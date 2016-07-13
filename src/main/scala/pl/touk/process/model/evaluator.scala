@@ -3,10 +3,13 @@ package pl.touk.process.model
 import org.slf4j.LoggerFactory
 import pl.touk.process.model.model._
 
+import scala.annotation.tailrec
+
 object evaluator {
 
   private val logger = LoggerFactory.getLogger("monitor")
 
+  @tailrec
   def evaluate(node: Node, ctx: Ctx): Ctx = {
     ctx.log(s"Processing node ${node.metaData.id}")
     node match {
@@ -18,7 +21,10 @@ object evaluator {
         val newCtx = ctx.copy(data = ctx.data + (exprVal -> output))
         nexts.view.find {
           case (expr, _) => expr.evaluate(newCtx).asInstanceOf[Boolean]
-        }.map(e => evaluate(e._2, ctx)).getOrElse(ctx)
+        } match {
+          case Some((_, nextNode)) => evaluate(nextNode, ctx)
+          case None => ctx
+        }
       case End(_) => ctx
       case _ => ctx
 
