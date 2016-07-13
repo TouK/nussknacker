@@ -27,8 +27,8 @@ object evaluator {
   }
 
   private def invoke(ref: ProcessorRef, ctx: Ctx): Any = {
-    val preparedCtx = ref.parameters.list.map {
-      case (name, expr) => val out = expr.evaluate(ctx); name -> out
+    val preparedCtx = ref.parameters.map { param =>
+      val out = param.expression.evaluate(ctx); param.name -> out
     }.toMap
     ctx.services(ref.id).invoke(preparedCtx, ctx)
   }

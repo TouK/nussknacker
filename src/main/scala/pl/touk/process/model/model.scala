@@ -55,8 +55,8 @@ object model {
     }
   }
 
-  case class Parameters(list: List[(String, Expression)])
+  case class Parameter(name: String, expression: Expression)
 
-  case class ProcessorRef(parameters: Parameters, id: String)
+  case class ProcessorRef(parameters: List[Parameter], id: String)
 
 }
