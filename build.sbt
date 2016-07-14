@@ -6,10 +6,22 @@ name := "rtm-engine"
 
 scalaVersion  := "2.11.8"
 
+val toukNexusGroups = "http://nexus.touk.pl/nexus/content/groups/"
+val toukNexusRepositories = "http://nexus.touk.pl/nexus/content/repositories/"
+
 resolvers ++= Seq(
-  "publishTo" at "file://"+Path.userHome.absolutePath+"/.m2/repository",
-  "touk repo" at "http://nexus.touk.pl/nexus/content/groups/public"
+  "local" at "file://"+Path.userHome.absolutePath+"/.m2/repository",
+  "touk repo" at toukNexusGroups + "public"
 )
+
+credentials += Credentials("Sonatype Nexus Repository Manager", "nexus.touk.pl", "deployment", "deployment123")
+
+publishTo := {
+  if (isSnapshot.value)
+    Some("snapshots" at toukNexusRepositories + "snapshots")
+  else
+    Some("releases"  at toukNexusRepositories + "public")
+}
 
 scalacOptions := Seq(
   "-unchecked",
