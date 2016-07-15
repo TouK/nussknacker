@@ -17,13 +17,16 @@ object expression {
 
   case class SpelExpression(expr: String) extends Expression {
 
-    @transient val parsed = new SpelExpressionParser(new SpelParserConfiguration(SpelCompilerMode.IMMEDIATE, null))
+    @transient lazy val parsed = new SpelExpressionParser(new SpelParserConfiguration(SpelCompilerMode.IMMEDIATE, null))
       .parseExpression(expr)
 
     override def evaluate[T](ctx: Ctx): T = {
       val simpleContext = new StandardEvaluationContext()
       ctx.vars.foreach {
         case (k, v) => simpleContext.setVariable(k, v)
+      }
+      ctx.expressionFunctions.foreach {
+        case (k, v) => simpleContext.registerFunction(k, v)
       }
       parsed.getValue(simpleContext).asInstanceOf[T]
     }
