@@ -1,24 +1,27 @@
-import 'todomvc-app-css/index.css';
 import React from 'react';
 import { render } from 'react-dom';
+import { browserHistory, Router, Route, Link } from 'react-router'
 import { AppContainer } from 'react-hot-loader';
-import configureStore from './store/configureStore';
-import Root from './containers/Root';
+import { App, Process, Visualization, TodoApp } from './containers/index';
 
-const store = configureStore();
+import './app.css'
+import 'todomvc-app-css/index.css'; /*fixme wyrzucic przy usuwanio todoapp*/
+import 'bootstrap/dist/css/bootstrap.css';
 
-render(
-  <AppContainer>
-    <Root
-      store={ store }
-    />
-  </AppContainer>,
-  document.getElementById('root')
-);
+render((
+    <Router history={browserHistory} >
+        <Route path={App.path} component={App}>
+            <Route path={Process.path} component={Process} />
+            <Route path={Visualization.path} component={Visualization} />
+            <Route path={TodoApp.path} component={TodoApp} />
+        </Route>
+    </Router>
+), document.getElementById('root'));
+
 
 if (module.hot) {
-  module.hot.accept('./containers/Root', () => {
-    const RootContainer = require('./containers/Root').default;
+  module.hot.accept('./containers/TodoAppRoot', () => {
+    const RootContainer = require('./containers/TodoAppRoot').default;
     render(
       <AppContainer>
         <RootContainer
