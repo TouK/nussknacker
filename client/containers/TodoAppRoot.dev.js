@@ -3,7 +3,7 @@ import { Provider } from 'react-redux';
 import TodoApp from './TodoApp';
 import DevTools from './DevTools';
 
-export default class Root extends Component {
+export default class TodoAppRoot extends Component {
   render() {
     const { store } = this.props;
     return (
