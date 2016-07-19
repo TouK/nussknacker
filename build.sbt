@@ -40,7 +40,7 @@ libraryDependencies ++= {
   val springV = "4.3.1.RELEASE"
   val scalaTestV = "3.0.0-M15"
   val logbackV = "1.1.3"
-  val circeV = "0.4.1"
+  val circeV = "0.5.0-M2"
   val slf4jV = "1.7.21"
 
   Seq(
