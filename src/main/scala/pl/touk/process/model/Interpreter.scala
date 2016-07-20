@@ -20,22 +20,39 @@ object Interpreter {
     ctx.listeners.foreach(_.nodeEntered(ctx, node))
     ctx.log(s"Processing node ${node.metaData.id}")
     node match {
-      case StartNode(_, next) => interpretNode(next, ctx)
-      case Processor(_, ref, next) => invoke(ref, ctx).flatMap(_ => interpretNode(next, ctx))
-      case Enricher(_, ref, outName, next) => invoke(ref, ctx).flatMap(out => interpretNode(next, ctx.withData(outName, out)))
+      case StartNode(_, next) =>
+        interpretNode(next, ctx)
+      case Processor(_, ref, next) =>
+        invoke(ref, ctx).flatMap(_ => interpretNode(next, ctx))
+      case Enricher(_, ref, outName, next) =>
+        invoke(ref, ctx).flatMap(out => interpretNode(next, ctx.withData(outName, out)))
       case Filter(_, expression, nextTrue, nextFalse) =>
-        if (expression.evaluate(ctx))
+        val result = expression.evaluate[Boolean](ctx)
+        ctx.listeners.foreach(_.expressionEvaluated(expression, result))
+        if (result)
           interpretNode(nextTrue, ctx)
-        else nextFalse.map(node => interpretNode(node, ctx)).getOrElse(Future((None, ctx)))
-      case Switch(_, expression, exprVal, nexts, defaultResult) => val output = expression.evaluate[Any](ctx)
+        else
+          nextFalse.map(node => interpretNode(node, ctx)).getOrElse(Future.successful((None, ctx)))
+      case Switch(_, expression, exprVal, nexts, defaultResult) =>
+        val output = expression.evaluate[Any](ctx)
+        ctx.listeners.foreach(_.expressionEvaluated(expression, output))
         val newCtx = ctx.withData(exprVal, output)
         nexts.view.find {
-          case (expr, _) => expr.evaluate(newCtx)
+          case (expr, _) =>
+            val result = expr.evaluate[Boolean](newCtx)
+            ctx.listeners.foreach(_.expressionEvaluated(expr, result))
+            result
         } match {
           case Some((_, nextNode)) => interpretNode(nextNode, ctx)
-          case None => Future((defaultResult.map(_.evaluate[Any](ctx)), ctx))
+          case None => Future.successful((defaultResult.map(_.evaluate[Any](ctx)), ctx))
         }
-      case End(_, expr) => Future((expr.map(_.evaluate[Any](ctx)), ctx))
+      case End(_, expr) =>
+        val optionalResult = expr.map { e =>
+          val result = e.evaluate[Any](ctx)
+          ctx.listeners.foreach(_.expressionEvaluated(e, result))
+          result
+        }
+        Future.successful((optionalResult, ctx))
     }
   }
 
