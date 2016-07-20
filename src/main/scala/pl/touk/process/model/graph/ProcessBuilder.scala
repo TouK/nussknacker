@@ -22,6 +22,8 @@ class ProcessBuilder[R <: Node] private(create: Node => R) {
   def end(metaData: MetaData): R =
     create(End(metaData))
 
+  def end(metaData: MetaData, expression: Expression): R =
+    create(End(metaData, Some(expression)))
 }
 
 object ProcessBuilder {
