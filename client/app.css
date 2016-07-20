@@ -28,8 +28,3 @@ ul.breadcrumbs-list li a.breadcrumb-active {
     text-decoration: none;
     cursor: default;
 }
-
-/*fixme usunac jak wywalimy todoapp */
-.todoapp {
-    position: static !important;
-}
