@@ -1,5 +1,5 @@
 {
-  "name": "rtm-ui-client",
+  "name": "esp-ui-client",
   "version": "0.0.0",
   "description": "ESP UI - client",
   "main": "server.js",

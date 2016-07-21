@@ -1,7 +1,7 @@
 import joint from 'jointjs'
 import _ from 'lodash'
 
-joint.shapes.devs.RtmNode = joint.shapes.basic.Generic.extend(_.extend({}, joint.shapes.basic.PortsModelInterface, {
+joint.shapes.devs.EspNode = joint.shapes.basic.Generic.extend(_.extend({}, joint.shapes.basic.PortsModelInterface, {
 
     markup: '<g class="rotatable"><g class="scalable"><rect class="body"/></g><text class="label"/><g class="inPorts"/><g class="outPorts"/></g>',
     portMarkup: '<g class="port port<%= id %>"><circle class="port-body"/><text class="port-label"/></g>',
@@ -114,7 +114,7 @@ export default {
 
         }
 
-        return new joint.shapes.devs.RtmNode({
+        return new joint.shapes.devs.EspNode({
             id: node.id,
             size: {width: width, height: height},
             inPorts: inPorts,
