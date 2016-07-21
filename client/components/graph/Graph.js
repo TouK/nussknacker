@@ -1,7 +1,7 @@
 import React from 'react'
 import { render } from 'react-dom'
 import joint from 'jointjs'
-import RtmNode from './RtmNode'
+import EspNode from './EspNode'
 import 'jointjs/dist/joint.css'
 import _ from 'lodash'
 
@@ -24,10 +24,10 @@ export default class Graph extends React.Component {
     componentDidMount() {
         var data = this.props.data
         var nodes = _.map(data.nodes, function (n) {
-            return RtmNode.makeElement(n)
+            return EspNode.makeElement(n)
         });
         var edges = _.map(data.edges, function (n) {
-            return RtmNode.makeLink(n.idIn, n.idOut, n.label)
+            return EspNode.makeLink(n.idIn, n.idOut, n.label)
         });
         var cells = nodes.concat(edges);
         var paper = new joint.dia.Paper({
