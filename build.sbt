@@ -1,8 +1,8 @@
 import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
 import net.virtualvoid.sbt.graph.Plugin._
 
-organization  := "pl.touk.rtm"
-name := "rtm-engine"
+organization  := "pl.touk.esp"
+name := "esp-engine"
 
 scalaVersion  := "2.11.8"
 
