@@ -40,17 +40,18 @@ libraryDependencies ++= {
   val springV = "4.3.1.RELEASE"
   val scalaTestV = "3.0.0-M15"
   val logbackV = "1.1.3"
-  val circeV = "0.5.0-M2"
+  val argonautShapelessV = "1.2.0-M1"
+  val argonautMajorV = "6.2"
+  val catsV = "0.6.1"
   val slf4jV = "1.7.21"
 
   Seq(
     "org.slf4j" % "slf4j-api" % slf4jV,
     "org.springframework" % "spring-expression" % springV,
+    "com.github.alexarchambault" %% s"argonaut-shapeless_$argonautMajorV" % argonautShapelessV,
+    "org.typelevel" %% "cats-core" % catsV,
     "ch.qos.logback" % "logback-classic" % logbackV % "test",
-    "org.scalatest" %% "scalatest" % scalaTestV % "test",
-    "io.circe" %% "circe-core" % circeV,
-    "io.circe" %% "circe-generic" % circeV,
-    "io.circe" %% "circe-parser" % circeV
+    "org.scalatest" %% "scalatest" % scalaTestV % "test"
   )
 }
 
