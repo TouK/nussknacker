@@ -54,6 +54,8 @@ libraryDependencies ++= {
   )
 }
 
+sources in (Compile, doc) := Seq.empty // skip javadoc generation
+
 releaseProcess := Seq[ReleaseStep](
   checkSnapshotDependencies,              // : ReleaseStep
   inquireVersions,                        // : ReleaseStep

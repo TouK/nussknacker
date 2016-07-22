@@ -1,11 +1,11 @@
-package pl.touk.process.model.marshall
+package pl.touk.esp.engine.marshall
 
 import cats.data.Xor
 import io.circe.Error
 import io.circe.generic.auto._
 import io.circe.parser._
 import io.circe.syntax._
-import pl.touk.process.model.graph.node.Node
+import pl.touk.esp.engine.graph.node._
 
 object GraphMarshaller {
 
