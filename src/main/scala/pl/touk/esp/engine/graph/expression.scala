@@ -1,9 +1,9 @@
-package pl.touk.process.model.graph
+package pl.touk.esp.engine.graph
 
 import org.springframework.expression.spel.standard.SpelExpressionParser
 import org.springframework.expression.spel.support.StandardEvaluationContext
 import org.springframework.expression.spel.{SpelCompilerMode, SpelParserConfiguration}
-import pl.touk.process.model.api.Ctx
+import pl.touk.esp.engine.api.Context
 
 import scala.language.implicitConversions
 
@@ -12,7 +12,7 @@ object expression {
   implicit def spelToExpression(expr: String): Expression = SpelExpression(expr)
 
   sealed trait Expression {
-    def evaluate[T](ctx: Ctx): T
+    def evaluate[T](ctx: Context): T
   }
 
   case class SpelExpression(expr: String) extends Expression {
@@ -20,9 +20,9 @@ object expression {
     @transient lazy val parsed = new SpelExpressionParser(new SpelParserConfiguration(SpelCompilerMode.IMMEDIATE, null))
       .parseExpression(expr)
 
-    override def evaluate[T](ctx: Ctx): T = {
+    override def evaluate[T](ctx: Context): T = {
       val simpleContext = new StandardEvaluationContext()
-      ctx.vars.foreach {
+      ctx.variables.foreach {
         case (k, v) => simpleContext.setVariable(k, v)
       }
       ctx.expressionFunctions.foreach {

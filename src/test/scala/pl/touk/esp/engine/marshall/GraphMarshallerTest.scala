@@ -1,8 +1,8 @@
-package pl.touk.process.model.marshall
+package pl.touk.esp.engine.marshall
 
 import org.scalatest.{FlatSpec, Matchers}
-import pl.touk.process.model.graph.node._
-import pl.touk.process.model.graph.expression._
+import pl.touk.esp.engine.graph.node._
+import pl.touk.esp.engine.graph.expression._
 
 
 class GraphMarshallerTest extends FlatSpec with Matchers {

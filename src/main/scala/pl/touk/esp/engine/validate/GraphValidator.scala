@@ -1,20 +1,20 @@
-package pl.touk.process.model
+package pl.touk.esp.engine.validate
 
-import cats.data.{Validated, ValidatedNel}
 import cats.data.Validated._
-import pl.touk.process.model.ProcessVerificationError._
-import pl.touk.process.model.graph.node._
+import cats.data.{Validated, ValidatedNel}
+import pl.touk.esp.engine.graph.node._
+import pl.touk.esp.engine.validate.GraphValidationError._
 
-object ProcessValidator {
+object GraphValidator {
 
-  def validate(node: Node): ValidatedNel[DuplicatedNodeIds, Unit] = {
+  def validate(node: StartNode): ValidatedNel[DuplicatedNodeIds, Unit] = {
     findDuplicates(node).toValidatedNel
   }
 
-  private def findDuplicates(node: Node): Validated[DuplicatedNodeIds, Unit] = {
+  private def findDuplicates(node: StartNode): Validated[DuplicatedNodeIds, Unit] = {
     val allNodes = collectNodes(node)
     val duplicatedIds =
-      allNodes.map(_.metaData.id).groupBy(identity).collect {
+      allNodes.map(_.id).groupBy(identity).collect {
         case (id, grouped) if grouped.size > 1 =>
           id
       }
@@ -27,6 +27,8 @@ object ProcessValidator {
   private def collectNodes(node: Node): List[Node] = {
     val children = node match {
       case StartNode(_, next) =>
+        collectNodes(next)
+      case VariableBuilder(_, _, _, next) =>
         collectNodes(next)
       case Processor(_, _, next) =>
         collectNodes(next)
@@ -46,10 +48,10 @@ object ProcessValidator {
 
 }
 
-sealed trait ProcessVerificationError
+sealed trait GraphValidationError
 
-object ProcessVerificationError {
+object GraphValidationError {
 
-  case class DuplicatedNodeIds(ids: Set[String]) extends ProcessVerificationError
+  case class DuplicatedNodeIds(ids: Set[String]) extends GraphValidationError
 
 }
