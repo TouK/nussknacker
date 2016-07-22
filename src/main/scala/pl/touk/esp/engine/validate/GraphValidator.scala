@@ -36,10 +36,10 @@ object GraphValidator {
         collectNodes(next)
       case Filter(_, _, nextTrue, nextFalse) =>
         collectNodes(nextTrue) ::: nextFalse.toList.flatMap(collectNodes)
-      case Switch(_, _, _, nexts, _) =>
+      case Switch(_, _, _, nexts, defaultNext) =>
         nexts.flatMap {
-          case (_, n) => collectNodes(n)
-        }
+          case Case(_, n) => collectNodes(n)
+        } ::: defaultNext.toList.flatMap(collectNodes)
       case End(_, _) =>
         Nil
     }

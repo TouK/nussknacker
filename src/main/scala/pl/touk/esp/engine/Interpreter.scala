@@ -46,10 +46,10 @@ class Interpreter(config: InterpreterConfig) {
         val output = evaluate[Any](expression, ctx)
         val newCtx = ctx.withVariable(exprVal, output)
         nexts.view.find {
-          case (expr, _) =>
+          case Case(expr, _) =>
             evaluate[Boolean](expr, newCtx)
         } match {
-          case Some((_, nextNode)) =>
+          case Some(Case(_, nextNode)) =>
             interpretNode(nextNode, ctx)
           case None =>
             interpretOptionalNext(node, defaultNext, ctx)
