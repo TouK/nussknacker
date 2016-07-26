@@ -9,28 +9,46 @@ import joint from 'jointjs'
 import 'jointjs/dist/joint.css'
 import _ from 'lodash'
 
+import '../stylesheets/mainMenu.styl'
+
 const store = configureStore();
 
 export const App = React.createClass({
     render: function() {
         return (
-            <div>
-                <aside>
-                    <ul className="nav nav-pills nav-stacked">
-                        <li><Link to={Process.path}>{Process.header}</Link></li>
-                        <li><Link to={Visualization.path}>{Visualization.header}</Link></li>
-                        <li><Link to={TodoApp.path}>{TodoApp.header}</Link></li>
-                    </ul>
-                </aside>
-                <main>
-                    {this.props.children}
-                </main>
-            </div>
+          <div id="app-container">
+            <nav id="main-menu" className="navbar navbar-default">
+              <div className="container-fluid">
+                <div className="navbar-header">
+                  <Link id="brand-name" className="navbar-brand" to={App.path}>
+                    <span id="app-logo" className="vert-middle">{App.header_a}</span>
+                    <span id="app-name" className="vert-middle">{App.header_b}</span>
+                  </Link>
+                </div>
+
+                <div className="collapse navbar-collapse">
+                  <ul id="menu-items" className="nav navbar-nav navbar-right nav-pills nav-stacked">
+                    <li><Link to={Process.path}>{Process.header}</Link></li>
+                    <li><Link to={Visualization.path}>{Visualization.header}</Link></li>
+                    <li><Link to={TodoApp.path}>{TodoApp.header}</Link></li>
+                  </ul>
+                </div>
+              </div>
+            </nav>
+            <main>
+              <div className="container">
+                {this.props.children}
+              </div>
+            </main>
+          </div>
         )
     }
 });
+
 App.title = 'Home'
 App.path = '/'
+App.header_a = 'ESP'
+App.header_b = 'Event Stream Processing'
 
 export const Process = () => (
     <div className="Page">
