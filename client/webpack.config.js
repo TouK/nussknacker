@@ -40,6 +40,14 @@ module.exports = {
       test: /\.styl$/,
       loaders: ['style-loader', 'css-loader', 'stylus-loader'],
       include: __dirname
+    }, {
+      test: /\.less$/,
+      loaders: ['style', 'css', 'less'],
+      include: __dirname
+    }, {
+      test: /\.(eot|svg|ttf|woff|woff2)$/,
+      loader: 'file?name=assets/fonts/[name].[ext]',
+      include: __dirname
     }]
   }
 };

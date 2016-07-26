@@ -1,0 +1,40 @@
+@import "./_variables.styl"
+
+#main-menu
+  position: absolute
+  top: 0
+  height: menuBarHeight
+  width: 100%
+  background-color: menuBkgColor
+  border: none
+  border-radius: 0
+
+#brand-name
+  color: menuTxtColor
+  height: 100%
+  display: table
+  #app-logo
+    font-size: 30px
+    padding: 0 20px 0 40px
+    font-weight: 400
+  #app-name
+    font-size: 24px
+    font-weight: 300
+  .vert-middle
+    display: table-cell
+    vertical-align: middle
+
+#menu-items
+  height: 100%
+  li
+    height: 100%
+    margin: 0
+  a
+    color: menuTxtColor
+    font-weight: 400
+    font-size: 18px
+    line-height: menuBarHeight
+    padding: 0 40px
+    border-radius: 0
+    &:hover
+      background-color: rgba(0, 0, 0, 0.1)

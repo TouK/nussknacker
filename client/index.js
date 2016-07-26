@@ -4,9 +4,10 @@ import { browserHistory, Router, Route, Link } from 'react-router'
 import { AppContainer } from 'react-hot-loader';
 import { App, Process, Visualization, TodoApp } from './containers/MainPage';
 
-import './app.styl'
 import 'todomvc-app-css/index.css'; /*fixme wyrzucic przy usuwanio todoapp*/
 import 'bootstrap/dist/css/bootstrap.css';
+import './assets/fonts/fonts.less'
+import './app.styl'
 
 render((
     <Router history={browserHistory} >
