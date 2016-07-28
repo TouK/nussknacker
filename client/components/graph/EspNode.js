@@ -68,7 +68,8 @@ export default {
 
     makeElement(node) {
 
-        var maxLineLength = _.max(node.label.split('\n'), function (l) {
+        var label = node.type + ": " + node.id
+        var maxLineLength = _.max(label.split('\n'), function (l) {
             return l.length;
         }).length;
 
@@ -76,8 +77,8 @@ export default {
         // of lines in the label and the letter size. 0.6 * letterSize is
         // an approximation of the monospace font letter width.
         var letterSize = 8;
-        var width = 2 * (letterSize * (0.6 * maxLineLength + 1));
-        var height = 3 * ((node.label.split('x').length + 1) * letterSize);
+        var width = 2 * (letterSize * (0.5 * maxLineLength + 1));
+        var height = 3 * ((label.split('x').length + 1) * letterSize);
 
         var inPorts = [];
         var outPorts = [];
@@ -91,13 +92,12 @@ export default {
         }
 
         var attrs = {
-            '.label': {text: node.label},
-            text: {text: node.label, 'font-size': letterSize, 'font-family': 'monospace'},
+            '.label': {text: label},
+            text: {text: node.id, 'font-size': letterSize, 'font-family': 'monospace'},
             rect: {
                 width: width, height: height,
                 rx: 5, ry: 5,
                 stroke: '#fe854f',
-                //ondblclick: '$("#builderModal").modal()',
                 'stroke-width': 2,
                 fill: '#feb663'
             },
@@ -105,13 +105,24 @@ export default {
             '.outPorts circle': {fill: '#E74C3C', type: 'output'}
         };
 
-        if (node.shape == 'circle') {
+        if (node.type == 'Start') {
             attrs.rect.fill = 'green';
-
+        } else if (node.type == 'End') {
+            attrs.rect.fill = 'red';
+        } else if (node.type == 'Filter') {
+            attrs.rect.fill = 'violet';
+        } else if (node.type == 'Switch') {
+            attrs.rect.fill = 'cyan';
+        } else if (node.type == 'VariableBuilder') {
+            attrs.rect.fill = 'pink';
+        } else if (node.type == 'Enricher') {
+            attrs.rect.fill = 'yellow';
+        } else if (node.type == 'Processor') {
+            attrs.rect.fill = 'silver';
         }
-        if (node.shape == 'diamond') {
-            attrs.rect.fill = 'blue';
-
+        else {
+            console.warn("unknown node type found: " + node.type)
+            attrs.rect.fill = 'black';
         }
 
         return new joint.shapes.devs.EspNode({
@@ -120,7 +131,8 @@ export default {
             inPorts: inPorts,
             outPorts: outPorts,
             attrs: attrs,
-            rankDir: 'R'
+            rankDir: 'R',
+            nodeData: node
         });
     },
 
