@@ -36,7 +36,7 @@ export const App = React.createClass({
               </div>
             </nav>
             <main>
-              <div className="container">
+              <div>
                 {this.props.children}
               </div>
             </main>
@@ -64,8 +64,9 @@ Process.header = 'Procesy'
 export const Visualization = () => {
     var graphData = {
 //TODO
-        "edges": [{ "idIn": "abc", "idOut": "55", "label": ""}, { "idIn": "55", "idOut": "56", "label": "yes"}, { "idIn": "53", "idOut": "54", "label": ""}, { "idIn": "52", "idOut": "53", "label": ""}, { "idIn": "51", "idOut": "52", "label": "yes"}, { "idIn": "56", "idOut": "51", "label": "a=>a.<=(5)"}, { "idIn": "49", "idOut": "50", "label": ""}, { "idIn": "56", "idOut": "49", "label": "a=>a.>(5)"}]
+//TODO
     }
+
     return (
         <div className="Page">
             <h1>{Visualization.header}</h1>
