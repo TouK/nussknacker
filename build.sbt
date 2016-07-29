@@ -52,7 +52,10 @@ val scalaTestV = "3.0.0-M15"
 val logbackV = "1.1.3"
 val argonautShapelessV = "1.2.0-M1"
 val argonautMajorV = "6.2"
+val argonautV = s"$argonautMajorV-M3"
 val catsV = "0.6.1"
+val scalaParsersV = "1.0.4"
+val dispatchV = "0.11.3"
 val slf4jV = "1.7.21"
 
 lazy val process = (project in file("process")).
@@ -118,6 +121,9 @@ lazy val util = (project in file("util")).
     name := "esp-util",
     libraryDependencies ++= {
       Seq(
+        "net.databinder.dispatch" %% "dispatch-core" % dispatchV,
+        "org.scala-lang.modules" %% "scala-parser-combinators" % scalaParsersV, // scalaxb deps
+        "io.argonaut" %% "argonaut" % argonautV,
         "org.apache.flink" %% "flink-streaming-java" % flinkV % "provided"
       )
     }
