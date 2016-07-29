@@ -11,6 +11,8 @@ import _ from 'lodash'
 
 import '../stylesheets/mainMenu.styl'
 
+import { Process } from './Processes'
+
 const store = configureStore();
 
 export const App = React.createClass({
@@ -28,6 +30,7 @@ export const App = React.createClass({
 
                 <div className="collapse navbar-collapse">
                   <ul id="menu-items" className="nav navbar-nav navbar-right nav-pills nav-stacked">
+                    <li><Link to={Home.path}>{Home.header}</Link></li>
                     <li><Link to={Process.path}>{Process.header}</Link></li>
                     <li><Link to={Visualization.path}>{Visualization.header}</Link></li>
                     <li><Link to={TodoApp.path}>{TodoApp.header}</Link></li>
@@ -50,16 +53,16 @@ App.path = '/'
 App.header_a = 'ESP'
 App.header_b = 'Event Stream Processing'
 
-export const Process = () => (
-    <div className="Page">
-        <h1>{Process.header}</h1>
-        <p>Zakladka z procesami</p>
-    </div>
+export const Home = () => (
+  <div className="Page">
+      <h1>Welcome to {App.header_b}</h1>
+  </div>
 );
 
-Process.title = 'Process'
-Process.path = '/process'
-Process.header = 'Procesy'
+Home.title = 'Home'
+Home.path = '/home'
+Home.header = 'Home'
+
 
 export const Visualization = () => {
     var graphData = {

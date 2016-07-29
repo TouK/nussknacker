@@ -1,0 +1,43 @@
+#process-table
+  width: 100%
+
+  td
+    text-align: left
+    padding: 20px 10px
+    border: none
+
+  th
+    background-color: #78878B
+    color: white
+    padding: 20px 10px
+    border: none
+
+  tr.row-hover:hover td
+    background-color: rgba(77, 157, 189, 0.5)
+    color: white
+  tr:nth-child(even)
+    background-color: #F5F5F5
+  tr:nth-child(odd)
+    background-color: #E0E0E0
+
+  tr#filter-row
+    background-color: white
+    border-left: 1px solid #E0E0E0
+    border-right: 1px solid #E0E0E0
+    #filter-input
+      width: 100%
+      border: 1px solid #E0E0E0
+      border-radius: 2px
+      padding: 5px 10px
+
+  .tagBlock
+    display: inline-block
+    margin: 0 5px 0
+    background-color: #969696
+    color: white
+    font-size: 14px
+    padding: 3px 15px
+    cursor: pointer
+    border-radius: 2px
+    &:hover
+      background-color: #615F5F
