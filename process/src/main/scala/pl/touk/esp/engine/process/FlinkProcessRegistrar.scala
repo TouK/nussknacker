@@ -3,17 +3,15 @@ package pl.touk.esp.engine.process
 import java.lang.Iterable
 import java.util.Collections
 
-import akka.util.Timeout
 import org.apache.flink.api.common.functions.FlatMapFunction
 import org.apache.flink.streaming.api.collector.selector.OutputSelector
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.scala.{StreamExecutionEnvironment, _}
 import org.apache.flink.util.Collector
-import org.slf4j.LoggerFactory
 import pl.touk.esp.engine.api._
 import pl.touk.esp.engine.api.sink.SinkRef
-import pl.touk.esp.engine.graph.{EspProcess, node}
 import pl.touk.esp.engine.graph.node.Source
+import pl.touk.esp.engine.graph.{EspProcess, node}
 import pl.touk.esp.engine.process.FlinkProcessRegistrar._
 import pl.touk.esp.engine.process.util.SynchronousExecutionContext
 import pl.touk.esp.engine.traverse.NodesCollector
@@ -79,7 +77,6 @@ object FlinkProcessRegistrar {
   class InterpretationFunction(config: => InterpreterConfig,
                                process: EspProcess,
                                processTimeout: Duration) extends FlatMapFunction[Any, InterpretationResult] {
-    private val logger = LoggerFactory.getLogger(getClass)
 
     private lazy val interpreter = new Interpreter(config)
 
