@@ -3,6 +3,8 @@ package pl.touk.esp.engine.process
 import java.lang.Iterable
 import java.util.Collections
 
+import cats.data.Validated.{Invalid, Valid}
+import cats.std.list._
 import org.apache.flink.api.common.functions.FlatMapFunction
 import org.apache.flink.streaming.api.collector.selector.OutputSelector
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
@@ -10,6 +12,7 @@ import org.apache.flink.streaming.api.scala.{StreamExecutionEnvironment, _}
 import org.apache.flink.util.Collector
 import pl.touk.esp.engine.api._
 import pl.touk.esp.engine.api.sink.SinkRef
+import pl.touk.esp.engine.compile.ProcessCompiler
 import pl.touk.esp.engine.graph.node.Source
 import pl.touk.esp.engine.graph.{EspProcess, node}
 import pl.touk.esp.engine.process.FlinkProcessRegistrar._
@@ -80,9 +83,14 @@ object FlinkProcessRegistrar {
 
     private lazy val interpreter = new Interpreter(config)
 
+    private lazy val compiledProcess = ProcessCompiler.default.compile(process) match {
+      case Valid(p) => p
+      case Invalid(err) => throw new IllegalArgumentException(err.unwrap.mkString("Compilation errors: ", ", ", ""))
+    }
+
     override def flatMap(input: Any, collector: Collector[InterpretationResult]): Unit = {
       implicit val ec = SynchronousExecutionContext.ctx
-      val resultFuture = interpreter.interpret(process, input).map { result =>
+      val resultFuture = interpreter.interpret(compiledProcess, input).map { result =>
         collector.collect(result)
       }
       Await.result(resultFuture, processTimeout)

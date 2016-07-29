@@ -5,20 +5,18 @@ import java.lang.reflect.Method
 import pl.touk.esp.engine.Interpreter._
 import pl.touk.esp.engine.api.sink.SinkRef
 import pl.touk.esp.engine.api.{Context, InterpretationResult, MetaData, ProcessListener}
-import pl.touk.esp.engine.graph._
-import pl.touk.esp.engine.graph.expression._
-import pl.touk.esp.engine.graph.node._
-import pl.touk.esp.engine.graph.service._
-import pl.touk.esp.engine.graph.variable._
-import pl.touk.esp.engine.validate.GraphValidator
+import pl.touk.esp.engine.compiledgraph._
+import pl.touk.esp.engine.compiledgraph.expression._
+import pl.touk.esp.engine.compiledgraph.node._
+import pl.touk.esp.engine.compiledgraph.service._
+import pl.touk.esp.engine.compiledgraph.variable._
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class Interpreter(config: InterpreterConfig) {
 
-  def interpret(process: EspProcess, input: Any)
+  def interpret(process: CompiledProcess, input: Any)
                (implicit executor : ExecutionContext): Future[InterpretationResult] = {
-    GraphValidator.validate(process).toXor.valueOr(errors => throw new IllegalArgumentException(s"Find errors: $errors"))
     val ctx = ContextImpl(config, process.metaData).withVariable(InputParamName, input)
     interpretNode(process.root, ctx).map {
       case NodeInterpretationResult(sinkRef, finalCtx) =>

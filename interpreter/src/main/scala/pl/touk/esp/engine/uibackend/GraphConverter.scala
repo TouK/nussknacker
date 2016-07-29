@@ -1,6 +1,7 @@
 package pl.touk.esp.engine.uibackend
 
-import cats.data.Xor
+import cats.data.Validated
+import cats.data.Validated._
 import pl.touk.esp.engine.flatgraph.flatnode
 import pl.touk.esp.engine.flatgraph.flatnode.FlatNode
 import pl.touk.esp.engine.graph.expression.Expression
@@ -56,11 +57,11 @@ object GraphConverter {
       case Nil =>
         (List(),List())
       case _ =>
-        throw new RuntimeException(s"cannot parse nodes: ${nodes}")
+        throw new RuntimeException(s"cannot parse nodes: $nodes")
     }
   }
 
-  def fromGraph(graph: GraphDisplay.Graph): Xor[Any, List[flatnode.FlatNode]] = {
+  def fromGraph(graph: GraphDisplay.Graph): Validated[Any, List[flatnode.FlatNode]] = {
     val nodesMap = graph.nodes.groupBy(_.id).mapValues(_.head)
     val edgesFromMapStart = graph.edges.groupBy(_.from)
 
@@ -99,8 +100,8 @@ object GraphConverter {
       }
     }
     graph.nodes.head match {
-      case _: GraphDisplay.Source => Xor.right(unFlattenNode(graph.nodes.head, edgesFromMapStart))
-      case unexpected => Xor.left(graph.nodes)
+      case _: GraphDisplay.Source => valid(unFlattenNode(graph.nodes.head, edgesFromMapStart))
+      case unexpected => invalid(graph.nodes)
     }
   }
 

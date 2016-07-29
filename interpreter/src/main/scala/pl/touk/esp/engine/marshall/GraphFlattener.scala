@@ -1,8 +1,13 @@
 package pl.touk.esp.engine.marshall
 
-import cats.data.Xor
+import cats.data.Validated._
+import cats.std.list._
+import cats.std.option._
+import cats.syntax.cartesian._
+import cats.syntax.traverse._
+import cats.data.ValidatedNel
 import pl.touk.esp.engine.graph._
-import pl.touk.esp.engine.marshall.GraphFlattenerError.{InvaliRootNode, InvalidTailOfBranch}
+import pl.touk.esp.engine.marshall.GraphUnFlattenError.{InvaliRootNode, InvalidTailOfBranch}
 import pl.touk.esp.engine.flatgraph._
 
 object GraphFlattener {
@@ -42,85 +47,70 @@ object GraphFlattener {
         flatnode.Sink(id, ref, endResult) :: Nil
     }
 
-  def unFlatten(flatProcess: FlatProcess): Xor[GraphFlattenerError, EspProcess] =
-    for {
-      root <- unFlatten(flatProcess.nodes)
-      source <- {
-        root match {
-          case source: node.Source =>
-            Xor.right(source)
-          case other =>
-            Xor.left(InvaliRootNode(other))
-        }
-      }
-    } yield EspProcess(flatProcess.metaData, source)
+  def unFlatten(flatProcess: FlatProcess): ValidatedNel[GraphUnFlattenError, EspProcess]=
+    (unFlatten(flatProcess.nodes) andThen validateIsSource).map(EspProcess(flatProcess.metaData, _))
 
-  private def unFlatten(flatNode: List[flatnode.FlatNode]): Xor[GraphFlattenerError, node.Node] =
+  private def validateIsSource(n: node.Node): ValidatedNel[GraphUnFlattenError, node.Source] =
+    n match {
+      case source: node.Source =>
+        valid(source)
+      case other =>
+        invalid(InvaliRootNode(other.id)).toValidatedNel
+    }
+
+  private def unFlatten(flatNode: List[flatnode.FlatNode]): ValidatedNel[GraphUnFlattenError, node.Node] =
     flatNode match {
       case flatnode.Source(id, ref) :: tail =>
-        for {
-          next <- unFlatten(tail)
-        } yield node.Source(id, ref, next)
+        unFlatten(tail).map(node.Source(id, ref, _))
       case flatnode.VariableBuilder(id, varName, fields) :: tail =>
-        for {
-          next <- unFlatten(tail)
-        } yield node.VariableBuilder(id, varName, fields, next)
+        unFlatten(tail).map(node.VariableBuilder(id, varName, fields, _))
       case flatnode.Processor(id, service) :: tail =>
-        for {
-          next <- unFlatten(tail)
-        } yield node.Processor(id, service, next)
+        unFlatten(tail).map(node.Processor(id, service, _))
       case flatnode.Enricher(id, service, output) :: tail =>
-        for {
-          next <- unFlatten(tail)
-        } yield node.Enricher(id, service, output, next)
+        unFlatten(tail).map(node.Enricher(id, service, output, _))
       case flatnode.Filter(id, expression, nextFalse) :: tail if nextFalse.isEmpty =>
-        for {
-          nextTrue <- unFlatten(tail)
-        } yield node.Filter(id, expression, nextTrue, None)
+        unFlatten(tail).map(node.Filter(id, expression, _, None))
       case flatnode.Filter(id, expression, nextFalse) :: tail =>
-        for {
-          nextTrue <- unFlatten(tail)
-          nextFalseR <- unFlatten(nextFalse.toList)
-        } yield node.Filter(id, expression, nextTrue, Some(nextFalseR))
+        (unFlatten(tail) |@| unFlatten(nextFalse)).map { (nextTrue, nextFalseV) =>
+          node.Filter(id, expression, nextTrue, Some(nextFalseV))
+        }
       case flatnode.Switch(id, expression, exprVal, nexts, defaultNext) :: Nil if defaultNext.isEmpty =>
-        for {
-          nextsR <- {
-            nexts.foldRight(Xor.right[GraphFlattenerError, List[node.Case]](List.empty)) {
-              case (casee, acc) =>
-                for {
-                  accR <- acc
-                  next <- unFlatten(casee.nodes.toList)
-                } yield node.Case(casee.expression, next) :: accR
-            }
-          }
-        } yield node.Switch(id, expression, exprVal, nextsR, None)
+        nexts.map { casee =>
+          unFlatten(casee.nodes).map(node.Case(casee.expression, _))
+        }.sequenceU.map(node.Switch(id, expression, exprVal, _, None))
       case flatnode.Switch(id, expression, exprVal, nexts, defaultNext) :: Nil =>
-        for {
-          nextsR <- {
-            nexts.foldRight(Xor.right[GraphFlattenerError, List[node.Case]](List.empty)) {
-              case (casee, acc) =>
-                for {
-                  accR <- acc
-                  next <- unFlatten(casee.nodes.toList)
-                } yield node.Case(casee.expression, next) :: accR
-            }
-          }
-          defaultNextR <- unFlatten(defaultNext.toList)
-        } yield node.Switch(id, expression, exprVal, nextsR, Some(defaultNextR))
+        val unFlattenNexts = nexts.map { casee =>
+          unFlatten(casee.nodes).map(node.Case(casee.expression, _))
+        }.sequenceU
+        (unFlattenNexts |@| unFlatten(defaultNext)).map { (nextsV, defaultNextV) =>
+          node.Switch(id, expression, exprVal, nextsV, Some(defaultNextV))
+        }
       case flatnode.Sink(id, ref, endResult) :: Nil =>
-        Xor.right(node.Sink(id, ref, endResult))
+        valid(node.Sink(id, ref, endResult))
       case invalidTail =>
-        Xor.left(InvalidTailOfBranch(invalidTail))
+        invalid(InvalidTailOfBranch(invalidTail.map(_.id).toSet)).toValidatedNel
     }
 
 }
 
-sealed trait GraphFlattenerError
+sealed trait GraphUnFlattenError {
 
-object GraphFlattenerError {
+  def nodeIds: Set[String]
 
-  case class InvaliRootNode(start: node.Node) extends GraphFlattenerError
+}
 
-  case class InvalidTailOfBranch(unexpected: List[flatnode.FlatNode]) extends GraphFlattenerError
+object GraphUnFlattenError {
+
+  trait InASingleNode { self: GraphUnFlattenError =>
+
+    override def nodeIds: Set[String] = Set(nodeId)
+
+    protected def nodeId: String
+
+  }
+
+  case class InvaliRootNode(nodeId: String) extends GraphUnFlattenError with InASingleNode
+
+  case class InvalidTailOfBranch(nodeIds: Set[String]) extends GraphUnFlattenError
 
 }
