@@ -18,6 +18,8 @@
     "react-hot-loader": "^3.0.0-beta.1",
     "react-redux": "4.4.5",
     "react-router": "2.6.0",
+    "react-modal": "1.4.0",
+    "reactable": "0.13.2",
     "redux": "3.5.2"
   },
   "devDependencies": {

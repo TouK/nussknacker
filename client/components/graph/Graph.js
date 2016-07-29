@@ -4,7 +4,6 @@ import joint from 'jointjs'
 import EspNode from './EspNode'
 import 'jointjs/dist/joint.css'
 import _ from 'lodash'
-import $ from 'jquery'
 import svgPanZoom from 'svg-pan-zoom'
 
 export default class Graph extends React.Component {
@@ -33,18 +32,12 @@ export default class Graph extends React.Component {
     }
 
     drawGraph = () => {
-        var data = this.props.data
-        var nodes = _.map(data.nodes, function (n) {
-            return EspNode.makeElement(n)
-        });
-        var edges = _.map(data.edges, function (n) {
-            return EspNode.makeLink(n.from, n.to, _.get(n, 'label.expr'))
-        });
+        var nodes = _.map(this.props.data.nodes, (n) => { return EspNode.makeElement(n) });
+        var edges = _.map(this.props.data.edges, (n) => { return EspNode.makeLink(n.from, n.to, _.get(n, 'label.original')) });
         var cells = nodes.concat(edges);
         var paper = new joint.dia.Paper({
-            el: $('#esp-graph'),
-            width: "100%",
-            height: 600,
+            el: this.refs.espGraph,
+            width: this.refs.espGraph.offsetWidth,
             gridSize: 1,
             model: this.graph
         });
@@ -55,44 +48,104 @@ export default class Graph extends React.Component {
     }
 
     enablePanZoom(paper) {
-        var graphElement = $('#esp-graph')[0]
-        var panAndZoom = svgPanZoom(graphElement.childNodes[0],
+        var panAndZoom = svgPanZoom(this.refs.espGraph.childNodes[0],
             {
-                viewportSelector: graphElement.childNodes[0].childNodes[0],
+                viewportSelector: this.refs.espGraph.childNodes[0].childNodes[0],
                 fit: true,
                 zoomScaleSensitivity: 0.4,
                 controlIconsEnabled: true,
                 panEnabled: false
             });
 
-        paper.on('blank:pointerdown', function (evt, x, y) {
+        paper.on('blank:pointerdown', (evt, x, y) => {
             panAndZoom.enablePan();
         });
-
-        paper.on('cell:pointerup blank:pointerup', function (cellView, event) {
+        paper.on('cell:pointerup blank:pointerup', (cellView, event) => {
             panAndZoom.disablePan();
         });
     }
 
     changeNodeDetailsOnClick (paper) {
-        paper.on('cell:pointerclick',
-            (cellView, evt, x, y) => {
+        paper.on('cell:pointerclick', (cellView, evt, x, y) => {
+            if (cellView.model.attributes.nodeData) {
                 this.setState({clickedNode: cellView.model.attributes.nodeData});
             }
-        );
+        });
+    }
+
+    onDetailsClosed = () => {
+        this.setState({clickedNode: {}})
     }
 
     render() {
         return (
             <div>
-                <div id="esp-graph" ref="placeholder"></div>
-                <NodeDetails node={this.state.clickedNode}/>
+                <NodeDetailsModal node={this.state.clickedNode} onClose={this.onDetailsClosed}/>
+                <div ref="espGraph"></div>
                 <button type="button" className="btn btn-default" onClick={this.directedLayout}>Wyśrodkuj proces</button>
             </div>
         );
     }
 }
 
+
+import Modal from 'react-modal'
+import Reactable from 'reactable'
+
+class NodeDetailsModal extends React.Component {
+    closeModal = () => {
+        this.props.onClose()
+    }
+
+    contentForNode = () => {
+        if (!_.isEmpty(this.props.node)) {
+            switch (this.props.node.type) {
+                case 'Filter':
+                    return (
+                        <div>
+                            <Reactable.Table className="table" data={[this.props.node.expression]}/>
+                            <NodeDetails node={this.props.node}/>
+                        </div>
+                    )
+                case 'Enricher':
+                    return (
+                        <div>
+                            <Reactable.Table className="table" data={_.map(this.props.node.service.parameters, (f) => {
+                                return {'name': f.name, expr: f.expression.original}}  )
+                            }/>
+                            <NodeDetails node={this.props.node}/>
+                        </div>
+                    )
+                case 'VariableBuilder':
+                    return (
+                        <div>
+                            <Reactable.Table className="table" data={_.map(this.props.node.fields, (f) => { return {'name': f.name, expr: f.expression.original}}  )}/>
+                            <NodeDetails node={this.props.node}/>
+                        </div>
+                    )
+                default:
+                    return (
+                        <div>
+                            <NodeDetails node={this.props.node}/>
+                        </div>
+                    )
+            }
+        }
+    }
+
+    render () {
+        var isOpen = !(_.isEmpty(this.props.node))
+        return (
+            <div>
+                <Modal isOpen={isOpen}>
+                    <h1>{this.props.node.type}: {this.props.node.id}</h1>
+                    {this.contentForNode()}
+                    <button onClick={this.closeModal}>Close</button>
+                </Modal>
+            </div>
+        );
+    }
+}
 
 class NodeDetails extends React.Component {
     render() {
@@ -102,5 +155,4 @@ class NodeDetails extends React.Component {
             </div>
         );
     }
-
 }

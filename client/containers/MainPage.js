@@ -66,7 +66,6 @@ export const Visualization = () => {
 //TODO
 //TODO
     }
-
     return (
         <div className="Page">
             <h1>{Visualization.header}</h1>
