@@ -105,9 +105,9 @@ export default {
             '.outPorts circle': {fill: '#E74C3C', type: 'output'}
         };
 
-        if (node.type == 'Start') {
+        if (node.type == 'Source') {
             attrs.rect.fill = 'green';
-        } else if (node.type == 'End') {
+        } else if (node.type == 'Sink') {
             attrs.rect.fill = 'red';
         } else if (node.type == 'Filter') {
             attrs.rect.fill = 'violet';
