@@ -6,19 +6,19 @@ import cats.std.option._
 import cats.syntax.cartesian._
 import cats.syntax.traverse._
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.{Semigroup, SemigroupK}
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine._
 import pl.touk.esp.engine.compiledgraph._
 import pl.touk.esp.engine.traverse.NodesCollector
 import ProcessCompilationError._
-import cats.{Semigroup, SemigroupK}
 import pl.touk.esp.engine.compile.ProcessCompiler.NodeId
 import pl.touk.esp.engine.compiledgraph.expression.ExpressionParser
 import pl.touk.esp.engine.spel.SpelExpressionParser
 
 class ProcessCompiler(expressionParsers: Map[String, ExpressionParser]) {
 
-  private implicit val nelMonoid: Semigroup[NonEmptyList[ProcessCompilationError]] =
+  private implicit val nelSemigroup: Semigroup[NonEmptyList[ProcessCompilationError]] =
     SemigroupK[NonEmptyList].algebra[ProcessCompilationError]
 
   def compile(process: EspProcess): ValidatedNel[ProcessCompilationError, CompiledProcess] = {
