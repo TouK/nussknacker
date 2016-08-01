@@ -121,7 +121,7 @@ lazy val util = (project in file("util")).
     name := "esp-util",
     libraryDependencies ++= {
       Seq(
-        "net.databinder.dispatch" %% "dispatch-core" % dispatchV,
+        "net.databinder.dispatch" %% "dispatch-core" % dispatchV % "optional",
         "org.scala-lang.modules" %% "scala-parser-combinators" % scalaParsersV, // scalaxb deps
         "io.argonaut" %% "argonaut" % argonautV,
         "org.apache.flink" %% "flink-streaming-java" % flinkV % "provided"
