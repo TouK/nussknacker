@@ -28,6 +28,14 @@ trait AuditDispatchClient extends RequestResponseLogging {
     }
   }
 
+  def postObjectAsJsonWithoutResponseParsing[Body: EncodeJson](url: Req, body: Body)
+                                                              (implicit executionContext: ExecutionContext,
+                                                               logCorrelationId: LogCorrelationId): Future[String] = {
+    val bodyAsString = body.asJson.spaces2
+    val req = url.setContentType("application/json", "utf-8") << bodyAsString
+    sendWithAuditAndStatusChecking(req)
+  }
+
   def getJsonAsObject[Resp: DecodeJson](req: Req)
                                        (implicit executionContext: ExecutionContext,
                                         logCorrelationId: LogCorrelationId): Future[Resp] = {
