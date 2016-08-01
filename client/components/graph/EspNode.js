@@ -68,7 +68,7 @@ export default {
 
     makeElement(node) {
 
-        var label = node.type + ": " + node.id
+        var label = node.type + (node.id ? ": " + node.id : "")
         var maxLineLength = _.max(label.split('\n'), function (l) {
             return l.length;
         }).length;
@@ -136,19 +136,19 @@ export default {
         });
     },
 
-    makeLink(parentElementLabel, childElementLabel, edgeLabel) {
-
+    makeLink(edge) {
         return new joint.dia.Link({
-            source: {id: parentElementLabel, port: 'Out'},
-            target: {id: childElementLabel, port: 'In'},
-            labels: [{position: 0.5, attrs: {text: {text: edgeLabel || '', 'font-weight': 'bold'}}}],
+            source: {id: edge.from, port: 'Out'},
+            target: {id: edge.to, port: 'In'},
+            labels: [{position: 0.5, attrs: {text: {text: _.get(edge, 'label.original') || '', 'font-weight': 'bold'}}}],
             attrs: {
 
                 '.tool-options': {display: 'none'},
                 //'.marker-target': {d: 'M 4 0 L 0 2 L 4 4 z', fill: '#7c68fc', stroke: '#7c68fc'},
                 '.connection': {stroke: '#7c68fc'},
                 minLen: 5
-            }
+            },
+            edgeData: edge
         });
     }
 
