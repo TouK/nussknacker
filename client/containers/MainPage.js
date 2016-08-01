@@ -65,10 +65,17 @@ Home.header = 'Home'
 
 
 export const Visualization = () => {
+    //var graphData = {
+//TODO
+//TODO
+    //}
+
     var graphData = {
 //TODO
 //TODO
     }
+
+
     return (
         <div className="Page">
             <h1>{Visualization.header}</h1>
