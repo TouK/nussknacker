@@ -5,12 +5,13 @@ import org.springframework.expression.spel.{SpelCompilerMode, SpelParserConfigur
 import org.springframework.expression.spel.support.StandardEvaluationContext
 import pl.touk.esp.engine.Interpreter.ContextImpl
 import pl.touk.esp.engine._
+import pl.touk.esp.engine.api.Context
 import pl.touk.esp.engine.compiledgraph.expression.{ExpressionParseError, ExpressionParser}
 
 class SpelExpression(parsed: org.springframework.expression.Expression,
                      val original: String) extends compiledgraph.expression.Expression {
 
-  override def evaluate[T](ctx: ContextImpl): T = {
+  override def evaluate[T](ctx: Context): T = {
     val simpleContext = new StandardEvaluationContext()
     ctx.variables.foreach {
       case (k, v) => simpleContext.setVariable(k, v)
