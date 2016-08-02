@@ -8,6 +8,8 @@ import pl.touk.esp.engine.graph.service.ServiceRef
 import pl.touk.esp.engine.graph.source.SourceRef
 import pl.touk.esp.engine.graph.variable._
 
+import scala.concurrent.duration.Duration
+
 class GraphBuilder[R <: Node] private(create: Node => R) {
 
   def buildVariable(id: String, varName: String, fields: Field*) =
@@ -25,6 +27,9 @@ class GraphBuilder[R <: Node] private(create: Node => R) {
   def to(node: Node): R = {
     create(node)
   }
+
+  def aggregate(id: String, expression: Expression, duration: Duration, step: Duration) : GraphBuilder[R]
+   = new GraphBuilder[R](node => create(Aggregate(id, expression, duration.toMillis, step.toMillis, node)))
 
   def sink(id: String, typ: String, params: api.sink.Parameter*): R =
     create(Sink(id, SinkRef(typ, params.toList)))

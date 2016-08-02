@@ -29,4 +29,9 @@ object node {
                     nexts: List[Case], defaultNext: Option[Node] = None) extends Node
 
   case class Case(expression: Expression, node: Node)
+
+  case class Aggregate(id: String,
+                       key: Expression,
+                       durationInMillis: Long, stepInMillis: Long, next: Node) extends Node
+
 }

@@ -3,24 +3,26 @@ package pl.touk.esp.engine.api
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 
-trait Source {
+trait Source[T] {
 
-  def typeInformation: TypeInformation[Any]
+  def typeInformation: TypeInformation[T]
 
-  def toFlinkSource: SourceFunction[Any]
+  def toFlinkSource: SourceFunction[T]
+
+  def extractTime(in: T) : Long = System.currentTimeMillis()
 
 }
 
-trait SourceFactory {
+trait SourceFactory[T] {
 
-  def create(processMetaData: MetaData, parameters: Map[String, String]): Source
+  def create(processMetaData: MetaData, parameters: Map[String, String]): Source[T]
 
 }
 
 object SourceFactory {
 
-  def noParam(source: Source): SourceFactory = new SourceFactory {
-    override def create(processMetaData: MetaData, parameters: Map[String, String]): Source = source
+  def noParam[T](source: Source[T]): SourceFactory[T] = new SourceFactory[T] {
+    override def create(processMetaData: MetaData, parameters: Map[String, String]): Source[T] = source
   }
 
 }

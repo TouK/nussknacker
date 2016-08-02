@@ -39,7 +39,7 @@ val commonSettings =
       "-target:jvm-1.8"
     ),
     javacOptions := Seq(
-      "-Xss4M" // to avoid SOF
+      //"-Xss:4M" // to avoid SOF
     ),
     sources in (Compile, doc) := Seq.empty,
     publishArtifact in (Compile, packageDoc) := false

@@ -28,7 +28,7 @@ class ProcessCompiler(expressionParsers: Map[String, ExpressionParser]) {
   }
 
   private def findDuplicates(node: graph.node.Source): Validated[ProcessCompilationError, Unit] = {
-    val allNodes = NodesCollector.collectNodes(node)
+    val allNodes = NodesCollector.collectNodesInAllParts(node)
     val duplicatedIds =
       allNodes.map(_.id).groupBy(identity).collect {
         case (id, grouped) if grouped.size > 1 =>
@@ -43,7 +43,7 @@ class ProcessCompiler(expressionParsers: Map[String, ExpressionParser]) {
   private def compile(s: graph.node.Source): ValidatedNel[ProcessCompilationError, compiledgraph.node.Source] =
     compile(s.next).map(compiledgraph.node.Source(s.id, s.ref, _))
 
-  private def compile(n: graph.node.Node): ValidatedNel[ProcessCompilationError, compiledgraph.node.Node] = {
+  def compile(n: graph.node.Node): ValidatedNel[ProcessCompilationError, compiledgraph.node.Node] = {
     implicit val nodeId = NodeId(n.id)
     n match {
       case s: graph.node.Source =>
@@ -65,6 +65,8 @@ class ProcessCompiler(expressionParsers: Map[String, ExpressionParser]) {
           .map(compiledgraph.node.Switch(id, _, exprVal, _, _))
       case graph.node.Sink(id, ref, optionalExpression) =>
         optionalExpression.map(compile).sequenceU.map(compiledgraph.node.Sink(id, ref, _))
+      case graph.node.Aggregate(id, keyExpr, duration, slide, next) =>
+        valid(compiledgraph.node.Aggregate(id))
     }
   }
 
@@ -84,7 +86,7 @@ class ProcessCompiler(expressionParsers: Map[String, ExpressionParser]) {
                      (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, compiledgraph.node.Case] =
     (compile(n.expression) |@| compile(n.node)).map(compiledgraph.node.Case)
 
-  private def compile(n: graph.expression.Expression)
+  def compile(n: graph.expression.Expression)
                      (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, compiledgraph.expression.Expression] = {
     val validParser = expressionParsers
       .get(n.language)
@@ -105,6 +107,8 @@ object ProcessCompiler {
     new ProcessCompiler(parsers.map(p => p.languageId -> p).toMap)
 
   case class NodeId(id: String)
+
+
 
 }
 
