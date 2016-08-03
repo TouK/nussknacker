@@ -2,6 +2,10 @@ package pl.touk.esp.engine.process
 
 import java.util.Date
 
+import org.apache.flink.api.common.ExecutionConfig
+import org.apache.flink.api.common.functions.RuntimeContext
+import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.scala._
 import org.scalatest.{FlatSpec, Matchers}
@@ -83,10 +87,11 @@ object processInvoker {
       "monitor" -> SinkFactory.noParam(monitorSink)
     )
     new FlinkProcessRegistrar(
-      interpreterConfig = new InterpreterConfig(Map("logService" -> MockService)),
-      sourceFactories = Map("input" -> SourceFactory.noParam(
-        new CollectionSource[SimpleRecord](env.getConfig, data, Some((a: SimpleRecord) => a.date.getTime)))),
-      sinkFactories = sinkFactories, processTimeout = 2 minutes
+      interpreterConfig = () => new InterpreterConfig(Map("logService" -> MockService)),
+      sourceFactories = Map("input" -> SourceFactory.noParam(new CollectionSource[SimpleRecord](env.getConfig, data, Some((a: SimpleRecord) => a.date.getTime)))),
+      sinkFactories = sinkFactories,
+      processTimeout = 2 minutes,
+      espExceptionHandlerProvider = () => SkipExceptionHandler
     ).register(env, process)
 
     MockService.data.clear()
