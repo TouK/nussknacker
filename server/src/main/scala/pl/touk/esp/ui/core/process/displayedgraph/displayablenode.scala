@@ -1,8 +1,8 @@
 package pl.touk.esp.ui.core.process.displayedgraph
 
-import pl.touk.esp.engine.api.sink.SinkRef
 import pl.touk.esp.engine.graph.expression.Expression
 import pl.touk.esp.engine.graph.service.ServiceRef
+import pl.touk.esp.engine.graph.sink.SinkRef
 import pl.touk.esp.engine.graph.source.SourceRef
 import pl.touk.esp.engine.graph.variable.Field
 
