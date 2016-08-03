@@ -1,5 +1,6 @@
 package pl.touk.esp.engine.marshall
 
+import argonaut.PrettyParams
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.esp.engine._
 import pl.touk.esp.engine.api.MetaData
@@ -35,7 +36,7 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers {
 
     val process = EspProcess(MetaData("process1"), graph)
 
-    val marshalled = ProcessMarshaller.toJson(process)
+    val marshalled = ProcessMarshaller.toJson(process, PrettyParams.spaces2)
     println(marshalled)
 
     val unmarshalled = ProcessMarshaller.fromJson(marshalled).toOption
