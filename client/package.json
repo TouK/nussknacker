@@ -8,19 +8,20 @@
   },
   "dependencies": {
     "bootstrap": "3.3.6",
-    "classnames": "^2.1.2",
+    "classnames": "2.2.5",
     "jointjs": "0.9.10",
-    "svg-pan-zoom": "3.2.9",
     "lodash": "4.13.1",
     "npm-font-open-sans": "0.0.3",
     "react": "15.2.1",
     "react-dom": "15.2.1",
+    "react-bootstrap": "0.30.1",
     "react-hot-loader": "^3.0.0-beta.1",
+    "react-modal": "1.4.0",
     "react-redux": "4.4.5",
     "react-router": "2.6.0",
-    "react-modal": "1.4.0",
     "reactable": "0.13.2",
-    "redux": "3.5.2"
+    "redux": "3.5.2",
+    "svg-pan-zoom": "3.2.9"
   },
   "devDependencies": {
     "babel-cli": "^6.3.17",
@@ -35,7 +36,7 @@
     "less": "2.7.1",
     "less-loader": "2.2.3",
     "node-libs-browser": "^0.5.2",
-    "raw-loader": "^0.5.1",
+    "raw-loader": "0.5.1",
     "redux-devtools": "3.3.1",
     "redux-devtools-dock-monitor": "1.1.1",
     "redux-devtools-log-monitor": "1.0.11",

@@ -2,8 +2,9 @@ import React from 'react';
 import { render } from 'react-dom';
 import { browserHistory, Router, Route, Link } from 'react-router'
 import { AppContainer } from 'react-hot-loader';
-import { App, Home, Visualization, TodoApp } from './containers/MainPage';
+import { App, Home, TodoApp } from './containers/MainPage';
 import { Process } from './containers/Processes';
+import { Visualization } from './containers/Visualization';
 
 import 'todomvc-app-css/index.css'; /*fixme wyrzucic przy usuwanio todoapp*/
 import 'bootstrap/dist/css/bootstrap.css';
