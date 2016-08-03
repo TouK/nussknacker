@@ -2,17 +2,17 @@ package pl.touk.esp.ui
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.server.Route
+import akka.http.scaladsl.server.{Directives, Route}
 import akka.stream.ActorMaterializer
 import pl.touk.esp.engine.canonize.ProcessCanonizer
-import pl.touk.esp.ui.api.ProcessesResources
+import pl.touk.esp.ui.api.{ProcessesResources, WebResources}
 import pl.touk.esp.ui.core.process.marshall.ProcessConverter
 import pl.touk.esp.ui.core.process.displayedgraph.DisplayableProcess
 import pl.touk.esp.ui.sample.SampleProcess
 
 import scala.concurrent.Future
 
-object EspUiApp extends App {
+object EspUiApp extends App with Directives {
 
   implicit val system = ActorSystem("esp-ui")
   import system.dispatcher
@@ -29,8 +29,14 @@ object EspUiApp extends App {
       )
     )
 
-  val route: Route = new ProcessesResources(sampleProcess).route
+  val route: Route =
+    WebResources.route ~
+    new ProcessesResources(sampleProcess).route
 
-  Http().bindAndHandle(route, interface = "0.0.0.0")
+  Http().bindAndHandle(
+    route,
+    interface = "0.0.0.0",
+    port = args(0).toInt
+  )
 
 }
