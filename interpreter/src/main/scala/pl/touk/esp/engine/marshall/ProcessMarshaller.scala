@@ -26,13 +26,13 @@ object ProcessMarshaller {
   private implicit lazy val listOfCanonicalNodeEncoder: EncodeJson[List[CanonicalNode]] = ListEncodeJson[CanonicalNode]
   private implicit lazy val listOfCanonicalNodeDecoder: DecodeJson[List[CanonicalNode]] = CanBuildFromDecodeJson[CanonicalNode, List]
 
-  def toJson(node: EspProcess) : String = {
+  def toJson(node: EspProcess, prettyParams: PrettyParams) : String = {
     val canonical = ProcessCanonizer.canonize(node)
-    toJson(canonical)
+    toJson(canonical, prettyParams)
   }
 
-  def toJson(canonical: CanonicalProcess): String = {
-    canonical.asJson.pretty(PrettyParams.spaces2.copy(dropNullKeys = true, preserveOrder = true))
+  def toJson(canonical: CanonicalProcess, prettyParams: PrettyParams): String = {
+    canonical.asJson.pretty(prettyParams.copy(dropNullKeys = true, preserveOrder = true))
   }
 
   def fromJson(json: String): ValidatedNel[ProcessUnmarshallError, EspProcess] = {
