@@ -124,7 +124,7 @@ class ProcessCompiler(expressionParsers: Map[String, ExpressionParser]) {
       .map(valid)
       .getOrElse(invalid(NotSupportedExpressionLanguage(n.language)))
     (validParser andThen { parser =>
-      parser.parse(n.expression).leftMap(err => ExpressionParseError(err.message))
+      parser.parse(n.expression).leftMap(err => ExpressionParseError(err.message, n.expression))
     }).toValidatedNel
   }
 
@@ -165,12 +165,12 @@ object ProcessCompilationError {
       NotSupportedExpressionLanguage(languageId, nodeId.id)
   }
 
-  case class ExpressionParseError(message: String, nodeId: String)
+  case class ExpressionParseError(message: String, nodeId: String, originalExpr: String)
     extends ProcessCompilationError with InASingleNode
 
   object ExpressionParseError {
-    def apply(message: String)(implicit nodeId: NodeId): ExpressionParseError =
-      ExpressionParseError(message, nodeId.id)
+    def apply(message: String, originalExpr: String)(implicit nodeId: NodeId): ExpressionParseError =
+      ExpressionParseError(message, nodeId.id, originalExpr)
   }
 
 }

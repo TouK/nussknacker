@@ -148,6 +148,10 @@ trait AuditDispatchClient extends RequestResponseLogging {
     resp.getResponseBody
   }
 
+  def shutdown(): Unit = {
+    http.shutdown()
+  }
+
 }
 
 class AuditDispatchClientImpl(override protected val http: Http) extends AuditDispatchClient

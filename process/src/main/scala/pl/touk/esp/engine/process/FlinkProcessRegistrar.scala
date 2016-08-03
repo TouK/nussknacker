@@ -8,17 +8,22 @@ import cats.data._
 import cats.std.list._
 import org.apache.flink.api.common.functions.FlatMapFunction
 import org.apache.flink.streaming.api.TimeCharacteristic
+import org.apache.flink.api.common.functions.RichFlatMapFunction
+import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.collector.selector.OutputSelector
+import org.apache.flink.streaming.api.datastream.DataStreamSink
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.scala.{StreamExecutionEnvironment, _}
 import org.apache.flink.streaming.api.windowing.time.Time
+import org.apache.flink.streaming.util.serialization.SerializationSchema
 import org.apache.flink.util.Collector
+import pl.touk.esp.engine.Interpreter.ContextImpl
 import pl.touk.esp.engine.api._
 import pl.touk.esp.engine.api.process.{InputWithExectutionContext, SinkFactory, Source, SourceFactory}
 import pl.touk.esp.engine.compile.{ProcessCompilationError, ProcessCompiler}
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.process.FlinkProcessRegistrar._
-import pl.touk.esp.engine.process.util.SynchronousExecutionContext
+import pl.touk.esp.engine.process.util.{SpelHack, SynchronousExecutionContext}
 import pl.touk.esp.engine.split.ProcessSplitter
 import pl.touk.esp.engine.splittedgraph.part._
 import pl.touk.esp.engine.splittedgraph.splittednode.{NextNode, PartRef, SplittedNode}
@@ -26,19 +31,21 @@ import pl.touk.esp.engine.splittedgraph.{SplittedProcess, splittednode}
 import pl.touk.esp.engine.{Interpreter, InterpreterConfig}
 
 import scala.collection.JavaConverters._
-import scala.concurrent.Await
+import scala.concurrent.{Future, Await}
 import scala.concurrent.duration.Duration
 import scala.language.implicitConversions
 
-class FlinkProcessRegistrar(interpreterConfig: => InterpreterConfig,
-                            sourceFactories: => Map[String, SourceFactory[_]],
-                            sinkFactories: => Map[String, SinkFactory],
-                            processTimeout: => Duration,
+class FlinkProcessRegistrar(interpreterConfig: () => InterpreterConfig,
+                            sourceFactories: Map[String, SourceFactory[_]],
+                            sinkFactories: Map[String, SinkFactory],
+                            espExceptionHandlerProvider: () => EspExceptionHandler,
+                            processTimeout: Duration,
                             compiler: => ProcessCompiler = ProcessCompiler.default) {
 
   implicit def millisToTime(duration: Long): Time = Time.of(duration, TimeUnit.MILLISECONDS)
 
   def register(env: StreamExecutionEnvironment, process: EspProcess): Unit = {
+    SpelHack.registerHackedSerializers(env)
     val splittedProcess = ProcessSplitter.split(process)
     validateOrFail(compiler.validate(splittedProcess))
     register(env, splittedProcess)
@@ -57,7 +64,7 @@ class FlinkProcessRegistrar(interpreterConfig: => InterpreterConfig,
         .addSource[Any](source.toFlinkSource)(source.typeInformation)
         //chyba nie ascending????
       val withAssigned = timeExtractionFunction.map(newStart.assignAscendingTimestamps).getOrElse(newStart)
-        .flatMap(new InitialInterpretationFunction(compiler, part.source, interpreterConfig, process.metaData, Interpreter.InputParamName, processTimeout))
+        .flatMap(new InitialInterpretationFunction(compiler, part.source, interpreterConfig, espExceptionHandlerProvider, process.metaData, Interpreter.InputParamName, processTimeout))
         .split(SplitFunction)
       registerParts(withAssigned, part.nextParts)
     }
@@ -67,7 +74,7 @@ class FlinkProcessRegistrar(interpreterConfig: => InterpreterConfig,
       processPart match {
         case part: AggregateExpressionPart =>
           val newStart = start.asInstanceOf[DataStream[InterpretationResult]]
-            .keyBy(new AggregateKeyByFunction(compiler, part.aggregate, interpreterConfig, processTimeout))
+            .keyBy(new AggregateKeyByFunction(compiler, part.aggregate, interpreterConfig, espExceptionHandlerProvider, processTimeout))
             .timeWindow(part.durationInMillis, part.slideInMillis)
             .fold(List[Any]())((a, b) => b.finalContext[Any](part.aggregatedVar) :: a)
             .map(_.asJava)
@@ -77,7 +84,7 @@ class FlinkProcessRegistrar(interpreterConfig: => InterpreterConfig,
           part.next match {
             case NextNode(node) =>
               val newStart = typedStart
-                .flatMap(new InitialInterpretationFunction(compiler, node, interpreterConfig, process.metaData, part.aggregatedVar, processTimeout))
+                .flatMap(new InitialInterpretationFunction(compiler, node, interpreterConfig, espExceptionHandlerProvider, process.metaData, part.aggregatedVar, processTimeout))
                 .split(SplitFunction)
               registerParts(newStart, part.nextParts)
             case PartRef(id) =>
@@ -87,7 +94,7 @@ class FlinkProcessRegistrar(interpreterConfig: => InterpreterConfig,
           }
         case part: SinkPart =>
           start.asInstanceOf[DataStream[InterpretationResult]]
-            .flatMap(new IntermediateInterpretationFunction(compiler, part.sink, interpreterConfig, processTimeout))
+            .flatMap(new SinkInterpretationFunction(compiler, part.sink, interpreterConfig, espExceptionHandlerProvider, processTimeout))
             .map { (interpretationResult: InterpretationResult) =>
               InputWithExectutionContext(interpretationResult.output, SynchronousExecutionContext.ctx)
             }
@@ -117,6 +124,7 @@ class FlinkProcessRegistrar(interpreterConfig: => InterpreterConfig,
         .create(process.metaData, part.ref.parameters.map(p => p.name -> p.value).toMap)
         .toFlinkSink
     }
+
   }
 
 }
@@ -132,37 +140,70 @@ object FlinkProcessRegistrar {
 
   class InitialInterpretationFunction(compiler: => ProcessCompiler,
                                       node: SplittedNode,
-                                      config: => InterpreterConfig,
+                                      configProvider: () => InterpreterConfig,
+                                      espExceptionHandlerProvider: () => EspExceptionHandler,
                                       metaData: MetaData,
                                       inputParamName: String,
-                                      processTimeout: Duration) extends FlatMapFunction[Any, InterpretationResult] {
+                                      processTimeout: Duration) extends RichFlatMapFunction[Any, InterpretationResult] {
 
+    lazy val config = configProvider()
     private lazy val interpreter = new Interpreter(config)
     private lazy val compiledNode = validateOrFail(compiler.compile(node))
+    private lazy val espExceptionHandler = espExceptionHandlerProvider()
+    lazy implicit val ec = SynchronousExecutionContext.ctx
+
+    override def open(parameters: Configuration): Unit = {
+      super.open(parameters)
+      config.open
+      espExceptionHandler.open()
+    }
 
     override def flatMap(input: Any, collector: Collector[InterpretationResult]): Unit = {
-      implicit val ec = SynchronousExecutionContext.ctx
-      val resultFuture = interpreter.interpret(compiledNode, metaData, input, inputParamName).map { result =>
-        collector.collect(result)
-      }
-      Await.result(resultFuture, processTimeout)
+      val result = espExceptionHandler.recover {
+        val resultFuture = interpreter.interpret(compiledNode, metaData, input, inputParamName)
+        Await.result(resultFuture, processTimeout)
+      }(ContextImpl(metaData).withVariable(inputParamName, input))
+      result.foreach(collector.collect)
     }
+
+    override def close(): Unit = {
+      super.close()
+      config.close()
+      espExceptionHandler.close()
+    }
+
   }
 
-  class IntermediateInterpretationFunction(compiler: => ProcessCompiler,
-                                           node: SplittedNode,
-                                           config: => InterpreterConfig,
-                                           processTimeout: Duration) extends FlatMapFunction[InterpretationResult, InterpretationResult] {
+  class SinkInterpretationFunction(compiler: => ProcessCompiler,
+                                   sink: splittednode.Sink,
+                                   configProvider: () => InterpreterConfig,
+                                   espExceptionHandlerProvider: () => EspExceptionHandler,
+                                   processTimeout: Duration) extends RichFlatMapFunction[InterpretationResult, InterpretationResult] {
 
+    lazy val config = configProvider()
     private lazy val interpreter = new Interpreter(config)
-    private lazy val compiledNode = validateOrFail(compiler.compile(node))
+    private lazy val compiledNode = validateOrFail(compiler.compile(sink))
+    private lazy val espExceptionHandler = espExceptionHandlerProvider()
+    lazy implicit val ec = SynchronousExecutionContext.ctx
+
+    override def open(parameters: Configuration): Unit = {
+      super.open(parameters)
+      config.open
+      espExceptionHandler.open()
+    }
 
     override def flatMap(input: InterpretationResult, collector: Collector[InterpretationResult]): Unit = {
-      implicit val ec = SynchronousExecutionContext.ctx
-      val resultFuture = interpreter.interpret(compiledNode, input.finalContext).map { result =>
-        collector.collect(result)
-      }
-      Await.result(resultFuture, processTimeout)
+      val result = espExceptionHandler.recover {
+        val result = interpreter.interpret(compiledNode, input.finalContext)
+        Await.result(result, processTimeout)
+      }(input.finalContext)
+      result.foreach(collector.collect)
+    }
+
+    override def close(): Unit = {
+      super.close()
+      config.open
+      espExceptionHandler.close()
     }
   }
 
@@ -178,16 +219,21 @@ object FlinkProcessRegistrar {
 
   class AggregateKeyByFunction(compiler: => ProcessCompiler,
                                node: splittednode.Aggregate,
-                               config: => InterpreterConfig,
-                               processTimeout: Duration) extends (InterpretationResult => String) with Serializable {
+                               configProvider: () => InterpreterConfig,
+                               espExceptionHandlerProvider: () => EspExceptionHandler,
+                               processTimeout: Duration) extends (InterpretationResult => Option[String]) with Serializable {
 
+    private lazy val config = configProvider()
     private lazy val interpreter = new Interpreter(config)
+    private lazy val espExceptionHandler = espExceptionHandlerProvider()
     private lazy val compiledNode = validateOrFail(compiler.compile(node))
 
     override def apply(result: InterpretationResult) = {
       implicit val ec = SynchronousExecutionContext.ctx
       val resultFuture = interpreter.interpret(compiledNode, result.finalContext).map(_.output.toString)
-      Await.result(resultFuture, processTimeout)
+      espExceptionHandler.recover {
+        Await.result(resultFuture, processTimeout)
+      }(result.finalContext)
     }
 
   }
