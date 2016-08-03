@@ -53,6 +53,8 @@ object ProcessConverter {
         (displayablenode.Switch(id, expr, exprVal) :: defaultNextNodes ::: nextNodes ::: tailNodes, createNextEdge(id, tail, None) ::: defaultNextEdgesConnectedToSwitch ::: nextEdges ::: tailEdges)
       case Nil =>
         (List(),List())
+        //FIXME??
+      case canonicalnode.Aggregate(_, _, _, _, _)::tail => (List(), List())
     }
 
   private def createNextEdge(id: String, tail: List[CanonicalNode], label: Option[Expression]): List[displayablenode.Edge] = {
