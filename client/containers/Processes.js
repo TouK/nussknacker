@@ -83,7 +83,7 @@ export const Process = React.createClass({
                 {mockupData.map(function(row, index){
                   return (
                     <Tr className="row-hover" key={index}>
-                      <Td column="name" value="name">{row.name}</Td>
+                      <Td column="name">{row.name}</Td>
                       <Td column="category">
                         <div>
                           {row.tags.map(function(tagi, tagIndex){

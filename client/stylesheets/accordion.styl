@@ -1,0 +1,84 @@
+// opening and closing left panel
+#mySidenav
+  &.is-opened
+    width: 250px
+  &.is-closed
+    width: 0px
+#open-close-accordion
+  &.is-opened
+    left: 250px
+  &.is-closed
+    left: 0px
+#working-area
+  &.is-opened
+    margin-left: 250px
+  &.is-closed
+    margin-left: 0px
+
+
+#open-close-accordion
+  position: absolute
+  left: 250px
+  top: 0
+  margin: 0
+  background-color: #EBEBEB
+  width: 60px
+  height: 60px
+  transition: left .5s
+
+  .closebtn
+    text-decoration: none
+    text-align: center
+    color: #616161
+    display: block
+    transition: 0.3s
+    font-size: 26px !important
+    height: inherit
+    &:hover,
+    &:focus,
+    &:focus
+      text-decoration: none
+
+  #closing-arrow
+    top: 50%
+    transform: translateY(-13px)
+
+.sidenav
+  height: 100%
+  width: 250px
+  position: fixed
+  z-index: 1
+  top: 100px
+  left: 0
+  background-color: #EBEBEB
+  overflow-x: hidden
+  transition: 0.5s
+  & a
+    white-space: pre
+
+// Accordion styles
+// overwriting default styles of the component
+.panel-default, .panel-heading
+  border: none !important
+  border-radius: 0 !important
+  background-color: #EBEBEB !important
+  cursor: pointer
+.panel-heading
+  padding: 0 !important
+  height: 60px
+  border-bottom: 1px solid #ddd !important
+  .panel-title
+    padding: 20px 15px !important
+  a
+    text-decoration: none !important
+  &:hover
+    background-color: #a5a5a5 !important
+
+.panel-body
+  background-color: #f5f5f5 !important
+  border: none !important
+
+.panel
+  box-shadow: none !important
+.panel + .panel
+  margin-top: 0 !important

@@ -4,7 +4,6 @@ import ReactDOM from 'react-dom';
 import { Link } from 'react-router'
 import configureStore from '../store/configureStore';
 import TodoAppRoot from '../containers/TodoAppRoot';
-import Graph from '../components/graph/Graph'
 import joint from 'jointjs'
 import 'jointjs/dist/joint.css'
 import _ from 'lodash'
@@ -12,6 +11,7 @@ import _ from 'lodash'
 import '../stylesheets/mainMenu.styl'
 
 import { Process } from './Processes'
+import { Visualization } from './Visualization'
 
 const store = configureStore();
 
@@ -39,9 +39,7 @@ export const App = React.createClass({
               </div>
             </nav>
             <main>
-              <div>
-                {this.props.children}
-              </div>
+              {this.props.children}
             </main>
           </div>
         )
@@ -63,31 +61,6 @@ Home.title = 'Home'
 Home.path = '/home'
 Home.header = 'Home'
 
-
-export const Visualization = () => {
-    //var graphData = {
-//TODO
-//TODO
-    //}
-
-    var graphData = {
-//TODO
-//TODO
-    }
-
-
-    return (
-        <div className="Page">
-            <h1>{Visualization.header}</h1>
-            <p>Tutaj bedzie wizualizacja procesu</p>
-            <Graph data={graphData}/>
-        </div>
-    )
-}
-
-Visualization.title = 'Visualization'
-Visualization.path = '/visualization'
-Visualization.header = 'Wizualizacja'
 
 export const TodoApp = () => (
 
