@@ -2,3 +2,5 @@
 *.iml
 target
 node_modules
+dist
+server/src/main/resources/web
