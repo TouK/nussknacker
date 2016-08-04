@@ -7,12 +7,14 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import cats.std.list._
 import org.apache.flink.api.common.functions.FlatMapFunction
+import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.collector.selector.OutputSelector
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.scala.{StreamExecutionEnvironment, _}
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.util.Collector
 import pl.touk.esp.engine.api._
+import pl.touk.esp.engine.api.process.{InputWithExectutionContext, SinkFactory, Source, SourceFactory}
 import pl.touk.esp.engine.compile.{ProcessCompilationError, ProcessCompiler}
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.process.FlinkProcessRegistrar._
@@ -29,11 +31,10 @@ import scala.concurrent.duration.Duration
 import scala.language.implicitConversions
 
 class FlinkProcessRegistrar(interpreterConfig: => InterpreterConfig,
-                            sourceFactories: Map[String, SourceFactory[_]],
-                            sinkFactories: Map[String, SinkFactory],
-                            processTimeout: Duration,
+                            sourceFactories: => Map[String, SourceFactory[_]],
+                            sinkFactories: => Map[String, SinkFactory],
+                            processTimeout: => Duration,
                             compiler: => ProcessCompiler = ProcessCompiler.default) {
-
 
   implicit def millisToTime(duration: Long): Time = Time.of(duration, TimeUnit.MILLISECONDS)
 
@@ -48,13 +49,17 @@ class FlinkProcessRegistrar(interpreterConfig: => InterpreterConfig,
 
     def registerSourcePart(part: SourcePart): Unit = {
       val source = createSource(part)
+      val timeExtractionFunction = source.timeExtractionFunction
+
+      timeExtractionFunction.foreach(_ => env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime))
+
       val newStart = env
         .addSource[Any](source.toFlinkSource)(source.typeInformation)
         //chyba nie ascending????
-        .assignAscendingTimestamps(source.extractTime)
+      val withAssigned = timeExtractionFunction.map(newStart.assignAscendingTimestamps).getOrElse(newStart)
         .flatMap(new InitialInterpretationFunction(compiler, part.source, interpreterConfig, process.metaData, Interpreter.InputParamName, processTimeout))
         .split(SplitFunction)
-      registerParts(newStart, part.nextParts)
+      registerParts(withAssigned, part.nextParts)
     }
 
     def registerSubsequentPart[T](start: DataStream[T],
