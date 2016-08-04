@@ -1,6 +1,7 @@
-package pl.touk.esp.engine.api
+package pl.touk.esp.engine.api.process
 
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
+import pl.touk.esp.engine.api.MetaData
 
 import scala.concurrent.ExecutionContext
 

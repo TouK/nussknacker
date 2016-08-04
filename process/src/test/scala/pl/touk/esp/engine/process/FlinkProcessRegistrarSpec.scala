@@ -2,21 +2,18 @@ package pl.touk.esp.engine.process
 
 import java.util.Date
 
-import org.apache.flink.api.common.ExecutionConfig
-import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.TimeCharacteristic
-import org.apache.flink.streaming.api.functions.source.FromElementsFunction
 import org.apache.flink.streaming.api.scala._
 import org.scalatest.{FlatSpec, Matchers}
-import pl.touk.esp.engine.compile.ProcessCompiler
-import pl.touk.esp.engine.process.util.CollectionSource
-import pl.touk.esp.engine.{InterpreterConfig, spel}
 import pl.touk.esp.engine.api._
+import pl.touk.esp.engine.api.process.{SinkFactory, SourceFactory}
 import pl.touk.esp.engine.build.GraphBuilder
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.graph.service.{Parameter, ServiceRef}
 import pl.touk.esp.engine.graph.variable.Field
+import pl.touk.esp.engine.process.util.CollectionSource
 import pl.touk.esp.engine.util.sink.ServiceSink
+import pl.touk.esp.engine.{InterpreterConfig, spel}
 
 import scala.beans.BeanProperty
 import scala.collection.JavaConverters._
@@ -88,7 +85,7 @@ object processInvoker {
     new FlinkProcessRegistrar(
       interpreterConfig = new InterpreterConfig(Map("logService" -> MockService)),
       sourceFactories = Map("input" -> SourceFactory.noParam(
-        new CollectionSource[SimpleRecord](env.getConfig, data, _.date.getTime))),
+        new CollectionSource[SimpleRecord](env.getConfig, data, Some((a: SimpleRecord) => a.date.getTime)))),
       sinkFactories = sinkFactories, processTimeout = 2 minutes
     ).register(env, process)
 

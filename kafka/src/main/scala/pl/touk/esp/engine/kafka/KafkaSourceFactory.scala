@@ -6,7 +6,8 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer09
 import org.apache.flink.streaming.util.serialization.DeserializationSchema
-import pl.touk.esp.engine.api.{MetaData, Source, SourceFactory}
+import pl.touk.esp.engine.api.process.{SourceFactory, Source}
+import pl.touk.esp.engine.api.MetaData
 import pl.touk.esp.engine.kafka.KafkaSourceFactory._
 
 class KafkaSourceFactory[T: TypeInformation](schema: DeserializationSchema[T],
