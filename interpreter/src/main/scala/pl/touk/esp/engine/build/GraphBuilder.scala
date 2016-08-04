@@ -1,7 +1,7 @@
 package pl.touk.esp.engine.build
 
 import pl.touk.esp.engine._
-import pl.touk.esp.engine.api.sink.SinkRef
+import pl.touk.esp.engine.graph.sink.SinkRef
 import pl.touk.esp.engine.graph.expression._
 import pl.touk.esp.engine.graph.node._
 import pl.touk.esp.engine.graph.service.ServiceRef
@@ -31,10 +31,10 @@ class GraphBuilder[R <: Node] private(create: Node => R) {
   def aggregate(id: String, aggregatedVar: String, expression: Expression, duration: Duration, step: Duration) : GraphBuilder[R]
    = new GraphBuilder[R](node => create(Aggregate(id, aggregatedVar, expression, duration.toMillis, step.toMillis, node)))
 
-  def sink(id: String, typ: String, params: api.sink.Parameter*): R =
+  def sink(id: String, typ: String, params: graph.sink.Parameter*): R =
     create(Sink(id, SinkRef(typ, params.toList)))
 
-  def sink(id: String, expression: Expression, typ: String, params: api.sink.Parameter*): R =
+  def sink(id: String, expression: Expression, typ: String, params: graph.sink.Parameter*): R =
     create(Sink(id, SinkRef(typ, params.toList), Some(expression)))
 
 }

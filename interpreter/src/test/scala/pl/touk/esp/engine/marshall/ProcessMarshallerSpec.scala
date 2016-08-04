@@ -4,7 +4,7 @@ import argonaut.PrettyParams
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.esp.engine._
 import pl.touk.esp.engine.api.MetaData
-import pl.touk.esp.engine.api.sink.SinkRef
+import pl.touk.esp.engine.graph.sink.SinkRef
 import pl.touk.esp.engine.build.GraphBuilder
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.graph.node._

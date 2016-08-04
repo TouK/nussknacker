@@ -1,10 +1,8 @@
 package pl.touk.esp.engine.compiledgraph
 
-import pl.touk.esp.engine.api.sink.SinkRef
 import pl.touk.esp.engine.compiledgraph.expression.Expression
 import pl.touk.esp.engine.compiledgraph.service.ServiceRef
 import pl.touk.esp.engine.compiledgraph.variable.Field
-import pl.touk.esp.engine.graph.source.SourceRef
 
 object node {
 
@@ -12,25 +10,28 @@ object node {
     def id: String
   }
 
-  case class Source(id: String, ref: SourceRef, next: Node) extends Node
+  case class Source(id: String, next: Next) extends Node
 
-  case class Sink(id: String, ref: SinkRef, endResult: Option[Expression]) extends Node
+  case class Sink(id: String, endResult: Option[Expression]) extends Node
 
-  case class VariableBuilder(id: String, varName: String, fields: List[Field], next: Node) extends Node
+  case class VariableBuilder(id: String, varName: String, fields: List[Field], next: Next) extends Node
 
-  case class Processor(id: String, service: ServiceRef, next: Node) extends Node
+  case class Processor(id: String, service: ServiceRef, next: Next) extends Node
 
-  case class Enricher(id: String, service: ServiceRef, output: String, next: Node) extends Node
+  case class Enricher(id: String, service: ServiceRef, output: String, next: Next) extends Node
 
-  case class Filter(id: String, expression: Expression, nextTrue: Node,
-                    nextFalse: Option[Node]) extends Node
+  case class Filter(id: String, expression: Expression, nextTrue: Next,
+                    nextFalse: Option[Next]) extends Node
 
   case class Switch(id: String, expression: Expression, exprVal: String,
-                    nexts: List[Case], defaultNext: Option[Node]) extends Node
+                    nexts: List[Case], defaultNext: Option[Next]) extends Node
 
-  case class Case(expression: Expression, node: Node)
+  case class Case(expression: Expression, node: Next)
 
-  case class Aggregate(id: String) extends Node
+  case class Aggregate(id: String, keyExpression: Expression, next: PartRef) extends Node
 
+  sealed trait Next
+  case class NextNode(node: Node) extends Next
+  case class PartRef(id: String) extends Next
 
 }

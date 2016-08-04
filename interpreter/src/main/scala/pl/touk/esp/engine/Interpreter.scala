@@ -11,37 +11,32 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class Interpreter(config: InterpreterConfig) {
 
-  def interpret(metaData: MetaData, compiledNode: Node, input: Any, inputVarName: String = InputParamName)
+  def interpret(node: Node, metaData: MetaData, input: Any, inputParamName: String = InputParamName)
                (implicit executor: ExecutionContext): Future[InterpretationResult] = {
-    val ctx = ContextImpl(metaData).withVariable(inputVarName, input)
-    interpret(compiledNode, ctx)
+    val ctx = ContextImpl(metaData).withVariable(inputParamName, input)
+    interpret(node, ctx)
   }
+  
+  def interpret(node: Node, ctx: Context)
+               (implicit executor: ExecutionContext): Future[InterpretationResult] =
+    interpretNode(node, ctx)
 
-
-  private def interpret(start: Node, ctx: InterpreterContext)
-                       (implicit executor: ExecutionContext): Future[InterpretationResult] =
-    interpretNode(start, ctx).map {
-      case NodeInterpretationResult(ref, finalCtx) =>
-        InterpretationResult(ref,
-          finalCtx.getOrElse(OutputParamName, new java.util.HashMap[String, Any]()), finalCtx)
-    }
-
-  private def interpretNode(node: Node, ctx: InterpreterContext)
-                           (implicit executor: ExecutionContext): Future[NodeInterpretationResult] = {
+  private def interpretNode(node: Node, ctx: Context)
+                           (implicit executor: ExecutionContext): Future[InterpretationResult] = {
     config.listeners.foreach(_.nodeEntered(node.id, ctx))
     node match {
-      case Source(_, _, next) =>
-        interpretNode(next, ctx)
+      case Source(_, next) =>
+        interpretNext(next, ctx)
       case VariableBuilder(_, varName, fields, next) =>
-        interpretNode(next, createOrUpdateVariable(ctx, varName, fields))
+        interpretNext(next, createOrUpdateVariable(ctx, varName, fields))
       case Processor(_, ref, next) =>
-        invoke(ref, ctx).flatMap(_ => interpretNode(next, ctx))
+        invoke(ref, ctx).flatMap(_ => interpretNext(next, ctx))
       case Enricher(_, ref, outName, next) =>
-        invoke(ref, ctx).flatMap(out => interpretNode(next, ctx.withVariable(outName, out)))
+        invoke(ref, ctx).flatMap(out => interpretNext(next, ctx.withVariable(outName, out)))
       case Filter(_, expression, nextTrue, nextFalse) =>
         val result = evaluate[Boolean](expression, ctx)
         if (result)
-          interpretNode(nextTrue, ctx)
+          interpretNext(nextTrue, ctx)
         else
           interpretOptionalNext(node, nextFalse, ctx)
       case Switch(_, expression, exprVal, nexts, defaultNext) =>
@@ -52,25 +47,44 @@ class Interpreter(config: InterpreterConfig) {
             evaluate[Boolean](expr, newCtx)
         } match {
           case Some(Case(_, nextNode)) =>
-            interpretNode(nextNode, ctx)
+            interpretNext(nextNode, ctx)
           case None =>
             interpretOptionalNext(node, defaultNext, ctx)
         }
-      case Sink(id, ref, optionalExpression) =>
-        val newCtx = optionalExpression match {
+      case Aggregate(_, keyExpression, next) =>
+        Future.successful(InterpretationResult(NextPartReference(next.id), evaluate(keyExpression, ctx), ctx))
+      case Sink(_, optionalExpression) =>
+        val output = optionalExpression match {
           case Some(expression) =>
-            ctx.withVariable(OutputParamName, evaluate[Any](expression, ctx))
+            evaluate[Any](expression, ctx)
           case None =>
-            ctx
+            outputValue(ctx)
         }
-        Future.successful(NodeInterpretationResult(Some(PartReference(id)), newCtx))
-      case Aggregate(id) =>
-        //TODO: output?
-        Future.successful(NodeInterpretationResult(Some(PartReference(id)), ctx))
+        Future.successful(InterpretationResult(EndReference, output, ctx))
     }
   }
 
-  private def createOrUpdateVariable(ctx: InterpreterContext, varName: String, fields: Seq[Field]): InterpreterContext = {
+  private def interpretOptionalNext(node: Node,
+                                    optionalNext: Option[Next],
+                                    ctx: Context)
+                                   (implicit executionContext: ExecutionContext): Future[InterpretationResult] = {
+    optionalNext match {
+      case Some(next) => interpretNext(next, ctx)
+      case None => Future.successful(InterpretationResult(DefaultSinkReference, outputValue(ctx), ctx))
+    }
+  }
+
+  private def interpretNext(next: Next, ctx: Context)
+                           (implicit executor: ExecutionContext): Future[InterpretationResult] =
+    next match {
+      case NextNode(node) => interpretNode(node, ctx)
+      case PartRef(ref) => Future.successful(InterpretationResult(NextPartReference(ref), outputValue(ctx), ctx)) // output tutaj nie ma sensu
+    }
+
+  private def outputValue(ctx: Context) =
+    ctx.getOrElse(OutputParamName, new java.util.HashMap[String, Any]())
+
+  private def createOrUpdateVariable(ctx: Context, varName: String, fields: Seq[Field]): Context = {
     val contextWithInitialVariable = ctx.modifyOptionalVariable[java.util.Map[String, Any]](varName, _.getOrElse(new java.util.HashMap[String, Any]()))
     fields.foldLeft(contextWithInitialVariable) {
       case (context, field) =>
@@ -82,7 +96,7 @@ class Interpreter(config: InterpreterConfig) {
     }
   }
 
-  private def invoke(ref: ServiceRef, ctx: InterpreterContext)
+  private def invoke(ref: ServiceRef, ctx: Context)
                     (implicit executionContext: ExecutionContext): Future[Any] = {
     val preparedParams = ref.parameters
       .map(param => param.name -> param.expression.evaluate(ctx)).toMap
@@ -97,20 +111,10 @@ class Interpreter(config: InterpreterConfig) {
     resultFuture
   }
 
-  private def evaluate[R](expr: Expression, ctx: InterpreterContext) = {
+  private def evaluate[R](expr: Expression, ctx: Context) = {
     val result = expr.evaluate[R](ctx)
     config.listeners.foreach(_.expressionEvaluated(expr.original, ctx, result))
     result
-  }
-
-  private def interpretOptionalNext(node: Node,
-                                    optionalNext: Option[Node],
-                                    ctx: InterpreterContext)
-                                   (implicit executionContext: ExecutionContext): Future[NodeInterpretationResult] = {
-    optionalNext match {
-      case Some(next) => interpretNode(next, ctx)
-      case None => Future.successful(NodeInterpretationResult(None, ctx))
-    }
   }
 
 }
@@ -120,25 +124,11 @@ object Interpreter {
   final val InputParamName = "input"
   final val OutputParamName = "output"
 
-  private case class NodeInterpretationResult(reference: Option[PartReference], context: Context)
-
   private[engine] case class ContextImpl(processMetaData: MetaData,
-                                         override val variables: Map[String, Any] = Map.empty) extends InterpreterContext {
+                                         override val variables: Map[String, Any] = Map.empty) extends Context {
 
-    def withVariable(name: String, value: Any): InterpreterContext =
+    def withVariable(name: String, value: Any): Context =
       copy(variables = variables + (name -> value))
   }
-
-}
-
-trait InterpreterContext extends Context {
-
-  def modifyVariable[T](name: String, f: T => T): InterpreterContext =
-    withVariable(name, f(apply(name)))
-
-  def modifyOptionalVariable[T](name: String, f: Option[T] => T): InterpreterContext =
-    withVariable(name, f(get[T](name)))
-
-  def withVariable(name: String, value: Any): InterpreterContext
 
 }

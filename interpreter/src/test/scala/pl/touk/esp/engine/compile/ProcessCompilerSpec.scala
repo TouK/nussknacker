@@ -13,7 +13,7 @@ class ProcessCompilerSpec extends FlatSpec with Matchers {
 
   it should "validated with success" in {
     val correctProcess = EspProcess(MetaData("process1"), GraphBuilder.source("id1", "").sink("id2", ""))
-    ProcessCompiler.default.compile(correctProcess) should matchPattern {
+    ProcessCompiler.default.validate(correctProcess) should matchPattern {
       case Valid(_) =>
     }
   }
@@ -21,7 +21,7 @@ class ProcessCompilerSpec extends FlatSpec with Matchers {
   it should "find duplicated ids" in {
     val duplicatedId = "id1"
     val processWithDuplicatedIds = EspProcess(MetaData("process1"), GraphBuilder.source(duplicatedId, "").sink(duplicatedId, ""))
-    ProcessCompiler.default.compile(processWithDuplicatedIds) should matchPattern {
+    ProcessCompiler.default.validate(processWithDuplicatedIds) should matchPattern {
       case Invalid(errors) =>
     }
   }
@@ -32,7 +32,7 @@ class ProcessCompilerSpec extends FlatSpec with Matchers {
       GraphBuilder.source("id1", "")
         .sink("id2", "wtf!!!", "")
     )
-    ProcessCompiler.default.compile(processWithInvalidExpresssion) should matchPattern {
+    ProcessCompiler.default.validate(processWithInvalidExpresssion) should matchPattern {
       case Invalid(errors) =>
     }
   }
