@@ -1,6 +1,6 @@
 package pl.touk.esp.engine.canonicalgraph
 
-import pl.touk.esp.engine.api.sink.SinkRef
+import pl.touk.esp.engine.graph.sink.SinkRef
 import pl.touk.esp.engine.graph.expression.Expression
 import pl.touk.esp.engine.graph.service.ServiceRef
 import pl.touk.esp.engine.graph.source.SourceRef

@@ -1,6 +1,6 @@
 package pl.touk.esp.engine.marshall
 
-import cats.data.{OneAnd, Validated, ValidatedNel, Xor}
+import cats.data.{Validated, ValidatedNel}
 import cats.std.list._
 import argonaut._
 import Argonaut._
@@ -47,7 +47,7 @@ object ProcessMarshaller {
 
   def validate(canonical: CanonicalProcess): ValidatedNel[ProcessValidationError, EspProcess] = {
     ProcessCanonizer.uncanonize(canonical).leftMap(_.map[ProcessValidationError](ProcessUncanonizationError)) andThen { unflatten =>
-      ProcessCompiler.default.compile(unflatten).map(_ => unflatten).leftMap(_.map[ProcessValidationError](ProcessCompilationError))
+      ProcessCompiler.default.validate(unflatten).map(_ => unflatten).leftMap(_.map[ProcessValidationError](ProcessCompilationError))
     }
   }
 

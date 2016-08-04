@@ -7,28 +7,34 @@ import cats.syntax.cartesian._
 import cats.syntax.traverse._
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.{Semigroup, SemigroupK}
-import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine._
-import pl.touk.esp.engine.compiledgraph._
-import pl.touk.esp.engine.traverse.NodesCollector
 import ProcessCompilationError._
 import pl.touk.esp.engine.compile.ProcessCompiler.NodeId
 import pl.touk.esp.engine.compiledgraph.expression.ExpressionParser
+import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.spel.SpelExpressionParser
+import pl.touk.esp.engine.split.{NodesCollector, PartsCollector, ProcessSplitter}
+import pl.touk.esp.engine.splittedgraph._
+import pl.touk.esp.engine.splittedgraph.part._
 
 class ProcessCompiler(expressionParsers: Map[String, ExpressionParser]) {
 
   private implicit val nelSemigroup: Semigroup[NonEmptyList[ProcessCompilationError]] =
     SemigroupK[NonEmptyList].algebra[ProcessCompilationError]
 
-  def compile(process: EspProcess): ValidatedNel[ProcessCompilationError, CompiledProcess] = {
-    (findDuplicates(process.root).toValidatedNel |@| compile(process.root)).map { (_, root) =>
-      CompiledProcess(process.metaData, root)
+  def validate(process: EspProcess): ValidatedNel[ProcessCompilationError, Unit] = {
+    val splittedProcess = ProcessSplitter.split(process)
+    validate(splittedProcess)
+  }
+
+  def validate(process: SplittedProcess): ValidatedNel[ProcessCompilationError, Unit] = {
+    (findDuplicates(process.source).toValidatedNel |@| validateAllParts(process)).map { (_, _) =>
+      Unit
     }
   }
 
-  private def findDuplicates(node: graph.node.Source): Validated[ProcessCompilationError, Unit] = {
-    val allNodes = NodesCollector.collectNodesInAllParts(node)
+  private def findDuplicates(part: SourcePart): Validated[ProcessCompilationError, Unit] = {
+    val allNodes = NodesCollector.collectNodesInAllParts(part)
     val duplicatedIds =
       allNodes.map(_.id).groupBy(identity).collect {
         case (id, grouped) if grouped.size > 1 =>
@@ -40,33 +46,58 @@ class ProcessCompiler(expressionParsers: Map[String, ExpressionParser]) {
       invalid(DuplicatedNodeIds(duplicatedIds.toSet))
   }
 
-  private def compile(s: graph.node.Source): ValidatedNel[ProcessCompilationError, compiledgraph.node.Source] =
-    compile(s.next).map(compiledgraph.node.Source(s.id, s.ref, _))
+  private def validateAllParts(process: SplittedProcess): ValidatedNel[ProcessCompilationError, Unit] = {
+    PartsCollector.collectParts(process.source).map(validatePart).sequenceU.map(_ => Unit)
+  }
 
-  def compile(n: graph.node.Node): ValidatedNel[ProcessCompilationError, compiledgraph.node.Node] = {
+  private def validatePart(part: ProcessPart): ValidatedNel[ProcessCompilationError, Unit] = {
+    val validated = part match {
+      case source: SourcePart =>
+        compile(source.source)
+      case agg: AggregateExpressionPart =>
+        compile(agg.aggregate)
+      case agg: AfterAggregationPart =>
+        compile(agg.next)
+      case sink: SinkPart =>
+        compile(sink.sink)
+    }
+    validated.map(_ => Unit)
+  }
+
+  def compile(n: splittednode.SplittedNode): ValidatedNel[ProcessCompilationError, compiledgraph.node.Node] = {
     implicit val nodeId = NodeId(n.id)
     n match {
-      case s: graph.node.Source =>
+      case s: splittednode.Source =>
         compile(s)
-      case graph.node.VariableBuilder(id, varName, fields, next) =>
+      case splittednode.VariableBuilder(id, varName, fields, next) =>
         (fields.map(compile).sequenceU |@| compile(next))
           .map(compiledgraph.node.VariableBuilder(id, varName, _, _))
-      case graph.node.Processor(id, ref, next) =>
+      case splittednode.Processor(id, ref, next) =>
         (compile(ref) |@| compile(next))
           .map(compiledgraph.node.Processor(id, _, _))
-      case graph.node.Enricher(id, ref, outName, next) =>
+      case splittednode.Enricher(id, ref, outName, next) =>
         (compile(ref) |@| compile(next))
           .map(compiledgraph.node.Enricher(id, _, outName, _))
-      case graph.node.Filter(id, expression, nextTrue, nextFalse) =>
+      case splittednode.Filter(id, expression, nextTrue, nextFalse) =>
         (compile(expression) |@| compile(nextTrue) |@| nextFalse.map(compile).sequenceU)
           .map(compiledgraph.node.Filter(id, _, _, _))
-      case graph.node.Switch(id, expression, exprVal, nexts, defaultNext) =>
+      case splittednode.Switch(id, expression, exprVal, nexts, defaultNext) =>
         (compile(expression) |@| nexts.map(compile).sequenceU |@| defaultNext.map(compile).sequenceU)
           .map(compiledgraph.node.Switch(id, _, exprVal, _, _))
-      case graph.node.Sink(id, ref, optionalExpression) =>
-        optionalExpression.map(compile).sequenceU.map(compiledgraph.node.Sink(id, ref, _))
-      case graph.node.Aggregate(id, aggregatedVar, keyExpr, duration, slide, next) =>
-        valid(compiledgraph.node.Aggregate(id))
+      case splittednode.Aggregate(id, keyExpression, next) =>
+        compile(keyExpression).map(compiledgraph.node.Aggregate(id, _, compiledgraph.node.PartRef(next.id)))
+      case splittednode.Sink(id, optionalExpression) =>
+        optionalExpression.map(compile).sequenceU.map(compiledgraph.node.Sink(id, _))
+    }
+  }
+
+  def compile(s: splittednode.Source): ValidatedNel[ProcessCompilationError, compiledgraph.node.Source] =
+    compile(s.next).map(compiledgraph.node.Source(s.id, _))
+
+  private def compile(next: splittednode.Next): ValidatedNel[ProcessCompilationError, compiledgraph.node.Next] = {
+    next match {
+      case splittednode.NextNode(n) => compile(n).map(compiledgraph.node.NextNode)
+      case splittednode.PartRef(ref) => valid(compiledgraph.node.PartRef(ref))
     }
   }
 
@@ -82,11 +113,11 @@ class ProcessCompiler(expressionParsers: Map[String, ExpressionParser]) {
                      (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, compiledgraph.service.Parameter] =
     compile(n.expression).map(compiledgraph.service.Parameter(n.name, _))
 
-  private def compile(n: graph.node.Case)
+  private def compile(n: splittednode.Case)
                      (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, compiledgraph.node.Case] =
     (compile(n.expression) |@| compile(n.node)).map(compiledgraph.node.Case)
 
-  def compile(n: graph.expression.Expression)
+  private def compile(n: graph.expression.Expression)
                      (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, compiledgraph.expression.Expression] = {
     val validParser = expressionParsers
       .get(n.language)
@@ -107,8 +138,6 @@ object ProcessCompiler {
     new ProcessCompiler(parsers.map(p => p.languageId -> p).toMap)
 
   case class NodeId(id: String)
-
-
 
 }
 
