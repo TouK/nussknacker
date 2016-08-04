@@ -30,8 +30,8 @@ object node {
 
   case class Case(expression: Expression, node: Node)
 
-  case class Aggregate(id: String,
-                       key: Expression,
-                       durationInMillis: Long, stepInMillis: Long, next: Node) extends Node
+  case class Aggregate(id: String, aggregatedVar: String,
+                       keyExpression: Expression, durationInMillis: Long,
+                       stepInMillis: Long, next: Node) extends Node
 
 }

@@ -28,7 +28,7 @@ object NodesCollector {
         } ::: defaultNext.toList.flatMap(collectNodesWithFlag)
       case Sink(_, _, _) =>
         Nil
-      case Aggregate(_, _, _, _, next) => if (stopOnParts) Nil else collectNodesWithFlag(next)
+      case Aggregate(_, _, _, _, _, next) => if (stopOnParts) Nil else collectNodesWithFlag(next)
     }
     node :: children
   }

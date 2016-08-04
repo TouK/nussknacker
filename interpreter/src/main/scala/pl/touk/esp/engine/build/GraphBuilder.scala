@@ -28,8 +28,8 @@ class GraphBuilder[R <: Node] private(create: Node => R) {
     create(node)
   }
 
-  def aggregate(id: String, expression: Expression, duration: Duration, step: Duration) : GraphBuilder[R]
-   = new GraphBuilder[R](node => create(Aggregate(id, expression, duration.toMillis, step.toMillis, node)))
+  def aggregate(id: String, aggregatedVar: String, expression: Expression, duration: Duration, step: Duration) : GraphBuilder[R]
+   = new GraphBuilder[R](node => create(Aggregate(id, aggregatedVar, expression, duration.toMillis, step.toMillis, node)))
 
   def sink(id: String, typ: String, params: api.sink.Parameter*): R =
     create(Sink(id, SinkRef(typ, params.toList)))

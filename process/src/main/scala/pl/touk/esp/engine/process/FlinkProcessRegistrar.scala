@@ -48,7 +48,7 @@ class FlinkProcessRegistrar(interpreterConfig: => InterpreterConfig,
 
     val splittedProcess = SplittedProcess(process.metaData, process.root)
 
-    prepareParts(start, splittedProcess)
+    prepareParts(start, splittedProcess, Interpreter.InputParamName)
   }
 
   def validate(process: EspProcess): Unit = {
@@ -63,10 +63,10 @@ class FlinkProcessRegistrar(interpreterConfig: => InterpreterConfig,
       .asInstanceOf[Source[Any]]
   }
 
-  def prepareParts[T](start: DataStream[T], splittedProcess: SplittedProcess): Unit = {
+  def prepareParts[T](start: DataStream[T], splittedProcess: SplittedProcess, inputVarName: String): Unit = {
 
     val splitResult = start
-      .flatMap(new InterpretationFunction[T](interpreterConfig, splittedProcess, processTimeout, compiler))
+      .flatMap(new InterpretationFunction[T](interpreterConfig, inputVarName, splittedProcess, processTimeout, compiler))
       .split(SplitFunction)
 
 
@@ -85,10 +85,10 @@ class FlinkProcessRegistrar(interpreterConfig: => InterpreterConfig,
       .keyBy(new AggregateKeyByFunction(aggregatePart, compiler))
       .timeWindow(aggregatePart.durationInMillis, aggregatePart.slideInMillis)
       //FIXME: co to w sumie powinno byc??
-      .fold(List[Any]())((a, b) => b.output :: a)
+      .fold(List[Any]())((a, b) => b.finalContext[Any](aggregatePart.aggregatedVar) :: a)
       .map(_.asJava)
 
-    prepareParts(afterFold, aggregatePart.next)
+    prepareParts(afterFold, aggregatePart.next, aggregatePart.aggregatedVar)
   }
 
   def prepareSink[T](processMetadata: MetaData,
@@ -116,6 +116,7 @@ object FlinkProcessRegistrar {
   }
 
   class InterpretationFunction[T](config: => InterpreterConfig,
+                                  inputVarName: String,
                                   splitProcess: SplittedProcess,
                                   processTimeout: Duration, compiler: => ProcessCompiler) extends FlatMapFunction[T, InterpretationResult] {
 
@@ -124,7 +125,7 @@ object FlinkProcessRegistrar {
 
     override def flatMap(input: T, collector: Collector[InterpretationResult]): Unit = {
       implicit val ec = SynchronousExecutionContext.ctx
-      val resultFuture = interpreter.interpret(splitProcess.processMetadata, compiledNode, input).map { result =>
+      val resultFuture = interpreter.interpret(splitProcess.processMetadata, compiledNode, input, inputVarName).map { result =>
         collector.collect(result)
       }
       Await.result(resultFuture, processTimeout)

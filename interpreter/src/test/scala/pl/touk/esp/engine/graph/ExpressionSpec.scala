@@ -6,22 +6,16 @@ import java.time.LocalDate
 import cats.data.Validated.{Invalid, Valid}
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.esp.engine.Interpreter.ContextImpl
-import pl.touk.esp.engine.api.{Context, MetaData}
-import pl.touk.esp.engine.InterpreterConfig
+import pl.touk.esp.engine.api.MetaData
 import pl.touk.esp.engine.spel.SpelExpressionParser
 
-import scala.collection.JavaConverters._
 import scala.beans.BeanProperty
+import scala.collection.JavaConverters._
 
 class ExpressionSpec extends FlatSpec with Matchers {
 
   val testValue = Test( "1", 2, List(Test("3", 4), Test("5", 6)).asJava)
   val ctx = ContextImpl(
-    config = InterpreterConfig(
-      services = Map.empty,
-      listeners = Seq.empty,
-      expressionFunctions = Map("today" -> classOf[LocalDate].getDeclaredMethod("now"))
-    ),
     processMetaData = MetaData("process1"),
     variables = Map("obj" -> testValue)
   )
@@ -29,7 +23,8 @@ class ExpressionSpec extends FlatSpec with Matchers {
   case class Test(@BeanProperty id: String, @BeanProperty value: Long, @BeanProperty children: java.util.List[Test] = List[Test]().asJava)
 
   private def parse(expr: String) = {
-    SpelExpressionParser.parse(expr) match {
+    val expressionFunctions = Map("today" -> classOf[LocalDate].getDeclaredMethod("now"))
+    new SpelExpressionParser(expressionFunctions).parse(expr) match {
       case Valid(e) => e
       case Invalid(err) => throw new ParseException(err.message, -1)
     }

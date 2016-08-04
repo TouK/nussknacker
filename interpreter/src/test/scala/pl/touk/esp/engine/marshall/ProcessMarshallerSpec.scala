@@ -31,7 +31,7 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers {
         .filter("b", "alamakota == 'true'", Some(nestedGraph("b")))
         .buildVariable("c", "fooVar", Field("f1", "expr1"), Field("f2", "expr2"))
         .enricher("d", ServiceRef("dService", List(Parameter("p1", "expr3"))), "barVar")
-        .aggregate("e", "alamakota == 'false'", 10000 milli, 5000 milli)
+        .aggregate("e", "input", "alamakota == 'false'", 10000 milli, 5000 milli)
         .to(Switch("f", "expr4", "eVar", List(Case("e1", Sink("endE1", SinkRef("", List.empty)))), Some(nestedGraph("e"))))
 
     val process = EspProcess(MetaData("process1"), graph)

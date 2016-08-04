@@ -1,7 +1,5 @@
 package pl.touk.esp.engine
 
-import java.lang.reflect.Method
-
 import pl.touk.esp.engine.Interpreter._
 import pl.touk.esp.engine.api._
 import pl.touk.esp.engine.compiledgraph.expression._
@@ -13,9 +11,9 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class Interpreter(config: InterpreterConfig) {
 
-  def interpret(metaData: MetaData, compiledNode: Node, input: Any)
+  def interpret(metaData: MetaData, compiledNode: Node, input: Any, inputVarName: String = InputParamName)
                (implicit executor: ExecutionContext): Future[InterpretationResult] = {
-    val ctx = ContextImpl(config, metaData).withVariable(InputParamName, input)
+    val ctx = ContextImpl(metaData).withVariable(inputVarName, input)
     interpret(compiledNode, ctx)
   }
 
@@ -30,7 +28,7 @@ class Interpreter(config: InterpreterConfig) {
 
   private def interpretNode(node: Node, ctx: InterpreterContext)
                            (implicit executor: ExecutionContext): Future[NodeInterpretationResult] = {
-    ctx.listeners.foreach(_.nodeEntered(node.id, ctx))
+    config.listeners.foreach(_.nodeEntered(node.id, ctx))
     node match {
       case Source(_, _, next) =>
         interpretNode(next, ctx)
@@ -68,8 +66,7 @@ class Interpreter(config: InterpreterConfig) {
         Future.successful(NodeInterpretationResult(Some(PartReference(id)), newCtx))
       case Aggregate(id) =>
         //TODO: output?
-        Future.successful(NodeInterpretationResult(Some(PartReference(id)),
-          ctx.withVariable(OutputParamName, ctx(InputParamName))))
+        Future.successful(NodeInterpretationResult(Some(PartReference(id)), ctx))
     }
   }
 
@@ -89,16 +86,20 @@ class Interpreter(config: InterpreterConfig) {
                     (implicit executionContext: ExecutionContext): Future[Any] = {
     val preparedParams = ref.parameters
       .map(param => param.name -> param.expression.evaluate(ctx)).toMap
-    val resultFuture = ctx.service(ref.id).invoke(preparedParams)
+    val service = config.services.getOrElse(
+      ref.id,
+      throw new RuntimeException(s"Missing service: ${ref.id}")
+    )
+    val resultFuture = service.invoke(preparedParams)
     resultFuture.onComplete { result =>
-      ctx.listeners.foreach(_.serviceInvoked(ref.id, ctx, result))
+      config.listeners.foreach(_.serviceInvoked(ref.id, ctx, result))
     }
     resultFuture
   }
 
   private def evaluate[R](expr: Expression, ctx: InterpreterContext) = {
     val result = expr.evaluate[R](ctx)
-    ctx.listeners.foreach(_.expressionEvaluated(expr.original, ctx, result))
+    config.listeners.foreach(_.expressionEvaluated(expr.original, ctx, result))
     result
   }
 
@@ -121,20 +122,8 @@ object Interpreter {
 
   private case class NodeInterpretationResult(reference: Option[PartReference], context: Context)
 
-  private[engine] case class ContextImpl(config: InterpreterConfig,
-                                         processMetaData: MetaData,
+  private[engine] case class ContextImpl(processMetaData: MetaData,
                                          override val variables: Map[String, Any] = Map.empty) extends InterpreterContext {
-
-    def listeners: Seq[ProcessListener] =
-      config.listeners
-
-    def expressionFunctions: Map[String, Method] =
-      config.expressionFunctions
-
-    def service(id: String) = config.services.getOrElse(
-      id,
-      throw new RuntimeException(s"Missing service: $id")
-    )
 
     def withVariable(name: String, value: Any): InterpreterContext =
       copy(variables = variables + (name -> value))
@@ -143,10 +132,6 @@ object Interpreter {
 }
 
 trait InterpreterContext extends Context {
-
-  def listeners: Seq[ProcessListener]
-
-  def service(id: String): Service
 
   def modifyVariable[T](name: String, f: T => T): InterpreterContext =
     withVariable(name, f(apply(name)))

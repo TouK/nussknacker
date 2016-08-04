@@ -31,6 +31,8 @@ object canonicalnode {
 
   case class Case(expression: Expression, nodes: List[CanonicalNode])
 
-  case class Aggregate(id: String, keyExpression: Expression, sizeInMillis: Long, slideInMillis: Long) extends CanonicalNode
+  case class Aggregate(id: String, aggregatedVar: String,
+                       keyExpression: Expression, durationInMillis: Long,
+                       slideInMillis: Long) extends CanonicalNode
 
 }
