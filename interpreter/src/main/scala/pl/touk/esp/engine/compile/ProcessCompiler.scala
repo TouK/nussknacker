@@ -65,7 +65,7 @@ class ProcessCompiler(expressionParsers: Map[String, ExpressionParser]) {
           .map(compiledgraph.node.Switch(id, _, exprVal, _, _))
       case graph.node.Sink(id, ref, optionalExpression) =>
         optionalExpression.map(compile).sequenceU.map(compiledgraph.node.Sink(id, ref, _))
-      case graph.node.Aggregate(id, keyExpr, duration, slide, next) =>
+      case graph.node.Aggregate(id, aggregatedVar, keyExpr, duration, slide, next) =>
         valid(compiledgraph.node.Aggregate(id))
     }
   }
@@ -101,7 +101,7 @@ class ProcessCompiler(expressionParsers: Map[String, ExpressionParser]) {
 
 object ProcessCompiler {
 
-  val default = ProcessCompiler(SpelExpressionParser)
+  val default = ProcessCompiler(SpelExpressionParser.default)
 
   def apply(parsers: ExpressionParser*) =
     new ProcessCompiler(parsers.map(p => p.languageId -> p).toMap)

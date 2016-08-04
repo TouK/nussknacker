@@ -10,7 +10,8 @@ object SplittedProcess {
 
   def apply(processMetadata: MetaData, node: Node): SplittedProcess =
     SplittedProcess(processMetadata, node, NodesCollector.collectNodes(node).collect {
-      case Aggregate(id, keyExpr, duration, slide, next) => AggregatePart(id, keyExpr, duration, slide, SplittedProcess(processMetadata, next))
+      case Aggregate(id, aggregatedVar, keyExpr, duration, slide, next) =>
+        AggregatePart(id, aggregatedVar, keyExpr, duration, slide, SplittedProcess(processMetadata, next))
       case Sink(id, ref, _) => SinkPart(id, ref)
     }.toSet)
 
@@ -22,8 +23,8 @@ sealed trait ProcessPart {
   def id: String
 }
 
-case class AggregatePart(id: String, keyExpression: Expression,
-                         durationInMillis: Long, slideInMillis: Long,
+case class AggregatePart(id: String, aggregatedVar: String,
+                         keyExpression: Expression, durationInMillis: Long, slideInMillis: Long,
                          next: SplittedProcess) extends ProcessPart
 
 case class SinkPart(id: String, sink: SinkRef) extends ProcessPart
