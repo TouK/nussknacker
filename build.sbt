@@ -1,6 +1,6 @@
 import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
 import net.virtualvoid.sbt.graph.Plugin._
-import sbt.Credentials
+import sbt._
 import sbt.Keys._
 
 val scalaV = "2.11.8"
@@ -68,6 +68,23 @@ lazy val process = (project in file("process")).
     }
   ).
   dependsOn(interpreter)
+
+lazy val process_sample = (project in file("process-sample")).
+  settings(commonSettings).
+  settings(
+    name := "esp-process-sample",
+    libraryDependencies ++= {
+      Seq(
+        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided"
+      )
+    },
+    artifact in (Compile, assembly) := {
+      val art = (artifact in (Compile, assembly)).value
+      art.copy(`classifier` = Some("assembly"))
+    }
+  ).
+  settings(addArtifact(artifact in (Compile, assembly), assembly).settings : _*)
+    .dependsOn(process)
 
 lazy val interpreter = (project in file("interpreter")).
   settings(commonSettings).
