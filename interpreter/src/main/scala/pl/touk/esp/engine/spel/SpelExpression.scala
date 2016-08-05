@@ -3,14 +3,15 @@ package pl.touk.esp.engine.spel
 import java.lang.reflect.Method
 import java.time.{LocalDate, LocalDateTime}
 
-import cats.data.{Validated, Xor}
-import org.springframework.expression.spel.{SpelCompilerMode, SpelParserConfiguration}
+import cats.data.Validated
 import org.springframework.expression.spel.support.StandardEvaluationContext
-import pl.touk.esp.engine.Interpreter.ContextImpl
+import org.springframework.expression.spel.{SpelCompilerMode, SpelParserConfiguration}
+import org.springframework.expression.{EvaluationContext, PropertyAccessor, TypedValue}
 import pl.touk.esp.engine._
 import pl.touk.esp.engine.api.Context
 import pl.touk.esp.engine.compiledgraph.expression.{ExpressionParseError, ExpressionParser}
 import pl.touk.esp.engine.functionUtils.CollectionUtils
+import pl.touk.esp.engine.spel.SpelExpressionParser.{MapPropertyAccessor, ScalaPropertyAccessor}
 
 class SpelExpression(parsed: org.springframework.expression.Expression,
                      val original: String,
@@ -18,6 +19,9 @@ class SpelExpression(parsed: org.springframework.expression.Expression,
 
   override def evaluate[T](ctx: Context): T = {
     val simpleContext = new StandardEvaluationContext()
+    simpleContext.addPropertyAccessor(new ScalaPropertyAccessor)
+    simpleContext.addPropertyAccessor(new MapPropertyAccessor)
+
     ctx.variables.foreach {
       case (k, v) => simpleContext.setVariable(k, v)
     }
@@ -54,5 +58,44 @@ object SpelExpressionParser {
     "distinct" -> classOf[CollectionUtils].getDeclaredMethod("distinct", classOf[java.util.Collection[_]]),
     "sum" -> classOf[CollectionUtils].getDeclaredMethod("sum", classOf[java.util.Collection[_]])
   ))
+
+  //TODO: jak bardzo to jest niewydajne???
+  class ScalaPropertyAccessor extends PropertyAccessor {
+
+    override def canRead(context: EvaluationContext, target: scala.Any, name: String) =
+      !target.isInstanceOf[Class[_]] && findMethod(name, target).isDefined
+
+    override def read(context: EvaluationContext, target: scala.Any, name: String) =
+      findMethod(name, target)
+        .map(_.invoke(target))
+        .map(new TypedValue(_))
+        .getOrElse(throw new IllegalAccessException("Property is not readable"))
+
+    private def findMethod(name: String, target: Any) =
+      target.getClass.getMethods.toList.find(m => m.getParameterCount == 0 && m.getName == name)
+
+    override def write(context: EvaluationContext, target: scala.Any, name: String, newValue: scala.Any) =
+      throw new IllegalAccessException("Property is not writeable")
+
+    override def canWrite(context: EvaluationContext, target: scala.Any, name: String) = false
+
+    override def getSpecificTargetClasses = null
+  }
+
+  class MapPropertyAccessor extends PropertyAccessor {
+
+    override def canRead(context: EvaluationContext, target: scala.Any, name: String) =
+      target.asInstanceOf[java.util.Map[_, _]].containsKey(name)
+
+    override def read(context: EvaluationContext, target: scala.Any, name: String) =
+      new TypedValue(target.asInstanceOf[java.util.Map[_, _]].get(name))
+
+    override def write(context: EvaluationContext, target: scala.Any, name: String, newValue: scala.Any) =
+      throw new IllegalAccessException("Property is not writeable")
+
+    override def canWrite(context: EvaluationContext, target: scala.Any, name: String) = false
+
+    override def getSpecificTargetClasses = Array(classOf[java.util.Map[_, _]])
+  }
 
 }
