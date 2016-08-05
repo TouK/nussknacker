@@ -20,7 +20,7 @@ class ExpressionSpec extends FlatSpec with Matchers {
     variables = Map("obj" -> testValue)
   )
 
-  case class Test(@BeanProperty id: String, @BeanProperty value: Long, @BeanProperty children: java.util.List[Test] = List[Test]().asJava)
+  case class Test(id: String, value: Long, children: java.util.List[Test] = List[Test]().asJava)
 
   private def parse(expr: String) = {
     val expressionFunctions = Map("today" -> classOf[LocalDate].getDeclaredMethod("now"))
@@ -55,6 +55,14 @@ class ExpressionSpec extends FlatSpec with Matchers {
     val withDays = ctx.withVariable("date", twoDaysAgo)
 
     parse("#date.until(#today()).days").evaluate[Integer](withDays) should equal(2)
+  }
+
+  it should "allow access to maps in dot notation" in {
+    val withMapVar = ctx.withVariable("map", Map("key1" -> "value1", "key2" -> 20).asJava)
+
+    parse("#map.key1").evaluate[String](withMapVar) should equal("value1")
+    parse("#map.key2").evaluate[Integer](withMapVar) should equal(20)
+
   }
 
 
