@@ -7,6 +7,8 @@ import _ from 'lodash'
 import svgPanZoom from 'svg-pan-zoom'
 import $ from 'jquery'
 
+import '../../stylesheets/graph.styl'
+
 export default class Graph extends React.Component {
 
     constructor(props) {
@@ -266,7 +268,7 @@ class NodeDetailsModal extends React.Component {
     render () {
         var isOpen = !(_.isEmpty(this.props.node))
         return (
-            <div>
+            <div className="objectModal">
                 <Modal isOpen={isOpen}>
                     <h1>{this.props.node.type}: {this.props.node.id}</h1>
                     {this.contentForNode()}
