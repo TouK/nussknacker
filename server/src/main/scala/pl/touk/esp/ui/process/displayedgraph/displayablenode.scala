@@ -1,4 +1,4 @@
-package pl.touk.esp.ui.core.process.displayedgraph
+package pl.touk.esp.ui.process.displayedgraph
 
 import pl.touk.esp.engine.graph.expression.Expression
 import pl.touk.esp.engine.graph.service.ServiceRef

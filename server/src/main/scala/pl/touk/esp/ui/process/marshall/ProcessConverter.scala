@@ -1,9 +1,9 @@
-package pl.touk.esp.ui.core.process.marshall
+package pl.touk.esp.ui.process.marshall
 
 import pl.touk.esp.engine.canonicalgraph.canonicalnode._
 import pl.touk.esp.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.esp.engine.graph.expression.Expression
-import pl.touk.esp.ui.core.process.displayedgraph.{DisplayableProcess, displayablenode}
+import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, displayablenode}
 
 object ProcessConverter {
 

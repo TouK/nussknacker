@@ -23,7 +23,7 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
 
     val resource: String = findJarPath()
 
-    val process = SampleProcess.prepareProcess()
+    val process = SampleProcess.process
     val marshalled = ProcessMarshaller.toJson(process, PrettyParams.spaces2)
     val id = process.id
 
