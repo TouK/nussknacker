@@ -43,6 +43,9 @@ val slf4jV = "1.7.21"
 val logbackV = "1.1.3"
 val scalaTestV = "3.0.0-M15"
 val flinkV = "1.0.3"
+val slickV = "3.1.1"
+val hsqldbV = "2.3.4"
+val flywayV = "4.0.3"
 
 libraryDependencies ++= {
   Seq(
@@ -57,10 +60,15 @@ libraryDependencies ++= {
     //to musimy podac explicite, zeby wymusic odpowiednia wersje dla flinka
     "com.typesafe.akka" %% "akka-remote" % akkaV,
     "com.typesafe.akka" %% "akka-slf4j" % akkaV,
+    "com.typesafe.slick" %% "slick" % slickV,
+    "com.typesafe.slick" %% "slick-hikaricp" % slickV,
+    "org.hsqldb" % "hsqldb" % hsqldbV,
+    "org.flywaydb" % "flyway-core" % flywayV,
 
     //to jest tylko po to, zeby miec fatjara do testow deploymentu
     "pl.touk.esp" %% "esp-process-sample" % espEngineV % "it" classifier "assembly",
     "com.typesafe.akka" %% "akka-http-testkit" % akkaV % "it,test",
+    "com.typesafe.slick" %% "slick-testkit" % slickV % "test",
     "org.scalatest" %% "scalatest" % scalaTestV % "it,test"
 
   )

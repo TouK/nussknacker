@@ -4,13 +4,11 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.stream.ActorMaterializer
-import pl.touk.esp.engine.canonize.ProcessCanonizer
+import _root_.db.migration.DefaultJdbcDriver
 import pl.touk.esp.ui.api.{ProcessesResources, WebResources}
-import pl.touk.esp.ui.core.process.marshall.ProcessConverter
-import pl.touk.esp.ui.core.process.displayedgraph.DisplayableProcess
-import pl.touk.esp.ui.sample.SampleProcess
-
-import scala.concurrent.Future
+import pl.touk.esp.ui.db.DatabaseInitializer
+import pl.touk.esp.ui.process.repository.ProcessRepository
+import slick.jdbc.JdbcBackend
 
 object EspUiApp extends App with Directives {
 
@@ -18,20 +16,22 @@ object EspUiApp extends App with Directives {
   import system.dispatcher
   implicit val materializer = ActorMaterializer()
 
-  def sampleProcess(id: String): Future[Option[DisplayableProcess]] =
-    Future.successful(
-      Some(
-        ProcessConverter.toDisplayable(
-          ProcessCanonizer.canonize(
-            SampleProcess.prepareProcess()
-          )
-        )
-      )
+  val db: JdbcBackend.Database = {
+    val db = JdbcBackend.Database.forURL(
+      url = s"jdbc:hsqldb:file:db",
+      driver = "org.hsqldb.jdbc.JDBCDriver",
+      user = "SA",
+      password = ""
     )
+    new DatabaseInitializer(db).initDatabase()
+    db
+  }
+
+  val processRepository = new ProcessRepository(db, DefaultJdbcDriver.driver)
 
   val route: Route =
     WebResources.route ~
-    new ProcessesResources(sampleProcess).route
+    new ProcessesResources(processRepository).route
 
   Http().bindAndHandle(
     route,
