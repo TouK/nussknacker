@@ -7,7 +7,10 @@ import UserPanel from '../components/UserPanel';
 
 import '../stylesheets/visualization.styl';
 
-export const Visualization = () => {
+export const Visualization = React.createClass({
+
+  render: function() {
+
     //var graphData = {
 //TODO
 //TODO
@@ -17,17 +20,15 @@ export const Visualization = () => {
 //TODO
 //TODO
     }
-
-
     return (
         <div className="Page">
-            <UserPanel />
+            <UserPanel/>
             <h1>{Visualization.header}</h1>
-            <p>Tutaj bedzie wizualizacja procesu</p>
             <Graph data={graphData}/>
         </div>
     )
-}
+  }
+});
 
 Visualization.title = 'Visualization'
 Visualization.path = '/visualization'

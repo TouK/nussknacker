@@ -46,9 +46,9 @@
 .sidenav
   height: 100%
   width: 250px
-  position: fixed
   z-index: 1
-  top: 100px
+  position: absolute
+  top: 0
   left: 0
   background-color: #EBEBEB
   overflow-x: hidden
@@ -68,9 +68,13 @@
   height: 60px
   border-bottom: 1px solid #ddd !important
   .panel-title
-    padding: 20px 15px !important
+    padding: 0 !important
   a
     text-decoration: none !important
+    display: block
+    width: 100%
+    height: 100%
+    padding: 20px
   &:hover
     background-color: #a5a5a5 !important
 
