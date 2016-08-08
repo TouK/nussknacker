@@ -1,12 +1,28 @@
-// FIXME - not working yet because parent-child
-// deendence with Accordion
-#working-area
+#toggle-user-panel
+  position: absolute
+  left: 250px
+  top: 0
+  margin: 0
+  width: 60px
+  height: 60px
+  transition: left .5s
+  cursor: pointer
   &.is-opened
-    margin-left: 250px
+    left: 250px
   &.is-closed
-    margin-left: 0px
+    left: 0px
+
+  .glyphicon
+    color: #46BFDB
+    font-size: 30px
+    margin: 10px
 
 
 #working-area
   transition: margin-left .5s
   padding: 16px
+  padding-left: 60px
+  &.is-opened
+    margin-left: 250px
+  &.is-closed
+    margin-left: 0px
