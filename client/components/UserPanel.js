@@ -5,7 +5,7 @@ import { Link } from 'react-router';
 import { Accordion, Panel, Glyphicon } from 'react-bootstrap';
 import classNames from 'classnames';
 
-import '../stylesheets/accordion.styl';
+import '../stylesheets/userPanel.styl';
 
 export default class UserPanel extends Component {
 
@@ -39,7 +39,7 @@ export default class UserPanel extends Component {
           </a>
         </div>
         <div id="mySidenav" className={sideNavClasses}>
-          <Accordion defaultActiveKey="1" expanded="true">
+          <Accordion defaultActiveKey="1">
             <Panel header="Historia" eventKey="1">
               Testing
             </Panel>
