@@ -42,6 +42,7 @@ val commonSettings =
     publishArtifact in (Compile, packageDoc) := false
   )
 
+val akkaV = "2.4.8"
 val flinkV = "1.0.3"
 val kafkaV = "0.9.0.1"
 val springV = "4.3.1.RELEASE"
@@ -54,6 +55,32 @@ val catsV = "0.6.1"
 val scalaParsersV = "1.0.4"
 val dispatchV = "0.11.3"
 val slf4jV = "1.7.21"
+
+lazy val management = (project in file("management")).
+  configs(IntegrationTest).
+  settings(commonSettings).
+  settings(Defaults.itSettings).
+  settings(
+    name := "esp-management",
+    Keys.test in IntegrationTest <<= (Keys.test in IntegrationTest).dependsOn(
+      assembly in Compile in process_sample
+    ),
+    libraryDependencies ++= {
+      Seq(
+        "org.apache.flink" %% "flink-clients" % flinkV,
+        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "runtime", // na potrzeby optymalizacji procesów
+
+        //to musimy podac explicite, zeby wymusic odpowiednia wersje dla flinka
+        "com.typesafe.akka" %% "akka-remote" % akkaV,
+        "com.typesafe.akka" %% "akka-actor" % akkaV,
+        "com.typesafe.akka" %% "akka-slf4j" % akkaV,
+
+        "com.jayway.awaitility" % "awaitility-scala" % "1.6.3" % "it",
+        "org.scalatest" %% "scalatest" % scalaTestV % "it",
+        organization.value %% "esp-process-sample" % version.value % "it" classifier "assembly"
+      )
+    }
+  )
 
 lazy val process = (project in file("process")).
   settings(commonSettings).
@@ -83,8 +110,8 @@ lazy val process_sample = (project in file("process-sample")).
       art.copy(`classifier` = Some("assembly"))
     }
   ).
-  settings(addArtifact(artifact in (Compile, assembly), assembly).settings : _*)
-    .dependsOn(process)
+  settings(addArtifact(artifact in (Compile, assembly), assembly)).
+  dependsOn(process)
 
 lazy val interpreter = (project in file("interpreter")).
   settings(commonSettings).
