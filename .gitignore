@@ -4,3 +4,6 @@ target
 node_modules
 dist
 server/src/main/resources/web
+db.log
+db.properties
+db.script
