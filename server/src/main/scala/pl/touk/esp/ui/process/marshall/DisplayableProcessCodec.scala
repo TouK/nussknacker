@@ -1,8 +1,8 @@
-package pl.touk.esp.ui.core.process.marshall
+package pl.touk.esp.ui.process.marshall
 
 import argonaut._
 import argonaut.derive.{JsonSumCodec, JsonSumCodecFor}
-import pl.touk.esp.ui.core.process.displayedgraph.DisplayableProcess
+import pl.touk.esp.ui.process.displayedgraph.DisplayableProcess
 
 object DisplayableProcessCodec {
 
@@ -12,5 +12,7 @@ object DisplayableProcessCodec {
     JsonSumCodecFor(JsonSumCodec.typeField)
 
   def encoder: EncodeJson[DisplayableProcess] = EncodeJson.of[DisplayableProcess]
+
+  def decoder: DecodeJson[DisplayableProcess] = DecodeJson.of[DisplayableProcess]
 
 }
