@@ -56,6 +56,48 @@ val scalaParsersV = "1.0.4"
 val dispatchV = "0.11.3"
 val slf4jV = "1.7.21"
 
+val perfTestSampleName = "esp-perf-test-sample"
+
+lazy val perf_test = (project in file("perf-test")).
+  configs(IntegrationTest). // po dodaniu własnej konfiguracji, IntellijIdea nie rozpoznaje zależności dla niej
+  settings(commonSettings).
+  settings(Defaults.itSettings).
+  settings(
+    name := "esp-perf-test",
+    Keys.test in IntegrationTest <<= (Keys.test in IntegrationTest).dependsOn(
+      publishLocal in (assembly in Compile) in perf_test_sample
+    ),
+    libraryDependencies ++= {
+      Seq(
+        "org.scalatest" %% "scalatest" % scalaTestV % "it,test",
+        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "runtime", // na potrzeby optymalizacji procesów
+        organization.value %% perfTestSampleName % version.value % "it,test" classifier "assembly"
+      )
+    }
+  ).
+  dependsOn(management, kafkaTestUtil)
+
+
+lazy val perf_test_sample = (project in file("perf-test/sample")).
+  settings(commonSettings).
+  settings(
+    name := perfTestSampleName,
+    libraryDependencies ++= {
+      Seq(
+        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
+        "com.iheart" %% "ficus" % "1.2.6"
+      )
+    },
+    artifact in (Compile, assembly) := {
+      val art = (artifact in (Compile, assembly)).value
+      art.copy(`classifier` = Some("assembly"))
+    }
+  ).
+  settings(addArtifact(artifact in (Compile, assembly), assembly)).
+  dependsOn(process, kafka)
+
+val managementSampleName = "esp-management-sample"
+
 lazy val management = (project in file("management")).
   configs(IntegrationTest).
   settings(commonSettings).
@@ -63,7 +105,7 @@ lazy val management = (project in file("management")).
   settings(
     name := "esp-management",
     Keys.test in IntegrationTest <<= (Keys.test in IntegrationTest).dependsOn(
-      assembly in Compile in process_sample
+      publishLocal in (assembly in Compile) in management_sample
     ),
     libraryDependencies ++= {
       Seq(
@@ -75,12 +117,29 @@ lazy val management = (project in file("management")).
         "com.typesafe.akka" %% "akka-actor" % akkaV,
         "com.typesafe.akka" %% "akka-slf4j" % akkaV,
 
-        "com.jayway.awaitility" % "awaitility-scala" % "1.6.3" % "it",
-        "org.scalatest" %% "scalatest" % scalaTestV % "it",
-        organization.value %% "esp-process-sample" % version.value % "it" classifier "assembly"
+        // zależności dla konfiguracji "it" muszą być też dla "test", żeby nie trafiły do publikowanego poma
+        "org.scalatest" %% "scalatest" % scalaTestV % "it,test",
+        organization.value %% managementSampleName % version.value % "it,test" classifier "assembly"
       )
     }
   )
+
+lazy val management_sample = (project in file("management/sample")).
+  settings(commonSettings).
+  settings(
+    name := managementSampleName,
+    libraryDependencies ++= {
+      Seq(
+        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided"
+      )
+    },
+    artifact in (Compile, assembly) := {
+      val art = (artifact in (Compile, assembly)).value
+      art.copy(`classifier` = Some("assembly"))
+    }
+  ).
+  settings(addArtifact(artifact in (Compile, assembly), assembly)).
+  dependsOn(process)
 
 lazy val process = (project in file("process")).
   settings(commonSettings).
@@ -95,23 +154,6 @@ lazy val process = (project in file("process")).
     }
   ).
   dependsOn(interpreter)
-
-lazy val process_sample = (project in file("process-sample")).
-  settings(commonSettings).
-  settings(
-    name := "esp-process-sample",
-    libraryDependencies ++= {
-      Seq(
-        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided"
-      )
-    },
-    artifact in (Compile, assembly) := {
-      val art = (artifact in (Compile, assembly)).value
-      art.copy(`classifier` = Some("assembly"))
-    }
-  ).
-  settings(addArtifact(artifact in (Compile, assembly), assembly)).
-  dependsOn(process)
 
 lazy val interpreter = (project in file("interpreter")).
   settings(commonSettings).
@@ -196,3 +238,4 @@ releaseProcess := Seq[ReleaseStep](
   commitNextVersion,                      // : ReleaseStep
   pushChanges                             // : ReleaseStep, also checks that an upstream branch is properly configured
 )
+

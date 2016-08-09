@@ -1,11 +1,10 @@
-package pl.touk.esp.process.sample
+package pl.touk.esp.engine.management.sample
 
 import com.typesafe.config.Config
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.streaming.api.scala._
-
 import pl.touk.esp.engine.api.process.{ProcessConfigCreator, SinkFactory, SourceFactory}
-import pl.touk.esp.engine.api.{SkipExceptionHandler, MetaData, Service}
+import pl.touk.esp.engine.api.{MetaData, Service, BrieflyLoggingExceptionHandler}
 import pl.touk.esp.engine.process.util.CollectionSource
 import pl.touk.esp.engine.util.sink.ServiceSink
 
@@ -15,8 +14,8 @@ import scala.concurrent.{ExecutionContext, Future}
 class TestProcessConfigCreator extends ProcessConfigCreator {
 
   override def sinkFactories(config: Config) = {
-    val sendSmsSink = new ServiceSink(EmptyService, invocationTimeout = 2 minutes)
-    val monitorSink = new ServiceSink(EmptyService, invocationTimeout = 2 minutes)
+    val sendSmsSink = new ServiceSink(EmptyService)
+    val monitorSink = new ServiceSink(EmptyService)
     Map[String, SinkFactory](
       "sendSms" -> SinkFactory.noParam(sendSmsSink),
       "monitor" -> SinkFactory.noParam(monitorSink)
@@ -46,7 +45,8 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
 
   override def foldingFunctions(config: Config) = Map()
 
-  override def exceptionHandler(config: Config) = SkipExceptionHandler
+  override def exceptionHandler(config: Config) = BrieflyLoggingExceptionHandler
+
 }
 
 case object EmptyService extends Service {

@@ -26,6 +26,10 @@ class KafkaClient(kafkaAddress: String, zkAddress: String) {
     ), new Properties, update = true)
   }
 
+  def deleteTopic(name: String) = {
+    AdminUtils.deleteTopic(zkUtils, name)
+  }
+
   def sendMessage(topic: String, content: String) = {
     producer.send(new ProducerRecord[String, String](topic, content))
   }

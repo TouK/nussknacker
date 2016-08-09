@@ -12,7 +12,8 @@ import pl.touk.esp.engine.kafka.KafkaSourceFactory._
 import scala.collection.JavaConverters._
 
 class KafkaSourceFactory[T: TypeInformation](config: KafkaConfig,
-                                             schema: DeserializationSchema[T]) extends SourceFactory[T] with Serializable {
+                                             schema: DeserializationSchema[T],
+                                             timeExtractionFunction: Option[(T) => Long]) extends SourceFactory[T] with Serializable {
 
   override def create(processMetaData: MetaData, parameters: Map[String, String]): Source[T] = {
     new KafkaSource(
@@ -46,7 +47,6 @@ class KafkaSourceFactory[T: TypeInformation](config: KafkaConfig,
 
 object KafkaSourceFactory {
 
-  case class KafkaConfig(zkAddress: String, kafkaAddress: String, kafkaProperties: Option[Map[String, String]])
   val TopicParamName = "topic"
 
 }

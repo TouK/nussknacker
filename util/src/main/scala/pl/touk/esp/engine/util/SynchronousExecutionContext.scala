@@ -1,4 +1,4 @@
-package pl.touk.esp.engine.process.util
+package pl.touk.esp.engine.util
 
 import java.util.concurrent.Executor
 
