@@ -54,8 +54,7 @@ libraryDependencies ++= {
     "com.jayway.awaitility" % "awaitility-scala" % "1.6.3" % "it",
 
     "org.apache.flink" %% "flink-clients" % flinkV,
-    "org.apache.flink" %% "flink-streaming-scala" % flinkV,
-    "org.apache.flink" %% "flink-runtime" % flinkV,
+    "org.apache.flink" %% "flink-streaming-scala" % flinkV % "runtime", // na potrzeby optymalizacji procesów
 
     //to musimy podac explicite, zeby wymusic odpowiednia wersje dla flinka
     "com.typesafe.akka" %% "akka-remote" % akkaV,
