@@ -2,28 +2,17 @@ package pl.touk.esp.engine.process
 
 import java.util.Date
 
-import org.apache.flink.api.common.ExecutionConfig
-import org.apache.flink.api.common.functions.RuntimeContext
-import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.configuration.Configuration
-import org.apache.flink.streaming.api.TimeCharacteristic
-import org.apache.flink.streaming.api.scala._
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.esp.engine.api._
-import pl.touk.esp.engine.api.process.{SinkFactory, SourceFactory}
 import pl.touk.esp.engine.build.GraphBuilder
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.graph.service.{Parameter, ServiceRef}
 import pl.touk.esp.engine.graph.variable.Field
-import pl.touk.esp.engine.process.util.CollectionSource
-import pl.touk.esp.engine.util.sink.ServiceSink
-import pl.touk.esp.engine.{InterpreterConfig, spel}
+import pl.touk.esp.engine.process.ProcessTestHelpers.{MockService, SimpleRecord, processInvoker}
+import pl.touk.esp.engine.spel
 
-import scala.beans.BeanProperty
 import scala.collection.JavaConverters._
-import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
 
 class FlinkProcessRegistrarSpec extends FlatSpec with Matchers {
 
@@ -75,43 +64,3 @@ class FlinkProcessRegistrarSpec extends FlatSpec with Matchers {
   }
 
 }
-
-object processInvoker {
-  def invoke(process: EspProcess, data: List[SimpleRecord]) = {
-    val env: StreamExecutionEnvironment = StreamExecutionEnvironment.createLocalEnvironment()
-
-    env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
-
-    val monitorSink = new ServiceSink(EmptyService, invocationTimeout = 2 minutes)
-    val sinkFactories = Map[String, SinkFactory](
-      "monitor" -> SinkFactory.noParam(monitorSink)
-    )
-    new FlinkProcessRegistrar(
-      interpreterConfig = () => new InterpreterConfig(Map("logService" -> MockService)),
-      sourceFactories = Map("input" -> SourceFactory.noParam(new CollectionSource[SimpleRecord](env.getConfig, data, Some((a: SimpleRecord) => a.date.getTime)))),
-      sinkFactories = sinkFactories,
-      processTimeout = 2 minutes,
-      espExceptionHandlerProvider = () => SkipExceptionHandler
-    ).register(env, process)
-
-    MockService.data.clear()
-    env.execute()
-
-  }
-}
-
-case class SimpleRecord(@BeanProperty id: String, @BeanProperty value1: Long, @BeanProperty value2: String, date: Date)
-
-object MockService extends Service {
-
-  val data = new ArrayBuffer[Map[String, Any]]
-
-  override def invoke(params: Map[String, Any])(implicit ec: ExecutionContext) = Future {
-    data.append(params)
-  }
-}
-
-object EmptyService extends Service {
-  override def invoke(params: Map[String, Any])(implicit ec: ExecutionContext) = Future(())
-}
-

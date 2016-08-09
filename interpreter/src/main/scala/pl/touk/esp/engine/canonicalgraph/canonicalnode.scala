@@ -33,6 +33,8 @@ object canonicalnode {
 
   case class Aggregate(id: String, aggregatedVar: String,
                        keyExpression: Expression, durationInMillis: Long,
-                       slideInMillis: Long) extends CanonicalNode
+                       slideInMillis: Long,
+                       triggerExpression: Option[Expression],
+                       foldingFunRef: Option[String]) extends CanonicalNode
 
 }

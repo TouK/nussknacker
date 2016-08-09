@@ -35,18 +35,10 @@ object FlinkProcessMain {
 
     val config = ConfigFactory.load().getConfig( args(1))
 
-    val timeout = config.getDuration("timeout", TimeUnit.SECONDS).seconds
-
     val creator = Thread.currentThread.getContextClassLoader.loadClass(config.getString("processConfigCreatorClass"))
       .newInstance().asInstanceOf[ProcessConfigCreator]
 
-    new FlinkProcessRegistrar(
-      () => new InterpreterConfig(creator.services(config), creator.listeners(config)),
-      creator.sourceFactories(config),
-      creator.sinkFactories(config),
-      () => SkipExceptionHandler,
-      timeout
-    )
+    FlinkProcessRegistrar(creator, config)
   }
 
   private def readProcessFromArgs(args: Array[String]) = {

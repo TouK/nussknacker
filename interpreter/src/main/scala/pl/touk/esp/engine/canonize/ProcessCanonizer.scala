@@ -49,8 +49,8 @@ object ProcessCanonizer {
         ) :: Nil
       case node.Sink(id, ref, endResult) =>
         canonicalnode.Sink(id, ref, endResult) :: Nil
-      case node.Aggregate(id, aggregatedVar, keyExpr, duration, step, next)
-        => canonicalnode.Aggregate(id, aggregatedVar, keyExpr, duration, step) :: nodesOnTheSameLevel(next)
+      case node.Aggregate(id, aggregatedVar, keyExpr, duration, step, triggerExpression, foldingFunRef, next)
+        => canonicalnode.Aggregate(id, aggregatedVar, keyExpr, duration, step, triggerExpression, foldingFunRef) :: nodesOnTheSameLevel(next)
     }
 
   def uncanonize(canonicalProcess: CanonicalProcess): ValidatedNel[ProcessUncanonizationError, EspProcess]=
@@ -93,8 +93,8 @@ object ProcessCanonizer {
         }
       case canonicalnode.Sink(id, ref, endResult) :: Nil =>
         valid(node.Sink(id, ref, endResult))
-      case canonicalnode.Aggregate(id, aggregatedVar, keyExpr, duration, slide)::tail =>
-        uncanonize(tail).map(node.Aggregate(id, aggregatedVar, keyExpr, duration, slide, _))
+      case canonicalnode.Aggregate(id, aggregatedVar, keyExpr, duration, slide, triggerExpression, foldingFunRef)::tail =>
+        uncanonize(tail).map(node.Aggregate(id, aggregatedVar, keyExpr, duration, slide, triggerExpression, foldingFunRef, _))
       case invalidTail =>
         invalid(InvalidTailOfBranch(invalidTail.map(_.id).toSet)).toValidatedNel
     }

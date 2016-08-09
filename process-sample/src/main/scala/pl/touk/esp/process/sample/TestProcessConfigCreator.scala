@@ -5,7 +5,7 @@ import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.streaming.api.scala._
 
 import pl.touk.esp.engine.api.process.{ProcessConfigCreator, SinkFactory, SourceFactory}
-import pl.touk.esp.engine.api.{MetaData, Service}
+import pl.touk.esp.engine.api.{SkipExceptionHandler, MetaData, Service}
 import pl.touk.esp.engine.process.util.CollectionSource
 import pl.touk.esp.engine.util.sink.ServiceSink
 
@@ -43,6 +43,10 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
       "serviceModelService" -> EmptyService
     )
   }
+
+  override def foldingFunctions(config: Config) = Map()
+
+  override def exceptionHandler(config: Config) = SkipExceptionHandler
 }
 
 case object EmptyService extends Service {
