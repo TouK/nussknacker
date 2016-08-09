@@ -6,12 +6,13 @@ import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.streaming.api.scala._
 
 import org.scalatest.FlatSpec
-import pl.touk.esp.engine.api.MetaData
+import pl.touk.esp.engine.api.{SkipExceptionHandler, MetaData}
 import pl.touk.esp.engine.api.process.{ProcessConfigCreator, SinkFactory, SourceFactory}
 import pl.touk.esp.engine.build.GraphBuilder
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.graph.service.{Parameter, ServiceRef}
 import pl.touk.esp.engine.marshall.ProcessMarshaller
+import pl.touk.esp.engine.process.ProcessTestHelpers.{SimpleRecord, EmptyService}
 import pl.touk.esp.engine.process.util.CollectionSource
 import pl.touk.esp.engine.spel
 import pl.touk.esp.engine.util.sink.ServiceSink
@@ -45,6 +46,11 @@ class SimpleProcessConfigCreator extends ProcessConfigCreator {
 
   override def listeners(config: Config) = List()
 
+  override def foldingFunctions(config: Config) = Map()
+
   override def sourceFactories(config: Config) = Map("input" -> SourceFactory.noParam(
     new CollectionSource[SimpleRecord](new ExecutionConfig, List(), Some((a: SimpleRecord) => a.date.getTime))))
+
+  override def exceptionHandler(config: Config) = SkipExceptionHandler
+
 }

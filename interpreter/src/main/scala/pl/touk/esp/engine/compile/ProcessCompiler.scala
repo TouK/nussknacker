@@ -10,7 +10,7 @@ import cats.{Semigroup, SemigroupK}
 import pl.touk.esp.engine._
 import ProcessCompilationError._
 import pl.touk.esp.engine.compile.ProcessCompiler.NodeId
-import pl.touk.esp.engine.compiledgraph.expression.ExpressionParser
+import pl.touk.esp.engine.compiledgraph.expression.{Expression, ExpressionParser}
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.spel.SpelExpressionParser
 import pl.touk.esp.engine.split.{NodesCollector, PartsCollector, ProcessSplitter}
@@ -54,7 +54,9 @@ class ProcessCompiler(expressionParsers: Map[String, ExpressionParser]) {
     val validated = part match {
       case source: SourcePart =>
         compile(source.source)
-      case agg: AggregateExpressionPart =>
+      case agg: AggregateDefinitionPart =>
+        compile(agg.aggregate)
+      case agg: AggregateTriggerPart =>
         compile(agg.aggregate)
       case agg: AfterAggregationPart =>
         compile(agg.next)
@@ -84,8 +86,11 @@ class ProcessCompiler(expressionParsers: Map[String, ExpressionParser]) {
       case splittednode.Switch(id, expression, exprVal, nexts, defaultNext) =>
         (compile(expression) |@| nexts.map(compile).sequenceU |@| defaultNext.map(compile).sequenceU)
           .map(compiledgraph.node.Switch(id, _, exprVal, _, _))
-      case splittednode.Aggregate(id, keyExpression, next) =>
-        compile(keyExpression).map(compiledgraph.node.Aggregate(id, _, compiledgraph.node.PartRef(next.id)))
+      case splittednode.AggregateDefinition(id, keyExpression, next) =>
+        compile(keyExpression).map(compiledgraph.node.AggregateDefinition(id, _, compiledgraph.node.PartRef(next.id)))
+      case splittednode.AggregateTrigger(id, triggerExpression, _, next) =>
+        triggerExpression.map(compile).sequenceU
+          .map(compiledgraph.node.AggregateTrigger(id, _, compiledgraph.node.PartRef(next.id)))
       case splittednode.Sink(id, optionalExpression) =>
         optionalExpression.map(compile).sequenceU.map(compiledgraph.node.Sink(id, _))
     }

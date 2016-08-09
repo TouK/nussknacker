@@ -32,6 +32,9 @@ object node {
 
   case class Aggregate(id: String, aggregatedVar: String,
                        keyExpression: Expression, durationInMillis: Long,
-                       stepInMillis: Long, next: Node) extends Node
+                       stepInMillis: Long,
+                       triggerExpression: Option[Expression],
+                       foldingFunRef: Option[String],
+                       next: Node) extends Node
 
 }

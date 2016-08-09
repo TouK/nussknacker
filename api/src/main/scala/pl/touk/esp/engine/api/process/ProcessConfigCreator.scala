@@ -1,7 +1,7 @@
 package pl.touk.esp.engine.api.process
 
 import com.typesafe.config.Config
-import pl.touk.esp.engine.api.{ProcessListener, Service}
+import pl.touk.esp.engine.api.{EspExceptionHandler, FoldingFunction, ProcessListener, Service}
 
 trait ProcessConfigCreator extends Serializable {
 
@@ -13,4 +13,7 @@ trait ProcessConfigCreator extends Serializable {
 
   def listeners(config: Config): Seq[ProcessListener]
 
+  def foldingFunctions(config: Config) : Map[String, FoldingFunction[_]]
+
+  def exceptionHandler(config: Config) : EspExceptionHandler
 }

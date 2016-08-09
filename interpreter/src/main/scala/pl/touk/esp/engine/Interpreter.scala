@@ -51,8 +51,11 @@ class Interpreter(config: InterpreterConfig) {
           case None =>
             interpretOptionalNext(node, defaultNext, ctx)
         }
-      case Aggregate(_, keyExpression, next) =>
+      case AggregateDefinition(_, keyExpression, next) =>
         Future.successful(InterpretationResult(NextPartReference(next.id), evaluate(keyExpression, ctx), ctx))
+      case AggregateTrigger(_, trigger, next) =>
+        Future.successful(InterpretationResult(NextPartReference(next.id),
+          trigger.map(evaluate[Boolean](_, ctx)).orNull, ctx))
       case Sink(_, optionalExpression) =>
         val output = optionalExpression match {
           case Some(expression) =>
