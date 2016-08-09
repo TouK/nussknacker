@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 
-./sbtwrapper clean test it:test
+./sbtwrapper clean test management/it:test
 

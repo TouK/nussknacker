@@ -6,7 +6,7 @@ import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.scala._
 import pl.touk.esp.engine.InterpreterConfig
 import pl.touk.esp.engine.api.process.{SinkFactory, SourceFactory}
-import pl.touk.esp.engine.api.{FoldingFunction, Service, SkipExceptionHandler}
+import pl.touk.esp.engine.api.{FoldingFunction, Service, BrieflyLoggingExceptionHandler}
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.process.util.CollectionSource
 import pl.touk.esp.engine.util.sink.ServiceSink
@@ -25,9 +25,7 @@ object ProcessTestHelpers {
   object processInvoker {
     def invoke(process: EspProcess, data: List[SimpleRecord],
                env: StreamExecutionEnvironment = StreamExecutionEnvironment.createLocalEnvironment()) = {
-      env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
-
-      val monitorSink = new ServiceSink(EmptyService, invocationTimeout = 2 minutes)
+      val monitorSink = new ServiceSink(EmptyService)
       val sinkFactories = Map[String, SinkFactory](
         "monitor" -> SinkFactory.noParam(monitorSink)
       )
@@ -37,7 +35,7 @@ object ProcessTestHelpers {
         sinkFactories = sinkFactories,
         foldingFunctions = Map("simpleFoldingFun" -> SimpleRecordFoldingFunction),
         processTimeout = 2 minutes,
-        espExceptionHandlerProvider = () => SkipExceptionHandler
+        espExceptionHandlerProvider = () => BrieflyLoggingExceptionHandler
       ).register(env, process)
 
       MockService.data.clear()

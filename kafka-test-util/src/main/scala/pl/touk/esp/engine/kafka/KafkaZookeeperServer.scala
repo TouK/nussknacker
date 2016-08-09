@@ -6,12 +6,14 @@ import java.nio.file.Files
 import java.util.Properties
 
 import kafka.api.OffsetRequest
-import kafka.consumer.{Consumer, ConsumerConfig, ConsumerConnector}
+import kafka.consumer.{Consumer, ConsumerConfig, ConsumerConnector, KafkaStream}
 import kafka.server.{KafkaConfig, KafkaServer}
 import kafka.utils.SystemTime
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.common.serialization.StringSerializer
 import org.apache.zookeeper.server.{NIOServerCnxnFactory, ZooKeeperServer}
+
+import scala.concurrent.{ExecutionContext, Future}
 
 object KafkaZookeeperServer {
   val localhost = "127.0.0.1"
@@ -85,8 +87,17 @@ object KafkaUtils {
   }
 
   implicit class RichConsumerConnector(c: ConsumerConnector) {
-    def consume(topic: String) = {
+    def consume(topic: String): KafkaStream[Array[Byte], Array[Byte]] = {
       c.createMessageStreams(Map(topic -> 1))(topic).head
     }
   }
+
+  implicit class RichKafkaStream(stream: KafkaStream[Array[Byte], Array[Byte]]) {
+    def takeNonBlocking(count: Int)
+                       (implicit ec: ExecutionContext) =
+      Future {
+        stream.take(count)
+      }
+  }
+
 }

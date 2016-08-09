@@ -7,12 +7,12 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import cats.std.list._
 import com.typesafe.config.Config
-import org.apache.flink.api.common.functions.{FoldFunction, RichFlatMapFunction, RichMapFunction}
+import org.apache.flink.api.common.functions._
 import org.apache.flink.api.common.state._
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.collector.selector.OutputSelector
-import org.apache.flink.streaming.api.functions.sink.SinkFunction
+import org.apache.flink.streaming.api.functions.sink.{RichSinkFunction, SinkFunction}
 import org.apache.flink.streaming.api.scala.function.util.ScalaFoldFunction
 import org.apache.flink.streaming.api.scala.{StreamExecutionEnvironment, _}
 import org.apache.flink.streaming.api.windowing.time.Time
@@ -27,16 +27,17 @@ import pl.touk.esp.engine.api.process._
 import pl.touk.esp.engine.compile.{ProcessCompilationError, ProcessCompiler}
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.process.FlinkProcessRegistrar._
-import pl.touk.esp.engine.process.util.{SpelHack, SynchronousExecutionContext}
+import pl.touk.esp.engine.process.util.SpelHack
 import pl.touk.esp.engine.split.ProcessSplitter
 import pl.touk.esp.engine.splittedgraph.part._
 import pl.touk.esp.engine.splittedgraph.splittednode.{NextNode, PartRef, SplittedNode}
 import pl.touk.esp.engine.splittedgraph.{SplittedProcess, splittednode}
+import pl.touk.esp.engine.util.SynchronousExecutionContext
 import pl.touk.esp.engine.util.metrics.InstantRateMeter
 import pl.touk.esp.engine.{Interpreter, InterpreterConfig}
 
 import scala.collection.JavaConverters._
-import scala.concurrent.Await
+import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
 import scala.language.implicitConversions
 
@@ -109,18 +110,15 @@ class FlinkProcessRegistrar(interpreterConfig: () => InterpreterConfig,
             case PartRef(id) =>
               assert(part.nextParts.size == 1, "Aggregate ended up with part ref should have one next part")
               assert(part.nextParts.head.id == id, "Aggregate ended up with part ref should have one next part with the same id as in ref")
-              registerSubsequentPart(typedStart, part.nextParts.head)
+              val newStart = typedStart
+                .map(new WrappingWithInterpretationResultFunction(NextPartReference(id), process.metaData, part.aggregatedVar))
+              registerSubsequentPart(newStart, part.nextParts.head)
           }
         case part: SinkPart =>
           start.asInstanceOf[DataStream[InterpretationResult]]
-            .flatMap(new SinkInterpretationFunction(
-              process.metaData,
-              compiler, part.sink, interpreterConfig, espExceptionHandlerProvider, processTimeout))
+            .flatMap(new SinkInterpretationFunction(process.metaData, compiler, part.sink, interpreterConfig, espExceptionHandlerProvider, processTimeout))
             .name(s"${part.id}-function")
-            .map { (interpretationResult: InterpretationResult) =>
-              InputWithExectutionContext(interpretationResult.output, SynchronousExecutionContext.ctx)
-            }
-            .addSink(createSink(part))
+            .addSink(new SinkSendingFunction(createSinkFunction(part), espExceptionHandlerProvider, processTimeout))
             .name(s"${part.id}-sink")
       }
 
@@ -140,12 +138,12 @@ class FlinkProcessRegistrar(interpreterConfig: () => InterpreterConfig,
         .asInstanceOf[Source[Any]]
     }
 
-    def createSink(part: SinkPart): SinkFunction[InputWithExectutionContext] = {
+    def createSinkFunction(part: SinkPart) = {
       val sinkType = part.ref.typ
       val sinkFactory = sinkFactories.getOrElse(sinkType, throw new IllegalArgumentException(s"Missing sink factory of type: $sinkType"))
       sinkFactory
         .create(process.metaData, part.ref.parameters.map(p => p.name -> p.value).toMap)
-        .toFlinkSink
+        .toFlinkFunction
     }
 
   }
@@ -205,6 +203,15 @@ object FlinkProcessRegistrar {
 
   }
 
+  class WrappingWithInterpretationResultFunction(ref: PartReference,
+                                                 metaData: MetaData,
+                                                 inputParamName: String) extends MapFunction[Any, InterpretationResult] {
+    override def map(value: Any): InterpretationResult = {
+      val ctx = ContextImpl(metaData).withVariable(inputParamName, value)
+      InterpretationResult(ref, null, ctx)
+    }
+  }
+
   class SinkInterpretationFunction(metaData: MetaData,
                                    compiler: => ProcessCompiler,
                                    sink: splittednode.Sink,
@@ -246,6 +253,39 @@ object FlinkProcessRegistrar {
     }
   }
 
+  class SinkSendingFunction(underlying: RichMapFunction[InputWithExectutionContext, Future[Unit]],
+                            espExceptionHandlerProvider: () => EspExceptionHandler,
+                            processTimeout: Duration) extends RichSinkFunction[InterpretationResult] {
+
+    private lazy val espExceptionHandler = espExceptionHandlerProvider()
+    lazy implicit val ec = SynchronousExecutionContext.ctx
+
+    override def setRuntimeContext(t: RuntimeContext): Unit = {
+      super.setRuntimeContext(t)
+      underlying.setRuntimeContext(t)
+    }
+
+    override def open(parameters: Configuration): Unit = {
+      super.open(parameters)
+      underlying.open(parameters)
+      espExceptionHandler.open()
+    }
+
+    override def invoke(input: InterpretationResult): Unit = {
+      espExceptionHandler.recover {
+        val futureResult = underlying.map(InputWithExectutionContext(input.output, ec))
+        Await.result(futureResult, processTimeout)
+      }(input.finalContext)
+    }
+
+    override def close(): Unit = {
+      super.close()
+      underlying.close()
+      espExceptionHandler.close()
+    }
+
+  }
+
   class AggregateKeyByFunction(compiler: => ProcessCompiler,
                                node: splittednode.AggregateDefinition,
                                configProvider: () => InterpreterConfig,
@@ -259,8 +299,8 @@ object FlinkProcessRegistrar {
 
     override def apply(result: InterpretationResult) = {
       implicit val ec = SynchronousExecutionContext.ctx
-      val resultFuture = interpreter.interpret(compiledNode, result.finalContext).map(_.output.toString)
       espExceptionHandler.recover {
+        val resultFuture = interpreter.interpret(compiledNode, result.finalContext).map(_.output.toString)
         Await.result(resultFuture, processTimeout)
       }(result.finalContext)
     }

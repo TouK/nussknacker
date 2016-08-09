@@ -6,7 +6,7 @@ import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.streaming.api.scala._
 
 import org.scalatest.FlatSpec
-import pl.touk.esp.engine.api.{SkipExceptionHandler, MetaData}
+import pl.touk.esp.engine.api.{BrieflyLoggingExceptionHandler, MetaData}
 import pl.touk.esp.engine.api.process.{ProcessConfigCreator, SinkFactory, SourceFactory}
 import pl.touk.esp.engine.build.GraphBuilder
 import pl.touk.esp.engine.graph.EspProcess
@@ -31,7 +31,7 @@ class FlinkProcessMainSpec extends FlatSpec {
         .processor("proc2", ServiceRef("logService", List(Parameter("all", "#distinct(#input.![value2])"))))
         .sink("out", "monitor"))
 
-    FlinkProcessMain.main(Array(ProcessMarshaller.toJson(process, PrettyParams.spaces2), "test"))
+    FlinkProcessMain.main(Array(ProcessMarshaller.toJson(process, PrettyParams.spaces2)))
   }
 
 }
@@ -41,7 +41,7 @@ class SimpleProcessConfigCreator extends ProcessConfigCreator {
   override def services(config: Config) = Map()
 
   override def sinkFactories(config: Config) = Map[String, SinkFactory](
-    "monitor" -> SinkFactory.noParam(new ServiceSink(EmptyService, invocationTimeout = 2 minutes))
+    "monitor" -> SinkFactory.noParam(new ServiceSink(EmptyService))
   )
 
   override def listeners(config: Config) = List()
@@ -51,6 +51,6 @@ class SimpleProcessConfigCreator extends ProcessConfigCreator {
   override def sourceFactories(config: Config) = Map("input" -> SourceFactory.noParam(
     new CollectionSource[SimpleRecord](new ExecutionConfig, List(), Some((a: SimpleRecord) => a.date.getTime))))
 
-  override def exceptionHandler(config: Config) = SkipExceptionHandler
+  override def exceptionHandler(config: Config) = BrieflyLoggingExceptionHandler
 
 }

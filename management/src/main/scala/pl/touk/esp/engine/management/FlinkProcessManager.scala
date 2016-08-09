@@ -39,7 +39,7 @@ object FlinkProcessManager {
     val client: StandaloneClusterClient = new StandaloneClusterClient(clientConfig)
     client.setDetached(true)
 
-    new FlinkProcessManager(flinkConf, client, actorSystem.dispatcher,
+    new FlinkProcessManager(config, client, actorSystem.dispatcher,
       prepareGateway(clientConfig, actorSystem))
   }
 
@@ -50,21 +50,21 @@ object FlinkProcessManager {
   }
 }
 
-class FlinkProcessManager(flinkConf: Config, client: ClusterClient,
+class FlinkProcessManager(config: Config, client: ClusterClient,
                           executionContext: ExecutionContext,
                           gateway: ActorGateway) extends ProcessManager {
 
   implicit val ec = executionContext
 
-  override def deploy(processId: String, processAsJson: String) = {
+  private val flinkConf = config.getConfig("flinkConfig")
 
+  override def deploy(processId: String, processAsJson: String) = {
     val processClass = "pl.touk.esp.engine.process.FlinkProcessMain"
 
-
     val jarFile = new File(flinkConf.getString("jarPath"))
-    val configPart = flinkConf.getString("processConfig")
+    val configPart = extractProcessConfig
 
-    val program = new PackagedProgram(jarFile, processClass, List(processAsJson, configPart).toArray: _*)
+    val program = new PackagedProgram(jarFile, processClass, List(processAsJson, configPart): _*)
 
     findJobStatus(processId).map(maybeOldJob => {
        maybeOldJob.foreach { job =>
@@ -73,6 +73,10 @@ class FlinkProcessManager(flinkConf: Config, client: ClusterClient,
     }).map(_ => client.run(program, flinkConf.getInt("parallelism")))
   }
 
+  private def extractProcessConfig: String = {
+    val configName = flinkConf.getString("processConfig")
+    config.getConfig(configName).root().render()
+  }
 
   override def findJobStatus(name: String) = {
     listJobs().map(_.runningJobs.toList.filter(_.getJobName == name).map(st => JobState(st.getJobId.toString,

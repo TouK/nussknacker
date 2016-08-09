@@ -1,29 +1,30 @@
 package pl.touk.esp.engine.management
 
 import java.util.UUID
-import java.util.concurrent.TimeUnit
 
 import argonaut.PrettyParams
-import com.jayway.awaitility.Awaitility._
-import com.jayway.awaitility.scala.AwaitilitySupport
 import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
-import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.time.{Seconds, Span}
+import org.scalatest.concurrent.{Eventually, ScalaFutures}
+import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.{FlatSpec, Matchers}
+import pl.touk.esp.engine.management.sample.TestProcessConfigCreator
+import pl.touk.esp.engine.management.util.JarFileFinder
 import pl.touk.esp.engine.marshall.ProcessMarshaller
-import pl.touk.esp.process.sample.TestProcessConfigCreator
 
 import scala.concurrent.duration._
 
-class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures with AwaitilitySupport {
+class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures with Eventually {
 
-  override implicit val patienceConfig = PatienceConfig(timeout = Span(5, Seconds))
+  override implicit val patienceConfig = PatienceConfig(
+    timeout = Span(10, Seconds),
+    interval = Span(100, Millis)
+  )
 
   it should "deploy process in running flink" in {
 
     val processId = UUID.randomUUID().toString
 
-    val resource: String = findJarPath()
+    val resource = JarFileFinder.findJarPath(classOf[TestProcessConfigCreator])
 
     val process = SampleProcess.prepareProcess(processId)
     val marshalled = ProcessMarshaller.toJson(process, PrettyParams.spaces2)
@@ -38,16 +39,11 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
 
     assert(processManager.cancel(process.id).isReadyWithin(1 seconds))
 
-    await().atMost(10, TimeUnit.SECONDS).until {
+    eventually {
       val jobStatusCanceled = processManager.findJobStatus(processId).futureValue
-      jobStatusCanceled.isEmpty
+      if (jobStatusCanceled.nonEmpty)
+        throw new IllegalStateException("Job still exists")
     }
   }
 
-
-  def findJarPath(): String = {
-    val loader = classOf[TestProcessConfigCreator].getClassLoader
-    loader.getResource("pl/touk/esp/process/sample/TestProcessConfigCreator.class")
-      .getFile.replaceAll("!.*", "").replace("file:", "")
-  }
 }

@@ -5,9 +5,10 @@ import java.util.Date
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.esp.engine.api._
 import pl.touk.esp.engine.build.GraphBuilder
-import pl.touk.esp.engine.graph.EspProcess
+import pl.touk.esp.engine.graph.{EspProcess, sink, source}
 import pl.touk.esp.engine.graph.service.{Parameter, ServiceRef}
 import pl.touk.esp.engine.graph.variable.Field
+import pl.touk.esp.engine.process.KeyValueTestHelper.KeyValue
 import pl.touk.esp.engine.process.ProcessTestHelpers.{MockService, SimpleRecord, processInvoker}
 import pl.touk.esp.engine.spel
 
@@ -17,6 +18,26 @@ import scala.concurrent.duration._
 class FlinkProcessRegistrarSpec extends FlatSpec with Matchers {
 
   import spel.Implicits._
+
+  it should "aggregate records" in {
+    val process = EspProcess(
+      MetaData("proc1"),
+      GraphBuilder.source("source", "simple-keyvalue")
+        .aggregate(
+          id = "aggregate", aggregatedVar = "input", keyExpression = "#input.key",
+          duration = 5 seconds, step = 1 second
+        )
+        .sink("sink", "#sum(#input.![value])", "simple-keyvalue")
+    )
+    val data = List(
+      KeyValue("a", 1, new Date(0)),
+      KeyValue("a", 1, new Date(1000))
+    )
+
+    KeyValueTestHelper.processInvoker.invoke(process, data)
+
+    KeyValueTestHelper.MockService.data shouldEqual List(1, 2, 2, 2, 2, 1)
+  }
 
   it should "aggregate and filter records" in {
     val process = EspProcess(MetaData("proc1"),

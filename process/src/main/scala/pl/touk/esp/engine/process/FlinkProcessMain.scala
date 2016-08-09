@@ -1,49 +1,36 @@
 package pl.touk.esp.engine.process
 
-import java.io.FileReader
-import java.util.concurrent.TimeUnit
+import java.io.{File, FileReader}
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.std.list._
-
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.commons.io.IOUtils
-import org.apache.flink.api.common.functions.RuntimeContext
-import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
-import pl.touk.esp.engine.InterpreterConfig
-import pl.touk.esp.engine.api.{SkipExceptionHandler, EspExceptionHandler, EspExceptionInfo}
 import pl.touk.esp.engine.api.process.ProcessConfigCreator
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.marshall.ProcessMarshaller
-
-import scala.concurrent.duration._
 
 object FlinkProcessMain {
 
   def main(args: Array[String]) : Unit = {
 
-    val process = readProcessFromArgs(args)
-    val registrar: FlinkProcessRegistrar = prepareRegistrar(args)
+    require(args.nonEmpty, "Process json should be passed as a first argument")
+    val process = readProcessFromArg(args(0))
+    val optionalConfigArg = if (args.length > 1) Some(args(1)) else None
+    val config = readConfigFromArg(optionalConfigArg)
+    val registrar: FlinkProcessRegistrar = prepareRegistrar(config)
 
     val env = StreamExecutionEnvironment.getExecutionEnvironment
     registrar.register(env, process)
     env.execute(process.id)
   }
 
-  private def prepareRegistrar(args: Array[String]): FlinkProcessRegistrar = {
-
-    val config = ConfigFactory.load().getConfig( args(1))
-
+  private def prepareRegistrar(config: Config): FlinkProcessRegistrar = {
     val creator = Thread.currentThread.getContextClassLoader.loadClass(config.getString("processConfigCreatorClass"))
       .newInstance().asInstanceOf[ProcessConfigCreator]
 
     FlinkProcessRegistrar(creator, config)
-  }
-
-  private def readProcessFromArgs(args: Array[String]) = {
-    require(args.nonEmpty, "Process json should be passed as a first argument")
-    readProcessFromArg(args(0))
   }
 
   private def readProcessFromArg(arg: String): EspProcess = {
@@ -57,4 +44,16 @@ object FlinkProcessMain {
       case Invalid(err) => throw new IllegalArgumentException(err.unwrap.mkString("Compilation errors: ", ", ", ""))
     }
   }
+
+  private def readConfigFromArg(arg: Option[String]): Config =
+    arg match {
+      case Some(name) if name.startsWith("@") =>
+        ConfigFactory.parseFile(new File(name.substring(1)))
+      case Some(string) =>
+        ConfigFactory.parseString(string)
+      case None =>
+        ConfigFactory.load()
+    }
+
+
 }
