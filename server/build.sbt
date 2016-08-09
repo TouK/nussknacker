@@ -50,10 +50,7 @@ val flywayV = "4.0.3"
 libraryDependencies ++= {
   Seq(
     "de.heikoseeberger" %% "akka-http-argonaut" % akkaHttpArgonautV,
-    "pl.touk.esp" %% "esp-process" % espEngineV,
-    "com.jayway.awaitility" % "awaitility-scala" % "1.6.3" % "it",
-
-    "org.apache.flink" %% "flink-clients" % flinkV,
+    "pl.touk.esp" %% "esp-management" % espEngineV,
     "org.apache.flink" %% "flink-streaming-scala" % flinkV % "runtime", // na potrzeby optymalizacji procesów
 
     //to musimy podac explicite, zeby wymusic odpowiednia wersje dla flinka
@@ -64,11 +61,9 @@ libraryDependencies ++= {
     "org.hsqldb" % "hsqldb" % hsqldbV,
     "org.flywaydb" % "flyway-core" % flywayV,
 
-    //to jest tylko po to, zeby miec fatjara do testow deploymentu
-    "pl.touk.esp" %% "esp-process-sample" % espEngineV % "it" classifier "assembly",
-    "com.typesafe.akka" %% "akka-http-testkit" % akkaV % "it,test",
+    "com.typesafe.akka" %% "akka-http-testkit" % akkaV % "test",
     "com.typesafe.slick" %% "slick-testkit" % slickV % "test",
-    "org.scalatest" %% "scalatest" % scalaTestV % "it,test"
+    "org.scalatest" %% "scalatest" % scalaTestV % "test"
 
   )
 }
@@ -84,8 +79,3 @@ releaseProcess := Seq[ReleaseStep](
   commitNextVersion,                      // : ReleaseStep
   pushChanges                             // : ReleaseStep, also checks that an upstream branch is properly configured
 )
-
-
-Defaults.itSettings
-lazy val `esp-ui` = project.in(file("."))
-  .configs(IntegrationTest)
