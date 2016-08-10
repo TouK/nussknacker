@@ -8,8 +8,11 @@ import cats.std.list._
 
 import com.typesafe.config.ConfigFactory
 import org.apache.commons.io.IOUtils
+import org.apache.flink.api.common.functions.RuntimeContext
+import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import pl.touk.esp.engine.InterpreterConfig
+import pl.touk.esp.engine.api.{SkipExceptionHandler, EspExceptionHandler, EspExceptionInfo}
 import pl.touk.esp.engine.api.process.ProcessConfigCreator
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.marshall.ProcessMarshaller
@@ -37,8 +40,13 @@ object FlinkProcessMain {
     val creator = Thread.currentThread.getContextClassLoader.loadClass(config.getString("processConfigCreatorClass"))
       .newInstance().asInstanceOf[ProcessConfigCreator]
 
-    new FlinkProcessRegistrar(new InterpreterConfig(creator.services(config), creator.listeners(config)),
-      creator.sourceFactories(config), creator.sinkFactories(config), timeout)
+    new FlinkProcessRegistrar(
+      () => new InterpreterConfig(creator.services(config), creator.listeners(config)),
+      creator.sourceFactories(config),
+      creator.sinkFactories(config),
+      () => SkipExceptionHandler,
+      timeout
+    )
   }
 
   private def readProcessFromArgs(args: Array[String]) = {
