@@ -94,15 +94,13 @@ export default class Graph extends React.Component {
         var displayedNodes = this.graph.attributes.cells.models.filter(m => !m.attributes.source).map(n => n.attributes.nodeData)
         return (
             <div>
+                <h2>{this.props.data.metaData.id}</h2>
                 <NodeDetailsModal node={this.state.clickedNode} onClose={this.onDetailsClosed}/>
-                <label><input type="checkbox" checked={this.state.toolboxVisible} onChange={this.toggleToolbox}/>Enable toolbox</label>
                 {this.processGraphPaper && this.panAndZoom && this.state.toolboxVisible ?
                     <Toolbox processGraphPaper={this.processGraphPaper} panAndZoom={this.panAndZoom} graph={this.graph}/> : null
                 }
                 <div ref="espGraph"></div>
                 <button type="button" className="btn btn-default" onClick={this.directedLayout}>Wyśrodkuj proces</button>
-                <pre>{JSON.stringify(displayedEdges)}</pre>
-                <pre>{JSON.stringify(displayedNodes)}</pre>
             </div>
         );
     }

@@ -46,10 +46,12 @@ val flinkV = "1.0.3"
 val slickV = "3.1.1"
 val hsqldbV = "2.3.4"
 val flywayV = "4.0.3"
+val akkaHttpCcorsV = "0.1.4"
 
 libraryDependencies ++= {
   Seq(
     "de.heikoseeberger" %% "akka-http-argonaut" % akkaHttpArgonautV,
+    "ch.megard" %% "akka-http-cors" % akkaHttpCcorsV,
     "pl.touk.esp" %% "esp-management" % espEngineV changing()
       //fixme tutaj nie powinnismy nawet probowac resolvowac esp-process-sample, trzeba poprawic konfiguracje testow it
       exclude("pl.touk.esp", "esp-process-sample_2.11") exclude("com.jayway.awaitility", "awaitility-scala")

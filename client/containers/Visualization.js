@@ -6,13 +6,24 @@ import Graph from '../components/graph/Graph';
 import UserPanel from '../components/UserPanel';
 import classNames from 'classnames';
 import { Glyphicon } from 'react-bootstrap';
+import _ from 'lodash';
+import $ from 'jquery';
+import appConfig from 'appConfig'
 
 import '../stylesheets/visualization.styl';
 
 export const Visualization = React.createClass({
 
   getInitialState: function() {
-    return { userPanelOpened: true };
+    return { userPanelOpened: false, process: {} };
+  },
+
+  componentDidMount() {
+    $.get(appConfig.API_URL + '/processes/' + this.props.params.processId + '/json', (processModel) => {
+      console.log('pobralem', appConfig.API_URL, processModel)
+      this.setState({process: processModel})
+    })
+
   },
 
   toggleUserPanel: function() {
@@ -20,26 +31,25 @@ export const Visualization = React.createClass({
   },
 
   render: function() {
-
-    var graphData = {
-     "metaData" : { "id": "process"},
+    //var graphData = {
+    // "metaData" : { "id": "process"},
 //TODO
 //TODO
-    };
+    //};
 
     var userPanelOpenedClass = classNames({
       'is-opened': this.state.userPanelOpened,
       'is-closed': !this.state.userPanelOpened
     })
-
-    return (
+    return _.isEmpty(this.state.process) ? null :
+    (
         <div className="Page">
             <UserPanel className={userPanelOpenedClass}/>
             <div id="toggle-user-panel" className={userPanelOpenedClass} onClick={this.toggleUserPanel}>
               <Glyphicon glyph={this.state.userPanelOpened ? 'remove' : 'menu-hamburger'}/>
             </div>
             <div id="working-area" className={userPanelOpenedClass}>
-              <Graph data={graphData}/>
+              <Graph data={this.state.process}/>
             </div>
         </div>
     )
@@ -47,5 +57,5 @@ export const Visualization = React.createClass({
 });
 
 Visualization.title = 'Visualization'
-Visualization.path = '/visualization'
+Visualization.path = '/visualization/:processId'
 Visualization.header = 'Wizualizacja'

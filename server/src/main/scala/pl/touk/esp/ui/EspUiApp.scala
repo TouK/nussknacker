@@ -12,6 +12,7 @@ import pl.touk.esp.ui.api.{ManagementResources, ProcessesResources, WebResources
 import pl.touk.esp.ui.db.DatabaseInitializer
 import pl.touk.esp.ui.process.repository.ProcessRepository
 import slick.jdbc.JdbcBackend
+import ch.megard.akka.http.cors.CorsDirectives._
 
 object EspUiApp extends App with Directives {
 
@@ -33,9 +34,9 @@ object EspUiApp extends App with Directives {
   val manager = FlinkProcessManager(config)
 
   val route: Route =
-    WebResources.route ~
-    new ManagementResources(processRepository, manager).route ~
-    new ProcessesResources(processRepository).route
+    cors() { pathPrefix("api") { new ProcessesResources(processRepository).route } } ~
+    cors() { pathPrefix("api") { new ManagementResources(processRepository, manager).route } } ~
+    WebResources.route
 
 
   val port = args(0).toInt
