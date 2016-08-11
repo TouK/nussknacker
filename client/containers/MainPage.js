@@ -10,8 +10,7 @@ import _ from 'lodash'
 
 import '../stylesheets/mainMenu.styl'
 
-import { Process } from './Processes'
-import { Visualization } from './Visualization'
+import { Processes } from './Processes'
 
 const store = configureStore();
 
@@ -31,8 +30,7 @@ export const App = React.createClass({
                 <div className="collapse navbar-collapse">
                   <ul id="menu-items" className="nav navbar-nav navbar-right nav-pills nav-stacked">
                     <li><Link to={Home.path}>{Home.header}</Link></li>
-                    <li><Link to={Process.path}>{Process.header}</Link></li>
-                    <li><Link to={Visualization.path}>{Visualization.header}</Link></li>
+                    <li><Link to={Processes.path}>{Processes.header}</Link></li>
                     <li><Link to={TodoApp.path}>{TodoApp.header}</Link></li>
                   </ul>
                 </div>

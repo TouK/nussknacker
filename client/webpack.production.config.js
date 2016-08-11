@@ -2,11 +2,8 @@ var path = require('path');
 var webpack = require('webpack');
 
 module.exports = {
-  devtool: 'eval',
+  devtool: 'cheap-source-map',
   entry: [
-    'webpack-dev-server/client?http://localhost:3000',
-    'webpack/hot/only-dev-server',
-    'react-hot-loader/patch',
     './index'
   ],
   output: {
@@ -15,7 +12,9 @@ module.exports = {
     publicPath: '/static/'
   },
   plugins: [
-    new webpack.HotModuleReplacementPlugin()
+    //new webpack.optimize.UglifyJsPlugin(), fixme to niestety nie dziala i psuje escapowanie ciapek w svg i przez to javascrypty zajmuja 4mb zamaist 1mb...
+    new webpack.optimize.DedupePlugin(),
+    new webpack.optimize.AggressiveMergingPlugin()
   ],
   resolve: {
     alias: {

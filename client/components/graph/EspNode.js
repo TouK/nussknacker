@@ -156,26 +156,6 @@ export default {
           }
         };
 
-        // if (node.type == 'Source') {
-        //     attrs['rect.blockHeader'].fill = '#A6D969';
-        // } else if (node.type == 'Sink') {
-        //     attrs['rect.blockHeader'].fill = '#D94E1F';
-        // } else if (node.type == 'Filter') {
-        //     attrs['rect.blockHeader'].fill = '#1395BA';
-        // } else if (node.type == 'Switch') {
-        //     attrs['rect.blockHeader'].fill = '#EBC844';
-        // } else if (node.type == 'VariableBuilder') {
-        //     attrs['rect.blockHeader'].fill = '#BEB9B5';
-        // } else if (node.type == 'Enricher') {
-        //     attrs['rect.blockHeader'].fill = '#EBC844';
-        // } else if (node.type == 'Processor') {
-        //     attrs['rect.blockHeader'].fill = '#FCF4D9';
-        // }
-        // else {
-        //     console.warn("unknown node type found: " + node.type)
-        //     attrs.rect.fill = 'black';
-        // }
-
         var inPorts = [];
         var outPorts = [];
         if (node.type == 'Sink') {
@@ -202,7 +182,7 @@ export default {
         return new joint.dia.Link({
             source: {id: edge.from, port: 'Out'},
             target: {id: edge.to, port: 'In'},
-            labels: [{position: 0.5, attrs: {text: {text: _.get(edge, 'label.original') || '', 'font-weight': 'bold'}}}],
+            labels: [{position: 0.5, attrs: {text: {text: _.get(edge, 'label.expression') || '', 'font-weight': 'bold'}}}],
             attrs: {
 
                 '.tool-options': {display: 'none'},

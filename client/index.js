@@ -3,7 +3,7 @@ import { render } from 'react-dom';
 import { browserHistory, Router, Route, Link } from 'react-router'
 import { AppContainer } from 'react-hot-loader';
 import { App, Home, TodoApp } from './containers/MainPage';
-import { Process } from './containers/Processes';
+import { Processes } from './containers/Processes';
 import { Visualization } from './containers/Visualization';
 
 import 'todomvc-app-css/index.css'; /*fixme wyrzucic przy usuwanio todoapp*/
@@ -15,7 +15,7 @@ render((
     <Router history={browserHistory} >
         <Route path={App.path} component={App}>
             <Route path={Home.path} component={Home} />
-            <Route path={Process.path} component={Process} />
+            <Route path={Processes.path} component={Processes} />
             <Route path={Visualization.path} component={Visualization} />
             <Route path={TodoApp.path} component={TodoApp} />
         </Route>

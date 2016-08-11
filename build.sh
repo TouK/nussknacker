@@ -2,7 +2,7 @@
 
 cd client
 npm install
-npm build
+npm run build
 cd -
 
 rm -rf server/src/main/resources/web
@@ -11,4 +11,7 @@ cp client/index.html server/src/main/resources/web
 cp -r client/dist server/src/main/resources/web/static
 
 cd server
-sbt clean assembly
+./sbtwrapper 'set test in assembly := {}' clean assembly
+
+#run
+#java -jar ./server/target/scala-2.11/esp-ui-assembly-0.1-SNAPSHOT.jar 8081
