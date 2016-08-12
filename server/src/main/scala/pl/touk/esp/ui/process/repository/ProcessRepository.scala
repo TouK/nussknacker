@@ -19,9 +19,15 @@ class ProcessRepository(db: JdbcBackend.Database,
   private val tagsMigration = new CreateTagsMigration {
     override protected val driver: JdbcDriver = ProcessRepository.this.driver
   }
+
   import processesMigration._
   import tagsMigration._
   import driver.api._
+
+  def saveProcess(id: String, json: String)(implicit ec: ExecutionContext): Future[Unit] = {
+    val insertOrUpdateAction = processesTable.insertOrUpdate(ProcessEntityData(id, id, None, Some(json)))
+    db.run(insertOrUpdateAction).map(_ => ())
+  }
 
   def fetchProcessesDetails()
                            (implicit ec: ExecutionContext): Future[List[ProcessDetails]] = {
@@ -31,6 +37,17 @@ class ProcessRepository(db: JdbcBackend.Database,
     } yield processesWithTags
     db.run(action).map(_.toList)
   }
+
+  private def fetchTagsThanPrepareDetailsAction(process: ProcessEntityData)
+                                               (implicit ec: ExecutionContext): DBIOAction[ProcessDetails, NoStream, Read] = {
+    fetchProcessTagsByIdAction(process.id).map { tagsForProcess =>
+      ProcessDetails(process.id, process.name, process.description, tagsForProcess)
+    }
+  }
+
+  private def fetchProcessTagsByIdAction(processId: String)
+                                        (implicit ec: ExecutionContext): DBIOAction[List[String], NoStream, Read] =
+    tagsTable.filter(_.processId === processId).map(_.name).result.map(_.toList)
 
   def fetchProcessDetailsById(id: String)
                              (implicit ec: ExecutionContext): Future[Option[ProcessDetails]] = {
@@ -52,17 +69,6 @@ class ProcessRepository(db: JdbcBackend.Database,
     val action = processesTable.filter(_.id === id).map(_.json).result.headOption.map(_.flatten)
     db.run(action)
   }
-
-  private def fetchTagsThanPrepareDetailsAction(process: ProcessEntityData)
-                                               (implicit ec: ExecutionContext): DBIOAction[ProcessDetails, NoStream, Read] = {
-    fetchProcessTagsByIdAction(process.id).map { tagsForProcess =>
-      ProcessDetails(process.id, process.name, process.description, tagsForProcess)
-    }
-  }
-
-  private def fetchProcessTagsByIdAction(processId: String)
-                                        (implicit ec: ExecutionContext): DBIOAction[List[String], NoStream, Read] =
-    tagsTable.filter(_.processId === processId).map(_.name).result.map(_.toList)
 
 
 }

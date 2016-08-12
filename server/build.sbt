@@ -50,11 +50,12 @@ val flywayV = "4.0.3"
 libraryDependencies ++= {
   Seq(
     "de.heikoseeberger" %% "akka-http-argonaut" % akkaHttpArgonautV,
-    //fixme tutaj nie powinnismy nawet probowac resolvowac esp-process-sample, trzeba poprawic konfiguracje testow it
-    "pl.touk.esp" %% "esp-management" % espEngineV changing() exclude("pl.touk.esp", "esp-process-sample_2.11"),
+    "pl.touk.esp" %% "esp-management" % espEngineV changing()
+      //fixme tutaj nie powinnismy nawet probowac resolvowac esp-process-sample, trzeba poprawic konfiguracje testow it
+      exclude("pl.touk.esp", "esp-process-sample_2.11") exclude("com.jayway.awaitility", "awaitility-scala")
+      //a tutaj mamy dwie wersje jsr305 we flinku i assembly sie pluje...
+      exclude("com.google.code.findbugs", "jsr305"),
     "pl.touk.esp" %% "esp-interpreter" % espEngineV changing(),
-
-    "org.apache.flink" %% "flink-streaming-scala" % flinkV % "runtime", // na potrzeby optymalizacji procesów
 
     //to musimy podac explicite, zeby wymusic odpowiednia wersje dla flinka
     "com.typesafe.akka" %% "akka-remote" % akkaV,
