@@ -43,7 +43,7 @@ val commonSettings =
   )
 
 val akkaV = "2.4.8"
-val flinkV = "1.0.3"
+val flinkV = "1.1.1"
 val kafkaV = "0.9.0.1"
 val springV = "4.3.1.RELEASE"
 val scalaTestV = "3.0.0-M15"
