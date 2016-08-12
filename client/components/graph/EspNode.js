@@ -115,29 +115,7 @@ export default {
         var height = 100;
         var headerHeight = 30;
 
-        var customAttrs = {
-          'Source': {
-            fill: '#A6D969'
-          },
-          'Sink': {
-            fill: '#D94E1F'
-          },
-          'Filter': {
-            fill: '#1395BA'
-          },
-          'Switch': {
-            fill: '#EBC844'
-          },
-          'VariableBuilder': {
-            fill: '#BEB9B5'
-          },
-          'Enricher': {
-            fill: '#EBC844'
-          },
-          'Processor': {
-            fill: '#FCF4D9'
-          }
-        };
+        var customAttrs = require('json!../../assets/json/nodeAttributes.json');
 
         var attrs = {
           '.body': {
@@ -149,7 +127,7 @@ export default {
             x: 0, y: 0,
             stroke: '#616161',
             'stroke-width': 1,
-            fill: customAttrs[headerLabel].fill
+            fill: customAttrs[headerLabel].styles.fill
           },
           '.headerLabel': {
             text: headerLabel,

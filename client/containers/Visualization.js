@@ -21,15 +21,11 @@ export const Visualization = React.createClass({
 
   render: function() {
 
-    //var graphData = {
-//TODO
-//TODO
-    //}
-    //
     var graphData = {
+     "metaData" : { "id": "process"},
 //TODO
 //TODO
-    }
+    };
 
     var userPanelOpenedClass = classNames({
       'is-opened': this.state.userPanelOpened,

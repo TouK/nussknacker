@@ -1,0 +1,51 @@
+{
+  "Source": {
+    "name": "Source",
+    "styles": {
+      "fill": "#A6D969",
+      "color": "white"
+    }
+  },
+  "Sink": {
+    "name": "Sink",
+    "styles": {
+      "fill": "#D94E1F",
+      "color": "white"
+    }
+  },
+  "Filter": {
+    "name": "Filter",
+    "styles": {
+      "fill": "#1395BA",
+      "color": "black"
+    }
+  },
+  "Switch": {
+    "name": "Switch",
+    "styles": {
+      "fill": "#b58ae6",
+      "color": "white"
+    }
+  },
+  "VariableBuilder": {
+    "name": "Variable Builder",
+    "styles": {
+      "fill": "#BEB9B5",
+      "color": "white"
+    }
+  },
+  "Enricher": {
+    "name": "Enricher",
+    "styles": {
+      "fill": "#EBC844",
+      "color": "white"
+    }
+  },
+  "Processor": {
+    "name": "Processor",
+    "styles": {
+      "fill": "#FCF4D9",
+      "color": "white"
+    }
+  }
+}
