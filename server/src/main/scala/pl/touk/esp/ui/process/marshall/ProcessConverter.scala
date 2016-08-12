@@ -54,7 +54,7 @@ object ProcessConverter {
       case Nil =>
         (List(),List())
         //FIXME??
-      case canonicalnode.Aggregate(_, _, _, _, _)::tail => (List(), List())
+      case canonicalnode.Aggregate(_, _, _, _, _, _, _)::tail => (List(), List())
     }
 
   private def createNextEdge(id: String, tail: List[CanonicalNode], label: Option[Expression]): List[displayablenode.Edge] = {
