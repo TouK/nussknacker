@@ -6,6 +6,8 @@ import 'jointjs/dist/joint.css'
 import _ from 'lodash'
 import svgPanZoom from 'svg-pan-zoom'
 import $ from 'jquery'
+import classNames from 'classnames';
+import NodeDetailsModal from './nodeDetailsModal.js';
 
 import '../../stylesheets/graph.styl'
 
@@ -217,74 +219,5 @@ class Toolbox extends React.Component {
             </div>
         );
 
-    }
-}
-
-
-import Modal from 'react-modal'
-import Reactable from 'reactable'
-
-class NodeDetailsModal extends React.Component {
-    closeModal = () => {
-        this.props.onClose()
-    }
-
-    contentForNode = () => {
-        if (!_.isEmpty(this.props.node)) {
-            switch (this.props.node.type) {
-                case 'Filter':
-                    return (
-                        <div>
-                            <Reactable.Table className="table" data={[this.props.node.expression]}/>
-                            <NodeDetails node={this.props.node}/>
-                        </div>
-                    )
-                case 'Enricher':
-                    return (
-                        <div>
-                            <Reactable.Table className="table" data={_.map(this.props.node.service.parameters, (f) => {
-                                return {'name': f.name, expr: f.expression.original}}  )
-                            }/>
-                            <NodeDetails node={this.props.node}/>
-                        </div>
-                    )
-                case 'VariableBuilder':
-                    return (
-                        <div>
-                            <Reactable.Table className="table" data={_.map(this.props.node.fields, (f) => { return {'name': f.name, expr: f.expression.original}}  )}/>
-                            <NodeDetails node={this.props.node}/>
-                        </div>
-                    )
-                default:
-                    return (
-                        <div>
-                            <NodeDetails node={this.props.node}/>
-                        </div>
-                    )
-            }
-        }
-    }
-
-    render () {
-        var isOpen = !(_.isEmpty(this.props.node))
-        return (
-            <div className="objectModal">
-                <Modal isOpen={isOpen}>
-                    <h1>{this.props.node.type}: {this.props.node.id}</h1>
-                    {this.contentForNode()}
-                    <button onClick={this.closeModal}>Close</button>
-                </Modal>
-            </div>
-        );
-    }
-}
-
-class NodeDetails extends React.Component {
-    render() {
-        return (
-            <div>
-                <pre>{JSON.stringify(this.props.node, null, 2)}</pre>
-            </div>
-        );
     }
 }

@@ -1,2 +1,76 @@
+@import "./_variables.styl"
+
 .ReactModal__Overlay
   z-index: 100
+
+#modalHeader
+  padding: 20px
+  span
+    font-size: 30px
+
+
+#modalContent
+  background-color: white
+  color: #333
+  padding: 50px 20px
+  min-height: 80%
+
+#modalFooter
+  position: relative
+  bottom: 0
+  padding: 10px 30px
+  width: 100%
+  height: 70px
+  div
+    float: right
+
+  .modalButton
+    min-width: 100px
+    margin-left: 20px
+    padding: 5px 0
+    background-color: buttonBkgColor
+    color: buttonTextColor
+    transition: background-color 0.3s
+
+    &:disabled
+      background-color: grey
+      cursor: not-allowed
+    &:not(:disabled):hover
+      background-color: buttonBkgHover
+
+table
+  width: 80%
+  margin: 0 auto
+  td
+    padding: 10px
+    padding-top: 40px
+  tr
+    padding: 10px
+    margin-top: 50px
+    border-bottom: 1px solid #9a9a9a
+  .node-label
+    width: 130px
+    vertical-align: top
+    color: #868686
+  td .node-input
+    border: none
+    background-color: #f3f3f3
+    padding: 0 10px
+    height: 35px
+
+  .inner-table
+    width: 80%
+    padding: 5px
+    .inner-label
+      width: 150px
+      float: left
+      text-align: right
+      margin-right: 10px
+      color: grey
+    .inner-value
+      min-width: 60%
+    pre.inner-value
+      border-radius: 0
+      font-family: inherit;
+      span
+        color: grey
