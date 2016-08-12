@@ -17,7 +17,7 @@ trait RequestResponseLogging {
                         (implicit executionContext: ExecutionContext): Future[Response] = {
     import collection.convert.wrapAsScala._
     val request = req.toRequest
-    logger.debug(
+    debug(
       s"""${request.getMethod} ${req.url} $id request:
          | HEADERS:
          |${request.getHeaders.entrySet().map(e => "  " + e.getKey + ": " + e.getValue.mkString(" ")).mkString("\n")}
@@ -26,7 +26,7 @@ trait RequestResponseLogging {
     val result = sendRequestAction
     result.onComplete {
       case Success(response) =>
-        logger.debug(
+        debug(
           s"""${request.getMethod} ${req.url} $id response:
              | STATUS: ${response.getStatusCode} ${response.getStatusText}
              | HEADERS:
@@ -38,4 +38,6 @@ trait RequestResponseLogging {
     }
     result
   }
+
+  def debug(obj: =>String) = logger.debug(obj)
 }

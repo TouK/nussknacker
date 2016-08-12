@@ -6,7 +6,7 @@ import java.util.concurrent.TimeUnit
 import akka.actor.ActorSystem
 import com.typesafe.config.{Config, ConfigValueType}
 import org.apache.flink.api.common.JobID
-import org.apache.flink.client.program.{Client, PackagedProgram}
+import org.apache.flink.client.program.{ClusterClient, StandaloneClusterClient, PackagedProgram}
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.runtime.akka.AkkaUtils
 import org.apache.flink.runtime.client.JobClient
@@ -36,7 +36,10 @@ object FlinkProcessManager {
     }
     val actorSystem = JobClient.startJobClientActorSystem(clientConfig)
 
-    new FlinkProcessManager(flinkConf, new Client(clientConfig), actorSystem.dispatcher,
+    val client: StandaloneClusterClient = new StandaloneClusterClient(clientConfig)
+    client.setDetached(true)
+
+    new FlinkProcessManager(flinkConf, client, actorSystem.dispatcher,
       prepareGateway(clientConfig, actorSystem))
   }
 
@@ -47,7 +50,7 @@ object FlinkProcessManager {
   }
 }
 
-class FlinkProcessManager(flinkConf: Config, client: Client,
+class FlinkProcessManager(flinkConf: Config, client: ClusterClient,
                           executionContext: ExecutionContext,
                           gateway: ActorGateway) extends ProcessManager {
 
@@ -67,7 +70,7 @@ class FlinkProcessManager(flinkConf: Config, client: Client,
        maybeOldJob.foreach { job =>
          client.cancel(JobID.fromHexString(job.id))
        }
-    }).map(_ => client.runDetached(program, flinkConf.getInt("parallelism")))
+    }).map(_ => client.run(program, flinkConf.getInt("parallelism")))
   }
 
 
