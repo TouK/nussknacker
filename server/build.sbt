@@ -50,7 +50,10 @@ val flywayV = "4.0.3"
 libraryDependencies ++= {
   Seq(
     "de.heikoseeberger" %% "akka-http-argonaut" % akkaHttpArgonautV,
-    "pl.touk.esp" %% "esp-management" % espEngineV,
+    //fixme tutaj nie powinnismy nawet probowac resolvowac esp-process-sample, trzeba poprawic konfiguracje testow it
+    "pl.touk.esp" %% "esp-management" % espEngineV changing() exclude("pl.touk.esp", "esp-process-sample_2.11"),
+    "pl.touk.esp" %% "esp-interpreter" % espEngineV changing(),
+
     "org.apache.flink" %% "flink-streaming-scala" % flinkV % "runtime", // na potrzeby optymalizacji procesów
 
     //to musimy podac explicite, zeby wymusic odpowiednia wersje dla flinka
