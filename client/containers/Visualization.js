@@ -20,7 +20,6 @@ export const Visualization = React.createClass({
 
   componentDidMount() {
     $.get(appConfig.API_URL + '/processes/' + this.props.params.processId + '/json', (processModel) => {
-      console.log('pobralem', appConfig.API_URL, processModel)
       this.setState({process: processModel})
     })
 
@@ -31,12 +30,6 @@ export const Visualization = React.createClass({
   },
 
   render: function() {
-    //var graphData = {
-    // "metaData" : { "id": "process"},
-//TODO
-//TODO
-    //};
-
     var userPanelOpenedClass = classNames({
       'is-opened': this.state.userPanelOpened,
       'is-closed': !this.state.userPanelOpened
