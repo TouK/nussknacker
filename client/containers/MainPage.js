@@ -2,8 +2,6 @@ import React from 'react'
 import { render } from 'react-dom'
 import ReactDOM from 'react-dom';
 import { Link } from 'react-router'
-import configureStore from '../store/configureStore';
-import TodoAppRoot from '../containers/TodoAppRoot';
 import joint from 'jointjs'
 import 'jointjs/dist/joint.css'
 import _ from 'lodash'
@@ -11,8 +9,6 @@ import _ from 'lodash'
 import '../stylesheets/mainMenu.styl'
 
 import { Processes } from './Processes'
-
-const store = configureStore();
 
 export const App = React.createClass({
     render: function() {
@@ -31,7 +27,6 @@ export const App = React.createClass({
                   <ul id="menu-items" className="nav navbar-nav navbar-right nav-pills nav-stacked">
                     <li><Link to={Home.path}>{Home.header}</Link></li>
                     <li><Link to={Processes.path}>{Processes.header}</Link></li>
-                    <li><Link to={TodoApp.path}>{TodoApp.header}</Link></li>
                   </ul>
                 </div>
               </div>
@@ -58,15 +53,3 @@ export const Home = () => (
 Home.title = 'Home'
 Home.path = '/home'
 Home.header = 'Home'
-
-
-export const TodoApp = () => (
-
-    <div className="Page">
-        <TodoAppRoot store={ store }/>
-    </div>
-)
-
-TodoApp.title = 'TodoApp'
-TodoApp.path = '/todoApp'
-TodoApp.header = 'TodoApp'
