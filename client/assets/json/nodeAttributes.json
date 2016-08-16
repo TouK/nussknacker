@@ -47,5 +47,12 @@
       "fill": "#FCF4D9",
       "color": "white"
     }
+  },
+  "Aggregate": {
+    "name": "Aggregate",
+    "styles": {
+      "fill": "#eb44c2",
+      "color": "white"
+    }
   }
 }

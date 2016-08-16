@@ -26,6 +26,12 @@ object displayablenode {
 
   case class Switch(id: String, expression: Expression, exprVal: String) extends DisplayableNode
 
+  case class Aggregate(id: String, aggregatedVar: String,
+                       keyExpression: Expression, durationInMillis: Long,
+                       slideInMillis: Long,
+                       triggerExpression: Option[Expression],
+                       foldingFunRef: Option[String]) extends DisplayableNode
+
   case class Edge(from: String, to: String, label: Option[Expression])
 
 }
