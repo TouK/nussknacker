@@ -16,21 +16,21 @@ export default class NodeDetailsModal extends Component {
         return (
           <tr>
             <td className="node-label">{fieldLabel}</td>
-            <td className="node-value"><input type="text" value={fieldValue} className="node-input" /></td>
+            <td className="node-value"><input type="text" value={fieldValue} className="node-input" readOnly/></td>
           </tr>
         )
       case 'textarea':
         return (
           <tr>
             <td className="node-label">{fieldLabel}</td>
-            <td><textarea rows="5" cols="50" value={fieldValue} className="node-input" /></td>
+            <td><textarea rows="5" cols="50" value={fieldValue} className="node-input" readOnly/></td>
           </tr>
         )
       case 'child-input':
         return (
           <div className={fieldType}>
             <div className="node-label">{fieldLabel}</div>
-            <input type="text" value={fieldValue} className="node-input" />
+            <input type="text" value={fieldValue} className="node-input" readOnly/>
           </div>
         )
       case 'child-table':
@@ -136,7 +136,17 @@ export default class NodeDetailsModal extends Component {
                     {this.createField("input", "exprVal:", this.props.node.exprVal)}
                   </tbody>
                 )
-            default:
+            case 'Aggregate':
+              return (
+                <tbody>
+                  {this.createField("textarea", "Key Expression:", this.props.node.keyExpression.expression)}
+                  {this.createField("textarea", "Trigger Expression:", this.props.node.triggerExpression.expression)}
+                  {this.createField("input", "Folding function", this.props.node.foldingFunRef)}
+                  {this.createField("input", "Duration (ms):", this.props.node.durationInMillis)}
+                  {this.createField("input", "Slide (ms):", this.props.node.slideInMillis)}
+                </tbody>
+              )
+          default:
                 return (
                     <div>
                         Node type not known.
@@ -193,7 +203,6 @@ export default class NodeDetailsModal extends Component {
                     </div>
                     <div id="modalContent">
                         {this.contentForNode()}
-                        <NodeDetails node={this.props.node}/>
                     </div>
                     <div id="modalFooter">
                       <div>

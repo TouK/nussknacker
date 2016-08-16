@@ -51,10 +51,11 @@ object ProcessConverter {
           (nextNodeNodes, nextNodeNodes.headOption.map(n => displayablenode.Edge(id, n.id, Some(c.expression))).toList ::: nextNodeEdges)
         })
         (displayablenode.Switch(id, expr, exprVal) :: defaultNextNodes ::: nextNodes ::: tailNodes, createNextEdge(id, tail, None) ::: defaultNextEdgesConnectedToSwitch ::: nextEdges ::: tailEdges)
+      case canonicalnode.Aggregate(id, aggregatedVar, keyExpr, duration, slide, triggerExpr, foldingFun)::tail =>
+        val (tailNodes, tailEdges) = toGraphInner(tail)
+        (displayablenode.Aggregate(id, aggregatedVar, keyExpr, duration, slide, triggerExpr, foldingFun) :: tailNodes, createNextEdge(id, tail, None) ::: tailEdges)
       case Nil =>
         (List(),List())
-        //FIXME??
-      case canonicalnode.Aggregate(_, _, _, _, _, _, _)::tail => (List(), List())
     }
 
   private def createNextEdge(id: String, tail: List[CanonicalNode], label: Option[Expression]): List[displayablenode.Edge] = {
@@ -100,6 +101,8 @@ object ProcessConverter {
             unflattenEdgeEnd(id, e)
           }.toList.flatten
           canonicalnode.Switch(id, expr, exprVal, nexts, default) :: Nil
+        case displayablenode.Aggregate(id, aggregatedVar, keyExpr, duration, slide, triggerExpr, foldingFun) =>
+          canonicalnode.Aggregate(id, aggregatedVar, keyExpr, duration, slide, triggerExpr, foldingFun) :: Nil
         case displayablenode.Sink(id, ref, endResult) =>
           canonicalnode.Sink(id, ref, endResult) :: Nil
       }

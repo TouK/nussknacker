@@ -100,7 +100,7 @@ export default class Graph extends React.Component {
                     <Toolbox processGraphPaper={this.processGraphPaper} panAndZoom={this.panAndZoom} graph={this.graph}/> : null
                 }
                 <div ref="espGraph"></div>
-                <button type="button" className="btn btn-default" onClick={this.directedLayout}>Wyśrodkuj proces</button>
+                <button type="button" className="btn btn-default" onClick={this.directedLayout}>Directed layout</button>
             </div>
         );
     }
