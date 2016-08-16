@@ -10,6 +10,52 @@ export default class NodeDetailsModal extends Component {
         this.props.onClose()
     }
 
+    createField = (fieldType, fieldLabel, fieldValue) => {
+      switch (fieldType) {
+      case 'input':
+        return (
+          <tr>
+            <td className="node-label">{fieldLabel}</td>
+            <td className="node-value"><input type="text" value={fieldValue} className="node-input" /></td>
+          </tr>
+        )
+      case 'textarea':
+        return (
+          <tr>
+            <td className="node-label">{fieldLabel}</td>
+            <td><textarea rows="5" cols="50" value={fieldValue} className="node-input" /></td>
+          </tr>
+        )
+      case 'child-input':
+        return (
+          <div className={fieldType}>
+            <div className="node-label">{fieldLabel}</div>
+            <input type="text" value={fieldValue} className="node-input" />
+          </div>
+        )
+      case 'child-table':
+        return (
+          <div className={fieldType}>
+            <div className="node-label">{fieldLabel}</div>
+            {fieldValue.map(function(params, index){
+              return (
+                <pre key={index}>
+                  <span>Name:</span> {params.name} <br />
+                  <span>Expression:</span> {params.expression.expression}
+                </pre>
+              )
+            })}
+          </div>
+        )
+      default:
+          return (
+              <div>
+                  Field type not known...
+              </div>
+          )
+      }
+    }
+
     customNode = () => {
         switch (this.props.node.type) {
             case 'Source':
@@ -18,26 +64,16 @@ export default class NodeDetailsModal extends Component {
                     <tr>
                       <td className="node-label">Ref:</td>
                       <td>
-                        <div className="inner-table">
-                          <div className="inner-label"><span>Typ:</span></div>
-                          <div className="inner-value">
-                            <input type="text" value={this.props.node.ref.typ} className="node-input" />
-                          </div>
-                          <br />
-                          <div className="inner-label"><span>Parameters:</span></div>
-
-                          {this.props.node.ref.parameters.map(function(params, index){
-                            return (
-                              <pre className="inner-value" key={index}>
-                                <span>Name: </span>
-                                <input type="text" value={params.name} className="node-input" />
-                                <br />
-                                <span>Value: </span>
-                                <input type="text" value={params.value} className="node-input" />
-                              </pre>
-                            )
-                          })}
-                        </div>
+                        {this.createField("child-input", "Type:", this.props.node.ref.typ)}
+                        <div className="inner-label"><span>Parameters:</span></div>
+                        {this.props.node.ref.parameters.map ((params, index) => {
+                          return (
+                            <pre className="inner-value" key={index}>
+                              {this.createField("child-input", "Name:", params.name)}
+                              {this.createField("child-input", "Value:", params.value)}
+                            </pre>
+                          )
+                        })}
                       </td>
                     </tr>
                   </tbody>
@@ -48,19 +84,18 @@ export default class NodeDetailsModal extends Component {
                     <tr>
                       <td className="node-label">Ref:</td>
                       <td>
-                        <pre>
-                          <span>Typ:</span>{this.props.node.ref.typ}<br />
+                        <div>
+                          {this.createField("child-input", "Type:", this.props.node.ref.typ)}
                           <span>Parameters:</span>
                           {this.props.node.ref.parameters.map(function(params, index){
                             return (
-                              <pre key={index}>
-                                <span>Name: </span> {params.name}
-                                <br />
-                                <span>Value: </span>{params["value"]}
-                              </pre>
+                              <div key={index}>
+                                {this.createField("child-input", "Name:", params.name)}
+                                {this.createField("child-input", "Value:", params.value)}
+                              </div>
                             )
                           })}
-                        </pre>
+                        </div>
                       </td>
                     </tr>
                   </tbody>
@@ -68,10 +103,7 @@ export default class NodeDetailsModal extends Component {
             case 'Filter':
                 return (
                   <tbody>
-                    <tr>
-                      <td className="node-label">Expression:</td>
-                      <td><textarea rows="5" cols="50" value={this.props.node.expression.expression} className="node-input" /></td>
-                    </tr>
+                    {this.createField("textarea", "Expression:", this.props.node.expression.expression)}
                   </tbody>
                 )
             case 'Enricher':
@@ -80,61 +112,28 @@ export default class NodeDetailsModal extends Component {
                     <tr>
                       <td className="node-label">Service:</td>
                       <td>
-                        <div>
-                          <span>Service Id:</span>{this.props.node.service.id}<br />
-                          <span>Parameters:</span>
-                          {this.props.node.service.parameters.map(function(params, index){
-                            return (
-                              <pre key={index}>
-                                <span>Name:</span> {params.name}
-                                <br />
-                                <span>Expression:</span> {params.expression.expression}
-                              </pre>
-                            )
-                          })}
-                        </div>
+                        {this.createField("child-input", "Service Id:", this.props.node.service.id)}
+                        {this.createField("child-table", "Parameters:", this.props.node.service.parameters)}
                       </td>
                     </tr>
-                    <tr>
-                      <td className="node-label">Output:</td>
-                      <td><input type="text" value={this.props.node.output} className="node-input" /></td>
-                    </tr>
+                    {this.createField("input", "Output:", this.props.node.output)}
                   </tbody>
                 )
             case 'VariableBuilder':
                 return (
                   <tbody>
-                    <tr>
-                      <td className="node-label">Variable Name:</td>
-                      <td><input type="text" value={this.props.node.varName} className="node-input" /></td>
-                    </tr>
+                    {this.createField("input", "Variable Name:", this.props.node.varName)}
                     <tr>
                       <td className="node-label">Fields:</td>
-                      <td>
-                        {this.props.node.fields.map(function(fields, index){
-                          return (
-                            <pre key={index}>
-                              <span>Name:</span> {fields.name} <br />
-                              <span>Expression:</span> {fields.expression.expression}
-                            </pre>
-                          )
-                        })}
-                      </td>
+                      <td>{this.createField("child-table", "", this.props.node.fields)}</td>
                     </tr>
-
                   </tbody>
                 )
             case 'Switch':
                 return (
                   <tbody>
-                    <tr>
-                      <td className="node-label">Expression:</td>
-                      <td><input type="text" value={this.props.node.expression.expression} className="node-input" /></td>
-                    </tr>
-                    <tr>
-                      <td className="node-label">exprVal:</td>
-                      <td><input type="text" value={this.props.node.exprVal} className="node-input" /></td>
-                    </tr>
+                    {this.createField("input", "Expression:", this.props.node.expression.expression)}
+                    {this.createField("input", "exprVal:", this.props.node.exprVal)}
                   </tbody>
                 )
             default:
@@ -152,14 +151,8 @@ export default class NodeDetailsModal extends Component {
           return (
             <table>
                 <tbody>
-                    <tr>
-                        <td className="node-label">Type:</td>
-                        <td><input type="text" value={this.props.node.type} className="node-input" /></td>
-                    </tr>
-                    <tr>
-                        <td className="node-label">Id:</td>
-                        <td><input type="text" value={this.props.node.id} className="node-input" /></td>
-                    </tr>
+                  {this.createField("input", "Type:", this.props.node.type)}
+                  {this.createField("input",  "Id:", this.props.node.id)}
                 </tbody>
                 {this.customNode()}
             </table>
@@ -200,6 +193,7 @@ export default class NodeDetailsModal extends Component {
                     </div>
                     <div id="modalContent">
                         {this.contentForNode()}
+                        <NodeDetails node={this.props.node}/>
                     </div>
                     <div id="modalFooter">
                       <div>
