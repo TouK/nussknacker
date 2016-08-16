@@ -20,6 +20,7 @@ import org.apache.flink.streaming.api.windowing.triggers.Trigger.TriggerContext
 import org.apache.flink.streaming.api.windowing.triggers.{Trigger, TriggerResult}
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow
 import org.apache.flink.util.Collector
+import org.slf4j.LoggerFactory
 import pl.touk.esp.engine.Interpreter.ContextImpl
 import pl.touk.esp.engine.api._
 import pl.touk.esp.engine.api.process._
@@ -31,6 +32,7 @@ import pl.touk.esp.engine.split.ProcessSplitter
 import pl.touk.esp.engine.splittedgraph.part._
 import pl.touk.esp.engine.splittedgraph.splittednode.{NextNode, PartRef, SplittedNode}
 import pl.touk.esp.engine.splittedgraph.{SplittedProcess, splittednode}
+import pl.touk.esp.engine.util.metrics.InstantRateMeter
 import pl.touk.esp.engine.{Interpreter, InterpreterConfig}
 
 import scala.collection.JavaConverters._
@@ -110,11 +112,15 @@ class FlinkProcessRegistrar(interpreterConfig: () => InterpreterConfig,
           }
         case part: SinkPart =>
           start.asInstanceOf[DataStream[InterpretationResult]]
-            .flatMap(new SinkInterpretationFunction(compiler, part.sink, interpreterConfig, espExceptionHandlerProvider, processTimeout))
+            .flatMap(new SinkInterpretationFunction(
+              process.metaData,
+              compiler, part.sink, interpreterConfig, espExceptionHandlerProvider, processTimeout))
+            .name(s"${part.id}-function")
             .map { (interpretationResult: InterpretationResult) =>
               InputWithExectutionContext(interpretationResult.output, SynchronousExecutionContext.ctx)
             }
             .addSink(createSink(part))
+              .name(s"${part.id}-sink")
       }
 
     def registerParts(start: SplitStream[InterpretationResult],
@@ -149,17 +155,17 @@ object FlinkProcessRegistrar {
 
   private final val DefaultSinkId = "$"
 
-  private def validateOrFail[T](validated: ValidatedNel[ProcessCompilationError, T]): T = validated match {
-    case Valid(r) => r
-    case Invalid(err) => throw new scala.IllegalArgumentException(err.unwrap.mkString("Compilation errors: ", ", ", ""))
-  }
-
   def apply(creator: ProcessConfigCreator, config: Config) = {
     val timeout = config.getDuration("timeout", TimeUnit.SECONDS).seconds
 
     new FlinkProcessRegistrar(() => new InterpreterConfig(creator.services(config), creator.listeners(config)),
       creator.sourceFactories(config), creator.sinkFactories(config),
       creator.foldingFunctions(config), () => creator.exceptionHandler(config), timeout)
+  }
+
+  private def validateOrFail[T](validated: ValidatedNel[ProcessCompilationError, T]): T = validated match {
+    case Valid(r) => r
+    case Invalid(err) => throw new scala.IllegalArgumentException(err.unwrap.mkString("Compilation errors: ", ", ", ""))
   }
 
   class InitialInterpretationFunction(compiler: => ProcessCompiler,
@@ -171,10 +177,10 @@ object FlinkProcessRegistrar {
                                       processTimeout: Duration) extends RichFlatMapFunction[Any, InterpretationResult] {
 
     lazy val config = configProvider()
+    lazy implicit val ec = SynchronousExecutionContext.ctx
     private lazy val interpreter = new Interpreter(config)
     private lazy val compiledNode = validateOrFail(compiler.compile(node))
     private lazy val espExceptionHandler = espExceptionHandlerProvider()
-    lazy implicit val ec = SynchronousExecutionContext.ctx
 
     override def open(parameters: Configuration): Unit = {
       super.open(parameters)
@@ -198,22 +204,29 @@ object FlinkProcessRegistrar {
 
   }
 
-  class SinkInterpretationFunction(compiler: => ProcessCompiler,
+  class SinkInterpretationFunction(metaData: MetaData,
+                                   compiler: => ProcessCompiler,
                                    sink: splittednode.Sink,
                                    configProvider: () => InterpreterConfig,
                                    espExceptionHandlerProvider: () => EspExceptionHandler,
                                    processTimeout: Duration) extends RichFlatMapFunction[InterpretationResult, InterpretationResult] {
 
     lazy val config = configProvider()
+    lazy val instantRateMeter = new InstantRateMeter
+    lazy implicit val ec = SynchronousExecutionContext.ctx
+    lazy val logger = LoggerFactory.getLogger(classOf[FlinkProcessRegistrar])
     private lazy val interpreter = new Interpreter(config)
     private lazy val compiledNode = validateOrFail(compiler.compile(sink))
     private lazy val espExceptionHandler = espExceptionHandlerProvider()
-    lazy implicit val ec = SynchronousExecutionContext.ctx
 
     override def open(parameters: Configuration): Unit = {
       super.open(parameters)
       config.open
       espExceptionHandler.open()
+      getRuntimeContext.getMetricGroup
+        .addGroup(sink.id)
+        .gauge[Double, InstantRateMeter]("instantRate", instantRateMeter)
+      logger.info("Registered gauge for instantRate")
     }
 
     override def flatMap(input: InterpretationResult, collector: Collector[InterpretationResult]): Unit = {
@@ -222,6 +235,7 @@ object FlinkProcessRegistrar {
         Await.result(result, processTimeout)
       }(input.finalContext)
       result.foreach(collector.collect)
+      instantRateMeter.mark()
     }
 
     override def close(): Unit = {
@@ -279,10 +293,6 @@ object FlinkProcessRegistrar {
       Await.result(resultFuture, processTimeout)
     }
 
-    override def onProcessingTime(time: Long, window: TimeWindow, ctx: TriggerContext) = TriggerResult.CONTINUE
-
-    override def onEventTime(time: Long, window: TimeWindow, ctx: TriggerContext) = TriggerResult.CONTINUE
-
     def getAggregatedState(ctx: TriggerContext): AnyRef = {
       //tutaj podajemy te nulle, bo tam wartosci sa wypelniane kiedy chcemy modyfikowac stan
       //to jest troche hack, bo polegamy na obecnej implementacji okien, ale nie wiem jak to inaczej zrobic...
@@ -290,6 +300,10 @@ object FlinkProcessRegistrar {
         new FoldingStateDescriptor[AnyRef, AnyRef]("window-contents", null,
           new ScalaFoldFunction[AnyRef, AnyRef]((_, _) => null), classOf[AnyRef])).get()
     }
+
+    override def onProcessingTime(time: Long, window: TimeWindow, ctx: TriggerContext) = TriggerResult.CONTINUE
+
+    override def onEventTime(time: Long, window: TimeWindow, ctx: TriggerContext) = TriggerResult.CONTINUE
 
   }
 
