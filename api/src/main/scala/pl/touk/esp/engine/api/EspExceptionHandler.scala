@@ -1,6 +1,6 @@
 package pl.touk.esp.engine.api
 
-import org.slf4j.LoggerFactory
+import com.typesafe.scalalogging.LazyLogging
 
 trait EspExceptionHandler extends Serializable {
   final def recover[T](block: => T)(context: Context): Option[T] = {
@@ -20,8 +20,7 @@ trait EspExceptionHandler extends Serializable {
 
 case class EspExceptionInfo(throwable: Throwable, context: Context) extends Serializable
 
-object BrieflyLoggingExceptionHandler extends EspExceptionHandler {
-  private lazy val logger = LoggerFactory.getLogger(getClass)
+object BrieflyLoggingExceptionHandler extends EspExceptionHandler with LazyLogging {
 
   override def open(): Unit = {}
   override protected def handle(e: EspExceptionInfo): Unit = {
@@ -31,8 +30,7 @@ object BrieflyLoggingExceptionHandler extends EspExceptionHandler {
 }
 
 
-object VerboselyLoggingExceptionHandler extends EspExceptionHandler {
-  private lazy val logger = LoggerFactory.getLogger(getClass)
+object VerboselyLoggingExceptionHandler extends EspExceptionHandler with LazyLogging {
 
   override def open(): Unit = {}
   override protected def handle(e: EspExceptionInfo): Unit = {

@@ -1,15 +1,13 @@
 package pl.touk.esp.engine.util.service
 
 import com.ning.http.client.Response
+import com.typesafe.scalalogging.LazyLogging
 import dispatch.Req
-import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-trait RequestResponseLogging {
-
-  private lazy val logger = LoggerFactory.getLogger(getClass)
+trait RequestResponseLogging extends LazyLogging {
 
   def logRequestResponse(req: Req)
                         (id: String)

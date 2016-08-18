@@ -7,6 +7,7 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import cats.instances.list._
 import com.typesafe.config.Config
+import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions._
 import org.apache.flink.api.common.state._
 import org.apache.flink.configuration.Configuration
@@ -19,7 +20,6 @@ import org.apache.flink.streaming.api.windowing.triggers.Trigger.TriggerContext
 import org.apache.flink.streaming.api.windowing.triggers.{Trigger, TriggerResult}
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow
 import org.apache.flink.util.Collector
-import org.slf4j.LoggerFactory
 import pl.touk.esp.engine.Interpreter
 import pl.touk.esp.engine.Interpreter.ContextImpl
 import pl.touk.esp.engine.api._
@@ -195,7 +195,7 @@ object FlinkProcessRegistrar {
                                    interpreterProvider: () => Interpreter,
                                    espExceptionHandlerProvider: () => EspExceptionHandler,
                                    sink: splittednode.Sink,
-                                   processTimeout: Duration) extends RichFlatMapFunction[InterpretationResult, Any] {
+                                   processTimeout: Duration) extends RichFlatMapFunction[InterpretationResult, Any] with LazyLogging {
 
     private lazy implicit val ec = SynchronousExecutionContext.ctx
     private lazy val compilerWithServices = compilerWithServicesProvider()
@@ -204,7 +204,6 @@ object FlinkProcessRegistrar {
     private lazy val espExceptionHandler = espExceptionHandlerProvider()
 
     private lazy val instantRateMeter = new InstantRateMeter
-    private lazy val logger = LoggerFactory.getLogger(classOf[FlinkProcessRegistrar])
 
     override def open(parameters: Configuration): Unit = {
       super.open(parameters)
@@ -302,7 +301,7 @@ object FlinkProcessRegistrar {
   }
 
 
-  class WindowFoldingFunction[T](aggregatedVar: String, foldingFun: => FoldingFunction[T])
+  class WindowFoldingFunction[T](aggregatedVar: String, foldingFun: FoldingFunction[T])
     extends FoldFunction[InterpretationResult, T] {
     override def fold(accumulator: T, value: InterpretationResult) = {
       val result = value.finalContext[AnyRef](aggregatedVar)

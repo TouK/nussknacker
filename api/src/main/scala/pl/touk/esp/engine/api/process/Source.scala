@@ -10,7 +10,7 @@ trait Source[T] {
 
   def toFlinkSource: SourceFunction[T]
 
-  def timeExtractionFunction : Option[T => Long] = None
+  def timeExtractionFunction : Option[T => Long]
 
 }
 
