@@ -7,6 +7,7 @@ import java.util.Properties
 
 import kafka.api.OffsetRequest
 import kafka.consumer.{Consumer, ConsumerConfig, ConsumerConnector, KafkaStream}
+import kafka.message.MessageAndMetadata
 import kafka.server.{KafkaConfig, KafkaServer}
 import kafka.utils.SystemTime
 import org.apache.kafka.clients.producer.KafkaProducer
@@ -93,10 +94,10 @@ object KafkaUtils {
   }
 
   implicit class RichKafkaStream(stream: KafkaStream[Array[Byte], Array[Byte]]) {
-    def takeNonBlocking(count: Int)
-                       (implicit ec: ExecutionContext) =
+    def takeNthNonBlocking(n: Int)
+                          (implicit ec: ExecutionContext) =
       Future {
-        stream.take(count)
+        stream.slice(n-1, n).head
       }
   }
 

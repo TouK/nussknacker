@@ -5,7 +5,10 @@ import java.util.Properties
 import kafka.admin.AdminUtils
 import kafka.consumer.ConsumerConnector
 import kafka.utils.ZkUtils
-import org.apache.kafka.clients.producer.{Callback, KafkaProducer, ProducerRecord}
+import org.apache.kafka.clients.producer.{Callback, KafkaProducer, ProducerRecord, RecordMetadata}
+
+import scala.concurrent.{Future, Promise}
+import scala.util.{Failure, Success, Try}
 
 class KafkaClient(kafkaAddress: String, zkAddress: String) {
   val producer = createKafkaProducer[String, String]
@@ -19,23 +22,48 @@ class KafkaClient(kafkaAddress: String, zkAddress: String) {
     KafkaUtils.createKafkaProducer(kafkaAddress)
   }
 
-  def createTopic(name: String) = {
-    AdminUtils.createTopic(zkUtils, name, 5, 1, new Properties())
-    AdminUtils.createOrUpdateTopicPartitionAssignmentPathInZK(zkUtils, name,
-      Map(0 -> Seq(0), 1 -> Seq(0), 2 -> Seq(0), 3 -> Seq(0), 4 -> Seq(0)
-    ), new Properties, update = true)
+  def createTopic(name: String, partitions: Int = 5) = {
+    AdminUtils.createTopic(zkUtils, name, partitions, 1, new Properties())
+    val replicaAssignment = (0 until partitions).map(_ -> Seq(0)).toMap
+    AdminUtils.createOrUpdateTopicPartitionAssignmentPathInZK(zkUtils, name, replicaAssignment, new Properties, update = true)
   }
 
   def deleteTopic(name: String) = {
     AdminUtils.deleteTopic(zkUtils, name)
   }
 
-  def sendMessage(topic: String, content: String) = {
-    producer.send(new ProducerRecord[String, String](topic, content))
+  def sendMessage(topic: String, key: String, content: String): Future[RecordMetadata] = {
+    val promise = Promise[RecordMetadata]()
+    producer.send(new ProducerRecord[String, String](topic, key, content), producerCallback(promise))
+    promise.future
+  }
+
+  def sendMessage(topic: String, content: String): Future[RecordMetadata] = {
+    val promise = Promise[RecordMetadata]()
+    producer.send(new ProducerRecord[String, String](topic, content), producerCallback(promise))
+    promise.future
   }
 
   def sendMessage(topic: String, content: String, callback: Callback) = {
     producer.send(new ProducerRecord[String, String](topic, content), callback)
+  }
+
+  private def producerCallback(promise: Promise[RecordMetadata]): Callback =
+    producerCallback(result => promise.complete(result))
+
+  private def producerCallback(callback: Try[RecordMetadata] => Unit): Callback = {
+    new Callback {
+      override def onCompletion(metadata: RecordMetadata, exception: Exception): Unit = {
+        val result =
+          if (exception == null) Success(metadata)
+          else Failure(exception)
+        callback(result)
+      }
+    }
+  }
+
+  def flush() = {
+    producer.flush()
   }
 
   def shutdown() = {

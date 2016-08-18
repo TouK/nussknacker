@@ -42,6 +42,8 @@ class KafkaSourceFactory[T: TypeInformation](config: KafkaConfig,
       config.kafkaProperties.map(_.asJava).foreach(props.putAll)
       props
     }
+
+    override def timeExtractionFunction = KafkaSourceFactory.this.timeExtractionFunction
   }
 
 }

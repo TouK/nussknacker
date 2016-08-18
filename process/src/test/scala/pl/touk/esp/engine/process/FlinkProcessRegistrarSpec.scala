@@ -36,7 +36,7 @@ class FlinkProcessRegistrarSpec extends FlatSpec with Matchers {
 
     KeyValueTestHelper.processInvoker.invoke(process, data)
 
-    KeyValueTestHelper.MockService.data shouldEqual List(1, 2, 2, 2, 2, 1)
+    KeyValueTestHelper.MockService.data.toArray() shouldEqual Array(1, 2, 2, 2, 2, 1)
   }
 
   it should "aggregate and filter records" in {

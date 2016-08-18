@@ -55,6 +55,8 @@ val catsV = "0.7.0"
 val scalaParsersV = "1.0.4"
 val dispatchV = "0.11.3"
 val slf4jV = "1.7.21"
+val scalaLoggingV = "3.4.0"
+val ficusV = "1.2.6"
 
 val perfTestSampleName = "esp-perf-test-sample"
 
@@ -70,12 +72,13 @@ lazy val perf_test = (project in file("perf-test")).
     libraryDependencies ++= {
       Seq(
         "org.scalatest" %% "scalatest" % scalaTestV % "it,test",
+        "org.slf4j" % "jul-to-slf4j" % slf4jV,
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "runtime", // na potrzeby optymalizacji procesów
-        organization.value %% perfTestSampleName % version.value % "it,test" classifier "assembly"
+        "com.iheart" %% "ficus" % ficusV
       )
     }
   ).
-  dependsOn(management, kafkaTestUtil)
+  dependsOn(management, interpreter, kafka, kafkaTestUtil)
 
 
 lazy val perf_test_sample = (project in file("perf-test/sample")).
@@ -85,7 +88,7 @@ lazy val perf_test_sample = (project in file("perf-test/sample")).
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
-        "com.iheart" %% "ficus" % "1.2.6"
+        "com.iheart" %% "ficus" % ficusV
       )
     },
     artifact in (Compile, assembly) := {
@@ -154,7 +157,7 @@ lazy val process = (project in file("process")).
       )
     }
   ).
-  dependsOn(interpreter)
+  dependsOn(interpreter, kafka % "test", kafkaTestUtil % "test")
 
 lazy val interpreter = (project in file("interpreter")).
   settings(commonSettings).
@@ -162,7 +165,6 @@ lazy val interpreter = (project in file("interpreter")).
     name := "esp-interpreter",
     libraryDependencies ++= {
       Seq(
-        "org.slf4j" % "slf4j-api" % slf4jV,
         "org.springframework" % "spring-expression" % springV,
         "com.github.alexarchambault" %% s"argonaut-shapeless_$argonautMajorV" % argonautShapelessV,
         "org.typelevel" %% "cats-core" % catsV,
@@ -223,6 +225,7 @@ lazy val api = (project in file("api")).
     name := "esp-api",
     libraryDependencies ++= {
       Seq(
+        "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
         "org.apache.flink" %% "flink-streaming-java" % flinkV % "provided"
       )
     }

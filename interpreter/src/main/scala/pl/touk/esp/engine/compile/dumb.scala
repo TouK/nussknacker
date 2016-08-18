@@ -23,6 +23,8 @@ object dumb {
         override def toFlinkSource = throw new IllegalAccessException("Dumb source shouldn't be used")
 
         override def typeInformation = throw new IllegalAccessException("Dumb source shouldn't be used")
+
+        override def timeExtractionFunction = throw new IllegalAccessException("Dumb source shouldn't be used")
       }
   }
 
