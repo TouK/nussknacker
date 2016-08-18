@@ -9,6 +9,7 @@ import org.apache.flink.streaming.util.serialization.DeserializationSchema
 import pl.touk.esp.engine.api.process.{SourceFactory, Source}
 import pl.touk.esp.engine.api.MetaData
 import pl.touk.esp.engine.kafka.KafkaSourceFactory._
+import scala.collection.JavaConverters._
 
 class KafkaSourceFactory[T: TypeInformation](config: KafkaConfig,
                                              schema: DeserializationSchema[T]) extends SourceFactory[T] with Serializable {
@@ -36,6 +37,7 @@ class KafkaSourceFactory[T: TypeInformation](config: KafkaConfig,
       props.setProperty("zookeeper.connect", config.zkAddress)
       props.setProperty("bootstrap.servers", config.kafkaAddress)
       props.setProperty("auto.offset.reset", "earliest")
+      config.kafkaProperties.map(_.asJava).foreach(props.putAll)
       props
     }
   }
@@ -44,7 +46,7 @@ class KafkaSourceFactory[T: TypeInformation](config: KafkaConfig,
 
 object KafkaSourceFactory {
 
-  case class KafkaConfig(zkAddress: String, kafkaAddress: String)
+  case class KafkaConfig(zkAddress: String, kafkaAddress: String, kafkaProperties: Option[Map[String, String]])
   val TopicParamName = "topic"
 
 }

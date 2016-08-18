@@ -7,7 +7,7 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import cats.std.list._
 import com.typesafe.config.Config
-import org.apache.flink.api.common.functions.{FoldFunction, RichFlatMapFunction}
+import org.apache.flink.api.common.functions.{FoldFunction, RichFlatMapFunction, RichMapFunction}
 import org.apache.flink.api.common.state._
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.TimeCharacteristic
@@ -70,6 +70,7 @@ class FlinkProcessRegistrar(interpreterConfig: () => InterpreterConfig,
         .addSource[Any](source.toFlinkSource)(source.typeInformation)
       //chyba nie ascending????
       val withAssigned = timeExtractionFunction.map(newStart.assignAscendingTimestamps).getOrElse(newStart)
+        .map(new MeterFunction[Any]("source", process.metaData.id))
         .flatMap(new InitialInterpretationFunction(compiler, part.source, interpreterConfig, espExceptionHandlerProvider, process.metaData, Interpreter.InputParamName, processTimeout))
         .split(SplitFunction)
       registerParts(withAssigned, part.nextParts)
@@ -120,7 +121,7 @@ class FlinkProcessRegistrar(interpreterConfig: () => InterpreterConfig,
               InputWithExectutionContext(interpretationResult.output, SynchronousExecutionContext.ctx)
             }
             .addSink(createSink(part))
-              .name(s"${part.id}-sink")
+            .name(s"${part.id}-sink")
       }
 
     def registerParts(start: SplitStream[InterpretationResult],
@@ -313,6 +314,23 @@ object FlinkProcessRegistrar {
     override def fold(accumulator: T, value: InterpretationResult) = {
       val result = value.finalContext[AnyRef](aggregatedVar)
       foldingFun.fold(result, Option(accumulator))
+    }
+  }
+
+  class MeterFunction[T](name: String, groupId: String) extends RichMapFunction[T, T] {
+    lazy val instantRateMeter = new InstantRateMeter
+
+    override def open(parameters: Configuration): Unit = {
+      super.open(parameters)
+
+      getRuntimeContext.getMetricGroup
+        .addGroup(groupId)
+        .gauge[Double, InstantRateMeter](name, instantRateMeter)
+    }
+
+    override def map(value: T) = {
+      instantRateMeter.mark()
+      value
     }
   }
 
