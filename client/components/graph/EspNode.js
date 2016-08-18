@@ -179,19 +179,40 @@ export default {
     },
 
     makeLink(edge) {
-        return new joint.dia.Link({
-            source: {id: edge.from, port: 'Out'},
-            target: {id: edge.to, port: 'In'},
-            labels: [{position: 0.5, attrs: {text: {text: _.get(edge, 'label.expression') || '', 'font-weight': 'bold'}}}],
-            attrs: {
-
-                '.tool-options': {display: 'none'},
-                //'.marker-target': {d: 'M 4 0 L 0 2 L 4 4 z', fill: '#7c68fc', stroke: '#7c68fc'},
-                '.connection': {stroke: '#7c68fc'},
-                minLen: 5
-            },
-            edgeData: edge
-        });
-    }
+       return new joint.dia.Link({
+         labelMarkup: [
+           '<g class="esp-label">',
+           '<rect class="label-border"/>',
+           '<text />',
+           '</g>'
+         ].join(''),
+         source: {id: edge.from, port: 'Out'},
+         target: {id: edge.to, port: 'In'},
+         labels: [
+           { position: 0.5,
+             attrs: {
+               'rect': {
+                 stroke: 'grey',
+                 'stroke-width': 0.5
+               },
+               'text': {
+                 text: joint.util.breakText((_.get(edge, 'label.expression') || ''), { width: 300 }),
+                 'font-weight': '300',
+                 'font-size': 8,
+                 'ref': 'rect',
+                 'ref-x': 0,
+                 'ref-y': 0
+               }
+             }
+           }
+         ],
+         attrs: {
+             '.tool-options': {display: 'none'},
+             '.connection': {stroke: '#7c68fc'},
+             minLen: 10
+         },
+         edgeData: edge
+       });
+   }
 
 }

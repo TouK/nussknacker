@@ -20,6 +20,7 @@ export default class Graph extends React.Component {
             clickedNode: {},
             toolboxVisible: false
         };
+
     }
 
     componentDidMount() {
@@ -33,6 +34,7 @@ export default class Graph extends React.Component {
         joint.layout.DirectedGraph.layout(this.graph, {
             nodeSep: 200,
             edgeSep: 500,
+            rankSep: 100,
             minLen: 300,
             rankDir: "TB"
         });
@@ -218,4 +220,4 @@ class Toolbox extends React.Component {
         );
 
     }
-}
+};
