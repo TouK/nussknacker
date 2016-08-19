@@ -40,6 +40,9 @@ class GraphBuilder[R <: Node] private(create: Node => R) {
   def sink(id: String, expression: Expression, typ: String, params: graph.sink.Parameter*): R =
     create(Sink(id, SinkRef(typ, params.toList), Some(expression)))
 
+  def processorEnd(id: String, service: ServiceRef): R =
+    create(EndingProcessor(id, service))
+
 }
 
 object GraphBuilder {

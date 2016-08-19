@@ -2,18 +2,17 @@ package pl.touk.esp.engine.process
 
 import java.util.Date
 
-import org.apache.flink.streaming.api.TimeCharacteristic
+import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.scala._
 import pl.touk.esp.engine.InterpreterConfig
-import pl.touk.esp.engine.api.process.{SinkFactory, SourceFactory}
-import pl.touk.esp.engine.api.{FoldingFunction, Service, BrieflyLoggingExceptionHandler}
+import pl.touk.esp.engine.api.process.{Sink, SinkFactory, SourceFactory}
+import pl.touk.esp.engine.api.{BrieflyLoggingExceptionHandler, FoldingFunction, Service}
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.process.util.CollectionSource
-import pl.touk.esp.engine.util.sink.ServiceSink
 
 import scala.collection.mutable.ArrayBuffer
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
 
 object ProcessTestHelpers {
 
@@ -25,7 +24,7 @@ object ProcessTestHelpers {
   object processInvoker {
     def invoke(process: EspProcess, data: List[SimpleRecord],
                env: StreamExecutionEnvironment = StreamExecutionEnvironment.createLocalEnvironment()) = {
-      val monitorSink = new ServiceSink(EmptyService)
+      val monitorSink = EmptySink
       val sinkFactories = Map[String, SinkFactory](
         "monitor" -> SinkFactory.noParam(monitorSink)
       )
@@ -53,6 +52,11 @@ object ProcessTestHelpers {
     }
   }
 
+  case object EmptySink extends Sink {
+    override def toFlinkFunction: SinkFunction[Any] = new SinkFunction[Any] {
+      override def invoke(value: Any): Unit = {}
+    }
+  }
 
   object EmptyService extends Service {
     override def invoke(params: Map[String, Any])(implicit ec: ExecutionContext) = Future(())

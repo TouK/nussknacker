@@ -31,6 +31,8 @@ object ProcessCanonizer {
         canonicalnode.VariableBuilder(id, varName, fields) :: nodesOnTheSameLevel(next)
       case node.Processor(id, service, next) =>
         canonicalnode.Processor(id, service) :: nodesOnTheSameLevel(next)
+      case node.EndingProcessor(id, service) =>
+        canonicalnode.Processor(id, service) :: Nil
       case node.Enricher(id, service, output, next) =>
         canonicalnode.Enricher(id, service, output) :: nodesOnTheSameLevel(next)
       case node.Filter(id, expression, nextTrue, nextFalse) =>
@@ -70,6 +72,8 @@ object ProcessCanonizer {
         uncanonize(tail).map(node.Source(id, ref, _))
       case canonicalnode.VariableBuilder(id, varName, fields) :: tail =>
         uncanonize(tail).map(node.VariableBuilder(id, varName, fields, _))
+      case canonicalnode.Processor(id, ref) :: Nil =>
+        valid(node.EndingProcessor(id, ref))
       case canonicalnode.Processor(id, service) :: tail =>
         uncanonize(tail).map(node.Processor(id, service, _))
       case canonicalnode.Enricher(id, service, output) :: tail =>

@@ -79,6 +79,8 @@ object ProcessSplitter {
       case sink: Sink =>
         val part = split(sink)
         NextWithParts(PartRef(part.id), List(part))
+      case end: EndingProcessor =>
+        NextWithParts(NextNode(splittednode.EndingProcessor(end.id, end.service)), List.empty)
       case aggregate: Aggregate =>
         val part = split(aggregate)
         NextWithParts(PartRef(part.id), List(part))

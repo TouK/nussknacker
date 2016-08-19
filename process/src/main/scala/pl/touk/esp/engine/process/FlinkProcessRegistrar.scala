@@ -103,7 +103,7 @@ class FlinkProcessRegistrar(interpreterConfig: () => InterpreterConfig,
           start
             .flatMap(new SinkInterpretationFunction(process.metaData, compiler, part.sink, interpreterConfig, espExceptionHandlerProvider, processTimeout))
             .name(s"${part.id}-function")
-            .addSink(new SinkSendingFunction(createSinkFunction(part), espExceptionHandlerProvider, processTimeout))
+            .addSink(createSinkFunction(part))
             .name(s"${part.id}-sink")
       }
 
@@ -193,7 +193,7 @@ object FlinkProcessRegistrar {
                                    sink: splittednode.Sink,
                                    configProvider: () => InterpreterConfig,
                                    espExceptionHandlerProvider: () => EspExceptionHandler,
-                                   processTimeout: Duration) extends RichFlatMapFunction[InterpretationResult, InterpretationResult] {
+                                   processTimeout: Duration) extends RichFlatMapFunction[InterpretationResult, Any] {
 
     lazy val config = configProvider()
     lazy val instantRateMeter = new InstantRateMeter
@@ -213,10 +213,10 @@ object FlinkProcessRegistrar {
       logger.info("Registered gauge for instantRate")
     }
 
-    override def flatMap(input: InterpretationResult, collector: Collector[InterpretationResult]): Unit = {
+    override def flatMap(input: InterpretationResult, collector: Collector[Any]): Unit = {
       val result = espExceptionHandler.recover {
-        val result = interpreter.interpret(compiledNode, InterpreterMode.Traverse, input.finalContext)
-        Await.result(result, processTimeout)
+        val resultFuture = interpreter.interpret(compiledNode, InterpreterMode.Traverse, input.finalContext)
+        Await.result(resultFuture, processTimeout).output
       }(input.finalContext)
       result.foreach(collector.collect)
       instantRateMeter.mark()
@@ -227,39 +227,6 @@ object FlinkProcessRegistrar {
       config.open
       espExceptionHandler.close()
     }
-  }
-
-  class SinkSendingFunction(underlying: RichMapFunction[InputWithExectutionContext, Future[Unit]],
-                            espExceptionHandlerProvider: () => EspExceptionHandler,
-                            processTimeout: Duration) extends RichSinkFunction[InterpretationResult] {
-
-    private lazy val espExceptionHandler = espExceptionHandlerProvider()
-    lazy implicit val ec = SynchronousExecutionContext.ctx
-
-    override def setRuntimeContext(t: RuntimeContext): Unit = {
-      super.setRuntimeContext(t)
-      underlying.setRuntimeContext(t)
-    }
-
-    override def open(parameters: Configuration): Unit = {
-      super.open(parameters)
-      underlying.open(parameters)
-      espExceptionHandler.open()
-    }
-
-    override def invoke(input: InterpretationResult): Unit = {
-      espExceptionHandler.recover {
-        val futureResult = underlying.map(InputWithExectutionContext(input.output, ec))
-        Await.result(futureResult, processTimeout)
-      }(input.finalContext)
-    }
-
-    override def close(): Unit = {
-      super.close()
-      underlying.close()
-      espExceptionHandler.close()
-    }
-
   }
 
   class AggregateKeyByFunction(compiler: => ProcessCompiler,

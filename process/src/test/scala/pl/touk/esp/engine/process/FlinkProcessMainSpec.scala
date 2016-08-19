@@ -6,16 +6,15 @@ import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.streaming.api.scala._
 
 import org.scalatest.FlatSpec
-import pl.touk.esp.engine.api.{BrieflyLoggingExceptionHandler, MetaData}
 import pl.touk.esp.engine.api.process.{ProcessConfigCreator, SinkFactory, SourceFactory}
+import pl.touk.esp.engine.api.{BrieflyLoggingExceptionHandler, MetaData}
 import pl.touk.esp.engine.build.GraphBuilder
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.graph.service.{Parameter, ServiceRef}
 import pl.touk.esp.engine.marshall.ProcessMarshaller
-import pl.touk.esp.engine.process.ProcessTestHelpers.{SimpleRecord, EmptyService}
+import pl.touk.esp.engine.process.ProcessTestHelpers.{EmptySink, SimpleRecord}
 import pl.touk.esp.engine.process.util.CollectionSource
 import pl.touk.esp.engine.spel
-import pl.touk.esp.engine.util.sink.ServiceSink
 
 import scala.concurrent.duration._
 
@@ -41,7 +40,7 @@ class SimpleProcessConfigCreator extends ProcessConfigCreator {
   override def services(config: Config) = Map()
 
   override def sinkFactories(config: Config) = Map[String, SinkFactory](
-    "monitor" -> SinkFactory.noParam(new ServiceSink(EmptyService))
+    "monitor" -> SinkFactory.noParam(EmptySink)
   )
 
   override def listeners(config: Config) = List()
