@@ -1,7 +1,7 @@
 @import "./_variables.styl"
 
 #process-filter
-  margin: 25px 60px
+  margin: 25px containerPadding
   width: 300px
   input
     stroke: #B7B7B7
@@ -24,17 +24,15 @@ table#process-table
   & *
     border: none
 
-  tablePadding = 70px
   th, td
     padding: 20px 10px
     &:nth-child(1)
-      padding-left: tablePadding
+      padding-left: containerPadding
     &:last-child
-      padding-right: tablePadding
+      padding-right: containerPadding
 
   th
     background-color: #E0E0E0
-    color: #686868
     font-size: 16px
     font-weight: 600
 
@@ -44,6 +42,7 @@ table#process-table
     background-color: #FFFFFF
   tr.row-hover:hover td
     background-color: #d9edf7
+    cursor: pointer
 
   .date-column
     text-align: center
@@ -61,11 +60,10 @@ table#process-table
     display: inline-block
     margin: 0 5px 0
     border-radius: 3px
-    padding: 3px 15px
+    padding: 4px 18px
     background-color: #FEB58A
     font-size: 13px
     color: white
-    cursor: pointer
 
   .reactable-pagination td
     text-align: center
