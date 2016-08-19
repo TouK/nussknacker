@@ -18,6 +18,8 @@ object splittednode {
 
   case class Processor(id: String, service: ServiceRef, next: Next) extends SplittedNode
 
+  case class EndingProcessor(id: String, service: ServiceRef) extends SplittedNode
+
   case class Enricher(id: String, service: ServiceRef, output: String, next: Next) extends SplittedNode
 
   case class Filter(id: String, expression: Expression, nextTrue: Next,

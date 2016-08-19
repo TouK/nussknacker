@@ -73,6 +73,8 @@ class ProcessCompiler(expressionParsers: Map[String, ExpressionParser]) {
       case splittednode.Processor(id, ref, next) =>
         (compile(ref) |@| compile(next))
           .map(compiledgraph.node.Processor(id, _, _))
+      case splittednode.EndingProcessor(id, ref) =>
+        compile(ref).map(compiledgraph.node.EndingProcessor(id, _))
       case splittednode.Enricher(id, ref, outName, next) =>
         (compile(ref) |@| compile(next))
           .map(compiledgraph.node.Enricher(id, _, outName, _))

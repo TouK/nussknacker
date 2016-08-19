@@ -18,6 +18,8 @@ object node {
 
   case class Processor(id: String, service: ServiceRef, next: Next) extends Node
 
+  case class EndingProcessor(id: String, service: ServiceRef) extends Node
+
   case class Enricher(id: String, service: ServiceRef, output: String, next: Next) extends Node
 
   case class Filter(id: String, expression: Expression, nextTrue: Next,

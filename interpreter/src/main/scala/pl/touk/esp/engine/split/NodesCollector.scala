@@ -35,6 +35,8 @@ object NodesCollector {
         collectNodes(n.next)
       case n: Sink =>
         List.empty
+      case n: EndingProcessor =>
+        List.empty
     }
     node :: children
   }

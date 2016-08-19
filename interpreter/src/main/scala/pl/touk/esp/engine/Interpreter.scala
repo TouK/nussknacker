@@ -37,6 +37,10 @@ class Interpreter(config: InterpreterConfig) {
         interpretNext(next, createOrUpdateVariable(ctx, varName, fields))
       case (Processor(_, ref, next), Traverse) =>
         invoke(ref, ctx).flatMap(_ => interpretNext(next, ctx))
+      case (EndingProcessor(_, ref), Traverse) =>
+        invoke(ref, ctx).map { output =>
+          InterpretationResult(EndReference, output, ctx)
+        }
       case (Enricher(_, ref, outName, next), Traverse) =>
         invoke(ref, ctx).flatMap(out => interpretNext(next, ctx.withVariable(outName, out)))
       case (Filter(_, expression, nextTrue, nextFalse), Traverse) =>

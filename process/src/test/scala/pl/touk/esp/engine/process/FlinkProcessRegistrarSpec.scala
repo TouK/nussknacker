@@ -5,7 +5,7 @@ import java.util.Date
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.esp.engine.api._
 import pl.touk.esp.engine.build.GraphBuilder
-import pl.touk.esp.engine.graph.{EspProcess, sink, source}
+import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.graph.service.{Parameter, ServiceRef}
 import pl.touk.esp.engine.graph.variable.Field
 import pl.touk.esp.engine.process.KeyValueTestHelper.KeyValue
@@ -27,7 +27,7 @@ class FlinkProcessRegistrarSpec extends FlatSpec with Matchers {
           id = "aggregate", aggregatedVar = "input", keyExpression = "#input.key",
           duration = 5 seconds, step = 1 second
         )
-        .sink("sink", "#sum(#input.![value])", "simple-keyvalue")
+        .processorEnd("service", ServiceRef("mock", List(Parameter("input", "#sum(#input.![value])"))))
     )
     val data = List(
       KeyValue("a", 1, new Date(0)),
