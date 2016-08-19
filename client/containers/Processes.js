@@ -14,7 +14,8 @@ export const Processes = React.createClass({
   getInitialState() {
     return {
       processes: [],
-      filterVal: ''
+      filterVal: '',
+      favouriteList: ["highPremiumUsage", "process"]
     }
   },
 
@@ -34,6 +35,14 @@ export const Processes = React.createClass({
 
   getFilterValue() {
     return this.state.filterVal.toLowerCase();
+  },
+
+  getFavouriteIcon(id) {
+    if (this.state.favouriteList.includes(id)){
+      return "assets/img/star-full.svg"
+    } else {
+      return "assets/img/star-empty.svg";
+    }
   },
 
   render() {
@@ -60,11 +69,14 @@ export const Processes = React.createClass({
         >
 
           <Thead>
-            <Th column="id">Id</Th>
+            <Th column="id">ID</Th>
             <Th column="name">Process name</Th>
             <Th column="category">Category</Th>
-            <Th column="createDate">Create date</Th>
-            <Th column="favourite">Favourite</Th>
+            <Th column="createDate" className="date-column">Create date</Th>
+            <Th column="favourite" className="favourite-column">
+              <span>Favourite</span>
+              <img src={this.getFavouriteIcon(process.id)} />
+            </Th>
           </Thead>
 
           {this.state.processes.map((process, index) => {
@@ -79,8 +91,10 @@ export const Processes = React.createClass({
                     })}
                   </div>
                 </Td>
-                <Td column="createDate">2016-08-10</Td>
-                <Td column="favourite"><input type="checkbox"/></Td>
+                <Td column="createDate" className="date-column">2016-08-10</Td>
+                <Td column="favourite" className="favourite-column">
+                  <img  src={this.getFavouriteIcon(process.id)} />
+                </Td>
               </Tr>
             )
           })}
