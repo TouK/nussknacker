@@ -54,12 +54,8 @@ class ProcessCompiler(expressionParsers: Map[String, ExpressionParser]) {
     val validated = part match {
       case source: SourcePart =>
         compile(source.source)
-      case agg: AggregateDefinitionPart =>
+      case agg: AggregatePart =>
         compile(agg.aggregate)
-      case agg: AggregateTriggerPart =>
-        compile(agg.aggregate)
-      case agg: AfterAggregationPart =>
-        compile(agg.next)
       case sink: SinkPart =>
         compile(sink.sink)
     }
@@ -86,11 +82,9 @@ class ProcessCompiler(expressionParsers: Map[String, ExpressionParser]) {
       case splittednode.Switch(id, expression, exprVal, nexts, defaultNext) =>
         (compile(expression) |@| nexts.map(compile).sequenceU |@| defaultNext.map(compile).sequenceU)
           .map(compiledgraph.node.Switch(id, _, exprVal, _, _))
-      case splittednode.AggregateDefinition(id, keyExpression, next) =>
-        compile(keyExpression).map(compiledgraph.node.AggregateDefinition(id, _, compiledgraph.node.PartRef(next.id)))
-      case splittednode.AggregateTrigger(id, triggerExpression, _, next) =>
-        triggerExpression.map(compile).sequenceU
-          .map(compiledgraph.node.AggregateTrigger(id, _, compiledgraph.node.PartRef(next.id)))
+      case splittednode.Aggregate(id, keyExpression, triggerExpression, next) =>
+        (compile(keyExpression) |@| triggerExpression.map(compile).sequenceU |@| compile(next))
+          .map(compiledgraph.node.Aggregate(id, _, _, _))
       case splittednode.Sink(id, optionalExpression) =>
         optionalExpression.map(compile).sequenceU.map(compiledgraph.node.Sink(id, _))
     }

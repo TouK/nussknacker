@@ -1,6 +1,7 @@
 package pl.touk.esp.engine
 
 import pl.touk.esp.engine.Interpreter._
+import pl.touk.esp.engine.api.InterpreterMode._
 import pl.touk.esp.engine.api._
 import pl.touk.esp.engine.compiledgraph.expression._
 import pl.touk.esp.engine.compiledgraph.node.{Sink, Source, _}
@@ -11,35 +12,40 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class Interpreter(config: InterpreterConfig) {
 
-  def interpret(node: Node, metaData: MetaData, input: Any, inputParamName: String = InputParamName)
+  def interpret(node: Node,
+                mode: InterpreterMode,
+                metaData: MetaData,
+                input: Any, inputParamName: String = InputParamName)
                (implicit executor: ExecutionContext): Future[InterpretationResult] = {
     val ctx = ContextImpl(metaData).withVariable(inputParamName, input)
-    interpret(node, ctx)
+    interpret(node, mode, ctx)
   }
   
-  def interpret(node: Node, ctx: Context)
-               (implicit executor: ExecutionContext): Future[InterpretationResult] =
+  def interpret(node: Node, mode: InterpreterMode, ctx: Context)
+               (implicit executor: ExecutionContext): Future[InterpretationResult] = {
+    implicit val implMode = mode
     interpretNode(node, ctx)
+  }
 
   private def interpretNode(node: Node, ctx: Context)
-                           (implicit executor: ExecutionContext): Future[InterpretationResult] = {
-    config.listeners.foreach(_.nodeEntered(node.id, ctx))
-    node match {
-      case Source(_, next) =>
+                           (implicit mode: InterpreterMode, executor: ExecutionContext): Future[InterpretationResult] = {
+    config.listeners.foreach(_.nodeEntered(node.id, ctx, mode))
+    (node, mode) match {
+      case (Source(_, next), Traverse) =>
         interpretNext(next, ctx)
-      case VariableBuilder(_, varName, fields, next) =>
+      case (VariableBuilder(_, varName, fields, next), Traverse) =>
         interpretNext(next, createOrUpdateVariable(ctx, varName, fields))
-      case Processor(_, ref, next) =>
+      case (Processor(_, ref, next), Traverse) =>
         invoke(ref, ctx).flatMap(_ => interpretNext(next, ctx))
-      case Enricher(_, ref, outName, next) =>
+      case (Enricher(_, ref, outName, next), Traverse) =>
         invoke(ref, ctx).flatMap(out => interpretNext(next, ctx.withVariable(outName, out)))
-      case Filter(_, expression, nextTrue, nextFalse) =>
+      case (Filter(_, expression, nextTrue, nextFalse), Traverse) =>
         val result = evaluate[Boolean](expression, ctx)
         if (result)
           interpretNext(nextTrue, ctx)
         else
           interpretOptionalNext(node, nextFalse, ctx)
-      case Switch(_, expression, exprVal, nexts, defaultNext) =>
+      case (Switch(_, expression, exprVal, nexts, defaultNext), Traverse) =>
         val output = evaluate[Any](expression, ctx)
         val newCtx = ctx.withVariable(exprVal, output)
         nexts.view.find {
@@ -51,12 +57,16 @@ class Interpreter(config: InterpreterConfig) {
           case None =>
             interpretOptionalNext(node, defaultNext, ctx)
         }
-      case AggregateDefinition(_, keyExpression, next) =>
-        Future.successful(InterpretationResult(NextPartReference(next.id), evaluate(keyExpression, ctx), ctx))
-      case AggregateTrigger(_, trigger, next) =>
-        Future.successful(InterpretationResult(NextPartReference(next.id),
-          trigger.map(evaluate[Boolean](_, ctx)).orNull, ctx))
-      case Sink(_, optionalExpression) =>
+      case (agg: Aggregate, Traverse) =>
+        interpretNext(agg.next, ctx)
+      case (agg: Aggregate, AggregateKeyExpression) =>
+        Future.successful(InterpretationResult(EndReference, evaluate(agg.keyExpression, ctx), ctx))
+      case (agg: Aggregate, AggregateTriggerExpression) =>
+        Future.successful(InterpretationResult(
+          EndReference,
+          agg.triggerExpression.map(evaluate[Boolean](_, ctx)).orNull,
+          ctx))
+      case (Sink(_, optionalExpression), Traverse) =>
         val output = optionalExpression match {
           case Some(expression) =>
             evaluate[Any](expression, ctx)
@@ -64,13 +74,16 @@ class Interpreter(config: InterpreterConfig) {
             outputValue(ctx)
         }
         Future.successful(InterpretationResult(EndReference, output, ctx))
+      case (_, AggregateKeyExpression | AggregateTriggerExpression) =>
+        throw new IllegalArgumentException(s"Mode $mode make no sense for node: ${node.getClass.getName}")
     }
   }
 
   private def interpretOptionalNext(node: Node,
                                     optionalNext: Option[Next],
                                     ctx: Context)
-                                   (implicit executionContext: ExecutionContext): Future[InterpretationResult] = {
+                                   (implicit mode: InterpreterMode,
+                                    executionContext: ExecutionContext): Future[InterpretationResult] = {
     optionalNext match {
       case Some(next) => interpretNext(next, ctx)
       case None => Future.successful(InterpretationResult(DefaultSinkReference, outputValue(ctx), ctx))
@@ -78,10 +91,10 @@ class Interpreter(config: InterpreterConfig) {
   }
 
   private def interpretNext(next: Next, ctx: Context)
-                           (implicit executor: ExecutionContext): Future[InterpretationResult] =
+                           (implicit mode: InterpreterMode, executor: ExecutionContext): Future[InterpretationResult] =
     next match {
       case NextNode(node) => interpretNode(node, ctx)
-      case PartRef(ref) => Future.successful(InterpretationResult(NextPartReference(ref), outputValue(ctx), ctx)) // output tutaj nie ma sensu
+      case PartRef(ref) => Future.successful(InterpretationResult(NextPartReference(ref), outputValue(ctx), ctx))
     }
 
   private def outputValue(ctx: Context) =

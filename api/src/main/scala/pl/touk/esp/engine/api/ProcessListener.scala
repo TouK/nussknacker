@@ -4,7 +4,7 @@ import scala.util.Try
 
 trait ProcessListener {
 
-  def nodeEntered(nodeId: String, context: Context): Unit
+  def nodeEntered(nodeId: String, context: Context, mode: InterpreterMode): Unit
 
   def expressionEvaluated(expression: String, context: Context, result: Any): Unit
 
