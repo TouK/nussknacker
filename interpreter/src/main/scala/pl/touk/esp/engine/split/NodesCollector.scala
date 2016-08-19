@@ -9,12 +9,8 @@ object NodesCollector {
     part match {
       case source: SourcePart =>
         collectNodes(source.source) ::: source.nextParts.flatMap(collectNodesInAllParts)
-      case agg: AggregateDefinitionPart =>
-        collectNodes(agg.aggregate) ::: collectNodesInAllParts(agg.nextPart)
-      case agg: AggregateTriggerPart =>
-        collectNodes(agg.aggregate) ::: collectNodesInAllParts(agg.nextPart)
-      case agg: AfterAggregationPart =>
-        collectNodes(agg.next) ::: agg.nextParts.flatMap(collectNodesInAllParts)
+      case agg: AggregatePart =>
+        collectNodes(agg.aggregate) ::: agg.nextParts.flatMap(collectNodesInAllParts)
       case sink: SinkPart =>
         collectNodes(sink.sink)
     }
@@ -35,9 +31,7 @@ object NodesCollector {
         n.nexts.flatMap {
           case Case(_, ch) => collectNodes(ch)
         } ::: n.defaultNext.toList.flatMap(collectNodes)
-      case n: AggregateDefinition =>
-        collectNodes(n.next)
-      case n: AggregateTrigger =>
+      case n: Aggregate =>
         collectNodes(n.next)
       case n: Sink =>
         List.empty

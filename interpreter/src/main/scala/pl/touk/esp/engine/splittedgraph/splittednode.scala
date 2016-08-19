@@ -28,14 +28,10 @@ object splittednode {
 
   case class Case(expression: Expression, node: Next)
 
-  case class AggregateDefinition(id: String,
-                                 keyExpression: Expression, next: PartRef) extends SplittedNode
-
-
-  case class AggregateTrigger(id: String, triggerExpression: Option[Expression],
-                              foldingFunRef: Option[String],
-                       next: PartRef) extends SplittedNode
-
+  case class Aggregate(id: String,
+                       keyExpression: Expression,
+                       triggerExpression: Option[Expression],
+                       next: Next) extends SplittedNode
 
   sealed trait Next
   case class NextNode(node: SplittedNode) extends Next

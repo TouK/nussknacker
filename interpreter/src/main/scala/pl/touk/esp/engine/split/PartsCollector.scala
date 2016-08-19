@@ -8,11 +8,7 @@ object PartsCollector {
     val children = part match {
       case source: SourcePart =>
         source.nextParts.flatMap(collectParts)
-      case agg: AggregateDefinitionPart =>
-        collectParts(agg.nextPart)
-      case agg: AggregateTriggerPart =>
-        collectParts(agg.nextPart)
-      case agg: AfterAggregationPart =>
+      case agg: AggregatePart =>
         agg.nextParts.flatMap(collectParts)
       case sink: SinkPart =>
         List.empty

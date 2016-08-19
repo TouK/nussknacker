@@ -28,9 +28,11 @@ object node {
 
   case class Case(expression: Expression, node: Next)
 
-  case class AggregateDefinition(id: String, keyExpression: Expression, next: PartRef) extends Node
 
-  case class AggregateTrigger(id: String, triggerExpression:Option[Expression], next: PartRef) extends Node
+  case class Aggregate(id: String,
+                       keyExpression: Expression,
+                       triggerExpression: Option[Expression],
+                       next: Next) extends Node
 
 
   sealed trait Next

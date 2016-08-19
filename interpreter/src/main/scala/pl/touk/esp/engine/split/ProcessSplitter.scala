@@ -5,7 +5,7 @@ import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.graph.node._
 import pl.touk.esp.engine.splittedgraph._
 import pl.touk.esp.engine.splittedgraph.part._
-import pl.touk.esp.engine.splittedgraph.splittednode.{AggregateTrigger, NextNode, PartRef}
+import pl.touk.esp.engine.splittedgraph.splittednode.{NextNode, PartRef}
 
 object ProcessSplitter {
 
@@ -18,29 +18,11 @@ object ProcessSplitter {
     SourcePart(node.id, node.ref, splittednode.Source(node.id, nextWithParts.next), nextWithParts.nextParts)
   }
 
-  private def split(node: Aggregate): AggregateDefinitionPart = {
+  private def split(node: Aggregate): AggregatePart = {
     val nextWithParts = traverse(node.next)
-    val afterAggregation = AfterAggregationPart(
-      id = node.id,
-      aggregatedVar = node.aggregatedVar,
-      next = nextWithParts.next,
-      nextParts = nextWithParts.nextParts
-    )
-    val aggregateTriggerPart =
-      //TODO: jakie id nadawac???
-      AggregateTriggerPart(id = node.id, aggregate = AggregateTrigger(s"${node.id}-trigger",
-        node.triggerExpression, node.foldingFunRef,
-        PartRef(afterAggregation.id)),
-        aggregatedVar = node.aggregatedVar,
-        afterAggregation)
-
-    AggregateDefinitionPart(
-      id = node.id,
-      durationInMillis = node.durationInMillis,
-      slideInMillis = node.stepInMillis,
-      aggregate = splittednode.AggregateDefinition(node.id, node.keyExpression, PartRef(afterAggregation.id)),
-      nextPart = aggregateTriggerPart
-    )
+    val aggregate = splittednode.Aggregate(node.id, node.keyExpression, node.triggerExpression, nextWithParts.next)
+    AggregatePart(node.id, node.durationInMillis, node.stepInMillis, node.aggregatedVar,
+      node.foldingFunRef, aggregate, nextWithParts.nextParts)
   }
 
   private def split(node: Sink): SinkPart = {
