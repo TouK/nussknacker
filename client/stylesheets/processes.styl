@@ -1,7 +1,7 @@
 @import "./_variables.styl"
 
 #process-filter
-  margin: 25px 50px
+  margin: 25px 60px
   width: 300px
   input
     stroke: #B7B7B7
@@ -15,46 +15,60 @@
       width: 20px
 
 
-#process-table
+table#process-table
   width: 100%
-
-  td
-    text-align: left
-    padding: 20px 10px
+  border-collapse: initial
+  font-size: 14px
+  font-weight: 400
+  color: #686868
+  & *
     border: none
+
+  tablePadding = 70px
+  th, td
+    padding: 20px 10px
+    &:nth-child(1)
+      padding-left: tablePadding
+    &:last-child
+      padding-right: tablePadding
 
   th
-    background-color: #78878B
-    color: white
-    padding: 20px 10px
-    border: none
+    background-color: #E0E0E0
+    color: #686868
+    font-size: 16px
+    font-weight: 600
 
-  tr.row-hover:hover td
-    background-color: rgba(77, 157, 189, 0.5)
-    color: white
   tr:nth-child(even)
     background-color: #F5F5F5
   tr:nth-child(odd)
-    background-color: #E0E0E0
+    background-color: #FFFFFF
+  tr.row-hover:hover td
+    background-color: #d9edf7
 
-  tr#filter-row
-    background-color: white
-    border-left: 1px solid #E0E0E0
-    border-right: 1px solid #E0E0E0
-    #filter-input
-      width: 100%
-      border: 1px solid #E0E0E0
-      border-radius: 2px
-      padding: 5px 10px
+  .date-column
+    text-align: center
+
+  .favourite-column
+    width: 200px
+    text-align: center;
+    img
+      height: 20px
+      margin: 0 auto 3px
+      padding: 0 10px
+      cursor: pointer
 
   .tagBlock
     display: inline-block
     margin: 0 5px 0
-    background-color: #969696
-    color: white
-    font-size: 14px
+    border-radius: 3px
     padding: 3px 15px
+    background-color: #FEB58A
+    font-size: 13px
+    color: white
     cursor: pointer
-    border-radius: 2px
-    &:hover
-      background-color: #615F5F
+
+  .reactable-pagination td
+    text-align: center
+    font-weight: 600
+    a
+      color: #686868
