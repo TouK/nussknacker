@@ -5,7 +5,7 @@ import java.util.Date
 import org.apache.flink.streaming.api.scala._
 import pl.touk.esp.engine.InterpreterConfig
 import pl.touk.esp.engine.api.process.SourceFactory
-import pl.touk.esp.engine.api.{BrieflyLoggingExceptionHandler, Service}
+import pl.touk.esp.engine.api.{BrieflyLoggingExceptionHandler, ParamName, Service}
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.process.util.CollectionSource
 
@@ -37,13 +37,11 @@ object KeyValueTestHelper {
 
   object MockService extends Service {
 
-    val ParamName = "input"
-
     val data = new ArrayBuffer[Any]
 
-    override def invoke(params: Map[String, Any])
-                       (implicit ec: ExecutionContext) =
-      Future.successful(data.append(params(ParamName)))
+    def invoke(@ParamName("input") input: Any)
+              (implicit ec: ExecutionContext) =
+      Future.successful(data.append(input))
   }
 
 }
