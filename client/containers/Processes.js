@@ -5,13 +5,15 @@ import { Link } from 'react-router'
 import { Table, Thead, Th, Tr, Td } from 'reactable'
 import $ from 'jquery'
 import { browserHistory } from 'react-router'
+import classNames from 'classnames'
 
 import '../stylesheets/processes.styl'
 import appConfig from 'appConfig'
 
+import filterIcon from '../assets/img/filter-icon.svg'
+import editIcon from '../assets/img/edit-icon.png'
 import starFull from '../assets/img/star-full.svg'
 import starEmpty from '../assets/img/star-empty.svg'
-import filterIcon from '../assets/img/filter-icon.svg'
 
 export const Processes = React.createClass({
 
@@ -19,7 +21,7 @@ export const Processes = React.createClass({
     return {
       processes: [],
       filterVal: '',
-      favouriteList: ["highPremiumUsage", "process"]
+      favouriteList: new Set()
     }
   },
 
@@ -41,12 +43,22 @@ export const Processes = React.createClass({
     return this.state.filterVal.toLowerCase();
   },
 
-  getFavouriteIcon(id) {
-    if (this.state.favouriteList.includes(id)){
-      return starFull
+  setFavourite(process) {
+    var favouriteArray = this.state.favouriteList;
+    if ( favouriteArray.has(process) ){
+      favouriteArray.delete(process);
     } else {
-      return starEmpty;
+      favouriteArray.add(process);
     }
+    this.setState({favouriteList: favouriteArray});
+  },
+
+  isFavourite(process){
+    var isFavourite = classNames({
+      'favourite-icon': true,
+      'is-favourite': this.state.favouriteList.has(process)
+    });
+    return isFavourite;
   },
 
   render() {
@@ -77,15 +89,15 @@ export const Processes = React.createClass({
             <Th column="name">Process name</Th>
             <Th column="category">Category</Th>
             <Th column="createDate" className="date-column">Create date</Th>
+            <Th column="edit" className="edit-column">Edit</Th>
             <Th column="favourite" className="favourite-column">
               <span>Favourite</span>
-              <img src={this.getFavouriteIcon(process.id)} />
             </Th>
           </Thead>
 
           {this.state.processes.map((process, index) => {
             return (
-              <Tr className="row-hover" key={index} onClick={this.showProcess.bind(this, process)}>
+              <Tr className="row-hover" key={index}>
                 <Td column="id">{process.id}</Td>
                 <Td column="name">{process.name}</Td>
                 <Td column="category">
@@ -96,8 +108,13 @@ export const Processes = React.createClass({
                   </div>
                 </Td>
                 <Td column="createDate" className="date-column">2016-08-10</Td>
+                <Td column="edit" className="edit-column">
+                  <img src={editIcon} className="edit-icon"
+                  onClick={this.showProcess.bind(this, process)} />
+                </Td>
                 <Td column="favourite" className="favourite-column">
-                  <img  src={this.getFavouriteIcon(process.id)} />
+                  <div className={this.isFavourite(process.id)}
+                  onClick={this.setFavourite.bind(this, process.id)}></div>
                 </Td>
               </Tr>
             )

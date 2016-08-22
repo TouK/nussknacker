@@ -42,18 +42,30 @@ table#process-table
     background-color: #FFFFFF
   tr.row-hover:hover td
     background-color: #d9edf7
-    cursor: pointer
+    cursor: default
 
   .date-column
     text-align: center
-
+// TODO - dodać webpackowego importa do ładowania obrazków w stylusie
   .favourite-column
     width: 200px
-    text-align: center;
+    text-align: center
+    .favourite-icon
+      background-image: url('../assets/img/star-empty.svg')
+      background-repeat: no-repeat
+      display:inline-block
+      height: 20px
+      margin: 0 auto
+      padding: 0 10px
+      cursor: pointer
+      &:hover, &.is-favourite
+        background-image: url('../assets/img/star-full.svg')
+
+  .edit-column
+    text-align: center
+    width: 50px
     img
       height: 20px
-      margin: 0 auto 3px
-      padding: 0 10px
       cursor: pointer
 
   .tagBlock
