@@ -30,7 +30,7 @@ module.exports = {
     loaders: [{
         test: /\.html$/,
         loader: "html"
-      }, {
+    }, {
       test: /\.js$/,
       loaders: ['babel'],
       exclude: /node_modules/,
@@ -48,7 +48,7 @@ module.exports = {
       loaders: ['style', 'css', 'less'],
       include: __dirname
     }, {
-      test: /\.(eot|svg|ttf|woff|woff2)$/,
+      test: /\.(eot|svg|png|ttf|woff|woff2)$/,
       loader: 'file?name=assets/fonts/[name].[ext]',
       include: __dirname
     }]
