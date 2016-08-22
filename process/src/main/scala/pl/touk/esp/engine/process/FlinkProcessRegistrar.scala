@@ -12,7 +12,6 @@ import org.apache.flink.api.common.state._
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.collector.selector.OutputSelector
-import org.apache.flink.streaming.api.functions.sink.RichSinkFunction
 import org.apache.flink.streaming.api.scala.function.util.ScalaFoldFunction
 import org.apache.flink.streaming.api.scala.{StreamExecutionEnvironment, _}
 import org.apache.flink.streaming.api.windowing.time.Time
@@ -21,59 +20,56 @@ import org.apache.flink.streaming.api.windowing.triggers.{Trigger, TriggerResult
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow
 import org.apache.flink.util.Collector
 import org.slf4j.LoggerFactory
+import pl.touk.esp.engine.Interpreter
 import pl.touk.esp.engine.Interpreter.ContextImpl
 import pl.touk.esp.engine.api._
 import pl.touk.esp.engine.api.process._
-import pl.touk.esp.engine.compile.{ProcessCompilationError, ProcessCompiler}
-import pl.touk.esp.engine.definition.{SinkCreator, SourceCreator}
+import pl.touk.esp.engine.compile.{PartSubGraphCompilationError, PartSubGraphCompiler, ProcessCompilationError, ProcessCompiler}
+import pl.touk.esp.engine.compiledgraph.CompiledProcessParts
+import pl.touk.esp.engine.compiledgraph.part._
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.process.FlinkProcessRegistrar._
 import pl.touk.esp.engine.process.util.SpelHack
-import pl.touk.esp.engine.split.ProcessSplitter
-import pl.touk.esp.engine.splittedgraph.part._
+import pl.touk.esp.engine.splittedgraph.splittednode
 import pl.touk.esp.engine.splittedgraph.splittednode.SplittedNode
-import pl.touk.esp.engine.splittedgraph.{SplittedProcess, splittednode}
 import pl.touk.esp.engine.util.SynchronousExecutionContext
 import pl.touk.esp.engine.util.metrics.InstantRateMeter
-import pl.touk.esp.engine.{Interpreter, InterpreterConfig}
 
 import scala.collection.JavaConverters._
+import scala.concurrent.Await
 import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
 import scala.language.implicitConversions
 
-class FlinkProcessRegistrar(interpreterConfig: () => InterpreterConfig,
-                            sourceFactories: Map[String, SourceFactory[_]],
-                            sinkFactories: Map[String, SinkFactory],
-                            foldingFunctions: => Map[String, FoldingFunction[_]],
+class FlinkProcessRegistrar(compilerWithServicesLifecycle: () => PartSubGraphCompilerWithServicesLifecycle,
+                            compiler: PartSubGraphCompiler => ProcessCompiler,
+                            interpreter: () => Interpreter,
                             espExceptionHandlerProvider: () => EspExceptionHandler,
-                            processTimeout: Duration,
-                            compiler: => ProcessCompiler = ProcessCompiler.default) {
+                            processTimeout: Duration) {
 
   implicit def millisToTime(duration: Long): Time = Time.of(duration, TimeUnit.MILLISECONDS)
 
   def register(env: StreamExecutionEnvironment, process: EspProcess): Unit = {
+    val processCompiler = compiler(compilerWithServicesLifecycle().compiler)
+    val compiledProcess = validateOrFailProcessCompilation(processCompiler.compile(process))
     SpelHack.registerHackedSerializers(env)
-    val splittedProcess = ProcessSplitter.split(process)
-    validateOrFail(compiler.validate(splittedProcess))
-    register(env, splittedProcess)
+    register(env, compiledProcess)
   }
 
-  private def register(env: StreamExecutionEnvironment, process: SplittedProcess): Unit = {
+  private def register(env: StreamExecutionEnvironment, process: CompiledProcessParts): Unit = {
     registerSourcePart(process.source)
 
     def registerSourcePart(part: SourcePart): Unit = {
-      val source = createSource(part)
-      val timeExtractionFunction = source.timeExtractionFunction
+      val timeExtractionFunction = part.obj.timeExtractionFunction
 
       timeExtractionFunction.foreach(_ => env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime))
 
       val newStart = env
-        .addSource[Any](source.toFlinkSource)(source.typeInformation)
+        .addSource[Any](part.obj.toFlinkSource)(part.obj.typeInformation)
       //chyba nie ascending????
       val withAssigned = timeExtractionFunction.map(newStart.assignAscendingTimestamps).getOrElse(newStart)
         .map(new MeterFunction[Any]("source", process.metaData.id))
-        .flatMap(new InitialInterpretationFunction(compiler, part.source, interpreterConfig, espExceptionHandlerProvider, process.metaData, Interpreter.InputParamName, processTimeout))
+        .flatMap(new InitialInterpretationFunction(compilerWithServicesLifecycle, interpreter,
+          espExceptionHandlerProvider, part.source, Interpreter.InputParamName, process.metaData, processTimeout))
         .split(SplitFunction)
       registerParts(withAssigned, part.nextParts)
     }
@@ -83,28 +79,27 @@ class FlinkProcessRegistrar(interpreterConfig: () => InterpreterConfig,
       processPart match {
         case part: AggregatePart =>
           val windowDef = start
-            .keyBy(new AggregateKeyByFunction(compiler, part.aggregate, interpreterConfig, espExceptionHandlerProvider, processTimeout))
+            .keyBy(new AggregateKeyByFunction(compilerWithServicesLifecycle, interpreter,
+              espExceptionHandlerProvider, part.aggregate, processTimeout))
             .timeWindow(part.durationInMillis, part.slideInMillis)
 
-          val foldingFunction = part.foldingFunRef.map(ref =>
-            foldingFunctions.getOrElse(ref, throw new IllegalStateException(s"Folding function $ref not found"))
-          ).getOrElse(JListFoldingFunction).asInstanceOf[FoldingFunction[Any]]
+          val foldingFunction = part.foldingFun.getOrElse(JListFoldingFunction).asInstanceOf[FoldingFunction[Any]]
 
           val newStart = part.aggregate.triggerExpression
-            .map(expr => windowDef.trigger(new AggregationTrigger(compiler, part.aggregatedVar,
-              part.aggregate, interpreterConfig, process.metaData, processTimeout))).getOrElse(windowDef)
+            .map(expr => windowDef.trigger(new AggregationTrigger(compilerWithServicesLifecycle, interpreter,
+              espExceptionHandlerProvider, part.aggregate, part.aggregatedVar, process.metaData, processTimeout))).getOrElse(windowDef)
             .fold(null, new WindowFoldingFunction(part.aggregatedVar, foldingFunction))
-            .flatMap(new InitialInterpretationFunction(
-              compiler, part.aggregate, interpreterConfig, espExceptionHandlerProvider,
-              process.metaData, part.aggregatedVar, processTimeout))
+            .flatMap(new InitialInterpretationFunction(compilerWithServicesLifecycle, interpreter,
+              espExceptionHandlerProvider, part.aggregate, part.aggregatedVar, process.metaData, processTimeout))
             .split(SplitFunction)
 
           registerParts(newStart, part.nextParts)
         case part: SinkPart =>
           start
-            .flatMap(new SinkInterpretationFunction(process.metaData, compiler, part.sink, interpreterConfig, espExceptionHandlerProvider, processTimeout))
+            .flatMap(new SinkInterpretationFunction(compilerWithServicesLifecycle, interpreter,
+              espExceptionHandlerProvider, part.sink, processTimeout))
             .name(s"${part.id}-function")
-            .addSink(createSinkFunction(part))
+            .addSink(part.obj.toFlinkFunction)
             .name(s"${part.id}-sink")
       }
 
@@ -114,22 +109,6 @@ class FlinkProcessRegistrar(interpreterConfig: () => InterpreterConfig,
         registerSubsequentPart(start.select(part.id), part)
       }
       // TODO: register default sink
-    }
-
-    def createSource(part: SourcePart): Source[Any] = {
-      val sourceType = part.ref.typ
-      val sourceFactory = sourceFactories.getOrElse(sourceType, throw new scala.IllegalArgumentException(s"Missing source factory of type: $sourceType"))
-      SourceCreator(sourceFactory)
-        .create(process.metaData, part.ref.parameters)
-        .asInstanceOf[Source[Any]]
-    }
-
-    def createSinkFunction(part: SinkPart) = {
-      val sinkType = part.ref.typ
-      val sinkFactory = sinkFactories.getOrElse(sinkType, throw new IllegalArgumentException(s"Missing sink factory of type: $sinkType"))
-      SinkCreator(sinkFactory)
-        .create(process.metaData, part.ref.parameters)
-        .toFlinkFunction
     }
 
   }
@@ -143,33 +122,56 @@ object FlinkProcessRegistrar {
   def apply(creator: ProcessConfigCreator, config: Config) = {
     val timeout = config.getDuration("timeout", TimeUnit.SECONDS).seconds
 
-    new FlinkProcessRegistrar(() => new InterpreterConfig(creator.services(config), creator.listeners(config)),
-      creator.sourceFactories(config), creator.sinkFactories(config),
-      creator.foldingFunctions(config), () => creator.exceptionHandler(config), timeout)
+    def subGraphCompilerWithServicesLifecycle() = {
+      val services = creator.services(config)
+      val sub = PartSubGraphCompiler.default(services)
+      PartSubGraphCompilerWithServicesLifecycle(sub, new ServicesLifecycle(services.values.toSeq))
+    }
+
+    def compiler(sub: PartSubGraphCompiler): ProcessCompiler = {
+      ProcessCompiler.apply(
+        sub = sub,
+        sourceFactories = creator.sourceFactories(config),
+        sinkFactories = creator.sinkFactories(config),
+        foldingFunctions = creator.foldingFunctions(config)
+      )
+    }
+
+    new FlinkProcessRegistrar(
+      compilerWithServicesLifecycle = subGraphCompilerWithServicesLifecycle,
+      compiler = compiler,
+      interpreter = () => new Interpreter(creator.listeners(config)),
+      espExceptionHandlerProvider = () => creator.exceptionHandler(config),
+      processTimeout = timeout)
   }
 
-  private def validateOrFail[T](validated: ValidatedNel[ProcessCompilationError, T]): T = validated match {
+  private def validateOrFailProcessCompilation[T](validated: ValidatedNel[ProcessCompilationError, T]): T = validated match {
     case Valid(r) => r
     case Invalid(err) => throw new scala.IllegalArgumentException(err.unwrap.mkString("Compilation errors: ", ", ", ""))
   }
 
-  class InitialInterpretationFunction(compiler: => ProcessCompiler,
-                                      node: SplittedNode,
-                                      configProvider: () => InterpreterConfig,
+  private def validateOrFail[T](validated: ValidatedNel[PartSubGraphCompilationError, T]): T = validated match {
+    case Valid(r) => r
+    case Invalid(err) => throw new scala.IllegalArgumentException(err.unwrap.mkString("Compilation errors: ", ", ", ""))
+  }
+
+  class InitialInterpretationFunction(compilerWithServicesProvider: () => PartSubGraphCompilerWithServicesLifecycle,
+                                      interpreterProvider: () => Interpreter,
                                       espExceptionHandlerProvider: () => EspExceptionHandler,
-                                      metaData: MetaData,
+                                      node: SplittedNode,
                                       inputParamName: String,
+                                      metaData: MetaData,
                                       processTimeout: Duration) extends RichFlatMapFunction[Any, InterpretationResult] {
 
-    lazy val config = configProvider()
-    lazy implicit val ec = SynchronousExecutionContext.ctx
-    private lazy val interpreter = new Interpreter(config)
-    private lazy val compiledNode = validateOrFail(compiler.compile(node))
+    private lazy implicit val ec = SynchronousExecutionContext.ctx
+    private lazy val compilerWithServices = compilerWithServicesProvider()
+    private lazy val compiledNode = validateOrFail(compilerWithServices.compiler.compile(node))
+    private lazy val interpreter = interpreterProvider()
     private lazy val espExceptionHandler = espExceptionHandlerProvider()
 
     override def open(parameters: Configuration): Unit = {
       super.open(parameters)
-      config.open
+      compilerWithServices.servicesLifecycle.open()
       espExceptionHandler.open()
     }
 
@@ -183,30 +185,30 @@ object FlinkProcessRegistrar {
 
     override def close(): Unit = {
       super.close()
-      config.close()
+      compilerWithServices.servicesLifecycle.close()
       espExceptionHandler.close()
     }
 
   }
 
-  class SinkInterpretationFunction(metaData: MetaData,
-                                   compiler: => ProcessCompiler,
-                                   sink: splittednode.Sink,
-                                   configProvider: () => InterpreterConfig,
+  class SinkInterpretationFunction(compilerWithServicesProvider: () => PartSubGraphCompilerWithServicesLifecycle,
+                                   interpreterProvider: () => Interpreter,
                                    espExceptionHandlerProvider: () => EspExceptionHandler,
+                                   sink: splittednode.Sink,
                                    processTimeout: Duration) extends RichFlatMapFunction[InterpretationResult, Any] {
 
-    lazy val config = configProvider()
-    lazy val instantRateMeter = new InstantRateMeter
-    lazy implicit val ec = SynchronousExecutionContext.ctx
-    lazy val logger = LoggerFactory.getLogger(classOf[FlinkProcessRegistrar])
-    private lazy val interpreter = new Interpreter(config)
-    private lazy val compiledNode = validateOrFail(compiler.compile(sink))
+    private lazy implicit val ec = SynchronousExecutionContext.ctx
+    private lazy val compilerWithServices = compilerWithServicesProvider()
+    private lazy val compiledNode = validateOrFail(compilerWithServices.compiler.compile(sink))
+    private lazy val interpreter = interpreterProvider()
     private lazy val espExceptionHandler = espExceptionHandlerProvider()
+
+    private lazy val instantRateMeter = new InstantRateMeter
+    private lazy val logger = LoggerFactory.getLogger(classOf[FlinkProcessRegistrar])
 
     override def open(parameters: Configuration): Unit = {
       super.open(parameters)
-      config.open
+      compilerWithServices.servicesLifecycle.open()
       espExceptionHandler.open()
       getRuntimeContext.getMetricGroup
         .addGroup(sink.id)
@@ -225,24 +227,24 @@ object FlinkProcessRegistrar {
 
     override def close(): Unit = {
       super.close()
-      config.open
+      compilerWithServices.servicesLifecycle.close()
       espExceptionHandler.close()
     }
   }
 
-  class AggregateKeyByFunction(compiler: => ProcessCompiler,
-                               node: splittednode.Aggregate,
-                               configProvider: () => InterpreterConfig,
+  class AggregateKeyByFunction(compilerWithServicesProvider: () => PartSubGraphCompilerWithServicesLifecycle,
+                               interpreterProvider: () => Interpreter,
                                espExceptionHandlerProvider: () => EspExceptionHandler,
+                               node: splittednode.Aggregate,
                                processTimeout: Duration) extends (InterpretationResult => Option[String]) with Serializable {
 
-    private lazy val config = configProvider()
-    private lazy val interpreter = new Interpreter(config)
+    private lazy implicit val ec = SynchronousExecutionContext.ctx
+    private lazy val compilerWithServices = compilerWithServicesProvider()
+    private lazy val compiledNode = validateOrFail(compilerWithServices.compiler.compile(node))
+    private lazy val interpreter = interpreterProvider()
     private lazy val espExceptionHandler = espExceptionHandlerProvider()
-    private lazy val compiledNode = validateOrFail(compiler.compile(node))
 
     override def apply(result: InterpretationResult) = {
-      implicit val ec = SynchronousExecutionContext.ctx
       espExceptionHandler.recover {
         val resultFuture = interpreter.interpret(compiledNode, InterpreterMode.AggregateKeyExpression, result.finalContext).map(_.output.toString)
         Await.result(resultFuture, processTimeout)
@@ -251,15 +253,19 @@ object FlinkProcessRegistrar {
 
   }
 
-  class AggregationTrigger(compiler: => ProcessCompiler,
-                           aggregateVar: String,
+  class AggregationTrigger(compilerWithServicesProvider: () => PartSubGraphCompilerWithServicesLifecycle,
+                           interpreterProvider: () => Interpreter,
+                           espExceptionHandlerProvider: () => EspExceptionHandler,
                            node: splittednode.Aggregate,
-                           config: () => InterpreterConfig,
+                           inputParamName: String,
                            metaData: MetaData,
                            processTimeout: Duration) extends Trigger[AnyRef, TimeWindow] with Serializable {
 
-    private lazy val interpreter = new Interpreter(config())
-    private lazy val compiledNode = validateOrFail(compiler.compile(node))
+    private lazy implicit val ec = SynchronousExecutionContext.ctx
+    private lazy val compilerWithServices = compilerWithServicesProvider()
+    private lazy val compiledNode = validateOrFail(compilerWithServices.compiler.compile(node))
+    private lazy val interpreter = interpreterProvider()
+    private lazy val espExceptionHandler = espExceptionHandlerProvider()
 
     override def onElement(element: scala.AnyRef, timestamp: Long, window: TimeWindow, ctx: TriggerContext) = {
       if (timestamp > window.maxTimestamp()) {
@@ -272,10 +278,13 @@ object FlinkProcessRegistrar {
     }
 
     def currentExceedsThreshold(ctx: TriggerContext): Boolean = {
-      implicit val ec = SynchronousExecutionContext.ctx
       val foldResult: AnyRef = getAggregatedState(ctx)
-      val resultFuture = interpreter.interpret(compiledNode, InterpreterMode.AggregateTriggerExpression, metaData, foldResult).map(_.output.toString.toBoolean)
-      Await.result(resultFuture, processTimeout)
+      espExceptionHandler.recover {
+        val resultFuture = interpreter
+          .interpret(compiledNode, InterpreterMode.AggregateTriggerExpression, metaData, foldResult, inputParamName)
+          .map(_.output.toString.toBoolean)
+        Await.result(resultFuture, processTimeout)
+      }(ContextImpl(metaData).withVariable(inputParamName, foldResult)).getOrElse(false) // false?
     }
 
     def getAggregatedState(ctx: TriggerContext): AnyRef = {

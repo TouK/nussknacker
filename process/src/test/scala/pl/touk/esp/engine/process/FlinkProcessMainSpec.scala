@@ -4,10 +4,9 @@ import argonaut.PrettyParams
 import com.typesafe.config.Config
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.streaming.api.scala._
-
 import org.scalatest.FlatSpec
 import pl.touk.esp.engine.api.process.{ProcessConfigCreator, SinkFactory, SourceFactory}
-import pl.touk.esp.engine.api.{BrieflyLoggingExceptionHandler, MetaData}
+import pl.touk.esp.engine.api.{BrieflyLoggingExceptionHandler, MetaData, ParamName, Service}
 import pl.touk.esp.engine.build.GraphBuilder
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.graph.service.{Parameter, ServiceRef}
@@ -16,6 +15,7 @@ import pl.touk.esp.engine.process.ProcessTestHelpers.{EmptySink, SimpleRecord}
 import pl.touk.esp.engine.process.util.CollectionSource
 import pl.touk.esp.engine.spel
 
+import scala.concurrent.Future
 import scala.concurrent.duration._
 
 class FlinkProcessMainSpec extends FlatSpec {
@@ -35,9 +35,15 @@ class FlinkProcessMainSpec extends FlatSpec {
 
 }
 
+object LogService extends Service {
+  def invoke(@ParamName("all") all: Any): Future[Unit] = {
+    Future.successful(Unit)
+  }
+}
+
 class SimpleProcessConfigCreator extends ProcessConfigCreator {
 
-  override def services(config: Config) = Map()
+  override def services(config: Config) = Map("logService" -> LogService)
 
   override def sinkFactories(config: Config) = Map[String, SinkFactory](
     "monitor" -> SinkFactory.noParam(EmptySink)

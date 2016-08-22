@@ -41,7 +41,7 @@ object FlinkProcessMain {
     }
     ProcessMarshaller.fromJson(canonicalJson) match {
       case Valid(p) => p
-      case Invalid(err) => throw new IllegalArgumentException(err.unwrap.mkString("Compilation errors: ", ", ", ""))
+      case Invalid(err) => throw new IllegalArgumentException(err.unwrap.mkString("Unmarshalling errors: ", ", ", ""))
     }
   }
 
