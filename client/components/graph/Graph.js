@@ -49,7 +49,8 @@ export default class Graph extends React.Component {
             width: this.refs.espGraph.offsetWidth,
             gridSize: 1,
             model: this.graph,
-            snapLinks: { radius: 75 }
+            snapLinks: { radius: 75 },
+            interactive: false //remove when editing won't be such a pain
         });
 
         this.graph.resetCells(cells);
