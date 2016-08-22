@@ -56,7 +56,7 @@ class FlinkProcessRegistrarSpec extends FlatSpec with Matchers {
     processInvoker.invoke(process, data)
 
     MockService.data shouldNot be('empty)
-    MockService.data(0) shouldBe Map("all" -> Set("a", "b").asJava)
+    MockService.data(0) shouldBe Set("a", "b").asJava
   }
 
   it should "aggregate nested records" in {
@@ -81,7 +81,7 @@ class FlinkProcessRegistrarSpec extends FlatSpec with Matchers {
     processInvoker.invoke(process, data)
 
     MockService.data shouldNot be('empty)
-    MockService.data(0) shouldBe Map("all" -> Set(27L).asJava)
+    MockService.data(0) shouldBe Set(27L).asJava
   }
 
 }

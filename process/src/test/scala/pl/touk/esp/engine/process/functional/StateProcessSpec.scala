@@ -34,7 +34,7 @@ class StateProcessSpec extends FlatSpec with Matchers {
     processInvoker.invoke(process, data, env)
 
     MockService.data shouldNot be('empty)
-    MockService.data(0) shouldBe Map("all" -> Set("a", "b"))
+    MockService.data(0) shouldBe Set("a", "b")
   }
 
 }

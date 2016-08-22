@@ -55,7 +55,5 @@ case object EmptySink extends Sink {
 }
 
 case object EmptyService extends Service {
-  override def invoke(params: Map[String, Any])(implicit ec: ExecutionContext) = {
-    Future(println(params))
-  }
+  def invoke() = Future.successful(Unit)
 }

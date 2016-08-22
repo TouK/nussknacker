@@ -6,7 +6,7 @@ import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.scala._
 import pl.touk.esp.engine.InterpreterConfig
 import pl.touk.esp.engine.api.process.{Sink, SinkFactory, SourceFactory}
-import pl.touk.esp.engine.api.{BrieflyLoggingExceptionHandler, FoldingFunction, Service}
+import pl.touk.esp.engine.api.{BrieflyLoggingExceptionHandler, FoldingFunction, ParamName, Service}
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.process.util.CollectionSource
 
@@ -45,10 +45,10 @@ object ProcessTestHelpers {
 
   object MockService extends Service {
 
-    val data = new ArrayBuffer[Map[String, Any]]
+    val data = new ArrayBuffer[Any]
 
-    override def invoke(params: Map[String, Any])(implicit ec: ExecutionContext) = Future {
-      data.append(params)
+    def invoke(@ParamName("all") all: Any) = Future.successful {
+      data.append(all)
     }
   }
 
@@ -59,7 +59,7 @@ object ProcessTestHelpers {
   }
 
   object EmptyService extends Service {
-    override def invoke(params: Map[String, Any])(implicit ec: ExecutionContext) = Future(())
+    def invoke() = Future.successful(Unit)
   }
 
   object SimpleRecordFoldingFunction extends FoldingFunction[SimpleRecordAcc] {

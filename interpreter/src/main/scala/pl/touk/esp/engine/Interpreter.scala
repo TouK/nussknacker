@@ -7,6 +7,7 @@ import pl.touk.esp.engine.compiledgraph.expression._
 import pl.touk.esp.engine.compiledgraph.node.{Sink, Source, _}
 import pl.touk.esp.engine.compiledgraph.service._
 import pl.touk.esp.engine.compiledgraph.variable._
+import pl.touk.esp.engine.definition.ServiceInvoker
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -118,13 +119,15 @@ class Interpreter(config: InterpreterConfig) {
 
   private def invoke(ref: ServiceRef, ctx: Context)
                     (implicit executionContext: ExecutionContext): Future[Any] = {
-    val preparedParams = ref.parameters
-      .map(param => param.name -> param.expression.evaluate(ctx)).toMap
     val service = config.services.getOrElse(
       ref.id,
       throw new RuntimeException(s"Missing service: ${ref.id}")
     )
-    val resultFuture = service.invoke(preparedParams)
+    val invoker = ServiceInvoker(service)
+    val implicitParams = ctx.variables // maybe properties of variables too?
+    val preparedParams = ref.parameters
+      .map(param => param.name -> param.expression.evaluate(ctx)).toMap
+    val resultFuture = invoker.invoke(implicitParams ++ preparedParams)
     resultFuture.onComplete { result =>
       config.listeners.foreach(_.serviceInvoked(ref.id, ctx, result))
     }
