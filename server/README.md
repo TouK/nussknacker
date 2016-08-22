@@ -19,3 +19,10 @@ gdzie:
 
 ###json dla procesu
 ```http://localhost:8081/api/processes/process/json```
+
+Deploy:
+================
+
+- `./build.sh`
+- `scp target/scala_2.11/esp-ui-assembly-0.1-SNAPSHOT.jar touk@{server}:esp-frontend`
+- na serwerze `cd esp-frontend; ./run.sh` - restartuje frontend
