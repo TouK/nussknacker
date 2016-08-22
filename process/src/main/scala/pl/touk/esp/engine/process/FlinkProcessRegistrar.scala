@@ -25,6 +25,7 @@ import pl.touk.esp.engine.Interpreter.ContextImpl
 import pl.touk.esp.engine.api._
 import pl.touk.esp.engine.api.process._
 import pl.touk.esp.engine.compile.{ProcessCompilationError, ProcessCompiler}
+import pl.touk.esp.engine.definition.{SinkCreator, SourceCreator}
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.process.FlinkProcessRegistrar._
 import pl.touk.esp.engine.process.util.SpelHack
@@ -118,16 +119,16 @@ class FlinkProcessRegistrar(interpreterConfig: () => InterpreterConfig,
     def createSource(part: SourcePart): Source[Any] = {
       val sourceType = part.ref.typ
       val sourceFactory = sourceFactories.getOrElse(sourceType, throw new scala.IllegalArgumentException(s"Missing source factory of type: $sourceType"))
-      sourceFactory
-        .create(process.metaData, part.ref.parameters.map(p => p.name -> p.value).toMap)
+      SourceCreator(sourceFactory)
+        .create(process.metaData, part.ref.parameters)
         .asInstanceOf[Source[Any]]
     }
 
     def createSinkFunction(part: SinkPart) = {
       val sinkType = part.ref.typ
       val sinkFactory = sinkFactories.getOrElse(sinkType, throw new IllegalArgumentException(s"Missing sink factory of type: $sinkType"))
-      sinkFactory
-        .create(process.metaData, part.ref.parameters.map(p => p.name -> p.value).toMap)
+      SinkCreator(sinkFactory)
+        .create(process.metaData, part.ref.parameters)
         .toFlinkFunction
     }
 

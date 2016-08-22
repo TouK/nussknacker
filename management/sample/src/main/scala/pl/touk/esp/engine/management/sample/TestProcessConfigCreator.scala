@@ -26,7 +26,7 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
   override def sourceFactories(config: Config) = {
     Map[String, SourceFactory[_]](
       "kafka-transaction" -> new SourceFactory[String] {
-        override def create(processMetaData: MetaData, parameters: Map[String, String]) = {
+        def create(processMetaData: MetaData) = {
           CollectionSource(new ExecutionConfig(), List("blee"), None)
         }
       }

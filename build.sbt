@@ -111,6 +111,7 @@ lazy val management = (project in file("management")).
       Seq(
         "org.apache.flink" %% "flink-clients" % flinkV,
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "runtime", // na potrzeby optymalizacji procesów
+        "org.apache.flink" %% "flink-streaming-java" % flinkV % "provided",
 
         //to musimy podac explicite, zeby wymusic odpowiednia wersje dla flinka
         "com.typesafe.akka" %% "akka-remote" % akkaV,
@@ -165,6 +166,7 @@ lazy val interpreter = (project in file("interpreter")).
         "org.springframework" % "spring-expression" % springV,
         "com.github.alexarchambault" %% s"argonaut-shapeless_$argonautMajorV" % argonautShapelessV,
         "org.typelevel" %% "cats-core" % catsV,
+        "org.apache.flink" %% "flink-streaming-java" % flinkV % "provided", // api dependency
         "ch.qos.logback" % "logback-classic" % logbackV % "test",
         "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )
@@ -179,12 +181,13 @@ lazy val kafka = (project in file("kafka")).
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" %% "flink-connector-kafka-0.9" % flinkV,
+        "org.apache.flink" %% "flink-streaming-java" % flinkV % "provided", // api dependency
         "org.apache.kafka" %% "kafka" % kafkaV % "test",
         "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )
     }
   ).
-  dependsOn(api % "compile->compile;provided->provided")
+  dependsOn(api)
 
 lazy val kafkaTestUtil = (project in file("kafka-test-util")).
   settings(commonSettings).

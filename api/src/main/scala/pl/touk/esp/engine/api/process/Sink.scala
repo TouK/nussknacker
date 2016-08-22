@@ -11,14 +11,15 @@ trait Sink {
 
 trait SinkFactory {
 
-  def create(processMetaData: MetaData, parameters: Map[String, String]): Sink
-
 }
 
 object SinkFactory {
 
-  def noParam(sink: Sink): SinkFactory = new SinkFactory {
-    override def create(processMetaData: MetaData, parameters: Map[String, String]): Sink = sink
+  def noParam(sink: Sink): SinkFactory =
+    new NoParamSinkFactory(sink)
+
+  class NoParamSinkFactory(sink: Sink) extends SinkFactory {
+    def create(): Sink = sink
   }
 
 }
