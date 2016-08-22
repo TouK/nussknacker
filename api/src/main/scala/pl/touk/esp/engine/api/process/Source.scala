@@ -15,15 +15,15 @@ trait Source[T] {
 }
 
 trait SourceFactory[T] {
-
-  def create(processMetaData: MetaData, parameters: Map[String, String]): Source[T]
-
 }
 
 object SourceFactory {
 
-  def noParam[T](source: Source[T]): SourceFactory[T] = new SourceFactory[T] {
-    override def create(processMetaData: MetaData, parameters: Map[String, String]): Source[T] = source
+  def noParam[T](source: Source[T]): SourceFactory[T] =
+    new NoParamSourceFactory[T](source)
+
+  class NoParamSourceFactory[T](source: Source[T]) extends SourceFactory[T] {
+    def create(): Source[T] = source
   }
 
 }
