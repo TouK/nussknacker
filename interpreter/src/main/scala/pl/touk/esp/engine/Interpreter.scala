@@ -7,11 +7,11 @@ import pl.touk.esp.engine.compiledgraph.expression._
 import pl.touk.esp.engine.compiledgraph.node.{Sink, Source, _}
 import pl.touk.esp.engine.compiledgraph.service._
 import pl.touk.esp.engine.compiledgraph.variable._
-import pl.touk.esp.engine.definition.ServiceInvoker
+import pl.touk.esp.engine.util.LoggingListener
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class Interpreter(config: InterpreterConfig) {
+class Interpreter(listeners: Seq[ProcessListener] = Seq(LoggingListener)) {
 
   def interpret(node: Node,
                 mode: InterpreterMode,
@@ -30,7 +30,7 @@ class Interpreter(config: InterpreterConfig) {
 
   private def interpretNode(node: Node, ctx: Context)
                            (implicit mode: InterpreterMode, executor: ExecutionContext): Future[InterpretationResult] = {
-    config.listeners.foreach(_.nodeEntered(node.id, ctx, mode))
+    listeners.foreach(_.nodeEntered(node.id, ctx, mode))
     (node, mode) match {
       case (Source(_, next), Traverse) =>
         interpretNext(next, ctx)
@@ -119,24 +119,19 @@ class Interpreter(config: InterpreterConfig) {
 
   private def invoke(ref: ServiceRef, ctx: Context)
                     (implicit executionContext: ExecutionContext): Future[Any] = {
-    val service = config.services.getOrElse(
-      ref.id,
-      throw new RuntimeException(s"Missing service: ${ref.id}")
-    )
-    val invoker = ServiceInvoker(service)
     val implicitParams = ctx.variables // maybe properties of variables too?
     val preparedParams = ref.parameters
-      .map(param => param.name -> param.expression.evaluate(ctx)).toMap
-    val resultFuture = invoker.invoke(implicitParams ++ preparedParams)
+      .map(param => param.name -> param.expression.evaluate[Any](ctx)).toMap
+    val resultFuture = ref.invoker.invoke(implicitParams ++ preparedParams)
     resultFuture.onComplete { result =>
-      config.listeners.foreach(_.serviceInvoked(ref.id, ctx, result))
+      listeners.foreach(_.serviceInvoked(ref.id, ctx, result))
     }
     resultFuture
   }
 
   private def evaluate[R](expr: Expression, ctx: Context) = {
     val result = expr.evaluate[R](ctx)
-    config.listeners.foreach(_.expressionEvaluated(expr.original, ctx, result))
+    listeners.foreach(_.expressionEvaluated(expr.original, ctx, result))
     result
   }
 

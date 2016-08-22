@@ -1,22 +1,20 @@
 package pl.touk.esp.engine.marshall
 
-import cats.data.{Validated, ValidatedNel}
-import cats.std.list._
 import argonaut._
 import Argonaut._
 import argonaut.PrettyParams
 import argonaut.derive._
-import pl.touk.esp.engine.{canonize, _}
-import pl.touk.esp.engine.compile.ProcessCompiler
+import cats.data.{Validated, ValidatedNel}
 import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
 import pl.touk.esp.engine.canonicalgraph.canonicalnode.CanonicalNode
 import pl.touk.esp.engine.canonize.ProcessCanonizer
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.marshall.ProcessUnmarshallError._
-import pl.touk.esp.engine.marshall.ProcessValidationError._
+import pl.touk.esp.engine.marshall.ProcessValidationError.ProcessUncanonizationError
 
 object ProcessMarshaller {
 
+  import cats.std.list._
   import ArgonautShapeless._
 
   private implicit def typeFieldJsonSumCodecFor[S]: JsonSumCodecFor[S] =
@@ -37,49 +35,12 @@ object ProcessMarshaller {
 
   def fromJson(json: String): ValidatedNel[ProcessUnmarshallError, EspProcess] = {
     decode(json).toValidatedNel[ProcessUnmarshallError, CanonicalProcess] andThen { canonical =>
-      validate(canonical).leftMap(_.map[ProcessUnmarshallError](identity))
+      ProcessCanonizer.uncanonize(canonical).leftMap(_.map[ProcessUnmarshallError](ProcessUncanonizationError))
     }
   }
 
   def decode(json: String): Validated[ProcessJsonDecodeError, CanonicalProcess] = {
     Validated.fromEither(json.decodeEither[CanonicalProcess]).leftMap(ProcessJsonDecodeError)
-  }
-
-  def validate(canonical: CanonicalProcess): ValidatedNel[ProcessValidationError, EspProcess] = {
-    ProcessCanonizer.uncanonize(canonical).leftMap(_.map[ProcessValidationError](ProcessUncanonizationError)) andThen { unflatten =>
-      ProcessCompiler.default.validate(unflatten).map(_ => unflatten).leftMap(_.map[ProcessValidationError](ProcessCompilationError))
-    }
-  }
-
-}
-
-sealed trait ProcessUnmarshallError {
-
-  def nodeIds: Set[String]
-
-}
-
-object ProcessUnmarshallError {
-
-  case class ProcessJsonDecodeError(msg: String) extends ProcessUnmarshallError {
-    override val nodeIds: Set[String] = Set.empty
-  }
-
-}
-
-sealed trait ProcessValidationError extends ProcessUnmarshallError
-
-object ProcessValidationError {
-
-  case class ProcessUncanonizationError(nested: canonize.ProcessUncanonizationError)
-    extends ProcessValidationError {
-
-    override def nodeIds: Set[String] = nested.nodeIds
-
-  }
-
-  case class ProcessCompilationError(nested: compile.ProcessCompilationError)  extends ProcessValidationError {
-    override def nodeIds: Set[String] = nested.nodeIds
   }
 
 }

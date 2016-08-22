@@ -5,7 +5,7 @@ import pl.touk.esp.engine.api.{Context, InterpreterMode, ProcessListener}
 
 import scala.util.Try
 
-class LoggingListener extends ProcessListener {
+object LoggingListener extends ProcessListener {
 
   private lazy val log = LoggerFactory.getLogger(getClass)
 
