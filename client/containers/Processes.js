@@ -9,6 +9,10 @@ import { browserHistory } from 'react-router'
 import '../stylesheets/processes.styl'
 import appConfig from 'appConfig'
 
+import starFull from '../assets/img/star-full.svg'
+import starEmpty from '../assets/img/star-empty.svg'
+import filterIcon from '../assets/img/filter-icon.svg'
+
 export const Processes = React.createClass({
 
   getInitialState() {
@@ -39,9 +43,9 @@ export const Processes = React.createClass({
 
   getFavouriteIcon(id) {
     if (this.state.favouriteList.includes(id)){
-      return "assets/img/star-full.svg"
+      return starFull
     } else {
-      return "assets/img/star-empty.svg";
+      return starEmpty;
     }
   },
 
@@ -52,7 +56,7 @@ export const Processes = React.createClass({
           <input type="text" className="form-control" aria-describedby="basic-addon1"
                   value={this.state.filterVal} onChange={this.handleChange}/>
           <span className="input-group-addon" id="basic-addon1">
-            <img id="search-icon" src="assets/img/filter-icon.svg" />
+            <img id="search-icon" src={filterIcon} />
           </span>
         </div>
         <Table id="process-table" className="table"
