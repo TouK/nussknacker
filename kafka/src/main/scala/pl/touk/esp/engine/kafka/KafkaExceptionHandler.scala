@@ -10,7 +10,7 @@ import pl.touk.esp.engine.api.{EspExceptionHandler, EspExceptionInfo}
 import scala.collection.JavaConversions._
 
 class KafkaExceptionHandler(kafkaAddress: String,
-                            topic: String,
+                            topicChoice: EspExceptionInfo=>String,
                             serializationSchema: SerializationSchema[EspExceptionInfo],
                             properties: Properties = new Properties()) extends EspExceptionHandler {
   lazy val producer = new KafkaProducer[Array[Byte], Array[Byte]](propertiesForKafka())
@@ -21,6 +21,7 @@ class KafkaExceptionHandler(kafkaAddress: String,
 
   override protected def handle(exceptionInfo: EspExceptionInfo): Unit = {
     val toSend = serializationSchema.serialize(exceptionInfo)
+    val topic = topicChoice(exceptionInfo)
     val logAsString = true
     val errorLoggingCallback = new ErrorLoggingCallback(topic, Array.empty, toSend, logAsString)
     producer.send(new ProducerRecord(topic, toSend), errorLoggingCallback)

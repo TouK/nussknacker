@@ -3,7 +3,7 @@ package pl.touk.esp.engine.perftest.sample
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-import org.apache.flink.streaming.util.serialization.SerializationSchema
+import org.apache.flink.streaming.util.serialization.{KeyedSerializationSchema, SerializationSchema}
 import pl.touk.esp.engine.api.VerboselyLoggingExceptionHandler
 import pl.touk.esp.engine.api.process.ProcessConfigCreator
 import pl.touk.esp.engine.kafka.KafkaConfig
@@ -26,10 +26,15 @@ class AggProcessConfigCreator extends ProcessConfigCreator {
 
   override def sinkFactories(config: Config) = {
     val kafkaConfig = config.as[KafkaConfig]("kafka")
-    val longSerializationSchema = new SerializationSchema[Any] {
-      override def serialize(element: Any): Array[Byte] = {
+    val longSerializationSchema = new KeyedSerializationSchema[Any] {
+
+      override def serializeValue(element: Any) =
         element.asInstanceOf[Long].toString.getBytes
-      }
+
+      override def serializeKey(element: Any) =
+        element.asInstanceOf[Long].toString.getBytes
+
+      override def getTargetTopic(element: Any) = null
     }
     Map(
       "kafka-long" -> new KafkaSinkFactory(kafkaConfig.kafkaAddress, longSerializationSchema)
