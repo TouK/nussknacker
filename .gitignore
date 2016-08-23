@@ -9,3 +9,4 @@ db.properties
 db.script
 db.lck
 db.tmp
+server/develConf/*.jar

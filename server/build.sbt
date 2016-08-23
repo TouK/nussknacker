@@ -27,10 +27,6 @@ scalacOptions := Seq(
   "-target:jvm-1.8"
 )
 
-javacOptions := Seq(
-  "-Xss4M" // to avoid SOF
-)
-
 sources in (Compile, doc) := Seq.empty
 
 publishArtifact in (Compile, packageDoc) := false
@@ -38,11 +34,9 @@ publishArtifact in (Compile, packageDoc) := false
 val espEngineV = "0.1-SNAPSHOT"
 val akkaHttpArgonautV = "1.8.0"
 val akkaV = "2.4.8"
-val catsV = "0.6.1"
 val slf4jV = "1.7.21"
 val logbackV = "1.1.3"
 val scalaTestV = "3.0.0-M15"
-val flinkV = "1.0.3"
 val slickV = "3.1.1"
 val hsqldbV = "2.3.4"
 val flywayV = "4.0.3"

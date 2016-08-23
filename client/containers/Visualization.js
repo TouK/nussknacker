@@ -15,18 +15,39 @@ import '../stylesheets/visualization.styl';
 export const Visualization = React.createClass({
 
   getInitialState: function() {
-    return { userPanelOpened: false, process: {} };
+    return { userPanelOpened: false, process: {} , processDetails: {} };
   },
 
   componentDidMount() {
+    this.startPollingForUpdates()
+    this.fetchProcessJson();
+    this.fetchProcessDetails();
+  },
+
+  startPollingForUpdates() {
+    setTimeout(() =>
+      setInterval(this.fetchProcessDetails, 10000),
+    2000)
+  },
+
+  fetchProcessJson() {
     $.get(appConfig.API_URL + '/processes/' + this.props.params.processId + '/json', (processModel) => {
       this.setState({process: processModel})
     })
+  },
 
+  fetchProcessDetails() {
+    $.get(appConfig.API_URL + '/processes/' + this.props.params.processId, (processDetails) => {
+      this.setState({processDetails: processDetails})
+    })
   },
 
   toggleUserPanel: function() {
     this.setState({ userPanelOpened: !this.state.userPanelOpened });
+  },
+
+  deploy() {
+    $.post(appConfig.API_URL + '/processManagement/deploy/' + this.props.params.processId)
   },
 
   render: function() {
@@ -34,7 +55,8 @@ export const Visualization = React.createClass({
       'is-opened': this.state.userPanelOpened,
       'is-closed': !this.state.userPanelOpened
     })
-    return _.isEmpty(this.state.process) ? null :
+
+    return _.isEmpty(this.state.process) || _.isEmpty(this.state.processDetails) ? null :
     (
         <div className="Page">
             <UserPanel className={userPanelOpenedClass}/>
@@ -42,7 +64,13 @@ export const Visualization = React.createClass({
               <Glyphicon glyph={this.state.userPanelOpened ? 'remove' : 'menu-hamburger'}/>
             </div>
             <div id="working-area" className={userPanelOpenedClass}>
-              <Graph data={this.state.process}/>
+              <div>
+                {this.state.processDetails.tags.map(function (tagi, tagIndex) {
+                  return <div key={tagIndex} className="tagsBlockVis">{tagi}</div>
+                })}
+                <button type="button" className="btn btn-danger pull-right" onClick={this.deploy}>Deploy</button>
+              </div>
+              <Graph data={this.state.process} processDetails={this.state.processDetails}/>
             </div>
         </div>
     )
