@@ -1,8 +1,8 @@
 package pl.touk.esp.engine.canonize
 
 import cats.data.Validated._
-import cats.std.list._
-import cats.std.option._
+import cats.instances.list._
+import cats.instances.option._
 import cats.syntax.cartesian._
 import cats.syntax.traverse._
 import cats.data.{NonEmptyList, Validated, ValidatedNel}

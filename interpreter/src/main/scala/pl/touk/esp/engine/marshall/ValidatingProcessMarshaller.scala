@@ -12,7 +12,7 @@ import pl.touk.esp.engine.marshall.ProcessValidationError._
 
 class ValidatingProcessMarshaller(validator: ProcessValidator) {
 
-  import cats.std.list._
+  import cats.instances.list._
 
   def toJson(node: EspProcess, prettyParams: PrettyParams) : String =
     ProcessMarshaller.toJson(node, prettyParams)
