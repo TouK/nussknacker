@@ -13,13 +13,18 @@ import pl.touk.esp.engine.compiledgraph.expression.{ExpressionParseError, Expres
 import pl.touk.esp.engine.functionUtils.CollectionUtils
 import pl.touk.esp.engine.spel.SpelExpressionParser.{MapPropertyAccessor, ScalaPropertyAccessor}
 
+import scala.collection.concurrent
+import scala.collection.concurrent.TrieMap
+
 class SpelExpression(parsed: org.springframework.expression.Expression,
                      val original: String,
                      expressionFunctions: Map[String, Method]) extends compiledgraph.expression.Expression {
 
+  val scalaPropertyAccessor = new ScalaPropertyAccessor
+
   override def evaluate[T](ctx: Context): T = {
     val simpleContext = new StandardEvaluationContext()
-    simpleContext.addPropertyAccessor(new ScalaPropertyAccessor)
+    simpleContext.addPropertyAccessor(scalaPropertyAccessor)
     simpleContext.addPropertyAccessor(new MapPropertyAccessor)
 
     ctx.variables.foreach {
@@ -62,6 +67,8 @@ object SpelExpressionParser {
   //TODO: jak bardzo to jest niewydajne???
   class ScalaPropertyAccessor extends PropertyAccessor {
 
+    val methodsCache = new TrieMap[(String, Class[_]), Option[Method]]()
+
     override def canRead(context: EvaluationContext, target: scala.Any, name: String) =
       !target.isInstanceOf[Class[_]] && findMethod(name, target).isDefined
 
@@ -71,8 +78,13 @@ object SpelExpressionParser {
         .map(new TypedValue(_))
         .getOrElse(throw new IllegalAccessException("Property is not readable"))
 
-    private def findMethod(name: String, target: Any) =
-      target.getClass.getMethods.toList.find(m => m.getParameterCount == 0 && m.getName == name)
+    private def findMethod(name: String, target: Any) = {
+      val targetClass = target.getClass
+      methodsCache.getOrElseUpdate((name, targetClass), reallyFindMethod(name, targetClass))
+    }
+
+    private def reallyFindMethod(name: String, target: Class[_]) : Option[Method] =
+      target.getMethods.toList.find(m => m.getParameterCount == 0 && m.getName == name)
 
     override def write(context: EvaluationContext, target: scala.Any, name: String, newValue: scala.Any) =
       throw new IllegalAccessException("Property is not writeable")
