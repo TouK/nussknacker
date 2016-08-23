@@ -1,4 +1,5 @@
 @import "./_variables.styl"
+@import "./_mixins.styl"
 
 #process-filter
   margin: 25px containerPadding
@@ -69,16 +70,11 @@ table#process-table
       cursor: pointer
 
   .tagBlock
-    display: inline-block
-    margin: 0 5px 0
-    border-radius: 3px
-    padding: 4px 18px
-    background-color: #FEB58A
-    font-size: 13px
-    color: white
+    tagsBlockMixin()
 
   .reactable-pagination td
     text-align: center
     font-weight: 600
     a
       color: #686868
+

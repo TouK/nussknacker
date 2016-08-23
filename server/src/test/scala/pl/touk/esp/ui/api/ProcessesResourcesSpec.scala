@@ -5,12 +5,15 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import argonaut.Argonaut._
 import db.migration.DefaultJdbcDriver
 import org.scalatest._
+import pl.touk.esp.engine.management.{JobState, ProcessManager}
 import pl.touk.esp.ui.db.DatabaseInitializer
 import pl.touk.esp.ui.process.displayedgraph.DisplayableProcess
 import pl.touk.esp.ui.process.repository.ProcessRepository
 import pl.touk.esp.ui.sample.SampleProcess
 import pl.touk.esp.ui.process.marshall._
 import slick.jdbc.JdbcBackend
+
+import scala.concurrent.Future
 
 class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Matchers with Inside {
 
@@ -26,8 +29,13 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
   }
 
   val processRepository = new ProcessRepository(db, DefaultJdbcDriver.driver)
+  val mockProcessManager = new ProcessManager {
+    override def findJobStatus(name: String): Future[Option[JobState]] = Future.successful(None)
+    override def cancel(name: String): Future[Unit] = Future.successful(Unit)
+    override def deploy(processId: String, processAsJson: String): Future[Unit] = Future.successful(Unit)
+  }
 
-  val route = new ProcessesResources(processRepository).route
+  val route = new ProcessesResources(processRepository, mockProcessManager).route
 
   it should "return list of process details" in {
     Get("/processes") ~> route ~> check {

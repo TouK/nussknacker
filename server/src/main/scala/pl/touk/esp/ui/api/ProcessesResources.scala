@@ -6,15 +6,16 @@ import akka.http.scaladsl.server.Directives
 import argonaut.{EncodeJson, Json, PrettyParams}
 import cats.data.Validated.{Invalid, Valid}
 import de.heikoseeberger.akkahttpargonaut.ArgonautSupport
+import pl.touk.esp.engine.management.ProcessManager
 import pl.touk.esp.engine.marshall.ProcessMarshaller
 import pl.touk.esp.ui.process.displayedgraph.DisplayableProcess
 import pl.touk.esp.ui.process.marshall.{DisplayableProcessCodec, ProcessConverter}
 import pl.touk.esp.ui.process.repository.ProcessRepository
 import pl.touk.esp.ui.process.repository.ProcessRepository._
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{Future, ExecutionContext}
 
-class ProcessesResources(repository: ProcessRepository)
+class ProcessesResources(repository: ProcessRepository, processManager: ProcessManager)
                         (implicit ec: ExecutionContext)
   extends Directives with ArgonautSupport {
 
@@ -29,17 +30,24 @@ class ProcessesResources(repository: ProcessRepository)
   implicit val printer: Json => String =
     PrettyParams.spaces2.copy(dropNullKeys = true, preserveOrder = true).pretty
 
+  import cats.syntax.traverse._
+  import cats.instances.future._
+  import cats.instances.list._
+  import cats.instances.option._
+
   val route =
     path("processes") {
       get {
         complete {
-          repository.fetchProcessesDetails()
+          repository.fetchProcessesDetails().flatMap { details =>
+            details.map(addProcessDetailsStatus).sequence
+          }
         }
       }
     } ~ path("processes" / Segment) { id =>
       get {
         complete {
-          repository.fetchProcessDetailsById(id).map[ToResponseMarshallable] {
+          repository.fetchProcessDetailsById(id).flatMap(p => p.map(addProcessDetailsStatus).sequence).map[ToResponseMarshallable] {
             case Some(process) =>
               process
             case None =>
@@ -73,6 +81,12 @@ class ProcessesResources(repository: ProcessRepository)
     ProcessMarshaller.decode(canonicalJson) match {
       case Valid(canonical) => ProcessConverter.toDisplayable(canonical)
       case Invalid(err) => throw new IllegalArgumentException(err.msg)
+    }
+  }
+
+  private def addProcessDetailsStatus(processDetails: ProcessDetails)(implicit ec: ExecutionContext): Future[ProcessDetails] = {
+    processManager.findJobStatus(processDetails.name).map { jobState =>
+      processDetails.copy(tags = processDetails.tags ++ jobState.toList.map(js => "TEST: " + js.status)) //todo na razie tak bo mamy tylko procesy na testach
     }
   }
 

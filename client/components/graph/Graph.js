@@ -20,7 +20,6 @@ export default class Graph extends React.Component {
             clickedNode: {},
             toolboxVisible: false
         };
-
     }
 
     componentDidMount() {
