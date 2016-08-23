@@ -5,7 +5,7 @@ import java.util.concurrent.TimeUnit
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data._
-import cats.std.list._
+import cats.instances.list._
 import com.typesafe.config.Config
 import org.apache.flink.api.common.functions._
 import org.apache.flink.api.common.state._
@@ -147,12 +147,12 @@ object FlinkProcessRegistrar {
 
   private def validateOrFailProcessCompilation[T](validated: ValidatedNel[ProcessCompilationError, T]): T = validated match {
     case Valid(r) => r
-    case Invalid(err) => throw new scala.IllegalArgumentException(err.unwrap.mkString("Compilation errors: ", ", ", ""))
+    case Invalid(err) => throw new scala.IllegalArgumentException(err.toList.mkString("Compilation errors: ", ", ", ""))
   }
 
   private def validateOrFail[T](validated: ValidatedNel[PartSubGraphCompilationError, T]): T = validated match {
     case Valid(r) => r
-    case Invalid(err) => throw new scala.IllegalArgumentException(err.unwrap.mkString("Compilation errors: ", ", ", ""))
+    case Invalid(err) => throw new scala.IllegalArgumentException(err.toList.mkString("Compilation errors: ", ", ", ""))
   }
 
   class InitialInterpretationFunction(compilerWithServicesProvider: () => PartSubGraphCompilerWithServicesLifecycle,

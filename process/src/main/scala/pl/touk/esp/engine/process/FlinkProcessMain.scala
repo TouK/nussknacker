@@ -3,7 +3,7 @@ package pl.touk.esp.engine.process
 import java.io.{File, FileReader}
 
 import cats.data.Validated.{Invalid, Valid}
-import cats.std.list._
+import cats.instances.list._
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.commons.io.IOUtils
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
@@ -41,7 +41,7 @@ object FlinkProcessMain {
     }
     ProcessMarshaller.fromJson(canonicalJson) match {
       case Valid(p) => p
-      case Invalid(err) => throw new IllegalArgumentException(err.unwrap.mkString("Unmarshalling errors: ", ", ", ""))
+      case Invalid(err) => throw new IllegalArgumentException(err.toList.mkString("Unmarshalling errors: ", ", ", ""))
     }
   }
 

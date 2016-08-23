@@ -1,6 +1,6 @@
 package pl.touk.esp.engine.compile
 
-import cats.data.OneAnd
+import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.esp.engine._
@@ -34,7 +34,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers {
     val duplicatedId = "id1"
     val processWithDuplicatedIds = EspProcess(MetaData("process1"), GraphBuilder.source(duplicatedId, "source").sink(duplicatedId, "sink"))
     ProcessValidator.default(baseDefinition).validate(processWithDuplicatedIds) should matchPattern {
-      case Invalid(OneAnd(DuplicatedNodeIds(_), _)) =>
+      case Invalid(NonEmptyList(DuplicatedNodeIds(_), _)) =>
     }
   }
 
@@ -46,7 +46,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers {
     )
 
     ProcessValidator.default(baseDefinition).validate(processWithInvalidExpresssion) should matchPattern {
-      case Invalid(OneAnd(ExpressionParseError(_, _, _), _)) =>
+      case Invalid(NonEmptyList(ExpressionParseError(_, _, _), _)) =>
     }
   }
 
@@ -59,7 +59,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers {
     )
 
     ProcessValidator.default(baseDefinition).validate(processWithRefToMissingService) should matchPattern {
-      case Invalid(OneAnd(MissingService(_, _), _)) =>
+      case Invalid(NonEmptyList(MissingService(_, _), _)) =>
     }
 
     val validDefinition = baseDefinition.withService(missingServiceId, Parameter(name = "foo", typ = "String"))
@@ -80,7 +80,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers {
     )
 
     ProcessValidator.default(definition).validate(processWithInvalidServiceInvocation) should matchPattern {
-      case Invalid(OneAnd(RedundantParameters(_, _), _)) =>
+      case Invalid(NonEmptyList(RedundantParameters(_, _), _)) =>
     }
   }
 
@@ -94,7 +94,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers {
 
     val definition = ProcessDefinition.empty.withService(missingServiceId, Parameter(name = "foo", typ = "String"))
     ProcessValidator.default(definition).validate(processWithRefToMissingService) should matchPattern {
-      case Invalid(OneAnd(MissingSourceFactory(_, _), _)) =>
+      case Invalid(NonEmptyList(MissingSourceFactory(_, _), _)) =>
     }
   }
 

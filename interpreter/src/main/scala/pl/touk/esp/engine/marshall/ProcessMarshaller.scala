@@ -14,7 +14,7 @@ import pl.touk.esp.engine.marshall.ProcessValidationError.ProcessUncanonizationE
 
 object ProcessMarshaller {
 
-  import cats.std.list._
+  import cats.instances.list._
   import ArgonautShapeless._
 
   private implicit def typeFieldJsonSumCodecFor[S]: JsonSumCodecFor[S] =

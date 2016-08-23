@@ -1,7 +1,8 @@
 package pl.touk.esp.engine.definition
 
+import com.typesafe.config.Config
 import pl.touk.esp.engine.api.{FoldingFunction, Service}
-import pl.touk.esp.engine.api.process.{SinkFactory, SourceFactory}
+import pl.touk.esp.engine.api.process.{ProcessConfigCreator, SinkFactory, SourceFactory}
 import pl.touk.esp.engine.definition.DefinitionExtractor.{ObjectDefinition, Parameter}
 
 object ProcessDefinitionExtractor {
@@ -18,6 +19,17 @@ object ProcessDefinitionExtractor {
                             sourceFactories: Map[String, SourceFactory[_]],
                             sinkFactories: Map[String, SinkFactory],
                             foldingFunctions: Map[String, FoldingFunction[_]])
+
+  object ProcessObjects {
+    def apply(creator: ProcessConfigCreator, config: Config): ProcessObjects = {
+      ProcessObjects(
+        services = creator.services(config),
+        sourceFactories = creator.sourceFactories(config),
+        sinkFactories = creator.sinkFactories(config),
+        foldingFunctions = creator.foldingFunctions(config)
+      )
+    }
+  }
 
   case class ProcessDefinition(services: Map[String, ObjectDefinition],
                                sourceFactories: Map[String, ObjectDefinition],
