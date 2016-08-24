@@ -6,7 +6,7 @@ import markup from './markups/markup.html';
 joint.shapes.devs.EspNode = joint.shapes.basic.Generic.extend(_.extend({}, joint.shapes.basic.PortsModelInterface, {
 
     markup: markup,
-    portMarkup: '<g class="port port<%= id %>"><circle class="port-body"/><text class="port-label"/></g>',
+    portMarkup: '<g class="port port<%= id %>"><circle class="port-body"/></g>',
 
     defaults: joint.util.deepSupplement({
 
@@ -56,17 +56,18 @@ joint.shapes.devs.EspNode = joint.shapes.basic.Generic.extend(_.extend({}, joint
                 'ref': '.body'
             },
             '.port-body': {
-                r: 10,
+                r: 5,
                 magnet: true,
                 'font-size': 10
             },
-            '.inPorts .port-label': {
-                y: 4, x: -4,
-                'font-size': 10
+            '.inPorts circle': {
+              fill: '#73E5B7',
+              magnet: 'passive',
+              type: 'input'
             },
-            '.outPorts .port-label': {
-                y: 4, x: -9,
-                'font-size': 10
+            '.outPorts circle': {
+              fill: '#F27980',
+              type: 'output'
             }
         }
 
@@ -78,10 +79,8 @@ joint.shapes.devs.EspNode = joint.shapes.basic.Generic.extend(_.extend({}, joint
 
         var portClass = 'port' + index;
         var portSelector = selector + '>.' + portClass;
-        var portLabelSelector = portSelector + '>.port-label';
         var portBodySelector = portSelector + '>.port-body';
 
-        attrs[portLabelSelector] = {text: portName};
         attrs[portBodySelector] = {port: {id: portName || _.uniqueId(type), type: type}};
 
         // CHANGED: swap x and y ports coordinates ('ref-y' => 'ref-x')
@@ -144,15 +143,6 @@ export default {
           },
           '.contentText': {
             text: bodyContent
-          },
-          '.inPorts circle': {
-            fill: '#16A085',
-            magnet: 'passive',
-            type: 'input'
-          },
-          '.outPorts circle': {
-            fill: '#E74C3C',
-            type: 'output'
           }
         };
 
@@ -179,41 +169,49 @@ export default {
     },
 
     makeLink(edge) {
-       return new joint.dia.Link({
-         labelMarkup: [
-           '<g class="esp-label">',
-           '<rect class="label-border"/>',
-           '<text />',
-           '</g>'
-         ].join(''),
-         source: {id: edge.from, port: 'Out'},
-         target: {id: edge.to, port: 'In'},
-         labels: [
-           { position: 0.5,
-             attrs: {
-               'rect': {
-                 fill: '#F5F5F5',
-                 rx: 13, ry: 13
-               },
-               'text': {
-                 text: joint.util.breakText((_.get(edge, 'label.expression') || ''), { width: 300 }),
-                 'font-weight': '300',
-                 'font-size': 10,
-                 fill: '#686868',
-                 'ref': 'rect',
-                 'ref-x': 0,
-                 'ref-y': 0
-               }
-             }
-           }
-         ],
-         attrs: {
-             '.tool-options': {display: 'none'},
-             '.connection': {stroke: '#B5B5B5'},
-             minLen: 10
-         },
-         edgeData: edge
-       });
+      return new joint.dia.Link({
+        markup: [
+            '<path class="connection"/>',
+            '<path class="marker-source"/>',
+            '<path class="marker-target"/>',
+            '<path class="connection-wrap"/>',
+            '<g class="labels" />',
+            '<g class="marker-vertices"/>',
+            '<g class="link-tools" />'
+        ].join(''),
+        labelMarkup: [
+          '<g class="esp-label">',
+          '<rect class="label-border"/>',
+          '<text />',
+          '</g>'
+        ].join(''),
+        source: {id: edge.from, port: 'Out'},
+        target: {id: edge.to, port: 'In'},
+        labels: [{
+          position: 0.5,
+          attrs: {
+            'rect': {
+            fill: '#F5F5F5',
+            rx: 13, ry: 13
+            },
+            'text': {
+              text: joint.util.breakText((_.get(edge, 'label.expression') || ''), { width: 300 }),
+              'font-weight': '300',
+              'font-size': 10,
+              fill: '#686868',
+              'ref': 'rect',
+              'ref-x': 0,
+              'ref-y': 0
+            }
+          }
+        }],
+        attrs: {
+          '.connection': { stroke: '#B5B5B5' },
+          '.marker-source': { 'stroke-width': 0, fill: '#B5B5B5', d: 'M 10 0 L 0 5 L 10 10 z' },
+          '.marker-target': { 'stroke-width': 0, fill: '#B5B5B5', d: 'M 10 0 L 0 5 L 10 10 z' },
+          minLen: 10
+        },
+        edgeData: edge
+     });
    }
-
 }
