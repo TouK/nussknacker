@@ -17,20 +17,20 @@ object ProcessConverter {
     nodes match {
       case canonicalnode.Source(id, ref) :: tail =>
         val (tailNodes, tailEdges) = toGraphInner(tail)
-        (displayablenode.Source(id, ref) :: tailNodes, createNextEdge(id, tail, None) ::: tailEdges)
+        (displayablenode.Source(id, ref) :: tailNodes, createNextEdge(id, tail) ::: tailEdges)
       case canonicalnode.Sink(id, ref, endResult) :: Nil =>
         (List(displayablenode.Sink(id, ref, endResult)), List())
       case canonicalnode.Sink(id, ref, endResult) :: tail =>
         throw new IllegalArgumentException(s"Unexpected tail: $tail after sink")
       case canonicalnode.VariableBuilder(id, varName, fields) :: tail =>
         val (tailNodes, tailEdges) = toGraphInner(tail)
-        (displayablenode.VariableBuilder(id, varName, fields) :: tailNodes, createNextEdge(id, tail, None) ::: tailEdges)
+        (displayablenode.VariableBuilder(id, varName, fields) :: tailNodes, createNextEdge(id, tail) ::: tailEdges)
       case canonicalnode.Processor(id, service) :: tail =>
         val (tailNodes, tailEdges) = toGraphInner(tail)
-        (displayablenode.Processor(id, service) :: tailNodes, createNextEdge(id, tail, None) ::: tailEdges)
+        (displayablenode.Processor(id, service) :: tailNodes, createNextEdge(id, tail) ::: tailEdges)
       case canonicalnode.Enricher(id, service, output) :: tail =>
         val (tailNodes, tailEdges) = toGraphInner(tail)
-        (displayablenode.Enricher(id, service, output) :: tailNodes, createNextEdge(id, tail, None) ::: tailEdges)
+        (displayablenode.Enricher(id, service, output) :: tailNodes, createNextEdge(id, tail) ::: tailEdges)
       case canonicalnode.Filter(id, expr, nextFalse) :: tail =>
         val (nextFalseNodes, nextFalseEdges) = toGraphInner(nextFalse)
         val nextFalseEdgesConnectedToFilter = nextFalseNodes match {
@@ -38,7 +38,7 @@ object ProcessConverter {
           case h :: _ => displayablenode.Edge(id, h.id, None) :: nextFalseEdges
         }
         val (tailNodes, tailEdges) = toGraphInner(tail)
-        (displayablenode.Filter(id, expr) :: nextFalseNodes ::: tailNodes, createNextEdge(id, tail, Some(expr)) ::: nextFalseEdgesConnectedToFilter ::: tailEdges)
+        (displayablenode.Filter(id, expr) :: nextFalseNodes ::: tailNodes, createNextEdge(id, tail) ::: nextFalseEdgesConnectedToFilter ::: tailEdges)
       case canonicalnode.Switch(id, expr, exprVal, nexts, defaultNext) :: tail =>
         val (defaultNextNodes, defaultNextEdges) = toGraphInner(defaultNext)
         val defaultNextEdgesConnectedToSwitch = defaultNextNodes match {
@@ -50,16 +50,16 @@ object ProcessConverter {
           val (nextNodeNodes, nextNodeEdges) = toGraphInner(c.nodes)
           (nextNodeNodes, nextNodeNodes.headOption.map(n => displayablenode.Edge(id, n.id, Some(c.expression))).toList ::: nextNodeEdges)
         })
-        (displayablenode.Switch(id, expr, exprVal) :: defaultNextNodes ::: nextNodes ::: tailNodes, createNextEdge(id, tail, None) ::: defaultNextEdgesConnectedToSwitch ::: nextEdges ::: tailEdges)
+        (displayablenode.Switch(id, expr, exprVal) :: defaultNextNodes ::: nextNodes ::: tailNodes, createNextEdge(id, tail) ::: defaultNextEdgesConnectedToSwitch ::: nextEdges ::: tailEdges)
       case canonicalnode.Aggregate(id, aggregatedVar, keyExpr, duration, slide, triggerExpr, foldingFun)::tail =>
         val (tailNodes, tailEdges) = toGraphInner(tail)
-        (displayablenode.Aggregate(id, aggregatedVar, keyExpr, duration, slide, triggerExpr, foldingFun) :: tailNodes, createNextEdge(id, tail, None) ::: tailEdges)
+        (displayablenode.Aggregate(id, aggregatedVar, keyExpr, duration, slide, triggerExpr, foldingFun) :: tailNodes, createNextEdge(id, tail) ::: tailEdges)
       case Nil =>
         (List(),List())
     }
 
-  private def createNextEdge(id: String, tail: List[CanonicalNode], label: Option[Expression]): List[displayablenode.Edge] = {
-    tail.headOption.map(n => displayablenode.Edge(id, n.id, label)).toList
+  private def createNextEdge(id: String, tail: List[CanonicalNode]): List[displayablenode.Edge] = {
+    tail.headOption.map(n => displayablenode.Edge(id, n.id, None)).toList
   }
 
   private def unzipListTuple[A, B](a: List[(List[A], List[B])]): (List[A], List[B]) = {
