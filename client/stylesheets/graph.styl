@@ -62,14 +62,28 @@ table
     .node-label
       display: inline-block
 
-.esp-label
-  rect
-    transform: translateY(0.1em) scale(1.2, 1.4)
-  &:hover
-    cursor: zoom-in
-    display: table
+.link
+  .connection-wrap
+    &:hover
+      stroke: transparent
+      stroke-width: 10px
+      stroke-linecap: initial
+  .esp-label
     rect
-      transform: translateY(0.8em) scale(2.5, 3.5)
-    text
-      font-size: 16
-      display: table-cell
+      transform: translateY(0.1em) scale(1.2, 1.4)
+    &:hover
+      cursor: zoom-in
+      display: table
+      rect
+        transform: translateY(0.8em) scale(2.5, 3.5)
+      text
+        font-size: 16
+        display: table-cell
+  &:hover
+    .connection
+      stroke: #46BFDB
+    .marker-target, .marker-source
+      fill: #46BFDB
+    .marker-vertices circle
+      fill: #B5B5B5
+      r: 6px
