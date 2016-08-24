@@ -47,7 +47,7 @@ trait AuditDispatchClient extends RequestResponseLogging {
   def getPossiblyUnavailableJsonAsObject[Resp: DecodeJson](req: Req)
                                                           (implicit executionContext: ExecutionContext,
                                                            logCorrelationId: LogCorrelationId): Future[Option[Resp]] = {
-    sendWithLogging(req).map { resp =>
+    sendWithAudit(req).map { resp =>
       if (resp.getStatusCode / 100 == 2) {
         val decoded = resp
           .getResponseBody
@@ -131,12 +131,18 @@ trait AuditDispatchClient extends RequestResponseLogging {
   private def sendWithAuditAndStatusChecking(req: Req)
                                             (implicit executionContext: ExecutionContext,
                                              logCorrelationId: LogCorrelationId): Future[String] = {
-    sendWithLogging(req).map(checkStatusThanConvertToString)
+    sendWithAudit(req).map(checkStatusThanConvertToString)
   }
 
-  private def sendWithLogging(req: Req)
-                             (implicit executionContext: ExecutionContext,
-                              logCorrelationId: LogCorrelationId): Future[Res] = {
+  protected def sendWithAuditWithResponseAsString(req: Req)
+                                                 (implicit executionContext: ExecutionContext,
+                                                  logCorrelationId: LogCorrelationId): Future[String] = {
+    sendWithAudit(req).map(_.getResponseBody)
+  }
+
+  private def sendWithAudit(req: Req)
+                           (implicit executionContext: ExecutionContext,
+                            logCorrelationId: LogCorrelationId): Future[Res] = {
     logRequestResponse(req)(logCorrelationId.withClientId(clientId)) {
       http(req > identity[Res] _)
     }
