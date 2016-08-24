@@ -19,27 +19,32 @@ joint.shapes.devs.EspNode = joint.shapes.basic.Generic.extend(_.extend({}, joint
         attrs: {
             '.': {magnet: false},
             '.body': {
-                width: 200, height: 100,
-                stroke: '#616161',
-                'stroke-width': 1
+                width: 300, height: 130,
+                stroke: '#B5B5B5',
+                'stroke-width': 1,
+                rx: 10
             },
             text: {
-                fill: 'black',
-                'pointer-events': 'none'
+                fill: '#1E1E1E',
+                'pointer-events': 'none',
+                'font-weight': 400
+            },
+            'rect.blockHeader': {
+              x: 0, y: 0,
+              rx: 10,
+              'stroke-width': 0
             },
             '.headerLabel': {
                 text: 'Model',
                 'font-size': 14,
-                'font-weight': 400,
+                'font-weight': 600,
                 'ref': '.blockHeader',
                 'ref-x': 10, 'ref-y': .3
             },
             '.contentText': {
-                text: 'Node Id',
                 'font-size': 14,
-                'font-weight': 400,
-                'ref': '.blockContent',
-                'ref-x': 10, 'ref-y': .2
+                'ref': '.blockHeader',
+                'ref-x': 20, 'ref-y': 50
             },
             // markups styling
             '.inPorts': {
@@ -53,7 +58,6 @@ joint.shapes.devs.EspNode = joint.shapes.basic.Generic.extend(_.extend({}, joint
             '.port-body': {
                 r: 10,
                 magnet: true,
-                stroke: '#616161',
                 'font-size': 10
             },
             '.inPorts .port-label': {
@@ -96,54 +100,50 @@ joint.shapes.devs.EspNode = joint.shapes.basic.Generic.extend(_.extend({}, joint
 export default {
 
     makeElement(node) {
+        var customAttrs = require('json!../../assets/json/nodeAttributes.json');
 
-        var headerLabel = node.type;
+        var headerLabel = _.toUpper(customAttrs[node.type].name);
         var bodyContent = node.id ? node.id : "";
-        var maxLineLength = _.max(bodyContent.split('\n'), function (l) {
-            return l.length;
-        }).length;
 
         // Compute width/height of the rectangle based on the number
         // of lines in the label and the letter size. 0.6 * letterSize is
         // an approximation of the monospace font letter width.
+        var maxLineLength = _.max(bodyContent.split('\n'), function (l) {
+            return l.length;
+        }).length;
         var letterSize = 14;
         var calculatedWidth = 2 * (letterSize * (0.5 * maxLineLength + 1));
-        var minBlockWidth = 200;
+        var minBlockWidth = 300;
         var width = _.max([minBlockWidth, calculatedWidth]);
+        var height = 150;
 
-        // var calculatedHeight = 3 * ((label.split('x').length + 1) * letterSize);
-        var height = 100;
-        var headerHeight = 30;
-
-        var customAttrs = require('json!../../assets/json/nodeAttributes.json');
+        // header styles
+        var headerHeight = 35;
+        var headerLength =  letterSize * (0.5 * headerLabel.length);
+        var headerLabelPosX = (width / 2) - ((headerLength / 2) + 5);
+        var headerFillerHeight = headerHeight / 2;
 
         var attrs = {
           '.body': {
             width: width
           },
+          'rect.headerFiller': {
+            x: 0, y: headerFillerHeight,
+            height: headerFillerHeight,
+            width: width,
+            fill: customAttrs[node.type].styles.fill
+          },
           'rect.blockHeader': {
             width: width,
             height: headerHeight,
-            x: 0, y: 0,
-            stroke: '#616161',
-            'stroke-width': 1,
-            fill: customAttrs[headerLabel].styles.fill
+            fill: customAttrs[node.type].styles.fill
           },
           '.headerLabel': {
             text: headerLabel,
-            'font-weight': 600
-          },
-          'rect.blockContent': {
-            width: width,
-            height: (height - headerHeight),
-            x: 0, y: headerHeight,
-            stroke: '#616161',
-            'stroke-width': 1,
-            fill: '#fff'
+            'ref-x': headerLabelPosX
           },
           '.contentText': {
-            text: bodyContent,
-            'font-weight': 400
+            text: bodyContent
           },
           '.inPorts circle': {
             fill: '#16A085',
@@ -192,13 +192,14 @@ export default {
            { position: 0.5,
              attrs: {
                'rect': {
-                 stroke: 'grey',
-                 'stroke-width': 0.5
+                 fill: '#F5F5F5',
+                 rx: 13, ry: 13
                },
                'text': {
                  text: joint.util.breakText((_.get(edge, 'label.expression') || ''), { width: 300 }),
                  'font-weight': '300',
-                 'font-size': 8,
+                 'font-size': 10,
+                 fill: '#686868',
                  'ref': 'rect',
                  'ref-x': 0,
                  'ref-y': 0
@@ -208,7 +209,7 @@ export default {
          ],
          attrs: {
              '.tool-options': {display: 'none'},
-             '.connection': {stroke: '#7c68fc'},
+             '.connection': {stroke: '#B5B5B5'},
              minLen: 10
          },
          edgeData: edge
