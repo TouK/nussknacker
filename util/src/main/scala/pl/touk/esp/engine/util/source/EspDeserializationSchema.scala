@@ -1,4 +1,4 @@
-package pl.touk.esp.engine.util
+package pl.touk.esp.engine.util.source
 
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.util.serialization.DeserializationSchema

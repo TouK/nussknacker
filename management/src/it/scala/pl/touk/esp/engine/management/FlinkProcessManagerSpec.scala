@@ -3,12 +3,10 @@ package pl.touk.esp.engine.management
 import java.util.UUID
 
 import argonaut.PrettyParams
-import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
+import com.typesafe.config.ConfigFactory
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.{FlatSpec, Matchers}
-import pl.touk.esp.engine.management.sample.TestProcessConfigCreator
-import pl.touk.esp.engine.management.util.JarFileFinder
 import pl.touk.esp.engine.marshall.ProcessMarshaller
 
 import scala.concurrent.duration._
@@ -21,15 +19,12 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
   )
 
   it should "deploy process in running flink" in {
-
     val processId = UUID.randomUUID().toString
-
-    val resource = JarFileFinder.findJarPath(classOf[TestProcessConfigCreator])
 
     val process = SampleProcess.prepareProcess(processId)
     val marshalled = ProcessMarshaller.toJson(process, PrettyParams.spaces2)
 
-    val config = ConfigFactory.load().withValue("flinkConfig.jarPath", ConfigValueFactory.fromAnyRef(resource))
+    val config = ConfigFactory.load()
     val processManager = FlinkProcessManager(config)
 
     assert(processManager.deploy(process.id, marshalled).isReadyWithin(100 seconds))

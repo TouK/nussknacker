@@ -5,10 +5,10 @@ import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.scala._
 import pl.touk.esp.engine.api.process.{ProcessConfigCreator, Sink, SinkFactory, SourceFactory}
-import pl.touk.esp.engine.api.{BrieflyLoggingExceptionHandler, MetaData, Service}
-import pl.touk.esp.engine.process.util.CollectionSource
+import pl.touk.esp.engine.api.{BrieflyLoggingExceptionHandler, Service}
+import pl.touk.esp.engine.util.source.CollectionSource
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
 class TestProcessConfigCreator extends ProcessConfigCreator {
 
@@ -25,11 +25,7 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
 
   override def sourceFactories(config: Config) = {
     Map[String, SourceFactory[_]](
-      "kafka-transaction" -> new SourceFactory[String] {
-        def create(processMetaData: MetaData) = {
-          CollectionSource(new ExecutionConfig(), List("blee"), None)
-        }
-      }
+      "kafka-transaction" -> SourceFactory.noParam(CollectionSource(new ExecutionConfig(), List("blee"), None))
     )
   }
 

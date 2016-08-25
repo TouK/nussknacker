@@ -1,4 +1,4 @@
-package pl.touk.esp.engine.process.util
+package pl.touk.esp.engine.util.source
 
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
