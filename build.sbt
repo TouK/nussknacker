@@ -97,7 +97,7 @@ lazy val perf_test_sample = (project in file("perf-test/sample")).
     }
   ).
   settings(addArtifact(artifact in (Compile, assembly), assembly)).
-  dependsOn(process, kafka)
+  dependsOn(util, kafka, process % "runtime")
 
 val managementSampleName = "esp-management-sample"
 
@@ -122,11 +122,10 @@ lazy val management = (project in file("management")).
         "com.typesafe.akka" %% "akka-slf4j" % akkaV,
 
         // zależności dla konfiguracji "it" muszą być też dla "test", żeby nie trafiły do publikowanego poma
-        "org.scalatest" %% "scalatest" % scalaTestV % "it,test",
-        organization.value %% managementSampleName % version.value % "it,test" classifier "assembly"
+        "org.scalatest" %% "scalatest" % scalaTestV % "it,test"
       )
     }
-  )
+  ).dependsOn(interpreter % "it,test")
 
 lazy val management_sample = (project in file("management/sample")).
   settings(commonSettings).
@@ -143,7 +142,7 @@ lazy val management_sample = (project in file("management/sample")).
     }
   ).
   settings(addArtifact(artifact in (Compile, assembly), assembly)).
-  dependsOn(process)
+  dependsOn(util, process % "runtime")
 
 lazy val process = (project in file("process")).
   settings(commonSettings).

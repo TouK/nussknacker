@@ -10,8 +10,8 @@ import pl.touk.esp.engine.api._
 import pl.touk.esp.engine.api.process.{ProcessConfigCreator, SourceFactory}
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.kafka.{KafkaConfig, KafkaSourceFactory}
-import pl.touk.esp.engine.process.util.CollectionSource
-import pl.touk.esp.engine.util.{CsvSchema, LoggingListener}
+import pl.touk.esp.engine.util.LoggingListener
+import pl.touk.esp.engine.util.source.{CollectionSource, CsvSchema}
 
 import scala.concurrent._
 

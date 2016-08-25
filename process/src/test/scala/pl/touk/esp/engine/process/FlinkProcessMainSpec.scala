@@ -12,8 +12,8 @@ import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.graph.service.{Parameter, ServiceRef}
 import pl.touk.esp.engine.marshall.ProcessMarshaller
 import pl.touk.esp.engine.process.ProcessTestHelpers.{EmptySink, SimpleRecord}
-import pl.touk.esp.engine.process.util.CollectionSource
 import pl.touk.esp.engine.spel
+import pl.touk.esp.engine.util.source.CollectionSource
 
 import scala.concurrent.Future
 import scala.concurrent.duration._

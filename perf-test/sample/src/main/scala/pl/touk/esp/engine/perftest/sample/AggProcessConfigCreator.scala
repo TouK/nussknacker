@@ -8,7 +8,8 @@ import pl.touk.esp.engine.api.VerboselyLoggingExceptionHandler
 import pl.touk.esp.engine.api.process.ProcessConfigCreator
 import pl.touk.esp.engine.kafka.{KafkaConfig, KafkaSinkFactory, KafkaSourceFactory}
 import pl.touk.esp.engine.perftest.sample.model.KeyValue
-import pl.touk.esp.engine.util.{CsvSchema, LoggingListener}
+import pl.touk.esp.engine.util.LoggingListener
+import pl.touk.esp.engine.util.source.CsvSchema
 
 class AggProcessConfigCreator extends ProcessConfigCreator {
 
