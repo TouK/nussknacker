@@ -23,28 +23,39 @@ export default class NodeDetailsModal extends Component {
         return (
           <tr>
             <td className="node-label">{fieldLabel}</td>
-            <td><textarea rows="5" cols="50" value={fieldValue} className="node-input" readOnly/></td>
+            <td className="node-value"><textarea rows="5" cols="50" value={fieldValue} className="node-input" readOnly/></td>
           </tr>
         )
       case 'child-input':
         return (
           <div className={fieldType}>
             <div className="node-label">{fieldLabel}</div>
-            <input type="text" value={fieldValue} className="node-input" readOnly/>
+            <div className="node-value">
+              <input type="text" value={fieldValue} className="node-input" readOnly/>
+            </div>
           </div>
         )
       case 'child-table':
         return (
           <div className={fieldType}>
-            <div className="node-label">{fieldLabel}</div>
-            {fieldValue.map(function(params, index){
-              return (
-                <pre key={index}>
-                  <span>Name:</span> {params.name} <br />
-                  <span>Expression:</span> {params.expression.expression}
-                </pre>
-              )
-            })}
+            {(() => {
+              if (fieldLabel) {
+                return <div className="node-label">{fieldLabel}</div>
+              }
+            })()}
+            <div className="node-value">
+              {fieldValue.map(function(params, index){
+                return (
+                  <div className="node-block" key={index}>
+                    <div className="node-label">Name:</div>
+                    <div className="node-value"><input type="text" value={params.name} className="node-input" readOnly/></div>
+
+                    <div className="node-label">Expression:</div>
+                    <div className="node-value"><input type="text" value={params.expression.expression} className="node-input" readOnly/></div>
+                  </div>
+                )
+              })}
+            </div>
           </div>
         )
       default:
@@ -63,17 +74,22 @@ export default class NodeDetailsModal extends Component {
                   <tbody>
                     <tr>
                       <td className="node-label">Ref:</td>
-                      <td>
+                      <td className="node-child-group">
                         {this.createField("child-input", "Type:", this.props.node.ref.typ)}
-                        <div className="inner-label"><span>Parameters:</span></div>
-                        {this.props.node.ref.parameters.map ((params, index) => {
-                          return (
-                            <pre className="inner-value" key={index}>
-                              {this.createField("child-input", "Name:", params.name)}
-                              {this.createField("child-input", "Value:", params.value)}
-                            </pre>
-                          )
-                        })}
+                        <div className="node-label">Parameters:</div>
+                        <div className="node-value">
+                          {this.props.node.ref.parameters.map ((params, index) => {
+                            return (
+                              <div className="node-block" key={index}>
+                                <div className="node-label">Name:</div>
+                                <div className="node-value"><input type="text" value={params.name} className="node-input" readOnly/></div>
+
+                                <div className="node-label">Value:</div>
+                                <div className="node-value"><input type="text" value={params.value} className="node-input" readOnly/></div>
+                              </div>
+                            )
+                          })}
+                        </div>
                       </td>
                     </tr>
                   </tbody>
@@ -83,15 +99,19 @@ export default class NodeDetailsModal extends Component {
                   <tbody>
                     <tr>
                       <td className="node-label">Ref:</td>
-                      <td>
-                        <div>
-                          {this.createField("child-input", "Type:", this.props.node.ref.typ)}
-                          <span>Parameters:</span>
+
+                      <td className="node-child-group">
+                        {this.createField("child-input", "Type:", this.props.node.ref.typ)}
+                        <div className="node-label">Parameters:</div>
+                        <div className="node-value">
                           {this.props.node.ref.parameters.map(function(params, index){
                             return (
-                              <div key={index}>
-                                {this.createField("child-input", "Name:", params.name)}
-                                {this.createField("child-input", "Value:", params.value)}
+                              <div className="node-block" key={index}>
+                                <div className="node-label">Name:</div>
+                                <div className="node-value"><input type="text" value={params.name} className="node-input" readOnly/></div>
+
+                                <div className="node-label">Value:</div>
+                                <div className="node-value"><input type="text" value={params.value} className="node-input" readOnly/></div>
                               </div>
                             )
                           })}
@@ -111,7 +131,7 @@ export default class NodeDetailsModal extends Component {
                   <tbody>
                     <tr>
                       <td className="node-label">Service:</td>
-                      <td>
+                      <td className="node-child-group">
                         {this.createField("child-input", "Service Id:", this.props.node.service.id)}
                         {this.createField("child-table", "Parameters:", this.props.node.service.parameters)}
                       </td>
@@ -125,7 +145,10 @@ export default class NodeDetailsModal extends Component {
                     {this.createField("input", "Variable Name:", this.props.node.varName)}
                     <tr>
                       <td className="node-label">Fields:</td>
-                      <td>{this.createField("child-table", "", this.props.node.fields)}</td>
+                      <td className="node-child-group node-variables">
+                        {this.createField("child-table", "", this.props.node.fields)}
+                      </td>
+
                     </tr>
                   </tbody>
                 )
@@ -178,9 +201,17 @@ export default class NodeDetailsModal extends Component {
     render () {
         var isOpen = !(_.isEmpty(this.props.node))
         var modalStyles = {
+          overlay: {
+            backgroundColor: 'rgba(63, 62, 61, 0.3)'
+          },
           content : {
             borderRadius: '0',
-            padding: '0'
+            padding: '0',
+            left: '20%',
+            right: '20%',
+            top: '15%',
+            bottom: '15%',
+            border: 'none'
           }
         };
 

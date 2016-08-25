@@ -2,32 +2,95 @@
 
 .ReactModal__Overlay
   z-index: 100
+.ReactModal__Body--open {
+  overflow-y: hidden;
+}
 
 #modalHeader
-  padding: 20px
-  span
-    font-size: 30px
-
+  padding: 25px 40px
+  text-transform: uppercase
+  font-weight: 700
+  font-size: 26px
 
 #modalContent
   background-color: white
-  color: #333
   padding: 50px 20px
-  min-height: 80%
+  min-height: 70%
+  table
+    min-width: 60%
+    max-width: 85%
+    margin: 0 auto
+    td
+      padding-bottom: 20px
+      color: #686868
+
+    .node-label
+      width: 100px
+      vertical-align: top
+      padding-top: 10px
+      font-size: 16px
+      text-transform: uppercase
+
+    .node-input
+      width: 100%
+      height: 40px
+      padding: 0 20px
+      border: none
+      background-color: #FAFAFA
+      font-weight: 700
+      font-size: 14px
+
+    .node-child-group
+      padding-top 40px
+      .node-label
+        text-transform: none
+        width: 25%
+        display: inline-block
+      .node-value
+        width: 75%
+        display: inline-block
+        input
+          width: 100%
+      .node-block
+        background-color: #FAFAFA
+        padding: 10px
+      .node-block + .node-block
+        margin-top: 20px
+
+    .child-input
+      margin-bottom: 20px
+
+    .node-variables
+      padding-top: 0
+      .node-value
+        width: 100%
+        .node-block .node-value
+          width: 75%
+
+    textarea.node-input
+      min-height: 100px
+      resize: vertical
+      line-height: 1.5
+      padding-top: 15px
+
 
 #modalFooter
   position: relative
   bottom: 0
   padding: 10px 30px
   width: 100%
-  height: 70px
+  height: 100px
   div
-    float: right
+    width: 400px
+    margin: 0 auto
 
   .modalButton
-    min-width: 100px
-    margin-left: 20px
-    padding: 5px 0
+    width: 180px
+    height: 44px
+    border: none
+    border-radius: 5px
+    font-weight: 600
+    font-size: 18px
     background-color: buttonBkgColor
     color: buttonTextColor
     transition: background-color 0.3s
@@ -37,30 +100,9 @@
       cursor: not-allowed
     &:not(:disabled):hover
       background-color: buttonBkgHover
+  .modalButton + .modalButton
+    float: right
 
-table
-  width: 80%
-  margin: 0 auto
-  td
-    padding: 10px
-    padding-top: 40px
-  tr
-    padding: 10px
-    margin-top: 50px
-    border-bottom: 1px solid #9a9a9a
-  .node-label
-    width: 130px
-    vertical-align: top
-    color: #868686
-  td .node-input
-    border: none
-    background-color: #f3f3f3
-    padding: 0 10px
-    height: 35px
-
-  .child-input
-    .node-label
-      display: inline-block
 
 .link
   .connection-wrap
