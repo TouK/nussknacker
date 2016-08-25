@@ -1,11 +1,12 @@
 package pl.touk.esp.engine.marshall
 
 import argonaut.PrettyParams
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.{FlatSpec, Matchers, OptionValues}
 import pl.touk.esp.engine._
 import pl.touk.esp.engine.api.MetaData
 import pl.touk.esp.engine.graph.sink.SinkRef
 import pl.touk.esp.engine.build.GraphBuilder
+import pl.touk.esp.engine.canonize.ProcessCanonizer
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.graph.node._
 import pl.touk.esp.engine.graph.service.{Parameter, ServiceRef}
@@ -14,7 +15,7 @@ import pl.touk.esp.engine.graph.variable.Field
 import scala.concurrent.duration._
 
 
-class ProcessMarshallerSpec extends FlatSpec with Matchers {
+class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues {
 
   import spel.Implicits._
 
@@ -40,8 +41,9 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers {
     println(marshalled)
 
     val unmarshalled = ProcessMarshaller.fromJson(marshalled).toOption
+    val result = ProcessCanonizer.uncanonize(unmarshalled.value).toOption
 
-    unmarshalled should equal(Some(process))
+    result should equal(Some(process))
   }
 
 }

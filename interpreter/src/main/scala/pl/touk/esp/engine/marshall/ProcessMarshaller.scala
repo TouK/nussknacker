@@ -4,17 +4,15 @@ import argonaut._
 import Argonaut._
 import argonaut.PrettyParams
 import argonaut.derive._
-import cats.data.{Validated, ValidatedNel}
+import cats.data.Validated
 import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
 import pl.touk.esp.engine.canonicalgraph.canonicalnode.CanonicalNode
 import pl.touk.esp.engine.canonize.ProcessCanonizer
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.marshall.ProcessUnmarshallError._
-import pl.touk.esp.engine.marshall.ProcessValidationError.ProcessUncanonizationError
 
 object ProcessMarshaller {
 
-  import cats.instances.list._
   import ArgonautShapeless._
 
   private implicit def typeFieldJsonSumCodecFor[S]: JsonSumCodecFor[S] =
@@ -33,13 +31,7 @@ object ProcessMarshaller {
     canonical.asJson.pretty(prettyParams.copy(dropNullKeys = true, preserveOrder = true))
   }
 
-  def fromJson(json: String): ValidatedNel[ProcessUnmarshallError, EspProcess] = {
-    decode(json).toValidatedNel[ProcessUnmarshallError, CanonicalProcess] andThen { canonical =>
-      ProcessCanonizer.uncanonize(canonical).leftMap(_.map[ProcessUnmarshallError](ProcessUncanonizationError))
-    }
-  }
-
-  def decode(json: String): Validated[ProcessJsonDecodeError, CanonicalProcess] = {
+  def fromJson(json: String): Validated[ProcessJsonDecodeError, CanonicalProcess] = {
     Validated.fromEither(json.decodeEither[CanonicalProcess]).leftMap(ProcessJsonDecodeError)
   }
 
