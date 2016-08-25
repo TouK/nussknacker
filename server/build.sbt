@@ -32,9 +32,7 @@ sources in (Compile, doc) := Seq.empty
 publishArtifact in (Compile, packageDoc) := false
 
 val espEngineV = "0.1-SNAPSHOT"
-val akkaHttpArgonautV = "1.8.0"
 val akkaV = "2.4.8"
-val slf4jV = "1.7.21"
 val logbackV = "1.1.3"
 val scalaTestV = "3.0.0-M15"
 val slickV = "3.1.1"
@@ -44,18 +42,12 @@ val akkaHttpCcorsV = "0.1.4"
 
 libraryDependencies ++= {
   Seq(
-    "de.heikoseeberger" %% "akka-http-argonaut" % akkaHttpArgonautV,
     "ch.megard" %% "akka-http-cors" % akkaHttpCcorsV,
     "pl.touk.esp" %% "esp-management" % espEngineV changing()
-      //fixme tutaj nie powinnismy nawet probowac resolvowac esp-process-sample, trzeba poprawic konfiguracje testow it
-      exclude("pl.touk.esp", "esp-process-sample_2.11") exclude("com.jayway.awaitility", "awaitility-scala")
-      //a tutaj mamy dwie wersje jsr305 we flinku i assembly sie pluje...
+      //tutaj mamy dwie wersje jsr305 we flinku i assembly sie pluje...
       exclude("com.google.code.findbugs", "jsr305"),
     "pl.touk.esp" %% "esp-interpreter" % espEngineV changing(),
 
-    //to musimy podac explicite, zeby wymusic odpowiednia wersje dla flinka
-    "com.typesafe.akka" %% "akka-remote" % akkaV,
-    "com.typesafe.akka" %% "akka-slf4j" % akkaV,
     "com.typesafe.slick" %% "slick" % slickV,
     "com.typesafe.slick" %% "slick-hikaricp" % slickV,
     "org.hsqldb" % "hsqldb" % hsqldbV,

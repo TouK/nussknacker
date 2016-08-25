@@ -5,19 +5,19 @@ import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.Directives
 import argonaut.{EncodeJson, Json, PrettyParams}
 import cats.data.Validated.{Invalid, Valid}
-import de.heikoseeberger.akkahttpargonaut.ArgonautSupport
 import pl.touk.esp.engine.management.ProcessManager
 import pl.touk.esp.engine.marshall.ProcessMarshaller
 import pl.touk.esp.ui.process.displayedgraph.DisplayableProcess
 import pl.touk.esp.ui.process.marshall.{DisplayableProcessCodec, ProcessConverter}
 import pl.touk.esp.ui.process.repository.ProcessRepository
 import pl.touk.esp.ui.process.repository.ProcessRepository._
+import pl.touk.esp.ui.util.Argonaut62Support
 
-import scala.concurrent.{Future, ExecutionContext}
+import scala.concurrent.{ExecutionContext, Future}
 
 class ProcessesResources(repository: ProcessRepository, processManager: ProcessManager)
                         (implicit ec: ExecutionContext)
-  extends Directives with ArgonautSupport {
+  extends Directives with Argonaut62Support {
 
   import argonaut.ArgonautShapeless._
 
@@ -78,7 +78,7 @@ class ProcessesResources(repository: ProcessRepository, processManager: ProcessM
     }
 
   private def convertToDisplayable(canonicalJson: String): DisplayableProcess = {
-    ProcessMarshaller.decode(canonicalJson) match {
+    ProcessMarshaller.fromJson(canonicalJson) match {
       case Valid(canonical) => ProcessConverter.toDisplayable(canonical)
       case Invalid(err) => throw new IllegalArgumentException(err.msg)
     }
