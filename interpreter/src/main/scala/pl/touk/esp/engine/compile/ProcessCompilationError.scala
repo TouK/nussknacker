@@ -4,6 +4,8 @@ sealed trait ProcessCompilationError {
   def nodeIds: Set[String]
 }
 
+sealed trait ProcessUncanonizationError extends ProcessCompilationError
+
 sealed trait PartSubGraphCompilationError extends ProcessCompilationError
 
 object ProcessCompilationError {
@@ -17,6 +19,10 @@ object ProcessCompilationError {
     protected def nodeId: String
 
   }
+
+  case class InvaliRootNode(nodeId: String) extends ProcessUncanonizationError with InASingleNode
+
+  case class InvalidTailOfBranch(nodeIds: Set[String]) extends ProcessUncanonizationError
 
   case class DuplicatedNodeIds(nodeIds: Set[String]) extends ProcessCompilationError
 

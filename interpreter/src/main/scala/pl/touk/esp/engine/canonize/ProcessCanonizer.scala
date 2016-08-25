@@ -8,7 +8,8 @@ import cats.syntax.traverse._
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.{Semigroup, SemigroupK}
 import pl.touk.esp.engine.canonicalgraph._
-import pl.touk.esp.engine.canonize.ProcessUncanonizationError._
+import pl.touk.esp.engine.compile.ProcessUncanonizationError
+import pl.touk.esp.engine.compile.ProcessCompilationError._
 import pl.touk.esp.engine.graph._
 
 object ProcessCanonizer {
@@ -102,27 +103,5 @@ object ProcessCanonizer {
       case invalidTail =>
         invalid(InvalidTailOfBranch(invalidTail.map(_.id).toSet)).toValidatedNel
     }
-
-}
-
-sealed trait ProcessUncanonizationError {
-
-  def nodeIds: Set[String]
-
-}
-
-object ProcessUncanonizationError {
-
-  trait InASingleNode { self: ProcessUncanonizationError =>
-
-    override def nodeIds: Set[String] = Set(nodeId)
-
-    protected def nodeId: String
-
-  }
-
-  case class InvaliRootNode(nodeId: String) extends ProcessUncanonizationError with InASingleNode
-
-  case class InvalidTailOfBranch(nodeIds: Set[String]) extends ProcessUncanonizationError
 
 }

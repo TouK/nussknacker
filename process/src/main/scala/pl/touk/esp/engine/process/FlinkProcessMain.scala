@@ -8,6 +8,8 @@ import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.commons.io.IOUtils
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import pl.touk.esp.engine.api.process.ProcessConfigCreator
+import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
+import pl.touk.esp.engine.canonize.ProcessCanonizer
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.marshall.ProcessMarshaller
 
@@ -39,7 +41,9 @@ object FlinkProcessMain {
     } else {
       arg
     }
-    ProcessMarshaller.fromJson(canonicalJson) match {
+    ProcessMarshaller.fromJson(canonicalJson).toValidatedNel[Any, CanonicalProcess] andThen { canonical =>
+      ProcessCanonizer.uncanonize(canonical)
+    } match {
       case Valid(p) => p
       case Invalid(err) => throw new IllegalArgumentException(err.toList.mkString("Unmarshalling errors: ", ", ", ""))
     }

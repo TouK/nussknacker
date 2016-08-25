@@ -11,6 +11,8 @@ import pl.touk.esp.engine._
 import ProcessCompilationError._
 import pl.touk.esp.engine.api.process._
 import pl.touk.esp.engine.api.{FoldingFunction, MetaData}
+import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
+import pl.touk.esp.engine.canonize.ProcessCanonizer
 import pl.touk.esp.engine.compile.dumb._
 import pl.touk.esp.engine.compiledgraph.CompiledProcessParts
 import pl.touk.esp.engine.definition.DefinitionExtractor._
@@ -69,6 +71,12 @@ protected trait ProcessCompilerBase {
 
   private implicit val nelSemigroup: Semigroup[NonEmptyList[ProcessCompilationError]] =
     SemigroupK[NonEmptyList].algebra[ProcessCompilationError]
+
+  def validate(canonical: CanonicalProcess): ValidatedNel[ProcessCompilationError, Unit] = {
+    ProcessCanonizer.uncanonize(canonical).leftMap(_.map(identity[ProcessCompilationError])) andThen { process =>
+      validate(process)
+    }
+  }
 
   def validate(process: EspProcess): ValidatedNel[ProcessCompilationError, Unit] = {
     compile(process).map(_ => Unit)
