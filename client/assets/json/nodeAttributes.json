@@ -17,7 +17,7 @@
     "name": "Filter",
     "styles": {
       "fill": "#AFA3E4",
-      "color": "black"
+      "color": "white"
     }
   },
   "Switch": {
@@ -37,7 +37,7 @@
   "Enricher": {
     "name": "Enricher",
     "styles": {
-      "fill": "#FDD88B",
+      "fill": "#FCC56D",
       "color": "white"
     }
   },
