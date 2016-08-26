@@ -5,6 +5,7 @@ import { AppContainer } from 'react-hot-loader';
 import { App, Home } from './containers/MainPage';
 import { Processes } from './containers/Processes';
 import { Visualization } from './containers/Visualization';
+import { Metrics } from './containers/Metrics';
 
 import 'bootstrap/dist/css/bootstrap.css';
 import './assets/fonts/fonts.less'
@@ -16,6 +17,7 @@ render((
             <Route path={Home.path} component={Home} />
             <Route path={Processes.path} component={Processes} />
             <Route showHamburger={true} path={Visualization.path} component={Visualization} />
+            <Route path={Metrics.path} component={Metrics} />
         </Route>
     </Router>
 ), document.getElementById('rootApp'));
