@@ -41,9 +41,13 @@ table#process-table
     background-color: #F5F5F5
   tr:nth-child(odd)
     background-color: #FFFFFF
-  tr.row-hover:hover td
-    background-color: #d9edf7
-    cursor: default
+  tr.row-hover:hover
+    td
+      background-color: #d9edf7
+      cursor: default
+    td.blue-bar
+      border-left: 5px solid menuBkgColor
+      padding-left: (containerPadding - 5px)
 
   .date-column
     text-align: center
@@ -77,4 +81,3 @@ table#process-table
     font-weight: 600
     a
       color: #686868
-

@@ -98,7 +98,7 @@ export const Processes = React.createClass({
           {this.state.processes.map((process, index) => {
             return (
               <Tr className="row-hover" key={index}>
-                <Td column="id">{process.id}</Td>
+                <Td column="id" className="blue-bar">{process.id}</Td>
                 <Td column="name">{process.name}</Td>
                 <Td column="category">
                   <div>
