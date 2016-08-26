@@ -1,5 +1,8 @@
 var path = require('path');
 var webpack = require('webpack');
+var childProcess = require('child_process'),
+GIT_HASH = childProcess.execSync('git log -1 --format=%H').toString();
+GIT_DATE = childProcess.execSync('git log -1 --format=%cd').toString();
 
 module.exports = {
   devtool: 'eval',
@@ -15,7 +18,13 @@ module.exports = {
     publicPath: '/static/'
   },
   plugins: [
-    new webpack.HotModuleReplacementPlugin()
+    new webpack.HotModuleReplacementPlugin(),
+    new webpack.DefinePlugin({
+      'GIT': {
+        'HASH': JSON.stringify(GIT_HASH),
+        'DATE': JSON.stringify(GIT_DATE)
+      }
+    })
   ],
   resolve: {
     alias: {

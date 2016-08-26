@@ -1,5 +1,8 @@
 var path = require('path');
 var webpack = require('webpack');
+var childProcess = require('child_process'),
+GIT_HASH = childProcess.execSync('git log -1 --format=%H').toString();
+GIT_DATE = childProcess.execSync('git log -1 --format=%cd').toString();
 
 module.exports = {
   devtool: 'cheap-source-map',
@@ -14,7 +17,13 @@ module.exports = {
   plugins: [
     //new webpack.optimize.UglifyJsPlugin(), fixme to niestety nie dziala i psuje escapowanie ciapek w svg i przez to javascrypty zajmuja 4mb zamaist 1mb...
     new webpack.optimize.DedupePlugin(),
-    new webpack.optimize.AggressiveMergingPlugin()
+    new webpack.optimize.AggressiveMergingPlugin(),
+    new webpack.DefinePlugin({
+      'GIT': {
+        'HASH': JSON.stringify(GIT_HASH),
+        'DATE': JSON.stringify(GIT_DATE)
+      }
+    })
   ],
   resolve: {
     alias: {
