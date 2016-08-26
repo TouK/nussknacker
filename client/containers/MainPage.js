@@ -14,6 +14,7 @@ import UserPanel from '../components/UserPanel'
 import '../stylesheets/mainMenu.styl'
 import hamburgerOpen from '../assets/img/menu-open.svg'
 import hamburgerClosed from '../assets/img/menu-closed.svg'
+import { Metrics } from './Metrics'
 
 
 export const App = React.createClass({
@@ -54,6 +55,7 @@ export const App = React.createClass({
                   <ul id="menu-items" className="nav navbar-nav navbar-right nav-pills nav-stacked">
                     <li><Link to={Home.path}>{Home.header}</Link></li>
                     <li><Link to={Processes.path}>{Processes.header}</Link></li>
+                    <li><Link to={Metrics.path}>{Metrics.header}</Link></li>
                   </ul>
                 </div>
               </div>
