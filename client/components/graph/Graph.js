@@ -44,9 +44,10 @@ export default class Graph extends React.Component {
         var edges = _.map(this.props.data.edges, (e) => { return EspNode.makeLink(e) });
         var cells = nodes.concat(edges);
         var paper = new joint.dia.Paper({
-            el: this.refs.espGraph,
-            width: this.refs.espGraph.offsetWidth,
+            el: $('#esp-graph'),
             gridSize: 1,
+            height: $('#esp-graph').height(),
+            width: $('#esp-graph').width(),
             model: this.graph,
             snapLinks: { radius: 75 },
             interactive: false //remove when editing won't be such a pain
@@ -96,13 +97,13 @@ export default class Graph extends React.Component {
         var displayedNodes = this.graph.attributes.cells.models.filter(m => !m.attributes.source).map(n => n.attributes.nodeData)
         return (
             <div>
-                <h2>{this.props.data.metaData.id}</h2>
+                <h2 id="process-name">{this.props.data.metaData.id}</h2>
                 <NodeDetailsModal node={this.state.clickedNode} onClose={this.onDetailsClosed}/>
                 {this.processGraphPaper && this.panAndZoom && this.state.toolboxVisible ?
                     <Toolbox processGraphPaper={this.processGraphPaper} panAndZoom={this.panAndZoom} graph={this.graph}/> : null
                 }
-                <div ref="espGraph"></div>
-                <button type="button" className="btn btn-default" onClick={this.directedLayout}>Directed layout</button>
+                <div ref="espGraph" id="esp-graph"></div>
+                <button type="button" className="btn btn-default hidden" onClick={this.directedLayout}>Directed layout</button>
             </div>
         );
     }

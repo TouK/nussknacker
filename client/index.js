@@ -15,7 +15,7 @@ render((
         <Route path={App.path} component={App}>
             <Route path={Home.path} component={Home} />
             <Route path={Processes.path} component={Processes} />
-            <Route path={Visualization.path} component={Visualization} />
+            <Route showHamburger={true} path={Visualization.path} component={Visualization} />
         </Route>
     </Router>
 ), document.getElementById('rootApp'));

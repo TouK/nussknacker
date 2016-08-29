@@ -1,21 +1,47 @@
 import React from 'react'
 import { render } from 'react-dom'
-import ReactDOM from 'react-dom';
+import ReactDOM from 'react-dom'
+import { browserHistory, Router, Route } from 'react-router'
 import { Link } from 'react-router'
 import joint from 'jointjs'
 import 'jointjs/dist/joint.css'
 import _ from 'lodash'
+import classNames from 'classnames'
+import { Processes } from './Processes'
+import { Visualization } from './Visualization'
+import UserPanel from '../components/UserPanel'
 
 import '../stylesheets/mainMenu.styl'
+import hamburgerOpen from '../assets/img/menu-open.svg'
+import hamburgerClosed from '../assets/img/menu-closed.svg'
 
-import { Processes } from './Processes'
 
 export const App = React.createClass({
+    getInitialState: function() {
+      return { userPanelOpened: false };
+    },
+
+    toggleUserPanel: function() {
+      this.setState({ userPanelOpened: !this.state.userPanelOpened });
+    },
+
     render: function() {
+        var userPanelOpenedClass = classNames({
+          'is-opened': this.state.userPanelOpened && _.get(this.props, 'routes[1].showHamburger', false)
+        })
         return (
           <div id="app-container">
             <nav id="main-menu" className="navbar navbar-default">
               <div id="git" className="hide">{JSON.stringify(GIT)}</div>
+              {(() => {
+                if (_.get(this.props, 'routes[1].showHamburger', false)) {
+                  return (
+                    <div id="toggle-user-panel" onClick={this.toggleUserPanel}>
+                      <img src={this.state.userPanelOpened ? hamburgerOpen : hamburgerClosed} />
+                    </div>
+                  )
+                }
+              })()}
               <div className="container-fluid">
                 <div className="navbar-header">
                   <Link id="brand-name" className="navbar-brand" to={App.path}>
@@ -33,7 +59,10 @@ export const App = React.createClass({
               </div>
             </nav>
             <main>
-              {this.props.children}
+              <UserPanel className={userPanelOpenedClass}/>
+              <div id="working-area" className={userPanelOpenedClass}>
+                {this.props.children}
+              </div>
             </main>
           </div>
         )

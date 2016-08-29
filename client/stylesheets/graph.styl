@@ -6,6 +6,24 @@
   overflow-y: hidden;
 }
 
+#process-name
+  position: absolute
+  margin-left: 15px
+
+#esp-graph
+  height: 100%
+  width: 100%
+  overflow-y: overlay
+  overflow-x: auto
+  background-image: url(../assets/img/paper-background.svg)
+  background-size: 15px
+  background-repeat: repeat
+  #svg-pan-zoom-controls
+    transform: translate(0, 50px) scale(0.75)
+  svg
+    width: inherit
+    padding: 30px 15px
+
 #modalHeader
   padding: 25px 40px
   text-transform: uppercase
