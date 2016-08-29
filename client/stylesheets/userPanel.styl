@@ -1,16 +1,18 @@
+@import "./_variables.styl"
+
 #mySidenav
+  width: 0px
   &.is-opened
     width: 250px
-  &.is-closed
-    width: 0px
 
 .sidenav
-  height: 100%
   width: 250px
   z-index: 1
   position: absolute
   top: 0
+  bottom: 0
   left: 0
+  padding-top: menuBarHeight
   background-color: #EBEBEB
   overflow-x: hidden
   transition: 0.5s

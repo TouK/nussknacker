@@ -3,9 +3,6 @@ import { render } from 'react-dom';
 import ReactDOM from 'react-dom';
 import { Link } from 'react-router';
 import Graph from '../components/graph/Graph';
-import UserPanel from '../components/UserPanel';
-import classNames from 'classnames';
-import { Glyphicon } from 'react-bootstrap';
 import _ from 'lodash';
 import $ from 'jquery';
 import appConfig from 'appConfig'
@@ -15,7 +12,7 @@ import '../stylesheets/visualization.styl';
 export const Visualization = React.createClass({
 
   getInitialState: function() {
-    return { userPanelOpened: false, process: {} , processDetails: {}, intervalId: null };
+    return { process: {} , processDetails: {}, intervalId: null };
   },
 
   componentDidMount() {
@@ -46,33 +43,20 @@ export const Visualization = React.createClass({
     })
   },
 
-  toggleUserPanel: function() {
-    this.setState({ userPanelOpened: !this.state.userPanelOpened });
-  },
-
   deploy() {
     $.post(appConfig.API_URL + '/processManagement/deploy/' + this.props.params.processId)
   },
 
   render: function() {
-    var userPanelOpenedClass = classNames({
-      'is-opened': this.state.userPanelOpened,
-      'is-closed': !this.state.userPanelOpened
-    })
-
     return _.isEmpty(this.state.process) || _.isEmpty(this.state.processDetails) ? null :
     (
         <div className="Page">
-            <UserPanel className={userPanelOpenedClass}/>
-            <div id="toggle-user-panel" className={userPanelOpenedClass} onClick={this.toggleUserPanel}>
-              <Glyphicon glyph={this.state.userPanelOpened ? 'remove' : 'menu-hamburger'}/>
-            </div>
-            <div id="working-area" className={userPanelOpenedClass}>
-              <div>
+            <div>
+              <div id="esp-action-panel">
                 {this.state.processDetails.tags.map(function (tagi, tagIndex) {
                   return <div key={tagIndex} className="tagsBlockVis">{tagi}</div>
                 })}
-                <button type="button" className="btn btn-danger pull-right" onClick={this.deploy}>Deploy</button>
+                <button type="button" className="btn btn-danger" onClick={this.deploy}>Deploy</button>
               </div>
               <Graph data={this.state.process} processDetails={this.state.processDetails}/>
             </div>
