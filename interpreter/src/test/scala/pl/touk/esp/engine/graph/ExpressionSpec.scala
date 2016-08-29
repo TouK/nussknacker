@@ -1,5 +1,6 @@
 package pl.touk.esp.engine.graph
 
+import java.math.BigDecimal
 import java.text.ParseException
 import java.time.LocalDate
 
@@ -13,7 +14,9 @@ import scala.collection.JavaConverters._
 
 class ExpressionSpec extends FlatSpec with Matchers {
 
-  val testValue = Test( "1", 2, List(Test("3", 4), Test("5", 6)).asJava)
+  private val bigValue = BigDecimal.valueOf(4187338076L)
+  
+  val testValue = Test( "1", 2, List(Test("3", 4), Test("5", 6)).asJava, bigValue)
   val ctx = ContextImpl(
     variables = Map("obj" -> testValue)
   )
@@ -23,7 +26,7 @@ class ExpressionSpec extends FlatSpec with Matchers {
 
   private val enrichingServiceId = "serviceId"
 
-  case class Test(id: String, value: Long, children: java.util.List[Test] = List[Test]().asJava) {
+  case class Test(id: String, value: Long, children: java.util.List[Test] = List[Test]().asJava, bigValue: BigDecimal = BigDecimal.valueOf(0L)) {
     def lazyValue(lazyValProvider: LazyValuesProvider): ValueWithModifiedContext[String] =
       lazyValProvider[String](enrichingServiceId).map(_ + " ma kota")
   }
@@ -40,6 +43,14 @@ class ExpressionSpec extends FlatSpec with Matchers {
 
     parse("#obj.value + 4").evaluate[Long](ctx, dumbLazyProvider).value should equal(6)
 
+  }
+
+  it should "handle big decimals" in {
+    bigValue.compareTo(BigDecimal.valueOf(50*1024*1024)) should be > 0
+    bigValue.compareTo(BigDecimal.valueOf(50*1024*1024L)) should be > 0
+    parse("#obj.bigValue").evaluate[BigDecimal](ctx, dumbLazyProvider).value should equal(bigValue)
+    parse("#obj.bigValue < 50*1024*1024").evaluate[Boolean](ctx, dumbLazyProvider).value should equal(false)
+    parse("#obj.bigValue < 50*1024*1024L").evaluate[Boolean](ctx, dumbLazyProvider).value should equal(false)
   }
 
   it should "filter by list predicates" in {
