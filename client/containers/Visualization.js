@@ -15,7 +15,7 @@ import '../stylesheets/visualization.styl';
 export const Visualization = React.createClass({
 
   getInitialState: function() {
-    return { userPanelOpened: false, process: {} , processDetails: {} };
+    return { userPanelOpened: false, process: {} , processDetails: {}, intervalId: null };
   },
 
   componentDidMount() {
@@ -24,9 +24,13 @@ export const Visualization = React.createClass({
     this.fetchProcessDetails();
   },
 
+  componentWillUnmount() {
+    clearInterval(this.state.intervalId)
+  },
+
   startPollingForUpdates() {
     setTimeout(() =>
-      setInterval(this.fetchProcessDetails, 10000),
+      this.setState({ intervalId: setInterval(this.fetchProcessDetails, 10000) }),
     2000)
   },
 
