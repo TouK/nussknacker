@@ -11,4 +11,5 @@ trait Service {
   def close(): Unit = {
 
   }
+
 }

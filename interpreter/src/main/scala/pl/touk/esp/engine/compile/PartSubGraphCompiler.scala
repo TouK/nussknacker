@@ -155,13 +155,9 @@ object PartSubGraphCompilerBase {
 
 object PartSubGraphCompiler {
 
-  def default(services: Map[String, Service]) = {
-    val servicesDefs = services.mapValues { service =>
-      ObjectWithMethodDef(service, ServiceDefinitionExtractor.extractMethodDefinition(service))
-    }
+  def default(servicesDefs: Map[String, ObjectWithMethodDef]): PartSubGraphCompiler = {
     new PartSubGraphCompiler(PartSubGraphCompilerBase.defaultParsers, servicesDefs)
   }
-
 }
 
 object PartSubGraphValidator {

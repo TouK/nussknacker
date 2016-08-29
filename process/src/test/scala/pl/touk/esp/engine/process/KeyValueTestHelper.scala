@@ -46,15 +46,6 @@ object KeyValueTestHelper {
       override def exceptionHandler(config: Config) = VerboselyLoggingExceptionHandler
     }
 
-    def invoke(process: EspProcess, data: List[KeyValue],
-               env: StreamExecutionEnvironment = StreamExecutionEnvironment.createLocalEnvironment()) = {
-      val creator = prepareCreator(env.getConfig, data, null)
-      FlinkProcessRegistrar(creator, ConfigFactory.load()).register(env, process)
-      MockService.data.clear()
-      env.execute()
-    }
-
-
     def invokeWithKafka(process: EspProcess, config: KafkaConfig,
                         env: StreamExecutionEnvironment = StreamExecutionEnvironment.createLocalEnvironment()) = {
       val creator = prepareCreator(env.getConfig, List.empty, config)

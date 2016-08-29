@@ -2,9 +2,9 @@ package pl.touk.esp.engine.api
 
 trait Context {
 
-  def processMetaData: MetaData
-
   def variables: Map[String, Any]
+
+  def lazyContext: LazyContext
 
   def apply[T](name: String): T =
     getOrElse(name, throw new RuntimeException(s"Unknown variable: $name"))
@@ -21,6 +21,11 @@ trait Context {
   def modifyOptionalVariable[T](name: String, f: Option[T] => T): Context =
     withVariable(name, f(get[T](name)))
 
-  def withVariable(name: String, value: Any): Context
+  def withVariable(name: String, value: Any): Context =
+    withVariables(Map(name -> value))
+
+  def withVariables(otherVariables: Map[String, Any]): Context
+
+  def withLazyContext(lazyContext: LazyContext): Context
 
 }

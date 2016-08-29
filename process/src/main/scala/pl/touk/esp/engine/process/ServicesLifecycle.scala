@@ -1,5 +1,6 @@
 package pl.touk.esp.engine.process
 
+import pl.touk.esp.engine.Interpreter
 import pl.touk.esp.engine.api.Service
 import pl.touk.esp.engine.compile.{PartSubGraphCompiler, ProcessCompiler}
 
@@ -15,4 +16,6 @@ class ServicesLifecycle(services: Seq[Service]) {
   }
 }
 
-case class PartSubGraphCompilerWithServicesLifecycle(compiler: PartSubGraphCompiler, servicesLifecycle: ServicesLifecycle)
+case class ServicesLifecycleWithDependants(servicesLifecycle: ServicesLifecycle,
+                                           compiler: PartSubGraphCompiler,
+                                           interpreter: Interpreter)

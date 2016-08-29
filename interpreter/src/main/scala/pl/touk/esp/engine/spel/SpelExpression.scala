@@ -8,32 +8,33 @@ import org.springframework.expression.spel.support.StandardEvaluationContext
 import org.springframework.expression.spel.{SpelCompilerMode, SpelParserConfiguration}
 import org.springframework.expression.{EvaluationContext, PropertyAccessor, TypedValue}
 import pl.touk.esp.engine._
-import pl.touk.esp.engine.api.Context
+import pl.touk.esp.engine.api.{Context, LazyValuesProvider, ValueWithModifiedContext}
 import pl.touk.esp.engine.compiledgraph.expression.{ExpressionParseError, ExpressionParser}
 import pl.touk.esp.engine.functionUtils.CollectionUtils
-import pl.touk.esp.engine.spel.SpelExpressionParser.{MapPropertyAccessor, ScalaPropertyAccessor}
+import pl.touk.esp.engine.spel.SpelExpressionParser.{MapPropertyAccessor, ScalaLazyPropertyAccessor, ScalaPropertyAccessor, _}
 
-import scala.collection.concurrent
 import scala.collection.concurrent.TrieMap
 
 class SpelExpression(parsed: org.springframework.expression.Expression,
                      val original: String,
-                     expressionFunctions: Map[String, Method]) extends compiledgraph.expression.Expression {
+                     expressionFunctions: Map[String, Method],
+                     propertyAccessors: Seq[PropertyAccessor]) extends compiledgraph.expression.Expression {
 
-  val scalaPropertyAccessor = new ScalaPropertyAccessor
-
-  override def evaluate[T](ctx: Context): T = {
+  override def evaluate[T](ctx: Context, lazyValuesProvider: Context => LazyValuesProvider): ValueWithModifiedContext[T] = {
     val simpleContext = new StandardEvaluationContext()
-    simpleContext.addPropertyAccessor(scalaPropertyAccessor)
-    simpleContext.addPropertyAccessor(new MapPropertyAccessor)
+    propertyAccessors.foreach(simpleContext.addPropertyAccessor)
 
     ctx.variables.foreach {
       case (k, v) => simpleContext.setVariable(k, v)
     }
+    simpleContext.setVariable(LazyValuesProviderVariableName, lazyValuesProvider)
+    simpleContext.setVariable(ModifiedContextVariableName, ctx)
     expressionFunctions.foreach {
       case (k, v) => simpleContext.registerFunction(k, v)
     }
-    parsed.getValue(simpleContext).asInstanceOf[T]
+    val value = parsed.getValue(simpleContext).asInstanceOf[T]
+    val modifiedContext = simpleContext.lookupVariable(ModifiedContextVariableName).asInstanceOf[Context]
+    ValueWithModifiedContext(value, modifiedContext)
   }
 }
 
@@ -45,10 +46,19 @@ class SpelExpressionParser(expressionFunctions: Map[String, Method]) extends Exp
     new SpelParserConfiguration(SpelCompilerMode.IMMEDIATE, null)
   )
 
+  private val scalaPropertyAccessor = new ScalaPropertyAccessor
+  private val scalaLazyPropertyAccessor = new ScalaLazyPropertyAccessor
+
+  private val propertyAccessors = Seq(
+    scalaPropertyAccessor,
+    scalaLazyPropertyAccessor,
+    MapPropertyAccessor
+  )
+
   override def parse(original: String): Validated[ExpressionParseError, compiledgraph.expression.Expression] = {
     for {
       parsed <- Validated.catchNonFatal(parser.parseExpression(original)).leftMap(ex => ExpressionParseError(ex.getMessage))
-    } yield new SpelExpression(parsed, original, expressionFunctions)
+    } yield new SpelExpression(parsed, original, expressionFunctions, propertyAccessors)
   }
 
 }
@@ -57,6 +67,9 @@ object SpelExpressionParser {
 
   val languageId: String = "spel"
 
+  private[spel] final val LazyValuesProviderVariableName: String = "$lazy"
+  private[spel] final val ModifiedContextVariableName: String = "$modifiedContext"
+
   val default: SpelExpressionParser = new SpelExpressionParser(Map(
     "today" -> classOf[LocalDate].getDeclaredMethod("now"),
     "now" -> classOf[LocalDateTime].getDeclaredMethod("now"),
@@ -64,37 +77,44 @@ object SpelExpressionParser {
     "sum" -> classOf[CollectionUtils].getDeclaredMethod("sum", classOf[java.util.Collection[_]])
   ))
 
-  //TODO: jak bardzo to jest niewydajne???
-  class ScalaPropertyAccessor extends PropertyAccessor {
 
-    val methodsCache = new TrieMap[(String, Class[_]), Option[Method]]()
+  class ScalaPropertyAccessor extends PropertyAccessor with ReadOnly with Caching {
 
-    override def canRead(context: EvaluationContext, target: scala.Any, name: String) =
-      !target.isInstanceOf[Class[_]] && findMethod(name, target).isDefined
+    override protected def reallyFindMethod(name: String, target: Class[_]) : Option[Method] =
+      target.getMethods.find(m => m.getParameterCount == 0 && m.getName == name)
 
-    override def read(context: EvaluationContext, target: scala.Any, name: String) =
-      findMethod(name, target)
-        .map(_.invoke(target))
-        .map(new TypedValue(_))
-        .getOrElse(throw new IllegalAccessException("Property is not readable"))
 
-    private def findMethod(name: String, target: Any) = {
-      val targetClass = target.getClass
-      methodsCache.getOrElseUpdate((name, targetClass), reallyFindMethod(name, targetClass))
+    override protected def invokeMethod(method: Method, target: Any, context: EvaluationContext) = {
+      method.invoke(target)
     }
-
-    private def reallyFindMethod(name: String, target: Class[_]) : Option[Method] =
-      target.getMethods.toList.find(m => m.getParameterCount == 0 && m.getName == name)
-
-    override def write(context: EvaluationContext, target: scala.Any, name: String, newValue: scala.Any) =
-      throw new IllegalAccessException("Property is not writeable")
-
-    override def canWrite(context: EvaluationContext, target: scala.Any, name: String) = false
 
     override def getSpecificTargetClasses = null
   }
 
-  class MapPropertyAccessor extends PropertyAccessor {
+  class ScalaLazyPropertyAccessor extends PropertyAccessor with ReadOnly with Caching {
+
+    override protected def reallyFindMethod(name: String, target: Class[_]) : Option[Method] =
+      target.getMethods.find(
+        m => m.getParameterCount == 1 &&
+        m.getParameterTypes()(0) == classOf[LazyValuesProvider] &&
+        m.getReturnType == classOf[ValueWithModifiedContext[_]] &&
+        m.getName == name)
+
+    override protected def invokeMethod(method: Method, target: Any, context: EvaluationContext)  = {
+      val createLazyProvider = context.lookupVariable(LazyValuesProviderVariableName).asInstanceOf[Context => LazyValuesProvider]
+      val ctx = context.lookupVariable(ModifiedContextVariableName).asInstanceOf[Context]
+      val valueWithContext = method
+        .invoke(target, createLazyProvider(ctx))
+        .asInstanceOf[ValueWithModifiedContext[_]]
+      context.setVariable(ModifiedContextVariableName, valueWithContext.context)
+      valueWithContext.value
+    }
+
+    override def getSpecificTargetClasses = null
+
+  }
+
+  object MapPropertyAccessor extends PropertyAccessor with ReadOnly {
 
     override def canRead(context: EvaluationContext, target: scala.Any, name: String) =
       target.asInstanceOf[java.util.Map[_, _]].containsKey(name)
@@ -102,12 +122,41 @@ object SpelExpressionParser {
     override def read(context: EvaluationContext, target: scala.Any, name: String) =
       new TypedValue(target.asInstanceOf[java.util.Map[_, _]].get(name))
 
+    override def getSpecificTargetClasses = Array(classOf[java.util.Map[_, _]])
+  }
+
+  trait Caching { self: PropertyAccessor =>
+
+    private val methodsCache = new TrieMap[(String, Class[_]), Option[Method]]()
+
+    override def canRead(context: EvaluationContext, target: scala.Any, name: String) =
+      !target.isInstanceOf[Class[_]] && findMethod(name, target).isDefined
+
+    override def read(context: EvaluationContext, target: scala.Any, name: String) =
+      findMethod(name, target)
+        .map { method =>
+          new TypedValue(invokeMethod(method, target, context))
+        }
+        .getOrElse(throw new IllegalAccessException("Property is not readable"))
+
+    private def findMethod(name: String, target: Any) = {
+      val targetClass = target.getClass
+      methodsCache.getOrElseUpdate((name, targetClass), reallyFindMethod(name, targetClass))
+    }
+
+    protected def reallyFindMethod(name: String, target: Class[_]) : Option[Method]
+
+    protected def invokeMethod(method: Method, target: Any, context: EvaluationContext): Any
+
+  }
+
+  trait ReadOnly { self: PropertyAccessor =>
+
     override def write(context: EvaluationContext, target: scala.Any, name: String, newValue: scala.Any) =
       throw new IllegalAccessException("Property is not writeable")
 
     override def canWrite(context: EvaluationContext, target: scala.Any, name: String) = false
 
-    override def getSpecificTargetClasses = Array(classOf[java.util.Map[_, _]])
   }
 
 }
