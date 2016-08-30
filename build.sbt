@@ -25,8 +25,8 @@ val commonSettings =
     resolvers ++= Seq(
       "local" at "file://"+Path.userHome.absolutePath+"/.m2/repository",
       "touk repo" at "http://nexus.touk.pl/nexus/content/groups/public",
-      "touk snapshots" at "http://nexus.touk.pl/nexus/content/groups/public-snapshots"
-//      "flink.release-staging" at "https://repository.apache.org/content/repositories/orgapacheflink-1098" //remove when flink 1.1.0 released
+      "touk snapshots" at "http://nexus.touk.pl/nexus/content/groups/public-snapshots",
+      "spring milestone" at "https://repo.spring.io/milestone"
     ),
     scalacOptions := Seq(
       "-unchecked",
@@ -39,13 +39,19 @@ val commonSettings =
       "-target:jvm-1.8"
     ),
     sources in (Compile, doc) := Seq.empty,
-    publishArtifact in (Compile, packageDoc) := false
+    publishArtifact in (Compile, packageDoc) := false,
+    assemblyMergeStrategy in assembly := {
+      case PathList(ps @ _*) if ps.last == "NumberUtils.class" => MergeStrategy.first
+      case x =>
+        val oldStrategy = (assemblyMergeStrategy in assembly).value
+        oldStrategy(x)
+    }
   )
 
 val akkaV = "2.4.8"
 val flinkV = "1.1.1"
 val kafkaV = "0.9.0.1"
-val springV = "4.3.1.RELEASE"
+val springV = "5.0.0.M1"
 val scalaTestV = "3.0.0-M15"
 val logbackV = "1.1.3"
 val argonautShapelessV = "1.2.0-M1"
