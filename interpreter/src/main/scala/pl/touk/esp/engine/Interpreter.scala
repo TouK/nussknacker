@@ -107,8 +107,11 @@ class Interpreter(servicesDefs: Map[String, ObjectWithMethodDef],
   private def interpretOptionalNext(node: Node, optionalNext: Option[Next], ctx: Context)
                                    (implicit mode: InterpreterMode, metaData: MetaData, ec: ExecutionContext): Future[InterpretationResult] = {
     optionalNext match {
-      case Some(next) => interpretNext(next, ctx)
-      case None => Future.successful(InterpretationResult(DefaultSinkReference, outputValue(ctx), ctx))
+      case Some(next) =>
+        interpretNext(next, ctx)
+      case None =>
+        listeners.foreach(_.deadEndEncountered(ctx, metaData))
+        Future.successful(InterpretationResult(DeadEndReference, outputValue(ctx), ctx))
     }
   }
 

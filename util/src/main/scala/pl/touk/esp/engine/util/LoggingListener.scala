@@ -12,6 +12,10 @@ object LoggingListener extends ProcessListener with LazyLogging {
     logger.debug(s"${processMetaData.id}: Node: $nodeId entered$modeSuffix")
   }
 
+  override def deadEndEncountered(context: Context, processMetaData: MetaData): Unit = {
+    logger.debug(s"${processMetaData.id}: Dead end encountered")
+  }
+
   override def serviceInvoked(id: String, context: Context, processMetaData: MetaData, result: Try[Any]): Unit = {
     logger.debug(s"${processMetaData.id}: Service: $id invocation ended-up with result: $result")
   }
