@@ -13,6 +13,7 @@ import org.apache.flink.api.common.state._
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.collector.selector.OutputSelector
+import org.apache.flink.streaming.api.functions.sink.RichSinkFunction
 import org.apache.flink.streaming.api.scala.function.util.ScalaFoldFunction
 import org.apache.flink.streaming.api.scala.{StreamExecutionEnvironment, _}
 import org.apache.flink.streaming.api.windowing.time.Time
@@ -107,7 +108,8 @@ class FlinkProcessRegistrar(serviceLifecycleWithDependants: () => ServicesLifecy
       nextParts.foreach { part =>
         registerSubsequentPart(start.select(part.id), part)
       }
-      // TODO: register default sink
+      start.select(DeadEndId)
+        .addSink(new DeadEndSinkFunction(espExceptionHandlerProvider, process.metaData))
     }
 
   }
@@ -116,7 +118,7 @@ class FlinkProcessRegistrar(serviceLifecycleWithDependants: () => ServicesLifecy
 
 object FlinkProcessRegistrar {
 
-  private final val DefaultSinkId = "$"
+  private final val DeadEndId = "$"
 
   def apply(creator: ProcessConfigCreator, config: Config) = {
     val timeout = config.getDuration("timeout", TimeUnit.SECONDS).seconds
@@ -235,6 +237,30 @@ object FlinkProcessRegistrar {
     }
   }
 
+
+  class DeadEndSinkFunction(espExceptionHandlerProvider: () => EspExceptionHandler,
+                            metaData: MetaData) extends RichSinkFunction[InterpretationResult]  {
+
+    private lazy val espExceptionHandler = espExceptionHandlerProvider()
+
+    override def open(parameters: Configuration): Unit = {
+      super.open(parameters)
+      espExceptionHandler.open()
+    }
+
+    override def invoke(value: InterpretationResult) = {
+      espExceptionHandler.handle(EspExceptionInfo(
+        NonTransientException(value.output.toString, "Process encountered on dead end"),
+        value.finalContext,
+        metaData))
+    }
+
+    override def close(): Unit = {
+      super.close()
+      espExceptionHandler.close()
+    }
+  }
+
   class AggregateKeyByFunction(serviceLifecycleWithDependantsProvider: () => ServicesLifecycleWithDependants,
                                espExceptionHandlerProvider: () => EspExceptionHandler,
                                node: splittednode.Aggregate,
@@ -333,8 +359,8 @@ object FlinkProcessRegistrar {
     override def select(interpretationResult: InterpretationResult): Iterable[String] = {
       interpretationResult.reference match {
         case NextPartReference(id) => List(id).asJava
-        case DefaultSinkReference => List(DefaultSinkId).asJava // TODO: default sink won't be registered
-        case EndReference => throw new IllegalStateException("Non-sink interpretation shouldn't ended up by end reference")
+        case DeadEndReference => List(DeadEndId).asJava
+        case EndReference => List.empty.asJava
       }
     }
   }

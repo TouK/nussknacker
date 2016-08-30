@@ -19,7 +19,7 @@ class KafkaExceptionHandler(kafkaAddress: String,
 
   }
 
-  override protected def handle(exceptionInfo: EspExceptionInfo): Unit = {
+  override def handle(exceptionInfo: EspExceptionInfo): Unit = {
     val toSend = serializationSchema.serialize(exceptionInfo)
     val topic = topicChoice(exceptionInfo)
     val logAsString = true

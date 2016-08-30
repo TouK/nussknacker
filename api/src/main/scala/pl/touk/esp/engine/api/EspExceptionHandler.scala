@@ -14,7 +14,7 @@ trait EspExceptionHandler extends Serializable {
   }
 
   def open(): Unit
-  protected def handle(exceptionInfo: EspExceptionInfo): Unit
+  def handle(exceptionInfo: EspExceptionInfo): Unit
   def close(): Unit
 }
 
@@ -23,7 +23,7 @@ case class EspExceptionInfo(throwable: Throwable, context: Context, processMetaD
 object BrieflyLoggingExceptionHandler extends EspExceptionHandler with LazyLogging {
 
   override def open(): Unit = {}
-  override protected def handle(e: EspExceptionInfo): Unit = {
+  override def handle(e: EspExceptionInfo): Unit = {
     logger.warn(s"${e.processMetaData.id}: Exception: ${e.throwable.getMessage} (${e.throwable.getClass.getName})")
   }
   override def close(): Unit = {}
@@ -33,7 +33,7 @@ object BrieflyLoggingExceptionHandler extends EspExceptionHandler with LazyLoggi
 object VerboselyLoggingExceptionHandler extends EspExceptionHandler with LazyLogging {
 
   override def open(): Unit = {}
-  override protected def handle(e: EspExceptionInfo): Unit = {
+  override def handle(e: EspExceptionInfo): Unit = {
     logger.error(s"${e.processMetaData.id}: Exception during processing job, context: ${e.context}", e.throwable)
   }
   override def close(): Unit = {}
