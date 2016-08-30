@@ -2,6 +2,7 @@ package pl.touk.esp.engine.kafka
 
 import java.util.Properties
 
+import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.streaming.util.serialization.SerializationSchema
 import org.apache.kafka.clients.producer.internals.ErrorLoggingCallback
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
@@ -15,7 +16,7 @@ class KafkaExceptionHandler(kafkaAddress: String,
                             properties: Properties = new Properties()) extends EspExceptionHandler {
   lazy val producer = new KafkaProducer[Array[Byte], Array[Byte]](propertiesForKafka())
 
-  override def open(): Unit = {
+  override def open(runtimeContext: RuntimeContext): Unit = {
 
   }
 

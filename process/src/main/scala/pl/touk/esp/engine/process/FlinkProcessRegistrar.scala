@@ -69,7 +69,7 @@ class FlinkProcessRegistrar(serviceLifecycleWithDependants: () => ServicesLifecy
         .addSource[Any](part.obj.toFlinkSource)(part.obj.typeInformation)
       //chyba nie ascending????
       val withAssigned = timeExtractionFunction.map(newStart.assignAscendingTimestamps).getOrElse(newStart)
-        .map(new MeterFunction[Any]("source", process.metaData.id))
+        .map(new MeterFunction[Any]("source"))
         .flatMap(new InitialInterpretationFunction(serviceLifecycleWithDependants,
           espExceptionHandlerProvider, part.source, Interpreter.InputParamName, process.metaData, processTimeout))
         .split(SplitFunction)
@@ -178,7 +178,7 @@ object FlinkProcessRegistrar {
     override def open(parameters: Configuration): Unit = {
       super.open(parameters)
       serviceLifecycleWithDependants.servicesLifecycle.open()
-      espExceptionHandler.open()
+      espExceptionHandler.open(getRuntimeContext)
     }
 
     override def flatMap(input: Any, collector: Collector[InterpretationResult]): Unit = {
@@ -214,7 +214,7 @@ object FlinkProcessRegistrar {
     override def open(parameters: Configuration): Unit = {
       super.open(parameters)
       serviceLifecycleWithDependants.servicesLifecycle.open()
-      espExceptionHandler.open()
+      espExceptionHandler.open(getRuntimeContext)
       getRuntimeContext.getMetricGroup
         .addGroup(sink.id)
         .gauge[Double, InstantRateMeter]("instantRate", instantRateMeter)
@@ -245,7 +245,7 @@ object FlinkProcessRegistrar {
 
     override def open(parameters: Configuration): Unit = {
       super.open(parameters)
-      espExceptionHandler.open()
+      espExceptionHandler.open(getRuntimeContext)
     }
 
     override def invoke(value: InterpretationResult) = {
@@ -338,7 +338,7 @@ object FlinkProcessRegistrar {
     }
   }
 
-  class MeterFunction[T](name: String, groupId: String) extends RichMapFunction[T, T] {
+  class MeterFunction[T](groupId: String) extends RichMapFunction[T, T] {
     lazy val instantRateMeter = new InstantRateMeter
 
     override def open(parameters: Configuration): Unit = {
@@ -346,7 +346,7 @@ object FlinkProcessRegistrar {
 
       getRuntimeContext.getMetricGroup
         .addGroup(groupId)
-        .gauge[Double, InstantRateMeter](name, instantRateMeter)
+        .gauge[Double, InstantRateMeter]("instantRate", instantRateMeter)
     }
 
     override def map(value: T) = {
