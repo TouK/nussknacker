@@ -3,6 +3,7 @@ package pl.touk.esp.engine.process
 import argonaut.PrettyParams
 import com.typesafe.config.Config
 import org.apache.flink.api.common.ExecutionConfig
+import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor
 import org.apache.flink.streaming.api.scala._
 import org.scalatest.FlatSpec
 import pl.touk.esp.engine.api.process.{ProcessConfigCreator, SinkFactory, SourceFactory}
@@ -54,7 +55,9 @@ class SimpleProcessConfigCreator extends ProcessConfigCreator {
   override def foldingFunctions(config: Config) = Map()
 
   override def sourceFactories(config: Config) = Map("input" -> SourceFactory.noParam(
-    new CollectionSource[SimpleRecord](new ExecutionConfig, List(), Some((a: SimpleRecord) => a.date.getTime))))
+    new CollectionSource[SimpleRecord](new ExecutionConfig, List(), Some(new AscendingTimestampExtractor[SimpleRecord] {
+      override def extractAscendingTimestamp(element: SimpleRecord) = element.date.getTime
+    }))))
 
   override def exceptionHandler(config: Config) = BrieflyLoggingExceptionHandler
 

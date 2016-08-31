@@ -13,6 +13,8 @@ import org.apache.flink.api.common.state._
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.collector.selector.OutputSelector
+import org.apache.flink.streaming.api.functions.{AssignerWithPeriodicWatermarks, AssignerWithPunctuatedWatermarks}
+import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor
 import org.apache.flink.streaming.api.scala.function.util.ScalaFoldFunction
 import org.apache.flink.streaming.api.scala.{StreamExecutionEnvironment, _}
 import org.apache.flink.streaming.api.windowing.time.Time
@@ -58,21 +60,27 @@ class FlinkProcessRegistrar(serviceLifecycleWithDependants: () => ServicesLifecy
   }
 
   private def register(env: StreamExecutionEnvironment, process: CompiledProcessParts): Unit = {
+    process.metaData.parallelism.foreach(env.setParallelism)
     registerSourcePart(process.source)
 
     def registerSourcePart(part: SourcePart): Unit = {
-      val timeExtractionFunction = part.obj.timeExtractionFunction
+      val timestampAssigner = part.obj.timestampAssigner
 
-      timeExtractionFunction.foreach(_ => env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime))
+      timestampAssigner.foreach(_ => env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime))
 
       val newStart = env
         .addSource[Any](part.obj.toFlinkSource)(part.obj.typeInformation)
-      //chyba nie ascending????
-      val withAssigned = timeExtractionFunction.map(newStart.assignAscendingTimestamps).getOrElse(newStart)
+      val withAssigned = timestampAssigner.collect {
+        case periodic: AssignerWithPeriodicWatermarks[Any@unchecked] =>
+          newStart.assignTimestampsAndWatermarks(periodic)
+        case punctuated: AssignerWithPunctuatedWatermarks[Any@unchecked] =>
+          newStart.assignTimestampsAndWatermarks(punctuated)
+      }.getOrElse(newStart)
         .map(new MeterFunction[Any]("source"))
         .flatMap(new InitialInterpretationFunction(serviceLifecycleWithDependants,
           espExceptionHandlerProvider, part.source, Interpreter.InputParamName, process.metaData, processTimeout))
         .split(SplitFunction)
+
       registerParts(withAssigned, part.nextParts, part.ends)
     }
 

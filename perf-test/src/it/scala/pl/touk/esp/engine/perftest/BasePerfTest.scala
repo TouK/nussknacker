@@ -42,6 +42,7 @@ trait BasePerfTest extends ScalaFutures with BeforeAndAfterAll { suite: Suite wi
   protected lazy val processId = s"perf.$baseTestName.${UUID.randomUUID()}"
 
   protected lazy val config: Config = {
+//    ConfigFactory.load("application-local.conf")
     ConfigFactory.load()
       .withValue(
         s"$profile.processConfigCreatorClass",
@@ -97,7 +98,7 @@ trait BasePerfTest extends ScalaFutures with BeforeAndAfterAll { suite: Suite wi
     SLF4JBridgeHandler.removeHandlersForRootLogger()
     SLF4JBridgeHandler.install()
     Logger.getLogger("").setLevel(Level.ALL)
-    system = ActorSystem(baseTestName)
+    system = ActorSystem(baseTestName, config)
   }
 
   override protected def afterAll() = {

@@ -1,6 +1,5 @@
 package pl.touk.esp.engine.perftest
 
-import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest._
 import org.scalatest.concurrent.Eventually
@@ -27,7 +26,7 @@ class AggregatePerfTest extends FlatSpec with BasePerfTest with Matchers  with E
   "simple process" should "has low memory footprint" in {
     val inTopic = processId + ".in"
     val outTopic = processId + ".out"
-    val kafkaClient = prepareKafka(config, inTopic, outTopic)
+    val kafkaClient = prepareKafka(inTopic, outTopic)
     try {
       val outputStream = kafkaClient.createConsumer().consume(outTopic)
 
@@ -35,6 +34,7 @@ class AggregatePerfTest extends FlatSpec with BasePerfTest with Matchers  with E
       val slidesInWindow = 5
       val messagesInSlide = 10
       val threshold = slidesInWindow * messagesInSlide
+      val parallelism = 8 // powinien być <= liczby slotów w innym przypadku się nie zadeployuje
 
       val process = prepareSimpleProcess(
         id = processId,
@@ -42,17 +42,19 @@ class AggregatePerfTest extends FlatSpec with BasePerfTest with Matchers  with E
         outTopic = outTopic,
         slideWidth = windowWidth,
         slidesInWindow = slidesInWindow,
-        threshold = threshold)
+        threshold = threshold,
+        parallelism = parallelism)
 
       withDeployedProcess(process) {
         val keys = 100
         val slides = 1000
         val inputCount = keys * slides * messagesInSlide
+        val triggeredRatio = 0.01
 
         val groupSize = 100 * 1000
         val groupsCount = Math.ceil(inputCount.toDouble / groupSize).toInt
 
-        val outputCount = keys * (slides - (slidesInWindow - 1))
+        val outputCount = (keys * triggeredRatio).toInt * (slides - (slidesInWindow - 1))
 
         val messagesStream =
           for {
@@ -61,8 +63,9 @@ class AggregatePerfTest extends FlatSpec with BasePerfTest with Matchers  with E
             keyIdx <- 1 to keys
           } yield {
             val timestamp = slide * windowWidth.toMillis + messageInSlide
+            val value = if (keyIdx.toDouble / keys <= triggeredRatio) "1" else "0"
             val key = s"key$keyIdx"
-            (key, s"$key|1|$timestamp")
+            (key, s"$key|$value|$timestamp")
           }
 
         val (lastMessage, metrics, durationInMillis) = collectMetricsIn {
@@ -86,11 +89,11 @@ class AggregatePerfTest extends FlatSpec with BasePerfTest with Matchers  with E
 
         logger.info(metrics.show)
         val usedMemoryInMB = metrics.memoryHistogram.percentile(95.0) / 1000 / 1000
-        val msgsPerSecond = outputCount.toDouble / (durationInMillis.toDouble / 1000)
+        val msgsPerSecond = inputCount.toDouble / (durationInMillis.toDouble / 1000)
         logger.info(f"Throughput: $msgsPerSecond%.2f msgs/sec.")
 
         usedMemoryInMB should be < 500L
-        msgsPerSecond should be > 1000.0
+        msgsPerSecond should be > 10000.0
       }
 
     } finally {
@@ -98,11 +101,10 @@ class AggregatePerfTest extends FlatSpec with BasePerfTest with Matchers  with E
     }
   }
 
-  private def prepareKafka(config: Config, inTopic: String, outTopic: String): KafkaClient = {
+  private def prepareKafka(inTopic: String, outTopic: String): KafkaClient = {
     val kafkaConfig = config.as[KafkaConfig](s"$profile.kafka")
     val kafkaClient = new KafkaClient(kafkaConfig.kafkaAddress, kafkaConfig.zkAddress)
-    // FIXME: przy większej ilości partycji w logach taskmanagera pojawia się Timestamp monotony violated i test nie przechodzi
-    kafkaClient.createTopic(inTopic, partitions = 1)
+    kafkaClient.createTopic(inTopic, partitions = 8)
     kafkaClient.createTopic(outTopic, partitions = 1)
     kafkaClient
   }
@@ -123,7 +125,8 @@ object AggregatePerfTest {
                            outTopic: String,
                            slideWidth: FiniteDuration,
                            slidesInWindow: Int,
-                           threshold: Int) = {
+                           threshold: Int,
+                           parallelism: Int) = {
     val graph =
       GraphBuilder.source("source", "kafka-keyvalue",
         source.Parameter("topic", inTopic)
@@ -137,7 +140,7 @@ object AggregatePerfTest {
       )
 
     EspProcess(
-      MetaData(id),
+      MetaData(id, parallelism = Some(parallelism)),
       graph
     )
   }

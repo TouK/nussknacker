@@ -19,7 +19,6 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.language.implicitConversions
 
-@Ignore // FIXME: ten test nie przechodzi na niektórych środowiskach, pojawiają się: Timestamp monotony violated
 class FlinkProcessRegistrarKafkaSpec
   extends FlatSpec
     with BeforeAndAfterAll
@@ -65,7 +64,8 @@ class FlinkProcessRegistrarKafkaSpec
 
     val keys = 10
     val slides = 100
-    val outputCount = keys * (slides - (slidesInWindow - 1))
+    val triggeredRatio = 0.01
+    val outputCount = (keys * triggeredRatio).toInt * (slides - (slidesInWindow - 1))
 
     val messagesStream =
       for {
@@ -74,7 +74,8 @@ class FlinkProcessRegistrarKafkaSpec
         key <- 1 to keys
       } yield {
         val timestamp = slide * windowWidth.toMillis + messageInSlide
-        (key.toString, s"$key|1|$timestamp")
+        val value = if (key.toDouble / keys <= triggeredRatio) "1" else "0"
+        (key.toString, s"$key|$value|$timestamp")
       }
     messagesStream.foreach {
       case (key, content) =>
