@@ -98,6 +98,7 @@ class FlinkProcessRegistrar(serviceLifecycleWithDependants: () => ServicesLifecy
         case part: SinkPart =>
           start
             .flatMap(new SinkInterpretationFunction(serviceLifecycleWithDependants, espExceptionHandlerProvider, part.sink, process.metaData, processTimeout))
+            .map(new MeterFunction[Any]("end"))
             .name(s"${part.id}-function")
             .addSink(part.obj.toFlinkFunction)
             .name(s"${part.id}-sink")
@@ -108,8 +109,10 @@ class FlinkProcessRegistrar(serviceLifecycleWithDependants: () => ServicesLifecy
       nextParts.foreach { part =>
         registerSubsequentPart(start.select(part.id), part)
       }
+      start.select(EndId)
+        .map(new MeterFunction[InterpretationResult]("end"))
       start.select(DeadEndId)
-        .addSink(new DeadEndSinkFunction(espExceptionHandlerProvider, process.metaData))
+        .map(new MeterFunction[InterpretationResult]("dead_end"))
     }
 
   }
@@ -118,7 +121,8 @@ class FlinkProcessRegistrar(serviceLifecycleWithDependants: () => ServicesLifecy
 
 object FlinkProcessRegistrar {
 
-  private final val DeadEndId = "$"
+  private final val EndId = "$end"
+  private final val DeadEndId = "$dead_end"
 
   def apply(creator: ProcessConfigCreator, config: Config) = {
     val timeout = config.getDuration("timeout", TimeUnit.SECONDS).seconds
@@ -209,15 +213,10 @@ object FlinkProcessRegistrar {
     private lazy val interpreter = serviceLifecycleWithDependants.interpreter
     private lazy val espExceptionHandler = espExceptionHandlerProvider()
 
-    private lazy val instantRateMeter = new InstantRateMeter
-
     override def open(parameters: Configuration): Unit = {
       super.open(parameters)
       serviceLifecycleWithDependants.servicesLifecycle.open()
       espExceptionHandler.open(getRuntimeContext)
-      getRuntimeContext.getMetricGroup
-        .addGroup(sink.id)
-        .gauge[Double, InstantRateMeter]("instantRate", instantRateMeter)
       logger.info("Registered gauge for instantRate")
     }
 
@@ -227,36 +226,11 @@ object FlinkProcessRegistrar {
         Await.result(resultFuture, processTimeout).output
       }(input.finalContext, metaData)
       result.foreach(collector.collect)
-      instantRateMeter.mark()
     }
 
     override def close(): Unit = {
       super.close()
       serviceLifecycleWithDependants.servicesLifecycle.close()
-      espExceptionHandler.close()
-    }
-  }
-
-
-  class DeadEndSinkFunction(espExceptionHandlerProvider: () => EspExceptionHandler,
-                            metaData: MetaData) extends RichSinkFunction[InterpretationResult]  {
-
-    private lazy val espExceptionHandler = espExceptionHandlerProvider()
-
-    override def open(parameters: Configuration): Unit = {
-      super.open(parameters)
-      espExceptionHandler.open(getRuntimeContext)
-    }
-
-    override def invoke(value: InterpretationResult) = {
-      espExceptionHandler.handle(EspExceptionInfo(
-        NonTransientException(value.output.toString, "Process encountered on dead end"),
-        value.finalContext,
-        metaData))
-    }
-
-    override def close(): Unit = {
-      super.close()
       espExceptionHandler.close()
     }
   }
@@ -360,7 +334,7 @@ object FlinkProcessRegistrar {
       interpretationResult.reference match {
         case NextPartReference(id) => List(id).asJava
         case DeadEndReference => List(DeadEndId).asJava
-        case EndReference => List.empty.asJava
+        case EndReference => List(EndId).asJava
       }
     }
   }
