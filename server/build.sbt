@@ -30,6 +30,12 @@ scalacOptions := Seq(
 sources in (Compile, doc) := Seq.empty
 
 publishArtifact in (Compile, packageDoc) := false
+assemblyMergeStrategy in assembly := {
+  case PathList(ps @ _*) if ps.last == "NumberUtils.class" => MergeStrategy.first
+  case x =>
+    val oldStrategy = (assemblyMergeStrategy in assembly).value
+    oldStrategy(x)
+}
 
 val espEngineV = "0.1-SNAPSHOT"
 val akkaV = "2.4.8"
