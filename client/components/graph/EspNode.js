@@ -111,7 +111,7 @@ export default {
             return l.length;
         }).length;
         var letterSize = 14;
-        var calculatedWidth = 2 * (letterSize * (0.5 * maxLineLength + 1));
+        var calculatedWidth = 1.2 * (letterSize * (0.5 * maxLineLength));
         var minBlockWidth = 300;
         var width = _.max([minBlockWidth, calculatedWidth]);
         var height = 150;
