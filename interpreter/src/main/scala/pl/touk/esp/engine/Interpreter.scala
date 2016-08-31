@@ -46,10 +46,10 @@ class Interpreter(servicesDefs: Map[String, ObjectWithMethodDef],
         invoke(ref, ctx).flatMap {
           case ValueWithModifiedContext(_, newCtx) => interpretNext(next, newCtx)
         }
-      case (EndingProcessor(_, ref), Traverse) =>
+      case (EndingProcessor(id, ref), Traverse) =>
         invoke(ref, ctx).map {
           case ValueWithModifiedContext(output, newCtx) =>
-            InterpretationResult(EndReference, output, newCtx)
+            InterpretationResult(EndReference(id), output, newCtx)
         }
       case (Enricher(_, ref, outName, next), Traverse) =>
         invoke(ref, ctx).flatMap {
@@ -84,21 +84,21 @@ class Interpreter(servicesDefs: Map[String, ObjectWithMethodDef],
       case (agg: Aggregate, Traverse) =>
         interpretNext(agg.next, ctx)
       case (agg: Aggregate, AggregateKeyExpression) =>
-        Future.successful(InterpretationResult(EndReference, evaluate(agg.keyExpression, ctx)))
+        Future.successful(InterpretationResult(EndReference(agg.id), evaluate(agg.keyExpression, ctx)))
       case (agg: Aggregate, AggregateTriggerExpression) =>
         Future.successful(InterpretationResult(
-          EndReference,
+          EndReference(agg.id),
           agg.triggerExpression
             .map(evaluate[Boolean](_, ctx))
             .getOrElse(throw new IllegalArgumentException("Trigger expression is not defined"))))
-      case (Sink(_, optionalExpression), Traverse) =>
+      case (Sink(id, optionalExpression), Traverse) =>
         val valueWithModifiedContext = optionalExpression match {
           case Some(expression) =>
             evaluate[Any](expression, ctx)
           case None =>
             ValueWithModifiedContext(outputValue(ctx), ctx)
         }
-        Future.successful(InterpretationResult(EndReference, valueWithModifiedContext))
+        Future.successful(InterpretationResult(EndReference(id), valueWithModifiedContext))
       case (_, AggregateKeyExpression | AggregateTriggerExpression) =>
         throw new IllegalArgumentException(s"Mode $mode make no sense for node: ${node.getClass.getName}")
     }
@@ -111,7 +111,7 @@ class Interpreter(servicesDefs: Map[String, ObjectWithMethodDef],
         interpretNext(next, ctx)
       case None =>
         listeners.foreach(_.deadEndEncountered(ctx, metaData))
-        Future.successful(InterpretationResult(DeadEndReference, outputValue(ctx), ctx))
+        Future.successful(InterpretationResult(DeadEndReference(node.id), outputValue(ctx), ctx))
     }
   }
 

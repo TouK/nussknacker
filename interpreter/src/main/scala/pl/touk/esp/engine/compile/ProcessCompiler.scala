@@ -110,9 +110,9 @@ protected trait ProcessCompilerBase {
                      (implicit metaData: MetaData): ValidatedNel[ProcessCompilationError, compiledgraph.part.SubsequentPart] = {
     implicit val nodeId = NodeId(part.id)
     part match {
-      case AggregatePart(id, durationInMillis, slideInMillis, aggregatedVar, foldingFunRef, aggregate, nextParts) =>
+      case AggregatePart(id, durationInMillis, slideInMillis, aggregatedVar, foldingFunRef, aggregate, nextParts, ends) =>
         (validate(aggregate) |@| foldingFunRef.map(compileFoldingFunction).sequenceU |@| compile(nextParts)).map { (_, foldingFunRefV, nextPartsV) =>
-          compiledgraph.part.AggregatePart(id, durationInMillis, slideInMillis, aggregatedVar, foldingFunRefV, aggregate, nextPartsV)
+          compiledgraph.part.AggregatePart(id, durationInMillis, slideInMillis, aggregatedVar, foldingFunRefV, aggregate, nextPartsV, ends)
         }
       case SinkPart(id, ref, sink) =>
         (validate(sink) |@| compile(ref)).map { (_, obj) =>
@@ -125,7 +125,7 @@ protected trait ProcessCompilerBase {
                      (implicit metaData: MetaData): ValidatedNel[ProcessCompilationError, compiledgraph.part.SourcePart] = {
     implicit val nodeId = NodeId(source.id)
     (validate(source.source) |@| compile(source.ref) |@| compile(source.nextParts)).map { (_, obj, nextParts) =>
-      compiledgraph.part.SourcePart(source.id, obj, source.source, nextParts)
+      compiledgraph.part.SourcePart(source.id, obj, source.source, nextParts, source.ends)
     }
   }
 
