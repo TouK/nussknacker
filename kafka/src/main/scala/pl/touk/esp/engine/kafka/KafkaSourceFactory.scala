@@ -3,6 +3,7 @@ package pl.touk.esp.engine.kafka
 import java.util.Properties
 
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.streaming.api.functions.TimestampAssigner
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer09
 import org.apache.flink.streaming.util.serialization.DeserializationSchema
@@ -14,7 +15,7 @@ import scala.collection.JavaConverters._
 
 class KafkaSourceFactory[T: TypeInformation](config: KafkaConfig,
                                              schema: DeserializationSchema[T],
-                                             timeExtractionFunction: Option[(T) => Long]) extends SourceFactory[T] with Serializable {
+                                             timestampAssigner: Option[TimestampAssigner[T]]) extends SourceFactory[T] with Serializable {
 
   def create(processMetaData: MetaData, @ParamName(`TopicParamName`) topic: String): Source[T] = {
     new KafkaSource(
@@ -43,7 +44,7 @@ class KafkaSourceFactory[T: TypeInformation](config: KafkaConfig,
       props
     }
 
-    override def timeExtractionFunction = KafkaSourceFactory.this.timeExtractionFunction
+    override def timestampAssigner = KafkaSourceFactory.this.timestampAssigner
   }
 
 }

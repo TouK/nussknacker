@@ -5,13 +5,15 @@ import java.util.concurrent.CopyOnWriteArrayList
 
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.flink.api.common.ExecutionConfig
+import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor
 import org.apache.flink.streaming.api.scala._
+import org.apache.flink.streaming.api.windowing.time.Time
 import pl.touk.esp.engine.api._
-import pl.touk.esp.engine.api.process.{ProcessConfigCreator, SourceFactory}
+import pl.touk.esp.engine.api.process.ProcessConfigCreator
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.kafka.{KafkaConfig, KafkaSourceFactory}
 import pl.touk.esp.engine.util.LoggingListener
-import pl.touk.esp.engine.util.source.{CollectionSource, CsvSchema}
+import pl.touk.esp.engine.util.source.CsvSchema
 
 import scala.concurrent._
 
@@ -37,8 +39,13 @@ object KeyValueTestHelper {
       override def services(config: Config) = Map("mock" -> MockService)
       override def sourceFactories(config: Config) =
         Map(
-          "simple-keyvalue" -> SourceFactory.noParam(new CollectionSource[KeyValue](exConfig, data, Some(_.date.getTime))),
-          "kafka-keyvalue" -> new KafkaSourceFactory[KeyValue](kafkaConfig, new CsvSchema(KeyValue.apply), Some(_.date.getTime))
+          "kafka-keyvalue" -> new KafkaSourceFactory[KeyValue](
+            kafkaConfig,
+            new CsvSchema(KeyValue.apply),
+            Some(new BoundedOutOfOrdernessTimestampExtractor[KeyValue](Time.minutes(10)) {
+              override def extractTimestamp(element: KeyValue) = element.date.getTime
+            })
+          )
         )
       override def sinkFactories(config: Config) = Map.empty
       override def listeners(config: Config) = Seq(LoggingListener)

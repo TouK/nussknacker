@@ -3,6 +3,8 @@ package pl.touk.esp.engine.perftest.sample
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor
+import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.util.serialization.KeyedSerializationSchema
 import pl.touk.esp.engine.api.VerboselyLoggingExceptionHandler
 import pl.touk.esp.engine.api.process.ProcessConfigCreator
@@ -20,7 +22,13 @@ class AggProcessConfigCreator extends ProcessConfigCreator {
   override def sourceFactories(config: Config) = {
     val kafkaConfig = config.as[KafkaConfig]("kafka")
     Map(
-      "kafka-keyvalue" -> new KafkaSourceFactory[KeyValue](kafkaConfig, new CsvSchema(KeyValue.apply), Some(_.date.getTime))
+      "kafka-keyvalue" -> new KafkaSourceFactory[KeyValue](
+        kafkaConfig,
+        new CsvSchema(KeyValue.apply),
+        Some(new BoundedOutOfOrdernessTimestampExtractor[KeyValue](Time.minutes(10)) { // ta liczba uzależniona jest od batcha jaki jest pobierany przez konsumenta
+          override def extractTimestamp(element: KeyValue) = element.date.getTime
+        })
+      )
     )
   }
 

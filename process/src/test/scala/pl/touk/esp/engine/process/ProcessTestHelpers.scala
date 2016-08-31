@@ -5,6 +5,7 @@ import java.util.Date
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
+import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor
 import org.apache.flink.streaming.api.scala._
 import pl.touk.esp.engine.api.process.{ProcessConfigCreator, Sink, SinkFactory, SourceFactory}
 import pl.touk.esp.engine.api.{BrieflyLoggingExceptionHandler, FoldingFunction, ParamName, Service}
@@ -26,7 +27,13 @@ object ProcessTestHelpers {
     def prepareCreator(exConfig: ExecutionConfig, data: List[SimpleRecord]) = new ProcessConfigCreator {
       override def services(config: Config) = Map("logService" -> MockService)
       override def sourceFactories(config: Config) = Map(
-        "input" -> SourceFactory.noParam(new CollectionSource[SimpleRecord](exConfig, data, Some((a: SimpleRecord) => a.date.getTime)))
+        "input" -> SourceFactory.noParam(new CollectionSource[SimpleRecord](
+          config = exConfig,
+          list = data,
+          timestampAssigner = Some(new AscendingTimestampExtractor[SimpleRecord] {
+            override def extractAscendingTimestamp(element: SimpleRecord) = element.date.getTime
+          })
+        ))
       )
       override def sinkFactories(config: Config) = Map(
         "monitor" -> SinkFactory.noParam(EmptySink)
