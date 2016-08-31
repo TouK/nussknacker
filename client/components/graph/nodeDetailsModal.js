@@ -126,7 +126,8 @@ export default class NodeDetailsModal extends Component {
                     {this.createField("textarea", "Expression:", this.props.node.expression.expression)}
                   </tbody>
                 )
-            case 'Enricher':
+              case 'Enricher':
+              case 'Processor':
                 return (
                   <tbody>
                     <tr>
@@ -136,7 +137,7 @@ export default class NodeDetailsModal extends Component {
                         {this.createField("child-table", "Parameters:", this.props.node.service.parameters)}
                       </td>
                     </tr>
-                    {this.createField("input", "Output:", this.props.node.output)}
+                    {this.props.node.type == 'Enricher' ? this.createField("input", "Output:", this.props.node.output) : null}
                   </tbody>
                 )
             case 'VariableBuilder':
@@ -148,7 +149,6 @@ export default class NodeDetailsModal extends Component {
                       <td className="node-child-group node-variables">
                         {this.createField("child-table", "", this.props.node.fields)}
                       </td>
-
                     </tr>
                   </tbody>
                 )
