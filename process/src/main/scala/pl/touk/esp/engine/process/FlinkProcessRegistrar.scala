@@ -13,7 +13,6 @@ import org.apache.flink.api.common.state._
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.collector.selector.OutputSelector
-import org.apache.flink.streaming.api.functions.sink.RichSinkFunction
 import org.apache.flink.streaming.api.scala.function.util.ScalaFoldFunction
 import org.apache.flink.streaming.api.scala.{StreamExecutionEnvironment, _}
 import org.apache.flink.streaming.api.windowing.time.Time
@@ -33,6 +32,7 @@ import pl.touk.esp.engine.definition.ServiceDefinitionExtractor
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.process.FlinkProcessRegistrar._
 import pl.touk.esp.engine.process.util.SpelHack
+import pl.touk.esp.engine.splittedgraph.end.{DeadEnd, End, NormalEnd}
 import pl.touk.esp.engine.splittedgraph.splittednode
 import pl.touk.esp.engine.splittedgraph.splittednode.SplittedNode
 import pl.touk.esp.engine.util.SynchronousExecutionContext
@@ -73,7 +73,7 @@ class FlinkProcessRegistrar(serviceLifecycleWithDependants: () => ServicesLifecy
         .flatMap(new InitialInterpretationFunction(serviceLifecycleWithDependants,
           espExceptionHandlerProvider, part.source, Interpreter.InputParamName, process.metaData, processTimeout))
         .split(SplitFunction)
-      registerParts(withAssigned, part.nextParts)
+      registerParts(withAssigned, part.nextParts, part.ends)
     }
 
     def registerSubsequentPart[T](start: DataStream[InterpretationResult],
@@ -94,25 +94,25 @@ class FlinkProcessRegistrar(serviceLifecycleWithDependants: () => ServicesLifecy
               espExceptionHandlerProvider, part.aggregate, part.aggregatedVar, process.metaData, processTimeout))
             .split(SplitFunction)
 
-          registerParts(newStart, part.nextParts)
+          registerParts(newStart, part.nextParts, part.ends)
         case part: SinkPart =>
           start
             .flatMap(new SinkInterpretationFunction(serviceLifecycleWithDependants, espExceptionHandlerProvider, part.sink, process.metaData, processTimeout))
-            .map(new MeterFunction[Any]("end"))
             .name(s"${part.id}-function")
+            .map(new EndMeterFunction(part.ends))
+            .map(_.output)
             .addSink(part.obj.toFlinkFunction)
             .name(s"${part.id}-sink")
       }
 
     def registerParts(start: SplitStream[InterpretationResult],
-                      nextParts: Seq[SubsequentPart]) = {
+                      nextParts: Seq[SubsequentPart],
+                      ends: Seq[End]) = {
       nextParts.foreach { part =>
         registerSubsequentPart(start.select(part.id), part)
       }
       start.select(EndId)
-        .map(new MeterFunction[InterpretationResult]("end"))
-      start.select(DeadEndId)
-        .map(new MeterFunction[InterpretationResult]("dead_end"))
+        .map(new EndMeterFunction(ends))
     }
 
   }
@@ -122,7 +122,6 @@ class FlinkProcessRegistrar(serviceLifecycleWithDependants: () => ServicesLifecy
 object FlinkProcessRegistrar {
 
   private final val EndId = "$end"
-  private final val DeadEndId = "$dead_end"
 
   def apply(creator: ProcessConfigCreator, config: Config) = {
     val timeout = config.getDuration("timeout", TimeUnit.SECONDS).seconds
@@ -205,7 +204,7 @@ object FlinkProcessRegistrar {
                                    espExceptionHandlerProvider: () => EspExceptionHandler,
                                    sink: splittednode.Sink,
                                    metaData: MetaData,
-                                   processTimeout: Duration) extends RichFlatMapFunction[InterpretationResult, Any] with LazyLogging {
+                                   processTimeout: Duration) extends RichFlatMapFunction[InterpretationResult, InterpretationResult] with LazyLogging {
 
     private lazy implicit val ec = SynchronousExecutionContext.ctx
     private lazy val serviceLifecycleWithDependants = serviceLifecycleWithDependantsProvider()
@@ -220,10 +219,10 @@ object FlinkProcessRegistrar {
       logger.info("Registered gauge for instantRate")
     }
 
-    override def flatMap(input: InterpretationResult, collector: Collector[Any]): Unit = {
+    override def flatMap(input: InterpretationResult, collector: Collector[InterpretationResult]): Unit = {
       val result = espExceptionHandler.recover {
         val resultFuture = interpreter.interpret(compiledNode, InterpreterMode.Traverse, input.finalContext, metaData)
-        Await.result(resultFuture, processTimeout).output
+        Await.result(resultFuture, processTimeout)
       }(input.finalContext, metaData)
       result.foreach(collector.collect)
     }
@@ -329,12 +328,47 @@ object FlinkProcessRegistrar {
     }
   }
 
+  class EndMeterFunction(ends: Seq[End]) extends RichMapFunction[InterpretationResult, InterpretationResult] {
+
+    @transient private var meterByReference: Map[PartReference, InstantRateMeter] = _
+
+    override def open(parameters: Configuration): Unit = {
+      super.open(parameters)
+
+      val parentGroupForNormalEnds = getRuntimeContext.getMetricGroup.addGroup("end")
+      val parentGroupForDeadEnds = getRuntimeContext.getMetricGroup.addGroup("dead_end")
+
+      def registerRateMeter(end: End) = {
+        val baseGroup = end match {
+          case normal: NormalEnd => parentGroupForNormalEnds
+          case dead: DeadEnd => parentGroupForDeadEnds
+        }
+        baseGroup
+          .addGroup(end.nodeId)
+          .gauge[Double, InstantRateMeter]("instantRate", new InstantRateMeter)
+      }
+
+      meterByReference = ends.map { end =>
+        val reference = end match {
+          case NormalEnd(nodeId) =>  EndReference(nodeId)
+          case DeadEnd(nodeId) =>  DeadEndReference(nodeId)
+        }
+        reference -> registerRateMeter(end)
+      }.toMap[PartReference, InstantRateMeter]
+    }
+
+    override def map(value: InterpretationResult) = {
+      val meter = meterByReference.getOrElse(value.reference, throw new IllegalArgumentException("Unexpected reference: " + value.reference))
+      meter.mark()
+      value
+    }
+  }
+
   object SplitFunction extends OutputSelector[InterpretationResult] {
     override def select(interpretationResult: InterpretationResult): Iterable[String] = {
       interpretationResult.reference match {
         case NextPartReference(id) => List(id).asJava
-        case DeadEndReference => List(DeadEndId).asJava
-        case EndReference => List(EndId).asJava
+        case _: EndingReference => List(EndId).asJava
       }
     }
   }
