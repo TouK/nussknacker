@@ -3,16 +3,15 @@ import { render } from 'react-dom';
 import ReactDOM from 'react-dom';
 import { Link } from 'react-router';
 import Graph from '../components/graph/Graph';
+import HttpService from '../http/HttpService'
 import _ from 'lodash';
-import $ from 'jquery';
-import appConfig from 'appConfig'
 
 import '../stylesheets/visualization.styl';
 
 export const Visualization = React.createClass({
 
   getInitialState: function() {
-    return { process: {} , processDetails: {}, intervalId: null };
+    return { process: {} , processDetails: {}, timeoutId: null, intervalId: null };
   },
 
   componentDidMount() {
@@ -22,29 +21,35 @@ export const Visualization = React.createClass({
   },
 
   componentWillUnmount() {
+    clearTimeout(this.state.timeoutId)
     clearInterval(this.state.intervalId)
   },
 
   startPollingForUpdates() {
-    setTimeout(() =>
+    var timeoutId = setTimeout(() =>
       this.setState({ intervalId: setInterval(this.fetchProcessDetails, 10000) }),
     2000)
+    this.setState({timeoutId: timeoutId})
   },
 
   fetchProcessJson() {
-    $.get(appConfig.API_URL + '/processes/' + this.props.params.processId + '/json', (processModel) => {
+    HttpService.fetchProcessJson(this.props.params.processId, (processModel) => {
       this.setState({process: processModel})
     })
   },
 
   fetchProcessDetails() {
-    $.get(appConfig.API_URL + '/processes/' + this.props.params.processId, (processDetails) => {
+    HttpService.fetchProcessDetails(this.props.params.processId, (processDetails) => {
       this.setState({processDetails: processDetails})
     })
   },
 
   deploy() {
-    $.post(appConfig.API_URL + '/processManagement/deploy/' + this.props.params.processId)
+    HttpService.deploy(this.props.params.processId)
+  },
+
+  stop() {
+    HttpService.stop(this.props.params.processId)
   },
 
   render: function() {
@@ -56,7 +61,8 @@ export const Visualization = React.createClass({
                 {this.state.processDetails.tags.map(function (tagi, tagIndex) {
                   return <div key={tagIndex} className="tagsBlockVis">{tagi}</div>
                 })}
-                <button type="button" className="btn btn-danger" onClick={this.deploy}>Deploy</button>
+                <button type="button" className="btn btn-success" onClick={this.deploy}>Deploy</button>
+                <button type="button" className="btn btn-danger" onClick={this.stop}>Stop</button>
               </div>
               <Graph data={this.state.process} processDetails={this.state.processDetails}/>
             </div>
