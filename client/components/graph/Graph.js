@@ -26,7 +26,8 @@ export default class Graph extends React.Component {
         this.processGraphPaper = this.drawProcessGraph()
         this.panAndZoom = this.enablePanZoom();
         this.changeNodeDetailsOnClick(this.processGraphPaper);
-        this.forceUpdate()
+        this.forceUpdate();
+        this.labelToFrontOnHover(this.processGraphPaper);
     }
 
     directedLayout = () => {
@@ -84,6 +85,12 @@ export default class Graph extends React.Component {
         });
     }
 
+    labelToFrontOnHover () {
+        this.processGraphPaper.on('cell:mouseover', (cellView, evt, x, y) => {
+          cellView.model.toFront();
+        });
+    }
+
     onDetailsClosed = () => {
         this.setState({clickedNode: {}})
     }
@@ -106,6 +113,7 @@ export default class Graph extends React.Component {
                 <button type="button" className="btn btn-default hidden" onClick={this.directedLayout}>Directed layout</button>
             </div>
         );
+
     }
 }
 
