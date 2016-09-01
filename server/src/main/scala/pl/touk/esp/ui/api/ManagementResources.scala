@@ -27,6 +27,17 @@ class ManagementResources(processRepository: ProcessRepository,
           }
         }
       }
-    }
+    } ~
+      path("processManagement" / "cancel" / Segment) { id =>
+        post {
+          complete {
+            processManager.cancel(id).map { _ =>
+              HttpResponse(
+                status = StatusCodes.OK
+              )
+            }
+          }
+        }
+      }
 
 }

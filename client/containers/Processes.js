@@ -3,12 +3,11 @@ import { render } from 'react-dom'
 import ReactDOM from 'react-dom'
 import { Link } from 'react-router'
 import { Table, Thead, Th, Tr, Td } from 'reactable'
-import $ from 'jquery'
 import { browserHistory } from 'react-router'
 import classNames from 'classnames'
+import HttpService from '../http/HttpService'
 
 import '../stylesheets/processes.styl'
-import appConfig from 'appConfig'
 
 import filterIcon from '../assets/img/filter-icon.svg'
 import editIcon from '../assets/img/edit-icon.png'
@@ -26,13 +25,17 @@ export const Processes = React.createClass({
   },
 
   componentDidMount() {
-    $.get(appConfig.API_URL + "/processes", (fetchedProcesses) => {
+    HttpService.fetchProcesses((fetchedProcesses) => {
       this.setState({processes: fetchedProcesses})
     })
   },
 
   showProcess(process) {
     browserHistory.push('/visualization/' + process.id)
+  },
+
+  showMetrics(process) {
+    browserHistory.push('/metrics/' + process.id)
   },
 
   handleChange(event) {
@@ -90,6 +93,7 @@ export const Processes = React.createClass({
             <Th column="category">Category</Th>
             <Th column="createDate" className="date-column">Create date</Th>
             <Th column="edit" className="edit-column">Edit</Th>
+            <Th column="metrics" className="metrics-column">Metrics</Th>
             <Th column="favourite" className="favourite-column">
               <span>Favourite</span>
             </Th>
@@ -111,6 +115,9 @@ export const Processes = React.createClass({
                 <Td column="edit" className="edit-column">
                   <img src={editIcon} className="edit-icon"
                   onClick={this.showProcess.bind(this, process)} />
+                </Td>
+                <Td column="metrics" className="metrics-column">
+                  <span className="glyphicon glyphicon-stats" onClick={this.showMetrics.bind(this, process)}/>
                 </Td>
                 <Td column="favourite" className="favourite-column">
                   <div className={this.isFavourite(process.id)}

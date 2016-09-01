@@ -55,7 +55,7 @@ export const App = React.createClass({
                   <ul id="menu-items" className="nav navbar-nav navbar-right nav-pills nav-stacked">
                     <li><Link to={Home.path}>{Home.header}</Link></li>
                     <li><Link to={Processes.path}>{Processes.header}</Link></li>
-                    <li><Link to={Metrics.path}>{Metrics.header}</Link></li>
+                    <li><Link to={Metrics.basePath}>{Metrics.header}</Link></li>
                   </ul>
                 </div>
               </div>

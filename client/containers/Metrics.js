@@ -3,14 +3,14 @@ import appConfig from 'appConfig'
 
 export const Metrics = React.createClass({
 
-  render: () => {
+  render: function() {
     var options = {
       grafanaUrl: appConfig.GRAFANA_URL,
       dashboard: 'touk-esp',
-      aliasName: '%5B%5Btag_process%5D%5D',
+      processName: this.props.params.processId || "All",
       theme: 'light'
     };
-    var iframeUrl = options.grafanaUrl + "/dashboard/db/" + options.dashboard + "?var-aliasName=" + options.aliasName + "&theme=" + options.theme
+    var iframeUrl = options.grafanaUrl + "/dashboard/db/" + options.dashboard + "?var-processName=" + options.processName + "&theme=" + options.theme
     return (
       <div className="Page">
         <iframe ref="metricsFrame" src={iframeUrl} width="100%" height={window.innerHeight} frameBorder="0"></iframe>
@@ -22,5 +22,6 @@ export const Metrics = React.createClass({
 
 
 Metrics.title = "Metrics"
-Metrics.path = "/metrics"
+Metrics.basePath = "/metrics"
+Metrics.path = Metrics.basePath + "(/:processId)"
 Metrics.header = "Metrics"
