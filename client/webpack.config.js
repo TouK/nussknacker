@@ -39,7 +39,7 @@ module.exports = {
   module: {
     loaders: [{
         test: /\.html$/,
-        loader: "html"
+        loader: "html-loader?minimize=false"
     }, {
       test: /\.js$/,
       loaders: ['babel'],
