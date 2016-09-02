@@ -15,10 +15,18 @@ module.exports = {
     publicPath: '/static/'
   },
   plugins: [
-    //new webpack.optimize.UglifyJsPlugin(), fixme to niestety nie dziala i psuje escapowanie ciapek w svg i przez to javascrypty zajmuja 4mb zamaist 1mb...
+    new webpack.optimize.UglifyJsPlugin({
+      compress:{
+        warnings: true
+      }
+    }),
     new webpack.optimize.DedupePlugin(),
     new webpack.optimize.AggressiveMergingPlugin(),
     new webpack.DefinePlugin({
+      //To sie wydaje nadmiarowe, bo w packages.json juz wlasciwie ustawiamy taka sama zmienna, ale tu jest jakas proba wyjasnienia tego http://stackoverflow.com/questions/37311972/react-doesnt-switch-to-production-mode
+      'process.env': {
+        'NODE_ENV': JSON.stringify('production')
+      },
       'GIT': {
         'HASH': JSON.stringify(GIT_HASH),
         'DATE': JSON.stringify(GIT_DATE)
@@ -38,7 +46,7 @@ module.exports = {
   module: {
     loaders: [{
         test: /\.html$/,
-        loader: "html"
+        loader: "html-loader?minimize=false"
     }, {
       test: /\.js$/,
       loaders: ['babel'],

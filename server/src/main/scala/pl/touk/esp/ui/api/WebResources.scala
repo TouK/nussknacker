@@ -4,7 +4,7 @@ import akka.http.scaladsl.server.Directives
 
 object WebResources extends Directives {
 
-  val route = //fixme tutaj powinno byc cos w stylu pathPrefix not 'api'
+  val route =
     pathPrefix("static") {
       get {
         getFromResourceDirectory("web/static")
