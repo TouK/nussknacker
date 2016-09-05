@@ -34,21 +34,24 @@
   background-color: white
   padding: 50px 20px
   min-height: 70%
-  table
+  .node-table
     min-width: 60%
-    max-width: 85%
+    max-width: 80%
     margin: 0 auto
-    td
-      padding-bottom: 20px
-      color: #686868
-
+    .node-row
+      margin-bottom: 20px
     .node-label
-      width: 110px
+      color: #686868
+      width: 15%
+      display: inline-block
       vertical-align: top
       padding-top: 10px
       font-size: 16px
       text-transform: uppercase
-
+    .node-value
+      width: 85%
+      display: inline-block
+      color: #686868
     .node-input
       width: 100%
       height: 40px
@@ -57,40 +60,24 @@
       background-color: #F5F5F5
       font-weight: 700
       font-size: 14px
-
-    .node-child-group
+    .node-group
       padding-top 40px
+      width: 85%
+      display: inline-block
       .node-label
         text-transform: none
-        width: 20%
-        display: inline-block
-      .node-value
-        width: 80%
-        display: inline-block
-        input
-          width: 100%
+    .child-group
+      padding-top: 0
       .node-block
         background-color: #F5F5F5
         padding: 10px 20px
       .node-block + .node-block
         margin-top: 20px
-
-    .child-input
-      margin-bottom: 20px
-
-    .node-variables
-      padding-top: 0
-      .node-value
-        width: 100%
-        .node-block .node-value
-          width: 75%
-
     textarea.node-input
       min-height: 100px
       resize: vertical
       line-height: 1.5
       padding-top: 15px
-
 
 #modalFooter
   position: relative
