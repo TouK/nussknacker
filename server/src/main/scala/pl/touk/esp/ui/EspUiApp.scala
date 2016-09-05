@@ -2,7 +2,7 @@ package pl.touk.esp.ui
 
 import java.io.File
 
-import _root_.db.migration.DefaultJdbcDriver
+import _root_.db.migration.DefaultJdbcProfile
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.{Directives, Route}
@@ -38,7 +38,7 @@ object EspUiApp extends App with Directives {
 
   val validator = ProcessValidator.default(loadProcessDefinition())
 
-  val processRepository = new ProcessRepository(db, DefaultJdbcDriver.driver)
+  val processRepository = new ProcessRepository(db, DefaultJdbcProfile.profile)
   insertInitialProcesses()
 
   val manager = FlinkProcessManager(config)
@@ -46,7 +46,7 @@ object EspUiApp extends App with Directives {
   val route: Route =
     cors() {
       pathPrefix("api") {
-        new ProcessesResources(processRepository, manager).route ~
+        new ProcessesResources(processRepository, manager, validator).route ~
           new ManagementResources(processRepository, manager).route ~
           new ValidationResources(validator).route
       }

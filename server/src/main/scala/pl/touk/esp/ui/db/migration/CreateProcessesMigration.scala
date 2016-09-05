@@ -4,11 +4,11 @@ import argonaut.PrettyParams
 import pl.touk.esp.engine.marshall.ProcessMarshaller
 import pl.touk.esp.ui.db.migration.CreateProcessesMigration.ProcessEntityData
 import pl.touk.esp.ui.sample.SampleProcess
-import slick.profile.SqlProfile.ColumnOption.NotNull
+import slick.sql.SqlProfile.ColumnOption.NotNull
 
 trait CreateProcessesMigration extends SlickMigration {
 
-  import driver.api._
+  import profile.api._
 
   override def migrateActions = {
     processesTable.schema.create andThen
