@@ -2,12 +2,12 @@ package pl.touk.esp.ui.db.migration
 
 import pl.touk.esp.ui.db.migration.CreateTagsMigration.TagsEntityData
 import pl.touk.esp.ui.sample.SampleProcess
-import slick.driver.JdbcDriver
-import slick.profile.SqlProfile.ColumnOption.NotNull
+import slick.jdbc.JdbcProfile
+import slick.sql.SqlProfile.ColumnOption.NotNull
 
 trait CreateTagsMigration extends SlickMigration {
 
-  import driver.api._
+  import profile.api._
 
   override def migrateActions = {
     tagsTable.schema.create andThen
@@ -31,7 +31,7 @@ trait CreateTagsMigration extends SlickMigration {
   val tagsTable = TableQuery[TagsEntity]
 
   lazy val processesMigration = new CreateProcessesMigration {
-    override protected val driver: JdbcDriver = CreateTagsMigration.this.driver
+    override protected val profile: JdbcProfile = CreateTagsMigration.this.profile
   }
   import processesMigration._
 
