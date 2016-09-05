@@ -1,9 +1,7 @@
 import React, { Component } from 'react';
 import { render } from 'react-dom';
 import classNames from 'classnames';
-
 import Modal from 'react-modal';
-import { Table, Thead, Th, Tr, Td } from 'reactable';
 
 export default class NodeDetailsModal extends Component {
     closeModal = () => {
@@ -14,48 +12,16 @@ export default class NodeDetailsModal extends Component {
       switch (fieldType) {
       case 'input':
         return (
-          <tr>
-            <td className="node-label">{fieldLabel}</td>
-            <td className="node-value"><input type="text" value={fieldValue} className="node-input" readOnly/></td>
-          </tr>
+          <div className="node-row">
+            <div className="node-label">{fieldLabel}</div>
+            <div className="node-value"><input type="text" value={fieldValue} className="node-input" readOnly/></div>
+          </div>
         )
       case 'textarea':
         return (
-          <tr>
-            <td className="node-label">{fieldLabel}</td>
-            <td className="node-value"><textarea rows="5" cols="50" value={fieldValue} className="node-input" readOnly/></td>
-          </tr>
-        )
-      case 'child-input':
-        return (
-          <div className={fieldType}>
+          <div className="node-row">
             <div className="node-label">{fieldLabel}</div>
-            <div className="node-value">
-              <input type="text" value={fieldValue} className="node-input" readOnly/>
-            </div>
-          </div>
-        )
-      case 'child-table':
-        return (
-          <div className={fieldType}>
-            {(() => {
-              if (fieldLabel) {
-                return <div className="node-label">{fieldLabel}</div>
-              }
-            })()}
-            <div className="node-value">
-              {fieldValue.map(function(params, index){
-                return (
-                  <div className="node-block" key={index}>
-                    <div className="node-label">Name:</div>
-                    <div className="node-value"><input type="text" value={params.name} className="node-input" readOnly/></div>
-
-                    <div className="node-label">Expression:</div>
-                    <div className="node-value"><input type="text" value={params.expression.expression} className="node-input" readOnly/></div>
-                  </div>
-                )
-              })}
-            </div>
+            <div className="node-value"><textarea rows="5" cols="50" value={fieldValue} className="node-input" readOnly/></div>
           </div>
         )
       default:
@@ -70,125 +36,151 @@ export default class NodeDetailsModal extends Component {
     customNode = () => {
         switch (this.props.node.type) {
             case 'Source':
-                return (
-                  <tbody>
-                    <tr>
-                      <td className="node-label">Ref:</td>
-                      <td className="node-child-group">
-                        {this.createField("child-input", "Type:", this.props.node.ref.typ)}
+              return (
+                <div className="node-table-body">
+                  <div className="node-row">
+                    <div className="node-label">Ref:</div>
+                    <div className="node-group">
+                      {this.createField("input", "Type:", this.props.node.ref.typ)}
+                      <div className="node-row">
                         <div className="node-label">Parameters:</div>
-                        <div className="node-value">
+                        <div className="node-group child-group">
                           {this.props.node.ref.parameters.map ((params, index) => {
                             return (
                               <div className="node-block" key={index}>
                                 <div className="node-label">Name:</div>
                                 <div className="node-value"><input type="text" value={params.name} className="node-input" readOnly/></div>
-
                                 <div className="node-label">Value:</div>
                                 <div className="node-value"><input type="text" value={params.value} className="node-input" readOnly/></div>
                               </div>
                             )
                           })}
                         </div>
-                      </td>
-                    </tr>
-                  </tbody>
-                )
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )
             case 'Sink':
                 return (
-                  <tbody>
-                    <tr>
-                      <td className="node-label">Ref:</td>
-
-                      <td className="node-child-group">
-                        {this.createField("child-input", "Type:", this.props.node.ref.typ)}
-                        <div className="node-label">Parameters:</div>
-                        <div className="node-value">
-                          {this.props.node.ref.parameters.map(function(params, index){
-                            return (
-                              <div className="node-block" key={index}>
-                                <div className="node-label">Name:</div>
-                                <div className="node-value"><input type="text" value={params.name} className="node-input" readOnly/></div>
-
-                                <div className="node-label">Value:</div>
-                                <div className="node-value"><input type="text" value={params.value} className="node-input" readOnly/></div>
-                              </div>
-                            )
-                          })}
+                  <div className="node-table-body">
+                    <div className="node-row">
+                      <div className="node-label">Ref:</div>
+                      <div className="node-group">
+                        {this.createField("input", "Type:", this.props.node.ref.typ)}
+                        <div className="node-row">
+                          <div className="node-label">Parameters:</div>
+                          <div className="node-group child-group">
+                            {this.props.node.ref.parameters.map(function(params, index){
+                              return (
+                                <div className="node-block" key={index}>
+                                  <div className="node-label">Name:</div>
+                                  <div className="node-value"><input type="text" value={params.name} className="node-input" readOnly/></div>
+                                  <div className="node-label">Value:</div>
+                                  <div className="node-value"><input type="text" value={params.value} className="node-input" readOnly/></div>
+                                </div>
+                              )
+                            })}
+                          </div>
                         </div>
-                      </td>
-                    </tr>
-                  </tbody>
+                      </div>
+                    </div>
+                  </div>
                 )
             case 'Filter':
-                return (
-                  <tbody>
-                    {this.createField("textarea", "Expression:", this.props.node.expression.expression)}
-                  </tbody>
-                )
+              return (
+                <div className="node-table-body">
+                  {this.createField("textarea", "Expression:", this.props.node.expression.expression)}
+                </div>
+              )
               case 'Enricher':
               case 'Processor':
                 return (
-                  <tbody>
-                    <tr>
-                      <td className="node-label">Service:</td>
-                      <td className="node-child-group">
-                        {this.createField("child-input", "Service Id:", this.props.node.service.id)}
-                        {this.createField("child-table", "Parameters:", this.props.node.service.parameters)}
-                      </td>
-                    </tr>
+                  <div className="node-table-body">
+                    <div className="node-row">
+                      <div className="node-label">Service:</div>
+                      <div className="node-group">
+                        {this.createField("input", "Service Id:", this.props.node.service.id)}
+                        <div className="node-row">
+                          <div className="node-label">Parameters:</div>
+                          <div className="node-group child-group">
+                            {this.props.node.service.parameters.map ((params, index) => {
+                              return (
+                                <div className="node-block" key={index}>
+                                  <div className="node-label">Name:</div>
+                                  <div className="node-value"><input type="text" value={params.name} className="node-input" readOnly/></div>
+
+                                  <div className="node-label">Expression:</div>
+                                  <div className="node-value"><input type="text" value={params.expression.expression} className="node-input" readOnly/></div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                     {this.props.node.type == 'Enricher' ? this.createField("input", "Output:", this.props.node.output) : null}
-                  </tbody>
+                  </div>
                 )
             case 'VariableBuilder':
                 return (
-                  <tbody>
+                  <div className="node-table-body">
                     {this.createField("input", "Variable Name:", this.props.node.varName)}
-                    <tr>
-                      <td className="node-label">Fields:</td>
-                      <td className="node-child-group node-variables">
-                        {this.createField("child-table", "", this.props.node.fields)}
-                      </td>
-                    </tr>
-                  </tbody>
+                    <div className="node-row">
+                      <div className="node-label">Fields:</div>
+                      <div className="node-group child-group">
+                        {this.props.node.fields.map ((params, index) => {
+                          return (
+                            <div className="node-block" key={index}>
+                              <div className="node-label">Name:</div>
+                              <div className="node-value"><input type="text" value={params.name} className="node-input" readOnly/></div>
+
+                              <div className="node-label">Expression:</div>
+                              <div className="node-value"><input type="text" value={params.expression.expression} className="node-input" readOnly/></div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  </div>
                 )
             case 'Switch':
-                return (
-                  <tbody>
-                    {this.createField("input", "Expression:", this.props.node.expression.expression)}
-                    {this.createField("input", "exprVal:", this.props.node.exprVal)}
-                  </tbody>
-                )
+              return (
+                <div className="node-table-body">
+                  {this.createField("input", "Expression:", this.props.node.expression.expression)}
+                  {this.createField("input", "exprVal:", this.props.node.exprVal)}
+                </div>
+              )
             case 'Aggregate':
               return (
-                <tbody>
+                <div className="node-table-body">
                   {this.createField("textarea", "Key Expression:", this.props.node.keyExpression.expression)}
                   {this.createField("textarea", "Trigger Expression:", this.props.node.triggerExpression.expression)}
                   {this.createField("input", "Folding function", this.props.node.foldingFunRef)}
                   {this.createField("input", "Duration (ms):", this.props.node.durationInMillis)}
                   {this.createField("input", "Slide (ms):", this.props.node.slideInMillis)}
-                </tbody>
+                </div>
               )
           default:
-                return (
-                    <div>
-                        Node type not known.
-                        <NodeDetails node={this.props.node}/>
-                    </div>
-                )
+            return (
+              <div>
+                Node type not known.
+                <NodeDetails node={this.props.node}/>
+              </div>
+            )
         }
     }
 
     contentForNode = () => {
         if (!_.isEmpty(this.props.node)) {
           return (
-            <table>
-                <tbody>
-                  {this.createField("input", "Type:", this.props.node.type)}
-                  {this.createField("input",  "Id:", this.props.node.id)}
-                </tbody>
-                {this.customNode()}
-            </table>
+            <div className="node-table">
+              <div className="node-table-body">
+                {this.createField("input", "Type:", this.props.node.type)}
+                {this.createField("input",  "Id:", this.props.node.id)}
+              </div>
+              {this.customNode()}
+            </div>
           )
         }
     }
