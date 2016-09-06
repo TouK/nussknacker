@@ -38,7 +38,10 @@ assemblyMergeStrategy in assembly := {
 }
 
 val espEngineV = "0.1-SNAPSHOT"
-val akkaV = "2.4.8"
+//mamy te wersje akki bo flink jej wymaga
+val akkaV = "2.3.7"
+val akkaHttpV = "2.0.3"
+
 val logbackV = "1.1.3"
 val scalaTestV = "3.0.0-M15"
 val slickV = "3.2.0-M1" // wsparcie dla select for update jest od 3.2.0
@@ -57,23 +60,21 @@ libraryDependencies ++= {
         ExclusionRule("org.slf4j", "slf4j-log4j12")
 
       ),
+    "com.typesafe.akka" %% "akka-http-experimental" % akkaHttpV force(),
+    "com.typesafe.akka" %% "akka-http-testkit-experimental" % akkaHttpV % "test" force(),
+
     "ch.qos.logback" % "logback-core" % logbackV,
     "ch.qos.logback" % "logback-classic" % logbackV,
     "org.slf4j" % "log4j-over-slf4j" % "1.7.21",
 
-
     "pl.touk.esp" %% "esp-interpreter" % espEngineV changing(),
-
     "com.typesafe.slick" %% "slick" % slickV,
     "com.typesafe.slick" %% "slick-hikaricp" % slickV,
     "org.hsqldb" % "hsqldb" % hsqldbV,
     "org.flywaydb" % "flyway-core" % flywayV,
 
-    "com.typesafe.akka" %% "akka-http-testkit" % akkaV % "test",
     "com.typesafe.slick" %% "slick-testkit" % slickV % "test",
     "org.scalatest" %% "scalatest" % scalaTestV % "test"
-
-
   )
 }
 
