@@ -47,7 +47,9 @@ import scala.concurrent.duration._
 import scala.language.implicitConversions
 
 class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessWithDeps,
-                            eventTimeMetricDuration: FiniteDuration) {
+                            eventTimeMetricDuration: FiniteDuration,
+                            checkpointInterval: FiniteDuration
+                           ) {
 
   implicit def millisToTime(duration: Long): Time = Time.of(duration, TimeUnit.MILLISECONDS)
 
@@ -60,6 +62,7 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessW
     val process = compiledProcessWithDeps().compiledProcess
     env.setRestartStrategy(process.exceptionHandler.restartStrategy)
     process.metaData.parallelism.foreach(env.setParallelism)
+    env.enableCheckpointing(checkpointInterval.toMillis)
     registerSourcePart(process.source)
 
     def registerSourcePart(part: SourcePart): Unit = {
@@ -132,6 +135,8 @@ object FlinkProcessRegistrar {
   private final val EndId = "$end"
 
   def apply(creator: ProcessConfigCreator, config: Config) = {
+    def checkpointInterval() = config.as[FiniteDuration]("checkpointInterval")
+
     def eventTimeMetricDuration() = config.getOrElse[FiniteDuration]("metrics.eventTime.duration", 10.seconds)
 
     def compiler(sub: PartSubGraphCompiler): ProcessCompiler = {
@@ -164,7 +169,9 @@ object FlinkProcessRegistrar {
 
     new FlinkProcessRegistrar(
       compileProcess = compileProcess,
-      eventTimeMetricDuration = eventTimeMetricDuration())
+      eventTimeMetricDuration = eventTimeMetricDuration(),
+      checkpointInterval = checkpointInterval()
+    )
   }
 
   private def validateOrFailProcessCompilation[T](validated: ValidatedNel[ProcessCompilationError, T]): T = validated match {

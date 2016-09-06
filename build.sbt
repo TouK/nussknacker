@@ -120,6 +120,7 @@ lazy val management = (project in file("management")).
     ),
     libraryDependencies ++= {
       Seq(
+        "org.typelevel" %% "cats-core" % catsV,
         "org.apache.flink" %% "flink-clients" % flinkV,
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "runtime", // na potrzeby optymalizacji procesów
         "org.apache.flink" %% "flink-streaming-java" % flinkV % "provided",
@@ -130,7 +131,7 @@ lazy val management = (project in file("management")).
         "org.scalatest" %% "scalatest" % scalaTestV % "it,test"
       )
     }
-  ).dependsOn(interpreter)
+  ).dependsOn(interpreter, kafkaTestUtil % "it,test")
 
 lazy val management_sample = (project in file("management/sample")).
   settings(commonSettings).
@@ -147,7 +148,7 @@ lazy val management_sample = (project in file("management/sample")).
     }
   ).
   settings(addArtifact(artifact in (Compile, assembly), assembly)).
-  dependsOn(util, process % "runtime")
+  dependsOn(util, kafka, process % "runtime")
 
 lazy val process = (project in file("process")).
   settings(commonSettings).
