@@ -7,10 +7,12 @@ import db.migration.DefaultJdbcProfile
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
+import pl.touk.esp.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.esp.engine.management.{JobState, ProcessManager}
 import pl.touk.esp.engine.marshall.ProcessMarshaller
 import pl.touk.esp.ui.db.DatabaseInitializer
 import pl.touk.esp.ui.process.displayedgraph.DisplayableProcess
+import pl.touk.esp.ui.process.displayedgraph.displayablenode.Sink
 import pl.touk.esp.ui.process.marshall._
 import pl.touk.esp.ui.process.repository.ProcessRepository
 import pl.touk.esp.ui.sample.SampleProcess
@@ -25,6 +27,8 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
   implicit override val patienceConfig = PatienceConfig(timeout = scaled(Span(1, Seconds)), interval = scaled(Span(100, Millis)))
 
   implicit val decoder =  DisplayableProcessCodec.decoder
+
+  import pl.touk.esp.engine.spel.Implicits._
 
   val db: JdbcBackend.Database = {
     val db = JdbcBackend.Database.forURL(
@@ -100,13 +104,45 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
     }
   }
 
+  it should "be possible to update subnode" in {
+    Put(s"/processes/${SampleProcess.process.id}/json", toEntity(ValidationTestData.validProcess)) ~> route ~> check {
+      status shouldEqual StatusCodes.OK
+    }
+    val expression = "'foo'"
+    val modifiedSink = ProcessConverter.toDisplayable(ValidationTestData.validProcess).nodes.collectFirst {
+      case sink: Sink =>
+        sink.copy(endResult = Some(expression))
+    }.getOrElse(sys.error("Process should contain sink"))
+
+    Put(s"/processes/${SampleProcess.process.id}/json/${modifiedSink.id}", toEntity(modifiedSink)) ~> route ~> check {
+      status shouldEqual StatusCodes.OK
+      fetchSampleProcess()
+        .map(_.nodes.last.asInstanceOf[canonicalnode.Sink].endResult.value.expression)
+        .futureValue shouldEqual expression
+    }
+  }
+
+  it should "return 404 when no node" in {
+    Put(s"/processes/${SampleProcess.process.id}/json", toEntity(ValidationTestData.validProcess)) ~> route ~> check {
+      status shouldEqual StatusCodes.OK
+    }
+    val someNode = ProcessConverter.toDisplayable(ValidationTestData.validProcess).nodes.head
+
+    Put(s"/processes/${SampleProcess.process.id}/json/missing_node_id", toEntity(someNode)) ~> route ~> check {
+      status shouldEqual StatusCodes.NotFound
+    }
+  }
+
   def checkSampleProcessRootIdEquals(expected: String) = {
-    processRepository
-      .fetchProcessJsonById(SampleProcess.process.id)
-      .map(_.getOrElse(sys.error("Sample process missing")))
-      .map(ProcessMarshaller.fromJson(_).valueOr(_ => sys.error("Invalid process json")))
+    fetchSampleProcess()
       .map(_.nodes.head.id)
       .futureValue shouldEqual expected
   }
 
+  def fetchSampleProcess(): Future[CanonicalProcess] = {
+    processRepository
+      .fetchProcessJsonById(SampleProcess.process.id)
+      .map(_.getOrElse(sys.error("Sample process missing")))
+      .map(ProcessMarshaller.fromJson(_).valueOr(_ => sys.error("Invalid process json")))
+  }
 }

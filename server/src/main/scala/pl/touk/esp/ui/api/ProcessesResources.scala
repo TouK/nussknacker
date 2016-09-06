@@ -5,15 +5,20 @@ import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.Directives
 import argonaut.{EncodeJson, Json, PrettyParams}
 import cats.data.Validated.{Invalid, Valid}
+import cats.data.Writer
+import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
+import pl.touk.esp.engine.canonicalgraph.canonicalnode._
 import pl.touk.esp.engine.compile.ProcessValidator
 import pl.touk.esp.engine.management.ProcessManager
 import pl.touk.esp.engine.marshall.ProcessMarshaller
 import pl.touk.esp.ui.api.ProcessValidation.ValidationResult
 import pl.touk.esp.ui.process.displayedgraph.DisplayableProcess
+import pl.touk.esp.ui.process.displayedgraph.displayablenode.DisplayableNode
 import pl.touk.esp.ui.process.marshall.{DisplayableProcessCodec, ProcessConverter}
 import pl.touk.esp.ui.process.repository.ProcessRepository
 import pl.touk.esp.ui.process.repository.ProcessRepository._
 import pl.touk.esp.ui.util.Argonaut62Support
+import ProcessesResources._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -24,6 +29,7 @@ class ProcessesResources(repository: ProcessRepository,
   extends Directives with Argonaut62Support with ProcessValidation {
 
   import argonaut.ArgonautShapeless._
+  import pl.touk.esp.engine.optics.Implicits._
 
   implicit val processEncode = EncodeJson.of[ProcessDetails]
 
@@ -32,6 +38,8 @@ class ProcessesResources(repository: ProcessRepository,
   implicit val displayableProcessEncode = DisplayableProcessCodec.encoder
 
   implicit val displayableProcessDecode = DisplayableProcessCodec.decoder
+
+  implicit val displayableProcessNodeDecode = DisplayableProcessCodec.nodeDecoder
 
   implicit val validationResultEncode = EncodeJson.of[ValidationResult]
 
@@ -70,16 +78,13 @@ class ProcessesResources(repository: ProcessRepository,
       get {
         complete {
           val optionalDisplayableJsonFuture = repository.fetchProcessJsonById(id).map { optionalJson =>
-            optionalJson.map(convertToDisplayable)
+            optionalJson.map(parseOrDie).map(ProcessConverter.toDisplayable)
           }
           optionalDisplayableJsonFuture.map[ToResponseMarshallable] {
             case Some(process) =>
               process
             case None =>
-              HttpResponse(
-                status = StatusCodes.NotFound,
-                entity = "Process not found"
-              )
+              HttpResponse(status = StatusCodes.NotFound, entity = s"Process $id not found")
           }
         }
       } ~ put {
@@ -87,7 +92,7 @@ class ProcessesResources(repository: ProcessRepository,
           complete {
             val canonical = ProcessConverter.fromDisplayable(displayableProcess)
             repository.withProcessJsonById(id) { _ =>
-              Some(ProcessMarshaller.toJson(canonical, PrettyParams.nospace))
+              Writer.value(Option(ProcessMarshaller.toJson(canonical, PrettyParams.nospace)))
             }.map[ToResponseMarshallable] {
               case Valid(_) =>
                 validate(canonical) match {
@@ -96,20 +101,51 @@ class ProcessesResources(repository: ProcessRepository,
                   case Invalid(errors) =>
                     errors
                 }
-              case Invalid(ProcessIsMissingError) =>
-                HttpResponse(
-                  status = StatusCodes.NotFound,
-                  entity = "Process not found"
-                )
+              case Invalid(err) =>
+                HttpResponse(status = StatusCodes.NotFound, entity = err.getMessage)
+            }
+          }
+        }
+      }
+    } ~ path("processes" / Segment / "json" / Segment) { (processId, nodeId) =>
+      put {
+        entity(as[DisplayableNode]) { displayableNode =>
+          complete {
+            repository.withProcessJsonById(processId) { optionalCurrentProcessJson =>
+              val currentProcessJson = optionalCurrentProcessJson.getOrElse {
+                throw ProcessNotInitializedError(processId)
+              }
+              val currentCanonical = parseOrDie(currentProcessJson)
+              val canonicalNode = ProcessConverter.nodeFromDisplayable(displayableNode)
+              val modificationResult = currentCanonical.modify[CanonicalNode](nodeId)(_ => canonicalNode)
+              if (modificationResult.modifiedCount < 1) {
+                throw NodeNotFoundError(processId = processId, nodeId = nodeId)
+              }
+              Writer(modificationResult.value, Option(ProcessMarshaller.toJson(modificationResult.value, PrettyParams.nospace)))
+            }.map[ToResponseMarshallable] {
+              case Valid(writer) =>
+                validate(writer.written) match { // Walidujemy cały proces bo błędy w węźle potrzebują kontekstu procesu
+                  case Valid(_) =>
+                    ValidationResult(Map.empty)
+                  case Invalid(errors) =>
+                    errors.filterNode(nodeId)
+                }
+              case Invalid(err) =>
+                HttpResponse(status = StatusCodes.NotFound, entity = err.getMessage)
+            }.recover[ToResponseMarshallable] {
+              case err: ProcessNotInitializedError =>
+                HttpResponse(status = StatusCodes.NotFound, entity = err.getMessage)
+              case err: NodeNotFoundError =>
+                HttpResponse(status = StatusCodes.NotFound, entity = err.getMessage)
             }
           }
         }
       }
     }
 
-  private def convertToDisplayable(canonicalJson: String): DisplayableProcess = {
+  private def parseOrDie(canonicalJson: String): CanonicalProcess = {
     ProcessMarshaller.fromJson(canonicalJson) match {
-      case Valid(canonical) => ProcessConverter.toDisplayable(canonical)
+      case Valid(canonical) => canonical
       case Invalid(err) => throw new IllegalArgumentException(err.msg)
     }
   }
@@ -119,5 +155,13 @@ class ProcessesResources(repository: ProcessRepository,
       processDetails.copy(tags = processDetails.tags ++ jobState.toList.map(js => "TEST: " + js.status)) //todo na razie tak bo mamy tylko procesy na testach
     }
   }
+
+}
+
+object ProcessesResources {
+
+  case class ProcessNotInitializedError(id: String) extends Exception(s"Process $id is not initialized")
+
+  case class NodeNotFoundError(processId: String, nodeId: String) extends Exception(s"Node $nodeId not found inside process $processId")
 
 }
