@@ -32,6 +32,7 @@ class StatisticsCollectorTest extends FlatSpec with ScalaFutures with Matchers w
   }
 
   override protected def afterAll(): Unit = {
-    system.terminate()
+    system.shutdown()
+    system.awaitTermination()
   }
 }

@@ -102,7 +102,8 @@ trait BasePerfTest extends ScalaFutures with BeforeAndAfterAll { suite: Suite wi
   }
 
   override protected def afterAll() = {
-    system.terminate()
+    system.shutdown()
+    system.awaitTermination()
   }
 
 }
