@@ -51,7 +51,17 @@ libraryDependencies ++= {
     "ch.megard" %% "akka-http-cors" % akkaHttpCcorsV,
     "pl.touk.esp" %% "esp-management" % espEngineV changing()
       //tutaj mamy dwie wersje jsr305 we flinku i assembly sie pluje...
-      exclude("com.google.code.findbugs", "jsr305"),
+      excludeAll(
+        ExclusionRule("com.google.code.findbugs", "jsr305"),
+        ExclusionRule("log4j", "log4j"),
+        ExclusionRule("org.slf4j", "slf4j-log4j12")
+
+      ),
+    "ch.qos.logback" % "logback-core" % logbackV,
+    "ch.qos.logback" % "logback-classic" % logbackV,
+    "org.slf4j" % "log4j-over-slf4j" % "1.7.21",
+
+
     "pl.touk.esp" %% "esp-interpreter" % espEngineV changing(),
 
     "com.typesafe.slick" %% "slick" % slickV,
@@ -62,6 +72,7 @@ libraryDependencies ++= {
     "com.typesafe.akka" %% "akka-http-testkit" % akkaV % "test",
     "com.typesafe.slick" %% "slick-testkit" % slickV % "test",
     "org.scalatest" %% "scalatest" % scalaTestV % "test"
+
 
   )
 }
