@@ -7,13 +7,13 @@ import akka.pattern.AskTimeoutException
 import com.typesafe.config.{Config, ConfigValueType}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.JobID
-import org.apache.flink.client.program.{PackagedProgram, StandaloneClusterClient}
+import org.apache.flink.client.program.{ProgramInvocationException, PackagedProgram, StandaloneClusterClient}
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.runtime.akka.AkkaUtils
-import org.apache.flink.runtime.client.JobClient
+import org.apache.flink.runtime.client.{JobTimeoutException, JobClient}
 import org.apache.flink.runtime.instance.ActorGateway
 import org.apache.flink.runtime.messages.JobManagerMessages
-import org.apache.flink.runtime.messages.JobManagerMessages.{CancelJob, CancellationSuccess, RunningJobsStatus}
+import org.apache.flink.runtime.messages.JobManagerMessages._
 import org.apache.flink.runtime.util.LeaderRetrievalUtils
 import pl.touk.esp.engine.marshall.ProcessMarshaller
 
@@ -88,16 +88,7 @@ class RestartableFlinkGateway(prepareGateway: () => FlinkGateway) extends FlinkG
 
   implicit val ec = ExecutionContext.Implicits.global
 
-  @volatile var gateway : FlinkGateway = null
-
-  def retrieveGateway() = synchronized {
-    if (gateway == null) {
-      logger.info("Creating new gateway")
-      gateway = prepareGateway()
-      logger.info("Gateway created")
-    }
-    gateway
-  }
+  @volatile var gateway: FlinkGateway = null
 
   override def invokeJobManager[Response: ClassTag](req: AnyRef): Future[Response] = {
     tryToInvokeJobManager[Response](req)
@@ -107,6 +98,10 @@ class RestartableFlinkGateway(prepareGateway: () => FlinkGateway) extends FlinkG
           restart()
           tryToInvokeJobManager[Response](req)
       }
+  }
+
+  private def tryToInvokeJobManager[Response: ClassTag](req: AnyRef): Future[Response] = {
+    retrieveGateway().invokeJobManager[Response](req)
   }
 
   override def run(program: PackagedProgram, maybeParalellism: Option[Int]): Unit = {
@@ -119,15 +114,21 @@ class RestartableFlinkGateway(prepareGateway: () => FlinkGateway) extends FlinkG
     }.get
   }
 
-  private def tryToInvokeJobManager[Response: ClassTag](req: AnyRef): Future[Response] =
-    retrieveGateway().invokeJobManager[Response](req)
-
   private def tryToRunProgram(program: PackagedProgram, maybeParalellism: Option[Int]): Try[Unit] =
     Try(retrieveGateway().run(program, maybeParalellism))
 
   private def restart(): Unit = synchronized {
     shutDown()
     retrieveGateway()
+  }
+
+  def retrieveGateway() = synchronized {
+    if (gateway == null) {
+      logger.info("Creating new gateway")
+      gateway = prepareGateway()
+      logger.info("Gateway created")
+    }
+    gateway
   }
 
   override def shutDown() = synchronized {
@@ -146,7 +147,7 @@ trait FlinkGateway {
 }
 
 class FlinkProcessManager(config: Config,
-                          gateway: FlinkGateway) extends ProcessManager {
+                          gateway: FlinkGateway) extends ProcessManager with LazyLogging {
 
   //tyle nam wystarczy, z aktorami to nigdy nic nie wiadomo...
   implicit val ec = ExecutionContext.Implicits.global
@@ -159,14 +160,46 @@ class FlinkProcessManager(config: Config,
     val jarFile = new File(flinkConf.getString("jarPath"))
     val configPart = extractProcessConfig
 
-    val maybeParallism = extractParallelism(processAsJson)
+    val maybeParalellism = extractParallelism(processAsJson)
     val program = new PackagedProgram(jarFile, processClass, List(processAsJson, configPart): _*)
 
-    findJobStatus(processId).flatMap {
-      case Some(job) => cancelJobById(JobID.fromHexString(job.id))
-      case None => Future.successful(())
-      //TODO: czy mozemy to zrefaktorowac zeby nie uzywac w sumie clienta?
-    }.map(_ => gateway.run(program, maybeParallism))
+    import cats.data.OptionT
+    import cats.implicits._
+
+    val stoppingResult = for {
+      maybeOldJob <- OptionT(findJobStatus(processId))
+      maybeSavePoint <- OptionT.liftF(stopSavingSavepoint(maybeOldJob))
+    } yield maybeSavePoint
+
+    stoppingResult.value.map { maybeSavepoint =>
+      maybeSavepoint.foreach(program.setSavepointPath)
+      Try(gateway.run(program, maybeParalellism)).recover {
+        //TODO: jest blad we flink, future nie dostaje odpowiedzi jak poleci wyjatek przy savepoincie :|
+        case e:ProgramInvocationException if e.getCause.isInstanceOf[JobTimeoutException] && maybeSavepoint.isDefined =>
+          program.setSavepointPath(null)
+          logger.info(s"Failed to run $processId with savepoint, trying with empty state")
+          gateway.run(program, maybeParalellism)
+      }.get
+    }
+  }
+
+  private def stopSavingSavepoint(job: JobState): Future[String] = {
+    val jobId = JobID.fromHexString(job.id)
+    for {
+      savepointPath <- makeSavepoint(jobId)
+      _ <- cancel(jobId)
+    } yield savepointPath
+  }
+
+  private def cancel(jobId: JobID) = {
+    gateway.invokeJobManager[CancellationSuccess](CancelJob(jobId)).map(_ => ())
+  }
+
+  private def makeSavepoint(jobId: JobID): Future[String] = {
+    gateway.invokeJobManager[Any](JobManagerMessages.TriggerSavepoint(jobId)).map {
+      case TriggerSavepointSuccess(_, path) => path
+      case TriggerSavepointFailure(_, reason) => throw reason
+    }
   }
 
   private def extractParallelism(processAsJson: String): Option[Int] = {
@@ -179,12 +212,12 @@ class FlinkProcessManager(config: Config,
     config.getConfig(configName).root().render()
   }
 
-  override def findJobStatus(name: String) : Future[Option[JobState]] = {
+  override def findJobStatus(name: String): Future[Option[JobState]] = {
     listJobs().map(_.runningJobs.toList.filter(_.getJobName == name).map(st => JobState(st.getJobId.toString,
       st.getJobState.toString, st.getStartTime)).headOption)
   }
 
-  override def cancel(name: String) : Future[Unit] = {
+  override def cancel(name: String): Future[Unit] = {
     listJobs().flatMap(jobs => {
       val maybeJob = jobs.runningJobs.toList.find(_.getJobName == name)
       val id = maybeJob.getOrElse(throw new IllegalStateException(s"Job $name not found")).getJobId
@@ -193,7 +226,7 @@ class FlinkProcessManager(config: Config,
   }
 
   private def cancelJobById(jobID: JobID)
-    = gateway.invokeJobManager[CancellationSuccess](CancelJob(jobID)).map(_ => ())
+  = gateway.invokeJobManager[CancellationSuccess](CancelJob(jobID)).map(_ => ())
 
   private def listJobs(): Future[RunningJobsStatus] = {
     gateway.invokeJobManager[RunningJobsStatus](JobManagerMessages.getRequestRunningJobsStatus)
