@@ -33,6 +33,9 @@ trait ProcessValidation {
 
 object ProcessValidation {
 
-  case class ValidationResult(invalidNodes: Map[String, List[String]])
+  case class ValidationResult(invalidNodes: Map[String, List[String]]) {
+    def filterNode(nodeId: String) =
+      copy(invalidNodes = invalidNodes.filterKeys(_ == nodeId))
+  }
 
 }

@@ -1,10 +1,10 @@
 package pl.touk.esp.ui.process.repository
 
-import cats.data.Validated
+import cats.data.{Kleisli, Validated, Writer, WriterT}
 import cats.data.Validated.{Invalid, Valid}
 import pl.touk.esp.ui.db.migration.CreateProcessesMigration.ProcessEntityData
 import pl.touk.esp.ui.db.migration.{CreateProcessesMigration, CreateTagsMigration}
-import pl.touk.esp.ui.process.repository.ProcessRepository.{ProcessDetails, ProcessIsMissingError}
+import pl.touk.esp.ui.process.repository.ProcessRepository.{ProcessDetails, ProcessNotFoundError}
 import slick.dbio.Effect.Read
 import slick.jdbc.{JdbcBackend, JdbcProfile}
 
@@ -61,16 +61,21 @@ class ProcessRepository(db: JdbcBackend.Database,
     db.run(action)
   }
 
-  def withProcessJsonById(id: String)
-                         (f: Option[String] => Option[String])
-                         (implicit ec: ExecutionContext): Future[Validated[ProcessIsMissingError, Unit]] = {
+  def withProcessJsonById[T](id: String)
+                            (f: Option[String] => Writer[T, Option[String]])
+                            (implicit ec: ExecutionContext): Future[Validated[ProcessNotFoundError, Writer[T, Unit]]] = {
     val action = for {
       optionalProcessJson <- processesTable.filter(_.id === id).forUpdate.map(_.json).result.headOption
       updateResult <- optionalProcessJson match {
         case Some(existingProcess) =>
-          processesTable.filter(_.id === id).map(_.json).update(f(existingProcess)).map(_ => Valid(()))
+          val (out, action) = f(existingProcess).map { newProcess =>
+            processesTable.filter(_.id === id).map(_.json).update(newProcess)
+          }.run // TODO: da się to jakimś Kleisli zrobić?
+          action.map { _ =>
+            Valid(Writer.tell(out))
+          }
         case None =>
-          DBIO.successful(Invalid(ProcessIsMissingError))
+          DBIO.successful(Invalid(ProcessNotFoundError(id)))
       }
     } yield updateResult
     db.run(action.transactionally)
@@ -92,8 +97,6 @@ object ProcessRepository {
 
   case class ProcessDetails(id: String, name: String, description: Option[String], tags: List[String])
 
-  sealed trait ProcessIsMissingError
-
-  case object ProcessIsMissingError extends ProcessIsMissingError
+  case class ProcessNotFoundError(id: String) extends Exception(s"Process $id not found")
 
 }
