@@ -58,6 +58,7 @@ val argonautShapelessV = "1.2.0-M1"
 val argonautMajorV = "6.2"
 val argonautV = s"$argonautMajorV-M3"
 val catsV = "0.7.0"
+val monocleV = "1.2.2"
 val scalaParsersV = "1.0.4"
 val dispatchV = "0.11.3"
 val slf4jV = "1.7.21"
@@ -173,6 +174,7 @@ lazy val interpreter = (project in file("interpreter")).
         "org.springframework" % "spring-expression" % springV,
         "com.github.alexarchambault" %% s"argonaut-shapeless_$argonautMajorV" % argonautShapelessV,
         "org.typelevel" %% "cats-core" % catsV,
+        "com.github.julien-truffaut"  %%  "monocle-macro"  % monocleV,
         "org.apache.flink" %% "flink-streaming-java" % flinkV % "provided", // api dependency
         "ch.qos.logback" % "logback-classic" % logbackV % "test",
         "org.scalatest" %% "scalatest" % scalaTestV % "test"
