@@ -1,24 +1,25 @@
 package pl.touk.esp.engine.management
 
 import java.io.File
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.{TimeUnit, TimeoutException}
 
-import akka.actor.ActorSystem
+import akka.pattern.AskTimeoutException
 import com.typesafe.config.{Config, ConfigValueType}
-import org.apache.flink.api.common.JobID
-import org.apache.flink.client.program.{ClusterClient, StandaloneClusterClient, PackagedProgram}
+import com.typesafe.scalalogging.LazyLogging
+import org.apache.flink.client.program.{PackagedProgram, StandaloneClusterClient}
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.runtime.akka.AkkaUtils
 import org.apache.flink.runtime.client.JobClient
 import org.apache.flink.runtime.instance.ActorGateway
 import org.apache.flink.runtime.messages.JobManagerMessages
-import org.apache.flink.runtime.messages.JobManagerMessages.{CancellationSuccess, CancelJob, RunningJobsStatus}
+import org.apache.flink.runtime.messages.JobManagerMessages.{CancelJob, CancellationSuccess, RunningJobsStatus}
 import org.apache.flink.runtime.util.LeaderRetrievalUtils
 
 import scala.collection.JavaConversions._
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
+import scala.util.Try
 
 object FlinkProcessManager {
   def apply(config: Config): FlinkProcessManager = {
@@ -34,27 +35,119 @@ object FlinkProcessManager {
         case _ =>
       }
     }
-    val actorSystem = JobClient.startJobClientActorSystem(clientConfig)
+    val timeout = flinkConf.getDuration("jobManagerTimeout", TimeUnit.MILLISECONDS) millis
 
-    val client: StandaloneClusterClient = new StandaloneClusterClient(clientConfig)
-    client.setDetached(true)
-
-    new FlinkProcessManager(config, client, actorSystem.dispatcher,
-      prepareGateway(clientConfig, actorSystem))
+    new FlinkProcessManager(config, new RestartableFlinkGateway(() => new DefaultFlinkGateway(clientConfig, timeout)))
   }
 
-  private def prepareGateway(config: Configuration, actorSystem: ActorSystem): ActorGateway = {
+
+}
+
+class DefaultFlinkGateway(config: Configuration, timeout: FiniteDuration) extends FlinkGateway {
+
+  implicit val ec = ExecutionContext.Implicits.global
+
+  var actorSystem = JobClient.startJobClientActorSystem(config)
+
+  var gateway: ActorGateway = prepareGateway(config)
+
+  var client: StandaloneClusterClient = createClient()
+
+  override def invokeJobManager[Response: ClassTag](req: AnyRef): Future[Response] = {
+    gateway.ask(req, timeout)
+      .mapTo[Response]
+  }
+
+  override def run(program: PackagedProgram, paralellism: Int): Unit = {
+    client.run(program, paralellism)
+  }
+
+  def shutDown(): Unit = {
+    actorSystem.shutdown()
+    actorSystem.awaitTermination(timeout)
+    client.shutdown()
+  }
+
+  private def createClient() =
+    new StandaloneClusterClient(config) {
+      setDetached(true)
+    }
+
+  private def prepareGateway(config: Configuration): ActorGateway = {
     val timeout = AkkaUtils.getClientTimeout(config)
     val leaderRetrievalService = LeaderRetrievalUtils.createLeaderRetrievalService(config)
     LeaderRetrievalUtils.retrieveLeaderGateway(leaderRetrievalService, actorSystem, timeout)
   }
+
 }
 
-class FlinkProcessManager(config: Config, client: ClusterClient,
-                          executionContext: ExecutionContext,
-                          gateway: ActorGateway) extends ProcessManager {
+//TODO: tak w sumie to przydaloby sie to zrobic na aktorach w ui moze??
+class RestartableFlinkGateway(prepareGateway: () => FlinkGateway) extends FlinkGateway with LazyLogging {
 
-  implicit val ec = executionContext
+  implicit val ec = ExecutionContext.Implicits.global
+
+  @volatile var gateway : FlinkGateway = null
+
+  def retrieveGateway() = synchronized {
+    if (gateway == null) {
+      logger.info("Creating new gateway")
+      gateway = prepareGateway()
+      logger.info("Gateway created")
+    }
+    gateway
+  }
+
+  override def invokeJobManager[Response: ClassTag](req: AnyRef): Future[Response] = {
+    tryToInvokeJobManager(req)
+      .recoverWith {
+        case e: AskTimeoutException =>
+          logger.error("Failed to connect to Flink, restarting", e)
+          restart()
+          tryToInvokeJobManager[Response](req)
+      }
+  }
+
+  override def run(program: PackagedProgram, paralellism: Int): Unit = {
+    tryToRunProgram(program, paralellism).recover {
+      //TODO: jaki powinien byc ten wyjatek??
+      case e: TimeoutException =>
+        logger.error("Failed to connect to Flink, restarting", e)
+        restart()
+        tryToRunProgram(program, paralellism)
+    }.get
+  }
+
+  private def tryToInvokeJobManager[Response: ClassTag](req: AnyRef): Future[Response] =
+    retrieveGateway().invokeJobManager[Response](req)
+
+  private def tryToRunProgram(program: PackagedProgram, paralellism: Int): Try[Unit] =
+    Try(retrieveGateway().run(program, paralellism))
+
+  private def restart(): Unit = synchronized {
+    shutDown()
+    retrieveGateway()
+  }
+
+  override def shutDown() = synchronized {
+    Option(gateway).foreach(_.shutDown())
+    gateway = null
+    logger.info("Gateway shut down")
+  }
+}
+
+trait FlinkGateway {
+  def invokeJobManager[Response: ClassTag](req: AnyRef): Future[Response]
+
+  def run(program: PackagedProgram, paralellism: Int): Unit
+
+  def shutDown(): Unit
+}
+
+class FlinkProcessManager(config: Config,
+                          gateway: FlinkGateway) extends ProcessManager {
+
+  //tyle nam wystarczy, z aktorami to nigdy nic nie wiadomo...
+  implicit val ec = ExecutionContext.Implicits.global
 
   private val flinkConf = config.getConfig("flinkConfig")
 
@@ -67,10 +160,11 @@ class FlinkProcessManager(config: Config, client: ClusterClient,
     val program = new PackagedProgram(jarFile, processClass, List(processAsJson, configPart): _*)
 
     findJobStatus(processId).map(maybeOldJob => {
-       maybeOldJob.foreach { job =>
-         client.cancel(JobID.fromHexString(job.id))
-       }
-    }).map(_ => client.run(program, flinkConf.getInt("parallelism")))
+      maybeOldJob.foreach { job =>
+        cancel(job.id)
+      }
+      //TODO: czy mozemy to zrefaktorowac zeby nie uzywac w sumie clienta?
+    }).map(_ => gateway.run(program, flinkConf.getInt("parallelism")))
   }
 
   private def extractProcessConfig: String = {
@@ -83,23 +177,17 @@ class FlinkProcessManager(config: Config, client: ClusterClient,
       st.getJobState.toString, st.getStartTime)).headOption)
   }
 
-
   override def cancel(name: String) = {
     listJobs().flatMap(jobs => {
       val maybeJob = jobs.runningJobs.toList.find(_.getJobName == name)
       val id = maybeJob.getOrElse(throw new IllegalStateException(s"Job $name not found")).getJobId
-      invokeJobManager[CancellationSuccess](CancelJob(id)).map(_ => ())
+      gateway.invokeJobManager[CancellationSuccess](CancelJob(id)).map(_ => ())
     })
   }
 
-  private def listJobs() : Future[RunningJobsStatus] = {
-    invokeJobManager[RunningJobsStatus](JobManagerMessages.getRequestRunningJobsStatus)
+  private def listJobs(): Future[RunningJobsStatus] = {
+    gateway.invokeJobManager[RunningJobsStatus](JobManagerMessages.getRequestRunningJobsStatus)
   }
 
-  private def invokeJobManager[Response:ClassTag](req: AnyRef) : Future[Response] = {
-    //??
-    val timeout = (flinkConf.getDuration("jobManagerTimeout", TimeUnit.MILLISECONDS) millis)
-    gateway.ask(req,  timeout).mapTo[Response]
-  }
 
 }

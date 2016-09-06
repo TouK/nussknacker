@@ -48,7 +48,8 @@ val commonSettings =
     }
   )
 
-val akkaV = "2.4.8"
+//mamy te wersje akki bo flink jej wymaga
+val akkaV = "2.3.7"
 val flinkV = "1.1.1"
 val kafkaV = "0.9.0.1"
 val springV = "5.0.0.M1"
@@ -127,6 +128,8 @@ lazy val management = (project in file("management")).
         "com.typesafe.akka" %% "akka-remote" % akkaV,
         "com.typesafe.akka" %% "akka-actor" % akkaV,
         "com.typesafe.akka" %% "akka-slf4j" % akkaV,
+
+        "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
 
         // zależności dla konfiguracji "it" muszą być też dla "test", żeby nie trafiły do publikowanego poma
         "org.scalatest" %% "scalatest" % scalaTestV % "it,test"
