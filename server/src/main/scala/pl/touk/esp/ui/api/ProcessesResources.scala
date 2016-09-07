@@ -5,12 +5,13 @@ import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.Directives
 import argonaut.{EncodeJson, Json, PrettyParams}
 import cats.data.Validated.{Invalid, Valid}
-import cats.data.Writer
+import cats.data.{Xor, Writer}
 import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
 import pl.touk.esp.engine.canonicalgraph.canonicalnode._
 import pl.touk.esp.engine.compile.ProcessValidator
 import pl.touk.esp.engine.management.ProcessManager
 import pl.touk.esp.engine.marshall.ProcessMarshaller
+import pl.touk.esp.ui.{EspError, NotFoundError, FatalError}
 import pl.touk.esp.ui.api.ProcessValidation.ValidationResult
 import pl.touk.esp.ui.process.displayedgraph.DisplayableProcess
 import pl.touk.esp.ui.process.displayedgraph.displayablenode.DisplayableNode
@@ -90,64 +91,71 @@ class ProcessesResources(repository: ProcessRepository,
       } ~ put {
         entity(as[DisplayableProcess]) { displayableProcess =>
           complete {
-            val canonical = ProcessConverter.fromDisplayable(displayableProcess)
             repository.withProcessJsonById(id) { _ =>
-              Writer.value(Option(ProcessMarshaller.toJson(canonical, PrettyParams.nospace)))
+              val canonical = ProcessConverter.fromDisplayable(displayableProcess)
+              Xor.right((canonical, Option(ProcessMarshaller.toJson(canonical, PrettyParams.nospace))))
             }.map[ToResponseMarshallable] {
-              case Valid(_) =>
+              case Xor.Right(canonical) =>
                 validate(canonical) match {
                   case Valid(_) =>
                     ValidationResult(Map.empty)
                   case Invalid(errors) =>
                     errors
                 }
-              case Invalid(err) =>
-                HttpResponse(status = StatusCodes.NotFound, entity = err.getMessage)
+              case Xor.Left(err) => espErrorToHttp(err)
             }
           }
         }
       }
     } ~ path("processes" / Segment / "json" / Segment) { (processId, nodeId) =>
-      put {
+       put {
         entity(as[DisplayableNode]) { displayableNode =>
           complete {
             repository.withProcessJsonById(processId) { optionalCurrentProcessJson =>
-              val currentProcessJson = optionalCurrentProcessJson.getOrElse {
-                throw ProcessNotInitializedError(processId)
-              }
-              val currentCanonical = parseOrDie(currentProcessJson)
-              val canonicalNode = ProcessConverter.nodeFromDisplayable(displayableNode)
-              val modificationResult = currentCanonical.modify[CanonicalNode](nodeId)(_ => canonicalNode)
-              if (modificationResult.modifiedCount < 1) {
-                throw NodeNotFoundError(processId = processId, nodeId = nodeId)
-              }
-              Writer(modificationResult.value, Option(ProcessMarshaller.toJson(modificationResult.value, PrettyParams.nospace)))
+
+              for {
+                currentProcessJson <- Xor.fromOption(optionalCurrentProcessJson, ProcessNotInitializedError(processId))
+                currentCanonical <- parseProcess(currentProcessJson)
+                canonicalNode = ProcessConverter.nodeFromDisplayable(displayableNode)
+                modificationResult = currentCanonical.modify[CanonicalNode](nodeId)(_ => canonicalNode)
+                _ <- if (modificationResult.modifiedCount < 1) Xor.left(NodeNotFoundError(processId = processId, nodeId = nodeId)) else Xor.right(())
+              } yield (modificationResult.value, Option(ProcessMarshaller.toJson(modificationResult.value, PrettyParams.nospace)))
             }.map[ToResponseMarshallable] {
-              case Valid(writer) =>
-                validate(writer.written) match { // Walidujemy cały proces bo błędy w węźle potrzebują kontekstu procesu
+              case Xor.Right(canonical) =>
+                validate(canonical) match { // Walidujemy cały proces bo błędy w węźle potrzebują kontekstu procesu
                   case Valid(_) =>
                     ValidationResult(Map.empty)
                   case Invalid(errors) =>
                     errors.filterNode(nodeId)
                 }
-              case Invalid(err) =>
-                HttpResponse(status = StatusCodes.NotFound, entity = err.getMessage)
-            }.recover[ToResponseMarshallable] {
-              case err: ProcessNotInitializedError =>
-                HttpResponse(status = StatusCodes.NotFound, entity = err.getMessage)
-              case err: NodeNotFoundError =>
-                HttpResponse(status = StatusCodes.NotFound, entity = err.getMessage)
+              case Xor.Left(err) => espErrorToHttp(err)
             }
           }
         }
       }
     }
 
-  private def parseOrDie(canonicalJson: String): CanonicalProcess = {
+  private def espErrorToHttp(error: EspError) = {
+    val statusCode =  error match {
+      case e:NotFoundError =>  StatusCodes.NotFound
+      case e:FatalError => StatusCodes.InternalServerError
+      //unknown?
+      case _ => StatusCodes.InternalServerError
+    }
+    HttpResponse(status = statusCode, entity = error.getMessage)
+  }
+
+  private def parseOrDie(canonicalJson: String) : CanonicalProcess = {
     ProcessMarshaller.fromJson(canonicalJson) match {
       case Valid(canonical) => canonical
       case Invalid(err) => throw new IllegalArgumentException(err.msg)
     }
+  }
+
+  private def parseProcess(canonicalJson: String): Xor[UnmarshallError, CanonicalProcess] = {
+    ProcessMarshaller.fromJson(canonicalJson)
+      .leftMap(e => UnmarshallError(e.msg))
+      .toXor
   }
 
   private def addProcessDetailsStatus(processDetails: ProcessDetails)(implicit ec: ExecutionContext): Future[ProcessDetails] = {
@@ -160,8 +168,10 @@ class ProcessesResources(repository: ProcessRepository,
 
 object ProcessesResources {
 
-  case class ProcessNotInitializedError(id: String) extends Exception(s"Process $id is not initialized")
+  case class UnmarshallError(message: String) extends Exception(message) with FatalError
 
-  case class NodeNotFoundError(processId: String, nodeId: String) extends Exception(s"Node $nodeId not found inside process $processId")
+  case class ProcessNotInitializedError(id: String) extends Exception(s"Process $id is not initialized") with NotFoundError
+
+  case class NodeNotFoundError(processId: String, nodeId: String) extends Exception(s"Node $nodeId not found inside process $processId") with NotFoundError
 
 }

@@ -1,14 +1,17 @@
 package pl.touk.esp.ui.process.repository
 
-import cats.data.{Kleisli, Validated, Writer, WriterT}
-import cats.data.Validated.{Invalid, Valid}
+import cats.data._
+import db.util.DBIOActionInstances.{DB, _}
+import pl.touk.esp.ui.EspError._
 import pl.touk.esp.ui.db.migration.CreateProcessesMigration.ProcessEntityData
 import pl.touk.esp.ui.db.migration.{CreateProcessesMigration, CreateTagsMigration}
 import pl.touk.esp.ui.process.repository.ProcessRepository.{ProcessDetails, ProcessNotFoundError}
+import pl.touk.esp.ui.{EspError, NotFoundError}
 import slick.dbio.Effect.Read
 import slick.jdbc.{JdbcBackend, JdbcProfile}
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.language.higherKinds
 
 class ProcessRepository(db: JdbcBackend.Database,
                         driver: JdbcProfile) {
@@ -50,35 +53,23 @@ class ProcessRepository(db: JdbcBackend.Database,
                              (implicit ec: ExecutionContext): Future[Option[ProcessDetails]] = {
     val action =
       for {
-        optionalProcess <- processesTable.filter(_.id === id).result.headOption
-        optionalProcessWithTags <- optionalProcess match {
-          case (Some(process)) =>
-            fetchTagsThanPrepareDetailsAction(process).map(Some(_))
-          case None =>
-            DBIO.successful(None)
-        }
-      } yield optionalProcessWithTags
-    db.run(action)
+        process <- OptionT[DB, ProcessEntityData](processesTable.filter(_.id === id).result.headOption)
+        processWithTags <- OptionT.liftF[DB, ProcessDetails](fetchTagsThanPrepareDetailsAction(process))
+      } yield processWithTags
+    db.run(action.value)
   }
 
   def withProcessJsonById[T](id: String)
-                            (f: Option[String] => Writer[T, Option[String]])
-                            (implicit ec: ExecutionContext): Future[Validated[ProcessNotFoundError, Writer[T, Unit]]] = {
+                            (f: Option[String] => XError[(T, Option[String])])
+                            (implicit ec: ExecutionContext): Future[XError[T]] = {
+
     val action = for {
-      optionalProcessJson <- processesTable.filter(_.id === id).forUpdate.map(_.json).result.headOption
-      updateResult <- optionalProcessJson match {
-        case Some(existingProcess) =>
-          val (out, action) = f(existingProcess).map { newProcess =>
-            processesTable.filter(_.id === id).map(_.json).update(newProcess)
-          }.run // TODO: da się to jakimś Kleisli zrobić?
-          action.map { _ =>
-            Valid(Writer.tell(out))
-          }
-        case None =>
-          DBIO.successful(Invalid(ProcessNotFoundError(id)))
-      }
-    } yield updateResult
-    db.run(action.transactionally)
+      maybeProcess <- XorT.right[DB, EspError, Option[Option[String]]](processesTable.filter(_.id === id).forUpdate.map(_.json).result.headOption)
+      existingProcess <- XorT.fromXor[DB](Xor.fromOption(maybeProcess, ProcessNotFoundError(id)))
+      transformed <- XorT.fromXor[DB](f(existingProcess))
+      _ <- XorT.right[DB, EspError, Int](processesTable.filter(_.id === id).map(_.json).update(transformed._2))
+    } yield transformed._1
+    db.run(action.value.transactionally)
   }
 
   private def fetchProcessTagsByIdAction(processId: String)
@@ -97,6 +88,8 @@ object ProcessRepository {
 
   case class ProcessDetails(id: String, name: String, description: Option[String], tags: List[String])
 
-  case class ProcessNotFoundError(id: String) extends Exception(s"Process $id not found")
+  case class ProcessNotFoundError(id: String) extends NotFoundError {
+    def getMessage = s"No process $id found"
+  }
 
 }
