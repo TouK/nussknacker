@@ -159,6 +159,8 @@ lazy val process = (project in file("process")).
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
+        "org.apache.flink" % "flink-metrics-dropwizard" % flinkV,
+        "com.iheart" %% "ficus" % ficusV,
         "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )
     }
