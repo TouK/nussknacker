@@ -6,21 +6,25 @@ import java.util.concurrent.TimeUnit
 import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import cats.instances.list._
+import com.codahale.metrics.{Histogram, SlidingTimeWindowReservoir}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions._
 import org.apache.flink.api.common.state._
 import org.apache.flink.configuration.Configuration
+import org.apache.flink.dropwizard.metrics.DropwizardHistogramWrapper
 import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.collector.selector.OutputSelector
 import org.apache.flink.streaming.api.functions.{AssignerWithPeriodicWatermarks, AssignerWithPunctuatedWatermarks}
-import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor
+import org.apache.flink.streaming.api.operators.{AbstractStreamOperator, OneInputStreamOperator}
 import org.apache.flink.streaming.api.scala.function.util.ScalaFoldFunction
 import org.apache.flink.streaming.api.scala.{StreamExecutionEnvironment, _}
+import org.apache.flink.streaming.api.watermark.Watermark
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.api.windowing.triggers.Trigger.TriggerContext
 import org.apache.flink.streaming.api.windowing.triggers.{Trigger, TriggerResult}
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow
+import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
 import org.apache.flink.util.Collector
 import pl.touk.esp.engine.Interpreter
 import pl.touk.esp.engine.Interpreter.ContextImpl
@@ -48,7 +52,8 @@ import scala.language.implicitConversions
 class FlinkProcessRegistrar(serviceLifecycleWithDependants: () => ServicesLifecycleWithDependants,
                             compiler: PartSubGraphCompiler => ProcessCompiler,
                             espExceptionHandlerProvider: () => EspExceptionHandler,
-                            processTimeout: Duration) {
+                            processTimeout: FiniteDuration,
+                            eventTimeMetricDuration: FiniteDuration) {
 
   implicit def millisToTime(duration: Long): Time = Time.of(duration, TimeUnit.MILLISECONDS)
 
@@ -70,13 +75,14 @@ class FlinkProcessRegistrar(serviceLifecycleWithDependants: () => ServicesLifecy
 
       val newStart = env
         .addSource[Any](part.obj.toFlinkSource)(part.obj.typeInformation)
-      val withAssigned = timestampAssigner.collect {
+      val withAssigned = timestampAssigner.map {
         case periodic: AssignerWithPeriodicWatermarks[Any@unchecked] =>
           newStart.assignTimestampsAndWatermarks(periodic)
         case punctuated: AssignerWithPunctuatedWatermarks[Any@unchecked] =>
           newStart.assignTimestampsAndWatermarks(punctuated)
-      }.getOrElse(newStart)
-        .map(new MeterFunction[Any]("source"))
+      }.map(_.transform("even-time-meter", new EventTimeDelayMeterFunction("eventtimedelay", eventTimeMetricDuration)))
+        .getOrElse(newStart)
+        .map(new RateMeterFunction[Any]("source"))
         .flatMap(new InitialInterpretationFunction(serviceLifecycleWithDependants,
           espExceptionHandlerProvider, part.source, Interpreter.InputParamName, process.metaData, processTimeout))
         .split(SplitFunction)
@@ -107,7 +113,7 @@ class FlinkProcessRegistrar(serviceLifecycleWithDependants: () => ServicesLifecy
           start
             .flatMap(new SinkInterpretationFunction(serviceLifecycleWithDependants, espExceptionHandlerProvider, part.sink, process.metaData, processTimeout))
             .name(s"${part.id}-function")
-            .map(new EndMeterFunction(part.ends))
+            .map(new EndRateMeterFunction(part.ends))
             .map(_.output)
             .addSink(part.obj.toFlinkFunction)
             .name(s"${part.id}-sink")
@@ -120,7 +126,7 @@ class FlinkProcessRegistrar(serviceLifecycleWithDependants: () => ServicesLifecy
         registerSubsequentPart(start.select(part.id), part)
       }
       start.select(EndId)
-        .map(new EndMeterFunction(ends))
+        .map(new EndRateMeterFunction(ends))
     }
 
   }
@@ -129,10 +135,13 @@ class FlinkProcessRegistrar(serviceLifecycleWithDependants: () => ServicesLifecy
 
 object FlinkProcessRegistrar {
 
+  import net.ceedubs.ficus.Ficus._
+
   private final val EndId = "$end"
 
   def apply(creator: ProcessConfigCreator, config: Config) = {
-    val timeout = config.getDuration("timeout", TimeUnit.SECONDS).seconds
+    val timeout = config.as[FiniteDuration]("timeout")
+    val eventTimeMetricDuration = config.getOrElse[FiniteDuration]("metrics.eventTime.duration", 10.seconds)
 
     def servicesLifecycleWithDependants() = {
       val services = creator.services(config)
@@ -160,7 +169,8 @@ object FlinkProcessRegistrar {
       serviceLifecycleWithDependants = servicesLifecycleWithDependants,
       compiler = compiler,
       espExceptionHandlerProvider = () => creator.exceptionHandler(config),
-      processTimeout = timeout)
+      processTimeout = timeout,
+      eventTimeMetricDuration = eventTimeMetricDuration)
   }
 
   private def validateOrFailProcessCompilation[T](validated: ValidatedNel[ProcessCompilationError, T]): T = validated match {
@@ -319,7 +329,7 @@ object FlinkProcessRegistrar {
     }
   }
 
-  class MeterFunction[T](groupId: String) extends RichMapFunction[T, T] {
+  class RateMeterFunction[T](groupId: String) extends RichMapFunction[T, T] {
     lazy val instantRateMeter = new InstantRateMeter
 
     override def open(parameters: Configuration): Unit = {
@@ -336,7 +346,36 @@ object FlinkProcessRegistrar {
     }
   }
 
-  class EndMeterFunction(ends: Seq[End]) extends RichMapFunction[InterpretationResult, InterpretationResult] {
+  class EventTimeDelayMeterFunction[T](groupId: String, slidingWindow: FiniteDuration)
+    extends AbstractStreamOperator[T] with OneInputStreamOperator[T, T] {
+
+    lazy val histogramMeter = new DropwizardHistogramWrapper(
+      new Histogram(
+        new SlidingTimeWindowReservoir(slidingWindow.toMillis, TimeUnit.MILLISECONDS)))
+
+    override def open(): Unit = {
+      super.open()
+
+      getRuntimeContext.getMetricGroup
+        .addGroup(groupId)
+        .histogram("histogram", histogramMeter)
+    }
+
+    override def processElement(element: StreamRecord[T]): Unit = {
+      if (element.hasTimestamp) {
+        val delay = System.currentTimeMillis() - element.getTimestamp
+        histogramMeter.update(delay)
+      }
+      output.collect(element)
+    }
+
+    override def processWatermark(mark: Watermark): Unit = {
+      output.emitWatermark(mark)
+    }
+
+  }
+
+  class EndRateMeterFunction(ends: Seq[End]) extends RichMapFunction[InterpretationResult, InterpretationResult] {
 
     @transient private var meterByReference: Map[PartReference, InstantRateMeter] = _
 
