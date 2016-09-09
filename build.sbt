@@ -178,7 +178,6 @@ lazy val interpreter = (project in file("interpreter")).
       Seq(
         "org.springframework" % "spring-expression" % springV,
         "com.github.alexarchambault" %% s"argonaut-shapeless_$argonautMajorV" % argonautShapelessV,
-        "org.typelevel" %% "cats-core" % catsV,
         "com.github.julien-truffaut"  %%  "monocle-macro"  % monocleV,
         "org.apache.flink" %% "flink-streaming-java" % flinkV % "provided", // api dependency
         "ch.qos.logback" % "logback-classic" % logbackV % "test",
@@ -237,6 +236,7 @@ lazy val api = (project in file("api")).
     name := "esp-api",
     libraryDependencies ++= {
       Seq(
+        "org.typelevel" %% "cats-core" % catsV,
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
         "org.apache.flink" %% "flink-streaming-java" % flinkV % "provided"
       )
