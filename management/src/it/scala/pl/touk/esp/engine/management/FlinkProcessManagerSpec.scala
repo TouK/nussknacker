@@ -17,7 +17,7 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
     timeout = Span(10, Seconds),
     interval = Span(100, Millis)
   )
-
+                 /*
   it should "deploy process in running flink" in {
     val processId = UUID.randomUUID().toString
 
@@ -39,6 +39,36 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
       if (jobStatusCanceled.nonEmpty)
         throw new IllegalStateException("Job still exists")
     }
+  }                */
+
+  it should "cancel before deployment" in {
+    val processId = UUID.randomUUID().toString
+
+    val process = SampleProcess.prepareProcess(processId)
+    val marshalled = ProcessMarshaller.toJson(process, PrettyParams.spaces2)
+
+    val config = ConfigFactory.load()
+    val processManager = FlinkProcessManager(config)
+
+    assert(processManager.deploy(process.id, marshalled).isReadyWithin(100 seconds))
+
+    val jobStatus = processManager.findJobStatus(processId).futureValue
+    jobStatus.map(_.status) shouldBe Some("RUNNING")
+
+    assert(processManager.deploy(process.id, marshalled).isReadyWithin(100 seconds))
+
+    val jobStatus2 = processManager.findJobStatus(processId).futureValue
+    jobStatus2.map(_.status) shouldBe Some("RUNNING")
+
+    assert(processManager.cancel(process.id).isReadyWithin(1 seconds))
+
+    eventually {
+      val jobStatusCanceled = processManager.findJobStatus(processId).futureValue
+      if (jobStatusCanceled.nonEmpty)
+        throw new IllegalStateException("Job still exists")
+    }
   }
+
+
 
 }

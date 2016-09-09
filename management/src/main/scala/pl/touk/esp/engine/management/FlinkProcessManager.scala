@@ -6,6 +6,7 @@ import java.util.concurrent.{TimeUnit, TimeoutException}
 import akka.pattern.AskTimeoutException
 import com.typesafe.config.{Config, ConfigValueType}
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.flink.api.common.JobID
 import org.apache.flink.client.program.{PackagedProgram, StandaloneClusterClient}
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.runtime.akka.AkkaUtils
@@ -159,12 +160,11 @@ class FlinkProcessManager(config: Config,
 
     val program = new PackagedProgram(jarFile, processClass, List(processAsJson, configPart): _*)
 
-    findJobStatus(processId).map(maybeOldJob => {
-      maybeOldJob.foreach { job =>
-        cancel(job.id)
-      }
+    findJobStatus(processId).flatMap {
+      case Some(job) => cancelJobById(JobID.fromHexString(job.id))
+      case None => Future.successful(())
       //TODO: czy mozemy to zrefaktorowac zeby nie uzywac w sumie clienta?
-    }).map(_ => gateway.run(program, flinkConf.getInt("parallelism")))
+    }.map(_ => gateway.run(program, flinkConf.getInt("parallelism")))
   }
 
   private def extractProcessConfig: String = {
@@ -172,18 +172,21 @@ class FlinkProcessManager(config: Config,
     config.getConfig(configName).root().render()
   }
 
-  override def findJobStatus(name: String) = {
+  override def findJobStatus(name: String) : Future[Option[JobState]] = {
     listJobs().map(_.runningJobs.toList.filter(_.getJobName == name).map(st => JobState(st.getJobId.toString,
       st.getJobState.toString, st.getStartTime)).headOption)
   }
 
-  override def cancel(name: String) = {
+  override def cancel(name: String) : Future[Unit] = {
     listJobs().flatMap(jobs => {
       val maybeJob = jobs.runningJobs.toList.find(_.getJobName == name)
       val id = maybeJob.getOrElse(throw new IllegalStateException(s"Job $name not found")).getJobId
-      gateway.invokeJobManager[CancellationSuccess](CancelJob(id)).map(_ => ())
+      cancelJobById(id)
     })
   }
+
+  private def cancelJobById(jobID: JobID)
+    = gateway.invokeJobManager[CancellationSuccess](CancelJob(jobID)).map(_ => ())
 
   private def listJobs(): Future[RunningJobsStatus] = {
     gateway.invokeJobManager[RunningJobsStatus](JobManagerMessages.getRequestRunningJobsStatus)
