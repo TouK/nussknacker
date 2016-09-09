@@ -21,6 +21,10 @@ export default {
 
   stop(processId, callback) {
     $.post(appConfig.API_URL + '/processManagement/cancel/' + processId, callback)
+  },
+
+  saveProcess(processId, callback) {
+    cosnole.log("process saved: " + processId);
   }
 
 }
