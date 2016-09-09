@@ -7,7 +7,7 @@ import java.time.LocalDate
 import cats.data.Validated.{Invalid, Valid}
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.esp.engine.Interpreter.ContextImpl
-import pl.touk.esp.engine.api.{Context, LazyValuesProvider, MetaData, ValueWithModifiedContext}
+import pl.touk.esp.engine.api.lazyy.{LazyContext, LazyValuesProvider, UsingLazyValues}
 import pl.touk.esp.engine.spel.SpelExpressionParser
 
 import scala.collection.JavaConverters._
@@ -20,15 +20,14 @@ class ExpressionSpec extends FlatSpec with Matchers {
   val ctx = ContextImpl(
     variables = Map("obj" -> testValue)
   )
-  def dumbLazyProvider(ctx: Context) = new LazyValuesProvider {
-    override def apply[T](serviceId: String, params: (String, Any)*) = throw new IllegalStateException("Shouln't be invoked")
+  def dumbLazyProvider = new LazyValuesProvider {
+    override def apply[T](ctx: LazyContext, serviceId: String, params: Seq[(String, Any)]) = throw new IllegalStateException("Shouln't be invoked")
   }
 
   private val enrichingServiceId = "serviceId"
 
-  case class Test(id: String, value: Long, children: java.util.List[Test] = List[Test]().asJava, bigValue: BigDecimal = BigDecimal.valueOf(0L)) {
-    def lazyValue(lazyValProvider: LazyValuesProvider): ValueWithModifiedContext[String] =
-      lazyValProvider[String](enrichingServiceId).map(_ + " ma kota")
+  case class Test(id: String, value: Long, children: java.util.List[Test] = List[Test]().asJava, bigValue: BigDecimal = BigDecimal.valueOf(0L)) extends UsingLazyValues {
+    val lazyVal = lazyValue[String](enrichingServiceId).map(_ + " ma kota")
   }
 
   private def parse(expr: String) = {
@@ -84,15 +83,12 @@ class ExpressionSpec extends FlatSpec with Matchers {
 
   it should "evaluate using lazy value" in {
     val provided = "ala"
-    def lazyValueProvider(c: Context) = new LazyValuesProvider {
-      override def apply[T](serviceId: String, params: (String, Any)*) =
-        ValueWithModifiedContext(
-          provided,
-          c.withLazyContext(c.lazyContext.withEvaluatedValue(enrichingServiceId, params.toMap, provided))
-        ).asInstanceOf[ValueWithModifiedContext[T]]
+    val lazyValueProvider = new LazyValuesProvider {
+      override def apply[T](context: LazyContext, serviceId: String, params: Seq[(String, Any)]) =
+        (context.withEvaluatedValue(enrichingServiceId, params.toMap, provided), provided.asInstanceOf[T])
     }
 
-    val valueWithModifiedContext = parse("#obj.lazyValue").evaluate[String](ctx, lazyValueProvider)
+    val valueWithModifiedContext = parse("#obj.lazyVal").evaluate[String](ctx, lazyValueProvider)
     valueWithModifiedContext.value shouldEqual "ala ma kota"
     valueWithModifiedContext.context.lazyContext[String](enrichingServiceId, Map.empty) shouldEqual provided
   }

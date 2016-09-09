@@ -1,7 +1,8 @@
 package pl.touk.esp.engine.compiledgraph
 
 import cats.data.Validated
-import pl.touk.esp.engine.api.{Context, LazyValuesProvider, ValueWithModifiedContext}
+import pl.touk.esp.engine.api.lazyy.LazyValuesProvider
+import pl.touk.esp.engine.api.{Context, ValueWithModifiedContext}
 import pl.touk.esp.engine.compiledgraph
 
 import scala.language.implicitConversions
@@ -11,7 +12,7 @@ object expression {
   trait Expression {
     def original: String
 
-    def evaluate[T](ctx: Context, lazyValuesProvider: Context => LazyValuesProvider): ValueWithModifiedContext[T]
+    def evaluate[T](ctx: Context, lazyValuesProvider: LazyValuesProvider): ValueWithModifiedContext[T]
   }
 
   trait ExpressionParser {
