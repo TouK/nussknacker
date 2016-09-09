@@ -5,13 +5,14 @@ import { Link } from 'react-router';
 import Graph from '../components/graph/Graph';
 import HttpService from '../http/HttpService'
 import _ from 'lodash';
+import NodeDetailsModal from '../components/graph/nodeDetailsModal.js';
 
 import '../stylesheets/visualization.styl';
 
 export const Visualization = React.createClass({
 
   getInitialState: function() {
-    return { process: {} , processDetails: {}, timeoutId: null, intervalId: null };
+    return { process: {} , processDetails: {}, clickedProperties: {}, timeoutId: null, intervalId: null };
   },
 
   componentDidMount() {
@@ -44,6 +45,14 @@ export const Visualization = React.createClass({
     })
   },
 
+  showProperties() {
+    this.setState({clickedProperties: this.state.process.properties});
+  },
+
+  onDetailsClosed() {
+    this.setState({clickedProperties: {}})
+  },
+
   deploy() {
     HttpService.deploy(this.props.params.processId)
   },
@@ -56,11 +65,13 @@ export const Visualization = React.createClass({
     return _.isEmpty(this.state.process) || _.isEmpty(this.state.processDetails) ? null :
     (
         <div className="Page">
+            <NodeDetailsModal node={this.state.clickedProperties} onClose={this.onDetailsClosed}/>
             <div>
               <div id="esp-action-panel">
                 {this.state.processDetails.tags.map(function (tagi, tagIndex) {
                   return <div key={tagIndex} className="tagsBlockVis">{tagi}</div>
                 })}
+                <button type="button" className="btn btn-success" onClick={this.showProperties}>Properties</button>
                 <button type="button" className="btn btn-success" onClick={this.deploy}>Deploy</button>
                 <button type="button" className="btn btn-danger" onClick={this.stop}>Stop</button>
               </div>
