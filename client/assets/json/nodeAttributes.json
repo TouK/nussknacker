@@ -54,5 +54,12 @@
       "fill": "#e892bd",
       "color": "white"
     }
+  },
+  "Properties": {
+    "name": "Properties",
+    "styles": {
+      "fill": "#73E5B7",
+      "color": "white"
+    }
   }
 }
