@@ -5,7 +5,6 @@ import java.util.concurrent.TimeUnit
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data._
-import cats.instances.list._
 import com.codahale.metrics.{Histogram, SlidingTimeWindowReservoir}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
@@ -16,7 +15,7 @@ import org.apache.flink.dropwizard.metrics.DropwizardHistogramWrapper
 import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.collector.selector.OutputSelector
 import org.apache.flink.streaming.api.functions.{AssignerWithPeriodicWatermarks, AssignerWithPunctuatedWatermarks}
-import org.apache.flink.streaming.api.operators.{AbstractStreamOperator, OneInputStreamOperator}
+import org.apache.flink.streaming.api.operators.{AbstractStreamOperator, ChainingStrategy, OneInputStreamOperator}
 import org.apache.flink.streaming.api.scala.function.util.ScalaFoldFunction
 import org.apache.flink.streaming.api.scala.{StreamExecutionEnvironment, _}
 import org.apache.flink.streaming.api.watermark.Watermark
@@ -348,6 +347,8 @@ object FlinkProcessRegistrar {
 
   class EventTimeDelayMeterFunction[T](groupId: String, slidingWindow: FiniteDuration)
     extends AbstractStreamOperator[T] with OneInputStreamOperator[T, T] {
+
+    setChainingStrategy(ChainingStrategy.ALWAYS)
 
     lazy val histogramMeter = new DropwizardHistogramWrapper(
       new Histogram(
