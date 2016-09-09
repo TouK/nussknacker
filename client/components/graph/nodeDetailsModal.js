@@ -2,26 +2,42 @@ import React, { Component } from 'react';
 import { render } from 'react-dom';
 import classNames from 'classnames';
 import Modal from 'react-modal';
+import _ from 'lodash';
 
-export default class NodeDetailsModal extends Component {
+export default class NodeDetailsModal extends React.Component {
+
+    constructor(props) {
+      super(props);
+      this.state = {
+          readOnly: true,
+          tempNodeData: ''
+      };
+    }
+
+    componentWillReceiveProps(nextProps) {
+      this.setState({tempNodeData: nextProps.node})
+      this.forceUpdate()
+    }
+
     closeModal = () => {
+        this.setState({readOnly: true})
         this.props.onClose()
     }
 
-    createField = (fieldType, fieldLabel, fieldValue) => {
+    createField = (fieldType, fieldLabel, fieldValue, handleChange) => {
       switch (fieldType) {
       case 'input':
         return (
           <div className="node-row">
             <div className="node-label">{fieldLabel}</div>
-            <div className="node-value"><input type="text" value={fieldValue} className="node-input" readOnly/></div>
+            <div className="node-value"><input type="text" className="node-input" value={fieldValue} onChange={handleChange} readOnly={this.state.readOnly}/></div>
           </div>
         )
       case 'textarea':
         return (
           <div className="node-row">
             <div className="node-label">{fieldLabel}</div>
-            <div className="node-value"><textarea rows="5" cols="50" value={fieldValue} className="node-input" readOnly/></div>
+            <div className="node-value"><textarea rows="5" cols="50" className="node-input" value={fieldValue} onChange={handleChange}  readOnly={this.state.readOnly}/></div>
           </div>
         )
       default:
@@ -41,17 +57,27 @@ export default class NodeDetailsModal extends Component {
                   <div className="node-row">
                     <div className="node-label">Ref:</div>
                     <div className="node-group">
-                      {this.createField("input", "Type:", this.props.node.ref.typ)}
+                      {this.createField("input", "Type:", this.state.tempNodeData.ref.typ, ((event) => {
+                        var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
+                        newtempNodeData.ref.typ = event.target.value
+                        this.setState( { tempNodeData: newtempNodeData} ) })
+                      )}
                       <div className="node-row">
                         <div className="node-label">Parameters:</div>
                         <div className="node-group child-group">
-                          {this.props.node.ref.parameters.map ((params, index) => {
+                          {this.state.tempNodeData.ref.parameters.map ((params, index) => {
                             return (
                               <div className="node-block" key={index}>
-                                <div className="node-label">Name:</div>
-                                <div className="node-value"><input type="text" value={params.name} className="node-input" readOnly/></div>
-                                <div className="node-label">Value:</div>
-                                <div className="node-value"><input type="text" value={params.value} className="node-input" readOnly/></div>
+                                {this.createField("input", "Name:", params.name, ((event) => {
+                                  var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
+                                  newtempNodeData.ref.parameters[index].name = event.target.value
+                                  this.setState( { tempNodeData: newtempNodeData} ) })
+                                )}
+                                {this.createField("input", "Value:", params.value, ((event) => {
+                                  var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
+                                  newtempNodeData.ref.parameters[index].value = event.target.value
+                                  this.setState( { tempNodeData: newtempNodeData} ) })
+                                )}
                               </div>
                             )
                           })}
@@ -67,17 +93,27 @@ export default class NodeDetailsModal extends Component {
                     <div className="node-row">
                       <div className="node-label">Ref:</div>
                       <div className="node-group">
-                        {this.createField("input", "Type:", this.props.node.ref.typ)}
+                        {this.createField("input", "Type:", this.state.tempNodeData.ref.typ, ((event) => {
+                          var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
+                          newtempNodeData.ref.typ = event.target.value
+                          this.setState( { tempNodeData: newtempNodeData} ) })
+                        )}
                         <div className="node-row">
                           <div className="node-label">Parameters:</div>
                           <div className="node-group child-group">
-                            {this.props.node.ref.parameters.map(function(params, index){
+                            {this.state.tempNodeData.ref.parameters.map((params, index) => {
                               return (
                                 <div className="node-block" key={index}>
-                                  <div className="node-label">Name:</div>
-                                  <div className="node-value"><input type="text" value={params.name} className="node-input" readOnly/></div>
-                                  <div className="node-label">Value:</div>
-                                  <div className="node-value"><input type="text" value={params.value} className="node-input" readOnly/></div>
+                                  {this.createField("input", "Name:", params.name, ((event) => {
+                                    var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
+                                    newtempNodeData.ref.parameters[index].name = event.target.value
+                                    this.setState( { tempNodeData: newtempNodeData} ) })
+                                  )}
+                                  {this.createField("input", "Value:", params.value, ((event) => {
+                                    var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
+                                    newtempNodeData.ref.parameters[index].value = event.target.value
+                                    this.setState( { tempNodeData: newtempNodeData} ) })
+                                  )}
                                 </div>
                               )
                             })}
@@ -90,7 +126,11 @@ export default class NodeDetailsModal extends Component {
             case 'Filter':
               return (
                 <div className="node-table-body">
-                  {this.createField("textarea", "Expression:", this.props.node.expression.expression)}
+                  {this.createField("textarea", "Expression:",this.state.tempNodeData.expression.expression, ((event) => {
+                    var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
+                    newtempNodeData.expression.expression.value = event.target.value
+                    this.setState( { tempNodeData: newtempNodeData} ) })
+                  )}
                 </div>
               )
               case 'Enricher':
@@ -100,18 +140,27 @@ export default class NodeDetailsModal extends Component {
                     <div className="node-row">
                       <div className="node-label">Service:</div>
                       <div className="node-group">
-                        {this.createField("input", "Service Id:", this.props.node.service.id)}
+                        {this.createField("input", "Service Id:", this.state.tempNodeData.service.id, ((event) => {
+                          var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
+                          newtempNodeData.service.id = event.target.value
+                          this.setState( { tempNodeData: newtempNodeData} ) })
+                        )}
                         <div className="node-row">
                           <div className="node-label">Parameters:</div>
                           <div className="node-group child-group">
-                            {this.props.node.service.parameters.map ((params, index) => {
+                            {this.state.tempNodeData.service.parameters.map ((params, index) => {
                               return (
                                 <div className="node-block" key={index}>
-                                  <div className="node-label">Name:</div>
-                                  <div className="node-value"><input type="text" value={params.name} className="node-input" readOnly/></div>
-
-                                  <div className="node-label">Expression:</div>
-                                  <div className="node-value"><input type="text" value={params.expression.expression} className="node-input" readOnly/></div>
+                                  {this.createField("input", "Name:", params.name, ((event) => {
+                                    var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
+                                    newtempNodeData.service.parameters[index].name = event.target.value
+                                    this.setState( { tempNodeData: newtempNodeData} ) })
+                                  )}
+                                  {this.createField("input", "Expression:", params.expression.expression, ((event) => {
+                                    var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
+                                    newtempNodeData.service.parameters[index].expression.expression = event.target.value
+                                    this.setState( { tempNodeData: newtempNodeData} ) })
+                                  )}
                                 </div>
                               )
                             })}
@@ -119,24 +168,37 @@ export default class NodeDetailsModal extends Component {
                         </div>
                       </div>
                     </div>
-                    {this.props.node.type == 'Enricher' ? this.createField("input", "Output:", this.props.node.output) : null}
+                    {this.props.node.type == 'Enricher' ? this.createField("input", "Output:", this.state.tempNodeData.output, ((event) => {
+                      var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
+                      newtempNodeData.output = event.target.value
+                      this.setState( { tempNodeData: newtempNodeData} ) }))
+                    : null }
                   </div>
                 )
             case 'VariableBuilder':
                 return (
                   <div className="node-table-body">
-                    {this.createField("input", "Variable Name:", this.props.node.varName)}
+                    {this.createField("input", "Variable Name:", this.state.tempNodeData.varName, ((event) => {
+                      var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
+                      newtempNodeData.varName = event.target.value
+                      this.setState( { tempNodeData: newtempNodeData} ) })
+                    )}
                     <div className="node-row">
                       <div className="node-label">Fields:</div>
                       <div className="node-group child-group">
-                        {this.props.node.fields.map ((params, index) => {
+                        {this.state.tempNodeData.fields.map ((params, index) => {
                           return (
                             <div className="node-block" key={index}>
-                              <div className="node-label">Name:</div>
-                              <div className="node-value"><input type="text" value={params.name} className="node-input" readOnly/></div>
-
-                              <div className="node-label">Expression:</div>
-                              <div className="node-value"><input type="text" value={params.expression.expression} className="node-input" readOnly/></div>
+                              {this.createField("input", "Name:", params.name, ((event) => {
+                                var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
+                                newtempNodeData.fields[index].name = event.target.value
+                                this.setState( { tempNodeData: newtempNodeData} ) })
+                              )}
+                              {this.createField("input", "Expression:", params.expression.expression, ((event) => {
+                                var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
+                                newtempNodeData.fields[index].expression.expression = event.target.value
+                                this.setState( { tempNodeData: newtempNodeData} ) })
+                              )}
                             </div>
                           )
                         })}
@@ -147,18 +209,46 @@ export default class NodeDetailsModal extends Component {
             case 'Switch':
               return (
                 <div className="node-table-body">
-                  {this.createField("input", "Expression:", this.props.node.expression.expression)}
-                  {this.createField("input", "exprVal:", this.props.node.exprVal)}
+                  {this.createField("input", "Expression:", this.state.tempNodeData.expression.expression, ((event) => {
+                    var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
+                    newtempNodeData.expression.expression = event.target.value
+                    this.setState( { tempNodeData: newtempNodeData} ) })
+                  )}
+                  {this.createField("input", "exprVal:", this.props.node.exprVal, ((event) => {
+                    var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
+                    newtempNodeData.exprVal = event.target.value
+                    this.setState( { tempNodeData: newtempNodeData} ) })
+                  )}
                 </div>
               )
             case 'Aggregate':
               return (
                 <div className="node-table-body">
-                  {this.createField("textarea", "Key Expression:", this.props.node.keyExpression.expression)}
-                  {this.createField("textarea", "Trigger Expression:", this.props.node.triggerExpression.expression)}
-                  {this.createField("input", "Folding function", this.props.node.foldingFunRef)}
-                  {this.createField("input", "Duration (ms):", this.props.node.durationInMillis)}
-                  {this.createField("input", "Slide (ms):", this.props.node.slideInMillis)}
+                  {this.createField("textarea", "Key Expression:", this.state.tempNodeData.keyExpression.expression, ((event) => {
+                    var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
+                    newtempNodeData.keyExpression.expression = event.target.value
+                    this.setState( { tempNodeData: newtempNodeData} ) })
+                  )}
+                  {this.createField("textarea", "Trigger Expression:", this.state.tempNodeData.triggerExpression.expression, ((event) => {
+                    var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
+                    newtempNodeData.triggerExpression.expression = event.target.value
+                    this.setState( { tempNodeData: newtempNodeData} ) })
+                  )}
+                  {this.createField("input", "Folding function", this.state.tempNodeData.foldingFunRef, ((event) => {
+                    var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
+                    newtempNodeData.foldingFunRef = event.target.value
+                    this.setState( { tempNodeData: newtempNodeData} ) })
+                  )}
+                  {this.createField("input", "Duration (ms):", this.state.tempNodeData.durationInMillis, ((event) => {
+                    var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
+                    newtempNodeData.durationInMillis = event.target.value
+                    this.setState( { tempNodeData: newtempNodeData} ) })
+                  )}
+                  {this.createField("input", "Slide (ms):", this.state.tempNodeData.slideInMillis, ((event) => {
+                    var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
+                    newtempNodeData.slideInMillis = event.target.value
+                    this.setState( { tempNodeData: newtempNodeData} ) })
+                  )}
                 </div>
               )
           default:
@@ -173,11 +263,19 @@ export default class NodeDetailsModal extends Component {
 
     contentForNode = () => {
         if (!_.isEmpty(this.props.node)) {
+          var nodeClass = classNames(
+            'node-table',
+            {
+            'node-editable': !this.state.readOnly
+          })
           return (
-            <div className="node-table">
+            <div className={nodeClass}>
               <div className="node-table-body">
-                {this.createField("input", "Type:", this.props.node.type)}
-                {this.createField("input",  "Id:", this.props.node.id)}
+                {this.createField("input",  "Id:", this.state.tempNodeData.id, ((event) => {
+                  var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
+                  newtempNodeData.id = event.target.value
+                  this.setState( { tempNodeData: newtempNodeData} ) })
+                )}
               </div>
               {this.customNode()}
             </div>
@@ -185,10 +283,23 @@ export default class NodeDetailsModal extends Component {
         }
     }
 
+    toggleReadOnly = () => {
+      this.setState({readOnly: !this.state.readOnly});
+    }
+
+    editNodeData = () => {
+      this.toggleReadOnly();
+    }
+
+    updateNodeData = () => {
+      // FIXME - dopisac funckje zapisu roboczego grafu
+      this.toggleReadOnly();
+    }
+
     nodeAttributes = () => {
       var nodeAttributes = require('json!../../assets/json/nodeAttributes.json');
       return nodeAttributes[this.props.node.type];
-    };
+    }
 
     render () {
         var isOpen = !(_.isEmpty(this.props.node))
@@ -209,7 +320,19 @@ export default class NodeDetailsModal extends Component {
 
         var buttonClasses = classNames(
           'modalButton'
-        );
+        )
+        var editButtonClasses = classNames(
+          buttonClasses,
+          'pull-left',
+          {
+          'hidden': !this.state.readOnly
+        })
+        var saveButtonClasses = classNames(
+          buttonClasses,
+          'pull-left',
+          {
+          'hidden': this.state.readOnly
+        })
 
         if (!_.isEmpty(this.props.node)) {
           var headerStyles = {
@@ -229,7 +352,8 @@ export default class NodeDetailsModal extends Component {
                     </div>
                     <div id="modalFooter">
                       <div>
-                        <button type="button" title="Not yet available" className={buttonClasses} onClick={null} disabled>Edit</button>
+                        <button type="button" title="Save node details" className={saveButtonClasses} onClick={this.updateNodeData}>Save</button>
+                        <button type="button" title="Edit node details" className={editButtonClasses} onClick={this.editNodeData}>Edit</button>
                         <button type="button" title="Close node details" className={buttonClasses} onClick={this.closeModal}>Close</button>
                       </div>
                     </div>
