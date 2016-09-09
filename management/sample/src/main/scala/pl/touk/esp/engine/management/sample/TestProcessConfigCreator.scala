@@ -1,12 +1,13 @@
 package pl.touk.esp.engine.management.sample
 
 import com.typesafe.config.Config
-import org.apache.flink.api.common.ExecutionConfig
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
+import org.apache.flink.streaming.api.functions.source.SourceFunction
+import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext
 import org.apache.flink.streaming.api.scala._
-import pl.touk.esp.engine.api.process.{ProcessConfigCreator, Sink, SinkFactory, SourceFactory}
+import pl.touk.esp.engine.api.process._
 import pl.touk.esp.engine.api.{BrieflyLoggingExceptionHandler, Service}
-import pl.touk.esp.engine.util.source.CollectionSource
 
 import scala.concurrent.Future
 
@@ -25,8 +26,31 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
 
   override def sourceFactories(config: Config) = {
     Map[String, SourceFactory[_]](
-      "kafka-transaction" -> SourceFactory.noParam(CollectionSource(new ExecutionConfig(), List("blee"), None))
+      "kafka-transaction" -> SourceFactory.noParam(prepareNotEndingSource)
     )
+  }
+
+  //potrzebujemy czegos takiego bo CollectionSource konczy sie sam i testy mi glupich rzeczy nie wykrywaly :)
+  def prepareNotEndingSource: Source[String] = {
+    new Source[String] {
+      override def typeInformation = implicitly[TypeInformation[String]]
+
+      override def timestampAssigner = None
+
+      override def toFlinkSource = new SourceFunction[String] {
+        var running = true
+
+        override def cancel() = {
+          running = false
+        }
+
+        override def run(ctx: SourceContext[String]) = {
+          while (running) {
+            Thread.sleep(2000)
+          }
+        }
+      }
+    }
   }
 
   override def services(config: Config) = {
