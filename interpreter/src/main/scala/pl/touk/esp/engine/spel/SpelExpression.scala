@@ -3,7 +3,7 @@ package pl.touk.esp.engine.spel
 import java.lang.reflect.Method
 import java.time.{LocalDate, LocalDateTime}
 
-import cats.data.Validated
+import cats.data.{State, Validated}
 import org.springframework.expression.spel.support.StandardEvaluationContext
 import org.springframework.expression.spel.{SpelCompilerMode, SpelParserConfiguration}
 import org.springframework.expression.{EvaluationContext, PropertyAccessor, TypedValue}
@@ -97,16 +97,16 @@ object SpelExpressionParser {
     override protected def reallyFindMethod(name: String, target: Class[_]) : Option[Method] =
       target.getMethods.find(
         m => m.getParameterCount == 0 &&
-        m.getReturnType == classOf[_ => _] &&
+        m.getReturnType == classOf[State[_,_]] &&
         m.getName == name)
 
     override protected def invokeMethod(method: Method, target: Any, context: EvaluationContext)  = {
       val f = method
         .invoke(target)
-        .asInstanceOf[ContextWithLazyValuesProvider => (ContextWithLazyValuesProvider, Any)]
+        .asInstanceOf[State[ContextWithLazyValuesProvider, Any]]
       val lazyProvider = context.lookupVariable(LazyValuesProviderVariableName).asInstanceOf[LazyValuesProvider]
       val ctx = context.lookupVariable(ModifiedContextVariableName).asInstanceOf[Context]
-      val (modifiedContext, value) = f(ContextWithLazyValuesProvider(ctx, lazyProvider))
+      val (modifiedContext, value) = f.run(ContextWithLazyValuesProvider(ctx, lazyProvider)).value
       context.setVariable(ModifiedContextVariableName, modifiedContext.context)
       value
     }

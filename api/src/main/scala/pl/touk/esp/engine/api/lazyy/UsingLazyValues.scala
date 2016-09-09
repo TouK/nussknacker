@@ -1,31 +1,14 @@
 package pl.touk.esp.engine.api.lazyy
 
+import cats.data.State
 import pl.touk.esp.engine.api.Context
+
+import scala.language.implicitConversions
 
 trait UsingLazyValues {
 
-  protected def lazyValue[T](serviceId: String, params: (String, Any)*): ContextWithLazyValuesProvider => (ContextWithLazyValuesProvider, T) =
-    _.lazyValue(serviceId, params)
-
-  protected implicit class LazyValuesFunction[T](f: ContextWithLazyValuesProvider => (ContextWithLazyValuesProvider, T)) {
-
-    def map[N](f2: T => N): (ContextWithLazyValuesProvider) => (ContextWithLazyValuesProvider, N) = {
-      f andThen {
-        case (ctxLvp, v) =>
-          val nv = f2(v)
-          (ctxLvp, nv)
-      }
-    }
-
-    def flatMap[N](f2: T => (ContextWithLazyValuesProvider => (ContextWithLazyValuesProvider, N))): ContextWithLazyValuesProvider => (ContextWithLazyValuesProvider, N) = {
-      f andThen {
-        case (ctxLvp, v) =>
-          val f3 = f2(v)
-          f3(ctxLvp)
-      }
-    }
-
-  }
+  protected def lazyValue[T](serviceId: String, params: (String, Any)*): State[ContextWithLazyValuesProvider, T] =
+    State(_.lazyValue(serviceId, params))
 
 }
 
