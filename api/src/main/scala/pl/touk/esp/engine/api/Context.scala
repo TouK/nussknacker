@@ -1,5 +1,7 @@
 package pl.touk.esp.engine.api
 
+import pl.touk.esp.engine.api.lazyy.LazyContext
+
 trait Context {
 
   def variables: Map[String, Any]

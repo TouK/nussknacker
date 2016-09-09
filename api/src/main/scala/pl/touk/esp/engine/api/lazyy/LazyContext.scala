@@ -1,6 +1,6 @@
-package pl.touk.esp.engine.api
+package pl.touk.esp.engine.api.lazyy
 
-import LazyContext._
+import pl.touk.esp.engine.api.lazyy.LazyContext._
 
 trait LazyContext {
 

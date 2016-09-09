@@ -3,6 +3,7 @@ package pl.touk.esp.engine
 import pl.touk.esp.engine.Interpreter._
 import pl.touk.esp.engine.api.InterpreterMode._
 import pl.touk.esp.engine.api._
+import pl.touk.esp.engine.api.lazyy.{LazyContext, LazyValuesProvider}
 import pl.touk.esp.engine.compiledgraph.expression._
 import pl.touk.esp.engine.compiledgraph.node.{Sink, Source, _}
 import pl.touk.esp.engine.compiledgraph.service._
@@ -159,11 +160,9 @@ class Interpreter(servicesDefs: Map[String, ObjectWithMethodDef],
 
   private def evaluate[R](expr: Expression, ctx: Context)
                          (implicit ec: ExecutionContext, metaData: MetaData): ValueWithModifiedContext[R] = {
-    def lazyValuesProvider(c: Context) = new LazyValuesProviderImpl(
+    val lazyValuesProvider = new LazyValuesProviderImpl(
       servicesDefs = servicesDefs,
-      lazyContext = c.lazyContext,
       implicitParams = implicitParams(ctx),
-      modifyContext = c.withLazyContext,
       timeout = lazyEvaluationTimeout
     )
     val valueWithModifiedContext = expr.evaluate[R](ctx, lazyValuesProvider)
@@ -199,20 +198,18 @@ object Interpreter {
   }
 
   private class LazyValuesProviderImpl(servicesDefs: Map[String, ObjectWithMethodDef],
-                                       lazyContext: LazyContext,
                                        implicitParams: Map[String, Any],
-                                       modifyContext: LazyContext => Context,
                                        timeout: FiniteDuration)
                                       (implicit ec: ExecutionContext) extends LazyValuesProvider {
 
-    override def apply[T](serviceId: String, params: (String, Any)*): ValueWithModifiedContext[T] = {
+    override def apply[T](context: LazyContext, serviceId: String, params: Seq[(String, Any)]): (LazyContext, T) = {
       val paramsMap = params.toMap
-      lazyContext.get[T](serviceId, paramsMap) match {
+      context.get[T](serviceId, paramsMap) match {
         case Some(value) =>
-          ValueWithModifiedContext(value, modifyContext(lazyContext))
+          (context, value)
         case None =>
           val value = evaluateValue[T](serviceId, paramsMap)
-          ValueWithModifiedContext(value, modifyContext(lazyContext.withEvaluatedValue(serviceId, paramsMap, value)))
+          (context.withEvaluatedValue(serviceId, paramsMap, value), value)
       }
     }
 

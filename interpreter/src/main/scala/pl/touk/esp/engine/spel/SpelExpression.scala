@@ -8,7 +8,8 @@ import org.springframework.expression.spel.support.StandardEvaluationContext
 import org.springframework.expression.spel.{SpelCompilerMode, SpelParserConfiguration}
 import org.springframework.expression.{EvaluationContext, PropertyAccessor, TypedValue}
 import pl.touk.esp.engine._
-import pl.touk.esp.engine.api.{Context, LazyValuesProvider, ValueWithModifiedContext}
+import pl.touk.esp.engine.api.lazyy.{ContextWithLazyValuesProvider, LazyValuesProvider}
+import pl.touk.esp.engine.api.{Context, ValueWithModifiedContext}
 import pl.touk.esp.engine.compiledgraph.expression.{ExpressionParseError, ExpressionParser}
 import pl.touk.esp.engine.functionUtils.CollectionUtils
 import pl.touk.esp.engine.spel.SpelExpressionParser.{MapPropertyAccessor, ScalaLazyPropertyAccessor, ScalaPropertyAccessor, _}
@@ -20,7 +21,7 @@ class SpelExpression(parsed: org.springframework.expression.Expression,
                      expressionFunctions: Map[String, Method],
                      propertyAccessors: Seq[PropertyAccessor]) extends compiledgraph.expression.Expression {
 
-  override def evaluate[T](ctx: Context, lazyValuesProvider: Context => LazyValuesProvider): ValueWithModifiedContext[T] = {
+  override def evaluate[T](ctx: Context, lazyValuesProvider: LazyValuesProvider): ValueWithModifiedContext[T] = {
     val simpleContext = new StandardEvaluationContext()
     propertyAccessors.foreach(simpleContext.addPropertyAccessor)
 
@@ -46,12 +47,12 @@ class SpelExpressionParser(expressionFunctions: Map[String, Method]) extends Exp
     new SpelParserConfiguration(SpelCompilerMode.IMMEDIATE, null)
   )
 
-  private val scalaPropertyAccessor = new ScalaPropertyAccessor
   private val scalaLazyPropertyAccessor = new ScalaLazyPropertyAccessor
+  private val scalaPropertyAccessor = new ScalaPropertyAccessor
 
   private val propertyAccessors = Seq(
+    scalaLazyPropertyAccessor, // must be before scalaPropertyAccessor
     scalaPropertyAccessor,
-    scalaLazyPropertyAccessor,
     MapPropertyAccessor
   )
 
@@ -95,19 +96,19 @@ object SpelExpressionParser {
 
     override protected def reallyFindMethod(name: String, target: Class[_]) : Option[Method] =
       target.getMethods.find(
-        m => m.getParameterCount == 1 &&
-        m.getParameterTypes()(0) == classOf[LazyValuesProvider] &&
-        m.getReturnType == classOf[ValueWithModifiedContext[_]] &&
+        m => m.getParameterCount == 0 &&
+        m.getReturnType == classOf[_ => _] &&
         m.getName == name)
 
     override protected def invokeMethod(method: Method, target: Any, context: EvaluationContext)  = {
-      val createLazyProvider = context.lookupVariable(LazyValuesProviderVariableName).asInstanceOf[Context => LazyValuesProvider]
+      val f = method
+        .invoke(target)
+        .asInstanceOf[ContextWithLazyValuesProvider => (ContextWithLazyValuesProvider, Any)]
+      val lazyProvider = context.lookupVariable(LazyValuesProviderVariableName).asInstanceOf[LazyValuesProvider]
       val ctx = context.lookupVariable(ModifiedContextVariableName).asInstanceOf[Context]
-      val valueWithContext = method
-        .invoke(target, createLazyProvider(ctx))
-        .asInstanceOf[ValueWithModifiedContext[_]]
-      context.setVariable(ModifiedContextVariableName, valueWithContext.context)
-      valueWithContext.value
+      val (modifiedContext, value) = f(ContextWithLazyValuesProvider(ctx, lazyProvider))
+      context.setVariable(ModifiedContextVariableName, modifiedContext.context)
+      value
     }
 
     override def getSpecificTargetClasses = null
