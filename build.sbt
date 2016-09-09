@@ -163,7 +163,6 @@ lazy val process = (project in file("process")).
       Seq(
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
         "org.apache.flink" % "flink-metrics-dropwizard" % flinkV,
-        "com.iheart" %% "ficus" % ficusV,
         "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )
     }
@@ -223,6 +222,7 @@ lazy val util = (project in file("util")).
         "net.databinder.dispatch" %% "dispatch-core" % dispatchV % "optional",
         "org.scala-lang.modules" %% "scala-parser-combinators" % scalaParsersV, // scalaxb deps
         "io.argonaut" %% "argonaut" % argonautV,
+        "com.iheart" %% "ficus" % ficusV,
         "org.apache.flink" %% "flink-streaming-java" % flinkV % "provided"
       )
     }

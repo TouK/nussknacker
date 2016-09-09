@@ -2,25 +2,22 @@ package pl.touk.esp.engine.kafka
 
 import java.util.Properties
 
-import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.streaming.util.serialization.SerializationSchema
 import org.apache.kafka.clients.producer.internals.ErrorLoggingCallback
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 import org.apache.kafka.common.serialization.ByteArraySerializer
-import pl.touk.esp.engine.api.{EspExceptionHandler, EspExceptionInfo}
+import pl.touk.esp.engine.api.exception.{EspExceptionConsumer, EspExceptionInfo, NonTransientException}
+
 import scala.collection.JavaConversions._
 
-class KafkaExceptionHandler(kafkaAddress: String,
-                            topicChoice: EspExceptionInfo=>String,
-                            serializationSchema: SerializationSchema[EspExceptionInfo],
-                            properties: Properties = new Properties()) extends EspExceptionHandler {
+class KafkaExceptionConsumer(kafkaAddress: String,
+                             topicChoice: EspExceptionInfo[NonTransientException] => String,
+                             serializationSchema: SerializationSchema[EspExceptionInfo[NonTransientException]],
+                             properties: Properties = new Properties()) extends EspExceptionConsumer {
+
   lazy val producer = new KafkaProducer[Array[Byte], Array[Byte]](propertiesForKafka())
 
-  override def open(runtimeContext: RuntimeContext): Unit = {
-
-  }
-
-  override def handle(exceptionInfo: EspExceptionInfo): Unit = {
+  def consume(exceptionInfo: EspExceptionInfo[NonTransientException]): Unit = {
     val toSend = serializationSchema.serialize(exceptionInfo)
     val topic = topicChoice(exceptionInfo)
     val logAsString = true
@@ -47,4 +44,5 @@ class KafkaExceptionHandler(kafkaAddress: String,
     }
     props
   }
+
 }

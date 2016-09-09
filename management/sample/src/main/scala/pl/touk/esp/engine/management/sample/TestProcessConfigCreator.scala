@@ -7,8 +7,8 @@ import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext
 import org.apache.flink.streaming.api.scala._
 import pl.touk.esp.engine.api.process._
-import pl.touk.esp.engine.api.{BrieflyLoggingExceptionHandler, Service}
-
+import pl.touk.esp.engine.api.Service
+import pl.touk.esp.engine.util.exception.VerboselyLoggingExceptionHandler
 import scala.concurrent.Future
 
 class TestProcessConfigCreator extends ProcessConfigCreator {
@@ -64,7 +64,7 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
 
   override def foldingFunctions(config: Config) = Map()
 
-  override def exceptionHandler(config: Config) = BrieflyLoggingExceptionHandler
+  override def exceptionHandler(config: Config) = VerboselyLoggingExceptionHandler
 
 }
 

@@ -8,9 +8,10 @@ import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor
 import org.apache.flink.streaming.api.scala._
 import pl.touk.esp.engine.api.process.{ProcessConfigCreator, Sink, SinkFactory, SourceFactory}
-import pl.touk.esp.engine.api.{BrieflyLoggingExceptionHandler, FoldingFunction, ParamName, Service}
+import pl.touk.esp.engine.api.{FoldingFunction, ParamName, Service}
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.util.LoggingListener
+import pl.touk.esp.engine.util.exception.VerboselyLoggingExceptionHandler
 import pl.touk.esp.engine.util.source.CollectionSource
 
 import scala.collection.mutable.ArrayBuffer
@@ -40,7 +41,7 @@ object ProcessTestHelpers {
       )
       override def listeners(config: Config) = Seq(LoggingListener)
       override def foldingFunctions(config: Config) = Map("simpleFoldingFun" -> SimpleRecordFoldingFunction)
-      override def exceptionHandler(config: Config) = BrieflyLoggingExceptionHandler
+      override def exceptionHandler(config: Config) = VerboselyLoggingExceptionHandler
     }
 
     def invoke(process: EspProcess, data: List[SimpleRecord],

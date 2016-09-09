@@ -4,16 +4,16 @@ import argonaut.PrettyParams
 import com.typesafe.config.Config
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor
-import org.apache.flink.streaming.api.scala._
 import org.scalatest.FlatSpec
 import pl.touk.esp.engine.api.process.{ProcessConfigCreator, SinkFactory, SourceFactory}
-import pl.touk.esp.engine.api.{BrieflyLoggingExceptionHandler, MetaData, ParamName, Service}
+import pl.touk.esp.engine.api.{MetaData, ParamName, Service}
 import pl.touk.esp.engine.build.GraphBuilder
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.graph.service.{Parameter, ServiceRef}
 import pl.touk.esp.engine.marshall.ProcessMarshaller
 import pl.touk.esp.engine.process.ProcessTestHelpers.{EmptySink, SimpleRecord}
 import pl.touk.esp.engine.spel
+import pl.touk.esp.engine.util.exception.VerboselyLoggingExceptionHandler
 import pl.touk.esp.engine.util.source.CollectionSource
 
 import scala.concurrent.Future
@@ -43,6 +43,8 @@ object LogService extends Service {
 }
 
 class SimpleProcessConfigCreator extends ProcessConfigCreator {
+  
+  import org.apache.flink.streaming.api.scala._
 
   override def services(config: Config) = Map("logService" -> LogService)
 
@@ -59,6 +61,6 @@ class SimpleProcessConfigCreator extends ProcessConfigCreator {
       override def extractAscendingTimestamp(element: SimpleRecord) = element.date.getTime
     }))))
 
-  override def exceptionHandler(config: Config) = BrieflyLoggingExceptionHandler
+  override def exceptionHandler(config: Config) = VerboselyLoggingExceptionHandler
 
 }

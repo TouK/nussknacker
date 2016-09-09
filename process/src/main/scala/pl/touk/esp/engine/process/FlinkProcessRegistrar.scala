@@ -28,6 +28,7 @@ import org.apache.flink.util.Collector
 import pl.touk.esp.engine.Interpreter
 import pl.touk.esp.engine.Interpreter.ContextImpl
 import pl.touk.esp.engine.api._
+import pl.touk.esp.engine.api.exception.EspExceptionHandler
 import pl.touk.esp.engine.api.process._
 import pl.touk.esp.engine.compile.{PartSubGraphCompilationError, PartSubGraphCompiler, ProcessCompilationError, ProcessCompiler}
 import pl.touk.esp.engine.compiledgraph.CompiledProcessParts
@@ -64,6 +65,8 @@ class FlinkProcessRegistrar(serviceLifecycleWithDependants: () => ServicesLifecy
   }
 
   private def register(env: StreamExecutionEnvironment, process: CompiledProcessParts): Unit = {
+    val exceptionHandler = espExceptionHandlerProvider()
+    env.setRestartStrategy(exceptionHandler.restartStrategy)
     process.metaData.parallelism.foreach(env.setParallelism)
     registerSourcePart(process.source)
 
