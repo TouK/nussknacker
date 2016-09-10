@@ -6,11 +6,12 @@ import monocle.function.Plated._
 import pl.touk.esp.engine.canonicalgraph.canonicalnode.{CanonicalNode, Case, Filter, Switch}
 import pl.touk.esp.engine.canonicalgraph.{CanonicalProcess, CanonicalTreeNode}
 
-import scala.language.{higherKinds, implicitConversions}
+import scala.language.{higherKinds, implicitConversions, reflectiveCalls}
 import scala.reflect.ClassTag
 import scalaz.std.list._
+import scalaz.std.anyVal._
 import scalaz.syntax.all._
-import scalaz.{Applicative, Monad}
+import scalaz.{Applicative, Monad, State}
 import ProcessOptics._
 
 class ProcessOptics(process: CanonicalProcess) {
@@ -50,12 +51,13 @@ class ProcessOptics(process: CanonicalProcess) {
   }
 
   def modify[T <: CanonicalNode: ClassTag](nodeId: String)(f: T => T): ModifyResult[CanonicalProcess] = {
-    transform[CanonicalTreeNode, ModifyResult] {
+    val (count, result) = transform[CanonicalTreeNode, ({type S[A] = State[Int, A]})#S] {
       case e:T if e.id == nodeId =>
-        ModifyResult(f(e), modifiedCount = 1)
+        State[Int, CanonicalTreeNode](count => (count + 1, f(e)))
       case other =>
-        ModifyResult(other, modifiedCount = 0)
-    }(process).asInstanceOf[ModifyResult[CanonicalProcess]]
+        State.state[Int, CanonicalTreeNode](other)
+    }(process).runZero
+    ModifyResult(result.asInstanceOf[CanonicalProcess], count)
   }
 
   private def transform[A: Plated, M[_]: Monad](f: A => M[A])(a: A): M[A] = {
@@ -69,24 +71,6 @@ class ProcessOptics(process: CanonicalProcess) {
 
 object ProcessOptics {
 
-  case class ModifyResult[V](value: V, modifiedCount: Int) {
-
-    def flatMap[NV](f: V => ModifyResult[NV]): ModifyResult[NV] = {
-      val fv = f(value)
-      ModifyResult(fv.value, modifiedCount + fv.modifiedCount)
-    }
-
-  }
-
-  implicit val modifyResultMonad: Monad[ModifyResult] = new Monad[ModifyResult] {
-
-    override def bind[A, B](fa: ModifyResult[A])
-                           (f: A => ModifyResult[B]): ModifyResult[B] =
-      fa.flatMap(f)
-
-    override def point[A](a: => A): ModifyResult[A] =
-      ModifyResult(a, modifiedCount = 0)
-
-  }
+  case class ModifyResult[V](value: V, modifiedCount: Int)
 
 }
