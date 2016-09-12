@@ -1,8 +1,8 @@
 package pl.touk.esp.engine.graph
 
-object source {
+import pl.touk.esp.engine.graph.param.Parameter
 
-  case class Parameter(name: String, value: String)
+object source {
 
   case class SourceRef(typ: String, parameters: List[Parameter])
 

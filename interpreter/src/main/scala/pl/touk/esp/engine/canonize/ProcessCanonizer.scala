@@ -20,6 +20,7 @@ object ProcessCanonizer {
   def canonize(process: EspProcess): CanonicalProcess = {
     CanonicalProcess(
       process.metaData,
+      process.exceptionHandlerRef,
       nodesOnTheSameLevel(process.root)
     )
   }
@@ -57,7 +58,8 @@ object ProcessCanonizer {
     }
 
   def uncanonize(canonicalProcess: CanonicalProcess): ValidatedNel[ProcessUncanonizationError, EspProcess]=
-    (uncanonize(canonicalProcess.nodes) andThen validateIsSource).map(EspProcess(canonicalProcess.metaData, _))
+    (uncanonize(canonicalProcess.nodes) andThen validateIsSource).map(
+      EspProcess(canonicalProcess.metaData, canonicalProcess.exceptionHandlerRef, _))
 
   private def validateIsSource(n: node.Node): ValidatedNel[ProcessUncanonizationError, node.Source] =
     n match {

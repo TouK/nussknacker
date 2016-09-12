@@ -1,8 +1,8 @@
 package pl.touk.esp.engine.graph
 
-object sink {
+import pl.touk.esp.engine.graph.param.Parameter
 
-  case class Parameter(name: String, value: String)
+object sink {
 
   case class SinkRef(typ: String, parameters: List[Parameter])
 

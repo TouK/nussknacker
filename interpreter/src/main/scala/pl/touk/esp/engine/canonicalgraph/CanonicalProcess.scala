@@ -2,6 +2,7 @@ package pl.touk.esp.engine.canonicalgraph
 
 import pl.touk.esp.engine.api.MetaData
 import pl.touk.esp.engine.canonicalgraph.canonicalnode.CanonicalNode
+import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.esp.engine.graph.expression.Expression
 import pl.touk.esp.engine.graph.service.ServiceRef
 import pl.touk.esp.engine.graph.sink.SinkRef
@@ -10,7 +11,7 @@ import pl.touk.esp.engine.graph.variable.Field
 
 sealed trait CanonicalTreeNode
 
-case class CanonicalProcess(metaData: MetaData, nodes: List[CanonicalNode]) extends CanonicalTreeNode
+case class CanonicalProcess(metaData: MetaData, exceptionHandlerRef: ExceptionHandlerRef, nodes: List[CanonicalNode]) extends CanonicalTreeNode
 
 // This package can't be inside marshall package because of format derivation for types using shapelesss
 // Don't change class names - they are putted in the field 'type'

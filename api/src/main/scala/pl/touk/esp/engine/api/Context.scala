@@ -2,11 +2,8 @@ package pl.touk.esp.engine.api
 
 import pl.touk.esp.engine.api.lazyy.LazyContext
 
-trait Context {
-
-  def variables: Map[String, Any]
-
-  def lazyContext: LazyContext
+case class Context(variables: Map[String, Any] = Map.empty,
+                   lazyContext: LazyContext = LazyContext()) {
 
   def apply[T](name: String): T =
     getOrElse(name, throw new RuntimeException(s"Unknown variable: $name"))
@@ -26,8 +23,10 @@ trait Context {
   def withVariable(name: String, value: Any): Context =
     withVariables(Map(name -> value))
 
-  def withVariables(otherVariables: Map[String, Any]): Context
+  def withVariables(otherVariables: Map[String, Any]): Context =
+    copy(variables = variables ++ otherVariables)
 
-  def withLazyContext(lazyContext: LazyContext): Context
+  def withLazyContext(lazyContext: LazyContext) =
+    copy(lazyContext = lazyContext)
 
 }

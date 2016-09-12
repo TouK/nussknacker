@@ -15,6 +15,7 @@ import org.apache.flink.runtime.instance.ActorGateway
 import org.apache.flink.runtime.messages.JobManagerMessages
 import org.apache.flink.runtime.messages.JobManagerMessages.{CancelJob, CancellationSuccess, RunningJobsStatus}
 import org.apache.flink.runtime.util.LeaderRetrievalUtils
+import pl.touk.esp.engine.marshall.ProcessMarshaller
 
 import scala.collection.JavaConversions._
 import scala.concurrent.duration._
@@ -59,8 +60,8 @@ class DefaultFlinkGateway(config: Configuration, timeout: FiniteDuration) extend
       .mapTo[Response]
   }
 
-  override def run(program: PackagedProgram, paralellism: Int): Unit = {
-    client.run(program, paralellism)
+  override def run(program: PackagedProgram, maybeParalellism: Option[Int]): Unit = {
+    client.run(program, maybeParalellism.getOrElse(-1))
   }
 
   def shutDown(): Unit = {
@@ -99,7 +100,7 @@ class RestartableFlinkGateway(prepareGateway: () => FlinkGateway) extends FlinkG
   }
 
   override def invokeJobManager[Response: ClassTag](req: AnyRef): Future[Response] = {
-    tryToInvokeJobManager(req)
+    tryToInvokeJobManager[Response](req)
       .recoverWith {
         case e: AskTimeoutException =>
           logger.error("Failed to connect to Flink, restarting", e)
@@ -108,21 +109,21 @@ class RestartableFlinkGateway(prepareGateway: () => FlinkGateway) extends FlinkG
       }
   }
 
-  override def run(program: PackagedProgram, paralellism: Int): Unit = {
-    tryToRunProgram(program, paralellism).recover {
+  override def run(program: PackagedProgram, maybeParalellism: Option[Int]): Unit = {
+    tryToRunProgram(program, maybeParalellism).recover {
       //TODO: jaki powinien byc ten wyjatek??
       case e: TimeoutException =>
         logger.error("Failed to connect to Flink, restarting", e)
         restart()
-        tryToRunProgram(program, paralellism)
+        tryToRunProgram(program, maybeParalellism)
     }.get
   }
 
   private def tryToInvokeJobManager[Response: ClassTag](req: AnyRef): Future[Response] =
     retrieveGateway().invokeJobManager[Response](req)
 
-  private def tryToRunProgram(program: PackagedProgram, paralellism: Int): Try[Unit] =
-    Try(retrieveGateway().run(program, paralellism))
+  private def tryToRunProgram(program: PackagedProgram, maybeParalellism: Option[Int]): Try[Unit] =
+    Try(retrieveGateway().run(program, maybeParalellism))
 
   private def restart(): Unit = synchronized {
     shutDown()
@@ -139,7 +140,7 @@ class RestartableFlinkGateway(prepareGateway: () => FlinkGateway) extends FlinkG
 trait FlinkGateway {
   def invokeJobManager[Response: ClassTag](req: AnyRef): Future[Response]
 
-  def run(program: PackagedProgram, paralellism: Int): Unit
+  def run(program: PackagedProgram, maybeParalellism: Option[Int]): Unit
 
   def shutDown(): Unit
 }
@@ -158,13 +159,19 @@ class FlinkProcessManager(config: Config,
     val jarFile = new File(flinkConf.getString("jarPath"))
     val configPart = extractProcessConfig
 
+    val maybeParallism = extractParallelism(processAsJson)
     val program = new PackagedProgram(jarFile, processClass, List(processAsJson, configPart): _*)
 
     findJobStatus(processId).flatMap {
       case Some(job) => cancelJobById(JobID.fromHexString(job.id))
       case None => Future.successful(())
       //TODO: czy mozemy to zrefaktorowac zeby nie uzywac w sumie clienta?
-    }.map(_ => gateway.run(program, flinkConf.getInt("parallelism")))
+    }.map(_ => gateway.run(program, maybeParallism))
+  }
+
+  private def extractParallelism(processAsJson: String): Option[Int] = {
+    val canonicalProcess = ProcessMarshaller.fromJson(processAsJson).valueOr(err => throw new IllegalArgumentException(err.msg))
+    canonicalProcess.metaData.parallelism
   }
 
   private def extractProcessConfig: String = {

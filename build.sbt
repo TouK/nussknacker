@@ -124,18 +124,13 @@ lazy val management = (project in file("management")).
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "runtime", // na potrzeby optymalizacji procesów
         "org.apache.flink" %% "flink-streaming-java" % flinkV % "provided",
 
-        //to musimy podac explicite, zeby wymusic odpowiednia wersje dla flinka
-        "com.typesafe.akka" %% "akka-remote" % akkaV,
-        "com.typesafe.akka" %% "akka-actor" % akkaV,
-        "com.typesafe.akka" %% "akka-slf4j" % akkaV,
-
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
 
         // zależności dla konfiguracji "it" muszą być też dla "test", żeby nie trafiły do publikowanego poma
         "org.scalatest" %% "scalatest" % scalaTestV % "it,test"
       )
     }
-  ).dependsOn(interpreter % "it,test")
+  ).dependsOn(interpreter)
 
 lazy val management_sample = (project in file("management/sample")).
   settings(commonSettings).

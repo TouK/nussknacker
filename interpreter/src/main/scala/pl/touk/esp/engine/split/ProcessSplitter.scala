@@ -11,7 +11,7 @@ import pl.touk.esp.engine.splittedgraph.splittednode.{NextNode, PartRef}
 object ProcessSplitter {
 
   def split(process: EspProcess): SplittedProcess = {
-    SplittedProcess(process.metaData, split(process.root))
+    SplittedProcess(process.metaData, process.exceptionHandlerRef, split(process.root))
   }
 
   private def split(node: Source): SourcePart = {

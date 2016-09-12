@@ -7,8 +7,9 @@ import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.esp.engine.api.MetaData
 import pl.touk.esp.engine.build.GraphBuilder
 import pl.touk.esp.engine.graph.EspProcess
+import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.esp.engine.graph.service.{Parameter, ServiceRef}
-import pl.touk.esp.engine.process.ProcessTestHelpers.{MockService, processInvoker, SimpleRecord}
+import pl.touk.esp.engine.process.ProcessTestHelpers.{MockService, SimpleRecord, processInvoker}
 import pl.touk.esp.engine.spel
 
 import scala.concurrent.duration._
@@ -19,10 +20,11 @@ class StateProcessSpec extends FlatSpec with Matchers {
     import spel.Implicits._
 
     val process = EspProcess(MetaData("proc1"),
+      ExceptionHandlerRef(List.empty),
       GraphBuilder.source("id", "input")
         .aggregate("agg", "input", "#input.id", 5 seconds, 5 second,
           Some("#input.value1 > 24"), Some("simpleFoldingFun"))
-        .processor("proc2", ServiceRef("logService", List(Parameter("all", "#input.value2"))))
+        .processor("proc2", "logService", "all" -> "#input.value2")
         .sink("out", "monitor"))
     val data = List(
       SimpleRecord("1", 12, "a", new Date(0)),

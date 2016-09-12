@@ -6,6 +6,7 @@ import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.util.serialization.KeyedSerializationSchema
+import pl.touk.esp.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.esp.engine.api.process.ProcessConfigCreator
 import pl.touk.esp.engine.kafka.{KafkaConfig, KafkaSinkFactory, KafkaSourceFactory}
 import pl.touk.esp.engine.perftest.sample.model.KeyValue
@@ -58,6 +59,7 @@ class AggProcessConfigCreator extends ProcessConfigCreator {
   override def foldingFunctions(config: Config) =
     Map("sum" -> KeyValue.sum)
 
-  override def exceptionHandler(config: Config) = VerboselyLoggingExceptionHandler
+  override def exceptionHandlerFactory(config: Config) =
+    ExceptionHandlerFactory.noParams(VerboselyLoggingExceptionHandler)
 
 }

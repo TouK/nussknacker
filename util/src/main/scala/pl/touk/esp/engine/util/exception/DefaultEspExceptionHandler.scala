@@ -6,6 +6,7 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
+import pl.touk.esp.engine.api.MetaData
 import pl.touk.esp.engine.api.exception.{EspExceptionConsumer, EspExceptionHandler, EspExceptionInfo, NonTransientException}
 import pl.touk.esp.engine.util.exception.DefaultEspExceptionHandler.{DefaultNonTransientExceptionExtractor, DefaultTransientExceptionExtractor}
 
@@ -26,7 +27,7 @@ object DefaultEspExceptionHandler {
 
 }
 
-object BrieflyLoggingExceptionHandler
+case class BrieflyLoggingExceptionHandler(processMetaData: MetaData)
   extends EspExceptionHandler
     with ConsumingNonTransientExceptions
     with NotRestartingProcesses
@@ -34,13 +35,13 @@ object BrieflyLoggingExceptionHandler
 
   override protected def consumer = new EspExceptionConsumer {
     override def consume(e: EspExceptionInfo[NonTransientException]) = {
-      logger.warn(s"${e.processMetaData.id}: Exception: ${e.throwable.getMessage} (${e.throwable.getClass.getName})")
+      logger.warn(s"${processMetaData.id}: Exception: ${e.throwable.getMessage} (${e.throwable.getClass.getName})")
     }
   }
 
 }
 
-object VerboselyLoggingExceptionHandler
+case class VerboselyLoggingExceptionHandler(processMetaData: MetaData)
   extends EspExceptionHandler
     with ConsumingNonTransientExceptions
     with NotRestartingProcesses
@@ -48,7 +49,7 @@ object VerboselyLoggingExceptionHandler
 
   override protected def consumer = new EspExceptionConsumer {
     override def consume(e: EspExceptionInfo[NonTransientException]) = {
-      logger.error(s"${e.processMetaData.id}: Exception during processing job, context: ${e.context}", e.throwable)
+      logger.error(s"${processMetaData.id}: Exception during processing job, context: ${e.context}", e.throwable)
     }
   }
   
@@ -75,10 +76,10 @@ trait ConsumingNonTransientExceptions { self: EspExceptionHandler =>
       case transientExceptionExtractor(_) =>
         throw exceptionInfo.throwable
       case nonTransientExceptionExtractor(nonTransient) =>
-        consumer.consume(EspExceptionInfo(nonTransient, exceptionInfo.context, exceptionInfo.processMetaData))
+        consumer.consume(EspExceptionInfo(nonTransient, exceptionInfo.context))
       case other =>
         val nonTransient = NonTransientException(input = other.getMessage, message = "Unknown exception", cause = other)
-        consumer.consume(EspExceptionInfo(nonTransient, exceptionInfo.context, exceptionInfo.processMetaData))
+        consumer.consume(EspExceptionInfo(nonTransient, exceptionInfo.context))
     }
   }
 

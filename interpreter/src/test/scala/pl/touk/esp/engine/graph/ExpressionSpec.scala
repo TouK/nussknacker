@@ -6,7 +6,7 @@ import java.time.LocalDate
 
 import cats.data.Validated.{Invalid, Valid}
 import org.scalatest.{FlatSpec, Matchers}
-import pl.touk.esp.engine.Interpreter.ContextImpl
+import pl.touk.esp.engine.api.Context
 import pl.touk.esp.engine.api.lazyy.{LazyContext, LazyValuesProvider, UsingLazyValues}
 import pl.touk.esp.engine.spel.SpelExpressionParser
 
@@ -17,7 +17,7 @@ class ExpressionSpec extends FlatSpec with Matchers {
   private val bigValue = BigDecimal.valueOf(4187338076L)
   
   val testValue = Test( "1", 2, List(Test("3", 4), Test("5", 6)).asJava, bigValue)
-  val ctx = ContextImpl(
+  val ctx = Context(
     variables = Map("obj" -> testValue)
   )
   def dumbLazyProvider = new LazyValuesProvider {
