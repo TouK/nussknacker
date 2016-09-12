@@ -9,6 +9,7 @@ import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrderness
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.windowing.time.Time
 import pl.touk.esp.engine.api._
+import pl.touk.esp.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.esp.engine.api.process.ProcessConfigCreator
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.kafka.{KafkaConfig, KafkaSourceFactory}
@@ -51,7 +52,7 @@ object KeyValueTestHelper {
       override def sinkFactories(config: Config) = Map.empty
       override def listeners(config: Config) = Seq(LoggingListener)
       override def foldingFunctions(config: Config) = Map("sum" -> Sum)
-      override def exceptionHandler(config: Config) = VerboselyLoggingExceptionHandler
+      override def exceptionHandlerFactory(config: Config) = ExceptionHandlerFactory.noParams(VerboselyLoggingExceptionHandler)
     }
 
     def invokeWithKafka(process: EspProcess, config: KafkaConfig,

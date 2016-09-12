@@ -8,11 +8,12 @@ import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Ignore, Matchers}
 import pl.touk.esp.engine.api.MetaData
 import pl.touk.esp.engine.build.GraphBuilder
+import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.esp.engine.graph.service.{Parameter, ServiceRef}
 import pl.touk.esp.engine.graph.{EspProcess, source}
 import pl.touk.esp.engine.kafka.{KafkaConfig, KafkaSpec}
 import pl.touk.esp.engine.process.KeyValueTestHelper.MockService
-import pl.touk.esp.engine.spel
+import pl.touk.esp.engine.{graph, spel}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -47,12 +48,13 @@ class FlinkProcessRegistrarKafkaSpec
 
     val process = EspProcess(
       MetaData("proc1"),
-      GraphBuilder.source("source", "kafka-keyvalue", source.Parameter("topic", inTopic))
+      ExceptionHandlerRef(List.empty),
+      GraphBuilder.source("source", "kafka-keyvalue", "topic" -> inTopic)
         .aggregate(
           id = "aggregate", aggregatedVar = "input", keyExpression = "#input.key",
           duration = windowWidth * slidesInWindow, step = windowWidth, triggerExpression = Some(s"#input == $threshold"), foldingFunRef = Some("sum")
         )
-        .processorEnd("service", ServiceRef("mock", List(Parameter("input", "#input"))))
+        .processorEnd("service", "mock", "input" -> "#input")
     )
 
     Future {

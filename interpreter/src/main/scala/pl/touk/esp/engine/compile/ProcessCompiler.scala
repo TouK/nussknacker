@@ -9,6 +9,7 @@ import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.{Semigroup, SemigroupK}
 import pl.touk.esp.engine._
 import ProcessCompilationError._
+import pl.touk.esp.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
 import pl.touk.esp.engine.api.process._
 import pl.touk.esp.engine.api.{FoldingFunction, MetaData}
 import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
@@ -17,19 +18,20 @@ import pl.touk.esp.engine.compile.dumb._
 import pl.touk.esp.engine.compiledgraph.CompiledProcessParts
 import pl.touk.esp.engine.definition.DefinitionExtractor._
 import pl.touk.esp.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
-import pl.touk.esp.engine.definition._
-import pl.touk.esp.engine.graph.EspProcess
+import pl.touk.esp.engine.definition.{ProcessObjectDefinitionExtractor, _}
+import pl.touk.esp.engine.graph.{EspProcess, param}
+import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.esp.engine.graph.sink.SinkRef
 import pl.touk.esp.engine.graph.source.SourceRef
 import pl.touk.esp.engine.split._
 import pl.touk.esp.engine.splittedgraph._
 import pl.touk.esp.engine.splittedgraph.part._
 
-
 class ProcessCompiler(protected val sub: PartSubGraphCompilerBase,
                       protected val sourceFactories: Map[String, ObjectWithMethodDef],
                       protected val sinkFactories: Map[String, ObjectWithMethodDef],
-                      protected val foldingFunctions: Map[String, FoldingFunction[Any]]) extends ProcessCompilerBase {
+                      protected val foldingFunctions: Map[String, FoldingFunction[Any]],
+                      protected val exceptionHandlerFactory: ObjectWithMethodDef) extends ProcessCompilerBase {
 
   override type ParameterProviderT = ObjectWithMethodDef
 
@@ -37,25 +39,21 @@ class ProcessCompiler(protected val sub: PartSubGraphCompilerBase,
     super.compile(process)
   }
 
-  override protected def createSourceCreator(obj: ObjectWithMethodDef) =
-    SourceCreator[Any](obj)
+  override protected def createFactory[T](obj: ObjectWithMethodDef) =
+    ProcessObjectFactory[T](obj)
 
-  override protected def createSinkCreator(obj: ObjectWithMethodDef) =
-    SinkCreator(obj)
 }
 
 class ProcessValidator(protected val sub: PartSubGraphCompilerBase,
                        protected val sourceFactories: Map[String, ObjectDefinition],
                        protected val sinkFactories: Map[String, ObjectDefinition],
-                       protected val foldingFunctions: Map[String, FoldingFunction[Any]]) extends ProcessCompilerBase {
+                       protected val foldingFunctions: Map[String, FoldingFunction[Any]],
+                       protected val exceptionHandlerFactory: ObjectDefinition) extends ProcessCompilerBase {
 
   override type ParameterProviderT = ObjectDefinition
 
-  override protected def createSourceCreator(obj: ObjectDefinition) =
-    DumbSourceCreator
-
-  override protected def createSinkCreator(obj: ObjectDefinition) =
-    DumbSinkCreator
+  override protected def createFactory[T](obj: ObjectDefinition) =
+    new DumbProcessObjectFactory[T]
 
 }
 
@@ -66,6 +64,7 @@ protected trait ProcessCompilerBase {
   protected def sourceFactories: Map[String, ParameterProviderT]
   protected def sinkFactories: Map[String, ParameterProviderT]
   protected def foldingFunctions: Map[String, FoldingFunction[Any]]
+  protected def exceptionHandlerFactory: ParameterProviderT
 
   protected def sub: PartSubGraphCompilerBase
 
@@ -88,8 +87,11 @@ protected trait ProcessCompilerBase {
 
   private def compile(splittedProcess: SplittedProcess): ValidatedNel[ProcessCompilationError, CompiledProcessParts] = {
     implicit val metaData = splittedProcess.metaData
-    (findDuplicates(splittedProcess.source).toValidatedNel |@| compile(splittedProcess.source)).map { (_, source) =>
-      CompiledProcessParts(splittedProcess.metaData, source)
+    (findDuplicates(splittedProcess.source).toValidatedNel |@|
+      compile(splittedProcess.exceptionHandlerRef) |@|
+      compile(splittedProcess.source)).map { (_, exceptionHandler, source) =>
+
+      CompiledProcessParts(splittedProcess.metaData, exceptionHandler, source)
     }
   }
 
@@ -129,27 +131,33 @@ protected trait ProcessCompilerBase {
     }
   }
 
+  private def compile(ref: ExceptionHandlerRef)
+                      (implicit metaData: MetaData): ValidatedNel[ProcessCompilationError, EspExceptionHandler] = {
+    implicit val nodeId = NodeId(ProcessCompilationError.ProcessNodeId)
+    compileProcessObject[EspExceptionHandler](exceptionHandlerFactory, ref.parameters)
+  }
+
   private def compile(ref: SourceRef)
                      (implicit nodeId: NodeId,
                       metaData: MetaData): ValidatedNel[ProcessCompilationError, api.process.Source[Any]] = {
     val validSourceFactory = sourceFactories.get(ref.typ).map(valid).getOrElse(invalid(MissingSourceFactory(ref.typ))).toValidatedNel
-    validSourceFactory.andThen { sourceFactory =>
-      validateParameters(sourceFactory, ref.parameters.map(_.name)).map { _ =>
-        val creator = createSourceCreator(sourceFactory)
-        creator.create(metaData, ref.parameters)
-      }
-    }
+    validSourceFactory.andThen(sourceFactory => compileProcessObject[Source[Any]](sourceFactory, ref.parameters))
   }
 
   private def compile(ref: SinkRef)
                      (implicit nodeId: NodeId,
                       metaData: MetaData): ValidatedNel[ProcessCompilationError, api.process.Sink] = {
     val validSinkFactory = sinkFactories.get(ref.typ).map(valid).getOrElse(invalid(MissingSinkFactory(ref.typ))).toValidatedNel
-    validSinkFactory.andThen { sinkFactory =>
-      validateParameters(sinkFactory, ref.parameters.map(_.name)).map { _ =>
-        val creator = createSinkCreator(sinkFactory)
-        creator.create(metaData, ref.parameters)
-      }
+    validSinkFactory.andThen(sinkFactory => compileProcessObject[Sink](sinkFactory, ref.parameters))
+  }
+
+  private def compileProcessObject[T](parameterProviderT: ParameterProviderT,
+                                      parameters: List[param.Parameter])
+                                     (implicit nodeId: NodeId,
+                                      metaData: MetaData): ValidatedNel[ProcessCompilationError, T] = {
+    validateParameters(parameterProviderT, parameters).map { _ =>
+      val factory = createFactory[T](parameterProviderT)
+      factory.create(metaData, parameters)
     }
   }
 
@@ -158,19 +166,17 @@ protected trait ProcessCompilerBase {
     foldingFunctions.get(ref).map(valid).getOrElse(invalid(MissingFoldingFunction(ref))).toValidatedNel
   }
 
-  protected def createSourceCreator(obj: ParameterProviderT): SourceCreator[Any]
-
-  protected def createSinkCreator(obj: ParameterProviderT): SinkCreator
+  protected def createFactory[T](obj: ParameterProviderT): ProcessObjectFactory[T]
 
   private def compile(parts: List[SubsequentPart])
                      (implicit metaData: MetaData): ValidatedNel[ProcessCompilationError, List[compiledgraph.part.SubsequentPart]] = {
     parts.map(compile).sequenceU
   }
 
-  private def validateParameters(parameterProvider: ParameterProviderT, usedParamNames: List[String])
+  private def validateParameters(parameterProvider: ParameterProviderT, usedParams: List[param.Parameter])
                                 (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] = {
     val definedParamNames = parameterProvider.parameters.map(_.name).toSet
-    val usedParamNamesSet = usedParamNames.toSet
+    val usedParamNamesSet = usedParams.map(_.name).toSet
     val missingParams = definedParamNames.diff(usedParamNamesSet)
     val redundantParams = usedParamNamesSet.diff(definedParamNames)
     val notMissing = if (missingParams.nonEmpty) invalid(MissingParameters(missingParams)) else valid(Unit)
@@ -191,15 +197,19 @@ object ProcessCompiler {
   def apply(sub: PartSubGraphCompiler,
             sourceFactories: Map[String, SourceFactory[_]],
             sinkFactories: Map[String, SinkFactory],
-            foldingFunctions: Map[String, FoldingFunction[_]]): ProcessCompiler = {
+            foldingFunctions: Map[String, FoldingFunction[_]],
+            exceptionHandlerFactory: ExceptionHandlerFactory): ProcessCompiler = {
     val sourceFactoriesDefs = sourceFactories.mapValues { factory =>
-      ObjectWithMethodDef(factory, SourceFactoryDefinitionExtractor.extractMethodDefinition(factory))
+      ObjectWithMethodDef(factory, ProcessObjectDefinitionExtractor.source.extractMethodDefinition(factory))
     }
     val sinkFactoriesDefs = sinkFactories.mapValues { factory =>
-      ObjectWithMethodDef(factory, SinkFactoryDefinitionExtractor.extractMethodDefinition(factory))
+      ObjectWithMethodDef(factory, ProcessObjectDefinitionExtractor.sink.extractMethodDefinition(factory))
     }
     val ffun = foldingFunctions.asInstanceOf[Map[String, FoldingFunction[Any]]]
-    new ProcessCompiler(sub, sourceFactoriesDefs, sinkFactoriesDefs, ffun)
+    val exceptionHandlerFactoryDefs = ObjectWithMethodDef(
+      exceptionHandlerFactory,
+      ProcessObjectDefinitionExtractor.exceptionHandler.extractMethodDefinition(exceptionHandlerFactory))
+    new ProcessCompiler(sub, sourceFactoriesDefs, sinkFactoriesDefs, ffun, exceptionHandlerFactoryDefs)
   }
 
 }
@@ -209,7 +219,7 @@ object ProcessValidator {
   def default(definition: ProcessDefinition): ProcessValidator = {
     val sub = PartSubGraphValidator.default(definition.services)
     val foldingFunctions = definition.foldingFunctions.map(name => name -> DumbFoldingFunction).toMap
-    new ProcessValidator(sub, definition.sourceFactories, definition.sinkFactories, foldingFunctions)
+    new ProcessValidator(sub, definition.sourceFactories, definition.sinkFactories, foldingFunctions, definition.exceptionHandlerFactory)
   }
 
 }

@@ -4,8 +4,8 @@ import com.typesafe.scalalogging.LazyLogging
 import org.scalatest._
 import org.scalatest.concurrent.Eventually
 import pl.touk.esp.engine.api.MetaData
-import pl.touk.esp.engine.build.GraphBuilder
-import pl.touk.esp.engine.graph.{EspProcess, sink, source}
+import pl.touk.esp.engine.build.{EspProcessBuilder, GraphBuilder}
+import pl.touk.esp.engine.graph.{EspProcess, param}
 import pl.touk.esp.engine.kafka.{KafkaClient, KafkaConfig}
 import pl.touk.esp.engine.perftest.AggregatePerfTest._
 
@@ -126,23 +126,16 @@ object AggregatePerfTest {
                            slideWidth: FiniteDuration,
                            slidesInWindow: Int,
                            threshold: Int,
-                           parallelism: Int) = {
-    val graph =
-      GraphBuilder.source("source", "kafka-keyvalue",
-        source.Parameter("topic", inTopic)
-      )
+                           parallelism: Int) =
+    EspProcessBuilder
+      .id(id)
+      .parallelism(parallelism)
+      .exceptionHandler()
+      .source("source", "kafka-keyvalue", "topic" -> inTopic)
       .aggregate(
         id = "aggregate", aggregatedVar = "input", keyExpression = "#input.key",
         duration = slideWidth * slidesInWindow, step = slideWidth, foldingFunRef = Some("sum"), triggerExpression = Some(s"#input == $threshold")
       )
-      .sink("sink", "#input", "kafka-int",
-        sink.Parameter("topic", outTopic)
-      )
-
-    EspProcess(
-      MetaData(id, parallelism = Some(parallelism)),
-      graph
-    )
-  }
+      .sink("sink", "#input", "kafka-int", "topic" -> outTopic)
 
 }

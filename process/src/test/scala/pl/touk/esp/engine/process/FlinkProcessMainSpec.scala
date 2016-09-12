@@ -5,11 +5,10 @@ import com.typesafe.config.Config
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor
 import org.scalatest.FlatSpec
+import pl.touk.esp.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.esp.engine.api.process.{ProcessConfigCreator, SinkFactory, SourceFactory}
-import pl.touk.esp.engine.api.{MetaData, ParamName, Service}
-import pl.touk.esp.engine.build.GraphBuilder
-import pl.touk.esp.engine.graph.EspProcess
-import pl.touk.esp.engine.graph.service.{Parameter, ServiceRef}
+import pl.touk.esp.engine.api.{ParamName, Service}
+import pl.touk.esp.engine.build.EspProcessBuilder
 import pl.touk.esp.engine.marshall.ProcessMarshaller
 import pl.touk.esp.engine.process.ProcessTestHelpers.{EmptySink, SimpleRecord}
 import pl.touk.esp.engine.spel
@@ -24,12 +23,15 @@ class FlinkProcessMainSpec extends FlatSpec {
   import spel.Implicits._
 
   it should "be able to compile and serialize services" in {
-    val process = EspProcess(MetaData("proc1"),
-      GraphBuilder.source("id", "input")
+    val process =
+      EspProcessBuilder
+        .id("proc1")
+        .exceptionHandler()
+        .source("id", "input")
         .aggregate("agg", "input", "#input.id", 5 seconds, 1 second)
         .filter("filter1", "#sum(#input.![value1]) > 24")
-        .processor("proc2", ServiceRef("logService", List(Parameter("all", "#distinct(#input.![value2])"))))
-        .sink("out", "monitor"))
+        .processor("proc2", "logService", "all" -> "#distinct(#input.![value2])")
+        .sink("out", "monitor")
 
     FlinkProcessMain.main(Array(ProcessMarshaller.toJson(process, PrettyParams.spaces2)))
   }
@@ -61,6 +63,7 @@ class SimpleProcessConfigCreator extends ProcessConfigCreator {
       override def extractAscendingTimestamp(element: SimpleRecord) = element.date.getTime
     }))))
 
-  override def exceptionHandler(config: Config) = VerboselyLoggingExceptionHandler
+  override def exceptionHandlerFactory(config: Config) =
+    ExceptionHandlerFactory.noParams(VerboselyLoggingExceptionHandler)
 
 }

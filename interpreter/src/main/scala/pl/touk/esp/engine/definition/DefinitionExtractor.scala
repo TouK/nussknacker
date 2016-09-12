@@ -54,6 +54,10 @@ object DefinitionExtractor {
 
   case class ObjectDefinition(parameters: List[Parameter]) extends ParametersProvider
 
+  object ObjectDefinition {
+    def noParam: ObjectDefinition = ObjectDefinition(List.empty)
+  }
+
   case class Parameter(name: String, typ: String)
 
   private[definition] class OrderedParameters(baseOrAdditional: List[Either[Parameter, Class[_]]]) {

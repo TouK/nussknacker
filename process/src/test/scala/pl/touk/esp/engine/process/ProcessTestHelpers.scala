@@ -7,6 +7,7 @@ import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor
 import org.apache.flink.streaming.api.scala._
+import pl.touk.esp.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.esp.engine.api.process.{ProcessConfigCreator, Sink, SinkFactory, SourceFactory}
 import pl.touk.esp.engine.api.{FoldingFunction, ParamName, Service}
 import pl.touk.esp.engine.graph.EspProcess
@@ -41,7 +42,7 @@ object ProcessTestHelpers {
       )
       override def listeners(config: Config) = Seq(LoggingListener)
       override def foldingFunctions(config: Config) = Map("simpleFoldingFun" -> SimpleRecordFoldingFunction)
-      override def exceptionHandler(config: Config) = VerboselyLoggingExceptionHandler
+      override def exceptionHandlerFactory(config: Config) = ExceptionHandlerFactory.noParams(VerboselyLoggingExceptionHandler)
     }
 
     def invoke(process: EspProcess, data: List[SimpleRecord],

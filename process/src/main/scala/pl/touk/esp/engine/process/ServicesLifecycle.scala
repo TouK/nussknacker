@@ -1,8 +1,6 @@
 package pl.touk.esp.engine.process
 
-import pl.touk.esp.engine.Interpreter
 import pl.touk.esp.engine.api.Service
-import pl.touk.esp.engine.compile.{PartSubGraphCompiler, ProcessCompiler}
 
 import scala.concurrent.ExecutionContext
 
@@ -16,6 +14,4 @@ class ServicesLifecycle(services: Seq[Service]) {
   }
 }
 
-case class ServicesLifecycleWithDependants(servicesLifecycle: ServicesLifecycle,
-                                           compiler: PartSubGraphCompiler,
-                                           interpreter: Interpreter)
+

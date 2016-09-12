@@ -15,20 +15,24 @@ import pl.touk.esp.engine.util.LoggingListener
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
 
-class Interpreter(servicesDefs: Map[String, ObjectWithMethodDef],
-                  lazyEvaluationTimeout: FiniteDuration,
-                  listeners: Seq[ProcessListener] = Seq(LoggingListener)) {
+class Interpreter private(services: Map[String, ServiceInvoker],
+                          lazyEvaluationTimeout: FiniteDuration,
+                          listeners: Seq[ProcessListener] = Seq(LoggingListener)) {
 
   def interpret(node: Node,
                 mode: InterpreterMode,
                 metaData: MetaData,
-                input: Any, inputParamName: String = InputParamName)
+                input: Any,
+                inputParamName: String = InputParamName)
                (implicit executor: ExecutionContext): Future[InterpretationResult] = {
-    val ctx = ContextImpl().withVariable(inputParamName, input)
-    interpret(node, mode, ctx, metaData)
+    val ctx = Context().withVariable(inputParamName, input)
+    interpret(node, mode, metaData, ctx)
   }
 
-  def interpret(node: Node, mode: InterpreterMode, ctx: Context, metaData: MetaData)
+  def interpret(node: Node,
+                mode: InterpreterMode,
+                metaData: MetaData,
+                ctx: Context)
                (implicit executor: ExecutionContext): Future[InterpretationResult] = {
     implicit val implMode = mode
     implicit val impMetaData = metaData
@@ -161,7 +165,7 @@ class Interpreter(servicesDefs: Map[String, ObjectWithMethodDef],
   private def evaluate[R](expr: Expression, ctx: Context)
                          (implicit ec: ExecutionContext, metaData: MetaData): ValueWithModifiedContext[R] = {
     val lazyValuesProvider = new LazyValuesProviderImpl(
-      servicesDefs = servicesDefs,
+      services = services,
       implicitParams = implicitParams(ctx),
       timeout = lazyEvaluationTimeout
     )
@@ -180,24 +184,13 @@ object Interpreter {
   final val InputParamName = "input"
   final val OutputParamName = "output"
 
-  private[engine] case class ContextImpl(override val variables: Map[String, Any] = Map.empty,
-                                         override val lazyContext: LazyContext = LazyContextImpl(Map.empty)) extends Context {
-
-    override def withVariables(otherVariables: Map[String, Any]): Context =
-      copy(variables = variables ++ otherVariables)
-
-    override def withLazyContext(lazyContext: LazyContext) =
-      copy(lazyContext = lazyContext)
+  def apply(servicesDefs: Map[String, ObjectWithMethodDef],
+            lazyEvaluationTimeout: FiniteDuration,
+            listeners: Seq[ProcessListener] = Seq(LoggingListener)) = {
+    new Interpreter(servicesDefs.mapValues(ServiceInvoker(_)), lazyEvaluationTimeout, listeners)
   }
 
-  private case class LazyContextImpl(override val evaluatedValues: Map[LazyContext.Key, Any]) extends LazyContext {
-
-    override def withEvaluatedValues(otherEvaluatedValues: Map[LazyContext.Key, Any]) =
-      copy(evaluatedValues = evaluatedValues ++ otherEvaluatedValues)
-
-  }
-
-  private class LazyValuesProviderImpl(servicesDefs: Map[String, ObjectWithMethodDef],
+  private class LazyValuesProviderImpl(services: Map[String, ServiceInvoker],
                                        implicitParams: Map[String, Any],
                                        timeout: FiniteDuration)
                                       (implicit ec: ExecutionContext) extends LazyValuesProvider {
@@ -214,10 +207,10 @@ object Interpreter {
     }
 
     private def evaluateValue[T](serviceId: String, paramsMap: Map[String, Any]): T = {
-      val serviceDef = servicesDefs.getOrElse(
+      val service = services.getOrElse(
         serviceId,
         throw new IllegalArgumentException(s"Service with id: $serviceId doesn't exist"))
-      val resultFuture = ServiceInvoker(serviceDef).invoke(implicitParams ++ paramsMap)
+      val resultFuture = service.invoke(implicitParams ++ paramsMap)
       // await jest niestety niezbędny tutaj, bo implementacje wyrażeń (spel) nie potrafią przetwarzać asynchronicznie
       Await.result(resultFuture, timeout).asInstanceOf[T]
     }

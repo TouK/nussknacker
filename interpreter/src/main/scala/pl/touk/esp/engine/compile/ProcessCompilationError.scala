@@ -10,6 +10,8 @@ sealed trait PartSubGraphCompilationError extends ProcessCompilationError
 
 object ProcessCompilationError {
 
+  final val ProcessNodeId = "$process"
+
   case class NodeId(id: String)
 
   trait InASingleNode { self: ProcessCompilationError =>

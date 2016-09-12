@@ -4,13 +4,10 @@ import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.esp.engine._
-import pl.touk.esp.engine.api.MetaData
-import pl.touk.esp.engine.build.GraphBuilder
+import pl.touk.esp.engine.build.EspProcessBuilder
 import pl.touk.esp.engine.compile.ProcessCompilationError._
 import pl.touk.esp.engine.definition.DefinitionExtractor.{ObjectDefinition, Parameter}
 import pl.touk.esp.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
-import pl.touk.esp.engine.graph.service.ServiceRef
-import pl.touk.esp.engine.graph.{EspProcess, service}
 
 class ProcessValidatorSpec extends FlatSpec with Matchers {
 
@@ -18,13 +15,14 @@ class ProcessValidatorSpec extends FlatSpec with Matchers {
 
   private val baseDefinition = ProcessDefinition(
     Map.empty,
-    Map("source" -> ObjectDefinition(List.empty)),
-    Map("sink" -> ObjectDefinition(List.empty)),
-    Set.empty
+    Map("source" -> ObjectDefinition.noParam),
+    Map("sink" -> ObjectDefinition.noParam),
+    Set.empty,
+    ObjectDefinition.noParam
   )
 
   it should "validated with success" in {
-    val correctProcess = EspProcess(MetaData("process1"), GraphBuilder.source("id1", "source").sink("id2", "sink"))
+    val correctProcess = EspProcessBuilder.id("process1").exceptionHandler().source("id1", "source").sink("id2", "sink")
     ProcessValidator.default(baseDefinition).validate(correctProcess) should matchPattern {
       case Valid(_) =>
     }
@@ -32,18 +30,19 @@ class ProcessValidatorSpec extends FlatSpec with Matchers {
 
   it should "find duplicated ids" in {
     val duplicatedId = "id1"
-    val processWithDuplicatedIds = EspProcess(MetaData("process1"), GraphBuilder.source(duplicatedId, "source").sink(duplicatedId, "sink"))
+    val processWithDuplicatedIds = EspProcessBuilder.id("process1").exceptionHandler().source(duplicatedId, "source").sink(duplicatedId, "sink")
     ProcessValidator.default(baseDefinition).validate(processWithDuplicatedIds) should matchPattern {
       case Invalid(NonEmptyList(DuplicatedNodeIds(_), _)) =>
     }
   }
 
   it should "find expression parse error" in {
-    val processWithInvalidExpresssion = EspProcess(
-      MetaData("process1"),
-      GraphBuilder.source("id1", "source")
+    val processWithInvalidExpresssion =
+      EspProcessBuilder
+        .id("process1")
+        .exceptionHandler()
+        .source("id1", "source")
         .sink("id2", "wtf!!!", "sink")
-    )
 
     ProcessValidator.default(baseDefinition).validate(processWithInvalidExpresssion) should matchPattern {
       case Invalid(NonEmptyList(ExpressionParseError(_, _, _), _)) =>
@@ -52,11 +51,12 @@ class ProcessValidatorSpec extends FlatSpec with Matchers {
 
   it should "find missing service error" in {
     val missingServiceId = "missingServiceId"
-    val processWithRefToMissingService = EspProcess(
-      MetaData("process1"),
-      GraphBuilder.source("id1", "source")
-        .processorEnd("id2", ServiceRef(missingServiceId, List(service.Parameter("foo", "'bar'"))))
-    )
+    val processWithRefToMissingService =
+      EspProcessBuilder
+        .id("process1")
+        .exceptionHandler()
+        .source("id1", "source")
+        .processorEnd("id2", missingServiceId, "foo" -> "'bar'")
 
     ProcessValidator.default(baseDefinition).validate(processWithRefToMissingService) should matchPattern {
       case Invalid(NonEmptyList(MissingService(_, _), _)) =>
@@ -73,11 +73,13 @@ class ProcessValidatorSpec extends FlatSpec with Matchers {
     val definition = baseDefinition.withService(serviceId)
 
     val redundantServiceParameter = "foo"
-    val processWithInvalidServiceInvocation = EspProcess(
-      MetaData("process1"),
-      GraphBuilder.source("id1", "source")
-        .processorEnd("id2", ServiceRef(serviceId, List(service.Parameter(redundantServiceParameter, "'bar'"))))
-    )
+
+    val processWithInvalidServiceInvocation =
+      EspProcessBuilder
+        .id("process1")
+        .exceptionHandler()
+        .source("id1", "source")
+        .processorEnd("id2", serviceId, redundantServiceParameter -> "'bar'")
 
     ProcessValidator.default(definition).validate(processWithInvalidServiceInvocation) should matchPattern {
       case Invalid(NonEmptyList(RedundantParameters(_, _), _)) =>
@@ -86,15 +88,24 @@ class ProcessValidatorSpec extends FlatSpec with Matchers {
 
   it should "find missing source" in {
     val missingServiceId = "missingServiceId"
-    val processWithRefToMissingService = EspProcess(
-      MetaData("process1"),
-      GraphBuilder.source("id1", "source")
-        .processorEnd("id2", ServiceRef(missingServiceId, List(service.Parameter("foo", "'bar'"))))
-    )
+    val processWithRefToMissingService =
+      EspProcessBuilder
+        .id("process1")
+        .exceptionHandler()
+        .source("id1", "source")
+        .processorEnd("id2", missingServiceId, "foo" -> "'bar'")
 
     val definition = ProcessDefinition.empty.withService(missingServiceId, Parameter(name = "foo", typ = "String"))
     ProcessValidator.default(definition).validate(processWithRefToMissingService) should matchPattern {
       case Invalid(NonEmptyList(MissingSourceFactory(_, _), _)) =>
+    }
+  }
+
+  it should "find missing parameter for exception handler" in {
+    val process = EspProcessBuilder.id("process1").exceptionHandler().source("id1", "source").sink("id2", "sink")
+    val definition = baseDefinition.withExceptionHandlerFactory(Parameter(name = "foo", typ = "String"))
+    ProcessValidator.default(definition).validate(process) should matchPattern {
+      case Invalid(NonEmptyList(MissingParameters(_, _), _)) =>
     }
   }
 

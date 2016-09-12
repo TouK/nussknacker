@@ -11,7 +11,7 @@ import pl.touk.esp.engine.api.exception.{EspExceptionConsumer, EspExceptionInfo,
 import scala.collection.JavaConversions._
 
 class KafkaExceptionConsumer(kafkaAddress: String,
-                             topicChoice: EspExceptionInfo[NonTransientException] => String,
+                             topic: String,
                              serializationSchema: SerializationSchema[EspExceptionInfo[NonTransientException]],
                              properties: Properties = new Properties()) extends EspExceptionConsumer {
 
@@ -19,7 +19,6 @@ class KafkaExceptionConsumer(kafkaAddress: String,
 
   def consume(exceptionInfo: EspExceptionInfo[NonTransientException]): Unit = {
     val toSend = serializationSchema.serialize(exceptionInfo)
-    val topic = topicChoice(exceptionInfo)
     val logAsString = true
     val errorLoggingCallback = new ErrorLoggingCallback(topic, Array.empty, toSend, logAsString)
     producer.send(new ProducerRecord(topic, toSend), errorLoggingCallback)

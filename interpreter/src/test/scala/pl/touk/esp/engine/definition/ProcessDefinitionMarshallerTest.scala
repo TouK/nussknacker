@@ -13,7 +13,8 @@ class ProcessDefinitionMarshallerTest extends FlatSpec with Matchers {
       Map("fooService" -> ObjectDefinition(List(Parameter(name = "foo", typ = "String")))),
       Map("fooSourceFactory" -> ObjectDefinition(List(Parameter(name = "foo", typ = "String")))),
       Map("fooSinkFactory" -> ObjectDefinition(List(Parameter(name = "foo", typ = "String")))),
-      Set("fooFoldingFunction")
+      Set("fooFoldingFunction"),
+      ObjectDefinition.noParam
     )
 
     val json = ProcessDefinitionMarshaller.toJson(definition, PrettyParams.spaces2)

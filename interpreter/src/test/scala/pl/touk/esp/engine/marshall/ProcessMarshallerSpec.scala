@@ -3,17 +3,12 @@ package pl.touk.esp.engine.marshall
 import argonaut.PrettyParams
 import org.scalatest.{FlatSpec, Matchers, OptionValues}
 import pl.touk.esp.engine._
-import pl.touk.esp.engine.api.MetaData
-import pl.touk.esp.engine.graph.sink.SinkRef
-import pl.touk.esp.engine.build.GraphBuilder
+import pl.touk.esp.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.esp.engine.canonize.ProcessCanonizer
-import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.graph.node._
-import pl.touk.esp.engine.graph.service.{Parameter, ServiceRef}
-import pl.touk.esp.engine.graph.variable.Field
+import pl.touk.esp.engine.graph.sink.SinkRef
 
 import scala.concurrent.duration._
-
 
 class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues {
 
@@ -23,19 +18,19 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues {
 
     def nestedGraph(id: String) =
       GraphBuilder
-        .processor(id + "Processor", ServiceRef(id + "Service", List.empty))
+        .processor(id + "Processor", id + "Service")
         .sink(id + "End", "")
 
-    val graph =
-      GraphBuilder
+    val process =
+      EspProcessBuilder
+        .id("process1")
+        .exceptionHandler()
         .source("a", "")
         .filter("b", "alamakota == 'true'", Some(nestedGraph("b")))
-        .buildVariable("c", "fooVar", Field("f1", "expr1"), Field("f2", "expr2"))
-        .enricher("d", ServiceRef("dService", List(Parameter("p1", "expr3"))), "barVar")
+        .buildVariable("c", "fooVar", "f1" -> "expr1", "f2" -> "expr2")
+        .enricher("d", "barVar", "dService", "p1" -> "expr3")
         .aggregate("e", "input", "alamakota == 'false'", 10000 milli, 5000 milli)
         .to(Switch("f", "expr4", "eVar", List(Case("e1", Sink("endE1", SinkRef("", List.empty)))), Some(nestedGraph("e"))))
-
-    val process = EspProcess(MetaData("process1"), graph)
 
     val marshalled = ProcessMarshaller.toJson(process, PrettyParams.spaces2)
     println(marshalled)
