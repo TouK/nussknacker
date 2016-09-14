@@ -34,7 +34,7 @@ import pl.touk.esp.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.esp.engine.definition.{ProcessObjectDefinitionExtractor, ProcessObjectFactory, ServiceDefinitionExtractor}
 import pl.touk.esp.engine.graph.{EspProcess, param}
 import pl.touk.esp.engine.process.FlinkProcessRegistrar._
-import pl.touk.esp.engine.process.util.SpelHack
+import pl.touk.esp.engine.process.util.{Serializers, SpelHack}
 import pl.touk.esp.engine.splittedgraph.end.{DeadEnd, End, NormalEnd}
 import pl.touk.esp.engine.splittedgraph.splittednode
 import pl.touk.esp.engine.splittedgraph.splittednode.SplittedNode
@@ -54,7 +54,7 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessW
   implicit def millisToTime(duration: Long): Time = Time.of(duration, TimeUnit.MILLISECONDS)
 
   def register(env: StreamExecutionEnvironment, process: EspProcess): Unit = {
-    SpelHack.registerHackedSerializers(env)
+    Serializers.registerSerializers(env)
     register(env, compileProcess(process))
   }
 
