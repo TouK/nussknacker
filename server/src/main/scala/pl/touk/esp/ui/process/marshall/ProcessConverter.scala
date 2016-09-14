@@ -15,7 +15,7 @@ object ProcessConverter {
   def toDisplayable(process: CanonicalProcess): DisplayableProcess = {
     val ne = toGraphInner(process.nodes)
     val (n, e) = ne
-    DisplayableProcess(process.metaData, n, e)
+    DisplayableProcess(process.metaData, process.exceptionHandlerRef, n, e)
   }
 
   private def toGraphInner(nodes: List[canonicalnode.CanonicalNode]): (List[displayablenode.DisplayableNode], List[displayablenode.Edge]) =
@@ -76,7 +76,7 @@ object ProcessConverter {
     val nodesMap = process.nodes.groupBy(_.id).mapValues(_.head)
     val edgesFromMapStart = process.edges.groupBy(_.from)
     val nodes = unFlattenNode(nodesMap)(process.nodes.head, edgesFromMapStart)
-    CanonicalProcess(process.metaData, nodes)
+    CanonicalProcess(process.metaData, process.exceptionHandlerRef, nodes)
   }
 
   private def unFlattenNode(nodesMap: Map[String, displayablenode.DisplayableNode])
