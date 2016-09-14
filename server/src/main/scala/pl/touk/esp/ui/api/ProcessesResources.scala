@@ -9,20 +9,19 @@ import cats.data.Xor
 import pl.touk.esp.engine.api.deployment.{GraphProcess, ProcessManager}
 import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
 import pl.touk.esp.engine.canonicalgraph.canonicalnode._
-import pl.touk.esp.engine.compile.ProcessValidator
+import pl.touk.esp.engine.compile.{ProcessCompilationError, ProcessValidator}
 import pl.touk.esp.engine.marshall.ProcessMarshaller
 import pl.touk.esp.ui.api.ProcessValidation.ValidationResult
 import pl.touk.esp.ui.api.ProcessesResources._
-import pl.touk.esp.ui.process.displayedgraph.DisplayableProcess
+import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.esp.ui.process.displayedgraph.displayablenode.DisplayableNode
-import pl.touk.esp.ui.process.marshall.{ProcessTypeCodec, DisplayableProcessCodec, ProcessConverter}
+import pl.touk.esp.ui.process.marshall.{DisplayableProcessCodec, ProcessConverter, ProcessTypeCodec}
 import pl.touk.esp.ui.process.repository.ProcessRepository
 import pl.touk.esp.ui.process.repository.ProcessRepository._
 import pl.touk.esp.ui.util.Argonaut62Support
 import pl.touk.esp.ui.{BadRequestError, EspError, FatalError, NotFoundError}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
 
 class ProcessesResources(repository: ProcessRepository,
                          processManager: ProcessManager,
@@ -99,45 +98,61 @@ class ProcessesResources(repository: ProcessRepository,
             repository.withProcessJsonById(id) { _ =>
               val canonical = ProcessConverter.fromDisplayable(displayableProcess)
               Xor.right((canonical, Option(ProcessMarshaller.toJson(canonical, PrettyParams.nospace))))
-            }.map[ToResponseMarshallable] {
-              case Xor.Right(canonical) =>
-                validate(canonical) match {
-                  case Valid(_) =>
-                    ValidationResult(Map.empty)
-                  case Invalid(errors) =>
-                    errors
+            }.map { canonicalXor =>
+              toResponse(
+                canonicalXor.map { canonical =>
+                  validate(canonical) match {
+                    case Valid(_) =>
+                      ValidationResult(Map.empty)
+                    case Invalid(errors) =>
+                      errors
+                  }
                 }
-              case Xor.Left(err) => espErrorToHttp(err)
+              )
             }
           }
         }
       }
-    } ~ path("processes" / Segment / "json" / Segment) { (processId, nodeId) =>
+    } ~ path("processes" / Segment / "json" / "properties") { processId =>
+      put {
+        entity(as[ProcessProperties]) { properties =>
+          complete {
+            repository.withParsedProcessById(processId) { currentCanonical =>
+              val modificatedProcess = currentCanonical.copy(
+                metaData = currentCanonical.metaData.copy(parallelism = properties.parallelism),
+                exceptionHandlerRef = properties.exceptionHandler)
+              Xor.right(modificatedProcess)
+            }.map { canonicalXor =>
+              toResponse(canonicalXor.map(validateFilteringResults(_, ProcessCompilationError.ProcessNodeId)))
+            }
+          }
+        }
+      }
+    } ~ path("processes" / Segment / "json" / "node" / Segment) { (processId, nodeId) =>
        put {
         entity(as[DisplayableNode]) { displayableNode =>
           complete {
-            repository.withProcessJsonById(processId) { optionalCurrentProcessJson =>
-
-              for {
-                currentProcessJson <- Xor.fromOption(optionalCurrentProcessJson, ProcessNotInitializedError(processId))
-                currentCanonical <- parseProcess(currentProcessJson)
-                canonicalNode = ProcessConverter.nodeFromDisplayable(displayableNode)
-                modificationResult = currentCanonical.modify[CanonicalNode](nodeId)(_ => canonicalNode)
-                _ <- if (modificationResult.modifiedCount < 1) Xor.left(NodeNotFoundError(processId = processId, nodeId = nodeId)) else Xor.right(())
-              } yield (modificationResult.value, Option(ProcessMarshaller.toJson(modificationResult.value, PrettyParams.nospace)))
-            }.map[ToResponseMarshallable] {
-              case Xor.Right(canonical) =>
-                validate(canonical) match { // Walidujemy cały proces bo błędy w węźle potrzebują kontekstu procesu
-                  case Valid(_) =>
-                    ValidationResult(Map.empty)
-                  case Invalid(errors) =>
-                    errors.filterNode(nodeId)
-                }
-              case Xor.Left(err) => espErrorToHttp(err)
+            repository.withParsedProcessById(processId) { currentCanonical =>
+              val canonicalNode = ProcessConverter.nodeFromDisplayable(displayableNode)
+              val modificationResult = currentCanonical.modify[CanonicalNode](nodeId)(_ => canonicalNode)
+              if (modificationResult.modifiedCount < 1)
+                Xor.left(NodeNotFoundError(processId = processId, nodeId = nodeId))
+              else
+                Xor.right(modificationResult.value)
+            }.map { canonicalXor =>
+              toResponse(canonicalXor.map(validateFilteringResults(_, nodeId)))
             }
           }
         }
       }
+    }
+
+  private def toResponse(xor: Xor[EspError, ValidationResult]): ToResponseMarshallable =
+    xor match {
+      case Xor.Right(validationResult) =>
+        validationResult
+      case Xor.Left(err) =>
+        espErrorToHttp(err)
     }
 
   private def espErrorToHttp(error: EspError) = {
@@ -156,12 +171,6 @@ class ProcessesResources(repository: ProcessRepository,
       case Valid(canonical) => canonical
       case Invalid(err) => throw new IllegalArgumentException(err.msg)
     }
-  }
-
-  private def parseProcess(canonicalJson: String): Xor[UnmarshallError, CanonicalProcess] = {
-    ProcessMarshaller.fromJson(canonicalJson)
-      .leftMap(e => UnmarshallError(e.msg))
-      .toXor
   }
 
   private def addProcessDetailsStatus(processDetails: ProcessDetails)(implicit ec: ExecutionContext): Future[ProcessDetails] = {

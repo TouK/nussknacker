@@ -1,5 +1,6 @@
 package pl.touk.esp.ui.api
 
+import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated}
 import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
 import pl.touk.esp.engine.compile.{ProcessCompilationError, ProcessValidator}
@@ -11,6 +12,15 @@ trait ProcessValidation {
   import pl.touk.esp.ui.util.CollectionsEnrichments._
 
   protected def processValidator: ProcessValidator
+
+  protected def validateFilteringResults(canonical: CanonicalProcess, nodeId: String): ValidationResult = {
+    validate(canonical) match {
+      case Valid(_) =>
+        ValidationResult(Map.empty)
+      case Invalid(errors) =>
+        errors.filterNode(nodeId)
+    }
+  }
 
   protected def validate(canonical: CanonicalProcess): Validated[ValidationResult, Unit] = {
     processValidator.validate(canonical).leftMap(formatErrors)
