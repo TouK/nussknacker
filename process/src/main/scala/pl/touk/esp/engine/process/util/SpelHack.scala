@@ -10,7 +10,7 @@ import scala.collection.JavaConversions._
 // Domyslnie lista w SPEL'u (tzn. "{'a', 'b'}") konwertuje sie do java.util.Collections.UnmodifiableCollection,
 // ktora nie chce sie serializowac przez Kryo, bo Kryo uzywa metody java.util.Collection.add(), ktora to w przypadku
 // niemodyfikowalnych kolekcji rzuca wyjatkiem... Dlatego to serializowanie javowych List bierzemy w swoje rece
-class SpelHack extends Serializer[java.util.List[_]](false, true) with Serializable {
+object SpelHack extends Serializer[java.util.List[_]](false, true) with Serializable {
 
   override def write(kryo: Kryo, out: Output, obj: java.util.List[_]): Unit = {
     //Write the size:
@@ -39,11 +39,4 @@ class SpelHack extends Serializer[java.util.List[_]](false, true) with Serializa
     seqAsJavaList(builder.result())
   }
 
-}
-
-object SpelHack {
-  def registerHackedSerializers(env: StreamExecutionEnvironment): Unit = {
-    env.getConfig.getRegisteredTypesWithKryoSerializers.put(classOf[java.util.List[_]], new ExecutionConfig.SerializableSerializer(new SpelHack))
-    env.getConfig.getDefaultKryoSerializers.put(classOf[java.util.List[_]], new ExecutionConfig.SerializableSerializer(new SpelHack))
-  }
 }
