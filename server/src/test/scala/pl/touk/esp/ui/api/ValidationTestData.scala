@@ -1,10 +1,8 @@
 package pl.touk.esp.ui.api
 
-import pl.touk.esp.engine.api.MetaData
-import pl.touk.esp.engine.build.GraphBuilder
+import pl.touk.esp.engine.build.EspProcessBuilder
 import pl.touk.esp.engine.compile.ProcessValidator
 import pl.touk.esp.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
-import pl.touk.esp.engine.graph.EspProcess
 
 object ValidationTestData {
 
@@ -18,18 +16,21 @@ object ValidationTestData {
   )
 
   val validProcess =
-    EspProcess(
-      MetaData(id = "fooProcess"),
-      GraphBuilder.source("source", existingSourceFactory).sink("sink", existingSinkFactory)
-    )
+    EspProcessBuilder
+      .id("fooProcess")
+      .exceptionHandler()
+      .source("source", existingSourceFactory)
+      .sink("sink", existingSinkFactory)
 
   val invalidProcess = {
     val missingSourceFactory = "fooSource"
     val missingSinkFactory = "fooSink"
-    EspProcess(
-      MetaData(id = "fooProcess"),
-      GraphBuilder.source("source", missingSourceFactory).sink("sink", missingSinkFactory)
-    )
+
+    EspProcessBuilder
+      .id("fooProcess")
+      .exceptionHandler()
+      .source("source", missingSourceFactory)
+      .sink("sink", missingSinkFactory)
   }
 
 }
