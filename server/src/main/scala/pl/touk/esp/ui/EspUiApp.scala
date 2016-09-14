@@ -9,8 +9,7 @@ import akka.http.scaladsl.server.{Directives, Route}
 import akka.stream.ActorMaterializer
 import cats.data.Validated.{Invalid, Valid}
 import ch.megard.akka.http.cors.CorsDirectives._
-import com.typesafe.config.{ConfigValue, ConfigFactory}
-import net.ceedubs.ficus.readers.ConfigValueReader
+import com.typesafe.config.{ConfigFactory, ConfigValue}
 import pl.touk.esp.engine.api.deployment.{CustomProcess, GraphProcess}
 import pl.touk.esp.engine.compile.ProcessValidator
 import pl.touk.esp.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
@@ -22,7 +21,6 @@ import pl.touk.esp.ui.process.repository.ProcessRepository
 import slick.jdbc.JdbcBackend
 
 import scala.collection.JavaConversions._
-import scala.concurrent.Future
 import scala.io.Source.fromFile
 
 object EspUiApp extends App with Directives {

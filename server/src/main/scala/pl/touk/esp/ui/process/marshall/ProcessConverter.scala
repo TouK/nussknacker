@@ -1,10 +1,11 @@
 package pl.touk.esp.ui.process.marshall
 
+import pl.touk.esp.engine.api.MetaData
 import pl.touk.esp.engine.canonicalgraph.canonicalnode._
 import pl.touk.esp.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.esp.engine.canonize.ProcessCanonizer
 import pl.touk.esp.engine.graph.EspProcess
-import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, displayablenode}
+import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties, displayablenode}
 
 object ProcessConverter {
 
@@ -15,7 +16,8 @@ object ProcessConverter {
   def toDisplayable(process: CanonicalProcess): DisplayableProcess = {
     val ne = toGraphInner(process.nodes)
     val (n, e) = ne
-    DisplayableProcess(process.metaData, process.exceptionHandlerRef, n, e)
+    val props = ProcessProperties(process.metaData.parallelism, process.exceptionHandlerRef)
+    DisplayableProcess(process.metaData.id, props, n, e)
   }
 
   private def toGraphInner(nodes: List[canonicalnode.CanonicalNode]): (List[displayablenode.DisplayableNode], List[displayablenode.Edge]) =
@@ -76,7 +78,8 @@ object ProcessConverter {
     val nodesMap = process.nodes.groupBy(_.id).mapValues(_.head)
     val edgesFromMapStart = process.edges.groupBy(_.from)
     val nodes = unFlattenNode(nodesMap)(process.nodes.head, edgesFromMapStart)
-    CanonicalProcess(process.metaData, process.exceptionHandlerRef, nodes)
+    val metaData = MetaData(process.id, process.properties.parallelism)
+    CanonicalProcess(metaData, process.properties.exceptionHandler, nodes)
   }
 
   private def unFlattenNode(nodesMap: Map[String, displayablenode.DisplayableNode])

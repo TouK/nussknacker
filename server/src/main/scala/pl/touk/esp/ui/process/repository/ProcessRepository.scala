@@ -1,12 +1,16 @@
 package pl.touk.esp.ui.process.repository
 
+import argonaut.PrettyParams
 import cats.data._
 import db.util.DBIOActionInstances.{DB, _}
 import pl.touk.esp.engine.api.deployment.{CustomProcess, GraphProcess, ProcessDeploymentData}
+import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
+import pl.touk.esp.engine.marshall.ProcessMarshaller
 import pl.touk.esp.ui.EspError._
+import pl.touk.esp.ui.api.ProcessesResources.{ProcessNotInitializedError, UnmarshallError}
 import pl.touk.esp.ui.db.migration.CreateProcessesMigration.ProcessType
 import pl.touk.esp.ui.db.migration.CreateProcessesMigration.ProcessType.ProcessType
-import pl.touk.esp.ui.db.migration.CreateProcessesMigration.{ProcessType, ProcessEntityData}
+import pl.touk.esp.ui.db.migration.CreateProcessesMigration.{ProcessEntityData, ProcessType}
 import pl.touk.esp.ui.db.migration.{CreateProcessesMigration, CreateTagsMigration}
 import pl.touk.esp.ui.process.repository.ProcessRepository.{InvalidProcessTypeError, ProcessDetails, ProcessNotFoundError}
 import pl.touk.esp.ui.{BadRequestError, EspError, NotFoundError}
@@ -67,10 +71,26 @@ class ProcessRepository(db: JdbcBackend.Database,
     db.run(action.value)
   }
 
+
+  def withParsedProcessById(processId: String)
+                           (f: CanonicalProcess => XError[CanonicalProcess])
+                           (implicit ec: ExecutionContext): Future[XError[CanonicalProcess]] =
+    withProcessJsonById(processId) { optionalCurrentProcessJson =>
+      for {
+        currentProcessJson <- Xor.fromOption(optionalCurrentProcessJson, ProcessNotInitializedError(processId))
+        currentCanonical <- parseProcess(currentProcessJson)
+        modifiedProcess <- f(currentCanonical)
+      } yield (modifiedProcess, Option(ProcessMarshaller.toJson(modifiedProcess, PrettyParams.nospace)))
+    }
+
+  private def parseProcess(canonicalJson: String): Xor[UnmarshallError, CanonicalProcess] =
+    ProcessMarshaller.fromJson(canonicalJson)
+      .leftMap(e => UnmarshallError(e.msg))
+      .toXor
+
   def withProcessJsonById[T](id: String)
                             (f: Option[String] => XError[(T, Option[String])])
                             (implicit ec: ExecutionContext): Future[XError[T]] = {
-
     val action = for {
       maybeProcess <- XorT.right[DB, EspError, Option[ProcessEntityData]](processesTable
         .filter(_.id === id).forUpdate.result.headOption)

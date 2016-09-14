@@ -3,15 +3,18 @@ package pl.touk.esp.ui.api
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import argonaut.Argonaut._
+import argonaut.Json
 import db.migration.DefaultJdbcProfile
 import org.scalatest._
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.esp.engine.api.deployment._
 import pl.touk.esp.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
+import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
+import pl.touk.esp.engine.graph.param.Parameter
 import pl.touk.esp.engine.marshall.ProcessMarshaller
 import pl.touk.esp.ui.db.DatabaseInitializer
-import pl.touk.esp.ui.process.displayedgraph.DisplayableProcess
+import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.esp.ui.process.displayedgraph.displayablenode.Sink
 import pl.touk.esp.ui.process.marshall._
 import pl.touk.esp.ui.process.repository.ProcessRepository
@@ -71,6 +74,38 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
     }
   }
 
+  it should "return sample process details with properites" in {
+    fetchSampleProcessJsonAndCheckProperites(
+      expectedParallelism = SampleProcess.process.metaData.parallelism.value,
+      expectedFirstParamName = "errorsTopic"
+    )
+  }
+
+  it should "allow to modify properties of process" in {
+    val modifiedParallelism = 123
+    val modifiedName = "fooBarName"
+    val props = ProcessProperties(Some(modifiedParallelism), ExceptionHandlerRef(List(Parameter(modifiedName, modifiedName))))
+    Put(s"/processes/${SampleProcess.process.id}/json/properties", toEntity(props)) ~> route ~> check {
+      status shouldEqual StatusCodes.OK
+      val json = entityAs[String].parseOption.value
+      json.field("invalidNodes").flatMap(_.obj).value.isEmpty shouldBe false
+      fetchSampleProcessJsonAndCheckProperites(
+        expectedParallelism = modifiedParallelism,
+        expectedFirstParamName = modifiedName
+      )
+    }
+  }
+
+  private def fetchSampleProcessJsonAndCheckProperites(expectedParallelism: Int, expectedFirstParamName: String) = {
+    Get(s"/processes/${SampleProcess.process.id}/json") ~> route ~> check {
+      status shouldEqual StatusCodes.OK
+      import pl.touk.esp.ui.util.Argonaut62Support._
+      val json = responseAs[Json]
+      (json.hcursor --\ "properties" --\ "parallelism").focus.value.number.value.toInt.value shouldEqual expectedParallelism
+      ((json.hcursor --\ "properties" --\ "exceptionHandler" --\ "parameters").downArray --\ "name").focus.value.string.value shouldEqual expectedFirstParamName
+    }
+  }
+
   it should "return sample process json" in {
     Get(s"/processes/${SampleProcess.process.id}/json") ~> route ~> check {
       status shouldEqual StatusCodes.OK
@@ -125,7 +160,7 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
         sink.copy(endResult = Some(expression))
     }.getOrElse(sys.error("Process should contain sink"))
 
-    Put(s"/processes/${SampleProcess.process.id}/json/${modifiedSink.id}", toEntity(modifiedSink)) ~> route ~> check {
+    Put(s"/processes/${SampleProcess.process.id}/json/node/${modifiedSink.id}", toEntity(modifiedSink)) ~> route ~> check {
       status shouldEqual StatusCodes.OK
       fetchSampleProcess()
         .map(_.nodes.last.asInstanceOf[canonicalnode.Sink].endResult.value.expression)
@@ -139,7 +174,7 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
     }
     val someNode = ProcessConverter.toDisplayable(ValidationTestData.validProcess).nodes.head
 
-    Put(s"/processes/${SampleProcess.process.id}/json/missing_node_id", toEntity(someNode)) ~> route ~> check {
+    Put(s"/processes/${SampleProcess.process.id}/json/node/missing_node_id", toEntity(someNode)) ~> route ~> check {
       status shouldEqual StatusCodes.NotFound
     }
   }
