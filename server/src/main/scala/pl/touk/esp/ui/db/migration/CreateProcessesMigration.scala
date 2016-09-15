@@ -2,13 +2,20 @@ package pl.touk.esp.ui.db.migration
 
 import argonaut.PrettyParams
 import pl.touk.esp.engine.marshall.ProcessMarshaller
-import pl.touk.esp.ui.db.migration.CreateProcessesMigration.ProcessEntityData
+import pl.touk.esp.ui.db.migration.CreateProcessesMigration.{ProcessType, ProcessEntityData}
+import pl.touk.esp.ui.db.migration.CreateProcessesMigration.ProcessType.ProcessType
+
 import pl.touk.esp.ui.sample.SampleProcess
 import slick.sql.SqlProfile.ColumnOption.NotNull
 
 trait CreateProcessesMigration extends SlickMigration {
 
   import profile.api._
+
+  implicit def processTypeMapper = MappedColumnType.base[ProcessType, String](
+    _.toString,
+    ProcessType.withName
+  )
 
   override def migrateActions = {
     processesTable.schema.create andThen
@@ -22,7 +29,8 @@ trait CreateProcessesMigration extends SlickMigration {
       process.id,
       "Sample process",
       Some("Sample process description"),
-      Some(json)
+      ProcessType.Graph,
+      Some(json), None
     )
   }
 
@@ -36,9 +44,13 @@ trait CreateProcessesMigration extends SlickMigration {
 
     def description = column[Option[String]]("description", O.Length(1000))
 
+    def processType = column[ProcessType]("type", NotNull)
+
     def json = column[Option[String]]("json", O.Length(100 * 1000))
 
-    def * = (id, name, description, json) <> (ProcessEntityData.apply _ tupled, ProcessEntityData.unapply)
+    def mainClass = column[Option[String]]("mainClass", O.Length(5000))
+
+    def * = (id, name, description, processType, json, mainClass) <> (ProcessEntityData.apply _ tupled, ProcessEntityData.unapply)
 
   }
 
@@ -46,6 +58,14 @@ trait CreateProcessesMigration extends SlickMigration {
 
 object CreateProcessesMigration {
 
-  case class ProcessEntityData(id: String, name: String, description: Option[String], json: Option[String])
+  case class ProcessEntityData(id: String, name: String, description: Option[String],
+                               processType: ProcessType,
+                               json: Option[String], mainClass: Option[String])
+
+  object ProcessType extends Enumeration {
+    type ProcessType = Value
+    val Graph = Value("graph")
+    val Custom = Value("custom")
+  }
 
 }

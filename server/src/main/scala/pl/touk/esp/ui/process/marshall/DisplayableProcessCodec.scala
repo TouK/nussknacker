@@ -12,12 +12,10 @@ object DisplayableProcessCodec {
   private implicit def typeFieldJsonSumCodecFor[S]: JsonSumCodecFor[S] =
     JsonSumCodecFor(JsonSumCodec.typeField)
 
-  def encoder: EncodeJson[DisplayableProcess] = EncodeJson.of[DisplayableProcess]
-
-  def decoder: DecodeJson[DisplayableProcess] = DecodeJson.of[DisplayableProcess]
-
   def nodeEncoder: EncodeJson[DisplayableNode] = EncodeJson.of[DisplayableNode]
 
   def nodeDecoder: DecodeJson[DisplayableNode] = DecodeJson.of[DisplayableNode]
+
+  def codec: CodecJson[DisplayableProcess] = CodecJson.derive[DisplayableProcess]
 
 }

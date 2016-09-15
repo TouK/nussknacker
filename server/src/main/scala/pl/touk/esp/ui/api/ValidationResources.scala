@@ -19,7 +19,7 @@ class ValidationResources(protected val processValidator: ProcessValidator)
 
   import argonaut.ArgonautShapeless._
 
-  implicit val displayableProcessDecode = DisplayableProcessCodec.decoder
+  implicit val displayableProcessDecode = DisplayableProcessCodec.codec
 
   implicit val printer: Json => String =
     PrettyParams.spaces2.copy(dropNullKeys = true, preserveOrder = true).pretty

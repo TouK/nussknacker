@@ -8,20 +8,29 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.stream.ActorMaterializer
 import cats.data.Validated.{Invalid, Valid}
+import ch.megard.akka.http.cors.CorsDirectives._
+import com.typesafe.config.{ConfigValue, ConfigFactory}
+import net.ceedubs.ficus.readers.ConfigValueReader
+import pl.touk.esp.engine.api.deployment.{CustomProcess, GraphProcess}
+import pl.touk.esp.engine.compile.ProcessValidator
+import pl.touk.esp.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
+import pl.touk.esp.engine.definition.ProcessDefinitionMarshaller
 import pl.touk.esp.engine.management.FlinkProcessManager
 import pl.touk.esp.ui.api.{ManagementResources, ProcessesResources, ValidationResources, WebResources}
 import pl.touk.esp.ui.db.DatabaseInitializer
 import pl.touk.esp.ui.process.repository.ProcessRepository
 import slick.jdbc.JdbcBackend
-import ch.megard.akka.http.cors.CorsDirectives._
-import pl.touk.esp.engine.compile.ProcessValidator
-import pl.touk.esp.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
-import pl.touk.esp.engine.definition.ProcessDefinitionMarshaller
+
+import scala.collection.JavaConversions._
+import scala.concurrent.Future
+import scala.io.Source.fromFile
 
 object EspUiApp extends App with Directives {
 
   implicit val system = ActorSystem("esp-ui")
+
   import system.dispatcher
+
   implicit val materializer = ActorMaterializer()
 
 
@@ -34,7 +43,7 @@ object EspUiApp extends App with Directives {
   }
 
   val port = args(0).toInt
-  val jsonsDirectory = new File(args(1))
+  val initialProcessDirectory = new File(args(1))
 
   val validator = ProcessValidator.default(loadProcessDefinition())
 
@@ -60,18 +69,23 @@ object EspUiApp extends App with Directives {
   )
 
   def loadProcessDefinition(): ProcessDefinition = {
-    val file = new File(jsonsDirectory, "definition.json")
-    ProcessDefinitionMarshaller.fromJson(scala.io.Source.fromFile(file).mkString) match {
+    val file = new File(initialProcessDirectory, "definition.json")
+    ProcessDefinitionMarshaller.fromJson(fromFile(file).mkString) match {
       case Valid(definition) => definition
       case Invalid(error) => throw new IllegalArgumentException("Invalid process definition: " + error)
     }
   }
 
   def insertInitialProcesses(): Unit = {
-    new File(jsonsDirectory, "processes").listFiles().foreach { file =>
+    new File(initialProcessDirectory, "processes").listFiles().foreach { file =>
       val name = file.getName.replaceAll("\\..*", "")
-      processRepository.saveProcess(name, scala.io.Source.fromFile(file).mkString)
+      processRepository.saveProcess(name, GraphProcess(fromFile(file).mkString))
     }
+    ConfigFactory.parseFile(new File(initialProcessDirectory, "customProcesses.conf"))
+      .entrySet().toSet
+      .foreach { (entry: java.util.Map.Entry[String, ConfigValue]) =>
+        processRepository.saveProcess(entry.getKey, CustomProcess(entry.getValue.unwrapped().toString))
+      }
   }
 
 }
