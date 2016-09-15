@@ -11,7 +11,7 @@ trait ProcessPosting {
 
   protected def toEntity(process: EspProcess): RequestEntity = {
     val displayable = ProcessConverter.toDisplayable(process)
-    implicit val encode = DisplayableProcessCodec.encoder
+    implicit val encode = DisplayableProcessCodec.codec
     val json = displayable.asJson.pretty(PrettyParams.spaces2.copy(dropNullKeys = true, preserveOrder = true))
     HttpEntity(ContentTypes.`application/json`, json)
   }

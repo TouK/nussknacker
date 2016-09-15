@@ -3,25 +3,26 @@ package pl.touk.esp.ui.api
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.Directives
-import argonaut.{EncodeJson, Json, PrettyParams}
+import argonaut._
 import cats.data.Validated.{Invalid, Valid}
-import cats.data.{Xor, Writer}
+import cats.data.Xor
+import pl.touk.esp.engine.api.deployment.{GraphProcess, ProcessManager}
 import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
 import pl.touk.esp.engine.canonicalgraph.canonicalnode._
 import pl.touk.esp.engine.compile.ProcessValidator
-import pl.touk.esp.engine.management.ProcessManager
 import pl.touk.esp.engine.marshall.ProcessMarshaller
-import pl.touk.esp.ui.{EspError, NotFoundError, FatalError}
 import pl.touk.esp.ui.api.ProcessValidation.ValidationResult
+import pl.touk.esp.ui.api.ProcessesResources._
 import pl.touk.esp.ui.process.displayedgraph.DisplayableProcess
 import pl.touk.esp.ui.process.displayedgraph.displayablenode.DisplayableNode
-import pl.touk.esp.ui.process.marshall.{DisplayableProcessCodec, ProcessConverter}
+import pl.touk.esp.ui.process.marshall.{ProcessTypeCodec, DisplayableProcessCodec, ProcessConverter}
 import pl.touk.esp.ui.process.repository.ProcessRepository
 import pl.touk.esp.ui.process.repository.ProcessRepository._
 import pl.touk.esp.ui.util.Argonaut62Support
-import ProcessesResources._
+import pl.touk.esp.ui.{BadRequestError, EspError, FatalError, NotFoundError}
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 class ProcessesResources(repository: ProcessRepository,
                          processManager: ProcessManager,
@@ -32,25 +33,27 @@ class ProcessesResources(repository: ProcessRepository,
   import argonaut.ArgonautShapeless._
   import pl.touk.esp.engine.optics.Implicits._
 
+  implicit val processTypeCodec = ProcessTypeCodec.codec
+
   implicit val processEncode = EncodeJson.of[ProcessDetails]
 
   implicit val processListEncode = EncodeJson.of[List[ProcessDetails]]
 
-  implicit val displayableProcessEncode = DisplayableProcessCodec.encoder
+  implicit val displayableProcessCodec = DisplayableProcessCodec.codec
 
-  implicit val displayableProcessDecode = DisplayableProcessCodec.decoder
+  implicit val displayableProcessNodeDecoder = DisplayableProcessCodec.nodeDecoder
 
-  implicit val displayableProcessNodeDecode = DisplayableProcessCodec.nodeDecoder
+  implicit val displayableProcessNodeEncoder = DisplayableProcessCodec.nodeEncoder
 
   implicit val validationResultEncode = EncodeJson.of[ValidationResult]
 
   implicit val printer: Json => String =
     PrettyParams.spaces2.copy(dropNullKeys = true, preserveOrder = true).pretty
 
-  import cats.syntax.traverse._
   import cats.instances.future._
   import cats.instances.list._
   import cats.instances.option._
+  import cats.syntax.traverse._
 
   val route =
     path("processes") {
@@ -78,8 +81,10 @@ class ProcessesResources(repository: ProcessRepository,
     } ~ path("processes" / Segment / "json") { id =>
       get {
         complete {
-          val optionalDisplayableJsonFuture = repository.fetchProcessJsonById(id).map { optionalJson =>
-            optionalJson.map(parseOrDie).map(ProcessConverter.toDisplayable)
+          val optionalDisplayableJsonFuture = repository.fetchProcessDeploymentById(id).map { optionalDeployment =>
+            optionalDeployment.collect {
+              case GraphProcess(json) => ProcessConverter.toDisplayable(parseOrDie(json))
+            }
           }
           optionalDisplayableJsonFuture.map[ToResponseMarshallable] {
             case Some(process) =>
@@ -139,6 +144,7 @@ class ProcessesResources(repository: ProcessRepository,
     val statusCode =  error match {
       case e:NotFoundError =>  StatusCodes.NotFound
       case e:FatalError => StatusCodes.InternalServerError
+      case e:BadRequestError => StatusCodes.BadRequest
       //unknown?
       case _ => StatusCodes.InternalServerError
     }

@@ -5,10 +5,10 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import argonaut.Argonaut._
 import db.migration.DefaultJdbcProfile
 import org.scalatest._
-import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.time.{Millis, Seconds, Span}
+import pl.touk.esp.engine.api.deployment._
 import pl.touk.esp.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
-import pl.touk.esp.engine.management.{JobState, ProcessManager}
 import pl.touk.esp.engine.marshall.ProcessMarshaller
 import pl.touk.esp.ui.db.DatabaseInitializer
 import pl.touk.esp.ui.process.displayedgraph.DisplayableProcess
@@ -22,11 +22,11 @@ import scala.concurrent.Future
 import scala.language.higherKinds
 
 class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Matchers with Inside
-  with ScalaFutures with OptionValues with ProcessPosting {
+  with ScalaFutures with OptionValues with ProcessPosting with Eventually {
 
   implicit override val patienceConfig = PatienceConfig(timeout = scaled(Span(1, Seconds)), interval = scaled(Span(100, Millis)))
 
-  implicit val decoder =  DisplayableProcessCodec.decoder
+  implicit val decoder =  DisplayableProcessCodec.codec
 
   import pl.touk.esp.engine.spel.Implicits._
 
@@ -43,9 +43,9 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
 
   val processRepository = new ProcessRepository(db, DefaultJdbcProfile.profile)
   val mockProcessManager = new ProcessManager {
-    override def findJobStatus(name: String): Future[Option[JobState]] = Future.successful(None)
+    override def findJobStatus(name: String): Future[Option[ProcessState]] = Future.successful(None)
     override def cancel(name: String): Future[Unit] = Future.successful(Unit)
-    override def deploy(processId: String, processAsJson: String): Future[Unit] = Future.successful(Unit)
+    override def deploy(processId: String, processDeploymentData: ProcessDeploymentData): Future[Unit] = Future.successful(Unit)
   }
 
 
@@ -85,6 +85,17 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
       status shouldEqual StatusCodes.NotFound
     }
   }
+
+  it should "return 400 when trying to update json of custom process" in {
+    eventually {
+      processRepository.saveProcess("customProcess", CustomProcess(""))
+    }
+
+    Put(s"/processes/customProcess/json", toEntity(SampleProcess.process)) ~> route ~> check {
+      status shouldEqual StatusCodes.BadRequest
+    }
+  }
+
 
   it should "save correct process json with ok status" in {
     Put(s"/processes/${SampleProcess.process.id}/json", toEntity(ValidationTestData.validProcess)) ~> route ~> check {
@@ -141,8 +152,9 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
 
   def fetchSampleProcess(): Future[CanonicalProcess] = {
     processRepository
-      .fetchProcessJsonById(SampleProcess.process.id)
+      .fetchProcessDeploymentById(SampleProcess.process.id)
       .map(_.getOrElse(sys.error("Sample process missing")))
-      .map(ProcessMarshaller.fromJson(_).valueOr(_ => sys.error("Invalid process json")))
+      .mapTo[GraphProcess]
+      .map(p => ProcessMarshaller.fromJson(p.processAsJson).valueOr(_ => sys.error("Invalid process json")))
   }
 }

@@ -113,8 +113,9 @@ export const Processes = React.createClass({
                 </Td>
                 <Td column="createDate" className="date-column">2016-08-10</Td>
                 <Td column="edit" className="edit-column">
-                  <img src={editIcon} className="edit-icon"
-                  onClick={this.showProcess.bind(this, process)} />
+                  { //TODO: wyszarzanie/blokowanie zmiast ukrywania... 
+		  (process.processType == "graph") ? <img src={editIcon} className="edit-icon"
+                  onClick={this.showProcess.bind(this, process)} /> : null}
                 </Td>
                 <Td column="metrics" className="metrics-column">
                   <span className="glyphicon glyphicon-stats" onClick={this.showMetrics.bind(this, process)}/>
