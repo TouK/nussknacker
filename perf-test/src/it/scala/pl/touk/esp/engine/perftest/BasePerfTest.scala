@@ -13,6 +13,7 @@ import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.time.{Hours, Millis, Seconds, Span}
 import org.scalatest.{BeforeAndAfterAll, Matchers, Suite}
 import org.slf4j.bridge.SLF4JBridgeHandler
+import pl.touk.esp.engine.api.deployment.GraphProcess
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.management.FlinkProcessManager
 import pl.touk.esp.engine.marshall.ProcessMarshaller
@@ -78,7 +79,7 @@ trait BasePerfTest extends ScalaFutures with BeforeAndAfterAll { suite: Suite wi
   protected def deployProcess(process: EspProcess) = {
     val marshalled = ProcessMarshaller.toJson(process, PrettyParams.nospace)
 
-    assert(processManager.deploy(processId, marshalled).isReadyWithin(65 seconds))
+    assert(processManager.deploy(processId, GraphProcess(marshalled)).isReadyWithin(65 seconds))
 
     val jobStatus = processManager.findJobStatus(processId).futureValue
     jobStatus.map(_.status) shouldBe Some("RUNNING")
