@@ -15,6 +15,7 @@ import org.apache.flink.runtime.instance.ActorGateway
 import org.apache.flink.runtime.messages.JobManagerMessages
 import org.apache.flink.runtime.messages.JobManagerMessages._
 import org.apache.flink.runtime.util.LeaderRetrievalUtils
+import pl.touk.esp.engine.api.deployment._
 import pl.touk.esp.engine.marshall.ProcessMarshaller
 
 import scala.collection.JavaConversions._
@@ -60,8 +61,8 @@ class DefaultFlinkGateway(config: Configuration, timeout: FiniteDuration) extend
       .mapTo[Response]
   }
 
-  override def run(program: PackagedProgram, maybeParalellism: Option[Int]): Unit = {
-    client.run(program, maybeParalellism.getOrElse(-1))
+  override def run(program: PackagedProgram): Unit = {
+    client.run(program, -1)
   }
 
   def shutDown(): Unit = {
@@ -104,18 +105,18 @@ class RestartableFlinkGateway(prepareGateway: () => FlinkGateway) extends FlinkG
     retrieveGateway().invokeJobManager[Response](req)
   }
 
-  override def run(program: PackagedProgram, maybeParalellism: Option[Int]): Unit = {
-    tryToRunProgram(program, maybeParalellism).recover {
+  override def run(program: PackagedProgram): Unit = {
+    tryToRunProgram(program).recover {
       //TODO: jaki powinien byc ten wyjatek??
       case e: TimeoutException =>
         logger.error("Failed to connect to Flink, restarting", e)
         restart()
-        tryToRunProgram(program, maybeParalellism)
+        tryToRunProgram(program)
     }.get
   }
 
-  private def tryToRunProgram(program: PackagedProgram, maybeParalellism: Option[Int]): Try[Unit] =
-    Try(retrieveGateway().run(program, maybeParalellism))
+  private def tryToRunProgram(program: PackagedProgram): Try[Unit] =
+    Try(retrieveGateway().run(program))
 
   private def restart(): Unit = synchronized {
     shutDown()
@@ -141,7 +142,7 @@ class RestartableFlinkGateway(prepareGateway: () => FlinkGateway) extends FlinkG
 trait FlinkGateway {
   def invokeJobManager[Response: ClassTag](req: AnyRef): Future[Response]
 
-  def run(program: PackagedProgram, maybeParalellism: Option[Int]): Unit
+  def run(program: PackagedProgram): Unit
 
   def shutDown(): Unit
 }
@@ -154,14 +155,21 @@ class FlinkProcessManager(config: Config,
 
   private val flinkConf = config.getConfig("flinkConfig")
 
-  override def deploy(processId: String, processAsJson: String) = {
-    val processClass = "pl.touk.esp.engine.process.FlinkProcessMain"
-
+  private def prepareProgram(processId: String, processDeploymentData: ProcessDeploymentData) : PackagedProgram = {
     val jarFile = new File(flinkConf.getString("jarPath"))
     val configPart = extractProcessConfig
 
-    val maybeParalellism = extractParallelism(processAsJson)
-    val program = new PackagedProgram(jarFile, processClass, List(processAsJson, configPart): _*)
+    processDeploymentData match {
+      case GraphProcess(processAsJson) =>
+        new PackagedProgram(jarFile, "pl.touk.esp.engine.process.FlinkProcessMain", List(processAsJson, configPart):_*)
+      case CustomProcess(mainClass) =>
+        new PackagedProgram(jarFile, mainClass, List(processId, configPart): _*)
+    }
+  }
+
+
+  override def deploy(processId: String, processDeploymentData: ProcessDeploymentData) = {
+    val program = prepareProgram(processId, processDeploymentData)
 
     import cats.data.OptionT
     import cats.implicits._
@@ -173,17 +181,17 @@ class FlinkProcessManager(config: Config,
 
     stoppingResult.value.map { maybeSavepoint =>
       maybeSavepoint.foreach(program.setSavepointPath)
-      Try(gateway.run(program, maybeParalellism)).recover {
+      Try(gateway.run(program)).recover {
         //TODO: jest blad we flink, future nie dostaje odpowiedzi jak poleci wyjatek przy savepoincie :|
         case e:ProgramInvocationException if e.getCause.isInstanceOf[JobTimeoutException] && maybeSavepoint.isDefined =>
           program.setSavepointPath(null)
           logger.info(s"Failed to run $processId with savepoint, trying with empty state")
-          gateway.run(program, maybeParalellism)
+          gateway.run(program)
       }.get
     }
   }
 
-  private def stopSavingSavepoint(job: JobState): Future[String] = {
+  private def stopSavingSavepoint(job: ProcessState): Future[String] = {
     val jobId = JobID.fromHexString(job.id)
     for {
       savepointPath <- makeSavepoint(jobId)
@@ -202,9 +210,12 @@ class FlinkProcessManager(config: Config,
     }
   }
 
-  private def extractParallelism(processAsJson: String): Option[Int] = {
-    val canonicalProcess = ProcessMarshaller.fromJson(processAsJson).valueOr(err => throw new IllegalArgumentException(err.msg))
-    canonicalProcess.metaData.parallelism
+  private def extractParallelism(processDeploymentData: ProcessDeploymentData): Option[Int] = processDeploymentData match {
+    case GraphProcess(processAsJson) =>
+      val canonicalProcess = ProcessMarshaller.fromJson(processAsJson).valueOr(err => throw new IllegalArgumentException(err.msg))
+      canonicalProcess.metaData.parallelism
+    case _ =>
+      None
   }
 
   private def extractProcessConfig: String = {
@@ -212,8 +223,8 @@ class FlinkProcessManager(config: Config,
     config.getConfig(configName).root().render()
   }
 
-  override def findJobStatus(name: String): Future[Option[JobState]] = {
-    listJobs().map(_.runningJobs.toList.filter(_.getJobName == name).map(st => JobState(st.getJobId.toString,
+  override def findJobStatus(name: String): Future[Option[ProcessState]] = {
+    listJobs().map(_.runningJobs.toList.filter(_.getJobName == name).map(st => ProcessState(st.getJobId.toString,
       st.getJobState.toString, st.getStartTime)).headOption)
   }
 
