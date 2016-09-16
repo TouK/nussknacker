@@ -3,7 +3,7 @@ package pl.touk.esp.engine.optics
 import monocle._
 import monocle.function.Plated
 import monocle.function.Plated._
-import pl.touk.esp.engine.canonicalgraph.canonicalnode.{CanonicalNode, Case, Filter, Switch}
+import pl.touk.esp.engine.canonicalgraph.canonicalnode._
 import pl.touk.esp.engine.canonicalgraph.{CanonicalProcess, CanonicalTreeNode}
 
 import scala.language.{higherKinds, implicitConversions, reflectiveCalls}
@@ -53,12 +53,23 @@ class ProcessOptics(process: CanonicalProcess) {
   def modify[T <: CanonicalNode: ClassTag](nodeId: String)(f: T => T): ModifyResult[CanonicalProcess] = {
     val (count, result) = transform[CanonicalTreeNode, ({type S[A] = State[Int, A]})#S] {
       case e:T if e.id == nodeId =>
-        State[Int, CanonicalTreeNode](count => (count + 1, f(e)))
+        State[Int, CanonicalTreeNode](count => (count + 1, restoreStructure(f(e), e)))
       case other =>
         State.state[Int, CanonicalTreeNode](other)
     }(process).runZero
     ModifyResult(result.asInstanceOf[CanonicalProcess], count)
   }
+
+  private def restoreStructure[T <: CanonicalNode](node: T, fromNode: T) =
+    (node: CanonicalNode) match {
+      case n: Filter =>
+        n.copy(nextFalse = fromNode.asInstanceOf[Filter].nextFalse)
+      case n: Switch =>
+        val fromSwitch = fromNode.asInstanceOf[Switch]
+        n.copy(nexts = fromSwitch.nexts, defaultNext = fromSwitch.defaultNext)
+      case _: Source | _: Sink | _: VariableBuilder | _: Processor | _: Enricher | _: Aggregate =>
+        node
+    }
 
   private def transform[A: Plated, M[_]: Monad](f: A => M[A])(a: A): M[A] = {
     val l = plate[A]
