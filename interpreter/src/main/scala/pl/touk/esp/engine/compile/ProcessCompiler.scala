@@ -1,28 +1,25 @@
 package pl.touk.esp.engine.compile
 
 import cats.data.Validated._
+import cats.data.{Validated, ValidatedNel}
 import cats.instances.list._
 import cats.instances.option._
-import cats.syntax.cartesian._
-import cats.syntax.traverse._
-import cats.data.{NonEmptyList, Validated, ValidatedNel}
-import cats.{Semigroup, SemigroupK}
 import pl.touk.esp.engine._
-import ProcessCompilationError._
 import pl.touk.esp.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
 import pl.touk.esp.engine.api.process._
 import pl.touk.esp.engine.api.{FoldingFunction, MetaData}
 import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
 import pl.touk.esp.engine.canonize.ProcessCanonizer
+import pl.touk.esp.engine.compile.ProcessCompilationError._
 import pl.touk.esp.engine.compile.dumb._
 import pl.touk.esp.engine.compiledgraph.CompiledProcessParts
 import pl.touk.esp.engine.definition.DefinitionExtractor._
 import pl.touk.esp.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
 import pl.touk.esp.engine.definition.{ProcessObjectDefinitionExtractor, _}
-import pl.touk.esp.engine.graph.{EspProcess, param}
 import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.esp.engine.graph.sink.SinkRef
 import pl.touk.esp.engine.graph.source.SourceRef
+import pl.touk.esp.engine.graph.{EspProcess, param}
 import pl.touk.esp.engine.split._
 import pl.touk.esp.engine.splittedgraph._
 import pl.touk.esp.engine.splittedgraph.part._
@@ -68,8 +65,8 @@ protected trait ProcessCompilerBase {
 
   protected def sub: PartSubGraphCompilerBase
 
-  private implicit val nelSemigroup: Semigroup[NonEmptyList[ProcessCompilationError]] =
-    SemigroupK[NonEmptyList].algebra[ProcessCompilationError]
+  private val syntax = ValidatedSyntax[ProcessCompilationError]
+  import syntax._
 
   def validate(canonical: CanonicalProcess): ValidatedNel[ProcessCompilationError, Unit] = {
     ProcessCanonizer.uncanonize(canonical).leftMap(_.map(identity[ProcessCompilationError])) andThen { process =>
@@ -87,10 +84,11 @@ protected trait ProcessCompilerBase {
 
   private def compile(splittedProcess: SplittedProcess): ValidatedNel[ProcessCompilationError, CompiledProcessParts] = {
     implicit val metaData = splittedProcess.metaData
-    (findDuplicates(splittedProcess.source).toValidatedNel |@|
-      compile(splittedProcess.exceptionHandlerRef) |@|
-      compile(splittedProcess.source)).map { (_, exceptionHandler, source) =>
-
+    A.map3(
+      findDuplicates(splittedProcess.source).toValidatedNel,
+      compile(splittedProcess.exceptionHandlerRef),
+      compile(splittedProcess.source)
+    ) { (_, exceptionHandler, source) =>
       CompiledProcessParts(splittedProcess.metaData, exceptionHandler, source)
     }
   }
@@ -113,11 +111,18 @@ protected trait ProcessCompilerBase {
     implicit val nodeId = NodeId(part.id)
     part match {
       case AggregatePart(id, durationInMillis, slideInMillis, aggregatedVar, foldingFunRef, aggregate, nextParts, ends) =>
-        (validate(aggregate) |@| foldingFunRef.map(compileFoldingFunction).sequenceU |@| compile(nextParts)).map { (_, foldingFunRefV, nextPartsV) =>
+        A.map3(
+          validate(aggregate),
+          foldingFunRef.map(compileFoldingFunction).sequence,
+          compile(nextParts)
+        ) { (_, foldingFunRefV, nextPartsV) =>
           compiledgraph.part.AggregatePart(id, durationInMillis, slideInMillis, aggregatedVar, foldingFunRefV, aggregate, nextPartsV, ends)
         }
       case SinkPart(id, ref, sink) =>
-        (validate(sink) |@| compile(ref)).map { (_, obj) =>
+        A.map2(
+          validate(sink),
+          compile(ref)
+        ) { (_, obj) =>
           compiledgraph.part.SinkPart(id, obj, sink)
         }
     }
@@ -126,7 +131,11 @@ protected trait ProcessCompilerBase {
   private def compile(source: SourcePart)
                      (implicit metaData: MetaData): ValidatedNel[ProcessCompilationError, compiledgraph.part.SourcePart] = {
     implicit val nodeId = NodeId(source.id)
-    (validate(source.source) |@| compile(source.ref) |@| compile(source.nextParts)).map { (_, obj, nextParts) =>
+    A.map3(
+      validate(source.source),
+      compile(source.ref),
+      compile(source.nextParts)
+    ) { (_, obj, nextParts) =>
       compiledgraph.part.SourcePart(source.id, obj, source.source, nextParts, source.ends)
     }
   }
@@ -170,7 +179,7 @@ protected trait ProcessCompilerBase {
 
   private def compile(parts: List[SubsequentPart])
                      (implicit metaData: MetaData): ValidatedNel[ProcessCompilationError, List[compiledgraph.part.SubsequentPart]] = {
-    parts.map(compile).sequenceU
+    parts.map(compile).sequence
   }
 
   private def validateParameters(parameterProvider: ParameterProviderT, usedParams: List[param.Parameter])
@@ -181,9 +190,10 @@ protected trait ProcessCompilerBase {
     val redundantParams = usedParamNamesSet.diff(definedParamNames)
     val notMissing = if (missingParams.nonEmpty) invalid(MissingParameters(missingParams)) else valid(Unit)
     val notRedundant = if (redundantParams.nonEmpty) invalid(RedundantParameters(redundantParams)) else valid(Unit)
-    (notMissing.toValidatedNel |@| notRedundant.toValidatedNel)
-      .map { (_, _) => () }
-      .leftMap(_.map(identity[ProcessCompilationError]))
+    A.map2(
+      notMissing.toValidatedNel,
+      notRedundant.toValidatedNel
+    ) { (_, _) => () }.leftMap(_.map(identity[ProcessCompilationError]))
   }
 
   private def validate(n: splittednode.SplittedNode): ValidatedNel[ProcessCompilationError, Unit] = {

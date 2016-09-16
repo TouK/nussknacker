@@ -1,14 +1,10 @@
 package pl.touk.esp.engine.compile
 
 import cats.data.Validated._
-import cats.data.{NonEmptyList, ValidatedNel}
+import cats.data.ValidatedNel
 import cats.instances.list._
 import cats.instances.option._
-import cats.syntax.traverse._
-import cats.syntax.cartesian._
-import cats.{Semigroup, SemigroupK}
 import pl.touk.esp.engine._
-import pl.touk.esp.engine.api.Service
 import pl.touk.esp.engine.compile.ProcessCompilationError._
 import pl.touk.esp.engine.compile.dumb._
 import pl.touk.esp.engine.compiledgraph.expression.ExpressionParser
@@ -48,9 +44,9 @@ private[compile] trait PartSubGraphCompilerBase {
 
   protected def expressionParsers: Map[String, ExpressionParser]
   protected def services: Map[String, ParametersProviderT]
-
-  private implicit val nelSemigroup: Semigroup[NonEmptyList[PartSubGraphCompilationError]] =
-    SemigroupK[NonEmptyList].algebra[PartSubGraphCompilationError]
+  
+  private val syntax = ValidatedSyntax[PartSubGraphCompilationError]
+  import syntax._
 
   def validate(n: splittednode.SplittedNode): ValidatedNel[PartSubGraphCompilationError, Unit] = {
     compile(n).map(_ => Unit)
@@ -62,27 +58,21 @@ private[compile] trait PartSubGraphCompilerBase {
       case s: splittednode.Source =>
         compile(s)
       case splittednode.VariableBuilder(id, varName, fields, next) =>
-        (fields.map(compile).sequenceU |@| compile(next))
-          .map(compiledgraph.node.VariableBuilder(id, varName, _, _))
+        A.map2(fields.map(compile).sequence, compile(next))(compiledgraph.node.VariableBuilder(id, varName, _, _))
       case splittednode.Processor(id, ref, next) =>
-        (compile(ref) |@| compile(next))
-          .map(compiledgraph.node.Processor(id, _, _))
+        A.map2(compile(ref), compile(next))(compiledgraph.node.Processor(id, _, _))
       case splittednode.EndingProcessor(id, ref) =>
         compile(ref).map(compiledgraph.node.EndingProcessor(id, _))
       case splittednode.Enricher(id, ref, outName, next) =>
-        (compile(ref) |@| compile(next))
-          .map(compiledgraph.node.Enricher(id, _, outName, _))
+        A.map2(compile(ref), compile(next))(compiledgraph.node.Enricher(id, _, outName, _))
       case splittednode.Filter(id, expression, nextTrue, nextFalse) =>
-        (compile(expression) |@| compile(nextTrue) |@| nextFalse.map(compile).sequenceU)
-          .map(compiledgraph.node.Filter(id, _, _, _))
+        A.map3(compile(expression), compile(nextTrue), nextFalse.map(compile).sequence)(compiledgraph.node.Filter(id, _, _, _))
       case splittednode.Switch(id, expression, exprVal, nexts, defaultNext) =>
-        (compile(expression) |@| nexts.map(compile).sequenceU |@| defaultNext.map(compile).sequenceU)
-          .map(compiledgraph.node.Switch(id, _, exprVal, _, _))
+        A.map3(compile(expression), nexts.map(compile).sequence, defaultNext.map(compile).sequence)(compiledgraph.node.Switch(id, _, exprVal, _, _))
       case splittednode.Aggregate(id, keyExpression, triggerExpression, next) =>
-        (compile(keyExpression) |@| triggerExpression.map(compile).sequenceU |@| compile(next))
-          .map(compiledgraph.node.Aggregate(id, _, _, _))
+        A.map3(compile(keyExpression), triggerExpression.map(compile).sequence, compile(next))(compiledgraph.node.Aggregate(id, _, _, _))
       case splittednode.Sink(id, optionalExpression) =>
-        optionalExpression.map(compile).sequenceU.map(compiledgraph.node.Sink(id, _))
+        optionalExpression.map(compile).sequence.map(compiledgraph.node.Sink(id, _))
     }
   }
 
@@ -99,8 +89,8 @@ private[compile] trait PartSubGraphCompilerBase {
   private def compile(n: graph.service.ServiceRef)
                      (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, compiledgraph.service.ServiceRef] = {
     val validService = services.get(n.id).map(valid).getOrElse(invalid(MissingService(n.id))).toValidatedNel
-    val validParams = n.parameters.map(compile).sequenceU
-    (validService |@| validParams).tupled.map(identity).andThen {
+    val validParams = n.parameters.map(compile).sequence
+    A.map2(validService, validParams)((_, _)).andThen {
       case (obj: ParametersProviderT@unchecked, params: List[Parameter]) =>
         validateServiceParameters(obj, params.map(_.name)).map { _ =>
           val invoker = createServiceInvoker(obj)
@@ -129,7 +119,7 @@ private[compile] trait PartSubGraphCompilerBase {
 
   private def compile(n: splittednode.Case)
                      (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, compiledgraph.node.Case] =
-    (compile(n.expression) |@| compile(n.node)).map(compiledgraph.node.Case)
+    A.map2(compile(n.expression), compile(n.node))(compiledgraph.node.Case)
 
   private def compile(n: graph.expression.Expression)
                      (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, compiledgraph.expression.Expression] = {
