@@ -1,5 +1,6 @@
 package pl.touk.esp.engine.build
 
+import pl.touk.esp.engine.graph.evaluatedparam.Parameter
 import pl.touk.esp.engine.graph.expression._
 import pl.touk.esp.engine.graph.node._
 import pl.touk.esp.engine.graph.service.ServiceRef
@@ -16,10 +17,10 @@ class GraphBuilder[R <: Node] private(create: Node => R) {
     new GraphBuilder[R](node => create(VariableBuilder(id, varName, fields.map(Field.tupled).toList, node)))
 
   def processor(id: String, svcId: String, params: (String, Expression)*): GraphBuilder[R] =
-    new GraphBuilder[R](node => create(Processor(id, ServiceRef(svcId, params.map(service.Parameter.tupled).toList), node)))
+    new GraphBuilder[R](node => create(Processor(id, ServiceRef(svcId, params.map(Parameter.tupled).toList), node)))
 
   def enricher(id: String, output: String, svcId: String, params: (String, Expression)*): GraphBuilder[R] =
-    new GraphBuilder[R](node => create(Enricher(id, ServiceRef(svcId, params.map(service.Parameter.tupled).toList), output, node)))
+    new GraphBuilder[R](node => create(Enricher(id, ServiceRef(svcId, params.map(Parameter.tupled).toList), output, node)))
 
   def filter(id: String, expression: Expression, nextFalse: Option[Node] = Option.empty): GraphBuilder[R] =
     new GraphBuilder[R](node => create(Filter(id, expression, node, nextFalse)))
@@ -46,6 +47,9 @@ class GraphBuilder[R <: Node] private(create: Node => R) {
              defaultNext: Node, nexts: Case*): R =
     create(GraphBuilder.switch(id, expression, exprVal, defaultNext, nexts: _*))
 
+  def customNode(id: String, outputVar: String, customNodeRef: String, params: (String, Expression)*): GraphBuilder[R]  =
+    new GraphBuilder[R](node => create(CustomNode(id, outputVar, customNodeRef, params.map(Parameter.tupled).toList, node)))
+
   def to(node: Node): R =
     create(node)
 
@@ -60,13 +64,16 @@ object GraphBuilder {
     new GraphBuilder(VariableBuilder(id, varName, fields.toList, _))
 
   def processor(id: String, svcId: String, params: (String, Expression)*): GraphBuilder[Processor] =
-    new GraphBuilder(Processor(id, ServiceRef(svcId, params.map(service.Parameter.tupled).toList), _))
+    new GraphBuilder(Processor(id, ServiceRef(svcId, params.map(Parameter.tupled).toList), _))
 
   def enricher(id: String, output: String, svcId: String, params: (String, Expression)*): GraphBuilder[Enricher] =
-    new GraphBuilder(Enricher(id, ServiceRef(svcId, params.map(service.Parameter.tupled).toList), output, _))
+    new GraphBuilder(Enricher(id, ServiceRef(svcId, params.map(Parameter.tupled).toList), output, _))
 
   def filter(id: String, expression: Expression, nextFalse: Option[Node] = Option.empty): GraphBuilder[Filter] =
     new GraphBuilder(Filter(id, expression, _, nextFalse))
+
+  def customNode(id: String, outputVar: String, customNodeRef: String, params: (String, Expression)*) : GraphBuilder[CustomNode] =
+    new GraphBuilder(CustomNode(id, outputVar, customNodeRef, params.map(Parameter.tupled).toList, _))
 
   def aggregate(id: String, aggregatedVar: String,
                 keyExpression: Expression, duration: Duration, step: Duration,
@@ -81,7 +88,7 @@ object GraphBuilder {
     Sink(id, SinkRef(typ, params.map(param.Parameter.tupled).toList), Some(expression))
 
   def processorEnd(id: String, svcId: String, params: (String, Expression)*): EndingProcessor =
-    EndingProcessor(id, ServiceRef(svcId, params.map(service.Parameter.tupled).toList))
+    EndingProcessor(id, ServiceRef(svcId, params.map(Parameter.tupled).toList))
 
   def switch(id: String, expression: Expression, exprVal: String, nexts: Case*): Switch =
     Switch(id, expression, exprVal, nexts.toList, None)

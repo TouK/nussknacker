@@ -32,6 +32,9 @@ class ProcessMetaDataBuilder private[build](metaData: MetaData) {
       def enricher(id: String, output: String, svcId: String, params: (String, Expression)*) =
         new ProcessGraphBuilder(graphBuilder.enricher(id, output, svcId, params: _*))
 
+      def customNode(id: String, outputVar: String, customNodeRef: String, params: (String, Expression)*) =
+        new ProcessGraphBuilder(graphBuilder.customNode(id, outputVar, customNodeRef, params: _*))
+
       def filter(id: String, expression: Expression, nextFalse: Option[Node] = Option.empty) =
         new ProcessGraphBuilder(graphBuilder.filter(id, expression, nextFalse))
 

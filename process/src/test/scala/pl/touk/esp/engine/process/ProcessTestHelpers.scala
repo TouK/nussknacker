@@ -7,44 +7,29 @@ import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor
 import org.apache.flink.streaming.api.scala._
+import pl.touk.esp.engine.api.LazyInterpreter
 import pl.touk.esp.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.esp.engine.api.process.{ProcessConfigCreator, Sink, SinkFactory, SourceFactory}
-import pl.touk.esp.engine.api.{FoldingFunction, ParamName, Service}
+import pl.touk.esp.engine.api._
 import pl.touk.esp.engine.graph.EspProcess
-import pl.touk.esp.engine.util.LoggingListener
+import pl.touk.esp.engine.util.{SynchronousExecutionContext, LoggingListener}
 import pl.touk.esp.engine.util.exception.VerboselyLoggingExceptionHandler
 import pl.touk.esp.engine.util.source.CollectionSource
 
 import scala.collection.mutable.ArrayBuffer
-import scala.concurrent.Future
+import scala.concurrent.{Await, Future}
+import scala.concurrent.duration.FiniteDuration
 
 object ProcessTestHelpers {
 
 
   case class SimpleRecord(id: String, value1: Long, value2: String, date: Date)
 
+  case class SimpleRecordWithPreviousValue(record: SimpleRecord, previous: Long)
+
   case class SimpleRecordAcc(id: String, value1: Long, value2: Set[String], date: Date)
 
   object processInvoker {
-    def prepareCreator(exConfig: ExecutionConfig, data: List[SimpleRecord]) = new ProcessConfigCreator {
-      override def services(config: Config) = Map("logService" -> MockService)
-      override def sourceFactories(config: Config) = Map(
-        "input" -> SourceFactory.noParam(new CollectionSource[SimpleRecord](
-          config = exConfig,
-          list = data,
-          timestampAssigner = Some(new AscendingTimestampExtractor[SimpleRecord] {
-            override def extractAscendingTimestamp(element: SimpleRecord) = element.date.getTime
-          })
-        ))
-      )
-      override def sinkFactories(config: Config) = Map(
-        "monitor" -> SinkFactory.noParam(EmptySink)
-      )
-      override def listeners(config: Config) = Seq(LoggingListener)
-      override def foldingFunctions(config: Config) = Map("simpleFoldingFun" -> SimpleRecordFoldingFunction)
-      override def exceptionHandlerFactory(config: Config) = ExceptionHandlerFactory.noParams(VerboselyLoggingExceptionHandler)
-    }
-
     def invoke(process: EspProcess, data: List[SimpleRecord],
                env: StreamExecutionEnvironment = StreamExecutionEnvironment.createLocalEnvironment()) = {
       val creator = prepareCreator(env.getConfig, data)
@@ -54,6 +39,51 @@ object ProcessTestHelpers {
       env.execute()
 
     }
+
+    def prepareCreator(exConfig: ExecutionConfig, data: List[SimpleRecord]) = new ProcessConfigCreator {
+      override def services(config: Config) = Map("logService" -> MockService)
+
+      override def sourceFactories(config: Config) = Map(
+        "input" -> SourceFactory.noParam(new CollectionSource[SimpleRecord](
+          config = exConfig,
+          list = data,
+          timestampAssigner = Some(new AscendingTimestampExtractor[SimpleRecord] {
+            override def extractAscendingTimestamp(element: SimpleRecord) = element.date.getTime
+          })
+        ))
+      )
+
+      override def sinkFactories(config: Config) = Map(
+        "monitor" -> SinkFactory.noParam(EmptySink)
+      )
+
+      override def customStreamTransformers(config: Config) = Map("stateCustom" -> StateCustomNode)
+
+      override def listeners(config: Config) = Seq(LoggingListener)
+
+      override def foldingFunctions(config: Config) = Map("simpleFoldingFun" -> SimpleRecordFoldingFunction)
+
+      override def exceptionHandlerFactory(config: Config) = ExceptionHandlerFactory.noParams(VerboselyLoggingExceptionHandler)
+    }
+  }
+
+  object StateCustomNode extends CustomStreamTransformer {
+
+    @MethodToInvoke
+    def execute(@ParamName("keyBy") keyBy: LazyInterpreter) = (start: DataStream[InterpretationResult], timeout: FiniteDuration) => {
+
+      start.keyBy(keyBy.syncInterpretationFunction.andThen(_.output))
+        .flatMapWithState[Any, Long] {
+        case (SimpleFromIr(sr), Some(oldState)) => (List(SimpleRecordWithPreviousValue(sr, oldState)), Some(sr.value1))
+        case (SimpleFromIr(sr), None) =>  (List(SimpleRecordWithPreviousValue(sr, 0)), Some(sr.value1))
+      }
+
+    }
+
+    object SimpleFromIr {
+      def unapply(ir:InterpretationResult) = Some(ir.finalContext.apply[SimpleRecord]("input"))
+    }
+
   }
 
   object MockService extends Service {

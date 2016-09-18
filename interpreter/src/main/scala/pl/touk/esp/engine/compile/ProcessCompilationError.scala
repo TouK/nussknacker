@@ -76,6 +76,14 @@ object ProcessCompilationError {
       MissingFoldingFunction(name, nodeId.id)
   }
 
+  case class MissingCustomNodeExecutor(name: String, nodeId: String)
+    extends ProcessCompilationError with InASingleNode
+
+  object MissingCustomNodeExecutor {
+    def apply(name: String)(implicit nodeId: NodeId): ProcessCompilationError =
+      MissingCustomNodeExecutor(name, nodeId.id)
+  }
+
   case class MissingParameters(params: Set[String], nodeId: String)
     extends PartSubGraphCompilationError with InASingleNode
 
@@ -91,5 +99,14 @@ object ProcessCompilationError {
     def apply(params: Set[String])(implicit nodeId: NodeId): PartSubGraphCompilationError =
       RedundantParameters(params, nodeId.id)
   }
+
+  case class WrongParameters(requiredParameters: Set[String], passedParameters: Set[String], nodeId: String)
+    extends PartSubGraphCompilationError with InASingleNode
+
+  object WrongParameters {
+    def apply(requiredParameters: Set[String], passedParameters: Set[String])(implicit nodeId: NodeId): PartSubGraphCompilationError =
+      WrongParameters(requiredParameters, passedParameters, nodeId.id)
+  }
+
 
 }

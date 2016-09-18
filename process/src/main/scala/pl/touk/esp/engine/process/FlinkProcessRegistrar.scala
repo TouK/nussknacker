@@ -25,16 +25,15 @@ import org.apache.flink.streaming.api.windowing.windows.TimeWindow
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
 import org.apache.flink.util.Collector
 import pl.touk.esp.engine.Interpreter
-import pl.touk.esp.engine.api.{MetaData, _}
-import pl.touk.esp.engine.api.exception.EspExceptionHandler
+import pl.touk.esp.engine.api._
 import pl.touk.esp.engine.api.process._
 import pl.touk.esp.engine.compile.{PartSubGraphCompiler, ProcessCompilationError, ProcessCompiler}
 import pl.touk.esp.engine.compiledgraph.part._
 import pl.touk.esp.engine.definition.DefinitionExtractor.ObjectWithMethodDef
-import pl.touk.esp.engine.definition.{ProcessObjectDefinitionExtractor, ProcessObjectFactory, ServiceDefinitionExtractor}
-import pl.touk.esp.engine.graph.{EspProcess, param}
+import pl.touk.esp.engine.definition.{CustomNodeInvoker, ServiceDefinitionExtractor}
+import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.process.FlinkProcessRegistrar._
-import pl.touk.esp.engine.process.util.{Serializers, SpelHack}
+import pl.touk.esp.engine.process.util.Serializers
 import pl.touk.esp.engine.splittedgraph.end.{DeadEnd, End, NormalEnd}
 import pl.touk.esp.engine.splittedgraph.splittednode
 import pl.touk.esp.engine.splittedgraph.splittednode.SplittedNode
@@ -42,8 +41,8 @@ import pl.touk.esp.engine.util.SynchronousExecutionContext
 import pl.touk.esp.engine.util.metrics.InstantRateMeter
 
 import scala.collection.JavaConverters._
-import scala.concurrent.Await
 import scala.concurrent.duration._
+import scala.concurrent.{Await, ExecutionContext}
 import scala.language.implicitConversions
 
 class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessWithDeps,
@@ -112,6 +111,17 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessW
             .map(_.output)
             .addSink(part.obj.toFlinkFunction)
             .name(s"${part.id}-sink")
+
+        case CustomNodePart(id, outputVar,
+          executor: CustomNodeInvoker[((DataStream[InterpretationResult], FiniteDuration) => DataStream[Any]) @unchecked],
+          part, nextParts, ends) =>
+
+          val newStart = executor.run(compiledProcessWithDeps)(start, compiledProcessWithDeps().processTimeout)
+            .flatMap(new InitialInterpretationFunction(compiledProcessWithDeps, part, outputVar))
+            .split(SplitFunction)
+          registerParts(newStart, nextParts, ends)
+        case e:CustomNodePart =>
+          throw new IllegalArgumentException(s"Unknown CustomNodeExecutor: ${e.customNodeInvoker}")
       }
 
     def registerParts(start: SplitStream[InterpretationResult],
@@ -145,6 +155,7 @@ object FlinkProcessRegistrar {
         sourceFactories = creator.sourceFactories(config),
         sinkFactories = creator.sinkFactories(config),
         foldingFunctions = creator.foldingFunctions(config),
+        customStreamTransformers = creator.customStreamTransformers(config),
         exceptionHandlerFactory = creator.exceptionHandlerFactory(config)
       )
     }
@@ -215,6 +226,7 @@ object FlinkProcessRegistrar {
     private lazy implicit val ec = SynchronousExecutionContext.ctx
     private lazy val compiledProcessWithDeps = compiledProcessWithDepsProvider()
     private lazy val compiledNode = compiledProcessWithDeps.compileSubPart(sink)
+
     import compiledProcessWithDeps._
 
     override def open(parameters: Configuration): Unit = {

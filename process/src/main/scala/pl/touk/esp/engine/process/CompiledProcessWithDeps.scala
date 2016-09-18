@@ -9,6 +9,7 @@ import pl.touk.esp.engine.api.exception.EspExceptionHandler
 import pl.touk.esp.engine.compile.{PartSubGraphCompilationError, PartSubGraphCompiler}
 import pl.touk.esp.engine.compiledgraph.CompiledProcessParts
 import pl.touk.esp.engine.compiledgraph.node.Node
+import pl.touk.esp.engine.definition.CustomNodeInvokerDeps
 import pl.touk.esp.engine.splittedgraph.splittednode.SplittedNode
 
 import scala.concurrent.ExecutionContext
@@ -16,9 +17,9 @@ import scala.concurrent.duration.FiniteDuration
 
 case class CompiledProcessWithDeps(compiledProcess: CompiledProcessParts,
                                    private val servicesLifecycle: ServicesLifecycle,
-                                   private val subPartCompiler: PartSubGraphCompiler,
+                                   subPartCompiler: PartSubGraphCompiler,
                                    interpreter: Interpreter,
-                                   processTimeout: FiniteDuration) {
+                                   processTimeout: FiniteDuration) extends CustomNodeInvokerDeps {
 
   def open(runtimeContext: RuntimeContext)(implicit ec: ExecutionContext): Unit = {
     servicesLifecycle.open()

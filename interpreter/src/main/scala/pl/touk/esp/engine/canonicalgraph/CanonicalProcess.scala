@@ -4,6 +4,7 @@ import pl.touk.esp.engine.api.MetaData
 import pl.touk.esp.engine.canonicalgraph.canonicalnode.CanonicalNode
 import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.esp.engine.graph.expression.Expression
+import pl.touk.esp.engine.graph.evaluatedparam.Parameter
 import pl.touk.esp.engine.graph.service.ServiceRef
 import pl.touk.esp.engine.graph.sink.SinkRef
 import pl.touk.esp.engine.graph.source.SourceRef
@@ -44,4 +45,5 @@ object canonicalnode {
                        triggerExpression: Option[Expression],
                        foldingFunRef: Option[String]) extends CanonicalNode
 
+  case class CustomNode(id: String, outputVar: String, customNodeRef: String, parameters: List[Parameter]) extends CanonicalNode
 }

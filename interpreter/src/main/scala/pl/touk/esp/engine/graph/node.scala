@@ -1,5 +1,6 @@
 package pl.touk.esp.engine.graph
 
+import pl.touk.esp.engine.graph.evaluatedparam.Parameter
 import sink.SinkRef
 import pl.touk.esp.engine.graph.expression.Expression
 import pl.touk.esp.engine.graph.service.ServiceRef
@@ -38,5 +39,8 @@ object node {
                        triggerExpression: Option[Expression],
                        foldingFunRef: Option[String],
                        next: Node) extends Node
+
+
+  case class CustomNode(id: String, outputVar: String, nodeType: String, parameters: List[Parameter], next: Node) extends Node
 
 }

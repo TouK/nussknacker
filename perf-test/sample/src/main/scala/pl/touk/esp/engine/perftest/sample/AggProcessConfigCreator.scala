@@ -59,6 +59,9 @@ class AggProcessConfigCreator extends ProcessConfigCreator {
   override def foldingFunctions(config: Config) =
     Map("sum" -> KeyValue.sum)
 
+
+  override def customStreamTransformers(config: Config) = Map()
+
   override def exceptionHandlerFactory(config: Config) =
     ExceptionHandlerFactory.noParams(VerboselyLoggingExceptionHandler)
 

@@ -1,5 +1,6 @@
 package pl.touk.esp.engine.compiledgraph
 
+import pl.touk.esp.engine.compiledgraph.evaluatedparam.Parameter
 import pl.touk.esp.engine.compiledgraph.expression.Expression
 import pl.touk.esp.engine.compiledgraph.service.ServiceRef
 import pl.touk.esp.engine.compiledgraph.variable.Field
@@ -36,6 +37,8 @@ object node {
                        triggerExpression: Option[Expression],
                        next: Next) extends Node
 
+
+  case class CustomNode(id:String, params:List[Parameter],  next: Next) extends Node
 
   sealed trait Next
   case class NextNode(node: Node) extends Next

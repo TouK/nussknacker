@@ -51,6 +51,8 @@ object KeyValueTestHelper {
         )
       override def sinkFactories(config: Config) = Map.empty
       override def listeners(config: Config) = Seq(LoggingListener)
+
+      override def customStreamTransformers(config: Config) = Map()
       override def foldingFunctions(config: Config) = Map("sum" -> Sum)
       override def exceptionHandlerFactory(config: Config) = ExceptionHandlerFactory.noParams(VerboselyLoggingExceptionHandler)
     }

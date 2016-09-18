@@ -18,6 +18,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers {
     Map("source" -> ObjectDefinition.noParam),
     Map("sink" -> ObjectDefinition.noParam),
     Set.empty,
+    Map.empty,
     ObjectDefinition.noParam
   )
 

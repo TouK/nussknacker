@@ -104,7 +104,15 @@ class Interpreter private(services: Map[String, ServiceInvoker],
             ValueWithModifiedContext(outputValue(ctx), ctx)
         }
         Future.successful(InterpretationResult(EndReference(id), valueWithModifiedContext))
-      case (_, AggregateKeyExpression | AggregateTriggerExpression) =>
+      case (CustomNode(id, parameters, next), CustomNodeExpression(expressionName)) =>
+        Future.successful(InterpretationResult(
+          EndReference(id),
+          evaluate(parameters.find(_.name == expressionName)
+            .map(_.expression)
+            .getOrElse(throw new IllegalArgumentException(s"Parameter $mode is not defined")), ctx)))
+      case (cust: CustomNode, Traverse) =>
+        interpretNext(cust.next, ctx)
+      case (_, AggregateKeyExpression | AggregateTriggerExpression | CustomNodeExpression(_)) =>
         throw new IllegalArgumentException(s"Mode $mode make no sense for node: ${node.getClass.getName}")
     }
   }

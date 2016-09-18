@@ -56,6 +56,8 @@ class SimpleProcessConfigCreator extends ProcessConfigCreator {
 
   override def listeners(config: Config) = List()
 
+  override def customStreamTransformers(config: Config) = Map()
+
   override def foldingFunctions(config: Config) = Map()
 
   override def sourceFactories(config: Config) = Map("input" -> SourceFactory.noParam(

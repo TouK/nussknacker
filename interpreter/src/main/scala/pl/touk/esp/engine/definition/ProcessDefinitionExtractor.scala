@@ -2,25 +2,17 @@ package pl.touk.esp.engine.definition
 
 import com.typesafe.config.Config
 import pl.touk.esp.engine.api.exception.ExceptionHandlerFactory
-import pl.touk.esp.engine.api.{FoldingFunction, Service}
+import pl.touk.esp.engine.api.{CustomStreamTransformer, FoldingFunction, Service}
 import pl.touk.esp.engine.api.process.{ProcessConfigCreator, SinkFactory, SourceFactory}
 import pl.touk.esp.engine.definition.DefinitionExtractor.{ObjectDefinition, Parameter}
 
 object ProcessDefinitionExtractor {
 
-  def extract(objects: ProcessObjects) =
-    ProcessDefinition(
-      services = objects.services.mapValues(ServiceDefinitionExtractor.extract),
-      sourceFactories = objects.sourceFactories.mapValues(ProcessObjectDefinitionExtractor.source.extract),
-      sinkFactories = objects.sinkFactories.mapValues(ProcessObjectDefinitionExtractor.sink.extract),
-      foldingFunctions = objects.foldingFunctions.keySet,
-      exceptionHandlerFactory = ProcessObjectDefinitionExtractor.exceptionHandler.extract(objects.exceptionHandlerFactory)
-    )
-
   case class ProcessObjects(services: Map[String, Service],
                             sourceFactories: Map[String, SourceFactory[_]],
                             sinkFactories: Map[String, SinkFactory],
                             foldingFunctions: Map[String, FoldingFunction[_]],
+                            customStreamTransformers: Map[String, CustomStreamTransformer],
                             exceptionHandlerFactory: ExceptionHandlerFactory)
 
   object ProcessObjects {
@@ -30,6 +22,8 @@ object ProcessDefinitionExtractor {
         sourceFactories = creator.sourceFactories(config),
         sinkFactories = creator.sinkFactories(config),
         foldingFunctions = creator.foldingFunctions(config),
+        customStreamTransformers = creator.customStreamTransformers(config),
+
         exceptionHandlerFactory = creator.exceptionHandlerFactory(config)
       )
     }
@@ -39,6 +33,7 @@ object ProcessDefinitionExtractor {
                                sourceFactories: Map[String, ObjectDefinition],
                                sinkFactories: Map[String, ObjectDefinition],
                                foldingFunctions: Set[String],
+                               customStreamTransformers: Map[String, ObjectDefinition],
                                exceptionHandlerFactory: ObjectDefinition) {
 
     def withService(id: String, params: Parameter*) =
@@ -59,7 +54,7 @@ object ProcessDefinitionExtractor {
   }
 
   object ProcessDefinition {
-    def empty: ProcessDefinition = ProcessDefinition(Map.empty, Map.empty, Map.empty, Set.empty, ObjectDefinition.noParam)
+    def empty: ProcessDefinition = ProcessDefinition(Map.empty, Map.empty, Map.empty, Set.empty, Map.empty, ObjectDefinition.noParam)
   }
 
 }

@@ -21,6 +21,13 @@ object part {
                            aggregatedVar: String, foldingFunRef: Option[String], aggregate: Aggregate,
                            nextParts: List[SubsequentPart], ends: List[End]) extends SubsequentPart
 
+  case class CustomNodePart(id: String,
+                            outputVar: String,
+                            customNodeRef: String,
+                            customNode: CustomNode,
+                            nextParts: List[SubsequentPart], ends: List[End]) extends SubsequentPart
+
+
   case class SinkPart(id: String, ref: SinkRef, sink: Sink) extends SubsequentPart {
     override lazy val ends = List(NormalEnd(sink.id))
   }

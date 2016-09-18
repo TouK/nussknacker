@@ -1,6 +1,6 @@
 package pl.touk.esp.engine.definition
 
-import pl.touk.esp.engine.api.MetaData
+import pl.touk.esp.engine.api.{CustomStreamTransformer, MetaData}
 import pl.touk.esp.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
 import pl.touk.esp.engine.api.process.{Sink, SinkFactory, Source, SourceFactory}
 import pl.touk.esp.engine.definition.DefinitionExtractor.{ObjectWithMethodDef, Parameter}
@@ -46,5 +46,6 @@ object ProcessObjectDefinitionExtractor {
   val source = new ProcessObjectDefinitionExtractor[SourceFactory[_], Source[Any]]
   val sink = new ProcessObjectDefinitionExtractor[SinkFactory, Sink]
   val exceptionHandler = new ProcessObjectDefinitionExtractor[ExceptionHandlerFactory, EspExceptionHandler]
+  val customNodeExecutor = CustomStreamTransforerExtractor
 
 }

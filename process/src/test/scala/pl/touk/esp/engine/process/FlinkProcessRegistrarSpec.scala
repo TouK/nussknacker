@@ -7,8 +7,6 @@ import pl.touk.esp.engine.api._
 import pl.touk.esp.engine.build.GraphBuilder
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
-import pl.touk.esp.engine.graph.service.{Parameter, ServiceRef}
-import pl.touk.esp.engine.graph.variable.Field
 import pl.touk.esp.engine.process.ProcessTestHelpers.{MockService, SimpleRecord, processInvoker}
 import pl.touk.esp.engine.spel
 

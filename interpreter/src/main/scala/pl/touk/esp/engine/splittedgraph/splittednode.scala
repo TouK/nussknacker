@@ -1,5 +1,6 @@
 package pl.touk.esp.engine.splittedgraph
 
+import pl.touk.esp.engine.graph.evaluatedparam.Parameter
 import pl.touk.esp.engine.graph.expression.Expression
 import pl.touk.esp.engine.graph.service.ServiceRef
 import pl.touk.esp.engine.graph.variable.Field
@@ -34,6 +35,8 @@ object splittednode {
                        keyExpression: Expression,
                        triggerExpression: Option[Expression],
                        next: Next) extends SplittedNode
+
+  case class CustomNode(id: String, customNodeRef: String, parameters: List[Parameter], next: Next) extends SplittedNode
 
   sealed trait Next
   case class NextNode(node: SplittedNode) extends Next

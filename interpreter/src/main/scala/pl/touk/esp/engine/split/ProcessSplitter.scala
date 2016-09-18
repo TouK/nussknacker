@@ -30,6 +30,12 @@ object ProcessSplitter {
     SinkPart(node.id, node.ref, splittednode.Sink(node.id, node.endResult))
   }
 
+  private def split(node: CustomNode) : CustomNodePart = {
+    val nextWithParts = traverse(node.next)
+    val splitted = splittednode.CustomNode(node.id, node.nodeType, node.parameters, nextWithParts.next)
+    CustomNodePart(node.id, node.outputVar, node.nodeType, splitted, nextWithParts.nextParts, nextWithParts.ends)
+  }
+
   private def traverse(node: Node): NextWithParts =
     node match {
       case source: Source =>
@@ -88,6 +94,9 @@ object ProcessSplitter {
         NextWithParts(NextNode(splittednode.EndingProcessor(end.id, end.service)), List.empty, List(NormalEnd(end.id)))
       case aggregate: Aggregate =>
         val part = split(aggregate)
+        NextWithParts(PartRef(part.id), List(part), List.empty)
+      case custom: CustomNode =>
+        val part = split(custom)
         NextWithParts(PartRef(part.id), List(part), List.empty)
     }
 

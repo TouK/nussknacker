@@ -7,7 +7,7 @@ import cats.instances.option._
 import pl.touk.esp.engine._
 import pl.touk.esp.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
 import pl.touk.esp.engine.api.process._
-import pl.touk.esp.engine.api.{FoldingFunction, MetaData}
+import pl.touk.esp.engine.api.{CustomStreamTransformer, FoldingFunction, MetaData}
 import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
 import pl.touk.esp.engine.canonize.ProcessCanonizer
 import pl.touk.esp.engine.compile.ProcessCompilationError._
@@ -23,11 +23,13 @@ import pl.touk.esp.engine.graph.{EspProcess, param}
 import pl.touk.esp.engine.split._
 import pl.touk.esp.engine.splittedgraph._
 import pl.touk.esp.engine.splittedgraph.part._
+import pl.touk.esp.engine.splittedgraph.splittednode.CustomNode
 
 class ProcessCompiler(protected val sub: PartSubGraphCompilerBase,
                       protected val sourceFactories: Map[String, ObjectWithMethodDef],
                       protected val sinkFactories: Map[String, ObjectWithMethodDef],
                       protected val foldingFunctions: Map[String, FoldingFunction[Any]],
+                      protected val customStreamTransformers: Map[String, ObjectWithMethodDef],
                       protected val exceptionHandlerFactory: ObjectWithMethodDef) extends ProcessCompilerBase {
 
   override type ParameterProviderT = ObjectWithMethodDef
@@ -35,6 +37,9 @@ class ProcessCompiler(protected val sub: PartSubGraphCompilerBase,
   override def compile(process: EspProcess): ValidatedNel[ProcessCompilationError, CompiledProcessParts] = {
     super.compile(process)
   }
+
+  override protected def createCustomNodeInvoker(obj: ObjectWithMethodDef, metaData: MetaData, node: CustomNode) =
+    CustomNodeInvoker[Any](obj, metaData, node)
 
   override protected def createFactory[T](obj: ObjectWithMethodDef) =
     ProcessObjectFactory[T](obj)
@@ -45,6 +50,7 @@ class ProcessValidator(protected val sub: PartSubGraphCompilerBase,
                        protected val sourceFactories: Map[String, ObjectDefinition],
                        protected val sinkFactories: Map[String, ObjectDefinition],
                        protected val foldingFunctions: Map[String, FoldingFunction[Any]],
+                       protected val customStreamTransformers: Map[String, ObjectDefinition],
                        protected val exceptionHandlerFactory: ObjectDefinition) extends ProcessCompilerBase {
 
   override type ParameterProviderT = ObjectDefinition
@@ -52,6 +58,8 @@ class ProcessValidator(protected val sub: PartSubGraphCompilerBase,
   override protected def createFactory[T](obj: ObjectDefinition) =
     new DumbProcessObjectFactory[T]
 
+  override protected def createCustomNodeInvoker(obj: ObjectDefinition, metaData: MetaData, node: CustomNode) =
+    new DumbCustomNodeInvoker[Any]
 }
 
 protected trait ProcessCompilerBase {
@@ -62,6 +70,7 @@ protected trait ProcessCompilerBase {
   protected def sinkFactories: Map[String, ParameterProviderT]
   protected def foldingFunctions: Map[String, FoldingFunction[Any]]
   protected def exceptionHandlerFactory: ParameterProviderT
+  protected val customStreamTransformers: Map[String, ParameterProviderT]
 
   protected def sub: PartSubGraphCompilerBase
 
@@ -125,6 +134,10 @@ protected trait ProcessCompilerBase {
         ) { (_, obj) =>
           compiledgraph.part.SinkPart(id, obj, sink)
         }
+      case CustomNodePart(id, outputVar, customNodeRef, customNode, nextParts, ends) =>
+        A.map2(compileCustomNodeInvoker(customNodeRef, customNode), compile(nextParts))(
+          compiledgraph.part.CustomNodePart(id, outputVar, _, customNode, _, ends)
+        )
     }
   }
 
@@ -164,7 +177,7 @@ protected trait ProcessCompilerBase {
                                       parameters: List[param.Parameter])
                                      (implicit nodeId: NodeId,
                                       metaData: MetaData): ValidatedNel[ProcessCompilationError, T] = {
-    validateParameters(parameterProviderT, parameters).map { _ =>
+    validateParameters(parameterProviderT, parameters.map(_.name)).map { _ =>
       val factory = createFactory[T](parameterProviderT)
       factory.create(metaData, parameters)
     }
@@ -175,6 +188,17 @@ protected trait ProcessCompilerBase {
     foldingFunctions.get(ref).map(valid).getOrElse(invalid(MissingFoldingFunction(ref))).toValidatedNel
   }
 
+  private def compileCustomNodeInvoker(ref: String, node: CustomNode)
+                                    (implicit nodeId: NodeId, metaData: MetaData): ValidatedNel[ProcessCompilationError, CustomNodeInvoker[Any]] = {
+
+    fromOption[ProcessCompilationError, ParameterProviderT](customStreamTransformers.get(ref), MissingCustomNodeExecutor(ref))
+      .toValidatedNel
+      .andThen((k: ParameterProviderT) => validateParameters(k, node.parameters.map(_.name)))
+      .map(createCustomNodeInvoker(_, metaData, node))
+  }
+
+  protected def createCustomNodeInvoker(obj: ParameterProviderT, metaData: MetaData, node: CustomNode) : CustomNodeInvoker[Any]
+
   protected def createFactory[T](obj: ParameterProviderT): ProcessObjectFactory[T]
 
   private def compile(parts: List[SubsequentPart])
@@ -182,10 +206,10 @@ protected trait ProcessCompilerBase {
     parts.map(compile).sequence
   }
 
-  private def validateParameters(parameterProvider: ParameterProviderT, usedParams: List[param.Parameter])
-                                (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] = {
+  private def validateParameters(parameterProvider: ParameterProviderT, usedParamsNames: List[String])
+                                (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, ParameterProviderT] = {
     val definedParamNames = parameterProvider.parameters.map(_.name).toSet
-    val usedParamNamesSet = usedParams.map(_.name).toSet
+    val usedParamNamesSet = usedParamsNames.toSet
     val missingParams = definedParamNames.diff(usedParamNamesSet)
     val redundantParams = usedParamNamesSet.diff(definedParamNames)
     val notMissing = if (missingParams.nonEmpty) invalid(MissingParameters(missingParams)) else valid(Unit)
@@ -193,7 +217,7 @@ protected trait ProcessCompilerBase {
     A.map2(
       notMissing.toValidatedNel,
       notRedundant.toValidatedNel
-    ) { (_, _) => () }.leftMap(_.map(identity[ProcessCompilationError]))
+    ) { (_, _) => parameterProvider }.leftMap(_.map(identity[ProcessCompilationError]))
   }
 
   private def validate(n: splittednode.SplittedNode): ValidatedNel[ProcessCompilationError, Unit] = {
@@ -208,6 +232,7 @@ object ProcessCompiler {
             sourceFactories: Map[String, SourceFactory[_]],
             sinkFactories: Map[String, SinkFactory],
             foldingFunctions: Map[String, FoldingFunction[_]],
+            customStreamTransformers: Map[String, CustomStreamTransformer],
             exceptionHandlerFactory: ExceptionHandlerFactory): ProcessCompiler = {
     val sourceFactoriesDefs = sourceFactories.mapValues { factory =>
       ObjectWithMethodDef(factory, ProcessObjectDefinitionExtractor.source.extractMethodDefinition(factory))
@@ -219,7 +244,10 @@ object ProcessCompiler {
     val exceptionHandlerFactoryDefs = ObjectWithMethodDef(
       exceptionHandlerFactory,
       ProcessObjectDefinitionExtractor.exceptionHandler.extractMethodDefinition(exceptionHandlerFactory))
-    new ProcessCompiler(sub, sourceFactoriesDefs, sinkFactoriesDefs, ffun, exceptionHandlerFactoryDefs)
+    val customNodesExecutorsDefs = customStreamTransformers.mapValues { executor =>
+      ObjectWithMethodDef(executor, ProcessObjectDefinitionExtractor.customNodeExecutor.extractMethodDefinition(executor))
+    }
+    new ProcessCompiler(sub, sourceFactoriesDefs, sinkFactoriesDefs, ffun, customNodesExecutorsDefs, exceptionHandlerFactoryDefs)
   }
 
 }
@@ -229,7 +257,8 @@ object ProcessValidator {
   def default(definition: ProcessDefinition): ProcessValidator = {
     val sub = PartSubGraphValidator.default(definition.services)
     val foldingFunctions = definition.foldingFunctions.map(name => name -> DumbFoldingFunction).toMap
-    new ProcessValidator(sub, definition.sourceFactories, definition.sinkFactories, foldingFunctions, definition.exceptionHandlerFactory)
+    new ProcessValidator(sub, definition.sourceFactories, definition.sinkFactories, foldingFunctions, definition.customStreamTransformers,
+      definition.exceptionHandlerFactory)
   }
 
 }
