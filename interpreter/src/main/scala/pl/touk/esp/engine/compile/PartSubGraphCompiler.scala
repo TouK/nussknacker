@@ -8,7 +8,8 @@ import pl.touk.esp.engine._
 import pl.touk.esp.engine.compile.ProcessCompilationError._
 import pl.touk.esp.engine.compile.dumb._
 import pl.touk.esp.engine.compiledgraph.expression.ExpressionParser
-import pl.touk.esp.engine.compiledgraph.service.Parameter
+import pl.touk.esp.engine.compiledgraph.node.CustomNode
+import pl.touk.esp.engine.compiledgraph.evaluatedparam.Parameter
 import pl.touk.esp.engine.definition.DefinitionExtractor._
 import pl.touk.esp.engine.definition._
 import pl.touk.esp.engine.spel.SpelExpressionParser
@@ -44,7 +45,7 @@ private[compile] trait PartSubGraphCompilerBase {
 
   protected def expressionParsers: Map[String, ExpressionParser]
   protected def services: Map[String, ParametersProviderT]
-  
+
   private val syntax = ValidatedSyntax[PartSubGraphCompilationError]
   import syntax._
 
@@ -52,7 +53,7 @@ private[compile] trait PartSubGraphCompilerBase {
     compile(n).map(_ => Unit)
   }
 
-  protected def compile(n: splittednode.SplittedNode): ValidatedNel[PartSubGraphCompilationError, compiledgraph.node.Node] = {
+  def compile(n: splittednode.SplittedNode): ValidatedNel[PartSubGraphCompilationError, compiledgraph.node.Node] = {
     implicit val nodeId = NodeId(n.id)
     n match {
       case s: splittednode.Source =>
@@ -71,6 +72,9 @@ private[compile] trait PartSubGraphCompilerBase {
         A.map3(compile(expression), nexts.map(compile).sequence, defaultNext.map(compile).sequence)(compiledgraph.node.Switch(id, _, exprVal, _, _))
       case splittednode.Aggregate(id, keyExpression, triggerExpression, next) =>
         A.map3(compile(keyExpression), triggerExpression.map(compile).sequence, compile(next))(compiledgraph.node.Aggregate(id, _, _, _))
+      case splittednode.CustomNode(id, customNodeRef, parameters, next) =>
+        val validParams = parameters.map(compile).sequence
+        A.map2(validParams, compile(next))(compiledgraph.node.CustomNode(id, _, _))
       case splittednode.Sink(id, optionalExpression) =>
         optionalExpression.map(compile).sequence.map(compiledgraph.node.Sink(id, _))
     }
@@ -113,9 +117,9 @@ private[compile] trait PartSubGraphCompilerBase {
                      (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, compiledgraph.variable.Field] =
     compile(n.expression).map(compiledgraph.variable.Field(n.name, _))
 
-  private def compile(n: graph.service.Parameter)
-                     (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, compiledgraph.service.Parameter] =
-    compile(n.expression).map(compiledgraph.service.Parameter(n.name, _))
+  private def compile(n: graph.evaluatedparam.Parameter)
+                     (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, compiledgraph.evaluatedparam.Parameter] =
+    compile(n.expression).map(compiledgraph.evaluatedparam.Parameter(n.name, _))
 
   private def compile(n: splittednode.Case)
                      (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, compiledgraph.node.Case] =

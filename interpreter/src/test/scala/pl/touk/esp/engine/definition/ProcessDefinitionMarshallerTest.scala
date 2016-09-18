@@ -14,6 +14,7 @@ class ProcessDefinitionMarshallerTest extends FlatSpec with Matchers {
       Map("fooSourceFactory" -> ObjectDefinition(List(Parameter(name = "foo", typ = "String")))),
       Map("fooSinkFactory" -> ObjectDefinition(List(Parameter(name = "foo", typ = "String")))),
       Set("fooFoldingFunction"),
+      Map("fooExecutorServiceFactory" -> ObjectDefinition(List(Parameter(name = "foo", typ = "String")))),
       ObjectDefinition.noParam
     )
 

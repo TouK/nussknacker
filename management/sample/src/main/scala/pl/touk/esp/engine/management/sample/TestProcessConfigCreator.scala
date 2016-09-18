@@ -107,6 +107,8 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
 
   override def foldingFunctions(config: Config) = Map("sample" -> SampleFoldingFunction)
 
+  override def customStreamTransformers(config: Config) = Map()
+
   override def exceptionHandlerFactory(config: Config) =
     ExceptionHandlerFactory.noParams(VerboselyLoggingExceptionHandler)
 

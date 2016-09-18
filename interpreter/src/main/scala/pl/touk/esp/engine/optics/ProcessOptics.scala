@@ -67,7 +67,7 @@ class ProcessOptics(process: CanonicalProcess) {
       case n: Switch =>
         val fromSwitch = fromNode.asInstanceOf[Switch]
         n.copy(nexts = fromSwitch.nexts, defaultNext = fromSwitch.defaultNext)
-      case _: Source | _: Sink | _: VariableBuilder | _: Processor | _: Enricher | _: Aggregate =>
+      case _: Source | _: Sink | _: VariableBuilder | _: Processor | _: Enricher | _: Aggregate | _: CustomNode=>
         node
     }
 

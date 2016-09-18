@@ -13,6 +13,9 @@ object NodesCollector {
         collectNodes(agg.aggregate) ::: agg.nextParts.flatMap(collectNodesInAllParts)
       case sink: SinkPart =>
         collectNodes(sink.sink)
+      case custom:CustomNodePart =>
+        collectNodes(custom.customNode) ::: custom.nextParts.flatMap(collectNodesInAllParts)
+
     }
 
   private def collectNodes(node: SplittedNode): List[SplittedNode] = {
@@ -35,6 +38,8 @@ object NodesCollector {
         collectNodes(n.next)
       case n: Sink =>
         List.empty
+      case n: CustomNode =>
+        collectNodes(n.next)
       case n: EndingProcessor =>
         List.empty
     }

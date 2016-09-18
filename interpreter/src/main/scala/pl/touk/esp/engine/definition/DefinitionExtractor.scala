@@ -2,14 +2,11 @@ package pl.touk.esp.engine.definition
 
 import java.lang.reflect.Method
 
-import pl.touk.esp.engine.api.ParamName
+import pl.touk.esp.engine.api.{MethodToInvoke, ParamName}
 import pl.touk.esp.engine.definition.DefinitionExtractor.{MethodDefinition, ObjectDefinition, OrderedParameters, Parameter}
 import pl.touk.esp.engine.util.ReflectUtils
 
 trait DefinitionExtractor[T] {
-
-  protected def returnType: Class[_]
-  protected def additionalParameters: Set[Class[_]]
 
   def extract(obj: T): ObjectDefinition =
     ObjectDefinition(
@@ -17,9 +14,17 @@ trait DefinitionExtractor[T] {
     )
 
   def extractMethodDefinition(obj: T): MethodDefinition = {
-    val method = obj.getClass.getMethods.find { m =>
+
+    val methods = obj.getClass.getMethods
+
+    def findByReturnType = methods.find { m =>
       m.getReturnType == returnType
-    } getOrElse {
+    }
+    def findByAnnotation = methods.find { m =>
+      m.getAnnotation(classOf[MethodToInvoke]) != null
+    }
+
+    val method = findByAnnotation orElse findByReturnType getOrElse {
       throw new IllegalArgumentException(s"Missing method with return type: $returnType")
     }
 
@@ -36,27 +41,29 @@ trait DefinitionExtractor[T] {
     MethodDefinition(method, new OrderedParameters(params))
   }
 
+  protected def returnType: Class[_]
+
+  protected def additionalParameters: Set[Class[_]]
+
 }
 
 object DefinitionExtractor {
-
-  case class ObjectWithMethodDef(obj: Any, methodDef: MethodDefinition) extends ParametersProvider {
-    def method = methodDef.method
-    def orderedParameters = methodDef.orderedParameters
-    override def parameters = orderedParameters.definedParameters
-  }
-
-  case class MethodDefinition(method: Method, orderedParameters: OrderedParameters)
 
   trait ParametersProvider {
     def parameters: List[Parameter]
   }
 
-  case class ObjectDefinition(parameters: List[Parameter]) extends ParametersProvider
+  case class ObjectWithMethodDef(obj: Any, methodDef: MethodDefinition) extends ParametersProvider {
+    def method = methodDef.method
 
-  object ObjectDefinition {
-    def noParam: ObjectDefinition = ObjectDefinition(List.empty)
+    override def parameters = orderedParameters.definedParameters
+
+    def orderedParameters = methodDef.orderedParameters
   }
+
+  case class MethodDefinition(method: Method, orderedParameters: OrderedParameters)
+
+  case class ObjectDefinition(parameters: List[Parameter]) extends ParametersProvider
 
   case class Parameter(name: String, typ: String)
 
@@ -75,6 +82,10 @@ object DefinitionExtractor {
           additionalParameters.find(classOfAdditional.isInstance).get
       }.map(_.asInstanceOf[AnyRef])
     }
+  }
+
+  object ObjectDefinition {
+    def noParam: ObjectDefinition = ObjectDefinition(List.empty)
   }
 
 }

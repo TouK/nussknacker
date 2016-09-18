@@ -5,15 +5,14 @@ import java.util.UUID
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.time.{Millis, Seconds, Span}
-import org.scalatest.{BeforeAndAfterAll, FlatSpec, Ignore, Matchers}
+import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import pl.touk.esp.engine.api.MetaData
 import pl.touk.esp.engine.build.GraphBuilder
 import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
-import pl.touk.esp.engine.graph.service.{Parameter, ServiceRef}
-import pl.touk.esp.engine.graph.{EspProcess, source}
+import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.kafka.{KafkaConfig, KafkaSpec}
 import pl.touk.esp.engine.process.KeyValueTestHelper.MockService
-import pl.touk.esp.engine.{graph, spel}
+import pl.touk.esp.engine.spel
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
