@@ -104,7 +104,7 @@ export default class Graph extends React.Component {
         var displayedNodes = this.graph.attributes.cells.models.filter(m => !m.attributes.source).map(n => n.attributes.nodeData)
         return (
             <div>
-                <h2 id="process-name">{this.props.data.metaData.id}</h2>
+                <h2 id="process-name">{this.props.data.id}</h2>
                 <NodeDetailsModal node={this.state.clickedNode} onClose={this.onDetailsClosed}/>
                 {this.processGraphPaper && this.panAndZoom && this.state.toolboxVisible ?
                     <Toolbox processGraphPaper={this.processGraphPaper} panAndZoom={this.panAndZoom} graph={this.graph}/> : null
