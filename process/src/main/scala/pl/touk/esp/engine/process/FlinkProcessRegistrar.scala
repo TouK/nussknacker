@@ -7,14 +7,16 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import com.codahale.metrics.{Histogram, SlidingTimeWindowReservoir}
 import com.typesafe.config.Config
+import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.functions._
 import org.apache.flink.api.common.state._
+import org.apache.flink.api.java.tuple
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.dropwizard.metrics.DropwizardHistogramWrapper
 import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.collector.selector.OutputSelector
 import org.apache.flink.streaming.api.functions.{AssignerWithPeriodicWatermarks, AssignerWithPunctuatedWatermarks}
-import org.apache.flink.streaming.api.operators.{AbstractStreamOperator, ChainingStrategy, OneInputStreamOperator}
+import org.apache.flink.streaming.api.operators.{StreamOperator, AbstractStreamOperator, ChainingStrategy, OneInputStreamOperator}
 import org.apache.flink.streaming.api.scala.function.util.ScalaFoldFunction
 import org.apache.flink.streaming.api.scala.{StreamExecutionEnvironment, _}
 import org.apache.flink.streaming.api.watermark.Watermark
@@ -22,6 +24,7 @@ import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.api.windowing.triggers.Trigger.TriggerContext
 import org.apache.flink.streaming.api.windowing.triggers.{Trigger, TriggerResult}
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow
+import org.apache.flink.streaming.runtime.operators.windowing.WindowOperator
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
 import org.apache.flink.util.Collector
 import pl.touk.esp.engine.Interpreter
@@ -39,6 +42,7 @@ import pl.touk.esp.engine.splittedgraph.splittednode
 import pl.touk.esp.engine.splittedgraph.splittednode.SplittedNode
 import pl.touk.esp.engine.util.SynchronousExecutionContext
 import pl.touk.esp.engine.util.metrics.InstantRateMeter
+import scala.collection.JavaConversions._
 
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
@@ -55,6 +59,19 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessW
   def register(env: StreamExecutionEnvironment, process: EspProcess): Unit = {
     Serializers.registerSerializers(env)
     register(env, compileProcess(process))
+
+    initializeStateDescriptors(env)
+
+  }
+
+  //Flink przy serializacji grafu (StateDescriptor:233) inicjalizuje KryoSerializer bez konfiguracji z env
+  //to jest chyba blad - do zgloszenia (?)
+  //TODO: czy to jedyny przypadek kiedy powinnismy tak robic??
+  def initializeStateDescriptors(env: StreamExecutionEnvironment): Unit = {
+    val config = env.getConfig
+    env.getStreamGraph.getOperators.toSet[tuple.Tuple2[Integer, StreamOperator[_]]].map(_.f1).collect {
+      case window:WindowOperator[_, _, _, _, _] => window.getStateDescriptor.initializeSerializerUnlessSet(config)
+    }
   }
 
   private def register(env: StreamExecutionEnvironment, compiledProcessWithDeps: () => CompiledProcessWithDeps): Unit = {
@@ -96,7 +113,8 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessW
           val foldingFunction = part.foldingFun.getOrElse(JListFoldingFunction).asInstanceOf[FoldingFunction[Any]]
 
           val newStart = part.aggregate.triggerExpression
-            .map(_ => windowDef.trigger(new AggregationTrigger(compiledProcessWithDeps, part.aggregate, part.aggregatedVar)))
+            .map(_ => windowDef.trigger(new AggregationTrigger(
+              compiledProcessWithDeps, part.aggregate, part.aggregatedVar, env.getConfig)))
             .getOrElse(windowDef)
             .fold(null, new WindowFoldingFunction(part.aggregatedVar, foldingFunction))
             .flatMap(new InitialInterpretationFunction(compiledProcessWithDeps, part.aggregate, part.aggregatedVar))
@@ -265,7 +283,7 @@ object FlinkProcessRegistrar {
 
   class AggregationTrigger(compiledProcessWithDepsProvider: () => CompiledProcessWithDeps,
                            node: splittednode.Aggregate,
-                           inputParamName: String) extends Trigger[AnyRef, TimeWindow] with Serializable {
+                           inputParamName: String, config: ExecutionConfig) extends Trigger[AnyRef, TimeWindow] with Serializable {
 
     private lazy implicit val ec = SynchronousExecutionContext.ctx
     private lazy val compiledProcessWithDeps = compiledProcessWithDepsProvider()
@@ -293,9 +311,11 @@ object FlinkProcessRegistrar {
     def getAggregatedState(ctx: TriggerContext): AnyRef = {
       //tutaj podajemy te nulle, bo tam wartosci sa wypelniane kiedy chcemy modyfikowac stan
       //to jest troche hack, bo polegamy na obecnej implementacji okien, ale nie wiem jak to inaczej zrobic...
+      val stateDescriptor: FoldingStateDescriptor[AnyRef, AnyRef] = new FoldingStateDescriptor[AnyRef, AnyRef]("window-contents", null,
+        new ScalaFoldFunction[AnyRef, AnyRef]((_, _) => null), classOf[AnyRef])
+      stateDescriptor.initializeSerializerUnlessSet(config)
       ctx.getPartitionedState[FoldingState[AnyRef, AnyRef]](
-        new FoldingStateDescriptor[AnyRef, AnyRef]("window-contents", null,
-          new ScalaFoldFunction[AnyRef, AnyRef]((_, _) => null), classOf[AnyRef])).get()
+        stateDescriptor).get()
     }
 
     override def onProcessingTime(time: Long, window: TimeWindow, ctx: TriggerContext) = TriggerResult.CONTINUE
