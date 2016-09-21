@@ -1,5 +1,6 @@
 package pl.touk.esp.ui.process.displayedgraph
 
+import pl.touk.esp.engine.graph.evaluatedparam.Parameter
 import pl.touk.esp.engine.graph.expression.Expression
 import pl.touk.esp.engine.graph.service.ServiceRef
 import pl.touk.esp.engine.graph.sink.SinkRef
@@ -31,6 +32,8 @@ object displayablenode {
                        slideInMillis: Long,
                        triggerExpression: Option[Expression],
                        foldingFunRef: Option[String]) extends DisplayableNode
+
+  case class CustomNode(id: String, outputVar: String, customNodeRef: String, parameters: List[Parameter]) extends DisplayableNode
 
   case class Edge(from: String, to: String, label: Option[Expression])
 

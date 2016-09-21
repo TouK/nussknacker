@@ -61,6 +61,10 @@ object ProcessConverter {
       case canonicalnode.Aggregate(id, aggregatedVar, keyExpr, duration, slide, triggerExpr, foldingFun)::tail =>
         val (tailNodes, tailEdges) = toGraphInner(tail)
         (displayablenode.Aggregate(id, aggregatedVar, keyExpr, duration, slide, triggerExpr, foldingFun) :: tailNodes, createNextEdge(id, tail) ::: tailEdges)
+      case canonicalnode.CustomNode(id, outputVar, customNodeRef, params):: tail =>
+        val (tailNodes, tailEdges) = toGraphInner(tail)
+        (displayablenode.CustomNode(id, outputVar, customNodeRef, params) :: tailNodes, createNextEdge(id, tail) ::: tailEdges)
+
       case Nil =>
         (List(),List())
     }
