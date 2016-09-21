@@ -54,35 +54,19 @@ export default class NodeDetailsModal extends React.Component {
             case 'Source':
               return (
                 <div className="node-table-body">
-                  {this.createField("input",  "Id:", this.state.tempNodeData.id, ((event) => {
-                    var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
-                    newtempNodeData.id = event.target.value
-                    this.setState( { tempNodeData: newtempNodeData} ) })
-                  )}
+                  {this.createField("input",  "Id:", this.state.tempNodeData.id, ((event) => this.setNodeDataAt('id', event.target.value) ))}
                   <div className="node-row">
                     <div className="node-label">Ref:</div>
                     <div className="node-group">
-                      {this.createField("input", "Type:", this.state.tempNodeData.ref.typ, ((event) => {
-                        var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
-                        newtempNodeData.ref.typ = event.target.value
-                        this.setState( { tempNodeData: newtempNodeData} ) })
-                      )}
+                      {this.createField("input", "Type:", this.state.tempNodeData.ref.typ, ((event) => this.setNodeDataAt('ref.typ', event.target.value) ))}
                       <div className="node-row">
                         <div className="node-label">Parameters:</div>
                         <div className="node-group child-group">
                           {this.state.tempNodeData.ref.parameters.map ((params, index) => {
                             return (
                               <div className="node-block" key={index}>
-                                {this.createField("input", "Name:", params.name, ((event) => {
-                                  var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
-                                  newtempNodeData.ref.parameters[index].name = event.target.value
-                                  this.setState( { tempNodeData: newtempNodeData} ) })
-                                )}
-                                {this.createField("input", "Value:", params.value, ((event) => {
-                                  var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
-                                  newtempNodeData.ref.parameters[index].value = event.target.value
-                                  this.setState( { tempNodeData: newtempNodeData} ) })
-                                )}
+                                {this.createField("input", "Name:", params.name, ((event) => this.setNodeDataAt(`ref.parameters[${index}].name`, event.target.value)))}
+                                {this.createField("input", "Value:", params.value, ((event) => this.setNodeDataAt(`ref.parameters[${index}].value`, event.target.value)))}
                               </div>
                             )
                           })}
@@ -95,35 +79,19 @@ export default class NodeDetailsModal extends React.Component {
             case 'Sink':
                 return (
                   <div className="node-table-body">
-                    {this.createField("input",  "Id:", this.state.tempNodeData.id, ((event) => {
-                      var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
-                      newtempNodeData.id = event.target.value
-                      this.setState( { tempNodeData: newtempNodeData} ) })
-                    )}
+                    {this.createField("input",  "Id:", this.state.tempNodeData.id, ((event) => this.setNodeDataAt('id', event.target.value) ))}
                     <div className="node-row">
                       <div className="node-label">Ref:</div>
                       <div className="node-group">
-                        {this.createField("input", "Type:", this.state.tempNodeData.ref.typ, ((event) => {
-                          var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
-                          newtempNodeData.ref.typ = event.target.value
-                          this.setState( { tempNodeData: newtempNodeData} ) })
-                        )}
+                        {this.createField("input", "Type:", this.state.tempNodeData.ref.typ, ((event) => this.setNodeDataAt('ref.typ', event.target.value) ))}
                         <div className="node-row">
                           <div className="node-label">Parameters:</div>
                           <div className="node-group child-group">
                             {this.state.tempNodeData.ref.parameters.map((params, index) => {
                               return (
                                 <div className="node-block" key={index}>
-                                  {this.createField("input", "Name:", params.name, ((event) => {
-                                    var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
-                                    newtempNodeData.ref.parameters[index].name = event.target.value
-                                    this.setState( { tempNodeData: newtempNodeData} ) })
-                                  )}
-                                  {this.createField("input", "Value:", params.value, ((event) => {
-                                    var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
-                                    newtempNodeData.ref.parameters[index].value = event.target.value
-                                    this.setState( { tempNodeData: newtempNodeData} ) })
-                                  )}
+                                  {this.createField("input", "Name:", params.name, ((event) => this.setNodeDataAt(`ref.parameters[${index}].name`, event.target.value) ))}
+                                  {this.createField("input", "Value:", params.value, ((event) => this.setNodeDataAt(`ref.parameters[${index}].value`, event.target.value) ))}
                                 </div>
                               )
                             })}
@@ -136,51 +104,27 @@ export default class NodeDetailsModal extends React.Component {
             case 'Filter':
               return (
                 <div className="node-table-body">
-                  {this.createField("input",  "Id:", this.state.tempNodeData.id, ((event) => {
-                    var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
-                    newtempNodeData.id = event.target.value
-                    this.setState( { tempNodeData: newtempNodeData} ) })
-                  )}
-                  {this.createField("textarea", "Expression:",this.state.tempNodeData.expression.expression, ((event) => {
-                    var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
-                    newtempNodeData.expression.expression.value = event.target.value
-                    this.setState( { tempNodeData: newtempNodeData} ) })
-                  )}
+                  {this.createField("input",  "Id:", this.state.tempNodeData.id, ((event) => this.setNodeDataAt('id', event.target.value) ))}
+                  {this.createField("textarea", "Expression:", this.state.tempNodeData.expression.expression, ((event) => this.setNodeDataAt('expression.expression', event.target.value) ))}
                 </div>
               )
               case 'Enricher':
               case 'Processor':
                 return (
                   <div className="node-table-body">
-                    {this.createField("input",  "Id:", this.state.tempNodeData.id, ((event) => {
-                      var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
-                      newtempNodeData.id = event.target.value
-                      this.setState( { tempNodeData: newtempNodeData} ) })
-                    )}
+                    {this.createField("input",  "Id:", this.state.tempNodeData.id, ((event) => this.setNodeDataAt('id', event.target.value) ))}
                     <div className="node-row">
                       <div className="node-label">Service:</div>
                       <div className="node-group">
-                        {this.createField("input", "Service Id:", this.state.tempNodeData.service.id, ((event) => {
-                          var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
-                          newtempNodeData.service.id = event.target.value
-                          this.setState( { tempNodeData: newtempNodeData} ) })
-                        )}
+                        {this.createField("input", "Service Id:", this.state.tempNodeData.service.id, ((event) => this.setNodeDataAt('service.id', event.target.value) ))}
                         <div className="node-row">
                           <div className="node-label">Parameters:</div>
                           <div className="node-group child-group">
                             {this.state.tempNodeData.service.parameters.map ((params, index) => {
                               return (
                                 <div className="node-block" key={index}>
-                                  {this.createField("input", "Name:", params.name, ((event) => {
-                                    var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
-                                    newtempNodeData.service.parameters[index].name = event.target.value
-                                    this.setState( { tempNodeData: newtempNodeData} ) })
-                                  )}
-                                  {this.createField("input", "Expression:", params.expression.expression, ((event) => {
-                                    var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
-                                    newtempNodeData.service.parameters[index].expression.expression = event.target.value
-                                    this.setState( { tempNodeData: newtempNodeData} ) })
-                                  )}
+                                  {this.createField("input", "Name:", params.name, ((event) => this.setNodeDataAt(`service.parameters[${index}].name`, event.target.value) ))}
+                                  {this.createField("input", "Expression:", params.expression.expression, ((event) => this.setNodeDataAt(`service.parameters[${index}].expression.expression`, event.target.value) ))}
                                 </div>
                               )
                             })}
@@ -188,42 +132,22 @@ export default class NodeDetailsModal extends React.Component {
                         </div>
                       </div>
                     </div>
-                    {this.props.node.type == 'Enricher' ? this.createField("input", "Output:", this.state.tempNodeData.output, ((event) => {
-                      var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
-                      newtempNodeData.output = event.target.value
-                      this.setState( { tempNodeData: newtempNodeData} ) }))
-                    : null }
+                    {this.props.node.type == 'Enricher' ? this.createField("input", "Output:", this.state.tempNodeData.output, ((event) => this.setNodeDataAt('output', event.target.value) )) : null }
                   </div>
                 )
             case 'VariableBuilder':
                 return (
                   <div className="node-table-body">
-                    {this.createField("input",  "Id:", this.state.tempNodeData.id, ((event) => {
-                      var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
-                      newtempNodeData.id = event.target.value
-                      this.setState( { tempNodeData: newtempNodeData} ) })
-                    )}
-                    {this.createField("input", "Variable Name:", this.state.tempNodeData.varName, ((event) => {
-                      var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
-                      newtempNodeData.varName = event.target.value
-                      this.setState( { tempNodeData: newtempNodeData} ) })
-                    )}
+                    {this.createField("input",  "Id:", this.state.tempNodeData.id, ((event) => this.setNodeDataAt('id', event.target.value) ))}
+                    {this.createField("input", "Variable Name:", this.state.tempNodeData.varName, ((event) => this.setNodeDataAt('varName', event.target.value) ))}
                     <div className="node-row">
                       <div className="node-label">Fields:</div>
                       <div className="node-group child-group">
                         {this.state.tempNodeData.fields.map ((params, index) => {
                           return (
                             <div className="node-block" key={index}>
-                              {this.createField("input", "Name:", params.name, ((event) => {
-                                var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
-                                newtempNodeData.fields[index].name = event.target.value
-                                this.setState( { tempNodeData: newtempNodeData} ) })
-                              )}
-                              {this.createField("input", "Expression:", params.expression.expression, ((event) => {
-                                var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
-                                newtempNodeData.fields[index].expression.expression = event.target.value
-                                this.setState( { tempNodeData: newtempNodeData} ) })
-                              )}
+                              {this.createField("input", "Name:", params.name, ((event) => this.setNodeDataAt(`fields[${index}].name`, event.target.value) ))}
+                              {this.createField("input", "Expression:", params.expression.expression, ((event) => this.setNodeDataAt(`fields[${index}].expression.expression`, event.target.value) ))}
                             </div>
                           )
                         })}
@@ -234,82 +158,34 @@ export default class NodeDetailsModal extends React.Component {
             case 'Switch':
               return (
                 <div className="node-table-body">
-                  {this.createField("input",  "Id:", this.state.tempNodeData.id, ((event) => {
-                    var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
-                    newtempNodeData.id = event.target.value
-                    this.setState( { tempNodeData: newtempNodeData} ) })
-                  )}
-                  {this.createField("input", "Expression:", this.state.tempNodeData.expression.expression, ((event) => {
-                    var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
-                    newtempNodeData.expression.expression = event.target.value
-                    this.setState( { tempNodeData: newtempNodeData} ) })
-                  )}
-                  {this.createField("input", "exprVal:", this.props.node.exprVal, ((event) => {
-                    var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
-                    newtempNodeData.exprVal = event.target.value
-                    this.setState( { tempNodeData: newtempNodeData} ) })
-                  )}
+                  {this.createField("input",  "Id:", this.state.tempNodeData.id, ((event) => this.setNodeDataAt('id', event.target.value) ))}
+                  {this.createField("input", "Expression:", this.state.tempNodeData.expression.expression, ((event) => this.setNodeDataAt('expression.expression', event.target.value) ))}
+                  {this.createField("input", "exprVal:", this.props.node.exprVal, ((event) => this.setNodeDataAt('exprVal', event.target.value) ))}
                 </div>
               )
             case 'Aggregate':
               return (
                 <div className="node-table-body">
-                  {this.createField("input",  "Id:", this.state.tempNodeData.id, ((event) => {
-                    var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
-                    newtempNodeData.id = event.target.value
-                    this.setState( { tempNodeData: newtempNodeData} ) })
-                  )}
-                  {this.createField("textarea", "Key Expression:", this.state.tempNodeData.keyExpression.expression, ((event) => {
-                    var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
-                    newtempNodeData.keyExpression.expression = event.target.value
-                    this.setState( { tempNodeData: newtempNodeData} ) })
-                  )}
-                  {this.createField("textarea", "Trigger Expression:", this.state.tempNodeData.triggerExpression.expression, ((event) => {
-                    var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
-                    newtempNodeData.triggerExpression.expression = event.target.value
-                    this.setState( { tempNodeData: newtempNodeData} ) })
-                  )}
-                  {this.createField("input", "Folding function", this.state.tempNodeData.foldingFunRef, ((event) => {
-                    var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
-                    newtempNodeData.foldingFunRef = event.target.value
-                    this.setState( { tempNodeData: newtempNodeData} ) })
-                  )}
-                  {this.createField("input", "Duration (ms):", this.state.tempNodeData.durationInMillis, ((event) => {
-                    var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
-                    newtempNodeData.durationInMillis = event.target.value
-                    this.setState( { tempNodeData: newtempNodeData} ) })
-                  )}
-                  {this.createField("input", "Slide (ms):", this.state.tempNodeData.slideInMillis, ((event) => {
-                    var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
-                    newtempNodeData.slideInMillis = event.target.value
-                    this.setState( { tempNodeData: newtempNodeData} ) })
-                  )}
+                  {this.createField("input",  "Id:", this.state.tempNodeData.id, ((event) => this.setNodeDataAt('id', event.target.value) ))}
+                  {this.createField("textarea", "Key Expression:", this.state.tempNodeData.keyExpression.expression, ((event) => this.setNodeDataAt('keyExpression.expression', event.target.value) ))}
+                  {this.createField("textarea", "Trigger Expression:", this.state.tempNodeData.triggerExpression.expression, ((event) => this.setNodeDataAt('triggerExpression.expression', event.target.value) ))}
+                  {this.createField("input", "Folding function", this.state.tempNodeData.foldingFunRef, ((event) => this.setNodeDataAt('foldingFunRef', event.target.value) ))}
+                  {this.createField("input", "Duration (ms):", this.state.tempNodeData.durationInMillis, ((event) => this.setNodeDataAt('durationInMillis', event.target.value) ))}
+                  {this.createField("input", "Slide (ms):", this.state.tempNodeData.slideInMillis, ((event) => this.setNodeDataAt('slideInMillis', event.target.value) ))}
                 </div>
               )
             case 'Properties':
               return (
                 <div className="node-table-body">
-                  {this.createField("input", "Variable Name:", this.state.tempNodeData.parallelism, ((event) => {
-                    var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
-                    newtempNodeData.parallelism = event.target.value
-                    this.setState( { tempNodeData: newtempNodeData} ) })
-                  )}
+                  {this.createField("input", "Variable Name:", this.state.tempNodeData.parallelism, ((event) => this.setNodeDataAt('parallelism', event.target.value) ))}
                   <div className="node-row">
                     <div className="node-label">Exception handler:</div>
                     <div className="node-group child-group">
                       {this.state.tempNodeData.exceptionHandler.parameters.map((params, index) => {
                         return (
                             <div className="node-block" key={index}>
-                              {this.createField("input", "Name:", params.name, ((event) => {
-                                var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
-                                newtempNodeData.exceptionHandler.parameters[index].name = event.target.value
-                                this.setState( { tempNodeData: newtempNodeData} ) })
-                              )}
-                              {this.createField("input", "Value:", params.value, ((event) => {
-                                var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
-                                newtempNodeData.exceptionHandler.parameters[index].value = event.target.value
-                                this.setState( { tempNodeData: newtempNodeData} ) })
-                              )}
+                              {this.createField("input", "Name:", params.name, ((event) => this.setNodeDataAt(`exceptionHandler.parameters[${index}].name`, event.target.value) ))}
+                              {this.createField("input", "Value:", params.value, ((event) => this.setNodeDataAt(`exceptionHandler.parameters[${index}].value`, event.target.value) ))}
                             </div>
                         )
                       })}
@@ -325,6 +201,12 @@ export default class NodeDetailsModal extends React.Component {
               </div>
             )
         }
+    }
+
+    setNodeDataAt = (propToMutate, newValue) => {
+      var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
+      _.set(newtempNodeData, propToMutate, newValue)
+      this.setState( { tempNodeData: newtempNodeData} )
     }
 
     contentForNode = () => {

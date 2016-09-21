@@ -23,11 +23,17 @@ export default class Graph extends React.Component {
     }
 
     componentDidMount() {
-        this.processGraphPaper = this.drawProcessGraph()
+        this.processGraphPaper = this.createPaper()
+        this.drawGraph(this.props.data)
         this.panAndZoom = this.enablePanZoom();
         this.changeNodeDetailsOnClick(this.processGraphPaper);
-        this.forceUpdate();
         this.labelToFrontOnHover(this.processGraphPaper);
+    }
+
+    componentWillUpdate(nextProps, nextState) {
+        if (!_.isEqual(this.props.data, nextProps.data)) {
+            this.drawGraph(nextProps.data)
+        }
     }
 
     directedLayout = () => {
@@ -40,11 +46,8 @@ export default class Graph extends React.Component {
         });
     }
 
-    drawProcessGraph = () => {
-        var nodes = _.map(this.props.data.nodes, (n) => { return EspNode.makeElement(n) });
-        var edges = _.map(this.props.data.edges, (e) => { return EspNode.makeLink(e) });
-        var cells = nodes.concat(edges);
-        var paper = new joint.dia.Paper({
+    createPaper = () => {
+        return new joint.dia.Paper({
             el: $('#esp-graph'),
             gridSize: 1,
             height: $('#esp-graph').height(),
@@ -53,10 +56,14 @@ export default class Graph extends React.Component {
             snapLinks: { radius: 75 },
             interactive: false //remove when editing won't be such a pain
         });
+    }
 
+    drawGraph = (data) => {
+        var nodes = _.map(data.nodes, (n) => { return EspNode.makeElement(n) });
+        var edges = _.map(data.edges, (e) => { return EspNode.makeLink(e) });
+        var cells = nodes.concat(edges);
         this.graph.resetCells(cells);
         this.directedLayout();
-        return paper;
     }
 
     enablePanZoom() {

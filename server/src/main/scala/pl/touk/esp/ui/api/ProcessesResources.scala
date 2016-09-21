@@ -1,5 +1,7 @@
 package pl.touk.esp.ui.api
 
+import java.time.LocalDateTime
+
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.Directives
@@ -34,9 +36,7 @@ class ProcessesResources(repository: ProcessRepository,
 
   implicit val processTypeCodec = ProcessTypeCodec.codec
 
-  implicit val processEncode = EncodeJson.of[ProcessDetails]
-
-  implicit val processListEncode = EncodeJson.of[List[ProcessDetails]]
+  implicit val localDateTimeEncode = EncodeJson.of[String].contramap[LocalDateTime](_.toString)
 
   implicit val displayableProcessCodec = DisplayableProcessCodec.codec
 
@@ -45,6 +45,8 @@ class ProcessesResources(repository: ProcessRepository,
   implicit val displayableProcessNodeEncoder = DisplayableProcessCodec.nodeEncoder
 
   implicit val validationResultEncode = EncodeJson.of[ValidationResult]
+
+  implicit val processListEncode = EncodeJson.of[List[ProcessDetails]]
 
   implicit val printer: Json => String =
     PrettyParams.spaces2.copy(dropNullKeys = true, preserveOrder = true).pretty
@@ -82,7 +84,7 @@ class ProcessesResources(repository: ProcessRepository,
         complete {
           val optionalDisplayableJsonFuture = repository.fetchProcessDeploymentById(id).map { optionalDeployment =>
             optionalDeployment.collect {
-              case GraphProcess(json) => ProcessConverter.toDisplayable(parseOrDie(json))
+              case GraphProcess(json) => ProcessConverter.toDisplayableOrDie(json)
             }
           }
           optionalDisplayableJsonFuture.map[ToResponseMarshallable] {
@@ -175,7 +177,8 @@ class ProcessesResources(repository: ProcessRepository,
 
   private def addProcessDetailsStatus(processDetails: ProcessDetails)(implicit ec: ExecutionContext): Future[ProcessDetails] = {
     processManager.findJobStatus(processDetails.name).map { jobState =>
-      processDetails.copy(tags = processDetails.tags ++ jobState.toList.map(js => "TEST: " + js.status)) //todo na razie tak bo mamy tylko procesy na testach
+      val updatedProcessDetails = if (jobState.exists(_.status == "RUNNING")) processDetails.copy(isRunning = true) else processDetails
+      updatedProcessDetails.copy(tags = processDetails.tags ++ jobState.toList.map(js => js.status)) //todo chcemy miec jedna wersje gui dla roznych srodowisk, czy wersje per srodowisko?
     }
   }
 

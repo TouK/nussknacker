@@ -17,7 +17,7 @@ import pl.touk.esp.engine.definition.ProcessDefinitionMarshaller
 import pl.touk.esp.engine.management.FlinkProcessManager
 import pl.touk.esp.ui.api.{ManagementResources, ProcessesResources, ValidationResources, WebResources}
 import pl.touk.esp.ui.db.DatabaseInitializer
-import pl.touk.esp.ui.process.repository.ProcessRepository
+import pl.touk.esp.ui.process.repository.{DeployedProcessRepository, ProcessRepository}
 import slick.jdbc.JdbcBackend
 
 import scala.collection.JavaConversions._
@@ -47,6 +47,8 @@ object EspUiApp extends App with Directives {
   val validator = ProcessValidator.default(loadProcessDefinition())
 
   val processRepository = new ProcessRepository(db, DefaultJdbcProfile.profile)
+  val deploymentProcessRepository = new DeployedProcessRepository(db, DefaultJdbcProfile.profile)
+
   insertInitialProcesses()
 
   val manager = FlinkProcessManager(config)
@@ -55,7 +57,7 @@ object EspUiApp extends App with Directives {
     cors() {
       pathPrefix("api") {
         new ProcessesResources(processRepository, manager, validator).route ~
-          new ManagementResources(processRepository, manager).route ~
+          new ManagementResources(processRepository, deploymentProcessRepository, manager).route ~
           new ValidationResources(validator).route
       }
     } ~
@@ -85,6 +87,8 @@ object EspUiApp extends App with Directives {
       .foreach { (entry: java.util.Map.Entry[String, ConfigValue]) =>
         processRepository.saveProcess(entry.getKey, CustomProcess(entry.getValue.unwrapped().toString))
       }
+    //do testow
+//    fixme
   }
 
 }

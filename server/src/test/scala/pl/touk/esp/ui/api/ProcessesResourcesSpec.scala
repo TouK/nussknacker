@@ -13,13 +13,12 @@ import pl.touk.esp.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.esp.engine.graph.param.Parameter
 import pl.touk.esp.engine.marshall.ProcessMarshaller
-import pl.touk.esp.ui.db.DatabaseInitializer
-import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties}
+import pl.touk.esp.ui.api.helpers.{DbTesting, InMemoryMocks}
 import pl.touk.esp.ui.process.displayedgraph.displayablenode.Sink
+import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.esp.ui.process.marshall._
 import pl.touk.esp.ui.process.repository.ProcessRepository
 import pl.touk.esp.ui.sample.SampleProcess
-import slick.jdbc.JdbcBackend
 
 import scala.concurrent.Future
 import scala.language.higherKinds
@@ -27,30 +26,15 @@ import scala.language.higherKinds
 class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Matchers with Inside
   with ScalaFutures with OptionValues with ProcessPosting with Eventually {
 
+  val db = DbTesting.db
   implicit override val patienceConfig = PatienceConfig(timeout = scaled(Span(1, Seconds)), interval = scaled(Span(100, Millis)))
 
   implicit val decoder =  DisplayableProcessCodec.codec
 
   import pl.touk.esp.engine.spel.Implicits._
 
-  val db: JdbcBackend.Database = {
-    val db = JdbcBackend.Database.forURL(
-      url = s"jdbc:hsqldb:mem:esp",
-      driver = "org.hsqldb.jdbc.JDBCDriver",
-      user = "SA",
-      password = ""
-    )
-    new DatabaseInitializer(db).initDatabase()
-    db
-  }
-
   val processRepository = new ProcessRepository(db, DefaultJdbcProfile.profile)
-  val mockProcessManager = new ProcessManager {
-    override def findJobStatus(name: String): Future[Option[ProcessState]] = Future.successful(None)
-    override def cancel(name: String): Future[Unit] = Future.successful(Unit)
-    override def deploy(processId: String, processDeploymentData: ProcessDeploymentData): Future[Unit] = Future.successful(Unit)
-  }
-
+  val mockProcessManager = InMemoryMocks.mockProcessManager
 
   val route = new ProcessesResources(processRepository, mockProcessManager, ValidationTestData.validator).route
 

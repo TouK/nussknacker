@@ -1,20 +1,24 @@
 package pl.touk.esp.ui.process.repository
 
+import java.time.LocalDateTime
+
 import argonaut.PrettyParams
 import cats.data._
-import db.util.DBIOActionInstances.{DB, _}
+import db.util.DBIOActionInstances._
 import pl.touk.esp.engine.api.deployment.{CustomProcess, GraphProcess, ProcessDeploymentData}
 import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
 import pl.touk.esp.engine.marshall.ProcessMarshaller
 import pl.touk.esp.ui.EspError._
 import pl.touk.esp.ui.api.ProcessesResources.{ProcessNotInitializedError, UnmarshallError}
-import pl.touk.esp.ui.db.migration.CreateProcessesMigration.ProcessType
+import pl.touk.esp.ui.db.migration.CreateDeployedProcessesMigration.DeployedProcessEntityData
 import pl.touk.esp.ui.db.migration.CreateProcessesMigration.ProcessType.ProcessType
 import pl.touk.esp.ui.db.migration.CreateProcessesMigration.{ProcessEntityData, ProcessType}
-import pl.touk.esp.ui.db.migration.{CreateProcessesMigration, CreateTagsMigration}
+import pl.touk.esp.ui.db.migration.CreateTagsMigration.TagsEntityData
+import pl.touk.esp.ui.db.migration.{CreateDeployedProcessesMigration, CreateProcessesMigration, CreateTagsMigration}
+import pl.touk.esp.ui.process.displayedgraph.DisplayableProcess
+import pl.touk.esp.ui.process.marshall.ProcessConverter
 import pl.touk.esp.ui.process.repository.ProcessRepository.{InvalidProcessTypeError, ProcessDetails, ProcessNotFoundError}
 import pl.touk.esp.ui.{BadRequestError, EspError, NotFoundError}
-import slick.dbio.Effect.Read
 import slick.jdbc.{JdbcBackend, JdbcProfile}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -27,10 +31,15 @@ class ProcessRepository(db: JdbcBackend.Database,
     override protected val profile: JdbcProfile = ProcessRepository.this.driver
   }
 
+  private val deployedProcessesMigration = new CreateDeployedProcessesMigration {
+    override protected val profile: JdbcProfile = ProcessRepository.this.driver
+  }
+
   private val tagsMigration = new CreateTagsMigration {
     override protected val profile: JdbcProfile = ProcessRepository.this.driver
   }
 
+  import deployedProcessesMigration._
   import driver.api._
   import processesMigration._
   import tagsMigration._
@@ -48,17 +57,10 @@ class ProcessRepository(db: JdbcBackend.Database,
   def fetchProcessesDetails()
                            (implicit ec: ExecutionContext): Future[List[ProcessDetails]] = {
     val action = for {
-      processes <- processesTable.result
-      processesWithTags <- DBIO.sequence(processes.map(fetchTagsThanPrepareDetailsAction))
-    } yield processesWithTags
+      tagsForProcesses <- tagsTable.result.map(_.toList.groupBy(_.processId).withDefaultValue(Nil))
+      processesJoined <- processesTable.joinLeft(deployedProcessesTable).on(_.id === _.id).result.map(_.map { case (a, b) => createFullDetails(a, b, tagsForProcesses(a.id))})
+    } yield processesJoined
     db.run(action).map(_.toList)
-  }
-
-  private def fetchTagsThanPrepareDetailsAction(process: ProcessEntityData)
-                                               (implicit ec: ExecutionContext): DBIOAction[ProcessDetails, NoStream, Read] = {
-    fetchProcessTagsByIdAction(process.id).map { tagsForProcess =>
-      ProcessDetails(process.id, process.name, process.description, process.processType, tagsForProcess)
-    }
   }
 
   def fetchProcessDetailsById(id: String)
@@ -66,11 +68,27 @@ class ProcessRepository(db: JdbcBackend.Database,
     val action =
       for {
         process <- OptionT[DB, ProcessEntityData](processesTable.filter(_.id === id).result.headOption)
-        processWithTags <- OptionT.liftF[DB, ProcessDetails](fetchTagsThanPrepareDetailsAction(process))
-      } yield processWithTags
+        deployedProcess <- OptionT.liftF[DB, Option[DeployedProcessEntityData]](deployedProcessesTable.filter(_.id === id).sortBy(_.deployedAt.desc).result.headOption)
+        tags <- OptionT.liftF[DB, Seq[TagsEntityData]](tagsTable.filter(_.processId === id).result)
+      } yield createFullDetails(process, deployedProcess, tags)
     db.run(action.value)
   }
 
+  private def createFullDetails(process: ProcessEntityData,
+                                deployedProcessEntityData: Option[DeployedProcessEntityData],
+                                tags: Seq[TagsEntityData]): ProcessDetails = {
+
+    ProcessDetails(
+      id = process.id,
+      name = process.name,
+      description = process.description,
+      processType = process.processType,
+      tags = tags.map(_.name).toList,
+      json = process.json.map(json => ProcessConverter.toDisplayableOrDie(json)),
+      deployedJson = deployedProcessEntityData.map(proc => ProcessConverter.toDisplayableOrDie(proc.json)),
+      deployedAt = deployedProcessEntityData.map(_.deployedAtTime)
+    )
+  }
 
   def withParsedProcessById(processId: String)
                            (f: CanonicalProcess => XError[CanonicalProcess])
@@ -103,11 +121,6 @@ class ProcessRepository(db: JdbcBackend.Database,
     db.run(action.value.transactionally)
   }
 
-
-  private def fetchProcessTagsByIdAction(processId: String)
-                                        (implicit ec: ExecutionContext): DBIOAction[List[String], NoStream, Read] =
-    tagsTable.filter(_.processId === processId).map(_.name).result.map(_.toList)
-
   def fetchProcessDeploymentById(id: String)
                           (implicit ec: ExecutionContext): Future[Option[ProcessDeploymentData]] = {
     val action = processesTable
@@ -125,12 +138,17 @@ class ProcessRepository(db: JdbcBackend.Database,
 
 object ProcessRepository {
 
-  case class ProcessDetails(id: String,
-                            name: String,
-                            description:
-                            Option[String],
-                            processType: ProcessType,
-                            tags: List[String])
+  case class ProcessDetails(
+                             id: String,
+                             name: String,
+                             description: Option[String],
+                             processType: ProcessType,
+                             tags: List[String],
+                             json: Option[DisplayableProcess],
+                             deployedJson: Option[DisplayableProcess],
+                             deployedAt: Option[LocalDateTime],
+                             isRunning: Boolean = false
+                           )
 
   case class ProcessNotFoundError(id: String) extends NotFoundError {
     def getMessage = s"No process $id found"
