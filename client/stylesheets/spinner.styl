@@ -1,0 +1,52 @@
+// preloader
+$height = 58px
+$petals = 12
+$rotatation = 1s
+$fade-in = 0.37214s
+
+$c-1 = rgba(grey, 0.91)
+$c-2 = rgba(grey, 0.15)
+
+.preloader-spin
+    font-size $height
+    position absolute
+    left 50%
+    top 50%
+    width 1em
+    height 1em
+    transform translate(-50%, -50%) rotate(180deg)
+    animation a-show-preloader $fade-in ease
+    animation-iteration-count once
+
+    &__petal
+        position absolute
+        left 0.4629em
+        bottom 0
+        width 0.1em
+        height 0.1em
+        border-radius 1em
+        background $c-2
+        transform-origin center -0.2222em
+        animation a-preloader $rotatation infinite linear
+        $delay = 0s
+        $degree = 0deg
+
+        for $num in (1..$petals)
+            &:nth-child({$num})
+                animation-delay $delay
+                transform rotate($degree)
+            $delay = $delay + ($rotatation/$petals)
+            $degree = $degree + 360deg/$petals
+
+
+@keyframes a-show-preloader
+    0%
+        opacity 0
+    100%
+        opacity 1
+
+@keyframes a-preloader
+    0%
+        background $c-1
+    100%
+        background $c-2

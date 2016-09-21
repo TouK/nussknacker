@@ -14,19 +14,22 @@ import editIcon from '../assets/img/edit-icon.png'
 import starFull from '../assets/img/star-full.svg'
 import starEmpty from '../assets/img/star-empty.svg'
 
+import LoaderSpinner from '../components/Spinner.js';
+
 export const Processes = React.createClass({
 
   getInitialState() {
     return {
       processes: [],
       filterVal: '',
-      favouriteList: new Set()
+      favouriteList: new Set(),
+      showLoader: true
     }
   },
 
   componentDidMount() {
     HttpService.fetchProcesses((fetchedProcesses) => {
-      this.setState({processes: fetchedProcesses})
+      this.setState({ processes: fetchedProcesses, showLoader: false })
     })
   },
 
@@ -76,6 +79,11 @@ export const Processes = React.createClass({
       "btn disabled edit-disabled": !this.isGraph(process),
     })
   },
+  spinnerClass(){
+    return classNames({
+      "hidden": !this.state.showLoader
+    })
+  },
 
   render() {
     return (
@@ -87,17 +95,19 @@ export const Processes = React.createClass({
             <img id="search-icon" src={filterIcon} />
           </span>
         </div>
+        <div className={this.spinnerClass()}> <LoaderSpinner /> </div>
         <Table id="process-table" className="table"
-               noDataText="No matching records found."
-               itemsPerPage={10}
-               pageButtonLimit={5}
-               previousPageLabel="< "
-               nextPageLabel=" >"
-               sortable={true}
-               currentPage="0"
-               filterable={['id', 'name']}
-               hideFilterInput
-               filterBy={this.getFilterValue()}
+           noDataText="No matching records found."
+           hidden={this.state.showLoader}
+           itemsPerPage={10}
+           pageButtonLimit={5}
+           previousPageLabel="< "
+           nextPageLabel=" >"
+           sortable={true}
+           currentPage="0"
+           filterable={['id', 'name']}
+           hideFilterInput
+           filterBy={this.getFilterValue()}
         >
 
           <Thead>
