@@ -30,8 +30,14 @@ export const Processes = React.createClass({
     })
   },
 
+  isGraph(process) {
+    return process.processType == "graph"
+  },
+
   showProcess(process) {
-    browserHistory.push('/visualization/' + process.id)
+    if(this.isGraph(process)) {
+      browserHistory.push('/visualization/' + process.id)
+    }
   },
 
   showMetrics(process) {
@@ -62,6 +68,13 @@ export const Processes = React.createClass({
       'is-favourite': this.state.favouriteList.has(process)
     });
     return isFavourite;
+  },
+
+  editIconClass(process){
+    return classNames({
+      "edit-icon": true,
+      "btn disabled edit-disabled": !this.isGraph(process),
+    })
   },
 
   render() {
@@ -113,9 +126,7 @@ export const Processes = React.createClass({
                 </Td>
                 <Td column="createDate" className="date-column">2016-08-10</Td>
                 <Td column="edit" className="edit-column">
-                  { //TODO: wyszarzanie/blokowanie zmiast ukrywania... 
-		  (process.processType == "graph") ? <img src={editIcon} className="edit-icon"
-                  onClick={this.showProcess.bind(this, process)} /> : null}
+                  <img src={editIcon} className={this.editIconClass(process)} onClick={this.showProcess.bind(this, process)} />
                 </Td>
                 <Td column="metrics" className="metrics-column">
                   <span className="glyphicon glyphicon-stats" onClick={this.showMetrics.bind(this, process)}/>
