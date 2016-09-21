@@ -8,6 +8,16 @@ import pl.touk.esp.engine.definition.DefinitionExtractor.{ObjectDefinition, Para
 
 object ProcessDefinitionExtractor {
 
+  def extract(objects: ProcessObjects) =
+    ProcessDefinition(
+      services = objects.services.mapValues(ServiceDefinitionExtractor.extract),
+      sourceFactories = objects.sourceFactories.mapValues(ProcessObjectDefinitionExtractor.source.extract),
+      sinkFactories = objects.sinkFactories.mapValues(ProcessObjectDefinitionExtractor.sink.extract),
+      foldingFunctions = objects.foldingFunctions.keySet,
+      customStreamTransformers =  objects.customStreamTransformers.mapValues(ProcessObjectDefinitionExtractor.customNodeExecutor.extract),
+      exceptionHandlerFactory = ProcessObjectDefinitionExtractor.exceptionHandler.extract(objects.exceptionHandlerFactory)
+    )
+
   case class ProcessObjects(services: Map[String, Service],
                             sourceFactories: Map[String, SourceFactory[_]],
                             sinkFactories: Map[String, SinkFactory],
