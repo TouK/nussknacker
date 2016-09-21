@@ -10,3 +10,4 @@ db.script
 db.lck
 db.tmp
 server/develConf/*.jar
+npm-debug.log

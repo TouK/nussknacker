@@ -1,10 +1,12 @@
 package pl.touk.esp.ui.process.marshall
 
+import cats.data.Validated.{Invalid, Valid}
 import pl.touk.esp.engine.api.MetaData
 import pl.touk.esp.engine.canonicalgraph.canonicalnode._
 import pl.touk.esp.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.esp.engine.canonize.ProcessCanonizer
 import pl.touk.esp.engine.graph.EspProcess
+import pl.touk.esp.engine.marshall.ProcessMarshaller
 import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties, displayablenode}
 
 object ProcessConverter {
@@ -13,11 +15,18 @@ object ProcessConverter {
     toDisplayable(ProcessCanonizer.canonize(process))
   }
 
-  def toDisplayable(process: CanonicalProcess): DisplayableProcess = {
+  private def toDisplayable(process: CanonicalProcess): DisplayableProcess = {
     val ne = toGraphInner(process.nodes)
     val (n, e) = ne
     val props = ProcessProperties(process.metaData.parallelism, process.exceptionHandlerRef)
     DisplayableProcess(process.metaData.id, props, n, e)
+  }
+
+  def toDisplayableOrDie(canonicalJson: String): DisplayableProcess = {
+    ProcessMarshaller.fromJson(canonicalJson) match {
+      case Valid(canonical) => toDisplayable(canonical)
+      case Invalid(err) => throw new IllegalArgumentException(err.msg)
+    }
   }
 
   private def toGraphInner(nodes: List[canonicalnode.CanonicalNode]): (List[displayablenode.DisplayableNode], List[displayablenode.Edge]) =

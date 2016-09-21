@@ -1,23 +1,22 @@
 import React from 'react';
 import { render } from 'react-dom';
-import ReactDOM from 'react-dom';
 import { Link } from 'react-router';
 import Graph from '../components/graph/Graph';
 import HttpService from '../http/HttpService'
 import _ from 'lodash';
 import NodeDetailsModal from '../components/graph/nodeDetailsModal.js';
+import { DropdownButton, MenuItem } from 'react-bootstrap';
 
 import '../stylesheets/visualization.styl';
 
 export const Visualization = React.createClass({
 
   getInitialState: function() {
-    return { process: {} , processDetails: {}, clickedProperties: {}, timeoutId: null, intervalId: null };
+    return { process: {}, processJsonToShow: 'json', processDetails: {}, clickedProperties: {}, timeoutId: null, intervalId: null, deployedAndCurrentProcessDiffer: false };
   },
 
   componentDidMount() {
     this.startPollingForUpdates()
-    this.fetchProcessJson();
     this.fetchProcessDetails();
   },
 
@@ -33,16 +32,18 @@ export const Visualization = React.createClass({
     this.setState({timeoutId: timeoutId})
   },
 
-  fetchProcessJson() {
-    HttpService.fetchProcessJson(this.props.params.processId, (processModel) => {
-      this.setState({process: processModel})
+  fetchProcessDetails() {
+    HttpService.fetchProcessDetails(this.props.params.processId, (processDetails) => {
+      this.setState({
+        processDetails: processDetails,
+        process: _.get(processDetails, this.state.processJsonToShow),
+        deployedAndCurrentProcessDiffer: !this.currentAndDeployedProcessEqual(processDetails)
+      })
     })
   },
 
-  fetchProcessDetails() {
-    HttpService.fetchProcessDetails(this.props.params.processId, (processDetails) => {
-      this.setState({processDetails: processDetails})
-    })
+  currentAndDeployedProcessEqual(processDetails){
+    return _.isEqual(processDetails.json, processDetails.deployedJson) && !_.isEmpty(processDetails.deployedJson)
   },
 
   showProperties() {
@@ -61,6 +62,18 @@ export const Visualization = React.createClass({
     HttpService.stop(this.props.params.processId)
   },
 
+  showDeployedProcess() {
+    this.setState({ process: this.state.processDetails.deployedJson, processJsonToShow: 'deployedJson'})
+  },
+
+  showCurrentProcess() {
+    this.setState({ process: this.state.processDetails.json, processJsonToShow: 'json'})
+  },
+
+  isRunning() {
+    return this.state.processDetails.isRunning
+  },
+
   render: function() {
     return _.isEmpty(this.state.process) || _.isEmpty(this.state.processDetails) ? null :
     (
@@ -68,17 +81,31 @@ export const Visualization = React.createClass({
             <NodeDetailsModal node={this.state.clickedProperties} onClose={this.onDetailsClosed}/>
             <div>
               <div id="esp-action-panel">
-                {this.state.processDetails.tags.map(function (tagi, tagIndex) {
+                {this.state.deployedAndCurrentProcessDiffer ? <span title="Current version differs from deployed one" className="glyphicon glyphicon-warning-sign tag-warning"/> : null}
+                <DropdownButton bsStyle="default" title="Action" id="actionDropdown">
+                  <MenuItem onSelect={this.showProperties}>Properties</MenuItem>
+                  <MenuItem disabled={!this.state.deployedAndCurrentProcessDiffer}
+                            onSelect={this.showCurrentProcess}>Show current process</MenuItem>
+                  <MenuItem disabled={!this.state.deployedAndCurrentProcessDiffer || !this.isRunning() || _.isEmpty(this.state.processDetails.deployedJson)}
+                            onSelect={this.showDeployedProcess}>Show deployed process</MenuItem>
+                  <MenuItem divider />
+                  <MenuItem onSelect={this.deploy}>Deploy</MenuItem>
+                  <MenuItem onSelect={this.stop}>Stop</MenuItem>
+                </DropdownButton>
+                {this.tagsForProcess().map(function (tagi, tagIndex) {
                   return <div key={tagIndex} className="tagsBlockVis">{tagi}</div>
                 })}
-                <button type="button" className="btn btn-success" onClick={this.showProperties}>Properties</button>
-                <button type="button" className="btn btn-success" onClick={this.deploy}>Deploy</button>
-                <button type="button" className="btn btn-danger" onClick={this.stop}>Stop</button>
               </div>
               <Graph data={this.state.process} processDetails={this.state.processDetails}/>
             </div>
         </div>
     )
+  },
+
+  tagsForProcess() {
+    var deployedVersionInfo = _.isEqual(this.state.process, this.state.processDetails.deployedJson) && this.isRunning() ? ["DEPLOYED"] : []
+    var currentVersionInfo = _.isEqual(this.state.process, this.state.processDetails.json) ? ["CURRENT"] : []
+    return _.concat(deployedVersionInfo, currentVersionInfo, this.state.processDetails.tags)
   }
 });
 
