@@ -61,5 +61,12 @@
       "fill": "#73E5B7",
       "color": "white"
     }
+  },
+  "CustomNode": {
+    "name": "CustomNode",
+    "styles": {
+      "fill": "#e892bd",
+      "color": "white"
+    }
   }
 }
