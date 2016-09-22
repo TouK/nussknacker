@@ -13,6 +13,7 @@ import org.apache.flink.api.common.state._
 import org.apache.flink.api.java.tuple
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.dropwizard.metrics.DropwizardHistogramWrapper
+import org.apache.flink.metrics.Gauge
 import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.collector.selector.OutputSelector
 import org.apache.flink.streaming.api.functions.{AssignerWithPeriodicWatermarks, AssignerWithPunctuatedWatermarks}
@@ -359,18 +360,27 @@ object FlinkProcessRegistrar {
       new Histogram(
         new SlidingTimeWindowReservoir(slidingWindow.toMillis, TimeUnit.MILLISECONDS)))
 
+    lazy val minimalDelayGauge = new Gauge[Long] {
+      val now = System.currentTimeMillis()
+      override def getValue = now - lastElement.getOrElse(now)
+    }
+
+    var lastElement : Option[Long] = None
+
     override def open(): Unit = {
       super.open()
 
-      getRuntimeContext.getMetricGroup
-        .addGroup(groupId)
-        .histogram("histogram", histogramMeter)
+      val group = getRuntimeContext.getMetricGroup.addGroup(groupId)
+      group.histogram("histogram", histogramMeter)
+      group.gauge[Long, Gauge[Long]]("minimalDelay", minimalDelayGauge)
     }
 
     override def processElement(element: StreamRecord[T]): Unit = {
       if (element.hasTimestamp) {
-        val delay = System.currentTimeMillis() - element.getTimestamp
+        val timestamp = element.getTimestamp
+        val delay = System.currentTimeMillis() - timestamp
         histogramMeter.update(delay)
+        lastElement = Some(lastElement.fold(timestamp)(math.max(_, timestamp)))
       }
       output.collect(element)
     }
