@@ -23,6 +23,7 @@ import slick.jdbc.JdbcBackend
 import scala.collection.JavaConversions._
 import scala.io.Source.fromFile
 
+//todo  dodac test, ktory startuje aplikacje i sprawdza ze sie nie wywala
 object EspUiApp extends App with Directives {
 
   implicit val system = ActorSystem("esp-ui")
