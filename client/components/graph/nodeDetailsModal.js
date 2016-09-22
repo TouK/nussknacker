@@ -135,6 +135,28 @@ export default class NodeDetailsModal extends React.Component {
                     {this.props.node.type == 'Enricher' ? this.createField("input", "Output:", this.state.tempNodeData.output, ((event) => this.setNodeDataAt('output', event.target.value) )) : null }
                   </div>
                 )
+            case 'CustomNode':
+              return (
+                <div className="node-table-body">
+                  {this.createField("input",  "Id:", this.state.tempNodeData.id, ((event) => this.setNodeDataAt('id', event.target.value) ))}
+                  {this.createField("input",  "Ouput:", this.state.tempNodeData.outputVar, ((event) => this.setNodeDataAt('outputVar', event.target.value) ))}
+                  {this.createField("input",  "Node type:", this.state.tempNodeData.customNodeRef, ((event) => this.setNodeDataAt('customNodeRef', event.target.value) ))}
+                    <div className="node-row">
+                      <div className="node-label">Parameters:</div>
+                      <div className="node-group child-group">
+                        {this.state.tempNodeData.parameters.map ((params, index) => {
+                          return (
+                            <div className="node-block" key={index}>
+                              {this.createField("input", "Name:", params.name, ((event) => this.setNodeDataAt(`parameters[${index}].name`, event.target.value) ))}
+                              {this.createField("input", "Expression:", params.expression.expression, ((event) => this.setNodeDataAt(`parameters[${index}].expression.expression`, event.target.value) ))}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                </div>
+              )
             case 'VariableBuilder':
                 return (
                   <div className="node-table-body">
