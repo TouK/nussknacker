@@ -28,7 +28,7 @@ export const Processes = React.createClass({
   },
 
   componentDidMount() {
-    HttpService.fetchProcesses((fetchedProcesses) => {
+    HttpService.fetchProcesses().then ((fetchedProcesses) => {
       this.setState({ processes: fetchedProcesses, showLoader: false })
     })
   },

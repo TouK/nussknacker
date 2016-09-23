@@ -7,13 +7,11 @@ import pl.touk.esp.engine.compile.{ProcessCompilationError, ProcessValidator}
 import pl.touk.esp.engine.util.ReflectUtils
 import pl.touk.esp.ui.api.ProcessValidation.ValidationResult
 
-trait ProcessValidation {
+class ProcessValidation(processValidator: ProcessValidator) {
 
   import pl.touk.esp.ui.util.CollectionsEnrichments._
 
-  protected def processValidator: ProcessValidator
-
-  protected def validateFilteringResults(canonical: CanonicalProcess, nodeId: String): ValidationResult = {
+  def validateFilteringResults(canonical: CanonicalProcess, nodeId: String): ValidationResult = {
     validate(canonical) match {
       case Valid(_) =>
         ValidationResult(Map.empty)
@@ -22,7 +20,7 @@ trait ProcessValidation {
     }
   }
 
-  protected def validate(canonical: CanonicalProcess): Validated[ValidationResult, Unit] = {
+  def validate(canonical: CanonicalProcess): Validated[ValidationResult, Unit] = {
     processValidator.validate(canonical).leftMap(formatErrors)
   }
 

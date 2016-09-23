@@ -11,7 +11,7 @@ import cats.data.Xor
 import pl.touk.esp.engine.api.deployment.{GraphProcess, ProcessManager}
 import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
 import pl.touk.esp.engine.canonicalgraph.canonicalnode._
-import pl.touk.esp.engine.compile.{ProcessCompilationError, ProcessValidator}
+import pl.touk.esp.engine.compile.ProcessCompilationError
 import pl.touk.esp.engine.marshall.ProcessMarshaller
 import pl.touk.esp.ui.api.ProcessValidation.ValidationResult
 import pl.touk.esp.ui.api.ProcessesResources._
@@ -27,9 +27,10 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class ProcessesResources(repository: ProcessRepository,
                          processManager: ProcessManager,
-                         protected val processValidator: ProcessValidator)
+                         processConverter: ProcessConverter,
+                         processValidation: ProcessValidation)
                         (implicit ec: ExecutionContext)
-  extends Directives with Argonaut62Support with ProcessValidation {
+  extends Directives with Argonaut62Support {
 
   import argonaut.ArgonautShapeless._
   import pl.touk.esp.engine.optics.Implicits._
@@ -84,7 +85,7 @@ class ProcessesResources(repository: ProcessRepository,
         complete {
           val optionalDisplayableJsonFuture = repository.fetchProcessDeploymentById(id).map { optionalDeployment =>
             optionalDeployment.collect {
-              case GraphProcess(json) => ProcessConverter.toDisplayableOrDie(json)
+              case GraphProcess(json) => processConverter.toDisplayableOrDie(json)
             }
           }
           optionalDisplayableJsonFuture.map[ToResponseMarshallable] {
@@ -98,12 +99,12 @@ class ProcessesResources(repository: ProcessRepository,
         entity(as[DisplayableProcess]) { displayableProcess =>
           complete {
             repository.withProcessJsonById(id) { _ =>
-              val canonical = ProcessConverter.fromDisplayable(displayableProcess)
+              val canonical = processConverter.fromDisplayable(displayableProcess)
               Xor.right((canonical, Option(ProcessMarshaller.toJson(canonical, PrettyParams.nospace))))
             }.map { canonicalXor =>
               toResponse(
                 canonicalXor.map { canonical =>
-                  validate(canonical) match {
+                  processValidation.validate(canonical) match {
                     case Valid(_) =>
                       ValidationResult(Map.empty)
                     case Invalid(errors) =>
@@ -125,24 +126,24 @@ class ProcessesResources(repository: ProcessRepository,
                 exceptionHandlerRef = properties.exceptionHandler)
               Xor.right(modificatedProcess)
             }.map { canonicalXor =>
-              toResponse(canonicalXor.map(validateFilteringResults(_, ProcessCompilationError.ProcessNodeId)))
+              toResponse(canonicalXor.map(processValidation.validateFilteringResults(_, ProcessCompilationError.ProcessNodeId)))
             }
           }
         }
       }
     } ~ path("processes" / Segment / "json" / "node" / Segment) { (processId, nodeId) =>
-       put {
+      put {
         entity(as[DisplayableNode]) { displayableNode =>
           complete {
             repository.withParsedProcessById(processId) { currentCanonical =>
-              val canonicalNode = ProcessConverter.nodeFromDisplayable(displayableNode)
+              val canonicalNode = processConverter.nodeFromDisplayable(displayableNode)
               val modificationResult = currentCanonical.modify[CanonicalNode](nodeId)(_ => canonicalNode)
               if (modificationResult.modifiedCount < 1)
                 Xor.left(NodeNotFoundError(processId = processId, nodeId = nodeId))
               else
                 Xor.right(modificationResult.value)
             }.map { canonicalXor =>
-              toResponse(canonicalXor.map(validateFilteringResults(_, nodeId)))
+              toResponse(canonicalXor.map(processValidation.validateFilteringResults(_, nodeId)))
             }
           }
         }

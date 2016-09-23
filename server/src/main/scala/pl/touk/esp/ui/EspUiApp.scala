@@ -2,21 +2,22 @@ package pl.touk.esp.ui
 
 import java.io.File
 
+import _root_.cors.CorsSupport
 import _root_.db.migration.DefaultJdbcProfile
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.stream.ActorMaterializer
 import cats.data.Validated.{Invalid, Valid}
-import ch.megard.akka.http.cors.CorsDirectives._
 import com.typesafe.config.{ConfigFactory, ConfigValue}
 import pl.touk.esp.engine.api.deployment.{CustomProcess, GraphProcess}
 import pl.touk.esp.engine.compile.ProcessValidator
 import pl.touk.esp.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
 import pl.touk.esp.engine.definition.ProcessDefinitionMarshaller
 import pl.touk.esp.engine.management.FlinkProcessManager
-import pl.touk.esp.ui.api.{ManagementResources, ProcessesResources, ValidationResources, WebResources}
+import pl.touk.esp.ui.api._
 import pl.touk.esp.ui.db.DatabaseInitializer
+import pl.touk.esp.ui.process.marshall.ProcessConverter
 import pl.touk.esp.ui.process.repository.{DeployedProcessRepository, ProcessRepository}
 import slick.jdbc.JdbcBackend
 
@@ -45,23 +46,26 @@ object EspUiApp extends App with Directives {
   val initialProcessDirectory = new File(args(1))
 
   val validator = ProcessValidator.default(loadProcessDefinition())
+  val processValidation = new ProcessValidation(validator)
+  val processConverter = new ProcessConverter(processValidation)
 
-  val processRepository = new ProcessRepository(db, DefaultJdbcProfile.profile)
+  val processRepository = new ProcessRepository(db, DefaultJdbcProfile.profile, processConverter)
   val deploymentProcessRepository = new DeployedProcessRepository(db, DefaultJdbcProfile.profile)
 
   insertInitialProcesses()
 
   val manager = FlinkProcessManager(config)
 
-  val route: Route =
-    cors() {
+  val route: Route = {
+    CorsSupport.cors() {
       pathPrefix("api") {
-        new ProcessesResources(processRepository, manager, validator).route ~
+        new ProcessesResources(processRepository, manager, processConverter, processValidation).route ~
           new ManagementResources(processRepository, deploymentProcessRepository, manager).route ~
-          new ValidationResources(validator).route
+          new ValidationResources(processValidation, processConverter).route
       }
     } ~
       WebResources.route
+  }
 
   Http().bindAndHandle(
     route,

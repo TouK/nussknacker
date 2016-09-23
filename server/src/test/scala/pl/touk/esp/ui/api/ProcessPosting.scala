@@ -8,22 +8,22 @@ import pl.touk.esp.ui.process.displayedgraph.ProcessProperties
 import pl.touk.esp.ui.process.displayedgraph.displayablenode.DisplayableNode
 import pl.touk.esp.ui.process.marshall.{DisplayableProcessCodec, ProcessConverter}
 
-trait ProcessPosting {
+class ProcessPosting(processConverter: ProcessConverter) {
 
-  protected def toEntity(process: EspProcess): RequestEntity = {
-    val displayable = ProcessConverter.toDisplayable(process)
+  def toEntity(process: EspProcess): RequestEntity = {
+    val displayable = processConverter.toDisplayable(process)
     implicit val encode = DisplayableProcessCodec.codec
     val json = displayable.asJson.pretty(PrettyParams.spaces2.copy(dropNullKeys = true, preserveOrder = true))
     HttpEntity(ContentTypes.`application/json`, json)
   }
 
-  protected def toEntity(node: DisplayableNode): RequestEntity = {
+  def toEntity(node: DisplayableNode): RequestEntity = {
     implicit val encode = DisplayableProcessCodec.nodeEncoder
     val json = node.asJson.pretty(PrettyParams.spaces2.copy(dropNullKeys = true, preserveOrder = true))
     HttpEntity(ContentTypes.`application/json`, json)
   }
 
-  protected def toEntity(properties: ProcessProperties): RequestEntity = {
+  def toEntity(properties: ProcessProperties): RequestEntity = {
     implicit val codec = DisplayableProcessCodec.propertiesCodec
     val json = properties.asJson.pretty(PrettyParams.spaces2.copy(dropNullKeys = true, preserveOrder = true))
     HttpEntity(ContentTypes.`application/json`, json)

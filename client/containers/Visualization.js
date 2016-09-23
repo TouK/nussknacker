@@ -33,13 +33,15 @@ export const Visualization = React.createClass({
   },
 
   fetchProcessDetails() {
-    HttpService.fetchProcessDetails(this.props.params.processId, (processDetails) => {
-      this.setState({
-        processDetails: processDetails,
-        process: _.get(processDetails, this.state.processJsonToShow),
-        deployedAndCurrentProcessDiffer: !this.currentAndDeployedProcessEqual(processDetails)
-      })
-    })
+    return HttpService.fetchProcessDetails(this.props.params.processId)
+      .then((processDetails) => {
+          this.setState({
+            processDetails: processDetails,
+            process: _.get(processDetails, this.state.processJsonToShow),
+            deployedAndCurrentProcessDiffer: !this.currentAndDeployedProcessEqual(processDetails)
+          })
+        }
+      )
   },
 
   currentAndDeployedProcessEqual(processDetails){
@@ -78,7 +80,14 @@ export const Visualization = React.createClass({
     return _.isEmpty(this.state.process) || _.isEmpty(this.state.processDetails) ? null :
     (
         <div className="Page">
-            <NodeDetailsModal node={this.state.clickedProperties} onClose={this.onDetailsClosed}/>
+            {!_.isEmpty(this.state.clickedProperties) ?
+              <NodeDetailsModal
+                node={this.state.clickedProperties}
+                processId={this.props.params.processId}
+                onProcessEdit={this.fetchProcessDetails}
+                editUsing={HttpService.editProcessProperties}
+                onClose={this.onDetailsClosed}/>
+              : null}
             <div>
               <div id="esp-action-panel">
                 {this.state.deployedAndCurrentProcessDiffer ? <span title="Current version differs from deployed one" className="glyphicon glyphicon-warning-sign tag-warning"/> : null}
@@ -96,7 +105,7 @@ export const Visualization = React.createClass({
                   return <div key={tagIndex} className="tagsBlockVis">{tagi}</div>
                 })}
               </div>
-              <Graph data={this.state.process} processDetails={this.state.processDetails}/>
+              <Graph data={this.state.process} processDetails={this.state.processDetails} onProcessEdit={this.fetchProcessDetails} editUsing={HttpService.editProcessNode}/>
             </div>
         </div>
     )

@@ -47,11 +47,9 @@ val scalaTestV = "3.0.0-M15"
 val slickV = "3.2.0-M1" // wsparcie dla select for update jest od 3.2.0
 val hsqldbV = "2.3.4"
 val flywayV = "4.0.3"
-val akkaHttpCcorsV = "0.1.4"
 
 libraryDependencies ++= {
   Seq(
-    "ch.megard" %% "akka-http-cors" % akkaHttpCcorsV,
     "pl.touk.esp" %% "esp-management" % espEngineV changing()
       //tutaj mamy dwie wersje jsr305 we flinku i assembly sie pluje...
       excludeAll(

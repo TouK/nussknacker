@@ -4,7 +4,6 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import argonaut.Argonaut._
 import argonaut.Json
-import db.migration.DefaultJdbcProfile
 import org.scalatest._
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.time.{Millis, Seconds, Span}
@@ -13,18 +12,18 @@ import pl.touk.esp.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.esp.engine.graph.param.Parameter
 import pl.touk.esp.engine.marshall.ProcessMarshaller
-import pl.touk.esp.ui.api.helpers.{DbTesting, InMemoryMocks}
+import pl.touk.esp.ui.api.helpers.DbTesting
+import pl.touk.esp.ui.api.helpers.TestFactory._
 import pl.touk.esp.ui.process.displayedgraph.displayablenode.Sink
 import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.esp.ui.process.marshall._
-import pl.touk.esp.ui.process.repository.ProcessRepository
 import pl.touk.esp.ui.sample.SampleProcess
 
 import scala.concurrent.Future
 import scala.language.higherKinds
 
 class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Matchers with Inside
-  with ScalaFutures with OptionValues with ProcessPosting with Eventually {
+  with ScalaFutures with OptionValues with Eventually {
 
   val db = DbTesting.db
   implicit override val patienceConfig = PatienceConfig(timeout = scaled(Span(1, Seconds)), interval = scaled(Span(100, Millis)))
@@ -33,10 +32,8 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
 
   import pl.touk.esp.engine.spel.Implicits._
 
-  val processRepository = new ProcessRepository(db, DefaultJdbcProfile.profile)
-  val mockProcessManager = InMemoryMocks.mockProcessManager
-
-  val route = new ProcessesResources(processRepository, mockProcessManager, ValidationTestData.validator).route
+  val processRepository = newProcessRepository(db)
+  val route = new ProcessesResources(processRepository, InMemoryMocks.mockProcessManager, processConverter, processValidation).route
 
   it should "return list of process details" in {
     Get("/processes") ~> route ~> check {
@@ -69,7 +66,7 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
     val modifiedParallelism = 123
     val modifiedName = "fooBarName"
     val props = ProcessProperties(Some(modifiedParallelism), ExceptionHandlerRef(List(Parameter(modifiedName, modifiedName))))
-    Put(s"/processes/${SampleProcess.process.id}/json/properties", toEntity(props)) ~> route ~> check {
+    Put(s"/processes/${SampleProcess.process.id}/json/properties", posting.toEntity(props)) ~> route ~> check {
       status shouldEqual StatusCodes.OK
       val json = entityAs[String].parseOption.value
       json.field("invalidNodes").flatMap(_.obj).value.isEmpty shouldBe false
@@ -100,7 +97,7 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
   }
 
   it should "return 404 when trying to update json of non existing process" in {
-    Put(s"/processes/missing_id/json", toEntity(SampleProcess.process)) ~> route ~> check {
+    Put(s"/processes/missing_id/json", posting.toEntity(SampleProcess.process)) ~> route ~> check {
       status shouldEqual StatusCodes.NotFound
     }
   }
@@ -110,14 +107,14 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
       processRepository.saveProcess("customProcess", CustomProcess(""))
     }
 
-    Put(s"/processes/customProcess/json", toEntity(SampleProcess.process)) ~> route ~> check {
+    Put(s"/processes/customProcess/json", posting.toEntity(SampleProcess.process)) ~> route ~> check {
       status shouldEqual StatusCodes.BadRequest
     }
   }
 
 
   it should "save correct process json with ok status" in {
-    Put(s"/processes/${SampleProcess.process.id}/json", toEntity(ValidationTestData.validProcess)) ~> route ~> check {
+    Put(s"/processes/${SampleProcess.process.id}/json", posting.toEntity(ValidationTestData.validProcess)) ~> route ~> check {
       status shouldEqual StatusCodes.OK
       checkSampleProcessRootIdEquals(ValidationTestData.validProcess.root.id)
       val json = entityAs[String].parseOption.value
@@ -126,7 +123,7 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
   }
 
   it should "save invalid process json with ok status but with non empty invalid nodes" in {
-    Put(s"/processes/${SampleProcess.process.id}/json", toEntity(ValidationTestData.invalidProcess)) ~> route ~> check {
+    Put(s"/processes/${SampleProcess.process.id}/json", posting.toEntity(ValidationTestData.invalidProcess)) ~> route ~> check {
       status shouldEqual StatusCodes.OK
       checkSampleProcessRootIdEquals(ValidationTestData.invalidProcess.root.id)
       val json = entityAs[String].parseOption.value
@@ -135,16 +132,16 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
   }
 
   it should "be possible to update subnode" in {
-    Put(s"/processes/${SampleProcess.process.id}/json", toEntity(ValidationTestData.validProcess)) ~> route ~> check {
+    Put(s"/processes/${SampleProcess.process.id}/json", posting.toEntity(ValidationTestData.validProcess)) ~> route ~> check {
       status shouldEqual StatusCodes.OK
     }
     val expression = "'foo'"
-    val modifiedSink = ProcessConverter.toDisplayable(ValidationTestData.validProcess).nodes.collectFirst {
+    val modifiedSink = processConverter.toDisplayable(ValidationTestData.validProcess).nodes.collectFirst {
       case sink: Sink =>
         sink.copy(endResult = Some(expression))
     }.getOrElse(sys.error("Process should contain sink"))
 
-    Put(s"/processes/${SampleProcess.process.id}/json/node/${modifiedSink.id}", toEntity(modifiedSink)) ~> route ~> check {
+    Put(s"/processes/${SampleProcess.process.id}/json/node/${modifiedSink.id}", posting.toEntity(modifiedSink)) ~> route ~> check {
       status shouldEqual StatusCodes.OK
       fetchSampleProcess()
         .map(_.nodes.last.asInstanceOf[canonicalnode.Sink].endResult.value.expression)
@@ -153,12 +150,12 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
   }
 
   it should "return 404 when no node" in {
-    Put(s"/processes/${SampleProcess.process.id}/json", toEntity(ValidationTestData.validProcess)) ~> route ~> check {
+    Put(s"/processes/${SampleProcess.process.id}/json", posting.toEntity(ValidationTestData.validProcess)) ~> route ~> check {
       status shouldEqual StatusCodes.OK
     }
-    val someNode = ProcessConverter.toDisplayable(ValidationTestData.validProcess).nodes.head
+    val someNode = processConverter.toDisplayable(ValidationTestData.validProcess).nodes.head
 
-    Put(s"/processes/${SampleProcess.process.id}/json/node/missing_node_id", toEntity(someNode)) ~> route ~> check {
+    Put(s"/processes/${SampleProcess.process.id}/json/node/missing_node_id", posting.toEntity(someNode)) ~> route ~> check {
       status shouldEqual StatusCodes.NotFound
     }
   }

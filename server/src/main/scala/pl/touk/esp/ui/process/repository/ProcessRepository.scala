@@ -25,7 +25,8 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 
 class ProcessRepository(db: JdbcBackend.Database,
-                        driver: JdbcProfile) {
+                        driver: JdbcProfile,
+                        processConverter: ProcessConverter) {
 
   private val processesMigration = new CreateProcessesMigration {
     override protected val profile: JdbcProfile = ProcessRepository.this.driver
@@ -58,7 +59,9 @@ class ProcessRepository(db: JdbcBackend.Database,
                            (implicit ec: ExecutionContext): Future[List[ProcessDetails]] = {
     val action = for {
       tagsForProcesses <- tagsTable.result.map(_.toList.groupBy(_.processId).withDefaultValue(Nil))
-      processesJoined <- processesTable.joinLeft(deployedProcessesTable).on(_.id === _.id).result.map(_.map { case (a, b) => createFullDetails(a, b, tagsForProcesses(a.id))})
+      processesJoined <- processesTable.joinLeft(deployedProcessesTable)
+        .on((p, dp) => p.id === dp.id && dp.deployedAt === deployedProcessesTable.filter(_.id === p.id).map(_.deployedAt).max
+      ).result.map(_.map { case (a, b) => createFullDetails(a, b, tagsForProcesses(a.id))})
     } yield processesJoined
     db.run(action).map(_.toList)
   }
@@ -84,8 +87,8 @@ class ProcessRepository(db: JdbcBackend.Database,
       description = process.description,
       processType = process.processType,
       tags = tags.map(_.name).toList,
-      json = process.json.map(json => ProcessConverter.toDisplayableOrDie(json)),
-      deployedJson = deployedProcessEntityData.map(proc => ProcessConverter.toDisplayableOrDie(proc.json)),
+      json = process.json.map(json => processConverter.toDisplayableOrDie(json)),
+      deployedJson = deployedProcessEntityData.map(proc => processConverter.toDisplayableOrDie(proc.json)),
       deployedAt = deployedProcessEntityData.map(_.deployedAtTime)
     )
   }
