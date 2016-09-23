@@ -112,7 +112,15 @@ export default class Graph extends React.Component {
         return (
             <div>
                 <h2 id="process-name">{this.props.data.id}</h2>
-                <NodeDetailsModal node={this.state.clickedNode} onClose={this.onDetailsClosed}/>
+                {!_.isEmpty(this.state.clickedNode) ?
+                    <NodeDetailsModal
+                      node={this.state.clickedNode}
+                      validationErrors={_.get(this.props.data, `validationErrors.invalidNodes[${this.state.clickedNode.id}]`)}
+                      processId={this.props.data.id}
+                      onClose={this.onDetailsClosed}
+                      editUsing={this.props.editUsing}
+                      onProcessEdit={this.props.onProcessEdit}/> : null
+                }
                 {this.processGraphPaper && this.panAndZoom && this.state.toolboxVisible ?
                     <Toolbox processGraphPaper={this.processGraphPaper} panAndZoom={this.panAndZoom} graph={this.graph}/> : null
                 }

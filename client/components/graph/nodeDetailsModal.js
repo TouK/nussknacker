@@ -3,6 +3,9 @@ import { render } from 'react-dom';
 import classNames from 'classnames';
 import Modal from 'react-modal';
 import _ from 'lodash';
+import LaddaButton from 'react-ladda';
+import laddaCss from 'ladda/dist/ladda.min.css'
+import { ListGroupItem } from 'react-bootstrap';
 
 export default class NodeDetailsModal extends React.Component {
 
@@ -10,13 +13,10 @@ export default class NodeDetailsModal extends React.Component {
       super(props);
       this.state = {
           readOnly: true,
-          tempNodeData: ''
+          tempNodeData: props.node,
+          currentNodeId: props.node.id,
+          pendingRequest: false
       };
-    }
-
-    componentWillReceiveProps(nextProps) {
-      this.setState({tempNodeData: nextProps.node})
-      this.forceUpdate()
     }
 
     closeModal = () => {
@@ -52,55 +52,9 @@ export default class NodeDetailsModal extends React.Component {
     customNode = () => {
         switch (this.nodeType()) {
             case 'Source':
-              return (
-                <div className="node-table-body">
-                  {this.createField("input",  "Id:", this.state.tempNodeData.id, ((event) => this.setNodeDataAt('id', event.target.value) ))}
-                  <div className="node-row">
-                    <div className="node-label">Ref:</div>
-                    <div className="node-group">
-                      {this.createField("input", "Type:", this.state.tempNodeData.ref.typ, ((event) => this.setNodeDataAt('ref.typ', event.target.value) ))}
-                      <div className="node-row">
-                        <div className="node-label">Parameters:</div>
-                        <div className="node-group child-group">
-                          {this.state.tempNodeData.ref.parameters.map ((params, index) => {
-                            return (
-                              <div className="node-block" key={index}>
-                                {this.createField("input", "Name:", params.name, ((event) => this.setNodeDataAt(`ref.parameters[${index}].name`, event.target.value)))}
-                                {this.createField("input", "Value:", params.value, ((event) => this.setNodeDataAt(`ref.parameters[${index}].value`, event.target.value)))}
-                              </div>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )
+              return this.sourceSinkCommon()
             case 'Sink':
-                return (
-                  <div className="node-table-body">
-                    {this.createField("input",  "Id:", this.state.tempNodeData.id, ((event) => this.setNodeDataAt('id', event.target.value) ))}
-                    <div className="node-row">
-                      <div className="node-label">Ref:</div>
-                      <div className="node-group">
-                        {this.createField("input", "Type:", this.state.tempNodeData.ref.typ, ((event) => this.setNodeDataAt('ref.typ', event.target.value) ))}
-                        <div className="node-row">
-                          <div className="node-label">Parameters:</div>
-                          <div className="node-group child-group">
-                            {this.state.tempNodeData.ref.parameters.map((params, index) => {
-                              return (
-                                <div className="node-block" key={index}>
-                                  {this.createField("input", "Name:", params.name, ((event) => this.setNodeDataAt(`ref.parameters[${index}].name`, event.target.value) ))}
-                                  {this.createField("input", "Value:", params.value, ((event) => this.setNodeDataAt(`ref.parameters[${index}].value`, event.target.value) ))}
-                                </div>
-                              )
-                            })}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )
+              return this.sourceSinkCommon()
             case 'Filter':
               return (
                 <div className="node-table-body">
@@ -199,7 +153,7 @@ export default class NodeDetailsModal extends React.Component {
             case 'Properties':
               return (
                 <div className="node-table-body">
-                  {this.createField("input", "Variable Name:", this.state.tempNodeData.parallelism, ((event) => this.setNodeDataAt('parallelism', event.target.value) ))}
+                  {this.createField("input", "Parallelism:", this.state.tempNodeData.parallelism, ((event) => this.setNodeDataAt('parallelism', event.target.value) ))}
                   <div className="node-row">
                     <div className="node-label">Exception handler:</div>
                     <div className="node-group child-group">
@@ -225,6 +179,33 @@ export default class NodeDetailsModal extends React.Component {
         }
     }
 
+    sourceSinkCommon() {
+      return (
+        <div className="node-table-body">
+          {this.createField("input", "Id:", this.state.tempNodeData.id, ((event) => this.setNodeDataAt('id', event.target.value) ))}
+          <div className="node-row">
+            <div className="node-label">Ref:</div>
+            <div className="node-group">
+              {this.createField("input", "Type:", this.state.tempNodeData.ref.typ, ((event) => this.setNodeDataAt('ref.typ', event.target.value) ))}
+              <div className="node-row">
+                <div className="node-label">Parameters:</div>
+                <div className="node-group child-group">
+                  {this.state.tempNodeData.ref.parameters.map((params, index) => {
+                    return (
+                      <div className="node-block" key={index}>
+                        {this.createField("input", "Name:", params.name, ((event) => this.setNodeDataAt(`ref.parameters[${index}].name`, event.target.value)))}
+                        {this.createField("input", "Value:", params.value, ((event) => this.setNodeDataAt(`ref.parameters[${index}].value`, event.target.value)))}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
     setNodeDataAt = (propToMutate, newValue) => {
       var newtempNodeData = _.cloneDeep(this.state.tempNodeData)
       _.set(newtempNodeData, propToMutate, newValue)
@@ -233,14 +214,11 @@ export default class NodeDetailsModal extends React.Component {
 
     contentForNode = () => {
         if (!_.isEmpty(this.props.node)) {
-          var nodeClass = classNames(
-            'node-table',
-            {
-            'node-editable': !this.state.readOnly
-          })
+          var nodeClass = classNames('node-table', { 'node-editable': !this.state.readOnly})
           return (
             <div className={nodeClass}>
               {this.customNode()}
+              {!_.isEmpty(this.props.validationErrors) ? <ListGroupItem bsStyle="danger">Node is invalid</ListGroupItem> : null}
             </div>
           )
         }
@@ -255,8 +233,18 @@ export default class NodeDetailsModal extends React.Component {
     }
 
     updateNodeData = () => {
-      // FIXME - dopisac funckje zapisu roboczego grafu
-      this.toggleReadOnly();
+      this.setState({ pendingRequest: true})
+      this.props.editUsing(this.props.processId, this.state.currentNodeId, this.state.tempNodeData).then((resp) => {
+        return this.props.onProcessEdit().then(() => {
+          this.setState({tempNodeData: this.state.tempNodeData, currentNodeId: this.state.tempNodeData.id})
+          this.toggleReadOnly();
+          if (!_.isEmpty(resp.invalidNodes)) {
+            console.error('Errors', resp.invalidNodes)
+          }
+        })
+      }).then(() =>
+        this.setState({ pendingRequest: false})
+      )
     }
 
     nodeAttributes = () => {
@@ -285,23 +273,11 @@ export default class NodeDetailsModal extends React.Component {
           }
         };
 
-        var buttonClasses = classNames(
-          'modalButton'
-        )
-        var editButtonClasses = classNames(
-          buttonClasses,
-          'pull-left',
-          {
-          'hidden': !this.state.readOnly
-        })
-        var saveButtonClasses = classNames(
-          buttonClasses,
-          'pull-left',
-          {
-          'hidden': this.state.readOnly
-        })
+      var buttonClasses = classNames('modalButton')
+      var editButtonClasses = classNames(buttonClasses, 'pull-left', { 'hidden': !this.state.readOnly})
+      var saveButtonClasses = classNames(buttonClasses, 'pull-left', { 'hidden': this.state.readOnly})
 
-        if (!_.isEmpty(this.props.node)) {
+      if (!_.isEmpty(this.props.node)) {
           var headerStyles = {
             backgroundColor: this.nodeAttributes().styles.fill,
             color: this.nodeAttributes().styles.color
@@ -319,7 +295,7 @@ export default class NodeDetailsModal extends React.Component {
                     </div>
                     <div id="modalFooter">
                       <div>
-                        <button type="button" title="Save node details" className={saveButtonClasses} onClick={this.updateNodeData}>Save</button>
+                        <LaddaButton title="Save node details" className={saveButtonClasses} loading={this.state.pendingRequest} buttonStyle='zoom-in' onClick={this.updateNodeData}>Save</LaddaButton>
                         <button type="button" title="Edit node details" className={editButtonClasses} onClick={this.editNodeData}>Edit</button>
                         <button type="button" title="Close node details" className={buttonClasses} onClick={this.closeModal}>Close</button>
                       </div>

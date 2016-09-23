@@ -7,19 +7,13 @@ import pl.touk.esp.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.esp.engine.canonize.ProcessCanonizer
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.marshall.ProcessMarshaller
+import pl.touk.esp.ui.api.ProcessValidation
 import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties, displayablenode}
 
-object ProcessConverter {
+class ProcessConverter(processValidation: ProcessValidation) {
 
   def toDisplayable(process: EspProcess): DisplayableProcess = {
     toDisplayable(ProcessCanonizer.canonize(process))
-  }
-
-  private def toDisplayable(process: CanonicalProcess): DisplayableProcess = {
-    val ne = toGraphInner(process.nodes)
-    val (n, e) = ne
-    val props = ProcessProperties(process.metaData.parallelism, process.exceptionHandlerRef)
-    DisplayableProcess(process.metaData.id, props, n, e)
   }
 
   def toDisplayableOrDie(canonicalJson: String): DisplayableProcess = {
@@ -27,6 +21,13 @@ object ProcessConverter {
       case Valid(canonical) => toDisplayable(canonical)
       case Invalid(err) => throw new IllegalArgumentException(err.msg)
     }
+  }
+
+  private def toDisplayable(process: CanonicalProcess): DisplayableProcess = {
+    val ne = toGraphInner(process.nodes)
+    val (n, e) = ne
+    val props = ProcessProperties(process.metaData.parallelism, process.exceptionHandlerRef)
+    DisplayableProcess(process.metaData.id, props, n, e, processValidation.validate(process).swap.toOption)
   }
 
   private def toGraphInner(nodes: List[canonicalnode.CanonicalNode]): (List[displayablenode.DisplayableNode], List[displayablenode.Edge]) =

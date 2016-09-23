@@ -13,9 +13,9 @@ import pl.touk.esp.ui.util.Argonaut62Support
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class ValidationResources(protected val processValidator: ProcessValidator)
+class ValidationResources(processValidation: ProcessValidation, processConverter: ProcessConverter)
                          (implicit ec: ExecutionContext)
-  extends Directives with Argonaut62Support with ProcessValidation {
+  extends Directives with Argonaut62Support{
 
   import argonaut.ArgonautShapeless._
 
@@ -31,8 +31,8 @@ class ValidationResources(protected val processValidator: ProcessValidator)
       post {
         entity(as[DisplayableProcess]) { displayable =>
           complete {
-            val canonical = ProcessConverter.fromDisplayable(displayable)
-            validate(canonical) match {
+            val canonical = processConverter.fromDisplayable(displayable)
+            processValidation.validate(canonical) match {
               case Valid(_) =>
                 Future.successful(HttpResponse(StatusCodes.OK))
               case Invalid(validationResult) =>
