@@ -141,6 +141,8 @@ class ProcessConverter(processValidation: ProcessValidation) {
       canonicalnode.VariableBuilder(id, varName, fields)
     case displayablenode.Processor(id, service) =>
       canonicalnode.Processor(id, service)
+    case displayablenode.CustomNode(id, output, customStreamRef, params) =>
+      canonicalnode.CustomNode(id, output, customStreamRef, params)
     case displayablenode.Enricher(id, service, output) =>
       canonicalnode.Enricher(id, service, output)
   }
