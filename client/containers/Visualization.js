@@ -6,17 +6,21 @@ import HttpService from '../http/HttpService'
 import _ from 'lodash';
 import NodeDetailsModal from '../components/graph/nodeDetailsModal.js';
 import { DropdownButton, MenuItem } from 'react-bootstrap';
+import { connect } from 'react-redux';
+import { bindActionCreators } from 'redux';
+import * as EspActions from '../actions/actions';
+import NodeUtils from '../components/graph/NodeUtils'
 
 import '../stylesheets/visualization.styl';
 
-export const Visualization = React.createClass({
+const Visualization = React.createClass({
 
   getInitialState: function() {
-    return { process: {}, processJsonToShow: 'json', processDetails: {}, clickedProperties: {}, timeoutId: null, intervalId: null, deployedAndCurrentProcessDiffer: false };
+    return { timeoutId: null, intervalId: null };
   },
 
   componentDidMount() {
-    this.startPollingForUpdates()
+    // this.startPollingForUpdates() fixme pobierac tylko czy job jest uruchomiony
     this.fetchProcessDetails();
   },
 
@@ -34,26 +38,11 @@ export const Visualization = React.createClass({
 
   fetchProcessDetails() {
     return HttpService.fetchProcessDetails(this.props.params.processId)
-      .then((processDetails) => {
-          this.setState({
-            processDetails: processDetails,
-            process: _.get(processDetails, this.state.processJsonToShow),
-            deployedAndCurrentProcessDiffer: !this.currentAndDeployedProcessEqual(processDetails)
-          })
-        }
-      )
-  },
-
-  currentAndDeployedProcessEqual(processDetails){
-    return _.isEqual(processDetails.json, processDetails.deployedJson) && !_.isEmpty(processDetails.deployedJson)
+      .then((processDetails) => this.props.actions.displayProcess(processDetails))
   },
 
   showProperties() {
-    this.setState({clickedProperties: this.state.process.properties});
-  },
-
-  onDetailsClosed() {
-    this.setState({clickedProperties: {}})
+    this.props.actions.displayNodeDetails(this.props.processToDisplay.properties)
   },
 
   deploy() {
@@ -65,37 +54,32 @@ export const Visualization = React.createClass({
   },
 
   showDeployedProcess() {
-    this.setState({ process: this.state.processDetails.deployedJson, processJsonToShow: 'deployedJson'})
+    this.props.actions.displayDeployedProcess(this.props.processDetails)
   },
 
   showCurrentProcess() {
-    this.setState({ process: this.state.processDetails.json, processJsonToShow: 'json'})
+    this.props.actions.displayProcess(this.props.processDetails)
   },
 
   isRunning() {
-    return this.state.processDetails.isRunning
+    return this.props.processDetails.isRunning
   },
 
   render: function() {
-    return _.isEmpty(this.state.process) || _.isEmpty(this.state.processDetails) ? null :
+    return _.isEmpty(this.props.processDetails) ? null :
     (
         <div className="Page">
-            {!_.isEmpty(this.state.clickedProperties) ?
-              <NodeDetailsModal
-                node={this.state.clickedProperties}
-                processId={this.props.params.processId}
-                onProcessEdit={this.fetchProcessDetails}
-                editUsing={HttpService.editProcessProperties}
-                onClose={this.onDetailsClosed}/>
+            {!_.isEmpty(this.props.nodeToDisplay) && NodeUtils.nodeIsProperties(this.props.nodeToDisplay) ?
+              <NodeDetailsModal onProcessEdit={this.fetchProcessDetails} editUsing={HttpService.editProcessProperties}/>
               : null}
             <div>
               <div id="esp-action-panel">
-                {this.state.deployedAndCurrentProcessDiffer ? <span title="Current version differs from deployed one" className="glyphicon glyphicon-warning-sign tag-warning"/> : null}
+                {this.props.deployedAndCurrentProcessDiffer ? <span title="Current version differs from deployed one" className="glyphicon glyphicon-warning-sign tag-warning"/> : null}
                 <DropdownButton bsStyle="default" title="Action" id="actionDropdown">
                   <MenuItem onSelect={this.showProperties}>Properties</MenuItem>
-                  <MenuItem disabled={!this.state.deployedAndCurrentProcessDiffer}
+                  <MenuItem disabled={!this.props.deployedAndCurrentProcessDiffer}
                             onSelect={this.showCurrentProcess}>Show current process</MenuItem>
-                  <MenuItem disabled={!this.state.deployedAndCurrentProcessDiffer || !this.isRunning() || _.isEmpty(this.state.processDetails.deployedJson)}
+                  <MenuItem disabled={!this.props.deployedAndCurrentProcessDiffer || !this.isRunning() || _.isEmpty(this.props.processDetails.deployedJson)}
                             onSelect={this.showDeployedProcess}>Show deployed process</MenuItem>
                   <MenuItem divider />
                   <MenuItem onSelect={this.deploy}>Deploy</MenuItem>
@@ -105,19 +89,39 @@ export const Visualization = React.createClass({
                   return <div key={tagIndex} className="tagsBlockVis">{tagi}</div>
                 })}
               </div>
-              <Graph data={this.state.process} processDetails={this.state.processDetails} onProcessEdit={this.fetchProcessDetails} editUsing={HttpService.editProcessNode}/>
+              <Graph onProcessEdit={this.fetchProcessDetails} editUsing={HttpService.editProcessNode}/>
             </div>
         </div>
     )
   },
 
   tagsForProcess() {
-    var deployedVersionInfo = _.isEqual(this.state.process, this.state.processDetails.deployedJson) && this.isRunning() ? ["DEPLOYED"] : []
-    var currentVersionInfo = _.isEqual(this.state.process, this.state.processDetails.json) ? ["CURRENT"] : []
-    return _.concat(deployedVersionInfo, currentVersionInfo, this.state.processDetails.tags)
+    var deployedVersionInfo = _.isEqual(this.props.processToDisplay, this.props.processDetails.deployedJson) && this.isRunning() ? ["DEPLOYED"] : []
+    var currentVersionInfo = _.isEqual(this.props.processToDisplay, this.props.processDetails.json) ? ["CURRENT"] : []
+    return _.concat(deployedVersionInfo, currentVersionInfo, this.props.processDetails.tags)
   }
 });
 
 Visualization.title = 'Visualization'
 Visualization.path = '/visualization/:processId'
 Visualization.header = 'Wizualizacja'
+
+
+function mapState(state) {
+  const processDetails = state.espReducer.processDetails
+  const currentAndDeployedProcessEqual = !_.isEmpty(processDetails) && _.isEqual(processDetails.json, processDetails.deployedJson) && !_.isEmpty(processDetails.deployedJson)
+  return {
+    nodeToDisplay: state.espReducer.nodeToDisplay,
+    processToDisplay: state.espReducer.processToDisplay,
+    processDetails: processDetails,
+    deployedAndCurrentProcessDiffer: !currentAndDeployedProcessEqual
+  };
+}
+
+function mapDispatch(dispatch) {
+  return {
+    actions: bindActionCreators(EspActions, dispatch)
+  };
+}
+
+export default connect(mapState, mapDispatch)(Visualization);
