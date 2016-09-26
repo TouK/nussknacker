@@ -61,6 +61,9 @@ object ProcessDefinitionExtractor {
     def withExceptionHandlerFactory(params: Parameter*) =
       copy(exceptionHandlerFactory = ObjectDefinition(params.toList))
 
+    def withCustomStreamTransformer(id: String, params: Parameter*) =
+      copy(customStreamTransformers = customStreamTransformers + (id -> ObjectDefinition(params.toList)))
+
   }
 
   object ProcessDefinition {
