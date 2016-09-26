@@ -1,30 +1,48 @@
 import React, {Component} from 'react';
 import {render} from 'react-dom';
+import { connect } from 'react-redux';
+import { bindActionCreators } from 'redux';
 import classNames from 'classnames';
 import Modal from 'react-modal';
 import _ from 'lodash';
 import LaddaButton from 'react-ladda';
 import laddaCss from 'ladda/dist/ladda.min.css'
+import * as EspActions from '../../actions/actions';
 import { ListGroupItem } from 'react-bootstrap';
 import NodeUtils from './NodeUtils';
 import NodeDetailsContent from './NodeDetailsContent';
 
 
-export default class NodeDetailsModal extends React.Component {
+class NodeDetailsModal extends React.Component {
+
+  static propTypes = {
+    editUsing: React.PropTypes.func.isRequired,
+    onProcessEdit: React.PropTypes.func.isRequired,
+    nodeToDisplay: React.PropTypes.object.isRequired,
+    processId: React.PropTypes.string.isRequired,
+    nodeErrors: React.PropTypes.array.isRequired
+  }
 
   constructor(props) {
     super(props);
     this.state = {
       isEditMode: false,
-      editedNode: props.node,
-      currentNodeId: props.node.id,
+      editedNode: props.nodeToDisplay,
+      currentNodeId: props.nodeToDisplay.id,
       pendingRequest: false
     };
   }
 
+  componentDidUpdate(prevProps, prevState){
+    //fixme na razie tak, bo undo w devtoolsach nie uderza do backendu
+    if (!_.isEqual(prevProps.nodeToDisplay, this.props.nodeToDisplay)) {
+      this.setState({editedNode: this.props.nodeToDisplay})
+    }
+  }
+
   closeModal = () => {
     this.setState({isEditMode: true})
-    this.props.onClose()
+    this.props.actions.closeNodeDetails()
   }
 
   toggleEdition = () => {
@@ -40,9 +58,8 @@ export default class NodeDetailsModal extends React.Component {
     this.props.editUsing(this.props.processId, this.state.currentNodeId, this.state.editedNode).then((resp) => {
       return this.props.onProcessEdit().then(() => {
         this.setState({currentNodeId: this.state.editedNode.id, isEditMode: false})
-        if (!_.isEmpty(resp.invalidNodes)) {
-          console.error('Errors', resp.invalidNodes)
-        }
+        if (!_.isEmpty(resp.invalidNodes)) { console.error('Errors', resp.invalidNodes) }
+        this.props.actions.nodeChangePersisted(this.props.nodeToDisplay, this.state.editedNode)
       })
     }).then(() =>
       this.setState({pendingRequest: false})
@@ -55,7 +72,7 @@ export default class NodeDetailsModal extends React.Component {
 
   nodeAttributes = () => {
     var nodeAttributes = require('json!../../assets/json/nodeAttributes.json');
-    return nodeAttributes[NodeUtils.nodeType(this.props.node)];
+    return nodeAttributes[NodeUtils.nodeType(this.props.nodeToDisplay)];
   }
 
   updateNodeState = (newNodeState) => {
@@ -63,7 +80,7 @@ export default class NodeDetailsModal extends React.Component {
   }
 
   render() {
-    var isOpen = !(_.isEmpty(this.props.node))
+    var isOpen = !(_.isEmpty(this.props.nodeToDisplay))
     var modalStyles = {
       overlay: {
         backgroundColor: 'rgba(63, 62, 61, 0.3)'
@@ -92,11 +109,11 @@ export default class NodeDetailsModal extends React.Component {
       <div className="objectModal">
         <Modal isOpen={isOpen} style={modalStyles} onRequestClose={this.closeModal}>
           <div id="modalHeader" style={headerStyles}>
-            <span>{NodeUtils.nodeType(this.props.node)}</span>
+            <span>{NodeUtils.nodeType(this.props.nodeToDisplay)}</span>
           </div>
           <div id="modalContent">
             <NodeDetailsContent isEditMode={this.state.isEditMode} node={this.state.editedNode}
-                                validationErrors={this.props.validationErrors} onChange={this.updateNodeState}/>
+                                validationErrors={this.props.nodeErrors} onChange={this.updateNodeState}/>
           </div>
           <div id="modalFooter">
             <div>
@@ -115,3 +132,20 @@ export default class NodeDetailsModal extends React.Component {
     );
   }
 }
+
+
+function mapState(state) {
+  return {
+    nodeToDisplay: state.espReducer.nodeToDisplay,
+    processId: state.espReducer.processToDisplay.id,
+    nodeErrors: _.get(state.espReducer.processToDisplay, `validationErrors.invalidNodes[${state.espReducer.nodeToDisplay.id}]`) || []
+  };
+}
+
+function mapDispatch(dispatch) {
+  return {
+    actions: bindActionCreators(EspActions, dispatch)
+  };
+}
+
+export default connect(mapState, mapDispatch)(NodeDetailsModal);

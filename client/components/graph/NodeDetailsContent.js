@@ -14,6 +14,12 @@ export default class NodeDetailsContent extends React.Component {
     }
   }
 
+  componentDidUpdate(prevProps, prevState){
+    if (!_.isEqual(prevProps.node, this.props.node)) {
+      this.setState({editedNode: this.props.node})
+    }
+  }
+
   customNode = () => {
     switch (NodeUtils.nodeType(this.props.node)) {
       case 'Source':
@@ -219,7 +225,7 @@ export default class NodeDetailsContent extends React.Component {
     return (
       <div className={nodeClass}>
         {this.customNode()}
-        {!_.isEmpty(this.props.validationErrors) ?
+        {!_.isEmpty(this.props.nodeErrors) ?
           <ListGroupItem bsStyle="danger">Node is invalid</ListGroupItem> : null}
       </div>
     )

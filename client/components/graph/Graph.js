@@ -7,32 +7,38 @@ import _ from 'lodash'
 import svgPanZoom from 'svg-pan-zoom'
 import $ from 'jquery'
 import classNames from 'classnames';
+import { connect } from 'react-redux';
+import { bindActionCreators } from 'redux';
+import * as EspActions from '../../actions/actions';
 import NodeDetailsModal from './nodeDetailsModal.js';
 
 import '../../stylesheets/graph.styl'
 
-export default class Graph extends React.Component {
+class Graph extends React.Component {
+
+    static propTypes = {
+        processToDisplay: React.PropTypes.object.isRequired
+    }
 
     constructor(props) {
         super(props);
         this.graph = new joint.dia.Graph();
         this.state = {
-            clickedNode: {},
             toolboxVisible: false
         };
     }
 
     componentDidMount() {
         this.processGraphPaper = this.createPaper()
-        this.drawGraph(this.props.data)
+        this.drawGraph(this.props.processToDisplay)
         this.panAndZoom = this.enablePanZoom();
         this.changeNodeDetailsOnClick(this.processGraphPaper);
         this.labelToFrontOnHover(this.processGraphPaper);
     }
 
     componentWillUpdate(nextProps, nextState) {
-        if (!_.isEqual(this.props.data, nextProps.data)) {
-            this.drawGraph(nextProps.data)
+        if (!_.isEqual(this.props.processToDisplay, nextProps.processToDisplay)) {
+            this.drawGraph(nextProps.processToDisplay)
         }
     }
 
@@ -97,7 +103,7 @@ export default class Graph extends React.Component {
     changeNodeDetailsOnClick () {
         this.processGraphPaper.on('cell:pointerclick', (cellView, evt, x, y) => {
             if (cellView.model.attributes.nodeData) {
-                this.setState({clickedNode: cellView.model.attributes.nodeData});
+                this.props.actions.displayNodeDetails(cellView.model.attributes.nodeData)
             }
         });
     }
@@ -106,10 +112,6 @@ export default class Graph extends React.Component {
         this.processGraphPaper.on('cell:mouseover', (cellView, evt, x, y) => {
           cellView.model.toFront();
         });
-    }
-
-    onDetailsClosed = () => {
-        this.setState({clickedNode: {}})
     }
 
     toggleToolbox = () => {
@@ -121,15 +123,9 @@ export default class Graph extends React.Component {
         var displayedNodes = this.graph.attributes.cells.models.filter(m => !m.attributes.source).map(n => n.attributes.nodeData)
         return (
             <div>
-                <h2 id="process-name">{this.props.data.id}</h2>
-                {!_.isEmpty(this.state.clickedNode) ?
-                    <NodeDetailsModal
-                      node={this.state.clickedNode}
-                      validationErrors={_.get(this.props.data, `validationErrors.invalidNodes[${this.state.clickedNode.id}]`)}
-                      processId={this.props.data.id}
-                      onClose={this.onDetailsClosed}
-                      editUsing={this.props.editUsing}
-                      onProcessEdit={this.props.onProcessEdit}/> : null
+                <h2 id="process-name">{this.props.processToDisplay.id}</h2>
+                {!_.isEmpty(this.props.nodeToDisplay) ?
+                    <NodeDetailsModal editUsing={this.props.editUsing} onProcessEdit={this.props.onProcessEdit}/> : null
                 }
                 {this.processGraphPaper && this.panAndZoom && this.state.toolboxVisible ?
                     <Toolbox processGraphPaper={this.processGraphPaper} panAndZoom={this.panAndZoom} graph={this.graph}/> : null
@@ -141,6 +137,21 @@ export default class Graph extends React.Component {
 
     }
 }
+
+function mapState(state) {
+    return {
+        nodeToDisplay: state.espReducer.nodeToDisplay,
+        processToDisplay: state.espReducer.processToDisplay
+    };
+}
+
+function mapDispatch(dispatch) {
+    return {
+        actions: bindActionCreators(EspActions, dispatch)
+    };
+}
+
+export default connect(mapState, mapDispatch)(Graph);
 
 class Toolbox extends React.Component {
 
