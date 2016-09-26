@@ -8,11 +8,13 @@ object ValidationTestData {
 
   val existingSourceFactory = "barSource"
   val existingSinkFactory = "barSink"
+  val existingStreamTransformer = "transformer"
 
   val validator = ProcessValidator.default(
     ProcessDefinition.empty
       .withSourceFactory(existingSourceFactory)
       .withSinkFactory(existingSinkFactory)
+      .withCustomStreamTransformer(existingStreamTransformer)
   )
 
   val validProcess =
@@ -20,6 +22,7 @@ object ValidationTestData {
       .id("fooProcess")
       .exceptionHandler()
       .source("source", existingSourceFactory)
+      .customNode("custom", "out1", existingStreamTransformer)
       .sink("sink", existingSinkFactory)
 
   val invalidProcess = {
