@@ -3,12 +3,13 @@ package pl.touk.esp.engine.definition
 import pl.touk.esp.engine.Interpreter
 import pl.touk.esp.engine.api.InterpreterMode.CustomNodeExpression
 import pl.touk.esp.engine.api._
+import pl.touk.esp.engine.api.exception.EspExceptionHandler
 import pl.touk.esp.engine.compile.PartSubGraphCompiler
-import pl.touk.esp.engine.definition.DefinitionExtractor.{Parameter, ObjectWithMethodDef}
+import pl.touk.esp.engine.definition.DefinitionExtractor.{ObjectWithMethodDef, Parameter}
 import pl.touk.esp.engine.splittedgraph.splittednode.CustomNode
 import pl.touk.esp.engine.util.SynchronousExecutionContext
 
-import scala.concurrent.{Await, Future, ExecutionContext}
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration.FiniteDuration
 
 trait CustomNodeInvoker[T] {
@@ -20,7 +21,7 @@ private[definition] class CustomNodeInvokerImpl[T](executor: ObjectWithMethodDef
 
   override def run(lazyDeps: () => CustomNodeInvokerDeps) : T = {
     def prepareParams(param: Parameter) = CompilerLazyInterpreter(lazyDeps, metaData, node, param)
-    val values = executor.orderedParameters.prepareValues(prepareParams, Seq())
+    val values = executor.orderedParameters.prepareValues(prepareParams, Seq(() => lazyDeps().exceptionHandler))
     executor.method.invoke(executor.obj, values: _*).asInstanceOf[T]
   }
 
@@ -68,12 +69,14 @@ trait CustomNodeInvokerDeps {
   def interpreter: Interpreter
   def subPartCompiler: PartSubGraphCompiler
   def processTimeout: FiniteDuration
+  def exceptionHandler: EspExceptionHandler
 }
 
 object CustomStreamTransforerExtractor extends DefinitionExtractor[CustomStreamTransformer] {
 
   override protected val returnType = classOf[Any]
-  override protected val additionalParameters = Set[Class[_]]()
+
+  override protected val additionalParameters = Set[Class[_]](classOf[() => EspExceptionHandler])
 
 }
 

@@ -4,15 +4,17 @@ import java.util.Date
 
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.flink.api.common.ExecutionConfig
+import org.apache.flink.api.common.functions.{MapFunction, RichMapFunction}
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor
 import org.apache.flink.streaming.api.scala._
 import pl.touk.esp.engine.api.LazyInterpreter
-import pl.touk.esp.engine.api.exception.ExceptionHandlerFactory
+import pl.touk.esp.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
 import pl.touk.esp.engine.api.process.{ProcessConfigCreator, Sink, SinkFactory, SourceFactory}
 import pl.touk.esp.engine.api._
 import pl.touk.esp.engine.graph.EspProcess
-import pl.touk.esp.engine.util.{SynchronousExecutionContext, LoggingListener}
+import pl.touk.esp.engine.process.api.WithExceptionHandler
+import pl.touk.esp.engine.util.{LoggingListener, SynchronousExecutionContext}
 import pl.touk.esp.engine.util.exception.VerboselyLoggingExceptionHandler
 import pl.touk.esp.engine.util.source.CollectionSource
 
@@ -70,13 +72,13 @@ object ProcessTestHelpers {
   object StateCustomNode extends CustomStreamTransformer {
 
     @MethodToInvoke
-    def execute(@ParamName("keyBy") keyBy: LazyInterpreter) = (start: DataStream[InterpretationResult], timeout: FiniteDuration) => {
+    def execute(@ParamName("keyBy") keyBy: LazyInterpreter)(exceptionHander: ()=>EspExceptionHandler) = (start: DataStream[InterpretationResult], timeout: FiniteDuration) => {
 
       start.keyBy(keyBy.syncInterpretationFunction.andThen(_.output))
         .flatMapWithState[Any, Long] {
         case (SimpleFromIr(sr), Some(oldState)) => (List(SimpleRecordWithPreviousValue(sr, oldState)), Some(sr.value1))
         case (SimpleFromIr(sr), None) =>  (List(SimpleRecordWithPreviousValue(sr, 0)), Some(sr.value1))
-      }
+      }.map(CustomMap(exceptionHander))
 
     }
 
@@ -84,6 +86,13 @@ object ProcessTestHelpers {
       def unapply(ir:InterpretationResult) = Some(ir.finalContext.apply[SimpleRecord]("input"))
     }
 
+  }
+
+  case class CustomMap(lazyHandler: ()=>EspExceptionHandler) extends RichMapFunction[Any, Any] with WithExceptionHandler {
+    override def map(value: Any) = {
+       //tu nic madrego nie robimy, tylko zeby zobaczyc czy Exceptionhandler jest wstrzykniety
+       exceptionHandler.recover(value)(Context()).getOrElse(0)
+    }
   }
 
   object MockService extends Service {
