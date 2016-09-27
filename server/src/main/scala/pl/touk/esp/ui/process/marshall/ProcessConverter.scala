@@ -27,7 +27,7 @@ class ProcessConverter(processValidation: ProcessValidation) {
     val ne = toGraphInner(process.nodes)
     val (n, e) = ne
     val props = ProcessProperties(process.metaData.parallelism, process.exceptionHandlerRef)
-    DisplayableProcess(process.metaData.id, props, n, e, processValidation.validate(process).swap.toOption)
+    DisplayableProcess(process.metaData.id, props, n, e, processValidation.validate(process))
   }
 
   private def toGraphInner(nodes: List[canonicalnode.CanonicalNode]): (List[displayablenode.DisplayableNode], List[displayablenode.Edge]) =

@@ -16,8 +16,6 @@ import NodeDetailsContent from './NodeDetailsContent';
 class NodeDetailsModal extends React.Component {
 
   static propTypes = {
-    editUsing: React.PropTypes.func.isRequired,
-    onProcessEdit: React.PropTypes.func.isRequired,
     nodeToDisplay: React.PropTypes.object.isRequired,
     processId: React.PropTypes.string.isRequired,
     nodeErrors: React.PropTypes.array.isRequired
@@ -53,21 +51,11 @@ class NodeDetailsModal extends React.Component {
     this.toggleEdition();
   }
 
-  updateNodeData = () => {
-    this.setState({pendingRequest: true})
-    this.props.editUsing(this.props.processId, this.state.currentNodeId, this.state.editedNode).then((resp) => {
-      return this.props.onProcessEdit().then(() => {
-        this.setState({currentNodeId: this.state.editedNode.id, isEditMode: false})
-        if (!_.isEmpty(resp.invalidNodes)) { console.error('Errors', resp.invalidNodes) }
-        this.props.actions.nodeChangePersisted(this.props.nodeToDisplay, this.state.editedNode)
-      })
-    }).then(() =>
-      this.setState({pendingRequest: false})
-    ).catch( (error) => {
-      //todo globalna oblsuga bledow
-      this.setState({pendingRequest: false})
-      console.log(error)
-    })
+  performNodeEdit = () => {
+    this.setState( { pendingRequest: true})
+    this.props.actions.editNode(this.props.processToDisplay, this.props.nodeToDisplay, this.state.editedNode).then (() =>
+      this.setState( { pendingRequest: false, isEditMode: false})
+    )
   }
 
   nodeAttributes = () => {
@@ -113,12 +101,12 @@ class NodeDetailsModal extends React.Component {
           </div>
           <div id="modalContent">
             <NodeDetailsContent isEditMode={this.state.isEditMode} node={this.state.editedNode}
-                                validationErrors={this.props.nodeErrors} onChange={this.updateNodeState}/>
+                                nodeErrors={this.props.nodeErrors} onChange={this.updateNodeState}/>
           </div>
           <div id="modalFooter">
             <div>
               <LaddaButton title="Save node details" className={saveButtonClasses} loading={this.state.pendingRequest}
-                           buttonStyle='zoom-in' onClick={this.updateNodeData}>Save</LaddaButton>
+                           buttonStyle='zoom-in' onClick={this.performNodeEdit}>Save</LaddaButton>
               <button type="button" title="Edit node details" className={editButtonClasses} onClick={this.editNodeData}>
                 Edit
               </button>
@@ -138,7 +126,8 @@ function mapState(state) {
   return {
     nodeToDisplay: state.espReducer.nodeToDisplay,
     processId: state.espReducer.processToDisplay.id,
-    nodeErrors: _.get(state.espReducer.processToDisplay, `validationErrors.invalidNodes[${state.espReducer.nodeToDisplay.id}]`) || []
+    nodeErrors: _.get(state.espReducer.processToDisplay, `validationResult.invalidNodes[${state.espReducer.nodeToDisplay.id}]`, []),
+    processToDisplay: state.espReducer.processToDisplay
   };
 }
 

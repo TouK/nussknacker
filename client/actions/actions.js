@@ -1,16 +1,20 @@
+import HttpService from '../http/HttpService'
+import GraphUtils from '../components/graph/GraphUtils'
+import * as ProcessToDisplayMode from '../constants/ProcessToDisplayMode'
+
 export function displayProcess(processDetails) {
   return {
     type: "DISPLAY_PROCESS",
-    processDetails: processDetails,
-    processToDisplay: processDetails.json
+    fetchedProcessDetails: processDetails,
+    processToDisplayMode: ProcessToDisplayMode.CURRENT
   };
 }
 
 export function displayDeployedProcess(processDetails) {
   return {
     type: "DISPLAY_PROCESS",
-    processDetails: processDetails,
-    processToDisplay: processDetails.deployedJson
+    fetchedProcessDetails: processDetails,
+    processToDisplayMode: ProcessToDisplayMode.DEPLOYED
   };
 }
 
@@ -28,10 +32,25 @@ export function closeNodeDetails() {
   };
 }
 
-export function nodeChangePersisted(before, after) {
-  return {
-    type: "NODE_CHANGE_PERSISTED",
-    before,
-    after
-  };
+export function editNode(process, before, after) {
+  return (dispatch) => {
+    const changedProcess = GraphUtils.mapProcessWithNewNode(process, before, after)
+    return HttpService.validateProcess(changedProcess).then((validationResult) => {
+      dispatch({
+        type: "EDIT_NODE",
+        before: before,
+        after: after,
+        validationResult: validationResult
+      })
+    })
+  }
+}
+
+//fixme to nie powinno tu byc, powinno byc wstrzykiwane jakos z espUndoable
+export function undo() {
+  return { type: "UNDO"};
+}
+
+export function redo() {
+  return { type: "REDO"};
 }

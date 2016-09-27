@@ -104,12 +104,7 @@ class ProcessesResources(repository: ProcessRepository,
             }.map { canonicalXor =>
               toResponse(
                 canonicalXor.map { canonical =>
-                  processValidation.validate(canonical) match {
-                    case Valid(_) =>
-                      ValidationResult(Map.empty)
-                    case Invalid(errors) =>
-                      errors
-                  }
+                  processValidation.validate(canonical)
                 }
               )
             }

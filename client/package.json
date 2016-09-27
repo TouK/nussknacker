@@ -22,6 +22,7 @@
     "react-modal": "1.4.0",
     "react-redux": "4.4.5",
     "react-router": "2.6.0",
+    "redux-thunk": "2.1.0",
     "reactable": "0.14",
     "redux": "3.5.2",
     "svg-pan-zoom": "3.2.9"

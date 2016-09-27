@@ -1,12 +1,21 @@
 import { combineReducers } from 'redux';
+import _ from 'lodash'
+import GraphUtils from '../components/graph/GraphUtils'
+import * as ProcessToDisplayMode from '../constants/ProcessToDisplayMode'
 
-export default function espReducer(state = {}, action) {
+function espReducer(state = {}, action) {
   switch (action.type) {
     case "DISPLAY_PROCESS": {
+      let processToDisplay
+      if (action.processToDisplayMode == ProcessToDisplayMode.CURRENT) {
+        processToDisplay = action.fetchedProcessDetails.json
+      } else if (action.processToDisplayMode == ProcessToDisplayMode.DEPLOYED) {
+        processToDisplay = action.fetchedProcessDetails.deployedJson
+      }
       return {
         ...state,
-        processToDisplay: action.processToDisplay,
-        processDetails: action.processDetails
+        processToDisplay: processToDisplay,
+        fetchedProcessDetails: action.fetchedProcessDetails
       }
     }
     case "DISPLAY_NODE_DETAILS":
@@ -19,11 +28,17 @@ export default function espReducer(state = {}, action) {
         ...state,
         nodeToDisplay: {}
       }
-    case "NODE_CHANGE_PERSISTED":
+    case "EDIT_NODE": {
+      const processToDisplay = GraphUtils.mapProcessWithNewNode(state.processToDisplay, action.before, action.after)
       return {
         ...state,
+        processToDisplay: {
+          ...processToDisplay,
+          validationResult: action.validationResult
+        },
         nodeToDisplay: action.after
       }
+    }
 
     default:
       return state
@@ -31,8 +46,76 @@ export default function espReducer(state = {}, action) {
 }
 
 
-const rootReducer = combineReducers({
+function espUndoable (reducer) {
+  const blacklist = ["@@INIT"]
+  const espUndoableFun = (state = {espReducer: {history: {past: [], future: []}}}, action) => {
+    if (_.includes(blacklist, action.type)) {
+      return reducer(state, action)
+    } else {
+      switch (action.type) {
+        case "JUMP_TO_STATE":
+          switch (action.direction) {
+            case "PAST": {
+              const newPast = state.espReducer.history.past.slice(0, action.index + 1)
+              const futurePartFromPast = state.espReducer.history.past.slice(action.index + 1)
+              const stateBasedOnPast = _.reduce(_.concat({}, newPast), reducer)
+              return {
+                espReducer: {
+                  ...stateBasedOnPast.espReducer,
+                  history: {
+                    past: newPast,
+                    future: _.concat(futurePartFromPast, state.espReducer.history.future)
+                  }
+                }
+              }
+            }
+            case "FUTURE": {
+              const pastPartFromFuture = state.espReducer.history.future.slice(0, action.index + 1)
+              const newFuture = state.espReducer.history.future.slice(action.index + 1)
+              const newPast = _.concat(state.espReducer.history.past, pastPartFromFuture)
+              const stateBasedOnPast = _.reduce(_.concat({}, newPast), reducer)
+              return {
+                espReducer: {
+                  ...stateBasedOnPast.espReducer,
+                  history: {
+                    past: newPast,
+                    future: newFuture
+                  }
+                }
+              }
+            }
+          }
+        case "UNDO":
+          const nextIndex = state.espReducer.history.past.length - 2
+          return espUndoableFun(state, {
+            type: "JUMP_TO_STATE",
+            index: nextIndex < 0 ? 1 : nextIndex,
+            direction: "PAST"
+          })
+        case "REDO":
+          return espUndoableFun(state, {type: "JUMP_TO_STATE", index: 0, direction: "FUTURE"})
+        default: {
+          const newState = reducer(state, action)
+          return {
+            //fixme czy musze tutaj odnosic sie do espReducer? jak trzymam historie tak po prostu to leca warningi? sprawdzic to
+            espReducer: {
+              ...newState.espReducer,
+              history: {
+                ...state.espReducer.history,
+                past: _.concat(state.espReducer.history.past, action),
+                future: []
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  return espUndoableFun
+}
+
+const rootReducer = espUndoable(combineReducers({
   espReducer
-});
+}));
 
 export default rootReducer;

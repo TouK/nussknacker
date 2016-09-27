@@ -1,7 +1,6 @@
 package pl.touk.esp.ui.api
 
-import cats.data.Validated.{Invalid, Valid}
-import cats.data.{NonEmptyList, Validated}
+import cats.data.NonEmptyList
 import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
 import pl.touk.esp.engine.compile.{ProcessCompilationError, ProcessValidator}
 import pl.touk.esp.engine.util.ReflectUtils
@@ -12,16 +11,11 @@ class ProcessValidation(processValidator: ProcessValidator) {
   import pl.touk.esp.ui.util.CollectionsEnrichments._
 
   def validateFilteringResults(canonical: CanonicalProcess, nodeId: String): ValidationResult = {
-    validate(canonical) match {
-      case Valid(_) =>
-        ValidationResult(Map.empty)
-      case Invalid(errors) =>
-        errors.filterNode(nodeId)
-    }
+    validate(canonical).filterNode(nodeId)
   }
 
-  def validate(canonical: CanonicalProcess): Validated[ValidationResult, Unit] = {
-    processValidator.validate(canonical).leftMap(formatErrors)
+  def validate(canonical: CanonicalProcess): ValidationResult = {
+    processValidator.validate(canonical).leftMap(formatErrors).swap.getOrElse(ValidationResult.success)
   }
 
   private def formatErrors(errors: NonEmptyList[ProcessCompilationError]): ValidationResult = {
@@ -44,6 +38,10 @@ object ProcessValidation {
   case class ValidationResult(invalidNodes: Map[String, List[String]]) {
     def filterNode(nodeId: String) =
       copy(invalidNodes = invalidNodes.filterKeys(_ == nodeId))
+  }
+
+  object ValidationResult {
+    val success = ValidationResult(Map.empty)
   }
 
 }
