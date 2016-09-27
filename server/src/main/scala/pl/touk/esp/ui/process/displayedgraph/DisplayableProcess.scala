@@ -8,6 +8,6 @@ case class DisplayableProcess(id: String,
                               properties: ProcessProperties,
                               nodes: List[DisplayableNode],
                               edges: List[Edge],
-                              validationErrors: Option[ValidationResult])
+                              validationResult: ValidationResult)
 
 case class ProcessProperties(parallelism: Option[Int], exceptionHandler: ExceptionHandlerRef)

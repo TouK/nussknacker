@@ -22,6 +22,14 @@ const Visualization = React.createClass({
   componentDidMount() {
     // this.startPollingForUpdates() fixme pobierac tylko czy job jest uruchomiony
     this.fetchProcessDetails();
+    window.onkeydown = (event) => {
+      if (event.ctrlKey && !event.shiftKey && event.key.toLowerCase() == "z") {
+        this.undo()
+      }
+      if (event.ctrlKey && event.shiftKey && event.key.toLowerCase() == "z") {
+        this.redo()
+      }
+    }
   },
 
   componentWillUnmount() {
@@ -54,51 +62,68 @@ const Visualization = React.createClass({
   },
 
   showDeployedProcess() {
-    this.props.actions.displayDeployedProcess(this.props.processDetails)
+    this.props.actions.displayDeployedProcess(this.props.fetchedProcessDetails)
   },
 
   showCurrentProcess() {
-    this.props.actions.displayProcess(this.props.processDetails)
+    this.props.actions.displayProcess(this.props.fetchedProcessDetails)
   },
 
   isRunning() {
-    return this.props.processDetails.isRunning
+    return this.props.fetchedProcessDetails.isRunning
+  },
+
+  undo() {
+    return this.props.actions.undo()
+  },
+
+  redo() {
+    return this.props.actions.redo()
+  },
+
+  save() {
+    return HttpService.saveProcess(this.props.params.processId, this.props.processToDisplay).then ((resp) => {
+      this.fetchProcessDetails()
+    })
   },
 
   render: function() {
-    return _.isEmpty(this.props.processDetails) ? null :
-    (
+    if (_.isEmpty(this.props.fetchedProcessDetails)) {
+      return null
+    } else {
+      const deployedVersionIsDisplayed = _.isEqual(this.props.processToDisplay, this.props.fetchedProcessDetails.deployedJson) //fixme blokowanie edycji dla zdeplojowanej wersji
+      const nothingToSave = _.isEqual(this.props.fetchedProcessDetails.json, this.props.processToDisplay) || deployedVersionIsDisplayed
+      return (
         <div className="Page">
-            {!_.isEmpty(this.props.nodeToDisplay) && NodeUtils.nodeIsProperties(this.props.nodeToDisplay) ?
-              <NodeDetailsModal onProcessEdit={this.fetchProcessDetails} editUsing={HttpService.editProcessProperties}/>
-              : null}
-            <div>
-              <div id="esp-action-panel">
-                {this.props.deployedAndCurrentProcessDiffer ? <span title="Current version differs from deployed one" className="glyphicon glyphicon-warning-sign tag-warning"/> : null}
-                <DropdownButton bsStyle="default" title="Action" id="actionDropdown">
-                  <MenuItem onSelect={this.showProperties}>Properties</MenuItem>
-                  <MenuItem disabled={!this.props.deployedAndCurrentProcessDiffer}
-                            onSelect={this.showCurrentProcess}>Show current process</MenuItem>
-                  <MenuItem disabled={!this.props.deployedAndCurrentProcessDiffer || !this.isRunning() || _.isEmpty(this.props.processDetails.deployedJson)}
-                            onSelect={this.showDeployedProcess}>Show deployed process</MenuItem>
-                  <MenuItem divider />
-                  <MenuItem onSelect={this.deploy}>Deploy</MenuItem>
-                  <MenuItem onSelect={this.stop}>Stop</MenuItem>
-                </DropdownButton>
-                {this.tagsForProcess().map(function (tagi, tagIndex) {
-                  return <div key={tagIndex} className="tagsBlockVis">{tagi}</div>
-                })}
-              </div>
-              <Graph onProcessEdit={this.fetchProcessDetails} editUsing={HttpService.editProcessNode}/>
+          <div>
+            <div id="esp-action-panel">
+              <button type="button" className="btn btn-default" disabled={nothingToSave} onClick={this.save}>SAVE{nothingToSave? "" : "*"}</button>
+              {this.props.deployedAndCurrentProcessDiffer ? <span title="Current version differs from deployed one" className="glyphicon glyphicon-warning-sign tag-warning"/> : null}
+              <DropdownButton bsStyle="default" title="Action" id="actionDropdown">
+                <MenuItem onSelect={this.showProperties}>Properties</MenuItem>
+                <MenuItem disabled={!this.props.deployedAndCurrentProcessDiffer}
+                          onSelect={this.showCurrentProcess}>Show current process</MenuItem>
+                <MenuItem disabled={!this.props.deployedAndCurrentProcessDiffer || !this.isRunning() || _.isEmpty(this.props.fetchedProcessDetails.deployedJson)}
+                          onSelect={this.showDeployedProcess}>Show deployed process</MenuItem>
+                <MenuItem divider />
+                <MenuItem onSelect={this.deploy}>Deploy</MenuItem>
+                <MenuItem onSelect={this.stop}>Stop</MenuItem>
+              </DropdownButton>
+              {this.tagsForProcess().map(function (tagi, tagIndex) {
+                return <div key={tagIndex} className="tagsBlockVis">{tagi}</div>
+              })}
             </div>
+            <Graph/>
+          </div>
         </div>
-    )
+      )
+    }
   },
 
   tagsForProcess() {
-    var deployedVersionInfo = _.isEqual(this.props.processToDisplay, this.props.processDetails.deployedJson) && this.isRunning() ? ["DEPLOYED"] : []
-    var currentVersionInfo = _.isEqual(this.props.processToDisplay, this.props.processDetails.json) ? ["CURRENT"] : []
-    return _.concat(deployedVersionInfo, currentVersionInfo, this.props.processDetails.tags)
+    var deployedVersionInfo = _.isEqual(this.props.processToDisplay, this.props.fetchedProcessDetails.deployedJson) && this.isRunning() ? ["DEPLOYED"] : []
+    var currentVersionInfo = _.isEqual(this.props.processToDisplay, this.props.fetchedProcessDetails.json) ? ["CURRENT"] : []
+    return _.concat(deployedVersionInfo, currentVersionInfo, this.props.fetchedProcessDetails.tags)
   }
 });
 
@@ -108,13 +133,14 @@ Visualization.header = 'Wizualizacja'
 
 
 function mapState(state) {
-  const processDetails = state.espReducer.processDetails
+  const processDetails = state.espReducer.fetchedProcessDetails
   const currentAndDeployedProcessEqual = !_.isEmpty(processDetails) && _.isEqual(processDetails.json, processDetails.deployedJson) && !_.isEmpty(processDetails.deployedJson)
   return {
     nodeToDisplay: state.espReducer.nodeToDisplay,
     processToDisplay: state.espReducer.processToDisplay,
-    processDetails: processDetails,
-    deployedAndCurrentProcessDiffer: !currentAndDeployedProcessEqual
+    fetchedProcessDetails: processDetails,
+    deployedAndCurrentProcessDiffer: !currentAndDeployedProcessEqual,
+    history: state.espReducer.history
   };
 }
 

@@ -57,7 +57,7 @@ object EspUiApp extends App with Directives {
   val manager = FlinkProcessManager(config)
 
   val route: Route = {
-    CorsSupport.cors() {
+    CorsSupport.cors {
       pathPrefix("api") {
         new ProcessesResources(processRepository, manager, processConverter, processValidation).route ~
           new ManagementResources(processRepository, deploymentProcessRepository, manager).route ~

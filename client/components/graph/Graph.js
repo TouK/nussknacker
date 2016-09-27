@@ -70,7 +70,7 @@ class Graph extends React.Component {
         var cells = nodes.concat(edges);
         this.graph.resetCells(cells);
 
-        _.keys(_.get(data.validationErrors, 'invalidNodes', {}))
+        _.keys(data.validationResult.invalidNodes)
             .forEach(name => {this.processGraphPaper.findViewByModel(this.graph.getCell(name)).highlight(null, {
                 highlighter: {
                   name: 'addClass',
@@ -124,9 +124,7 @@ class Graph extends React.Component {
         return (
             <div>
                 <h2 id="process-name">{this.props.processToDisplay.id}</h2>
-                {!_.isEmpty(this.props.nodeToDisplay) ?
-                    <NodeDetailsModal editUsing={this.props.editUsing} onProcessEdit={this.props.onProcessEdit}/> : null
-                }
+                {!_.isEmpty(this.props.nodeToDisplay) ? <NodeDetailsModal/> : null }
                 {this.processGraphPaper && this.panAndZoom && this.state.toolboxVisible ?
                     <Toolbox processGraphPaper={this.processGraphPaper} panAndZoom={this.panAndZoom} graph={this.graph}/> : null
                 }
