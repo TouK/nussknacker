@@ -4,10 +4,11 @@ import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.esp.engine._
-import pl.touk.esp.engine.build.EspProcessBuilder
+import pl.touk.esp.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.esp.engine.compile.ProcessCompilationError._
 import pl.touk.esp.engine.definition.DefinitionExtractor.{ObjectDefinition, Parameter}
 import pl.touk.esp.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
+import pl.touk.esp.engine.graph.node.Case
 
 class ProcessValidatorSpec extends FlatSpec with Matchers {
 
@@ -32,6 +33,22 @@ class ProcessValidatorSpec extends FlatSpec with Matchers {
   it should "find duplicated ids" in {
     val duplicatedId = "id1"
     val processWithDuplicatedIds = EspProcessBuilder.id("process1").exceptionHandler().source(duplicatedId, "source").sink(duplicatedId, "sink")
+    ProcessValidator.default(baseDefinition).validate(processWithDuplicatedIds) should matchPattern {
+      case Invalid(NonEmptyList(DuplicatedNodeIds(_), _)) =>
+    }
+  }
+
+  it should "find duplicated ids in switch" in {
+    val duplicatedId = "id1"
+    val processWithDuplicatedIds =
+      EspProcessBuilder
+        .id("process1")
+        .exceptionHandler()
+        .source("source", "source")
+          .switch("switch", "''", "var",
+            Case("'1'", GraphBuilder.sink(duplicatedId, "sink")),
+            Case("'2'", GraphBuilder.sink(duplicatedId, "sink"))
+          )
     ProcessValidator.default(baseDefinition).validate(processWithDuplicatedIds) should matchPattern {
       case Invalid(NonEmptyList(DuplicatedNodeIds(_), _)) =>
     }

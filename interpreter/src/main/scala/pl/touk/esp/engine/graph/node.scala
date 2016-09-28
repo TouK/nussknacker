@@ -10,37 +10,56 @@ import pl.touk.esp.engine.graph.variable.Field
 object node {
 
   sealed trait Node {
+    def data: NodeData
+    def id: String = data.id
+  }
+
+  sealed trait OneOutputNode extends Node {
+    def next: SubsequentNode
+  }
+
+  case class SourceNode(data: Source, next: SubsequentNode) extends OneOutputNode
+
+  sealed trait SubsequentNode extends Node
+
+  case class OneOutputSubsequentNode(data: OneOutputSubsequentNodeData, next: SubsequentNode) extends OneOutputNode with SubsequentNode
+
+  case class FilterNode(data: Filter, nextTrue: SubsequentNode, nextFalse: Option[SubsequentNode] = None) extends SubsequentNode
+
+  case class SwitchNode(data: Switch, nexts: List[Case], defaultNext: Option[SubsequentNode] = None) extends SubsequentNode
+
+  case class Case(expression: Expression, node: SubsequentNode)
+
+  case class EndingNode(data: EndingNodeData) extends SubsequentNode
+
+  sealed trait NodeData {
     def id: String
   }
 
-  case class Source(id: String, ref: SourceRef, next: Node) extends Node
+  case class Source(id: String, ref: SourceRef) extends NodeData
 
-  case class Sink(id: String, ref: SinkRef, endResult: Option[Expression] = None) extends Node
+  case class Filter(id: String, expression: Expression) extends NodeData
 
-  case class VariableBuilder(id: String, varName: String, fields: List[Field], next: Node) extends Node
+  case class Switch(id: String, expression: Expression, exprVal: String) extends NodeData
 
-  case class Processor(id: String, service: ServiceRef, next: Node) extends Node
+  sealed trait OneOutputSubsequentNodeData extends NodeData
 
-  case class EndingProcessor(id: String, service: ServiceRef) extends Node
+  case class VariableBuilder(id: String, varName: String, fields: List[Field]) extends OneOutputSubsequentNodeData
 
-  case class Enricher(id: String, service: ServiceRef, output: String, next: Node) extends Node
-
-  case class Filter(id: String, expression: Expression, nextTrue: Node,
-                    nextFalse: Option[Node] = None) extends Node
-
-  case class Switch(id: String, expression: Expression, exprVal: String,
-                    nexts: List[Case], defaultNext: Option[Node] = None) extends Node
-
-  case class Case(expression: Expression, node: Node)
+  case class Enricher(id: String, service: ServiceRef, output: String) extends OneOutputSubsequentNodeData
 
   case class Aggregate(id: String, aggregatedVar: String,
                        keyExpression: Expression, durationInMillis: Long,
                        stepInMillis: Long,
                        triggerExpression: Option[Expression],
-                       foldingFunRef: Option[String],
-                       next: Node) extends Node
+                       foldingFunRef: Option[String]) extends OneOutputSubsequentNodeData
 
+  case class CustomNode(id: String, outputVar: String, nodeType: String, parameters: List[Parameter]) extends OneOutputSubsequentNodeData
 
-  case class CustomNode(id: String, outputVar: String, nodeType: String, parameters: List[Parameter], next: Node) extends Node
+  sealed trait EndingNodeData extends NodeData
+
+  case class Processor(id: String, service: ServiceRef) extends OneOutputSubsequentNodeData with EndingNodeData
+
+  case class Sink(id: String, ref: SinkRef, endResult: Option[Expression] = None) extends EndingNodeData
 
 }

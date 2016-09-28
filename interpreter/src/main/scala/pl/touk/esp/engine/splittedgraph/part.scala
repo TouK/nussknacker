@@ -1,35 +1,36 @@
 package pl.touk.esp.engine.splittedgraph
 
-import pl.touk.esp.engine.graph.sink.SinkRef
-import pl.touk.esp.engine.graph.source.SourceRef
+import pl.touk.esp.engine.graph.node.{OneOutputSubsequentNode => _, EndingNode => _, SourceNode => _, _}
 import pl.touk.esp.engine.splittedgraph.end.{End, NormalEnd}
 import pl.touk.esp.engine.splittedgraph.splittednode._
 
 object part {
 
   sealed trait ProcessPart {
-    def id: String
+    type T <: NodeData
+    def node: SplittedNode[T]
+    def id: String = node.id
     def ends: List[End]
   }
 
-  case class SourcePart(id: String, ref: SourceRef, source: Source,
-                        nextParts: List[SubsequentPart], ends: List[End]) extends ProcessPart
+  case class SourcePart(node: SourceNode, nextParts: List[SubsequentPart], ends: List[End]) extends ProcessPart {
+    override type T = Source
+  }
 
   sealed trait SubsequentPart extends ProcessPart
 
-  case class AggregatePart(id: String, durationInMillis: Long, slideInMillis: Long,
-                           aggregatedVar: String, foldingFunRef: Option[String], aggregate: Aggregate,
-                           nextParts: List[SubsequentPart], ends: List[End]) extends SubsequentPart
+  case class AggregatePart(node: OneOutputSubsequentNode[Aggregate], nextParts: List[SubsequentPart], ends: List[End]) extends SubsequentPart {
+    override type T = Aggregate
+  }
 
-  case class CustomNodePart(id: String,
-                            outputVar: String,
-                            customNodeRef: String,
-                            customNode: CustomNode,
-                            nextParts: List[SubsequentPart], ends: List[End]) extends SubsequentPart
+  case class CustomNodePart(node: OneOutputSubsequentNode[CustomNode], nextParts: List[SubsequentPart], ends: List[End]) extends SubsequentPart {
+    override type T = CustomNode
+  }
 
+  case class SinkPart(node: EndingNode[Sink]) extends SubsequentPart {
+    override type T = Sink
 
-  case class SinkPart(id: String, ref: SinkRef, sink: Sink) extends SubsequentPart {
-    override lazy val ends = List(NormalEnd(sink.id))
+    override lazy val ends = List(NormalEnd(node.id))
   }
 
 }

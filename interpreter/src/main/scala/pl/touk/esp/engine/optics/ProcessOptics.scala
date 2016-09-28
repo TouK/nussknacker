@@ -26,11 +26,11 @@ class ProcessOptics(process: CanonicalProcess) {
               n.nodes.traverse(f).map { cn =>
                 n.copy(nodes = cn.asInstanceOf[List[CanonicalNode]])
               }
-            case n: Filter =>
+            case n: FilterNode =>
               n.nextFalse.traverse(f).map { cn =>
                 n.copy(nextFalse = cn.asInstanceOf[List[CanonicalNode]])
               }
-            case n: Switch =>
+            case n: SwitchNode =>
               (n.nexts.traverse(f) |@| n.defaultNext.traverse(f)) { (cn, df) =>
                 n.copy(nexts = cn.asInstanceOf[List[Case]], defaultNext = df.asInstanceOf[List[CanonicalNode]])
               }
@@ -44,15 +44,15 @@ class ProcessOptics(process: CanonicalProcess) {
       }
   }
 
-  def select[T <: CanonicalNode: ClassTag](nodeId: String): Option[T] = {
+  def select(nodeId: String): Option[CanonicalNode] = {
     universe(process.asInstanceOf[CanonicalTreeNode]).collectFirst {
-      case e: T if e.asInstanceOf[T].id == nodeId => e
+      case e: CanonicalNode if e.id == nodeId => e
     }
   }
 
-  def modify[T <: CanonicalNode: ClassTag](nodeId: String)(f: T => T): ModifyResult[CanonicalProcess] = {
+  def modify(nodeId: String)(f: CanonicalNode => CanonicalNode): ModifyResult[CanonicalProcess] = {
     val (count, result) = transform[CanonicalTreeNode, ({type S[A] = State[Int, A]})#S] {
-      case e:T if e.id == nodeId =>
+      case e: CanonicalNode if e.id == nodeId =>
         State[Int, CanonicalTreeNode](count => (count + 1, restoreStructure(f(e), e)))
       case other =>
         State.state[Int, CanonicalTreeNode](other)
@@ -62,12 +62,12 @@ class ProcessOptics(process: CanonicalProcess) {
 
   private def restoreStructure[T <: CanonicalNode](node: T, fromNode: T) =
     (node: CanonicalNode) match {
-      case n: Filter =>
-        n.copy(nextFalse = fromNode.asInstanceOf[Filter].nextFalse)
-      case n: Switch =>
-        val fromSwitch = fromNode.asInstanceOf[Switch]
+      case n: FilterNode =>
+        n.copy(nextFalse = fromNode.asInstanceOf[FilterNode].nextFalse)
+      case n: SwitchNode =>
+        val fromSwitch = fromNode.asInstanceOf[SwitchNode]
         n.copy(nexts = fromSwitch.nexts, defaultNext = fromSwitch.defaultNext)
-      case _: Source | _: Sink | _: VariableBuilder | _: Processor | _: Enricher | _: Aggregate | _: CustomNode=>
+      case _: FlatNode=>
         node
     }
 

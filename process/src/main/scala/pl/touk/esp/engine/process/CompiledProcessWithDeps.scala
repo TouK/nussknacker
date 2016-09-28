@@ -31,7 +31,7 @@ case class CompiledProcessWithDeps(compiledProcess: CompiledProcessParts,
     exceptionHandler.close()
   }
 
-  def compileSubPart(node: SplittedNode): Node = {
+  def compileSubPart(node: SplittedNode[_]): Node = {
     validateOrFail(subPartCompiler.compile(node))
   }
 
