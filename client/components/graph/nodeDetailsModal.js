@@ -6,6 +6,9 @@ import _ from 'lodash';
 import LaddaButton from 'react-ladda';
 import laddaCss from 'ladda/dist/ladda.min.css'
 import { ListGroupItem } from 'react-bootstrap';
+import NodeUtils from './NodeUtils';
+import NodeDetailsContent from './NodeDetailsContent';
+
 
 export default class NodeDetailsModal extends React.Component {
 
