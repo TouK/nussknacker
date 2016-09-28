@@ -63,6 +63,16 @@ export default class Graph extends React.Component {
         var edges = _.map(data.edges, (e) => { return EspNode.makeLink(e) });
         var cells = nodes.concat(edges);
         this.graph.resetCells(cells);
+
+        _.keys(_.get(data.validationErrors, 'invalidNodes', {}))
+            .forEach(name => {this.processGraphPaper.findViewByModel(this.graph.getCell(name)).highlight(null, {
+                highlighter: {
+                  name: 'addClass',
+                  options: {
+                    className: 'node-validation-error'
+                  }
+                }
+            })});
         this.directedLayout();
     }
 

@@ -19,9 +19,14 @@ joint.shapes.devs.EspNode = joint.shapes.basic.Generic.extend(_.extend({}, joint
         attrs: {
             '.': {magnet: false},
             '.body': {
+                fill: "none",
                 width: 300, height: 130,
                 stroke: '#B5B5B5',
                 'stroke-width': 1,
+                rx: 10
+            },
+            '.background': {
+                width: 300, height: 130,
                 rx: 10
             },
             text: {
@@ -123,8 +128,11 @@ export default {
         var headerFillerHeight = headerHeight / 2;
 
         var attrs = {
-          '.body': {
+          '.background': {
             width: width
+          },
+          '.body': {
+            width: width,
           },
           'rect.headerFiller': {
             x: 0, y: headerFillerHeight,
