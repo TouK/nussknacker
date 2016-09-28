@@ -10,11 +10,11 @@ import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.esp.engine.api.deployment._
 import pl.touk.esp.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
+import pl.touk.esp.engine.graph.node.Sink
 import pl.touk.esp.engine.graph.param.Parameter
 import pl.touk.esp.engine.marshall.ProcessMarshaller
 import pl.touk.esp.ui.api.helpers.DbTesting
 import pl.touk.esp.ui.api.helpers.TestFactory._
-import pl.touk.esp.ui.process.displayedgraph.displayablenode.Sink
 import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.esp.ui.process.marshall._
 import pl.touk.esp.ui.sample.SampleProcess
@@ -144,7 +144,7 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
     Put(s"/processes/${SampleProcess.process.id}/json/node/${modifiedSink.id}", posting.toEntity(modifiedSink)) ~> route ~> check {
       status shouldEqual StatusCodes.OK
       fetchSampleProcess()
-        .map(_.nodes.last.asInstanceOf[canonicalnode.Sink].endResult.value.expression)
+        .map(_.nodes.last.data.asInstanceOf[Sink].endResult.value.expression)
         .futureValue shouldEqual expression
     }
   }
