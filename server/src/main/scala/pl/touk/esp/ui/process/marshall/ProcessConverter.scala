@@ -6,6 +6,7 @@ import pl.touk.esp.engine.canonicalgraph.canonicalnode._
 import pl.touk.esp.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.esp.engine.canonize.ProcessCanonizer
 import pl.touk.esp.engine.graph.EspProcess
+import pl.touk.esp.engine.graph.node.{Filter, NodeData, Switch}
 import pl.touk.esp.engine.marshall.ProcessMarshaller
 import pl.touk.esp.ui.api.ProcessValidation
 import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties, displayablenode}
@@ -30,51 +31,31 @@ class ProcessConverter(processValidation: ProcessValidation) {
     DisplayableProcess(process.metaData.id, props, n, e, processValidation.validate(process))
   }
 
-  private def toGraphInner(nodes: List[canonicalnode.CanonicalNode]): (List[displayablenode.DisplayableNode], List[displayablenode.Edge]) =
+  private def toGraphInner(nodes: List[canonicalnode.CanonicalNode]): (List[NodeData], List[displayablenode.Edge]) =
     nodes match {
-      case canonicalnode.Source(id, ref) :: tail =>
+      case canonicalnode.FlatNode(data) :: tail =>
         val (tailNodes, tailEdges) = toGraphInner(tail)
-        (displayablenode.Source(id, ref) :: tailNodes, createNextEdge(id, tail) ::: tailEdges)
-      case canonicalnode.Sink(id, ref, endResult) :: Nil =>
-        (List(displayablenode.Sink(id, ref, endResult)), List())
-      case canonicalnode.Sink(id, ref, endResult) :: tail =>
-        throw new IllegalArgumentException(s"Unexpected tail: $tail after sink")
-      case canonicalnode.VariableBuilder(id, varName, fields) :: tail =>
-        val (tailNodes, tailEdges) = toGraphInner(tail)
-        (displayablenode.VariableBuilder(id, varName, fields) :: tailNodes, createNextEdge(id, tail) ::: tailEdges)
-      case canonicalnode.Processor(id, service) :: tail =>
-        val (tailNodes, tailEdges) = toGraphInner(tail)
-        (displayablenode.Processor(id, service) :: tailNodes, createNextEdge(id, tail) ::: tailEdges)
-      case canonicalnode.Enricher(id, service, output) :: tail =>
-        val (tailNodes, tailEdges) = toGraphInner(tail)
-        (displayablenode.Enricher(id, service, output) :: tailNodes, createNextEdge(id, tail) ::: tailEdges)
-      case canonicalnode.Filter(id, expr, nextFalse) :: tail =>
+        (data :: tailNodes, createNextEdge(data.id, tail) ::: tailEdges)
+      case canonicalnode.FilterNode(data, nextFalse) :: tail =>
         val (nextFalseNodes, nextFalseEdges) = toGraphInner(nextFalse)
         val nextFalseEdgesConnectedToFilter = nextFalseNodes match {
           case Nil => nextFalseEdges
-          case h :: _ => displayablenode.Edge(id, h.id, None) :: nextFalseEdges
+          case h :: _ => displayablenode.Edge(data.id, h.id, None) :: nextFalseEdges
         }
         val (tailNodes, tailEdges) = toGraphInner(tail)
-        (displayablenode.Filter(id, expr) :: nextFalseNodes ::: tailNodes, createNextEdge(id, tail) ::: nextFalseEdgesConnectedToFilter ::: tailEdges)
-      case canonicalnode.Switch(id, expr, exprVal, nexts, defaultNext) :: tail =>
+        (data :: nextFalseNodes ::: tailNodes, createNextEdge(data.id, tail) ::: nextFalseEdgesConnectedToFilter ::: tailEdges)
+      case canonicalnode.SwitchNode(data, nexts, defaultNext) :: tail =>
         val (defaultNextNodes, defaultNextEdges) = toGraphInner(defaultNext)
         val defaultNextEdgesConnectedToSwitch = defaultNextNodes match {
           case Nil => defaultNextEdges
-          case h :: _ => displayablenode.Edge(id, h.id, None) :: defaultNextEdges
+          case h :: _ => displayablenode.Edge(data.id, h.id, None) :: defaultNextEdges
         }
         val (tailNodes, tailEdges) = toGraphInner(tail)
         val (nextNodes, nextEdges) = unzipListTuple(nexts.map { c =>
           val (nextNodeNodes, nextNodeEdges) = toGraphInner(c.nodes)
-          (nextNodeNodes, nextNodeNodes.headOption.map(n => displayablenode.Edge(id, n.id, Some(c.expression))).toList ::: nextNodeEdges)
+          (nextNodeNodes, nextNodeNodes.headOption.map(n => displayablenode.Edge(data.id, n.id, Some(c.expression))).toList ::: nextNodeEdges)
         })
-        (displayablenode.Switch(id, expr, exprVal) :: defaultNextNodes ::: nextNodes ::: tailNodes, createNextEdge(id, tail) ::: defaultNextEdgesConnectedToSwitch ::: nextEdges ::: tailEdges)
-      case canonicalnode.Aggregate(id, aggregatedVar, keyExpr, duration, slide, triggerExpr, foldingFun)::tail =>
-        val (tailNodes, tailEdges) = toGraphInner(tail)
-        (displayablenode.Aggregate(id, aggregatedVar, keyExpr, duration, slide, triggerExpr, foldingFun) :: tailNodes, createNextEdge(id, tail) ::: tailEdges)
-      case canonicalnode.CustomNode(id, outputVar, customNodeRef, params):: tail =>
-        val (tailNodes, tailEdges) = toGraphInner(tail)
-        (displayablenode.CustomNode(id, outputVar, customNodeRef, params) :: tailNodes, createNextEdge(id, tail) ::: tailEdges)
-
+        (data :: defaultNextNodes ::: nextNodes ::: tailNodes, createNextEdge(data.id, tail) ::: defaultNextEdgesConnectedToSwitch ::: nextEdges ::: tailEdges)
       case Nil =>
         (List(),List())
     }
@@ -96,56 +77,43 @@ class ProcessConverter(processValidation: ProcessValidation) {
     CanonicalProcess(metaData, process.properties.exceptionHandler, nodes)
   }
 
-  private def unFlattenNode(nodesMap: Map[String, displayablenode.DisplayableNode])
-                           (n: displayablenode.DisplayableNode, edgesFromMap: Map[String, List[displayablenode.Edge]]): List[canonicalnode.CanonicalNode] = {
+  private def unFlattenNode(nodesMap: Map[String, NodeData])
+                           (n: NodeData, edgesFromMap: Map[String, List[displayablenode.Edge]]): List[canonicalnode.CanonicalNode] = {
     def unflattenEdgeEnd(id: String, e: displayablenode.Edge): List[canonicalnode.CanonicalNode] = {
       unFlattenNode(nodesMap)(nodesMap(e.to), edgesFromMap.updated(id, edgesFromMap(id).filterNot(_ == e)))
     }
-    val handleNestedNodes: PartialFunction[displayablenode.DisplayableNode, List[canonicalnode.CanonicalNode]] = {
-      case displayablenode.Filter(id, expr) =>
-        val filterEdges = edgesFromMap(id)
-        val next = unflattenEdgeEnd(id, filterEdges.head)
-        val nextFalse = filterEdges.tail.lastOption.map(nf => unflattenEdgeEnd(id, nf)).toList.flatten
-        canonicalnode.Filter(id, expr, nextFalse) :: next
-      case displayablenode.Switch(id, expr, exprVal) =>
-        val nexts = edgesFromMap(id).collect { case e@displayablenode.Edge(_, _, Some(edgeExpr)) =>
-          canonicalnode.Case(edgeExpr, unflattenEdgeEnd(id, e))
+    val handleNestedNodes: PartialFunction[NodeData, List[canonicalnode.CanonicalNode]] = {
+      case data: Filter =>
+        val filterEdges = edgesFromMap(data.id)
+        val next = unflattenEdgeEnd(data.id, filterEdges.head)
+        val nextFalse = filterEdges.tail.lastOption.map(nf => unflattenEdgeEnd(data.id, nf)).toList.flatten
+        canonicalnode.FilterNode(data, nextFalse) :: next
+      case data: Switch =>
+        val nexts = edgesFromMap(data.id).collect { case e@displayablenode.Edge(_, _, Some(edgeExpr)) =>
+          canonicalnode.Case(edgeExpr, unflattenEdgeEnd(data.id, e))
         }
-        val default = edgesFromMap(id).find(_.label.isEmpty).map { e =>
-          unflattenEdgeEnd(id, e)
+        val default = edgesFromMap(data.id).find(_.label.isEmpty).map { e =>
+          unflattenEdgeEnd(data.id, e)
         }.toList.flatten
-        canonicalnode.Switch(id, expr, exprVal, nexts, default) :: Nil
+        canonicalnode.SwitchNode(data, nexts, default) :: Nil
     }
-    ((handleDirectNodes andThen { n =>
+    (handleNestedNodes orElse (handleDirectNodes andThen { n =>
       n :: edgesFromMap.get(n.id).toList.flatten.flatMap(unflattenEdgeEnd(n.id, _))
-    }) orElse handleNestedNodes)(n)
+    }))(n)
   }
 
-  def nodeFromDisplayable(n: displayablenode.DisplayableNode): canonicalnode.CanonicalNode = {
-    val handleNestedNodes: PartialFunction[displayablenode.DisplayableNode, canonicalnode.CanonicalNode] = {
-      case displayablenode.Filter(id, expr) =>
-        canonicalnode.Filter(id, expr, List.empty)
-      case displayablenode.Switch(id, expr, exprVal) =>
-        canonicalnode.Switch(id, expr, exprVal, List.empty, List.empty)
+  def nodeFromDisplayable(n: NodeData): canonicalnode.CanonicalNode = {
+    val handleNestedNodes: PartialFunction[NodeData, canonicalnode.CanonicalNode] = {
+      case data: Filter =>
+        canonicalnode.FilterNode(data, List.empty)
+      case data: Switch =>
+        canonicalnode.SwitchNode(data, List.empty, List.empty)
     }
-    (handleDirectNodes orElse handleNestedNodes)(n)
+    (handleNestedNodes orElse handleDirectNodes)(n)
   }
 
-  private val handleDirectNodes: PartialFunction[displayablenode.DisplayableNode, canonicalnode.CanonicalNode] = {
-    case displayablenode.Source(id, ref) =>
-      canonicalnode.Source(id, ref)
-    case displayablenode.VariableBuilder(id, varName, fields) =>
-      canonicalnode.VariableBuilder(id, varName, fields)
-    case displayablenode.Processor(id, service) =>
-      canonicalnode.Processor(id, service)
-    case displayablenode.CustomNode(id, output, customStreamRef, params) =>
-      canonicalnode.CustomNode(id, output, customStreamRef, params)
-    case displayablenode.Enricher(id, service, output) =>
-      canonicalnode.Enricher(id, service, output)
-    case displayablenode.Aggregate(id, aggregatedVar, keyExpr, duration, slide, triggerExpr, foldingFun) =>
-      canonicalnode.Aggregate(id, aggregatedVar, keyExpr, duration, slide, triggerExpr, foldingFun)
-    case displayablenode.Sink(id, ref, endResult) =>
-      canonicalnode.Sink(id, ref, endResult)
+  private val handleDirectNodes: PartialFunction[NodeData, canonicalnode.CanonicalNode] = {
+    case data => FlatNode(data)
   }
 
 }

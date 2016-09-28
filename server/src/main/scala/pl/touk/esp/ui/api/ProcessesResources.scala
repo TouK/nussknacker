@@ -12,11 +12,11 @@ import pl.touk.esp.engine.api.deployment.{GraphProcess, ProcessManager}
 import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
 import pl.touk.esp.engine.canonicalgraph.canonicalnode._
 import pl.touk.esp.engine.compile.ProcessCompilationError
+import pl.touk.esp.engine.graph.node.NodeData
 import pl.touk.esp.engine.marshall.ProcessMarshaller
 import pl.touk.esp.ui.api.ProcessValidation.ValidationResult
 import pl.touk.esp.ui.api.ProcessesResources._
 import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties}
-import pl.touk.esp.ui.process.displayedgraph.displayablenode.DisplayableNode
 import pl.touk.esp.ui.process.marshall.{DisplayableProcessCodec, ProcessConverter, ProcessTypeCodec}
 import pl.touk.esp.ui.process.repository.ProcessRepository
 import pl.touk.esp.ui.process.repository.ProcessRepository._
@@ -128,11 +128,11 @@ class ProcessesResources(repository: ProcessRepository,
       }
     } ~ path("processes" / Segment / "json" / "node" / Segment) { (processId, nodeId) =>
       put {
-        entity(as[DisplayableNode]) { displayableNode =>
+        entity(as[NodeData]) { displayableNode =>
           complete {
             repository.withParsedProcessById(processId) { currentCanonical =>
               val canonicalNode = processConverter.nodeFromDisplayable(displayableNode)
-              val modificationResult = currentCanonical.modify[CanonicalNode](nodeId)(_ => canonicalNode)
+              val modificationResult = currentCanonical.modify(nodeId)(_ => canonicalNode)
               if (modificationResult.modifiedCount < 1)
                 Xor.left(NodeNotFoundError(processId = processId, nodeId = nodeId))
               else
