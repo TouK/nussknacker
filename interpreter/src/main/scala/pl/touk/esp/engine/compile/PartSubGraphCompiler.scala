@@ -7,11 +7,11 @@ import cats.instances.option._
 import pl.touk.esp.engine._
 import pl.touk.esp.engine.compile.ProcessCompilationError._
 import pl.touk.esp.engine.compile.dumb._
-import pl.touk.esp.engine.compiledgraph.expression.ExpressionParser
-import pl.touk.esp.engine.compiledgraph.node.CustomNode
 import pl.touk.esp.engine.compiledgraph.evaluatedparam.Parameter
+import pl.touk.esp.engine.compiledgraph.expression.ExpressionParser
 import pl.touk.esp.engine.definition.DefinitionExtractor._
 import pl.touk.esp.engine.definition._
+import pl.touk.esp.engine.graph.node.{OneOutputSubsequentNodeData, EndingNodeData}
 import pl.touk.esp.engine.spel.SpelExpressionParser
 import pl.touk.esp.engine.splittedgraph._
 
@@ -20,7 +20,7 @@ class PartSubGraphCompiler(protected val expressionParsers: Map[String, Expressi
 
   override type ParametersProviderT = ObjectWithMethodDef
 
-  override def compile(n: splittednode.SplittedNode): ValidatedNel[PartSubGraphCompilationError, compiledgraph.node.Node] = {
+  override def compile(n: splittednode.SplittedNode[_]): ValidatedNel[PartSubGraphCompilationError, compiledgraph.node.Node] = {
     super.compile(n)
   }
 
@@ -49,39 +49,42 @@ private[compile] trait PartSubGraphCompilerBase {
   private val syntax = ValidatedSyntax[PartSubGraphCompilationError]
   import syntax._
 
-  def validate(n: splittednode.SplittedNode): ValidatedNel[PartSubGraphCompilationError, Unit] = {
+  def validate(n: splittednode.SplittedNode[_]): ValidatedNel[PartSubGraphCompilationError, Unit] = {
     compile(n).map(_ => Unit)
   }
 
-  def compile(n: splittednode.SplittedNode): ValidatedNel[PartSubGraphCompilationError, compiledgraph.node.Node] = {
+  def compile(n: splittednode.SplittedNode[_]): ValidatedNel[PartSubGraphCompilationError, compiledgraph.node.Node] = {
     implicit val nodeId = NodeId(n.id)
     n match {
-      case s: splittednode.Source =>
-        compile(s)
-      case splittednode.VariableBuilder(id, varName, fields, next) =>
-        A.map2(fields.map(compile).sequence, compile(next))(compiledgraph.node.VariableBuilder(id, varName, _, _))
-      case splittednode.Processor(id, ref, next) =>
-        A.map2(compile(ref), compile(next))(compiledgraph.node.Processor(id, _, _))
-      case splittednode.EndingProcessor(id, ref) =>
-        compile(ref).map(compiledgraph.node.EndingProcessor(id, _))
-      case splittednode.Enricher(id, ref, outName, next) =>
-        A.map2(compile(ref), compile(next))(compiledgraph.node.Enricher(id, _, outName, _))
-      case splittednode.Filter(id, expression, nextTrue, nextFalse) =>
+      case splittednode.SourceNode(graph.node.Source(id, _), next) =>
+        compile(next).map(compiledgraph.node.Source(id, _))
+      case splittednode.OneOutputSubsequentNode(data: OneOutputSubsequentNodeData, next) =>
+        data match {
+          case graph.node.VariableBuilder(id, varName, fields) =>
+            A.map2(fields.map(compile).sequence, compile(next))(compiledgraph.node.VariableBuilder(id, varName, _, _))
+          case graph.node.Processor(id, ref) =>
+            A.map2(compile(ref), compile(next))(compiledgraph.node.Processor(id, _, _))
+          case graph.node.Enricher(id, ref, outName) =>
+            A.map2(compile(ref), compile(next))(compiledgraph.node.Enricher(id, _, outName, _))
+          case graph.node.Aggregate(id, _, keyExpression, _, _, triggerExpression, _) =>
+            A.map3(compile(keyExpression), triggerExpression.map(compile).sequence, compile(next))(compiledgraph.node.Aggregate(id, _, _, _))
+          case graph.node.CustomNode(id, _, customNodeRef, parameters) =>
+            val validParams = parameters.map(compile).sequence
+            A.map2(validParams, compile(next))(compiledgraph.node.CustomNode(id, _, _))
+        }
+      case splittednode.FilterNode(graph.node.Filter(id, expression), nextTrue, nextFalse) =>
         A.map3(compile(expression), compile(nextTrue), nextFalse.map(compile).sequence)(compiledgraph.node.Filter(id, _, _, _))
-      case splittednode.Switch(id, expression, exprVal, nexts, defaultNext) =>
+      case splittednode.SwitchNode(graph.node.Switch(id, expression, exprVal), nexts, defaultNext) =>
         A.map3(compile(expression), nexts.map(compile).sequence, defaultNext.map(compile).sequence)(compiledgraph.node.Switch(id, _, exprVal, _, _))
-      case splittednode.Aggregate(id, keyExpression, triggerExpression, next) =>
-        A.map3(compile(keyExpression), triggerExpression.map(compile).sequence, compile(next))(compiledgraph.node.Aggregate(id, _, _, _))
-      case splittednode.CustomNode(id, customNodeRef, parameters, next) =>
-        val validParams = parameters.map(compile).sequence
-        A.map2(validParams, compile(next))(compiledgraph.node.CustomNode(id, _, _))
-      case splittednode.Sink(id, optionalExpression) =>
-        optionalExpression.map(compile).sequence.map(compiledgraph.node.Sink(id, _))
+      case splittednode.EndingNode(data: EndingNodeData) =>
+        data match {
+          case graph.node.Processor(id, ref) =>
+            compile(ref).map(compiledgraph.node.EndingProcessor(id, _))
+          case graph.node.Sink(id, _, optionalExpression) =>
+            optionalExpression.map(compile).sequence.map(compiledgraph.node.Sink(id, _))
+        }
     }
   }
-
-  def compile(s: splittednode.Source): ValidatedNel[PartSubGraphCompilationError, compiledgraph.node.Source] =
-    compile(s.next).map(compiledgraph.node.Source(s.id, _))
 
   private def compile(next: splittednode.Next): ValidatedNel[PartSubGraphCompilationError, compiledgraph.node.Next] = {
     next match {

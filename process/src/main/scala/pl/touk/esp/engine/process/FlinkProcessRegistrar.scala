@@ -17,7 +17,7 @@ import org.apache.flink.metrics.Gauge
 import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.collector.selector.OutputSelector
 import org.apache.flink.streaming.api.functions.{AssignerWithPeriodicWatermarks, AssignerWithPunctuatedWatermarks}
-import org.apache.flink.streaming.api.operators.{StreamOperator, AbstractStreamOperator, ChainingStrategy, OneInputStreamOperator}
+import org.apache.flink.streaming.api.operators.{AbstractStreamOperator, ChainingStrategy, OneInputStreamOperator, StreamOperator}
 import org.apache.flink.streaming.api.scala.function.util.ScalaFoldFunction
 import org.apache.flink.streaming.api.scala.{StreamExecutionEnvironment, _}
 import org.apache.flink.streaming.api.watermark.Watermark
@@ -35,7 +35,8 @@ import pl.touk.esp.engine.compile.{PartSubGraphCompiler, ProcessCompilationError
 import pl.touk.esp.engine.compiledgraph.part._
 import pl.touk.esp.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.esp.engine.definition.{CustomNodeInvoker, ServiceDefinitionExtractor}
-import pl.touk.esp.engine.graph.EspProcess
+import pl.touk.esp.engine.graph.{EspProcess, node}
+import pl.touk.esp.engine.graph.node.Aggregate
 import pl.touk.esp.engine.process.FlinkProcessRegistrar._
 import pl.touk.esp.engine.process.util.Serializers
 import pl.touk.esp.engine.splittedgraph.end.{DeadEnd, End, NormalEnd}
@@ -43,8 +44,8 @@ import pl.touk.esp.engine.splittedgraph.splittednode
 import pl.touk.esp.engine.splittedgraph.splittednode.SplittedNode
 import pl.touk.esp.engine.util.SynchronousExecutionContext
 import pl.touk.esp.engine.util.metrics.InstantRateMeter
-import scala.collection.JavaConversions._
 
+import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext}
@@ -97,7 +98,7 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessW
       }.map(_.transform("even-time-meter", new EventTimeDelayMeterFunction("eventtimedelay", eventTimeMetricDuration)))
         .getOrElse(newStart)
         .map(new RateMeterFunction[Any]("source"))
-        .flatMap(new InitialInterpretationFunction(compiledProcessWithDeps, part.source, Interpreter.InputParamName))
+        .flatMap(new InitialInterpretationFunction(compiledProcessWithDeps, part.node, Interpreter.InputParamName))
         .split(SplitFunction)
 
       registerParts(withAssigned, part.nextParts, part.ends)
@@ -108,35 +109,35 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessW
       processPart match {
         case part: AggregatePart =>
           val windowDef = start
-            .keyBy(new AggregateKeyByFunction(compiledProcessWithDeps, part.aggregate))
+            .keyBy(new AggregateKeyByFunction(compiledProcessWithDeps, part.node))
             .timeWindow(part.durationInMillis, part.slideInMillis)
 
           val foldingFunction = part.foldingFun.getOrElse(JListFoldingFunction).asInstanceOf[FoldingFunction[Any]]
 
-          val newStart = part.aggregate.triggerExpression
+          val newStart = part.triggerExpression
             .map(_ => windowDef.trigger(new AggregationTrigger(
-              compiledProcessWithDeps, part.aggregate, part.aggregatedVar, env.getConfig)))
+              compiledProcessWithDeps, part.node, part.aggregatedVar, env.getConfig)))
             .getOrElse(windowDef)
             .fold(null, new WindowFoldingFunction(part.aggregatedVar, foldingFunction))
-            .flatMap(new InitialInterpretationFunction(compiledProcessWithDeps, part.aggregate, part.aggregatedVar))
+            .flatMap(new InitialInterpretationFunction(compiledProcessWithDeps, part.node, part.aggregatedVar))
             .split(SplitFunction)
 
           registerParts(newStart, part.nextParts, part.ends)
         case part: SinkPart =>
           start
-            .flatMap(new SinkInterpretationFunction(compiledProcessWithDeps, part.sink))
+            .flatMap(new SinkInterpretationFunction(compiledProcessWithDeps, part.node))
             .name(s"${part.id}-function")
             .map(new EndRateMeterFunction(part.ends))
             .map(_.output)
             .addSink(part.obj.toFlinkFunction)
             .name(s"${part.id}-sink")
 
-        case CustomNodePart(id, outputVar,
+        case part@CustomNodePart(
           executor: CustomNodeInvoker[((DataStream[InterpretationResult], FiniteDuration) => DataStream[Any]) @unchecked],
-          part, nextParts, ends) =>
+          node, nextParts, ends) =>
 
           val newStart = executor.run(compiledProcessWithDeps)(start, compiledProcessWithDeps().processTimeout)
-            .flatMap(new InitialInterpretationFunction(compiledProcessWithDeps, part, outputVar))
+            .flatMap(new InitialInterpretationFunction(compiledProcessWithDeps, node, part.outputVar))
             .split(SplitFunction)
           registerParts(newStart, nextParts, ends)
         case e:CustomNodePart =>
@@ -210,7 +211,7 @@ object FlinkProcessRegistrar {
   }
 
   class InitialInterpretationFunction(compiledProcessWithDepsProvider: () => CompiledProcessWithDeps,
-                                      node: SplittedNode,
+                                      node: SplittedNode[_],
                                       inputParamName: String) extends RichFlatMapFunction[Any, InterpretationResult] {
 
     private lazy implicit val ec = SynchronousExecutionContext.ctx
@@ -240,7 +241,7 @@ object FlinkProcessRegistrar {
   }
 
   class SinkInterpretationFunction(compiledProcessWithDepsProvider: () => CompiledProcessWithDeps,
-                                   sink: splittednode.Sink) extends RichFlatMapFunction[InterpretationResult, InterpretationResult] {
+                                   sink: splittednode.SplittedNode[node.Sink]) extends RichFlatMapFunction[InterpretationResult, InterpretationResult] {
 
     private lazy implicit val ec = SynchronousExecutionContext.ctx
     private lazy val compiledProcessWithDeps = compiledProcessWithDepsProvider()
@@ -268,7 +269,7 @@ object FlinkProcessRegistrar {
   }
 
   class AggregateKeyByFunction(compiledProcessWithDepsProvider: () => CompiledProcessWithDeps,
-                               node: splittednode.Aggregate) extends (InterpretationResult => String) with Serializable {
+                               node: splittednode.SplittedNode[Aggregate]) extends (InterpretationResult => String) with Serializable {
 
     private lazy implicit val ec = SynchronousExecutionContext.ctx
     private lazy val compiledProcessWithDeps = compiledProcessWithDepsProvider()
@@ -283,7 +284,7 @@ object FlinkProcessRegistrar {
   }
 
   class AggregationTrigger(compiledProcessWithDepsProvider: () => CompiledProcessWithDeps,
-                           node: splittednode.Aggregate,
+                           node: splittednode.SplittedNode[Aggregate],
                            inputParamName: String, config: ExecutionConfig) extends Trigger[AnyRef, TimeWindow] with Serializable {
 
     private lazy implicit val ec = SynchronousExecutionContext.ctx

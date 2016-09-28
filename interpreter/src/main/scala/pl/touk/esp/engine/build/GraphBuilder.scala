@@ -11,25 +11,28 @@ import pl.touk.esp.engine.graph.{param, service}
 
 import scala.concurrent.duration.Duration
 
-class GraphBuilder[R <: Node] private(create: Node => R) {
+class GraphBuilder[R <: Node] private(create: SubsequentNode => R) {
 
   def buildVariable(id: String, varName: String, fields: (String, Expression)*) =
-    new GraphBuilder[R](node => create(VariableBuilder(id, varName, fields.map(Field.tupled).toList, node)))
+    new GraphBuilder[R](node => create(OneOutputSubsequentNode(VariableBuilder(id, varName, fields.map(Field.tupled).toList), node)))
 
   def processor(id: String, svcId: String, params: (String, Expression)*): GraphBuilder[R] =
-    new GraphBuilder[R](node => create(Processor(id, ServiceRef(svcId, params.map(Parameter.tupled).toList), node)))
+    new GraphBuilder[R](node => create(OneOutputSubsequentNode(Processor(id, ServiceRef(svcId, params.map(Parameter.tupled).toList)), node)))
 
   def enricher(id: String, output: String, svcId: String, params: (String, Expression)*): GraphBuilder[R] =
-    new GraphBuilder[R](node => create(Enricher(id, ServiceRef(svcId, params.map(Parameter.tupled).toList), output, node)))
+    new GraphBuilder[R](node => create(OneOutputSubsequentNode(Enricher(id, ServiceRef(svcId, params.map(Parameter.tupled).toList), output), node)))
 
-  def filter(id: String, expression: Expression, nextFalse: Option[Node] = Option.empty): GraphBuilder[R] =
-    new GraphBuilder[R](node => create(Filter(id, expression, node, nextFalse)))
+  def filter(id: String, expression: Expression): GraphBuilder[R] =
+    new GraphBuilder[R](node => create(FilterNode(Filter(id, expression), node, None)))
+
+  def filter(id: String, expression: Expression, nextFalse: SubsequentNode): GraphBuilder[R] =
+    new GraphBuilder[R](node => create(FilterNode(Filter(id, expression), node, Some(nextFalse))))
 
   def aggregate(id: String, aggregatedVar: String,
                 keyExpression: Expression, duration: Duration, step: Duration,
                 triggerExpression: Option[Expression] = None, foldingFunRef: Option[String] = None): GraphBuilder[R] =
-    new GraphBuilder[R](node => create(Aggregate(id, aggregatedVar, keyExpression,
-      duration.toMillis, step.toMillis, triggerExpression, foldingFunRef, node)))
+    new GraphBuilder[R](node => create(OneOutputSubsequentNode(Aggregate(id, aggregatedVar, keyExpression,
+      duration.toMillis, step.toMillis, triggerExpression, foldingFunRef), node)))
 
   def sink(id: String, typ: String, params: (String, String)*): R =
     create(GraphBuilder.sink(id, typ, params: _*))
@@ -44,57 +47,60 @@ class GraphBuilder[R <: Node] private(create: Node => R) {
     create(GraphBuilder.switch(id, expression, exprVal, nexts: _*))
 
   def switch(id: String, expression: Expression, exprVal: String,
-             defaultNext: Node, nexts: Case*): R =
+             defaultNext: SubsequentNode, nexts: Case*): R =
     create(GraphBuilder.switch(id, expression, exprVal, defaultNext, nexts: _*))
 
   def customNode(id: String, outputVar: String, customNodeRef: String, params: (String, Expression)*): GraphBuilder[R]  =
-    new GraphBuilder[R](node => create(CustomNode(id, outputVar, customNodeRef, params.map(Parameter.tupled).toList, node)))
+    new GraphBuilder[R](node => create(OneOutputSubsequentNode(CustomNode(id, outputVar, customNodeRef, params.map(Parameter.tupled).toList), node)))
 
-  def to(node: Node): R =
+  def to(node: SubsequentNode): R =
     create(node)
 
 }
 
 object GraphBuilder {
 
-  def source(id: String, typ: String, params: (String, String)*): GraphBuilder[Source] =
-    new GraphBuilder(Source(id, SourceRef(typ, params.map(param.Parameter.tupled).toList), _))
+  def source(id: String, typ: String, params: (String, String)*): GraphBuilder[SourceNode] =
+    new GraphBuilder(SourceNode(Source(id, SourceRef(typ, params.map(param.Parameter.tupled).toList)), _))
 
-  def buildVariable(id: String, varName: String, fields: Field*) =
-    new GraphBuilder(VariableBuilder(id, varName, fields.toList, _))
+  def buildVariable(id: String, varName: String, fields: Field*): GraphBuilder[OneOutputSubsequentNode] =
+    new GraphBuilder(OneOutputSubsequentNode(VariableBuilder(id, varName, fields.toList), _))
 
-  def processor(id: String, svcId: String, params: (String, Expression)*): GraphBuilder[Processor] =
-    new GraphBuilder(Processor(id, ServiceRef(svcId, params.map(Parameter.tupled).toList), _))
+  def processor(id: String, svcId: String, params: (String, Expression)*): GraphBuilder[OneOutputSubsequentNode] =
+    new GraphBuilder(OneOutputSubsequentNode(Processor(id, ServiceRef(svcId, params.map(Parameter.tupled).toList)), _))
 
-  def enricher(id: String, output: String, svcId: String, params: (String, Expression)*): GraphBuilder[Enricher] =
-    new GraphBuilder(Enricher(id, ServiceRef(svcId, params.map(Parameter.tupled).toList), output, _))
+  def enricher(id: String, output: String, svcId: String, params: (String, Expression)*): GraphBuilder[OneOutputSubsequentNode] =
+    new GraphBuilder(OneOutputSubsequentNode(Enricher(id, ServiceRef(svcId, params.map(Parameter.tupled).toList), output), _))
 
-  def filter(id: String, expression: Expression, nextFalse: Option[Node] = Option.empty): GraphBuilder[Filter] =
-    new GraphBuilder(Filter(id, expression, _, nextFalse))
+  def filter(id: String, expression: Expression): GraphBuilder[FilterNode] =
+    new GraphBuilder(FilterNode(Filter(id, expression), _, None))
 
-  def customNode(id: String, outputVar: String, customNodeRef: String, params: (String, Expression)*) : GraphBuilder[CustomNode] =
-    new GraphBuilder(CustomNode(id, outputVar, customNodeRef, params.map(Parameter.tupled).toList, _))
+  def filter(id: String, expression: Expression, nextFalse: SubsequentNode): GraphBuilder[FilterNode] =
+    new GraphBuilder(FilterNode(Filter(id, expression), _, Some(nextFalse)))
+
+  def customNode(id: String, outputVar: String, customNodeRef: String, params: (String, Expression)*) : GraphBuilder[OneOutputSubsequentNode] =
+    new GraphBuilder(OneOutputSubsequentNode(CustomNode(id, outputVar, customNodeRef, params.map(Parameter.tupled).toList), _))
 
   def aggregate(id: String, aggregatedVar: String,
                 keyExpression: Expression, duration: Duration, step: Duration,
-                triggerExpression: Option[Expression] = None, foldingFunRef: Option[String] = None): GraphBuilder[Aggregate] =
-    new GraphBuilder(Aggregate(id, aggregatedVar, keyExpression,
-      duration.toMillis, step.toMillis, triggerExpression, foldingFunRef, _))
+                triggerExpression: Option[Expression] = None, foldingFunRef: Option[String] = None): GraphBuilder[OneOutputSubsequentNode] =
+    new GraphBuilder(OneOutputSubsequentNode(Aggregate(id, aggregatedVar, keyExpression,
+      duration.toMillis, step.toMillis, triggerExpression, foldingFunRef), _))
 
-  def sink(id: String, typ: String, params: (String, String)*): Sink =
-    Sink(id, SinkRef(typ, params.map(param.Parameter.tupled).toList))
+  def sink(id: String, typ: String, params: (String, String)*): EndingNode =
+    EndingNode(Sink(id, SinkRef(typ, params.map(param.Parameter.tupled).toList)))
 
-  def sink(id: String, expression: Expression, typ: String, params: (String, String)*): Sink =
-    Sink(id, SinkRef(typ, params.map(param.Parameter.tupled).toList), Some(expression))
+  def sink(id: String, expression: Expression, typ: String, params: (String, String)*): EndingNode =
+    EndingNode(Sink(id, SinkRef(typ, params.map(param.Parameter.tupled).toList), Some(expression)))
 
-  def processorEnd(id: String, svcId: String, params: (String, Expression)*): EndingProcessor =
-    EndingProcessor(id, ServiceRef(svcId, params.map(Parameter.tupled).toList))
+  def processorEnd(id: String, svcId: String, params: (String, Expression)*): EndingNode =
+    EndingNode(Processor(id, ServiceRef(svcId, params.map(Parameter.tupled).toList)))
 
-  def switch(id: String, expression: Expression, exprVal: String, nexts: Case*): Switch =
-    Switch(id, expression, exprVal, nexts.toList, None)
+  def switch(id: String, expression: Expression, exprVal: String, nexts: Case*): SwitchNode =
+    SwitchNode(Switch(id, expression, exprVal), nexts.toList, None)
 
   def switch(id: String, expression: Expression, exprVal: String,
-             defaultNext: Node, nexts: Case*): Switch =
-    Switch(id, expression, exprVal, nexts.toList, Some(defaultNext))
+             defaultNext: SubsequentNode, nexts: Case*): SwitchNode =
+    SwitchNode(Switch(id, expression, exprVal), nexts.toList, Some(defaultNext))
 
 }

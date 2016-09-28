@@ -1,45 +1,35 @@
 package pl.touk.esp.engine.splittedgraph
 
-import pl.touk.esp.engine.graph.evaluatedparam.Parameter
 import pl.touk.esp.engine.graph.expression.Expression
-import pl.touk.esp.engine.graph.service.ServiceRef
-import pl.touk.esp.engine.graph.variable.Field
+import pl.touk.esp.engine.graph.node._
 
 object splittednode {
 
-  sealed trait SplittedNode {
-    def id: String
+  sealed trait SplittedNode[T <: NodeData] {
+    def data: T
+    def id: String = data.id
   }
 
-  case class Source(id: String, next: Next) extends SplittedNode
+  sealed trait OneOutputNode[T <: NodeData] extends SplittedNode[T] {
+    def next: Next
+  }
 
-  case class Sink(id: String, endResult: Option[Expression] = None) extends SplittedNode
+  case class SourceNode(data: Source, next: Next) extends OneOutputNode[Source]
 
-  case class VariableBuilder(id: String, varName: String, fields: List[Field], next: Next) extends SplittedNode
+  sealed trait SubsequentNode[T <: NodeData] extends SplittedNode[T]
 
-  case class Processor(id: String, service: ServiceRef, next: Next) extends SplittedNode
+  case class OneOutputSubsequentNode[T <: OneOutputSubsequentNodeData](data: T, next: Next) extends OneOutputNode[T] with SubsequentNode[T]
 
-  case class EndingProcessor(id: String, service: ServiceRef) extends SplittedNode
+  case class FilterNode(data: Filter, nextTrue: Next, nextFalse: Option[Next] = None) extends SubsequentNode[Filter]
 
-  case class Enricher(id: String, service: ServiceRef, output: String, next: Next) extends SplittedNode
-
-  case class Filter(id: String, expression: Expression, nextTrue: Next,
-                    nextFalse: Option[Next] = None) extends SplittedNode
-
-  case class Switch(id: String, expression: Expression, exprVal: String,
-                    nexts: List[Case], defaultNext: Option[Next] = None) extends SplittedNode
+  case class SwitchNode(data: Switch, nexts: List[Case], defaultNext: Option[Next] = None) extends SubsequentNode[Switch]
 
   case class Case(expression: Expression, node: Next)
 
-  case class Aggregate(id: String,
-                       keyExpression: Expression,
-                       triggerExpression: Option[Expression],
-                       next: Next) extends SplittedNode
-
-  case class CustomNode(id: String, customNodeRef: String, parameters: List[Parameter], next: Next) extends SplittedNode
+  case class EndingNode[T <: EndingNodeData](data: T) extends SubsequentNode[T]
 
   sealed trait Next
-  case class NextNode(node: SplittedNode) extends Next
+  case class NextNode(node: SubsequentNode[_ <: NodeData]) extends Next
   case class PartRef(id: String) extends Next
 
 }

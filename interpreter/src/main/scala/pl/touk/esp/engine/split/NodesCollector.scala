@@ -5,48 +5,36 @@ import pl.touk.esp.engine.splittedgraph.splittednode._
 
 object NodesCollector {
 
-  def collectNodesInAllParts(part: ProcessPart): List[SplittedNode] =
+  def collectNodesInAllParts(part: ProcessPart): List[SplittedNode[_]] =
     part match {
       case source: SourcePart =>
-        collectNodes(source.source) ::: source.nextParts.flatMap(collectNodesInAllParts)
+        collectNodes(source.node) ::: source.nextParts.flatMap(collectNodesInAllParts)
       case agg: AggregatePart =>
-        collectNodes(agg.aggregate) ::: agg.nextParts.flatMap(collectNodesInAllParts)
+        collectNodes(agg.node) ::: agg.nextParts.flatMap(collectNodesInAllParts)
       case sink: SinkPart =>
-        collectNodes(sink.sink)
+        collectNodes(sink.node)
       case custom:CustomNodePart =>
-        collectNodes(custom.customNode) ::: custom.nextParts.flatMap(collectNodesInAllParts)
+        collectNodes(custom.node) ::: custom.nextParts.flatMap(collectNodesInAllParts)
 
     }
 
-  private def collectNodes(node: SplittedNode): List[SplittedNode] = {
+  private def collectNodes(node: SplittedNode[_]): List[SplittedNode[_]] = {
     val children = node match {
-      case n: Source =>
+      case n: OneOutputNode[_] =>
         collectNodes(n.next)
-      case n: VariableBuilder =>
-        collectNodes(n.next)
-      case n: Processor =>
-        collectNodes(n.next)
-      case n: Enricher =>
-        collectNodes(n.next)
-      case n: Filter =>
+      case n: FilterNode =>
         collectNodes(n.nextTrue) ::: n.nextFalse.toList.flatMap(collectNodes)
-      case n: Switch =>
+      case n: SwitchNode =>
         n.nexts.flatMap {
           case Case(_, ch) => collectNodes(ch)
         } ::: n.defaultNext.toList.flatMap(collectNodes)
-      case n: Aggregate =>
-        collectNodes(n.next)
-      case n: Sink =>
-        List.empty
-      case n: CustomNode =>
-        collectNodes(n.next)
-      case n: EndingProcessor =>
+      case n: EndingNode[_] =>
         List.empty
     }
     node :: children
   }
 
-  private def collectNodes(next: Next): List[SplittedNode] =
+  private def collectNodes(next: Next): List[SplittedNode[_]] =
     next match {
       case NextNode(node) => collectNodes(node)
       case part: PartRef => List.empty

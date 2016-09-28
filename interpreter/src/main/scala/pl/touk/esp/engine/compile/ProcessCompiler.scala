@@ -23,7 +23,7 @@ import pl.touk.esp.engine.graph.{EspProcess, param}
 import pl.touk.esp.engine.split._
 import pl.touk.esp.engine.splittedgraph._
 import pl.touk.esp.engine.splittedgraph.part._
-import pl.touk.esp.engine.splittedgraph.splittednode.CustomNode
+import pl.touk.esp.engine.splittedgraph.splittednode.SplittedNode
 
 class ProcessCompiler(protected val sub: PartSubGraphCompilerBase,
                       protected val sourceFactories: Map[String, ObjectWithMethodDef],
@@ -38,7 +38,7 @@ class ProcessCompiler(protected val sub: PartSubGraphCompilerBase,
     super.compile(process)
   }
 
-  override protected def createCustomNodeInvoker(obj: ObjectWithMethodDef, metaData: MetaData, node: CustomNode) =
+  override protected def createCustomNodeInvoker(obj: ObjectWithMethodDef, metaData: MetaData, node: SplittedNode[graph.node.CustomNode]) =
     CustomNodeInvoker[Any](obj, metaData, node)
 
   override protected def createFactory[T](obj: ObjectWithMethodDef) =
@@ -58,7 +58,7 @@ class ProcessValidator(protected val sub: PartSubGraphCompilerBase,
   override protected def createFactory[T](obj: ObjectDefinition) =
     new DumbProcessObjectFactory[T]
 
-  override protected def createCustomNodeInvoker(obj: ObjectDefinition, metaData: MetaData, node: CustomNode) =
+  override protected def createCustomNodeInvoker(obj: ObjectDefinition, metaData: MetaData, node: SplittedNode[graph.node.CustomNode]) =
     new DumbCustomNodeInvoker[Any]
 }
 
@@ -119,24 +119,24 @@ protected trait ProcessCompilerBase {
                      (implicit metaData: MetaData): ValidatedNel[ProcessCompilationError, compiledgraph.part.SubsequentPart] = {
     implicit val nodeId = NodeId(part.id)
     part match {
-      case AggregatePart(id, durationInMillis, slideInMillis, aggregatedVar, foldingFunRef, aggregate, nextParts, ends) =>
+      case AggregatePart(node, nextParts, ends) =>
         A.map3(
-          validate(aggregate),
-          foldingFunRef.map(compileFoldingFunction).sequence,
+          validate(node),
+          node.data.foldingFunRef.map(compileFoldingFunction).sequence,
           compile(nextParts)
         ) { (_, foldingFunRefV, nextPartsV) =>
-          compiledgraph.part.AggregatePart(id, durationInMillis, slideInMillis, aggregatedVar, foldingFunRefV, aggregate, nextPartsV, ends)
+          compiledgraph.part.AggregatePart(foldingFunRefV, node, nextPartsV, ends)
         }
-      case SinkPart(id, ref, sink) =>
+      case SinkPart(node) =>
         A.map2(
-          validate(sink),
-          compile(ref)
+          validate(node),
+          compile(node.data.ref)
         ) { (_, obj) =>
-          compiledgraph.part.SinkPart(id, obj, sink)
+          compiledgraph.part.SinkPart(obj, node)
         }
-      case CustomNodePart(id, outputVar, customNodeRef, customNode, nextParts, ends) =>
-        A.map2(compileCustomNodeInvoker(customNodeRef, customNode), compile(nextParts))(
-          compiledgraph.part.CustomNodePart(id, outputVar, _, customNode, _, ends)
+      case CustomNodePart(node, nextParts, ends) =>
+        A.map2(compileCustomNodeInvoker(node), compile(nextParts))(
+          compiledgraph.part.CustomNodePart(_, node, _, ends)
         )
     }
   }
@@ -145,11 +145,11 @@ protected trait ProcessCompilerBase {
                      (implicit metaData: MetaData): ValidatedNel[ProcessCompilationError, compiledgraph.part.SourcePart] = {
     implicit val nodeId = NodeId(source.id)
     A.map3(
-      validate(source.source),
-      compile(source.ref),
+      validate(source.node),
+      compile(source.node.data.ref),
       compile(source.nextParts)
     ) { (_, obj, nextParts) =>
-      compiledgraph.part.SourcePart(source.id, obj, source.source, nextParts, source.ends)
+      compiledgraph.part.SourcePart(obj, source.node, nextParts, source.ends)
     }
   }
 
@@ -188,16 +188,16 @@ protected trait ProcessCompilerBase {
     foldingFunctions.get(ref).map(valid).getOrElse(invalid(MissingFoldingFunction(ref))).toValidatedNel
   }
 
-  private def compileCustomNodeInvoker(ref: String, node: CustomNode)
-                                    (implicit nodeId: NodeId, metaData: MetaData): ValidatedNel[ProcessCompilationError, CustomNodeInvoker[Any]] = {
-
+  private def compileCustomNodeInvoker(node: SplittedNode[graph.node.CustomNode])
+                                      (implicit nodeId: NodeId, metaData: MetaData): ValidatedNel[ProcessCompilationError, CustomNodeInvoker[Any]] = {
+    val ref = node.data.nodeType
     fromOption[ProcessCompilationError, ParameterProviderT](customStreamTransformers.get(ref), MissingCustomNodeExecutor(ref))
       .toValidatedNel
-      .andThen((k: ParameterProviderT) => validateParameters(k, node.parameters.map(_.name)))
+      .andThen((k: ParameterProviderT) => validateParameters(k, node.data.parameters.map(_.name)))
       .map(createCustomNodeInvoker(_, metaData, node))
   }
 
-  protected def createCustomNodeInvoker(obj: ParameterProviderT, metaData: MetaData, node: CustomNode) : CustomNodeInvoker[Any]
+  protected def createCustomNodeInvoker(obj: ParameterProviderT, metaData: MetaData, node: SplittedNode[graph.node.CustomNode]) : CustomNodeInvoker[Any]
 
   protected def createFactory[T](obj: ParameterProviderT): ProcessObjectFactory[T]
 
@@ -220,7 +220,7 @@ protected trait ProcessCompilerBase {
     ) { (_, _) => parameterProvider }.leftMap(_.map(identity[ProcessCompilationError]))
   }
 
-  private def validate(n: splittednode.SplittedNode): ValidatedNel[ProcessCompilationError, Unit] = {
+  private def validate(n: splittednode.SplittedNode[_]): ValidatedNel[ProcessCompilationError, Unit] = {
     sub.validate(n).leftMap(_.map(identity[ProcessCompilationError]))
   }
 

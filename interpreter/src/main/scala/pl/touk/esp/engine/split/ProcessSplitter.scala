@@ -1,6 +1,5 @@
 package pl.touk.esp.engine.split
 
-
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.graph.node._
 import pl.touk.esp.engine.splittedgraph._
@@ -14,61 +13,47 @@ object ProcessSplitter {
     SplittedProcess(process.metaData, process.exceptionHandlerRef, split(process.root))
   }
 
-  private def split(node: Source): SourcePart = {
+  private def split(node: SourceNode): SourcePart = {
     val nextWithParts = traverse(node.next)
-    SourcePart(node.id, node.ref, splittednode.Source(node.id, nextWithParts.next), nextWithParts.nextParts, nextWithParts.ends)
+    SourcePart(splittednode.SourceNode(node.data, nextWithParts.next), nextWithParts.nextParts, nextWithParts.ends)
   }
 
-  private def split(node: Aggregate): AggregatePart = {
-    val nextWithParts = traverse(node.next)
-    val aggregate = splittednode.Aggregate(node.id, node.keyExpression, node.triggerExpression, nextWithParts.next)
-    AggregatePart(node.id, node.durationInMillis, node.stepInMillis, node.aggregatedVar,
-      node.foldingFunRef, aggregate, nextWithParts.nextParts, nextWithParts.ends)
+  private def split(aggregate: Aggregate, next: SubsequentNode): AggregatePart = {
+    val nextWithParts = traverse(next)
+    val node = splittednode.OneOutputSubsequentNode(aggregate, nextWithParts.next)
+    AggregatePart(node, nextWithParts.nextParts, nextWithParts.ends)
   }
 
-  private def split(node: Sink): SinkPart = {
-    SinkPart(node.id, node.ref, splittednode.Sink(node.id, node.endResult))
+  private def split(custom: CustomNode, next: SubsequentNode) : CustomNodePart = {
+    val nextWithParts = traverse(next)
+    val node = splittednode.OneOutputSubsequentNode(custom, nextWithParts.next)
+    CustomNodePart(node, nextWithParts.nextParts, nextWithParts.ends)
   }
 
-  private def split(node: CustomNode) : CustomNodePart = {
-    val nextWithParts = traverse(node.next)
-    val splitted = splittednode.CustomNode(node.id, node.nodeType, node.parameters, nextWithParts.next)
-    CustomNodePart(node.id, node.outputVar, node.nodeType, splitted, nextWithParts.nextParts, nextWithParts.ends)
+  private def split(sink: Sink): SinkPart = {
+    val node = splittednode.EndingNode(sink)
+    SinkPart(node)
   }
 
-  private def traverse(node: Node): NextWithParts =
+  private def traverse(node: SubsequentNode): NextWithParts =
     node match {
-      case source: Source =>
-        throw new IllegalArgumentException("Source shouldn't be traversed")
-      case VariableBuilder(id, varName, fields, next) =>
-        traverse(next).map { nextT =>
-          NextNode(splittednode.VariableBuilder(id, varName, fields, nextT))
-        }
-      case Processor(id, service, next) =>
-        traverse(next).map { nextT =>
-          NextNode(splittednode.Processor(id, service, nextT))
-        }
-      case Enricher(id, service, output, next) =>
-        traverse(next).map { nextT =>
-          NextNode(splittednode.Enricher(id, service, output, nextT))
-        }
-      case Filter(id, expression, nextTrue, nextFalse) =>
+      case FilterNode(data, nextTrue, nextFalse) =>
         val nextTrueT = traverse(nextTrue)
         nextFalse.map(traverse) match {
           case Some(nextFalseT) =>
             NextWithParts(
-              NextNode(splittednode.Filter(id, expression, nextTrueT.next, Some(nextFalseT.next))),
+              NextNode(splittednode.FilterNode(data, nextTrueT.next, Some(nextFalseT.next))),
               nextTrueT.nextParts ::: nextFalseT.nextParts,
               nextTrueT.ends ::: nextFalseT.ends
             )
           case None =>
             NextWithParts(
-              NextNode(splittednode.Filter(id, expression, nextTrueT.next, None)),
+              NextNode(splittednode.FilterNode(data, nextTrueT.next, None)),
               nextTrueT.nextParts,
-              DeadEnd(id) :: nextTrueT.ends
+              DeadEnd(data.id) :: nextTrueT.ends
             )
         }
-      case Switch(id, expression, exprVal, nexts, defaultNext) =>
+      case SwitchNode(data, nexts, defaultNext) =>
         val (nextsT, casesNextParts, casesEnds) = nexts.map { casee =>
           val nextWithParts = traverse(casee.node)
           (splittednode.Case(casee.expression, nextWithParts.next), nextWithParts.nextParts, nextWithParts.ends)
@@ -76,28 +61,32 @@ object ProcessSplitter {
         defaultNext.map(traverse) match {
           case Some(defaultNextT) =>
             NextWithParts(
-              NextNode(splittednode.Switch(id, expression, exprVal, nextsT, Some(defaultNextT.next))),
+              NextNode(splittednode.SwitchNode(data, nextsT, Some(defaultNextT.next))),
               defaultNextT.nextParts ::: casesNextParts.flatten,
               defaultNextT.ends ::: casesEnds.flatten
             )
           case None =>
             NextWithParts(
-              NextNode(splittednode.Switch(id, expression, exprVal, nextsT, None)),
+              NextNode(splittednode.SwitchNode(data, nextsT, None)),
               casesNextParts.flatten,
-              DeadEnd(id) :: casesEnds.flatten
+              DeadEnd(data.id) :: casesEnds.flatten
             )
         }
-      case sink: Sink =>
+      case OneOutputSubsequentNode(custom: CustomNode, next) =>
+        val part = split(custom, next)
+        NextWithParts(PartRef(part.id), List(part), List.empty)
+      case OneOutputSubsequentNode(aggregate: Aggregate, next) =>
+        val part = split(aggregate, next)
+        NextWithParts(PartRef(part.id), List(part), List.empty)
+      case OneOutputSubsequentNode(other, next) =>
+        traverse(next).map { nextT =>
+          NextNode(splittednode.OneOutputSubsequentNode(other, nextT))
+        }
+      case EndingNode(sink: Sink) =>
         val part = split(sink)
-        NextWithParts(PartRef(part.id), List(part), List.empty)
-      case end: EndingProcessor =>
-        NextWithParts(NextNode(splittednode.EndingProcessor(end.id, end.service)), List.empty, List(NormalEnd(end.id)))
-      case aggregate: Aggregate =>
-        val part = split(aggregate)
-        NextWithParts(PartRef(part.id), List(part), List.empty)
-      case custom: CustomNode =>
-        val part = split(custom)
-        NextWithParts(PartRef(part.id), List(part), List.empty)
+        NextWithParts(PartRef(sink.id), List(part), List.empty)
+      case EndingNode(other) =>
+        NextWithParts(NextNode(splittednode.EndingNode(other)), List.empty, List(NormalEnd(other.id)))
     }
 
   case class NextWithParts(next: splittednode.Next, nextParts: List[SubsequentPart], ends: List[End]) {

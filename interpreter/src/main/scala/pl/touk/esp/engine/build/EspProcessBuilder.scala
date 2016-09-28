@@ -21,7 +21,7 @@ class ProcessMetaDataBuilder private[build](metaData: MetaData) {
     def source(id: String, typ: String, params: (String, String)*): ProcessGraphBuilder =
       new ProcessGraphBuilder(GraphBuilder.source(id, typ, params: _*))
 
-    class ProcessGraphBuilder private[ProcessExceptionHandlerBuilder](graphBuilder: GraphBuilder[Source]) {
+    class ProcessGraphBuilder private[ProcessExceptionHandlerBuilder](graphBuilder: GraphBuilder[SourceNode]) {
 
       def buildVariable(id: String, varName: String, fields: (String, Expression)*) =
         new ProcessGraphBuilder(graphBuilder.buildVariable(id, varName, fields: _*))
@@ -35,7 +35,10 @@ class ProcessMetaDataBuilder private[build](metaData: MetaData) {
       def customNode(id: String, outputVar: String, customNodeRef: String, params: (String, Expression)*) =
         new ProcessGraphBuilder(graphBuilder.customNode(id, outputVar, customNodeRef, params: _*))
 
-      def filter(id: String, expression: Expression, nextFalse: Option[Node] = Option.empty) =
+      def filter(id: String, expression: Expression) =
+        new ProcessGraphBuilder(graphBuilder.filter(id, expression))
+
+      def filter(id: String, expression: Expression, nextFalse: SubsequentNode) =
         new ProcessGraphBuilder(graphBuilder.filter(id, expression, nextFalse))
 
       def aggregate(id: String, aggregatedVar: String,
@@ -57,13 +60,13 @@ class ProcessMetaDataBuilder private[build](metaData: MetaData) {
         create(graphBuilder.switch(id, expression, exprVal, nexts: _*))
 
       def switch(id: String, expression: Expression, exprVal: String,
-                 defaultNext: Node, nexts: Case*) =
+                 defaultNext: SubsequentNode, nexts: Case*) =
         create(graphBuilder.switch(id, expression, exprVal, defaultNext, nexts: _*))
 
-      def to(node: Node) =
+      def to(node: SubsequentNode) =
         create(graphBuilder.to(node))
 
-      private def create(source: Source): EspProcess =
+      private def create(source: SourceNode): EspProcess =
         EspProcess(metaData, exceptionHandlerRef, source)
 
     }

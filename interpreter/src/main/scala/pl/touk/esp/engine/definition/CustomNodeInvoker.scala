@@ -6,17 +6,18 @@ import pl.touk.esp.engine.api._
 import pl.touk.esp.engine.api.exception.EspExceptionHandler
 import pl.touk.esp.engine.compile.PartSubGraphCompiler
 import pl.touk.esp.engine.definition.DefinitionExtractor.{ObjectWithMethodDef, Parameter}
-import pl.touk.esp.engine.splittedgraph.splittednode.CustomNode
+import pl.touk.esp.engine.graph.node.CustomNode
+import pl.touk.esp.engine.splittedgraph.splittednode.SplittedNode
 import pl.touk.esp.engine.util.SynchronousExecutionContext
 
-import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 trait CustomNodeInvoker[T] {
   def run(lazyDeps: () => CustomNodeInvokerDeps): T
 }
 
-private[definition] class CustomNodeInvokerImpl[T](executor: ObjectWithMethodDef, metaData: MetaData, node: CustomNode)
+private[definition] class CustomNodeInvokerImpl[T](executor: ObjectWithMethodDef, metaData: MetaData, node: SplittedNode[CustomNode])
     extends CustomNodeInvoker[T] {
 
   override def run(lazyDeps: () => CustomNodeInvokerDeps) : T = {
@@ -31,7 +32,7 @@ private[definition] class CustomNodeInvokerImpl[T](executor: ObjectWithMethodDef
 
 case class CompilerLazyInterpreter(lazyDeps: () => CustomNodeInvokerDeps,
                                    metaData: MetaData,
-                                   node: CustomNode, param: Parameter) extends LazyInterpreter {
+                                   node: SplittedNode[CustomNode], param: Parameter) extends LazyInterpreter {
 
   override def createInterpreter(ec: ExecutionContext) = {
     createInterpreter(ec, lazyDeps())
@@ -59,7 +60,7 @@ case class CompilerLazyInterpreter(lazyDeps: () => CustomNodeInvokerDeps,
 
 object CustomNodeInvoker {
 
-  def apply[T](executor: ObjectWithMethodDef, metaData: MetaData, node: CustomNode) =
+  def apply[T](executor: ObjectWithMethodDef, metaData: MetaData, node: SplittedNode[CustomNode]) =
     new CustomNodeInvokerImpl[T](executor, metaData, node)
 
 }
