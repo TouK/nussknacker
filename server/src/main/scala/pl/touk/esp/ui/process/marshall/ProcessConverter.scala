@@ -116,11 +116,8 @@ class ProcessConverter(processValidation: ProcessValidation) {
         }.toList.flatten
         canonicalnode.Switch(id, expr, exprVal, nexts, default) :: Nil
     }
-    ((handleIntermediateFlatNodes andThen { n =>
-      val firstEdge = edgesFromMap(n.id).head
-      n :: unflattenEdgeEnd(n.id, firstEdge)
-    }) orElse (handleFinalFlatNodes andThen { n =>
-      List(n)
+    ((handleDirectNodes andThen { n =>
+      n :: edgesFromMap.get(n.id).toList.flatten.flatMap(unflattenEdgeEnd(n.id, _))
     }) orElse handleNestedNodes)(n)
   }
 
@@ -131,10 +128,10 @@ class ProcessConverter(processValidation: ProcessValidation) {
       case displayablenode.Switch(id, expr, exprVal) =>
         canonicalnode.Switch(id, expr, exprVal, List.empty, List.empty)
     }
-    (handleIntermediateFlatNodes orElse handleFinalFlatNodes orElse handleNestedNodes)(n)
+    (handleDirectNodes orElse handleNestedNodes)(n)
   }
 
-  private val handleIntermediateFlatNodes: PartialFunction[displayablenode.DisplayableNode, canonicalnode.CanonicalNode] = {
+  private val handleDirectNodes: PartialFunction[displayablenode.DisplayableNode, canonicalnode.CanonicalNode] = {
     case displayablenode.Source(id, ref) =>
       canonicalnode.Source(id, ref)
     case displayablenode.VariableBuilder(id, varName, fields) =>
@@ -145,9 +142,6 @@ class ProcessConverter(processValidation: ProcessValidation) {
       canonicalnode.CustomNode(id, output, customStreamRef, params)
     case displayablenode.Enricher(id, service, output) =>
       canonicalnode.Enricher(id, service, output)
-  }
-
-  private val handleFinalFlatNodes: PartialFunction[displayablenode.DisplayableNode, canonicalnode.CanonicalNode] = {
     case displayablenode.Aggregate(id, aggregatedVar, keyExpr, duration, slide, triggerExpr, foldingFun) =>
       canonicalnode.Aggregate(id, aggregatedVar, keyExpr, duration, slide, triggerExpr, foldingFun)
     case displayablenode.Sink(id, ref, endResult) =>
