@@ -4,6 +4,7 @@ import java.lang.reflect.Method
 import java.time.{LocalDate, LocalDateTime}
 
 import cats.data.{State, Validated}
+import com.typesafe.scalalogging.LazyLogging
 import org.springframework.expression.spel.support.StandardEvaluationContext
 import org.springframework.expression.spel.{SpelCompilerMode, SpelParserConfiguration}
 import org.springframework.expression.{EvaluationContext, PropertyAccessor, TypedValue}
@@ -15,13 +16,14 @@ import pl.touk.esp.engine.functionUtils.CollectionUtils
 import pl.touk.esp.engine.spel.SpelExpressionParser.{MapPropertyAccessor, ScalaLazyPropertyAccessor, ScalaPropertyAccessor, _}
 
 import scala.collection.concurrent.TrieMap
+import scala.util.control.NonFatal
 
 class SpelExpression(parsed: org.springframework.expression.Expression,
                      val original: String,
                      expressionFunctions: Map[String, Method],
-                     propertyAccessors: Seq[PropertyAccessor]) extends compiledgraph.expression.Expression {
+                     propertyAccessors: Seq[PropertyAccessor]) extends compiledgraph.expression.Expression with LazyLogging {
 
-  override def evaluate[T](ctx: Context, lazyValuesProvider: LazyValuesProvider): ValueWithModifiedContext[T] = {
+  override def evaluate[T](ctx: Context, lazyValuesProvider: LazyValuesProvider): ValueWithModifiedContext[T] = logOnException(ctx) {
     val simpleContext = new StandardEvaluationContext()
     propertyAccessors.foreach(simpleContext.addPropertyAccessor)
 
@@ -36,6 +38,16 @@ class SpelExpression(parsed: org.springframework.expression.Expression,
     val value = parsed.getValue(simpleContext).asInstanceOf[T]
     val modifiedContext = simpleContext.lookupVariable(ModifiedContextVariableName).asInstanceOf[Context]
     ValueWithModifiedContext(value, modifiedContext)
+  }
+
+  private def logOnException[A](ctx: Context)(block: => A): A = {
+    try {
+      block
+    } catch {
+      case NonFatal(e) =>
+        logger.warn(s"Expression evaluation failed. Original: $original. Context: $ctx", e)
+        throw e
+    }
   }
 }
 
