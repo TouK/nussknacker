@@ -72,17 +72,21 @@ class SpelExpressionParser(expressionFunctions: Map[String, Method]) extends Exp
     for {
       parsed <- Validated.catchNonFatal(parser.parseExpression(original)).leftMap(ex => ExpressionParseError(ex.getMessage))
     } yield {
-      forceCompile(parsed) // robimy pierwszą ewaluację bo SpelCompilerMode.IMMEDIATE sprawia że dopiero wtedy jest prawdziwa kompilacja
+      // wymuszamy kompilację, żeby nie była wykonywana współbieżnie później
+      forceCompile(parsed)
       new SpelExpression(parsed, original, expressionFunctions, propertyAccessors)
     }
   }
 
   private def forceCompile(parsed: Expression): Unit = {
-    try {
+    def recoveredEvaluate() = try {
       parsed.getValue
     } catch {
       case e: EvaluationException =>
     }
+    // robimy dwie ewaluacje bo SpelCompilerMode.IMMEDIATE sprawia że dopiero wtedy jest prawdziwa kompilacja
+    recoveredEvaluate()
+    recoveredEvaluate()
   }
 
 }
