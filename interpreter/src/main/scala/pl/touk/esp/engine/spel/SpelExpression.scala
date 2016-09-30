@@ -7,7 +7,7 @@ import cats.data.{State, Validated}
 import com.typesafe.scalalogging.LazyLogging
 import org.springframework.expression.spel.support.StandardEvaluationContext
 import org.springframework.expression.spel.{SpelCompilerMode, SpelParserConfiguration}
-import org.springframework.expression.{EvaluationContext, PropertyAccessor, TypedValue}
+import org.springframework.expression._
 import pl.touk.esp.engine._
 import pl.touk.esp.engine.api.lazyy.{ContextWithLazyValuesProvider, LazyValuesProvider}
 import pl.touk.esp.engine.api.{Context, ValueWithModifiedContext}
@@ -71,7 +71,18 @@ class SpelExpressionParser(expressionFunctions: Map[String, Method]) extends Exp
   override def parse(original: String): Validated[ExpressionParseError, compiledgraph.expression.Expression] = {
     for {
       parsed <- Validated.catchNonFatal(parser.parseExpression(original)).leftMap(ex => ExpressionParseError(ex.getMessage))
-    } yield new SpelExpression(parsed, original, expressionFunctions, propertyAccessors)
+    } yield {
+      forceCompile(parsed) // robimy pierwszą ewaluację bo SpelCompilerMode.IMMEDIATE sprawia że dopiero wtedy jest prawdziwa kompilacja
+      new SpelExpression(parsed, original, expressionFunctions, propertyAccessors)
+    }
+  }
+
+  private def forceCompile(parsed: Expression): Unit = {
+    try {
+      parsed.getValue
+    } catch {
+      case e: EvaluationException =>
+    }
   }
 
 }
