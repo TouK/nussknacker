@@ -1,12 +1,9 @@
 package pl.touk.esp.engine.build
 
 import pl.touk.esp.engine.api.MetaData
+import pl.touk.esp.engine.build.GraphBuilder.Creator
 import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
-import pl.touk.esp.engine.graph.expression.Expression
-import pl.touk.esp.engine.graph.node._
 import pl.touk.esp.engine.graph.{EspProcess, param}
-
-import scala.concurrent.duration.Duration
 
 class ProcessMetaDataBuilder private[build](metaData: MetaData) {
 
@@ -19,56 +16,13 @@ class ProcessMetaDataBuilder private[build](metaData: MetaData) {
   class ProcessExceptionHandlerBuilder private[ProcessMetaDataBuilder](exceptionHandlerRef: ExceptionHandlerRef) {
 
     def source(id: String, typ: String, params: (String, String)*): ProcessGraphBuilder =
-      new ProcessGraphBuilder(GraphBuilder.source(id, typ, params: _*))
+      new ProcessGraphBuilder(GraphBuilder.source(id, typ, params: _*).creator
+          .andThen(EspProcess(metaData, exceptionHandlerRef, _)))
 
-    class ProcessGraphBuilder private[ProcessExceptionHandlerBuilder](graphBuilder: GraphBuilder[SourceNode]) {
+    class ProcessGraphBuilder private[ProcessExceptionHandlerBuilder](val creator: Creator[EspProcess])
+      extends GraphBuilder[EspProcess] {
 
-      def buildVariable(id: String, varName: String, fields: (String, Expression)*) =
-        new ProcessGraphBuilder(graphBuilder.buildVariable(id, varName, fields: _*))
-
-      def processor(id: String, svcId: String, params: (String, Expression)*) =
-        new ProcessGraphBuilder(graphBuilder.processor(id, svcId, params: _*))
-
-      def enricher(id: String, output: String, svcId: String, params: (String, Expression)*) =
-        new ProcessGraphBuilder(graphBuilder.enricher(id, output, svcId, params: _*))
-
-      def customNode(id: String, outputVar: String, customNodeRef: String, params: (String, Expression)*) =
-        new ProcessGraphBuilder(graphBuilder.customNode(id, outputVar, customNodeRef, params: _*))
-
-      def filter(id: String, expression: Expression) =
-        new ProcessGraphBuilder(graphBuilder.filter(id, expression))
-
-      def filter(id: String, expression: Expression, nextFalse: SubsequentNode) =
-        new ProcessGraphBuilder(graphBuilder.filter(id, expression, nextFalse))
-
-      def aggregate(id: String, aggregatedVar: String,
-                    keyExpression: Expression, duration: Duration, step: Duration,
-                    triggerExpression: Option[Expression] = None, foldingFunRef: Option[String] = None) =
-        new ProcessGraphBuilder(graphBuilder.aggregate(id, aggregatedVar, keyExpression,
-          duration, step, triggerExpression, foldingFunRef))
-
-      def sink(id: String, typ: String, params: (String, String)*) =
-        create(graphBuilder.sink(id, typ, params: _*))
-
-      def sink(id: String, expression: Expression, typ: String, params: (String, String)*) =
-        create(graphBuilder.sink(id, expression, typ, params: _*))
-
-      def processorEnd(id: String, svcId: String, params: (String, Expression)*) =
-        create(graphBuilder.processorEnd(id, svcId, params: _*))
-
-      def switch(id: String, expression: Expression, exprVal: String, nexts: Case*) =
-        create(graphBuilder.switch(id, expression, exprVal, nexts: _*))
-
-      def switch(id: String, expression: Expression, exprVal: String,
-                 defaultNext: SubsequentNode, nexts: Case*) =
-        create(graphBuilder.switch(id, expression, exprVal, defaultNext, nexts: _*))
-
-      def to(node: SubsequentNode) =
-        create(graphBuilder.to(node))
-
-      private def create(source: SourceNode): EspProcess =
-        EspProcess(metaData, exceptionHandlerRef, source)
-
+      override def build(inner: Creator[EspProcess]) = new ProcessGraphBuilder(inner)
     }
 
   }
