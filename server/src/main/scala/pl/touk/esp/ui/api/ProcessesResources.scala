@@ -6,17 +6,15 @@ import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.Directives
 import argonaut._
-import cats.data.Validated.{Invalid, Valid}
 import cats.data.Xor
-import pl.touk.esp.engine.api.deployment.{GraphProcess, ProcessManager}
-import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
+import pl.touk.esp.engine.api.deployment.{GraphProcess, ProcessManager, ProcessState}
 import pl.touk.esp.engine.canonicalgraph.canonicalnode._
 import pl.touk.esp.engine.compile.ProcessCompilationError
 import pl.touk.esp.engine.graph.node.NodeData
 import pl.touk.esp.engine.marshall.ProcessMarshaller
 import pl.touk.esp.ui.api.ProcessValidation.ValidationResult
 import pl.touk.esp.ui.api.ProcessesResources._
-import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties}
+import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties, ProcessStatus}
 import pl.touk.esp.ui.process.marshall.{DisplayableProcessCodec, ProcessConverter, ProcessTypeCodec}
 import pl.touk.esp.ui.process.repository.ProcessRepository
 import pl.touk.esp.ui.process.repository.ProcessRepository._
@@ -61,15 +59,23 @@ class ProcessesResources(repository: ProcessRepository,
     path("processes") {
       get {
         complete {
-          repository.fetchProcessesDetails().flatMap { details =>
-            details.map(addProcessDetailsStatus).sequence
-          }
+          repository.fetchProcessesDetails()
         }
       }
+    } ~ path("processes" / "status") {
+      get {
+        complete {
+          for {
+            processes <- repository.fetchProcessesDetails()
+            processStatesForProcess <- fetchProcessStatesForProcesses(processes)
+          } yield processStatesForProcess
+        }
+      }
+
     } ~ path("processes" / Segment) { id =>
       get {
         complete {
-          repository.fetchProcessDetailsById(id).flatMap(p => p.map(addProcessDetailsStatus).sequence).map[ToResponseMarshallable] {
+          repository.fetchProcessDetailsById(id).map[ToResponseMarshallable] {
             case Some(process) =>
               process
             case None =>
@@ -143,7 +149,25 @@ class ProcessesResources(repository: ProcessRepository,
           }
         }
       }
+    } ~ path("processes" / Segment / "status" ) { processId =>
+      get {
+        complete {
+          repository.fetchProcessDetailsById(processId).flatMap[ToResponseMarshallable] {
+            case Some(process) =>
+              findJobStatus(process.name).map {
+                case Some(status) => status
+                case None => HttpResponse(status = StatusCodes.OK, entity = "Process is not running")
+              }
+            case None =>
+              Future.successful(HttpResponse(status = StatusCodes.NotFound, entity = "Process not found"))
+          }
+        }
+      }
     }
+
+  private def fetchProcessStatesForProcesses(processes: List[ProcessDetails]): Future[Map[String, Option[ProcessStatus]]] = {
+    processes.map(process => findJobStatus(process.name).map(status => process.name -> status)).sequence.map(_.toMap)
+  }
 
   private def toResponse(xor: Xor[EspError, ValidationResult]): ToResponseMarshallable =
     xor match {
@@ -164,18 +188,8 @@ class ProcessesResources(repository: ProcessRepository,
     HttpResponse(status = statusCode, entity = error.getMessage)
   }
 
-  private def parseOrDie(canonicalJson: String) : CanonicalProcess = {
-    ProcessMarshaller.fromJson(canonicalJson) match {
-      case Valid(canonical) => canonical
-      case Invalid(err) => throw new IllegalArgumentException(err.msg)
-    }
-  }
-
-  private def addProcessDetailsStatus(processDetails: ProcessDetails)(implicit ec: ExecutionContext): Future[ProcessDetails] = {
-    processManager.findJobStatus(processDetails.name).map { jobState =>
-      val updatedProcessDetails = if (jobState.exists(_.status == "RUNNING")) processDetails.copy(isRunning = true) else processDetails
-      updatedProcessDetails.copy(tags = processDetails.tags ++ jobState.toList.map(js => js.status)) //todo chcemy miec jedna wersje gui dla roznych srodowisk, czy wersje per srodowisko?
-    }
+  private def findJobStatus(processName: String)(implicit ec: ExecutionContext): Future[Option[ProcessStatus]] = {
+    processManager.findJobStatus(processName).map(statusOpt => statusOpt.map(ProcessStatus.apply))
   }
 
 }

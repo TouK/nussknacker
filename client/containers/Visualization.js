@@ -16,12 +16,13 @@ import '../stylesheets/visualization.styl';
 const Visualization = React.createClass({
 
   getInitialState: function() {
-    return { timeoutId: null, intervalId: null };
+    return { timeoutId: null, intervalId: null, status: {}};
   },
 
   componentDidMount() {
     // this.startPollingForUpdates() fixme pobierac tylko czy job jest uruchomiony
     this.fetchProcessDetails();
+    this.fetchProcessStatus();
     window.onkeydown = (event) => {
       if (event.ctrlKey && !event.shiftKey && event.key.toLowerCase() == "z") {
         this.undo()
@@ -50,6 +51,12 @@ const Visualization = React.createClass({
       .then((processDetails) => this.props.actions.displayProcess(processDetails))
   },
 
+  fetchProcessStatus() {
+    HttpService.fetchSingleProcessStatus(this.props.params.processId).then ((status) => {
+      this.setState({status: status})
+    })
+  },
+
   showProperties() {
     this.props.actions.displayNodeDetails(this.props.processToDisplay.properties)
   },
@@ -71,7 +78,7 @@ const Visualization = React.createClass({
   },
 
   isRunning() {
-    return this.props.fetchedProcessDetails.isRunning
+    return _.get(this.state.status, 'isRunning', false)
   },
 
   undo() {

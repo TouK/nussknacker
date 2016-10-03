@@ -21,6 +21,7 @@ export const Processes = React.createClass({
   getInitialState() {
     return {
       processes: [],
+      statuses: {},
       filterVal: '',
       favouriteList: new Set(),
       showLoader: true
@@ -30,7 +31,10 @@ export const Processes = React.createClass({
   componentDidMount() {
     HttpService.fetchProcesses().then ((fetchedProcesses) => {
       this.setState({ processes: fetchedProcesses, showLoader: false })
-    })
+    }).catch( e => this.setState({ showLoader: false }))
+    HttpService.fetchProcessesStatus().then ((statuses) => {
+      this.setState({ statuses: statuses, showLoader: false })
+    }).catch( e => this.setState({ showLoader: false }))
   },
 
   isGraph(process) {
@@ -117,6 +121,7 @@ export const Processes = React.createClass({
             <Th column="createDate" className="date-column">Create date</Th>
             <Th column="edit" className="edit-column">Edit</Th>
             <Th column="metrics" className="metrics-column">Metrics</Th>
+            <Th column="status" className="status-column">Status</Th>
             <Th column="favourite" className="favourite-column">
               <span>Favourite</span>
             </Th>
@@ -140,6 +145,9 @@ export const Processes = React.createClass({
                 </Td>
                 <Td column="metrics" className="metrics-column">
                   <span className="glyphicon glyphicon-stats" onClick={this.showMetrics.bind(this, process)}/>
+                </Td>
+                <Td column="status" className="status-column">
+                  { _.get(this.state.statuses[process.name], 'isRunning') ? <div className="status-running"/> : null}
                 </Td>
                 <Td column="favourite" className="favourite-column">
                   <div className={this.isFavourite(process.id)}
