@@ -8,6 +8,14 @@ export default {
     return promiseWrap($.get(appConfig.API_URL + '/processes'))
   },
 
+  fetchProcessesStatus() {
+    return promiseWrap($.get(appConfig.API_URL + '/processes/status'))
+  },
+
+  fetchSingleProcessStatus(processId) {
+    return promiseWrap($.get(appConfig.API_URL + `/processes/${processId}/status`))
+  },
+
   fetchProcessDetails(processId) {
     return promiseWrap($.get(appConfig.API_URL + '/processes/' + processId))
   },
@@ -68,9 +76,4 @@ var promiseWrap = (plainAjaxCall) => {
   return new Promise((resolve, reject) => {
     plainAjaxCall.done(resolve).fail(reject)
   })
-}
-
-//fixme albo zmienic jak validationResult przychodzi z backendu, albo zrobic w backendzie jakos skipUnknownFields
-var omitSomeProcessFields = (process) => {
-  return process
 }

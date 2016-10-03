@@ -149,8 +149,7 @@ object ProcessRepository {
                              tags: List[String],
                              json: Option[DisplayableProcess],
                              deployedJson: Option[DisplayableProcess],
-                             deployedAt: Option[LocalDateTime],
-                             isRunning: Boolean = false
+                             deployedAt: Option[LocalDateTime]
                            )
 
   case class ProcessNotFoundError(id: String) extends NotFoundError {
