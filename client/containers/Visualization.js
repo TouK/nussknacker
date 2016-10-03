@@ -35,6 +35,7 @@ const Visualization = React.createClass({
   componentWillUnmount() {
     clearTimeout(this.state.timeoutId)
     clearInterval(this.state.intervalId)
+    this.props.actions.clearProcess()
   },
 
   startPollingForUpdates() {

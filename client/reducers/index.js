@@ -18,6 +18,13 @@ function espReducer(state = {}, action) {
         fetchedProcessDetails: action.fetchedProcessDetails
       }
     }
+    case "CLEAR_PROCESS": {
+      return {
+        ...state,
+        processToDisplay: {},
+        fetchedProcessDetails: {}
+      }
+    }
     case "DISPLAY_NODE_DETAILS":
       return {
         ...state,
@@ -46,9 +53,10 @@ function espReducer(state = {}, action) {
 }
 
 
-function espUndoable (reducer) {
-  const blacklist = ["@@INIT"]
-  const espUndoableFun = (state = {espReducer: {history: {past: [], future: []}}}, action) => {
+function espUndoable (reducer, config) {
+  const emptyHistory = { history: {past: [], future: []}}
+  const blacklist = _.concat(["@@INIT"], config.blacklist)
+  const espUndoableFun = (state = {espReducer: emptyHistory}, action) => {
     if (_.includes(blacklist, action.type)) {
       return reducer(state, action)
     } else {
@@ -94,6 +102,13 @@ function espUndoable (reducer) {
           })
         case "REDO":
           return espUndoableFun(state, {type: "JUMP_TO_STATE", index: 0, direction: "FUTURE"})
+        case "CLEAR":
+          return {
+            espReducer: {
+              ...state.espReducer,
+              ...emptyHistory
+            }
+          }
         default: {
           const newState = reducer(state, action)
           return {
@@ -114,8 +129,11 @@ function espUndoable (reducer) {
   return espUndoableFun
 }
 
+const espUndoableConfig = {
+  blacklist: ["CLEAR_PROCESS"]
+}
 const rootReducer = espUndoable(combineReducers({
   espReducer
-}));
+}), espUndoableConfig);
 
 export default rootReducer;

@@ -18,6 +18,14 @@ export function displayDeployedProcess(processDetails) {
   };
 }
 
+export function clearProcess() {
+  return (dispatch) => {
+    dispatch(clear())
+    return dispatch({
+      type: "CLEAR_PROCESS"
+    })
+  }
+}
 
 export function displayNodeDetails(node) {
   return {
@@ -53,4 +61,8 @@ export function undo() {
 
 export function redo() {
   return { type: "REDO"};
+}
+
+export function clear() {
+  return { type: "CLEAR"};
 }
