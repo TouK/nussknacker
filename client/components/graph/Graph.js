@@ -71,14 +71,19 @@ class Graph extends React.Component {
         this.graph.resetCells(cells);
 
         _.keys(data.validationResult.invalidNodes)
-            .forEach(name => {this.processGraphPaper.findViewByModel(this.graph.getCell(name)).highlight(null, {
-                highlighter: {
-                  name: 'addClass',
-                  options: {
-                    className: 'node-validation-error'
-                  }
-                }
-            })});
+          .forEach(name => {
+              const cell = this.graph.getCell(name) // na razie robimy tak, bo nie wiemy jak pokazac blad np w propertiesach procesu, bo nie pokazujemy propertiesow jako zwykly node
+              if (cell) {
+                  this.processGraphPaper.findViewByModel(cell).highlight(null, {
+                      highlighter: {
+                          name: 'addClass',
+                          options: {
+                              className: 'node-validation-error'
+                          }
+                      }
+                  })
+              }
+          });
         this.directedLayout();
     }
 
