@@ -2,6 +2,7 @@ package pl.touk.esp.ui.api
 
 import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.Directives
+import com.typesafe.scalalogging.LazyLogging
 import pl.touk.esp.engine.api.deployment.{CustomProcess, GraphProcess, ProcessDeploymentData, ProcessManager}
 import pl.touk.esp.ui.process.repository.{DeployedProcessRepository, ProcessRepository}
 
@@ -10,7 +11,7 @@ import scala.util.control.NonFatal
 
 class ManagementResources(processRepository: ProcessRepository,
                           deployedProcessRepository: DeployedProcessRepository,
-                          processManager: ProcessManager)(implicit ec: ExecutionContext) extends Directives {
+                          processManager: ProcessManager)(implicit ec: ExecutionContext) extends Directives with LazyLogging {
 
   val route =
     path("processManagement" / "deploy" / Segment) { id =>
@@ -42,13 +43,16 @@ class ManagementResources(processRepository: ProcessRepository,
       }
 
   private def deployAndSaveProcess(id: String, deployment: ProcessDeploymentData): Future[Unit] = {
+    logger.debug(s"Deploy of $id started")
     processManager.deploy(id, deployment).flatMap { _ =>
       deployment match {
         case GraphProcess(json) =>
+          logger.debug(s"Deploy of $id finished")
           deployedProcessRepository.saveDeployedProcess(id, json).recoverWith { case NonFatal(e) =>
             processManager.cancel(id)
           }
         case CustomProcess(_) =>
+          logger.debug(s"Deploy of $id finished")
           Future.successful(Unit)
       }
     }
