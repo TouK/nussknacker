@@ -6,11 +6,11 @@ import java.util.concurrent.{TimeUnit, TimeoutException}
 import akka.pattern.AskTimeoutException
 import com.typesafe.config.{Config, ConfigValueType}
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.flink.api.common.JobID
-import org.apache.flink.client.program.{ProgramInvocationException, PackagedProgram, StandaloneClusterClient}
+import org.apache.flink.api.common.{JobID, JobSubmissionResult}
+import org.apache.flink.client.program.{PackagedProgram, ProgramInvocationException, StandaloneClusterClient}
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.runtime.akka.AkkaUtils
-import org.apache.flink.runtime.client.{JobTimeoutException, JobClient}
+import org.apache.flink.runtime.client.{JobClient, JobTimeoutException}
 import org.apache.flink.runtime.instance.ActorGateway
 import org.apache.flink.runtime.messages.JobManagerMessages
 import org.apache.flink.runtime.messages.JobManagerMessages._
@@ -46,7 +46,7 @@ object FlinkProcessManager {
 
 }
 
-class DefaultFlinkGateway(config: Configuration, timeout: FiniteDuration) extends FlinkGateway {
+class DefaultFlinkGateway(config: Configuration, timeout: FiniteDuration) extends FlinkGateway with LazyLogging {
 
   implicit val ec = ExecutionContext.Implicits.global
 
@@ -62,7 +62,9 @@ class DefaultFlinkGateway(config: Configuration, timeout: FiniteDuration) extend
   }
 
   override def run(program: PackagedProgram): Unit = {
-    client.run(program, -1)
+    logger.debug(s"Deploying right now. PackagedProgram args :${program.getArguments}")
+    val submissionResult = client.run(program, -1)
+    logger.debug(s"Deployment finished. JobId ${submissionResult.getJobID}")
   }
 
   def shutDown(): Unit = {
@@ -176,11 +178,18 @@ class FlinkProcessManager(config: Config,
 
     val stoppingResult = for {
       maybeOldJob <- OptionT(findJobStatus(processId))
-      maybeSavePoint <- OptionT.liftF(stopSavingSavepoint(maybeOldJob))
-    } yield maybeSavePoint
+      maybeSavePoint <- {
+        { logger.debug(s"Deploying $processId. Status: $maybeOldJob") }
+        OptionT.liftF(stopSavingSavepoint(maybeOldJob))
+      }
+    } yield {
+      logger.debug(s"Deploying $processId. Saving savepoint finished")
+      maybeSavePoint
+    }
 
     stoppingResult.value.map { maybeSavepoint =>
       maybeSavepoint.foreach(program.setSavepointPath)
+      logger.debug(s"Deploying $processId. Setting savepoint finished")
       Try(gateway.run(program)).recover {
         //TODO: jest blad we flink, future nie dostaje odpowiedzi jak poleci wyjatek przy savepoincie :|
         case e:ProgramInvocationException if e.getCause.isInstanceOf[JobTimeoutException] && maybeSavepoint.isDefined =>
