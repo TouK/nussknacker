@@ -44,7 +44,8 @@ case class CompilerLazyInterpreter(lazyDeps: () => CustomNodeInvokerDeps,
       ir.finalContext)(ec)
   }
 
-  override def syncInterpretationFunction = new SyncFunction
+  //lazy val jest po to, zeby za kazdym razem nie tworzyc interpretera - bo to kosztowne b.
+  @transient override lazy val syncInterpretationFunction = new SyncFunction
 
   class SyncFunction extends (InterpretationResult => InterpretationResult) with Serializable {
     lazy implicit val ec = SynchronousExecutionContext.ctx
