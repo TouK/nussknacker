@@ -4,13 +4,11 @@ import { Link } from 'react-router';
 import Graph from '../components/graph/Graph';
 import HttpService from '../http/HttpService'
 import _ from 'lodash';
-import NodeDetailsModal from '../components/graph/nodeDetailsModal.js';
 import { DropdownButton, MenuItem } from 'react-bootstrap';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
 import * as EspActions from '../actions/actions';
-import NodeUtils from '../components/graph/NodeUtils'
-
+import LoaderSpinner from '../components/Spinner.js';
 import '../stylesheets/visualization.styl';
 
 const Visualization = React.createClass({
@@ -47,8 +45,7 @@ const Visualization = React.createClass({
   },
 
   fetchProcessDetails() {
-    return HttpService.fetchProcessDetails(this.props.params.processId)
-      .then((processDetails) => this.props.actions.displayProcess(processDetails))
+    this.props.actions.displayCurrentProcessVersion(this.props.params.processId)
   },
 
   fetchProcessStatus() {
@@ -89,15 +86,20 @@ const Visualization = React.createClass({
     return this.props.actions.redo()
   },
 
+  clearHistory() {
+    return this.props.actions.clear()
+  },
+
   save() {
     return HttpService.saveProcess(this.props.params.processId, this.props.processToDisplay).then ((resp) => {
+      this.clearHistory()
       this.fetchProcessDetails()
     })
   },
 
   render: function() {
-    if (_.isEmpty(this.props.fetchedProcessDetails)) {
-      return null
+    if (_.isEmpty(this.props.fetchedProcessDetails) || this.props.graphLoading) {
+      return (<LoaderSpinner show={true}/>)
     } else {
       const deployedVersionIsDisplayed = _.isEqual(this.props.processToDisplay, this.props.fetchedProcessDetails.deployedJson) //fixme blokowanie edycji dla zdeplojowanej wersji
       const nothingToSave = _.isEqual(this.props.fetchedProcessDetails.json, this.props.processToDisplay) || deployedVersionIsDisplayed
@@ -157,6 +159,7 @@ function mapState(state) {
     processToDisplay: state.espReducer.processToDisplay,
     fetchedProcessDetails: processDetails,
     deployedAndCurrentProcessDiffer: !currentAndDeployedProcessEqual,
+    graphLoading: state.espReducer.graphLoading,
     history: state.espReducer.history,
     loggedUser: state.espReducer.loggedUser
   };

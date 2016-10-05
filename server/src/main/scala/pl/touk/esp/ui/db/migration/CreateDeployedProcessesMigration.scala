@@ -1,12 +1,12 @@
 package pl.touk.esp.ui.db.migration
 
 import java.sql.Timestamp
-import java.time.{LocalDateTime, ZoneId}
 
 import argonaut.PrettyParams
 import pl.touk.esp.engine.marshall.ProcessMarshaller
 import pl.touk.esp.ui.db.migration.CreateDeployedProcessesMigration.DeployedProcessEntityData
 import pl.touk.esp.ui.sample.SampleProcess
+import pl.touk.esp.ui.util.DateUtils
 import slick.jdbc.JdbcProfile
 import slick.sql.SqlProfile.ColumnOption.NotNull
 
@@ -23,7 +23,7 @@ trait CreateDeployedProcessesMigration extends SlickMigration {
     val json = ProcessMarshaller.toJson(process, PrettyParams.nospace)
     deployedProcessesTable += DeployedProcessEntityData(
       process.id,
-      Timestamp.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant),
+      DateUtils.now,
       json
     )
   }
@@ -62,7 +62,7 @@ trait CreateDeployedProcessesMigration extends SlickMigration {
 object CreateDeployedProcessesMigration {
   //moze dodac hasha/wersje z gita? sbt-buildinfo + sbt-git sie nada https://github.com/sbt/sbt-git/issues/33
   case class DeployedProcessEntityData(id: String, deployedAt: Timestamp, json: String) {
-    val deployedAtTime = LocalDateTime.ofInstant(deployedAt.toInstant, ZoneId.systemDefault())
+    val deployedAtTime = DateUtils.toLocalDateTime(deployedAt)
   }
 
 }

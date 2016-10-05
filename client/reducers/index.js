@@ -3,8 +3,21 @@ import _ from 'lodash'
 import GraphUtils from '../components/graph/GraphUtils'
 import * as ProcessToDisplayMode from '../constants/ProcessToDisplayMode'
 
-function espReducer(state = {}, action) {
+const emptyEspState = {
+  graphLoading: false,
+  processToDisplay: {},
+  fetchedProcessDetails: {},
+  nodeToDisplay: {}
+}
+
+function espReducer(state = emptyEspState, action) {
   switch (action.type) {
+    case "FETCH_PROCESS_TO_DISPLAY": {
+      return {
+        ...state,
+        graphLoading: true
+      }
+    }
     case "DISPLAY_PROCESS": {
       let processToDisplay
       if (action.processToDisplayMode == ProcessToDisplayMode.CURRENT) {
@@ -15,7 +28,8 @@ function espReducer(state = {}, action) {
       return {
         ...state,
         processToDisplay: processToDisplay,
-        fetchedProcessDetails: action.fetchedProcessDetails
+        fetchedProcessDetails: action.fetchedProcessDetails,
+        graphLoading: false
       }
     }
     case "CLEAR_PROCESS": {
@@ -52,7 +66,12 @@ function espReducer(state = {}, action) {
         loggedUser: action.user
       }
     }
-
+    case "URL_CHANGED": {
+      return {
+        ...state,
+        ...emptyEspState
+      }
+    }
     default:
       return state
   }
@@ -136,7 +155,7 @@ function espUndoable (reducer, config) {
 }
 
 const espUndoableConfig = {
-  blacklist: ["CLEAR_PROCESS"]
+  blacklist: ["CLEAR_PROCESS", "FETCH_PROCESS_TO_DISPLAY", "URL_CHANGED"]
 }
 const rootReducer = espUndoable(combineReducers({
   espReducer

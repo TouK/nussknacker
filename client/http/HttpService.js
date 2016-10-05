@@ -53,6 +53,12 @@ export default {
     return promiseWrap($.get(appConfig.API_URL + '/processes'))
   },
 
+  fetchProcessDetails(processId, versionId) {
+    return versionId ?
+      promiseWrap($.get(appConfig.API_URL + '/processes/' + processId + '/' + versionId)) :
+      promiseWrap($.get(appConfig.API_URL + '/processes/' + processId))
+  },
+
   fetchProcessesStatus() {
     return promiseWrap($.get(appConfig.API_URL + '/processes/status'))
       .catch((error) => this.addError(`Cannot fetch statuses`, error) );
@@ -62,10 +68,6 @@ export default {
     return promiseWrap($.get(appConfig.API_URL + `/processes/${processId}/status`))
       .catch((error) => this.addError(`Cannot fetch status`, error) );
 
-  },
-
-  fetchProcessDetails(processId) {
-    return promiseWrap($.get(appConfig.API_URL + '/processes/' + processId))
   },
 
   deploy(processId) {
@@ -85,22 +87,6 @@ export default {
       url: appConfig.API_URL + '/processValidation',
       type: 'POST',
       data: JSON.stringify(process)
-    });
-  },
-
-  editProcessNode: (processId, nodeId, node) => {
-    return ajaxCall({
-      url: appConfig.API_URL + '/processes/' + processId + '/json/node/' + nodeId,
-      type: 'PUT',
-      data: JSON.stringify(node)
-    });
-  },
-
-  editProcessProperties(processId, nodeId, properties) {
-    return ajaxCall({
-      url: appConfig.API_URL + '/processes/' + processId + '/json/properties',
-      type: 'PUT',
-      data: JSON.stringify(properties)
     });
   },
 

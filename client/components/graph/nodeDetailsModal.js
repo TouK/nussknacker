@@ -67,16 +67,18 @@ class NodeDetailsModal extends React.Component {
     this.setState( { editedNode: newNodeState})
   }
 
-  renderEditButtons() {
+  renderEditButtons(buttonClasses) {
+    var editButtonClasses = classNames(buttonClasses, 'pull-left', {'hidden': this.state.isEditMode})
+    var saveButtonClasses = classNames(buttonClasses, 'pull-left', {'hidden': !this.state.isEditMode})
     if (this.props.loggedUser.canWrite) {
-      return (<span>
+      return ([
         <LaddaButton title="Save node details" className={saveButtonClasses}
                                    loading={this.state.pendingRequest}
-                                   buttonStyle='zoom-in' onClick={this.performNodeEdit}>Save</LaddaButton>
+                                   buttonStyle='zoom-in' onClick={this.performNodeEdit}>Save</LaddaButton>,
         <button type="button" title="Edit node details" className={editButtonClasses} onClick={this.editNodeData}>
           Edit
         </button>
-      </span>);
+      ] );
     } else {
       return null;
     }
@@ -100,9 +102,6 @@ class NodeDetailsModal extends React.Component {
     };
 
     var buttonClasses = classNames('modalButton')
-    var editButtonClasses = classNames(buttonClasses, 'pull-left', {'hidden': this.state.isEditMode})
-    var saveButtonClasses = classNames(buttonClasses, 'pull-left', {'hidden': !this.state.isEditMode})
-
     var headerStyles = {
       backgroundColor: this.nodeAttributes().styles.fill,
       color: this.nodeAttributes().styles.color
@@ -120,7 +119,7 @@ class NodeDetailsModal extends React.Component {
           </div>
           <div id="modalFooter">
             <div>
-              {this.renderEditButtons()}
+              {this.renderEditButtons(buttonClasses)}
               <button type="button" title="Close node details" className={buttonClasses} onClick={this.closeModal}>
                 Close
               </button>

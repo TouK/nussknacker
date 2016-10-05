@@ -15,6 +15,11 @@ import '../app.styl'
 export default class EspAppRouter extends React.Component {
 
   render() {
+    browserHistory.listen(location => {
+      if (location.action == "PUSH") {
+        this.props.store.dispatch({type: "URL_CHANGED"})
+      }
+    })
     return (
       <Router history={browserHistory} >
         <Route path={App.path} component={App}>

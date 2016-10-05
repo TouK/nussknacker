@@ -1,0 +1,62 @@
+@import "./_variables.styl"
+
+#process-history
+  process-history-color=dodgerblue
+  font-size 12px
+  padding: 0;
+  ul {
+    list-style: none;
+    margin: 50px;
+    color: #999;
+  }
+  li {
+    overflow: hidden;
+    position: relative;
+    padding: 0 0 10px 35px;
+  }
+
+  li::before {
+       content: '';
+       position: absolute;
+       left: 7px;
+       top: 7px;
+       width: 20px;
+       height: 999px;
+       border: 2px solid lightblue;
+       border-width: 0px 0 0 2px;
+     }
+
+  li:last-child::before {
+    border-width: 0 0 0;
+  }
+
+  li::after {
+       content: '';
+       position: absolute;
+       left: 0;
+       top: 0;
+       width: 16px;
+       height: 16px;
+       background: #fff;
+       border: 2px solid lightblue;
+       border-radius: 50%;
+     }
+
+  li.current,
+  li.past {
+    color: #000;
+  }
+
+  li.current::before {
+    border-color: process-history-color;
+  }
+
+  li.current::after {
+    border-color: process-history-color;
+    background: process-history-color;
+  }
+
+  li.past::before,
+  li.past::after {
+    border-color: process-history-color;
+  }
