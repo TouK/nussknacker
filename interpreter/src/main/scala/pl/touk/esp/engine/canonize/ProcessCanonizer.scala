@@ -55,6 +55,8 @@ object ProcessCanonizer {
 
   private def uncanonize(canonicalNode: List[canonicalnode.CanonicalNode]): ValidatedNel[ProcessUncanonizationError, node.SubsequentNode] =
     canonicalNode match {
+      case canonicalnode.FlatNode(data: node.EndingNodeData) :: Nil =>
+        valid(node.EndingNode(data))
       case canonicalnode.FlatNode(data: node.OneOutputSubsequentNodeData) :: tail =>
         uncanonize(tail).map(node.OneOutputSubsequentNode(data, _))
       case canonicalnode.FilterNode(data, nextFalse) :: tail if nextFalse.isEmpty =>
@@ -74,8 +76,6 @@ object ProcessCanonizer {
         A.map2(unFlattenNexts, uncanonize(defaultNext)) { (nextsV, defaultNextV) =>
           node.SwitchNode(data, nextsV, Some(defaultNextV))
         }
-      case canonicalnode.FlatNode(data: node.EndingNodeData) :: Nil =>
-        valid(node.EndingNode(data))
       case invalidTail =>
         invalid(InvalidTailOfBranch(invalidTail.map(_.id).toSet)).toValidatedNel
     }
