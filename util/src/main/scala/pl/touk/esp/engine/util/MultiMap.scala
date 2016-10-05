@@ -6,7 +6,7 @@ object MultiMap {
   def apply[K:Ordering, V] : MultiMap[K, V] = MultiMap(TreeMap())
 }
 
-case class MultiMap[K:Ordering, V](map: TreeMap[K, List[V]]) {
+case class MultiMap[K, V](map: TreeMap[K, List[V]]) {
 
   def add(key: K, value: V) : MultiMap[K, V] = {
     val newElement = map.get(key) match {
