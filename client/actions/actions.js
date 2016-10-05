@@ -2,6 +2,22 @@ import HttpService from '../http/HttpService'
 import GraphUtils from '../components/graph/GraphUtils'
 import * as ProcessToDisplayMode from '../constants/ProcessToDisplayMode'
 
+export function fetchProcessToDisplay(processId, versionId) {
+  return (dispatch) => {
+    dispatch({
+      type: "FETCH_PROCESS_TO_DISPLAY"
+    })
+    return HttpService.fetchProcessDetails(processId, versionId)
+      .then((processDetails) => {
+        return dispatch(displayProcess(processDetails))
+      })
+  }
+}
+
+export function displayCurrentProcessVersion(processId) {
+  return fetchProcessToDisplay(processId)
+}
+
 export function displayProcess(processDetails) {
   return {
     type: "DISPLAY_PROCESS",

@@ -94,14 +94,15 @@ object EspUiApp extends App with Directives {
   }
 
   def insertInitialProcesses(): Unit = {
+    val user = "TouK"
     new File(initialProcessDirectory, "processes").listFiles().foreach { file =>
       val name = file.getName.replaceAll("\\..*", "")
-      processRepository.saveProcess(name, GraphProcess(fromFile(file).mkString))
+      processRepository.saveProcess(name, GraphProcess(fromFile(file).mkString), user)
     }
     ConfigFactory.parseFile(new File(initialProcessDirectory, "customProcesses.conf"))
       .entrySet().toSet
       .foreach { (entry: java.util.Map.Entry[String, ConfigValue]) =>
-        processRepository.saveProcess(entry.getKey, CustomProcess(entry.getValue.unwrapped().toString))
+        processRepository.saveProcess(entry.getKey, CustomProcess(entry.getValue.unwrapped().toString), user)
       }
     //do testow
     //    fixme

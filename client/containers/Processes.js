@@ -83,11 +83,6 @@ export const Processes = React.createClass({
       "btn disabled edit-disabled": !this.isGraph(process),
     })
   },
-  spinnerClass(){
-    return classNames({
-      "hidden": !this.state.showLoader
-    })
-  },
 
   render() {
     return (
@@ -99,7 +94,7 @@ export const Processes = React.createClass({
             <img id="search-icon" src={filterIcon} />
           </span>
         </div>
-        <div className={this.spinnerClass()}> <LoaderSpinner /> </div>
+        <LoaderSpinner show={this.state.showLoader}/>
         <Table id="process-table" className="table"
            noDataText="No matching records found."
            hidden={this.state.showLoader}

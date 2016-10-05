@@ -7,13 +7,12 @@ import akka.http.scaladsl.model.{HttpMethods, HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.{Directive, Directives}
 import argonaut._
 import cats.data.Xor
-import pl.touk.esp.engine.api.deployment.{GraphProcess, ProcessManager}
+import pl.touk.esp.engine.api.deployment.{GraphProcess, ProcessManager, ProcessDeploymentData}
 import pl.touk.esp.engine.compile.ProcessCompilationError
 import pl.touk.esp.engine.graph.node.NodeData
 import pl.touk.esp.engine.marshall.ProcessMarshaller
 import pl.touk.esp.ui.api.ProcessValidation.ValidationResult
-import pl.touk.esp.ui.api.ProcessesResources._
-import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties, ProcessStatus}
+import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessStatus}
 import pl.touk.esp.ui.process.marshall.{DisplayableProcessCodec, ProcessConverter, ProcessTypeCodec}
 import pl.touk.esp.ui.process.repository.ProcessRepository
 import pl.touk.esp.ui.process.repository.ProcessRepository._
@@ -34,7 +33,8 @@ class ProcessesResources(repository: ProcessRepository,
   import pl.touk.esp.engine.optics.Implicits._
   import cats.instances.future._
   import cats.instances.option._
-
+  import cats.instances.list._
+  import cats.syntax.traverse._
 
   implicit val processTypeCodec = ProcessTypeCodec.codec
 
@@ -48,14 +48,12 @@ class ProcessesResources(repository: ProcessRepository,
 
   implicit val validationResultEncode = EncodeJson.of[ValidationResult]
 
+  implicit val processHistory = EncodeJson.of[ProcessHistoryEntry]
+
   implicit val processListEncode = EncodeJson.of[List[ProcessDetails]]
 
   implicit val printer: Json => String =
     PrettyParams.spaces2.copy(dropNullKeys = true, preserveOrder = true).pretty
-
-  import cats.instances.list._
-  import cats.syntax.traverse._
-
 
   val route = (user: LoggedUser) => {
     def authorizeMethod = extractMethod.flatMap[Unit] {
@@ -64,7 +62,6 @@ class ProcessesResources(repository: ProcessRepository,
       //czyli co??? options?
       case _ => Directive.Empty
     }
-
     authorizeMethod {
       path("processes") {
         get {
@@ -82,87 +79,47 @@ class ProcessesResources(repository: ProcessRepository,
           }
         }
 
-      } ~ path("processes" / Segment) { id =>
+      } ~ path("processes" / Segment) { processId =>
         get {
           complete {
-            repository.fetchProcessDetailsById(id).map[ToResponseMarshallable] {
-              case Some(process) =>
-                process
-              case None =>
-                HttpResponse(
-                  status = StatusCodes.NotFound,
-                  entity = "Process not found"
-                )
+            repository.fetchLatestProcessDetailsForProcessId(processId).map[ToResponseMarshallable] {
+              case Some(process) => process
+              case None => HttpResponse(status = StatusCodes.NotFound, entity = "Process not found")
             }
           }
         }
-      } ~ path("processes" / Segment / "json") { id =>
+      } ~ path("processes" / Segment/ LongNumber) { (processId, versionId) =>
         get {
           complete {
-            val optionalDisplayableJsonFuture = repository.fetchProcessDeploymentById(id).map { optionalDeployment =>
-              optionalDeployment.collect {
-                case GraphProcess(json) => processConverter.toDisplayableOrDie(json)
-              }
+            repository.fetchProcessDetailsForId(processId, versionId).map[ToResponseMarshallable] {
+              case Some(process) => process
+              case None => HttpResponse(status = StatusCodes.NotFound, entity = "Process not found")
             }
-            optionalDisplayableJsonFuture.map[ToResponseMarshallable] {
-              case Some(process) =>
-                process
-              case None =>
-                HttpResponse(status = StatusCodes.NotFound, entity = s"Process $id not found")
-            }
+          }
+        }
+      } ~ path("processes" / Segment / "json") { processId =>
+        get {
+          complete {
+            renderProcess(processId, repository.fetchLatestProcessDeploymentForId(processId))
           }
         } ~ put {
           entity(as[DisplayableProcess]) { displayableProcess =>
             complete {
-              repository.withProcessJsonById(id) { _ =>
-                val canonical = processConverter.fromDisplayable(displayableProcess)
-                Xor.right((canonical, Option(ProcessMarshaller.toJson(canonical, PrettyParams.nospace))))
-              }.map { canonicalXor =>
-                toResponse(
-                  canonicalXor.map { canonical =>
-                    processValidation.validate(canonical)
-                  }
-                )
+              val canonical = processConverter.fromDisplayable(displayableProcess)
+              val json = ProcessMarshaller.toJson(canonical, PrettyParams.nospace)
+              val user = "TouK"
+              repository.saveProcess(processId, GraphProcess(json), user).map { result =>
+                toResponse {
+                  result.map(_ => processValidation.validate(canonical))
+                }
               }
             }
           }
         }
-      } ~ path("processes" / Segment / "json" / "properties") { processId =>
-        put {
-          entity(as[ProcessProperties]) { properties =>
-            complete {
-              repository.withParsedProcessById(processId) { currentCanonical =>
-                val modificatedProcess = currentCanonical.copy(
-                  metaData = currentCanonical.metaData.copy(parallelism = properties.parallelism),
-                  exceptionHandlerRef = properties.exceptionHandler)
-                Xor.right(modificatedProcess)
-              }.map { canonicalXor =>
-                toResponse(canonicalXor.map(processValidation.validateFilteringResults(_, ProcessCompilationError.ProcessNodeId)))
-              }
-            }
-          }
-        }
-      } ~ path("processes" / Segment / "json" / "node" / Segment) { (processId, nodeId) =>
-        put {
-          entity(as[NodeData]) { displayableNode =>
-            complete {
-              repository.withParsedProcessById(processId) { currentCanonical =>
-                val canonicalNode = processConverter.nodeFromDisplayable(displayableNode)
-                val modificationResult = currentCanonical.modify(nodeId)(_ => canonicalNode)
-                if (modificationResult.modifiedCount < 1)
-                  Xor.left(NodeNotFoundError(processId = processId, nodeId = nodeId))
-                else
-                  Xor.right(modificationResult.value)
-              }.map { canonicalXor =>
-                toResponse(canonicalXor.map(processValidation.validateFilteringResults(_, nodeId)))
-              }
-            }
-          }
-        }
-      } ~ path("processes" / Segment / "status") { processId =>
-        put {
+      } ~ path("processes" / Segment / "status" ) { processId =>
+        get {
           complete {
-            repository.fetchProcessDetailsById(processId).flatMap[ToResponseMarshallable] {
+            repository.fetchLatestProcessDetailsForProcessId(processId).flatMap[ToResponseMarshallable] {
               case Some(process) =>
                 findJobStatus(process.name).map {
                   case Some(status) => status
@@ -177,6 +134,19 @@ class ProcessesResources(repository: ProcessRepository,
     }
   }
 
+  private def renderProcess(id: String, processDeploymentById: Future[Option[ProcessDeploymentData]]): ToResponseMarshallable = {
+    val optionalDisplayableJsonFuture = processDeploymentById.map { optionalDeployment =>
+      optionalDeployment.collect {
+        case GraphProcess(json) => processConverter.toDisplayableOrDie(json)
+      }
+    }
+    optionalDisplayableJsonFuture.map[ToResponseMarshallable] {
+      case Some(process) =>
+        process
+      case None =>
+        HttpResponse(status = StatusCodes.NotFound, entity = s"Process $id not found")
+    }
+  }
 
   private def fetchProcessStatesForProcesses(processes: List[ProcessDetails]): Future[Map[String, Option[ProcessStatus]]] = {
     processes.map(process => findJobStatus(process.name).map(status => process.name -> status)).sequence.map(_.toMap)

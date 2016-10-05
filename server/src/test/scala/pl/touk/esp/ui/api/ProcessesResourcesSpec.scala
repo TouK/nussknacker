@@ -1,15 +1,19 @@
 package pl.touk.esp.ui.api
 
+import java.time.LocalDateTime
+
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server
 import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
 import argonaut.Argonaut._
-import argonaut.Json
+import argonaut.{DecodeJson, EncodeJson, Json}
 import org.scalatest._
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.esp.engine.api.deployment._
+import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
+import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
 import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.esp.engine.graph.node.Sink
@@ -19,6 +23,7 @@ import pl.touk.esp.ui.api.helpers.DbTesting
 import pl.touk.esp.ui.api.helpers.TestFactory._
 import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.esp.ui.process.marshall._
+import pl.touk.esp.ui.process.repository.ProcessRepository.ProcessDetails
 import pl.touk.esp.ui.sample.SampleProcess
 import pl.touk.esp.ui.security.{LoggedUser, Permission}
 
@@ -32,8 +37,14 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
   val db = DbTesting.db
   implicit override val patienceConfig = PatienceConfig(timeout = scaled(Span(1, Seconds)), interval = scaled(Span(100, Millis)))
 
-  implicit val decoder =  DisplayableProcessCodec.codec
+  import argonaut.ArgonautShapeless._
+  implicit val decoder = DisplayableProcessCodec.codec
+  implicit val processTypeCodec = ProcessTypeCodec.codec
 
+  implicit val localDateTimeEncode = EncodeJson.of[String].contramap[LocalDateTime](_.toString)
+  implicit val localDateTimeDecode = DecodeJson.of[String].map[LocalDateTime](s => LocalDateTime.parse(s))
+
+  implicit val processListEncode = DecodeJson.of[ProcessDetails]
   implicit val testtimeout = RouteTestTimeout(2.seconds)
 
 
@@ -46,89 +57,40 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
 
   val routeWithRead = withPermissions(route, Permission.Read)
   val routeWithWrite = withPermissions(route, Permission.Write)
+  val routWithAllPermissions = withAllPermissions(route)
 
   private val processId: String = SampleProcess.process.id
 
   it should "return list of process details" in {
-    Get("/processes") ~> routeWithRead ~> check {
+    Get("/processes") ~> routWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
       responseAs[String] should include (processId)
     }
   }
 
   it should "return 404 when no process" in {
-    Get("/processes/123") ~> routeWithRead ~> check {
+    Get("/processes/123") ~> routWithAllPermissions ~> check {
       status shouldEqual StatusCodes.NotFound
     }
   }
 
   it should "return sample process details" in {
-    Get(s"/processes/$processId") ~> routeWithRead ~> check {
+    Get(s"/processes/$processId") ~> routWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
       responseAs[String] should include (processId)
     }
   }
 
-  it should "return sample process details with properites" in {
-    fetchSampleProcessJsonAndCheckProperites(
-      expectedParallelism = SampleProcess.process.metaData.parallelism.value,
-      expectedFirstParamName = "errorsTopic"
-    )
-  }
-
-  it should "allow to modify properties of process" in {
-    val modifiedParallelism = 123
-    val modifiedName = "fooBarName"
-    val props = ProcessProperties(Some(modifiedParallelism), ExceptionHandlerRef(List(Parameter(modifiedName, modifiedName))))
-    Put(s"/processes/$processId/json/properties", posting.toEntity(props)) ~> routeWithWrite ~> check {
-      status shouldEqual StatusCodes.OK
-      val json = entityAs[String].parseOption.value
-      json.field("invalidNodes").flatMap(_.obj).value.isEmpty shouldBe false
-      fetchSampleProcessJsonAndCheckProperites(
-        expectedParallelism = modifiedParallelism,
-        expectedFirstParamName = modifiedName
-      )
-    }
-  }
-
-  private def fetchSampleProcessJsonAndCheckProperites(expectedParallelism: Int, expectedFirstParamName: String) = {
-    Get(s"/processes/$processId/json") ~> routeWithRead ~> check {
-      status shouldEqual StatusCodes.OK
-      import pl.touk.esp.ui.util.Argonaut62Support._
-      val json = responseAs[Json]
-      (json.hcursor --\ "properties" --\ "parallelism").focus.value.number.value.toInt.value shouldEqual expectedParallelism
-      ((json.hcursor --\ "properties" --\ "exceptionHandler" --\ "parameters").downArray --\ "name").focus.value.string.value shouldEqual expectedFirstParamName
-    }
-  }
-
-  it should "return sample process json" in {
-    Get(s"/processes/$processId/json") ~> routeWithRead ~> check {
-      status shouldEqual StatusCodes.OK
-      inside(responseAs[String].decodeEither[DisplayableProcess]) {
-        case Right(_) =>
+  it should "return 400 when trying to update json of custom process" in {
+    whenReady(processRepository.saveProcess("customProcess", CustomProcess(""), "")) { _ =>
+      saveProcess("customProcess", SampleProcess.process) {
+        status shouldEqual StatusCodes.BadRequest
       }
     }
   }
 
-  it should "return 404 when trying to update json of non existing process" in {
-    Put(s"/processes/missing_id/json", posting.toEntity(SampleProcess.process)) ~> routeWithWrite ~> check {
-      status shouldEqual StatusCodes.NotFound
-    }
-  }
-
-  it should "return 400 when trying to update json of custom process" in {
-    eventually {
-      processRepository.saveProcess("customProcess", CustomProcess(""))
-    }
-
-    Put(s"/processes/customProcess/json", posting.toEntity(SampleProcess.process)) ~> routeWithWrite ~> check {
-      status shouldEqual StatusCodes.BadRequest
-    }
-  }
-
-
   it should "save correct process json with ok status" in {
-    Put(s"/processes/$processId/json", posting.toEntity(ValidationTestData.validProcess)) ~> routeWithWrite ~> check {
+    saveProcess(SampleProcess.process.id, ValidationTestData.validProcess) {
       status shouldEqual StatusCodes.OK
       checkSampleProcessRootIdEquals(ValidationTestData.validProcess.root.id)
       val json = entityAs[String].parseOption.value
@@ -137,7 +99,7 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
   }
 
   it should "save invalid process json with ok status but with non empty invalid nodes" in {
-    Put(s"/processes/$processId/json", posting.toEntity(ValidationTestData.invalidProcess)) ~> routeWithWrite ~> check {
+    saveProcess(SampleProcess.process.id, ValidationTestData.invalidProcess) {
       status shouldEqual StatusCodes.OK
       checkSampleProcessRootIdEquals(ValidationTestData.invalidProcess.root.id)
       val json = entityAs[String].parseOption.value
@@ -145,32 +107,43 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
     }
   }
 
-  it should "be possible to update subnode" in {
-    Put(s"/processes/$processId/json", posting.toEntity(ValidationTestData.validProcess)) ~> routeWithWrite ~> check {
-      status shouldEqual StatusCodes.OK
-    }
-    val expression = "'foo'"
-    val modifiedSink = processConverter.toDisplayable(ValidationTestData.validProcess).nodes.collectFirst {
-      case sink: Sink =>
-        sink.copy(endResult = Some(expression))
-    }.getOrElse(sys.error("Process should contain sink"))
+  it should "return one latest version for process" in {
+    saveProcess(SampleProcess.process.id, ValidationTestData.validProcess) { status shouldEqual StatusCodes.OK}
+    saveProcess(SampleProcess.process.id, ValidationTestData.invalidProcess) { status shouldEqual StatusCodes.OK}
 
-    Put(s"/processes/$processId/json/node/${modifiedSink.id}", posting.toEntity(modifiedSink)) ~> routeWithWrite ~> check {
+    Get("/processes") ~> routWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
-      fetchSampleProcess()
-        .map(_.nodes.last.data.asInstanceOf[Sink].endResult.value.expression)
-        .futureValue shouldEqual expression
+      val resp = responseAs[String].decodeOption[List[ProcessDetails]].get
+      withClue(resp) {
+        resp.count(_.id == SampleProcess.process.id) shouldBe 1
+      }
     }
   }
 
-  it should "return 404 when no node" in {
-    Put(s"/processes/$processId/json", posting.toEntity(ValidationTestData.validProcess)) ~> routeWithWrite ~> check {
+  it should "save process history" in {
+    saveProcess(SampleProcess.process.id, ValidationTestData.validProcess) {
       status shouldEqual StatusCodes.OK
     }
-    val someNode = processConverter.toDisplayable(ValidationTestData.validProcess).nodes.head
+    saveProcess(SampleProcess.process.id, ValidationTestData.validProcess.copy(root = ValidationTestData.validProcess.root.copy(data = ValidationTestData.validProcess.root.data.copy(id = "AARGH")))) {
+      status shouldEqual StatusCodes.OK
+    }
+    Get(s"/processes/${SampleProcess.process.id}") ~> routWithAllPermissions ~> check {
+      val processDetails = responseAs[String].decodeOption[ProcessDetails].get
+      processDetails.name shouldBe SampleProcess.process.id
+      processDetails.history.length should be >= 2 //fixme a da sie czyscic baze co kazdy test?
+      processDetails.history.forall(_.processName == SampleProcess.process.id) shouldBe true
+    }
+  }
 
-    Put(s"/processes/$processId/json/node/missing_node_id", posting.toEntity(someNode)) ~> routeWithWrite ~> check {
-      status shouldEqual StatusCodes.NotFound
+  it should "perform idempotent process save" in {
+    saveSampleProcess()
+    Get(s"/processes/${SampleProcess.process.id}") ~> routWithAllPermissions ~> check {
+      val processHistoryBeforeDuplicatedWrite = responseAs[String].decodeOption[ProcessDetails].get.history
+      saveSampleProcess()
+      Get(s"/processes/${SampleProcess.process.id}") ~> routWithAllPermissions ~> check {
+        val processHistoryAfterDuplicatedWrite = responseAs[String].decodeOption[ProcessDetails].get.history
+        processHistoryAfterDuplicatedWrite shouldBe processHistoryBeforeDuplicatedWrite
+      }
     }
   }
 
@@ -188,6 +161,14 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
 
   }
 
+  def saveSampleProcess() = {
+    saveProcess(SampleProcess.process.id, ValidationTestData.validProcess) { status shouldEqual StatusCodes.OK}
+  }
+
+  def saveProcess(processId: String, process: EspProcess)(testCode: => Assertion) = {
+    Put(s"/processes/${processId}/json", posting.toEntity(process)) ~> routWithAllPermissions ~> check { testCode }
+  }
+
   def checkSampleProcessRootIdEquals(expected: String) = {
     fetchSampleProcess()
       .map(_.nodes.head.id)
@@ -196,7 +177,7 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
 
   def fetchSampleProcess(): Future[CanonicalProcess] = {
     processRepository
-      .fetchProcessDeploymentById(processId)
+      .fetchLatestProcessDeploymentForId(SampleProcess.process.id)
       .map(_.getOrElse(sys.error("Sample process missing")))
       .mapTo[GraphProcess]
       .map(p => ProcessMarshaller.fromJson(p.processAsJson).valueOr(_ => sys.error("Invalid process json")))

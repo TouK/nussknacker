@@ -19,7 +19,7 @@ class ManagementResources(processRepository: ProcessRepository,
       path("processManagement" / "deploy" / Segment) { id =>
         post {
           complete {
-            processRepository.fetchProcessDeploymentById(id).flatMap {
+            processRepository.fetchLatestProcessDeploymentForId(id).flatMap {
               case Some(deployment) =>
                 deployAndSaveProcess(id, deployment).map { _ =>
                   HttpResponse(status = StatusCodes.OK)
@@ -51,17 +51,17 @@ class ManagementResources(processRepository: ProcessRepository,
   }
 
 
-  private def deployAndSaveProcess(id: String, deployment: ProcessDeploymentData): Future[Unit] = {
-    logger.debug(s"Deploy of $id started")
-    processManager.deploy(id, deployment).flatMap { _ =>
+  private def deployAndSaveProcess(processName: String, deployment: ProcessDeploymentData): Future[Unit] = {
+    logger.debug(s"Deploy of $processName started")
+    processManager.deploy(processName, deployment).flatMap { _ =>
       deployment match {
         case GraphProcess(json) =>
-          logger.debug(s"Deploy of $id finished")
-          deployedProcessRepository.saveDeployedProcess(id, json).recoverWith { case NonFatal(e) =>
-            processManager.cancel(id)
+          logger.debug(s"Deploy of $processName finished")
+          deployedProcessRepository.saveDeployedProcess(processName, json).recoverWith { case NonFatal(e) =>
+            processManager.cancel(processName)
           }
         case CustomProcess(_) =>
-          logger.debug(s"Deploy of $id finished")
+          logger.debug(s"Deploy of $processName finished")
           Future.successful(Unit)
       }
     }

@@ -45,12 +45,11 @@ trait CreateTagsMigration extends SlickMigration {
 
     def pk = primaryKey("pk_tag", (name, processId))
 
-    def process = foreignKey("process-fk", processId, processesTable)(
+    def process = foreignKey("tag-process-fk", processId, processesTable)(
       _.id,
       onUpdate = ForeignKeyAction.Cascade,
       onDelete = ForeignKeyAction.Cascade
     )
-
   }
 
 }

@@ -19,7 +19,9 @@ $.ajaxSetup({
   }
 });
 
-setInterval(HttpService.fetchLoggedUser().then((user) => store.dispatch({type: "LOGGED_USER", user: user })), 10000);
+const fetchUser = () => HttpService.fetchLoggedUser().then((user) => store.dispatch({type: "LOGGED_USER", user: user }))
+fetchUser()
+setInterval(fetchUser, 10000);
 
 export default class Root extends React.Component {
 
@@ -28,7 +30,7 @@ export default class Root extends React.Component {
       <Provider store={store}>
         <div>
           <NotificationSystem ref={(c) => HttpService.setNotificationSystem(c)} />
-          <EspAppRouter/>
+          <EspAppRouter store={store}/>
           <DevTools/>
         </div>
       </Provider>
