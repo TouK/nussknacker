@@ -5,6 +5,7 @@ import org.scalatest.{FlatSpec, Matchers, OptionValues}
 import pl.touk.esp.engine._
 import pl.touk.esp.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.esp.engine.canonize.ProcessCanonizer
+import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.graph.node._
 import pl.touk.esp.engine.graph.sink.SinkRef
 
@@ -41,4 +42,21 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues {
     result should equal(Some(process))
   }
 
+  it should "marshall and unmarshall to same process with ending processor" in {
+    val process = EspProcessBuilder
+            .id("process1")
+            .exceptionHandler()
+            .source("a", "")
+            .processorEnd("d", "dService", "p1" -> "expr3")
+
+    val result = marshallAndUnmarshall(process)
+
+    result should equal(Some(process))
+  }
+
+  def marshallAndUnmarshall(process: EspProcess): Option[EspProcess] = {
+    val marshalled = ProcessMarshaller.toJson(process, PrettyParams.spaces2)
+    val unmarshalled = ProcessMarshaller.fromJson(marshalled).toOption
+    ProcessCanonizer.uncanonize(unmarshalled.value).toOption
+  }
 }
