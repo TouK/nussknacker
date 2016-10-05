@@ -147,7 +147,7 @@ export const Processes = React.createClass({
                   <span className="glyphicon glyphicon-stats" onClick={this.showMetrics.bind(this, process)}/>
                 </Td>
                 <Td column="status" className="status-column">
-                  { _.get(this.state.statuses[process.name], 'isRunning') ? <div className="status-running"/> : null}
+                  { this.state.statuses && _.get(this.state.statuses[process.name], 'isRunning') ? <div className="status-running"/> : null}
                 </Td>
                 <Td column="favourite" className="favourite-column">
                   <div className={this.isFavourite(process.id)}

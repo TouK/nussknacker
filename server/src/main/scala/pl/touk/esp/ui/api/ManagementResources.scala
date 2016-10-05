@@ -26,6 +26,8 @@ class ManagementResources(processRepository: ProcessRepository,
               status = StatusCodes.NotFound,
               entity = "Process not found"
             ))
+          }.recover { case error =>
+            HttpResponse(status = StatusCodes.InternalServerError, entity = error.getMessage)
           }
         }
       }
@@ -37,6 +39,8 @@ class ManagementResources(processRepository: ProcessRepository,
               HttpResponse(
                 status = StatusCodes.OK
               )
+            }.recover { case error =>
+              HttpResponse(status = StatusCodes.InternalServerError, entity = error.getMessage)
             }
           }
         }
