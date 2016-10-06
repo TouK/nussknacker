@@ -1,10 +1,13 @@
 package pl.touk.esp.ui.api.helpers
 
+import akka.http.scaladsl.server.Route
 import db.migration.DefaultJdbcProfile
 import pl.touk.esp.engine.api.deployment.{ProcessDeploymentData, ProcessManager, ProcessState}
 import pl.touk.esp.ui.api.{ProcessPosting, ProcessValidation, ValidationTestData}
 import pl.touk.esp.ui.process.marshall.ProcessConverter
 import pl.touk.esp.ui.process.repository.{DeployedProcessRepository, ProcessRepository}
+import pl.touk.esp.ui.security.LoggedUser
+import pl.touk.esp.ui.security.Permission.Permission
 import slick.jdbc.JdbcBackend
 
 import scala.concurrent.Future
@@ -27,4 +30,9 @@ object TestFactory {
       override def deploy(processId: String, processDeploymentData: ProcessDeploymentData): Future[Unit] = Future.successful(Unit)
     }
   }
+
+  def user(permissions: Permission*) = LoggedUser("userId", "pass", permissions.toList, List())
+
+  def withPermissions(route: LoggedUser => Route, permissions: Permission*) = route(user(permissions : _*))
+
 }

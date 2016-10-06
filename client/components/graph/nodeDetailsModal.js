@@ -67,6 +67,21 @@ class NodeDetailsModal extends React.Component {
     this.setState( { editedNode: newNodeState})
   }
 
+  renderEditButtons() {
+    if (this.props.loggedUser.canWrite) {
+      return (<span>
+        <LaddaButton title="Save node details" className={saveButtonClasses}
+                                   loading={this.state.pendingRequest}
+                                   buttonStyle='zoom-in' onClick={this.performNodeEdit}>Save</LaddaButton>
+        <button type="button" title="Edit node details" className={editButtonClasses} onClick={this.editNodeData}>
+          Edit
+        </button>
+      </span>);
+    } else {
+      return null;
+    }
+  }
+
   render() {
     var isOpen = !(_.isEmpty(this.props.nodeToDisplay))
     var modalStyles = {
@@ -105,11 +120,7 @@ class NodeDetailsModal extends React.Component {
           </div>
           <div id="modalFooter">
             <div>
-              <LaddaButton title="Save node details" className={saveButtonClasses} loading={this.state.pendingRequest}
-                           buttonStyle='zoom-in' onClick={this.performNodeEdit}>Save</LaddaButton>
-              <button type="button" title="Edit node details" className={editButtonClasses} onClick={this.editNodeData}>
-                Edit
-              </button>
+              {this.renderEditButtons()}
               <button type="button" title="Close node details" className={buttonClasses} onClick={this.closeModal}>
                 Close
               </button>
@@ -127,7 +138,8 @@ function mapState(state) {
     nodeToDisplay: state.espReducer.nodeToDisplay,
     processId: state.espReducer.processToDisplay.id,
     nodeErrors: _.get(state.espReducer.processToDisplay, `validationResult.invalidNodes[${state.espReducer.nodeToDisplay.id}]`, []),
-    processToDisplay: state.espReducer.processToDisplay
+    processToDisplay: state.espReducer.processToDisplay,
+    loggedUser: state.espReducer.loggedUser
   };
 }
 

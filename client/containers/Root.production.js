@@ -9,9 +9,9 @@ import EspAppRouter from './EspAppRouter';
 
 const store = configureStore();
 
+setInterval(HttpService.fetchLoggedUser().then((user) => store.dispatch({type: "LOGGED_USER", user: user })), 10000);
+
 export default class Root extends React.Component {
-
-
 
   render() {
     return (
