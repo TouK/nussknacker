@@ -101,11 +101,20 @@ const Visualization = React.createClass({
     } else {
       const deployedVersionIsDisplayed = _.isEqual(this.props.processToDisplay, this.props.fetchedProcessDetails.deployedJson) //fixme blokowanie edycji dla zdeplojowanej wersji
       const nothingToSave = _.isEqual(this.props.fetchedProcessDetails.json, this.props.processToDisplay) || deployedVersionIsDisplayed
+      const deployButtons = this.props.loggedUser.canDeploy ? ([
+                      <MenuItem divider />,
+                      <MenuItem onSelect={this.deploy}>Deploy</MenuItem>,
+                      <MenuItem onSelect={this.stop}>Stop</MenuItem>
+     ]) : null;
+      const saveButton = this.props.loggedUser.canWrite ? (
+        <button type="button" className="btn btn-default" disabled={nothingToSave} onClick={this.save}>SAVE{nothingToSave? "" : "*"}</button>
+
+      ) : null;
       return (
         <div className="Page">
           <div>
             <div id="esp-action-panel">
-              <button type="button" className="btn btn-default" disabled={nothingToSave} onClick={this.save}>SAVE{nothingToSave? "" : "*"}</button>
+              {saveButton}
               {this.props.deployedAndCurrentProcessDiffer ? <span title="Current version differs from deployed one" className="glyphicon glyphicon-warning-sign tag-warning"/> : null}
               <DropdownButton bsStyle="default" title="Action" id="actionDropdown">
                 <MenuItem onSelect={this.showProperties}>Properties</MenuItem>
@@ -113,9 +122,9 @@ const Visualization = React.createClass({
                           onSelect={this.showCurrentProcess}>Show current process</MenuItem>
                 <MenuItem disabled={!this.props.deployedAndCurrentProcessDiffer || !this.isRunning() || _.isEmpty(this.props.fetchedProcessDetails.deployedJson)}
                           onSelect={this.showDeployedProcess}>Show deployed process</MenuItem>
-                <MenuItem divider />
-                <MenuItem onSelect={this.deploy}>Deploy</MenuItem>
-                <MenuItem onSelect={this.stop}>Stop</MenuItem>
+
+                {deployButtons}
+
               </DropdownButton>
               {this.tagsForProcess().map(function (tagi, tagIndex) {
                 return <div key={tagIndex} className="tagsBlockVis">{tagi}</div>
@@ -148,7 +157,8 @@ function mapState(state) {
     processToDisplay: state.espReducer.processToDisplay,
     fetchedProcessDetails: processDetails,
     deployedAndCurrentProcessDiffer: !currentAndDeployedProcessEqual,
-    history: state.espReducer.history
+    history: state.espReducer.history,
+    loggedUser: state.espReducer.loggedUser
   };
 }
 

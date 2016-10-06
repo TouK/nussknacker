@@ -16,7 +16,6 @@ import hamburgerOpen from '../assets/img/menu-open.svg'
 import hamburgerClosed from '../assets/img/menu-closed.svg'
 import { Metrics } from './Metrics'
 
-
 export const App = React.createClass({
     getInitialState: function() {
       return { userPanelOpened: false };

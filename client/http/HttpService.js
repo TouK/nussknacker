@@ -36,6 +36,19 @@ export default {
     }
   },
 
+  fetchLoggedUser() {
+    return promiseWrap($.get(appConfig.API_URL + '/user')).then((user) => ({
+      id: user.id,
+      categories: user.categories,
+      hasPermission(name) {
+        return user.permissions.includes(name)
+      },
+      canRead : user.permissions.includes("Read"),
+      canDeploy : user.permissions.includes("Deploy"),
+      canWrite : user.permissions.includes("Write"),
+    }))
+  },
+
   fetchProcesses() {
     return promiseWrap($.get(appConfig.API_URL + '/processes'))
   },

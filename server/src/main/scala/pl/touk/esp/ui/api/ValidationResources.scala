@@ -5,6 +5,7 @@ import argonaut.{EncodeJson, Json, PrettyParams}
 import pl.touk.esp.ui.api.ProcessValidation.ValidationResult
 import pl.touk.esp.ui.process.displayedgraph.DisplayableProcess
 import pl.touk.esp.ui.process.marshall.{DisplayableProcessCodec, ProcessConverter}
+import pl.touk.esp.ui.security.LoggedUser
 import pl.touk.esp.ui.util.Argonaut62Support
 
 import scala.concurrent.ExecutionContext
@@ -22,7 +23,7 @@ class ValidationResources(processValidation: ProcessValidation, processConverter
 
   implicit val validationResultEncode = EncodeJson.of[ValidationResult]
 
-  val route =
+  val route = (user:LoggedUser) =>
     path("processValidation") {
       post {
         entity(as[DisplayableProcess]) { displayable =>

@@ -46,6 +46,12 @@ function espReducer(state = {}, action) {
         nodeToDisplay: action.after
       }
     }
+    case "LOGGED_USER": {
+      return {
+        ...state,
+        loggedUser: action.user
+      }
+    }
 
     default:
       return state

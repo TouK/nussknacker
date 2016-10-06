@@ -19,6 +19,7 @@ import pl.touk.esp.ui.api._
 import pl.touk.esp.ui.db.DatabaseInitializer
 import pl.touk.esp.ui.process.marshall.ProcessConverter
 import pl.touk.esp.ui.process.repository.{DeployedProcessRepository, ProcessRepository}
+import pl.touk.esp.ui.security.SimpleAuthenticator
 import slick.jdbc.JdbcBackend
 
 import scala.collection.JavaConversions._
@@ -56,15 +57,26 @@ object EspUiApp extends App with Directives {
 
   val manager = FlinkProcessManager(config)
 
+  val authenticator = new SimpleAuthenticator(config.getString("usersFile"))
+
   val route: Route = {
-    CorsSupport.cors {
-      pathPrefix("api") {
-        new ProcessesResources(processRepository, manager, processConverter, processValidation).route ~
-          new ManagementResources(processRepository, deploymentProcessRepository, manager).route ~
-          new ValidationResources(processValidation, processConverter).route
+
+    CorsSupport.cors(config.getBoolean("corsEnabled")) {
+      authenticateBasic("esp", authenticator) { user =>
+
+        pathPrefix("api") {
+
+          new ProcessesResources(processRepository, manager, processConverter, processValidation).route(user) ~
+            new ManagementResources(processRepository, deploymentProcessRepository, manager).route(user) ~
+            new ValidationResources(processValidation, processConverter).route(user) ~
+            new UserResources().route(user)
+        } ~
+        //nie chcemy api, zeby nie miec problemow z autentykacja...
+        pathPrefixTest(!"api") {
+          WebResources.route
+        }
       }
-    } ~
-      WebResources.route
+    }
   }
 
   Http().bindAndHandle(
@@ -92,7 +104,7 @@ object EspUiApp extends App with Directives {
         processRepository.saveProcess(entry.getKey, CustomProcess(entry.getValue.unwrapped().toString))
       }
     //do testow
-//    fixme
+    //    fixme
   }
 
 }

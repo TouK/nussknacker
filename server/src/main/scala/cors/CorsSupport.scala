@@ -1,21 +1,34 @@
 package cors
 
 import akka.http.scaladsl.model.headers._
+import akka.http.scaladsl.model.{HttpMethods, HttpResponse, StatusCodes}
+import akka.http.scaladsl.server.Directive
 import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.Route
 
 object CorsSupport {
 
-  val optionsSupport = {
-    options {complete("")}
-  }
-
-  val corsHeaders = List(RawHeader("Access-Control-Allow-Origin", "*"),
+  private val corsHeaders = List(RawHeader("Access-Control-Allow-Origin", "*"),
     RawHeader("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS, DELETE"),
-    RawHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization") )
+    RawHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization"),
+    RawHeader("Access-Control-Allow-Credentials", "true")
+  )
 
-  def cors(r: Route) = {
-    respondWithHeaders(corsHeaders) { r ~ optionsSupport}
+  def cors(enabled: Boolean) = {
+    import akka.http.scaladsl.server.StandardRoute._
+    import akka.http.scaladsl.server.directives.BasicDirectives._
+
+    if (enabled) {
+      extractRequest.flatMap[Unit] { request =>
+        request.method match {
+          case HttpMethods.OPTIONS =>
+            complete(HttpResponse(StatusCodes.OK, corsHeaders))
+          case _ =>
+            respondWithHeaders(corsHeaders)
+        }
+      }
+    } else {
+      Directive.Empty
+    }
   }
 
 }
