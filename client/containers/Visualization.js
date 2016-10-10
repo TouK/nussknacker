@@ -59,7 +59,9 @@ const Visualization = React.createClass({
   },
 
   deploy() {
-    HttpService.deploy(this.props.params.processId)
+    HttpService.deploy(this.props.params.processId).then((resp) => {
+      this.fetchProcessDetails()
+    })
   },
 
   stop() {
@@ -104,9 +106,9 @@ const Visualization = React.createClass({
       const deployedVersionIsDisplayed = _.isEqual(this.props.processToDisplay, this.props.fetchedProcessDetails.deployedJson) //fixme blokowanie edycji dla zdeplojowanej wersji
       const nothingToSave = _.isEqual(this.props.fetchedProcessDetails.json, this.props.processToDisplay) || deployedVersionIsDisplayed
       const deployButtons = this.props.loggedUser.canDeploy ? ([
-                      <MenuItem divider />,
-                      <MenuItem onSelect={this.deploy}>Deploy</MenuItem>,
-                      <MenuItem onSelect={this.stop}>Stop</MenuItem>
+                      <MenuItem divider key="0"/>,
+                      <MenuItem onSelect={this.deploy} key="1">Deploy</MenuItem>,
+                      <MenuItem onSelect={this.stop} key="2">Stop</MenuItem>
      ]) : null;
       const saveButton = this.props.loggedUser.canWrite ? (
         <button type="button" className="btn btn-default" disabled={nothingToSave} onClick={this.save}>SAVE{nothingToSave? "" : "*"}</button>

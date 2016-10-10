@@ -2,9 +2,7 @@ package pl.touk.esp.ui.db.migration
 
 import java.sql.Timestamp
 
-import argonaut.PrettyParams
-import pl.touk.esp.engine.marshall.ProcessMarshaller
-import pl.touk.esp.ui.db.migration.CreateDeployedProcessesMigration.DeployedProcessEntityData
+import pl.touk.esp.ui.db.migration.CreateDeployedProcessesMigration.DeployedProcessVersionEntityData
 import pl.touk.esp.ui.sample.SampleProcess
 import pl.touk.esp.ui.util.DateUtils
 import slick.jdbc.JdbcProfile
@@ -20,40 +18,55 @@ trait CreateDeployedProcessesMigration extends SlickMigration {
 
   private def createSample = {
     val process = SampleProcess.process
-    val json = ProcessMarshaller.toJson(process, PrettyParams.nospace)
-    deployedProcessesTable += DeployedProcessEntityData(
+    deployedProcessesTable += DeployedProcessVersionEntityData(
       process.id,
-      DateUtils.now,
-      json
+      1,
+      "test",
+      "TouK",
+      DateUtils.now
     )
   }
 
-  val deployedProcessesTable = TableQuery[DeployedProcessEntity]
+  val deployedProcessesTable = TableQuery[DeployedProcessVersionEntity]
 
-  class DeployedProcessEntity(tag: Tag) extends Table[DeployedProcessEntityData](tag, "deployed_processes") {
+  class DeployedProcessVersionEntity(tag: Tag) extends Table[DeployedProcessVersionEntityData](tag, "deployed_process_versions") {
 
-    def id = column[String]("id", NotNull)
+    def processId = column[String]("process_id", NotNull)
+
+    def processVersionId = column[Long]("process_version_id", NotNull)
 
     def deployedAt = column[Timestamp]("deploy_at", NotNull)
 
-    def json = column[String]("json", O.Length(100 * 1000), NotNull)
+    def environment = column[String]("environment", NotNull)
 
-    def pk = primaryKey("pk_deployed_process", (id, deployedAt))
+    def user = column[String]("user", NotNull)
+
+    def pk = primaryKey("pk_deployed_process_version", (processId, processVersionId, environment, deployedAt))
 
     //fixme czy naprwade musze tak dziwnie to wszedzie robic?
-    val processesMigration = new CreateProcessesMigration {
+    val processVersionsMigration = new CreateProcessVersionsMigration {
+      override protected val profile: JdbcProfile = CreateDeployedProcessesMigration.this.profile
+    }
+    val environmentsMigration = new CreateEnvironmentsMigration {
       override protected val profile: JdbcProfile = CreateDeployedProcessesMigration.this.profile
     }
 
-    import processesMigration._
+    import processVersionsMigration._
+    import environmentsMigration._
 
-    def processes_fk = foreignKey("proc_in_deployed_proc_fk", id, processesTable)(
-      _.id,
+    def processes_fk = foreignKey("proc_ver_in_deployed_proc_fk", (processId, processVersionId), processVersionsTable)(
+      (procV) => (procV.processId, procV.id),
       onUpdate = ForeignKeyAction.Cascade,
       onDelete = ForeignKeyAction.NoAction
     )
 
-    def * = (id, deployedAt, json) <> (DeployedProcessEntityData.tupled, DeployedProcessEntityData.unapply)
+    def environment_fk = foreignKey("env_in_deployed_proc_fk", environment, environmentsTable)(
+      _.name,
+      onUpdate = ForeignKeyAction.Cascade,
+      onDelete = ForeignKeyAction.NoAction
+    )
+
+    def * = (processId, processVersionId, environment, user, deployedAt) <> (DeployedProcessVersionEntityData.tupled, DeployedProcessVersionEntityData.unapply)
 
   }
 
@@ -61,7 +74,7 @@ trait CreateDeployedProcessesMigration extends SlickMigration {
 
 object CreateDeployedProcessesMigration {
   //moze dodac hasha/wersje z gita? sbt-buildinfo + sbt-git sie nada https://github.com/sbt/sbt-git/issues/33
-  case class DeployedProcessEntityData(id: String, deployedAt: Timestamp, json: String) {
+  case class DeployedProcessVersionEntityData(processId: String, processVersionId: Long, environment: String, user: String, deployedAt: Timestamp) {
     val deployedAtTime = DateUtils.toLocalDateTime(deployedAt)
   }
 

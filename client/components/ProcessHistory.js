@@ -43,6 +43,10 @@ export class ProcessHistory_ extends Component {
     }
   }
 
+  formatDate(date) {
+    return date.substring(0, 16)
+  }
+
   render() {
     return (
       <Scrollbars style={{ height: 300 }}>
@@ -50,9 +54,14 @@ export class ProcessHistory_ extends Component {
           {this.props.processHistory.map ((historyEntry, index) => {
             return (
               <li key={index} className={this.processVersionOnTimeline(historyEntry, index)}
-                  onClick={this.showProcess.bind(this, historyEntry, index)}>{historyEntry.processName}:v{historyEntry.processVersionId} {historyEntry.user}
+                  onClick={this.showProcess.bind(this, historyEntry, index)}>
+                {historyEntry.processName}:v{historyEntry.processVersionId} {historyEntry.user}
                 <br/>
-                <small><i>{historyEntry.createDate}</i></small>
+                <small><i>{this.formatDate(historyEntry.createDate)}</i></small>
+                <br/>
+                {historyEntry.deployments.map((deployment, index) =>
+                  <small key={index}>{this.formatDate(deployment.deployedAt)} <span className="label label-info">{deployment.environment}</span></small>
+                )}
               </li>
             )
           })}

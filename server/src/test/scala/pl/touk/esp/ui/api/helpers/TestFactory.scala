@@ -33,7 +33,8 @@ object TestFactory {
 
   def user(permissions: Permission*) = LoggedUser("userId", "pass", permissions.toList, List())
 
+  val allPermissions = List(Permission.Deploy, Permission.Read, Permission.Write)
   def withPermissions(route: LoggedUser => Route, permissions: Permission*) = route(user(permissions : _*))
-  def withAllPermissions(route: LoggedUser => Route) = route(user(List(Permission.Deploy, Permission.Read, Permission.Write) : _*))
+  def withAllPermissions(route: LoggedUser => Route) = route(user(allPermissions: _*))
 
 }
