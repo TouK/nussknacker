@@ -5,10 +5,9 @@ import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
 import _ from 'lodash'
 import * as EspActions from '../actions/actions';
-import HttpService from '../http/HttpService'
 import '../stylesheets/processHistory.styl'
 
-class ProcessHistory extends Component {
+export class ProcessHistory_ extends Component {
 
   static propTypes = {
     processHistory: React.PropTypes.array.isRequired
@@ -75,4 +74,4 @@ function mapDispatch(dispatch) {
   };
 }
 
-export default connect(mapState, mapDispatch)(ProcessHistory);
+export default connect(mapState, mapDispatch)(ProcessHistory_);
