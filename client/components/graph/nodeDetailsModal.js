@@ -72,10 +72,10 @@ class NodeDetailsModal extends React.Component {
     var saveButtonClasses = classNames(buttonClasses, 'pull-left', {'hidden': !this.state.isEditMode})
     if (this.props.loggedUser.canWrite) {
       return ([
-        <LaddaButton title="Save node details" className={saveButtonClasses}
+        <LaddaButton key="1" title="Save node details" className={saveButtonClasses}
                                    loading={this.state.pendingRequest}
                                    buttonStyle='zoom-in' onClick={this.performNodeEdit}>Save</LaddaButton>,
-        <button type="button" title="Edit node details" className={editButtonClasses} onClick={this.editNodeData}>
+        <button key="2" type="button" title="Edit node details" className={editButtonClasses} onClick={this.editNodeData}>
           Edit
         </button>
       ] );

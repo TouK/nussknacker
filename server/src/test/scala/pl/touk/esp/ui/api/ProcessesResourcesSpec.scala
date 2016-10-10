@@ -177,8 +177,9 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
 
   def fetchSampleProcess(): Future[CanonicalProcess] = {
     processRepository
-      .fetchLatestProcessDeploymentForId(SampleProcess.process.id)
+      .fetchLatestProcessVersion(SampleProcess.process.id)
       .map(_.getOrElse(sys.error("Sample process missing")))
+      .map(_.deploymentData)
       .mapTo[GraphProcess]
       .map(p => ProcessMarshaller.fromJson(p.processAsJson).valueOr(_ => sys.error("Invalid process json")))
   }

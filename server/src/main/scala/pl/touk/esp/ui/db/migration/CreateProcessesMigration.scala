@@ -3,6 +3,7 @@ package pl.touk.esp.ui.db.migration
 import java.sql.Timestamp
 
 import argonaut.PrettyParams
+import pl.touk.esp.engine.api.deployment.{CustomProcess, GraphProcess}
 import pl.touk.esp.engine.marshall.ProcessMarshaller
 import pl.touk.esp.ui.db.migration.CreateProcessesMigration.{ProcessEntityData, ProcessType, ProcessVersionEntityData}
 import pl.touk.esp.ui.db.migration.CreateProcessesMigration.ProcessType.ProcessType
@@ -53,7 +54,7 @@ trait CreateProcessesMigration extends SlickMigration {
 
 }
 
-trait CreateProcessVersionsMigration extends SlickMigration { self =>
+trait CreateProcessVersionsMigration extends SlickMigration {
   import profile.api._
 
   private val processesMigration = new CreateProcessesMigration {
@@ -125,7 +126,13 @@ object CreateProcessesMigration {
                                        mainClass: Option[String],
                                        createDate: Timestamp,
                                        user: String
-                                     )
+                                     ) {
+    def deploymentData = (json, mainClass) match {
+      case (Some(j), _) => GraphProcess(j)
+      case (None, Some(mc)) => CustomProcess(mc)
+      case _ => throw new IllegalStateException(s"Process version has neither json nor mainClass. ${this}")
+    }
+  }
 
   object ProcessType extends Enumeration {
     type ProcessType = Value

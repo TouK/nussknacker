@@ -98,17 +98,12 @@ class ProcessesResources(repository: ProcessRepository,
           }
         }
       } ~ path("processes" / Segment / "json") { processId =>
-        get {
-          complete {
-            renderProcess(processId, repository.fetchLatestProcessDeploymentForId(processId))
-          }
-        } ~ put {
+        put {
           entity(as[DisplayableProcess]) { displayableProcess =>
             complete {
               val canonical = processConverter.fromDisplayable(displayableProcess)
               val json = ProcessMarshaller.toJson(canonical, PrettyParams.nospace)
-              val user = "TouK"
-              repository.saveProcess(processId, GraphProcess(json), user).map { result =>
+              repository.saveProcess(processId, GraphProcess(json), user.id).map { result =>
                 toResponse {
                   result.map(_ => processValidation.validate(canonical))
                 }
@@ -131,20 +126,6 @@ class ProcessesResources(repository: ProcessRepository,
           }
         }
       }
-    }
-  }
-
-  private def renderProcess(id: String, processDeploymentById: Future[Option[ProcessDeploymentData]]): ToResponseMarshallable = {
-    val optionalDisplayableJsonFuture = processDeploymentById.map { optionalDeployment =>
-      optionalDeployment.collect {
-        case GraphProcess(json) => processConverter.toDisplayableOrDie(json)
-      }
-    }
-    optionalDisplayableJsonFuture.map[ToResponseMarshallable] {
-      case Some(process) =>
-        process
-      case None =>
-        HttpResponse(status = StatusCodes.NotFound, entity = s"Process $id not found")
     }
   }
 

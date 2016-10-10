@@ -12,7 +12,7 @@ import $ from 'jquery';
 const store = configureStore();
 
 //TODO: jakos inaczej to ograc??
-var user = "writer";
+var user = "admin";
 $.ajaxSetup({
   headers: {
     'Authorization': "Basic " + btoa(`${user}:${user}`)

@@ -58,6 +58,7 @@ object EspUiApp extends App with Directives {
   val manager = FlinkProcessManager(config)
 
   val authenticator = new SimpleAuthenticator(config.getString("usersFile"))
+  val environment = config.getString("environment")
 
   val route: Route = {
 
@@ -67,7 +68,7 @@ object EspUiApp extends App with Directives {
         pathPrefix("api") {
 
           new ProcessesResources(processRepository, manager, processConverter, processValidation).route(user) ~
-            new ManagementResources(processRepository, deploymentProcessRepository, manager).route(user) ~
+            new ManagementResources(processRepository, deploymentProcessRepository, manager, environment).route(user) ~
             new ValidationResources(processValidation, processConverter).route(user) ~
             new UserResources().route(user)
         } ~
@@ -104,8 +105,6 @@ object EspUiApp extends App with Directives {
       .foreach { (entry: java.util.Map.Entry[String, ConfigValue]) =>
         processRepository.saveProcess(entry.getKey, CustomProcess(entry.getValue.unwrapped().toString), user)
       }
-    //do testow
-    //    fixme
   }
 
 }
