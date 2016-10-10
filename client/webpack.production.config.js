@@ -23,7 +23,7 @@ module.exports = {
     new webpack.optimize.DedupePlugin(),
     new webpack.optimize.AggressiveMergingPlugin(),
     new webpack.DefinePlugin({
-      //To sie wydaje nadmiarowe, bo w packages.json juz wlasciwie ustawiamy taka sama zmienna, ale tu jest jakas proba wyjasnienia tego http://stackoverflow.com/questions/37311972/react-doesnt-switch-to-production-mode
+      //To sie wydaje nadmiarowe, bo w packages.json juz wlasciwie ustawiamy taka sama zmienna, tu jest jakas proba wyjasnienia tego http://stackoverflow.com/questions/37311972/react-doesnt-switch-to-production-mode
       'process.env': {
         'NODE_ENV': JSON.stringify('production')
       },
