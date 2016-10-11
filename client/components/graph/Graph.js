@@ -17,15 +17,42 @@ import '../../stylesheets/graph.styl'
 class Graph extends React.Component {
 
     static propTypes = {
-        processToDisplay: React.PropTypes.object.isRequired
+        processToDisplay: React.PropTypes.object.isRequired,
+        loggedUser: React.PropTypes.object.isRequired
     }
 
     constructor(props) {
         super(props);
         this.graph = new joint.dia.Graph();
+        this.graph
+          .on("remove", (e, f) => {
+            if (e.isLink) {
+              this.props.actions.nodesDisconnected(e.attributes.source.id, e.attributes.target.id)
+            }
+        })
+        //dodajemy w inny sposob...
+        /*  .on("add", (e, f) => {
+            console.log("created", e, f)
+            if (e.isElement()) {
+              setTimeout(() => {
+                this.props.actions.nodeAdded(e, e.get('position'));
+              }, 100);
+            }
+        })*/
         this.state = {
             toolboxVisible: false
         };
+    }
+
+    addFilter() {
+      var node = {
+        "type": "Filter",
+        "expression": {
+          "language": "spel",
+          "expression": "true"
+        }
+      }
+      this.props.actions.nodeAdded(node, {x: 50, y: 50});
     }
 
     componentDidMount() {
@@ -37,12 +64,12 @@ class Graph extends React.Component {
     }
 
     componentWillUpdate(nextProps, nextState) {
-        if (!_.isEqual(this.props.processToDisplay, nextProps.processToDisplay)) {
-            this.drawGraph(nextProps.processToDisplay)
+        if (!_.isEqual(this.props.processToDisplay, nextProps.processToDisplay) || !_.isEqual(this.props.layout, nextProps.layout)) {
+            this.drawGraph(nextProps.processToDisplay, nextProps.layout)
         }
     }
 
-    directedLayout = () => {
+    directedLayout() {
         joint.layout.DirectedGraph.layout(this.graph, {
             nodeSep: 200,
             edgeSep: 500,
@@ -50,9 +77,11 @@ class Graph extends React.Component {
             minLen: 300,
             rankDir: "TB"
         });
+        this.changeLayoutIfNeeded()
     }
 
     createPaper = () => {
+        const canWrite = this.props.loggedUser.canWrite
         return new joint.dia.Paper({
             el: $('#esp-graph'),
             gridSize: 1,
@@ -60,11 +89,27 @@ class Graph extends React.Component {
             width: $('#esp-graph').width(),
             model: this.graph,
             snapLinks: { radius: 75 },
-            interactive: false //remove when editing won't be such a pain
-        });
+            interactive: function(cellView) {
+                if (!canWrite) {
+                  return false;
+                } else if (cellView.model instanceof joint.dia.Link) {
+                    // Disable the default vertex add functionality on pointerdown.
+                    return { vertexAdd: false };
+                } else {
+                  return true;
+                }
+            },
+            linkPinning: false,
+            defaultLink: EspNode.makeLink({})
+
+        })
+          .on("cell:pointerup", (c, e) => {
+            this.changeLayoutIfNeeded()
+          })
+          .on("link:connect", (c) => this.props.actions.nodesConnected(c.sourceView.model.id, c.targetView.model.id))
     }
 
-    drawGraph = (data) => {
+    drawGraph = (data, layout) => {
         var nodes = _.map(data.nodes, (n) => { return EspNode.makeElement(n) });
         var edges = _.map(data.edges, (e) => { return EspNode.makeLink(e) });
         var cells = nodes.concat(edges);
@@ -84,7 +129,21 @@ class Graph extends React.Component {
                   })
               }
           });
-        this.directedLayout();
+        if (!layout) {
+          this.directedLayout()
+        } else {
+          _.map(layout, el => this.graph.getCell(el.id).set('position', el.position));
+        }
+    }
+
+    changeLayoutIfNeeded = () => {
+      var newLayout = _.map(this.graph.getElements(), (el) => {
+              var pos = el.get('position');
+              return { id: el.id, position: pos }
+            })
+      if (!_.isEqual(this.props.layout, newLayout)) {
+        this.props.actions.layoutChanged(newLayout)
+      }
     }
 
     enablePanZoom() {
@@ -144,7 +203,9 @@ class Graph extends React.Component {
 function mapState(state) {
     return {
         nodeToDisplay: state.espReducer.nodeToDisplay,
-        processToDisplay: state.espReducer.processToDisplay
+        processToDisplay: state.espReducer.processToDisplay,
+        loggedUser: state.espReducer.loggedUser,
+        layout: state.espReducer.layout
     };
 }
 
@@ -154,7 +215,8 @@ function mapDispatch(dispatch) {
     };
 }
 
-export default connect(mapState, mapDispatch)(Graph);
+//withRef jest po to, zeby parent mogl sie dostac
+export default connect(mapState, mapDispatch, null, {withRef: true})(Graph);
 
 class Toolbox extends React.Component {
 
@@ -170,7 +232,7 @@ class Toolbox extends React.Component {
     }
 
     componentDidMount() {
-        this.drawToolbox(this.props.processGraphPaper, this.props.panAndZoom, this.props.graph);
+    //this.drawToolbox(this.props.processGraphPaper, this.props.panAndZoom, this.props.graph);
     }
 
     drawToolbox(processGraphPaper, panAndZoom, graph) {
@@ -214,7 +276,9 @@ class Toolbox extends React.Component {
             el: this.refs.toolbox,
             height: 60,
             model: toolboxGraph,
-            interactive: false
+            interactive: false,
+            linkPinning: false,
+            defaultLink: EspNode.makeLink({})
         });
 
         toolboxGraph.addCells([EspNode.makeElement({type: 'Filter'}), EspNode.makeElement({type: 'Sink'})]);

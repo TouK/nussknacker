@@ -7,7 +7,9 @@ const emptyEspState = {
   graphLoading: false,
   processToDisplay: {},
   fetchedProcessDetails: {},
-  nodeToDisplay: {}
+  nodeToDisplay: {},
+  //TODO: czy powinien byc wypelniony?
+  loggedUser: {}
 }
 
 function espReducer(state = emptyEspState, action) {
@@ -51,13 +53,22 @@ function espReducer(state = emptyEspState, action) {
       }
     case "EDIT_NODE": {
       const processToDisplay = GraphUtils.mapProcessWithNewNode(state.processToDisplay, action.before, action.after)
+      var newLayout = _.map(state.layout, (n) => {
+        if (action.before.id == n.id) {
+          return {
+            ...n,
+            id: action.after.id
+          }
+        } else return n;
+      });
       return {
         ...state,
         processToDisplay: {
           ...processToDisplay,
           validationResult: action.validationResult
         },
-        nodeToDisplay: action.after
+        nodeToDisplay: action.after,
+        layout: newLayout
       }
     }
     case "LOGGED_USER": {
@@ -69,7 +80,46 @@ function espReducer(state = emptyEspState, action) {
     case "URL_CHANGED": {
       return {
         ...state,
-        ...emptyEspState
+        ...emptyEspState,
+        loggedUser: state.loggedUser
+      }
+    }
+    case "NODES_CONNECTED": {
+      return {
+        ...state,
+        processToDisplay: {
+          ...state.processToDisplay,
+          edges: _.concat(state.processToDisplay.edges, {from: action.from, to: action.to})
+        }
+      }
+    }
+    case "NODES_DISCONNECTED": {
+      return {
+        ...state,
+        processToDisplay: {
+          ...state.processToDisplay,
+          edges: _.reject(state.processToDisplay.edges, (e) => e.from == action.from && e.to == action.to)
+        }
+      }
+    }
+    case "NODE_ADDED": {
+      var newId = `node${state.processToDisplay.nodes.length}`
+      return {
+        ...state,
+        processToDisplay: {
+          ...state.processToDisplay,
+          nodes: _.concat(state.processToDisplay.nodes, {
+            ... action.node,
+            id: newId
+          })
+        },
+        layout: _.concat(state.layout, {id: newId, position: action.position})
+      }
+    }
+    case "LAYOUT_CHANGED": {
+      return {
+        ...state,
+        layout: action.layout
       }
     }
     default:
@@ -155,10 +205,11 @@ function espUndoable (reducer, config) {
 }
 
 const espUndoableConfig = {
-  blacklist: ["CLEAR_PROCESS", "FETCH_PROCESS_TO_DISPLAY", "URL_CHANGED"]
+  blacklist: ["CLEAR_PROCESS", "FETCH_PROCESS_TO_DISPLAY", "URL_CHANGED", "LOGGED_USER"]
 }
 const rootReducer = espUndoable(combineReducers({
   espReducer
 }), espUndoableConfig);
 
 export default rootReducer;
+
