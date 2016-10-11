@@ -1,6 +1,6 @@
-import HttpService from '../http/HttpService'
-import GraphUtils from '../components/graph/GraphUtils'
-import * as ProcessToDisplayMode from '../constants/ProcessToDisplayMode'
+import HttpService from "../http/HttpService";
+import GraphUtils from "../components/graph/GraphUtils";
+import * as ProcessToDisplayMode from "../constants/ProcessToDisplayMode";
 
 export function fetchProcessToDisplay(processId, versionId) {
   return (dispatch) => {
@@ -70,15 +70,37 @@ export function editNode(process, before, after) {
   }
 }
 
+export function nodesConnected(from, to) {
+  return {type: "NODES_CONNECTED", from: from, to: to}
+}
+export function nodesDisconnected(from, to) {
+  return {type: "NODES_DISCONNECTED", from: from, to: to}
+}
+export function nodeAdded(node, position) {
+
+  return {
+    type: "NODE_ADDED",
+    node: node,
+    position: position
+  }
+}
+
+export function layoutChanged(layout) {
+  return {
+    type: "LAYOUT_CHANGED",
+    layout: layout
+  }
+}
+
 //fixme to nie powinno tu byc, powinno byc wstrzykiwane jakos z espUndoable
 export function undo() {
-  return { type: "UNDO"};
+  return {type: "UNDO"};
 }
 
 export function redo() {
-  return { type: "REDO"};
+  return {type: "REDO"};
 }
 
 export function clear() {
-  return { type: "CLEAR"};
+  return {type: "CLEAR"};
 }

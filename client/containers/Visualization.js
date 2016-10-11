@@ -114,17 +114,28 @@ const Visualization = React.createClass({
         <button type="button" className="btn btn-default" disabled={nothingToSave} onClick={this.save}>SAVE{nothingToSave? "" : "*"}</button>
 
       ) : null;
+
+      const editButtons = this.props.loggedUser.canWrite ? ([
+          <MenuItem key="3" onSelect={() => getGraph().directedLayout()}>Layout</MenuItem>,
+          <MenuItem key="4" onSelect={() => getGraph().addFilter()}>Add filter</MenuItem>
+      ]) : null;
+
+      //niestety tak musi byc, bo graph jest reduxowym komponentem
+      var getGraph = () => this.refs.graph.getWrappedInstance();
+
       return (
         <div className="Page">
+
           <div>
             <div id="esp-action-panel">
               {saveButton}
               {this.props.deployedAndCurrentProcessDiffer ? <span title="Current version differs from deployed one" className="glyphicon glyphicon-warning-sign tag-warning"/> : null}
-              <DropdownButton bsStyle="default" title="Action" id="actionDropdown">
-                <MenuItem onSelect={this.showProperties}>Properties</MenuItem>
-                <MenuItem disabled={!this.props.deployedAndCurrentProcessDiffer}
+              <DropdownButton bsStyle="default" pullRight title="Action" id="actionDropdown">
+                {editButtons}
+                <MenuItem key="6" onSelect={this.showProperties}>Properties</MenuItem>
+                <MenuItem key="7" disabled={!this.props.deployedAndCurrentProcessDiffer}
                           onSelect={this.showCurrentProcess}>Show current process</MenuItem>
-                <MenuItem disabled={!this.props.deployedAndCurrentProcessDiffer || !this.isRunning() || _.isEmpty(this.props.fetchedProcessDetails.deployedJson)}
+                <MenuItem key="8" disabled={!this.props.deployedAndCurrentProcessDiffer || !this.isRunning() || _.isEmpty(this.props.fetchedProcessDetails.deployedJson)}
                           onSelect={this.showDeployedProcess}>Show deployed process</MenuItem>
 
                 {deployButtons}
@@ -134,7 +145,7 @@ const Visualization = React.createClass({
                 return <div key={tagIndex} className="tagsBlockVis">{tagi}</div>
               })}
             </div>
-            <Graph/>
+            <Graph ref="graph"/>
           </div>
         </div>
       )
