@@ -4,7 +4,7 @@ import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.Directives
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.esp.engine.api.deployment.{CustomProcess, GraphProcess, ProcessManager}
-import pl.touk.esp.ui.db.migration.CreateProcessesMigration.ProcessVersionEntityData
+import pl.touk.esp.ui.db.entity.ProcessVersionEntity.ProcessVersionEntityData
 import pl.touk.esp.ui.process.repository.{DeployedProcessRepository, ProcessRepository}
 import pl.touk.esp.ui.security.{LoggedUser, Permission}
 

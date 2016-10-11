@@ -2,8 +2,8 @@ package pl.touk.esp.ui.process.marshall
 
 import argonaut.Json._
 import argonaut.{CodecJson, CursorHistory, DecodeResult}
-import pl.touk.esp.ui.db.migration.CreateProcessesMigration.ProcessType
-import pl.touk.esp.ui.db.migration.CreateProcessesMigration.ProcessType.ProcessType
+import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessType
+import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessType.ProcessType
 
 import scala.util.{Failure, Success, Try}
 
