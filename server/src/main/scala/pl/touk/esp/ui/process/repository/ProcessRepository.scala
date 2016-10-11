@@ -6,11 +6,12 @@ import cats.data._
 import db.util.DBIOActionInstances._
 import pl.touk.esp.engine.api.deployment.{CustomProcess, GraphProcess, ProcessDeploymentData}
 import pl.touk.esp.ui.EspError._
-import pl.touk.esp.ui.db.migration.CreateDeployedProcessesMigration.DeployedProcessVersionEntityData
-import pl.touk.esp.ui.db.migration.CreateProcessesMigration.ProcessType.ProcessType
-import pl.touk.esp.ui.db.migration.CreateProcessesMigration.{ProcessEntityData, ProcessType, ProcessVersionEntityData}
-import pl.touk.esp.ui.db.migration.CreateTagsMigration.TagsEntityData
-import pl.touk.esp.ui.db.migration.{CreateDeployedProcessesMigration, CreateProcessVersionsMigration, CreateProcessesMigration, CreateTagsMigration}
+import pl.touk.esp.ui.db.entity.DeployedProcessVersionEntity.DeployedProcessVersionEntityData
+import pl.touk.esp.ui.db.entity.ProcessEntity.{ProcessEntityData, ProcessType}
+import pl.touk.esp.ui.db.entity.ProcessVersionEntity.ProcessVersionEntityData
+import pl.touk.esp.ui.db.entity.TagsEntity.TagsEntityData
+import pl.touk.esp.ui.db.EspTables._
+import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessType.ProcessType
 import pl.touk.esp.ui.process.displayedgraph.DisplayableProcess
 import pl.touk.esp.ui.process.marshall.ProcessConverter
 import pl.touk.esp.ui.process.repository.ProcessRepository.{InvalidProcessTypeError, ProcessDetails, ProcessHistoryEntry}
@@ -24,28 +25,7 @@ import scala.language.higherKinds
 class ProcessRepository(db: JdbcBackend.Database,
                         driver: JdbcProfile,
                         processConverter: ProcessConverter) {
-
-  private val processesMigration = new CreateProcessesMigration {
-    override protected val profile: JdbcProfile = ProcessRepository.this.driver
-  }
-
-  private val processVersionsMigration = new CreateProcessVersionsMigration {
-    override protected val profile: JdbcProfile = ProcessRepository.this.driver
-  }
-
-  private val deployedProcessesMigration = new CreateDeployedProcessesMigration {
-    override protected val profile: JdbcProfile = ProcessRepository.this.driver
-  }
-
-  private val tagsMigration = new CreateTagsMigration {
-    override protected val profile: JdbcProfile = ProcessRepository.this.driver
-  }
-
-  import deployedProcessesMigration._
   import driver.api._
-  import processesMigration._
-  import processVersionsMigration._
-  import tagsMigration._
 
   def saveProcess(processId: String, processDeploymentData: ProcessDeploymentData, user: String)(implicit ec: ExecutionContext): Future[XError[Unit]] = {
     val (pType, maybeJson, maybeMainClass) = processDeploymentData match {

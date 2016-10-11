@@ -16,7 +16,9 @@ import pl.touk.esp.engine.definition.ProcessDefinitionExtractor.ProcessDefinitio
 import pl.touk.esp.engine.definition.ProcessDefinitionMarshaller
 import pl.touk.esp.engine.management.FlinkProcessManager
 import pl.touk.esp.ui.api._
-import pl.touk.esp.ui.db.DatabaseInitializer
+import pl.touk.esp.ui.db.entity.EnvironmentsEntity.{EnvironmentsEntity, EnvironmentsEntityData}
+import pl.touk.esp.ui.db.{DatabaseInitializer, EspTables}
+import pl.touk.esp.ui.db.migration.{SampleData, SampleDataInserter}
 import pl.touk.esp.ui.process.marshall.ProcessConverter
 import pl.touk.esp.ui.process.repository.{DeployedProcessRepository, ProcessRepository}
 import pl.touk.esp.ui.security.SimpleAuthenticator
@@ -53,16 +55,15 @@ object EspUiApp extends App with Directives {
   val processRepository = new ProcessRepository(db, DefaultJdbcProfile.profile, processConverter)
   val deploymentProcessRepository = new DeployedProcessRepository(db, DefaultJdbcProfile.profile)
 
-  insertInitialProcesses()
-
   val manager = FlinkProcessManager(config)
 
   val authenticator = new SimpleAuthenticator(config.getString("usersFile"))
   val environment = config.getString("environment")
 
+  val isDevelopmentMode = config.hasPath("developmentMode") && config.getBoolean("developmentMode")
   val route: Route = {
 
-    CorsSupport.cors(config.getBoolean("corsEnabled")) {
+    CorsSupport.cors(isDevelopmentMode) {
       authenticateBasic("esp", authenticator) { user =>
 
         pathPrefix("api") {
@@ -80,11 +81,19 @@ object EspUiApp extends App with Directives {
     }
   }
 
-  Http().bindAndHandle(
-    route,
-    interface = "0.0.0.0",
-    port = port
-  )
+  init()
+  def init() = {
+    insertInitialProcesses()
+    insertEnvironment(environment)
+    if (isDevelopmentMode) {
+      SampleDataInserter.insert(db)
+    }
+    Http().bindAndHandle(
+      route,
+      interface = "0.0.0.0",
+      port = port
+    )
+  }
 
   def loadProcessDefinition(): ProcessDefinition = {
     val file = new File(initialProcessDirectory, "definition.json")
@@ -105,6 +114,12 @@ object EspUiApp extends App with Directives {
       .foreach { (entry: java.util.Map.Entry[String, ConfigValue]) =>
         processRepository.saveProcess(entry.getKey, CustomProcess(entry.getValue.unwrapped().toString), user)
       }
+  }
+
+  def insertEnvironment(environmentName: String) = {
+    import DefaultJdbcProfile.profile.api._
+    val insertAction = EspTables.environmentsTable += EnvironmentsEntityData(environmentName)
+    db.run(insertAction).map(_ => ())
   }
 
 }
