@@ -98,12 +98,12 @@ export const Processes = React.createClass({
         <Table id="process-table" className="table"
            noDataText="No matching records found."
            hidden={this.state.showLoader}
+           currentPage={0}
            itemsPerPage={10}
            pageButtonLimit={5}
-           previousPageLabel="< "
-           nextPageLabel=" >"
+           previousPageLabel="<"
+           nextPageLabel=">"
            sortable={true}
-           currentPage="0"
            filterable={['id', 'name']}
            hideFilterInput
            filterBy={this.getFilterValue()}

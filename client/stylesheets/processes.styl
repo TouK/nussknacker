@@ -87,11 +87,23 @@ table#process-table
   .tagBlock
     tagsBlockMixin()
 
-  .reactable-pagination td
-    text-align: center
-    font-weight: 600
-    a
+  .reactable-pagination
+    td
+      text-align: center
+      font-weight: 600
+      font-size: 16px
+    .reactable-next-page, .reactable-previous-page, .reactable-page-button
       color: #686868
+      &:focus
+        text-decoration: none
+    a.reactable-page-button
+      padding: 4px 10px
+      margin: 0 8px
+      &.reactable-current-page
+        background-color: #686868
+        color: white
+        border-radius: 100%
+        text-decoration: none
 
 .status-running
   width: 15px
