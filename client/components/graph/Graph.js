@@ -56,6 +56,7 @@ class Graph extends React.Component {
         this.panAndZoom = this.enablePanZoom();
         this.changeNodeDetailsOnClick(this.processGraphPaper);
         this.labelToFrontOnHover(this.processGraphPaper);
+        this.cursorBehaviour(this.processGraphPaper);
     }
 
     componentWillUpdate(nextProps, nextState) {
@@ -171,6 +172,16 @@ class Graph extends React.Component {
         this.processGraphPaper.on('cell:mouseover', (cellView, evt, x, y) => {
           cellView.model.toFront();
         });
+    }
+    // FIXME - w chrome 52.0.2743.82 (64-bit) nie działa na esp-graph
+    // Trzeba sprawdzić na innych wersjach Chrome u innych, bo może to być kwestia tylko tej wersji chrome
+    cursorBehaviour () {
+      this.processGraphPaper.on('blank:pointerdown', function(evt, x, y) {
+        $('#esp-graph').css('cursor', 'move')
+      })
+      this.processGraphPaper.on('blank:pointerup', function(evt, x, y) {
+        $('#esp-graph').css('cursor', 'auto')
+      })
     }
 
     toggleToolbox = () => {
