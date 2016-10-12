@@ -14,15 +14,17 @@ trait Source[T] {
 
 }
 
-trait SourceFactory[T] {
+//bez `extends Serializable` serializacja np. kafkaMocks.MockSourceFactory nie dziala...
+abstract class SourceFactory[T: TypeInformation] extends Serializable {
+  def clazz = implicitly[TypeInformation[T]].getTypeClass
 }
 
 object SourceFactory {
 
-  def noParam[T](source: Source[T]): SourceFactory[T] =
+  def noParam[T: TypeInformation](source: Source[T]): SourceFactory[T] =
     new NoParamSourceFactory[T](source)
 
-  class NoParamSourceFactory[T](source: Source[T]) extends SourceFactory[T] {
+  class NoParamSourceFactory[T: TypeInformation](val source: Source[T]) extends SourceFactory[T] {
     def create(): Source[T] = source
   }
 
