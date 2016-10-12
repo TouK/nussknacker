@@ -5,12 +5,13 @@ import java.time.{LocalDate, LocalDateTime}
 
 import cats.data.{State, Validated}
 import com.typesafe.scalalogging.LazyLogging
+import org.springframework.expression._
 import org.springframework.expression.spel.support.StandardEvaluationContext
 import org.springframework.expression.spel.{SpelCompilerMode, SpelParserConfiguration}
-import org.springframework.expression._
 import pl.touk.esp.engine._
 import pl.touk.esp.engine.api.lazyy.{ContextWithLazyValuesProvider, LazyValuesProvider}
 import pl.touk.esp.engine.api.{Context, ValueWithModifiedContext}
+import pl.touk.esp.engine.compile.ValidationContext
 import pl.touk.esp.engine.compiledgraph.expression.{ExpressionParseError, ExpressionParser}
 import pl.touk.esp.engine.functionUtils.CollectionUtils
 import pl.touk.esp.engine.spel.SpelExpressionParser.{MapPropertyAccessor, ScalaLazyPropertyAccessor, ScalaPropertyAccessor, _}
@@ -68,13 +69,22 @@ class SpelExpressionParser(expressionFunctions: Map[String, Method]) extends Exp
     MapPropertyAccessor
   )
 
-  override def parse(original: String): Validated[ExpressionParseError, compiledgraph.expression.Expression] = {
-    for {
-      parsed <- Validated.catchNonFatal(parser.parseExpression(original)).leftMap(ex => ExpressionParseError(ex.getMessage))
-    } yield {
+  //fixme wydzielic metode
+  override def parseWithoutContextValidation(original: String): Validated[ExpressionParseError, compiledgraph.expression.Expression] = {
+    Validated.catchNonFatal(parser.parseExpression(original)).leftMap(ex => ExpressionParseError(ex.getMessage)).map { parsed =>
       // wymuszamy kompilację, żeby nie była wykonywana współbieżnie później
       forceCompile(parsed)
       new SpelExpression(parsed, original, expressionFunctions, propertyAccessors)
+    }
+  }
+
+  override def parse(original: String, ctx: ValidationContext): Validated[ExpressionParseError, compiledgraph.expression.Expression] = {
+    Validated.catchNonFatal(parser.parseExpression(original)).leftMap(ex => ExpressionParseError(ex.getMessage)).andThen { parsed =>
+      new SpelExpressionValidator(parsed, ctx).validate()
+    }.map { withReferencesResolved =>
+      // wymuszamy kompilację, żeby nie była wykonywana współbieżnie później
+      forceCompile(withReferencesResolved)
+      new SpelExpression(withReferencesResolved, original, expressionFunctions, propertyAccessors)
     }
   }
 

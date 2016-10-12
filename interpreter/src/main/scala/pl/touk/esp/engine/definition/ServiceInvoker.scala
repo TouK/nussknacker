@@ -28,7 +28,7 @@ private[definition] class ServiceInvokerImpl(objectWithMethodDef: ObjectWithMeth
 object ServiceInvoker {
 
   def apply(service: Service) =
-    new ServiceInvokerImpl(ObjectWithMethodDef(service, ServiceDefinitionExtractor.extractMethodDefinition(service)))
+    new ServiceInvokerImpl(ObjectWithMethodDef(service, ServiceDefinitionExtractor.extractMethodDefinition(service), ServiceDefinitionExtractor.extract(service)))
 
   def apply(objectWithMethodDef: ObjectWithMethodDef): ServiceInvoker =
     new ServiceInvokerImpl(objectWithMethodDef)

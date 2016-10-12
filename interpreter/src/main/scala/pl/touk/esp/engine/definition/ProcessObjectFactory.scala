@@ -3,7 +3,7 @@ package pl.touk.esp.engine.definition
 import pl.touk.esp.engine.api.{CustomStreamTransformer, MetaData}
 import pl.touk.esp.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
 import pl.touk.esp.engine.api.process.{Sink, SinkFactory, Source, SourceFactory}
-import pl.touk.esp.engine.definition.DefinitionExtractor.{ObjectWithMethodDef, Parameter}
+import pl.touk.esp.engine.definition.DefinitionExtractor.{ClazzRef, ObjectDefinition, ObjectWithMethodDef, Parameter}
 import pl.touk.esp.engine.graph
 
 import scala.reflect.ClassTag
@@ -41,9 +41,21 @@ class ProcessObjectDefinitionExtractor[F, T: ClassTag] extends DefinitionExtract
 
 }
 
+class SourceProcessObjectDefinitionExtractor[F, T: ClassTag] extends ProcessObjectDefinitionExtractor[F, T] {
+
+  override def extract(obj: F): ObjectDefinition = {
+    val sourceFactory = obj.asInstanceOf[SourceFactory[_]]
+    ObjectDefinition(
+      extractMethodDefinition(obj).orderedParameters.definedParameters,
+      ClazzRef(sourceFactory.clazz),
+      None
+    )
+  }
+}
+
 object ProcessObjectDefinitionExtractor {
 
-  val source = new ProcessObjectDefinitionExtractor[SourceFactory[_], Source[Any]]
+  val source = new SourceProcessObjectDefinitionExtractor[SourceFactory[_], Source[Any]]
   val sink = new ProcessObjectDefinitionExtractor[SinkFactory, Sink]
   val exceptionHandler = new ProcessObjectDefinitionExtractor[ExceptionHandlerFactory, EspExceptionHandler]
   val customNodeExecutor = CustomStreamTransforerExtractor

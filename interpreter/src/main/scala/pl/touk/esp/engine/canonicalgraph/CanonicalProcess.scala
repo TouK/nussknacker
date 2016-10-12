@@ -10,8 +10,6 @@ sealed trait CanonicalTreeNode
 
 case class CanonicalProcess(metaData: MetaData, exceptionHandlerRef: ExceptionHandlerRef, nodes: List[CanonicalNode]) extends CanonicalTreeNode
 
-// This package can't be inside marshall package because of format derivation for types using shapelesss
-// Don't change class names - they are putted in the field 'type'
 object canonicalnode {
 
   sealed trait CanonicalNode extends CanonicalTreeNode {

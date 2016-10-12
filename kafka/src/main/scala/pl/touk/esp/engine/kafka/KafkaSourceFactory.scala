@@ -12,6 +12,7 @@ import pl.touk.esp.engine.api.{MetaData, ParamName}
 import pl.touk.esp.engine.kafka.KafkaSourceFactory._
 
 import scala.collection.JavaConverters._
+import scala.reflect.ClassTag
 
 class KafkaSourceFactory[T: TypeInformation](config: KafkaConfig,
                                              schema: DeserializationSchema[T],

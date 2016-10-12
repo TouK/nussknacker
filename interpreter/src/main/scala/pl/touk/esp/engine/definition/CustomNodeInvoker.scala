@@ -4,7 +4,7 @@ import pl.touk.esp.engine.Interpreter
 import pl.touk.esp.engine.api.InterpreterMode.CustomNodeExpression
 import pl.touk.esp.engine.api._
 import pl.touk.esp.engine.api.exception.EspExceptionHandler
-import pl.touk.esp.engine.compile.PartSubGraphCompiler
+import pl.touk.esp.engine.compile.{PartSubGraphCompiler, ValidationContext}
 import pl.touk.esp.engine.definition.DefinitionExtractor.{ObjectWithMethodDef, Parameter}
 import pl.touk.esp.engine.graph.node.CustomNode
 import pl.touk.esp.engine.splittedgraph.splittednode.SplittedNode
@@ -39,8 +39,8 @@ case class CompilerLazyInterpreter(lazyDeps: () => CustomNodeInvokerDeps,
   }
 
   private[definition] def createInterpreter(ec: ExecutionContext, deps: CustomNodeInvokerDeps): (InterpretationResult) => Future[InterpretationResult] = {
-    val compiled = deps.subPartCompiler.compile(node).getOrElse(throw new scala.IllegalArgumentException("Cannot compile"))
-    (ir: InterpretationResult) => deps.interpreter.interpret(compiled, CustomNodeExpression(param.name), metaData,
+    val compiled = deps.subPartCompiler.compileWithoutContextValidation(node).getOrElse(throw new scala.IllegalArgumentException("Cannot compile"))
+    (ir: InterpretationResult) => deps.interpreter.interpret(compiled.node, CustomNodeExpression(param.name), metaData,
       ir.finalContext)(ec)
   }
 

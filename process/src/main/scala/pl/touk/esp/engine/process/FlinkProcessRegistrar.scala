@@ -34,7 +34,7 @@ import pl.touk.esp.engine.api.process._
 import pl.touk.esp.engine.compile.{PartSubGraphCompiler, ProcessCompilationError, ProcessCompiler}
 import pl.touk.esp.engine.compiledgraph.part._
 import pl.touk.esp.engine.definition.DefinitionExtractor.ObjectWithMethodDef
-import pl.touk.esp.engine.definition.{CustomNodeInvoker, ServiceDefinitionExtractor}
+import pl.touk.esp.engine.definition.{CustomNodeInvoker, ProcessObjectDefinitionExtractor, ServiceDefinitionExtractor}
 import pl.touk.esp.engine.graph.{EspProcess, node}
 import pl.touk.esp.engine.graph.node.Aggregate
 import pl.touk.esp.engine.process.FlinkProcessRegistrar._
@@ -104,6 +104,16 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessW
       registerParts(withAssigned, part.nextParts, part.ends)
     }
 
+    def registerParts(start: SplitStream[InterpretationResult],
+                      nextParts: Seq[SubsequentPart],
+                      ends: Seq[End]) = {
+      nextParts.foreach { part =>
+        registerSubsequentPart(start.select(part.id), part)
+      }
+      start.select(EndId)
+        .map(new EndRateMeterFunction(ends))
+    }
+
     def registerSubsequentPart[T](start: DataStream[InterpretationResult],
                                   processPart: SubsequentPart): Unit =
       processPart match {
@@ -132,9 +142,9 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessW
             .addSink(part.obj.toFlinkFunction)
             .name(s"${part.id}-sink")
 
-        case part@CustomNodePart(
-          executor: CustomNodeInvoker[((DataStream[InterpretationResult], FiniteDuration) => DataStream[Any]) @unchecked],
-          node, nextParts, ends) =>
+        case part@CustomNodePart(executor:
+          CustomNodeInvoker[((DataStream[InterpretationResult], FiniteDuration) => DataStream[Any])@unchecked],
+        node, nextParts, ends) =>
 
           val newStart = executor.run(compiledProcessWithDeps)(start, compiledProcessWithDeps().processTimeout)
             .flatMap(new InitialInterpretationFunction(compiledProcessWithDeps, node, part.outputVar))
@@ -143,16 +153,6 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessW
         case e:CustomNodePart =>
           throw new IllegalArgumentException(s"Unknown CustomNodeExecutor: ${e.customNodeInvoker}")
       }
-
-    def registerParts(start: SplitStream[InterpretationResult],
-                      nextParts: Seq[SubsequentPart],
-                      ends: Seq[End]) = {
-      nextParts.foreach { part =>
-        registerSubsequentPart(start.select(part.id), part)
-      }
-      start.select(EndId)
-        .map(new EndRateMeterFunction(ends))
-    }
 
   }
 
@@ -172,6 +172,7 @@ object FlinkProcessRegistrar {
     def compiler(sub: PartSubGraphCompiler): ProcessCompiler = {
       ProcessCompiler.apply(
         sub = sub,
+        services = creator.services(config),
         sourceFactories = creator.sourceFactories(config),
         sinkFactories = creator.sinkFactories(config),
         foldingFunctions = creator.foldingFunctions(config),
@@ -182,9 +183,7 @@ object FlinkProcessRegistrar {
 
     def compileProcess(process: EspProcess)() = {
       val services = creator.services(config)
-      val servicesDefs = services.mapValues { service =>
-        ObjectWithMethodDef(service, ServiceDefinitionExtractor.extractMethodDefinition(service))
-      }
+      val servicesDefs = services.mapValues { service => ObjectWithMethodDef(service, ServiceDefinitionExtractor) }
       val subCompiler = PartSubGraphCompiler.default(servicesDefs)
       val processCompiler = compiler(subCompiler)
       val compiledProcess = validateOrFailProcessCompilation(processCompiler.compile(process))

@@ -6,7 +6,7 @@ import org.apache.flink.api.common.functions.RuntimeContext
 import pl.touk.esp.engine.Interpreter
 import pl.touk.esp.engine.api.MetaData
 import pl.touk.esp.engine.api.exception.EspExceptionHandler
-import pl.touk.esp.engine.compile.{PartSubGraphCompilationError, PartSubGraphCompiler}
+import pl.touk.esp.engine.compile.{PartSubGraphCompilationError, PartSubGraphCompiler, ValidationContext}
 import pl.touk.esp.engine.compiledgraph.CompiledProcessParts
 import pl.touk.esp.engine.compiledgraph.node.Node
 import pl.touk.esp.engine.definition.CustomNodeInvokerDeps
@@ -32,7 +32,7 @@ case class CompiledProcessWithDeps(compiledProcess: CompiledProcessParts,
   }
 
   def compileSubPart(node: SplittedNode[_]): Node = {
-    validateOrFail(subPartCompiler.compile(node))
+    validateOrFail(subPartCompiler.compileWithoutContextValidation(node).map(_.node))
   }
 
   private def validateOrFail[T](validated: ValidatedNel[PartSubGraphCompilationError, T]): T = validated match {
