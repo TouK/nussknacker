@@ -61,6 +61,7 @@ class ManagementResources(processRepository: ProcessRepository,
         case GraphProcess(_) =>
           logger.debug(s"Deploy of $processId finished")
           deployedProcessRepository.markProcessAsDeployed(latestVersion, userId, environment).recoverWith { case NonFatal(e) =>
+            logger.error("Error during marking process as deployed", e)
             processManager.cancel(processId)
           }
         case CustomProcess(_) =>
