@@ -1,10 +1,12 @@
 package pl.touk.esp.ui.api.helpers
 
+import com.typesafe.scalalogging.LazyLogging
 import pl.touk.esp.ui.db.DatabaseInitializer
-import pl.touk.esp.ui.db.migration.SampleDataInserter
 import slick.jdbc.JdbcBackend
 
-object DbTesting {
+import scala.util.Try
+
+object DbTesting extends LazyLogging {
   val db: JdbcBackend.Database = JdbcBackend.Database.forURL(
     url = s"jdbc:hsqldb:mem:esp;sql.syntax_ora=true",
     driver = "org.hsqldb.jdbc.JDBCDriver",
@@ -13,6 +15,15 @@ object DbTesting {
   )
 
   new DatabaseInitializer(db).initDatabase()
-  //najlepiej by bylo nie miec tego w testach i kasowac baze po kazdym tescie
-  SampleDataInserter.insert(db)
+
+  def cleanDB(): Try[Unit] = {
+    Try {
+      val session = db.createSession()
+      session.prepareStatement("""delete from "deployed_process_versions"""").execute()
+      session.prepareStatement("""delete from "process_versions"""").execute()
+      session.prepareStatement("""delete from "tags"""").execute()
+      session.prepareStatement("""delete from "environments"""").execute()
+      session.prepareStatement("""delete from "processes"""").execute()
+    }
+  }
 }

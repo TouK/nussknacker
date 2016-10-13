@@ -1,70 +1,46 @@
 package pl.touk.esp.ui.api
 
-import java.time.LocalDateTime
-
-import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server
 import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
 import argonaut.Argonaut._
-import argonaut.{DecodeJson, EncodeJson, Json}
 import org.scalatest._
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.esp.engine.api.deployment._
 import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
-import pl.touk.esp.engine.graph.EspProcess
-import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
 import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
-import pl.touk.esp.engine.graph.node.Sink
 import pl.touk.esp.engine.graph.param.Parameter
 import pl.touk.esp.engine.marshall.ProcessMarshaller
-import pl.touk.esp.ui.api.helpers.DbTesting
+import pl.touk.esp.ui.api.helpers.EspItTest
 import pl.touk.esp.ui.api.helpers.TestFactory._
-import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties}
-import pl.touk.esp.ui.process.marshall._
+import pl.touk.esp.ui.process.displayedgraph.ProcessProperties
 import pl.touk.esp.ui.process.repository.ProcessRepository.ProcessDetails
 import pl.touk.esp.ui.sample.SampleProcess
-import pl.touk.esp.ui.security.{LoggedUser, Permission}
+import pl.touk.esp.ui.security.Permission
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.language.higherKinds
 
 class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Matchers with Inside
-  with ScalaFutures with OptionValues with Eventually {
+  with ScalaFutures with OptionValues with Eventually with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest  {
 
-  val db = DbTesting.db
   implicit override val patienceConfig = PatienceConfig(timeout = scaled(Span(1, Seconds)), interval = scaled(Span(100, Millis)))
-
-  import argonaut.ArgonautShapeless._
-  implicit val decoder = DisplayableProcessCodec.codec
-  implicit val processTypeCodec = ProcessTypeCodec.codec
-
-  implicit val localDateTimeEncode = EncodeJson.of[String].contramap[LocalDateTime](_.toString)
-  implicit val localDateTimeDecode = DecodeJson.of[String].map[LocalDateTime](s => LocalDateTime.parse(s))
-
-  implicit val processListEncode = DecodeJson.of[ProcessDetails]
   implicit val testtimeout = RouteTestTimeout(2.seconds)
 
-
-  import pl.touk.esp.engine.spel.Implicits._
-
-  val processRepository = newProcessRepository(db)
-
-  val route = new ProcessesResources(processRepository, InMemoryMocks.mockProcessManager,
-    processConverter, processValidation).route
-
-  val routeWithRead = withPermissions(route, Permission.Read)
-  val routeWithWrite = withPermissions(route, Permission.Write)
-  val routWithAllPermissions = withAllPermissions(route)
+  val routeWithRead = withPermissions(processesRoute, Permission.Read)
+  val routeWithWrite = withPermissions(processesRoute, Permission.Write)
+  val routWithAllPermissions = withAllPermissions(processesRoute)
 
   private val processId: String = SampleProcess.process.id
 
   it should "return list of process details" in {
-    Get("/processes") ~> routWithAllPermissions ~> check {
-      status shouldEqual StatusCodes.OK
-      responseAs[String] should include (processId)
+    saveProcess(processId, ValidationTestData.validProcess) {
+      Get("/processes") ~> routWithAllPermissions ~> check {
+        status shouldEqual StatusCodes.OK
+        responseAs[String] should include (processId)
+      }
     }
   }
 
@@ -75,9 +51,11 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
   }
 
   it should "return sample process details" in {
-    Get(s"/processes/$processId") ~> routWithAllPermissions ~> check {
-      status shouldEqual StatusCodes.OK
-      responseAs[String] should include (processId)
+    saveProcess(processId, ValidationTestData.validProcess) {
+      Get(s"/processes/$processId") ~> routWithAllPermissions ~> check {
+        status shouldEqual StatusCodes.OK
+        responseAs[String] should include (processId)
+      }
     }
   }
 
@@ -130,7 +108,7 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
     Get(s"/processes/${SampleProcess.process.id}") ~> routWithAllPermissions ~> check {
       val processDetails = responseAs[String].decodeOption[ProcessDetails].get
       processDetails.name shouldBe SampleProcess.process.id
-      processDetails.history.length should be >= 2 //fixme a da sie czyscic baze co kazdy test?
+      processDetails.history.length shouldBe 2
       processDetails.history.forall(_.processName == SampleProcess.process.id) shouldBe true
     }
   }
@@ -163,10 +141,6 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
 
   def saveSampleProcess() = {
     saveProcess(SampleProcess.process.id, ValidationTestData.validProcess) { status shouldEqual StatusCodes.OK}
-  }
-
-  def saveProcess(processId: String, process: EspProcess)(testCode: => Assertion) = {
-    Put(s"/processes/${processId}/json", posting.toEntity(process)) ~> routWithAllPermissions ~> check { testCode }
   }
 
   def checkSampleProcessRootIdEquals(expected: String) = {

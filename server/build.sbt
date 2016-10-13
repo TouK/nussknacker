@@ -87,3 +87,5 @@ releaseProcess := Seq[ReleaseStep](
   commitNextVersion,                      // : ReleaseStep
   pushChanges                             // : ReleaseStep, also checks that an upstream branch is properly configured
 )
+
+parallelExecution in ThisBuild := false //bo testy korzystaja ze wspolnej bazy
