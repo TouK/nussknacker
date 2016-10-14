@@ -1,0 +1,3 @@
+CREATE TABLE "environments" (
+  "name" VARCHAR(254) NOT NULL PRIMARY KEY
+);
