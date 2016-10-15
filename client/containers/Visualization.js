@@ -117,11 +117,10 @@ const Visualization = React.createClass({
 
       const editButtons = this.props.loggedUser.canWrite ? ([
           <MenuItem key="3" onSelect={() => getGraph().directedLayout()}>Layout</MenuItem>,
-          <MenuItem key="4" onSelect={() => getGraph().addFilter()}>Add filter</MenuItem>
       ]) : null;
 
       //niestety tak musi byc, bo graph jest reduxowym komponentem
-      var getGraph = () => this.refs.graph.getWrappedInstance();
+      var getGraph = () => this.refs.graph.getWrappedInstance().getDecoratedComponentInstance();
 
       return (
         <div className="Page">

@@ -1,5 +1,5 @@
 import React from 'react'
-import { render } from 'react-dom'
+import { render, findDOMNode } from 'react-dom'
 import joint from 'jointjs'
 import EspNode from './EspNode'
 import 'jointjs/dist/joint.css'
@@ -11,14 +11,16 @@ import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
 import * as EspActions from '../../actions/actions';
 import NodeDetailsModal from './nodeDetailsModal.js';
-
+import { DropTarget } from 'react-dnd';
 import '../../stylesheets/graph.styl'
+
 
 class Graph extends React.Component {
 
     static propTypes = {
         processToDisplay: React.PropTypes.object.isRequired,
-        loggedUser: React.PropTypes.object.isRequired
+        loggedUser: React.PropTypes.object.isRequired,
+        connectDropTarget: React.PropTypes.func.isRequired
     }
 
     constructor(props) {
@@ -44,15 +46,8 @@ class Graph extends React.Component {
         };
     }
 
-    addFilter() {
-      var node = {
-        "type": "Filter",
-        "expression": {
-          "language": "spel",
-          "expression": "true"
-        }
-      }
-      this.props.actions.nodeAdded(node, {x: 50, y: 50});
+    addNode(node, position) {
+      this.props.actions.nodeAdded(node, position);
     }
 
     componentDidMount() {
@@ -185,7 +180,7 @@ class Graph extends React.Component {
     render() {
         var displayedEdges = this.graph.attributes.cells.models.filter(m => m.attributes.source).map(l => l.attributes.edgeData)
         var displayedNodes = this.graph.attributes.cells.models.filter(m => !m.attributes.source).map(n => n.attributes.nodeData)
-        return (
+        return this.props.connectDropTarget(
             <div>
                 <h2 id="process-name">{this.props.processToDisplay.id}</h2>
                 {!_.isEmpty(this.props.nodeToDisplay) ? <NodeDetailsModal/> : null }
@@ -215,121 +210,24 @@ function mapDispatch(dispatch) {
     };
 }
 
-//withRef jest po to, zeby parent mogl sie dostac
-export default connect(mapState, mapDispatch, null, {withRef: true})(Graph);
+var spec = {
+  drop: (props, monitor, component) => {
+    const pan = component.panAndZoom.getPan()
+    const sizes = component.panAndZoom.getSizes()
+    var pointerOffset = monitor.getClientOffset()
+    var rect = findDOMNode(component).getBoundingClientRect();
+    var zoom = component.panAndZoom.getSizes().realZoom
+    //czegos tu chyba jeszcze brakuje... ale nie wiem czego :|
+    var relOffset = { x: (pointerOffset.x - rect.left - pan.x)/zoom, y : (pointerOffset.y - rect.top - pan.y)/zoom }
+    console.log(relOffset)
 
-class Toolbox extends React.Component {
+    component.addNode(monitor.getItem(), relOffset)
 
-    constructor(props) {
-        super(props);
-        this.state = {
-            dragAndDropPaper: {
-                visible: false,
-                left: null,
-                top: null
-            }
-        };
-    }
-
-    componentDidMount() {
-    //this.drawToolbox(this.props.processGraphPaper, this.props.panAndZoom, this.props.graph);
-    }
-
-    drawToolbox(processGraphPaper, panAndZoom, graph) {
-        var toolboxPaper = this.initializeToolboxGraph();
-        toolboxPaper.on('cell:pointerdown', (cellView, e, x, y) => {
-            var originalClickOffset = { x: x - cellView.model.position().x, y: y - cellView.model.position().y};
-            this.setState({
-                dragAndDropPaper: {
-                    visible: true,
-                    left: e.pageX - originalClickOffset.x - window.pageXOffset,
-                    top: e.pageY - originalClickOffset.y - window.pageYOffset
-                }
-            })
-            var flyShape = this.initializeFlyGraphWithDraggedElement(cellView);
-
-            //todo: sprobowac usuac to jquery stad
-            $('body').on('mousemove', (e) => {
-                this.setState({
-                    dragAndDropPaper: {
-                        visible: true,
-                        left: e.pageX - originalClickOffset.x - window.pageXOffset + this.refs.dragAndDropPaper.clientLeft,
-                        top: e.pageY - originalClickOffset.y - window.pageYOffset + this.refs.dragAndDropPaper.clientTop
-                    }})
-            });
-            $('body').on('mouseup', (e) => {
-                var targetPaperOffset = processGraphPaper.$el.offset();
-                if (this.isElementDroppedOnTheProcessGraph(e, targetPaperOffset, processGraphPaper)) {
-                    var element = this.createDraggedElement(flyShape, panAndZoom, e, targetPaperOffset, originalClickOffset);
-                    graph.addCell(element);
-                }
-                $('body').off('mousemove').off('mouseup');
-                flyShape.remove();
-                this.setState({dragAndDropPaper: {visible: false }});
-            });
-        });
-    }
-
-    initializeToolboxGraph() {
-        var toolboxGraph = new joint.dia.Graph
-        var toolboxPaper = new joint.dia.Paper({
-            el: this.refs.toolbox,
-            height: 60,
-            model: toolboxGraph,
-            interactive: false,
-            linkPinning: false,
-            defaultLink: EspNode.makeLink({})
-        });
-
-        toolboxGraph.addCells([EspNode.makeElement({type: 'Filter'}), EspNode.makeElement({type: 'Sink'})]);
-        joint.layout.DirectedGraph.layout(toolboxGraph, {nodeSep: 200, edgeSep: 500, minLen: 300, rankDir: "TB"})
-        return toolboxPaper;
-    }
-
-    initializeFlyGraphWithDraggedElement(cellView) {
-        var flyGraph = new joint.dia.Graph
-        var dragAndDropPaper = new joint.dia.Paper({
-            el: this.refs.dragAndDropPaper,
-            model: flyGraph,
-            interactive: false
-        })
-        var flyShape = cellView.model.clone()
-        flyShape.position(0, 0);
-        flyGraph.addCell(flyShape);
-        return flyShape;
-    }
-
-    createDraggedElement(flyShape, panAndZoom, e, targetPaperOffset, originalClickOffset) {
-        var element = flyShape.clone();
-        var pan = panAndZoom.getPan()
-        var zoom = panAndZoom.getSizes().realZoom
-        var resX = (e.pageX - targetPaperOffset.left - originalClickOffset.x - pan.x) / zoom;
-        var resY = (e.pageY - targetPaperOffset.top - originalClickOffset.y - pan.y) / zoom;
-        element.position(resX, resY);
-        return element;
-    }
-
-    isElementDroppedOnTheProcessGraph = (e, targetPaperOffset, processGraphPaper) => {
-        return e.pageX > targetPaperOffset.left &&
-            e.pageX < targetPaperOffset.left + processGraphPaper.$el.width() &&
-            e.pageY > targetPaperOffset.top &&
-            e.pageY < targetPaperOffset.top + processGraphPaper.$el.height();
-    }
-
-
-    render() {
-        var dragAndDropPaperStyles = {
-            position: 'fixed', zIndex:100, opacity:.7, pointerEvent: 'none',
-            top: this.state.dragAndDropPaper.top, left: this.state.dragAndDropPaper.left
-        }
-
-        return (
-            <div>
-                <div ref="toolbox" style={ {background: "#146DFF" }}></div>
-                {this.state.dragAndDropPaper.visible ?
-                    <div ref="dragAndDropPaper" id="dragAndDropPaper" style={dragAndDropPaperStyles}></div> : null }
-            </div>
-        );
-
-    }
+  }
 };
+
+//withRef jest po to, zeby parent mogl sie dostac
+export default connect(mapState, mapDispatch, null, {withRef: true})(DropTarget("element", spec, (connect, monitor) => ({
+  connectDropTarget: connect.dropTarget()
+}))(Graph));
+

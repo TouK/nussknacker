@@ -15,10 +15,12 @@ import '../stylesheets/mainMenu.styl'
 import hamburgerOpen from '../assets/img/menu-open.svg'
 import hamburgerClosed from '../assets/img/menu-closed.svg'
 import { Metrics } from './Metrics'
+import DragArea from '../components/DragArea'
+
 
 export const App = React.createClass({
     getInitialState: function() {
-      return { userPanelOpened: false };
+      return { userPanelOpened: true };
     },
 
     toggleUserPanel: function() {
@@ -60,10 +62,12 @@ export const App = React.createClass({
               </div>
             </nav>
             <main>
-              <UserPanel className={userPanelOpenedClass}/>
-              <div id="working-area" className={userPanelOpenedClass}>
-                {this.props.children}
-              </div>
+              <DragArea>
+                <UserPanel className={userPanelOpenedClass}/>
+                <div id="working-area" className={userPanelOpenedClass}>
+                  {this.props.children}
+                </div>
+              </DragArea>
             </main>
           </div>
         )

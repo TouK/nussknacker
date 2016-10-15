@@ -15,6 +15,7 @@
   },
   "Filter": {
     "name": "Filter",
+    "icon": "filter.svg",
     "styles": {
       "fill": "#AFA3E4",
       "color": "white"
@@ -43,6 +44,7 @@
   },
   "Processor": {
     "name": "Processor",
+    "icon": "cog.svg",
     "styles": {
       "fill": "#38B27A",
       "color": "white"
