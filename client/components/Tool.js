@@ -6,12 +6,13 @@ import "../stylesheets/toolBox.styl";
 class Tool extends React.Component {
 
   static propTypes = {
-    type: React.PropTypes.string.isRequired,
+    nodeModel: React.PropTypes.object.isRequired,
+    label: React.PropTypes.string.isRequired,
     connectDragSource: React.PropTypes.func.isRequired
   };
 
   render() {
-    const type = this.props.type
+    const type = this.props.nodeModel.type
     const attributes = require('json!../assets/json/nodeAttributes.json')
     const iconName = attributes[type].icon
     const icon = require('../assets/img/' + iconName);
@@ -22,7 +23,7 @@ class Tool extends React.Component {
           <img src={icon} className="toolIcon"/>
         </div>
         <div className="title-block">
-          <span>{this.props.type}</span>
+          <span>{this.props.label}</span>
         </div>
       </div>
     )
@@ -30,13 +31,7 @@ class Tool extends React.Component {
 }
 
 var spec = {
-  beginDrag: (props, monitor, component) => ({
-    type: props.type,
-    expression: {
-      language: "spel",
-      expression: "true"
-    }
-  })
+  beginDrag: (props, monitor, component) => props.nodeModel
 };
 
 export default DragSource("element", spec, (connect, monitor) => ({

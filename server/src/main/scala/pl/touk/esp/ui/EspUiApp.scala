@@ -48,7 +48,8 @@ object EspUiApp extends App with Directives {
   val port = args(0).toInt
   val initialProcessDirectory = new File(args(1))
 
-  val validator = ProcessValidator.default(loadProcessDefinition())
+  val processDefinition = loadProcessDefinition()
+  val validator = ProcessValidator.default(processDefinition)
   val processValidation = new ProcessValidation(validator)
   val processConverter = new ProcessConverter(processValidation)
 
@@ -71,6 +72,7 @@ object EspUiApp extends App with Directives {
           new ProcessesResources(processRepository, manager, processConverter, processValidation).route(user) ~
             new ManagementResources(processRepository, deploymentProcessRepository, manager, environment).route(user) ~
             new ValidationResources(processValidation, processConverter).route(user) ~
+            new DefinitionResources(processDefinition).route(user) ~
             new UserResources().route(user) ~
             new SettingsResources(config).route(user)
         } ~
