@@ -53,6 +53,10 @@ export default {
     return promiseWrap($.get(appConfig.API_URL + '/settings/grafana'))
   },
 
+  fetchProcessDefinitionData() {
+    return promiseWrap($.get(appConfig.API_URL + '/processDefinitionData'))
+  },
+
   fetchProcesses() {
     return promiseWrap($.get(appConfig.API_URL + '/processes'))
   },

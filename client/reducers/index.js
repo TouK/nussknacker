@@ -9,7 +9,7 @@ const emptyEspState = {
   nodeToDisplay: {}
 }
 
-function settingsReducer(state = {loggedUser: {}, grafanaSettings: {}}, action) {
+function settingsReducer(state = {loggedUser: {}, grafanaSettings: {}, processDefinitionData: {}}, action) {
   switch (action.type) {
     case "LOGGED_USER": {
       return {
@@ -21,6 +21,12 @@ function settingsReducer(state = {loggedUser: {}, grafanaSettings: {}}, action) 
       return {
         ...state,
           grafanaSettings: action.grafanaSettings
+      }
+    }
+    case "PROCESS_DEFINITION_DATA": {
+      return {
+        ...state,
+          processDefinitionData: action.processDefinitionData
       }
     }
     default:
@@ -234,4 +240,3 @@ const rootReducer = combineReducers({
 });
 
 export default rootReducer;
-

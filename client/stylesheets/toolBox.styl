@@ -1,32 +1,38 @@
 @import "./_variables.styl"
 
 .panel-body
-  padding: 30px 20px !important
+  padding: 0px 0px 0px 30px !important
 
 #toolbox
   .tool
-    // padding 5px
-    //no i jak to zrobic inaczej zeby sie nie lamalo??
-    // width 300px
     overflow-x: hidden
-    border: 1px solid #848484
+    border: 1px solid #e6e6e6
+    background-color: #fdfdfd
     border-radius: 3px
-    margin-bottom: 20px
+    margin-top: 12px
+    margin-bottom: 12px
+    margin-right: 24px
     float: left
     width: 95px
     height: 100px
-  .tool:nth-child(odd)
-    margin-right: 15px
   .toolIcon
     width: 30px
     height: auto
     margin: 0px auto
     clear: both
     display: block
+    opacity: 0.8
   .icon-block
     padding: 13px 3px 3px 3px
   .title-block
+    color: #5d5d5d
     border-radius: 0 0 10px 10px
     text-align: center
-    padding: 8px
+    padding: 8px 5px
     font-size: 12px
+    overflow: hidden !important
+    text-overflow: ellipsis
+  .tool-group
+    clear: both
+    width: 215px
+    margin: 0px

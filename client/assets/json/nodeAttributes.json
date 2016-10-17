@@ -66,6 +66,7 @@
   },
   "CustomNode": {
     "name": "CustomNode",
+    "icon": "cog.svg",
     "styles": {
       "fill": "#e892bd",
       "color": "white"
