@@ -41,11 +41,13 @@ trait DefinitionExtractor[T] {
         val name = Option(p.getAnnotation(classOf[ParamName]))
           .map(_.value())
           .getOrElse(throw new IllegalArgumentException(s"Parameter $p of $obj has missing @ParamName annotation"))
-        Left(Parameter(name, ClazzRef(p.getType)))
+        Left(Parameter(name, ClazzRef(extractParameterType(p))))
       }
     }.toList
     MethodDefinition(method, new OrderedParameters(params))
   }
+
+  protected def extractParameterType(p: java.lang.reflect.Parameter) = p.getType
 
   protected def returnType: Class[_]
 

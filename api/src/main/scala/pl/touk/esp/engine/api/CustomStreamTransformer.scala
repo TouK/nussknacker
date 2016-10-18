@@ -7,8 +7,10 @@ trait CustomStreamTransformer {
 
 }
 
-trait LazyInterpreter {
-  def createInterpreter(ec: ExecutionContext) : (InterpretationResult => Future[InterpretationResult])
+trait LazyInterpreter[T] {
 
-  def syncInterpretationFunction : InterpretationResult => InterpretationResult
+  def createInterpreter(ec: ExecutionContext) : (InterpretationResult => Future[T])
+
+  def syncInterpretationFunction : InterpretationResult => T
+
 }

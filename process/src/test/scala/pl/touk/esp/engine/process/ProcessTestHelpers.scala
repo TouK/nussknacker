@@ -27,7 +27,7 @@ object ProcessTestHelpers {
 
   case class SimpleRecord(id: String, value1: Long, value2: String, date: Date)
 
-  case class SimpleRecordWithPreviousValue(record: SimpleRecord, previous: Long)
+  case class SimpleRecordWithPreviousValue(record: SimpleRecord, previous: Long, added: String)
 
   case class SimpleRecordAcc(id: String, value1: Long, value2: Set[String], date: Date)
 
@@ -72,12 +72,13 @@ object ProcessTestHelpers {
   object StateCustomNode extends CustomStreamTransformer {
 
     @MethodToInvoke
-    def execute(@ParamName("keyBy") keyBy: LazyInterpreter)(exceptionHander: ()=>EspExceptionHandler) = (start: DataStream[InterpretationResult], timeout: FiniteDuration) => {
+    def execute(@ParamName("keyBy") keyBy: LazyInterpreter[SimpleRecord],
+               @ParamName("stringVal") stringVal: String)(exceptionHander: ()=>EspExceptionHandler) = (start: DataStream[InterpretationResult], timeout: FiniteDuration) => {
 
-      start.keyBy(keyBy.syncInterpretationFunction.andThen(_.output))
+      start.keyBy(keyBy.syncInterpretationFunction)
         .flatMapWithState[Any, Long] {
-        case (SimpleFromIr(sr), Some(oldState)) => (List(SimpleRecordWithPreviousValue(sr, oldState)), Some(sr.value1))
-        case (SimpleFromIr(sr), None) =>  (List(SimpleRecordWithPreviousValue(sr, 0)), Some(sr.value1))
+        case (SimpleFromIr(sr), Some(oldState)) => (List(SimpleRecordWithPreviousValue(sr, oldState, stringVal)), Some(sr.value1))
+        case (SimpleFromIr(sr), None) =>  (List(SimpleRecordWithPreviousValue(sr, 0, stringVal)), Some(sr.value1))
       }.map(CustomMap(exceptionHander))
 
     }

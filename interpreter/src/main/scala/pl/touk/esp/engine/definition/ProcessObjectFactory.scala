@@ -58,6 +58,6 @@ object ProcessObjectDefinitionExtractor {
   val source = new SourceProcessObjectDefinitionExtractor[SourceFactory[_], Source[Any]]
   val sink = new ProcessObjectDefinitionExtractor[SinkFactory, Sink]
   val exceptionHandler = new ProcessObjectDefinitionExtractor[ExceptionHandlerFactory, EspExceptionHandler]
-  val customNodeExecutor = CustomStreamTransforerExtractor
+  val customNodeExecutor = CustomStreamTransformerExtractor
 
 }
