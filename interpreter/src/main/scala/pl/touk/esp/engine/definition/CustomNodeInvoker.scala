@@ -1,5 +1,7 @@
 package pl.touk.esp.engine.definition
 
+import java.lang.reflect.ParameterizedType
+
 import pl.touk.esp.engine.Interpreter
 import pl.touk.esp.engine.api.InterpreterMode.CustomNodeExpression
 import pl.touk.esp.engine.api._
@@ -8,6 +10,7 @@ import pl.touk.esp.engine.compile.{PartSubGraphCompiler, ValidationContext}
 import pl.touk.esp.engine.definition.DefinitionExtractor.{ObjectWithMethodDef, Parameter}
 import pl.touk.esp.engine.graph.node.CustomNode
 import pl.touk.esp.engine.splittedgraph.splittednode.SplittedNode
+import pl.touk.esp.engine.types.EspTypeUtils
 import pl.touk.esp.engine.util.SynchronousExecutionContext
 
 import scala.concurrent.duration.FiniteDuration
@@ -21,33 +24,43 @@ private[definition] class CustomNodeInvokerImpl[T](executor: ObjectWithMethodDef
     extends CustomNodeInvoker[T] {
 
   override def run(lazyDeps: () => CustomNodeInvokerDeps) : T = {
-    def prepareParams(param: Parameter) = CompilerLazyInterpreter(lazyDeps, metaData, node, param)
-    val values = executor.orderedParameters.prepareValues(prepareParams, Seq(() => lazyDeps().exceptionHandler))
+    val values = executor.orderedParameters.prepareValues(prepareParam(lazyDeps), Seq(() => lazyDeps().exceptionHandler))
     executor.method.invoke(executor.obj, values: _*).asInstanceOf[T]
+  }
+
+  private def prepareParam(lazyDeps: () => CustomNodeInvokerDeps)(param: Parameter) = {
+    val interpreter = CompilerLazyInterpreter[Any](lazyDeps, metaData, node, param)
+    val methodParam = EspTypeUtils.findParameterByParameterName(executor.method, param.name)
+    if (methodParam.exists(_.getType ==  classOf[LazyInterpreter[_]])) {
+      interpreter
+    } else {
+      val emptyResult = InterpretationResult(NextPartReference(node.id), null, Context())
+      interpreter.syncInterpretationFunction(emptyResult)
+    }
   }
 
 }
 
 
 
-case class CompilerLazyInterpreter(lazyDeps: () => CustomNodeInvokerDeps,
+case class CompilerLazyInterpreter[T](lazyDeps: () => CustomNodeInvokerDeps,
                                    metaData: MetaData,
-                                   node: SplittedNode[CustomNode], param: Parameter) extends LazyInterpreter {
+                                   node: SplittedNode[CustomNode], param: Parameter) extends LazyInterpreter[T] {
 
   override def createInterpreter(ec: ExecutionContext) = {
     createInterpreter(ec, lazyDeps())
   }
 
-  private[definition] def createInterpreter(ec: ExecutionContext, deps: CustomNodeInvokerDeps): (InterpretationResult) => Future[InterpretationResult] = {
+  private[definition] def createInterpreter(ec: ExecutionContext, deps: CustomNodeInvokerDeps): (InterpretationResult) => Future[T] = {
     val compiled = deps.subPartCompiler.compileWithoutContextValidation(node).getOrElse(throw new scala.IllegalArgumentException("Cannot compile"))
     (ir: InterpretationResult) => deps.interpreter.interpret(compiled.node, CustomNodeExpression(param.name), metaData,
-      ir.finalContext)(ec)
+      ir.finalContext)(ec).map(_.output.asInstanceOf[T])(ec)
   }
 
   //lazy val jest po to, zeby za kazdym razem nie tworzyc interpretera - bo to kosztowne b.
   @transient override lazy val syncInterpretationFunction = new SyncFunction
 
-  class SyncFunction extends (InterpretationResult => InterpretationResult) with Serializable {
+  class SyncFunction extends (InterpretationResult => T) with Serializable {
     lazy implicit val ec = SynchronousExecutionContext.ctx
     lazy val deps = lazyDeps()
     lazy val interpreter = createInterpreter(ec, deps)
@@ -57,6 +70,8 @@ case class CompilerLazyInterpreter(lazyDeps: () => CustomNodeInvokerDeps,
     }
 
   }
+
+
 }
 
 object CustomNodeInvoker {
@@ -74,12 +89,17 @@ trait CustomNodeInvokerDeps {
   def exceptionHandler: EspExceptionHandler
 }
 
-object CustomStreamTransforerExtractor extends DefinitionExtractor[CustomStreamTransformer] {
+object CustomStreamTransformerExtractor extends DefinitionExtractor[CustomStreamTransformer] {
 
   override protected val returnType = classOf[Any]
 
   override protected val additionalParameters = Set[Class[_]](classOf[() => EspExceptionHandler])
 
+  override protected def extractParameterType(p: java.lang.reflect.Parameter) =
+    EspTypeUtils.extractParameterType(p, classOf[LazyInterpreter[_]])
+
+
 }
+
 
 

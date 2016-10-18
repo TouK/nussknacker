@@ -1,9 +1,10 @@
 package pl.touk.esp.engine.types
 
-import java.lang.reflect.{Method, Modifier, Type}
+import java.lang.reflect.{Method, Modifier, ParameterizedType, Type}
 
 import cats.Eval
 import cats.data.StateT
+import pl.touk.esp.engine.api.{LazyInterpreter, ParamName}
 import pl.touk.esp.engine.definition.DefinitionExtractor.{ClazzRef, PlainClazzDefinition}
 import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl
 
@@ -70,6 +71,23 @@ object EspTypeUtils {
     }.toMap
     res
   }
+
+  def findParameterByParameterName(method: Method, paramName: String) =
+    method.getParameters.find { p =>
+      Option(p.getAnnotation(classOf[ParamName])).exists(_.value() == paramName)
+    }
+
+  def extractParameterType(p: java.lang.reflect.Parameter, classesToExtractGenericFrom: Class[_]*) =
+    if (classesToExtractGenericFrom.contains(p.getType)) {
+      val parameterizedType = p.getParameterizedType.asInstanceOf[ParameterizedType]
+      parameterizedType.getActualTypeArguments.apply(0) match {
+        case a:Class[_] => a
+        case b:ParameterizedType => b.getRawType.asInstanceOf[Class[_]]
+      }
+    } else {
+      p.getType
+    }
+
 
   def getGenericMethodType(m: Method): Option[Class[_]] = {
     val genericReturnType = m.getGenericReturnType
