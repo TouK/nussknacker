@@ -31,6 +31,7 @@ class ManagementResources(processRepository: ProcessRepository,
                 entity = "Process not found"
               ))
             }.recover { case error =>
+              logger.warn("Failed to deploy", error)
               HttpResponse(status = StatusCodes.InternalServerError, entity = error.getMessage)
             }
           }
