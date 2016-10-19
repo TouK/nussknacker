@@ -1,15 +1,14 @@
 package pl.touk.esp.engine.types
 
-import java.lang.reflect.{Method, Modifier, ParameterizedType, Type}
+import java.lang.reflect.{Method, ParameterizedType, Type}
 
 import cats.Eval
 import cats.data.StateT
-import pl.touk.esp.engine.api.{LazyInterpreter, ParamName}
+import pl.touk.esp.engine.api.ParamName
 import pl.touk.esp.engine.definition.DefinitionExtractor.{ClazzRef, PlainClazzDefinition}
 import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl
 
 import scala.concurrent.Future
-import scala.util.Try
 
 object EspTypeUtils {
 
@@ -51,8 +50,9 @@ object EspTypeUtils {
       val recursiveClazzes = mainClazzDefinition.methods.values.toList
         .filter(m => !primitiveTypesSimpleNames.contains(m.refClazzName) && m.refClazzName != clazz.getName)
         .filter(m => !blacklistedClazzPackagePrefix.exists(m.refClazzName.startsWith))
+        .filter(m => !m.refClazzName.startsWith("["))
         .map(_.refClazzName).distinct
-        .flatMap(m => clazzAndItsChildrenDefinition(Class.forName(m)))
+        .flatMap(m => clazzAndItsChildrenDefinition(Thread.currentThread.getContextClassLoader.loadClass(m)))
       mainClazzDefinition :: recursiveClazzes
     }
     result.distinct
@@ -63,8 +63,8 @@ object EspTypeUtils {
   }
 
   private def getDeclaredMethods(clazz: Class[_]): Map[String, ClazzRef] = {
-    val interestingMethods = clazz.getDeclaredMethods.toList.filter( m =>
-      !blackilistedMethods.contains(m.getName) && Modifier.isPublic(m.getModifiers) && !m.getName.contains("$")
+    val interestingMethods = clazz.getMethods.filter( m =>
+      !blackilistedMethods.contains(m.getName) && !m.getName.contains("$")
     )
     val res = interestingMethods.map { method =>
       method.getName -> ClazzRef(getGenericMethodType(method).getOrElse(method.getReturnType))
