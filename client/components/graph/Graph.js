@@ -5,8 +5,6 @@ import EspNode from './EspNode'
 import 'jointjs/dist/joint.css'
 import _ from 'lodash'
 import svgPanZoom from 'svg-pan-zoom'
-import $ from 'jquery'
-import classNames from 'classnames';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
 import * as EspActions from '../../actions/actions';
@@ -32,18 +30,6 @@ class Graph extends React.Component {
               this.props.actions.nodesDisconnected(e.attributes.source.id, e.attributes.target.id)
             }
         })
-        //dodajemy w inny sposob...
-        /*  .on("add", (e, f) => {
-            console.log("created", e, f)
-            if (e.isElement()) {
-              setTimeout(() => {
-                this.props.actions.nodeAdded(e, e.get('position'));
-              }, 100);
-            }
-        })*/
-        this.state = {
-            toolboxVisible: false
-        };
     }
 
     addNode(node, position) {
@@ -79,10 +65,10 @@ class Graph extends React.Component {
     createPaper = () => {
         const canWrite = this.props.loggedUser.canWrite
         return new joint.dia.Paper({
-            el: $('#esp-graph'),
+            el: this.refs.espGraph,
             gridSize: 1,
-            height: $('#esp-graph').height(),
-            width: $('#esp-graph').width(),
+            height: this.refs.espGraph.offsetHeight,
+            width: this.refs.espGraph.offsetWidth,
             model: this.graph,
             snapLinks: { radius: 75 },
             interactive: function(cellView) {
@@ -184,20 +170,11 @@ class Graph extends React.Component {
       })
     }
 
-    toggleToolbox = () => {
-        this.setState({toolboxVisible: !this.state.toolboxVisible})
-    }
-
     render() {
-        var displayedEdges = this.graph.attributes.cells.models.filter(m => m.attributes.source).map(l => l.attributes.edgeData)
-        var displayedNodes = this.graph.attributes.cells.models.filter(m => !m.attributes.source).map(n => n.attributes.nodeData)
         return this.props.connectDropTarget(
             <div>
                 <h2 id="process-name">{this.props.processToDisplay.id}</h2>
                 {!_.isEmpty(this.props.nodeToDisplay) ? <NodeDetailsModal/> : null }
-                {this.processGraphPaper && this.panAndZoom && this.state.toolboxVisible ?
-                    <Toolbox processGraphPaper={this.processGraphPaper} panAndZoom={this.panAndZoom} graph={this.graph}/> : null
-                }
                 <div ref="espGraph" id="esp-graph"></div>
                 <button type="button" className="btn btn-default hidden" onClick={this.directedLayout}>Directed layout</button>
             </div>
