@@ -18,7 +18,14 @@ class Tool extends React.Component {
 
     return this.props.connectDragSource(
       <div className="tool">
-        <img src={icon} className="toolIcon"/>{this.props.type}</div>)
+        <div className="icon-block">
+          <img src={icon} className="toolIcon"/>
+        </div>
+        <div className="title-block">
+          <span>{this.props.type}</span>
+        </div>
+      </div>
+    )
   }
 }
 
