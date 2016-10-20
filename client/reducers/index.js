@@ -8,11 +8,28 @@ const emptyEspState = {
   processToDisplay: {},
   fetchedProcessDetails: {},
   nodeToDisplay: {},
-  //TODO: czy powinien byc wypelniony?
-  loggedUser: {}
 }
 
-function espReducer(state = emptyEspState, action) {
+function settingsReducer(state = {loggedUser: {}, grafanaSettings: {}}, action) {
+  switch (action.type) {
+    case "LOGGED_USER": {
+      return {
+        ...state,
+          loggedUser: action.user
+      }
+    }
+    case "GRAFANA_SETTINGS": {
+      return {
+        ...state,
+          grafanaSettings: action.grafanaSettings
+      }
+    }
+    default:
+      return state
+  }
+}
+
+function graphReducer(state = emptyEspState, action) {
   switch (action.type) {
     case "FETCH_PROCESS_TO_DISPLAY": {
       return {
@@ -71,17 +88,10 @@ function espReducer(state = emptyEspState, action) {
         layout: newLayout
       }
     }
-    case "LOGGED_USER": {
-      return {
-        ...state,
-        loggedUser: action.user
-      }
-    }
     case "URL_CHANGED": {
       return {
         ...state,
         ...emptyEspState,
-        loggedUser: state.loggedUser
       }
     }
     case "NODES_CONNECTED": {
@@ -131,7 +141,7 @@ function espReducer(state = emptyEspState, action) {
 function espUndoable (reducer, config) {
   const emptyHistory = { history: {past: [], future: []}}
   const blacklist = _.concat(["@@INIT"], config.blacklist)
-  const espUndoableFun = (state = {espReducer: emptyHistory}, action) => {
+  const espUndoableFun = (state = emptyHistory, action) => {
     if (_.includes(blacklist, action.type)) {
       return reducer(state, action)
     } else {
@@ -139,37 +149,33 @@ function espUndoable (reducer, config) {
         case "JUMP_TO_STATE":
           switch (action.direction) {
             case "PAST": {
-              const newPast = state.espReducer.history.past.slice(0, action.index + 1)
-              const futurePartFromPast = state.espReducer.history.past.slice(action.index + 1)
+              const newPast = state.history.past.slice(0, action.index + 1)
+              const futurePartFromPast = state.history.past.slice(action.index + 1)
               const stateBasedOnPast = _.reduce(_.concat({}, newPast), reducer)
               return {
-                espReducer: {
-                  ...stateBasedOnPast.espReducer,
-                  history: {
-                    past: newPast,
-                    future: _.concat(futurePartFromPast, state.espReducer.history.future)
-                  }
+                ...stateBasedOnPast,
+                history: {
+                  past: newPast,
+                  future: _.concat(futurePartFromPast, state.history.future)
                 }
               }
             }
             case "FUTURE": {
-              const pastPartFromFuture = state.espReducer.history.future.slice(0, action.index + 1)
-              const newFuture = state.espReducer.history.future.slice(action.index + 1)
-              const newPast = _.concat(state.espReducer.history.past, pastPartFromFuture)
+              const pastPartFromFuture = state.history.future.slice(0, action.index + 1)
+              const newFuture = state.history.future.slice(action.index + 1)
+              const newPast = _.concat(state.history.past, pastPartFromFuture)
               const stateBasedOnPast = _.reduce(_.concat({}, newPast), reducer)
               return {
-                espReducer: {
-                  ...stateBasedOnPast.espReducer,
-                  history: {
-                    past: newPast,
-                    future: newFuture
-                  }
+                ...stateBasedOnPast,
+                history: {
+                  past: newPast,
+                  future: newFuture
                 }
               }
             }
           }
         case "UNDO":
-          const nextIndex = state.espReducer.history.past.length - 2
+          const nextIndex = state.history.past.length - 2
           return espUndoableFun(state, {
             type: "JUMP_TO_STATE",
             index: nextIndex < 0 ? 1 : nextIndex,
@@ -179,23 +185,18 @@ function espUndoable (reducer, config) {
           return espUndoableFun(state, {type: "JUMP_TO_STATE", index: 0, direction: "FUTURE"})
         case "CLEAR":
           return {
-            espReducer: {
-              ...state.espReducer,
+              ...state,
               ...emptyHistory
-            }
           }
         default: {
           const newState = reducer(state, action)
-          return {
-            //fixme czy musze tutaj odnosic sie do espReducer? jak trzymam historie tak po prostu to leca warningi? sprawdzic to
-            espReducer: {
-              ...newState.espReducer,
+          return _.isEqual(newState, state) ? state : {
+              ...newState,
               history: {
-                ...state.espReducer.history,
-                past: _.concat(state.espReducer.history.past, action),
+                ...state.history,
+                past: _.concat(state.history.past, action),
                 future: []
               }
-            }
           }
         }
       }
@@ -207,9 +208,7 @@ function espUndoable (reducer, config) {
 const espUndoableConfig = {
   blacklist: ["CLEAR_PROCESS", "FETCH_PROCESS_TO_DISPLAY", "URL_CHANGED", "LOGGED_USER"]
 }
-const rootReducer = espUndoable(combineReducers({
-  espReducer
-}), espUndoableConfig);
+const rootReducer = combineReducers({graphReducer: espUndoable(graphReducer, espUndoableConfig), settings: settingsReducer});
 
 export default rootReducer;
 

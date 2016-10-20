@@ -14,7 +14,7 @@ import UserPanel from '../components/UserPanel'
 import '../stylesheets/mainMenu.styl'
 import hamburgerOpen from '../assets/img/menu-open.svg'
 import hamburgerClosed from '../assets/img/menu-closed.svg'
-import { Metrics } from './Metrics'
+import Metrics from './Metrics'
 import DragArea from '../components/DragArea'
 
 

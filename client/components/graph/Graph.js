@@ -185,10 +185,10 @@ class Graph extends React.Component {
 
 function mapState(state) {
     return {
-        nodeToDisplay: state.espReducer.nodeToDisplay,
-        processToDisplay: state.espReducer.processToDisplay,
-        loggedUser: state.espReducer.loggedUser,
-        layout: state.espReducer.layout
+        nodeToDisplay: state.graphReducer.nodeToDisplay,
+        processToDisplay: state.graphReducer.processToDisplay,
+        loggedUser: state.settings.loggedUser,
+        layout: state.graphReducer.layout
     };
 }
 
