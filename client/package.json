@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "build": "NODE_ENV=production ./node_modules/webpack/bin/webpack.js --config ./webpack.production.config.js --progress",
-    "test": "./node_modules/karma/bin/karma start --single-run --browsers PhantomJS"
+    "test": "NODE_ENV=production ./node_modules/karma/bin/karma start --single-run --browsers PhantomJS"
   },
   "dependencies": {
     "bootstrap": "3.3.6",
@@ -29,6 +29,7 @@
     "redux-thunk": "2.1.0",
     "react-notification-system": "0.2.10",
     "reactable": "0.14",
+    "react-resizable-box": "1.8.0",
     "redux": "3.5.2",
     "svg-pan-zoom": "3.2.9"
   },

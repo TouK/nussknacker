@@ -7,14 +7,22 @@ import ToolBox from './ToolBox'
 
 import '../stylesheets/userPanel.styl';
 
-export default class UserPanel extends Component {
+export class UserPanel extends Component {
+
+  static propTypes = {
+    isOpened: React.PropTypes.bool.isRequired
+  }
+
+  renderClassName() {
+    return this.props.isOpened ? 'sidenav is-opened' : 'sidenav'
+  }
 
   render() {
     return (
-      <div id="espSidenav" className={'sidenav ' + this.props.className}>
+      <div id="espSidenav" className={this.renderClassName()}>
         {/*Historia domyslnie otwarta, bo wtedy scrollbar z historii poprawnie sie renderuje, teraz nie wiem jak to lepiej obejsc bez hakow*/}
         <Accordion defaultActiveKey="1">
-          <Panel header="History" eventKey="1">
+          <Panel header="Versions" eventKey="1">
             <ProcessHistory/>
           </Panel>
           <Panel header="Creator panel" eventKey="2">

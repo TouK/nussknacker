@@ -7,7 +7,7 @@ import Modal from 'react-modal';
 import _ from 'lodash';
 import LaddaButton from 'react-ladda';
 import laddaCss from 'ladda/dist/ladda.min.css'
-import * as EspActions from '../../actions/actions';
+import ActionsUtils from '../../actions/ActionsUtils';
 import { ListGroupItem } from 'react-bootstrap';
 import NodeUtils from './NodeUtils';
 import NodeDetailsContent from './NodeDetailsContent';
@@ -39,7 +39,7 @@ class NodeDetailsModal extends React.Component {
   }
 
   closeModal = () => {
-    this.setState({isEditMode: true})
+    this.setState({isEditMode: false})
     this.props.actions.closeNodeDetails()
   }
 
@@ -85,7 +85,8 @@ class NodeDetailsModal extends React.Component {
   }
 
   render() {
-    var isOpen = !(_.isEmpty(this.props.nodeToDisplay))
+
+    var isOpen = !_.isEmpty(this.props.nodeToDisplay) && this.props.showNodeDetailsModal
     var modalStyles = {
       overlay: {
         backgroundColor: 'rgba(63, 62, 61, 0.3)'
@@ -138,14 +139,9 @@ function mapState(state) {
     processId: state.graphReducer.processToDisplay.id,
     nodeErrors: _.get(state.graphReducer.processToDisplay, `validationResult.invalidNodes[${state.graphReducer.nodeToDisplay.id}]`, []),
     processToDisplay: state.graphReducer.processToDisplay,
-    loggedUser: state.settings.loggedUser
+    loggedUser: state.settings.loggedUser,
+    showNodeDetailsModal: state.graphReducer.showNodeDetailsModal
   };
 }
 
-function mapDispatch(dispatch) {
-  return {
-    actions: bindActionCreators(EspActions, dispatch)
-  };
-}
-
-export default connect(mapState, mapDispatch)(NodeDetailsModal);
+export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(NodeDetailsModal);

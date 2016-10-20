@@ -7,7 +7,7 @@ import _ from 'lodash'
 import svgPanZoom from 'svg-pan-zoom'
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
-import * as EspActions from '../../actions/actions';
+import ActionsUtils from '../../actions/ActionsUtils';
 import NodeDetailsModal from './nodeDetailsModal.js';
 import { DropTarget } from 'react-dnd';
 import '../../stylesheets/graph.styl'
@@ -135,7 +135,8 @@ class Graph extends React.Component {
                 fit: true,
                 zoomScaleSensitivity: 0.4,
                 controlIconsEnabled: true,
-                panEnabled: false
+                panEnabled: false,
+                dblClickZoomEnabled: false
             });
         this.processGraphPaper.on('blank:pointerdown', (evt, x, y) => {
             panAndZoom.enablePan();
@@ -147,11 +148,16 @@ class Graph extends React.Component {
     }
 
     changeNodeDetailsOnClick () {
-        this.processGraphPaper.on('cell:pointerclick', (cellView, evt, x, y) => {
-            if (cellView.model.attributes.nodeData) {
-                this.props.actions.displayNodeDetails(cellView.model.attributes.nodeData)
-            }
-        });
+      this.processGraphPaper.on('cell:pointerdblclick', (cellView, evt, x, y) => {
+        if (cellView.model.attributes.nodeData) {
+          this.props.actions.displayModalNodeDetails(cellView.model.attributes.nodeData)
+        }
+      })
+      this.processGraphPaper.on('cell:pointerclick', (cellView, evt, x, y) => {
+        if (cellView.model.attributes.nodeData) {
+          this.props.actions.displayNodeDetails(cellView.model.attributes.nodeData)
+        }
+      });
     }
 
     labelToFrontOnHover () {
@@ -162,11 +168,15 @@ class Graph extends React.Component {
     // FIXME - w chrome 52.0.2743.82 (64-bit) nie działa na esp-graph
     // Trzeba sprawdzić na innych wersjach Chrome u innych, bo może to być kwestia tylko tej wersji chrome
     cursorBehaviour () {
-      this.processGraphPaper.on('blank:pointerdown', function(evt, x, y) {
-        $('#esp-graph').css('cursor', 'move')
+      this.processGraphPaper.on('blank:pointerdown', (evt, x, y) => {
+        if (this.refs.espGraph) {
+          this.refs.espGraph.style.cursor = "move"
+        }
       })
-      this.processGraphPaper.on('blank:pointerup', function(evt, x, y) {
-        $('#esp-graph').css('cursor', 'auto')
+      this.processGraphPaper.on('blank:pointerup', (evt, x, y) => {
+        if (this.refs.espGraph) {
+          this.refs.espGraph.style.cursor = "auto"
+        }
       })
     }
 
@@ -192,12 +202,6 @@ function mapState(state) {
     };
 }
 
-function mapDispatch(dispatch) {
-    return {
-        actions: bindActionCreators(EspActions, dispatch)
-    };
-}
-
 var spec = {
   drop: (props, monitor, component) => {
     const pan = component.panAndZoom.getPan()
@@ -215,7 +219,7 @@ var spec = {
 };
 
 //withRef jest po to, zeby parent mogl sie dostac
-export default connect(mapState, mapDispatch, null, {withRef: true})(DropTarget("element", spec, (connect, monitor) => ({
+export default connect(mapState, ActionsUtils.mapDispatchWithEspActions, null, {withRef: true})(DropTarget("element", spec, (connect, monitor) => ({
   connectDropTarget: connect.dropTarget()
 }))(Graph));
 

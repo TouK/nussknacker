@@ -2,9 +2,8 @@ import React, { PropTypes, Component } from 'react';
 import { render } from 'react-dom';
 import { Scrollbars } from 'react-custom-scrollbars';
 import { connect } from 'react-redux';
-import { bindActionCreators } from 'redux';
 import _ from 'lodash'
-import * as EspActions from '../actions/actions';
+import ActionsUtils from '../actions/ActionsUtils';
 import '../stylesheets/processHistory.styl'
 
 export class ProcessHistory_ extends Component {
@@ -49,7 +48,7 @@ export class ProcessHistory_ extends Component {
 
   render() {
     return (
-      <Scrollbars renderTrackHorizontal={props => <div className="hide"/>} autoHeight autoHeightMax={300}>
+      <Scrollbars renderTrackHorizontal={props => <div className="hide"/>} autoHeight autoHeightMax={300} hideTracksWhenNotNeeded={true}>
         <ul id="process-history">
           {this.props.processHistory.map ((historyEntry, index) => {
             return (
@@ -77,10 +76,4 @@ function mapState(state) {
   };
 }
 
-function mapDispatch(dispatch) {
-  return {
-    actions: bindActionCreators(EspActions, dispatch)
-  };
-}
-
-export default connect(mapState, mapDispatch)(ProcessHistory_);
+export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(ProcessHistory_);

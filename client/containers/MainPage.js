@@ -9,7 +9,7 @@ import _ from 'lodash'
 import classNames from 'classnames'
 import { Processes } from './Processes'
 import { Visualization } from './Visualization'
-import UserPanel from '../components/UserPanel'
+import {UserPanel, UserRightPanel} from '../components/UserPanel'
 
 import '../stylesheets/mainMenu.styl'
 import hamburgerOpen from '../assets/img/menu-open.svg'
@@ -20,7 +20,7 @@ import DragArea from '../components/DragArea'
 
 export const App = React.createClass({
     getInitialState: function() {
-      return { userPanelOpened: true };
+      return { userPanelOpened: true, userRightPanelOpened: false };
     },
 
     toggleUserPanel: function() {
@@ -28,9 +28,7 @@ export const App = React.createClass({
     },
 
     render: function() {
-        var userPanelOpenedClass = classNames({
-          'is-opened': this.state.userPanelOpened && _.get(this.props, 'routes[1].showHamburger', false)
-        })
+        const leftPanelIsOpened = this.state.userPanelOpened && _.get(this.props, 'routes[1].showHamburger', false)
         return (
           <div id="app-container">
             <nav id="main-menu" className="navbar navbar-default">
@@ -63,8 +61,8 @@ export const App = React.createClass({
             </nav>
             <main>
               <DragArea>
-                <UserPanel className={userPanelOpenedClass}/>
-                <div id="working-area" className={userPanelOpenedClass}>
+                <UserPanel isOpened={leftPanelIsOpened}/>
+                <div id="working-area" className={leftPanelIsOpened ? 'is-opened' : null}>
                   {this.props.children}
                 </div>
               </DragArea>

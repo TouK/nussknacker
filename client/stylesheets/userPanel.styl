@@ -4,19 +4,40 @@
   width: 0px
   &.is-opened
     width: 260px
+  .tab-content
+    margin-top 10px
+  hr
+    border-top 1px solid #ddd
+    margin-top 0px
+    margin-bottom 10px
+  #right-panel-tabs
+    ul.nav-tabs li a
+      color: #333
 
-.sidenav
-  // width: 250px
+sidenavMixin()
   z-index: 1
   position: absolute
   top: 0
   bottom: 0
-  left: 0
   padding-top: menuBarHeight
   background-color: #EBEBEB
   overflow-x: hidden
   & a
     white-space: pre
+
+.sidenav
+  sidenavMixin()
+  left: 0
+
+.rightSidenav
+  sidenavMixin()
+  right: 0
+  width: auto !important
+  #right-panel-tabs .tab-content
+    padding 0px 15px 0px 15px
+    button
+      display block
+      margin-bottom 5px
 
 // Accordion styles
 // overwriting default styles of the component
@@ -48,3 +69,17 @@
   box-shadow: none !important
 .panel + .panel
   margin-top: 0 !important
+
+.sideNodeDetails
+  .node-label
+    display: block
+    font-weight: bold
+    margin-bottom: 5px
+    text-transform capitalize
+  .node-key
+    display: inline
+    font-style: italic
+    text-transform capitalize
+  .node-value
+    display: inline
+    word-wrap: break-word
