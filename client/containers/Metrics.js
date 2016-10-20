@@ -20,7 +20,7 @@ class Metrics extends React.Component {
       hosts: this.props.settings.hosts
     };
     var iframeUrl = options.grafanaUrl + "/dashboard/db/" + options.dashboard + "?var-processName=" + options.processName
-      + "&theme=" + options.theme + "&hosts=" + options.hosts
+      + "&theme=" + options.theme + "&var-hosts=" + options.hosts
     return (
       <div className="Page">
         <iframe ref="metricsFrame" src={iframeUrl} width="100%" height={window.innerHeight} frameBorder="0"></iframe>
