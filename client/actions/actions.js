@@ -1,6 +1,5 @@
 import HttpService from "../http/HttpService";
 import GraphUtils from "../components/graph/GraphUtils";
-import * as ProcessToDisplayMode from "../constants/ProcessToDisplayMode";
 
 export function fetchProcessToDisplay(processId, versionId) {
   return (dispatch) => {
@@ -21,16 +20,7 @@ export function displayCurrentProcessVersion(processId) {
 export function displayProcess(processDetails) {
   return {
     type: "DISPLAY_PROCESS",
-    fetchedProcessDetails: processDetails,
-    processToDisplayMode: ProcessToDisplayMode.CURRENT
-  };
-}
-
-export function displayDeployedProcess(processDetails) {
-  return {
-    type: "DISPLAY_PROCESS",
-    fetchedProcessDetails: processDetails,
-    processToDisplayMode: ProcessToDisplayMode.DEPLOYED
+    fetchedProcessDetails: processDetails
   };
 }
 
@@ -43,10 +33,19 @@ export function clearProcess() {
   }
 }
 
+export function displayModalNodeDetails(node) {
+  return {
+    type: "DISPLAY_NODE_DETAILS",
+    nodeToDisplay: node,
+    showNodeDetailsModal: true
+  };
+}
+
 export function displayNodeDetails(node) {
   return {
     type: "DISPLAY_NODE_DETAILS",
-    nodeToDisplay: node
+    nodeToDisplay: node,
+    showNodeDetailsModal: false
   };
 }
 

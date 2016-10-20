@@ -1,7 +1,6 @@
 import { combineReducers } from 'redux';
 import _ from 'lodash'
 import GraphUtils from '../components/graph/GraphUtils'
-import * as ProcessToDisplayMode from '../constants/ProcessToDisplayMode'
 
 const emptyEspState = {
   graphLoading: false,
@@ -38,15 +37,9 @@ function graphReducer(state = emptyEspState, action) {
       }
     }
     case "DISPLAY_PROCESS": {
-      let processToDisplay
-      if (action.processToDisplayMode == ProcessToDisplayMode.CURRENT) {
-        processToDisplay = action.fetchedProcessDetails.json
-      } else if (action.processToDisplayMode == ProcessToDisplayMode.DEPLOYED) {
-        processToDisplay = action.fetchedProcessDetails.deployedJson
-      }
       return {
         ...state,
-        processToDisplay: processToDisplay,
+        processToDisplay: action.fetchedProcessDetails.json,
         fetchedProcessDetails: action.fetchedProcessDetails,
         graphLoading: false
       }
@@ -61,12 +54,13 @@ function graphReducer(state = emptyEspState, action) {
     case "DISPLAY_NODE_DETAILS":
       return {
         ...state,
-        nodeToDisplay: action.nodeToDisplay
+        nodeToDisplay: action.nodeToDisplay,
+        showNodeDetailsModal: action.showNodeDetailsModal
       }
     case "CLOSE_NODE_DETAILS":
       return {
         ...state,
-        nodeToDisplay: {}
+        showNodeDetailsModal: false
       }
     case "EDIT_NODE": {
       const processToDisplay = GraphUtils.mapProcessWithNewNode(state.processToDisplay, action.before, action.after)

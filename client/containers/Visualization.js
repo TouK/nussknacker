@@ -2,12 +2,13 @@ import React from 'react';
 import { render } from 'react-dom';
 import { Link } from 'react-router';
 import Graph from '../components/graph/Graph';
+import UserRightPanel from '../components/right-panel/UserRightPanel';
 import HttpService from '../http/HttpService'
 import _ from 'lodash';
 import { DropdownButton, MenuItem } from 'react-bootstrap';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
-import * as EspActions from '../actions/actions';
+import ActionsUtils from '../actions/ActionsUtils';
 import LoaderSpinner from '../components/Spinner.js';
 import '../stylesheets/visualization.styl';
 
@@ -18,7 +19,6 @@ const Visualization = React.createClass({
   },
 
   componentDidMount() {
-    // this.startPollingForUpdates() fixme pobierac tylko czy job jest uruchomiony
     this.fetchProcessDetails();
     this.fetchProcessStatus();
     window.onkeydown = (event) => {
@@ -54,28 +54,6 @@ const Visualization = React.createClass({
     })
   },
 
-  showProperties() {
-    this.props.actions.displayNodeDetails(this.props.processToDisplay.properties)
-  },
-
-  deploy() {
-    HttpService.deploy(this.props.params.processId).then((resp) => {
-      this.fetchProcessDetails()
-    })
-  },
-
-  stop() {
-    HttpService.stop(this.props.params.processId)
-  },
-
-  showDeployedProcess() {
-    this.props.actions.displayDeployedProcess(this.props.fetchedProcessDetails)
-  },
-
-  showCurrentProcess() {
-    this.props.actions.displayProcess(this.props.fetchedProcessDetails)
-  },
-
   isRunning() {
     return _.get(this.state.status, 'isRunning', false)
   },
@@ -88,62 +66,21 @@ const Visualization = React.createClass({
     return this.props.actions.redo()
   },
 
-  clearHistory() {
-    return this.props.actions.clear()
-  },
-
-  save() {
-    return HttpService.saveProcess(this.props.params.processId, this.props.processToDisplay).then ((resp) => {
-      this.clearHistory()
-      this.fetchProcessDetails()
-    })
-  },
-
   render: function() {
     if (_.isEmpty(this.props.fetchedProcessDetails) || this.props.graphLoading) {
       return (<LoaderSpinner show={true}/>)
     } else {
-      const deployedVersionIsDisplayed = _.isEqual(this.props.processToDisplay, this.props.fetchedProcessDetails.deployedJson) //fixme blokowanie edycji dla zdeplojowanej wersji
-      const nothingToSave = _.isEqual(this.props.fetchedProcessDetails.json, this.props.processToDisplay) || deployedVersionIsDisplayed
-      const deployButtons = this.props.loggedUser.canDeploy ? ([
-                      <MenuItem divider key="0"/>,
-                      <MenuItem onSelect={this.deploy} key="1">Deploy</MenuItem>,
-                      <MenuItem onSelect={this.stop} key="2">Stop</MenuItem>
-     ]) : null;
-      const saveButton = this.props.loggedUser.canWrite ? (
-        <button type="button" className="btn btn-default" disabled={nothingToSave} onClick={this.save}>SAVE{nothingToSave? "" : "*"}</button>
-
-      ) : null;
-
-      const editButtons = this.props.loggedUser.canWrite ? ([
-          <MenuItem key="3" onSelect={() => getGraph().directedLayout()}>Layout</MenuItem>,
-      ]) : null;
-
       //niestety tak musi byc, bo graph jest reduxowym komponentem
       var getGraph = () => this.refs.graph.getWrappedInstance().getDecoratedComponentInstance();
+      const graphLayoutFun = () => {
+        return !_.isEmpty(this.refs.graph) ? getGraph().directedLayout() : () => null
+      }
 
       return (
         <div className="Page">
-
           <div>
-            <div id="esp-action-panel">
-              {saveButton}
-              {this.props.deployedAndCurrentProcessDiffer ? <span title="Current version differs from deployed one" className="glyphicon glyphicon-warning-sign tag-warning"/> : null}
-              <DropdownButton bsStyle="default" pullRight title="Action" id="actionDropdown">
-                {editButtons}
-                <MenuItem key="6" onSelect={this.showProperties}>Properties</MenuItem>
-                <MenuItem key="7" disabled={!this.props.deployedAndCurrentProcessDiffer}
-                          onSelect={this.showCurrentProcess}>Show current process</MenuItem>
-                <MenuItem key="8" disabled={!this.props.deployedAndCurrentProcessDiffer || !this.isRunning() || _.isEmpty(this.props.fetchedProcessDetails.deployedJson)}
-                          onSelect={this.showDeployedProcess}>Show deployed process</MenuItem>
-
-                {deployButtons}
-
-              </DropdownButton>
-              {this.tagsForProcess().map(function (tagi, tagIndex) {
-                return <div key={tagIndex} className="tagsBlockVis">{tagi}</div>
-              })}
-            </div>
+            {/*fixme przeniesc tu lewy panel*/}
+            <UserRightPanel isOpened={true} graphLayout={graphLayoutFun}/>
             <Graph ref="graph"/>
           </div>
         </div>
@@ -151,11 +88,6 @@ const Visualization = React.createClass({
     }
   },
 
-  tagsForProcess() {
-    var deployedVersionInfo = _.isEqual(this.props.processToDisplay, this.props.fetchedProcessDetails.deployedJson) && this.isRunning() ? ["DEPLOYED"] : []
-    var currentVersionInfo = _.isEqual(this.props.processToDisplay, this.props.fetchedProcessDetails.json) ? ["CURRENT"] : []
-    return _.concat(deployedVersionInfo, currentVersionInfo, this.props.fetchedProcessDetails.tags)
-  }
 });
 
 Visualization.title = 'Visualization'
@@ -164,23 +96,9 @@ Visualization.header = 'Wizualizacja'
 
 
 function mapState(state) {
-  const processDetails = state.graphReducer.fetchedProcessDetails
-  const currentAndDeployedProcessEqual = !_.isEmpty(processDetails) && _.isEqual(processDetails.json, processDetails.deployedJson) && !_.isEmpty(processDetails.deployedJson)
   return {
-    nodeToDisplay: state.graphReducer.nodeToDisplay,
-    processToDisplay: state.graphReducer.processToDisplay,
-    fetchedProcessDetails: processDetails,
-    deployedAndCurrentProcessDiffer: !currentAndDeployedProcessEqual,
-    graphLoading: state.graphReducer.graphLoading,
-    history: state.graphReducer.history,
-    loggedUser: state.settings.loggedUser
+    fetchedProcessDetails: state.graphReducer.fetchedProcessDetails,
+    graphLoading: state.graphReducer.graphLoading
   };
 }
-
-function mapDispatch(dispatch) {
-  return {
-    actions: bindActionCreators(EspActions, dispatch)
-  };
-}
-
-export default connect(mapState, mapDispatch)(Visualization);
+export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(Visualization);
