@@ -1,16 +1,26 @@
 import React from 'react'
-import appConfig from 'appConfig'
+import { connect } from 'react-redux';
+import { bindActionCreators } from 'redux';
 
-export const Metrics = React.createClass({
+class Metrics extends React.Component {
 
-  render: function() {
+  static propTypes = {
+      settings: React.PropTypes.object.isRequired,
+  }
+
+  render() {
+    if (!this.props.settings.url) {
+      return (<div/>)
+    }
     var options = {
-      grafanaUrl: appConfig.GRAFANA_URL,
-      dashboard: 'touk-esp',
+      grafanaUrl: this.props.settings.url,
+      dashboard: this.props.settings.dashboard,
       processName: this.props.params.processId || "All",
-      theme: 'light'
+      theme: 'light',
+      hosts: this.props.settings.hosts
     };
-    var iframeUrl = options.grafanaUrl + "/dashboard/db/" + options.dashboard + "?var-processName=" + options.processName + "&theme=" + options.theme
+    var iframeUrl = options.grafanaUrl + "/dashboard/db/" + options.dashboard + "?var-processName=" + options.processName
+      + "&theme=" + options.theme + "&hosts=" + options.hosts
     return (
       <div className="Page">
         <iframe ref="metricsFrame" src={iframeUrl} width="100%" height={window.innerHeight} frameBorder="0"></iframe>
@@ -18,10 +28,22 @@ export const Metrics = React.createClass({
     )
   }
 
-})
+}
 
-
-Metrics.title = "Metrics"
 Metrics.basePath = "/metrics"
 Metrics.path = Metrics.basePath + "(/:processId)"
 Metrics.header = "Metrics"
+
+function mapState(state) {
+  return {
+    settings: state.settings.grafanaSettings
+  };
+}
+
+function mapDispatch() {
+  return {
+    actions: {}
+  };
+}
+
+export default connect(mapState, mapDispatch)(Metrics);

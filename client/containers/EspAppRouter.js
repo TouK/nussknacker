@@ -6,7 +6,7 @@ import { browserHistory, Router, Route, Link } from 'react-router'
 import { App, Home } from './MainPage';
 import { Processes } from './Processes';
 import Visualization from './Visualization';
-import { Metrics } from './Metrics';
+import Metrics from './Metrics';
 
 import 'bootstrap/dist/css/bootstrap.css';
 import '../assets/fonts/fonts.less'

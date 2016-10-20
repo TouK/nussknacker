@@ -73,7 +73,7 @@ export class ProcessHistory_ extends Component {
 
 function mapState(state) {
   return {
-    processHistory: _.get(state.espReducer.fetchedProcessDetails, 'history', []),
+    processHistory: _.get(state.graphReducer.fetchedProcessDetails, 'history', []),
   };
 }
 

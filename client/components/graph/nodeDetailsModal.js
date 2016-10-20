@@ -134,11 +134,11 @@ class NodeDetailsModal extends React.Component {
 
 function mapState(state) {
   return {
-    nodeToDisplay: state.espReducer.nodeToDisplay,
-    processId: state.espReducer.processToDisplay.id,
-    nodeErrors: _.get(state.espReducer.processToDisplay, `validationResult.invalidNodes[${state.espReducer.nodeToDisplay.id}]`, []),
-    processToDisplay: state.espReducer.processToDisplay,
-    loggedUser: state.espReducer.loggedUser
+    nodeToDisplay: state.graphReducer.nodeToDisplay,
+    processId: state.graphReducer.processToDisplay.id,
+    nodeErrors: _.get(state.graphReducer.processToDisplay, `validationResult.invalidNodes[${state.graphReducer.nodeToDisplay.id}]`, []),
+    processToDisplay: state.graphReducer.processToDisplay,
+    loggedUser: state.settings.loggedUser
   };
 }
 

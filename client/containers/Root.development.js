@@ -5,6 +5,7 @@ import DevTools from './DevTools';
 import configureStore from '../store/configureStore.develpoment';
 import NotificationSystem from 'react-notification-system';
 import HttpService from '../http/HttpService'
+import Settings from '../http/Settings'
 import EspAppRouter from './EspAppRouter';
 import $ from 'jquery';
 
@@ -19,9 +20,9 @@ $.ajaxSetup({
   }
 });
 
-const fetchUser = () => HttpService.fetchLoggedUser().then((user) => store.dispatch({type: "LOGGED_USER", user: user }))
-fetchUser()
-setInterval(fetchUser, 10000);
+Settings.updateSettings(store)
+//TODO: wywalic??
+setInterval(() => Settings.updateSettings(store), 60000);
 
 export default class Root extends React.Component {
 

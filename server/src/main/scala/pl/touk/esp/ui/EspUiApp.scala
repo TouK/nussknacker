@@ -71,7 +71,8 @@ object EspUiApp extends App with Directives {
           new ProcessesResources(processRepository, manager, processConverter, processValidation).route(user) ~
             new ManagementResources(processRepository, deploymentProcessRepository, manager, environment).route(user) ~
             new ValidationResources(processValidation, processConverter).route(user) ~
-            new UserResources().route(user)
+            new UserResources().route(user) ~
+            new SettingsResources(config).route(user)
         } ~
         //nie chcemy api, zeby nie miec problemow z autentykacja...
         pathPrefixTest(!"api") {

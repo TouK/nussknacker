@@ -164,16 +164,16 @@ Visualization.header = 'Wizualizacja'
 
 
 function mapState(state) {
-  const processDetails = state.espReducer.fetchedProcessDetails
+  const processDetails = state.graphReducer.fetchedProcessDetails
   const currentAndDeployedProcessEqual = !_.isEmpty(processDetails) && _.isEqual(processDetails.json, processDetails.deployedJson) && !_.isEmpty(processDetails.deployedJson)
   return {
-    nodeToDisplay: state.espReducer.nodeToDisplay,
-    processToDisplay: state.espReducer.processToDisplay,
+    nodeToDisplay: state.graphReducer.nodeToDisplay,
+    processToDisplay: state.graphReducer.processToDisplay,
     fetchedProcessDetails: processDetails,
     deployedAndCurrentProcessDiffer: !currentAndDeployedProcessEqual,
-    graphLoading: state.espReducer.graphLoading,
-    history: state.espReducer.history,
-    loggedUser: state.espReducer.loggedUser
+    graphLoading: state.graphReducer.graphLoading,
+    history: state.graphReducer.history,
+    loggedUser: state.settings.loggedUser
   };
 }
 
