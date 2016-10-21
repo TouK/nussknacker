@@ -49,7 +49,7 @@ export class ProcessHistory_ extends Component {
 
   render() {
     return (
-      <Scrollbars style={{ height: Math.min(300, this.props.processHistory.length * 50 ) }}>
+      <Scrollbars renderTrackHorizontal={props => <div className="hide"/>} autoHeight autoHeightMax={300}>
         <ul id="process-history">
           {this.props.processHistory.map ((historyEntry, index) => {
             return (

@@ -12,7 +12,8 @@ export default class UserPanel extends Component {
   render() {
     return (
       <div id="espSidenav" className={'sidenav ' + this.props.className}>
-        <Accordion defaultActiveKey="2">
+        {/*Historia domyslnie otwarta, bo wtedy scrollbar z historii poprawnie sie renderuje, teraz nie wiem jak to lepiej obejsc bez hakow*/}
+        <Accordion defaultActiveKey="1">
           <Panel header="History" eventKey="1">
             <ProcessHistory/>
           </Panel>
