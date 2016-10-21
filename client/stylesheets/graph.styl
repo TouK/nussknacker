@@ -24,12 +24,18 @@
     width: inherit
     padding: 30px 15px
 
-.node-validation-error
+node-highlight(strokeColor, backgroundFill)
   .body
-    stroke: #a94442
+    stroke: strokeColor
     stroke-width: 2px
   .background
-    fill: #f2dede
+    fill: backgroundFill
+
+.node-validation-error
+  node-highlight(#a94442, #f2dede)
+
+.node-focused
+  node-highlight(#0058a9, #e6ecff)
 
 #modalHeader
   padding: 25px 40px

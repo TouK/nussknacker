@@ -140,7 +140,7 @@ function mapState(state) {
     nodeErrors: _.get(state.graphReducer.processToDisplay, `validationResult.invalidNodes[${state.graphReducer.nodeToDisplay.id}]`, []),
     processToDisplay: state.graphReducer.processToDisplay,
     loggedUser: state.settings.loggedUser,
-    showNodeDetailsModal: state.graphReducer.showNodeDetailsModal
+    showNodeDetailsModal: state.ui.showNodeDetailsModal
   };
 }
 

@@ -35,17 +35,15 @@ export function clearProcess() {
 
 export function displayModalNodeDetails(node) {
   return {
-    type: "DISPLAY_NODE_DETAILS",
-    nodeToDisplay: node,
-    showNodeDetailsModal: true
+    type: "DISPLAY_MODAL_NODE_DETAILS",
+    nodeToDisplay: node
   };
 }
 
 export function displayNodeDetails(node) {
   return {
     type: "DISPLAY_NODE_DETAILS",
-    nodeToDisplay: node,
-    showNodeDetailsModal: false
+    nodeToDisplay: node
   };
 }
 

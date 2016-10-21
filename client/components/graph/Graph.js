@@ -46,9 +46,12 @@ class Graph extends React.Component {
     }
 
     componentWillUpdate(nextProps, nextState) {
-        if (!_.isEqual(this.props.processToDisplay, nextProps.processToDisplay) || !_.isEqual(this.props.layout, nextProps.layout)) {
-            this.drawGraph(nextProps.processToDisplay, nextProps.layout)
-        }
+      const nothingChanged = _.isEqual(this.props.processToDisplay, nextProps.processToDisplay) &&
+        _.isEqual(this.props.layout, nextProps.layout) &&
+        _.isEqual(this.props.nodeToDisplay, nextProps.nodeToDisplay)
+      if (!nothingChanged) {
+        this.drawGraph(nextProps.processToDisplay, nextProps.layout, nextProps.nodeToDisplay)
+      }
     }
 
     directedLayout() {
@@ -91,34 +94,34 @@ class Graph extends React.Component {
           .on("link:connect", (c) => this.props.actions.nodesConnected(c.sourceView.model.id, c.targetView.model.id))
     }
 
-    drawGraph = (data, layout) => {
-        var nodes = _.map(data.nodes, (n) => { return EspNode.makeElement(n) });
-        var edges = _.map(data.edges, (e) => { return EspNode.makeLink(e) });
-        var cells = nodes.concat(edges);
-        this.graph.resetCells(cells);
-
-        _.keys(data.validationResult.invalidNodes)
-          .forEach(name => {
-              const cell = this.graph.getCell(name) // na razie robimy tak, bo nie wiemy jak pokazac blad np w propertiesach procesu, bo nie pokazujemy propertiesow jako zwykly node
-              if (cell) {
-                  this.processGraphPaper.findViewByModel(cell).highlight(null, {
-                      highlighter: {
-                          name: 'addClass',
-                          options: {
-                              className: 'node-validation-error'
-                          }
-                      }
-                  })
-              }
-          });
-        if (!layout) {
-          this.directedLayout()
-        } else {
-          _.map(layout, el => this.graph.getCell(el.id).set('position', el.position));
-        }
+    drawGraph = (data, layout, nodeToDisplay) => {
+      const nodes = _.map(data.nodes, (n) => { return EspNode.makeElement(n) });
+      const edges = _.map(data.edges, (e) => { return EspNode.makeLink(e) });
+      const cells = nodes.concat(edges);
+      this.graph.resetCells(cells);
+      this.highlightNodes(data, nodeToDisplay);
+      if (!layout) {
+        this.directedLayout()
+      } else {
+        _.forEach(layout, el => this.graph.getCell(el.id).set('position', el.position));
+      }
     }
 
-    changeLayoutIfNeeded = () => {
+    highlightNodes = (data, nodeToDisplay) => {
+      _.keys(data.validationResult.invalidNodes).forEach(name => { this.highlightNode(name, 'node-validation-error') });
+      if (nodeToDisplay) {
+        this.highlightNode(nodeToDisplay.id, 'node-focused')
+      }
+    }
+
+    highlightNode = (nodeId, highlightClass) => {
+      const cell = this.graph.getCell(nodeId)
+      if (cell) { //zabezpieczenie przed dostaniem sie do node'a propertiesow procesu, ktorego to nie pokazujemy na grafie
+        this.processGraphPaper.findViewByModel(cell).highlight(null, { highlighter: { name: 'addClass', options: { className: highlightClass}} })
+      }
+    }
+
+  changeLayoutIfNeeded = () => {
       var newLayout = _.map(this.graph.getElements(), (el) => {
               var pos = el.get('position');
               return { id: el.id, position: pos }
@@ -150,10 +153,10 @@ class Graph extends React.Component {
 
     //fixme To jest niestety hack. Po dodaniu prawego panelu graf nie jest juz wysrodkowany, ten hack to w ulomny sposob naprawia.
     //Docelowe rozwiazanie to przerobienie layoutu, tak zeby w widoku grafu elementy nie nachodzily na siebie (tak jak prawy panel nachodzi na graf)
-    //Fajnie jakby prawy panel dalej byl resizowalny, to troche utrodnia sprawe, stad takie szybkie rozwiazanie
+    //Fajnie jakby prawy panel dalej byl resizowalny, to troche utrudnia sprawe, stad takie szybkie rozwiazanie
     centerGraphHack(panAndZoom) {
       const currentPan = panAndZoom.getPan()
-      panAndZoom.pan({x: currentPan.x - 250, y: currentPan.y})
+      panAndZoom.pan({x: currentPan.x - 270/2, y: currentPan.y})
     }
 
     changeNodeDetailsOnClick () {

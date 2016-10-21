@@ -25,6 +25,10 @@ class SideNodeDetails extends Component {
     })
   }
 
+  editNode = () => {
+    this.props.actions.displayModalNodeDetails(this.props.nodeToDisplay)
+  }
+
   render() {
     const flatten = this.flatObject(this.props.nodeToDisplay)
     return (
@@ -47,6 +51,8 @@ class SideNodeDetails extends Component {
             )
           }
         })}
+        <hr/>
+        <button type="button" className="btn btn-default" onClick={this.editNode}>Edit</button>
       </div>
     )
   }

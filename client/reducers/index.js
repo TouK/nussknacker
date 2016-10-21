@@ -28,12 +28,28 @@ function settingsReducer(state = {loggedUser: {}, grafanaSettings: {}}, action) 
   }
 }
 
-function uiStateReducer(state = { leftPanelIsOpened: false }, action) {
+const emptyUiState = {
+  leftPanelIsOpened: false,
+  showNodeDetailsModal: false
+}
+function uiStateReducer(state = emptyUiState, action) {
   switch (action.type) {
     case "TOGGLE_LEFT_PANEL": {
       return {
         ...state,
         leftPanelIsOpened: action.leftPanelIsOpened
+      }
+    }
+    case "CLOSE_NODE_DETAILS": {
+      return {
+        ...state,
+        showNodeDetailsModal: false
+      }
+    }
+    case "DISPLAY_MODAL_NODE_DETAILS": {
+      return {
+        ...state,
+        showNodeDetailsModal: true
       }
     }
     default:
@@ -54,7 +70,8 @@ function graphReducer(state, action) {
         ...state,
         processToDisplay: action.fetchedProcessDetails.json,
         fetchedProcessDetails: action.fetchedProcessDetails,
-        graphLoading: false
+        graphLoading: false,
+        nodeToDisplay: action.fetchedProcessDetails.json.properties
       }
     }
     case "CLEAR_PROCESS": {
@@ -64,16 +81,11 @@ function graphReducer(state, action) {
         fetchedProcessDetails: {}
       }
     }
+    case "DISPLAY_MODAL_NODE_DETAILS":
     case "DISPLAY_NODE_DETAILS":
       return {
         ...state,
-        nodeToDisplay: action.nodeToDisplay,
-        showNodeDetailsModal: action.showNodeDetailsModal
-      }
-    case "CLOSE_NODE_DETAILS":
-      return {
-        ...state,
-        showNodeDetailsModal: false
+        nodeToDisplay: action.nodeToDisplay
       }
     case "EDIT_NODE": {
       const processToDisplay = GraphUtils.mapProcessWithNewNode(state.processToDisplay, action.before, action.after)
@@ -213,7 +225,7 @@ function espUndoable (reducer, config) {
 }
 
 const espUndoableConfig = {
-  blacklist: ["CLEAR_PROCESS", "FETCH_PROCESS_TO_DISPLAY", "URL_CHANGED", "LOGGED_USER"]
+  blacklist: ["CLEAR_PROCESS", "FETCH_PROCESS_TO_DISPLAY", "URL_CHANGED"]
 }
 const rootReducer = combineReducers({
   graphReducer: espUndoable(graphReducer, espUndoableConfig),
