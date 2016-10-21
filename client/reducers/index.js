@@ -6,7 +6,7 @@ const emptyEspState = {
   graphLoading: false,
   processToDisplay: {},
   fetchedProcessDetails: {},
-  nodeToDisplay: {},
+  nodeToDisplay: {}
 }
 
 function settingsReducer(state = {loggedUser: {}, grafanaSettings: {}}, action) {
@@ -28,7 +28,20 @@ function settingsReducer(state = {loggedUser: {}, grafanaSettings: {}}, action) 
   }
 }
 
-function graphReducer(state = emptyEspState, action) {
+function uiStateReducer(state = { leftPanelIsOpened: false }, action) {
+  switch (action.type) {
+    case "TOGGLE_LEFT_PANEL": {
+      return {
+        ...state,
+        leftPanelIsOpened: action.leftPanelIsOpened
+      }
+    }
+    default:
+      return state
+  }
+}
+
+function graphReducer(state, action) {
   switch (action.type) {
     case "FETCH_PROCESS_TO_DISPLAY": {
       return {
@@ -202,7 +215,11 @@ function espUndoable (reducer, config) {
 const espUndoableConfig = {
   blacklist: ["CLEAR_PROCESS", "FETCH_PROCESS_TO_DISPLAY", "URL_CHANGED", "LOGGED_USER"]
 }
-const rootReducer = combineReducers({graphReducer: espUndoable(graphReducer, espUndoableConfig), settings: settingsReducer});
+const rootReducer = combineReducers({
+  graphReducer: espUndoable(graphReducer, espUndoableConfig),
+  settings: settingsReducer,
+  ui: uiStateReducer
+});
 
 export default rootReducer;
 

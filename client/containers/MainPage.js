@@ -1,35 +1,24 @@
-import React from 'react'
-import { render } from 'react-dom'
-import ReactDOM from 'react-dom'
-import { browserHistory, Router, Route } from 'react-router'
-import { Link } from 'react-router'
-import joint from 'jointjs'
-import 'jointjs/dist/joint.css'
-import _ from 'lodash'
-import classNames from 'classnames'
-import { Processes } from './Processes'
-import { Visualization } from './Visualization'
-import {UserPanel, UserRightPanel} from '../components/UserPanel'
+import React from "react";
+import {render} from "react-dom";
+import {browserHistory, Router, Route, Link} from "react-router";
+import _ from "lodash";
+import {Processes} from "./Processes";
+import "../stylesheets/mainMenu.styl";
+import hamburgerOpen from "../assets/img/menu-open.svg";
+import hamburgerClosed from "../assets/img/menu-closed.svg";
+import Metrics from "./Metrics";
+import DragArea from "../components/DragArea";
+import {connect} from "react-redux";
+import ActionsUtils from "../actions/ActionsUtils";
 
-import '../stylesheets/mainMenu.styl'
-import hamburgerOpen from '../assets/img/menu-open.svg'
-import hamburgerClosed from '../assets/img/menu-closed.svg'
-import Metrics from './Metrics'
-import DragArea from '../components/DragArea'
-
-
-export const App = React.createClass({
-    getInitialState: function() {
-      return { userPanelOpened: true, userRightPanelOpened: false };
-    },
+const App_ = React.createClass({
 
     toggleUserPanel: function() {
-      this.setState({ userPanelOpened: !this.state.userPanelOpened });
+      this.props.actions.toggleLeftPanel(!this.props.leftPanelIsOpened)
     },
 
     render: function() {
-        const leftPanelIsOpened = this.state.userPanelOpened && _.get(this.props, 'routes[1].showHamburger', false)
-        return (
+      return (
           <div id="app-container">
             <nav id="main-menu" className="navbar navbar-default">
               <div id="git" className="hide">{JSON.stringify(GIT)}</div>
@@ -37,7 +26,7 @@ export const App = React.createClass({
                 if (_.get(this.props, 'routes[1].showHamburger', false)) {
                   return (
                     <div id="toggle-user-panel" onClick={this.toggleUserPanel}>
-                      <img src={this.state.userPanelOpened ? hamburgerOpen : hamburgerClosed} />
+                      <img src={this.props.leftPanelIsOpened ? hamburgerOpen : hamburgerClosed} />
                     </div>
                   )
                 }
@@ -61,8 +50,7 @@ export const App = React.createClass({
             </nav>
             <main>
               <DragArea>
-                <UserPanel isOpened={leftPanelIsOpened}/>
-                <div id="working-area" className={leftPanelIsOpened ? 'is-opened' : null}>
+                <div id="working-area" className={this.props.leftPanelIsOpened ? 'is-opened' : null}>
                   {this.props.children}
                 </div>
               </DragArea>
@@ -71,6 +59,14 @@ export const App = React.createClass({
         )
     }
 });
+
+function mapState(state) {
+  return {
+    leftPanelIsOpened: state.ui.leftPanelIsOpened
+  };
+}
+
+export const App = connect(mapState, ActionsUtils.mapDispatchWithEspActions)(App_);
 
 App.title = 'Home'
 App.path = '/'
