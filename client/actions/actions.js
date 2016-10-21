@@ -91,6 +91,13 @@ export function layoutChanged(layout) {
   }
 }
 
+export function toggleLeftPanel(isOpened) {
+  return {
+    type: "TOGGLE_LEFT_PANEL",
+    leftPanelIsOpened: isOpened
+  }
+}
+
 //fixme to nie powinno tu byc, powinno byc wstrzykiwane jakos z espUndoable
 export function undo() {
   return {type: "UNDO"};

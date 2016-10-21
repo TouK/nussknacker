@@ -3,11 +3,11 @@ import { render } from 'react-dom';
 import { Link } from 'react-router';
 import Graph from '../components/graph/Graph';
 import UserRightPanel from '../components/right-panel/UserRightPanel';
+import UserLeftPanel from '../components/UserLeftPanel';
 import HttpService from '../http/HttpService'
 import _ from 'lodash';
 import { DropdownButton, MenuItem } from 'react-bootstrap';
 import { connect } from 'react-redux';
-import { bindActionCreators } from 'redux';
 import ActionsUtils from '../actions/ActionsUtils';
 import LoaderSpinner from '../components/Spinner.js';
 import '../stylesheets/visualization.styl';
@@ -29,12 +29,14 @@ const Visualization = React.createClass({
         this.redo()
       }
     }
+    this.props.actions.toggleLeftPanel(true)
   },
 
   componentWillUnmount() {
     clearTimeout(this.state.timeoutId)
     clearInterval(this.state.intervalId)
     this.props.actions.clearProcess()
+    this.props.actions.toggleLeftPanel(false)
   },
 
   startPollingForUpdates() {
@@ -79,7 +81,7 @@ const Visualization = React.createClass({
       return (
         <div className="Page">
           <div>
-            {/*fixme przeniesc tu lewy panel*/}
+            <UserLeftPanel isOpened={this.props.leftPanelIsOpened}/>
             <UserRightPanel isOpened={true} graphLayout={graphLayoutFun}/>
             <Graph ref="graph"/>
           </div>
@@ -98,7 +100,8 @@ Visualization.header = 'Wizualizacja'
 function mapState(state) {
   return {
     fetchedProcessDetails: state.graphReducer.fetchedProcessDetails,
-    graphLoading: state.graphReducer.graphLoading
+    graphLoading: state.graphReducer.graphLoading,
+    leftPanelIsOpened: state.ui.leftPanelIsOpened
   };
 }
 export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(Visualization);

@@ -1,13 +1,12 @@
 import React, { PropTypes, Component } from 'react';
 import { render } from 'react-dom';
-import { Link } from 'react-router';
 import { Accordion, Panel } from 'react-bootstrap';
 import ProcessHistory from './ProcessHistory'
 import ToolBox from './ToolBox'
 
 import '../stylesheets/userPanel.styl';
 
-export class UserPanel extends Component {
+export default class UserLeftPanel extends Component {
 
   static propTypes = {
     isOpened: React.PropTypes.bool.isRequired
