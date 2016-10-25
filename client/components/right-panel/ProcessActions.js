@@ -45,8 +45,12 @@ class ProcessActions extends React.Component {
     return this.props.processToDisplay.id
   }
 
+  dataResolved = () => {
+    return !_.isEmpty(this.props.fetchedProcessDetails)
+  }
+
   render() {
-    const nothingToSave = _.isEqual(this.props.fetchedProcessDetails.json, this.props.processToDisplay)
+    const nothingToSave = this.dataResolved() ? _.isEqual(this.props.fetchedProcessDetails.json, this.props.processToDisplay) : true
     const buttonClass = "espButton"
     return (
       <div>
