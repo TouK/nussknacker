@@ -47,8 +47,7 @@ class ProcessActions extends React.Component {
 
   render() {
     const nothingToSave = _.isEqual(this.props.fetchedProcessDetails.json, this.props.processToDisplay)
-    //todo style
-    const buttonClass = "btn btn-default"
+    const buttonClass = "espButton"
     return (
       <div>
         {this.props.loggedUser.canWrite ? (
