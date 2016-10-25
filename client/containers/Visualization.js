@@ -69,25 +69,21 @@ const Visualization = React.createClass({
   },
 
   render: function() {
-    if (_.isEmpty(this.props.fetchedProcessDetails) || this.props.graphLoading) {
-      return (<LoaderSpinner show={true}/>)
-    } else {
-      //niestety tak musi byc, bo graph jest reduxowym komponentem
-      var getGraph = () => this.refs.graph.getWrappedInstance().getDecoratedComponentInstance();
-      const graphLayoutFun = () => {
-        return !_.isEmpty(this.refs.graph) ? getGraph().directedLayout() : () => null
-      }
-
-      return (
-        <div className="Page">
-          <div>
-            <UserLeftPanel isOpened={this.props.leftPanelIsOpened}/>
-            <UserRightPanel isOpened={true} graphLayout={graphLayoutFun}/>
-            <Graph ref="graph"/>
-          </div>
-        </div>
-      )
+    //niestety tak musi byc, bo graph jest reduxowym komponentem
+    var getGraph = () => this.refs.graph.getWrappedInstance().getDecoratedComponentInstance();
+    const graphLayoutFun = () => {
+      return !_.isEmpty(this.refs.graph) ? getGraph().directedLayout() : () => null
     }
+    return (
+      <div className="Page">
+        <div>
+          <UserLeftPanel isOpened={this.props.leftPanelIsOpened}/>
+          <UserRightPanel isOpened={true} graphLayout={graphLayoutFun}/>
+          {(_.isEmpty(this.props.fetchedProcessDetails) || this.props.graphLoading) ? <LoaderSpinner show={true}/> : <Graph ref="graph"/> }
+
+        </div>
+      </div>
+    )
   },
 
 });
