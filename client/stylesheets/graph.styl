@@ -97,6 +97,30 @@ node-highlight(strokeColor, backgroundFill)
       .node-input
         border-bottom: 1px solid #bfbfbf
 
+
+espButton()
+  width: 180px
+  height: 44px
+  border: none
+  border-radius: 5px
+  font-weight: 600
+  font-size: 18px
+  background-color: buttonBkgColor
+  color: buttonTextColor
+  transition: background-color 0.3s
+
+  &:disabled
+    background-color: grey
+    cursor: not-allowed
+  &:not(:disabled):hover
+    background-color: buttonBkgHover
+
+.espButton
+  espButton()
+  width: 120px
+  height: 25px
+  font-size: 15px
+
 modalFooterPadding=10px 30px
 #modalFooter
   position: relative
@@ -109,21 +133,7 @@ modalFooterPadding=10px 30px
     margin: 0 auto
 
   .modalButton
-    width: 180px
-    height: 44px
-    border: none
-    border-radius: 5px
-    font-weight: 600
-    font-size: 18px
-    background-color: buttonBkgColor
-    color: buttonTextColor
-    transition: background-color 0.3s
-
-    &:disabled
-      background-color: grey
-      cursor: not-allowed
-    &:not(:disabled):hover
-      background-color: buttonBkgHover
+    espButton()
   .ladda-button
       padding: modalFooterPadding
       outline: none

@@ -16,7 +16,10 @@ class SideNodeDetails extends Component {
       } else if (_.isObject(val)) {
         if (_.isEqual(key, "expression")) {
           return [new FlatObjectEntry(key, _.get(val, "expression"))]
-        } else {
+        } else if(_.isEqual(key, "endResult")) {
+          return [new FlatObjectEntry(null, key), new FlatObjectEntry("expression", _.get(val, "expression"))]
+        }
+        else {
           return _.concat(new FlatObjectEntry(null, key), this.flatObject(val))
         }
       } else {
@@ -52,7 +55,7 @@ class SideNodeDetails extends Component {
           }
         })}
         <hr/>
-        <button type="button" className="btn btn-default" onClick={this.editNode}>Edit</button>
+        <button type="button" className="espButton" onClick={this.editNode}>Edit</button>
       </div>
     )
   }
