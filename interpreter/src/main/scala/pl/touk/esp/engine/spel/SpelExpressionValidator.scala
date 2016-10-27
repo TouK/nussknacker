@@ -4,12 +4,16 @@ import cats.data.Validated
 import org.springframework.expression.Expression
 import org.springframework.expression.spel.ast.{CompoundExpression, PropertyOrFieldReference, VariableReference}
 import org.springframework.expression.spel.{SpelNode, standard}
-import pl.touk.esp.engine.compile.ValidationContext
+import pl.touk.esp.engine.compile.{ValidatedSyntax, ValidationContext}
 import pl.touk.esp.engine.compiledgraph.expression.ExpressionParseError
 import pl.touk.esp.engine.definition.DefinitionExtractor.ClazzRef
 
 class SpelExpressionValidator(expr: Expression, ctx: ValidationContext) {
   import SpelExpressionValidator._
+  import cats.instances.list._
+
+  private val syntax = ValidatedSyntax[ExpressionParseError]
+  import syntax._
 
   private val ignoredTypes: Set[ClazzRef] = Set(
     classOf[java.util.Map[_, _]],
@@ -20,10 +24,11 @@ class SpelExpressionValidator(expr: Expression, ctx: ValidationContext) {
   def validate(): Validated[ExpressionParseError, Expression] = {
     val ast = expr.asInstanceOf[standard.SpelExpression].getAST
     resolveReferences(ast).andThen { _ =>
-      val propertyAccesses = findAllPropertyAccess(ast)
-      propertyAccesses.flatMap(validatePropertyAccess).headOption match {
-        case Some(error) => Validated.invalid(error)
-        case None => Validated.valid(expr)
+      findAllPropertyAccess(ast).andThen { propertyAccesses =>
+        propertyAccesses.flatMap(validatePropertyAccess).headOption match {
+          case Some(error) => Validated.invalid(error)
+          case None => Validated.valid(expr)
+        }
       }
     }
   }
@@ -35,22 +40,24 @@ class SpelExpressionValidator(expr: Expression, ctx: ValidationContext) {
     else Validated.Invalid(ExpressionParseError(s"Unresolved references ${notResolved.mkString(", ")}"))
   }
 
-  private def findAllPropertyAccess(n: SpelNode): List[SpelPropertyAccess] = {
+  private def findAllPropertyAccess(n: SpelNode): Validated[ExpressionParseError, List[SpelPropertyAccess]] = {
     n match {
       case ce: CompoundExpression if ce.childrenHead.isInstanceOf[VariableReference] =>
         val children = ce.children.toList
         val variableName = children.head.toStringAST.tail
         val clazzRef = ctx.apply(variableName)
-        if (ignoredTypes.contains(clazzRef)) List.empty //odpuszczamy na razie walidowanie spelowych Map i wtedy kiedy nie jestesmy pewni typu
+        if (ignoredTypes.contains(clazzRef)) Validated.valid(List.empty) //odpuszczamy na razie walidowanie spelowych Map i wtedy kiedy nie jestesmy pewni typu
         else {
           val references = children.tail.takeWhile(_.isInstanceOf[PropertyOrFieldReference]).map(_.toStringAST) //nie bierzemy jeszcze wszystkich co nie jest do konca poprawnne, np w `#obj.children.?[id == '55'].empty`
-          List(SpelPropertyAccess(variableName, references, ctx.apply(variableName)))
+          Validated.valid(List(SpelPropertyAccess(variableName, references, ctx.apply(variableName))))
         }
+      case ce: CompoundExpression if ce.childrenHead.isInstanceOf[PropertyOrFieldReference] =>
+        Validated.invalid(ExpressionParseError(s"Non reference '${ce.childrenHead.toStringAST}' occurred. Maybe you missed '#' in front of it?"))
       case _ =>
-        n.children.flatMap(c => findAllPropertyAccess(c)).toList
+        val accessesWithErrors = n.children.toList.map { child => findAllPropertyAccess(child).toValidatedNel }.sequence
+        accessesWithErrors.map(_.flatten).leftMap(_.head)
     }
   }
-
 
   private def validatePropertyAccess(propAccess: SpelPropertyAccess): Option[ExpressionParseError] = {
     def checkIfPropertiesExistsOnClass(propsToGo: List[String], clazz: ClazzRef): Option[ExpressionParseError] = {
