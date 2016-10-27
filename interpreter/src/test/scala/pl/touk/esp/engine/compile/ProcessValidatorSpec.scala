@@ -153,6 +153,19 @@ class ProcessValidatorSpec extends FlatSpec with Matchers {
     }
   }
 
+  it should "find usage of non references" in {
+    val process = EspProcessBuilder
+      .id("process1")
+      .exceptionHandler()
+      .source("id1", "source")
+      .filter("sampleFilter1", "#input.plainValue > 10")
+      .filter("sampleFilter2", "input.plainValue > 10")
+      .sink("id2", "sink")
+    ProcessValidator.default(baseDefinition).validate(process) should matchPattern {
+      case Invalid(NonEmptyList(ExpressionParseError("Non reference 'input' occurred. Maybe you missed '#' in front of it?", _, _), _)) =>
+    }
+  }
+
   it should "find usage of fields that does not exist in object" in {
     val process = EspProcessBuilder
       .id("process1")
