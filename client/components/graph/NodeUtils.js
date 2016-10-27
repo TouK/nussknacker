@@ -5,7 +5,7 @@ export default {
   },
 
   nodeIsProperties: (node) => {
-    var type = node.type ? node.type : "Properties"
+    var type = node && node.type ? node.type : "Properties"
     // fixme jak najlepiej tutaj wolac funkcje z tego samego modulu?
     return type == "Properties";
   }

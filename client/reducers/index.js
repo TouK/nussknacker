@@ -113,6 +113,17 @@ function graphReducer(state, action) {
         layout: newLayout
       }
     }
+    case "DELETE_NODE": {
+      var idToDelete = action.id
+      const processToDisplay = GraphUtils.deleteNode(state.processToDisplay, idToDelete);
+      var layoutWithoutNode = _.filter(state.layout, (n) => n.id != idToDelete);
+      return {
+        ...state,
+        processToDisplay: processToDisplay,
+        nodeToDisplay: processToDisplay.properties,
+        layout: layoutWithoutNode
+      }
+    }
     case "URL_CHANGED": {
       return {
         ...state,
