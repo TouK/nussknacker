@@ -53,6 +53,13 @@ export function closeNodeDetails() {
   };
 }
 
+export function deleteNode(id) {
+  return {
+    type: "DELETE_NODE",
+    id: id
+  }
+}
+
 export function editNode(process, before, after) {
   return (dispatch) => {
     const changedProcess = GraphUtils.mapProcessWithNewNode(process, before, after)
