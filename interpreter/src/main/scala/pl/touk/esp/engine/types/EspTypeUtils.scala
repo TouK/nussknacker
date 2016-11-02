@@ -88,6 +88,9 @@ object EspTypeUtils {
       p.getType
     }
 
+  def getCompanionObject[T](klazz: Class[T]) : T= {
+    klazz.getField("MODULE$").get(null).asInstanceOf[T]
+  }
 
   def getGenericMethodType(m: Method): Option[Class[_]] = {
     val genericReturnType = m.getGenericReturnType
