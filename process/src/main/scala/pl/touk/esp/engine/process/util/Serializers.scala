@@ -2,13 +2,18 @@ package pl.touk.esp.engine.process.util
 
 import com.esotericsoftware.kryo.io.{Input, Output}
 import com.esotericsoftware.kryo.{Kryo, Serializer}
+import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
+import pl.touk.esp.engine.types.EspTypeUtils
 import shapeless._
 import shapeless.ops.hlist.Mapper._
-import scala.reflect.ClassTag
 
-object Serializers {
+import scala.reflect.ClassTag
+import scala.util
+import scala.util.{Failure, Try}
+
+object Serializers extends LazyLogging {
 
   def registerSerializers(env: StreamExecutionEnvironment): Unit = {
 
@@ -36,10 +41,19 @@ object Serializers {
     }
 
     override def read(kryo: Kryo, input: Input, obj: Class[Product]) = {
-      val cons = obj.getConstructors()(0)
       val arity = input.readInt()
-      val params = (1 to arity).map(_ => kryo.readClassAndObject(input)).toArray[AnyRef]
-      cons.newInstance(params: _*).asInstanceOf[Product]
+      val constructors = obj.getConstructors
+
+      //TODO: a co z np. case class bez parametrow??
+      if (arity == 0 && constructors.isEmpty) {
+        Try(EspTypeUtils.getCompanionObject(obj)).recover {
+          case e => logger.error(s"Failed to load companion for ${obj.getClass}"); Failure(e)
+        }.get
+      } else {
+        val cons = constructors(0)
+        val params = (1 to arity).map(_ => kryo.readClassAndObject(input)).toArray[AnyRef]
+        cons.newInstance(params: _*).asInstanceOf[Product]
+      }
     }
 
     override def copy(kryo: Kryo, original: Product) = original
