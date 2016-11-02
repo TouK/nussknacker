@@ -19,9 +19,9 @@ import scala.concurrent.{ExecutionContext, Future}
 object KafkaZookeeperServer {
   val localhost = "127.0.0.1"
 
-  def run(zkPort: Int, kafkaPort: Int): KafkaZookeeperServer = {
+  def run(zkPort: Int, kafkaPort: Int, kafkaBrokerConfig: Map[String, String]): KafkaZookeeperServer = {
     val zk = runZookeeper(zkPort)
-    val kafka = runKafka(zkPort, kafkaPort)
+    val kafka = runKafka(zkPort, kafkaPort, kafkaBrokerConfig)
     KafkaZookeeperServer(zk, kafka, s"$localhost:$zkPort", s"$localhost:$kafkaPort")
   }
 
@@ -33,7 +33,7 @@ object KafkaZookeeperServer {
     factory
   }
 
-  private def runKafka(zkPort: Int, kafkaPort: Int): KafkaServer = {
+  private def runKafka(zkPort: Int, kafkaPort: Int, kafkaBrokerConfig: Map[String, String]): KafkaServer = {
     val properties = new Properties()
     properties.setProperty("zookeeper.connect", s"$localhost:$zkPort")
     properties.setProperty("broker.id", "0")
@@ -41,9 +41,14 @@ object KafkaZookeeperServer {
     properties.setProperty("hostname", localhost)
     properties.setProperty("advertised.host.name", localhost)
     properties.setProperty("num.partitions", "1")
+    properties.setProperty("log.cleaner.dedupe.buffer.size", (2 * 1024 * 1024L).toString) //dajemy 2MB, bo wiecej do testow raczej nie potrzeba
 
     properties.setProperty("port", s"$kafkaPort")
     properties.setProperty("log.dir", tempDir().getAbsolutePath)
+
+    kafkaBrokerConfig.foreach { case (key, value) =>
+      properties.setProperty(key, value)
+    }
 
     val server = new KafkaServer(new KafkaConfig(properties), SystemTime)
     server.startup()
