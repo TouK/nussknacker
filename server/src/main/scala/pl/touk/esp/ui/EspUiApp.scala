@@ -9,7 +9,9 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.stream.ActorMaterializer
 import cats.data.Validated.{Invalid, Valid}
+import cats.data.Xor
 import com.typesafe.config.{ConfigFactory, ConfigValue}
+import com.typesafe.scalalogging.LazyLogging
 import pl.touk.esp.engine.api.deployment.{CustomProcess, GraphProcess}
 import pl.touk.esp.engine.compile.ProcessValidator
 import pl.touk.esp.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
@@ -25,10 +27,11 @@ import pl.touk.esp.ui.security.SimpleAuthenticator
 import slick.jdbc.JdbcBackend
 
 import scala.collection.JavaConversions._
+import scala.concurrent.Future
 import scala.io.Source.fromFile
 
 //todo  dodac test, ktory startuje aplikacje i sprawdza ze sie nie wywala
-object EspUiApp extends App with Directives {
+object EspUiApp extends App with Directives with LazyLogging {
 
   implicit val system = ActorSystem("esp-ui")
 
@@ -107,15 +110,27 @@ object EspUiApp extends App with Directives {
   }
 
   def insertInitialProcesses(): Unit = {
-    val user = "TouK"
+    val toukUser = "TouK"
     new File(initialProcessDirectory, "processes").listFiles().foreach { file =>
       val name = file.getName.replaceAll("\\..*", "")
-      processRepository.saveProcess(name, GraphProcess(fromFile(file).mkString), user)
+      for {
+        latestVersion <- processRepository.fetchLatestProcessVersion(name)
+        versionShouldBeUpdated = latestVersion.exists(_.user == toukUser)
+        processJson = fromFile(file).mkString
+        _ <- {
+          if (versionShouldBeUpdated) {
+            processRepository.saveProcess(name, GraphProcess(fromFile(file).mkString), toukUser)
+          } else {
+            logger.info(s"Process $name not updated. DB version is: \n${latestVersion.flatMap(_.json).getOrElse("")}\n and version from file is: \n$processJson")
+            Future.successful(Xor.right(()))
+          }
+        }
+      } yield ()
     }
     ConfigFactory.parseFile(new File(initialProcessDirectory, "customProcesses.conf"))
       .entrySet().toSet
       .foreach { (entry: java.util.Map.Entry[String, ConfigValue]) =>
-        processRepository.saveProcess(entry.getKey, CustomProcess(entry.getValue.unwrapped().toString), user)
+        processRepository.saveProcess(entry.getKey, CustomProcess(entry.getValue.unwrapped().toString), toukUser)
       }
   }
 
