@@ -115,7 +115,7 @@ object EspUiApp extends App with Directives with LazyLogging {
       val name = file.getName.replaceAll("\\..*", "")
       for {
         latestVersion <- processRepository.fetchLatestProcessVersion(name)
-        versionShouldBeUpdated = latestVersion.exists(_.user == toukUser)
+        versionShouldBeUpdated = latestVersion.exists(_.user == toukUser) || latestVersion.isEmpty
         processJson = fromFile(file).mkString
         _ <- {
           if (versionShouldBeUpdated) {
