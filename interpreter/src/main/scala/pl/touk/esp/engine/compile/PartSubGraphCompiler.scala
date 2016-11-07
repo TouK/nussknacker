@@ -93,9 +93,11 @@ private[compile] trait PartSubGraphCompilerBase {
             case graph.node.VariableBuilder(id, varName, fields) =>
               val newCtx = ctx.withVariable(varName, ClazzRef(classOf[Map[String, Any]])) //jak wyciagnac informacie o typach zmiennych w mapie?
               A.map2(fields.map(f => compile(f, newCtx)).sequence, compile(next, newCtx))(
-                (fields, nextWithCtx) => CompiledNode(compiledgraph.node.VariableBuilder(id, varName, fields, nextWithCtx.next), nextWithCtx.ctx))
+                (fields, nextWithCtx) =>
+                  CompiledNode(compiledgraph.node.VariableBuilder(id, varName, fields, nextWithCtx.next), nextWithCtx.ctx))
             case graph.node.Processor(id, ref) =>
-              A.map2(compile(ref, ctx), compile(next, ctx))((ref, nextWithCtx) => CompiledNode(compiledgraph.node.Processor(id, ref, nextWithCtx.next), ctx))
+              A.map2(compile(ref, ctx), compile(next, ctx))((ref, nextWithCtx) =>
+                CompiledNode(compiledgraph.node.Processor(id, ref, nextWithCtx.next), nextWithCtx.ctx))
             case graph.node.Enricher(id, ref, outName) =>
               val newCtx = services.get(ref.id).map {
                 case o: ObjectWithMethodDef =>

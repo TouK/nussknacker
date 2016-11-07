@@ -34,8 +34,10 @@ class ProcessValidatorSpec extends FlatSpec with Matchers {
       .id("process1")
       .exceptionHandler()
       .source("id1", "source")
-      .enricher("sampleEnricherId", "out", "sampleEnricher")
-      .sink("id2", "sink")
+      .processor("sampleProcessor1", "sampleEnricher")
+      .enricher("sampleProcessor2", "out", "sampleEnricher")
+      .buildVariable("bv1", "vars", "v1" -> "42")
+      .sink("sink", "#input.someMethod(#vars['v1'])", "sink")
     ProcessValidator.default(baseDefinition).validate(correctProcess) should matchPattern {
       case Valid(_) =>
     }
@@ -183,6 +185,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers {
     private val privateValue = "priv"
     def invoke1: Future[AnotherSimpleRecord] = ???
     def invoke2: State[ContextWithLazyValuesProvider, AnotherSimpleRecord] = ???
+    def someMethod(a: Int): Int = ???
   }
   case class AnotherSimpleRecord(value2: Long)
   private val definitionWithTypedSource = baseDefinition.copy(sourceFactories = Map("source" -> ObjectDefinition.noParam.copy(clazz = ClazzRef(classOf[SimpleRecord]))))
