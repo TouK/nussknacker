@@ -33,13 +33,13 @@ class ExpressionSpec extends FlatSpec with Matchers {
     val lazyVal = lazyValue[String](enrichingServiceId).map(_ + " ma kota")
   }
 
-  private def parse(expr: String, context: Context = ctx) = {
+  private def parse(expr: String, context: Context = ctx, globalProcessVariables: Map[String, ClazzRef] = Map.empty) = {
     val validationCtx = ValidationContext(
       context.variables.mapValues(_.getClass).mapValues(ClazzRef.apply),
       EspTypeUtils.clazzAndItsChildrenDefinition(context.variables.values.map(_.getClass).toList)
     )
     val expressionFunctions = Map("today" -> classOf[LocalDate].getDeclaredMethod("now"))
-    new SpelExpressionParser(expressionFunctions).parse(expr, validationCtx) match {
+    new SpelExpressionParser(expressionFunctions, globalProcessVariables).parse(expr, validationCtx) match {
       case Valid(e) => e
       case Invalid(err) => throw new ParseException(err.message, -1)
     }
@@ -82,6 +82,11 @@ class ExpressionSpec extends FlatSpec with Matchers {
     parse("#date.until(#today()).days", withDays).evaluate[Integer](withDays, dumbLazyProvider).value should equal(2)
   }
 
+  it should "register global variables" in {
+    val globalVars = Map("processHelper" -> ClazzRef.apply(SampleGlobalObject.getClass))
+    parse("#processHelper.add(1, #processHelper.constant())", ctx, globalVars).evaluate[Integer](ctx, dumbLazyProvider).value should equal(5)
+  }
+
   it should "allow access to maps in dot notation" in {
     val withMapVar = ctx.withVariable("map", Map("key1" -> "value1", "key2" -> 20).asJava)
 
@@ -103,4 +108,9 @@ class ExpressionSpec extends FlatSpec with Matchers {
   }
 
 
+}
+
+object SampleGlobalObject {
+  val constant = 4
+  def add(a: Int, b: Int): Int = a + b
 }

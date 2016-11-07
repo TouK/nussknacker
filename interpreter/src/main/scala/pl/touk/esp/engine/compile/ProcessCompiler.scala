@@ -230,7 +230,8 @@ object ProcessCompiler {
             sourceFactories: Map[String, SourceFactory[_]],
             sinkFactories: Map[String, SinkFactory],
             customStreamTransformers: Map[String, CustomStreamTransformer],
-            exceptionHandlerFactory: ExceptionHandlerFactory): ProcessCompiler = {
+            exceptionHandlerFactory: ExceptionHandlerFactory,
+            globalProcessVariables: Map[String, Class[_]]): ProcessCompiler = {
     val sourceFactoriesDefs = sourceFactories.mapValues { factory =>
       ObjectWithMethodDef(factory, ProcessObjectDefinitionExtractor.source)
     }
@@ -242,7 +243,7 @@ object ProcessCompiler {
     val customNodesExecutorsDefs = customStreamTransformers.mapValues { executor =>
       ObjectWithMethodDef(executor, ProcessObjectDefinitionExtractor.customNodeExecutor)
     }
-    val typesInformation = TypesInformation.extract(services, sourceFactories, sinkFactories)
+    val typesInformation = TypesInformation.extract(services, sourceFactories, sinkFactories, globalProcessVariables)
     new ProcessCompiler(sub, sourceFactoriesDefs, sinkFactoriesDefs, customNodesExecutorsDefs, exceptionHandlerFactoryDefs, typesInformation)
   }
 
@@ -251,7 +252,7 @@ object ProcessCompiler {
 object ProcessValidator {
 
   def default(definition: ProcessDefinition): ProcessValidator = {
-    val sub = PartSubGraphValidator.default(definition.services)
+    val sub = PartSubGraphValidator.default(definition.services, definition.globalProcessVariables)
     new ProcessValidator(sub, definition.sourceFactories, definition.sinkFactories, definition.customStreamTransformers,
       definition.exceptionHandlerFactory, definition.typesInformation)
   }

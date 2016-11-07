@@ -64,6 +64,10 @@ object ProcessTestHelpers {
       override def listeners(config: Config) = Seq(LoggingListener)
 
       override def exceptionHandlerFactory(config: Config) = ExceptionHandlerFactory.noParams(VerboselyLoggingExceptionHandler)
+
+      override def globalProcessVariables(config: Config): Map[String, Class[_]] = {
+        Map("processHelper" -> ProcessHelper.getClass)
+      }
     }
   }
 
@@ -113,4 +117,11 @@ object ProcessTestHelpers {
     def invoke() = Future.successful(Unit)
   }
 
+}
+
+object ProcessHelper {
+  val constant = 4
+  def add(a: Int, b: Int) = {
+    a + b
+  }
 }

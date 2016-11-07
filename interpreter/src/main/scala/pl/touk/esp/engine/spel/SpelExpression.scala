@@ -13,6 +13,7 @@ import pl.touk.esp.engine.api.lazyy.{ContextWithLazyValuesProvider, LazyValuesPr
 import pl.touk.esp.engine.api.{Context, ValueWithModifiedContext}
 import pl.touk.esp.engine.compile.ValidationContext
 import pl.touk.esp.engine.compiledgraph.expression.{ExpressionParseError, ExpressionParser}
+import pl.touk.esp.engine.definition.DefinitionExtractor.ClazzRef
 import pl.touk.esp.engine.functionUtils.CollectionUtils
 import pl.touk.esp.engine.spel.SpelExpressionParser.{MapPropertyAccessor, ScalaLazyPropertyAccessor, ScalaPropertyAccessor, _}
 
@@ -52,7 +53,7 @@ class SpelExpression(parsed: org.springframework.expression.Expression,
   }
 }
 
-class SpelExpressionParser(expressionFunctions: Map[String, Method]) extends ExpressionParser {
+class SpelExpressionParser(expressionFunctions: Map[String, Method], globalProcessVariables: Map[String, ClazzRef]) extends ExpressionParser {
 
   override final val languageId: String = SpelExpressionParser.languageId
 
@@ -69,9 +70,9 @@ class SpelExpressionParser(expressionFunctions: Map[String, Method]) extends Exp
     MapPropertyAccessor
   )
 
-  //fixme wydzielic metode
   override def parseWithoutContextValidation(original: String): Validated[ExpressionParseError, compiledgraph.expression.Expression] = {
-    Validated.catchNonFatal(parser.parseExpression(original)).leftMap(ex => ExpressionParseError(ex.getMessage)).map { parsed =>
+    val desugared = desugarStaticReferences(original)
+    Validated.catchNonFatal(parser.parseExpression(desugared)).leftMap(ex => ExpressionParseError(ex.getMessage)).map { parsed =>
       // wymuszamy kompilację, żeby nie była wykonywana współbieżnie później
       forceCompile(parsed)
       new SpelExpression(parsed, original, expressionFunctions, propertyAccessors)
@@ -79,12 +80,21 @@ class SpelExpressionParser(expressionFunctions: Map[String, Method]) extends Exp
   }
 
   override def parse(original: String, ctx: ValidationContext): Validated[ExpressionParseError, compiledgraph.expression.Expression] = {
-    Validated.catchNonFatal(parser.parseExpression(original)).leftMap(ex => ExpressionParseError(ex.getMessage)).andThen { parsed =>
+    val desugared = desugarStaticReferences(original)
+    Validated.catchNonFatal(parser.parseExpression(desugared)).leftMap(ex => ExpressionParseError(ex.getMessage)).andThen { parsed =>
       new SpelExpressionValidator(parsed, ctx).validate()
     }.map { withReferencesResolved =>
       // wymuszamy kompilację, żeby nie była wykonywana współbieżnie później
       forceCompile(withReferencesResolved)
       new SpelExpression(withReferencesResolved, original, expressionFunctions, propertyAccessors)
+    }
+  }
+
+  //to nie wyglada zbyt profesjonalnie, moze da sie jakos ladniej?
+  private def desugarStaticReferences(original: String) = {
+    globalProcessVariables.foldLeft(original) { case (preprocessed, (globalVariableName, clazzRef)) =>
+      val staticClazz = s"T(${clazzRef.refClazzName.init})"
+      preprocessed.replace(s"#$globalVariableName", staticClazz)
     }
   }
 
@@ -108,12 +118,13 @@ object SpelExpressionParser {
   private[spel] final val LazyValuesProviderVariableName: String = "$lazy"
   private[spel] final val ModifiedContextVariableName: String = "$modifiedContext"
 
-  val default: SpelExpressionParser = new SpelExpressionParser(Map(
+  //caching?
+  def default(globalProcessVariables: Map[String, ClazzRef]): SpelExpressionParser = new SpelExpressionParser(Map(
     "today" -> classOf[LocalDate].getDeclaredMethod("now"),
     "now" -> classOf[LocalDateTime].getDeclaredMethod("now"),
     "distinct" -> classOf[CollectionUtils].getDeclaredMethod("distinct", classOf[java.util.Collection[_]]),
     "sum" -> classOf[CollectionUtils].getDeclaredMethod("sum", classOf[java.util.Collection[_]])
-  ))
+  ), globalProcessVariables)
 
 
   class ScalaPropertyAccessor extends PropertyAccessor with ReadOnly with Caching {

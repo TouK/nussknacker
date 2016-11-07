@@ -21,6 +21,7 @@ class FlinkProcessRegistrarSpec extends FlatSpec with Matchers {
     val process = EspProcess(MetaData("proc1"),
       ExceptionHandlerRef(List.empty),
       GraphBuilder.source("id", "input")
+        .filter("filter11", "#processHelper.add(12, #processHelper.constant()) > 1")
         .filter("filter1", "#sum(#input.![value1]) > 24")
         .processor("proc2", "logService", "all" -> "#distinct(#input.![value2])")
         .sink("out", "monitor"))

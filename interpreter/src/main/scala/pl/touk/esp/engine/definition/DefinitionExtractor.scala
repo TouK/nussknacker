@@ -97,8 +97,9 @@ object DefinitionExtractor {
   object TypesInformation {
     def extract(services: Map[String, Service],
                 sourceFactories: Map[String, SourceFactory[_]],
-                sinkFactories: Map[String, SinkFactory]): List[PlainClazzDefinition] = {
-      (sourceFactories.values.map(_.clazz) ++ sinkFactories.values.map(_.getClass) ++ services.values.map(_.getClass))
+                sinkFactories: Map[String, SinkFactory],
+                globalProcessVariables: Map[String, Class[_]]): List[PlainClazzDefinition] = {
+      (sourceFactories.values.map(_.clazz) ++ sinkFactories.values.map(_.getClass) ++ services.values.map(_.getClass) ++ globalProcessVariables.values)
         .flatMap(EspTypeUtils.clazzAndItsChildrenDefinition).toList.distinct
     }
   }

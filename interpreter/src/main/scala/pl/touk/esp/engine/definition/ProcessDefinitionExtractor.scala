@@ -4,7 +4,7 @@ import com.typesafe.config.Config
 import pl.touk.esp.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.esp.engine.api.{CustomStreamTransformer, Service}
 import pl.touk.esp.engine.api.process.{ProcessConfigCreator, SinkFactory, SourceFactory}
-import pl.touk.esp.engine.definition.DefinitionExtractor.{ObjectDefinition, Parameter, PlainClazzDefinition, TypesInformation}
+import pl.touk.esp.engine.definition.DefinitionExtractor._
 import pl.touk.esp.engine.types.EspTypeUtils
 
 object ProcessDefinitionExtractor {
@@ -16,7 +16,8 @@ object ProcessDefinitionExtractor {
       sinkFactories = objects.sinkFactories.mapValues(ProcessObjectDefinitionExtractor.sink.extract),
       customStreamTransformers =  objects.customStreamTransformers.mapValues(ProcessObjectDefinitionExtractor.customNodeExecutor.extract),
       exceptionHandlerFactory = ProcessObjectDefinitionExtractor.exceptionHandler.extract(objects.exceptionHandlerFactory),
-      typesInformation = TypesInformation.extract(objects.services, objects.sourceFactories, objects.sinkFactories)
+      globalProcessVariables = objects.globalProcessVariables.map { case (key, value) => key -> ClazzRef(value)},
+      typesInformation = TypesInformation.extract(objects.services, objects.sourceFactories, objects.sinkFactories, objects.globalProcessVariables)
     )
   }
 
@@ -24,7 +25,9 @@ object ProcessDefinitionExtractor {
                             sourceFactories: Map[String, SourceFactory[_]],
                             sinkFactories: Map[String, SinkFactory],
                             customStreamTransformers: Map[String, CustomStreamTransformer],
-                            exceptionHandlerFactory: ExceptionHandlerFactory)
+                            exceptionHandlerFactory: ExceptionHandlerFactory,
+                            globalProcessVariables: Map[String, Class[_]]
+                           )
 
   object ProcessObjects {
     def apply(creator: ProcessConfigCreator, config: Config): ProcessObjects = {
@@ -33,7 +36,8 @@ object ProcessDefinitionExtractor {
         sourceFactories = creator.sourceFactories(config),
         sinkFactories = creator.sinkFactories(config),
         customStreamTransformers = creator.customStreamTransformers(config),
-        exceptionHandlerFactory = creator.exceptionHandlerFactory(config)
+        exceptionHandlerFactory = creator.exceptionHandlerFactory(config),
+        globalProcessVariables = creator.globalProcessVariables(config)
       )
     }
   }
@@ -43,6 +47,7 @@ object ProcessDefinitionExtractor {
                                sinkFactories: Map[String, ObjectDefinition],
                                customStreamTransformers: Map[String, ObjectDefinition],
                                exceptionHandlerFactory: ObjectDefinition,
+                               globalProcessVariables: Map[String, ClazzRef],
                                typesInformation: List[PlainClazzDefinition]) {
 
     def withService(id: String, params: Parameter*) =
@@ -63,7 +68,7 @@ object ProcessDefinitionExtractor {
   }
 
   object ProcessDefinition {
-    def empty: ProcessDefinition = ProcessDefinition(Map.empty, Map.empty, Map.empty, Map.empty, ObjectDefinition.noParam, List.empty)
+    def empty: ProcessDefinition = ProcessDefinition(Map.empty, Map.empty, Map.empty, Map.empty, ObjectDefinition.noParam, Map.empty, List.empty)
   }
 
 }

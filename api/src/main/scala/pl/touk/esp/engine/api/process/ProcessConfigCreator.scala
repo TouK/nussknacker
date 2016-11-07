@@ -18,4 +18,6 @@ trait ProcessConfigCreator extends Serializable {
 
   def exceptionHandlerFactory(config: Config) : ExceptionHandlerFactory
 
+  def globalProcessVariables(config: Config): Map[String, Class[_]]
+
 }
