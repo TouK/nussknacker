@@ -33,7 +33,7 @@ import pl.touk.esp.engine.api._
 import pl.touk.esp.engine.api.process._
 import pl.touk.esp.engine.compile.{PartSubGraphCompiler, ProcessCompilationError, ProcessCompiler}
 import pl.touk.esp.engine.compiledgraph.part._
-import pl.touk.esp.engine.definition.DefinitionExtractor.ObjectWithMethodDef
+import pl.touk.esp.engine.definition.DefinitionExtractor.{ClazzRef, ObjectWithMethodDef}
 import pl.touk.esp.engine.definition.{CustomNodeInvoker, ProcessObjectDefinitionExtractor, ServiceDefinitionExtractor}
 import pl.touk.esp.engine.graph.{EspProcess, node}
 import pl.touk.esp.engine.process.FlinkProcessRegistrar._
@@ -159,14 +159,15 @@ object FlinkProcessRegistrar {
         sourceFactories = creator.sourceFactories(config),
         sinkFactories = creator.sinkFactories(config),
         customStreamTransformers = creator.customStreamTransformers(config),
-        exceptionHandlerFactory = creator.exceptionHandlerFactory(config)
+        exceptionHandlerFactory = creator.exceptionHandlerFactory(config),
+        globalProcessVariables = creator.globalProcessVariables(config)
       )
     }
 
     def compileProcess(process: EspProcess)() = {
       val services = creator.services(config)
       val servicesDefs = services.mapValues { service => ObjectWithMethodDef(service, ServiceDefinitionExtractor) }
-      val subCompiler = PartSubGraphCompiler.default(servicesDefs)
+      val subCompiler = PartSubGraphCompiler.default(servicesDefs, creator.globalProcessVariables(config).map { case (k, v) => k -> ClazzRef.apply(v) })
       val processCompiler = compiler(subCompiler)
       val compiledProcess = validateOrFailProcessCompilation(processCompiler.compile(process))
       val timeout = config.as[FiniteDuration]("timeout")

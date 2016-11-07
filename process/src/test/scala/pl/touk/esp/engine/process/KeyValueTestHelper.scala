@@ -48,6 +48,8 @@ object KeyValueTestHelper {
 
       override def customStreamTransformers(config: Config) = Map()
       override def exceptionHandlerFactory(config: Config) = ExceptionHandlerFactory.noParams(VerboselyLoggingExceptionHandler)
+
+      override def globalProcessVariables(config: Config): Map[String, Class[_]] = Map.empty
     }
 
     def invokeWithKafka(process: EspProcess, config: KafkaConfig,

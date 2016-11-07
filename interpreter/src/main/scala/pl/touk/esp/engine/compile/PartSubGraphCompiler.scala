@@ -201,8 +201,8 @@ private[compile] trait PartSubGraphCompilerBase {
 
 object PartSubGraphCompilerBase {
 
-  private[compile] val defaultParsers = {
-    val parsersSeq = Seq(SpelExpressionParser.default)
+  private[compile] def defaultParsers(globalProcessVariables: Map[String, ClazzRef]) = {
+    val parsersSeq = Seq(SpelExpressionParser.default(globalProcessVariables))
     parsersSeq.map(p => p.languageId -> p).toMap
   }
 
@@ -213,15 +213,15 @@ object PartSubGraphCompilerBase {
 
 object PartSubGraphCompiler {
 
-  def default(servicesDefs: Map[String, ObjectWithMethodDef]): PartSubGraphCompiler = {
-    new PartSubGraphCompiler(PartSubGraphCompilerBase.defaultParsers, servicesDefs)
+  def default(servicesDefs: Map[String, ObjectWithMethodDef], globalProcessVariables: Map[String, ClazzRef]): PartSubGraphCompiler = {
+    new PartSubGraphCompiler(PartSubGraphCompilerBase.defaultParsers(globalProcessVariables), servicesDefs)
   }
 }
 
 object PartSubGraphValidator {
 
-  def default(services: Map[String, ObjectDefinition]) = {
-    new PartSubGraphValidator(PartSubGraphCompilerBase.defaultParsers, services)
+  def default(services: Map[String, ObjectDefinition], globalProcessVariables: Map[String, ClazzRef]) = {
+    new PartSubGraphValidator(PartSubGraphCompilerBase.defaultParsers(globalProcessVariables), services)
   }
 
 }

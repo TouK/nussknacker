@@ -25,7 +25,8 @@ class ProcessValidatorSpec extends FlatSpec with Matchers {
     Map("sink" -> ObjectDefinition.noParam),
     Map("customTransformer" -> ObjectDefinition(List.empty, classOf[SimpleRecord], None)),
     ObjectDefinition.noParam,
-    EspTypeUtils.clazzAndItsChildrenDefinition(List(classOf[SampleEnricher], classOf[SimpleRecord]))
+    Map("processHelper" -> ClazzRef(ProcessHelper.getClass)),
+    EspTypeUtils.clazzAndItsChildrenDefinition(List(classOf[SampleEnricher], classOf[SimpleRecord], ProcessHelper.getClass))
   )
 
   it should "validated with success" in {
@@ -36,7 +37,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers {
       .processor("sampleProcessor1", "sampleEnricher")
       .enricher("sampleProcessor2", "out", "sampleEnricher")
       .buildVariable("bv1", "vars", "v1" -> "42")
-      .sink("sink", "#input.someMethod(#vars['v1'])", "sink")
+      .sink("id2", "#processHelper.add(#processHelper, 2)", "sink")
     ProcessValidator.default(baseDefinition).validate(correctProcess) should matchPattern {
       case Valid(_) =>
     }
@@ -191,6 +192,10 @@ class ProcessValidatorSpec extends FlatSpec with Matchers {
 
   class SampleEnricher extends Service {
     def invoke()(implicit ec: ExecutionContext) = Future(SimpleRecord(AnotherSimpleRecord(1), 2))
+  }
+
+  object ProcessHelper {
+    def add(a: Int, b: Int) = a + b
   }
 
 }
