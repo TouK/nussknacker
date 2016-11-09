@@ -25,7 +25,8 @@ export default class NodeDetailsContent extends React.Component {
       case 'Source':
         return this.sourceSinkCommon()
       case 'Sink':
-        return this.sourceSinkCommon()
+        const toAppend = this.createField("textarea", "Expression:", "endResult.expression")
+        return this.sourceSinkCommon(toAppend)
       case 'Filter':
         return (
           <div className="node-table-body">
@@ -49,7 +50,7 @@ export default class NodeDetailsContent extends React.Component {
                       return (
                         <div className="node-block" key={index}>
                           {this.createListField("input", "Name:", params, 'name', `service.parameters[${index}]`)}
-                          {this.createListField("input", "Expression:", params, 'expression.expression', `service.parameters[${index}]`)}
+                          {this.createListField("textarea", "Expression:", params, 'expression.expression', `service.parameters[${index}]`)}
                         </div>
                       )
                     })}
@@ -65,7 +66,7 @@ export default class NodeDetailsContent extends React.Component {
           <div className="node-table-body">
             {this.createField("input", "Id:", "id")}
             {this.createField("input", "Output:", "outputVar")}
-            {this.createField("input", "Node type:", "customNodeRef")}
+            {this.createField("input", "Node type:", "nodeType")}
             <div className="node-row">
               <div className="node-label">Parameters:</div>
               <div className="node-group child-group">
@@ -73,7 +74,7 @@ export default class NodeDetailsContent extends React.Component {
                   return (
                     <div className="node-block" key={index}>
                       {this.createListField("input", "Name:", params, "name", `parameters[${index}]`)}
-                      {this.createListField("input", "Expression:", params, "expression.expression", `parameters[${index}]`)}
+                      {this.createListField("textarea", "Expression:", params, "expression.expression", `parameters[${index}]`)}
                     </div>
                   )
                 })}
@@ -94,7 +95,7 @@ export default class NodeDetailsContent extends React.Component {
                   return (
                     <div className="node-block" key={index}>
                       {this.createListField("input", "Name:", params, "name", `fields[${index}]`)}
-                      {this.createListField("input", "Expression:", params, "expression.expression", `fields[${index}]`)}
+                      {this.createListField("textarea", "Expression:", params, "expression.expression", `fields[${index}]`)}
                     </div>
                   )
                 })}
@@ -106,7 +107,7 @@ export default class NodeDetailsContent extends React.Component {
         return (
           <div className="node-table-body">
             {this.createField("input", "Id:", "id")}
-            {this.createField("input", "Expression:", "expression.expression")}
+            {this.createField("textarea", "Expression:", "expression.expression")}
             {this.createField("input", "exprVal:", "exprVal")}
           </div>
         )
@@ -150,7 +151,7 @@ export default class NodeDetailsContent extends React.Component {
     }
   }
 
-  sourceSinkCommon() {
+  sourceSinkCommon(toAppend) {
     return (
       <div className="node-table-body">
         {this.createField("input", "Id:", "id")}
@@ -173,6 +174,7 @@ export default class NodeDetailsContent extends React.Component {
             </div>
           </div>
         </div>
+        {toAppend}
       </div>
     )
   }

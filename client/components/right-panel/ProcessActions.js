@@ -2,6 +2,7 @@ import React, {PropTypes, Component} from "react";
 import {render} from "react-dom";
 import {connect} from "react-redux";
 import {bindActionCreators} from "redux";
+import { browserHistory } from 'react-router'
 import ActionsUtils from "../../actions/ActionsUtils";
 import HttpService from "../../http/HttpService";
 
@@ -49,6 +50,10 @@ class ProcessActions extends React.Component {
     return !_.isEmpty(this.props.fetchedProcessDetails)
   }
 
+  showMetrics = () => {
+    browserHistory.push('/metrics/' + this.processId())
+  }
+
   render() {
     const nothingToSave = this.dataResolved() ? _.isEqual(this.props.fetchedProcessDetails.json, this.props.processToDisplay) : true
     const buttonClass = "espButton"
@@ -59,6 +64,8 @@ class ProcessActions extends React.Component {
         ) : null}
         <button type="button" className={buttonClass} onClick={this.props.graphLayout}>Layout</button>
         <button type="button" className={buttonClass} onClick={this.showProperties}>Properties</button>
+        <hr/>
+        <button type="button" className={buttonClass} onClick={this.showMetrics}>Metrics</button>
         <hr/>
         {this.props.loggedUser.canDeploy ? (
           <button type="button" className={buttonClass} onClick={this.deploy}>Deploy</button>
