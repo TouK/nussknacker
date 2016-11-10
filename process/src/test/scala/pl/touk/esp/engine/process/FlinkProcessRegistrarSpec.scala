@@ -39,7 +39,7 @@ class FlinkProcessRegistrarSpec extends FlatSpec with Matchers {
   }
 
   it should "aggregate nested records" in {
-    val process = EspProcess(MetaData("proc1"),
+    val process = EspProcess(MetaData("proc2"),
       ExceptionHandlerRef(List.empty),
       GraphBuilder.source("id", "input")
         .aggregate("agg", "input", "#input.id", 5 seconds, 1 second)

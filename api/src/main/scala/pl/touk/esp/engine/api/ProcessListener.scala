@@ -6,10 +6,10 @@ trait ProcessListener {
 
   def nodeEntered(nodeId: String, context: Context, processMetaData: MetaData, mode: InterpreterMode): Unit
 
-  def deadEndEncountered(context: Context, processMetaData: MetaData): Unit
+  def deadEndEncountered(lastNodeId: String, context: Context, processMetaData: MetaData): Unit
 
-  def expressionEvaluated(expression: String, context: Context, processMetaData: MetaData, result: Any): Unit
+  def expressionEvaluated(nodeId: String, expression: String, context: Context, processMetaData: MetaData, result: Any): Unit
 
-  def serviceInvoked(id: String, context: Context, processMetaData: MetaData, result: Try[Any]): Unit
+  def serviceInvoked(nodeId: String, id: String, context: Context, processMetaData: MetaData, result: Try[Any]): Unit
 
 }
