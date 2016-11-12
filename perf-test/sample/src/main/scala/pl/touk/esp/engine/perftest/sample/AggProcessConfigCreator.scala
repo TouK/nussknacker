@@ -50,7 +50,7 @@ class AggProcessConfigCreator extends ProcessConfigCreator {
     }
 
     Map(
-      "kafka-int" -> new KafkaSinkFactory(kafkaConfig.kafkaAddress, intSerializationSchema)
+      "kafka-int" -> new KafkaSinkFactory(kafkaConfig, intSerializationSchema)
     )
   }
 
