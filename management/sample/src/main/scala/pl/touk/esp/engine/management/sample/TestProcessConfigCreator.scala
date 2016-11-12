@@ -27,7 +27,7 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
     Map[String, SinkFactory](
       "sendSms" -> SinkFactory.noParam(sendSmsSink),
       "monitor" -> SinkFactory.noParam(monitorSink),
-      "kafka-string" -> new KafkaSinkFactory(kConfig.kafkaAddress,
+      "kafka-string" -> new KafkaSinkFactory(kConfig,
         new KeyedSerializationSchema[Any] {
           override def serializeValue(element: Any) = element.toString.getBytes
 
