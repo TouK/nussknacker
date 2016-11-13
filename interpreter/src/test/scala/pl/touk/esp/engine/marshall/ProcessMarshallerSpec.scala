@@ -30,7 +30,6 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues {
         .filter("b", "alamakota == 'true'", nestedGraph("b"))
         .buildVariable("c", "fooVar", "f1" -> "expr1", "f2" -> "expr2")
         .enricher("d", "barVar", "dService", "p1" -> "expr3")
-        .aggregate("e", "input", "alamakota == 'false'", 10000 milli, 5000 milli)
         .switch("f", "expr4", "eVar", nestedGraph("e"), Case("e1", GraphBuilder.sink("endE1", "")))
 
     val marshalled = ProcessMarshaller.toJson(process, PrettyParams.spaces2)

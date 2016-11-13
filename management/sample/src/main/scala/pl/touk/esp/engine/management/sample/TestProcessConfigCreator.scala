@@ -7,14 +7,14 @@ import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.util.serialization.KeyedSerializationSchema
-import pl.touk.esp.engine.api.{FoldingFunction, Service}
-import pl.touk.esp.engine.api.process._
-import pl.touk.esp.engine.api.Service
+import pl.touk.esp.engine.api._
 import pl.touk.esp.engine.api.exception.ExceptionHandlerFactory
+import pl.touk.esp.engine.api.process._
 import pl.touk.esp.engine.kafka.{KafkaConfig, KafkaSinkFactory}
 import pl.touk.esp.engine.util.exception.VerboselyLoggingExceptionHandler
 
 import scala.concurrent.Future
+import scala.concurrent.duration.FiniteDuration
 
 class TestProcessConfigCreator extends ProcessConfigCreator {
 
@@ -105,12 +105,29 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
     )
   }
 
-  override def foldingFunctions(config: Config) = Map("sample" -> SampleFoldingFunction)
-
-  override def customStreamTransformers(config: Config) = Map()
+  override def customStreamTransformers(config: Config) = Map("stateful" -> StatefulTransformer)
 
   override def exceptionHandlerFactory(config: Config) =
     ExceptionHandlerFactory.noParams(VerboselyLoggingExceptionHandler)
+
+}
+
+case object StatefulTransformer extends CustomStreamTransformer {
+
+  @MethodToInvoke
+  def execute(@ParamName("keyBy") keyBy: LazyInterpreter[String])
+  = (start: DataStream[InterpretationResult], timeout: FiniteDuration) => {
+    start.keyBy(keyBy.syncInterpretationFunction)
+      .mapWithState[Any, List[String]] { case (StringFromIr(sr), oldState) =>
+      val nList = sr :: oldState.getOrElse(Nil)
+      (nList, Some(nList))
+    }
+
+  }
+
+  object StringFromIr {
+    def unapply(ir: InterpretationResult) = Some(ir.finalContext.apply[String]("input"))
+  }
 
 }
 
@@ -122,13 +139,4 @@ case object EmptySink extends Sink {
 
 case object EmptyService extends Service {
   def invoke() = Future.successful(Unit)
-}
-
-case class SampleFold(count: Int)
-
-object SampleFoldingFunction extends FoldingFunction[SampleFold] {
-  override def fold(value: AnyRef, acc: Option[SampleFold]) = {
-    val value = acc.getOrElse(SampleFold(0))
-    value.copy(count = value.count + 1)
-  }
 }

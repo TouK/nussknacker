@@ -36,7 +36,6 @@ import pl.touk.esp.engine.compiledgraph.part._
 import pl.touk.esp.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.esp.engine.definition.{CustomNodeInvoker, ProcessObjectDefinitionExtractor, ServiceDefinitionExtractor}
 import pl.touk.esp.engine.graph.{EspProcess, node}
-import pl.touk.esp.engine.graph.node.Aggregate
 import pl.touk.esp.engine.process.FlinkProcessRegistrar._
 import pl.touk.esp.engine.process.util.Serializers
 import pl.touk.esp.engine.splittedgraph.end.{DeadEnd, End, NormalEnd}
@@ -117,22 +116,6 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessW
     def registerSubsequentPart[T](start: DataStream[InterpretationResult],
                                   processPart: SubsequentPart): Unit =
       processPart match {
-        case part: AggregatePart =>
-          val windowDef = start
-            .keyBy(new AggregateKeyByFunction(compiledProcessWithDeps, part.node))
-            .timeWindow(part.durationInMillis, part.slideInMillis)
-
-          val foldingFunction = part.foldingFun.getOrElse(JListFoldingFunction).asInstanceOf[FoldingFunction[Any]]
-
-          val newStart = part.triggerExpression
-            .map(_ => windowDef.trigger(new AggregationTrigger(
-              compiledProcessWithDeps, part.node, part.aggregatedVar, env.getConfig)))
-            .getOrElse(windowDef)
-            .fold(null, new WindowFoldingFunction(part.aggregatedVar, foldingFunction))
-            .flatMap(new InitialInterpretationFunction(compiledProcessWithDeps, part.node, part.aggregatedVar))
-            .split(SplitFunction)
-
-          registerParts(newStart, part.nextParts, part.ends)
         case part: SinkPart =>
           start
             .flatMap(new SinkInterpretationFunction(compiledProcessWithDeps, part.node))
@@ -175,7 +158,6 @@ object FlinkProcessRegistrar {
         services = creator.services(config),
         sourceFactories = creator.sourceFactories(config),
         sinkFactories = creator.sinkFactories(config),
-        foldingFunctions = creator.foldingFunctions(config),
         customStreamTransformers = creator.customStreamTransformers(config),
         exceptionHandlerFactory = creator.exceptionHandlerFactory(config)
       )
@@ -264,73 +246,6 @@ object FlinkProcessRegistrar {
     override def close(): Unit = {
       super.close()
       compiledProcessWithDeps.close()
-    }
-  }
-
-  class AggregateKeyByFunction(compiledProcessWithDepsProvider: () => CompiledProcessWithDeps,
-                               node: splittednode.SplittedNode[Aggregate]) extends (InterpretationResult => String) with Serializable {
-
-    private lazy implicit val ec = SynchronousExecutionContext.ctx
-    private lazy val compiledProcessWithDeps = compiledProcessWithDepsProvider()
-    private lazy val compiledNode = compiledProcessWithDeps.compileSubPart(node)
-    import compiledProcessWithDeps._
-
-    override def apply(result: InterpretationResult) = {
-      val resultFuture = interpreter.interpret(compiledNode, InterpreterMode.AggregateKeyExpression, metaData, result.finalContext).map(_.output.toString)
-      Await.result(resultFuture, processTimeout)
-    }
-
-  }
-
-  class AggregationTrigger(compiledProcessWithDepsProvider: () => CompiledProcessWithDeps,
-                           node: splittednode.SplittedNode[Aggregate],
-                           inputParamName: String, config: ExecutionConfig) extends Trigger[AnyRef, TimeWindow] with Serializable {
-
-    private lazy implicit val ec = SynchronousExecutionContext.ctx
-    private lazy val compiledProcessWithDeps = compiledProcessWithDepsProvider()
-    private lazy val compiledNode = compiledProcessWithDeps.compileSubPart(node)
-    import compiledProcessWithDeps._
-
-    override def onElement(element: scala.AnyRef, timestamp: Long, window: TimeWindow, ctx: TriggerContext) = {
-      if (timestamp > window.maxTimestamp()) {
-        TriggerResult.PURGE
-      } else if (currentExceedsThreshold(ctx)) {
-        TriggerResult.FIRE_AND_PURGE
-      } else {
-        TriggerResult.CONTINUE
-      }
-    }
-
-    def currentExceedsThreshold(ctx: TriggerContext): Boolean = {
-      val foldResult: AnyRef = getAggregatedState(ctx)
-      val resultFuture = interpreter
-        .interpret(compiledNode, InterpreterMode.AggregateTriggerExpression, metaData, foldResult, inputParamName)
-        .map(_.output.toString.toBoolean)
-      Await.result(resultFuture, processTimeout)
-    }
-
-    def getAggregatedState(ctx: TriggerContext): AnyRef = {
-      //tutaj podajemy te nulle, bo tam wartosci sa wypelniane kiedy chcemy modyfikowac stan
-      //to jest troche hack, bo polegamy na obecnej implementacji okien, ale nie wiem jak to inaczej zrobic...
-      val stateDescriptor: FoldingStateDescriptor[AnyRef, AnyRef] = new FoldingStateDescriptor[AnyRef, AnyRef]("window-contents", null,
-        new ScalaFoldFunction[AnyRef, AnyRef]((_, _) => null), classOf[AnyRef])
-      stateDescriptor.initializeSerializerUnlessSet(config)
-      ctx.getPartitionedState[FoldingState[AnyRef, AnyRef]](
-        stateDescriptor).get()
-    }
-
-    override def onProcessingTime(time: Long, window: TimeWindow, ctx: TriggerContext) = TriggerResult.CONTINUE
-
-    override def onEventTime(time: Long, window: TimeWindow, ctx: TriggerContext) = TriggerResult.CONTINUE
-
-  }
-
-
-  class WindowFoldingFunction[T](aggregatedVar: String, foldingFun: FoldingFunction[T])
-    extends FoldFunction[InterpretationResult, T] {
-    override def fold(accumulator: T, value: InterpretationResult) = {
-      val result = value.finalContext[AnyRef](aggregatedVar)
-      foldingFun.fold(result, Option(accumulator))
     }
   }
 

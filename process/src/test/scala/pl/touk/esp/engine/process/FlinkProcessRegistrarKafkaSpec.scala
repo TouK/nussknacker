@@ -35,6 +35,7 @@ class FlinkProcessRegistrarKafkaSpec
 
   import spel.Implicits._
 
+  //FIXME: brak testu
   it should "aggregate records with triggering" in {
     val id = "itest.agg." + UUID.randomUUID().toString
     val inTopic = id + ".in"
@@ -49,10 +50,6 @@ class FlinkProcessRegistrarKafkaSpec
       MetaData("proc1"),
       ExceptionHandlerRef(List.empty),
       GraphBuilder.source("source", "kafka-keyvalue", "topic" -> inTopic)
-        .aggregate(
-          id = "aggregate", aggregatedVar = "input", keyExpression = "#input.key",
-          duration = windowWidth * slidesInWindow, step = windowWidth, triggerExpression = Some(s"#input == $threshold"), foldingFunRef = Some("sum")
-        )
         .processorEnd("service", "mock", "input" -> "#input")
     )
 

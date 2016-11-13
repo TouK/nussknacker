@@ -18,11 +18,7 @@ object StatefulSampleProcess {
       .id(id)
       .exceptionHandler()
       .source("state", "oneSource")
-        .aggregate("sample", aggregatedVar =  "input", keyExpression =  "#input",
-          duration =  1 minute,
-          step = 10 second,
-          triggerExpression =  Some("#input.count > 1"),
-          foldingFunRef = Some("sample"))
+          .customNode("stateful", "input", "stateful", "keyBy" -> "#input")
         .sink("end", "#input", "kafka-string", "topic" -> s"output-$id")
   }
 }

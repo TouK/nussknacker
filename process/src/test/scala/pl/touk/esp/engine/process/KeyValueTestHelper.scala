@@ -29,12 +29,6 @@ object KeyValueTestHelper {
     }
   }
 
-  case object Sum extends FoldingFunction[Int] {
-    override def fold(value: AnyRef, acc: Option[Int]) = {
-      acc.getOrElse(0) + value.asInstanceOf[KeyValue].value
-    }
-  }
-
   object processInvoker {
 
     def prepareCreator(exConfig: ExecutionConfig, data: List[KeyValue], kafkaConfig: KafkaConfig) = new ProcessConfigCreator {
@@ -53,7 +47,6 @@ object KeyValueTestHelper {
       override def listeners(config: Config) = Seq(LoggingListener)
 
       override def customStreamTransformers(config: Config) = Map()
-      override def foldingFunctions(config: Config) = Map("sum" -> Sum)
       override def exceptionHandlerFactory(config: Config) = ExceptionHandlerFactory.noParams(VerboselyLoggingExceptionHandler)
     }
 

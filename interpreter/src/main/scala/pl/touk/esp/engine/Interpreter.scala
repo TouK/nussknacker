@@ -87,16 +87,6 @@ class Interpreter private(services: Map[String, ServiceInvoker],
           case (accCtx, None) =>
             interpretOptionalNext(node, defaultNext, accCtx)
         }
-      case (agg: Aggregate, Traverse) =>
-        interpretNext(agg.next, ctx)
-      case (agg: Aggregate, AggregateKeyExpression) =>
-        Future.successful(InterpretationResult(EndReference(agg.id), evaluate(agg.keyExpression, ctx)))
-      case (agg: Aggregate, AggregateTriggerExpression) =>
-        Future.successful(InterpretationResult(
-          EndReference(agg.id),
-          agg.triggerExpression
-            .map(evaluate[Boolean](_, ctx))
-            .getOrElse(throw new IllegalArgumentException("Trigger expression is not defined"))))
       case (Sink(id, optionalExpression), Traverse) =>
         val valueWithModifiedContext = optionalExpression match {
           case Some(expression) =>
@@ -113,7 +103,7 @@ class Interpreter private(services: Map[String, ServiceInvoker],
             .getOrElse(throw new IllegalArgumentException(s"Parameter $mode is not defined")), ctx)))
       case (cust: CustomNode, Traverse) =>
         interpretNext(cust.next, ctx)
-      case (_, AggregateKeyExpression | AggregateTriggerExpression | CustomNodeExpression(_)) =>
+      case (_, CustomNodeExpression(_)) =>
         throw new IllegalArgumentException(s"Mode $mode make no sense for node: ${node.getClass.getName}")
     }
   }

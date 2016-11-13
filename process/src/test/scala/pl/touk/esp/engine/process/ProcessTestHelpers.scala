@@ -63,8 +63,6 @@ object ProcessTestHelpers {
 
       override def listeners(config: Config) = Seq(LoggingListener)
 
-      override def foldingFunctions(config: Config) = Map("simpleFoldingFun" -> SimpleRecordFoldingFunction)
-
       override def exceptionHandlerFactory(config: Config) = ExceptionHandlerFactory.noParams(VerboselyLoggingExceptionHandler)
     }
   }
@@ -113,16 +111,6 @@ object ProcessTestHelpers {
 
   object EmptyService extends Service {
     def invoke() = Future.successful(Unit)
-  }
-
-  object SimpleRecordFoldingFunction extends FoldingFunction[SimpleRecordAcc] {
-    override def fold(value: AnyRef, acc: Option[SimpleRecordAcc]) = {
-      val srv = value.asInstanceOf[SimpleRecord]
-      acc match {
-        case Some(old) => SimpleRecordAcc(old.id, old.value1 + srv.value1, old.value2 + srv.value2, srv.date)
-        case None => SimpleRecordAcc(srv.id, srv.value1, Set(srv.value2), srv.date)
-      }
-    }
   }
 
 }

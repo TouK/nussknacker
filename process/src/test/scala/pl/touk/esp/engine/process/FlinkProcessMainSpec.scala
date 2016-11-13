@@ -28,7 +28,6 @@ class FlinkProcessMainSpec extends FlatSpec {
         .id("proc1")
         .exceptionHandler()
         .source("id", "input")
-        .aggregate("agg", "input", "#input.id", 5 seconds, 1 second)
         .filter("filter1", "#sum(#input.![value1]) > 24")
         .processor("proc2", "logService", "all" -> "#distinct(#input.![value2])")
         .sink("out", "monitor")
@@ -57,8 +56,6 @@ class SimpleProcessConfigCreator extends ProcessConfigCreator {
   override def listeners(config: Config) = List()
 
   override def customStreamTransformers(config: Config) = Map()
-
-  override def foldingFunctions(config: Config) = Map()
 
   override def sourceFactories(config: Config) = Map("input" -> SourceFactory.noParam(
     new CollectionSource[SimpleRecord](new ExecutionConfig, List(), Some(new AscendingTimestampExtractor[SimpleRecord] {

@@ -14,7 +14,6 @@ class ProcessDefinitionMarshallerTest extends FlatSpec with Matchers {
       Map("fooService" -> ObjectDefinition.withParams(List(Parameter(name = "foo", typ = ClazzRef(classOf[String]))))),
       Map("fooSourceFactory" -> ObjectDefinition.withParams(List(Parameter(name = "foo", typ = ClazzRef(classOf[String]))))),
       Map("fooSinkFactory" -> ObjectDefinition.withParams(List(Parameter(name = "foo", typ = ClazzRef(classOf[String]))))),
-      Set("fooFoldingFunction"),
       Map("fooExecutorServiceFactory" -> ObjectDefinition.withParams(List(Parameter(name = "foo", typ = ClazzRef(classOf[String]))))),
       ObjectDefinition.noParam,
       EspTypeUtils.clazzAndItsChildrenDefinition(List.empty)
