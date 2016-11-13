@@ -68,14 +68,6 @@ object ProcessCompilationError {
       MissingSinkFactory(typ, nodeId.id)
   }
 
-  case class MissingFoldingFunction(name: String, nodeId: String)
-    extends ProcessCompilationError with InASingleNode
-
-  object MissingFoldingFunction {
-    def apply(name: String)(implicit nodeId: NodeId): ProcessCompilationError =
-      MissingFoldingFunction(name, nodeId.id)
-  }
-
   case class MissingCustomNodeExecutor(name: String, nodeId: String)
     extends ProcessCompilationError with InASingleNode
 

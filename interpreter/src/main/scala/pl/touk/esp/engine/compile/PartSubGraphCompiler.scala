@@ -110,11 +110,6 @@ private[compile] trait PartSubGraphCompilerBase {
               }.getOrElse(ctx)
               A.map2(compile(ref, newCtx), compile(next, newCtx))((ref, nextWithCtx) =>
                 CompiledNode(compiledgraph.node.Enricher(id, ref, outName, nextWithCtx.next), nextWithCtx.ctx))
-            case graph.node.Aggregate(id, aggregatedVar, keyExpression, _, _, triggerExpression, _) =>
-              val newCtx = ctx.copy(variables = Map(aggregatedVar -> ClazzRef(classOf[Any]))) //na razie olewamy
-              A.map3(compile(keyExpression, newCtx), triggerExpression.map(te => compile(te, newCtx)).sequence, compile(next, newCtx))(
-                (keyExpr, triggerExpr, nextWithCtx) =>
-                  CompiledNode(compiledgraph.node.Aggregate(id, keyExpr, triggerExpr, nextWithCtx.next), nextWithCtx.ctx))
             case graph.node.CustomNode(id, outputVar, customNodeRef, parameters) =>
               val newCtx = ctx.copy(variables = Map(outputVar -> ClazzRef(classOf[Any]))) //na razie olewamy
               val validParams = parameters.map(p => compile(p, newCtx)).sequence

@@ -2,7 +2,7 @@ package pl.touk.esp.engine.api.process
 
 import com.typesafe.config.Config
 import pl.touk.esp.engine.api.exception.ExceptionHandlerFactory
-import pl.touk.esp.engine.api.{CustomStreamTransformer, FoldingFunction, ProcessListener, Service}
+import pl.touk.esp.engine.api.{CustomStreamTransformer, ProcessListener, Service}
 
 trait ProcessConfigCreator extends Serializable {
 
@@ -15,8 +15,6 @@ trait ProcessConfigCreator extends Serializable {
   def sinkFactories(config: Config): Map[String, SinkFactory]
 
   def listeners(config: Config): Seq[ProcessListener]
-
-  def foldingFunctions(config: Config) : Map[String, FoldingFunction[_]]
 
   def exceptionHandlerFactory(config: Config) : ExceptionHandlerFactory
 

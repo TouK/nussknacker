@@ -13,6 +13,7 @@ class CustomNodeProcessSpec extends FlatSpec with Matchers {
 
   import spel.Implicits._
 
+  //FIXME: brak testu
   it should "fire alert when aggregate threshold exceeded" in {
 
     val process = EspProcessBuilder.id("proc1")

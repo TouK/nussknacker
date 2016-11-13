@@ -19,10 +19,6 @@ object part {
 
   sealed trait SubsequentPart extends ProcessPart
 
-  case class AggregatePart(node: OneOutputSubsequentNode[Aggregate], nextParts: List[SubsequentPart], ends: List[End]) extends SubsequentPart {
-    override type T = Aggregate
-  }
-
   case class CustomNodePart(node: OneOutputSubsequentNode[CustomNode], nextParts: List[SubsequentPart], ends: List[End]) extends SubsequentPart {
     override type T = CustomNode
   }

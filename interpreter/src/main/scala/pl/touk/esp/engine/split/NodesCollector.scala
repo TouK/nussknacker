@@ -9,8 +9,6 @@ object NodesCollector {
     part match {
       case source: SourcePart =>
         collectNodes(source.node) ::: source.nextParts.flatMap(collectNodesInAllParts)
-      case agg: AggregatePart =>
-        collectNodes(agg.node) ::: agg.nextParts.flatMap(collectNodesInAllParts)
       case sink: SinkPart =>
         collectNodes(sink.node)
       case custom:CustomNodePart =>

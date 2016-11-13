@@ -32,12 +32,6 @@ trait GraphBuilder[R] {
   def filter(id: String, expression: Expression, nextFalse: SubsequentNode): GraphBuilder[R] =
     build(node => creator(FilterNode(Filter(id, expression), node, Some(nextFalse))))
 
-  def aggregate(id: String, aggregatedVar: String,
-                keyExpression: Expression, duration: Duration, step: Duration,
-                triggerExpression: Option[Expression] = None, foldingFunRef: Option[String] = None): GraphBuilder[R] =
-    build(node => creator(OneOutputSubsequentNode(Aggregate(id, aggregatedVar, keyExpression,
-      duration.toMillis, step.toMillis, triggerExpression, foldingFunRef), node)))
-
   def sink(id: String, typ: String, params: (String, String)*): R =
     creator(EndingNode(Sink(id, SinkRef(typ, params.map(param.Parameter.tupled).toList))))
 

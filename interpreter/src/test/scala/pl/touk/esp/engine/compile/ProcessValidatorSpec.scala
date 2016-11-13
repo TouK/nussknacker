@@ -23,7 +23,6 @@ class ProcessValidatorSpec extends FlatSpec with Matchers {
     Map("sampleEnricher" -> ObjectDefinition(List.empty, classOf[SampleEnricher], Some(classOf[SimpleRecord]))),
     Map("source" -> ObjectDefinition(List.empty, classOf[SimpleRecord], None)),
     Map("sink" -> ObjectDefinition.noParam),
-    Set.empty,
     Map("customTransformer" -> ObjectDefinition(List.empty, classOf[SimpleRecord], None)),
     ObjectDefinition.noParam,
     EspTypeUtils.clazzAndItsChildrenDefinition(List(classOf[SampleEnricher], classOf[SimpleRecord]))

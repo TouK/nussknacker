@@ -12,14 +12,13 @@ import scala.concurrent.duration._
 
 class StateProcessSpec extends FlatSpec with Matchers {
 
-  it should "fire alert when aggregate threshold exceeded" in {
+  //FIXME: brak testu
+  ignore should "fire alert when aggregate threshold exceeded" in {
     import spel.Implicits._
 
     val process = EspProcessBuilder.id("proc1")
       .exceptionHandler()
       .source("id", "input")
-      .aggregate("agg", "input", "#input.id", 5 seconds, 5 second,
-        Some("#input.value1 > 24"), Some("simpleFoldingFun"))
       .processor("proc2", "logService", "all" -> "#input.value2")
       .sink("out", "monitor")
     val data = List(

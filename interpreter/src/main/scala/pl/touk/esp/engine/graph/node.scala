@@ -48,12 +48,6 @@ object node {
 
   case class Enricher(id: String, service: ServiceRef, output: String) extends OneOutputSubsequentNodeData
 
-  case class Aggregate(id: String, aggregatedVar: String,
-                       keyExpression: Expression, durationInMillis: Long,
-                       stepInMillis: Long,
-                       triggerExpression: Option[Expression],
-                       foldingFunRef: Option[String]) extends OneOutputSubsequentNodeData
-
   case class CustomNode(id: String, outputVar: String, nodeType: String, parameters: List[Parameter]) extends OneOutputSubsequentNodeData
 
   sealed trait EndingNodeData extends NodeData

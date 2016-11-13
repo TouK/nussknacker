@@ -1,6 +1,6 @@
 package pl.touk.esp.engine.compile
 
-import pl.touk.esp.engine.api.{CustomStreamTransformer, FoldingFunction, MetaData}
+import pl.touk.esp.engine.api.{CustomStreamTransformer, MetaData}
 import pl.touk.esp.engine.definition.{CustomNodeInvokerDeps, CustomNodeInvoker, ProcessObjectFactory, ServiceInvoker}
 import pl.touk.esp.engine.graph.param.Parameter
 
@@ -22,12 +22,6 @@ object dumb {
 
   class DumbCustomNodeInvoker[T] extends CustomNodeInvoker[T] {
     override def run(lazyDeps: () => CustomNodeInvokerDeps) = null.asInstanceOf[T]
-  }
-
-  object DumbFoldingFunction extends FoldingFunction[Any] {
-
-    override def fold(value: AnyRef, acc: Option[Any]) = throw new IllegalAccessException("Dumb folding function shouldn't be invoked")
-
   }
 
   object DumbCustomStreamTransformer extends CustomStreamTransformer
