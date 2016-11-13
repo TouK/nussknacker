@@ -59,7 +59,7 @@ object DefinitionExtractor {
 
   trait ClazzParametersProvider {
     def parameters: List[Parameter]
-    def clazz: ClazzRef
+    def definedClass: ClazzRef
   }
 
   case class ObjectWithMethodDef(obj: Any, methodDef: MethodDefinition, objectDefinition: ObjectDefinition) extends ClazzParametersProvider {
@@ -71,7 +71,7 @@ object DefinitionExtractor {
 
     def orderedParameters = methodDef.orderedParameters
 
-    override def clazz: ClazzRef = objectDefinition.clazz
+    override def definedClass: ClazzRef = objectDefinition.definedClass
   }
   object ObjectWithMethodDef {
     def apply[T](obj: T, extractor: DefinitionExtractor[T]): ObjectWithMethodDef = {
@@ -95,16 +95,20 @@ object DefinitionExtractor {
   }
 
   object TypesInformation {
-    def extract(services: Map[String, Service],
+    def extract(services: Map[String, ObjectWithMethodDef],
                 sourceFactories: Map[String, SourceFactory[_]],
-                sinkFactories: Map[String, SinkFactory],
                 globalProcessVariables: Map[String, Class[_]]): List[PlainClazzDefinition] = {
-      (sourceFactories.values.map(_.clazz) ++ sinkFactories.values.map(_.getClass) ++ services.values.map(_.getClass) ++ globalProcessVariables.values)
-        .flatMap(EspTypeUtils.clazzAndItsChildrenDefinition).toList.distinct
+
+      //TODO: czy tutaj potrzebujemy serwisów jako takich?
+      val classesToExtractDefinitions = globalProcessVariables.values ++
+          sourceFactories.values.map(_.clazz) ++
+          services.values.map(sv => EspTypeUtils.getReturnClassForMethod(sv.method))
+
+      classesToExtractDefinitions.flatMap(EspTypeUtils.clazzAndItsChildrenDefinition).toList.distinct
     }
   }
 
-  case class ObjectDefinition(parameters: List[Parameter], clazz: ClazzRef, returnType: Option[ClazzRef]) extends ClazzParametersProvider
+  case class ObjectDefinition(parameters: List[Parameter], definedClass: ClazzRef, returnType: Option[ClazzRef]) extends ClazzParametersProvider
 
   case class Parameter(name: String, typ: ClazzRef)
 

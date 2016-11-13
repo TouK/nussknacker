@@ -82,6 +82,7 @@ private[compile] trait PartSubGraphCompilerBase {
     new Compiler(false).doCompile(n, ValidationContext())
   }
 
+  //TODO: no to wyglada troche strasznie, nie??
   private class Compiler(contextValidationEnabled: Boolean) {
     def doCompile(n: SplittedNode[_], ctx: ValidationContext): ValidatedNel[PartSubGraphCompilationError, CompiledNode] = {
       implicit val nodeId = NodeId(n.id)

@@ -4,17 +4,18 @@ import pl.touk.esp.engine.definition.ProcessDefinitionExtractor.ProcessDefinitio
 import argonaut.Argonaut._
 import argonaut.PrettyParams
 import cats.data.Validated
+import pl.touk.esp.engine.definition.DefinitionExtractor.ObjectDefinition
 
 object ProcessDefinitionMarshaller {
 
   import argonaut.ArgonautShapeless._
 
-  def toJson(definition: ProcessDefinition, prettyParams: PrettyParams): String = {
+  def toJson(definition: ProcessDefinition[ObjectDefinition], prettyParams: PrettyParams): String = {
     definition.asJson.pretty(prettyParams.copy(dropNullKeys = true, preserveOrder = true))
   }
 
-  def fromJson(json: String): Validated[String, ProcessDefinition] = {
-    Validated.fromEither(json.decodeEither[ProcessDefinition])
+  def fromJson(json: String): Validated[String, ProcessDefinition[ObjectDefinition]] = {
+    Validated.fromEither(json.decodeEither[ProcessDefinition[ObjectDefinition]])
   }
 
 }

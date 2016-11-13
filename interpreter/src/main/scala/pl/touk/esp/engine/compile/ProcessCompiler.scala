@@ -24,14 +24,9 @@ import pl.touk.esp.engine.split._
 import pl.touk.esp.engine.splittedgraph._
 import pl.touk.esp.engine.splittedgraph.part._
 import pl.touk.esp.engine.splittedgraph.splittednode.SplittedNode
-import pl.touk.esp.engine.types.EspTypeUtils
 
 class ProcessCompiler(protected val sub: PartSubGraphCompilerBase,
-                      protected val sourceFactories: Map[String, ObjectWithMethodDef],
-                      protected val sinkFactories: Map[String, ObjectWithMethodDef],
-                      protected val customStreamTransformers: Map[String, ObjectWithMethodDef],
-                      protected val exceptionHandlerFactory: ObjectWithMethodDef,
-                      protected val typesInformation: List[PlainClazzDefinition]) extends ProcessCompilerBase {
+                      protected val definitions: ProcessDefinition[ObjectWithMethodDef]) extends ProcessCompilerBase {
 
   override type ParameterProviderT = ObjectWithMethodDef
 
@@ -48,11 +43,7 @@ class ProcessCompiler(protected val sub: PartSubGraphCompilerBase,
 }
 
 class ProcessValidator(protected val sub: PartSubGraphCompilerBase,
-                       protected val sourceFactories: Map[String, ObjectDefinition],
-                       protected val sinkFactories: Map[String, ObjectDefinition],
-                       protected val customStreamTransformers: Map[String, ObjectDefinition],
-                       protected val exceptionHandlerFactory: ObjectDefinition,
-                       protected val typesInformation: List[PlainClazzDefinition]) extends ProcessCompilerBase {
+                       protected val definitions: ProcessDefinition[ObjectDefinition]) extends ProcessCompilerBase {
 
   override type ParameterProviderT = ObjectDefinition
 
@@ -67,11 +58,12 @@ protected trait ProcessCompilerBase {
 
   type ParameterProviderT <: ClazzParametersProvider
 
-  protected def sourceFactories: Map[String, ParameterProviderT]
-  protected def sinkFactories: Map[String, ParameterProviderT]
-  protected def exceptionHandlerFactory: ParameterProviderT
-  protected val customStreamTransformers: Map[String, ParameterProviderT]
-  protected val typesInformation: List[PlainClazzDefinition]
+  protected def definitions: ProcessDefinition[ParameterProviderT]
+  protected def sourceFactories = definitions.sourceFactories
+  protected def sinkFactories = definitions.sinkFactories
+  protected def exceptionHandlerFactory = definitions.exceptionHandlerFactory
+  protected val customStreamTransformers = definitions.customStreamTransformers
+  protected val typesInformation = definitions.typesInformation
 
   protected def sub: PartSubGraphCompilerBase
 
@@ -140,7 +132,8 @@ protected trait ProcessCompilerBase {
   private def compile(source: SourcePart)
                      (implicit metaData: MetaData): ValidatedNel[ProcessCompilationError, compiledgraph.part.SourcePart] = {
     implicit val nodeId = NodeId(source.id)
-    val variables = sourceFactories.get(source.node.data.ref.typ).map(sf => Map(Interpreter.InputParamName -> sf.clazz)).getOrElse(Map.empty)
+    val variables = sourceFactories.get(source.node.data.ref.typ)
+      .map(sf => Map(Interpreter.InputParamName -> sf.definedClass)).getOrElse(Map.empty)
     validate(source.node, ValidationContext(variables, typesInformation)).andThen { ctx =>
       compile(source.node.data.ref).andThen { obj =>
         compile(source.nextParts, ctx).map { nextParts =>
@@ -223,38 +216,11 @@ protected trait ProcessCompilerBase {
 
 }
 
-object ProcessCompiler {
-
-  def apply(sub: PartSubGraphCompiler,
-            services: Map[String, Service],
-            sourceFactories: Map[String, SourceFactory[_]],
-            sinkFactories: Map[String, SinkFactory],
-            customStreamTransformers: Map[String, CustomStreamTransformer],
-            exceptionHandlerFactory: ExceptionHandlerFactory,
-            globalProcessVariables: Map[String, Class[_]]): ProcessCompiler = {
-    val sourceFactoriesDefs = sourceFactories.mapValues { factory =>
-      ObjectWithMethodDef(factory, ProcessObjectDefinitionExtractor.source)
-    }
-    val sinkFactoriesDefs = sinkFactories.mapValues { factory =>
-      ObjectWithMethodDef(factory, ProcessObjectDefinitionExtractor.sink)
-    }
-    val exceptionHandlerFactoryDefs = ObjectWithMethodDef(
-      exceptionHandlerFactory, ProcessObjectDefinitionExtractor.exceptionHandler)
-    val customNodesExecutorsDefs = customStreamTransformers.mapValues { executor =>
-      ObjectWithMethodDef(executor, ProcessObjectDefinitionExtractor.customNodeExecutor)
-    }
-    val typesInformation = TypesInformation.extract(services, sourceFactories, sinkFactories, globalProcessVariables)
-    new ProcessCompiler(sub, sourceFactoriesDefs, sinkFactoriesDefs, customNodesExecutorsDefs, exceptionHandlerFactoryDefs, typesInformation)
-  }
-
-}
-
 object ProcessValidator {
 
-  def default(definition: ProcessDefinition): ProcessValidator = {
-    val sub = PartSubGraphValidator.default(definition.services, definition.globalProcessVariables)
-    new ProcessValidator(sub, definition.sourceFactories, definition.sinkFactories, definition.customStreamTransformers,
-      definition.exceptionHandlerFactory, definition.typesInformation)
+  def default(definition: ProcessDefinition[ObjectDefinition]): ProcessValidator = {
+    val sub = PartSubGraphValidator.default(definition.services, definition.globalVariables)
+    new ProcessValidator(sub, definition)
   }
 
 }

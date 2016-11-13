@@ -35,6 +35,8 @@ import pl.touk.esp.engine.compile.{PartSubGraphCompiler, ProcessCompilationError
 import pl.touk.esp.engine.compiledgraph.part._
 import pl.touk.esp.engine.definition.DefinitionExtractor.{ClazzRef, ObjectWithMethodDef}
 import pl.touk.esp.engine.definition.{CustomNodeInvoker, ProcessObjectDefinitionExtractor, ServiceDefinitionExtractor}
+import pl.touk.esp.engine.definition.DefinitionExtractor.ObjectWithMethodDef
+import pl.touk.esp.engine.definition.{CustomNodeInvoker, ProcessDefinitionExtractor, ProcessObjectDefinitionExtractor, ServiceDefinitionExtractor}
 import pl.touk.esp.engine.graph.{EspProcess, node}
 import pl.touk.esp.engine.process.FlinkProcessRegistrar._
 import pl.touk.esp.engine.process.util.Serializers
@@ -153,15 +155,8 @@ object FlinkProcessRegistrar {
     def eventTimeMetricDuration() = config.getOrElse[FiniteDuration]("metrics.eventTime.duration", 10.seconds)
 
     def compiler(sub: PartSubGraphCompiler): ProcessCompiler = {
-      ProcessCompiler.apply(
-        sub = sub,
-        services = creator.services(config),
-        sourceFactories = creator.sourceFactories(config),
-        sinkFactories = creator.sinkFactories(config),
-        customStreamTransformers = creator.customStreamTransformers(config),
-        exceptionHandlerFactory = creator.exceptionHandlerFactory(config),
-        globalProcessVariables = creator.globalProcessVariables(config)
-      )
+      val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(creator, config)
+      new ProcessCompiler(sub, definitions)
     }
 
     def compileProcess(process: EspProcess)() = {
