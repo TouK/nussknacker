@@ -9,7 +9,7 @@ import pl.touk.esp.engine.api.lazyy.ContextWithLazyValuesProvider
 import pl.touk.esp.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.esp.engine.compile.ProcessCompilationError._
 import pl.touk.esp.engine.definition.DefinitionExtractor.{ClazzRef, ObjectDefinition, Parameter}
-import pl.touk.esp.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
+import pl.touk.esp.engine.definition.ProcessDefinitionExtractor.{ObjectProcessDefinition, ProcessDefinition}
 import pl.touk.esp.engine.graph.node.Case
 import pl.touk.esp.engine.types.EspTypeUtils
 
@@ -128,7 +128,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers {
         .source("id1", "source")
         .processorEnd("id2", missingServiceId, "foo" -> "'bar'")
 
-    val definition = ProcessDefinition.empty.withService(missingServiceId, Parameter(name = "foo", typ = ClazzRef(classOf[String])))
+    val definition = ObjectProcessDefinition.empty.withService(missingServiceId, Parameter(name = "foo", typ = ClazzRef(classOf[String])))
     ProcessValidator.default(definition).validate(processWithRefToMissingService) should matchPattern {
       case Invalid(NonEmptyList(MissingSourceFactory(_, _), _)) =>
     }
@@ -188,7 +188,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers {
     def someMethod(a: Int): Int = ???
   }
   case class AnotherSimpleRecord(value2: Long)
-  private val definitionWithTypedSource = baseDefinition.copy(sourceFactories = Map("source" -> ObjectDefinition.noParam.copy(clazz = ClazzRef(classOf[SimpleRecord]))))
+  private val definitionWithTypedSource = baseDefinition.copy(sourceFactories = Map("source" -> ObjectDefinition.noParam.copy(definedClass = ClazzRef(classOf[SimpleRecord]))))
 
   class SampleEnricher extends Service {
     def invoke()(implicit ec: ExecutionContext) = Future(SimpleRecord(AnotherSimpleRecord(1), 2))

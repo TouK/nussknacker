@@ -1,75 +1,87 @@
 package pl.touk.esp.engine.definition
 
 import com.typesafe.config.Config
-import pl.touk.esp.engine.api.exception.ExceptionHandlerFactory
-import pl.touk.esp.engine.api.{CustomStreamTransformer, Service}
-import pl.touk.esp.engine.api.process.{ProcessConfigCreator, SinkFactory, SourceFactory}
+import pl.touk.esp.engine.api.process.ProcessConfigCreator
 import pl.touk.esp.engine.definition.DefinitionExtractor._
-import pl.touk.esp.engine.types.EspTypeUtils
 
 object ProcessDefinitionExtractor {
 
-  def extract(objects: ProcessObjects) = {
-    ProcessDefinition(
-      services = objects.services.mapValues(ServiceDefinitionExtractor.extract),
-      sourceFactories = objects.sourceFactories.mapValues(ProcessObjectDefinitionExtractor.source.extract),
-      sinkFactories = objects.sinkFactories.mapValues(ProcessObjectDefinitionExtractor.sink.extract),
-      customStreamTransformers =  objects.customStreamTransformers.mapValues(ProcessObjectDefinitionExtractor.customNodeExecutor.extract),
-      exceptionHandlerFactory = ProcessObjectDefinitionExtractor.exceptionHandler.extract(objects.exceptionHandlerFactory),
-      globalProcessVariables = objects.globalProcessVariables.map { case (key, value) => key -> ClazzRef(value)},
-      typesInformation = TypesInformation.extract(objects.services, objects.sourceFactories, objects.sinkFactories, objects.globalProcessVariables)
-    )
-  }
+  //TODO: a moze to do ProcessConfigCreator??
+  def extractObjectWithMethods(creator: ProcessConfigCreator, config: Config) : ProcessDefinition[ObjectWithMethodDef] = {
 
-  case class ProcessObjects(services: Map[String, Service],
-                            sourceFactories: Map[String, SourceFactory[_]],
-                            sinkFactories: Map[String, SinkFactory],
-                            customStreamTransformers: Map[String, CustomStreamTransformer],
-                            exceptionHandlerFactory: ExceptionHandlerFactory,
-                            globalProcessVariables: Map[String, Class[_]]
-                           )
+    val services = creator.services(config)
+    val sourceFactories = creator.sourceFactories(config)
+    val sinkFactories = creator.sinkFactories(config)
+    val exceptionHandlerFactory = creator.exceptionHandlerFactory(config)
+    val customStreamTransformers = creator.customStreamTransformers(config)
+    val globalVariables = creator.globalProcessVariables(config)
 
-  object ProcessObjects {
-    def apply(creator: ProcessConfigCreator, config: Config): ProcessObjects = {
-      ProcessObjects(
-        services = creator.services(config),
-        sourceFactories = creator.sourceFactories(config),
-        sinkFactories = creator.sinkFactories(config),
-        customStreamTransformers = creator.customStreamTransformers(config),
-        exceptionHandlerFactory = creator.exceptionHandlerFactory(config),
-        globalProcessVariables = creator.globalProcessVariables(config)
-      )
+    val servicesDefs = services.mapValues { factory =>
+      ObjectWithMethodDef(factory, ProcessObjectDefinitionExtractor.service)
     }
+
+    val sourceFactoriesDefs = sourceFactories.mapValues { factory =>
+      ObjectWithMethodDef(factory, ProcessObjectDefinitionExtractor.source)
+    }
+    val sinkFactoriesDefs = sinkFactories.mapValues { factory =>
+      ObjectWithMethodDef(factory, ProcessObjectDefinitionExtractor.sink)
+    }
+    val exceptionHandlerFactoryDefs = ObjectWithMethodDef(
+      exceptionHandlerFactory, ProcessObjectDefinitionExtractor.exceptionHandler)
+    val customNodesExecutorsDefs = customStreamTransformers.mapValues { executor =>
+      ObjectWithMethodDef(executor, ProcessObjectDefinitionExtractor.customNodeExecutor)
+    }
+    val globalVariablesDefs = globalVariables.mapValues { globalVar =>
+      ClazzRef(globalVar)
+    }
+
+    val typesInformation = TypesInformation.extract(servicesDefs, sourceFactories, globalVariables)
+
+    ProcessDefinition[ObjectWithMethodDef](
+      servicesDefs, sourceFactoriesDefs, sinkFactoriesDefs,
+      customNodesExecutorsDefs, exceptionHandlerFactoryDefs, globalVariablesDefs, typesInformation)
   }
 
-  case class ProcessDefinition(services: Map[String, ObjectDefinition],
-                               sourceFactories: Map[String, ObjectDefinition],
-                               sinkFactories: Map[String, ObjectDefinition],
-                               customStreamTransformers: Map[String, ObjectDefinition],
-                               exceptionHandlerFactory: ObjectDefinition,
-                               globalProcessVariables: Map[String, ClazzRef],
-                               typesInformation: List[PlainClazzDefinition]) {
+  case class ProcessDefinition[T <: ClazzParametersProvider](services: Map[String, T],
+                                                             sourceFactories: Map[String, T],
+                                                             sinkFactories: Map[String, T],
+                                                             customStreamTransformers: Map[String, T],
+                                                             exceptionHandlerFactory: T,
+                                                             globalVariables: Map[String, ClazzRef],
+                                                             typesInformation: List[PlainClazzDefinition]) {
+  }
 
+  object ObjectProcessDefinition {
+    def empty: ProcessDefinition[ObjectDefinition] =
+      ProcessDefinition(Map.empty, Map.empty, Map.empty, Map.empty, ObjectDefinition.noParam, Map.empty, List.empty)
+
+    def apply(definition: ProcessDefinition[ObjectWithMethodDef]) =
+      ProcessDefinition(
+        definition.services.mapValues(_.objectDefinition),
+        definition.sourceFactories.mapValues(_.objectDefinition),
+        definition.sinkFactories.mapValues(_.objectDefinition),
+        definition.customStreamTransformers.mapValues(_.objectDefinition),
+        definition.exceptionHandlerFactory.objectDefinition,
+        definition.globalVariables,
+        definition.typesInformation
+      )
+  }
+
+  implicit class ObjectProcessDefinition(definition: ProcessDefinition[ObjectDefinition]) {
     def withService(id: String, params: Parameter*) =
-      copy(services = services + (id -> ObjectDefinition.withParams(params.toList)))
+      definition.copy(services = definition.services + (id -> ObjectDefinition.withParams(params.toList)))
 
     def withSourceFactory(typ: String, params: Parameter*) =
-      copy(sourceFactories = sourceFactories + (typ -> ObjectDefinition.withParams(params.toList)))
+      definition.copy(sourceFactories = definition.sourceFactories + (typ -> ObjectDefinition.withParams(params.toList)))
 
     def withSinkFactory(typ: String, params: Parameter*) =
-      copy(sinkFactories = sinkFactories + (typ -> ObjectDefinition.withParams(params.toList)))
+      definition.copy(sinkFactories = definition.sinkFactories + (typ -> ObjectDefinition.withParams(params.toList)))
 
     def withExceptionHandlerFactory(params: Parameter*) =
-      copy(exceptionHandlerFactory = ObjectDefinition.withParams(params.toList))
+      definition.copy(exceptionHandlerFactory = ObjectDefinition.withParams(params.toList))
 
     def withCustomStreamTransformer(id: String, params: Parameter*) =
-      copy(customStreamTransformers = customStreamTransformers + (id -> ObjectDefinition.withParams(params.toList)))
-
+      definition.copy(customStreamTransformers = definition.customStreamTransformers + (id -> ObjectDefinition.withParams(params.toList)))
   }
-
-  object ProcessDefinition {
-    def empty: ProcessDefinition = ProcessDefinition(Map.empty, Map.empty, Map.empty, Map.empty, ObjectDefinition.noParam, Map.empty, List.empty)
-  }
-
 }
 

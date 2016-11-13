@@ -4,6 +4,7 @@ import argonaut.PrettyParams
 import cats.data._
 import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
 import pl.touk.esp.engine.compile.ProcessValidator
+import pl.touk.esp.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.esp.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.marshall.ProcessUnmarshallError._
@@ -33,7 +34,7 @@ class ValidatingProcessMarshaller(validator: ProcessValidator) {
 
 object ValidatingProcessMarshaller {
 
-  def default(definition: ProcessDefinition) = {
+  def default(definition: ProcessDefinition[ObjectDefinition]) = {
     new ValidatingProcessMarshaller(ProcessValidator.default(definition))
   }
 

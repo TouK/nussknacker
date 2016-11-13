@@ -67,7 +67,7 @@ object EspTypeUtils {
       !blackilistedMethods.contains(m.getName) && !m.getName.contains("$")
     )
     val res = interestingMethods.map { method =>
-      method.getName -> ClazzRef(getGenericMethodType(method).getOrElse(method.getReturnType))
+      method.getName -> ClazzRef(getReturnClassForMethod(method))
     }.toMap
     res
   }
@@ -91,6 +91,9 @@ object EspTypeUtils {
   def getCompanionObject[T](klazz: Class[T]) : T= {
     klazz.getField("MODULE$").get(null).asInstanceOf[T]
   }
+
+  def getReturnClassForMethod(method: Method)
+    = getGenericMethodType(method).getOrElse(method.getReturnType)
 
   def getGenericMethodType(m: Method): Option[Class[_]] = {
     val genericReturnType = m.getGenericReturnType
