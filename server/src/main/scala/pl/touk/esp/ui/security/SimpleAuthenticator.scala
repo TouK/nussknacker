@@ -29,12 +29,14 @@ class SimpleAuthenticator(path: String) extends SecurityDirectives.Authenticator
 case class LoggedUser(id: String, password: String, permissions: List[Permission],
                       categories: List[String]) {
   def hasPermission(permission: Permission) = {
-    permissions.contains(permission)
+    permissions.contains(permission) || isAdmin
   }
+
+  def isAdmin = permissions.contains(Permission.Admin)
 }
 
 object Permission extends Enumeration {
   type Permission = Value
-  val Read, Write, Deploy = Value
+  val Read, Write, Deploy, Admin = Value
 }
 

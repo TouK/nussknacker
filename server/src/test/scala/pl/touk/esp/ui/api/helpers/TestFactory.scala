@@ -14,6 +14,8 @@ import scala.concurrent.Future
 
 object TestFactory {
 
+  val testCategory = "TESTCAT"
+
   val processValidation = new ProcessValidation(ValidationTestData.validator)
   val processConverter = new ProcessConverter(processValidation)
   val posting = new ProcessPosting(processConverter)
@@ -31,7 +33,7 @@ object TestFactory {
     }
   }
 
-  def user(permissions: Permission*) = LoggedUser("userId", "pass", permissions.toList, List())
+  def user(permissions: Permission*) = LoggedUser("userId", "pass", permissions.toList, List(testCategory))
 
   val allPermissions = List(Permission.Deploy, Permission.Read, Permission.Write)
   def withPermissions(route: LoggedUser => Route, permissions: Permission*) = route(user(permissions : _*))

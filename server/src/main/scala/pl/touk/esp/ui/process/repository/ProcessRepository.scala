@@ -3,6 +3,7 @@ package pl.touk.esp.ui.process.repository
 import java.time.LocalDateTime
 
 import cats.data._
+import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
 import pl.touk.esp.engine.api.deployment.{CustomProcess, GraphProcess, ProcessDeploymentData}
 import pl.touk.esp.ui.EspError._
@@ -14,39 +15,46 @@ import pl.touk.esp.ui.db.EspTables._
 import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessType.ProcessType
 import pl.touk.esp.ui.process.displayedgraph.DisplayableProcess
 import pl.touk.esp.ui.process.marshall.ProcessConverter
-import pl.touk.esp.ui.process.repository.ProcessRepository.{InvalidProcessTypeError, ProcessDetails, ProcessHistoryEntry}
+import pl.touk.esp.ui.process.repository.ProcessRepository.{InvalidProcessTypeError, ProcessDetails, ProcessHistoryEntry, ProcessNotFoundError}
+import pl.touk.esp.ui.security.LoggedUser
 import pl.touk.esp.ui.util.DateUtils
 import pl.touk.esp.ui.{BadRequestError, EspError, NotFoundError}
 import slick.jdbc.{JdbcBackend, JdbcProfile}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class ProcessRepository(db: JdbcBackend.Database,
                         driver: JdbcProfile,
-                        processConverter: ProcessConverter) {
+                        processConverter: ProcessConverter) extends LazyLogging {
   import driver.api._
 
-  def saveProcess(processId: String, processDeploymentData: ProcessDeploymentData, user: String)(implicit ec: ExecutionContext): Future[XError[Unit]] = {
+  def saveProcess(processId: String, processDeploymentData: ProcessDeploymentData)
+                 (implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[XError[Unit]] = {
+    logger.info(s"Saving process $processId by user $loggedUser")
     val (pType, maybeJson, maybeMainClass) = processDeploymentData match {
       case GraphProcess(json) => (ProcessType.Graph, Some(json), None)
       case CustomProcess(mainClass) => (ProcessType.Custom, None, Some(mainClass))
     }
+
     def processToInsert(process: Option[ProcessEntityData]): XError[Option[ProcessEntityData]] = process match {
       case Some(p) =>
         if (p.processType != pType) Xor.left(InvalidProcessTypeError(processId))
         else Xor.right(None)
       case None =>
-        Xor.right(Option(ProcessEntityData(id = processId, name = processId, description = None, processType = pType)))
+        Xor.right(Option(ProcessEntityData(id = processId,
+          name = processId, processCategory = ProcessRepository.defaultCategory,
+          description = None, processType = pType)))
     }
     def versionToInsert(latestProcessVersion: Option[ProcessVersionEntityData],
                         processesVersionCount: Int): Option[ProcessVersionEntityData] = latestProcessVersion match {
       case Some(version) if version.json == maybeJson && version.mainClass == maybeMainClass => None
       case _ => Option(ProcessVersionEntityData(id = processesVersionCount + 1, processId = processId,
-        json = maybeJson, mainClass = maybeMainClass, createDate = DateUtils.now, user = user))
+        json = maybeJson, mainClass = maybeMainClass, createDate = DateUtils.now, user = loggedUser.id))
     }
     val insertAction = for {
-      process <- XorT.right[DB, EspError, Option[ProcessEntityData]](processesTable.filter(_.id === processId).result.headOption)
+      process <- XorT.right[DB, EspError, Option[ProcessEntityData]](processTableFilteredByUser.filter(_.id === processId).result.headOption)
       processesVersionCount <- XorT.right[DB, EspError, Int](processVersionsTable.filter(p => p.processId === processId).length.result)
       latestProcessVersion <- XorT.right[DB, EspError, Option[ProcessVersionEntityData]](latestProcessVersions(processId).result.headOption)
       newProcess <- XorT.fromXor(processToInsert(process))
@@ -57,21 +65,33 @@ class ProcessRepository(db: JdbcBackend.Database,
     db.run(insertAction.value)
   }
 
+  //accessible only from initializing scripts so far
+  def updateCategory(processId: String, category: String)(implicit loggedUser: LoggedUser) : Future[XError[Unit]] = {
+    val processCat = for { c <- processesTable if c.id === processId } yield c.processCategory
+    db.run(processCat.update(category)).map {
+      case 0 => Xor.left(ProcessNotFoundError(processId))
+      case 1 => Xor.right(())
+    }
+  }
+
+  private def processTableFilteredByUser(implicit loggedUser: LoggedUser) =
+    if (loggedUser.isAdmin) processesTable else processesTable.filter(_.processCategory inSet (loggedUser.categories :+ ProcessRepository.defaultCategory))
+
   def fetchProcessesDetails()
-                           (implicit ec: ExecutionContext): Future[List[ProcessDetails]] = {
+                           (implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[List[ProcessDetails]] = {
     val action = for {
       tagsForProcesses <- tagsTable.result.map(_.toList.groupBy(_.processId).withDefaultValue(Nil))
       latestProcesses <- processVersionsTable.groupBy(_.processId).map { case (n, group) => (n, group.map(_.createDate).max) }
         .join(processVersionsTable).on { case (((processId, latestVersionDate)), processVersion) =>
         processVersion.processId === processId && processVersion.createDate === latestVersionDate
-      }.join(processesTable).on { case ((_, latestVersion), process) => latestVersion.processId === process.id }
+      }.join(processTableFilteredByUser).on { case ((_, latestVersion), process) => latestVersion.processId === process.id }
         .result.map(_.map { case ((_, processVersion), process) => createFullDetails(process, processVersion, tagsForProcesses(process.name), List.empty) })
     } yield latestProcesses
     db.run(action).map(_.toList)
   }
 
   def fetchLatestProcessDetailsForProcessId(id: String)
-                                           (implicit ec: ExecutionContext): Future[Option[ProcessDetails]] = {
+                                           (implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Option[ProcessDetails]] = {
     val action = for {
       latestProcessVersion <- OptionT[DB, ProcessVersionEntityData](latestProcessVersions(id).result.headOption)
       processDetails <- fetchProcessDetailsForVersion(latestProcessVersion)
@@ -80,7 +100,7 @@ class ProcessRepository(db: JdbcBackend.Database,
   }
 
   def fetchProcessDetailsForId(processId: String, versionId: Long)
-                              (implicit ec: ExecutionContext): Future[Option[ProcessDetails]] = {
+                              (implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Option[ProcessDetails]] = {
     val action = for {
       processVersion <- OptionT[DB, ProcessVersionEntityData](latestProcessVersions(processId).filter(pv => pv.id === versionId).result.headOption)
       processDetails <- fetchProcessDetailsForVersion(processVersion)
@@ -89,10 +109,10 @@ class ProcessRepository(db: JdbcBackend.Database,
   }
 
   private def fetchProcessDetailsForVersion(processVersion: ProcessVersionEntityData)
-                                           (implicit ec: ExecutionContext)= {
+                                           (implicit ec: ExecutionContext, loggedUser: LoggedUser)= {
     val id = processVersion.processId
     for {
-      process <- OptionT[DB, ProcessEntityData](processesTable.filter(_.id === id).result.headOption)
+      process <- OptionT[DB, ProcessEntityData](processTableFilteredByUser.filter(_.id === id).result.headOption)
       processVersions <- OptionT.liftF[DB, Seq[ProcessVersionEntityData]](latestProcessVersions(id).result)
       latestDeployedVersionsPerEnv <- OptionT.liftF[DB, Map[String, DeployedProcessVersionEntityData]](latestDeployedProcessVersionsPerEnvironment(id).result.map(_.toMap))
       tags <- OptionT.liftF[DB, Seq[TagsEntityData]](tagsTable.filter(_.processId === process.name).result)
@@ -109,14 +129,16 @@ class ProcessRepository(db: JdbcBackend.Database,
       name = process.name,
       description = process.description,
       processType = process.processType,
+      processCategory = process.processCategory,
       tags = tags.map(_.name).toList,
+      modificationDate = DateUtils.toLocalDateTime(processVersion.createDate),
       json = processVersion.json.map(json => processConverter.toDisplayableOrDie(json)),
       history = history.toList
     )
   }
 
   def fetchLatestProcessVersion(processId: String)
-                               (implicit ec: ExecutionContext): Future[Option[ProcessVersionEntityData]] = {
+                               (implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Option[ProcessVersionEntityData]] = {
     val action = latestProcessVersions(processId).result.headOption
     db.run(action)
   }
@@ -135,11 +157,15 @@ class ProcessRepository(db: JdbcBackend.Database,
 
 object ProcessRepository {
 
+  val defaultCategory = "Default"
+
   case class ProcessDetails(
                              id: String,
                              name: String,
                              description: Option[String],
                              processType: ProcessType,
+                             processCategory: String,
+                             modificationDate: LocalDateTime,
                              tags: List[String],
                              json: Option[DisplayableProcess],
                              history: List[ProcessHistoryEntry]

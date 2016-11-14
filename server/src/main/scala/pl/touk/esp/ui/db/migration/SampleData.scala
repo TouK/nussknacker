@@ -18,7 +18,7 @@ object SampleData {
       process.id,
       process.id,
       Some("Sample process description"),
-      ProcessType.Graph
+      ProcessType.Graph, "Category1"
     )
   }
 

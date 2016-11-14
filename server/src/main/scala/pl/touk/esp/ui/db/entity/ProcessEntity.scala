@@ -21,14 +21,17 @@ object ProcessEntity {
 
     def processType = column[ProcessType]("type", NotNull)
 
-    def * = (id, name, description, processType) <> (ProcessEntityData.apply _ tupled, ProcessEntityData.unapply)
+    def processCategory = column[String]("category", NotNull)
+
+    def * = (id, name, description, processType, processCategory) <> (ProcessEntityData.apply _ tupled, ProcessEntityData.unapply)
 
   }
 
   case class ProcessEntityData(id: String,
                                name: String,
                                description: Option[String],
-                               processType: ProcessType
+                               processType: ProcessType,
+                               processCategory: String
                               )
 
   object ProcessType extends Enumeration {
