@@ -14,6 +14,7 @@ import com.typesafe.config.{ConfigFactory, ConfigValue}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.esp.engine.api.deployment.{CustomProcess, GraphProcess}
 import pl.touk.esp.engine.compile.ProcessValidator
+import pl.touk.esp.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.esp.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
 import pl.touk.esp.engine.definition.ProcessDefinitionMarshaller
 import pl.touk.esp.engine.management.FlinkProcessManager
@@ -101,7 +102,7 @@ object EspUiApp extends App with Directives with LazyLogging {
     )
   }
 
-  def loadProcessDefinition(): ProcessDefinition = {
+  def loadProcessDefinition(): ProcessDefinition[ObjectDefinition] = {
     val file = new File(initialProcessDirectory, "definition.json")
     ProcessDefinitionMarshaller.fromJson(fromFile(file).mkString) match {
       case Valid(definition) => definition
