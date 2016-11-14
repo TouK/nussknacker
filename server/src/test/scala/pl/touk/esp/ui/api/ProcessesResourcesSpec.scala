@@ -15,9 +15,11 @@ import pl.touk.esp.engine.marshall.ProcessMarshaller
 import pl.touk.esp.ui.api.helpers.EspItTest
 import pl.touk.esp.ui.api.helpers.TestFactory._
 import pl.touk.esp.ui.process.displayedgraph.ProcessProperties
+import pl.touk.esp.ui.process.repository.ProcessRepository
 import pl.touk.esp.ui.process.repository.ProcessRepository.ProcessDetails
+import pl.touk.esp.ui.sample
 import pl.touk.esp.ui.sample.SampleProcess
-import pl.touk.esp.ui.security.Permission
+import pl.touk.esp.ui.security.{LoggedUser, Permission}
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -32,6 +34,9 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
   val routeWithRead = withPermissions(processesRoute, Permission.Read)
   val routeWithWrite = withPermissions(processesRoute, Permission.Write)
   val routWithAllPermissions = withAllPermissions(processesRoute)
+  val routWithAdminPermission = withPermissions(processesRoute, Permission.Admin)
+
+  implicit val loggedUser = LoggedUser("lu", "", List(), List(testCategory))
 
   private val processId: String = SampleProcess.process.id
 
@@ -60,7 +65,7 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
   }
 
   it should "return 400 when trying to update json of custom process" in {
-    whenReady(processRepository.saveProcess("customProcess", CustomProcess(""), "")) { _ =>
+    whenReady(processRepository.saveProcess("customProcess", CustomProcess(""))) { _ =>
       saveProcess("customProcess", SampleProcess.process) {
         status shouldEqual StatusCodes.BadRequest
       }
@@ -98,6 +103,60 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
     }
   }
 
+
+  it should "save new process with default category" in {
+    saveProcess(SampleProcess.process.id, ValidationTestData.validProcess) { status shouldEqual StatusCodes.OK}
+    Get(s"/processes/${SampleProcess.process.id}") ~> routWithAllPermissions ~> check {
+      val processDetails = responseAs[String].decodeOption[ProcessDetails].get
+      processDetails.processCategory shouldBe ProcessRepository.defaultCategory
+    }
+
+  }
+
+  it should "return process if user has category" in {
+    saveProcess(SampleProcess.process.id, ValidationTestData.validProcess) { status shouldEqual StatusCodes.OK}
+    processRepository.updateCategory(SampleProcess.process.id, testCategory)
+
+    Get(s"/processes/${SampleProcess.process.id}") ~> routWithAllPermissions ~> check {
+      val processDetails = responseAs[String].decodeOption[ProcessDetails].get
+      processDetails.processCategory shouldBe testCategory
+    }
+
+    Get(s"/processes") ~> routeWithRead ~> check {
+      status shouldEqual StatusCodes.OK
+      responseAs[String] should include (SampleProcess.process.id)
+    }
+
+  }
+
+  it should "not return processes not in user categories" in {
+    saveProcess(SampleProcess.process.id, ValidationTestData.validProcess) { status shouldEqual StatusCodes.OK}
+    processRepository.updateCategory(SampleProcess.process.id, "newCategory")
+    Get(s"/processes/${SampleProcess.process.id}") ~> routeWithRead ~> check {
+      status shouldEqual StatusCodes.NotFound
+    }
+
+    Get(s"/processes") ~> routeWithRead ~> check {
+      status shouldEqual StatusCodes.OK
+      responseAs[String] shouldBe "[]"
+    }
+  }
+
+  it should "return all processes for admin user" in {
+    saveProcess(SampleProcess.process.id, ValidationTestData.validProcess) { status shouldEqual StatusCodes.OK}
+    processRepository.updateCategory(SampleProcess.process.id, "newCategory")
+
+    Get(s"/processes/${SampleProcess.process.id}") ~> routWithAdminPermission ~> check {
+      val processDetails = responseAs[String].decodeOption[ProcessDetails].get
+      processDetails.processCategory shouldBe "newCategory"
+    }
+
+    Get(s"/processes") ~> routWithAdminPermission ~> check {
+      status shouldEqual StatusCodes.OK
+      responseAs[String] should include (SampleProcess.process.id)
+    }
+  }
+
   it should "save process history" in {
     saveProcess(SampleProcess.process.id, ValidationTestData.validProcess) {
       status shouldEqual StatusCodes.OK
@@ -126,14 +185,14 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
   }
 
   it should "not authorize user with read permissions to modify node" in {
-    Put(s"/processes/$processId/json", posting.toEntity(ValidationTestData.validProcess)) ~> routeWithRead ~> check {
+    Put(s"/processes/$testCategory/$processId/json", posting.toEntity(ValidationTestData.validProcess)) ~> routeWithRead ~> check {
       rejection shouldBe server.AuthorizationFailedRejection
     }
 
     val modifiedParallelism = 123
     val modifiedName = "fooBarName"
     val props = ProcessProperties(Some(modifiedParallelism), ExceptionHandlerRef(List(Parameter(modifiedName, modifiedName))))
-    Put(s"/processes/$processId/json/properties", posting.toEntity(props)) ~> routeWithRead ~> check {
+    Put(s"/processes/$testCategory/$processId/json/properties", posting.toEntity(props)) ~> routeWithRead ~> check {
       rejection shouldBe server.AuthorizationFailedRejection
     }
 

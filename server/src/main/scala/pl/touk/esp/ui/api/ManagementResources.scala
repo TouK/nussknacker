@@ -1,7 +1,7 @@
 package pl.touk.esp.ui.api
 
 import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
-import akka.http.scaladsl.server.Directives
+import akka.http.scaladsl.server.{Directives, Route}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.esp.engine.api.deployment.{CustomProcess, GraphProcess, ProcessManager}
 import pl.touk.esp.ui.db.entity.ProcessVersionEntity.ProcessVersionEntityData
@@ -16,7 +16,7 @@ class ManagementResources(processRepository: ProcessRepository,
                           processManager: ProcessManager,
                           environment: String)(implicit ec: ExecutionContext) extends Directives with LazyLogging {
 
-  val route = (user: LoggedUser) => {
+  def route(implicit user: LoggedUser) : Route = {
     authorize(user.hasPermission(Permission.Deploy)) {
       path("processManagement" / "deploy" / Segment) { processId =>
         post {

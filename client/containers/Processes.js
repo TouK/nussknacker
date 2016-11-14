@@ -4,10 +4,13 @@ import ReactDOM from 'react-dom'
 import { Link } from 'react-router'
 import { Table, Thead, Th, Tr, Td } from 'reactable'
 import { browserHistory } from 'react-router'
+import _ from "lodash";
+
 import classNames from 'classnames'
 import HttpService from '../http/HttpService'
 
 import '../stylesheets/processes.styl'
+import DateUtils from '../utils/DateUtils'
 
 import filterIcon from '../assets/img/filter-icon.svg'
 import editIcon from '../assets/img/edit-icon.png'
@@ -104,7 +107,7 @@ export const Processes = React.createClass({
            previousPageLabel="<"
            nextPageLabel=">"
            sortable={true}
-           filterable={['id', 'name']}
+           filterable={['id', 'name', 'category']}
            hideFilterInput
            filterBy={this.getFilterValue()}
         >
@@ -113,7 +116,9 @@ export const Processes = React.createClass({
             <Th column="id">ID</Th>
             <Th column="name">Process name</Th>
             <Th column="category">Category</Th>
-            <Th column="createDate" className="date-column">Create date</Th>
+            <Th column="tags">Tags</Th>
+            <Th column="modifyDate" className="date-column">Last modification</Th>
+
             <Th column="edit" className="edit-column">Edit</Th>
             <Th column="metrics" className="metrics-column">Metrics</Th>
             <Th column="status" className="status-column">Status</Th>
@@ -127,14 +132,16 @@ export const Processes = React.createClass({
               <Tr className="row-hover" key={index}>
                 <Td column="id" className="blue-bar">{process.id}</Td>
                 <Td column="name">{process.name}</Td>
-                <Td column="category">
+                <Td column="category">{process.processCategory}</Td>
+                <Td column="tags">
                   <div>
                     {process.tags.map(function (tagi, tagIndex) {
                       return <div key={tagIndex} className="tagBlock">{tagi}</div>
                     })}
                   </div>
                 </Td>
-                <Td column="createDate" className="date-column">2016-08-10</Td>
+                <Td column="modifyDate" className="date-column">{DateUtils.format(process.modificationDate)}</Td>
+
                 <Td column="edit" className="edit-column">
                   <img src={editIcon} className={this.editIconClass(process)} onClick={this.showProcess.bind(this, process)} />
                 </Td>

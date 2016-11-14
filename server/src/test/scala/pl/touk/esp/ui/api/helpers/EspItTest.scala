@@ -15,6 +15,7 @@ import pl.touk.esp.ui.db.EspTables
 import pl.touk.esp.ui.db.migration.SampleData
 import pl.touk.esp.ui.process.marshall.{DisplayableProcessCodec, ProcessTypeCodec}
 import pl.touk.esp.ui.process.repository.ProcessRepository.ProcessDetails
+import pl.touk.esp.ui.security.LoggedUser
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
@@ -34,12 +35,12 @@ trait EspItTest extends LazyLogging { self: ScalatestRouteTest with Suite with B
   val processRepository = newProcessRepository(db)
   val deploymentProcessRepository = newDeploymentProcessRepository(db)
 
-  val processesRoute = new ProcessesResources(processRepository, InMemoryMocks.mockProcessManager, processConverter, processValidation).route
+  val processesRoute = (u:LoggedUser) => new ProcessesResources(processRepository, InMemoryMocks.mockProcessManager, processConverter, processValidation).route(u)
   val processesRouteWithAllPermissions = withAllPermissions(processesRoute)
-  val deployRoute = new ManagementResources(processRepository, deploymentProcessRepository, InMemoryMocks.mockProcessManager, env).route
+  val deployRoute = (u:LoggedUser) =>  new ManagementResources(processRepository, deploymentProcessRepository, InMemoryMocks.mockProcessManager, env).route(u)
 
   def saveProcess(processId: String, process: EspProcess)(testCode: => Assertion): Assertion = {
-    Put(s"/processes/${processId}/json", TestFactory.posting.toEntity(process)) ~> processesRouteWithAllPermissions ~> check { testCode }
+    Put(s"/processes/$processId/json", TestFactory.posting.toEntity(process)) ~> processesRouteWithAllPermissions ~> check { testCode }
   }
 
   def saveProcessAndAssertSuccess(processId: String, process: EspProcess): Assertion = {

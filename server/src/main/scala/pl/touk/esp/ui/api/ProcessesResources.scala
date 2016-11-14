@@ -4,10 +4,10 @@ import java.time.LocalDateTime
 
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model.{HttpMethods, HttpResponse, StatusCodes}
-import akka.http.scaladsl.server.{Directive, Directives}
+import akka.http.scaladsl.server.{Directive, Directives, Route}
 import argonaut._
 import cats.data.Xor
-import pl.touk.esp.engine.api.deployment.{GraphProcess, ProcessManager, ProcessDeploymentData}
+import pl.touk.esp.engine.api.deployment.{GraphProcess, ProcessDeploymentData, ProcessManager}
 import pl.touk.esp.engine.compile.ProcessCompilationError
 import pl.touk.esp.engine.graph.node.NodeData
 import pl.touk.esp.engine.marshall.ProcessMarshaller
@@ -55,10 +55,10 @@ class ProcessesResources(repository: ProcessRepository,
   implicit val printer: Json => String =
     PrettyParams.spaces2.copy(dropNullKeys = true, preserveOrder = true).pretty
 
-  val route = (user: LoggedUser) => {
+  def route(implicit user: LoggedUser) : Route = {
     def authorizeMethod = extractMethod.flatMap[Unit] {
-      case HttpMethods.POST | HttpMethods.PUT | HttpMethods.DELETE => authorize(user.permissions.contains(Permission.Write))
-      case HttpMethods.GET => authorize(user.permissions.contains(Permission.Read))
+      case HttpMethods.POST | HttpMethods.PUT | HttpMethods.DELETE => authorize(user.hasPermission(Permission.Write))
+      case HttpMethods.GET => authorize(user.hasPermission(Permission.Read))
       //czyli co??? options?
       case _ => Directive.Empty
     }
@@ -103,7 +103,7 @@ class ProcessesResources(repository: ProcessRepository,
             complete {
               val canonical = processConverter.fromDisplayable(displayableProcess)
               val json = ProcessMarshaller.toJson(canonical, PrettyParams.nospace)
-              repository.saveProcess(processId, GraphProcess(json), user.id).map { result =>
+              repository.saveProcess(processId, GraphProcess(json)).map { result =>
                 toResponse {
                   result.map(_ => processValidation.validate(canonical))
                 }
