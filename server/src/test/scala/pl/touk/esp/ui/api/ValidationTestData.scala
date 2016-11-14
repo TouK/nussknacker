@@ -2,7 +2,7 @@ package pl.touk.esp.ui.api
 
 import pl.touk.esp.engine.build.EspProcessBuilder
 import pl.touk.esp.engine.compile.ProcessValidator
-import pl.touk.esp.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
+import pl.touk.esp.engine.definition.ProcessDefinitionExtractor.{ObjectProcessDefinition, ProcessDefinition}
 
 object ValidationTestData {
 
@@ -11,7 +11,7 @@ object ValidationTestData {
   val existingStreamTransformer = "transformer"
 
   val validator = ProcessValidator.default(
-    ProcessDefinition.empty
+    ObjectProcessDefinition.empty
       .withSourceFactory(existingSourceFactory)
       .withSinkFactory(existingSinkFactory)
       .withCustomStreamTransformer(existingStreamTransformer)

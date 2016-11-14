@@ -3,6 +3,7 @@ package pl.touk.esp.ui.api
 import akka.http.scaladsl.server.Directives
 import argonaut.{EncodeJson, Json, PrettyParams}
 import pl.touk.esp.engine.definition.DefinitionExtractor
+import pl.touk.esp.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.esp.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
 import pl.touk.esp.engine.graph.evaluatedparam.Parameter
 import pl.touk.esp.engine.graph.expression.Expression
@@ -14,7 +15,7 @@ import pl.touk.esp.ui.util.Argonaut62Support
 
 import scala.concurrent.ExecutionContext
 
-class DefinitionResources(processDefinition: ProcessDefinition)
+class DefinitionResources(processDefinition: ProcessDefinition[ObjectDefinition])
                          (implicit ec: ExecutionContext)
   extends Directives with Argonaut62Support {
 
@@ -48,7 +49,7 @@ case class NodeGroup(name: String, possibleNodes: List[NodeToAdd])
 
 object DefinitionPreparer {
 
-  def prepareNodesToAdd(processDefinition: ProcessDefinition): List[NodeGroup] = {
+  def prepareNodesToAdd(processDefinition: ProcessDefinition[ObjectDefinition]): List[NodeGroup] = {
 
     val base = NodeGroup("base", List(
       NodeToAdd("filter", "Filter", Filter("", Expression("spel", "true")))
