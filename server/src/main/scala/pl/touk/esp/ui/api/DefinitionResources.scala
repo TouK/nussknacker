@@ -33,7 +33,7 @@ class DefinitionResources(processDefinition: ProcessDefinition[ObjectDefinition]
     path("processDefinitionData") {
       get {
         complete {
-          ProcessObjects(DefinitionPreparer.prepareNodesToAdd(processDefinition))
+          ProcessObjects(DefinitionPreparer.prepareNodesToAdd(processDefinition), processDefinition)
         }
       }
     }
@@ -41,7 +41,7 @@ class DefinitionResources(processDefinition: ProcessDefinition[ObjectDefinition]
 }
 
 //TODO: dalsze czesci? co tu w sumie moze byc??
-case class ProcessObjects(nodesToAdd: List[NodeGroup])
+case class ProcessObjects(nodesToAdd: List[NodeGroup], processDefinition: ProcessDefinition[ObjectDefinition])
 
 case class NodeToAdd(`type`: String, label: String, node: NodeData)
 

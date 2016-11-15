@@ -60,8 +60,7 @@ function uiStateReducer(state = emptyUiState, action) {
     }
     default:
       return {
-        ...state,
-        showNodeDetailsModal: false //bo chcemy wyjsc z detali node'a po undo
+        ...state
       }
   }
 }
