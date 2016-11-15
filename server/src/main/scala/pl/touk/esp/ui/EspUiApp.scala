@@ -31,7 +31,6 @@ import scala.collection.JavaConversions._
 import scala.concurrent.Future
 import scala.io.Source.fromFile
 
-//todo  dodac test, ktory startuje aplikacje i sprawdza ze sie nie wywala
 object EspUiApp extends App with Directives with LazyLogging {
 
   implicit val system = ActorSystem("esp-ui")
