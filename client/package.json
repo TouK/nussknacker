@@ -28,6 +28,8 @@
     "react-router": "2.6.0",
     "redux-thunk": "2.1.0",
     "react-notification-system": "0.2.10",
+    "react-autosuggest": "7.0.1",
+    "react-autowhatever": "git://github.com/fijolekProjects/react-autowhatever.git#fix-24-dist",
     "reactable": "0.14",
     "react-resizable-box": "1.8.0",
     "redux": "3.5.2",

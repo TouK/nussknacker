@@ -14,7 +14,7 @@ import com.typesafe.config.{ConfigFactory, ConfigValue}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.esp.engine.api.deployment.{CustomProcess, GraphProcess}
 import pl.touk.esp.engine.compile.ProcessValidator
-import pl.touk.esp.engine.definition.DefinitionExtractor.ObjectDefinition
+import pl.touk.esp.engine.definition.DefinitionExtractor.{ClazzRef, ObjectDefinition}
 import pl.touk.esp.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
 import pl.touk.esp.engine.definition.ProcessDefinitionMarshaller
 import pl.touk.esp.engine.management.FlinkProcessManager
@@ -28,6 +28,7 @@ import pl.touk.esp.ui.security.SimpleAuthenticator
 import slick.jdbc.JdbcBackend
 
 import scala.collection.JavaConversions._
+import scala.collection.immutable.TreeMap
 import scala.concurrent.Future
 import scala.io.Source.fromFile
 
@@ -104,9 +105,15 @@ object EspUiApp extends App with Directives with LazyLogging {
   def loadProcessDefinition(): ProcessDefinition[ObjectDefinition] = {
     val file = new File(initialProcessDirectory, "definition.json")
     ProcessDefinitionMarshaller.fromJson(fromFile(file).mkString) match {
-      case Valid(definition) => definition
+      case Valid(definition) => sortProcessDefinition(definition)
       case Invalid(error) => throw new IllegalArgumentException("Invalid process definition: " + error)
     }
+  }
+
+  private def sortProcessDefinition(definition: ProcessDefinition[ObjectDefinition]): ProcessDefinition[ObjectDefinition] = {
+    definition.copy(typesInformation = definition.typesInformation.map(definition =>
+      definition.copy(methods = TreeMap.apply(definition.methods.toList: _*)))
+    )
   }
 
   def insertInitialProcesses(): Unit = {

@@ -61,11 +61,16 @@ const Visualization = React.createClass({
   },
 
   undo() {
-    return this.props.actions.undo()
+    //ten if moze powinien byc blisko reducera, tylko jak to ladnie zrobic?
+    if (this.props.undoRedoAvailable) {
+      this.props.actions.undo()
+    }
   },
 
   redo() {
-    return this.props.actions.redo()
+    if (this.props.undoRedoAvailable) {
+      this.props.actions.redo()
+    }
   },
 
   render: function() {
@@ -97,7 +102,8 @@ function mapState(state) {
   return {
     fetchedProcessDetails: state.graphReducer.fetchedProcessDetails,
     graphLoading: state.graphReducer.graphLoading,
-    leftPanelIsOpened: state.ui.leftPanelIsOpened
+    leftPanelIsOpened: state.ui.leftPanelIsOpened,
+    undoRedoAvailable: !state.ui.showNodeDetailsModal
   };
 }
 export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(Visualization);

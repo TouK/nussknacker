@@ -4,13 +4,15 @@ import classNames from 'classnames';
 import _ from 'lodash';
 import {ListGroupItem} from 'react-bootstrap';
 import NodeUtils from './NodeUtils'
+import ExpressionSuggest from './ExpressionSuggest'
 
 export default class NodeDetailsContent extends React.Component {
 
   constructor(props) {
     super(props);
     this.state = {
-      editedNode: props.node
+      editedNode: props.node,
+      codeCompletionEnabled: true
     }
   }
 
@@ -180,11 +182,11 @@ export default class NodeDetailsContent extends React.Component {
   }
 
   createField = (fieldType, fieldLabel, fieldProperty) => {
-    return this.doCreateField(fieldType, fieldLabel, _.get(this.state.editedNode, fieldProperty), ((event) => this.setNodeDataAt(fieldProperty, event.target.value) ))
+    return this.doCreateField(fieldType, fieldLabel, _.get(this.state.editedNode, fieldProperty), ((newValue) => this.setNodeDataAt(fieldProperty, newValue) ))
   }
 
   createListField = (fieldType, fieldLabel, obj, fieldProperty, listFieldProperty) => {
-    return this.doCreateField(fieldType, fieldLabel, _.get(obj, fieldProperty), ((event) => this.setNodeDataAt(`${listFieldProperty}.${fieldProperty}`, event.target.value) ))
+    return this.doCreateField(fieldType, fieldLabel, _.get(obj, fieldProperty), ((newValue) => this.setNodeDataAt(`${listFieldProperty}.${fieldProperty}`, newValue) ))
   }
 
   doCreateField = (fieldType, fieldLabel, fieldValue, handleChange) => {
@@ -201,8 +203,21 @@ export default class NodeDetailsContent extends React.Component {
         return (
           <div className="node-row">
             <div className="node-label">{fieldLabel}</div>
-            <div className="node-value"><textarea rows="5" cols="50" className="node-input" value={fieldValue}
-                                                  onChange={handleChange} readOnly={!this.props.isEditMode}/></div>
+            <div className="node-value">
+              {this.state.codeCompletionEnabled ?
+                <ExpressionSuggest inputProps={{
+                  rows: 5, cols: 50, className: "node-input", value: fieldValue,
+                  onChange: handleChange, readOnly: !this.props.isEditMode
+                }}/> :
+                <textarea rows="5" cols="50" className="node-input" value={fieldValue}
+                          onChange={(e) => handleChange(e.target.value)} readOnly={!this.props.isEditMode}/>
+              }
+              <label>
+                <input type="checkbox" checked={this.state.codeCompletionEnabled} onChange={(e) => {
+                  this.setState({codeCompletionEnabled: !this.state.codeCompletionEnabled})
+                }}/> Code completion enabled
+              </label>
+            </div>
           </div>
         )
       default:
