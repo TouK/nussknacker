@@ -7,9 +7,7 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import com.codahale.metrics.{Histogram, SlidingTimeWindowReservoir}
 import com.typesafe.config.Config
-import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.functions._
-import org.apache.flink.api.common.state._
 import org.apache.flink.api.java.tuple
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.dropwizard.metrics.DropwizardHistogramWrapper
@@ -18,13 +16,9 @@ import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.collector.selector.OutputSelector
 import org.apache.flink.streaming.api.functions.{AssignerWithPeriodicWatermarks, AssignerWithPunctuatedWatermarks}
 import org.apache.flink.streaming.api.operators.{AbstractStreamOperator, ChainingStrategy, OneInputStreamOperator, StreamOperator}
-import org.apache.flink.streaming.api.scala.function.util.ScalaFoldFunction
 import org.apache.flink.streaming.api.scala.{StreamExecutionEnvironment, _}
 import org.apache.flink.streaming.api.watermark.Watermark
 import org.apache.flink.streaming.api.windowing.time.Time
-import org.apache.flink.streaming.api.windowing.triggers.Trigger.TriggerContext
-import org.apache.flink.streaming.api.windowing.triggers.{Trigger, TriggerResult}
-import org.apache.flink.streaming.api.windowing.windows.TimeWindow
 import org.apache.flink.streaming.runtime.operators.windowing.WindowOperator
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
 import org.apache.flink.util.Collector
@@ -34,9 +28,10 @@ import pl.touk.esp.engine.api.process._
 import pl.touk.esp.engine.compile.{PartSubGraphCompiler, ProcessCompilationError, ProcessCompiler}
 import pl.touk.esp.engine.compiledgraph.part._
 import pl.touk.esp.engine.definition.DefinitionExtractor.{ClazzRef, ObjectWithMethodDef}
-import pl.touk.esp.engine.definition.{CustomNodeInvoker, ProcessObjectDefinitionExtractor, ServiceDefinitionExtractor}
-import pl.touk.esp.engine.definition.DefinitionExtractor.ObjectWithMethodDef
-import pl.touk.esp.engine.definition.{CustomNodeInvoker, ProcessDefinitionExtractor, ProcessObjectDefinitionExtractor, ServiceDefinitionExtractor}
+import pl.touk.esp.engine.definition.{CustomNodeInvoker, ProcessDefinitionExtractor, ServiceDefinitionExtractor}
+import pl.touk.esp.engine.flink.api.exception.FlinkEspExceptionHandler
+import pl.touk.esp.engine.flink.api.process.{FlinkSink, FlinkSource}
+import pl.touk.esp.engine.flink.util.metrics.InstantRateMeter
 import pl.touk.esp.engine.graph.{EspProcess, node}
 import pl.touk.esp.engine.process.FlinkProcessRegistrar._
 import pl.touk.esp.engine.process.util.Serializers
@@ -44,12 +39,11 @@ import pl.touk.esp.engine.splittedgraph.end.{DeadEnd, End, NormalEnd}
 import pl.touk.esp.engine.splittedgraph.splittednode
 import pl.touk.esp.engine.splittedgraph.splittednode.SplittedNode
 import pl.touk.esp.engine.util.SynchronousExecutionContext
-import pl.touk.esp.engine.util.metrics.InstantRateMeter
 
 import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
+import scala.concurrent.Await
 import scala.concurrent.duration._
-import scala.concurrent.{Await, ExecutionContext}
 import scala.language.implicitConversions
 
 class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessWithDeps,
@@ -79,18 +73,22 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessW
 
   private def register(env: StreamExecutionEnvironment, compiledProcessWithDeps: () => CompiledProcessWithDeps): Unit = {
     val process = compiledProcessWithDeps().compiledProcess
-    env.setRestartStrategy(process.exceptionHandler.restartStrategy)
+    //FIXME: ladniej bez casta
+    env.setRestartStrategy(process.exceptionHandler.asInstanceOf[FlinkEspExceptionHandler].restartStrategy)
     process.metaData.parallelism.foreach(env.setParallelism)
     env.enableCheckpointing(checkpointInterval.toMillis)
     registerSourcePart(process.source)
 
     def registerSourcePart(part: SourcePart): Unit = {
-      val timestampAssigner = part.obj.timestampAssigner
+      //FIXME: ladniej bez casta
+      val source = part.obj.asInstanceOf[FlinkSource[Any]]
+
+      val timestampAssigner = source.timestampAssigner
 
       timestampAssigner.foreach(_ => env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime))
 
       val newStart = env
-        .addSource[Any](part.obj.toFlinkSource)(part.obj.typeInformation)
+        .addSource[Any](source.toFlinkSource)(source.typeInformation)
       val withAssigned = timestampAssigner.map {
         case periodic: AssignerWithPeriodicWatermarks[Any@unchecked] =>
           newStart.assignTimestampsAndWatermarks(periodic)
@@ -118,14 +116,16 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessW
     def registerSubsequentPart[T](start: DataStream[InterpretationResult],
                                   processPart: SubsequentPart): Unit =
       processPart match {
-        case part: SinkPart =>
+        case part@SinkPart(sink: FlinkSink, _) =>
           start
             .flatMap(new SinkInterpretationFunction(compiledProcessWithDeps, part.node))
             .name(s"${part.id}-function")
             .map(new EndRateMeterFunction(part.ends))
             .map(_.output)
-            .addSink(part.obj.toFlinkFunction)
+            .addSink(sink.toFlinkFunction)
             .name(s"${part.id}-sink")
+        case part:SinkPart =>
+          throw new IllegalArgumentException(s"Process can only use flink sinks, instead given: ${part.obj}")
 
         case part@CustomNodePart(executor:
           CustomNodeInvoker[((DataStream[InterpretationResult], FiniteDuration) => DataStream[Any])@unchecked],

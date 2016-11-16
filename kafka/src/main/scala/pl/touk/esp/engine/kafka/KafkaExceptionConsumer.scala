@@ -7,13 +7,14 @@ import org.apache.kafka.clients.producer.internals.ErrorLoggingCallback
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 import org.apache.kafka.common.serialization.ByteArraySerializer
 import pl.touk.esp.engine.api.exception.{EspExceptionConsumer, EspExceptionInfo, NonTransientException}
+import pl.touk.esp.engine.flink.api.exception.FlinkEspExceptionConsumer
 
 import scala.collection.JavaConversions._
 
 class KafkaExceptionConsumer(kafkaAddress: String,
                              topic: String,
                              serializationSchema: SerializationSchema[EspExceptionInfo[NonTransientException]],
-                             properties: Properties = new Properties()) extends EspExceptionConsumer {
+                             properties: Properties = new Properties()) extends FlinkEspExceptionConsumer {
 
   lazy val producer = new KafkaProducer[Array[Byte], Array[Byte]](propertiesForKafka())
 

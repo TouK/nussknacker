@@ -1,4 +1,4 @@
-package pl.touk.esp.engine.util.exception
+package pl.touk.esp.engine.flink.util.exception
 
 trait ExceptionExtractor[T] {
   def unapply(ex: Throwable): Option[T]

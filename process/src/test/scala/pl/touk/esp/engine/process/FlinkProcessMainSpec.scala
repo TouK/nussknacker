@@ -6,17 +6,17 @@ import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor
 import org.scalatest.FlatSpec
 import pl.touk.esp.engine.api.exception.ExceptionHandlerFactory
-import pl.touk.esp.engine.api.process.{ProcessConfigCreator, SinkFactory, SourceFactory}
+import pl.touk.esp.engine.api.process.{ProcessConfigCreator, SinkFactory}
 import pl.touk.esp.engine.api.{ParamName, Service}
 import pl.touk.esp.engine.build.EspProcessBuilder
+import pl.touk.esp.engine.flink.api.process.FlinkSourceFactory
+import pl.touk.esp.engine.flink.util.exception.VerboselyLoggingExceptionHandler
+import pl.touk.esp.engine.flink.util.source.CollectionSource
 import pl.touk.esp.engine.marshall.ProcessMarshaller
 import pl.touk.esp.engine.process.ProcessTestHelpers.{EmptySink, SimpleRecord}
 import pl.touk.esp.engine.spel
-import pl.touk.esp.engine.util.exception.VerboselyLoggingExceptionHandler
-import pl.touk.esp.engine.util.source.CollectionSource
 
 import scala.concurrent.Future
-import scala.concurrent.duration._
 
 class FlinkProcessMainSpec extends FlatSpec {
 
@@ -57,7 +57,7 @@ class SimpleProcessConfigCreator extends ProcessConfigCreator {
 
   override def customStreamTransformers(config: Config) = Map()
 
-  override def sourceFactories(config: Config) = Map("input" -> SourceFactory.noParam(
+  override def sourceFactories(config: Config) = Map("input" -> FlinkSourceFactory.noParam(
     new CollectionSource[SimpleRecord](new ExecutionConfig, List(), Some(new AscendingTimestampExtractor[SimpleRecord] {
       override def extractAscendingTimestamp(element: SimpleRecord) = element.date.getTime
     }))))

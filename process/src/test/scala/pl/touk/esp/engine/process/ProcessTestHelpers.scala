@@ -12,11 +12,13 @@ import pl.touk.esp.engine.api.LazyInterpreter
 import pl.touk.esp.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
 import pl.touk.esp.engine.api.process.{ProcessConfigCreator, Sink, SinkFactory, SourceFactory}
 import pl.touk.esp.engine.api._
+import pl.touk.esp.engine.flink.api.exception.FlinkEspExceptionHandler
+import pl.touk.esp.engine.flink.api.process.{FlinkSink, FlinkSourceFactory}
+import pl.touk.esp.engine.flink.util.exception.VerboselyLoggingExceptionHandler
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.process.api.WithExceptionHandler
 import pl.touk.esp.engine.util.{LoggingListener, SynchronousExecutionContext}
-import pl.touk.esp.engine.util.exception.VerboselyLoggingExceptionHandler
-import pl.touk.esp.engine.util.source.CollectionSource
+import pl.touk.esp.engine.flink.util.source.CollectionSource
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.{Await, Future}
@@ -46,7 +48,7 @@ object ProcessTestHelpers {
       override def services(config: Config) = Map("logService" -> MockService)
 
       override def sourceFactories(config: Config) = Map(
-        "input" -> SourceFactory.noParam(new CollectionSource[SimpleRecord](
+        "input" -> FlinkSourceFactory.noParam(new CollectionSource[SimpleRecord](
           config = exConfig,
           list = data,
           timestampAssigner = Some(new AscendingTimestampExtractor[SimpleRecord] {
@@ -75,7 +77,7 @@ object ProcessTestHelpers {
 
     @MethodToInvoke
     def execute(@ParamName("keyBy") keyBy: LazyInterpreter[SimpleRecord],
-               @ParamName("stringVal") stringVal: String)(exceptionHander: ()=>EspExceptionHandler) = (start: DataStream[InterpretationResult], timeout: FiniteDuration) => {
+               @ParamName("stringVal") stringVal: String)(exceptionHander: ()=>FlinkEspExceptionHandler) = (start: DataStream[InterpretationResult], timeout: FiniteDuration) => {
 
       start.keyBy(keyBy.syncInterpretationFunction)
         .flatMapWithState[Any, Long] {
@@ -91,7 +93,7 @@ object ProcessTestHelpers {
 
   }
 
-  case class CustomMap(lazyHandler: ()=>EspExceptionHandler) extends RichMapFunction[Any, Any] with WithExceptionHandler {
+  case class CustomMap(lazyHandler: ()=>FlinkEspExceptionHandler) extends RichMapFunction[Any, Any] with WithExceptionHandler {
     override def map(value: Any) = {
        //tu nic madrego nie robimy, tylko zeby zobaczyc czy Exceptionhandler jest wstrzykniety
        exceptionHandler.recover(value)(Context()).getOrElse(0)
@@ -107,7 +109,7 @@ object ProcessTestHelpers {
     }
   }
 
-  case object EmptySink extends Sink {
+  case object EmptySink extends FlinkSink {
     override def toFlinkFunction: SinkFunction[Any] = new SinkFunction[Any] {
       override def invoke(value: Any): Unit = {}
     }

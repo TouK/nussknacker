@@ -7,8 +7,8 @@ import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
 import org.scalatest.concurrent.Eventually
 import org.scalatest.time.{Seconds, Span}
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
-import pl.touk.esp.engine.util.source.StaticSource
-import pl.touk.esp.engine.util.source.StaticSource.{Data, Watermark}
+import pl.touk.esp.engine.flink.util.source.StaticSource
+import pl.touk.esp.engine.flink.util.source.StaticSource.{Data, Watermark}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._

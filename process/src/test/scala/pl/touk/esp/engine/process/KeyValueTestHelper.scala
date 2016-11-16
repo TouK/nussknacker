@@ -11,11 +11,11 @@ import org.apache.flink.streaming.api.windowing.time.Time
 import pl.touk.esp.engine.api._
 import pl.touk.esp.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.esp.engine.api.process.ProcessConfigCreator
+import pl.touk.esp.engine.flink.util.exception.VerboselyLoggingExceptionHandler
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.kafka.{KafkaConfig, KafkaSourceFactory}
 import pl.touk.esp.engine.util.LoggingListener
-import pl.touk.esp.engine.util.exception.VerboselyLoggingExceptionHandler
-import pl.touk.esp.engine.util.source.CsvSchema
+import pl.touk.esp.engine.flink.util.source.CsvSchema
 
 import scala.concurrent._
 

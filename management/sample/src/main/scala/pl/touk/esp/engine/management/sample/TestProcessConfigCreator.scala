@@ -10,8 +10,9 @@ import org.apache.flink.streaming.util.serialization.KeyedSerializationSchema
 import pl.touk.esp.engine.api._
 import pl.touk.esp.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.esp.engine.api.process._
+import pl.touk.esp.engine.flink.api.process.{FlinkSink, FlinkSource, FlinkSourceFactory}
+import pl.touk.esp.engine.flink.util.exception.VerboselyLoggingExceptionHandler
 import pl.touk.esp.engine.kafka.{KafkaConfig, KafkaSinkFactory}
-import pl.touk.esp.engine.util.exception.VerboselyLoggingExceptionHandler
 
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
@@ -44,8 +45,8 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
     val kConfig = KafkaConfig(config.getString("kafka.zkAddress"), config.getString("kafka.kafkaAddress"), None)
 
     Map[String, SourceFactory[_]](
-      "kafka-transaction" -> SourceFactory.noParam(prepareNotEndingSource),
-      "oneSource" -> SourceFactory.noParam(new Source[String] {
+      "kafka-transaction" -> FlinkSourceFactory.noParam(prepareNotEndingSource),
+      "oneSource" -> FlinkSourceFactory.noParam(new FlinkSource[String] {
 
         override def timestampAssigner = None
 
@@ -74,8 +75,8 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
   }
 
   //potrzebujemy czegos takiego bo CollectionSource konczy sie sam i testy mi glupich rzeczy nie wykrywaly :)
-  def prepareNotEndingSource: Source[String] = {
-    new Source[String] {
+  def prepareNotEndingSource: FlinkSource[String] = {
+    new FlinkSource[String] {
       override def typeInformation = implicitly[TypeInformation[String]]
 
       override def timestampAssigner = None
@@ -132,7 +133,7 @@ case object StatefulTransformer extends CustomStreamTransformer {
 
 }
 
-case object EmptySink extends Sink {
+case object EmptySink extends FlinkSink {
   override def toFlinkFunction: SinkFunction[Any] = new SinkFunction[Any] {
     override def invoke(value: Any): Unit = {}
   }

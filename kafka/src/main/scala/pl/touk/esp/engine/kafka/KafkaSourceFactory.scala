@@ -9,6 +9,7 @@ import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer09
 import org.apache.flink.streaming.util.serialization.DeserializationSchema
 import pl.touk.esp.engine.api.process.{Source, SourceFactory}
 import pl.touk.esp.engine.api.{MetaData, ParamName}
+import pl.touk.esp.engine.flink.api.process.{FlinkSource, FlinkSourceFactory}
 import pl.touk.esp.engine.kafka.KafkaSourceFactory._
 
 import scala.collection.JavaConverters._
@@ -16,7 +17,7 @@ import scala.reflect.ClassTag
 
 class KafkaSourceFactory[T: TypeInformation](config: KafkaConfig,
                                              schema: DeserializationSchema[T],
-                                             timestampAssigner: Option[TimestampAssigner[T]]) extends SourceFactory[T] with Serializable {
+                                             timestampAssigner: Option[TimestampAssigner[T]]) extends FlinkSourceFactory[T] with Serializable {
 
   def create(processMetaData: MetaData, @ParamName(`TopicParamName`) topic: String): Source[T] = {
     new KafkaSource(
@@ -25,7 +26,7 @@ class KafkaSourceFactory[T: TypeInformation](config: KafkaConfig,
     )
   }
 
-  class KafkaSource(consumerGroupId: String, topic: String) extends Source[T] with Serializable {
+  class KafkaSource(consumerGroupId: String, topic: String) extends FlinkSource[T] with Serializable {
     override def typeInformation: TypeInformation[T] =
       implicitly[TypeInformation[T]]
 
