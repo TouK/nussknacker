@@ -1,4 +1,4 @@
-package pl.touk.esp.engine.util.exception
+package pl.touk.esp.engine.flink.util.exception
 
 import java.net.ConnectException
 
@@ -7,13 +7,14 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import pl.touk.esp.engine.api.MetaData
-import pl.touk.esp.engine.api.exception.{EspExceptionConsumer, EspExceptionHandler, EspExceptionInfo, NonTransientException}
-import pl.touk.esp.engine.util.exception.DefaultEspExceptionHandler.{DefaultNonTransientExceptionExtractor, DefaultTransientExceptionExtractor}
+import pl.touk.esp.engine.api.exception.{EspExceptionInfo, NonTransientException}
+import pl.touk.esp.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionHandler}
+import pl.touk.esp.engine.flink.util.exception.DefaultEspExceptionHandler.{DefaultNonTransientExceptionExtractor, DefaultTransientExceptionExtractor}
 
 import scala.concurrent.duration._
 
 trait DefaultEspExceptionHandler
-  extends EspExceptionHandler
+  extends FlinkEspExceptionHandler
     with ConsumingNonTransientExceptions
     with RestartingProcessAfterDelay
 
@@ -28,12 +29,12 @@ object DefaultEspExceptionHandler {
 }
 
 case class BrieflyLoggingExceptionHandler(processMetaData: MetaData)
-  extends EspExceptionHandler
+  extends FlinkEspExceptionHandler
     with ConsumingNonTransientExceptions
     with NotRestartingProcesses
     with LazyLogging {
 
-  override protected def consumer = new EspExceptionConsumer {
+  override protected def consumer = new FlinkEspExceptionConsumer {
     override def consume(e: EspExceptionInfo[NonTransientException]) = {
       logger.warn(s"${processMetaData.id}: Exception: ${e.throwable.getMessage} (${e.throwable.getClass.getName})")
     }
@@ -42,12 +43,12 @@ case class BrieflyLoggingExceptionHandler(processMetaData: MetaData)
 }
 
 case class VerboselyLoggingExceptionHandler(processMetaData: MetaData)
-  extends EspExceptionHandler
+  extends FlinkEspExceptionHandler
     with ConsumingNonTransientExceptions
     with NotRestartingProcesses
     with LazyLogging {
 
-  override protected def consumer = new EspExceptionConsumer {
+  override protected def consumer = new FlinkEspExceptionConsumer {
     override def consume(e: EspExceptionInfo[NonTransientException]) = {
       logger.error(s"${processMetaData.id}: Exception during processing job, context: ${e.context}", e.throwable)
     }
@@ -55,9 +56,9 @@ case class VerboselyLoggingExceptionHandler(processMetaData: MetaData)
   
 }
 
-trait ConsumingNonTransientExceptions { self: EspExceptionHandler =>
+trait ConsumingNonTransientExceptions { self: FlinkEspExceptionHandler =>
 
-  protected def consumer: EspExceptionConsumer
+  protected def consumer: FlinkEspExceptionConsumer
 
   override def open(runtimeContext: RuntimeContext) = {
     consumer.open(runtimeContext)
@@ -91,7 +92,7 @@ trait ConsumingNonTransientExceptions { self: EspExceptionHandler =>
 
 }
 
-trait RestartingProcessAfterDelay { self: EspExceptionHandler =>
+trait RestartingProcessAfterDelay { self: FlinkEspExceptionHandler =>
 
   import net.ceedubs.ficus.Ficus._
 
@@ -104,7 +105,7 @@ trait RestartingProcessAfterDelay { self: EspExceptionHandler =>
     )
 }
 
-trait NotRestartingProcesses { self: EspExceptionHandler =>
+trait NotRestartingProcesses { self: FlinkEspExceptionHandler =>
   
   override def restartStrategy = RestartStrategies.noRestart()
   

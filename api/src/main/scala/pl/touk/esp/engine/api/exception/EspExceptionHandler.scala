@@ -1,7 +1,5 @@
 package pl.touk.esp.engine.api.exception
 
-import org.apache.flink.api.common.functions.RuntimeContext
-import org.apache.flink.api.common.restartstrategy.RestartStrategies.RestartStrategyConfiguration
 import pl.touk.esp.engine.api.{Context, MetaData}
 
 trait EspExceptionHandler {
@@ -16,11 +14,8 @@ trait EspExceptionHandler {
     }
   }
 
-  def restartStrategy: RestartStrategyConfiguration
-
-  def open(runtimeContext: RuntimeContext): Unit = {}
   protected def handle(exceptionInfo: EspExceptionInfo[Throwable]): Unit
-  def close(): Unit = {}
+
 
 }
 

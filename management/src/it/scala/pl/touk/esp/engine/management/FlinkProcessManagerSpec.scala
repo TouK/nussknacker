@@ -34,7 +34,7 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
     val jobStatus = processManager.findJobStatus(processId).futureValue
     jobStatus.map(_.status) shouldBe Some("RUNNING")
 
-    assert(processManager.cancel(process.id).isReadyWithin(1 seconds))
+    assert(processManager.cancel(process.id).isReadyWithin(10 seconds))
 
     eventually {
       val jobStatusCanceled = processManager.findJobStatus(processId).futureValue
@@ -64,7 +64,7 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
     val jobStatus2 = processManager.findJobStatus(processId).futureValue
     jobStatus2.map(_.status) shouldBe Some("RUNNING")
 
-    assert(processManager.cancel(process.id).isReadyWithin(1 seconds))
+    assert(processManager.cancel(process.id).isReadyWithin(10 seconds))
 
     eventually {
       val jobStatusCanceled = processManager.findJobStatus(processId).futureValue
@@ -107,7 +107,7 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
     val message = kafkaClient.createConsumer().consume(outTopic).take(2).last.message()
     new String(message) shouldBe "List(One element, One element)"
 
-    assert(processManager.cancel(processEmittingOneElementAfterStart.id).isReadyWithin(1 seconds))
+    assert(processManager.cancel(processEmittingOneElementAfterStart.id).isReadyWithin(10 seconds))
 
   }
 
@@ -142,7 +142,7 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
     val jobStatus2 = processManager.findJobStatus(processId).futureValue
     jobStatus2.map(_.status) shouldBe Some("RUNNING")
 
-    assert(processManager.cancel(process.id).isReadyWithin(1 seconds))
+    assert(processManager.cancel(process.id).isReadyWithin(10 seconds))
   }
 
   it should "deploy custom process" in {
@@ -156,7 +156,7 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
     val jobStatus = processManager.findJobStatus(processId).futureValue
     jobStatus.map(_.status) shouldBe Some("RUNNING")
 
-    assert(processManager.cancel(processId).isReadyWithin(1 seconds))
+    assert(processManager.cancel(processId).isReadyWithin(10 seconds))
 
     eventually {
       val jobStatusCanceled = processManager.findJobStatus(processId).futureValue

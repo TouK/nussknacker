@@ -1,4 +1,4 @@
-package pl.touk.esp.engine.util.source
+package pl.touk.esp.engine.flink.util.source
 
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext

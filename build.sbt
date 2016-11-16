@@ -65,6 +65,7 @@ val dispatchV = "0.11.3"
 val slf4jV = "1.7.21"
 val scalaLoggingV = "3.4.0"
 val ficusV = "1.2.6"
+val configV = "1.3.0"
 
 val perfTestSampleName = "esp-perf-test-sample"
 
@@ -105,7 +106,7 @@ lazy val perf_test_sample = (project in file("perf-test/sample")).
     }
   ).
   settings(addArtifact(artifact in (Compile, assembly), assembly)).
-  dependsOn(util, kafka, process % "runtime")
+  dependsOn(flinkUtil, kafka, process % "runtime")
 
 val managementSampleName = "esp-management-sample"
 
@@ -148,7 +149,7 @@ lazy val management_sample = (project in file("management/sample")).
     }
   ).
   settings(addArtifact(artifact in (Compile, assembly), assembly)).
-  dependsOn(util, kafka, process % "runtime")
+  dependsOn(flinkUtil, kafka, process % "runtime")
 
 lazy val process = (project in file("process")).
   settings(commonSettings).
@@ -162,8 +163,7 @@ lazy val process = (project in file("process")).
         "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )
     }
-  ).
-  dependsOn(interpreter, kafka % "test", kafkaTestUtil % "test")
+  ).dependsOn(flinkApi, flinkUtil, interpreter, kafka % "test", kafkaTestUtil % "test")
 
 lazy val interpreter = (project in file("interpreter")).
   settings(commonSettings).
@@ -174,13 +174,11 @@ lazy val interpreter = (project in file("interpreter")).
         "org.springframework" % "spring-expression" % springV,
         "com.github.alexarchambault" %% s"argonaut-shapeless_$argonautMajorV" % argonautShapelessV,
         "com.github.julien-truffaut"  %%  "monocle-macro"  % monocleV,
-        "org.apache.flink" %% "flink-streaming-java" % flinkV % "provided", // api dependency
         "ch.qos.logback" % "logback-classic" % logbackV % "test",
         "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )
     }
-  ).
-  dependsOn(util)
+  ).dependsOn(util)
 
 lazy val kafka = (project in file("kafka")).
   settings(commonSettings).
@@ -195,7 +193,7 @@ lazy val kafka = (project in file("kafka")).
       )
     }
   ).
-  dependsOn(api)
+  dependsOn(flinkApi)
 
 lazy val kafkaTestUtil = (project in file("kafka-test-util")).
   settings(commonSettings).
@@ -219,12 +217,23 @@ lazy val util = (project in file("util")).
         "net.databinder.dispatch" %% "dispatch-core" % dispatchV,// % "optional",
         "org.scala-lang.modules" %% "scala-parser-combinators" % scalaParsersV, // scalaxb deps
         "io.argonaut" %% "argonaut" % argonautV,
-        "com.iheart" %% "ficus" % ficusV,
-        "org.apache.flink" %% "flink-streaming-java" % flinkV % "provided"
+        "com.iheart" %% "ficus" % ficusV
       )
     }
-  ).
-  dependsOn(api)
+  ).dependsOn(api)
+
+
+
+lazy val flinkUtil = (project in file("flink-util")).
+  settings(commonSettings).
+  settings(
+    name := "esp-flink-util",
+    libraryDependencies ++= {
+      Seq(
+        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided"
+      )
+    }
+  ).dependsOn(util, flinkApi)
 
 
 lazy val api = (project in file("api")).
@@ -235,10 +244,22 @@ lazy val api = (project in file("api")).
       Seq(
         "org.typelevel" %% "cats-core" % catsV,
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
-        "org.apache.flink" %% "flink-streaming-java" % flinkV % "provided"
+        "com.typesafe" % "config" % configV
+
       )
     }
   )
+
+lazy val flinkApi = (project in file("flink-api")).
+  settings(commonSettings).
+  settings(
+    name := "esp-flink-api",
+    libraryDependencies ++= {
+      Seq(
+        "org.apache.flink" %% "flink-streaming-java" % flinkV % "provided"
+      )
+    }
+  ).dependsOn(api)
 
 publishArtifact := false
 

@@ -10,6 +10,7 @@ import pl.touk.esp.engine.compile.{PartSubGraphCompilationError, PartSubGraphCom
 import pl.touk.esp.engine.compiledgraph.CompiledProcessParts
 import pl.touk.esp.engine.compiledgraph.node.Node
 import pl.touk.esp.engine.definition.CustomNodeInvokerDeps
+import pl.touk.esp.engine.flink.api.exception.FlinkEspExceptionHandler
 import pl.touk.esp.engine.splittedgraph.splittednode.SplittedNode
 
 import scala.concurrent.ExecutionContext
@@ -42,6 +43,7 @@ case class CompiledProcessWithDeps(compiledProcess: CompiledProcessParts,
 
   def metaData: MetaData = compiledProcess.metaData
 
-  def exceptionHandler: EspExceptionHandler = compiledProcess.exceptionHandler
+  //FIXME: ladniej bez castow...
+  def exceptionHandler: FlinkEspExceptionHandler = compiledProcess.exceptionHandler.asInstanceOf[FlinkEspExceptionHandler]
 
 }

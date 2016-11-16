@@ -1,10 +1,11 @@
-package pl.touk.esp.engine.util.exception
+package pl.touk.esp.engine.flink.util.exception
 
 import org.apache.flink.api.common.functions.RuntimeContext
-import pl.touk.esp.engine.api.exception.{EspExceptionConsumer, EspExceptionInfo, NonTransientException}
-import pl.touk.esp.engine.util.metrics.InstantRateMeter
+import pl.touk.esp.engine.api.exception.{EspExceptionInfo, NonTransientException}
+import pl.touk.esp.engine.flink.api.exception.FlinkEspExceptionConsumer
+import pl.touk.esp.engine.flink.util.metrics.InstantRateMeter
 
-class RateMeterExceptionConsumer(underlying: EspExceptionConsumer) extends EspExceptionConsumer {
+class RateMeterExceptionConsumer(underlying: FlinkEspExceptionConsumer) extends FlinkEspExceptionConsumer {
 
   private lazy val instantRateMeter = new InstantRateMeter
 
