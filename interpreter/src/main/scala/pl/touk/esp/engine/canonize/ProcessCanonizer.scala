@@ -37,6 +37,8 @@ object ProcessCanonizer {
         ) :: Nil
       case ending: node.EndingNode =>
         canonicalnode.FlatNode(ending.data) :: Nil
+      case node.SplitNode(bare, nexts) =>
+        canonicalnode.SplitNode(bare, nexts.map(nodesOnTheSameLevel)) :: Nil
     }
 
   def uncanonize(canonicalProcess: CanonicalProcess): ValidatedNel[ProcessUncanonizationError, EspProcess] =
@@ -75,6 +77,10 @@ object ProcessCanonizer {
         }.sequence
         A.map2(unFlattenNexts, uncanonize(defaultNext)) { (nextsV, defaultNextV) =>
           node.SwitchNode(data, nextsV, Some(defaultNextV))
+        }
+      case canonicalnode.SplitNode(bare, nexts) :: Nil=>
+        nexts.map(uncanonize).sequence.map { uncanonized =>
+          node.SplitNode(bare, uncanonized)
         }
       case invalidTail =>
         invalid(InvalidTailOfBranch(invalidTail.map(_.id).toSet)).toValidatedNel

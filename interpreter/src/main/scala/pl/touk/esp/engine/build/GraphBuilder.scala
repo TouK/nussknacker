@@ -3,13 +3,11 @@ package pl.touk.esp.engine.build
 import pl.touk.esp.engine.graph.evaluatedparam.Parameter
 import pl.touk.esp.engine.graph.expression._
 import pl.touk.esp.engine.graph.node._
+import pl.touk.esp.engine.graph.param
 import pl.touk.esp.engine.graph.service.ServiceRef
 import pl.touk.esp.engine.graph.sink.SinkRef
 import pl.touk.esp.engine.graph.source.SourceRef
 import pl.touk.esp.engine.graph.variable._
-import pl.touk.esp.engine.graph.{param, service}
-
-import scala.concurrent.duration.Duration
 
 trait GraphBuilder[R] {
 
@@ -19,6 +17,9 @@ trait GraphBuilder[R] {
 
   def buildVariable(id: String, varName: String, fields: (String, Expression)*) =
     build(node => creator(OneOutputSubsequentNode(VariableBuilder(id, varName, fields.map(Field.tupled).toList), node)))
+
+  def buildSimpleVariable(id: String, varName: String, value: Expression) =
+    build(node => creator(OneOutputSubsequentNode(Variable(id, varName, value), node)))
 
   def processor(id: String, svcId: String, params: (String, Expression)*): GraphBuilder[R] =
     build(node => creator(OneOutputSubsequentNode(Processor(id, ServiceRef(svcId, params.map(Parameter.tupled).toList)), node)))
@@ -50,6 +51,8 @@ trait GraphBuilder[R] {
 
   def customNode(id: String, outputVar: String, customNodeRef: String, params: (String, Expression)*): GraphBuilder[R]  =
     build(node => creator(OneOutputSubsequentNode(CustomNode(id, outputVar, customNodeRef, params.map(Parameter.tupled).toList), node)))
+
+  def split(id: String, nexts: SubsequentNode*): R = creator(SplitNode(Split(id), nexts.toList))
 
   def to(node: SubsequentNode): R =
     creator(node)

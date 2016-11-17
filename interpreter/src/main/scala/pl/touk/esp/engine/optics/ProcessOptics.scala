@@ -67,6 +67,9 @@ class ProcessOptics(process: CanonicalProcess) {
       case n: SwitchNode =>
         val fromSwitch = fromNode.asInstanceOf[SwitchNode]
         n.copy(nexts = fromSwitch.nexts, defaultNext = fromSwitch.defaultNext)
+      case n: SplitNode =>
+        val fromSplit = fromNode.asInstanceOf[SplitNode]
+        n.copy(nexts = fromSplit.nexts)
       case _: FlatNode=>
         node
     }

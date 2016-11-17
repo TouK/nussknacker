@@ -9,7 +9,7 @@ import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
 import pl.touk.esp.engine.canonicalgraph.canonicalnode._
 import pl.touk.esp.engine.canonize.ProcessCanonizer
 import pl.touk.esp.engine.graph.EspProcess
-import pl.touk.esp.engine.graph.node.{Filter, NodeData, Switch}
+import pl.touk.esp.engine.graph.node.{Split, Filter, NodeData, Switch}
 import pl.touk.esp.engine.marshall.ProcessUnmarshallError._
 
 object ProcessMarshaller {
@@ -52,15 +52,31 @@ object ProcessMarshaller {
       defaultNext <- DecodeJson(j => listOfCanonicalNodeDecoder.tryDecode(j --\ "defaultNext"))
     } yield SwitchNode(data, nexts, defaultNext)
 
+  private implicit lazy val splitEncode: EncodeJson[SplitNode] =
+    EncodeJson[SplitNode](switch =>
+      EncodeJson.of[NodeData].encode(switch.data).withObject(_
+        :+ "nexts" -> EncodeJson.of[List[List[CanonicalNode]]].encode(switch.nexts)
+      )
+    )
+  private lazy val splitDecode: DecodeJson[CanonicalNode] =
+    for {
+      data <- DecodeJson.of[Split]
+      nexts <- DecodeJson(j => DecodeJson.of[List[List[CanonicalNode]]].tryDecode(j --\  "nexts"))
+    } yield SplitNode(data, nexts)
+
+
   private implicit lazy val nodeEncode: EncodeJson[CanonicalNode] =
     EncodeJson[CanonicalNode] {
       case flat: FlatNode => flatNodeEncode(flat)
       case filter: FilterNode => filterEncode(filter)
       case switch: SwitchNode => switchEncode(switch)
+      case split: SplitNode => splitEncode(split)
+
     }
 
+  //order is important here! flatNodeDecode has to be the last
   private implicit lazy val nodeDecode: DecodeJson[CanonicalNode] =
-    filterDecode ||| switchDecode ||| flatNodeDecode
+    filterDecode ||| switchDecode ||| splitDecode||| flatNodeDecode
 
   // Without this nested lists were serialized to colon(head, tail) instead of json array
   private implicit lazy val listOfCanonicalNodeEncoder: EncodeJson[List[CanonicalNode]] = ListEncodeJson[CanonicalNode]

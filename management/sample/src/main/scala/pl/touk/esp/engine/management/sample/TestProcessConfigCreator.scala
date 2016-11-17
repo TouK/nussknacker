@@ -120,15 +120,15 @@ case object StatefulTransformer extends CustomStreamTransformer {
   def execute(@ParamName("keyBy") keyBy: LazyInterpreter[String])
   = (start: DataStream[InterpretationResult], timeout: FiniteDuration) => {
     start.keyBy(keyBy.syncInterpretationFunction)
-      .mapWithState[Any, List[String]] { case (StringFromIr(sr), oldState) =>
+      .mapWithState[Any, List[String]] { case (StringFromIr(ir, sr), oldState) =>
       val nList = sr :: oldState.getOrElse(Nil)
-      (nList, Some(nList))
+      (ValueWithContext(nList, ir.finalContext), Some(nList))
     }
 
   }
 
   object StringFromIr {
-    def unapply(ir: InterpretationResult) = Some(ir.finalContext.apply[String]("input"))
+    def unapply(ir: InterpretationResult) = Some(ir, ir.finalContext.apply[String]("input"))
   }
 
 }

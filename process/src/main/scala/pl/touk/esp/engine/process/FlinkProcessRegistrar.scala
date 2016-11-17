@@ -1,6 +1,7 @@
 package pl.touk.esp.engine.process
 
 import java.lang.Iterable
+import java.util.Collections
 import java.util.concurrent.TimeUnit
 
 import cats.data.Validated.{Invalid, Valid}
@@ -37,11 +38,10 @@ import pl.touk.esp.engine.process.FlinkProcessRegistrar._
 import pl.touk.esp.engine.process.util.Serializers
 import pl.touk.esp.engine.splittedgraph.end.{DeadEnd, End, NormalEnd}
 import pl.touk.esp.engine.splittedgraph.splittednode
-import pl.touk.esp.engine.splittedgraph.splittednode.SplittedNode
+import pl.touk.esp.engine.splittedgraph.splittednode.{NextNode, PartRef, SplittedNode}
 import pl.touk.esp.engine.util.SynchronousExecutionContext
 
 import scala.collection.JavaConversions._
-import scala.collection.JavaConverters._
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.language.implicitConversions
@@ -97,7 +97,8 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessW
       }.map(_.transform("even-time-meter", new EventTimeDelayMeterFunction("eventtimedelay", eventTimeMetricDuration)))
         .getOrElse(newStart)
         .map(new RateMeterFunction[Any]("source"))
-        .flatMap(new InitialInterpretationFunction(compiledProcessWithDeps, part.node, Interpreter.InputParamName))
+          .map(input => Context().withVariable(Interpreter.InputParamName, input))
+        .flatMap(new InterpretationFunction(compiledProcessWithDeps, part.node))
         .split(SplitFunction)
 
       registerParts(withAssigned, part.nextParts, part.ends)
@@ -126,21 +127,34 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessW
             .name(s"${part.id}-sink")
         case part:SinkPart =>
           throw new IllegalArgumentException(s"Process can only use flink sinks, instead given: ${part.obj}")
-
+        case SplitPart(splitNode, nexts) =>
+          val newStart = start.split(_ => nexts.map(_.next.id))
+          nexts.foreach {
+            //FIXME: czy to wszystko tutaj jest w porzadku???
+            case NextWithParts(NextNode(nextNode), parts, ends) =>
+              val interpreted = newStart.select(nextNode.id)
+                  .map(_.finalContext)
+                  .flatMap(new InterpretationFunction(compiledProcessWithDeps, nextNode))
+                    .split(SplitFunction)
+              registerParts(interpreted, parts, ends)
+            case NextWithParts(PartRef(id), parts, ends) =>
+              val splitted = newStart.select(id).split(SplitFunction)
+              registerParts(splitted, parts, ends)
+          }
         case part@CustomNodePart(executor:
-          CustomNodeInvoker[((DataStream[InterpretationResult], FiniteDuration) => DataStream[Any])@unchecked],
-        node, nextParts, ends) =>
+          CustomNodeInvoker[((DataStream[InterpretationResult], FiniteDuration) => DataStream[ValueWithContext[_]])@unchecked],
+              node, nextParts, ends) =>
 
           val newStart = executor.run(compiledProcessWithDeps)(start, compiledProcessWithDeps().processTimeout)
-            .flatMap(new InitialInterpretationFunction(compiledProcessWithDeps, node, part.outputVar))
-            .split(SplitFunction)
+              .map(ir => ir.context.withVariable(node.data.outputVar, ir.value))
+              .flatMap(new InterpretationFunction(compiledProcessWithDeps, node))
+              .split(SplitFunction)
+
           registerParts(newStart, nextParts, ends)
         case e:CustomNodePart =>
           throw new IllegalArgumentException(s"Unknown CustomNodeExecutor: ${e.customNodeInvoker}")
       }
-
   }
-
 }
 
 object FlinkProcessRegistrar {
@@ -187,9 +201,8 @@ object FlinkProcessRegistrar {
     case Invalid(err) => throw new scala.IllegalArgumentException(err.toList.mkString("Compilation errors: ", ", ", ""))
   }
 
-  class InitialInterpretationFunction(compiledProcessWithDepsProvider: () => CompiledProcessWithDeps,
-                                      node: SplittedNode[_],
-                                      inputParamName: String) extends RichFlatMapFunction[Any, InterpretationResult] {
+  class InterpretationFunction(compiledProcessWithDepsProvider: () => CompiledProcessWithDeps,
+                               node: SplittedNode[_]) extends RichFlatMapFunction[Context, InterpretationResult] {
 
     private lazy implicit val ec = SynchronousExecutionContext.ctx
     private lazy val compiledProcessWithDeps = compiledProcessWithDepsProvider()
@@ -201,12 +214,11 @@ object FlinkProcessRegistrar {
       compiledProcessWithDeps.open(getRuntimeContext)
     }
 
-    override def flatMap(input: Any, collector: Collector[InterpretationResult]): Unit = {
-      val context = Context().withVariable(inputParamName, input)
+    override def flatMap(input: Context, collector: Collector[InterpretationResult]): Unit = {
       val result = exceptionHandler.recover {
-        val resultFuture = interpreter.interpret(compiledNode, InterpreterMode.Traverse, metaData, context)
+        val resultFuture = interpreter.interpret(compiledNode, InterpreterMode.Traverse, metaData, input)
         Await.result(resultFuture, processTimeout)
-      }(context)
+      }(input)
       result.foreach(collector.collect)
     }
 
@@ -340,10 +352,10 @@ object FlinkProcessRegistrar {
 
   object SplitFunction extends OutputSelector[InterpretationResult] {
     override def select(interpretationResult: InterpretationResult): Iterable[String] = {
-      interpretationResult.reference match {
-        case NextPartReference(id) => List(id).asJava
-        case _: EndingReference => List(EndId).asJava
-      }
+      Collections.singletonList(interpretationResult.reference match {
+        case NextPartReference(id) => id
+        case _: EndingReference => EndId
+      })
     }
   }
 

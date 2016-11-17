@@ -2,6 +2,7 @@ package pl.touk.esp.engine.splittedgraph
 
 import pl.touk.esp.engine.graph.expression.Expression
 import pl.touk.esp.engine.graph.node._
+import pl.touk.esp.engine.split.ProcessSplitter.NextWithParts
 
 object splittednode {
 
@@ -20,6 +21,8 @@ object splittednode {
 
   case class OneOutputSubsequentNode[T <: OneOutputSubsequentNodeData](data: T, next: Next) extends OneOutputNode[T] with SubsequentNode[T]
 
+  case class SplitNode(data: Split, nexts: List[NextWithParts]) extends SubsequentNode[Split]
+
   case class FilterNode(data: Filter, nextTrue: Next, nextFalse: Option[Next] = None) extends SubsequentNode[Filter]
 
   case class SwitchNode(data: Switch, nexts: List[Case], defaultNext: Option[Next] = None) extends SubsequentNode[Switch]
@@ -28,8 +31,12 @@ object splittednode {
 
   case class EndingNode[T <: EndingNodeData](data: T) extends SubsequentNode[T]
 
-  sealed trait Next
-  case class NextNode(node: SubsequentNode[_ <: NodeData]) extends Next
+  sealed trait Next {
+    def id: String
+  }
+  case class NextNode(node: SubsequentNode[_ <: NodeData]) extends Next {
+    def id = node.id
+  }
   case class PartRef(id: String) extends Next
 
 }

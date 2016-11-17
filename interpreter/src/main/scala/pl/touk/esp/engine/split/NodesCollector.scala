@@ -13,6 +13,8 @@ object NodesCollector {
         collectNodes(sink.node)
       case custom:CustomNodePart =>
         collectNodes(custom.node) ::: custom.nextParts.flatMap(collectNodesInAllParts)
+      case split: SplitPart =>
+        collectNodes(split.node) ::: split.node.nexts.flatMap(_.nextParts).flatMap(collectNodesInAllParts)
 
     }
 
@@ -26,6 +28,8 @@ object NodesCollector {
         n.nexts.flatMap {
           case Case(_, ch) => collectNodes(ch)
         } ::: n.defaultNext.toList.flatMap(collectNodes)
+      case SplitNode(_, nextsWithParts) =>
+        nextsWithParts.map(_.next).flatMap(collectNodes)
       case n: EndingNode[_] =>
         List.empty
     }

@@ -3,27 +3,28 @@ package pl.touk.esp.engine.compile
 import cats.data.Validated._
 import cats.data.{Validated, ValidatedNel}
 import cats.instances.list._
-import cats.instances.option._
 import pl.touk.esp.engine._
-import pl.touk.esp.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
+import pl.touk.esp.engine.api.MetaData
+import pl.touk.esp.engine.api.exception.EspExceptionHandler
 import pl.touk.esp.engine.api.process._
-import pl.touk.esp.engine.api.{CustomStreamTransformer, MetaData, Service}
 import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
 import pl.touk.esp.engine.canonize.ProcessCanonizer
 import pl.touk.esp.engine.compile.ProcessCompilationError._
 import pl.touk.esp.engine.compile.dumb._
 import pl.touk.esp.engine.compiledgraph.CompiledProcessParts
+import pl.touk.esp.engine.compiledgraph.part.NextWithParts
 import pl.touk.esp.engine.definition.DefinitionExtractor._
 import pl.touk.esp.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
-import pl.touk.esp.engine.definition.{ProcessObjectDefinitionExtractor, _}
+import pl.touk.esp.engine.definition._
 import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
+import pl.touk.esp.engine.graph.node.CustomNode
 import pl.touk.esp.engine.graph.sink.SinkRef
 import pl.touk.esp.engine.graph.source.SourceRef
 import pl.touk.esp.engine.graph.{EspProcess, param}
 import pl.touk.esp.engine.split._
 import pl.touk.esp.engine.splittedgraph._
 import pl.touk.esp.engine.splittedgraph.part._
-import pl.touk.esp.engine.splittedgraph.splittednode.SplittedNode
+import pl.touk.esp.engine.splittedgraph.splittednode.{Next, NextNode, SplittedNode}
 
 class ProcessCompiler(protected val sub: PartSubGraphCompilerBase,
                       protected val definitions: ProcessDefinition[ObjectWithMethodDef]) extends ProcessCompilerBase {
@@ -119,13 +120,26 @@ protected trait ProcessCompilerBase {
           }
         }
       case CustomNodePart(node, nextParts, ends) =>
-        validateWithoutContextValidation(node, ctx).andThen { newCtx =>
-          compileCustomNodeInvoker(node).andThen { nodeInvoker =>
-            compile(nextParts, newCtx).map { nextParts =>
-              compiledgraph.part.CustomNodePart(nodeInvoker, node, nextParts, ends)
+        getCustomNodeDefinition(node).andThen { nodeDefinition =>
+          val ctxWithVar = ctx.withVariable(node.data.outputVar, nodeDefinition.returnType)
+          validate(node, ctxWithVar).andThen { newCtx =>
+            compileCustomNodeInvoker(node, nodeDefinition).andThen { nodeInvoker =>
+              compile(nextParts, newCtx).map { nextParts =>
+                compiledgraph.part.CustomNodePart(nodeInvoker, node, nextParts, ends)
+              }
             }
           }
         }
+
+      case SplitPart(node@splittednode.SplitNode(_, nexts)) =>
+        nexts.map { next =>
+          validate(next.next, ctx).andThen { newCtx =>
+            compile(next.nextParts, newCtx).map(cp => NextWithParts(next.next, cp, next.ends))
+          }
+        }.sequence.map { nextsWithParts =>
+          compiledgraph.part.SplitPart(node, nextsWithParts)
+        }
+
     }
   }
 
@@ -133,7 +147,7 @@ protected trait ProcessCompilerBase {
                      (implicit metaData: MetaData): ValidatedNel[ProcessCompilationError, compiledgraph.part.SourcePart] = {
     implicit val nodeId = NodeId(source.id)
     val variables = sourceFactories.get(source.node.data.ref.typ)
-      .map(sf => Map(Interpreter.InputParamName -> sf.definedClass)).getOrElse(Map.empty)
+      .map(sf => Map(Interpreter.InputParamName -> sf.returnType)).getOrElse(Map.empty)
     validate(source.node, ValidationContext(variables, typesInformation)).andThen { ctx =>
       compile(source.node.data.ref).andThen { obj =>
         compile(source.nextParts, ctx).map { nextParts =>
@@ -173,12 +187,15 @@ protected trait ProcessCompilerBase {
     }
   }
 
-  private def compileCustomNodeInvoker(node: SplittedNode[graph.node.CustomNode])
-                                      (implicit nodeId: NodeId, metaData: MetaData): ValidatedNel[ProcessCompilationError, CustomNodeInvoker[Any]] = {
+  private def getCustomNodeDefinition(node: SplittedNode[graph.node.CustomNode])(implicit nodeId: NodeId, metaData: MetaData) = {
     val ref = node.data.nodeType
     fromOption[ProcessCompilationError, ParameterProviderT](customStreamTransformers.get(ref), MissingCustomNodeExecutor(ref))
-      .toValidatedNel
-      .andThen((k: ParameterProviderT) => validateParameters(k, node.data.parameters.map(_.name)))
+          .toValidatedNel
+  }
+
+  private def compileCustomNodeInvoker(node: SplittedNode[CustomNode], nodeDefinition: ParameterProviderT)
+                                      (implicit nodeId: NodeId, metaData: MetaData): ValidatedNel[ProcessCompilationError, CustomNodeInvoker[Any]] = {
+    validateParameters(nodeDefinition, node.data.parameters.map(_.name))
       .map(createCustomNodeInvoker(_, metaData, node))
   }
 
@@ -207,6 +224,12 @@ protected trait ProcessCompilerBase {
 
   private def validate(n: splittednode.SplittedNode[_], ctx: ValidationContext): ValidatedNel[ProcessCompilationError, ValidationContext] = {
     sub.validate(n, ctx).leftMap(_.map(identity[ProcessCompilationError]))
+  }
+
+  private def validate(n: Next, ctx: ValidationContext): ValidatedNel[ProcessCompilationError, ValidationContext] = n match {
+    case NextNode(node) => sub.validate(node, ctx).leftMap(_.map(identity[ProcessCompilationError]))
+    //TODO: a moze cos tu innego powinno byc??
+    case _ => Validated.valid(ctx)
   }
 
   private def validateWithoutContextValidation(n: splittednode.SplittedNode[_], ctx: ValidationContext): ValidatedNel[ProcessCompilationError, ValidationContext] = {

@@ -10,6 +10,7 @@ import pl.touk.esp.engine.compile.ProcessCompilationError._
 import pl.touk.esp.engine.compile.dumb._
 import pl.touk.esp.engine.compiledgraph.evaluatedparam.Parameter
 import pl.touk.esp.engine.compiledgraph.expression.ExpressionParser
+import pl.touk.esp.engine.compiledgraph.node.{NextNode, PartRef}
 import pl.touk.esp.engine.definition.DefinitionExtractor._
 import pl.touk.esp.engine.definition._
 import pl.touk.esp.engine.graph.node.{EndingNodeData, OneOutputSubsequentNodeData}
@@ -17,6 +18,8 @@ import pl.touk.esp.engine.spel.SpelExpressionParser
 import pl.touk.esp.engine.splittedgraph._
 import pl.touk.esp.engine.splittedgraph.splittednode.SplittedNode
 import pl.touk.esp.engine.types.EspTypeUtils
+
+import scala.util.Right
 
 class PartSubGraphCompiler(protected val expressionParsers: Map[String, ExpressionParser],
                            protected val services: Map[String, ObjectWithMethodDef]) extends PartSubGraphCompilerBase {
@@ -55,32 +58,35 @@ class PartSubGraphValidator(protected val expressionParsers: Map[String, Express
 private[compile] trait PartSubGraphCompilerBase {
 
   type ParametersProviderT <: ObjectMetadata
-
-  protected def expressionParsers: Map[String, ExpressionParser]
-  protected def services: Map[String, ParametersProviderT]
-
   private val syntax = ValidatedSyntax[PartSubGraphCompilationError]
-  import syntax._
 
   def validate(n: splittednode.SplittedNode[_], ctx: ValidationContext): ValidatedNel[PartSubGraphCompilationError, ValidationContext] = {
     compile(n, ctx).map(_.ctx)
-  }
-
-  def validateWithoutContextValidation(n: splittednode.SplittedNode[_]): ValidatedNel[PartSubGraphCompilationError, ValidationContext] = {
-    compileWithoutContextValidation(n).map(_.ctx)
-  }
-
-  protected def compile(n: splittednode.SplittedNode[_]): ValidatedNel[PartSubGraphCompilationError, CompiledNode] = {
-    new Compiler(true).doCompile(n, ValidationContext())
   }
 
   protected def compile(n: splittednode.SplittedNode[_], ctx: ValidationContext): ValidatedNel[PartSubGraphCompilationError, CompiledNode] = {
     new Compiler(true).doCompile(n, ctx)
   }
 
+  import syntax._
+
+  def validateWithoutContextValidation(n: splittednode.SplittedNode[_]): ValidatedNel[PartSubGraphCompilationError, ValidationContext] = {
+    compileWithoutContextValidation(n).map(_.ctx)
+  }
+
   protected def compileWithoutContextValidation(n: splittednode.SplittedNode[_]): ValidatedNel[PartSubGraphCompilationError, CompiledNode] = {
     new Compiler(false).doCompile(n, ValidationContext())
   }
+
+  protected def expressionParsers: Map[String, ExpressionParser]
+
+  protected def services: Map[String, ParametersProviderT]
+
+  protected def compile(n: splittednode.SplittedNode[_]): ValidatedNel[PartSubGraphCompilationError, CompiledNode] = {
+    new Compiler(true).doCompile(n, ValidationContext())
+  }
+
+  protected def createServiceInvoker(obj: ParametersProviderT): ServiceInvoker
 
   //TODO: no to wyglada troche strasznie, nie??
   private class Compiler(contextValidationEnabled: Boolean) {
@@ -91,31 +97,35 @@ private[compile] trait PartSubGraphCompilerBase {
           compile(next, ctx).map(nwc => CompiledNode(compiledgraph.node.Source(id, nwc.next), nwc.ctx))
         case splittednode.OneOutputSubsequentNode(data: OneOutputSubsequentNodeData, next) =>
           data match {
+            case graph.node.Variable(id, varName, expression) =>
+              val newCtx = ctx.withVariable(varName, ClazzRef(classOf[Any])) //jak wyciagnac informacie o typie zmiennej?
+              A.map2(compile(expression, ctx), compile(next, newCtx))(
+                (compiledExpression, nextWithCtx) =>
+                  CompiledNode(compiledgraph.node.VariableBuilder(id, varName, Left(compiledExpression), nextWithCtx.next), nextWithCtx.ctx))
             case graph.node.VariableBuilder(id, varName, fields) =>
               val newCtx = ctx.withVariable(varName, ClazzRef(classOf[Map[String, Any]])) //jak wyciagnac informacie o typach zmiennych w mapie?
-              A.map2(fields.map(f => compile(f, newCtx)).sequence, compile(next, newCtx))(
+              A.map2(fields.map(f => compile(f, ctx)).sequence, compile(next, newCtx))(
                 (fields, nextWithCtx) =>
-                  CompiledNode(compiledgraph.node.VariableBuilder(id, varName, fields, nextWithCtx.next), nextWithCtx.ctx))
+                  CompiledNode(compiledgraph.node.VariableBuilder(id, varName, Right(fields), nextWithCtx.next), nextWithCtx.ctx))
             case graph.node.Processor(id, ref) =>
               A.map2(compile(ref, ctx), compile(next, ctx))((ref, nextWithCtx) =>
                 CompiledNode(compiledgraph.node.Processor(id, ref, nextWithCtx.next), nextWithCtx.ctx))
             case graph.node.Enricher(id, ref, outName) =>
-              val newCtx = services.get(ref.id).map {
-                case o: ObjectWithMethodDef =>
-                  EspTypeUtils.getGenericMethodType(o.method) match {
-                    case Some(futureGenericType) => ctx.withVariable(outName, ClazzRef(futureGenericType))
-                    case None => ctx
-                  }
-                case o: ObjectDefinition =>
-                  o.returnType.map(ctx.withVariable(outName, _)).getOrElse(ctx)
+              val newCtx = services.get(ref.id).map { definition =>
+                ctx.withVariable(outName, definition.returnType)
               }.getOrElse(ctx)
               A.map2(compile(ref, newCtx), compile(next, newCtx))((ref, nextWithCtx) =>
                 CompiledNode(compiledgraph.node.Enricher(id, ref, outName, nextWithCtx.next), nextWithCtx.ctx))
             case graph.node.CustomNode(id, outputVar, customNodeRef, parameters) =>
-              val newCtx = ctx.copy(variables = Map(outputVar -> ClazzRef(classOf[Any]))) //na razie olewamy
-              val validParams = parameters.map(p => compile(p, newCtx)).sequence
-              A.map2(validParams, compile(next, newCtx))((params, nextWithCtx) =>
+              //TODO: na razie zakladamy ze nie resetujemy kontekstu, output mamy z gory
+              //TODO: nie walidujemy parametrow ze zmiennymi, bo nie wiemy co doda CustomNode
+              val validParams = parameters.map(p => compileParam(p, ctx, skipContextValidation = true)).sequence
+              A.map2(validParams, compile(next, ctx))((params, nextWithCtx) =>
                 CompiledNode(compiledgraph.node.CustomNode(id, params, nextWithCtx.next), nextWithCtx.ctx))
+          }
+        case splittednode.SplitNode(bareNode, nexts) =>
+          nexts.map(n => compile(n.next, ctx)).sequence.map { _ =>
+            CompiledNode(compiledgraph.node.SplitNode(bareNode.id), ctx)
           }
         case splittednode.FilterNode(graph.node.Filter(id, expression), nextTrue, nextFalse) =>
           A.map3(compile(expression, ctx), compile(nextTrue, ctx), nextFalse.map(next => compile(next, ctx)).sequence)(
@@ -149,7 +159,7 @@ private[compile] trait PartSubGraphCompilerBase {
     private def compile(n: graph.service.ServiceRef, ctx: ValidationContext)
                        (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, compiledgraph.service.ServiceRef] = {
       val validService = services.get(n.id).map(valid).getOrElse(invalid(MissingService(n.id))).toValidatedNel
-      val validParams = n.parameters.map(p => compile(p, ctx)).sequence
+      val validParams = n.parameters.map(p => compileParam(p, ctx)).sequence
       A.map2(validService, validParams)((_, _)).andThen {
         case (obj: ParametersProviderT@unchecked, params: List[Parameter]) =>
           validateServiceParameters(obj, params.map(_.name)).map { _ =>
@@ -158,6 +168,7 @@ private[compile] trait PartSubGraphCompilerBase {
           }
       }
     }
+
     private def validateServiceParameters(parameterProvider: ParametersProviderT, usedParamNames: List[String])
                                          (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, Unit] = {
       val definedParamNames = parameterProvider.parameters.map(_.name).toSet
@@ -170,22 +181,22 @@ private[compile] trait PartSubGraphCompilerBase {
                        (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, compiledgraph.variable.Field] =
       compile(n.expression, ctx).map(compiledgraph.variable.Field(n.name, _))
 
-    private def compile(n: graph.evaluatedparam.Parameter, ctx: ValidationContext)
+    private def compileParam(n: graph.evaluatedparam.Parameter, ctx: ValidationContext, skipContextValidation: Boolean = false)
                        (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, compiledgraph.evaluatedparam.Parameter] =
-      compile(n.expression, ctx).map(compiledgraph.evaluatedparam.Parameter(n.name, _))
+      compile(n.expression, ctx, skipContextValidation).map(compiledgraph.evaluatedparam.Parameter(n.name, _))
 
     private def compile(n: splittednode.Case, ctx: ValidationContext)
                        (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, (compiledgraph.node.Case, ValidationContext)] =
       A.map2(compile(n.expression, ctx), compile(n.node, ctx))((expr, nextWithCtx) => (compiledgraph.node.Case(expr, nextWithCtx.next), nextWithCtx.ctx))
 
-    private def compile(n: graph.expression.Expression, ctx: ValidationContext)
+    private def compile(n: graph.expression.Expression, ctx: ValidationContext, skipContextValidation: Boolean = false)
                        (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, compiledgraph.expression.Expression] = {
       val validParser = expressionParsers
         .get(n.language)
         .map(valid)
         .getOrElse(invalid(NotSupportedExpressionLanguage(n.language)))
       (validParser andThen { parser =>
-        val parseResult = if (contextValidationEnabled) {
+        val parseResult = if (contextValidationEnabled && !skipContextValidation) {
           parser.parse(n.expression, ctx)
         } else {
           parser.parseWithoutContextValidation(n.expression)
@@ -194,8 +205,6 @@ private[compile] trait PartSubGraphCompilerBase {
       }).toValidatedNel
     }
   }
-
-  protected def createServiceInvoker(obj: ParametersProviderT): ServiceInvoker
 
 
 }
@@ -208,6 +217,7 @@ object PartSubGraphCompilerBase {
   }
 
   case class CompiledNode(node: compiledgraph.node.Node, ctx: ValidationContext)
+
   case class NextWithContext(next: compiledgraph.node.Next, ctx: ValidationContext)
 
 }

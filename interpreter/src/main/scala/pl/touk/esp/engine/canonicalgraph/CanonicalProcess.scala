@@ -4,7 +4,7 @@ import pl.touk.esp.engine.api.MetaData
 import pl.touk.esp.engine.canonicalgraph.canonicalnode.CanonicalNode
 import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.esp.engine.graph.expression.Expression
-import pl.touk.esp.engine.graph.node.{Filter, NodeData, Switch}
+import pl.touk.esp.engine.graph.node.{Split, Filter, NodeData, Switch}
 
 sealed trait CanonicalTreeNode
 
@@ -22,6 +22,8 @@ object canonicalnode {
   case class FilterNode(data: Filter, nextFalse: List[CanonicalNode]) extends CanonicalNode
 
   case class SwitchNode(data: Switch, nexts: List[Case], defaultNext: List[CanonicalNode]) extends CanonicalNode
+
+  case class SplitNode(data: Split, nexts: List[List[CanonicalNode]]) extends CanonicalNode
 
   case class Case(expression: Expression, nodes: List[CanonicalNode]) extends CanonicalTreeNode
 

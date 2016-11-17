@@ -13,7 +13,6 @@ object part {
     type T <: NodeData
     def node: SplittedNode[T]
     def id: String = node.id
-    def ends: List[End]
   }
 
   case class SourcePart(obj: api.process.Source[Any], node: splittednode.SourceNode,
@@ -31,10 +30,16 @@ object part {
     def outputVar: String = node.data.outputVar
   }
 
+  case class SplitPart(node: splittednode.SplitNode, nexts: List[NextWithParts]) extends SubsequentPart {
+    override type T = Split
+  }
+
   case class SinkPart(obj: api.process.Sink, node: splittednode.EndingNode[Sink]) extends SubsequentPart {
     override type T = Sink
 
-    override lazy val ends = List(NormalEnd(node.id))
+    val ends = List(NormalEnd(node.id))
   }
+
+  case class NextWithParts(next: splittednode.Next, nextParts: List[SubsequentPart], ends: List[End])
 
 }
