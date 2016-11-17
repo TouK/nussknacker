@@ -56,7 +56,7 @@ class ProcessValidator(protected val sub: PartSubGraphCompilerBase,
 
 protected trait ProcessCompilerBase {
 
-  type ParameterProviderT <: ClazzParametersProvider
+  type ParameterProviderT <: ObjectMetadata
 
   protected def definitions: ProcessDefinition[ParameterProviderT]
   protected def sourceFactories = definitions.sourceFactories
@@ -219,7 +219,7 @@ protected trait ProcessCompilerBase {
 object ProcessValidator {
 
   def default(definition: ProcessDefinition[ObjectDefinition]): ProcessValidator = {
-    val sub = PartSubGraphValidator.default(definition.services, definition.globalVariables)
+    val sub = PartSubGraphValidator.default(definition.services, definition.globalVariables.mapValues(_.value))
     new ProcessValidator(sub, definition)
   }
 

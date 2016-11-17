@@ -7,7 +7,7 @@ import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrderness
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.util.serialization.KeyedSerializationSchema
 import pl.touk.esp.engine.api.exception.ExceptionHandlerFactory
-import pl.touk.esp.engine.api.process.ProcessConfigCreator
+import pl.touk.esp.engine.api.process.{ProcessConfigCreator, WithCategories}
 import pl.touk.esp.engine.flink.util.exception.VerboselyLoggingExceptionHandler
 import pl.touk.esp.engine.kafka.{KafkaConfig, KafkaSinkFactory, KafkaSourceFactory}
 import pl.touk.esp.engine.perftest.sample.model.KeyValue
@@ -23,13 +23,13 @@ class AggProcessConfigCreator extends ProcessConfigCreator {
   override def sourceFactories(config: Config) = {
     val kafkaConfig = config.as[KafkaConfig]("kafka")
     Map(
-      "kafka-keyvalue" -> new KafkaSourceFactory[KeyValue](
+      "kafka-keyvalue" -> WithCategories(new KafkaSourceFactory[KeyValue](
         kafkaConfig,
         new CsvSchema(KeyValue.apply),
         Some(new BoundedOutOfOrdernessTimestampExtractor[KeyValue](Time.minutes(10)) { // ta liczba uzależniona jest od batcha jaki jest pobierany przez konsumenta
           override def extractTimestamp(element: KeyValue) = element.date.getTime
         })
-      )
+      ))
     )
   }
 
@@ -50,7 +50,7 @@ class AggProcessConfigCreator extends ProcessConfigCreator {
     }
 
     Map(
-      "kafka-int" -> new KafkaSinkFactory(kafkaConfig, intSerializationSchema)
+      "kafka-int" -> WithCategories(new KafkaSinkFactory(kafkaConfig, intSerializationSchema))
     )
   }
 
@@ -61,5 +61,5 @@ class AggProcessConfigCreator extends ProcessConfigCreator {
   override def exceptionHandlerFactory(config: Config) =
     ExceptionHandlerFactory.noParams(VerboselyLoggingExceptionHandler)
 
-  override def globalProcessVariables(config: Config): Map[String, Class[_]] = Map.empty
+  override def globalProcessVariables(config: Config) = Map.empty
 }

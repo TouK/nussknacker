@@ -11,10 +11,10 @@ class ProcessDefinitionMarshallerTest extends FlatSpec with Matchers {
 
   it should "work round-trip" in {
     val definition = ProcessDefinition(
-      Map("fooService" -> ObjectDefinition.withParams(List(Parameter(name = "foo", typ = ClazzRef(classOf[String]))))),
-      Map("fooSourceFactory" -> ObjectDefinition.withParams(List(Parameter(name = "foo", typ = ClazzRef(classOf[String]))))),
-      Map("fooSinkFactory" -> ObjectDefinition.withParams(List(Parameter(name = "foo", typ = ClazzRef(classOf[String]))))),
-      Map("fooExecutorServiceFactory" -> ObjectDefinition.withParams(List(Parameter(name = "foo", typ = ClazzRef(classOf[String]))))),
+      Map("fooService" -> ObjectDefinition.withParamsAndCategories(List(Parameter(name = "foo", typ = ClazzRef(classOf[String]))), List("cat1"))),
+      Map("fooSourceFactory" -> ObjectDefinition.withParamsAndCategories(List(Parameter(name = "foo", typ = ClazzRef(classOf[String]))), List("cat1"))),
+      Map("fooSinkFactory" -> ObjectDefinition.withParamsAndCategories(List(Parameter(name = "foo", typ = ClazzRef(classOf[String]))), List("cat1", "cat2"))),
+      Map("fooExecutorServiceFactory" -> ObjectDefinition.withParamsAndCategories(List(Parameter(name = "foo", typ = ClazzRef(classOf[String]))), List("cat1"))),
       ObjectDefinition.noParam,
       Map.empty,
       EspTypeUtils.clazzAndItsChildrenDefinition(List.empty)

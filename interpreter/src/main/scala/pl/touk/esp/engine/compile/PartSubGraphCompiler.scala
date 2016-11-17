@@ -54,7 +54,7 @@ class PartSubGraphValidator(protected val expressionParsers: Map[String, Express
 
 private[compile] trait PartSubGraphCompilerBase {
 
-  type ParametersProviderT <: ClazzParametersProvider
+  type ParametersProviderT <: ObjectMetadata
 
   protected def expressionParsers: Map[String, ExpressionParser]
   protected def services: Map[String, ParametersProviderT]

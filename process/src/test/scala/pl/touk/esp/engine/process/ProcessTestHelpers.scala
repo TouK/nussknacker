@@ -10,7 +10,7 @@ import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExt
 import org.apache.flink.streaming.api.scala._
 import pl.touk.esp.engine.api.LazyInterpreter
 import pl.touk.esp.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
-import pl.touk.esp.engine.api.process.{ProcessConfigCreator, Sink, SinkFactory, SourceFactory}
+import pl.touk.esp.engine.api.process._
 import pl.touk.esp.engine.api._
 import pl.touk.esp.engine.flink.api.exception.FlinkEspExceptionHandler
 import pl.touk.esp.engine.flink.api.process.{FlinkSink, FlinkSourceFactory}
@@ -45,30 +45,30 @@ object ProcessTestHelpers {
     }
 
     def prepareCreator(exConfig: ExecutionConfig, data: List[SimpleRecord]) = new ProcessConfigCreator {
-      override def services(config: Config) = Map("logService" -> MockService)
+      override def services(config: Config) = Map("logService" -> WithCategories(MockService))
 
       override def sourceFactories(config: Config) = Map(
-        "input" -> FlinkSourceFactory.noParam(new CollectionSource[SimpleRecord](
+        "input" -> WithCategories(FlinkSourceFactory.noParam(new CollectionSource[SimpleRecord](
           config = exConfig,
           list = data,
           timestampAssigner = Some(new AscendingTimestampExtractor[SimpleRecord] {
             override def extractAscendingTimestamp(element: SimpleRecord) = element.date.getTime
           })
-        ))
+        )))
       )
 
       override def sinkFactories(config: Config) = Map(
-        "monitor" -> SinkFactory.noParam(EmptySink)
+        "monitor" -> WithCategories(SinkFactory.noParam(EmptySink))
       )
 
-      override def customStreamTransformers(config: Config) = Map("stateCustom" -> StateCustomNode)
+      override def customStreamTransformers(config: Config) = Map("stateCustom" -> WithCategories(StateCustomNode))
 
       override def listeners(config: Config) = Seq(LoggingListener)
 
       override def exceptionHandlerFactory(config: Config) = ExceptionHandlerFactory.noParams(VerboselyLoggingExceptionHandler)
 
-      override def globalProcessVariables(config: Config): Map[String, Class[_]] = {
-        Map("processHelper" -> ProcessHelper.getClass)
+      override def globalProcessVariables(config: Config) = {
+        Map("processHelper" -> WithCategories(ProcessHelper.getClass))
       }
     }
   }

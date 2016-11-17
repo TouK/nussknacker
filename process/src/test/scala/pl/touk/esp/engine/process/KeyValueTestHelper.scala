@@ -10,7 +10,7 @@ import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.windowing.time.Time
 import pl.touk.esp.engine.api._
 import pl.touk.esp.engine.api.exception.ExceptionHandlerFactory
-import pl.touk.esp.engine.api.process.ProcessConfigCreator
+import pl.touk.esp.engine.api.process.{ProcessConfigCreator, WithCategories}
 import pl.touk.esp.engine.flink.util.exception.VerboselyLoggingExceptionHandler
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.kafka.{KafkaConfig, KafkaSourceFactory}
@@ -32,24 +32,24 @@ object KeyValueTestHelper {
   object processInvoker {
 
     def prepareCreator(exConfig: ExecutionConfig, data: List[KeyValue], kafkaConfig: KafkaConfig) = new ProcessConfigCreator {
-      override def services(config: Config) = Map("mock" -> MockService)
+      override def services(config: Config) = Map("mock" -> WithCategories(MockService))
       override def sourceFactories(config: Config) =
         Map(
-          "kafka-keyvalue" -> new KafkaSourceFactory[KeyValue](
+          "kafka-keyvalue" -> WithCategories(new KafkaSourceFactory[KeyValue](
             kafkaConfig,
             new CsvSchema(KeyValue.apply),
             Some(new BoundedOutOfOrdernessTimestampExtractor[KeyValue](Time.minutes(10)) {
               override def extractTimestamp(element: KeyValue) = element.date.getTime
             })
           )
-        )
+        ))
       override def sinkFactories(config: Config) = Map.empty
       override def listeners(config: Config) = Seq(LoggingListener)
 
       override def customStreamTransformers(config: Config) = Map()
       override def exceptionHandlerFactory(config: Config) = ExceptionHandlerFactory.noParams(VerboselyLoggingExceptionHandler)
 
-      override def globalProcessVariables(config: Config): Map[String, Class[_]] = Map.empty
+      override def globalProcessVariables(config: Config) = Map.empty
     }
 
     def invokeWithKafka(process: EspProcess, config: KafkaConfig,

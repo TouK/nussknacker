@@ -2,7 +2,7 @@ package pl.touk.esp.engine.definition
 
 import java.lang.reflect.Method
 
-import pl.touk.esp.engine.api.process.{SinkFactory, SourceFactory}
+import pl.touk.esp.engine.api.process.{SinkFactory, SourceFactory, WithCategories}
 import pl.touk.esp.engine.api.{MethodToInvoke, ParamName, Service}
 import pl.touk.esp.engine.definition.DefinitionExtractor._
 import pl.touk.esp.engine.types.EspTypeUtils
@@ -10,12 +10,13 @@ import pl.touk.esp.engine.util.ReflectUtils
 
 trait DefinitionExtractor[T] {
 
-  def extract(obj: T): ObjectDefinition = {
+  def extract(obj: T, categories: List[String]): ObjectDefinition = {
     val methodDef = extractMethodDefinition(obj)
     ObjectDefinition(
       methodDef.orderedParameters.definedParameters,
       ClazzRef(obj.getClass),
-      EspTypeUtils.getGenericMethodType(methodDef.method).map(clazz => ClazzRef.apply(clazz.getName))
+      EspTypeUtils.getGenericMethodType(methodDef.method).map(clazz => ClazzRef.apply(clazz.getName)),
+      categories
     )
   }
 
@@ -57,12 +58,13 @@ trait DefinitionExtractor[T] {
 
 object DefinitionExtractor {
 
-  trait ClazzParametersProvider {
+  trait ObjectMetadata {
     def parameters: List[Parameter]
     def definedClass: ClazzRef
+    def categories: List[String]
   }
 
-  case class ObjectWithMethodDef(obj: Any, methodDef: MethodDefinition, objectDefinition: ObjectDefinition) extends ClazzParametersProvider {
+  case class ObjectWithMethodDef(obj: Any, methodDef: MethodDefinition, objectDefinition: ObjectDefinition) extends ObjectMetadata {
     def method = {
       methodDef.method
     }
@@ -72,10 +74,12 @@ object DefinitionExtractor {
     def orderedParameters = methodDef.orderedParameters
 
     override def definedClass: ClazzRef = objectDefinition.definedClass
+
+    override def categories = objectDefinition.categories
   }
   object ObjectWithMethodDef {
-    def apply[T](obj: T, extractor: DefinitionExtractor[T]): ObjectWithMethodDef = {
-      ObjectWithMethodDef(obj, extractor.extractMethodDefinition(obj), extractor.extract(obj))
+    def apply[T](obj: WithCategories[T], extractor: DefinitionExtractor[T]): ObjectWithMethodDef = {
+      ObjectWithMethodDef(obj.value, extractor.extractMethodDefinition(obj.value), extractor.extract(obj.value, obj.categories))
     }
   }
 
@@ -108,7 +112,9 @@ object DefinitionExtractor {
     }
   }
 
-  case class ObjectDefinition(parameters: List[Parameter], definedClass: ClazzRef, returnType: Option[ClazzRef]) extends ClazzParametersProvider
+  case class ObjectDefinition(parameters: List[Parameter],
+                              definedClass: ClazzRef,
+                              returnType: Option[ClazzRef], categories: List[String]) extends ObjectMetadata
 
   case class Parameter(name: String, typ: ClazzRef)
 
@@ -130,11 +136,14 @@ object DefinitionExtractor {
   }
 
   object ObjectDefinition {
-    def noParam: ObjectDefinition = ObjectDefinition(List.empty, ClazzRef(classOf[Null]), None)
-    def withParams(params: List[Parameter]): ObjectDefinition = ObjectDefinition(params, ClazzRef(classOf[Null]), None)
+    def noParam: ObjectDefinition = ObjectDefinition(List.empty, ClazzRef(classOf[Null]), None, List())
+    def withParams(params: List[Parameter]): ObjectDefinition = ObjectDefinition(params, ClazzRef(classOf[Null]), None, List())
 
-    def apply(parameters: List[Parameter], clazz: Class[_], returnType: Option[Class[_]]): ObjectDefinition = {
-      ObjectDefinition(parameters, ClazzRef(clazz), returnType.map(ClazzRef.apply))
+    def withParamsAndCategories(params: List[Parameter], categories: List[String]): ObjectDefinition =
+      ObjectDefinition(params, ClazzRef(classOf[Null]), None, categories)
+
+    def apply(parameters: List[Parameter], clazz: Class[_], returnType: Option[Class[_]], categories: List[String]): ObjectDefinition = {
+      ObjectDefinition(parameters, ClazzRef(clazz), returnType.map(ClazzRef.apply), categories)
     }
   }
 
