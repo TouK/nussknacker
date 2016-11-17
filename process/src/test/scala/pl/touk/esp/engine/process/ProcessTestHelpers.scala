@@ -5,24 +5,23 @@ import java.util.concurrent.CopyOnWriteArrayList
 
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.flink.api.common.ExecutionConfig
-import org.apache.flink.api.common.functions.{MapFunction, RichMapFunction}
+import org.apache.flink.api.common.functions.RichMapFunction
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor
 import org.apache.flink.streaming.api.scala._
-import pl.touk.esp.engine.api.LazyInterpreter
-import pl.touk.esp.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
+import pl.touk.esp.engine.api.{LazyInterpreter, _}
+import pl.touk.esp.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.esp.engine.api.process._
-import pl.touk.esp.engine.api._
 import pl.touk.esp.engine.flink.api.exception.FlinkEspExceptionHandler
 import pl.touk.esp.engine.flink.api.process.{FlinkSink, FlinkSourceFactory}
 import pl.touk.esp.engine.flink.util.exception.VerboselyLoggingExceptionHandler
+import pl.touk.esp.engine.flink.util.source.CollectionSource
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.process.api.WithExceptionHandler
-import pl.touk.esp.engine.util.{LoggingListener, SynchronousExecutionContext}
-import pl.touk.esp.engine.flink.util.source.CollectionSource
+import pl.touk.esp.engine.util.LoggingListener
 
 import scala.collection.mutable.ArrayBuffer
-import scala.concurrent.{Await, Future}
+import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 
 object ProcessTestHelpers {
@@ -76,28 +75,35 @@ object ProcessTestHelpers {
 
   object StateCustomNode extends CustomStreamTransformer {
 
-    @MethodToInvoke
+    @MethodToInvoke(returnType = classOf[SimpleRecordWithPreviousValue])
     def execute(@ParamName("keyBy") keyBy: LazyInterpreter[SimpleRecord],
                @ParamName("stringVal") stringVal: String)(exceptionHander: ()=>FlinkEspExceptionHandler) = (start: DataStream[InterpretationResult], timeout: FiniteDuration) => {
 
       start.keyBy(keyBy.syncInterpretationFunction)
-        .flatMapWithState[Any, Long] {
-        case (SimpleFromIr(sr), Some(oldState)) => (List(SimpleRecordWithPreviousValue(sr, oldState, stringVal)), Some(sr.value1))
-        case (SimpleFromIr(sr), None) =>  (List(SimpleRecordWithPreviousValue(sr, 0, stringVal)), Some(sr.value1))
+        .mapWithState[ValueWithContext[Any], Long] {
+        //TODO: tu musi byc jakis node id??
+        //na razie zawsze wszystko zwracamy..
+        case (SimpleFromIr(ir, sr), Some(oldState)) =>
+          (ValueWithContext(
+          SimpleRecordWithPreviousValue(sr, oldState, stringVal), ir.finalContext), Some(sr.value1))
+        case (SimpleFromIr(ir, sr), None) =>
+          (ValueWithContext(
+           SimpleRecordWithPreviousValue(sr, 0, stringVal), ir.finalContext), Some(sr.value1))
       }.map(CustomMap(exceptionHander))
+
 
     }
 
     object SimpleFromIr {
-      def unapply(ir:InterpretationResult) = Some(ir.finalContext.apply[SimpleRecord]("input"))
+      def unapply(ir:InterpretationResult) = Some((ir, ir.finalContext.apply[SimpleRecord]("input")))
     }
 
   }
 
-  case class CustomMap(lazyHandler: ()=>FlinkEspExceptionHandler) extends RichMapFunction[Any, Any] with WithExceptionHandler {
-    override def map(value: Any) = {
+  case class CustomMap(lazyHandler: ()=>FlinkEspExceptionHandler) extends RichMapFunction[ValueWithContext[Any], ValueWithContext[Any]] with WithExceptionHandler {
+    override def map(value: ValueWithContext[Any]) = {
        //tu nic madrego nie robimy, tylko zeby zobaczyc czy Exceptionhandler jest wstrzykniety
-       exceptionHandler.recover(value)(Context()).getOrElse(0)
+       exceptionHandler.recover(value)(value.context).orNull
     }
   }
 

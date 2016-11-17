@@ -1,7 +1,7 @@
 package pl.touk.esp.engine.compile
 
-import cats.data._
 import cats.data.Validated.{Invalid, Valid}
+import cats.data._
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.esp.engine._
 import pl.touk.esp.engine.api.Service
@@ -21,10 +21,10 @@ class ProcessValidatorSpec extends FlatSpec with Matchers {
   import spel.Implicits._
 
   private val baseDefinition = ProcessDefinition(
-    Map("sampleEnricher" -> ObjectDefinition(List.empty, classOf[SampleEnricher], Some(classOf[SimpleRecord]), List())),
-    Map("source" -> ObjectDefinition(List.empty, classOf[SimpleRecord], None, List())),
+    Map("sampleEnricher" -> ObjectDefinition(List.empty, classOf[SimpleRecord], List())),
+    Map("source" -> ObjectDefinition(List.empty, classOf[SimpleRecord], List())),
     Map("sink" -> ObjectDefinition.noParam),
-    Map("customTransformer" -> ObjectDefinition(List.empty, classOf[SimpleRecord], None, List())),
+    Map("customTransformer" -> ObjectDefinition(List.empty, classOf[SimpleRecord], List())),
     ObjectDefinition.noParam,
     Map("processHelper" -> WithCategories(ClazzRef(ProcessHelper.getClass), List("cat1"))),
     EspTypeUtils.clazzAndItsChildrenDefinition(List(classOf[SampleEnricher], classOf[SimpleRecord], ProcessHelper.getClass))
@@ -62,10 +62,10 @@ class ProcessValidatorSpec extends FlatSpec with Matchers {
         .id("process1")
         .exceptionHandler()
         .source("source", "source")
-          .switch("switch", "''", "var",
-            Case("'1'", GraphBuilder.sink(duplicatedId, "sink")),
-            Case("'2'", GraphBuilder.sink(duplicatedId, "sink"))
-          )
+        .switch("switch", "''", "var",
+          Case("'1'", GraphBuilder.sink(duplicatedId, "sink")),
+          Case("'2'", GraphBuilder.sink(duplicatedId, "sink"))
+        )
     ProcessValidator.default(baseDefinition).validate(processWithDuplicatedIds) should matchPattern {
       case Invalid(NonEmptyList(DuplicatedNodeIds(_), _)) =>
     }
@@ -185,6 +185,79 @@ class ProcessValidatorSpec extends FlatSpec with Matchers {
     }
   }
 
+
+  it should "find not existing variables after custom node" in {
+    val process = EspProcessBuilder
+      .id("process1")
+      .exceptionHandler()
+      .source("id1", "source")
+      .customNode("cNode1", "out1", "custom", "par1" -> "'1'")
+      .filter("sampleFilter2", "#input.value1.value3 > 10")
+      .sink("id2", "sink")
+    val definitionWithCustomNode = definitionWithTypedSourceAndTransformNode
+
+    ProcessValidator.default(definitionWithCustomNode).validate(process) should matchPattern {
+      case Invalid(NonEmptyList(ExpressionParseError("There is no property 'value3' in type 'pl.touk.esp.engine.compile.ProcessValidatorSpec$AnotherSimpleRecord'", _, _), _)) =>
+    }
+  }
+
+  it should "find not existing variables after split" in {
+    val process = EspProcessBuilder
+      .id("process1")
+      .exceptionHandler()
+      .source("id1", "source")
+      .split("split1",
+        GraphBuilder.sink("id2", "sink"),
+        GraphBuilder.filter("sampleFilter2", "#input.value1.value3 > 10").sink("id3", "sink")
+      )
+
+    val definitionWithCustomNode = definitionWithTypedSourceAndTransformNode
+
+    ProcessValidator.default(definitionWithCustomNode).validate(process) should matchPattern {
+      case Invalid(NonEmptyList(ExpressionParseError("There is no property 'value3' in type 'pl.touk.esp.engine.compile.ProcessValidatorSpec$AnotherSimpleRecord'", _, _), _)) =>
+    }
+  }
+
+  it should "validate custom node return type" in {
+    val process = EspProcessBuilder
+      .id("process1")
+      .exceptionHandler()
+      .source("id1", "source")
+      .customNode("cNode1", "out1", "custom", "par1" -> "'1'")
+      .filter("sampleFilter1", "#out1.value2")
+      .filter("sampleFilter2", "#out1.terefere")
+      .sink("id2", "sink")
+    val definitionWithCustomNode = definitionWithTypedSourceAndTransformNode
+
+    ProcessValidator.default(definitionWithCustomNode).validate(process) should matchPattern {
+      case Invalid(NonEmptyList(ExpressionParseError("There is no property 'terefere' in type 'pl.touk.esp.engine.compile.ProcessValidatorSpec$AnotherSimpleRecord'",
+      "sampleFilter2", "#out1.terefere"), _)) =>
+
+    }
+  }
+
+  //TODO: zrobic cos zeby dalo sie jednak cos tu walidowac...
+  it should "allow unknown vars in custom node params" in {
+    val process = EspProcessBuilder
+      .id("process1")
+      .exceptionHandler()
+      .source("id1", "source")
+      .customNode("cNode1", "out1", "custom", "par1" -> "#strangeVar")
+      .sink("id2", "sink")
+    val definitionWithCustomNode = definitionWithTypedSourceAndTransformNode
+
+    ProcessValidator.default(definitionWithCustomNode).validate(process) should matchPattern {
+      case Valid(_) =>
+    }
+
+  }
+
+  private val definitionWithTypedSource = baseDefinition.copy(sourceFactories
+    = Map("source" -> ObjectDefinition.noParam.copy(returnType = ClazzRef(classOf[SimpleRecord]))))
+
+  private val definitionWithTypedSourceAndTransformNode =
+    definitionWithTypedSource.withCustomStreamTransformer("custom", classOf[AnotherSimpleRecord], Parameter("par1", ClazzRef(classOf[String])))
+
   it should "find usage of fields that does not exist in option object" in {
     val process = EspProcessBuilder
       .id("process1")
@@ -199,12 +272,15 @@ class ProcessValidatorSpec extends FlatSpec with Matchers {
 
   case class SimpleRecord(value1: AnotherSimpleRecord, plainValue: BigDecimal, plainValueOpt: Option[BigDecimal], intAsAny: Any) {
     private val privateValue = "priv"
+
     def invoke1: Future[AnotherSimpleRecord] = ???
+
     def invoke2: State[ContextWithLazyValuesProvider, AnotherSimpleRecord] = ???
+
     def someMethod(a: Int): Int = ???
   }
+
   case class AnotherSimpleRecord(value2: Long)
-  private val definitionWithTypedSource = baseDefinition.copy(sourceFactories = Map("source" -> ObjectDefinition.noParam.copy(definedClass = ClazzRef(classOf[SimpleRecord]))))
 
   class SampleEnricher extends Service {
     def invoke()(implicit ec: ExecutionContext) = Future(SimpleRecord(AnotherSimpleRecord(1), 2, Option(2), 1))

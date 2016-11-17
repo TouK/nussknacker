@@ -10,7 +10,6 @@ object part {
     type T <: NodeData
     def node: SplittedNode[T]
     def id: String = node.id
-    def ends: List[End]
   }
 
   case class SourcePart(node: SourceNode, nextParts: List[SubsequentPart], ends: List[End]) extends ProcessPart {
@@ -23,10 +22,13 @@ object part {
     override type T = CustomNode
   }
 
+  case class SplitPart(node: splittednode.SplitNode) extends SubsequentPart {
+    override type T = Split
+  }
+
   case class SinkPart(node: EndingNode[Sink]) extends SubsequentPart {
     override type T = Sink
 
-    override lazy val ends = List(NormalEnd(node.id))
   }
 
 }

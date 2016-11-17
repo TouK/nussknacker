@@ -28,6 +28,8 @@ object node {
 
   case class SwitchNode(data: Switch, nexts: List[Case], defaultNext: Option[SubsequentNode] = None) extends SubsequentNode
 
+  case class SplitNode(data: Split, nextParts: List[SubsequentNode]) extends SubsequentNode
+
   case class Case(expression: Expression, node: SubsequentNode)
 
   case class EndingNode(data: EndingNodeData) extends SubsequentNode
@@ -46,9 +48,13 @@ object node {
 
   case class VariableBuilder(id: String, varName: String, fields: List[Field]) extends OneOutputSubsequentNodeData
 
+  case class Variable(id: String, varName: String, value: Expression) extends OneOutputSubsequentNodeData
+
   case class Enricher(id: String, service: ServiceRef, output: String) extends OneOutputSubsequentNodeData
 
   case class CustomNode(id: String, outputVar: String, nodeType: String, parameters: List[Parameter]) extends OneOutputSubsequentNodeData
+
+  case class Split(id: String) extends NodeData
 
   sealed trait EndingNodeData extends NodeData
 

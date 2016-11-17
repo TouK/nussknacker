@@ -35,7 +35,11 @@ object ProcessDefinitionExtractor {
       globalVar.map(ClazzRef(_))
     }
 
-    val typesInformation = TypesInformation.extract(servicesDefs, sourceFactories.mapValues(_.value), globalVariables.mapValues(_.value))
+    val typesInformation = TypesInformation.extract(servicesDefs.values,
+      sourceFactoriesDefs.values,
+      customNodesExecutorsDefs.values,
+      globalVariables.values.map(_.value)
+    )
 
     ProcessDefinition[ObjectWithMethodDef](
       servicesDefs, sourceFactoriesDefs, sinkFactoriesDefs,
@@ -80,8 +84,8 @@ object ProcessDefinitionExtractor {
     def withExceptionHandlerFactory(params: Parameter*) =
       definition.copy(exceptionHandlerFactory = ObjectDefinition.withParams(params.toList))
 
-    def withCustomStreamTransformer(id: String, params: Parameter*) =
-      definition.copy(customStreamTransformers = definition.customStreamTransformers + (id -> ObjectDefinition.withParams(params.toList)))
+    def withCustomStreamTransformer(id: String, returnType: Class[_], params: Parameter*) =
+      definition.copy(customStreamTransformers = definition.customStreamTransformers + (id -> ObjectDefinition(params.toList, returnType, List())))
   }
 }
 

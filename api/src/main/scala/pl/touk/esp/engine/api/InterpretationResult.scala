@@ -5,7 +5,11 @@ case class InterpretationResult(reference: PartReference,
                                 finalContext: Context)
 
 object InterpretationResult {
-  def apply(reference: PartReference, valueWithModifiedContext: ValueWithModifiedContext[_]): InterpretationResult = {
-    InterpretationResult(reference, valueWithModifiedContext.value, valueWithModifiedContext.context)
+
+  def apply(reference: PartReference, valueWithModifiedContext: ValueWithContext[_]): InterpretationResult = {
+    apply(reference, valueWithModifiedContext.value, valueWithModifiedContext.context)
   }
+
+
+
 }

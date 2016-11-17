@@ -10,7 +10,7 @@ import org.springframework.expression.spel.support.StandardEvaluationContext
 import org.springframework.expression.spel.{SpelCompilerMode, SpelParserConfiguration}
 import pl.touk.esp.engine._
 import pl.touk.esp.engine.api.lazyy.{ContextWithLazyValuesProvider, LazyValuesProvider}
-import pl.touk.esp.engine.api.{Context, ValueWithModifiedContext}
+import pl.touk.esp.engine.api.{Context, ValueWithContext}
 import pl.touk.esp.engine.compile.ValidationContext
 import pl.touk.esp.engine.compiledgraph.expression.{ExpressionParseError, ExpressionParser}
 import pl.touk.esp.engine.definition.DefinitionExtractor.ClazzRef
@@ -25,7 +25,7 @@ class SpelExpression(parsed: org.springframework.expression.Expression,
                      expressionFunctions: Map[String, Method],
                      propertyAccessors: Seq[PropertyAccessor]) extends compiledgraph.expression.Expression with LazyLogging {
 
-  override def evaluate[T](ctx: Context, lazyValuesProvider: LazyValuesProvider): ValueWithModifiedContext[T] = logOnException(ctx) {
+  override def evaluate[T](ctx: Context, lazyValuesProvider: LazyValuesProvider): ValueWithContext[T] = logOnException(ctx) {
     val simpleContext = new StandardEvaluationContext()
     propertyAccessors.foreach(simpleContext.addPropertyAccessor)
 
@@ -39,7 +39,7 @@ class SpelExpression(parsed: org.springframework.expression.Expression,
     }
     val value = parsed.getValue(simpleContext).asInstanceOf[T]
     val modifiedContext = simpleContext.lookupVariable(ModifiedContextVariableName).asInstanceOf[Context]
-    ValueWithModifiedContext(value, modifiedContext)
+    ValueWithContext(value, modifiedContext)
   }
 
   private def logOnException[A](ctx: Context)(block: => A): A = {

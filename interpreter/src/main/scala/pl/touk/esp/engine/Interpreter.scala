@@ -22,16 +22,6 @@ class Interpreter private(services: Map[String, ServiceInvoker],
   def interpret(node: Node,
                 mode: InterpreterMode,
                 metaData: MetaData,
-                input: Any,
-                inputParamName: String = InputParamName)
-               (implicit executor: ExecutionContext): Future[InterpretationResult] = {
-    val ctx = Context().withVariable(inputParamName, input)
-    interpret(node, mode, metaData, ctx)
-  }
-
-  def interpret(node: Node,
-                mode: InterpreterMode,
-                metaData: MetaData,
                 ctx: Context)
                (implicit executor: ExecutionContext): Future[InterpretationResult] = {
     implicit val implMode = mode
@@ -46,20 +36,23 @@ class Interpreter private(services: Map[String, ServiceInvoker],
     (node, mode) match {
       case (Source(_, next), Traverse) =>
         interpretNext(next, ctx)
-      case (VariableBuilder(_, varName, fields, next), Traverse) =>
+      case (VariableBuilder(_, varName, Right(fields), next), Traverse) =>
         interpretNext(next, createOrUpdateVariable(ctx, varName, fields))
+      case (VariableBuilder(_, varName, Left(expression), next), Traverse) =>
+        val valueWithModifiedContext = evaluate[Any](expression, ctx)
+        interpretNext(next, ctx.withVariable(varName, valueWithModifiedContext.value))
       case (Processor(_, ref, next), Traverse) =>
         invoke(ref, ctx).flatMap {
-          case ValueWithModifiedContext(_, newCtx) => interpretNext(next, newCtx)
+          case ValueWithContext(_, newCtx) => interpretNext(next, newCtx)
         }
       case (EndingProcessor(id, ref), Traverse) =>
         invoke(ref, ctx).map {
-          case ValueWithModifiedContext(output, newCtx) =>
+          case ValueWithContext(output, newCtx) =>
             InterpretationResult(EndReference(id), output, newCtx)
         }
       case (Enricher(_, ref, outName, next), Traverse) =>
         invoke(ref, ctx).flatMap {
-          case ValueWithModifiedContext(out, newCtx) =>
+          case ValueWithContext(out, newCtx) =>
             interpretNext(next, newCtx.withVariable(outName, out))
         }
       case (Filter(_, expression, nextTrue, nextFalse), Traverse) =>
@@ -92,17 +85,20 @@ class Interpreter private(services: Map[String, ServiceInvoker],
           case Some(expression) =>
             evaluate[Any](expression, ctx)
           case None =>
-            ValueWithModifiedContext(outputValue(ctx), ctx)
+            ValueWithContext(outputValue(ctx), ctx)
         }
         Future.successful(InterpretationResult(EndReference(id), valueWithModifiedContext))
-      case (CustomNode(id, parameters, next), CustomNodeExpression(expressionName)) =>
+      case (CustomNode(id, parameters, _), CustomNodeExpression(expressionName)) =>
         Future.successful(InterpretationResult(
-          EndReference(id),
+          NextPartReference(id),
           evaluate(parameters.find(_.name == expressionName)
             .map(_.expression)
             .getOrElse(throw new IllegalArgumentException(s"Parameter $mode is not defined")), ctx)))
       case (cust: CustomNode, Traverse) =>
         interpretNext(cust.next, ctx)
+      //FIXME: yyyy czy to kiedykolwiek moze nastapic??
+      case (cust: SplitNode, Traverse) =>
+        throw new IllegalArgumentException(s"Split node encountered, should not happen: $cust")
       case (_, CustomNodeExpression(_)) =>
         throw new IllegalArgumentException(s"Mode $mode make no sense for node: ${node.getClass.getName}")
     }
@@ -126,6 +122,7 @@ class Interpreter private(services: Map[String, ServiceInvoker],
       case PartRef(ref) => Future.successful(InterpretationResult(NextPartReference(ref), outputValue(ctx), ctx))
     }
 
+  //hmm... to tak ma byc?
   private def outputValue(ctx: Context) =
     ctx.getOrElse(OutputParamName, new java.util.HashMap[String, Any]())
 
@@ -144,7 +141,7 @@ class Interpreter private(services: Map[String, ServiceInvoker],
   }
 
   private def invoke(ref: ServiceRef, ctx: Context)
-                    (implicit executionContext: ExecutionContext, metaData: MetaData, node: Node): Future[ValueWithModifiedContext[Any]] = {
+                    (implicit executionContext: ExecutionContext, metaData: MetaData, node: Node): Future[ValueWithContext[Any]] = {
     val (newCtx, preparedParams) = ref.parameters.foldLeft((ctx, Map.empty[String, Any])) {
       case ((accCtx, accParams), param) =>
         val valueWithModifiedContext = evaluate[Any](param.expression, accCtx)
@@ -157,12 +154,12 @@ class Interpreter private(services: Map[String, ServiceInvoker],
       listeners.foreach(_.serviceInvoked(node.id, ref.id, ctx, metaData, result))
     }
     resultFuture.map { result =>
-      ValueWithModifiedContext(result, newCtx)
+      ValueWithContext(result, newCtx)
     }
   }
 
   private def evaluate[R](expr: Expression, ctx: Context)
-                         (implicit ec: ExecutionContext, metaData: MetaData, node: Node): ValueWithModifiedContext[R] = {
+                         (implicit ec: ExecutionContext, metaData: MetaData, node: Node): ValueWithContext[R] = {
     val lazyValuesProvider = new LazyValuesProviderImpl(
       services = services,
       implicitParams = implicitParams(ctx),

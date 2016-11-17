@@ -15,7 +15,7 @@ object node {
 
   case class Sink(id: String, endResult: Option[Expression]) extends Node
 
-  case class VariableBuilder(id: String, varName: String, fields: List[Field], next: Next) extends Node
+  case class VariableBuilder(id: String, varName: String, value: Either[Expression, List[Field]], next: Next) extends Node
 
   case class Processor(id: String, service: ServiceRef, next: Next) extends Node
 
@@ -33,8 +33,14 @@ object node {
 
   case class CustomNode(id:String, params:List[Parameter],  next: Next) extends Node
 
-  sealed trait Next
-  case class NextNode(node: Node) extends Next
+  case class SplitNode(id: String) extends Node
+
+  sealed trait Next {
+    def id: String
+  }
+  case class NextNode(node: Node) extends Next {
+    def id = node.id
+  }
   case class PartRef(id: String) extends Next
 
 }
