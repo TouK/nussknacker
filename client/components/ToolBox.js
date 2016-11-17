@@ -3,6 +3,7 @@ import {render} from "react-dom";
 import {Scrollbars} from "react-custom-scrollbars";
 import {connect} from "react-redux";
 import {bindActionCreators} from "redux";
+import _ from 'lodash'
 import "../stylesheets/toolBox.styl";
 import {Accordion, Panel} from "react-bootstrap";
 import Tool from "./Tool"
@@ -10,7 +11,8 @@ import Tool from "./Tool"
 class ToolBox extends React.Component {
 
   static propTypes = {
-    processDefinitionData: React.PropTypes.object.isRequired
+    processDefinitionData: React.PropTypes.object.isRequired,
+    processCategory: React.PropTypes.string.isRequired
   }
 
 
@@ -23,7 +25,9 @@ class ToolBox extends React.Component {
         <Scrollbars renderTrackHorizontal={props => <div className="hide"/>} autoHeight  autoHeightMax={400}>
         {
           nodesToAdd.map(group => {
-            var nodes = group.possibleNodes.map(node => <Tool nodeModel={node.node} label={node.label} key={node.type + node.label}/>)
+            var nodes = group.possibleNodes
+              .filter((node) => node.categories.includes(this.props.processCategory))
+              .map(node => <Tool nodeModel={node.node} label={node.label} key={node.type + node.label}/>)
             nodes.push(<hr className="tool-group"/>)
             return nodes
           })
@@ -37,7 +41,8 @@ class ToolBox extends React.Component {
 
 function mapState(state) {
   return {
-    processDefinitionData: state.settings.processDefinitionData || {}
+    processDefinitionData: state.settings.processDefinitionData || {},
+    processCategory: _.get(state.graphReducer.fetchedProcessDetails, 'processCategory', ''),
   }
 }
 

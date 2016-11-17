@@ -37,6 +37,7 @@
   },
   "Enricher": {
     "name": "Enricher",
+    "icon": "cog.svg",
     "styles": {
       "fill": "#FCC56D",
       "color": "white"
