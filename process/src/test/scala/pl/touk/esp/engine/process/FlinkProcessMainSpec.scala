@@ -6,7 +6,7 @@ import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor
 import org.scalatest.FlatSpec
 import pl.touk.esp.engine.api.exception.ExceptionHandlerFactory
-import pl.touk.esp.engine.api.process.{ProcessConfigCreator, SinkFactory}
+import pl.touk.esp.engine.api.process.{ProcessConfigCreator, SinkFactory, WithCategories}
 import pl.touk.esp.engine.api.{ParamName, Service}
 import pl.touk.esp.engine.build.EspProcessBuilder
 import pl.touk.esp.engine.flink.api.process.FlinkSourceFactory
@@ -47,23 +47,23 @@ class SimpleProcessConfigCreator extends ProcessConfigCreator {
   
   import org.apache.flink.streaming.api.scala._
 
-  override def services(config: Config) = Map("logService" -> LogService)
+  override def services(config: Config) = Map("logService" -> WithCategories(LogService, "c1"))
 
-  override def sinkFactories(config: Config) = Map[String, SinkFactory](
-    "monitor" -> SinkFactory.noParam(EmptySink)
+  override def sinkFactories(config: Config) = Map(
+    "monitor" -> WithCategories(SinkFactory.noParam(EmptySink), "c2")
   )
 
   override def listeners(config: Config) = List()
 
   override def customStreamTransformers(config: Config) = Map()
 
-  override def sourceFactories(config: Config) = Map("input" -> FlinkSourceFactory.noParam(
+  override def sourceFactories(config: Config) = Map("input" -> WithCategories(FlinkSourceFactory.noParam(
     new CollectionSource[SimpleRecord](new ExecutionConfig, List(), Some(new AscendingTimestampExtractor[SimpleRecord] {
       override def extractAscendingTimestamp(element: SimpleRecord) = element.date.getTime
-    }))))
+    }))), "cat2"))
 
   override def exceptionHandlerFactory(config: Config) =
     ExceptionHandlerFactory.noParams(VerboselyLoggingExceptionHandler)
 
-  override def globalProcessVariables(config: Config): Map[String, Class[_]] = Map.empty
+  override def globalProcessVariables(config: Config): Map[String, WithCategories[Class[_]]] = Map.empty
 }

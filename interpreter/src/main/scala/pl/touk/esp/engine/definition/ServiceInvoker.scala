@@ -27,8 +27,10 @@ private[definition] class ServiceInvokerImpl(objectWithMethodDef: ObjectWithMeth
 
 object ServiceInvoker {
 
+  //TODO: to w sumie metoda tylko do testow...
   def apply(service: Service) =
-    new ServiceInvokerImpl(ObjectWithMethodDef(service, ServiceDefinitionExtractor.extractMethodDefinition(service), ServiceDefinitionExtractor.extract(service)))
+    new ServiceInvokerImpl(ObjectWithMethodDef(service, ServiceDefinitionExtractor.extractMethodDefinition(service),
+      ServiceDefinitionExtractor.extract(service, List())))
 
   def apply(objectWithMethodDef: ObjectWithMethodDef): ServiceInvoker =
     new ServiceInvokerImpl(objectWithMethodDef)

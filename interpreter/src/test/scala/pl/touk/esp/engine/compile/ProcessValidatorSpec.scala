@@ -6,6 +6,7 @@ import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.esp.engine._
 import pl.touk.esp.engine.api.Service
 import pl.touk.esp.engine.api.lazyy.ContextWithLazyValuesProvider
+import pl.touk.esp.engine.api.process.WithCategories
 import pl.touk.esp.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.esp.engine.compile.ProcessCompilationError._
 import pl.touk.esp.engine.definition.DefinitionExtractor.{ClazzRef, ObjectDefinition, Parameter}
@@ -20,12 +21,12 @@ class ProcessValidatorSpec extends FlatSpec with Matchers {
   import spel.Implicits._
 
   private val baseDefinition = ProcessDefinition(
-    Map("sampleEnricher" -> ObjectDefinition(List.empty, classOf[SampleEnricher], Some(classOf[SimpleRecord]))),
-    Map("source" -> ObjectDefinition(List.empty, classOf[SimpleRecord], None)),
+    Map("sampleEnricher" -> ObjectDefinition(List.empty, classOf[SampleEnricher], Some(classOf[SimpleRecord]), List())),
+    Map("source" -> ObjectDefinition(List.empty, classOf[SimpleRecord], None, List())),
     Map("sink" -> ObjectDefinition.noParam),
-    Map("customTransformer" -> ObjectDefinition(List.empty, classOf[SimpleRecord], None)),
+    Map("customTransformer" -> ObjectDefinition(List.empty, classOf[SimpleRecord], None, List())),
     ObjectDefinition.noParam,
-    Map("processHelper" -> ClazzRef(ProcessHelper.getClass)),
+    Map("processHelper" -> WithCategories(ClazzRef(ProcessHelper.getClass), List("cat1"))),
     EspTypeUtils.clazzAndItsChildrenDefinition(List(classOf[SampleEnricher], classOf[SimpleRecord], ProcessHelper.getClass))
   )
 

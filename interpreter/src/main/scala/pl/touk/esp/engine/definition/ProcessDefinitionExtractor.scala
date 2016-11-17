@@ -1,7 +1,7 @@
 package pl.touk.esp.engine.definition
 
 import com.typesafe.config.Config
-import pl.touk.esp.engine.api.process.ProcessConfigCreator
+import pl.touk.esp.engine.api.process.{ProcessConfigCreator, WithCategories}
 import pl.touk.esp.engine.definition.DefinitionExtractor._
 
 object ProcessDefinitionExtractor {
@@ -27,28 +27,28 @@ object ProcessDefinitionExtractor {
       ObjectWithMethodDef(factory, ProcessObjectDefinitionExtractor.sink)
     }
     val exceptionHandlerFactoryDefs = ObjectWithMethodDef(
-      exceptionHandlerFactory, ProcessObjectDefinitionExtractor.exceptionHandler)
+      WithCategories(exceptionHandlerFactory, List()), ProcessObjectDefinitionExtractor.exceptionHandler)
     val customNodesExecutorsDefs = customStreamTransformers.mapValues { executor =>
       ObjectWithMethodDef(executor, ProcessObjectDefinitionExtractor.customNodeExecutor)
     }
     val globalVariablesDefs = globalVariables.mapValues { globalVar =>
-      ClazzRef(globalVar)
+      globalVar.map(ClazzRef(_))
     }
 
-    val typesInformation = TypesInformation.extract(servicesDefs, sourceFactories, globalVariables)
+    val typesInformation = TypesInformation.extract(servicesDefs, sourceFactories.mapValues(_.value), globalVariables.mapValues(_.value))
 
     ProcessDefinition[ObjectWithMethodDef](
       servicesDefs, sourceFactoriesDefs, sinkFactoriesDefs,
       customNodesExecutorsDefs, exceptionHandlerFactoryDefs, globalVariablesDefs, typesInformation)
   }
 
-  case class ProcessDefinition[T <: ClazzParametersProvider](services: Map[String, T],
-                                                             sourceFactories: Map[String, T],
-                                                             sinkFactories: Map[String, T],
-                                                             customStreamTransformers: Map[String, T],
-                                                             exceptionHandlerFactory: T,
-                                                             globalVariables: Map[String, ClazzRef],
-                                                             typesInformation: List[PlainClazzDefinition]) {
+  case class ProcessDefinition[T <: ObjectMetadata](services: Map[String, T],
+                                                    sourceFactories: Map[String, T],
+                                                    sinkFactories: Map[String, T],
+                                                    customStreamTransformers: Map[String, T],
+                                                    exceptionHandlerFactory: T,
+                                                    globalVariables: Map[String, WithCategories[ClazzRef]],
+                                                    typesInformation: List[PlainClazzDefinition]) {
   }
 
   object ObjectProcessDefinition {

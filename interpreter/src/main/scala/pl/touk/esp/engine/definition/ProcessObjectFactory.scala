@@ -1,5 +1,6 @@
 package pl.touk.esp.engine.definition
 
+import com.typesafe.scalalogging.LazyLogging
 import pl.touk.esp.engine.api.{CustomStreamTransformer, MetaData}
 import pl.touk.esp.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
 import pl.touk.esp.engine.api.process.{Sink, SinkFactory, Source, SourceFactory}
@@ -7,12 +8,13 @@ import pl.touk.esp.engine.definition.DefinitionExtractor.{ClazzRef, ObjectDefini
 import pl.touk.esp.engine.graph
 
 import scala.reflect.ClassTag
+import scala.util.control.NonFatal
 
 trait ProcessObjectFactory[T] {
   def create(processMetaData: MetaData, params: List[graph.param.Parameter]): T
 }
 
-private[definition] class ProcessObjectFactoryImpl[T](objectWithMethodDef: ObjectWithMethodDef) extends ProcessObjectFactory[T] {
+private[definition] class ProcessObjectFactoryImpl[T](objectWithMethodDef: ObjectWithMethodDef) extends ProcessObjectFactory[T] with LazyLogging {
 
   override def create(processMetaData: MetaData, params: List[graph.param.Parameter]): T = {
     val paramsMap = params.map(p => p.name -> p.value).toMap
@@ -22,7 +24,13 @@ private[definition] class ProcessObjectFactoryImpl[T](objectWithMethodDef: Objec
         throw new IllegalArgumentException(s"Missing parameter with name: ${p.name}")
       )
     val values = objectWithMethodDef.orderedParameters.prepareValues(prepareValue, Seq(processMetaData))
-    objectWithMethodDef.method.invoke(objectWithMethodDef.obj, values: _*).asInstanceOf[T]
+    try {
+      objectWithMethodDef.method.invoke(objectWithMethodDef.obj, values: _*).asInstanceOf[T]
+    } catch {
+      case NonFatal(e) =>
+       logger.error(s"Failed to invoke ${objectWithMethodDef.method} on ${objectWithMethodDef.obj} with params $values")
+       throw e
+    }
   }
 
 }
@@ -43,12 +51,13 @@ class ProcessObjectDefinitionExtractor[F, T: ClassTag] extends DefinitionExtract
 
 class SourceProcessObjectDefinitionExtractor[F, T: ClassTag] extends ProcessObjectDefinitionExtractor[F, T] {
 
-  override def extract(obj: F): ObjectDefinition = {
+  override def extract(obj: F, categories: List[String]): ObjectDefinition = {
     val sourceFactory = obj.asInstanceOf[SourceFactory[_]]
     ObjectDefinition(
       extractMethodDefinition(obj).orderedParameters.definedParameters,
       ClazzRef(sourceFactory.clazz),
-      None
+      None,
+      categories
     )
   }
 }

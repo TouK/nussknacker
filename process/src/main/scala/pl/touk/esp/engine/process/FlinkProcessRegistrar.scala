@@ -162,13 +162,13 @@ object FlinkProcessRegistrar {
     def compileProcess(process: EspProcess)() = {
       val services = creator.services(config)
       val servicesDefs = services.mapValues { service => ObjectWithMethodDef(service, ServiceDefinitionExtractor) }
-      val subCompiler = PartSubGraphCompiler.default(servicesDefs, creator.globalProcessVariables(config).map { case (k, v) => k -> ClazzRef.apply(v) })
+      val subCompiler = PartSubGraphCompiler.default(servicesDefs, creator.globalProcessVariables(config).mapValues(v => ClazzRef(v.value)))
       val processCompiler = compiler(subCompiler)
       val compiledProcess = validateOrFailProcessCompilation(processCompiler.compile(process))
       val timeout = config.as[FiniteDuration]("timeout")
       CompiledProcessWithDeps(
         compiledProcess,
-        new ServicesLifecycle(services.values.toSeq),
+        new ServicesLifecycle(services.values.map(_.value).toSeq),
         subCompiler,
         Interpreter(servicesDefs, timeout, creator.listeners(config)),
         timeout
