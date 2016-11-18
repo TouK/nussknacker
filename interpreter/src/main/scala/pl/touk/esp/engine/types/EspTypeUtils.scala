@@ -114,6 +114,10 @@ object EspTypeUtils {
       val futureGenericType = genericMethodType.getActualTypeArguments.apply(0)
       extractClass(futureGenericType)
     }
+    else if (classOf[Option[_]].isAssignableFrom(genericMethodType.getRawType)) {
+      val optionGenericType = genericMethodType.getActualTypeArguments.apply(0)
+      extractClass(optionGenericType)
+    }
     else None
   }
 
