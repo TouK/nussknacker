@@ -1,6 +1,7 @@
 package pl.touk.esp.engine.process
 
 import java.util.Date
+import java.util.concurrent.CopyOnWriteArrayList
 
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.flink.api.common.ExecutionConfig
@@ -27,7 +28,7 @@ import scala.concurrent.duration.FiniteDuration
 object ProcessTestHelpers {
 
 
-  case class SimpleRecord(id: String, value1: Long, value2: String, date: Date)
+  case class SimpleRecord(id: String, value1: Long, value2: String, date: Date, value3Opt: Option[BigDecimal] = None, value3: BigDecimal = 1, intAsAny: Any = 1)
 
   case class SimpleRecordWithPreviousValue(record: SimpleRecord, previous: Long, added: String)
 
@@ -39,7 +40,7 @@ object ProcessTestHelpers {
       val creator = prepareCreator(env.getConfig, data)
       FlinkProcessRegistrar(creator, ConfigFactory.load()).register(env, process)
 
-      MockService.data.clear()
+      MockService.clear()
       env.execute()
 
     }
@@ -102,10 +103,19 @@ object ProcessTestHelpers {
 
   object MockService extends Service {
 
-    val data = new ArrayBuffer[Any]
+    private val data_ = new CopyOnWriteArrayList[Any]
+    def data = {
+      data_.toArray.toList
+    }
 
-    def invoke(@ParamName("all") all: Any) = Future.successful {
-      data.append(all)
+    def clear() = {
+      data_.clear()
+    }
+
+    def invoke(@ParamName("all") all: Any) = {
+      Future.successful {
+        data_.add(all)
+      }
     }
   }
 

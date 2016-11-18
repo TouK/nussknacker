@@ -35,6 +35,9 @@ class ProcessValidatorSpec extends FlatSpec with Matchers {
       .id("process1")
       .exceptionHandler()
       .source("id1", "source")
+      .filter("filter1", "#input.plainValueOpt + 1 > 1")
+      .filter("filter2", "#input.plainValueOpt.abs + 1 > 1")
+      .filter("filter3", "#input.intAsAny + 1 > 1")
       .processor("sampleProcessor1", "sampleEnricher")
       .enricher("sampleProcessor2", "out", "sampleEnricher")
       .buildVariable("bv1", "vars", "v1" -> "42")
@@ -182,7 +185,19 @@ class ProcessValidatorSpec extends FlatSpec with Matchers {
     }
   }
 
-  case class SimpleRecord(value1: AnotherSimpleRecord, plainValue: Int) {
+  it should "find usage of fields that does not exist in option object" in {
+    val process = EspProcessBuilder
+      .id("process1")
+      .exceptionHandler()
+      .source("id1", "source")
+      .filter("sampleFilter1", "#input.plainValueOpt.terefere > 10")
+      .sink("id2", "sink")
+    ProcessValidator.default(definitionWithTypedSource).validate(process) should matchPattern {
+      case Invalid(NonEmptyList(ExpressionParseError("There is no property 'terefere' in type 'scala.math.BigDecimal'", _, _), _)) =>
+    }
+  }
+
+  case class SimpleRecord(value1: AnotherSimpleRecord, plainValue: BigDecimal, plainValueOpt: Option[BigDecimal], intAsAny: Any) {
     private val privateValue = "priv"
     def invoke1: Future[AnotherSimpleRecord] = ???
     def invoke2: State[ContextWithLazyValuesProvider, AnotherSimpleRecord] = ???
@@ -192,7 +207,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers {
   private val definitionWithTypedSource = baseDefinition.copy(sourceFactories = Map("source" -> ObjectDefinition.noParam.copy(definedClass = ClazzRef(classOf[SimpleRecord]))))
 
   class SampleEnricher extends Service {
-    def invoke()(implicit ec: ExecutionContext) = Future(SimpleRecord(AnotherSimpleRecord(1), 2))
+    def invoke()(implicit ec: ExecutionContext) = Future(SimpleRecord(AnotherSimpleRecord(1), 2, Option(2), 1))
   }
 
   object ProcessHelper {

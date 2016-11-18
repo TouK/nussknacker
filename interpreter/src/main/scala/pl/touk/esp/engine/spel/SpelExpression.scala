@@ -63,9 +63,11 @@ class SpelExpressionParser(expressionFunctions: Map[String, Method], globalProce
 
   private val scalaLazyPropertyAccessor = new ScalaLazyPropertyAccessor
   private val scalaPropertyAccessor = new ScalaPropertyAccessor
+  private val scalaOptionOrNullPropertyAccessor = new ScalaOptionOrNullPropertyAccessor
 
   private val propertyAccessors = Seq(
     scalaLazyPropertyAccessor, // must be before scalaPropertyAccessor
+    scalaOptionOrNullPropertyAccessor, // // must be before scalaPropertyAccessor
     scalaPropertyAccessor,
     MapPropertyAccessor
   )
@@ -135,6 +137,19 @@ object SpelExpressionParser {
 
     override protected def invokeMethod(method: Method, target: Any, context: EvaluationContext) = {
       method.invoke(target)
+    }
+
+    override def getSpecificTargetClasses = null
+  }
+
+  class ScalaOptionOrNullPropertyAccessor extends PropertyAccessor with ReadOnly with Caching {
+
+    override protected def reallyFindMethod(name: String, target: Class[_]) : Option[Method] = {
+      target.getMethods.find(m => m.getParameterCount == 0 && m.getName == name && classOf[Option[_]].isAssignableFrom(m.getReturnType))
+    }
+
+    override protected def invokeMethod(method: Method, target: Any, context: EvaluationContext) = {
+      method.invoke(target).asInstanceOf[Option[Any]].orNull
     }
 
     override def getSpecificTargetClasses = null
