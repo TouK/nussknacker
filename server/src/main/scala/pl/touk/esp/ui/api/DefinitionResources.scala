@@ -58,10 +58,11 @@ object DefinitionPreparer {
     def serviceRef(id: String, objDefinition: ObjectDefinition) = ServiceRef(id, objDefinition.parameters.map(mapDefinitionParamToEvaluatedParam))
 
     val returnsUnit = ((id: String, objectDefinition: ObjectDefinition)
-      => objectDefinition.returnType.exists(_.refClazzName == classOf[BoxedUnit].getName)).tupled
+      => objectDefinition.returnType.refClazzName == classOf[BoxedUnit].getName).tupled
 
     val base = NodeGroup("base", List(
-      NodeToAdd("filter", "Filter", Filter("", Expression("spel", "true")), user.categories)
+      NodeToAdd("filter", "Filter", Filter("", Expression("spel", "true")), user.categories),
+      NodeToAdd("split", "Split", Split(""), user.categories)
       //TODO: jak robic VariableBuilder??
     ))
     val services = NodeGroup("services",

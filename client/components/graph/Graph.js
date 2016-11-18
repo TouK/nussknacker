@@ -65,6 +65,31 @@ class Graph extends React.Component {
         this.changeLayoutIfNeeded()
     }
 
+    nodeInputs = (nodeId) => {
+      return this.props.processToDisplay.edges.filter(e => e.to == nodeId)
+    }
+
+    nodeOutputs = (nodeId) => {
+      return this.props.processToDisplay.edges.filter(e => e.from == nodeId)
+    }
+
+    isMultiOutput = (nodeId) => {
+      var node = this.props.processToDisplay.nodes.find(n => n.id == nodeId)
+      return node.type == "Split"
+    }
+
+    //we don't allow multi outputs other than split, and no multiple inputs
+    validateConnection = (cellViewS, magnetS, cellViewT, magnetT) => {
+      var from = cellViewS.model.id
+      var to = cellViewT.model.id
+
+      var targetHasNoInput = this.nodeInputs(to).length == 0
+      var sourceHasNoOutput = this.nodeOutputs(from).length == 0
+      var canLinkFromSource = sourceHasNoOutput || this.isMultiOutput(from)
+
+      return magnetT && targetHasNoInput && canLinkFromSource;
+    }
+
     createPaper = () => {
         const canWrite = this.props.loggedUser.canWrite
         return new joint.dia.Paper({
@@ -85,8 +110,8 @@ class Graph extends React.Component {
                 }
             },
             linkPinning: false,
-            defaultLink: EspNode.makeLink({})
-
+            defaultLink: EspNode.makeLink({}),
+            validateConnection: this.validateConnection
         })
           .on("cell:pointerup", (c, e) => {
             this.changeLayoutIfNeeded()

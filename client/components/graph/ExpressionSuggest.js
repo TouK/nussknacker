@@ -216,7 +216,7 @@ function mapState(state) {
   const typesInformation = processDefinitionData.processDefinition.typesInformation;
   const sourceType = state.graphReducer.processToDisplay.nodes[0].ref.typ
   const source = _.get(sourceFactories, sourceType);
-  const sourceClazzName = _.isEmpty(source) ? null : source.definedClass.refClazzName
+  const sourceClazzName = _.isEmpty(source) ? null : source.returnType.refClazzName
   const sourceMethods = () => {
     const sourceDef = _.find(typesInformation, { clazzName: { refClazzName: sourceClazzName }})
     return sourceDef.methods

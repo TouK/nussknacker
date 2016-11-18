@@ -14,7 +14,7 @@ object ValidationTestData {
     ObjectProcessDefinition.empty
       .withSourceFactory(existingSourceFactory)
       .withSinkFactory(existingSinkFactory)
-      .withCustomStreamTransformer(existingStreamTransformer)
+      .withCustomStreamTransformer(existingStreamTransformer, classOf[String])
   )
 
   val validProcess =
