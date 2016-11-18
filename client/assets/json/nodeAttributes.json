@@ -43,6 +43,14 @@
       "color": "white"
     }
   },
+  "Split": {
+    "name": "Split",
+    "icon": "split.svg",
+    "styles": {
+      "fill": "#FCC56D",
+      "color": "white"
+    }
+  },
   "Processor": {
     "name": "Processor",
     "icon": "cog.svg",

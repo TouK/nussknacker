@@ -124,6 +124,12 @@ export default class NodeDetailsContent extends React.Component {
             {this.createField("input", "Slide (ms):", "slideInMillis")}
           </div>
         )
+      case 'Split':
+        return (
+          <div className="node-table-body">
+            {this.createField("input", "Id:", "id")}
+          </div>
+        )
       case 'Properties':
         return (
           <div className="node-table-body">
@@ -196,7 +202,7 @@ export default class NodeDetailsContent extends React.Component {
           <div className="node-row">
             <div className="node-label">{fieldLabel}</div>
             <div className="node-value"><input type="text" className="node-input" value={fieldValue}
-                                               onChange={handleChange} readOnly={!this.props.isEditMode}/></div>
+                                               onChange={(e) => handleChange(e.target.value)} readOnly={!this.props.isEditMode}/></div>
           </div>
         )
       case 'textarea':

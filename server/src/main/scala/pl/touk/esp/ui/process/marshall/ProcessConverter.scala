@@ -6,7 +6,7 @@ import pl.touk.esp.engine.canonicalgraph.canonicalnode._
 import pl.touk.esp.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.esp.engine.canonize.ProcessCanonizer
 import pl.touk.esp.engine.graph.EspProcess
-import pl.touk.esp.engine.graph.node.{Filter, NodeData, Switch}
+import pl.touk.esp.engine.graph.node.{Split, Filter, NodeData, Switch}
 import pl.touk.esp.engine.marshall.ProcessMarshaller
 import pl.touk.esp.ui.api.ProcessValidation
 import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties, displayablenode}
@@ -56,6 +56,13 @@ class ProcessConverter(processValidation: ProcessValidation) {
           (nextNodeNodes, nextNodeNodes.headOption.map(n => displayablenode.Edge(data.id, n.id, Some(c.expression))).toList ::: nextNodeEdges)
         })
         (data :: defaultNextNodes ::: nextNodes ::: tailNodes, createNextEdge(data.id, tail) ::: defaultNextEdgesConnectedToSwitch ::: nextEdges ::: tailEdges)
+      case canonicalnode.SplitNode(data, nexts) :: tail =>
+        val (tailNodes, tailEdges) = toGraphInner(tail)
+        val nextInner = nexts.map(toGraphInner).unzip
+        val nodes = nextInner._1.flatten
+        val edges = nextInner._2.flatten
+        val connecting = nexts.flatMap(e => e.headOption.map(_.id).map(displayablenode.Edge(data.id, _, None)))
+        (data :: nodes ::: tailNodes, connecting ::: edges ::: tailEdges)
       case Nil =>
         (List(),List())
     }
@@ -96,6 +103,9 @@ class ProcessConverter(processValidation: ProcessValidation) {
           unflattenEdgeEnd(data.id, e)
         }.toList.flatten
         canonicalnode.SwitchNode(data, nexts, default) :: Nil
+      case data: Split =>
+        val nexts = edgesFromMap(data.id).map(unflattenEdgeEnd(data.id, _))
+        canonicalnode.SplitNode(data, nexts) :: Nil
     }
     (handleNestedNodes orElse (handleDirectNodes andThen { n =>
       n :: edgesFromMap.get(n.id).toList.flatten.flatMap(unflattenEdgeEnd(n.id, _))
