@@ -19,7 +19,7 @@ class ExpressionSpec extends FlatSpec with Matchers {
 
   private val bigValue = BigDecimal.valueOf(4187338076L)
   
-  val testValue = Test( "1", 2, List(Test("3", 4), Test("5", 6)).asJava, bigValue)
+  val testValue = Test( "1", 2, List(Test("3", 4), Test("5", 6)).asJava, bigValue, Option(2))
   val ctx = Context(
     variables = Map("obj" -> testValue)
   )
@@ -29,7 +29,7 @@ class ExpressionSpec extends FlatSpec with Matchers {
 
   private val enrichingServiceId = "serviceId"
 
-  case class Test(id: String, value: Long, children: java.util.List[Test] = List[Test]().asJava, bigValue: BigDecimal = BigDecimal.valueOf(0L)) extends UsingLazyValues {
+  case class Test(id: String, value: Long, children: java.util.List[Test] = List[Test]().asJava, bigValue: BigDecimal = BigDecimal.valueOf(0L), optValue: Option[Long] = Option(42L)) extends UsingLazyValues {
     val lazyVal = lazyValue[String](enrichingServiceId).map(_ + " ma kota")
   }
 
@@ -47,6 +47,17 @@ class ExpressionSpec extends FlatSpec with Matchers {
 
   it should "invoke simple expression" in {
     parse("#obj.value + 4").evaluate[Long](ctx, dumbLazyProvider).value should equal(6)
+  }
+
+  it should "access scala option as it was plain, nullable value" in {
+    val newCtx = ctx.withVariables(Map(
+      "objWithSome" -> testValue.copy(optValue = Option(2)),
+      "objWithNone" -> testValue.copy(optValue = None)
+    ))
+
+    parse("#objWithSome.optValue + 4", newCtx).evaluate[Long](newCtx, dumbLazyProvider).value should equal(6)
+    parse("#objWithSome.optValue != null ? #objWithSome.optValue + 4 : 100", newCtx).evaluate[Long](newCtx, dumbLazyProvider).value should equal(6)
+    parse("#objWithNone.optValue != null ? #objWithNone.optValue + 4 : 42", newCtx).evaluate[Long](newCtx, dumbLazyProvider).value should equal(42)
   }
 
   it should "invoke simple list expression" in {
