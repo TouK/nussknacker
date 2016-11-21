@@ -8,6 +8,7 @@
   },
   "Sink": {
     "name": "Sink",
+    "icon": "filter.svg",
     "styles": {
       "fill": "#F27980",
       "color": "white"
@@ -30,6 +31,15 @@
   },
   "VariableBuilder": {
     "name": "Variable Builder",
+    "icon": "filter.svg",
+    "styles": {
+      "fill": "#FEB58A",
+      "color": "white"
+    }
+  },
+  "Variable": {
+    "name": "Variable",
+    "icon": "filter.svg",
     "styles": {
       "fill": "#FEB58A",
       "color": "white"

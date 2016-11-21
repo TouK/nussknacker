@@ -8,7 +8,9 @@ import pl.touk.esp.engine.definition.ProcessDefinitionExtractor.ProcessDefinitio
 import pl.touk.esp.engine.graph.evaluatedparam.Parameter
 import pl.touk.esp.engine.graph.expression.Expression
 import pl.touk.esp.engine.graph.node._
+import pl.touk.esp.engine.graph.param
 import pl.touk.esp.engine.graph.service.ServiceRef
+import pl.touk.esp.engine.graph.sink.SinkRef
 import pl.touk.esp.ui.process.marshall.DisplayableProcessCodec
 import pl.touk.esp.ui.security.LoggedUser
 import pl.touk.esp.ui.util.Argonaut62Support
@@ -55,14 +57,17 @@ object DefinitionPreparer {
 
     def filterCategories(objectDefinition: ObjectDefinition) = user.categories.intersect(objectDefinition.categories)
 
-    def serviceRef(id: String, objDefinition: ObjectDefinition) = ServiceRef(id, objDefinition.parameters.map(mapDefinitionParamToEvaluatedParam))
+    def objDefParams(objDefinition: ObjectDefinition) = objDefinition.parameters.map(mapDefinitionParamToEvaluatedParam)
+
+    def serviceRef(id: String, objDefinition: ObjectDefinition) = ServiceRef(id, objDefParams(objDefinition))
 
     val returnsUnit = ((id: String, objectDefinition: ObjectDefinition)
       => objectDefinition.returnType.refClazzName == classOf[BoxedUnit].getName).tupled
 
     val base = NodeGroup("base", List(
       NodeToAdd("filter", "Filter", Filter("", Expression("spel", "true")), user.categories),
-      NodeToAdd("split", "Split", Split(""), user.categories)
+      NodeToAdd("split", "Split", Split(""), user.categories),
+      NodeToAdd("variable", "Variable", Variable("", "varName", Expression("spel", "'value'")), user.categories)
       //TODO: jak robic VariableBuilder??
     ))
     val services = NodeGroup("services",
@@ -82,12 +87,22 @@ object DefinitionPreparer {
     val customTransformers = NodeGroup("custom",
       processDefinition.customStreamTransformers.map {
         case (id, objDefinition) => NodeToAdd("customNode", id,
-          CustomNode("", "outputVar", id, objDefinition.parameters.map(mapDefinitionParamToEvaluatedParam)), filterCategories(objDefinition))
+          CustomNode("", "outputVar", id, objDefParams(objDefinition)), filterCategories(objDefinition))
       }.toList
     )
 
-    //TODO: sink, source, switch...
-    List(base, services, enrichers, customTransformers)
+    val sinks = NodeGroup("sinks",
+      processDefinition.sinkFactories.map {
+        case (id, objDefinition) => NodeToAdd("sink", id,
+          Sink("", SinkRef(id, objDefinition.parameters.map(p => param.Parameter(p.name, "TODO"))),
+            Some(Expression("spel", "#input"))), filterCategories(objDefinition)
+        )
+      }.toList
+
+    )
+
+    //TODO: source, switch...
+    List(base, services, enrichers, customTransformers, sinks)
   }
 
   private def mapDefinitionParamToEvaluatedParam(param: DefinitionExtractor.Parameter) = {
