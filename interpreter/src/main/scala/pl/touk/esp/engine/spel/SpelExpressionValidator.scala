@@ -2,9 +2,10 @@ package pl.touk.esp.engine.spel
 
 import cats.data.Validated
 import org.springframework.expression.Expression
-import org.springframework.expression.spel.ast.{CompoundExpression, PropertyOrFieldReference, VariableReference}
+import org.springframework.expression.spel.ast._
 import org.springframework.expression.spel.{SpelNode, standard}
 import pl.touk.esp.engine.compile.{ValidatedSyntax, ValidationContext}
+import pl.touk.esp.engine.compiledgraph.expression
 import pl.touk.esp.engine.compiledgraph.expression.ExpressionParseError
 import pl.touk.esp.engine.definition.DefinitionExtractor.ClazzRef
 
@@ -24,7 +25,7 @@ class SpelExpressionValidator(expr: Expression, ctx: ValidationContext) {
   def validate(): Validated[ExpressionParseError, Expression] = {
     val ast = expr.asInstanceOf[standard.SpelExpression].getAST
     resolveReferences(ast).andThen { _ =>
-      findAllPropertyAccess(ast).andThen { propertyAccesses =>
+      findAllPropertyAccess(ast, None).andThen { propertyAccesses =>
         propertyAccesses.flatMap(validatePropertyAccess).headOption match {
           case Some(error) => Validated.invalid(error)
           case None => Validated.valid(expr)
@@ -40,24 +41,43 @@ class SpelExpressionValidator(expr: Expression, ctx: ValidationContext) {
     else Validated.Invalid(ExpressionParseError(s"Unresolved references ${notResolved.mkString(", ")}"))
   }
 
-  private def findAllPropertyAccess(n: SpelNode): Validated[ExpressionParseError, List[SpelPropertyAccess]] = {
+  private def findAllPropertyAccess(n: SpelNode, rootClass: Option[ClazzRef]): Validated[ExpressionParseError, List[SpelPropertyAccess]] = {
     n match {
       case ce: CompoundExpression if ce.childrenHead.isInstanceOf[VariableReference] =>
-        val children = ce.children.toList
-        val variableName = children.head.toStringAST.tail
-        val clazzRef = ctx.apply(variableName)
-        if (ignoredTypes.contains(clazzRef)) Validated.valid(List.empty) //odpuszczamy na razie walidowanie spelowych Map i wtedy kiedy nie jestesmy pewni typu
-        else {
-          val references = children.tail.takeWhile(_.isInstanceOf[PropertyOrFieldReference]).map(_.toStringAST) //nie bierzemy jeszcze wszystkich co nie jest do konca poprawnne, np w `#obj.children.?[id == '55'].empty`
-          Validated.valid(List(SpelPropertyAccess(variableName, references, ctx.apply(variableName))))
-        }
+        findVariableReferenceAccess(ce.childrenHead.asInstanceOf[VariableReference], ce.children.tail.toList)
+      //TODO: walidacja zmiennych w srodku Projection/Selection
       case ce: CompoundExpression if ce.childrenHead.isInstanceOf[PropertyOrFieldReference] =>
         Validated.invalid(ExpressionParseError(s"Non reference '${ce.childrenHead.toStringAST}' occurred. Maybe you missed '#' in front of it?"))
+      case prop: PropertyOrFieldReference if rootClass.isEmpty =>
+        Validated.invalid(ExpressionParseError(s"Non reference '${prop.toStringAST}' occurred. Maybe you missed '#' in front of it?"))
+      //TODO: walidacja zmiennych w srodku Projection/Selection, ale wtedy musielibysmy znac typ zawartosci listy...
+      case prop: Projection =>
+        validateChildren(n.children, Some(ClazzRef(classOf[Object])))
+      case sel: Selection =>
+        validateChildren(n.children, Some(ClazzRef(classOf[Object])))
+      case map: InlineMap =>
+        //we take only odd indices, even ones are map keys...
+        validateChildren(n.children.zipWithIndex.filter(_._2 % 2 == 1).map(_._1), None)
       case _ =>
-        val accessesWithErrors = n.children.toList.map { child => findAllPropertyAccess(child).toValidatedNel }.sequence
-        accessesWithErrors.map(_.flatten).leftMap(_.head)
+        validateChildren(n.children, None)
     }
   }
+
+  private def validateChildren(children: Seq[SpelNode], rootClass: Option[ClazzRef]): Validated[expression.ExpressionParseError, List[SpelPropertyAccess]] = {
+    val accessesWithErrors = children.toList.map { child => findAllPropertyAccess(child, rootClass).toValidatedNel }.sequence
+    accessesWithErrors.map(_.flatten).leftMap(_.head)
+  }
+
+  private def findVariableReferenceAccess(reference: VariableReference, children: List[SpelNode] = List()) = {
+    val variableName = reference.toStringAST.tail
+    val references = children.takeWhile(_.isInstanceOf[PropertyOrFieldReference]).map(_.toStringAST) //nie bierzemy jeszcze wszystkich co nie jest do konca poprawnne, np w `#obj.children.?[id == '55'].empty`
+    val clazzRef = ctx.apply(variableName)
+    if (ignoredTypes.contains(clazzRef)) Validated.valid(List.empty) //odpuszczamy na razie walidowanie spelowych Map i wtedy kiedy nie jestesmy pewni typu
+    else {
+      Validated.valid(List(SpelPropertyAccess(variableName, references, ctx.apply(variableName))))
+    }
+  }
+
 
   private def validatePropertyAccess(propAccess: SpelPropertyAccess): Option[ExpressionParseError] = {
     def checkIfPropertiesExistsOnClass(propsToGo: List[String], clazz: ClazzRef): Option[ExpressionParseError] = {
