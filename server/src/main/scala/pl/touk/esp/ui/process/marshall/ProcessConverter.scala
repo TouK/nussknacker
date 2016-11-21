@@ -9,26 +9,25 @@ import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.graph.node.{Split, Filter, NodeData, Switch}
 import pl.touk.esp.engine.marshall.ProcessMarshaller
 import pl.touk.esp.ui.api.ProcessValidation
+import pl.touk.esp.ui.process.displayedgraph.displayablenode.ProcessAdditionalFields
 import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties, displayablenode}
 
 class ProcessConverter(processValidation: ProcessValidation) {
 
-  def toDisplayable(process: EspProcess): DisplayableProcess = {
-    toDisplayable(ProcessCanonizer.canonize(process))
-  }
+  val processMarshaller = UiProcessMarshaller()
 
   def toDisplayableOrDie(canonicalJson: String): DisplayableProcess = {
-    ProcessMarshaller.fromJson(canonicalJson) match {
+    processMarshaller.fromJson(canonicalJson) match {
       case Valid(canonical) => toDisplayable(canonical)
       case Invalid(err) => throw new IllegalArgumentException(err.msg)
     }
   }
 
-  private def toDisplayable(process: CanonicalProcess): DisplayableProcess = {
-    val ne = toGraphInner(process.nodes)
-    val (n, e) = ne
-    val props = ProcessProperties(process.metaData.parallelism, process.exceptionHandlerRef)
-    DisplayableProcess(process.metaData.id, props, n, e, processValidation.validate(process))
+  def toDisplayable(process: CanonicalProcess): DisplayableProcess = {
+    val nodesEdges = toGraphInner(process.nodes)
+    val (nodes, edges) = nodesEdges
+    val props = ProcessProperties(process.metaData.parallelism, process.exceptionHandlerRef, process.metaData.additionalFields)
+    DisplayableProcess(process.metaData.id, props, nodes, edges, processValidation.validate(process))
   }
 
   private def toGraphInner(nodes: List[canonicalnode.CanonicalNode]): (List[NodeData], List[displayablenode.Edge]) =
@@ -80,7 +79,7 @@ class ProcessConverter(processValidation: ProcessValidation) {
     val nodesMap = process.nodes.groupBy(_.id).mapValues(_.head)
     val edgesFromMapStart = process.edges.groupBy(_.from)
     val nodes = unFlattenNode(nodesMap)(process.nodes.head, edgesFromMapStart)
-    val metaData = MetaData(process.id, process.properties.parallelism)
+    val metaData = MetaData(process.id, process.properties.parallelism, process.properties.additionalFields)
     CanonicalProcess(metaData, process.properties.exceptionHandler, nodes)
   }
 

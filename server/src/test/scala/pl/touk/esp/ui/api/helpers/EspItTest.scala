@@ -13,6 +13,7 @@ import pl.touk.esp.ui.api.helpers.TestFactory._
 import pl.touk.esp.ui.api.{ManagementResources, ProcessesResources}
 import pl.touk.esp.ui.db.EspTables
 import pl.touk.esp.ui.db.migration.SampleData
+import pl.touk.esp.ui.process.displayedgraph.DisplayableProcess
 import pl.touk.esp.ui.process.marshall.{DisplayableProcessCodec, ProcessTypeCodec}
 import pl.touk.esp.ui.process.repository.ProcessRepository.ProcessDetails
 import pl.touk.esp.ui.security.LoggedUser
@@ -40,6 +41,11 @@ trait EspItTest extends LazyLogging { self: ScalatestRouteTest with Suite with B
   val deployRoute = (u:LoggedUser) =>  new ManagementResources(processRepository, deploymentProcessRepository, InMemoryMocks.mockProcessManager, env).route(u)
 
   def saveProcess(processId: String, process: EspProcess)(testCode: => Assertion): Assertion = {
+    Put(s"/processes/$processId/json", TestFactory.posting.toEntity(process)) ~> processesRouteWithAllPermissions ~> check { testCode }
+  }
+
+  def saveProcess(process: DisplayableProcess)(testCode: => Assertion): Assertion = {
+    val processId = process.id
     Put(s"/processes/$processId/json", TestFactory.posting.toEntity(process)) ~> processesRouteWithAllPermissions ~> check { testCode }
   }
 

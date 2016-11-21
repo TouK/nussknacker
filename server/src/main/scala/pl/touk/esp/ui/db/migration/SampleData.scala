@@ -7,6 +7,7 @@ import pl.touk.esp.ui.db.entity.EnvironmentsEntity.EnvironmentsEntityData
 import pl.touk.esp.ui.db.entity.ProcessEntity.{ProcessEntityData, ProcessType}
 import pl.touk.esp.ui.db.entity.ProcessVersionEntity.ProcessVersionEntityData
 import pl.touk.esp.ui.db.entity.TagsEntity.TagsEntityData
+import pl.touk.esp.ui.process.marshall.UiProcessMarshaller
 import pl.touk.esp.ui.sample.SampleProcess
 import pl.touk.esp.ui.util.DateUtils
 
@@ -24,7 +25,7 @@ object SampleData {
 
   def processVersion = {
     val process = SampleProcess.process
-    val json = ProcessMarshaller.toJson(process, PrettyParams.nospace)
+    val json = UiProcessMarshaller().toJson(process, PrettyParams.nospace)
     ProcessVersionEntityData(
       1,
       process.id,
