@@ -22,7 +22,7 @@ class ToolBox extends React.Component {
     //TODO: jakie opcje scrollbara??
     return (
       <div id="toolbox">
-        <Scrollbars renderTrackHorizontal={props => <div className="hide"/>} autoHeight  autoHeightMax={400}>
+        <Scrollbars renderTrackHorizontal={props => <div className="hide"/>} autoHeight  autoHeightMax={600}>
         {
           nodesToAdd.map(group => {
             var nodes = group.possibleNodes

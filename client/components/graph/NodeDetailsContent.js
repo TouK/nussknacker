@@ -103,6 +103,14 @@ export default class NodeDetailsContent extends React.Component {
             </div>
           </div>
         )
+      case 'Variable':
+        return (
+          <div className="node-table-body">
+            {this.createField("input", "Id:", "id")}
+            {this.createField("input", "Variable Name:", "varName")}
+            {this.createField("textarea", "Expression:", "value.expression")}
+          </div>
+        )
       case 'Switch':
         return (
           <div className="node-table-body">
