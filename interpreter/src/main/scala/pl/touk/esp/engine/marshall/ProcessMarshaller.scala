@@ -1,18 +1,21 @@
 package pl.touk.esp.engine.marshall
 
-import argonaut._
+import argonaut.{EncodeJson, PrettyParams, _}
 import Argonaut._
-import argonaut.PrettyParams
 import argonaut.derive._
 import cats.data.Validated
+import pl.touk.esp.engine.api.{MetaData, UserDefinedProcessAdditionalFields}
 import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
 import pl.touk.esp.engine.canonicalgraph.canonicalnode._
 import pl.touk.esp.engine.canonize.ProcessCanonizer
-import pl.touk.esp.engine.graph.EspProcess
-import pl.touk.esp.engine.graph.node.{Split, Filter, NodeData, Switch}
+import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
+import pl.touk.esp.engine.graph.{EspProcess, node}
+import pl.touk.esp.engine.graph.node.{Filter, NodeData, Split, Switch}
 import pl.touk.esp.engine.marshall.ProcessUnmarshallError._
 
-object ProcessMarshaller {
+class ProcessMarshaller(implicit
+                        additionalNodeDataFieldsCodec: CodecJson[Option[node.UserDefinedAdditionalNodeFields]] = ProcessMarshaller.additionalNodeDataFieldsCodec,
+                        additionalProcessFieldsCodec: CodecJson[Option[UserDefinedProcessAdditionalFields]] = ProcessMarshaller.additionalProcessFieldsCodec ) {
 
   import ArgonautShapeless._
 
@@ -76,7 +79,7 @@ object ProcessMarshaller {
 
   //order is important here! flatNodeDecode has to be the last
   private implicit lazy val nodeDecode: DecodeJson[CanonicalNode] =
-    filterDecode ||| switchDecode ||| splitDecode||| flatNodeDecode
+  filterDecode ||| switchDecode ||| splitDecode||| flatNodeDecode
 
   // Without this nested lists were serialized to colon(head, tail) instead of json array
   private implicit lazy val listOfCanonicalNodeEncoder: EncodeJson[List[CanonicalNode]] = ListEncodeJson[CanonicalNode]
@@ -95,4 +98,12 @@ object ProcessMarshaller {
     Validated.fromEither(json.decodeEither[CanonicalProcess]).leftMap(ProcessJsonDecodeError)
   }
 
+}
+
+object ProcessMarshaller {
+  def emptyOptionCodec[T]: CodecJson[Option[T]] = CodecJson.apply[Option[T]](_ => jEmptyObject, c => DecodeResult.ok(Option.empty[T]))
+
+  val additionalNodeDataFieldsCodec: CodecJson[Option[node.UserDefinedAdditionalNodeFields]] = emptyOptionCodec
+
+  val additionalProcessFieldsCodec: CodecJson[Option[UserDefinedProcessAdditionalFields]] = emptyOptionCodec
 }

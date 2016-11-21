@@ -93,30 +93,30 @@ private[compile] trait PartSubGraphCompilerBase {
     def doCompile(n: SplittedNode[_], ctx: ValidationContext): ValidatedNel[PartSubGraphCompilationError, CompiledNode] = {
       implicit val nodeId = NodeId(n.id)
       n match {
-        case splittednode.SourceNode(graph.node.Source(id, ref), next) =>
+        case splittednode.SourceNode(graph.node.Source(id, ref, _), next) =>
           compile(next, ctx).map(nwc => CompiledNode(compiledgraph.node.Source(id, nwc.next), nwc.ctx))
         case splittednode.OneOutputSubsequentNode(data: OneOutputSubsequentNodeData, next) =>
           data match {
-            case graph.node.Variable(id, varName, expression) =>
+            case graph.node.Variable(id, varName, expression, _) =>
               val newCtx = ctx.withVariable(varName, ClazzRef(classOf[Any])) //jak wyciagnac informacie o typie zmiennej?
               A.map2(compile(expression, ctx), compile(next, newCtx))(
                 (compiledExpression, nextWithCtx) =>
                   CompiledNode(compiledgraph.node.VariableBuilder(id, varName, Left(compiledExpression), nextWithCtx.next), nextWithCtx.ctx))
-            case graph.node.VariableBuilder(id, varName, fields) =>
+            case graph.node.VariableBuilder(id, varName, fields, _) =>
               val newCtx = ctx.withVariable(varName, ClazzRef(classOf[Map[String, Any]])) //jak wyciagnac informacie o typach zmiennych w mapie?
               A.map2(fields.map(f => compile(f, ctx)).sequence, compile(next, newCtx))(
                 (fields, nextWithCtx) =>
                   CompiledNode(compiledgraph.node.VariableBuilder(id, varName, Right(fields), nextWithCtx.next), nextWithCtx.ctx))
-            case graph.node.Processor(id, ref) =>
+            case graph.node.Processor(id, ref, _) =>
               A.map2(compile(ref, ctx), compile(next, ctx))((ref, nextWithCtx) =>
                 CompiledNode(compiledgraph.node.Processor(id, ref, nextWithCtx.next), nextWithCtx.ctx))
-            case graph.node.Enricher(id, ref, outName) =>
+            case graph.node.Enricher(id, ref, outName, _) =>
               val newCtx = services.get(ref.id).map { definition =>
                 ctx.withVariable(outName, definition.returnType)
               }.getOrElse(ctx)
               A.map2(compile(ref, newCtx), compile(next, newCtx))((ref, nextWithCtx) =>
                 CompiledNode(compiledgraph.node.Enricher(id, ref, outName, nextWithCtx.next), nextWithCtx.ctx))
-            case graph.node.CustomNode(id, outputVar, customNodeRef, parameters) =>
+            case graph.node.CustomNode(id, outputVar, customNodeRef, parameters, _) =>
               //TODO: na razie zakladamy ze nie resetujemy kontekstu, output mamy z gory
               //TODO: nie walidujemy parametrow ze zmiennymi, bo nie wiemy co doda CustomNode
               val validParams = parameters.map(p => compileParam(p, ctx, skipContextValidation = true)).sequence
@@ -127,11 +127,11 @@ private[compile] trait PartSubGraphCompilerBase {
           nexts.map(n => compile(n.next, ctx)).sequence.map { _ =>
             CompiledNode(compiledgraph.node.SplitNode(bareNode.id), ctx)
           }
-        case splittednode.FilterNode(graph.node.Filter(id, expression), nextTrue, nextFalse) =>
+        case splittednode.FilterNode(graph.node.Filter(id, expression, _), nextTrue, nextFalse) =>
           A.map3(compile(expression, ctx), compile(nextTrue, ctx), nextFalse.map(next => compile(next, ctx)).sequence)(
             (expr, nextWithCtx, nextWithCtxFalse) => CompiledNode(compiledgraph.node.Filter(id, expr, nextWithCtx.next,
               nextWithCtxFalse.map(_.next)), nextWithCtxFalse.map(nwc => ValidationContext.merge(nwc.ctx, nextWithCtx.ctx)).getOrElse(nextWithCtx.ctx)))
-        case splittednode.SwitchNode(graph.node.Switch(id, expression, exprVal), nexts, defaultNext) =>
+        case splittednode.SwitchNode(graph.node.Switch(id, expression, exprVal, _), nexts, defaultNext) =>
           val newCtx = ctx.withVariable(exprVal, ClazzRef(classOf[Any]))
           A.map3(compile(expression, newCtx), nexts.map(n => compile(n, newCtx)).sequence, defaultNext.map(dn => compile(dn, newCtx)).sequence)(
             (expr, cases, nextWithCtx) => {
@@ -141,9 +141,9 @@ private[compile] trait PartSubGraphCompilerBase {
             })
         case splittednode.EndingNode(data: EndingNodeData) =>
           data match {
-            case graph.node.Processor(id, ref) =>
+            case graph.node.Processor(id, ref, _) =>
               compile(ref, ctx).map(compiledgraph.node.EndingProcessor(id, _)).map(CompiledNode(_, ctx))
-            case graph.node.Sink(id, _, optionalExpression) =>
+            case graph.node.Sink(id, _, optionalExpression, _) =>
               optionalExpression.map(oe => compile(oe, ctx)).sequence.map(compiledgraph.node.Sink(id, _)).map(CompiledNode(_, ctx))
           }
       }
@@ -182,7 +182,7 @@ private[compile] trait PartSubGraphCompilerBase {
       compile(n.expression, ctx).map(compiledgraph.variable.Field(n.name, _))
 
     private def compileParam(n: graph.evaluatedparam.Parameter, ctx: ValidationContext, skipContextValidation: Boolean = false)
-                       (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, compiledgraph.evaluatedparam.Parameter] =
+                            (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, compiledgraph.evaluatedparam.Parameter] =
       compile(n.expression, ctx, skipContextValidation).map(compiledgraph.evaluatedparam.Parameter(n.name, _))
 
     private def compile(n: splittednode.Case, ctx: ValidationContext)
