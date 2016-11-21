@@ -11,7 +11,7 @@ class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with Matc
   val route = withPermissions(new ValidationResources(processValidation, processConverter).route, Permission.Read)
 
   it should "find errors in a bad process" in {
-    Post("/processValidation", posting.toEntity(ValidationTestData.invalidProcess)) ~> route ~> check {
+    Post("/processValidation", posting.toEntity(ProcessTestData.invalidProcess)) ~> route ~> check {
       status shouldEqual StatusCodes.OK
       val entity = entityAs[String]
       entity should include ("MissingSourceFactory")
@@ -19,7 +19,7 @@ class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with Matc
   }
 
   it should "find no errors in a good process" in {
-    Post("/processValidation", posting.toEntity(ValidationTestData.validProcess)) ~> route ~> check {
+    Post("/processValidation", posting.toEntity(ProcessTestData.validProcess)) ~> route ~> check {
       status shouldEqual StatusCodes.OK
     }
   }

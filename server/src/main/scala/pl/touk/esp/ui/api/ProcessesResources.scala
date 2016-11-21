@@ -9,11 +9,12 @@ import argonaut._
 import cats.data.Xor
 import pl.touk.esp.engine.api.deployment.{GraphProcess, ProcessDeploymentData, ProcessManager}
 import pl.touk.esp.engine.compile.ProcessCompilationError
+import pl.touk.esp.engine.graph.node
 import pl.touk.esp.engine.graph.node.NodeData
 import pl.touk.esp.engine.marshall.ProcessMarshaller
 import pl.touk.esp.ui.api.ProcessValidation.ValidationResult
 import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessStatus}
-import pl.touk.esp.ui.process.marshall.{DisplayableProcessCodec, ProcessConverter, ProcessTypeCodec}
+import pl.touk.esp.ui.process.marshall.{DisplayableProcessCodec, ProcessConverter, ProcessTypeCodec, UiProcessMarshaller}
 import pl.touk.esp.ui.process.repository.ProcessRepository
 import pl.touk.esp.ui.process.repository.ProcessRepository._
 import pl.touk.esp.ui.security.{LoggedUser, Permission}
@@ -42,10 +43,6 @@ class ProcessesResources(repository: ProcessRepository,
 
   implicit val displayableProcessCodec = DisplayableProcessCodec.codec
 
-  implicit val displayableProcessNodeDecoder = DisplayableProcessCodec.nodeDecoder
-
-  implicit val displayableProcessNodeEncoder = DisplayableProcessCodec.nodeEncoder
-
   implicit val validationResultEncode = EncodeJson.of[ValidationResult]
 
   implicit val processHistory = EncodeJson.of[ProcessHistoryEntry]
@@ -54,6 +51,8 @@ class ProcessesResources(repository: ProcessRepository,
 
   implicit val printer: Json => String =
     PrettyParams.spaces2.copy(dropNullKeys = true, preserveOrder = true).pretty
+
+  val uiProcessMarshaller = UiProcessMarshaller()
 
   def route(implicit user: LoggedUser) : Route = {
     def authorizeMethod = extractMethod.flatMap[Unit] {
@@ -102,7 +101,7 @@ class ProcessesResources(repository: ProcessRepository,
           entity(as[DisplayableProcess]) { displayableProcess =>
             complete {
               val canonical = processConverter.fromDisplayable(displayableProcess)
-              val json = ProcessMarshaller.toJson(canonical, PrettyParams.nospace)
+              val json = uiProcessMarshaller.toJson(canonical, PrettyParams.nospace)
               repository.saveProcess(processId, GraphProcess(json)).map { result =>
                 toResponse {
                   result.map(_ => processValidation.validate(canonical))

@@ -3,7 +3,7 @@ package pl.touk.esp.ui.api.helpers
 import akka.http.scaladsl.server.Route
 import db.migration.DefaultJdbcProfile
 import pl.touk.esp.engine.api.deployment.{ProcessDeploymentData, ProcessManager, ProcessState}
-import pl.touk.esp.ui.api.{ProcessPosting, ProcessValidation, ValidationTestData}
+import pl.touk.esp.ui.api.{ProcessPosting, ProcessValidation, ProcessTestData}
 import pl.touk.esp.ui.process.marshall.ProcessConverter
 import pl.touk.esp.ui.process.repository.{DeployedProcessRepository, ProcessRepository}
 import pl.touk.esp.ui.security.{LoggedUser, Permission}
@@ -16,7 +16,7 @@ object TestFactory {
 
   val testCategory = "TESTCAT"
 
-  val processValidation = new ProcessValidation(ValidationTestData.validator)
+  val processValidation = new ProcessValidation(ProcessTestData.validator)
   val processConverter = new ProcessConverter(processValidation)
   val posting = new ProcessPosting(processConverter)
 

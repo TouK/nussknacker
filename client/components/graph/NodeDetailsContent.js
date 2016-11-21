@@ -34,6 +34,7 @@ export default class NodeDetailsContent extends React.Component {
           <div className="node-table-body">
             {this.createField("input", "Id:", "id")}
             {this.createField("textarea", "Expression:", "expression.expression")}
+            {this.descriptionField()}
           </div>
         )
       case 'Enricher':
@@ -57,6 +58,7 @@ export default class NodeDetailsContent extends React.Component {
               </div>
             </div>
             {this.props.node.type == 'Enricher' ? this.createField("input", "Output:", "output") : null }
+            {this.descriptionField()}
           </div>
         )
       case 'CustomNode':
@@ -79,7 +81,7 @@ export default class NodeDetailsContent extends React.Component {
                 })}
               </div>
             </div>
-
+            {this.descriptionField()}
           </div>
         )
       case 'VariableBuilder':
@@ -101,6 +103,7 @@ export default class NodeDetailsContent extends React.Component {
                 })}
               </div>
             </div>
+            {this.descriptionField()}
           </div>
         )
       case 'Variable':
@@ -109,6 +112,7 @@ export default class NodeDetailsContent extends React.Component {
             {this.createField("input", "Id:", "id")}
             {this.createField("input", "Variable Name:", "varName")}
             {this.createField("textarea", "Expression:", "value.expression")}
+            {this.descriptionField()}
           </div>
         )
       case 'Switch':
@@ -117,6 +121,7 @@ export default class NodeDetailsContent extends React.Component {
             {this.createField("input", "Id:", "id")}
             {this.createField("textarea", "Expression:", "expression.expression")}
             {this.createField("input", "exprVal:", "exprVal")}
+            {this.descriptionField()}
           </div>
         )
       case 'Aggregate':
@@ -128,12 +133,14 @@ export default class NodeDetailsContent extends React.Component {
             {this.createField("input", "Folding function", "foldingFunRef")}
             {this.createField("input", "Duration (ms):", "durationInMillis")}
             {this.createField("input", "Slide (ms):", "slideInMillis")}
+            {this.descriptionField()}
           </div>
         )
       case 'Split':
         return (
           <div className="node-table-body">
             {this.createField("input", "Id:", "id")}
+            {this.descriptionField()}
           </div>
         )
       case 'Properties':
@@ -154,6 +161,7 @@ export default class NodeDetailsContent extends React.Component {
                 })}
               </div>
             </div>
+            {this.descriptionField()}
           </div>
         )
       default:
@@ -185,13 +193,14 @@ export default class NodeDetailsContent extends React.Component {
             })}
           </div>
         </div>
+        {this.descriptionField()}
         {toAppend}
       </div>
     )
   }
 
   createField = (fieldType, fieldLabel, fieldProperty) => {
-    return this.doCreateField(fieldType, fieldLabel, _.get(this.state.editedNode, fieldProperty), ((newValue) => this.setNodeDataAt(fieldProperty, newValue) ))
+    return this.doCreateField(fieldType, fieldLabel, _.get(this.state.editedNode, fieldProperty, ""), ((newValue) => this.setNodeDataAt(fieldProperty, newValue) ))
   }
 
   createListField = (fieldType, fieldLabel, obj, fieldProperty, listFieldProperty) => {
@@ -240,6 +249,9 @@ export default class NodeDetailsContent extends React.Component {
     this.props.onChange(newtempNodeData)
   }
 
+  descriptionField = () => {
+    return this.createField("input", "Description:", "additionalFields.description")
+  }
 
   render() {
     var nodeClass = classNames('node-table', {'node-editable': this.props.isEditMode})
