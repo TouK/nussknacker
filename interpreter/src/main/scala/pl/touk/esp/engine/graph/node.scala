@@ -34,32 +34,35 @@ object node {
 
   case class EndingNode(data: EndingNodeData) extends SubsequentNode
 
+  trait UserDefinedAdditionalNodeFields
   sealed trait NodeData {
     def id: String
+    def additionalFields: Option[UserDefinedAdditionalNodeFields]
   }
 
-  case class Source(id: String, ref: SourceRef) extends NodeData
+  case class Source(id: String, ref: SourceRef, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends NodeData
 
-  case class Filter(id: String, expression: Expression) extends NodeData
+  case class Filter(id: String, expression: Expression, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends NodeData
 
-  case class Switch(id: String, expression: Expression, exprVal: String) extends NodeData
+  case class Switch(id: String, expression: Expression, exprVal: String, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends NodeData
 
   sealed trait OneOutputSubsequentNodeData extends NodeData
 
-  case class VariableBuilder(id: String, varName: String, fields: List[Field]) extends OneOutputSubsequentNodeData
+  case class VariableBuilder(id: String, varName: String, fields: List[Field], additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends OneOutputSubsequentNodeData
 
-  case class Variable(id: String, varName: String, value: Expression) extends OneOutputSubsequentNodeData
+  case class Variable(id: String, varName: String, value: Expression, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends OneOutputSubsequentNodeData
 
-  case class Enricher(id: String, service: ServiceRef, output: String) extends OneOutputSubsequentNodeData
+  case class Enricher(id: String, service: ServiceRef, output: String, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends OneOutputSubsequentNodeData
 
-  case class CustomNode(id: String, outputVar: String, nodeType: String, parameters: List[Parameter]) extends OneOutputSubsequentNodeData
+  case class CustomNode(id: String, outputVar: String, nodeType: String, parameters: List[Parameter], additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends OneOutputSubsequentNodeData
 
-  case class Split(id: String) extends NodeData
+  case class Split(id: String, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends NodeData
 
   sealed trait EndingNodeData extends NodeData
 
-  case class Processor(id: String, service: ServiceRef) extends OneOutputSubsequentNodeData with EndingNodeData
+  case class Processor(id: String, service: ServiceRef, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends OneOutputSubsequentNodeData with EndingNodeData
 
-  case class Sink(id: String, ref: SinkRef, endResult: Option[Expression] = None) extends EndingNodeData
+  case class Sink(id: String, ref: SinkRef, endResult: Option[Expression] = None, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends EndingNodeData
+
 
 }

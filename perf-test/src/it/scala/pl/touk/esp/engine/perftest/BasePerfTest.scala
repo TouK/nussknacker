@@ -55,6 +55,8 @@ trait BasePerfTest extends ScalaFutures with BeforeAndAfterAll { suite: Suite wi
 
   private var system: ActorSystem = _
 
+  lazy val ProcessMarshaller = new ProcessMarshaller
+
   protected def collectMetricsIn[T](f: => T): (T, StoppedMetricsCollector, Long) = {
     val jmxCollector = JmxMetricsCollector(
       system,

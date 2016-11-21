@@ -15,6 +15,8 @@ import pl.touk.esp.engine.marshall.ProcessMarshaller
 
 object FlinkProcessMain {
 
+  val ProcessMarshaller = new ProcessMarshaller
+
   def main(args: Array[String]) : Unit = {
 
     require(args.nonEmpty, "Process json should be passed as a first argument")

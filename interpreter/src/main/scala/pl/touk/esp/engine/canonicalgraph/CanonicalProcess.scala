@@ -7,8 +7,9 @@ import pl.touk.esp.engine.graph.expression.Expression
 import pl.touk.esp.engine.graph.node.{Split, Filter, NodeData, Switch}
 
 sealed trait CanonicalTreeNode
-
-case class CanonicalProcess(metaData: MetaData, exceptionHandlerRef: ExceptionHandlerRef, nodes: List[CanonicalNode]) extends CanonicalTreeNode
+case class CanonicalProcess(metaData: MetaData,
+                            exceptionHandlerRef: ExceptionHandlerRef,
+                            nodes: List[CanonicalNode]) extends CanonicalTreeNode
 
 object canonicalnode {
 

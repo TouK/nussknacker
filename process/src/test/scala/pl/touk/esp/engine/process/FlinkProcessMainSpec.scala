@@ -4,7 +4,7 @@ import argonaut.PrettyParams
 import com.typesafe.config.Config
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor
-import org.scalatest.FlatSpec
+import org.scalatest.{FlatSpec, Inside, Matchers}
 import pl.touk.esp.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.esp.engine.api.process.{ProcessConfigCreator, SinkFactory, WithCategories}
 import pl.touk.esp.engine.api.{ParamName, Service}
@@ -18,9 +18,11 @@ import pl.touk.esp.engine.spel
 
 import scala.concurrent.Future
 
-class FlinkProcessMainSpec extends FlatSpec {
+class FlinkProcessMainSpec extends FlatSpec with Matchers with Inside {
 
   import spel.Implicits._
+
+  val ProcessMarshaller = new ProcessMarshaller
 
   it should "be able to compile and serialize services" in {
     val process =
@@ -44,7 +46,7 @@ object LogService extends Service {
 }
 
 class SimpleProcessConfigCreator extends ProcessConfigCreator {
-  
+
   import org.apache.flink.streaming.api.scala._
 
   override def services(config: Config) = Map("logService" -> WithCategories(LogService, "c1"))

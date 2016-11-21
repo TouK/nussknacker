@@ -20,6 +20,8 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
     timeout = Span(10, Seconds),
     interval = Span(100, Millis)
   )
+
+  val ProcessMarshaller = new ProcessMarshaller
   it should "deploy process in running flink" in {
     val processId = UUID.randomUUID().toString
 

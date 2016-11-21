@@ -1,7 +1,8 @@
 package pl.touk.esp.engine.marshall
 
 import argonaut.PrettyParams
-import org.scalatest.{FlatSpec, Matchers, OptionValues}
+import cats.data.Validated.Valid
+import org.scalatest.{FlatSpec, Inside, Matchers, OptionValues}
 import pl.touk.esp.engine._
 import pl.touk.esp.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.esp.engine.canonize.ProcessCanonizer
@@ -11,10 +12,11 @@ import pl.touk.esp.engine.graph.sink.SinkRef
 
 import scala.concurrent.duration._
 
-class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues {
+class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues with Inside {
 
   import spel.Implicits._
 
+  val ProcessMarshaller = new ProcessMarshaller
   it should "marshall and unmarshall to same process" in {
 
     def nestedGraph(id: String) =
@@ -52,6 +54,53 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues {
 
     result should equal(Some(process))
   }
+
+  it should "omit additional fields" in {
+    val withAdditionalFields =
+      """
+        |{
+        |    "metaData" : { "id": "custom", "parallelism" : 2, "additionalFields": { "description": "process description"} },
+        |    "exceptionHandlerRef" : { "parameters" : [ { "name": "errorsTopic", "value": "error.topic"}]},
+        |    "nodes" : [
+        |        {
+        |            "type" : "Source",
+        |            "id" : "start",
+        |            "ref" : { "typ": "kafka-transaction", "parameters": [ { "name": "topic", "value": "in.topic"}]},
+        |            "additionalFields": { "description": "single node description"}
+        |        }
+        |    ]
+        |}
+      """.stripMargin
+
+    val withoutAdditionalFields =
+      """
+        |{
+        |    "metaData" : { "id": "custom", "parallelism" : 2},
+        |    "exceptionHandlerRef" : { "parameters" : [ { "name": "errorsTopic", "value": "error.topic"}]},
+        |    "nodes" : [
+        |        {
+        |            "type" : "Source",
+        |            "id" : "start",
+        |            "ref" : { "typ": "kafka-transaction", "parameters": [ { "name": "topic", "value": "in.topic"}]}
+        |        }
+        |    ]
+        |}
+      """.stripMargin
+
+    inside(ProcessMarshaller.fromJson(withAdditionalFields)) { case Valid(process) =>
+      process.metaData.id shouldBe "custom"
+      process.metaData.additionalFields shouldBe None
+      process.nodes.head.data.additionalFields shouldBe None
+    }
+
+    inside(ProcessMarshaller.fromJson(withoutAdditionalFields)) { case Valid(process) =>
+      process.metaData.id shouldBe "custom"
+      process.metaData.additionalFields shouldBe None
+      process.nodes.head.data.additionalFields shouldBe None
+    }
+
+  }
+
 
   def marshallAndUnmarshall(process: EspProcess): Option[EspProcess] = {
     val marshalled = ProcessMarshaller.toJson(process, PrettyParams.spaces2)

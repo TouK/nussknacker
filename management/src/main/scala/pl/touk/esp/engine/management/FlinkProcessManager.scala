@@ -117,12 +117,15 @@ class FlinkProcessManager(config: Config,
     }
   }
 
-  private def extractParallelism(processDeploymentData: ProcessDeploymentData): Option[Int] = processDeploymentData match {
-    case GraphProcess(processAsJson) =>
-      val canonicalProcess = ProcessMarshaller.fromJson(processAsJson).valueOr(err => throw new IllegalArgumentException(err.msg))
-      canonicalProcess.metaData.parallelism
-    case _ =>
-      None
+  private def extractParallelism(processDeploymentData: ProcessDeploymentData): Option[Int] = {
+    val processMarshaller = new ProcessMarshaller
+    processDeploymentData match {
+      case GraphProcess(processAsJson) =>
+        val canonicalProcess = processMarshaller.fromJson(processAsJson).valueOr(err => throw new IllegalArgumentException(err.msg))
+        canonicalProcess.metaData.parallelism
+      case _ =>
+        None
+    }
   }
 
   private def extractProcessConfig: String = {
