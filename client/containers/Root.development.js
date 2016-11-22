@@ -13,6 +13,7 @@ import $ from 'jquery';
 const store = configureStore();
 
 //TODO: jakos inaczej to ograc??
+// var user = "reader";
 var user = "admin";
 $.ajaxSetup({
   headers: {

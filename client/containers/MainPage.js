@@ -2,7 +2,7 @@ import React from "react";
 import {render} from "react-dom";
 import {browserHistory, Router, Route, Link} from "react-router";
 import _ from "lodash";
-import {Processes} from "./Processes";
+import Processes from "./Processes";
 import "../stylesheets/mainMenu.styl";
 import hamburgerOpen from "../assets/img/menu-open.svg";
 import hamburgerClosed from "../assets/img/menu-closed.svg";
