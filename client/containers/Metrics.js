@@ -17,10 +17,10 @@ class Metrics extends React.Component {
       dashboard: this.props.settings.dashboard,
       processName: this.props.params.processId || "All",
       theme: 'light',
-      hosts: this.props.settings.hosts
+      hosts: this.props.settings.hosts.split("|").map(host => "&var-hosts=" + host).join("")
     };
     var iframeUrl = options.grafanaUrl + "/dashboard/db/" + options.dashboard + "?var-processName=" + options.processName
-      + "&theme=" + options.theme + "&var-hosts=" + options.hosts
+      + "&theme=" + options.theme + options.hosts
     return (
       <div className="Page">
         <iframe ref="metricsFrame" src={iframeUrl} width="100%" height={window.innerHeight} frameBorder="0"></iframe>
