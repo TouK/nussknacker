@@ -1,4 +1,4 @@
-package pl.touk.esp.engine.spel
+package pl.touk.esp.engine.graph
 
 import java.math.BigDecimal
 import java.text.ParseException
@@ -9,16 +9,16 @@ import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.esp.engine.api.Context
 import pl.touk.esp.engine.api.lazyy.{LazyContext, LazyValuesProvider, UsingLazyValues}
 import pl.touk.esp.engine.compile.ValidationContext
-import pl.touk.esp.engine.compiledgraph.expression.ExpressionParseError
 import pl.touk.esp.engine.definition.DefinitionExtractor.ClazzRef
+import pl.touk.esp.engine.spel.SpelExpressionParser
 import pl.touk.esp.engine.types.EspTypeUtils
 
 import scala.collection.JavaConverters._
 
-class SpelExpressionSpec extends FlatSpec with Matchers {
+class ExpressionSpec extends FlatSpec with Matchers {
 
   private val bigValue = BigDecimal.valueOf(4187338076L)
-
+  
   val testValue = Test( "1", 2, List(Test("3", 4), Test("5", 6)).asJava, bigValue)
   val ctx = Context(
     variables = Map("obj" -> testValue)
@@ -33,43 +33,38 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
     val lazyVal = lazyValue[String](enrichingServiceId).map(_ + " ma kota")
   }
 
-  private def parseOrFail(expr: String, context: Context = ctx, globalProcessVariables: Map[String, ClazzRef] = Map.empty) = {
-    parse(expr, context, globalProcessVariables) match {
-      case Valid(e) => e
-      case Invalid(err) => throw new ParseException(err.message, -1)
-    }
-  }
-
-
   private def parse(expr: String, context: Context = ctx, globalProcessVariables: Map[String, ClazzRef] = Map.empty) = {
     val validationCtx = ValidationContext(
       context.variables.mapValues(_.getClass).mapValues(ClazzRef.apply),
       EspTypeUtils.clazzAndItsChildrenDefinition(context.variables.values.map(_.getClass).toList)
     )
     val expressionFunctions = Map("today" -> classOf[LocalDate].getDeclaredMethod("now"))
-    new SpelExpressionParser(expressionFunctions, globalProcessVariables).parse(expr, validationCtx)
+    new SpelExpressionParser(expressionFunctions, globalProcessVariables).parse(expr, validationCtx) match {
+      case Valid(e) => e
+      case Invalid(err) => throw new ParseException(err.message, -1)
+    }
   }
 
   it should "invoke simple expression" in {
-    parseOrFail("#obj.value + 4").evaluate[Long](ctx, dumbLazyProvider).value should equal(6)
+    parse("#obj.value + 4").evaluate[Long](ctx, dumbLazyProvider).value should equal(6)
   }
 
   it should "invoke simple list expression" in {
-    parseOrFail("{'1', '2'}.contains('2')").evaluate[Boolean](ctx, dumbLazyProvider).value shouldBe true
+    parse("{'1', '2'}.contains('2')").evaluate[Boolean](ctx, dumbLazyProvider).value shouldBe true
   }
 
   it should "handle big decimals" in {
     bigValue.compareTo(BigDecimal.valueOf(50*1024*1024)) should be > 0
     bigValue.compareTo(BigDecimal.valueOf(50*1024*1024L)) should be > 0
-    parseOrFail("#obj.bigValue").evaluate[BigDecimal](ctx, dumbLazyProvider).value should equal(bigValue)
-    parseOrFail("#obj.bigValue < 50*1024*1024").evaluate[Boolean](ctx, dumbLazyProvider).value should equal(false)
-    parseOrFail("#obj.bigValue < 50*1024*1024L").evaluate[Boolean](ctx, dumbLazyProvider).value should equal(false)
+    parse("#obj.bigValue").evaluate[BigDecimal](ctx, dumbLazyProvider).value should equal(bigValue)
+    parse("#obj.bigValue < 50*1024*1024").evaluate[Boolean](ctx, dumbLazyProvider).value should equal(false)
+    parse("#obj.bigValue < 50*1024*1024L").evaluate[Boolean](ctx, dumbLazyProvider).value should equal(false)
   }
 
   it should "filter by list predicates" in {
 
-    parseOrFail("#obj.children.?[id == '55'].empty").evaluate[Boolean](ctx, dumbLazyProvider).value should equal(true)
-    parseOrFail("#obj.children.?[id == '5'].size()").evaluate[Integer](ctx, dumbLazyProvider).value should equal(1: Integer)
+    parse("#obj.children.?[id == '55'].empty").evaluate[Boolean](ctx, dumbLazyProvider).value should equal(true)
+    parse("#obj.children.?[id == '5'].size()").evaluate[Integer](ctx, dumbLazyProvider).value should equal(1: Integer)
 
   }
 
@@ -77,26 +72,26 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
     val twoDaysAgo = LocalDate.now().minusDays(2)
     val withDays = ctx.withVariable("date", twoDaysAgo)
 
-    parseOrFail("#date.until(T(java.time.LocalDate).now()).days", withDays).evaluate[Integer](withDays, dumbLazyProvider).value should equal(2)
+    parse("#date.until(T(java.time.LocalDate).now()).days", withDays).evaluate[Integer](withDays, dumbLazyProvider).value should equal(2)
   }
 
   it should "register functions" in {
     val twoDaysAgo = LocalDate.now().minusDays(2)
     val withDays = ctx.withVariable("date", twoDaysAgo)
 
-    parseOrFail("#date.until(#today()).days", withDays).evaluate[Integer](withDays, dumbLazyProvider).value should equal(2)
+    parse("#date.until(#today()).days", withDays).evaluate[Integer](withDays, dumbLazyProvider).value should equal(2)
   }
 
   it should "register global variables" in {
     val globalVars = Map("processHelper" -> ClazzRef.apply(SampleGlobalObject.getClass))
-    parseOrFail("#processHelper.add(1, #processHelper.constant())", ctx, globalVars).evaluate[Integer](ctx, dumbLazyProvider).value should equal(5)
+    parse("#processHelper.add(1, #processHelper.constant())", ctx, globalVars).evaluate[Integer](ctx, dumbLazyProvider).value should equal(5)
   }
 
   it should "allow access to maps in dot notation" in {
     val withMapVar = ctx.withVariable("map", Map("key1" -> "value1", "key2" -> 20).asJava)
 
-    parseOrFail("#map.key1", withMapVar).evaluate[String](withMapVar, dumbLazyProvider).value should equal("value1")
-    parseOrFail("#map.key2", withMapVar).evaluate[Integer](withMapVar, dumbLazyProvider).value should equal(20)
+    parse("#map.key1", withMapVar).evaluate[String](withMapVar, dumbLazyProvider).value should equal("value1")
+    parse("#map.key2", withMapVar).evaluate[Integer](withMapVar, dumbLazyProvider).value should equal(20)
 
   }
 
@@ -107,25 +102,11 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
         (context.withEvaluatedValue(enrichingServiceId, params.toMap, provided), provided.asInstanceOf[T])
     }
 
-    val valueWithModifiedContext = parseOrFail("#obj.lazyVal").evaluate[String](ctx, lazyValueProvider)
+    val valueWithModifiedContext = parse("#obj.lazyVal").evaluate[String](ctx, lazyValueProvider)
     valueWithModifiedContext.value shouldEqual "ala ma kota"
     valueWithModifiedContext.context.lazyContext[String](enrichingServiceId, Map.empty) shouldEqual provided
   }
 
-  it should "not allow access to variables without hash in methods" in {
-    val globalVars = Map("processHelper" -> ClazzRef.apply(SampleGlobalObject.getClass))
-    val withNum = ctx.withVariable("a", 5)
-    parse("#processHelper.add(a, 1)", withNum, globalVars) should matchPattern {
-      case Invalid(ExpressionParseError("Non reference 'a' occurred. Maybe you missed '#' in front of it?")) =>
-    }
-  }
-
-  it should "not allow unknown variables in methods" in {
-    val globalVars = Map("processHelper" -> ClazzRef.apply(SampleGlobalObject.getClass))
-    parse("#processHelper.add(#a, 1)", ctx, globalVars) should matchPattern {
-      case Invalid(ExpressionParseError("Unresolved references a")) =>
-    }
-  }
 
 }
 
