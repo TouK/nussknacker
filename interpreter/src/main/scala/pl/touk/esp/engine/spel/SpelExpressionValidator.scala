@@ -43,27 +43,21 @@ class SpelExpressionValidator(expr: Expression, ctx: ValidationContext) {
   private def findAllPropertyAccess(n: SpelNode): Validated[ExpressionParseError, List[SpelPropertyAccess]] = {
     n match {
       case ce: CompoundExpression if ce.childrenHead.isInstanceOf[VariableReference] =>
-        findVariableReferenceAccess(ce.childrenHead.asInstanceOf[VariableReference], ce.children.tail.toList)
+        val children = ce.children.toList
+        val variableName = children.head.toStringAST.tail
+        val clazzRef = ctx.apply(variableName)
+        if (ignoredTypes.contains(clazzRef)) Validated.valid(List.empty) //odpuszczamy na razie walidowanie spelowych Map i wtedy kiedy nie jestesmy pewni typu
+        else {
+          val references = children.tail.takeWhile(_.isInstanceOf[PropertyOrFieldReference]).map(_.toStringAST) //nie bierzemy jeszcze wszystkich co nie jest do konca poprawnne, np w `#obj.children.?[id == '55'].empty`
+          Validated.valid(List(SpelPropertyAccess(variableName, references, ctx.apply(variableName))))
+        }
       case ce: CompoundExpression if ce.childrenHead.isInstanceOf[PropertyOrFieldReference] =>
         Validated.invalid(ExpressionParseError(s"Non reference '${ce.childrenHead.toStringAST}' occurred. Maybe you missed '#' in front of it?"))
-      case prop: PropertyOrFieldReference =>
-        Validated.invalid(ExpressionParseError(s"Non reference '${prop.toStringAST}' occurred. Maybe you missed '#' in front of it?"))
       case _ =>
         val accessesWithErrors = n.children.toList.map { child => findAllPropertyAccess(child).toValidatedNel }.sequence
         accessesWithErrors.map(_.flatten).leftMap(_.head)
     }
   }
-
-  private def findVariableReferenceAccess(reference: VariableReference, children: List[SpelNode] = List()) = {
-    val variableName = reference.toStringAST.tail
-    val references = children.takeWhile(_.isInstanceOf[PropertyOrFieldReference]).map(_.toStringAST) //nie bierzemy jeszcze wszystkich co nie jest do konca poprawnne, np w `#obj.children.?[id == '55'].empty`
-    val clazzRef = ctx.apply(variableName)
-    if (ignoredTypes.contains(clazzRef)) Validated.valid(List.empty) //odpuszczamy na razie walidowanie spelowych Map i wtedy kiedy nie jestesmy pewni typu
-    else {
-      Validated.valid(List(SpelPropertyAccess(variableName, references, ctx.apply(variableName))))
-    }
-  }
-
 
   private def validatePropertyAccess(propAccess: SpelPropertyAccess): Option[ExpressionParseError] = {
     def checkIfPropertiesExistsOnClass(propsToGo: List[String], clazz: ClazzRef): Option[ExpressionParseError] = {
