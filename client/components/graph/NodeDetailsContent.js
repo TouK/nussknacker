@@ -208,7 +208,7 @@ export default class NodeDetailsContent extends React.Component {
               {this.state.codeCompletionEnabled ?
                 <ExpressionSuggest inputProps={{
                   rows: 5, cols: 50, className: "node-input", value: fieldValue,
-                  onChange: handleChange, readOnly: !this.props.isEditMode
+                  onValueChange: handleChange, readOnly: !this.props.isEditMode
                 }}/> :
                 <textarea rows="5" cols="50" className="node-input" value={fieldValue}
                           onChange={(e) => handleChange(e.target.value)} readOnly={!this.props.isEditMode}/>

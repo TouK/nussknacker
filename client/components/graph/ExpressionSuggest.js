@@ -11,6 +11,8 @@ import $ from "jquery";
 // - rozwiazac https://github.com/moroshko/react-autowhatever/issues/24 i usunac wlasne rozwiazanie z packages.json
 // - Obslugiwanie innych zmiennych niz "input"
 // - wiecej milosci
+
+var inputExprIdCounter = 0
 class ExpressionSuggest extends React.Component {
 
   static propTypes = {
@@ -19,10 +21,12 @@ class ExpressionSuggest extends React.Component {
 
   constructor(props) {
     super(props);
+    inputExprIdCounter+=1;
     this.state = {
       value: props.inputProps.value,
       suggestions: [],
-      expectedCaretPosition: 0
+      expectedCaretPosition: 0,
+      id: "inputExpr" + inputExprIdCounter
     };
   }
 
@@ -61,7 +65,7 @@ class ExpressionSuggest extends React.Component {
   renderInputComponent = inputProps => {
     return (
       <div>
-        <textarea id="inputExpr" {...inputProps} />
+        <textarea id={this.state.id} {...inputProps} />
       </div>
     )
   }
@@ -83,8 +87,8 @@ class ExpressionSuggest extends React.Component {
     }
   }
 
-  onSuggestionsFetchRequested = ({ value }) => {
-    if (!this.props.inputProps.readOnly) {
+  onSuggestionsFetchRequested = ({value, event}) => {
+    if (!this.props.inputProps.readOnly && event.type != "focus") {
       const lastExpressionPart = this.lastExpressionPart(this.currentlyFocusedExpressionLastPart(value))
       const properties = this.alreadyTypedProperties(lastExpressionPart)
       const focusedClazz = this.findMostParentClazz(properties)
@@ -97,7 +101,7 @@ class ExpressionSuggest extends React.Component {
 
   //fixme jak to zamienic na ref?
   getInputExprElement = () => {
-    return $('#inputExpr')[0]
+    return $('#' + this.state.id)[0]
   }
 
   getCaretPosition = () => {
@@ -159,7 +163,7 @@ class ExpressionSuggest extends React.Component {
     return _.join(properties, ".")
   }
 
-  onChange = (event, { newValue }) => {
+  onChange = (newValue) => {
     this.setState({
       value: newValue,
       expectedCaretPosition: this.getCaretPosition()
@@ -175,11 +179,11 @@ class ExpressionSuggest extends React.Component {
   render() {
     if (this.props.dataResolved) {
       const inputProps = {
-        ...this.props.inputProps,
+        ..._.omit(this.props.inputProps, "onValueChange"),
         value: this.state.value,
         onChange: (event, {newValue}) => {
-          this.onChange(event, {newValue})
-          this.props.inputProps.onChange(newValue)
+          this.onChange(newValue)
+          this.props.inputProps.onValueChange(newValue)
         }
     }
       return (
