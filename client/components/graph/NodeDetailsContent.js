@@ -41,23 +41,19 @@ export default class NodeDetailsContent extends React.Component {
         return (
           <div className="node-table-body">
             {this.createField("input", "Id:", "id")}
+            {this.createField("input", "Service Id:", "service.id")}
             <div className="node-row">
-              <div className="node-label">Service:</div>
+              <div className="node-label">Parameters:</div>
               <div className="node-group">
-                {this.createField("input", "Service Id:", "service.id")}
-                <div className="node-row">
-                  <div className="node-label">Parameters:</div>
-                  <div className="node-group child-group">
-                    {this.state.editedNode.service.parameters.map((params, index) => {
-                      return (
-                        <div className="node-block" key={index}>
-                          {this.createListField("input", "Name:", params, 'name', `service.parameters[${index}]`)}
-                          {this.createListField("textarea", "Expression:", params, 'expression.expression', `service.parameters[${index}]`)}
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
+                {this.state.editedNode.service.parameters.map((params, index) => {
+                  return (
+                    <div className="node-block" key={index}>
+                      {this.createListField("input", "Name:", params, 'name', `service.parameters[${index}]`)}
+                      {this.createListField("textarea", "Expression:", params, 'expression.expression', `service.parameters[${index}]`)}
+                      <hr />
+                    </div>
+                  )
+                })}
               </div>
             </div>
             {this.props.node.type == 'Enricher' ? this.createField("input", "Output:", "output") : null }
@@ -71,12 +67,13 @@ export default class NodeDetailsContent extends React.Component {
             {this.createField("input", "Node type:", "nodeType")}
             <div className="node-row">
               <div className="node-label">Parameters:</div>
-              <div className="node-group child-group">
+              <div className="node-group">
                 {this.state.editedNode.parameters.map((params, index) => {
                   return (
                     <div className="node-block" key={index}>
                       {this.createListField("input", "Name:", params, "name", `parameters[${index}]`)}
                       {this.createListField("textarea", "Expression:", params, "expression.expression", `parameters[${index}]`)}
+                      <hr />
                     </div>
                   )
                 })}
@@ -92,12 +89,13 @@ export default class NodeDetailsContent extends React.Component {
             {this.createField("input", "Variable Name:", "varName")}
             <div className="node-row">
               <div className="node-label">Fields:</div>
-              <div className="node-group child-group">
+              <div className="node-group">
                 {this.state.editedNode.fields.map((params, index) => {
                   return (
                     <div className="node-block" key={index}>
                       {this.createListField("input", "Name:", params, "name", `fields[${index}]`)}
                       {this.createListField("textarea", "Expression:", params, "expression.expression", `fields[${index}]`)}
+                      <hr />
                     </div>
                   )
                 })}
@@ -136,12 +134,13 @@ export default class NodeDetailsContent extends React.Component {
             {this.createField("input", "Parallelism:", "parallelism")}
             <div className="node-row">
               <div className="node-label">Exception handler:</div>
-              <div className="node-group child-group">
+              <div className="node-group">
                 {this.state.editedNode.exceptionHandler.parameters.map((params, index) => {
                   return (
                     <div className="node-block" key={index}>
                       {this.createListField("input", "Name:", params, "name", `exceptionHandler.parameters[${index}]`)}
                       {this.createListField("input", "Value:", params, "value", `exceptionHandler.parameters[${index}]`)}
+                      <hr />
                     </div>
                   )
                 })}
@@ -163,23 +162,19 @@ export default class NodeDetailsContent extends React.Component {
     return (
       <div className="node-table-body">
         {this.createField("input", "Id:", "id")}
+        {this.createField("input", "Ref Type:", "ref.typ")}
         <div className="node-row">
-          <div className="node-label">Ref:</div>
+          <div className="node-label">Parameters:</div>
           <div className="node-group">
-            {this.createField("input", "Type:", "ref.typ")}
-            <div className="node-row">
-              <div className="node-label">Parameters:</div>
-              <div className="node-group child-group">
-                {this.state.editedNode.ref.parameters.map((params, index) => {
-                  return (
-                    <div className="node-block" key={index}>
-                      {this.createListField("input", "Name:", params, "name", `ref.parameters[${index}]`)}
-                      {this.createListField("input", "Value:", params, "value", `ref.parameters[${index}]`)}
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
+            {this.state.editedNode.ref.parameters.map((params, index) => {
+              return (
+                <div className="node-block" key={index}>
+                  {this.createListField("input", "Name:", params, "name", `ref.parameters[${index}]`)}
+                  {this.createListField("input", "Value:", params, "value", `ref.parameters[${index}]`)}
+                  <hr />
+                </div>
+              )
+            })}
           </div>
         </div>
         {toAppend}
@@ -218,11 +213,6 @@ export default class NodeDetailsContent extends React.Component {
                 <textarea rows="5" cols="50" className="node-input" value={fieldValue}
                           onChange={(e) => handleChange(e.target.value)} readOnly={!this.props.isEditMode}/>
               }
-              <label>
-                <input type="checkbox" checked={this.state.codeCompletionEnabled} onChange={(e) => {
-                  this.setState({codeCompletionEnabled: !this.state.codeCompletionEnabled})
-                }}/> Code completion enabled
-              </label>
             </div>
           </div>
         )
@@ -247,6 +237,11 @@ export default class NodeDetailsContent extends React.Component {
     var nodeClass = classNames('node-table', {'node-editable': this.props.isEditMode})
     return (
       <div className={nodeClass}>
+        <label className="code-completion">
+          <input type="checkbox" disabled={!this.props.isEditMode} checked={this.state.codeCompletionEnabled} onChange={(e) => {
+            this.setState({codeCompletionEnabled: !this.state.codeCompletionEnabled})
+          }}/> Code completion enabled
+        </label>
         {this.customNode()}
         {!_.isEmpty(this.props.nodeErrors) ?
           <ListGroupItem bsStyle="danger">Node is invalid</ListGroupItem> : null}

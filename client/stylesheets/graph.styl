@@ -37,22 +37,39 @@ node-highlight(strokeColor, backgroundFill)
 .node-focused
   node-highlight(#0058a9, #e6ecff)
 
+headerHeight = 90px
 #modalHeader
   padding: 25px 40px
   text-transform: uppercase
   font-weight: 700
   font-size: 26px
+  height: headerHeight
+  .header-buttons
+    float: right
+    img
+      margin: 3px 7px
+      height: 30px
+      width: auto
+      &:hover
+        cursor: pointer
 
 #modalContent
   background-color: white
   padding: 50px 20px
-  min-height: 70%
+  position: absolute
+  top: headerHeight
+  bottom: 0
+  left: 0
+  right: 0
+  overflow: auto
   .node-table
     min-width: 60%
     max-width: 80%
     margin: 0 auto
+    .node-table-body
+      clear: both
     .node-row
-      margin-bottom: 20px
+      margin-bottom: 15px
     .node-label
       color: #686868
       width: 15%
@@ -60,6 +77,7 @@ node-highlight(strokeColor, backgroundFill)
       vertical-align: top
       padding-top: 10px
       font-size: 14px
+      font-weight: 700
       text-transform: uppercase
     .node-value
       width: 85%
@@ -71,25 +89,20 @@ node-highlight(strokeColor, backgroundFill)
       padding: 0 20px
       border: none
       background-color: #F5F5F5
-      font-weight: 700
+      font-weight: 400
       font-size: 14px
     .node-group
-      padding-top 40px
-      width: 85%
-      display: inline-block
+      padding-top 15px
+      width: 100%
+      padding-left: 50px
       .node-label
         text-transform: none
-    .child-group
-      padding-top: 0
-      .node-row
-        margin: 10px 0
-      .node-block
-        background-color: #F5F5F5
-        padding: 10px 20px
-      .node-block + .node-block
-        margin-top: 20px
+    .node-block
+      padding: 10px 0
+      hr
+        margin: 0
     textarea.node-input
-      min-height: 100px
+      min-height: 80px
       resize: vertical
       line-height: 1.5
       padding-top: 15px
@@ -121,26 +134,20 @@ espButton()
   height: 25px
   font-size: 15px
 
-modalFooterPadding=10px 30px
-#modalFooter
-  position: relative
-  bottom: 0
-  padding: modalFooterPadding
-  width: 100%
-  height: 100px
-  div
-    width: 400px
-    margin: 0 auto
+.modalButton
+  background: transparent
+  padding: 0
+  margin: 0 7px
+  border: none
+.ladda-button
+  outline: none
+  &:hover
+    background: transparent
 
-  .modalButton
-    espButton()
-  .ladda-button
-      padding: modalFooterPadding
-      outline: none
-  .error
-    background-color: red
-  .modalButton + .modalButton
-    float: right
+.error
+  background-color: red
+.modalButton + .modalButton
+  float: right
 
 .element
   cursor: pointer
@@ -170,3 +177,9 @@ modalFooterPadding=10px 30px
     .marker-vertices circle
       fill: #B5B5B5
       r: 6px
+
+.code-completion
+  color: #686868
+  position: relative
+  top: -25px
+  float: right

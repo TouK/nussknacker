@@ -67,16 +67,25 @@ class NodeDetailsModal extends React.Component {
     this.setState( { editedNode: newNodeState})
   }
 
-  renderEditButtons(buttonClasses) {
+  renderModalButtons() {
+    const EditIcon = require('../../assets/img/edit-icon.svg');
+    const SaveIcon = require('../../assets/img/save-icon.svg');
+    const CloseIcon = require('../../assets/img/close-icon.svg');
+
+    var buttonClasses = classNames('modalButton')
     var editButtonClasses = classNames(buttonClasses, 'pull-left', {'hidden': this.state.isEditMode})
     var saveButtonClasses = classNames(buttonClasses, 'pull-left', {'hidden': !this.state.isEditMode})
+
     if (this.props.loggedUser.canWrite) {
       return ([
         <LaddaButton key="1" title="Save node details" className={saveButtonClasses}
-                                   loading={this.state.pendingRequest}
-                                   buttonStyle='zoom-in' onClick={this.performNodeEdit}>Save</LaddaButton>,
+                      loading={this.state.pendingRequest}
+                      buttonStyle='zoom-in' onClick={this.performNodeEdit}><img src={SaveIcon}/></LaddaButton>,
         <button key="2" type="button" title="Edit node details" className={editButtonClasses} onClick={this.editNodeData}>
-          Edit
+          <img src={EditIcon}/>
+        </button>,
+        <button key="3" type="button" title="Close node details" className={buttonClasses} onClick={this.closeModal}>
+          <img src={CloseIcon}/>
         </button>
       ] );
     } else {
@@ -96,13 +105,13 @@ class NodeDetailsModal extends React.Component {
         padding: '0',
         left: '20%',
         right: '20%',
-        top: '15%',
-        bottom: '15%',
-        border: 'none'
+        top: '100px',
+        bottom: '100px',
+        border: 'none',
+        overflow: 'none'
       }
     };
 
-    var buttonClasses = classNames('modalButton')
     var headerStyles = {
       backgroundColor: this.nodeAttributes().styles.fill,
       color: this.nodeAttributes().styles.color
@@ -113,19 +122,15 @@ class NodeDetailsModal extends React.Component {
         <Modal isOpen={isOpen} style={modalStyles} onRequestClose={this.closeModal}>
           <div id="modalHeader" style={headerStyles}>
             <span>{NodeUtils.nodeType(this.props.nodeToDisplay)}</span>
+            <div className="header-buttons">
+              {this.renderModalButtons()}
+            </div>
           </div>
           <div id="modalContent">
             <NodeDetailsContent isEditMode={this.state.isEditMode} node={this.state.editedNode}
                                 nodeErrors={this.props.nodeErrors} onChange={this.updateNodeState}/>
           </div>
-          <div id="modalFooter">
-            <div>
-              {this.renderEditButtons(buttonClasses)}
-              <button type="button" title="Close node details" className={buttonClasses} onClick={this.closeModal}>
-                Close
-              </button>
-            </div>
-          </div>
+          <div id="modalFooter"></div>
         </Modal>
       </div>
     );
