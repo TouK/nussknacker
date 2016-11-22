@@ -40,7 +40,10 @@ class ProcessValidatorSpec extends FlatSpec with Matchers {
       .filter("filter3", "#input.intAsAny + 1 > 1")
       .processor("sampleProcessor1", "sampleEnricher")
       .enricher("sampleProcessor2", "out", "sampleEnricher")
-      .buildVariable("bv1", "vars", "v1" -> "42")
+      .buildVariable("bv1", "vars", "v1" -> "42",
+        "mapVariable" -> "{ Field1: 'Field1Value', Field2: 'Field2Value', Field3: #input.plainValue }",
+        "funkySpelVariable" -> "(#input.list.?[plainValue == 5]).![plainValue].contains(5)"
+      )
       .sink("id2", "#processHelper.add(#processHelper, 2)", "sink")
     ProcessValidator.default(baseDefinition).validate(correctProcess) should matchPattern {
       case Valid(_) =>
@@ -270,7 +273,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers {
     }
   }
 
-  case class SimpleRecord(value1: AnotherSimpleRecord, plainValue: BigDecimal, plainValueOpt: Option[BigDecimal], intAsAny: Any) {
+  case class SimpleRecord(value1: AnotherSimpleRecord, plainValue: BigDecimal, plainValueOpt: Option[BigDecimal], intAsAny: Any, list: java.util.List[SimpleRecord]) {
     private val privateValue = "priv"
 
     def invoke1: Future[AnotherSimpleRecord] = ???
@@ -282,8 +285,9 @@ class ProcessValidatorSpec extends FlatSpec with Matchers {
 
   case class AnotherSimpleRecord(value2: Long)
 
+  import scala.collection.JavaConversions._
   class SampleEnricher extends Service {
-    def invoke()(implicit ec: ExecutionContext) = Future(SimpleRecord(AnotherSimpleRecord(1), 2, Option(2), 1))
+    def invoke()(implicit ec: ExecutionContext) = Future(SimpleRecord(AnotherSimpleRecord(1), 2, Option(2), 1, List.empty[SimpleRecord]))
   }
 
   object ProcessHelper {
