@@ -5,9 +5,11 @@ import { Link } from 'react-router'
 import { Table, Thead, Th, Tr, Td } from 'reactable'
 import { browserHistory } from 'react-router'
 import _ from "lodash";
-
 import classNames from 'classnames'
+import { connect } from 'react-redux';
+
 import HttpService from '../http/HttpService'
+import ActionsUtils from '../actions/ActionsUtils';
 
 import '../stylesheets/processes.styl'
 import DateUtils from '../utils/DateUtils'
@@ -19,7 +21,7 @@ import starEmpty from '../assets/img/star-empty.svg'
 
 import LoaderSpinner from '../components/Spinner.js';
 
-export const Processes = React.createClass({
+const Processes = React.createClass({
 
   getInitialState() {
     return {
@@ -56,6 +58,10 @@ export const Processes = React.createClass({
 
   handleChange(event) {
     this.setState({filterVal: event.target.value});
+  },
+
+  deploy(process) {
+    HttpService.deploy(process.id)
   },
 
   getFilterValue() {
@@ -125,6 +131,9 @@ export const Processes = React.createClass({
             <Th column="favourite" className="favourite-column">
               <span>Favourite</span>
             </Th>
+            {this.props.loggedUser.canDeploy ? (
+              <Th column="deploy" className="deploy-column">Deploy</Th>
+            ) : []}
           </Thead>
 
           {this.state.processes.map((process, index) => {
@@ -155,6 +164,12 @@ export const Processes = React.createClass({
                   <div className={this.isFavourite(process.id)}
                   onClick={this.setFavourite.bind(this, process.id)}></div>
                 </Td>
+                {this.props.loggedUser.canDeploy ? (
+                  <Td column="deploy" className="deploy-column">
+                    {/*TODO wylaczyc przycisk przy czekaniu na odpowiedz, zarowno tutaj jak i na stronie procesu*/}
+                    <span className="glyphicon glyphicon-play" onClick={this.deploy.bind(this, process)}/>
+                  </Td>
+                ) : []}
               </Tr>
             )
           })}
@@ -168,3 +183,12 @@ export const Processes = React.createClass({
 Processes.title = 'Processes'
 Processes.path = '/processes'
 Processes.header = 'Processes'
+
+
+function mapState(state) {
+  return {
+    loggedUser: state.settings.loggedUser
+  };
+}
+
+export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(Processes);

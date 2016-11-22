@@ -53,8 +53,9 @@ table#process-table
   .date-column
     text-align: center
 // TODO - dodać webpackowego importa do ładowania obrazków w stylusie
+  iconColumnWidth=50px
   .favourite-column
-    width: 200px
+    width: iconColumnWidth
     text-align: center
     .favourite-icon
       background-image: url('../assets/img/star-empty.svg')
@@ -69,7 +70,7 @@ table#process-table
 
   .edit-column
     text-align: center
-    width: 50px
+    width: iconColumnWidth
     img
       height: 20px
       cursor: pointer
@@ -79,12 +80,21 @@ table#process-table
 
   .metrics-column
     text-align: center
-    width: 50px
+    width: iconColumnWidth
     span
       font-size: 20px
       cursor: pointer
+
+  .deploy-column
+    text-align: center
+    width: iconColumnWidth
+    span
+      font-size: 20px
+      cursor: pointer
+
   .status-column
     text-align: center
+    width: iconColumnWidth
 
   .tagBlock
     tagsBlockMixin()
