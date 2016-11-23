@@ -8,6 +8,10 @@ val scalaV = "2.11.8"
 val toukNexusGroups = "http://nexus.touk.pl/nexus/content/groups/"
 val toukNexusRepositories = "http://nexus.touk.pl/nexus/content/repositories/"
 
+val defaultVersion = "0.1-SNAPSHOT"
+
+version in ThisBuild := sys.props.getOrElse("espEngineToukVersion", defaultVersion)
+
 credentials in ThisBuild += Credentials("Sonatype Nexus Repository Manager", "nexus.touk.pl", "deployment", "deployment123")
 
 publishTo in ThisBuild := {
