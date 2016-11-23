@@ -37,7 +37,8 @@ assemblyMergeStrategy in assembly := {
     oldStrategy(x)
 }
 
-val espEngineV = "0.1-SNAPSHOT"
+val espEngineDefaultV = "0.1-SNAPSHOT"
+val espEngineV = sys.props.getOrElse("espEngineToukVersion", espEngineDefaultV)
 //mamy te wersje akki bo flink jej wymaga
 val akkaV = "2.3.7"
 val akkaHttpV = "2.0.3"

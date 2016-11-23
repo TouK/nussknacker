@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+espEngineToukVersion=$1
+
 runAndExitOnFail() {
     command=$1
     $command
@@ -24,4 +26,10 @@ runAndExitOnFail "npm run build"
 cd -
 
 cd server
-./sbtwrapper clean test
+
+if [ -z "$espEngineToukVersion" ]
+    then
+        ./sbtwrapper clean test
+    else
+        ./sbtwrapper clean test -DespEngineToukVersion=$espEngineToukVersion
+fi
