@@ -38,7 +38,7 @@ class Graph extends React.Component {
 
     componentDidMount() {
         this.processGraphPaper = this.createPaper()
-        this.drawGraph(this.props.processToDisplay)
+        this.drawGraph(this.props.processToDisplay, this.props.layout)
         this.panAndZoom = this.enablePanZoom();
         this.changeNodeDetailsOnClick(this.processGraphPaper);
         this.labelToFrontOnHover(this.processGraphPaper);

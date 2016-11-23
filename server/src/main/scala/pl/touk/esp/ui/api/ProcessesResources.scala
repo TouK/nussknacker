@@ -3,16 +3,18 @@ package pl.touk.esp.ui.api
 import java.time.LocalDateTime
 
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
-import akka.http.scaladsl.model.{HttpMethods, HttpResponse, StatusCodes}
+import akka.http.scaladsl.model.headers.ContentDispositionTypes
+import akka.http.scaladsl.model.{HttpMethods, HttpResponse, StatusCodes, headers}
 import akka.http.scaladsl.server.{Directive, Directives, Route}
+import akka.stream.Materializer
+import akka.stream.scaladsl.{Sink, Source}
+import akka.util.ByteString
 import argonaut._
+import cats.data.Validated.{Invalid, Valid}
 import cats.data.Xor
-import pl.touk.esp.engine.api.deployment.{GraphProcess, ProcessDeploymentData, ProcessManager}
-import pl.touk.esp.engine.compile.ProcessCompilationError
-import pl.touk.esp.engine.graph.node
-import pl.touk.esp.engine.graph.node.NodeData
-import pl.touk.esp.engine.marshall.ProcessMarshaller
+import pl.touk.esp.engine.api.deployment.{GraphProcess, ProcessManager}
 import pl.touk.esp.ui.api.ProcessValidation.ValidationResult
+import pl.touk.esp.ui.api.ProcessesResources.{UnmarshallError, WrongProcessId}
 import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessStatus}
 import pl.touk.esp.ui.process.marshall.{DisplayableProcessCodec, ProcessConverter, ProcessTypeCodec, UiProcessMarshaller}
 import pl.touk.esp.ui.process.repository.ProcessRepository
@@ -27,7 +29,7 @@ class ProcessesResources(repository: ProcessRepository,
                          processManager: ProcessManager,
                          processConverter: ProcessConverter,
                          processValidation: ProcessValidation)
-                        (implicit ec: ExecutionContext)
+                        (implicit ec: ExecutionContext, mat: Materializer)
   extends Directives with Argonaut62Support {
 
   import argonaut.ArgonautShapeless._
@@ -54,7 +56,7 @@ class ProcessesResources(repository: ProcessRepository,
 
   val uiProcessMarshaller = UiProcessMarshaller()
 
-  def route(implicit user: LoggedUser) : Route = {
+  def route(implicit user: LoggedUser): Route = {
     def authorizeMethod = extractMethod.flatMap[Unit] {
       case HttpMethods.POST | HttpMethods.PUT | HttpMethods.DELETE => authorize(user.hasPermission(Permission.Write))
       case HttpMethods.GET => authorize(user.hasPermission(Permission.Read))
@@ -87,7 +89,7 @@ class ProcessesResources(repository: ProcessRepository,
             }
           }
         }
-      } ~ path("processes" / Segment/ LongNumber) { (processId, versionId) =>
+      } ~ path("processes" / Segment / LongNumber) { (processId, versionId) =>
         get {
           complete {
             repository.fetchProcessDetailsForId(processId, versionId).map[ToResponseMarshallable] {
@@ -110,7 +112,7 @@ class ProcessesResources(repository: ProcessRepository,
             }
           }
         }
-      } ~ path("processes" / Segment / "status" ) { processId =>
+      } ~ path("processes" / Segment / "status") { processId =>
         get {
           complete {
             repository.fetchLatestProcessDetailsForProcessId(processId).flatMap[ToResponseMarshallable] {
@@ -124,9 +126,49 @@ class ProcessesResources(repository: ProcessRepository,
             }
           }
         }
+      } ~ path("processes" / "export" / Segment) { processIdWithJson =>
+        get {
+          complete {
+            val processId = processIdWithJson.replace(".json", "")
+            repository.fetchLatestProcessDetailsForProcessId(processId).map {
+              case Some(process) =>
+                process.json.map { json =>
+                  uiProcessMarshaller.toJson(processConverter.fromDisplayable(json), PrettyParams.spaces2)
+                }.map { canJson =>
+                  HttpResponse(status = StatusCodes.OK, entity = canJson,
+                    headers = List(headers.`Content-Disposition`(ContentDispositionTypes.attachment, Map("filename" -> s"$processId.json")))
+                  )
+                }.getOrElse(HttpResponse(status = StatusCodes.NotFound, entity = "Process not found"))
+              case None =>
+                HttpResponse(status = StatusCodes.NotFound, entity = "Process not found")
+            }
+          }
+        }
+      } ~ path("processes" / "import" / Segment) { processId =>
+        post {
+          fileUpload("process") { case (metadata, byteSource) =>
+            complete {
+              readFile(byteSource).map[ToResponseMarshallable] { json =>
+                (uiProcessMarshaller.fromJson(json) match {
+                  case Valid(process) if process.metaData.id != processId => Invalid(WrongProcessId(processId, process.metaData.id))
+                  case Valid(process) => Valid(process)
+                  case Invalid(unmarshallError) => Invalid(UnmarshallError(unmarshallError.msg))
+                }) match {
+                  case Valid(process) => processConverter.toDisplayable(process)
+                  case Invalid(error) => espErrorToHttp(error)
+                }
+              }
+            }
+          }
+        }
       }
     }
   }
+
+  def readFile(byteSource: Source[ByteString, Any]): Future[String] =
+    byteSource.runWith(Sink.seq)
+      .map(_.flatten.toArray).map(new String(_))
+
 
   private def fetchProcessStatesForProcesses(processes: List[ProcessDetails]): Future[Map[String, Option[ProcessStatus]]] = {
     processes.map(process => findJobStatus(process.name).map(status => process.name -> status)).sequence.map(_.toMap)
@@ -160,6 +202,8 @@ class ProcessesResources(repository: ProcessRepository,
 object ProcessesResources {
 
   case class UnmarshallError(message: String) extends Exception(message) with FatalError
+
+  case class WrongProcessId(processId: String, givenId: String) extends Exception(s"Process has id $givenId instead of $processId") with BadRequestError
 
   case class ProcessNotInitializedError(id: String) extends Exception(s"Process $id is not initialized") with NotFoundError
 

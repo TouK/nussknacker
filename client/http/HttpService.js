@@ -106,6 +106,24 @@ export default {
     }).then(() => this.addInfo(`Process ${processId} was saved`))
       .catch((error) => this.addError(`Failed to save`, error));
 
+  },
+
+  importProcess(processId, file, callback, errorCallback) {
+    var formData = new FormData();
+    formData.append("process", file)
+
+    return  ajaxCallWithoutContentType({
+      url: appConfig.API_URL + '/processes/import/' + processId,
+      type: 'POST',
+      processData: false,
+      contentType: false,
+      data: formData
+    }).then(callback, (error) => {
+      this.addError(`Failed to import`, error);
+      if (errorCallback) {
+        errorCallback(error)
+      }
+    });
   }
 
 }
@@ -117,8 +135,10 @@ var ajaxCall = (opts) => {
     },
     ...opts
   }
-  return promiseWrap($.ajax(requestOpts))
+  return ajaxCallWithoutContentType(requestOpts)
 }
+
+var ajaxCallWithoutContentType = (opts) => promiseWrap($.ajax(opts))
 
 var notificationSystem = null;
 

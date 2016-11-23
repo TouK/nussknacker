@@ -78,10 +78,22 @@ function uiStateReducer(state = emptyUiState, action) {
 
 function graphReducer(state, action) {
   switch (action.type) {
-    case "FETCH_PROCESS_TO_DISPLAY": {
+    case "PROCESS_LOADING": {
       return {
         ...state,
         graphLoading: true
+      }
+    }
+    case "UPDATE_IMPORTED_PROCESS": {
+      const oldNodeIds = _.sortBy(state.processToDisplay.nodes.map((n) => n.id))
+      const newNodeids = _.sortBy(action.processJson.nodes.map((n) => n.id))
+      const newLayout = _.isEqual(oldNodeIds, newNodeids) ? state.layout : null
+
+      return {
+        ...state,
+        graphLoading: false,
+        processToDisplay: action.processJson,
+        layout: newLayout
       }
     }
     case "DISPLAY_PROCESS": {
@@ -91,6 +103,12 @@ function graphReducer(state, action) {
         fetchedProcessDetails: action.fetchedProcessDetails,
         graphLoading: false,
         nodeToDisplay: action.fetchedProcessDetails.json.properties
+      }
+    }
+    case "LOADING_FAILED": {
+      return {
+        ...state,
+        graphLoading: false
       }
     }
     case "CLEAR_PROCESS": {
@@ -255,7 +273,7 @@ function espUndoable (reducer, config) {
 }
 
 const espUndoableConfig = {
-  blacklist: ["CLEAR_PROCESS", "FETCH_PROCESS_TO_DISPLAY", "URL_CHANGED"]
+  blacklist: ["CLEAR_PROCESS", "PROCESS_LOADING", "URL_CHANGED"]
 }
 const rootReducer = combineReducers({
   graphReducer: espUndoable(graphReducer, espUndoableConfig),
