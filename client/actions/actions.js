@@ -4,7 +4,7 @@ import GraphUtils from "../components/graph/GraphUtils";
 export function fetchProcessToDisplay(processId, versionId) {
   return (dispatch) => {
     dispatch({
-      type: "FETCH_PROCESS_TO_DISPLAY"
+      type: "PROCESS_LOADING"
     })
     return HttpService.fetchProcessDetails(processId, versionId)
       .then((processDetails) => {
@@ -21,6 +21,25 @@ export function displayProcess(processDetails) {
   return {
     type: "DISPLAY_PROCESS",
     fetchedProcessDetails: processDetails
+  };
+}
+
+export function importProcess(processId, file) {
+  return (dispatch) => {
+    dispatch({
+      type: "PROCESS_LOADING"
+    })
+    return HttpService.importProcess(processId, file, process => dispatch(updateImportedProcess(process)),
+      error => dispatch({
+        type: "LOADING_FAILED"
+      }))
+  }
+}
+
+export function updateImportedProcess(processJson) {
+  return {
+    type: "UPDATE_IMPORTED_PROCESS",
+    processJson: processJson
   };
 }
 

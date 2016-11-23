@@ -2,11 +2,13 @@ import React, {PropTypes, Component} from "react";
 import {render} from "react-dom";
 import {connect} from "react-redux";
 import {bindActionCreators} from "redux";
-import { browserHistory } from 'react-router'
+import {browserHistory} from "react-router";
+import Dropzone from "react-dropzone";
 import ActionsUtils from "../../actions/ActionsUtils";
 import HttpService from "../../http/HttpService";
 import DialogMessages from '../../common/DialogMessages';
 import ProcessUtils from '../../common/ProcessUtils';
+import appConfig from "appConfig";
 
 class ProcessActions extends React.Component {
 
@@ -19,7 +21,7 @@ class ProcessActions extends React.Component {
   }
 
   save = () => {
-    return HttpService.saveProcess(this.processId(), this.props.processToDisplay).then ((resp) => {
+    return HttpService.saveProcess(this.processId(), this.props.processToDisplay).then((resp) => {
       this.clearHistory()
       this.fetchProcessDetails()
     })
@@ -56,6 +58,17 @@ class ProcessActions extends React.Component {
     browserHistory.push('/metrics/' + this.processId())
   }
 
+  exportProcess = () => {
+    window.open(appConfig.API_URL + '/processes/export/' + this.processId() + ".json");
+  }
+
+  onDrop = (files) => {
+    files.forEach((file)=>
+      this.props.actions.importProcess(this.processId(), file)
+    );
+  }
+
+
   render() {
     const buttonClass = "espButton"
     return (
@@ -66,6 +79,15 @@ class ProcessActions extends React.Component {
         <button type="button" className={buttonClass} onClick={this.showProperties}>Properties</button>
         <hr/>
         <button type="button" className={buttonClass} onClick={this.showMetrics}>Metrics</button>
+        <hr/>
+        <button type="button" className={buttonClass} onClick={this.exportProcess}>Export</button>
+
+        {this.props.loggedUser.canWrite ? (
+          <Dropzone onDrop={this.onDrop} className="dropZone espButton">
+            <div>Import</div>
+            <div>drop or click</div>
+          </Dropzone>
+        ) : null}
         <hr/>
         {this.props.loggedUser.canDeploy ? (
           <button type="button" className={buttonClass} onClick={this.deploy}>Deploy</button>
