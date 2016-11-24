@@ -5,6 +5,8 @@ import {bindActionCreators} from "redux";
 import { browserHistory } from 'react-router'
 import ActionsUtils from "../../actions/ActionsUtils";
 import HttpService from "../../http/HttpService";
+import DialogMessages from '../../common/DialogMessages';
+import ProcessUtils from '../../common/ProcessUtils';
 
 class ProcessActions extends React.Component {
 
@@ -24,14 +26,18 @@ class ProcessActions extends React.Component {
   }
 
   deploy = () => {
-    HttpService.deploy(this.processId()).then((resp) => {
-      //ten kod wykonuje sie nawet kiedy deploy sie nie uda, bo wyzej robimy catch i w przypadku bledu tutaj dostajemy undefined, pomyslec jak ladnie to rozwiazac
-      this.fetchProcessDetails()
+    this.props.actions.toggleConfirmDialog(true, DialogMessages.deploy(this.processId()), () => {
+      return HttpService.deploy(this.processId()).then((resp) => {
+        //ten kod wykonuje sie nawet kiedy deploy sie nie uda, bo wyzej robimy catch i w przypadku bledu tutaj dostajemy undefined, pomyslec jak ladnie to rozwiazac
+        this.fetchProcessDetails()
+      })
     })
   }
 
   stop = () => {
-    HttpService.stop(this.processId())
+    this.props.actions.toggleConfirmDialog(true, DialogMessages.stop(this.processId()), () => {
+      return HttpService.stop(this.processId())
+    })
   }
 
   clearHistory = () => {
@@ -46,22 +52,16 @@ class ProcessActions extends React.Component {
     return this.props.processToDisplay.id
   }
 
-  dataResolved = () => {
-    return !_.isEmpty(this.props.fetchedProcessDetails)
-  }
-
   showMetrics = () => {
     browserHistory.push('/metrics/' + this.processId())
   }
 
   render() {
-    const nothingToSave = this.dataResolved() ? _.isEqual(this.props.fetchedProcessDetails.json, this.props.processToDisplay) : true
     const buttonClass = "espButton"
     return (
       <div>
         {this.props.loggedUser.canWrite ? (
-          <button type="button" className={buttonClass} disabled={nothingToSave} onClick={this.save}>Save{nothingToSave? "" : "*"}</button>
-        ) : null}
+          <button type="button" className={buttonClass} disabled={this.props.nothingToSave} onClick={this.save}>Save{this.props.nothingToSave? "" : "*"}</button> ) : null}
         <button type="button" className={buttonClass} onClick={this.props.graphLayout}>Layout</button>
         <button type="button" className={buttonClass} onClick={this.showProperties}>Properties</button>
         <hr/>
@@ -81,7 +81,8 @@ function mapState(state) {
   return {
     fetchedProcessDetails: state.graphReducer.fetchedProcessDetails,
     processToDisplay: state.graphReducer.processToDisplay,
-    loggedUser: state.settings.loggedUser
+    loggedUser: state.settings.loggedUser,
+    nothingToSave: ProcessUtils.nothingToSave(state)
   };
 }
 

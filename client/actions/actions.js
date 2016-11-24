@@ -103,6 +103,15 @@ export function toggleLeftPanel(isOpened) {
   }
 }
 
+export function toggleConfirmDialog(isOpen, text, action) {
+  return {
+    type: "TOGGLE_CONFIRM_DIALOG",
+    isOpen: isOpen,
+    text: text,
+    onConfirmCallback: action
+  }
+}
+
 //fixme to nie powinno tu byc, powinno byc wstrzykiwane jakos z espUndoable
 export function undo() {
   return {type: "UNDO"};
