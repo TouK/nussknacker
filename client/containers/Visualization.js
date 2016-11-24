@@ -1,6 +1,6 @@
 import React from 'react';
 import { render } from 'react-dom';
-import { Link } from 'react-router';
+import { Link, withRouter } from 'react-router';
 import Graph from '../components/graph/Graph';
 import UserRightPanel from '../components/right-panel/UserRightPanel';
 import UserLeftPanel from '../components/UserLeftPanel';
@@ -9,10 +9,12 @@ import _ from 'lodash';
 import { DropdownButton, MenuItem } from 'react-bootstrap';
 import { connect } from 'react-redux';
 import ActionsUtils from '../actions/ActionsUtils';
+import ProcessUtils from '../common/ProcessUtils';
+import DialogMessages from '../common/DialogMessages';
 import LoaderSpinner from '../components/Spinner.js';
 import '../stylesheets/visualization.styl';
 
-const Visualization = React.createClass({
+const Visualization = withRouter(React.createClass({
 
   getInitialState: function() {
     return { timeoutId: null, intervalId: null, status: {}};
@@ -30,6 +32,11 @@ const Visualization = React.createClass({
       }
     }
     this.props.actions.toggleLeftPanel(true)
+    this.props.router.setRouteLeaveHook(this.props.route, (route) => {
+      if (!this.props.nothingToSave) { //najlepiej jakby tutaj pokazywal sie modal, a nie alert, tylko jak w react-router to zrobic...
+        return DialogMessages.unsavedProcessChanges()
+      }
+    })
   },
 
   componentWillUnmount() {
@@ -91,7 +98,7 @@ const Visualization = React.createClass({
     )
   },
 
-});
+}));
 
 Visualization.title = 'Visualization'
 Visualization.path = '/visualization/:processId'
@@ -103,7 +110,8 @@ function mapState(state) {
     fetchedProcessDetails: state.graphReducer.fetchedProcessDetails,
     graphLoading: state.graphReducer.graphLoading,
     leftPanelIsOpened: state.ui.leftPanelIsOpened,
-    undoRedoAvailable: !state.ui.showNodeDetailsModal
+    undoRedoAvailable: !state.ui.showNodeDetailsModal,
+    nothingToSave: ProcessUtils.nothingToSave(state)
   };
 }
 export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(Visualization);

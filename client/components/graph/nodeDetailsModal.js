@@ -11,7 +11,7 @@ import ActionsUtils from '../../actions/ActionsUtils';
 import { ListGroupItem } from 'react-bootstrap';
 import NodeUtils from './NodeUtils';
 import NodeDetailsContent from './NodeDetailsContent';
-
+import EspModalStyles from '../../common/EspModalStyles'
 
 class NodeDetailsModal extends React.Component {
 
@@ -94,43 +94,22 @@ class NodeDetailsModal extends React.Component {
   }
 
   render() {
-
     var isOpen = !_.isEmpty(this.props.nodeToDisplay) && this.props.showNodeDetailsModal
-    var modalStyles = {
-      overlay: {
-        backgroundColor: 'rgba(63, 62, 61, 0.3)'
-      },
-      content: {
-        borderRadius: '0',
-        padding: '0',
-        left: '20%',
-        right: '20%',
-        top: '100px',
-        bottom: '100px',
-        border: 'none',
-        overflow: 'none'
-      }
-    };
-
-    var headerStyles = {
-      backgroundColor: this.nodeAttributes().styles.fill,
-      color: this.nodeAttributes().styles.color
-    };
-
+    var headerStyles = EspModalStyles.headerStyles(this.nodeAttributes().styles.fill, this.nodeAttributes().styles.color)
     return (
       <div className="objectModal">
-        <Modal isOpen={isOpen} style={modalStyles} onRequestClose={this.closeModal}>
-          <div id="modalHeader" style={headerStyles}>
+        <Modal isOpen={isOpen} style={EspModalStyles.modalStyles()} onRequestClose={this.closeModal}>
+          <div className="modalHeader" style={headerStyles}>
             <span>{NodeUtils.nodeType(this.props.nodeToDisplay)}</span>
             <div className="header-buttons">
               {this.renderModalButtons()}
             </div>
           </div>
-          <div id="modalContent">
+          <div className="modalContent">
             <NodeDetailsContent isEditMode={this.state.isEditMode} node={this.state.editedNode}
                                 nodeErrors={this.props.nodeErrors} onChange={this.updateNodeState}/>
           </div>
-          <div id="modalFooter"></div>
+          <div className="modalFooter"></div>
         </Modal>
       </div>
     );

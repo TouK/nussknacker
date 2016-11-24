@@ -36,7 +36,8 @@ function settingsReducer(state = {loggedUser: {}, grafanaSettings: {}, processDe
 
 const emptyUiState = {
   leftPanelIsOpened: false,
-  showNodeDetailsModal: false
+  showNodeDetailsModal: false,
+  confirmDialog: {}
 }
 function uiStateReducer(state = emptyUiState, action) {
   switch (action.type) {
@@ -56,6 +57,16 @@ function uiStateReducer(state = emptyUiState, action) {
       return {
         ...state,
         showNodeDetailsModal: true
+      }
+    }
+    case "TOGGLE_CONFIRM_DIALOG": {
+      return {
+        ...state,
+        confirmDialog: {
+          isOpen: action.isOpen,
+          text: action.text,
+          onConfirmCallback: action.onConfirmCallback
+        }
       }
     }
     default:

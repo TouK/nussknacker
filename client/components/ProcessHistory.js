@@ -4,8 +4,10 @@ import { Scrollbars } from 'react-custom-scrollbars';
 import { connect } from 'react-redux';
 import _ from 'lodash'
 import ActionsUtils from '../actions/ActionsUtils';
+import DialogMessages from '../common/DialogMessages';
 import '../stylesheets/processHistory.styl'
-import DateUtils from '../utils/DateUtils'
+import DateUtils from '../common/DateUtils'
+import ProcessUtils from '../common/ProcessUtils'
 
 export class ProcessHistory_ extends Component {
 
@@ -30,9 +32,19 @@ export class ProcessHistory_ extends Component {
     this.setState({currentProcess: {}})
   }
 
-  showProcess(process, index) {
+  doShowProcess(process) {
     this.setState({currentProcess: process})
-    this.props.actions.fetchProcessToDisplay(process.processId, process.processVersionId)
+    return this.props.actions.fetchProcessToDisplay(process.processId, process.processVersionId)
+  }
+
+  showProcess(process, index) {
+    if (this.props.nothingToSave) {
+      this.doShowProcess(process)
+    } else {
+      this.props.actions.toggleConfirmDialog(true, DialogMessages.unsavedProcessChanges(), () => {
+        this.doShowProcess(process)
+      })
+    }
   }
 
   processVersionOnTimeline(process, index) {
@@ -43,6 +55,9 @@ export class ProcessHistory_ extends Component {
     }
   }
 
+  processDisplayName(historyEntry) {
+    return `${historyEntry.processName}:v${historyEntry.processVersionId}`
+  }
 
   render() {
     return (
@@ -52,7 +67,7 @@ export class ProcessHistory_ extends Component {
             return (
               <li key={index} className={this.processVersionOnTimeline(historyEntry, index)}
                   onClick={this.showProcess.bind(this, historyEntry, index)}>
-                {historyEntry.processName}:v{historyEntry.processVersionId} {historyEntry.user}
+                {this.processDisplayName(historyEntry)} {historyEntry.user}
                 <br/>
                 <small><i>{DateUtils.format(historyEntry.createDate)}</i></small>
                 <br/>
@@ -71,6 +86,7 @@ export class ProcessHistory_ extends Component {
 function mapState(state) {
   return {
     processHistory: _.get(state.graphReducer.fetchedProcessDetails, 'history', []),
+    nothingToSave: ProcessUtils.nothingToSave(state)
   };
 }
 

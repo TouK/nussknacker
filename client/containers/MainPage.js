@@ -10,6 +10,7 @@ import Metrics from "./Metrics";
 import DragArea from "../components/DragArea";
 import {connect} from "react-redux";
 import ActionsUtils from "../actions/ActionsUtils";
+import ConfirmDialog from "../components/ConfirmDialog";
 
 const App_ = React.createClass({
 
@@ -50,6 +51,7 @@ const App_ = React.createClass({
             </nav>
             <main>
               <DragArea>
+                <ConfirmDialog/>
                 <div id="working-area" className={this.props.leftPanelIsOpened ? 'is-opened' : null}>
                   {this.props.children}
                 </div>

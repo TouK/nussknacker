@@ -1,25 +1,22 @@
-import React from 'react'
-import { render } from 'react-dom'
-import ReactDOM from 'react-dom'
-import { Link } from 'react-router'
-import { Table, Thead, Th, Tr, Td } from 'reactable'
-import { browserHistory } from 'react-router'
+import React from "react";
+import {render} from "react-dom";
+import {Link, browserHistory} from "react-router";
+import {Table, Thead, Th, Tr, Td} from "reactable";
 import _ from "lodash";
-import classNames from 'classnames'
-import { connect } from 'react-redux';
+import classNames from "classnames";
+import {connect} from "react-redux";
 
-import HttpService from '../http/HttpService'
-import ActionsUtils from '../actions/ActionsUtils';
+import HttpService from "../http/HttpService";
+import ActionsUtils from "../actions/ActionsUtils";
+import DialogMessages from "../common/DialogMessages";
+import DateUtils from "../common/DateUtils";
+import LoaderSpinner from "../components/Spinner.js";
 
-import '../stylesheets/processes.styl'
-import DateUtils from '../utils/DateUtils'
-
+import "../stylesheets/processes.styl";
 import filterIcon from '../assets/img/filter-icon.svg'
 import editIcon from '../assets/img/edit-icon.png'
 import starFull from '../assets/img/star-full.svg'
 import starEmpty from '../assets/img/star-empty.svg'
-
-import LoaderSpinner from '../components/Spinner.js';
 
 const Processes = React.createClass({
 
@@ -61,7 +58,9 @@ const Processes = React.createClass({
   },
 
   deploy(process) {
-    HttpService.deploy(process.id)
+    this.props.actions.toggleConfirmDialog(true, DialogMessages.deploy(process.id), () => {
+      return HttpService.deploy(process.id)
+    })
   },
 
   getFilterValue() {
