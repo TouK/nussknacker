@@ -4,12 +4,13 @@ import {ListGroupItem} from "react-bootstrap";
 import { connect } from 'react-redux';
 import _ from 'lodash';
 import ActionsUtils from '../../actions/ActionsUtils';
+import ProcessUtils from '../../common/ProcessUtils';
 import Autosuggest from "react-autosuggest";
 import $ from "jquery";
 
 //do poprawy
-// - rozwiazac https://github.com/moroshko/react-autowhatever/issues/24 i usunac wlasne rozwiazanie z packages.json
-// - Obslugiwanie innych zmiennych niz "input"
+// - uwzglednic kategorie dla zmiennych globalnych?
+// - moze ESC powinien byc dozwolony? tzn nie zamykalby sie modal tylko chowaloby sie podpowiadanie?
 // - wiecej milosci
 
 var inputExprIdCounter = 0
@@ -35,30 +36,24 @@ class ExpressionSuggest extends React.Component {
   }
 
   getSuggestionValue = suggestion => {
-    const caretPosition = this.getCaretPosition()
-    const beforeCaret = this.state.value.slice(0, caretPosition)
-    const afterCaret = this.state.value.slice(caretPosition)
-    const lastExpressionPart = this.lastExpressionPart(this.currentlyFocusedExpressionLastPart(this.state.value))
-    const firstExpressionPart = _.trimEnd(beforeCaret, lastExpressionPart)
-    const suggestionForLastExpression = _.concat(this.alreadyTypedProperties(lastExpressionPart), suggestion.methodName)
-    const suggestionValue = this.propertiesToDotSeparated(suggestionForLastExpression)
-    const suggested = _.trimStart(suggestionValue, '.');
-    const newBeforeCaret = firstExpressionPart + suggested
-    //fixme to jest niestety bardzo slabe, ale teraz nie wiem jak to lepiej zrobic....
-    //uzywamy setTimeout zeby ten setState wykonal sie PO setState w onChange
-    setTimeout(() => {
-      this.setState({
-        expectedCaretPosition: newBeforeCaret.length
-      })
-    }, 30)
-    return newBeforeCaret + afterCaret
+    return this.state.value
   }
 
   renderSuggestion = suggestion => {
+    const justTyped = this.justTypedProperty(this.focusedLastExpressionPart(this.state.value))
+    const expr = new RegExp(`(.*?)${justTyped}(.*)`, "i")
+    const suggestedStartAndEnd = suggestion.methodName.match(expr)
+    const start = _.nth(suggestedStartAndEnd, 1)
+    const end = _.nth(suggestedStartAndEnd, 2)
+    const matchStartIdx = _.get(start, 'length')
+    const matchEndIdx = suggestion.methodName.length - _.get(end, 'length')
+    const middle = suggestion.methodName.slice(matchStartIdx, matchEndIdx)
     return (
-      <div>
-        {suggestion.methodName}
-      </div>
+      start || middle || end ?
+        <div>
+          {start}<b>{middle}</b>{end}
+        </div> :
+        <div>{suggestion.methodName}</div>
     );
   }
 
@@ -72,24 +67,36 @@ class ExpressionSuggest extends React.Component {
 
   onSuggestionSelected = (event, { suggestion, suggestionValue, sectionIndex, method }) => {
     event.preventDefault() //zeby przy textarea po wybraniu podpowiadanej opcji nie przechodzic do nowej linii
+    const caretPosition = this.getCaretPosition()
+    const beforeCaret = this.state.value.slice(0, caretPosition)
+    const afterCaret = this.state.value.slice(caretPosition)
+    const lastExpressionPart = this.focusedLastExpressionPart(this.state.value)
+    const firstExpressionPart = _.trimEnd(beforeCaret, lastExpressionPart)
+    const suggestionForLastExpression = _.concat(this.alreadyTypedProperties(lastExpressionPart), suggestion.methodName)
+    const suggestionValueText = this.propertiesToDotSeparated(suggestionForLastExpression)
+    const newBeforeCaret = firstExpressionPart + suggestionValueText
+    this.setState({
+      value: newBeforeCaret + afterCaret,
+      expectedCaretPosition: newBeforeCaret.length
+    })
   }
 
   findMostParentClazz = (properties) => {
-    if (_.isEqual(properties[0], "#input")) {
+    const variableName = properties[0]
+    if (_.has(this.props.variables, variableName)) {
+      const variableClazzName = _.get(this.props.variables, variableName)
       return _.reduce(_.tail(properties), (currentParentClazz, prop) => {
         const parentClazz = this.getTypeInfo(currentParentClazz)
         return _.get(parentClazz.methods, `${prop}.refClazzName`) || ""
-      }, this.props.sourceClazzName)
-    } else if (_.isEqual(properties, ["#input"])) {
-      return this.props.sourceClazzName
+      }, variableClazzName)
     } else {
       return null
     }
   }
 
-  onSuggestionsFetchRequested = ({value, event}) => {
-    if (!this.props.inputProps.readOnly && event.type != "focus") {
-      const lastExpressionPart = this.lastExpressionPart(this.currentlyFocusedExpressionLastPart(value))
+  onSuggestionsFetchRequested = ({value}) => {
+    if (!this.props.inputProps.readOnly) {
+      const lastExpressionPart = this.focusedLastExpressionPart(value)
       const properties = this.alreadyTypedProperties(lastExpressionPart)
       const focusedClazz = this.findMostParentClazz(properties)
       const suggestions = this.getSuggestions(lastExpressionPart, focusedClazz)
@@ -97,6 +104,10 @@ class ExpressionSuggest extends React.Component {
         suggestions: suggestions
       })
     }
+  }
+
+  focusedLastExpressionPart = (expression) => {
+    return this.lastExpressionPart(this.currentlyFocusedExpressionPart(expression))
   }
 
   //fixme jak to zamienic na ref?
@@ -112,22 +123,24 @@ class ExpressionSuggest extends React.Component {
     this.getInputExprElement().setSelectionRange(position, position)
   }
 
-  currentlyFocusedExpressionLastPart = (value) => {
+  currentlyFocusedExpressionPart = (value) => {
     return value.slice(0, this.getCaretPosition())
   }
 
   getSuggestions = (value, focusedClazz) => {
-    if (_.includes(value, "#input.") && focusedClazz) {
+    const variableNames = _.keys(this.props.variables)
+    const variableAlreadySelected = _.some(variableNames, (variable) => { return _.includes(value, `${variable}.`) })
+    const variableNotSelected = _.some(variableNames, (variable) => { return _.startsWith(variable, value.toLowerCase()) })
+    if (variableAlreadySelected && focusedClazz) {
       const currentType = this.getTypeInfo(focusedClazz)
       const inputValue = this.justTypedProperty(value).trim()
-      const allowedMethodList = _.map(currentType.methods, (val, key) => {
-        return { ...val, methodName: key}
-      })
+      const allowedMethodList = _.map(currentType.methods, (val, key) => { return { ...val, methodName: key} })
       return inputValue.length === 0 ? allowedMethodList : _.filter(allowedMethodList, (method) => {
+        //fixme zamienic na regexa tutaj zeby bylo spojnie z tym co wyzej?
         return _.includes(method.methodName.toLowerCase(), inputValue.toLowerCase())
       })
-    } else if (_.includes("#input", value.toLowerCase())) {
-      return [{ methodName: "#input"}]
+    } else if (variableNotSelected && !_.isEmpty(value)) {
+      return _.map(variableNames, (variableName) => { return { methodName: variableName}})
     }
     else {
       return []
@@ -144,7 +157,7 @@ class ExpressionSuggest extends React.Component {
   }
 
   lastExpressionPart = (value) => {
-    return "#" + _.last(_.split(value, '#'))
+    return _.isEmpty(value) ? "" : "#" + _.last(_.split(value, '#'))
   }
 
   justTypedProperty = (value) => {
@@ -179,7 +192,7 @@ class ExpressionSuggest extends React.Component {
   render() {
     if (this.props.dataResolved) {
       const inputProps = {
-        ..._.omit(this.props.inputProps, "onValueChange"),
+        ..._.omit(this.props.inputProps, "onValueChange"), //wyrzucamy bo pluje warningami
         value: this.state.value,
         onChange: (event, {newValue}) => {
           this.onChange(newValue)
@@ -189,6 +202,7 @@ class ExpressionSuggest extends React.Component {
       return (
         <div>
           <Autosuggest
+            id={"autosuggest-" + this.props.id}
             suggestions={this.state.suggestions}
             onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
             onSuggestionsClearRequested={this.onSuggestionsClearRequested}
@@ -214,25 +228,14 @@ class ExpressionSuggest extends React.Component {
 
 function mapState(state) {
   const processDefinitionData = !_.isEmpty(state.settings.processDefinitionData) ? state.settings.processDefinitionData
-    : {processDefinition: { sourceFactories: [], typesInformation: []}}
+    : {processDefinition: { typesInformation: []}}
   const dataResolved = !_.isEmpty(state.settings.processDefinitionData)
-  const sourceFactories = processDefinitionData.processDefinition.sourceFactories;
-  const typesInformation = processDefinitionData.processDefinition.typesInformation;
-  const sourceType = state.graphReducer.processToDisplay.nodes[0].ref.typ
-  const source = _.get(sourceFactories, sourceType);
-  const sourceClazzName = _.isEmpty(source) ? null : source.returnType.refClazzName
-  const sourceMethods = () => {
-    const sourceDef = _.find(typesInformation, { clazzName: { refClazzName: sourceClazzName }})
-    return sourceDef.methods
-  }
-
+  const typesInformation = processDefinitionData.processDefinition.typesInformation
+  const variables = ProcessUtils.findAvailableVariables(state.graphReducer.nodeToDisplay.id, state.graphReducer.processToDisplay, processDefinitionData.processDefinition)
   return {
-    sourceFactories: sourceFactories,
     typesInformation: typesInformation,
     dataResolved: dataResolved,
-    sourceType: sourceType,
-    sourceMethods: dataResolved ? sourceMethods() : [],
-    sourceClazzName: sourceClazzName
+    variables: variables
   };
 }
 export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(ExpressionSuggest);
