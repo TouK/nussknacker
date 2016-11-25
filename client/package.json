@@ -29,7 +29,6 @@
     "redux-thunk": "2.1.0",
     "react-notification-system": "0.2.10",
     "react-autosuggest": "7.0.1",
-    "react-autowhatever": "git://github.com/fijolekProjects/react-autowhatever.git#fix-24-dist",
     "react-dropzone": "3.7.3",
     "reactable": "0.14.1",
     "react-resizable-box": "1.8.0",

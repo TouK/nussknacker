@@ -22,8 +22,6 @@ $.ajaxSetup({
 });
 
 Settings.updateSettings(store)
-//TODO: wywalic??
-setInterval(() => Settings.updateSettings(store), 60000);
 
 export default class Root extends React.Component {
 
