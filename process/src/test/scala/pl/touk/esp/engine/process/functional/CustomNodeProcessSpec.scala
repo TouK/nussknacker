@@ -6,6 +6,7 @@ import java.util.Date
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.esp.engine.build.{EspProcessBuilder, GraphBuilder}
+import pl.touk.esp.engine.graph.node.SubsequentNode
 import pl.touk.esp.engine.process.ProcessTestHelpers.{MockService, SimpleRecord, SimpleRecordWithPreviousValue, processInvoker}
 import pl.touk.esp.engine.spel
 
@@ -42,14 +43,19 @@ class CustomNodeProcessSpec extends FlatSpec with Matchers {
   }
 
   it should "be able to split after custom node" in {
+    val additionalFilterBranch = GraphBuilder.filter("falseFilter", "#outRec.record.value1 > #outRec.previous + 1")
+      .customNode("custom2", "outRec", "stateCustom", "keyBy" -> "#input.id", "stringVal" -> "'terefere'")
+      .sink("outFalse", "monitor")
+
     val process = EspProcessBuilder.id("proc1")
       .exceptionHandler()
       .source("id", "input")
       .customNode("custom", "outRec", "stateCustom", "keyBy" -> "#input.id", "stringVal" -> "'terefere'")
       .split("split",
         GraphBuilder.processorEnd("proc3", "logService", "all" -> "'allRec-' + #outRec.record.value1"),
-        GraphBuilder.filter("delta", "#outRec.record.value1 > #outRec.previous + 5")
-                .processor("proc2", "logService", "all" -> "#outRec.record.value1 + '-' + #outRec.added").sink("out", "monitor")
+        //additionalFilterBranch jest bo przy kompilacji wychodzily rozne ciekawe rzeczy...
+        GraphBuilder.filter("delta", "#outRec.record.value1 > #outRec.previous + 5", additionalFilterBranch)
+          .processor("proc2", "logService", "all" -> "#outRec.record.value1 + '-' + #outRec.added").sink("out", "monitor")
       )
 
     val data = List(
@@ -97,7 +103,7 @@ class CustomNodeProcessSpec extends FlatSpec with Matchers {
     val process = EspProcessBuilder.id("proc1")
       .exceptionHandler()
       .source("id", "input")
-       .buildSimpleVariable("testVar", "beforeNode", "'testBeforeNode'")
+      .buildSimpleVariable("testVar", "beforeNode", "'testBeforeNode'")
       .customNode("custom", "outRec", "stateCustom", "keyBy" -> "#input.id", "stringVal" -> "'terefere'")
       .processorEnd("proc2", "logService", "all" -> "#beforeNode")
 
