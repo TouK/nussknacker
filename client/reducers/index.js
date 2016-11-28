@@ -2,13 +2,6 @@ import { combineReducers } from 'redux';
 import _ from 'lodash'
 import GraphUtils from '../components/graph/GraphUtils'
 
-const emptyEspState = {
-  graphLoading: false,
-  processToDisplay: {},
-  fetchedProcessDetails: {},
-  nodeToDisplay: {}
-}
-
 function settingsReducer(state = {loggedUser: {}, grafanaSettings: {}, processDefinitionData: {}}, action) {
   switch (action.type) {
     case "LOGGED_USER": {
@@ -76,6 +69,14 @@ function uiStateReducer(state = emptyUiState, action) {
   }
 }
 
+const emptyGraphState = {
+  graphLoading: false,
+  processToDisplay: {},
+  fetchedProcessDetails: {},
+  nodeToDisplay: {},
+  layout: {}
+}
+
 function graphReducer(state, action) {
   switch (action.type) {
     case "PROCESS_LOADING": {
@@ -102,7 +103,8 @@ function graphReducer(state, action) {
         processToDisplay: action.fetchedProcessDetails.json,
         fetchedProcessDetails: action.fetchedProcessDetails,
         graphLoading: false,
-        nodeToDisplay: action.fetchedProcessDetails.json.properties
+        nodeToDisplay: action.fetchedProcessDetails.json.properties,
+        layout: {} //potrzebne np przy pokazywaniu historycznej wersji
       }
     }
     case "LOADING_FAILED": {
@@ -158,7 +160,7 @@ function graphReducer(state, action) {
     case "URL_CHANGED": {
       return {
         ...state,
-        ...emptyEspState,
+        ...emptyGraphState,
       }
     }
     case "NODES_CONNECTED": {

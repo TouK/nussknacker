@@ -125,7 +125,7 @@ class Graph extends React.Component {
       const cells = nodes.concat(edges);
       this.graph.resetCells(cells);
       this.highlightNodes(data, nodeToDisplay);
-      if (!layout) {
+      if (_.isEmpty(layout)) {
         this.directedLayout()
       } else {
         _.forEach(layout, el => this.graph.getCell(el.id).set('position', el.position));
