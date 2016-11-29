@@ -1,7 +1,11 @@
 package pl.touk.esp.ui.db.migration
 
+import java.sql.Timestamp
+import java.time.LocalDateTime
+
 import argonaut.PrettyParams
 import pl.touk.esp.engine.marshall.ProcessMarshaller
+import pl.touk.esp.ui.db.entity.CommentEntity.CommentEntityData
 import pl.touk.esp.ui.db.entity.DeployedProcessVersionEntity.DeployedProcessVersionEntityData
 import pl.touk.esp.ui.db.entity.EnvironmentsEntity.EnvironmentsEntityData
 import pl.touk.esp.ui.db.entity.ProcessEntity.{ProcessEntityData, ProcessType}
@@ -62,6 +66,16 @@ object SampleData {
         name = "fraud",
         processId = process.id
       )
+    )
+  }
+
+  def comments = {
+    val someDate = LocalDateTime.of(2016, 10, 12, 14, 15, 42)
+    val process = SampleProcess.process
+    Seq(
+      CommentEntityData(process.id, 1L, "Test message", "TouK", Timestamp.valueOf(someDate.minusHours(1))),
+      CommentEntityData(process.id, 1L, "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec placerat, nunc sed finibus hendrerit, lorem nulla tristique sapien, at porta sem quam et orci. Donec venenatis sagittis ligula, a ultrices justo porta at. Nam accumsan ex quis mattis pulvinar. Maecenas in egestas nulla, ac interdum diam. Nam purus risus, vehicula id dolor a, volutpat ullamcorper nisi. Nulla venenatis malesuada ante eget porta. Mauris non luctus metus, porta laoreet orci. Quisque luctus euismod dolor, at mollis tortor elementum consectetur.", "TouK", Timestamp.valueOf(someDate)),
+      CommentEntityData(process.id, 1L, "Another test message", "TouK", Timestamp.valueOf(someDate.minusHours(2)))
     )
   }
 

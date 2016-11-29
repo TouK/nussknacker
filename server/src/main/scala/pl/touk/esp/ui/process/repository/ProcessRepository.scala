@@ -15,7 +15,7 @@ import pl.touk.esp.ui.db.EspTables._
 import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessType.ProcessType
 import pl.touk.esp.ui.process.displayedgraph.DisplayableProcess
 import pl.touk.esp.ui.process.marshall.ProcessConverter
-import pl.touk.esp.ui.process.repository.ProcessRepository.{InvalidProcessTypeError, ProcessDetails, ProcessHistoryEntry, ProcessNotFoundError}
+import pl.touk.esp.ui.process.repository.ProcessRepository._
 import pl.touk.esp.ui.security.LoggedUser
 import pl.touk.esp.ui.util.DateUtils
 import pl.touk.esp.ui.{BadRequestError, EspError, NotFoundError}
@@ -125,17 +125,22 @@ class ProcessRepository(db: JdbcBackend.Database,
       processVersions <- OptionT.liftF[DB, Seq[ProcessVersionEntityData]](latestProcessVersions(id).result)
       latestDeployedVersionsPerEnv <- OptionT.liftF[DB, Map[String, DeployedProcessVersionEntityData]](latestDeployedProcessVersionsPerEnvironment(id).result.map(_.toMap))
       tags <- OptionT.liftF[DB, Seq[TagsEntityData]](tagsTable.filter(_.processId === process.name).result)
-    } yield createFullDetails(process, processVersion, tags, processVersions.map(pvs => ProcessHistoryEntry(process, pvs, latestDeployedVersionsPerEnv)))
+    } yield createFullDetails(
+      process = process,
+      processVersion = processVersion,
+      tags = tags,
+      history = processVersions.map(pvs => ProcessHistoryEntry(process, pvs, latestDeployedVersionsPerEnv))
+    )
   }
 
   private def createFullDetails(process: ProcessEntityData,
                                 processVersion: ProcessVersionEntityData,
                                 tags: Seq[TagsEntityData],
                                 history: Seq[ProcessHistoryEntry]): ProcessDetails = {
-
     ProcessDetails(
       id = process.id,
       name = process.name,
+      processVersionId = processVersion.id,
       description = process.description,
       processType = process.processType,
       processCategory = process.processCategory,
@@ -175,6 +180,7 @@ object ProcessRepository {
   case class ProcessDetails(
                              id: String,
                              name: String,
+                             processVersionId: Long,
                              description: Option[String],
                              processType: ProcessType,
                              processCategory: String,

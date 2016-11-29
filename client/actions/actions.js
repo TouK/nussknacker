@@ -17,7 +17,26 @@ export function displayCurrentProcessVersion(processId) {
   return fetchProcessToDisplay(processId)
 }
 
-export function displayProcess(processDetails) {
+export function addComment(processId, processVersionId, comment) {
+  return (dispatch) => {
+    return HttpService.addComment(processId, processVersionId, comment).then (() => {
+      return dispatch(displayProcessActivity(processId))
+    })
+  }
+}
+
+export function displayProcessActivity(processId) {
+  return (dispatch) => {
+    return HttpService.fetchProcessActivity(processId).then((activity) => {
+      return dispatch({
+        type: "DISPLAY_PROCESS_ACTIVITY",
+        comments: activity.comments
+      })
+    })
+  }
+}
+
+function displayProcess(processDetails) {
   return {
     type: "DISPLAY_PROCESS",
     fetchedProcessDetails: processDetails

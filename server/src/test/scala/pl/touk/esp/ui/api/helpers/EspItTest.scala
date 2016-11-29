@@ -10,7 +10,7 @@ import db.migration.DefaultJdbcProfile
 import org.scalatest._
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.ui.api.helpers.TestFactory._
-import pl.touk.esp.ui.api.{ManagementResources, ProcessesResources}
+import pl.touk.esp.ui.api.{ManagementResources, ProcessActivityResource, ProcessesResources}
 import pl.touk.esp.ui.db.EspTables
 import pl.touk.esp.ui.db.migration.SampleData
 import pl.touk.esp.ui.process.displayedgraph.DisplayableProcess
@@ -21,7 +21,7 @@ import pl.touk.esp.ui.security.LoggedUser
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
-trait EspItTest extends LazyLogging { self: ScalatestRouteTest with Suite with BeforeAndAfterEach with BeforeAndAfterAll with Matchers =>
+trait EspItTest extends LazyLogging { self: ScalatestRouteTest with Suite with BeforeAndAfterEach with Matchers =>
 
   import argonaut.ArgonautShapeless._
   implicit val decoder = DisplayableProcessCodec.codec
@@ -35,10 +35,12 @@ trait EspItTest extends LazyLogging { self: ScalatestRouteTest with Suite with B
 
   val processRepository = newProcessRepository(db)
   val deploymentProcessRepository = newDeploymentProcessRepository(db)
+  val commentsRepository = newCommentsRepository(db)
 
   val processesRoute = (u:LoggedUser) => new ProcessesResources(processRepository, InMemoryMocks.mockProcessManager, processConverter, processValidation).route(u)
   val processesRouteWithAllPermissions = withAllPermissions(processesRoute)
   val deployRoute = (u:LoggedUser) =>  new ManagementResources(processRepository, deploymentProcessRepository, InMemoryMocks.mockProcessManager, env).route(u)
+  val processActivityRoute = (u:LoggedUser) =>  new ProcessActivityResource(commentsRepository).route(u)
 
   def saveProcess(processId: String, process: EspProcess)(testCode: => Assertion): Assertion = {
     Post(s"/processes/$processId/$testCategory") ~> processesRouteWithAllPermissions ~> check {

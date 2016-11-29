@@ -8,6 +8,10 @@ class ProcessUtils {
     return !_.isEmpty(fetchedProcessDetails) ? _.isEqual(fetchedProcessDetails.json, processToDisplay) : true
   }
 
+  processDisplayName = (processId, versionId) => {
+    return `${processId}:v${versionId}`
+  }
+
   findAvailableVariables = (nodeId, process, processDefinition) => {
     const globalVariables = _.mapValues(processDefinition.globalVariables, (v) => {return v.value.refClazzName})
     const variablesDefinedBeforeNode = this._findVariablesDeclaredBeforeNode(nodeId, process, processDefinition);

@@ -3,6 +3,7 @@ import { render } from 'react-dom';
 import { Accordion, Panel } from 'react-bootstrap';
 import ProcessHistory from './ProcessHistory'
 import ToolBox from './ToolBox'
+import ProcessComments from './ProcessComments'
 
 import '../stylesheets/userPanel.styl';
 
@@ -27,8 +28,11 @@ export default class UserLeftPanel extends Component {
           <Panel header="Creator panel" eventKey="2">
             <ToolBox/>
           </Panel>
+          <Panel header="Comments" eventKey="3">
+            <ProcessComments/>
+          </Panel>
         </Accordion>
-      </div>
+    </div>
     );
   }
 

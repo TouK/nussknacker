@@ -15,7 +15,7 @@ import pl.touk.esp.ui.api._
 import pl.touk.esp.ui.db.DatabaseInitializer
 import pl.touk.esp.ui.initialization.{DefinitionLoader, Initialization}
 import pl.touk.esp.ui.process.marshall.ProcessConverter
-import pl.touk.esp.ui.process.repository.{DeployedProcessRepository, ProcessRepository}
+import pl.touk.esp.ui.process.repository.{ProcessActivityRepository, DeployedProcessRepository, ProcessRepository}
 import pl.touk.esp.ui.security.SimpleAuthenticator
 import slick.jdbc.JdbcBackend
 
@@ -45,6 +45,7 @@ object EspUiApp extends App with Directives with LazyLogging {
 
   val processRepository = new ProcessRepository(db, DefaultJdbcProfile.profile, processConverter)
   val deploymentProcessRepository = new DeployedProcessRepository(db, DefaultJdbcProfile.profile)
+  val commentsRepository = new ProcessActivityRepository(db, DefaultJdbcProfile.profile)
 
   val manager = FlinkProcessManager(config)
 
@@ -66,6 +67,7 @@ object EspUiApp extends App with Directives with LazyLogging {
             pathPrefix("api") {
 
               new ProcessesResources(processRepository, manager, processConverter, processValidation).route(user) ~
+                new ProcessActivityResource(commentsRepository).route(user) ~
                 new ManagementResources(processRepository, deploymentProcessRepository, manager, environment).route(user) ~
                 new ValidationResources(processValidation, processConverter).route(user) ~
                 new DefinitionResources(processDefinition).route(user) ~
