@@ -88,6 +88,19 @@ export default {
       .catch((error) => this.addError(`Failed to stop ${processId}`, error, true));
   },
 
+  fetchProcessActivity(processId) {
+    return promiseWrap($.get(`${appConfig.API_URL}/processes/${processId}/activity`))
+  },
+
+  addComment(processId, versionId, comment) {
+    return ajaxCall({
+      url: `${appConfig.API_URL}/processes/${processId}/${versionId}/activity/comments`,
+      type: 'POST',
+      data: comment
+    }).then(() => this.addInfo(`Comment added`))
+      .catch((error) => this.addError(`Failed to add comment`, error));
+  },
+
   validateProcess: (process) => {
     return ajaxCall({
       url: appConfig.API_URL + '/processValidation',

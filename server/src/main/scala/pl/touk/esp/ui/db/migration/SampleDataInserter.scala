@@ -10,9 +10,9 @@ import scala.util.Try
 
 object SampleDataInserter {
 
+  import DefaultJdbcProfile.profile.api._
+  implicit val ec = scala.concurrent.ExecutionContext.global
   def insert(db: JdbcBackend.DatabaseDef) = {
-    import DefaultJdbcProfile.profile.api._
-    implicit val ec = scala.concurrent.ExecutionContext.global
     //Tu powinien byc upsert, ale slick niestety nie do konca umie https://github.com/slick/slick/issues/966
     //przez co inserty sie wywalaja jak ktos ma juz dzialajaca baze.
     //Robimy tak brzydko, bo nie chcemy pisac generycznego upserta do testowych insertow
@@ -21,6 +21,12 @@ object SampleDataInserter {
     TryWithAwait(db.run(EspTables.processVersionsTable += SampleData.processVersion))
     TryWithAwait(db.run(EspTables.deployedProcessesTable += SampleData.deployedProcess))
     TryWithAwait(db.run(EspTables.tagsTable ++= SampleData.tags))
+    upsertComments(db)
+  }
+
+  def upsertComments(db: JdbcBackend.DatabaseDef): Try[Option[Int]] = {
+    TryWithAwait(db.run(EspTables.commentsTable.filter(_.user === "TouK").delete))
+    TryWithAwait(db.run(EspTables.commentsTable ++= SampleData.comments))
   }
 
   def TryWithAwait[A](a: Future[A]) = {

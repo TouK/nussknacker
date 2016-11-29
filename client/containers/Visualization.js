@@ -55,6 +55,7 @@ const Visualization = withRouter(React.createClass({
 
   fetchProcessDetails() {
     this.props.actions.displayCurrentProcessVersion(this.props.params.processId)
+    this.props.actions.displayProcessActivity(this.props.params.processId)
   },
 
   fetchProcessStatus() {

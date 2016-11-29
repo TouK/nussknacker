@@ -56,7 +56,7 @@ export class ProcessHistory_ extends Component {
   }
 
   processDisplayName(historyEntry) {
-    return `${historyEntry.processName}:v${historyEntry.processVersionId}`
+    return ProcessUtils.processDisplayName(historyEntry.processName, historyEntry.processVersionId)
   }
 
   render() {

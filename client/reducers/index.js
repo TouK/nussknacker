@@ -211,6 +211,22 @@ function graphReducer(state, action) {
   }
 }
 
+const emptyProcessActivity = {
+  comments: []
+}
+
+function processActivityReducer(state = emptyProcessActivity, action) {
+  switch (action.type) {
+    case "DISPLAY_PROCESS_ACTIVITY": {
+      return {
+        ...state,
+        comments: action.comments
+      }
+    }
+    default:
+      return state
+  }
+}
 
 function espUndoable (reducer, config) {
   const emptyHistory = { history: {past: [], future: []}}
@@ -285,7 +301,8 @@ const espUndoableConfig = {
 const rootReducer = combineReducers({
   graphReducer: espUndoable(graphReducer, espUndoableConfig),
   settings: settingsReducer,
-  ui: uiStateReducer
+  ui: uiStateReducer,
+  processActivity: processActivityReducer
 });
 
 export default rootReducer;
