@@ -18,20 +18,34 @@ const App_ = React.createClass({
       this.props.actions.toggleLeftPanel(!this.props.leftPanelIsOpened)
     },
 
+    goToProcess: function() {
+      browserHistory.push('/visualization/' + this.props.params.processId)
+    },
+
+    renderTopLeftButton: function () {
+      if (_.get(this.props, 'routes[1].showHamburger', false)) {
+        return (
+          <div className="top-left-button" onClick={this.toggleUserPanel}>
+            <img src={this.props.leftPanelIsOpened ? hamburgerOpen : hamburgerClosed} />
+          </div>
+        )
+      } else if (this.props.location.pathname.startsWith("/metrics")) {
+        return (
+          <div className="top-left-button" onClick={this.goToProcess}>
+            <span className="glyphicon glyphicon-menu-left"/>
+          </div>
+        )
+      } else {
+        return null
+      }
+    },
+
     render: function() {
       return (
           <div id="app-container">
             <nav id="main-menu" className="navbar navbar-default">
               <div id="git" className="hide">{JSON.stringify(GIT)}</div>
-              {(() => {
-                if (_.get(this.props, 'routes[1].showHamburger', false)) {
-                  return (
-                    <div id="toggle-user-panel" onClick={this.toggleUserPanel}>
-                      <img src={this.props.leftPanelIsOpened ? hamburgerOpen : hamburgerClosed} />
-                    </div>
-                  )
-                }
-              })()}
+              {this.renderTopLeftButton()}
               <div className="container-fluid">
                 <div className="navbar-header">
                   <Link id="brand-name" className="navbar-brand" to={App.path}>
