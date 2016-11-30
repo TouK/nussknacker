@@ -25,10 +25,15 @@ class NodeDetailsModal extends React.Component {
     super(props);
     this.state = {
       isEditMode: false,
-      editedNode: props.nodeToDisplay,
-      currentNodeId: props.nodeToDisplay.id,
       pendingRequest: false
     };
+  }
+
+  componentWillReceiveProps(props) {
+    this.setState({
+      editedNode: props.nodeToDisplay,
+      currentNodeId: props.nodeToDisplay.id
+    })
   }
 
   componentDidUpdate(prevProps, prevState){

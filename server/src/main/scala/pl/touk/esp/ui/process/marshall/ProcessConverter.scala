@@ -4,12 +4,8 @@ import cats.data.Validated.{Invalid, Valid}
 import pl.touk.esp.engine.api.MetaData
 import pl.touk.esp.engine.canonicalgraph.canonicalnode._
 import pl.touk.esp.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
-import pl.touk.esp.engine.canonize.ProcessCanonizer
-import pl.touk.esp.engine.graph.EspProcess
-import pl.touk.esp.engine.graph.node.{Split, Filter, NodeData, Switch}
-import pl.touk.esp.engine.marshall.ProcessMarshaller
+import pl.touk.esp.engine.graph.node.{Filter, NodeData, Split, Switch}
 import pl.touk.esp.ui.api.ProcessValidation
-import pl.touk.esp.ui.process.displayedgraph.displayablenode.ProcessAdditionalFields
 import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties, displayablenode}
 
 class ProcessConverter(processValidation: ProcessValidation) {
@@ -78,36 +74,44 @@ class ProcessConverter(processValidation: ProcessValidation) {
   def fromDisplayable(process: DisplayableProcess): CanonicalProcess = {
     val nodesMap = process.nodes.groupBy(_.id).mapValues(_.head)
     val edgesFromMapStart = process.edges.groupBy(_.from)
-    val nodes = unFlattenNode(nodesMap)(process.nodes.head, edgesFromMapStart)
+    //FIXME: co z luznymi wezlami???
+    val nodes = findRootNodes(process).headOption.map(headNode => unFlattenNode(nodesMap)(headNode, edgesFromMapStart)).getOrElse(List())
     val metaData = MetaData(process.id, process.properties.parallelism, process.properties.additionalFields)
     CanonicalProcess(metaData, process.properties.exceptionHandler, nodes)
   }
+
+  private def findRootNodes(process: DisplayableProcess): List[NodeData] =
+    process.nodes.filterNot(n => process.edges.exists(_.to == n.id))
 
   private def unFlattenNode(nodesMap: Map[String, NodeData])
                            (n: NodeData, edgesFromMap: Map[String, List[displayablenode.Edge]]): List[canonicalnode.CanonicalNode] = {
     def unflattenEdgeEnd(id: String, e: displayablenode.Edge): List[canonicalnode.CanonicalNode] = {
       unFlattenNode(nodesMap)(nodesMap(e.to), edgesFromMap.updated(id, edgesFromMap(id).filterNot(_ == e)))
     }
+
+    def getEdges(id: String) = edgesFromMap.getOrElse(id, List())
+
     val handleNestedNodes: PartialFunction[NodeData, List[canonicalnode.CanonicalNode]] = {
       case data: Filter =>
-        val filterEdges = edgesFromMap(data.id)
-        val next = unflattenEdgeEnd(data.id, filterEdges.head)
-        val nextFalse = filterEdges.tail.lastOption.map(nf => unflattenEdgeEnd(data.id, nf)).toList.flatten
+        //FIXME: tutaj zakladamy ze pierwszy edge bedzie true, a drugi false - to troche slabe...
+        val filterEdges = getEdges(data.id)
+        val next = filterEdges.headOption.map(truePath => unflattenEdgeEnd(data.id, truePath)).getOrElse(List())
+        val nextFalse = filterEdges.drop(1).lastOption.map(nf => unflattenEdgeEnd(data.id, nf)).toList.flatten
         canonicalnode.FilterNode(data, nextFalse) :: next
       case data: Switch =>
-        val nexts = edgesFromMap(data.id).collect { case e@displayablenode.Edge(_, _, Some(edgeExpr)) =>
+        val nexts = getEdges(data.id).collect { case e@displayablenode.Edge(_, _, Some(edgeExpr)) =>
           canonicalnode.Case(edgeExpr, unflattenEdgeEnd(data.id, e))
         }
-        val default = edgesFromMap(data.id).find(_.label.isEmpty).map { e =>
+        val default = getEdges(data.id).find(_.label.isEmpty).map { e =>
           unflattenEdgeEnd(data.id, e)
         }.toList.flatten
         canonicalnode.SwitchNode(data, nexts, default) :: Nil
       case data: Split =>
-        val nexts = edgesFromMap(data.id).map(unflattenEdgeEnd(data.id, _))
+        val nexts = getEdges(data.id).map(unflattenEdgeEnd(data.id, _))
         canonicalnode.SplitNode(data, nexts) :: Nil
     }
     (handleNestedNodes orElse (handleDirectNodes andThen { n =>
-      n :: edgesFromMap.get(n.id).toList.flatten.flatMap(unflattenEdgeEnd(n.id, _))
+      n :: getEdges(n.id).flatMap(unflattenEdgeEnd(n.id, _))
     }))(n)
   }
 

@@ -7,7 +7,7 @@ import _root_.db.migration.DefaultJdbcProfile
 import cats.data.Xor
 import com.typesafe.config.{ConfigFactory, ConfigValue}
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.esp.engine.api.deployment.{CustomProcess, GraphProcess}
+import pl.touk.esp.engine.api.deployment.{CustomProcess, GraphProcess, ProcessDeploymentData}
 import pl.touk.esp.ui.db.EspTables
 import pl.touk.esp.ui.db.entity.EnvironmentsEntity.EnvironmentsEntityData
 import pl.touk.esp.ui.db.migration.SampleDataInserter
@@ -33,23 +33,10 @@ class Initialization(processRepository: ProcessRepository,
       logger.info(s"Processing category $category")
 
       categoryDir.listFiles().foreach { file =>
-        val name = file.getName.replaceAll("\\..*", "")
-        val updateProcess = for {
-          latestVersion <- processRepository.fetchLatestProcessVersion(name)
-          versionShouldBeUpdated = latestVersion.exists(_.user == toukUser.id) || latestVersion.isEmpty
-          processJson = fromFile(file).mkString
-          _ <- {
-            if (versionShouldBeUpdated) {
-              processRepository.saveProcess(name, GraphProcess(fromFile(file).mkString))
-            } else {
-              logger.info(s"Process $name not updated. DB version is: \n${latestVersion.flatMap(_.json).getOrElse("")}\n and version from file is: \n$processJson")
-              Future.successful(Xor.right(()))
-            }
-          }.map {
-            _ => processRepository.updateCategory(name, category)
-          }
-        } yield ()
-        Await.result(updateProcess, 1 second)
+        val processId = file.getName.replaceAll("\\..*", "")
+        val processJson = fromFile(file).mkString
+        val deploymentData = GraphProcess(processJson)
+        saveOrUpdate(processId, category, deploymentData)
       }
     }
     updateTechnicalProcesses()
@@ -58,15 +45,28 @@ class Initialization(processRepository: ProcessRepository,
   def updateTechnicalProcesses(): Unit = {
     ConfigFactory.parseFile(new File(initialProcessDirectory, "customProcesses.conf")).entrySet().toSet
       .foreach { (entry: Entry[String, ConfigValue]) =>
-        val name = entry.getKey
-        logger.info(s"Saving custom process $name")
-        val savedProces = processRepository
-          .saveProcess(name, CustomProcess(entry.getValue.unwrapped().toString))
-          .map {
-            _ => processRepository.updateCategory(name, "Technical")
-          }
-        Await.result(savedProces, 1 second)
+        val processId = entry.getKey
+        val deploymentData = CustomProcess(entry.getValue.unwrapped().toString)
+        logger.info(s"Saving custom process $processId")
+        saveOrUpdate(processId, "Technical", deploymentData)
       }
+  }
+
+  private def saveOrUpdate(processId: String, category: String, deploymentData: ProcessDeploymentData) = {
+    val updateProcess = for {
+      latestVersion <- processRepository.fetchLatestProcessVersion(processId)
+      _ <- {
+        latestVersion match {
+          case None => processRepository.saveProcess(processId, category, deploymentData)
+          case Some(version) if version.user == toukUser.id => processRepository.updateProcess(processId, deploymentData)
+          case _ => logger.info(s"Process $processId not updated. DB version is: \n${latestVersion.flatMap(_.json).getOrElse("")}\n " +
+            s" and version from file is: \n$deploymentData")
+                    Future.successful(Xor.right(()))
+        }
+      }
+      //no to znowu jest nietransakcyjnie, ale przy inicjalizacji moze jakos przezyjemy...
+    } yield processRepository.updateCategory(processId, category)
+    Await.result(updateProcess, 1 second)
   }
 
   def insertEnvironment(environmentName: String) = {
@@ -74,7 +74,6 @@ class Initialization(processRepository: ProcessRepository,
     val insertAction = EspTables.environmentsTable += EnvironmentsEntityData(environmentName)
     db.run(insertAction).map(_ => ())
   }
-
 
 }
 

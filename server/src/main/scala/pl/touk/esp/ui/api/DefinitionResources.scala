@@ -11,6 +11,7 @@ import pl.touk.esp.engine.graph.node._
 import pl.touk.esp.engine.graph.param
 import pl.touk.esp.engine.graph.service.ServiceRef
 import pl.touk.esp.engine.graph.sink.SinkRef
+import pl.touk.esp.engine.graph.source.SourceRef
 import pl.touk.esp.ui.process.marshall.DisplayableProcessCodec
 import pl.touk.esp.ui.security.LoggedUser
 import pl.touk.esp.ui.util.Argonaut62Support
@@ -98,11 +99,18 @@ object DefinitionPreparer {
             Some(Expression("spel", "#input"))), filterCategories(objDefinition)
         )
       }.toList
+    )
 
+    val sources = NodeGroup("sources",
+      processDefinition.sourceFactories.map {
+        case (id, objDefinition) => NodeToAdd("source", id,
+          Source("", SourceRef(id, objDefinition.parameters.map(p => param.Parameter(p.name, "TODO")))), filterCategories(objDefinition)
+        )
+      }.toList
     )
 
     //TODO: source, switch...
-    List(base, services, enrichers, customTransformers, sinks)
+    List(base, services, enrichers, customTransformers, sources, sinks)
   }
 
   private def mapDefinitionParamToEvaluatedParam(param: DefinitionExtractor.Parameter) = {

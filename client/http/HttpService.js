@@ -1,8 +1,6 @@
-import $ from 'jquery';
-import appConfig from 'appConfig'
-import _ from 'lodash'
-import NotificationSystem from 'react-notification-system';
-import React from 'react'
+import $ from "jquery";
+import appConfig from "appConfig";
+import React from "react";
 
 
 export default {
@@ -43,9 +41,9 @@ export default {
       hasPermission(name) {
         return user.permissions.includes(name)
       },
-      canRead : user.permissions.includes("Read"),
-      canDeploy : user.permissions.includes("Deploy"),
-      canWrite : user.permissions.includes("Write"),
+      canRead: user.permissions.includes("Read"),
+      canDeploy: user.permissions.includes("Deploy"),
+      canWrite: user.permissions.includes("Write"),
     }))
   },
 
@@ -69,12 +67,12 @@ export default {
 
   fetchProcessesStatus() {
     return promiseWrap($.get(appConfig.API_URL + '/processes/status'))
-      .catch((error) => this.addError(`Cannot fetch statuses`, error) );
+      .catch((error) => this.addError(`Cannot fetch statuses`, error));
   },
 
   fetchSingleProcessStatus(processId) {
     return promiseWrap($.get(appConfig.API_URL + `/processes/${processId}/status`))
-      .catch((error) => this.addError(`Cannot fetch status`, error) );
+      .catch((error) => this.addError(`Cannot fetch status`, error));
 
   },
 
@@ -108,11 +106,20 @@ export default {
 
   },
 
+  createProcess(processId, processCategory, callback) {
+    return ajaxCall({
+      url: `${appConfig.API_URL}/processes/${processId}/${processCategory}`,
+      type: 'POST'
+    }).then(callback, (error) => {
+      this.addError(`Failed to create process:`, error, true);
+    })
+  },
+
   importProcess(processId, file, callback, errorCallback) {
     var formData = new FormData();
     formData.append("process", file)
 
-    return  ajaxCallWithoutContentType({
+    return ajaxCallWithoutContentType({
       url: appConfig.API_URL + '/processes/import/' + processId,
       type: 'POST',
       processData: false,

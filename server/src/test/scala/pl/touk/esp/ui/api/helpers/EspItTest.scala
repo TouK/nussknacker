@@ -41,12 +41,31 @@ trait EspItTest extends LazyLogging { self: ScalatestRouteTest with Suite with B
   val deployRoute = (u:LoggedUser) =>  new ManagementResources(processRepository, deploymentProcessRepository, InMemoryMocks.mockProcessManager, env).route(u)
 
   def saveProcess(processId: String, process: EspProcess)(testCode: => Assertion): Assertion = {
-    Put(s"/processes/$processId/json", TestFactory.posting.toEntity(process)) ~> processesRouteWithAllPermissions ~> check { testCode }
+    Post(s"/processes/$processId/$testCategory") ~> processesRouteWithAllPermissions ~> check {
+      status shouldBe StatusCodes.Created
+      updateProcess(processId, process)(testCode)
+    }
   }
 
   def saveProcess(process: DisplayableProcess)(testCode: => Assertion): Assertion = {
     val processId = process.id
-    Put(s"/processes/$processId/json", TestFactory.posting.toEntity(process)) ~> processesRouteWithAllPermissions ~> check { testCode }
+    Post(s"/processes/$processId/$testCategory") ~> processesRouteWithAllPermissions ~> check {
+      status shouldBe StatusCodes.Created
+      updateProcess(process)(testCode)
+    }
+  }
+
+  def updateProcess(process: DisplayableProcess)(testCode: => Assertion): Assertion = {
+    val processId = process.id
+    Put(s"/processes/$processId/json", TestFactory.posting.toEntity(process)) ~> processesRouteWithAllPermissions ~> check {
+      testCode
+    }
+  }
+
+  def updateProcess(processId: String, process: EspProcess)(testCode: => Assertion): Assertion = {
+    Put(s"/processes/$processId/json", TestFactory.posting.toEntity(process)) ~> processesRouteWithAllPermissions ~> check {
+      testCode
+    }
   }
 
   def saveProcessAndAssertSuccess(processId: String, process: EspProcess): Assertion = {
@@ -54,6 +73,14 @@ trait EspItTest extends LazyLogging { self: ScalatestRouteTest with Suite with B
       status shouldEqual StatusCodes.OK
     }
   }
+
+  def updateProcessAndAssertSuccess(processId: String, process: EspProcess): Assertion = {
+    updateProcess(processId, process) {
+      status shouldEqual StatusCodes.OK
+    }
+  }
+
+
 
   override protected def beforeEach(): Unit = {
     import DefaultJdbcProfile.profile.api._

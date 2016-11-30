@@ -12,7 +12,10 @@ import akka.util.ByteString
 import argonaut._
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.Xor
+import pl.touk.esp.engine.api.MetaData
 import pl.touk.esp.engine.api.deployment.{GraphProcess, ProcessManager}
+import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
+import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.esp.ui.api.ProcessValidation.ValidationResult
 import pl.touk.esp.ui.api.ProcessesResources.{UnmarshallError, WrongProcessId}
 import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessStatus}
@@ -104,7 +107,7 @@ class ProcessesResources(repository: ProcessRepository,
             complete {
               val canonical = processConverter.fromDisplayable(displayableProcess)
               val json = uiProcessMarshaller.toJson(canonical, PrettyParams.nospace)
-              repository.saveProcess(processId, GraphProcess(json)).map { result =>
+              repository.updateProcess(processId, GraphProcess(json)).map { result =>
                 toResponse {
                   result.map(_ => processValidation.validate(canonical))
                 }
@@ -112,6 +115,25 @@ class ProcessesResources(repository: ProcessRepository,
             }
           }
         }
+      } ~ path("processes" / Segment / Segment) { (processId, category) =>
+        authorize(user.categories.contains(category)) {
+          post {
+            complete {
+              val emptyCanonical = CanonicalProcess(MetaData(id = processId), ExceptionHandlerRef(List()), List())
+              val emptyProcess = uiProcessMarshaller.toJson(emptyCanonical, PrettyParams.nospace)
+
+              repository.fetchLatestProcessDetailsForProcessId(processId).flatMap {
+                case Some(_) => Future(HttpResponse(status = StatusCodes.BadRequest, entity = "Process already exists"))
+                case None => repository.saveProcess(processId, category, GraphProcess(emptyProcess)).map {
+                  case Xor.Left(error) => espErrorToHttp(error)
+                  case Xor.Right(_) => HttpResponse(status = StatusCodes.Created)
+                }
+              }
+
+            }
+          }
+        }
+
       } ~ path("processes" / Segment / "status") { processId =>
         get {
           complete {

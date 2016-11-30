@@ -30,23 +30,32 @@ class ProcessRepository(db: JdbcBackend.Database,
                         processConverter: ProcessConverter) extends LazyLogging {
   import driver.api._
 
-  def saveProcess(processId: String, processDeploymentData: ProcessDeploymentData)
+  def saveProcess(processId: String, category: String, processDeploymentData: ProcessDeploymentData)
                  (implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[XError[Unit]] = {
     logger.info(s"Saving process $processId by user $loggedUser")
-    val (pType, maybeJson, maybeMainClass) = processDeploymentData match {
-      case GraphProcess(json) => (ProcessType.Graph, Some(json), None)
-      case CustomProcess(mainClass) => (ProcessType.Custom, None, Some(mainClass))
+
+    val processToSave = ProcessEntityData(id = processId, name = processId, processCategory = category,
+              description = None, processType = processType(processDeploymentData))
+
+    val insertAction =
+      (processesTable += processToSave).andThen(updateProcessInternal(processId, processDeploymentData))
+    db.run(insertAction.transactionally)
+  }
+
+  def updateProcess(processId: String, processDeploymentData: ProcessDeploymentData)
+                 (implicit ec: ExecutionContext, loggedUser: LoggedUser) = {
+    val update = updateProcessInternal(processId, processDeploymentData)
+    db.run(update.transactionally)
+  }
+
+  private def updateProcessInternal(processId: String, processDeploymentData: ProcessDeploymentData)
+                   (implicit ec: ExecutionContext, loggedUser: LoggedUser): DB[XError[Unit]] = {
+    logger.info(s"Updating process $processId by user $loggedUser")
+    val (maybeJson, maybeMainClass) = processDeploymentData match {
+      case GraphProcess(json) => (Some(json), None)
+      case CustomProcess(mainClass) => (None, Some(mainClass))
     }
 
-    def processToInsert(process: Option[ProcessEntityData]): XError[Option[ProcessEntityData]] = process match {
-      case Some(p) =>
-        if (p.processType != pType) Xor.left(InvalidProcessTypeError(processId))
-        else Xor.right(None)
-      case None =>
-        Xor.right(Option(ProcessEntityData(id = processId,
-          name = processId, processCategory = ProcessRepository.defaultCategory,
-          description = None, processType = pType)))
-    }
     def versionToInsert(latestProcessVersion: Option[ProcessVersionEntityData],
                         processesVersionCount: Int): Option[ProcessVersionEntityData] = latestProcessVersion match {
       case Some(version) if version.json == maybeJson && version.mainClass == maybeMainClass => None
@@ -54,28 +63,28 @@ class ProcessRepository(db: JdbcBackend.Database,
         json = maybeJson, mainClass = maybeMainClass, createDate = DateUtils.now, user = loggedUser.id))
     }
     val insertAction = for {
-      process <- XorT.right[DB, EspError, Option[ProcessEntityData]](processTableFilteredByUser.filter(_.id === processId).result.headOption)
+      maybeProcess <- XorT.right[DB, EspError, Option[ProcessEntityData]](processTableFilteredByUser.filter(_.id === processId).result.headOption)
+      process <- XorT.fromXor(Xor.fromOption(maybeProcess, ProcessNotFoundError(processId)))
+      _ <- XorT.fromEither(Either.cond(process.processType == processType(processDeploymentData), (), InvalidProcessTypeError(processId)))
       processesVersionCount <- XorT.right[DB, EspError, Int](processVersionsTable.filter(p => p.processId === processId).length.result)
       latestProcessVersion <- XorT.right[DB, EspError, Option[ProcessVersionEntityData]](latestProcessVersions(processId).result.headOption)
-      newProcess <- XorT.fromXor(processToInsert(process))
       newProcessVersion <- XorT.fromXor(Xor.right(versionToInsert(latestProcessVersion, processesVersionCount)))
-      _ <- XorT.right[DB, EspError, Int](newProcess.map(processesTable += _).getOrElse(dbMonad.pure(0)))
       _ <- XorT.right[DB, EspError, Int](newProcessVersion.map(processVersionsTable += _).getOrElse(dbMonad.pure(0)))
     } yield ()
-    db.run(insertAction.value)
+    insertAction.value
   }
 
   //accessible only from initializing scripts so far
   def updateCategory(processId: String, category: String)(implicit loggedUser: LoggedUser) : Future[XError[Unit]] = {
     val processCat = for { c <- processesTable if c.id === processId } yield c.processCategory
-    db.run(processCat.update(category)).map {
+    db.run(processCat.update(category).map {
       case 0 => Xor.left(ProcessNotFoundError(processId))
       case 1 => Xor.right(())
-    }
+    })
   }
 
   private def processTableFilteredByUser(implicit loggedUser: LoggedUser) =
-    if (loggedUser.isAdmin) processesTable else processesTable.filter(_.processCategory inSet (loggedUser.categories :+ ProcessRepository.defaultCategory))
+    if (loggedUser.isAdmin) processesTable else processesTable.filter(_.processCategory inSet loggedUser.categories)
 
   def fetchProcessesDetails()
                            (implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[List[ProcessDetails]] = {
@@ -153,11 +162,15 @@ class ProcessRepository(db: JdbcBackend.Database,
       deplProc.processId === processId && deplProc.environment === env && deplProc.deployedAt === maxDeployedAtForEnv
     }.map { case ((env, _), deployedVersion) => env -> deployedVersion }
   }
+
+
+  private def processType(processDeploymentData: ProcessDeploymentData) = processDeploymentData match {
+    case a:GraphProcess => ProcessType.Graph
+    case a:CustomProcess => ProcessType.Custom
+  }
 }
 
 object ProcessRepository {
-
-  val defaultCategory = "Default"
 
   case class ProcessDetails(
                              id: String,
