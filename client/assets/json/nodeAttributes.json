@@ -1,6 +1,7 @@
 {
   "Source": {
     "name": "Source",
+    "icon": "filter.svg",
     "styles": {
       "fill": "#73E5B7",
       "color": "white"

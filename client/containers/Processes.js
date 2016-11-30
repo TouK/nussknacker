@@ -11,6 +11,7 @@ import ActionsUtils from "../actions/ActionsUtils";
 import DialogMessages from "../common/DialogMessages";
 import DateUtils from "../common/DateUtils";
 import LoaderSpinner from "../components/Spinner.js";
+import AddProcessDialog from "../components/AddProcessDialog.js";
 
 import "../stylesheets/processes.styl";
 import filterIcon from '../assets/img/filter-icon.svg'
@@ -26,7 +27,8 @@ const Processes = React.createClass({
       statuses: {},
       filterVal: '',
       favouriteList: new Set(),
-      showLoader: true
+      showLoader: true,
+      showAddProcess: false
     }
   },
 
@@ -95,13 +97,20 @@ const Processes = React.createClass({
   render() {
     return (
       <div className="Page">
-        <div id="process-filter" className="input-group">
-          <input type="text" className="form-control" aria-describedby="basic-addon1"
-                  value={this.state.filterVal} onChange={this.handleChange}/>
-          <span className="input-group-addon" id="basic-addon1">
-            <img id="search-icon" src={filterIcon} />
-          </span>
+        <div id="process-top-bar">
+          <div id="process-filter" className="input-group">
+            <input type="text" className="form-control" aria-describedby="basic-addon1"
+                    value={this.state.filterVal} onChange={this.handleChange}/>
+            <span className="input-group-addon" id="basic-addon1">
+              <img id="search-icon" src={filterIcon} />
+            </span>
+          </div>
+          {this.props.loggedUser.canWrite ? (
+          <div id="process-add-button" className="input-group" role="button"
+               onClick={() => this.setState({showAddProcess : true})}>+</div>) : null
+          }
         </div>
+        <AddProcessDialog onClose={() => this.setState({showAddProcess : false})} isOpen={this.state.showAddProcess} />
         <LoaderSpinner show={this.state.showLoader}/>
         <Table id="process-table" className="table"
            noDataText="No matching records found."

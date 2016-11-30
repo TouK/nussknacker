@@ -39,7 +39,6 @@ class Graph extends React.Component {
     componentDidMount() {
         this.processGraphPaper = this.createPaper()
         this.drawGraph(this.props.processToDisplay, this.props.layout)
-        this.panAndZoom = this.enablePanZoom();
         this.changeNodeDetailsOnClick(this.processGraphPaper);
         this.labelToFrontOnHover(this.processGraphPaper);
         this.cursorBehaviour(this.processGraphPaper);
@@ -130,6 +129,9 @@ class Graph extends React.Component {
       } else {
         _.forEach(layout, el => this.graph.getCell(el.id).set('position', el.position));
       }
+      if (!this.panAndZoom) {
+        this.panAndZoom = this.enablePanZoom();
+      }
     }
 
     highlightNodes = (data, nodeToDisplay) => {
@@ -157,6 +159,7 @@ class Graph extends React.Component {
     }
 
     enablePanZoom() {
+      if (this.props.processToDisplay.nodes.length > 0) {
         var panAndZoom = svgPanZoom(this.refs.espGraph.childNodes[0],
             {
                 viewportSelector: this.refs.espGraph.childNodes[0].childNodes[0],
@@ -174,6 +177,9 @@ class Graph extends React.Component {
         });
         this.centerGraphHack(panAndZoom)
         return panAndZoom
+      } else {
+        return null;
+      }
     }
 
     //fixme To jest niestety hack. Po dodaniu prawego panelu graf nie jest juz wysrodkowany, ten hack to w ulomny sposob naprawia.
@@ -241,11 +247,11 @@ function mapState(state) {
 
 var spec = {
   drop: (props, monitor, component) => {
-    const pan = component.panAndZoom.getPan()
-    const sizes = component.panAndZoom.getSizes()
+    const pan = component.panAndZoom ? component.panAndZoom.getPan() : {x: 0, y: 0}
+    var zoom = component.panAndZoom ? component.panAndZoom.getSizes().realZoom : 1
+
     var pointerOffset = monitor.getClientOffset()
     var rect = findDOMNode(component).getBoundingClientRect();
-    var zoom = component.panAndZoom.getSizes().realZoom
     //czegos tu chyba jeszcze brakuje... ale nie wiem czego :|
     var relOffset = { x: (pointerOffset.x - rect.left - pan.x)/zoom, y : (pointerOffset.y - rect.top - pan.y)/zoom }
     component.addNode(monitor.getItem(), relOffset)

@@ -23,7 +23,7 @@ class ProcessManagementResourcesSpec extends FlatSpec with ScalatestRouteTest
       getSampleProcess ~> check {
         val oldDeployments = getHistoryDeployments
         oldDeployments.size shouldBe 1
-        saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
+        updateProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
         deploySampleProcess ~> check {
           getSampleProcess ~> check {
             val currentDeployments = getHistoryDeployments

@@ -5,24 +5,19 @@ import akka.http.scaladsl.server
 import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
 import argonaut.Argonaut._
 import argonaut.PrettyParams
-import cats.data.Validated
 import org.scalatest._
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.esp.engine.api.deployment._
 import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
-import pl.touk.esp.engine.canonize.ProcessCanonizer
 import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.esp.engine.graph.param.Parameter
-import pl.touk.esp.engine.marshall.ProcessMarshaller
-import pl.touk.esp.engine.marshall.ProcessUnmarshallError.ProcessJsonDecodeError
 import pl.touk.esp.ui.api.helpers.EspItTest
 import pl.touk.esp.ui.api.helpers.TestFactory._
 import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties}
-import pl.touk.esp.ui.process.marshall.{DisplayableProcessCodec, UiProcessMarshaller}
+import pl.touk.esp.ui.process.marshall.UiProcessMarshaller
 import pl.touk.esp.ui.process.repository.ProcessRepository
 import pl.touk.esp.ui.process.repository.ProcessRepository.ProcessDetails
-import pl.touk.esp.ui.sample
 import pl.touk.esp.ui.sample.SampleProcess
 import pl.touk.esp.ui.security.{LoggedUser, Permission}
 import pl.touk.esp.ui.util.FileUploadUtils
@@ -32,7 +27,7 @@ import scala.concurrent.duration._
 import scala.language.higherKinds
 
 class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Matchers with Inside
-  with ScalaFutures with OptionValues with Eventually with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest  {
+  with ScalaFutures with OptionValues with Eventually with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
   implicit override val patienceConfig = PatienceConfig(timeout = scaled(Span(1, Seconds)), interval = scaled(Span(100, Millis)))
   implicit val testtimeout = RouteTestTimeout(2.seconds)
@@ -52,7 +47,7 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
     saveProcess(processId, ProcessTestData.validProcess) {
       Get("/processes") ~> routWithAllPermissions ~> check {
         status shouldEqual StatusCodes.OK
-        responseAs[String] should include (processId)
+        responseAs[String] should include(processId)
       }
     }
   }
@@ -67,14 +62,14 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
     saveProcess(processId, ProcessTestData.validProcess) {
       Get(s"/processes/$processId") ~> routWithAllPermissions ~> check {
         status shouldEqual StatusCodes.OK
-        responseAs[String] should include (processId)
+        responseAs[String] should include(processId)
       }
     }
   }
 
   it should "return 400 when trying to update json of custom process" in {
-    whenReady(processRepository.saveProcess("customProcess", CustomProcess(""))) { _ =>
-      saveProcess("customProcess", SampleProcess.process) {
+    whenReady(processRepository.saveProcess("customProcess", testCategory, CustomProcess(""))) { res =>
+      updateProcess("customProcess", SampleProcess.process) {
         status shouldEqual StatusCodes.BadRequest
       }
     }
@@ -99,8 +94,12 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
   }
 
   it should "return one latest version for process" in {
-    saveProcess(SampleProcess.process.id, ProcessTestData.validProcess) { status shouldEqual StatusCodes.OK}
-    saveProcess(SampleProcess.process.id, ProcessTestData.invalidProcess) { status shouldEqual StatusCodes.OK}
+    saveProcess(SampleProcess.process.id, ProcessTestData.validProcess) {
+      status shouldEqual StatusCodes.OK
+    }
+    updateProcess(SampleProcess.process.id, ProcessTestData.invalidProcess) {
+      status shouldEqual StatusCodes.OK
+    }
 
     Get("/processes") ~> routWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
@@ -111,18 +110,10 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
     }
   }
 
-
-  it should "save new process with default category" in {
-    saveProcess(SampleProcess.process.id, ProcessTestData.validProcess) { status shouldEqual StatusCodes.OK}
-    Get(s"/processes/${SampleProcess.process.id}") ~> routWithAllPermissions ~> check {
-      val processDetails = responseAs[String].decodeOption[ProcessDetails].get
-      processDetails.processCategory shouldBe ProcessRepository.defaultCategory
-    }
-
-  }
-
   it should "return process if user has category" in {
-    saveProcess(SampleProcess.process.id, ProcessTestData.validProcess) { status shouldEqual StatusCodes.OK}
+    saveProcess(SampleProcess.process.id, ProcessTestData.validProcess) {
+      status shouldEqual StatusCodes.OK
+    }
     processRepository.updateCategory(SampleProcess.process.id, testCategory)
 
     Get(s"/processes/${SampleProcess.process.id}") ~> routWithAllPermissions ~> check {
@@ -132,13 +123,15 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
 
     Get(s"/processes") ~> routeWithRead ~> check {
       status shouldEqual StatusCodes.OK
-      responseAs[String] should include (SampleProcess.process.id)
+      responseAs[String] should include(SampleProcess.process.id)
     }
 
   }
 
   it should "not return processes not in user categories" in {
-    saveProcess(SampleProcess.process.id, ProcessTestData.validProcess) { status shouldEqual StatusCodes.OK}
+    saveProcess(SampleProcess.process.id, ProcessTestData.validProcess) {
+      status shouldEqual StatusCodes.OK
+    }
     processRepository.updateCategory(SampleProcess.process.id, "newCategory")
     Get(s"/processes/${SampleProcess.process.id}") ~> routeWithRead ~> check {
       status shouldEqual StatusCodes.NotFound
@@ -151,7 +144,9 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
   }
 
   it should "return all processes for admin user" in {
-    saveProcess(SampleProcess.process.id, ProcessTestData.validProcess) { status shouldEqual StatusCodes.OK}
+    saveProcess(SampleProcess.process.id, ProcessTestData.validProcess) {
+      status shouldEqual StatusCodes.OK
+    }
     processRepository.updateCategory(SampleProcess.process.id, "newCategory")
 
     Get(s"/processes/${SampleProcess.process.id}") ~> routWithAdminPermission ~> check {
@@ -161,7 +156,7 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
 
     Get(s"/processes") ~> routWithAdminPermission ~> check {
       status shouldEqual StatusCodes.OK
-      responseAs[String] should include (SampleProcess.process.id)
+      responseAs[String] should include(SampleProcess.process.id)
     }
   }
 
@@ -169,22 +164,22 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
     saveProcess(SampleProcess.process.id, ProcessTestData.validProcess) {
       status shouldEqual StatusCodes.OK
     }
-    saveProcess(SampleProcess.process.id, ProcessTestData.validProcess.copy(root = ProcessTestData.validProcess.root.copy(data = ProcessTestData.validProcess.root.data.copy(id = "AARGH")))) {
+    updateProcess(SampleProcess.process.id, ProcessTestData.validProcess.copy(root = ProcessTestData.validProcess.root.copy(data = ProcessTestData.validProcess.root.data.copy(id = "AARGH")))) {
       status shouldEqual StatusCodes.OK
     }
     Get(s"/processes/${SampleProcess.process.id}") ~> routWithAllPermissions ~> check {
       val processDetails = responseAs[String].decodeOption[ProcessDetails].get
       processDetails.name shouldBe SampleProcess.process.id
-      processDetails.history.length shouldBe 2
+      processDetails.history.length shouldBe 3
       processDetails.history.forall(_.processName == SampleProcess.process.id) shouldBe true
     }
   }
 
   it should "perform idempotent process save" in {
-    saveSampleProcess()
+    saveProcessAndAssertSuccess(SampleProcess.process.id, ProcessTestData.validProcess)
     Get(s"/processes/${SampleProcess.process.id}") ~> routWithAllPermissions ~> check {
       val processHistoryBeforeDuplicatedWrite = responseAs[String].decodeOption[ProcessDetails].get.history
-      saveSampleProcess()
+      updateProcessAndAssertSuccess(SampleProcess.process.id, ProcessTestData.validProcess)
       Get(s"/processes/${SampleProcess.process.id}") ~> routWithAllPermissions ~> check {
         val processHistoryAfterDuplicatedWrite = responseAs[String].decodeOption[ProcessDetails].get.history
         processHistoryAfterDuplicatedWrite shouldBe processHistoryBeforeDuplicatedWrite
@@ -233,13 +228,13 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
           "process", HttpEntity(ContentTypes.`text/plain(UTF-8)`, marshaller.toJson(modified, PrettyParams.spaces2)),
           Map("filename" -> "process.json")))
 
-        Post(s"/processes/import/${processToSave.id}", multipartForm) ~> routWithAllPermissions ~> check {
-          status shouldEqual StatusCodes.OK
-          val imported = responseAs[String].decodeOption[DisplayableProcess].get
-          imported.properties.parallelism shouldBe Some(987)
-          imported.id shouldBe processToSave.id
-          imported.nodes shouldBe processToSave.nodes
-        }
+      Post(s"/processes/import/${processToSave.id}", multipartForm) ~> routWithAllPermissions ~> check {
+        status shouldEqual StatusCodes.OK
+        val imported = responseAs[String].decodeOption[DisplayableProcess].get
+        imported.properties.parallelism shouldBe Some(987)
+        imported.id shouldBe processToSave.id
+        imported.nodes shouldBe processToSave.nodes
+      }
 
 
     }
@@ -258,14 +253,42 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
       val multipartForm =
         FileUploadUtils.prepareMultiPart(marshaller.toJson(modified, PrettyParams.spaces2), "process")
 
-        Post(s"/processes/import/${processToSave.id}", multipartForm) ~> routWithAllPermissions ~> check {
-          status shouldEqual StatusCodes.BadRequest
-        }
+      Post(s"/processes/import/${processToSave.id}", multipartForm) ~> routWithAllPermissions ~> check {
+        status shouldEqual StatusCodes.BadRequest
+      }
     }
   }
 
-  def saveSampleProcess() = {
-    saveProcess(SampleProcess.process.id, ProcessTestData.validProcess) { status shouldEqual StatusCodes.OK}
+  it should "save new process with empty json" in {
+    val newProcessId = "tst1"
+    Post(s"/processes/$newProcessId/$testCategory") ~> routWithAdminPermission ~> check {
+      status shouldEqual StatusCodes.Created
+
+      Get(s"/processes/$newProcessId") ~> routWithAdminPermission ~> check {
+        status shouldEqual StatusCodes.OK
+        val loadedProcess = responseAs[String].decodeOption[ProcessDetails].get
+        loadedProcess.processCategory shouldBe testCategory
+      }
+    }
+  }
+
+  it should "not allow to save process if already exists" in {
+    val processToSave = ProcessTestData.sampleDisplayableProcess
+    saveProcess(processToSave) {
+      status shouldEqual StatusCodes.OK
+      Post(s"/processes/${processToSave.id}/$testCategory") ~> routWithAdminPermission ~> check {
+        status shouldEqual StatusCodes.BadRequest
+
+      }
+    }
+  }
+
+  it should "not allow to save process with category not allowed for user" in {
+    Post(s"/processes/p11/abcd") ~> routWithAdminPermission ~> check {
+      //to ponizej nie dziala, bo nie potrafie tak ustawic dyrektyw path i authorize zeby przeszlo tak jak chce :(
+      //rejection shouldBe server.AuthorizationFailedRejection
+      handled shouldBe false
+    }
   }
 
   def checkSampleProcessRootIdEquals(expected: String) = {
