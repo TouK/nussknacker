@@ -248,8 +248,6 @@ var spec = {
     var zoom = component.panAndZoom.getSizes().realZoom
     //czegos tu chyba jeszcze brakuje... ale nie wiem czego :|
     var relOffset = { x: (pointerOffset.x - rect.left - pan.x)/zoom, y : (pointerOffset.y - rect.top - pan.y)/zoom }
-    console.log(relOffset)
-
     component.addNode(monitor.getItem(), relOffset)
 
   }

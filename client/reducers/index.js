@@ -182,7 +182,7 @@ function graphReducer(state, action) {
       }
     }
     case "NODE_ADDED": {
-      var newId = `node${state.processToDisplay.nodes.length}`
+      var newId = createUniqueNodeId(state.processToDisplay.nodes, state.processToDisplay.nodes.length)
       return {
         ...state,
         processToDisplay: {
@@ -203,6 +203,11 @@ function graphReducer(state, action) {
     }
     default:
       return state
+  }
+
+  function createUniqueNodeId(nodes, nodeCounter) {
+    var newId = `node${nodeCounter}`
+    return _.some(nodes, (n) => {return n.id == newId}) ? createUniqueNodeId(nodes, nodeCounter + 1) : newId
   }
 }
 
