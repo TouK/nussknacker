@@ -137,7 +137,7 @@ private[compile] trait PartSubGraphCompilerBase {
             (expr, cases, nextWithCtx) => {
               val defaultCtx = nextWithCtx.map(_.ctx).getOrElse(ctx)
               CompiledNode(compiledgraph.node.Switch(id, expr, exprVal, cases.unzip._1, nextWithCtx.map(_.next)),
-                ValidationContext.merge(defaultCtx, cases.unzip._2.reduce(ValidationContext.merge)))
+                cases.unzip._2.fold(defaultCtx)(ValidationContext.merge))
             })
         case splittednode.EndingNode(data: EndingNodeData) =>
           data match {
