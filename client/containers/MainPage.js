@@ -18,6 +18,10 @@ const App_ = React.createClass({
       this.props.actions.toggleLeftPanel(!this.props.leftPanelIsOpened)
     },
 
+    canGoToProcess: function () {
+      return !_.isEmpty(this.props.params.processId)
+    },
+
     goToProcess: function() {
       browserHistory.push('/visualization/' + this.props.params.processId)
     },
@@ -29,7 +33,7 @@ const App_ = React.createClass({
             <img src={this.props.leftPanelIsOpened ? hamburgerOpen : hamburgerClosed} />
           </div>
         )
-      } else if (this.props.location.pathname.startsWith("/metrics")) {
+      } else if (this.props.location.pathname.startsWith("/metrics") && this.canGoToProcess()) {
         return (
           <div className="top-left-button" onClick={this.goToProcess}>
             <span className="glyphicon glyphicon-menu-left"/>
