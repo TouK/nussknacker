@@ -7,32 +7,26 @@ import pl.touk.esp.engine.canonize.ProcessCanonizer
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.graph.node.NodeData
 import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties}
-import pl.touk.esp.ui.process.marshall.{DisplayableProcessCodec, ProcessConverter}
+import pl.touk.esp.ui.process.marshall.ProcessConverter
 
 class ProcessPosting(processConverter: ProcessConverter) {
+  import pl.touk.esp.ui.codec.UiCodecs._
+
+  val prettyParams = PrettyParams.spaces2.copy(dropNullKeys = true, preserveOrder = true)
 
   def toEntity(process: EspProcess): RequestEntity = {
     val displayable = processConverter.toDisplayable(ProcessCanonizer.canonize(process))
-    implicit val encode = DisplayableProcessCodec.codec
-    val json = displayable.asJson.pretty(PrettyParams.spaces2.copy(dropNullKeys = true, preserveOrder = true))
-    HttpEntity(ContentTypes.`application/json`, json)
-  }
-
-  def toEntity(node: NodeData): RequestEntity = {
-    implicit val encode = DisplayableProcessCodec.nodeEncoder
-    val json = node.asJson.pretty(PrettyParams.spaces2.copy(dropNullKeys = true, preserveOrder = true))
+    val json = displayable.asJson.pretty(prettyParams)
     HttpEntity(ContentTypes.`application/json`, json)
   }
 
   def toEntity(properties: ProcessProperties): RequestEntity = {
-    implicit val codec = DisplayableProcessCodec.propertiesCodec
-    val json = properties.asJson.pretty(PrettyParams.spaces2.copy(dropNullKeys = true, preserveOrder = true))
+    val json = properties.asJson.pretty(prettyParams)
     HttpEntity(ContentTypes.`application/json`, json)
   }
 
   def toEntity(process: DisplayableProcess): RequestEntity = {
-    implicit val codec = DisplayableProcessCodec.codec
-    val json = process.asJson.pretty(PrettyParams.spaces2.copy(dropNullKeys = true, preserveOrder = true))
+    val json = process.asJson.pretty(prettyParams)
     HttpEntity(ContentTypes.`application/json`, json)
   }
 

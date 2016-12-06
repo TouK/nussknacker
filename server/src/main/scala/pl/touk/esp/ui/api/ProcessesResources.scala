@@ -1,7 +1,5 @@
 package pl.touk.esp.ui.api
 
-import java.time.LocalDateTime
-
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model.headers.ContentDispositionTypes
 import akka.http.scaladsl.model.{HttpMethods, HttpResponse, StatusCodes, headers}
@@ -19,7 +17,7 @@ import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.esp.ui.api.ProcessValidation.ValidationResult
 import pl.touk.esp.ui.api.ProcessesResources.{UnmarshallError, WrongProcessId}
 import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessStatus}
-import pl.touk.esp.ui.process.marshall.{DisplayableProcessCodec, ProcessConverter, ProcessTypeCodec, UiProcessMarshaller}
+import pl.touk.esp.ui.process.marshall.{ProcessConverter, UiProcessMarshaller}
 import pl.touk.esp.ui.process.repository.ProcessRepository
 import pl.touk.esp.ui.process.repository.ProcessRepository._
 import pl.touk.esp.ui.security.{LoggedUser, Permission}
@@ -36,26 +34,7 @@ class ProcessesResources(repository: ProcessRepository,
   extends Directives with Argonaut62Support {
 
   import argonaut.ArgonautShapeless._
-  import pl.touk.esp.engine.optics.Implicits._
-  import cats.instances.future._
-  import cats.instances.option._
-  import cats.instances.list._
-  import cats.syntax.traverse._
-
-  implicit val processTypeCodec = ProcessTypeCodec.codec
-
-  implicit val localDateTimeEncode = EncodeJson.of[String].contramap[LocalDateTime](_.toString)
-
-  implicit val displayableProcessCodec = DisplayableProcessCodec.codec
-
-  implicit val validationResultEncode = EncodeJson.of[ValidationResult]
-
-  implicit val processHistory = EncodeJson.of[ProcessHistoryEntry]
-
-  implicit val processListEncode = EncodeJson.of[List[ProcessDetails]]
-
-  implicit val printer: Json => String =
-    PrettyParams.spaces2.copy(dropNullKeys = true, preserveOrder = true).pretty
+  import pl.touk.esp.ui.codec.UiCodecs._
 
   val uiProcessMarshaller = UiProcessMarshaller()
 
@@ -193,6 +172,9 @@ class ProcessesResources(repository: ProcessRepository,
 
 
   private def fetchProcessStatesForProcesses(processes: List[ProcessDetails]): Future[Map[String, Option[ProcessStatus]]] = {
+    import cats.instances.future._
+    import cats.instances.list._
+    import cats.syntax.traverse._
     processes.map(process => findJobStatus(process.name).map(status => process.name -> status)).sequence.map(_.toMap)
   }
 
