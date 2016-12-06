@@ -32,9 +32,13 @@ trait RequestResponseLogging extends LazyLogging {
              | CONTENT:
              |  ${response.getResponseBody}""".stripMargin)
       case Failure(ex) =>
-        logger.error(s"${req.url} $id error", ex)
+        logFailure(req, id, ex)
     }
     result
+  }
+
+  def logFailure(req: Req, id: String, ex: Throwable): Unit = {
+    logger.error(s"${req.url} $id error", ex)
   }
 
   def debug(obj: =>String) = logger.debug(obj)

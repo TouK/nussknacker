@@ -24,7 +24,7 @@ trait AuditDispatchClient extends RequestResponseLogging {
     val bodyAsString = body.asJson.spaces2
     val req = url.setContentType("application/json", "utf-8") << bodyAsString
     sendWithAuditAndStatusChecking(req).map {
-      _.decodeWithMessage[Resp, Resp](identity, msg => throw new InvalidJsonResponseException(msg))
+      _.decodeWithMessage[Resp, Resp](identity, msg => throwWithLogging(req, new InvalidJsonResponseException(msg)))
     }
   }
 
@@ -40,7 +40,7 @@ trait AuditDispatchClient extends RequestResponseLogging {
                                        (implicit executionContext: ExecutionContext,
                                         logCorrelationId: LogCorrelationId): Future[Resp] = {
     sendWithAuditAndStatusChecking(req).map {
-      _.decodeWithMessage[Resp, Resp](identity, msg => throw new InvalidJsonResponseException(msg))
+      _.decodeWithMessage[Resp, Resp](identity, msg => throwWithLogging(req, new InvalidJsonResponseException(msg)))
     }
   }
 
@@ -51,12 +51,12 @@ trait AuditDispatchClient extends RequestResponseLogging {
       if (resp.getStatusCode / 100 == 2) {
         val decoded = resp
           .getResponseBody
-          .decodeWithMessage[Resp, Resp](identity, msg => throw new InvalidJsonResponseException(msg))
+          .decodeWithMessage[Resp, Resp](identity, msg => throwWithLogging(req, new InvalidJsonResponseException(msg)))
         Some(decoded)
       } else if (resp.getStatusCode == 404) {
         None
       } else {
-        throw StatusCode(resp.getStatusCode)
+        throwWithLogging(req, StatusCode(resp.getStatusCode))
       }
     }
   }
@@ -65,7 +65,7 @@ trait AuditDispatchClient extends RequestResponseLogging {
              (implicit executionContext: ExecutionContext,
               logCorrelationId: LogCorrelationId): Future[Json] = {
     sendWithAuditAndStatusChecking(req).map { respAsString =>
-      respAsString.parseWith[Json](identity, msg => throw new InvalidJsonResponseException(msg))
+      respAsString.parseWith[Json](identity, msg => throwWithLogging(req, new InvalidJsonResponseException(msg)))
     }
   }
 
@@ -131,7 +131,7 @@ trait AuditDispatchClient extends RequestResponseLogging {
   private def sendWithAuditAndStatusChecking(req: Req)
                                             (implicit executionContext: ExecutionContext,
                                              logCorrelationId: LogCorrelationId): Future[String] = {
-    sendWithAudit(req).map(checkStatusThanConvertToString)
+    sendWithAudit(req).map(checkStatusThanConvertToString(req))
   }
 
   protected def sendWithAuditWithResponseAsString(req: Req)
@@ -148,14 +148,20 @@ trait AuditDispatchClient extends RequestResponseLogging {
     }
   }
 
-  private def checkStatusThanConvertToString(resp: Response) = {
-    if (resp.getStatusCode / 100 != 2)
-      throw StatusCode(resp.getStatusCode)
+  private def checkStatusThanConvertToString(req: Req)(resp: Response)(implicit logCorrelationId: LogCorrelationId) = {
+    if (resp.getStatusCode / 100 != 2) {
+      throwWithLogging(req, StatusCode(resp.getStatusCode))
+    }
     resp.getResponseBody
   }
 
   def shutdown(): Unit = {
     http.shutdown()
+  }
+
+  private def throwWithLogging(req: Req, ex: Throwable)(implicit logCorrelationId: LogCorrelationId) = {
+    logFailure(req, logCorrelationId.withClientId(clientId), ex)
+    throw ex
   }
 
 }
