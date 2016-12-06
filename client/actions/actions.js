@@ -1,5 +1,6 @@
 import HttpService from "../http/HttpService";
 import GraphUtils from "../components/graph/GraphUtils";
+import * as UndoRedoActions from '../undoredo/UndoRedoActions';
 
 export function fetchProcessToDisplay(processId, versionId) {
   return (dispatch) => {
@@ -64,7 +65,7 @@ export function updateImportedProcess(processJson) {
 
 export function clearProcess() {
   return (dispatch) => {
-    dispatch(clear())
+    dispatch(UndoRedoActions.clear())
     return dispatch({
       type: "CLEAR_PROCESS"
     })
@@ -148,17 +149,4 @@ export function toggleConfirmDialog(isOpen, text, action) {
     text: text,
     onConfirmCallback: action
   }
-}
-
-//fixme to nie powinno tu byc, powinno byc wstrzykiwane jakos z espUndoable
-export function undo() {
-  return {type: "UNDO"};
-}
-
-export function redo() {
-  return {type: "REDO"};
-}
-
-export function clear() {
-  return {type: "CLEAR"};
 }

@@ -37,7 +37,6 @@ class NodeDetailsModal extends React.Component {
   }
 
   componentDidUpdate(prevProps, prevState){
-    //fixme na razie tak, bo undo w devtoolsach nie uderza do backendu
     if (!_.isEqual(prevProps.nodeToDisplay, this.props.nodeToDisplay)) {
       this.setState({editedNode: this.props.nodeToDisplay})
     }

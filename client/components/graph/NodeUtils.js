@@ -1,13 +1,13 @@
 
-export default {
-  nodeType: (node) => {
-    return node.type ? node.type : "Properties";
-  },
+class NodeUtils {
 
-  nodeIsProperties: (node) => {
-    var type = node && node.type ? node.type : "Properties"
-    // fixme jak najlepiej tutaj wolac funkcje z tego samego modulu?
-    return type == "Properties";
+  nodeType = (node) => {
+    return node.type ? node.type : "Properties";
   }
 
+  nodeIsProperties = (node) => {
+    const type = node && this.nodeType(node)
+    return type == "Properties";
+  }
 }
+export default new NodeUtils()
