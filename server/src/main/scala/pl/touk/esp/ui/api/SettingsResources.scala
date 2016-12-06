@@ -27,4 +27,4 @@ class SettingsResources(config: Config)(implicit ec: ExecutionContext)
     }
 }
 
-case class GrafanaSettings(url: String, dashboard: String, hosts: String)
+case class GrafanaSettings(url: String, dashboard: String, env: String)
