@@ -1,7 +1,6 @@
 package pl.touk.esp.ui.api
 
 import akka.http.scaladsl.server.Directives
-import argonaut.{EncodeJson, Json, PrettyParams}
 import pl.touk.esp.engine.definition.DefinitionExtractor
 import pl.touk.esp.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.esp.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
@@ -12,7 +11,6 @@ import pl.touk.esp.engine.graph.param
 import pl.touk.esp.engine.graph.service.ServiceRef
 import pl.touk.esp.engine.graph.sink.SinkRef
 import pl.touk.esp.engine.graph.source.SourceRef
-import pl.touk.esp.ui.process.marshall.DisplayableProcessCodec
 import pl.touk.esp.ui.security.LoggedUser
 import pl.touk.esp.ui.util.Argonaut62Support
 
@@ -24,14 +22,7 @@ class DefinitionResources(processDefinition: ProcessDefinition[ObjectDefinition]
   extends Directives with Argonaut62Support {
 
   import argonaut.ArgonautShapeless._
-
-  implicit val displayableProcessDecode = DisplayableProcessCodec.codec
-
-  implicit val printer: Json => String =
-    PrettyParams.spaces2.copy(dropNullKeys = true, preserveOrder = true).pretty
-
-  implicit val displayableProcessNodeEncoder = DisplayableProcessCodec.nodeEncoder
-  implicit val processObjectsEncodeEncode = EncodeJson.of[ProcessObjects]
+  import pl.touk.esp.ui.codec.UiCodecs._
 
   val route = (user: LoggedUser) =>
     path("processDefinitionData") {

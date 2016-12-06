@@ -11,10 +11,10 @@ import org.scalatest._
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.ui.api.helpers.TestFactory._
 import pl.touk.esp.ui.api.{ManagementResources, ProcessActivityResource, ProcessesResources}
+import pl.touk.esp.ui.codec.{ProcessTypeCodec, UiCodecs}
 import pl.touk.esp.ui.db.EspTables
 import pl.touk.esp.ui.db.migration.SampleData
 import pl.touk.esp.ui.process.displayedgraph.DisplayableProcess
-import pl.touk.esp.ui.process.marshall.{DisplayableProcessCodec, ProcessTypeCodec}
 import pl.touk.esp.ui.process.repository.ProcessRepository.ProcessDetails
 import pl.touk.esp.ui.security.LoggedUser
 
@@ -24,7 +24,7 @@ import scala.concurrent.duration.Duration
 trait EspItTest extends LazyLogging { self: ScalatestRouteTest with Suite with BeforeAndAfterEach with Matchers =>
 
   import argonaut.ArgonautShapeless._
-  implicit val decoder = DisplayableProcessCodec.codec
+  implicit val decoder = UiCodecs.codec
   implicit val processTypeCodec = ProcessTypeCodec.codec
   implicit val localDateTimeEncode = EncodeJson.of[String].contramap[LocalDateTime](_.toString)
   implicit val localDateTimeDecode = DecodeJson.of[String].map[LocalDateTime](s => LocalDateTime.parse(s))

@@ -8,7 +8,6 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.esp.ui.api.helpers.EspItTest
 import pl.touk.esp.ui.api.helpers.TestFactory._
-import pl.touk.esp.ui.process.marshall.DisplayableProcessCodec
 import pl.touk.esp.ui.process.repository.ProcessActivityRepository.ProcessActivity
 
 import scala.concurrent.duration._
@@ -16,7 +15,7 @@ import scala.language.higherKinds
 
 class ProcessActivityResourceSpec extends FlatSpec with ScalatestRouteTest with Matchers with ScalaFutures with BeforeAndAfterEach with EspItTest  {
 
-  import DisplayableProcessCodec._
+  import pl.touk.esp.ui.codec.UiCodecs._
   implicit override val patienceConfig = PatienceConfig(timeout = scaled(Span(1, Seconds)), interval = scaled(Span(100, Millis)))
   implicit val testtimeout = RouteTestTimeout(2.seconds)
 

@@ -1,4 +1,4 @@
-package pl.touk.esp.ui.process.marshall
+package pl.touk.esp.ui.codec
 
 import argonaut.Json._
 import argonaut.{CodecJson, CursorHistory, DecodeResult}
