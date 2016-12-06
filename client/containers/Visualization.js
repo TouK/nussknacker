@@ -71,13 +71,13 @@ const Visualization = withRouter(React.createClass({
   undo() {
     //ten if moze powinien byc blisko reducera, tylko jak to ladnie zrobic?
     if (this.props.undoRedoAvailable) {
-      this.props.actions.undo()
+      this.props.undoRedoActions.undo()
     }
   },
 
   redo() {
     if (this.props.undoRedoAvailable) {
-      this.props.actions.redo()
+      this.props.undoRedoActions.redo()
     }
   },
 

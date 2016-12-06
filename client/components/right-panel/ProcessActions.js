@@ -43,7 +43,7 @@ class ProcessActions extends React.Component {
   }
 
   clearHistory = () => {
-    return this.props.actions.clear()
+    return this.props.undoRedoActions.clear()
   }
 
   fetchProcessDetails = () => {
