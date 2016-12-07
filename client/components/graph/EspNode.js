@@ -215,7 +215,6 @@ export default {
         }],
         attrs: {
           '.connection': { stroke: '#B5B5B5' },
-          '.marker-source': { 'stroke-width': 0, fill: '#B5B5B5', d: 'M 10 0 L 0 5 L 10 10 z' },
           '.marker-target': { 'stroke-width': 0, fill: '#B5B5B5', d: 'M 10 0 L 0 5 L 10 10 z' },
           minLen: 10
         },
