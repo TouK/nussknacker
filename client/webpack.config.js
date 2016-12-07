@@ -20,6 +20,9 @@ module.exports = {
   plugins: [
     new webpack.HotModuleReplacementPlugin(),
     new webpack.DefinePlugin({
+      'process.env': {
+        'NODE_ENV': JSON.stringify('development')
+      },
       'GIT': {
         'HASH': JSON.stringify(GIT_HASH),
         'DATE': JSON.stringify(GIT_DATE)

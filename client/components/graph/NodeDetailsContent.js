@@ -230,6 +230,12 @@ export default class NodeDetailsContent extends React.Component {
                 <textarea rows="5" cols="50" className="node-input" value={fieldValue}
                           onChange={(e) => handleChange(e.target.value)} readOnly={!this.props.isEditMode}/>
               }
+              {process.env.NODE_ENV == "development" ?
+                <div style={{color: "red"}}>
+                  <p>ONLY_IN_DEV_MODE</p>
+                  <p>{fieldValue}</p>
+                </div> : null
+              }
             </div>
           </div>
         )
