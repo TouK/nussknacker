@@ -56,7 +56,7 @@ class FlinkProcessRegistrarKafkaSpec
     Future {
       KeyValueTestHelper.processInvoker.invokeWithKafka(
         process,
-        KafkaConfig(kafkaZookeeperServer.zkAddress, kafkaZookeeperServer.kafkaAddress, None)
+        KafkaConfig(kafkaZookeeperServer.zkAddress, kafkaZookeeperServer.kafkaAddress, None, None)
       )
     }
 
