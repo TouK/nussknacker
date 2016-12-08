@@ -6,6 +6,7 @@ import cats.Eval
 import cats.data.StateT
 import pl.touk.esp.engine.api.ParamName
 import pl.touk.esp.engine.definition.DefinitionExtractor.{ClazzRef, PlainClazzDefinition}
+import pl.touk.esp.engine.util.ThreadUtils
 import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl
 
 import scala.concurrent.Future
@@ -52,7 +53,7 @@ object EspTypeUtils {
         .filter(m => !blacklistedClazzPackagePrefix.exists(m.refClazzName.startsWith))
         .filter(m => !m.refClazzName.startsWith("["))
         .map(_.refClazzName).distinct
-        .flatMap(m => clazzAndItsChildrenDefinition(Thread.currentThread.getContextClassLoader.loadClass(m)))
+        .flatMap(m => clazzAndItsChildrenDefinition(ThreadUtils.loadUsingContextLoader(m)))
       mainClazzDefinition :: recursiveClazzes
     }
     result.distinct

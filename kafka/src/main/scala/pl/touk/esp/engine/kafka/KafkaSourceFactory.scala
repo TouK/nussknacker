@@ -7,13 +7,12 @@ import org.apache.flink.streaming.api.functions.TimestampAssigner
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer09
 import org.apache.flink.streaming.util.serialization.DeserializationSchema
-import pl.touk.esp.engine.api.process.{Source, SourceFactory}
+import pl.touk.esp.engine.api.process.Source
 import pl.touk.esp.engine.api.{MetaData, ParamName}
 import pl.touk.esp.engine.flink.api.process.{FlinkSource, FlinkSourceFactory}
 import pl.touk.esp.engine.kafka.KafkaSourceFactory._
 
 import scala.collection.JavaConverters._
-import scala.reflect.ClassTag
 
 class KafkaSourceFactory[T: TypeInformation](config: KafkaConfig,
                                              schema: DeserializationSchema[T],
@@ -48,6 +47,8 @@ class KafkaSourceFactory[T: TypeInformation](config: KafkaConfig,
 
     override def timestampAssigner = KafkaSourceFactory.this.timestampAssigner
   }
+
+  override val testDataParser : Option[String => T] = Some(testData => schema.deserialize(testData.getBytes))
 
 }
 

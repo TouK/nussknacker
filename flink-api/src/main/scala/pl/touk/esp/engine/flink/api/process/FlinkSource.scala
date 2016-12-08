@@ -18,15 +18,17 @@ trait FlinkSource[T] extends Source[T] {
 
 //bez `extends Serializable` serializacja np. kafkaMocks.MockSourceFactory nie dziala...
 abstract class FlinkSourceFactory[T: TypeInformation] extends SourceFactory[T] with Serializable {
-  def clazz = implicitly[TypeInformation[T]].getTypeClass
+  def clazz = typeInformation.getTypeClass
+
+  def typeInformation = implicitly[TypeInformation[T]]
 }
 
 object FlinkSourceFactory {
 
-  def noParam[T: TypeInformation](source: FlinkSource[T]): FlinkSourceFactory[T] =
-    new NoParamSourceFactory[T](source)
+  def noParam[T: TypeInformation](source: FlinkSource[T], testDataParser: Option[String => T] = None): FlinkSourceFactory[T] =
+    new NoParamSourceFactory[T](source, testDataParser)
 
-  class NoParamSourceFactory[T: TypeInformation](val source: FlinkSource[T]) extends FlinkSourceFactory[T] {
+  class NoParamSourceFactory[T: TypeInformation](val source: FlinkSource[T], val testDataParser: Option[String => T]) extends FlinkSourceFactory[T] {
     def create(): Source[T] = source
   }
 

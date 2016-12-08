@@ -73,8 +73,8 @@ object DefinitionExtractor {
   case class ObjectWithMethodDef(obj: Any,
                                  methodDef: MethodDefinition,
                                  objectDefinition: ObjectDefinition) extends ObjectMetadata {
-    def method = {
-      methodDef.method
+    def invokeMethod(args: List[AnyRef]) = {
+      methodDef.method.invoke(obj, args.toArray : _*)
     }
 
     override def parameters = orderedParameters.definedParameters

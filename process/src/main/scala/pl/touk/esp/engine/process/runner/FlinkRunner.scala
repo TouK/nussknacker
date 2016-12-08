@@ -1,43 +1,31 @@
-package pl.touk.esp.engine.process
+package pl.touk.esp.engine.process.runner
 
 import java.io.{File, FileReader}
 
 import cats.data.Validated.{Invalid, Valid}
-import cats.instances.list._
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.commons.io.IOUtils
-import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import pl.touk.esp.engine.api.process.ProcessConfigCreator
 import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
 import pl.touk.esp.engine.canonize.ProcessCanonizer
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.marshall.ProcessMarshaller
+import pl.touk.esp.engine.util.ThreadUtils
 
-object FlinkProcessMain {
+trait FlinkRunner {
 
-  val ProcessMarshaller = new ProcessMarshaller
+  private val ProcessMarshaller = new ProcessMarshaller
 
-  def main(args: Array[String]) : Unit = {
 
-    require(args.nonEmpty, "Process json should be passed as a first argument")
-    val process = readProcessFromArg(args(0))
+  protected def readConfigFromArgs(args: Array[String]): Config = {
     val optionalConfigArg = if (args.length > 1) Some(args(1)) else None
-    val config = readConfigFromArg(optionalConfigArg)
-    val registrar: FlinkProcessRegistrar = prepareRegistrar(config)
-
-    val env = StreamExecutionEnvironment.getExecutionEnvironment
-    registrar.register(env, process)
-    env.execute(process.id)
+    readConfigFromArg(optionalConfigArg)
   }
 
-  private def prepareRegistrar(config: Config): FlinkProcessRegistrar = {
-    val creator = Thread.currentThread.getContextClassLoader.loadClass(config.getString("processConfigCreatorClass"))
-      .newInstance().asInstanceOf[ProcessConfigCreator]
+  protected def loadCreator(config: Config): ProcessConfigCreator =
+    ThreadUtils.loadUsingContextLoader(config.getString("processConfigCreatorClass")).newInstance().asInstanceOf[ProcessConfigCreator]
 
-    FlinkProcessRegistrar(creator, config)
-  }
-
-  private def readProcessFromArg(arg: String): EspProcess = {
+  protected def readProcessFromArg(arg: String): EspProcess = {
     val canonicalJson = if (arg.startsWith("@")) {
       IOUtils.toString(new FileReader(arg.substring(1)))
     } else {

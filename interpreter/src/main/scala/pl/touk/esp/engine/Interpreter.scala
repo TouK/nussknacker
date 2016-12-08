@@ -87,6 +87,7 @@ class Interpreter private(services: Map[String, ServiceInvoker],
           case None =>
             ValueWithContext(outputValue(ctx), ctx)
         }
+        listeners.foreach(_.sinkInvoked(node.id, id, ctx, metaData, valueWithModifiedContext.value))
         Future.successful(InterpretationResult(EndReference(id), valueWithModifiedContext))
       case (CustomNode(id, parameters, _), CustomNodeExpression(expressionName)) =>
         Future.successful(InterpretationResult(
@@ -151,7 +152,8 @@ class Interpreter private(services: Map[String, ServiceInvoker],
     }
     val resultFuture = ref.invoker.invoke(implicitParams(ctx) ++ preparedParams)
     resultFuture.onComplete { result =>
-      listeners.foreach(_.serviceInvoked(node.id, ref.id, ctx, metaData, result))
+      //TODO: a implicit tez??
+      listeners.foreach(_.serviceInvoked(node.id, ref.id, ctx, metaData, preparedParams, result))
     }
     resultFuture.map { result =>
       ValueWithContext(result, newCtx)

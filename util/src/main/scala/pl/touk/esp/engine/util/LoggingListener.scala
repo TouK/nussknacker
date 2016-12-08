@@ -14,7 +14,7 @@ object LoggingListener extends ProcessListener with Serializable {
     val loggerKey = keys.mkString(".")
     val logger = LoggerFactory.getLogger(s"$className.$loggerKey")
     if (logger.isDebugEnabled()) {
-      logger.debug(message)  
+      logger.debug(message)
     }
   }
 
@@ -31,8 +31,11 @@ object LoggingListener extends ProcessListener with Serializable {
     debug(List(metadata.id, nodeId, "expression"), s"invoked expression: $expr with result $result. Context: $context")
   }
 
-  override def serviceInvoked(nodeId: String, id: String, context: Context, metadata: MetaData, result: Try[Any]): Unit = {
+  override def serviceInvoked(nodeId: String, id: String, context: Context, metadata: MetaData, params: Map[String, Any], result: Try[Any]): Unit = {
     debug(List(metadata.id, nodeId, "service", id), s"Invocation ended-up with result: $result. Context: $context")
   }
 
+  override def sinkInvoked(nodeId: String, id: String, context: Context, metadata: MetaData, param: Any) = {
+    debug(List(metadata.id, nodeId, "sink", id), s"Sink invoked with param: $param. Context: $context")
+  }
 }

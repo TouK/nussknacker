@@ -54,8 +54,8 @@ object ProcessTestHelpers {
           timestampAssigner = Some(new AscendingTimestampExtractor[SimpleRecord] {
             override def extractAscendingTimestamp(element: SimpleRecord) = element.date.getTime
           })
-        )))
-      )
+        ))
+      ))
 
       override def sinkFactories(config: Config) = Map(
         "monitor" -> WithCategories(SinkFactory.noParam(EmptySink))
