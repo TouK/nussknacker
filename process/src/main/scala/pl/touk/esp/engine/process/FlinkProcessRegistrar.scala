@@ -165,15 +165,18 @@ object FlinkProcessRegistrar {
 
   private final val EndId = "$end"
 
-  def apply(creator: ProcessConfigCreator, config: Config) = {
+  def apply(creator: ProcessConfigCreator, config: Config,
+            definitionsPostProcessor: (ProcessDefinitionExtractor.ProcessDefinition[ObjectWithMethodDef] => ProcessDefinitionExtractor.ProcessDefinition[ObjectWithMethodDef]) = identity,
+              additionalListeners: List[ProcessListener] = List()) = {
     def checkpointInterval() = config.as[FiniteDuration]("checkpointInterval")
 
     def eventTimeMetricDuration() = config.getOrElse[FiniteDuration]("metrics.eventTime.duration", 10.seconds)
 
     def compiler(sub: PartSubGraphCompiler): ProcessCompiler = {
       val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(creator, config)
-      new ProcessCompiler(sub, definitions)
+      new ProcessCompiler(sub, definitionsPostProcessor(definitions))
     }
+
 
     def compileProcess(process: EspProcess)() = {
       val services = creator.services(config)
@@ -186,7 +189,7 @@ object FlinkProcessRegistrar {
         compiledProcess,
         new ServicesLifecycle(services.values.map(_.value).toSeq),
         subCompiler,
-        Interpreter(servicesDefs, timeout, creator.listeners(config)),
+        Interpreter(servicesDefs, timeout, creator.listeners(config) ++ additionalListeners),
         timeout
       )
     }

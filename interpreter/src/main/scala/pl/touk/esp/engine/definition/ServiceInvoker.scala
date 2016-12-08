@@ -23,10 +23,10 @@ private[definition] class ServiceInvokerImpl(objectWithMethodDef: ObjectWithMeth
       )
     val values = objectWithMethodDef.orderedParameters.prepareValues(prepareValue, Seq(ec))
     try {
-      objectWithMethodDef.method.invoke(objectWithMethodDef.obj, values: _*).asInstanceOf[Future[Any]]
+      objectWithMethodDef.invokeMethod(values).asInstanceOf[Future[Any]]
     } catch {
       case ex: IllegalArgumentException =>
-        logger.warn(s"Failed to invoke method: ${objectWithMethodDef.method}, with params: ${values}", ex)
+        logger.warn(s"Failed to invoke method: ${objectWithMethodDef.methodDef.method}, with params: $values", ex)
         throw ex
       case NonFatal(ex) =>
         throw ex

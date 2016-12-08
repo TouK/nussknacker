@@ -10,6 +10,15 @@ trait ProcessListener {
 
   def expressionEvaluated(nodeId: String, expression: String, context: Context, processMetaData: MetaData, result: Any): Unit
 
-  def serviceInvoked(nodeId: String, id: String, context: Context, processMetaData: MetaData, result: Try[Any]): Unit
+  def serviceInvoked(nodeId: String, id: String,
+                     context: Context,
+                     processMetaData: MetaData,
+                     params: Map[String, Any],
+                     result: Try[Any]): Unit
+
+  def sinkInvoked(nodeId: String, id: String,
+                       context: Context,
+                       processMetaData: MetaData,
+                       param: Any)
 
 }

@@ -25,12 +25,12 @@ private[definition] class CustomNodeInvokerImpl[T](executor: ObjectWithMethodDef
 
   override def run(lazyDeps: () => CustomNodeInvokerDeps) : T = {
     val values = executor.orderedParameters.prepareValues(prepareParam(lazyDeps), Seq(() => lazyDeps().exceptionHandler))
-    executor.method.invoke(executor.obj, values: _*).asInstanceOf[T]
+    executor.invokeMethod(values).asInstanceOf[T]
   }
 
   private def prepareParam(lazyDeps: () => CustomNodeInvokerDeps)(param: Parameter) = {
     val interpreter = CompilerLazyInterpreter[Any](lazyDeps, metaData, node, param)
-    val methodParam = EspTypeUtils.findParameterByParameterName(executor.method, param.name)
+    val methodParam = EspTypeUtils.findParameterByParameterName(executor.methodDef.method, param.name)
     if (methodParam.exists(_.getType ==  classOf[LazyInterpreter[_]])) {
       interpreter
     } else {

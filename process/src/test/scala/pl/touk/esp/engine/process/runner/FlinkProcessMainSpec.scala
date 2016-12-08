@@ -1,4 +1,6 @@
-package pl.touk.esp.engine.process
+package pl.touk.esp.engine.process.runner
+
+import java.util.Date
 
 import argonaut.PrettyParams
 import com.typesafe.config.Config
@@ -62,7 +64,11 @@ class SimpleProcessConfigCreator extends ProcessConfigCreator {
   override def sourceFactories(config: Config) = Map("input" -> WithCategories(FlinkSourceFactory.noParam(
     new CollectionSource[SimpleRecord](new ExecutionConfig, List(), Some(new AscendingTimestampExtractor[SimpleRecord] {
       override def extractAscendingTimestamp(element: SimpleRecord) = element.date.getTime
-    }))), "cat2"))
+    })), Some((csv: String) => {
+      val parts = csv.split("\\|")
+      SimpleRecord(parts(0), parts(1).toLong, parts(2), new Date(parts(3).toLong), Some(BigDecimal(parts(4))), BigDecimal(parts(5)), parts(6))
+    })
+  ), "cat2"))
 
   override def exceptionHandlerFactory(config: Config) =
     ExceptionHandlerFactory.noParams(VerboselyLoggingExceptionHandler)

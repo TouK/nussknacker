@@ -45,7 +45,7 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
     val kConfig = KafkaConfig(config.getString("kafka.zkAddress"), config.getString("kafka.kafkaAddress"), None, None)
 
     Map(
-      "kafka-transaction" -> WithCategories(FlinkSourceFactory.noParam(prepareNotEndingSource)),
+      "kafka-transaction" -> WithCategories(FlinkSourceFactory.noParam(prepareNotEndingSource, Some(identity[String] _))),
       "oneSource" -> WithCategories(FlinkSourceFactory.noParam(new FlinkSource[String] {
 
         override def timestampAssigner = None

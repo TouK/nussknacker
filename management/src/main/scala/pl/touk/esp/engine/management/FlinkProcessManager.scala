@@ -1,27 +1,23 @@
 package pl.touk.esp.engine.management
 
 import java.io.File
-import java.util.concurrent.{TimeUnit, TimeoutException}
+import java.util.concurrent.TimeUnit
 
-import akka.pattern.AskTimeoutException
-import com.typesafe.config.{Config, ConfigValueType}
+import com.typesafe.config.{Config, ConfigObject, ConfigValueType}
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.flink.api.common.{JobID, JobSubmissionResult}
-import org.apache.flink.client.program.{PackagedProgram, ProgramInvocationException, StandaloneClusterClient}
+import org.apache.flink.api.common.JobID
+import org.apache.flink.client.program.{PackagedProgram, ProgramInvocationException}
 import org.apache.flink.configuration.Configuration
-import org.apache.flink.runtime.akka.AkkaUtils
-import org.apache.flink.runtime.client.{JobClient, JobTimeoutException}
-import org.apache.flink.runtime.instance.ActorGateway
+import org.apache.flink.runtime.client.JobTimeoutException
 import org.apache.flink.runtime.messages.JobManagerMessages
 import org.apache.flink.runtime.messages.JobManagerMessages._
-import org.apache.flink.runtime.util.LeaderRetrievalUtils
 import pl.touk.esp.engine.api.deployment._
+import pl.touk.esp.engine.api.deployment.test.TestData
 import pl.touk.esp.engine.marshall.ProcessMarshaller
 
 import scala.collection.JavaConversions._
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
-import scala.reflect.ClassTag
 import scala.util.Try
 
 object FlinkProcessManager {
@@ -55,13 +51,18 @@ class FlinkProcessManager(config: Config,
 
   private val flinkConf = config.getConfig("flinkConfig")
 
+  private val jarFile = new File(flinkConf.getString("jarPath"))
+
+  private val processConfigPart = extractProcessConfig
+
+  private val testRunner = FlinkProcessTestRunner(processConfigPart.toConfig, jarFile)
+
   private def prepareProgram(processId: String, processDeploymentData: ProcessDeploymentData) : PackagedProgram = {
-    val jarFile = new File(flinkConf.getString("jarPath"))
-    val configPart = extractProcessConfig
+    val configPart = processConfigPart.render()
 
     processDeploymentData match {
       case GraphProcess(processAsJson) =>
-        new PackagedProgram(jarFile, "pl.touk.esp.engine.process.FlinkProcessMain", List(processAsJson, configPart):_*)
+        new PackagedProgram(jarFile, "pl.touk.esp.engine.process.runner.FlinkProcessMain", List(processAsJson, configPart):_*)
       case CustomProcess(mainClass) =>
         new PackagedProgram(jarFile, mainClass, List(processId, configPart): _*)
     }
@@ -98,6 +99,11 @@ class FlinkProcessManager(config: Config,
     }
   }
 
+
+  override def test(processId: String, processDeploymentData: ProcessDeploymentData, testData: TestData) = {
+    Future(testRunner.test(processId, processDeploymentData, testData))
+  }
+
   private def stopSavingSavepoint(job: ProcessState): Future[String] = {
     val jobId = JobID.fromHexString(job.id)
     for {
@@ -128,9 +134,9 @@ class FlinkProcessManager(config: Config,
     }
   }
 
-  private def extractProcessConfig: String = {
+  private def extractProcessConfig: ConfigObject = {
     val configName = flinkConf.getString("processConfig")
-    config.getConfig(configName).root().render()
+    config.getConfig(configName).root()
   }
 
   override def findJobStatus(name: String): Future[Option[ProcessState]] = {

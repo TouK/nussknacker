@@ -27,10 +27,10 @@ private[definition] class ProcessObjectFactoryImpl[T](objectWithMethodDef: Objec
       )
     val values = objectWithMethodDef.orderedParameters.prepareValues(prepareValue, Seq(processMetaData))
     try {
-      objectWithMethodDef.method.invoke(objectWithMethodDef.obj, values: _*).asInstanceOf[T]
+      objectWithMethodDef.invokeMethod(values).asInstanceOf[T]
     } catch {
       case NonFatal(e) =>
-       logger.error(s"Failed to invoke ${objectWithMethodDef.method} on ${objectWithMethodDef.obj} with params $values")
+       logger.error(s"Failed to invoke ${objectWithMethodDef.methodDef} on ${objectWithMethodDef.obj} with params $values")
        throw e
     }
   }
