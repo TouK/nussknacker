@@ -1,16 +1,18 @@
 package pl.touk.esp.engine.definition
 
+import com.typesafe.scalalogging.LazyLogging
 import pl.touk.esp.engine.api.Service
 import pl.touk.esp.engine.definition.DefinitionExtractor.{ObjectWithMethodDef, Parameter}
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
 
 trait ServiceInvoker {
   def invoke(params: Map[String, Any])
             (implicit ec: ExecutionContext): Future[Any]
 }
 
-private[definition] class ServiceInvokerImpl(objectWithMethodDef: ObjectWithMethodDef) extends ServiceInvoker {
+private[definition] class ServiceInvokerImpl(objectWithMethodDef: ObjectWithMethodDef) extends ServiceInvoker with LazyLogging {
 
   override def invoke(params: Map[String, Any])
                      (implicit ec: ExecutionContext): Future[Any] = {
@@ -20,7 +22,15 @@ private[definition] class ServiceInvokerImpl(objectWithMethodDef: ObjectWithMeth
         throw new IllegalArgumentException(s"Missing parameter with name: ${p.name}")
       )
     val values = objectWithMethodDef.orderedParameters.prepareValues(prepareValue, Seq(ec))
-    objectWithMethodDef.method.invoke(objectWithMethodDef.obj, values: _*).asInstanceOf[Future[Any]]
+    try {
+      objectWithMethodDef.method.invoke(objectWithMethodDef.obj, values: _*).asInstanceOf[Future[Any]]
+    } catch {
+      case ex: IllegalArgumentException =>
+        logger.warn(s"Failed to invoke method: ${objectWithMethodDef.method}, with params: ${values}", ex)
+        throw ex
+      case NonFatal(ex) =>
+        throw ex
+    }
   }
 
 }
