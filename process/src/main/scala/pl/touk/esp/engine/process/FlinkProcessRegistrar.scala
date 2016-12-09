@@ -129,7 +129,8 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessW
           throw new IllegalArgumentException(s"Process can only use flink sinks, instead given: ${part.obj}")
         case SplitPart(splitNode, nexts) =>
           val nextIds = nexts.map(_.next.id)
-          val newStart = start.split(_ => nextIds)
+          //TODO: bug we flinku jesli sa 2 splity pod rzad - to jest workaround, trzeba zglosic i poprawic...
+          val newStart = start.map(identity[InterpretationResult] _).split(_ => nextIds)
           nexts.foreach {
             //FIXME: czy to wszystko tutaj jest w porzadku???
             case NextWithParts(NextNode(nextNode), parts, ends) =>
