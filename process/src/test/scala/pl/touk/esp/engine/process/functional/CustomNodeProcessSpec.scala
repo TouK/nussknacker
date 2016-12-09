@@ -76,6 +76,27 @@ class CustomNodeProcessSpec extends FlatSpec with Matchers {
 
   }
 
+  it should "be able to filter before split" in {
+
+    val process = EspProcessBuilder.id("proc1")
+      .exceptionHandler()
+      .source("id", "input")
+      .filter("dummy", "false")
+      .split("split",
+        GraphBuilder.processorEnd("proc2", "logService", "all" -> "#input")
+      )
+
+    val data = List(
+      SimpleRecord("1", 3, "a", new Date(0))
+    )
+
+    val env = StreamExecutionEnvironment.createLocalEnvironment(1)
+    processInvoker.invoke(process, data, env)
+
+    MockService.data shouldBe 'empty
+
+  }
+
   it should "retain context after split" in {
     val process = EspProcessBuilder.id("proc1")
       .exceptionHandler()
