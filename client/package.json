@@ -27,6 +27,7 @@
     "react-redux": "4.4.5",
     "react-router": "2.6.0",
     "redux-thunk": "2.1.0",
+    "react-textarea-autosize": "4.0.5",
     "react-notification-system": "0.2.10",
     "react-autosuggest": "7.0.1",
     "react-dropzone": "3.7.3",

@@ -1,10 +1,12 @@
-import React, {Component} from 'react';
-import {render} from 'react-dom';
-import classNames from 'classnames';
-import _ from 'lodash';
-import {ListGroupItem} from 'react-bootstrap';
-import NodeUtils from './NodeUtils'
-import ExpressionSuggest from './ExpressionSuggest'
+import React, {Component} from "react";
+import {render} from "react-dom";
+import classNames from "classnames";
+import _ from "lodash";
+import {ListGroupItem} from "react-bootstrap";
+import Textarea from 'react-textarea-autosize';
+import NodeUtils from "./NodeUtils";
+import ExpressionSuggest from "./ExpressionSuggest";
+
 
 export default class NodeDetailsContent extends React.Component {
 
@@ -16,7 +18,7 @@ export default class NodeDetailsContent extends React.Component {
     }
   }
 
-  componentDidUpdate(prevProps, prevState){
+  componentDidUpdate(prevProps, prevState) {
     if (!_.isEqual(prevProps.node, this.props.node)) {
       this.setState({editedNode: this.props.node})
     }
@@ -27,13 +29,13 @@ export default class NodeDetailsContent extends React.Component {
       case 'Source':
         return this.sourceSinkCommon()
       case 'Sink':
-        const toAppend = this.createField("textarea", "Expression:", "endResult.expression")
+        const toAppend = this.createField("textarea", "Expression", "endResult.expression")
         return this.sourceSinkCommon(toAppend)
       case 'Filter':
         return (
           <div className="node-table-body">
-            {this.createField("input", "Id:", "id")}
-            {this.createField("textarea", "Expression:", "expression.expression")}
+            {this.createField("input", "Id", "id")}
+            {this.createField("textarea", "Expression", "expression.expression")}
             {this.descriptionField()}
           </div>
         )
@@ -41,62 +43,51 @@ export default class NodeDetailsContent extends React.Component {
       case 'Processor':
         return (
           <div className="node-table-body">
-            {this.createField("input", "Id:", "id")}
-            {this.createField("input", "Service Id:", "service.id")}
-            <div className="node-row">
-              <div className="node-label">Parameters:</div>
-              <div className="node-group">
-                {this.state.editedNode.service.parameters.map((params, index) => {
-                  return (
-                    <div className="node-block" key={index}>
-                      {this.createListField("input", "Name:", params, 'name', `service.parameters[${index}]`)}
-                      {this.createListField("textarea", "Expression:", params, 'expression.expression', `service.parameters[${index}]`)}
-                      <hr />
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-            {this.props.node.type == 'Enricher' ? this.createField("input", "Output:", "output") : null }
+            {this.createField("input", "Id", "id")}
+            {this.createField("input", "Service Id", "service.id")}
+            {this.state.editedNode.service.parameters.map((params, index) => {
+              //TODO: czy tu i w custom node i gdzies jeszcze chcemy te hr??
+              return (
+                <div className="node-block" key={index}>
+                  {this.createListField("textarea", params.name, params, 'expression.expression', `service.parameters[${index}]`)}
+                  <hr/>
+                </div>
+              )
+            })}
+            {this.props.node.type == 'Enricher' ? this.createField("input", "Output", "output") : null }
             {this.descriptionField()}
           </div>
         )
       case 'CustomNode':
         return (
           <div className="node-table-body">
-            {this.createField("input", "Id:", "id")}
-            {this.createField("input", "Output:", "outputVar")}
-            {this.createField("input", "Node type:", "nodeType")}
-            <div className="node-row">
-              <div className="node-label">Parameters:</div>
-              <div className="node-group">
-                {this.state.editedNode.parameters.map((params, index) => {
-                  return (
-                    <div className="node-block" key={index}>
-                      {this.createListField("input", "Name:", params, "name", `parameters[${index}]`)}
-                      {this.createListField("textarea", "Expression:", params, "expression.expression", `parameters[${index}]`)}
-                      <hr />
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
+            {this.createField("input", "Id", "id")}
+            {this.createField("input", "Output", "outputVar")}
+            {this.createField("input", "Node type", "nodeType")}
+            {this.state.editedNode.parameters.map((params, index) => {
+              return (
+                <div className="node-block" key={index}>
+                  {this.createListField("textarea", params.name, params, 'expression.expression', `parameters[${index}]`)}
+                  <hr />
+                </div>
+              )
+            })}
             {this.descriptionField()}
           </div>
         )
       case 'VariableBuilder':
         return (
           <div className="node-table-body">
-            {this.createField("input", "Id:", "id")}
-            {this.createField("input", "Variable Name:", "varName")}
+            {this.createField("input", "Id", "id")}
+            {this.createField("input", "Variable Name", "varName")}
             <div className="node-row">
               <div className="node-label">Fields:</div>
               <div className="node-group">
                 {this.state.editedNode.fields.map((params, index) => {
                   return (
                     <div className="node-block" key={index}>
-                      {this.createListField("input", "Name:", params, "name", `fields[${index}]`)}
-                      {this.createListField("textarea", "Expression:", params, "expression.expression", `fields[${index}]`)}
+                      {this.createListField("input", "Name", params, "name", `fields[${index}]`)}
+                      {this.createListField("textarea", "Expression", params, "expression.expression", `fields[${index}]`)}
                       <hr />
                     </div>
                   )
@@ -109,52 +100,39 @@ export default class NodeDetailsContent extends React.Component {
       case 'Variable':
         return (
           <div className="node-table-body">
-            {this.createField("input", "Id:", "id")}
-            {this.createField("input", "Variable Name:", "varName")}
-            {this.createField("textarea", "Expression:", "value.expression")}
+            {this.createField("input", "Id", "id")}
+            {this.createField("input", "Variable Name", "varName")}
+            {this.createField("textarea", "Expression", "value.expression")}
             {this.descriptionField()}
           </div>
         )
       case 'Switch':
         return (
           <div className="node-table-body">
-            {this.createField("input", "Id:", "id")}
-            {this.createField("textarea", "Expression:", "expression.expression")}
-            {this.createField("input", "exprVal:", "exprVal")}
-            {this.descriptionField()}
-          </div>
-        )
-      case 'Aggregate':
-        return (
-          <div className="node-table-body">
-            {this.createField("input", "Id:", "id")}
-            {this.createField("textarea", "Key Expression:", "keyExpression.expression")}
-            {this.createField("textarea", "Trigger Expression:", "triggerExpression.expression")}
-            {this.createField("input", "Folding function", "foldingFunRef")}
-            {this.createField("input", "Duration (ms):", "durationInMillis")}
-            {this.createField("input", "Slide (ms):", "slideInMillis")}
+            {this.createField("input", "Id", "id")}
+            {this.createField("textarea", "Expression", "expression.expression")}
+            {this.createField("input", "exprVal", "exprVal")}
             {this.descriptionField()}
           </div>
         )
       case 'Split':
         return (
           <div className="node-table-body">
-            {this.createField("input", "Id:", "id")}
+            {this.createField("input", "Id", "id")}
             {this.descriptionField()}
           </div>
         )
       case 'Properties':
         return (
           <div className="node-table-body">
-            {this.createField("input", "Parallelism:", "parallelism")}
+            {this.createField("input", "Parallelism", "parallelism")}
             <div className="node-row">
               <div className="node-label">Exception handler:</div>
               <div className="node-group">
                 {this.state.editedNode.exceptionHandler.parameters.map((params, index) => {
                   return (
                     <div className="node-block" key={index}>
-                      {this.createListField("input", "Name:", params, "name", `exceptionHandler.parameters[${index}]`)}
-                      {this.createListField("input", "Value:", params, "value", `exceptionHandler.parameters[${index}]`)}
+                      {this.createListField("input", params.name, params, "value", `exceptionHandler.parameters[${index}]`)}
                       <hr />
                     </div>
                   )
@@ -177,22 +155,16 @@ export default class NodeDetailsContent extends React.Component {
   sourceSinkCommon(toAppend) {
     return (
       <div className="node-table-body">
-        {this.createField("input", "Id:", "id")}
-        {this.createField("input", "Ref Type:", "ref.typ")}
-        <div className="node-row">
-          <div className="node-label">Parameters:</div>
-          <div className="node-group">
-            {this.state.editedNode.ref.parameters.map((params, index) => {
-              return (
-                <div className="node-block" key={index}>
-                  {this.createListField("input", "Name:", params, "name", `ref.parameters[${index}]`)}
-                  {this.createListField("input", "Value:", params, "value", `ref.parameters[${index}]`)}
-                  <hr />
-                </div>
-              )
-            })}
-          </div>
-        </div>
+        {this.createField("input", "Id", "id")}
+        {this.createField("input", "Ref Type", "ref.typ")}
+        {this.state.editedNode.ref.parameters.map((params, index) => {
+          return (
+            <div className="node-block" key={index}>
+              {this.createListField("input", params.name, params, "value", `ref.parameters[${index}]`)}
+              <hr />
+            </div>
+          )
+        })}
         {this.descriptionField()}
         {toAppend}
       </div>
@@ -200,35 +172,35 @@ export default class NodeDetailsContent extends React.Component {
   }
 
   createField = (fieldType, fieldLabel, fieldProperty) => {
-    return this.doCreateField(fieldType, fieldLabel, _.get(this.state.editedNode, fieldProperty, ""), ((newValue) => this.setNodeDataAt(fieldProperty, newValue) ))
+    return this.doCreateField(fieldType, fieldLabel, fieldProperty, _.get(this.state.editedNode, fieldProperty, ""), ((newValue) => this.setNodeDataAt(fieldProperty, newValue) ))
   }
 
   createListField = (fieldType, fieldLabel, obj, fieldProperty, listFieldProperty) => {
-    return this.doCreateField(fieldType, fieldLabel, _.get(obj, fieldProperty), ((newValue) => this.setNodeDataAt(`${listFieldProperty}.${fieldProperty}`, newValue) ))
+    return this.doCreateField(fieldType, fieldLabel, fieldProperty, _.get(obj, fieldProperty), ((newValue) => this.setNodeDataAt(`${listFieldProperty}.${fieldProperty}`, newValue) ))
   }
 
-  doCreateField = (fieldType, fieldLabel, fieldValue, handleChange) => {
+  doCreateField = (fieldType, fieldLabel, fieldProperty, fieldValue, handleChange) => {
     switch (fieldType) {
       case 'input':
         return (
           <div className="node-row">
-            <div className="node-label">{fieldLabel}</div>
+            <div className="node-label">{fieldLabel}:</div>
             <div className="node-value"><input type="text" className="node-input" value={fieldValue}
-                                               onChange={(e) => handleChange(e.target.value)} readOnly={!this.props.isEditMode}/></div>
+                                               onChange={(e) => handleChange(e.target.value)}
+                                               readOnly={!this.props.isEditMode}/></div>
           </div>
         )
       case 'textarea':
         return (
           <div className="node-row">
-            <div className="node-label">{fieldLabel}</div>
+            <div className="node-label">{fieldLabel}:</div>
             <div className="node-value">
               {this.state.codeCompletionEnabled ?
                 <ExpressionSuggest inputProps={{
-                  rows: 5, cols: 50, className: "node-input", value: fieldValue,
+                  rows: 1, cols: 50, className: "node-input", value: fieldValue,
                   onValueChange: handleChange, readOnly: !this.props.isEditMode
                 }}/> :
-                <textarea rows="5" cols="50" className="node-input" value={fieldValue}
-                          onChange={(e) => handleChange(e.target.value)} readOnly={!this.props.isEditMode}/>
+                <Textarea rows="1" cols="50" className="node-input" value={fieldValue} onChange={(e) => handleChange(e.target.value)} readOnly={!this.props.isEditMode}/>
               }
               {process.env.NODE_ENV == "development" ?
                 <div style={{color: "red"}}>
@@ -256,7 +228,7 @@ export default class NodeDetailsContent extends React.Component {
   }
 
   descriptionField = () => {
-    return this.createField("input", "Description:", "additionalFields.description")
+    return this.createField("textarea", "Description", "additionalFields.description")
   }
 
   render() {
@@ -264,13 +236,22 @@ export default class NodeDetailsContent extends React.Component {
     return (
       <div className={nodeClass}>
         <label className="code-completion">
-          <input type="checkbox" disabled={!this.props.isEditMode} checked={this.state.codeCompletionEnabled} onChange={(e) => {
-            this.setState({codeCompletionEnabled: !this.state.codeCompletionEnabled})
-          }}/> Code completion enabled
+          <input type="checkbox" disabled={!this.props.isEditMode} checked={this.state.codeCompletionEnabled}
+                 onChange={(e) => {
+                   this.setState({codeCompletionEnabled: !this.state.codeCompletionEnabled})
+                 }}/> Code completion enabled
         </label>
-        {this.customNode()}
         {!_.isEmpty(this.props.nodeErrors) ?
-          <ListGroupItem bsStyle="danger">Node is invalid</ListGroupItem> : null}
+          //FIXME: ladniej... i moze bledy dotyczace pol kolo nich?
+          <ListGroupItem bsStyle="danger">Node is invalid:
+            <ul>
+              {this.props.nodeErrors.map(error =>
+                (<li>{error.message + (error.fieldName ? ` (field: ${error.fieldName})` : '')}</li>)
+              )}
+            </ul>
+          </ListGroupItem> : null}
+        {!_.isEmpty(this.props.nodeErrors) ? <hr/> : null}
+        {this.customNode()}
       </div>
     )
   }

@@ -2,6 +2,7 @@ import React, {Component} from "react";
 import {render} from "react-dom";
 import {ListGroupItem} from "react-bootstrap";
 import { connect } from 'react-redux';
+import Textarea from 'react-textarea-autosize';
 import _ from 'lodash';
 import ActionsUtils from '../../actions/ActionsUtils';
 import ProcessUtils from '../../common/ProcessUtils';
@@ -63,7 +64,7 @@ class ExpressionSuggest extends React.Component {
   renderInputComponent = inputProps => {
     return (
       <div>
-        <textarea id={this.state.id} {...inputProps} />
+        <Textarea id={this.state.id} {...inputProps} />
       </div>
     )
   }
