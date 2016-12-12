@@ -36,12 +36,12 @@ object ProcessCompilationError {
       NotSupportedExpressionLanguage(languageId, nodeId.id)
   }
 
-  case class ExpressionParseError(message: String, nodeId: String, originalExpr: String)
+  case class ExpressionParseError(message: String, nodeId: String, fieldName: Option[String], originalExpr: String)
     extends PartSubGraphCompilationError with InASingleNode
 
   object ExpressionParseError {
-    def apply(message: String, originalExpr: String)(implicit nodeId: NodeId): PartSubGraphCompilationError =
-      ExpressionParseError(message, nodeId.id, originalExpr)
+    def apply(message: String, fieldName: Option[String], originalExpr: String)(implicit nodeId: NodeId): PartSubGraphCompilationError =
+      ExpressionParseError(message, nodeId.id, fieldName, originalExpr)
   }
 
   case class MissingService(serviceId: String, nodeId: String)
