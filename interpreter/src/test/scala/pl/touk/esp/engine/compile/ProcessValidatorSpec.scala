@@ -21,10 +21,12 @@ class ProcessValidatorSpec extends FlatSpec with Matchers {
   import spel.Implicits._
 
   private val baseDefinition = ProcessDefinition(
-    Map("sampleEnricher" -> ObjectDefinition(List.empty, classOf[SimpleRecord], List())),
+    Map("sampleEnricher" -> ObjectDefinition(List.empty, classOf[SimpleRecord], List()), "withParamsService" -> ObjectDefinition(List(Parameter("par1",
+      ClazzRef(classOf[String]))), classOf[SimpleRecord], List())),
     Map("source" -> ObjectDefinition(List.empty, classOf[SimpleRecord], List())),
     Map("sink" -> ObjectDefinition.noParam),
-    Map("customTransformer" -> ObjectDefinition(List.empty, classOf[SimpleRecord], List())),
+    Map("customTransformer" -> ObjectDefinition(List.empty, classOf[SimpleRecord], List()), "withParamsTransformer" -> ObjectDefinition(List(Parameter("par1",
+      ClazzRef(classOf[String]))), classOf[SimpleRecord], List())),
     ObjectDefinition.noParam,
     Map("processHelper" -> WithCategories(ClazzRef(ProcessHelper.getClass), List("cat1"))),
     EspTypeUtils.clazzAndItsChildrenDefinition(List(classOf[SampleEnricher], classOf[SimpleRecord], ProcessHelper.getClass))
@@ -83,7 +85,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers {
         .sink("id2", "wtf!!!", "sink")
 
     ProcessValidator.default(baseDefinition).validate(processWithInvalidExpresssion) should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError(_, _, _), _)) =>
+      case Invalid(NonEmptyList(ExpressionParseError(_, _, _, _), _)) =>
     }
   }
 
@@ -158,7 +160,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers {
       .filter("sampleFilter", "#doesExist['v1'] + #doesNotExist1 + #doesNotExist2 > 10")
       .sink("id2", "sink")
     ProcessValidator.default(baseDefinition).validate(process) should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("Unresolved references doesNotExist1, doesNotExist2", _, _), _)) =>
+      case Invalid(NonEmptyList(ExpressionParseError("Unresolved references doesNotExist1, doesNotExist2", "sampleFilter", None, _), _)) =>
     }
   }
 
@@ -171,7 +173,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers {
       .filter("sampleFilter2", "input.plainValue > 10")
       .sink("id2", "sink")
     ProcessValidator.default(baseDefinition).validate(process) should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("Non reference 'input' occurred. Maybe you missed '#' in front of it?", _, _), _)) =>
+      case Invalid(NonEmptyList(ExpressionParseError("Non reference 'input' occurred. Maybe you missed '#' in front of it?", "sampleFilter2", None, _), _)) =>
     }
   }
 
@@ -184,7 +186,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers {
       .filter("sampleFilter2", "#input.value1.value3 > 10")
       .sink("id2", "sink")
     ProcessValidator.default(definitionWithTypedSource).validate(process) should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("There is no property 'value3' in type 'pl.touk.esp.engine.compile.ProcessValidatorSpec$AnotherSimpleRecord'", _, _), _)) =>
+      case Invalid(NonEmptyList(ExpressionParseError("There is no property 'value3' in type 'pl.touk.esp.engine.compile.ProcessValidatorSpec$AnotherSimpleRecord'", "sampleFilter2", None, _), _)) =>
     }
   }
 
@@ -200,7 +202,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers {
     val definitionWithCustomNode = definitionWithTypedSourceAndTransformNode
 
     ProcessValidator.default(definitionWithCustomNode).validate(process) should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("There is no property 'value3' in type 'pl.touk.esp.engine.compile.ProcessValidatorSpec$AnotherSimpleRecord'", _, _), _)) =>
+      case Invalid(NonEmptyList(ExpressionParseError("There is no property 'value3' in type 'pl.touk.esp.engine.compile.ProcessValidatorSpec$AnotherSimpleRecord'", "sampleFilter2", None, _), _)) =>
     }
   }
 
@@ -217,7 +219,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers {
     val definitionWithCustomNode = definitionWithTypedSourceAndTransformNode
 
     ProcessValidator.default(definitionWithCustomNode).validate(process) should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("There is no property 'value3' in type 'pl.touk.esp.engine.compile.ProcessValidatorSpec$AnotherSimpleRecord'", _, _), _)) =>
+      case Invalid(NonEmptyList(ExpressionParseError("There is no property 'value3' in type 'pl.touk.esp.engine.compile.ProcessValidatorSpec$AnotherSimpleRecord'", "sampleFilter2", None, _), _)) =>
     }
   }
 
@@ -234,7 +236,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers {
 
     ProcessValidator.default(definitionWithCustomNode).validate(process) should matchPattern {
       case Invalid(NonEmptyList(ExpressionParseError("There is no property 'terefere' in type 'pl.touk.esp.engine.compile.ProcessValidatorSpec$AnotherSimpleRecord'",
-      "sampleFilter2", "#out1.terefere"), _)) =>
+      "sampleFilter2", None, "#out1.terefere"), _)) =>
 
     }
   }
@@ -269,7 +271,29 @@ class ProcessValidatorSpec extends FlatSpec with Matchers {
       .filter("sampleFilter1", "#input.plainValueOpt.terefere > 10")
       .sink("id2", "sink")
     ProcessValidator.default(definitionWithTypedSource).validate(process) should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("There is no property 'terefere' in type 'scala.math.BigDecimal'", _, _), _)) =>
+      case Invalid(NonEmptyList(ExpressionParseError("There is no property 'terefere' in type 'scala.math.BigDecimal'", "sampleFilter1", None, _), _)) =>
+    }
+  }
+
+  it should "return field/property names in errors" in {
+    val process = EspProcessBuilder
+      .id("process1")
+      .exceptionHandler()
+      .source("id1", "source")
+      .split("split",
+        GraphBuilder.processorEnd("p1", "withParamsService", "par1" -> "#terefere"),
+        GraphBuilder.customNode("c1", "output", "withParamsTransformer", "par1" -> "{").sink("id2", "sink"),
+        GraphBuilder.buildVariable("v1", "output", "par1" -> "#terefere22")
+          .sink("id3", "sink")
+      )
+
+    ProcessValidator.default(definitionWithTypedSource).validate(process) should matchPattern {
+      case Invalid(NonEmptyList(
+      ExpressionParseError("Unresolved references terefere", "p1", Some("par1"), _),
+      List(
+        ExpressionParseError("EL1044E:(pos 0): Unexpectedly ran out of input", "c1", Some("par1"), _),
+        ExpressionParseError("Unresolved references terefere22", "v1", Some("par1"), _))
+      )) =>
     }
   }
 
@@ -286,6 +310,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers {
   case class AnotherSimpleRecord(value2: Long)
 
   import scala.collection.JavaConversions._
+
   class SampleEnricher extends Service {
     def invoke()(implicit ec: ExecutionContext) = Future(SimpleRecord(AnotherSimpleRecord(1), 2, Option(2), 1, List.empty[SimpleRecord]))
   }

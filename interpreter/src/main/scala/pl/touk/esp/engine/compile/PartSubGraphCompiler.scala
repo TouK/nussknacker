@@ -99,7 +99,7 @@ private[compile] trait PartSubGraphCompilerBase {
           data match {
             case graph.node.Variable(id, varName, expression, _) =>
               val newCtx = ctx.withVariable(varName, ClazzRef(classOf[Any])) //jak wyciagnac informacie o typie zmiennej?
-              A.map2(compile(expression, ctx), compile(next, newCtx))(
+              A.map2(compile(expression, None, ctx), compile(next, newCtx))(
                 (compiledExpression, nextWithCtx) =>
                   CompiledNode(compiledgraph.node.VariableBuilder(id, varName, Left(compiledExpression), nextWithCtx.next), nextWithCtx.ctx))
             case graph.node.VariableBuilder(id, varName, fields, _) =>
@@ -128,12 +128,12 @@ private[compile] trait PartSubGraphCompilerBase {
             CompiledNode(compiledgraph.node.SplitNode(bareNode.id), ctx)
           }
         case splittednode.FilterNode(graph.node.Filter(id, expression, _), nextTrue, nextFalse) =>
-          A.map3(compile(expression, ctx), compile(nextTrue, ctx), nextFalse.map(next => compile(next, ctx)).sequence)(
+          A.map3(compile(expression, None, ctx), compile(nextTrue, ctx), nextFalse.map(next => compile(next, ctx)).sequence)(
             (expr, nextWithCtx, nextWithCtxFalse) => CompiledNode(compiledgraph.node.Filter(id, expr, nextWithCtx.next,
               nextWithCtxFalse.map(_.next)), nextWithCtxFalse.map(nwc => ValidationContext.merge(nwc.ctx, nextWithCtx.ctx)).getOrElse(nextWithCtx.ctx)))
         case splittednode.SwitchNode(graph.node.Switch(id, expression, exprVal, _), nexts, defaultNext) =>
           val newCtx = ctx.withVariable(exprVal, ClazzRef(classOf[Any]))
-          A.map3(compile(expression, newCtx), nexts.map(n => compile(n, newCtx)).sequence, defaultNext.map(dn => compile(dn, newCtx)).sequence)(
+          A.map3(compile(expression, None, newCtx), nexts.map(n => compile(n, newCtx)).sequence, defaultNext.map(dn => compile(dn, newCtx)).sequence)(
             (expr, cases, nextWithCtx) => {
               val defaultCtx = nextWithCtx.map(_.ctx).getOrElse(ctx)
               CompiledNode(compiledgraph.node.Switch(id, expr, exprVal, cases.unzip._1, nextWithCtx.map(_.next)),
@@ -144,7 +144,7 @@ private[compile] trait PartSubGraphCompilerBase {
             case graph.node.Processor(id, ref, _) =>
               compile(ref, ctx).map(compiledgraph.node.EndingProcessor(id, _)).map(CompiledNode(_, ctx))
             case graph.node.Sink(id, _, optionalExpression, _) =>
-              optionalExpression.map(oe => compile(oe, ctx)).sequence.map(compiledgraph.node.Sink(id, _)).map(CompiledNode(_, ctx))
+              optionalExpression.map(oe => compile(oe, None, ctx)).sequence.map(compiledgraph.node.Sink(id, _)).map(CompiledNode(_, ctx))
           }
       }
     }
@@ -179,17 +179,17 @@ private[compile] trait PartSubGraphCompilerBase {
 
     private def compile(n: graph.variable.Field, ctx: ValidationContext)
                        (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, compiledgraph.variable.Field] =
-      compile(n.expression, ctx).map(compiledgraph.variable.Field(n.name, _))
+      compile(n.expression, Some(n.name), ctx).map(compiledgraph.variable.Field(n.name, _))
 
     private def compileParam(n: graph.evaluatedparam.Parameter, ctx: ValidationContext, skipContextValidation: Boolean = false)
                             (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, compiledgraph.evaluatedparam.Parameter] =
-      compile(n.expression, ctx, skipContextValidation).map(compiledgraph.evaluatedparam.Parameter(n.name, _))
+      compile(n.expression, Some(n.name), ctx, skipContextValidation).map(compiledgraph.evaluatedparam.Parameter(n.name, _))
 
     private def compile(n: splittednode.Case, ctx: ValidationContext)
                        (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, (compiledgraph.node.Case, ValidationContext)] =
-      A.map2(compile(n.expression, ctx), compile(n.node, ctx))((expr, nextWithCtx) => (compiledgraph.node.Case(expr, nextWithCtx.next), nextWithCtx.ctx))
+      A.map2(compile(n.expression, None, ctx), compile(n.node, ctx))((expr, nextWithCtx) => (compiledgraph.node.Case(expr, nextWithCtx.next), nextWithCtx.ctx))
 
-    private def compile(n: graph.expression.Expression, ctx: ValidationContext, skipContextValidation: Boolean = false)
+    private def compile(n: graph.expression.Expression, fieldName: Option[String], ctx: ValidationContext, skipContextValidation: Boolean = false)
                        (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, compiledgraph.expression.Expression] = {
       val validParser = expressionParsers
         .get(n.language)
@@ -201,7 +201,7 @@ private[compile] trait PartSubGraphCompilerBase {
         } else {
           parser.parseWithoutContextValidation(n.expression)
         }
-        parseResult.leftMap(err => ExpressionParseError(err.message, n.expression))
+        parseResult.leftMap(err => ExpressionParseError(err.message, fieldName, n.expression))
       }).toValidatedNel
     }
   }
