@@ -2,10 +2,11 @@ package pl.touk.esp.ui.api.helpers
 
 import akka.http.scaladsl.server.Route
 import db.migration.DefaultJdbcProfile
+import pl.touk.esp.engine.api.deployment.test.{TestData, TestResults}
 import pl.touk.esp.engine.api.deployment.{ProcessDeploymentData, ProcessManager, ProcessState}
 import pl.touk.esp.ui.api.{ProcessPosting, ProcessTestData, ProcessValidation}
 import pl.touk.esp.ui.process.marshall.ProcessConverter
-import pl.touk.esp.ui.process.repository.{ProcessActivityRepository, DeployedProcessRepository, ProcessRepository}
+import pl.touk.esp.ui.process.repository.{DeployedProcessRepository, ProcessActivityRepository, ProcessRepository}
 import pl.touk.esp.ui.security.{LoggedUser, Permission}
 import pl.touk.esp.ui.security.Permission.Permission
 import slick.jdbc.JdbcBackend
@@ -31,6 +32,8 @@ object TestFactory {
       override def findJobStatus(name: String): Future[Option[ProcessState]] = Future.successful(None)
       override def cancel(name: String): Future[Unit] = Future.successful(Unit)
       override def deploy(processId: String, processDeploymentData: ProcessDeploymentData): Future[Unit] = Future.successful(Unit)
+
+      override def test(processId: String, processDeploymentData: ProcessDeploymentData, testData: TestData) = Future.successful(TestResults())
     }
   }
 
