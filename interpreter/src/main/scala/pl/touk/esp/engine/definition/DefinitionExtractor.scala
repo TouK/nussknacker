@@ -7,6 +7,8 @@ import pl.touk.esp.engine.api.{MethodToInvoke, ParamName}
 import pl.touk.esp.engine.definition.DefinitionExtractor._
 import pl.touk.esp.engine.types.EspTypeUtils
 
+import scala.util.Try
+
 trait DefinitionExtractor[T] {
 
   def extract(obj: T, methodDef: MethodDefinition, categories: List[String]): ObjectDefinition = {
@@ -17,48 +19,54 @@ trait DefinitionExtractor[T] {
     )
   }
 
-  def extractReturnTypeFromMethod(obj: T, method: Method) = {
+  def extractMethodDefinition(obj: T): MethodDefinition = {
+
+    val methods = obj.getClass.getMethods.flatMap(tryToExtractParams)
+
+    def findByReturnType = methods.find { case (m, _) =>
+      m.getReturnType == returnType
+    }
+    def findByAnnotation = methods.find { case (m, _) =>
+      m.getAnnotation(classOf[MethodToInvoke]) != null
+    }
+
+    val (method, params) = findByAnnotation orElse findByReturnType getOrElse {
+      throw new IllegalArgumentException(s"Missing method with return type: $returnType or @MethodToInvoke annotation")
+    }
+
+
+    MethodDefinition(method, extractReturnTypeFromMethod(obj, method), params)
+  }
+
+  protected def extractReturnTypeFromMethod(obj: T, method: Method) = {
     val typeFromAnnotation = Option(method.getAnnotation(classOf[MethodToInvoke]))
-        .filterNot(_.returnType() == classOf[Object])
-        .flatMap[Class[_]](ann => Option(ann.returnType()))
+      .filterNot(_.returnType() == classOf[Object])
+      .flatMap[Class[_]](ann => Option(ann.returnType()))
     val typeFromSignature = EspTypeUtils.getGenericMethodType(method)
 
     typeFromAnnotation.orElse(typeFromSignature).getOrElse(classOf[Any])
   }
 
-  def extractMethodDefinition(obj: T): MethodDefinition = {
-
-    val methods = obj.getClass.getMethods
-
-    def findByReturnType = methods.find { m =>
-      m.getReturnType == returnType
-    }
-    def findByAnnotation = methods.find { m =>
-      m.getAnnotation(classOf[MethodToInvoke]) != null
-    }
-
-    val method = findByAnnotation orElse findByReturnType getOrElse {
-      throw new IllegalArgumentException(s"Missing method with return type: $returnType")
-    }
-
-    val params = method.getParameters.map { p =>
-      if (additionalParameters.contains(p.getType)) {
-        Right(p.getType)
-      } else {
-        val name = Option(p.getAnnotation(classOf[ParamName]))
-          .map(_.value())
-          .getOrElse(throw new IllegalArgumentException(s"Parameter $p of $obj has missing @ParamName annotation"))
-        Left(Parameter(name, ClazzRef(extractParameterType(p))))
-      }
-    }.toList
-    MethodDefinition(method, extractReturnTypeFromMethod(obj, method), new OrderedParameters(params))
-  }
-
-  protected def extractParameterType(p: java.lang.reflect.Parameter) = p.getType
-
   protected def returnType: Class[_]
 
   protected def additionalParameters: Set[Class[_]]
+
+  private def tryToExtractParams(method: Method): Option[(Method, OrderedParameters)] =
+    Try {
+      val params = method.getParameters.map { p =>
+        if (additionalParameters.contains(p.getType)) {
+          Right(p.getType)
+        } else {
+          val name = Option(p.getAnnotation(classOf[ParamName]))
+            .map(_.value())
+            .getOrElse(throw new IllegalArgumentException(s"Parameter $p of $method has missing @ParamName annotation"))
+          Left(Parameter(name, ClazzRef(extractParameterType(p))))
+        }
+      }.toList
+      (method, new OrderedParameters(params))
+    }.toOption
+
+  protected def extractParameterType(p: java.lang.reflect.Parameter) = p.getType
 
 }
 
@@ -66,7 +74,9 @@ object DefinitionExtractor {
 
   trait ObjectMetadata {
     def parameters: List[Parameter]
+
     def returnType: ClazzRef
+
     def categories: List[String]
   }
 
@@ -74,7 +84,7 @@ object DefinitionExtractor {
                                  methodDef: MethodDefinition,
                                  objectDefinition: ObjectDefinition) extends ObjectMetadata {
     def invokeMethod(args: List[AnyRef]) = {
-      methodDef.method.invoke(obj, args.toArray : _*)
+      methodDef.method.invoke(obj, args.toArray: _*)
     }
 
     override def parameters = orderedParameters.definedParameters
@@ -86,40 +96,14 @@ object DefinitionExtractor {
     override def returnType = objectDefinition.returnType
 
   }
-  object ObjectWithMethodDef {
-    def apply[T](obj: WithCategories[T], extractor: DefinitionExtractor[T]): ObjectWithMethodDef = {
-      val methodDefinition = extractor.extractMethodDefinition(obj.value)
-      ObjectWithMethodDef(obj.value, methodDefinition, extractor.extract(obj.value, methodDefinition, obj.categories))
-    }
-  }
 
   case class MethodDefinition(method: Method, returnType: Class[_], orderedParameters: OrderedParameters)
 
   case class ClazzRef(refClazzName: String)
-  object ClazzRef {
-    def apply(clazz: Class[_]): ClazzRef = {
-      ClazzRef(clazz.getName)
-    }
-  }
 
   case class PlainClazzDefinition(clazzName: ClazzRef, methods: Map[String, ClazzRef]) {
     def getMethod(methodName: String): Option[ClazzRef] = {
       methods.get(methodName)
-    }
-  }
-
-  object TypesInformation {
-    def extract(services: Iterable[ObjectWithMethodDef],
-                sourceFactories: Iterable[ObjectWithMethodDef],
-                customNodeTransformers: Iterable[ObjectWithMethodDef],
-                globalProcessVariables: Iterable[Class[_]]): List[PlainClazzDefinition] = {
-
-      //TODO: czy tutaj potrzebujemy serwisów jako takich?
-      val classesToExtractDefinitions =
-          globalProcessVariables ++
-          (services ++ customNodeTransformers ++ sourceFactories).map(sv => sv.methodDef.returnType)
-
-      classesToExtractDefinitions.flatMap(EspTypeUtils.clazzAndItsChildrenDefinition).toList.distinct
     }
   }
 
@@ -145,8 +129,37 @@ object DefinitionExtractor {
     }
   }
 
+  object ObjectWithMethodDef {
+    def apply[T](obj: WithCategories[T], extractor: DefinitionExtractor[T]): ObjectWithMethodDef = {
+      val methodDefinition = extractor.extractMethodDefinition(obj.value)
+      ObjectWithMethodDef(obj.value, methodDefinition, extractor.extract(obj.value, methodDefinition, obj.categories))
+    }
+  }
+
+  object ClazzRef {
+    def apply(clazz: Class[_]): ClazzRef = {
+      ClazzRef(clazz.getName)
+    }
+  }
+
+  object TypesInformation {
+    def extract(services: Iterable[ObjectWithMethodDef],
+                sourceFactories: Iterable[ObjectWithMethodDef],
+                customNodeTransformers: Iterable[ObjectWithMethodDef],
+                globalProcessVariables: Iterable[Class[_]]): List[PlainClazzDefinition] = {
+
+      //TODO: czy tutaj potrzebujemy serwisów jako takich?
+      val classesToExtractDefinitions =
+      globalProcessVariables ++
+        (services ++ customNodeTransformers ++ sourceFactories).map(sv => sv.methodDef.returnType)
+
+      classesToExtractDefinitions.flatMap(EspTypeUtils.clazzAndItsChildrenDefinition).toList.distinct
+    }
+  }
+
   object ObjectDefinition {
     def noParam: ObjectDefinition = ObjectDefinition(List.empty, ClazzRef(classOf[Null]), List())
+
     def withParams(params: List[Parameter]): ObjectDefinition = ObjectDefinition(params, ClazzRef(classOf[Null]), List())
 
     def withParamsAndCategories(params: List[Parameter], categories: List[String]): ObjectDefinition =
