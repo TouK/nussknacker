@@ -23,7 +23,7 @@ case class CompiledProcessWithDeps(compiledProcess: CompiledProcessParts,
                                    processTimeout: FiniteDuration) extends CustomNodeInvokerDeps {
 
   def open(runtimeContext: RuntimeContext)(implicit ec: ExecutionContext): Unit = {
-    servicesLifecycle.open()
+    servicesLifecycle.open(runtimeContext)
     exceptionHandler.open(runtimeContext)
   }
 

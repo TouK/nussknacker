@@ -1,12 +1,10 @@
 package pl.touk.esp.engine.flink.api.exception
 
-import org.apache.flink.api.common.functions.RuntimeContext
 import pl.touk.esp.engine.api.exception.EspExceptionConsumer
+import pl.touk.esp.engine.flink.api.RuntimeContextLifecycle
 
-trait FlinkEspExceptionConsumer extends EspExceptionConsumer {
+trait FlinkEspExceptionConsumer extends EspExceptionConsumer with RuntimeContextLifecycle {
 
-  def open(runtimeContext: RuntimeContext): Unit = {}
-
-  def close(): Unit = {}
+  def close() : Unit = {}
 
 }

@@ -15,13 +15,14 @@ import pl.touk.esp.engine.api.process._
 import pl.touk.esp.engine.flink.api.exception.FlinkEspExceptionHandler
 import pl.touk.esp.engine.flink.api.process.{FlinkSink, FlinkSourceFactory}
 import pl.touk.esp.engine.flink.util.exception.VerboselyLoggingExceptionHandler
+import pl.touk.esp.engine.flink.util.service.TimeMeasuringService
 import pl.touk.esp.engine.flink.util.source.CollectionSource
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.process.api.WithExceptionHandler
 import pl.touk.esp.engine.util.LoggingListener
 
 import scala.collection.mutable.ArrayBuffer
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.FiniteDuration
 
 object ProcessTestHelpers {
@@ -40,7 +41,7 @@ object ProcessTestHelpers {
       FlinkProcessRegistrar(creator, ConfigFactory.load()).register(env, process)
 
       MockService.clear()
-      env.execute()
+      env.execute(process.id)
 
     }
 
@@ -107,9 +108,12 @@ object ProcessTestHelpers {
     }
   }
 
-  object MockService extends Service {
+  object MockService extends Service with TimeMeasuringService {
 
     private val data_ = new CopyOnWriteArrayList[Any]
+
+    val serviceName = "mockService"
+
     def data = {
       data_.toArray.toList
     }
@@ -118,10 +122,10 @@ object ProcessTestHelpers {
       data_.clear()
     }
 
-    def invoke(@ParamName("all") all: Any) = {
-      Future.successful {
+    def invoke(@ParamName("all") all: Any)(implicit ec: ExecutionContext) = {
+      measuring(Future.successful {
         data_.add(all)
-      }
+      })
     }
   }
 
