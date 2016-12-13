@@ -10,26 +10,29 @@ object LoggingListener extends ProcessListener with Serializable {
   val className = getClass.getName.init
 
   //nie cachujemy bo logback sam juz to robi
-  private def getLogger(keys: List[String]) = {
+  private def debug(keys: List[String], message: => String) = {
     val loggerKey = keys.mkString(".")
-    LoggerFactory.getLogger(s"$className.$loggerKey")
+    val logger = LoggerFactory.getLogger(s"$className.$loggerKey")
+    if (logger.isDebugEnabled()) {
+      logger.debug(message)  
+    }
   }
 
   override def nodeEntered(nodeId: String, context: Context, metadata: MetaData, mode: InterpreterMode): Unit = {
     lazy val modeSuffix = if (mode == InterpreterMode.Traverse) "" else " for " + mode
-    getLogger(List(metadata.id, nodeId)).debug(s"Node entered$modeSuffix. Context: $context")
+    debug(List(metadata.id, nodeId), s"Node entered$modeSuffix. Context: $context")
   }
 
   override def deadEndEncountered(lastNodeId: String, context: Context, metadata: MetaData): Unit = {
-    getLogger(List(metadata.id, lastNodeId, "deadEnd")).debug(s"Dead end encountered. Context: $context")
+    debug(List(metadata.id, lastNodeId, "deadEnd"), s"Dead end encountered. Context: $context")
   }
 
   override def expressionEvaluated(nodeId: String, expr: String, context: Context, metadata: MetaData, result: Any): Unit = {
-    getLogger(List(metadata.id, nodeId, "expression")).debug(s"invoked expression: $expr with result $result. Context: $context")
+    debug(List(metadata.id, nodeId, "expression"), s"invoked expression: $expr with result $result. Context: $context")
   }
 
   override def serviceInvoked(nodeId: String, id: String, context: Context, metadata: MetaData, result: Try[Any]): Unit = {
-    getLogger(List(metadata.id, nodeId, "service", id)).debug(s"Invocation ended-up with result: $result. Context: $context")
+    debug(List(metadata.id, nodeId, "service", id), s"Invocation ended-up with result: $result. Context: $context")
   }
 
 }
