@@ -67,6 +67,8 @@ libraryDependencies ++= {
     "org.slf4j" % "log4j-over-slf4j" % "1.7.21",
 
     "pl.touk.esp" %% "esp-interpreter" % espEngineV changing(),
+    //FIXME: bez tego test nie przechodzi bo nie mamy prawdziwego jara...
+    "pl.touk.esp" %% "esp-process" % espEngineV % "test" changing(),
     "com.typesafe.slick" %% "slick" % slickV,
     "com.typesafe.slick" %% "slick-hikaricp" % slickV,
     "org.hsqldb" % "hsqldb" % hsqldbV,
