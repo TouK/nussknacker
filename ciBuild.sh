@@ -26,6 +26,8 @@ runAndExitOnFail "npm run build"
 cd -
 
 cd server
+#FIXME: na razie nie potrafie inaczej...
+rm -rf ~/.ivy2/cache/pl.touk.esp/esp-management-sample_2.11
 
 if [ -z "$espEngineToukVersion" ]
     then

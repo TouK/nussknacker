@@ -1,0 +1,39 @@
+{
+  "metaData" : {
+    "id" : "Test2"
+  },
+  "exceptionHandlerRef" : {
+    "parameters" : []
+  },
+  "nodes" : [
+    {
+      "type" : "Source",
+      "id" : "source1",
+      "ref" : {
+        "typ" : "kafka-transaction",
+        "parameters" : []
+      }
+    },
+    {
+      "type" : "Filter",
+      "id" : "filter",
+      "expression" : {
+        "language" : "spel",
+        "expression" : "true"
+      },
+      "nextFalse" : []
+    },
+    {
+      "type" : "Sink",
+      "id" : "end",
+      "ref" : {
+        "typ" : "logging",
+        "parameters" : []
+      },
+      "endResult" : {
+        "language" : "spel",
+        "expression" : "#input.substring(1)"
+      }
+    }
+  ]
+}

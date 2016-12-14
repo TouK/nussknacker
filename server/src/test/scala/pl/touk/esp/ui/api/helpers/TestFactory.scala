@@ -1,9 +1,11 @@
 package pl.touk.esp.ui.api.helpers
 
 import akka.http.scaladsl.server.Route
+import com.typesafe.config.{Config, ConfigFactory}
 import db.migration.DefaultJdbcProfile
 import pl.touk.esp.engine.api.deployment.test.{TestData, TestResults}
 import pl.touk.esp.engine.api.deployment.{ProcessDeploymentData, ProcessManager, ProcessState}
+import pl.touk.esp.engine.management.FlinkProcessManager
 import pl.touk.esp.ui.api.{ProcessPosting, ProcessTestData, ProcessValidation}
 import pl.touk.esp.ui.process.marshall.ProcessConverter
 import pl.touk.esp.ui.process.repository.{DeployedProcessRepository, ProcessActivityRepository, ProcessRepository}
@@ -28,12 +30,10 @@ object TestFactory {
 
   object InMemoryMocks {
 
-    val mockProcessManager = new ProcessManager {
+    val mockProcessManager = new FlinkProcessManager(ConfigFactory.load(), null) {
       override def findJobStatus(name: String): Future[Option[ProcessState]] = Future.successful(None)
       override def cancel(name: String): Future[Unit] = Future.successful(Unit)
       override def deploy(processId: String, processDeploymentData: ProcessDeploymentData): Future[Unit] = Future.successful(Unit)
-
-      override def test(processId: String, processDeploymentData: ProcessDeploymentData, testData: TestData) = Future.successful(TestResults())
     }
   }
 
