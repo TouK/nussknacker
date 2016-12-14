@@ -28,8 +28,9 @@ trait TimeMeasuringService extends RuntimeContextLifecycle {
     metrics = Map()
   }
 
-  protected def measuring[T](action: => Future[T])(implicit ec: ExecutionContext) : Future[T] = {
+  protected def measuring[T](actionFun: => Future[T])(implicit ec: ExecutionContext) : Future[T] = {
     val start = System.nanoTime()
+    val action = actionFun
     action.onComplete { result =>
       detectMeterName(result).foreach { meterName =>
         getOrCreateTimer(meterName).update(start)
