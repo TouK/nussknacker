@@ -1,6 +1,7 @@
 package pl.touk.esp.engine.management
 
 import java.io.File
+import java.net.URLClassLoader
 import java.util.concurrent.TimeUnit
 
 import com.typesafe.config.{Config, ConfigObject, ConfigValueType}
@@ -13,6 +14,9 @@ import org.apache.flink.runtime.messages.JobManagerMessages
 import org.apache.flink.runtime.messages.JobManagerMessages._
 import pl.touk.esp.engine.api.deployment._
 import pl.touk.esp.engine.api.deployment.test.TestData
+import pl.touk.esp.engine.api.process.ProcessConfigCreator
+import pl.touk.esp.engine.definition.ProcessDefinitionExtractor.ObjectProcessDefinition
+import pl.touk.esp.engine.definition.{ProcessDefinitionExtractor, ProcessDefinitionProvider}
 import pl.touk.esp.engine.marshall.ProcessMarshaller
 
 import scala.collection.JavaConversions._
@@ -44,7 +48,7 @@ object FlinkProcessManager {
 
 
 class FlinkProcessManager(config: Config,
-                          gateway: FlinkGateway) extends ProcessManager with LazyLogging {
+                          gateway: FlinkGateway) extends ProcessManager with ProcessDefinitionProvider with LazyLogging {
 
   //tyle nam wystarczy, z aktorami to nigdy nic nie wiadomo...
   implicit val ec = ExecutionContext.Implicits.global
@@ -52,6 +56,8 @@ class FlinkProcessManager(config: Config,
   private val flinkConf = config.getConfig("flinkConfig")
 
   private val jarFile = new File(flinkConf.getString("jarPath"))
+
+  private val classLoader = new URLClassLoader(Array(jarFile.toURI.toURL), getClass.getClassLoader)
 
   private val processConfigPart = extractProcessConfig
 
@@ -102,6 +108,13 @@ class FlinkProcessManager(config: Config,
 
   override def test(processId: String, processDeploymentData: ProcessDeploymentData, testData: TestData) = {
     Future(testRunner.test(processId, processDeploymentData, testData))
+  }
+
+  override def getProcessDefinition = {
+    val config = processConfigPart.toConfig
+    val creator =
+      classLoader.loadClass(config.getString("processConfigCreatorClass")).newInstance().asInstanceOf[ProcessConfigCreator]
+    ObjectProcessDefinition(ProcessDefinitionExtractor.extractObjectWithMethods(creator, config))
   }
 
   private def stopSavingSavepoint(job: ProcessState): Future[String] = {
