@@ -167,4 +167,15 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
     }
   }
 
+  it should "extract process definition" in {
+    val config = ConfigFactory.load()
+    val processManager = FlinkProcessManager(config)
+
+
+    val definition = processManager.getProcessDefinition
+
+    definition.services should contain key "accountService"
+  }
+
+
 }

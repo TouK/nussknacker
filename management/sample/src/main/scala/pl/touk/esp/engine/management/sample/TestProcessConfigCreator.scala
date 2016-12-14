@@ -26,8 +26,8 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
     val sendSmsSink = EmptySink
     val monitorSink = EmptySink
     Map(
-      "sendSms" -> WithCategories(SinkFactory.noParam(sendSmsSink)),
-      "monitor" -> WithCategories(SinkFactory.noParam(monitorSink)),
+      "sendSms" -> WithCategories(SinkFactory.noParam(sendSmsSink), "Category1"),
+      "monitor" -> WithCategories(SinkFactory.noParam(monitorSink), "Category1", "Category2"),
       "kafka-string" -> WithCategories(new KafkaSinkFactory(kConfig,
         new KeyedSerializationSchema[Any] {
           override def serializeValue(element: Any) = element.toString.getBytes
@@ -35,8 +35,8 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
           override def serializeKey(element: Any) = null
 
           override def getTargetTopic(element: Any) = null
-        })
-    ))
+        }), "Category2")
+    )
   }
 
   override def listeners(config: Config) = List()
@@ -45,7 +45,7 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
     val kConfig = KafkaConfig(config.getString("kafka.zkAddress"), config.getString("kafka.kafkaAddress"), None, None)
 
     Map(
-      "kafka-transaction" -> WithCategories(FlinkSourceFactory.noParam(prepareNotEndingSource, Some(identity[String] _))),
+      "kafka-transaction" -> WithCategories(FlinkSourceFactory.noParam(prepareNotEndingSource, Some(identity[String] _)), "Category1"),
       "oneSource" -> WithCategories(FlinkSourceFactory.noParam(new FlinkSource[String] {
 
         override def timestampAssigner = None
@@ -70,7 +70,7 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
         }
 
         override def typeInformation = implicitly[TypeInformation[String]]
-      }))
+      }), "Category1", "Category2")
     )
   }
 
@@ -99,14 +99,14 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
 
   override def services(config: Config) = {
     Map(
-      "accountService" -> WithCategories(EmptyService),
-      "componentService" -> WithCategories(EmptyService),
-      "transactionService" -> WithCategories(EmptyService),
-      "serviceModelService" -> WithCategories(EmptyService)
+      "accountService" -> WithCategories(EmptyService, "Category1"),
+      "componentService" -> WithCategories(EmptyService, "Category1", "Category2"),
+      "transactionService" -> WithCategories(EmptyService, "Category1"),
+      "serviceModelService" -> WithCategories(EmptyService, "Category1", "Category2")
     )
   }
 
-  override def customStreamTransformers(config: Config) = Map("stateful" -> WithCategories(StatefulTransformer))
+  override def customStreamTransformers(config: Config) = Map("stateful" -> WithCategories(StatefulTransformer, "Category1"))
 
   override def exceptionHandlerFactory(config: Config) =
     ExceptionHandlerFactory.noParams(VerboselyLoggingExceptionHandler)
