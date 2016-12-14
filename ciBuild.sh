@@ -1,9 +1,21 @@
 #!/usr/bin/env bash
 espEngineToukVersion=$1
-if [ -z "$espEngineToukVersion" ]
+
+runAndExitOnFail() {
+    command=$1
+    $command
+    result=${PIPESTATUS[0]}
+    if [[ ${result} -eq 0 ]]
     then
-        ./sbtwrapper clean test management/it:test
+        echo "$command SUCCESS!"
     else
-        ./sbtwrapper clean test management/it:test
+        echo "$command FAILURE!"
+        exit ${result}
+    fi
+}
+
+runAndExitOnFail "./sbtwrapper clean test management/it:test"
+if [ -n "$espEngineToukVersion" ]
+    then
         ./sbtwrapper publish -DespEngineToukVersion=$espEngineToukVersion
 fi
