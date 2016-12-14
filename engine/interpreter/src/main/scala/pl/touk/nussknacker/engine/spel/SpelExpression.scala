@@ -2,15 +2,18 @@ package pl.touk.nussknacker.engine.spel
 
 import java.lang.reflect.{Method, Modifier}
 import java.time.{LocalDate, LocalDateTime}
+import java.util
+import java.util.Collections
 import java.util.concurrent.TimeoutException
 
 import cats.data.{NonEmptyList, State, StateT, Validated}
 import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
+import org.springframework.core.convert.TypeDescriptor
 import org.springframework.expression._
 import org.springframework.expression.common.CompositeStringExpression
 import org.springframework.expression.spel.ast.SpelNodeImpl
-import org.springframework.expression.spel.support.{StandardEvaluationContext, StandardTypeLocator}
+import org.springframework.expression.spel.support.{ReflectiveMethodExecutor, ReflectiveMethodResolver, StandardEvaluationContext, StandardTypeLocator}
 import org.springframework.expression.spel.{SpelCompilerMode, SpelParserConfiguration, standard}
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.Context
@@ -46,6 +49,8 @@ class SpelExpression(parsed: org.springframework.expression.Expression,
     simpleContext.setTypeLocator(locator)
     propertyAccessors.foreach(simpleContext.addPropertyAccessor)
 
+    simpleContext.setMethodResolvers(optimizedMethodResolvers())
+
     ctx.variables.foreach {
       case (k, v) => simpleContext.setVariable(k, v)
     }
@@ -58,6 +63,16 @@ class SpelExpression(parsed: org.springframework.expression.Expression,
     val value = parsed.getValue(simpleContext, expectedClass).asInstanceOf[T]
     val modifiedLazyContext = simpleContext.lookupVariable(LazyContextVariableName).asInstanceOf[LazyContext]
     Future.successful(ValueWithLazyContext(value, modifiedLazyContext))
+  }
+
+  private def optimizedMethodResolvers() : java.util.List[MethodResolver] = {
+    val mr = new ReflectiveMethodResolver {
+      override def resolve(context: EvaluationContext, targetObject: scala.Any, name: String, argumentTypes: util.List[TypeDescriptor]): MethodExecutor = {
+        val methodExecutor = super.resolve(context, targetObject, name, argumentTypes).asInstanceOf[ReflectiveMethodExecutor]
+        new OmitAnnotationsMethodExecutor(methodExecutor)
+      }
+    }
+    Collections.singletonList(mr)
   }
 
   private def logOnException[A](ctx: Context)(block: => A): A = {
