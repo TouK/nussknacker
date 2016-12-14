@@ -118,5 +118,4 @@ object DefinitionPreparer {
     Parameter(param.name, Expression("spel", defaultExpression))
   }
 
-
 }

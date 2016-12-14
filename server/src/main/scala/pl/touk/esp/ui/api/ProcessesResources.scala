@@ -5,8 +5,6 @@ import akka.http.scaladsl.model.headers.ContentDispositionTypes
 import akka.http.scaladsl.model.{HttpMethods, HttpResponse, StatusCodes, headers}
 import akka.http.scaladsl.server.{Directive, Directives, Route}
 import akka.stream.Materializer
-import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
 import argonaut._
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.Xor
@@ -21,7 +19,7 @@ import pl.touk.esp.ui.process.marshall.{ProcessConverter, UiProcessMarshaller}
 import pl.touk.esp.ui.process.repository.ProcessRepository
 import pl.touk.esp.ui.process.repository.ProcessRepository._
 import pl.touk.esp.ui.security.{LoggedUser, Permission}
-import pl.touk.esp.ui.util.Argonaut62Support
+import pl.touk.esp.ui.util.{Argonaut62Support, MultipartUtils}
 import pl.touk.esp.ui.{BadRequestError, EspError, FatalError, NotFoundError}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -149,7 +147,7 @@ class ProcessesResources(repository: ProcessRepository,
         post {
           fileUpload("process") { case (metadata, byteSource) =>
             complete {
-              readFile(byteSource).map[ToResponseMarshallable] { json =>
+              MultipartUtils.readFile(byteSource).map[ToResponseMarshallable] { json =>
                 (uiProcessMarshaller.fromJson(json) match {
                   case Valid(process) if process.metaData.id != processId => Invalid(WrongProcessId(processId, process.metaData.id))
                   case Valid(process) => Valid(process)
@@ -166,9 +164,6 @@ class ProcessesResources(repository: ProcessRepository,
     }
   }
 
-  def readFile(byteSource: Source[ByteString, Any]): Future[String] =
-    byteSource.runWith(Sink.seq)
-      .map(_.flatten.toArray).map(new String(_))
 
 
   private def fetchProcessStatesForProcesses(processes: List[ProcessDetails]): Future[Map[String, Option[ProcessStatus]]] = {

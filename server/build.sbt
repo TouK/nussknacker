@@ -1,5 +1,9 @@
+import java.nio.file.{Files, StandardCopyOption}
+
 import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
 import sbt.Keys._
+
+import scala.util.control.NonFatal
 
 val scalaV = "2.11.8"
 
@@ -59,6 +63,8 @@ libraryDependencies ++= {
         ExclusionRule("org.slf4j", "slf4j-log4j12")
 
       ),
+    "pl.touk.esp" %% "esp-management-sample" % espEngineV % "test" changing() classifier "assembly",
+
     "com.typesafe.akka" %% "akka-http-experimental" % akkaHttpV force(),
     "com.typesafe.akka" %% "akka-http-testkit-experimental" % akkaHttpV % "test" force(),
 
@@ -67,8 +73,6 @@ libraryDependencies ++= {
     "org.slf4j" % "log4j-over-slf4j" % "1.7.21",
 
     "pl.touk.esp" %% "esp-interpreter" % espEngineV changing(),
-    //FIXME: bez tego test nie przechodzi bo nie mamy prawdziwego jara...
-    "pl.touk.esp" %% "esp-process" % espEngineV % "test" changing(),
     "com.typesafe.slick" %% "slick" % slickV,
     "com.typesafe.slick" %% "slick-hikaricp" % slickV,
     "org.hsqldb" % "hsqldb" % hsqldbV,
@@ -77,6 +81,22 @@ libraryDependencies ++= {
     "com.typesafe.slick" %% "slick-testkit" % slickV % "test",
     "org.scalatest" %% "scalatest" % scalaTestV % "test"
   )
+}
+
+resourceGenerators in Test <+= Def.task {
+  val destFile = target.value / "testJar.jar"
+  target.value.mkdirs()
+
+  val maybeFile = (dependencyClasspath in Test).value
+    .map(_.data).find(_.name contains "esp-management-sample")
+
+  println(s"esp-management-sample jar: $maybeFile")
+
+
+  maybeFile.foreach { file =>
+      Files.copy(file.toPath, destFile.toPath, StandardCopyOption.REPLACE_EXISTING)
+  }
+  maybeFile.map(_ => destFile).toSeq
 }
 
 releaseProcess := Seq[ReleaseStep](

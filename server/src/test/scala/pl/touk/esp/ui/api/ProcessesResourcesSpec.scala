@@ -20,7 +20,7 @@ import pl.touk.esp.ui.process.repository.ProcessRepository
 import pl.touk.esp.ui.process.repository.ProcessRepository.ProcessDetails
 import pl.touk.esp.ui.sample.SampleProcess
 import pl.touk.esp.ui.security.{LoggedUser, Permission}
-import pl.touk.esp.ui.util.FileUploadUtils
+import pl.touk.esp.ui.util.{FileUploadUtils, MultipartUtils}
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -224,9 +224,7 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
       val modified = processDetails.copy(metaData = processDetails.metaData.copy(parallelism = Some(987)))
 
       val multipartForm =
-        Multipart.FormData(Multipart.FormData.BodyPart.Strict(
-          "process", HttpEntity(ContentTypes.`text/plain(UTF-8)`, marshaller.toJson(modified, PrettyParams.spaces2)),
-          Map("filename" -> "process.json")))
+        MultipartUtils.prepareMultiPart(marshaller.toJson(modified, PrettyParams.spaces2), "process")
 
       Post(s"/processes/import/${processToSave.id}", multipartForm) ~> routWithAllPermissions ~> check {
         status shouldEqual StatusCodes.OK

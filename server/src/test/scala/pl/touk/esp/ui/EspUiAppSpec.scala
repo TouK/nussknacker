@@ -3,6 +3,7 @@ package pl.touk.esp.ui
 import org.scalatest.FlatSpec
 import pl.touk.esp.ui.util.AvailablePortFinder
 
+
 class EspUiAppSpec extends FlatSpec {
 
   it should "start app without errors" in {

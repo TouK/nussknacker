@@ -13,7 +13,7 @@ import pl.touk.esp.engine.compile.ProcessValidator
 import pl.touk.esp.engine.management.FlinkProcessManager
 import pl.touk.esp.ui.api._
 import pl.touk.esp.ui.db.DatabaseInitializer
-import pl.touk.esp.ui.initialization.{DefinitionLoader, Initialization}
+import pl.touk.esp.ui.initialization.Initialization
 import pl.touk.esp.ui.process.marshall.ProcessConverter
 import pl.touk.esp.ui.process.repository.{ProcessActivityRepository, DeployedProcessRepository, ProcessRepository}
 import pl.touk.esp.ui.security.SimpleAuthenticator
@@ -37,8 +37,9 @@ object EspUiApp extends App with Directives with LazyLogging {
 
   val port = args(0).toInt
   val initialProcessDirectory = new File(args(1))
+  val manager = FlinkProcessManager(config)
 
-  val processDefinition = DefinitionLoader.loadProcessDefinition(initialProcessDirectory)
+  val processDefinition = manager.getProcessDefinition
   val validator = ProcessValidator.default(processDefinition)
   val processValidation = new ProcessValidation(validator)
   val processConverter = new ProcessConverter(processValidation)
@@ -47,7 +48,6 @@ object EspUiApp extends App with Directives with LazyLogging {
   val deploymentProcessRepository = new DeployedProcessRepository(db, DefaultJdbcProfile.profile)
   val commentsRepository = new ProcessActivityRepository(db, DefaultJdbcProfile.profile)
 
-  val manager = FlinkProcessManager(config)
 
   val authenticator = new SimpleAuthenticator(config.getString("usersFile"))
   val environment = config.getString("environment")
