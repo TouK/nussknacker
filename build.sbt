@@ -142,6 +142,7 @@ lazy val management_sample = (project in file("management/sample")).
   settings(commonSettings).
   settings(
     name := managementSampleName,
+    assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false, level = Level.Debug),
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided"
@@ -176,12 +177,24 @@ lazy val interpreter = (project in file("interpreter")).
       Seq(
         "org.springframework" % "spring-expression" % springV,
         "com.github.alexarchambault" %% s"argonaut-shapeless_$argonautMajorV" % argonautShapelessV,
-        "com.github.julien-truffaut"  %%  "monocle-macro"  % monocleV,
         "ch.qos.logback" % "logback-classic" % logbackV % "test",
         "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )
     }
   ).dependsOn(util)
+
+
+lazy val interpreterAddons = (project in file("interpreter-addons")).
+  settings(commonSettings).
+  settings(
+    name := "esp-interpreter-addons",
+    libraryDependencies ++= {
+      Seq(
+        "com.github.julien-truffaut"  %%  "monocle-macro"  % monocleV,
+        "org.scalatest" %% "scalatest" % scalaTestV % "test"
+      )
+    }
+  ).dependsOn(interpreter)
 
 lazy val kafka = (project in file("kafka")).
   settings(commonSettings).
