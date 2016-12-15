@@ -4,6 +4,7 @@ import java.io.File
 import java.net.URLClassLoader
 import java.util.concurrent.TimeUnit
 
+import argonaut.PrettyParams
 import com.typesafe.config.{Config, ConfigObject, ConfigValueType}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.JobID
@@ -51,6 +52,8 @@ object FlinkProcessManager {
 class FlinkProcessManager(config: Config,
                           gateway: FlinkGateway) extends ProcessManager with ProcessDefinitionProvider with LazyLogging {
 
+  import argonaut.Argonaut._
+
   //tyle nam wystarczy, z aktorami to nigdy nic nie wiadomo...
   implicit val ec = ExecutionContext.Implicits.global
 
@@ -66,12 +69,11 @@ class FlinkProcessManager(config: Config,
 
   private def prepareProgram(processId: String, processDeploymentData: ProcessDeploymentData) : PackagedProgram = {
     val configPart = processConfigPart.render()
-
     processDeploymentData match {
       case GraphProcess(processAsJson) =>
-        new PackagedProgram(jarFile, "pl.touk.esp.engine.process.runner.FlinkProcessMain", List(processAsJson, configPart):_*)
+        new PackagedProgram(jarFile, "pl.touk.esp.engine.process.runner.FlinkProcessMain", List(processAsJson, configPart, buildInfoJson):_*)
       case CustomProcess(mainClass) =>
-        new PackagedProgram(jarFile, mainClass, List(processId, configPart): _*)
+        new PackagedProgram(jarFile, mainClass, List(processId, configPart, buildInfoJson): _*)
     }
   }
 
@@ -111,13 +113,26 @@ class FlinkProcessManager(config: Config,
     Future(testRunner.test(processId, processDeploymentData, testData))
   }
 
+  lazy val buildInfo: Map[String, String] = {
+    val config = processConfigPart.toConfig
+    val creator = loadProcessConfigCreator(config)
+    creator.buildInfo()
+  }
+
+  private lazy val buildInfoJson = {
+    buildInfo.asJson.pretty(PrettyParams.spaces2.copy(preserveOrder = true))
+  }
+
   override def getProcessDefinition = {
     val config = processConfigPart.toConfig
     ThreadUtils.withThisAsContextClassLoader(classLoader) {
-      val creator =
-        classLoader.loadClass(config.getString("processConfigCreatorClass")).newInstance().asInstanceOf[ProcessConfigCreator]
+      val creator = loadProcessConfigCreator(config)
       ObjectProcessDefinition(ProcessDefinitionExtractor.extractObjectWithMethods(creator, config))
     }
+  }
+
+  private def loadProcessConfigCreator(config: Config): ProcessConfigCreator = {
+    classLoader.loadClass(config.getString("processConfigCreatorClass")).newInstance().asInstanceOf[ProcessConfigCreator]
   }
 
   private def stopSavingSavepoint(job: ProcessState): Future[String] = {

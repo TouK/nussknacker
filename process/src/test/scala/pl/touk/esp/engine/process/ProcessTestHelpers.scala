@@ -71,6 +71,8 @@ object ProcessTestHelpers {
       override def globalProcessVariables(config: Config) = {
         Map("processHelper" -> WithCategories(ProcessHelper.getClass))
       }
+
+      override def buildInfo(): Map[String, String] = Map.empty
     }
   }
 

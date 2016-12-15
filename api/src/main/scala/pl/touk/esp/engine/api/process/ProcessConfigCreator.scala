@@ -20,4 +20,6 @@ trait ProcessConfigCreator extends Serializable {
 
   def globalProcessVariables(config: Config): Map[String, WithCategories[Class[_]]]
 
+  def buildInfo(): Map[String, String]
+
 }

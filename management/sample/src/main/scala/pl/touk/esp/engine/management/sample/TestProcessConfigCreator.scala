@@ -112,6 +112,13 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
     ExceptionHandlerFactory.noParams(VerboselyLoggingExceptionHandler)
 
   override def globalProcessVariables(config: Config) = Map.empty
+
+  override def buildInfo(): Map[String, String] = {
+    Map(
+      "process-version" -> "0.1",
+      "engine-version" -> "0.1"
+    )
+  }
 }
 
 case object StatefulTransformer extends CustomStreamTransformer {
