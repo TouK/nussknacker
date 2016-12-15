@@ -5,7 +5,7 @@ import java.sql.Timestamp
 import db.migration.DefaultJdbcProfile.profile.api._
 import pl.touk.esp.ui.db.EspTables
 import pl.touk.esp.ui.util.DateUtils
-import slick.sql.SqlProfile.ColumnOption.NotNull
+import slick.sql.SqlProfile.ColumnOption.{NotNull, Nullable}
 
 object DeployedProcessVersionEntity {
 
@@ -21,6 +21,8 @@ object DeployedProcessVersionEntity {
 
     def user = column[String]("user", NotNull)
 
+    def buildInfo = column[Option[String]]("build_info", Nullable)
+
     def pk = primaryKey("pk_deployed_process_version", (processId, processVersionId, environment, deployedAt))
 
     def processes_fk = foreignKey("proc_ver_in_deployed_proc_fk", (processId, processVersionId), EspTables.processVersionsTable)(
@@ -35,12 +37,17 @@ object DeployedProcessVersionEntity {
       onDelete = ForeignKeyAction.NoAction
     )
 
-    def * = (processId, processVersionId, environment, user, deployedAt) <> (DeployedProcessVersionEntityData.tupled, DeployedProcessVersionEntityData.unapply)
+    def * = (processId, processVersionId, environment, user, deployedAt, buildInfo) <> (DeployedProcessVersionEntityData.tupled, DeployedProcessVersionEntityData.unapply)
 
   }
 
   //moze dodac hasha/wersje z gita? sbt-buildinfo + sbt-git sie nada https://github.com/sbt/sbt-git/issues/33
-  case class DeployedProcessVersionEntityData(processId: String, processVersionId: Long, environment: String, user: String, deployedAt: Timestamp) {
+  case class DeployedProcessVersionEntityData(processId: String,
+                                              processVersionId: Long,
+                                              environment: String,
+                                              user: String,
+                                              deployedAt: Timestamp,
+                                              buildInfo: Option[String]) {
     val deployedAtTime = DateUtils.toLocalDateTime(deployedAt)
   }
 

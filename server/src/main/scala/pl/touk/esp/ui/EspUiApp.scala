@@ -12,6 +12,7 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.esp.engine.compile.ProcessValidator
 import pl.touk.esp.engine.management.FlinkProcessManager
 import pl.touk.esp.ui.api._
+import pl.touk.esp.ui.app.BuildInfoHolder
 import pl.touk.esp.ui.db.DatabaseInitializer
 import pl.touk.esp.ui.initialization.Initialization
 import pl.touk.esp.ui.process.deployment.ManagementActor
@@ -40,13 +41,16 @@ object EspUiApp extends App with Directives with LazyLogging {
   val initialProcessDirectory = new File(args(1))
   val manager = FlinkProcessManager(config)
 
+  val buildInfoHolder = new BuildInfoHolder(manager.buildInfo)
+  logger.info(s"Starting app, build info ${buildInfoHolder.buildInfoAsJson}")
+
   val processDefinition = manager.getProcessDefinition
   val validator = ProcessValidator.default(processDefinition)
   val processValidation = new ProcessValidation(validator)
   val processConverter = new ProcessConverter(processValidation)
 
   val processRepository = new ProcessRepository(db, DefaultJdbcProfile.profile, processConverter)
-  val deploymentProcessRepository = new DeployedProcessRepository(db, DefaultJdbcProfile.profile)
+  val deploymentProcessRepository = new DeployedProcessRepository(db, DefaultJdbcProfile.profile, buildInfoHolder)
   val commentsRepository = new ProcessActivityRepository(db, DefaultJdbcProfile.profile)
 
 

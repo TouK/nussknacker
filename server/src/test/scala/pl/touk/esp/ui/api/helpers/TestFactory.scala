@@ -1,5 +1,7 @@
 package pl.touk.esp.ui.api.helpers
 
+import java.io.File
+
 import akka.http.scaladsl.server.Route
 import com.typesafe.config.{Config, ConfigFactory}
 import db.migration.DefaultJdbcProfile
@@ -7,6 +9,7 @@ import pl.touk.esp.engine.api.deployment.test.{TestData, TestResults}
 import pl.touk.esp.engine.api.deployment.{ProcessDeploymentData, ProcessManager, ProcessState}
 import pl.touk.esp.engine.management.FlinkProcessManager
 import pl.touk.esp.ui.api.{ProcessPosting, ProcessTestData, ProcessValidation}
+import pl.touk.esp.ui.app.BuildInfoHolder
 import pl.touk.esp.ui.process.marshall.ProcessConverter
 import pl.touk.esp.ui.process.repository.{DeployedProcessRepository, ProcessActivityRepository, ProcessRepository}
 import pl.touk.esp.ui.security.{LoggedUser, Permission}
@@ -24,7 +27,11 @@ object TestFactory {
   val posting = new ProcessPosting(processConverter)
 
   def newProcessRepository(db: JdbcBackend.Database) = new ProcessRepository(db, DefaultJdbcProfile.profile, processConverter)
-  def newDeploymentProcessRepository(db: JdbcBackend.Database) = new DeployedProcessRepository(db, DefaultJdbcProfile.profile)
+
+  val buildInfoHolder = new BuildInfoHolder(Map("engine-version" -> "0.1"))
+
+  def newDeploymentProcessRepository(db: JdbcBackend.Database) = new DeployedProcessRepository(db, DefaultJdbcProfile.profile,
+    buildInfoHolder)
   def newCommentsRepository(db: JdbcBackend.Database) = new ProcessActivityRepository(db, DefaultJdbcProfile.profile)
   val mockProcessManager = InMemoryMocks.mockProcessManager
 
