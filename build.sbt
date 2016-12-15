@@ -181,7 +181,18 @@ lazy val interpreter = (project in file("interpreter")).
         "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )
     }
-  ).dependsOn(util)
+  ).
+  enablePlugins(BuildInfoPlugin).
+  settings(
+    buildInfoKeys := Seq[BuildInfoKey](name, version),
+    buildInfoKeys ++= Seq[BuildInfoKey] (
+      "buildTime" -> java.time.LocalDateTime.now().toString,
+      "gitCommit" -> git.gitHeadCommit.value.getOrElse("")
+    ),
+    buildInfoPackage := "pl.touk.esp.engine.version",
+    buildInfoOptions ++= Seq(BuildInfoOption.ToMap)
+  ).
+  dependsOn(util)
 
 
 lazy val interpreterAddons = (project in file("interpreter-addons")).
