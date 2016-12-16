@@ -18,6 +18,7 @@ import pl.touk.esp.engine.api.process.ProcessConfigCreator
 import pl.touk.esp.engine.definition.ProcessDefinitionExtractor.ObjectProcessDefinition
 import pl.touk.esp.engine.definition.{ProcessDefinitionExtractor, ProcessDefinitionProvider}
 import pl.touk.esp.engine.marshall.ProcessMarshaller
+import pl.touk.esp.engine.util.ThreadUtils
 
 import scala.collection.JavaConversions._
 import scala.concurrent.duration._
@@ -112,9 +113,11 @@ class FlinkProcessManager(config: Config,
 
   override def getProcessDefinition = {
     val config = processConfigPart.toConfig
-    val creator =
-      classLoader.loadClass(config.getString("processConfigCreatorClass")).newInstance().asInstanceOf[ProcessConfigCreator]
-    ObjectProcessDefinition(ProcessDefinitionExtractor.extractObjectWithMethods(creator, config))
+    ThreadUtils.withThisAsContextClassLoader(classLoader) {
+      val creator =
+        classLoader.loadClass(config.getString("processConfigCreatorClass")).newInstance().asInstanceOf[ProcessConfigCreator]
+      ObjectProcessDefinition(ProcessDefinitionExtractor.extractObjectWithMethods(creator, config))
+    }
   }
 
   private def stopSavingSavepoint(job: ProcessState): Future[String] = {
