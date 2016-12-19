@@ -118,7 +118,8 @@ function graphReducer(state, action) {
       return {
         ...state,
         processToDisplay: {},
-        fetchedProcessDetails: {}
+        fetchedProcessDetails: {},
+        testResults: null
       }
     }
     case "DISPLAY_MODAL_NODE_DETAILS":
@@ -200,6 +201,19 @@ function graphReducer(state, action) {
       return {
         ...state,
         layout: action.layout
+      }
+    }
+    case "DISPLAY_TEST_RESULTS": {
+      return {
+        ...state,
+        testResults: action.testResults,
+        graphLoading: false
+      }
+    }
+    case "HIDE_TEST_RESULTS": {
+      return {
+        ...state,
+        testResults: null
       }
     }
     default:

@@ -144,9 +144,29 @@ export default {
         errorCallback(error)
       }
     });
+  },
+
+  testProcess(processId, file, callback, errorCallback) {
+    var formData = new FormData();
+    formData.append("testData", file)
+
+    return ajaxCallWithoutContentType({
+      url: appConfig.API_URL + '/processManagement/test/' + processId,
+      type: 'POST',
+      processData: false,
+      contentType: false,
+      data: formData
+    }).then(callback, (error) => {
+      this.addError(`Failed to test`, error);
+      if (errorCallback) {
+        errorCallback(error)
+      }
+    });
   }
 
+
 }
+
 
 var ajaxCall = (opts) => {
   var requestOpts = {

@@ -62,23 +62,20 @@ val flinkScope = if (includeFlinkAndScala) "compile" else "provided"
 libraryDependencies ++= {
   Seq(
     "pl.touk.esp" %% "esp-management" % espEngineV changing(),
+    "org.apache.flink" %% "flink-streaming-scala" % flinkV % flinkScope
+    excludeAll(
+        ExclusionRule("com.google.code.findbugs", "jsr305"),
+        ExclusionRule("log4j", "log4j"),
+        ExclusionRule("org.slf4j", "slf4j-log4j12")
+
+      ),
+    "org.apache.flink" %% "flink-clients" % flinkV % flinkScope
     //tutaj mamy dwie wersje jsr305 we flinku i assembly sie pluje...
-    "org.apache.flink" %% "flink-clients" % flinkV % flinkScope excludeAll(
+    excludeAll(
       ExclusionRule("com.google.code.findbugs", "jsr305"),
       ExclusionRule("log4j", "log4j"),
       ExclusionRule("org.slf4j", "slf4j-log4j12")
-    ),
-    //potrzebne bo w ui wolamy refleksyjnie np. ProcessDefinitionExtractor.extractObjectWithMethods, ktore korzysta z flinkowych SourceFunction
-    "org.apache.flink" %% "flink-streaming-java" % flinkV % flinkScope excludeAll(
-      ExclusionRule("com.google.code.findbugs", "jsr305"),
-      ExclusionRule("log4j", "log4j"),
-      ExclusionRule("org.slf4j", "slf4j-log4j12")
-    ),
-    //teraz tego potrzebujemy bo przy wyliczaniu definicji typow gdzies plata sie ta klasa, ale raczej nie powinnismy jej tam w ogole probowac ladowac?
-    "org.apache.flink" %% "flink-streaming-scala" % flinkV % flinkScope excludeAll(
-      ExclusionRule("com.google.code.findbugs", "jsr305"),
-      ExclusionRule("log4j", "log4j"),
-      ExclusionRule("org.slf4j", "slf4j-log4j12")
+
     ),
     "pl.touk.esp" %% "esp-management-sample" % espEngineV % "test" changing() classifier "assembly",
 

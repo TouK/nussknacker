@@ -1,6 +1,6 @@
 import HttpService from "../http/HttpService";
 import GraphUtils from "../components/graph/GraphUtils";
-import * as UndoRedoActions from '../undoredo/UndoRedoActions';
+import * as UndoRedoActions from "../undoredo/UndoRedoActions";
 
 export function fetchProcessToDisplay(processId, versionId) {
   return (dispatch) => {
@@ -20,7 +20,7 @@ export function displayCurrentProcessVersion(processId) {
 
 export function addComment(processId, processVersionId, comment) {
   return (dispatch) => {
-    return HttpService.addComment(processId, processVersionId, comment).then (() => {
+    return HttpService.addComment(processId, processVersionId, comment).then(() => {
       return dispatch(displayProcessActivity(processId))
     })
   }
@@ -148,5 +148,31 @@ export function toggleConfirmDialog(isOpen, text, action) {
     isOpen: isOpen,
     text: text,
     onConfirmCallback: action
+  }
+}
+
+export function testProcessFromFile(id, testDataFile) {
+  return (dispatch) => {
+    dispatch({
+      type: "PROCESS_LOADING"
+    })
+    HttpService.testProcess(id, testDataFile, testResults => dispatch(displayTestResults(testResults)),
+      error => dispatch({
+        type: "LOADING_FAILED"
+      }));
+
+  }
+}
+
+export function displayTestResults(testResults) {
+  return {
+    type: "DISPLAY_TEST_RESULTS",
+    testResults: testResults
+  }
+}
+
+export function hideTestResults() {
+  return (dispatch) => {
+    dispatch({type: "HIDE_TEST_RESULTS"})
   }
 }

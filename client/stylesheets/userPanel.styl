@@ -89,8 +89,14 @@ sidenavMixin()
 
 .dropZone
   cursor: pointer
-  height: 60
+  height: 33
   //TODO: czy to da sie jakos automatycznie zrobic?
   padding-top 6
+  margin-bottom 5
+  &.disabled
+    background-color: grey
+    cursor: not-allowed
+  &:not(.disabled):hover
+    background-color: buttonBkgHover
   div
     text-align center

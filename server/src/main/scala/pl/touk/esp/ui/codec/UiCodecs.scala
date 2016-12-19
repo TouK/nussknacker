@@ -6,7 +6,7 @@ import argonaut._
 import argonaut.derive.{JsonSumCodec, JsonSumCodecFor}
 import pl.touk.esp.engine.api
 import pl.touk.esp.engine.api.UserDefinedProcessAdditionalFields
-import pl.touk.esp.engine.api.deployment.test.TestResults
+import pl.touk.esp.engine.api.deployment.test.{ExpressionInvocationResult, TestResults}
 import pl.touk.esp.engine.definition.DefinitionExtractor.PlainClazzDefinition
 import pl.touk.esp.engine.graph.node
 import pl.touk.esp.ui.api.ProcessValidation.ValidationResult
@@ -106,7 +106,21 @@ object UiCodecs {
         }.toMap.asJson
     }
 
-    implicit def ctxEncode = EncodeJson.of[Map[String, Any]].contramap[api.Context](_.variables)
+    implicit def ctxEncode = EncodeJson[api.Context] {
+      case api.Context(id, vars, _) => jObjectFields(
+        "id" -> jString(id),
+        "variables" -> vars.asJson
+      )
+    }
+
+    implicit def exprInvocationResult =   EncodeJson[ExpressionInvocationResult] {
+      case ExpressionInvocationResult(context, name, result) => jObjectFields(
+        "context" -> context.asJson,
+        "name" -> jString(name),
+        "value" -> encodeVariable(result)
+      )
+    }
+
 
     implicit def testResultsEncode = EncodeJson.of[TestResults]
   }

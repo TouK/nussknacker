@@ -18,7 +18,8 @@ class Graph extends React.Component {
     static propTypes = {
         processToDisplay: React.PropTypes.object.isRequired,
         loggedUser: React.PropTypes.object.isRequired,
-        connectDropTarget: React.PropTypes.func.isRequired
+        connectDropTarget: React.PropTypes.func.isRequired,
+        testResults: React.PropTypes.object.isRequired
     }
 
     constructor(props) {
@@ -38,7 +39,7 @@ class Graph extends React.Component {
 
     componentDidMount() {
         this.processGraphPaper = this.createPaper()
-        this.drawGraph(this.props.processToDisplay, this.props.layout)
+        this.drawGraph(this.props.processToDisplay, this.props.layout, null, this.props.testResults)
         this.changeNodeDetailsOnClick(this.processGraphPaper);
         this.labelToFrontOnHover(this.processGraphPaper);
         this.cursorBehaviour(this.processGraphPaper);
@@ -47,9 +48,10 @@ class Graph extends React.Component {
     componentWillUpdate(nextProps, nextState) {
       const nothingChanged = _.isEqual(this.props.processToDisplay, nextProps.processToDisplay) &&
         _.isEqual(this.props.layout, nextProps.layout) &&
-        _.isEqual(this.props.nodeToDisplay, nextProps.nodeToDisplay)
+        _.isEqual(this.props.nodeToDisplay, nextProps.nodeToDisplay) &&
+        _.isEqual(this.props.testResults, nextProps.testResults)
       if (!nothingChanged) {
-        this.drawGraph(nextProps.processToDisplay, nextProps.layout, nextProps.nodeToDisplay)
+        this.drawGraph(nextProps.processToDisplay, nextProps.layout, nextProps.nodeToDisplay, nextProps.testResults)
       }
     }
 
@@ -118,8 +120,8 @@ class Graph extends React.Component {
           .on("link:connect", (c) => this.props.actions.nodesConnected(c.sourceView.model.id, c.targetView.model.id))
     }
 
-    drawGraph = (data, layout, nodeToDisplay) => {
-      const nodes = _.map(data.nodes, (n) => { return EspNode.makeElement(n) });
+    drawGraph = (data, layout, nodeToDisplay, testResults) => {
+      const nodes = _.map(data.nodes, (n) => { return EspNode.makeElement(n, _.get(testResults, `nodeResults.${n.id}`)) });
       const edges = _.map(data.edges, (e) => { return EspNode.makeLink(e) });
       const cells = nodes.concat(edges);
       this.graph.resetCells(cells);
@@ -241,7 +243,8 @@ function mapState(state) {
         nodeToDisplay: state.graphReducer.nodeToDisplay,
         processToDisplay: state.graphReducer.processToDisplay,
         loggedUser: state.settings.loggedUser,
-        layout: state.graphReducer.layout
+        layout: state.graphReducer.layout,
+        testResults: state.graphReducer.testResults || {}
     };
 }
 

@@ -3,9 +3,10 @@ import {render} from "react-dom";
 import classNames from "classnames";
 import _ from "lodash";
 import {ListGroupItem} from "react-bootstrap";
-import Textarea from 'react-textarea-autosize';
+import Textarea from "react-textarea-autosize";
 import NodeUtils from "./NodeUtils";
 import ExpressionSuggest from "./ExpressionSuggest";
+import TestResultUtils from "../../common/TestResultUtils";
 
 //zastanowic sie czy this.state tutaj nie powinien byc przepychany przez reduxa,
 // bo obecnie ten stan moze byc przypadkowo resetowany kiedy parent component dostanie nowe propsy - bo tak mamy
@@ -16,13 +17,20 @@ export default class NodeDetailsContent extends React.Component {
     super(props);
     this.state = {
       editedNode: props.node,
-      codeCompletionEnabled: true
+      codeCompletionEnabled: true,
+    }
+    this.state = {
+      ...this.state,
+      ...this.selectTestResults()
     }
   }
 
   componentDidUpdate(prevProps, prevState) {
     if (!_.isEqual(prevProps.node, this.props.node)) {
       this.setState({editedNode: this.props.node})
+    }
+    if (!_.isEqual(prevProps.node, this.props.node) || !_.isEqual(prevProps.testResults, this.props.testResults)) {
+      this.selectTestResults()
     }
   }
 
@@ -31,13 +39,13 @@ export default class NodeDetailsContent extends React.Component {
       case 'Source':
         return this.sourceSinkCommon()
       case 'Sink':
-        const toAppend = this.createField("textarea", "Expression", "endResult.expression")
+        const toAppend = this.createField("textarea", "Expression", "endResult.expression", "expression")
         return this.sourceSinkCommon(toAppend)
       case 'Filter':
         return (
           <div className="node-table-body">
             {this.createField("input", "Id", "id")}
-            {this.createField("textarea", "Expression", "expression.expression")}
+            {this.createField("textarea", "Expression", "expression.expression", "expression")}
             {this.descriptionField()}
           </div>
         )
@@ -51,7 +59,7 @@ export default class NodeDetailsContent extends React.Component {
               //TODO: czy tu i w custom node i gdzies jeszcze chcemy te hr??
               return (
                 <div className="node-block" key={index}>
-                  {this.createListField("textarea", params.name, params, 'expression.expression', `service.parameters[${index}]`)}
+                  {this.createListField("textarea", params.name, params, 'expression.expression', `service.parameters[${index}]`, params.name)}
                   <hr/>
                 </div>
               )
@@ -69,7 +77,7 @@ export default class NodeDetailsContent extends React.Component {
             {this.state.editedNode.parameters.map((params, index) => {
               return (
                 <div className="node-block" key={index}>
-                  {this.createListField("textarea", params.name, params, 'expression.expression', `parameters[${index}]`)}
+                  {this.createListField("textarea", params.name, params, 'expression.expression', `parameters[${index}]`, params.name)}
                   <hr />
                 </div>
               )
@@ -89,7 +97,7 @@ export default class NodeDetailsContent extends React.Component {
                   return (
                     <div className="node-block" key={index}>
                       {this.createListField("input", "Name", params, "name", `fields[${index}]`)}
-                      {this.createListField("textarea", "Expression", params, "expression.expression", `fields[${index}]`)}
+                      {this.createListField("textarea", "Expression", params, "expression.expression", `fields[${index}]`, "expression")}
                       <hr />
                     </div>
                   )
@@ -104,7 +112,9 @@ export default class NodeDetailsContent extends React.Component {
           <div className="node-table-body">
             {this.createField("input", "Id", "id")}
             {this.createField("input", "Variable Name", "varName")}
-            {this.createField("textarea", "Expression", "value.expression")}
+            {
+              //TODO: to sie dobrze nie wyswietli...
+              this.createField("textarea", "Expression", "value.expression", "expression")}
             {this.descriptionField()}
           </div>
         )
@@ -112,7 +122,7 @@ export default class NodeDetailsContent extends React.Component {
         return (
           <div className="node-table-body">
             {this.createField("input", "Id", "id")}
-            {this.createField("textarea", "Expression", "expression.expression")}
+            {this.createField("textarea", "Expression", "expression.expression", "expression")}
             {this.createField("input", "exprVal", "exprVal")}
             {this.descriptionField()}
           </div>
@@ -173,15 +183,40 @@ export default class NodeDetailsContent extends React.Component {
     )
   }
 
-  createField = (fieldType, fieldLabel, fieldProperty) => {
-    return this.doCreateField(fieldType, fieldLabel, fieldProperty, _.get(this.state.editedNode, fieldProperty, ""), ((newValue) => this.setNodeDataAt(fieldProperty, newValue) ))
+  createField = (fieldType, fieldLabel, fieldProperty, fieldName) => {
+    return this.doCreateField(fieldType, fieldLabel, fieldName, _.get(this.state.editedNode, fieldProperty, ""), ((newValue) => this.setNodeDataAt(fieldProperty, newValue) ))
   }
 
-  createListField = (fieldType, fieldLabel, obj, fieldProperty, listFieldProperty) => {
-    return this.doCreateField(fieldType, fieldLabel, fieldProperty, _.get(obj, fieldProperty), ((newValue) => this.setNodeDataAt(`${listFieldProperty}.${fieldProperty}`, newValue) ))
+  createListField = (fieldType, fieldLabel, obj, fieldProperty, listFieldProperty, fieldName) => {
+    return this.doCreateField(fieldType, fieldLabel, fieldName, _.get(obj, fieldProperty), ((newValue) => this.setNodeDataAt(`${listFieldProperty}.${fieldProperty}`, newValue) ))
   }
 
-  doCreateField = (fieldType, fieldLabel, fieldProperty, fieldValue, handleChange) => {
+  wrapWithTestResult = (fieldName, field) => {
+    var testValue = fieldName ? (this.state.testResultsToShow && this.state.testResultsToShow.expressionResults[fieldName]) : null
+
+    if (testValue) {
+      return (
+        <div>
+          {field}
+          <div className="node-row">
+            <div className="node-label">
+              Evaluated:
+            </div>
+            <div className="node-value">
+              <input type="text" readOnly="true" className="node-input"
+                     value={testValue}/>
+            </div>
+          </div>
+        </div>
+      )
+    } else {
+      return field
+    }
+  }
+
+  doCreateField = (fieldType, fieldLabel, fieldName, fieldValue, handleChange) => {
+
+
     switch (fieldType) {
       case 'input':
         return (
@@ -197,12 +232,13 @@ export default class NodeDetailsContent extends React.Component {
           <div className="node-row">
             <div className="node-label">{fieldLabel}:</div>
             <div className="node-value">
-              <Textarea rows={1} cols={50} className="node-input" value={fieldValue} onChange={(e) => handleChange(e.target.value)} readOnly={!this.props.isEditMode}/>
+              <Textarea rows={1} cols={50} className="node-input" value={fieldValue}
+                        onChange={(e) => handleChange(e.target.value)} readOnly={!this.props.isEditMode}/>
             </div>
           </div>
         )
       case 'textarea':
-        return (
+        return this.wrapWithTestResult(fieldName, (
           <div className="node-row">
             <div className="node-label">{fieldLabel}:</div>
             <div className="node-value">
@@ -211,7 +247,8 @@ export default class NodeDetailsContent extends React.Component {
                   rows: 1, cols: 50, className: "node-input", value: fieldValue,
                   onValueChange: handleChange, readOnly: !this.props.isEditMode
                 }}/> :
-                <Textarea rows={1} cols={50} className="node-input" value={fieldValue} onChange={(e) => handleChange(e.target.value)} readOnly={!this.props.isEditMode}/>
+                <Textarea rows={1} cols={50} className="node-input" value={fieldValue}
+                          onChange={(e) => handleChange(e.target.value)} readOnly={!this.props.isEditMode}/>
               }
               {process.env.NODE_ENV == "development" ?
                 <div style={{color: "red"}}>
@@ -220,7 +257,7 @@ export default class NodeDetailsContent extends React.Component {
                 </div> : null
               }
             </div>
-          </div>
+          </div>)
         )
       default:
         return (
@@ -240,6 +277,62 @@ export default class NodeDetailsContent extends React.Component {
 
   descriptionField = () => {
     return this.createField("plain-textarea", "Description", "additionalFields.description")
+  }
+
+
+  stateForSelectTestResults = (id) => {
+    if (this.props.testResults) {
+      const chosenId = id || _.get(_.head(TestResultUtils.availableContexts(this.props.testResults)), "id")
+      return {
+        testResultsToShow: TestResultUtils.nodeResultsForContext(this.props.testResults, chosenId),
+        testResultsIdToShow: chosenId
+      }
+    } else {
+      return null;
+    }
+  }
+
+  selectTestResults = (id) => {
+    this.setState(this.stateForSelectTestResults(id))
+  }
+
+  testResultsSelect = () => {
+    if (this.props.testResults) {
+      return (
+        <select className="node-input selectTestResults" onChange={(e) => this.selectTestResults(e.target.value)}
+                value={this.state.testResultsIdToShow}>
+          { TestResultUtils.availableContexts(this.props.testResults).map((ctx, idx) =>
+            //ten toString jest b. slaby w wielu przypadkach - trzeba cos z nim zrobic :|
+            (<option key={idx} value={ctx.id}>{ctx.id} ({(ctx.input || "").toString().substring(0, 50)})</option>)
+          )}
+        </select>
+      )
+    } else {
+      return null;
+    }
+
+  }
+
+  testResults = () => {
+    if (this.state.testResultsToShow && this.state.testResultsToShow.context) {
+      var ctx = this.state.testResultsToShow.context.variables
+      return (<div className="node-table-body">
+        <div className="node-row">
+          <div className="node-label">Variables:</div>
+        </div>
+        {
+          Object.keys(ctx).map((key, ikey) => {
+            return (<div className="node-row" key={ikey}>
+                <div className="node-label">{key}:</div>
+                <div className="node-value"><input type="text" readOnly="true"  className="node-input" value={ctx[key]}/></div>
+              </div>
+            )
+          })
+        }
+      </div>)
+    } else {
+      return null;
+    }
   }
 
   render() {
@@ -262,7 +355,9 @@ export default class NodeDetailsContent extends React.Component {
             </ul>
           </ListGroupItem> : null}
         {!_.isEmpty(this.props.nodeErrors) ? <hr/> : null}
+        {this.testResultsSelect()}
         {this.customNode()}
+        {this.testResults()}
       </div>
     )
   }

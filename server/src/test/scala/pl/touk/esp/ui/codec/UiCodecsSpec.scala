@@ -16,12 +16,14 @@ class UiCodecsSpec extends FlatSpec with Matchers {
     import codec._
 
     val json =
-      api.Context(Map("var1" ->
+      api.Context("terefere", Map("var1" ->
         TestRecord("a", 1, Some("b"), LocalDateTime.now(), Some(TestRecord("c", 2, None, LocalDateTime.now(), None)))
       )).asJson
 
     for {
-      var1 <- json.cursor --\ "var1"
+      ctxId <- json.cursor --\ "id"
+      vars <- json.cursor --\ "variables"
+      var1 <- vars --\ "var1"
       id <- var1 --\ "id"
       inner <- var1 --\ "record"
       innerNumber <- inner --\ "number"
@@ -29,6 +31,7 @@ class UiCodecsSpec extends FlatSpec with Matchers {
       innerSome = inner --\ "some"
 
     } yield {
+      ctxId.focus shouldBe jString("terefere")
       id.focus shouldBe jString("a")
       some.focus shouldBe jString("b")
       innerNumber.focus shouldBe jNumber(2)
