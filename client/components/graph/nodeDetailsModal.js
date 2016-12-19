@@ -12,13 +12,16 @@ import { ListGroupItem } from 'react-bootstrap';
 import NodeUtils from './NodeUtils';
 import NodeDetailsContent from './NodeDetailsContent';
 import EspModalStyles from '../../common/EspModalStyles'
+import TestResultUtils from '../../common/TestResultUtils'
 
 class NodeDetailsModal extends React.Component {
 
   static propTypes = {
     nodeToDisplay: React.PropTypes.object.isRequired,
+    testResults: React.PropTypes.object,
     processId: React.PropTypes.string.isRequired,
-    nodeErrors: React.PropTypes.array.isRequired
+    nodeErrors: React.PropTypes.array.isRequired,
+    readOnly: React.PropTypes.bool.isRequired
   }
 
   constructor(props) {
@@ -80,7 +83,7 @@ class NodeDetailsModal extends React.Component {
     var editButtonClasses = classNames(buttonClasses, 'pull-left', {'hidden': this.state.isEditMode})
     var saveButtonClasses = classNames(buttonClasses, 'pull-left', {'hidden': !this.state.isEditMode})
 
-    if (this.props.loggedUser.canWrite) {
+    if (!this.props.readOnly) {
       return ([
         <LaddaButton key="1" title="Save node details" className={saveButtonClasses}
                       loading={this.state.pendingRequest}
@@ -100,6 +103,8 @@ class NodeDetailsModal extends React.Component {
   render() {
     var isOpen = !_.isEmpty(this.props.nodeToDisplay) && this.props.showNodeDetailsModal
     var headerStyles = EspModalStyles.headerStyles(this.nodeAttributes().styles.fill, this.nodeAttributes().styles.color)
+
+    var testResults = TestResultUtils.resultsForNode(this.props.testResults, this.state.currentNodeId)
     return (
       <div className="objectModal">
         <Modal isOpen={isOpen} style={EspModalStyles.modalStyles()} onRequestClose={this.closeModal}>
@@ -111,7 +116,7 @@ class NodeDetailsModal extends React.Component {
           </div>
           <div className="modalContent">
             <NodeDetailsContent isEditMode={this.state.isEditMode} node={this.state.editedNode}
-                                nodeErrors={this.props.nodeErrors} onChange={this.updateNodeState}/>
+                                nodeErrors={this.props.nodeErrors} onChange={this.updateNodeState} testResults={testResults}/>
           </div>
           <div className="modalFooter"></div>
         </Modal>
@@ -127,8 +132,9 @@ function mapState(state) {
     processId: state.graphReducer.processToDisplay.id,
     nodeErrors: _.get(state.graphReducer.processToDisplay, `validationResult.invalidNodes[${state.graphReducer.nodeToDisplay.id}]`, []),
     processToDisplay: state.graphReducer.processToDisplay,
-    loggedUser: state.settings.loggedUser,
-    showNodeDetailsModal: state.ui.showNodeDetailsModal
+    readOnly: !state.settings.loggedUser.canWrite,
+    showNodeDetailsModal: state.ui.showNodeDetailsModal,
+    testResults: state.graphReducer.testResults
   };
 }
 

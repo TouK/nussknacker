@@ -51,6 +51,10 @@ joint.shapes.devs.EspNode = joint.shapes.basic.Generic.extend(_.extend({}, joint
                 'ref': '.blockHeader',
                 'ref-x': 20, 'ref-y': 50
             },
+            '.testResultsSummary': {
+                'ref': '.blockHeader',
+                'ref-x': 250, 'ref-y': 50
+            },
             // markups styling
             '.inPorts': {
                 'ref-x': 0, 'ref-y': 0,
@@ -103,11 +107,12 @@ joint.shapes.devs.EspNode = joint.shapes.basic.Generic.extend(_.extend({}, joint
 
 export default {
 
-    makeElement(node) {
+    makeElement(node, testResult) {
         var customAttrs = require('json!../../assets/json/nodeAttributes.json');
 
         var headerLabel = _.toUpper(customAttrs[node.type].name);
         var bodyContent = node.id ? node.id : "";
+        var testResultsContent = testResult ? testResult.length : ""
 
         // Compute width/height of the rectangle based on the number
         // of lines in the label and the letter size. 0.6 * letterSize is
@@ -151,6 +156,9 @@ export default {
           },
           '.contentText': {
             text: bodyContent
+          },
+          '.testResultsSummary': {
+            text: testResultsContent
           }
         };
 
