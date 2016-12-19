@@ -7,8 +7,6 @@ import pl.touk.esp.engine.api.{MethodToInvoke, ParamName}
 import pl.touk.esp.engine.definition.DefinitionExtractor._
 import pl.touk.esp.engine.types.EspTypeUtils
 
-import scala.util.Try
-
 trait DefinitionExtractor[T] {
 
   def extract(obj: T, methodDef: MethodDefinition, categories: List[String]): ObjectDefinition = {
@@ -20,24 +18,31 @@ trait DefinitionExtractor[T] {
   }
 
   def extractMethodDefinition(obj: T): MethodDefinition = {
+    val methods = obj.getClass.getMethods
 
-    val methods = obj.getClass.getMethods.flatMap(tryToExtractParams)
-
-    def findByReturnType = methods.find { case (m, _) =>
+    def findByReturnType = methods.find { m =>
       m.getReturnType == returnType
     }
-    def findByAnnotation = methods.find { case (m, _) =>
+    def findByAnnotation = methods.find { m =>
       m.getAnnotation(classOf[MethodToInvoke]) != null
     }
 
-    val (method, params) = findByAnnotation orElse findByReturnType getOrElse {
-      throw new IllegalArgumentException(s"Missing method with return type: $returnType or @MethodToInvoke annotation")
+    val method = findByAnnotation orElse findByReturnType getOrElse {
+      throw new IllegalArgumentException(s"Missing method with return type: $returnType")
     }
 
-
-    MethodDefinition(method, extractReturnTypeFromMethod(obj, method), params)
+    val params = method.getParameters.map { p =>
+      if (additionalParameters.contains(p.getType)) {
+        Right(p.getType)
+      } else {
+        val name = Option(p.getAnnotation(classOf[ParamName]))
+          .map(_.value())
+          .getOrElse(throw new IllegalArgumentException(s"Parameter $p of $obj and method : ${method.getName} has missing @ParamName annotation"))
+        Left(Parameter(name, ClazzRef(extractParameterType(p))))
+      }
+    }.toList
+    MethodDefinition(method, extractReturnTypeFromMethod(obj, method), new OrderedParameters(params))
   }
-
   protected def extractReturnTypeFromMethod(obj: T, method: Method) = {
     val typeFromAnnotation = Option(method.getAnnotation(classOf[MethodToInvoke]))
       .filterNot(_.returnType() == classOf[Object])
@@ -50,21 +55,6 @@ trait DefinitionExtractor[T] {
   protected def returnType: Class[_]
 
   protected def additionalParameters: Set[Class[_]]
-
-  private def tryToExtractParams(method: Method): Option[(Method, OrderedParameters)] =
-    Try {
-      val params = method.getParameters.map { p =>
-        if (additionalParameters.contains(p.getType)) {
-          Right(p.getType)
-        } else {
-          val name = Option(p.getAnnotation(classOf[ParamName]))
-            .map(_.value())
-            .getOrElse(throw new IllegalArgumentException(s"Parameter $p of $method has missing @ParamName annotation"))
-          Left(Parameter(name, ClazzRef(extractParameterType(p))))
-        }
-      }.toList
-      (method, new OrderedParameters(params))
-    }.toOption
 
   protected def extractParameterType(p: java.lang.reflect.Parameter) = p.getType
 

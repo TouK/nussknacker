@@ -91,7 +91,7 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
 
     val kafkaClient = new KafkaClient(config.getString("prod.kafka.kafkaAddress"),
       config.getString("prod.kafka.zkAddress"))
-    kafkaClient.createTopic(outTopic)
+    kafkaClient.createTopic(outTopic, 1)
 
 
     assert(processManager.deploy(processEmittingOneElementAfterStart.id, GraphProcess(marshalledProcess)).isReadyWithin(100 seconds))
@@ -106,7 +106,10 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
     val jobStatus2 = processManager.findJobStatus(processId).futureValue
     jobStatus2.map(_.status) shouldBe Some("RUNNING")
 
-    val message = kafkaClient.createConsumer().consume(outTopic).take(2).last.message()
+    val messages = kafkaClient.createConsumer().consume(outTopic).take(2).toList
+    println("save state when redeploying messages: " + messages.map(m => new String(m.message())).mkString("\n"))
+
+    val message = messages.last.message()
     new String(message) shouldBe "List(One element, One element)"
 
     assert(processManager.cancel(processEmittingOneElementAfterStart.id).isReadyWithin(10 seconds))

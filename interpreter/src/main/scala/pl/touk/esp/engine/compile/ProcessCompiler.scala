@@ -241,8 +241,10 @@ protected trait ProcessCompilerBase {
 
 object ProcessValidator {
 
+  import pl.touk.esp.engine.util.Implicits._
+
   def default(definition: ProcessDefinition[ObjectDefinition]): ProcessValidator = {
-    val sub = PartSubGraphValidator.default(definition.services, definition.globalVariables.mapValues(_.value))
+    val sub = PartSubGraphValidator.default(definition.services, definition.globalVariables.mapValuesNow(_.value))
     new ProcessValidator(sub, definition)
   }
 

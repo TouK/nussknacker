@@ -89,6 +89,7 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessW
 
       val newStart = env
         .addSource[Any](source.toFlinkSource)(source.typeInformation)
+        .name(s"${process.metaData.id}-source")
       val withAssigned = timestampAssigner.map {
         case periodic: AssignerWithPeriodicWatermarks[Any@unchecked] =>
           newStart.assignTimestampsAndWatermarks(periodic)
@@ -99,6 +100,7 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessW
         .map(new RateMeterFunction[Any]("source"))
           .map(input => Context().withVariable(Interpreter.InputParamName, input))
         .flatMap(new InterpretationFunction(compiledProcessWithDeps, part.node))
+        .name(s"${process.metaData.id}-source-interpretation")
         .split(SplitFunction)
 
       registerParts(withAssigned, part.nextParts, part.ends)
@@ -120,11 +122,11 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessW
         case part@SinkPart(sink: FlinkSink, _) =>
           start
             .flatMap(new SinkInterpretationFunction(compiledProcessWithDeps, part.node))
-            .name(s"${part.id}-function")
+            .name(s"${process.metaData.id}-${part.id}-function")
             .map(new EndRateMeterFunction(part.ends))
             .map(_.output)
             .addSink(sink.toFlinkFunction)
-            .name(s"${part.id}-sink")
+            .name(s"${process.metaData.id}-${part.id}-sink")
         case part:SinkPart =>
           throw new IllegalArgumentException(s"Process can only use flink sinks, instead given: ${part.obj}")
         case SplitPart(splitNode, nexts) =>
@@ -137,7 +139,8 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessW
               val interpreted = newStart.select(nextNode.id)
                   .map(_.finalContext)
                   .flatMap(new InterpretationFunction(compiledProcessWithDeps, nextNode))
-                    .split(SplitFunction)
+                  .name(s"${process.metaData.id}-${nextNode.id}-interpretation")
+                  .split(SplitFunction)
               registerParts(interpreted, parts, ends)
             case NextWithParts(PartRef(id), parts, ends) =>
               val splitted = newStart.select(id).split(SplitFunction)
@@ -150,6 +153,7 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessW
           val newStart = executor.run(compiledProcessWithDeps)(start, compiledProcessWithDeps().processTimeout)
               .map(ir => ir.context.withVariable(node.data.outputVar, ir.value))
               .flatMap(new InterpretationFunction(compiledProcessWithDeps, node))
+              .name(s"${process.metaData.id}-${node.id}-customNodeInterpretation")
               .split(SplitFunction)
 
           registerParts(newStart, nextParts, ends)
@@ -162,6 +166,7 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessW
 object FlinkProcessRegistrar {
 
   import net.ceedubs.ficus.Ficus._
+  import pl.touk.esp.engine.util.Implicits._
 
   private final val EndId = "$end"
 
@@ -180,8 +185,8 @@ object FlinkProcessRegistrar {
 
     def compileProcess(process: EspProcess)() = {
       val services = creator.services(config)
-      val servicesDefs = services.mapValues { service => ObjectWithMethodDef(service, ServiceDefinitionExtractor) }
-      val subCompiler = PartSubGraphCompiler.default(servicesDefs, creator.globalProcessVariables(config).mapValues(v => ClazzRef(v.value)))
+      val servicesDefs = services.mapValuesNow { service => ObjectWithMethodDef(service, ServiceDefinitionExtractor) }
+      val subCompiler = PartSubGraphCompiler.default(servicesDefs, creator.globalProcessVariables(config).mapValuesNow(v => ClazzRef(v.value)))
       val processCompiler = compiler(subCompiler)
       val compiledProcess = validateOrFailProcessCompilation(processCompiler.compile(process))
       val timeout = config.as[FiniteDuration]("timeout")

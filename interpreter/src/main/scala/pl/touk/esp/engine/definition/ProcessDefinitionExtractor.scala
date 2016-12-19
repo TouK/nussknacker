@@ -6,6 +6,7 @@ import pl.touk.esp.engine.definition.DefinitionExtractor._
 
 object ProcessDefinitionExtractor {
 
+  import pl.touk.esp.engine.util.Implicits._
   //TODO: a moze to do ProcessConfigCreator??
   def extractObjectWithMethods(creator: ProcessConfigCreator, config: Config) : ProcessDefinition[ObjectWithMethodDef] = {
 
@@ -16,22 +17,22 @@ object ProcessDefinitionExtractor {
     val customStreamTransformers = creator.customStreamTransformers(config)
     val globalVariables = creator.globalProcessVariables(config)
 
-    val servicesDefs = services.mapValues { factory =>
+    val servicesDefs = services.mapValuesNow { factory =>
       ObjectWithMethodDef(factory, ProcessObjectDefinitionExtractor.service)
     }
 
-    val sourceFactoriesDefs = sourceFactories.mapValues { factory =>
+    val sourceFactoriesDefs = sourceFactories.mapValuesNow { factory =>
       ObjectWithMethodDef(factory, ProcessObjectDefinitionExtractor.source)
     }
-    val sinkFactoriesDefs = sinkFactories.mapValues { factory =>
+    val sinkFactoriesDefs = sinkFactories.mapValuesNow { factory =>
       ObjectWithMethodDef(factory, ProcessObjectDefinitionExtractor.sink)
     }
     val exceptionHandlerFactoryDefs = ObjectWithMethodDef(
       WithCategories(exceptionHandlerFactory, List()), ProcessObjectDefinitionExtractor.exceptionHandler)
-    val customNodesExecutorsDefs = customStreamTransformers.mapValues { executor =>
+    val customNodesExecutorsDefs = customStreamTransformers.mapValuesNow { executor =>
       ObjectWithMethodDef(executor, ProcessObjectDefinitionExtractor.customNodeExecutor)
     }
-    val globalVariablesDefs = globalVariables.mapValues { globalVar =>
+    val globalVariablesDefs = globalVariables.mapValuesNow { globalVar =>
       globalVar.map(ClazzRef(_))
     }
 
@@ -61,10 +62,10 @@ object ProcessDefinitionExtractor {
 
     def apply(definition: ProcessDefinition[ObjectWithMethodDef]) =
       ProcessDefinition(
-        definition.services.mapValues(_.objectDefinition),
-        definition.sourceFactories.mapValues(_.objectDefinition),
-        definition.sinkFactories.mapValues(_.objectDefinition),
-        definition.customStreamTransformers.mapValues(_.objectDefinition),
+        definition.services.mapValuesNow(_.objectDefinition),
+        definition.sourceFactories.mapValuesNow(_.objectDefinition),
+        definition.sinkFactories.mapValuesNow(_.objectDefinition),
+        definition.customStreamTransformers.mapValuesNow(_.objectDefinition),
         definition.exceptionHandlerFactory.objectDefinition,
         definition.globalVariables,
         definition.typesInformation

@@ -124,6 +124,7 @@ object ProcessTestHelpers {
       data_.clear()
     }
 
+    @MethodToInvoke
     def invoke(@ParamName("all") all: Any)(implicit ec: ExecutionContext) = {
       measuring(Future.successful {
         data_.add(all)
