@@ -41,9 +41,11 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
   }
 
 
+  import pl.touk.esp.engine.util.Implicits._
+
   private def parse(expr: String, context: Context = ctx, globalProcessVariables: Map[String, ClazzRef] = Map.empty) = {
     val validationCtx = ValidationContext(
-      context.variables.mapValues(_.getClass).mapValues(ClazzRef.apply),
+      context.variables.mapValuesNow(_.getClass).mapValuesNow(ClazzRef.apply),
       EspTypeUtils.clazzAndItsChildrenDefinition(context.variables.values.map(_.getClass).toList)
     )
     val expressionFunctions = Map("today" -> classOf[LocalDate].getDeclaredMethod("now"))

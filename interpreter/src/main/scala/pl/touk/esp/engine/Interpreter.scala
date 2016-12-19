@@ -182,10 +182,12 @@ object Interpreter {
   final val InputParamName = "input"
   final val OutputParamName = "output"
 
+  import pl.touk.esp.engine.util.Implicits._
+
   def apply(servicesDefs: Map[String, ObjectWithMethodDef],
             lazyEvaluationTimeout: FiniteDuration,
             listeners: Seq[ProcessListener] = Seq(LoggingListener)) = {
-    new Interpreter(servicesDefs.mapValues(ServiceInvoker(_)), lazyEvaluationTimeout, listeners)
+    new Interpreter(servicesDefs.mapValuesNow(ServiceInvoker(_)), lazyEvaluationTimeout, listeners)
   }
 
   private class LazyValuesProviderImpl(services: Map[String, ServiceInvoker],
