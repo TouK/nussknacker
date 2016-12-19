@@ -14,6 +14,7 @@ import pl.touk.esp.ui.api.{ManagementResources, ProcessActivityResource, Process
 import pl.touk.esp.ui.codec.{ProcessTypeCodec, UiCodecs}
 import pl.touk.esp.ui.db.EspTables
 import pl.touk.esp.ui.db.migration.SampleData
+import pl.touk.esp.ui.process.deployment.ManagementActor
 import pl.touk.esp.ui.process.displayedgraph.DisplayableProcess
 import pl.touk.esp.ui.process.repository.ProcessRepository.ProcessDetails
 import pl.touk.esp.ui.security.LoggedUser
@@ -37,9 +38,11 @@ trait EspItTest extends LazyLogging { self: ScalatestRouteTest with Suite with B
   val deploymentProcessRepository = newDeploymentProcessRepository(db)
   val commentsRepository = newCommentsRepository(db)
 
-  val processesRoute = (u:LoggedUser) => new ProcessesResources(processRepository, InMemoryMocks.mockProcessManager, processConverter, processValidation).route(u)
+  val managementActor = ManagementActor(env, InMemoryMocks.mockProcessManager, processRepository, deploymentProcessRepository)
+  val processesRoute = (u:LoggedUser) => new ProcessesResources(processRepository, managementActor, processConverter, processValidation).route(u)
+
   val processesRouteWithAllPermissions = withAllPermissions(processesRoute)
-  val deployRoute = (u:LoggedUser) =>  new ManagementResources(processRepository, deploymentProcessRepository, InMemoryMocks.mockProcessManager, env).route(u)
+  val deployRoute = (u:LoggedUser) =>  new ManagementResources(InMemoryMocks.mockProcessManager.getProcessDefinition.typesInformation, managementActor).route(u)
   val processActivityRoute = (u:LoggedUser) =>  new ProcessActivityResource(commentsRepository).route(u)
 
   def saveProcess(processId: String, process: EspProcess)(testCode: => Assertion): Assertion = {

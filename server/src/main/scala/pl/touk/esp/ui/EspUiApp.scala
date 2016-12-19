@@ -4,7 +4,7 @@ import java.io.File
 
 import _root_.cors.CorsSupport
 import _root_.db.migration.DefaultJdbcProfile
-import akka.actor.ActorSystem
+import akka.actor.{ActorSystem, Props}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.stream.ActorMaterializer
@@ -14,8 +14,9 @@ import pl.touk.esp.engine.management.FlinkProcessManager
 import pl.touk.esp.ui.api._
 import pl.touk.esp.ui.db.DatabaseInitializer
 import pl.touk.esp.ui.initialization.Initialization
+import pl.touk.esp.ui.process.deployment.ManagementActor
 import pl.touk.esp.ui.process.marshall.ProcessConverter
-import pl.touk.esp.ui.process.repository.{ProcessActivityRepository, DeployedProcessRepository, ProcessRepository}
+import pl.touk.esp.ui.process.repository.{DeployedProcessRepository, ProcessActivityRepository, ProcessRepository}
 import pl.touk.esp.ui.security.SimpleAuthenticator
 import slick.jdbc.JdbcBackend
 
@@ -58,6 +59,8 @@ object EspUiApp extends App with Directives with LazyLogging {
   Initialization.init(processRepository, db, environment, isDevelopmentMode, initialProcessDirectory)
   initHttp()
 
+  val managementActor = ManagementActor(environment, manager, processRepository, deploymentProcessRepository)
+
   def initHttp() = {
     val route: Route = {
 
@@ -66,9 +69,9 @@ object EspUiApp extends App with Directives with LazyLogging {
 
             pathPrefix("api") {
 
-              new ProcessesResources(processRepository, manager, processConverter, processValidation).route(user) ~
+              new ProcessesResources(processRepository, managementActor, processConverter, processValidation).route(user) ~
                 new ProcessActivityResource(commentsRepository).route(user) ~
-                new ManagementResources(processRepository, deploymentProcessRepository, manager, environment).route(user) ~
+                new ManagementResources(processDefinition.typesInformation, managementActor).route(user) ~
                 new ValidationResources(processValidation, processConverter).route(user) ~
                 new DefinitionResources(processDefinition).route(user) ~
                 new UserResources().route(user) ~
