@@ -1,5 +1,6 @@
 package pl.touk.esp.ui.api
 
+import akka.actor.ActorRef
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model.headers.ContentDispositionTypes
 import akka.http.scaladsl.model.{HttpMethods, HttpResponse, StatusCodes, headers}
@@ -14,6 +15,7 @@ import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
 import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.esp.ui.api.ProcessValidation.ValidationResult
 import pl.touk.esp.ui.api.ProcessesResources.{UnmarshallError, WrongProcessId}
+import pl.touk.esp.ui.process.deployment.CheckStatus
 import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessStatus}
 import pl.touk.esp.ui.process.marshall.{ProcessConverter, UiProcessMarshaller}
 import pl.touk.esp.ui.process.repository.ProcessRepository
@@ -21,11 +23,15 @@ import pl.touk.esp.ui.process.repository.ProcessRepository._
 import pl.touk.esp.ui.security.{LoggedUser, Permission}
 import pl.touk.esp.ui.util.{Argonaut62Support, MultipartUtils}
 import pl.touk.esp.ui.{BadRequestError, EspError, FatalError, NotFoundError}
+import akka.pattern.ask
+import akka.util.Timeout
+import scala.concurrent.duration._
+import EspErrorToHttp._
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class ProcessesResources(repository: ProcessRepository,
-                         processManager: ProcessManager,
+                         managerActor: ActorRef,
                          processConverter: ProcessConverter,
                          processValidation: ProcessValidation)
                         (implicit ec: ExecutionContext, mat: Materializer)
@@ -174,7 +180,8 @@ class ProcessesResources(repository: ProcessRepository,
   }
 
   private def findJobStatus(processName: String)(implicit ec: ExecutionContext): Future[Option[ProcessStatus]] = {
-    processManager.findJobStatus(processName).map(statusOpt => statusOpt.map(ProcessStatus.apply))
+    implicit val timeout = Timeout(1 minute)
+    (managerActor ? CheckStatus(processName)).mapTo[Option[ProcessStatus]]
   }
 
   private def toResponse(xor: Xor[EspError, ValidationResult]): ToResponseMarshallable =
@@ -185,16 +192,7 @@ class ProcessesResources(repository: ProcessRepository,
         espErrorToHttp(err)
     }
 
-  private def espErrorToHttp(error: EspError) = {
-    val statusCode = error match {
-      case e: NotFoundError => StatusCodes.NotFound
-      case e: FatalError => StatusCodes.InternalServerError
-      case e: BadRequestError => StatusCodes.BadRequest
-      //unknown?
-      case _ => StatusCodes.InternalServerError
-    }
-    HttpResponse(status = statusCode, entity = error.getMessage)
-  }
+
 
 }
 

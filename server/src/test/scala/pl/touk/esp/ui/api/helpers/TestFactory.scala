@@ -30,10 +30,25 @@ object TestFactory {
 
   object InMemoryMocks {
 
+    private var sleepBeforeAnswer : Long = 0
+
+    def withLongerSleepBeforeAnswer[T](action : => T) = {
+      try {
+        sleepBeforeAnswer = 500
+        action
+      } finally {
+        sleepBeforeAnswer = 0
+      }
+    }
+
     val mockProcessManager = new FlinkProcessManager(ConfigFactory.load(), null) {
       override def findJobStatus(name: String): Future[Option[ProcessState]] = Future.successful(None)
       override def cancel(name: String): Future[Unit] = Future.successful(Unit)
-      override def deploy(processId: String, processDeploymentData: ProcessDeploymentData): Future[Unit] = Future.successful(Unit)
+      override def deploy(processId: String, processDeploymentData: ProcessDeploymentData): Future[Unit] = Future {
+        Thread.sleep(sleepBeforeAnswer)
+        println("FINISHED?")
+        ()
+      }
     }
   }
 
