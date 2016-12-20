@@ -2,11 +2,13 @@ package pl.touk.esp.ui.process.repository
 
 import java.time.LocalDateTime
 
+import argonaut.{Json, Parse}
 import cats.data._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
 import pl.touk.esp.engine.api.deployment.{CustomProcess, GraphProcess, ProcessDeploymentData}
 import pl.touk.esp.ui.EspError._
+import pl.touk.esp.ui.app.BuildInfo
 import pl.touk.esp.ui.db.entity.DeployedProcessVersionEntity.DeployedProcessVersionEntityData
 import pl.touk.esp.ui.db.entity.ProcessEntity.{ProcessEntityData, ProcessType}
 import pl.touk.esp.ui.db.entity.ProcessVersionEntity.ProcessVersionEntityData
@@ -94,7 +96,7 @@ class ProcessRepository(db: JdbcBackend.Database,
         .join(processVersionsTable).on { case (((processId, latestVersionDate)), processVersion) =>
         processVersion.processId === processId && processVersion.createDate === latestVersionDate
       }.join(processTableFilteredByUser).on { case ((_, latestVersion), process) => latestVersion.processId === process.id }
-        .result.map(_.map { case ((_, processVersion), process) => createFullDetails(process, processVersion, tagsForProcesses(process.name), List.empty) })
+        .result.map(_.map { case ((_, processVersion), process) => createFullDetails(process, processVersion, isLatestVersion = true, tagsForProcesses(process.name), List.empty) })
     } yield latestProcesses
     db.run(action).map(_.toList)
   }
@@ -103,7 +105,7 @@ class ProcessRepository(db: JdbcBackend.Database,
                                            (implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Option[ProcessDetails]] = {
     val action = for {
       latestProcessVersion <- OptionT[DB, ProcessVersionEntityData](latestProcessVersions(id).result.headOption)
-      processDetails <- fetchProcessDetailsForVersion(latestProcessVersion)
+      processDetails <- fetchProcessDetailsForVersion(latestProcessVersion, isLatestVersion = true)
     } yield processDetails
     db.run(action.value)
   }
@@ -111,13 +113,14 @@ class ProcessRepository(db: JdbcBackend.Database,
   def fetchProcessDetailsForId(processId: String, versionId: Long)
                               (implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Option[ProcessDetails]] = {
     val action = for {
+      latestProcessVersion <- OptionT[DB, ProcessVersionEntityData](latestProcessVersions(processId).result.headOption)
       processVersion <- OptionT[DB, ProcessVersionEntityData](latestProcessVersions(processId).filter(pv => pv.id === versionId).result.headOption)
-      processDetails <- fetchProcessDetailsForVersion(processVersion)
+      processDetails <- fetchProcessDetailsForVersion(processVersion, isLatestVersion = latestProcessVersion.id == processVersion.id)
     } yield processDetails
     db.run(action.value)
   }
 
-  private def fetchProcessDetailsForVersion(processVersion: ProcessVersionEntityData)
+  private def fetchProcessDetailsForVersion(processVersion: ProcessVersionEntityData, isLatestVersion: Boolean)
                                            (implicit ec: ExecutionContext, loggedUser: LoggedUser)= {
     val id = processVersion.processId
     for {
@@ -128,6 +131,7 @@ class ProcessRepository(db: JdbcBackend.Database,
     } yield createFullDetails(
       process = process,
       processVersion = processVersion,
+      isLatestVersion = isLatestVersion,
       tags = tags,
       history = processVersions.map(pvs => ProcessHistoryEntry(process, pvs, latestDeployedVersionsPerEnv))
     )
@@ -135,12 +139,14 @@ class ProcessRepository(db: JdbcBackend.Database,
 
   private def createFullDetails(process: ProcessEntityData,
                                 processVersion: ProcessVersionEntityData,
+                                isLatestVersion: Boolean,
                                 tags: Seq[TagsEntityData],
                                 history: Seq[ProcessHistoryEntry]): ProcessDetails = {
     ProcessDetails(
       id = process.id,
       name = process.name,
       processVersionId = processVersion.id,
+      isLatestVersion = isLatestVersion,
       description = process.description,
       processType = process.processType,
       processCategory = process.processCategory,
@@ -181,6 +187,7 @@ object ProcessRepository {
                              id: String,
                              name: String,
                              processVersionId: Long,
+                             isLatestVersion: Boolean,
                              description: Option[String],
                              processType: ProcessType,
                              processCategory: String,
@@ -208,13 +215,14 @@ object ProcessRepository {
         createDate = DateUtils.toLocalDateTime(processVersion.createDate),
         user = processVersion.user,
         deployments = deployedVersionsPerEnv.collect { case (env, deployedVersion) if deployedVersion.processVersionId == processVersion.id =>
-          DeploymentEntry(env, deployedVersion.deployedAtTime, deployedVersion.buildInfo.getOrElse(""))
+          DeploymentEntry(env, deployedVersion.deployedAtTime,
+            deployedVersion.buildInfo.flatMap(BuildInfo.parseJson).getOrElse(BuildInfo.empty))
         }.toList
       )
     }
   }
 
-  case class DeploymentEntry(environment: String, deployedAt: LocalDateTime, buildInfo: String)
+  case class DeploymentEntry(environment: String, deployedAt: LocalDateTime, buildInfo: Map[String, String])
 
   case class ProcessNotFoundError(id: String) extends NotFoundError {
     def getMessage = s"No process $id found"

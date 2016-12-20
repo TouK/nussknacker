@@ -16,7 +16,6 @@ import pl.touk.esp.ui.api.helpers.EspItTest
 import pl.touk.esp.ui.api.helpers.TestFactory._
 import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.esp.ui.process.marshall.UiProcessMarshaller
-import pl.touk.esp.ui.process.repository.ProcessRepository
 import pl.touk.esp.ui.process.repository.ProcessRepository.ProcessDetails
 import pl.touk.esp.ui.sample.SampleProcess
 import pl.touk.esp.ui.security.{LoggedUser, Permission}
@@ -172,6 +171,29 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
       processDetails.name shouldBe SampleProcess.process.id
       processDetails.history.length shouldBe 3
       processDetails.history.forall(_.processName == SampleProcess.process.id) shouldBe true
+    }
+  }
+
+  it should "access process version and mark latest version" in {
+    saveProcess(SampleProcess.process.id, ProcessTestData.validProcess) { status shouldEqual StatusCodes.OK }
+    updateProcess(SampleProcess.process.id, ProcessTestData.invalidProcess) { status shouldEqual StatusCodes.OK}
+
+    Get(s"/processes/${SampleProcess.process.id}/1") ~> routWithAllPermissions ~> check {
+      val processDetails = responseAs[String].decodeOption[ProcessDetails].get
+      processDetails.processVersionId shouldBe 1
+      processDetails.isLatestVersion shouldBe false
+    }
+
+    Get(s"/processes/${SampleProcess.process.id}/2") ~> routWithAllPermissions ~> check {
+      val processDetails = responseAs[String].decodeOption[ProcessDetails].get
+      processDetails.processVersionId shouldBe 2
+      processDetails.isLatestVersion shouldBe false
+    }
+
+    Get(s"/processes/${SampleProcess.process.id}/3") ~> routWithAllPermissions ~> check {
+      val processDetails = responseAs[String].decodeOption[ProcessDetails].get
+      processDetails.processVersionId shouldBe 3
+      processDetails.isLatestVersion shouldBe true
     }
   }
 

@@ -59,6 +59,10 @@ export class ProcessHistory_ extends Component {
     return ProcessUtils.processDisplayName(historyEntry.processName, historyEntry.processVersionId)
   }
 
+  latestVersionIsNotDeployed = (index, historyEntry) => {
+    return _.isEqual(index, 0) && _.isEmpty(historyEntry.deployments)
+  }
+
   render() {
     return (
       <Scrollbars renderTrackHorizontal={props => <div className="hide"/>} autoHeight autoHeightMax={300} hideTracksWhenNotNeeded={true}>
@@ -68,6 +72,10 @@ export class ProcessHistory_ extends Component {
               <li key={index} className={this.processVersionOnTimeline(historyEntry, index)}
                   onClick={this.showProcess.bind(this, historyEntry, index)}>
                 {this.processDisplayName(historyEntry)} {historyEntry.user}
+                {this.latestVersionIsNotDeployed(index, historyEntry) ?
+                  <small> <span title="Latest version is not deployed" className="glyphicon glyphicon-warning-sign"/></small> :
+                  null
+                }
                 <br/>
                 <small><i>{DateUtils.format(historyEntry.createDate)}</i></small>
                 <br/>
