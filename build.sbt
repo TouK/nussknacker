@@ -86,6 +86,7 @@ lazy val perf_test = (project in file("perf-test")).
       Seq(
         "org.scalatest" %% "scalatest" % scalaTestV % "it,test",
         "org.slf4j" % "jul-to-slf4j" % slf4jV,
+        "org.apache.flink" %% "flink-clients" % flinkV % "provided",
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "runtime", // na potrzeby optymalizacji procesów
         "com.iheart" %% "ficus" % ficusV
       )
@@ -126,9 +127,8 @@ lazy val management = (project in file("management")).
     libraryDependencies ++= {
       Seq(
         "org.typelevel" %% "cats-core" % catsV,
-        "org.apache.flink" %% "flink-clients" % flinkV,
-        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "runtime", // na potrzeby optymalizacji procesów
-        "org.apache.flink" %% "flink-streaming-java" % flinkV % "provided",
+        "org.apache.flink" %% "flink-clients" % flinkV % "provided",
+        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
 
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
 
