@@ -7,7 +7,9 @@ new WebpackDevServer(webpack(config), {
   hot: true,
   progress: true,
   inline: true,
-  historyApiFallback: true,
+  historyApiFallback: {
+    index: 'main.html'
+  },
   stats: {
     colors: true
   }

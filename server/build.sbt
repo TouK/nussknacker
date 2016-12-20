@@ -52,17 +52,34 @@ val scalaTestV = "3.0.0-M15"
 val slickV = "3.2.0-M1" // wsparcie dla select for update jest od 3.2.0
 val hsqldbV = "2.3.4"
 val flywayV = "4.0.3"
+val flinkV = "1.1.1"
+
+//we want to be able to build
+val includeFlinkAndScala = Option(System.getProperty("includeFlinkAndScala")).exists(_.toBoolean)
+
+val flinkScope = if (includeFlinkAndScala) "compile" else "provided"
 
 libraryDependencies ++= {
   Seq(
-    "pl.touk.esp" %% "esp-management" % espEngineV changing()
-      //tutaj mamy dwie wersje jsr305 we flinku i assembly sie pluje...
-      excludeAll(
-        ExclusionRule("com.google.code.findbugs", "jsr305"),
-        ExclusionRule("log4j", "log4j"),
-        ExclusionRule("org.slf4j", "slf4j-log4j12")
-
-      ),
+    "pl.touk.esp" %% "esp-management" % espEngineV changing(),
+    //tutaj mamy dwie wersje jsr305 we flinku i assembly sie pluje...
+    "org.apache.flink" %% "flink-clients" % flinkV % flinkScope excludeAll(
+      ExclusionRule("com.google.code.findbugs", "jsr305"),
+      ExclusionRule("log4j", "log4j"),
+      ExclusionRule("org.slf4j", "slf4j-log4j12")
+    ),
+    //potrzebne bo w ui wolamy refleksyjnie np. ProcessDefinitionExtractor.extractObjectWithMethods, ktore korzysta z flinkowych SourceFunction
+    "org.apache.flink" %% "flink-streaming-java" % flinkV % flinkScope excludeAll(
+      ExclusionRule("com.google.code.findbugs", "jsr305"),
+      ExclusionRule("log4j", "log4j"),
+      ExclusionRule("org.slf4j", "slf4j-log4j12")
+    ),
+    //teraz tego potrzebujemy bo przy wyliczaniu definicji typow gdzies plata sie ta klasa, ale raczej nie powinnismy jej tam w ogole probowac ladowac?
+    "org.apache.flink" %% "flink-streaming-scala" % flinkV % flinkScope excludeAll(
+      ExclusionRule("com.google.code.findbugs", "jsr305"),
+      ExclusionRule("log4j", "log4j"),
+      ExclusionRule("org.slf4j", "slf4j-log4j12")
+    ),
     "pl.touk.esp" %% "esp-management-sample" % espEngineV % "test" changing() classifier "assembly",
 
     "com.typesafe.akka" %% "akka-http-experimental" % akkaHttpV force(),
@@ -98,6 +115,9 @@ resourceGenerators in Test <+= Def.task {
   }
   maybeFile.map(_ => destFile).toSeq
 }
+
+assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = includeFlinkAndScala, level = Level.Debug)
+
 
 releaseProcess := Seq[ReleaseStep](
   checkSnapshotDependencies,              // : ReleaseStep
