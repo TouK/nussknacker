@@ -28,8 +28,8 @@ class ToolBox extends React.Component {
             var nodes = group.possibleNodes
               .filter((node) => node.categories.includes(this.props.processCategory))
               .map(node => <Tool nodeModel={node.node} label={node.label} key={node.type + node.label}/>)
-            nodes.push(<hr className="tool-group"/>)
-            return nodes
+            return _.isEmpty(nodes) ? [] :
+              _.concat(<p>{_.startCase(_.toLower(group.name)) }</p>, nodes, <hr className="tool-group"></hr>)
           })
         }
         </Scrollbars>

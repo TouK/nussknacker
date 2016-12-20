@@ -12,7 +12,7 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.esp.engine.compile.ProcessValidator
 import pl.touk.esp.engine.management.FlinkProcessManager
 import pl.touk.esp.ui.api._
-import pl.touk.esp.ui.app.BuildInfoHolder
+import pl.touk.esp.ui.app.BuildInfo
 import pl.touk.esp.ui.db.DatabaseInitializer
 import pl.touk.esp.ui.initialization.Initialization
 import pl.touk.esp.ui.process.deployment.ManagementActor
@@ -41,8 +41,8 @@ object EspUiApp extends App with Directives with LazyLogging {
   val initialProcessDirectory = new File(args(1))
   val manager = FlinkProcessManager(config)
 
-  val buildInfoHolder = new BuildInfoHolder(manager.buildInfo)
-  logger.info(s"Starting app, build info ${buildInfoHolder.buildInfoAsJson}")
+  val buildInfo = BuildInfo.ordered(manager.buildInfo)
+  logger.info(s"Starting app, build info ${BuildInfo.writeAsJson(buildInfo)}")
 
   val processDefinition = manager.getProcessDefinition
   val validator = ProcessValidator.default(processDefinition)
@@ -50,7 +50,7 @@ object EspUiApp extends App with Directives with LazyLogging {
   val processConverter = new ProcessConverter(processValidation)
 
   val processRepository = new ProcessRepository(db, DefaultJdbcProfile.profile, processConverter)
-  val deploymentProcessRepository = new DeployedProcessRepository(db, DefaultJdbcProfile.profile, buildInfoHolder)
+  val deploymentProcessRepository = new DeployedProcessRepository(db, DefaultJdbcProfile.profile, buildInfo)
   val commentsRepository = new ProcessActivityRepository(db, DefaultJdbcProfile.profile)
 
 
@@ -79,7 +79,8 @@ object EspUiApp extends App with Directives with LazyLogging {
                 new ValidationResources(processValidation, processConverter).route(user) ~
                 new DefinitionResources(processDefinition).route(user) ~
                 new UserResources().route(user) ~
-                new SettingsResources(config).route(user)
+                new SettingsResources(config).route(user) ~
+                new AppResources(buildInfo).route(user)
             } ~
               //nie chcemy api, zeby nie miec problemow z autentykacja...
               pathPrefixTest(!"api") {

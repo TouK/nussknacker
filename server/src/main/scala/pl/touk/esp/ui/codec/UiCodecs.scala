@@ -11,6 +11,7 @@ import pl.touk.esp.engine.definition.DefinitionExtractor.PlainClazzDefinition
 import pl.touk.esp.engine.graph.node
 import pl.touk.esp.ui.api.ProcessValidation.ValidationResult
 import pl.touk.esp.ui.api.{DisplayableUser, GrafanaSettings, ProcessObjects}
+import pl.touk.esp.ui.app.BuildInfo
 import pl.touk.esp.ui.process.displayedgraph.displayablenode.{NodeAdditionalFields, ProcessAdditionalFields}
 import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.esp.ui.process.repository.ProcessActivityRepository.{Comment, ProcessActivity}

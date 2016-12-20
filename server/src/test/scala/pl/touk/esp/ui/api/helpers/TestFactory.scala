@@ -9,7 +9,6 @@ import pl.touk.esp.engine.api.deployment.test.{TestData, TestResults}
 import pl.touk.esp.engine.api.deployment.{ProcessDeploymentData, ProcessManager, ProcessState}
 import pl.touk.esp.engine.management.FlinkProcessManager
 import pl.touk.esp.ui.api.{ProcessPosting, ProcessTestData, ProcessValidation}
-import pl.touk.esp.ui.app.BuildInfoHolder
 import pl.touk.esp.ui.process.marshall.ProcessConverter
 import pl.touk.esp.ui.process.repository.{DeployedProcessRepository, ProcessActivityRepository, ProcessRepository}
 import pl.touk.esp.ui.security.{LoggedUser, Permission}
@@ -28,10 +27,10 @@ object TestFactory {
 
   def newProcessRepository(db: JdbcBackend.Database) = new ProcessRepository(db, DefaultJdbcProfile.profile, processConverter)
 
-  val buildInfoHolder = new BuildInfoHolder(Map("engine-version" -> "0.1"))
+  val buildInfo = Map("engine-version" -> "0.1")
 
   def newDeploymentProcessRepository(db: JdbcBackend.Database) = new DeployedProcessRepository(db, DefaultJdbcProfile.profile,
-    buildInfoHolder)
+    buildInfo)
   def newCommentsRepository(db: JdbcBackend.Database) = new ProcessActivityRepository(db, DefaultJdbcProfile.profile)
   val mockProcessManager = InMemoryMocks.mockProcessManager
 

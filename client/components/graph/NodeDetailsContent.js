@@ -7,7 +7,9 @@ import Textarea from 'react-textarea-autosize';
 import NodeUtils from "./NodeUtils";
 import ExpressionSuggest from "./ExpressionSuggest";
 
-
+//zastanowic sie czy this.state tutaj nie powinien byc przepychany przez reduxa,
+// bo obecnie ten stan moze byc przypadkowo resetowany kiedy parent component dostanie nowe propsy - bo tak mamy
+// zaimplementowane `componentDidUpdate` zeby przy wyjsciu z node'a niezapisane zmiany sie cofaly
 export default class NodeDetailsContent extends React.Component {
 
   constructor(props) {
@@ -190,6 +192,15 @@ export default class NodeDetailsContent extends React.Component {
                                                readOnly={!this.props.isEditMode}/></div>
           </div>
         )
+      case 'plain-textarea':
+        return (
+          <div className="node-row">
+            <div className="node-label">{fieldLabel}:</div>
+            <div className="node-value">
+              <Textarea rows={1} cols={50} className="node-input" value={fieldValue} onChange={(e) => handleChange(e.target.value)} readOnly={!this.props.isEditMode}/>
+            </div>
+          </div>
+        )
       case 'textarea':
         return (
           <div className="node-row">
@@ -200,7 +211,7 @@ export default class NodeDetailsContent extends React.Component {
                   rows: 1, cols: 50, className: "node-input", value: fieldValue,
                   onValueChange: handleChange, readOnly: !this.props.isEditMode
                 }}/> :
-                <Textarea rows="1" cols="50" className="node-input" value={fieldValue} onChange={(e) => handleChange(e.target.value)} readOnly={!this.props.isEditMode}/>
+                <Textarea rows={1} cols={50} className="node-input" value={fieldValue} onChange={(e) => handleChange(e.target.value)} readOnly={!this.props.isEditMode}/>
               }
               {process.env.NODE_ENV == "development" ?
                 <div style={{color: "red"}}>
@@ -228,7 +239,7 @@ export default class NodeDetailsContent extends React.Component {
   }
 
   descriptionField = () => {
-    return this.createField("textarea", "Description", "additionalFields.description")
+    return this.createField("plain-textarea", "Description", "additionalFields.description")
   }
 
   render() {
@@ -245,8 +256,8 @@ export default class NodeDetailsContent extends React.Component {
           //FIXME: ladniej... i moze bledy dotyczace pol kolo nich?
           <ListGroupItem bsStyle="danger">Node is invalid:
             <ul>
-              {this.props.nodeErrors.map(error =>
-                (<li>{error.message + (error.fieldName ? ` (field: ${error.fieldName})` : '')}</li>)
+              {this.props.nodeErrors.map((error, index) =>
+                (<li key={index}>{error.message + (error.fieldName ? ` (field: ${error.fieldName})` : '')}</li>)
               )}
             </ul>
           </ListGroupItem> : null}

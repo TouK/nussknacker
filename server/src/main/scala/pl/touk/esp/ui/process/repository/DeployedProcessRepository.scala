@@ -3,7 +3,7 @@ package pl.touk.esp.ui.process.repository
 import java.sql.Timestamp
 import java.time.LocalDateTime
 
-import pl.touk.esp.ui.app.BuildInfoHolder
+import pl.touk.esp.ui.app.BuildInfo
 import pl.touk.esp.ui.db.EspTables
 import pl.touk.esp.ui.db.entity.DeployedProcessVersionEntity.DeployedProcessVersionEntityData
 import pl.touk.esp.ui.db.entity.ProcessVersionEntity.ProcessVersionEntityData
@@ -14,7 +14,7 @@ import scala.language.higherKinds
 
 class DeployedProcessRepository(db: JdbcBackend.Database,
                                 driver: JdbcProfile,
-                                buildInfoHolder: BuildInfoHolder) {
+                                buildInfo: Map[String, String]) {
   import driver.api._
 
   def markProcessAsDeployed(processVersion: ProcessVersionEntityData, userId: String, environment: String)
@@ -25,7 +25,7 @@ class DeployedProcessRepository(db: JdbcBackend.Database,
       environment,
       userId,
       Timestamp.valueOf(LocalDateTime.now()),
-      Some(buildInfoHolder.buildInfoAsJson)
+      Some(BuildInfo.writeAsJson(buildInfo))
     )
     db.run(insertAction).map(_ => ())
   }

@@ -80,7 +80,7 @@ class ProcessActions extends React.Component {
         <hr/>
         <button type="button" className={buttonClass} onClick={this.showMetrics}>Metrics</button>
         <hr/>
-        <button type="button" className={buttonClass} onClick={this.exportProcess}>Export</button>
+        <button disabled={!this.props.processIsLatestVersion} type="button" className={buttonClass} onClick={this.exportProcess}>Export</button>
 
         {this.props.loggedUser.canWrite ? (
           <Dropzone onDrop={this.onDrop} className="dropZone espButton">
@@ -90,7 +90,7 @@ class ProcessActions extends React.Component {
         ) : null}
         <hr/>
         {this.props.loggedUser.canDeploy ? (
-          <button type="button" className={buttonClass} onClick={this.deploy}>Deploy</button>
+          <button disabled={!this.props.processIsLatestVersion} type="button" className={buttonClass} onClick={this.deploy}>Deploy</button>
         ) : null}
         <button type="button" className={buttonClass} onClick={this.stop}>Stop</button>
       </div>
@@ -100,11 +100,13 @@ class ProcessActions extends React.Component {
 }
 
 function mapState(state) {
+  const fetchedProcessDetails = state.graphReducer.fetchedProcessDetails
   return {
-    fetchedProcessDetails: state.graphReducer.fetchedProcessDetails,
+    fetchedProcessDetails: fetchedProcessDetails,
     processToDisplay: state.graphReducer.processToDisplay,
     loggedUser: state.settings.loggedUser,
-    nothingToSave: ProcessUtils.nothingToSave(state)
+    nothingToSave: ProcessUtils.nothingToSave(state),
+    processIsLatestVersion: _.get(fetchedProcessDetails, 'isLatestVersion', false)
   };
 }
 

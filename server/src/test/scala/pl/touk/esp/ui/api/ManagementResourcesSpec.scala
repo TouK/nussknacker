@@ -38,10 +38,9 @@ class ManagementResourcesSpec extends FlatSpec with ScalatestRouteTest
             currentDeployments.size shouldBe 1
             currentDeployments.head.environment shouldBe env
             currentDeployments.head.deployedAt should not be oldDeployments.head.deployedAt
-            currentDeployments.head.buildInfo should not be empty
-            val buildInfo = Parse.parse(currentDeployments.head.buildInfo).right.get
+            val buildInfo = currentDeployments.head.buildInfo
             println(buildInfo)
-            (buildInfo.cursor --\ "engine-version").get.focus.toString() should not be empty
+            buildInfo("engine-version") should not be empty
           }
         }
       }

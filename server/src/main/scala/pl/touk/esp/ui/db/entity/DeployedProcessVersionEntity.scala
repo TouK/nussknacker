@@ -41,7 +41,6 @@ object DeployedProcessVersionEntity {
 
   }
 
-  //moze dodac hasha/wersje z gita? sbt-buildinfo + sbt-git sie nada https://github.com/sbt/sbt-git/issues/33
   case class DeployedProcessVersionEntityData(processId: String,
                                               processVersionId: Long,
                                               environment: String,
