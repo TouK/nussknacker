@@ -4,7 +4,7 @@ import java.net.URL
 
 import com.typesafe.config.Config
 import org.apache.flink.api.common.ExecutionConfig
-import org.apache.flink.configuration.Configuration
+import org.apache.flink.configuration.{ConfigConstants, Configuration}
 import org.apache.flink.runtime.minicluster.LocalFlinkMiniCluster
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import pl.touk.esp.engine.api.deployment.test.{TestData, TestResults}
@@ -34,7 +34,7 @@ object FlinkTestMain extends FlinkRunner {
 class FlinkTestMain(config: Config, testData: TestData, process: EspProcess, creator: ProcessConfigCreator) extends Serializable {
 
   def runTest(urls: List[URL]): TestResults = {
-    val env = StreamExecutionEnvironment.createLocalEnvironment(1)
+    val env = StreamExecutionEnvironment.createLocalEnvironment(process.metaData.parallelism.getOrElse(1))
 
 
     val collectingListener = ResultsCollectingListenerHolder.registerRun
@@ -79,6 +79,7 @@ class FlinkTestMain(config: Config, testData: TestData, process: EspProcess, cre
 
     val configuration: Configuration = new Configuration
     configuration.addAll(jobGraph.getJobConfiguration)
+    configuration.setInteger(ConfigConstants.TASK_MANAGER_NUM_TASK_SLOTS, env.getParallelism)
 
     val exec: LocalFlinkMiniCluster = new LocalFlinkMiniCluster(configuration, true)
     try {

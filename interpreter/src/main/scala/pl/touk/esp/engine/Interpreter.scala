@@ -39,7 +39,7 @@ class Interpreter private(services: Map[String, ServiceInvoker],
       case (VariableBuilder(_, varName, Right(fields), next), Traverse) =>
         interpretNext(next, createOrUpdateVariable(ctx, varName, fields))
       case (VariableBuilder(_, varName, Left(expression), next), Traverse) =>
-        val valueWithModifiedContext = evaluate[Any](expression, ctx)
+        val valueWithModifiedContext = evaluate[Any](expression, varName, ctx)
         interpretNext(next, ctx.withVariable(varName, valueWithModifiedContext.value))
       case (Processor(_, ref, next), Traverse) =>
         invoke(ref, ctx).flatMap {
@@ -56,17 +56,18 @@ class Interpreter private(services: Map[String, ServiceInvoker],
             interpretNext(next, newCtx.withVariable(outName, out))
         }
       case (Filter(_, expression, nextTrue, nextFalse), Traverse) =>
-        val valueWithModifiedContext = evaluate[Boolean](expression, ctx)
+        val valueWithModifiedContext = evaluateExpression[Boolean](expression, ctx)
         if (valueWithModifiedContext.value)
           interpretNext(nextTrue, valueWithModifiedContext.context)
         else
           interpretOptionalNext(node, nextFalse, valueWithModifiedContext.context)
       case (Switch(_, expression, exprVal, nexts, defaultNext), Traverse) =>
-        val valueWithModifiedContext = evaluate[Any](expression, ctx)
+        val valueWithModifiedContext = evaluateExpression[Any](expression, ctx)
         val newCtx = valueWithModifiedContext.context.withVariable(exprVal, valueWithModifiedContext.value)
         nexts.foldLeft((newCtx, Option.empty[Next])) {
           case ((accCtx, None), casee) =>
-            val valueWithModifiedContext = evaluate[Boolean](casee.expression, accCtx)
+            //TODO: jakies inne expressionId??
+            val valueWithModifiedContext = evaluateExpression[Boolean](casee.expression, accCtx)
             if (valueWithModifiedContext.value) {
               (valueWithModifiedContext.context, Some(casee.node))
             } else {
@@ -83,7 +84,7 @@ class Interpreter private(services: Map[String, ServiceInvoker],
       case (Sink(id, optionalExpression), Traverse) =>
         val valueWithModifiedContext = optionalExpression match {
           case Some(expression) =>
-            evaluate[Any](expression, ctx)
+            evaluateExpression[Any](expression, ctx)
           case None =>
             ValueWithContext(outputValue(ctx), ctx)
         }
@@ -94,7 +95,7 @@ class Interpreter private(services: Map[String, ServiceInvoker],
           NextPartReference(id),
           evaluate(parameters.find(_.name == expressionName)
             .map(_.expression)
-            .getOrElse(throw new IllegalArgumentException(s"Parameter $mode is not defined")), ctx)))
+            .getOrElse(throw new IllegalArgumentException(s"Parameter $mode is not defined")), expressionName, ctx)))
       case (cust: CustomNode, Traverse) =>
         interpretNext(cust.next, ctx)
       //FIXME: yyyy czy to kiedykolwiek moze nastapic??
@@ -124,15 +125,15 @@ class Interpreter private(services: Map[String, ServiceInvoker],
     }
 
   //hmm... to tak ma byc?
-  private def outputValue(ctx: Context) =
-    ctx.getOrElse(OutputParamName, new java.util.HashMap[String, Any]())
+  private def outputValue(ctx: Context) : Any =
+    ctx.getOrElse[Any](OutputParamName, new java.util.HashMap[String, Any]())
 
   private def createOrUpdateVariable(ctx: Context, varName: String, fields: Seq[Field])
                                     (implicit ec: ExecutionContext, metaData: MetaData, node: Node): Context = {
     val contextWithInitialVariable = ctx.modifyOptionalVariable[java.util.Map[String, Any]](varName, _.getOrElse(new java.util.HashMap[String, Any]()))
     fields.foldLeft(contextWithInitialVariable) {
       case (context, field) =>
-        val valueWithModifiedContext = evaluate[Any](field.expression, context)
+        val valueWithModifiedContext = evaluate[Any](field.expression, field.name, context)
         valueWithModifiedContext.context.modifyVariable[java.util.Map[String, Any]](varName, { m =>
           val newMap = new java.util.HashMap[String, Any](m)
           newMap.put(field.name, valueWithModifiedContext.value)
@@ -145,7 +146,7 @@ class Interpreter private(services: Map[String, ServiceInvoker],
                     (implicit executionContext: ExecutionContext, metaData: MetaData, node: Node): Future[ValueWithContext[Any]] = {
     val (newCtx, preparedParams) = ref.parameters.foldLeft((ctx, Map.empty[String, Any])) {
       case ((accCtx, accParams), param) =>
-        val valueWithModifiedContext = evaluate[Any](param.expression, accCtx)
+        val valueWithModifiedContext = evaluate[Any](param.expression, param.name, accCtx)
         val newAccParams = accParams + (param.name -> valueWithModifiedContext.value)
         (valueWithModifiedContext.context, newAccParams)
 
@@ -160,7 +161,11 @@ class Interpreter private(services: Map[String, ServiceInvoker],
     }
   }
 
-  private def evaluate[R](expr: Expression, ctx: Context)
+  private def evaluateExpression[R](expr: Expression, ctx: Context)
+                           (implicit ec: ExecutionContext, metaData: MetaData, node: Node): ValueWithContext[R]
+    = evaluate(expr, "expression", ctx)
+
+  private def evaluate[R](expr: Expression, expressionId: String, ctx: Context)
                          (implicit ec: ExecutionContext, metaData: MetaData, node: Node): ValueWithContext[R] = {
     val lazyValuesProvider = new LazyValuesProviderImpl(
       services = services,
@@ -168,7 +173,7 @@ class Interpreter private(services: Map[String, ServiceInvoker],
       timeout = lazyEvaluationTimeout
     )
     val valueWithModifiedContext = expr.evaluate[R](ctx, lazyValuesProvider)
-    listeners.foreach(_.expressionEvaluated(node.id, expr.original, ctx, metaData, valueWithModifiedContext.value))
+    listeners.foreach(_.expressionEvaluated(node.id, expressionId, expr.original, ctx, metaData, valueWithModifiedContext.value))
     valueWithModifiedContext
   }
 

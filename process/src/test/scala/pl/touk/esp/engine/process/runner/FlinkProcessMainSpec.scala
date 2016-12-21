@@ -15,7 +15,7 @@ import pl.touk.esp.engine.flink.api.process.FlinkSourceFactory
 import pl.touk.esp.engine.flink.util.exception.VerboselyLoggingExceptionHandler
 import pl.touk.esp.engine.flink.util.source.CollectionSource
 import pl.touk.esp.engine.marshall.ProcessMarshaller
-import pl.touk.esp.engine.process.ProcessTestHelpers.{EmptySink, SimpleRecord}
+import pl.touk.esp.engine.process.ProcessTestHelpers.{EmptySink, SimpleRecord, StateCustomNode}
 import pl.touk.esp.engine.spel
 
 import scala.concurrent.Future
@@ -59,7 +59,7 @@ class SimpleProcessConfigCreator extends ProcessConfigCreator {
 
   override def listeners(config: Config) = List()
 
-  override def customStreamTransformers(config: Config) = Map()
+  override def customStreamTransformers(config: Config) = Map("stateCustom" -> WithCategories(StateCustomNode))
 
   override def sourceFactories(config: Config) = Map("input" -> WithCategories(FlinkSourceFactory.noParam(
     new CollectionSource[SimpleRecord](new ExecutionConfig, List(), Some(new AscendingTimestampExtractor[SimpleRecord] {

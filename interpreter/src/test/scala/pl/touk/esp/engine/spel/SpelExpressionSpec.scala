@@ -20,7 +20,7 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
   private val bigValue = BigDecimal.valueOf(4187338076L)
 
   val testValue = Test( "1", 2, List(Test("3", 4), Test("5", 6)).asJava, bigValue)
-  val ctx = Context(
+  val ctx = Context("abc",
     variables = Map("obj" -> testValue)
   )
   def dumbLazyProvider = new LazyValuesProvider {

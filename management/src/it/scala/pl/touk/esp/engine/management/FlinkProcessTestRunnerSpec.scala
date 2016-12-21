@@ -37,9 +37,9 @@ class FlinkProcessTestRunnerSpec extends FlatSpec with Matchers with ScalaFuture
       TestData(List("terefere"))), patienceConfig.timeout)
 
     results.nodeResults shouldBe Map(
-      "startProcess" -> List(NodeResult(Context(Map("input" -> "terefere")))),
-      "nightFilter" -> List(NodeResult(Context(Map("input" -> "terefere")))),
-      "endSend" -> List(NodeResult(Context(Map("input" -> "terefere"))))
+      "startProcess" -> List(NodeResult(Context(s"$processId-startProcess-0-0", Map("input" -> "terefere")))),
+      "nightFilter" -> List(NodeResult(Context(s"$processId-startProcess-0-0", Map("input" -> "terefere")))),
+      "endSend" -> List(NodeResult(Context(s"$processId-startProcess-0-0", Map("input" -> "terefere"))))
     )
   }
 

@@ -35,7 +35,7 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
           override def serializeKey(element: Any) = null
 
           override def getTargetTopic(element: Any) = null
-        }), "Category2")
+        }), "Category1", "Category2")
     )
   }
 
@@ -45,7 +45,7 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
     val kConfig = KafkaConfig(config.getString("kafka.zkAddress"), config.getString("kafka.kafkaAddress"), None, None)
 
     Map(
-      "kafka-transaction" -> WithCategories(FlinkSourceFactory.noParam(prepareNotEndingSource, Some(identity[String] _)), "Category1"),
+      "kafka-transaction" -> WithCategories(FlinkSourceFactory.noParam(prepareNotEndingSource, Some(identity[String] _)), "Category1", "Category2"),
       "oneSource" -> WithCategories(FlinkSourceFactory.noParam(new FlinkSource[String] {
 
         override def timestampAssigner = None
@@ -102,11 +102,12 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
       "accountService" -> WithCategories(EmptyService, "Category1"),
       "componentService" -> WithCategories(EmptyService, "Category1", "Category2"),
       "transactionService" -> WithCategories(EmptyService, "Category1"),
-      "serviceModelService" -> WithCategories(EmptyService, "Category1", "Category2")
+      "serviceModelService" -> WithCategories(EmptyService, "Category1", "Category2"),
+      "paramService" -> WithCategories(OneParamService, "Category1")
     )
   }
 
-  override def customStreamTransformers(config: Config) = Map("stateful" -> WithCategories(StatefulTransformer, "Category1"))
+  override def customStreamTransformers(config: Config) = Map("stateful" -> WithCategories(StatefulTransformer, "Category1", "Category2"))
 
   override def exceptionHandlerFactory(config: Config) =
     ExceptionHandlerFactory.noParams(VerboselyLoggingExceptionHandler)
@@ -148,4 +149,8 @@ case object EmptySink extends FlinkSink {
 
 case object EmptyService extends Service {
   def invoke() = Future.successful(Unit)
+}
+
+case object OneParamService extends Service {
+  def invoke(@ParamName("param") param: String) = Future.successful(param)
 }
