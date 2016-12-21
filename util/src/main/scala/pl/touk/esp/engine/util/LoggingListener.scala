@@ -27,7 +27,7 @@ object LoggingListener extends ProcessListener with Serializable {
     debug(List(metadata.id, lastNodeId, "deadEnd"), s"Dead end encountered. Context: $context")
   }
 
-  override def expressionEvaluated(nodeId: String, expr: String, context: Context, metadata: MetaData, result: Any): Unit = {
+  override def expressionEvaluated(nodeId: String, expressionId: String, expr: String, context: Context, metadata: MetaData, result: Any): Unit = {
     debug(List(metadata.id, nodeId, "expression"), s"invoked expression: $expr with result $result. Context: $context")
   }
 

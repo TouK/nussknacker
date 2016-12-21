@@ -34,7 +34,7 @@ private[definition] class CustomNodeInvokerImpl[T](executor: ObjectWithMethodDef
     if (methodParam.exists(_.getType ==  classOf[LazyInterpreter[_]])) {
       interpreter
     } else {
-      val emptyResult = InterpretationResult(NextPartReference(node.id), null, Context())
+      val emptyResult = InterpretationResult(NextPartReference(node.id), null, Context(""))
       interpreter.syncInterpretationFunction(emptyResult)
     }
   }

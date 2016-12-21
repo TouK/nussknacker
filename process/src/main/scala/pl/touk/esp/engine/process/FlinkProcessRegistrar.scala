@@ -32,6 +32,7 @@ import pl.touk.esp.engine.definition.DefinitionExtractor.{ClazzRef, ObjectWithMe
 import pl.touk.esp.engine.definition.{CustomNodeInvoker, ProcessDefinitionExtractor, ServiceDefinitionExtractor}
 import pl.touk.esp.engine.flink.api.exception.FlinkEspExceptionHandler
 import pl.touk.esp.engine.flink.api.process.{FlinkSink, FlinkSource}
+import pl.touk.esp.engine.flink.util.ContextInitializingFunction
 import pl.touk.esp.engine.flink.util.metrics.InstantRateMeter
 import pl.touk.esp.engine.graph.{EspProcess, node}
 import pl.touk.esp.engine.process.FlinkProcessRegistrar._
@@ -98,7 +99,7 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessW
       }.map(_.transform("even-time-meter", new EventTimeDelayMeterFunction("eventtimedelay", eventTimeMetricDuration)))
         .getOrElse(newStart)
         .map(new RateMeterFunction[Any]("source"))
-          .map(input => Context().withVariable(Interpreter.InputParamName, input))
+          .map(InitContextFunction(process.metaData.id, part.node.id))
         .flatMap(new InterpretationFunction(compiledProcessWithDeps, part.node))
         .name(s"${process.metaData.id}-source-interpretation")
         .split(SplitFunction)
@@ -282,6 +283,16 @@ object FlinkProcessRegistrar {
       instantRateMeter.mark()
       value
     }
+  }
+
+  case class InitContextFunction(processId: String, taskName: String) extends RichMapFunction[Any, Context] with ContextInitializingFunction {
+
+    override def open(parameters: Configuration) = {
+      init(getRuntimeContext)
+    }
+
+    override def map(input: Any) = newContext.withVariable(Interpreter.InputParamName, input)
+
   }
 
   class EventTimeDelayMeterFunction[T](groupId: String, slidingWindow: FiniteDuration)

@@ -8,7 +8,8 @@ trait ProcessListener {
 
   def deadEndEncountered(lastNodeId: String, context: Context, processMetaData: MetaData): Unit
 
-  def expressionEvaluated(nodeId: String, expression: String, context: Context, processMetaData: MetaData, result: Any): Unit
+  def expressionEvaluated(nodeId: String, expressionId: String,
+                          expression: String, context: Context, processMetaData: MetaData, result: Any): Unit
 
   def serviceInvoked(nodeId: String, id: String,
                      context: Context,

@@ -2,7 +2,7 @@ package pl.touk.esp.engine.api
 
 import pl.touk.esp.engine.api.lazyy.LazyContext
 
-case class Context(variables: Map[String, Any] = Map.empty,
+case class Context(id: String, variables: Map[String, Any] = Map.empty,
                    lazyContext: LazyContext = LazyContext()) {
 
   def apply[T](name: String): T =
