@@ -5,11 +5,12 @@ import java.time.LocalDateTime
 
 import pl.touk.esp.ui.app.BuildInfo
 import pl.touk.esp.ui.db.EspTables
-import pl.touk.esp.ui.db.entity.DeployedProcessVersionEntity.DeployedProcessVersionEntityData
+import pl.touk.esp.ui.db.EspTables._
+import pl.touk.esp.ui.db.entity.ProcessDeploymentInfoEntity.{DeployedProcessVersionEntityData, DeploymentAction}
 import pl.touk.esp.ui.db.entity.ProcessVersionEntity.ProcessVersionEntityData
 import slick.jdbc.{JdbcBackend, JdbcProfile}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.language.higherKinds
 
 class DeployedProcessRepository(db: JdbcBackend.Database,
@@ -21,11 +22,27 @@ class DeployedProcessRepository(db: JdbcBackend.Database,
                            (implicit ec: ExecutionContext): Future[Unit] = {
     val insertAction = EspTables.deployedProcessesTable += DeployedProcessVersionEntityData(
       processVersion.processId,
-      processVersion.id,
+      Some(processVersion.id),
       environment,
       userId,
       Timestamp.valueOf(LocalDateTime.now()),
+      DeploymentAction.Deploy,
       Some(BuildInfo.writeAsJson(buildInfo))
+    )
+    db.run(insertAction).map(_ => ())
+  }
+
+  def markProcessAsCancelled(processId: String, userId: String, environment: String)
+                             (implicit ec: ExecutionContext): Future[Unit] = {
+
+    val insertAction = EspTables.deployedProcessesTable += DeployedProcessVersionEntityData(
+      processId,
+      None,
+      environment,
+      userId,
+      Timestamp.valueOf(LocalDateTime.now()),
+      DeploymentAction.Cancel,
+      None
     )
     db.run(insertAction).map(_ => ())
   }

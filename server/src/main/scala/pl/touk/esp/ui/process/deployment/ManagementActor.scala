@@ -39,7 +39,7 @@ class ManagementActor(environment: String, processManager: ProcessManager,
       val deployRes: Future[_] = deployProcess(id)(user)
       reply(withDeploymentInfo(id, user.id, "Deployment", deployRes))
     case Cancel(id, user) =>
-      val cancelRes = processManager.cancel(id)
+      val cancelRes = processManager.cancel(id).flatMap(_ => deployedProcessRepository.markProcessAsCancelled(id, user.id, environment))
       reply(withDeploymentInfo(id, user.id, "Cancel", cancelRes))
     case CheckStatus(id) if isBeingDeployed(id) =>
       val info = beingDeployed(id)
@@ -91,7 +91,7 @@ class ManagementActor(environment: String, processManager: ProcessManager,
           logger.debug(s"Deploy of $processId finished")
           deployedProcessRepository.markProcessAsDeployed(latestVersion, user.id, environment).recoverWith { case NonFatal(e) =>
             logger.error("Error during marking process as deployed", e)
-            processManager.cancel(processId)
+            processManager.cancel(processId).map(_ => Future.failed(e))
           }
         case CustomProcess(_) =>
           logger.debug(s"Deploy of $processId finished")

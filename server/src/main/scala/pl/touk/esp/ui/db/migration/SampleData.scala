@@ -6,7 +6,7 @@ import java.time.LocalDateTime
 import argonaut.PrettyParams
 import pl.touk.esp.engine.marshall.ProcessMarshaller
 import pl.touk.esp.ui.db.entity.CommentEntity.CommentEntityData
-import pl.touk.esp.ui.db.entity.DeployedProcessVersionEntity.DeployedProcessVersionEntityData
+import pl.touk.esp.ui.db.entity.ProcessDeploymentInfoEntity.{DeployedProcessVersionEntityData, DeploymentAction}
 import pl.touk.esp.ui.db.entity.EnvironmentsEntity.EnvironmentsEntityData
 import pl.touk.esp.ui.db.entity.ProcessEntity.{ProcessEntityData, ProcessType}
 import pl.touk.esp.ui.db.entity.ProcessVersionEntity.ProcessVersionEntityData
@@ -44,10 +44,24 @@ object SampleData {
     val process = SampleProcess.process
     DeployedProcessVersionEntityData(
       process.id,
-      1,
+      Some(1),
       "test",
       "TouK",
       DateUtils.now,
+      DeploymentAction.Deploy,
+      None
+    )
+  }
+
+  def cancelledProcess = {
+    val process = SampleProcess.process
+    DeployedProcessVersionEntityData(
+      process.id,
+      None,
+      "test",
+      "TouK",
+      DateUtils.now,
+      DeploymentAction.Cancel,
       None
     )
   }

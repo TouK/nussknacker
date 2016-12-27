@@ -11,6 +11,7 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.esp.ui.api.helpers.EspItTest
 import pl.touk.esp.ui.api.helpers.TestFactory._
+import pl.touk.esp.ui.process.repository.ProcessRepository
 import pl.touk.esp.ui.process.repository.ProcessRepository.ProcessDetails
 import pl.touk.esp.ui.sample.SampleProcess
 import pl.touk.esp.ui.security.Permission
@@ -28,24 +29,61 @@ class ManagementResourcesSpec extends FlatSpec with ScalatestRouteTest
   it should "process deployment should be visible in process history" in {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
     deployProcess() ~> check {
+      status shouldBe StatusCodes.OK
       getSampleProcess ~> check {
         val oldDeployments = getHistoryDeployments
+        decodeDetails.currentlyDeployedAt shouldBe Set("test")
         oldDeployments.size shouldBe 1
         updateProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
         deployProcess() ~> check {
           getSampleProcess ~> check {
+            decodeDetails.currentlyDeployedAt shouldBe Set("test")
+
             val currentDeployments = getHistoryDeployments
             currentDeployments.size shouldBe 1
             currentDeployments.head.environment shouldBe env
             currentDeployments.head.deployedAt should not be oldDeployments.head.deployedAt
             val buildInfo = currentDeployments.head.buildInfo
-            println(buildInfo)
             buildInfo("engine-version") should not be empty
           }
         }
       }
     }
   }
+
+  it should "recognize process cancel in deployment list" in {
+    saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
+    deployProcess() ~> check {
+      status shouldBe StatusCodes.OK
+      getSampleProcess ~> check {
+        decodeDetails.currentlyDeployedAt shouldBe Set("test")
+        cancelProcess() ~> check {
+          getSampleProcess ~> check {
+            decodeDetails.currentlyDeployedAt shouldBe Set()
+            val currentDeployments = getHistoryDeployments
+            currentDeployments shouldBe empty
+          }
+        }
+      }
+    }
+  }
+
+
+  it should "recognize process deploy and cancel in global process list" in {
+    saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
+    deployProcess() ~> check {
+      status shouldBe StatusCodes.OK
+      getProcesses ~> check {
+        decodeDetailsFromAll.currentlyDeployedAt shouldBe Set("test")
+        cancelProcess() ~> check {
+          getProcesses ~> check {
+            decodeDetailsFromAll.currentlyDeployedAt shouldBe Set()
+          }
+        }
+      }
+    }
+  }
+
 
   def deployProcess(id: String = SampleProcess.process.id): RouteTestResult = {
     Post(s"/processManagement/deploy/$id") ~> withPermissions(deployRoute, Permission.Deploy)
@@ -57,6 +95,10 @@ class ManagementResourcesSpec extends FlatSpec with ScalatestRouteTest
 
   def getSampleProcess: RouteTestResult = {
     Get(s"/processes/${SampleProcess.process.id}") ~> withPermissions(processesRoute, Permission.Read)
+  }
+
+  def getProcesses: RouteTestResult = {
+    Get(s"/processes") ~> withPermissions(processesRoute, Permission.Read)
   }
 
   it should "not authorize user with write permission to deploy" in {
@@ -143,5 +185,14 @@ class ManagementResourcesSpec extends FlatSpec with ScalatestRouteTest
     }
   }
 
-  private def getHistoryDeployments = responseAs[String].decodeOption[ProcessDetails].get.history.flatMap(_.deployments)
+  private def getHistoryDeployments = decodeDetails.history.flatMap(_.deployments)
+
+  def decodeDetails: ProcessRepository.ProcessDetails = {
+    responseAs[String].decodeOption[ProcessDetails].get
+  }
+
+
+  def decodeDetailsFromAll: ProcessRepository.ProcessDetails = {
+    responseAs[String].decodeOption[List[ProcessDetails]].flatMap(_.find(_.id == SampleProcess.process.id)).get
+  }
 }

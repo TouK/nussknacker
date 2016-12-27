@@ -33,13 +33,44 @@ const Processes = React.createClass({
   },
 
   componentDidMount() {
+    const intervalIds = {
+      reloadStatusesIntervalId: setInterval(() => this.reloadProcesses(), 6000),
+      reloadProcessesIntervalId: setInterval(() => this.reloadStatuses(), 10000)
+    }
+    this.setState(intervalIds)
+    this.reloadProcessesAndStatuses();
+  },
+
+  reloadProcessesAndStatuses() {
+    this.reloadProcesses();
+    this.reloadStatuses();
+  },
+
+  componentWillUnmount() {
+    if (this.state.reloadStatusesIntervalId) {
+      clearInterval(this.state.reloadStatusesIntervalId)
+    }
+    if (this.state.reloadProcessesIntervalId) {
+      clearInterval(this.state.reloadProcessesIntervalId)
+    }
+  },
+
+  reloadProcesses() {
     HttpService.fetchProcesses().then ((fetchedProcesses) => {
-      this.setState({ processes: fetchedProcesses, showLoader: false })
-    }).catch( e => this.setState({ showLoader: false }))
-    HttpService.fetchProcessesStatus().then ((statuses) => {
-      this.setState({ statuses: statuses, showLoader: false })
+      if (!this.state.showAddProcess) {
+        this.setState({processes: fetchedProcesses, showLoader: false})
+      }
     }).catch( e => this.setState({ showLoader: false }))
   },
+
+  reloadStatuses() {
+    HttpService.fetchProcessesStatus().then ((statuses) => {
+      if (!this.state.showAddProcess) {
+        this.setState({ statuses: statuses, showLoader: false })
+      }
+    }).catch( e => this.setState({ showLoader: false }))
+  },
+
 
   isGraph(process) {
     return process.processType == "graph"
@@ -61,7 +92,7 @@ const Processes = React.createClass({
 
   deploy(process) {
     this.props.actions.toggleConfirmDialog(true, DialogMessages.deploy(process.id), () => {
-      return HttpService.deploy(process.id)
+      return HttpService.deploy(process.id).then(this.reloadProcessesAndStatuses)
     })
   },
 
@@ -92,6 +123,18 @@ const Processes = React.createClass({
       "edit-icon": true,
       "btn disabled edit-disabled": !this.isGraph(process),
     })
+  },
+
+  processStatusClass(process) {
+    const processId = process.name;
+    const shouldRun = process.currentlyDeployedAt.length > 0;
+    const statusesKnown = this.state.statuses;
+    const isRunning = statusesKnown && _.get(this.state.statuses[processId], 'isRunning');
+    if (isRunning) {
+      return "status-running";
+    } else if (shouldRun) {
+      return statusesKnown ? "status-notrunning" : "status-unknown"
+    } else return null;
   },
 
   render() {
@@ -166,7 +209,7 @@ const Processes = React.createClass({
                   <span className="glyphicon glyphicon-stats" onClick={this.showMetrics.bind(this, process)}/>
                 </Td>
                 <Td column="status" className="status-column">
-                  { this.state.statuses && _.get(this.state.statuses[process.name], 'isRunning') ? <div className="status-running"/> : null}
+                  <div className={this.processStatusClass(process)}/>
                 </Td>
                 <Td column="favourite" className="favourite-column">
                   <div className={this.isFavourite(process.id)}
