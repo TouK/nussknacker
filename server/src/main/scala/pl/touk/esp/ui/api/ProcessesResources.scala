@@ -59,10 +59,7 @@ class ProcessesResources(repository: ProcessRepository,
       } ~ path("processes" / "status") {
         get {
           complete {
-            for {
-              processes <- repository.fetchProcessesDetails()
-              processStatesForProcess <- fetchProcessStatesForProcesses(processes)
-            } yield processStatesForProcess
+            repository.fetchProcessesDetails().flatMap(fetchProcessStatesForProcesses)
           }
         }
 

@@ -52,7 +52,6 @@ object TestFactory {
       override def cancel(name: String): Future[Unit] = Future.successful(Unit)
       override def deploy(processId: String, processDeploymentData: ProcessDeploymentData): Future[Unit] = Future {
         Thread.sleep(sleepBeforeAnswer)
-        println("FINISHED?")
         ()
       }
     }

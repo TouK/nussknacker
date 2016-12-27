@@ -9,7 +9,7 @@ import db.util.DBIOActionInstances._
 import pl.touk.esp.engine.api.deployment.{CustomProcess, GraphProcess, ProcessDeploymentData}
 import pl.touk.esp.ui.EspError._
 import pl.touk.esp.ui.app.BuildInfo
-import pl.touk.esp.ui.db.entity.DeployedProcessVersionEntity.DeployedProcessVersionEntityData
+import pl.touk.esp.ui.db.entity.ProcessDeploymentInfoEntity.{DeployedProcessVersionEntityData, DeploymentAction}
 import pl.touk.esp.ui.db.entity.ProcessEntity.{ProcessEntityData, ProcessType}
 import pl.touk.esp.ui.db.entity.ProcessVersionEntity.ProcessVersionEntityData
 import pl.touk.esp.ui.db.entity.TagsEntity.TagsEntityData
@@ -23,7 +23,7 @@ import pl.touk.esp.ui.util.DateUtils
 import pl.touk.esp.ui.{BadRequestError, EspError, NotFoundError}
 import slick.jdbc.{JdbcBackend, JdbcProfile}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.language.higherKinds
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -96,8 +96,12 @@ class ProcessRepository(db: JdbcBackend.Database,
         .join(processVersionsTable).on { case (((processId, latestVersionDate)), processVersion) =>
         processVersion.processId === processId && processVersion.createDate === latestVersionDate
       }.join(processTableFilteredByUser).on { case ((_, latestVersion), process) => latestVersion.processId === process.id }
-        .result.map(_.map { case ((_, processVersion), process) => createFullDetails(process, processVersion, isLatestVersion = true, tagsForProcesses(process.name), List.empty) })
-    } yield latestProcesses
+        .result
+      deployedPerEnv <- latestDeployedProcessesVersionsPerEnvironment.result
+    } yield latestProcesses.map { case ((_, processVersion), process) =>
+      createFullDetails(process, processVersion, isLatestVersion = true,
+        deployedPerEnv.map(_._1).filter(_._1 == process.id).map(_._2).toSet,
+        tagsForProcesses(process.name), List.empty) }
     db.run(action).map(_.toList)
   }
 
@@ -132,6 +136,7 @@ class ProcessRepository(db: JdbcBackend.Database,
       process = process,
       processVersion = processVersion,
       isLatestVersion = isLatestVersion,
+      currentlyDeployedAt = latestDeployedVersionsPerEnv.keySet,
       tags = tags,
       history = processVersions.map(pvs => ProcessHistoryEntry(process, pvs, latestDeployedVersionsPerEnv))
     )
@@ -140,6 +145,7 @@ class ProcessRepository(db: JdbcBackend.Database,
   private def createFullDetails(process: ProcessEntityData,
                                 processVersion: ProcessVersionEntityData,
                                 isLatestVersion: Boolean,
+                                currentlyDeployedAt: Set[String],
                                 tags: Seq[TagsEntityData],
                                 history: Seq[ProcessHistoryEntry]): ProcessDetails = {
     ProcessDetails(
@@ -150,6 +156,7 @@ class ProcessRepository(db: JdbcBackend.Database,
       description = process.description,
       processType = process.processType,
       processCategory = process.processCategory,
+      currentlyDeployedAt = currentlyDeployedAt,
       tags = tags.map(_.name).toList,
       modificationDate = DateUtils.toLocalDateTime(processVersion.createDate),
       json = processVersion.json.map(json => processConverter.toDisplayableOrDie(json)),
@@ -168,11 +175,16 @@ class ProcessRepository(db: JdbcBackend.Database,
   }
 
   private def latestDeployedProcessVersionsPerEnvironment(processId: String) = {
-    deployedProcessesTable.filter(_.processId === processId).groupBy(_.environment).map { case (env, group) => (env, group.map(_.deployedAt).max) }
-      .join(deployedProcessesTable).on { case ((env, maxDeployedAtForEnv), deplProc) =>
-      deplProc.processId === processId && deplProc.environment === env && deplProc.deployedAt === maxDeployedAtForEnv
-    }.map { case ((env, _), deployedVersion) => env -> deployedVersion }
+    latestDeployedProcessesVersionsPerEnvironment.filter(_._1._1 === processId).map { case ((_, env), deployedVersion) => (env, deployedVersion)}
   }
+
+  private def latestDeployedProcessesVersionsPerEnvironment = {
+    deployedProcessesTable.groupBy(e => (e.processId, e.environment)).map { case (processIdEnv, group) => (processIdEnv, group.map(_.deployedAt).max) }
+      .join(deployedProcessesTable).on { case ((processIdEnv, maxDeployedAtForEnv), deplProc) =>
+      deplProc.processId === processIdEnv._1 && deplProc.environment === processIdEnv._2 && deplProc.deployedAt === maxDeployedAtForEnv
+    }.map { case ((env, _), deployedVersion) => env -> deployedVersion }.filter(_._2.deploymentAction === DeploymentAction.Deploy)
+  }
+
 
 
   private def processType(processDeploymentData: ProcessDeploymentData) = processDeploymentData match {
@@ -193,6 +205,7 @@ object ProcessRepository {
                              processCategory: String,
                              modificationDate: LocalDateTime,
                              tags: List[String],
+                             currentlyDeployedAt: Set[String],
                              json: Option[DisplayableProcess],
                              history: List[ProcessHistoryEntry]
                            )
@@ -214,7 +227,7 @@ object ProcessRepository {
         processName = process.name,
         createDate = DateUtils.toLocalDateTime(processVersion.createDate),
         user = processVersion.user,
-        deployments = deployedVersionsPerEnv.collect { case (env, deployedVersion) if deployedVersion.processVersionId == processVersion.id =>
+        deployments = deployedVersionsPerEnv.collect { case (env, deployedVersion) if deployedVersion.processVersionId.contains(processVersion.id) =>
           DeploymentEntry(env, deployedVersion.deployedAtTime,
             deployedVersion.buildInfo.flatMap(BuildInfo.parseJson).getOrElse(BuildInfo.empty))
         }.toList

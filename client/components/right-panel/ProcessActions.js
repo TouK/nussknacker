@@ -17,6 +17,9 @@ class ProcessActions extends React.Component {
     isTesting: React.PropTypes.bool.isRequired
   }
 
+  //only check deployment status in db
+  isRunning = () => this.props.fetchedProcessDetails && (this.props.fetchedProcessDetails.currentlyDeployedAt || []).length > 0
+
   showProperties = () => {
     this.props.actions.displayModalNodeDetails(this.props.processToDisplay.properties)
   }
@@ -39,7 +42,10 @@ class ProcessActions extends React.Component {
 
   stop = () => {
     this.props.actions.toggleConfirmDialog(true, DialogMessages.stop(this.processId()), () => {
-      return HttpService.stop(this.processId())
+      return HttpService.stop(this.processId()).then((resp) => {
+        //ten kod wykonuje sie nawet kiedy deploy sie nie uda, bo wyzej robimy catch i w przypadku bledu tutaj dostajemy undefined, pomyslec jak ladnie to rozwiazac
+        this.fetchProcessDetails()
+      })
     })
   }
 
@@ -104,9 +110,8 @@ class ProcessActions extends React.Component {
         {this.props.loggedUser.canDeploy ? (
           <div>
             <button disabled={!this.props.processIsLatestVersion} type="button" className={buttonClass}
-                    onClick={this.deploy}>Deploy
-            </button>
-            <button type="button" className={buttonClass} onClick={this.stop}>Stop</button>
+                    onClick={this.deploy}>Deploy</button>
+            <button type="button" disabled={!this.isRunning()} className={buttonClass} onClick={this.stop}>Stop</button>
             <hr/>
           </div>
         ) : null}
