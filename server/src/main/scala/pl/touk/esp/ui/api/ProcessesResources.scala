@@ -128,11 +128,10 @@ class ProcessesResources(repository: ProcessRepository,
             }
           }
         }
-      } ~ path("processes" / "export" / Segment) { processIdWithJson =>
+      } ~ path("processes" / "export" / Segment/ LongNumber) { (processId, versionId) =>
         get {
           complete {
-            val processId = processIdWithJson.replace(".json", "")
-            repository.fetchLatestProcessDetailsForProcessId(processId).map {
+            repository.fetchProcessDetailsForId(processId, versionId).map {
               case Some(process) =>
                 process.json.map { json =>
                   uiProcessMarshaller.toJson(processConverter.fromDisplayable(json), PrettyParams.spaces2)

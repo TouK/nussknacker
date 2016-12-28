@@ -1,6 +1,6 @@
 package pl.touk.esp.ui.api
 
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity, Multipart, StatusCodes}
+import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server
 import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
 import argonaut.Argonaut._
@@ -14,6 +14,7 @@ import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.esp.engine.graph.param.Parameter
 import pl.touk.esp.ui.api.helpers.EspItTest
 import pl.touk.esp.ui.api.helpers.TestFactory._
+import pl.touk.esp.ui.process.displayedgraph.displayablenode.ProcessAdditionalFields
 import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.esp.ui.process.marshall.UiProcessMarshaller
 import pl.touk.esp.ui.process.repository.ProcessRepository.ProcessDetails
@@ -175,8 +176,12 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
   }
 
   it should "access process version and mark latest version" in {
-    saveProcess(SampleProcess.process.id, ProcessTestData.validProcess) { status shouldEqual StatusCodes.OK }
-    updateProcess(SampleProcess.process.id, ProcessTestData.invalidProcess) { status shouldEqual StatusCodes.OK}
+    saveProcess(SampleProcess.process.id, ProcessTestData.validProcess) {
+      status shouldEqual StatusCodes.OK
+    }
+    updateProcess(SampleProcess.process.id, ProcessTestData.invalidProcess) {
+      status shouldEqual StatusCodes.OK
+    }
 
     Get(s"/processes/${SampleProcess.process.id}/1") ~> routWithAllPermissions ~> check {
       val processDetails = responseAs[String].decodeOption[ProcessDetails].get
@@ -241,7 +246,7 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
       status shouldEqual StatusCodes.OK
     }
 
-    Get(s"/processes/export/${processToSave.id}.json") ~> routWithAllPermissions ~> check {
+    Get(s"/processes/export/${processToSave.id}/2") ~> routWithAllPermissions ~> check {
       val processDetails = marshaller.fromJson(responseAs[String]).toOption.get
       val modified = processDetails.copy(metaData = processDetails.metaData.copy(parallelism = Some(987)))
 
@@ -260,13 +265,35 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
     }
   }
 
+  it should "export process in new version" in {
+    val description = "alamakota"
+    val processToSave = ProcessTestData.sampleDisplayableProcess
+    val processWithDescription = processToSave.copy(properties = processToSave.properties.copy(additionalFields = Some(ProcessAdditionalFields(Some(description)))))
+
+    saveProcess(processToSave) {
+      status shouldEqual StatusCodes.OK
+    }
+    updateProcess(processWithDescription) {
+      status shouldEqual StatusCodes.OK
+    }
+
+    Get(s"/processes/export/${processToSave.id}/2") ~> routWithAllPermissions ~> check {
+      responseAs[String] shouldNot include(description)
+    }
+
+    Get(s"/processes/export/${processToSave.id}/3") ~> routWithAllPermissions ~> check {
+      responseAs[String] should include(description)
+    }
+
+  }
+
   it should "fail to import process with different id" in {
     val processToSave = ProcessTestData.sampleDisplayableProcess
     saveProcess(processToSave) {
       status shouldEqual StatusCodes.OK
     }
 
-    Get(s"/processes/export/${processToSave.id}.json") ~> routWithAllPermissions ~> check {
+    Get(s"/processes/export/${processToSave.id}/2") ~> routWithAllPermissions ~> check {
       val processDetails = marshaller.fromJson(responseAs[String]).toOption.get
       val modified = processDetails.copy(metaData = processDetails.metaData.copy(id = "SOMEVERYFAKEID"))
 

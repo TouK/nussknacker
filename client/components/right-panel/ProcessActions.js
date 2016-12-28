@@ -61,12 +61,14 @@ class ProcessActions extends React.Component {
     return this.props.processToDisplay.id
   }
 
+  versionId = () => this.props.fetchedProcessDetails.processVersionId
+
   showMetrics = () => {
     browserHistory.push('/metrics/' + this.processId())
   }
 
   exportProcess = () => {
-    window.open(appConfig.API_URL + '/processes/export/' + this.processId() + ".json");
+    window.open(`${appConfig.API_URL}/processes/export/${this.processId()}/${this.versionId()}`);
   }
 
   importProcess = (files) => {
@@ -97,10 +99,7 @@ class ProcessActions extends React.Component {
         <hr/>
         <button type="button" className={buttonClass} onClick={this.showMetrics}>Metrics</button>
         <hr/>
-        <button disabled={!this.props.processIsLatestVersion} type="button" className={buttonClass}
-                onClick={this.exportProcess}>Export
-        </button>
-
+        <button type="button" className={buttonClass} onClick={this.exportProcess}>Export</button>
         {this.props.loggedUser.canWrite ? (
           <Dropzone onDrop={this.importProcess} className="dropZone espButton">
             <div>Import</div>
