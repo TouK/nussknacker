@@ -24,7 +24,11 @@ object ProcessCompilationError {
 
   case class InvaliRootNode(nodeId: String) extends ProcessUncanonizationError with InASingleNode
 
-  case class InvalidTailOfBranch(nodeIds: Set[String]) extends ProcessUncanonizationError
+  object EmptyProcess extends ProcessUncanonizationError {
+    override def nodeIds = Set()
+  }
+
+  case class InvalidTailOfBranch(nodeId: String) extends ProcessUncanonizationError with InASingleNode
 
   case class DuplicatedNodeIds(nodeIds: Set[String]) extends ProcessCompilationError
 

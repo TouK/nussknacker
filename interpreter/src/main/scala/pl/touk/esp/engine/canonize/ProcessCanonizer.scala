@@ -47,43 +47,45 @@ object ProcessCanonizer {
 
   private def uncanonizeSource(canonicalNode: List[canonicalnode.CanonicalNode]): ValidatedNel[ProcessUncanonizationError, node.SourceNode] =
     canonicalNode match {
-      case canonicalnode.FlatNode(data: node.Source) :: tail =>
-        uncanonize(tail).map(node.SourceNode(data, _))
+      case (a@canonicalnode.FlatNode(data: node.Source)) :: tail =>
+        uncanonize(a, tail).map(node.SourceNode(data, _))
       case other :: tail =>
         invalid(InvaliRootNode(other.id)).toValidatedNel
-      case invalidTail => // TODO: lepszy komunitkat na pusty proces
-        invalid(InvalidTailOfBranch(invalidTail.map(_.id).toSet)).toValidatedNel
+      case invalidTail =>
+        invalid(EmptyProcess).toValidatedNel
     }
 
-  private def uncanonize(canonicalNode: List[canonicalnode.CanonicalNode]): ValidatedNel[ProcessUncanonizationError, node.SubsequentNode] =
+  private def uncanonize(previous: canonicalnode.CanonicalNode,
+                         canonicalNode: List[canonicalnode.CanonicalNode]): ValidatedNel[ProcessUncanonizationError, node.SubsequentNode] =
     canonicalNode match {
       case canonicalnode.FlatNode(data: node.EndingNodeData) :: Nil =>
         valid(node.EndingNode(data))
-      case canonicalnode.FlatNode(data: node.OneOutputSubsequentNodeData) :: tail =>
-        uncanonize(tail).map(node.OneOutputSubsequentNode(data, _))
-      case canonicalnode.FilterNode(data, nextFalse) :: tail if nextFalse.isEmpty =>
-        uncanonize(tail).map(node.FilterNode(data, _, None))
-      case canonicalnode.FilterNode(data, nextFalse) :: tail =>
-        A.map2(uncanonize(tail), uncanonize(nextFalse)) { (nextTrue, nextFalseV) =>
+      case (a@canonicalnode.FlatNode(data: node.OneOutputSubsequentNodeData)) :: tail =>
+        uncanonize(a, tail).map(node.OneOutputSubsequentNode(data, _))
+      case (a@canonicalnode.FilterNode(data, nextFalse)) :: tail if nextFalse.isEmpty =>
+        uncanonize(a, tail).map(node.FilterNode(data, _, None))
+      case (a@canonicalnode.FilterNode(data, nextFalse)) :: tail =>
+        A.map2(uncanonize(a, tail), uncanonize(a, nextFalse)) { (nextTrue, nextFalseV) =>
           node.FilterNode(data, nextTrue, Some(nextFalseV))
         }
-      case canonicalnode.SwitchNode(data, nexts, defaultNext) :: Nil if defaultNext.isEmpty =>
+      case (a@canonicalnode.SwitchNode(data, nexts, defaultNext)) :: Nil if defaultNext.isEmpty =>
         nexts.map { casee =>
-          uncanonize(casee.nodes).map(node.Case(casee.expression, _))
+          uncanonize(a, casee.nodes).map(node.Case(casee.expression, _))
         }.sequence.map(node.SwitchNode(data, _, None))
-      case canonicalnode.SwitchNode(data, nexts, defaultNext) :: Nil =>
+      case (a@canonicalnode.SwitchNode(data, nexts, defaultNext)) :: Nil =>
         val unFlattenNexts = nexts.map { casee =>
-          uncanonize(casee.nodes).map(node.Case(casee.expression, _))
+          uncanonize(a, casee.nodes).map(node.Case(casee.expression, _))
         }.sequence
-        A.map2(unFlattenNexts, uncanonize(defaultNext)) { (nextsV, defaultNextV) =>
+        A.map2(unFlattenNexts, uncanonize(a, defaultNext)) { (nextsV, defaultNextV) =>
           node.SwitchNode(data, nextsV, Some(defaultNextV))
         }
-      case canonicalnode.SplitNode(bare, nexts) :: Nil=>
-        nexts.map(uncanonize).sequence.map { uncanonized =>
+      case (a@canonicalnode.SplitNode(bare, nexts)) :: Nil=>
+        nexts.map(uncanonize(a, _)).sequence.map { uncanonized =>
           node.SplitNode(bare, uncanonized)
         }
-      case invalidTail =>
-        invalid(InvalidTailOfBranch(invalidTail.map(_.id).toSet)).toValidatedNel
+      case invalidHead :: _ =>
+        invalid(InvalidTailOfBranch(invalidHead.id)).toValidatedNel
+      case Nil => invalid(InvalidTailOfBranch(previous.id)).toValidatedNel
     }
 
 }
