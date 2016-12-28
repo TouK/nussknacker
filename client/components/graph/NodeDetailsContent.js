@@ -21,7 +21,7 @@ export default class NodeDetailsContent extends React.Component {
     }
     this.state = {
       ...this.state,
-      ...this.selectTestResults()
+      ...this.stateForSelectTestResults()
     }
   }
 
@@ -293,7 +293,10 @@ export default class NodeDetailsContent extends React.Component {
   }
 
   selectTestResults = (id) => {
-    this.setState(this.stateForSelectTestResults(id))
+    const stateForSelect = this.stateForSelectTestResults(id)
+    if (stateForSelect) {
+      this.setState(stateForSelect)
+    }
   }
 
   testResultsSelect = () => {
