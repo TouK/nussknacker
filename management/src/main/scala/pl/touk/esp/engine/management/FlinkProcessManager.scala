@@ -11,6 +11,7 @@ import org.apache.flink.api.common.JobID
 import org.apache.flink.client.program.{PackagedProgram, ProgramInvocationException}
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.runtime.client.JobTimeoutException
+import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import org.apache.flink.runtime.messages.JobManagerMessages
 import org.apache.flink.runtime.messages.JobManagerMessages._
 import pl.touk.esp.engine.api.deployment._
@@ -96,12 +97,12 @@ class FlinkProcessManager(config: Config,
     }
 
     stoppingResult.value.map { maybeSavepoint =>
-      maybeSavepoint.foreach(program.setSavepointPath)
+      maybeSavepoint.foreach(path => program.setSavepointRestoreSettings(SavepointRestoreSettings.forPath(path, true)))
       logger.debug(s"Deploying $processId. Setting savepoint finished")
       Try(gateway.run(program)).recover {
         //TODO: jest blad we flink, future nie dostaje odpowiedzi jak poleci wyjatek przy savepoincie :|
         case e:ProgramInvocationException if e.getCause.isInstanceOf[JobTimeoutException] && maybeSavepoint.isDefined =>
-          program.setSavepointPath(null)
+          program.setSavepointRestoreSettings(SavepointRestoreSettings.none())
           logger.info(s"Failed to run $processId with savepoint, trying with empty state")
           gateway.run(program)
       }.get
