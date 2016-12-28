@@ -34,6 +34,16 @@ export default {
     }
   },
 
+  fetchBuildInfo() {
+    return promiseWrap($.get(appConfig.API_URL + '/app/buildInfo'))
+  },
+
+  fetchHealthCheck() {
+    return promiseWrap($.get(appConfig.API_URL + '/app/healthCheck'))
+      .then(() => ({state: "ok"}))
+      .catch((error) => ({state: "error", error: error.responseText}))
+  },
+
   fetchLoggedUser() {
     return promiseWrap($.get(appConfig.API_URL + '/user')).then((user) => ({
       id: user.id,
