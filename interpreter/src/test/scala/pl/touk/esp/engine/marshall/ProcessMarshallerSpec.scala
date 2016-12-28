@@ -1,14 +1,22 @@
 package pl.touk.esp.engine.marshall
 
 import argonaut.PrettyParams
-import cats.data.Validated.Valid
+import cats.data.NonEmptyList
+import cats.data.Validated.{Invalid, Valid}
 import org.scalatest.{FlatSpec, Inside, Matchers, OptionValues}
 import pl.touk.esp.engine._
+import pl.touk.esp.engine.api.MetaData
 import pl.touk.esp.engine.build.{EspProcessBuilder, GraphBuilder}
+import pl.touk.esp.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
+import pl.touk.esp.engine.canonicalgraph.canonicalnode.{CanonicalNode, FlatNode}
 import pl.touk.esp.engine.canonize.ProcessCanonizer
+import pl.touk.esp.engine.compile.ProcessCompilationError.{InvaliRootNode, InvalidTailOfBranch}
 import pl.touk.esp.engine.graph.EspProcess
+import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
+import pl.touk.esp.engine.graph.expression.Expression
 import pl.touk.esp.engine.graph.node._
 import pl.touk.esp.engine.graph.sink.SinkRef
+import pl.touk.esp.engine.graph.source.SourceRef
 
 import scala.concurrent.duration._
 
@@ -100,6 +108,25 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
     }
 
   }
+
+  it should "detect bad branch" in {
+
+    def checkOneInvalid(expectedBadNodeId: String, nodes: CanonicalNode*) = {
+      inside(ProcessCanonizer.uncanonize(CanonicalProcess(MetaData("1"), ExceptionHandlerRef(List()), nodes.toList))) {
+        case Invalid(NonEmptyList(InvalidTailOfBranch(id), Nil)) => id shouldBe expectedBadNodeId
+      }
+    }
+    val source = FlatNode(Source("s1", SourceRef("a", List())))
+
+    checkOneInvalid("filter", source, canonicalnode.FilterNode(Filter("filter", Expression("", "")), List()))
+    checkOneInvalid("custom", source, canonicalnode.FlatNode(CustomNode("custom", "out", "t1", List())))
+
+
+
+
+
+  }
+
 
 
   def marshallAndUnmarshall(process: EspProcess): Option[EspProcess] = {
