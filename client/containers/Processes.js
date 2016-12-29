@@ -28,7 +28,10 @@ const Processes = React.createClass({
       filterVal: '',
       favouriteList: new Set(),
       showLoader: true,
-      showAddProcess: false
+      showAddProcess: false,
+      currentPage: 0,
+      sort: { column: "id", direction: 1}
+
     }
   },
 
@@ -156,17 +159,21 @@ const Processes = React.createClass({
         <AddProcessDialog onClose={() => this.setState({showAddProcess : false})} isOpen={this.state.showAddProcess} />
         <LoaderSpinner show={this.state.showLoader}/>
         <Table id="process-table" className="table"
+               onSort={sort => this.setState({sort: sort})}
+               onPageChange={currentPage => this.setState({currentPage: currentPage})}
            noDataText="No matching records found."
            hidden={this.state.showLoader}
-           currentPage={0}
+           currentPage={this.state.currentPage}
+           defaultSort={this.state.sort}
            itemsPerPage={10}
            pageButtonLimit={5}
            previousPageLabel="<"
            nextPageLabel=">"
-           sortable={true}
+           sortable={['id', 'name', 'category', 'modifyDate']}
            filterable={['id', 'name', 'category']}
            hideFilterInput
            filterBy={this.getFilterValue()}
+
         >
 
           <Thead>
