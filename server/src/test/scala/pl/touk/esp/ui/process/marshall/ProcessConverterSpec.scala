@@ -1,5 +1,6 @@
 package pl.touk.esp.ui.process.marshall
 
+import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.esp.engine.api.MetaData
 import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
@@ -12,10 +13,11 @@ import pl.touk.esp.engine.graph.node._
 import pl.touk.esp.engine.graph.service.ServiceRef
 import pl.touk.esp.engine.graph.source.SourceRef
 import pl.touk.esp.ui.api.ProcessValidation
+import pl.touk.esp.ui.api.ProcessValidation.{NodeValidationError, ValidationResult}
 import pl.touk.esp.ui.process.displayedgraph.displayablenode.Edge
 import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties}
 
-class ProcessConverterSpec extends FlatSpec with Matchers {
+class ProcessConverterSpec extends FlatSpec with Matchers with TableDrivenPropertyChecks {
 
   val converter = {
     val processDefinition = ProcessDefinition[ObjectDefinition](Map("ref" -> ObjectDefinition.noParam),
@@ -49,18 +51,16 @@ class ProcessConverterSpec extends FlatSpec with Matchers {
 
   it should "be able to convert process ending not properly" in {
 
-    val unexpectedEnds = List(
+    forAll(Table(
+      "unexpectedEnd",
       Filter("e", Expression("spel", "0")),
       Switch("e", Expression("spel", "0"), "a"),
-      Processor("e", ServiceRef("ref", List())),
       Enricher("e", ServiceRef("ref", List()), "out"),
       Split("e")
-    )
-
-    unexpectedEnds.foreach { unexpectedEnd =>
+    )) { (unexpectedEnd) =>
       val process = DisplayableProcess("t1", ProcessProperties(Some(2), ExceptionHandlerRef(List()), None),
         List(Source("s", SourceRef("sourceRef", List())), unexpectedEnd),
-        List(Edge("s", "e", None)), ProcessValidation.ValidationResult.success
+        List(Edge("s", "e", None)), ValidationResult(Map(unexpectedEnd.id -> List(NodeValidationError("InvalidTailOfBranch","InvalidTailOfBranch",None))))
       )
       displayableCanonical(process) shouldBe process
     }
