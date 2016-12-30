@@ -68,6 +68,8 @@ object ProcessCanonizer {
         A.map2(uncanonize(a, tail), uncanonize(a, nextFalse)) { (nextTrue, nextFalseV) =>
           node.FilterNode(data, nextTrue, Some(nextFalseV))
         }
+      case (a@canonicalnode.SwitchNode(data, Nil, defaultNext)) :: Nil =>
+        invalid(InvalidTailOfBranch(data.id)).toValidatedNel
       case (a@canonicalnode.SwitchNode(data, nexts, defaultNext)) :: Nil if defaultNext.isEmpty =>
         nexts.map { casee =>
           uncanonize(a, casee.nodes).map(node.Case(casee.expression, _))
@@ -79,6 +81,8 @@ object ProcessCanonizer {
         A.map2(unFlattenNexts, uncanonize(a, defaultNext)) { (nextsV, defaultNextV) =>
           node.SwitchNode(data, nextsV, Some(defaultNextV))
         }
+      case (a@canonicalnode.SplitNode(bare, Nil)) :: Nil=>
+        invalid(InvalidTailOfBranch(bare.id)).toValidatedNel
       case (a@canonicalnode.SplitNode(bare, nexts)) :: Nil=>
         nexts.map(uncanonize(a, _)).sequence.map { uncanonized =>
           node.SplitNode(bare, uncanonized)
