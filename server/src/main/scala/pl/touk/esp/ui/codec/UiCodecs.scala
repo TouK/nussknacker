@@ -90,8 +90,9 @@ object UiCodecs {
         case a: LocalDateTime => a.asJson
         //TODO: a to??
         //case a: LocalDate => a.asJson
-        case _ if typesWithMethodNames.contains(klass.getName) =>
-          printKnownType(any, klass)
+        //TODO: co tu w sumie lepiej pokazywac??
+        //case _ if typesWithMethodNames.contains(klass.getName) =>
+        //  printKnownType(any, klass)
         case _ => jString(any.toString)
       }
     }

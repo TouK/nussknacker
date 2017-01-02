@@ -92,7 +92,7 @@ class ProcessActions extends React.Component {
     return (
       <div>
         {this.props.loggedUser.canWrite ? (
-          <button type="button" className={buttonClass} disabled={this.props.nothingToSave} onClick={this.save}>
+          <button type="button" className={buttonClass} disabled={this.props.nothingToSave && this.props.processIsLatestVersion} onClick={this.save}>
             Save{this.props.nothingToSave ? "" : "*"}</button> ) : null}
         <button type="button" className={buttonClass} onClick={this.props.graphLayout}>Layout</button>
         <button type="button" className={buttonClass} onClick={this.showProperties}>Properties</button>
