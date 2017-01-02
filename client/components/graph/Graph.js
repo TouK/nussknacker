@@ -39,19 +39,25 @@ class Graph extends React.Component {
 
     componentDidMount() {
         this.processGraphPaper = this.createPaper()
-        this.drawGraph(this.props.processToDisplay, this.props.layout, null, this.props.testResults)
-        this.changeNodeDetailsOnClick(this.processGraphPaper);
-        this.labelToFrontOnHover(this.processGraphPaper);
-        this.cursorBehaviour(this.processGraphPaper);
+        this.drawGraph(this.props.processToDisplay, this.props.layout, this.props.testResults)
+        this.changeNodeDetailsOnClick();
+        this.labelToFrontOnHover();
+        this.cursorBehaviour();
+        this.highlightNodes(this.props.processToDisplay, this.props.nodeToDisplay);
+
     }
 
     componentWillUpdate(nextProps, nextState) {
-      const nothingChanged = _.isEqual(this.props.processToDisplay, nextProps.processToDisplay) &&
+      const processNotChanged = _.isEqual(this.props.processToDisplay, nextProps.processToDisplay) &&
         _.isEqual(this.props.layout, nextProps.layout) &&
-        _.isEqual(this.props.nodeToDisplay, nextProps.nodeToDisplay) &&
         _.isEqual(this.props.testResults, nextProps.testResults)
-      if (!nothingChanged) {
-        this.drawGraph(nextProps.processToDisplay, nextProps.layout, nextProps.nodeToDisplay, nextProps.testResults)
+
+      if (!processNotChanged) {
+        this.drawGraph(nextProps.processToDisplay, nextProps.layout, nextProps.testResults)
+      }
+      //when e.g. layout changed we have to remember to highlight nodes
+      if (!processNotChanged || !_.isEqual(this.props.nodeToDisplay, nextProps.nodeToDisplay)){
+        this.highlightNodes(nextProps.processToDisplay, nextProps.nodeToDisplay);
       }
     }
 
@@ -120,12 +126,11 @@ class Graph extends React.Component {
           .on("link:connect", (c) => this.props.actions.nodesConnected(c.sourceView.model.id, c.targetView.model.id))
     }
 
-    drawGraph = (data, layout, nodeToDisplay, testResults) => {
+    drawGraph = (data, layout, testResults) => {
       const nodes = _.map(data.nodes, (n) => { return EspNode.makeElement(n, _.get(testResults, `nodeResults.${n.id}`)) });
       const edges = _.map(data.edges, (e) => { return EspNode.makeLink(e) });
       const cells = nodes.concat(edges);
       this.graph.resetCells(cells);
-      this.highlightNodes(data, nodeToDisplay);
       if (_.isEmpty(layout)) {
         this.directedLayout()
       } else {
@@ -137,18 +142,31 @@ class Graph extends React.Component {
     }
 
     highlightNodes = (data, nodeToDisplay) => {
+      this.graph.getCells().forEach(cell => {
+        this.unhighlightCell(cell, 'node-validation-error')
+        this.unhighlightCell(cell, 'node-focused')
+      })
       _.keys(data.validationResult.invalidNodes).forEach(name => { this.highlightNode(name, 'node-validation-error') });
       if (nodeToDisplay) {
         this.highlightNode(nodeToDisplay.id, 'node-focused')
       }
     }
 
+    highlightCell(cell, className) {
+      this.processGraphPaper.findViewByModel(cell).highlight(null, { highlighter: { name: 'addClass', options: { className: className}} })
+    }
+
+    unhighlightCell(cell, className) {
+      this.processGraphPaper.findViewByModel(cell).unhighlight(null, { highlighter: {name: 'addClass', options: { className: className}} })
+    }
+
     highlightNode = (nodeId, highlightClass) => {
       const cell = this.graph.getCell(nodeId)
       if (cell) { //zabezpieczenie przed dostaniem sie do node'a propertiesow procesu, ktorego to nie pokazujemy na grafie
-        this.processGraphPaper.findViewByModel(cell).highlight(null, { highlighter: { name: 'addClass', options: { className: highlightClass}} })
+        this.highlightCell(cell, highlightClass)
       }
     }
+
 
   changeLayoutIfNeeded = () => {
       var newLayout = _.map(this.graph.getElements(), (el) => {
