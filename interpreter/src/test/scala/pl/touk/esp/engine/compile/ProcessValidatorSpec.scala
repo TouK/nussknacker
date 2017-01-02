@@ -129,17 +129,34 @@ class ProcessValidatorSpec extends FlatSpec with Matchers {
   }
 
   it should "find missing source" in {
-    val missingServiceId = "missingServiceId"
+    val serviceId = "serviceId"
     val processWithRefToMissingService =
       EspProcessBuilder
         .id("process1")
         .exceptionHandler()
         .source("id1", "source")
-        .processorEnd("id2", missingServiceId, "foo" -> "'bar'")
+        .filter("filter", "#input != null")
+        .processorEnd("id2", serviceId, "foo" -> "'bar'")
 
-    val definition = ObjectProcessDefinition.empty.withService(missingServiceId, Parameter(name = "foo", typ = ClazzRef(classOf[String])))
+    val definition = ObjectProcessDefinition.empty.withService(serviceId, Parameter(name = "foo", typ = ClazzRef(classOf[String])))
     ProcessValidator.default(definition).validate(processWithRefToMissingService) should matchPattern {
-      case Invalid(NonEmptyList(MissingSourceFactory(_, _), _)) =>
+      case Invalid(NonEmptyList(ExpressionParseError("Unresolved references input", "filter", None, "#input != null"), List(MissingSourceFactory(_, _)))) =>
+    }
+  }
+
+
+  it should "find missing custom node" in {
+    val processWithRefToMissingService =
+      EspProcessBuilder
+        .id("process1")
+        .exceptionHandler()
+        .source("id1", "source")
+        .customNode("custom", "out", "notExisting", "dummy" -> "input")
+        .filter("filter", "#out != null")
+        .sink("id2", "sink")
+
+    ProcessValidator.default(baseDefinition).validate(processWithRefToMissingService) should matchPattern {
+      case Invalid(NonEmptyList(MissingCustomNodeExecutor("notExisting", "custom"), Nil)) =>
     }
   }
 
@@ -291,8 +308,8 @@ class ProcessValidatorSpec extends FlatSpec with Matchers {
       case Invalid(NonEmptyList(
       ExpressionParseError("Unresolved references terefere", "p1", Some("par1"), _),
       List(
-        ExpressionParseError("EL1044E:(pos 0): Unexpectedly ran out of input", "c1", Some("par1"), _),
-        ExpressionParseError("Unresolved references terefere22", "v1", Some("par1"), _))
+      ExpressionParseError("EL1044E:(pos 0): Unexpectedly ran out of input", "c1", Some("par1"), _),
+      ExpressionParseError("Unresolved references terefere22", "v1", Some("par1"), _))
       )) =>
     }
   }

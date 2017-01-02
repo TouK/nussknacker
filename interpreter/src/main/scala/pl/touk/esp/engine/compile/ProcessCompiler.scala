@@ -148,13 +148,11 @@ protected trait ProcessCompilerBase {
     implicit val nodeId = NodeId(source.id)
     val variables = sourceFactories.get(source.node.data.ref.typ)
       .map(sf => Map(Interpreter.InputParamName -> sf.returnType)).getOrElse(Map.empty)
-    validate(source.node, ValidationContext(variables, typesInformation)).andThen { ctx =>
-      compile(source.node.data.ref).andThen { obj =>
-        compile(source.nextParts, ctx).map { nextParts =>
-          compiledgraph.part.SourcePart(obj, source.node, nextParts, source.ends)
-        }
+    A.map2(validate(source.node, ValidationContext(variables, typesInformation)), compile(source.node.data.ref)) { (ctx, obj) =>
+      compile(source.nextParts, ctx).map { nextParts =>
+        compiledgraph.part.SourcePart(obj, source.node, nextParts, source.ends)
       }
-    }
+    }.andThen(identity)
   }
 
   private def compile(ref: ExceptionHandlerRef)
