@@ -240,6 +240,25 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
     }
   }
 
+  it should "delete process" in {
+    val processToSave = ProcessTestData.sampleDisplayableProcess
+    val id = processToSave.id
+    saveProcess(processToSave) {
+      status shouldEqual StatusCodes.OK
+    }
+
+    Delete(s"/processes/$id") ~> routWithAllPermissions ~> check {
+      Get(s"/processes/$id") ~> routWithAllPermissions ~> check {
+       status shouldEqual StatusCodes.NotFound
+      }
+    }
+
+    saveProcess(processToSave) {
+      status shouldEqual StatusCodes.OK
+    }
+
+  }
+
   it should "export process and import it" in {
     val processToSave = ProcessTestData.sampleDisplayableProcess
     saveProcess(processToSave) {

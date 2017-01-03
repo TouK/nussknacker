@@ -3,7 +3,7 @@ package pl.touk.esp.ui.api
 import akka.actor.ActorRef
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model.headers.ContentDispositionTypes
-import akka.http.scaladsl.model.{HttpMethods, HttpResponse, StatusCodes, headers}
+import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.{Directive, Directives, Route}
 import akka.stream.Materializer
 import argonaut._
@@ -25,6 +25,7 @@ import pl.touk.esp.ui.util.{Argonaut62Support, MultipartUtils}
 import pl.touk.esp.ui.{BadRequestError, EspError, FatalError, NotFoundError}
 import akka.pattern.ask
 import akka.util.Timeout
+
 import scala.concurrent.duration._
 import EspErrorToHttp._
 
@@ -71,6 +72,10 @@ class ProcessesResources(repository: ProcessRepository,
               case None => HttpResponse(status = StatusCodes.NotFound, entity = "Process not found")
             }
           }
+        } ~ delete {
+          complete {
+            repository.deleteProcess(processId).map(toResponse(StatusCodes.OK))
+          }
         }
       } ~ path("processes" / Segment / LongNumber) { (processId, versionId) =>
         get {
@@ -104,10 +109,7 @@ class ProcessesResources(repository: ProcessRepository,
 
               repository.fetchLatestProcessDetailsForProcessId(processId).flatMap {
                 case Some(_) => Future(HttpResponse(status = StatusCodes.BadRequest, entity = "Process already exists"))
-                case None => repository.saveProcess(processId, category, GraphProcess(emptyProcess)).map {
-                  case Xor.Left(error) => espErrorToHttp(error)
-                  case Xor.Right(_) => HttpResponse(status = StatusCodes.Created)
-                }
+                case None => repository.saveProcess(processId, category, GraphProcess(emptyProcess)).map(toResponse(StatusCodes.Created))
               }
 
             }
@@ -188,6 +190,10 @@ class ProcessesResources(repository: ProcessRepository,
         espErrorToHttp(err)
     }
 
+  private def toResponse(okStatus: StatusCode)(xor: Xor[EspError, Unit]): HttpResponse = xor match {
+    case Xor.Left(error) => espErrorToHttp(error)
+    case Xor.Right(_) => HttpResponse(status = okStatus)
+  }
 
 
 }

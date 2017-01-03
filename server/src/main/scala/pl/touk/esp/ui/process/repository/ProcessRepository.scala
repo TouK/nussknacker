@@ -50,6 +50,13 @@ class ProcessRepository(db: JdbcBackend.Database,
     db.run(update.transactionally)
   }
 
+  def deleteProcess(processId: String) : Future[XError[Unit]] = {
+    db.run(processesTable.filter(_.id === processId).delete.transactionally).map {
+      case 0 => Xor.left(ProcessNotFoundError(processId))
+      case 1 => Xor.right(())
+    }
+  }
+
   private def updateProcessInternal(processId: String, processDeploymentData: ProcessDeploymentData)
                    (implicit ec: ExecutionContext, loggedUser: LoggedUser): DB[XError[Unit]] = {
     logger.info(s"Updating process $processId by user $loggedUser")
