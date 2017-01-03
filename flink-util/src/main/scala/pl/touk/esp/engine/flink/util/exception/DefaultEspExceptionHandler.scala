@@ -56,7 +56,7 @@ case class VerboselyLoggingExceptionHandler(processMetaData: MetaData)
   
 }
 
-trait ConsumingNonTransientExceptions { self: FlinkEspExceptionHandler =>
+trait ConsumingNonTransientExceptions extends LazyLogging { self: FlinkEspExceptionHandler =>
 
   protected def consumer: FlinkEspExceptionConsumer
 
@@ -80,6 +80,7 @@ trait ConsumingNonTransientExceptions { self: FlinkEspExceptionHandler =>
         consumer.consume(EspExceptionInfo(nonTransient, exceptionInfo.context))
       case other =>
         val nonTransient = NonTransientException(input = other.getMessage, message = "Unknown exception", cause = other)
+        logger.warn(s"Unknown exception ${other.getMessage} for ${exceptionInfo.context}", other)
         consumer.consume(EspExceptionInfo(nonTransient, exceptionInfo.context))
     }
   }
