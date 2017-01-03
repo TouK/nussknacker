@@ -92,18 +92,18 @@ class FlinkProcessManager(config: Config,
         OptionT.liftF(stopSavingSavepoint(maybeOldJob))
       }
     } yield {
-      logger.debug(s"Deploying $processId. Saving savepoint finished")
+      logger.info(s"Deploying $processId. Saving savepoint finished")
       maybeSavePoint
     }
 
     stoppingResult.value.map { maybeSavepoint =>
       maybeSavepoint.foreach(path => program.setSavepointRestoreSettings(SavepointRestoreSettings.forPath(path, true)))
-      logger.debug(s"Deploying $processId. Setting savepoint finished")
+      logger.info(s"Deploying $processId. Setting savepoint (${program.getSavepointSettings}) finished")
       Try(gateway.run(program)).recover {
         //TODO: jest blad we flink, future nie dostaje odpowiedzi jak poleci wyjatek przy savepoincie :|
         case e:ProgramInvocationException if e.getCause.isInstanceOf[JobTimeoutException] && maybeSavepoint.isDefined =>
           program.setSavepointRestoreSettings(SavepointRestoreSettings.none())
-          logger.info(s"Failed to run $processId with savepoint, trying with empty state")
+          logger.warn(s"Failed to run $processId with savepoint, trying with empty state")
           gateway.run(program)
       }.get
     }
