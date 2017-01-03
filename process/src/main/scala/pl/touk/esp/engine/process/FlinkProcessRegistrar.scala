@@ -8,6 +8,7 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import com.codahale.metrics.{Histogram, SlidingTimeWindowReservoir}
 import com.typesafe.config.Config
+import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions._
 import org.apache.flink.api.java.tuple
 import org.apache.flink.configuration.Configuration
@@ -15,6 +16,7 @@ import org.apache.flink.dropwizard.metrics.DropwizardHistogramWrapper
 import org.apache.flink.metrics.Gauge
 import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.collector.selector.OutputSelector
+import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.functions.{AssignerWithPeriodicWatermarks, AssignerWithPunctuatedWatermarks}
 import org.apache.flink.streaming.api.operators.{AbstractStreamOperator, ChainingStrategy, OneInputStreamOperator, StreamOperator}
 import org.apache.flink.streaming.api.scala.{StreamExecutionEnvironment, _}
@@ -49,17 +51,20 @@ import scala.language.implicitConversions
 
 class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessWithDeps,
                             eventTimeMetricDuration: FiniteDuration,
-                            checkpointInterval: FiniteDuration
-                           ) {
+                            checkpointInterval: FiniteDuration, enableObjectReuse: Boolean
+                           ) extends LazyLogging {
 
   implicit def millisToTime(duration: Long): Time = Time.of(duration, TimeUnit.MILLISECONDS)
 
   def register(env: StreamExecutionEnvironment, process: EspProcess): Unit = {
     Serializers.registerSerializers(env)
+    if (enableObjectReuse) {
+      env.getConfig.enableObjectReuse()
+      logger.info("Object reuse enabled")
+    }
+
     register(env, compileProcess(process))
-
     initializeStateDescriptors(env)
-
   }
 
   //Flink przy serializacji grafu (StateDescriptor:233) inicjalizuje KryoSerializer bez konfiguracji z env
@@ -109,12 +114,12 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessW
 
     def registerParts(start: SplitStream[InterpretationResult],
                       nextParts: Seq[SubsequentPart],
-                      ends: Seq[End]) = {
+                      ends: Seq[End]) : Unit = {
       nextParts.foreach { part =>
         registerSubsequentPart(start.select(part.id), part)
       }
       start.select(EndId)
-        .map(new EndRateMeterFunction(ends))
+        .addSink(new EndRateMeterFunction(ends))
     }
 
     def registerSubsequentPart[T](start: DataStream[InterpretationResult],
@@ -200,10 +205,13 @@ object FlinkProcessRegistrar {
       )
     }
 
+    val enableObjectReuse = config.getOrElse[Boolean]("enableObjectReuse", true)
+
     new FlinkProcessRegistrar(
       compileProcess = compileProcess,
       eventTimeMetricDuration = eventTimeMetricDuration(),
-      checkpointInterval = checkpointInterval()
+      checkpointInterval = checkpointInterval(),
+      enableObjectReuse = enableObjectReuse
     )
   }
 
@@ -335,7 +343,8 @@ object FlinkProcessRegistrar {
 
   }
 
-  class EndRateMeterFunction(ends: Seq[End]) extends RichMapFunction[InterpretationResult, InterpretationResult] {
+  class EndRateMeterFunction(ends: Seq[End]) extends AbstractRichFunction
+    with MapFunction[InterpretationResult, InterpretationResult] with SinkFunction[InterpretationResult] {
 
     @transient private var meterByReference: Map[PartReference, InstantRateMeter] = _
 
@@ -368,6 +377,10 @@ object FlinkProcessRegistrar {
       val meter = meterByReference.getOrElse(value.reference, throw new IllegalArgumentException("Unexpected reference: " + value.reference))
       meter.mark()
       value
+    }
+
+    override def invoke(value: InterpretationResult) = {
+      map(value)
     }
   }
 

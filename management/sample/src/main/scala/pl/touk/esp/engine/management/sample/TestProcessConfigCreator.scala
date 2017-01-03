@@ -9,6 +9,7 @@ import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.util.serialization.KeyedSerializationSchema
 import pl.touk.esp.engine.api._
 import pl.touk.esp.engine.api.exception.ExceptionHandlerFactory
+import pl.touk.esp.engine.api.lazyy.UsingLazyValues
 import pl.touk.esp.engine.api.process._
 import pl.touk.esp.engine.flink.api.process.{FlinkSink, FlinkSource, FlinkSourceFactory}
 import pl.touk.esp.engine.flink.util.exception.VerboselyLoggingExceptionHandler
@@ -70,9 +71,23 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
         }
 
         override def typeInformation = implicitly[TypeInformation[String]]
-      }), "Category1", "Category2")
+      }), "Category1", "Category2"),
+      "csv-source" -> WithCategories(FlinkSourceFactory.noParam(new FlinkSource[CsvRecord] {
+        override def typeInformation = implicitly[TypeInformation[CsvRecord]]
+
+        override def toFlinkSource = new SourceFunction[CsvRecord] {
+          override def cancel() = {}
+
+          override def run(ctx: SourceContext[CsvRecord]) = {}
+        }
+
+        override def timestampAssigner = None
+
+      }, Some((a: String) => CsvRecord(a.split("\\|").toList))), "Category1", "Category2")
     )
+
   }
+
 
   //potrzebujemy czegos takiego bo CollectionSource konczy sie sam i testy mi glupich rzeczy nie wykrywaly :)
   def prepareNotEndingSource: FlinkSource[String] = {
@@ -103,7 +118,9 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
       "componentService" -> WithCategories(EmptyService, "Category1", "Category2"),
       "transactionService" -> WithCategories(EmptyService, "Category1"),
       "serviceModelService" -> WithCategories(EmptyService, "Category1", "Category2"),
-      "paramService" -> WithCategories(OneParamService, "Category1")
+      "paramService" -> WithCategories(OneParamService, "Category1"),
+      "enricher" -> WithCategories(Enricher, "Category1", "Category2")
+
     )
   }
 
@@ -153,4 +170,19 @@ case object EmptyService extends Service {
 
 case object OneParamService extends Service {
   def invoke(@ParamName("param") param: String) = Future.successful(param)
+}
+
+case object Enricher extends Service {
+  def invoke(@ParamName("param") param: String) = Future.successful(RichObject(param, 123L, Some("rrrr")))
+}
+
+case class RichObject(field1: String, field2: Long, field3: Option[String])
+
+case class CsvRecord(fields: List[String]) extends UsingLazyValues {
+
+  lazy val firstField = fields.head
+
+  lazy val enrichedField = lazyValue[RichObject]("enricher", "param" -> firstField)
+
+
 }
