@@ -20,6 +20,7 @@ import scala.concurrent.Future
 object TestFactory {
 
   val testCategory = "TESTCAT"
+  val testEnvironment = "test"
 
   val processValidation = new ProcessValidation(ProcessTestData.validator)
   val processConverter = new ProcessConverter(processValidation)

@@ -17,7 +17,8 @@ import pl.touk.esp.ui.db.migration.SampleData
 import pl.touk.esp.ui.process.deployment.ManagementActor
 import pl.touk.esp.ui.process.displayedgraph.DisplayableProcess
 import pl.touk.esp.ui.process.repository.ProcessRepository.ProcessDetails
-import pl.touk.esp.ui.security.LoggedUser
+import pl.touk.esp.ui.sample.SampleProcess
+import pl.touk.esp.ui.security.{LoggedUser, Permission}
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
@@ -86,6 +87,25 @@ trait EspItTest extends LazyLogging { self: ScalatestRouteTest with Suite with B
   }
 
 
+  def deployProcess(id: String = SampleProcess.process.id) = {
+    Post(s"/processManagement/deploy/$id") ~> withPermissions(deployRoute, Permission.Deploy)
+  }
+
+  def cancelProcess(id: String = SampleProcess.process.id) = {
+    Post(s"/processManagement/cancel/$id") ~> withPermissions(deployRoute, Permission.Deploy)
+  }
+
+  def getSampleProcess = {
+    Get(s"/processes/${SampleProcess.process.id}") ~> withPermissions(processesRoute, Permission.Read)
+  }
+
+  def getProcess(processId: String) = {
+    Get(s"/processes/$processId") ~> withPermissions(processesRoute, Permission.Read)
+  }
+
+  def getProcesses = {
+    Get(s"/processes") ~> withPermissions(processesRoute, Permission.Read)
+  }
 
   override protected def beforeEach(): Unit = {
     import DefaultJdbcProfile.profile.api._
