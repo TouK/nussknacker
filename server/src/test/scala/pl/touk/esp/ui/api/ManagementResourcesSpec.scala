@@ -9,7 +9,8 @@ import argonaut.Parse
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
-import pl.touk.esp.ui.api.helpers.EspItTest
+import pl.touk.esp.engine.api.deployment.CustomProcess
+import pl.touk.esp.ui.api.helpers.{EspItTest, TestFactory}
 import pl.touk.esp.ui.api.helpers.TestFactory._
 import pl.touk.esp.ui.process.repository.ProcessRepository
 import pl.touk.esp.ui.process.repository.ProcessRepository.ProcessDetails
@@ -51,6 +52,18 @@ class ManagementResourcesSpec extends FlatSpec with ScalatestRouteTest
     }
   }
 
+  it should "deploy technical process and mark it as deployed" in {
+    implicit val loggedUser = user().copy(categories = List(testCategory))
+    val processId = "Process1"
+    whenReady(processRepository.saveProcess(processId, testCategory, CustomProcess(""))) { res =>
+      deployProcess(processId) ~> check { status shouldBe StatusCodes.OK }
+      getProcess(processId) ~> check {
+        val processDetails = responseAs[String].decodeOption[ProcessDetails].get
+        processDetails.currentlyDeployedAt shouldBe Set(TestFactory.testEnvironment)
+      }
+    }
+  }
+
   it should "recognize process cancel in deployment list" in {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
     deployProcess() ~> check {
@@ -82,23 +95,6 @@ class ManagementResourcesSpec extends FlatSpec with ScalatestRouteTest
         }
       }
     }
-  }
-
-
-  def deployProcess(id: String = SampleProcess.process.id): RouteTestResult = {
-    Post(s"/processManagement/deploy/$id") ~> withPermissions(deployRoute, Permission.Deploy)
-  }
-
-  def cancelProcess(id: String = SampleProcess.process.id): RouteTestResult = {
-    Post(s"/processManagement/cancel/$id") ~> withPermissions(deployRoute, Permission.Deploy)
-  }
-
-  def getSampleProcess: RouteTestResult = {
-    Get(s"/processes/${SampleProcess.process.id}") ~> withPermissions(processesRoute, Permission.Read)
-  }
-
-  def getProcesses: RouteTestResult = {
-    Get(s"/processes") ~> withPermissions(processesRoute, Permission.Read)
   }
 
   it should "not authorize user with write permission to deploy" in {

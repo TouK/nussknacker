@@ -37,6 +37,15 @@
 
 
 table#process-table
+  iconColumnWidth=50px
+
+  clickableIconColumn()
+    text-align: center
+    width: iconColumnWidth
+    span
+      font-size: 20px
+      cursor: pointer
+
   width: 100%
   border-collapse: initial
   font-size: 14px
@@ -87,8 +96,7 @@ table#process-table
 
   .date-column
     text-align: center
-// TODO - dodać webpackowego importa do ładowania obrazków w stylusie
-  iconColumnWidth=50px
+
   .favourite-column
     width: iconColumnWidth
     text-align: center
@@ -114,18 +122,13 @@ table#process-table
       padding: 0
 
   .metrics-column
-    text-align: center
-    width: iconColumnWidth
-    span
-      font-size: 20px
-      cursor: pointer
+    clickableIconColumn()
 
   .deploy-column
-    text-align: center
-    width: iconColumnWidth
-    span
-      font-size: 20px
-      cursor: pointer
+    clickableIconColumn()
+
+  .stop-column
+    clickableIconColumn()
 
   .status-column
     text-align: center

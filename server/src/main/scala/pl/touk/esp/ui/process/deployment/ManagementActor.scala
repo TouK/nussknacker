@@ -86,16 +86,10 @@ class ManagementActor(environment: String, processManager: ProcessManager,
     logger.debug(s"Deploy of $processId started")
     val deployment = latestVersion.deploymentData
     processManager.deploy(processId, deployment).flatMap { _ =>
-      deployment match {
-        case GraphProcess(_) =>
-          logger.debug(s"Deploy of $processId finished")
-          deployedProcessRepository.markProcessAsDeployed(latestVersion, user.id, environment).recoverWith { case NonFatal(e) =>
-            logger.error("Error during marking process as deployed", e)
-            processManager.cancel(processId).map(_ => Future.failed(e))
-          }
-        case CustomProcess(_) =>
-          logger.debug(s"Deploy of $processId finished")
-          Future.successful(Unit)
+      logger.debug(s"Deploy of $processId finished")
+      deployedProcessRepository.markProcessAsDeployed(latestVersion, user.id, environment).recoverWith { case NonFatal(e) =>
+        logger.error("Error during marking process as deployed", e)
+        processManager.cancel(processId).map(_ => Future.failed(e))
       }
     }
   }

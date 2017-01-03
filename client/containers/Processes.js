@@ -99,6 +99,12 @@ const Processes = React.createClass({
     })
   },
 
+  stop(process) {
+    this.props.actions.toggleConfirmDialog(true, DialogMessages.stop(process.id), () => {
+      return HttpService.stop(process.id).then(this.reloadProcessesAndStatuses)
+    })
+  },
+
   getFilterValue() {
     return this.state.filterVal.toLowerCase();
   },
@@ -192,6 +198,9 @@ const Processes = React.createClass({
             {this.props.loggedUser.canDeploy ? (
               <Th column="deploy" className="deploy-column">Deploy</Th>
             ) : []}
+            {this.props.loggedUser.canDeploy ? (
+              <Th column="stop" className="stop-column">Stop</Th>
+            ) : []}
           </Thead>
 
           {this.state.processes.map((process, index) => {
@@ -224,10 +233,16 @@ const Processes = React.createClass({
                 </Td>
                 {this.props.loggedUser.canDeploy ? (
                   <Td column="deploy" className="deploy-column">
-                    {/*TODO wylaczyc przycisk przy czekaniu na odpowiedz, zarowno tutaj jak i na stronie procesu*/}
                     <span className="glyphicon glyphicon-play" onClick={this.deploy.bind(this, process)}/>
                   </Td>
                 ) : []}
+                { (this.processStatusClass(process) == "status-running" && this.props.loggedUser.canDeploy) ?
+                  (
+                    <Td column="stop" className="stop-column">
+                      <span className="glyphicon glyphicon-stop" onClick={this.stop.bind(this, process)}/>
+                    </Td>
+                  ) : []
+                }
               </Tr>
             )
           })}
