@@ -1,6 +1,6 @@
 package pl.touk.esp.engine.spel
 
-import java.lang.reflect.Method
+import java.lang.reflect.{Method, Modifier}
 import java.time.{LocalDate, LocalDateTime}
 
 import cats.data.{State, Validated}
@@ -64,11 +64,13 @@ class SpelExpressionParser(expressionFunctions: Map[String, Method], globalProce
   private val scalaLazyPropertyAccessor = new ScalaLazyPropertyAccessor
   private val scalaPropertyAccessor = new ScalaPropertyAccessor
   private val scalaOptionOrNullPropertyAccessor = new ScalaOptionOrNullPropertyAccessor
+  private val staticPropertyAccessor = new StaticPropertyAccessor
 
   private val propertyAccessors = Seq(
     scalaLazyPropertyAccessor, // must be before scalaPropertyAccessor
     scalaOptionOrNullPropertyAccessor, // // must be before scalaPropertyAccessor
     scalaPropertyAccessor,
+    staticPropertyAccessor,
     MapPropertyAccessor
   )
 
@@ -142,6 +144,21 @@ object SpelExpressionParser {
     override def getSpecificTargetClasses = null
   }
 
+  class StaticPropertyAccessor extends PropertyAccessor with ReadOnly with StaticMethodCaching {
+
+    override protected def reallyFindMethod(name: String, target: Class[_]): Option[Method] = {
+      target.asInstanceOf[Class[_]].getMethods.find(m =>
+        m.getParameterCount == 0 && m.getName == name && Modifier.isStatic(m.getModifiers)
+      )
+    }
+
+    override protected def invokeMethod(method: Method, target: Any, context: EvaluationContext): Any = {
+      method.invoke(target)
+    }
+
+    override def getSpecificTargetClasses: Array[Class[_]] = null
+  }
+
   class ScalaOptionOrNullPropertyAccessor extends PropertyAccessor with ReadOnly with Caching {
 
     override protected def reallyFindMethod(name: String, target: Class[_]) : Option[Method] = {
@@ -189,12 +206,23 @@ object SpelExpressionParser {
     override def getSpecificTargetClasses = Array(classOf[java.util.Map[_, _]])
   }
 
-  trait Caching { self: PropertyAccessor =>
-
-    private val methodsCache = new TrieMap[(String, Class[_]), Option[Method]]()
+  trait Caching extends CachingBase { self: PropertyAccessor =>
 
     override def canRead(context: EvaluationContext, target: scala.Any, name: String) =
       !target.isInstanceOf[Class[_]] && findMethod(name, target).isDefined
+
+    override protected def extractClassFromTarget(target: Any): Class[_] = target.getClass
+  }
+
+  trait StaticMethodCaching extends CachingBase { self: PropertyAccessor =>
+    override def canRead(context: EvaluationContext, target: scala.Any, name: String) =
+      target.isInstanceOf[Class[_]] && findMethod(name, target).isDefined
+
+    override protected def extractClassFromTarget(target: Any): Class[_] = target.asInstanceOf[Class[_]]
+  }
+
+  trait CachingBase { self: PropertyAccessor =>
+    private val methodsCache = new TrieMap[(String, Class[_]), Option[Method]]()
 
     override def read(context: EvaluationContext, target: scala.Any, name: String) =
       findMethod(name, target)
@@ -203,15 +231,14 @@ object SpelExpressionParser {
         }
         .getOrElse(throw new IllegalAccessException("Property is not readable"))
 
-    private def findMethod(name: String, target: Any) = {
-      val targetClass = target.getClass
+    protected def findMethod(name: String, target: Any): Option[Method] = {
+      val targetClass = extractClassFromTarget(target)
       methodsCache.getOrElseUpdate((name, targetClass), reallyFindMethod(name, targetClass))
     }
 
-    protected def reallyFindMethod(name: String, target: Class[_]) : Option[Method]
-
+    protected def extractClassFromTarget(target: Any): Class[_]
     protected def invokeMethod(method: Method, target: Any, context: EvaluationContext): Any
-
+    protected def reallyFindMethod(name: String, target: Class[_]) : Option[Method]
   }
 
   trait ReadOnly { self: PropertyAccessor =>

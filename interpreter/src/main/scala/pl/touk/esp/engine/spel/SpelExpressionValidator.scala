@@ -25,7 +25,7 @@ class SpelExpressionValidator(expr: Expression, ctx: ValidationContext) {
   def validate(): Validated[ExpressionParseError, Expression] = {
     val ast = expr.asInstanceOf[standard.SpelExpression].getAST
     resolveReferences(ast).andThen { _ =>
-      findAllPropertyAccess(ast, None).andThen { propertyAccesses =>
+      findAllPropertyAccess(ast, None, None).andThen { propertyAccesses =>
         propertyAccesses.flatMap(validatePropertyAccess).headOption match {
           case Some(error) => Validated.invalid(error)
           case None => Validated.valid(expr)
@@ -41,30 +41,30 @@ class SpelExpressionValidator(expr: Expression, ctx: ValidationContext) {
     else Validated.Invalid(ExpressionParseError(s"Unresolved references ${notResolved.mkString(", ")}"))
   }
 
-  private def findAllPropertyAccess(n: SpelNode, rootClass: Option[ClazzRef]): Validated[ExpressionParseError, List[SpelPropertyAccess]] = {
+  private def findAllPropertyAccess(n: SpelNode, rootClass: Option[ClazzRef], parent: Option[SpelNode]): Validated[ExpressionParseError, List[SpelPropertyAccess]] = {
     n match {
       case ce: CompoundExpression if ce.childrenHead.isInstanceOf[VariableReference] =>
         findVariableReferenceAccess(ce.childrenHead.asInstanceOf[VariableReference], ce.children.tail.toList)
       //TODO: walidacja zmiennych w srodku Projection/Selection
       case ce: CompoundExpression if ce.childrenHead.isInstanceOf[PropertyOrFieldReference] =>
         Validated.invalid(ExpressionParseError(s"Non reference '${ce.childrenHead.toStringAST}' occurred. Maybe you missed '#' in front of it?"))
-      case prop: PropertyOrFieldReference if rootClass.isEmpty =>
+      case prop: PropertyOrFieldReference if rootClass.isEmpty && parent.exists(_.isInstanceOf[MethodReference]) =>
         Validated.invalid(ExpressionParseError(s"Non reference '${prop.toStringAST}' occurred. Maybe you missed '#' in front of it?"))
       //TODO: walidacja zmiennych w srodku Projection/Selection, ale wtedy musielibysmy znac typ zawartosci listy...
       case prop: Projection =>
-        validateChildren(n.children, Some(ClazzRef(classOf[Object])))
+        validateChildren(n.children, Some(ClazzRef(classOf[Object])), Some(n))
       case sel: Selection =>
-        validateChildren(n.children, Some(ClazzRef(classOf[Object])))
+        validateChildren(n.children, Some(ClazzRef(classOf[Object])), Some(n))
       case map: InlineMap =>
         //we take only odd indices, even ones are map keys...
-        validateChildren(n.children.zipWithIndex.filter(_._2 % 2 == 1).map(_._1), None)
-      case _ =>
-        validateChildren(n.children, None)
+        validateChildren(n.children.zipWithIndex.filter(_._2 % 2 == 1).map(_._1), None, Some(n))
+      case other =>
+        validateChildren(n.children, None, Some(n))
     }
   }
 
-  private def validateChildren(children: Seq[SpelNode], rootClass: Option[ClazzRef]): Validated[expression.ExpressionParseError, List[SpelPropertyAccess]] = {
-    val accessesWithErrors = children.toList.map { child => findAllPropertyAccess(child, rootClass).toValidatedNel }.sequence
+  private def validateChildren(children: Seq[SpelNode], rootClass: Option[ClazzRef], parent: Option[SpelNode]): Validated[expression.ExpressionParseError, List[SpelPropertyAccess]] = {
+    val accessesWithErrors = children.toList.map { child => findAllPropertyAccess(child, rootClass, parent).toValidatedNel }.sequence
     accessesWithErrors.map(_.flatten).leftMap(_.head)
   }
 
