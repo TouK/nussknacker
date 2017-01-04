@@ -137,8 +137,14 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
   it should "validate map literals" in {
     val ctxWithInput = ctx.withVariable("input", SampleValue(444))
     parse("{ Field1: 'Field1Value', Field2: 'Field2Value', Field3: #input.value }", ctxWithInput, Map()) shouldBe 'valid
+  }
 
-
+  it should "evaluate static field/method using property syntax" in {
+    val globalVars = Map("processHelper" -> ClazzRef.apply(SampleGlobalObject.getClass))
+    parseOrFail("#processHelper.one", globalProcessVariables = globalVars).evaluate[Int](ctx, dumbLazyProvider).value should equal(1)
+    parseOrFail("#processHelper.one()", globalProcessVariables = globalVars).evaluate[Int](ctx, dumbLazyProvider).value should equal(1)
+    parseOrFail("#processHelper.constant", globalProcessVariables = globalVars).evaluate[Int](ctx, dumbLazyProvider).value should equal(4)
+    parseOrFail("#processHelper.constant()", globalProcessVariables = globalVars).evaluate[Int](ctx, dumbLazyProvider).value should equal(4)
   }
 
 }
@@ -151,4 +157,5 @@ case class SampleValue(value: Int)
 object SampleGlobalObject {
   val constant = 4
   def add(a: Int, b: Int): Int = a + b
+  def one() = 1
 }
