@@ -227,7 +227,8 @@ function graphReducer(state, action) {
 }
 
 const emptyProcessActivity = {
-  comments: []
+  comments: [],
+  attachments: []
 }
 
 function processActivityReducer(state = emptyProcessActivity, action) {
@@ -235,7 +236,8 @@ function processActivityReducer(state = emptyProcessActivity, action) {
     case "DISPLAY_PROCESS_ACTIVITY": {
       return {
         ...state,
-        comments: action.comments
+        comments: action.comments,
+        attachments: action.attachments
       }
     }
     default:

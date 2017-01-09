@@ -10,7 +10,10 @@ import scala.concurrent.{ExecutionContext, Future}
 object MultipartUtils {
 
   def readFile(byteSource: Source[ByteString, Any])(implicit ec: ExecutionContext, mat: Materializer): Future[String] =
-    byteSource.runWith(Sink.seq).map(_.flatten.toArray).map(new String(_))
+    readFileBytes(byteSource).map(new String(_))
+
+  def readFileBytes(byteSource: Source[ByteString, Any])(implicit ec: ExecutionContext, mat: Materializer): Future[Array[Byte]] =
+    byteSource.runWith(Sink.seq).map(_.flatten.toArray)
 
   def prepareMultiPart(content: String, name: String, fileName: String = "file.json") =
     Multipart.FormData(Multipart.FormData.BodyPart.Strict(name,

@@ -117,19 +117,22 @@ ul.breadcrumbs-list
   background-color: #ddd;
 }
 
+processActivityList()
+  width 100%
+  font-size 10px
+  float left
+  padding 10px 5px 0 0
+  .user
+    font-weight bold
+  .footer
+    font-style italic
+    p
+      margin-bottom 0
+
 .process-comments
   margin-bottom 10px
   .process-comments-list
-    width 100%
-    font-size 10px
-    float left
-    padding 10px 5px 0 0
-    .user
-      font-weight bold
-    .footer
-      font-style italic
-      p
-        margin-bottom 0
+    processActivityList()
 
   .add-comment
     font-size 12px
@@ -138,3 +141,23 @@ ul.breadcrumbs-list
       height 60px
     button
       margin-top 10px
+
+
+.process-attachments
+  cursor: default
+  margin-bottom 10px
+  .process-attachments-list
+    processActivityList()
+
+  .details
+    display inline-block
+
+  .download-attachment
+    margin-left 10px
+    cursor: pointer
+    display inline-block
+    font-size 15px
+
+  .add-attachments
+    font-size 12px
+    display inline-block

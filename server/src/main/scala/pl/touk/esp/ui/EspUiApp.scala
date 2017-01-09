@@ -51,7 +51,8 @@ object EspUiApp extends App with Directives with LazyLogging {
 
   val processRepository = new ProcessRepository(db, DefaultJdbcProfile.profile, processConverter)
   val deploymentProcessRepository = new DeployedProcessRepository(db, DefaultJdbcProfile.profile, buildInfo)
-  val commentsRepository = new ProcessActivityRepository(db, DefaultJdbcProfile.profile)
+  val processActivityRepository = new ProcessActivityRepository(db, DefaultJdbcProfile.profile)
+  val attachmentService = new ProcessAttachmentService(config.getString("attachmentsPath"), processActivityRepository)
 
 
   val authenticator = new SimpleAuthenticator(config.getString("usersFile"))
@@ -74,7 +75,7 @@ object EspUiApp extends App with Directives with LazyLogging {
             pathPrefix("api") {
 
               new ProcessesResources(processRepository, managementActor, processConverter, processValidation).route(user) ~
-                new ProcessActivityResource(commentsRepository).route(user) ~
+                new ProcessActivityResource(processActivityRepository, attachmentService).route(user) ~
                 new ManagementResources(processDefinition.typesInformation, managementActor).route(user) ~
                 new ValidationResources(processValidation, processConverter).route(user) ~
                 new DefinitionResources(processDefinition).route(user) ~

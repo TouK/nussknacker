@@ -26,12 +26,21 @@ export function addComment(processId, processVersionId, comment) {
   }
 }
 
+export function addAttachment(processId, processVersionId, comment) {
+  return (dispatch) => {
+    return HttpService.addAttachment(processId, processVersionId, comment).then(() => {
+      return dispatch(displayProcessActivity(processId))
+    })
+  }
+}
+
 export function displayProcessActivity(processId) {
   return (dispatch) => {
     return HttpService.fetchProcessActivity(processId).then((activity) => {
       return dispatch({
         type: "DISPLAY_PROCESS_ACTIVITY",
-        comments: activity.comments
+        comments: activity.comments,
+        attachments: activity.attachments
       })
     })
   }

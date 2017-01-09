@@ -10,7 +10,7 @@ import db.migration.DefaultJdbcProfile
 import org.scalatest._
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.ui.api.helpers.TestFactory._
-import pl.touk.esp.ui.api.{ManagementResources, ProcessActivityResource, ProcessesResources}
+import pl.touk.esp.ui.api._
 import pl.touk.esp.ui.codec.{ProcessTypeCodec, UiCodecs}
 import pl.touk.esp.ui.db.EspTables
 import pl.touk.esp.ui.db.migration.SampleData
@@ -34,17 +34,19 @@ trait EspItTest extends LazyLogging { self: ScalatestRouteTest with Suite with B
 
   val env = "test"
   val db = DbTesting.db
+  val attachmentsPath = "/tmp/attachments" + System.currentTimeMillis()
 
   val processRepository = newProcessRepository(db)
   val deploymentProcessRepository = newDeploymentProcessRepository(db)
-  val commentsRepository = newCommentsRepository(db)
+  val processActivityRepository = newProcessActivityRepository(db)
 
   val managementActor = ManagementActor(env, InMemoryMocks.mockProcessManager, processRepository, deploymentProcessRepository)
   val processesRoute = (u:LoggedUser) => new ProcessesResources(processRepository, managementActor, processConverter, processValidation).route(u)
 
   val processesRouteWithAllPermissions = withAllPermissions(processesRoute)
   val deployRoute = (u:LoggedUser) =>  new ManagementResources(InMemoryMocks.mockProcessManager.getProcessDefinition.typesInformation, managementActor).route(u)
-  val processActivityRoute = (u:LoggedUser) =>  new ProcessActivityResource(commentsRepository).route(u)
+  val attachmentService = new ProcessAttachmentService(attachmentsPath, processActivityRepository)
+  val processActivityRoute = (u:LoggedUser) =>  new ProcessActivityResource(processActivityRepository, attachmentService).route(u)
 
   def saveProcess(processId: String, process: EspProcess)(testCode: => Assertion): Assertion = {
     Post(s"/processes/$processId/$testCategory") ~> processesRouteWithAllPermissions ~> check {

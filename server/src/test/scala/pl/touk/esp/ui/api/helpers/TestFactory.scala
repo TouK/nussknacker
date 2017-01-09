@@ -32,7 +32,7 @@ object TestFactory {
 
   def newDeploymentProcessRepository(db: JdbcBackend.Database) = new DeployedProcessRepository(db, DefaultJdbcProfile.profile,
     buildInfo)
-  def newCommentsRepository(db: JdbcBackend.Database) = new ProcessActivityRepository(db, DefaultJdbcProfile.profile)
+  def newProcessActivityRepository(db: JdbcBackend.Database) = new ProcessActivityRepository(db, DefaultJdbcProfile.profile)
   val mockProcessManager = InMemoryMocks.mockProcessManager
 
   object InMemoryMocks {

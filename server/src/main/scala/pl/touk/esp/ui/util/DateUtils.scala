@@ -12,4 +12,8 @@ object DateUtils {
   def toLocalDateTime(t: Timestamp) = {
     LocalDateTime.ofInstant(t.toInstant, ZoneId.systemDefault())
   }
+
+  def toMillis(ldt: LocalDateTime) = {
+    ldt.atZone(ZoneId.systemDefault()).toInstant.toEpochMilli
+  }
 }
