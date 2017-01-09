@@ -3,6 +3,7 @@ package pl.touk.esp.engine.spel
 import java.math.BigDecimal
 import java.text.ParseException
 import java.time.LocalDate
+import java.util.Collections
 
 import cats.data.Validated.{Invalid, Valid}
 import org.scalatest.{FlatSpec, Matchers}
@@ -73,6 +74,11 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
     parseOrFail("#obj.children.?[id == '55'].empty").evaluate[Boolean](ctx, dumbLazyProvider).value should equal(true)
     parseOrFail("#obj.children.?[id == '5'].size()").evaluate[Integer](ctx, dumbLazyProvider).value should equal(1: Integer)
 
+  }
+
+  it should "evaluate map " in {
+    val ctxWithVar = ctx.withVariable("processVariables", Collections.singletonMap("processingStartTime", 11L))
+    parseOrFail("#processVariables['processingStartTime']", ctxWithVar).evaluate[Long](ctxWithVar, dumbLazyProvider).value should equal(11L)
   }
 
   it should "perform date operations" in {
