@@ -123,10 +123,10 @@ espButton()
   color: buttonTextColor
   transition: background-color 0.3s
 
-  &:disabled
-    background-color: grey
-    cursor: not-allowed
-  &:not(:disabled):hover
+  &:disabled,&.disabled
+    background-color: grey !important
+    cursor: not-allowed !important
+  &:not(:disabled):hover,&:not(.disabled):hover
     background-color: buttonBkgHover
 
 .espButton

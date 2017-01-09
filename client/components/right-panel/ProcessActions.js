@@ -8,7 +8,6 @@ import ActionsUtils from "../../actions/ActionsUtils";
 import HttpService from "../../http/HttpService";
 import DialogMessages from "../../common/DialogMessages";
 import ProcessUtils from "../../common/ProcessUtils";
-import appConfig from "appConfig";
 
 class ProcessActions extends React.Component {
 
@@ -68,7 +67,7 @@ class ProcessActions extends React.Component {
   }
 
   exportProcess = () => {
-    window.open(`${appConfig.API_URL}/processes/export/${this.processId()}/${this.versionId()}`);
+    HttpService.exportProcess(this.processId(), this.versionId())
   }
 
   importProcess = (files) => {

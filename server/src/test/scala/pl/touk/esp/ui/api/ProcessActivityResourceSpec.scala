@@ -3,12 +3,14 @@ package pl.touk.esp.ui.api
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
 import argonaut.Argonaut._
+import org.apache.commons.io.FileUtils
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.esp.ui.api.helpers.EspItTest
 import pl.touk.esp.ui.api.helpers.TestFactory._
 import pl.touk.esp.ui.process.repository.ProcessActivityRepository.ProcessActivity
+import pl.touk.esp.ui.util.{DateUtils, MultipartUtils}
 
 import scala.concurrent.duration._
 import scala.language.higherKinds
@@ -34,4 +36,61 @@ class ProcessActivityResourceSpec extends FlatSpec with ScalatestRouteTest with 
     }
   }
 
+  it should "add attachment to process and then be able to download it" in {
+    val processToSave = ProcessTestData.sampleDisplayableProcess
+    saveProcess(processToSave) { status shouldEqual StatusCodes.OK}
+
+    val fileName = "important_file.txt"
+    val fileContent = "very important content"
+    val mutipartFile = MultipartUtils.prepareMultiPart(fileContent, "attachment", fileName)
+
+    Post(s"/processes/${processToSave.id}/1/activity/attachments", mutipartFile) ~> processActivityRouteWithAllPermission ~> check {
+      status shouldEqual StatusCodes.OK
+
+      Get(s"/processes/${processToSave.id}/activity") ~> processActivityRouteWithAllPermission ~> check {
+        val processActivity = responseAs[String].decodeOption[ProcessActivity].get
+        val attachment = processActivity.attachments.head
+        attachment.fileName shouldBe fileName
+        attachment.processId shouldBe processToSave.id
+        getAttachment(processToSave.id, attachment.id) { responseAs[String] shouldBe fileContent }
+      }
+    }
+  }
+
+  it should "handle attachments with the same name" in {
+    val processToSave = ProcessTestData.sampleDisplayableProcess
+    saveProcess(processToSave) { status shouldEqual StatusCodes.OK}
+
+    val fileName = "important_file.txt"
+    val fileContent1 = "very important content1"
+    val fileContent2 = "very important content2"
+    val mutipartFile1 = MultipartUtils.prepareMultiPart(fileContent1, "attachment", fileName)
+    val mutipartFile2 = MultipartUtils.prepareMultiPart(fileContent2, "attachment", fileName)
+
+    Post(s"/processes/${processToSave.id}/1/activity/attachments", mutipartFile1) ~> processActivityRouteWithAllPermission ~> check {
+      status shouldEqual StatusCodes.OK
+      Post(s"/processes/${processToSave.id}/1/activity/attachments", mutipartFile2) ~> processActivityRouteWithAllPermission ~> check {
+        status shouldEqual StatusCodes.OK
+        Get(s"/processes/${processToSave.id}/activity") ~> processActivityRouteWithAllPermission ~> check {
+          val processActivity = responseAs[String].decodeOption[ProcessActivity].get
+          processActivity.attachments.size shouldBe 2
+          val attachmentsOrdered = processActivity.attachments.sortBy(a => DateUtils.toMillis(a.createDate))
+          val (attachment1, attachment2) = (attachmentsOrdered(0), attachmentsOrdered(1))
+          getAttachment(processToSave.id, attachment1.id) { responseAs[String] shouldBe fileContent1 }
+          getAttachment(processToSave.id, attachment2.id) { responseAs[String] shouldBe fileContent2 }
+        }
+      }
+    }
+  }
+
+  def getAttachment(processId: String, attachmentId: Long)(testCode: => Assertion) = {
+    Get(s"/processes/${processId}/1/activity/attachments/${attachmentId}") ~> processActivityRouteWithAllPermission ~> check {
+      testCode
+    }
+  }
+
+  override protected def afterEach(): Unit = {
+    super.afterEach()
+    FileUtils.deleteDirectory(new java.io.File(attachmentsPath))
+  }
 }

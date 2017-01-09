@@ -1,5 +1,6 @@
 package pl.touk.esp.ui.db
 
+import pl.touk.esp.ui.db.entity.AttachmentEntity.AttachmentEntity
 import pl.touk.esp.ui.db.entity.CommentEntity.CommentEntity
 import pl.touk.esp.ui.db.entity.ProcessDeploymentInfoEntity.ProcessDeploymentInfoEntity
 import pl.touk.esp.ui.db.entity.EnvironmentsEntity.EnvironmentsEntity
@@ -15,4 +16,5 @@ object EspTables {
   val tagsTable = TableQuery[TagsEntity]
   val environmentsTable = TableQuery[EnvironmentsEntity]
   val commentsTable = TableQuery[CommentEntity]
+  val attachmentsTable = TableQuery[AttachmentEntity]
 }

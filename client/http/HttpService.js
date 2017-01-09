@@ -111,6 +111,28 @@ export default {
       .catch((error) => this.addError(`Failed to add comment`, error));
   },
 
+  addAttachment(processId, versionId, file) {
+    var formData = new FormData();
+    formData.append("attachment", file)
+
+    return ajaxCallWithoutContentType({
+      url: `${appConfig.API_URL}/processes/${processId}/${versionId}/activity/attachments`,
+      type: 'POST',
+      processData: false,
+      contentType: false,
+      data: formData
+    }).then(() => this.addInfo(`Attachment added`))
+      .catch((error) => this.addError(`Failed to add attachment`, error));
+  },
+
+  downloadAttachment(processId, processVersionId, attachmentId) {
+    window.open(`${appConfig.API_URL}/processes/${processId}/${processVersionId}/activity/attachments/${attachmentId}`)
+  },
+
+  exportProcess(processId, versionId) {
+    window.open(`${appConfig.API_URL}/processes/export/${processId}/${versionId}`);
+  },
+
   validateProcess: (process) => {
     return ajaxCall({
       url: appConfig.API_URL + '/processValidation',

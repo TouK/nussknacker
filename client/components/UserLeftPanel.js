@@ -4,6 +4,7 @@ import { Accordion, Panel } from 'react-bootstrap';
 import ProcessHistory from './ProcessHistory'
 import ToolBox from './ToolBox'
 import ProcessComments from './ProcessComments'
+import ProcessAttachments from './ProcessAttachments'
 
 import '../stylesheets/userPanel.styl';
 
@@ -30,6 +31,9 @@ export default class UserLeftPanel extends Component {
           </Panel>
           <Panel header="Comments" eventKey="3">
             <ProcessComments/>
+          </Panel>
+          <Panel header="Attachments" eventKey="4">
+            <ProcessAttachments/>
           </Panel>
         </Accordion>
     </div>

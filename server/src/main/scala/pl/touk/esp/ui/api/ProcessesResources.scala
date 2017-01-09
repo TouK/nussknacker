@@ -2,7 +2,6 @@ package pl.touk.esp.ui.api
 
 import akka.actor.ActorRef
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
-import akka.http.scaladsl.model.headers.ContentDispositionTypes
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.{Directive, Directives, Route}
 import akka.stream.Materializer
@@ -21,7 +20,7 @@ import pl.touk.esp.ui.process.marshall.{ProcessConverter, UiProcessMarshaller}
 import pl.touk.esp.ui.process.repository.ProcessRepository
 import pl.touk.esp.ui.process.repository.ProcessRepository._
 import pl.touk.esp.ui.security.{LoggedUser, Permission}
-import pl.touk.esp.ui.util.{Argonaut62Support, MultipartUtils}
+import pl.touk.esp.ui.util.{AkkaHttpResponse, Argonaut62Support, MultipartUtils}
 import pl.touk.esp.ui.{BadRequestError, EspError, FatalError, NotFoundError}
 import akka.pattern.ask
 import akka.util.Timeout
@@ -137,10 +136,8 @@ class ProcessesResources(repository: ProcessRepository,
               case Some(process) =>
                 process.json.map { json =>
                   uiProcessMarshaller.toJson(processConverter.fromDisplayable(json), PrettyParams.spaces2)
-                }.map { canJson =>
-                  HttpResponse(status = StatusCodes.OK, entity = canJson,
-                    headers = List(headers.`Content-Disposition`(ContentDispositionTypes.attachment, Map("filename" -> s"$processId.json")))
-                  )
+                }.map { canonicalJson =>
+                  AkkaHttpResponse.asFile(canonicalJson, s"$processId.json")
                 }.getOrElse(HttpResponse(status = StatusCodes.NotFound, entity = "Process not found"))
               case None =>
                 HttpResponse(status = StatusCodes.NotFound, entity = "Process not found")

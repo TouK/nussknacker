@@ -19,6 +19,7 @@ object DbTesting extends LazyLogging {
   def cleanDB(): Try[Unit] = {
     Try {
       val session = db.createSession()
+      session.prepareStatement("""delete from "process_attachments"""").execute()
       session.prepareStatement("""delete from "process_comments"""").execute()
       session.prepareStatement("""delete from "process_deployment_info"""").execute()
       session.prepareStatement("""delete from "process_versions"""").execute()
