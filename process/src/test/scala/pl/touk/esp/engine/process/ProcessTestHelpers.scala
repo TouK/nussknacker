@@ -9,9 +9,9 @@ import org.apache.flink.api.common.functions.RichMapFunction
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor
 import org.apache.flink.streaming.api.scala._
-import pl.touk.esp.engine.api.{LazyInterpreter, _}
-import pl.touk.esp.engine.api.exception.ExceptionHandlerFactory
+import pl.touk.esp.engine.api.exception.{EspExceptionInfo, ExceptionHandlerFactory}
 import pl.touk.esp.engine.api.process._
+import pl.touk.esp.engine.api.{LazyInterpreter, _}
 import pl.touk.esp.engine.flink.api.exception.FlinkEspExceptionHandler
 import pl.touk.esp.engine.flink.api.process.{FlinkSink, FlinkSourceFactory}
 import pl.touk.esp.engine.flink.util.exception.VerboselyLoggingExceptionHandler
@@ -21,9 +21,8 @@ import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.process.api.WithExceptionHandler
 import pl.touk.esp.engine.util.LoggingListener
 
-import scala.collection.mutable.ArrayBuffer
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.{ExecutionContext, Future}
 
 object ProcessTestHelpers {
 
@@ -106,7 +105,12 @@ object ProcessTestHelpers {
   case class CustomMap(lazyHandler: ()=>FlinkEspExceptionHandler) extends RichMapFunction[ValueWithContext[Any], ValueWithContext[Any]] with WithExceptionHandler {
     override def map(value: ValueWithContext[Any]) = {
        //tu nic madrego nie robimy, tylko zeby zobaczyc czy Exceptionhandler jest wstrzykniety
-       exceptionHandler.recover(value)(value.context).orNull
+      try {
+        value
+      } catch {
+        case e:Exception => exceptionHandler.handle(EspExceptionInfo(None, e, value.context))
+          value
+      }
     }
   }
 

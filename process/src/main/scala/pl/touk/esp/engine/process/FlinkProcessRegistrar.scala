@@ -234,10 +234,8 @@ object FlinkProcessRegistrar {
     }
 
     override def flatMap(input: Context, collector: Collector[InterpretationResult]): Unit = {
-      val result = exceptionHandler.recover {
-        val resultFuture = interpreter.interpret(compiledNode, InterpreterMode.Traverse, metaData, input)
-        Await.result(resultFuture, processTimeout)
-      }(input)
+      val result =
+        interpreter.interpretSync(compiledNode, InterpreterMode.Traverse, metaData, input, processTimeout, exceptionHandler)
       result.foreach(collector.collect)
     }
 
@@ -263,10 +261,8 @@ object FlinkProcessRegistrar {
     }
 
     override def flatMap(input: InterpretationResult, collector: Collector[InterpretationResult]): Unit = {
-      val result = exceptionHandler.recover {
-        val resultFuture = interpreter.interpret(compiledNode, InterpreterMode.Traverse, metaData, input.finalContext)
-        Await.result(resultFuture, processTimeout)
-      }(input.finalContext)
+      val result =
+        interpreter.interpretSync(compiledNode, InterpreterMode.Traverse, metaData, input.finalContext, processTimeout, exceptionHandler)
       result.foreach(collector.collect)
     }
 

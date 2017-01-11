@@ -3,6 +3,7 @@ package pl.touk.esp.engine
 import pl.touk.esp.engine.Interpreter._
 import pl.touk.esp.engine.api.InterpreterMode._
 import pl.touk.esp.engine.api._
+import pl.touk.esp.engine.api.exception.{EspExceptionHandler, EspExceptionInfo}
 import pl.touk.esp.engine.api.lazyy.{LazyContext, LazyValuesProvider}
 import pl.touk.esp.engine.compiledgraph.expression._
 import pl.touk.esp.engine.compiledgraph.node.{Sink, Source, _}
@@ -14,10 +15,35 @@ import pl.touk.esp.engine.util.LoggingListener
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.util.Try
+import scala.util.control.NonFatal
 
 class Interpreter private(services: Map[String, ServiceInvoker],
                           lazyEvaluationTimeout: FiniteDuration,
                           listeners: Seq[ProcessListener] = Seq(LoggingListener)) {
+
+  def interpretSync(node: Node,
+                    mode: InterpreterMode,
+                    metaData: MetaData,
+                    ctx: Context, timeout: FiniteDuration, exceptionHandler: EspExceptionHandler)
+                   (implicit executor: ExecutionContext): Option[InterpretationResult] = {
+    try {
+      val resultFuture = interpret(node, mode, metaData, ctx)
+      Some(Await.result(resultFuture, timeout))
+    } catch {
+      case ex@NodeIdExceptionWrapper(nodeId, exception) =>
+        val exInfo = EspExceptionInfo(Some(nodeId), exception, ctx)
+        listeners.foreach(_.exceptionThrown(exInfo))
+        exceptionHandler.handle(exInfo)
+        None
+      case NonFatal(ex) =>
+        val exInfo = EspExceptionInfo(None, ex, ctx)
+        listeners.foreach(_.exceptionThrown(exInfo))
+        exceptionHandler.handle(exInfo)
+        None
+    }
+
+  }
 
   def interpret(node: Node,
                 mode: InterpreterMode,
@@ -26,7 +52,21 @@ class Interpreter private(services: Map[String, ServiceInvoker],
                (implicit executor: ExecutionContext): Future[InterpretationResult] = {
     implicit val implMode = mode
     implicit val impMetaData = metaData
-    interpretNode(node, ctx)
+    tryToInterpretNode(node, ctx)
+  }
+
+  private def tryToInterpretNode(node: Node, ctx: Context)
+                           (implicit mode: InterpreterMode, metaData: MetaData, executor: ExecutionContext): Future[InterpretationResult] = {
+    try {
+      interpretNode(node, ctx).transform(identity, transform(node.id))
+    } catch {
+      case NonFatal(ex) => throw transform(node.id)(ex)
+    }
+  }
+
+  private def transform(nodeId: String)(ex: Throwable) : Throwable = ex match {
+    case ex: NodeIdExceptionWrapper => ex
+    case ex: Throwable => NodeIdExceptionWrapper(nodeId, ex)
   }
 
   private def interpretNode(node: Node, ctx: Context)
@@ -120,13 +160,13 @@ class Interpreter private(services: Map[String, ServiceInvoker],
   private def interpretNext(next: Next, ctx: Context)
                            (implicit mode: InterpreterMode, metaData: MetaData, executor: ExecutionContext): Future[InterpretationResult] =
     next match {
-      case NextNode(node) => interpretNode(node, ctx)
+      case NextNode(node) => tryToInterpretNode(node, ctx)
       case PartRef(ref) => Future.successful(InterpretationResult(NextPartReference(ref), outputValue(ctx), ctx))
     }
 
   //hmm... to tak ma byc?
-  private def outputValue(ctx: Context) : Any =
-    ctx.getOrElse[Any](OutputParamName, new java.util.HashMap[String, Any]())
+  private def outputValue(ctx: Context): Any =
+  ctx.getOrElse[Any](OutputParamName, new java.util.HashMap[String, Any]())
 
   private def createOrUpdateVariable(ctx: Context, varName: String, fields: Seq[Field])
                                     (implicit ec: ExecutionContext, metaData: MetaData, node: Node): Context = {
@@ -162,8 +202,8 @@ class Interpreter private(services: Map[String, ServiceInvoker],
   }
 
   private def evaluateExpression[R](expr: Expression, ctx: Context)
-                           (implicit ec: ExecutionContext, metaData: MetaData, node: Node): ValueWithContext[R]
-    = evaluate(expr, "expression", ctx)
+                                   (implicit ec: ExecutionContext, metaData: MetaData, node: Node): ValueWithContext[R]
+  = evaluate(expr, "expression", ctx)
 
   private def evaluate[R](expr: Expression, expressionId: String, ctx: Context)
                          (implicit ec: ExecutionContext, metaData: MetaData, node: Node): ValueWithContext[R] = {
@@ -179,6 +219,8 @@ class Interpreter private(services: Map[String, ServiceInvoker],
 
   private def implicitParams(ctx: Context): Map[String, Any] =
     ctx.variables // maybe properties of variables too?
+
+  private case class NodeIdExceptionWrapper(nodeId: String, exception: Throwable) extends Exception
 
 }
 

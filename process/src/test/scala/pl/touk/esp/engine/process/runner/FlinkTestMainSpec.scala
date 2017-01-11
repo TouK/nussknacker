@@ -118,6 +118,37 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside {
 
   }
 
+  it should "detect errors" in {
+    val process =
+      EspProcessBuilder
+        .id("proc1")
+        .exceptionHandler()
+        .source("id", "input")
+          .processor("failing", "throwingService", "throw" -> "#input.value1 == 2")
+        .filter("filter", "1 / #input.value1 >= 0")
+        .sink("out", "#input", "monitor")
+
+    val results = FlinkTestMain.run(ProcessMarshaller.toJson(process, PrettyParams.spaces2),
+      ConfigFactory.load(), TestData(List("0|1|2|3|4|5|6", "1|0|2|3|4|5|6", "2|2|2|3|4|5|6", "3|4|2|3|4|5|6")), List())
+
+    val nodeResults = results.nodeResults
+
+    nodeResults("id") should have length 4
+    nodeResults("out") should have length 2
+
+    results.exceptions should have length 2
+
+    val exceptionFromExpression = results.exceptions.head
+    exceptionFromExpression.nodeId shouldBe Some("filter")
+    exceptionFromExpression.context.apply[SimpleRecord]("input").id shouldBe "1"
+    exceptionFromExpression.throwable.getMessage shouldBe "/ by zero"
+
+    val exceptionFromService = results.exceptions.last
+    exceptionFromService.nodeId shouldBe Some("failing")
+    exceptionFromService.context.apply[SimpleRecord]("input").id shouldBe "2"
+    exceptionFromService.throwable.getMessage shouldBe "Thrown as expected"
+  }
+
   def nodeResult(count: Int, vars: (String, Any)*) = NodeResult(Context(s"proc1-id-0-$count", Map(vars: _*)))
 
 }

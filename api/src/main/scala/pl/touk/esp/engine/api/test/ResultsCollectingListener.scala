@@ -4,6 +4,7 @@ import java.util.UUID
 
 import pl.touk.esp.engine.api.{Context, InterpreterMode, MetaData, ProcessListener}
 import pl.touk.esp.engine.api.deployment.test.{ExpressionInvocationResult, NodeResult, TestResults}
+import pl.touk.esp.engine.api.exception.EspExceptionInfo
 
 import scala.util.Try
 
@@ -29,6 +30,9 @@ case class ResultsCollectingListener(holderClass: String, runId: String) extends
 
   override def sinkInvoked(nodeId: String, id: String, context: Context, processMetaData: MetaData, param: Any) = {}
 
+  override def exceptionThrown(exceptionInfo: EspExceptionInfo[_ <: Throwable]) = {
+    ResultsCollectingListenerHolder.updateResult(runId, exceptionInfo)
+  }
 }
 
 
@@ -44,6 +48,11 @@ object ResultsCollectingListenerHolder {
 
   private[test] def updateResult(runId: String, nodeId: String, nodeResult: NodeResult) = synchronized {
     val runResult = results.getOrElse(runId, TestResults()).updateResult(nodeId, nodeResult)
+    results += (runId -> runResult)
+  }
+
+  private[test] def updateResult(runId: String, espExceptionInfo: EspExceptionInfo[_ <: Throwable]) = synchronized {
+    val runResult = results.getOrElse(runId, TestResults()).updateResult(espExceptionInfo)
     results += (runId -> runResult)
   }
 

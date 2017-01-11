@@ -47,11 +47,22 @@ object LogService extends Service {
   }
 }
 
+object ThrowingService extends Service {
+  def invoke(@ParamName("throw") throwing: Boolean): Future[Unit] = {
+    if (throwing) {
+      Future.failed(new RuntimeException("Thrown as expected"))
+    } else  Future.successful(Unit)
+  }
+}
+
 class SimpleProcessConfigCreator extends ProcessConfigCreator {
 
   import org.apache.flink.streaming.api.scala._
 
-  override def services(config: Config) = Map("logService" -> WithCategories(LogService, "c1"))
+  override def services(config: Config) = Map(
+    "logService" -> WithCategories(LogService, "c1"),
+    "throwingService" -> WithCategories(ThrowingService, "c1")
+  )
 
   override def sinkFactories(config: Config) = Map(
     "monitor" -> WithCategories(SinkFactory.noParam(EmptySink), "c2")
