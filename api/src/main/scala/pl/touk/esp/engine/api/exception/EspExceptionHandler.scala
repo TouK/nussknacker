@@ -4,18 +4,7 @@ import pl.touk.esp.engine.api.{Context, MetaData}
 
 trait EspExceptionHandler {
 
-  final def recover[T](block: => T)(context: => Context): Option[T] = {
-    try {
-      Some(block)
-    } catch {
-      case ex: Throwable =>
-        this.handle(EspExceptionInfo(ex, context))
-        None
-    }
-  }
-
-  protected def handle(exceptionInfo: EspExceptionInfo[Throwable]): Unit
-
+  def handle(exceptionInfo: EspExceptionInfo[_ <: Throwable]): Unit
 
 }
 
@@ -34,4 +23,4 @@ object ExceptionHandlerFactory {
 
 
 
-case class EspExceptionInfo[T <: Throwable](throwable: T, context: Context) extends Serializable
+case class EspExceptionInfo[T <: Throwable](nodeId: Option[String], throwable: T, context: Context) extends Serializable

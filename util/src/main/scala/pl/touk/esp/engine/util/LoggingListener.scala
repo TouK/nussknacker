@@ -1,5 +1,6 @@
 package pl.touk.esp.engine.util
 
+import pl.touk.esp.engine.api.exception.EspExceptionInfo
 import pl.touk.esp.engine.api.{Context, InterpreterMode, MetaData, ProcessListener}
 
 import scala.util.Try
@@ -37,5 +38,9 @@ object LoggingListener extends ProcessListener with Serializable {
 
   override def sinkInvoked(nodeId: String, id: String, context: Context, metadata: MetaData, param: Any) = {
     debug(List(metadata.id, nodeId, "sink", id), s"Sink invoked with param: $param. Context: $context")
+  }
+
+  override def exceptionThrown(exceptionInfo: EspExceptionInfo[_ <: Throwable]) = {
+    //TODO:??
   }
 }

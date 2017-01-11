@@ -1,5 +1,7 @@
 package pl.touk.esp.engine.api
 
+import pl.touk.esp.engine.api.exception.EspExceptionInfo
+
 import scala.util.Try
 
 trait ProcessListener {
@@ -21,5 +23,7 @@ trait ProcessListener {
                        context: Context,
                        processMetaData: MetaData,
                        param: Any)
+
+  def exceptionThrown(exceptionInfo: EspExceptionInfo[_<:Throwable]) : Unit
 
 }

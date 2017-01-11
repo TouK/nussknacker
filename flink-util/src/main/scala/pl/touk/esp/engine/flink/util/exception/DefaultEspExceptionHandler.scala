@@ -64,7 +64,7 @@ trait ConsumingNonTransientExceptions extends LazyLogging { self: FlinkEspExcept
     consumer.open(runtimeContext)
   }
 
-  override protected def handle(exceptionInfo: EspExceptionInfo[Throwable]): Unit = {
+  override def handle(exceptionInfo: EspExceptionInfo[_ <: Throwable]): Unit = {
     defaultHandleException(exceptionInfo)
   }
 
@@ -72,16 +72,16 @@ trait ConsumingNonTransientExceptions extends LazyLogging { self: FlinkEspExcept
     consumer.close()
   }
 
-  final protected def defaultHandleException(exceptionInfo: EspExceptionInfo[Throwable]) = {
+  final protected def defaultHandleException(exceptionInfo: EspExceptionInfo[_ <:Throwable]) = {
     exceptionInfo.throwable match {
       case transientExceptionExtractor(_) =>
         throw exceptionInfo.throwable
       case nonTransientExceptionExtractor(nonTransient) =>
-        consumer.consume(EspExceptionInfo(nonTransient, exceptionInfo.context))
+        consumer.consume(EspExceptionInfo(exceptionInfo.nodeId, nonTransient, exceptionInfo.context))
       case other =>
         val nonTransient = NonTransientException(input = other.getMessage, message = "Unknown exception", cause = other)
         logger.warn(s"Unknown exception ${other.getMessage} for ${exceptionInfo.context}", other)
-        consumer.consume(EspExceptionInfo(nonTransient, exceptionInfo.context))
+        consumer.consume(EspExceptionInfo(exceptionInfo.nodeId, nonTransient, exceptionInfo.context))
     }
   }
 
