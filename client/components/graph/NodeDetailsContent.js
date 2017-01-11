@@ -327,12 +327,34 @@ export default class NodeDetailsContent extends React.Component {
           Object.keys(ctx).map((key, ikey) => {
             return (<div className="node-row" key={ikey}>
                 <div className="node-label">{key}:</div>
-                <div className="node-value"><input type="text" readOnly="true"  className="node-input" value={ctx[key]}/></div>
+                <div className="node-value">
+                  <Textarea className="node-input" readOnly={true} value={ctx[key]}/>
+                </div>
               </div>
             )
           })
         }
       </div>)
+    } else {
+      return null;
+    }
+  }
+
+  testErrors = () => {
+    if (this.state.testResultsToShow && this.state.testResultsToShow.error) {
+      var error = this.state.testResultsToShow.error
+
+      //TODO: jakos to nie wyglada rewelacyjnie...
+      return (
+        <ListGroupItem bsStyle="danger">
+          <div className="node-table-body">
+            <div className="node-row">
+              <div className="node-label">Error:</div>
+              <div className="node-value"><Textarea className="node-input" readOnly={true} value={`${error.message} (${error.class})`}/></div>
+            </div>
+          </div>
+        </ListGroupItem>
+      );
     } else {
       return null;
     }
@@ -359,6 +381,7 @@ export default class NodeDetailsContent extends React.Component {
           </ListGroupItem> : null}
         {!_.isEmpty(this.props.nodeErrors) ? <hr/> : null}
         {this.testResultsSelect()}
+        {this.testErrors()}
         {this.customNode()}
         {this.testResults()}
       </div>

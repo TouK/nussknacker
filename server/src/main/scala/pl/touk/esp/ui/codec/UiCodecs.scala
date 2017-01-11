@@ -7,6 +7,7 @@ import argonaut.derive.{JsonSumCodec, JsonSumCodecFor}
 import pl.touk.esp.engine.api
 import pl.touk.esp.engine.api.UserDefinedProcessAdditionalFields
 import pl.touk.esp.engine.api.deployment.test.{ExpressionInvocationResult, TestResults}
+import pl.touk.esp.engine.api.exception.EspExceptionInfo
 import pl.touk.esp.engine.definition.DefinitionExtractor.PlainClazzDefinition
 import pl.touk.esp.engine.graph.node
 import pl.touk.esp.ui.api.ProcessValidation.ValidationResult
@@ -122,6 +123,16 @@ object UiCodecs {
       )
     }
 
+    implicit def exceptionInfo = EncodeJson[EspExceptionInfo[_<:Throwable]] {
+      case EspExceptionInfo(nodeId, throwable, ctx) => jObjectFields(
+        "nodeId" -> nodeId.asJson,
+        "exception" -> jObjectFields(
+          "message" -> jString(throwable.getMessage),
+          "class" -> jString(throwable.getClass.getSimpleName)
+        ),
+        "context" -> ctx.asJson
+      )
+    }
 
     implicit def testResultsEncode = EncodeJson.of[TestResults]
   }

@@ -127,7 +127,8 @@ class Graph extends React.Component {
     }
 
     drawGraph = (data, layout, testResults) => {
-      const nodes = _.map(data.nodes, (n) => { return EspNode.makeElement(n, _.get(testResults, `nodeResults.${n.id}`)) });
+      const nodes = _.map(data.nodes, (n) => { return EspNode.makeElement(n, testResults.nodeResults, _.get(testResults, `nodeResults.${n.id}`),
+        _.get(testResults, `exceptions`, []).filter((i) => i.nodeId == n.id)) });
       const edges = _.map(data.edges, (e) => { return EspNode.makeLink(e) });
       const cells = nodes.concat(edges);
       this.graph.resetCells(cells);

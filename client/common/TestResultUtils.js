@@ -11,11 +11,16 @@ class TestResultUtils {
     return (testResults.invocationResults || {})[nodeId] || []
   }
 
+  _errors = (testResults, nodeId) => {
+    return (testResults.exceptions || []).filter((ex) => ex.nodeId == nodeId)
+  }
+
   resultsForNode = (testResults, nodeId) => {
     if (testResults && this._nodeResults(testResults, nodeId)) {
       return {
         invocationResults: this._invocationResults(testResults, nodeId),
-        nodeResults: this._nodeResults(testResults, nodeId)
+        nodeResults: this._nodeResults(testResults, nodeId),
+        errors: this._errors(testResults, nodeId)
       }
     } else {
       return null;
@@ -28,9 +33,11 @@ class TestResultUtils {
       .invocationResults
       .filter(result => result.context.id == contextId)
       .map(result => [result.name, result.value]))
+    var error = ((nodeTestResults.errors || []).find((error) => error.context.id == contextId) || {}).exception
     return {
       context: context,
-      expressionResults: expressionResults
+      expressionResults: expressionResults,
+      error: error
     }
   }
 
