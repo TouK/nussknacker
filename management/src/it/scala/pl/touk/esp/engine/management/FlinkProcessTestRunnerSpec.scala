@@ -10,6 +10,7 @@ import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.esp.engine.api.Context
 import pl.touk.esp.engine.api.deployment.GraphProcess
 import pl.touk.esp.engine.api.deployment.test.{NodeResult, TestData, TestResults}
+import pl.touk.esp.engine.build.EspProcessBuilder
 import pl.touk.esp.engine.marshall.ProcessMarshaller
 
 import scala.concurrent.Await
@@ -43,4 +44,24 @@ class FlinkProcessTestRunnerSpec extends FlatSpec with Matchers with ScalaFuture
     )
   }
 
+  it should "return correct error messages" in {
+    val processId = UUID.randomUUID().toString
+
+    val process = EspProcessBuilder
+      .id(processId)
+      .exceptionHandler()
+      .source("startProcess", "kafka-transaction")
+      .sink("endSend", "sendSms")
+
+    val config = ConfigFactory.load()
+    val processManager = FlinkProcessManager(config)
+
+    val processData = GraphProcess(ProcessMarshaller.toJson(process, PrettyParams.spaces2))
+
+
+    val caught = intercept[IllegalArgumentException] {
+      Await.result(processManager.test(processId, processData, TestData(List("terefere"))), patienceConfig.timeout)
+    }
+    caught.getMessage shouldBe "Compilation errors: MissingParameters(Set(param1),$process)"
+  }
 }

@@ -8,7 +8,7 @@ import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceCont
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.util.serialization.KeyedSerializationSchema
 import pl.touk.esp.engine.api._
-import pl.touk.esp.engine.api.exception.ExceptionHandlerFactory
+import pl.touk.esp.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
 import pl.touk.esp.engine.api.lazyy.UsingLazyValues
 import pl.touk.esp.engine.api.process._
 import pl.touk.esp.engine.flink.api.process.{FlinkSink, FlinkSource, FlinkSourceFactory}
@@ -126,8 +126,7 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
 
   override def customStreamTransformers(config: Config) = Map("stateful" -> WithCategories(StatefulTransformer, "Category1", "Category2"))
 
-  override def exceptionHandlerFactory(config: Config) =
-    ExceptionHandlerFactory.noParams(VerboselyLoggingExceptionHandler)
+  override def exceptionHandlerFactory(config: Config) = ParamExceptionHandler
 
   override def globalProcessVariables(config: Config) = Map.empty
 
@@ -155,6 +154,11 @@ case object StatefulTransformer extends CustomStreamTransformer {
   object StringFromIr {
     def unapply(ir: InterpretationResult) = Some(ir, ir.finalContext.apply[String]("input"))
   }
+
+}
+
+case object ParamExceptionHandler extends ExceptionHandlerFactory {
+  def create(@ParamName("param1") param: String, metaData: MetaData): EspExceptionHandler = VerboselyLoggingExceptionHandler(metaData)
 
 }
 

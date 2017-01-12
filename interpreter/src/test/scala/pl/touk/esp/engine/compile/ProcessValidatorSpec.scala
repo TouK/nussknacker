@@ -2,9 +2,9 @@ package pl.touk.esp.engine.compile
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data._
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.{FlatSpec, Inside, Matchers}
 import pl.touk.esp.engine._
-import pl.touk.esp.engine.api.Service
+import pl.touk.esp.engine.api.{ParamName, Service}
 import pl.touk.esp.engine.api.lazyy.ContextWithLazyValuesProvider
 import pl.touk.esp.engine.api.process.WithCategories
 import pl.touk.esp.engine.build.{EspProcessBuilder, GraphBuilder}
@@ -16,7 +16,7 @@ import pl.touk.esp.engine.types.EspTypeUtils
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class ProcessValidatorSpec extends FlatSpec with Matchers {
+class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
 
   import spel.Implicits._
 
@@ -272,6 +272,21 @@ class ProcessValidatorSpec extends FlatSpec with Matchers {
       case Valid(_) =>
     }
 
+  }
+
+  it should "validate exception handler params" in {
+
+    val process = EspProcessBuilder
+      .id("process1")
+      .exceptionHandler()
+      .source("id1", "source")
+      .sink("id2", "sink")
+    val definitionWithExceptionHandlerWithParams = baseDefinition.copy(exceptionHandlerFactory =
+      ObjectDefinition.withParams(List(Parameter("param1", ClazzRef(classOf[String])))))
+
+    inside (ProcessValidator.default(definitionWithExceptionHandlerWithParams).validate(process)) {
+      case Invalid(NonEmptyList(MissingParameters(missingParam, "$process"), _)) => missingParam shouldBe Set("param1")
+    }
   }
 
   private val definitionWithTypedSource = baseDefinition.copy(sourceFactories
