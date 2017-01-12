@@ -31,7 +31,7 @@ class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with Matc
     val invalidShapeProcess = DisplayableProcess("p1", ProcessProperties(Some(2), ExceptionHandlerRef(List()), None),
       List(Source("s1", SourceRef(ProcessTestData.existingSourceFactory, List())), node.Filter("f1", Expression("spel", "false"))),
       List(Edge("s1", "f1", None)),
-      ValidationResult(Map()))
+      ValidationResult(Map(), List(), List()))
 
     Post("/processValidation", posting.toEntity(invalidShapeProcess)) ~> route ~> check {
       status shouldEqual StatusCodes.OK

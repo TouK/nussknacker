@@ -22,7 +22,6 @@ export default {
   },
 
   addError(message, error, showErrorText) {
-
     var details = showErrorText && error.responseText ? (<div>{error.responseText}</div>) : null;
     if (notificationSystem) {
       notificationSystem.addNotification({
@@ -171,7 +170,7 @@ export default {
       contentType: false,
       data: formData
     }).then(callback, (error) => {
-      this.addError(`Failed to import`, error);
+      this.addError(`Failed to import`, error, true);
       if (errorCallback) {
         errorCallback(error)
       }
@@ -189,7 +188,7 @@ export default {
       contentType: false,
       data: formData
     }).then(callback, (error) => {
-      this.addError(`Failed to test`, error);
+      this.addError(`Failed to test`, error, true);
       if (errorCallback) {
         errorCallback(error)
       }

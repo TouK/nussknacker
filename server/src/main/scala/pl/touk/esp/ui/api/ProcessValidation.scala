@@ -11,29 +11,29 @@ class ProcessValidation(processValidator: ProcessValidator) {
 
   import pl.touk.esp.ui.util.CollectionsEnrichments._
 
-  def validateFilteringResults(canonical: CanonicalProcess, nodeId: String): ValidationResult = {
-    validate(canonical).filterNode(nodeId)
-  }
-
   def validate(canonical: CanonicalProcess): ValidationResult = {
     processValidator.validate(canonical).leftMap(formatErrors).swap.getOrElse(ValidationResult.success)
   }
 
   private def formatErrors(errors: NonEmptyList[ProcessCompilationError]): ValidationResult = {
+    val globalErrors = errors.filter(_.nodeIds.isEmpty)
+    val processPropertyErrors = errors.filter(_.nodeIds == Set(ProcessCompilationError.ProcessNodeId))
+
     ValidationResult(
       (for {
-        error <- errors.toList
+        error <- errors.toList.filterNot(globalErrors.contains).filterNot(processPropertyErrors.contains)
         nodeId <- error.nodeIds
-      } yield nodeId -> formatErrorMessage(error)).flatGroupByKey
+      } yield nodeId -> formatErrorMessage(error)).flatGroupByKey,
+      processPropertyErrors.map(formatErrorMessage),
+      globalErrors.map(formatErrorMessage)
     )
   }
 
   private def formatErrorMessage(error: ProcessCompilationError): NodeValidationError = {
     val typ = ReflectUtils.fixedClassSimpleNameWithoutParentModule(error.getClass)
+    //TODO: lepsze komunikaty o bledach?
     error match {
       case ExpressionParseError(message, _, fieldName, _) => NodeValidationError(typ, message, fieldName)
-
-
       case _ => NodeValidationError(typ, typ, None)
 
     }
@@ -43,15 +43,14 @@ class ProcessValidation(processValidator: ProcessValidator) {
 
 object ProcessValidation {
 
-  case class ValidationResult(invalidNodes: Map[String, List[NodeValidationError]]) {
-    def filterNode(nodeId: String) =
-      copy(invalidNodes = invalidNodes.filterKeys(_ == nodeId))
-  }
+  case class ValidationResult(invalidNodes: Map[String, List[NodeValidationError]],
+                              processPropertiesErrors: List[NodeValidationError],
+                              globalErrors: List[NodeValidationError])
 
   case class NodeValidationError(typ: String, message: String, fieldName: Option[String])
 
   object ValidationResult {
-    val success = ValidationResult(Map.empty)
+    val success = ValidationResult(Map.empty, List(), List())
   }
 
 }

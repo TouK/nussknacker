@@ -60,7 +60,7 @@ class ProcessConverterSpec extends FlatSpec with Matchers with TableDrivenProper
     )) { (unexpectedEnd) =>
       val process = DisplayableProcess("t1", ProcessProperties(Some(2), ExceptionHandlerRef(List()), None),
         List(Source("s", SourceRef("sourceRef", List())), unexpectedEnd),
-        List(Edge("s", "e", None)), ValidationResult(Map(unexpectedEnd.id -> List(NodeValidationError("InvalidTailOfBranch","InvalidTailOfBranch",None))))
+        List(Edge("s", "e", None)), ValidationResult(Map(unexpectedEnd.id -> List(NodeValidationError("InvalidTailOfBranch","InvalidTailOfBranch",None))), List(), List())
       )
       displayableCanonical(process) shouldBe process
     }

@@ -50,12 +50,17 @@ class ManagementActor(environment: String, processManager: ProcessManager,
       logger.info(s"Finishing ${beingDeployed.get(id)} of $id")
       beingDeployed -= id
     case Test(processId, testData, user) =>
-      implicit val loggedUser = user
-      reply(processRepository.fetchLatestProcessVersion(processId).flatMap {
-        case Some(version) => processManager.test(processId, version.deploymentData, testData)
-        case None => Future(ProcessNotFoundError(processId))
-      })
-
+      //to b. smutne, ale Flink przechowuje przy deploymencie za pomoca Client.run niektore rzeczy w staticu
+      //i leci wyjatek jak sie testy rownlolegle pusci...
+      if (beingDeployed.nonEmpty) {
+        sender() ! Status.Failure(ProcessIsBeingDeployedNoTestAllowed)
+      } else {
+        implicit val loggedUser = user
+        reply(processRepository.fetchLatestProcessVersion(processId).flatMap {
+          case Some(version) => processManager.test(processId, version.deploymentData, testData)
+          case None => Future(ProcessNotFoundError(processId))
+        })
+      }
   }
 
   private def withDeploymentInfo(id: String, userId: String, actionName: String, action: => Future[_]) = {
@@ -115,3 +120,7 @@ case class DeployInfo(userId: String, time: Long, action: String)
 
 class ProcessIsBeingDeployed(id: String, info: DeployInfo) extends
   Exception(s"${info.action} is currently performed on $id by ${info.userId}") with EspError
+
+object ProcessIsBeingDeployedNoTestAllowed extends
+  Exception("Cannot run tests when deployment in progress. Please wait...") with EspError
+
