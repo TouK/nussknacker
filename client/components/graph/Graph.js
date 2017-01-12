@@ -168,6 +168,11 @@ class Graph extends React.Component {
       }
     }
 
+  isProcessValid = () => {
+    var result = (this.props.processToDisplay || {}).validationResult
+    return !result || (Object.keys(result.invalidNodes || {}).length == 0 && (result.globalErrors || []).length == 0 && (result.processPropertiesErrors || []).length == 0)
+  }
+
 
   changeLayoutIfNeeded = () => {
       var newLayout = _.map(this.graph.getElements(), (el) => {
@@ -245,9 +250,10 @@ class Graph extends React.Component {
     }
 
     render() {
+
         return this.props.connectDropTarget(
             <div>
-                <h2 id="process-name">{this.props.processToDisplay.id}</h2>
+                <h2 id="process-name" className={this.isProcessValid() ? "" : "alert alert-danger"}>{this.props.processToDisplay.id}</h2>
                 {!_.isEmpty(this.props.nodeToDisplay) ? <NodeDetailsModal/> : null }
                 <div ref="espGraph" id="esp-graph"></div>
                 <button type="button" className="btn btn-default hidden" onClick={this.directedLayout}>Directed layout</button>
