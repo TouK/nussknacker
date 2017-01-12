@@ -16,7 +16,7 @@ object StatefulSampleProcess {
 
    EspProcessBuilder
       .id(id)
-      .exceptionHandler()
+      .exceptionHandler("param1" -> "val1")
       .source("state", "oneSource")
           .customNode("stateful", "input", "stateful", "keyBy" -> "#input")
         .sink("end", "#input", "kafka-string", "topic" -> s"output-$id")

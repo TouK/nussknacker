@@ -1,6 +1,7 @@
 package pl.touk.esp.engine.management
 
 import java.io.File
+import java.lang.reflect.InvocationTargetException
 import java.net.{URL, URLClassLoader}
 
 import com.typesafe.config.Config
@@ -34,10 +35,15 @@ class FlinkProcessTestRunner(config: Config, jars: List[URL]) {
     //we have to use context loader, as in UI we have don't have esp-process on classpath...
     ThreadUtils.withThisAsContextClassLoader(classLoader) {
       processDeploymentData match {
-        case GraphProcess(json) => invoker(json, config, testData, jars).asInstanceOf[TestResults]
+        case GraphProcess(json) => tryToInvoke(testData, json).asInstanceOf[TestResults]
         case _ => throw new IllegalArgumentException(s"Process $processId with deploymentData $processDeploymentData cannot be tested")
       }
     }
   }
 
+  def tryToInvoke(testData: TestData, json: String): Any = try {
+    invoker(json, config, testData, jars)
+  } catch {
+    case e:InvocationTargetException => throw e.getTargetException
+  }
 }

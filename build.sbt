@@ -124,6 +124,8 @@ lazy val management = (project in file("management")).
     Keys.test in IntegrationTest <<= (Keys.test in IntegrationTest).dependsOn(
       publishLocal in (assembly in Compile) in management_sample
     ),
+    //jest problem we flinku jesli sie naraz deployuje i puszcza testy :|
+    parallelExecution in IntegrationTest := false,
     libraryDependencies ++= {
       Seq(
         "org.typelevel" %% "cats-core" % catsV,
