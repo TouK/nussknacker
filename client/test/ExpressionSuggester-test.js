@@ -17,7 +17,8 @@ const typesInformation = [
 
 const variables = {
   "#input": "org.A",
-  "#other": "org.C"
+  "#other": "org.C",
+  "#ANOTHER": "org.A"
 }
 
 const expressionSuggester = new ExpressionSuggester(typesInformation, variables)
@@ -32,8 +33,19 @@ describe("expression suggester", () => {
     const suggestions = expressionSuggester.suggestionsFor("#", "#".length)
     expect(suggestions).toEqual([
       { methodName: "#input"},
-      { methodName: "#other"}
+      { methodName: "#other"},
+      { methodName: "#ANOTHER"}
     ])
+  })
+
+  it("should filter global variables suggestions", () => {
+    const suggestions = expressionSuggester.suggestionsFor("#ot", "#ot".length)
+    expect(suggestions).toEqual([{methodName: "#other"}])
+  })
+
+  it("should filter uppercase global variables suggestions", () => {
+    const suggestions = expressionSuggester.suggestionsFor("#ANO", "#ANO".length)
+    expect(suggestions).toEqual([{methodName: "#ANOTHER"}])
   })
 
   it("should suggest global variable", () => {

@@ -43,7 +43,7 @@ export default class ExpressionSuggester {
   _getSuggestions = (value, focusedClazz) => {
     const variableNames = _.keys(this._variables)
     const variableAlreadySelected = _.some(variableNames, (variable) => { return _.includes(value, `${variable}.`) })
-    const variableNotSelected = _.some(variableNames, (variable) => { return _.startsWith(variable, value.toLowerCase()) })
+    const variableNotSelected = _.some(variableNames, (variable) => { return _.startsWith(variable.toLowerCase(), value.toLowerCase()) })
     if (variableAlreadySelected && focusedClazz) {
       const currentType = this._getTypeInfo(focusedClazz)
       const inputValue = this._justTypedProperty(value)
