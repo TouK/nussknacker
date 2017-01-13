@@ -7,6 +7,7 @@ import Textarea from "react-textarea-autosize";
 import NodeUtils from "./NodeUtils";
 import ExpressionSuggest from "./ExpressionSuggest";
 import TestResultUtils from "../../common/TestResultUtils";
+import NodeParametersMerger from "./NodeParametersMerger";
 
 //zastanowic sie czy this.state tutaj nie powinien byc przepychany przez reduxa,
 // bo obecnie ten stan moze byc przypadkowo resetowany kiedy parent component dostanie nowe propsy - bo tak mamy
@@ -16,7 +17,7 @@ export default class NodeDetailsContent extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      editedNode: props.node,
+      editedNode: NodeParametersMerger.addMissingParametersToNode(props.processDefinitionData, props.node),
       codeCompletionEnabled: true,
     }
     this.state = {

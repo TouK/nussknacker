@@ -116,6 +116,7 @@ class NodeDetailsModal extends React.Component {
           </div>
           <div className="modalContent">
             <NodeDetailsContent isEditMode={this.state.isEditMode} node={this.state.editedNode}
+                                processDefinitionData={this.props.processDefinitionData}
                                 nodeErrors={this.props.nodeErrors} onChange={this.updateNodeState} testResults={testResults}/>
           </div>
           <div className="modalFooter"></div>
@@ -137,7 +138,8 @@ function mapState(state) {
     processToDisplay: state.graphReducer.processToDisplay,
     readOnly: !state.settings.loggedUser.canWrite,
     showNodeDetailsModal: state.ui.showNodeDetailsModal,
-    testResults: state.graphReducer.testResults
+    testResults: state.graphReducer.testResults,
+    processDefinitionData: state.settings.processDefinitionData
   };
 }
 
