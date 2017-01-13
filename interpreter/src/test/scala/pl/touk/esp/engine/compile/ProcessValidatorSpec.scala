@@ -289,6 +289,19 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
     }
   }
 
+  it should "validate service params" in {
+    val process = EspProcessBuilder
+      .id("process1")
+      .exceptionHandler()
+      .source("id1", "source")
+      .enricher("enricher1", "out", "withParamsService")
+      .sink("id2", "sink")
+
+    inside (ProcessValidator.default(definitionWithTypedSource).validate(process)) {
+      case Invalid(NonEmptyList(MissingParameters(missingParam, "enricher1"), _)) => missingParam shouldBe Set("par1")
+    }
+  }
+
   private val definitionWithTypedSource = baseDefinition.copy(sourceFactories
     = Map("source" -> ObjectDefinition.noParam.copy(returnType = ClazzRef(classOf[SimpleRecord]))))
 
