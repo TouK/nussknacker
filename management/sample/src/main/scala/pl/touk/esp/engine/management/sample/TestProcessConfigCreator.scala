@@ -119,7 +119,8 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
       "transactionService" -> WithCategories(EmptyService, "Category1"),
       "serviceModelService" -> WithCategories(EmptyService, "Category1", "Category2"),
       "paramService" -> WithCategories(OneParamService, "Category1"),
-      "enricher" -> WithCategories(Enricher, "Category1", "Category2")
+      "enricher" -> WithCategories(Enricher, "Category1", "Category2"),
+      "multipleParamsService" -> WithCategories(MultipleParamsService, "Category1", "Category2")
 
     )
   }
@@ -189,4 +190,11 @@ case class CsvRecord(fields: List[String]) extends UsingLazyValues {
   lazy val enrichedField = lazyValue[RichObject]("enricher", "param" -> firstField)
 
 
+}
+
+case object MultipleParamsService extends Service {
+  def invoke(@ParamName("foo") foo: String,
+             @ParamName("bar") bar: String,
+             @ParamName("baz") baz: String,
+             @ParamName("quax") quax: String) = Future.successful(Unit)
 }
