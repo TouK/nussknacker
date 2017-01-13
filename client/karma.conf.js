@@ -5,15 +5,15 @@ var _ = require('lodash')
 module.exports = function(config) {
   config.set({
     basePath: '',
-    frameworks: ['jasmine'],
+    frameworks: ['jasmine', 'es6-shim'],
     files: [
       'test/**/*.js'
     ],
 
     preprocessors: {
       // add webpack as preprocessor
-      '*.js': ['webpack', 'sourcemap'],
-      'test/**/*.js': ['webpack', 'sourcemap']
+      '*.js': ['webpack'],
+      'test/**/*.js': ['webpack']
     },
 
     webpack: { //tutaj staramy sie w miare cywilizowany sposob uzyc istniejacej konfiguracji webpacka i dopchnac tylko niektore rzeczy na potrzeby testow
@@ -40,23 +40,6 @@ module.exports = function(config) {
     webpackServer: {
       noInfo: true //please don't spam the console when running in karma!
     },
-
-    plugins: [
-      'karma-webpack',
-      'karma-jasmine',
-      'karma-sourcemap-loader',
-      'karma-phantomjs-launcher',
-      'karma-verbose-reporter',
-      'karma-spec-reporter'
-    ],
-
-    //fixme to jakby w ogole nie dziala?
-    babelPreprocessor: {
-      options: {
-        presets: ["es2015-loose", "stage-0", "react"]
-      }
-    },
-
 
     reporters: ['spec'],
     port: 9876,
