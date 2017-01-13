@@ -18,7 +18,7 @@ class Tool extends React.Component {
     const icon = require('../assets/img/' + iconName);
 
     return this.props.connectDragSource(
-      <div className="tool">
+      <div className="tool" title={this.props.label}>
         <div className="icon-block">
           <img src={icon} className="toolIcon"/>
         </div>
