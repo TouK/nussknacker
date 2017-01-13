@@ -174,7 +174,14 @@ private[compile] trait PartSubGraphCompilerBase {
       val definedParamNames = parameterProvider.parameters.map(_.name).toSet
       val usedParamNamesSet = usedParamNames.toSet
       val redundantParams = usedParamNamesSet.diff(definedParamNames)
-      if (redundantParams.nonEmpty) invalid(RedundantParameters(redundantParams)).toValidatedNel else valid(Unit)
+      val notUsedParams = definedParamNames.diff(usedParamNamesSet)
+      if (redundantParams.nonEmpty) {
+        invalid(RedundantParameters(redundantParams)).toValidatedNel
+      } else if (notUsedParams.nonEmpty) {
+        invalid(MissingParameters(notUsedParams)).toValidatedNel
+      } else {
+        valid(Unit)
+      }
     }
 
     private def compile(n: graph.variable.Field, ctx: ValidationContext)

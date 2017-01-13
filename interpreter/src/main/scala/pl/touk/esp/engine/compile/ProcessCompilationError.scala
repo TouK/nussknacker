@@ -84,7 +84,7 @@ object ProcessCompilationError {
     extends PartSubGraphCompilationError with InASingleNode
 
   object MissingParameters {
-    def apply(params: Set[String])(implicit nodeId: NodeId): ProcessCompilationError =
+    def apply(params: Set[String])(implicit nodeId: NodeId): PartSubGraphCompilationError =
       MissingParameters(params, nodeId.id)
   }
 
