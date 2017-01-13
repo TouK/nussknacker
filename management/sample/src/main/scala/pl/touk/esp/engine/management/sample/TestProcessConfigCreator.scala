@@ -129,7 +129,9 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
 
   override def exceptionHandlerFactory(config: Config) = ParamExceptionHandler
 
-  override def globalProcessVariables(config: Config) = Map.empty
+  override def globalProcessVariables(config: Config) = Map(
+    "DATE" -> WithCategories(DateProcessHelper.getClass, "Category1", "Category2")
+  )
 
   override def buildInfo(): Map[String, String] = {
     Map(
@@ -197,4 +199,8 @@ case object MultipleParamsService extends Service {
              @ParamName("bar") bar: String,
              @ParamName("baz") baz: String,
              @ParamName("quax") quax: String) = Future.successful(Unit)
+}
+
+object DateProcessHelper {
+  def nowTimestamp(): Long = System.currentTimeMillis()
 }
