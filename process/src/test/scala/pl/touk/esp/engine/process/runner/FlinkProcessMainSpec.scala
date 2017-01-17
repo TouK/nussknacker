@@ -1,5 +1,6 @@
 package pl.touk.esp.engine.process.runner
 
+import java.net.ConnectException
 import java.util.Date
 
 import argonaut.PrettyParams
@@ -12,7 +13,7 @@ import pl.touk.esp.engine.api.process.{ProcessConfigCreator, SinkFactory, WithCa
 import pl.touk.esp.engine.api.{ParamName, Service}
 import pl.touk.esp.engine.build.EspProcessBuilder
 import pl.touk.esp.engine.flink.api.process.FlinkSourceFactory
-import pl.touk.esp.engine.flink.util.exception.VerboselyLoggingExceptionHandler
+import pl.touk.esp.engine.flink.util.exception.{VerboselyLoggingExceptionHandler, VerboselyLoggingRestartingExceptionHandler}
 import pl.touk.esp.engine.flink.util.source.CollectionSource
 import pl.touk.esp.engine.marshall.ProcessMarshaller
 import pl.touk.esp.engine.process.ProcessTestHelpers.{EmptySink, SimpleRecord, StateCustomNode}
@@ -47,10 +48,10 @@ object LogService extends Service {
   }
 }
 
-object ThrowingService extends Service {
+class ThrowingService(exception: Exception) extends Service {
   def invoke(@ParamName("throw") throwing: Boolean): Future[Unit] = {
     if (throwing) {
-      Future.failed(new RuntimeException("Thrown as expected"))
+      Future.failed(exception)
     } else  Future.successful(Unit)
   }
 }
@@ -61,7 +62,9 @@ class SimpleProcessConfigCreator extends ProcessConfigCreator {
 
   override def services(config: Config) = Map(
     "logService" -> WithCategories(LogService, "c1"),
-    "throwingService" -> WithCategories(ThrowingService, "c1")
+    "throwingService" -> WithCategories(new ThrowingService(new RuntimeException("Thrown as expected")), "c1"),
+    "throwingTransientService" -> WithCategories(new ThrowingService(new ConnectException()), "c1")
+
   )
 
   override def sinkFactories(config: Config) = Map(
@@ -82,7 +85,7 @@ class SimpleProcessConfigCreator extends ProcessConfigCreator {
   ), "cat2"))
 
   override def exceptionHandlerFactory(config: Config) =
-    ExceptionHandlerFactory.noParams(VerboselyLoggingExceptionHandler)
+    ExceptionHandlerFactory.noParams(VerboselyLoggingRestartingExceptionHandler)
 
   override def globalProcessVariables(config: Config): Map[String, WithCategories[Class[_]]] = Map.empty
 
