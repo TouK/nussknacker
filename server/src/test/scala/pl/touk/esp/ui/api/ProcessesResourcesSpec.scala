@@ -301,7 +301,13 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
     }
 
     Get(s"/processes/export/${processToSave.id}/3") ~> routWithAllPermissions ~> check {
-      responseAs[String] should include(description)
+      val latestProcessVersion = responseAs[String]
+      latestProcessVersion should include(description)
+
+      Get(s"/processes/export/${processToSave.id}") ~> routWithAllPermissions ~> check {
+        responseAs[String] shouldBe latestProcessVersion
+      }
+
     }
 
   }

@@ -129,19 +129,16 @@ class ProcessesResources(repository: ProcessRepository,
             }
           }
         }
-      } ~ path("processes" / "export" / Segment/ LongNumber) { (processId, versionId) =>
+      } ~ path("processes" / "export" / Segment / LongNumber) { (processId, versionId) =>
         get {
           complete {
-            repository.fetchProcessDetailsForId(processId, versionId).map {
-              case Some(process) =>
-                process.json.map { json =>
-                  uiProcessMarshaller.toJson(processConverter.fromDisplayable(json), PrettyParams.spaces2)
-                }.map { canonicalJson =>
-                  AkkaHttpResponse.asFile(canonicalJson, s"$processId.json")
-                }.getOrElse(HttpResponse(status = StatusCodes.NotFound, entity = "Process not found"))
-              case None =>
-                HttpResponse(status = StatusCodes.NotFound, entity = "Process not found")
-            }
+            repository.fetchProcessDetailsForId(processId, versionId).map { exportProcess }
+          }
+        }
+      } ~ path("processes" / "export" / Segment ) { processId =>
+        get {
+          complete {
+            repository.fetchLatestProcessDetailsForProcessId(processId).map { exportProcess }
           }
         }
       } ~ path("processes" / "import" / Segment) { processId =>
@@ -165,7 +162,16 @@ class ProcessesResources(repository: ProcessRepository,
     }
   }
 
-
+  private def exportProcess(processDetails: Option[ProcessDetails]) = processDetails match {
+    case Some(process) =>
+      process.json.map { json =>
+        uiProcessMarshaller.toJson(processConverter.fromDisplayable(json), PrettyParams.spaces2)
+      }.map { canonicalJson =>
+        AkkaHttpResponse.asFile(canonicalJson, s"${process.id}.json")
+      }.getOrElse(HttpResponse(status = StatusCodes.NotFound, entity = "Process not found"))
+    case None =>
+      HttpResponse(status = StatusCodes.NotFound, entity = "Process not found")
+  }
 
   private def fetchProcessStatesForProcesses(processes: List[ProcessDetails]): Future[Map[String, Option[ProcessStatus]]] = {
     import cats.instances.future._
