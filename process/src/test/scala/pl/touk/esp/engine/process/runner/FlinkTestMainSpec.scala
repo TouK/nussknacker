@@ -4,6 +4,7 @@ import java.util.Date
 
 import argonaut.PrettyParams
 import com.typesafe.config.ConfigFactory
+import org.apache.flink.runtime.client.JobExecutionException
 import org.scalatest.{FlatSpec, Inside, Matchers}
 import pl.touk.esp.engine.api.Context
 import pl.touk.esp.engine.api.deployment.test.{ExpressionInvocationResult, NodeResult, TestData}
@@ -11,6 +12,11 @@ import pl.touk.esp.engine.build.EspProcessBuilder
 import pl.touk.esp.engine.marshall.ProcessMarshaller
 import pl.touk.esp.engine.process.ProcessTestHelpers.{SimpleRecord, SimpleRecordWithPreviousValue}
 import pl.touk.esp.engine.spel
+
+import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{Await, Future}
+import scala.util.Failure
 
 class FlinkTestMainSpec extends FlatSpec with Matchers with Inside {
 
@@ -147,6 +153,25 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside {
     exceptionFromService.nodeId shouldBe Some("failing")
     exceptionFromService.context.apply[SimpleRecord]("input").id shouldBe "2"
     exceptionFromService.throwable.getMessage shouldBe "Thrown as expected"
+  }
+
+  it should "handle transient errors" in {
+    val process =
+      EspProcessBuilder
+        .id("proc1")
+        .exceptionHandler()
+        .source("id", "input")
+        .processor("failing", "throwingTransientService", "throw" -> "#input.value1 == 2")
+        .sink("out", "#input", "monitor")
+
+    val run = Future {
+      FlinkTestMain.run(ProcessMarshaller.toJson(process, PrettyParams.spaces2),
+        ConfigFactory.load(), TestData(List("2|2|2|3|4|5|6")), List())
+    }
+
+    intercept[JobExecutionException](Await.result(run, 5 seconds))
+
+
   }
 
   def nodeResult(count: Int, vars: (String, Any)*) = NodeResult(Context(s"proc1-id-0-$count", Map(vars: _*)))

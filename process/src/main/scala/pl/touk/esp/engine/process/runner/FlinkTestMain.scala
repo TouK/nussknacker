@@ -4,6 +4,7 @@ import java.net.URL
 
 import com.typesafe.config.Config
 import org.apache.flink.api.common.ExecutionConfig
+import org.apache.flink.api.common.restartstrategy.RestartStrategies.NoRestartStrategyConfiguration
 import org.apache.flink.configuration.{ConfigConstants, Configuration}
 import org.apache.flink.runtime.minicluster.LocalFlinkMiniCluster
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
@@ -33,14 +34,16 @@ object FlinkTestMain extends FlinkRunner {
 
 class FlinkTestMain(config: Config, testData: TestData, process: EspProcess, creator: ProcessConfigCreator) extends Serializable {
 
+  def overWriteRestartStrategy(env: StreamExecutionEnvironment) = env.setRestartStrategy(new NoRestartStrategyConfiguration)
+
   def runTest(urls: List[URL]): TestResults = {
     val env = StreamExecutionEnvironment.createLocalEnvironment(process.metaData.parallelism.getOrElse(1))
-
 
     val collectingListener = ResultsCollectingListenerHolder.registerRun
     try {
       val registrar: FlinkProcessRegistrar = FlinkProcessRegistrar(creator, config, prepareSources(env.getConfig), List(collectingListener))
       registrar.register(env, process)
+      overWriteRestartStrategy(env)
       execute(env, urls)
       collectingListener.results
     } finally {
