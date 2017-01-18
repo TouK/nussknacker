@@ -40,6 +40,7 @@ class Graph extends React.Component {
     componentDidMount() {
         this.processGraphPaper = this.createPaper()
         this.drawGraph(this.props.processToDisplay, this.props.layout, this.props.testResults)
+        this.panAndZoom = this.enablePanZoom();
         this.changeNodeDetailsOnClick();
         this.labelToFrontOnHover();
         this.cursorBehaviour();
@@ -137,9 +138,6 @@ class Graph extends React.Component {
       } else {
         _.forEach(layout, el => this.graph.getCell(el.id).set('position', el.position));
       }
-      if (!this.panAndZoom) {
-        this.panAndZoom = this.enablePanZoom();
-      }
     }
 
     highlightNodes = (data, nodeToDisplay) => {
@@ -185,27 +183,25 @@ class Graph extends React.Component {
     }
 
     enablePanZoom() {
-      if (this.props.processToDisplay.nodes.length > 0) {
-        var panAndZoom = svgPanZoom(this.refs.espGraph.childNodes[0],
-            {
-                viewportSelector: this.refs.espGraph.childNodes[0].childNodes[0],
-                fit: true,
-                zoomScaleSensitivity: 0.4,
-                controlIconsEnabled: true,
-                panEnabled: false,
-                dblClickZoomEnabled: false
-            });
-        this.processGraphPaper.on('blank:pointerdown', (evt, x, y) => {
-            panAndZoom.enablePan();
+      var panAndZoom = svgPanZoom(this.refs.espGraph.childNodes[0],
+        {
+          viewportSelector: this.refs.espGraph.childNodes[0].childNodes[0],
+          fit: this.props.processToDisplay.nodes.length > 1,
+          zoomScaleSensitivity: 0.4,
+          controlIconsEnabled: true,
+          panEnabled: false,
+          dblClickZoomEnabled: false,
+          minZoom: 0.2,
+          maxZoom: 10
         });
-        this.processGraphPaper.on('cell:pointerup blank:pointerup', (cellView, event) => {
-            panAndZoom.disablePan();
-        });
-        this.centerGraphHack(panAndZoom)
-        return panAndZoom
-      } else {
-        return null;
-      }
+      this.processGraphPaper.on('blank:pointerdown', (evt, x, y) => {
+        panAndZoom.enablePan();
+      });
+      this.processGraphPaper.on('cell:pointerup blank:pointerup', (cellView, event) => {
+        panAndZoom.disablePan();
+      });
+      this.centerGraphHack(panAndZoom)
+      return panAndZoom
     }
 
     //fixme To jest niestety hack. Po dodaniu prawego panelu graf nie jest juz wysrodkowany, ten hack to w ulomny sposob naprawia.
