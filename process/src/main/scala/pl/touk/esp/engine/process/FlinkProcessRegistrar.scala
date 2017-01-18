@@ -309,8 +309,10 @@ object FlinkProcessRegistrar {
         new SlidingTimeWindowReservoir(slidingWindow.toMillis, TimeUnit.MILLISECONDS)))
 
     lazy val minimalDelayGauge = new Gauge[Long] {
-      val now = System.currentTimeMillis()
-      override def getValue = now - lastElement.getOrElse(now)
+      override def getValue = {
+        val now = System.currentTimeMillis()
+        now - lastElement.getOrElse(now)
+      }
     }
 
     var lastElement : Option[Long] = None
