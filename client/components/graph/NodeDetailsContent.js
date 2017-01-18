@@ -55,7 +55,7 @@ export default class NodeDetailsContent extends React.Component {
         return (
           <div className="node-table-body">
             {this.createField("input", "Id", "id")}
-            {this.createField("input", "Service Id", "service.id")}
+            {this.createReadonlyField("input", "Service Id", "service.id")}
             {this.state.editedNode.service.parameters.map((params, index) => {
               //TODO: czy tu i w custom node i gdzies jeszcze chcemy te hr??
               return (
@@ -74,7 +74,7 @@ export default class NodeDetailsContent extends React.Component {
           <div className="node-table-body">
             {this.createField("input", "Id", "id")}
             {this.createField("input", "Output", "outputVar")}
-            {this.createField("input", "Node type", "nodeType")}
+            {this.createReadonlyField("input", "Node type", "nodeType")}
             {this.state.editedNode.parameters.map((params, index) => {
               return (
                 <div className="node-block" key={index}>
@@ -169,7 +169,7 @@ export default class NodeDetailsContent extends React.Component {
     return (
       <div className="node-table-body">
         {this.createField("input", "Id", "id")}
-        {this.createField("input", "Ref Type", "ref.typ")}
+        {this.createReadonlyField("input", "Ref Type", "ref.typ")}
         {this.state.editedNode.ref.parameters.map((params, index) => {
           return (
             <div className="node-block" key={index}>
@@ -184,8 +184,12 @@ export default class NodeDetailsContent extends React.Component {
     )
   }
 
-  createField = (fieldType, fieldLabel, fieldProperty, fieldName) => {
-    return this.doCreateField(fieldType, fieldLabel, fieldName, _.get(this.state.editedNode, fieldProperty, ""), ((newValue) => this.setNodeDataAt(fieldProperty, newValue) ))
+  createReadonlyField = (fieldType, fieldLabel, fieldProperty) => {
+    return this.createField(fieldType, fieldLabel, fieldProperty, null, true)
+  }
+
+  createField = (fieldType, fieldLabel, fieldProperty, fieldName, readonly) => {
+    return this.doCreateField(fieldType, fieldLabel, fieldName, _.get(this.state.editedNode, fieldProperty, ""), ((newValue) => this.setNodeDataAt(fieldProperty, newValue) ), readonly)
   }
 
   createListField = (fieldType, fieldLabel, obj, fieldProperty, listFieldProperty, fieldName) => {
@@ -199,15 +203,16 @@ export default class NodeDetailsContent extends React.Component {
       return (
         <div>
           {field}
-          <div className="node-row">
-            <div className="node-label">
-              Evaluated:
+          <ListGroupItem bsStyle="success" bordered="false">
+            <div className="node-row">
+              <div className="node-label">
+                Evaluated:
+              </div>
+              <div className="node-value">
+                <Textarea rows={1} cols={50} className="node-input" value={testValue} readOnly={true}/>
+              </div>
             </div>
-            <div className="node-value">
-              <input type="text" readOnly="true" className="node-input"
-                     value={testValue}/>
-            </div>
-          </div>
+            </ListGroupItem>
         </div>
       )
     } else {
@@ -215,9 +220,9 @@ export default class NodeDetailsContent extends React.Component {
     }
   }
 
-  doCreateField = (fieldType, fieldLabel, fieldName, fieldValue, handleChange) => {
+  doCreateField = (fieldType, fieldLabel, fieldName, fieldValue, handleChange, forceReadonly) => {
 
-
+    const readOnly = !this.props.isEditMode || forceReadonly
     switch (fieldType) {
       case 'input':
         return (
@@ -225,7 +230,7 @@ export default class NodeDetailsContent extends React.Component {
             <div className="node-label">{fieldLabel}:</div>
             <div className="node-value"><input type="text" className="node-input" value={fieldValue}
                                                onChange={(e) => handleChange(e.target.value)}
-                                               readOnly={!this.props.isEditMode}/></div>
+                                               readOnly={readOnly}/></div>
           </div>
         )
       case 'plain-textarea':
@@ -234,7 +239,7 @@ export default class NodeDetailsContent extends React.Component {
             <div className="node-label">{fieldLabel}:</div>
             <div className="node-value">
               <Textarea rows={1} cols={50} className="node-input" value={fieldValue}
-                        onChange={(e) => handleChange(e.target.value)} readOnly={!this.props.isEditMode}/>
+                        onChange={(e) => handleChange(e.target.value)} readOnly={readOnly}/>
             </div>
           </div>
         )
@@ -249,7 +254,7 @@ export default class NodeDetailsContent extends React.Component {
                   onValueChange: handleChange, readOnly: !this.props.isEditMode
                 }}/> :
                 <Textarea rows={1} cols={50} className="node-input" value={fieldValue}
-                          onChange={(e) => handleChange(e.target.value)} readOnly={!this.props.isEditMode}/>
+                          onChange={(e) => handleChange(e.target.value)} readOnly={readOnly}/>
               }
               {process.env.NODE_ENV == "development" ?
                 <div style={{color: "red"}}>
@@ -320,7 +325,10 @@ export default class NodeDetailsContent extends React.Component {
   testResults = () => {
     if (this.state.testResultsToShow && this.state.testResultsToShow.context) {
       var ctx = this.state.testResultsToShow.context.variables
-      return (<div className="node-table-body">
+      return (
+        <ListGroupItem bsStyle="success">
+
+        <div className="node-table-body">
         <div className="node-row">
           <div className="node-label">Variables:</div>
         </div>
@@ -335,7 +343,7 @@ export default class NodeDetailsContent extends React.Component {
             )
           })
         }
-      </div>)
+      </div></ListGroupItem>)
     } else {
       return null;
     }
