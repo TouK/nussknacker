@@ -191,7 +191,7 @@ class Interpreter private(services: Map[String, ServiceInvoker],
         (valueWithModifiedContext.context, newAccParams)
 
     }
-    val resultFuture = ref.invoker.invoke(implicitParams(ctx) ++ preparedParams)
+    val resultFuture = ref.invoker.invoke(preparedParams)
     resultFuture.onComplete { result =>
       //TODO: a implicit tez??
       listeners.foreach(_.serviceInvoked(node.id, ref.id, ctx, metaData, preparedParams, result))
@@ -209,16 +209,12 @@ class Interpreter private(services: Map[String, ServiceInvoker],
                          (implicit ec: ExecutionContext, metaData: MetaData, node: Node): ValueWithContext[R] = {
     val lazyValuesProvider = new LazyValuesProviderImpl(
       services = services,
-      implicitParams = implicitParams(ctx),
       timeout = lazyEvaluationTimeout
     )
     val valueWithModifiedContext = expr.evaluate[R](ctx, lazyValuesProvider)
     listeners.foreach(_.expressionEvaluated(node.id, expressionId, expr.original, ctx, metaData, valueWithModifiedContext.value))
     valueWithModifiedContext
   }
-
-  private def implicitParams(ctx: Context): Map[String, Any] =
-    ctx.variables // maybe properties of variables too?
 
   private case class NodeIdExceptionWrapper(nodeId: String, exception: Throwable) extends Exception
 
@@ -238,7 +234,6 @@ object Interpreter {
   }
 
   private class LazyValuesProviderImpl(services: Map[String, ServiceInvoker],
-                                       implicitParams: Map[String, Any],
                                        timeout: FiniteDuration)
                                       (implicit ec: ExecutionContext) extends LazyValuesProvider {
 
@@ -257,7 +252,7 @@ object Interpreter {
       val service = services.getOrElse(
         serviceId,
         throw new IllegalArgumentException(s"Service with id: $serviceId doesn't exist"))
-      val resultFuture = service.invoke(implicitParams ++ paramsMap)
+      val resultFuture = service.invoke(paramsMap)
       // await jest niestety niezbędny tutaj, bo implementacje wyrażeń (spel) nie potrafią przetwarzać asynchronicznie
       Await.result(resultFuture, timeout).asInstanceOf[T]
     }
