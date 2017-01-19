@@ -112,6 +112,7 @@ joint.shapes.devs.EspNode = joint.shapes.basic.Generic.extend(_.extend({}, joint
 export default {
 
     makeElement(node, hasResults, testResult, testErrors) {
+        var descr = (node.additionalFields || {}).description
         var customAttrs = require('json!../../assets/json/nodeAttributes.json');
 
         var headerLabel = _.toUpper(customAttrs[node.type].name);
@@ -141,8 +142,11 @@ export default {
           '.background': {
             width: width
           },
+          '.background title': {
+            text: descr
+          },
           '.body': {
-            width: width,
+            width: width
           },
           'rect.headerFiller': {
             x: 0, y: headerFillerHeight,
@@ -154,6 +158,9 @@ export default {
             width: width,
             height: headerHeight,
             fill: customAttrs[node.type].styles.fill
+          },
+          'rect.blockHeader title': {
+            text: descr
           },
           '.headerLabel': {
             text: headerLabel,
