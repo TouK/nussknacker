@@ -143,8 +143,8 @@ private[compile] trait PartSubGraphCompilerBase {
           data match {
             case graph.node.Processor(id, ref, _) =>
               compile(ref, ctx).map(compiledgraph.node.EndingProcessor(id, _)).map(CompiledNode(_, ctx))
-            case graph.node.Sink(id, _, optionalExpression, _) =>
-              optionalExpression.map(oe => compile(oe, None, ctx)).sequence.map(compiledgraph.node.Sink(id, _)).map(CompiledNode(_, ctx))
+            case graph.node.Sink(id, ref, optionalExpression, _) =>
+              optionalExpression.map(oe => compile(oe, None, ctx)).sequence.map(compiledgraph.node.Sink(id, ref.typ, _)).map(CompiledNode(_, ctx))
           }
       }
     }

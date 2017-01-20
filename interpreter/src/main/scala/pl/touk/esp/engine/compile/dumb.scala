@@ -1,7 +1,8 @@
 package pl.touk.esp.engine.compile
 
+import pl.touk.esp.engine.api.test.InvocationCollectors.NodeContext
 import pl.touk.esp.engine.api.{CustomStreamTransformer, MetaData}
-import pl.touk.esp.engine.definition.{CustomNodeInvokerDeps, CustomNodeInvoker, ProcessObjectFactory, ServiceInvoker}
+import pl.touk.esp.engine.definition.{CustomNodeInvoker, CustomNodeInvokerDeps, ProcessObjectFactory, ServiceInvoker}
 import pl.touk.esp.engine.graph.param.Parameter
 
 import scala.concurrent.ExecutionContext
@@ -10,7 +11,7 @@ object dumb {
 
   object DumbServiceInvoker extends ServiceInvoker {
 
-    override def invoke(params: Map[String, Any])
+    override def invoke(params: Map[String, Any], nodeContext: NodeContext)
                        (implicit ec: ExecutionContext) = throw new IllegalAccessException("Dumb service shouldn't be invoked")
 
   }

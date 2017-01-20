@@ -11,10 +11,11 @@ class KafkaSinkFactory(config: KafkaConfig,
                        serializationSchema: KeyedSerializationSchema[Any]) extends SinkFactory {
 
   def create(processMetaData: MetaData, @ParamName(`TopicParamName`) topic: String): Sink = {
-    new FlinkSink {
+    new FlinkSink with Serializable {
       override def toFlinkFunction: SinkFunction[Any] = {
         PartitionByKeyFlinkKafkaProducer09(config.kafkaAddress, topic, serializationSchema, config.kafkaProperties)
       }
+      override def testDataOutput: Option[(Any) => String] = Option(value => new String(serializationSchema.serializeValue(value)))
     }
   }
 }
@@ -24,4 +25,3 @@ object KafkaSinkFactory {
   final val TopicParamName = "topic"
 
 }
-

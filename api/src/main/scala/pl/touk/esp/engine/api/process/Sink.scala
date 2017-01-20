@@ -3,10 +3,11 @@ package pl.touk.esp.engine.api.process
 
 trait Sink {
 
+  def testDataOutput: Option[Any => String]
 
 }
 
-trait SinkFactory {
+trait SinkFactory extends Serializable {
 
 }
 
