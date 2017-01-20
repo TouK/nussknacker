@@ -6,7 +6,7 @@ import argonaut._
 import argonaut.derive.{JsonSumCodec, JsonSumCodecFor}
 import pl.touk.esp.engine.api
 import pl.touk.esp.engine.api.UserDefinedProcessAdditionalFields
-import pl.touk.esp.engine.api.deployment.test.{ExpressionInvocationResult, TestResults}
+import pl.touk.esp.engine.api.deployment.test.{ExpressionInvocationResult, MockedResult, TestResults}
 import pl.touk.esp.engine.api.exception.EspExceptionInfo
 import pl.touk.esp.engine.definition.DefinitionExtractor.PlainClazzDefinition
 import pl.touk.esp.engine.graph.node
@@ -117,6 +117,14 @@ object UiCodecs {
 
     implicit def exprInvocationResult =   EncodeJson[ExpressionInvocationResult] {
       case ExpressionInvocationResult(context, name, result) => jObjectFields(
+        "context" -> context.asJson,
+        "name" -> jString(name),
+        "value" -> encodeVariable(result)
+      )
+    }
+
+    implicit def mockedResult = EncodeJson[MockedResult] {
+      case MockedResult(context, name, result) => jObjectFields(
         "context" -> context.asJson,
         "name" -> jString(name),
         "value" -> encodeVariable(result)
