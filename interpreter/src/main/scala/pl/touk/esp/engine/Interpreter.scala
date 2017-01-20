@@ -5,6 +5,7 @@ import pl.touk.esp.engine.api.InterpreterMode._
 import pl.touk.esp.engine.api._
 import pl.touk.esp.engine.api.exception.{EspExceptionHandler, EspExceptionInfo}
 import pl.touk.esp.engine.api.lazyy.{LazyContext, LazyValuesProvider}
+import pl.touk.esp.engine.api.test.InvocationCollectors.NodeContext
 import pl.touk.esp.engine.compiledgraph.expression._
 import pl.touk.esp.engine.compiledgraph.node.{Sink, Source, _}
 import pl.touk.esp.engine.compiledgraph.service._
@@ -121,14 +122,14 @@ class Interpreter private(services: Map[String, ServiceInvoker],
           case (accCtx, None) =>
             interpretOptionalNext(node, defaultNext, accCtx)
         }
-      case (Sink(id, optionalExpression), Traverse) =>
+      case (Sink(id, ref, optionalExpression), Traverse) =>
         val valueWithModifiedContext = optionalExpression match {
           case Some(expression) =>
             evaluateExpression[Any](expression, ctx)
           case None =>
             ValueWithContext(outputValue(ctx), ctx)
         }
-        listeners.foreach(_.sinkInvoked(node.id, id, ctx, metaData, valueWithModifiedContext.value))
+        listeners.foreach(_.sinkInvoked(node.id, ref, ctx, metaData, valueWithModifiedContext.value))
         Future.successful(InterpretationResult(EndReference(id), valueWithModifiedContext))
       case (CustomNode(id, parameters, _), CustomNodeExpression(expressionName)) =>
         Future.successful(InterpretationResult(
@@ -191,7 +192,7 @@ class Interpreter private(services: Map[String, ServiceInvoker],
         (valueWithModifiedContext.context, newAccParams)
 
     }
-    val resultFuture = ref.invoker.invoke(preparedParams)
+    val resultFuture = ref.invoker.invoke(preparedParams, NodeContext(ctx.id, node.id, ref.id))
     resultFuture.onComplete { result =>
       //TODO: a implicit tez??
       listeners.foreach(_.serviceInvoked(node.id, ref.id, ctx, metaData, preparedParams, result))
@@ -209,7 +210,8 @@ class Interpreter private(services: Map[String, ServiceInvoker],
                          (implicit ec: ExecutionContext, metaData: MetaData, node: Node): ValueWithContext[R] = {
     val lazyValuesProvider = new LazyValuesProviderImpl(
       services = services,
-      timeout = lazyEvaluationTimeout
+      timeout = lazyEvaluationTimeout,
+      ctx = ctx
     )
     val valueWithModifiedContext = expr.evaluate[R](ctx, lazyValuesProvider)
     listeners.foreach(_.expressionEvaluated(node.id, expressionId, expr.original, ctx, metaData, valueWithModifiedContext.value))
@@ -234,8 +236,9 @@ object Interpreter {
   }
 
   private class LazyValuesProviderImpl(services: Map[String, ServiceInvoker],
-                                       timeout: FiniteDuration)
-                                      (implicit ec: ExecutionContext) extends LazyValuesProvider {
+                                       timeout: FiniteDuration,
+                                       ctx: Context)
+                                      (implicit ec: ExecutionContext, node: Node) extends LazyValuesProvider {
 
     override def apply[T](context: LazyContext, serviceId: String, params: Seq[(String, Any)]): (LazyContext, T) = {
       val paramsMap = params.toMap
@@ -252,7 +255,7 @@ object Interpreter {
       val service = services.getOrElse(
         serviceId,
         throw new IllegalArgumentException(s"Service with id: $serviceId doesn't exist"))
-      val resultFuture = service.invoke(paramsMap)
+      val resultFuture = service.invoke(paramsMap, NodeContext(ctx.id, node.id, serviceId))
       // await jest niestety niezbędny tutaj, bo implementacje wyrażeń (spel) nie potrafią przetwarzać asynchronicznie
       Await.result(resultFuture, timeout).asInstanceOf[T]
     }

@@ -2,6 +2,7 @@ package pl.touk.esp.engine.process
 
 import java.util.Date
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.atomic.AtomicInteger
 
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.flink.api.common.ExecutionConfig
@@ -11,6 +12,7 @@ import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExt
 import org.apache.flink.streaming.api.scala._
 import pl.touk.esp.engine.api.exception.{EspExceptionInfo, ExceptionHandlerFactory}
 import pl.touk.esp.engine.api.process._
+import pl.touk.esp.engine.api.test.InvocationCollectors.SinkInvocationCollector
 import pl.touk.esp.engine.api.{LazyInterpreter, _}
 import pl.touk.esp.engine.flink.api.exception.FlinkEspExceptionHandler
 import pl.touk.esp.engine.flink.api.process.{FlinkSink, FlinkSourceFactory}
@@ -58,7 +60,7 @@ object ProcessTestHelpers {
       ))
 
       override def sinkFactories(config: Config) = Map(
-        "monitor" -> WithCategories(SinkFactory.noParam(EmptySink))
+        "monitor" -> WithCategories(SinkFactory.noParam(MonitorEmptySink))
       )
 
       override def customStreamTransformers(config: Config) = Map("stateCustom" -> WithCategories(StateCustomNode))
@@ -136,9 +138,17 @@ object ProcessTestHelpers {
     }
   }
 
-  case object EmptySink extends FlinkSink {
+  case object MonitorEmptySink extends FlinkSink {
+    val invocationsCount = new AtomicInteger(0)
+
+    def clear() = {
+      invocationsCount.set(0)
+    }
+    override def testDataOutput: Option[(Any) => String] = Some(output => output.toString)
     override def toFlinkFunction: SinkFunction[Any] = new SinkFunction[Any] {
-      override def invoke(value: Any): Unit = {}
+      override def invoke(value: Any): Unit = {
+        invocationsCount.getAndIncrement()
+      }
     }
   }
 

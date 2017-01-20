@@ -5,23 +5,27 @@ import java.util.Date
 import argonaut.PrettyParams
 import com.typesafe.config.ConfigFactory
 import org.apache.flink.runtime.client.JobExecutionException
-import org.scalatest.{FlatSpec, Inside, Matchers}
+import org.scalatest.{BeforeAndAfterEach, FlatSpec, Inside, Matchers}
 import pl.touk.esp.engine.api.Context
-import pl.touk.esp.engine.api.deployment.test.{ExpressionInvocationResult, NodeResult, TestData}
+import pl.touk.esp.engine.api.deployment.test.{ExpressionInvocationResult, MockedResult, NodeResult, TestData}
 import pl.touk.esp.engine.build.EspProcessBuilder
 import pl.touk.esp.engine.marshall.ProcessMarshaller
-import pl.touk.esp.engine.process.ProcessTestHelpers.{SimpleRecord, SimpleRecordWithPreviousValue}
+import pl.touk.esp.engine.process.ProcessTestHelpers.{MonitorEmptySink, SimpleRecord, SimpleRecordWithPreviousValue}
 import pl.touk.esp.engine.spel
 
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Await, Future}
-import scala.util.Failure
 
-class FlinkTestMainSpec extends FlatSpec with Matchers with Inside {
-
+class FlinkTestMainSpec extends FlatSpec with Matchers with Inside with BeforeAndAfterEach {
 
   import spel.Implicits._
+
+  override protected def beforeEach(): Unit = {
+    super.beforeEach()
+    MonitorEmptySink.clear()
+    LogService.clear()
+  }
 
   val ProcessMarshaller = new ProcessMarshaller
 
@@ -57,7 +61,10 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside {
     invocationResults("out") shouldBe
       List(ExpressionInvocationResult(Context("proc1-id-0-1",Map("input" -> input2, "variable1" -> "ala")), "expression", 11))
 
-
+    results.mockedResults("proc2") shouldBe List(MockedResult(Context("proc1-id-0-1", Map.empty), "logService", "0-collectedDuringServiceInvocation"))
+    results.mockedResults("out") shouldBe List(MockedResult(Context("proc1-id-0-1",Map.empty), "monitor", "11"))
+    MonitorEmptySink.invocationsCount.get() shouldBe 0
+    LogService.invocationsCount.get() shouldBe 0
   }
 
   it should "return correct result for custom node" in {
@@ -104,6 +111,12 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside {
         ExpressionInvocationResult(Context("proc1-id-0-1",Map("input" -> input2, "out" -> aggregate2)), "expression", "11 1")
       )
 
+    results.mockedResults("out") shouldBe
+      List(
+        MockedResult(Context("proc1-id-0-0",Map.empty), "monitor", "1 0"),
+        MockedResult(Context("proc1-id-0-1",Map.empty), "monitor", "11 1")
+      )
+
   }
 
   it should "handle large parallelism" in {
@@ -130,7 +143,7 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside {
         .id("proc1")
         .exceptionHandler()
         .source("id", "input")
-          .processor("failing", "throwingService", "throw" -> "#input.value1 == 2")
+        .processor("failing", "throwingService", "throw" -> "#input.value1 == 2")
         .filter("filter", "1 / #input.value1 >= 0")
         .sink("out", "#input", "monitor")
 

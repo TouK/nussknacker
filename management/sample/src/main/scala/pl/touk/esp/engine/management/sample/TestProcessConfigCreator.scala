@@ -11,6 +11,7 @@ import pl.touk.esp.engine.api._
 import pl.touk.esp.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
 import pl.touk.esp.engine.api.lazyy.UsingLazyValues
 import pl.touk.esp.engine.api.process._
+import pl.touk.esp.engine.api.test.InvocationCollectors.SinkInvocationCollector
 import pl.touk.esp.engine.flink.api.process.{FlinkSink, FlinkSource, FlinkSourceFactory}
 import pl.touk.esp.engine.flink.util.exception.VerboselyLoggingExceptionHandler
 import pl.touk.esp.engine.kafka.{KafkaConfig, KafkaSinkFactory}
@@ -166,8 +167,10 @@ case object ParamExceptionHandler extends ExceptionHandlerFactory {
 }
 
 case object EmptySink extends FlinkSink {
+
+  override def testDataOutput: Option[(Any) => String] = Option(out => out.toString)
   override def toFlinkFunction: SinkFunction[Any] = new SinkFunction[Any] {
-    override def invoke(value: Any): Unit = {}
+    override def invoke(value: Any): Unit = ()
   }
 }
 

@@ -2,6 +2,7 @@ package pl.touk.esp.engine.process.runner
 
 import java.net.ConnectException
 import java.util.Date
+import java.util.concurrent.atomic.AtomicInteger
 
 import argonaut.PrettyParams
 import com.typesafe.config.Config
@@ -9,17 +10,18 @@ import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor
 import org.scalatest.{FlatSpec, Inside, Matchers}
 import pl.touk.esp.engine.api.exception.ExceptionHandlerFactory
-import pl.touk.esp.engine.api.process.{ProcessConfigCreator, SinkFactory, WithCategories}
-import pl.touk.esp.engine.api.{ParamName, Service}
+import pl.touk.esp.engine.api.process.{ProcessConfigCreator, Sink, SinkFactory, WithCategories}
+import pl.touk.esp.engine.api.test.InvocationCollectors.ServiceInvocationCollector
+import pl.touk.esp.engine.api.{MethodToInvoke, ParamName, Service}
 import pl.touk.esp.engine.build.EspProcessBuilder
 import pl.touk.esp.engine.flink.api.process.FlinkSourceFactory
 import pl.touk.esp.engine.flink.util.exception.{VerboselyLoggingExceptionHandler, VerboselyLoggingRestartingExceptionHandler}
 import pl.touk.esp.engine.flink.util.source.CollectionSource
 import pl.touk.esp.engine.marshall.ProcessMarshaller
-import pl.touk.esp.engine.process.ProcessTestHelpers.{EmptySink, SimpleRecord, StateCustomNode}
+import pl.touk.esp.engine.process.ProcessTestHelpers.{MonitorEmptySink, SimpleRecord, StateCustomNode}
 import pl.touk.esp.engine.spel
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class FlinkProcessMainSpec extends FlatSpec with Matchers with Inside {
 
@@ -43,8 +45,22 @@ class FlinkProcessMainSpec extends FlatSpec with Matchers with Inside {
 }
 
 object LogService extends Service {
-  def invoke(@ParamName("all") all: Any): Future[Unit] = {
-    Future.successful(Unit)
+
+  val invocationsCount = new AtomicInteger(0)
+
+  def clear() = {
+    invocationsCount.set(0)
+  }
+
+  @MethodToInvoke
+  def invoke(@ParamName("all") all: Any)(implicit ec: ExecutionContext, collector: ServiceInvocationCollector): Future[Unit] = {
+    if (collector.collectorEnabled) {
+      collector.collect(s"$all-collectedDuringServiceInvocation")
+      Future.successful(Unit)
+    } else {
+      invocationsCount.incrementAndGet()
+      Future.successful(Unit)
+    }
   }
 }
 
@@ -68,7 +84,7 @@ class SimpleProcessConfigCreator extends ProcessConfigCreator {
   )
 
   override def sinkFactories(config: Config) = Map(
-    "monitor" -> WithCategories(SinkFactory.noParam(EmptySink), "c2")
+    "monitor" -> WithCategories(new SinkFactory { def create(): Sink = MonitorEmptySink}, "c2")
   )
 
   override def listeners(config: Config) = List()
