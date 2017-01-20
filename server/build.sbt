@@ -91,6 +91,7 @@ libraryDependencies ++= {
     "com.typesafe.slick" %% "slick-hikaricp" % slickV,
     "org.hsqldb" % "hsqldb" % hsqldbV,
     "org.flywaydb" % "flyway-core" % flywayV,
+    "org.apache.xmlgraphics" % "fop" % "2.1",
 
     "com.typesafe.slick" %% "slick-testkit" % slickV % "test",
     "org.scalatest" %% "scalatest" % scalaTestV % "test"

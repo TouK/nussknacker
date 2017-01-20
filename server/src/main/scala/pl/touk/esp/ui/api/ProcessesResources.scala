@@ -1,5 +1,7 @@
 package pl.touk.esp.ui.api
 
+import java.net.URLDecoder
+
 import akka.actor.ActorRef
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model._
@@ -20,7 +22,7 @@ import pl.touk.esp.ui.process.marshall.{ProcessConverter, UiProcessMarshaller}
 import pl.touk.esp.ui.process.repository.ProcessRepository
 import pl.touk.esp.ui.process.repository.ProcessRepository._
 import pl.touk.esp.ui.security.{LoggedUser, Permission}
-import pl.touk.esp.ui.util.{AkkaHttpResponse, Argonaut62Support, MultipartUtils}
+import pl.touk.esp.ui.util.{AkkaHttpResponse, Argonaut62Support, MultipartUtils, PdfExporter}
 import pl.touk.esp.ui.{BadRequestError, EspError, FatalError, NotFoundError}
 import akka.pattern.ask
 import akka.util.Timeout
@@ -135,6 +137,14 @@ class ProcessesResources(repository: ProcessRepository,
             repository.fetchProcessDetailsForId(processId, versionId).map { exportProcess }
           }
         }
+      } ~ path("processes" / "exportToPdf" / Segment / LongNumber) { (processId, versionId) =>
+          post {
+            entity(as[Array[Byte]]) { (svg) =>
+              complete {
+                repository.fetchProcessDetailsForId(processId, versionId).map { exportProcessToPdf(new String(svg), _) }
+             }
+            }
+          }
       } ~ path("processes" / "export" / Segment ) { processId =>
         get {
           complete {
@@ -172,6 +182,18 @@ class ProcessesResources(repository: ProcessRepository,
     case None =>
       HttpResponse(status = StatusCodes.NotFound, entity = "Process not found")
   }
+
+  private def exportProcessToPdf(svg: String, processDetails: Option[ProcessDetails]) = processDetails match {
+    case Some(process) =>
+      process.json.map { json =>
+        PdfExporter.exportToPdf(svg, process, json)
+      }.map { pdf =>
+        HttpResponse(status = StatusCodes.OK, entity = pdf)
+      }.getOrElse(HttpResponse(status = StatusCodes.NotFound, entity = "Process not found"))
+    case None =>
+      HttpResponse(status = StatusCodes.NotFound, entity = "Process not found")
+  }
+
 
   private def fetchProcessStatesForProcesses(processes: List[ProcessDetails]): Future[Map[String, Option[ProcessStatus]]] = {
     import cats.instances.future._
