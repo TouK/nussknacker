@@ -13,5 +13,6 @@ case class DisplayableProcess(id: String,
                               validationResult: ValidationResult)
 
 case class ProcessProperties(parallelism: Option[Int],
+                             splitStateToDisk: Option[Boolean],
                              exceptionHandler: ExceptionHandlerRef,
                              additionalFields: Option[UserDefinedProcessAdditionalFields])

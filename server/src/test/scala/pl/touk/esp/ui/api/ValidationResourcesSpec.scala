@@ -28,7 +28,7 @@ class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with Matc
 
   it should "find errors in process of bad shape" in {
 
-    val invalidShapeProcess = DisplayableProcess("p1", ProcessProperties(Some(2), ExceptionHandlerRef(List()), None),
+    val invalidShapeProcess = DisplayableProcess("p1", ProcessProperties(Some(2), Some(false), ExceptionHandlerRef(List()), None),
       List(Source("s1", SourceRef(ProcessTestData.existingSourceFactory, List())), node.Filter("f1", Expression("spel", "false"))),
       List(Edge("s1", "f1", None)),
       ValidationResult(Map(), List(), List()))
