@@ -61,7 +61,7 @@ class SideNodeDetails extends Component {
               <div key={index}>
                 {index == 0 ? <p className="node-label">Main</p> : null}
                 <p className="node-key">{obj.key + ": "}</p>
-                <p className="node-value">{obj.value}</p>
+                <p className="node-value">{obj.value ? obj.value.toString() : obj.value}</p>
               </div>
             )
           }

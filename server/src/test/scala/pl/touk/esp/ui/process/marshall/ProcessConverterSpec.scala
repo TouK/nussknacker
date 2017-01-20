@@ -38,7 +38,7 @@ class ProcessConverterSpec extends FlatSpec with Matchers with TableDrivenProper
   }
 
   it should "be able to handle different node order" in {
-    val process = DisplayableProcess("t1", ProcessProperties(Some(2), ExceptionHandlerRef(List()), None),
+    val process = DisplayableProcess("t1", ProcessProperties(Some(2), Some(false), ExceptionHandlerRef(List()), None),
       List(
         Processor("e", ServiceRef("ref", List())),
         Source("s", SourceRef("sourceRef", List()))
@@ -58,7 +58,7 @@ class ProcessConverterSpec extends FlatSpec with Matchers with TableDrivenProper
       Enricher("e", ServiceRef("ref", List()), "out"),
       Split("e")
     )) { (unexpectedEnd) =>
-      val process = DisplayableProcess("t1", ProcessProperties(Some(2), ExceptionHandlerRef(List()), None),
+      val process = DisplayableProcess("t1", ProcessProperties(Some(2), Some(false), ExceptionHandlerRef(List()), None),
         List(Source("s", SourceRef("sourceRef", List())), unexpectedEnd),
         List(Edge("s", "e", None)), ValidationResult(Map(unexpectedEnd.id -> List(NodeValidationError("InvalidTailOfBranch","InvalidTailOfBranch",None))), List(), List())
       )

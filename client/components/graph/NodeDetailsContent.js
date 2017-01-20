@@ -139,6 +139,8 @@ export default class NodeDetailsContent extends React.Component {
         return (
           <div className="node-table-body">
             {this.createField("input", "Parallelism", "parallelism")}
+            {this.createField("checkbox", "Should split state to disk", "splitStateToDisk")}
+
             <div className="node-row">
               <div className="node-label">Exception handler:</div>
               <div className="node-group">
@@ -233,6 +235,16 @@ export default class NodeDetailsContent extends React.Component {
                                                readOnly={readOnly}/></div>
           </div>
         )
+      case 'checkbox': {
+        return (
+          <div className="node-row">
+            <div className="node-label">{fieldLabel}:</div>
+            <div className="node-value"><input type="checkbox" className="node-input"  checked={fieldValue}
+                                               onChange={(e) => handleChange(fieldValue ? false : true)}
+                                               disabled={readOnly ? 'disabled' : ''}/></div>
+          </div>
+        )
+      }
       case 'plain-textarea':
         return (
           <div className="node-row">

@@ -46,7 +46,7 @@ object ProcessTestData {
   val sampleDisplayableProcess = {
     DisplayableProcess(
       id = "fooProcess",
-      properties = ProcessProperties(Some(2), ExceptionHandlerRef(List.empty), Some(ProcessAdditionalFields(Some("process description")))),
+      properties = ProcessProperties(Some(2), None, ExceptionHandlerRef(List.empty), Some(ProcessAdditionalFields(Some("process description")))),
       nodes = List(
         node.Source(
           id = "sourceId",

@@ -221,7 +221,7 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
 
     val modifiedParallelism = 123
     val modifiedName = "fooBarName"
-    val props = ProcessProperties(Some(modifiedParallelism), ExceptionHandlerRef(List(Parameter(modifiedName, modifiedName))), None)
+    val props = ProcessProperties(Some(modifiedParallelism), None, ExceptionHandlerRef(List(Parameter(modifiedName, modifiedName))), None)
     Put(s"/processes/$testCategory/$processId/json/properties", posting.toEntity(props)) ~> routeWithRead ~> check {
       rejection shouldBe server.AuthorizationFailedRejection
     }
