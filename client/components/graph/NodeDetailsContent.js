@@ -214,7 +214,7 @@ export default class NodeDetailsContent extends React.Component {
                 <Textarea rows={1} cols={50} className="node-input" value={testValue} readOnly={true}/>
               </div>
             </div>
-            </ListGroupItem>
+          </ListGroupItem>
         </div>
       )
     } else {
@@ -355,10 +355,32 @@ export default class NodeDetailsContent extends React.Component {
             )
           })
         }
-      </div></ListGroupItem>)
+          {this.state.testResultsToShow && !_.isEmpty(this.state.testResultsToShow.mockedResultsForCurrentContext) ?
+            (this.state.testResultsToShow.mockedResultsForCurrentContext).map((mockedValue, index) =>
+              <a download={this.props.node.id + "-single-input"} key={index} href={this.downloadableHref(mockedValue.value)}>
+                Save results for single input</a>
+            ) : null
+          }
+          <br/>
+
+          {this.state.testResultsToShow && !_.isEmpty(this.state.testResultsToShow.mockedResultsForEveryContext) ?
+            <a download={this.props.node.id + "-all-inputs"}
+               href={this.downloadableHref(this.mergedMockedResults(this.state.testResultsToShow.mockedResultsForEveryContext))}>
+              Save results for all inputs</a>
+            : null
+          }
+        </div></ListGroupItem>)
     } else {
       return null;
     }
+  }
+
+  mergedMockedResults = (mockedResults) => {
+    return _.join(mockedResults.map((mockedValue) => mockedValue.value), "\n\n")
+  }
+
+  downloadableHref = (content) => {
+    return "data:application/octet-stream;charset=utf-8," + encodeURIComponent(content)
   }
 
   testErrors = () => {
