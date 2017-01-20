@@ -13,6 +13,7 @@ class ProcessActions extends React.Component {
 
   static propTypes = {
     graphLayout: React.PropTypes.func.isRequired,
+    exportGraph: React.PropTypes.func.isRequired,
     isTesting: React.PropTypes.bool.isRequired
   }
 
@@ -70,6 +71,11 @@ class ProcessActions extends React.Component {
     HttpService.exportProcess(this.processId(), this.versionId())
   }
 
+  exportProcessToPdf = () => {
+    const data = this.props.exportGraph()
+    HttpService.exportProcessToPdf(this.processId(), this.versionId(), data)
+  }
+
   importProcess = (files) => {
     files.forEach((file)=>
       this.props.actions.importProcess(this.processId(), file)
@@ -99,6 +105,7 @@ class ProcessActions extends React.Component {
         <button type="button" className={buttonClass} onClick={this.showMetrics}>Metrics</button>
         <hr/>
         <button type="button" className={buttonClass} onClick={this.exportProcess}>Export</button>
+        <button type="button" className={buttonClass} disabled={!this.props.nothingToSave} onClick={this.exportProcessToPdf}>Export to PDF</button>
         {this.props.loggedUser.canWrite ? (
           <Dropzone onDrop={this.importProcess} className="dropZone espButton">
             <div>Import</div>

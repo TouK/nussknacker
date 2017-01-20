@@ -87,11 +87,14 @@ const Visualization = withRouter(React.createClass({
     const graphLayoutFun = () => {
       return !_.isEmpty(this.refs.graph) ? getGraph().directedLayout() : () => null
     }
+    const exportGraphFun = () => {
+      return !_.isEmpty(this.refs.graph) ? getGraph().exportGraph() : () => null
+    }
     return (
       <div className="Page">
         <div>
           <UserLeftPanel isOpened={this.props.leftPanelIsOpened}/>
-          <UserRightPanel isOpened={true} graphLayout={graphLayoutFun}/>
+          <UserRightPanel isOpened={true} graphLayout={graphLayoutFun} exportGraph={exportGraphFun}/>
           {(_.isEmpty(this.props.fetchedProcessDetails) || this.props.graphLoading) ? <LoaderSpinner show={true}/> : <Graph ref="graph"/> }
 
         </div>

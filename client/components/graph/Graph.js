@@ -11,6 +11,7 @@ import ActionsUtils from '../../actions/ActionsUtils';
 import NodeDetailsModal from './nodeDetailsModal.js';
 import { DropTarget } from 'react-dnd';
 import '../../stylesheets/graph.styl'
+import SVGUtils from '../../common/SVGUtils';
 
 
 class Graph extends React.Component {
@@ -40,6 +41,7 @@ class Graph extends React.Component {
     componentDidMount() {
         this.processGraphPaper = this.createPaper()
         this.drawGraph(this.props.processToDisplay, this.props.layout, this.props.testResults)
+        this._prepareContentForExport()
         this.panAndZoom = this.enablePanZoom();
         this.changeNodeDetailsOnClick();
         this.labelToFrontOnHover();
@@ -71,6 +73,10 @@ class Graph extends React.Component {
             rankDir: "TB"
         });
         this.changeLayoutIfNeeded()
+    }
+
+    exportGraph() {
+      return this.state.exported
     }
 
     nodeInputs = (nodeId) => {
@@ -138,6 +144,11 @@ class Graph extends React.Component {
       } else {
         _.forEach(layout, el => this.graph.getCell(el.id).set('position', el.position));
       }
+    }
+
+    _prepareContentForExport = () => {
+      this.processGraphPaper.fitToContent()
+      this.setState({exported: SVGUtils.toXml(this.refs.espGraph.childNodes[0])})
     }
 
     highlightNodes = (data, nodeToDisplay) => {

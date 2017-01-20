@@ -1,6 +1,7 @@
 import $ from "jquery";
 import appConfig from "appConfig";
 import React from "react";
+import FileSaver from "file-saver";
 
 
 export default {
@@ -22,6 +23,7 @@ export default {
   },
 
   addError(message, error, showErrorText) {
+    console.log(error)
     var details = showErrorText && error.responseText ? (<div>{error.responseText}</div>) : null;
     if (notificationSystem) {
       notificationSystem.addNotification({
@@ -130,6 +132,19 @@ export default {
 
   exportProcess(processId, versionId) {
     window.open(`${appConfig.API_URL}/processes/export/${processId}/${versionId}`);
+  },
+
+  exportProcessToPdf(processId, versionId, data) {
+    fetch(`${appConfig.API_URL}/processes/exportToPdf/${processId}/${versionId}`,
+      {
+          mode: 'cors-with-forced-prefligh',
+          method: 'POST',
+          body: data,
+          credentials: 'include'
+      }
+    ).then((response) => response.blob()).then((blob) => {
+      FileSaver.saveAs(blob, `${processId}-${versionId}.pdf`);
+    }).catch((error) => this.addError(`Failed to export`, error));
   },
 
   validateProcess: (process) => {
