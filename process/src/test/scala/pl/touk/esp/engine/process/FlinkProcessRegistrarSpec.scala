@@ -41,4 +41,25 @@ class FlinkProcessRegistrarSpec extends FlatSpec with Matchers with Eventually {
     }
   }
 
+  //TODO: jakies lepsze sprawdzenia niz "nie wywala sie"??
+  it should "use rocksDB backend" in {
+    val process = EspProcess(MetaData("proc1", splitStateToDisk = Some(true)),
+      ExceptionHandlerRef(List.empty),
+      GraphBuilder.source("id", "input")
+        .customNode("custom2", "outRec", "stateCustom", "keyBy" -> "#input.id", "stringVal" -> "'terefere'")
+        .processor("proc2", "logService", "all" -> "#input.value2")
+        .sink("out", "monitor"))
+    val data = List(
+      SimpleRecord("1", 12, "a", new Date(0), Option(1)),
+      SimpleRecord("1", 15, "b", new Date(1000), None),
+      SimpleRecord("2", 12, "c", new Date(2000), Option(3))
+    )
+
+    processInvoker.invoke(process, data)
+
+    eventually {
+      MockService.data.toSet shouldBe Set("a", "b", "c")
+    }
+  }
+
 }

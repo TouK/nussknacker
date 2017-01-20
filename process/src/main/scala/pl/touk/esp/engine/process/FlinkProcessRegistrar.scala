@@ -10,10 +10,13 @@ import com.codahale.metrics.{Histogram, SlidingTimeWindowReservoir}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions._
+import org.apache.flink.api.common.state.StateBackend
 import org.apache.flink.api.java.tuple
 import org.apache.flink.configuration.Configuration
+import org.apache.flink.contrib.streaming.state.RocksDBStateBackend
 import org.apache.flink.dropwizard.metrics.DropwizardHistogramWrapper
 import org.apache.flink.metrics.Gauge
+import org.apache.flink.runtime.state.AbstractStateBackend
 import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.collector.selector.OutputSelector
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
@@ -51,7 +54,8 @@ import scala.language.implicitConversions
 
 class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessWithDeps,
                             eventTimeMetricDuration: FiniteDuration,
-                            checkpointInterval: FiniteDuration, enableObjectReuse: Boolean
+                            checkpointInterval: FiniteDuration,
+                            enableObjectReuse: Boolean, diskStateBackend: Option[AbstractStateBackend]
                            ) extends LazyLogging {
 
   implicit def millisToTime(duration: Long): Time = Time.of(duration, TimeUnit.MILLISECONDS)
@@ -83,6 +87,15 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessW
     env.setRestartStrategy(process.exceptionHandler.asInstanceOf[FlinkEspExceptionHandler].restartStrategy)
     process.metaData.parallelism.foreach(env.setParallelism)
     env.enableCheckpointing(checkpointInterval.toMillis)
+
+    diskStateBackend match {
+      case Some(backend) if process.metaData.splitStateToDisk.getOrElse(false) =>
+        logger.info("Using disk state backend")
+        env.setStateBackend(backend)
+      case _ => logger.info("Using default state backend")
+    }
+
+
     registerSourcePart(process.source)
 
     def registerSourcePart(part: SourcePart): Unit = {
@@ -211,7 +224,8 @@ object FlinkProcessRegistrar {
       compileProcess = compileProcess,
       eventTimeMetricDuration = eventTimeMetricDuration(),
       checkpointInterval = checkpointInterval(),
-      enableObjectReuse = enableObjectReuse
+      enableObjectReuse = enableObjectReuse,
+      diskStateBackend = StateConfiguration.prepareRocksDBStateBackend(config)
     )
   }
 
