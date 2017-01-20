@@ -78,7 +78,7 @@ object ProcessTestHelpers {
   object StateCustomNode extends CustomStreamTransformer {
 
     @MethodToInvoke(returnType = classOf[SimpleRecordWithPreviousValue])
-    def execute(@ParamName("keyBy") keyBy: LazyInterpreter[SimpleRecord],
+    def execute(@ParamName("keyBy") keyBy: LazyInterpreter[String],
                @ParamName("stringVal") stringVal: String)(exceptionHander: ()=>FlinkEspExceptionHandler) = (start: DataStream[InterpretationResult], timeout: FiniteDuration) => {
 
       start.keyBy(keyBy.syncInterpretationFunction)
