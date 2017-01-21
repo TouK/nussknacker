@@ -146,6 +146,18 @@ const Processes = React.createClass({
     } else return null;
   },
 
+  processStatusTitle(processStatusClass) {
+    if (processStatusClass == "status-running") {
+      return "Running"
+    } else if (processStatusClass == "status-notrunning") {
+      return "Not running"
+    } else if (processStatusClass == "status-unknown") {
+      return "Unknown state"
+    } else {
+      return null
+    }
+  },
+
   render() {
     return (
       <div className="Page">
@@ -188,13 +200,12 @@ const Processes = React.createClass({
             <Th column="category">Category</Th>
             <Th column="tags">Tags</Th>
             <Th column="modifyDate" className="date-column">Last modification</Th>
-
-            <Th column="edit" className="edit-column">Edit</Th>
-            <Th column="metrics" className="metrics-column">Metrics</Th>
             <Th column="status" className="status-column">Status</Th>
             <Th column="favourite" className="favourite-column">
               <span>Favourite</span>
             </Th>
+            <Th column="edit" className="edit-column">Edit</Th>
+            <Th column="metrics" className="metrics-column">Metrics</Th>
             {this.props.loggedUser.canDeploy ? (
               <Th column="deploy" className="deploy-column">Deploy</Th>
             ) : []}
@@ -217,29 +228,29 @@ const Processes = React.createClass({
                   </div>
                 </Td>
                 <Td column="modifyDate" className="date-column">{DateUtils.format(process.modificationDate)}</Td>
-
-                <Td column="edit" className="edit-column">
-                  <img src={editIcon} className={this.editIconClass(process)} onClick={this.showProcess.bind(this, process)} />
-                </Td>
-                <Td column="metrics" className="metrics-column">
-                  <span className="glyphicon glyphicon-stats" onClick={this.showMetrics.bind(this, process)}/>
-                </Td>
                 <Td column="status" className="status-column">
-                  <div className={this.processStatusClass(process)}/>
+                  <div className={this.processStatusClass(process)} title={this.processStatusTitle(this.processStatusClass(process))}/>
                 </Td>
                 <Td column="favourite" className="favourite-column">
                   <div className={this.isFavourite(process.id)}
                   onClick={this.setFavourite.bind(this, process.id)}></div>
                 </Td>
+                <Td column="edit" className="edit-column">
+                  <img src={editIcon} className={this.editIconClass(process)} title="Edit" onClick={this.showProcess.bind(this, process)} />
+                </Td>
+                <Td column="metrics" className="metrics-column">
+                  <span className="glyphicon glyphicon-stats" title="Show metrics" onClick={this.showMetrics.bind(this, process)}/>
+                </Td>
+
                 {this.props.loggedUser.canDeploy ? (
                   <Td column="deploy" className="deploy-column">
-                    <span className="glyphicon glyphicon-play" onClick={this.deploy.bind(this, process)}/>
+                    <span className="glyphicon glyphicon-play" title="Deploy process" onClick={this.deploy.bind(this, process)}/>
                   </Td>
                 ) : []}
                 { (this.processStatusClass(process) == "status-running" && this.props.loggedUser.canDeploy) ?
                   (
                     <Td column="stop" className="stop-column">
-                      <span className="glyphicon glyphicon-stop" onClick={this.stop.bind(this, process)}/>
+                      <span className="glyphicon glyphicon-stop" title="Stop process" onClick={this.stop.bind(this, process)}/>
                     </Td>
                   ) : []
                 }

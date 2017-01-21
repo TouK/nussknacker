@@ -30,6 +30,10 @@ const Visualization = withRouter(React.createClass({
       if (event.ctrlKey && event.shiftKey && event.key.toLowerCase() == "z") {
         this.redo()
       }
+      const deleteKeyCode = 46
+      if (event.keyCode == deleteKeyCode && this.props.currentNodeId) {
+        this.deleteNode(this.props.currentNodeId)
+      }
     }
     this.props.actions.toggleLeftPanel(true)
     this.props.router.setRouteLeaveHook(this.props.route, (route) => {
@@ -81,6 +85,10 @@ const Visualization = withRouter(React.createClass({
     }
   },
 
+  deleteNode(id) {
+    this.props.actions.deleteNode(id)
+  },
+
   render: function() {
     //niestety tak musi byc, bo graph jest reduxowym komponentem
     var getGraph = () => this.refs.graph.getWrappedInstance().getDecoratedComponentInstance();
@@ -112,6 +120,7 @@ Visualization.header = 'Wizualizacja'
 function mapState(state) {
   return {
     fetchedProcessDetails: state.graphReducer.fetchedProcessDetails,
+    currentNodeId: (state.graphReducer.nodeToDisplay || {}).id,
     graphLoading: state.graphReducer.graphLoading,
     leftPanelIsOpened: state.ui.leftPanelIsOpened,
     undoRedoAvailable: !state.ui.showNodeDetailsModal,
