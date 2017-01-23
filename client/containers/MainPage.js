@@ -92,7 +92,6 @@ function mapState(state) {
 
 export const App = connect(mapState, ActionsUtils.mapDispatchWithEspActions)(App_);
 
-App.title = 'Home'
 App.path = '/'
 App.header_a = 'ESP'
 

@@ -40,7 +40,7 @@ class AppResources(buildInfo: Map[String, String],
                 HttpResponse(status = StatusCodes.OK)
               } else {
                 logger.warn(s"Processes not running: $set")
-                HttpResponse(status = StatusCodes.InternalServerError, entity = s"Processes not running: ${set.mkString(",")}")
+                HttpResponse(status = StatusCodes.InternalServerError, entity = s"Deployed processes not running (probably failed): \n${set.mkString(",")}")
               }
             }.recover[HttpResponse] {
               case NonFatal(e) =>
