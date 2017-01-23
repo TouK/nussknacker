@@ -147,8 +147,13 @@ class Graph extends React.Component {
     }
 
     _prepareContentForExport = () => {
+      const oldHeight = this.refs.espGraph.offsetHeight
+      const oldWidth = this.refs.espGraph.offsetWidth
+      //we fit to content to be able to export svg nicely...
       this.processGraphPaper.fitToContent()
       this.setState({exported: SVGUtils.toXml(this.refs.espGraph.childNodes[0])})
+      //we have to set former width/height
+      this.processGraphPaper.setDimensions(oldWidth, oldHeight)
     }
 
     highlightNodes = (data, nodeToDisplay) => {
@@ -176,12 +181,6 @@ class Graph extends React.Component {
         this.highlightCell(cell, highlightClass)
       }
     }
-
-  isProcessValid = () => {
-    var result = (this.props.processToDisplay || {}).validationResult
-    return !result || (Object.keys(result.invalidNodes || {}).length == 0 && (result.globalErrors || []).length == 0 && (result.processPropertiesErrors || []).length == 0)
-  }
-
 
   changeLayoutIfNeeded = () => {
       var newLayout = _.map(this.graph.getElements(), (el) => {
@@ -260,10 +259,8 @@ class Graph extends React.Component {
 
         return this.props.connectDropTarget(
             <div>
-                <h2 id="process-name" className={this.isProcessValid() ? "" : "alert alert-danger"}>{this.props.processToDisplay.id}</h2>
                 {!_.isEmpty(this.props.nodeToDisplay) ? <NodeDetailsModal/> : null }
                 <div ref="espGraph" id="esp-graph"></div>
-                <button type="button" className="btn btn-default hidden" onClick={this.directedLayout}>Directed layout</button>
             </div>
         );
 
