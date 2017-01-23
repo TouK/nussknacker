@@ -74,7 +74,7 @@ object EspUiApp extends App with Directives with LazyLogging {
 
             pathPrefix("api") {
 
-              new ProcessesResources(processRepository, managementActor, processConverter, processValidation).route(user) ~
+              new ProcessesResources(processRepository, managementActor, processConverter, processActivityRepository, processValidation).route(user) ~
                 new ProcessActivityResource(processActivityRepository, attachmentService).route(user) ~
                 new ManagementResources(processDefinition.typesInformation, managementActor).route(user) ~
                 new ValidationResources(processValidation, processConverter).route(user) ~

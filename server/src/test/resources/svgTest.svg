@@ -1,0 +1,452 @@
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" id="v-4619" width="800" height="1130">
+    <g id="v-4620" class="viewport">
+        <g id="j_219" model-id="startProcess" class="element devs Model joint-theme-default" magnet="false" fill="#ffffff"
+           stroke="none" transform="translate(250,0)">
+            <g class="rotatable" id="v-4635" transform="rotate(0,150,75)">
+                <rect class="background" id="v-4639" width="300" height="130" rx="10">
+                    <title id="v-4652"/>
+                </rect>
+                <g id="v-4655">
+                    <rect class="headerFiller" id="v-4653" x="0" y="17.5" height="17.5" width="300" fill="#73E5B7"/>
+                    <rect class="blockHeader" id="v-4644" x="0" y="0" rx="10" stroke-width="0" width="300" height="35"
+                          fill="#73E5B7">
+                        <title id="v-4654"/>
+                    </rect>
+                    <text class="headerLabel" id="v-4640" fill="#1E1E1E"  font-weight="600" y="0.8em" xml:space="preserve" font-size="14" transform="translate(124,10.5)">S11</text>
+                </g>
+                <rect class="body" id="v-4638" fill="none" width="300" height="130" stroke="#B5B5B5" stroke-width="1"
+                      rx="10"/>
+
+                <g id="v-4656">
+                    <text class="contentText" id="v-4641" fill="#1E1E1E" pointer-events="none" font-weight="400" y="0.8em" font-size="14" transform="translate(20,50)"><tspan id="v-4646" dy="0em" x="0" class="v-line">endsf</tspan></text>
+                </g>
+                <g id="v-4657">
+                    <text class="testResultsSummary" id="v-4642" fill="#1E1E1E" pointer-events="none" font-weight="400" y="0.8em" display="none" xml:space="preserve" transform="translate(250,50)"><tspan id="v-4647" dy="0em" x="0" class="v-line v-empty-line" style="opacity: 0;">-</tspan></text>
+        <text class="testErrorsSummary" id="v-4643" fill="#1E1E1E" pointer-events="none" font-weight="400" y="0.8em" display="none" xml:space="preserve" transform="translate(230,50)"><tspan id="v-4648" dy="0em" x="0" class="v-line v-empty-line" style="opacity: 0;">-</tspan></text>
+                </g>
+
+                <g class="inPorts" id="v-4649" transform="translate(0,0)"/>
+                <g class="outPorts" id="v-4650" transform="translate(0,0)">
+                    <g class="port port0" id="v-4637" transform="translate(150,130)">
+                        <circle class="port-body" id="v-4651" r="5" magnet="true" font-size="10" fill="#F27980"
+                                type="output" port="Out"/>
+                    </g>
+                </g>
+
+            </g>
+        </g>
+        <g id="j_222" model-id="endsuffix" class="element devs Model joint-theme-default" magnet="false" fill="#ffffff"
+           stroke="none" transform="translate(0,1000)">
+            <g class="rotatable" id="v-4711" transform="rotate(0,150,75)">
+                <rect class="background" id="v-4715" width="300" height="130" rx="10">
+                    <title id="v-4728"/>
+                </rect>
+                <g id="v-4731">
+                    <rect class="headerFiller" id="v-4729" x="0" y="17.5" height="17.5" width="300" fill="#F27980"/>
+                    <rect class="blockHeader" id="v-4720" x="0" y="0" rx="10" stroke-width="0" width="300" height="35"
+                          fill="#F27980">
+                        <title id="v-4730"/>
+                    </rect>
+                    <text class="headerLabel" id="v-4716" fill="#1E1E1E" pointer-events="none" font-weight="600" y="0.8em" xml:space="preserve" font-size="14" transform="translate(131,10.5)"><tspan id="v-4721" dy="0em" x="0" class="v-line">SINK</tspan></text>
+                </g>
+                <rect class="body" id="v-4714" fill="none" width="300" height="130" stroke="#B5B5B5" stroke-width="1"
+                      rx="10"/>
+
+                <g id="v-4732">
+                    <text class="contentText" id="v-4717" fill="#1E1E1E" pointer-events="none" font-weight="400" y="0.8em" xml:space="preserve" font-size="14" transform="translate(20,50)"><tspan id="v-4722" dy="0em" x="0" class="v-line">endsuffix</tspan></text>
+                </g>
+                <g id="v-4733">
+                    <text class="testResultsSummary" id="v-4718" fill="#1E1E1E" pointer-events="none" font-weight="400" y="0.8em" display="none" xml:space="preserve" transform="translate(250,50)"><tspan id="v-4723" dy="0em" x="0" class="v-line v-empty-line" style="opacity: 0;">-</tspan></text>
+        <text class="testErrorsSummary" id="v-4719" fill="#1E1E1E" pointer-events="none" font-weight="400" y="0.8em" display="none" xml:space="preserve" transform="translate(230,50)"><tspan id="v-4724" dy="0em" x="0" class="v-line v-empty-line" style="opacity: 0;">-</tspan></text>
+                </g>
+
+                <g class="inPorts" id="v-4725" transform="translate(0,0)">
+                    <g class="port port0" id="v-4713" transform="translate(150,0)">
+                        <circle class="port-body" id="v-4727" r="5" magnet="passive" font-size="10" fill="#73E5B7"
+                                type="input" port="In"/>
+                    </g>
+                </g>
+                <g class="outPorts" id="v-4726" transform="translate(0,0)"/>
+
+            </g>
+        </g>
+        <g id="j_223" model-id="node5" class="element devs Model joint-theme-default" magnet="false" fill="#ffffff"
+           stroke="none" transform="translate(500,750)">
+            <g class="rotatable" id="v-4735" transform="rotate(0,150,75)">
+                <rect class="background" id="v-4740" width="300" height="130" rx="10">
+                    <title id="v-4754"/>
+                </rect>
+                <g id="v-4757">
+                    <rect class="headerFiller" id="v-4755" x="0" y="17.5" height="17.5" width="300" fill="#AFA3E4"/>
+                    <rect class="blockHeader" id="v-4745" x="0" y="0" rx="10" stroke-width="0" width="300" height="35"
+                          fill="#AFA3E4">
+                        <title id="v-4756"/>
+                    </rect>
+                    <text class="headerLabel" id="v-4741" fill="#1E1E1E" pointer-events="none" font-weight="600" y="0.8em" xml:space="preserve" font-size="14" transform="translate(124,10.5)"><tspan id="v-4746" dy="0em" x="0" class="v-line">FILTER</tspan></text>
+                </g>
+                <rect class="body" id="v-4739" fill="none" width="300" height="130" stroke="#B5B5B5" stroke-width="1"
+                      rx="10"/>
+
+                <g id="v-4758">
+                    <text class="contentText" id="v-4742" fill="#1E1E1E" pointer-events="none" font-weight="400" y="0.8em" xml:space="preserve" font-size="14" transform="translate(20,50)"><tspan id="v-4747" dy="0em" x="0" class="v-line">node5</tspan></text>
+                </g>
+                <g id="v-4759">
+                    <text class="testResultsSummary" id="v-4743" fill="#1E1E1E" pointer-events="none" font-weight="400" y="0.8em" display="none" xml:space="preserve" transform="translate(250,50)"><tspan id="v-4748" dy="0em" x="0" class="v-line v-empty-line" style="opacity: 0;">-</tspan></text>
+        <text class="testErrorsSummary" id="v-4744" fill="#1E1E1E" pointer-events="none" font-weight="400" y="0.8em" display="none" xml:space="preserve" transform="translate(230,50)"><tspan id="v-4749" dy="0em" x="0" class="v-line v-empty-line" style="opacity: 0;">-</tspan></text>
+                </g>
+
+                <g class="inPorts" id="v-4750" transform="translate(0,0)">
+                    <g class="port port0" id="v-4737" transform="translate(150,0)">
+                        <circle class="port-body" id="v-4752" r="5" magnet="passive" font-size="10" fill="#73E5B7"
+                                type="input" port="In"/>
+                    </g>
+                </g>
+                <g class="outPorts" id="v-4751" transform="translate(0,0)">
+                    <g class="port port0" id="v-4738" transform="translate(150,130)">
+                        <circle class="port-body" id="v-4753" r="5" magnet="true" font-size="10" fill="#F27980"
+                                type="output" port="Out"/>
+                    </g>
+                </g>
+
+            </g>
+        </g>
+        <g id="j_224" model-id="input" class="element devs Model joint-theme-default" magnet="false" fill="#ffffff"
+           stroke="none" transform="translate(250,250)">
+            <g class="rotatable" id="v-4761" transform="rotate(0,150,75)">
+                <rect class="background" id="v-4766" width="300" height="130" rx="10">
+                    <title id="v-4780"/>
+                </rect>
+                <g id="v-4783">
+                    <rect class="headerFiller" id="v-4781" x="0" y="17.5" height="17.5" width="300" fill="#AFA3E4"/>
+                    <rect class="blockHeader" id="v-4771" x="0" y="0" rx="10" stroke-width="0" width="300" height="35"
+                          fill="#AFA3E4">
+                        <title id="v-4782"/>
+                    </rect>
+                    <text class="headerLabel" id="v-4767" fill="#1E1E1E" pointer-events="none" font-weight="600" y="0.8em" xml:space="preserve" font-size="14" transform="translate(124,10.5)"><tspan id="v-4772" dy="0em" x="0" class="v-line">FILTER</tspan></text>
+                </g>
+                <rect class="body" id="v-4765" fill="none" width="300" height="130" stroke="#B5B5B5" stroke-width="1"
+                      rx="10"/>
+
+                <g id="v-4784">
+                    <text class="contentText" id="v-4768" fill="#1E1E1E" pointer-events="none" font-weight="400" y="0.8em" xml:space="preserve" font-size="14" transform="translate(20,50)"><tspan id="v-4773" dy="0em" x="0" class="v-line">input</tspan></text>
+                </g>
+                <g id="v-4785">
+                    <text class="testResultsSummary" id="v-4769" fill="#1E1E1E" pointer-events="none" font-weight="400" y="0.8em" display="none" xml:space="preserve" transform="translate(250,50)"><tspan id="v-4774" dy="0em" x="0" class="v-line v-empty-line" style="opacity: 0;">-</tspan></text>
+        <text class="testErrorsSummary" id="v-4770" fill="#1E1E1E" pointer-events="none" font-weight="400" y="0.8em" display="none" xml:space="preserve" transform="translate(230,50)"><tspan id="v-4775" dy="0em" x="0" class="v-line v-empty-line" style="opacity: 0;">-</tspan></text>
+                </g>
+
+                <g class="inPorts" id="v-4776" transform="translate(0,0)">
+                    <g class="port port0" id="v-4763" transform="translate(150,0)">
+                        <circle class="port-body" id="v-4778" r="5" magnet="passive" font-size="10" fill="#73E5B7"
+                                type="input" port="In"/>
+                    </g>
+                </g>
+                <g class="outPorts" id="v-4777" transform="translate(0,0)">
+                    <g class="port port0" id="v-4764" transform="translate(150,130)">
+                        <circle class="port-body" id="v-4779" r="5" magnet="true" font-size="10" fill="#F27980"
+                                type="output" port="Out"/>
+                    </g>
+                </g>
+
+            </g>
+        </g>
+        <g id="j_221" model-id="messagesuffix" class="element devs Model joint-theme-default" magnet="false"
+           fill="#ffffff" stroke="none" transform="translate(0,750)">
+            <g class="rotatable" id="v-4685" transform="rotate(0,150,75)">
+                <rect class="background" id="v-4690" width="300" height="130" rx="10">
+                    <title id="v-4704"/>
+                </rect>
+                <g id="v-4707">
+                    <rect class="headerFiller" id="v-4705" x="0" y="17.5" height="17.5" width="300" fill="#FEB58A"/>
+                    <rect class="blockHeader" id="v-4695" x="0" y="0" rx="10" stroke-width="0" width="300" height="35"
+                          fill="#FEB58A">
+                        <title id="v-4706"/>
+                    </rect>
+                    <text class="headerLabel" id="v-4691" fill="#1E1E1E" pointer-events="none" font-weight="600" y="0.8em" xml:space="preserve" font-size="14" transform="translate(89,10.5)"><tspan id="v-4696" dy="0em" x="0" class="v-line">VARIABLE BUILDER</tspan></text>
+                </g>
+                <rect class="body" id="v-4689" fill="none" width="300" height="130" stroke="#B5B5B5" stroke-width="1"
+                      rx="10"/>
+
+                <g id="v-4708">
+                    <text class="contentText" id="v-4692" fill="#1E1E1E" pointer-events="none" font-weight="400" y="0.8em" xml:space="preserve" font-size="14" transform="translate(20,50)"><tspan id="v-4697" dy="0em" x="0" class="v-line">messagesuffix</tspan></text>
+                </g>
+                <g id="v-4709">
+                    <text class="testResultsSummary" id="v-4693" fill="#1E1E1E" pointer-events="none" font-weight="400" y="0.8em" display="none" xml:space="preserve" transform="translate(250,50)"><tspan id="v-4698" dy="0em" x="0" class="v-line v-empty-line" style="opacity: 0;">-</tspan></text>
+        <text class="testErrorsSummary" id="v-4694" fill="#1E1E1E" pointer-events="none" font-weight="400" y="0.8em" display="none" xml:space="preserve" transform="translate(230,50)"><tspan id="v-4699" dy="0em" x="0" class="v-line v-empty-line" style="opacity: 0;">-</tspan></text>
+                </g>
+
+                <g class="inPorts" id="v-4700" transform="translate(0,0)">
+                    <g class="port port0" id="v-4687" transform="translate(150,0)">
+                        <circle class="port-body" id="v-4702" r="5" magnet="passive" font-size="10" fill="#73E5B7"
+                                type="input" port="In"/>
+                    </g>
+                </g>
+                <g class="outPorts" id="v-4701" transform="translate(0,0)">
+                    <g class="port port0" id="v-4688" transform="translate(150,130)">
+                        <circle class="port-body" id="v-4703" r="5" magnet="true" font-size="10" fill="#F27980"
+                                type="output" port="Out"/>
+                    </g>
+                </g>
+
+            </g>
+        </g>
+        <g id="j_226" model-id="92f2a0b9-471d-45c1-8246-d05480482948" class="link joint-theme-default">
+            <path class="connection" id="v-4811" stroke="#B5B5B5" d="M 650 885 650 985"/>
+            <path class="marker-source" id="v-4812" transform="translate(650,885) scale(1,1) rotate(-270)"/>
+            <path class="marker-target" id="v-4813" stroke-width="0" fill="#B5B5B5" d="M 10 0 L 0 5 L 10 10 z"
+                  transform="translate(645,995) scale(1,1) rotate(-90)"/>
+            <path class="connection-wrap" id="v-4814" d="M 650 885 650 985"/>
+            <g class="labels" id="v-4815">
+                <g class="esp-label" id="v-4820" label-idx="0" cursor="move" transform="translate(650, 935)">
+                    <rect class="label-border" fill="#F5F5F5" rx="13" ry="13" x="0" y="0" width="0" height="0"/>
+                    <text text-anchor="middle" font-size="10" font-weight="300" fill="#686868" ref="rect" ref-x="0" ref-y="0" id="v-4821" y="0.8em" display="none" xml:space="preserve" transform="translate(0,0)"><tspan id="v-4822" dy="0em" x="0" class="v-line v-empty-line" style="opacity: 0;">-</tspan></text>
+                </g>
+            </g>
+            <g class="marker-vertices" id="v-4816"/>
+            <g class="link-tools" id="v-4817">
+                <g class="link-tool" id="v-4818" transform="translate(650, 925) ">
+                    <g class="tool-remove" event="remove">
+                        <circle r="11"/>
+                        <path transform="scale(.8) translate(-16, -16)"
+                              d="M24.778,21.419 19.276,15.917 24.777,10.415 21.949,7.585 16.447,13.087 10.945,7.585 8.117,10.415 13.618,15.917 8.116,21.419 10.946,24.248 16.447,18.746 21.948,24.248z"/>
+                        <title>Remove link.</title>
+                    </g>
+                    <g class="tool-options" event="link:options">
+                        <circle r="11" transform="translate(25)"/>
+                        <path fill="white" transform="scale(.55) translate(29, -16)"
+                              d="M31.229,17.736c0.064-0.571,0.104-1.148,0.104-1.736s-0.04-1.166-0.104-1.737l-4.377-1.557c-0.218-0.716-0.504-1.401-0.851-2.05l1.993-4.192c-0.725-0.91-1.549-1.734-2.458-2.459l-4.193,1.994c-0.647-0.347-1.334-0.632-2.049-0.849l-1.558-4.378C17.165,0.708,16.588,0.667,16,0.667s-1.166,0.041-1.737,0.105L12.707,5.15c-0.716,0.217-1.401,0.502-2.05,0.849L6.464,4.005C5.554,4.73,4.73,5.554,4.005,6.464l1.994,4.192c-0.347,0.648-0.632,1.334-0.849,2.05l-4.378,1.557C0.708,14.834,0.667,15.412,0.667,16s0.041,1.165,0.105,1.736l4.378,1.558c0.217,0.715,0.502,1.401,0.849,2.049l-1.994,4.193c0.725,0.909,1.549,1.733,2.459,2.458l4.192-1.993c0.648,0.347,1.334,0.633,2.05,0.851l1.557,4.377c0.571,0.064,1.148,0.104,1.737,0.104c0.588,0,1.165-0.04,1.736-0.104l1.558-4.377c0.715-0.218,1.399-0.504,2.049-0.851l4.193,1.993c0.909-0.725,1.733-1.549,2.458-2.458l-1.993-4.193c0.347-0.647,0.633-1.334,0.851-2.049L31.229,17.736zM16,20.871c-2.69,0-4.872-2.182-4.872-4.871c0-2.69,2.182-4.872,4.872-4.872c2.689,0,4.871,2.182,4.871,4.872C20.871,18.689,18.689,20.871,16,20.871z"/>
+                        <title>Link options.</title>
+                    </g>
+                </g>
+            </g>
+        </g>
+        <g id="j_227" model-id="4a4dfc85-e486-4e60-94d3-f29a8173530d" class="link joint-theme-default">
+            <path class="connection" id="v-4824" stroke="#B5B5B5" d="M 150 885 150 985"/>
+            <path class="marker-source" id="v-4825" transform="translate(150,885) scale(1,1) rotate(-270)"/>
+            <path class="marker-target" id="v-4826" stroke-width="0" fill="#B5B5B5" d="M 10 0 L 0 5 L 10 10 z"
+                  transform="translate(145,995) scale(1,1) rotate(-90)"/>
+            <path class="connection-wrap" id="v-4827" d="M 150 885 150 985"/>
+            <g class="labels" id="v-4828">
+                <g class="esp-label" id="v-4833" label-idx="0" cursor="move" transform="translate(150, 935)">
+                    <rect class="label-border" fill="#F5F5F5" rx="13" ry="13" x="0" y="0" width="0" height="0"/>
+                    <text text-anchor="middle" font-size="10" font-weight="300" fill="#686868" ref="rect" ref-x="0" ref-y="0" id="v-4834" y="0.8em" display="none" xml:space="preserve" transform="translate(0,0)"><tspan id="v-4835" dy="0em" x="0" class="v-line v-empty-line" style="opacity: 0;">-</tspan></text>
+                </g>
+            </g>
+            <g class="marker-vertices" id="v-4829"/>
+            <g class="link-tools" id="v-4830">
+                <g class="link-tool" id="v-4831" transform="translate(150, 925) ">
+                    <g class="tool-remove" event="remove">
+                        <circle r="11"/>
+                        <path transform="scale(.8) translate(-16, -16)"
+                              d="M24.778,21.419 19.276,15.917 24.777,10.415 21.949,7.585 16.447,13.087 10.945,7.585 8.117,10.415 13.618,15.917 8.116,21.419 10.946,24.248 16.447,18.746 21.948,24.248z"/>
+                        <title>Remove link.</title>
+                    </g>
+                    <g class="tool-options" event="link:options">
+                        <circle r="11" transform="translate(25)"/>
+                        <path fill="white" transform="scale(.55) translate(29, -16)"
+                              d="M31.229,17.736c0.064-0.571,0.104-1.148,0.104-1.736s-0.04-1.166-0.104-1.737l-4.377-1.557c-0.218-0.716-0.504-1.401-0.851-2.05l1.993-4.192c-0.725-0.91-1.549-1.734-2.458-2.459l-4.193,1.994c-0.647-0.347-1.334-0.632-2.049-0.849l-1.558-4.378C17.165,0.708,16.588,0.667,16,0.667s-1.166,0.041-1.737,0.105L12.707,5.15c-0.716,0.217-1.401,0.502-2.05,0.849L6.464,4.005C5.554,4.73,4.73,5.554,4.005,6.464l1.994,4.192c-0.347,0.648-0.632,1.334-0.849,2.05l-4.378,1.557C0.708,14.834,0.667,15.412,0.667,16s0.041,1.165,0.105,1.736l4.378,1.558c0.217,0.715,0.502,1.401,0.849,2.049l-1.994,4.193c0.725,0.909,1.549,1.733,2.459,2.458l4.192-1.993c0.648,0.347,1.334,0.633,2.05,0.851l1.557,4.377c0.571,0.064,1.148,0.104,1.737,0.104c0.588,0,1.165-0.04,1.736-0.104l1.558-4.377c0.715-0.218,1.399-0.504,2.049-0.851l4.193,1.993c0.909-0.725,1.733-1.549,2.458-2.458l-1.993-4.193c0.347-0.647,0.633-1.334,0.851-2.049L31.229,17.736zM16,20.871c-2.69,0-4.872-2.182-4.872-4.871c0-2.69,2.182-4.872,4.872-4.872c2.689,0,4.871,2.182,4.871,4.872C20.871,18.689,18.689,20.871,16,20.871z"/>
+                        <title>Link options.</title>
+                    </g>
+                </g>
+            </g>
+        </g>
+        <g id="j_228" model-id="3c04f454-87f0-444d-bb69-121555876869" class="link joint-theme-default">
+            <path class="connection" id="v-4837" stroke="#B5B5B5" d="M 405 632 636 744"/>
+            <path class="marker-source" id="v-4838"
+                  transform="translate(405,632) scale(1,1) rotate(25.796020507812486)"/>
+            <path class="marker-target" id="v-4839" stroke-width="0" fill="#B5B5B5" d="M 10 0 L 0 5 L 10 10 z"
+                  transform="translate(642.824132139701,752.5017455387274) scale(1,1) rotate(-154.2039794921875)"/>
+            <path class="connection-wrap" id="v-4840" d="M 405 632 636 744"/>
+            <g class="labels" id="v-4841">
+                <g class="esp-label" id="v-4846" label-idx="0" cursor="move" transform="translate(520.5, 688)">
+                    <rect class="label-border" fill="#F5F5F5" rx="13" ry="13" x="0" y="0" width="0" height="0"/>
+                    <text text-anchor="middle" font-size="10" font-weight="300" fill="#686868" ref="rect" ref-x="0" ref-y="0" id="v-4847" y="0.8em" display="none" xml:space="preserve" transform="translate(0,0)"><tspan id="v-4848" dy="0em" x="0" class="v-line v-empty-line" style="opacity: 0;">-</tspan></text>
+                </g>
+            </g>
+            <g class="marker-vertices" id="v-4842"/>
+            <g class="link-tools" id="v-4843">
+                <g class="link-tool" id="v-4844" transform="translate(440.9925537109375, 649.450927734375) ">
+                    <g class="tool-remove" event="remove">
+                        <circle r="11"/>
+                        <path transform="scale(.8) translate(-16, -16)"
+                              d="M24.778,21.419 19.276,15.917 24.777,10.415 21.949,7.585 16.447,13.087 10.945,7.585 8.117,10.415 13.618,15.917 8.116,21.419 10.946,24.248 16.447,18.746 21.948,24.248z"/>
+                        <title>Remove link.</title>
+                    </g>
+                    <g class="tool-options" event="link:options">
+                        <circle r="11" transform="translate(25)"/>
+                        <path fill="white" transform="scale(.55) translate(29, -16)"
+                              d="M31.229,17.736c0.064-0.571,0.104-1.148,0.104-1.736s-0.04-1.166-0.104-1.737l-4.377-1.557c-0.218-0.716-0.504-1.401-0.851-2.05l1.993-4.192c-0.725-0.91-1.549-1.734-2.458-2.459l-4.193,1.994c-0.647-0.347-1.334-0.632-2.049-0.849l-1.558-4.378C17.165,0.708,16.588,0.667,16,0.667s-1.166,0.041-1.737,0.105L12.707,5.15c-0.716,0.217-1.401,0.502-2.05,0.849L6.464,4.005C5.554,4.73,4.73,5.554,4.005,6.464l1.994,4.192c-0.347,0.648-0.632,1.334-0.849,2.05l-4.378,1.557C0.708,14.834,0.667,15.412,0.667,16s0.041,1.165,0.105,1.736l4.378,1.558c0.217,0.715,0.502,1.401,0.849,2.049l-1.994,4.193c0.725,0.909,1.549,1.733,2.459,2.458l4.192-1.993c0.648,0.347,1.334,0.633,2.05,0.851l1.557,4.377c0.571,0.064,1.148,0.104,1.737,0.104c0.588,0,1.165-0.04,1.736-0.104l1.558-4.377c0.715-0.218,1.399-0.504,2.049-0.851l4.193,1.993c0.909-0.725,1.733-1.549,2.458-2.458l-1.993-4.193c0.347-0.647,0.633-1.334,0.851-2.049L31.229,17.736zM16,20.871c-2.69,0-4.872-2.182-4.872-4.871c0-2.69,2.182-4.872,4.872-4.872c2.689,0,4.871,2.182,4.871,4.872C20.871,18.689,18.689,20.871,16,20.871z"/>
+                        <title>Link options.</title>
+                    </g>
+                </g>
+            </g>
+        </g>
+        <g id="j_229" model-id="926c61f3-1376-43f6-b258-22207e095709" class="link joint-theme-default">
+            <path class="connection" id="v-4850" stroke="#B5B5B5" d="M 395 632 164 744"/>
+            <path class="marker-source" id="v-4851"
+                  transform="translate(395,632) scale(1,1) rotate(-205.7960205078125)"/>
+            <path class="marker-target" id="v-4852" stroke-width="0" fill="#B5B5B5" d="M 10 0 L 0 5 L 10 10 z"
+                  transform="translate(152.82415144578508,743.4982562224925) scale(1,1) rotate(-25.7960262298584)"/>
+            <path class="connection-wrap" id="v-4853" d="M 395 632 164 744"/>
+            <g class="labels" id="v-4854">
+                <g class="esp-label" id="v-4859" label-idx="0" cursor="move" transform="translate(279.5, 688)">
+                    <rect class="label-border" fill="#F5F5F5" rx="13" ry="13" x="0" y="0" width="0" height="0"/>
+                    <text text-anchor="middle" font-size="10" font-weight="300" fill="#686868" ref="rect" ref-x="0" ref-y="0" id="v-4860" y="0.8em" display="none" xml:space="preserve" transform="translate(0,0)"><tspan id="v-4861" dy="0em" x="0" class="v-line v-empty-line" style="opacity: 0;">-</tspan></text>
+                </g>
+            </g>
+            <g class="marker-vertices" id="v-4855"/>
+            <g class="link-tools" id="v-4856">
+                <g class="link-tool" id="v-4857" transform="translate(359.0074462890625, 649.450927734375) ">
+                    <g class="tool-remove" event="remove">
+                        <circle r="11"/>
+                        <path transform="scale(.8) translate(-16, -16)"
+                              d="M24.778,21.419 19.276,15.917 24.777,10.415 21.949,7.585 16.447,13.087 10.945,7.585 8.117,10.415 13.618,15.917 8.116,21.419 10.946,24.248 16.447,18.746 21.948,24.248z"/>
+                        <title>Remove link.</title>
+                    </g>
+                    <g class="tool-options" event="link:options">
+                        <circle r="11" transform="translate(25)"/>
+                        <path fill="white" transform="scale(.55) translate(29, -16)"
+                              d="M31.229,17.736c0.064-0.571,0.104-1.148,0.104-1.736s-0.04-1.166-0.104-1.737l-4.377-1.557c-0.218-0.716-0.504-1.401-0.851-2.05l1.993-4.192c-0.725-0.91-1.549-1.734-2.458-2.459l-4.193,1.994c-0.647-0.347-1.334-0.632-2.049-0.849l-1.558-4.378C17.165,0.708,16.588,0.667,16,0.667s-1.166,0.041-1.737,0.105L12.707,5.15c-0.716,0.217-1.401,0.502-2.05,0.849L6.464,4.005C5.554,4.73,4.73,5.554,4.005,6.464l1.994,4.192c-0.347,0.648-0.632,1.334-0.849,2.05l-4.378,1.557C0.708,14.834,0.667,15.412,0.667,16s0.041,1.165,0.105,1.736l4.378,1.558c0.217,0.715,0.502,1.401,0.849,2.049l-1.994,4.193c0.725,0.909,1.549,1.733,2.459,2.458l4.192-1.993c0.648,0.347,1.334,0.633,2.05,0.851l1.557,4.377c0.571,0.064,1.148,0.104,1.737,0.104c0.588,0,1.165-0.04,1.736-0.104l1.558-4.377c0.715-0.218,1.399-0.504,2.049-0.851l4.193,1.993c0.909-0.725,1.733-1.549,2.458-2.458l-1.993-4.193c0.347-0.647,0.633-1.334,0.851-2.049L31.229,17.736zM16,20.871c-2.69,0-4.872-2.182-4.872-4.871c0-2.69,2.182-4.872,4.872-4.872c2.689,0,4.871,2.182,4.871,4.872C20.871,18.689,18.689,20.871,16,20.871z"/>
+                        <title>Link options.</title>
+                    </g>
+                </g>
+            </g>
+        </g>
+        <g id="j_230" model-id="64eaa4b1-c44e-4193-8171-d0ca259ba4fd" class="link joint-theme-default">
+            <path class="connection" id="v-4863" stroke="#B5B5B5" d="M 400 385 400 485"/>
+            <path class="marker-source" id="v-4864" transform="translate(400,385) scale(1,1) rotate(-270)"/>
+            <path class="marker-target" id="v-4865" stroke-width="0" fill="#B5B5B5" d="M 10 0 L 0 5 L 10 10 z"
+                  transform="translate(395,495) scale(1,1) rotate(-90)"/>
+            <path class="connection-wrap" id="v-4866" d="M 400 385 400 485"/>
+            <g class="labels" id="v-4867">
+                <g class="esp-label" id="v-4872" label-idx="0" cursor="move" transform="translate(400, 435)">
+                    <rect class="label-border" fill="#F5F5F5" rx="13" ry="13" x="0" y="0" width="0" height="0"/>
+                    <text text-anchor="middle" font-size="10" font-weight="300" fill="#686868" ref="rect" ref-x="0" ref-y="0" id="v-4873" y="0.8em" display="none" xml:space="preserve" transform="translate(0,0)"><tspan id="v-4874" dy="0em" x="0" class="v-line v-empty-line" style="opacity: 0;">-</tspan></text>
+                </g>
+            </g>
+            <g class="marker-vertices" id="v-4868"/>
+            <g class="link-tools" id="v-4869">
+                <g class="link-tool" id="v-4870" transform="translate(400, 425) ">
+                    <g class="tool-remove" event="remove">
+                        <circle r="11"/>
+                        <path transform="scale(.8) translate(-16, -16)"
+                              d="M24.778,21.419 19.276,15.917 24.777,10.415 21.949,7.585 16.447,13.087 10.945,7.585 8.117,10.415 13.618,15.917 8.116,21.419 10.946,24.248 16.447,18.746 21.948,24.248z"/>
+                        <title>Remove link.</title>
+                    </g>
+                    <g class="tool-options" event="link:options">
+                        <circle r="11" transform="translate(25)"/>
+                        <path fill="white" transform="scale(.55) translate(29, -16)"
+                              d="M31.229,17.736c0.064-0.571,0.104-1.148,0.104-1.736s-0.04-1.166-0.104-1.737l-4.377-1.557c-0.218-0.716-0.504-1.401-0.851-2.05l1.993-4.192c-0.725-0.91-1.549-1.734-2.458-2.459l-4.193,1.994c-0.647-0.347-1.334-0.632-2.049-0.849l-1.558-4.378C17.165,0.708,16.588,0.667,16,0.667s-1.166,0.041-1.737,0.105L12.707,5.15c-0.716,0.217-1.401,0.502-2.05,0.849L6.464,4.005C5.554,4.73,4.73,5.554,4.005,6.464l1.994,4.192c-0.347,0.648-0.632,1.334-0.849,2.05l-4.378,1.557C0.708,14.834,0.667,15.412,0.667,16s0.041,1.165,0.105,1.736l4.378,1.558c0.217,0.715,0.502,1.401,0.849,2.049l-1.994,4.193c0.725,0.909,1.549,1.733,2.459,2.458l4.192-1.993c0.648,0.347,1.334,0.633,2.05,0.851l1.557,4.377c0.571,0.064,1.148,0.104,1.737,0.104c0.588,0,1.165-0.04,1.736-0.104l1.558-4.377c0.715-0.218,1.399-0.504,2.049-0.851l4.193,1.993c0.909-0.725,1.733-1.549,2.458-2.458l-1.993-4.193c0.347-0.647,0.633-1.334,0.851-2.049L31.229,17.736zM16,20.871c-2.69,0-4.872-2.182-4.872-4.871c0-2.69,2.182-4.872,4.872-4.872c2.689,0,4.871,2.182,4.871,4.872C20.871,18.689,18.689,20.871,16,20.871z"/>
+                        <title>Link options.</title>
+                    </g>
+                </g>
+            </g>
+        </g>
+        <g id="j_220" model-id="node4" class="element devs Model joint-theme-default" magnet="false" fill="#ffffff"
+           stroke="none" transform="translate(250,500)">
+            <g class="rotatable" id="v-4659" transform="rotate(0,150,75)">
+                <rect class="background" id="v-4664" width="300" height="130" rx="10">
+                    <title id="v-4678"/>
+                </rect>
+                <g id="v-4681">
+                    <rect class="headerFiller" id="v-4679" x="0" y="17.5" height="17.5" width="300" fill="#FCC56D"/>
+                    <rect class="blockHeader" id="v-4669" x="0" y="0" rx="10" stroke-width="0" width="300" height="35"
+                          fill="#FCC56D">
+                        <title id="v-4680"/>
+                    </rect>
+                    <text class="headerLabel" id="v-4665" fill="#1E1E1E" pointer-events="none" font-weight="600" y="0.8em" xml:space="preserve" font-size="14" transform="translate(127.5,10.5)"><tspan id="v-4670" dy="0em" x="0" class="v-line">SPLIT</tspan></text>
+                </g>
+                <rect class="body" id="v-4663" fill="none" width="300" height="130" stroke="#B5B5B5" stroke-width="1"
+                      rx="10"/>
+
+                <g id="v-4682">
+                    <text class="contentText" id="v-4666" fill="#1E1E1E" pointer-events="none" font-weight="400" y="0.8em" xml:space="preserve" font-size="14" transform="translate(20,50)"><tspan id="v-4671" dy="0em" x="0" class="v-line">node4</tspan></text>
+                </g>
+                <g id="v-4683">
+                    <text class="testResultsSummary" id="v-4667" fill="#1E1E1E" pointer-events="none" font-weight="400" y="0.8em" display="none" xml:space="preserve" transform="translate(250,50)"><tspan id="v-4672" dy="0em" x="0" class="v-line v-empty-line" style="opacity: 0;">-</tspan></text>
+        <text class="testErrorsSummary" id="v-4668" fill="#1E1E1E" pointer-events="none" font-weight="400" y="0.8em" display="none" xml:space="preserve" transform="translate(230,50)"><tspan id="v-4673" dy="0em" x="0" class="v-line v-empty-line" style="opacity: 0;">-</tspan></text>
+                </g>
+
+                <g class="inPorts" id="v-4674" transform="translate(0,0)">
+                    <g class="port port0" id="v-4661" transform="translate(150,0)">
+                        <circle class="port-body" id="v-4676" r="5" magnet="passive" font-size="10" fill="#73E5B7"
+                                type="input" port="In"/>
+                    </g>
+                </g>
+                <g class="outPorts" id="v-4675" transform="translate(0,0)">
+                    <g class="port port0" id="v-4662" transform="translate(150,130)">
+                        <circle class="port-body" id="v-4677" r="5" magnet="true" font-size="10" fill="#F27980"
+                                type="output" port="Out"/>
+                    </g>
+                </g>
+
+            </g>
+        </g>
+        <g id="j_231" model-id="7f87d37c-f5ae-42a6-8a9d-f30e24ea928f" class="link joint-theme-default">
+            <path class="connection" id="v-4876" stroke="#B5B5B5" d="M 400 135 400 235"/>
+            <path class="marker-source" id="v-4877" transform="translate(400,135) scale(1,1) rotate(-270)"/>
+            <path class="marker-target" id="v-4878" stroke-width="0" fill="#B5B5B5" d="M 10 0 L 0 5 L 10 10 z"
+                  transform="translate(395,245) scale(1,1) rotate(-90)"/>
+            <path class="connection-wrap" id="v-4879" d="M 400 135 400 235"/>
+            <g class="labels" id="v-4880">
+                <g class="esp-label" id="v-4885" label-idx="0" cursor="move" transform="translate(400, 185)">
+                    <rect class="label-border" fill="#F5F5F5" rx="13" ry="13" x="0" y="0" width="0" height="0"/>
+                    <text text-anchor="middle" font-size="10" font-weight="300" fill="#686868" ref="rect" ref-x="0" ref-y="0" id="v-4886" y="0.8em" display="none" xml:space="preserve" transform="translate(0,0)"><tspan id="v-4887" dy="0em" x="0" class="v-line v-empty-line" style="opacity: 0;">-</tspan></text>
+                </g>
+            </g>
+            <g class="marker-vertices" id="v-4881"/>
+            <g class="link-tools" id="v-4882">
+                <g class="link-tool" id="v-4883" transform="translate(400, 175) ">
+                    <g class="tool-remove" event="remove">
+                        <circle r="11"/>
+                        <path transform="scale(.8) translate(-16, -16)"
+                              d="M24.778,21.419 19.276,15.917 24.777,10.415 21.949,7.585 16.447,13.087 10.945,7.585 8.117,10.415 13.618,15.917 8.116,21.419 10.946,24.248 16.447,18.746 21.948,24.248z"/>
+                        <title>Remove link.</title>
+                    </g>
+                    <g class="tool-options" event="link:options">
+                        <circle r="11" transform="translate(25)"/>
+                        <path fill="white" transform="scale(.55) translate(29, -16)"
+                              d="M31.229,17.736c0.064-0.571,0.104-1.148,0.104-1.736s-0.04-1.166-0.104-1.737l-4.377-1.557c-0.218-0.716-0.504-1.401-0.851-2.05l1.993-4.192c-0.725-0.91-1.549-1.734-2.458-2.459l-4.193,1.994c-0.647-0.347-1.334-0.632-2.049-0.849l-1.558-4.378C17.165,0.708,16.588,0.667,16,0.667s-1.166,0.041-1.737,0.105L12.707,5.15c-0.716,0.217-1.401,0.502-2.05,0.849L6.464,4.005C5.554,4.73,4.73,5.554,4.005,6.464l1.994,4.192c-0.347,0.648-0.632,1.334-0.849,2.05l-4.378,1.557C0.708,14.834,0.667,15.412,0.667,16s0.041,1.165,0.105,1.736l4.378,1.558c0.217,0.715,0.502,1.401,0.849,2.049l-1.994,4.193c0.725,0.909,1.549,1.733,2.459,2.458l4.192-1.993c0.648,0.347,1.334,0.633,2.05,0.851l1.557,4.377c0.571,0.064,1.148,0.104,1.737,0.104c0.588,0,1.165-0.04,1.736-0.104l1.558-4.377c0.715-0.218,1.399-0.504,2.049-0.851l4.193,1.993c0.909-0.725,1.733-1.549,2.458-2.458l-1.993-4.193c0.347-0.647,0.633-1.334,0.851-2.049L31.229,17.736zM16,20.871c-2.69,0-4.872-2.182-4.872-4.871c0-2.69,2.182-4.872,4.872-4.872c2.689,0,4.871,2.182,4.871,4.872C20.871,18.689,18.689,20.871,16,20.871z"/>
+                        <title>Link options.</title>
+                    </g>
+                </g>
+            </g>
+        </g>
+        <g id="j_225" model-id="node6" class="element devs Model joint-theme-default" magnet="false" fill="#ffffff"
+           stroke="none" transform="translate(500,1000)">
+            <g class="rotatable" id="v-4787" transform="rotate(0,150,75)">
+                <rect class="background" id="v-4791" width="300" height="130" rx="10">
+                    <title id="v-4804"/>
+                </rect>
+                <g id="v-4807">
+                    <rect class="headerFiller" id="v-4805" x="0" y="17.5" height="17.5" width="300" fill="#F27980"/>
+                    <rect class="blockHeader" id="v-4796" x="0" y="0" rx="10" stroke-width="0" width="300" height="35"
+                          fill="#F27980">
+                        <title id="v-4806"/>
+                    </rect>
+                    <text class="headerLabel" id="v-4792" fill="#1E1E1E" pointer-events="none" font-weight="600" y="0.8em" xml:space="preserve" font-size="14" transform="translate(131,10.5)"><tspan id="v-4797" dy="0em" x="0" class="v-line">SINK</tspan></text>
+                </g>
+                <rect class="body" id="v-4790" fill="none" width="300" height="130" stroke="#B5B5B5" stroke-width="1"
+                      rx="10"/>
+
+                <g id="v-4808">
+                    <text class="contentText" id="v-4793" fill="#1E1E1E" pointer-events="none" font-weight="400" y="0.8em" xml:space="preserve" font-size="14" transform="translate(20,50)"><tspan id="v-4798" dy="0em" x="0" class="v-line">node6</tspan></text>
+                </g>
+                <g id="v-4809">
+                    <text class="testResultsSummary" id="v-4794" fill="#1E1E1E" pointer-events="none" font-weight="400" y="0.8em" display="none" xml:space="preserve" transform="translate(250,50)"><tspan id="v-4799" dy="0em" x="0" class="v-line v-empty-line" style="opacity: 0;">-</tspan></text>
+        <text class="testErrorsSummary" id="v-4795" fill="#1E1E1E" pointer-events="none" font-weight="400" y="0.8em" display="none" xml:space="preserve" transform="translate(230,50)"><tspan id="v-4800" dy="0em" x="0" class="v-line v-empty-line" style="opacity: 0;">-</tspan></text>
+                </g>
+
+                <g class="inPorts" id="v-4801" transform="translate(0,0)">
+                    <g class="port port0" id="v-4789" transform="translate(150,0)">
+                        <circle class="port-body" id="v-4803" r="5" magnet="passive" font-size="10" fill="#73E5B7"
+                                type="input" port="In"/>
+                    </g>
+                </g>
+                <g class="outPorts" id="v-4802" transform="translate(0,0)"/>
+
+            </g>
+        </g>
+    </g>
+    <defs id="v-4621"/>
+</svg>

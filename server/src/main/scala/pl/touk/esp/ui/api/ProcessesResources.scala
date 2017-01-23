@@ -1,6 +1,7 @@
 package pl.touk.esp.ui.api
 
 import java.net.URLDecoder
+import java.util.Base64
 
 import akka.actor.ActorRef
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
@@ -19,7 +20,7 @@ import pl.touk.esp.ui.api.ProcessesResources.{UnmarshallError, WrongProcessId}
 import pl.touk.esp.ui.process.deployment.CheckStatus
 import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessStatus}
 import pl.touk.esp.ui.process.marshall.{ProcessConverter, UiProcessMarshaller}
-import pl.touk.esp.ui.process.repository.ProcessRepository
+import pl.touk.esp.ui.process.repository.{ProcessActivityRepository, ProcessRepository}
 import pl.touk.esp.ui.process.repository.ProcessRepository._
 import pl.touk.esp.ui.security.{LoggedUser, Permission}
 import pl.touk.esp.ui.util.{AkkaHttpResponse, Argonaut62Support, MultipartUtils, PdfExporter}
@@ -29,12 +30,14 @@ import akka.util.Timeout
 
 import scala.concurrent.duration._
 import EspErrorToHttp._
+import pl.touk.esp.ui.process.repository.ProcessActivityRepository.ProcessActivity
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class ProcessesResources(repository: ProcessRepository,
                          managerActor: ActorRef,
                          processConverter: ProcessConverter,
+                         processActivityRepository: ProcessActivityRepository,
                          processValidation: ProcessValidation)
                         (implicit ec: ExecutionContext, mat: Materializer)
   extends Directives with Argonaut62Support {
@@ -141,7 +144,8 @@ class ProcessesResources(repository: ProcessRepository,
           post {
             entity(as[Array[Byte]]) { (svg) =>
               complete {
-                repository.fetchProcessDetailsForId(processId, versionId).map { exportProcessToPdf(new String(svg), _) }
+                 repository.fetchProcessDetailsForId(processId, versionId).flatMap { process =>
+                   processActivityRepository.findActivity(processId).map(exportProcessToPdf(new String(svg), process, _)) }
              }
             }
           }
@@ -183,10 +187,10 @@ class ProcessesResources(repository: ProcessRepository,
       HttpResponse(status = StatusCodes.NotFound, entity = "Process not found")
   }
 
-  private def exportProcessToPdf(svg: String, processDetails: Option[ProcessDetails]) = processDetails match {
+  private def exportProcessToPdf(svg: String, processDetails: Option[ProcessDetails], processActivity: ProcessActivity) = processDetails match {
     case Some(process) =>
       process.json.map { json =>
-        PdfExporter.exportToPdf(svg, process, json)
+        PdfExporter.exportToPdf(svg, process, processActivity, json)
       }.map { pdf =>
         HttpResponse(status = StatusCodes.OK, entity = pdf)
       }.getOrElse(HttpResponse(status = StatusCodes.NotFound, entity = "Process not found"))

@@ -36,6 +36,7 @@ sources in (Compile, doc) := Seq.empty
 publishArtifact in (Compile, packageDoc) := false
 assemblyMergeStrategy in assembly := {
   case PathList(ps @ _*) if ps.last == "NumberUtils.class" => MergeStrategy.first
+  case PathList("org", "w3c", "dom", "events",  xs @ _*) => MergeStrategy.first
   case x =>
     val oldStrategy = (assemblyMergeStrategy in assembly).value
     oldStrategy(x)
@@ -67,7 +68,6 @@ libraryDependencies ++= {
         ExclusionRule("com.google.code.findbugs", "jsr305"),
         ExclusionRule("log4j", "log4j"),
         ExclusionRule("org.slf4j", "slf4j-log4j12")
-
       ),
     "org.apache.flink" %% "flink-clients" % flinkV % flinkScope
     //tutaj mamy dwie wersje jsr305 we flinku i assembly sie pluje...

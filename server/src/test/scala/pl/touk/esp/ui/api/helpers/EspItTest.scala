@@ -41,7 +41,7 @@ trait EspItTest extends LazyLogging { self: ScalatestRouteTest with Suite with B
   val processActivityRepository = newProcessActivityRepository(db)
 
   val managementActor = ManagementActor(env, InMemoryMocks.mockProcessManager, processRepository, deploymentProcessRepository)
-  val processesRoute = (u:LoggedUser) => new ProcessesResources(processRepository, managementActor, processConverter, processValidation).route(u)
+  val processesRoute = (u:LoggedUser) => new ProcessesResources(processRepository, managementActor, processConverter, processActivityRepository, processValidation).route(u)
 
   val processesRouteWithAllPermissions = withAllPermissions(processesRoute)
   val deployRoute = (u:LoggedUser) =>  new ManagementResources(InMemoryMocks.mockProcessManager.getProcessDefinition.typesInformation, managementActor).route(u)
