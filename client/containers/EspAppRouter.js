@@ -1,7 +1,7 @@
 import React from 'react';
 import { render } from 'react-dom';
 import { Provider } from 'react-redux';
-import { browserHistory, Router, Route, Link } from 'react-router'
+import { browserHistory, Router, Route, IndexRoute, Link } from 'react-router'
 
 import { App, Home } from './MainPage';
 import Processes from './Processes';
@@ -27,6 +27,7 @@ export default class EspAppRouter extends React.Component {
           <Route path={Processes.path} component={Processes} />
           <Route showHamburger={true} path={Visualization.path} component={Visualization} />
           <Route path={Metrics.path} component={Metrics} />
+          <IndexRoute component={Home} />
         </Route>
       </Router>
     );
