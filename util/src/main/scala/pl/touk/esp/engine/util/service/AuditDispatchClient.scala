@@ -21,8 +21,7 @@ trait AuditDispatchClient extends RequestResponseLogging {
   def postObjectAsJson[Body: EncodeJson, Resp: DecodeJson](url: Req, body: Body)
                                                           (implicit executionContext: ExecutionContext,
                                                            logCorrelationId: LogCorrelationId): Future[Resp] = {
-    val bodyAsString = body.asJson.spaces2
-    val req = url.setContentType("application/json", "utf-8") << bodyAsString
+    val req = preparePostJsonRequest(url, body)
     sendWithAuditAndStatusChecking(req).map {
       _.decodeWithMessage[Resp, Resp](identity, msg => throwWithLogging(req, new InvalidJsonResponseException(msg)))
     }
@@ -31,9 +30,14 @@ trait AuditDispatchClient extends RequestResponseLogging {
   def postObjectAsJsonWithoutResponseParsing[Body: EncodeJson](url: Req, body: Body)
                                                               (implicit executionContext: ExecutionContext,
                                                                logCorrelationId: LogCorrelationId): Future[String] = {
+    val req = preparePostJsonRequest(url, body)
+    sendWithAuditAndStatusChecking(req)
+  }
+
+  def preparePostJsonRequest[Body: EncodeJson](url: Req, body: Body): Req = {
     val bodyAsString = body.asJson.spaces2
     val req = url.setContentType("application/json", "utf-8") << bodyAsString
-    sendWithAuditAndStatusChecking(req)
+    req
   }
 
   def getJsonAsObject[Resp: DecodeJson](req: Req)
@@ -128,9 +132,9 @@ trait AuditDispatchClient extends RequestResponseLogging {
 
   // BASE
 
-  private def sendWithAuditAndStatusChecking(req: Req)
-                                            (implicit executionContext: ExecutionContext,
-                                             logCorrelationId: LogCorrelationId): Future[String] = {
+  def sendWithAuditAndStatusChecking(req: Req)
+                                    (implicit executionContext: ExecutionContext,
+                                     logCorrelationId: LogCorrelationId): Future[String] = {
     sendWithAudit(req).map(checkStatusThanConvertToString(req))
   }
 
@@ -140,9 +144,9 @@ trait AuditDispatchClient extends RequestResponseLogging {
     sendWithAudit(req).map(_.getResponseBody)
   }
 
-  private def sendWithAudit(req: Req)
-                           (implicit executionContext: ExecutionContext,
-                            logCorrelationId: LogCorrelationId): Future[Res] = {
+  def sendWithAudit(req: Req)
+                   (implicit executionContext: ExecutionContext,
+                    logCorrelationId: LogCorrelationId): Future[Res] = {
     logRequestResponse(req)(logCorrelationId.withClientId(clientId)) {
       http(req > identity[Res] _)
     }
