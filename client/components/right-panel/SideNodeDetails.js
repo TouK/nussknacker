@@ -4,7 +4,6 @@ import {connect} from "react-redux";
 import _ from "lodash";
 import {bindActionCreators} from "redux";
 import ActionsUtils from "../../actions/ActionsUtils";
-import NodeUtils from '../graph/NodeUtils'
 
 
 class SideNodeDetails extends Component {
@@ -29,21 +28,6 @@ class SideNodeDetails extends Component {
       }
     })
   }
-
-  editNode = () => {
-    this.props.actions.displayModalNodeDetails(this.props.nodeToDisplay)
-  }
-
-  deleteNode = () => {
-    this.props.actions.deleteNode(this.props.nodeToDisplay.id)
-  }
-
-  deleteButton() {
-    if (!NodeUtils.nodeIsProperties(this.props.nodeToDisplay)) {
-      return (<button type="button" className="espButton" onClick={this.deleteNode}>Delete</button>)
-    }
-  }
-
   render() {
     const flatten = this.flatObject(this.props.nodeToDisplay)
     return (
@@ -67,9 +51,6 @@ class SideNodeDetails extends Component {
           }
         })}
         <hr/>
-        <button type="button" className="espButton" onClick={this.editNode}>Edit</button>
-        { this.deleteButton() }
-
       </div>
     )
   }

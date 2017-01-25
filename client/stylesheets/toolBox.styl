@@ -1,39 +1,28 @@
 @import "./_variables.styl"
 
-.panel-body
-  padding: 0px 0px 0px 20px !important
-
 #toolbox
+  font-size 16px
+  font-weight lighter
+  margin-left -15px
+  margin-right 10px
+  .tree-view_item
+    border 1px solid #4f4f4f
+    &.disabled
+      opacity 0.4
+      cursor: not-allowed !important
+  .toolWrapper
+    margin-left 17px
   .tool
-    overflow-x: hidden
-    border: 1px solid #e6e6e6
-    background-color: #fdfdfd
-    border-radius: 3px
-    margin-bottom: 10px
-    margin-right: 24px
-    float: left
-    width: 95px
-    height: 90px
+    margin-left -17px
+    margin-bottom -1px
+    img
+      margin-left 15px
+    height 27px
+    border 1px solid #4f4f4f
+    &:hover
+      background-color toolHoverBkgColor
   .toolIcon
-    width: 30px
-    height: auto
-    margin: 0px auto
-    clear: both
-    display: block
-    opacity: 0.8
-  .icon-block
-    padding: 13px 3px 3px 3px
-  .title-block
-    color: #5d5d5d
-    border-radius: 0 0 10px 10px
-    text-align: center
-    padding: 8px 5px
-    font-size: 12px
-    overflow: hidden !important
-    text-overflow: ellipsis
-  .tool-group
-    clear: both
-    width: 215px
-    margin: 0px
-  p
-    margin-top: 10px
+    height 15px
+    display inline-block
+    svg
+      height 15px

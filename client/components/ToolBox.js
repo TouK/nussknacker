@@ -8,6 +8,9 @@ import "../stylesheets/toolBox.styl";
 import {Accordion, Panel} from "react-bootstrap";
 import Tool from "./Tool"
 
+import TreeView from 'react-treeview'
+import reactTreeviewCss from 'react-treeview/react-treeview.css'
+
 class ToolBox extends React.Component {
 
   static propTypes = {
@@ -15,34 +18,68 @@ class ToolBox extends React.Component {
     processCategory: React.PropTypes.string.isRequired
   }
 
+  constructor(props) {
+    super(props);
+    this.state = {
+      openedNodeGroups: {}
+    }
+  }
+
+  toggleGroup = (nodeGroup) => {
+    if (!this.nodeGroupIsEmpty(nodeGroup)) {
+      const newOpenedNodeGroups = {
+        ...this.state.openedNodeGroups,
+        [nodeGroup.name]: !this.state.openedNodeGroups[nodeGroup.name]
+      }
+      this.setState({openedNodeGroups: newOpenedNodeGroups});
+    }
+  }
+
+  nodeGroupIsEmpty = (nodeGroup) => {
+    return nodeGroup.possibleNodes.length == 0
+  }
 
   render() {
-    var nodesToAdd = this.props.processDefinitionData.nodesToAdd || []
-
-    //TODO: jakie opcje scrollbara??
     return (
       <div id="toolbox">
-        <Scrollbars renderTrackHorizontal={props => <div className="hide"/>} autoHeight  autoHeightMax={600}>
-        {
-          nodesToAdd.map(group => {
-            var nodes = group.possibleNodes
-              .filter((node) => node.categories.includes(this.props.processCategory))
-              .map(node => <Tool nodeModel={node.node} label={node.label} key={node.type + node.label}/>)
-            return _.isEmpty(nodes) ? [] :
-              _.concat(<p>{_.startCase(_.toLower(group.name)) }</p>, nodes, <hr className="tool-group"></hr>)
-          })
-        }
-        </Scrollbars>
-
+        <div>
+          {this.props.nodesToAdd.map((nodeGroup, i) => {
+            const label =
+              <span onClick={this.toggleGroup.bind(this, nodeGroup)}>{nodeGroup.name}</span>
+            return (
+              <TreeView
+                itemClassName={this.nodeGroupIsEmpty(nodeGroup) ? "disabled" : ""}
+                key={i}
+                nodeLabel={label}
+                collapsed={!this.state.openedNodeGroups[nodeGroup.name]}
+                onClick={this.toggleGroup.bind(this, nodeGroup)}
+              >
+                {nodeGroup.possibleNodes.map(node =>
+                  <Tool nodeModel={node.node} label={node.label} key={node.type + node.label}/>
+                )}
+              </TreeView>
+            );
+          })}
+        </div>
       </div>
     );
   }
 }
 
 function mapState(state) {
+  const processDefinitionData = state.settings.processDefinitionData || {}
+  const processCategory = _.get(state.graphReducer.fetchedProcessDetails, 'processCategory', '')
+  const nodesToAdd = (processDefinitionData.nodesToAdd || []).map((group) => {
+    return {
+      ...group,
+      possibleNodes: group.possibleNodes.filter((node) => node.categories.includes(processCategory))
+    }
+  })
+
   return {
-    processDefinitionData: state.settings.processDefinitionData || {},
-    processCategory: _.get(state.graphReducer.fetchedProcessDetails, 'processCategory', ''),
+    processDefinitionData: processDefinitionData,
+    processCategory: processCategory,
+    nodesToAdd: nodesToAdd
   }
 }
 

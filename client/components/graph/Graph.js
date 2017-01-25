@@ -4,6 +4,7 @@ import joint from 'jointjs'
 import EspNode from './EspNode'
 import 'jointjs/dist/joint.css'
 import _ from 'lodash'
+import $ from 'jquery'
 import svgPanZoom from 'svg-pan-zoom'
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
@@ -66,10 +67,10 @@ class Graph extends React.Component {
 
     directedLayout() {
         joint.layout.DirectedGraph.layout(this.graph, {
-            nodeSep: 200,
-            edgeSep: 500,
-            rankSep: 100,
-            minLen: 300,
+            nodeSep: 0,
+            edgeSep: 0,
+            rankSep: -40,
+            minLen: 0,
             rankDir: "TB"
         });
         this.changeLayoutIfNeeded()
@@ -210,17 +211,15 @@ class Graph extends React.Component {
       this.processGraphPaper.on('cell:pointerup blank:pointerup', (cellView, event) => {
         panAndZoom.disablePan();
       });
-      this.centerGraphHack(panAndZoom)
+      this.fitSmallAndLargeGraphs(panAndZoom)
       return panAndZoom
     }
 
-    //fixme To jest niestety hack. Po dodaniu prawego panelu graf nie jest juz wysrodkowany, ten hack to w ulomny sposob naprawia.
-    //Docelowe rozwiazanie to przerobienie layoutu, tak zeby w widoku grafu elementy nie nachodzily na siebie (tak jak prawy panel nachodzi na graf)
-    //Fajnie jakby prawy panel dalej byl resizowalny, to troche utrudnia sprawe, stad takie szybkie rozwiazanie
-    centerGraphHack(panAndZoom) {
-      const currentPan = panAndZoom.getPan()
-      panAndZoom.pan({x: currentPan.x - 270/2, y: currentPan.y})
-    }
+  fitSmallAndLargeGraphs = (panAndZoom) => {
+    const realZoom = panAndZoom.getSizes().realZoom
+    const toZoomBy = realZoom > 1 ? 1 / realZoom : 0.90 //jak jest za duze powiekszenie to oddalamy bardziej
+    panAndZoom.zoomBy(toZoomBy)
+  }
 
     changeNodeDetailsOnClick () {
       this.processGraphPaper.on('cell:pointerdblclick', (cellView, evt, x, y) => {
@@ -285,7 +284,8 @@ var spec = {
     var pointerOffset = monitor.getClientOffset()
     var rect = findDOMNode(component).getBoundingClientRect();
     //czegos tu chyba jeszcze brakuje... ale nie wiem czego :|
-    var relOffset = { x: (pointerOffset.x - rect.left - pan.x)/zoom, y : (pointerOffset.y - rect.top - pan.y)/zoom }
+    const graphPosition = $('#esp-graph svg').position()
+    var relOffset = { x: (pointerOffset.x - rect.left - pan.x - graphPosition.left)/zoom, y : (pointerOffset.y - rect.top - pan.y - graphPosition.top)/zoom }
     component.addNode(monitor.getItem(), relOffset)
 
   }

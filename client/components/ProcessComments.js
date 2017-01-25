@@ -33,22 +33,19 @@ class ProcessComments extends React.Component {
           {_.map(this.props.comments, (comment, idx) => {
             return (
               <div key={idx}>
-                <div className="user">
-                  <p>{comment.user}</p>
+                <div className="header">
+                  <span className="label label-info">{comment.user}</span>
+                  <span className="date">{DateUtils.format(comment.createDate)}</span>
+                  <p>{ProcessUtils.processDisplayName(comment.processId, comment.processVersionId)}</p>
                 </div>
                 <p>{comment.content}</p>
-                <div className="footer">
-                  <p>{ProcessUtils.processDisplayName(comment.processId, comment.processVersionId)}</p>
-                  <p>{DateUtils.format(comment.createDate)}</p>
-                </div>
-                <hr/>
               </div>
             )
           })}
         </ul>
         <div className="add-comment">
           <textarea placeholder="Write a comment..." value={this.state.comment} onChange={(e) => { this.setState({comment: e.target.value}) } } />
-          <button type="button" className="espButton" onClick={this.addComment}
+          <button type="button" className="espButton add-comment" onClick={this.addComment}
                   disabled={this.state.pendingRequest || _.isEmpty(this.state.comment) }>
             Add
           </button>

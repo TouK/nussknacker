@@ -45,21 +45,11 @@ class AddProcessDialog extends React.Component {
   }
 
   render() {
-    const headerStyles = EspModalStyles.headerStyles("#73E5B7", "white")
-    const dialogStyles = {content: {height: "60%"}}
+    const headerStyles = EspModalStyles.headerStyles("#2d8e54", "white")
     return (
-      <Modal isOpen={this.props.isOpen} style={EspModalStyles.modalStyles(dialogStyles)}
-             onRequestClose={this.closeDialog}>
+      <Modal isOpen={this.props.isOpen} className="espModal" onRequestClose={this.closeDialog}>
         <div className="modalHeader" style={headerStyles}>
           <span>Create new process</span>
-          <div className="header-buttons">
-            <button type="button" title="Create" className='modalButton' onClick={this.confirm}>
-              <img src={SaveIcon}/>
-            </button>
-            <button type="button" title="Cancel" className='modalButton' onClick={this.closeDialog}>
-              <img src={CloseIcon}/>
-            </button>
-          </div>
         </div>
         <div className="modalContent">
           <div className="node-table">
@@ -80,7 +70,12 @@ class AddProcessDialog extends React.Component {
             </div>
           </div>
         </div>
-        <div className="modalFooter"></div>
+        <div className="modalFooter">
+          <div className="footerButtons">
+            <button type="button" title="Cancel" className='modalButton' onClick={this.closeDialog}>Cancel</button>
+            <button type="button" title="Create" className='modalButton' onClick={this.confirm}>Create</button>
+          </div>
+        </div>
       </Modal>
     );
   }

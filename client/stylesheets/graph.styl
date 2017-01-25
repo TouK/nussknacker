@@ -1,27 +1,21 @@
 @import "./_variables.styl"
 
-.ReactModal__Overlay
-  z-index: 100
-.ReactModal__Body--open {
-  overflow-y: hidden;
-}
-
 #process-name
   position: absolute
   margin-left: 15px
 
 #esp-graph
   height: 100%
-  width: 100%
+  margin-left sidebarWidth
+  margin-right sidebarWidth
   overflow-y: overlay
   overflow-x: auto
-  background-image: url(../assets/img/paper-background.svg)
-  background-size: 15px
-  background-repeat: repeat
+  background-color: graphBkgColor
   #svg-pan-zoom-controls
     transform: translate(0, 0px) scale(0.75)
   svg
-    width: inherit
+    width: 100%
+    height 100%
     padding: 30px 15px
 
 node-highlight(strokeColor, backgroundFill)
@@ -37,34 +31,65 @@ node-highlight(strokeColor, backgroundFill)
 .node-focused
   node-highlight(#0058a9, #e6ecff)
 
-headerHeight = 90px
+.ReactModal__Overlay
+  z-index: 100
+  background-color: rgba(23, 22, 21, 0.3) !important //fixme ee nie wiem dlaczego important?
+
+
+.espModal
+  max-height modalMaxHeight
+  max-width modalMaxWidth
+  position: absolute;
+  background modalBkgColor
+  background-color modalBkgColor
+  outline: none;
+  border-radius: 0px;
+  padding: 0px;
+  top: 50px
+  left: 20%;
+  right: 20%;
+  margin-left auto
+  margin-right auto
+  border: 2px solid menuBkgColor
+
+.confirmationModal
+  width 575px
+  height 200px
+  font-size 18px
+  font-weight lighter
+  text-align center
+  p
+    margin-top 30px
+  button
+    margin-top 80px
+    margin-left 0px
+  button:first-child
+    margin-right 20px
+  button:nth-child(2)
+    margin-left 20px
+
 .modalHeader
-  padding: 25px 40px
-  text-transform: uppercase
-  font-weight: 700
-  font-size: 26px
-  height: headerHeight
-  .header-buttons
-    float: right
-    img
-      margin: 3px 7px
-      height: 30px
-      width: auto
-      &:hover
-        cursor: pointer
+  text-transform: lowercase
+  font-size 14px
+  font-weight 600
+  height: modalHeaderHeight
+  min-width modalHeaderWidth
+  display inline-block
+  background-color modalBkgColor
+  span
+    display inline-block
+    margin-left 15px
+    margin-top 3px
+  span::after
+    content: "\00a0\00a0"
 
 .modalContent
-  background-color: white
-  padding: 50px 20px
-  position: absolute
-  top: headerHeight
-  bottom: 0
-  left: 0
-  right: 0
-  overflow: auto
+  overflow auto
+  max-height modalContentMaxHeight
+  background-color: modalBkgColor
   .node-table
     min-width: 60%
-    max-width: 80%
+    max-width: 82%
     margin: 0 auto
     .node-table-body
       clear: both
@@ -72,7 +97,7 @@ headerHeight = 90px
       margin-bottom: 8px
       margin-top: 7px
     .node-label
-      color: #686868
+      color: modalLabelTextColor
       width: 20%
       display: inline-block
       vertical-align: top
@@ -84,12 +109,29 @@ headerHeight = 90px
       width: 80%
       display: inline-block
       color: #686868
+      textarea
+        overflow hidden
+    .node-error
+      width: 100%
+      color: warningColor
+      font-size: 14px
+      font-weight: 400
+      margin-bottom: 10px
+      margin-top: 10px
+    .node-tip
+      margin-left: 10px
+      width: 25px
+      height: 25px
+    .node-test-results
+      border: 1px solid testResultsColor
+      padding: 5px
     .node-input
       width: 100%
       height: 40px
       padding: 0 20px
       border: none
-      background-color: #F5F5F5
+      background-color: modalInputBkgColor
+      color: modalInputTextColor
       font-weight: 400
       font-size: 14px
     .node-group
@@ -98,12 +140,7 @@ headerHeight = 90px
       padding-left: 50px
       .node-label
         text-transform: none
-    .node-block
-      padding: 10px 0
-      hr
-        margin: 0
     textarea.node-input
-      min-height: 40px
       resize: vertical
       line-height: 1.5
       padding-top: 10px
@@ -112,14 +149,29 @@ headerHeight = 90px
       height: 20px
     &.node-editable
       .node-input
-        border-bottom: 1px solid #bfbfbf
+        border-bottom: 1px solid gray
 
+.modalFooter
+  margin-top: 5px
+  border-top: 2px solid menuBkgColor
+  height modalFooterHeight
+  background-color modalFooterBkgColor
+  .footerButtons
+    float right
+    button
+      text-transform uppercase
+    button.ladda-button
+      margin-right 20px
+      color modalConfirmButtonColor
+    button:nth-child(2)
+      margin-right 20px
+      color modalConfirmButtonColor
 
 espButton()
   width: 180px
   height: 44px
   border: none
-  border-radius: 5px
+  border-radius: 0px
   font-weight: 600
   font-size: 18px
   background-color: buttonBkgColor
@@ -127,31 +179,68 @@ espButton()
   transition: background-color 0.3s
 
   &:disabled,&.disabled
-    background-color: grey !important
+    opacity 0.3
     cursor: not-allowed !important
   &:not(:disabled):hover,&:not(.disabled):hover
     background-color: buttonBkgHover
+
+espButtonIcon()
+  width: buttonSize
+  height: buttonSize
+  font-size rightPanelButtonFontSize
+  border 1px solid buttonBorderColor
+  margin 10px buttonPadding 10px 0
+  img
+    display block
+    margin auto
+  svg
+    width 40px
+    display block
+    margin auto
+  &.dropzone
+    padding-top 4px //nie wiem o co chodzi...
+    display inline-block
 
 .espButton
   espButton()
   width: 120px
   height: 25px
   font-size: 15px
+  &.right-panel
+    espButtonIcon()
+  &.add-comment
+    espButtonIcon()
+    width 40px
+    height 30px
+  &.download-button
+    width 27px
+    height 27px
+    border 1px solid buttonBorderColor
+  &.attachment-button
+    svg
+      margin-top 10px
+      width 27px
+      height 27px
 
 .modalButton
-  background: transparent
-  padding: 0
-  margin: 0 7px
-  border: none
+  width: 120px;
+  height 30px
+  font-size: 18px;
+  margin-top: 10px;
+  font-weight: 600;
+  color: buttonTextColor;
+  background-color: buttonBkgColor;
+  border: 1px solid buttonBorderColor;
+  margin-left 10px
+
 .ladda-button
+  padding 0
   outline: none
   &:hover
     background: transparent
 
 .error
   background-color: red
-.modalButton + .modalButton
-  float: right
 
 .element
   cursor: pointer
@@ -189,15 +278,9 @@ espButton()
   float: right
 
 .testResultsSummary
-  fill: green
   font-size: 20
   font-weight: bold
 
-.testErrorsSummary
-  fill: red
-  font-size: 20
-  font-weight: bold
-
-.selectTestResults
-  margin-top 15px
-  margin-bottom 15px
+.testResultsPlaceholder
+  fill: buttonBorderColor
+  border: 0

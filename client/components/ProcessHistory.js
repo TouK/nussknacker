@@ -51,7 +51,7 @@ export class ProcessHistory_ extends Component {
     if (_.isEmpty(this.state.currentProcess)) {
       return index == 0 ? "current" : "past"
     } else {
-      return _.isEqual(process.createDate, this.state.currentProcess.createDate) ? "current" : process.createDate < this.state.currentProcess.createDate ? "past" : "";
+      return _.isEqual(process.createDate, this.state.currentProcess.createDate) ? "current" : process.createDate < this.state.currentProcess.createDate ? "past" : "future";
     }
   }
 
@@ -80,7 +80,7 @@ export class ProcessHistory_ extends Component {
                 <small><i>{DateUtils.format(historyEntry.createDate)}</i></small>
                 <br/>
                 {historyEntry.deployments.map((deployment, index) =>
-                  <small key={index}>{DateUtils.format(deployment.deployedAt)} <span className="label label-info">{deployment.environment}</span></small>
+                  <small key={index}><i>{DateUtils.format(deployment.deployedAt)}</i> <span className="label label-info">{deployment.environment}</span></small>
                 )}
               </li>
             )
