@@ -7,6 +7,8 @@ body
   width: 100%
   height: 100%
   font-family: _fontFamily !important
+  color: defaultTextColor
+  font-size: defaultFontSize
 
 #app-container
   position: absolute
@@ -122,12 +124,22 @@ processActivityList()
   font-size 10px
   float left
   padding 10px 5px 0 0
-  .user
-    font-weight bold
+  .header
+    display inline-block
+    span
+      margin-right 5px
+      &.date
+        color panelTitleTextColor
+        font-style italic
+    p
+      font-style italic
+      color panelTitleTextColor
   .footer
     font-style italic
     p
       margin-bottom 0
+  p
+    font-size 12px
 
 .process-comments
   margin-bottom 10px
@@ -137,8 +149,14 @@ processActivityList()
   .add-comment
     font-size 12px
     textarea
-      width 100%
-      height 60px
+      width 90%
+      height 30px
+      font-size 12px
+      font-weight lighter
+      border 1px solid commentBorderColor
+      background-color commentBkgColor
+      &:focus
+        outline-color: defaultTextColor
     button
       margin-top 10px
 
@@ -153,11 +171,25 @@ processActivityList()
     display inline-block
 
   .download-attachment
-    margin-left 10px
+    margin-right 5px
     cursor: pointer
     display inline-block
-    font-size 15px
+    font-size 25px
 
   .add-attachments
     font-size 12px
     display inline-block
+    width 90%
+    height: 90px
+    border 1px solid buttonBorderColor
+    .dropZone
+      width 100%
+      height 100%
+      font-size 12px
+      font-weight normal
+      padding 0
+    .attachment-button-text
+      margin-top -50px
+
+.label-info
+  background-color labelBkgColor

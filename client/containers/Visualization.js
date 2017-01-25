@@ -31,7 +31,7 @@ const Visualization = withRouter(React.createClass({
         this.redo()
       }
       const deleteKeyCode = 46
-      if (event.keyCode == deleteKeyCode && this.props.currentNodeId) {
+      if (event.keyCode == deleteKeyCode && this.props.currentNodeId && !this.props.showNodeDetailsModal) {
         this.deleteNode(this.props.currentNodeId)
       }
     }
@@ -124,6 +124,7 @@ function mapState(state) {
     graphLoading: state.graphReducer.graphLoading,
     leftPanelIsOpened: state.ui.leftPanelIsOpened,
     undoRedoAvailable: !state.ui.showNodeDetailsModal,
+    showNodeDetailsModal: state.ui.showNodeDetailsModal,
     nothingToSave: ProcessUtils.nothingToSave(state)
   };
 }

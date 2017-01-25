@@ -2,38 +2,51 @@
 @import "./_mixins.styl"
 
 #process-filter
-  margin: 25px containerPadding
-  width: 300px
+  margin: 45px containerPadding
+  width: 470px
   input
-    stroke: #B7B7B7
-    background-color: #FAFBFC
+    background-color: processesSearchInput
     box-shadow: none
   .input-group-addon
-    background-color: menuBkgColor
+    background-color: buttonBlueBkgColor
     border: none
-    padding: 6px 8px
+    padding: 8px 10px
     #search-icon
-      width: 20px
+      stroke: #FFFFFF
+      width: 30px
+  .form-control
+    height: 45px
+    width: 425px
+
 
 #process-top-bar
   display: flex
   justify-content: space-between
+  background-color: processesTopBar
 
 #process-add-button
-  margin: 25px containerPadding
-  width: 45px
+  margin: 45px 50px
+  width: 310px
   height: 45px
   float: right
-  border-radius: 50%
-  background-color: buttonBkgColor
-  color: buttonTextColor
+  background-color: buttonBlueBkgColor
+  color: buttonBlueColor
   display: flex
   align-items: center
   justify-content: center
-  font-size: xx-large
-  font-weight: 200
+  font open
+  font-size: 21px
+  font-weight: 600
   &:hover
-    background-color: buttonBkgHover
+    background: processesHoverColor
+  #add-icon
+    width: 20px
+    height: 45px
+    margin: 10px
+    margin-left: 20px
+    &:hover
+      background: processesHoverColor
+
 
 
 table#process-table
@@ -50,35 +63,36 @@ table#process-table
   border-collapse: initial
   font-size: 14px
   font-weight: 400
-  color: #686868
+  color: #000000
   & *
     border: none
 
   th, td
     padding: 20px 10px
+    vertical-align: middle
     &:nth-child(1)
       padding-left: containerPadding
     &:last-child
       padding-right: containerPadding
 
   th
-    background-color: #E0E0E0
+    background-color: processesTableHeaderColor
     font-size: 16px
     font-weight: 600
     &.reactable-th-id, &.reactable-th-name, &.reactable-th-category &.reactable-th-modifyDate
       width: 16%
-
   tr:nth-child(even)
-    background-color: #F5F5F5
+    background-color: processesTableEvenColor
   tr:nth-child(odd)
-    background-color: #FFFFFF
-  tr.row-hover:hover
+    background-color: processesTableOddColor
+  tr.row-hover:hover:nth-child(even)
     td
-      background-color: #d9edf7
+      background-color: lighten(processesTableEvenColor, 5%)
       cursor: default
-    td.blue-bar
-      border-left: 5px solid menuBkgColor
-      padding-left: (containerPadding - 5px)
+  tr.row-hover:hover:nth-child(odd)
+    td
+      background-color: lighten(processesTableOddColor, 5%)
+      cursor: default
 
   th.reactable-header-sort-asc:after {
     content: '\25BC'
@@ -97,20 +111,6 @@ table#process-table
   .date-column
     text-align: center
 
-  .favourite-column
-    width: iconColumnWidth
-    text-align: center
-    .favourite-icon
-      background-image: url('../assets/img/star-empty.svg')
-      background-repeat: no-repeat
-      display:inline-block
-      height: 20px
-      margin: 0 auto
-      padding: 0 10px
-      cursor: pointer
-      &:hover, &.is-favourite
-        background-image: url('../assets/img/star-full.svg')
-
   .edit-column
     text-align: center
     width: iconColumnWidth
@@ -123,6 +123,10 @@ table#process-table
 
   .metrics-column
     clickableIconColumn()
+
+  .edit-column
+    clickableIconColumn()
+
 
   .deploy-column
     clickableIconColumn()
@@ -144,7 +148,7 @@ table#process-table
       font-weight: 600
       font-size: 16px
     .reactable-next-page, .reactable-previous-page, .reactable-page-button
-      color: #686868
+      color: #000000
       &:focus
         text-decoration: none
     a.reactable-page-button

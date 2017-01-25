@@ -1,4 +1,5 @@
 
+//fixme wyrzucic
 class EspModalStyles {
 
   modalStyles = (userStyles = {}) => {

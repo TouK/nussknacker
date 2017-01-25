@@ -14,7 +14,6 @@ import ProcessTopBar from "../components/ProcessTopBar";
 import {connect} from "react-redux";
 import ActionsUtils from "../actions/ActionsUtils";
 import ConfirmDialog from "../components/ConfirmDialog";
-import HttpService from "../http/HttpService"
 
 const App_ = React.createClass({
 
@@ -31,13 +30,7 @@ const App_ = React.createClass({
   },
 
   renderTopLeftButton: function () {
-    if (_.get(this.props, 'routes[1].showHamburger', false)) {
-      return (
-        <div className="top-left-button" onClick={this.toggleUserPanel}>
-          <img src={this.props.leftPanelIsOpened ? hamburgerOpen : hamburgerClosed}/>
-        </div>
-      )
-    } else if (this.props.location.pathname.startsWith("/metrics") && this.canGoToProcess()) {
+    if (this.props.location.pathname.startsWith("/metrics") && this.canGoToProcess()) {
       return (
         <div className="top-left-button" onClick={this.goToProcess}>
           <span className="glyphicon glyphicon-menu-left"/>
@@ -64,7 +57,6 @@ const App_ = React.createClass({
 
             <div className="collapse navbar-collapse">
               <ul id="menu-items" className="nav navbar-nav navbar-right nav-pills nav-stacked">
-                <li><Link to={Home.path}>{Home.header}</Link></li>
                 <li><Link to={Processes.path}>{Processes.header}</Link></li>
                 <li><Link to={Metrics.basePath}>{Metrics.header}</Link></li>
               </ul>
@@ -95,36 +87,3 @@ export const App = connect(mapState, ActionsUtils.mapDispatchWithEspActions)(App
 App.path = '/'
 App.header_a = 'ESP'
 
-export const Home = React.createClass({
-
-  getInitialState() {
-    return {};
-  },
-
-  componentWillMount() {
-    HttpService.fetchBuildInfo().then((info) => this.setState({buildInfo: info}))
-    HttpService.fetchHealthCheck().then((check) => this.setState({healthCheck: check}))
-  },
-
-  render() {
-    return (<div className="Page homeScreen">
-      {this.state.healthCheck ?
-        (<div>
-          <div className={"appState " + this.state.healthCheck.state}/>
-          {this.state.healthCheck.error ? (<p className="errorText">{this.state.healthCheck.error}</p>) : null}
-        </div>) : null
-      }
-      {this.state.buildInfo ?
-        (<div className="buildInfo">
-          <p>Build info:</p>
-          {Object.keys(this.state.buildInfo).map((key, idx) => (<p key={idx}>{key}: {this.state.buildInfo[key]}</p>))}
-        </div>)
-        : null
-      }
-    </div>)
-  }
-});
-
-Home.title = 'Home'
-Home.path = '/home'
-Home.header = 'Home'

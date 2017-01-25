@@ -3,7 +3,7 @@
     "name": "Source",
     "icon": "filter.svg",
     "styles": {
-      "fill": "#73E5B7",
+      "fill": "#2d8e54",
       "color": "white"
     }
   },
@@ -11,7 +11,7 @@
     "name": "Sink",
     "icon": "filter.svg",
     "styles": {
-      "fill": "#F27980",
+      "fill": "#db4646",
       "color": "white"
     }
   },
@@ -19,7 +19,7 @@
     "name": "Filter",
     "icon": "filter.svg",
     "styles": {
-      "fill": "#AFA3E4",
+      "fill": "#db7e3a",
       "color": "white"
     }
   },
@@ -50,7 +50,7 @@
     "name": "Enricher",
     "icon": "cog.svg",
     "styles": {
-      "fill": "#FCC56D",
+      "fill": "#805db2",
       "color": "white"
     }
   },
@@ -66,7 +66,7 @@
     "name": "Processor",
     "icon": "cog.svg",
     "styles": {
-      "fill": "#38B27A",
+      "fill": "#4583dd",
       "color": "white"
     }
   },
@@ -88,7 +88,7 @@
     "name": "CustomNode",
     "icon": "cog.svg",
     "styles": {
-      "fill": "#e892bd",
+      "fill": "#1aada6",
       "color": "white"
     }
   }

@@ -32,25 +32,15 @@ class ConfirmDialog extends React.Component {
   }
 
   render() {
-    const headerStyles = EspModalStyles.headerStyles("#a94442", "white")
-    const dialogStyles = {content: {height: "30%"}}
     return (
-      <Modal isOpen={this.props.confirmDialog.isOpen} style={EspModalStyles.modalStyles(dialogStyles)} onRequestClose={this.closeDialog}>
-        <div className="modalHeader" style={headerStyles}>
-          <span>Are you sure?</span>
-          <div className="header-buttons">
-            <button type="button" title="Accept" className='modalButton' onClick={this.confirm}>
-              <img src={SaveIcon}/>
-            </button>
-            <button type="button" title="Cancel" className='modalButton' onClick={this.closeDialog}>
-              <img src={CloseIcon}/>
-            </button>
-          </div>
-        </div>
+      <Modal isOpen={this.props.confirmDialog.isOpen} className="espModal confirmationModal" onRequestClose={this.closeDialog}>
         <div className="modalContent">
           <p>{this.props.confirmDialog.text}</p>
+          <div className="confirmationButtons">
+            <button type="button" title="Cancel" className='modalButton' onClick={this.closeDialog}>No</button>
+            <button type="button" title="Yes" className='modalButton' onClick={this.confirm}>Yes</button>
+          </div>
         </div>
-        <div className="modalFooter"></div>
       </Modal>
     );
   }

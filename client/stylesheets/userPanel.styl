@@ -1,18 +1,13 @@
 @import "./_variables.styl"
 
 #espSidenav
-  width: 0px
-  &.is-opened
-    width: 280px
+  width: sidebarWidth
   .tab-content
     margin-top 10px
   hr
     border-top 1px solid #ddd
     margin-top 10px
     margin-bottom 10px
-  #right-panel-tabs
-    ul.nav-tabs li a
-      color: #333
 
 sidenavMixin()
   z-index: 1
@@ -20,7 +15,7 @@ sidenavMixin()
   top: 0
   bottom: 0
   padding-top: menuBarHeight
-  background-color: #EBEBEB
+  background-color: panelBkgColor
   overflow-x: hidden
   & a
     white-space: pre
@@ -32,41 +27,52 @@ sidenavMixin()
 .rightSidenav
   sidenavMixin()
   right: 0
-  width: auto !important
   #right-panel-tabs .tab-content
     padding 0px 15px 0px 15px
     button
       display block
       margin-bottom 5px
+  .global
+    display inline-flex
+    .global-process-info
+      display inline-block
+      margin-left buttonPadding
+      margin-top buttonPadding
+      width (buttonPadding * 2 + buttonSize * 2)px
+      p
+        font-size 14px
+        font-weight lighter
+
+    .global-buttons
+      display inline-block
 
 // Accordion styles
 // overwriting default styles of the component
 .panel-default, .panel-heading
+  background-color: panelHeaderBkgColor !important
   border: none !important
   border-radius: 0 !important
-  background-color: #EBEBEB !important
-  cursor: pointer
+  cursor: pointer //fixme to wywalic
 .panel-heading
+  height: panelHeaderHeight
   padding: 0 !important
-  height: 60px
-  border-bottom: 1px solid #ddd !important
   .panel-title
-    padding: 0 !important
-    color: #5d5d5d
+    color: panelTitleTextColor
+    font-size: panelHeaderFontSize
   a
+    padding 5px 0 0 buttonPadding
     text-decoration: none !important
     display: block
     width: 100%
     height: 100%
-    padding: 20px
-  &:hover
-    background-color: #a5a5a5 !important
 
 .panel-body
-  background-color: #f5f5f5 !important
+  padding: 0 0 0 buttonPadding !important
+  background-color: panelBkgColor
   border: none !important
 
 .panel
+  margin-bottom: 1px !important
   box-shadow: none !important
 .panel + .panel
   margin-top: 0 !important
@@ -95,3 +101,7 @@ sidenavMixin()
   margin-bottom 5
   div
     text-align center
+
+
+.thumbVertical
+  background-color scrollbarColor

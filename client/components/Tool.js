@@ -1,6 +1,7 @@
 import React from 'react'
 import {render} from "react-dom";
 import { DragSource } from 'react-dnd';
+import InlinedSvgs from '../assets/icons/InlinedSvgs'
 import "../stylesheets/toolBox.styl";
 
 class Tool extends React.Component {
@@ -12,20 +13,13 @@ class Tool extends React.Component {
   };
 
   render() {
-    const type = this.props.nodeModel.type
-    const attributes = require('json!../assets/json/nodeAttributes.json')
-    const iconName = attributes[type].icon
-    const icon = require('../assets/img/' + iconName);
+    const icon = InlinedSvgs.svgs[this.props.nodeModel.type]
 
     return this.props.connectDragSource(
-      <div className="tool" title={this.props.label}>
-        <div className="icon-block">
-          <img src={icon} className="toolIcon"/>
+      <div className="tool">
+        <div className="toolWrapper">
+          <div dangerouslySetInnerHTML={{__html: icon}} className="toolIcon"/> {this.props.label} </div>
         </div>
-        <div className="title-block">
-          <span>{this.props.label}</span>
-        </div>
-      </div>
     )
   }
 }

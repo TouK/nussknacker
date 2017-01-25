@@ -13,6 +13,8 @@ import NodeUtils from './NodeUtils';
 import NodeDetailsContent from './NodeDetailsContent';
 import EspModalStyles from '../../common/EspModalStyles'
 import TestResultUtils from '../../common/TestResultUtils'
+import {Scrollbars} from "react-custom-scrollbars";
+import cssVariables from "../../stylesheets/_variables.styl"
 
 class NodeDetailsModal extends React.Component {
 
@@ -75,24 +77,20 @@ class NodeDetailsModal extends React.Component {
   }
 
   renderModalButtons() {
-    const EditIcon = require('../../assets/img/edit-icon.svg');
-    const SaveIcon = require('../../assets/img/save-icon.svg');
-    const CloseIcon = require('../../assets/img/close-icon.svg');
-
     var buttonClasses = classNames('modalButton')
-    var editButtonClasses = classNames(buttonClasses, 'pull-left', {'hidden': this.state.isEditMode})
-    var saveButtonClasses = classNames(buttonClasses, 'pull-left', {'hidden': !this.state.isEditMode})
+    var editButtonClasses = classNames(buttonClasses, 'pull-right', {'hidden': this.state.isEditMode})
+    var saveButtonClasses = classNames(buttonClasses, 'pull-right', {'hidden': !this.state.isEditMode})
 
     if (!this.props.readOnly) {
       return ([
         <LaddaButton key="1" title="Save node details" className={saveButtonClasses}
                       loading={this.state.pendingRequest}
-                      buttonStyle='zoom-in' onClick={this.performNodeEdit}><img src={SaveIcon}/></LaddaButton>,
+                      buttonStyle='zoom-in' onClick={this.performNodeEdit}>Save</LaddaButton>,
         <button key="2" type="button" title="Edit node details" className={editButtonClasses} onClick={this.editNodeData}>
-          <img src={EditIcon}/>
+          Edit
         </button>,
         <button key="3" type="button" title="Close node details" className={buttonClasses} onClick={this.closeModal}>
-          <img src={CloseIcon}/>
+          Close
         </button>
       ] );
     } else {
@@ -103,23 +101,25 @@ class NodeDetailsModal extends React.Component {
   render() {
     var isOpen = !_.isEmpty(this.props.nodeToDisplay) && this.props.showNodeDetailsModal
     var headerStyles = EspModalStyles.headerStyles(this.nodeAttributes().styles.fill, this.nodeAttributes().styles.color)
-
     var testResults = TestResultUtils.resultsForNode(this.props.testResults, this.state.currentNodeId)
     return (
       <div className="objectModal">
-        <Modal isOpen={isOpen} style={EspModalStyles.modalStyles()} onRequestClose={this.closeModal}>
+        <Modal isOpen={isOpen} className="espModal" onRequestClose={this.closeModal}>
           <div className="modalHeader" style={headerStyles}>
             <span>{NodeUtils.nodeType(this.props.nodeToDisplay)}</span>
-            <div className="header-buttons">
+          </div>
+          <div className="modalContent">
+          <Scrollbars autoHeight autoHeightMax={cssVariables.modalContentMaxHeight} renderThumbVertical={props => <div {...props} className="thumbVertical"/>}>
+              <NodeDetailsContent isEditMode={this.state.isEditMode} node={this.state.editedNode}
+                                  processDefinitionData={this.props.processDefinitionData}
+                                  nodeErrors={this.props.nodeErrors} onChange={this.updateNodeState} testResults={testResults}/>
+          </Scrollbars>
+          </div>
+          <div className="modalFooter">
+            <div className="footerButtons">
               {this.renderModalButtons()}
             </div>
           </div>
-          <div className="modalContent">
-            <NodeDetailsContent isEditMode={this.state.isEditMode} node={this.state.editedNode}
-                                processDefinitionData={this.props.processDefinitionData}
-                                nodeErrors={this.props.nodeErrors} onChange={this.updateNodeState} testResults={testResults}/>
-          </div>
-          <div className="modalFooter"></div>
         </Modal>
       </div>
     );

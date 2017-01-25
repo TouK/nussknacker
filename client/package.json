@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "build": "NODE_ENV=production ./node_modules/webpack/bin/webpack.js --config ./webpack.production.config.js --progress",
+    "build": "NODE_ENV=production ./node_modules/webpack/bin/webpack.js --config ./webpack.production.config.js --progress && cp -R assets/icons/license dist/license",
     "test": "NODE_ENV=production ./node_modules/karma/bin/karma start --single-run --browsers PhantomJS"
   },
   "dependencies": {
@@ -28,6 +28,7 @@
     "react-redux": "4.4.5",
     "react-router": "2.6.0",
     "redux-thunk": "2.1.0",
+    "react-treeview": "0.4.6",
     "react-textarea-autosize": "4.0.5",
     "react-notification-system": "0.2.10",
     "react-autosuggest": "7.0.1",

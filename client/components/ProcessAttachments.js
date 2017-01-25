@@ -9,6 +9,7 @@ import DateUtils from '../common/DateUtils'
 import ProcessUtils from '../common/ProcessUtils'
 import HttpService from "../http/HttpService";
 import Dropzone from "react-dropzone";
+import InlinedSvgs from '../assets/icons/InlinedSvgs'
 
 export class ProcessAttachments_ extends React.Component {
 
@@ -42,29 +43,25 @@ export class ProcessAttachments_ extends React.Component {
           {_.map(this.props.attachments, (attachment, idx) => {
             return (
               <div key={idx}>
-                <div className="user">
-                  <p>{attachment.user}</p>
+                <div className="download-attachment">
+                  <div className="espButton download-button" dangerouslySetInnerHTML={{__html: InlinedSvgs.buttonDownload}}
+                       onClick={this.downloadAttachment.bind(this, attachment.processId, attachment.processVersionId, attachment.id)}/>
+                </div>
+                <div className="header">
+                  <span className="label label-info">{attachment.user}</span>
+                  <span className="date">{DateUtils.format(attachment.createDate)}</span>
+                  <p>{ProcessUtils.processDisplayName(attachment.processId, attachment.processVersionId)}</p>
                 </div>
                 <p> {attachment.fileName} </p>
-                <div className="footer">
-                  <div className="details">
-                    <p>{ProcessUtils.processDisplayName(attachment.processId, attachment.processVersionId)}</p>
-                    <p>{DateUtils.format(attachment.createDate)}</p>
-                  </div>
-                  <div className="download-attachment">
-                    <span onClick={this.downloadAttachment.bind(this, attachment.processId, attachment.processVersionId, attachment.id)}
-                          className="glyphicon glyphicon-download-alt"></span>
-                  </div>
-                </div>
-                <hr/>
               </div>
             )
           })}
         </ul>
         <div className="add-attachments">
           <Dropzone onDrop={this.addAttachment} disableClick={this.state.pendingRequest}
-                    className={"dropZone espButton " + (this.state.pendingRequest ? "disabled" : "")}  >
-            <div>Add</div>
+                    className={"dropZone espButton" + (this.state.pendingRequest ? "disabled" : "")}  >
+            <div className="dropZone espButton attachment-button" dangerouslySetInnerHTML={{__html: InlinedSvgs.buttonUpload_1}} />
+            <div className="attachment-button-text">drop or choose a file</div>
           </Dropzone>
         </div>
       </div>

@@ -8,6 +8,7 @@ import NodeUtils from "./NodeUtils";
 import ExpressionSuggest from "./ExpressionSuggest";
 import TestResultUtils from "../../common/TestResultUtils";
 import NodeParametersMerger from "./NodeParametersMerger";
+import InlinedSvgs from "../../assets/icons/InlinedSvgs"
 
 //zastanowic sie czy this.state tutaj nie powinien byc przepychany przez reduxa,
 // bo obecnie ten stan moze byc przypadkowo resetowany kiedy parent component dostanie nowe propsy - bo tak mamy
@@ -61,7 +62,6 @@ export default class NodeDetailsContent extends React.Component {
               return (
                 <div className="node-block" key={index}>
                   {this.createListField("textarea", params.name, params, 'expression.expression', `service.parameters[${index}]`, params.name)}
-                  <hr/>
                 </div>
               )
             })}
@@ -79,7 +79,6 @@ export default class NodeDetailsContent extends React.Component {
               return (
                 <div className="node-block" key={index}>
                   {this.createListField("textarea", params.name, params, 'expression.expression', `parameters[${index}]`, params.name)}
-                  <hr />
                 </div>
               )
             })}
@@ -99,7 +98,6 @@ export default class NodeDetailsContent extends React.Component {
                     <div className="node-block" key={index}>
                       {this.createListField("input", "Name", params, "name", `fields[${index}]`)}
                       {this.createListField("textarea", "Expression", params, "expression.expression", `fields[${index}]`, "expression")}
-                      <hr />
                     </div>
                   )
                 })}
@@ -176,7 +174,6 @@ export default class NodeDetailsContent extends React.Component {
           return (
             <div className="node-block" key={index}>
               {this.createListField("input", params.name, params, "value", `ref.parameters[${index}]`)}
-              <hr />
             </div>
           )
         })}
@@ -203,18 +200,14 @@ export default class NodeDetailsContent extends React.Component {
 
     if (testValue) {
       return (
-        <div>
+        <div >
           {field}
-          <ListGroupItem bsStyle="success" bordered="false">
-            <div className="node-row">
-              <div className="node-label">
-                Evaluated:
-              </div>
+            <div className="node-row node-test-results">
+              <div className="node-label">{this.info('Value evaluated in test case')}</div>
               <div className="node-value">
                 <Textarea rows={1} cols={50} className="node-input" value={testValue} readOnly={true}/>
               </div>
             </div>
-          </ListGroupItem>
         </div>
       )
     } else {
@@ -260,15 +253,11 @@ export default class NodeDetailsContent extends React.Component {
           <div className="node-row">
             <div className="node-label">{fieldLabel}:</div>
             <div className="node-value">
-              {this.state.codeCompletionEnabled ?
-                <ExpressionSuggest inputProps={{
-                  rows: 1, cols: 50, className: "node-input", value: fieldValue,
-                  onValueChange: handleChange, readOnly: !this.props.isEditMode
-                }}/> :
-                <Textarea rows={1} cols={50} className="node-input" value={fieldValue}
-                          onChange={(e) => handleChange(e.target.value)} readOnly={readOnly}/>
-              }
-              {process.env.NODE_ENV == "development" ?
+              <ExpressionSuggest inputProps={{
+                rows: 1, cols: 50, className: "node-input", value: fieldValue,
+                onValueChange: handleChange, readOnly: !this.props.isEditMode
+              }}/>
+              {process.env.NODE_ENV == false ?
                 <div style={{color: "red"}}>
                   <p>ONLY_IN_DEV_MODE</p>
                   <p>{fieldValue}</p>
@@ -297,9 +286,10 @@ export default class NodeDetailsContent extends React.Component {
     return this.createField("plain-textarea", "Description", "additionalFields.description")
   }
 
+  hasTestResults = () => this.props.testResults && TestResultUtils.availableContexts(this.props.testResults).length > 0
 
   stateForSelectTestResults = (id) => {
-    if (this.props.testResults) {
+    if (this.hasTestResults()) {
       const chosenId = id || _.get(_.head(TestResultUtils.availableContexts(this.props.testResults)), "id")
       return {
         testResultsToShow: TestResultUtils.nodeResultsForContext(this.props.testResults, chosenId),
@@ -318,15 +308,20 @@ export default class NodeDetailsContent extends React.Component {
   }
 
   testResultsSelect = () => {
-    if (this.props.testResults) {
+    if (this.hasTestResults()) {
       return (
-        <select className="node-input selectTestResults" onChange={(e) => this.selectTestResults(e.target.value)}
-                value={this.state.testResultsIdToShow}>
-          { TestResultUtils.availableContexts(this.props.testResults).map((ctx, idx) =>
-            //ten toString jest b. slaby w wielu przypadkach - trzeba cos z nim zrobic :|
-            (<option key={idx} value={ctx.id}>{ctx.id} ({(ctx.input || "").toString().substring(0, 50)})</option>)
-          )}
-        </select>
+        <div className="node-row">
+          <div className="node-label">Test case:</div>
+          <div className="node-value">
+            <select className="node-input selectTestResults" onChange={(e) => this.selectTestResults(e.target.value)}
+                    value={this.state.testResultsIdToShow}>
+              { TestResultUtils.availableContexts(this.props.testResults).map((ctx, idx) =>
+                //ten toString jest b. slaby w wielu przypadkach - trzeba cos z nim zrobic :|
+                (<option key={idx} value={ctx.id}>{ctx.id} ({(ctx.input || "").toString().substring(0, 50)})</option>)
+              )}
+            </select>
+          </div>
+        </div>
       )
     } else {
       return null;
@@ -338,11 +333,10 @@ export default class NodeDetailsContent extends React.Component {
     if (this.state.testResultsToShow && this.state.testResultsToShow.context) {
       var ctx = this.state.testResultsToShow.context.variables
       return (
-        <ListGroupItem bsStyle="success">
 
-        <div className="node-table-body">
+        <div className="node-table-body node-test-results">
         <div className="node-row">
-          <div className="node-label">Variables:</div>
+          <div className="node-label">{this.info('Variables in test case')}</div>
         </div>
         {
           Object.keys(ctx).map((key, ikey) => {
@@ -369,7 +363,7 @@ export default class NodeDetailsContent extends React.Component {
               Save results for all inputs</a>
             : null
           }
-        </div></ListGroupItem>)
+        </div>)
     } else {
       return null;
     }
@@ -387,42 +381,46 @@ export default class NodeDetailsContent extends React.Component {
     if (this.state.testResultsToShow && this.state.testResultsToShow.error) {
       var error = this.state.testResultsToShow.error
 
-      //TODO: jakos to nie wyglada rewelacyjnie...
       return (
-        <ListGroupItem bsStyle="danger">
           <div className="node-table-body">
             <div className="node-row">
-              <div className="node-label">Error:</div>
-              <div className="node-value"><Textarea className="node-input" readOnly={true} value={`${error.message} (${error.class})`}/></div>
+              <div className="node-label">{ this.warning('Test case error')} </div>
+              <div className="node-value">
+                <div className="node-error">{`${error.message} (${error.class})`}</div>
+              </div>
             </div>
           </div>
-        </ListGroupItem>
       );
     } else {
       return null;
     }
   }
 
+  warning(title) {
+    return (<div className="node-tip" title={title} dangerouslySetInnerHTML={{__html: InlinedSvgs.tipsWarning}} />);
+  }
+
+  info(title) {
+    return (<div className="node-tip" title={title} dangerouslySetInnerHTML={{__html: InlinedSvgs.tipsInfo}} />);
+  }
+
   render() {
     var nodeClass = classNames('node-table', {'node-editable': this.props.isEditMode})
     return (
       <div className={nodeClass}>
-        <label className="code-completion">
-          <input type="checkbox" disabled={!this.props.isEditMode} checked={this.state.codeCompletionEnabled}
-                 onChange={(e) => {
-                   this.setState({codeCompletionEnabled: !this.state.codeCompletionEnabled})
-                 }}/> Code completion enabled
-        </label>
         {!_.isEmpty(this.props.nodeErrors) ?
           //FIXME: ladniej... i moze bledy dotyczace pol kolo nich?
-          <ListGroupItem bsStyle="danger">Node is invalid:
-            <ul>
-              {this.props.nodeErrors.map((error, index) =>
-                (<li key={index}>{error.message + (error.fieldName ? ` (field: ${error.fieldName})` : '')}</li>)
-              )}
-            </ul>
-          </ListGroupItem> : null}
-        {!_.isEmpty(this.props.nodeErrors) ? <hr/> : null}
+          <div className="node-table-body">
+            <div className="node-label">{this.warning('Node has errors')}</div>
+            <div className="node-value">
+              <div>
+                {this.props.nodeErrors.map((error, index) =>
+                  (<div className="node-error" key={index}>{error.message + (error.fieldName ? ` (field: ${error.fieldName})` : '')}</div>)
+                )}
+              </div>
+
+            </div>
+          </div> : null}
         {this.testResultsSelect()}
         {this.testErrors()}
         {this.customNode()}

@@ -16,7 +16,7 @@ class Metrics extends React.Component {
       grafanaUrl: this.props.settings.url,
       dashboard: this.props.settings.dashboard,
       processName: this.props.params.processId || "All",
-      theme: 'light',
+      theme: 'dark',
       env: this.props.settings.env
     };
     var iframeUrl = options.grafanaUrl + "/dashboard/db/" + options.dashboard + "?var-processName=" + options.processName

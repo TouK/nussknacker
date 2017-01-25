@@ -1,10 +1,12 @@
 import React, { PropTypes, Component } from 'react';
 import { render } from 'react-dom';
 import { Accordion, Panel } from 'react-bootstrap';
+import { Scrollbars } from 'react-custom-scrollbars';
 import ProcessHistory from './ProcessHistory'
 import ToolBox from './ToolBox'
 import ProcessComments from './ProcessComments'
 import ProcessAttachments from './ProcessAttachments'
+import Tips from './Tips.js'
 
 import '../stylesheets/userPanel.styl';
 
@@ -21,22 +23,22 @@ export default class UserLeftPanel extends Component {
   render() {
     return (
       <div id="espSidenav" className={this.renderClassName()}>
-        {/*Historia domyslnie otwarta, bo wtedy scrollbar z historii poprawnie sie renderuje, teraz nie wiem jak to lepiej obejsc bez hakow*/}
-        <Accordion defaultActiveKey="1">
-          <Panel header="Versions" eventKey="1">
-            <ProcessHistory/>
-          </Panel>
-          <Panel header="Creator panel" eventKey="2">
+        <Scrollbars renderThumbVertical={props => <div {...props} className="thumbVertical"/>}>
+          <Tips />
+          <Panel collapsible defaultExpanded header="Creator panel">
             <ToolBox/>
           </Panel>
-          <Panel header="Comments" eventKey="3">
+          <Panel collapsible defaultExpanded header="Versions">
+            <ProcessHistory/>
+          </Panel>
+          <Panel collapsible defaultExpanded header="Comments">
             <ProcessComments/>
           </Panel>
-          <Panel header="Attachments" eventKey="4">
+          <Panel collapsible defaultExpanded header="Attachments">
             <ProcessAttachments/>
           </Panel>
-        </Accordion>
-    </div>
+       </Scrollbars>
+      </div>
     );
   }
 
