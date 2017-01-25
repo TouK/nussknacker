@@ -1,13 +1,15 @@
 package pl.touk.esp.ui.util
 
 import java.io._
+import java.net.URI
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import javax.xml.transform.TransformerFactory
 import javax.xml.transform.sax.SAXResult
 import javax.xml.transform.stream.StreamSource
 
-import org.apache.fop.apps.FopFactory
+import org.apache.fop.apps.io.ResourceResolverFactory
+import org.apache.fop.apps.{FopConfParser, FopFactory}
 import org.apache.xmlgraphics.util.MimeConstants
 import pl.touk.esp.engine.graph.node._
 import pl.touk.esp.engine.graph.service.ServiceRef
@@ -22,7 +24,8 @@ import scala.xml.{Elem, NodeSeq, XML}
 
 object PdfExporter {
 
-  val fopFactory = FopFactory.newInstance(new File(getClass.getResource("/fop/config.xml").getFile))
+  val fopFactory = new FopConfParser(getClass.getResourceAsStream("/fop/config.xml"),
+    new URI("http://touk.pl"), ResourceResolverFactory.createDefaultResourceResolver).getFopFactoryBuilder.build
 
   def exportToPdf(svg: String, processDetails: ProcessDetails, processActivity: ProcessActivity, displayableProcess: DisplayableProcess): Array[Byte] = {
 
@@ -44,7 +47,7 @@ object PdfExporter {
     out.toByteArray
   }
 
-  val formatter = DateTimeFormatter.ofPattern("YYYY-MM-DD HH:mm:ss")
+  val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
   //TODO: dokladniejsze opisy wezlow, style, historia zmian/komentarze??
   private def prepareFopXml(svg: String, processDetails: ProcessDetails, processActivity: ProcessActivity, displayableProcess: DisplayableProcess) = {
