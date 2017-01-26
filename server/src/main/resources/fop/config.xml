@@ -2,7 +2,40 @@
     <renderers>
         <renderer mime="application/pdf">
             <fonts>
-                <auto-detect/>
+                <font kerning="yes" embed-url="file:///tmp/fop/fonts/OpenSans-Bold.ttf" embedding-mode="subset">
+                    <font-triplet name="OpenSans" style="normal" weight="bold"/>
+                </font>
+                <font kerning="yes" embed-url="file:///tmp/fop/fonts/OpenSans-BoldItalic.ttf" embedding-mode="subset">
+                    <font-triplet name="OpenSans" style="italic" weight="bold"/>
+                </font>
+                <font kerning="yes" embed-url="file:///tmp/fop/fonts/OpenSans-ExtraBold.ttf" embedding-mode="subset">
+                    <font-triplet name="OpenSans" style="normal" weight="900"/>
+                </font>
+                <font kerning="yes" embed-url="file:///tmp/fop/fonts/OpenSans-ExtraBoldItalic.ttf" embedding-mode="subset">
+                    <font-triplet name="OpenSans" style="italic" weight="900"/>
+                </font>
+
+                <font kerning="yes" embed-url="file:///tmp/fop/fonts/OpenSans-Italic.ttf" embedding-mode="subset">
+                    <font-triplet name="OpenSans" style="italic" weight="bold"/>
+                </font>
+                <font kerning="yes" embed-url="file:///tmp/fop/fonts/OpenSans-Ligth.ttf" embedding-mode="subset">
+                    <font-triplet name="OpenSans" style="normal" weight="200"/>
+                </font>
+                <font kerning="yes" embed-url="file:///tmp/fop/fonts/OpenSans-LigthItalic.ttf" embedding-mode="subset">
+                    <font-triplet name="OpenSans" style="italic" weight="200"/>
+                </font>
+
+                <font kerning="yes" embed-url="file:///tmp/fop/fonts/OpenSans-Regular.ttf" embedding-mode="subset">
+                    <font-triplet name="OpenSans" style="normal" weight="normal"/>
+                </font>
+
+                <font kerning="yes" embed-url="file:///tmp/fop/fonts/OpenSans-Semibold.ttf" embedding-mode="subset">
+                    <font-triplet name="OpenSans" style="normal" weight="500"/>
+                </font>
+
+                <font kerning="yes" embed-url="file:///tmp/fop/fonts/OpenSans-SemiboldItalic.ttf" embedding-mode="subset">
+                    <font-triplet name="OpenSans" style="italic" weight="500"/>
+                </font>
             </fonts>
         </renderer>
     </renderers>
