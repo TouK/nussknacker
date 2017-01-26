@@ -8,8 +8,10 @@ import javax.xml.transform.TransformerFactory
 import javax.xml.transform.sax.SAXResult
 import javax.xml.transform.stream.StreamSource
 
+import com.typesafe.scalalogging.LazyLogging
+import org.apache.commons.io.IOUtils
+import org.apache.fop.apps.FopConfParser
 import org.apache.fop.apps.io.ResourceResolverFactory
-import org.apache.fop.apps.{FopConfParser, FopFactory}
 import org.apache.xmlgraphics.util.MimeConstants
 import pl.touk.esp.engine.graph.node._
 import pl.touk.esp.engine.graph.service.ServiceRef
@@ -22,7 +24,7 @@ import pl.touk.esp.ui.process.repository.ProcessRepository.ProcessDetails
 
 import scala.xml.{Elem, NodeSeq, XML}
 
-object PdfExporter {
+object PdfExporter extends LazyLogging {
 
   val fopFactory = new FopConfParser(getClass.getResourceAsStream("/fop/config.xml"),
     new URI("http://touk.pl"), ResourceResolverFactory.createDefaultResourceResolver).getFopFactoryBuilder.build
@@ -33,11 +35,31 @@ object PdfExporter {
       //nooo to jest dopiero hak... to po to, aby ukryc krzyzyki na linkach
       .replace("class=\"link-tools\"", "class=\"link-tools\" style=\"display: none\"")
 
+    //robimy to za kazdym razem, zeby sie nie okazalo ze /tmp zostal wyczyszczony...
+    initFontsIfNeeded()
     val fopXml = prepareFopXml(decodedSvg, processDetails, processActivity, displayableProcess)
 
     createPdf(fopXml)
   }
 
+  //TODO: to jest dosc brzydki hack, ale nie potrafie inaczej zmusic fopa do czytania fontow z classpatha :(
+  private def initFontsIfNeeded(): Unit = synchronized {
+    val dir = new File("/tmp/fop/fonts")
+    dir.mkdirs()
+    List("OpenSans-BoldItalic.ttf",
+    "OpenSans-Bold.ttf",
+    "OpenSans-ExtraBoldItalic.ttf",
+    "OpenSans-ExtraBold.ttf",
+    "OpenSans-Italic.ttf",
+    "OpenSans-LightItalic.ttf",
+    "OpenSans-Light.ttf",
+    "OpenSans-Regular.ttf",
+    "OpenSans-SemiboldItalic.ttf",
+    "OpenSans-Semibold.ttf"
+    ).filterNot(name => new File (dir, name).exists()).foreach { name =>
+      IOUtils.copy(getClass.getResourceAsStream(s"/fop/fonts/$name"), new FileOutputStream(new File(dir, name)))
+    }
+  }
 
   private def createPdf(fopXml: Elem): Array[Byte] = {
     val out = new ByteArrayOutputStream()
@@ -54,7 +76,7 @@ object PdfExporter {
     val diagram = XML.loadString(svg)
     val currentVersion = processDetails.history.find(_.processVersionId == processDetails.processVersionId).get
 
-    <root xmlns="http://www.w3.org/1999/XSL/Format" font-family="DroidSans" font-size="12pt">
+    <root xmlns="http://www.w3.org/1999/XSL/Format" font-family="OpenSans" font-size="12pt">
 
       <layout-master-set>
         <simple-page-master margin-right="1.5cm" margin-left="1.5cm" margin-bottom="2cm" margin-top="1cm" page-width="21cm" page-height="29.7cm" master-name="left">
@@ -156,11 +178,6 @@ object PdfExporter {
     </block>
   </block>
 
-  private def attachments(processActivity: ProcessActivity) = {
-    <block/>
-  }
-
-
   private def nodeDetails(node: NodeData) = {
     val nodeData = node match {
       case Source(_, SourceRef(typ, params), _) => ("Type", typ) :: params.map(p => (p.name, p.value))
@@ -260,6 +277,10 @@ object PdfExporter {
         </table-body>
       </table>
     </block>
+  }
+
+  private def attachments(processActivity: ProcessActivity) = {
+      <block/>
   }
 
 }
