@@ -31,13 +31,9 @@ object PdfExporter extends LazyLogging {
 
   def exportToPdf(svg: String, processDetails: ProcessDetails, processActivity: ProcessActivity, displayableProcess: DisplayableProcess): Array[Byte] = {
 
-    val decodedSvg = svg
-      //nooo to jest dopiero hak... to po to, aby ukryc krzyzyki na linkach
-      .replace("class=\"link-tools\"", "class=\"link-tools\" style=\"display: none\"")
-
     //robimy to za kazdym razem, zeby sie nie okazalo ze /tmp zostal wyczyszczony...
     initFontsIfNeeded()
-    val fopXml = prepareFopXml(decodedSvg, processDetails, processActivity, displayableProcess)
+    val fopXml = prepareFopXml(svg, processDetails, processActivity, displayableProcess)
 
     createPdf(fopXml)
   }

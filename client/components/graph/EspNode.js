@@ -7,6 +7,8 @@ import InlinedSvgs from '../../assets/icons/InlinedSvgs'
 const rectWidth = 300
 const rectHeight = 60
 const nodeLabelFontSize = 15
+const edgeStroke = '#b3b3b3'
+
 
 const attrsConfig = () => {
   return {
@@ -69,12 +71,16 @@ const attrsConfig = () => {
       'font-size': 10
     },
     '.inPorts circle': {
-      fill: '#73E5B7',
+      fill: '#FFFFFF',
       magnet: 'passive',
+      stroke: edgeStroke,
+      'stroke-width': '1',
       type: 'input'
     },
     '.outPorts circle': {
-      fill: '#F27980',
+      fill: '#FFFFFF',
+      stroke: edgeStroke,
+      'stroke-width': '1',
       type: 'output'
     }
   }
@@ -194,7 +200,7 @@ export default {
         });
     },
 
-    makeLink(edge) {
+    makeLink(edge, forExport) {
       return new joint.dia.Link({
         markup: [
             '<path class="connection"/>',
@@ -231,8 +237,9 @@ export default {
           }
         }],
         attrs: {
-          '.connection': { stroke: 'white' },
-          '.marker-target': { 'stroke-width': 0, fill: 'white', d: 'M 10 0 L 0 5 L 10 10 z' },
+          '.link-tools': forExport ? { display: 'none'} : {},
+          '.connection': forExport ? { stroke: edgeStroke, 'stroke-width': 2, fill: edgeStroke } : { stroke: 'white', 'stroke-width': 2, fill: 'none' },
+          '.marker-target': { 'stroke-width': forExport ? 1 : 0, stroke: forExport ? edgeStroke : 'white', fill: 'white', d: 'M 10 0 L 0 5 L 10 10 L 8 5 z' },
           minLen: 10
         },
         edgeData: edge

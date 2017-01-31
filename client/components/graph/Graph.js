@@ -41,8 +41,9 @@ class Graph extends React.Component {
 
     componentDidMount() {
         this.processGraphPaper = this.createPaper()
-        this.drawGraph(this.props.processToDisplay, this.props.layout, this.props.testResults)
+        this.drawGraph(this.props.processToDisplay, this.props.layout, this.props.testResults, true)
         this._prepareContentForExport()
+        this.drawGraph(this.props.processToDisplay, this.props.layout, this.props.testResults)
         this.panAndZoom = this.enablePanZoom();
         this.changeNodeDetailsOnClick();
         this.labelToFrontOnHover();
@@ -134,10 +135,10 @@ class Graph extends React.Component {
           .on("link:connect", (c) => this.props.actions.nodesConnected(c.sourceView.model.id, c.targetView.model.id))
     }
 
-    drawGraph = (data, layout, testResults) => {
+    drawGraph = (data, layout, testResults, forExport) => {
       const nodes = _.map(data.nodes, (n) => { return EspNode.makeElement(n, testResults.nodeResults, _.get(testResults, `nodeResults.${n.id}`),
         _.get(testResults, `exceptions`, []).filter((i) => i.nodeId == n.id)) });
-      const edges = _.map(data.edges, (e) => { return EspNode.makeLink(e) });
+      const edges = _.map(data.edges, (e) => { return EspNode.makeLink(e, forExport) });
       const cells = nodes.concat(edges);
       this.graph.resetCells(cells);
       if (_.isEmpty(layout)) {
