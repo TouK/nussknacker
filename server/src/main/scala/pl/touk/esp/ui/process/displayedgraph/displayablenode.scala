@@ -8,5 +8,5 @@ object displayablenode {
 
   case class Edge(from: String, to: String, label: Option[Expression])
   case class NodeAdditionalFields(description: Option[String]) extends node.UserDefinedAdditionalNodeFields
-  case class ProcessAdditionalFields(description: Option[String]) extends UserDefinedProcessAdditionalFields
+  case class ProcessAdditionalFields(description: Option[String], groups: Set[Set[String]] = Set()) extends UserDefinedProcessAdditionalFields
 }

@@ -108,6 +108,29 @@ export function deleteNode(id) {
   }
 }
 
+export function startGrouping() {
+  return { type: "START_GROUPING"}
+}
+
+export function cancelGrouping() {
+  return { type: "CANCEL_GROUPING"}
+}
+
+export function finishGrouping() {
+  return { type: "FINISH_GROUPING"}
+}
+
+export function addToGroup(nodeId) {
+  return { type: "ADD_NODE_TO_GROUP", nodeId: nodeId}
+}
+
+export function ungroup(node) {
+  return { type: "UNGROUP", groupToRemove: node.ids}
+}
+
+
+
+
 export function editNode(process, before, after) {
   return (dispatch) => {
     const changedProcess = GraphUtils.mapProcessWithNewNode(process, before, after)

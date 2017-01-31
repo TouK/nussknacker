@@ -13,6 +13,7 @@ import ProcessUtils from '../common/ProcessUtils';
 import DialogMessages from '../common/DialogMessages';
 import LoaderSpinner from '../components/Spinner.js';
 import '../stylesheets/visualization.styl';
+import NodeUtils from '../components/graph/NodeUtils';
 
 const Visualization = withRouter(React.createClass({
 
@@ -86,7 +87,9 @@ const Visualization = withRouter(React.createClass({
   },
 
   deleteNode(id) {
-    this.props.actions.deleteNode(id)
+    if (this.props.canDelete) {
+      this.props.actions.deleteNode(id)
+    }
   },
 
   render: function() {
@@ -125,7 +128,8 @@ function mapState(state) {
     leftPanelIsOpened: state.ui.leftPanelIsOpened,
     undoRedoAvailable: !state.ui.showNodeDetailsModal,
     showNodeDetailsModal: state.ui.showNodeDetailsModal,
-    nothingToSave: ProcessUtils.nothingToSave(state)
+    nothingToSave: ProcessUtils.nothingToSave(state),
+    canDelete: !state.ui.showNodeDetailsModal && !NodeUtils.nodeIsGroup(state.graphReducer.nodeToDisplay)
   };
 }
 export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(Visualization);

@@ -12,6 +12,10 @@ class ProcessUtils {
     return `${processId}:v${versionId}`
   }
 
+  isInGroupingMode = (state) => {
+    return state.graphReducer.groupingState != null
+  }
+
   findAvailableVariables = (nodeId, process, processDefinition) => {
     const globalVariables = _.mapValues(processDefinition.globalVariables, (v) => {return v.value.refClazzName})
     const variablesDefinedBeforeNode = this._findVariablesDeclaredBeforeNode(nodeId, process, processDefinition);

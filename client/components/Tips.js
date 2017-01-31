@@ -10,8 +10,10 @@ import InlinedSvgs from '../assets/icons/InlinedSvgs'
 export class Tips extends Component {
 
   static propTypes = {
-    currentProcess: React.PropTypes.object.isRequired,
-    testing: React.PropTypes.bool.isRequired
+    currentProcess: React.PropTypes.object,
+    testing: React.PropTypes.bool.isRequired,
+    grouping: React.PropTypes.bool.isRequired
+
   }
 
   validationResult = () => this.props.currentProcess.validationResult
@@ -24,13 +26,23 @@ export class Tips extends Component {
 
   tipText = () => {
     if (this.isProcessValid()) {
-      return this.props.testing ? "Testing mode enabled" : "Everything seems to be OK";
+      return this.validTip()
     } else {
       const result = this.validationResult()
       const nodesErrors = _.flatten(Object.keys(result.invalidNodes || {}).map((key) => result.invalidNodes[key].map(error => this.printError(error, key))))
       const globalErrors = (result.globalErrors || []).map(this.printError)
       const processProperties = (result.processPropertiesErrors || []).map(error => this.printError(error, 'Properties'))
       return globalErrors.concat(processProperties.concat(nodesErrors)).join('\n')
+    }
+  }
+
+  validTip = () => {
+    if (this.props.testing) {
+      return "Testing mode enabled"
+    } else if (this.props.grouping) {
+      return "Grouping mode enabled"
+    } else {
+      return "Everything seems to be OK"
     }
   }
 
@@ -58,7 +70,8 @@ export class Tips extends Component {
 function mapState(state) {
   return {
     currentProcess: state.graphReducer.processToDisplay || {},
-    testing: state.graphReducer.testResults != null
+    testing: state.graphReducer.testResults != null,
+    grouping: state.graphReducer.groupingState != null
   };
 }
 
