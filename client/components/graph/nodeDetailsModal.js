@@ -78,8 +78,9 @@ class NodeDetailsModal extends React.Component {
 
   renderModalButtons() {
     var buttonClasses = classNames('modalButton')
-    var editButtonClasses = classNames(buttonClasses, 'pull-right', {'hidden': this.state.isEditMode})
-    var saveButtonClasses = classNames(buttonClasses, 'pull-right', {'hidden': !this.state.isEditMode})
+    var notEditable = this.nodeAttributes().notEditable
+    var editButtonClasses = classNames(buttonClasses, 'pull-right', {'hidden': notEditable || this.state.isEditMode})
+    var saveButtonClasses = classNames(buttonClasses, 'pull-right', {'hidden': notEditable || !this.state.isEditMode})
 
     if (!this.props.readOnly) {
       return ([
@@ -106,13 +107,17 @@ class NodeDetailsModal extends React.Component {
       <div className="objectModal">
         <Modal isOpen={isOpen} className="espModal" onRequestClose={this.closeModal}>
           <div className="modalHeader" style={headerStyles}>
-            <span>{NodeUtils.nodeType(this.props.nodeToDisplay)}</span>
+            <span>{this.nodeAttributes().name}</span>
           </div>
           <div className="modalContent">
           <Scrollbars autoHeight autoHeightMax={cssVariables.modalContentMaxHeight} renderThumbVertical={props => <div {...props} className="thumbVertical"/>}>
-              <NodeDetailsContent isEditMode={this.state.isEditMode} node={this.state.editedNode}
-                                  processDefinitionData={this.props.processDefinitionData}
-                                  nodeErrors={this.props.nodeErrors} onChange={this.updateNodeState} testResults={testResults}/>
+            {
+              NodeUtils.nodeIsGroup(this.state.editedNode) ?
+                  this.state.editedNode.nodes.map((node, idx) => (<div key={idx}><NodeDetailsContent isEditMode={false} node={node} processDefinitionData={this.props.processDefinitionData}
+                                                    nodeErrors={this.props.nodeErrors} onChange={() => {}} testResults={testResults}/><hr/></div>))
+               : (<NodeDetailsContent isEditMode={this.state.isEditMode} node={this.state.editedNode} processDefinitionData={this.props.processDefinitionData}
+                                  nodeErrors={this.props.nodeErrors} onChange={this.updateNodeState} testResults={testResults}/>)
+            }
           </Scrollbars>
           </div>
           <div className="modalFooter">

@@ -12,8 +12,13 @@ class SideNodeDetails extends Component {
     return _.flatMap(_.toPairs(obj), (keyVal) => {
       const key = keyVal[0]
       const val = keyVal[1]
+
       if (_.isArray(val)) {
-        return _.concat(new FlatObjectEntry(null, key), _.flatMap(val, (v) => {return this.flatObject(v)}))
+        if (_.isEqual(key, "ids")) {
+          return val.join(",")
+        } else {
+          return _.concat(new FlatObjectEntry(null, key), _.flatMap(val,this.flatObject))
+        }
       } else if (_.isObject(val)) {
         if (_.isEqual(key, "expression")) {
           return [new FlatObjectEntry(key, _.get(val, "expression"))]

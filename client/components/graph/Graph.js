@@ -13,12 +13,14 @@ import NodeDetailsModal from './nodeDetailsModal.js';
 import { DropTarget } from 'react-dnd';
 import '../../stylesheets/graph.styl'
 import SVGUtils from '../../common/SVGUtils';
+import NodeUtils from './NodeUtils.js'
 
 
 class Graph extends React.Component {
 
     static propTypes = {
         processToDisplay: React.PropTypes.object.isRequired,
+        groupingState: React.PropTypes.array,
         loggedUser: React.PropTypes.object.isRequired,
         connectDropTarget: React.PropTypes.func.isRequired,
         testResults: React.PropTypes.object.isRequired
@@ -55,14 +57,15 @@ class Graph extends React.Component {
     componentWillUpdate(nextProps, nextState) {
       const processNotChanged = _.isEqual(this.props.processToDisplay, nextProps.processToDisplay) &&
         _.isEqual(this.props.layout, nextProps.layout) &&
-        _.isEqual(this.props.testResults, nextProps.testResults)
+        _.isEqual(this.props.testResults, nextProps.testResults) &&
+        _.isEqual(this.props.groupingState, nextProps.groupingState)
 
       if (!processNotChanged) {
         this.drawGraph(nextProps.processToDisplay, nextProps.layout, nextProps.testResults)
       }
       //when e.g. layout changed we have to remember to highlight nodes
       if (!processNotChanged || !_.isEqual(this.props.nodeToDisplay, nextProps.nodeToDisplay)){
-        this.highlightNodes(nextProps.processToDisplay, nextProps.nodeToDisplay);
+        this.highlightNodes(nextProps.processToDisplay, nextProps.nodeToDisplay, nextProps.groupingState);
       }
     }
 
@@ -82,15 +85,15 @@ class Graph extends React.Component {
     }
 
     nodeInputs = (nodeId) => {
-      return this.props.processToDisplay.edges.filter(e => e.to == nodeId)
+      return NodeUtils.edgesFromProcess(this.props.processToDisplay).filter(e => e.to == nodeId)
     }
 
     nodeOutputs = (nodeId) => {
-      return this.props.processToDisplay.edges.filter(e => e.from == nodeId)
+      return NodeUtils.edgesFromProcess(this.props.processToDisplay).filter(e => e.from == nodeId)
     }
 
     isMultiOutput = (nodeId) => {
-      var node = this.props.processToDisplay.nodes.find(n => n.id == nodeId)
+      var node = NodeUtils.nodesFromProcess(this.props.processToDisplay).find(n => n.id == nodeId)
       return node.type == "Split"
     }
 
@@ -136,15 +139,21 @@ class Graph extends React.Component {
     }
 
     drawGraph = (data, layout, testResults, forExport) => {
-      const nodes = _.map(data.nodes, (n) => { return EspNode.makeElement(n, testResults.nodeResults, _.get(testResults, `nodeResults.${n.id}`),
+      const nodesWithGroups = NodeUtils.nodesFromProcess(data)
+      const edgesWithGroups = NodeUtils.edgesFromProcess(data)
+
+      const nodes = _.map(nodesWithGroups, (n) => { return EspNode.makeElement(n, testResults.nodeResults, _.get(testResults, `nodeResults.${n.id}`),
         _.get(testResults, `exceptions`, []).filter((i) => i.nodeId == n.id)) });
-      const edges = _.map(data.edges, (e) => { return EspNode.makeLink(e, forExport) });
+      const edges = _.map(edgesWithGroups, (e) => { return EspNode.makeLink(e, forExport) });
       const cells = nodes.concat(edges);
       this.graph.resetCells(cells);
       if (_.isEmpty(layout)) {
         this.directedLayout()
       } else {
-        _.forEach(layout, el => this.graph.getCell(el.id).set('position', el.position));
+        _.forEach(layout, el => {
+          const cell = this.graph.getCell(el.id)
+          if (cell) cell.set('position', el.position)
+        });
       }
     }
 
@@ -158,15 +167,18 @@ class Graph extends React.Component {
       this.processGraphPaper.setDimensions(oldWidth, oldHeight)
     }
 
-    highlightNodes = (data, nodeToDisplay) => {
+    highlightNodes = (data, nodeToDisplay, groupingState) => {
       this.graph.getCells().forEach(cell => {
         this.unhighlightCell(cell, 'node-validation-error')
         this.unhighlightCell(cell, 'node-focused')
+        this.unhighlightCell(cell, 'node-grouping')
+
       })
       _.keys(data.validationResult.invalidNodes).forEach(name => { this.highlightNode(name, 'node-validation-error') });
       if (nodeToDisplay) {
         this.highlightNode(nodeToDisplay.id, 'node-focused')
       }
+      (groupingState || []).forEach(id => this.highlightNode(id, 'node-grouping'))
     }
 
     highlightCell(cell, className) {
@@ -270,6 +282,7 @@ class Graph extends React.Component {
 function mapState(state) {
     return {
         nodeToDisplay: state.graphReducer.nodeToDisplay,
+        groupingState: state.graphReducer.groupingState,
         processToDisplay: state.graphReducer.processToDisplay,
         loggedUser: state.settings.loggedUser,
         layout: state.graphReducer.layout,

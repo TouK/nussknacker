@@ -24,6 +24,10 @@ InlinedSvgs.nodeSwitch = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2
 
 InlinedSvgs.nodeVariable = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"> <defs> <style>.a { fill: #fff; } .b { fill: none; } </style> </defs> <title>node-variable</title> <g> <path class="a" d="M16.16,16.59H12.52l-2.34-3.7-.35-.62A.79.79,0,0,1,9.67,12h0a2.71,2.71,0,0,1-.13.31c-.09.18-.22.41-.37.65L6.85,16.59H3.06V14.14H4.94L7.84,9.87l-2.72-4h-2V3.41H7.16l2,3.35c.13.21.23.43.34.62a.8.8,0,0,1,.16.31h0a1,1,0,0,1,.16-.31l.37-.62,2.06-3.35h3.77V5.87H14.27l-2.7,3.92,3,4.35h1.6Z"/> <rect class="b" width="20" height="20"/> </g> </svg>`
 
+InlinedSvgs.nodeGroup = `<svg viewBox="-470 -470 3000 3000" xmlns="http://www.w3.org/2000/svg"><defs> <style>.a {fill: #fff}</style> </defs><path class="a" d="M1920 384h-128v1024h128v384h-384v-128h-1280v128h-384v-384h128v-1024h-128v-384h384v128h1280v-128h384v384zm-256-256v128h128v-128h-128zm-1664 0v128h128v-128h-128zm128 1536v-128h-128v128h128zm1408-128v-128h128v-1024h-128v-128h-1280v128h-128v1024h128v128h1280zm256 128v-128h-128v128h128zm-640-1024h384v768h-896v-256h-384v-768h896v256zm-768 384h640v-512h-640v512zm1024 256v-512h-256v384h-384v128h640z"/><rect class="b" width="32" height="32"/></svg>`
+
+InlinedSvgs.nodeUngroup = `<svg viewBox="-470 -470 3000 3000" xmlns="http://www.w3.org/2000/svg"><defs> <style>.a {fill: #fff}</style> </defs><path class="a" d="M2048 768h-128v640h128v384h-384v-128h-896v128h-384v-384h128v-128h-384v128h-384v-384h128v-640h-128v-384h384v128h896v-128h384v384h-128v128h384v-128h384v384zm-256-256v128h128v-128h-128zm-640-384v128h128v-128h-128zm-1280 0v128h128v-128h-128zm128 1152v-128h-128v128h128zm1280-128h-128v128h128v-128zm-1152 0h896v-128h128v-640h-128v-128h-896v128h-128v640h128v128zm512 512v-128h-128v128h128zm1280 0v-128h-128v128h128zm-128-256v-640h-128v-128h-384v384h128v384h-384v-128h-384v128h128v128h896v-128h128z"/><rect class="b" width="32" height="32"/></svg>`
+
 InlinedSvgs.svgs = {
   "Source": InlinedSvgs.nodeSource,
   "Sink": InlinedSvgs.nodeSink,
@@ -34,7 +38,8 @@ InlinedSvgs.svgs = {
   "Enricher": InlinedSvgs.nodeEnricher,
   "Split": InlinedSvgs.nodeSplit,
   "Processor": InlinedSvgs.nodeService,
-  "CustomNode": InlinedSvgs.nodeCustom
+  "CustomNode": InlinedSvgs.nodeCustom,
+  "_group": InlinedSvgs.nodeGroup
 }
 
 
@@ -79,3 +84,8 @@ InlinedSvgs.tipsWarning = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 
 
 /*font-awesome to jest wziete z https://github.com/encharm/Font-Awesome-SVG-PNG/tree/master/black/svg*/
 InlinedSvgs.buttonDelete = `<svg viewBox="0 0 1792 1792" xmlns="http://www.w3.org/2000/svg"><defs> <style>.a {fill: #999}</style> </defs><path class="a" d="M1490 1322q0 40-28 68l-136 136q-28 28-68 28t-68-28l-294-294-294 294q-28 28-68 28t-68-28l-136-136q-28-28-28-68t28-68l294-294-294-294q-28-28-28-68t28-68l136-136q28-28 68-28t68 28l294 294 294-294q28-28 68-28t68 28l136 136q28 28 28 68t-28 68l-294 294 294 294q28 28 28 68z"/><rect class="b" width="32" height="32"/></svg>`
+
+InlinedSvgs.buttonGroup = `<svg viewBox="-470 -470 3000 3000" xmlns="http://www.w3.org/2000/svg"><defs> <style>.a {fill: #999}</style> </defs><path class="a" d="M1920 384h-128v1024h128v384h-384v-128h-1280v128h-384v-384h128v-1024h-128v-384h384v128h1280v-128h384v384zm-256-256v128h128v-128h-128zm-1664 0v128h128v-128h-128zm128 1536v-128h-128v128h128zm1408-128v-128h128v-1024h-128v-128h-1280v128h-128v1024h128v128h1280zm256 128v-128h-128v128h128zm-640-1024h384v768h-896v-256h-384v-768h896v256zm-768 384h640v-512h-640v512zm1024 256v-512h-256v384h-384v128h640z"/><rect class="b" width="32" height="32"/></svg>`
+
+InlinedSvgs.buttonUngroup = `<svg viewBox="-470 -470 3000 3000" xmlns="http://www.w3.org/2000/svg"><defs> <style>.a {fill: #999}</style> </defs><path class="a" d="M2048 768h-128v640h128v384h-384v-128h-896v128h-384v-384h128v-128h-384v128h-384v-384h128v-640h-128v-384h384v128h896v-128h384v384h-128v128h384v-128h384v384zm-256-256v128h128v-128h-128zm-640-384v128h128v-128h-128zm-1280 0v128h128v-128h-128zm128 1152v-128h-128v128h128zm1280-128h-128v128h128v-128zm-1152 0h896v-128h128v-640h-128v-128h-896v128h-128v640h128v128zm512 512v-128h-128v128h128zm1280 0v-128h-128v128h128zm-128-256v-640h-128v-128h-384v384h128v384h-384v-128h-384v128h128v128h896v-128h128z"/><rect class="b" width="32" height="32"/></svg>`
+

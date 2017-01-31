@@ -1,6 +1,10 @@
 import { combineReducers } from 'redux';
 import _ from 'lodash'
+import fp from 'lodash/fp'
+
 import GraphUtils from '../components/graph/GraphUtils'
+import NodeUtils from '../components/graph/NodeUtils'
+
 import UndoRedoReducer from '../undoredo/UndoRedoReducer'
 
 function settingsReducer(state = {loggedUser: {}, grafanaSettings: {}, processDefinitionData: {}}, action) {
@@ -75,7 +79,8 @@ const emptyGraphState = {
   processToDisplay: {},
   fetchedProcessDetails: {},
   nodeToDisplay: {},
-  layout: {}
+  layout: {},
+  groupingState: null
 }
 
 function graphReducer(state, action) {
@@ -124,10 +129,20 @@ function graphReducer(state, action) {
     }
     case "DISPLAY_MODAL_NODE_DETAILS":
     case "DISPLAY_NODE_DETAILS":
-      return {
-        ...state,
-        nodeToDisplay: action.nodeToDisplay
+      if (state.groupingState) {
+        const newNodeId = action.nodeToDisplay.id
+        return {
+           ...state,
+          //FIXME: dodanie do grupy
+          groupingState: canGroup(state, action.nodeToDisplay) ? _.concat(state.groupingState, newNodeId) : state.groupingState
+        }
+      } else {
+        return {
+          ...state,
+          nodeToDisplay: action.nodeToDisplay
+        }
       }
+
     case "EDIT_NODE": {
       const processToDisplay = GraphUtils.mapProcessWithNewNode(state.processToDisplay, action.before, action.after)
       var newLayout = _.map(state.layout, (n) => {
@@ -216,8 +231,43 @@ function graphReducer(state, action) {
         testResults: null
       }
     }
+    case "START_GROUPING": {
+      return _.omit({
+        ...state,
+        groupingState: []
+      }, 'nodeToDisplay')
+    }
+    case "FINISH_GROUPING": {
+      const updatedGroups = state.groupingState.length > 1 ?
+              update('processToDisplay.properties.additionalFields.groups', (groups) => _.concat((groups || []), [state.groupingState]), fp.set('layout', {}, state)) :  state
+      return _.omit(updatedGroups, 'groupingState')
+    }
+    case "CANCEL_GROUPING": {
+      return _.omit(state, 'groupingState')
+    }
+    case "UNGROUP": {
+      const updatedGroups =  update('processToDisplay.properties.additionalFields.groups',
+        (groups) => groups.filter(e => !_.isEqual(e, action.groupToRemove)), state)
+      return {
+        ...updatedGroups,
+        layout: {},
+        nodeToDisplay: {}
+      }
+    }
     default:
       return state
+  }
+
+  //TODO: no przeciez to juz powinno byc??
+  function update(path, fun, object) {
+    return fp.set(path, fun(_.get(object, path)), object)
+  }
+
+  function canGroup(state, newNode) {
+    const newNodeId = newNode.id
+    const currentGrouping = state.groupingState
+    return !NodeUtils.nodeIsGroup(newNode) && currentGrouping.length == 0 ||
+      currentGrouping.find(nodeId => state.processToDisplay.edges.find(edge => edge.from == nodeId && edge.to == newNodeId ||  edge.to == nodeId && edge.from == newNodeId))
   }
 
   function createUniqueNodeId(nodes, nodeCounter) {

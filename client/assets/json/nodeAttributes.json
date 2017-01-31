@@ -1,7 +1,6 @@
 {
   "Source": {
     "name": "Source",
-    "icon": "filter.svg",
     "styles": {
       "fill": "#2d8e54",
       "color": "white"
@@ -9,7 +8,6 @@
   },
   "Sink": {
     "name": "Sink",
-    "icon": "filter.svg",
     "styles": {
       "fill": "#db4646",
       "color": "white"
@@ -17,7 +15,6 @@
   },
   "Filter": {
     "name": "Filter",
-    "icon": "filter.svg",
     "styles": {
       "fill": "#db7e3a",
       "color": "white"
@@ -32,7 +29,6 @@
   },
   "VariableBuilder": {
     "name": "Variable Builder",
-    "icon": "filter.svg",
     "styles": {
       "fill": "#FEB58A",
       "color": "white"
@@ -40,7 +36,6 @@
   },
   "Variable": {
     "name": "Variable",
-    "icon": "filter.svg",
     "styles": {
       "fill": "#FEB58A",
       "color": "white"
@@ -48,7 +43,6 @@
   },
   "Enricher": {
     "name": "Enricher",
-    "icon": "cog.svg",
     "styles": {
       "fill": "#805db2",
       "color": "white"
@@ -56,7 +50,6 @@
   },
   "Split": {
     "name": "Split",
-    "icon": "split.svg",
     "styles": {
       "fill": "#FCC56D",
       "color": "white"
@@ -64,7 +57,6 @@
   },
   "Processor": {
     "name": "Processor",
-    "icon": "cog.svg",
     "styles": {
       "fill": "#4583dd",
       "color": "white"
@@ -86,7 +78,14 @@
   },
   "CustomNode": {
     "name": "CustomNode",
-    "icon": "cog.svg",
+    "styles": {
+      "fill": "#1aada6",
+      "color": "white"
+    }
+  },
+  "_group": {
+    "name": "Group",
+    "notEditable": true,
     "styles": {
       "fill": "#1aada6",
       "color": "white"

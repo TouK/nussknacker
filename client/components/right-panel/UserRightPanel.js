@@ -57,7 +57,7 @@ class UserRightPanel extends Component {
             {name: "redo", onClick: this.redo, icon: InlinedSvgs.buttonRedo},
             {name: "align", onClick: this.props.graphLayout, icon: InlinedSvgs.buttonAlign},
             {name: "properties", onClick: this.showProperties, icon: InlinedSvgs.buttonSettings},
-            {name: "delete", onClick: this.deleteNode, icon: InlinedSvgs.buttonDelete, disabled: NodeUtils.nodeIsProperties(this.props.nodeToDisplay) }
+            {name: "delete", onClick: this.deleteNode, icon: InlinedSvgs.buttonDelete, disabled: NodeUtils.nodeIsProperties(this.props.nodeToDisplay) || NodeUtils.nodeIsGroup(this.props.nodeToDisplay) }
           ]
         },
         {
@@ -65,6 +65,15 @@ class UserRightPanel extends Component {
           buttons: [
             {name: "from file", onClick: this.testProcess, icon: InlinedSvgs.buttonFromFile, dropzone: true, disabled: !this.props.processIsLatestVersion || !this.props.nothingToSave},
             {name: "hide", onClick: this.hideTestResults, icon: InlinedSvgs.buttonHide, disabled: !this.props.isTesting}
+          ]
+        },
+        {
+          panelName: "Group",
+          buttons: [
+            {name: "start", onClick: this.props.actions.startGrouping, icon: InlinedSvgs.buttonGroup, disabled: this.props.groupingState != null},
+            {name: "finish", onClick: this.props.actions.finishGrouping, icon: InlinedSvgs.buttonGroup, disabled: (this.props.groupingState || []).length <= 1},
+            {name: "cancel", onClick: this.props.actions.cancelGrouping, icon: InlinedSvgs.buttonUngroup, disabled: !this.props.groupingState },
+            {name: "ungroup", onClick: this.ungroup, icon: InlinedSvgs.buttonUngroup, disabled: !NodeUtils.nodeIsGroup(this.props.nodeToDisplay) }
           ]
         }
       ]
@@ -193,6 +202,10 @@ class UserRightPanel extends Component {
     this.props.actions.deleteNode(this.props.nodeToDisplay.id)
   }
 
+  ungroup = () => {
+    this.props.actions.ungroup(this.props.nodeToDisplay)
+  }
+
 }
 
 function mapState(state) {
@@ -205,7 +218,8 @@ function mapState(state) {
     isTesting: !_.isEmpty(state.graphReducer.testResults),
     undoRedoAvailable: !state.ui.showNodeDetailsModal,
     processIsLatestVersion: _.get(fetchedProcessDetails, 'isLatestVersion', false),
-    nodeToDisplay: state.graphReducer.nodeToDisplay
+    nodeToDisplay: state.graphReducer.nodeToDisplay,
+    groupingState: state.graphReducer.groupingState,
   };
 }
 
