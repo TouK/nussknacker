@@ -58,7 +58,7 @@ export class Tips extends Component {
     var tipsIcon = this.isProcessValid() ? InlinedSvgs.tipsInfo : InlinedSvgs.tipsWarning
     return (
         <div id="tipsPanel">
-          <Scrollbars renderThumbVertical={props => <div {...props} className="thumbVertical"/>}>
+          <Scrollbars renderThumbVertical={props => <div {...props} className="thumbVertical"/>} hideTracksWhenNotNeeded={true}>
           <div className="icon" title="" dangerouslySetInnerHTML={{__html: tipsIcon}} />
           {this.tipText()}
           </Scrollbars>

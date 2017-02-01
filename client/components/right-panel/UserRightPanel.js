@@ -79,7 +79,7 @@ class UserRightPanel extends Component {
       ]
     return (
       <div id="espSidenav" className={this.renderClassName()}>
-        <Scrollbars renderThumbVertical={props => <div {...props} className="thumbVertical"/>}>
+        <Scrollbars renderThumbVertical={props => <div {...props} className="thumbVertical"/>} hideTracksWhenNotNeeded={true}>
           {config.map ((panel, panelIdx) => {
             return (
               <Panel key={panelIdx} collapsible defaultExpanded header={panel.panelName}>
