@@ -351,16 +351,16 @@ export default class NodeDetailsContent extends React.Component {
         }
           {this.state.testResultsToShow && !_.isEmpty(this.state.testResultsToShow.mockedResultsForCurrentContext) ?
             (this.state.testResultsToShow.mockedResultsForCurrentContext).map((mockedValue, index) =>
+              <span className="testResultDownload">
               <a download={this.props.node.id + "-single-input"} key={index} href={this.downloadableHref(mockedValue.value)}>
-                Save results for single input</a>
+                <span className="glyphicon glyphicon-download"/> Results for this input</a></span>
             ) : null
           }
-          <br/>
-
           {this.state.testResultsToShow && !_.isEmpty(this.state.testResultsToShow.mockedResultsForEveryContext) ?
-            <a download={this.props.node.id + "-all-inputs"}
+            <span className="testResultDownload">
+              <a download={this.props.node.id + "-all-inputs"}
                href={this.downloadableHref(this.mergedMockedResults(this.state.testResultsToShow.mockedResultsForEveryContext))}>
-              Save results for all inputs</a>
+              <span className="glyphicon glyphicon-download"/> Results for all inputs</a></span>
             : null
           }
         </div>)
