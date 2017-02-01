@@ -126,13 +126,13 @@ joint.shapes.devs.EspNode = joint.shapes.basic.Generic.extend(_.extend({}, joint
 
 export default {
 
-    makeElement(node, hasResults, testResult, testErrors) {
+    makeElement(node, hasResults, testSummary) {
         var descr = (node.additionalFields || {}).description
         var customAttrs = require('json!../../assets/json/nodeAttributes.json');
 
         var bodyContent = node.id ? node.id : "";
-        var testResultsContent = hasResults ? (testResult ? testResult.length : "0") : ""
-        var testErrorsContent = hasResults && testErrors && testErrors.length > 0 ? testErrors.length :  ""
+        var testResultsContent = hasResults ? (testSummary ? testSummary.all : "0") : ""
+        var testErrors = hasResults  && testSummary && testSummary.errors > 0
 
         // Compute width/height of the rectangle based on the number
         // of lines in the label and the letter size. 0.6 * letterSize is
@@ -144,7 +144,6 @@ export default {
         var calculatedWidth = 1.2 * (letterSize * (0.6 * maxLineLength));
         var width = _.max([rectWidth, calculatedWidth]);
         var height = 150;
-        var textPosX = (width / 2) - ((calculatedWidth / 2) + 5)
         var icon = InlinedSvgs.svgs[node.type]
 
         var widthWithTestResults = width + (hasResults ? rectHeight : 0)
@@ -174,7 +173,7 @@ export default {
           '.testResultsSummary': {
             text: testResultsContent,
             //TODO: style??
-            fill: testErrorsContent ? 'red' : 'white'
+            fill: testErrors ? 'red' : 'white'
           },
         };
 
@@ -201,6 +200,7 @@ export default {
     },
 
     makeLink(edge, forExport) {
+      const label = _.get(edge, 'label') || ''
       return new joint.dia.Link({
         markup: [
             '<path class="connection"/>',
@@ -226,7 +226,7 @@ export default {
             fill: '#F5F5F5',
             },
             'text': {
-              text: joint.util.breakText((_.get(edge, 'label.expression') || ''), { width: rectWidth }),
+              text: joint.util.breakText(label, { width: rectWidth }),
               'font-weight': '300',
               'font-size': 10,
               fill: '#686868',
@@ -240,7 +240,7 @@ export default {
           '.link-tools': forExport ? { display: 'none'} : {},
           '.connection': forExport ? { stroke: edgeStroke, 'stroke-width': 2, fill: edgeStroke } : { stroke: 'white', 'stroke-width': 2, fill: 'none' },
           '.marker-target': { 'stroke-width': forExport ? 1 : 0, stroke: forExport ? edgeStroke : 'white', fill: 'white', d: 'M 10 0 L 0 5 L 10 10 L 8 5 z' },
-          minLen: 10
+          minLen: label ? 20 : 10
         },
         edgeData: edge
      });

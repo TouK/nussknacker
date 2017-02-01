@@ -2,6 +2,7 @@ import $ from "jquery";
 import appConfig from "appConfig";
 import React from "react";
 import FileSaver from "file-saver";
+import InlinedSvgs from "../assets/icons/InlinedSvgs";
 
 
 export default {
@@ -17,20 +18,21 @@ export default {
       notificationSystem.addNotification({
         message: message,
         level: 'success',
-        autoDismiss: 1
+        children: (<div className="icon" title="" dangerouslySetInnerHTML={{__html: InlinedSvgs.tipsInfo}} />),
+        autoDismiss: 5
       })
     }
   },
 
   addError(message, error, showErrorText) {
     console.log(error)
-    var details = showErrorText && error.responseText ? (<div>{error.responseText}</div>) : null;
+    var details = showErrorText && error.responseText ? (<div key="details" className="details">{error.responseText}</div>) : null;
     if (notificationSystem) {
       notificationSystem.addNotification({
         message: message,
         level: 'error',
-        autoDismiss: 5,
-        children: details
+        autoDismiss: 10,
+        children: [(<div className="icon" key="icon" title="" dangerouslySetInnerHTML={{__html: InlinedSvgs.tipsWarning}}/>), details]
       })
     }
   },

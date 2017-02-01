@@ -20,7 +20,10 @@ class UserRightPanel extends Component {
   static propTypes = {
     isOpened: React.PropTypes.bool.isRequired,
     graphLayout: React.PropTypes.func.isRequired,
-    exportGraph: React.PropTypes.func.isRequired
+    exportGraph: React.PropTypes.func.isRequired,
+    zoomIn: React.PropTypes.func.isRequired,
+    zoomOut: React.PropTypes.func.isRequired
+
   }
 
   renderClassName = () => {
@@ -34,7 +37,8 @@ class UserRightPanel extends Component {
           panelName: "Deployment",
           buttons:[
             {name: "deploy", visible: this.props.loggedUser.canDeploy, disabled: !this.props.processIsLatestVersion, onClick: this.deploy, icon: InlinedSvgs.buttonDeploy},
-            {name: "stop", visible: this.props.loggedUser.canDeploy, disabled: !this.isRunning(), onClick: this.stop, icon: InlinedSvgs.buttonStop}
+            {name: "stop", visible: this.props.loggedUser.canDeploy, disabled: !this.isRunning(), onClick: this.stop, icon: InlinedSvgs.buttonStop},
+            {name: "metrics", onClick: this.showMetrics, icon: InlinedSvgs.buttonMetrics}
           ]
         },
         {
@@ -47,7 +51,9 @@ class UserRightPanel extends Component {
           {name: "import", visible: this.props.loggedUser.canWrite, disabled: false, onClick: this.importProcess, icon: InlinedSvgs.buttonImport, dropzone: true},
           {name: "export", onClick: this.exportProcess, icon: InlinedSvgs.buttonExport},
           {name: "exportPDF", disabled: !this.props.nothingToSave, onClick: this.exportProcessToPdf, icon: InlinedSvgs.buttonExport},
-          {name: "metrics", onClick: this.showMetrics, icon: InlinedSvgs.buttonMetrics},
+          {name: "zoomIn", onClick: this.props.zoomIn, icon: InlinedSvgs.buttonZoomIn},
+          {name: "zoomOut", onClick: this.props.zoomOut, icon: InlinedSvgs.buttonZoomOut}
+
         ]
       },
         {
@@ -187,13 +193,13 @@ class UserRightPanel extends Component {
 
   undo = () => {
     //ten if moze powinien byc blisko reducera, tylko jak to ladnie zrobic?
-    if (this.props.undoRedoAvailable) {
+    if (this.props.keyActionsAvailable) {
       this.props.undoRedoActions.undo()
     }
   }
 
   redo = () => {
-    if (this.props.undoRedoAvailable) {
+    if (this.props.keyActionsAvailable) {
       this.props.undoRedoActions.redo()
     }
   }
@@ -216,7 +222,7 @@ function mapState(state) {
     loggedUser: state.settings.loggedUser,
     nothingToSave: ProcessUtils.nothingToSave(state),
     isTesting: !_.isEmpty(state.graphReducer.testResults),
-    undoRedoAvailable: !state.ui.showNodeDetailsModal,
+    keyActionsAvailable: !state.ui.showNodeDetailsModal,
     processIsLatestVersion: _.get(fetchedProcessDetails, 'isLatestVersion', false),
     nodeToDisplay: state.graphReducer.nodeToDisplay,
     groupingState: state.graphReducer.groupingState,

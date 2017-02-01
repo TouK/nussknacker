@@ -1,4 +1,5 @@
 import _ from 'lodash'
+import NodeUtils from '../components/graph/NodeUtils'
 
 class TestResultUtils {
 
@@ -14,6 +15,14 @@ class TestResultUtils {
     } else {
       return null;
     }
+  }
+
+  nodeResultsSummary = (testResults, node) => {
+    const ids = NodeUtils.nodeIsGroup(node) ? node.ids : [ node.id ]
+    return _.reduce(ids.map(id => this.resultsForNode(testResults, id)),
+      (acc, n) => ({all: Math.max(n.nodeResults.length, acc.all), errors: Math.max(n.errors.length, acc.errors)}),
+      {all: 0, errors: 0}
+    )
   }
 
   _nodeResults = (testResults, nodeId) => {

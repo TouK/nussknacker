@@ -4,6 +4,7 @@ import { Provider } from 'react-redux';
 import DevTools from './DevTools';
 import configureStore from '../store/configureStore.develpoment';
 import NotificationSystem from 'react-notification-system';
+import "../stylesheets/notifications.styl";
 import HttpService from '../http/HttpService'
 import Settings from '../http/Settings'
 import EspAppRouter from './EspAppRouter';
@@ -25,11 +26,12 @@ Settings.updateSettings(store)
 
 export default class Root extends React.Component {
 
+
   render() {
     return (
       <Provider store={store}>
         <div>
-          <NotificationSystem ref={(c) => HttpService.setNotificationSystem(c)} />
+          <NotificationSystem ref={(c) => HttpService.setNotificationSystem(c)} style={false} />
           <EspAppRouter store={store}/>
           <DevTools/>
         </div>

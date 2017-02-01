@@ -102,7 +102,7 @@ class NodeDetailsModal extends React.Component {
   render() {
     var isOpen = !_.isEmpty(this.props.nodeToDisplay) && this.props.showNodeDetailsModal
     var headerStyles = EspModalStyles.headerStyles(this.nodeAttributes().styles.fill, this.nodeAttributes().styles.color)
-    var testResults = TestResultUtils.resultsForNode(this.props.testResults, this.state.currentNodeId)
+    var testResults = (id) => TestResultUtils.resultsForNode(this.props.testResults, id)
     return (
       <div className="objectModal">
         <Modal isOpen={isOpen} className="espModal" onRequestClose={this.closeModal}>
@@ -113,10 +113,11 @@ class NodeDetailsModal extends React.Component {
             <Scrollbars hideTracksWhenNotNeeded={true} autoHeight autoHeightMax={cssVariables.modalContentMaxHeight} renderThumbVertical={props => <div {...props} className="thumbVertical"/>}>
               {
                 NodeUtils.nodeIsGroup(this.state.editedNode) ?
-                  this.state.editedNode.nodes.map((node, idx) => (<div key={idx}><NodeDetailsContent isEditMode={false} node={node} processDefinitionData={this.props.processDefinitionData}
-                                                                                                     nodeErrors={this.props.nodeErrors} onChange={() => {}} testResults={testResults}/><hr/></div>))
+                  this.state.editedNode.nodes.map((node, idx) => (<div key={idx}>
+                    <NodeDetailsContent isEditMode={false} node={node} processDefinitionData={this.props.processDefinitionData}
+                      nodeErrors={this.props.nodeErrors} onChange={() => {}} testResults={testResults(node.id)}/><hr/></div>))
                   : (<NodeDetailsContent isEditMode={this.state.isEditMode} node={this.state.editedNode} processDefinitionData={this.props.processDefinitionData}
-                                         nodeErrors={this.props.nodeErrors} onChange={this.updateNodeState} testResults={testResults}/>)
+                      nodeErrors={this.props.nodeErrors} onChange={this.updateNodeState} testResults={testResults(this.state.currentNodeId)}/>)
               }
             </Scrollbars>
           </div>

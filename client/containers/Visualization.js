@@ -95,17 +95,19 @@ const Visualization = withRouter(React.createClass({
   render: function() {
     //niestety tak musi byc, bo graph jest reduxowym komponentem
     var getGraph = () => this.refs.graph.getWrappedInstance().getDecoratedComponentInstance();
-    const graphLayoutFun = () => {
-      return !_.isEmpty(this.refs.graph) ? getGraph().directedLayout() : () => null
-    }
-    const exportGraphFun = () => {
-      return !_.isEmpty(this.refs.graph) ? getGraph().exportGraph() : () => null
-    }
+    const graphFun = (fun) => (() => !_.isEmpty(this.refs.graph) ? fun(getGraph()) : () => null)
+
+    const graphLayoutFun = graphFun(graph => graph.directedLayout())
+    const exportGraphFun = graphFun(graph => graph.exportGraph())
+    const zoomInFun = graphFun(graph => graph.zoomIn())
+    const zoomOutFun = graphFun(graph => graph.zoomOut())
+
     return (
       <div className="Page">
         <div>
           <UserLeftPanel isOpened={this.props.leftPanelIsOpened}/>
-          <UserRightPanel isOpened={true} graphLayout={graphLayoutFun} exportGraph={exportGraphFun}/>
+          <UserRightPanel isOpened={true} graphLayout={graphLayoutFun}
+                          exportGraph={exportGraphFun} zoomIn={zoomInFun} zoomOut={zoomOutFun}/>
           {(_.isEmpty(this.props.fetchedProcessDetails) || this.props.graphLoading) ? <LoaderSpinner show={true}/> : <Graph ref="graph"/> }
 
         </div>
