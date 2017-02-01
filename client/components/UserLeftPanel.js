@@ -23,7 +23,7 @@ export default class UserLeftPanel extends Component {
   render() {
     return (
       <div id="espSidenav" className={this.renderClassName()}>
-        <Scrollbars renderThumbVertical={props => <div {...props} className="thumbVertical"/>}>
+        <Scrollbars renderThumbVertical={props => <div {...props} className="thumbVertical"/>} hideTracksWhenNotNeeded={true}>
           <Tips />
           <Panel collapsible defaultExpanded header="Creator panel">
             <ToolBox/>

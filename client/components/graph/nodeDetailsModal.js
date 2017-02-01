@@ -110,15 +110,15 @@ class NodeDetailsModal extends React.Component {
             <span>{this.nodeAttributes().name}</span>
           </div>
           <div className="modalContent">
-          <Scrollbars autoHeight autoHeightMax={cssVariables.modalContentMaxHeight} renderThumbVertical={props => <div {...props} className="thumbVertical"/>}>
-            {
-              NodeUtils.nodeIsGroup(this.state.editedNode) ?
+            <Scrollbars hideTracksWhenNotNeeded={true} autoHeight autoHeightMax={cssVariables.modalContentMaxHeight} renderThumbVertical={props => <div {...props} className="thumbVertical"/>}>
+              {
+                NodeUtils.nodeIsGroup(this.state.editedNode) ?
                   this.state.editedNode.nodes.map((node, idx) => (<div key={idx}><NodeDetailsContent isEditMode={false} node={node} processDefinitionData={this.props.processDefinitionData}
-                                                    nodeErrors={this.props.nodeErrors} onChange={() => {}} testResults={testResults}/><hr/></div>))
-               : (<NodeDetailsContent isEditMode={this.state.isEditMode} node={this.state.editedNode} processDefinitionData={this.props.processDefinitionData}
-                                  nodeErrors={this.props.nodeErrors} onChange={this.updateNodeState} testResults={testResults}/>)
-            }
-          </Scrollbars>
+                                                                                                     nodeErrors={this.props.nodeErrors} onChange={() => {}} testResults={testResults}/><hr/></div>))
+                  : (<NodeDetailsContent isEditMode={this.state.isEditMode} node={this.state.editedNode} processDefinitionData={this.props.processDefinitionData}
+                                         nodeErrors={this.props.nodeErrors} onChange={this.updateNodeState} testResults={testResults}/>)
+              }
+            </Scrollbars>
           </div>
           <div className="modalFooter">
             <div className="footerButtons">
