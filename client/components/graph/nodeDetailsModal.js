@@ -29,7 +29,6 @@ class NodeDetailsModal extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      isEditMode: false,
       pendingRequest: false
     };
   }
@@ -48,22 +47,13 @@ class NodeDetailsModal extends React.Component {
   }
 
   closeModal = () => {
-    this.setState({isEditMode: false})
     this.props.actions.closeNodeDetails()
-  }
-
-  toggleEdition = () => {
-    this.setState({isEditMode: !this.state.isEditMode});
-  }
-
-  editNodeData = () => {
-    this.toggleEdition();
   }
 
   performNodeEdit = () => {
     this.setState( { pendingRequest: true})
     this.props.actions.editNode(this.props.processToDisplay, this.props.nodeToDisplay, this.state.editedNode).then (() =>
-      this.setState( { pendingRequest: false, isEditMode: false})
+      this.setState( { pendingRequest: false})
     )
   }
 
@@ -77,20 +67,14 @@ class NodeDetailsModal extends React.Component {
   }
 
   renderModalButtons() {
-    var buttonClasses = classNames('modalButton')
-    var notEditable = this.nodeAttributes().notEditable
-    var editButtonClasses = classNames(buttonClasses, 'pull-right', {'hidden': notEditable || this.state.isEditMode})
-    var saveButtonClasses = classNames(buttonClasses, 'pull-right', {'hidden': notEditable || !this.state.isEditMode})
+    var editable = !this.nodeAttributes().notEditable
 
     if (!this.props.readOnly) {
       return ([
-        <LaddaButton key="1" title="Save node details" className={saveButtonClasses}
+        editable ? <LaddaButton key="1" title="Save node details" className='modalButton pull-right modalConfirmButton'
                       loading={this.state.pendingRequest}
-                      buttonStyle='zoom-in' onClick={this.performNodeEdit}>Save</LaddaButton>,
-        <button key="2" type="button" title="Edit node details" className={editButtonClasses} onClick={this.editNodeData}>
-          Edit
-        </button>,
-        <button key="3" type="button" title="Close node details" className={buttonClasses} onClick={this.closeModal}>
+                      buttonStyle='zoom-in' onClick={this.performNodeEdit}>Save</LaddaButton>: null,
+        <button key="3" type="button" title="Close node details" className='modalButton' onClick={this.closeModal}>
           Close
         </button>
       ] );
@@ -115,9 +99,9 @@ class NodeDetailsModal extends React.Component {
                 NodeUtils.nodeIsGroup(this.state.editedNode) ?
                   this.state.editedNode.nodes.map((node, idx) => (<div key={idx}>
                     <NodeDetailsContent isEditMode={false} node={node} processDefinitionData={this.props.processDefinitionData}
-                      nodeErrors={this.props.nodeErrors} onChange={() => {}} testResults={testResults(node.id)}/><hr/></div>))
-                  : (<NodeDetailsContent isEditMode={this.state.isEditMode} node={this.state.editedNode} processDefinitionData={this.props.processDefinitionData}
-                      nodeErrors={this.props.nodeErrors} onChange={this.updateNodeState} testResults={testResults(this.state.currentNodeId)}/>)
+                         nodeErrors={this.props.nodeErrors} onChange={() => {}} testResults={testResults(node.id)}/><hr/></div>))
+                  : (<NodeDetailsContent isEditMode={true} node={this.state.editedNode} processDefinitionData={this.props.processDefinitionData}
+                         nodeErrors={this.props.nodeErrors} onChange={this.updateNodeState} testResults={testResults(this.state.currentNodeId)}/>)
               }
             </Scrollbars>
           </div>

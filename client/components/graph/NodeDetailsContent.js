@@ -232,7 +232,7 @@ export default class NodeDetailsContent extends React.Component {
         return (
           <div className="node-row">
             <div className="node-label">{fieldLabel}:</div>
-            <div className="node-value"><input type="checkbox" className="node-input"  checked={fieldValue}
+            <div className="node-value"><input type="checkbox" checked={fieldValue}
                                                onChange={(e) => handleChange(fieldValue ? false : true)}
                                                disabled={readOnly ? 'disabled' : ''}/></div>
           </div>

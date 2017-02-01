@@ -45,9 +45,9 @@ const App_ = React.createClass({
       <div id="app-container">
         <nav id="main-menu" className="navbar navbar-default">
           <div id="git" className="hide">{JSON.stringify(GIT)}</div>
-          {this.renderTopLeftButton()}
           <div className="container-fluid">
             <div className="navbar-header">
+              {this.renderTopLeftButton()}
               <Link id="brand-name" className="navbar-brand" to={App.path}>
                 <span id="app-logo" className="vert-middle">{App.header_a}</span>
               </Link>
