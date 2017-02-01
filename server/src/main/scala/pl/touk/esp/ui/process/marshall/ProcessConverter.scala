@@ -4,6 +4,7 @@ import cats.data.Validated.{Invalid, Valid}
 import pl.touk.esp.engine.api.MetaData
 import pl.touk.esp.engine.canonicalgraph.canonicalnode._
 import pl.touk.esp.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
+import pl.touk.esp.engine.graph.expression.Expression
 import pl.touk.esp.engine.graph.node.{Filter, NodeData, Split, Switch}
 import pl.touk.esp.ui.api.ProcessValidation
 import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties, displayablenode}
@@ -11,6 +12,8 @@ import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessPropert
 class ProcessConverter(processValidation: ProcessValidation) {
 
   val processMarshaller = UiProcessMarshaller()
+
+  val defaultSwitchLabel = "default"
 
   def toDisplayableOrDie(canonicalJson: String): DisplayableProcess = {
     processMarshaller.fromJson(canonicalJson) match {
@@ -35,22 +38,23 @@ class ProcessConverter(processValidation: ProcessValidation) {
         val (nextFalseNodes, nextFalseEdges) = toGraphInner(nextFalse)
         val nextFalseEdgesConnectedToFilter = nextFalseNodes match {
           case Nil => nextFalseEdges
-          case h :: _ => displayablenode.Edge(data.id, h.id, None) :: nextFalseEdges
+          case h :: _ => displayablenode.Edge(data.id, h.id, Some("false")) :: nextFalseEdges
         }
         val (tailNodes, tailEdges) = toGraphInner(tail)
-        (data :: nextFalseNodes ::: tailNodes, createNextEdge(data.id, tail) ::: nextFalseEdgesConnectedToFilter ::: tailEdges)
+        val nextEdgeLabel = if (nextFalseNodes.isEmpty) None else Some("true")
+        (data :: nextFalseNodes ::: tailNodes, createNextEdge(data.id, tail, nextEdgeLabel) ::: nextFalseEdgesConnectedToFilter ::: tailEdges)
       case canonicalnode.SwitchNode(data, nexts, defaultNext) :: tail =>
         val (defaultNextNodes, defaultNextEdges) = toGraphInner(defaultNext)
         val defaultNextEdgesConnectedToSwitch = defaultNextNodes match {
           case Nil => defaultNextEdges
-          case h :: _ => displayablenode.Edge(data.id, h.id, None) :: defaultNextEdges
+          case h :: _ => displayablenode.Edge(data.id, h.id, Some(defaultSwitchLabel)) :: defaultNextEdges
         }
         val (tailNodes, tailEdges) = toGraphInner(tail)
         val (nextNodes, nextEdges) = unzipListTuple(nexts.map { c =>
           val (nextNodeNodes, nextNodeEdges) = toGraphInner(c.nodes)
-          (nextNodeNodes, nextNodeNodes.headOption.map(n => displayablenode.Edge(data.id, n.id, Some(c.expression))).toList ::: nextNodeEdges)
+          (nextNodeNodes, nextNodeNodes.headOption.map(n => displayablenode.Edge(data.id, n.id, Some(c.expression.expression))).toList ::: nextNodeEdges)
         })
-        (data :: defaultNextNodes ::: nextNodes ::: tailNodes, createNextEdge(data.id, tail) ::: defaultNextEdgesConnectedToSwitch ::: nextEdges ::: tailEdges)
+        (data :: defaultNextNodes ::: nextNodes ::: tailNodes, createNextEdge(data.id, tail) ::: nextEdges ::: defaultNextEdgesConnectedToSwitch ::: tailEdges)
       case canonicalnode.SplitNode(data, nexts) :: tail =>
         val (tailNodes, tailEdges) = toGraphInner(tail)
         val nextInner = nexts.map(toGraphInner).unzip
@@ -62,8 +66,8 @@ class ProcessConverter(processValidation: ProcessValidation) {
         (List(),List())
     }
 
-  private def createNextEdge(id: String, tail: List[CanonicalNode]): List[displayablenode.Edge] = {
-    tail.headOption.map(n => displayablenode.Edge(id, n.id, None)).toList
+  private def createNextEdge(id: String, tail: List[CanonicalNode], description: Option[String] = None): List[displayablenode.Edge] = {
+    tail.headOption.map(n => displayablenode.Edge(id, n.id, description)).toList
   }
 
   private def unzipListTuple[A, B](a: List[(List[A], List[B])]): (List[A], List[B]) = {
@@ -99,10 +103,11 @@ class ProcessConverter(processValidation: ProcessValidation) {
         val nextFalse = filterEdges.drop(1).lastOption.map(nf => unflattenEdgeEnd(data.id, nf)).toList.flatten
         canonicalnode.FilterNode(data, nextFalse) :: next
       case data: Switch =>
-        val nexts = getEdges(data.id).collect { case e@displayablenode.Edge(_, _, Some(edgeExpr)) =>
-          canonicalnode.Case(edgeExpr, unflattenEdgeEnd(data.id, e))
+        val nexts = getEdges(data.id).collect { case e@displayablenode.Edge(_, _, Some(edgeExpr)) if edgeExpr != defaultSwitchLabel =>
+          //FIXME: a jak nie spel??
+          canonicalnode.Case(Expression("spel", edgeExpr), unflattenEdgeEnd(data.id, e))
         }
-        val default = getEdges(data.id).find(_.label.isEmpty).map { e =>
+        val default = getEdges(data.id).find(_.label.exists(_ == defaultSwitchLabel)).map { e =>
           unflattenEdgeEnd(data.id, e)
         }.toList.flatten
         canonicalnode.SwitchNode(data, nexts, default) :: Nil

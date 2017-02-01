@@ -1,0 +1,36 @@
+@import "./_variables.styl"
+
+.notifications-wrapper
+  position absolute
+  top 10
+  right 20
+  z-index 1000
+
+  .notification
+    background-color: #4D4D4D
+    width: 320px
+    minimal-height: 60px
+    padding: 10px
+    margin: 2px
+    font-size: 18
+    text-align: center;
+    display: flex
+    flex-wrap: wrap
+    .notification-dismiss
+      display: none
+    .notification-message
+      order: 0
+    &.notification-hidden
+      display none
+    &.notification-success
+      border: solid 2px okColor
+    &.notification-error
+      border: solid 2px warningColor
+    .icon
+      order: -1
+      width: 20px
+      height: 20px
+      margin-right: 10px
+    .details
+      width: 100%
+      font-size: 14px

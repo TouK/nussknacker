@@ -14,6 +14,7 @@ import { DropTarget } from 'react-dnd';
 import '../../stylesheets/graph.styl'
 import SVGUtils from '../../common/SVGUtils';
 import NodeUtils from './NodeUtils.js'
+import TestResultUtils from '../../common/TestResultUtils'
 
 
 class Graph extends React.Component {
@@ -80,6 +81,14 @@ class Graph extends React.Component {
         this.changeLayoutIfNeeded()
     }
 
+    zoomIn() {
+      this.panAndZoom.zoomIn()
+    }
+
+    zoomOut() {
+      this.panAndZoom.zoomOut()
+    }
+
     exportGraph() {
       return this.state.exported
     }
@@ -142,8 +151,9 @@ class Graph extends React.Component {
       const nodesWithGroups = NodeUtils.nodesFromProcess(data)
       const edgesWithGroups = NodeUtils.edgesFromProcess(data)
 
-      const nodes = _.map(nodesWithGroups, (n) => { return EspNode.makeElement(n, testResults.nodeResults, _.get(testResults, `nodeResults.${n.id}`),
-        _.get(testResults, `exceptions`, []).filter((i) => i.nodeId == n.id)) });
+      const testSummary = (n) => TestResultUtils.nodeResultsSummary(testResults, n)
+
+      const nodes = _.map(nodesWithGroups, (n) => { return EspNode.makeElement(n, testResults.nodeResults, testSummary(n))});
       const edges = _.map(edgesWithGroups, (e) => { return EspNode.makeLink(e, forExport) });
       const cells = nodes.concat(edges);
       this.graph.resetCells(cells);
@@ -212,7 +222,7 @@ class Graph extends React.Component {
           viewportSelector: this.refs.espGraph.childNodes[0].childNodes[0],
           fit: this.props.processToDisplay.nodes.length > 1,
           zoomScaleSensitivity: 0.4,
-          controlIconsEnabled: true,
+          controlIconsEnabled: false,
           panEnabled: false,
           dblClickZoomEnabled: false,
           minZoom: 0.2,

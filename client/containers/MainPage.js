@@ -10,7 +10,6 @@ import hamburgerOpen from "../assets/img/menu-open.svg";
 import hamburgerClosed from "../assets/img/menu-closed.svg";
 import Metrics from "./Metrics";
 import DragArea from "../components/DragArea";
-import ProcessTopBar from "../components/ProcessTopBar";
 import {connect} from "react-redux";
 import ActionsUtils from "../actions/ActionsUtils";
 import ConfirmDialog from "../components/ConfirmDialog";
@@ -51,7 +50,6 @@ const App_ = React.createClass({
             <div className="navbar-header">
               <Link id="brand-name" className="navbar-brand" to={App.path}>
                 <span id="app-logo" className="vert-middle">{App.header_a}</span>
-                <ProcessTopBar/>
               </Link>
             </div>
 
