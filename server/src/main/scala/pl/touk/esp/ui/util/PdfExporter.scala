@@ -33,7 +33,8 @@ object PdfExporter extends LazyLogging {
 
     //robimy to za kazdym razem, zeby sie nie okazalo ze /tmp zostal wyczyszczony...
     initFontsIfNeeded()
-    val fopXml = prepareFopXml(svg, processDetails, processActivity, displayableProcess)
+    //FIXME: cannot render polish signs..., better to strip them than not render anything...
+    val fopXml = prepareFopXml(svg.replaceAll("[^\\p{ASCII}]", ""), processDetails, processActivity, displayableProcess)
 
     createPdf(fopXml)
   }
