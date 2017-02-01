@@ -39,6 +39,42 @@ node-highlight(strokeColor, backgroundFill)
   background-color: rgba(23, 22, 21, 0.3) !important //fixme ee nie wiem dlaczego important?
 
 
+espCheckbox()
+  checkboxWidth = 20px
+  input[type='checkbox']
+    text-rendering optimizeSpeed
+    width checkboxWidth
+    height checkboxWidth
+    margin 0
+    margin-right 1px
+    display block
+    position relative
+    cursor pointer
+
+  input[type='checkbox']:after
+    content ""
+    vertical-align middle
+    text-align center
+    line-height checkboxWidth
+    position absolute
+    cursor pointer
+    height checkboxWidth
+    width checkboxWidth
+    font-size checkboxWidth - 6
+    box-shadow inset 0px 1px 1px #000, 0px 1px 0px #444
+    background #45484d
+
+  input[type='checkbox']:hover:after, input[type='checkbox']:checked:hover:after
+    background #2d2d2d
+    content '\2714'
+    color #888
+
+  input[type='checkbox']:checked
+    &:after
+      background #202020
+      content '\2714'
+      color #fff
+
 .espModal
   max-height modalMaxHeight
   max-width modalMaxWidth
@@ -115,6 +151,9 @@ node-highlight(strokeColor, backgroundFill)
       color: #686868
       textarea
         overflow hidden
+      espCheckbox()
+      input[type='checkbox']
+        margin-top 20px
     .node-error
       width: 100%
       color: warningColor
@@ -163,12 +202,9 @@ node-highlight(strokeColor, backgroundFill)
   .footerButtons
     float right
     button
+      margin-right 20px
       text-transform uppercase
-    button.ladda-button
-      margin-right 20px
-      color modalConfirmButtonColor
-    button:nth-child(2)
-      margin-right 20px
+    .modalConfirmButton
       color modalConfirmButtonColor
 
 espButton()
