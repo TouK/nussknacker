@@ -148,8 +148,11 @@ class FlinkProcessManager(config: Config,
 
   private def makeSavepoint(jobId: JobID): Future[String] = {
     gateway.invokeJobManager[Any](JobManagerMessages.TriggerSavepoint(jobId)).map {
-      case TriggerSavepointSuccess(_, path) => path
-      case TriggerSavepointFailure(_, reason) => throw reason
+      case TriggerSavepointSuccess(_, path) =>
+        path
+      case TriggerSavepointFailure(_, reason) =>
+        logger.error("Savepoint failed", reason)
+        throw reason
     }
   }
 

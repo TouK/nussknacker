@@ -74,12 +74,12 @@ class EvictableStateTest extends FlatSpec with Matchers with BeforeAndAfter with
 
 
 class TestOperator extends EvictableState[String, String]  {
-  override def getState = getRuntimeContext.getState(new ValueStateDescriptor("st1", classOf[List[String]], List()))
+  override def getState = getRuntimeContext.getState(new ValueStateDescriptor("st1", classOf[List[String]]))
 
   override def processElement(element: StreamRecord[String]) = {
     setEvictionTimeForCurrentKey(element.getTimestamp + 5000)
 
-    val newState = getState.value() :+ element.getValue
+    val newState = Option(getState.value()).getOrElse(List()) :+ element.getValue
 
     TestOperator.buffer = TestOperator.buffer :+ newState
     getState.update(newState)
