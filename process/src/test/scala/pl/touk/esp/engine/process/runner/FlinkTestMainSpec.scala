@@ -10,7 +10,7 @@ import pl.touk.esp.engine.api.Context
 import pl.touk.esp.engine.api.deployment.test.{ExpressionInvocationResult, MockedResult, NodeResult, TestData}
 import pl.touk.esp.engine.build.EspProcessBuilder
 import pl.touk.esp.engine.marshall.ProcessMarshaller
-import pl.touk.esp.engine.process.ProcessTestHelpers.{MonitorEmptySink, SimpleRecord, SimpleRecordWithPreviousValue}
+import pl.touk.esp.engine.process.ProcessTestHelpers.{MonitorEmptySink, SimpleJsonRecord, SimpleRecord, SimpleRecordWithPreviousValue}
 import pl.touk.esp.engine.spel
 
 import scala.concurrent.duration._
@@ -44,7 +44,7 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside with BeforeAn
     val input2 = SimpleRecord("0", 11, "2", new Date(3), Some(4), 5, "6")
 
     val results = FlinkTestMain.run(ProcessMarshaller.toJson(process, PrettyParams.spaces2),
-      ConfigFactory.load(), TestData(List("0|1|2|3|4|5|6", "0|11|2|3|4|5|6")), List())
+      ConfigFactory.load(), TestData(List("0|1|2|3|4|5|6", "0|11|2|3|4|5|6").mkString("\n")), List())
 
     val nodeResults = results.nodeResults
 
@@ -84,7 +84,7 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside with BeforeAn
 
 
     val results = FlinkTestMain.run(ProcessMarshaller.toJson(process, PrettyParams.spaces2),
-      ConfigFactory.load(), TestData(List("0|1|2|3|4|5|6", "0|11|2|3|4|5|6")), List())
+      ConfigFactory.load(), TestData(List("0|1|2|3|4|5|6", "0|11|2|3|4|5|6").mkString("\n")), List())
 
     val nodeResults = results.nodeResults
 
@@ -129,7 +129,7 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside with BeforeAn
         .sink("out", "#input", "monitor")
 
     val results = FlinkTestMain.run(ProcessMarshaller.toJson(process, PrettyParams.spaces2),
-      ConfigFactory.load(), TestData(List("0|1|2|3|4|5|6", "0|11|2|3|4|5|6", "0|11|2|3|4|5|6", "0|11|2|3|4|5|6", "0|11|2|3|4|5|6")), List())
+      ConfigFactory.load(), TestData(List("0|1|2|3|4|5|6", "0|11|2|3|4|5|6", "0|11|2|3|4|5|6", "0|11|2|3|4|5|6", "0|11|2|3|4|5|6").mkString("\n")), List())
 
     val nodeResults = results.nodeResults
 
@@ -148,7 +148,7 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside with BeforeAn
         .sink("out", "#input", "monitor")
 
     val results = FlinkTestMain.run(ProcessMarshaller.toJson(process, PrettyParams.spaces2),
-      ConfigFactory.load(), TestData(List("0|1|2|3|4|5|6", "1|0|2|3|4|5|6", "2|2|2|3|4|5|6", "3|4|2|3|4|5|6")), List())
+      ConfigFactory.load(), TestData(List("0|1|2|3|4|5|6", "1|0|2|3|4|5|6", "2|2|2|3|4|5|6", "3|4|2|3|4|5|6").mkString("\n")), List())
 
     val nodeResults = results.nodeResults
 
@@ -179,12 +179,49 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside with BeforeAn
 
     val run = Future {
       FlinkTestMain.run(ProcessMarshaller.toJson(process, PrettyParams.spaces2),
-        ConfigFactory.load(), TestData(List("2|2|2|3|4|5|6")), List())
+        ConfigFactory.load(), TestData(List("2|2|2|3|4|5|6").mkString("\n")), List())
     }
 
     intercept[JobExecutionException](Await.result(run, 5 seconds))
 
 
+  }
+
+  it should "handle custom multiline source input" in {
+    val process =
+      EspProcessBuilder
+        .id("proc1")
+        .exceptionHandler()
+        .source("id", "jsonInput")
+        .sink("out", "#input", "monitor")
+    val testJsonData = TestData(
+      """{
+        | "id": "1",
+        | "field": "11"
+        |}
+        |
+        |
+        |{
+        | "id": "2",
+        | "field": "22"
+        |}
+        |
+        |{
+        | "id": "3",
+        | "field": "33"
+        |}
+        |""".stripMargin)
+
+    val results = FlinkTestMain.run(ProcessMarshaller.toJson(process, PrettyParams.spaces2),
+      ConfigFactory.load(), testJsonData, List())
+
+    results.nodeResults("id") should have size 3
+    results.mockedResults("out") shouldBe
+      List(
+        MockedResult(Context("proc1-id-0-0",Map.empty), "monitor", "SimpleJsonRecord(1,11)"),
+        MockedResult(Context("proc1-id-0-1",Map.empty), "monitor", "SimpleJsonRecord(2,22)"),
+        MockedResult(Context("proc1-id-0-2",Map.empty), "monitor", "SimpleJsonRecord(3,33)")
+      )
   }
 
   def nodeResult(count: Int, vars: (String, Any)*) = NodeResult(Context(s"proc1-id-0-$count", Map(vars: _*)))

@@ -8,6 +8,7 @@ import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer09
 import org.apache.flink.streaming.util.serialization.DeserializationSchema
 import pl.touk.esp.engine.api.process.Source
+import pl.touk.esp.engine.api.test.TestDataParser
 import pl.touk.esp.engine.api.{MetaData, ParamName}
 import pl.touk.esp.engine.flink.api.process.{FlinkSource, FlinkSourceFactory}
 import pl.touk.esp.engine.kafka.KafkaSourceFactory._
@@ -16,9 +17,17 @@ import scala.collection.JavaConverters._
 
 class KafkaSourceFactory[T: TypeInformation](config: KafkaConfig,
                                              schema: DeserializationSchema[T],
-                                             timestampAssigner: Option[TimestampAssigner[T]]) extends FlinkSourceFactory[T] with Serializable {
+                                             timestampAssigner: Option[TimestampAssigner[T]],
+                                             override val testDataParser: Option[TestDataParser[T]]) extends FlinkSourceFactory[T] with Serializable {
 
   def create(processMetaData: MetaData, @ParamName(`TopicParamName`) topic: String): Source[T] = {
+    val espKafkaProperties = config.kafkaEspProperties.getOrElse(Map.empty)
+    if (espKafkaProperties.get("forceLatestRead").exists(java.lang.Boolean.parseBoolean)) {
+      //moznaby definiowac chec resetowania offsetu przy definicji procesu, ale nie jestem pewien czy tak chcemy?
+      KafkaEspUtils.setOffsetToLatest(topic, processMetaData.id, config)
+    } else {
+      ()
+    }
     new KafkaSource(
       consumerGroupId = processMetaData.id,
       topic = topic
@@ -47,8 +56,6 @@ class KafkaSourceFactory[T: TypeInformation](config: KafkaConfig,
 
     override def timestampAssigner = KafkaSourceFactory.this.timestampAssigner
   }
-
-  override val testDataParser : Option[String => T] = Some(testData => schema.deserialize(testData.getBytes))
 
 }
 
