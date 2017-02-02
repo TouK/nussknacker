@@ -56,7 +56,7 @@ class ManagementResources(typesInformation: List[PlainClazzDefinition],
             fileUpload("testData") { case (metadata, byteSource) =>
               complete {
                 MultipartUtils.readFile(byteSource).map[ToResponseMarshallable] { testData =>
-                  (managementActor ? Test(processId, TestData(testData.split("\n").toList), user)).mapTo[TestResults]
+                  (managementActor ? Test(processId, TestData(testData), user)).mapTo[TestResults]
                     .map { results =>
                       HttpResponse(status = StatusCodes.OK, entity =
                         HttpEntity(ContentTypes.`application/json`, results.asJson.pretty(PrettyParams.spaces2)))
