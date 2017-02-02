@@ -54,7 +54,7 @@ val commonSettings =
 
 //mamy te wersje akki bo flink jej wymaga
 val akkaV = "2.3.7"
-val flinkV = "1.1.4"
+val flinkV = "1.2.0"
 val kafkaV = "0.9.0.1"
 val springV = "5.0.0.M1"
 val scalaTestV = "3.0.0-M15"
