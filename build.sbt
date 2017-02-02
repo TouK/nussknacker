@@ -223,7 +223,7 @@ lazy val kafka = (project in file("kafka")).
       )
     }
   ).
-  dependsOn(flinkApi)
+  dependsOn(flinkApi, util)
 
 lazy val kafkaTestUtil = (project in file("kafka-test-util")).
   settings(commonSettings).

@@ -5,7 +5,10 @@ import pl.touk.esp.engine.api.exception.EspExceptionInfo
 
 object test {
 
-  case class TestData(testData: List[String])
+  case class TestData(testData: Array[Byte])
+  object TestData {
+    def apply(s: String): TestData = new TestData(s.getBytes)
+  }
 
   case class TestResults(nodeResults: Map[String, List[NodeResult]] = Map(),
                          invocationResults: Map[String, List[ExpressionInvocationResult]] = Map(),

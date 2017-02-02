@@ -12,6 +12,7 @@ import pl.touk.esp.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFa
 import pl.touk.esp.engine.api.lazyy.UsingLazyValues
 import pl.touk.esp.engine.api.process._
 import pl.touk.esp.engine.api.test.InvocationCollectors.SinkInvocationCollector
+import pl.touk.esp.engine.api.test.NewLineSplittedTestDataParser
 import pl.touk.esp.engine.flink.api.process.{FlinkSink, FlinkSource, FlinkSourceFactory}
 import pl.touk.esp.engine.flink.util.exception.VerboselyLoggingExceptionHandler
 import pl.touk.esp.engine.kafka.{KafkaConfig, KafkaSinkFactory}
@@ -47,7 +48,9 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
     val kConfig = KafkaConfig(config.getString("kafka.zkAddress"), config.getString("kafka.kafkaAddress"), None, None)
 
     Map(
-      "kafka-transaction" -> WithCategories(FlinkSourceFactory.noParam(prepareNotEndingSource, Some(identity[String] _)), "Category1", "Category2"),
+      "kafka-transaction" -> WithCategories(FlinkSourceFactory.noParam(prepareNotEndingSource, Some(new NewLineSplittedTestDataParser[String] {
+        override def parseElement(testElement: String): String = testElement
+      })), "Category1", "Category2"),
       "oneSource" -> WithCategories(FlinkSourceFactory.noParam(new FlinkSource[String] {
 
         override def timestampAssigner = None
@@ -84,7 +87,9 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
 
         override def timestampAssigner = None
 
-      }, Some((a: String) => CsvRecord(a.split("\\|").toList))), "Category1", "Category2")
+      }, Some(new NewLineSplittedTestDataParser[CsvRecord] {
+        override def parseElement(testElement: String): CsvRecord = CsvRecord(testElement.split("\\|").toList)
+      })), "Category1", "Category2")
     )
 
   }

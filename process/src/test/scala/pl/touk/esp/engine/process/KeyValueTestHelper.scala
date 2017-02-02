@@ -40,7 +40,8 @@ object KeyValueTestHelper {
             new CsvSchema(KeyValue.apply),
             Some(new BoundedOutOfOrdernessTimestampExtractor[KeyValue](Time.minutes(10)) {
               override def extractTimestamp(element: KeyValue) = element.date.getTime
-            })
+            }),
+            None
           )
         ))
       override def sinkFactories(config: Config) = Map.empty

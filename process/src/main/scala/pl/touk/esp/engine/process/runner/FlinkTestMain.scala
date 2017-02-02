@@ -73,7 +73,7 @@ class FlinkTestMain(config: Config, testData: TestData, process: EspProcess, cre
     val originalSource = objectWithMethodDef.obj.asInstanceOf[FlinkSourceFactory[Object]]
     implicit val typeInfo = originalSource.typeInformation
     originalSource.testDataParser.map { testDataParser =>
-      val testObjects = testData.testData.map(testDataParser)
+      val testObjects = testDataParser.parseTestData(testData.testData)
       val testFactory = CollectionSource[Object](executionConfig, testObjects, None)
       new TestDataInvokingObjectWithMethodDef(testFactory, objectWithMethodDef)
     }

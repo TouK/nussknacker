@@ -35,7 +35,7 @@ class FlinkProcessTestRunnerSpec extends FlatSpec with Matchers with ScalaFuture
 
 
     val results = Await.result(processManager.test(processId, processData,
-      TestData(List("terefere"))), patienceConfig.timeout)
+      TestData("terefere")), patienceConfig.timeout)
 
     results.nodeResults shouldBe Map(
       "startProcess" -> List(NodeResult(Context(s"$processId-startProcess-0-0", Map("input" -> "terefere")))),
@@ -60,7 +60,7 @@ class FlinkProcessTestRunnerSpec extends FlatSpec with Matchers with ScalaFuture
 
 
     val caught = intercept[IllegalArgumentException] {
-      Await.result(processManager.test(processId, processData, TestData(List("terefere"))), patienceConfig.timeout)
+      Await.result(processManager.test(processId, processData, TestData("terefere")), patienceConfig.timeout)
     }
     caught.getMessage shouldBe "Compilation errors: MissingParameters(Set(param1),$process)"
   }

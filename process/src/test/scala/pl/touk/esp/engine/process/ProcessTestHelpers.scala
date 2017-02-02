@@ -35,6 +35,8 @@ object ProcessTestHelpers {
 
   case class SimpleRecordAcc(id: String, value1: Long, value2: Set[String], date: Date)
 
+  case class SimpleJsonRecord(id: String, field: String)
+
   object processInvoker {
     def invoke(process: EspProcess, data: List[SimpleRecord],
                env: StreamExecutionEnvironment = StreamExecutionEnvironment.createLocalEnvironment()) = {

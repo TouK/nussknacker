@@ -10,15 +10,16 @@ import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor
 import org.scalatest.{FlatSpec, Inside, Matchers}
 import pl.touk.esp.engine.api.exception.ExceptionHandlerFactory
-import pl.touk.esp.engine.api.process.{ProcessConfigCreator, Sink, SinkFactory, WithCategories}
+import pl.touk.esp.engine.api.process._
 import pl.touk.esp.engine.api.test.InvocationCollectors.ServiceInvocationCollector
+import pl.touk.esp.engine.api.test.{EmptyLineSplittedTestDataParser, NewLineSplittedTestDataParser, TestDataParser}
 import pl.touk.esp.engine.api.{MethodToInvoke, ParamName, Service}
 import pl.touk.esp.engine.build.EspProcessBuilder
 import pl.touk.esp.engine.flink.api.process.FlinkSourceFactory
 import pl.touk.esp.engine.flink.util.exception.{VerboselyLoggingExceptionHandler, VerboselyLoggingRestartingExceptionHandler}
 import pl.touk.esp.engine.flink.util.source.CollectionSource
 import pl.touk.esp.engine.marshall.ProcessMarshaller
-import pl.touk.esp.engine.process.ProcessTestHelpers.{MonitorEmptySink, SimpleRecord, StateCustomNode}
+import pl.touk.esp.engine.process.ProcessTestHelpers.{MonitorEmptySink, SimpleJsonRecord, SimpleRecord, StateCustomNode}
 import pl.touk.esp.engine.spel
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -91,14 +92,10 @@ class SimpleProcessConfigCreator extends ProcessConfigCreator {
 
   override def customStreamTransformers(config: Config) = Map("stateCustom" -> WithCategories(StateCustomNode))
 
-  override def sourceFactories(config: Config) = Map("input" -> WithCategories(FlinkSourceFactory.noParam(
-    new CollectionSource[SimpleRecord](new ExecutionConfig, List(), Some(new AscendingTimestampExtractor[SimpleRecord] {
-      override def extractAscendingTimestamp(element: SimpleRecord) = element.date.getTime
-    })), Some((csv: String) => {
-      val parts = csv.split("\\|")
-      SimpleRecord(parts(0), parts(1).toLong, parts(2), new Date(parts(3).toLong), Some(BigDecimal(parts(4))), BigDecimal(parts(5)), parts(6))
-    })
-  ), "cat2"))
+  override def sourceFactories(config: Config) = Map(
+    "input" -> WithCategories(TestSources.simpleRecordSource, "cat2"),
+    "jsonInput" -> WithCategories(TestSources.jsonSource, "cat2")
+  )
 
   override def exceptionHandlerFactory(config: Config) =
     ExceptionHandlerFactory.noParams(VerboselyLoggingRestartingExceptionHandler)
@@ -106,4 +103,34 @@ class SimpleProcessConfigCreator extends ProcessConfigCreator {
   override def globalProcessVariables(config: Config): Map[String, WithCategories[Class[_]]] = Map.empty
 
   override def buildInfo(): Map[String, String] = Map.empty
+}
+
+object TestSources {
+  import org.apache.flink.streaming.api.scala._
+
+  import argonaut._
+  import argonaut.Argonaut._
+  import ArgonautShapeless._
+
+  val simpleRecordSource = FlinkSourceFactory.noParam(
+    new CollectionSource[SimpleRecord](new ExecutionConfig, List(), Some(new AscendingTimestampExtractor[SimpleRecord] {
+      override def extractAscendingTimestamp(element: SimpleRecord) = element.date.getTime
+    })), Some(new NewLineSplittedTestDataParser[SimpleRecord] {
+      override def parseElement(csv: String): SimpleRecord = {
+        val parts = csv.split("\\|")
+        SimpleRecord(parts(0), parts(1).toLong, parts(2), new Date(parts(3).toLong), Some(BigDecimal(parts(4))), BigDecimal(parts(5)), parts(6))
+      }
+    })
+  )
+
+
+  val jsonSource = FlinkSourceFactory.noParam(
+    new CollectionSource[SimpleJsonRecord](new ExecutionConfig, List(), None), Some(new EmptyLineSplittedTestDataParser[SimpleJsonRecord] {
+
+      override def parseElement(json: String): SimpleJsonRecord = {
+        json.decodeOption[SimpleJsonRecord].get
+      }
+    })
+  )
+
 }

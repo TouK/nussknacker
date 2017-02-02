@@ -4,6 +4,7 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.TimestampAssigner
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import pl.touk.esp.engine.api.process.{Source, SourceFactory}
+import pl.touk.esp.engine.api.test.TestDataParser
 
 trait FlinkSource[T] extends Source[T] {
 
@@ -25,10 +26,10 @@ abstract class FlinkSourceFactory[T: TypeInformation] extends SourceFactory[T] w
 
 object FlinkSourceFactory {
 
-  def noParam[T: TypeInformation](source: FlinkSource[T], testDataParser: Option[String => T] = None): FlinkSourceFactory[T] =
+  def noParam[T: TypeInformation](source: FlinkSource[T], testDataParser: Option[TestDataParser[T]] = None): FlinkSourceFactory[T] =
     new NoParamSourceFactory[T](source, testDataParser)
 
-  class NoParamSourceFactory[T: TypeInformation](val source: FlinkSource[T], val testDataParser: Option[String => T]) extends FlinkSourceFactory[T] {
+  class NoParamSourceFactory[T: TypeInformation](val source: FlinkSource[T], val testDataParser: Option[TestDataParser[T]]) extends FlinkSourceFactory[T] {
     def create(): Source[T] = source
   }
 

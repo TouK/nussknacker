@@ -28,7 +28,8 @@ class AggProcessConfigCreator extends ProcessConfigCreator {
         new CsvSchema(KeyValue.apply),
         Some(new BoundedOutOfOrdernessTimestampExtractor[KeyValue](Time.minutes(10)) { // ta liczba uzależniona jest od batcha jaki jest pobierany przez konsumenta
           override def extractTimestamp(element: KeyValue) = element.date.getTime
-        })
+        }),
+        None
       ))
     )
   }
