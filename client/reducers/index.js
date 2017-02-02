@@ -232,10 +232,11 @@ function graphReducer(state, action) {
       }
     }
     case "START_GROUPING": {
-      return _.omit({
+      return {
         ...state,
-        groupingState: []
-      }, 'nodeToDisplay')
+        groupingState: [],
+        nodeToDisplay: state.processToDisplay.properties
+      }
     }
     case "FINISH_GROUPING": {
       const updatedGroups = state.groupingState.length > 1 ?
@@ -251,7 +252,7 @@ function graphReducer(state, action) {
       return {
         ...updatedGroups,
         layout: {},
-        nodeToDisplay: {}
+        nodeToDisplay: state.processToDisplay.properties,
       }
     }
     default:
