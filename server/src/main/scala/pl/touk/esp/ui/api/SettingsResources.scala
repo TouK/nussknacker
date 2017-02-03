@@ -23,8 +23,16 @@ class SettingsResources(config: Config)(implicit ec: ExecutionContext)
             config.as[GrafanaSettings]("grafanaSettings")
           }
         }
-      }
+      } ~
+        path("kibana") {
+          get {
+            complete {
+              config.as[KibanaSettings]("kibanaSettings")
+            }
+          }
+        }
     }
 }
 
 case class GrafanaSettings(url: String, dashboard: String, env: String)
+case class KibanaSettings(url: String)
