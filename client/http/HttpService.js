@@ -64,6 +64,10 @@ export default {
     return promiseWrap($.get(appConfig.API_URL + '/settings/grafana'))
   },
 
+  fetchKibanaSettings() {
+    return promiseWrap($.get(appConfig.API_URL + '/settings/kibana'))
+  },
+
   fetchProcessDefinitionData() {
     return promiseWrap($.get(appConfig.API_URL + '/processDefinitionData'))
   },

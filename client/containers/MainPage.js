@@ -9,6 +9,7 @@ import "../stylesheets/main.styl";
 import hamburgerOpen from "../assets/img/menu-open.svg";
 import hamburgerClosed from "../assets/img/menu-closed.svg";
 import Metrics from "./Metrics";
+import Search from "./Search";
 import DragArea from "../components/DragArea";
 import {connect} from "react-redux";
 import ActionsUtils from "../actions/ActionsUtils";
@@ -57,6 +58,7 @@ const App_ = React.createClass({
               <ul id="menu-items" className="nav navbar-nav navbar-right nav-pills nav-stacked">
                 <li><Link to={Processes.path}>{Processes.header}</Link></li>
                 <li><Link to={Metrics.basePath}>{Metrics.header}</Link></li>
+                <li><Link to={Search.path}>{Search.header}</Link></li>
               </ul>
             </div>
           </div>
