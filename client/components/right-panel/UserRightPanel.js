@@ -69,8 +69,11 @@ class UserRightPanel extends Component {
         {
           panelName: "Test",
           buttons: [
-            {name: "from file", onClick: this.testProcess, icon: InlinedSvgs.buttonFromFile, dropzone: true, disabled: !this.props.processIsLatestVersion || !this.props.nothingToSave},
-            {name: "hide", onClick: this.hideTestResults, icon: InlinedSvgs.buttonHide, disabled: !this.props.isTesting}
+            {name: "from file", onClick: this.testProcess, icon: InlinedSvgs.buttonFromFile, dropzone: true,
+              disabled: !this.props.processIsLatestVersion || !this.props.nothingToSave || !this.props.testCapabilities.canBeTested},
+            {name: "hide", onClick: this.hideTestResults, icon: InlinedSvgs.buttonHide, disabled: !this.props.isTesting},
+            {name: "generate", onClick: this.generateData, icon: InlinedSvgs.buttonGenerate,
+              disabled: !this.props.processIsLatestVersion || !this.props.nothingToSave || !this.props.testCapabilities.canGenerateTestData},
           ]
         },
         {
@@ -175,6 +178,11 @@ class UserRightPanel extends Component {
     HttpService.exportProcessToPdf(this.processId(), this.versionId(), data)
   }
 
+  generateData = () => {
+    HttpService.generateTestData(this.props.fetchedProcessDetails.id, this.props.processToDisplay)
+  }
+
+
   importProcess = (files) => {
     files.forEach((file)=>
       this.props.actions.importProcess(this.processId(), file)
@@ -219,6 +227,8 @@ function mapState(state) {
   return {
     fetchedProcessDetails: fetchedProcessDetails,
     processToDisplay: state.graphReducer.processToDisplay,
+    testCapabilities: state.graphReducer.testCapabilities || {},
+
     loggedUser: state.settings.loggedUser,
     nothingToSave: ProcessUtils.nothingToSave(state),
     isTesting: !_.isEmpty(state.graphReducer.testResults),

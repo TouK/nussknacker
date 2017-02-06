@@ -9,6 +9,7 @@ export function fetchProcessToDisplay(processId, versionId) {
     })
     return HttpService.fetchProcessDetails(processId, versionId)
       .then((processDetails) => {
+        displayTestCapabilites(processDetails.json)(dispatch)
         return dispatch(displayProcess(processDetails))
       })
   }
@@ -44,6 +45,17 @@ export function displayProcessActivity(processId) {
       })
     })
   }
+}
+
+function displayTestCapabilites(processDetails) {
+  return (dispatch) => {
+    HttpService.getTestCapabilities(processDetails).then((capabilites) => dispatch({
+      type: "UPDATE_TEST_CAPABILITIES",
+      capabilities: capabilites
+    }))
+
+  }
+
 }
 
 function displayProcess(processDetails) {

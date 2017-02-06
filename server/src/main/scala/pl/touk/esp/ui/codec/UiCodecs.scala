@@ -5,10 +5,11 @@ import java.time.{LocalDate, LocalDateTime}
 import argonaut._
 import argonaut.derive.{JsonSumCodec, JsonSumCodecFor}
 import pl.touk.esp.engine.api
-import pl.touk.esp.engine.api.UserDefinedProcessAdditionalFields
+import pl.touk.esp.engine.api.{Displayable, UserDefinedProcessAdditionalFields}
 import pl.touk.esp.engine.api.deployment.test.{ExpressionInvocationResult, MockedResult, TestResults}
 import pl.touk.esp.engine.api.exception.EspExceptionInfo
 import pl.touk.esp.engine.definition.DefinitionExtractor.PlainClazzDefinition
+import pl.touk.esp.engine.definition.TestingCapabilities
 import pl.touk.esp.engine.graph.node
 import pl.touk.esp.ui.api.ProcessValidation.ValidationResult
 import pl.touk.esp.ui.api.{DisplayableUser, GrafanaSettings, ProcessObjects}
@@ -34,6 +35,8 @@ object UiCodecs {
     CodecJson.derived[Option[ProcessAdditionalFields]]
       .asInstanceOf[CodecJson[Option[UserDefinedProcessAdditionalFields]]]
   }
+
+  implicit def testingCapabilitiesCodec: CodecJson[TestingCapabilities] = CodecJson.derive[TestingCapabilities]
 
   implicit def propertiesCodec: CodecJson[ProcessProperties] = CodecJson.derive[ProcessProperties]
 
@@ -89,6 +92,7 @@ object UiCodecs {
         case a: Int => jNumber(a)
         case a: Number => jNumber(a.doubleValue())
         case a: LocalDateTime => a.asJson
+        case a: Displayable => jString(a.display)
         //TODO: a to??
         //case a: LocalDate => a.asJson
         //TODO: co tu w sumie lepiej pokazywac??

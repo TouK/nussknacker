@@ -86,6 +86,7 @@ const emptyGraphState = {
   fetchedProcessDetails: {},
   nodeToDisplay: {},
   layout: {},
+  testCapabilities: {},
   groupingState: null
 }
 
@@ -107,6 +108,12 @@ function graphReducer(state, action) {
         graphLoading: false,
         processToDisplay: action.processJson,
         layout: newLayout
+      }
+    }
+    case "UPDATE_TEST_CAPABILITIES": {
+      return {
+        ...state,
+        testCapabilities: action.capabilities
       }
     }
     case "DISPLAY_PROCESS": {
