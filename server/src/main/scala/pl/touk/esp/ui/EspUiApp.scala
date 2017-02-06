@@ -81,7 +81,8 @@ object EspUiApp extends App with Directives with LazyLogging {
                 new DefinitionResources(processDefinition).route(user) ~
                 new UserResources().route(user) ~
                 new SettingsResources(config).route(user) ~
-                new AppResources(buildInfo, processRepository, managementActor).route(user)
+                new AppResources(buildInfo, processRepository, managementActor).route(user) ~
+                new TestInfoResources(manager, processConverter, config.getInt("testSampleSize")).route(user)
             } ~
               //nie chcemy api, zeby nie miec problemow z autentykacja...
               pathPrefixTest(!"api") {

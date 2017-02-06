@@ -161,6 +161,30 @@ export default {
     });
   },
 
+  getTestCapabilities: (process) => {
+    return ajaxCall({
+      url: appConfig.API_URL + '/testInfo/capabilities',
+      type: 'POST',
+      data: JSON.stringify(process)
+    });
+  },
+
+  generateTestData: (processId, processJson) => {
+    fetch(`${appConfig.API_URL}/testInfo/generate`,
+      {
+          mode: 'cors-with-forced-prefligh',
+          method: 'POST',
+          body: JSON.stringify(processJson),
+          credentials: 'include',
+          headers: new Headers({
+        		'Content-Type': 'application/json'
+          })
+      }
+    ).then((response) => response.blob()).then((blob) => {
+      FileSaver.saveAs(blob, `${processId}-testData`);
+    }).catch((error) => this.addError(`Failed to generate test data`, error));
+  },
+
   saveProcess(processId, processJson) {
     return ajaxCall({
       url: appConfig.API_URL + '/processes/' + processId + '/json',
