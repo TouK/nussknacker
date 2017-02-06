@@ -8,6 +8,7 @@ import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.util.serialization.KeyedSerializationSchema
 import pl.touk.esp.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.esp.engine.api.process.{ProcessConfigCreator, WithCategories}
+import pl.touk.esp.engine.api.test.TestParsingUtils
 import pl.touk.esp.engine.flink.util.exception.VerboselyLoggingExceptionHandler
 import pl.touk.esp.engine.kafka.{KafkaConfig, KafkaSinkFactory, KafkaSourceFactory}
 import pl.touk.esp.engine.perftest.sample.model.KeyValue
@@ -29,7 +30,7 @@ class AggProcessConfigCreator extends ProcessConfigCreator {
         Some(new BoundedOutOfOrdernessTimestampExtractor[KeyValue](Time.minutes(10)) { // ta liczba uzależniona jest od batcha jaki jest pobierany przez konsumenta
           override def extractTimestamp(element: KeyValue) = element.date.getTime
         }),
-        None
+        TestParsingUtils.newLineSplit
       ))
     )
   }

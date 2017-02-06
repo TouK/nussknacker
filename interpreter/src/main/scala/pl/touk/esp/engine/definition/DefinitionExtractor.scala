@@ -120,7 +120,7 @@ object DefinitionExtractor {
   }
 
   object ObjectWithMethodDef {
-    def apply[T](obj: WithCategories[T], extractor: DefinitionExtractor[T]): ObjectWithMethodDef = {
+    def apply[T](obj: WithCategories[_<:T], extractor: DefinitionExtractor[T]): ObjectWithMethodDef = {
       val methodDefinition = extractor.extractMethodDefinition(obj.value)
       ObjectWithMethodDef(obj.value, methodDefinition, extractor.extract(obj.value, methodDefinition, obj.categories))
     }

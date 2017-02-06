@@ -9,8 +9,10 @@ import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrderness
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.windowing.time.Time
 import pl.touk.esp.engine.api._
+import pl.touk.esp.engine.api.deployment.test.TestData
 import pl.touk.esp.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.esp.engine.api.process.{ProcessConfigCreator, WithCategories}
+import pl.touk.esp.engine.api.test.TestParsingUtils
 import pl.touk.esp.engine.flink.util.exception.VerboselyLoggingExceptionHandler
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.kafka.{KafkaConfig, KafkaSourceFactory}
@@ -41,7 +43,7 @@ object KeyValueTestHelper {
             Some(new BoundedOutOfOrdernessTimestampExtractor[KeyValue](Time.minutes(10)) {
               override def extractTimestamp(element: KeyValue) = element.date.getTime
             }),
-            None
+            TestParsingUtils.newLineSplit
           )
         ))
       override def sinkFactories(config: Config) = Map.empty
