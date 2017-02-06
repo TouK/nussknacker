@@ -6,6 +6,12 @@ trait Source[T] {
 
 }
 
+trait TestDataGenerator {
+  def generateTestData(size: Int) : Array[Byte]
+}
+
+
+
 trait SourceFactory[T] extends Serializable {
   def clazz : Class[_]
 

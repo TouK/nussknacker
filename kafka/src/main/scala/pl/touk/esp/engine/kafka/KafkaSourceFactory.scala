@@ -1,26 +1,23 @@
 package pl.touk.esp.engine.kafka
 
-import java.util.Properties
-
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.TimestampAssigner
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer09
 import org.apache.flink.streaming.util.serialization.DeserializationSchema
-import pl.touk.esp.engine.api.process.Source
-import pl.touk.esp.engine.api.test.TestDataParser
+import pl.touk.esp.engine.api.process.{Source, TestDataGenerator}
+import pl.touk.esp.engine.api.test.{TestDataParser, TestDataSplit}
 import pl.touk.esp.engine.api.{MetaData, ParamName}
 import pl.touk.esp.engine.flink.api.process.{FlinkSource, FlinkSourceFactory}
 import pl.touk.esp.engine.kafka.KafkaSourceFactory._
 
-import scala.collection.JavaConverters._
 
 class KafkaSourceFactory[T: TypeInformation](config: KafkaConfig,
                                              schema: DeserializationSchema[T],
                                              timestampAssigner: Option[TimestampAssigner[T]],
-                                             override val testDataParser: Option[TestDataParser[T]]) extends FlinkSourceFactory[T] with Serializable {
+                                             testPrepareInfo: TestDataSplit) extends FlinkSourceFactory[T] with Serializable {
 
-  def create(processMetaData: MetaData, @ParamName(`TopicParamName`) topic: String): Source[T] = {
+  def create(processMetaData: MetaData, @ParamName(`TopicParamName`) topic: String): Source[T] with TestDataGenerator = {
     val espKafkaProperties = config.kafkaEspProperties.getOrElse(Map.empty)
     if (espKafkaProperties.get("forceLatestRead").exists(java.lang.Boolean.parseBoolean)) {
       //moznaby definiowac chec resetowania offsetu przy definicji procesu, ale nie jestem pewien czy tak chcemy?
@@ -28,31 +25,24 @@ class KafkaSourceFactory[T: TypeInformation](config: KafkaConfig,
     } else {
       ()
     }
-    new KafkaSource(
-      consumerGroupId = processMetaData.id,
-      topic = topic
-    )
+    new KafkaSource(consumerGroupId = processMetaData.id, topic = topic)
   }
 
-  class KafkaSource(consumerGroupId: String, topic: String) extends FlinkSource[T] with Serializable {
+  override def testDataParser = Some(new TestDataParser[T] {
+    override def parseTestData(data: Array[Byte]) = testPrepareInfo.splitData(data).map(schema.deserialize)
+  })
+
+  class KafkaSource(consumerGroupId: String, topic: String) extends FlinkSource[T] with Serializable
+    with TestDataGenerator {
     override def typeInformation: TypeInformation[T] =
       implicitly[TypeInformation[T]]
 
     override def toFlinkSource: SourceFunction[T] = {
-      val propertiesCopy = new Properties()
-      propertiesCopy.putAll(kafkaProperties())
-      propertiesCopy.setProperty("group.id", consumerGroupId)
-      new FlinkKafkaConsumer09[T](topic, schema, propertiesCopy)
+      new FlinkKafkaConsumer09[T](topic, schema, KafkaEspUtils.toProperties(config, Some(consumerGroupId)))
     }
 
-    private def kafkaProperties(): Properties = {
-      val props = new Properties()
-      props.setProperty("zookeeper.connect", config.zkAddress)
-      props.setProperty("bootstrap.servers", config.kafkaAddress)
-      props.setProperty("auto.offset.reset", "earliest")
-      config.kafkaProperties.map(_.asJava).foreach(props.putAll)
-      props
-    }
+    override def generateTestData(size: Int) =
+      testPrepareInfo.joinData(KafkaEspUtils.readLastMessages(topic, size, config))
 
     override def timestampAssigner = KafkaSourceFactory.this.timestampAssigner
   }

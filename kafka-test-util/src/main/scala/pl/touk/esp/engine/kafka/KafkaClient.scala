@@ -32,9 +32,10 @@ class KafkaClient(kafkaAddress: String, zkAddress: String) {
     AdminUtils.deleteTopic(zkUtils, name)
   }
 
-  def sendMessage(topic: String, key: String, content: String): Future[RecordMetadata] = {
+  def sendMessage(topic: String, key: String, content: String, partition: Option[Int] = None): Future[RecordMetadata] = {
     val promise = Promise[RecordMetadata]()
-    producer.send(new ProducerRecord[String, String](topic, key, content), producerCallback(promise))
+    val record = partition.map(new ProducerRecord[String, String](topic, _, key, content)).getOrElse(new ProducerRecord[String, String](topic, key, content))
+    producer.send(record, producerCallback(promise))
     promise.future
   }
 

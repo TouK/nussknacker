@@ -76,14 +76,17 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
 
         override def typeInformation = implicitly[TypeInformation[String]]
       }), "Category1", "Category2"),
-      "csv-source" -> WithCategories(FlinkSourceFactory.noParam(new FlinkSource[CsvRecord] {
+      "csv-source" -> WithCategories(FlinkSourceFactory.noParam(new FlinkSource[CsvRecord] with TestDataGenerator {
         override def typeInformation = implicitly[TypeInformation[CsvRecord]]
 
         override def toFlinkSource = new SourceFunction[CsvRecord] {
           override def cancel() = {}
 
           override def run(ctx: SourceContext[CsvRecord]) = {}
+
         }
+
+        override def generateTestData(size: Int) = "record1|field2\nrecord2|field3".getBytes
 
         override def timestampAssigner = None
 
@@ -193,13 +196,13 @@ case object Enricher extends Service {
 
 case class RichObject(field1: String, field2: Long, field3: Option[String])
 
-case class CsvRecord(fields: List[String]) extends UsingLazyValues {
+case class CsvRecord(fields: List[String]) extends UsingLazyValues with Displayable {
 
   lazy val firstField = fields.head
 
   lazy val enrichedField = lazyValue[RichObject]("enricher", "param" -> firstField)
 
-
+  override def display = fields.mkString("|")
 }
 
 case object MultipleParamsService extends Service {
