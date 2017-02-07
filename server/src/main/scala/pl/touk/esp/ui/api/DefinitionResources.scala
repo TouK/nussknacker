@@ -40,6 +40,10 @@ case class ProcessObjects(nodesToAdd: List[NodeGroup], processDefinition: Proces
 
 case class NodeToAdd(`type`: String, label: String, node: NodeData, categories: List[String])
 
+object SortedNodeGroup {
+  def apply(name: String, possibleNodes: List[NodeToAdd]): NodeGroup = NodeGroup(name, possibleNodes.sortBy(_.label))
+}
+
 case class NodeGroup(name: String, possibleNodes: List[NodeToAdd])
 
 //TODO: czy to da sie ladniej?
@@ -56,34 +60,34 @@ object DefinitionPreparer {
     val returnsUnit = ((id: String, objectDefinition: ObjectDefinition)
       => objectDefinition.returnType.refClazzName == classOf[BoxedUnit].getName).tupled
 
-    val base = NodeGroup("base", List(
+    val base = SortedNodeGroup("base", List(
       NodeToAdd("filter", "Filter", Filter("", Expression("spel", "true")), user.categories),
       NodeToAdd("split", "Split", Split(""), user.categories),
       NodeToAdd("variable", "Variable", Variable("", "varName", Expression("spel", "'value'")), user.categories)
       //TODO: jak robic VariableBuilder??
     ))
-    val services = NodeGroup("services",
+    val services = SortedNodeGroup("services",
       processDefinition.services.filter(returnsUnit).map {
         case (id, objDefinition) => NodeToAdd("processor", id,
           Processor("", serviceRef(id, objDefinition)), filterCategories(objDefinition))
       }.toList
     )
 
-    val enrichers = NodeGroup("enrichers",
+    val enrichers = SortedNodeGroup("enrichers",
       processDefinition.services.filterNot(returnsUnit).map {
         case (id, objDefinition) => NodeToAdd("enricher", id,
           Enricher("", serviceRef(id, objDefinition), "output"), filterCategories(objDefinition))
       }.toList
     )
 
-    val customTransformers = NodeGroup("custom",
+    val customTransformers = SortedNodeGroup("custom",
       processDefinition.customStreamTransformers.map {
         case (id, objDefinition) => NodeToAdd("customNode", id,
           CustomNode("", "outputVar", id, objDefParams(objDefinition)), filterCategories(objDefinition))
       }.toList
     )
 
-    val sinks = NodeGroup("sinks",
+    val sinks = SortedNodeGroup("sinks",
       processDefinition.sinkFactories.map {
         case (id, objDefinition) => NodeToAdd("sink", id,
           Sink("", SinkRef(id, objDefinition.parameters.map(p => param.Parameter(p.name, "TODO"))),
@@ -92,7 +96,7 @@ object DefinitionPreparer {
       }.toList
     )
 
-    val sources = NodeGroup("sources",
+    val sources = SortedNodeGroup("sources",
       processDefinition.sourceFactories.map {
         case (id, objDefinition) => NodeToAdd("source", id,
           Source("", SourceRef(id, objDefinition.parameters.map(p => param.Parameter(p.name, "TODO")))), filterCategories(objDefinition)
