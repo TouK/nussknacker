@@ -14,8 +14,8 @@ import pl.touk.esp.engine.graph.node
 import pl.touk.esp.ui.api.ProcessValidation.ValidationResult
 import pl.touk.esp.ui.api.{DisplayableUser, GrafanaSettings, ProcessObjects}
 import pl.touk.esp.ui.app.BuildInfo
-import pl.touk.esp.ui.process.displayedgraph.displayablenode.{NodeAdditionalFields, ProcessAdditionalFields}
-import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties}
+import pl.touk.esp.ui.process.displayedgraph.displayablenode.{EdgeType, NodeAdditionalFields, ProcessAdditionalFields}
+import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties, displayablenode}
 import pl.touk.esp.ui.process.repository.ProcessActivityRepository.{Comment, ProcessActivity}
 import pl.touk.esp.ui.process.repository.ProcessRepository.{ProcessDetails, ProcessHistoryEntry}
 
@@ -45,6 +45,29 @@ object UiCodecs {
   implicit def localDateTimeDecode = DecodeJson.of[String].map[LocalDateTime](s => LocalDateTime.parse(s))
 
   implicit def validationResultEncode = EncodeJson.of[ValidationResult]
+
+  //fixme jak to zrobic automatycznie?
+  implicit def edgeTypeEncode: EncodeJson[EdgeType] = EncodeJson[EdgeType] {
+    case EdgeType.FilterFalse => jObjectFields("type" -> jString("FilterFalse"))
+    case EdgeType.FilterTrue => jObjectFields("type" -> jString("FilterTrue"))
+    case EdgeType.SwitchDefault => jObjectFields("type" -> jString("SwitchDefault"))
+    case ns: EdgeType.NextSwitch => jObjectFields("type" -> jString("NextSwitch"), "condition" -> jString(ns.condition))
+  }
+
+  implicit def edgeTypeDecode: DecodeJson[EdgeType] = DecodeJson[EdgeType] { c =>
+    for {
+      edgeType <- (c --\ "type").as[String]
+      edgeTypeObj <- {
+        if (edgeType == "FilterFalse") DecodeResult.ok(EdgeType.FilterFalse)
+        else if (edgeType == "FilterTrue") DecodeResult.ok(EdgeType.FilterTrue)
+        else if (edgeType == "SwitchDefault") DecodeResult.ok(EdgeType.SwitchDefault)
+        else if (edgeType == "NextSwitch") (c --\ "condition").as[String].map(condition => EdgeType.NextSwitch(condition))
+        else throw new IllegalArgumentException(s"Unknown edge type: $edgeType")
+      }
+    } yield edgeTypeObj
+  }
+
+  implicit def edgeEncode = EncodeJson.of[displayablenode.Edge]
 
   implicit def codec: CodecJson[DisplayableProcess] = CodecJson.derive[DisplayableProcess]
 
@@ -119,7 +142,7 @@ object UiCodecs {
       )
     }
 
-    implicit def exprInvocationResult =   EncodeJson[ExpressionInvocationResult] {
+    implicit def exprInvocationResult = EncodeJson[ExpressionInvocationResult] {
       case ExpressionInvocationResult(context, name, result) => jObjectFields(
         "context" -> context.asJson,
         "name" -> jString(name),

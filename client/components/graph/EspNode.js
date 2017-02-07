@@ -1,5 +1,6 @@
 import joint from 'jointjs'
 import _ from 'lodash'
+import NodeUtils from './NodeUtils'
 
 import markup from './markups/markup.html';
 import InlinedSvgs from '../../assets/icons/InlinedSvgs'
@@ -199,8 +200,8 @@ export default {
         });
     },
 
-    makeLink(edge, forExport) {
-      const label = _.get(edge, 'label') || ''
+    makeLink(edge, outgoingEdges, forExport) {
+      const label = NodeUtils.edgeLabel(edge, outgoingEdges)
       return new joint.dia.Link({
         markup: [
             '<path class="connection"/>',

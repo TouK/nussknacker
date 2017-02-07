@@ -31,6 +31,7 @@ class UserRightPanel extends Component {
   }
 
   render() {
+    const saveDisabled = this.props.nothingToSave && this.props.processIsLatestVersion
     const config =
       [
         {
@@ -44,10 +45,7 @@ class UserRightPanel extends Component {
         {
         panelName: "Process",
         buttons: [
-          {name: "save" + (this.props.nothingToSave ? "" : "*"),
-            visible: this.props.loggedUser.canWrite,
-            disabled: this.props.nothingToSave && this.props.processIsLatestVersion,
-            onClick: this.save, icon: InlinedSvgs.buttonSave},
+          {name: "save" + (!saveDisabled ? "*" : ""), visible: this.props.loggedUser.canWrite, disabled: saveDisabled, onClick: this.save, icon: InlinedSvgs.buttonSave},
           {name: "import", visible: this.props.loggedUser.canWrite, disabled: false, onClick: this.importProcess, icon: InlinedSvgs.buttonImport, dropzone: true},
           {name: "export", onClick: this.exportProcess, icon: InlinedSvgs.buttonExport},
           {name: "exportPDF", disabled: !this.props.nothingToSave, onClick: this.exportProcessToPdf, icon: InlinedSvgs.buttonExport},

@@ -157,8 +157,8 @@ export function editNode(process, before, after) {
   }
 }
 
-export function nodesConnected(from, to) {
-  return {type: "NODES_CONNECTED", from: from, to: to}
+export function nodesConnected(fromNode, toNode) {
+  return {type: "NODES_CONNECTED", fromNode: fromNode, toNode: toNode}
 }
 export function nodesDisconnected(from, to) {
   return {type: "NODES_DISCONNECTED", from: from, to: to}
