@@ -59,6 +59,9 @@ class ProcessUtils {
       case "Variable": {
         return [{[node.varName]: "java.lang.Object"}] //fixme co tutaj?
       }
+      case "Switch": {
+        return [{[node.exprVal]: "java.lang.Object"}]
+      }
       default: {
         return []
       }

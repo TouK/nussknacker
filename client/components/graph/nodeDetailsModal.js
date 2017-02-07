@@ -47,7 +47,7 @@ class NodeDetailsModal extends React.Component {
   }
 
   closeModal = () => {
-    this.props.actions.closeNodeDetails()
+    this.props.actions.closeModals()
   }
 
   performNodeEdit = () => {

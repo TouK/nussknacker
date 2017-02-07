@@ -49,11 +49,14 @@ class NodeUtils {
     return group.join("-")
   }
 
-  edgeType = (allEdges, node) => {
+  edgeType = (allEdges, node, edgesFromDefinition) => {
     if (node.type == "Filter") {
       const thisFilterConnections = allEdges.filter((edge) => edge.from == node.id)
       return {type: _.get(thisFilterConnections[0], 'edgeType.type') == 'FilterTrue' ? 'FilterFalse' : 'FilterTrue'}
-    } else {
+    } else if (node.type == "Switch") {
+      return edgesFromDefinition["NextSwitch"]
+    }
+    else {
       return null
     }
   }
@@ -63,7 +66,7 @@ class NodeUtils {
       "FilterFalse": "false",
       "FilterTrue": "true",
       "SwitchDefault": "default",
-      "NextSwitch": _.get(edge, 'edgeType.condition')
+      "NextSwitch": _.get(edge, 'edgeType.condition.expression')
     }
     const edgeType = _.get(edge, 'edgeType.type')
     return (edgeType == "FilterTrue" && outgoingEdges[edge.from].length == 1 ? '' : edgeTypeToLabel[edgeType]) || ''

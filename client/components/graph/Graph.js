@@ -9,7 +9,8 @@ import svgPanZoom from 'svg-pan-zoom'
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
 import ActionsUtils from '../../actions/ActionsUtils';
-import NodeDetailsModal from './nodeDetailsModal.js';
+import NodeDetailsModal from './nodeDetailsModal';
+import EdgeDetailsModal from './EdgeDetailsModal';
 import { DropTarget } from 'react-dnd';
 import '../../stylesheets/graph.styl'
 import SVGUtils from '../../common/SVGUtils';
@@ -126,7 +127,11 @@ class Graph extends React.Component {
             this.changeLayoutIfNeeded()
           })
           .on("link:connect", (c) => {
-            this.props.actions.nodesConnected(c.sourceView.model.attributes.nodeData, c.targetView.model.attributes.nodeData)
+            this.props.actions.nodesConnected(
+              c.sourceView.model.attributes.nodeData,
+              c.targetView.model.attributes.nodeData,
+              this.props.processDefinitionData.edgeTypes
+            )
           })
     }
 
@@ -233,12 +238,15 @@ class Graph extends React.Component {
         if (cellView.model.attributes.nodeData) {
           this.props.actions.displayModalNodeDetails(cellView.model.attributes.nodeData)
         }
+        if (cellView.model.attributes.edgeData) {
+          this.props.actions.displayModalEdgeDetails(cellView.model.attributes.edgeData)
+        }
       })
       this.processGraphPaper.on('cell:pointerclick', (cellView, evt, x, y) => {
         if (cellView.model.attributes.nodeData) {
           this.props.actions.displayNodeDetails(cellView.model.attributes.nodeData)
         }
-      });
+      })
     }
 
     labelToFrontOnHover () {
@@ -266,6 +274,7 @@ class Graph extends React.Component {
         return this.props.connectDropTarget(
             <div>
                 {!_.isEmpty(this.props.nodeToDisplay) ? <NodeDetailsModal/> : null }
+                {!_.isEmpty(this.props.edgeToDisplay) ? <EdgeDetailsModal/> : null }
                 <div ref="espGraph" id="esp-graph"></div>
             </div>
         );
@@ -276,11 +285,13 @@ class Graph extends React.Component {
 function mapState(state) {
     return {
         nodeToDisplay: state.graphReducer.nodeToDisplay,
+        edgeToDisplay: state.graphReducer.edgeToDisplay,
         groupingState: state.graphReducer.groupingState,
         processToDisplay: state.graphReducer.processToDisplay,
         loggedUser: state.settings.loggedUser,
         layout: state.graphReducer.layout,
-        testResults: state.graphReducer.testResults || {}
+        testResults: state.graphReducer.testResults || {},
+        processDefinitionData: state.settings.processDefinitionData
     };
 }
 

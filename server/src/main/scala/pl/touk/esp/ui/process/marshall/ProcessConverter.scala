@@ -50,7 +50,7 @@ class ProcessConverter(processValidation: ProcessValidation) {
         val (tailNodes, tailEdges) = toGraphInner(tail)
         val (nextNodes, nextEdges) = unzipListTuple(nexts.map { c =>
           val (nextNodeNodes, nextNodeEdges) = toGraphInner(c.nodes)
-          (nextNodeNodes, nextNodeNodes.headOption.map(n => displayablenode.Edge(data.id, n.id, Some(EdgeType.NextSwitch(c.expression.expression)))).toList ::: nextNodeEdges)
+          (nextNodeNodes, nextNodeNodes.headOption.map(n => displayablenode.Edge(data.id, n.id, Some(EdgeType.NextSwitch(c.expression)))).toList ::: nextNodeEdges)
         })
         (data :: defaultNextNodes ::: nextNodes ::: tailNodes, createNextEdge(data.id, tail) ::: nextEdges ::: defaultNextEdgesConnectedToSwitch ::: tailEdges)
       case canonicalnode.SplitNode(data, nexts) :: tail =>
@@ -101,8 +101,7 @@ class ProcessConverter(processValidation: ProcessValidation) {
         canonicalnode.FilterNode(data, nextFalse) :: next
       case data: Switch =>
         val nexts = getEdges(data.id).collect { case e@displayablenode.Edge(_, _, Some(EdgeType.NextSwitch(edgeExpr))) =>
-          //FIXME: a jak nie spel??
-          canonicalnode.Case(Expression("spel", edgeExpr), unflattenEdgeEnd(data.id, e))
+          canonicalnode.Case(edgeExpr, unflattenEdgeEnd(data.id, e))
         }
         val default = getEdges(data.id).find(_.edgeType.contains(EdgeType.SwitchDefault)).map { e =>
           unflattenEdgeEnd(data.id, e)

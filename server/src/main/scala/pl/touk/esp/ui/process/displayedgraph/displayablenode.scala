@@ -12,7 +12,7 @@ object displayablenode {
     sealed trait SwitchEdge extends EdgeType
     case object FilterTrue extends FilterEdge
     case object FilterFalse extends FilterEdge
-    case class NextSwitch(condition: String) extends SwitchEdge
+    case class NextSwitch(condition: Expression) extends SwitchEdge
     case object SwitchDefault extends SwitchEdge
   }
 
