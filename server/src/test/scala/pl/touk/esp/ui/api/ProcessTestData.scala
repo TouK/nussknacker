@@ -15,14 +15,18 @@ object ProcessTestData {
 
   val existingSourceFactory = "barSource"
   val existingSinkFactory = "barSink"
+  val otherExistingSinkFactory = "barSink"
   val existingStreamTransformer = "transformer"
+  val otherExistingStreamTransformer = "otherTransformer"
 
-  val validator = ProcessValidator.default(
-    ObjectProcessDefinition.empty
-      .withSourceFactory(existingSourceFactory)
-      .withSinkFactory(existingSinkFactory)
-      .withCustomStreamTransformer(existingStreamTransformer, classOf[String])
-  )
+  val processDefinition = ObjectProcessDefinition.empty
+        .withSourceFactory(existingSourceFactory)
+        .withSinkFactory(otherExistingSinkFactory)
+        .withSinkFactory(existingSinkFactory)
+        .withCustomStreamTransformer(existingStreamTransformer, classOf[String])
+        .withCustomStreamTransformer(otherExistingStreamTransformer, classOf[String])
+
+  val validator = ProcessValidator.default(processDefinition)
 
   val validProcess =
     EspProcessBuilder
