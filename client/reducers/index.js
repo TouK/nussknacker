@@ -41,42 +41,52 @@ function settingsReducer(state = {loggedUser: {}, grafanaSettings: {}, kibanaSet
 const emptyUiState = {
   leftPanelIsOpened: false,
   showNodeDetailsModal: false,
+  showEdgeDetailsModal: false,
   confirmDialog: {}
 }
 function uiStateReducer(state = emptyUiState, action) {
+  const withAllModalsClosed = (newState) => {
+    const allModalsClosed = !(newState.showNodeDetailsModal || newState.showEdgeDetailsModal || newState.confirmDialog.isOpen)
+    return { ...newState, allModalsClosed: allModalsClosed}
+  }
   switch (action.type) {
     case "TOGGLE_LEFT_PANEL": {
-      return {
+      return withAllModalsClosed({
         ...state,
         leftPanelIsOpened: action.leftPanelIsOpened
-      }
+      })
     }
-    case "CLOSE_NODE_DETAILS": {
-      return {
+    case "CLOSE_MODALS": {
+      return withAllModalsClosed({
         ...state,
-        showNodeDetailsModal: false
-      }
+        showNodeDetailsModal: false,
+        showEdgeDetailsModal: false
+      })
     }
     case "DISPLAY_MODAL_NODE_DETAILS": {
-      return {
+      return withAllModalsClosed({
         ...state,
         showNodeDetailsModal: true
-      }
+      })
+    }
+    case "DISPLAY_MODAL_EDGE_DETAILS": {
+      return withAllModalsClosed({
+        ...state,
+        showEdgeDetailsModal: true
+      })
     }
     case "TOGGLE_CONFIRM_DIALOG": {
-      return {
+      return withAllModalsClosed({
         ...state,
         confirmDialog: {
           isOpen: action.isOpen,
           text: action.text,
           onConfirmCallback: action.onConfirmCallback
         }
-      }
+      })
     }
     default:
-      return {
-        ...state
-      }
+      return withAllModalsClosed(state)
   }
 }
 
@@ -85,6 +95,7 @@ const emptyGraphState = {
   processToDisplay: {},
   fetchedProcessDetails: {},
   nodeToDisplay: {},
+  edgeToDisplay: {},
   layout: {},
   testCapabilities: {},
   groupingState: null
@@ -156,6 +167,24 @@ function graphReducer(state, action) {
         }
       }
 
+    case "DISPLAY_MODAL_EDGE_DETAILS": {
+      return {
+        ...state,
+        edgeToDisplay: action.edgeToDisplay
+      }
+    }
+
+    case "EDIT_EDGE": {
+      const processToDisplay = GraphUtils.mapProcessWithNewEdge(state.processToDisplay, action.before, action.after)
+      return {
+        ...state,
+        processToDisplay: {
+          ...processToDisplay,
+          validationResult: action.validationResult
+        },
+        edgeToDisplay: action.after,
+      }
+    }
     case "EDIT_NODE": {
       const processToDisplay = GraphUtils.mapProcessWithNewNode(state.processToDisplay, action.before, action.after)
       var newLayout = _.map(state.layout, (n) => {
@@ -195,7 +224,7 @@ function graphReducer(state, action) {
     }
     case "NODES_CONNECTED": {
       const baseEdge = {from: action.fromNode.id, to: action.toNode.id}
-      const edgeType = NodeUtils.edgeType(state.processToDisplay.edges, action.fromNode)
+      const edgeType = NodeUtils.edgeType(state.processToDisplay.edges, action.fromNode, action.edgeTypes)
       const edge = edgeType ? {...baseEdge, edgeType: edgeType} : baseEdge
       return {
         ...state,

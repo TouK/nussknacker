@@ -6,9 +6,9 @@ import {ListGroupItem} from "react-bootstrap";
 import Textarea from "react-textarea-autosize";
 import NodeUtils from "./NodeUtils";
 import ExpressionSuggest from "./ExpressionSuggest";
+import ModalRenderUtils from "./ModalRenderUtils";
 import TestResultUtils from "../../common/TestResultUtils";
 import NodeParametersMerger from "./NodeParametersMerger";
-import InlinedSvgs from "../../assets/icons/InlinedSvgs"
 
 //zastanowic sie czy this.state tutaj nie powinien byc przepychany przez reduxa,
 // bo obecnie ten stan moze byc przypadkowo resetowany kiedy parent component dostanie nowe propsy - bo tak mamy
@@ -203,7 +203,7 @@ export default class NodeDetailsContent extends React.Component {
         <div >
           {field}
             <div className="node-row node-test-results">
-              <div className="node-label">{this.info('Value evaluated in test case')}</div>
+              <div className="node-label">{ModalRenderUtils.renderInfo('Value evaluated in test case')}</div>
               <div className="node-value">
                 <Textarea rows={1} cols={50} className="node-input" value={testValue} readOnly={true}/>
               </div>
@@ -336,7 +336,7 @@ export default class NodeDetailsContent extends React.Component {
 
         <div className="node-table-body node-test-results">
         <div className="node-row">
-          <div className="node-label">{this.info('Variables in test case')}</div>
+          <div className="node-label">{ModalRenderUtils.renderInfo('Variables in test case')}</div>
         </div>
         {
           Object.keys(ctx).map((key, ikey) => {
@@ -384,7 +384,7 @@ export default class NodeDetailsContent extends React.Component {
       return (
           <div className="node-table-body">
             <div className="node-row">
-              <div className="node-label">{ this.warning('Test case error')} </div>
+              <div className="node-label">{ ModalRenderUtils.renderWarning('Test case error')} </div>
               <div className="node-value">
                 <div className="node-error">{`${error.message} (${error.class})`}</div>
               </div>
@@ -396,31 +396,11 @@ export default class NodeDetailsContent extends React.Component {
     }
   }
 
-  warning(title) {
-    return (<div className="node-tip" title={title} dangerouslySetInnerHTML={{__html: InlinedSvgs.tipsWarning}} />);
-  }
-
-  info(title) {
-    return (<div className="node-tip" title={title} dangerouslySetInnerHTML={{__html: InlinedSvgs.tipsInfo}} />);
-  }
-
   render() {
     var nodeClass = classNames('node-table', {'node-editable': this.props.isEditMode})
     return (
       <div className={nodeClass}>
-        {!_.isEmpty(this.props.nodeErrors) ?
-          //FIXME: ladniej... i moze bledy dotyczace pol kolo nich?
-          <div className="node-table-body">
-            <div className="node-label">{this.warning('Node has errors')}</div>
-            <div className="node-value">
-              <div>
-                {this.props.nodeErrors.map((error, index) =>
-                  (<div className="node-error" key={index}>{error.message + (error.fieldName ? ` (field: ${error.fieldName})` : '')}</div>)
-                )}
-              </div>
-
-            </div>
-          </div> : null}
+        {ModalRenderUtils.renderErrors(this.props.nodeErrors, 'Node has errors')}
         {this.testResultsSelect()}
         {this.testErrors()}
         {this.customNode()}

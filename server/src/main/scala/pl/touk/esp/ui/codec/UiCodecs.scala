@@ -9,6 +9,7 @@ import pl.touk.esp.engine.api.{Displayable, UserDefinedProcessAdditionalFields}
 import pl.touk.esp.engine.api.deployment.test.{ExpressionInvocationResult, MockedResult, TestResults}
 import pl.touk.esp.engine.api.exception.EspExceptionInfo
 import pl.touk.esp.engine.definition.DefinitionExtractor.PlainClazzDefinition
+import pl.touk.esp.engine.graph.expression.Expression
 import pl.touk.esp.engine.definition.TestingCapabilities
 import pl.touk.esp.engine.graph.node
 import pl.touk.esp.ui.api.ProcessValidation.ValidationResult
@@ -51,7 +52,7 @@ object UiCodecs {
     case EdgeType.FilterFalse => jObjectFields("type" -> jString("FilterFalse"))
     case EdgeType.FilterTrue => jObjectFields("type" -> jString("FilterTrue"))
     case EdgeType.SwitchDefault => jObjectFields("type" -> jString("SwitchDefault"))
-    case ns: EdgeType.NextSwitch => jObjectFields("type" -> jString("NextSwitch"), "condition" -> jString(ns.condition))
+    case ns: EdgeType.NextSwitch => jObjectFields("type" -> jString("NextSwitch"), "condition" -> ns.condition.asJson)
   }
 
   implicit def edgeTypeDecode: DecodeJson[EdgeType] = DecodeJson[EdgeType] { c =>
@@ -61,7 +62,7 @@ object UiCodecs {
         if (edgeType == "FilterFalse") DecodeResult.ok(EdgeType.FilterFalse)
         else if (edgeType == "FilterTrue") DecodeResult.ok(EdgeType.FilterTrue)
         else if (edgeType == "SwitchDefault") DecodeResult.ok(EdgeType.SwitchDefault)
-        else if (edgeType == "NextSwitch") (c --\ "condition").as[String].map(condition => EdgeType.NextSwitch(condition))
+        else if (edgeType == "NextSwitch") (c --\ "condition").as[Expression].map(condition => EdgeType.NextSwitch(condition))
         else throw new IllegalArgumentException(s"Unknown edge type: $edgeType")
       }
     } yield edgeTypeObj

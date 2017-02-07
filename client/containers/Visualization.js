@@ -32,7 +32,7 @@ const Visualization = withRouter(React.createClass({
         this.redo()
       }
       const deleteKeyCode = 46
-      if (event.keyCode == deleteKeyCode && this.props.currentNodeId && !this.props.showNodeDetailsModal) {
+      if (event.keyCode == deleteKeyCode && this.props.currentNodeId && this.props.canDelete) {
         this.deleteNode(this.props.currentNodeId)
       }
     }
@@ -128,10 +128,9 @@ function mapState(state) {
     currentNodeId: (state.graphReducer.nodeToDisplay || {}).id,
     graphLoading: state.graphReducer.graphLoading,
     leftPanelIsOpened: state.ui.leftPanelIsOpened,
-    undoRedoAvailable: !state.ui.showNodeDetailsModal,
-    showNodeDetailsModal: state.ui.showNodeDetailsModal,
+    undoRedoAvailable: state.ui.allModalsClosed,
     nothingToSave: ProcessUtils.nothingToSave(state),
-    canDelete: !state.ui.showNodeDetailsModal && !NodeUtils.nodeIsGroup(state.graphReducer.nodeToDisplay)
+    canDelete: state.ui.allModalsClosed && !NodeUtils.nodeIsGroup(state.graphReducer.nodeToDisplay)
   };
 }
 export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(Visualization);

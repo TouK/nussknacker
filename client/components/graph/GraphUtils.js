@@ -19,6 +19,19 @@ export default {
     }
   },
 
+  mapProcessWithNewEdge: (process, before, after) => {
+    return {
+      ...process,
+      edges: _.map(process.edges, (e) => {
+        if (_.isEqual(e.from, before.from) && _.isEqual(e.to, before.to)) {
+          return after
+        } else {
+          return e
+        }
+      })
+    }
+  },
+
   deleteNode: (process, id) => {
     return {
       ...process,

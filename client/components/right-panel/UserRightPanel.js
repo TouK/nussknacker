@@ -230,7 +230,7 @@ function mapState(state) {
     loggedUser: state.settings.loggedUser,
     nothingToSave: ProcessUtils.nothingToSave(state),
     isTesting: !_.isEmpty(state.graphReducer.testResults),
-    keyActionsAvailable: !state.ui.showNodeDetailsModal,
+    keyActionsAvailable: state.ui.allModalsClosed,
     processIsLatestVersion: _.get(fetchedProcessDetails, 'isLatestVersion', false),
     nodeToDisplay: state.graphReducer.nodeToDisplay,
     groupingState: state.graphReducer.groupingState,

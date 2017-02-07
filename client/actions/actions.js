@@ -100,6 +100,13 @@ export function displayModalNodeDetails(node) {
   };
 }
 
+export function displayModalEdgeDetails(edge) {
+  return {
+    type: "DISPLAY_MODAL_EDGE_DETAILS",
+    edgeToDisplay: edge
+  };
+}
+
 export function displayNodeDetails(node) {
   return {
     type: "DISPLAY_NODE_DETAILS",
@@ -107,9 +114,9 @@ export function displayNodeDetails(node) {
   };
 }
 
-export function closeNodeDetails() {
+export function closeModals() {
   return {
-    type: "CLOSE_NODE_DETAILS"
+    type: "CLOSE_MODALS"
   };
 }
 
@@ -140,7 +147,19 @@ export function ungroup(node) {
   return { type: "UNGROUP", groupToRemove: node.ids}
 }
 
-
+export function editEdge(process, before, after) {
+  return (dispatch) => {
+    const changedProcess = GraphUtils.mapProcessWithNewEdge(process, before, after)
+    return HttpService.validateProcess(changedProcess).then((validationResult) => {
+      dispatch({
+        type: "EDIT_EDGE",
+        before: before,
+        after: after,
+        validationResult: validationResult
+      })
+    })
+  }
+}
 
 
 export function editNode(process, before, after) {
@@ -157,8 +176,8 @@ export function editNode(process, before, after) {
   }
 }
 
-export function nodesConnected(fromNode, toNode) {
-  return {type: "NODES_CONNECTED", fromNode: fromNode, toNode: toNode}
+export function nodesConnected(fromNode, toNode, edgeTypes) {
+  return {type: "NODES_CONNECTED", fromNode: fromNode, toNode: toNode, edgeTypes: edgeTypes}
 }
 export function nodesDisconnected(from, to) {
   return {type: "NODES_DISCONNECTED", from: from, to: to}

@@ -11,6 +11,7 @@ import pl.touk.esp.engine.graph.param
 import pl.touk.esp.engine.graph.service.ServiceRef
 import pl.touk.esp.engine.graph.sink.SinkRef
 import pl.touk.esp.engine.graph.source.SourceRef
+import pl.touk.esp.ui.process.displayedgraph.displayablenode.{Edge, EdgeType}
 import pl.touk.esp.ui.security.LoggedUser
 import pl.touk.esp.ui.util.Argonaut62Support
 
@@ -28,7 +29,7 @@ class DefinitionResources(processDefinition: ProcessDefinition[ObjectDefinition]
     path("processDefinitionData") {
       get {
         complete {
-          ProcessObjects(DefinitionPreparer.prepareNodesToAdd(user, processDefinition), processDefinition)
+          ProcessObjects(DefinitionPreparer.prepareNodesToAdd(user, processDefinition), processDefinition, DefinitionPreparer.prepareEdgeTypes())
         }
       }
     }
@@ -36,7 +37,7 @@ class DefinitionResources(processDefinition: ProcessDefinition[ObjectDefinition]
 }
 
 //TODO: dalsze czesci? co tu w sumie moze byc??
-case class ProcessObjects(nodesToAdd: List[NodeGroup], processDefinition: ProcessDefinition[ObjectDefinition])
+case class ProcessObjects(nodesToAdd: List[NodeGroup], processDefinition: ProcessDefinition[ObjectDefinition], edgeTypes: Map[String, EdgeType])
 
 case class NodeToAdd(`type`: String, label: String, node: NodeData, categories: List[String])
 
@@ -63,6 +64,7 @@ object DefinitionPreparer {
     val base = SortedNodeGroup("base", List(
       NodeToAdd("filter", "Filter", Filter("", Expression("spel", "true")), user.categories),
       NodeToAdd("split", "Split", Split(""), user.categories),
+      NodeToAdd("switch", "Switch", Switch("", Expression("spel", "true"), "output"), user.categories),
       NodeToAdd("variable", "Variable", Variable("", "varName", Expression("spel", "'value'")), user.categories)
       //TODO: jak robic VariableBuilder??
     ))
@@ -122,4 +124,10 @@ object DefinitionPreparer {
     Parameter(param.name, Expression("spel", defaultExpression))
   }
 
+  def prepareEdgeTypes(): Map[String, EdgeType] = {
+    Map(
+      "SwitchDefault" -> EdgeType.SwitchDefault,
+      "NextSwitch" -> EdgeType.NextSwitch(Expression("spel", "true"))
+    )
+  }
 }
