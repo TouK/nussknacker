@@ -64,7 +64,7 @@ object ProcessTestData {
           additionalFields = None
         )
       ),
-      edges = List(Edge(from = "sourceId", to = "sinkId", label = None)),
+      edges = List(Edge(from = "sourceId", to = "sinkId", edgeType = None)),
       validationResult = ValidationResult.success
     )
   }

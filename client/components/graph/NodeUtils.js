@@ -48,5 +48,54 @@ class NodeUtils {
   _groupId = (group) => {
     return group.join("-")
   }
+
+  edgeType = (allEdges, node) => {
+    if (node.type == "Filter") {
+      const thisFilterConnections = allEdges.filter((edge) => edge.from == node.id)
+      return {type: _.get(thisFilterConnections[0], 'edgeType.type') == 'FilterTrue' ? 'FilterFalse' : 'FilterTrue'}
+    } else {
+      return null
+    }
+  }
+
+  edgeLabel = (edge, outgoingEdges) => {
+    const edgeTypeToLabel = {
+      "FilterFalse": "false",
+      "FilterTrue": "true",
+      "SwitchDefault": "default",
+      "NextSwitch": _.get(edge, 'edgeType.condition')
+    }
+    const edgeType = _.get(edge, 'edgeType.type')
+    return (edgeType == "FilterTrue" && outgoingEdges[edge.from].length == 1 ? '' : edgeTypeToLabel[edgeType]) || ''
+  }
+
+  //we don't allow multi outputs other than split, filter, switch and no multiple inputs
+  canMakeLink = (from, to, process) => {
+    var nodeInputs = this._nodeInputs(to, process);
+    var nodeOutputs = this._nodeOutputs(from, process);
+    var targetHasNoInput = nodeInputs.length == 0
+    var sourceHasNoOutput = nodeOutputs.length == 0
+    var canLinkFromSource = sourceHasNoOutput || this._isMultiOutput(from, nodeOutputs, process)
+    return targetHasNoInput && canLinkFromSource
+  }
+
+  _isMultiOutput = (nodeId, nodeOutputs, process) => {
+    var node = this._nodeType(nodeId, process)
+    return node.type == "Split" || node.type == "Filter" && nodeOutputs.length < 2 || node.type == "Switch"
+  }
+
+  _nodeInputs = (nodeId, process) => {
+    return this.edgesFromProcess(process).filter(e => e.to == nodeId)
+  }
+
+  _nodeOutputs = (nodeId, process) => {
+    return this.edgesFromProcess(process).filter(e => e.from == nodeId)
+  }
+
+  _nodeType = (nodeId, process) => {
+    return this.nodesFromProcess(process).find(n => n.id == nodeId)
+  }
+
+
 }
 export default new NodeUtils()

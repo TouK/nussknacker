@@ -93,29 +93,10 @@ class Graph extends React.Component {
       return this.state.exported
     }
 
-    nodeInputs = (nodeId) => {
-      return NodeUtils.edgesFromProcess(this.props.processToDisplay).filter(e => e.to == nodeId)
-    }
-
-    nodeOutputs = (nodeId) => {
-      return NodeUtils.edgesFromProcess(this.props.processToDisplay).filter(e => e.from == nodeId)
-    }
-
-    isMultiOutput = (nodeId) => {
-      var node = NodeUtils.nodesFromProcess(this.props.processToDisplay).find(n => n.id == nodeId)
-      return node.type == "Split"
-    }
-
-    //we don't allow multi outputs other than split, and no multiple inputs
     validateConnection = (cellViewS, magnetS, cellViewT, magnetT) => {
       var from = cellViewS.model.id
       var to = cellViewT.model.id
-
-      var targetHasNoInput = this.nodeInputs(to).length == 0
-      var sourceHasNoOutput = this.nodeOutputs(from).length == 0
-      var canLinkFromSource = sourceHasNoOutput || this.isMultiOutput(from)
-
-      return magnetT && targetHasNoInput && canLinkFromSource;
+      return magnetT && NodeUtils.canMakeLink(from, to, this.props.processToDisplay);
     }
 
     createPaper = () => {
@@ -144,17 +125,20 @@ class Graph extends React.Component {
           .on("cell:pointerup", (c, e) => {
             this.changeLayoutIfNeeded()
           })
-          .on("link:connect", (c) => this.props.actions.nodesConnected(c.sourceView.model.id, c.targetView.model.id))
+          .on("link:connect", (c) => {
+            this.props.actions.nodesConnected(c.sourceView.model.attributes.nodeData, c.targetView.model.attributes.nodeData)
+          })
     }
 
-    drawGraph = (data, layout, testResults, forExport) => {
-      const nodesWithGroups = NodeUtils.nodesFromProcess(data)
-      const edgesWithGroups = NodeUtils.edgesFromProcess(data)
+    drawGraph = (process, layout, testResults, forExport) => {
+      const nodesWithGroups = NodeUtils.nodesFromProcess(process)
+      const edgesWithGroups = NodeUtils.edgesFromProcess(process)
+      const outgoingEdgesGrouped = _.groupBy(process.edges, "from")
 
       const testSummary = (n) => TestResultUtils.nodeResultsSummary(testResults, n)
 
       const nodes = _.map(nodesWithGroups, (n) => { return EspNode.makeElement(n, testResults.nodeResults, testSummary(n))});
-      const edges = _.map(edgesWithGroups, (e) => { return EspNode.makeLink(e, forExport) });
+      const edges = _.map(edgesWithGroups, (e) => { return EspNode.makeLink(e, outgoingEdgesGrouped, forExport) });
       const cells = nodes.concat(edges);
       this.graph.resetCells(cells);
       if (_.isEmpty(layout)) {

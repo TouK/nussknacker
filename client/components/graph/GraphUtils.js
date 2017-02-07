@@ -7,9 +7,9 @@ export default {
       ...process,
       edges: _.map(process.edges, (e) => {
         if (_.isEqual(e.from, before.id)) {
-          return {from: after.id, to: e.to}
+          return {...e, from: after.id, to: e.to}
         } else if (_.isEqual(e.to, before.id)) {
-          return {from: e.from, to: after.id}
+          return {...e, from: e.from, to: after.id}
         } else {
           return e
         }
