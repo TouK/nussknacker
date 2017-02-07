@@ -75,7 +75,7 @@ class Graph extends React.Component {
         joint.layout.DirectedGraph.layout(this.graph, {
             nodeSep: 0,
             edgeSep: 0,
-            rankSep: -40,
+            rankSep: -20,
             minLen: 0,
             rankDir: "TB"
         });
@@ -142,7 +142,7 @@ class Graph extends React.Component {
 
       const testSummary = (n) => TestResultUtils.nodeResultsSummary(testResults, n)
 
-      const nodes = _.map(nodesWithGroups, (n) => { return EspNode.makeElement(n, testResults.nodeResults, testSummary(n))});
+      const nodes = _.map(nodesWithGroups, (n) => { return EspNode.makeElement(n, testResults.nodeResults, testSummary(n), forExport)});
       const edges = _.map(edgesWithGroups, (e) => { return EspNode.makeLink(e, outgoingEdgesGrouped, forExport) });
       const cells = nodes.concat(edges);
       this.graph.resetCells(cells);

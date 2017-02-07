@@ -127,7 +127,7 @@ joint.shapes.devs.EspNode = joint.shapes.basic.Generic.extend(_.extend({}, joint
 
 export default {
 
-    makeElement(node, hasResults, testSummary) {
+    makeElement(node, hasResults, testSummary, forExport) {
         var descr = (node.additionalFields || {}).description
         var customAttrs = require('json!../../assets/json/nodeAttributes.json');
 
@@ -169,7 +169,7 @@ export default {
             text: bodyContent
           },
           '.testResultsPlaceHolder': {
-            display: hasResults ? 'block' : 'none'
+            display: hasResults && !forExport ? 'block' : 'none'
           },
           '.testResultsSummary': {
             text: testResultsContent,
