@@ -26,13 +26,13 @@ export class Tips extends Component {
 
   tipText = () => {
     if (this.isProcessValid()) {
-      return this.validTip()
+      return (<div>{this.validTip()}</div>)
     } else {
       const result = this.validationResult()
       const nodesErrors = _.flatten(Object.keys(result.invalidNodes || {}).map((key) => result.invalidNodes[key].map(error => this.printError(error, key))))
       const globalErrors = (result.globalErrors || []).map(this.printError)
       const processProperties = (result.processPropertiesErrors || []).map(error => this.printError(error, 'Properties'))
-      return globalErrors.concat(processProperties.concat(nodesErrors)).join('\n')
+      return globalErrors.concat(processProperties.concat(nodesErrors))
     }
   }
 
@@ -46,8 +46,10 @@ export class Tips extends Component {
     }
   }
 
-  printError = (error, suffix) => (suffix ? suffix + ": " : '') + error.message + (error.fieldName ? `(${error.fieldName})` : "")
-
+  printError = (error, suffix) =>
+    (<div title={error.description}>
+      {(suffix ? suffix + ": " : '') + error.message + (error.fieldName ? `(${error.fieldName})` : "")}
+    </div>)
 
   constructor(props) {
     super(props);
