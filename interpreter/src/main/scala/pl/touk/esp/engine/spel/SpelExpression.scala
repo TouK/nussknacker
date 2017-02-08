@@ -8,7 +8,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.springframework.expression._
 import org.springframework.expression.common.CompositeStringExpression
 import org.springframework.expression.spel.ast.SpelNodeImpl
-import org.springframework.expression.spel.support.StandardEvaluationContext
+import org.springframework.expression.spel.support.{StandardEvaluationContext, StandardTypeLocator}
 import org.springframework.expression.spel.{SpelCompilerMode, SpelParserConfiguration, standard}
 import pl.touk.esp.engine._
 import pl.touk.esp.engine.api.lazyy.{ContextWithLazyValuesProvider, LazyValuesProvider}
@@ -24,13 +24,14 @@ import scala.util.control.NonFatal
 class SpelExpression(parsed: org.springframework.expression.Expression,
                      val original: String,
                      expressionFunctions: Map[String, Method],
-                     propertyAccessors: Seq[PropertyAccessor]) extends compiledgraph.expression.Expression with LazyLogging {
+                     propertyAccessors: Seq[PropertyAccessor], classLoader: ClassLoader) extends compiledgraph.expression.Expression with LazyLogging {
 
   import pl.touk.esp.engine.spel.SpelExpressionParser._
 
 
   override def evaluate[T](ctx: Context, lazyValuesProvider: LazyValuesProvider): ValueWithContext[T] = logOnException(ctx) {
     val simpleContext = new StandardEvaluationContext()
+    simpleContext.setTypeLocator(new StandardTypeLocator(classLoader))
     propertyAccessors.foreach(simpleContext.addPropertyAccessor)
 
     ctx.variables.foreach {
@@ -60,7 +61,8 @@ class SpelExpression(parsed: org.springframework.expression.Expression,
   }
 }
 
-class SpelExpressionParser(expressionFunctions: Map[String, Method], globalProcessVariables: Map[String, ClazzRef]) extends ExpressionParser {
+class SpelExpressionParser(expressionFunctions: Map[String, Method], globalProcessVariables: Map[String, ClazzRef],
+                           classLoader: ClassLoader) extends ExpressionParser {
 
   import pl.touk.esp.engine.spel.SpelExpressionParser._
 
@@ -68,7 +70,7 @@ class SpelExpressionParser(expressionFunctions: Map[String, Method], globalProce
 
   private val parser = new org.springframework.expression.spel.standard.SpelExpressionParser(
     //we have to pass classloader, because default contextClassLoader can be sth different than we expect...
-    new SpelParserConfiguration(SpelCompilerMode.IMMEDIATE, getClass.getClassLoader)
+    new SpelParserConfiguration(SpelCompilerMode.IMMEDIATE, classLoader)
   )
 
   private val scalaLazyPropertyAccessor = new ScalaLazyPropertyAccessor
@@ -88,7 +90,7 @@ class SpelExpressionParser(expressionFunctions: Map[String, Method], globalProce
     val desugared = desugarStaticReferences(original)
     Validated.catchNonFatal(parser.parseExpression(desugared)).leftMap(ex => ExpressionParseError(ex.getMessage)).map { parsed =>
       forceCompile(parsed)
-      new SpelExpression(parsed, original, expressionFunctions, propertyAccessors)
+      new SpelExpression(parsed, original, expressionFunctions, propertyAccessors, classLoader)
     }
   }
 
@@ -98,7 +100,7 @@ class SpelExpressionParser(expressionFunctions: Map[String, Method], globalProce
       new SpelExpressionValidator(parsed, ctx).validate()
     }.map { withReferencesResolved =>
       forceCompile(withReferencesResolved)
-      new SpelExpression(withReferencesResolved, original, expressionFunctions, propertyAccessors)
+      new SpelExpression(withReferencesResolved, original, expressionFunctions, propertyAccessors, classLoader)
     }
   }
 
@@ -142,12 +144,12 @@ object SpelExpressionParser extends LazyLogging {
 
 
   //caching?
-  def default(globalProcessVariables: Map[String, ClazzRef]): SpelExpressionParser = new SpelExpressionParser(Map(
+  def default(globalProcessVariables: Map[String, ClazzRef], loader: ClassLoader): SpelExpressionParser = new SpelExpressionParser(Map(
     "today" -> classOf[LocalDate].getDeclaredMethod("now"),
     "now" -> classOf[LocalDateTime].getDeclaredMethod("now"),
     "distinct" -> classOf[CollectionUtils].getDeclaredMethod("distinct", classOf[java.util.Collection[_]]),
     "sum" -> classOf[CollectionUtils].getDeclaredMethod("sum", classOf[java.util.Collection[_]])
-  ), globalProcessVariables)
+  ), globalProcessVariables, loader)
 
 
   class ScalaPropertyAccessor extends PropertyAccessor with ReadOnly with Caching {

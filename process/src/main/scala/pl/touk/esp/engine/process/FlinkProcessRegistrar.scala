@@ -219,7 +219,9 @@ object FlinkProcessRegistrar {
 
     def compileProcess(process: EspProcess)() = {
       val servicesDefs = definitions().services
-      val subCompiler = PartSubGraphCompiler.default(servicesDefs, creator.globalProcessVariables(config).mapValuesNow(v => ClazzRef(v.value)))
+      //for testing environment it's important to take classloader from user jar
+      val subCompiler = PartSubGraphCompiler.default(servicesDefs, creator.globalProcessVariables(config).mapValuesNow(v => ClazzRef(v.value)),
+        creator.getClass.getClassLoader)
       val processCompiler = compiler(subCompiler)
       val compiledProcess = validateOrFailProcessCompilation(processCompiler.compile(process))
       val timeout = config.as[FiniteDuration]("timeout")

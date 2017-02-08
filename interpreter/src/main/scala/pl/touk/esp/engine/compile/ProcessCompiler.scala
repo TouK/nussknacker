@@ -241,8 +241,8 @@ object ProcessValidator {
 
   import pl.touk.esp.engine.util.Implicits._
 
-  def default(definition: ProcessDefinition[ObjectDefinition]): ProcessValidator = {
-    val sub = PartSubGraphValidator.default(definition.services, definition.globalVariables.mapValuesNow(_.value))
+  def default(definition: ProcessDefinition[ObjectDefinition], loader: ClassLoader = getClass.getClassLoader): ProcessValidator = {
+    val sub = PartSubGraphValidator.default(definition.services, definition.globalVariables.mapValuesNow(_.value), loader)
     new ProcessValidator(sub, definition)
   }
 
