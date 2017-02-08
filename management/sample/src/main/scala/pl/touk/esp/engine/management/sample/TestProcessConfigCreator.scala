@@ -176,7 +176,11 @@ case object ParamExceptionHandler extends ExceptionHandlerFactory {
 
 case object EmptySink extends FlinkSink {
 
-  override def testDataOutput: Option[(Any) => String] = Option(out => out.toString)
+  override def testDataOutput: Option[(Any) => String] = Option {
+    case a: Displayable => a.display
+    case b => b.toString
+  }
+
   override def toFlinkFunction: SinkFunction[Any] = new SinkFunction[Any] {
     override def invoke(value: Any): Unit = ()
   }
