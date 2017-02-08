@@ -10,12 +10,12 @@ import scala.concurrent.ExecutionContext
 
 class ValidationResources(processValidation: ProcessValidation, processConverter: ProcessConverter)
                          (implicit ec: ExecutionContext)
-  extends Directives with Argonaut62Support{
+  extends Directives with Argonaut62Support {
 
   import argonaut.ArgonautShapeless._
   import pl.touk.esp.ui.codec.UiCodecs._
 
-  val route = (user:LoggedUser) =>
+  val route = (user: LoggedUser) =>
     path("processValidation") {
       post {
         entity(as[DisplayableProcess]) { displayable =>
@@ -28,3 +28,4 @@ class ValidationResources(processValidation: ProcessValidation, processConverter
     }
 
 }
+
