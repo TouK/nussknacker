@@ -1,0 +1,7 @@
+- name: "restartTaskManager"
+  command: "{{flink_dir}}/bin/restartTaskmanager.sh"
+
+
+- name: "restartJobManager"
+  command: "{{flink_dir}}/bin/restartJobmanager.sh"
+

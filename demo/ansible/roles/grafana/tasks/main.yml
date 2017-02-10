@@ -1,0 +1,15 @@
+- name: check if present
+  stat: path={{grafana_dir}}
+  register: running
+- name: download grafana
+  local_action: get_url url=https://grafanarel.s3.amazonaws.com/builds/grafana-{{grafana_version}}.linux-x64.tar.gz dest=/tmp/grafana.tar.gz
+  when: not (running.stat.exists)
+- name: unpack grafana
+  unarchive: src=/tmp/grafana.tar.gz dest=.
+  when: not (running.stat.exists)
+- name: copy script
+  template: src=restartGrafana.sh dest=./restartGrafana.sh mode=0775
+- name: copy conf
+  template: src=grafana.ini dest=./grafana.ini
+- name: start grafana
+  command: ./restartGrafana.sh

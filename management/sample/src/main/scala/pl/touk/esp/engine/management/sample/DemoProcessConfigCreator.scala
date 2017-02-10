@@ -8,7 +8,9 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.TimestampAssigner
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext
+import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor
 import org.apache.flink.streaming.api.scala._
+import org.apache.flink.streaming.api.windowing.time.Time
 import pl.touk.esp.engine.api.{Displayable, MetaData, ParamName, WithFields}
 import pl.touk.esp.engine.api.exception.{EspExceptionInfo, ExceptionHandlerFactory}
 import pl.touk.esp.engine.api.process.{ProcessConfigCreator, SinkFactory, WithCategories}
@@ -83,8 +85,8 @@ class DemoProcessConfigCreator extends ProcessConfigCreator {
       override def parseElement(testElement: String) = parser(testElement.split("|").toList)
     })
 
-    def create(@ParamName("ratePerMinute") rate: Int) = {
-      new FlinkSource[T] {
+    def create(@ParamName("ratePerMinute") rate: String /*tutaj z jakiegos powodu musi byc string?*/) = {
+      new FlinkSource[T] with Serializable {
 
         override def typeInformation = implicitly[TypeInformation[T]]
 
@@ -99,14 +101,14 @@ class DemoProcessConfigCreator extends ProcessConfigCreator {
           }
 
           override def run(ctx: SourceContext[T]) = while (running) {
-            Thread.sleep(1000 * 60/rate)
+            Thread.sleep(1000 * 60/rate.toInt)
             count = count + 1
             ctx.collect(generate(count))
           }
         }
 
-        override def timestampAssigner = Some(new TimestampAssigner[T] {
-          override def extractTimestamp(element: T, previousElementTimestamp: Long) = timestamp(element)
+        override def timestampAssigner = Some(new BoundedOutOfOrdernessTimestampExtractor[T](Time.minutes(10)) {
+          override def extractTimestamp(element: T): Long = timestamp(element)
         })
       }
     }

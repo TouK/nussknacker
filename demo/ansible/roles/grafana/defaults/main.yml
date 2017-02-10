@@ -1,0 +1,3 @@
+---
+grafana_version: 4.0.0-1479719016beta2
+grafana_dir: /home/touk/grafana-{{grafana_version}}

@@ -21,7 +21,7 @@ trait DefinitionExtractor[T] {
     val methods = obj.getClass.getMethods
 
     def findByReturnType = methods.find { m =>
-      m.getReturnType == returnType
+      returnType.isAssignableFrom(m.getReturnType)
     }
     def findByAnnotation = methods.find { m =>
       m.getAnnotation(classOf[MethodToInvoke]) != null
