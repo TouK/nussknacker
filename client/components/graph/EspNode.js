@@ -52,10 +52,9 @@ const attrsConfig = () => {
     },
     '.testResultsSummary': {
       width: rectHeight/2, height: rectHeight/2,
-      'ref': '.testResultsPlaceholder',
-      'ref-x': rectHeight/2, 'ref-y': rectHeight/3,
       'text-anchor': 'middle',
-      'alignment-baseline': "middle"
+      'alignment-baseline': "middle",
+      'ref-y': rectHeight/3
     },
     // markups styling
     '.inPorts': {
@@ -169,12 +168,13 @@ export default {
             text: bodyContent
           },
           '.testResultsPlaceHolder': {
-            display: hasResults && !forExport ? 'block' : 'none'
+            display: hasResults && !forExport ? 'block' : 'none',
+            'ref-x': width
           },
           '.testResultsSummary': {
             text: testResultsContent,
-            //TODO: style??
-            fill: testErrors ? 'red' : 'white'
+            fill: testErrors ? 'red' : 'white',
+            'ref-x': width + rectHeight/2
           },
         };
 
