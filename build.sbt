@@ -147,7 +147,8 @@ lazy val management_sample = (project in file("management/sample")).
     assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false, level = Level.Debug),
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided"
+        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
+        "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )
     },
     artifact in (Compile, assembly) := {
@@ -156,7 +157,7 @@ lazy val management_sample = (project in file("management/sample")).
     }
   ).
   settings(addArtifact(artifact in (Compile, assembly), assembly)).
-  dependsOn(flinkUtil, kafka, process % "runtime")
+  dependsOn(flinkUtil, kafka, process % "runtime,test")
 
 lazy val process = (project in file("process")).
   settings(commonSettings).

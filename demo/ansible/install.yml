@@ -1,0 +1,16 @@
+ - hosts: server
+   remote_user: touk
+   roles:
+     - { role: frontend, tags: 'frontend' }
+
+ - hosts: grafana
+   remote_user: touk
+   roles:
+     - { role: grafana, tags: 'utils' }
+     - { role: influxdb, tags: 'utils' }
+
+ - hosts: all
+   remote_user: touk
+   roles:
+     - { role: flink, tags: 'flink' }
+     - { role: telegraf, tags: 'utils' }

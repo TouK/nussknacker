@@ -1,0 +1,24 @@
+- name: download flink metrics
+  local_action: get_url url={{nexus_url}}org/apache/flink/flink-metrics-graphite/{{flink_version}}/flink-metrics-graphite-{{flink_version}}.jar dest=/tmp
+- name: copy flink metrics
+  copy: src=/tmp/flink-metrics-graphite-{{flink_version}}.jar dest=flink-{{flink_version}}/lib
+
+- name: download flink dropwizard metrics
+  local_action: get_url url={{nexus_url}}org/apache/flink/flink-metrics-dropwizard/{{flink_version}}/flink-metrics-dropwizard-{{flink_version}}.jar dest=/tmp
+- name: copy flink dropwizard metrics
+  copy: src=/tmp/flink-metrics-dropwizard-{{flink_version}}.jar dest=flink-{{flink_version}}/lib
+
+
+- name: download dropwizard metrics
+  local_action: get_url url={{nexus_url}}io/dropwizard/metrics/metrics-core/3.1.0/metrics-core-3.1.0.jar dest=/tmp
+- name: copy dropwizard metrics
+  copy: src=/tmp/metrics-core-3.1.0.jar dest=flink-{{flink_version}}/lib
+
+- name: download dropwizard graphite
+  local_action: get_url url={{nexus_url}}io/dropwizard/metrics/metrics-graphite/3.1.0/metrics-graphite-3.1.0.jar dest=/tmp
+- name: copy dropwizard graphite
+  copy: src=/tmp/metrics-graphite-3.1.0.jar dest=flink-{{flink_version}}/lib
+
+
+
+

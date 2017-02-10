@@ -1,0 +1,33 @@
+- name: check if present
+  stat: path={{flink_dir}}
+  register: running
+  #uwaga na cache ansible'a... musialem usunac lokalnie /tmp/flink* zeby uzyl nowej wersji
+- name: download flink dist
+  local_action: get_url url=http://ftp.piotrkosoft.net/pub/mirrors/ftp.apache.org/flink/flink-{{flink_version}}/flink-{{flink_version}}-bin-hadoop2-scala_2.11.tgz dest=/tmp/flink.tar.gz
+  when: not (running.stat.exists)
+- name: unpack flink
+  unarchive: src=/tmp/flink.tar.gz dest=.
+  when: not (running.stat.exists)
+  notify:
+    - "restartJobManager"
+    - "restartTaskManager"
+- name: copy scripts
+  template: src={{item}} dest={{flink_dir}}/bin mode=0775
+  with_items:
+    - restartJobmanager.sh
+    - restartTaskmanager.sh
+- name: copy flink files
+  template: src=flink-conf.yaml dest={{flink_dir}}/conf
+  notify:
+    - "restartJobManager"
+    - "restartTaskManager"
+- name: setup logback
+  include: setLogback.yml
+- name: setup graphite
+  include: setGraphite.yml
+- name: link flink
+  file: src={{flink_dir}} dest=/home/touk/flink state=link force=yes
+
+
+
+

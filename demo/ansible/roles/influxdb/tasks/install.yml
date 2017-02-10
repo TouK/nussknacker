@@ -1,0 +1,6 @@
+- name: download influx
+  local_action: get_url url=https://s3.amazonaws.com/influxdb/influxdb-0.10.0-1_linux_amd64.tar.gz dest=/tmp/influx.tar.gz
+- name: unpack influx
+  unarchive: src=/tmp/influx.tar.gz dest=.
+- name: copy script
+  copy: src=restartInflux.sh dest=./restartInflux.sh mode=0775
