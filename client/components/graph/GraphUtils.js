@@ -38,6 +38,22 @@ export default {
       edges: _.filter(process.edges, (e) => !_.isEqual(e.from, id) && !_.isEqual(e.to, id)),
       nodes: _.filter(process.nodes, (n) => !_.isEqual(n.id, id))
     }
+  },
+
+  computeBoundingRect: (expandedGroup, layout, nodes, margin) => {
+
+    const widthsHeights = expandedGroup.nodes
+      .map(n => {
+        const bbox = nodes.find(node => node.id == n).get('size')
+        const layoutForNode = ((layout || []).find(k => k.id == n) || {}).position || {}
+        return {height: rectHeight, width: bbox.width, x: layoutForNode.x || 0, y: layoutForNode.y || 0}
+      })
+    const x = _.min(widthsHeights.map(wh => wh.x)) - margin
+    const y =  _.min(widthsHeights.map(wh => wh.y)) - margin
+    const width = _.max(widthsHeights.map((wh) => wh.x + wh.width - x)) + margin
+    const height = _.max(widthsHeights.map((wh) => wh.y + wh.height - y)) + margin
+    return { x, y, width, height}
+
   }
 
 }

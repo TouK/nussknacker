@@ -45,9 +45,9 @@ class Graph extends React.Component {
 
     componentDidMount() {
         this.processGraphPaper = this.createPaper()
-        this.drawGraph(this.props.processToDisplay, this.props.layout, this.props.testResults, true)
+        this.drawGraph(this.props.processToDisplay, this.props.layout, this.props.testResults, true, [])
         this._prepareContentForExport()
-        this.drawGraph(this.props.processToDisplay, this.props.layout, this.props.testResults)
+        this.drawGraph(this.props.processToDisplay, this.props.layout, this.props.testResults, false, this.props.expandedGroups)
         this.panAndZoom = this.enablePanZoom();
         this.changeNodeDetailsOnClick();
         this.labelToFrontOnHover();
@@ -60,10 +60,11 @@ class Graph extends React.Component {
       const processNotChanged = _.isEqual(this.props.processToDisplay, nextProps.processToDisplay) &&
         _.isEqual(this.props.layout, nextProps.layout) &&
         _.isEqual(this.props.testResults, nextProps.testResults) &&
-        _.isEqual(this.props.groupingState, nextProps.groupingState)
+        _.isEqual(this.props.groupingState, nextProps.groupingState) &&
+        _.isEqual(this.props.expandedGroups, nextProps.expandedGroups)
 
       if (!processNotChanged) {
-        this.drawGraph(nextProps.processToDisplay, nextProps.layout, nextProps.testResults)
+        this.drawGraph(nextProps.processToDisplay, nextProps.layout, nextProps.testResults, false, nextProps.expandedGroups)
       }
       //when e.g. layout changed we have to remember to highlight nodes
       if (!processNotChanged || !_.isEqual(this.props.nodeToDisplay, nextProps.nodeToDisplay)){
@@ -72,14 +73,14 @@ class Graph extends React.Component {
     }
 
     directedLayout() {
-        joint.layout.DirectedGraph.layout(this.graph, {
-            nodeSep: 0,
-            edgeSep: 0,
-            rankSep: -20,
-            minLen: 0,
-            rankDir: "TB"
-        });
-        this.changeLayoutIfNeeded()
+      joint.layout.DirectedGraph.layout(this.graph.getCells().filter(cell => !cell.get('backgroundObject')), {
+          nodeSep: 0,
+          edgeSep: 0,
+          rankSep: -20,
+          minLen: 0,
+          rankDir: "TB"
+      });
+      this.changeLayoutIfNeeded()
     }
 
     zoomIn() {
@@ -115,6 +116,8 @@ class Graph extends React.Component {
                 } else if (cellView.model instanceof joint.dia.Link) {
                     // Disable the default vertex add functionality on pointerdown.
                     return { vertexAdd: false };
+                } else if (cellView.get('backgroundObject')) {
+                  return false
                 } else {
                   return true;
                 }
@@ -135,16 +138,25 @@ class Graph extends React.Component {
           })
     }
 
-    drawGraph = (process, layout, testResults, forExport) => {
-      const nodesWithGroups = NodeUtils.nodesFromProcess(process)
-      const edgesWithGroups = NodeUtils.edgesFromProcess(process)
-      const outgoingEdgesGrouped = _.groupBy(process.edges, "from")
+    drawGraph = (process, layout, testResults, forExport, expandedGroups) => {
+      const nodesWithGroups = NodeUtils.nodesFromProcess(process, expandedGroups)
+      const edgesWithGroups = NodeUtils.edgesFromProcess(process, expandedGroups)
+
+      const outgoingEdgesGrouped = _.groupBy(edgesWithGroups, "from")
 
       const testSummary = (n) => TestResultUtils.nodeResultsSummary(testResults, n)
 
       const nodes = _.map(nodesWithGroups, (n) => { return EspNode.makeElement(n, testResults.nodeResults, testSummary(n), forExport)});
       const edges = _.map(edgesWithGroups, (e) => { return EspNode.makeLink(e, outgoingEdgesGrouped, forExport) });
-      const cells = nodes.concat(edges);
+
+
+      const boundingRects = NodeUtils.getExpandedGroups(process, expandedGroups)
+        .map(expandedGroup => ({group: expandedGroup, rect: EspNode.boundingRect(nodes, expandedGroup, layout,
+          NodeUtils.createGroup(nodesWithGroups, expandedGroup))}))
+
+      const cells = boundingRects.map(g => g.rect).concat(nodes.concat(edges));
+
+
       this.graph.resetCells(cells);
       if (_.isEmpty(layout)) {
         this.directedLayout()
@@ -154,6 +166,9 @@ class Graph extends React.Component {
           if (cell) cell.set('position', el.position)
         });
       }
+
+      _.forEach(boundingRects, rect => rect.rect.toBack())
+
     }
 
     _prepareContentForExport = () => {
@@ -196,10 +211,11 @@ class Graph extends React.Component {
     }
 
   changeLayoutIfNeeded = () => {
-      var newLayout = _.map(this.graph.getElements(), (el) => {
-              var pos = el.get('position');
-              return { id: el.id, position: pos }
-            })
+      var newLayout = this.graph.getElements().filter(el => !el.get('backgroundObject'))
+        .map(el => {
+          var pos = el.get('position');
+          return { id: el.id, position: pos }
+      })
       if (!_.isEqual(this.props.layout, newLayout)) {
         this.props.actions.layoutChanged(newLayout)
       }
@@ -251,7 +267,9 @@ class Graph extends React.Component {
 
     labelToFrontOnHover () {
         this.processGraphPaper.on('cell:mouseover', (cellView, evt, x, y) => {
-          cellView.model.toFront();
+          if (cellView.get && !cellView.get('backgroundObject')) {
+            cellView.model.toFront();
+          }
         });
     }
     // FIXME - w chrome 52.0.2743.82 (64-bit) nie działa na esp-graph
@@ -291,7 +309,8 @@ function mapState(state) {
         loggedUser: state.settings.loggedUser,
         layout: state.graphReducer.layout,
         testResults: state.graphReducer.testResults || {},
-        processDefinitionData: state.settings.processDefinitionData
+        processDefinitionData: state.settings.processDefinitionData,
+        expandedGroups: state.ui.expandedGroups
     };
 }
 

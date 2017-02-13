@@ -15,39 +15,49 @@ class NodeUtils {
     return node && this.nodeType(node) == "_group"
   }
 
-  nodesFromProcess = (process) => {
+  nodesFromProcess = (process, expandedGroups) => {
     var nodes = process.nodes
-    const groups = _.get(process, 'properties.additionalFields.groups', [])
+    const groups = this.getCollapsedGroups(process, expandedGroups)
     groups.forEach(group => {
-      const groupNodes = nodes.filter(node => _.includes(group, node.id))
-      nodes = nodes.filter(node => !_.includes(group, node.id))
-      nodes = nodes.concat([{
-        id: this._groupId(group),
-        type: "_group",
-        nodes: groupNodes,
-        ids: group
-      }])
+      nodes = nodes.filter(node => !_.includes(group.nodes, node.id))
+      nodes = nodes.concat([this.createGroup(process.nodes, group)])
     })
     return nodes;
   }
 
-  edgesFromProcess = (process) => {
+  createGroup = (nodes, group) => {
+    const groupId = group.id
+    const groupNodes = nodes.filter(node => _.includes(group.nodes, node.id))
+    return {
+      id: groupId,
+      type: "_group",
+      nodes: groupNodes,
+      ids: group.nodes
+    }
+  }
+
+  edgesFromProcess = (process, expandedGroups) => {
     var edges = process.edges
-    const groups = _.get(process, 'properties.additionalFields.groups', [])
+    const groups = this.getCollapsedGroups(process, expandedGroups)
     groups.forEach(group => {
-      const id = this._groupId(group)
+      const id = group.id
       edges = edges.map(edge => ({
         ...edge,
-        from: _.includes(group, edge.from) ? id : edge.from,
-        to: _.includes(group, edge.to) ? id : edge.to,
+        from: _.includes(group.nodes, edge.from) ? id : edge.from,
+        to: _.includes(group.nodes, edge.to) ? id : edge.to,
       })).filter(a => !(_.eq(a.from, a.to)))
     })
     return edges;
   }
 
-  _groupId = (group) => {
-    return group.join("-")
-  }
+  getAllGroups = (process) => _.get(process, 'properties.additionalFields.groups', [])
+
+  getCollapsedGroups = (process, expandedGroups) => this.getAllGroups(process)
+    .filter(g => !_.includes(expandedGroups, g.id))
+
+  getExpandedGroups = (process, expandedGroups) => this.getAllGroups(process)
+    .filter(g => _.includes(expandedGroups, g.id))
+
 
   edgeType = (allEdges, node, edgesFromDefinition) => {
     if (node.type == "Filter") {
@@ -60,6 +70,7 @@ class NodeUtils {
       return null
     }
   }
+
 
   edgeLabel = (edge, outgoingEdges) => {
     const edgeTypeToLabel = {

@@ -1,6 +1,7 @@
 import joint from 'jointjs'
 import _ from 'lodash'
 import NodeUtils from './NodeUtils'
+import GraphUtils from './GraphUtils'
 
 import markup from './markups/markup.html';
 import InlinedSvgs from '../../assets/icons/InlinedSvgs'
@@ -198,6 +199,19 @@ export default {
             rankDir: 'R',
             nodeData: node
         });
+    },
+
+    boundingRect(nodes, expandedGroup, layout, group) {
+      const boundingRect = GraphUtils.computeBoundingRect(expandedGroup, layout, nodes, 15)
+
+      return new joint.shapes.basic.Rect({
+          id: group.id,
+          position: { x: boundingRect.x, y: boundingRect.y },
+          backgroundObject: true,
+          nodeData: group,
+          size: { width: boundingRect.width, height: boundingRect.height },
+          attrs: { rect: { fill: 'green', opacity: 0.1 }}
+      })
     },
 
     makeLink(edge, outgoingEdges, forExport) {

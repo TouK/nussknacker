@@ -144,7 +144,7 @@ export function addToGroup(nodeId) {
 }
 
 export function ungroup(node) {
-  return { type: "UNGROUP", groupToRemove: node.ids}
+  return { type: "UNGROUP", groupToRemove: node.id}
 }
 
 export function editEdge(process, before, after) {
@@ -174,6 +174,15 @@ export function editNode(process, before, after) {
       })
     })
   }
+}
+
+export function editGroup(oldGroupId, newGroup) {
+  return {
+    type: "EDIT_GROUP",
+    oldGroupId: oldGroupId,
+    newGroup: newGroup
+  }
+
 }
 
 export function nodesConnected(fromNode, toNode, edgeTypes) {
@@ -235,7 +244,13 @@ export function displayTestResults(testResults) {
 }
 
 export function hideTestResults() {
-  return (dispatch) => {
-    dispatch({type: "HIDE_TEST_RESULTS"})
-  }
+  return {type: "HIDE_TEST_RESULTS"}
+}
+
+export function expandGroup(id) {
+  return {type: "EXPAND_GROUP", id: id}
+}
+
+export function collapseGroup(id) {
+  return {type: "COLLAPSE_GROUP", id: id}
 }
