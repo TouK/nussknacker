@@ -42,7 +42,8 @@ const emptyUiState = {
   leftPanelIsOpened: false,
   showNodeDetailsModal: false,
   showEdgeDetailsModal: false,
-  confirmDialog: {}
+  confirmDialog: {},
+  expandedGroups: []
 }
 function uiStateReducer(state = emptyUiState, action) {
   const withAllModalsClosed = (newState) => {
@@ -85,6 +86,24 @@ function uiStateReducer(state = emptyUiState, action) {
         }
       })
     }
+    case "EXPAND_GROUP": {
+      return {
+        ...state,
+        expandedGroups: _.concat(state.expandedGroups, [action.id])
+      }
+    }
+    case "COLLAPSE_GROUP": {
+      return {
+        ...state,
+        expandedGroups: state.expandedGroups.filter(g => g != action.id)
+      }
+    }
+    case "EDIT_GROUP": {
+      return {
+        ...state,
+        expandedGroups: state.expandedGroups.map(id => id == action.oldGroupId ? action.newGroup.id : id)
+      }
+    }
     default:
       return withAllModalsClosed(state)
   }
@@ -96,9 +115,9 @@ const emptyGraphState = {
   fetchedProcessDetails: {},
   nodeToDisplay: {},
   edgeToDisplay: {},
-  layout: {},
+  layout: [],
   testCapabilities: {},
-  groupingState: null
+  groupingState: null,
 }
 
 function graphReducer(state, action) {
@@ -134,7 +153,7 @@ function graphReducer(state, action) {
         fetchedProcessDetails: action.fetchedProcessDetails,
         graphLoading: false,
         nodeToDisplay: action.fetchedProcessDetails.json.properties,
-        layout: {} //potrzebne np przy pokazywaniu historycznej wersji
+        layout: [] //potrzebne np przy pokazywaniu historycznej wersji
       }
     }
     case "LOADING_FAILED": {
@@ -257,6 +276,7 @@ function graphReducer(state, action) {
         layout: _.concat(state.layout, {id: newId, position: action.position})
       }
     }
+    //TODO: jakos inaczej to obsluzyc??
     case "LAYOUT_CHANGED": {
       return {
         ...state,
@@ -284,8 +304,10 @@ function graphReducer(state, action) {
       }
     }
     case "FINISH_GROUPING": {
+      const groupId = state.groupingState.join("-")
       const updatedGroups = state.groupingState.length > 1 ?
-              update('processToDisplay.properties.additionalFields.groups', (groups) => _.concat((groups || []), [state.groupingState]), fp.set('layout', {}, state)) :  state
+              update('processToDisplay.properties.additionalFields.groups',
+                (groups) => _.concat((groups || []), [{id: groupId, nodes: state.groupingState}]), fp.set('layout', {}, state)) :  state
       return _.omit(updatedGroups, 'groupingState')
     }
     case "CANCEL_GROUPING": {
@@ -293,12 +315,24 @@ function graphReducer(state, action) {
     }
     case "UNGROUP": {
       const updatedGroups =  update('processToDisplay.properties.additionalFields.groups',
-        (groups) => groups.filter(e => !_.isEqual(e, action.groupToRemove)), state)
+        (groups) => groups.filter(e => !_.isEqual(e.id, action.groupToRemove)), state)
       return {
         ...updatedGroups,
-        layout: {},
+        layout: [],
         nodeToDisplay: state.processToDisplay.properties,
       }
+    }
+    case "EXPAND_GROUP":
+    case "COLLAPSE_GROUP": {
+      return {
+        ...state,
+        layout: []
+      }
+    }
+    case "EDIT_GROUP": {
+      const groupForState = {id: action.newGroup.id, nodes: action.newGroup.ids}
+      return update('processToDisplay.properties.additionalFields.groups',
+                (groups) => _.concat((groups.filter(g => g.id != action.oldGroupId)), [groupForState]), { ...state, nodeToDisplay: action.newGroup})
     }
     default:
       return state

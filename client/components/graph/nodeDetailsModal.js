@@ -51,10 +51,17 @@ class NodeDetailsModal extends React.Component {
   }
 
   performNodeEdit = () => {
-    this.setState( { pendingRequest: true})
-    this.props.actions.editNode(this.props.processToDisplay, this.props.nodeToDisplay, this.state.editedNode).then (() =>
-      this.setState( { pendingRequest: false})
-    )
+    if (this.isGroup()) {
+      this.props.actions.editGroup(this.props.nodeToDisplay.id, this.state.editedNode)
+      this.closeModal()
+    } else {
+      this.setState( { pendingRequest: true})
+      this.props.actions.editNode(this.props.processToDisplay, this.props.nodeToDisplay, this.state.editedNode).then (() => {
+          this.setState( { pendingRequest: false})
+          this.closeModal()
+        }
+      )
+    }
   }
 
   nodeAttributes = () => {
@@ -67,21 +74,53 @@ class NodeDetailsModal extends React.Component {
   }
 
   renderModalButtons() {
-    var editable = !this.nodeAttributes().notEditable
-
-    if (!this.props.readOnly) {
-      return ([
-        editable ? <LaddaButton key="1" title="Save node details" className='modalButton pull-right modalConfirmButton'
-                      loading={this.state.pendingRequest}
-                      buttonStyle='zoom-in' onClick={this.performNodeEdit}>Save</LaddaButton>: null,
-        <button key="3" type="button" title="Close node details" className='modalButton' onClick={this.closeModal}>
-          Close
-        </button>
-      ] );
-    } else {
-      return null;
-    }
+    return ([
+      this.isGroup() ? this.renderGroupUngroup() : null,
+      !this.props.readOnly ? <LaddaButton key="1" title="Save node details" className='modalButton pull-right modalConfirmButton'
+                    loading={this.state.pendingRequest}
+                    buttonStyle='zoom-in' onClick={this.performNodeEdit}>Save</LaddaButton>: null,
+      <button key="2" type="button" title="Close node details" className='modalButton' onClick={this.closeModal}>
+        Close
+      </button>
+    ] );
   }
+
+  renderGroupUngroup() {
+    const expand = () => { this.props.actions.expandGroup(id); this.closeModal() }
+    const collapse = () => { this.props.actions.collapseGroup(id); this.closeModal() }
+
+    const id = this.state.editedNode.id
+    const expanded = _.includes(this.props.expandedGroups, id)
+    return  expanded ? (<button type="button" key="0" title="Collapse group" className='modalButton' onClick={collapse}>Collapse</button>)
+         : (<button type="button" title="Expand group" key="0" className='modalButton' onClick={expand}>Expand</button>)
+  }
+
+  renderGroup(testResults) {
+    return (
+      <div>
+        <div className="node-table">
+          <div className="node-table-body">
+
+            <div className="node-row">
+              <div className="node-label">Group id</div>
+              <div className="node-value">
+                <input type="text" className="node-input" value={this.state.editedNode.id}
+                       onChange={(e) => { const newId = e.target.value; this.setState((prevState) => ({ editedNode: { ...prevState.editedNode, id: newId}}))}} />
+              </div>
+            </div>
+            {this.state.editedNode.nodes.map((node, idx) => (<div key={idx}>
+                                    <NodeDetailsContent isEditMode={false} node={node} processDefinitionData={this.props.processDefinitionData}
+                                         nodeErrors={this.props.nodeErrors} onChange={() => {}} testResults={testResults(node.id)}/><hr/></div>))}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  isGroup() {
+    return NodeUtils.nodeIsGroup(this.state.editedNode)
+  }
+
 
   render() {
     var isOpen = !_.isEmpty(this.props.nodeToDisplay) && this.props.showNodeDetailsModal
@@ -96,10 +135,7 @@ class NodeDetailsModal extends React.Component {
           <div className="modalContent">
             <Scrollbars hideTracksWhenNotNeeded={true} autoHeight autoHeightMax={cssVariables.modalContentMaxHeight} renderThumbVertical={props => <div {...props} className="thumbVertical"/>}>
               {
-                NodeUtils.nodeIsGroup(this.state.editedNode) ?
-                  this.state.editedNode.nodes.map((node, idx) => (<div key={idx}>
-                    <NodeDetailsContent isEditMode={false} node={node} processDefinitionData={this.props.processDefinitionData}
-                         nodeErrors={this.props.nodeErrors} onChange={() => {}} testResults={testResults(node.id)}/><hr/></div>))
+                this.isGroup() ? this.renderGroup(testResults)
                   : (<NodeDetailsContent isEditMode={true} node={this.state.editedNode} processDefinitionData={this.props.processDefinitionData}
                          nodeErrors={this.props.nodeErrors} onChange={this.updateNodeState} testResults={testResults(this.state.currentNodeId)}/>)
               }
@@ -129,7 +165,8 @@ function mapState(state) {
     readOnly: !state.settings.loggedUser.canWrite,
     showNodeDetailsModal: state.ui.showNodeDetailsModal,
     testResults: state.graphReducer.testResults,
-    processDefinitionData: state.settings.processDefinitionData
+    processDefinitionData: state.settings.processDefinitionData,
+    expandedGroups: state.ui.expandedGroups
   };
 }
 

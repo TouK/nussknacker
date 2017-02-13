@@ -6,7 +6,10 @@ import java.sql.Connection
 import java.util.logging.Logger
 import javax.sql.DataSource
 
+import argonaut.{Json, Parse}
 import org.flywaydb.core.api.migration.jdbc.JdbcMigration
+import pl.touk.esp.ui.db.EspTables
+import pl.touk.esp.ui.db.entity.ProcessVersionEntity.ProcessVersionEntityData
 import slick.jdbc.JdbcProfile
 
 import scala.concurrent.Await
@@ -25,6 +28,30 @@ trait SlickMigration extends JdbcMigration {
     Await.result(database.run(migrateActions), 10 minute)
   }
 
+}
+
+trait ProcessJsonMigration extends SlickMigration {
+
+  import scala.concurrent.ExecutionContext.Implicits.global
+  import slick.dbio.DBIOAction
+  import profile.api._
+
+  override def migrateActions = for {
+    processes <- EspTables.processVersionsTable.filter(_.json.isDefined).result
+    seqed <- DBIOAction.sequence(processes.map(updateOne))
+  } yield seqed
+
+  private def updateOne(process: ProcessVersionEntityData) = EspTables.processVersionsTable
+          .filter(v => v.id === process.id && v.processId === process.processId)
+          .map(_.json).update(process.json.map(prepareAndUpdateJson))
+
+  private def prepareAndUpdateJson(json: String) : String = {
+    val jsonProcess = Parse.parse(json).right.get
+    val updated = updateProcessJson(jsonProcess)
+    updated.getOrElse(jsonProcess).spaces2
+  }
+
+  def updateProcessJson(json: Json) : Option[Json]
 }
 
 class AlwaysUsingSameConnectionDataSource(conn: Connection) extends DataSource {
