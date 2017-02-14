@@ -4,6 +4,8 @@ import java.time.{LocalDate, LocalDateTime}
 
 import argonaut._
 import argonaut.derive.{JsonSumCodec, JsonSumCodecFor}
+import com.typesafe.scalalogging.LazyLogging
+import org.apache.flink.runtime.execution.librarycache.FlinkUserCodeClassLoader
 import pl.touk.esp.engine.api
 import pl.touk.esp.engine.api.{Displayable, UserDefinedProcessAdditionalFields}
 import pl.touk.esp.engine.api.deployment.test.{ExpressionInvocationResult, MockedResult, TestResults}
@@ -96,7 +98,7 @@ object UiCodecs {
 
   //separated from the rest, as we're doing some hacking here...
   //we have hacky codec here, as we want to encode Map[String, Any] of more or less arbitrary objects
-  case class ContextCodecs(typesInformation: List[PlainClazzDefinition]) {
+  case class ContextCodecs(typesInformation: List[PlainClazzDefinition]) extends LazyLogging {
 
     val typesWithMethodNames: Map[String, Set[String]]
     = typesInformation.map(ti => ti.clazzName.refClazzName -> ti.methods.keys.toSet).toMap
@@ -116,13 +118,21 @@ object UiCodecs {
         case a: Int => jNumber(a)
         case a: Number => jNumber(a.doubleValue())
         case a: LocalDateTime => a.asJson
-        case a: Displayable => jString(a.display)
+        case a: Displayable => displayableToJson(a)
         //TODO: a to??
         //case a: LocalDate => a.asJson
         //TODO: co tu w sumie lepiej pokazywac??
         //case _ if typesWithMethodNames.contains(klass.getName) =>
         //  printKnownType(any, klass)
         case _ => jString(any.toString)
+      }
+    }
+
+    private def displayableToJson(displayable: Displayable): Json = {
+      val prettyDisplay = displayable.prettyDisplay
+      displayable.originalDisplay match {
+        case None => jObjectFields("pretty" -> jString(prettyDisplay))
+        case Some(original) => jObjectFields("original" -> jString(original), "pretty" -> jString(prettyDisplay))
       }
     }
 

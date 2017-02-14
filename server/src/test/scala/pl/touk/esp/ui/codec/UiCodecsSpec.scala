@@ -2,46 +2,62 @@ package pl.touk.esp.ui.codec
 
 import java.time.LocalDateTime
 
-import argonaut.Argonaut._
-import argonaut._
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.esp.engine.api
+import pl.touk.esp.engine.api.Displayable
 import pl.touk.esp.engine.definition.DefinitionExtractor.TypesInformation
 
 class UiCodecsSpec extends FlatSpec with Matchers {
+
+  import argonaut._
+  import Argonaut._
+  import ArgonautShapeless._
 
   it should "should encode record" in {
 
     val codec = UiCodecs.ContextCodecs(TypesInformation.extract(List(), List(), List(), List(classOf[TestRecord])))
     import codec._
 
+    val date = LocalDateTime.of(2010, 1, 1, 1, 1)
     val json =
-      api.Context("terefere", Map("var1" ->
-        TestRecord("a", 1, Some("b"), LocalDateTime.now(), Some(TestRecord("c", 2, None, LocalDateTime.now(), None)))
+      api.Context("terefere", Map(
+        "var1" -> TestRecord("a", 1, Some("b"), date),
+        "var2" -> CsvRecord(List("aa", "bb"))
       )).asJson
 
-    for {
+    val variables = (for {
       ctxId <- json.cursor --\ "id"
       vars <- json.cursor --\ "variables"
       var1 <- vars --\ "var1"
-      id <- var1 --\ "id"
-      inner <- var1 --\ "record"
-      innerNumber <- inner --\ "number"
-      some <- var1 --\ "some"
-      innerSome = inner --\ "some"
+      var2 <- vars --\ "var2"
+    } yield List(var1.focus, var2.focus)).toList.flatten
 
-    } yield {
-      ctxId.focus shouldBe jString("terefere")
-      id.focus shouldBe jString("a")
-      some.focus shouldBe jString("b")
-      innerNumber.focus shouldBe jNumber(2)
-      innerSome shouldBe 'empty
-    }
-
+    variables.size shouldBe 2
+    //jak to zrobic ladniej?
+    variables(0) shouldBe Parse.parse("{\"pretty\":\"{\\n  \\\"date\\\" : \\\"2010-01-01T01:01\\\",\\n  \\\"some\\\" : \\\"b\\\",\\n  \\\"number\\\" : 1,\\n  \\\"id\\\" : \\\"a\\\"\\n}\"}").right.get
+    variables(1) shouldBe Parse.parse("{\"original\":\"aa|bb\",\"pretty\":\"{\\n \\\"fieldA\\\" : \\\"aa\\\",\\n \\\"fieldB\\\" : \\\"bb\\\"\\n}\"}").right.get
 
   }
 
-  case class TestRecord(id: String, number: Long, some: Option[String], date: LocalDateTime, record: Option[TestRecord])
+  import UiCodecs._
+  case class TestRecord(id: String, number: Long, some: Option[String], date: LocalDateTime) extends Displayable {
+    override def originalDisplay: Option[String] = None
+    override def prettyDisplay: String = this.asJson.spaces2
+  }
+
+  case class CsvRecord(fields: List[String]) extends Displayable {
+
+    override def originalDisplay: Option[String] = Some(fields.mkString("|"))
+
+    override def prettyDisplay: String = {
+      s"""{
+        | "fieldA" : "$fieldA",
+        | "fieldB" : "$fieldB"
+        |}""".stripMargin
+    }
+    val fieldA = fields(0)
+    val fieldB = fields(1)
+  }
 
 }
 
