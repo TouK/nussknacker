@@ -136,6 +136,10 @@ describe("extract matching part from input", () => {
     })
   })
 
+  it("should make suggestion type readable", () => {
+    expect(expressionSuggester.humanReadableSuggestionType({refClazzName: "java.lang.String", methodName: "a"})).toEqual("String")
+    expect(expressionSuggester.humanReadableSuggestionType({refClazzName: "int", methodName: "a"})).toEqual("Int")
+  })
 })
 
 

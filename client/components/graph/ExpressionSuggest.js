@@ -52,12 +52,13 @@ class ExpressionSuggest extends React.Component {
 
   renderSuggestion = suggestion => {
     const {start, middle, end} = this.expressionSuggester.extractMatchingPartFromInput(suggestion, this.state.value, this.getCaretPosition())
+    const suggestionType = this.expressionSuggester.humanReadableSuggestionType(suggestion)
     return (
       start || middle || end ?
         <div>
-          {start}<b>{middle}</b>{end}
+          {start}<b>{middle}</b>{end}<span className="typeSuggestion">{suggestionType}</span>
         </div> :
-        <div>{suggestion.methodName}</div>
+        <div>{suggestion.methodName}{suggestionType}</div>
     );
   }
 
