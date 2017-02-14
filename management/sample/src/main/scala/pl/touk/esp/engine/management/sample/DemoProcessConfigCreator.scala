@@ -2,6 +2,7 @@ package pl.touk.esp.engine.management.sample
 
 import java.time.{LocalDateTime, ZoneOffset}
 
+import argonaut.Argonaut
 import com.typesafe.config.Config
 import org.apache.flink.api.common.restartstrategy.RestartStrategies.RestartStrategyConfiguration
 import org.apache.flink.api.common.typeinfo.TypeInformation
@@ -71,10 +72,22 @@ class DemoProcessConfigCreator extends ProcessConfigCreator {
 
   case class Transaction(clientId: String, date: LocalDateTime, amount: Int, `type`: String) extends WithFields {
     override def fields = List(clientId, date, amount, `type`)
+    override def prettyDisplay: String = Argonaut.jObjectFields(
+      "clientId" -> Argonaut.jString(clientId),
+      "date" -> Argonaut.jString(date.toString),
+      "amount" -> Argonaut.jNumber(amount),
+      "type" -> Argonaut.jString(`type`)
+    ).spaces2
   }
 
   case class PageVisit(clientId: String, date:LocalDateTime, path: String, ip: String) extends WithFields {
     override def fields = List(clientId, date, path, ip)
+    override def prettyDisplay: String = Argonaut.jObjectFields(
+      "clientId" -> Argonaut.jString(clientId),
+      "date" -> Argonaut.jString(date.toString),
+      "path" -> Argonaut.jString(path),
+      "ip" -> Argonaut.jString(ip)
+    ).spaces2
   }
 
   case class Client(clientId: String, age: Long, isVip: Boolean, country: String)

@@ -177,7 +177,7 @@ case object ParamExceptionHandler extends ExceptionHandlerFactory {
 case object EmptySink extends FlinkSink {
 
   override def testDataOutput: Option[(Any) => String] = Option {
-    case a: Displayable => a.display
+    case a: Displayable => a.prettyDisplay
     case b => b.toString
   }
 
@@ -206,7 +206,9 @@ case class CsvRecord(fields: List[String]) extends UsingLazyValues with Displaya
 
   lazy val enrichedField = lazyValue[RichObject]("enricher", "param" -> firstField)
 
-  override def display = fields.mkString("|")
+  override def prettyDisplay = s"""{"firstField": "$firstField""}"""
+
+  override def originalDisplay: Option[String] = Some(fields.mkString("|"))
 }
 
 case object MultipleParamsService extends Service {

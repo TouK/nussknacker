@@ -6,6 +6,5 @@ trait WithFields extends Displayable {
 
   def fields: List[Any]
 
-  override def display = fields.map(a => Option(a).getOrElse("")).mkString(separator)
-
+  override def originalDisplay: Option[String] = Some(fields.map(a => Option(a).getOrElse("")).mkString(separator))
 }
