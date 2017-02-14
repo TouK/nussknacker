@@ -20,6 +20,7 @@ export default class NodeDetailsContent extends React.Component {
     this.state = {
       editedNode: NodeParametersMerger.addMissingParametersToNode(props.processDefinitionData, props.node),
       codeCompletionEnabled: true,
+      testResultsToHide: new Set()
     }
     this.state = {
       ...this.state,
@@ -197,15 +198,21 @@ export default class NodeDetailsContent extends React.Component {
 
   wrapWithTestResult = (fieldName, field) => {
     var testValue = fieldName ? (this.state.testResultsToShow && this.state.testResultsToShow.expressionResults[fieldName]) : null
-
+    const shouldHideTestResults = this.state.testResultsToHide.has(fieldName)
+    const hiddenClassPart = (shouldHideTestResults ? " partly-hidden" : "")
+    const showIconClass = shouldHideTestResults ? "glyphicon glyphicon-eye-close" : "glyphicon glyphicon-eye-open"
     if (testValue) {
       return (
         <div >
           {field}
             <div className="node-row node-test-results">
-              <div className="node-label">{ModalRenderUtils.renderInfo('Value evaluated in test case')}</div>
-              <div className="node-value">
-                <Textarea rows={1} cols={50} className="node-input" value={testValue} readOnly={true}/>
+              <div className="node-label">{ModalRenderUtils.renderInfo('Value evaluated in test case')}
+                {testValue.pretty ? <span className={showIconClass} onClick={this.toggleTestResult.bind(this, fieldName)}/> : null}
+              </div>
+              <div className={"node-value" + hiddenClassPart}>
+                {testValue.original ? <Textarea className="node-input" readOnly={true} value={testValue.original}/> : null}
+                <Textarea rows={1} cols={50} className="node-input" value={testValue.pretty || testValue} readOnly={true}/>
+                {shouldHideTestResults ? <div className="fadeout"></div> : null}
               </div>
             </div>
         </div>
@@ -213,6 +220,12 @@ export default class NodeDetailsContent extends React.Component {
     } else {
       return field
     }
+  }
+
+  toggleTestResult = (fieldName) => {
+    const newTestResultsToHide = _.cloneDeep(this.state.testResultsToHide)
+    newTestResultsToHide.has(fieldName) ? newTestResultsToHide.delete(fieldName) : newTestResultsToHide.add(fieldName)
+    this.setState({testResultsToHide: newTestResultsToHide})
   }
 
   doCreateField = (fieldType, fieldLabel, fieldName, fieldValue, handleChange, forceReadonly) => {
@@ -317,7 +330,7 @@ export default class NodeDetailsContent extends React.Component {
                     value={this.state.testResultsIdToShow}>
               { TestResultUtils.availableContexts(this.props.testResults).map((ctx, idx) =>
                 //ten toString jest b. slaby w wielu przypadkach - trzeba cos z nim zrobic :|
-                (<option key={idx} value={ctx.id}>{ctx.id} ({(ctx.input || "").toString().substring(0, 50)})</option>)
+                (<option key={idx} value={ctx.id}>{ctx.id} ({(ctx.input.original || ctx.input || "").toString().substring(0, 50)})</option>)
               )}
             </select>
           </div>
@@ -343,7 +356,8 @@ export default class NodeDetailsContent extends React.Component {
             return (<div className="node-row" key={ikey}>
                 <div className="node-label">{key}:</div>
                 <div className="node-value">
-                  <Textarea className="node-input" readOnly={true} value={ctx[key]}/>
+                  {ctx[key].original ? <Textarea className="node-input" readOnly={true} value={ctx[key].original}/> : null}
+                  <Textarea className="node-input" readOnly={true} value={ctx[key].pretty || ctx[key]}/>
                 </div>
               </div>
             )

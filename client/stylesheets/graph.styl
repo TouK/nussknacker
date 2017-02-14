@@ -145,6 +145,12 @@ espCheckbox()
       font-size: 14px
       font-weight: 700
       text-transform: uppercase
+      span
+        margin-top: 10px
+        margin-left: 10px
+        font-size: 15px
+        &:hover
+          cursor pointer
     .node-value
       width: 80%
       display: inline-block
@@ -154,6 +160,9 @@ espCheckbox()
       espCheckbox()
       input[type='checkbox']
         margin-top 20px
+      &.partly-hidden
+        textarea
+          height 100px !important
     .node-error
       width: 100%
       color: warningColor
@@ -163,8 +172,8 @@ espCheckbox()
       margin-top: 10px
     .node-tip
       margin-left: 10px
-      width: 25px
-      height: 25px
+      width: 15px
+      height: 15px
     .node-test-results
       border: 1px solid testResultsColor
       padding: 5px
@@ -333,3 +342,29 @@ espButtonIcon()
 .testResultsPlaceholder
   fill: buttonBorderColor
   border: 0
+
+.fadeout {
+  position: relative;
+  bottom: 4em;
+  height: 4em;
+  background: -webkit-linear-gradient(
+          rgba(20, 20, 20, 0) 0%,
+          rgba(20, 20, 20, 1) 100%
+  );
+  background-image: -moz-linear-gradient(
+          rgba(20, 20, 20, 0) 0%,
+          rgba(20, 20, 20, 1) 100%
+  );
+  background-image: -o-linear-gradient(
+          rgba(20, 20, 20, 0) 0%,
+          rgba(20, 20, 20, 1) 100%
+  );
+  background-image: linear-gradient(
+          rgba(20, 20, 20, 0) 0%,
+          rgba(20, 20, 20, 1) 100%
+  );
+  background-image: -ms-linear-gradient(
+          rgba(20, 20, 20, 0) 0%,
+          rgba(20, 20, 20, 1) 100%
+  );
+}
