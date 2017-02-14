@@ -114,4 +114,13 @@ export default class ExpressionSuggester {
     return _.join(properties, ".")
   }
 
+  humanReadableSuggestionType = (suggestion) => {
+    if (suggestion.refClazzName) {
+      const lastClazzNamePart = _.last(this._dotSeparatedToProperties(suggestion.refClazzName))
+      return _.upperFirst(lastClazzNamePart)
+    } else {
+      return ""
+    }
+  }
+
 }
