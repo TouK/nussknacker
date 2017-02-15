@@ -52,6 +52,7 @@ class NodeDetailsModal extends React.Component {
 
   performNodeEdit = () => {
     if (this.isGroup()) {
+      //FIXME: a czy tutaj nie chcemy walidowac???
       this.props.actions.editGroup(this.props.nodeToDisplay.id, this.state.editedNode)
       this.closeModal()
     } else {
@@ -59,7 +60,7 @@ class NodeDetailsModal extends React.Component {
       this.props.actions.editNode(this.props.processToDisplay, this.props.nodeToDisplay, this.state.editedNode).then (() => {
           this.setState( { pendingRequest: false})
           this.closeModal()
-        }
+        }, () => this.setState( { pendingRequest: false})
       )
     }
   }

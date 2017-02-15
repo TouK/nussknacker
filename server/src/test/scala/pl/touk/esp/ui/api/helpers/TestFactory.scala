@@ -23,10 +23,9 @@ object TestFactory {
   val testEnvironment = "test"
 
   val processValidation = new ProcessValidation(ProcessTestData.validator)
-  val processConverter = new ProcessConverter(processValidation)
-  val posting = new ProcessPosting(processConverter)
+  val posting = new ProcessPosting
 
-  def newProcessRepository(db: JdbcBackend.Database) = new ProcessRepository(db, DefaultJdbcProfile.profile, processConverter)
+  def newProcessRepository(db: JdbcBackend.Database) = new ProcessRepository(db, DefaultJdbcProfile.profile, processValidation)
 
   val buildInfo = Map("engine-version" -> "0.1")
 

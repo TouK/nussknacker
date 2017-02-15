@@ -65,7 +65,7 @@ object ProcessTestData {
         )
       ),
       edges = List(Edge(from = "sourceId", to = "sinkId", edgeType = None)),
-      validationResult = ValidationResult.success
+      validationResult = Some(ValidationResult.success)
     )
   }
 }

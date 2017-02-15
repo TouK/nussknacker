@@ -8,7 +8,7 @@ import pl.touk.esp.ui.util.Argonaut62Support
 
 import scala.concurrent.ExecutionContext
 
-class ValidationResources(processValidation: ProcessValidation, processConverter: ProcessConverter)
+class ValidationResources(processValidation: ProcessValidation)
                          (implicit ec: ExecutionContext)
   extends Directives with Argonaut62Support {
 
@@ -20,8 +20,7 @@ class ValidationResources(processValidation: ProcessValidation, processConverter
       post {
         entity(as[DisplayableProcess]) { displayable =>
           complete {
-            val canonical = processConverter.fromDisplayable(displayable)
-            processValidation.validate(canonical)
+            EspErrorToHttp.toResponse(processValidation.validate(displayable).fatalAsError)
           }
         }
       }

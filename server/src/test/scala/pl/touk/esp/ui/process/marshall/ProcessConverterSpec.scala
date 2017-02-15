@@ -19,17 +19,16 @@ import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessPropert
 
 class ProcessConverterSpec extends FlatSpec with Matchers with TableDrivenPropertyChecks {
 
-  val converter = {
+  val validation = {
     val processDefinition = ProcessDefinition[ObjectDefinition](Map("ref" -> ObjectDefinition.noParam),
       Map("sourceRef" -> ObjectDefinition.noParam), Map(), Map(), ObjectDefinition.noParam, Map(), List())
     val validator = ProcessValidator.default(processDefinition)
-    val processValidation = new ProcessValidation(validator)
-    new ProcessConverter(processValidation)
+    new ProcessValidation(validator)
   }
 
-  def canonicalDisplayable = (converter.toDisplayable _).andThen(converter.fromDisplayable)
+  def canonicalDisplayable = (ProcessConverter.toDisplayable _).andThen(ProcessConverter.fromDisplayable)
 
-  def displayableCanonical = (converter.fromDisplayable _).andThen(converter.toDisplayable)
+  def displayableCanonical = (ProcessConverter.fromDisplayable _).andThen(ProcessConverter.toDisplayable).andThen(_.validated(validation))
 
   it should "be able to convert empty process" in {
     val emptyProcess = CanonicalProcess(MetaData(id = "t1"), ExceptionHandlerRef(List()), List())
@@ -42,7 +41,7 @@ class ProcessConverterSpec extends FlatSpec with Matchers with TableDrivenProper
       List(
         Processor("e", ServiceRef("ref", List())),
         Source("s", SourceRef("sourceRef", List()))
-      ), List(Edge("s", "e", None)), ProcessValidation.ValidationResult.success)
+      ), List(Edge("s", "e", None)))
 
     displayableCanonical(process).nodes.toSet shouldBe process.nodes.toSet
     displayableCanonical(process).edges.toSet shouldBe process.edges.toSet
@@ -60,8 +59,8 @@ class ProcessConverterSpec extends FlatSpec with Matchers with TableDrivenProper
     )) { (unexpectedEnd) =>
       val process = DisplayableProcess("t1", ProcessProperties(Some(2), Some(false), ExceptionHandlerRef(List()), None),
         List(Source("s", SourceRef("sourceRef", List())), unexpectedEnd),
-        List(Edge("s", "e", None)), ValidationResult(Map(unexpectedEnd.id -> List(NodeValidationError("InvalidTailOfBranch",
-          "Invalid end of process", "Process branch can only end with sink or processor", None))), List(), List())
+        List(Edge("s", "e", None)), Some(ValidationResult(Map(unexpectedEnd.id -> List(NodeValidationError("InvalidTailOfBranch",
+          "Invalid end of process", "Process branch can only end with sink or processor", None, isFatal = false))), List(), List()))
       )
       displayableCanonical(process) shouldBe process
     }

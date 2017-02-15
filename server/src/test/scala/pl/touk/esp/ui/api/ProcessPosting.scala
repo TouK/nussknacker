@@ -9,13 +9,13 @@ import pl.touk.esp.engine.graph.node.NodeData
 import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.esp.ui.process.marshall.ProcessConverter
 
-class ProcessPosting(processConverter: ProcessConverter) {
+class ProcessPosting {
   import pl.touk.esp.ui.codec.UiCodecs._
 
   val prettyParams = PrettyParams.spaces2.copy(dropNullKeys = true, preserveOrder = true)
 
   def toEntity(process: EspProcess): RequestEntity = {
-    val displayable = processConverter.toDisplayable(ProcessCanonizer.canonize(process))
+    val displayable = ProcessConverter.toDisplayable(ProcessCanonizer.canonize(process))
     val json = displayable.asJson.pretty(prettyParams)
     HttpEntity(ContentTypes.`application/json`, json)
   }

@@ -47,9 +47,8 @@ object EspUiApp extends App with Directives with LazyLogging {
   val processDefinition = manager.getProcessDefinition
   val validator = ProcessValidator.default(processDefinition)
   val processValidation = new ProcessValidation(validator)
-  val processConverter = new ProcessConverter(processValidation)
 
-  val processRepository = new ProcessRepository(db, DefaultJdbcProfile.profile, processConverter)
+  val processRepository = new ProcessRepository(db, DefaultJdbcProfile.profile, processValidation)
   val deploymentProcessRepository = new DeployedProcessRepository(db, DefaultJdbcProfile.profile, buildInfo)
   val processActivityRepository = new ProcessActivityRepository(db, DefaultJdbcProfile.profile)
   val attachmentService = new ProcessAttachmentService(config.getString("attachmentsPath"), processActivityRepository)
@@ -74,15 +73,15 @@ object EspUiApp extends App with Directives with LazyLogging {
 
             pathPrefix("api") {
 
-              new ProcessesResources(processRepository, managementActor, processConverter, processActivityRepository, processValidation).route(user) ~
+              new ProcessesResources(processRepository, managementActor, processActivityRepository, processValidation).route(user) ~
                 new ProcessActivityResource(processActivityRepository, attachmentService).route(user) ~
                 new ManagementResources(processDefinition.typesInformation, managementActor).route(user) ~
-                new ValidationResources(processValidation, processConverter).route(user) ~
+                new ValidationResources(processValidation).route(user) ~
                 new DefinitionResources(processDefinition).route(user) ~
                 new UserResources().route(user) ~
                 new SettingsResources(config).route(user) ~
                 new AppResources(buildInfo, processRepository, managementActor).route(user) ~
-                new TestInfoResources(manager, processConverter, config.getInt("testSampleSize")).route(user)
+                new TestInfoResources(manager, config.getInt("testSampleSize")).route(user)
             } ~
               //nie chcemy api, zeby nie miec problemow z autentykacja...
               pathPrefixTest(!"api") {
