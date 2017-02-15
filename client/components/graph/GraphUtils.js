@@ -40,13 +40,13 @@ export default {
     }
   },
 
-  computeBoundingRect: (expandedGroup, layout, nodes, margin) => {
+  computeBoundingRect: (expandedGroup, layout, nodes, nodeHeight, margin) => {
 
     const widthsHeights = expandedGroup.nodes
       .map(n => {
         const bbox = nodes.find(node => node.id == n).get('size')
         const layoutForNode = ((layout || []).find(k => k.id == n) || {}).position || {}
-        return {height: rectHeight, width: bbox.width, x: layoutForNode.x || 0, y: layoutForNode.y || 0}
+        return {height: nodeHeight, width: bbox.width, x: layoutForNode.x || 0, y: layoutForNode.y || 0}
       })
     const x = _.min(widthsHeights.map(wh => wh.x)) - margin
     const y =  _.min(widthsHeights.map(wh => wh.y)) - margin

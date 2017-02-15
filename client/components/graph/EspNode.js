@@ -202,7 +202,7 @@ export default {
     },
 
     boundingRect(nodes, expandedGroup, layout, group) {
-      const boundingRect = GraphUtils.computeBoundingRect(expandedGroup, layout, nodes, 15)
+      const boundingRect = GraphUtils.computeBoundingRect(expandedGroup, layout, nodes, rectHeight, 15)
 
       return new joint.shapes.basic.Rect({
           id: group.id,

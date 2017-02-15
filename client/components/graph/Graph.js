@@ -116,7 +116,7 @@ class Graph extends React.Component {
                 } else if (cellView.model instanceof joint.dia.Link) {
                     // Disable the default vertex add functionality on pointerdown.
                     return { vertexAdd: false };
-                } else if (cellView.get('backgroundObject')) {
+                } else if (cellView.get && cellView.get('backgroundObject')) {
                   return false
                 } else {
                   return true;
