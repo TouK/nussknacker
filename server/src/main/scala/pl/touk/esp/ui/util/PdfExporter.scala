@@ -179,7 +179,7 @@ object PdfExporter extends LazyLogging {
   private def nodeDetails(node: NodeData) = {
     val nodeData = node match {
       case Source(_, SourceRef(typ, params), _) => ("Type", typ) :: params.map(p => (p.name, p.value))
-      case Filter(_, expression, _) => List(("Expression", expression.expression))
+      case Filter(_, expression, _, _) => List(("Expression", expression.expression))
       case Enricher(_, ServiceRef(typ, params), output, _) => ("Type", typ) :: ("Output", output) :: params.map(p => (p.name, p.expression.expression))
         //TODO: jak zwykle - co ze switchem??
       case Switch(_, expression, exprVal, _) => List(("Expression", expression.expression))

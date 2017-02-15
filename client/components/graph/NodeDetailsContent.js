@@ -49,6 +49,7 @@ export default class NodeDetailsContent extends React.Component {
           <div className="node-table-body">
             {this.createField("input", "Id", "id")}
             {this.createField("textarea", "Expression", "expression.expression", "expression")}
+            {this.createField("checkbox", "Disabled", "isDisabled")}
             {this.descriptionField()}
           </div>
         )
