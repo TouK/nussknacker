@@ -27,8 +27,8 @@ trait GraphBuilder[R] {
   def enricher(id: String, output: String, svcId: String, params: (String, Expression)*): GraphBuilder[R] =
     build(node => creator(OneOutputSubsequentNode(Enricher(id, ServiceRef(svcId, params.map(Parameter.tupled).toList), output), node)))
 
-  def filter(id: String, expression: Expression): GraphBuilder[R] =
-    build(node => creator(FilterNode(Filter(id, expression), node, None)))
+  def filter(id: String, expression: Expression, disabled: Option[Boolean] = None): GraphBuilder[R] =
+    build(node => creator(FilterNode(Filter(id, expression, disabled), node, None)))
 
   def filter(id: String, expression: Expression, nextFalse: SubsequentNode): GraphBuilder[R] =
     build(node => creator(FilterNode(Filter(id, expression), node, Some(nextFalse))))

@@ -96,9 +96,9 @@ class Interpreter private(services: Map[String, ServiceInvoker],
           case ValueWithContext(out, newCtx) =>
             interpretNext(next, newCtx.withVariable(outName, out))
         }
-      case (Filter(_, expression, nextTrue, nextFalse), Traverse) =>
+      case (Filter(_, expression, nextTrue, nextFalse, disabled), Traverse) =>
         val valueWithModifiedContext = evaluateExpression[Boolean](expression, ctx)
-        if (valueWithModifiedContext.value)
+        if (disabled || valueWithModifiedContext.value)
           interpretNext(nextTrue, valueWithModifiedContext.context)
         else
           interpretOptionalNext(node, nextFalse, valueWithModifiedContext.context)

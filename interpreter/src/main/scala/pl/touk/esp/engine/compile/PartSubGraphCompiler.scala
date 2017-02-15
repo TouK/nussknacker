@@ -127,10 +127,10 @@ private[compile] trait PartSubGraphCompilerBase {
           nexts.map(n => compile(n.next, ctx)).sequence.map { _ =>
             CompiledNode(compiledgraph.node.SplitNode(bareNode.id), ctx)
           }
-        case splittednode.FilterNode(graph.node.Filter(id, expression, _), nextTrue, nextFalse) =>
+        case splittednode.FilterNode(f@graph.node.Filter(id, expression, _, _), nextTrue, nextFalse) =>
           A.map3(compile(expression, None, ctx), compile(nextTrue, ctx), nextFalse.map(next => compile(next, ctx)).sequence)(
             (expr, nextWithCtx, nextWithCtxFalse) => CompiledNode(compiledgraph.node.Filter(id, expr, nextWithCtx.next,
-              nextWithCtxFalse.map(_.next)), nextWithCtxFalse.map(nwc => ValidationContext.merge(nwc.ctx, nextWithCtx.ctx)).getOrElse(nextWithCtx.ctx)))
+              nextWithCtxFalse.map(_.next), f.isDisabled.contains(true)), nextWithCtxFalse.map(nwc => ValidationContext.merge(nwc.ctx, nextWithCtx.ctx)).getOrElse(nextWithCtx.ctx)))
         case splittednode.SwitchNode(graph.node.Switch(id, expression, exprVal, _), nexts, defaultNext) =>
           val newCtx = ctx.withVariable(exprVal, ClazzRef(classOf[Any]))
           A.map3(compile(expression, None, newCtx), nexts.map(n => compile(n, newCtx)).sequence, defaultNext.map(dn => compile(dn, newCtx)).sequence)(
