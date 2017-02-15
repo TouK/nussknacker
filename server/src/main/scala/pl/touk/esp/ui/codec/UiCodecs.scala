@@ -109,22 +109,26 @@ object UiCodecs {
 
     //TODO: cos jeszcze??
     private def encodeVariable(any: Any): Json = {
-      val klass = any.getClass
-      any match {
-        case Some(a) => encodeVariable(a)
-        case s: String => jString(s)
-        case a: Long => jNumber(a)
-        case a: Double => jNumber(a)
-        case a: Int => jNumber(a)
-        case a: Number => jNumber(a.doubleValue())
-        case a: LocalDateTime => a.asJson
-        case a: Displayable => displayableToJson(a)
-        //TODO: a to??
-        //case a: LocalDate => a.asJson
-        //TODO: co tu w sumie lepiej pokazywac??
-        //case _ if typesWithMethodNames.contains(klass.getName) =>
-        //  printKnownType(any, klass)
-        case _ => jString(any.toString)
+      if (any == null) {
+        jNull
+      } else {
+        val klass = any.getClass
+        any match {
+          case Some(a) => encodeVariable(a)
+          case s: String => jString(s)
+          case a: Long => jNumber(a)
+          case a: Double => jNumber(a)
+          case a: Int => jNumber(a)
+          case a: Number => jNumber(a.doubleValue())
+          case a: LocalDateTime => a.asJson
+          case a: Displayable => displayableToJson(a)
+          //TODO: a to??
+          //case a: LocalDate => a.asJson
+          //TODO: co tu w sumie lepiej pokazywac??
+          //case _ if typesWithMethodNames.contains(klass.getName) =>
+          //  printKnownType(any, klass)
+          case _ => jString(any.toString)
+        }
       }
     }
 

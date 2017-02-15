@@ -40,17 +40,18 @@ class ProcessUtils {
 
   _findVariablesDefinedInProcess = (nodeId, process, processDefinition) => {
     const node = _.find(process.nodes, (node) => node.id == nodeId)
+    const nodeObjectTypeDefinition = this.findNodeObjectTypeDefinition(node, processDefinition)
+    const clazzName = _.get(nodeObjectTypeDefinition, 'returnType.refClazzName')
     switch (node.type) {
       case "Source": {
-        return [{"input": _.get(processDefinition, `sourceFactories[${node.ref.typ}].returnType.refClazzName`)}]
+        return [{"input": clazzName}]
       }
       case "Enricher": {
-        return [{[node.output]: _.get(processDefinition, `services[${node.service.id}].returnType.refClazzName`)}]
+        return [{[node.output]: clazzName}]
       }
       case "CustomNode": {
-        const customNodeType = node.nodeType
         const outputVariableName = node.outputVar
-        const outputClazz = _.get(processDefinition, `customStreamTransformers[${customNodeType}].returnType.refClazzName`)
+        const outputClazz = clazzName
         return _.isEmpty(outputClazz) ? [] : [ {[outputVariableName]: outputClazz} ]
       }
       case "VariableBuilder": {
@@ -65,6 +66,38 @@ class ProcessUtils {
       default: {
         return []
       }
+    }
+  }
+
+  findNodeObjectTypeDefinition = (node, processDefinition) => {
+    switch (node.type) {
+      case "Source": {
+        return _.get(processDefinition, `sourceFactories[${node.ref.typ}]`)
+      }
+      case "Sink": {
+        return _.get(processDefinition, `sinkFactories[${node.ref.typ}]`)
+      }
+      case "Enricher":
+      case "Processor": {
+        return _.get(processDefinition, `services[${node.service.id}]`)
+      }
+      case "CustomNode": {
+        const customNodeType = node.nodeType
+        return _.get(processDefinition, `customStreamTransformers[${customNodeType}]`)
+      }
+      default: {
+        return {}
+      }
+    }
+  }
+
+  humanReadableType = (refClazzName) => {
+    if (_.isEmpty(refClazzName)) {
+      return ""
+    } else {
+      const typeSplitted = _.split(refClazzName, ".")
+      const lastClazzNamePart = _.last(typeSplitted)
+      return _.upperFirst(lastClazzNamePart)
     }
   }
 

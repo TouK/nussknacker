@@ -55,6 +55,7 @@
     "less-loader": "2.2.3",
     "node-libs-browser": "^0.5.2",
     "raw-loader": "0.5.1",
+    "react-addons-perf": "15.2.1",
     "redux-devtools": "3.3.1",
     "redux-devtools-dock-monitor": "1.1.1",
     "redux-devtools-log-monitor": "1.0.11",

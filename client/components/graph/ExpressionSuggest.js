@@ -34,6 +34,15 @@ class ExpressionSuggest extends React.Component {
     this.expressionSuggester = this.createExpressionSuggester(props)
   }
 
+  //fixme czy o wystarczy?
+  // to jest po to, zeby przy wielu instancjach tego komponentu na stronie do rerenderowania brac pod uwage tylko te ktore naprawde mogly sie zmienic
+  shouldComponentUpdate(nextProps, nextState) {
+    return !(_.isEqual(this.state.suggestions, nextState.suggestions) &&
+      _.isEqual(this.state.expectedCaretPosition, nextState.expectedCaretPosition) &&
+      _.isEqual(this.state.value, nextState.value)
+    )
+  }
+
   componentDidUpdate(prevProps, prevState) {
     this.expressionSuggester = this.createExpressionSuggester(this.props)
     this.setCaretPosition(this.state.expectedCaretPosition)
@@ -52,7 +61,7 @@ class ExpressionSuggest extends React.Component {
 
   renderSuggestion = suggestion => {
     const {start, middle, end} = this.expressionSuggester.extractMatchingPartFromInput(suggestion, this.state.value, this.getCaretPosition())
-    const suggestionType = this.expressionSuggester.humanReadableSuggestionType(suggestion)
+    const suggestionType = ProcessUtils.humanReadableType(suggestion.refClazzName)
     return (
       start || middle || end ?
         <div>

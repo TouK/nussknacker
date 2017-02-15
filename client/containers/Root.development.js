@@ -10,6 +10,8 @@ import Settings from '../http/Settings'
 import EspAppRouter from './EspAppRouter';
 import $ from 'jquery';
 
+import Perf from 'react-addons-perf'
+window.Perf = Perf
 
 const store = configureStore();
 
