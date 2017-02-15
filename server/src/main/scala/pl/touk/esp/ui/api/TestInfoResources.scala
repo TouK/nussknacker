@@ -14,8 +14,7 @@ import pl.touk.esp.ui.util.Argonaut62Support
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
-class TestInfoResources(processDefinition: TestInfoProvider,
-                        processConverter: ProcessConverter, testSampleSize: Int)
+class TestInfoResources(processDefinition: TestInfoProvider, testSampleSize: Int)
                        (implicit ec: ExecutionContext) extends Directives with Argonaut62Support {
   import argonaut.ArgonautShapeless._
   import pl.touk.esp.ui.codec.UiCodecs._
@@ -27,7 +26,7 @@ class TestInfoResources(processDefinition: TestInfoProvider,
       pathPrefix("testInfo") {
         post {
           entity(as[DisplayableProcess]) { displayableProcess =>
-            val espProcess = ProcessCanonizer.uncanonize(processConverter.fromDisplayable(displayableProcess))
+            val espProcess = ProcessCanonizer.uncanonize(ProcessConverter.fromDisplayable(displayableProcess))
 
             path("capabilities") {
               complete {

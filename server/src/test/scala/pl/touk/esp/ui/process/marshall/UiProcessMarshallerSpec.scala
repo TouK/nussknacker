@@ -2,7 +2,6 @@ package pl.touk.esp.ui.process.marshall
 
 import argonaut.{Parse, PrettyParams}
 import org.scalatest.{FlatSpec, Matchers}
-import pl.touk.esp.ui.api.helpers.TestFactory.processConverter
 import pl.touk.esp.ui.process.displayedgraph.displayablenode.{NodeAdditionalFields, ProcessAdditionalFields}
 
 class UiProcessMarshallerSpec extends FlatSpec with Matchers {
@@ -42,7 +41,7 @@ class UiProcessMarshallerSpec extends FlatSpec with Matchers {
 
 
   it should "unmarshall to displayable process properly" in {
-    val displayableProcess = processConverter.toDisplayableOrDie(processWithAdditionalFields)
+    val displayableProcess = ProcessConverter.toDisplayableOrDie(processWithAdditionalFields)
 
     val processDescription = displayableProcess.properties.additionalFields.flatMap(_.asInstanceOf[ProcessAdditionalFields].description)
     val nodeDescription = displayableProcess.nodes.head.additionalFields.flatMap(_.asInstanceOf[NodeAdditionalFields].description)
@@ -52,16 +51,16 @@ class UiProcessMarshallerSpec extends FlatSpec with Matchers {
 
   it should "marshall and unmarshall process" in {
     val baseProcess = processWithAdditionalFields
-    val displayableProcess = processConverter.toDisplayableOrDie(baseProcess)
-    val canonical = processConverter.fromDisplayable(displayableProcess)
+    val displayableProcess = ProcessConverter.toDisplayableOrDie(baseProcess)
+    val canonical = ProcessConverter.fromDisplayable(displayableProcess)
 
-    val processAfterMarshallAndUnmarshall = processConverter.processMarshaller.toJson(canonical, PrettyParams.nospace)
+    val processAfterMarshallAndUnmarshall = ProcessConverter.processMarshaller.toJson(canonical, PrettyParams.nospace)
 
     Parse.parse(processAfterMarshallAndUnmarshall) shouldBe Parse.parse(baseProcess)
   }
 
   it should "unmarshall json without additional fields" in {
-    val displayableProcess = processConverter.toDisplayableOrDie(processWithoutAdditionalFields)
+    val displayableProcess = ProcessConverter.toDisplayableOrDie(processWithoutAdditionalFields)
 
     displayableProcess.id shouldBe "custom"
     displayableProcess.nodes.head.additionalFields shouldBe None

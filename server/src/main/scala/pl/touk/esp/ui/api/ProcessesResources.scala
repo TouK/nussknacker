@@ -1,8 +1,5 @@
 package pl.touk.esp.ui.api
 
-import java.net.URLDecoder
-import java.util.Base64
-
 import akka.actor.ActorRef
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model._
@@ -10,7 +7,9 @@ import akka.http.scaladsl.server.{Directive, Directives, Route}
 import akka.stream.Materializer
 import argonaut._
 import cats.data.Validated.{Invalid, Valid}
-import cats.data.Xor
+import cats.data.{Xor, XorT}
+import cats.instances .future._
+
 import pl.touk.esp.engine.api.MetaData
 import pl.touk.esp.engine.api.deployment.{GraphProcess, ProcessManager}
 import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
@@ -36,7 +35,6 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class ProcessesResources(repository: ProcessRepository,
                          managerActor: ActorRef,
-                         processConverter: ProcessConverter,
                          processActivityRepository: ProcessActivityRepository,
                          processValidation: ProcessValidation)
                         (implicit ec: ExecutionContext, mat: Materializer)
@@ -94,13 +92,14 @@ class ProcessesResources(repository: ProcessRepository,
         put {
           entity(as[DisplayableProcess]) { displayableProcess =>
             complete {
-              val canonical = processConverter.fromDisplayable(displayableProcess)
+              val canonical = ProcessConverter.fromDisplayable(displayableProcess)
               val json = uiProcessMarshaller.toJson(canonical, PrettyParams.nospace)
-              repository.updateProcess(processId, GraphProcess(json)).map { result =>
-                toResponse {
-                  result.map(_ => processValidation.validate(canonical))
-                }
-              }
+
+              (for {
+                validation <- XorT.fromXor[Future](processValidation.validate(displayableProcess).fatalAsError)
+                result <- XorT(repository.updateProcess(processId, GraphProcess(json)))
+              } yield validation).value.map(toResponse)
+
             }
           }
         }
@@ -165,7 +164,7 @@ class ProcessesResources(repository: ProcessRepository,
                   case Valid(process) => Valid(process)
                   case Invalid(unmarshallError) => Invalid(UnmarshallError(unmarshallError.msg))
                 }) match {
-                  case Valid(process) => processConverter.toDisplayable(process)
+                  case Valid(process) => ProcessConverter.toDisplayable(process).validated(processValidation)
                   case Invalid(error) => espErrorToHttp(error)
                 }
               }
@@ -179,7 +178,7 @@ class ProcessesResources(repository: ProcessRepository,
   private def exportProcess(processDetails: Option[ProcessDetails]) = processDetails match {
     case Some(process) =>
       process.json.map { json =>
-        uiProcessMarshaller.toJson(processConverter.fromDisplayable(json), PrettyParams.spaces2)
+        uiProcessMarshaller.toJson(ProcessConverter.fromDisplayable(json), PrettyParams.spaces2)
       }.map { canonicalJson =>
         AkkaHttpResponse.asFile(canonicalJson, s"${process.id}.json")
       }.getOrElse(HttpResponse(status = StatusCodes.NotFound, entity = "Process not found"))
@@ -209,19 +208,6 @@ class ProcessesResources(repository: ProcessRepository,
   private def findJobStatus(processName: String)(implicit ec: ExecutionContext): Future[Option[ProcessStatus]] = {
     implicit val timeout = Timeout(1 minute)
     (managerActor ? CheckStatus(processName)).mapTo[Option[ProcessStatus]]
-  }
-
-  private def toResponse(xor: Xor[EspError, ValidationResult]): ToResponseMarshallable =
-    xor match {
-      case Xor.Right(validationResult) =>
-        validationResult
-      case Xor.Left(err) =>
-        espErrorToHttp(err)
-    }
-
-  private def toResponse(okStatus: StatusCode)(xor: Xor[EspError, Unit]): HttpResponse = xor match {
-    case Xor.Left(error) => espErrorToHttp(error)
-    case Xor.Right(_) => HttpResponse(status = okStatus)
   }
 
 

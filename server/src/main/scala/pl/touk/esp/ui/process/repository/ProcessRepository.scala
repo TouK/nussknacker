@@ -2,12 +2,12 @@ package pl.touk.esp.ui.process.repository
 
 import java.time.LocalDateTime
 
-import argonaut.{Json, Parse}
 import cats.data._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
 import pl.touk.esp.engine.api.deployment.{CustomProcess, GraphProcess, ProcessDeploymentData}
 import pl.touk.esp.ui.EspError._
+import pl.touk.esp.ui.api.ProcessValidation
 import pl.touk.esp.ui.app.BuildInfo
 import pl.touk.esp.ui.db.entity.ProcessDeploymentInfoEntity.{DeployedProcessVersionEntityData, DeploymentAction}
 import pl.touk.esp.ui.db.entity.ProcessEntity.{ProcessEntityData, ProcessType}
@@ -29,7 +29,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 class ProcessRepository(db: JdbcBackend.Database,
                         driver: JdbcProfile,
-                        processConverter: ProcessConverter) extends LazyLogging {
+                        processValidation: ProcessValidation) extends LazyLogging {
   import driver.api._
 
   def saveProcess(processId: String, category: String, processDeploymentData: ProcessDeploymentData)
@@ -166,7 +166,7 @@ class ProcessRepository(db: JdbcBackend.Database,
       currentlyDeployedAt = currentlyDeployedAt,
       tags = tags.map(_.name).toList,
       modificationDate = DateUtils.toLocalDateTime(processVersion.createDate),
-      json = processVersion.json.map(json => processConverter.toDisplayableOrDie(json)),
+      json = processVersion.json.map(json => ProcessConverter.toDisplayableOrDie(json).validated(processValidation)),
       history = history.toList
     )
   }

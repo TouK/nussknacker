@@ -7,10 +7,11 @@ import pl.touk.esp.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.esp.engine.graph.expression.Expression
 import pl.touk.esp.engine.graph.node.{Filter, NodeData, Split, Switch}
 import pl.touk.esp.ui.api.ProcessValidation
+import pl.touk.esp.ui.api.ProcessValidation.ValidationResult
 import pl.touk.esp.ui.process.displayedgraph.displayablenode.{Edge, EdgeType}
 import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties, displayablenode}
 
-class ProcessConverter(processValidation: ProcessValidation) {
+object ProcessConverter {
 
   val processMarshaller = UiProcessMarshaller()
 
@@ -25,7 +26,7 @@ class ProcessConverter(processValidation: ProcessValidation) {
     val nodesEdges = toGraphInner(process.nodes)
     val (nodes, edges) = nodesEdges
     val props = ProcessProperties(process.metaData.parallelism, process.metaData.splitStateToDisk, process.exceptionHandlerRef, process.metaData.additionalFields)
-    DisplayableProcess(process.metaData.id, props, nodes, edges, processValidation.validate(process))
+    DisplayableProcess(process.metaData.id, props, nodes, edges)
   }
 
   private def toGraphInner(nodes: List[canonicalnode.CanonicalNode]): (List[NodeData], List[displayablenode.Edge]) =

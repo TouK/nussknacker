@@ -3,14 +3,21 @@ package pl.touk.esp.ui.process.displayedgraph
 import pl.touk.esp.engine.api.UserDefinedProcessAdditionalFields
 import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.esp.engine.graph.node.NodeData
+import pl.touk.esp.ui.api.ProcessValidation
 import pl.touk.esp.ui.api.ProcessValidation.ValidationResult
 import pl.touk.esp.ui.process.displayedgraph.displayablenode._
 
+//it would be better to have two classes but it would either to derivce from each other, which is not easy for case classes
+//or we'd have to do composition which would break many things in client
 case class DisplayableProcess(id: String,
                               properties: ProcessProperties,
                               nodes: List[NodeData],
-                              edges: List[Edge],
-                              validationResult: ValidationResult)
+                              edges: List[Edge], validationResult: Option[ValidationResult] = None) {
+  def validated(validation: ProcessValidation) =
+    copy(validationResult = Some(validation.validate(this)))
+
+}
+
 
 case class ProcessProperties(parallelism: Option[Int],
                              splitStateToDisk: Option[Boolean],

@@ -153,12 +153,12 @@ export default {
     }).catch((error) => this.addError(`Failed to export`, error));
   },
 
-  validateProcess: (process) => {
+  validateProcess(process) {
     return ajaxCall({
       url: appConfig.API_URL + '/processValidation',
       type: 'POST',
       data: JSON.stringify(process)
-    });
+    }).catch(error => {this.addError(`Fatal validation error, cannot save`, error, true); return Promise.reject(error)})
   },
 
   getTestCapabilities: (process) => {
