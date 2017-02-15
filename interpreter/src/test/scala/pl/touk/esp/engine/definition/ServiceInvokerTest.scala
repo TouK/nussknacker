@@ -23,6 +23,15 @@ class ServiceInvokerTest extends FlatSpec with ScalaFutures with OptionValues wi
 
   }
 
+  it should "throw excpetion with nice message when parameters do not match" in {
+    val mock = new MockService
+    val definition = ObjectWithMethodDef[Service](WithCategories(mock), ServiceDefinitionExtractor)
+    val invoker = ServiceInvoker(definition)
+
+    intercept[IllegalArgumentException](
+      invoker.invoke(Map("foo" -> "aa", "bar" -> "terefere"), NodeContext("", "", ""))).getMessage shouldBe "Parameter bar has invalid class: java.lang.String, should be: int"
+  }
+
 }
 
 class MockService extends Service {

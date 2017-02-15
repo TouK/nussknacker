@@ -1,7 +1,5 @@
 package pl.touk.esp.engine.definition
 
-import java.lang.reflect.ParameterizedType
-
 import pl.touk.esp.engine.Interpreter
 import pl.touk.esp.engine.api.InterpreterMode.CustomNodeExpression
 import pl.touk.esp.engine.api._
@@ -24,18 +22,17 @@ private[definition] class CustomNodeInvokerImpl[T](executor: ObjectWithMethodDef
     extends CustomNodeInvoker[T] {
 
   override def run(lazyDeps: () => CustomNodeInvokerDeps) : T = {
-    val values = executor.orderedParameters.prepareValues(prepareParam(lazyDeps), Seq(() => lazyDeps().exceptionHandler))
-    executor.invokeMethod(values).asInstanceOf[T]
+    executor.invokeMethod(prepareParam(lazyDeps), Seq(() => lazyDeps().exceptionHandler)).asInstanceOf[T]
   }
 
-  private def prepareParam(lazyDeps: () => CustomNodeInvokerDeps)(param: Parameter) = {
-    val interpreter = CompilerLazyInterpreter[Any](lazyDeps, metaData, node, param)
-    val methodParam = EspTypeUtils.findParameterByParameterName(executor.methodDef.method, param.name)
+  private def prepareParam(lazyDeps: () => CustomNodeInvokerDeps)(param: String) : Option[AnyRef] = {
+    val interpreter = CompilerLazyInterpreter[AnyRef](lazyDeps, metaData, node, param)
+    val methodParam = EspTypeUtils.findParameterByParameterName(executor.methodDef.method, param)
     if (methodParam.exists(_.getType ==  classOf[LazyInterpreter[_]])) {
-      interpreter
+      Some(interpreter)
     } else {
       val emptyResult = InterpretationResult(NextPartReference(node.id), null, Context(""))
-      interpreter.syncInterpretationFunction(emptyResult)
+      Some(interpreter.syncInterpretationFunction(emptyResult))
     }
   }
 
@@ -45,7 +42,7 @@ private[definition] class CustomNodeInvokerImpl[T](executor: ObjectWithMethodDef
 
 case class CompilerLazyInterpreter[T](lazyDeps: () => CustomNodeInvokerDeps,
                                    metaData: MetaData,
-                                   node: SplittedNode[CustomNode], param: Parameter) extends LazyInterpreter[T] {
+                                   node: SplittedNode[CustomNode], param: String) extends LazyInterpreter[T] {
 
   override def createInterpreter(ec: ExecutionContext) = {
     createInterpreter(ec, lazyDeps())
@@ -53,7 +50,7 @@ case class CompilerLazyInterpreter[T](lazyDeps: () => CustomNodeInvokerDeps,
 
   private[definition] def createInterpreter(ec: ExecutionContext, deps: CustomNodeInvokerDeps): (InterpretationResult) => Future[T] = {
     val compiled = deps.subPartCompiler.compileWithoutContextValidation(node).getOrElse(throw new scala.IllegalArgumentException("Cannot compile"))
-    (ir: InterpretationResult) => deps.interpreter.interpret(compiled.node, CustomNodeExpression(param.name), metaData,
+    (ir: InterpretationResult) => deps.interpreter.interpret(compiled.node, CustomNodeExpression(param), metaData,
       ir.finalContext)(ec).map(_.output.asInstanceOf[T])(ec)
   }
 

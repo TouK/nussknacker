@@ -6,7 +6,6 @@ import pl.touk.esp.engine.api.test.InvocationCollectors.{NodeContext, ServiceInv
 import pl.touk.esp.engine.definition.DefinitionExtractor.{ObjectWithMethodDef, Parameter}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.control.NonFatal
 
 trait ServiceInvoker {
   def invoke(params: Map[String, Any], nodeContext: NodeContext)
@@ -17,23 +16,10 @@ private[definition] class ServiceInvokerImpl(objectWithMethodDef: ObjectWithMeth
 
   override def invoke(params: Map[String, Any], nodeContext: NodeContext)
                      (implicit ec: ExecutionContext): Future[Any] = {
-    def prepareValue(p: Parameter): Any =
-      params.getOrElse(
-        p.name,
-        throw new IllegalArgumentException(s"Missing parameter with name: ${p.name}")
-      )
-    val values = objectWithMethodDef.orderedParameters.prepareValues(prepareValue, Seq(ec, ServiceInvocationCollector(nodeContext)))
-    try {
-      objectWithMethodDef.invokeMethod(values).asInstanceOf[Future[Any]]
-    } catch {
-      case ex: IllegalArgumentException =>
-        logger.warn(s"Failed to invoke method: ${objectWithMethodDef.methodDef.method}, with params: $values", ex)
-        throw ex
-      case NonFatal(ex) =>
-        throw ex
-    }
+    //FIXME: skad ten instanceOf???
+      objectWithMethodDef.invokeMethod((params.get _)
+        .andThen(_.map(_.asInstanceOf[AnyRef])), Seq(ec, ServiceInvocationCollector(nodeContext))).asInstanceOf[Future[Any]]
   }
-
 }
 
 object ServiceInvoker {

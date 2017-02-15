@@ -2,10 +2,13 @@ package pl.touk.esp.engine.definition
 
 import java.lang.reflect.Method
 
+import com.typesafe.scalalogging.LazyLogging
 import pl.touk.esp.engine.api.process.WithCategories
 import pl.touk.esp.engine.api.{MethodToInvoke, ParamName}
 import pl.touk.esp.engine.definition.DefinitionExtractor._
 import pl.touk.esp.engine.types.EspTypeUtils
+
+import scala.util.control.NonFatal
 
 trait DefinitionExtractor[T] {
 
@@ -72,18 +75,42 @@ object DefinitionExtractor {
 
   case class ObjectWithMethodDef(obj: Any,
                                  methodDef: MethodDefinition,
-                                 objectDefinition: ObjectDefinition) extends ObjectMetadata {
-    def invokeMethod(args: List[AnyRef]) = {
-      methodDef.method.invoke(obj, args.toArray: _*)
+                                 objectDefinition: ObjectDefinition) extends ObjectMetadata with LazyLogging {
+    def invokeMethod(paramFun: String => Option[AnyRef], additional: Seq[AnyRef]) : Any = {
+      val paramsWithValues = methodDef.orderedParameters.prepareValues(paramFun, additional)
+      validateParameters(paramsWithValues)
+      val values = paramsWithValues.map(_._2)
+      try {
+        methodDef.method.invoke(obj, values: _*)
+      } catch {
+        case ex: IllegalArgumentException =>
+          logger.warn(s"Failed to invoke method: ${methodDef.method}, with params: $values", ex)
+          throw ex
+        case NonFatal(ex) =>
+          throw ex
+      }
     }
 
-    override def parameters = orderedParameters.definedParameters
+    override def parameters = methodDef.orderedParameters.definedParameters
 
-    def orderedParameters = methodDef.orderedParameters
 
     override def categories = objectDefinition.categories
 
     override def returnType = objectDefinition.returnType
+
+
+    private def validateParameters(values: List[(String, AnyRef)]) = {
+      val method = methodDef.method
+      if (method.getParameterCount != values.size) {
+        throw new IllegalArgumentException(s"Failed to invoke method: ${methodDef.method}, " +
+          s"with params: $values, invalid parameter count")
+      }
+      method.getParameterTypes.zip(values).zipWithIndex.foreach { case ((klass, (paramName, value)), idx) =>
+        if (value != null && !EspTypeUtils.signatureElementMatches(klass, value.getClass)) {
+          throw new IllegalArgumentException(s"Parameter $paramName has invalid class: ${value.getClass.getName}, should be: ${klass.getName}")
+        }
+      }
+    }
 
   }
 
@@ -108,14 +135,15 @@ object DefinitionExtractor {
       case Left(param) => param
     }
 
-    def prepareValues(prepareValue: Parameter => Any,
-                      additionalParameters: Seq[Any]): List[AnyRef] = {
+    def prepareValues(prepareValue: String => Option[AnyRef],
+                      additionalParameters: Seq[AnyRef]): List[(String, AnyRef)] = {
       baseOrAdditional.map {
         case Left(param) =>
-          prepareValue(param)
+          (param.name, prepareValue(param.name).getOrElse(throw new IllegalArgumentException(s"Missing parameter: ${param.name}")))
         case Right(classOfAdditional) =>
-          additionalParameters.find(classOfAdditional.isInstance).get
-      }.map(_.asInstanceOf[AnyRef])
+          (classOfAdditional.getName, additionalParameters.find(classOfAdditional.isInstance).getOrElse(
+            throw new IllegalArgumentException(s"Missing additional parameter of class: ${classOfAdditional.getName}")))
+      }
     }
   }
 

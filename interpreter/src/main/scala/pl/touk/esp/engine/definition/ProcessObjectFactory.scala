@@ -20,19 +20,7 @@ private[definition] class ProcessObjectFactoryImpl[T](objectWithMethodDef: Objec
 
   override def create(processMetaData: MetaData, params: List[graph.param.Parameter]): T = {
     val paramsMap = params.map(p => p.name -> p.value).toMap
-    def prepareValue(p: Parameter): String =
-      paramsMap.getOrElse(
-        p.name,
-        throw new IllegalArgumentException(s"Missing parameter with name: ${p.name}")
-      )
-    val values = objectWithMethodDef.orderedParameters.prepareValues(prepareValue, Seq(processMetaData))
-    try {
-      objectWithMethodDef.invokeMethod(values).asInstanceOf[T]
-    } catch {
-      case NonFatal(e) =>
-       logger.error(s"Failed to invoke ${objectWithMethodDef.methodDef} on ${objectWithMethodDef.obj} with params $values")
-       throw e
-    }
+    objectWithMethodDef.invokeMethod(paramsMap.get, Seq(processMetaData)).asInstanceOf[T]
   }
 
 }
