@@ -4,6 +4,7 @@ import java.lang.reflect.{Method, ParameterizedType, Type}
 
 import cats.Eval
 import cats.data.StateT
+import org.apache.commons.lang3.ClassUtils
 import pl.touk.esp.engine.api.ParamName
 import pl.touk.esp.engine.definition.DefinitionExtractor.{ClazzRef, PlainClazzDefinition}
 import pl.touk.esp.engine.util.ThreadUtils
@@ -42,6 +43,8 @@ object EspTypeUtils {
     java.lang.Short.TYPE -> classOf[java.lang.Short],
     java.lang.Character.TYPE -> classOf[java.lang.Character]
   )
+
+  private val boxedToPrimitives = primitiveTypesToBoxed.map(_.swap)
 
 
   private val primitiveTypesSimpleNames = primitiveTypesToBoxed.keys.map(_.getName).toSet
@@ -141,11 +144,12 @@ object EspTypeUtils {
     }
   }
 
-  def signatureElementMatches(signatureType: Class[_], passedValueClass: Class[_]) : Boolean = {
-    val unboxedSignature = primitiveTypesToBoxed.getOrElse(signatureType, signatureType)
-    val unboxedPassedValueClass = primitiveTypesToBoxed.getOrElse(passedValueClass, passedValueClass)
+  private def tryToUnBox(clazz : Class[_]) = boxedToPrimitives.getOrElse(clazz, clazz)
 
-    unboxedSignature.isAssignableFrom(unboxedPassedValueClass)
+  //TODO: what is *really* needed here?? is it performant enough??
+  def signatureElementMatches(signatureType: Class[_], passedValueClass: Class[_]) : Boolean = {
+    ClassUtils.isAssignable(passedValueClass, signatureType, true) ||
+      ClassUtils.isAssignable(tryToUnBox(passedValueClass), tryToUnBox(signatureType), true)
   }
 
 }

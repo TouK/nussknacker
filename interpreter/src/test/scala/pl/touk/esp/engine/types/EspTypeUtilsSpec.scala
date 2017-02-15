@@ -9,6 +9,12 @@ class EspTypeUtilsSpec extends FlatSpec with Matchers {
     (java.lang.Boolean.TYPE, classOf[java.lang.Boolean], true),
     (java.lang.Long.TYPE, classOf[java.lang.Long], true),
     (java.lang.Integer.TYPE, classOf[java.lang.Integer], true),
+    (classOf[java.lang.Long], classOf[java.lang.Integer], true),
+    (classOf[java.lang.Long], java.lang.Integer.TYPE, true),
+    (java.lang.Long.TYPE, java.lang.Integer.TYPE, true),
+    (java.lang.Long.TYPE, classOf[java.lang.Integer], true),
+    (java.lang.Long.TYPE, classOf[java.lang.Integer], true),
+
     (java.lang.Character.TYPE, classOf[java.lang.Character], true),
     (classOf[java.lang.Number], classOf[java.lang.Integer], true),
     (java.lang.Integer.TYPE, classOf[java.lang.Long], false)

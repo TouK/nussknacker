@@ -70,6 +70,7 @@ val slf4jV = "1.7.21"
 val scalaLoggingV = "3.4.0"
 val ficusV = "1.2.6"
 val configV = "1.3.0"
+val commonsLangV = "3.3.2"
 
 val perfTestSampleName = "esp-perf-test-sample"
 
@@ -179,6 +180,7 @@ lazy val interpreter = (project in file("interpreter")).
     name := "esp-interpreter",
     libraryDependencies ++= {
       Seq(
+        "org.apache.commons" % "commons-lang3" % commonsLangV,
         "org.springframework" % "spring-expression" % springV,
         "com.github.alexarchambault" %% s"argonaut-shapeless_$argonautMajorV" % argonautShapelessV,
         "ch.qos.logback" % "logback-classic" % logbackV % "test",
