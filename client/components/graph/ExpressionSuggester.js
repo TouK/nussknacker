@@ -22,7 +22,7 @@ export default class ExpressionSuggester {
   }
 
   extractMatchingPartFromInput = (suggestion, inputValue, caretPosition) => {
-    const justTyped = this._justTypedProperty(this._focusedLastExpressionPart(inputValue, caretPosition))
+    const justTyped = this._justTypedProperty(this._focusedLastExpressionPartWithoutMethodParens(inputValue, caretPosition))
     const expr = new RegExp(`(.*?)${justTyped}(.*)`, "i")
     const suggestedStartAndEnd = suggestion.methodName.match(expr)
     const start = _.nth(suggestedStartAndEnd, 1)
@@ -34,7 +34,7 @@ export default class ExpressionSuggester {
   }
 
   suggestionsFor = (inputValue, caretPosition) => {
-    const lastExpressionPart = this._focusedLastExpressionPart(inputValue, caretPosition)
+    const lastExpressionPart = this._focusedLastExpressionPartWithoutMethodParens(inputValue, caretPosition)
     const properties = this._alreadyTypedProperties(lastExpressionPart)
     const focusedClazz = this._findRootClazz(properties)
     return this._getSuggestions(lastExpressionPart, focusedClazz)
@@ -86,12 +86,21 @@ export default class ExpressionSuggester {
       }}
   }
 
+  _focusedLastExpressionPartWithoutMethodParens = (expression, caretPosition) => {
+    return this._lastExpressionPartWithoutMethodParens(this._currentlyFocusedExpressionPart(expression, caretPosition))
+  }
+
   _focusedLastExpressionPart = (expression, caretPosition) => {
     return this._lastExpressionPart(this._currentlyFocusedExpressionPart(expression, caretPosition))
   }
 
   _currentlyFocusedExpressionPart = (value, caretPosition) => {
     return value.slice(0, caretPosition)
+  }
+
+  _lastExpressionPartWithoutMethodParens = (value) => {
+    const valueCleaned = this._removeMethodParensFromProperty(value)
+    return _.isEmpty(value) ? "" : "#" + _.last(_.split(valueCleaned, '#'))
   }
 
   _lastExpressionPart = (value) => {
@@ -114,13 +123,8 @@ export default class ExpressionSuggester {
     return _.join(properties, ".")
   }
 
-  humanReadableSuggestionType = (suggestion) => {
-    if (suggestion.refClazzName) {
-      const lastClazzNamePart = _.last(this._dotSeparatedToProperties(suggestion.refClazzName))
-      return _.upperFirst(lastClazzNamePart)
-    } else {
-      return ""
-    }
+  _removeMethodParensFromProperty = (property) => {
+    return property.replace(/\(.*\)/, "")
   }
 
 }

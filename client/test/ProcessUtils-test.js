@@ -76,3 +76,11 @@ const process = {
   ],
   "validationResult": { "invalidNodes": {}}
 }
+
+
+describe("process utils", () => {
+  it("should convert to readable type", () => {
+    expect(ProcessUtils.humanReadableType("java.lang.String")).toEqual("String")
+    expect(ProcessUtils.humanReadableType("int")).toEqual("Int")
+  })
+})

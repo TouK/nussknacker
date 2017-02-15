@@ -9,6 +9,7 @@ import ExpressionSuggest from "./ExpressionSuggest";
 import ModalRenderUtils from "./ModalRenderUtils";
 import TestResultUtils from "../../common/TestResultUtils";
 import NodeParametersMerger from "./NodeParametersMerger";
+import ProcessUtils from '../../common/ProcessUtils';
 
 //zastanowic sie czy this.state tutaj nie powinien byc przepychany przez reduxa,
 // bo obecnie ten stan moze byc przypadkowo resetowany kiedy parent component dostanie nowe propsy - bo tak mamy
@@ -26,6 +27,7 @@ export default class NodeDetailsContent extends React.Component {
       ...this.state,
       ...this.stateForSelectTestResults()
     }
+    this.nodeObjectDetails = ProcessUtils.findNodeObjectTypeDefinition(this.props.node, this.props.processDefinitionData.processDefinition)
   }
 
   componentDidUpdate(prevProps, prevState) {
@@ -236,7 +238,7 @@ export default class NodeDetailsContent extends React.Component {
       case 'input':
         return (
           <div className="node-row">
-            <div className="node-label">{fieldLabel}:</div>
+            {this.renderFieldLabel(fieldLabel)}
             <div className="node-value"><input type="text" className="node-input" value={fieldValue}
                                                onChange={(e) => handleChange(e.target.value)}
                                                readOnly={readOnly}/></div>
@@ -245,7 +247,7 @@ export default class NodeDetailsContent extends React.Component {
       case 'checkbox': {
         return (
           <div className="node-row">
-            <div className="node-label">{fieldLabel}:</div>
+            {this.renderFieldLabel(fieldLabel)}
             <div className="node-value"><input type="checkbox" checked={fieldValue}
                                                onChange={(e) => handleChange(fieldValue ? false : true)}
                                                disabled={readOnly ? 'disabled' : ''}/></div>
@@ -255,7 +257,7 @@ export default class NodeDetailsContent extends React.Component {
       case 'plain-textarea':
         return (
           <div className="node-row">
-            <div className="node-label">{fieldLabel}:</div>
+            {this.renderFieldLabel(fieldLabel)}
             <div className="node-value">
               <Textarea rows={1} cols={50} className="node-input" value={fieldValue}
                         onChange={(e) => handleChange(e.target.value)} readOnly={readOnly}/>
@@ -265,7 +267,7 @@ export default class NodeDetailsContent extends React.Component {
       case 'textarea':
         return this.wrapWithTestResult(fieldName, (
           <div className="node-row">
-            <div className="node-label">{fieldLabel}:</div>
+            {this.renderFieldLabel(fieldLabel)}
             <div className="node-value">
               <ExpressionSuggest inputProps={{
                 rows: 1, cols: 50, className: "node-input", value: fieldValue,
@@ -382,6 +384,14 @@ export default class NodeDetailsContent extends React.Component {
     } else {
       return null;
     }
+  }
+
+  renderFieldLabel = (label) => {
+    const parameter = (this.nodeObjectDetails.parameters || []).find((param) => param.name == label)
+    return (
+      <div className="node-label" title={label}>{label}:
+        {parameter ? <div className="labelFooter">{ProcessUtils.humanReadableType(parameter.typ.refClazzName)}</div> : null}
+    </div>)
   }
 
   mergedMockedResults = (mockedResults) => {

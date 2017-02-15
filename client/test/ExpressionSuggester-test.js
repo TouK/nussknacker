@@ -103,6 +103,19 @@ describe("expression suggester", () => {
     expect(suggestions).toEqual([])
   })
 
+  it("should suggest for invocations with method parameters #1", () => {
+    const suggestions = expressionSuggester.suggestionsFor("#input.foo + #input.barB.bazC('1').quax", "#input.foo + #input.barB.bazC('1').quax".length)
+    expect(suggestions).toEqual([
+      { methodName: 'quaxString', refClazzName: 'java.lang.String'}
+    ])
+  })
+
+  it("should suggest for invocations with method parameters #2", () => {
+    const suggestions = expressionSuggester.suggestionsFor("#input.foo + #input.barB.bazC('1', #input.foo, 2).quax", "#input.foo + #input.barB.bazC('1', #input.foo, 2).quax".length)
+    expect(suggestions).toEqual([
+      { methodName: 'quaxString', refClazzName: 'java.lang.String'}
+    ])
+  })
 })
 
 describe("extract matching part from input", () => {
@@ -136,10 +149,6 @@ describe("extract matching part from input", () => {
     })
   })
 
-  it("should make suggestion type readable", () => {
-    expect(expressionSuggester.humanReadableSuggestionType({refClazzName: "java.lang.String", methodName: "a"})).toEqual("String")
-    expect(expressionSuggester.humanReadableSuggestionType({refClazzName: "int", methodName: "a"})).toEqual("Int")
-  })
 })
 
 
@@ -162,5 +171,14 @@ describe("suggestion applied", () => {
     })
   })
 
+  it("should apply suggestion after method with parameters used", () => {
+
+    const fooMethod = { methodName: 'quaxString', refClazzName: 'java.lang.String'};
+    const suggestionApplied = expressionSuggester.applySuggestion(fooMethod, "#input.barB.bazC('1').quax", "#input.barB.bazC('1').quax".length)
+    expect(suggestionApplied).toEqual({
+      value: "#input.barB.bazC('1').quaxString",
+      caretPosition: "#input.barB.bazC('1').quaxString".length
+    })
+  })
 })
 
