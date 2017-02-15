@@ -160,7 +160,8 @@ export default {
             width: widthWithTestResults
           },
           'rect.nodeIconPlaceholder': {
-            fill: customAttrs[node.type].styles.fill
+            fill: customAttrs[node.type].styles.fill,
+            opacity: node.isDisabled ? 0.5 : 1
           },
           '.nodeIconItself': {
             'xlink:href': 'data:image/svg+xml;utf8,' + encodeURIComponent(icon)
