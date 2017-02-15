@@ -12,7 +12,7 @@ import pl.touk.esp.engine.api.deployment.test.{TestData, TestResults}
 import pl.touk.esp.engine.api.process.{ProcessConfigCreator, Sink}
 import pl.touk.esp.engine.api.test.InvocationCollectors.{NodeContext, ServiceInvocationCollector, SinkInvocationCollector}
 import pl.touk.esp.engine.api.test.{ResultsCollectingListener, ResultsCollectingListenerHolder}
-import pl.touk.esp.engine.definition.DefinitionExtractor.ObjectWithMethodDef
+import pl.touk.esp.engine.definition.DefinitionExtractor.{ObjectWithMethodDef, Parameter}
 import pl.touk.esp.engine.definition.ProcessDefinitionExtractor
 import pl.touk.esp.engine.flink.api.process.FlinkSourceFactory
 import pl.touk.esp.engine.flink.util.source.CollectionSource
@@ -81,12 +81,12 @@ class FlinkTestMain(config: Config, testData: TestData, process: EspProcess, cre
 
   private def prepareServiceWithEnabledInvocationCollector(runId: String, service: ObjectWithMethodDef): ObjectWithMethodDef = {
     new ObjectWithMethodDef(service.obj, service.methodDef, service.objectDefinition) {
-      override def invokeMethod(args: List[AnyRef]): AnyRef = {
-        val newArgs = args.map {
-          case collector: ServiceInvocationCollector => collector.enable(runId)
-          case other => other
+      override def invokeMethod(parameterCreator: String => Option[AnyRef], additional: Seq[AnyRef]): Any = {
+        val newAdditional = additional.map {
+          case c: ServiceInvocationCollector => c.enable(runId)
+          case a => a
         }
-        service.invokeMethod(newArgs)
+        service.invokeMethod(parameterCreator, newAdditional)
       }
     }
   }
@@ -118,6 +118,6 @@ class FlinkTestMain(config: Config, testData: TestData, process: EspProcess, cre
 private class TestDataInvokingObjectWithMethodDef(testFactory: AnyRef, original: ObjectWithMethodDef)
   extends ObjectWithMethodDef(testFactory, original.methodDef, original.objectDefinition) {
 
-  override def invokeMethod(args: List[AnyRef]) = testFactory
+  override def invokeMethod(paramFun: String => Option[AnyRef], additional: Seq[AnyRef]) = testFactory
 
 }

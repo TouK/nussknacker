@@ -22,10 +22,6 @@ object EspTypeUtils {
       methodNames(ScalaCaseClassStub.DumpCaseClass.getClass)).toSet
   }
 
-  private val primitiveTypesSimpleNames = Set(
-    "void", "boolean", "int", "long", "float", "double", "byte", "short", "char"
-  )
-
   private val baseClazzPackagePrefix = Set("java", "scala")
 
   private val blacklistedClazzPackagePrefix = Set(
@@ -34,6 +30,21 @@ object EspTypeUtils {
     "cats", "argonaut", "dispatch",
     "org.apache.flink.api.common.typeinfo.TypeInformation"
   )
+
+  private val primitiveTypesToBoxed : Map[Class[_], Class[_]] = Map(
+    Void.TYPE -> classOf[Void],
+    java.lang.Boolean.TYPE -> classOf[java.lang.Boolean],
+    java.lang.Integer.TYPE -> classOf[java.lang.Integer],
+    java.lang.Long.TYPE -> classOf[java.lang.Long],
+    java.lang.Float.TYPE -> classOf[java.lang.Float],
+    java.lang.Double.TYPE -> classOf[java.lang.Double],
+    java.lang.Byte.TYPE -> classOf[java.lang.Byte],
+    java.lang.Short.TYPE -> classOf[java.lang.Short],
+    java.lang.Character.TYPE -> classOf[java.lang.Character]
+  )
+
+
+  private val primitiveTypesSimpleNames = primitiveTypesToBoxed.keys.map(_.getName).toSet
 
   private def methodNames(clazz: Class[_]): List[String] = {
     clazz.getMethods.map(_.getName).toList
@@ -129,4 +140,12 @@ object EspTypeUtils {
       case t => None
     }
   }
+
+  def signatureElementMatches(signatureType: Class[_], passedValueClass: Class[_]) : Boolean = {
+    val unboxedSignature = primitiveTypesToBoxed.getOrElse(signatureType, signatureType)
+    val unboxedPassedValueClass = primitiveTypesToBoxed.getOrElse(passedValueClass, passedValueClass)
+
+    unboxedSignature.isAssignableFrom(unboxedPassedValueClass)
+  }
+
 }
