@@ -81,7 +81,7 @@ object DefinitionExtractor {
       validateParameters(paramsWithValues)
       val values = paramsWithValues.map(_._2)
       try {
-        methodDef.method.invoke(obj, values: _*)
+        methodDef.method.invoke(obj, values.toArray: _*)
       } catch {
         case ex: IllegalArgumentException =>
           logger.warn(s"Failed to invoke method: ${methodDef.method}, with params: $values", ex)
