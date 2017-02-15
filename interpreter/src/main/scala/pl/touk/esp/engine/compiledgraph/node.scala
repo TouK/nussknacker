@@ -24,7 +24,7 @@ object node {
   case class Enricher(id: String, service: ServiceRef, output: String, next: Next) extends Node
 
   case class Filter(id: String, expression: Expression, nextTrue: Next,
-                    nextFalse: Option[Next]) extends Node
+                    nextFalse: Option[Next], isDisabled: Boolean) extends Node
 
   case class Switch(id: String, expression: Expression, exprVal: String,
                     nexts: List[Case], defaultNext: Option[Next]) extends Node

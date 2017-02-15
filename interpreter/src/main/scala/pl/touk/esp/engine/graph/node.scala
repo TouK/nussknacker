@@ -40,9 +40,15 @@ object node {
     def additionalFields: Option[UserDefinedAdditionalNodeFields]
   }
 
+  trait Disableable {
+
+    def isDisabled: Option[Boolean]
+  }
+
   case class Source(id: String, ref: SourceRef, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends NodeData
 
-  case class Filter(id: String, expression: Expression, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends NodeData
+  case class Filter(id: String, expression: Expression, isDisabled: Option[Boolean] = None,
+                    additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends NodeData with Disableable
 
   case class Switch(id: String, expression: Expression, exprVal: String, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends NodeData
 
