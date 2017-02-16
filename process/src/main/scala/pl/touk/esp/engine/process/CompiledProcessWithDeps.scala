@@ -4,8 +4,8 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import org.apache.flink.api.common.functions.RuntimeContext
 import pl.touk.esp.engine.Interpreter
-import pl.touk.esp.engine.api.MetaData
-import pl.touk.esp.engine.api.exception.EspExceptionHandler
+import pl.touk.esp.engine.api.{MetaData, ProcessListener}
+import pl.touk.esp.engine.api.exception.{EspExceptionHandler, EspExceptionInfo}
 import pl.touk.esp.engine.compile.{PartSubGraphCompilationError, PartSubGraphCompiler, ValidationContext}
 import pl.touk.esp.engine.compiledgraph.CompiledProcessParts
 import pl.touk.esp.engine.compiledgraph.node.Node
@@ -18,6 +18,7 @@ import scala.concurrent.duration.FiniteDuration
 
 case class CompiledProcessWithDeps(compiledProcess: CompiledProcessParts,
                                    private val servicesLifecycle: ServicesLifecycle,
+                                   private val listeners: Seq[ProcessListener],
                                    subPartCompiler: PartSubGraphCompiler,
                                    interpreter: Interpreter,
                                    processTimeout: FiniteDuration) extends CustomNodeInvokerDeps {
@@ -43,7 +44,18 @@ case class CompiledProcessWithDeps(compiledProcess: CompiledProcessParts,
 
   def metaData: MetaData = compiledProcess.metaData
 
-  //FIXME: ladniej bez castow...
-  def exceptionHandler: FlinkEspExceptionHandler = compiledProcess.exceptionHandler.asInstanceOf[FlinkEspExceptionHandler]
+  def exceptionHandler: FlinkEspExceptionHandler = new ListeningExceptionHandler
+
+  private class ListeningExceptionHandler extends FlinkEspExceptionHandler {
+
+    //FIXME: ladniej bez castow...
+    override def restartStrategy = compiledProcess.exceptionHandler.asInstanceOf[FlinkEspExceptionHandler].restartStrategy
+
+    override def handle(exceptionInfo: EspExceptionInfo[_ <: Throwable]) = {
+      listeners.foreach(_.exceptionThrown(exceptionInfo))
+      compiledProcess.exceptionHandler.handle(exceptionInfo)
+    }
+  }
 
 }
+
