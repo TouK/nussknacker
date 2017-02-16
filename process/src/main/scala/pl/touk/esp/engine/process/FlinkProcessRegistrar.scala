@@ -10,11 +10,8 @@ import com.codahale.metrics.{Histogram, SlidingTimeWindowReservoir}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions._
-import org.apache.flink.api.common.typeinfo.{TypeHint, TypeInformation}
-import org.apache.flink.api.common.state.StateBackend
 import org.apache.flink.api.java.tuple
 import org.apache.flink.configuration.Configuration
-import org.apache.flink.contrib.streaming.state.RocksDBStateBackend
 import org.apache.flink.dropwizard.metrics.DropwizardHistogramWrapper
 import org.apache.flink.metrics.Gauge
 import org.apache.flink.runtime.state.AbstractStateBackend
@@ -152,11 +149,7 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessW
                 .map(_.output)
                 .addSink(sink.toFlinkFunction)
             case Some(collectingSink) =>
-              startAfterSinkEvaluated
-                .map(ir => (ir.output, NodeContext(contextId = ir.finalContext.id, nodeId = part.node.id, ref = part.node.data.ref.typ)))
-                .addSink(new SinkFunction[(Any, NodeContext)] {
-                  override def invoke(value: (Any, NodeContext)): Unit = collectingSink.collect(value._1, value._2, sink)
-                })
+              startAfterSinkEvaluated.addSink(new CollectingSinkFunction(compiledProcessWithDeps, collectingSink, part))
           }
           withSinkAdded.name(s"${process.metaData.id}-${part.id}-sink")
         case part:SinkPart =>
@@ -225,11 +218,13 @@ object FlinkProcessRegistrar {
       val processCompiler = compiler(subCompiler)
       val compiledProcess = validateOrFailProcessCompilation(processCompiler.compile(process))
       val timeout = config.as[FiniteDuration]("timeout")
+      val listeners =  creator.listeners(config) ++ additionalListeners
       CompiledProcessWithDeps(
         compiledProcess,
         new ServicesLifecycle(servicesDefs.values.map(_.obj.asInstanceOf[Service]).toSeq),
+        listeners,
         subCompiler,
-        Interpreter(servicesDefs, timeout, creator.listeners(config) ++ additionalListeners),
+        Interpreter(servicesDefs, timeout, listeners),
         timeout
       )
     }
@@ -291,14 +286,30 @@ object FlinkProcessRegistrar {
     }
 
     override def flatMap(input: InterpretationResult, collector: Collector[InterpretationResult]): Unit = {
-      val result =
-        interpreter.interpretSync(compiledNode, InterpreterMode.Traverse, metaData, input.finalContext, processTimeout, exceptionHandler)
-      result.foreach(collector.collect)
+      compiledProcessWithDeps.exceptionHandler.handling(Some(sink.id), input.finalContext) {
+        val result =
+          interpreter.interpretSync(compiledNode, InterpreterMode.Traverse, metaData, input.finalContext, processTimeout, exceptionHandler)
+        result.foreach(collector.collect)
+      }
     }
 
     override def close(): Unit = {
       super.close()
       compiledProcessWithDeps.close()
+    }
+  }
+
+  class CollectingSinkFunction(compiledProcessWithDepsProvider: () => CompiledProcessWithDeps,
+                               collectingSink: SinkInvocationCollector, sink: SinkPart) extends SinkFunction[InterpretationResult] {
+
+    private lazy val compiledProcessWithDeps = compiledProcessWithDepsProvider()
+
+    override def invoke(value: InterpretationResult) = {
+      compiledProcessWithDeps.exceptionHandler.handling(Some(sink.id), value.finalContext) {
+        collectingSink.collect(value.output, NodeContext(contextId = value.finalContext.id,
+          nodeId = sink.id, ref = sink.node.data.ref.typ), sink.obj)
+
+      }
     }
   }
 

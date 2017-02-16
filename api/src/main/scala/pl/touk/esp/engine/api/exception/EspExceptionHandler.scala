@@ -2,9 +2,19 @@ package pl.touk.esp.engine.api.exception
 
 import pl.touk.esp.engine.api.{Context, MetaData}
 
+import scala.util.control.NonFatal
+
 trait EspExceptionHandler {
 
   def handle(exceptionInfo: EspExceptionInfo[_ <: Throwable]): Unit
+
+  def handling[T](nodeId: Option[String], context: Context)(action : => T) : Option[T] =
+    try {
+      Some(action)
+    } catch {
+      case NonFatal(e) => handle(EspExceptionInfo(nodeId, e, context))
+        None
+    }
 
 }
 

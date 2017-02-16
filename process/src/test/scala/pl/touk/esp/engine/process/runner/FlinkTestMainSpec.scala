@@ -10,7 +10,7 @@ import pl.touk.esp.engine.api.Context
 import pl.touk.esp.engine.api.deployment.test.{ExpressionInvocationResult, MockedResult, NodeResult, TestData}
 import pl.touk.esp.engine.build.EspProcessBuilder
 import pl.touk.esp.engine.marshall.ProcessMarshaller
-import pl.touk.esp.engine.process.ProcessTestHelpers.{MonitorEmptySink, SimpleJsonRecord, SimpleRecord, SimpleRecordWithPreviousValue}
+import pl.touk.esp.engine.process.ProcessTestHelpers._
 import pl.touk.esp.engine.spel
 
 import scala.concurrent.duration._
@@ -222,6 +222,28 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside with BeforeAn
         MockedResult(Context("proc1-id-0-1",Map.empty), "monitor", "SimpleJsonRecord(2,22)"),
         MockedResult(Context("proc1-id-0-2",Map.empty), "monitor", "SimpleJsonRecord(3,33)")
       )
+  }
+
+  it should "give meaningful error messages for sink errors" in {
+    val process =
+      EspProcessBuilder
+        .id("proc1")
+        .exceptionHandler()
+        .source("id", "input")
+        .sink("out", "#input", "sinkForInts")
+
+    val run = Future {
+      FlinkTestMain.run(ProcessMarshaller.toJson(process, PrettyParams.spaces2),
+        ConfigFactory.load(), TestData("2|2|2|3|4|5|6"), List())
+    }
+
+    val results = Await.result(run, 5 seconds)
+
+    results.exceptions should have length 1
+    results.exceptions.head.nodeId shouldBe Some("out")
+    results.exceptions.head.throwable.getMessage should include ("For input string: ")
+
+    SinkForInts.invocations should have length 0
   }
 
   def nodeResult(count: Int, vars: (String, Any)*) = NodeResult(Context(s"proc1-id-0-$count", Map(vars: _*)))

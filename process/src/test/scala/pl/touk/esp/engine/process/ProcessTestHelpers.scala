@@ -62,7 +62,8 @@ object ProcessTestHelpers {
       ))
 
       override def sinkFactories(config: Config) = Map(
-        "monitor" -> WithCategories(SinkFactory.noParam(MonitorEmptySink))
+        "monitor" -> WithCategories(SinkFactory.noParam(MonitorEmptySink)),
+        "sinkForInts" -> WithCategories(SinkFactory.noParam(SinkForInts))
       )
 
       override def customStreamTransformers(config: Config) = Map("stateCustom" -> WithCategories(StateCustomNode))
@@ -152,6 +153,20 @@ object ProcessTestHelpers {
         invocationsCount.getAndIncrement()
       }
     }
+  }
+
+  case object SinkForInts extends FlinkSink with Serializable {
+
+    var invocations = List[Int]()
+
+    override def toFlinkFunction = new SinkFunction[Any] {
+      override def invoke(value: Any) = {
+        invocations = value.toString.toInt :: invocations
+      }
+    }
+
+    //stupid but have to make an error :|
+    override def testDataOutput : Option[Any => String] = Some(_.toString.toInt.toString)
   }
 
   object EmptyService extends Service {

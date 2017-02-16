@@ -34,12 +34,10 @@ class Interpreter private(services: Map[String, ServiceInvoker],
     } catch {
       case ex@NodeIdExceptionWrapper(nodeId, exception) =>
         val exInfo = EspExceptionInfo(Some(nodeId), exception, ctx)
-        listeners.foreach(_.exceptionThrown(exInfo))
         exceptionHandler.handle(exInfo)
         None
       case NonFatal(ex) =>
         val exInfo = EspExceptionInfo(None, ex, ctx)
-        listeners.foreach(_.exceptionThrown(exInfo))
         exceptionHandler.handle(exInfo)
         None
     }

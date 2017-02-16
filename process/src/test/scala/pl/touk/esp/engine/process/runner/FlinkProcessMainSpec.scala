@@ -19,7 +19,7 @@ import pl.touk.esp.engine.flink.api.process.FlinkSourceFactory
 import pl.touk.esp.engine.flink.util.exception.{VerboselyLoggingExceptionHandler, VerboselyLoggingRestartingExceptionHandler}
 import pl.touk.esp.engine.flink.util.source.CollectionSource
 import pl.touk.esp.engine.marshall.ProcessMarshaller
-import pl.touk.esp.engine.process.ProcessTestHelpers.{MonitorEmptySink, SimpleJsonRecord, SimpleRecord, StateCustomNode}
+import pl.touk.esp.engine.process.ProcessTestHelpers._
 import pl.touk.esp.engine.spel
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -85,7 +85,8 @@ class SimpleProcessConfigCreator extends ProcessConfigCreator {
   )
 
   override def sinkFactories(config: Config) = Map(
-    "monitor" -> WithCategories(new SinkFactory { def create(): Sink = MonitorEmptySink}, "c2")
+    "monitor" -> WithCategories(new SinkFactory { def create(): Sink = MonitorEmptySink}, "c2"),
+    "sinkForInts" -> WithCategories(SinkFactory.noParam(SinkForInts))
   )
 
   override def listeners(config: Config) = List()
