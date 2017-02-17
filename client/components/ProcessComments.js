@@ -7,6 +7,7 @@ import _ from 'lodash'
 import ActionsUtils from "../actions/ActionsUtils";
 import DateUtils from '../common/DateUtils'
 import ProcessUtils from '../common/ProcessUtils'
+import DialogMessages from '../common/DialogMessages'
 
 class ProcessComments extends React.Component {
 
@@ -26,6 +27,15 @@ class ProcessComments extends React.Component {
     })
   }
 
+  deleteComment = (comment) => {
+    this.props.actions.toggleConfirmDialog(true, DialogMessages.deleteComment(), () => {
+      this.setState({ pendingRequest: true})
+      this.props.actions.deleteComment(this.props.processId, comment.id).then((resp) => {
+        this.setState(this.initState)
+      })
+    })
+  }
+
   render() {
     return (
       <div className="process-comments">
@@ -36,6 +46,9 @@ class ProcessComments extends React.Component {
                 <div className="header">
                   <span className="label label-info">{comment.user}</span>
                   <span className="date">{DateUtils.format(comment.createDate)}</span>
+                  {comment.user == this.props.loggedUser.id ?
+                    <span className="remove glyphicon glyphicon-remove" onClick={this.deleteComment.bind(this, comment)}/>
+                    : null}
                   <p>{ProcessUtils.processDisplayName(comment.processId, comment.processVersionId)}</p>
                 </div>
                 <p>{comment.content}</p>
@@ -60,7 +73,8 @@ function mapState(state) {
   return {
     comments: _.get(state.processActivity, 'comments', []),
     processId: _.get(state.graphReducer, 'fetchedProcessDetails.id'),
-    processVersionId: _.get(state.graphReducer, 'fetchedProcessDetails.processVersionId')
+    processVersionId: _.get(state.graphReducer, 'fetchedProcessDetails.processVersionId'),
+    loggedUser: state.settings.loggedUser || {}
   }
 }
 

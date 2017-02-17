@@ -10,6 +10,10 @@ class DialogMessages {
     return `Are you sure you want to stop ${processId}?`
   }
 
+  deleteComment = () => {
+    return 'Are you sure you want to delete comment?'
+  }
+
 }
 
 export default new DialogMessages()

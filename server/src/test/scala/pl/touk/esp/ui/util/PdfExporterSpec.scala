@@ -32,19 +32,20 @@ class PdfExporterSpec extends FlatSpec {
       ProcessEntity.ProcessType.Graph, "Category 22", LocalDateTime.now(), List(), Set(), Some(displayable),
       List(ProcessHistoryEntry("My process",  "My process", 11, LocalDateTime.now(), "Zenon Wojciech", List()) )
     )
-    val activities = ProcessActivity(List(Comment("aa", 11, "Jakiś taki dziwny ten proces??", "Wacław Wójcik", LocalDateTime.now()),
-      Comment("aa", 11, "Jakiś taki dziwny ten proces??", "Wacław Wójcik", LocalDateTime.now()),
-      Comment("aa", 11, "Jakiś taki dziwny ten proces??", "Wacław Wójcik", LocalDateTime.now()),
-      Comment("aa", 11, "Jakiś taki dziwny ten proces??", "Wacław Wójcik", LocalDateTime.now()),
-      Comment("aa", 11, "Jakiś taki dziwny ten proces??", "Wacław Wójcik", LocalDateTime.now()),
-      Comment("aa", 11, "Jakiś taki dziwny ten proces??", "Wacław Wójcik", LocalDateTime.now()),
-      Comment("aa", 11, "Jakiś taki dziwny ten proces??", "Wacław Wójcik", LocalDateTime.now()),
-      Comment("aa", 11, "Jakiś taki dziwny ten proces??", "Wacław Wójcik", LocalDateTime.now()),
-      Comment("aa", 11, "Jakiś taki dziwny ten proces??", "Wacław Wójcik", LocalDateTime.now()),
-      Comment("aa", 11, "Jakiś taki dziwny ten proces??", "Wacław Wójcik", LocalDateTime.now()),
-      Comment("aa", 11, "Jakiś taki dziwny ten proces??", "Wacław Wójcik", LocalDateTime.now()),
-      Comment("aa", 11, "Jakiś taki dziwny ten proces??", "Wacław Wójcik", LocalDateTime.now()),
-      Comment("aa", 11, "Jakiś taki dziwny ten proces??", "Wacław Wójcik", LocalDateTime.now())
+    val activities = ProcessActivity(List(
+      Comment(1L, "aa", 11, "Jakiś taki dziwny ten proces??", "Wacław Wójcik", LocalDateTime.now()),
+      Comment(1L, "aa", 11, "Jakiś taki dziwny ten proces??", "Wacław Wójcik", LocalDateTime.now()),
+      Comment(1L, "aa", 11, "Jakiś taki dziwny ten proces??", "Wacław Wójcik", LocalDateTime.now()),
+      Comment(1L, "aa", 11, "Jakiś taki dziwny ten proces??", "Wacław Wójcik", LocalDateTime.now()),
+      Comment(1L, "aa", 11, "Jakiś taki dziwny ten proces??", "Wacław Wójcik", LocalDateTime.now()),
+      Comment(1L, "aa", 11, "Jakiś taki dziwny ten proces??", "Wacław Wójcik", LocalDateTime.now()),
+      Comment(1L, "aa", 11, "Jakiś taki dziwny ten proces??", "Wacław Wójcik", LocalDateTime.now()),
+      Comment(1L, "aa", 11, "Jakiś taki dziwny ten proces??", "Wacław Wójcik", LocalDateTime.now()),
+      Comment(1L, "aa", 11, "Jakiś taki dziwny ten proces??", "Wacław Wójcik", LocalDateTime.now()),
+      Comment(1L, "aa", 11, "Jakiś taki dziwny ten proces??", "Wacław Wójcik", LocalDateTime.now()),
+      Comment(1L, "aa", 11, "Jakiś taki dziwny ten proces??", "Wacław Wójcik", LocalDateTime.now()),
+      Comment(1L, "aa", 11, "Jakiś taki dziwny ten proces??", "Wacław Wójcik", LocalDateTime.now()),
+      Comment(1L, "aa", 11, "Jakiś taki dziwny ten proces??", "Wacław Wójcik", LocalDateTime.now())
     ), List())
 
     val svg: String = Source.fromInputStream(getClass.getResourceAsStream("/svgTest.svg")).getLines().mkString("")

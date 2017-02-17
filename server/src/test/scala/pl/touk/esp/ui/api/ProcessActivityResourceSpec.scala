@@ -23,7 +23,7 @@ class ProcessActivityResourceSpec extends FlatSpec with ScalatestRouteTest with 
 
   val processActivityRouteWithAllPermission = withAllPermissions(processActivityRoute)
 
-  it should "add comment to process activity" in {
+  it should "add and remove comment in process activity" in {
     val processToSave = ProcessTestData.sampleDisplayableProcess
     val commentContent = "test message"
     saveProcess(processToSave) { status shouldEqual StatusCodes.OK}
@@ -31,7 +31,16 @@ class ProcessActivityResourceSpec extends FlatSpec with ScalatestRouteTest with 
       status shouldEqual StatusCodes.OK
       Get(s"/processes/${processToSave.id}/activity") ~> processActivityRouteWithAllPermission ~> check {
         val processActivity = responseAs[String].decodeOption[ProcessActivity].get
+        val firstComment = processActivity.comments.head
+        processActivity.comments should have size 1
         processActivity.comments.head.content shouldBe commentContent
+        Delete(s"/processes/${processToSave.id}/activity/comments/${firstComment.id}") ~> processActivityRouteWithAllPermission ~> check {
+          status shouldEqual StatusCodes.OK
+          Get(s"/processes/${processToSave.id}/activity") ~> processActivityRouteWithAllPermission ~> check {
+            val newProcessActivity = responseAs[String].decodeOption[ProcessActivity].get
+            newProcessActivity.comments shouldBe empty
+          }
+        }
       }
     }
   }

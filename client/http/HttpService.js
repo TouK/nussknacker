@@ -118,6 +118,14 @@ export default {
       .catch((error) => this.addError(`Failed to add comment`, error));
   },
 
+  deleteComment(processId, commentId) {
+    return ajaxCall({
+      url: `${appConfig.API_URL}/processes/${processId}/activity/comments/${commentId}`,
+      type: 'DELETE'
+    }).then(() => this.addInfo(`Comment deleted`))
+      .catch((error) => this.addError(`Failed to delete comment`, error));
+  },
+
   addAttachment(processId, versionId, file) {
     var formData = new FormData();
     formData.append("attachment", file)
