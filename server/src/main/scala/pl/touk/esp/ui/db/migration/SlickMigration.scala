@@ -48,7 +48,7 @@ trait ProcessJsonMigration extends SlickMigration {
   private def prepareAndUpdateJson(json: String) : String = {
     val jsonProcess = Parse.parse(json).right.get
     val updated = updateProcessJson(jsonProcess)
-    updated.getOrElse(jsonProcess).spaces2
+    updated.getOrElse(jsonProcess).nospaces
   }
 
   def updateProcessJson(json: Json) : Option[Json]
