@@ -12,20 +12,25 @@ import argonaut.PrettyParams
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.esp.engine.api.deployment.test.{TestData, TestResults}
 import pl.touk.esp.engine.definition.DefinitionExtractor.PlainClazzDefinition
+import pl.touk.esp.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.esp.ui.codec.UiCodecs
 import pl.touk.esp.ui.process.deployment.{Cancel, Deploy, Test}
+import pl.touk.esp.ui.process.displayedgraph.DisplayableProcess
+import pl.touk.esp.ui.process.marshall.{ProcessConverter, UiProcessMarshaller}
 import pl.touk.esp.ui.process.repository.ProcessRepository
 import pl.touk.esp.ui.security.{LoggedUser, Permission}
 import pl.touk.esp.ui.util.MultipartUtils
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 
 
 class ManagementResources(typesInformation: List[PlainClazzDefinition],
                           val managementActor: ActorRef)(implicit ec: ExecutionContext, mat: Materializer) extends Directives with LazyLogging {
 
+  import pl.touk.esp.ui.codec.UiCodecs.displayableProcessCodec
   val codecs = UiCodecs.ContextCodecs(typesInformation)
+  val processMarshaller = UiProcessMarshaller()
 
   import codecs._
 
@@ -54,18 +59,32 @@ class ManagementResources(typesInformation: List[PlainClazzDefinition],
         path("processManagement" / "test" / Segment) { processId =>
           post {
             fileUpload("testData") { case (metadata, byteSource) =>
-              complete {
-                MultipartUtils.readFile(byteSource).map[ToResponseMarshallable] { testData =>
-                  (managementActor ? Test(processId, TestData(testData), user)).mapTo[TestResults]
-                    .map { results =>
-                      HttpResponse(status = StatusCodes.OK, entity =
-                        HttpEntity(ContentTypes.`application/json`, results.asJson.pretty(PrettyParams.spaces2)))
-                    }.recover(EspErrorToHttp.errorToHttp)
+              fileUpload("processJson") { case (processJsonMetadata, processJsonByteSource) =>
+                complete {
+                  MultipartUtils.readFile(byteSource).map[ToResponseMarshallable] { testData =>
+                    MultipartUtils.readFile(processJsonByteSource).map[ToResponseMarshallable] { displayableProcessJson =>
+                      performTest(processId, testData, displayableProcessJson).map { results =>
+                        HttpResponse(status = StatusCodes.OK, entity =
+                          HttpEntity(ContentTypes.`application/json`, results.asJson.pretty(PrettyParams.spaces2)))
+                      }.recover(EspErrorToHttp.errorToHttp)
+                    }
+                  }
                 }
               }
             }
           }
         }
+    }
+  }
+
+  private def performTest(processId: String, testData: String, displayableProcessJson: String)(implicit user: LoggedUser): Future[TestResults] = {
+    displayableProcessJson.decodeEither[DisplayableProcess] match {
+      case Right(process) =>
+        val canonical = ProcessConverter.fromDisplayable(process)
+        val canonicalJson = processMarshaller.toJson(canonical, PrettyParams.nospace)
+        (managementActor ? Test(processId, canonicalJson, TestData(testData), user)).mapTo[TestResults]
+      case Left(error) =>
+        Future.failed(UnmarshallError(error))
     }
   }
 

@@ -68,7 +68,7 @@ class UserRightPanel extends Component {
           panelName: "Test",
           buttons: [
             {name: "from file", onClick: this.testProcess, icon: InlinedSvgs.buttonFromFile, dropzone: true,
-              disabled: !this.props.processIsLatestVersion || !this.props.nothingToSave || !this.props.testCapabilities.canBeTested},
+              disabled: !this.props.testCapabilities.canBeTested},
             {name: "hide", onClick: this.hideTestResults, icon: InlinedSvgs.buttonHide, disabled: !this.props.isTesting},
             {name: "generate", onClick: this.generateData, icon: InlinedSvgs.buttonGenerate,
               disabled: !this.props.processIsLatestVersion || !this.props.nothingToSave || !this.props.testCapabilities.canGenerateTestData},
@@ -189,7 +189,7 @@ class UserRightPanel extends Component {
 
   testProcess = (files) => {
     files.forEach((file)=>
-      this.props.actions.testProcessFromFile(this.processId(), file)
+      this.props.actions.testProcessFromFile(this.processId(), file, this.props.processToDisplay)
     );
   }
 

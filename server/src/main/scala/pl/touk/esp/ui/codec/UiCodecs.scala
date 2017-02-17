@@ -72,7 +72,7 @@ object UiCodecs {
 
   implicit def edgeEncode = EncodeJson.of[displayablenode.Edge]
 
-  implicit def codec: CodecJson[DisplayableProcess] = CodecJson.derive[DisplayableProcess]
+  implicit def displayableProcessCodec: CodecJson[DisplayableProcess] = CodecJson.derive[DisplayableProcess]
 
   implicit def commentCodec = CodecJson.derived[Comment]
 

@@ -10,8 +10,11 @@ import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.esp.engine.api.deployment.CustomProcess
+import pl.touk.esp.engine.canonize.ProcessCanonizer
 import pl.touk.esp.ui.api.helpers.{EspItTest, TestFactory}
 import pl.touk.esp.ui.api.helpers.TestFactory._
+import pl.touk.esp.ui.codec.UiCodecs
+import pl.touk.esp.ui.process.marshall.ProcessConverter
 import pl.touk.esp.ui.process.repository.ProcessRepository
 import pl.touk.esp.ui.process.repository.ProcessRepository.ProcessDetails
 import pl.touk.esp.ui.sample.SampleProcess
@@ -161,8 +164,9 @@ class ManagementResourcesSpec extends FlatSpec with ScalatestRouteTest
 
   it should "return test results" in {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-
-    val multiPart = MultipartUtils.prepareMultiPart("ala\nbela", "testData")
+    val displayableProcess = ProcessConverter.toDisplayable(ProcessCanonizer.canonize(SampleProcess.process))
+    val displayableProcessJson = UiCodecs.displayableProcessCodec.encode(displayableProcess).nospaces
+    val multiPart = MultipartUtils.prepareMultiParts("testData" -> "ala\nbela", "processJson" -> displayableProcessJson)()
     Post(s"/processManagement/test/${SampleProcess.process.id}", multiPart) ~> withPermissions(deployRoute, Permission.Deploy) ~> check {
       status shouldEqual StatusCodes.OK
       val results = Parse.parse(responseAs[String]).right.get

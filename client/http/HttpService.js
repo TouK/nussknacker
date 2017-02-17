@@ -222,9 +222,10 @@ export default {
     });
   },
 
-  testProcess(processId, file, callback, errorCallback) {
+  testProcess(processId, file, processJson, callback, errorCallback) {
     var formData = new FormData();
     formData.append("testData", file)
+    formData.append("processJson", new Blob([JSON.stringify(processJson)], {type : 'application/json'}))
 
     return ajaxCallWithoutContentType({
       url: appConfig.API_URL + '/processManagement/test/' + processId,

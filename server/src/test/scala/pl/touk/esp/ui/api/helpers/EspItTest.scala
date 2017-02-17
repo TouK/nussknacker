@@ -26,7 +26,7 @@ import scala.concurrent.duration.Duration
 trait EspItTest extends LazyLogging { self: ScalatestRouteTest with Suite with BeforeAndAfterEach with Matchers =>
 
   import argonaut.ArgonautShapeless._
-  implicit val decoder = UiCodecs.codec
+  implicit val decoder = UiCodecs.displayableProcessCodec
   implicit val processTypeCodec = ProcessTypeCodec.codec
   implicit val localDateTimeEncode = EncodeJson.of[String].contramap[LocalDateTime](_.toString)
   implicit val localDateTimeDecode = DecodeJson.of[String].map[LocalDateTime](s => LocalDateTime.parse(s))

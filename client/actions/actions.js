@@ -223,12 +223,12 @@ export function toggleConfirmDialog(isOpen, text, action) {
   }
 }
 
-export function testProcessFromFile(id, testDataFile) {
+export function testProcessFromFile(id, testDataFile, processJson) {
   return (dispatch) => {
     dispatch({
       type: "PROCESS_LOADING"
     })
-    HttpService.testProcess(id, testDataFile, testResults => dispatch(displayTestResults(testResults)),
+    HttpService.testProcess(id, testDataFile, processJson, testResults => dispatch(displayTestResults(testResults)),
       error => dispatch({
         type: "LOADING_FAILED"
       }));
