@@ -143,7 +143,6 @@ export default {
   exportProcessToPdf(processId, versionId, data) {
     fetch(`${appConfig.API_URL}/processes/exportToPdf/${processId}/${versionId}`,
       {
-          mode: 'cors-with-forced-prefligh',
           method: 'POST',
           body: data,
           credentials: 'include'
@@ -161,7 +160,7 @@ export default {
     }).catch(error => {this.addError(`Fatal validation error, cannot save`, error, true); return Promise.reject(error)})
   },
 
-  getTestCapabilities: (process) => {
+  getTestCapabilities(process) {
     return ajaxCall({
       url: appConfig.API_URL + '/testInfo/capabilities',
       type: 'POST',
@@ -169,10 +168,9 @@ export default {
     });
   },
 
-  generateTestData: (processId, processJson) => {
-    fetch(`${appConfig.API_URL}/testInfo/generate`,
+  generateTestData(processId, testSampleSize, processJson) {
+    return fetch(`${appConfig.API_URL}/testInfo/generate/${testSampleSize}`,
       {
-          mode: 'cors-with-forced-prefligh',
           method: 'POST',
           body: JSON.stringify(processJson),
           credentials: 'include',

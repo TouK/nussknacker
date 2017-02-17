@@ -71,6 +71,20 @@ sidenavMixin()
   background-color: panelBkgColor
   border: none !important
 
+  .properties
+    margin-top 5px
+    label
+      display inline-block
+      font-weight 500
+      margin-right 5px
+    input
+      display inline-block
+      border none
+      background-color modalInputBkgColor
+    input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button
+      -webkit-appearance: none;
+      margin: 0;
+
 .panel
   margin-bottom: 1px !important
   box-shadow: none !important

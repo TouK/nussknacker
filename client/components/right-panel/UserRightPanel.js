@@ -26,6 +26,14 @@ class UserRightPanel extends Component {
 
   }
 
+  constructor(props) {
+    super(props);
+    this.state = {
+      testSampleSize: 10
+    };
+  }
+
+
   renderClassName = () => {
     return this.props.isOpened ? 'rightSidenav is-opened' : 'rightSidenav'
   }
@@ -66,6 +74,12 @@ class UserRightPanel extends Component {
         },
         {
           panelName: "Test",
+          properties: (
+            <div className="properties">
+              <label>Test sample size: </label>
+              <input type="number" value={this.state.testSampleSize} onChange={(e) => {this.setState({testSampleSize: e.target.value})}}/>
+            </div>
+          ),
           buttons: [
             {name: "from file", onClick: this.testProcess, icon: InlinedSvgs.buttonFromFile, dropzone: true,
               disabled: !this.props.testCapabilities.canBeTested},
@@ -90,6 +104,7 @@ class UserRightPanel extends Component {
           {config.map ((panel, panelIdx) => {
             return (
               <Panel key={panelIdx} collapsible defaultExpanded header={panel.panelName}>
+                {panel.properties ? panel.properties : null }
                 {panel.buttons.map((panelButton, idx) => this.renderPanelButton(panelButton, idx))}
               </Panel>
             )}
@@ -177,7 +192,7 @@ class UserRightPanel extends Component {
   }
 
   generateData = () => {
-    HttpService.generateTestData(this.props.fetchedProcessDetails.id, this.props.processToDisplay)
+    HttpService.generateTestData(this.props.fetchedProcessDetails.id, this.state.testSampleSize, this.props.processToDisplay)
   }
 
 
