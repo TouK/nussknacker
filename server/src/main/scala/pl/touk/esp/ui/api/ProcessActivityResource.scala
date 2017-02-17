@@ -43,6 +43,12 @@ class ProcessActivityResource(processActivityRepository: ProcessActivityReposito
           }
         }
       }
+    } ~ path("processes" / Segment / "activity" / "comments" / LongNumber) { (processId, commentId) =>
+      delete {
+        complete {
+          processActivityRepository.deleteComment(commentId)
+        }
+      }
     } ~ path("processes" / Segment / LongNumber / "activity" / "attachments") { (processId, versionId) =>
       post {
         fileUpload("attachment") { case (metadata, byteSource) =>

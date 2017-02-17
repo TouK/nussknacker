@@ -88,9 +88,9 @@ object SampleData {
     val someDate = LocalDateTime.of(2016, 10, 12, 14, 15, 42)
     val process = SampleProcess.process
     Seq(
-      CommentEntityData(process.id, 1L, "Test message", "TouK", Timestamp.valueOf(someDate.minusHours(1))),
-      CommentEntityData(process.id, 1L, "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec placerat, nunc sed finibus hendrerit, lorem nulla tristique sapien, at porta sem quam et orci. Donec venenatis sagittis ligula, a ultrices justo porta at. Nam accumsan ex quis mattis pulvinar. Maecenas in egestas nulla, ac interdum diam. Nam purus risus, vehicula id dolor a, volutpat ullamcorper nisi. Nulla venenatis malesuada ante eget porta. Mauris non luctus metus, porta laoreet orci. Quisque luctus euismod dolor, at mollis tortor elementum consectetur.", "TouK", Timestamp.valueOf(someDate)),
-      CommentEntityData(process.id, 1L, "Another test message", "TouK", Timestamp.valueOf(someDate.minusHours(2)))
+      CommentEntityData(-1L, process.id, 1L, "Test message", "TouK", Timestamp.valueOf(someDate.minusHours(1))),
+      CommentEntityData(-2L, process.id, 1L, "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec placerat, nunc sed finibus hendrerit, lorem nulla tristique sapien, at porta sem quam et orci. Donec venenatis sagittis ligula, a ultrices justo porta at. Nam accumsan ex quis mattis pulvinar. Maecenas in egestas nulla, ac interdum diam. Nam purus risus, vehicula id dolor a, volutpat ullamcorper nisi. Nulla venenatis malesuada ante eget porta. Mauris non luctus metus, porta laoreet orci. Quisque luctus euismod dolor, at mollis tortor elementum consectetur.", "TouK", Timestamp.valueOf(someDate)),
+      CommentEntityData(-3L, process.id, 1L, "Another test message", "TouK", Timestamp.valueOf(someDate.minusHours(2)))
     )
   }
 

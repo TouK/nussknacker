@@ -149,7 +149,13 @@ processActivityList()
   margin-bottom 10px
   .process-comments-list
     processActivityList()
-
+    .header
+      width 100%
+      .remove
+        float right
+        &:hover
+          cursor pointer
+          opacity 0.5
   .add-comment
     font-size 12px
     textarea

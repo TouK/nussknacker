@@ -27,6 +27,14 @@ export function addComment(processId, processVersionId, comment) {
   }
 }
 
+export function deleteComment(processId, commentId) {
+  return (dispatch) => {
+    return HttpService.deleteComment(processId, commentId).then(() => {
+      return dispatch(displayProcessActivity(processId))
+    })
+  }
+}
+
 export function addAttachment(processId, processVersionId, comment) {
   return (dispatch) => {
     return HttpService.addAttachment(processId, processVersionId, comment).then(() => {

@@ -8,7 +8,13 @@ import slick.sql.SqlProfile.ColumnOption.NotNull
 
 object CommentEntity {
 
+  val nextIdAction: DBIO[Long] = {
+    sql"""select "process_comments_id_sequence".nextval from dual""".as[Long].head
+  }
+
   class CommentEntity(tag: Tag) extends Table[CommentEntityData](tag, "process_comments") {
+
+    def id = column[Long]("id", O.PrimaryKey)
 
     def processId = column[String]("process_id", NotNull)
 
@@ -20,11 +26,11 @@ object CommentEntity {
 
     def user = column[String]("user", NotNull)
 
-    def * = (processId, processVersionId, content, user, createDate) <> (CommentEntityData.tupled, CommentEntityData.unapply)
+    def * = (id, processId, processVersionId, content, user, createDate) <> (CommentEntityData.tupled, CommentEntityData.unapply)
 
   }
 
-  case class CommentEntityData(processId: String, processVersionId: Long, content: String, user: String, createDate: Timestamp) {
+  case class CommentEntityData(id: Long, processId: String, processVersionId: Long, content: String, user: String, createDate: Timestamp) {
     val createDateTime = DateUtils.toLocalDateTime(createDate)
   }
 
