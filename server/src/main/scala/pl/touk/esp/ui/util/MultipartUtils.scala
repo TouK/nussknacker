@@ -19,7 +19,12 @@ object MultipartUtils {
     Multipart.FormData(Multipart.FormData.BodyPart.Strict(name,
       HttpEntity(ContentTypes.`text/plain(UTF-8)`, content), Map("filename" -> fileName)))
 
-
-
+  def prepareMultiParts(nameContent: (String, String)*)(fileName: String = "file.json") = {
+    val bodyPart = nameContent.map { case (name, content) =>
+      Multipart.FormData.BodyPart.Strict(name,
+        HttpEntity(ContentTypes.`text/plain(UTF-8)`, content), Map("filename" -> fileName))
+    }
+    Multipart.FormData(bodyPart: _*)
+  }
 
 }

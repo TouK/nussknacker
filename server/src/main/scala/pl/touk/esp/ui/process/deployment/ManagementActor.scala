@@ -49,17 +49,14 @@ class ManagementActor(environment: String, processManager: ProcessManager,
     case DeploymentActionFinished(id) =>
       logger.info(s"Finishing ${beingDeployed.get(id)} of $id")
       beingDeployed -= id
-    case Test(processId, testData, user) =>
+    case Test(processId, processJson, testData, user) =>
       //to b. smutne, ale Flink przechowuje przy deploymencie za pomoca Client.run niektore rzeczy w staticu
       //i leci wyjatek jak sie testy rownlolegle pusci...
       if (beingDeployed.nonEmpty) {
         sender() ! Status.Failure(ProcessIsBeingDeployedNoTestAllowed)
       } else {
         implicit val loggedUser = user
-        reply(processRepository.fetchLatestProcessVersion(processId).flatMap {
-          case Some(version) => processManager.test(processId, version.deploymentData, testData)
-          case None => Future(ProcessNotFoundError(processId))
-        })
+        reply(processManager.test(processId, GraphProcess(processJson), testData))
       }
   }
 
@@ -112,7 +109,7 @@ case class Cancel(id: String, user:LoggedUser) extends DeploymentAction
 
 case class CheckStatus(id: String)
 
-case class Test(id: String, test: TestData, user:LoggedUser)
+case class Test(processId: String, processJson: String, test: TestData, user:LoggedUser)
 
 case class DeploymentActionFinished(id: String)
 
