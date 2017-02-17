@@ -29,9 +29,9 @@ export class Tips extends Component {
       return (<div>{this.validTip()}</div>)
     } else {
       const result = this.validationResult()
-      const nodesErrors = _.flatten(Object.keys(result.invalidNodes || {}).map((key) => result.invalidNodes[key].map(error => this.printError(error, key))))
-      const globalErrors = (result.globalErrors || []).map(this.printError)
-      const processProperties = (result.processPropertiesErrors || []).map(error => this.printError(error, 'Properties'))
+      const nodesErrors = _.flatten(Object.keys(result.invalidNodes || {}).map((key, idx) => result.invalidNodes[key].map(error => this.printError(error, key, idx))))
+      const globalErrors = (result.globalErrors || []).map((error, idx) => this.printError(error, null, idx))
+      const processProperties = (result.processPropertiesErrors || []).map((error, idx) => this.printError(error, 'Properties', idx))
       return globalErrors.concat(processProperties.concat(nodesErrors))
     }
   }
@@ -46,10 +46,13 @@ export class Tips extends Component {
     }
   }
 
-  printError = (error, suffix) =>
-    (<div title={error.description}>
+  printError = (error, suffix, idx) => {
+    return (
+      <div key={idx + suffix} title={error.description}>
       {(suffix ? suffix + ": " : '') + error.message + (error.fieldName ? `(${error.fieldName})` : "")}
-    </div>)
+    </div>
+    )
+  }
 
   constructor(props) {
     super(props);

@@ -14,7 +14,7 @@ import pl.touk.esp.ui.util.Argonaut62Support
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
-class TestInfoResources(processDefinition: TestInfoProvider, testSampleSize: Int)
+class TestInfoResources(processDefinition: TestInfoProvider)
                        (implicit ec: ExecutionContext) extends Directives with Argonaut62Support {
   import argonaut.ArgonautShapeless._
   import pl.touk.esp.ui.codec.UiCodecs._
@@ -36,10 +36,11 @@ class TestInfoResources(processDefinition: TestInfoProvider, testSampleSize: Int
                 }
               }
             } ~
-              path("generate") {
+              path("generate" / IntNumber) { testSampleSize =>
                 complete {
                   espProcess match {
-                    case Valid(process) => val response = processDefinition.generateTestData(process, testSampleSize).getOrElse(new Array[Byte](0))
+                    case Valid(process) =>
+                      val response = processDefinition.generateTestData(process, testSampleSize).getOrElse(new Array[Byte](0))
                       response
                     case Invalid(error) => HttpResponse(status = StatusCodes.BadRequest, entity = "Failed to uncanonize")
                   }
