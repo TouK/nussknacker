@@ -7,6 +7,11 @@ import akka.http.scaladsl.server.{Directives, Route}
 import akka.pattern.ask
 import akka.stream.Materializer
 import akka.util.Timeout
+import akka.http.scaladsl.server.{RequestContext, RouteResult, Directive, Route}
+import akka.stream.ActorMaterializer
+import akka.http.scaladsl.server.Directives._
+import scala.concurrent.Future
+import scala.concurrent.duration._
 import argonaut.Argonaut._
 import argonaut.PrettyParams
 import com.typesafe.scalalogging.LazyLogging
@@ -19,7 +24,6 @@ import pl.touk.esp.ui.process.displayedgraph.DisplayableProcess
 import pl.touk.esp.ui.process.marshall.{ProcessConverter, UiProcessMarshaller}
 import pl.touk.esp.ui.process.repository.ProcessRepository
 import pl.touk.esp.ui.security.{LoggedUser, Permission}
-import pl.touk.esp.ui.util.MultipartUtils
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
@@ -58,17 +62,18 @@ class ManagementResources(typesInformation: List[PlainClazzDefinition],
         } ~
         path("processManagement" / "test" / Segment) { processId =>
           post {
-            fileUpload("testData") { case (metadata, byteSource) =>
-              fileUpload("processJson") { case (processJsonMetadata, processJsonByteSource) =>
+            //Jest bug w akka http przy uzyciu formFields (korzystajac z MultipartUtils tez wystepuje -
+            // zaczelo sie wtedy kiedy dodalem drugie (processJson) pole do formularza).
+            //Bug niestety nie objawia sie na kazdej maszynie, juz mi sie nie chce teraz dochodzic dlaczego
+            //issue: https://github.com/akka/akka/issues/19506
+            //workaround: https://gist.github.com/rklaehn/d4d3ee43443b0f4741fb#file-uploadhandlertostrict-scala
+            toStrict(5.second) {
+              formFields('testData.as[Array[Byte]], 'processJson) { (testData, displayableProcessJson) =>
                 complete {
-                  MultipartUtils.readFile(byteSource).map[ToResponseMarshallable] { testData =>
-                    MultipartUtils.readFile(processJsonByteSource).map[ToResponseMarshallable] { displayableProcessJson =>
-                      performTest(processId, testData, displayableProcessJson).map { results =>
-                        HttpResponse(status = StatusCodes.OK, entity =
-                          HttpEntity(ContentTypes.`application/json`, results.asJson.pretty(PrettyParams.spaces2)))
-                      }.recover(EspErrorToHttp.errorToHttp)
-                    }
-                  }
+                  performTest(processId, testData, displayableProcessJson).map { results =>
+                    HttpResponse(status = StatusCodes.OK, entity =
+                      HttpEntity(ContentTypes.`application/json`, results.asJson.pretty(PrettyParams.spaces2)))
+                  }.recover(EspErrorToHttp.errorToHttp)
                 }
               }
             }
@@ -77,7 +82,7 @@ class ManagementResources(typesInformation: List[PlainClazzDefinition],
     }
   }
 
-  private def performTest(processId: String, testData: String, displayableProcessJson: String)(implicit user: LoggedUser): Future[TestResults] = {
+  private def performTest(processId: String, testData: Array[Byte], displayableProcessJson: String)(implicit user: LoggedUser): Future[TestResults] = {
     displayableProcessJson.decodeEither[DisplayableProcess] match {
       case Right(process) =>
         val canonical = ProcessConverter.fromDisplayable(process)
@@ -88,5 +93,21 @@ class ManagementResources(typesInformation: List[PlainClazzDefinition],
     }
   }
 
+
+  private def toStrict(timeout: FiniteDuration): Directive[Unit] = {
+    def toStrict0(inner: Unit ⇒ Route): Route = {
+      val result: RequestContext ⇒ Future[RouteResult] = c ⇒ {
+        // call entity.toStrict (returns a future)
+        c.request.entity.toStrict(timeout).flatMap { strict ⇒
+          // modify the context with the strictified entity
+          val c1 = c.withRequest(c.request.withEntity(strict))
+          // call the inner route with the modified context
+          inner()(c1)
+        }
+      }
+      result
+    }
+    Directive[Unit](toStrict0)
+  }
 
 }
