@@ -5,6 +5,7 @@ import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.esp.engine.graph.node.NodeData
 import pl.touk.esp.ui.api.ProcessValidation
 import pl.touk.esp.ui.api.ProcessValidation.ValidationResult
+import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
 import pl.touk.esp.ui.process.displayedgraph.displayablenode._
 
 //it would be better to have two classes but it would either to derivce from each other, which is not easy for case classes
@@ -12,7 +13,9 @@ import pl.touk.esp.ui.process.displayedgraph.displayablenode._
 case class DisplayableProcess(id: String,
                               properties: ProcessProperties,
                               nodes: List[NodeData],
-                              edges: List[Edge], validationResult: Option[ValidationResult] = None) {
+                              edges: List[Edge],
+                              processingType: ProcessingType,
+                              validationResult: Option[ValidationResult] = None) {
   def validated(validation: ProcessValidation) =
     copy(validationResult = Some(validation.validate(this)))
 

@@ -9,6 +9,7 @@ import pl.touk.esp.engine.canonize.ProcessCanonizer
 import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.esp.engine.graph.node.Filter
 import pl.touk.esp.ui.db.entity.ProcessEntity
+import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.esp.ui.process.displayedgraph.displayablenode.NodeAdditionalFields
 import pl.touk.esp.ui.process.marshall.ProcessConverter
@@ -22,14 +23,14 @@ class PdfExporterSpec extends FlatSpec {
 
   it should "export process to " in {
 
-    val process: DisplayableProcess = ProcessConverter.toDisplayable(ProcessCanonizer.canonize(SampleProcess.process))
+    val process: DisplayableProcess = ProcessConverter.toDisplayable(ProcessCanonizer.canonize(SampleProcess.process), ProcessingType.Streaming)
     val displayable = process.copy(nodes = process.nodes.map {
         case a:Filter => a.copy(additionalFields = Some(NodeAdditionalFields(Some("mój wnikliwy komętaż"))))
         case a => a
     })
     val details = ProcessDetails("My process", "My process", 11, true,
       Some("My fancy description, which is quite, quite, quite looooooooong. \n And it contains maaaany, maaany strange features..."),
-      ProcessEntity.ProcessType.Graph, "Category 22", LocalDateTime.now(), List(), Set(), Some(displayable),
+      ProcessEntity.ProcessType.Graph, ProcessingType.Streaming, "Category 22", LocalDateTime.now(), List(), Set(), Some(displayable),
       List(ProcessHistoryEntry("My process",  "My process", 11, LocalDateTime.now(), "Zenon Wojciech", List()) )
     )
     val activities = ProcessActivity(List(
@@ -57,11 +58,11 @@ class PdfExporterSpec extends FlatSpec {
 
   it should "export empty process to " in {
 
-    val displayable: DisplayableProcess = DisplayableProcess("Proc11", ProcessProperties(None, None, ExceptionHandlerRef(List()), None), List(), List())
+    val displayable: DisplayableProcess = DisplayableProcess("Proc11", ProcessProperties(None, None, ExceptionHandlerRef(List()), None), List(), List(), ProcessingType.Streaming)
 
     val details = ProcessDetails("My process", "My process", 11, true,
       Some("My fancy description, which is quite, quite, quite looooooooong. \n And it contains maaaany, maaany strange features..."),
-      ProcessEntity.ProcessType.Graph, "Category 22", LocalDateTime.now(), List(), Set(), Some(displayable),
+      ProcessEntity.ProcessType.Graph, ProcessingType.Streaming, "Category 22", LocalDateTime.now(), List(), Set(), Some(displayable),
       List(ProcessHistoryEntry("My process",  "My process", 11, LocalDateTime.now(), "Zenon Wojciech", List()) )
     )
     val activities = ProcessActivity(List(), List())

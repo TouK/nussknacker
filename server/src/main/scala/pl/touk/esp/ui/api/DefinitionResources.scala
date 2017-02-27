@@ -11,6 +11,8 @@ import pl.touk.esp.engine.graph.param
 import pl.touk.esp.engine.graph.service.ServiceRef
 import pl.touk.esp.engine.graph.sink.SinkRef
 import pl.touk.esp.engine.graph.source.SourceRef
+import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType
+import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
 import pl.touk.esp.ui.process.displayedgraph.displayablenode.{Edge, EdgeType}
 import pl.touk.esp.ui.security.LoggedUser
 import pl.touk.esp.ui.util.Argonaut62Support
@@ -18,7 +20,7 @@ import pl.touk.esp.ui.util.Argonaut62Support
 import scala.concurrent.ExecutionContext
 import scala.runtime.BoxedUnit
 
-class DefinitionResources(processDefinition: ProcessDefinition[ObjectDefinition])
+class DefinitionResources(processDefinition: Map[ProcessingType, ProcessDefinition[ObjectDefinition]])
                          (implicit ec: ExecutionContext)
   extends Directives with Argonaut62Support {
 
@@ -26,10 +28,11 @@ class DefinitionResources(processDefinition: ProcessDefinition[ObjectDefinition]
   import pl.touk.esp.ui.codec.UiCodecs._
 
   val route = (user: LoggedUser) =>
-    path("processDefinitionData") {
+    path("processDefinitionData" / Segment) { processingType =>
       get {
         complete {
-          ProcessObjects(DefinitionPreparer.prepareNodesToAdd(user, processDefinition), processDefinition, DefinitionPreparer.prepareEdgeTypes())
+          val chosenProcessDefinition = processDefinition(ProcessingType.withName(processingType))
+          ProcessObjects(DefinitionPreparer.prepareNodesToAdd(user, chosenProcessDefinition), chosenProcessDefinition, DefinitionPreparer.prepareEdgeTypes())
         }
       }
     }

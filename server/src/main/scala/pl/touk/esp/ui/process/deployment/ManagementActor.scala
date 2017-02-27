@@ -5,26 +5,28 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.esp.engine.api.deployment.test.TestData
 import pl.touk.esp.engine.api.deployment.{CustomProcess, GraphProcess, ProcessManager}
 import pl.touk.esp.ui.EspError
+import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
 import pl.touk.esp.ui.db.entity.ProcessVersionEntity.ProcessVersionEntityData
 import pl.touk.esp.ui.process.displayedgraph.ProcessStatus
 import pl.touk.esp.ui.process.repository.ProcessRepository.ProcessNotFoundError
 import pl.touk.esp.ui.process.repository.{DeployedProcessRepository, ProcessRepository}
 import pl.touk.esp.ui.security.LoggedUser
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 
 object ManagementActor {
-  def apply(environment: String, processManager: ProcessManager,
-                        processRepository: ProcessRepository,
-                        deployedProcessRepository: DeployedProcessRepository)(implicit context: ActorRefFactory) : ActorRef = {
-    context.actorOf(Props(classOf[ManagementActor], environment, processManager, processRepository, deployedProcessRepository))
+  def apply(environment: String,
+            managers: Map[ProcessingType, ProcessManager],
+            processRepository: ProcessRepository,
+            deployedProcessRepository: DeployedProcessRepository)(implicit context: ActorRefFactory): ActorRef = {
+    context.actorOf(Props(classOf[ManagementActor], environment, managers, processRepository, deployedProcessRepository))
   }
 
 }
 
-class ManagementActor(environment: String, processManager: ProcessManager,
+class ManagementActor(environment: String, managers: Map[ProcessingType, ProcessManager],
                       processRepository: ProcessRepository,
                       deployedProcessRepository: DeployedProcessRepository) extends Actor with LazyLogging {
 
@@ -39,24 +41,34 @@ class ManagementActor(environment: String, processManager: ProcessManager,
       val deployRes: Future[_] = deployProcess(id)(user)
       reply(withDeploymentInfo(id, user.id, "Deployment", deployRes))
     case Cancel(id, user) =>
-      val cancelRes = processManager.cancel(id).flatMap(_ => deployedProcessRepository.markProcessAsCancelled(id, user.id, environment))
+      implicit val loggedUser = user
+      val cancelRes = processManager(id).map { manager =>
+        manager.cancel(id).flatMap(_ => deployedProcessRepository.markProcessAsCancelled(id, user.id, environment))
+      }
       reply(withDeploymentInfo(id, user.id, "Cancel", cancelRes))
-    case CheckStatus(id) if isBeingDeployed(id) =>
+    case CheckStatus(id, user) if isBeingDeployed(id) =>
       val info = beingDeployed(id)
       sender() ! Some(ProcessStatus(None, s"${info.action} IN PROGRESS", info.time, false, true))
-    case CheckStatus(id) =>
-      reply(processManager.findJobStatus(id).map(_.map(ProcessStatus.apply)))
+    case CheckStatus(id, user) =>
+      implicit val loggedUser = user
+      val processStatus = processManager(id).flatMap { manager =>
+        manager.findJobStatus(id).map(_.map(ProcessStatus.apply))
+      }
+      reply(processStatus)
     case DeploymentActionFinished(id) =>
       logger.info(s"Finishing ${beingDeployed.get(id)} of $id")
       beingDeployed -= id
     case Test(processId, processJson, testData, user) =>
       //to b. smutne, ale Flink przechowuje przy deploymencie za pomoca Client.run niektore rzeczy w staticu
       //i leci wyjatek jak sie testy rownlolegle pusci...
+      implicit val loggedUser = user
       if (beingDeployed.nonEmpty) {
         sender() ! Status.Failure(ProcessIsBeingDeployedNoTestAllowed)
       } else {
-        implicit val loggedUser = user
-        reply(processManager.test(processId, GraphProcess(processJson), testData))
+        val testAction = processManager(processId).flatMap { manager =>
+          manager.test(processId, GraphProcess(processJson), testData)
+        }
+        reply(testAction)
       }
   }
 
@@ -77,13 +89,15 @@ class ManagementActor(environment: String, processManager: ProcessManager,
   private def isBeingDeployed(id: String) = beingDeployed.contains(id)
 
   private def deployProcess(processId: String)(implicit user: LoggedUser) = {
-    processRepository.fetchLatestProcessVersion(processId).flatMap {
-      case Some(latestVersion) => deployAndSaveProcess(latestVersion)
-      case None => Future(ProcessNotFoundError(processId))
+    processManager(processId).flatMap { manager =>
+      processRepository.fetchLatestProcessVersion(processId).flatMap {
+        case Some(latestVersion) => deployAndSaveProcess(latestVersion, manager)
+        case None => Future(ProcessNotFoundError(processId))
+      }
     }
   }
 
-  private def deployAndSaveProcess(latestVersion: ProcessVersionEntityData)(implicit user: LoggedUser): Future[Unit] = {
+  private def deployAndSaveProcess(latestVersion: ProcessVersionEntityData, processManager: ProcessManager)(implicit user: LoggedUser): Future[Unit] = {
     val processId = latestVersion.processId
     logger.debug(s"Deploy of $processId started")
     val deployment = latestVersion.deploymentData
@@ -96,6 +110,13 @@ class ManagementActor(environment: String, processManager: ProcessManager,
     }
   }
 
+  private def processManager(processId: String)(implicit ec: ExecutionContext, user: LoggedUser) = {
+    processingType(processId).map(managers)
+  }
+
+  private def processingType(id: String)(implicit ec: ExecutionContext, user: LoggedUser) = {
+    processRepository.fetchLatestProcessDetailsForProcessId(id).map(_.map(_.processingType)).map(_.getOrElse(throw new RuntimeException(ProcessNotFoundError(id).getMessage)))
+  }
 }
 
 
@@ -107,7 +128,7 @@ case class Deploy(id: String, user:LoggedUser) extends DeploymentAction
 
 case class Cancel(id: String, user:LoggedUser) extends DeploymentAction
 
-case class CheckStatus(id: String)
+case class CheckStatus(id: String, user:LoggedUser)
 
 case class Test(processId: String, processJson: String, test: TestData, user:LoggedUser)
 

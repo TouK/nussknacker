@@ -6,6 +6,7 @@ import argonaut.PrettyParams
 import pl.touk.esp.engine.canonize.ProcessCanonizer
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.graph.node.NodeData
+import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.esp.ui.process.marshall.ProcessConverter
 
@@ -15,7 +16,7 @@ class ProcessPosting {
   val prettyParams = PrettyParams.spaces2.copy(dropNullKeys = true, preserveOrder = true)
 
   def toEntity(process: EspProcess): RequestEntity = {
-    val displayable = ProcessConverter.toDisplayable(ProcessCanonizer.canonize(process))
+    val displayable = ProcessConverter.toDisplayable(ProcessCanonizer.canonize(process), ProcessingType.Streaming)
     val json = displayable.asJson.pretty(prettyParams)
     HttpEntity(ContentTypes.`application/json`, json)
   }

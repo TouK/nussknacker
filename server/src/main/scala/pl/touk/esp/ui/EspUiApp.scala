@@ -9,14 +9,10 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.stream.ActorMaterializer
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.esp.engine.compile.ProcessValidator
-import pl.touk.esp.engine.management.FlinkProcessManager
 import pl.touk.esp.ui.api._
-import pl.touk.esp.ui.app.BuildInfo
 import pl.touk.esp.ui.db.DatabaseInitializer
 import pl.touk.esp.ui.initialization.Initialization
 import pl.touk.esp.ui.process.deployment.ManagementActor
-import pl.touk.esp.ui.process.marshall.ProcessConverter
 import pl.touk.esp.ui.process.repository.{DeployedProcessRepository, ProcessActivityRepository, ProcessRepository}
 import pl.touk.esp.ui.security.SimpleAuthenticator
 import slick.jdbc.JdbcBackend
@@ -39,14 +35,9 @@ object EspUiApp extends App with Directives with LazyLogging {
 
   val port = args(0).toInt
   val initialProcessDirectory = new File(args(1))
-  val manager = FlinkProcessManager(config)
+  val ProcessingTypeDeps(processDefinitions, validators, managers, buildInfo, standaloneModeEnabled) = ProcessingTypeDeps(config)
 
-  val buildInfo = BuildInfo.ordered(manager.buildInfo)
-  logger.info(s"Starting app, build info ${BuildInfo.writeAsJson(buildInfo)}")
-
-  val processDefinition = manager.getProcessDefinition
-  val validator = ProcessValidator.default(processDefinition)
-  val processValidation = new ProcessValidation(validator)
+  val processValidation = new ProcessValidation(validators)
 
   val processRepository = new ProcessRepository(db, DefaultJdbcProfile.profile, processValidation)
   val deploymentProcessRepository = new DeployedProcessRepository(db, DefaultJdbcProfile.profile, buildInfo)
@@ -60,10 +51,10 @@ object EspUiApp extends App with Directives with LazyLogging {
   val isDevelopmentMode = config.hasPath("developmentMode") && config.getBoolean("developmentMode")
 
 
-  Initialization.init(processRepository, db, environment, isDevelopmentMode, initialProcessDirectory)
+  Initialization.init(processRepository, db, environment, isDevelopmentMode, initialProcessDirectory, standaloneModeEnabled)
   initHttp()
 
-  val managementActor = ManagementActor(environment, manager, processRepository, deploymentProcessRepository)
+  val managementActor = ManagementActor(environment, managers, processRepository, deploymentProcessRepository)
 
   def initHttp() = {
     val route: Route = {
@@ -75,13 +66,13 @@ object EspUiApp extends App with Directives with LazyLogging {
 
               new ProcessesResources(processRepository, managementActor, processActivityRepository, processValidation).route(user) ~
                 new ProcessActivityResource(processActivityRepository, attachmentService).route(user) ~
-                new ManagementResources(processDefinition.typesInformation, managementActor).route(user) ~
+                new ManagementResources(processDefinitions.values.flatMap(_.typesInformation).toList, managementActor).route(user) ~
                 new ValidationResources(processValidation).route(user) ~
-                new DefinitionResources(processDefinition).route(user) ~
+                new DefinitionResources(processDefinitions).route(user) ~
                 new UserResources().route(user) ~
                 new SettingsResources(config).route(user) ~
                 new AppResources(buildInfo, processRepository, managementActor).route(user) ~
-                new TestInfoResources(manager).route(user)
+                new TestInfoResources(managers, processRepository).route(user)
             } ~
               //nie chcemy api, zeby nie miec problemow z autentykacja...
               pathPrefixTest(!"api") {

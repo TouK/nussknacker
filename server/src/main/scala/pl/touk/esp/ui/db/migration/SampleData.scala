@@ -8,7 +8,7 @@ import pl.touk.esp.engine.marshall.ProcessMarshaller
 import pl.touk.esp.ui.db.entity.CommentEntity.CommentEntityData
 import pl.touk.esp.ui.db.entity.ProcessDeploymentInfoEntity.{DeployedProcessVersionEntityData, DeploymentAction}
 import pl.touk.esp.ui.db.entity.EnvironmentsEntity.EnvironmentsEntityData
-import pl.touk.esp.ui.db.entity.ProcessEntity.{ProcessEntityData, ProcessType}
+import pl.touk.esp.ui.db.entity.ProcessEntity.{ProcessEntityData, ProcessType, ProcessingType}
 import pl.touk.esp.ui.db.entity.ProcessVersionEntity.ProcessVersionEntityData
 import pl.touk.esp.ui.db.entity.TagsEntity.TagsEntityData
 import pl.touk.esp.ui.process.marshall.UiProcessMarshaller
@@ -23,7 +23,8 @@ object SampleData {
       process.id,
       process.id,
       Some("Sample process description"),
-      ProcessType.Graph, "Category1"
+      ProcessType.Graph, "Category1",
+      ProcessingType.Streaming
     )
   }
 

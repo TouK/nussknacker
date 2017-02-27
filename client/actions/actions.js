@@ -9,9 +9,17 @@ export function fetchProcessToDisplay(processId, versionId) {
     })
     return HttpService.fetchProcessDetails(processId, versionId)
       .then((processDetails) => {
-        displayTestCapabilites(processDetails.json)(dispatch)
+        displayTestCapabilites(processDetails.json, processDetails.processingType)(dispatch)
         return dispatch(displayProcess(processDetails))
       })
+  }
+}
+
+export function fetchProcessDefinition(processingType) {
+  return (dispatch) => {
+    HttpService.fetchProcessDefinitionData(processingType).then((data) =>
+      dispatch({type: "PROCESS_DEFINITION_DATA", processDefinitionData: data})
+    )
   }
 }
 

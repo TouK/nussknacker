@@ -82,6 +82,8 @@ object UiCodecs {
 
   implicit def processTypeCodec = ProcessTypeCodec.codec
 
+  implicit def processingTypeCodec = ProcessingTypeCodec.codec
+
   implicit def processHistory = EncodeJson.of[ProcessHistoryEntry]
 
   implicit def processListEncode = EncodeJson.of[List[ProcessDetails]]

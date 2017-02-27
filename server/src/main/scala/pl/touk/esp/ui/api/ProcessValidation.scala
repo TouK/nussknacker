@@ -9,14 +9,16 @@ import pl.touk.esp.ui.api.ProcessValidation.{NodeValidationError, ValidationResu
 import pl.touk.esp.ui.process.displayedgraph.DisplayableProcess
 import pl.touk.esp.ui.process.marshall.ProcessConverter
 import cats.implicits._
+import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
 
-class ProcessValidation(processValidator: ProcessValidator) {
+class ProcessValidation(validators: Map[ProcessingType, ProcessValidator]) {
 
   val uiValidationError = "UiValidation"
 
   import pl.touk.esp.ui.util.CollectionsEnrichments._
 
   def validate(displayable: DisplayableProcess): ValidationResult = {
+    val processValidator = validators(displayable.processingType)
     val canonical = ProcessConverter.fromDisplayable(displayable)
     val compilationValidationResult = processValidator.validate(canonical).leftMap(formatErrors).swap.getOrElse(ValidationResult.success)
     val uiValidationResult = uiValidation(displayable)

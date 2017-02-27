@@ -2,6 +2,7 @@ package pl.touk.esp.ui.process.marshall
 
 import argonaut.{Parse, PrettyParams}
 import org.scalatest.{FlatSpec, Matchers}
+import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.esp.ui.process.displayedgraph.displayablenode.{NodeAdditionalFields, ProcessAdditionalFields}
 
 class UiProcessMarshallerSpec extends FlatSpec with Matchers {
@@ -41,7 +42,7 @@ class UiProcessMarshallerSpec extends FlatSpec with Matchers {
 
 
   it should "unmarshall to displayable process properly" in {
-    val displayableProcess = ProcessConverter.toDisplayableOrDie(processWithAdditionalFields)
+    val displayableProcess = ProcessConverter.toDisplayableOrDie(processWithAdditionalFields, ProcessingType.Streaming)
 
     val processDescription = displayableProcess.properties.additionalFields.flatMap(_.asInstanceOf[ProcessAdditionalFields].description)
     val nodeDescription = displayableProcess.nodes.head.additionalFields.flatMap(_.asInstanceOf[NodeAdditionalFields].description)
@@ -51,7 +52,7 @@ class UiProcessMarshallerSpec extends FlatSpec with Matchers {
 
   it should "marshall and unmarshall process" in {
     val baseProcess = processWithAdditionalFields
-    val displayableProcess = ProcessConverter.toDisplayableOrDie(baseProcess)
+    val displayableProcess = ProcessConverter.toDisplayableOrDie(baseProcess, ProcessingType.Streaming)
     val canonical = ProcessConverter.fromDisplayable(displayableProcess)
 
     val processAfterMarshallAndUnmarshall = ProcessConverter.processMarshaller.toJson(canonical, PrettyParams.nospace)
@@ -60,7 +61,7 @@ class UiProcessMarshallerSpec extends FlatSpec with Matchers {
   }
 
   it should "unmarshall json without additional fields" in {
-    val displayableProcess = ProcessConverter.toDisplayableOrDie(processWithoutAdditionalFields)
+    val displayableProcess = ProcessConverter.toDisplayableOrDie(processWithoutAdditionalFields, ProcessingType.Streaming)
 
     displayableProcess.id shouldBe "custom"
     displayableProcess.nodes.head.additionalFields shouldBe None
