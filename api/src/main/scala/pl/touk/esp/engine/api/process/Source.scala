@@ -18,3 +18,7 @@ trait SourceFactory[T] extends Serializable {
   def testDataParser: Option[TestDataParser[T]]
 
 }
+
+trait StandaloneSourceFactory[T] extends SourceFactory[T] {
+  def toObject(obj: Array[Byte]): T
+}

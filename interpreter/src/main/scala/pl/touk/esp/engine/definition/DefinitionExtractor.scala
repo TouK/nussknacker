@@ -31,7 +31,7 @@ trait DefinitionExtractor[T] {
     }
 
     val method = findByAnnotation orElse findByReturnType getOrElse {
-      throw new IllegalArgumentException(s"Missing method with return type: $returnType")
+      throw new IllegalArgumentException(s"Missing method with return type: $returnType on $obj")
     }
 
     val params = method.getParameters.map { p =>
