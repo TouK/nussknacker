@@ -86,8 +86,10 @@ class SpelExpressionValidator(expr: Expression, ctx: ValidationContext) {
         val currentProp = propsToGo.head
         val typeInfo = ctx.getTypeInfo(clazz)
         typeInfo.getMethod(currentProp) match {
-          case Some(anotherClazzRef) => checkIfPropertiesExistsOnClass(propsToGo.tail, anotherClazzRef)
-          case None => Some(ExpressionParseError(s"There is no property '$currentProp' in type '${typeInfo.clazzName.refClazzName}'"))
+          case Some(anotherClazzRef) =>
+            checkIfPropertiesExistsOnClass(propsToGo.tail, anotherClazzRef)
+          case None =>
+            Some(ExpressionParseError(s"There is no property '$currentProp' in type '${typeInfo.clazzName.refClazzName}'"))
         }
       }
     }

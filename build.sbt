@@ -114,7 +114,34 @@ lazy val perf_test_sample = (project in file("perf-test/sample")).
   settings(addArtifact(artifact in (Compile, assembly), assembly)).
   dependsOn(flinkUtil, kafka, process % "runtime")
 
-val managementSampleName = "esp-management-sample"
+val akkaHttpV = "2.0.3"
+
+lazy val engineStandalone = (project in file("engine-standalone")).
+  settings(commonSettings).
+  settings(
+    name := "esp-engine-standalone",
+    assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = true, level = Level.Debug),
+    artifact in (Compile, assembly) := {
+      val art = (artifact in (Compile, assembly)).value
+      art.copy(`classifier` = Some("assembly"))
+    },
+    libraryDependencies ++= {
+      Seq(
+        "org.typelevel" %% "cats-core" % catsV,
+        "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
+
+        "com.typesafe.akka" %% "akka-http-experimental" % akkaHttpV force(),
+        "com.typesafe.akka" %% "akka-http-testkit-experimental" % akkaHttpV % "test" force(),
+        "io.argonaut" %% "argonaut" % argonautV,
+        "com.github.alexarchambault" %% s"argonaut-shapeless_$argonautMajorV" % argonautShapelessV,
+
+        "org.scalatest" %% "scalatest" % scalaTestV % "test",
+        "ch.qos.logback" % "logback-classic" % logbackV % "test"
+      )
+    }
+  ).
+  settings(addArtifact(artifact in (Compile, assembly), assembly)).
+  dependsOn(interpreter)
 
 lazy val management = (project in file("management")).
   configs(IntegrationTest).
@@ -135,11 +162,12 @@ lazy val management = (project in file("management")).
 
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
 
-        // zależności dla konfiguracji "it" muszą być też dla "test", żeby nie trafiły do publikowanego poma
         "org.scalatest" %% "scalatest" % scalaTestV % "it,test"
       )
     }
   ).dependsOn(interpreter, kafkaTestUtil % "it,test")
+
+val managementSampleName = "esp-management-sample"
 
 lazy val management_sample = (project in file("management/sample")).
   settings(commonSettings).
