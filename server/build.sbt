@@ -63,6 +63,7 @@ val flinkScope = if (includeFlinkAndScala) "compile" else "provided"
 libraryDependencies ++= {
   Seq(
     "pl.touk.esp" %% "esp-management" % espEngineV changing(),
+    "pl.touk.esp" %% "esp-engine-standalone" % espEngineV changing(),
     "org.apache.flink" %% "flink-streaming-scala" % flinkV % flinkScope
     excludeAll(
         ExclusionRule("com.google.code.findbugs", "jsr305"),

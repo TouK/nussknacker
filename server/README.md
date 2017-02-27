@@ -1,7 +1,7 @@
 Uruchamianie z Idei:
 ====================
 Main class:         pl.touk.esp.ui.EspUiApp
-VM options:         -Dconfig.file=./server/develConf/application.conf
+VM options:         -Dconfig.file=./server/develConf/application.conf -Dlogback.configurationFile=./logback.xml
 Program arguments:  8081 ./server/develConf/jsons
 Env variables:      includeFlinkAndScala=true
 

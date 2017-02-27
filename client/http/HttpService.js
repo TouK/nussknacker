@@ -68,8 +68,8 @@ export default {
     return promiseWrap($.get(appConfig.API_URL + '/settings/kibana'))
   },
 
-  fetchProcessDefinitionData() {
-    return promiseWrap($.get(appConfig.API_URL + '/processDefinitionData'))
+  fetchProcessDefinitionData(processingType) {
+    return promiseWrap($.get(`${appConfig.API_URL}/processDefinitionData/${processingType}`))
   },
 
   fetchProcesses() {
@@ -201,9 +201,9 @@ export default {
 
   },
 
-  createProcess(processId, processCategory, callback) {
+  createProcess(processId, processCategory, processingType, callback) {
     return ajaxCall({
-      url: `${appConfig.API_URL}/processes/${processId}/${processCategory}`,
+      url: `${appConfig.API_URL}/processes/${processId}/${processCategory}/${processingType}`,
       type: 'POST'
     }).then(callback, (error) => {
       this.addError(`Failed to create process:`, error, true);

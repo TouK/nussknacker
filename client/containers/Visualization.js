@@ -22,7 +22,7 @@ const Visualization = withRouter(React.createClass({
   },
 
   componentDidMount() {
-    this.fetchProcessDetails();
+    this.fetchProcessDetails().then((details) => this.props.actions.fetchProcessDefinition(details.fetchedProcessDetails.processingType));
     this.fetchProcessStatus();
     window.onkeydown = (event) => {
       if (event.ctrlKey && !event.shiftKey && event.key.toLowerCase() == "z") {
@@ -59,8 +59,9 @@ const Visualization = withRouter(React.createClass({
   },
 
   fetchProcessDetails() {
-    this.props.actions.displayCurrentProcessVersion(this.props.params.processId)
+    const details = this.props.actions.displayCurrentProcessVersion(this.props.params.processId)
     this.props.actions.displayProcessActivity(this.props.params.processId)
+    return details
   },
 
   fetchProcessStatus() {

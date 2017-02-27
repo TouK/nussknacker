@@ -8,6 +8,7 @@ import pl.touk.esp.engine.graph.node
 import pl.touk.esp.engine.graph.sink.SinkRef
 import pl.touk.esp.engine.graph.source.SourceRef
 import pl.touk.esp.ui.api.ProcessValidation.ValidationResult
+import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.esp.ui.process.displayedgraph.displayablenode.{Edge, NodeAdditionalFields, ProcessAdditionalFields}
 import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties}
 
@@ -65,6 +66,7 @@ object ProcessTestData {
         )
       ),
       edges = List(Edge(from = "sourceId", to = "sinkId", edgeType = None)),
+      processingType = ProcessingType.Streaming,
       validationResult = Some(ValidationResult.success)
     )
   }

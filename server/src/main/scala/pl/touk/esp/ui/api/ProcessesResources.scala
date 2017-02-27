@@ -8,8 +8,7 @@ import akka.stream.Materializer
 import argonaut._
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{Xor, XorT}
-import cats.instances .future._
-
+import cats.instances.future._
 import pl.touk.esp.engine.api.MetaData
 import pl.touk.esp.engine.api.deployment.{GraphProcess, ProcessManager}
 import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
@@ -29,6 +28,8 @@ import akka.util.Timeout
 
 import scala.concurrent.duration._
 import EspErrorToHttp._
+import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType
+import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
 import pl.touk.esp.ui.process.repository.ProcessActivityRepository.ProcessActivity
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -103,7 +104,7 @@ class ProcessesResources(repository: ProcessRepository,
             }
           }
         }
-      } ~ path("processes" / Segment / Segment) { (processId, category) =>
+      } ~ path("processes" / Segment / Segment / Segment) { (processId, category, processingType) =>
         authorize(user.categories.contains(category)) {
           post {
             complete {
@@ -112,7 +113,7 @@ class ProcessesResources(repository: ProcessRepository,
 
               repository.fetchLatestProcessDetailsForProcessId(processId).flatMap {
                 case Some(_) => Future(HttpResponse(status = StatusCodes.BadRequest, entity = "Process already exists"))
-                case None => repository.saveProcess(processId, category, GraphProcess(emptyProcess)).map(toResponse(StatusCodes.Created))
+                case None => repository.saveNewProcess(processId, category, GraphProcess(emptyProcess), ProcessingType.withName(processingType)).map(toResponse(StatusCodes.Created))
               }
 
             }
@@ -124,7 +125,7 @@ class ProcessesResources(repository: ProcessRepository,
           complete {
             repository.fetchLatestProcessDetailsForProcessId(processId).flatMap[ToResponseMarshallable] {
               case Some(process) =>
-                findJobStatus(process.name).map {
+                findJobStatus(process.name, process.processingType).map {
                   case Some(status) => status
                   case None => HttpResponse(status = StatusCodes.OK, entity = "Process is not running")
                 }
@@ -164,7 +165,14 @@ class ProcessesResources(repository: ProcessRepository,
                   case Valid(process) => Valid(process)
                   case Invalid(unmarshallError) => Invalid(UnmarshallError(unmarshallError.msg))
                 }) match {
-                  case Valid(process) => ProcessConverter.toDisplayable(process).validated(processValidation)
+                  case Valid(process) =>
+                    repository.fetchLatestProcessDetailsForProcessIdXor(processId).map { detailsXor =>
+                      val validatedProcess = detailsXor.map(details =>
+                        ProcessConverter.toDisplayable(process, details.processingType).validated(processValidation)
+                      )
+                      toResponseXor(validatedProcess)
+                    }
+
                   case Invalid(error) => espErrorToHttp(error)
                 }
               }
@@ -198,16 +206,16 @@ class ProcessesResources(repository: ProcessRepository,
   }
 
 
-  private def fetchProcessStatesForProcesses(processes: List[ProcessDetails]): Future[Map[String, Option[ProcessStatus]]] = {
+  private def fetchProcessStatesForProcesses(processes: List[ProcessDetails])(implicit user: LoggedUser): Future[Map[String, Option[ProcessStatus]]] = {
     import cats.instances.future._
     import cats.instances.list._
     import cats.syntax.traverse._
-    processes.map(process => findJobStatus(process.name).map(status => process.name -> status)).sequence.map(_.toMap)
+    processes.map(process => findJobStatus(process.name, process.processingType).map(status => process.name -> status)).sequence.map(_.toMap)
   }
 
-  private def findJobStatus(processName: String)(implicit ec: ExecutionContext): Future[Option[ProcessStatus]] = {
+  private def findJobStatus(processName: String, processingType: ProcessingType)(implicit ec: ExecutionContext, user: LoggedUser): Future[Option[ProcessStatus]] = {
     implicit val timeout = Timeout(1 minute)
-    (managerActor ? CheckStatus(processName)).mapTo[Option[ProcessStatus]]
+    (managerActor ? CheckStatus(processName, user)).mapTo[Option[ProcessStatus]]
   }
 
 

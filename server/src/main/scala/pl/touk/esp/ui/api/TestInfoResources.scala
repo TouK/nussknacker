@@ -6,15 +6,19 @@ import akka.util.Timeout
 import cats.data.Validated.{Invalid, Valid}
 import pl.touk.esp.engine.canonize.ProcessCanonizer
 import pl.touk.esp.engine.definition.TestInfoProvider
+import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType
+import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
 import pl.touk.esp.ui.process.displayedgraph.DisplayableProcess
 import pl.touk.esp.ui.process.marshall.ProcessConverter
+import pl.touk.esp.ui.process.repository.ProcessRepository
 import pl.touk.esp.ui.security.{LoggedUser, Permission}
 import pl.touk.esp.ui.util.Argonaut62Support
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
-class TestInfoResources(processDefinition: TestInfoProvider)
+class TestInfoResources(providers: Map[ProcessingType, TestInfoProvider],
+                        processRepository: ProcessRepository)
                        (implicit ec: ExecutionContext) extends Directives with Argonaut62Support {
   import argonaut.ArgonautShapeless._
   import pl.touk.esp.ui.codec.UiCodecs._
@@ -26,6 +30,7 @@ class TestInfoResources(processDefinition: TestInfoProvider)
       pathPrefix("testInfo") {
         post {
           entity(as[DisplayableProcess]) { displayableProcess =>
+            val processDefinition = providers(displayableProcess.processingType)
             val espProcess = ProcessCanonizer.uncanonize(ProcessConverter.fromDisplayable(displayableProcess))
 
             path("capabilities") {

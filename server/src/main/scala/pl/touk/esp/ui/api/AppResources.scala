@@ -6,6 +6,7 @@ import akka.http.scaladsl.server._
 import akka.util.Timeout
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.runtime.messages.JobClientMessages.JobManagerActorRef
+import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
 import pl.touk.esp.ui.process.deployment.CheckStatus
 import pl.touk.esp.ui.process.displayedgraph.ProcessStatus
 import pl.touk.esp.ui.process.repository.ProcessRepository
@@ -63,13 +64,13 @@ class AppResources(buildInfo: Map[String, String],
     }
   }
 
-  private def statusList(processes: Seq[ProcessDetails]) : Seq[Future[(String, Option[ProcessStatus])]] =
-    processes.filterNot(_.currentlyDeployedAt.isEmpty).map(_.name).map(n => findJobStatus(n).map((n, _)))
+  private def statusList(processes: Seq[ProcessDetails])(implicit user: LoggedUser) : Seq[Future[(String, Option[ProcessStatus])]] =
+    processes.filterNot(_.currentlyDeployedAt.isEmpty).map(process => findJobStatus(process.name, process.processingType).map((process.name, _)))
 
-  private def findJobStatus(processName: String)(implicit ec: ExecutionContext): Future[Option[ProcessStatus]] = {
+  private def findJobStatus(processName: String, processingType: ProcessingType)(implicit ec: ExecutionContext, user: LoggedUser): Future[Option[ProcessStatus]] = {
     import scala.concurrent.duration._
     import akka.pattern.ask
     implicit val timeout = Timeout(1 minute)
-    (managerActor ? CheckStatus(processName)).mapTo[Option[ProcessStatus]]
+    (managerActor ? CheckStatus(processName, user)).mapTo[Option[ProcessStatus]]
   }
 }

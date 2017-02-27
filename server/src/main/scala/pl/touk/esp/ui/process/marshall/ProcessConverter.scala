@@ -4,10 +4,8 @@ import cats.data.Validated.{Invalid, Valid}
 import pl.touk.esp.engine.api.MetaData
 import pl.touk.esp.engine.canonicalgraph.canonicalnode._
 import pl.touk.esp.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
-import pl.touk.esp.engine.graph.expression.Expression
 import pl.touk.esp.engine.graph.node.{Filter, NodeData, Split, Switch}
-import pl.touk.esp.ui.api.ProcessValidation
-import pl.touk.esp.ui.api.ProcessValidation.ValidationResult
+import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
 import pl.touk.esp.ui.process.displayedgraph.displayablenode.{Edge, EdgeType}
 import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties, displayablenode}
 
@@ -15,18 +13,18 @@ object ProcessConverter {
 
   val processMarshaller = UiProcessMarshaller()
 
-  def toDisplayableOrDie(canonicalJson: String): DisplayableProcess = {
+  def toDisplayableOrDie(canonicalJson: String, processingType: ProcessingType): DisplayableProcess = {
     processMarshaller.fromJson(canonicalJson) match {
-      case Valid(canonical) => toDisplayable(canonical)
+      case Valid(canonical) => toDisplayable(canonical, processingType)
       case Invalid(err) => throw new IllegalArgumentException(err.msg)
     }
   }
 
-  def toDisplayable(process: CanonicalProcess): DisplayableProcess = {
+  def toDisplayable(process: CanonicalProcess, processingType: ProcessingType): DisplayableProcess = {
     val nodesEdges = toGraphInner(process.nodes)
     val (nodes, edges) = nodesEdges
     val props = ProcessProperties(process.metaData.parallelism, process.metaData.splitStateToDisk, process.exceptionHandlerRef, process.metaData.additionalFields)
-    DisplayableProcess(process.metaData.id, props, nodes, edges)
+    DisplayableProcess(process.metaData.id, props, nodes, edges, processingType)
   }
 
   private def toGraphInner(nodes: List[canonicalnode.CanonicalNode]): (List[NodeData], List[displayablenode.Edge]) =

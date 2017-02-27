@@ -2,6 +2,7 @@ package pl.touk.esp.ui.api
 
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model.{HttpResponse, StatusCode, StatusCodes}
+import argonaut.EncodeJson
 import cats.data.Xor
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.esp.ui.api.ProcessValidation.{FatalValidationError, ValidationResult}
@@ -42,6 +43,14 @@ object EspErrorToHttp extends LazyLogging with Argonaut62Support {
     xor.flatMap(_.fatalAsError) match {
       case Xor.Right(validationResult) =>
         validationResult
+      case Xor.Left(err) =>
+        espErrorToHttp(err)
+    }
+
+  def toResponseXor[T: EncodeJson](xor: Xor[EspError, T]): ToResponseMarshallable =
+    xor match {
+      case Xor.Right(t) =>
+        t
       case Xor.Left(err) =>
         espErrorToHttp(err)
     }

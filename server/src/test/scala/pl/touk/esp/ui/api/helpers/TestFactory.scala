@@ -9,6 +9,7 @@ import pl.touk.esp.engine.api.deployment.test.{TestData, TestResults}
 import pl.touk.esp.engine.api.deployment.{ProcessDeploymentData, ProcessManager, ProcessState}
 import pl.touk.esp.engine.management.FlinkProcessManager
 import pl.touk.esp.ui.api.{ProcessPosting, ProcessTestData, ProcessValidation}
+import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.esp.ui.process.marshall.ProcessConverter
 import pl.touk.esp.ui.process.repository.{DeployedProcessRepository, ProcessActivityRepository, ProcessRepository}
 import pl.touk.esp.ui.security.{LoggedUser, Permission}
@@ -22,7 +23,7 @@ object TestFactory {
   val testCategory = "TESTCAT"
   val testEnvironment = "test"
 
-  val processValidation = new ProcessValidation(ProcessTestData.validator)
+  val processValidation = new ProcessValidation(Map(ProcessingType.Streaming -> ProcessTestData.validator))
   val posting = new ProcessPosting
 
   def newProcessRepository(db: JdbcBackend.Database) = new ProcessRepository(db, DefaultJdbcProfile.profile, processValidation)

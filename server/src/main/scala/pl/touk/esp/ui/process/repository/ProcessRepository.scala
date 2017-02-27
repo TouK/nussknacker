@@ -15,6 +15,7 @@ import pl.touk.esp.ui.db.entity.ProcessVersionEntity.ProcessVersionEntityData
 import pl.touk.esp.ui.db.entity.TagsEntity.TagsEntityData
 import pl.touk.esp.ui.db.EspTables._
 import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessType.ProcessType
+import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
 import pl.touk.esp.ui.process.displayedgraph.DisplayableProcess
 import pl.touk.esp.ui.process.marshall.ProcessConverter
 import pl.touk.esp.ui.process.repository.ProcessRepository._
@@ -32,12 +33,12 @@ class ProcessRepository(db: JdbcBackend.Database,
                         processValidation: ProcessValidation) extends LazyLogging {
   import driver.api._
 
-  def saveProcess(processId: String, category: String, processDeploymentData: ProcessDeploymentData)
-                 (implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[XError[Unit]] = {
+  def saveNewProcess(processId: String, category: String, processDeploymentData: ProcessDeploymentData, processingType: ProcessingType)
+                    (implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[XError[Unit]] = {
     logger.info(s"Saving process $processId by user $loggedUser")
 
     val processToSave = ProcessEntityData(id = processId, name = processId, processCategory = category,
-              description = None, processType = processType(processDeploymentData))
+              description = None, processType = processType(processDeploymentData), processingType = processingType)
 
     val insertAction =
       (processesTable += processToSave).andThen(updateProcessInternal(processId, processDeploymentData))
@@ -121,6 +122,14 @@ class ProcessRepository(db: JdbcBackend.Database,
     db.run(action.value)
   }
 
+  def fetchLatestProcessDetailsForProcessIdXor(id: String)
+                                           (implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[XError[ProcessDetails]] = {
+    fetchLatestProcessDetailsForProcessId(id).map {
+      case None => Xor.Left(ProcessNotFoundError(id))
+      case Some(p) => Xor.Right(p)
+    }
+  }
+
   def fetchProcessDetailsForId(processId: String, versionId: Long)
                               (implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Option[ProcessDetails]] = {
     val action = for {
@@ -162,11 +171,12 @@ class ProcessRepository(db: JdbcBackend.Database,
       isLatestVersion = isLatestVersion,
       description = process.description,
       processType = process.processType,
+      processingType = process.processingType,
       processCategory = process.processCategory,
       currentlyDeployedAt = currentlyDeployedAt,
       tags = tags.map(_.name).toList,
       modificationDate = DateUtils.toLocalDateTime(processVersion.createDate),
-      json = processVersion.json.map(json => ProcessConverter.toDisplayableOrDie(json).validated(processValidation)),
+      json = processVersion.json.map(json => ProcessConverter.toDisplayableOrDie(json, process.processingType).validated(processValidation)),
       history = history.toList
     )
   }
@@ -209,6 +219,7 @@ object ProcessRepository {
                              isLatestVersion: Boolean,
                              description: Option[String],
                              processType: ProcessType,
+                             processingType: ProcessingType,
                              processCategory: String,
                              modificationDate: LocalDateTime,
                              tags: List[String],

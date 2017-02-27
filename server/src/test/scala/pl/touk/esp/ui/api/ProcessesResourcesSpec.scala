@@ -14,6 +14,7 @@ import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.esp.engine.graph.param.Parameter
 import pl.touk.esp.ui.api.helpers.EspItTest
 import pl.touk.esp.ui.api.helpers.TestFactory._
+import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.esp.ui.process.displayedgraph.displayablenode.ProcessAdditionalFields
 import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.esp.ui.process.marshall.UiProcessMarshaller
@@ -68,7 +69,7 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
   }
 
   it should "return 400 when trying to update json of custom process" in {
-    whenReady(processRepository.saveProcess("customProcess", testCategory, CustomProcess(""))) { res =>
+    whenReady(processRepository.saveNewProcess("customProcess", testCategory, CustomProcess(""), ProcessingType.Streaming)) { res =>
       updateProcess("customProcess", SampleProcess.process) {
         status shouldEqual StatusCodes.BadRequest
       }
@@ -333,7 +334,7 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
 
   it should "save new process with empty json" in {
     val newProcessId = "tst1"
-    Post(s"/processes/$newProcessId/$testCategory") ~> routWithAdminPermission ~> check {
+    Post(s"/processes/$newProcessId/$testCategory/${ProcessingType.Streaming}") ~> routWithAdminPermission ~> check {
       status shouldEqual StatusCodes.Created
 
       Get(s"/processes/$newProcessId") ~> routWithAdminPermission ~> check {
@@ -348,7 +349,7 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
     val processToSave = ProcessTestData.sampleDisplayableProcess
     saveProcess(processToSave) {
       status shouldEqual StatusCodes.OK
-      Post(s"/processes/${processToSave.id}/$testCategory") ~> routWithAdminPermission ~> check {
+      Post(s"/processes/${processToSave.id}/$testCategory/${ProcessingType.Streaming}") ~> routWithAdminPermission ~> check {
         status shouldEqual StatusCodes.BadRequest
 
       }
@@ -356,7 +357,7 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
   }
 
   it should "not allow to save process with category not allowed for user" in {
-    Post(s"/processes/p11/abcd") ~> routWithAdminPermission ~> check {
+    Post(s"/processes/p11/abcd/${ProcessingType.Streaming}") ~> routWithAdminPermission ~> check {
       //to ponizej nie dziala, bo nie potrafie tak ustawic dyrektyw path i authorize zeby przeszlo tak jak chce :(
       //rejection shouldBe server.AuthorizationFailedRejection
       handled shouldBe false
