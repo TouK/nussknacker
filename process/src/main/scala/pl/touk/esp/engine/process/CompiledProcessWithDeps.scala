@@ -44,12 +44,22 @@ case class CompiledProcessWithDeps(compiledProcess: CompiledProcessParts,
 
   def metaData: MetaData = compiledProcess.metaData
 
-  def exceptionHandler: FlinkEspExceptionHandler = new ListeningExceptionHandler
+  val exceptionHandler: FlinkEspExceptionHandler = new ListeningExceptionHandler
 
   private class ListeningExceptionHandler extends FlinkEspExceptionHandler {
 
     //FIXME: ladniej bez castow...
-    override def restartStrategy = compiledProcess.exceptionHandler.asInstanceOf[FlinkEspExceptionHandler].restartStrategy
+    private def flinkExceptionHandler = compiledProcess.exceptionHandler.asInstanceOf[FlinkEspExceptionHandler]
+
+    override def open(runtimeContext: RuntimeContext) = {
+      flinkExceptionHandler.open(runtimeContext)
+    }
+
+    override def close() = {
+      flinkExceptionHandler.close()
+    }
+
+    override def restartStrategy = flinkExceptionHandler.restartStrategy
 
     override def handle(exceptionInfo: EspExceptionInfo[_ <: Throwable]) = {
       listeners.foreach(_.exceptionThrown(exceptionInfo))
