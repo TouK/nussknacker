@@ -38,7 +38,7 @@ case class BrieflyLoggingExceptionHandler(processMetaData: MetaData)
     with NotRestartingProcesses
     with LazyLogging {
 
-  override protected def consumer = new FlinkEspExceptionConsumer {
+  override protected val consumer = new FlinkEspExceptionConsumer {
     override def consume(e: EspExceptionInfo[NonTransientException]) = {
       logger.warn(s"${processMetaData.id}: Exception: ${e.throwable.getMessage} (${e.throwable.getClass.getName})")
     }
@@ -50,14 +50,14 @@ case class VerboselyLoggingExceptionHandler(processMetaData: MetaData)
   extends FlinkEspExceptionHandler
     with ConsumingNonTransientExceptions
     with NotRestartingProcesses {
-  override protected def consumer = VerboselyLoggingExceptionConsumer(processMetaData)
+  override protected val consumer = new RateMeterExceptionConsumer(VerboselyLoggingExceptionConsumer(processMetaData))
 
 }
 
 case class VerboselyLoggingRestartingExceptionHandler(processMetaData: MetaData)
   extends FlinkEspExceptionHandler
     with ConsumingNonTransientExceptions {
-  override protected def consumer = VerboselyLoggingExceptionConsumer(processMetaData)
+  override protected val consumer = VerboselyLoggingExceptionConsumer(processMetaData)
 
   override def restartStrategy = new FailureRateRestartStrategyConfiguration(10, Time.seconds(1), Time.seconds(1))
 }

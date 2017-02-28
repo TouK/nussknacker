@@ -18,6 +18,8 @@ import scala.collection.mutable.ArrayBuffer
 class MetricsSpec extends FlatSpec with Matchers {
 
   it should "measure time for service" in {
+    TestReporter.reset()
+
     import spel.Implicits._
 
     val process = EspProcessBuilder.id("proc1")
@@ -44,11 +46,43 @@ class MetricsSpec extends FlatSpec with Matchers {
     val histogram = TestReporter.taskManagerReporter.testHistogram("serviceTimes.mockService.OK")
     histogram.getCount shouldBe 1
 
-}
+  }
+
+  it should "measure errors" in {
+    TestReporter.reset()
+
+    import spel.Implicits._
+
+    val process = EspProcessBuilder.id("proc1")
+      .exceptionHandler()
+      .source("id", "input")
+      .processor("proc2", "logService", "all" -> "1 / #input.value1")
+      .sink("out", "monitor")
+    val data = List(
+      SimpleRecord("1", 0, "a", new Date(0))
+    )
+
+    val config = new Configuration()
+    config.setString(ConfigConstants.METRICS_REPORTERS_LIST, "test")
+    config.setString(ConfigConstants.METRICS_REPORTER_PREFIX + "test.class", classOf[TestReporter].getName)
+
+
+    val env = new StreamExecutionEnvironment(JavaEnv.createLocalEnvironment(1, config))
+
+    processInvoker.invoke(process, data, env)
+
+    //smutne, ale logika w InstantRateMeter troche to wymusza...
+    Thread.sleep(1200)
+
+    val gauges = TestReporter.taskManagerReporter.testGauges("error.instantRate")
+    gauges.exists(_.getValue.asInstanceOf[Double] > 0) shouldBe true
+  }
 
 }
 
 object TestReporter {
+
+  def reset() = instances.clear()
 
   val instances: ArrayBuffer[TestReporter] = new ArrayBuffer[TestReporter]()
 
@@ -61,6 +95,8 @@ class TestReporter extends AbstractReporter {
   def testHistograms = histograms.toMap
 
   def testHistogram(containing: String) = testHistograms.filter(_._2.contains(containing)).keys.head
+
+  def testGauges(containing: String) = gauges.toMap.filter(_._2.contains(containing)).keys
 
   override def notifyOfRemovedMetric(metric: Metric, metricName: String, group: MetricGroup) = {}
 
