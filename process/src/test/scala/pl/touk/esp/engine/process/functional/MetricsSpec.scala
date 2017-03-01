@@ -74,8 +74,11 @@ class MetricsSpec extends FlatSpec with Matchers {
     //smutne, ale logika w InstantRateMeter troche to wymusza...
     Thread.sleep(1200)
 
-    val gauges = TestReporter.taskManagerReporter.testGauges("error.instantRate")
-    gauges.exists(_.getValue.asInstanceOf[Double] > 0) shouldBe true
+    val totalGauges = TestReporter.taskManagerReporter.testGauges("error.instantRate")
+    totalGauges.exists(_.getValue.asInstanceOf[Double] > 0) shouldBe true
+
+    val nodeGauges = TestReporter.taskManagerReporter.testGauges("error.instantRateByNode.proc2")
+    nodeGauges.exists(_.getValue.asInstanceOf[Double] > 0) shouldBe true
   }
 
 }
