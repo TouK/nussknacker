@@ -77,7 +77,7 @@ class MetricsSpec extends FlatSpec with Matchers {
     val totalGauges = TestReporter.taskManagerReporter.testGauges("error.instantRate")
     totalGauges.exists(_.getValue.asInstanceOf[Double] > 0) shouldBe true
 
-    val nodeGauges = TestReporter.taskManagerReporter.testGauges("error.instantRateByNode.proc2")
+    val nodeGauges = TestReporter.taskManagerReporter.testGauges("error.proc2.instantRateByNode")
     nodeGauges.exists(_.getValue.asInstanceOf[Double] > 0) shouldBe true
   }
 

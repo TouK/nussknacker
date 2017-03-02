@@ -39,7 +39,9 @@ class RateMeterExceptionConsumer(underlying: FlinkEspExceptionConsumer) extends 
     case Some(meter) => meter
     case None =>
       val meter = new InstantRateMeter
-      errorMetricGroup.gauge[Double, InstantRateMeter](s"instantRateByNode.$nodeId", meter)
+      errorMetricGroup
+        .addGroup(nodeId)
+        .gauge[Double, InstantRateMeter]("instantRateByNode", meter)
       meterMap = meterMap.updated(nodeId, meter)
       meter
   }
