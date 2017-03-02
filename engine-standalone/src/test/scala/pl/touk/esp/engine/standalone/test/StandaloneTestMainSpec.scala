@@ -3,7 +3,7 @@ package pl.touk.esp.engine.standalone.test
 import argonaut.PrettyParams
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FlatSpec, Matchers}
 import pl.touk.esp.engine.api.Context
 import pl.touk.esp.engine.api.deployment.test._
 import pl.touk.esp.engine.api.exception.EspExceptionInfo
@@ -13,7 +13,7 @@ import pl.touk.esp.engine.spel
 import pl.touk.esp.engine.standalone.management.StandaloneTestMain
 import pl.touk.esp.engine.standalone.{ProcessorService, Request1}
 
-class StandaloneTestMainSpec extends FlatSpec with Matchers {
+class StandaloneTestMainSpec extends FlatSpec with Matchers with BeforeAndAfterEach {
 
   import spel.Implicits._
   import scala.concurrent.ExecutionContext.Implicits.global
@@ -79,5 +79,7 @@ class StandaloneTestMainSpec extends FlatSpec with Matchers {
     results.exceptions.head.throwable.getMessage shouldBe "/ by zero"
   }
 
-
+  override protected def beforeEach(): Unit = {
+    ProcessorService.clear()
+  }
 }
