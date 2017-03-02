@@ -145,6 +145,10 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
     parse("{ Field1: 'Field1Value', Field2: 'Field2Value', Field3: #input.value }", ctxWithInput, Map()) shouldBe 'valid
   }
 
+  it should "not validate plain string " in {
+    parse("abcd", ctx, Map()) shouldNot be ('valid)
+  }
+
   it should "evaluate static field/method using property syntax" in {
     val globalVars = Map("processHelper" -> ClazzRef.apply(SampleGlobalObject.getClass))
     parseOrFail("#processHelper.one", globalProcessVariables = globalVars).evaluate[Int](ctx, dumbLazyProvider).value should equal(1)
