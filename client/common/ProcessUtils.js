@@ -16,6 +16,13 @@ class ProcessUtils {
     return state.graphReducer.groupingState != null
   }
 
+
+  isProcessValid = (process) => {
+    const result = process.validationResult
+    return !result || (Object.keys(result.invalidNodes || {}).length == 0
+      && (result.globalErrors || []).length == 0 && (result.processPropertiesErrors || []).length == 0)
+  }
+
   findAvailableVariables = (nodeId, process, processDefinition) => {
     const globalVariables = _.mapValues(processDefinition.globalVariables, (v) => {return v.value.refClazzName})
     const variablesDefinedBeforeNode = this._findVariablesDeclaredBeforeNode(nodeId, process, processDefinition);

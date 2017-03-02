@@ -45,7 +45,7 @@ class UserRightPanel extends Component {
         {
           panelName: "Deployment",
           buttons:[
-            {name: "deploy", visible: this.props.loggedUser.canDeploy, disabled: !this.props.processIsLatestVersion, onClick: this.deploy, icon: InlinedSvgs.buttonDeploy},
+            {name: "deploy", visible: this.props.loggedUser.canDeploy, disabled: !this.props.processIsLatestVersion || !ProcessUtils.isProcessValid(this.props.processToDisplay), onClick: this.deploy, icon: InlinedSvgs.buttonDeploy},
             {name: "stop", visible: this.props.loggedUser.canDeploy, disabled: !this.isRunning(), onClick: this.stop, icon: InlinedSvgs.buttonStop},
             {name: "metrics", onClick: this.showMetrics, icon: InlinedSvgs.buttonMetrics}
           ]

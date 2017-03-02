@@ -4,6 +4,8 @@ import { Scrollbars } from 'react-custom-scrollbars';
 import { connect } from 'react-redux';
 import _ from 'lodash'
 import ActionsUtils from '../actions/ActionsUtils';
+import ProcessUtils from '../common/ProcessUtils';
+
 import InlinedSvgs from '../assets/icons/InlinedSvgs'
 
 
@@ -16,19 +18,11 @@ export class Tips extends Component {
 
   }
 
-  validationResult = () => this.props.currentProcess.validationResult
-
-  isProcessValid = () => {
-    const result = this.validationResult()
-    return !result || (Object.keys(result.invalidNodes || {}).length == 0
-      && (result.globalErrors || []).length == 0 && (result.processPropertiesErrors || []).length == 0)
-  }
-
   tipText = () => {
-    if (this.isProcessValid()) {
+    if (ProcessUtils.isProcessValid(this.props.currentProcess)) {
       return (<div>{this.validTip()}</div>)
     } else {
-      const result = this.validationResult()
+      const result =  this.props.currentProcess.validationResult
       const nodesErrors = _.flatten(Object.keys(result.invalidNodes || {}).map((key, idx) => result.invalidNodes[key].map(error => this.printError(error, key, idx))))
       const globalErrors = (result.globalErrors || []).map((error, idx) => this.printError(error, null, idx))
       const processProperties = (result.processPropertiesErrors || []).map((error, idx) => this.printError(error, 'Properties', idx))
@@ -60,7 +54,7 @@ export class Tips extends Component {
 
 
   render() {
-    var tipsIcon = this.isProcessValid() ? InlinedSvgs.tipsInfo : InlinedSvgs.tipsWarning
+    var tipsIcon = ProcessUtils.isProcessValid(this.props.currentProcess) ? InlinedSvgs.tipsInfo : InlinedSvgs.tipsWarning
     return (
         <div id="tipsPanel">
           <Scrollbars renderThumbVertical={props => <div {...props} className="thumbVertical"/>} hideTracksWhenNotNeeded={true}>
