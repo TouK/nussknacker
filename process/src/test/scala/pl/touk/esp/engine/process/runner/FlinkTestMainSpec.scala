@@ -59,10 +59,10 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside with BeforeAn
     invocationResults("proc2") shouldBe
       List(ExpressionInvocationResult(Context("proc1-id-0-1", Map("input" -> input2, "variable1" -> "ala")), "all", "0"))
     invocationResults("out") shouldBe
-      List(ExpressionInvocationResult(Context("proc1-id-0-1",Map("input" -> input2, "variable1" -> "ala")), "expression", 11))
+      List(ExpressionInvocationResult(Context("proc1-id-0-1", Map("input" -> input2, "variable1" -> "ala")), "expression", 11))
 
     results.mockedResults("proc2") shouldBe List(MockedResult(Context("proc1-id-0-1", Map.empty), "logService", "0-collectedDuringServiceInvocation"))
-    results.mockedResults("out") shouldBe List(MockedResult(Context("proc1-id-0-1",Map.empty), "monitor", "11"))
+    results.mockedResults("out") shouldBe List(MockedResult(Context("proc1-id-0-1", Map("input" -> input2, "variable1" -> "ala")), "monitor", "11"))
     MonitorEmptySink.invocationsCount.get() shouldBe 0
     LogService.invocationsCount.get() shouldBe 0
   }
@@ -113,8 +113,8 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside with BeforeAn
 
     results.mockedResults("out") shouldBe
       List(
-        MockedResult(Context("proc1-id-0-0",Map.empty), "monitor", "1 0"),
-        MockedResult(Context("proc1-id-0-1",Map.empty), "monitor", "11 1")
+        MockedResult(Context("proc1-id-0-0", Map("input" -> input, "out" -> aggregate)), "monitor", "1 0"),
+        MockedResult(Context("proc1-id-0-1", Map("input" -> input2, "out" -> aggregate2)), "monitor", "11 1")
       )
 
   }
@@ -218,9 +218,9 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside with BeforeAn
     results.nodeResults("id") should have size 3
     results.mockedResults("out") shouldBe
       List(
-        MockedResult(Context("proc1-id-0-0",Map.empty), "monitor", "SimpleJsonRecord(1,11)"),
-        MockedResult(Context("proc1-id-0-1",Map.empty), "monitor", "SimpleJsonRecord(2,22)"),
-        MockedResult(Context("proc1-id-0-2",Map.empty), "monitor", "SimpleJsonRecord(3,33)")
+        MockedResult(Context("proc1-id-0-0",Map("input" -> SimpleJsonRecord("1", "11"))), "monitor", "SimpleJsonRecord(1,11)"),
+        MockedResult(Context("proc1-id-0-1",Map("input" -> SimpleJsonRecord("2", "22"))), "monitor", "SimpleJsonRecord(2,22)"),
+        MockedResult(Context("proc1-id-0-2",Map("input" -> SimpleJsonRecord("3", "33"))), "monitor", "SimpleJsonRecord(3,33)")
       )
   }
 

@@ -86,12 +86,12 @@ class Request1SourceFactory extends StandaloneSourceFactory[Request1] {
     decoder.decodeJson(Parse.parse(str).right.get).result.right.get
   }
 
-  override def clazz: Class[_] = Request1.getClass
+  override def clazz: Class[_] = classOf[Request1]
 
   override def testDataParser: Option[TestDataParser[Request1]] = Some(
     new TestDataParser[Request1] {
       override def parseTestData(data: Array[Byte]): List[Request1] = {
-        val request1List = (new String(data)).split("\n").toList
+        val request1List = new String(data).split("\n").toList
         request1List.map(str => decoder.decodeJson(Parse.parse(str).right.get).result.right.get)
       }
     }

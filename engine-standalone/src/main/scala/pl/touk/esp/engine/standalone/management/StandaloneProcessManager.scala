@@ -8,14 +8,14 @@ import java.util.concurrent.TimeUnit
 
 import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.config.Config
-import dispatch.{Http, Req}
-import pl.touk.esp.engine.api.ProcessListener
+import dispatch.Http
 import pl.touk.esp.engine.api.deployment._
 import pl.touk.esp.engine.api.deployment.test.{TestData, TestResults}
-import pl.touk.esp.engine.api.exception.{EspExceptionHandler, EspExceptionInfo}
+import pl.touk.esp.engine.api.exception.EspExceptionInfo
 import pl.touk.esp.engine.api.process.{ProcessConfigCreator, SourceFactory}
 import pl.touk.esp.engine.api.test.InvocationCollectors.{ServiceInvocationCollector, SinkInvocationCollector}
-import pl.touk.esp.engine.api.test.{ResultsCollectingListener, ResultsCollectingListenerHolder}
+import pl.touk.esp.engine.api.test.{ResultsCollectingListener, ResultsCollectingListenerHolder, TestRunId}
+import pl.touk.esp.engine.api.{EndingReference, InterpretationResult, ProcessListener}
 import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
 import pl.touk.esp.engine.canonize.ProcessCanonizer
 import pl.touk.esp.engine.definition.DefinitionExtractor.{ObjectDefinition, ObjectWithMethodDef}
@@ -28,7 +28,7 @@ import pl.touk.esp.engine.util.ThreadUtils
 import pl.touk.esp.engine.util.service.{AuditDispatchClient, LogCorrelationId}
 
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 class StandaloneProcessManager(config: Config)
   extends ProcessManager with ConfigCreatorTestInfoProvider with ProcessDefinitionProvider {
@@ -124,32 +124,47 @@ object StandaloneTestMain {
 }
 
 class StandaloneTestMain(config: Config, testData: TestData, process: EspProcess, creator: ProcessConfigCreator) {
-  val timeout = FiniteDuration(10, TimeUnit.SECONDS)
 
+  private val timeout = FiniteDuration(10, TimeUnit.SECONDS)
 
-  def runTest()(): TestResults = {
+  import ExecutionContext.Implicits.global
+
+  def runTest(): TestResults = {
     val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(creator, config)
     val parsedTestData = readTestData(definitions)
 
     val collectingListener = ResultsCollectingListenerHolder.registerRun
-    val sinkInvocationCollector = SinkInvocationCollector(collectingListener.runId)
 
-    //fixme za duzo opcjonalnych parametrow, mzoe jakos inaczej trzeba bedzie to zrobic?
-    val standaloneInterpreter = new StandaloneProcessInterpreter(process)(creator, config,
+    //FIXME: walidacja??
+    val standaloneInterpreter = StandaloneProcessInterpreter(process, creator, config,
       definitionsPostProcessor = prepareMocksForTest(collectingListener),
-      additionalListeners = List(collectingListener),
-      sinkInvocationCollector = Some(sinkInvocationCollector)
-    )
-    val exceptionHandler = new TestUtils.ListeningExceptionHandler(creator.listeners(config).toList ++ List(collectingListener), standaloneInterpreter.exceptionHandler)
+      additionalListeners = List(collectingListener)
+    ).toOption.get
 
     try {
-      parsedTestData.map(data => standaloneInterpreter.runSync(data)(timeout, exceptionHandler))
+      val results = Await.result(Future.sequence(parsedTestData.map(standaloneInterpreter.invokeToResult)), timeout)
+      collectSinkResults(collectingListener.runId, results)
+      collectExceptions(collectingListener, results)
       collectingListener.results
     } finally {
       collectingListener.clean()
     }
 
   }
+
+  private def collectSinkResults(runId: TestRunId, results: List[Either[Option[InterpretationResult], EspExceptionInfo[_ <: Throwable]]]) = {
+    val successfulResults = results.flatMap(_.left.toOption.flatten.toList)
+    successfulResults.foreach { result =>
+      val node = result.reference.asInstanceOf[EndingReference].nodeId
+      SinkInvocationCollector(runId, node, node, _.toString).collect(result)
+    }
+  }
+
+  private def collectExceptions(listener: ResultsCollectingListener, results: List[Either[Option[InterpretationResult], EspExceptionInfo[_ <: Throwable]]]) = {
+    val exceptions = results.flatMap(_.right.toOption)
+    exceptions.foreach(listener.exceptionThrown)
+  }
+
 
   private def readTestData(definitions: ProcessDefinition[ObjectWithMethodDef]): List[Any] = {
     val sourceType = process.root.data.ref.typ
@@ -193,7 +208,7 @@ object TestUtils {
   }
 
   //fixme zdeduplikowac
-  def prepareServiceWithEnabledInvocationCollector(runId: String, service: ObjectWithMethodDef): ObjectWithMethodDef = {
+  def prepareServiceWithEnabledInvocationCollector(runId: TestRunId, service: ObjectWithMethodDef): ObjectWithMethodDef = {
     new ObjectWithMethodDef(service.obj, service.methodDef, service.objectDefinition) {
       override def invokeMethod(parameterCreator: String => Option[AnyRef], additional: Seq[AnyRef]): Any = {
         val newAdditional = additional.map {
@@ -237,14 +252,5 @@ object TestUtils {
     }
 
   }
-
-  class ListeningExceptionHandler(listeners: Seq[ProcessListener], originalExceptionHandler: EspExceptionHandler) extends EspExceptionHandler {
-
-    override def handle(exceptionInfo: EspExceptionInfo[_ <: Throwable]) = {
-      listeners.foreach(_.exceptionThrown(exceptionInfo))
-      originalExceptionHandler.handle(exceptionInfo)
-    }
-  }
-
 
 }

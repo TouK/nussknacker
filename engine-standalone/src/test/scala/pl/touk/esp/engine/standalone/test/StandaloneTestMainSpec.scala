@@ -48,7 +48,9 @@ class StandaloneTestMainSpec extends FlatSpec with Matchers with BeforeAndAfterE
     )
 
     results.mockedResults("processor") shouldBe List(MockedResult(Context("proc1-0"), "processorService", "processor service invoked"))
-    results.mockedResults("endNodeIID") shouldBe List(MockedResult(Context("proc1-0"), "response-sink", "alamakota"))
+    results.mockedResults("endNodeIID") shouldBe List(MockedResult(Context("proc1-0", Map("input" -> Request1("a","b"), "var1" -> "alamakota")),
+      //FIXME: w tej chwili tu nie wpisuje refa, tylko nodeId...
+      "endNodeIID", "alamakota"))
 
     ProcessorService.invocationsCount.get shouldBe 0
 

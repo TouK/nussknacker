@@ -38,8 +38,7 @@ class StandaloneProcessInterpreterSpec extends FlatSpec with Matchers {
       .id("proc1")
       .exceptionHandler()
       .source("start", "request1-source")
-//      .filter("filter1", "#input.field1 == 'a'") //fixme dlaczego to nie dziala?
-      .filter("filter1", "#input.field1() == 'a'")
+      .filter("filter1", "#input.field1 == 'a'")
       .enricher("enricher", "var1", "enricherService")
       .processor("processor", "processorService")
       .sink("endNodeIID", "#var1", "response-sink")
@@ -47,12 +46,16 @@ class StandaloneProcessInterpreterSpec extends FlatSpec with Matchers {
     val input = Request1("a", "b")
     val config = ConfigFactory.load()
     val creator = new StandaloneProcessConfigCreator
-    val interpreter = new StandaloneProcessInterpreter(process)(creator, config)
+    val maybeinterpreter = StandaloneProcessInterpreter(process, creator, config)
+
+
+    maybeinterpreter shouldBe 'valid
+    val interpreter = maybeinterpreter.toOption.get
     interpreter.open()
 
-    val result = interpreter.run(input)
+    val result = interpreter.invoke(input)
 
-    Await.result(result, Duration(5, TimeUnit.SECONDS)) shouldBe Some("alamakota")
+    Await.result(result, Duration(5, TimeUnit.SECONDS)) shouldBe Left(Some("alamakota"))
     ProcessorService.invocationsCount.get() shouldBe 1
 
     interpreter.close()
