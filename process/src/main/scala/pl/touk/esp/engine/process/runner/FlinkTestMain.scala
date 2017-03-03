@@ -9,10 +9,10 @@ import org.apache.flink.configuration.{ConfigConstants, Configuration}
 import org.apache.flink.runtime.minicluster.LocalFlinkMiniCluster
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import pl.touk.esp.engine.api.deployment.test.{TestData, TestResults}
-import pl.touk.esp.engine.api.process.{ProcessConfigCreator, Sink}
-import pl.touk.esp.engine.api.test.InvocationCollectors.{NodeContext, ServiceInvocationCollector, SinkInvocationCollector}
-import pl.touk.esp.engine.api.test.{ResultsCollectingListener, ResultsCollectingListenerHolder}
-import pl.touk.esp.engine.definition.DefinitionExtractor.{ObjectWithMethodDef, Parameter}
+import pl.touk.esp.engine.api.process.ProcessConfigCreator
+import pl.touk.esp.engine.api.test.InvocationCollectors.ServiceInvocationCollector
+import pl.touk.esp.engine.api.test.{ResultsCollectingListener, ResultsCollectingListenerHolder, TestRunId}
+import pl.touk.esp.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.esp.engine.definition.ProcessDefinitionExtractor
 import pl.touk.esp.engine.flink.api.process.FlinkSourceFactory
 import pl.touk.esp.engine.flink.util.source.CollectionSource
@@ -44,7 +44,7 @@ class FlinkTestMain(config: Config, testData: TestData, process: EspProcess, cre
     val collectingListener = ResultsCollectingListenerHolder.registerRun
     try {
       val registrar: FlinkProcessRegistrar = FlinkProcessRegistrar(creator, config, prepareMocksForTest(env.getConfig, collectingListener), List(collectingListener))
-      registrar.register(env, process, Option(SinkInvocationCollector(collectingListener.runId)))
+      registrar.register(env, process, Option(collectingListener.runId))
       overWriteRestartStrategy(env)
       execute(env, urls)
       collectingListener.results
@@ -79,7 +79,7 @@ class FlinkTestMain(config: Config, testData: TestData, process: EspProcess, cre
     }
   }
 
-  private def prepareServiceWithEnabledInvocationCollector(runId: String, service: ObjectWithMethodDef): ObjectWithMethodDef = {
+  private def prepareServiceWithEnabledInvocationCollector(runId: TestRunId, service: ObjectWithMethodDef): ObjectWithMethodDef = {
     new ObjectWithMethodDef(service.obj, service.methodDef, service.objectDefinition) {
       override def invokeMethod(parameterCreator: String => Option[AnyRef], additional: Seq[AnyRef]): Any = {
         val newAdditional = additional.map {

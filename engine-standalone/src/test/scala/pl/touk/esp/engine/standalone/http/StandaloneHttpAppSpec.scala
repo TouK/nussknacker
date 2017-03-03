@@ -53,8 +53,8 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
 
   val exampleApp = StandaloneHttpApp
 
-  val managementRoute = exampleApp.managementRoute
-  val processesRoute = exampleApp.processRoute
+  val managementRoute = exampleApp.managementRoute.route
+  val processesRoute = exampleApp.processRoute.route
 
   it should "deploy process and then run it" in {
     assertProcessNotRunning("proc1")
@@ -87,7 +87,7 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
       status shouldBe StatusCodes.OK
       Post("/proc1", toEntity(Request1("c", "d"))) ~> processesRoute ~> check {
         status shouldBe StatusCodes.OK
-        responseAs[String] shouldBe "" //fixme co wlasciwie powinnismy zwracac kiedy event nie przeszedl calego procesu?
+        responseAs[String] shouldBe "\"\"" //fixme co wlasciwie powinnismy zwracac kiedy event nie przeszedl calego procesu?
         cancelProcess("proc1")
       }
     }
@@ -107,7 +107,7 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
       status shouldBe StatusCodes.OK
       Post("/proc1", toEntity(req)) ~> processesRoute ~> check {
         status shouldBe StatusCodes.OK
-        responseAs[String] shouldBe "" //fixme co wlasciwie powinnismy zwracac kiedy event nie przeszedl calego procesu?
+        responseAs[String] shouldBe "\"\"" //fixme co wlasciwie powinnismy zwracac kiedy event nie przeszedl calego procesu?
         Post("/deploy", toEntity(DeploymentData("proc1", noFilterProcessJson))) ~> managementRoute ~> check {
           status shouldBe StatusCodes.OK
           Post("/proc1", toEntity(req)) ~> processesRoute ~> check {

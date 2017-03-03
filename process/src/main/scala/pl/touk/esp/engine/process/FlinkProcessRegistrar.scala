@@ -28,8 +28,10 @@ import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
 import org.apache.flink.util.Collector
 import pl.touk.esp.engine.Interpreter
 import pl.touk.esp.engine.api._
+import pl.touk.esp.engine.api.exception.EspExceptionInfo
 import pl.touk.esp.engine.api.process._
 import pl.touk.esp.engine.api.test.InvocationCollectors.{NodeContext, SinkInvocationCollector}
+import pl.touk.esp.engine.api.test.TestRunId
 import pl.touk.esp.engine.compile.{PartSubGraphCompiler, ProcessCompilationError, ProcessCompiler}
 import pl.touk.esp.engine.compiledgraph.part._
 import pl.touk.esp.engine.definition.DefinitionExtractor.{ClazzRef, ObjectWithMethodDef}
@@ -48,8 +50,11 @@ import pl.touk.esp.engine.splittedgraph.splittednode.{NextNode, PartRef, Splitte
 import pl.touk.esp.engine.util.SynchronousExecutionContext
 
 import scala.collection.JavaConversions._
+import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.language.implicitConversions
+import scala.util.Try
+import scala.util.control.NonFatal
 
 class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessWithDeps,
                             eventTimeMetricDuration: FiniteDuration,
@@ -59,14 +64,14 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessW
 
   implicit def millisToTime(duration: Long): Time = Time.of(duration, TimeUnit.MILLISECONDS)
 
-  def register(env: StreamExecutionEnvironment, process: EspProcess, sinkInvocationCollector: Option[SinkInvocationCollector] = None): Unit = {
+  def register(env: StreamExecutionEnvironment, process: EspProcess, testRunId: Option[TestRunId] = None): Unit = {
     Serializers.registerSerializers(env)
     if (enableObjectReuse) {
       env.getConfig.enableObjectReuse()
       logger.info("Object reuse enabled")
     }
 
-    register(env, compileProcess(process), sinkInvocationCollector)
+    register(env, compileProcess(process), testRunId)
     initializeStateDescriptors(env)
   }
 
@@ -81,7 +86,7 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessW
   }
 
   private def register(env: StreamExecutionEnvironment, compiledProcessWithDeps: () => CompiledProcessWithDeps,
-                       sinkInvocationCollector: Option[SinkInvocationCollector]): Unit = {
+                       testRunId: Option[TestRunId]): Unit = {
     val process = compiledProcessWithDeps().compiledProcess
     //FIXME: ladniej bez casta
     env.setRestartStrategy(process.exceptionHandler.asInstanceOf[FlinkEspExceptionHandler].restartStrategy)
@@ -143,12 +148,15 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessW
             .flatMap(new SinkInterpretationFunction(compiledProcessWithDeps, part.node))
             .name(s"${process.metaData.id}-${part.id}-function")
             .map(new EndRateMeterFunction(part.ends))
-          val withSinkAdded = sinkInvocationCollector match {
+          val withSinkAdded = testRunId match {
             case None =>
               startAfterSinkEvaluated
                 .map(_.output)
                 .addSink(sink.toFlinkFunction)
-            case Some(collectingSink) =>
+            case Some(runId) =>
+              val typ = part.node.data.ref.typ
+              val prepareFunction = sink.testDataOutput.getOrElse(throw new IllegalArgumentException(s"Sink $typ cannot be mocked"))
+              val collectingSink = SinkInvocationCollector(runId, part.id, typ, prepareFunction)
               startAfterSinkEvaluated.addSink(new CollectingSinkFunction(compiledProcessWithDeps, collectingSink, part))
           }
           withSinkAdded.name(s"${process.metaData.id}-${part.id}-sink")
@@ -259,9 +267,11 @@ object FlinkProcessRegistrar {
     }
 
     override def flatMap(input: Context, collector: Collector[InterpretationResult]): Unit = {
-      val result =
-        interpreter.interpretSync(compiledNode, InterpreterMode.Traverse, metaData, input, processTimeout, exceptionHandler)
-      result.foreach(collector.collect)
+      (try {
+        Await.result(interpreter.interpret(compiledNode, InterpreterMode.Traverse, metaData, input), processTimeout)
+      } catch {
+        case NonFatal(error) => Right(EspExceptionInfo(Some(node.id), error, input))
+      }).fold(collector.collect, exceptionHandler.handle)
     }
 
     override def close(): Unit = {
@@ -286,11 +296,11 @@ object FlinkProcessRegistrar {
     }
 
     override def flatMap(input: InterpretationResult, collector: Collector[InterpretationResult]): Unit = {
-      compiledProcessWithDeps.exceptionHandler.handling(Some(sink.id), input.finalContext) {
-        val result =
-          interpreter.interpretSync(compiledNode, InterpreterMode.Traverse, metaData, input.finalContext, processTimeout, exceptionHandler)
-        result.foreach(collector.collect)
-      }
+      (try {
+        Await.result(interpreter.interpret(compiledNode, InterpreterMode.Traverse, metaData, input.finalContext), processTimeout)
+      } catch {
+        case NonFatal(error) => Right(EspExceptionInfo(Some(sink.id), error, input.finalContext))
+      }).fold(collector.collect, exceptionHandler.handle)
     }
 
     override def close(): Unit = {
@@ -306,9 +316,7 @@ object FlinkProcessRegistrar {
 
     override def invoke(value: InterpretationResult) = {
       compiledProcessWithDeps.exceptionHandler.handling(Some(sink.id), value.finalContext) {
-        collectingSink.collect(value.output, NodeContext(contextId = value.finalContext.id,
-          nodeId = sink.id, ref = sink.node.data.ref.typ), sink.obj)
-
+        collectingSink.collect(value)
       }
     }
   }

@@ -22,6 +22,8 @@ object ProcessCompilationError {
 
   }
 
+  case class UnsupportedPart(nodeId: String) extends ProcessCompilationError with InASingleNode
+
   case class InvaliRootNode(nodeId: String) extends ProcessUncanonizationError with InASingleNode
 
   object EmptyProcess extends ProcessUncanonizationError {

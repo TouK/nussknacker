@@ -2,14 +2,17 @@ package pl.touk.esp.engine.api.test
 
 import java.util.UUID
 
-import pl.touk.esp.engine.api.{Context, InterpreterMode, MetaData, ProcessListener}
+import pl.touk.esp.engine.api._
 import pl.touk.esp.engine.api.deployment.test.{ExpressionInvocationResult, MockedResult, NodeResult, TestResults}
 import pl.touk.esp.engine.api.exception.EspExceptionInfo
 import pl.touk.esp.engine.api.process.Sink
 
 import scala.util.Try
 
-case class ResultsCollectingListener(holderClass: String, runId: String) extends ProcessListener with Serializable {
+case class TestRunId(id: String)
+
+
+case class ResultsCollectingListener(holderClass: String, runId: TestRunId) extends ProcessListener with Serializable {
 
   def results = ResultsCollectingListenerHolder.results(runId)
 
@@ -39,35 +42,35 @@ case class ResultsCollectingListener(holderClass: String, runId: String) extends
 
 object ResultsCollectingListenerHolder {
 
-  private[test] var results = Map[String, TestResults]()
+  private[test] var results = Map[TestRunId, TestResults]()
 
   def registerRun = synchronized {
-    val runId = UUID.randomUUID().toString
+    val runId = TestRunId(UUID.randomUUID().toString)
     results += (runId -> TestResults())
     ResultsCollectingListener(getClass.getCanonicalName, runId)
   }
 
-  private[test] def updateResult(runId: String, nodeId: String, nodeResult: NodeResult) = synchronized {
+  private[test] def updateResult(runId: TestRunId, nodeId: String, nodeResult: NodeResult) = synchronized {
     val runResult = results.getOrElse(runId, TestResults()).updateResult(nodeId, nodeResult)
     results += (runId -> runResult)
   }
 
-  private[test] def updateResult(runId: String, espExceptionInfo: EspExceptionInfo[_ <: Throwable]) = synchronized {
+  private[test] def updateResult(runId: TestRunId, espExceptionInfo: EspExceptionInfo[_ <: Throwable]) = synchronized {
     val runResult = results.getOrElse(runId, TestResults()).updateResult(espExceptionInfo)
     results += (runId -> runResult)
   }
 
-  private[test] def updateResult(runId: String, nodeId: String, nodeResult: ExpressionInvocationResult) = synchronized {
+  private[test] def updateResult(runId: TestRunId, nodeId: String, nodeResult: ExpressionInvocationResult) = synchronized {
     val runResult = results.getOrElse(runId, TestResults()).updateResult(nodeId, nodeResult)
     results += (runId -> runResult)
   }
 
-  private[test] def updateResult(runId: String, nodeId: String, mockedResult: MockedResult) = synchronized {
+  private[test] def updateResult(runId: TestRunId, nodeId: String, mockedResult: MockedResult) = synchronized {
     val runResult = results.getOrElse(runId, TestResults()).updateResult(nodeId, mockedResult)
     results += (runId -> runResult)
   }
 
-  def cleanResult(runId: String) = synchronized {
+  def cleanResult(runId: TestRunId) = synchronized {
     results -= runId
   }
 }
@@ -76,8 +79,8 @@ object InvocationCollectors {
 
   case class NodeContext(contextId: String, nodeId: String, ref: String)
 
-  case class ServiceInvocationCollector private(runIdOpt: Option[String], nodeContext: NodeContext) {
-    def enable(runId: String) = this.copy(runIdOpt = Some(runId))
+  case class ServiceInvocationCollector private(runIdOpt: Option[TestRunId], nodeContext: NodeContext) {
+    def enable(runId: TestRunId) = this.copy(runIdOpt = Some(runId))
     def collectorEnabled = runIdOpt.isDefined
 
     def collect(testInvocation: Any): Unit = {
@@ -101,17 +104,11 @@ object InvocationCollectors {
     }
   }
 
-  case class SinkInvocationCollector(runId: String) {
+  case class SinkInvocationCollector(runId: TestRunId, nodeId: String, ref: String, outputPreparer: Any => String) {
 
-    def collect(value: Any, nodeContext: NodeContext, originalSink: Sink): Unit = {
-      originalSink.testDataOutput match {
-        case Some(mapping) =>
-          val mockedResult = mapping(value)
-          ResultsCollectingListenerHolder.updateResult(runId, nodeContext.nodeId,
-            MockedResult(Context(nodeContext.contextId), nodeContext.ref, mockedResult))
-        case None =>
-          throw new IllegalArgumentException(s"Sink ${nodeContext.ref} cannot be mocked")
-      }
+    def collect(result: InterpretationResult): Unit = {
+      val mockedResult = outputPreparer(result.output)
+      ResultsCollectingListenerHolder.updateResult(runId, nodeId, MockedResult(result.finalContext, ref, mockedResult))
     }
   }
 }

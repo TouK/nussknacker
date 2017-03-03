@@ -23,35 +23,21 @@ class Interpreter private(services: Map[String, ServiceInvoker],
                           lazyEvaluationTimeout: FiniteDuration,
                           listeners: Seq[ProcessListener] = Seq(LoggingListener)) {
 
-  def interpretSync(node: Node,
-                    mode: InterpreterMode,
-                    metaData: MetaData,
-                    ctx: Context, timeout: FiniteDuration, exceptionHandler: EspExceptionHandler)
-                   (implicit executor: ExecutionContext): Option[InterpretationResult] = {
-    try {
-      val resultFuture = interpret(node, mode, metaData, ctx)
-      Some(Await.result(resultFuture, timeout))
-    } catch {
-      case ex@NodeIdExceptionWrapper(nodeId, exception) =>
-        val exInfo = EspExceptionInfo(Some(nodeId), exception, ctx)
-        exceptionHandler.handle(exInfo)
-        None
-      case NonFatal(ex) =>
-        val exInfo = EspExceptionInfo(None, ex, ctx)
-        exceptionHandler.handle(exInfo)
-        None
-    }
-
-  }
-
   def interpret(node: Node,
                 mode: InterpreterMode,
                 metaData: MetaData,
                 ctx: Context)
-               (implicit executor: ExecutionContext): Future[InterpretationResult] = {
+               (implicit executor: ExecutionContext): Future[Either[InterpretationResult, EspExceptionInfo[_<:Throwable]]] = {
     implicit val implMode = mode
     implicit val impMetaData = metaData
-    tryToInterpretNode(node, ctx)
+    tryToInterpretNode(node, ctx).map(Left(_)).recover {
+      case ex@NodeIdExceptionWrapper(nodeId, exception) =>
+        val exInfo = EspExceptionInfo(Some(nodeId), exception, ctx)
+        Right(exInfo)
+      case NonFatal(ex) =>
+        val exInfo = EspExceptionInfo(None, ex, ctx)
+        Right(exInfo)
+    }
   }
 
   private def tryToInterpretNode(node: Node, ctx: Context)
@@ -59,7 +45,7 @@ class Interpreter private(services: Map[String, ServiceInvoker],
     try {
       interpretNode(node, ctx).transform(identity, transform(node.id))
     } catch {
-      case NonFatal(ex) => throw transform(node.id)(ex)
+      case NonFatal(ex) => Future.failed(transform(node.id)(ex))
     }
   }
 

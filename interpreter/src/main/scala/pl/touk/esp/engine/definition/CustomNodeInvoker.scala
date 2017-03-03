@@ -51,7 +51,10 @@ case class CompilerLazyInterpreter[T](lazyDeps: () => CustomNodeInvokerDeps,
   private[definition] def createInterpreter(ec: ExecutionContext, deps: CustomNodeInvokerDeps): (InterpretationResult) => Future[T] = {
     val compiled = deps.subPartCompiler.compileWithoutContextValidation(node).getOrElse(throw new scala.IllegalArgumentException("Cannot compile"))
     (ir: InterpretationResult) => deps.interpreter.interpret(compiled.node, CustomNodeExpression(param), metaData,
-      ir.finalContext)(ec).map(_.output.asInstanceOf[T])(ec)
+      ir.finalContext)(ec).flatMap {
+      case Left(result) => Future.successful(result.output.asInstanceOf[T])
+      case Right(result) => Future.failed(result.throwable)
+    }(ec)
   }
 
   //lazy val jest po to, zeby za kazdym razem nie tworzyc interpretera - bo to kosztowne b.
