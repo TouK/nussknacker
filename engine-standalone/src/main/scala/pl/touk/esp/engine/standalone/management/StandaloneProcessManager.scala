@@ -9,13 +9,12 @@ import java.util.concurrent.TimeUnit
 import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.config.Config
 import dispatch.Http
+import pl.touk.esp.engine.api.EndingReference
 import pl.touk.esp.engine.api.deployment._
 import pl.touk.esp.engine.api.deployment.test.{TestData, TestResults}
-import pl.touk.esp.engine.api.exception.EspExceptionInfo
 import pl.touk.esp.engine.api.process.{ProcessConfigCreator, SourceFactory}
 import pl.touk.esp.engine.api.test.InvocationCollectors.{ServiceInvocationCollector, SinkInvocationCollector}
 import pl.touk.esp.engine.api.test.{ResultsCollectingListener, ResultsCollectingListenerHolder, TestRunId}
-import pl.touk.esp.engine.api.{EndingReference, InterpretationResult, ProcessListener}
 import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
 import pl.touk.esp.engine.canonize.ProcessCanonizer
 import pl.touk.esp.engine.definition.DefinitionExtractor.{ObjectDefinition, ObjectWithMethodDef}
@@ -152,16 +151,16 @@ class StandaloneTestMain(config: Config, testData: TestData, process: EspProcess
 
   }
 
-  private def collectSinkResults(runId: TestRunId, results: List[StandaloneProcessInterpreter.ResultType]) = {
-    val successfulResults = results.flatMap(_.left.toOption.toList.flatten)
+  private def collectSinkResults(runId: TestRunId, results: List[StandaloneProcessInterpreter.InterpretationResultType]) = {
+    val successfulResults = results.flatMap(_.right.toOption.toList.flatten)
     successfulResults.foreach { result =>
       val node = result.reference.asInstanceOf[EndingReference].nodeId
       SinkInvocationCollector(runId, node, node, _.toString).collect(result)
     }
   }
 
-  private def collectExceptions(listener: ResultsCollectingListener, results: List[StandaloneProcessInterpreter.ResultType]) = {
-    val exceptions = results.flatMap(_.right.toOption)
+  private def collectExceptions(listener: ResultsCollectingListener, results: List[StandaloneProcessInterpreter.InterpretationResultType]) = {
+    val exceptions = results.flatMap(_.left.toOption)
     exceptions.flatMap(_.toList).foreach(listener.exceptionThrown)
   }
 

@@ -68,7 +68,7 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
       }
       Post("/proc1", toEntity(Request1("a", "b"))) ~> processesRoute ~> check {
         status shouldBe StatusCodes.OK
-        responseAs[String] shouldBe "[\"alamakota\"]"
+        responseAs[String] shouldBe "[{\"field1\":\"alamakota\"}]"
         cancelProcess("proc1")
       }
     }
@@ -111,7 +111,7 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
         Post("/deploy", toEntity(DeploymentData("proc1", noFilterProcessJson))) ~> managementRoute ~> check {
           status shouldBe StatusCodes.OK
           Post("/proc1", toEntity(req)) ~> processesRoute ~> check {
-            responseAs[String] shouldBe "[\"alamakota\"]"
+            responseAs[String] shouldBe "[{\"field1\":\"alamakota\"}]"
             cancelProcess("proc1")
           }
         }

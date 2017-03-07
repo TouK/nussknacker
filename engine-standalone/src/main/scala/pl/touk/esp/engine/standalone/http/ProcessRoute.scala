@@ -4,9 +4,13 @@ package pl.touk.esp.engine.standalone.http
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.{Directives, Route}
+import argonaut.Json
 import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.esp.engine.api.Displayable
 import pl.touk.esp.engine.api.exception.EspExceptionInfo
+import pl.touk.esp.engine.standalone.StandaloneProcessInterpreter
+import pl.touk.esp.engine.standalone.StandaloneProcessInterpreter.GenericResultType
 import pl.touk.esp.engine.standalone.management.DeploymentService
 import pl.touk.esp.engine.util.ThreadUtils
 
@@ -38,10 +42,22 @@ class ProcessRoute(processesClassLoader: ClassLoader, deploymentService: Deploym
     }
   }
 
-  def toResponse(either: Either[List[Any], NonEmptyList[EspExceptionInfo[_ <: Throwable]]]) : ToResponseMarshallable = either match {
-    case Right(exceptions) => exceptions.map(exception => EspError(exception.nodeId, exception.throwable.getMessage)).toList: ToResponseMarshallable
-      //FIXME: niech tu json bedzie...
-    case Left(response) => response.map(_.toString)
+  //TODO: czy to jest tak jak powinno byc??
+  def toResponse(either: GenericResultType[Any, EspExceptionInfo[_<:Throwable]]) : ToResponseMarshallable = {
+    val withErrorsMapped : GenericResultType[Any, EspError] = either.left
+      .map(_.map(exception => EspError(exception.nodeId, exception.throwable.getMessage)))
+
+    val withJsonsConverted  : GenericResultType[GenericResultType[Json, EspError], EspError] = withErrorsMapped.right.map(toJsonOrErrors)
+
+    withJsonsConverted.right.flatMap[NonEmptyList[EspError], List[Json]](StandaloneProcessInterpreter.foldResults)
+  }
+
+  private def toJsonOrErrors(values: List[Any]) : List[GenericResultType[Json, EspError]] = values.map(toJsonOrError)
+
+  private def toJsonOrError(value: Any) : GenericResultType[Json, EspError] = value match {
+    case a:Displayable => Right(List(a.display))
+    case a:String => Right(List(Json.jString(a)))
+    case a => Left(NonEmptyList.of(EspError(None, s"Invalid result type: ${a.getClass}")))
   }
 
   case class EspError(nodeId: Option[String], message: String)

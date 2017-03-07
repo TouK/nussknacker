@@ -5,12 +5,13 @@ import java.util.concurrent.atomic.AtomicInteger
 import argonaut.{DecodeJson, Parse}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.esp.engine.api.{CustomStreamTransformer, MethodToInvoke, ProcessListener, Service}
+import pl.touk.esp.engine.api._
 import pl.touk.esp.engine.api.exception.{EspExceptionHandler, EspExceptionInfo, ExceptionHandlerFactory}
 import pl.touk.esp.engine.api.process._
 import pl.touk.esp.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.esp.engine.api.test.TestDataParser
 import pl.touk.esp.engine.util.LoggingListener
+import argonaut.ArgonautShapeless._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -45,11 +46,13 @@ case class Request1(field1: String, field2: String)
 case class Request2(field12: String, field22: String)
 case class Request3(field13: String, field23: String)
 
+case class Response(field1: String) extends DisplayableAsJson[Response]
+
 
 class EnricherService extends Service {
   @MethodToInvoke
-  def invoke()(implicit ex: ExecutionContext, collector: ServiceInvocationCollector): Future[String] = {
-    Future.successful("alamakota")
+  def invoke()(implicit ex: ExecutionContext, collector: ServiceInvocationCollector): Future[Response] = {
+    Future.successful(Response("alamakota"))
   }
 }
 
