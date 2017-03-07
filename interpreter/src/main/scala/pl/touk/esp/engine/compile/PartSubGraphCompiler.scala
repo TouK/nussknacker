@@ -107,9 +107,9 @@ private[compile] trait PartSubGraphCompilerBase {
               A.map2(fields.map(f => compile(f, ctx)).sequence, compile(next, newCtx))(
                 (fields, nextWithCtx) =>
                   CompiledNode(compiledgraph.node.VariableBuilder(id, varName, Right(fields), nextWithCtx.next), nextWithCtx.ctx))
-            case graph.node.Processor(id, ref, _) =>
+            case graph.node.Processor(id, ref, isDisabled, _) =>
               A.map2(compile(ref, ctx), compile(next, ctx))((ref, nextWithCtx) =>
-                CompiledNode(compiledgraph.node.Processor(id, ref, nextWithCtx.next), nextWithCtx.ctx))
+                CompiledNode(compiledgraph.node.Processor(id, ref, nextWithCtx.next, isDisabled.contains(true)), nextWithCtx.ctx))
             case graph.node.Enricher(id, ref, outName, _) =>
               val newCtx = services.get(ref.id).map { definition =>
                 ctx.withVariable(outName, definition.returnType)
@@ -141,8 +141,8 @@ private[compile] trait PartSubGraphCompilerBase {
             })
         case splittednode.EndingNode(data: EndingNodeData) =>
           data match {
-            case graph.node.Processor(id, ref, _) =>
-              compile(ref, ctx).map(compiledgraph.node.EndingProcessor(id, _)).map(CompiledNode(_, ctx))
+            case graph.node.Processor(id, ref, disabled, _) =>
+              compile(ref, ctx).map(compiledgraph.node.EndingProcessor(id, _, disabled.contains(true))).map(CompiledNode(_, ctx))
             case graph.node.Sink(id, ref, optionalExpression, _) =>
               optionalExpression.map(oe => compile(oe, None, ctx)).sequence.map(compiledgraph.node.Sink(id, ref.typ, _)).map(CompiledNode(_, ctx))
           }

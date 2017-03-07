@@ -80,15 +80,19 @@ class Interpreter private(services: Map[String, ServiceInvoker],
       case (VariableBuilder(_, varName, Left(expression), next), Traverse) =>
         val valueWithModifiedContext = evaluate[Any](expression, varName, ctx)
         interpretNext(next, ctx.withVariable(varName, valueWithModifiedContext.value))
-      case (Processor(_, ref, next), Traverse) =>
+      case (Processor(_, ref, next, false), Traverse) =>
         invoke(ref, ctx).flatMap {
           case ValueWithContext(_, newCtx) => interpretNext(next, newCtx)
         }
-      case (EndingProcessor(id, ref), Traverse) =>
+      case (Processor(_, ref, next, true), Traverse) => interpretNext(next, ctx)
+      case (EndingProcessor(id, ref, false), Traverse) =>
         invoke(ref, ctx).map {
           case ValueWithContext(output, newCtx) =>
             InterpretationResult(EndReference(id), output, newCtx)
         }
+      case (EndingProcessor(id, ref, true), Traverse) =>
+        //FIXME: null??
+        Future.successful(InterpretationResult(EndReference(id), null, ctx))
       case (Enricher(_, ref, outName, next), Traverse) =>
         invoke(ref, ctx).flatMap {
           case ValueWithContext(out, newCtx) =>

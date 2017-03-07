@@ -17,9 +17,9 @@ object node {
 
   case class VariableBuilder(id: String, varName: String, value: Either[Expression, List[Field]], next: Next) extends Node
 
-  case class Processor(id: String, service: ServiceRef, next: Next) extends Node
+  case class Processor(id: String, service: ServiceRef, next: Next, isDisabled: Boolean) extends Node
 
-  case class EndingProcessor(id: String, service: ServiceRef) extends Node
+  case class EndingProcessor(id: String, service: ServiceRef, isDisabled: Boolean) extends Node
 
   case class Enricher(id: String, service: ServiceRef, output: String, next: Next) extends Node
 
