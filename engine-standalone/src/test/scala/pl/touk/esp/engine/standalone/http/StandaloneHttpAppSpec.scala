@@ -68,7 +68,7 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
       }
       Post("/proc1", toEntity(Request1("a", "b"))) ~> processesRoute ~> check {
         status shouldBe StatusCodes.OK
-        responseAs[String] shouldBe "\"alamakota\"" //fixme ee po co te ciapki?
+        responseAs[String] shouldBe "[\"alamakota\"]"
         cancelProcess("proc1")
       }
     }
@@ -87,7 +87,7 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
       status shouldBe StatusCodes.OK
       Post("/proc1", toEntity(Request1("c", "d"))) ~> processesRoute ~> check {
         status shouldBe StatusCodes.OK
-        responseAs[String] shouldBe "\"\"" //fixme co wlasciwie powinnismy zwracac kiedy event nie przeszedl calego procesu?
+        responseAs[String] shouldBe "[]"
         cancelProcess("proc1")
       }
     }
@@ -107,11 +107,11 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
       status shouldBe StatusCodes.OK
       Post("/proc1", toEntity(req)) ~> processesRoute ~> check {
         status shouldBe StatusCodes.OK
-        responseAs[String] shouldBe "\"\"" //fixme co wlasciwie powinnismy zwracac kiedy event nie przeszedl calego procesu?
+        responseAs[String] shouldBe "[]"
         Post("/deploy", toEntity(DeploymentData("proc1", noFilterProcessJson))) ~> managementRoute ~> check {
           status shouldBe StatusCodes.OK
           Post("/proc1", toEntity(req)) ~> processesRoute ~> check {
-            responseAs[String] shouldBe "\"alamakota\"" //fixme ee po co te ciapki?
+            responseAs[String] shouldBe "[\"alamakota\"]"
             cancelProcess("proc1")
           }
         }

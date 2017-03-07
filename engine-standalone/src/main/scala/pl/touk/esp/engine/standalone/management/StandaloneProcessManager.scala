@@ -152,17 +152,17 @@ class StandaloneTestMain(config: Config, testData: TestData, process: EspProcess
 
   }
 
-  private def collectSinkResults(runId: TestRunId, results: List[Either[Option[InterpretationResult], EspExceptionInfo[_ <: Throwable]]]) = {
-    val successfulResults = results.flatMap(_.left.toOption.flatten.toList)
+  private def collectSinkResults(runId: TestRunId, results: List[StandaloneProcessInterpreter.ResultType]) = {
+    val successfulResults = results.flatMap(_.left.toOption.toList.flatten)
     successfulResults.foreach { result =>
       val node = result.reference.asInstanceOf[EndingReference].nodeId
       SinkInvocationCollector(runId, node, node, _.toString).collect(result)
     }
   }
 
-  private def collectExceptions(listener: ResultsCollectingListener, results: List[Either[Option[InterpretationResult], EspExceptionInfo[_ <: Throwable]]]) = {
+  private def collectExceptions(listener: ResultsCollectingListener, results: List[StandaloneProcessInterpreter.ResultType]) = {
     val exceptions = results.flatMap(_.right.toOption)
-    exceptions.foreach(listener.exceptionThrown)
+    exceptions.flatMap(_.toList).foreach(listener.exceptionThrown)
   }
 
 

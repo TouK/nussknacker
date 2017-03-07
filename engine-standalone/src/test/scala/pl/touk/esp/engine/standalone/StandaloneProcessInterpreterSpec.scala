@@ -1,35 +1,19 @@
 package pl.touk.esp.engine.standalone
 
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicInteger
 
-import argonaut.{DecodeJson, EncodeJson, Parse}
-import cats.data.Validated.{Invalid, Valid}
-import cats.data._
-import com.typesafe.config.{Config, ConfigFactory}
-import com.typesafe.scalalogging.LazyLogging
+import com.typesafe.config.ConfigFactory
 import org.scalatest.{FlatSpec, Matchers}
-import pl.touk.esp.engine.api._
-import pl.touk.esp.engine.api.exception.{EspExceptionHandler, EspExceptionInfo, ExceptionHandlerFactory}
-import pl.touk.esp.engine.api.process._
-import pl.touk.esp.engine.api.test.InvocationCollectors.ServiceInvocationCollector
-import pl.touk.esp.engine.api.test.TestDataParser
-import pl.touk.esp.engine.build.EspProcessBuilder
-import pl.touk.esp.engine.compile.{PartSubGraphCompilationError, PartSubGraphCompiler, ProcessCompilationError, ProcessCompiler}
-import pl.touk.esp.engine.compiledgraph.{CompiledProcessParts, node}
-import pl.touk.esp.engine.definition.ProcessDefinitionExtractor
-import pl.touk.esp.engine.graph.EspProcess
-import pl.touk.esp.engine.graph.node.NodeData
-import pl.touk.esp.engine.splittedgraph.splittednode.SplittedNode
-import pl.touk.esp.engine.util.LoggingListener
-import pl.touk.esp.engine.{Interpreter, spel}
+import pl.touk.esp.engine.build.{EspProcessBuilder, GraphBuilder}
+import pl.touk.esp.engine.spel
 
-import scala.concurrent.duration.{Duration, FiniteDuration}
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 
 class StandaloneProcessInterpreterSpec extends FlatSpec with Matchers {
 
   import spel.Implicits._
+
   import scala.concurrent.ExecutionContext.Implicits.global
 
   it should "run process in request response mode" in {
@@ -55,10 +39,36 @@ class StandaloneProcessInterpreterSpec extends FlatSpec with Matchers {
 
     val result = interpreter.invoke(input)
 
-    Await.result(result, Duration(5, TimeUnit.SECONDS)) shouldBe Left(Some("alamakota"))
+    Await.result(result, Duration(5, TimeUnit.SECONDS)) shouldBe Left(List("alamakota"))
     ProcessorService.invocationsCount.get() shouldBe 1
 
     interpreter.close()
     ProcessorService.clear()
   }
+
+  it should "collect results after split" in {
+    val process = EspProcessBuilder
+      .id("proc1")
+      .exceptionHandler()
+      .source("start", "request1-source")
+        .split("split",
+          GraphBuilder.sink("sink1", "#input.field1", "response-sink"),
+          GraphBuilder.sink("sink2", "#input.field2", "response-sink")
+        )
+
+    val input = Request1("a", "b")
+    val config = ConfigFactory.load()
+    val creator = new StandaloneProcessConfigCreator
+    val maybeinterpreter = StandaloneProcessInterpreter(process, creator, config)
+
+    maybeinterpreter shouldBe 'valid
+    val interpreter = maybeinterpreter.toOption.get
+    interpreter.open()
+
+    val result = interpreter.invoke(input)
+
+    Await.result(result, Duration(5, TimeUnit.SECONDS)) shouldBe Left(List("a", "b"))
+    interpreter.close()
+  }
+
 }

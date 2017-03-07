@@ -4,6 +4,7 @@ package pl.touk.esp.engine.standalone.http
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.{Directives, Route}
+import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.esp.engine.api.exception.EspExceptionInfo
 import pl.touk.esp.engine.standalone.management.DeploymentService
@@ -37,10 +38,10 @@ class ProcessRoute(processesClassLoader: ClassLoader, deploymentService: Deploym
     }
   }
 
-  def toResponse(either: Either[Option[Any], EspExceptionInfo[_ <: Throwable]]) : ToResponseMarshallable = either match {
-    case Right(exception) => EspError(exception.nodeId, exception.throwable.getMessage): ToResponseMarshallable
-    case Left(Some(response)) => response.toString
-    case Left(None) => ""
+  def toResponse(either: Either[List[Any], NonEmptyList[EspExceptionInfo[_ <: Throwable]]]) : ToResponseMarshallable = either match {
+    case Right(exceptions) => exceptions.map(exception => EspError(exception.nodeId, exception.throwable.getMessage)).toList: ToResponseMarshallable
+      //FIXME: niech tu json bedzie...
+    case Left(response) => response.map(_.toString)
   }
 
   case class EspError(nodeId: Option[String], message: String)
