@@ -19,7 +19,7 @@ import pl.touk.esp.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.esp.engine.definition.ProcessDefinitionExtractor
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.splittedgraph.splittednode.{NextNode, PartRef, SplittedNode}
-import pl.touk.esp.engine.standalone.StandaloneProcessInterpreter.OutType
+import pl.touk.esp.engine.standalone.StandaloneProcessInterpreter.{GenericResultType, OutType}
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
@@ -28,11 +28,23 @@ object StandaloneProcessInterpreter {
 
   type SuccessfulResultType = List[InterpretationResult]
 
-  type ResultType = Either[SuccessfulResultType, NonEmptyList[EspExceptionInfo[_ <: Throwable]]]
+  type GenericResultType[T, Error] = Either[NonEmptyList[Error], List[T]]
 
-  type OutType = Future[ResultType]
+  type InterpretationResultType = GenericResultType[InterpretationResult, EspExceptionInfo[_ <: Throwable]]
+
+  type OutType = Future[InterpretationResultType]
 
   type OutFunType = (Context, ExecutionContext) => OutType
+
+  def foldResults[T, Error](results: List[GenericResultType[T, Error]]) = {
+    //hmm... moze Validated tu by sie bardziej przydal?
+    results.foldLeft[GenericResultType[T, Error]](Right(Nil)) {
+      case (Right(a), Right(b)) => Right(a ++ b)
+      case (Left(a), Right(_)) => Left(a)
+      case (Right(_), Left(a)) => Left(a)
+      case (Left(a), Left(b)) => Left(a ++ b.toList)
+    }
+  }
 
   def apply(process: EspProcess, creator: ProcessConfigCreator, config: Config,
             additionalListeners: List[ProcessListener] = List(),
@@ -87,20 +99,11 @@ object StandaloneProcessInterpreter {
           (ctx: Context, ec: ExecutionContext) => {
             implicit val iec = ec
             compiledSplitParts.map(_ (ctx, ec))
-              .sequence[Future, ResultType]
-              .map(_.foldLeft[ResultType](Left(Nil))(foldResult))
+              .sequence[Future, InterpretationResultType].map(StandaloneProcessInterpreter.foldResults)
           }
         }
 
       case a: CustomNodePart => Invalid(NonEmptyList.of(UnsupportedPart(a.id)))
-    }
-
-    //hmm... moze Validated tu by sie bardziej przydal?
-    private def foldResult(result: ResultType, result2: ResultType) = (result, result2) match {
-      case (Left(a), Left(b)) => Left(a ++ b)
-      case (Right(a), Left(_)) => Right(a)
-      case (Left(_), Right(a)) => Right(a)
-      case (Right(a), Right(b)) => Right(a ++ b.toList)
     }
 
     private def compilePartInvokers(parts: List[SubsequentPart]) : CompilationResult[Map[String, OutFunType]] =
@@ -117,13 +120,13 @@ object StandaloneProcessInterpreter {
             maybeResult.fold[OutType](ir => {
               ir.reference match {
                 case _: EndReference =>
-                  Future.successful(Left(List(ir)))
+                  Future.successful(Right(List(ir)))
                 case _: DeadEndReference =>
-                  Future.successful(Left(Nil))
+                  Future.successful(Right(Nil))
                 case NextPartReference(id) =>
                   partsInvokers.getOrElse(id, throw new Exception("Unknown reference"))(ir.finalContext, ec)
               }
-            }, a => Future.successful(Right(NonEmptyList.of(a))))
+            }, a => Future.successful(Left(NonEmptyList.of(a))))
           }
         }
       }
@@ -143,8 +146,8 @@ case class StandaloneProcessInterpreter(id: String,
 
   private val counter = new AtomicLong(0)
 
-  def invoke(input: Any)(implicit ec: ExecutionContext): Future[Either[List[Any], NonEmptyList[EspExceptionInfo[_ <: Throwable]]]] = {
-    invokeToResult(input).map(_.left.map(_.map(_.output)))
+  def invoke(input: Any)(implicit ec: ExecutionContext): Future[GenericResultType[Any, EspExceptionInfo[_ <: Throwable]]] = {
+    invokeToResult(input).map(_.right.map(_.map(_.output)))
   }
 
   def invokeToResult(input: Any)(implicit ec: ExecutionContext): OutType = {

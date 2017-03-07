@@ -1,5 +1,6 @@
 package pl.touk.esp.engine.management.sample
 
+import argonaut.{Argonaut, Json}
 import com.typesafe.config.Config
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
@@ -177,7 +178,7 @@ case object ParamExceptionHandler extends ExceptionHandlerFactory {
 case object EmptySink extends FlinkSink {
 
   override def testDataOutput: Option[(Any) => String] = Option {
-    case a: Displayable => a.prettyDisplay
+    case a: Displayable => a.display.spaces2
     case b => b.toString
   }
 
@@ -206,7 +207,7 @@ case class CsvRecord(fields: List[String]) extends UsingLazyValues with Displaya
 
   lazy val enrichedField = lazyValue[RichObject]("enricher", "param" -> firstField)
 
-  override def prettyDisplay = s"""{"firstField": "$firstField""}"""
+  override def display = Argonaut.jObjectFields("firstField" -> Json.jString(firstField))
 
   override def originalDisplay: Option[String] = Some(fields.mkString("|"))
 }

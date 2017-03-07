@@ -39,7 +39,7 @@ class StandaloneProcessInterpreterSpec extends FlatSpec with Matchers {
 
     val result = interpreter.invoke(input)
 
-    Await.result(result, Duration(5, TimeUnit.SECONDS)) shouldBe Left(List("alamakota"))
+    Await.result(result, Duration(5, TimeUnit.SECONDS)) shouldBe Right(List(Response("alamakota")))
     ProcessorService.invocationsCount.get() shouldBe 1
 
     interpreter.close()
@@ -67,7 +67,7 @@ class StandaloneProcessInterpreterSpec extends FlatSpec with Matchers {
 
     val result = interpreter.invoke(input)
 
-    Await.result(result, Duration(5, TimeUnit.SECONDS)) shouldBe Left(List("a", "b"))
+    Await.result(result, Duration(5, TimeUnit.SECONDS)) shouldBe Right(List("a", "b"))
     interpreter.close()
   }
 

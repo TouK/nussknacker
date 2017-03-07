@@ -11,7 +11,7 @@ import pl.touk.esp.engine.build.EspProcessBuilder
 import pl.touk.esp.engine.marshall.ProcessMarshaller
 import pl.touk.esp.engine.spel
 import pl.touk.esp.engine.standalone.management.StandaloneTestMain
-import pl.touk.esp.engine.standalone.{ProcessorService, Request1}
+import pl.touk.esp.engine.standalone.{ProcessorService, Request1, Response}
 
 class StandaloneTestMainSpec extends FlatSpec with Matchers with BeforeAndAfterEach {
 
@@ -48,9 +48,9 @@ class StandaloneTestMainSpec extends FlatSpec with Matchers with BeforeAndAfterE
     )
 
     results.mockedResults("processor") shouldBe List(MockedResult(Context("proc1-0"), "processorService", "processor service invoked"))
-    results.mockedResults("endNodeIID") shouldBe List(MockedResult(Context("proc1-0", Map("input" -> Request1("a","b"), "var1" -> "alamakota")),
-      //FIXME: w tej chwili tu nie wpisuje refa, tylko nodeId...
-      "endNodeIID", "alamakota"))
+    results.mockedResults("endNodeIID") shouldBe List(MockedResult(Context("proc1-0", Map("input" -> Request1("a","b"), "var1" -> Response("alamakota"))),
+      //FIXME: w tej chwili tu nie wpisuje refa, tylko nodeId... poza tym co to za wynik??
+      "endNodeIID", "Response(alamakota)"))
 
     ProcessorService.invocationsCount.get shouldBe 0
 
