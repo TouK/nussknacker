@@ -11,7 +11,7 @@ import pl.touk.esp.engine.build.EspProcessBuilder
 import pl.touk.esp.engine.marshall.ProcessMarshaller
 import pl.touk.esp.engine.spel
 import pl.touk.esp.engine.standalone.management.StandaloneTestMain
-import pl.touk.esp.engine.standalone.{ProcessorService, Request1, Response}
+import pl.touk.esp.engine.standalone.{ProcessorService, Request1, Response, StandaloneProcessConfigCreator}
 
 class StandaloneTestMainSpec extends FlatSpec with Matchers with BeforeAndAfterEach {
 
@@ -52,7 +52,7 @@ class StandaloneTestMainSpec extends FlatSpec with Matchers with BeforeAndAfterE
       //FIXME: w tej chwili tu nie wpisuje refa, tylko nodeId... poza tym co to za wynik??
       "endNodeIID", "Response(alamakota)"))
 
-    ProcessorService.invocationsCount.get shouldBe 0
+    StandaloneProcessConfigCreator.processorService.get().invocationsCount.get shouldBe 0
 
   }
 
@@ -81,7 +81,4 @@ class StandaloneTestMainSpec extends FlatSpec with Matchers with BeforeAndAfterE
     results.exceptions.head.throwable.getMessage shouldBe "/ by zero"
   }
 
-  override protected def beforeEach(): Unit = {
-    ProcessorService.clear()
-  }
 }

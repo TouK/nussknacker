@@ -40,10 +40,9 @@ class StandaloneProcessInterpreterSpec extends FlatSpec with Matchers {
     val result = interpreter.invoke(input)
 
     Await.result(result, Duration(5, TimeUnit.SECONDS)) shouldBe Right(List(Response("alamakota")))
-    ProcessorService.invocationsCount.get() shouldBe 1
+    creator.processorService.invocationsCount.get() shouldBe 1
 
     interpreter.close()
-    ProcessorService.clear()
   }
 
   it should "collect results after split" in {
