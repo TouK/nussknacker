@@ -1,9 +1,11 @@
 package pl.touk.esp.engine.standalone.management
 
+import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 
 import cats.data.{NonEmptyList, ValidatedNel}
 import com.typesafe.config.Config
+import com.typesafe.scalalogging.LazyLogging
 import pl.touk.esp.engine.api.deployment.ProcessState
 import pl.touk.esp.engine.api.process.ProcessConfigCreator
 import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
@@ -14,35 +16,58 @@ import pl.touk.esp.engine.standalone.StandaloneProcessInterpreter
 
 import scala.concurrent.ExecutionContext
 
-class DeploymentService(creator: ProcessConfigCreator, config: Config) {
+object DeploymentService {
 
-  val processInterpreters: ConcurrentHashMap[String, (StandaloneProcessInterpreter, Long)] = new ConcurrentHashMap()
+  //TODO: to jest rozwiazanie tymczasowe, docelowo powinnismy np. zapisywac do zk te procesy...
+  def apply(creator: ProcessConfigCreator, config: Config): DeploymentService =
+    new DeploymentService(creator, config, FileProcessRepository(config.getString("standaloneEngineProcessLocation")))
+
+}
+
+class DeploymentService(creator: ProcessConfigCreator, config: Config, processRepository: ProcessRepository) extends LazyLogging {
+
+  val processInterpreters: collection.concurrent.TrieMap[String, (StandaloneProcessInterpreter, Long)] = collection.concurrent.TrieMap()
+
   val processMarshaller = new ProcessMarshaller()
+
+  initProcesses()
+
+  private def initProcesses() : Unit = {
+    val deploymentResults = processRepository.loadAll.map { case (id, json) =>
+      (id, deploy(id, json)(ExecutionContext.Implicits.global))
+    }
+    deploymentResults.collect {
+      case (id, Left(errors)) => logger.error(s"Failed to deploy $id, errors: $errors")
+    }
+  }
 
   def deploy(processId: String, processJson: String)(implicit ec: ExecutionContext): Either[NonEmptyList[DeploymentError], Unit] = {
 
     val interpreter = toEspProcess(processJson).andThen(process => newInterpreter(process))
     interpreter.foreach { processInterpreter =>
+      processRepository.add(processId, processJson)
       processInterpreters.put(processId, (processInterpreter, System.currentTimeMillis()))
       processInterpreter.open()
+      logger.info(s"Successfully deployed process $processId")
     }
     interpreter.map(_ => ()).toEither
   }
 
   def checkStatus(processId: String): Option[ProcessState] = {
-    Option(processInterpreters.get(processId)).map { case (_, startTime) =>
+    processInterpreters.get(processId).map { case (_, startTime) =>
       ProcessState(processId, "RUNNING", startTime)
     }
   }
 
   def cancel(processId: String): Option[Unit] = {
-    val removed = Option(processInterpreters.remove(processId))
+    processRepository.remove(processId)
+    val removed = processInterpreters.remove(processId)
     removed.foreach(_._1.close())
     removed.map(_ => ())
   }
 
   def getInterpreter(processId: String): Option[StandaloneProcessInterpreter] = {
-    val interpreter = Option(processInterpreters.get(processId))
+    val interpreter = processInterpreters.get(processId)
     interpreter.map(_._1)
   }
 

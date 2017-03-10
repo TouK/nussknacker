@@ -15,12 +15,24 @@ import argonaut.ArgonautShapeless._
 
 import scala.concurrent.{ExecutionContext, Future}
 
+object StandaloneProcessConfigCreator {
+  var processorService = new ThreadLocal[ProcessorService]
+}
+
 class StandaloneProcessConfigCreator extends ProcessConfigCreator with LazyLogging {
+
+  val processorService = new ProcessorService
+
+  {
+    //no troche slabe, ale na staticach nie da sie chyba polegac
+    StandaloneProcessConfigCreator.processorService.set(processorService)
+  }
+
   override def customStreamTransformers(config: Config): Map[String, WithCategories[CustomStreamTransformer]] = Map.empty
 
   override def services(config: Config): Map[String, WithCategories[Service]] = Map(
     "enricherService" -> WithCategories(new EnricherService),
-    "processorService" -> WithCategories(new ProcessorService)
+    "processorService" -> WithCategories(processorService)
   )
 
   override def sourceFactories(config: Config): Map[String, WithCategories[SourceFactory[_]]] = Map(
@@ -56,19 +68,16 @@ class EnricherService extends Service {
   }
 }
 
-object ProcessorService {
+class ProcessorService extends Service {
+
   val invocationsCount = new AtomicInteger(0)
 
-  def clear() = invocationsCount.set(0)
-}
-
-class ProcessorService extends Service {
   @MethodToInvoke
   def invoke()(implicit ex: ExecutionContext, collector: ServiceInvocationCollector): Future[Unit] = {
     if (collector.collectorEnabled) {
       collector.collect("processor service invoked")
     } else {
-      ProcessorService.invocationsCount.getAndIncrement()
+      invocationsCount.getAndIncrement()
     }
     Future.successful(())
   }

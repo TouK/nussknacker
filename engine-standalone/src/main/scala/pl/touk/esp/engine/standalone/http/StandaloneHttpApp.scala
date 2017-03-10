@@ -10,7 +10,7 @@ import akka.stream.ActorMaterializer
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.esp.engine.api.process.ProcessConfigCreator
-import pl.touk.esp.engine.standalone.management.DeploymentService
+import pl.touk.esp.engine.standalone.management.{DeploymentService, FileProcessRepository}
 import pl.touk.esp.engine.util.ThreadUtils
 
 import scala.util.Try
@@ -27,7 +27,8 @@ object StandaloneHttpApp extends Directives with Argonaut62Support with LazyLogg
   val processesClassLoader = loadProcessesClassloader(config)
   val creator = loadCreator(config)
 
-  val deploymentService = new DeploymentService(creator, config)
+
+  val deploymentService = DeploymentService(creator, config)
 
   def main(args: Array[String]): Unit = {
     val ports = for {
