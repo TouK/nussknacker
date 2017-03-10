@@ -34,21 +34,9 @@ class UiCodecsSpec extends FlatSpec with Matchers {
     } yield List(var1.focus, var2.focus)).toList.flatten
 
     variables.size shouldBe 2
-    variables(0) shouldBe Argonaut.jObjectFields(
-      "pretty" -> Argonaut.jObjectFields(
-        "date" -> Argonaut.jString("2010-01-01T01:01"),
-        "some" -> Argonaut.jString("b"),
-        "number" -> Argonaut.jNumber(1),
-        "id" -> Argonaut.jString("a")
-      )
-    )
-    variables(1) shouldBe Argonaut.jObjectFields(
-      "original" -> Argonaut.jString("aa|bb"),
-      "pretty" -> Argonaut.jObjectFields(
-        "fieldA" -> Argonaut.jString("aa"),
-        "fieldB" -> Argonaut.jString("bb")
-      )
-    )
+    //jak to zrobic ladniej?
+    variables(0) shouldBe Parse.parse("{\"pretty\":\"{\\n  \\\"date\\\" : \\\"2010-01-01T01:01\\\",\\n  \\\"some\\\" : \\\"b\\\",\\n  \\\"number\\\" : 1,\\n  \\\"id\\\" : \\\"a\\\"\\n}\"}").right.get
+    variables(1) shouldBe Parse.parse("{\"original\":\"aa|bb\",\"pretty\":\"{\\n  \\\"fieldA\\\" : \\\"aa\\\",\\n  \\\"fieldB\\\" : \\\"bb\\\"\\n}\"}").right.get
   }
 
   import UiCodecs._

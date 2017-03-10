@@ -20,7 +20,7 @@ class AddProcessDialog extends React.Component {
   }
 
   initialState(props) {
-    return {processId: '', processCategory: _.head(props.categories) || '', processingType: '' }
+    return {processId: '', processCategory: _.head(props.categories) || '', processingType: _.head(props.processingTypes) || '' }
   }
 
   constructor(props) {

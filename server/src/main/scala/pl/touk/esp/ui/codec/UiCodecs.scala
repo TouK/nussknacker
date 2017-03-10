@@ -135,10 +135,10 @@ object UiCodecs {
     }
 
     private def displayableToJson(displayable: Displayable): Json = {
-      val prettyDisplay = displayable.display
+      val prettyDisplay = displayable.display.spaces2
       displayable.originalDisplay match {
-        case None => jObjectFields("pretty" -> prettyDisplay)
-        case Some(original) => jObjectFields("original" -> jString(original), "pretty" -> prettyDisplay)
+        case None => jObjectFields("pretty" -> jString(prettyDisplay))
+        case Some(original) => jObjectFields("original" -> jString(original), "pretty" -> jString(prettyDisplay))
       }
     }
 
