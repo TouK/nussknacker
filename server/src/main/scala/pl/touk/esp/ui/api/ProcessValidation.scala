@@ -94,6 +94,8 @@ class ProcessValidation(validators: Map[ProcessingType, ProcessValidator]) {
         node(s"Wrong parameters", s"Please provide ${requiredParameters.mkString(", ")} instead of ${passedParameters.mkString(", ")}")
 
       case NotSupportedExpressionLanguage(languageId, _) => node(s"Language $languageId is not supported", "Currently only SPEL expressions are supported")
+      case MissingPart(id) => node("MissingPart", s"Node $id has missing part")
+      case UnsupportedPart(id) => node("UnsupportedPart", s"Type of node $id is unsupported right now")
     }
   }
 

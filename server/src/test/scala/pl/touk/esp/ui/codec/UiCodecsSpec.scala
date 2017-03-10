@@ -2,6 +2,7 @@ package pl.touk.esp.ui.codec
 
 import java.time.LocalDateTime
 
+import argonaut.Argonaut
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.esp.engine.api
 import pl.touk.esp.engine.api.Displayable
@@ -33,27 +34,38 @@ class UiCodecsSpec extends FlatSpec with Matchers {
     } yield List(var1.focus, var2.focus)).toList.flatten
 
     variables.size shouldBe 2
-    //jak to zrobic ladniej?
-    variables(0) shouldBe Parse.parse("{\"pretty\":\"{\\n  \\\"date\\\" : \\\"2010-01-01T01:01\\\",\\n  \\\"some\\\" : \\\"b\\\",\\n  \\\"number\\\" : 1,\\n  \\\"id\\\" : \\\"a\\\"\\n}\"}").right.get
-    variables(1) shouldBe Parse.parse("{\"original\":\"aa|bb\",\"pretty\":\"{\\n \\\"fieldA\\\" : \\\"aa\\\",\\n \\\"fieldB\\\" : \\\"bb\\\"\\n}\"}").right.get
-
+    variables(0) shouldBe Argonaut.jObjectFields(
+      "pretty" -> Argonaut.jObjectFields(
+        "date" -> Argonaut.jString("2010-01-01T01:01"),
+        "some" -> Argonaut.jString("b"),
+        "number" -> Argonaut.jNumber(1),
+        "id" -> Argonaut.jString("a")
+      )
+    )
+    variables(1) shouldBe Argonaut.jObjectFields(
+      "original" -> Argonaut.jString("aa|bb"),
+      "pretty" -> Argonaut.jObjectFields(
+        "fieldA" -> Argonaut.jString("aa"),
+        "fieldB" -> Argonaut.jString("bb")
+      )
+    )
   }
 
   import UiCodecs._
   case class TestRecord(id: String, number: Long, some: Option[String], date: LocalDateTime) extends Displayable {
     override def originalDisplay: Option[String] = None
-    override def prettyDisplay: String = this.asJson.spaces2
+    override def display = this.asJson
   }
 
   case class CsvRecord(fields: List[String]) extends Displayable {
 
     override def originalDisplay: Option[String] = Some(fields.mkString("|"))
 
-    override def prettyDisplay: String = {
-      s"""{
-        | "fieldA" : "$fieldA",
-        | "fieldB" : "$fieldB"
-        |}""".stripMargin
+    override def display = {
+      Argonaut.jObjectFields(
+        "fieldA" -> Argonaut.jString(fieldA),
+        "fieldB" -> Argonaut.jString(fieldB)
+      )
     }
     val fieldA = fields(0)
     val fieldB = fields(1)
