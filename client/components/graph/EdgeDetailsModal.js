@@ -160,7 +160,7 @@ class EdgeDetailsModal extends React.Component {
 
 function mapState(state) {
   var nodeId = state.graphReducer.edgeToDisplay.from
-  var errors = _.get(state.graphReducer.processToDisplay, `validationResult.invalidNodes[${nodeId}]`, [])
+  var errors = _.get(state.graphReducer.processToDisplay, `validationResult.errors.invalidNodes[${nodeId}]`, [])
   return {
     edgeToDisplay: state.graphReducer.edgeToDisplay,
     processToDisplay: state.graphReducer.processToDisplay,

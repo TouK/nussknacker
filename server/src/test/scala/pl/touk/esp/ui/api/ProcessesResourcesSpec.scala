@@ -81,7 +81,7 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
       status shouldEqual StatusCodes.OK
       checkSampleProcessRootIdEquals(ProcessTestData.validProcess.root.id)
       val json = entityAs[String].parseOption.value
-      json.field("invalidNodes").flatMap(_.obj).value.isEmpty shouldBe true
+      json.field("errors").flatMap(_.field("invalidNodes")).flatMap(_.obj).value.isEmpty shouldBe true
     }
   }
 
@@ -90,7 +90,7 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
       status shouldEqual StatusCodes.OK
       checkSampleProcessRootIdEquals(ProcessTestData.invalidProcess.root.id)
       val json = entityAs[String].parseOption.value
-      json.field("invalidNodes").flatMap(_.obj).value.isEmpty shouldBe false
+      json.field("errors").flatMap(_.field("invalidNodes")).flatMap(_.obj).value.isEmpty shouldBe false
     }
   }
 

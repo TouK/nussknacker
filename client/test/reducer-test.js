@@ -175,9 +175,11 @@ const baseProcessState = {
       }
     ],
     "validationResult": {
-      "invalidNodes": {},
-      "processPropertiesErrors": [],
-      "globalErrors": []
+      "errors" : {
+        "invalidNodes": {},
+        "processPropertiesErrors": [],
+        "globalErrors": []
+      }
     }
   },
   "history": []

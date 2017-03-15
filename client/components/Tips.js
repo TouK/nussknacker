@@ -19,14 +19,16 @@ export class Tips extends Component {
   }
 
   tipText = () => {
-    if (ProcessUtils.isProcessValid(this.props.currentProcess)) {
+    if (ProcessUtils.hasNoErrorsNorWarnings(this.props.currentProcess)) {
       return (<div>{this.validTip()}</div>)
     } else {
-      const result =  this.props.currentProcess.validationResult
-      const nodesErrors = _.flatten(Object.keys(result.invalidNodes || {}).map((key, idx) => result.invalidNodes[key].map(error => this.printError(error, key, idx))))
-      const globalErrors = (result.globalErrors || []).map((error, idx) => this.printError(error, null, idx))
-      const processProperties = (result.processPropertiesErrors || []).map((error, idx) => this.printError(error, 'Properties', idx))
-      return globalErrors.concat(processProperties.concat(nodesErrors))
+      const errors = (this.props.currentProcess.validationResult || {}).errors
+      const nodesErrors = ProcessUtils.extractInvalidNodes(errors.invalidNodes).map((error, idx) => this.printError(error.error, error.key, idx))
+      const globalErrors = (errors.globalErrors || []).map((error, idx) => this.printError(error, null, idx))
+      const processProperties = (errors.processPropertiesErrors || []).map((error, idx) => this.printError(error, 'Properties', idx))
+      const warnings = (this.props.currentProcess.validationResult || {}).warnings
+      const nodesWarnings = ProcessUtils.extractInvalidNodes(warnings.invalidNodes).map((error, idx) => this.printError(error.error, error.key, idx))
+      return globalErrors.concat(processProperties.concat(nodesErrors).concat(nodesWarnings))
     }
   }
 
@@ -54,7 +56,7 @@ export class Tips extends Component {
 
 
   render() {
-    var tipsIcon = ProcessUtils.isProcessValid(this.props.currentProcess) ? InlinedSvgs.tipsInfo : InlinedSvgs.tipsWarning
+    var tipsIcon = ProcessUtils.hasNoErrorsNorWarnings(this.props.currentProcess) ? InlinedSvgs.tipsInfo : InlinedSvgs.tipsWarning
     return (
         <div id="tipsPanel">
           <Scrollbars renderThumbVertical={props => <div {...props} className="thumbVertical"/>} hideTracksWhenNotNeeded={true}>

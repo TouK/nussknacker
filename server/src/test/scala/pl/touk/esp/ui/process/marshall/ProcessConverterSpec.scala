@@ -12,11 +12,11 @@ import pl.touk.esp.engine.graph.expression.Expression
 import pl.touk.esp.engine.graph.node._
 import pl.touk.esp.engine.graph.service.ServiceRef
 import pl.touk.esp.engine.graph.source.SourceRef
-import pl.touk.esp.ui.api.ProcessValidation
-import pl.touk.esp.ui.api.ProcessValidation.{NodeValidationError, ValidationResult}
+import pl.touk.esp.ui.validation.ProcessValidation
 import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.esp.ui.process.displayedgraph.displayablenode.Edge
 import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties}
+import pl.touk.esp.ui.validation.ValidationResults.{NodeValidationError, ValidationResult}
 
 class ProcessConverterSpec extends FlatSpec with Matchers with TableDrivenPropertyChecks {
 
@@ -66,7 +66,7 @@ class ProcessConverterSpec extends FlatSpec with Matchers with TableDrivenProper
     )) { (unexpectedEnd) =>
       val process = DisplayableProcess("t1", ProcessProperties(Some(2), Some(false), ExceptionHandlerRef(List()), None),
         List(Source("s", SourceRef("sourceRef", List())), unexpectedEnd),
-        List(Edge("s", "e", None)), ProcessingType.Streaming, Some(ValidationResult(Map(unexpectedEnd.id -> List(NodeValidationError("InvalidTailOfBranch",
+        List(Edge("s", "e", None)), ProcessingType.Streaming, Some(ValidationResult.errors(Map(unexpectedEnd.id -> List(NodeValidationError("InvalidTailOfBranch",
           "Invalid end of process", "Process branch can only end with sink or processor", None, isFatal = false))), List(), List()))
       )
       displayableCanonical(process) shouldBe process

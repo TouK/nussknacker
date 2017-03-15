@@ -4,12 +4,14 @@ import {Link} from "react-router";
 import Modal from "react-modal";
 import {DropdownButton, MenuItem} from "react-bootstrap";
 import {connect} from "react-redux";
+import _ from "lodash";
 import ActionsUtils from "../actions/ActionsUtils";
 import EspModalStyles from '../common/EspModalStyles'
 import ProcessUtils from '../common/ProcessUtils';
 import "../stylesheets/visualization.styl";
 import SaveIcon from '../assets/img/save-icon.svg';
 import CloseIcon from '../assets/img/close-icon.svg';
+import InlinedSvgs from '../assets/icons/InlinedSvgs'
 
 class ConfirmDialog extends React.Component {
 
@@ -36,6 +38,13 @@ class ConfirmDialog extends React.Component {
       <Modal isOpen={this.props.confirmDialog.isOpen} className="espModal confirmationModal" onRequestClose={this.closeDialog}>
         <div className="modalContent">
           <p>{this.props.confirmDialog.text}</p>
+          {this.props.processHasSomeWarnings ?
+            <div className="warning">
+              <div className="icon" title="Warning" dangerouslySetInnerHTML={{__html: InlinedSvgs.tipsWarning}} />
+              <p>Warnings found - please look at left panel to see details. Proceed with caution</p>
+            </div> :
+            null
+          }
           <div className="confirmationButtons">
             <button type="button" title="Cancel" className='modalButton' onClick={this.closeDialog}>No</button>
             <button type="button" title="Yes" className='modalButton' onClick={this.confirm}>Yes</button>
@@ -47,9 +56,11 @@ class ConfirmDialog extends React.Component {
 }
 
 function mapState(state) {
+  const processHasNoWarnings = ProcessUtils.hasNoWarnings(state.graphReducer.processToDisplay || {})
   return {
     confirmDialog: state.ui.confirmDialog,
-    nothingToSave: ProcessUtils.nothingToSave(state)
+    nothingToSave: ProcessUtils.nothingToSave(state),
+    processHasSomeWarnings: !processHasNoWarnings
   }
 }
 

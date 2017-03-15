@@ -7,16 +7,17 @@ import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.esp.engine.graph.node
 import pl.touk.esp.engine.graph.sink.SinkRef
 import pl.touk.esp.engine.graph.source.SourceRef
-import pl.touk.esp.ui.api.ProcessValidation.ValidationResult
 import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.esp.ui.process.displayedgraph.displayablenode.{Edge, NodeAdditionalFields, ProcessAdditionalFields}
 import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties}
+import pl.touk.esp.ui.validation.ValidationResults.ValidationResult
 
 object ProcessTestData {
 
   val existingSourceFactory = "barSource"
   val existingSinkFactory = "barSink"
   val otherExistingSinkFactory = "barSink"
+  val existingServiceId = "barService"
   val existingStreamTransformer = "transformer"
   val otherExistingStreamTransformer = "otherTransformer"
 
@@ -24,6 +25,7 @@ object ProcessTestData {
         .withSourceFactory(existingSourceFactory)
         .withSinkFactory(otherExistingSinkFactory)
         .withSinkFactory(existingSinkFactory)
+        .withService(existingServiceId)
         .withCustomStreamTransformer(existingStreamTransformer, classOf[String])
         .withCustomStreamTransformer(otherExistingStreamTransformer, classOf[String])
 
