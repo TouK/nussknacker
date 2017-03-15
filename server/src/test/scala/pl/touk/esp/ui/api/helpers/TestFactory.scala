@@ -8,7 +8,8 @@ import db.migration.DefaultJdbcProfile
 import pl.touk.esp.engine.api.deployment.test.{TestData, TestResults}
 import pl.touk.esp.engine.api.deployment.{ProcessDeploymentData, ProcessManager, ProcessState}
 import pl.touk.esp.engine.management.FlinkProcessManager
-import pl.touk.esp.ui.api.{ProcessPosting, ProcessTestData, ProcessValidation}
+import pl.touk.esp.ui.validation.ProcessValidation
+import pl.touk.esp.ui.api.{ProcessPosting, ProcessTestData}
 import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.esp.ui.process.marshall.ProcessConverter
 import pl.touk.esp.ui.process.repository.{DeployedProcessRepository, ProcessActivityRepository, ProcessRepository}

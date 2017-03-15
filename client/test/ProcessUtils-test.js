@@ -74,7 +74,7 @@ const process = {
     { "from": "someFilterNode", "to": "aggregateId"},
     { "from": "aggregateId", "to": "endEnriched"}
   ],
-  "validationResult": { "invalidNodes": {}}
+  "validationResult": { "errors": {"invalidNodes": {}}}
 }
 
 

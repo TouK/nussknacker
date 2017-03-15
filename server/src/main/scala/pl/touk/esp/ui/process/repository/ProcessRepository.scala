@@ -7,7 +7,7 @@ import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
 import pl.touk.esp.engine.api.deployment.{CustomProcess, GraphProcess, ProcessDeploymentData}
 import pl.touk.esp.ui.EspError._
-import pl.touk.esp.ui.api.ProcessValidation
+import pl.touk.esp.ui.validation.ProcessValidation
 import pl.touk.esp.ui.app.BuildInfo
 import pl.touk.esp.ui.db.entity.ProcessDeploymentInfoEntity.{DeployedProcessVersionEntityData, DeploymentAction}
 import pl.touk.esp.ui.db.entity.ProcessEntity.{ProcessEntityData, ProcessType}

@@ -40,12 +40,13 @@ class UserRightPanel extends Component {
 
   render() {
     const saveDisabled = this.props.nothingToSave && this.props.processIsLatestVersion
+    const deployPossible = (this.props.processIsLatestVersion && ProcessUtils.hasNoErrors(this.props.processToDisplay) && this.props.nothingToSave)
     const config =
       [
         {
           panelName: "Deployment",
           buttons:[
-            {name: "deploy", visible: this.props.loggedUser.canDeploy, disabled: !this.props.processIsLatestVersion || !ProcessUtils.isProcessValid(this.props.processToDisplay), onClick: this.deploy, icon: InlinedSvgs.buttonDeploy},
+            {name: "deploy", visible: this.props.loggedUser.canDeploy, disabled: !deployPossible, onClick: this.deploy, icon: InlinedSvgs.buttonDeploy},
             {name: "stop", visible: this.props.loggedUser.canDeploy, disabled: !this.isRunning(), onClick: this.stop, icon: InlinedSvgs.buttonStop},
             {name: "metrics", onClick: this.showMetrics, icon: InlinedSvgs.buttonMetrics}
           ]

@@ -156,8 +156,8 @@ class NodeDetailsModal extends React.Component {
 
 function mapState(state) {
   var nodeId = state.graphReducer.nodeToDisplay.id
-  var errors = nodeId ? _.get(state.graphReducer.processToDisplay, `validationResult.invalidNodes[${state.graphReducer.nodeToDisplay.id}]`, [])
-    : _.get(state.graphReducer.processToDisplay, "validationResult.processPropertiesErrors", [])
+  var errors = nodeId ? _.get(state.graphReducer.processToDisplay, `validationResult.errors.invalidNodes[${state.graphReducer.nodeToDisplay.id}]`, [])
+    : _.get(state.graphReducer.processToDisplay, "validationResult.errors.processPropertiesErrors", [])
   return {
     nodeToDisplay: state.graphReducer.nodeToDisplay,
     processId: state.graphReducer.processToDisplay.id,

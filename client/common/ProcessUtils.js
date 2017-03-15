@@ -16,11 +16,26 @@ class ProcessUtils {
     return state.graphReducer.groupingState != null
   }
 
+  //fixme powinnismy zwracac flage z backendu typu hasErrors, hasWarnings, ale to moze nie byc takie latwe...
+  hasNoErrorsNorWarnings = (process) => {
+    return this.hasNoErrors(process) && this.hasNoWarnings(process)
+  }
 
-  isProcessValid = (process) => {
-    const result = process.validationResult
+  extractInvalidNodes = (invalidNodes) => {
+    return _.flatten(Object.keys(invalidNodes || {}).map((key, idx) => invalidNodes[key].map((error) => {
+      return {"error": error, "key": key}
+    })))
+  }
+
+  hasNoErrors = (process) => {
+    const result = (process.validationResult || {}).errors
     return !result || (Object.keys(result.invalidNodes || {}).length == 0
       && (result.globalErrors || []).length == 0 && (result.processPropertiesErrors || []).length == 0)
+  }
+
+  hasNoWarnings = (process) => {
+    const warnings = (process.validationResult || {}).warnings
+    return _.isEmpty(warnings) || Object.keys(warnings.invalidNodes || {}).length == 0
   }
 
   findAvailableVariables = (nodeId, process, processDefinition) => {

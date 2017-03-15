@@ -10,6 +10,7 @@ import akka.http.scaladsl.server.{Directives, Route}
 import akka.stream.ActorMaterializer
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.esp.ui.api._
+import pl.touk.esp.ui.validation.ProcessValidation
 import pl.touk.esp.ui.db.DatabaseInitializer
 import pl.touk.esp.ui.initialization.Initialization
 import pl.touk.esp.ui.process.deployment.ManagementActor

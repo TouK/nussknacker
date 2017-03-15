@@ -188,7 +188,7 @@ class Graph extends React.Component {
         this.unhighlightCell(cell, 'node-grouping')
 
       })
-      _.keys(data.validationResult.invalidNodes).forEach(name => { this.highlightNode(name, 'node-validation-error') });
+      _.keys((data.validationResult.errors || {}).invalidNodes).forEach(name => { this.highlightNode(name, 'node-validation-error') });
       if (nodeToDisplay) {
         this.highlightNode(nodeToDisplay.id, 'node-focused')
       }
