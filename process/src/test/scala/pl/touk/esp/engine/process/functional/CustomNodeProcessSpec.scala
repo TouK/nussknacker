@@ -44,7 +44,7 @@ class CustomNodeProcessSpec extends FlatSpec with Matchers {
 
   it should "be able to split after custom node" in {
     val additionalFilterBranch = GraphBuilder.filter("falseFilter", "#outRec.record.value1 > #outRec.previous + 1")
-      .customNode("custom2", "outRec", "stateCustom", "keyBy" -> "#input.id", "stringVal" -> "'terefere'")
+      .customNode("custom2", "outRec2", "stateCustom", "keyBy" -> "#input.id", "stringVal" -> "'terefere'")
       .sink("outFalse", "monitor")
 
     val process = EspProcessBuilder.id("proc1")

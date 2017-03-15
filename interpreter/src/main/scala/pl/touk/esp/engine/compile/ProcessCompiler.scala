@@ -1,7 +1,7 @@
 package pl.touk.esp.engine.compile
 
 import cats.data.Validated._
-import cats.data.{Validated, ValidatedNel}
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.instances.list._
 import pl.touk.esp.engine._
 import pl.touk.esp.engine.api.MetaData
@@ -9,9 +9,11 @@ import pl.touk.esp.engine.api.exception.EspExceptionHandler
 import pl.touk.esp.engine.api.process._
 import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
 import pl.touk.esp.engine.canonize.ProcessCanonizer
+import pl.touk.esp.engine.compile.PartSubGraphCompilerBase.ContextsForParts
 import pl.touk.esp.engine.compile.ProcessCompilationError._
 import pl.touk.esp.engine.compile.dumb._
 import pl.touk.esp.engine.compiledgraph.CompiledProcessParts
+import pl.touk.esp.engine.splittedgraph.splittednode.PartRef
 import pl.touk.esp.engine.compiledgraph.part.NextWithParts
 import pl.touk.esp.engine.definition.DefinitionExtractor._
 import pl.touk.esp.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
@@ -121,11 +123,14 @@ protected trait ProcessCompilerBase {
         }
       case CustomNodePart(node, nextParts, ends) =>
         getCustomNodeDefinition(node).andThen { nodeDefinition =>
-          val ctxWithVar = ctx.withVariable(node.data.outputVar, nodeDefinition.returnType)
-          validate(node, ctxWithVar).andThen { newCtx =>
-            compileCustomNodeInvoker(node, nodeDefinition).andThen { nodeInvoker =>
-              compile(nextParts, newCtx).map { nextParts =>
-                compiledgraph.part.CustomNodePart(nodeInvoker, node, nextParts, ends)
+          ctx.withVariable(node.data.outputVar, nodeDefinition.returnType)
+            //ble... NonEmptyList is invariant...
+            .asInstanceOf[ValidatedNel[ProcessCompilationError,ValidationContext]].andThen { ctxWithVar =>
+            validate(node, ctxWithVar).andThen { newCtx =>
+              compileCustomNodeInvoker(node, nodeDefinition).andThen { nodeInvoker =>
+                compile(nextParts, newCtx).map { nextParts =>
+                  compiledgraph.part.CustomNodePart(nodeInvoker, node, nextParts, ends)
+                }
               }
             }
           }
@@ -201,9 +206,10 @@ protected trait ProcessCompilerBase {
 
   protected def createFactory[T](obj: ParameterProviderT): ProcessObjectFactory[T]
 
-  private def compile(parts: List[SubsequentPart], ctx: ValidationContext)
+  private def compile(parts: List[SubsequentPart], ctx: ContextsForParts)
                      (implicit metaData: MetaData): ValidatedNel[ProcessCompilationError, List[compiledgraph.part.SubsequentPart]] = {
-    parts.map(p => compile(p, ctx)).sequence
+    parts.map(p =>
+      ctx.get(p.id).map(compile(p, _)).getOrElse(Invalid(NonEmptyList.of[ProcessCompilationError](MissingPart(p.id))))).sequence
   }
 
   private def validateParameters(parameterProvider: ParameterProviderT, usedParamsNames: List[String])
@@ -220,17 +226,17 @@ protected trait ProcessCompilerBase {
     ) { (_, _) => parameterProvider }.leftMap(_.map(identity[ProcessCompilationError]))
   }
 
-  private def validate(n: splittednode.SplittedNode[_], ctx: ValidationContext): ValidatedNel[ProcessCompilationError, ValidationContext] = {
+  private def validate(n: splittednode.SplittedNode[_], ctx: ValidationContext): ValidatedNel[ProcessCompilationError, ContextsForParts] = {
     sub.validate(n, ctx).leftMap(_.map(identity[ProcessCompilationError]))
   }
 
-  private def validate(n: Next, ctx: ValidationContext): ValidatedNel[ProcessCompilationError, ValidationContext] = n match {
+  private def validate(n: Next, ctx: ValidationContext): ValidatedNel[ProcessCompilationError, ContextsForParts] = n match {
     case NextNode(node) => sub.validate(node, ctx).leftMap(_.map(identity[ProcessCompilationError]))
     //TODO: a moze cos tu innego powinno byc??
-    case _ => Validated.valid(ctx)
+    case PartRef(id) => Validated.valid(Map(id -> ctx))
   }
 
-  private def validateWithoutContextValidation(n: splittednode.SplittedNode[_], ctx: ValidationContext): ValidatedNel[ProcessCompilationError, ValidationContext] = {
+  private def validateWithoutContextValidation(n: splittednode.SplittedNode[_], ctx: ValidationContext): ValidatedNel[ProcessCompilationError, ContextsForParts] = {
     sub.validateWithoutContextValidation(n).leftMap(_.map(identity[ProcessCompilationError]))
   }
 
