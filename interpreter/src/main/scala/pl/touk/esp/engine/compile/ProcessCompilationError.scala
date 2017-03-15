@@ -109,4 +109,14 @@ object ProcessCompilationError {
   }
 
 
+  case class OverwrittenVariable(variableName: String, nodeId: String)
+    extends PartSubGraphCompilationError with InASingleNode
+
+  object OverwrittenVariable {
+    def apply(variableName: String)(implicit nodeId: NodeId): PartSubGraphCompilationError =
+      OverwrittenVariable(variableName, nodeId.id)
+  }
+
+
+
 }

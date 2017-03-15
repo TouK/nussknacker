@@ -274,6 +274,22 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
 
   }
 
+  it should "pass custom node output var" in {
+    val process = EspProcessBuilder
+      .id("process1")
+      .exceptionHandler()
+      .source("id1", "source")
+      .customNode("cNode1", "out1", "custom", "par1" -> "#strangeVar")
+      .sink("id2", "#out1", "sink")
+    val definitionWithCustomNode = definitionWithTypedSourceAndTransformNode
+
+    ProcessValidator.default(definitionWithCustomNode).validate(process) should matchPattern {
+      case Valid(_) =>
+    }
+
+  }
+
+
   it should "validate exception handler params" in {
 
     val process = EspProcessBuilder
@@ -341,6 +357,102 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
       )) =>
     }
   }
+
+  it should "not allow to overwrite variable by variable node" in {
+    val process = EspProcessBuilder
+      .id("process1")
+      .exceptionHandler()
+      .source("id1", "source")
+      .buildSimpleVariable("var1", "var1", "''")
+      .buildSimpleVariable("var1overwrite", "var1", "''")
+      .sink("id2", "sink")
+    ProcessValidator.default(definitionWithTypedSource).validate(process) should matchPattern {
+      case Invalid(NonEmptyList(OverwrittenVariable("var1", "var1overwrite"), _)) =>
+    }
+  }
+
+  it should "not allow to overwrite variable by switch node" in {
+    val process = EspProcessBuilder
+      .id("process1")
+      .exceptionHandler()
+      .source("id1", "source")
+      .buildSimpleVariable("var1", "var1", "''")
+      .switch("var1overwrite", "''", "var1", GraphBuilder.sink("id2", "sink"))
+
+    ProcessValidator.default(definitionWithTypedSource).validate(process) should matchPattern {
+      case Invalid(NonEmptyList(OverwrittenVariable("var1", "var1overwrite"), _)) =>
+    }
+  }
+
+  it should "not allow to overwrite variable by enricher node" in {
+    val process = EspProcessBuilder
+      .id("process1")
+      .exceptionHandler()
+      .source("id1", "source")
+      .buildSimpleVariable("var1", "var1", "''")
+      .enricher("var1overwrite", "var1", "sampleEnricher")
+      .sink("id2", "sink")
+
+    ProcessValidator.default(definitionWithTypedSource).validate(process) should matchPattern {
+      case Invalid(NonEmptyList(OverwrittenVariable("var1", "var1overwrite"), _)) =>
+    }
+  }
+
+  it should "not allow to overwrite variable by variable builder" in {
+    val process = EspProcessBuilder
+      .id("process1")
+      .exceptionHandler()
+      .source("id1", "source")
+      .buildSimpleVariable("var1", "var1", "''")
+      .buildVariable("var1overwrite", "var1", "a" -> "''")
+      .sink("id2", "sink")
+    ProcessValidator.default(definitionWithTypedSource).validate(process) should matchPattern {
+      case Invalid(NonEmptyList(OverwrittenVariable("var1", "var1overwrite"), _)) =>
+    }
+  }
+
+  it should "not allow to overwrite variable by custom node" in {
+    val process = EspProcessBuilder
+      .id("process1")
+      .exceptionHandler()
+      .source("id1", "source")
+      .buildSimpleVariable("var1", "var1", "''")
+      .customNode("var1overwrite", "var1", "custom", "par1" -> "''")
+      .sink("id2", "sink")
+
+    ProcessValidator.default(definitionWithTypedSourceAndTransformNode).validate(process) should matchPattern {
+      case Invalid(NonEmptyList(OverwrittenVariable("var1", "var1overwrite"), _)) =>
+    }
+  }
+
+  it should "allow different vars in branches" in {
+    val process = EspProcessBuilder
+      .id("process1")
+      .exceptionHandler()
+      .source("id1", "source")
+      .switch("switch", "''", "var2",
+        GraphBuilder.buildSimpleVariable("var3", "var3", "''").sink("id2", "sink"),
+         Case("''", GraphBuilder.buildSimpleVariable("var3b", "var3", "''").sink("id3", "sink")))
+
+    ProcessValidator.default(definitionWithTypedSource).validate(process) should matchPattern {
+      case Valid(_) =>
+    }
+  }
+
+  it should "not allow to use vars from different branches" in {
+    val process = EspProcessBuilder
+      .id("process1")
+      .exceptionHandler()
+      .source("id1", "source")
+      .switch("switch", "''", "var2",
+        GraphBuilder.buildSimpleVariable("var3", "var3", "''").sink("id2", "sink"),
+         Case("''", GraphBuilder.sink("id3", "#var3", "sink")))
+
+    ProcessValidator.default(definitionWithTypedSource).validate(process) should matchPattern {
+      case Invalid(NonEmptyList(ExpressionParseError("Unresolved references var3", "id3", None, "#var3"), _)) =>
+    }
+  }
+
 
   case class SimpleRecord(value1: AnotherSimpleRecord, plainValue: BigDecimal, plainValueOpt: Option[BigDecimal], intAsAny: Any, list: java.util.List[SimpleRecord]) {
     private val privateValue = "priv"

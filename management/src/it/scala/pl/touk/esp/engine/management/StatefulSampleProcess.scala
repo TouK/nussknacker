@@ -18,7 +18,7 @@ object StatefulSampleProcess {
       .id(id)
       .exceptionHandler("param1" -> "val1")
       .source("state", "oneSource")
-          .customNode("stateful", "input", "stateful", "keyBy" -> "#input")
-        .sink("end", "#input", "kafka-string", "topic" -> s"output-$id")
+          .customNode("stateful", "stateVar", "stateful", "keyBy" -> "#input")
+        .sink("end", "#stateVar", "kafka-string", "topic" -> s"output-$id")
   }
 }

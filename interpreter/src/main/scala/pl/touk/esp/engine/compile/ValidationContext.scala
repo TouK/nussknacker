@@ -1,5 +1,8 @@
 package pl.touk.esp.engine.compile
 
+import cats.data.Validated.{Invalid, Valid}
+import cats.data._
+import pl.touk.esp.engine.compile.ProcessCompilationError.{NodeId, OverwrittenVariable}
 import pl.touk.esp.engine.definition.DefinitionExtractor.{ClazzRef, PlainClazzDefinition}
 
 case class ValidationContext(variables: Map[String, ClazzRef] = Map.empty, typesInformation: List[PlainClazzDefinition] = List.empty) {
@@ -12,29 +15,11 @@ case class ValidationContext(variables: Map[String, ClazzRef] = Map.empty, types
 
   def contains(name: String): Boolean = variables.contains(name)
 
-  def withVariables(otherVariables: Map[String, ClazzRef]): ValidationContext =
-    copy(variables = variables ++ otherVariables)
-
-  def withVariable(name: String, value: ClazzRef): ValidationContext =
-    withVariables(Map(name -> value))
-
-  def setVariablesTo(otherVariables: Map[String, ClazzRef]): ValidationContext = {
-    copy(variables = otherVariables)
-  }
-
-  def merge(ctx: ValidationContext): ValidationContext = {
-    withVariables(ctx.variables)
-  }
+  def withVariable(name: String, value: ClazzRef)(implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, ValidationContext] =
+    if (variables.contains(name)) Invalid(NonEmptyList.of(OverwrittenVariable(name))) else Valid(copy(variables = variables + (name -> value)))
 
   def getTypeInfo(clazzRef: ClazzRef): PlainClazzDefinition = {
     typesInformation.find(_.clazzName == clazzRef).getOrElse(throw new RuntimeException(s"Unknown clazz ref: $clazzRef"))
-  }
-
-}
-
-object ValidationContext {
-  def merge(ctx1: ValidationContext, ctx2: ValidationContext): ValidationContext = {
-    ctx1.withVariables(ctx2.variables)
   }
 
 }
