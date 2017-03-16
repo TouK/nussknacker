@@ -1,8 +1,5 @@
 package pl.touk.esp.engine.standalone.management
 
-import java.io.File
-import java.util.concurrent.ConcurrentHashMap
-
 import cats.data.{NonEmptyList, ValidatedNel}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
@@ -13,18 +10,20 @@ import pl.touk.esp.engine.canonize.ProcessCanonizer
 import pl.touk.esp.engine.compile.ProcessCompilationError
 import pl.touk.esp.engine.marshall.{ProcessMarshaller, ProcessUnmarshallError}
 import pl.touk.esp.engine.standalone.StandaloneProcessInterpreter
+import pl.touk.esp.engine.standalone.utils.{StandaloneContext, StandaloneContextPreparer}
 
 import scala.concurrent.ExecutionContext
 
 object DeploymentService {
 
   //TODO: to jest rozwiazanie tymczasowe, docelowo powinnismy np. zapisywac do zk te procesy...
-  def apply(creator: ProcessConfigCreator, config: Config): DeploymentService =
-    new DeploymentService(creator, config, FileProcessRepository(config.getString("standaloneEngineProcessLocation")))
+  def apply(context: StandaloneContextPreparer, creator: ProcessConfigCreator, config: Config): DeploymentService =
+    new DeploymentService(context, creator, config, FileProcessRepository(config.getString("standaloneEngineProcessLocation")))
 
 }
 
-class DeploymentService(creator: ProcessConfigCreator, config: Config, processRepository: ProcessRepository) extends LazyLogging {
+class DeploymentService(context: StandaloneContextPreparer,
+                        creator: ProcessConfigCreator, config: Config, processRepository: ProcessRepository) extends LazyLogging {
 
   val processInterpreters: collection.concurrent.TrieMap[String, (StandaloneProcessInterpreter, Long)] = collection.concurrent.TrieMap()
 
@@ -45,6 +44,8 @@ class DeploymentService(creator: ProcessConfigCreator, config: Config, processRe
 
     val interpreter = toEspProcess(processJson).andThen(process => newInterpreter(process))
     interpreter.foreach { processInterpreter =>
+      cancel(processId)
+
       processRepository.add(processId, processJson)
       processInterpreters.put(processId, (processInterpreter, System.currentTimeMillis()))
       processInterpreter.open()
@@ -73,7 +74,7 @@ class DeploymentService(creator: ProcessConfigCreator, config: Config, processRe
 
   private def newInterpreter(canonicalProcess: CanonicalProcess) =
     ProcessCanonizer.uncanonize(canonicalProcess)
-      .andThen(StandaloneProcessInterpreter(_, creator, config)).leftMap(_.map(DeploymentError(_)))
+      .andThen(StandaloneProcessInterpreter(_, context, creator, config)).leftMap(_.map(DeploymentError(_)))
 
 
   private def toEspProcess(processJson: String): ValidatedNel[DeploymentError, CanonicalProcess] =

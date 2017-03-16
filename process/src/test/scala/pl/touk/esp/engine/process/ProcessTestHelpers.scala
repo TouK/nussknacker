@@ -49,7 +49,8 @@ object ProcessTestHelpers {
     }
 
     def prepareCreator(exConfig: ExecutionConfig, data: List[SimpleRecord]) = new ProcessConfigCreator {
-      override def services(config: Config) = Map("logService" -> WithCategories(MockService))
+
+      override def services(config: Config) = Map("logService" -> WithCategories(new MockService))
 
       override def sourceFactories(config: Config) = Map(
         "input" -> WithCategories(FlinkSourceFactory.noParam(new CollectionSource[SimpleRecord](
@@ -119,11 +120,8 @@ object ProcessTestHelpers {
     }
   }
 
-  object MockService extends Service with TimeMeasuringService {
-
+  object MockService {
     private val data_ = new CopyOnWriteArrayList[Any]
-
-    val serviceName = "mockService"
 
     def data = {
       data_.toArray.toList
@@ -132,11 +130,17 @@ object ProcessTestHelpers {
     def clear() = {
       data_.clear()
     }
+  }
+
+  //data is static, to be able to track, Service is object, to initialize metrics properly...
+  class MockService extends Service with TimeMeasuringService {
+
+    val serviceName = "mockService"
 
     @MethodToInvoke
     def invoke(@ParamName("all") all: Any)(implicit ec: ExecutionContext) = {
       measuring(Future.successful {
-        data_.add(all)
+        MockService.data_.add(all)
       })
     }
   }

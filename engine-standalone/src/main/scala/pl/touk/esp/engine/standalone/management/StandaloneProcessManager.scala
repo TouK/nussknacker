@@ -7,6 +7,7 @@ import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 import cats.data.Validated.{Invalid, Valid}
+import com.codahale.metrics.MetricRegistry
 import com.typesafe.config.Config
 import dispatch.Http
 import pl.touk.esp.engine.api.EndingReference
@@ -23,6 +24,7 @@ import pl.touk.esp.engine.definition.{ConfigCreatorTestInfoProvider, ProcessDefi
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.marshall.ProcessMarshaller
 import pl.touk.esp.engine.standalone.StandaloneProcessInterpreter
+import pl.touk.esp.engine.standalone.utils.{StandaloneContext, StandaloneContextPreparer}
 import pl.touk.esp.engine.util.ThreadUtils
 import pl.touk.esp.engine.util.service.{AuditDispatchClient, LogCorrelationId}
 
@@ -134,8 +136,11 @@ class StandaloneTestMain(config: Config, testData: TestData, process: EspProcess
 
     val collectingListener = ResultsCollectingListenerHolder.registerRun
 
+    //in tests we don't send metrics anywhere
+    val testContext = new StandaloneContextPreparer(new MetricRegistry)
+
     //FIXME: walidacja??
-    val standaloneInterpreter = StandaloneProcessInterpreter(process, creator, config,
+    val standaloneInterpreter = StandaloneProcessInterpreter(process, testContext, creator, config,
       definitionsPostProcessor = prepareMocksForTest(collectingListener),
       additionalListeners = List(collectingListener)
     ).toOption.get

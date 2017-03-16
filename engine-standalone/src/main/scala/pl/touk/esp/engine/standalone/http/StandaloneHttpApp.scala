@@ -7,10 +7,13 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Directives
 import akka.stream.ActorMaterializer
+import com.codahale.metrics.MetricRegistry
+import com.codahale.metrics.graphite.{Graphite, GraphiteReporter}
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.esp.engine.api.process.ProcessConfigCreator
-import pl.touk.esp.engine.standalone.management.{DeploymentService, FileProcessRepository}
+import pl.touk.esp.engine.standalone.management.DeploymentService
+import pl.touk.esp.engine.standalone.utils.StandaloneContextPreparer
 import pl.touk.esp.engine.util.ThreadUtils
 
 import scala.util.Try
@@ -28,7 +31,7 @@ object StandaloneHttpApp extends Directives with Argonaut62Support with LazyLogg
   val creator = loadCreator(config)
 
 
-  val deploymentService = DeploymentService(creator, config)
+  val deploymentService = DeploymentService(prepareContext(config), creator, config)
 
   def main(args: Array[String]): Unit = {
     val ports = for {
@@ -76,6 +79,14 @@ object StandaloneHttpApp extends Directives with Argonaut62Support with LazyLogg
       val classLoader = new URLClassLoader(Array(jarFile.toURI.toURL), getClass.getClassLoader)
       classLoader
     }
+  }
+
+  private def prepareContext(config: Config): StandaloneContextPreparer = {
+    val metricRegistry = new MetricRegistry
+    GraphiteReporter.forRegistry(metricRegistry)
+      .prefixedWith(s"standaloneEngine.${config.getString("hostName")}")
+        .build(new Graphite(config.getString("graphite.hostName"), config.getInt("graphite.port")))
+    new StandaloneContextPreparer(metricRegistry)
   }
 
 }
