@@ -3,6 +3,7 @@ package pl.touk.esp.engine.standalone.management
 import java.nio.file.Files
 
 import argonaut.PrettyParams
+import com.codahale.metrics.MetricRegistry
 import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.esp.engine.build.EspProcessBuilder
@@ -10,6 +11,7 @@ import pl.touk.esp.engine.canonize.ProcessCanonizer
 import pl.touk.esp.engine.marshall.ProcessMarshaller
 import pl.touk.esp.engine.spel
 import pl.touk.esp.engine.standalone.StandaloneProcessConfigCreator
+import pl.touk.esp.engine.standalone.utils.{StandaloneContext, StandaloneContextPreparer}
 
 class DeploymentServiceSpec extends FlatSpec with Matchers {
 
@@ -29,8 +31,7 @@ class DeploymentServiceSpec extends FlatSpec with Matchers {
 
   val tmpDir = Files.createTempDirectory("deploymentSpec")
 
-
-  def createService() = DeploymentService(new StandaloneProcessConfigCreator,
+  def createService() = DeploymentService(new StandaloneContextPreparer(new MetricRegistry), new StandaloneProcessConfigCreator,
     ConfigFactory.load().withValue("standaloneEngineProcessLocation", ConfigValueFactory.fromAnyRef(tmpDir.toFile.getAbsolutePath)))
 
   it should "preserve processes between deployments" in {

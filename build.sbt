@@ -71,6 +71,7 @@ val scalaLoggingV = "3.4.0"
 val ficusV = "1.2.6"
 val configV = "1.3.0"
 val commonsLangV = "3.3.2"
+val dropWizardV = "3.1.0"
 
 val perfTestSampleName = "esp-perf-test-sample"
 
@@ -141,7 +142,7 @@ lazy val engineStandalone = (project in file("engine-standalone")).
     }
   ).
   settings(addArtifact(artifact in (Compile, assembly), assembly)).
-  dependsOn(interpreter)
+  dependsOn(interpreter, standaloneUtil)
 
 lazy val management = (project in file("management")).
   configs(IntegrationTest).
@@ -228,19 +229,6 @@ lazy val interpreter = (project in file("interpreter")).
   ).
   dependsOn(util)
 
-
-lazy val interpreterAddons = (project in file("interpreter-addons")).
-  settings(commonSettings).
-  settings(
-    name := "esp-interpreter-addons",
-    libraryDependencies ++= {
-      Seq(
-        "com.github.julien-truffaut"  %%  "monocle-macro"  % monocleV,
-        "org.scalatest" %% "scalatest" % scalaTestV % "test"
-      )
-    }
-  ).dependsOn(interpreter)
-
 lazy val kafka = (project in file("kafka")).
   settings(commonSettings).
   settings(
@@ -296,6 +284,20 @@ lazy val flinkUtil = (project in file("flink-util")).
       )
     }
   ).dependsOn(util, flinkApi)
+
+lazy val standaloneUtil = (project in file("standalone-util")).
+  settings(commonSettings).
+  settings(
+    name := "esp-standalone-util",
+    libraryDependencies ++= {
+      Seq(
+        "io.dropwizard.metrics" % "metrics-core" % dropWizardV,
+        "io.dropwizard.metrics" % "metrics-graphite" % dropWizardV
+      )
+    }
+  ).dependsOn(util)
+
+
 
 
 lazy val api = (project in file("api")).

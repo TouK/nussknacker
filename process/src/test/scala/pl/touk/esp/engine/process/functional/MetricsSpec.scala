@@ -7,6 +7,8 @@ import org.apache.flink.metrics.reporter.AbstractReporter
 import org.apache.flink.metrics.{Metric, MetricConfig, MetricGroup}
 import org.apache.flink.streaming.api.environment.{StreamExecutionEnvironment => JavaEnv}
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
+import org.scalatest.concurrent.Eventually
+import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.esp.engine.build.EspProcessBuilder
 import pl.touk.esp.engine.process.ProcessTestHelpers.{MockService, SimpleRecord, processInvoker}
@@ -15,7 +17,13 @@ import pl.touk.esp.engine.spel
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ArrayBuffer
 
-class MetricsSpec extends FlatSpec with Matchers {
+class MetricsSpec extends FlatSpec with Matchers with Eventually {
+
+
+  override implicit val patienceConfig = PatienceConfig(
+    timeout = Span(10, Seconds),
+    interval = Span(100, Millis)
+  )
 
   it should "measure time for service" in {
     TestReporter.reset()
@@ -71,14 +79,14 @@ class MetricsSpec extends FlatSpec with Matchers {
 
     processInvoker.invoke(process, data, env)
 
-    //smutne, ale logika w InstantRateMeter troche to wymusza...
-    Thread.sleep(1200)
+    eventually {
+      val totalGauges = TestReporter.taskManagerReporter.testGauges("error.instantRate")
+      totalGauges.exists(_.getValue.asInstanceOf[Double] > 0) shouldBe true
 
-    val totalGauges = TestReporter.taskManagerReporter.testGauges("error.instantRate")
-    totalGauges.exists(_.getValue.asInstanceOf[Double] > 0) shouldBe true
+      val nodeGauges = TestReporter.taskManagerReporter.testGauges("error.proc2.instantRateByNode")
+      nodeGauges.exists(_.getValue.asInstanceOf[Double] > 0) shouldBe true
+    }
 
-    val nodeGauges = TestReporter.taskManagerReporter.testGauges("error.proc2.instantRateByNode")
-    nodeGauges.exists(_.getValue.asInstanceOf[Double] > 0) shouldBe true
   }
 
 }

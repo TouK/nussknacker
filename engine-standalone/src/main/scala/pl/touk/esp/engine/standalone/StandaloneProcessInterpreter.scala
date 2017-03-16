@@ -6,6 +6,7 @@ import java.util.concurrent.atomic.AtomicLong
 import cats.data
 import cats.data.Validated.Invalid
 import cats.data.{NonEmptyList, ValidatedNel}
+import com.codahale.metrics.{Metric, MetricFilter}
 import com.typesafe.config.Config
 import pl.touk.esp.engine.{Interpreter, compiledgraph}
 import pl.touk.esp.engine.api._
@@ -20,6 +21,8 @@ import pl.touk.esp.engine.definition.ProcessDefinitionExtractor
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.splittedgraph.splittednode.{NextNode, PartRef, SplittedNode}
 import pl.touk.esp.engine.standalone.StandaloneProcessInterpreter.{GenericResultType, OutType}
+import pl.touk.esp.engine.standalone.metrics.InvocationMetrics
+import pl.touk.esp.engine.standalone.utils.{StandaloneContext, StandaloneContextLifecycle, StandaloneContextPreparer}
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
@@ -46,7 +49,7 @@ object StandaloneProcessInterpreter {
     }
   }
 
-  def apply(process: EspProcess, creator: ProcessConfigCreator, config: Config,
+  def apply(process: EspProcess, contextPreparer: StandaloneContextPreparer, creator: ProcessConfigCreator, config: Config,
             additionalListeners: List[ProcessListener] = List(),
             definitionsPostProcessor: (ProcessDefinitionExtractor.ProcessDefinition[ObjectWithMethodDef]
               => ProcessDefinitionExtractor.ProcessDefinition[ObjectWithMethodDef]) = identity)
@@ -65,7 +68,7 @@ object StandaloneProcessInterpreter {
 
     new ProcessCompiler(sub, definitions).compile(process)
       .andThen(StandaloneInvokerCompiler(sub, _, interpreter).compile)
-      .map(StandaloneProcessInterpreter(process.id, _, services, sourceFactory))
+      .map(StandaloneProcessInterpreter(process.id, contextPreparer.prepare(process.id), _, services, sourceFactory))
 
   }
 
@@ -139,10 +142,10 @@ object StandaloneProcessInterpreter {
 }
 
 
-case class StandaloneProcessInterpreter(id: String,
+case class StandaloneProcessInterpreter(id: String, context: StandaloneContext,
                                         invoker: StandaloneProcessInterpreter.OutFunType,
                                         services: Iterable[Service],
-                                        source: StandaloneSourceFactory[Any]) {
+                                        source: StandaloneSourceFactory[Any]) extends InvocationMetrics {
 
   private val counter = new AtomicLong(0)
 
@@ -152,17 +155,22 @@ case class StandaloneProcessInterpreter(id: String,
 
   def invokeToResult(input: Any)(implicit ec: ExecutionContext): OutType = {
     val contextId = s"$id-${counter.getAndIncrement()}"
-    val ctx = Context(contextId).withVariable(Interpreter.InputParamName, input)
-    invoker(ctx, ec)
+    measureTime {
+      val ctx = Context(contextId).withVariable(Interpreter.InputParamName, input)
+      invoker(ctx, ec)
+    }
   }
 
   def open()(implicit ec: ExecutionContext): Unit = {
-    services.foreach(_.open())
-    //fixme jak zawolam open() w czasie testowania to metryki beda sie inicjalizowac?
+    services.foreach {
+      case a:StandaloneContextLifecycle => a.open(context)
+      case a => a.open()
+    }
   }
 
   def close(): Unit = {
     services.foreach(_.close())
+    context.close()
   }
 
 }
