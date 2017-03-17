@@ -3,7 +3,7 @@ package pl.touk.esp.engine.kafka
 import org.apache.flink.api.java.typeutils.GenericTypeInfo
 import org.apache.flink.streaming.util.serialization.SimpleStringSchema
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
-import pl.touk.esp.engine.api.MetaData
+import pl.touk.esp.engine.api.{MetaData, StreamMetaData}
 import pl.touk.esp.engine.api.test.TestParsingUtils
 
 class KafkaSourceFactorySpec extends FlatSpec with BeforeAndAfterAll with KafkaSpec with Matchers {
@@ -25,8 +25,8 @@ class KafkaSourceFactorySpec extends FlatSpec with BeforeAndAfterAll with KafkaS
 
     val sourceFactory = new KafkaSourceFactory[String](kafkaConfig, new SimpleStringSchema, None, TestParsingUtils.newLineSplit)
 
-    val dataFor3 = sourceFactory.create(MetaData(""), topic).generateTestData(3)
-    val dataFor5 = sourceFactory.create(MetaData(""), topic).generateTestData(5)
+    val dataFor3 = sourceFactory.create(MetaData("", StreamMetaData()), topic).generateTestData(3)
+    val dataFor5 = sourceFactory.create(MetaData("", StreamMetaData()), topic).generateTestData(5)
 
 
     //first partition 1, than 0

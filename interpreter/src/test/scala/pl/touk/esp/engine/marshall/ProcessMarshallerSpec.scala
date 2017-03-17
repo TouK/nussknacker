@@ -5,7 +5,7 @@ import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
 import org.scalatest.{FlatSpec, Inside, Matchers, OptionValues}
 import pl.touk.esp.engine._
-import pl.touk.esp.engine.api.MetaData
+import pl.touk.esp.engine.api.{MetaData, StreamMetaData}
 import pl.touk.esp.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.esp.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.esp.engine.canonicalgraph.canonicalnode.{CanonicalNode, FlatNode}
@@ -15,10 +15,7 @@ import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.esp.engine.graph.expression.Expression
 import pl.touk.esp.engine.graph.node._
-import pl.touk.esp.engine.graph.sink.SinkRef
 import pl.touk.esp.engine.graph.source.SourceRef
-
-import scala.concurrent.duration._
 
 class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues with Inside {
 
@@ -67,7 +64,7 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
     val withAdditionalFields =
       """
         |{
-        |    "metaData" : { "id": "custom", "parallelism" : 2, "additionalFields": { "description": "process description"} },
+        |    "metaData" : { "id": "custom", "typeSpecificData": { "type" : "StreamMetaData", "parallelism" : 2 }, "additionalFields": { "description": "process description"} },
         |    "exceptionHandlerRef" : { "parameters" : [ { "name": "errorsTopic", "value": "error.topic"}]},
         |    "nodes" : [
         |        {
@@ -83,7 +80,7 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
     val withoutAdditionalFields =
       """
         |{
-        |    "metaData" : { "id": "custom", "parallelism" : 2},
+        |    "metaData" : { "id": "custom", "typeSpecificData": { "type" : "StreamMetaData", "parallelism" : 2 }},
         |    "exceptionHandlerRef" : { "parameters" : [ { "name": "errorsTopic", "value": "error.topic"}]},
         |    "nodes" : [
         |        {
@@ -112,7 +109,7 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
   it should "detect bad branch" in {
 
     def checkOneInvalid(expectedBadNodeId: String, nodes: CanonicalNode*) = {
-      inside(ProcessCanonizer.uncanonize(CanonicalProcess(MetaData("1"), ExceptionHandlerRef(List()), nodes.toList))) {
+      inside(ProcessCanonizer.uncanonize(CanonicalProcess(MetaData("1", StreamMetaData()), ExceptionHandlerRef(List()), nodes.toList))) {
         case Invalid(NonEmptyList(InvalidTailOfBranch(id), Nil)) => id shouldBe expectedBadNodeId
       }
     }

@@ -21,10 +21,10 @@ class ProcessRoute(processesClassLoader: ClassLoader, deploymentService: Deploym
   import argonaut.ArgonautShapeless._
 
   def route(implicit ec: ExecutionContext): Route = ThreadUtils.withThisAsContextClassLoader(processesClassLoader) {
-    path(Segment) { processId =>
+    path(Segment) { processPath =>
       post {
         entity(as[Array[Byte]]) { bytes =>
-          val interpreter = deploymentService.getInterpreter(processId)
+          val interpreter = deploymentService.getInterpreterByPath(processPath)
           interpreter match {
             case None =>
               complete {

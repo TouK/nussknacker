@@ -14,6 +14,7 @@ import org.apache.flink.runtime.client.JobTimeoutException
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import org.apache.flink.runtime.messages.JobManagerMessages
 import org.apache.flink.runtime.messages.JobManagerMessages._
+import pl.touk.esp.engine.api.StreamMetaData
 import pl.touk.esp.engine.api.deployment._
 import pl.touk.esp.engine.api.deployment.test.TestData
 import pl.touk.esp.engine.api.process.ProcessConfigCreator
@@ -149,17 +150,6 @@ class FlinkProcessManager(config: Config,
     gateway.invokeJobManager[Any](JobManagerMessages.TriggerSavepoint(jobId)).map {
       case TriggerSavepointSuccess(_, path) => path
       case TriggerSavepointFailure(_, reason) => throw reason
-    }
-  }
-
-  private def extractParallelism(processDeploymentData: ProcessDeploymentData): Option[Int] = {
-    val processMarshaller = new ProcessMarshaller
-    processDeploymentData match {
-      case GraphProcess(processAsJson) =>
-        val canonicalProcess = processMarshaller.fromJson(processAsJson).valueOr(err => throw new IllegalArgumentException(err.msg))
-        canonicalProcess.metaData.parallelism
-      case _ =>
-        None
     }
   }
 

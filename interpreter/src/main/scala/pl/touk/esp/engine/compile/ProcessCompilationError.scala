@@ -22,6 +22,10 @@ object ProcessCompilationError {
 
   }
 
+  case class WrongProcessType() extends ProcessCompilationError {
+    override def nodeIds = Set()
+  }
+
   case class UnsupportedPart(nodeId: String) extends ProcessCompilationError with InASingleNode
 
   case class MissingPart(nodeId: String) extends ProcessCompilationError with InASingleNode

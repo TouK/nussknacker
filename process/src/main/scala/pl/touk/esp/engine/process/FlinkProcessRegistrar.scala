@@ -30,7 +30,7 @@ import pl.touk.esp.engine.Interpreter
 import pl.touk.esp.engine.api._
 import pl.touk.esp.engine.api.exception.EspExceptionInfo
 import pl.touk.esp.engine.api.process._
-import pl.touk.esp.engine.api.test.InvocationCollectors.{NodeContext, SinkInvocationCollector}
+import pl.touk.esp.engine.api.test.InvocationCollectors.SinkInvocationCollector
 import pl.touk.esp.engine.api.test.TestRunId
 import pl.touk.esp.engine.compile.{PartSubGraphCompiler, ProcessCompilationError, ProcessCompiler}
 import pl.touk.esp.engine.compiledgraph.part._
@@ -43,7 +43,7 @@ import pl.touk.esp.engine.flink.util.ContextInitializingFunction
 import pl.touk.esp.engine.flink.util.metrics.InstantRateMeter
 import pl.touk.esp.engine.graph.{EspProcess, node}
 import pl.touk.esp.engine.process.FlinkProcessRegistrar._
-import pl.touk.esp.engine.process.util.Serializers
+import pl.touk.esp.engine.process.util.{MetaDataExtractor, Serializers}
 import pl.touk.esp.engine.splittedgraph.end.{DeadEnd, End, NormalEnd}
 import pl.touk.esp.engine.splittedgraph.splittednode
 import pl.touk.esp.engine.splittedgraph.splittednode.{NextNode, PartRef, SplittedNode}
@@ -53,7 +53,6 @@ import scala.collection.JavaConversions._
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.language.implicitConversions
-import scala.util.Try
 import scala.util.control.NonFatal
 
 class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessWithDeps,
@@ -88,13 +87,14 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessW
   private def register(env: StreamExecutionEnvironment, compiledProcessWithDeps: () => CompiledProcessWithDeps,
                        testRunId: Option[TestRunId]): Unit = {
     val process = compiledProcessWithDeps().compiledProcess
+    val streamMetaData = MetaDataExtractor.extractStreamMetaDataOrFail(process.metaData)
     //FIXME: ladniej bez casta
     env.setRestartStrategy(process.exceptionHandler.asInstanceOf[FlinkEspExceptionHandler].restartStrategy)
-    process.metaData.parallelism.foreach(env.setParallelism)
+    streamMetaData.parallelism.foreach(env.setParallelism)
     env.enableCheckpointing(checkpointInterval.toMillis)
 
     diskStateBackend match {
-      case Some(backend) if process.metaData.splitStateToDisk.getOrElse(false) =>
+      case Some(backend) if streamMetaData.splitStateToDisk.getOrElse(false) =>
         logger.info("Using disk state backend")
         env.setStateBackend(backend)
       case _ => logger.info("Using default state backend")

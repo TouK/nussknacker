@@ -10,7 +10,7 @@ import argonaut.{DecodeJson, EncodeJson, PrettyParams}
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
 import pl.touk.esp.engine.api.deployment.{DeploymentData, ProcessState}
-import pl.touk.esp.engine.build.EspProcessBuilder
+import pl.touk.esp.engine.build.{EspProcessBuilder, StandaloneProcessBuilder}
 import pl.touk.esp.engine.canonize.ProcessCanonizer
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.marshall.ProcessMarshaller
@@ -30,33 +30,42 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
     procId = UUID.randomUUID().toString
   }
 
-  def process = EspProcessBuilder
+  val processMarshaller = new ProcessMarshaller
+
+  def processJson = processToJson(StandaloneProcessBuilder
     .id(procId)
     .exceptionHandler()
     .source("start", "request1-source")
     .filter("filter1", "#input.field1() == 'a'")
     .enricher("enricher", "var1", "enricherService")
     .processor("processor", "processorService")
-    .sink("endNodeIID", "#var1", "response-sink")
+    .sink("endNodeIID", "#var1", "response-sink"))
 
-  def noFilterProcess = EspProcessBuilder
+
+  def processWithPathJson = processToJson(StandaloneProcessBuilder
+    .id(procId)
+      .path(Some("customPath1"))
+    .exceptionHandler()
+    .source("start", "request1-source")
+    .filter("filter1", "#input.field1() == 'a'")
+    .enricher("enricher", "var1", "enricherService")
+    .processor("processor", "processorService")
+    .sink("endNodeIID", "#var1", "response-sink"))
+
+  def noFilterProcessJson = processToJson(StandaloneProcessBuilder
     .id(procId)
     .exceptionHandler()
     .source("start", "request1-source")
     .enricher("enricher", "var1", "enricherService")
     .processor("processor", "processorService")
-    .sink("endNodeIID", "#var1", "response-sink")
+    .sink("endNodeIID", "#var1", "response-sink"))
 
-  def invalidProcess = EspProcessBuilder
+  def invalidProcessJson = processToJson(StandaloneProcessBuilder
     .id(procId)
     .exceptionHandler()
     .source("start", "request1-source")
-    .sink("endNodeIID", "#var1", "response-sink")
+    .sink("endNodeIID", "#var1", "response-sink"))
 
-  val processMarshaller = new ProcessMarshaller
-  def processJson = processToJson(process)
-  def noFilterProcessJson = processToJson(noFilterProcess)
-  def invalidProcessJson = processToJson(invalidProcess)
 
   def processToJson(espProcess: EspProcess): String = {
     val canonical = ProcessCanonizer.canonize(espProcess)
@@ -81,6 +90,18 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
         processState.status shouldBe "RUNNING"
       }
       Post(s"/$procId", toEntity(Request1("a", "b"))) ~> processesRoute ~> check {
+        status shouldBe StatusCodes.OK
+        responseAs[String] shouldBe "[{\"field1\":\"alamakota\"}]"
+        cancelProcess(procId)
+      }
+    }
+  }
+
+  it should "deploy process under specific path and then run it" in {
+    assertProcessNotRunning(procId)
+    Post("/deploy", toEntity(DeploymentData(procId, processWithPathJson))) ~> managementRoute ~> check {
+      status shouldBe StatusCodes.OK
+      Post(s"/customPath1", toEntity(Request1("a", "b"))) ~> processesRoute ~> check {
         status shouldBe StatusCodes.OK
         responseAs[String] shouldBe "[{\"field1\":\"alamakota\"}]"
         cancelProcess(procId)

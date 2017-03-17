@@ -16,7 +16,7 @@ class FlinkProcessRegistrarSpec extends FlatSpec with Matchers with Eventually {
   import spel.Implicits._
 
   it should "perform simple valid process" in {
-    val process = EspProcess(MetaData("proc1"),
+    val process = EspProcess(MetaData("proc1", StreamMetaData()),
       ExceptionHandlerRef(List.empty),
       GraphBuilder.source("id", "input")
         .filter("filter1", "#processHelper.add(12, #processHelper.constant()) > 1")
@@ -43,7 +43,7 @@ class FlinkProcessRegistrarSpec extends FlatSpec with Matchers with Eventually {
 
   //TODO: jakies lepsze sprawdzenia niz "nie wywala sie"??
   it should "use rocksDB backend" in {
-    val process = EspProcess(MetaData("proc1", splitStateToDisk = Some(true)),
+    val process = EspProcess(MetaData("proc1", StreamMetaData(splitStateToDisk = Some(true))),
       ExceptionHandlerRef(List.empty),
       GraphBuilder.source("id", "input")
         .customNode("custom2", "outRec", "stateCustom", "keyBy" -> "#input.id", "stringVal" -> "'terefere'")
