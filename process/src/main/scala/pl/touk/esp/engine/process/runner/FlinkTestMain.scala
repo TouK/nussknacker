@@ -18,9 +18,9 @@ import pl.touk.esp.engine.flink.api.process.FlinkSourceFactory
 import pl.touk.esp.engine.flink.util.source.CollectionSource
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.process.FlinkProcessRegistrar
+import pl.touk.esp.engine.process.util.MetaDataExtractor
 
 import scala.collection.JavaConverters._
-import scala.reflect.runtime.{universe => ru}
 
 
 object FlinkTestMain extends FlinkRunner {
@@ -40,7 +40,7 @@ class FlinkTestMain(config: Config, testData: TestData, process: EspProcess, cre
   def overWriteRestartStrategy(env: StreamExecutionEnvironment) = env.setRestartStrategy(new NoRestartStrategyConfiguration)
 
   def runTest(urls: List[URL]): TestResults = {
-    val env = StreamExecutionEnvironment.createLocalEnvironment(process.metaData.parallelism.getOrElse(1))
+    val env = StreamExecutionEnvironment.createLocalEnvironment(MetaDataExtractor.extractStreamMetaDataOrFail(process.metaData).parallelism.getOrElse(1))
     val collectingListener = ResultsCollectingListenerHolder.registerRun
     try {
       val registrar: FlinkProcessRegistrar = FlinkProcessRegistrar(creator, config, prepareMocksForTest(env.getConfig, collectingListener), List(collectingListener))
@@ -106,7 +106,7 @@ class FlinkTestMain(config: Config, testData: TestData, process: EspProcess, cre
     val exec: LocalFlinkMiniCluster = new LocalFlinkMiniCluster(configuration, true)
     try {
       exec.start()
-      exec.submitJobAndWait(jobGraph, false)
+      exec.submitJobAndWait(jobGraph, printUpdates = false)
     } finally {
       exec.stop()
     }

@@ -1,8 +1,10 @@
 package pl.touk.esp.engine.standalone.management
 
+import cats.data.Validated.Invalid
 import cats.data.{NonEmptyList, ValidatedNel}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.esp.engine.api.StandaloneMetaData
 import pl.touk.esp.engine.api.deployment.ProcessState
 import pl.touk.esp.engine.api.process.ProcessConfigCreator
 import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
@@ -27,6 +29,8 @@ class DeploymentService(context: StandaloneContextPreparer,
 
   val processInterpreters: collection.concurrent.TrieMap[String, (StandaloneProcessInterpreter, Long)] = collection.concurrent.TrieMap()
 
+  val pathToInterpreterMap: collection.concurrent.TrieMap[String, StandaloneProcessInterpreter] = collection.concurrent.TrieMap()
+
   val processMarshaller = new ProcessMarshaller()
 
   initProcesses()
@@ -42,17 +46,33 @@ class DeploymentService(context: StandaloneContextPreparer,
 
   def deploy(processId: String, processJson: String)(implicit ec: ExecutionContext): Either[NonEmptyList[DeploymentError], Unit] = {
 
-    val interpreter = toEspProcess(processJson).andThen(process => newInterpreter(process))
-    interpreter.foreach { processInterpreter =>
-      cancel(processId)
+    toEspProcess(processJson).andThen { process =>
+      process.metaData.typeSpecificData match {
+        case StandaloneMetaData(path) =>
+          val pathToDeploy = path.getOrElse(processId)
+          val currentAtPath = pathToInterpreterMap.get(pathToDeploy).map(_.id)
+          currentAtPath match {
+            case Some(oldId) if oldId != processId =>
+              Invalid(NonEmptyList.of(DeploymentError(Set(), s"Process $oldId is already deployed at path $pathToDeploy")))
+            case _ =>
+              val interpreter = newInterpreter(process)
+              interpreter.foreach { processInterpreter =>
+                cancel(processId)
+                processRepository.add(processId, processJson)
+                processInterpreters.put(processId, (processInterpreter, System.currentTimeMillis()))
+                pathToInterpreterMap.put(path.getOrElse(processId), processInterpreter)
+                processInterpreter.open()
+                logger.info(s"Successfully deployed process $processId")
+              }
+              interpreter.map(_ => ())
+          }
+        case _ => Invalid(NonEmptyList.of(DeploymentError(Set(), "Wrong process type")))
+      }
+    }.toEither
 
-      processRepository.add(processId, processJson)
-      processInterpreters.put(processId, (processInterpreter, System.currentTimeMillis()))
-      processInterpreter.open()
-      logger.info(s"Successfully deployed process $processId")
-    }
-    interpreter.map(_ => ()).toEither
   }
+
+
 
   def checkStatus(processId: String): Option[ProcessState] = {
     processInterpreters.get(processId).map { case (_, startTime) =>
@@ -63,13 +83,15 @@ class DeploymentService(context: StandaloneContextPreparer,
   def cancel(processId: String): Option[Unit] = {
     processRepository.remove(processId)
     val removed = processInterpreters.remove(processId)
+    removed.foreach { case (interpreter, _) =>
+      pathToInterpreterMap.filter(_._2 == interpreter).foreach { case (k, _) => pathToInterpreterMap.remove(k) }
+    }
     removed.foreach(_._1.close())
     removed.map(_ => ())
   }
 
-  def getInterpreter(processId: String): Option[StandaloneProcessInterpreter] = {
-    val interpreter = processInterpreters.get(processId)
-    interpreter.map(_._1)
+  def getInterpreterByPath(path: String): Option[StandaloneProcessInterpreter] = {
+    pathToInterpreterMap.get(path)
   }
 
   private def newInterpreter(canonicalProcess: CanonicalProcess) =

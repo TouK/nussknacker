@@ -1,14 +1,20 @@
 package pl.touk.esp.engine.build
 
-import pl.touk.esp.engine.api.MetaData
+import pl.touk.esp.engine.api.{MetaData, StandaloneMetaData, StreamMetaData}
 import pl.touk.esp.engine.build.GraphBuilder.Creator
 import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.esp.engine.graph.{EspProcess, param}
 
 class ProcessMetaDataBuilder private[build](metaData: MetaData) {
 
+  //TODO: wywalac sie jak nie stream?
   def parallelism(p: Int) =
-    new ProcessMetaDataBuilder(metaData.copy(parallelism = Some(p)))
+   new ProcessMetaDataBuilder(metaData.copy(typeSpecificData = StreamMetaData(Some(p))))
+
+  //TODO: wywalac sie jak nie standalone?
+  def path(p: Option[String]) =
+   new ProcessMetaDataBuilder(metaData.copy(typeSpecificData = StandaloneMetaData(p)))
+
 
   def exceptionHandler(params: (String, String)*) =
     new ProcessExceptionHandlerBuilder(ExceptionHandlerRef(params.map(param.Parameter.tupled).toList))
@@ -32,6 +38,13 @@ class ProcessMetaDataBuilder private[build](metaData: MetaData) {
 object EspProcessBuilder {
 
   def id(id: String) =
-    new ProcessMetaDataBuilder(MetaData(id))
+    new ProcessMetaDataBuilder(MetaData(id, StreamMetaData()))
+
+}
+
+object StandaloneProcessBuilder {
+
+  def id(id: String) =
+    new ProcessMetaDataBuilder(MetaData(id, StandaloneMetaData(None)))
 
 }

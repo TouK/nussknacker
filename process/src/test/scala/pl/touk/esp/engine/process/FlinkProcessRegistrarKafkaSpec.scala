@@ -6,7 +6,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
-import pl.touk.esp.engine.api.MetaData
+import pl.touk.esp.engine.api.{MetaData, StreamMetaData}
 import pl.touk.esp.engine.build.GraphBuilder
 import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.esp.engine.graph.EspProcess
@@ -47,7 +47,7 @@ class FlinkProcessRegistrarKafkaSpec
     val threshold = slidesInWindow * messagesInSlide
 
     val process = EspProcess(
-      MetaData("proc1"),
+      MetaData("proc1", StreamMetaData()),
       ExceptionHandlerRef(List.empty),
       GraphBuilder.source("source", "kafka-keyvalue", "topic" -> inTopic)
         .processorEnd("service", "mock", "input" -> "#input")

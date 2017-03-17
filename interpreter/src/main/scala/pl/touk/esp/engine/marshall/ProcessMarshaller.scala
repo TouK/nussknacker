@@ -2,13 +2,13 @@ package pl.touk.esp.engine.marshall
 
 import argonaut.{EncodeJson, PrettyParams, _}
 import Argonaut._
+import ArgonautShapeless._
 import argonaut.derive._
 import cats.data.Validated
-import pl.touk.esp.engine.api.{MetaData, UserDefinedProcessAdditionalFields}
+import pl.touk.esp.engine.api.{MetaData, TypeSpecificData, UserDefinedProcessAdditionalFields}
 import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
 import pl.touk.esp.engine.canonicalgraph.canonicalnode._
 import pl.touk.esp.engine.canonize.ProcessCanonizer
-import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.esp.engine.graph.{EspProcess, node}
 import pl.touk.esp.engine.graph.node.{Filter, NodeData, Split, Switch}
 import pl.touk.esp.engine.marshall.ProcessUnmarshallError._
@@ -17,7 +17,8 @@ class ProcessMarshaller(implicit
                         additionalNodeDataFieldsCodec: CodecJson[Option[node.UserDefinedAdditionalNodeFields]] = ProcessMarshaller.additionalNodeDataFieldsCodec,
                         additionalProcessFieldsCodec: CodecJson[Option[UserDefinedProcessAdditionalFields]] = ProcessMarshaller.additionalProcessFieldsCodec ) {
 
-  import ArgonautShapeless._
+  //TODO: w sumie to potzebne w UI, ale tam cos mialem problemy z kompilacja... :|
+  val typeSpecificEncoder =  CodecJson.derived[TypeSpecificData]
 
   private implicit def typeFieldJsonSumCodecFor[S]: JsonSumCodecFor[S] =
     JsonSumCodecFor(JsonSumCodec.typeField)
