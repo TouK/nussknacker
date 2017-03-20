@@ -81,6 +81,16 @@ function displayProcess(processDetails) {
   };
 }
 
+export function saveProcess(processId, processJson, comment) {
+  return (dispatch) => {
+    return HttpService.saveProcess(processId, processJson, comment)
+      .then((res) => dispatch(toggleSaveProcessDialog(false)))
+      .then((res) => dispatch(displayCurrentProcessVersion(processId)))
+      .then((res) => dispatch(displayProcessActivity(processId)))
+      .then((res) => dispatch(UndoRedoActions.clear()))
+  }
+}
+
 export function importProcess(processId, file) {
   return (dispatch) => {
     dispatch({
@@ -236,6 +246,13 @@ export function toggleConfirmDialog(isOpen, text, action) {
     isOpen: isOpen,
     text: text,
     onConfirmCallback: action
+  }
+}
+
+export function toggleSaveProcessDialog(isOpen) {
+  return {
+    type: "TOGGLE_SAVE_PROCESS_DIALOG",
+    isOpen: isOpen
   }
 }
 

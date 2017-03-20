@@ -42,11 +42,11 @@ class ProcessRepository(db: JdbcBackend.Database,
 
     val insertAction =
       (processesTable += processToSave).andThen(updateProcessInternal(processId, processDeploymentData))
-    db.run(insertAction.transactionally)
+    db.run(insertAction.transactionally).map(_.map(_ => ()))
   }
 
   def updateProcess(processId: String, processDeploymentData: ProcessDeploymentData)
-                 (implicit ec: ExecutionContext, loggedUser: LoggedUser) = {
+                 (implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[XError[Option[ProcessVersionEntityData]]] = {
     val update = updateProcessInternal(processId, processDeploymentData)
     db.run(update.transactionally)
   }
@@ -59,7 +59,7 @@ class ProcessRepository(db: JdbcBackend.Database,
   }
 
   private def updateProcessInternal(processId: String, processDeploymentData: ProcessDeploymentData)
-                   (implicit ec: ExecutionContext, loggedUser: LoggedUser): DB[XError[Unit]] = {
+                   (implicit ec: ExecutionContext, loggedUser: LoggedUser): DB[XError[Option[ProcessVersionEntityData]]] = {
     logger.info(s"Updating process $processId by user $loggedUser")
     val (maybeJson, maybeMainClass) = processDeploymentData match {
       case GraphProcess(json) => (Some(json), None)
@@ -80,7 +80,7 @@ class ProcessRepository(db: JdbcBackend.Database,
       latestProcessVersion <- XorT.right[DB, EspError, Option[ProcessVersionEntityData]](latestProcessVersions(processId).result.headOption)
       newProcessVersion <- XorT.fromXor(Xor.right(versionToInsert(latestProcessVersion, processesVersionCount)))
       _ <- XorT.right[DB, EspError, Int](newProcessVersion.map(processVersionsTable += _).getOrElse(dbMonad.pure(0)))
-    } yield ()
+    } yield newProcessVersion
     insertAction.value
   }
 

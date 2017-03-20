@@ -191,14 +191,15 @@ export default {
     }).catch((error) => this.addError(`Failed to generate test data`, error));
   },
 
-  saveProcess(processId, processJson) {
+  saveProcess(processId, processJson, comment) {
+    const processToSave = {process: processJson, comment: comment}
     return ajaxCall({
-      url: appConfig.API_URL + '/processes/' + processId + '/json',
+      url: `${appConfig.API_URL}/processes/${processId}`,
       type: 'PUT',
-      data: JSON.stringify(processJson)
-    }).then(() => this.addInfo(`Process ${processId} was saved`))
+      data: JSON.stringify(processToSave)
+    })
+      .then(() => this.addInfo(`Process ${processId} was saved`))
       .catch((error) => this.addError(`Failed to save`, error));
-
   },
 
   createProcess(processId, processCategory, callback) {

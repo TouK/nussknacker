@@ -15,6 +15,7 @@ import pl.touk.esp.ui.db.EspTables
 import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.esp.ui.db.migration.SampleData
 import pl.touk.esp.ui.process.ProcessTypesForCategories
+import pl.touk.esp.ui.process.ProcessToSave
 import pl.touk.esp.ui.process.deployment.ManagementActor
 import pl.touk.esp.ui.process.displayedgraph.DisplayableProcess
 import pl.touk.esp.ui.sample.SampleProcess
@@ -59,13 +60,20 @@ trait EspItTest extends LazyLogging with TestCodecs { self: ScalatestRouteTest w
 
   def updateProcess(process: DisplayableProcess)(testCode: => Assertion): Assertion = {
     val processId = process.id
-    Put(s"/processes/$processId/json", TestFactory.posting.toEntity(process)) ~> processesRouteWithAllPermissions ~> check {
+    Put(s"/processes/$processId", TestFactory.posting.toEntityAsProcessToSave(process)) ~> processesRouteWithAllPermissions ~> check {
+      testCode
+    }
+  }
+
+  def updateProcess(process: ProcessToSave)(testCode: => Assertion): Assertion = {
+    val processId = process.process.id
+    Put(s"/processes/$processId", TestFactory.posting.toEntity(process)) ~> processesRouteWithAllPermissions ~> check {
       testCode
     }
   }
 
   def updateProcess(processId: String, process: EspProcess)(testCode: => Assertion): Assertion = {
-    Put(s"/processes/$processId/json", TestFactory.posting.toEntity(process)) ~> processesRouteWithAllPermissions ~> check {
+    Put(s"/processes/$processId", TestFactory.posting.toEntityAsProcessToSave(process)) ~> processesRouteWithAllPermissions ~> check {
       testCode
     }
   }

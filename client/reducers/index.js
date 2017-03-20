@@ -43,11 +43,12 @@ const emptyUiState = {
   showNodeDetailsModal: false,
   showEdgeDetailsModal: false,
   confirmDialog: {},
+  toggleSaveProcessDialog: {},
   expandedGroups: []
 }
 function uiStateReducer(state = emptyUiState, action) {
   const withAllModalsClosed = (newState) => {
-    const allModalsClosed = !(newState.showNodeDetailsModal || newState.showEdgeDetailsModal || newState.confirmDialog.isOpen)
+    const allModalsClosed = !(newState.showNodeDetailsModal || newState.showEdgeDetailsModal || newState.confirmDialog.isOpen || newState.toggleSaveProcessDialog.isOpen)
     return { ...newState, allModalsClosed: allModalsClosed}
   }
   switch (action.type) {
@@ -83,6 +84,14 @@ function uiStateReducer(state = emptyUiState, action) {
           isOpen: action.isOpen,
           text: action.text,
           onConfirmCallback: action.onConfirmCallback
+        }
+      })
+    }
+    case "TOGGLE_SAVE_PROCESS_DIALOG": {
+      return withAllModalsClosed({
+        ...state,
+        saveProcessDialog: {
+          isOpen: action.isOpen
         }
       })
     }
