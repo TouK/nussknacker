@@ -141,10 +141,7 @@ class UserRightPanel extends Component {
   }
 
   save = () => {
-    return HttpService.saveProcess(this.processId(), this.props.processToDisplay).then((resp) => {
-      this.clearHistory()
-      this.fetchProcessDetails()
-    })
+    this.props.actions.toggleSaveProcessDialog(true)
   }
 
   deploy = () => {

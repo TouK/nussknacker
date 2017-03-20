@@ -30,6 +30,8 @@ import EspErrorToHttp._
 import pl.touk.esp.ui.validation.ProcessValidation
 import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
+import pl.touk.esp.ui.db.entity.ProcessVersionEntity.ProcessVersionEntityData
+import pl.touk.esp.ui.process.ProcessToSave
 import pl.touk.esp.ui.process.ProcessTypesForCategories
 import pl.touk.esp.ui.process.repository.ProcessActivityRepository.ProcessActivity
 
@@ -90,18 +92,23 @@ class ProcessesResources(repository: ProcessRepository,
             }
           }
         }
-      } ~ path("processes" / Segment / "json") { processId =>
-        put {
-          entity(as[DisplayableProcess]) { displayableProcess =>
+      } ~ path("processes" / Segment) { processId =>
+          put {
+          entity(as[ProcessToSave]) { processToSave =>
             complete {
+              val displayableProcess = processToSave.process
               val canonical = ProcessConverter.fromDisplayable(displayableProcess)
               val json = uiProcessMarshaller.toJson(canonical, PrettyParams.nospace)
 
               (for {
                 validation <- XorT.fromXor[Future](processValidation.validate(displayableProcess).fatalAsError)
                 result <- XorT(repository.updateProcess(processId, GraphProcess(json)))
+                _ <- XorT.right[Future, pl.touk.esp.ui.EspError, Unit](
+                  result.map { version =>
+                    processActivityRepository.addComment(processId, version.id, processToSave.comment)
+                  }.getOrElse(Future.successful(()))
+                )
               } yield validation).value.map(toResponse)
-
             }
           }
         }

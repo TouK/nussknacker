@@ -12,13 +12,16 @@ import pl.touk.esp.engine.api.StreamMetaData
 import pl.touk.esp.engine.api.deployment._
 import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
 import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
+import pl.touk.esp.engine.graph.node
 import pl.touk.esp.engine.graph.param.Parameter
-import pl.touk.esp.ui.api.helpers.EspItTest
+import pl.touk.esp.ui.api.helpers.{EspItTest, TestFactory}
 import pl.touk.esp.ui.api.helpers.TestFactory._
 import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType
+import pl.touk.esp.ui.process.ProcessToSave
 import pl.touk.esp.ui.process.displayedgraph.displayablenode.ProcessAdditionalFields
 import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.esp.ui.process.marshall.UiProcessMarshaller
+import pl.touk.esp.ui.process.repository.ProcessActivityRepository.ProcessActivity
 import pl.touk.esp.ui.process.repository.ProcessRepository.ProcessDetails
 import pl.touk.esp.ui.sample.SampleProcess
 import pl.touk.esp.ui.security.{LoggedUser, Permission}
@@ -217,7 +220,7 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
   }
 
   it should "not authorize user with read permissions to modify node" in {
-    Put(s"/processes/$testCategory/$processId/json", posting.toEntity(ProcessTestData.validProcess)) ~> routeWithRead ~> check {
+    Put(s"/processes/$testCategory/$processId", posting.toEntityAsProcessToSave(ProcessTestData.validProcess)) ~> routeWithRead ~> check {
       rejection shouldBe server.AuthorizationFailedRejection
     }
 
@@ -362,6 +365,29 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
       //to ponizej nie dziala, bo nie potrafie tak ustawic dyrektyw path i authorize zeby przeszlo tak jak chce :(
       //rejection shouldBe server.AuthorizationFailedRejection
       handled shouldBe false
+    }
+  }
+
+  it should "should be able to add comment when updating a process" in {
+    import pl.touk.esp.ui.codec.UiCodecs._
+    val processToSave = ProcessTestData.sampleDisplayableProcess
+    val updatedProcess = ProcessToSave(
+      processToSave.copy(nodes = processToSave.nodes.head.asInstanceOf[node.Source].copy(id = "newId") :: processToSave.nodes.tail),
+      "source id changed"
+    )
+    val processId = processToSave.id
+
+    saveProcess(processToSave) {
+      updateProcess(updatedProcess) {
+        status shouldEqual StatusCodes.OK
+        Get(s"/processes/${processId}/activity") ~> processActivityRouteWithAllPermission ~> check {
+          status shouldEqual StatusCodes.OK
+          val processActivity = responseAs[String].decodeOption[ProcessActivity].get
+          val firstComment = processActivity.comments.head
+          firstComment.content shouldBe updatedProcess.comment
+          firstComment.processVersionId shouldBe 3
+        }
+      }
     }
   }
 

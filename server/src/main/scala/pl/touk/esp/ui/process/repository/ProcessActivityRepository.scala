@@ -22,18 +22,22 @@ class ProcessActivityRepository(db: JdbcBackend.Database,
 
   def addComment(processId: String, processVersionId: Long, comment: String)
                 (implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Unit] = {
-    val addCommentAction = for {
-      newId <- CommentEntity.nextIdAction
-      _ <- commentsTable += CommentEntityData(
-        id = newId,
-        processId = processId,
-        processVersionId = processVersionId,
-        content = comment,
-        user = loggedUser.id,
-        createDate = Timestamp.valueOf(LocalDateTime.now())
-      )
-    } yield ()
-    db.run(addCommentAction).map(_ => ())
+    if (comment.nonEmpty) {
+      val addCommentAction = for {
+        newId <- CommentEntity.nextIdAction
+        _ <- commentsTable += CommentEntityData(
+          id = newId,
+          processId = processId,
+          processVersionId = processVersionId,
+          content = comment,
+          user = loggedUser.id,
+          createDate = Timestamp.valueOf(LocalDateTime.now())
+        )
+      } yield ()
+      db.run(addCommentAction).map(_ => ())
+    } else {
+      Future.successful(())
+    }
   }
 
   def deleteComment(commentId: Long)(implicit ec: ExecutionContext): Future[Unit] = {

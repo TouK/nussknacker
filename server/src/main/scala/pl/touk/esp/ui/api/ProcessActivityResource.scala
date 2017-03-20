@@ -35,11 +35,7 @@ class ProcessActivityResource(processActivityRepository: ProcessActivityReposito
         entity(as[Array[Byte]]) { commentBytes =>
           complete {
             val comment = new String(commentBytes, java.nio.charset.Charset.forName("UTF-8"))
-            if (!comment.isEmpty) {
-              processActivityRepository.addComment(processId, versionId, comment)
-            } else {
-              HttpResponse(status = StatusCodes.OK)
-            }
+            processActivityRepository.addComment(processId, versionId, comment)
           }
         }
       }

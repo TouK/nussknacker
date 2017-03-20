@@ -14,6 +14,7 @@ import DragArea from "../components/DragArea";
 import {connect} from "react-redux";
 import ActionsUtils from "../actions/ActionsUtils";
 import ConfirmDialog from "../components/ConfirmDialog";
+import SaveProcessDialog from "../components/SaveProcessDialog";
 
 const App_ = React.createClass({
 
@@ -66,6 +67,7 @@ const App_ = React.createClass({
         <main>
           <DragArea>
             <ConfirmDialog/>
+            <SaveProcessDialog/>
             <div id="working-area" className={this.props.leftPanelIsOpened ? 'is-opened' : null}>
               {this.props.children}
             </div>
