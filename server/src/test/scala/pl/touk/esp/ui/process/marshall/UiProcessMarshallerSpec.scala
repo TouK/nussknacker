@@ -12,7 +12,7 @@ class UiProcessMarshallerSpec extends FlatSpec with Matchers {
   val processWithAdditionalFields =
     s"""
        |{
-       |    "metaData" : { "id": "custom", "parallelism" : 2, "additionalFields": { "description": "$someProcessDescription"} },
+       |    "metaData" : { "id": "custom", "typeSpecificData": {"type": "StreamMetaData", "parallelism" : 2}, "additionalFields": { "description": "$someProcessDescription"} },
        |    "exceptionHandlerRef" : { "parameters" : [ { "name": "errorsTopic", "value": "error.topic"}]},
        |    "nodes" : [
        |        {
@@ -28,7 +28,7 @@ class UiProcessMarshallerSpec extends FlatSpec with Matchers {
   val processWithoutAdditionalFields =
     s"""
        |{
-       |    "metaData" : { "id": "custom", "parallelism" : 2},
+       |    "metaData" : { "id": "custom", "typeSpecificData": {"type": "StreamMetaData", "parallelism" : 2}},
        |    "exceptionHandlerRef" : { "parameters" : [ { "name": "errorsTopic", "value": "error.topic"}]},
        |    "nodes" : [
        |        {

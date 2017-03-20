@@ -23,7 +23,8 @@ object ProcessConverter {
   def toDisplayable(process: CanonicalProcess, processingType: ProcessingType): DisplayableProcess = {
     val nodesEdges = toGraphInner(process.nodes)
     val (nodes, edges) = nodesEdges
-    val props = ProcessProperties(process.metaData.parallelism, process.metaData.splitStateToDisk, process.exceptionHandlerRef, process.metaData.additionalFields)
+
+    val props = ProcessProperties(process.metaData.typeSpecificData, process.exceptionHandlerRef, process.metaData.additionalFields)
     DisplayableProcess(process.metaData.id, props, nodes, edges, processingType)
   }
 
@@ -77,7 +78,7 @@ object ProcessConverter {
     val edgesFromMapStart = process.edges.groupBy(_.from)
     //FIXME: co z luznymi wezlami???
     val nodes = findRootNodes(process).headOption.map(headNode => unFlattenNode(nodesMap)(headNode, edgesFromMapStart)).getOrElse(List())
-    val metaData = MetaData(process.id, process.properties.parallelism, process.properties.splitStateToDisk, process.properties.additionalFields)
+    val metaData = MetaData(process.id, process.properties.typeSpecificProperties, process.properties.additionalFields)
     CanonicalProcess(metaData, process.properties.exceptionHandler, nodes)
   }
 

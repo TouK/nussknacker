@@ -201,9 +201,9 @@ export default {
 
   },
 
-  createProcess(processId, processCategory, processingType, callback) {
+  createProcess(processId, processCategory, callback) {
     return ajaxCall({
-      url: `${appConfig.API_URL}/processes/${processId}/${processCategory}/${processingType}`,
+      url: `${appConfig.API_URL}/processes/${processId}/${processCategory}`,
       type: 'POST'
     }).then(callback, (error) => {
       this.addError(`Failed to create process:`, error, true);

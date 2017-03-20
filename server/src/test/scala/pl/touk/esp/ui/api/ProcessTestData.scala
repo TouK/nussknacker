@@ -1,5 +1,6 @@
 package pl.touk.esp.ui.api
 
+import pl.touk.esp.engine.api.StreamMetaData
 import pl.touk.esp.engine.build.EspProcessBuilder
 import pl.touk.esp.engine.compile.ProcessValidator
 import pl.touk.esp.engine.definition.ProcessDefinitionExtractor.{ObjectProcessDefinition, ProcessDefinition}
@@ -53,7 +54,7 @@ object ProcessTestData {
   val sampleDisplayableProcess = {
     DisplayableProcess(
       id = "fooProcess",
-      properties = ProcessProperties(Some(2), None, ExceptionHandlerRef(List.empty), Some(ProcessAdditionalFields(Some("process description")))),
+      properties = ProcessProperties(StreamMetaData(Some(2)), ExceptionHandlerRef(List.empty), Some(ProcessAdditionalFields(Some("process description")))),
       nodes = List(
         node.Source(
           id = "sourceId",

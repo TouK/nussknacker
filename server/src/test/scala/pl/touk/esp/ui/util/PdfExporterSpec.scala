@@ -5,6 +5,7 @@ import java.time.LocalDateTime
 
 import org.apache.commons.io.IOUtils
 import org.scalatest.FlatSpec
+import pl.touk.esp.engine.api.StreamMetaData
 import pl.touk.esp.engine.canonize.ProcessCanonizer
 import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.esp.engine.graph.node.Filter
@@ -58,7 +59,7 @@ class PdfExporterSpec extends FlatSpec {
 
   it should "export empty process to " in {
 
-    val displayable: DisplayableProcess = DisplayableProcess("Proc11", ProcessProperties(None, None, ExceptionHandlerRef(List()), None), List(), List(), ProcessingType.Streaming)
+    val displayable: DisplayableProcess = DisplayableProcess("Proc11", ProcessProperties(StreamMetaData(), ExceptionHandlerRef(List()), None), List(), List(), ProcessingType.Streaming)
 
     val details = ProcessDetails("My process", "My process", 11, true,
       Some("My fancy description, which is quite, quite, quite looooooooong. \n And it contains maaaany, maaany strange features..."),

@@ -8,6 +8,7 @@ import argonaut.PrettyParams
 import org.scalatest._
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.time.{Millis, Seconds, Span}
+import pl.touk.esp.engine.api.StreamMetaData
 import pl.touk.esp.engine.api.deployment._
 import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
 import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
@@ -222,7 +223,7 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
 
     val modifiedParallelism = 123
     val modifiedName = "fooBarName"
-    val props = ProcessProperties(Some(modifiedParallelism), None, ExceptionHandlerRef(List(Parameter(modifiedName, modifiedName))), None)
+    val props = ProcessProperties(StreamMetaData(Some(modifiedParallelism)), ExceptionHandlerRef(List(Parameter(modifiedName, modifiedName))), None)
     Put(s"/processes/$testCategory/$processId/json/properties", posting.toEntity(props)) ~> routeWithRead ~> check {
       rejection shouldBe server.AuthorizationFailedRejection
     }
@@ -268,7 +269,7 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
 
     Get(s"/processes/export/${processToSave.id}/2") ~> routWithAllPermissions ~> check {
       val processDetails = marshaller.fromJson(responseAs[String]).toOption.get
-      val modified = processDetails.copy(metaData = processDetails.metaData.copy(parallelism = Some(987)))
+      val modified = processDetails.copy(metaData = processDetails.metaData.copy(typeSpecificData = StreamMetaData(Some(987))))
 
       val multipartForm =
         MultipartUtils.prepareMultiPart(marshaller.toJson(modified, PrettyParams.spaces2), "process")
@@ -276,7 +277,7 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
       Post(s"/processes/import/${processToSave.id}", multipartForm) ~> routWithAllPermissions ~> check {
         status shouldEqual StatusCodes.OK
         val imported = responseAs[String].decodeOption[DisplayableProcess].get
-        imported.properties.parallelism shouldBe Some(987)
+        imported.properties.typeSpecificProperties.asInstanceOf[StreamMetaData].parallelism shouldBe Some(987)
         imported.id shouldBe processToSave.id
         imported.nodes shouldBe processToSave.nodes
       }
@@ -334,7 +335,7 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
 
   it should "save new process with empty json" in {
     val newProcessId = "tst1"
-    Post(s"/processes/$newProcessId/$testCategory/${ProcessingType.Streaming}") ~> routWithAdminPermission ~> check {
+    Post(s"/processes/$newProcessId/$testCategory") ~> routWithAdminPermission ~> check {
       status shouldEqual StatusCodes.Created
 
       Get(s"/processes/$newProcessId") ~> routWithAdminPermission ~> check {
@@ -349,7 +350,7 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
     val processToSave = ProcessTestData.sampleDisplayableProcess
     saveProcess(processToSave) {
       status shouldEqual StatusCodes.OK
-      Post(s"/processes/${processToSave.id}/$testCategory/${ProcessingType.Streaming}") ~> routWithAdminPermission ~> check {
+      Post(s"/processes/${processToSave.id}/$testCategory") ~> routWithAdminPermission ~> check {
         status shouldEqual StatusCodes.BadRequest
 
       }

@@ -7,10 +7,10 @@ import akka.http.scaladsl.server.{Directive, Directives, Route}
 import akka.stream.Materializer
 import argonaut._
 import cats.data.Validated.{Invalid, Valid}
-import cats.data.{Xor, XorT}
+import cats.data.XorT
 import cats.instances.future._
-import pl.touk.esp.engine.api.MetaData
-import pl.touk.esp.engine.api.deployment.{GraphProcess, ProcessManager}
+import pl.touk.esp.engine.api.{MetaData, StandaloneMetaData, StreamMetaData}
+import pl.touk.esp.engine.api.deployment.GraphProcess
 import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
 import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.esp.ui.api.ProcessesResources.{UnmarshallError, WrongProcessId}
@@ -21,7 +21,7 @@ import pl.touk.esp.ui.process.repository.{ProcessActivityRepository, ProcessRepo
 import pl.touk.esp.ui.process.repository.ProcessRepository._
 import pl.touk.esp.ui.security.{LoggedUser, Permission}
 import pl.touk.esp.ui.util.{AkkaHttpResponse, Argonaut62Support, MultipartUtils, PdfExporter}
-import pl.touk.esp.ui.{BadRequestError, EspError, FatalError, NotFoundError}
+import pl.touk.esp.ui.{BadRequestError, FatalError, NotFoundError}
 import akka.pattern.ask
 import akka.util.Timeout
 
@@ -30,6 +30,7 @@ import EspErrorToHttp._
 import pl.touk.esp.ui.validation.ProcessValidation
 import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
+import pl.touk.esp.ui.process.ProcessTypesForCategories
 import pl.touk.esp.ui.process.repository.ProcessActivityRepository.ProcessActivity
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -37,7 +38,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class ProcessesResources(repository: ProcessRepository,
                          managerActor: ActorRef,
                          processActivityRepository: ProcessActivityRepository,
-                         processValidation: ProcessValidation)
+                         processValidation: ProcessValidation, typesForCategories: ProcessTypesForCategories)
                         (implicit ec: ExecutionContext, mat: Materializer)
   extends Directives with Argonaut62Support {
 
@@ -104,18 +105,19 @@ class ProcessesResources(repository: ProcessRepository,
             }
           }
         }
-      } ~ path("processes" / Segment / Segment / Segment) { (processId, category, processingType) =>
+      } ~ path("processes" / Segment / Segment) { (processId, category) =>
         authorize(user.categories.contains(category)) {
           post {
             complete {
-              val emptyCanonical = CanonicalProcess(MetaData(id = processId), ExceptionHandlerRef(List()), List())
-              val emptyProcess = uiProcessMarshaller.toJson(emptyCanonical, PrettyParams.nospace)
-
-              repository.fetchLatestProcessDetailsForProcessId(processId).flatMap {
-                case Some(_) => Future(HttpResponse(status = StatusCodes.BadRequest, entity = "Process already exists"))
-                case None => repository.saveNewProcess(processId, category, GraphProcess(emptyProcess), ProcessingType.withName(processingType)).map(toResponse(StatusCodes.Created))
+              typesForCategories.getTypeForCategory(category) match {
+                case Some(processingType) =>
+                  val emptyProcess = makeEmptyProcess(processId, processingType)
+                  repository.fetchLatestProcessDetailsForProcessId(processId).flatMap {
+                    case Some(_) => Future(HttpResponse(status = StatusCodes.BadRequest, entity = "Process already exists"))
+                    case None => repository.saveNewProcess(processId, category, GraphProcess(emptyProcess), processingType).map(toResponse(StatusCodes.Created))
+                  }
+                case None => Future(HttpResponse(status = StatusCodes.BadRequest, entity = "Process category not found"))
               }
-
             }
           }
         }
@@ -218,6 +220,14 @@ class ProcessesResources(repository: ProcessRepository,
     (managerActor ? CheckStatus(processName, user)).mapTo[Option[ProcessStatus]]
   }
 
+  private def makeEmptyProcess(processId: String, processingType: ProcessingType) = {
+    val specificMetaData = processingType match {
+      case ProcessingType.Streaming => StreamMetaData()
+      case ProcessingType.RequestResponse => StandaloneMetaData(None)
+    }
+    val emptyCanonical = CanonicalProcess(MetaData(id = processId, typeSpecificData = specificMetaData), ExceptionHandlerRef(List()), List())
+    uiProcessMarshaller.toJson(emptyCanonical, PrettyParams.nospace)
+  }
 
 }
 

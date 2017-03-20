@@ -1,6 +1,7 @@
 {
   "metaData" : {
-    "id" : "RequestResponseTest1"
+    "id" : "RequestResponseTest1",
+        "typeSpecificData":{"type":"StandaloneMetaData"}
   },
   "exceptionHandlerRef" : {
     "parameters" : []

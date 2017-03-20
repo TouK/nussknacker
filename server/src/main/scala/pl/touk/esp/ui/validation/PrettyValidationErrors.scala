@@ -34,6 +34,7 @@ object PrettyValidationErrors {
       case OverwrittenVariable(varName, _) => node(s"Variable $varName is already defined", "You cannot overwrite variables")
       case NotSupportedExpressionLanguage(languageId, _) => node(s"Language $languageId is not supported", "Currently only SPEL expressions are supported")
       case MissingPart(id) => node("MissingPart", s"Node $id has missing part")
+      case WrongProcessType() => node("Wrong process type", "Process type doesn't match category - please check configuration")
       case UnsupportedPart(id) => node("UnsupportedPart", s"Type of node $id is unsupported right now")
     }
   }

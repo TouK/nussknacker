@@ -20,7 +20,7 @@ class AddProcessDialog extends React.Component {
   }
 
   initialState(props) {
-    return {processId: '', processCategory: _.head(props.categories) || '', processingType: _.head(props.processingTypes) || '' }
+    return {processId: '', processCategory: _.head(props.categories) || ''}
   }
 
   constructor(props) {
@@ -38,7 +38,7 @@ class AddProcessDialog extends React.Component {
 
   confirm = () => {
     var processId = this.state.processId
-    HttpService.createProcess(this.state.processId, this.state.processCategory, this.state.processingType, () => {
+    HttpService.createProcess(this.state.processId, this.state.processCategory, () => {
       this.closeDialog()
       browserHistory.push('/visualization/' + processId)
     })
@@ -67,14 +67,6 @@ class AddProcessDialog extends React.Component {
                   </select>
                 </div>
               </div>
-              <div className="node-row">
-                <div className="node-label">Processing type</div>
-                <div className="node-value">
-                  <select id="processingType" className="node-input"  onChange={(e) => this.setState({processingType: e.target.value})}>
-                    {this.props.processingTypes.map((procType, index) => (<option key={index} value={procType}>{procType}</option>))}
-                  </select>
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -91,8 +83,7 @@ class AddProcessDialog extends React.Component {
 
 function mapState(state) {
   return {
-    categories: state.settings.loggedUser.categories || [],
-    processingTypes: ['streaming', 'request-response'] || [] //fixme to pobierac z backendu
+    categories: state.settings.loggedUser.categories || []
   }
 }
 
