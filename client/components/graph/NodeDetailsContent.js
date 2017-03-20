@@ -138,24 +138,31 @@ export default class NodeDetailsContent extends React.Component {
           </div>
         )
       case 'Properties':
+        const type = this.props.node.typeSpecificProperties.type;
+        //FIXME: czy to tak powinno byc? czy konfiguracja gdzies indziej?
+        const fields = type == "StreamMetaData" ? [
+          this.createField("input", "Parallelism", "typeSpecificProperties.parallelism", "parallelism"),
+          this.createField("checkbox", "Should split state to disk", "typeSpecificProperties.splitStateToDisk", "splitStateToDisk")] :
+          [this.createField("input", "Query path",  "typeSpecificProperties.path", "path")]
+        const hasExceptionHandlerParams = this.state.editedNode.exceptionHandler.parameters.length > 0
         return (
           <div className="node-table-body">
-            {this.createField("input", "Parallelism", "parallelism")}
-            {this.createField("checkbox", "Should split state to disk", "splitStateToDisk")}
-
-            <div className="node-row">
-              <div className="node-label">Exception handler:</div>
-              <div className="node-group">
-                {this.state.editedNode.exceptionHandler.parameters.map((params, index) => {
-                  return (
-                    <div className="node-block" key={index}>
-                      {this.createListField("input", params.name, params, "value", `exceptionHandler.parameters[${index}]`)}
-                      <hr />
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
+            {fields}
+            { hasExceptionHandlerParams ?
+              (<div className="node-row">
+                <div className="node-label">Exception handler:</div>
+                <div className="node-group">
+                  {this.state.editedNode.exceptionHandler.parameters.map((params, index) => {
+                    return (
+                      <div className="node-block" key={index}>
+                        {this.createListField("input", params.name, params, "value", `exceptionHandler.parameters[${index}]`)}
+                        <hr />
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>) : null
+            }
             {this.descriptionField()}
           </div>
         )

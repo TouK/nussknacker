@@ -13,6 +13,7 @@ import pl.touk.esp.ui.api._
 import pl.touk.esp.ui.validation.ProcessValidation
 import pl.touk.esp.ui.db.DatabaseInitializer
 import pl.touk.esp.ui.initialization.Initialization
+import pl.touk.esp.ui.process.{ProcessTypesForCategories, ProcessingTypeDeps}
 import pl.touk.esp.ui.process.deployment.ManagementActor
 import pl.touk.esp.ui.process.repository.{DeployedProcessRepository, ProcessActivityRepository, ProcessRepository}
 import pl.touk.esp.ui.security.SimpleAuthenticator
@@ -57,6 +58,8 @@ object EspUiApp extends App with Directives with LazyLogging {
 
   val managementActor = ManagementActor(environment, managers, processRepository, deploymentProcessRepository)
 
+  val typesForCategories = new ProcessTypesForCategories(config)
+
   def initHttp() = {
     val route: Route = {
 
@@ -65,7 +68,7 @@ object EspUiApp extends App with Directives with LazyLogging {
 
             pathPrefix("api") {
 
-              new ProcessesResources(processRepository, managementActor, processActivityRepository, processValidation).route(user) ~
+              new ProcessesResources(processRepository, managementActor, processActivityRepository, processValidation, typesForCategories).route(user) ~
                 new ProcessActivityResource(processActivityRepository, attachmentService).route(user) ~
                 new ManagementResources(processDefinitions.values.flatMap(_.typesInformation).toList, managementActor).route(user) ~
                 new ValidationResources(processValidation).route(user) ~

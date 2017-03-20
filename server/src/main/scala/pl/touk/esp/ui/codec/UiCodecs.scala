@@ -1,32 +1,37 @@
 package pl.touk.esp.ui.codec
 
-import java.time.{LocalDate, LocalDateTime}
+import java.time.LocalDateTime
 
 import argonaut._
 import argonaut.derive.{JsonSumCodec, JsonSumCodecFor}
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.flink.runtime.execution.librarycache.FlinkUserCodeClassLoader
 import pl.touk.esp.engine.api
-import pl.touk.esp.engine.api.{Displayable, UserDefinedProcessAdditionalFields}
+import pl.touk.esp.engine.api.{Displayable, TypeSpecificData, UserDefinedProcessAdditionalFields}
 import pl.touk.esp.engine.api.deployment.test.{ExpressionInvocationResult, MockedResult, TestResults}
 import pl.touk.esp.engine.api.exception.EspExceptionInfo
 import pl.touk.esp.engine.definition.DefinitionExtractor.PlainClazzDefinition
 import pl.touk.esp.engine.graph.expression.Expression
 import pl.touk.esp.engine.definition.TestingCapabilities
 import pl.touk.esp.engine.graph.node
+import pl.touk.esp.engine.marshall.ProcessMarshaller
 import pl.touk.esp.ui.api.{DisplayableUser, GrafanaSettings, ProcessObjects}
-import pl.touk.esp.ui.app.BuildInfo
 import pl.touk.esp.ui.process.displayedgraph.displayablenode.{EdgeType, NodeAdditionalFields, ProcessAdditionalFields}
-import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties, displayablenode}
+import pl.touk.esp.ui.process.displayedgraph._
 import pl.touk.esp.ui.process.repository.ProcessActivityRepository.{Comment, ProcessActivity}
 import pl.touk.esp.ui.process.repository.ProcessRepository.{ProcessDetails, ProcessHistoryEntry}
-import pl.touk.esp.ui.validation.ValidationResults.{ValidationErrors, ValidationResult}
+import pl.touk.esp.ui.validation.ValidationResults.ValidationResult
 
 object UiCodecs {
 
   import ArgonautShapeless._
   import Argonaut._
 
+  private implicit def typeFieldJsonSumCodecFor[S]: JsonSumCodecFor[S] =
+    JsonSumCodecFor(JsonSumCodec.typeField)
+
+
+  //w sumie nie rozumiem czemu tak... ale probowalem roznych rzeczy i rozne wyjatki mi rzucalo... lacznie ze stackoverflow...
+  implicit def typeCodec : CodecJson[TypeSpecificData] = new ProcessMarshaller().typeSpecificEncoder
 
   //rzutujemy bo argonaut nie lubi kowariancji...
   implicit def nodeAdditionalFieldsOptCodec: CodecJson[Option[node.UserDefinedAdditionalNodeFields]] = {
@@ -94,9 +99,6 @@ object UiCodecs {
 
   implicit def printer: Json => String =
     PrettyParams.spaces2.copy(dropNullKeys = true, preserveOrder = true).pretty
-
-  private implicit def typeFieldJsonSumCodecFor[S]: JsonSumCodecFor[S] =
-    JsonSumCodecFor(JsonSumCodec.typeField)
 
   //separated from the rest, as we're doing some hacking here...
   //we have hacky codec here, as we want to encode Map[String, Any] of more or less arbitrary objects

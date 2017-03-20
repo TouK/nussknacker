@@ -4,6 +4,7 @@ import java.time.LocalDateTime
 
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
 import db.migration.DefaultJdbcProfile
 import org.scalatest._
@@ -13,6 +14,7 @@ import pl.touk.esp.ui.api._
 import pl.touk.esp.ui.db.EspTables
 import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.esp.ui.db.migration.SampleData
+import pl.touk.esp.ui.process.ProcessTypesForCategories
 import pl.touk.esp.ui.process.deployment.ManagementActor
 import pl.touk.esp.ui.process.displayedgraph.DisplayableProcess
 import pl.touk.esp.ui.sample.SampleProcess
@@ -30,9 +32,10 @@ trait EspItTest extends LazyLogging with TestCodecs { self: ScalatestRouteTest w
   val processRepository = newProcessRepository(db)
   val deploymentProcessRepository = newDeploymentProcessRepository(db)
   val processActivityRepository = newProcessActivityRepository(db)
+  val typesForCategories = new ProcessTypesForCategories(ConfigFactory.load())
 
   val managementActor = ManagementActor(env, Map(ProcessingType.Streaming -> InMemoryMocks.mockProcessManager), processRepository, deploymentProcessRepository)
-  val processesRoute = (u:LoggedUser) => new ProcessesResources(processRepository, managementActor, processActivityRepository, processValidation).route(u)
+  val processesRoute = (u:LoggedUser) => new ProcessesResources(processRepository, managementActor, processActivityRepository, processValidation, typesForCategories).route(u)
 
   val processesRouteWithAllPermissions = withAllPermissions(processesRoute)
   val deployRoute = (u:LoggedUser) =>  new ManagementResources(InMemoryMocks.mockProcessManager.getProcessDefinition.typesInformation, managementActor).route(u)
@@ -40,7 +43,7 @@ trait EspItTest extends LazyLogging with TestCodecs { self: ScalatestRouteTest w
   val processActivityRoute = (u:LoggedUser) =>  new ProcessActivityResource(processActivityRepository, attachmentService).route(u)
 
   def saveProcess(processId: String, process: EspProcess)(testCode: => Assertion): Assertion = {
-    Post(s"/processes/$processId/$testCategory/${ProcessingType.Streaming}") ~> processesRouteWithAllPermissions ~> check {
+    Post(s"/processes/$processId/$testCategory") ~> processesRouteWithAllPermissions ~> check {
       status shouldBe StatusCodes.Created
       updateProcess(processId, process)(testCode)
     }
@@ -48,7 +51,7 @@ trait EspItTest extends LazyLogging with TestCodecs { self: ScalatestRouteTest w
 
   def saveProcess(process: DisplayableProcess)(testCode: => Assertion): Assertion = {
     val processId = process.id
-    Post(s"/processes/$processId/$testCategory/${ProcessingType.Streaming}") ~> processesRouteWithAllPermissions ~> check {
+    Post(s"/processes/$processId/$testCategory") ~> processesRouteWithAllPermissions ~> check {
       status shouldBe StatusCodes.Created
       updateProcess(process)(testCode)
     }

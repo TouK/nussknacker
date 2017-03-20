@@ -1,4 +1,4 @@
-package pl.touk.esp.ui
+package pl.touk.esp.ui.process
 
 import com.typesafe.config.Config
 import pl.touk.esp.engine.api.deployment.ProcessManager

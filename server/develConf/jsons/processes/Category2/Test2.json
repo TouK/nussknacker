@@ -1,6 +1,7 @@
 {
   "metaData" : {
-    "id" : "Test2"
+    "id" : "Test2",
+    "typeSpecificData":{"type":"StreamMetaData"}
   },
   "exceptionHandlerRef" : {
     "parameters" : []

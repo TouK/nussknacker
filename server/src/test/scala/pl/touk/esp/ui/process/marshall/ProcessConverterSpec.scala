@@ -2,7 +2,7 @@ package pl.touk.esp.ui.process.marshall
 
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{FlatSpec, Matchers}
-import pl.touk.esp.engine.api.MetaData
+import pl.touk.esp.engine.api.{MetaData, StreamMetaData}
 import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
 import pl.touk.esp.engine.compile.ProcessValidator
 import pl.touk.esp.engine.definition.DefinitionExtractor.ObjectDefinition
@@ -38,13 +38,13 @@ class ProcessConverterSpec extends FlatSpec with Matchers with TableDrivenProper
   }
 
   it should "be able to convert empty process" in {
-    val emptyProcess = CanonicalProcess(MetaData(id = "t1"), ExceptionHandlerRef(List()), List())
+    val emptyProcess = CanonicalProcess(MetaData(id = "t1", StreamMetaData()), ExceptionHandlerRef(List()), List())
 
     canonicalDisplayable(emptyProcess) shouldBe emptyProcess
   }
 
   it should "be able to handle different node order" in {
-    val process = DisplayableProcess("t1", ProcessProperties(Some(2), Some(false), ExceptionHandlerRef(List()), None),
+    val process = DisplayableProcess("t1", ProcessProperties(StreamMetaData(Some(2), Some(false)), ExceptionHandlerRef(List()), None),
       List(
         Processor("e", ServiceRef("ref", List())),
         Source("s", SourceRef("sourceRef", List()))
@@ -64,7 +64,7 @@ class ProcessConverterSpec extends FlatSpec with Matchers with TableDrivenProper
       Enricher("e", ServiceRef("ref", List()), "out"),
       Split("e")
     )) { (unexpectedEnd) =>
-      val process = DisplayableProcess("t1", ProcessProperties(Some(2), Some(false), ExceptionHandlerRef(List()), None),
+      val process = DisplayableProcess("t1", ProcessProperties(StreamMetaData(Some(2), Some(false)), ExceptionHandlerRef(List()), None),
         List(Source("s", SourceRef("sourceRef", List())), unexpectedEnd),
         List(Edge("s", "e", None)), ProcessingType.Streaming, Some(ValidationResult.errors(Map(unexpectedEnd.id -> List(NodeValidationError("InvalidTailOfBranch",
           "Invalid end of process", "Process branch can only end with sink or processor", None, isFatal = false))), List(), List()))

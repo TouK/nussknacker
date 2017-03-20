@@ -4,6 +4,7 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import org.scalatest._
 import argonaut.Argonaut._
+import pl.touk.esp.engine.api.StreamMetaData
 import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.esp.engine.graph.expression.Expression
 import pl.touk.esp.engine.graph.node
@@ -95,7 +96,7 @@ class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with Matc
   def newDisplayableProcess(id: String, nodes: List[NodeData], edges: List[Edge]) = {
     DisplayableProcess(
       id = id,
-      properties = ProcessProperties(Some(2), Some(false), ExceptionHandlerRef(List()), None),
+      properties = ProcessProperties(StreamMetaData(Some(2), Some(false)), ExceptionHandlerRef(List()), None),
       nodes = nodes,
       edges = edges,
       processingType = ProcessingType.Streaming,

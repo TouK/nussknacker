@@ -1,6 +1,6 @@
 package pl.touk.esp.ui.process.displayedgraph
 
-import pl.touk.esp.engine.api.UserDefinedProcessAdditionalFields
+import pl.touk.esp.engine.api.{TypeSpecificData, UserDefinedProcessAdditionalFields}
 import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.esp.engine.graph.node.NodeData
 import pl.touk.esp.ui.validation.ProcessValidation
@@ -22,7 +22,6 @@ case class DisplayableProcess(id: String,
 }
 
 
-case class ProcessProperties(parallelism: Option[Int],
-                             splitStateToDisk: Option[Boolean],
+case class ProcessProperties(typeSpecificProperties: TypeSpecificData,
                              exceptionHandler: ExceptionHandlerRef,
                              additionalFields: Option[UserDefinedProcessAdditionalFields])
