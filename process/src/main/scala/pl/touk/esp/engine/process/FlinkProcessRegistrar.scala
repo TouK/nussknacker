@@ -183,8 +183,13 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessW
           CustomNodeInvoker[((DataStream[InterpretationResult], FiniteDuration) => DataStream[ValueWithContext[_]])@unchecked],
               node, nextParts, ends) =>
 
+          val newContextFun = (ir: ValueWithContext[_]) => node.data.outputVar match {
+            case Some(name) => ir.context.withVariable(name, ir.value)
+            case None => ir.context
+          }
+
           val newStart = executor.run(compiledProcessWithDeps)(start, compiledProcessWithDeps().processTimeout)
-              .map(ir => ir.context.withVariable(node.data.outputVar, ir.value))
+              .map(newContextFun)
               .flatMap(new InterpretationFunction(compiledProcessWithDeps, node))
               .name(s"${process.metaData.id}-${node.id}-customNodeInterpretation")
               .split(SplitFunction)

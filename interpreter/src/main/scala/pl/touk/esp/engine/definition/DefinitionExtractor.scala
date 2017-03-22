@@ -8,6 +8,7 @@ import pl.touk.esp.engine.api.{MethodToInvoke, ParamName}
 import pl.touk.esp.engine.definition.DefinitionExtractor._
 import pl.touk.esp.engine.types.EspTypeUtils
 
+import scala.runtime.BoxedUnit
 import scala.util.control.NonFatal
 
 trait DefinitionExtractor[T] {
@@ -71,6 +72,10 @@ object DefinitionExtractor {
     def returnType: ClazzRef
 
     def categories: List[String]
+
+    //TODO: czy to tak?
+    def hasNoReturn = Set(classOf[Void], classOf[Unit], classOf[BoxedUnit]).map(_.getName).contains(returnType.refClazzName)
+
   }
 
   case class ObjectWithMethodDef(obj: Any,

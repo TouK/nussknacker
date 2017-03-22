@@ -27,7 +27,6 @@ object part {
                             nextParts: List[SubsequentPart], ends: List[End]) extends SubsequentPart {
     override type T = CustomNode
 
-    def outputVar: String = node.data.outputVar
   }
 
   case class SplitPart(node: splittednode.SplitNode, nexts: List[NextWithParts]) extends SubsequentPart {

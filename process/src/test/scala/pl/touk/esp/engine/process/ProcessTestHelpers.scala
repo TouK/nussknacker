@@ -12,7 +12,6 @@ import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExt
 import org.apache.flink.streaming.api.scala._
 import pl.touk.esp.engine.api.exception.{EspExceptionInfo, ExceptionHandlerFactory}
 import pl.touk.esp.engine.api.process._
-import pl.touk.esp.engine.api.test.InvocationCollectors.SinkInvocationCollector
 import pl.touk.esp.engine.api.{LazyInterpreter, _}
 import pl.touk.esp.engine.flink.api.exception.FlinkEspExceptionHandler
 import pl.touk.esp.engine.flink.api.process.{FlinkSink, FlinkSourceFactory}
@@ -23,6 +22,7 @@ import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.process.api.WithExceptionHandler
 import pl.touk.esp.engine.util.LoggingListener
 
+import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -67,7 +67,8 @@ object ProcessTestHelpers {
         "sinkForInts" -> WithCategories(SinkFactory.noParam(SinkForInts))
       )
 
-      override def customStreamTransformers(config: Config) = Map("stateCustom" -> WithCategories(StateCustomNode))
+      override def customStreamTransformers(config: Config) = Map(
+        "stateCustom" -> WithCategories(StateCustomNode), "customFilter" -> WithCategories(CustomFilter))
 
       override def listeners(config: Config) = Seq(LoggingListener)
 
@@ -106,6 +107,18 @@ object ProcessTestHelpers {
       def unapply(ir:InterpretationResult) = Some((ir, ir.finalContext.apply[SimpleRecord]("input")))
     }
 
+  }
+
+  object CustomFilter extends CustomStreamTransformer {
+
+    @MethodToInvoke(returnType = classOf[Void])
+    def execute(@ParamName("input") keyBy: LazyInterpreter[String],
+               @ParamName("stringVal") stringVal: String)(exceptionHander: ()=>FlinkEspExceptionHandler) = (start: DataStream[InterpretationResult], timeout: FiniteDuration) => {
+
+      start.filter { ir =>
+        keyBy.syncInterpretationFunction(ir) == stringVal
+      }.map(ValueWithContext(_))
+    }
   }
 
   case class CustomMap(lazyHandler: ()=>FlinkEspExceptionHandler) extends RichMapFunction[ValueWithContext[Any], ValueWithContext[Any]] with WithExceptionHandler {

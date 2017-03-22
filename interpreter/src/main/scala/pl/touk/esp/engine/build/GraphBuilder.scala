@@ -50,7 +50,11 @@ trait GraphBuilder[R] {
     creator(SwitchNode(Switch(id, expression, exprVal), nexts.toList, Some(defaultNext)))
 
   def customNode(id: String, outputVar: String, customNodeRef: String, params: (String, Expression)*): GraphBuilder[R]  =
-    build(node => creator(OneOutputSubsequentNode(CustomNode(id, outputVar, customNodeRef, params.map(Parameter.tupled).toList), node)))
+    build(node => creator(OneOutputSubsequentNode(CustomNode(id, Some(outputVar), customNodeRef, params.map(Parameter.tupled).toList), node)))
+
+  def customNodeNoOutput(id: String, customNodeRef: String, params: (String, Expression)*): GraphBuilder[R]  =
+    build(node => creator(OneOutputSubsequentNode(CustomNode(id, None, customNodeRef, params.map(Parameter.tupled).toList), node)))
+
 
   def split(id: String, nexts: SubsequentNode*): R = creator(SplitNode(Split(id), nexts.toList))
 

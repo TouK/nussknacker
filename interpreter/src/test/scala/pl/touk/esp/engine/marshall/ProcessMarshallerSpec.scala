@@ -116,7 +116,7 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
     val source = FlatNode(Source("s1", SourceRef("a", List())))
 
     checkOneInvalid("filter", source, canonicalnode.FilterNode(Filter("filter", Expression("", "")), List()))
-    checkOneInvalid("custom", source, canonicalnode.FlatNode(CustomNode("custom", "out", "t1", List())))
+    checkOneInvalid("custom", source, canonicalnode.FlatNode(CustomNode("custom", Some("out"), "t1", List())))
     checkOneInvalid("split", source, canonicalnode.SplitNode(Split("split"), List.empty))
     checkOneInvalid("switch", source, canonicalnode.SwitchNode(Switch("switch", Expression("", ""), ""), List.empty, List.empty))
 

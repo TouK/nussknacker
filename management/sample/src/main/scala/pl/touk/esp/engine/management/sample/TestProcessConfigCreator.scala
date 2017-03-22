@@ -135,7 +135,10 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
     )
   }
 
-  override def customStreamTransformers(config: Config) = Map("stateful" -> WithCategories(StatefulTransformer, "Category1", "Category2"))
+  override def customStreamTransformers(config: Config) = Map(
+    "stateful" -> WithCategories(StatefulTransformer, "Category1", "Category2"),
+    "customFilter" -> WithCategories(CustomFilter, "Category1", "Category2")
+  )
 
   override def exceptionHandlerFactory(config: Config) = ParamExceptionHandler
 
@@ -167,6 +170,15 @@ case object StatefulTransformer extends CustomStreamTransformer {
   object StringFromIr {
     def unapply(ir: InterpretationResult) = Some(ir, ir.finalContext.apply[String]("input"))
   }
+
+}
+
+case object CustomFilter extends CustomStreamTransformer {
+
+  @MethodToInvoke(returnType = classOf[Void])
+  def execute(@ParamName("expression") expression: LazyInterpreter[Boolean])
+   = (start: DataStream[InterpretationResult], timeout: FiniteDuration) =>
+      start.filter(expression.syncInterpretationFunction).map(ValueWithContext(_))
 
 }
 
