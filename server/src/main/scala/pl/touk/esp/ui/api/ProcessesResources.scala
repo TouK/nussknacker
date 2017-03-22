@@ -21,7 +21,7 @@ import pl.touk.esp.ui.process.repository.{ProcessActivityRepository, ProcessRepo
 import pl.touk.esp.ui.process.repository.ProcessRepository._
 import pl.touk.esp.ui.security.{LoggedUser, Permission}
 import pl.touk.esp.ui.util.{AkkaHttpResponse, Argonaut62Support, MultipartUtils, PdfExporter}
-import pl.touk.esp.ui.{BadRequestError, FatalError, NotFoundError}
+import pl.touk.esp.ui.{BadRequestError, EspError, FatalError, NotFoundError}
 import akka.pattern.ask
 import akka.util.Timeout
 

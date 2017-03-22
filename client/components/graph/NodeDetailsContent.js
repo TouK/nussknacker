@@ -77,7 +77,7 @@ export default class NodeDetailsContent extends React.Component {
         return (
           <div className="node-table-body">
             {this.createField("input", "Id", "id")}
-            {this.createField("input", "Output", "outputVar")}
+            {_.has(this.state.editedNode, 'outputVar') ? this.createField("input", "Output", "outputVar") : null}
             {this.createReadonlyField("input", "Node type", "nodeType")}
             {this.state.editedNode.parameters.map((params, index) => {
               return (
