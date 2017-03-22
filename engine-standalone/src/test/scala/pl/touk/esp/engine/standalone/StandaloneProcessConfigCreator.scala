@@ -12,6 +12,7 @@ import pl.touk.esp.engine.api.test.InvocationCollectors.ServiceInvocationCollect
 import pl.touk.esp.engine.api.test.TestDataParser
 import pl.touk.esp.engine.util.LoggingListener
 import argonaut.ArgonautShapeless._
+import pl.touk.esp.engine.standalone.utils.{JsonStandaloneSourceFactory, StandaloneSinkFactory}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -35,12 +36,14 @@ class StandaloneProcessConfigCreator extends ProcessConfigCreator with LazyLoggi
     "processorService" -> WithCategories(processorService)
   )
 
+  implicit val decoder = DecodeJson.derive[Request1]
+
   override def sourceFactories(config: Config): Map[String, WithCategories[SourceFactory[_]]] = Map(
-    "request1-source" -> WithCategories(new Request1SourceFactory)
+    "request1-source" -> WithCategories(new JsonStandaloneSourceFactory[Request1])
   )
 
   override def sinkFactories(config: Config): Map[String, WithCategories[SinkFactory]] = Map(
-    "response-sink" -> WithCategories(new ResponseSink)
+    "response-sink" -> WithCategories(new StandaloneSinkFactory)
   )
 
   override def listeners(config: Config): Seq[ProcessListener] = List(LoggingListener)
@@ -82,37 +85,4 @@ class ProcessorService extends Service {
     Future.successful(())
   }
 
-}
-
-class Request1SourceFactory extends StandaloneSourceFactory[Request1] {
-  val decoder = DecodeJson.derive[Request1]
-
-  @MethodToInvoke
-  def create(): Source[Request1] = {
-    new Source[Request1] {
-    }
-  }
-
-  override def toObject(obj: Array[Byte]): Request1 = {
-    val str = new String(obj)
-    decoder.decodeJson(Parse.parse(str).right.get).result.right.get
-  }
-
-  override def clazz: Class[_] = classOf[Request1]
-
-  override def testDataParser: Option[TestDataParser[Request1]] = Some(
-    new TestDataParser[Request1] {
-      override def parseTestData(data: Array[Byte]): List[Request1] = {
-        val request1List = new String(data).split("\n").toList
-        request1List.map(str => decoder.decodeJson(Parse.parse(str).right.get).result.right.get)
-      }
-    }
-  )
-}
-
-class ResponseSink extends SinkFactory {
-  @MethodToInvoke
-  def invoke(): Sink = new Sink {
-    override def testDataOutput: Option[(Any) => String] = Some(_.toString)
-  }
 }
