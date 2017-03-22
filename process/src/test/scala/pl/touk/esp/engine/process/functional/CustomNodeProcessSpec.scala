@@ -6,7 +6,6 @@ import java.util.Date
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.esp.engine.build.{EspProcessBuilder, GraphBuilder}
-import pl.touk.esp.engine.graph.node.SubsequentNode
 import pl.touk.esp.engine.process.ProcessTestHelpers.{MockService, SimpleRecord, SimpleRecordWithPreviousValue, processInvoker}
 import pl.touk.esp.engine.spel
 
@@ -36,7 +35,7 @@ class CustomNodeProcessSpec extends FlatSpec with Matchers {
     val env = StreamExecutionEnvironment.createLocalEnvironment(1)
     processInvoker.invoke(process, data, env)
 
-    val mockData = MockService.data.toList.map(_.asInstanceOf[SimpleRecordWithPreviousValue])
+    val mockData = MockService.data.map(_.asInstanceOf[SimpleRecordWithPreviousValue])
     mockData.map(_.record.value1) shouldBe List(12L, 20L)
     mockData.map(_.added) shouldBe List("terefere", "terefere")
 
@@ -70,7 +69,7 @@ class CustomNodeProcessSpec extends FlatSpec with Matchers {
     val env = StreamExecutionEnvironment.createLocalEnvironment(1)
     processInvoker.invoke(process, data, env)
 
-    val (allMocked, filteredMocked) = MockService.data.toList.map(_.asInstanceOf[String]).partition(_.startsWith("allRec-"))
+    val (allMocked, filteredMocked) = MockService.data.map(_.asInstanceOf[String]).partition(_.startsWith("allRec-"))
     allMocked shouldBe List("allRec-3", "allRec-5", "allRec-12", "allRec-14", "allRec-20")
     filteredMocked shouldBe List("12-terefere", "20-terefere")
 
@@ -132,7 +131,24 @@ class CustomNodeProcessSpec extends FlatSpec with Matchers {
     val env = StreamExecutionEnvironment.createLocalEnvironment(1)
     processInvoker.invoke(process, data, env)
 
-    MockService.data.toList shouldBe List("testBeforeNode")
+    MockService.data shouldBe List("testBeforeNode")
+
+  }
+
+  it should "process custom node without return properly" in {
+    val process = EspProcessBuilder.id("proc1")
+      .exceptionHandler()
+      .source("id", "input")
+      .buildSimpleVariable("testVar", "beforeNode", "'testBeforeNode'")
+      .customNodeNoOutput("custom", "customFilter", "input" -> "#input.id", "stringVal" -> "'terefere'")
+      .processorEnd("proc2", "logService", "all" -> "#input.id")
+
+    val data = List(SimpleRecord("terefere", 3, "a", new Date(0)), SimpleRecord("kuku", 3, "b", new Date(0)))
+
+    val env = StreamExecutionEnvironment.createLocalEnvironment(1)
+    processInvoker.invoke(process, data, env)
+
+    MockService.data shouldBe List("terefere")
 
   }
 

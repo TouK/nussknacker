@@ -111,6 +111,17 @@ protected trait ProcessCompilerBase {
       invalid(DuplicatedNodeIds(duplicatedIds.toSet))
   }
 
+  private def contextAfterCustomNode(node: CustomNode, nodeDefinition: ParameterProviderT, validationContext: ValidationContext)
+                                    (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, ValidationContext]=
+    (node.outputVar, nodeDefinition.hasNoReturn) match {
+      case (Some(varName), false) => validationContext.withVariable(varName, nodeDefinition.returnType)
+        //ble... NonEmptyList is invariant...
+        .asInstanceOf[ValidatedNel[ProcessCompilationError,ValidationContext]]
+      case (None, true) => Valid(validationContext)
+      case (Some(_), true) => Invalid(NonEmptyList.of(RedundantParameters(Set("OutputVariable"))))
+      case (None, false) => Invalid(NonEmptyList.of(MissingParameters(Set("OutputVariable"))))
+    }
+
   private def compile(part: SubsequentPart, ctx: ValidationContext)
                      (implicit metaData: MetaData): ValidatedNel[ProcessCompilationError, compiledgraph.part.SubsequentPart] = {
     implicit val nodeId = NodeId(part.id)
@@ -123,9 +134,7 @@ protected trait ProcessCompilerBase {
         }
       case CustomNodePart(node, nextParts, ends) =>
         getCustomNodeDefinition(node).andThen { nodeDefinition =>
-          ctx.withVariable(node.data.outputVar, nodeDefinition.returnType)
-            //ble... NonEmptyList is invariant...
-            .asInstanceOf[ValidatedNel[ProcessCompilationError,ValidationContext]].andThen { ctxWithVar =>
+          contextAfterCustomNode(node.data, nodeDefinition, ctx).andThen { ctxWithVar =>
             validate(node, ctxWithVar).andThen { newCtx =>
               compileCustomNodeInvoker(node, nodeDefinition).andThen { nodeInvoker =>
                 compile(nextParts, newCtx).map { nextParts =>

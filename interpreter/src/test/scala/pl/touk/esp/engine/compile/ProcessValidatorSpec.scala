@@ -4,7 +4,7 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import org.scalatest.{FlatSpec, Inside, Matchers}
 import pl.touk.esp.engine._
-import pl.touk.esp.engine.api.{ParamName, Service}
+import pl.touk.esp.engine.api.Service
 import pl.touk.esp.engine.api.lazyy.ContextWithLazyValuesProvider
 import pl.touk.esp.engine.api.process.WithCategories
 import pl.touk.esp.engine.build.{EspProcessBuilder, GraphBuilder}
@@ -25,8 +25,10 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
       ClazzRef(classOf[String]))), classOf[SimpleRecord], List())),
     Map("source" -> ObjectDefinition(List.empty, classOf[SimpleRecord], List())),
     Map("sink" -> ObjectDefinition.noParam),
-    Map("customTransformer" -> ObjectDefinition(List.empty, classOf[SimpleRecord], List()), "withParamsTransformer" -> ObjectDefinition(List(Parameter("par1",
-      ClazzRef(classOf[String]))), classOf[SimpleRecord], List())),
+    Map("customTransformer" -> ObjectDefinition(List.empty, classOf[SimpleRecord], List()),
+      "withParamsTransformer" -> ObjectDefinition(List(Parameter("par1", ClazzRef(classOf[String]))), classOf[SimpleRecord], List()),
+      "withoutReturnType" -> ObjectDefinition(List(Parameter("par1", ClazzRef(classOf[String]))), classOf[Void], List())
+    ),
     ObjectDefinition.noParam,
     Map("processHelper" -> WithCategories(ClazzRef(ProcessHelper.getClass), List("cat1"))),
     EspTypeUtils.clazzAndItsChildrenDefinition(List(classOf[SampleEnricher], classOf[SimpleRecord], ProcessHelper.getClass))
@@ -245,6 +247,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
       .id("process1")
       .exceptionHandler()
       .source("id1", "source")
+      .customNodeNoOutput("noOutput", "withoutReturnType", "par1" -> "'1'")
       .customNode("cNode1", "out1", "custom", "par1" -> "'1'")
       .filter("sampleFilter1", "#out1.value2")
       .filter("sampleFilter2", "#out1.terefere")
@@ -452,6 +455,36 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
       case Invalid(NonEmptyList(ExpressionParseError("Unresolved references var3", "id3", None, "#var3"), _)) =>
     }
   }
+
+  it should "not allow customNode outputVar when no return type in definition" in {
+    val processWithInvalidExpresssion =
+      EspProcessBuilder
+        .id("process1")
+        .exceptionHandler()
+        .source("id1", "source")
+        .customNode("custom", "varName", "withoutReturnType", "par1" -> "'1'")
+        .sink("id2", "''", "sink")
+
+    ProcessValidator.default(baseDefinition).validate(processWithInvalidExpresssion) should matchPattern {
+      case Invalid(NonEmptyList(RedundantParameters(vars, _), _)) if vars == Set("OutputVariable") =>
+    }
+  }
+
+
+  it should "require customNode outputVar when return type in definition" in {
+    val processWithInvalidExpresssion =
+      EspProcessBuilder
+        .id("process1")
+        .exceptionHandler()
+        .source("id1", "source")
+        .customNodeNoOutput("custom", "customTransformer", "par1" -> "'1'")
+        .sink("id2", "''", "sink")
+
+    ProcessValidator.default(baseDefinition).validate(processWithInvalidExpresssion) should matchPattern {
+      case Invalid(NonEmptyList(MissingParameters(vars, _), _)) if vars == Set("OutputVariable") =>
+    }
+  }
+
 
 
   case class SimpleRecord(value1: AnotherSimpleRecord, plainValue: BigDecimal, plainValueOpt: Option[BigDecimal], intAsAny: Any, list: java.util.List[SimpleRecord]) {
