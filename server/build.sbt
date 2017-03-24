@@ -53,7 +53,7 @@ val scalaTestV = "3.0.0-M15"
 val slickV = "3.2.0-M1" // wsparcie dla select for update jest od 3.2.0
 val hsqldbV = "2.3.4"
 val flywayV = "4.0.3"
-val flinkV = "1.1.4"
+val flinkV = "1.2.0"
 
 //we want to be able to build
 val includeFlinkAndScala = Option(System.getProperty("includeFlinkAndScala")).exists(_.toBoolean)
