@@ -10,4 +10,5 @@ db.script
 db.lck
 db.tmp
 server/develConf/*.jar
+server/develConf/jsons/*
 npm-debug.log
