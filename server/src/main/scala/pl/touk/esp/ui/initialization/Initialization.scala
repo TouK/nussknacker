@@ -44,7 +44,9 @@ class Initialization(processRepository: ProcessRepository,
   }
 
   def insertInitialProcesses(dirName: String, processingType: ProcessingType): Unit = {
-    new File(initialProcessDirectory, dirName).listFiles().filter(_.isDirectory).foreach { categoryDir =>
+    val processesDir = new File(initialProcessDirectory, dirName)
+    processesDir.mkdirs()
+    processesDir.listFiles().filter(_.isDirectory).foreach { categoryDir =>
       val category = categoryDir.getName
       logger.info(s"Processing category $category")
 
