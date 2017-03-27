@@ -14,11 +14,11 @@ abstract class EvictableState[In, Out] extends AbstractStreamOperator[Out]
 
   var internalTimerService : InternalTimerService[String] = _
 
-  var timerState : ValueState[java.lang.Long] = _
+  var lastEventTimeForKey : ValueState[java.lang.Long] = _
 
   override def open() = {
     super.open()
-    timerState = getRuntimeContext.getState[java.lang.Long](new ValueStateDescriptor[java.lang.Long]("timers", classOf[java.lang.Long]))
+    lastEventTimeForKey = getRuntimeContext.getState[java.lang.Long](new ValueStateDescriptor[java.lang.Long]("timers", classOf[java.lang.Long]))
     internalTimerService = getInternalTimerService("evictable-timers", new StringSerializer, this)
   }
 
@@ -30,16 +30,19 @@ abstract class EvictableState[In, Out] extends AbstractStreamOperator[Out]
 
   override def onEventTime(timer: InternalTimer[String, String]) = {
     setCurrentKey(timer.getKey)
-    getState.clear()
-    timerState.update(null)
+    val noNewerEventsArrived = lastEventTimeForKey.value() == timer.getTimestamp
+    if (noNewerEventsArrived) {
+      getState.clear()
+      lastEventTimeForKey.update(null)
+    }
   }
 
 
   protected final def setEvictionTimeForCurrentKey(time: Long) = {
     val key = getCurrentKey.toString
-    Option(timerState.value()).foreach(time => internalTimerService.deleteEventTimeTimer(key, time))
+    //we don't delete former timer, because it's inefficient
     internalTimerService.registerEventTimeTimer(key, time)
-    timerState.update(time)
+    lastEventTimeForKey.update(time)
   }
 
 }
