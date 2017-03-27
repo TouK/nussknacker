@@ -8,6 +8,8 @@ import cats.data.Xor
 import com.typesafe.config.{ConfigFactory, ConfigValue}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.esp.engine.api.deployment.{CustomProcess, GraphProcess, ProcessDeploymentData}
+import pl.touk.esp.ui.EspError
+import pl.touk.esp.ui.EspError.XError
 import pl.touk.esp.ui.db.EspTables
 import pl.touk.esp.ui.db.entity.EnvironmentsEntity.EnvironmentsEntityData
 import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType
@@ -22,6 +24,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 import scala.io.Source._
+import scala.util
 
 class Initialization(processRepository: ProcessRepository,
                      db: JdbcBackend.DatabaseDef,
@@ -54,22 +57,35 @@ class Initialization(processRepository: ProcessRepository,
         val processId = file.getName.replaceAll("\\..*", "")
         val processJson = fromFile(file).mkString
         val deploymentData = GraphProcess(processJson)
-        saveOrUpdate(processId, category, deploymentData, processingType)
+        saveOrUpdate(processId, category, deploymentData, processingType).map(_.toEither).map(removeFileOnSuccess(file, _))
       }
     }
   }
 
   def updateTechnicalProcesses(): Unit = {
-    ConfigFactory.parseFile(new File(initialProcessDirectory, "customProcesses.conf")).entrySet().toSet
-      .foreach { (entry: Entry[String, ConfigValue]) =>
+    val customProcessesFile = new File(initialProcessDirectory, "customProcesses.conf")
+    val futures = ConfigFactory.parseFile(customProcessesFile).entrySet().toSet
+      .map { (entry: Entry[String, ConfigValue]) =>
         val processId = entry.getKey
         val deploymentData = CustomProcess(entry.getValue.unwrapped().toString)
         logger.info(s"Saving custom process $processId")
         saveOrUpdate(processId, "Technical", deploymentData, ProcessingType.Streaming)
-      }
+      }.toList
+    Future.sequence(futures).foreach { potentialErrors =>
+      val potentialError = potentialErrors.map(_.toEither).find(_.isLeft).getOrElse(util.Right(()))
+      removeFileOnSuccess(customProcessesFile, potentialError)
+    }
   }
 
-  private def saveOrUpdate(processId: String, category: String, deploymentData: ProcessDeploymentData, processingType: ProcessingType) = {
+  private def removeFileOnSuccess(file: File, xError: Either[EspError, Unit]) = xError match {
+    case scala.util.Left(error) =>
+      logger.warn(s"error $error occurred during processing of $file")
+    case scala.util.Right(()) =>
+      logger.info(s"processing file $file completed, removing file")
+      file.delete()
+  }
+
+  private def saveOrUpdate(processId: String, category: String, deploymentData: ProcessDeploymentData, processingType: ProcessingType): Future[XError[Unit]] = {
     val updateProcess = for {
       latestVersion <- processRepository.fetchLatestProcessVersion(processId)
       _ <- {
