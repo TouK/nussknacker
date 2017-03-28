@@ -259,8 +259,16 @@ export default {
     })
       .then(() => this.addInfo(`Process ${processId} was migrated`))
       .catch((error) => this.addError(`Failed to migrate`, error));
-  }
+  },
 
+  sendSignal(signalType, params) {
+    return ajaxCall({
+      url: `${appConfig.API_URL}/signal/${signalType}`,
+      type: 'POST',
+      data: JSON.stringify(params)
+    }).then(() => this.addInfo(`Signal send`))
+      .catch((error) => this.addError(`Failed to send signal`, error));
+  }
 
 }
 

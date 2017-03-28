@@ -86,6 +86,7 @@ object EspUiApp extends App with Directives with LazyLogging {
                 new ManagementResources(processDefinitions.values.flatMap(_.typesInformation).toList, managementActor).route(user) ~
                 new ValidationResources(processValidation).route(user) ~
                 new DefinitionResources(processDefinitions).route(user) ~
+                new SignalsResources(managers).route(user) ~
                 new UserResources().route(user) ~
                 new SettingsResources(config).route(user) ~
                 new AppResources(buildInfo, processRepository, managementActor).route(user) ~

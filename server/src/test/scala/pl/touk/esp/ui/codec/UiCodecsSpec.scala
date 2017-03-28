@@ -16,7 +16,7 @@ class UiCodecsSpec extends FlatSpec with Matchers {
 
   it should "should encode record" in {
 
-    val codec = UiCodecs.ContextCodecs(TypesInformation.extract(List(), List(), List(), List(classOf[TestRecord])))
+    val codec = UiCodecs.ContextCodecs(TypesInformation.extract(List(), List(), List(), List(), List(classOf[TestRecord])))
     import codec._
 
     val date = LocalDateTime.of(2010, 1, 1, 1, 1)
