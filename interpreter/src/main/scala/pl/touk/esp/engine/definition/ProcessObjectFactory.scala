@@ -3,13 +3,14 @@ package pl.touk.esp.engine.definition
 import java.lang.reflect.Method
 
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.esp.engine.api.{CustomStreamTransformer, MetaData}
+import pl.touk.esp.engine.api.{CustomStreamTransformer, MetaData, ProcessSignalSender}
 import pl.touk.esp.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
-import pl.touk.esp.engine.api.process.{Sink, SinkFactory, Source, SourceFactory}
+import pl.touk.esp.engine.api.process._
 import pl.touk.esp.engine.definition.DefinitionExtractor._
 import pl.touk.esp.engine.graph
 
 import scala.reflect.ClassTag
+import scala.runtime.BoxedUnit
 import scala.util.control.NonFatal
 
 trait ProcessObjectFactory[T] {
@@ -44,6 +45,13 @@ class SourceProcessObjectDefinitionExtractor extends ProcessObjectDefinitionExtr
   override def extractReturnTypeFromMethod(sourceFactory: SourceFactory[_], method: Method) = sourceFactory.clazz
 }
 
+object SignalsDefinitionExtractor extends DefinitionExtractor[ProcessSignalSender] {
+
+  override protected val returnType = classOf[BoxedUnit]
+  override protected val additionalParameters = Set[Class[_]]()
+
+}
+
 object ProcessObjectDefinitionExtractor {
 
   val source = new SourceProcessObjectDefinitionExtractor
@@ -51,6 +59,7 @@ object ProcessObjectDefinitionExtractor {
   val exceptionHandler = new ProcessObjectDefinitionExtractor[ExceptionHandlerFactory, EspExceptionHandler]
   val customNodeExecutor = CustomStreamTransformerExtractor
   val service = ServiceDefinitionExtractor
+  val signals = SignalsDefinitionExtractor
 
 
 }

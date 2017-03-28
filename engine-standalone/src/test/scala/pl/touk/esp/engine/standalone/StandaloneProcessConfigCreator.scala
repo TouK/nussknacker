@@ -54,6 +54,8 @@ class StandaloneProcessConfigCreator extends ProcessConfigCreator with LazyLoggi
 
   override def globalProcessVariables(config: Config): Map[String, WithCategories[Class[_]]] = Map.empty
 
+  override def signals(config: Config): Map[String, WithCategories[ProcessSignalSender]] = Map.empty
+
   override def buildInfo(): Map[String, String] = Map.empty
 }
 

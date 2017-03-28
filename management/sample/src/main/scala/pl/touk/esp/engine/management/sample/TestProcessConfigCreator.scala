@@ -17,6 +17,8 @@ import pl.touk.esp.engine.api.test.NewLineSplittedTestDataParser
 import pl.touk.esp.engine.flink.api.process.{FlinkSink, FlinkSource, FlinkSourceFactory}
 import pl.touk.esp.engine.flink.util.exception.VerboselyLoggingExceptionHandler
 import pl.touk.esp.engine.kafka.{KafkaConfig, KafkaSinkFactory}
+import pl.touk.esp.engine.management.sample.signal.{RemoveLockProcessSignalFactory, SampleSignalHandlingTransformer}
+import pl.touk.esp.engine.management.sample.signal.SampleSignalHandlingTransformer.LockStreamTransformer
 
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
@@ -115,6 +117,7 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
 
         override def run(ctx: SourceContext[String]) = {
           while (running) {
+            ctx.collect("TestInput" + System.currentTimeMillis())
             Thread.sleep(2000)
           }
         }
@@ -135,10 +138,23 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
     )
   }
 
-  override def customStreamTransformers(config: Config) = Map(
-    "stateful" -> WithCategories(StatefulTransformer, "Category1", "Category2"),
-    "customFilter" -> WithCategories(CustomFilter, "Category1", "Category2")
-  )
+  override def customStreamTransformers(config: Config) = {
+    val kConfig = KafkaConfig(config.getString("kafka.zkAddress"), config.getString("kafka.kafkaAddress"), None, None)
+    val signalsTopic = config.getString("signals.topic")
+    Map(
+      "stateful" -> WithCategories(StatefulTransformer, "Category1", "Category2"),
+      "customFilter" -> WithCategories(CustomFilter, "Category1", "Category2"),
+      "lockStreamTransformer" -> WithCategories(new SampleSignalHandlingTransformer.LockStreamTransformer(kConfig, signalsTopic), "Category1", "Category2")
+    )
+  }
+
+  override def signals(config: Config) = {
+    val kConfig = KafkaConfig(config.getString("kafka.zkAddress"), config.getString("kafka.kafkaAddress"), None, None)
+    val signalsTopic = config.getString("signals.topic")
+    Map(
+      "removeLockSignal" -> WithCategories(new RemoveLockProcessSignalFactory(kConfig, signalsTopic), "Category1", "Category2")
+    )
+  }
 
   override def exceptionHandlerFactory(config: Config) = ParamExceptionHandler
 

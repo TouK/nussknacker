@@ -7,7 +7,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.KafkaClient
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.common.TopicPartition
-import org.apache.kafka.common.serialization.ByteArrayDeserializer
+import org.apache.kafka.common.serialization.{ByteArrayDeserializer, ByteArraySerializer}
 import pl.touk.esp.engine.util.ThreadUtils
 
 import scala.concurrent.{Await, Future}
@@ -39,6 +39,22 @@ object KafkaEspUtils extends LazyLogging {
     props.setProperty("auto.offset.reset", "earliest")
     groupId.foreach(props.setProperty("group.id", _))
     config.kafkaProperties.map(_.asJava).foreach(props.putAll)
+    props
+  }
+
+  def toProducerProperties(config: KafkaConfig) = {
+    val props: Properties = new Properties
+    props.setProperty("bootstrap.servers", config.kafkaAddress)
+    props.setProperty("key.serializer", classOf[ByteArraySerializer].getCanonicalName)
+    props.setProperty("value.serializer", classOf[ByteArraySerializer].getCanonicalName)
+    props.setProperty("acks", "all")
+    props.setProperty("retries", "0")
+    props.setProperty("batch.size", "16384")
+    props.setProperty("linger.ms", "1")
+    props.setProperty("buffer.memory", "33554432")
+    config.kafkaProperties.getOrElse(Map.empty).foreach { case (k, v) =>
+      props.setProperty(k, v)
+    }
     props
   }
 

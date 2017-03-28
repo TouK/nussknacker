@@ -22,13 +22,13 @@ private[definition] class CustomNodeInvokerImpl[T](executor: ObjectWithMethodDef
     extends CustomNodeInvoker[T] {
 
   override def run(lazyDeps: () => CustomNodeInvokerDeps) : T = {
-    executor.invokeMethod(prepareParam(lazyDeps), Seq(() => lazyDeps().exceptionHandler)).asInstanceOf[T]
+    executor.invokeMethod(prepareParam(lazyDeps), Seq(() => lazyDeps().exceptionHandler, metaData, node.id)).asInstanceOf[T]
   }
 
   private def prepareParam(lazyDeps: () => CustomNodeInvokerDeps)(param: String) : Option[AnyRef] = {
     val interpreter = CompilerLazyInterpreter[AnyRef](lazyDeps, metaData, node, param)
     val methodParam = EspTypeUtils.findParameterByParameterName(executor.methodDef.method, param)
-    if (methodParam.exists(_.getType ==  classOf[LazyInterpreter[_]])) {
+    if (methodParam.exists(_.getType == classOf[LazyInterpreter[_]])) {
       Some(interpreter)
     } else {
       val emptyResult = InterpretationResult(NextPartReference(node.id), null, Context(""))
@@ -93,7 +93,7 @@ object CustomStreamTransformerExtractor extends DefinitionExtractor[CustomStream
 
   override protected val returnType = classOf[Any]
 
-  override protected val additionalParameters = Set[Class[_]](classOf[() => EspExceptionHandler])
+  override protected val additionalParameters = Set[Class[_]](classOf[() => EspExceptionHandler], classOf[MetaData], classOf[String])
 
   override protected def extractParameterType(p: java.lang.reflect.Parameter) =
     EspTypeUtils.extractParameterType(p, classOf[LazyInterpreter[_]])

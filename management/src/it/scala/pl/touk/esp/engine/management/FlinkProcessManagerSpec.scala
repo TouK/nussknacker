@@ -3,7 +3,7 @@ package pl.touk.esp.engine.management
 import java.util.UUID
 
 import argonaut.PrettyParams
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{ConfigFactory, ConfigValue, ConfigValueFactory}
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.{FlatSpec, Matchers}
@@ -15,6 +15,8 @@ import scala.concurrent.duration._
 import pl.touk.esp.engine.kafka.KafkaUtils._
 
 class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures with Eventually {
+
+  import pl.touk.esp.engine.kafka.KafkaUtils._
 
   override implicit val patienceConfig = PatienceConfig(
     timeout = Span(10, Seconds),
@@ -180,5 +182,20 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
     definition.services should contain key "accountService"
   }
 
+  it should "dispatch process signal to kafka" in {
+    val signalsTopic = s"esp.signal-${UUID.randomUUID()}"
+    val config = ConfigFactory.load()
+      .withValue("prod.signals.topic", ConfigValueFactory.fromAnyRef(signalsTopic))
+    val processManager = FlinkProcessManager(config)
+    val kafkaClient = new KafkaClient(config.getString("prod.kafka.kafkaAddress"), config.getString("prod.kafka.zkAddress"))
+    val consumer = kafkaClient.createConsumer()
 
+    processManager.dispatchSignal("removeLockSignal", Map("processId" -> "test-process", "lockId" -> "test-lockId"))
+
+    val readSignals = consumer.consume(signalsTopic).take(1).map(m => new String(m.message())).toList
+    val signalJson = argonaut.Parse.parse(readSignals(0)).right.get
+    signalJson.field("processId").get.nospaces shouldBe "\"test-process\""
+    signalJson.field("action").get.field("type").get.nospaces shouldBe "\"RemoveLock\""
+    signalJson.field("action").get.field("lockId").get.nospaces shouldBe "\"test-lockId\""
+  }
 }

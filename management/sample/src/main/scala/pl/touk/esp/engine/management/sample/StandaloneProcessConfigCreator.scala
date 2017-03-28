@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import argonaut.{DecodeJson, Parse}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.esp.engine.api.{CustomStreamTransformer, MethodToInvoke, ProcessListener, Service}
+import pl.touk.esp.engine.api._
 import pl.touk.esp.engine.api.exception.{EspExceptionHandler, EspExceptionInfo, ExceptionHandlerFactory}
 import pl.touk.esp.engine.api.process._
 import pl.touk.esp.engine.api.test.InvocationCollectors.ServiceInvocationCollector
@@ -40,6 +40,8 @@ class StandaloneProcessConfigCreator extends ProcessConfigCreator with LazyLoggi
   })
 
   override def globalProcessVariables(config: Config): Map[String, WithCategories[Class[_]]] = Map.empty
+
+  override def signals(config: Config): Map[String, WithCategories[ProcessSignalSender]] = Map.empty
 
   override def buildInfo(): Map[String, String] = Map.empty
 }

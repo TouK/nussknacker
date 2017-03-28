@@ -98,6 +98,8 @@ class SimpleProcessConfigCreator extends ProcessConfigCreator {
     "jsonInput" -> WithCategories(TestSources.jsonSource, "cat2")
   )
 
+  override def signals(config: Config) = Map.empty
+
   override def exceptionHandlerFactory(config: Config) =
     ExceptionHandlerFactory.noParams(VerboselyLoggingRestartingExceptionHandler)
 

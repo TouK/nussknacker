@@ -36,7 +36,7 @@ trait DefinitionExtractor[T] {
     }
 
     val params = method.getParameters.map { p =>
-      if (additionalParameters.contains(p.getType)) {
+      if (additionalParameters.contains(p.getType) && p.getAnnotation(classOf[ParamName]) == null) {
         Right(p.getType)
       } else {
         val name = Option(p.getAnnotation(classOf[ParamName]))
@@ -169,12 +169,13 @@ object DefinitionExtractor {
     def extract(services: Iterable[ObjectWithMethodDef],
                 sourceFactories: Iterable[ObjectWithMethodDef],
                 customNodeTransformers: Iterable[ObjectWithMethodDef],
+                signalsFactories: Iterable[ObjectWithMethodDef],
                 globalProcessVariables: Iterable[Class[_]]): List[PlainClazzDefinition] = {
 
       //TODO: czy tutaj potrzebujemy serwisów jako takich?
       val classesToExtractDefinitions =
       globalProcessVariables ++
-        (services ++ customNodeTransformers ++ sourceFactories).map(sv => sv.methodDef.returnType)
+        (services ++ customNodeTransformers ++ sourceFactories ++ signalsFactories).map(sv => sv.methodDef.returnType)
 
       classesToExtractDefinitions.flatMap(EspTypeUtils.clazzAndItsChildrenDefinition).toList.distinct
     }

@@ -58,6 +58,8 @@ class DemoProcessConfigCreator extends ProcessConfigCreator {
     "DATE" -> all(DateProcessHelper.getClass)
   )
 
+  override def signals(config: Config) = Map.empty
+
   override def buildInfo() = Map(
     "process-version" -> "0.1",
     "engine-version" -> "0.1"
