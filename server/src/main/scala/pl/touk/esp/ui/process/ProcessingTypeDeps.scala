@@ -5,7 +5,7 @@ import pl.touk.esp.engine.api.deployment.ProcessManager
 import pl.touk.esp.engine.compile.ProcessValidator
 import pl.touk.esp.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.esp.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
-import pl.touk.esp.engine.definition.{ConfigCreatorTestInfoProvider, ProcessDefinitionProvider}
+import pl.touk.esp.engine.definition.{ConfigCreatorTestInfoProvider, ProcessDefinitionProvider, SignalDispatcher}
 import pl.touk.esp.engine.management.FlinkProcessManager
 import pl.touk.esp.engine.standalone.management.StandaloneProcessManager
 import pl.touk.esp.ui.app.BuildInfo
@@ -14,7 +14,7 @@ import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
 
 case class ProcessingTypeDeps(processDefinitions: Map[ProcessingType, ProcessDefinition[ObjectDefinition]],
                               validators: Map[ProcessingType, ProcessValidator],
-                              managers: Map[ProcessingType, ProcessManager with ConfigCreatorTestInfoProvider with ProcessDefinitionProvider],
+                              managers: Map[ProcessingType, ProcessManager with ConfigCreatorTestInfoProvider with ProcessDefinitionProvider with SignalDispatcher],
                               buildInfo: Map[String, String],
                               standaloneModeEnabled: Boolean
                              )

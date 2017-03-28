@@ -35,14 +35,15 @@ class InitializationItSpec extends FlatSpec with ScalatestRouteTest with Matcher
   }
 
   it should "save json processes and delete files afterwards" in {
-    listFilesFromDir(processesDir) should have size 4
+    val processesFromFilesCount = listFilesFromDir(processesDir).size
+    processesFromFilesCount should be > 1
     Await.result(getAllProcesses, Duration.apply(1, TimeUnit.SECONDS)) should have size 0
 
     Initialization.init(processRepository, db, "test", isDevelopmentMode = false, initialProcessDirectory = processesDir, standaloneModeEnabled = true)
 
     eventually {
       listFilesFromDir(processesDir) should have size 0
-      Await.result(getAllProcesses, Duration.apply(1, TimeUnit.SECONDS)) should have size 4
+      Await.result(getAllProcesses, Duration.apply(1, TimeUnit.SECONDS)) should have size processesFromFilesCount
     }
   }
 
