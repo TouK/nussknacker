@@ -78,6 +78,8 @@ object ProcessTestHelpers {
         Map("processHelper" -> WithCategories(ProcessHelper.getClass))
       }
 
+      override def signals(config: Config): Map[String, WithCategories[ProcessSignalSender]] = Map.empty
+
       override def buildInfo(): Map[String, String] = Map.empty
     }
   }
@@ -86,8 +88,7 @@ object ProcessTestHelpers {
 
     @MethodToInvoke(returnType = classOf[SimpleRecordWithPreviousValue])
     def execute(@ParamName("keyBy") keyBy: LazyInterpreter[String],
-               @ParamName("stringVal") stringVal: String)(exceptionHander: ()=>FlinkEspExceptionHandler) = (start: DataStream[InterpretationResult], timeout: FiniteDuration) => {
-
+               @ParamName("stringVal") stringVal: String)(exceptionHander: ()=>FlinkEspExceptionHandler, metaData: MetaData) = (start: DataStream[InterpretationResult], timeout: FiniteDuration) => {
       start.keyBy(keyBy.syncInterpretationFunction)
         .mapWithState[ValueWithContext[Any], Long] {
         //TODO: tu musi byc jakis node id??

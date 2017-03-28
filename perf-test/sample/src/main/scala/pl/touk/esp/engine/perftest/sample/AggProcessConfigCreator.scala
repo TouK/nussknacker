@@ -65,5 +65,8 @@ class AggProcessConfigCreator extends ProcessConfigCreator {
 
   override def globalProcessVariables(config: Config) = Map.empty
 
+
+  override def signals(config: Config) = Map.empty
+
   override def buildInfo(): Map[String, String] = Map.empty
 }

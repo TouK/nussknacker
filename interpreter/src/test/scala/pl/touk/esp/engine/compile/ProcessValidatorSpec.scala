@@ -29,6 +29,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
       "withParamsTransformer" -> ObjectDefinition(List(Parameter("par1", ClazzRef(classOf[String]))), classOf[SimpleRecord], List()),
       "withoutReturnType" -> ObjectDefinition(List(Parameter("par1", ClazzRef(classOf[String]))), classOf[Void], List())
     ),
+    Map.empty,
     ObjectDefinition.noParam,
     Map("processHelper" -> WithCategories(ClazzRef(ProcessHelper.getClass), List("cat1"))),
     EspTypeUtils.clazzAndItsChildrenDefinition(List(classOf[SampleEnricher], classOf[SimpleRecord], ProcessHelper.getClass))

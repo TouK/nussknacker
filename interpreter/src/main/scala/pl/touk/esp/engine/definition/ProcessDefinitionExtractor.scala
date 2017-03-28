@@ -11,6 +11,7 @@ object ProcessDefinitionExtractor {
   def extractObjectWithMethods(creator: ProcessConfigCreator, config: Config) : ProcessDefinition[ObjectWithMethodDef] = {
 
     val services = creator.services(config)
+    val signals = creator.signals(config)
     val sourceFactories = creator.sourceFactories(config)
     val sinkFactories = creator.sinkFactories(config)
     val exceptionHandlerFactory = creator.exceptionHandlerFactory(config)
@@ -19,6 +20,10 @@ object ProcessDefinitionExtractor {
 
     val servicesDefs = services.mapValuesNow { factory =>
       ObjectWithMethodDef(factory, ProcessObjectDefinitionExtractor.service)
+    }
+
+    val signalsDefs = signals.mapValuesNow { signal =>
+      ObjectWithMethodDef(signal, ProcessObjectDefinitionExtractor.signals)
     }
 
     val sourceFactoriesDefs = sourceFactories.mapValuesNow { factory =>
@@ -39,18 +44,20 @@ object ProcessDefinitionExtractor {
     val typesInformation = TypesInformation.extract(servicesDefs.values,
       sourceFactoriesDefs.values,
       customNodesExecutorsDefs.values,
+      signalsDefs.values,
       globalVariables.values.map(_.value)
     )
 
     ProcessDefinition[ObjectWithMethodDef](
       servicesDefs, sourceFactoriesDefs, sinkFactoriesDefs,
-      customNodesExecutorsDefs, exceptionHandlerFactoryDefs, globalVariablesDefs, typesInformation)
+      customNodesExecutorsDefs, signalsDefs, exceptionHandlerFactoryDefs, globalVariablesDefs, typesInformation)
   }
 
   case class ProcessDefinition[T <: ObjectMetadata](services: Map[String, T],
                                                     sourceFactories: Map[String, T],
                                                     sinkFactories: Map[String, T],
                                                     customStreamTransformers: Map[String, T],
+                                                    signals: Map[String, T],
                                                     exceptionHandlerFactory: T,
                                                     globalVariables: Map[String, WithCategories[ClazzRef]],
                                                     typesInformation: List[PlainClazzDefinition]) {
@@ -58,7 +65,7 @@ object ProcessDefinitionExtractor {
 
   object ObjectProcessDefinition {
     def empty: ProcessDefinition[ObjectDefinition] =
-      ProcessDefinition(Map.empty, Map.empty, Map.empty, Map.empty, ObjectDefinition.noParam, Map.empty, List.empty)
+      ProcessDefinition(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, ObjectDefinition.noParam, Map.empty, List.empty)
 
     def apply(definition: ProcessDefinition[ObjectWithMethodDef]) =
       ProcessDefinition(
@@ -66,6 +73,7 @@ object ProcessDefinitionExtractor {
         definition.sourceFactories.mapValuesNow(_.objectDefinition),
         definition.sinkFactories.mapValuesNow(_.objectDefinition),
         definition.customStreamTransformers.mapValuesNow(_.objectDefinition),
+        definition.signals.mapValuesNow(_.objectDefinition),
         definition.exceptionHandlerFactory.objectDefinition,
         definition.globalVariables,
         definition.typesInformation

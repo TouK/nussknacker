@@ -135,10 +135,10 @@ object SpelExpressionParser extends LazyLogging {
       spel.getAST match {
         case node: SpelNodeImpl if node.isCompilable =>
           throw new IllegalStateException(s"Failed to compile expression: ${spel.getExpressionString}")
-        case _ => logger.info(s"Expression ${spel.getExpressionString} will not be compiled")
+        case _ => logger.debug(s"Expression ${spel.getExpressionString} will not be compiled")
       }
     } else {
-      logger.info(s"Compiled ${spel.getExpressionString} with compiler result: $spel")
+      logger.debug(s"Compiled ${spel.getExpressionString} with compiler result: $spel")
     }
   }
 

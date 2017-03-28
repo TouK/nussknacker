@@ -2,7 +2,7 @@ package pl.touk.esp.engine.api.process
 
 import com.typesafe.config.Config
 import pl.touk.esp.engine.api.exception.ExceptionHandlerFactory
-import pl.touk.esp.engine.api.{CustomStreamTransformer, ProcessListener, Service}
+import pl.touk.esp.engine.api._
 
 trait ProcessConfigCreator extends Serializable {
 
@@ -21,5 +21,7 @@ trait ProcessConfigCreator extends Serializable {
   def globalProcessVariables(config: Config): Map[String, WithCategories[Class[_]]]
 
   def buildInfo(): Map[String, String]
+
+  def signals(config: Config): Map[String, WithCategories[ProcessSignalSender]]
 
 }

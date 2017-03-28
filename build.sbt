@@ -187,7 +187,7 @@ lazy val management_sample = (project in file("management/sample")).
     }
   ).
   settings(addArtifact(artifact in (Compile, assembly), assembly)).
-  dependsOn(flinkUtil, kafka, process % "runtime,test")
+  dependsOn(flinkUtil, kafka, kafkaFlinkUtil, process % "runtime,test")
 
 lazy val process = (project in file("process")).
   settings(commonSettings).
@@ -243,6 +243,19 @@ lazy val kafka = (project in file("kafka")).
     }
   ).
   dependsOn(flinkApi, util, kafkaTestUtil % "test")
+
+lazy val kafkaFlinkUtil = (project in file("kafka-flink-util")).
+  settings(commonSettings).
+  settings(
+    name := "esp-kafka-flink-util",
+    libraryDependencies ++= {
+      Seq(
+        "org.apache.flink" %% "flink-connector-kafka-0.9" % flinkV,
+        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided"
+      )
+    }
+  ).
+  dependsOn(kafka, flinkUtil)
 
 lazy val kafkaTestUtil = (project in file("kafka-test-util")).
   settings(commonSettings).

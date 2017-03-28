@@ -20,7 +20,7 @@ import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
 import pl.touk.esp.engine.canonize.ProcessCanonizer
 import pl.touk.esp.engine.definition.DefinitionExtractor.{ObjectDefinition, ObjectWithMethodDef}
 import pl.touk.esp.engine.definition.ProcessDefinitionExtractor.{ObjectProcessDefinition, ProcessDefinition}
-import pl.touk.esp.engine.definition.{ConfigCreatorTestInfoProvider, ProcessDefinitionExtractor, ProcessDefinitionProvider}
+import pl.touk.esp.engine.definition._
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.marshall.ProcessMarshaller
 import pl.touk.esp.engine.standalone.StandaloneProcessInterpreter
@@ -32,7 +32,7 @@ import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, ExecutionContext, Future}
 
 class StandaloneProcessManager(config: Config)
-  extends ProcessManager with ConfigCreatorTestInfoProvider with ProcessDefinitionProvider {
+  extends ProcessManager with ConfigCreatorTestInfoProvider with ProcessDefinitionProvider with ConfigCreatorSignalDispatcher {
 
 
   implicit val ec = ExecutionContext.Implicits.global
