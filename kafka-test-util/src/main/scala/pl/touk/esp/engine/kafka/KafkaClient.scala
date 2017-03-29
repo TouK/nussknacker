@@ -74,8 +74,8 @@ class KafkaClient(kafkaAddress: String, zkAddress: String) {
     zkClient.close()
   }
 
-  def createConsumer(): ConsumerConnector = {
-    val consumer = KafkaUtils.createConsumerConnector(zkAddress)
+  def createConsumer(consumerTimeout: Long = 10000): ConsumerConnector = {
+    val consumer = KafkaUtils.createConsumerConnector(zkAddress, consumerTimeout)
     consumers.add(consumer)
     consumer
   }

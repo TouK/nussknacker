@@ -84,11 +84,12 @@ object KafkaUtils {
     createConsumerConnector(zookeeperAddress)
   }
 
-  def createConsumerConnector(zookeeperAddress: String): ConsumerConnector = {
+  def createConsumerConnector(zookeeperAddress: String, consumerTimeout: Long = 10000): ConsumerConnector = {
     val props = new Properties()
     props.put("group.id", "testGroup")
     props.put("zookeeper.connect", zookeeperAddress)
     props.put("auto.offset.reset", OffsetRequest.SmallestTimeString)
+    props.put("consumer.timeout.ms", consumerTimeout.toString)
     Consumer.create(new ConsumerConfig(props))
   }
 
