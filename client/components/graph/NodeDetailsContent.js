@@ -142,6 +142,7 @@ export default class NodeDetailsContent extends React.Component {
         //FIXME: czy to tak powinno byc? czy konfiguracja gdzies indziej?
         const fields = type == "StreamMetaData" ? [
           this.createField("input", "Parallelism", "typeSpecificProperties.parallelism", "parallelism"),
+          this.createField("input", "Checkpoint interval in seconds", "typeSpecificProperties.checkpointIntervalInSeconds", "checkpointIntervalInSeconds"),
           this.createField("checkbox", "Should split state to disk", "typeSpecificProperties.splitStateToDisk", "splitStateToDisk")] :
           [this.createField("input", "Query path",  "typeSpecificProperties.path", "path")]
         const hasExceptionHandlerParams = this.state.editedNode.exceptionHandler.parameters.length > 0
