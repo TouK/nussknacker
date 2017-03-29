@@ -91,7 +91,7 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessW
     //FIXME: ladniej bez casta
     env.setRestartStrategy(process.exceptionHandler.asInstanceOf[FlinkEspExceptionHandler].restartStrategy)
     streamMetaData.parallelism.foreach(env.setParallelism)
-    env.enableCheckpointing(checkpointInterval.toMillis)
+    env.enableCheckpointing(streamMetaData.checkpointIntervalDuration.getOrElse(checkpointInterval).toMillis)
 
     diskStateBackend match {
       case Some(backend) if streamMetaData.splitStateToDisk.getOrElse(false) =>
