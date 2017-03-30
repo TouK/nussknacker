@@ -55,6 +55,12 @@ object EspErrorToHttp extends LazyLogging with Argonaut62Support {
         espErrorToHttp(err)
     }
 
+  def toResponseEither[T: EncodeJson](either: Either[EspError, T]): ToResponseMarshallable = either match {
+      case Right(t) => t
+      case Left(err) => espErrorToHttp(err)
+  }
+
+
   def toResponse(okStatus: StatusCode)(xor: Xor[EspError, Unit]): HttpResponse = xor match {
     case Xor.Left(error) => espErrorToHttp(error)
     case Xor.Right(_) => HttpResponse(status = okStatus)

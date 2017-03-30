@@ -22,7 +22,8 @@ class UserRightPanel extends Component {
     graphLayout: React.PropTypes.func.isRequired,
     exportGraph: React.PropTypes.func.isRequired,
     zoomIn: React.PropTypes.func.isRequired,
-    zoomOut: React.PropTypes.func.isRequired
+    zoomOut: React.PropTypes.func.isRequired,
+    migrationSettings: React.PropTypes.object.isRequired
 
   }
 
@@ -40,7 +41,9 @@ class UserRightPanel extends Component {
 
   render() {
     const saveDisabled = this.props.nothingToSave && this.props.processIsLatestVersion
-    const deployPossible = (this.props.processIsLatestVersion && ProcessUtils.hasNoErrors(this.props.processToDisplay) && this.props.nothingToSave)
+    const deployPossible = this.props.processIsLatestVersion && ProcessUtils.hasNoErrors(this.props.processToDisplay) && this.props.nothingToSave
+    const migratePossible = this.props.processIsLatestVersion && ProcessUtils.hasNoErrors(this.props.processToDisplay) && this.props.nothingToSave
+
     const config =
       [
         {
@@ -55,6 +58,8 @@ class UserRightPanel extends Component {
         panelName: "Process",
         buttons: [
           {name: "save" + (!saveDisabled ? "*" : ""), visible: this.props.loggedUser.canWrite, disabled: saveDisabled, onClick: this.save, icon: InlinedSvgs.buttonSave},
+          {name: "migrate", visible: this.props.loggedUser.canDeploy && this.props.migrationSettings.enabled, disabled: !migratePossible, onClick: this.migrate, icon: InlinedSvgs.buttonMigrate},
+
           {name: "import", visible: this.props.loggedUser.canWrite, disabled: false, onClick: this.importProcess, icon: InlinedSvgs.buttonImport, dropzone: true},
           {name: "export", onClick: this.exportProcess, icon: InlinedSvgs.buttonExport},
           {name: "exportPDF", disabled: !this.props.nothingToSave, onClick: this.exportProcessToPdf, icon: InlinedSvgs.buttonExport},
@@ -142,6 +147,12 @@ class UserRightPanel extends Component {
 
   save = () => {
     this.props.actions.toggleSaveProcessDialog(true)
+  }
+
+  migrate = () => {
+    this.props.actions.toggleConfirmDialog(true, DialogMessages.migrate(this.processId(), this.props.migrationSettings.targetEnvironmentId), () => {
+      HttpService.migrateProcess(this.processId())
+    })
   }
 
   deploy = () => {
@@ -247,6 +258,7 @@ function mapState(state) {
     processIsLatestVersion: _.get(fetchedProcessDetails, 'isLatestVersion', false),
     nodeToDisplay: state.graphReducer.nodeToDisplay,
     groupingState: state.graphReducer.groupingState,
+    migrationSettings: state.settings.migrationSettings
   };
 }
 

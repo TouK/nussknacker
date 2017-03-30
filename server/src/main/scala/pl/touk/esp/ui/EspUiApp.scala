@@ -4,10 +4,11 @@ import java.io.File
 
 import _root_.cors.CorsSupport
 import _root_.db.migration.DefaultJdbcProfile
-import akka.actor.{ActorSystem, Props}
+import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.stream.ActorMaterializer
+import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.esp.ui.api._
 import pl.touk.esp.ui.validation.ProcessValidation
@@ -15,6 +16,7 @@ import pl.touk.esp.ui.db.DatabaseInitializer
 import pl.touk.esp.ui.initialization.Initialization
 import pl.touk.esp.ui.process.{ProcessTypesForCategories, ProcessingTypeDeps}
 import pl.touk.esp.ui.process.deployment.ManagementActor
+import pl.touk.esp.ui.process.migrate.{HttpMigratorTargetEnvironmentConfig, HttpProcessMigrator}
 import pl.touk.esp.ui.process.repository.{DeployedProcessRepository, ProcessActivityRepository, ProcessRepository}
 import pl.touk.esp.ui.security.SimpleAuthenticator
 import slick.jdbc.JdbcBackend
@@ -46,6 +48,17 @@ object EspUiApp extends App with Directives with LazyLogging {
   val processActivityRepository = new ProcessActivityRepository(db, DefaultJdbcProfile.profile)
   val attachmentService = new ProcessAttachmentService(config.getString("attachmentsPath"), processActivityRepository)
 
+  def prepareMigrator(config: Config) = {
+    val key = "secondaryEnvironment"
+    import net.ceedubs.ficus.Ficus._
+    import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+
+    //TODO: maybe introduce feature toggles in one class?
+    if (config.hasPath(key)) Some(new HttpProcessMigrator(config.as[HttpMigratorTargetEnvironmentConfig](key), environment)) else None
+  }
+
+
+  val migrator = prepareMigrator(config)
 
   val authenticator = new SimpleAuthenticator(config.getString("usersFile"))
   val environment = config.getString("environment")
@@ -76,7 +89,8 @@ object EspUiApp extends App with Directives with LazyLogging {
                 new UserResources().route(user) ~
                 new SettingsResources(config).route(user) ~
                 new AppResources(buildInfo, processRepository, managementActor).route(user) ~
-                new TestInfoResources(managers, processRepository).route(user)
+                new TestInfoResources(managers, processRepository).route(user) ~
+                new MigrationResources(migrator, processRepository).route(user)
             } ~
               //nie chcemy api, zeby nie miec problemow z autentykacja...
               pathPrefixTest(!"api") {

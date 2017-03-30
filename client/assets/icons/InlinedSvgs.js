@@ -45,6 +45,8 @@ InlinedSvgs.buttonAlign = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 
 
 InlinedSvgs.buttonDeploy = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"> <defs> <style>.a { fill: #999; } .b { fill: none; } </style> </defs> <title>button-deploy</title> <g> <path class="a" d="M9.31,5.71l13.38,10v.77L9.31,26.29Z"/> <rect class="b" width="32" height="32"/> </g> </svg>`
 
+InlinedSvgs.buttonMigrate = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1792 1792"> <defs> <style>.a { fill: #999; } .b { fill: none; } </style> </defs> <title>button-migrate</title> <g> <path class="a" d="M979 960q0 13-10 23l-466 466q-10 10-23 10t-23-10l-50-50q-10-10-10-23t10-23l393-393-393-393q-10-10-10-23t10-23l50-50q10-10 23-10t23 10l466 466q10 10 10 23zm384 0q0 13-10 23l-466 466q-10 10-23 10t-23-10l-50-50q-10-10-10-23t10-23l393-393-393-393q-10-10-10-23t10-23l50-50q10-10 23-10t23 10l466 466q10 10 10 23z"/> <rect class="b" width="32" height="32"/> </g> </svg>`
+
 InlinedSvgs.buttonDownload = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"> <defs> <style>.a { fill: #999; } .b { fill: none; } </style> </defs> <title>button-download</title> <g> <path class="a" d="M14.92,16.15H5.08V18h9.85ZM11.23,2H8.77v8L5.69,6.31V10L10,14.92,14.31,10V6.31L11.23,10Z"/> <rect class="b" width="20" height="20"/> </g> </svg>`
 
 InlinedSvgs.buttonExport = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"> <defs> <style>.a { fill: #999; } .b { fill: none; } </style> </defs> <title>button-export</title> <g> <path class="a" d="M14.34,20.49V10.82L9.92,16.07V10.68L16,3.78l6.08,6.91v5.39l-4.42-5.25v9.67ZM4.4,17.73h8.84v2.21H6.61V26H25.39V19.94H18.76V17.73H27.6v10.5H4.4Zm8.84,4.42h5.53V23.8H13.24Z"/> <rect class="b" width="32" height="32"/> </g> </svg>`
