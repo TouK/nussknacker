@@ -6,6 +6,10 @@ class DialogMessages {
   deploy = (processId) => {
     return `Are you sure you want to deploy ${processId}?`
   }
+  migrate = (processId, environmentId) => {
+    return `Are you sure you want to migrate ${processId} to ${environmentId}?`
+  }
+
   stop = (processId) => {
     return `Are you sure you want to stop ${processId}?`
   }

@@ -68,6 +68,10 @@ export default {
     return promiseWrap($.get(appConfig.API_URL + '/settings/kibana'))
   },
 
+  fetchMigrationSettings() {
+    return promiseWrap($.get(appConfig.API_URL + '/migration/settings'))
+  },
+
   fetchProcessDefinitionData(processingType) {
     return promiseWrap($.get(`${appConfig.API_URL}/processDefinitionData/${processingType}`))
   },
@@ -246,6 +250,15 @@ export default {
         errorCallback(error)
       }
     });
+  },
+
+  migrateProcess(processId) {
+    return ajaxCall({
+      url: `${appConfig.API_URL}/migration/migrate/${processId}`,
+      type: 'POST',
+    })
+      .then(() => this.addInfo(`Process ${processId} was migrated`))
+      .catch((error) => this.addError(`Failed to migrate`, error));
   }
 
 

@@ -15,7 +15,7 @@ class EspUiAppSpec extends FlatSpec with BeforeAndAfterEach {
   override protected def beforeEach(): Unit = {
     super.beforeEach()
     processesDir = Files.createTempDirectory("processesJsons").toFile
-    val sampleProcessesDir = new File("develConf/jsons")
+    val sampleProcessesDir = new File(getClass.getResource("/jsons").getFile)
     FileUtils.copyDirectory(sampleProcessesDir, processesDir)
   }
 
