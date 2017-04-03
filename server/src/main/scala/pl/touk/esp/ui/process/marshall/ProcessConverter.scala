@@ -16,7 +16,7 @@ object ProcessConverter {
   def toDisplayableOrDie(canonicalJson: String, processingType: ProcessingType): DisplayableProcess = {
     processMarshaller.fromJson(canonicalJson) match {
       case Valid(canonical) => toDisplayable(canonical, processingType)
-      case Invalid(err) => throw new IllegalArgumentException(err.msg)
+      case Invalid(err) => throw new IllegalArgumentException(err.msg + "\n" + canonicalJson)
     }
   }
 
