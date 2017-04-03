@@ -14,6 +14,7 @@ import pl.touk.esp.engine.api.MetaData
 import pl.touk.esp.engine.api.exception.{EspExceptionInfo, NonTransientException}
 import pl.touk.esp.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionHandler}
 import pl.touk.esp.engine.flink.util.exception.DefaultEspExceptionHandler.{DefaultNonTransientExceptionExtractor, DefaultTransientExceptionExtractor}
+import pl.touk.esp.engine.util.ReflectUtils
 
 import scala.concurrent.duration._
 
@@ -91,8 +92,9 @@ trait ConsumingNonTransientExceptions extends LazyLogging {
       case nonTransientExceptionExtractor(nonTransient) =>
         consumer.consume(EspExceptionInfo(exceptionInfo.nodeId, nonTransient, exceptionInfo.context))
       case other =>
-        val nonTransient = NonTransientException(input = other.getMessage, message = "Unknown exception", cause = other)
-        logger.warn(s"Unknown exception ${other.getMessage} for ${exceptionInfo.context}", other)
+        val exceptionDetails = s"${ReflectUtils.fixedClassSimpleNameWithoutParentModule(other.getClass)}:${other.getMessage}"
+        val nonTransient = NonTransientException(input = exceptionDetails, message = "Unknown exception", cause = other)
+        logger.warn(s"Unknown exception $exceptionDetails for ${exceptionInfo.context}", other)
         consumer.consume(EspExceptionInfo(exceptionInfo.nodeId, nonTransient, exceptionInfo.context))
     }
   }
