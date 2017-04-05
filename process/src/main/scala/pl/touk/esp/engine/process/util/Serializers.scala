@@ -10,7 +10,6 @@ import shapeless._
 import shapeless.ops.hlist.Mapper._
 
 import scala.reflect.ClassTag
-import scala.util
 import scala.util.{Failure, Try}
 
 object Serializers extends LazyLogging {
@@ -19,13 +18,20 @@ object Serializers extends LazyLogging {
 
     object registers extends Poly1 {
       implicit def caseSerializer[T,S](implicit ev0: ClassTag[T], ev1: S <:< Serializer[T] with Serializable) = at[S] { s =>
-        val klass = implicitly[ClassTag[T]].runtimeClass
+        val klass = implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]]
         val serializer = ev1(s)
-        env.getConfig.getRegisteredTypesWithKryoSerializers.put(klass, new ExecutionConfig.SerializableSerializer(serializer))
-        env.getConfig.getDefaultKryoSerializers.put(klass, new ExecutionConfig.SerializableSerializer(serializer))
+        registerSerializer(env)(klass, serializer)
       }
     }
-    (CaseClassSerializer :: SpelHack :: HNil).map(registers)
+    (CaseClassSerializer :: SpelHack :: HNil ).map(registers)
+
+    TimeSerializers.addDefaultSerializers(env)
+
+  }
+
+  def registerSerializer[T](env: StreamExecutionEnvironment)(klass: Class[T], serializer: Serializer[T] with Serializable) = {
+    env.getConfig.getRegisteredTypesWithKryoSerializers.put(klass, new ExecutionConfig.SerializableSerializer(serializer))
+    env.getConfig.getDefaultKryoSerializers.put(klass, new ExecutionConfig.SerializableSerializer(serializer))
   }
 
   //to nadal nie jest jakies super, ale od czegos trzeba zaczac...
