@@ -4,17 +4,12 @@ import argonaut.Argonaut._
 import argonaut.ArgonautShapeless._
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.state.{ValueState, ValueStateDescriptor}
-import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.operators.{AbstractStreamOperator, TwoInputStreamOperator}
 import org.apache.flink.streaming.api.scala.{DataStream, _}
-import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer09
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
-import org.apache.flink.streaming.util.serialization.DeserializationSchema
 import pl.touk.esp.engine.api.{MethodToInvoke, ParamName, ProcessSignalSender, _}
-import pl.touk.esp.engine.flink.util.metrics.InstantRateMeter
 import pl.touk.esp.engine.flink.util.signal.KafkaSignalStreamConnector
-import pl.touk.esp.engine.flink.util.source.EspDeserializationSchema
-import pl.touk.esp.engine.kafka.{EspSimpleKafkaProducer, KafkaConfig, KafkaEspUtils}
+import pl.touk.esp.engine.kafka.{EspSimpleKafkaProducer, KafkaConfig}
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -42,7 +37,7 @@ object SampleSignalHandlingTransformer {
         logger.info(s"Signal received: $signal")
         handle(signal)
       } else {
-        logger.debug(s"Signal for other process received, ignoring. Current process ${metaData.id}, signal ${signal}")
+        logger.debug(s"Signal for other process received, ignoring. Current process ${metaData.id}, signal $signal")
       }
     }
   }

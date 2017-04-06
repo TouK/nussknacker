@@ -1,17 +1,17 @@
 package pl.touk.esp.engine.util.exception
 
 import pl.touk.esp.engine.api.exception.{EspExceptionConsumer, EspExceptionInfo, NonTransientException}
-import pl.touk.esp.engine.util.metrics.GenericInstantRateMeter
+import pl.touk.esp.engine.util.metrics.RateMeter
 
 trait GenericRateMeterExceptionConsumer extends EspExceptionConsumer {
 
   def underlying: EspExceptionConsumer
 
-  def instantRateMeter(name: String*): GenericInstantRateMeter
+  def instantRateMeter(name: String*): RateMeter
 
-  private var allErrorsMeter: GenericInstantRateMeter = _
+  private var allErrorsMeter: RateMeter = _
 
-  private val nodeErrorsMeterMap = collection.concurrent.TrieMap[String, GenericInstantRateMeter]()
+  private val nodeErrorsMeterMap = collection.concurrent.TrieMap[String, RateMeter]()
 
   def open(): Unit = {
     allErrorsMeter = instantRateMeter("error", "instantRate")
