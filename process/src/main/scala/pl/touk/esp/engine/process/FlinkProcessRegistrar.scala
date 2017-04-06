@@ -40,13 +40,15 @@ import pl.touk.esp.engine.definition.{CustomNodeInvoker, ProcessDefinitionExtrac
 import pl.touk.esp.engine.flink.api.exception.FlinkEspExceptionHandler
 import pl.touk.esp.engine.flink.api.process.{FlinkSink, FlinkSource}
 import pl.touk.esp.engine.flink.util.ContextInitializingFunction
-import pl.touk.esp.engine.flink.util.metrics.InstantRateMeter
-import pl.touk.esp.engine.graph.{EspProcess, node}
+import pl.touk.esp.engine.graph.node.Sink
+import pl.touk.esp.engine.flink.util.metrics.InstantRateMeterWithCount
+import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.process.FlinkProcessRegistrar._
 import pl.touk.esp.engine.process.util.{MetaDataExtractor, Serializers}
 import pl.touk.esp.engine.splittedgraph.end.{DeadEnd, End, NormalEnd}
 import pl.touk.esp.engine.splittedgraph.splittednode
 import pl.touk.esp.engine.splittedgraph.splittednode.{NextNode, PartRef, SplittedNode}
+import pl.touk.esp.engine.util.metrics.RateMeter
 import pl.touk.esp.engine.util.SynchronousExecutionContext
 
 import scala.collection.JavaConversions._
@@ -287,7 +289,7 @@ object FlinkProcessRegistrar {
   }
 
   class SinkInterpretationFunction(compiledProcessWithDepsProvider: () => CompiledProcessWithDeps,
-                                   sink: splittednode.SplittedNode[node.Sink]) extends RichFlatMapFunction[InterpretationResult, InterpretationResult] {
+                                   sink: splittednode.SplittedNode[Sink]) extends RichFlatMapFunction[InterpretationResult, InterpretationResult] {
 
     private lazy implicit val ec = SynchronousExecutionContext.ctx
     private lazy val compiledProcessWithDeps = compiledProcessWithDepsProvider()
@@ -327,14 +329,12 @@ object FlinkProcessRegistrar {
   }
 
   class RateMeterFunction[T](groupId: String) extends RichMapFunction[T, T] {
-    lazy val instantRateMeter = new InstantRateMeter
+    private var instantRateMeter : RateMeter = _
 
     override def open(parameters: Configuration): Unit = {
       super.open(parameters)
 
-      getRuntimeContext.getMetricGroup
-        .addGroup(groupId)
-        .gauge[Double, InstantRateMeter]("instantRate", instantRateMeter)
+      instantRateMeter = InstantRateMeterWithCount.register(getRuntimeContext.getMetricGroup.addGroup(groupId))
     }
 
     override def map(value: T) = {
@@ -398,7 +398,7 @@ object FlinkProcessRegistrar {
   class EndRateMeterFunction(ends: Seq[End]) extends AbstractRichFunction
     with MapFunction[InterpretationResult, InterpretationResult] with SinkFunction[InterpretationResult] {
 
-    @transient private var meterByReference: Map[PartReference, InstantRateMeter] = _
+    @transient private var meterByReference: Map[PartReference, RateMeter] = _
 
     override def open(parameters: Configuration): Unit = {
       super.open(parameters)
@@ -411,9 +411,7 @@ object FlinkProcessRegistrar {
           case normal: NormalEnd => parentGroupForNormalEnds
           case dead: DeadEnd => parentGroupForDeadEnds
         }
-        baseGroup
-          .addGroup(end.nodeId)
-          .gauge[Double, InstantRateMeter]("instantRate", new InstantRateMeter)
+        InstantRateMeterWithCount.register(baseGroup.addGroup(end.nodeId))
       }
 
       meterByReference = ends.map { end =>
@@ -422,7 +420,7 @@ object FlinkProcessRegistrar {
           case DeadEnd(nodeId) =>  DeadEndReference(nodeId)
         }
         reference -> registerRateMeter(end)
-      }.toMap[PartReference, InstantRateMeter]
+      }.toMap[PartReference, RateMeter]
     }
 
     override def map(value: InterpretationResult) = {

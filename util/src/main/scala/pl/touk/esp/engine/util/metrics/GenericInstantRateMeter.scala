@@ -3,8 +3,12 @@ package pl.touk.esp.engine.util.metrics
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.LongAdder
 
+trait RateMeter {
+  def mark(): Unit
+}
+
 //To jest bardzo slaba implementacja, ale na nasze potrzeby moze wystarczy...
-trait GenericInstantRateMeter {
+trait GenericInstantRateMeter extends RateMeter {
 
   val counter = new LongAdder
   private val NANOS_IN_SECOND = TimeUnit.SECONDS.toNanos(1)
@@ -13,7 +17,7 @@ trait GenericInstantRateMeter {
 
   var lastValue = 0d
 
-  def mark(): Unit = {
+  override def mark(): Unit = {
     counter.add(1)
   }
 
