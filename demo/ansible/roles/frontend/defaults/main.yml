@@ -1,3 +1,2 @@
 ---
-flink_version: 1.1.4
 flink_dir: /home/touk/flink-{{flink_version}}

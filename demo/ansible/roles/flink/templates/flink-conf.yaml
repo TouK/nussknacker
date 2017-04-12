@@ -163,6 +163,7 @@ metrics.reporters: graphite_reporter
 metrics.reporter.graphite_reporter.class: org.apache.flink.metrics.graphite.GraphiteReporter
 metrics.reporter.graphite_reporter.host: {{graphite_host}}
 metrics.reporter.graphite_reporter.port: {{graphite_port}}
+metrics.reporter.graphite_reporter.protocol: UDP
 
 metrics.scope.jm: {{environment_id}}.<host>.jobmanagerGlobal
 metrics.scope.jm.job: {{environment_id}}.<host>.jobmanagerJob.<job_name>
