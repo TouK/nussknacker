@@ -12,6 +12,8 @@ influxDataDir=/tmp/touk/influxdb
 grafana_port=8082
 
 [all:vars]
+flink_host=esp-demo
+flink_version=1.2.0
 environment_id=touk
 taskmanager_heap_mb=1000
 taskmanager_slots=20
@@ -19,7 +21,6 @@ jobmanager_heap_mb=500
 
 graphite_host=esp-demo
 graphite_port=2003
-grafana_hosts=esp-demo
 grafana_domain=esp-demo.touk
 #to jest teraz niestety na esp-demo-grafana a nie esp-demo bo przy tej samej domenie jest konflikt z powodu basic auth?
 grafana_url=https://esp-demo-grafana.touk.pl/grafana

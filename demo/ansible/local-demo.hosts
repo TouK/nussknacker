@@ -1,0 +1,30 @@
+#do odpalenia ansible'a lokalnie potrzeba stworzyc usera touk (sudo adduser touk) i zainstalowac
+#(sudo apt-get install openssh-server) zeby moc sie sshowac do touk@localhost - troche to glupie ale tak jest duzo prosciej
+[server]
+localhost
+
+[all]
+localhost
+
+[grafana]
+localhost
+
+[grafana:vars]
+influxDataDir=/tmp/touk/influxdb
+grafana_port=8082
+
+[all:vars]
+flink_host=localhost
+flink_version=1.2.0
+environment_id=touk
+taskmanager_heap_mb=1000
+taskmanager_slots=20
+jobmanager_heap_mb=500
+
+graphite_host=localhost
+graphite_port=2003
+grafana_domain=localhost
+grafana_url=http://localhost:8082
+kibana_url=http://localhost:8084
+
+taskmanagerTmpDirs=/tmp/flinkData

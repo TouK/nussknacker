@@ -12,13 +12,17 @@ import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceCont
 import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.windowing.time.Time
-import pl.touk.esp.engine.api.{Displayable, MetaData, ParamName, WithFields}
+import pl.touk.esp.engine.api.{Displayable, DisplayableAsJson, MetaData, MethodToInvoke, ParamName, Service, WithFields}
 import pl.touk.esp.engine.api.exception.{EspExceptionInfo, ExceptionHandlerFactory}
-import pl.touk.esp.engine.api.process.{ProcessConfigCreator, SinkFactory, WithCategories}
+import pl.touk.esp.engine.api.process.{ProcessConfigCreator, SinkFactory, TestDataGenerator, WithCategories}
 import pl.touk.esp.engine.api.test.NewLineSplittedTestDataParser
 import pl.touk.esp.engine.flink.api.exception.FlinkEspExceptionHandler
 import pl.touk.esp.engine.flink.api.process.{FlinkSource, FlinkSourceFactory}
 import pl.touk.esp.engine.flink.util.exception.VerboselyLoggingExceptionHandler
+import pl.touk.esp.engine.flink.util.service.TimeMeasuringService
+
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Random, Try}
 
 class DemoProcessConfigCreator extends ProcessConfigCreator {
 
@@ -34,20 +38,35 @@ class DemoProcessConfigCreator extends ProcessConfigCreator {
 
   override def customStreamTransformers(config: Config) = Map()
 
-  override def services(config: Config) = Map()
-
-  override def sourceFactories(config: Config) = Map(
-    "PageVisits" -> recommendation(new RunningSourceFactory[PageVisit]((count: Int) => PageVisit(s"${count % 20}", LocalDateTime.now(),
-      s"/products/product${count % 14}", s"10.1.3.${count % 15}"), _.date.toInstant(ZoneOffset.UTC).toEpochMilli,
-      line => PageVisit(line(0), LocalDateTime.parse(line(1)), line(2), line(3)))),
-    "Transactions" -> fraud(new RunningSourceFactory[Transaction]((count: Int) => Transaction(s"${count % 20}", LocalDateTime.now(),
-      count % 34, if (count % 3 == 1) "PREMIUM" else "NORMAL"), _.date.toInstant(ZoneOffset.UTC).toEpochMilli,
-      line => Transaction(line(0), LocalDateTime.parse(line(1)), line(2).toInt, line(3))))
+  override def services(config: Config) = Map(
+    "CustomerDataService" -> all(new CustomerDataService),
+    "TariffService"  -> all(new TariffService)
   )
+
+  override def sourceFactories(config: Config) = {
+    Map(
+      "PageVisits" -> recommendation(new RunningSourceFactory[PageVisit]((count: Int) => PageVisit(s"${count % 20}", LocalDateTime.now(),
+        s"/products/product${count % 14}", s"10.1.3.${count % 15}"), _.date.toInstant(ZoneOffset.UTC).toEpochMilli,
+        line => PageVisit(line(0), LocalDateTime.parse(line(1)), line(2), line(3)))),
+      "Transactions" -> fraud(new RunningSourceFactory[Transaction]((count: Int) => Transaction(s"${count % 20}", LocalDateTime.now(),
+        count % 34, if (count % 3 == 1) "PREMIUM" else "NORMAL"), _.date.toInstant(ZoneOffset.UTC).toEpochMilli,
+        line => Transaction(line(0), LocalDateTime.parse(line(1)), line(2).toInt, line(3)))),
+      "Notifications" -> fraud(new RunningSourceFactory[Notification]((count: Int) =>
+        Notification(
+          msisdn = s"4869312312${count % 9}",
+          notificationType = count % 4,
+          finalCharge = BigDecimal(count % 5) + BigDecimal((count % 3) / 10d),
+          tariffId = count % 5 + 1000,
+          timestamp = System.currentTimeMillis()
+        ), _.timestamp,
+        line => Notification(line(0), line(1).toInt, BigDecimal.apply(line(2)), line(3).toLong, line(4).toLong)))
+    )
+  }
 
   override def sinkFactories(config: Config) = Map(
     "ReportFraud" -> fraud(SinkFactory.noParam(EmptySink)),
-    "Recommend" -> recommendation(SinkFactory.noParam(EmptySink))
+    "Recommend" -> recommendation(SinkFactory.noParam(EmptySink)),
+    "KafkaSink" -> fraud(SinkFactory.noParam(EmptySink))
   )
 
   override def listeners(config: Config) = List()
@@ -71,6 +90,17 @@ class DemoProcessConfigCreator extends ProcessConfigCreator {
 
   }
 
+  case class Notification(msisdn: String, notificationType: Int, finalCharge: BigDecimal, tariffId: Long, timestamp: Long) extends WithFields {
+    override def fields = List(msisdn, notificationType, finalCharge, tariffId, timestamp)
+
+    override def display: Json = Argonaut.jObjectFields(
+      "msisdn" -> Argonaut.jString(msisdn),
+      "notificationType" -> Argonaut.jNumber(notificationType),
+      "finalCharge" -> Argonaut.jNumber(finalCharge),
+      "tariffId" -> Argonaut.jNumber(tariffId),
+      "timestamp" -> Argonaut.jNumber(timestamp)
+    )
+  }
 
   case class Transaction(clientId: String, date: LocalDateTime, amount: Int, `type`: String) extends WithFields {
     override def fields = List(clientId, date, amount, `type`)
@@ -94,14 +124,14 @@ class DemoProcessConfigCreator extends ProcessConfigCreator {
 
   case class Client(clientId: String, age: Long, isVip: Boolean, country: String)
 
-  class RunningSourceFactory[T:TypeInformation](generate: Int => T, timestamp: T => Long, parser: List[String] => T) extends FlinkSourceFactory[T] {
+  class RunningSourceFactory[T <: WithFields :TypeInformation](generate: Int => T, timestamp: T => Long, parser: List[String] => T) extends FlinkSourceFactory[T] {
 
     override def testDataParser = Some(new NewLineSplittedTestDataParser[T] {
-      override def parseElement(testElement: String) = parser(testElement.split("|").toList)
+      override def parseElement(testElement: String) = parser(testElement.split('|').toList)
     })
 
     def create(@ParamName("ratePerMinute") rate: String /*tutaj z jakiegos powodu musi byc string?*/) = {
-      new FlinkSource[T] with Serializable {
+      new FlinkSource[T] with Serializable with TestDataGenerator {
 
         override def typeInformation = implicitly[TypeInformation[T]]
 
@@ -125,8 +155,49 @@ class DemoProcessConfigCreator extends ProcessConfigCreator {
         override def timestampAssigner = Some(new BoundedOutOfOrdernessTimestampExtractor[T](Time.minutes(10)) {
           override def extractTimestamp(element: T): Long = timestamp(element)
         })
+
+        override def generateTestData(size: Int): Array[Byte] = {
+          (1 to size).map(generate).map(_.originalDisplay.getOrElse("")).mkString("\n").getBytes()
+        }
       }
     }
 
   }
+
+  class TariffService extends Service with TimeMeasuringService with Serializable {
+
+    override protected def serviceName: String = "tariffService"
+
+    @MethodToInvoke
+    def invoke(@ParamName("tariffId") tariffId: Long)(implicit ec: ExecutionContext) = {
+      measuring {
+        val tariffs = Map(
+          1000L -> "family tariff",
+          1001L -> "company tariff",
+          1002L -> "promotion tariff",
+          1003L -> "individual tariff",
+          1004L -> "business tariff"
+        )
+
+        val tariff = tariffs.getOrElse(tariffId, "unknown")
+        Thread.sleep(Random.nextInt(50))
+        Future.successful(tariff)
+      }
+    }
+  }
+
+  class CustomerDataService extends Service with TimeMeasuringService with Serializable {
+    override protected def serviceName: String = "customerDataService"
+
+    @MethodToInvoke
+    def invoke(@ParamName("msisdn") msisdn: String)(implicit ec: ExecutionContext): Future[CustomerData] = {
+      measuring {
+        Thread.sleep(Random.nextInt(100))
+        Future.successful(CustomerData(msisdn, "8" + msisdn))
+      }
+    }
+  }
+
+  import argonaut.ArgonautShapeless._
+  case class CustomerData(msisdn: String, pesel: String) extends DisplayableAsJson[CustomerData]
 }
