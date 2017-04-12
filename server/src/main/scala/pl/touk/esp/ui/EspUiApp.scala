@@ -48,20 +48,10 @@ object EspUiApp extends App with Directives with LazyLogging {
   val processActivityRepository = new ProcessActivityRepository(db, DefaultJdbcProfile.profile)
   val attachmentService = new ProcessAttachmentService(config.getString("attachmentsPath"), processActivityRepository)
 
-  def prepareMigrator(config: Config) = {
-    val key = "secondaryEnvironment"
-    import net.ceedubs.ficus.Ficus._
-    import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-
-    //TODO: maybe introduce feature toggles in one class?
-    if (config.hasPath(key)) Some(new HttpProcessMigrator(config.as[HttpMigratorTargetEnvironmentConfig](key), environment)) else None
-  }
-
-
-  val migrator = prepareMigrator(config)
+  val environment = config.getString("environment")
+  val migrator = prepareMigrator(config, environment)
 
   val authenticator = new SimpleAuthenticator(config.getString("usersFile"))
-  val environment = config.getString("environment")
 
   val isDevelopmentMode = config.hasPath("developmentMode") && config.getBoolean("developmentMode")
 
@@ -72,6 +62,15 @@ object EspUiApp extends App with Directives with LazyLogging {
   val managementActor = ManagementActor(environment, managers, processRepository, deploymentProcessRepository)
 
   val typesForCategories = new ProcessTypesForCategories(config)
+
+  def prepareMigrator(config: Config, environment: String) = {
+    val key = "secondaryEnvironment"
+    import net.ceedubs.ficus.Ficus._
+    import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+
+    //TODO: maybe introduce feature toggles in one class?
+    if (config.hasPath(key)) Some(new HttpProcessMigrator(config.as[HttpMigratorTargetEnvironmentConfig](key), environment)) else None
+  }
 
   def initHttp() = {
     val route: Route = {
