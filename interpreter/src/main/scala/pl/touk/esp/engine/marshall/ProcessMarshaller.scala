@@ -9,8 +9,8 @@ import pl.touk.esp.engine.api.{MetaData, TypeSpecificData, UserDefinedProcessAdd
 import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
 import pl.touk.esp.engine.canonicalgraph.canonicalnode._
 import pl.touk.esp.engine.canonize.ProcessCanonizer
-import pl.touk.esp.engine.graph.{EspProcess, node}
-import pl.touk.esp.engine.graph.node.{Filter, NodeData, Split, Switch}
+import pl.touk.esp.engine.graph.{EspProcess, SubprocessDefinition, node}
+import pl.touk.esp.engine.graph.node.{Case => _, FilterNode => _, SplitNode => _, SwitchNode => _, _}
 import pl.touk.esp.engine.marshall.ProcessUnmarshallError._
 
 class ProcessMarshaller(implicit
@@ -68,6 +68,19 @@ class ProcessMarshaller(implicit
       nexts <- DecodeJson(j => DecodeJson.of[List[List[CanonicalNode]]].tryDecode(j --\  "nexts"))
     } yield SplitNode(data, nexts)
 
+  private lazy val subprocessEncode: EncodeJson[Subprocess] =
+    EncodeJson[Subprocess](subprocess =>
+      EncodeJson.of[NodeData].encode(subprocess.data).withObject(_
+        :+ "outputs" -> EncodeJson.of[Map[String, List[CanonicalNode]]].encode(subprocess.outputs)
+      )
+    )
+
+  private lazy val subprocessDecode: DecodeJson[CanonicalNode] =
+    for {
+      data <- DecodeJson.of[SubprocessInput]
+      nexts <- DecodeJson(j => DecodeJson.of[Map[String, List[CanonicalNode]]].tryDecode(j --\  "outputs"))
+    } yield Subprocess(data, nexts)
+
 
   private implicit lazy val nodeEncode: EncodeJson[CanonicalNode] =
     EncodeJson[CanonicalNode] {
@@ -75,12 +88,13 @@ class ProcessMarshaller(implicit
       case filter: FilterNode => filterEncode(filter)
       case switch: SwitchNode => switchEncode(switch)
       case split: SplitNode => splitEncode(split)
+      case subprocess: Subprocess => subprocessEncode(subprocess)
 
     }
 
   //order is important here! flatNodeDecode has to be the last
   private implicit lazy val nodeDecode: DecodeJson[CanonicalNode] =
-  filterDecode ||| switchDecode ||| splitDecode||| flatNodeDecode
+  filterDecode ||| switchDecode ||| splitDecode||| subprocessDecode ||| flatNodeDecode
 
   // Without this nested lists were serialized to colon(head, tail) instead of json array
   private implicit lazy val listOfCanonicalNodeEncoder: EncodeJson[List[CanonicalNode]] = ListEncodeJson[CanonicalNode]
@@ -97,6 +111,14 @@ class ProcessMarshaller(implicit
 
   def fromJson(json: String): Validated[ProcessJsonDecodeError, CanonicalProcess] = {
     Validated.fromEither(json.decodeEither[CanonicalProcess]).leftMap(ProcessJsonDecodeError)
+  }
+
+  def toJsonSubprocess(canonical: SubprocessDefinition, prettyParams: PrettyParams): String = {
+    canonical.asJson.pretty(prettyParams.copy(dropNullKeys = true, preserveOrder = true))
+  }
+
+  def fromJsonSubprocess(json: String): Validated[ProcessJsonDecodeError, SubprocessDefinition] = {
+    Validated.fromEither(json.decodeEither[SubprocessDefinition]).leftMap(ProcessJsonDecodeError)
   }
 
 }

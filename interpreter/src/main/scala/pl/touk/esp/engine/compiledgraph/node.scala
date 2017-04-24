@@ -33,6 +33,10 @@ object node {
 
   case class CustomNode(id:String, params:List[Parameter],  next: Next) extends Node
 
+  case class SubprocessStart(id: String, params: List[Parameter], next: Next) extends Node
+
+  case class SubprocessEnd(id: String, next: Next) extends Node
+
   case class SplitNode(id: String) extends Node
 
   sealed trait Next {

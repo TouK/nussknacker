@@ -1,11 +1,13 @@
 package pl.touk.esp.engine.compile
 
 import cats.data.Validated.{Invalid, Valid}
-import cats.data._
-import pl.touk.esp.engine.compile.ProcessCompilationError.{NodeId, OverwrittenVariable}
+import cats.data.{ValidatedNel, _}
+import pl.touk.esp.engine.compile.ProcessCompilationError.{NoParentContext, NodeId, OverwrittenVariable}
 import pl.touk.esp.engine.definition.DefinitionExtractor.{ClazzRef, PlainClazzDefinition}
 
-case class ValidationContext(variables: Map[String, ClazzRef] = Map.empty, typesInformation: List[PlainClazzDefinition] = List.empty) {
+case class ValidationContext(variables: Map[String, ClazzRef] = Map.empty,
+                             typesInformation: List[PlainClazzDefinition] = List.empty,
+                             parent: Option[ValidationContext] = None) {
 
   def apply(name: String): ClazzRef =
     get(name).getOrElse(throw new RuntimeException(s"Unknown variable: $name"))
@@ -20,6 +22,14 @@ case class ValidationContext(variables: Map[String, ClazzRef] = Map.empty, types
 
   def getTypeInfo(clazzRef: ClazzRef): PlainClazzDefinition = {
     typesInformation.find(_.clazzName == clazzRef).getOrElse(throw new RuntimeException(s"Unknown clazz ref: $clazzRef"))
+  }
+
+  def pushNewContext() : ValidationContext
+    = ValidationContext(Map(), typesInformation, Some(this))
+
+  def popContext(implicit nodeId: NodeId) : ValidatedNel[PartSubGraphCompilationError, ValidationContext] = parent match {
+    case Some(ctx) => Valid(ctx)
+    case None => Invalid(NonEmptyList.of(NoParentContext(nodeId.id)))
   }
 
 }

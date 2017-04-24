@@ -7,6 +7,7 @@ import pl.touk.esp.engine.graph.param
 import pl.touk.esp.engine.graph.service.ServiceRef
 import pl.touk.esp.engine.graph.sink.SinkRef
 import pl.touk.esp.engine.graph.source.SourceRef
+import pl.touk.esp.engine.graph.subprocess.SubprocessRef
 import pl.touk.esp.engine.graph.variable._
 
 trait GraphBuilder[R] {
@@ -15,14 +16,23 @@ trait GraphBuilder[R] {
 
   protected def build(inner: GraphBuilder.Creator[R]): GraphBuilder[R]
 
-  def buildVariable(id: String, varName: String, fields: (String, Expression)*) =
+  def buildVariable(id: String, varName: String, fields: (String, Expression)*): GraphBuilder[R] =
     build(node => creator(OneOutputSubsequentNode(VariableBuilder(id, varName, fields.map(Field.tupled).toList), node)))
 
-  def buildSimpleVariable(id: String, varName: String, value: Expression) =
+  def buildSimpleVariable(id: String, varName: String, value: Expression): GraphBuilder[R] =
     build(node => creator(OneOutputSubsequentNode(Variable(id, varName, value), node)))
 
   def processor(id: String, svcId: String, params: (String, Expression)*): GraphBuilder[R] =
     build(node => creator(OneOutputSubsequentNode(Processor(id, ServiceRef(svcId, params.map(Parameter.tupled).toList)), node)))
+
+  def subprocessOneOut(id: String, subProcessId: String, output: String, params: (String, Expression)*): GraphBuilder[R] =
+    build(node => creator(SubprocessNode(SubprocessInput(id, SubprocessRef(subProcessId, params.map(Parameter.tupled).toList)), Map(output -> node))))
+
+  def subprocess(id: String, subProcessId: String, params: List[(String, Expression)], outputs: Map[String, SubsequentNode]): R =
+    creator(SubprocessNode(SubprocessInput(id, SubprocessRef(subProcessId, params.map(Parameter.tupled))), outputs))
+
+  def subprocessEnd(id: String, subProcessId: String, params: (String, Expression)*): R =
+    creator(SubprocessNode(SubprocessInput(id, SubprocessRef(subProcessId, params.map(Parameter.tupled).toList)), Map()))
 
   def enricher(id: String, output: String, svcId: String, params: (String, Expression)*): GraphBuilder[R] =
     build(node => creator(OneOutputSubsequentNode(Enricher(id, ServiceRef(svcId, params.map(Parameter.tupled).toList), output), node)))

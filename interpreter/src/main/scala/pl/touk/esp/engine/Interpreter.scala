@@ -3,7 +3,7 @@ package pl.touk.esp.engine
 import pl.touk.esp.engine.Interpreter._
 import pl.touk.esp.engine.api.InterpreterMode._
 import pl.touk.esp.engine.api._
-import pl.touk.esp.engine.api.exception.{EspExceptionHandler, EspExceptionInfo}
+import pl.touk.esp.engine.api.exception.EspExceptionInfo
 import pl.touk.esp.engine.api.lazyy.{LazyContext, LazyValuesProvider}
 import pl.touk.esp.engine.api.test.InvocationCollectors.NodeContext
 import pl.touk.esp.engine.compiledgraph.expression._
@@ -66,6 +66,16 @@ class Interpreter private(services: Map[String, ServiceInvoker],
       case (VariableBuilder(_, varName, Left(expression), next), Traverse) =>
         val valueWithModifiedContext = evaluate[Any](expression, varName, ctx)
         interpretNext(next, ctx.withVariable(varName, valueWithModifiedContext.value))
+      case (SubprocessStart(_, params, next), Traverse) =>
+
+        val (newCtx, vars) = params.foldLeft((ctx, Map[String,Any]())){ case ((newCtx, vars), param) =>
+          val valueWithCtx = evaluate[Any](param.expression, param.name, newCtx)
+          (valueWithCtx.context, vars + (param.name -> valueWithCtx.value))
+        }
+        interpretNext(next, newCtx.pushNewContext(vars))
+      case (SubprocessEnd(id, next), Traverse) =>
+        interpretNext(next, ctx.popContext)
+
       case (Processor(_, ref, next, false), Traverse) =>
         invoke(ref, ctx).flatMap {
           case ValueWithContext(_, newCtx) => interpretNext(next, newCtx)

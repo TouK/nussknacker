@@ -5,6 +5,7 @@ import sink.SinkRef
 import pl.touk.esp.engine.graph.expression.Expression
 import pl.touk.esp.engine.graph.service.ServiceRef
 import pl.touk.esp.engine.graph.source.SourceRef
+import pl.touk.esp.engine.graph.subprocess.SubprocessRef
 import pl.touk.esp.engine.graph.variable.Field
 
 object node {
@@ -25,6 +26,9 @@ object node {
   case class OneOutputSubsequentNode(data: OneOutputSubsequentNodeData, next: SubsequentNode) extends OneOutputNode with SubsequentNode
 
   case class FilterNode(data: Filter, nextTrue: SubsequentNode, nextFalse: Option[SubsequentNode] = None) extends SubsequentNode
+
+  //this should never occur in process to be run (unresolved)
+  case class SubprocessNode(data: SubprocessInput, nexts: Map[String, SubsequentNode]) extends SubsequentNode
 
   case class SwitchNode(data: Switch, nexts: List[Case], defaultNext: Option[SubsequentNode] = None) extends SubsequentNode
 
@@ -70,5 +74,18 @@ object node {
 
   case class Sink(id: String, ref: SinkRef, endResult: Option[Expression] = None, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends EndingNodeData
 
+  case class SubprocessInput(id: String, ref: SubprocessRef,
+                             additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends OneOutputSubsequentNodeData with EndingNodeData
 
+  case class SubprocessOutput(id: String, outputName: String, additionalFields: Option[UserDefinedAdditionalNodeFields] = None)
+    extends OneOutputSubsequentNodeData
+
+  case class SubprocessOutputDefinition(id: String, outputName: String, additionalFields: Option[UserDefinedAdditionalNodeFields] = None)
+    extends EndingNodeData
+
+  //it has to be here, otherwise it won't compile...
+  def prefixNodeId[T<:NodeData](prefix: List[String], nodeData: T) : T = {
+    import pl.touk.esp.engine.util.copySyntax._
+    nodeData.asInstanceOf[NodeData].copy(id = (prefix :+ nodeData.id).mkString("-")).asInstanceOf[T]
+  }
 }

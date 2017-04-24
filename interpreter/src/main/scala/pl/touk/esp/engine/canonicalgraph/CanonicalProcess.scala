@@ -4,7 +4,7 @@ import pl.touk.esp.engine.api.MetaData
 import pl.touk.esp.engine.canonicalgraph.canonicalnode.CanonicalNode
 import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.esp.engine.graph.expression.Expression
-import pl.touk.esp.engine.graph.node.{Split, Filter, NodeData, Switch}
+import pl.touk.esp.engine.graph.node._
 
 sealed trait CanonicalTreeNode
 case class CanonicalProcess(metaData: MetaData,
@@ -27,5 +27,8 @@ object canonicalnode {
   case class SplitNode(data: Split, nexts: List[List[CanonicalNode]]) extends CanonicalNode
 
   case class Case(expression: Expression, nodes: List[CanonicalNode]) extends CanonicalTreeNode
+
+  case class Subprocess(data: SubprocessInput,
+                        outputs: Map[String, List[CanonicalNode]]) extends CanonicalNode
 
 }

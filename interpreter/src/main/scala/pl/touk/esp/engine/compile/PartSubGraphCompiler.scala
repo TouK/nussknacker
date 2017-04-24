@@ -10,32 +10,20 @@ import pl.touk.esp.engine.compile.ProcessCompilationError._
 import pl.touk.esp.engine.compile.dumb._
 import pl.touk.esp.engine.compiledgraph.evaluatedparam.Parameter
 import pl.touk.esp.engine.compiledgraph.expression.ExpressionParser
-import pl.touk.esp.engine.compiledgraph.node.{NextNode, PartRef}
+import pl.touk.esp.engine.compiledgraph.node.{NextNode, PartRef, SubprocessEnd}
 import pl.touk.esp.engine.definition.DefinitionExtractor.{ClazzRef, _}
 import pl.touk.esp.engine.definition._
-import pl.touk.esp.engine.graph.node.{EndingNodeData, OneOutputSubsequentNodeData}
+import pl.touk.esp.engine.graph.node._
 import pl.touk.esp.engine.spel.SpelExpressionParser
 import pl.touk.esp.engine.splittedgraph._
 import pl.touk.esp.engine.splittedgraph.splittednode.SplittedNode
-import pl.touk.esp.engine.types.EspTypeUtils
 
-import scala.reflect.ClassTag
 import scala.util.Right
 
 class PartSubGraphCompiler(protected val expressionParsers: Map[String, ExpressionParser],
                            protected val services: Map[String, ObjectWithMethodDef]) extends PartSubGraphCompilerBase {
 
   override type ParametersProviderT = ObjectWithMethodDef
-
-  //robimy dostep publiczny
-  override def compile(n: splittednode.SplittedNode[_]): ValidatedNel[PartSubGraphCompilationError, CompiledNode] = {
-    super.compile(n)
-  }
-
-  //robimy dostep publiczny
-  override def compile(n: splittednode.SplittedNode[_], ctx: ValidationContext): ValidatedNel[PartSubGraphCompilationError, CompiledNode] = {
-    super.compile(n, ctx)
-  }
 
   override def compileWithoutContextValidation(n: SplittedNode[_]): ValidatedNel[PartSubGraphCompilationError, CompiledNode] = {
     super.compileWithoutContextValidation(n)
@@ -94,6 +82,8 @@ private[compile] trait PartSubGraphCompilerBase {
   //na wyjsciu dostajemy takze informacje o tym jakie moga byc dalsze kroki (PartRef) i jakie wtedy sa tam zmienne
   private class Compiler(contextValidationEnabled: Boolean) {
 
+    type ValidatedWithCompiler[A] = ValidatedNel[PartSubGraphCompilationError, A]
+
     def doCompile(n: SplittedNode[_], ctx: ValidationContext): ValidatedNel[PartSubGraphCompilationError, CompiledNode] = {
       implicit val nodeId = NodeId(n.id)
       n match {
@@ -132,6 +122,20 @@ private[compile] trait PartSubGraphCompilerBase {
               val validParams = parameters.map(p => compileParam(p, ctx, skipContextValidation = true)).sequence
               A.map2(validParams, compile(next, ctx))((params, nextWithCtx) =>
                 CompiledNode(compiledgraph.node.CustomNode(id, params, nextWithCtx.next), nextWithCtx.ctx))
+            case SubprocessInput(id, ref, _) =>
+              //TODO: typowanie zmiennych?
+              ref.parameters.foldLeft(Valid(ctx.pushNewContext()).asInstanceOf[ValidatedNel[PartSubGraphCompilationError, ValidationContext]])
+                { case (accCtx, param) => accCtx.andThen(_.withVariable(param.name, ClazzRef[Any]))}.andThen { ctxWithVars =>
+                  val validParams = ref.parameters.map(p => compileParam(p, ctx)).sequence
+                  A.map2(validParams, compile(next, ctxWithVars))((params, nextWithCtx) =>
+                    CompiledNode(compiledgraph.node.SubprocessStart(id, params, nextWithCtx.next), nextWithCtx.ctx))
+                  }
+            case SubprocessOutput(id, _, _) =>
+              ctx.popContext.andThen { popContext =>
+                compile(next, popContext).map { nextWithCtx =>
+                  CompiledNode(SubprocessEnd(id, nextWithCtx.next), nextWithCtx.ctx)
+                }
+              }
           }
         case splittednode.SplitNode(bareNode, nexts) =>
           nexts.map(n => compile(n.next, ctx)).sequence.map { parts =>
@@ -159,6 +163,9 @@ private[compile] trait PartSubGraphCompilerBase {
               compile(ref, ctx).map(compiledgraph.node.EndingProcessor(id, _, disabled.contains(true))).map(CompiledNode(_, Map()))
             case graph.node.Sink(id, ref, optionalExpression, _) =>
               optionalExpression.map(oe => compile(oe, None, ctx)).sequence.map(compiledgraph.node.Sink(id, ref.typ, _)).map(CompiledNode(_, Map()))
+            //no chyba tutaj tego nie powinno byc, bo to bylby pusty podproces??
+            case SubprocessInput(id, _, _) => Invalid(NonEmptyList.of(UnresolvedSubprocess(id)))
+            case SubprocessOutputDefinition(id, _, _) => Invalid(NonEmptyList.of(UnresolvedSubprocess(id)))
           }
       }
     }
@@ -185,17 +192,7 @@ private[compile] trait PartSubGraphCompilerBase {
 
     private def validateServiceParameters(parameterProvider: ParametersProviderT, usedParamNames: List[String])
                                          (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, Unit] = {
-      val definedParamNames = parameterProvider.parameters.map(_.name).toSet
-      val usedParamNamesSet = usedParamNames.toSet
-      val redundantParams = usedParamNamesSet.diff(definedParamNames)
-      val notUsedParams = definedParamNames.diff(usedParamNamesSet)
-      if (redundantParams.nonEmpty) {
-        invalid(RedundantParameters(redundantParams)).toValidatedNel
-      } else if (notUsedParams.nonEmpty) {
-        invalid(MissingParameters(notUsedParams)).toValidatedNel
-      } else {
-        valid(Unit)
-      }
+      Validations.validateParameters(parameterProvider.parameters.map(_.name), usedParamNames)
     }
 
     private def compile(n: graph.variable.Field, ctx: ValidationContext)

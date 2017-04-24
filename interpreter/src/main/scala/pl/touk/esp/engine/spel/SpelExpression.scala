@@ -232,7 +232,8 @@ object SpelExpressionParser extends LazyLogging {
     override def canRead(context: EvaluationContext, target: scala.Any, name: String) =
       !target.isInstanceOf[Class[_]] && findMethod(name, target).isDefined
 
-    override protected def extractClassFromTarget(target: Any): Class[_] = target.getClass
+    override protected def extractClassFromTarget(target: Any): Class[_] =
+      target.getClass
   }
 
   trait StaticMethodCaching extends CachingBase { self: PropertyAccessor =>
