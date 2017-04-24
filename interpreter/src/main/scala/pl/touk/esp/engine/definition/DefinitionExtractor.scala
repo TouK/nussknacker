@@ -8,6 +8,7 @@ import pl.touk.esp.engine.api.{MethodToInvoke, ParamName}
 import pl.touk.esp.engine.definition.DefinitionExtractor._
 import pl.touk.esp.engine.types.EspTypeUtils
 
+import scala.reflect.ClassTag
 import scala.runtime.BoxedUnit
 import scala.util.control.NonFatal
 
@@ -162,6 +163,9 @@ object DefinitionExtractor {
   object ClazzRef {
     def apply(clazz: Class[_]): ClazzRef = {
       ClazzRef(clazz.getName)
+    }
+    def apply[T:ClassTag]: ClazzRef = {
+      ClazzRef(implicitly[ClassTag[T]].runtimeClass.getName)
     }
   }
 

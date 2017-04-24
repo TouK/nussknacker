@@ -1,17 +1,18 @@
 package pl.touk.esp.engine.definition
 
 import com.typesafe.config.Config
-import pl.touk.esp.engine.api.process._
+import pl.touk.esp.engine.api.{MetaData, process}
+import pl.touk.esp.engine.api.process.{ProcessConfigCreator, SourceFactory, TestDataGenerator, WithCategories}
 import pl.touk.esp.engine.api.test.TestDataParser
 import pl.touk.esp.engine.definition.DefinitionExtractor.ObjectWithMethodDef
-import pl.touk.esp.engine.graph.EspProcess
+import pl.touk.esp.engine.graph.node.Source
 import shapeless.syntax.typeable._
 
 trait TestInfoProvider {
 
-  def getTestingCapabilities(espProcess: EspProcess) : TestingCapabilities
+  def getTestingCapabilities(metaData: MetaData, source: Source) : TestingCapabilities
 
-  def generateTestData(espProcess: EspProcess, size: Int) : Option[Array[Byte]]
+  def generateTestData(metaData: MetaData, source: Source, size: Int) : Option[Array[Byte]]
 
 }
 
@@ -23,23 +24,23 @@ trait ConfigCreatorTestInfoProvider extends TestInfoProvider {
 
   def processConfig: Config
 
-  override def getTestingCapabilities(espProcess: EspProcess) = {
-    val canTest = sourceFactory(espProcess).flatMap[TestDataParser[_]](_.testDataParser).isDefined
-    val canGenerateData = prepareTestDataGenerator(espProcess).isDefined
+  override def getTestingCapabilities(metaData: MetaData, source: Source) = {
+    val canTest = sourceFactory(source).flatMap[TestDataParser[_]](_.testDataParser).isDefined
+    val canGenerateData = prepareTestDataGenerator(metaData, source).isDefined
     TestingCapabilities(canBeTested = canTest, canGenerateTestData = canGenerateData)
   }
 
-  def sourceFactory(espProcess: EspProcess): Option[SourceFactory[_]] =
-    configCreator.sourceFactories(processConfig).get(espProcess.root.data.ref.typ).map(_.value)
+  private def sourceFactory(source: Source): Option[SourceFactory[_]] =
+    configCreator.sourceFactories(processConfig).get(source.ref.typ).map(_.value)
 
-  override def generateTestData(espProcess: EspProcess, size: Int) =
-    prepareTestDataGenerator(espProcess).map(_.generateTestData(size))
+  override def generateTestData(metaData: MetaData, source: Source, size: Int) =
+    prepareTestDataGenerator(metaData, source).map(_.generateTestData(size))
 
-  private def prepareTestDataGenerator(espProcess: EspProcess) : Option[TestDataGenerator] =
+  private def prepareTestDataGenerator(metaData: MetaData, source: Source) : Option[TestDataGenerator] =
     for {
-      factory <- sourceFactory(espProcess)
+      factory <- sourceFactory(source)
       definition = ObjectWithMethodDef(WithCategories(factory), ProcessObjectDefinitionExtractor.source)
-      source = ProcessObjectFactory[Source[Any]](definition).create(espProcess.metaData, espProcess.root.data.ref.parameters)
-      asTest <- source.cast[TestDataGenerator]
+      sourceObj = ProcessObjectFactory[process.Source[Any]](definition).create(metaData, source.ref.parameters)
+      asTest <- sourceObj.cast[TestDataGenerator]
     } yield asTest
 }

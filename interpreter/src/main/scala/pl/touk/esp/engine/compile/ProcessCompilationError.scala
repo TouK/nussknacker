@@ -91,6 +91,10 @@ object ProcessCompilationError {
   case class MissingParameters(params: Set[String], nodeId: String)
     extends PartSubGraphCompilationError with InASingleNode
 
+  case class UnresolvedSubprocess(nodeId: String)
+    extends PartSubGraphCompilationError with InASingleNode
+
+
   object MissingParameters {
     def apply(params: Set[String])(implicit nodeId: NodeId): PartSubGraphCompilationError =
       MissingParameters(params, nodeId.id)
@@ -121,6 +125,14 @@ object ProcessCompilationError {
       OverwrittenVariable(variableName, nodeId.id)
   }
 
+  case class NoParentContext(nodeId: String) extends PartSubGraphCompilationError with InASingleNode
 
+  case class UnknownSubprocessOutput(id: String, nodeId: String) extends ProcessCompilationError with InASingleNode
+
+  case class UnknownSubprocess(id: String, nodeId: String) extends ProcessCompilationError with InASingleNode
+
+  object UnknownSubprocess {
+    def apply(id: String)(implicit nodeId: NodeId): ProcessCompilationError =UnknownSubprocess(id, nodeId.id)
+  }
 
 }

@@ -39,6 +39,8 @@ object ProcessCanonizer {
         canonicalnode.FlatNode(ending.data) :: Nil
       case node.SplitNode(bare, nexts) =>
         canonicalnode.SplitNode(bare, nexts.map(nodesOnTheSameLevel)) :: Nil
+      case node.SubprocessNode(input, nexts) =>
+        canonicalnode.Subprocess(input, nexts.mapValues(nodesOnTheSameLevel)) :: Nil
     }
 
   def uncanonize(canonicalProcess: CanonicalProcess): ValidatedNel[ProcessUncanonizationError, EspProcess] =

@@ -3,7 +3,7 @@ package pl.touk.esp.engine.api
 import pl.touk.esp.engine.api.lazyy.LazyContext
 
 case class Context(id: String, variables: Map[String, Any] = Map.empty,
-                   lazyContext: LazyContext = LazyContext()) {
+                   lazyContext: LazyContext = LazyContext(), parentContext: Option[Context] = None) {
 
   def apply[T](name: String): T =
     getOrElse(name, throw new RuntimeException(s"Unknown variable: $name"))
@@ -26,7 +26,16 @@ case class Context(id: String, variables: Map[String, Any] = Map.empty,
   def withVariables(otherVariables: Map[String, Any]): Context =
     copy(variables = variables ++ otherVariables)
 
-  def withLazyContext(lazyContext: LazyContext) =
+  def withLazyContext(lazyContext: LazyContext) : Context =
     copy(lazyContext = lazyContext)
+
+  def pushNewContext(variables: Map[String, Any]) : Context = {
+    Context(id, variables, lazyContext, Some(this))
+  }
+
+  def popContext : Context =
+    parentContext
+      .map(parent => parent.copy(lazyContext = parent.lazyContext.withEvaluatedValues(this.lazyContext.evaluatedValues)))
+      .getOrElse(throw new RuntimeException("No parent context available"))
 
 }
