@@ -410,7 +410,7 @@ export default class NodeDetailsContent extends React.Component {
   }
 
   renderFieldLabel = (label) => {
-    const parameter = (this.nodeObjectDetails.parameters || []).find((param) => param.name == label)
+    const parameter = (_.get(this.nodeObjectDetails, 'parameters', [])).find((param) => param.name == label)
     return (
       <div className="node-label" title={label}>{label}:
         {parameter ? <div className="labelFooter">{ProcessUtils.humanReadableType(parameter.typ.refClazzName)}</div> : null}

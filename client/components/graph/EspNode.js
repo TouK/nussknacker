@@ -127,13 +127,14 @@ joint.shapes.devs.EspNode = joint.shapes.basic.Generic.extend(_.extend({}, joint
 
 export default {
 
-    makeElement(node, hasResults, testSummary, forExport) {
+    makeElement(node, processCounts, forExport) {
+        const hasCounts = !_.isEmpty(processCounts)
         var descr = (node.additionalFields || {}).description
         var customAttrs = require('json!../../assets/json/nodeAttributes.json');
 
         var bodyContent = node.id ? node.id : "";
-        var testResultsContent = hasResults ? (testSummary ? testSummary.all : "0") : ""
-        var testErrors = hasResults  && testSummary && testSummary.errors > 0
+        var countsContent = hasCounts ? (processCounts ? processCounts.all : "0") : ""
+        var hasErrors = hasCounts && processCounts && processCounts.errors > 0
 
         // Compute width/height of the rectangle based on the number
         // of lines in the label and the letter size. 0.6 * letterSize is
@@ -147,7 +148,7 @@ export default {
         var height = 150;
         var icon = InlinedSvgs.svgs[node.type]
 
-        var widthWithTestResults = width + (hasResults ? rectHeight : 0)
+        var widthWithTestResults = width + (hasCounts ? rectHeight : 0)
 
         var attrs = {
           '.background': {
@@ -170,12 +171,12 @@ export default {
             text: bodyContent
           },
           '.testResultsPlaceHolder': {
-            display: hasResults && !forExport ? 'block' : 'none',
+            display: hasCounts && !forExport ? 'block' : 'none',
             'ref-x': width
           },
           '.testResultsSummary': {
-            text: testResultsContent,
-            fill: testErrors ? 'red' : 'white',
+            text: countsContent,
+            fill: hasErrors ? 'red' : 'white',
             'ref-x': width + rectHeight/2
           },
         };

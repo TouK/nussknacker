@@ -14,6 +14,7 @@ import ProcessUtils from "../../common/ProcessUtils";
 import SideNodeDetails from "./SideNodeDetails";
 import NodeUtils from '../graph/NodeUtils'
 import InlinedSvgs from "../../assets/icons/InlinedSvgs"
+import Moment from "moment"
 
 class UserRightPanel extends Component {
 
@@ -29,8 +30,12 @@ class UserRightPanel extends Component {
 
   constructor(props) {
     super(props);
+    const nowMidnight = Moment().startOf('day')
+    const yesterdayMidnight = Moment().subtract(1,'days').startOf('day')
     this.state = {
-      testSampleSize: 10
+      testSampleSize: 10,
+      processCountsDateFrom: yesterdayMidnight.format("YYYY-MM-D HH:mm:ss"),
+      processCountsDateTo: nowMidnight.format("YYYY-MM-D HH:mm:ss")
     };
   }
 
@@ -82,16 +87,22 @@ class UserRightPanel extends Component {
           panelName: "Test",
           properties: (
             <div className="properties">
-              <label>Test sample size: </label>
+              <label>Test sample size</label>
               <input type="number" value={this.state.testSampleSize} onChange={(e) => {this.setState({testSampleSize: e.target.value})}}/>
+              {/*TODO these process counts dates should be in modal*/}
+              <label>Process counts from</label>
+              <input type="text" value={this.state.processCountsDateFrom} onChange={(e) => {this.setState({processCountsDateFrom: e.target.value})}}/>
+              <label>Process counts to</label>
+              <input type="text" value={this.state.processCountsDateTo} onChange={(e) => {this.setState({processCountsDateTo: e.target.value})}}/>
             </div>
           ),
           buttons: [
             {name: "from file", onClick: this.testProcess, icon: InlinedSvgs.buttonFromFile, dropzone: true,
               disabled: !this.props.testCapabilities.canBeTested},
-            {name: "hide", onClick: this.hideTestResults, icon: InlinedSvgs.buttonHide, disabled: !this.props.isTesting},
+            {name: "hide", onClick: this.hideRunProcessDetails, icon: InlinedSvgs.buttonHide, disabled: !this.props.showRunProcessDetails},
             {name: "generate", onClick: this.generateData, icon: InlinedSvgs.buttonGenerate,
               disabled: !this.props.processIsLatestVersion || !this.props.nothingToSave || !this.props.testCapabilities.canGenerateTestData},
+            {name: "counts", onClick: this.fetchProcessCounts, icon: InlinedSvgs.buttonCounts},
           ]
         },
         {
@@ -204,6 +215,10 @@ class UserRightPanel extends Component {
     HttpService.generateTestData(this.props.fetchedProcessDetails.id, this.state.testSampleSize, this.props.processToDisplay)
   }
 
+  fetchProcessCounts = () => {
+    HttpService.fetchProcessCounts(this.processId(), this.state.processCountsDateFrom, this.state.processCountsDateTo)
+      .then((processCounts) => this.props.actions.displayProcessCounts(processCounts, this.props.nodesWithGroups))
+  }
 
   importProcess = (files) => {
     files.forEach((file)=>
@@ -213,12 +228,12 @@ class UserRightPanel extends Component {
 
   testProcess = (files) => {
     files.forEach((file)=>
-      this.props.actions.testProcessFromFile(this.processId(), file, this.props.processToDisplay)
+      this.props.actions.testProcessFromFile(this.processId(), file, this.props.processToDisplay, this.props.nodesWithGroups)
     );
   }
 
-  hideTestResults = () => {
-    this.props.actions.hideTestResults()
+  hideRunProcessDetails = () => {
+    this.props.actions.hideRunProcessDetails()
   }
 
   undo = () => {
@@ -253,12 +268,13 @@ function mapState(state) {
 
     loggedUser: state.settings.loggedUser,
     nothingToSave: ProcessUtils.nothingToSave(state),
-    isTesting: !_.isEmpty(state.graphReducer.testResults),
+    showRunProcessDetails: !_.isEmpty(state.graphReducer.testResults) || !_.isEmpty(state.graphReducer.processCounts),
     keyActionsAvailable: state.ui.allModalsClosed,
     processIsLatestVersion: _.get(fetchedProcessDetails, 'isLatestVersion', false),
     nodeToDisplay: state.graphReducer.nodeToDisplay,
     groupingState: state.graphReducer.groupingState,
-    migrationSettings: state.settings.migrationSettings
+    migrationSettings: state.settings.migrationSettings,
+    nodesWithGroups: NodeUtils.nodesFromProcess(state.graphReducer.processToDisplay || {}, state.ui.expandedGroups)
   };
 }
 

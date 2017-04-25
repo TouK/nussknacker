@@ -88,6 +88,7 @@ libraryDependencies ++= {
     "org.slf4j" % "log4j-over-slf4j" % "1.7.21",
 
     "pl.touk.esp" %% "esp-interpreter" % espEngineV changing(),
+    "pl.touk.esp" %% "esp-process-reports" % espEngineV changing(),
     "com.typesafe.slick" %% "slick" % slickV,
     "com.typesafe.slick" %% "slick-hikaricp" % slickV,
     "org.hsqldb" % "hsqldb" % hsqldbV,

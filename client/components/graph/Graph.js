@@ -15,7 +15,6 @@ import { DropTarget } from 'react-dnd';
 import '../../stylesheets/graph.styl'
 import SVGUtils from '../../common/SVGUtils';
 import NodeUtils from './NodeUtils.js'
-import TestResultUtils from '../../common/TestResultUtils'
 
 
 class Graph extends React.Component {
@@ -24,8 +23,7 @@ class Graph extends React.Component {
         processToDisplay: React.PropTypes.object.isRequired,
         groupingState: React.PropTypes.array,
         loggedUser: React.PropTypes.object.isRequired,
-        connectDropTarget: React.PropTypes.func.isRequired,
-        testResults: React.PropTypes.object.isRequired
+        connectDropTarget: React.PropTypes.func.isRequired
     }
 
     constructor(props) {
@@ -45,9 +43,9 @@ class Graph extends React.Component {
 
     componentDidMount() {
         this.processGraphPaper = this.createPaper()
-        this.drawGraph(this.props.processToDisplay, this.props.layout, this.props.testResults, true, [])
+        this.drawGraph(this.props.processToDisplay, this.props.layout, this.props.processCounts, true, [])
         this._prepareContentForExport()
-        this.drawGraph(this.props.processToDisplay, this.props.layout, this.props.testResults, false, this.props.expandedGroups)
+        this.drawGraph(this.props.processToDisplay, this.props.layout, this.props.processCounts, false, this.props.expandedGroups)
         this.panAndZoom = this.enablePanZoom();
         this.changeNodeDetailsOnClick();
         this.labelToFrontOnHover();
@@ -59,12 +57,12 @@ class Graph extends React.Component {
     componentWillUpdate(nextProps, nextState) {
       const processNotChanged = _.isEqual(this.props.processToDisplay, nextProps.processToDisplay) &&
         _.isEqual(this.props.layout, nextProps.layout) &&
-        _.isEqual(this.props.testResults, nextProps.testResults) &&
+        _.isEqual(this.props.processCounts, nextProps.processCounts) &&
         _.isEqual(this.props.groupingState, nextProps.groupingState) &&
         _.isEqual(this.props.expandedGroups, nextProps.expandedGroups)
 
       if (!processNotChanged) {
-        this.drawGraph(nextProps.processToDisplay, nextProps.layout, nextProps.testResults, false, nextProps.expandedGroups)
+        this.drawGraph(nextProps.processToDisplay, nextProps.layout, nextProps.processCounts, false, nextProps.expandedGroups)
       }
       //when e.g. layout changed we have to remember to highlight nodes
       if (!processNotChanged || !_.isEqual(this.props.nodeToDisplay, nextProps.nodeToDisplay)){
@@ -138,25 +136,16 @@ class Graph extends React.Component {
           })
     }
 
-    drawGraph = (process, layout, testResults, forExport, expandedGroups) => {
+    drawGraph = (process, layout, processCounts, forExport, expandedGroups) => {
       const nodesWithGroups = NodeUtils.nodesFromProcess(process, expandedGroups)
       const edgesWithGroups = NodeUtils.edgesFromProcess(process, expandedGroups)
-
       const outgoingEdgesGrouped = _.groupBy(edgesWithGroups, "from")
-
-      const testSummary = (n) => TestResultUtils.nodeResultsSummary(testResults, n)
-
-      const nodes = _.map(nodesWithGroups, (n) => { return EspNode.makeElement(n, testResults.nodeResults, testSummary(n), forExport)});
+      const nodes = _.map(nodesWithGroups, (n) => { return EspNode.makeElement(n, processCounts[n.id], forExport) });
       const edges = _.map(edgesWithGroups, (e) => { return EspNode.makeLink(e, outgoingEdgesGrouped, forExport) });
-
-
       const boundingRects = NodeUtils.getExpandedGroups(process, expandedGroups)
         .map(expandedGroup => ({group: expandedGroup, rect: EspNode.boundingRect(nodes, expandedGroup, layout,
           NodeUtils.createGroup(nodesWithGroups, expandedGroup))}))
-
       const cells = boundingRects.map(g => g.rect).concat(nodes.concat(edges));
-
-
       this.graph.resetCells(cells);
       if (_.isEmpty(layout)) {
         this.directedLayout()
@@ -308,7 +297,7 @@ function mapState(state) {
         processToDisplay: state.graphReducer.processToDisplay,
         loggedUser: state.settings.loggedUser,
         layout: state.graphReducer.layout,
-        testResults: state.graphReducer.testResults || {},
+        processCounts: state.graphReducer.processCounts || {},
         processDefinitionData: state.settings.processDefinitionData,
         expandedGroups: state.ui.expandedGroups
     };

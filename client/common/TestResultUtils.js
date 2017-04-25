@@ -17,12 +17,12 @@ class TestResultUtils {
     }
   }
 
-  nodeResultsSummary = (testResults, node) => {
-    const ids = NodeUtils.nodeIsGroup(node) ? node.ids : [ node.id ]
-    return _.reduce(ids.map(id => this.resultsForNode(testResults, id)),
-      (acc, n) => ({all: Math.max(n.nodeResults.length, acc.all), errors: Math.max(n.errors.length, acc.errors)}),
-      {all: 0, errors: 0}
-    )
+  nodeCounts = (testResults, nodeId) => {
+    const resultsForNode = this.resultsForNode(testResults, nodeId)
+    return {
+      all: resultsForNode.nodeResults.length,
+      errors: resultsForNode.errors.length
+    }
   }
 
   _nodeResults = (testResults, nodeId) => {

@@ -1,5 +1,7 @@
 import HttpService from "../http/HttpService";
 import GraphUtils from "../components/graph/GraphUtils";
+import ProcessCountsUtil from "../common/ProcessCountsUtil";
+import _ from "lodash";
 import * as UndoRedoActions from "../undoredo/UndoRedoActions";
 
 export function fetchProcessToDisplay(processId, versionId) {
@@ -256,12 +258,12 @@ export function toggleSaveProcessDialog(isOpen) {
   }
 }
 
-export function testProcessFromFile(id, testDataFile, processJson) {
+export function testProcessFromFile(id, testDataFile, process, nodesWithGroups) {
   return (dispatch) => {
     dispatch({
       type: "PROCESS_LOADING"
     })
-    HttpService.testProcess(id, testDataFile, processJson, testResults => dispatch(displayTestResults(testResults)),
+    HttpService.testProcess(id, testDataFile, process, testResults => dispatch(displayTestResults(testResults, nodesWithGroups)),
       error => dispatch({
         type: "LOADING_FAILED"
       }));
@@ -269,15 +271,31 @@ export function testProcessFromFile(id, testDataFile, processJson) {
   }
 }
 
-export function displayTestResults(testResults) {
-  return {
-    type: "DISPLAY_TEST_RESULTS",
-    testResults: testResults
+function displayTestResults(testResults, nodesWithGroups) {
+  const processCounts = ProcessCountsUtil.processCountsForTests(testResults, nodesWithGroups)
+  return (dispatch) => {
+    dispatch({
+      type: "DISPLAY_TEST_RESULTS_DETAILS",
+      testResults: testResults
+    })
+    dispatch({
+        type: "DISPLAY_PROCESS_COUNTS",
+        processCounts: processCounts
+      }
+    )
   }
 }
 
-export function hideTestResults() {
-  return {type: "HIDE_TEST_RESULTS"}
+export function displayProcessCounts(processCountsWithoutGroups, nodesWithGroups) {
+  const processCounts = ProcessCountsUtil.processCounts(processCountsWithoutGroups, nodesWithGroups)
+  return {
+    type: "DISPLAY_PROCESS_COUNTS",
+    processCounts: processCounts
+  }
+}
+
+export function hideRunProcessDetails() {
+  return {type: "HIDE_RUN_PROCESS_DETAILS"}
 }
 
 export function expandGroup(id) {
