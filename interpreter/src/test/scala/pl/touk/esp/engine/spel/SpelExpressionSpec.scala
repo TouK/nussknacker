@@ -3,6 +3,7 @@ package pl.touk.esp.engine.spel
 import java.math.BigDecimal
 import java.text.ParseException
 import java.time.LocalDate
+import java.util
 import java.util.Collections
 
 import cats.data.Validated.{Invalid, Valid}
@@ -72,7 +73,13 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
   it should "filter by list predicates" in {
 
     parseOrFail("#obj.children.?[id == '55'].empty").evaluate[Boolean](ctx, dumbLazyProvider).value should equal(true)
+    parseOrFail("#obj.children.?[id == '55' || id == '66'].empty").evaluate[Boolean](ctx, dumbLazyProvider).value should equal(true)
     parseOrFail("#obj.children.?[id == '5'].size()").evaluate[Integer](ctx, dumbLazyProvider).value should equal(1: Integer)
+    parseOrFail("#obj.children.?[id == '5' || id == '3'].size()").evaluate[Integer](ctx, dumbLazyProvider).value should equal(2: Integer)
+    parseOrFail("#obj.children.?[id == '5' || id == '3'].![value]")
+      .evaluate[util.ArrayList[Long]](ctx, dumbLazyProvider).value should equal(new util.ArrayList(util.Arrays.asList(4L, 6L)))
+    parseOrFail("(#obj.children.?[id == '5' || id == '3'].![value]).contains(4L)")
+      .evaluate[Boolean](ctx, dumbLazyProvider).value should equal(true)
 
   }
 
