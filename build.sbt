@@ -275,14 +275,10 @@ lazy val util = (project in file("util")).
     name := "esp-util",
     libraryDependencies ++= {
       Seq(
-        //TODO: przywrocic optional, kiedy uporzadkujemy zaleznosci w ui
-        "net.databinder.dispatch" %% "dispatch-core" % dispatchV,// % "optional",
-        "org.scala-lang.modules" %% "scala-parser-combinators" % scalaParsersV, // scalaxb deps
-        "io.argonaut" %% "argonaut" % argonautV,
         "com.iheart" %% "ficus" % ficusV
       )
     }
-  ).dependsOn(api)
+  ).dependsOn(api, httpUtils)
 
 
 
@@ -339,6 +335,33 @@ lazy val flinkApi = (project in file("flink-api")).
       )
     }
   ).dependsOn(api)
+
+lazy val processReports = (project in file("processReports")).
+  settings(commonSettings).
+  settings(
+    name := "esp-process-reports",
+    libraryDependencies ++= {
+      Seq(
+        "com.typesafe" % "config" % "1.3.0",
+        "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV
+      )
+    }
+  ).dependsOn(httpUtils)
+
+lazy val httpUtils = (project in file("httpUtils")).
+  settings(commonSettings).
+  settings(
+    name := "esp-http-utils",
+    libraryDependencies ++= {
+      Seq(
+        "net.databinder.dispatch" %% "dispatch-core" % dispatchV,// % "optional",
+        "org.scala-lang.modules" %% "scala-parser-combinators" % scalaParsersV, // scalaxb deps
+        "io.argonaut" %% "argonaut" % argonautV,
+        "com.github.alexarchambault" %% s"argonaut-shapeless_$argonautMajorV" % argonautShapelessV,
+        "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV
+      )
+    }
+  )
 
 publishArtifact := false
 
