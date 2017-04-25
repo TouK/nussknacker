@@ -195,6 +195,17 @@ export default {
     }).catch((error) => this.addError(`Failed to generate test data`, error));
   },
 
+  fetchProcessCounts(processId, dateFrom, dateTo) {
+    return ajaxCall({
+      url: appConfig.API_URL + '/processCounts/' + processId,
+      type: 'GET',
+      data: { dateFrom: dateFrom, dateTo: dateTo }
+    }).catch(error => {
+      this.addError(`Cannot fetch process counts`, error, true);
+      return Promise.reject(error)
+    })
+  },
+
   saveProcess(processId, processJson, comment) {
     const processToSave = {process: processJson, comment: comment}
     return ajaxCall({

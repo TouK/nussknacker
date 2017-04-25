@@ -36,7 +36,8 @@
     "reactable": "0.14.1",
     "react-resizable-box": "1.8.0",
     "redux": "3.5.2",
-    "svg-pan-zoom": "3.2.9"
+    "svg-pan-zoom": "3.2.9",
+    "moment": "2.18.1"
   },
   "devDependencies": {
     "babel-cli": "^6.3.17",

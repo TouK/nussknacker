@@ -133,6 +133,8 @@ const emptyGraphState = {
   layout: [],
   testCapabilities: {},
   groupingState: null,
+  processCounts: {},
+  testResults: {}
 }
 
 function graphReducer(state, action) {
@@ -298,17 +300,24 @@ function graphReducer(state, action) {
         layout: action.layout
       }
     }
-    case "DISPLAY_TEST_RESULTS": {
+    case "DISPLAY_PROCESS_COUNTS": {
+      return {
+        ...state,
+        processCounts: action.processCounts
+      }
+    }
+    case "DISPLAY_TEST_RESULTS_DETAILS": {
       return {
         ...state,
         testResults: action.testResults,
         graphLoading: false
       }
     }
-    case "HIDE_TEST_RESULTS": {
+    case "HIDE_RUN_PROCESS_DETAILS": {
       return {
         ...state,
-        testResults: null
+        testResults: null,
+        processCounts: null
       }
     }
     case "START_GROUPING": {
