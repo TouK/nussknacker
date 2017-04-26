@@ -6,9 +6,10 @@ import pl.touk.esp.engine.graph.node.{Disableable, NodeData}
 import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
 import pl.touk.esp.ui.process.displayedgraph.DisplayableProcess
 import pl.touk.esp.ui.process.marshall.ProcessConverter
+import pl.touk.esp.ui.process.subprocess.SubprocessResolver
 import pl.touk.esp.ui.validation.ValidationResults.ValidationResult
 
-class ProcessValidation(validators: Map[ProcessingType, ProcessValidator]) {
+class ProcessValidation(validators: Map[ProcessingType, ProcessValidator], subprocessResolver: SubprocessResolver) {
 
   val uiValidationError = "UiValidation"
 
@@ -17,7 +18,9 @@ class ProcessValidation(validators: Map[ProcessingType, ProcessValidator]) {
   def validate(displayable: DisplayableProcess): ValidationResult = {
     val processValidator = validators(displayable.processingType)
     val canonical = ProcessConverter.fromDisplayable(displayable)
-    val compilationValidationResult = processValidator.validate(canonical).leftMap(formatErrors).swap.getOrElse(ValidationResult.success)
+    val compilationValidationResult =
+      subprocessResolver.resolveSubprocesses(canonical).andThen(processValidator.validate)
+        .leftMap(formatErrors).swap.getOrElse(ValidationResult.success)
     val uiValidationResult = uiValidation(displayable)
     val validationWarningsResult = warningValidation(displayable)
     compilationValidationResult

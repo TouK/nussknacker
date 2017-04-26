@@ -36,6 +36,10 @@ object PrettyValidationErrors {
       case MissingPart(id) => node("MissingPart", s"Node $id has missing part")
       case WrongProcessType() => node("Wrong process type", "Process type doesn't match category - please check configuration")
       case UnsupportedPart(id) => node("UnsupportedPart", s"Type of node $id is unsupported right now")
+      case UnknownSubprocess(id, nodeId) => node("Unknown subprocess", s"Node $id uses subprocess $nodeId which is missing")
+      case UnresolvedSubprocess(id) => node("Unresolved subprocess", s"Subprocess $id encountered, this should not happen")
+      case NoParentContext(_) => node("No parent context", "Please check subprocess definition")
+      case UnknownSubprocessOutput(id, _) => node(s"Unknown subprocess output $id", "Please check subprocess definition")
     }
   }
 

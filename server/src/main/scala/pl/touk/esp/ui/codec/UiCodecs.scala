@@ -60,6 +60,7 @@ object UiCodecs {
     case EdgeType.FilterTrue => jObjectFields("type" -> jString("FilterTrue"))
     case EdgeType.SwitchDefault => jObjectFields("type" -> jString("SwitchDefault"))
     case ns: EdgeType.NextSwitch => jObjectFields("type" -> jString("NextSwitch"), "condition" -> ns.condition.asJson)
+    case EdgeType.SubprocessOutput(name) => jObjectFields("type" -> jString("SubprocessOutput"), "name" -> name.asJson)
   }
 
   implicit def edgeTypeDecode: DecodeJson[EdgeType] = DecodeJson[EdgeType] { c =>
@@ -70,6 +71,8 @@ object UiCodecs {
         else if (edgeType == "FilterTrue") DecodeResult.ok(EdgeType.FilterTrue)
         else if (edgeType == "SwitchDefault") DecodeResult.ok(EdgeType.SwitchDefault)
         else if (edgeType == "NextSwitch") (c --\ "condition").as[Expression].map(condition => EdgeType.NextSwitch(condition))
+        else if (edgeType == "SubprocessOutput") (c --\ "name").as[String].map(name => EdgeType.SubprocessOutput(name))
+
         else throw new IllegalArgumentException(s"Unknown edge type: $edgeType")
       }
     } yield edgeTypeObj
@@ -155,7 +158,7 @@ object UiCodecs {
     }
 
     implicit def ctxEncode = EncodeJson[api.Context] {
-      case api.Context(id, vars, _) => jObjectFields(
+      case api.Context(id, vars, _, _) => jObjectFields(
         "id" -> jString(id),
         "variables" -> vars.asJson
       )

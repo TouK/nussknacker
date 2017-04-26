@@ -1,0 +1,27 @@
+{
+  "id" : "test1",
+  "parameters" : [
+    [
+      "param1",
+      {
+        "refClazzName" : "java.lang.String"
+      }
+    ]
+  ],
+  "nodes" : [
+    {
+      "type" : "Filter",
+      "id" : "filter",
+      "expression" : {
+        "language" : "spel",
+        "expression" : "#param1 == 'ala'"
+      },
+      "nextFalse" : []
+    },
+    {
+      "type" : "SubprocessOutputDefinition",
+      "id" : "out1",
+      "outputName" : "output"
+    }
+  ]
+}

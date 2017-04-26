@@ -12,6 +12,7 @@ import pl.touk.esp.engine.graph.expression.Expression
 import pl.touk.esp.engine.graph.node._
 import pl.touk.esp.engine.graph.service.ServiceRef
 import pl.touk.esp.engine.graph.source.SourceRef
+import pl.touk.esp.ui.api.helpers.TestFactory.sampleResolver
 import pl.touk.esp.ui.validation.ProcessValidation
 import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.esp.ui.process.displayedgraph.displayablenode.Edge
@@ -24,7 +25,7 @@ class ProcessConverterSpec extends FlatSpec with Matchers with TableDrivenProper
     val processDefinition = ProcessDefinition[ObjectDefinition](Map("ref" -> ObjectDefinition.noParam),
       Map("sourceRef" -> ObjectDefinition.noParam), Map(), Map(), Map(), ObjectDefinition.noParam, Map(), List())
     val validator = ProcessValidator.default(processDefinition)
-    new ProcessValidation(Map(ProcessingType.Streaming -> validator))
+    new ProcessValidation(Map(ProcessingType.Streaming -> validator), sampleResolver)
   }
 
   def canonicalDisplayable(canonicalProcess: CanonicalProcess) = {

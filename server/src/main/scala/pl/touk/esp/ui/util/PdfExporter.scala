@@ -17,6 +17,7 @@ import pl.touk.esp.engine.graph.node._
 import pl.touk.esp.engine.graph.service.ServiceRef
 import pl.touk.esp.engine.graph.sink.SinkRef
 import pl.touk.esp.engine.graph.source.SourceRef
+import pl.touk.esp.engine.graph.subprocess.SubprocessRef
 import pl.touk.esp.ui.process.displayedgraph.DisplayableProcess
 import pl.touk.esp.ui.process.displayedgraph.displayablenode.NodeAdditionalFields
 import pl.touk.esp.ui.process.repository.ProcessActivityRepository.ProcessActivity
@@ -186,6 +187,7 @@ object PdfExporter extends LazyLogging {
       case Processor(_, ServiceRef(typ, params), _, _) => ("Type", typ) :: params.map(p => (p.name, p.expression.expression))
       case Sink(_, SinkRef(typ, params), output, _) => ("Type", typ) :: output.map(expr => ("Output", expr.expression)).toList ++ params.map(p => (p.name, p.value))
       case CustomNode(_, output, typ, params, _) => ("Type", typ) :: ("Output", output) :: params.map(p => (p.name, p.expression.expression))
+      case SubprocessInput(_, SubprocessRef(typ, params), _) => ("Type", typ) :: params.map(p => (p.name, p.expression.expression))
       //TODO: variable, variable builder,
       case _ => List()
     }

@@ -1,18 +1,16 @@
 package pl.touk.esp.ui.api
 
-import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
+import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.server._
 import akka.util.Timeout
-import cats.data.Validated.{Invalid, Valid}
-import pl.touk.esp.engine.canonize.ProcessCanonizer
-import pl.touk.esp.engine.definition.TestInfoProvider
-import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType
+import pl.touk.esp.engine.definition.{TestInfoProvider, TestingCapabilities}
+import pl.touk.esp.engine.graph.node.Source
 import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
 import pl.touk.esp.ui.process.displayedgraph.DisplayableProcess
-import pl.touk.esp.ui.process.marshall.ProcessConverter
 import pl.touk.esp.ui.process.repository.ProcessRepository
 import pl.touk.esp.ui.security.{LoggedUser, Permission}
 import pl.touk.esp.ui.util.Argonaut62Support
+import shapeless.syntax.typeable._
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
@@ -31,24 +29,22 @@ class TestInfoResources(providers: Map[ProcessingType, TestInfoProvider],
         post {
           entity(as[DisplayableProcess]) { displayableProcess =>
             val processDefinition = providers(displayableProcess.processingType)
-            val espProcess = ProcessCanonizer.uncanonize(ProcessConverter.fromDisplayable(displayableProcess))
+
+            val source = displayableProcess.nodes.flatMap(_.cast[Source]).headOption
+            val metadata = displayableProcess.metaData
 
             path("capabilities") {
               complete {
-                espProcess match {
-                  case Valid(process) => processDefinition.getTestingCapabilities(process)
-                  case Invalid(error) => HttpResponse(status = StatusCodes.BadRequest, entity = "Failed to uncanonize")
-                }
+                val resp: TestingCapabilities = source.map(processDefinition.getTestingCapabilities(metadata, _))
+                  .getOrElse(TestingCapabilities(false, false))
+                resp
               }
             } ~
               path("generate" / IntNumber) { testSampleSize =>
                 complete {
-                  espProcess match {
-                    case Valid(process) =>
-                      val response = processDefinition.generateTestData(process, testSampleSize).getOrElse(new Array[Byte](0))
-                      response
-                    case Invalid(error) => HttpResponse(status = StatusCodes.BadRequest, entity = "Failed to uncanonize")
-                  }
+                  val resp: Array[Byte] =
+                    source.flatMap(processDefinition.generateTestData(metadata, _ , testSampleSize)).getOrElse(new Array[Byte](0))
+                  resp
                 }
               }
           }

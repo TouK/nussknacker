@@ -65,6 +65,9 @@ class NodeUtils {
       return {type: _.get(thisFilterConnections[0], 'edgeType.type') == 'FilterTrue' ? 'FilterFalse' : 'FilterTrue'}
     } else if (node.type == "Switch") {
       return edgesFromDefinition["NextSwitch"]
+    } else if (node.type == "SubprocessInput") {
+      //FIXME: co tutaj??
+      return {type: "SubprocessOutput", name: "output"}
     }
     else {
       return null

@@ -35,7 +35,8 @@ trait EspItTest extends LazyLogging with TestCodecs { self: ScalatestRouteTest w
   val processActivityRepository = newProcessActivityRepository(db)
   val typesForCategories = new ProcessTypesForCategories(ConfigFactory.load())
 
-  val managementActor = ManagementActor(env, Map(ProcessingType.Streaming -> InMemoryMocks.mockProcessManager), processRepository, deploymentProcessRepository)
+  val managementActor = ManagementActor(env,
+    Map(ProcessingType.Streaming -> InMemoryMocks.mockProcessManager), processRepository, deploymentProcessRepository, TestFactory.sampleResolver)
   val processesRoute = (u:LoggedUser) => new ProcessesResources(processRepository, managementActor, processActivityRepository, processValidation, typesForCategories).route(u)
 
   val processesRouteWithAllPermissions = withAllPermissions(processesRoute)

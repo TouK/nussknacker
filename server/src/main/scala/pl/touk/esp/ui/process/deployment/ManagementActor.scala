@@ -1,15 +1,19 @@
 package pl.touk.esp.ui.process.deployment
 
 import akka.actor.{Actor, ActorRef, ActorRefFactory, Props, Status}
+import argonaut.PrettyParams
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.esp.engine.api.deployment.test.TestData
 import pl.touk.esp.engine.api.deployment.{CustomProcess, GraphProcess, ProcessManager}
+import pl.touk.esp.engine.canonize.ProcessCanonizer
 import pl.touk.esp.ui.EspError
 import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
 import pl.touk.esp.ui.db.entity.ProcessVersionEntity.ProcessVersionEntityData
 import pl.touk.esp.ui.process.displayedgraph.ProcessStatus
+import pl.touk.esp.ui.process.marshall.UiProcessMarshaller
 import pl.touk.esp.ui.process.repository.ProcessRepository.ProcessNotFoundError
 import pl.touk.esp.ui.process.repository.{DeployedProcessRepository, ProcessRepository}
+import pl.touk.esp.ui.process.subprocess.SubprocessResolver
 import pl.touk.esp.ui.security.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -20,19 +24,21 @@ object ManagementActor {
   def apply(environment: String,
             managers: Map[ProcessingType, ProcessManager],
             processRepository: ProcessRepository,
-            deployedProcessRepository: DeployedProcessRepository)(implicit context: ActorRefFactory): ActorRef = {
-    context.actorOf(Props(classOf[ManagementActor], environment, managers, processRepository, deployedProcessRepository))
+            deployedProcessRepository: DeployedProcessRepository, subprocessResolver: SubprocessResolver)(implicit context: ActorRefFactory): ActorRef = {
+    context.actorOf(Props(classOf[ManagementActor], environment, managers, processRepository, deployedProcessRepository, subprocessResolver))
   }
 
 }
 
 class ManagementActor(environment: String, managers: Map[ProcessingType, ProcessManager],
                       processRepository: ProcessRepository,
-                      deployedProcessRepository: DeployedProcessRepository) extends Actor with LazyLogging {
+                      deployedProcessRepository: DeployedProcessRepository, subprocessResolver: SubprocessResolver) extends Actor with LazyLogging {
 
-  var beingDeployed = Map[String, DeployInfo]()
+  private var beingDeployed = Map[String, DeployInfo]()
 
-  implicit val ec = context.dispatcher
+  private implicit val ec = context.dispatcher
+
+  private val marshaller = UiProcessMarshaller()
 
   override def receive = {
     case a: DeploymentAction if isBeingDeployed(a.id) =>
@@ -66,7 +72,7 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
         sender() ! Status.Failure(ProcessIsBeingDeployedNoTestAllowed)
       } else {
         val testAction = processManager(processId).flatMap { manager =>
-          manager.test(processId, GraphProcess(processJson), testData)
+          manager.test(processId, resolveGraph(processJson), testData)
         }
         reply(testAction)
       }
@@ -97,10 +103,18 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
     }
   }
 
+  //FIXME: to powinno dziac sie gdzie indziej... ale gdzie??
+  private def resolveGraph(canonicalJson: String) : GraphProcess = {
+    GraphProcess(marshaller.toJson(marshaller.fromJson(canonicalJson).andThen(subprocessResolver.resolveSubprocesses).toOption.get, PrettyParams.spaces2))
+  }
+
   private def deployAndSaveProcess(latestVersion: ProcessVersionEntityData, processManager: ProcessManager)(implicit user: LoggedUser): Future[Unit] = {
     val processId = latestVersion.processId
     logger.debug(s"Deploy of $processId started")
-    val deployment = latestVersion.deploymentData
+    val deployment = latestVersion.deploymentData match {
+      case GraphProcess(canonical) => resolveGraph(canonical)
+      case a => a
+    }
     processManager.deploy(processId, deployment).flatMap { _ =>
       logger.debug(s"Deploy of $processId finished")
       deployedProcessRepository.markProcessAsDeployed(latestVersion, user.id, environment).recoverWith { case NonFatal(e) =>

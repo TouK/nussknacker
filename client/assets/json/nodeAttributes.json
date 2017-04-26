@@ -48,6 +48,13 @@
       "color": "white"
     }
   },
+  "SubprocessInput": {
+    "name": "SubprocessInput",
+    "styles": {
+      "fill": "#805db2",
+      "color": "white"
+    }
+  },
   "Split": {
     "name": "Split",
     "styles": {

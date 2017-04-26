@@ -7,20 +7,22 @@ import pl.touk.esp.engine.definition.ProcessDefinitionExtractor.ProcessDefinitio
 import pl.touk.esp.engine.graph.evaluatedparam.Parameter
 import pl.touk.esp.engine.graph.expression.Expression
 import pl.touk.esp.engine.graph.node._
-import pl.touk.esp.engine.graph.param
+import pl.touk.esp.engine.graph.{SubprocessDefinition, param}
 import pl.touk.esp.engine.graph.service.ServiceRef
 import pl.touk.esp.engine.graph.sink.SinkRef
 import pl.touk.esp.engine.graph.source.SourceRef
+import pl.touk.esp.engine.graph.subprocess.SubprocessRef
 import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
 import pl.touk.esp.ui.process.displayedgraph.displayablenode.{Edge, EdgeType}
+import pl.touk.esp.ui.process.subprocess.SubprocessRepository
 import pl.touk.esp.ui.security.LoggedUser
 import pl.touk.esp.ui.util.Argonaut62Support
 
 import scala.concurrent.ExecutionContext
 import scala.runtime.BoxedUnit
 
-class DefinitionResources(processDefinition: Map[ProcessingType, ProcessDefinition[ObjectDefinition]])
+class DefinitionResources(processDefinition: Map[ProcessingType, ProcessDefinition[ObjectDefinition]], subprocessRepository: SubprocessRepository)
                          (implicit ec: ExecutionContext)
   extends Directives with Argonaut62Support {
 
@@ -32,7 +34,7 @@ class DefinitionResources(processDefinition: Map[ProcessingType, ProcessDefiniti
       get {
         complete {
           val chosenProcessDefinition = processDefinition(ProcessingType.withName(processingType))
-          ProcessObjects(DefinitionPreparer.prepareNodesToAdd(user, chosenProcessDefinition), chosenProcessDefinition, DefinitionPreparer.prepareEdgeTypes())
+          ProcessObjects(DefinitionPreparer.prepareNodesToAdd(user, chosenProcessDefinition, subprocessRepository), chosenProcessDefinition, DefinitionPreparer.prepareEdgeTypes())
         }
       }
     }
@@ -53,7 +55,7 @@ case class NodeGroup(name: String, possibleNodes: List[NodeToAdd])
 //TODO: czy to da sie ladniej?
 object DefinitionPreparer {
 
-  def prepareNodesToAdd(user:LoggedUser, processDefinition: ProcessDefinition[ObjectDefinition]): List[NodeGroup] = {
+  def prepareNodesToAdd(user:LoggedUser, processDefinition: ProcessDefinition[ObjectDefinition], subprocessRepo: SubprocessRepository): List[NodeGroup] = {
 
     def filterCategories(objectDefinition: ObjectDefinition) = user.categories.intersect(objectDefinition.categories)
 
@@ -109,8 +111,16 @@ object DefinitionPreparer {
       }.toList
     )
 
-    //TODO: source, switch...
-    List(base, services, enrichers, customTransformers, sources, sinks)
+    val subprocesses = SortedNodeGroup("subprocesses",
+      subprocessRepo.loadSubprocesses().map {
+        case SubprocessDefinition(id, parameters, _) => NodeToAdd("subprocess", id,
+          SubprocessInput("", SubprocessRef(id,
+            //FIXME: kategorie
+            parameters.map(DefinitionExtractor.Parameter.tupled).map(mapDefinitionParamToEvaluatedParam))), user.categories)
+      }.toList
+    )
+
+    List(base, services, enrichers, subprocesses, customTransformers, sources, sinks)
   }
 
   private def mapDefinitionParamToEvaluatedParam(param: DefinitionExtractor.Parameter) = {
