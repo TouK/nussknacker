@@ -37,6 +37,8 @@ InlinedSvgs.svgs = {
   "Split": InlinedSvgs.nodeSplit,
   "Processor": InlinedSvgs.nodeService,
   "CustomNode": InlinedSvgs.nodeCustom,
+  "SubprocessInput": InlinedSvgs.nodeGroup,
+
   "_group": InlinedSvgs.nodeGroup
 }
 

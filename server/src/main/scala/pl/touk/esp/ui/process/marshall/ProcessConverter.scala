@@ -4,8 +4,9 @@ import cats.data.Validated.{Invalid, Valid}
 import pl.touk.esp.engine.api.MetaData
 import pl.touk.esp.engine.canonicalgraph.canonicalnode._
 import pl.touk.esp.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
-import pl.touk.esp.engine.graph.node.{Filter, NodeData, Split, Switch}
+import pl.touk.esp.engine.graph.node._
 import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
+import pl.touk.esp.ui.process.displayedgraph.displayablenode.EdgeType.SubprocessOutput
 import pl.touk.esp.ui.process.displayedgraph.displayablenode.{Edge, EdgeType}
 import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties, displayablenode}
 
@@ -60,6 +61,15 @@ object ProcessConverter {
         val edges = nextInner._2.flatten
         val connecting = nexts.flatMap(e => e.headOption.map(_.id).map(displayablenode.Edge(data.id, _, None)))
         (data :: nodes ::: tailNodes, connecting ::: edges ::: tailEdges)
+      case canonicalnode.Subprocess(data, outputs) :: tail =>
+        val (tailNodes, tailEdges) = toGraphInner(tail)
+        val nextInner = outputs.values.toList.map(toGraphInner).unzip
+        val nodes = nextInner._1.flatten
+        val edges = nextInner._2.flatten
+        val connecting = outputs
+          .flatMap{ case (name, outputEdges) =>
+            outputEdges.headOption.map(_.id).map(displayablenode.Edge(data.id, _, Some(SubprocessOutput(name))))}.toList
+        (data :: nodes ::: tailNodes, connecting ::: edges ::: tailEdges)
       case Nil =>
         (List(),List())
     }
@@ -78,8 +88,7 @@ object ProcessConverter {
     val edgesFromMapStart = process.edges.groupBy(_.from)
     //FIXME: co z luznymi wezlami???
     val nodes = findRootNodes(process).headOption.map(headNode => unFlattenNode(nodesMap)(headNode, edgesFromMapStart)).getOrElse(List())
-    val metaData = MetaData(process.id, process.properties.typeSpecificProperties, process.properties.additionalFields)
-    CanonicalProcess(metaData, process.properties.exceptionHandler, nodes)
+    CanonicalProcess(process.metaData, process.properties.exceptionHandler, nodes)
   }
 
   private def findRootNodes(process: DisplayableProcess): List[NodeData] =
@@ -110,6 +119,11 @@ object ProcessConverter {
       case data: Split =>
         val nexts = getEdges(data.id).map(unflattenEdgeEnd(data.id, _))
         canonicalnode.SplitNode(data, nexts) :: Nil
+      case data: SubprocessInput =>
+        //TODO: obsluga jakis bledow?
+        val nexts = getEdges(data.id).map(e => e.edgeType.get.asInstanceOf[SubprocessOutput].name -> unflattenEdgeEnd(data.id, e)).toMap
+        canonicalnode.Subprocess(data, nexts) :: Nil
+
     }
     (handleNestedNodes orElse (handleDirectNodes andThen { n =>
       n :: getEdges(n.id).flatMap(unflattenEdgeEnd(n.id, _))

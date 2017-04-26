@@ -62,7 +62,6 @@ export default class NodeDetailsContent extends React.Component {
             {this.createField("input", "Id", "id")}
             {this.createReadonlyField("input", "Service Id", "service.id")}
             {this.state.editedNode.service.parameters.map((params, index) => {
-              //TODO: czy tu i w custom node i gdzies jeszcze chcemy te hr??
               return (
                 <div className="node-block" key={index}>
                   {this.createListField("textarea", params.name, params, 'expression.expression', `service.parameters[${index}]`, params.name)}
@@ -73,6 +72,22 @@ export default class NodeDetailsContent extends React.Component {
             {this.descriptionField()}
           </div>
         )
+      case 'SubprocessInput':
+        return (
+          <div className="node-table-body">
+            {this.createField("input", "Id", "id")}
+            {this.createReadonlyField("input", "Subprocess Id", "ref.id")}
+            {this.state.editedNode.ref.parameters.map((params, index) => {
+              return (
+                <div className="node-block" key={index}>
+                  {this.createListField("textarea", params.name, params, 'expression.expression', `ref.parameters[${index}]`, params.name)}
+                </div>
+              )
+            })}
+            {this.descriptionField()}
+          </div>
+        )
+
       case 'CustomNode':
         return (
           <div className="node-table-body">

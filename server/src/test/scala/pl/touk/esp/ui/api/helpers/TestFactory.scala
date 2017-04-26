@@ -13,6 +13,7 @@ import pl.touk.esp.ui.api.{ProcessPosting, ProcessTestData}
 import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.esp.ui.process.marshall.ProcessConverter
 import pl.touk.esp.ui.process.repository.{DeployedProcessRepository, ProcessActivityRepository, ProcessRepository}
+import pl.touk.esp.ui.process.subprocess.{SampleSubprocessRepository, SubprocessResolver}
 import pl.touk.esp.ui.security.{LoggedUser, Permission}
 import pl.touk.esp.ui.security.Permission.Permission
 import slick.jdbc.JdbcBackend
@@ -24,7 +25,10 @@ object TestFactory {
   val testCategory = "TESTCAT"
   val testEnvironment = "test"
 
-  val processValidation = new ProcessValidation(Map(ProcessingType.Streaming -> ProcessTestData.validator))
+  val sampleSubprocessRepository = SampleSubprocessRepository
+  val sampleResolver = new SubprocessResolver(sampleSubprocessRepository)
+
+  val processValidation = new ProcessValidation(Map(ProcessingType.Streaming -> ProcessTestData.validator), sampleResolver)
   val posting = new ProcessPosting
 
   def newProcessRepository(db: JdbcBackend.Database) = new ProcessRepository(db, DefaultJdbcProfile.profile, processValidation)

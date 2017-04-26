@@ -10,6 +10,7 @@ import akka.http.scaladsl.server.{Directives, Route}
 import akka.stream.ActorMaterializer
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.esp.engine.standalone.management.FileProcessRepository
 import pl.touk.esp.ui.api._
 import pl.touk.esp.ui.validation.ProcessValidation
 import pl.touk.esp.ui.db.DatabaseInitializer
@@ -18,6 +19,7 @@ import pl.touk.esp.ui.process.{ProcessTypesForCategories, ProcessingTypeDeps}
 import pl.touk.esp.ui.process.deployment.ManagementActor
 import pl.touk.esp.ui.process.migrate.{HttpMigratorTargetEnvironmentConfig, HttpProcessMigrator}
 import pl.touk.esp.ui.process.repository.{DeployedProcessRepository, ProcessActivityRepository, ProcessRepository}
+import pl.touk.esp.ui.process.subprocess.{FileSubprocessRepository, SampleSubprocessRepository, SubprocessResolver}
 import pl.touk.esp.ui.security.SimpleAuthenticator
 import slick.jdbc.JdbcBackend
 
@@ -41,7 +43,10 @@ object EspUiApp extends App with Directives with LazyLogging {
   val initialProcessDirectory = new File(args(1))
   val ProcessingTypeDeps(processDefinitions, validators, managers, buildInfo, standaloneModeEnabled) = ProcessingTypeDeps(config)
 
-  val processValidation = new ProcessValidation(validators)
+  val subprocessRepository = new FileSubprocessRepository(new File(initialProcessDirectory, "subprocesses"))
+  val subprocessResolver = new SubprocessResolver(subprocessRepository)
+
+  val processValidation = new ProcessValidation(validators, subprocessResolver)
 
   val processRepository = new ProcessRepository(db, DefaultJdbcProfile.profile, processValidation)
   val deploymentProcessRepository = new DeployedProcessRepository(db, DefaultJdbcProfile.profile, buildInfo)
@@ -59,7 +64,7 @@ object EspUiApp extends App with Directives with LazyLogging {
   Initialization.init(processRepository, db, environment, isDevelopmentMode, initialProcessDirectory, standaloneModeEnabled)
   initHttp()
 
-  val managementActor = ManagementActor(environment, managers, processRepository, deploymentProcessRepository)
+  val managementActor = ManagementActor(environment, managers, processRepository, deploymentProcessRepository, subprocessResolver)
 
   val typesForCategories = new ProcessTypesForCategories(config)
 
@@ -84,7 +89,7 @@ object EspUiApp extends App with Directives with LazyLogging {
                 new ProcessActivityResource(processActivityRepository, attachmentService).route(user) ~
                 new ManagementResources(processDefinitions.values.flatMap(_.typesInformation).toList, managementActor).route(user) ~
                 new ValidationResources(processValidation).route(user) ~
-                new DefinitionResources(processDefinitions).route(user) ~
+                new DefinitionResources(processDefinitions, subprocessRepository).route(user) ~
                 new SignalsResources(managers).route(user) ~
                 new UserResources().route(user) ~
                 new SettingsResources(config).route(user) ~

@@ -14,6 +14,7 @@ object displayablenode {
     case object FilterFalse extends FilterEdge
     case class NextSwitch(condition: Expression) extends SwitchEdge
     case object SwitchDefault extends SwitchEdge
+    case class SubprocessOutput(name: String) extends EdgeType
   }
 
   case class Edge(from: String, to: String, edgeType: Option[EdgeType])

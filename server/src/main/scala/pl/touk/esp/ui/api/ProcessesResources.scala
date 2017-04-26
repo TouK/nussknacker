@@ -11,7 +11,6 @@ import cats.data.XorT
 import cats.instances.future._
 import pl.touk.esp.engine.api.{MetaData, StandaloneMetaData, StreamMetaData}
 import pl.touk.esp.engine.api.deployment.GraphProcess
-import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
 import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.esp.ui.api.ProcessesResources.{UnmarshallError, WrongProcessId}
 import pl.touk.esp.ui.process.deployment.CheckStatus
@@ -27,6 +26,7 @@ import akka.util.Timeout
 
 import scala.concurrent.duration._
 import EspErrorToHttp._
+import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
 import pl.touk.esp.ui.validation.ProcessValidation
 import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
