@@ -272,9 +272,16 @@ export default {
       .catch((error) => this.addError(`Failed to migrate`, error));
   },
 
-  sendSignal(signalType, params) {
+  fetchSignals() {
     return ajaxCall({
-      url: `${appConfig.API_URL}/signal/${signalType}`,
+      url: `${appConfig.API_URL}/signal`,
+      type: 'GET',
+    }).catch((error) => this.addError(`Failed to fetch signals`, error));
+  },
+
+  sendSignal(signalType, processId, params) {
+    return ajaxCall({
+      url: `${appConfig.API_URL}/signal/${signalType}/${processId}`,
       type: 'POST',
       data: JSON.stringify(params)
     }).then(() => this.addInfo(`Signal send`))

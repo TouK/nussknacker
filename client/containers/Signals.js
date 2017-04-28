@@ -14,7 +14,9 @@ class Signals extends React.Component {
   }
 
   componentDidMount() {
-    this.props.actions.fetchProcessDefinition(this.props.processingType)
+    HttpService.fetchSignals().then(signals => this.setState(
+      {signals: signals, signalType: signals[0].name}
+    ))
   }
 
   componentWillReceiveProps(props) {
@@ -22,10 +24,12 @@ class Signals extends React.Component {
   }
 
   initialState(props) {
-    return {signalType: _.keys(props.signals)[0] || '', signalParams: {}}
+    return {signalType: '', processId: null, signalParams: {}, signals: {}}
   }
 
   render() {
+    const currentSignal = _.find(this.state.signals, sig => sig.name == this.state.signalType) || {}
+
     //fixme usunac odniesienia do modalowych klas
     //fixme da sie to bez tylu zagniezdzen?
     return (
@@ -37,16 +41,25 @@ class Signals extends React.Component {
               <div className="node-label">Signal type</div>
               <div className="node-value">
                 <select className="node-input" onChange={(e) => this.setState({signalType: e.target.value, signalParams: {}})}>
-                  {_.keys(this.props.signals).map((sig, index) => (<option key={index} value={sig}>{sig}</option>))}
+                  {_.map(this.state.signals, (sig, index) => (<option key={index} value={sig.name}>{sig.name}</option>))}
                 </select>
               </div>
             </div>
-            {this.readSignalParams().map((param, idx) => {
+            <div className="node-row">
+              <div className="node-label">Process id</div>
+              <div className="node-value">
+                <select className="node-input" onChange={(e) => this.setState({processId: e.target.value})}>
+                  {(currentSignal.availableProcesses || [])
+                    .map((process, index) => (<option key={index} value={process}>{process}</option>))}
+                </select>
+              </div>
+            </div>
+            {_.get(currentSignal, 'parameters', []).map((param, idx) => {
               return (
                 <div className="node-row" key={idx}>
-                  <div className="node-label">{param.name}</div>
+                  <div className="node-label">{param}</div>
                   <div className="node-value">
-                    <input className="node-input" type="text" value={this.state.signalParams[param.name] || ""} onChange={(e) => this.changeParamValue(param.name, e.target.value)}/>
+                    <input className="node-input" type="text" value={this.state.signalParams[param] || ""} onChange={(e) => this.changeParamValue(param, e.target.value)}/>
                   </div>
                 </div>
               )
@@ -54,7 +67,7 @@ class Signals extends React.Component {
           </div>
           {!_.isEmpty(this.state.signalType) ?
             <button type="button" className="modalButton"
-                    onClick={this.sendSignal.bind(this, this.state.signalType, this.state.signalParams)}>Send signal</button>
+                    onClick={this.sendSignal.bind(this, this.state.signalType, this.state.processId, this.state.signalParams)}>Send signal</button>
             : null}
         </div>
     </div>
@@ -62,8 +75,8 @@ class Signals extends React.Component {
     )
   }
 
-  sendSignal = (signalType, signalParams) => {
-    return HttpService.sendSignal(signalType, signalParams)
+  sendSignal = (signalType, processId, signalParams) => {
+    return HttpService.sendSignal(signalType, processId, signalParams)
   }
 
   changeParamValue = (paramName, newValue) => {
@@ -72,9 +85,6 @@ class Signals extends React.Component {
     this.setState({signalParams: newSignalParams})
   }
 
-  readSignalParams = () => {
-    return (this.props.signals[this.state.signalType] || {}).parameters || []
-  }
 
 }
 
@@ -84,7 +94,6 @@ Signals.header = "Signals"
 function mapState(state) {
   return {
     processingType: 'streaming',
-    signals: _.get(state.settings.processDefinitionData, 'processDefinition.signals') || {}
   };
 }
 
