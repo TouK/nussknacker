@@ -7,15 +7,16 @@ import java.util.concurrent.atomic.AtomicInteger
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.functions.RichMapFunction
+import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor
 import org.apache.flink.streaming.api.scala._
-import pl.touk.esp.engine.api.exception.{EspExceptionInfo, ExceptionHandlerFactory}
+import pl.touk.esp.engine.api.exception.{EspExceptionInfo, ExceptionHandlerFactory, NonTransientException}
 import pl.touk.esp.engine.api.process._
 import pl.touk.esp.engine.api.{LazyInterpreter, _}
-import pl.touk.esp.engine.flink.api.exception.FlinkEspExceptionHandler
+import pl.touk.esp.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionHandler}
 import pl.touk.esp.engine.flink.api.process.{FlinkSink, FlinkSourceFactory}
-import pl.touk.esp.engine.flink.util.exception.VerboselyLoggingExceptionHandler
+import pl.touk.esp.engine.flink.util.exception._
 import pl.touk.esp.engine.flink.util.service.TimeMeasuringService
 import pl.touk.esp.engine.flink.util.source.CollectionSource
 import pl.touk.esp.engine.graph.EspProcess
@@ -72,7 +73,8 @@ object ProcessTestHelpers {
 
       override def listeners(config: Config) = Seq(LoggingListener)
 
-      override def exceptionHandlerFactory(config: Config) = ExceptionHandlerFactory.noParams(VerboselyLoggingExceptionHandler)
+      override def exceptionHandlerFactory(config: Config) =
+        ExceptionHandlerFactory.noParams(RecordingExceptionHandler(_))
 
       override def globalProcessVariables(config: Config) = {
         Map("processHelper" -> WithCategories(ProcessHelper.getClass))
@@ -83,6 +85,18 @@ object ProcessTestHelpers {
       override def buildInfo(): Map[String, String] = Map.empty
     }
   }
+
+  case class RecordingExceptionHandler(metaData: MetaData) extends FlinkEspExceptionHandler with ConsumingNonTransientExceptions {
+    override def restartStrategy: RestartStrategies.RestartStrategyConfiguration = RestartStrategies.noRestart()
+
+
+    override protected val consumer: FlinkEspExceptionConsumer = new RateMeterExceptionConsumer(new FlinkEspExceptionConsumer {
+      override def consume(exceptionInfo: EspExceptionInfo[NonTransientException]): Unit =
+        RecordingExceptionHandler.add(exceptionInfo)
+    })
+  }
+
+  object RecordingExceptionHandler extends WithDataList[EspExceptionInfo[_ <: Throwable]]
 
   object StateCustomNode extends CustomStreamTransformer {
 
@@ -134,17 +148,7 @@ object ProcessTestHelpers {
     }
   }
 
-  object MockService {
-    private val data_ = new CopyOnWriteArrayList[Any]
-
-    def data = {
-      data_.toArray.toList
-    }
-
-    def clear() = {
-      data_.clear()
-    }
-  }
+  object MockService extends WithDataList[Any]
 
   //data is static, to be able to track, Service is object, to initialize metrics properly...
   class MockService extends Service with TimeMeasuringService {
@@ -154,7 +158,7 @@ object ProcessTestHelpers {
     @MethodToInvoke
     def invoke(@ParamName("all") all: Any)(implicit ec: ExecutionContext) = {
       measuring(Future.successful {
-        MockService.data_.add(all)
+        MockService.add(all)
       })
     }
   }
@@ -162,7 +166,7 @@ object ProcessTestHelpers {
   case object MonitorEmptySink extends FlinkSink {
     val invocationsCount = new AtomicInteger(0)
 
-    def clear() = {
+    def clear() : Unit = {
       invocationsCount.set(0)
     }
     override def testDataOutput: Option[(Any) => String] = Some(output => output.toString)
@@ -173,13 +177,11 @@ object ProcessTestHelpers {
     }
   }
 
-  case object SinkForInts extends FlinkSink with Serializable {
-
-    var invocations = List[Int]()
+  case object SinkForInts extends FlinkSink with Serializable with WithDataList[Int] {
 
     override def toFlinkFunction = new SinkFunction[Any] {
       override def invoke(value: Any) = {
-        invocations = value.toString.toInt :: invocations
+        add(value.toString.toInt)
       }
     }
 
@@ -195,7 +197,22 @@ object ProcessTestHelpers {
 
 object ProcessHelper {
   val constant = 4
-  def add(a: Int, b: Int) = {
+  def add(a: Int, b: Int) : Int = {
     a + b
+  }
+}
+
+trait WithDataList[T] {
+
+  private val dataList = new CopyOnWriteArrayList[T]
+
+  def add(element: T) : Unit = dataList.add(element)
+
+  def data : List[T] = {
+    dataList.toArray.toList.map(_.asInstanceOf[T])
+  }
+
+  def clear() : Unit = {
+    dataList.clear()
   }
 }
