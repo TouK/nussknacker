@@ -4,17 +4,21 @@ import java.net.URL
 
 import com.typesafe.config.Config
 import org.apache.flink.api.common.ExecutionConfig
+import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import org.apache.flink.api.common.restartstrategy.RestartStrategies.NoRestartStrategyConfiguration
 import org.apache.flink.configuration.{ConfigConstants, Configuration}
 import org.apache.flink.runtime.minicluster.LocalFlinkMiniCluster
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import pl.touk.esp.engine.api.deployment.test.{TestData, TestResults}
+import pl.touk.esp.engine.api.exception.{EspExceptionInfo, NonTransientException}
 import pl.touk.esp.engine.api.process.ProcessConfigCreator
 import pl.touk.esp.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.esp.engine.api.test.{ResultsCollectingListener, ResultsCollectingListenerHolder, TestRunId}
 import pl.touk.esp.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.esp.engine.definition.ProcessDefinitionExtractor
+import pl.touk.esp.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionHandler}
 import pl.touk.esp.engine.flink.api.process.FlinkSourceFactory
+import pl.touk.esp.engine.flink.util.exception.{ConsumingNonTransientExceptions, DefaultEspExceptionHandler}
 import pl.touk.esp.engine.flink.util.source.CollectionSource
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.process.FlinkProcessRegistrar
@@ -65,8 +69,10 @@ class FlinkTestMain(config: Config, testData: TestData, process: EspProcess, cre
       prepareServiceWithEnabledInvocationCollector(listener.runId, service)
     }
     definitions
-      .copy(sourceFactories = definitions.sourceFactories + (sourceType -> testSource))
-      .copy(services = servicesWithEnabledInvocationCollector)
+      .copy(sourceFactories = definitions.sourceFactories + (sourceType -> testSource),
+            services = servicesWithEnabledInvocationCollector,
+            exceptionHandlerFactory = prepareDummyExceptionHandler(definitions.exceptionHandlerFactory)
+      )
   }
 
   private def prepareTestDataSourceFactory(executionConfig: ExecutionConfig)(objectWithMethodDef: ObjectWithMethodDef): Option[ObjectWithMethodDef] = {
@@ -87,6 +93,21 @@ class FlinkTestMain(config: Config, testData: TestData, process: EspProcess, cre
           case a => a
         }
         service.invokeMethod(parameterCreator, newAdditional)
+      }
+    }
+  }
+
+  //exceptions are recorded any way, by listeners
+  private def prepareDummyExceptionHandler(exceptionHandler: ObjectWithMethodDef) : ObjectWithMethodDef = {
+    new ObjectWithMethodDef(exceptionHandler.obj, exceptionHandler.methodDef, exceptionHandler.objectDefinition) {
+      override def invokeMethod(parameterCreator: String => Option[AnyRef], additional: Seq[AnyRef]): Any = {
+        new FlinkEspExceptionHandler with ConsumingNonTransientExceptions{
+          override def restartStrategy: RestartStrategies.RestartStrategyConfiguration = RestartStrategies.noRestart()
+
+          override protected def consumer: FlinkEspExceptionConsumer = new FlinkEspExceptionConsumer {
+            override def consume(exceptionInfo: EspExceptionInfo[NonTransientException]): Unit = {}
+          }
+        }
       }
     }
   }

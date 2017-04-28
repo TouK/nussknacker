@@ -25,6 +25,7 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside with BeforeAn
     super.beforeEach()
     MonitorEmptySink.clear()
     LogService.clear()
+    RecordingExceptionHandler.clear()
   }
 
   val ProcessMarshaller = new ProcessMarshaller
@@ -168,6 +169,28 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside with BeforeAn
     exceptionFromService.throwable.getMessage shouldBe "Thrown as expected"
   }
 
+  it should "ignore real exception handler" in {
+    val process =
+      EspProcessBuilder
+        .id("proc1")
+        .exceptionHandler()
+        .source("id", "input")
+        .processor("failing", "throwingService", "throw" -> "#input.value1 == 2")
+        .filter("filter", "1 / #input.value1 >= 0")
+        .sink("out", "#input", "monitor")
+
+    val results = FlinkTestMain.run(ProcessMarshaller.toJson(process, PrettyParams.spaces2),
+      ConfigFactory.load(), TestData(List("0|1|2|3|4|5|6", "1|0|2|3|4|5|6", "2|2|2|3|4|5|6", "3|4|2|3|4|5|6").mkString("\n")), List())
+
+    val nodeResults = results.nodeResults
+
+    nodeResults("id") should have length 4
+    nodeResults("out") should have length 2
+
+    results.exceptions should have length 2
+    RecordingExceptionHandler.data shouldBe 'empty
+  }
+
   it should "handle transient errors" in {
     val process =
       EspProcessBuilder
@@ -243,7 +266,7 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside with BeforeAn
     results.exceptions.head.nodeId shouldBe Some("out")
     results.exceptions.head.throwable.getMessage should include ("For input string: ")
 
-    SinkForInts.invocations should have length 0
+    SinkForInts.data should have length 0
   }
 
   def nodeResult(count: Int, vars: (String, Any)*) = NodeResult(Context(s"proc1-id-0-$count", Map(vars: _*)))
