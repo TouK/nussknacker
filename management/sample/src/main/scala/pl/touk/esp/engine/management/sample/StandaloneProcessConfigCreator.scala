@@ -8,6 +8,7 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.esp.engine.api._
 import pl.touk.esp.engine.api.exception.{EspExceptionHandler, EspExceptionInfo, ExceptionHandlerFactory}
 import pl.touk.esp.engine.api.process._
+import pl.touk.esp.engine.api.signal.ProcessSignalSender
 import pl.touk.esp.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.esp.engine.api.test.TestDataParser
 import pl.touk.esp.engine.util.LoggingListener

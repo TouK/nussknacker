@@ -2,6 +2,7 @@ package pl.touk.esp.engine.definition
 
 import com.typesafe.config.Config
 import pl.touk.esp.engine.api.process.{ProcessConfigCreator, WithCategories}
+import pl.touk.esp.engine.api.signal.SignalTransformer
 import pl.touk.esp.engine.definition.DefinitionExtractor._
 
 object ProcessDefinitionExtractor {
@@ -22,8 +23,16 @@ object ProcessDefinitionExtractor {
       ObjectWithMethodDef(factory, ProcessObjectDefinitionExtractor.service)
     }
 
-    val signalsDefs = signals.mapValuesNow { signal =>
-      ObjectWithMethodDef(signal, ProcessObjectDefinitionExtractor.signals)
+    val customStreamTransformersDefs = customStreamTransformers.mapValuesNow { executor =>
+      ObjectWithMethodDef(executor, ProcessObjectDefinitionExtractor.customNodeExecutor)
+    }
+
+    val signalsDefs = signals.map { case (signalName, signal) =>
+      val signalSender = ObjectWithMethodDef(signal, ProcessObjectDefinitionExtractor.signals)
+      val transformers = customStreamTransformersDefs.filter { case (_, transformerDef) =>
+          Option(transformerDef.methodDef.method.getAnnotation(classOf[SignalTransformer])).exists(_.signalClass() == signal.value.getClass)
+      }.keySet
+      (signalName, (signalSender, transformers))
     }
 
     val sourceFactoriesDefs = sourceFactories.mapValuesNow { factory =>
@@ -34,30 +43,28 @@ object ProcessDefinitionExtractor {
     }
     val exceptionHandlerFactoryDefs = ObjectWithMethodDef(
       WithCategories(exceptionHandlerFactory, List()), ProcessObjectDefinitionExtractor.exceptionHandler)
-    val customNodesExecutorsDefs = customStreamTransformers.mapValuesNow { executor =>
-      ObjectWithMethodDef(executor, ProcessObjectDefinitionExtractor.customNodeExecutor)
-    }
+
     val globalVariablesDefs = globalVariables.mapValuesNow { globalVar =>
       globalVar.map(ClazzRef(_))
     }
 
     val typesInformation = TypesInformation.extract(servicesDefs.values,
       sourceFactoriesDefs.values,
-      customNodesExecutorsDefs.values,
-      signalsDefs.values,
+      customStreamTransformersDefs.values,
+      signalsDefs.values.map(_._1),
       globalVariables.values.map(_.value)
     )
 
     ProcessDefinition[ObjectWithMethodDef](
       servicesDefs, sourceFactoriesDefs, sinkFactoriesDefs,
-      customNodesExecutorsDefs, signalsDefs, exceptionHandlerFactoryDefs, globalVariablesDefs, typesInformation)
+      customStreamTransformersDefs, signalsDefs, exceptionHandlerFactoryDefs, globalVariablesDefs, typesInformation)
   }
 
   case class ProcessDefinition[T <: ObjectMetadata](services: Map[String, T],
                                                     sourceFactories: Map[String, T],
                                                     sinkFactories: Map[String, T],
                                                     customStreamTransformers: Map[String, T],
-                                                    signals: Map[String, T],
+                                                    signalsWithTransformers: Map[String, (T, Set[String])],
                                                     exceptionHandlerFactory: T,
                                                     globalVariables: Map[String, WithCategories[ClazzRef]],
                                                     typesInformation: List[PlainClazzDefinition]) {
@@ -73,7 +80,7 @@ object ProcessDefinitionExtractor {
         definition.sourceFactories.mapValuesNow(_.objectDefinition),
         definition.sinkFactories.mapValuesNow(_.objectDefinition),
         definition.customStreamTransformers.mapValuesNow(_.objectDefinition),
-        definition.signals.mapValuesNow(_.objectDefinition),
+        definition.signalsWithTransformers.mapValuesNow(sign => (sign._1.objectDefinition, sign._2)),
         definition.exceptionHandlerFactory.objectDefinition,
         definition.globalVariables,
         definition.typesInformation

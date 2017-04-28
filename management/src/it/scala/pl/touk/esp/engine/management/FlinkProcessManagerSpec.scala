@@ -190,7 +190,7 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
     val kafkaClient = new KafkaClient(config.getString("prod.kafka.kafkaAddress"), config.getString("prod.kafka.zkAddress"))
     val consumer = kafkaClient.createConsumer()
 
-    processManager.dispatchSignal("removeLockSignal", Map("processId" -> "test-process", "lockId" -> "test-lockId"))
+    processManager.dispatchSignal("removeLockSignal", "test-process", Map("lockId" -> "test-lockId"))
 
     val readSignals = consumer.consume(signalsTopic).take(1).map(m => new String(m.message())).toList
     val signalJson = argonaut.Parse.parse(readSignals(0)).right.get
