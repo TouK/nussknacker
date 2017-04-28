@@ -3,9 +3,10 @@ package pl.touk.esp.engine.definition
 import java.lang.reflect.Method
 
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.esp.engine.api.{CustomStreamTransformer, MetaData, ProcessSignalSender}
+import pl.touk.esp.engine.api.{CustomStreamTransformer, MetaData}
 import pl.touk.esp.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
 import pl.touk.esp.engine.api.process._
+import pl.touk.esp.engine.api.signal.ProcessSignalSender
 import pl.touk.esp.engine.definition.DefinitionExtractor._
 import pl.touk.esp.engine.graph
 
@@ -48,7 +49,7 @@ class SourceProcessObjectDefinitionExtractor extends ProcessObjectDefinitionExtr
 object SignalsDefinitionExtractor extends DefinitionExtractor[ProcessSignalSender] {
 
   override protected val returnType = classOf[BoxedUnit]
-  override protected val additionalParameters = Set[Class[_]]()
+  override protected val additionalParameters = Set[Class[_]](classOf[String])
 
 }
 

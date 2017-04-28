@@ -13,6 +13,7 @@ import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExt
 import org.apache.flink.streaming.api.scala._
 import pl.touk.esp.engine.api.exception.{EspExceptionInfo, ExceptionHandlerFactory, NonTransientException}
 import pl.touk.esp.engine.api.process._
+import pl.touk.esp.engine.api.signal.ProcessSignalSender
 import pl.touk.esp.engine.api.{LazyInterpreter, _}
 import pl.touk.esp.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionHandler}
 import pl.touk.esp.engine.flink.api.process.{FlinkSink, FlinkSourceFactory}

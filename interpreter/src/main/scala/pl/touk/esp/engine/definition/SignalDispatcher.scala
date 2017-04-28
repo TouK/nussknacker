@@ -6,8 +6,7 @@ import pl.touk.esp.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.esp.engine.util.ThreadUtils
 
 trait SignalDispatcher {
-  //TODO docelowo powinien byc tutaj przekazywany processId, najlepiej przekazywany do ProcessSignalSender jako dodatkowy parametr
-  def dispatchSignal(signalType: String, parameters: Map[String, AnyRef]): Option[Unit]
+  def dispatchSignal(signalType: String, processId: String, parameters: Map[String, AnyRef]): Option[Unit]
 }
 
 trait ConfigCreatorSignalDispatcher extends SignalDispatcher {
@@ -15,11 +14,11 @@ trait ConfigCreatorSignalDispatcher extends SignalDispatcher {
 
   def processConfig: Config
 
-  def dispatchSignal(signalType: String, parameters: Map[String, AnyRef]): Option[Unit] = {
+  def dispatchSignal(signalType: String, processId: String, parameters: Map[String, AnyRef]): Option[Unit] = {
     ThreadUtils.withThisAsContextClassLoader(configCreator.getClass.getClassLoader) {
       configCreator.signals(processConfig).get(signalType).map { signalFactory =>
         val objectWithMethodDef = ObjectWithMethodDef(WithCategories(signalFactory.value), ProcessObjectDefinitionExtractor.signals)
-        objectWithMethodDef.invokeMethod(parameters.get, Seq.empty)
+        objectWithMethodDef.invokeMethod(parameters.get, List(processId))
         ()
       }
     }

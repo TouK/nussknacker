@@ -7,18 +7,20 @@ import org.apache.flink.api.common.state.{ValueState, ValueStateDescriptor}
 import org.apache.flink.streaming.api.operators.{AbstractStreamOperator, TwoInputStreamOperator}
 import org.apache.flink.streaming.api.scala.{DataStream, _}
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
-import pl.touk.esp.engine.api.{MethodToInvoke, ParamName, ProcessSignalSender, _}
+import pl.touk.esp.engine.api.signal.{ProcessSignalSender, SignalTransformer}
+import pl.touk.esp.engine.api.{MethodToInvoke, ParamName, _}
 import pl.touk.esp.engine.flink.util.signal.KafkaSignalStreamConnector
 import pl.touk.esp.engine.kafka.{EspSimpleKafkaProducer, KafkaConfig}
 
 import scala.concurrent.duration.FiniteDuration
 
-class RemoveLockProcessSignalFactory(val kafkaConfig: KafkaConfig, val signalsTopic: String) extends ProcessSignalSender with EspSimpleKafkaProducer {
+class RemoveLockProcessSignalFactory(val kafkaConfig: KafkaConfig, val signalsTopic: String)
+  extends ProcessSignalSender with EspSimpleKafkaProducer {
 
   import Signals._
 
   @MethodToInvoke
-  def sendSignal(@ParamName("processId") processId: String, @ParamName("lockId") lockId: String) = {
+  def sendSignal(@ParamName("lockId") lockId: String)(processId: String) = {
     val signal = SampleProcessSignal(processId, System.currentTimeMillis(), RemoveLock(lockId))
     val json = ProcessSignalCodecs.processSignalCodec.Encoder(signal).nospaces
     sendToKafkaWithNewProducer(Array.empty, json.getBytes, signalsTopic)
@@ -44,6 +46,7 @@ object SampleSignalHandlingTransformer {
 
   class LockStreamTransformer(val kafkaConfig: KafkaConfig, val signalsTopic: String) extends CustomStreamTransformer with KafkaSignalStreamConnector {
 
+    @SignalTransformer(signalClass = classOf[RemoveLockProcessSignalFactory])
     @MethodToInvoke(returnType = classOf[LockOutput])
     def execute(@ParamName("input") input: LazyInterpreter[String])(metaData: MetaData, nodeId: String) =
       (start: DataStream[InterpretationResult], timeout: FiniteDuration) => {

@@ -12,6 +12,7 @@ import pl.touk.esp.engine.api.test.InvocationCollectors.ServiceInvocationCollect
 import pl.touk.esp.engine.api.test.TestDataParser
 import pl.touk.esp.engine.util.LoggingListener
 import argonaut.ArgonautShapeless._
+import pl.touk.esp.engine.api.signal.ProcessSignalSender
 import pl.touk.esp.engine.standalone.utils.{JsonStandaloneSourceFactory, StandaloneSinkFactory}
 
 import scala.concurrent.{ExecutionContext, Future}
