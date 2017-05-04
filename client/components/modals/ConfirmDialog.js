@@ -1,18 +1,15 @@
 import React from "react";
 import {render} from "react-dom";
-import {Link} from "react-router";
 import Modal from "react-modal";
-import {DropdownButton, MenuItem} from "react-bootstrap";
 import {connect} from "react-redux";
 import _ from "lodash";
-import ActionsUtils from "../actions/ActionsUtils";
-import EspModalStyles from '../common/EspModalStyles'
-import ProcessUtils from '../common/ProcessUtils';
-import "../stylesheets/visualization.styl";
-import SaveIcon from '../assets/img/save-icon.svg';
-import CloseIcon from '../assets/img/close-icon.svg';
-import InlinedSvgs from '../assets/icons/InlinedSvgs'
+import ActionsUtils from "../../actions/ActionsUtils";
+import ProcessUtils from '../../common/ProcessUtils';
+import "../../stylesheets/visualization.styl";
+import InlinedSvgs from '../../assets/icons/InlinedSvgs'
 
+
+//TODO: uwspolnic z innymi modals
 class ConfirmDialog extends React.Component {
 
   componentDidMount = () => {
@@ -35,7 +32,9 @@ class ConfirmDialog extends React.Component {
 
   render() {
     return (
-      <Modal isOpen={this.props.confirmDialog.isOpen} className="espModal confirmationModal" onRequestClose={this.closeDialog}>
+      <Modal isOpen={this.props.confirmDialog.isOpen}
+             shouldCloseOnOverlayClick={false}
+             className="espModal confirmationModal" onRequestClose={this.closeDialog}>
         <div className="modalContent">
           <p>{this.props.confirmDialog.text}</p>
           {this.props.processHasSomeWarnings ?

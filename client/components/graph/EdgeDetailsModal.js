@@ -45,10 +45,11 @@ class EdgeDetailsModal extends React.Component {
   }
 
   performEdgeEdit = () => {
-    this.setState( { pendingRequest: true})
-    this.props.actions.editEdge(this.props.processToDisplay, this.props.edgeToDisplay, this.state.editedEdge).then (() =>
-      this.setState( { pendingRequest: false})
-    )
+    this.setState( { pendingRequest: true});
+    this.props.actions.editEdge(this.props.processToDisplay, this.props.edgeToDisplay, this.state.editedEdge).then (() => {
+      this.setState( { pendingRequest: false});
+      this.closeModal()
+    })
   }
 
   renderModalButtons() {
@@ -141,7 +142,7 @@ class EdgeDetailsModal extends React.Component {
     var headerStyles = EspModalStyles.headerStyles("#2d8e54", "white")
     return (
       <div className="objectModal">
-        <Modal isOpen={isOpen} className="espModal" onRequestClose={this.closeModal}>
+        <Modal isOpen={isOpen} className="espModal" shouldCloseOnOverlayClick={false} onRequestClose={this.closeModal}>
           <div className="modalHeader" style={headerStyles}><span>edge</span></div>
           <div className="modalContent">
             {this.renderModalContent()}

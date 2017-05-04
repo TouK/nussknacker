@@ -14,7 +14,7 @@ import ProcessUtils from "../../common/ProcessUtils";
 import SideNodeDetails from "./SideNodeDetails";
 import NodeUtils from '../graph/NodeUtils'
 import InlinedSvgs from "../../assets/icons/InlinedSvgs"
-import Moment from "moment"
+import Dialogs from "../modals/Dialogs"
 
 class UserRightPanel extends Component {
 
@@ -30,13 +30,6 @@ class UserRightPanel extends Component {
 
   constructor(props) {
     super(props);
-    const nowMidnight = Moment().startOf('day')
-    const yesterdayMidnight = Moment().subtract(1,'days').startOf('day')
-    this.state = {
-      testSampleSize: 10,
-      processCountsDateFrom: yesterdayMidnight.format("YYYY-MM-D HH:mm:ss"),
-      processCountsDateTo: nowMidnight.format("YYYY-MM-D HH:mm:ss")
-    };
   }
 
 
@@ -85,17 +78,6 @@ class UserRightPanel extends Component {
         },
         {
           panelName: "Test",
-          properties: (
-            <div className="properties">
-              <label>Test sample size</label>
-              <input type="number" value={this.state.testSampleSize} onChange={(e) => {this.setState({testSampleSize: e.target.value})}}/>
-              {/*TODO these process counts dates should be in modal*/}
-              <label>Process counts from</label>
-              <input type="text" value={this.state.processCountsDateFrom} onChange={(e) => {this.setState({processCountsDateFrom: e.target.value})}}/>
-              <label>Process counts to</label>
-              <input type="text" value={this.state.processCountsDateTo} onChange={(e) => {this.setState({processCountsDateTo: e.target.value})}}/>
-            </div>
-          ),
           buttons: [
             {name: "from file", onClick: this.testProcess, icon: InlinedSvgs.buttonFromFile, dropzone: true,
               disabled: !this.props.testCapabilities.canBeTested},
@@ -157,7 +139,7 @@ class UserRightPanel extends Component {
   }
 
   save = () => {
-    this.props.actions.toggleSaveProcessDialog(true)
+    this.props.actions.toggleModalDialog(Dialogs.types.saveProcess)
   }
 
   migrate = () => {
@@ -212,12 +194,11 @@ class UserRightPanel extends Component {
   }
 
   generateData = () => {
-    HttpService.generateTestData(this.props.fetchedProcessDetails.id, this.state.testSampleSize, this.props.processToDisplay)
+    this.props.actions.toggleModalDialog(Dialogs.types.generateTestData)
   }
 
   fetchProcessCounts = () => {
-    HttpService.fetchProcessCounts(this.processId(), this.state.processCountsDateFrom, this.state.processCountsDateTo)
-      .then((processCounts) => this.props.actions.displayProcessCounts(processCounts, this.props.nodesWithGroups))
+    this.props.actions.toggleModalDialog(Dialogs.types.calculateCounts)
   }
 
   importProcess = (files) => {
