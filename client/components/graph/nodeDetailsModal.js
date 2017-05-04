@@ -129,7 +129,7 @@ class NodeDetailsModal extends React.Component {
     var testResults = (id) => TestResultUtils.resultsForNode(this.props.testResults, id)
     return (
       <div className="objectModal">
-        <Modal isOpen={isOpen} className="espModal" onRequestClose={this.closeModal}>
+        <Modal shouldCloseOnOverlayClick={false} isOpen={isOpen} className="espModal" onRequestClose={this.closeModal}>
           <div className="modalHeader" style={headerStyles}>
             <span>{this.nodeAttributes().name}</span>
           </div>

@@ -6,16 +6,14 @@ import Processes from "./Processes";
 import "../stylesheets/mainMenu.styl";
 import "../stylesheets/main.styl";
 
-import hamburgerOpen from "../assets/img/menu-open.svg";
-import hamburgerClosed from "../assets/img/menu-closed.svg";
 import Metrics from "./Metrics";
 import Search from "./Search";
 import Signals from "./Signals";
 import DragArea from "../components/DragArea";
 import {connect} from "react-redux";
 import ActionsUtils from "../actions/ActionsUtils";
-import ConfirmDialog from "../components/ConfirmDialog";
-import SaveProcessDialog from "../components/SaveProcessDialog";
+import Dialogs from "../components/modals/Dialogs";
+
 
 const App_ = React.createClass({
 
@@ -44,6 +42,7 @@ const App_ = React.createClass({
   },
 
   render: function () {
+    const AllDialogs = Dialogs.AllDialogs
     return (
       <div id="app-container">
         <nav id="main-menu" className="navbar navbar-default">
@@ -68,8 +67,7 @@ const App_ = React.createClass({
         </nav>
         <main>
           <DragArea>
-            <ConfirmDialog/>
-            <SaveProcessDialog/>
+            <AllDialogs/>
             <div id="working-area" className={this.props.leftPanelIsOpened ? 'is-opened' : null}>
               {this.props.children}
             </div>

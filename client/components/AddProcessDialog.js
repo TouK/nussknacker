@@ -11,6 +11,7 @@ import SaveIcon from "../assets/img/save-icon.svg";
 import CloseIcon from "../assets/img/close-icon.svg";
 import HttpService from "../http/HttpService";
 
+//TODO: uwspolnic z modals
 class AddProcessDialog extends React.Component {
 
   static propTypes = {
@@ -47,7 +48,7 @@ class AddProcessDialog extends React.Component {
   render() {
     const headerStyles = EspModalStyles.headerStyles("#2d8e54", "white")
     return (
-      <Modal isOpen={this.props.isOpen} className="espModal" onRequestClose={this.closeDialog}>
+      <Modal isOpen={this.props.isOpen} className="espModal" shouldCloseOnOverlayClick={false} onRequestClose={this.closeDialog}>
         <div className="modalHeader" style={headerStyles}>
           <span>Create new process</span>
         </div>
