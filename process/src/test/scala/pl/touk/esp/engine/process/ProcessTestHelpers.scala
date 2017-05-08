@@ -18,6 +18,7 @@ import pl.touk.esp.engine.api.{LazyInterpreter, _}
 import pl.touk.esp.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionHandler}
 import pl.touk.esp.engine.flink.api.process.{FlinkSink, FlinkSourceFactory}
 import pl.touk.esp.engine.flink.util.exception._
+import pl.touk.esp.engine.flink.util.listener.NodeCountMetricListener
 import pl.touk.esp.engine.flink.util.service.TimeMeasuringService
 import pl.touk.esp.engine.flink.util.source.CollectionSource
 import pl.touk.esp.engine.graph.EspProcess
@@ -72,7 +73,7 @@ object ProcessTestHelpers {
       override def customStreamTransformers(config: Config) = Map(
         "stateCustom" -> WithCategories(StateCustomNode), "customFilter" -> WithCategories(CustomFilter))
 
-      override def listeners(config: Config) = Seq(LoggingListener)
+      override def listeners(config: Config) = Seq(LoggingListener, new NodeCountMetricListener)
 
       override def exceptionHandlerFactory(config: Config) =
         ExceptionHandlerFactory.noParams(RecordingExceptionHandler(_))
