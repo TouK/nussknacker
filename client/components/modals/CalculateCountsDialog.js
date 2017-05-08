@@ -18,8 +18,8 @@ class CalculateCountsDialog extends React.Component {
     const nowMidnight = Moment().startOf('day')
     const yesterdayMidnight = Moment().subtract(1,'days').startOf('day')
     this.initState = {
-      processCountsDateFrom: yesterdayMidnight.format("YYYY-MM-D HH:mm:ss"),
-      processCountsDateTo: nowMidnight.format("YYYY-MM-D HH:mm:ss")
+      processCountsDateFrom: yesterdayMidnight.format("YYYY-MM-DD HH:mm:ss"),
+      processCountsDateTo: nowMidnight.format("YYYY-MM-DD HH:mm:ss")
     };
     this.state = this.initState
   }
