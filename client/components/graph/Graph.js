@@ -19,6 +19,8 @@ import NodeUtils from './NodeUtils.js'
 
 class Graph extends React.Component {
 
+    redrawing = false
+
     static propTypes = {
         processToDisplay: React.PropTypes.object.isRequired,
         groupingState: React.PropTypes.array,
@@ -31,7 +33,7 @@ class Graph extends React.Component {
         this.graph = new joint.dia.Graph();
         this.graph
           .on("remove", (e, f) => {
-            if (e.isLink) {
+            if (e.isLink && !this.redrawing) {
               this.props.actions.nodesDisconnected(e.attributes.source.id, e.attributes.target.id)
             }
         })
@@ -136,31 +138,91 @@ class Graph extends React.Component {
           })
     }
 
+    time = (start, name) => {
+      const now = window.performance.now()
+      //uncomment to track performance...
+      //console.log("time: ", name, now - start)
+      return now
+    }
+
     drawGraph = (process, layout, processCounts, forExport, expandedGroups) => {
+      this.redrawing = true
+
+      //leaving performance debug for now, as there is still room for improvement:
+      //handling forExport and processCounts without need of full redraw
+      const performance = window.performance;
+      var t = performance.now();
+
       const nodesWithGroups = NodeUtils.nodesFromProcess(process, expandedGroups)
       const edgesWithGroups = NodeUtils.edgesFromProcess(process, expandedGroups)
       const outgoingEdgesGrouped = _.groupBy(edgesWithGroups, "from")
+      t = this.time(t, 'start')
+
       const nodes = _.map(nodesWithGroups, (n) => { return EspNode.makeElement(n, processCounts[n.id], forExport) });
+      t = this.time(t, 'nodes')
+
       const edges = _.map(edgesWithGroups, (e) => { return EspNode.makeLink(e, outgoingEdgesGrouped, forExport) });
+      t = this.time(t, 'links')
+
       const boundingRects = NodeUtils.getExpandedGroups(process, expandedGroups)
         .map(expandedGroup => ({group: expandedGroup, rect: EspNode.boundingRect(nodes, expandedGroup, layout,
           NodeUtils.createGroup(nodesWithGroups, expandedGroup))}))
+      t = this.time(t, 'bounding')
+
       const cells = boundingRects.map(g => g.rect).concat(nodes.concat(edges));
-      this.graph.resetCells(cells);
-      if (_.isEmpty(layout)) {
-        this.directedLayout()
+
+      const newCells = _.filter(cells, cell => !this.graph.getCell(cell.id))
+      const deletedCells = _.filter(this.graph.getCells(), oldCell => !_.find(cells, cell => cell.id === oldCell.id))
+      const changedCells = _.filter(cells, cell => {
+        const old = this.graph.getCell(cell.id)
+        //TODO: some different ways of comparing?
+        return old &&  JSON.stringify(old.get("definitionToCompare")) !== JSON.stringify(cell.get("definitionToCompare"))
+      })
+
+      t = this.time(t, 'compute')
+
+      if (newCells.length + deletedCells.length + changedCells.length > 3) {
+        this.graph.resetCells(cells);
       } else {
-        _.forEach(layout, el => {
-          const cell = this.graph.getCell(el.id)
-          if (cell) cell.set('position', el.position)
-        });
+        this.graph.removeCells(deletedCells)
+        this._updateChangedCells(changedCells);
+        this.graph.addCells(newCells)
       }
+      t = this.time(t, 'redraw')
+
+      this._layout(layout);
+      this.time(t, 'layout')
 
       _.forEach(boundingRects, rect => rect.rect.toBack())
 
+      this.redrawing = false
     }
 
-    _prepareContentForExport = () => {
+  _layout(layout) {
+    if (_.isEmpty(layout)) {
+      this.directedLayout()
+    } else {
+      _.forEach(layout, el => {
+        const cell = this.graph.getCell(el.id)
+        if (cell && JSON.stringify(cell.get('position')) !== JSON.stringify(el.position)) cell.set('position', el.position)
+      });
+    }
+  }
+
+  _updateChangedCells(changedCells) {
+    _.forEach(changedCells, cell => {
+      const cellToRemove = this.graph.getCell(cell.id)
+      const links = cellToRemove.isElement ? this.graph.getConnectedLinks(cellToRemove) : []
+      cellToRemove.remove()
+      this.graph.addCell(cell)
+      _.forEach(links, l => {
+        l.remove()
+        this.graph.addCell(l)
+      })
+    })
+  }
+
+  _prepareContentForExport = () => {
       const oldHeight = this.refs.espGraph.offsetHeight
       const oldWidth = this.refs.espGraph.offsetWidth
       //we fit to content to be able to export svg nicely...

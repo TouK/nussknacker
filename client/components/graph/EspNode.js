@@ -199,7 +199,12 @@ export default {
             outPorts: outPorts,
             attrs: attrs,
             rankDir: 'R',
-            nodeData: node
+            nodeData: node,
+            definitionToCompare: {
+              node: node,
+              processCounts: processCounts,
+              forExport: forExport
+            }
         });
     },
 
@@ -212,13 +217,19 @@ export default {
           backgroundObject: true,
           nodeData: group,
           size: { width: boundingRect.width, height: boundingRect.height },
-          attrs: { rect: { fill: 'green', opacity: 0.1 }}
+          attrs: { rect: { fill: 'green', opacity: 0.1 }},
+          definitionToCompare: {
+            boundingRect: boundingRect,
+            group
+          }
       })
     },
 
     makeLink(edge, outgoingEdges, forExport) {
       const label = NodeUtils.edgeLabel(edge, outgoingEdges)
       return new joint.dia.Link({
+        //TODO: czy da sie jakos inaczej, ale unikanie i deterministycznie?
+        id: `${edge.from}-${edge.to}-${label}`,
         markup: [
             '<path class="connection"/>',
             '<path class="marker-source"/>',
@@ -259,7 +270,12 @@ export default {
           '.marker-target': { 'stroke-width': forExport ? 1 : 0, stroke: forExport ? edgeStroke : 'white', fill: 'white', d: 'M 10 0 L 0 5 L 10 10 L 8 5 z' },
           minLen: label ? 20 : 10
         },
-        edgeData: edge
+        edgeData: edge,
+        definitionToCompare: {
+          edge: edge,
+          label: label,
+          forExport: forExport
+        }
      });
    }
 }
