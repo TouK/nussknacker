@@ -4,9 +4,9 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import org.apache.flink.api.common.functions.RuntimeContext
 import pl.touk.esp.engine.Interpreter
-import pl.touk.esp.engine.api.{MetaData, ProcessListener}
-import pl.touk.esp.engine.api.exception.{EspExceptionHandler, EspExceptionInfo}
-import pl.touk.esp.engine.compile.{PartSubGraphCompilationError, PartSubGraphCompiler, ValidationContext}
+import pl.touk.esp.engine.api.exception.EspExceptionInfo
+import pl.touk.esp.engine.api.{MetaData, ProcessListener, Service}
+import pl.touk.esp.engine.compile.{PartSubGraphCompilationError, PartSubGraphCompiler}
 import pl.touk.esp.engine.compiledgraph.CompiledProcessParts
 import pl.touk.esp.engine.compiledgraph.node.Node
 import pl.touk.esp.engine.definition.CustomNodeInvokerDeps
@@ -17,19 +17,21 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
 
 case class CompiledProcessWithDeps(compiledProcess: CompiledProcessParts,
-                                   private val servicesLifecycle: ServicesLifecycle,
-                                   private val listeners: Seq[ProcessListener],
+                                   private val services: WithLifecycle[Service],
+                                   private val listeners: WithLifecycle[ProcessListener],
                                    subPartCompiler: PartSubGraphCompiler,
                                    interpreter: Interpreter,
                                    processTimeout: FiniteDuration) extends CustomNodeInvokerDeps {
 
   def open(runtimeContext: RuntimeContext)(implicit ec: ExecutionContext): Unit = {
-    servicesLifecycle.open(runtimeContext)
+    services.open(runtimeContext)
+    listeners.open(runtimeContext)
     exceptionHandler.open(runtimeContext)
   }
 
   def close() = {
-    servicesLifecycle.close()
+    services.close()
+    listeners.close()
     exceptionHandler.close()
   }
 
@@ -62,7 +64,7 @@ case class CompiledProcessWithDeps(compiledProcess: CompiledProcessParts,
     override def restartStrategy = flinkExceptionHandler.restartStrategy
 
     override def handle(exceptionInfo: EspExceptionInfo[_ <: Throwable]) = {
-      listeners.foreach(_.exceptionThrown(exceptionInfo))
+      listeners.values.foreach(_.exceptionThrown(exceptionInfo))
       compiledProcess.exceptionHandler.handle(exceptionInfo)
     }
   }

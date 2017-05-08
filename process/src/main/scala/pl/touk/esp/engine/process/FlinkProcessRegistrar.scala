@@ -236,8 +236,8 @@ object FlinkProcessRegistrar {
       val listeners =  creator.listeners(config) ++ additionalListeners
       CompiledProcessWithDeps(
         compiledProcess,
-        new ServicesLifecycle(servicesDefs.values.map(_.obj.asInstanceOf[Service]).toSeq),
-        listeners,
+        WithLifecycle(servicesDefs.values.map(_.obj.asInstanceOf[Service]).toSeq),
+        WithLifecycle(listeners),
         subCompiler,
         Interpreter(servicesDefs, timeout, listeners),
         timeout
