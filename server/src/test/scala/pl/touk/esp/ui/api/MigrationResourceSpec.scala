@@ -36,27 +36,9 @@ class MigrationResourceSpec extends FlatSpec with ScalatestRouteTest with ScalaF
   val validDisplayable = ProcessConverter.toDisplayable(ProcessCanonizer.canonize(ProcessTestData.validProcess), ProcessingType.Streaming)
     .copy(validationResult = Some(ValidationResult.success))
 
-  it should "fail when migration not enabled" in {
-    val route = withPermissions(new MigrationResources(None, processRepository).route, Permission.Deploy)
-
-    Get("/migration/settings") ~> route ~> check {
-      status shouldEqual StatusCodes.OK
-      import pl.touk.esp.ui.util.Argonaut62Support._
-      responseAs[MigrationSettings] shouldBe MigrationSettings(false, None)
-    }
-
-    saveProcess(processId, ProcessTestData.validProcess) {
-      Post(s"/migration/migrate/$processId") ~> route ~> check {
-        status shouldEqual StatusCodes.BadRequest
-        responseAs[String] shouldBe "Migrator not enabled"
-      }
-    }
-  }
-
-
   it should "fail when process does not exist" in {
     val migrator = new MockMigrator
-    val route = withPermissions(new MigrationResources(Some(migrator), processRepository).route, Permission.Deploy)
+    val route = withPermissions(new MigrationResources(migrator, processRepository).route, Permission.Deploy)
 
 
     Get(s"/migration/compare/$processId") ~> route ~> check {
@@ -76,13 +58,8 @@ class MigrationResourceSpec extends FlatSpec with ScalatestRouteTest with ScalaF
 
   it should "invoke migrator for found process" in {
     val migrator = new MockMigrator
-    val route = withPermissions(new MigrationResources(Some(migrator), processRepository).route, Permission.Deploy)
+    val route = withPermissions(new MigrationResources(migrator, processRepository).route, Permission.Deploy)
     import pl.touk.esp.ui.util.Argonaut62Support._
-
-    Get("/migration/settings") ~> route ~> check {
-      status shouldEqual StatusCodes.OK
-      responseAs[MigrationSettings] shouldBe MigrationSettings(true, Some("abcd"))
-    }
 
     saveProcess(processId, ProcessTestData.validProcess) {
       Get(s"/migration/compare/$processId") ~> route ~> check {

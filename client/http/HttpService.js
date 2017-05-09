@@ -47,6 +47,10 @@ export default {
       .catch((error) => ({state: "error", error: error.responseText}))
   },
 
+  fetchSettings() {
+    return promiseWrap($.get(appConfig.API_URL + '/settings'))
+  },
+
   fetchLoggedUser() {
     return promiseWrap($.get(appConfig.API_URL + '/user')).then((user) => ({
       id: user.id,
@@ -58,18 +62,6 @@ export default {
       canDeploy: user.permissions.includes("Deploy"),
       canWrite: user.permissions.includes("Write"),
     }))
-  },
-
-  fetchGrafanaSettings() {
-    return promiseWrap($.get(appConfig.API_URL + '/settings/grafana'))
-  },
-
-  fetchKibanaSettings() {
-    return promiseWrap($.get(appConfig.API_URL + '/settings/kibana'))
-  },
-
-  fetchMigrationSettings() {
-    return promiseWrap($.get(appConfig.API_URL + '/migration/settings'))
   },
 
   fetchProcessDefinitionData(processingType) {

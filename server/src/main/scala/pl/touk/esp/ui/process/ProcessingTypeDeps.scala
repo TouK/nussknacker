@@ -20,13 +20,12 @@ case class ProcessingTypeDeps(processDefinitions: Map[ProcessingType, ProcessDef
                              )
 
 object ProcessingTypeDeps {
-  def apply(config: Config): ProcessingTypeDeps = {
+  def apply(config: Config, standaloneModeEnabled: Boolean): ProcessingTypeDeps = {
     val streaming = ProcessingType.Streaming
     val reqResp = ProcessingType.RequestResponse
     val streamingManager = FlinkProcessManager(config)
     val processDefinition = streamingManager.getProcessDefinition
     val streamingBuildInfo = BuildInfo.ordered(streamingManager.buildInfo)
-    val standaloneModeEnabled = config.hasPath("standaloneModeEnabled") && config.getBoolean("standaloneModeEnabled")
     val validator = ProcessValidator.default(processDefinition)
     if (standaloneModeEnabled) {
       val requestResponseManager = new StandaloneProcessManager(config)

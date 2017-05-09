@@ -36,7 +36,7 @@ Metrics.header = "Metrics"
 
 function mapState(state) {
   return {
-    settings: state.settings.grafanaSettings
+    settings: state.settings.featuresSettings.metrics
   };
 }
 

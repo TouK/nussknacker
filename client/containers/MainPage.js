@@ -58,8 +58,10 @@ const App_ = React.createClass({
             <div className="collapse navbar-collapse">
               <ul id="menu-items" className="nav navbar-nav navbar-right nav-pills nav-stacked">
                 <li><Link to={Processes.path}>{Processes.header}</Link></li>
-                <li><Link to={Metrics.basePath}>{Metrics.header}</Link></li>
-                <li><Link to={Search.path}>{Search.header}</Link></li>
+                {!_.isEmpty(this.props.featuresSettings.metrics) ?
+                  <li><Link to={Metrics.basePath}>{Metrics.header}</Link></li> : null}
+                {!_.isEmpty(this.props.featuresSettings.search) ?
+                  <li><Link to={Search.path}>{Search.header}</Link></li> : null }
                 <li><Link to={Signals.path}>{Signals.header}</Link></li>
               </ul>
             </div>
@@ -80,7 +82,8 @@ const App_ = React.createClass({
 
 function mapState(state) {
   return {
-    leftPanelIsOpened: state.ui.leftPanelIsOpened
+    leftPanelIsOpened: state.ui.leftPanelIsOpened,
+    featuresSettings: state.settings.featuresSettings
   };
 }
 
