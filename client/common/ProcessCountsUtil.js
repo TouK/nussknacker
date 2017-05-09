@@ -5,8 +5,9 @@ import TestResultUtils from '../common/TestResultUtils'
 class ProcessCountsUtil {
 
   processCountsForTests = (testResults, nodesWithGroups) => {
-    const processCountsWithoutGroups =
-      _.mapValues(testResults.nodeResults, ((_, nodeId) => {return TestResultUtils.nodeCounts(testResults, nodeId)}))
+    const ids = (_.flatMap(nodesWithGroups, (n) => n.ids || [n.id]))
+    const processCountsWithoutGroups = _.zipObject(ids,
+      _.map(ids, (nodeId) => {return TestResultUtils.nodeCounts(testResults, nodeId)}))
     return this.processCounts(processCountsWithoutGroups, nodesWithGroups)
   }
 
