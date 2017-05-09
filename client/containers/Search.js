@@ -28,7 +28,7 @@ Search.header = "Search"
 
 function mapState(state) {
   return {
-    settings: state.settings.kibanaSettings
+    settings: state.settings.featuresSettings.search
   };
 }
 

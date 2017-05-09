@@ -11,7 +11,7 @@ import pl.touk.process.report.influxdb.InfluxReporter
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class ProcessReportResources(influxReporter: InfluxReporter, processRepository: ProcessRepository)
+class ProcessCountsResources(influxReporter: InfluxReporter, processRepository: ProcessRepository)
                             (implicit ec: ExecutionContext) extends Directives with Argonaut62Support {
 
   import argonaut.ArgonautShapeless._

@@ -7,7 +7,7 @@ import NodeUtils from '../components/graph/NodeUtils'
 
 import UndoRedoReducer from '../undoredo/UndoRedoReducer'
 
-function settingsReducer(state = {loggedUser: {}, grafanaSettings: {}, kibanaSettings: {}, processDefinitionData: {}, migrationSettings: {}}, action) {
+function settingsReducer(state = {loggedUser: {}, featuresSettings: {}}, action) {
   switch (action.type) {
     case "LOGGED_USER": {
       return {
@@ -15,22 +15,10 @@ function settingsReducer(state = {loggedUser: {}, grafanaSettings: {}, kibanaSet
           loggedUser: action.user
       }
     }
-    case "GRAFANA_SETTINGS": {
+    case "FEATURES_SETTINGS": {
       return {
         ...state,
-          grafanaSettings: action.grafanaSettings
-      }
-    }
-    case "KIBANA_SETTINGS": {
-      return {
-        ...state,
-        kibanaSettings: action.kibanaSettings
-      }
-    }
-    case "MIGRATION_SETTINGS": {
-      return {
-        ...state,
-        migrationSettings: action.migrationSettings
+        featuresSettings: action.featuresSettings
       }
     }
     case "PROCESS_DEFINITION_DATA": {
