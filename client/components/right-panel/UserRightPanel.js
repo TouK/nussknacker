@@ -73,7 +73,8 @@ class UserRightPanel extends Component {
             {name: "redo", onClick: this.redo, icon: InlinedSvgs.buttonRedo},
             {name: "align", onClick: this.props.graphLayout, icon: InlinedSvgs.buttonAlign},
             {name: "properties", onClick: this.showProperties, icon: InlinedSvgs.buttonSettings},
-            {name: "delete", onClick: this.deleteNode, icon: InlinedSvgs.buttonDelete, disabled: NodeUtils.nodeIsProperties(this.props.nodeToDisplay) || NodeUtils.nodeIsGroup(this.props.nodeToDisplay) }
+            {name: "duplicate", onClick: this.duplicateNode, icon: InlinedSvgs.duplicateButton, disabled: this.noChosenNode(this.props.nodeToDisplay)},
+            {name: "delete", onClick: this.deleteNode, icon: InlinedSvgs.buttonDelete, disabled: this.noChosenNode(this.props.nodeToDisplay) }
           ]
         },
         {
@@ -83,7 +84,7 @@ class UserRightPanel extends Component {
               disabled: !this.props.testCapabilities.canBeTested},
             {name: "hide", onClick: this.hideRunProcessDetails, icon: InlinedSvgs.buttonHide, disabled: !this.props.showRunProcessDetails},
             {name: "generate", onClick: this.generateData, icon: InlinedSvgs.buttonGenerate,
-              disabled: !this.props.processIsLatestVersion || !this.props.nothingToSave || !this.props.testCapabilities.canGenerateTestData},
+              disabled: !this.props.processIsLatestVersion || !this.props.testCapabilities.canGenerateTestData},
             {name: "counts", onClick: this.fetchProcessCounts, icon: InlinedSvgs.buttonCounts},
           ]
         },
@@ -130,6 +131,10 @@ class UserRightPanel extends Component {
                 onClick={panelButton.onClick}>
           <div dangerouslySetInnerHTML={{__html: panelButton.icon}} /> {panelButton.name}
         </button>
+  }
+
+  noChosenNode = (node) => {
+    return NodeUtils.nodeIsProperties(node) || _.isEmpty(node)
   }
 
   isRunning = () => this.props.fetchedProcessDetails && (this.props.fetchedProcessDetails.currentlyDeployedAt || []).length > 0
@@ -228,6 +233,11 @@ class UserRightPanel extends Component {
     if (this.props.keyActionsAvailable) {
       this.props.undoRedoActions.redo()
     }
+  }
+
+  duplicateNode = () => {
+    const visiblePosition = {x: -200, y: 0}
+    this.props.actions.nodeAdded(this.props.nodeToDisplay, visiblePosition)
   }
 
   deleteNode = () => {
