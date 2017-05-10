@@ -18,6 +18,7 @@ import pl.touk.esp.ui.process.ProcessTypesForCategories
 import pl.touk.esp.ui.process.ProcessToSave
 import pl.touk.esp.ui.process.deployment.ManagementActor
 import pl.touk.esp.ui.process.displayedgraph.DisplayableProcess
+import pl.touk.esp.ui.processreport.ProcessCounter
 import pl.touk.esp.ui.sample.SampleProcess
 import pl.touk.esp.ui.security.{LoggedUser, Permission}
 
@@ -40,7 +41,8 @@ trait EspItTest extends LazyLogging with TestCodecs { self: ScalatestRouteTest w
   val processesRoute = (u:LoggedUser) => new ProcessesResources(processRepository, managementActor, processActivityRepository, processValidation, typesForCategories).route(u)
 
   val processesRouteWithAllPermissions = withAllPermissions(processesRoute)
-  val deployRoute = (u:LoggedUser) =>  new ManagementResources(InMemoryMocks.mockProcessManager.getProcessDefinition.typesInformation, managementActor).route(u)
+  val deployRoute = (u:LoggedUser) =>  new ManagementResources(
+    InMemoryMocks.mockProcessManager.getProcessDefinition.typesInformation, new ProcessCounter(TestFactory.sampleSubprocessRepository), managementActor).route(u)
   val attachmentService = new ProcessAttachmentService(attachmentsPath, processActivityRepository)
   val processActivityRoute = (u:LoggedUser) =>  new ProcessActivityResource(processActivityRepository, attachmentService).route(u)
 

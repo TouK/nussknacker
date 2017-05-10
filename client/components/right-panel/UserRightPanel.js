@@ -214,7 +214,7 @@ class UserRightPanel extends Component {
 
   testProcess = (files) => {
     files.forEach((file)=>
-      this.props.actions.testProcessFromFile(this.processId(), file, this.props.processToDisplay, this.props.nodesWithGroups)
+      this.props.actions.testProcessFromFile(this.processId(), file, this.props.processToDisplay)
     );
   }
 
@@ -264,8 +264,7 @@ function mapState(state) {
     processIsLatestVersion: _.get(fetchedProcessDetails, 'isLatestVersion', false),
     nodeToDisplay: state.graphReducer.nodeToDisplay,
     groupingState: state.graphReducer.groupingState,
-    featuresSettings: state.settings.featuresSettings,
-    nodesWithGroups: NodeUtils.nodesFromProcess(state.graphReducer.processToDisplay || {}, state.ui.expandedGroups)
+    featuresSettings: state.settings.featuresSettings
   };
 }
 

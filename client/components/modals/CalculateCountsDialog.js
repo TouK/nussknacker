@@ -26,7 +26,7 @@ class CalculateCountsDialog extends React.Component {
 
   confirm = (callbackAfter) => {
     HttpService.fetchProcessCounts(this.props.processId, this.state.processCountsDateFrom, this.state.processCountsDateTo)
-      .then((processCounts) => this.props.actions.displayProcessCounts(processCounts, this.props.nodesWithGroups))
+      .then((processCounts) => this.props.actions.displayProcessCounts(processCounts))
       .then(callbackAfter)
   }
 
@@ -46,9 +46,7 @@ class CalculateCountsDialog extends React.Component {
 function mapState(state) {
   return {
     processId: _.get(state.graphReducer, 'fetchedProcessDetails.id'),
-    processToDisplay: state.graphReducer.processToDisplay,
-    //TODO: to powinno byc gdzies indziej liczone??
-    nodesWithGroups: NodeUtils.nodesFromProcess(state.graphReducer.processToDisplay || {}, state.ui.expandedGroups)
+    processToDisplay: state.graphReducer.processToDisplay
   }
 }
 
