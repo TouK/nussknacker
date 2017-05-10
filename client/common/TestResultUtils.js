@@ -1,6 +1,6 @@
 import _ from 'lodash'
-import NodeUtils from '../components/graph/NodeUtils'
 
+//TODO: a moze to tez da sie dac do backendu??
 class TestResultUtils {
 
 
@@ -14,14 +14,6 @@ class TestResultUtils {
       }
     } else {
       return null;
-    }
-  }
-
-  nodeCounts = (testResults, nodeId) => {
-    const resultsForNode = this.resultsForNode(testResults, nodeId)
-    return {
-      all: resultsForNode.nodeResults.length,
-      errors: resultsForNode.errors.length
     }
   }
 

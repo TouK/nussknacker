@@ -1,6 +1,5 @@
 import HttpService from "../http/HttpService";
 import GraphUtils from "../components/graph/GraphUtils";
-import ProcessCountsUtil from "../common/ProcessCountsUtil";
 import _ from "lodash";
 import * as UndoRedoActions from "../undoredo/UndoRedoActions";
 
@@ -257,12 +256,12 @@ export function toggleModalDialog(openDialog) {
   }
 }
 
-export function testProcessFromFile(id, testDataFile, process, nodesWithGroups) {
+export function testProcessFromFile(id, testDataFile, process) {
   return (dispatch) => {
     dispatch({
       type: "PROCESS_LOADING"
     })
-    HttpService.testProcess(id, testDataFile, process, testResults => dispatch(displayTestResults(testResults, nodesWithGroups)),
+    HttpService.testProcess(id, testDataFile, process, testResults => dispatch(displayTestResults(testResults)),
       error => dispatch({
         type: "LOADING_FAILED"
       }));
@@ -270,23 +269,21 @@ export function testProcessFromFile(id, testDataFile, process, nodesWithGroups) 
   }
 }
 
-function displayTestResults(testResults, nodesWithGroups) {
-  const processCounts = ProcessCountsUtil.processCountsForTests(testResults, nodesWithGroups)
+function displayTestResults(testResults) {
   return (dispatch) => {
     dispatch({
       type: "DISPLAY_TEST_RESULTS_DETAILS",
-      testResults: testResults
+      testResults: testResults.results
     })
     dispatch({
         type: "DISPLAY_PROCESS_COUNTS",
-        processCounts: processCounts
+        processCounts: testResults.counts
       }
     )
   }
 }
 
-export function displayProcessCounts(processCountsWithoutGroups, nodesWithGroups) {
-  const processCounts = ProcessCountsUtil.processCounts(processCountsWithoutGroups, nodesWithGroups)
+export function displayProcessCounts(processCounts) {
   return {
     type: "DISPLAY_PROCESS_COUNTS",
     processCounts: processCounts

@@ -20,6 +20,8 @@ trait SubprocessRepository {
 
   def loadSubprocesses(): Set[SubprocessDefinition]
 
+  def get(id: String) : Option[SubprocessDefinition] = loadSubprocesses().find(_.id == id)
+
 }
 
 object SampleSubprocessRepository extends SubprocessRepository {

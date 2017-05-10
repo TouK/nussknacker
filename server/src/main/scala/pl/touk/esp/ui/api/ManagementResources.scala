@@ -1,35 +1,32 @@
 package pl.touk.esp.ui.api
 
 import akka.actor.ActorRef
-import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse, StatusCodes}
-import akka.http.scaladsl.server.{Directives, Route}
+import akka.http.scaladsl.server.Directives
 import akka.pattern.ask
 import akka.stream.Materializer
 import akka.util.Timeout
-import akka.http.scaladsl.server.{RequestContext, RouteResult, Directive, Route}
-import akka.stream.ActorMaterializer
+import akka.http.scaladsl.server.{Directive, RequestContext, Route, RouteResult}
 import akka.http.scaladsl.server.Directives._
-import scala.concurrent.Future
-import scala.concurrent.duration._
 import argonaut.Argonaut._
 import argonaut.PrettyParams
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.esp.engine.api.deployment.test.{TestData, TestResults}
+import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
 import pl.touk.esp.engine.definition.DefinitionExtractor.PlainClazzDefinition
 import pl.touk.esp.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.esp.ui.codec.UiCodecs
 import pl.touk.esp.ui.process.deployment.{Cancel, Deploy, Test}
 import pl.touk.esp.ui.process.displayedgraph.DisplayableProcess
 import pl.touk.esp.ui.process.marshall.{ProcessConverter, UiProcessMarshaller}
-import pl.touk.esp.ui.process.repository.ProcessRepository
+import pl.touk.esp.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.esp.ui.security.{LoggedUser, Permission}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 
 
-class ManagementResources(typesInformation: List[PlainClazzDefinition],
+class ManagementResources(typesInformation: List[PlainClazzDefinition], processCounter: ProcessCounter,
                           val managementActor: ActorRef)(implicit ec: ExecutionContext, mat: Materializer) extends Directives with LazyLogging {
 
   import pl.touk.esp.ui.codec.UiCodecs.displayableProcessCodec
@@ -82,17 +79,25 @@ class ManagementResources(typesInformation: List[PlainClazzDefinition],
     }
   }
 
-  private def performTest(processId: String, testData: Array[Byte], displayableProcessJson: String)(implicit user: LoggedUser): Future[TestResults] = {
+  private def performTest(processId: String, testData: Array[Byte], displayableProcessJson: String)(implicit user: LoggedUser): Future[ResultsWithCounts] = {
     displayableProcessJson.decodeEither[DisplayableProcess] match {
       case Right(process) =>
         val canonical = ProcessConverter.fromDisplayable(process)
         val canonicalJson = processMarshaller.toJson(canonical, PrettyParams.nospace)
-        (managementActor ? Test(processId, canonicalJson, TestData(testData), user)).mapTo[TestResults]
+        (managementActor ? Test(processId, canonicalJson, TestData(testData), user)).mapTo[TestResults].map { results =>
+          ResultsWithCounts(results, computeCounts(canonical, results))
+        }
       case Left(error) =>
         Future.failed(UnmarshallError(error))
     }
   }
 
+  private def computeCounts(canonical: CanonicalProcess, results: TestResults) : Map[String, NodeCount] = {
+    val counts = results.nodeResults.map { case (key, nresults) =>
+      key -> RawCount(nresults.size.toLong, results.exceptions.find(_.nodeId.contains(key)).size.toLong)
+    }
+    processCounter.computeCounts(canonical, counts)
+  }
 
   private def toStrict(timeout: FiniteDuration): Directive[Unit] = {
     def toStrict0(inner: Unit ⇒ Route): Route = {
@@ -111,3 +116,5 @@ class ManagementResources(typesInformation: List[PlainClazzDefinition],
   }
 
 }
+
+case class ResultsWithCounts(results: TestResults, counts: Map[String, NodeCount])

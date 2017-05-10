@@ -14,11 +14,12 @@ import pl.touk.esp.engine.graph.expression.Expression
 import pl.touk.esp.engine.definition.TestingCapabilities
 import pl.touk.esp.engine.graph.node
 import pl.touk.esp.engine.marshall.ProcessMarshaller
-import pl.touk.esp.ui.api.{DisplayableUser, GrafanaSettings, ProcessObjects}
+import pl.touk.esp.ui.api.{DisplayableUser, GrafanaSettings, ProcessObjects, ResultsWithCounts}
 import pl.touk.esp.ui.process.displayedgraph.displayablenode.{EdgeType, NodeAdditionalFields, ProcessAdditionalFields}
 import pl.touk.esp.ui.process.displayedgraph._
 import pl.touk.esp.ui.process.repository.ProcessActivityRepository.{Comment, ProcessActivity}
 import pl.touk.esp.ui.process.repository.ProcessRepository.{ProcessDetails, ProcessHistoryEntry}
+import pl.touk.esp.ui.processreport.NodeCount
 import pl.touk.esp.ui.validation.ValidationResults.ValidationResult
 
 object UiCodecs {
@@ -191,7 +192,22 @@ object UiCodecs {
       )
     }
 
+
     implicit def testResultsEncode = EncodeJson.of[TestResults]
+
+    implicit def resultsWithCountsEncode = EncodeJson.of[ResultsWithCounts]
+    
   }
+
+  //unfortunately, this has do be done manually, as argonaut has problems with recursive types...
+  implicit val encodeNodeCount : EncodeJson[NodeCount] = EncodeJson[NodeCount] {
+    case NodeCount(all, errors, subProcessCounts) => jObjectFields(
+      "all" -> jNumber(all),
+      "errors" -> jNumber(errors),
+      "subprocessCounts" -> jObjectFields(subProcessCounts.mapValues(encodeNodeCount(_)).toList: _*)
+    )
+  }
+
+
 
 }

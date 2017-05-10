@@ -133,6 +133,8 @@ export default {
         var customAttrs = require('json!../../assets/json/nodeAttributes.json');
 
         var bodyContent = node.id ? node.id : "";
+        //TODO: displaying counts for subprocesses
+        //FIXME: proper width for large numbers
         var countsContent = hasCounts ? (processCounts ? processCounts.all : "0") : ""
         var hasErrors = hasCounts && processCounts && processCounts.errors > 0
 

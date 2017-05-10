@@ -19,6 +19,7 @@ import pl.touk.esp.ui.process.deployment.ManagementActor
 import pl.touk.esp.ui.process.migrate.HttpProcessMigrator
 import pl.touk.esp.ui.process.repository.{DeployedProcessRepository, ProcessActivityRepository, ProcessRepository}
 import pl.touk.esp.ui.process.subprocess.{FileSubprocessRepository, SubprocessResolver}
+import pl.touk.esp.ui.processreport.ProcessCounter
 import pl.touk.esp.ui.security.SimpleAuthenticator
 import pl.touk.process.report.influxdb.InfluxReporter
 import slick.jdbc.JdbcBackend
@@ -55,6 +56,7 @@ object EspUiApp extends App with Directives with LazyLogging {
   val processActivityRepository = new ProcessActivityRepository(db, DefaultJdbcProfile.profile)
   val attachmentService = new ProcessAttachmentService(config.getString("attachmentsPath"), processActivityRepository)
   val authenticator = new SimpleAuthenticator(config.getString("usersFile"))
+  val counter = new ProcessCounter(subprocessRepository)
 
   Initialization.init(processRepository, db, environment, featureTogglesConfig.development, initialProcessDirectory, standaloneModeEnabled)
   initHttp()
@@ -73,7 +75,7 @@ object EspUiApp extends App with Directives with LazyLogging {
               val routes = List(
                 new ProcessesResources(processRepository, managementActor, processActivityRepository, processValidation, typesForCategories).route(user),
                   new ProcessActivityResource(processActivityRepository, attachmentService).route(user),
-                  new ManagementResources(processDefinitions.values.flatMap(_.typesInformation).toList, managementActor).route(user),
+                  new ManagementResources(processDefinitions.values.flatMap(_.typesInformation).toList, counter, managementActor).route(user),
                   new ValidationResources(processValidation).route(user),
                   new DefinitionResources(processDefinitions, subprocessRepository).route(user),
                   new SignalsResources(managers, processDefinitions, processRepository).route(user),
@@ -88,7 +90,7 @@ object EspUiApp extends App with Directives with LazyLogging {
                   .map(migrator => new MigrationResources(migrator, processRepository).route(user)),
                 featureTogglesConfig.counts
                   .map(countsConfig => new InfluxReporter(environment, countsConfig))
-                  .map(reporter => new ProcessCountsResources(reporter, processRepository).route(user))
+                  .map(reporter => new ProcessReportResources(reporter, counter, processRepository).route(user))
               ).flatten
               (routes ++ optionalRoutes).reduce(_ ~ _)
             } ~
