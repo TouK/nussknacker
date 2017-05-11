@@ -25,9 +25,9 @@ class InfluxGenerator(url: String, user: String, password: String, dbName: Strin
     DecodeResult.ok(focused.as(bigDecimalDecoder).toOption.getOrElse(focused.as(stringDecoder).toOption.get))
   }
 
-  case class InfluxResponse(results: List[InfluxResult])
-  case class InfluxResult(series: List[InfluxSerie])
-  case class InfluxSerie(name: String, columns: List[String], values: List[List[Any]])
+  case class InfluxResponse(results: List[InfluxResult] = List())
+  case class InfluxResult(series: List[InfluxSerie] = List())
+  case class InfluxSerie(name: String, columns: List[String], values: List[List[Any]] = List())
 
   def query(processName: String, metricName: String, dateFrom: LocalDateTime, dateTo: LocalDateTime): Future[Map[String, Long]] = {
     val start = dateFrom
