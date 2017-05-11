@@ -20,7 +20,8 @@ class SettingsResources(config: FeatureTogglesConfig)(implicit ec: ExecutionCont
             counts = config.counts.isDefined,
             search = config.search,
             metrics = config.metrics,
-            migration = config.migration.map(c => MigrationConfig(c.environmentId))
+            migration = config.migration.map(c => MigrationConfig(c.environmentId)),
+            environmentAlert = config.environmentAlert
           )
         }
       }
@@ -34,5 +35,6 @@ case class MigrationConfig(targetEnvironmentId: String)
 case class ToggleFeaturesOptions(counts: Boolean,
                                  search: Option[KibanaSettings],
                                  metrics: Option[GrafanaSettings],
-                                 migration: Option[MigrationConfig]
+                                 migration: Option[MigrationConfig],
+                                 environmentAlert:Option[String]
                                 )
