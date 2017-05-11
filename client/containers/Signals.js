@@ -14,13 +14,12 @@ class Signals extends React.Component {
   }
 
   componentDidMount() {
-    HttpService.fetchSignals().then(signals => this.setState(
-      {signals: signals, signalType: signals[0].name}
-    ))
-  }
-
-  componentWillReceiveProps(props) {
-    this.setState(this.initialState(props))
+    HttpService.fetchSignals().then(signals => {
+      const firstSignal = _.head(signals)
+      this.setState(
+        {signals: signals, signalType: firstSignal.name, processId : _.head(firstSignal.availableProcesses)}
+      )
+    })
   }
 
   initialState(props) {
@@ -28,8 +27,7 @@ class Signals extends React.Component {
   }
 
   render() {
-    const currentSignal = _.find(this.state.signals, sig => sig.name == this.state.signalType) || {}
-
+    const currentSignal = this.findSignal(this.state.signalType)
     //fixme usunac odniesienia do modalowych klas
     //fixme da sie to bez tylu zagniezdzen?
     return (
@@ -40,7 +38,10 @@ class Signals extends React.Component {
             <div className="node-row">
               <div className="node-label">Signal type</div>
               <div className="node-value">
-                <select className="node-input" onChange={(e) => this.setState({signalType: e.target.value, signalParams: {}})}>
+                <select className="node-input" onChange={(e) => {
+                  const nextSignalType = e.target.value
+                  this.setState({signalType: nextSignalType, signalParams: {}, processId: this.firstProcessForSignal(nextSignalType)})
+                }}>
                   {_.map(this.state.signals, (sig, index) => (<option key={index} value={sig.name}>{sig.name}</option>))}
                 </select>
               </div>
@@ -73,6 +74,15 @@ class Signals extends React.Component {
     </div>
     </div>
     )
+  }
+
+  firstProcessForSignal = (signalType) => {
+    const signalForType = this.findSignal(signalType)
+    return _.head(signalForType.availableProcesses)
+  }
+
+  findSignal = (signalType) => {
+    return _.find(this.state.signals, sig => sig.name == signalType) || {}
   }
 
   sendSignal = (signalType, processId, signalParams) => {
