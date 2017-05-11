@@ -14,10 +14,12 @@ class InfluxReporter(env: String, config: InfluxReporterConfig) extends LazyLogg
     //todo tego influxUrl mozna samemu dociagac korzystajac z api grafany
     val influxGenerator = new InfluxGenerator(config.influxUrl, config.user, config.password, config.database, env)
     val reportData = for {
-      allCount <- influxGenerator.query(processId, "source", dateFrom, dateTo).map(_ ("count"))
+      allCount <- influxGenerator.query(processId, "source", dateFrom, dateTo).map(_.getOrElse("count", 0L))
+      //TODO: czy potrzebujemy teraz tych countow??
       endCount <- influxGenerator.query(processId, "end.count", dateFrom, dateTo)
       deadEndCount <- influxGenerator.query(processId, "dead_end.count", dateFrom, dateTo)
-    } yield ProcessBaseCounts(all = allCount, ends = endCount, deadEnds = deadEndCount)
+      nodes <- influxGenerator.query(processId, "nodeCount", dateFrom, dateTo)
+    } yield ProcessBaseCounts(all = allCount, ends = endCount, deadEnds = deadEndCount, nodes = nodes)
     reportData.onComplete {
       case Success(_) =>
         influxGenerator.close()
@@ -30,7 +32,7 @@ class InfluxReporter(env: String, config: InfluxReporterConfig) extends LazyLogg
 
 }
 
-case class ProcessBaseCounts(all: Long, ends: Map[String, Long], deadEnds: Map[String, Long]) {
+case class ProcessBaseCounts(all: Long, ends: Map[String, Long], deadEnds: Map[String, Long], nodes: Map[String, Long]) {
 
   //idiki nodow w metrykach z influxa sa inne niz te originalne, np influx zamienia spacje i kropki na '-'
   //dlatego musimy wykonac transformacje odwrotna
