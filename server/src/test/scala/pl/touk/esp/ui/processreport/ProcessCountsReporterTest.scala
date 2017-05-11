@@ -14,7 +14,7 @@ class ProcessCountsReporterTest extends FlatSpec with Matchers {
   import spel.Implicits._
 
   it should "count events at every node for process1" in {
-    val counts = ProcessBaseCounts(3, Map("end1" -> 1), Map("filter1" -> 2))
+    val counts = ProcessBaseCounts(3, Map("end1" -> 1), Map("filter1" -> 2), Map.empty)
     val process = EspProcessBuilder
       .id("fooProcess")
       .exceptionHandler()
@@ -29,7 +29,7 @@ class ProcessCountsReporterTest extends FlatSpec with Matchers {
   }
 
   it should "count events at every node for process2" in {
-    val counts = ProcessBaseCounts(5, Map("end1" -> 1), Map("filter1" -> 2, "filter2" -> 2))
+    val counts = ProcessBaseCounts(5, Map("end1" -> 1), Map("filter1" -> 2, "filter2" -> 2), Map.empty)
     val process = EspProcessBuilder
       .id("fooProcess")
       .exceptionHandler()
@@ -53,7 +53,7 @@ class ProcessCountsReporterTest extends FlatSpec with Matchers {
   }
 
   it should "count events at every node for process3" in {
-    val counts = ProcessBaseCounts(5, Map("end1" -> 1, "end2" -> 2), Map("filter1" -> 2))
+    val counts = ProcessBaseCounts(5, Map("end1" -> 1, "end2" -> 2), Map("filter1" -> 2), Map.empty)
     val process = EspProcessBuilder
       .id("fooProcess")
       .exceptionHandler()
@@ -89,7 +89,7 @@ class ProcessCountsReporterTest extends FlatSpec with Matchers {
 
   it should "count events at every node for process4" in {
     val counts = ProcessBaseCounts(16, Map("end11" -> 1, "end31" -> 0, "end32" -> 1, "end33" -> 5),
-      Map("filter31" -> 4, "filter32" -> 0, "filter33" -> 3, "filter21" -> 2))
+      Map("filter31" -> 4, "filter32" -> 0, "filter33" -> 3, "filter21" -> 2), Map.empty)
     val process = EspProcessBuilder
       .id("fooProcess")
       .exceptionHandler()
