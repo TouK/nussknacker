@@ -23,7 +23,7 @@ class RemoveLockProcessSignalFactory(val kafkaConfig: KafkaConfig, val signalsTo
   def sendSignal(@ParamName("lockId") lockId: String)(processId: String) = {
     val signal = SampleProcessSignal(processId, System.currentTimeMillis(), RemoveLock(lockId))
     val json = ProcessSignalCodecs.processSignalCodec.Encoder(signal).nospaces
-    sendToKafkaWithNewProducer(Array.empty, json.getBytes, signalsTopic)
+    sendToKafkaWithNewProducer(signalsTopic, Array.empty, json.getBytes)
   }
 
 }

@@ -13,7 +13,7 @@ class KafkaExceptionConsumer(val kafkaConfig: KafkaConfig,
 
   def consume(exceptionInfo: EspExceptionInfo[NonTransientException]): Unit = {
     val toSend = serializationSchema.serialize(exceptionInfo)
-    sendToKafka(Array.empty, toSend, topic)(producer)
+    sendToKafka(topic, Array.empty, toSend)(producer)
   }
 
   override def close(): Unit = {
