@@ -40,6 +40,13 @@ const App_ = React.createClass({
       return null
     }
   },
+  environmentAlert: function (content) {
+    if (content)
+      return (<span className="navbar-brand vert-middle ">
+        <span className="btn btn-danger">{content}</span>
+      </span>
+    );
+  },
 
   render: function () {
     const AllDialogs = Dialogs.AllDialogs
@@ -53,6 +60,7 @@ const App_ = React.createClass({
               <Link id="brand-name" className="navbar-brand" to={App.path}>
                 <span id="app-logo" className="vert-middle">{App.header_a}</span>
               </Link>
+              {this.environmentAlert(this.props.featuresSettings.environmentAlert)}
             </div>
 
             <div className="collapse navbar-collapse">
