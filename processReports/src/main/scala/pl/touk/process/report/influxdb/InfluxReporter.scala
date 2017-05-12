@@ -39,6 +39,7 @@ case class ProcessBaseCounts(all: Long, ends: Map[String, Long], deadEnds: Map[S
   def mapToOriginalNodeIds(allNodeIds: List[String]): ProcessBaseCounts = {
     copy(ends = mapToOriginalNodeIds(allNodeIds, ends))
       .copy(deadEnds = mapToOriginalNodeIds(allNodeIds, deadEnds))
+        .copy(nodes = mapToOriginalNodeIds(allNodeIds, nodes))
   }
 
   private def mapToOriginalNodeIds(allNodeIds: List[String], counts: Map[String, Long]): Map[String, Long] = {
