@@ -20,7 +20,8 @@ class UserRightPanel extends Component {
 
   static propTypes = {
     isOpened: React.PropTypes.bool.isRequired,
-    graphLayout: React.PropTypes.func.isRequired,
+    graphLayoutFunction: React.PropTypes.func.isRequired,
+    layout: React.PropTypes.array.isRequired,
     exportGraph: React.PropTypes.func.isRequired,
     zoomIn: React.PropTypes.func.isRequired,
     zoomOut: React.PropTypes.func.isRequired,
@@ -71,9 +72,11 @@ class UserRightPanel extends Component {
           buttons: [
             {name: "undo", onClick: this.undo, icon: InlinedSvgs.buttonUndo},
             {name: "redo", onClick: this.redo, icon: InlinedSvgs.buttonRedo},
-            {name: "align", onClick: this.props.graphLayout, icon: InlinedSvgs.buttonAlign},
+            {name: "align", onClick: this.props.graphLayoutFunction, icon: InlinedSvgs.buttonAlign},
             {name: "properties", onClick: this.showProperties, icon: InlinedSvgs.buttonSettings},
-            {name: "duplicate", onClick: this.duplicateNode, icon: InlinedSvgs.duplicateButton, disabled: this.noChosenNode(this.props.nodeToDisplay)},
+            {name: "duplicate", onClick: this.duplicateNode, icon: InlinedSvgs.duplicateButton,
+              //cloning groups can be tricky...
+              disabled: this.noChosenNode(this.props.nodeToDisplay) || NodeUtils.nodeIsGroup(this.props.nodeToDisplay)},
             {name: "delete", onClick: this.deleteNode, icon: InlinedSvgs.buttonDelete, disabled: this.noChosenNode(this.props.nodeToDisplay) }
           ]
         },
@@ -236,7 +239,8 @@ class UserRightPanel extends Component {
   }
 
   duplicateNode = () => {
-    const visiblePosition = {x: -200, y: 0}
+    const duplicatedNodePosition = this.props.layout.find(node => node.id === this.props.nodeToDisplay.id) || {position: {x: 0, y: 0}}
+    const visiblePosition = {x: duplicatedNodePosition.position.x -200, y: duplicatedNodePosition.position.y}
     this.props.actions.nodeAdded(this.props.nodeToDisplay, visiblePosition)
   }
 
@@ -255,6 +259,9 @@ function mapState(state) {
   return {
     fetchedProcessDetails: fetchedProcessDetails,
     processToDisplay: state.graphReducer.processToDisplay,
+    //TODO: now only needed for duplicate, maybe we can do it somehow differently?
+    layout: state.graphReducer.layout || [],
+
     testCapabilities: state.graphReducer.testCapabilities || {},
 
     loggedUser: state.settings.loggedUser,

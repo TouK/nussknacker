@@ -107,7 +107,7 @@ const Visualization = withRouter(React.createClass({
       <div className="Page">
         <div>
           <UserLeftPanel isOpened={this.props.leftPanelIsOpened}/>
-          <UserRightPanel isOpened={true} graphLayout={graphLayoutFun}
+          <UserRightPanel isOpened={true} graphLayoutFunction={graphLayoutFun}
                           exportGraph={exportGraphFun} zoomIn={zoomInFun} zoomOut={zoomOutFun}/>
           {(_.isEmpty(this.props.fetchedProcessDetails) || this.props.graphLoading) ? <LoaderSpinner show={true}/> : <Graph ref="graph"/> }
 
