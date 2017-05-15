@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package pl.touk.esp.engine.standalone.http
+package pl.touk.http.argonaut
 
 import akka.http.scaladsl.marshalling.{Marshaller, ToEntityMarshaller}
 import akka.http.scaladsl.model.MediaTypes.`application/json`

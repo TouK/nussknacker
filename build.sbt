@@ -142,7 +142,7 @@ lazy val engineStandalone = (project in file("engine-standalone")).
     }
   ).
   settings(addArtifact(artifact in (Compile, assembly), assembly)).
-  dependsOn(interpreter, standaloneUtil)
+  dependsOn(interpreter, standaloneUtil, argonautUtils)
 
 lazy val management = (project in file("management")).
   configs(IntegrationTest).
@@ -359,6 +359,19 @@ lazy val httpUtils = (project in file("httpUtils")).
         "io.argonaut" %% "argonaut" % argonautV,
         "com.github.alexarchambault" %% s"argonaut-shapeless_$argonautMajorV" % argonautShapelessV,
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV
+      )
+    }
+  )
+
+lazy val argonautUtils = (project in file("argonautUtils")).
+  settings(commonSettings).
+  settings(
+    name := "esp-argonaut-utils",
+    libraryDependencies ++= {
+      Seq(
+        "io.argonaut" %% "argonaut" % argonautV,
+        "com.github.alexarchambault" %% s"argonaut-shapeless_$argonautMajorV" % argonautShapelessV,
+        "com.typesafe.akka" %% "akka-http-experimental" % akkaHttpV force()
       )
     }
   )
