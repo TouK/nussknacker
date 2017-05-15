@@ -13,6 +13,7 @@ import pl.touk.esp.engine.standalone.StandaloneProcessInterpreter
 import pl.touk.esp.engine.standalone.StandaloneProcessInterpreter.GenericResultType
 import pl.touk.esp.engine.standalone.management.DeploymentService
 import pl.touk.esp.engine.util.ThreadUtils
+import pl.touk.http.argonaut.Argonaut62Support
 
 import scala.concurrent.ExecutionContext
 

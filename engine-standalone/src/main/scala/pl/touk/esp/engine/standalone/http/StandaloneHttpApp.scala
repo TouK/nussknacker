@@ -15,6 +15,7 @@ import pl.touk.esp.engine.api.process.ProcessConfigCreator
 import pl.touk.esp.engine.standalone.management.DeploymentService
 import pl.touk.esp.engine.standalone.utils.StandaloneContextPreparer
 import pl.touk.esp.engine.util.ThreadUtils
+import pl.touk.http.argonaut.Argonaut62Support
 
 import scala.util.Try
 

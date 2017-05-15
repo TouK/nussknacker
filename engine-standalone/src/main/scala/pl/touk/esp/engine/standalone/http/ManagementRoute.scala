@@ -8,6 +8,7 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.esp.engine.api.deployment.DeploymentData
 import pl.touk.esp.engine.standalone.management.{DeploymentError, DeploymentService}
 import pl.touk.esp.engine.util.ThreadUtils
+import pl.touk.http.argonaut.Argonaut62Support
 
 import scala.concurrent.ExecutionContext
 
