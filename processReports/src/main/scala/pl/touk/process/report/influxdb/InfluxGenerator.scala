@@ -5,12 +5,13 @@ import java.util.UUID
 
 import argonaut.{DecodeJson, DecodeResult}
 import com.ning.http.client.AsyncHttpClient
+import com.typesafe.scalalogging.LazyLogging
 import dispatch.Http
 import pl.touk.esp.engine.util.service.{AuditDispatchClientImpl, LogCorrelationId}
 
 import scala.concurrent.Future
 
-class InfluxGenerator(url: String, user: String, password: String, dbName: String, env: String = "test") {
+class InfluxGenerator(url: String, user: String, password: String, dbName: String, env: String = "test") extends LazyLogging {
 
   import argonaut.ArgonautShapeless._
 
@@ -34,13 +35,11 @@ class InfluxGenerator(url: String, user: String, password: String, dbName: Strin
     val stop = dateTo
 
     def query(date: LocalDateTime) = {
-      //uzywamy sekund epoch bo zeby nie bylo problemow ze strefa czasowa...
+      //we use epoch seconds to avoid time zone problems... in influx
       val from = toEpochSeconds(date)
-      val to = toEpochSeconds(date.plusMinutes(5))
-      //robimy taki dziwny 5cio minutowy przedzial, bo metryki czasem sie gubia,
-      // ale zakladamy ze w przeciagu tych 5minut ten counter jednak sie wysle do influxa
-      val query = s"""select action, max(value) as value from "$metricName.count" where process = '$processName' """ +
-        s"and time >= ${from}s and env = '$env' and time < ${to}s group by slot, action"
+
+      val query = s"""select action, first(value) as value from "$metricName.count" where process = '$processName' """ +
+        s"and time >= ${from}s and env = '$env' group by slot, action"
 
       implicit val id = LogCorrelationId(UUID.randomUUID().toString)
       val req = dispatch.url(url)
@@ -50,6 +49,7 @@ class InfluxGenerator(url: String, user: String, password: String, dbName: Strin
 
       httpClient.getJsonAsObject[InfluxResponse](req)
         .map { qr =>
+
           qr.results.head.series
             .map(r => (r.values.head.lift(1).getOrElse("UNKNOWN"), r.values.head.lift(2).getOrElse(0L)))
             .groupBy(_._1.asInstanceOf[String]).mapValues(_.map(_._2.asInstanceOf[Number].longValue()).sum)
