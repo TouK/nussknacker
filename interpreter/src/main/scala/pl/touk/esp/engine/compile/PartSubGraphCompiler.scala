@@ -246,7 +246,8 @@ object PartSubGraphCompilerBase {
 
 object PartSubGraphCompiler {
 
-  def default(servicesDefs: Map[String, ObjectWithMethodDef], globalProcessVariables: Map[String, ClazzRef], loader: ClassLoader): PartSubGraphCompiler = {
+  def default(servicesDefs: Map[String, ObjectWithMethodDef],
+              globalProcessVariables: Map[String, ClazzRef], loader: ClassLoader): PartSubGraphCompiler = {
     new PartSubGraphCompiler(PartSubGraphCompilerBase.defaultParsers(globalProcessVariables, loader), servicesDefs)
   }
 }

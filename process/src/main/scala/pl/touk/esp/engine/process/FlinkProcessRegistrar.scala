@@ -4,8 +4,6 @@ import java.lang.Iterable
 import java.util.Collections
 import java.util.concurrent.TimeUnit
 
-import cats.data.Validated.{Invalid, Valid}
-import cats.data._
 import com.codahale.metrics.{Histogram, SlidingTimeWindowReservoir}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
@@ -29,33 +27,30 @@ import org.apache.flink.util.Collector
 import pl.touk.esp.engine.Interpreter
 import pl.touk.esp.engine.api._
 import pl.touk.esp.engine.api.exception.EspExceptionInfo
-import pl.touk.esp.engine.api.process._
 import pl.touk.esp.engine.api.test.InvocationCollectors.SinkInvocationCollector
 import pl.touk.esp.engine.api.test.TestRunId
-import pl.touk.esp.engine.compile.{PartSubGraphCompiler, ProcessCompilationError, ProcessCompiler}
 import pl.touk.esp.engine.compiledgraph.part._
-import pl.touk.esp.engine.definition.DefinitionExtractor.{ClazzRef, ObjectWithMethodDef}
-import pl.touk.esp.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
-import pl.touk.esp.engine.definition.{CustomNodeInvoker, ProcessDefinitionExtractor}
+import pl.touk.esp.engine.definition.CustomNodeInvoker
 import pl.touk.esp.engine.flink.api.exception.FlinkEspExceptionHandler
-import pl.touk.esp.engine.flink.api.process.{FlinkSink, FlinkSource}
+import pl.touk.esp.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation, FlinkSink, FlinkSource}
 import pl.touk.esp.engine.flink.util.ContextInitializingFunction
-import pl.touk.esp.engine.graph.node.Sink
 import pl.touk.esp.engine.flink.util.metrics.InstantRateMeterWithCount
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.process.FlinkProcessRegistrar._
-import pl.touk.esp.engine.process.util.{MetaDataExtractor, Serializers}
+import pl.touk.esp.engine.process.compiler.{CompiledProcessWithDeps, FlinkProcessCompiler}
+import pl.touk.esp.engine.process.util.StateConfiguration.RocksDBStateBackendConfig
+import pl.touk.esp.engine.process.util.{MetaDataExtractor, Serializers, StateConfiguration}
 import pl.touk.esp.engine.splittedgraph.end.{DeadEnd, End, NormalEnd}
-import pl.touk.esp.engine.splittedgraph.splittednode
 import pl.touk.esp.engine.splittedgraph.splittednode.{NextNode, PartRef, SplittedNode}
-import pl.touk.esp.engine.util.metrics.RateMeter
 import pl.touk.esp.engine.util.SynchronousExecutionContext
+import pl.touk.esp.engine.util.metrics.RateMeter
 
 import scala.collection.JavaConversions._
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.language.implicitConversions
 import scala.util.control.NonFatal
+
 
 class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessWithDeps,
                             eventTimeMetricDuration: FiniteDuration,
@@ -79,7 +74,7 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessW
   //Flink przy serializacji grafu (StateDescriptor:233) inicjalizuje KryoSerializer bez konfiguracji z env
   //to jest chyba blad - do zgloszenia (?)
   //TODO: czy to jedyny przypadek kiedy powinnismy tak robic??
-  def initializeStateDescriptors(env: StreamExecutionEnvironment): Unit = {
+  private def initializeStateDescriptors(env: StreamExecutionEnvironment): Unit = {
     val config = env.getConfig
     env.getStreamGraph.getOperators.toSet[tuple.Tuple2[Integer, StreamOperator[_]]].map(_.f1).collect {
       case window:WindowOperator[_, _, _, _, _] => window.getStateDescriptor.initializeSerializerUnlessSet(config)
@@ -88,7 +83,9 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessW
 
   private def register(env: StreamExecutionEnvironment, compiledProcessWithDeps: () => CompiledProcessWithDeps,
                        testRunId: Option[TestRunId]): Unit = {
-    val process = compiledProcessWithDeps().compiledProcess
+
+    val processWithDeps = compiledProcessWithDeps()
+    val process = processWithDeps.compiledProcess
     val streamMetaData = MetaDataExtractor.extractStreamMetaDataOrFail(process.metaData)
     //FIXME: ladniej bez casta
     env.setRestartStrategy(process.exceptionHandler.asInstanceOf[FlinkEspExceptionHandler].restartStrategy)
@@ -147,7 +144,8 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessW
       processPart match {
         case part@SinkPart(sink: FlinkSink, _) =>
           val startAfterSinkEvaluated = start
-            .flatMap(new SinkInterpretationFunction(compiledProcessWithDeps, part.node))
+            .map(_.finalContext)
+            .flatMap(new InterpretationFunction(compiledProcessWithDeps, part.node))
             .name(s"${process.metaData.id}-${part.id}-function")
             .map(new EndRateMeterFunction(part.ends))
           val withSinkAdded = testRunId match {
@@ -182,7 +180,7 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessW
               registerParts(splitted, parts, ends)
           }
         case part@CustomNodePart(executor:
-          CustomNodeInvoker[((DataStream[InterpretationResult], FiniteDuration) => DataStream[ValueWithContext[_]])@unchecked],
+          CustomNodeInvoker[FlinkCustomStreamTransformation@unchecked],
               node, nextParts, ends) =>
 
           val newContextFun = (ir: ValueWithContext[_]) => node.data.outputVar match {
@@ -190,7 +188,10 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessW
             case None => ir.context
           }
 
-          val newStart = executor.run(compiledProcessWithDeps)(start, compiledProcessWithDeps().processTimeout)
+          val customNodeContext = FlinkCustomNodeContext(process.metaData,
+                                    node.id, processWithDeps.processTimeout, () => compiledProcessWithDeps().exceptionHandler, processWithDeps.signalSenders)
+
+          val newStart = executor.run(compiledProcessWithDeps).transform(start, customNodeContext)
               .map(newContextFun)
               .flatMap(new InterpretationFunction(compiledProcessWithDeps, node))
               .name(s"${process.metaData.id}-${node.id}-customNodeInterpretation")
@@ -203,62 +204,31 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessW
   }
 }
 
+
 object FlinkProcessRegistrar {
 
   import net.ceedubs.ficus.Ficus._
-  import pl.touk.esp.engine.util.Implicits._
-
+  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+  import net.ceedubs.ficus.readers.ValueReader
+  
   private final val EndId = "$end"
 
-  def apply(creator: ProcessConfigCreator, config: Config,
-            definitionsPostProcessor: (ProcessDefinitionExtractor.ProcessDefinition[ObjectWithMethodDef] => ProcessDefinitionExtractor.ProcessDefinition[ObjectWithMethodDef]) = identity,
-            additionalListeners: List[ProcessListener] = List()) = {
-    def checkpointInterval() = config.as[FiniteDuration]("checkpointInterval")
-
-    def eventTimeMetricDuration() = config.getOrElse[FiniteDuration]("metrics.eventTime.duration", 10.seconds)
-
-    def definitions(): ProcessDefinition[ObjectWithMethodDef] = {
-      definitionsPostProcessor(ProcessDefinitionExtractor.extractObjectWithMethods(creator, config))
-    }
-
-    def compiler(sub: PartSubGraphCompiler): ProcessCompiler = {
-      new ProcessCompiler(sub, definitions())
-    }
-
-    def compileProcess(process: EspProcess)() = {
-      val servicesDefs = definitions().services
-      //for testing environment it's important to take classloader from user jar
-      val subCompiler = PartSubGraphCompiler.default(servicesDefs, creator.globalProcessVariables(config).mapValuesNow(v => ClazzRef(v.value)),
-        creator.getClass.getClassLoader)
-      val processCompiler = compiler(subCompiler)
-      val compiledProcess = validateOrFailProcessCompilation(processCompiler.compile(process))
-      val timeout = config.as[FiniteDuration]("timeout")
-      val listeners =  creator.listeners(config) ++ additionalListeners
-      CompiledProcessWithDeps(
-        compiledProcess,
-        WithLifecycle(servicesDefs.values.map(_.obj.asInstanceOf[Service]).toSeq),
-        WithLifecycle(listeners),
-        subCompiler,
-        Interpreter(servicesDefs, timeout, listeners),
-        timeout
-      )
-    }
+  def apply(compiler: FlinkProcessCompiler, config: Config) : FlinkProcessRegistrar = {
 
     val enableObjectReuse = config.getOrElse[Boolean]("enableObjectReuse", true)
+    val eventTimeMetricDuration = config.getOrElse[FiniteDuration]("eventTimeMetricSlideDuration", 10.seconds)
+    val checkpointInterval = config.as[FiniteDuration]("checkpointInterval")
 
     new FlinkProcessRegistrar(
-      compileProcess = compileProcess,
-      eventTimeMetricDuration = eventTimeMetricDuration(),
-      checkpointInterval = checkpointInterval(),
+      compileProcess = compiler.compileProcess,
+      eventTimeMetricDuration = eventTimeMetricDuration,
+      checkpointInterval = checkpointInterval,
       enableObjectReuse = enableObjectReuse,
-      diskStateBackend = StateConfiguration.prepareRocksDBStateBackend(config)
+      diskStateBackend = config.getAs[RocksDBStateBackendConfig]("rocksDB").map(StateConfiguration.prepareRocksDBStateBackend)
     )
   }
 
-  private def validateOrFailProcessCompilation[T](validated: ValidatedNel[ProcessCompilationError, T]): T = validated match {
-    case Valid(r) => r
-    case Invalid(err) => throw new scala.IllegalArgumentException(err.toList.mkString("Compilation errors: ", ", ", ""))
-  }
+
 
   class InterpretationFunction(compiledProcessWithDepsProvider: () => CompiledProcessWithDeps,
                                node: SplittedNode[_]) extends RichFlatMapFunction[Context, InterpretationResult] {
@@ -286,34 +256,6 @@ object FlinkProcessRegistrar {
       compiledProcessWithDeps.close()
     }
 
-  }
-
-  class SinkInterpretationFunction(compiledProcessWithDepsProvider: () => CompiledProcessWithDeps,
-                                   sink: splittednode.SplittedNode[Sink]) extends RichFlatMapFunction[InterpretationResult, InterpretationResult] {
-
-    private lazy implicit val ec = SynchronousExecutionContext.ctx
-    private lazy val compiledProcessWithDeps = compiledProcessWithDepsProvider()
-    private lazy val compiledNode = compiledProcessWithDeps.compileSubPart(sink)
-
-    import compiledProcessWithDeps._
-
-    override def open(parameters: Configuration): Unit = {
-      super.open(parameters)
-      compiledProcessWithDeps.open(getRuntimeContext)
-    }
-
-    override def flatMap(input: InterpretationResult, collector: Collector[InterpretationResult]): Unit = {
-      (try {
-        Await.result(interpreter.interpret(compiledNode, InterpreterMode.Traverse, metaData, input.finalContext), processTimeout)
-      } catch {
-        case NonFatal(error) => Right(EspExceptionInfo(Some(sink.id), error, input.finalContext))
-      }).fold(collector.collect, exceptionHandler.handle)
-    }
-
-    override def close(): Unit = {
-      super.close()
-      compiledProcessWithDeps.close()
-    }
   }
 
   class CollectingSinkFunction(compiledProcessWithDepsProvider: () => CompiledProcessWithDeps,

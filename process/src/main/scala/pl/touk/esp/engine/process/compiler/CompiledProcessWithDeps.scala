@@ -1,4 +1,4 @@
-package pl.touk.esp.engine.process
+package pl.touk.esp.engine.process.compiler
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data._
@@ -11,6 +11,8 @@ import pl.touk.esp.engine.compiledgraph.CompiledProcessParts
 import pl.touk.esp.engine.compiledgraph.node.Node
 import pl.touk.esp.engine.definition.CustomNodeInvokerDeps
 import pl.touk.esp.engine.flink.api.exception.FlinkEspExceptionHandler
+import pl.touk.esp.engine.flink.api.process.{FlinkCustomNodeContext, FlinkProcessSignalSenderProvider}
+import pl.touk.esp.engine.process.WithLifecycle
 import pl.touk.esp.engine.splittedgraph.splittednode.SplittedNode
 
 import scala.concurrent.ExecutionContext
@@ -21,7 +23,9 @@ case class CompiledProcessWithDeps(compiledProcess: CompiledProcessParts,
                                    private val listeners: WithLifecycle[ProcessListener],
                                    subPartCompiler: PartSubGraphCompiler,
                                    interpreter: Interpreter,
-                                   processTimeout: FiniteDuration) extends CustomNodeInvokerDeps {
+                                   processTimeout: FiniteDuration,
+                                   signalSenders: FlinkProcessSignalSenderProvider
+                                  ) extends CustomNodeInvokerDeps {
 
   def open(runtimeContext: RuntimeContext)(implicit ec: ExecutionContext): Unit = {
     services.open(runtimeContext)
@@ -45,7 +49,7 @@ case class CompiledProcessWithDeps(compiledProcess: CompiledProcessParts,
   }
 
   def metaData: MetaData = compiledProcess.metaData
-
+  
   val exceptionHandler: FlinkEspExceptionHandler = new ListeningExceptionHandler
 
   private class ListeningExceptionHandler extends FlinkEspExceptionHandler {

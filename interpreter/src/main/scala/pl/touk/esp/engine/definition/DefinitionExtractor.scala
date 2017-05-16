@@ -104,6 +104,7 @@ object DefinitionExtractor {
 
     override def returnType = objectDefinition.returnType
 
+    def as[T] : T = obj.asInstanceOf[T]
 
     private def validateParameters(values: List[(String, AnyRef)]) = {
       val method = methodDef.method

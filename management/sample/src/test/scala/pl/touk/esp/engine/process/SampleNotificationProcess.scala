@@ -5,6 +5,7 @@ import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.esp.engine.build.EspProcessBuilder
 import pl.touk.esp.engine.management.sample.DemoProcessConfigCreator
+import pl.touk.esp.engine.process.compiler.StandardFlinkProcessCompiler
 import pl.touk.esp.engine.spel
 
 import scala.concurrent.Future
@@ -29,7 +30,7 @@ class SampleNotificationProcess extends FlatSpec with Matchers {
 
     val config = ConfigFactory.load()
 
-    FlinkProcessRegistrar(creator, config).register(env, process)
+    new StandardFlinkProcessCompiler(creator, config).createFlinkProcessRegistrar().register(env, process)
 
     Future { env.execute("sample_notification")}.failed.foreach(_.printStackTrace())
     Thread.sleep(2000)

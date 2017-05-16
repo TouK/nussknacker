@@ -1,8 +1,7 @@
-package pl.touk.esp.engine.process.api
+package pl.touk.esp.engine.flink.api.state
 
 import org.apache.flink.api.common.functions.RichFunction
 import org.apache.flink.configuration.Configuration
-import pl.touk.esp.engine.api.exception.EspExceptionHandler
 import pl.touk.esp.engine.flink.api.exception.FlinkEspExceptionHandler
 
 //wydzielic do flink-api?

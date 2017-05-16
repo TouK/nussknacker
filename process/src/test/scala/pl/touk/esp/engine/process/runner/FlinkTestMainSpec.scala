@@ -269,6 +269,27 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside with BeforeAn
     SinkForInts.data should have length 0
   }
 
+  it should "be able to test process with signals" in {
+    val process =
+      EspProcessBuilder
+        .id("proc1")
+        .exceptionHandler()
+        .source("id", "input")
+        .customNodeNoOutput("cid", "signalReader")
+        .sink("out", "#input.value1", "monitor")
+
+    val input = SimpleRecord("0", 1, "2", new Date(3), Some(4), 5, "6")
+
+
+    val results = FlinkTestMain.run(ProcessMarshaller.toJson(process, PrettyParams.spaces2),
+      ConfigFactory.load(), TestData(List("0|1|2|3|4|5|6").mkString("\n")), List())
+
+    val nodeResults = results.nodeResults
+
+    nodeResults("out") shouldBe List(nodeResult(0, "input" -> input))
+
+  }
+
   def nodeResult(count: Int, vars: (String, Any)*) = NodeResult(Context(s"proc1-id-0-$count", Map(vars: _*)))
 
 }

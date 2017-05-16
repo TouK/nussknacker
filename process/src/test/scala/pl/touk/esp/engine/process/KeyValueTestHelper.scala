@@ -18,6 +18,7 @@ import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.kafka.{KafkaConfig, KafkaSourceFactory}
 import pl.touk.esp.engine.util.LoggingListener
 import pl.touk.esp.engine.flink.util.source.CsvSchema
+import pl.touk.esp.engine.process.compiler.StandardFlinkProcessCompiler
 
 import scala.concurrent._
 
@@ -54,7 +55,7 @@ object KeyValueTestHelper {
 
       override def globalProcessVariables(config: Config) = Map.empty
 
-      override def signals(config: Config) = Map.empty
+      override def signals(config: Config) = Map()
 
       override def buildInfo(): Map[String, String] = Map.empty
     }
@@ -62,7 +63,8 @@ object KeyValueTestHelper {
     def invokeWithKafka(process: EspProcess, config: KafkaConfig,
                         env: StreamExecutionEnvironment = StreamExecutionEnvironment.createLocalEnvironment()) = {
       val creator = prepareCreator(env.getConfig, List.empty, config)
-      FlinkProcessRegistrar(creator, ConfigFactory.load()).register(env, process)
+      val configuration = ConfigFactory.load()
+      new StandardFlinkProcessCompiler(creator, configuration).createFlinkProcessRegistrar().register(env, process)
       MockService.data.clear()
       env.execute()
     }

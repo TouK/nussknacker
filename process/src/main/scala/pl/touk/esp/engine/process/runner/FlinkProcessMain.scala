@@ -4,6 +4,7 @@ import com.typesafe.config.Config
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import pl.touk.esp.engine.api.process.ProcessConfigCreator
 import pl.touk.esp.engine.process.FlinkProcessRegistrar
+import pl.touk.esp.engine.process.compiler.StandardFlinkProcessCompiler
 
 object FlinkProcessMain extends FlinkRunner {
 
@@ -23,7 +24,7 @@ object FlinkProcessMain extends FlinkRunner {
   }
 
   private def prepareRegistrar(processConfigCreator: ProcessConfigCreator, config: Config): FlinkProcessRegistrar = {
-    FlinkProcessRegistrar(processConfigCreator, config)
+    new StandardFlinkProcessCompiler(processConfigCreator, config).createFlinkProcessRegistrar()
   }
 
   private def setBuildInfo(buildInfo: String, env: StreamExecutionEnvironment) = {
