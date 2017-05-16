@@ -32,8 +32,7 @@ class AppResources(buildInfo: Map[String, String],
             buildInfo
           }
         }
-      } ~
-      path("healthCheck")  {
+      } ~ path("healthCheck") {
         get {
           complete {
             notRunningProcessesThatShouldRun.map[HttpResponse] { set =>
@@ -50,6 +49,19 @@ class AppResources(buildInfo: Map[String, String],
             }
           }
         }
+      } ~ path("sanityCheck")  {
+        get {
+          complete {
+            processesWithValidationErrors.map[HttpResponse] { processes =>
+              if (processes.isEmpty) {
+                HttpResponse(status = StatusCodes.OK)
+              } else {
+                val message = s"Processes with validation errors: \n${processes.mkString(",")}"
+                HttpResponse(status = StatusCodes.InternalServerError, entity = message)
+              }
+            }
+          }
+        }
       }
     }
 
@@ -61,6 +73,13 @@ class AppResources(buildInfo: Map[String, String],
       statusMap <- Future.sequence(statusList(processes)).map(_.toMap)
     } yield {
       statusMap.filter { case (_, status) => !status.exists(_.isRunning) }.keySet
+    }
+  }
+
+  private def processesWithValidationErrors(implicit ec: ExecutionContext, user: LoggedUser): Future[List[String]] = {
+    processRepository.fetchProcessesDetails().map { processes =>
+      val processesWithErrors = processes.flatMap(_.json).filter(process => process.validationResult.exists(!_.errors.isEmpty))
+      processesWithErrors.map(_.id)
     }
   }
 

@@ -7,12 +7,12 @@ import akka.stream.ActorMaterializer
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.esp.engine.canonize.ProcessCanonizer
-import pl.touk.esp.engine.standalone.http.Argonaut62Support
 import pl.touk.esp.ui.api.ProcessTestData
 import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.esp.ui.process.ProcessToSave
 import pl.touk.esp.ui.process.marshall.ProcessConverter
 import pl.touk.esp.ui.security.LoggedUser
+import pl.touk.esp.ui.util.Argonaut62Support
 import pl.touk.esp.ui.validation.ValidationResults.{NodeValidationError, ValidationErrors, ValidationResult}
 
 import scala.concurrent.ExecutionContext.Implicits.global

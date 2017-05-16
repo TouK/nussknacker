@@ -32,7 +32,9 @@ object ValidationResults {
 
   case class ValidationErrors(invalidNodes: Map[String, List[NodeValidationError]],
                               processPropertiesErrors: List[NodeValidationError],
-                              globalErrors: List[NodeValidationError])
+                              globalErrors: List[NodeValidationError]) {
+    def isEmpty = invalidNodes.isEmpty && processPropertiesErrors.isEmpty && globalErrors.isEmpty
+  }
   object ValidationErrors {
     val success = ValidationErrors(Map.empty, List(), List())
   }
