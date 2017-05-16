@@ -4,18 +4,21 @@ import argonaut.Argonaut._
 import argonaut.ArgonautShapeless._
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.state.{ValueState, ValueStateDescriptor}
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.operators.{AbstractStreamOperator, TwoInputStreamOperator}
 import org.apache.flink.streaming.api.scala.{DataStream, _}
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
-import pl.touk.esp.engine.api.signal.{ProcessSignalSender, SignalTransformer}
+import pl.touk.esp.engine.api.signal.SignalTransformer
+import pl.touk.esp.engine.api.signal.SignalTransformer._
 import pl.touk.esp.engine.api.{MethodToInvoke, ParamName, _}
+import pl.touk.esp.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation}
+import pl.touk.esp.engine.flink.api.signal.FlinkProcessSignalSender
 import pl.touk.esp.engine.flink.util.signal.KafkaSignalStreamConnector
 import pl.touk.esp.engine.kafka.{EspSimpleKafkaProducer, KafkaConfig}
 
-import scala.concurrent.duration.FiniteDuration
 
 class RemoveLockProcessSignalFactory(val kafkaConfig: KafkaConfig, val signalsTopic: String)
-  extends ProcessSignalSender with EspSimpleKafkaProducer {
+  extends FlinkProcessSignalSender with EspSimpleKafkaProducer with KafkaSignalStreamConnector {
 
   import Signals._
 
@@ -44,20 +47,20 @@ object SampleSignalHandlingTransformer {
     }
   }
 
-  class LockStreamTransformer(val kafkaConfig: KafkaConfig, val signalsTopic: String) extends CustomStreamTransformer with KafkaSignalStreamConnector {
+  class LockStreamTransformer extends CustomStreamTransformer {
 
     @SignalTransformer(signalClass = classOf[RemoveLockProcessSignalFactory])
     @MethodToInvoke(returnType = classOf[LockOutput])
-    def execute(@ParamName("input") input: LazyInterpreter[String])(metaData: MetaData, nodeId: String) =
-      (start: DataStream[InterpretationResult], timeout: FiniteDuration) => {
-        connectWithSignals(start, metaData.id, nodeId, SignalSchema.deserializationSchema)
+    def execute(@ParamName("input") input: LazyInterpreter[String]) =
+      FlinkCustomStreamTransformation((start: DataStream[InterpretationResult], context: FlinkCustomNodeContext) => {
+        context.signalSenderProvider.get[RemoveLockProcessSignalFactory].connectWithSignals(start, context.metaData.id, context.nodeId, SignalSchema.deserializationSchema)
           .keyBy(_ => 1, _ => 1)
-          .transform("lockStreamTransform", new LockStreamFunction(metaData))
-      }
+          .transform("lockStreamTransform", new LockStreamFunction(context.metaData))
+      })
   }
 
   class LockStreamFunction(val metaData: MetaData)
-    extends AbstractStreamOperator[Any] with TwoInputStreamOperator[InterpretationResult, SampleProcessSignal, Any]
+    extends AbstractStreamOperator[ValueWithContext[Any]] with TwoInputStreamOperator[InterpretationResult, SampleProcessSignal, ValueWithContext[Any]]
       with LazyLogging with SignalHandler {
 
     var lockEnabledState: ValueState[java.lang.Boolean] = _
@@ -69,7 +72,7 @@ object SampleSignalHandlingTransformer {
 
     override def processElement1(element: StreamRecord[InterpretationResult]): Unit = {
       setInitialStateIfStateNotDefined()
-      output.collect(new StreamRecord[Any](ValueWithContext(LockOutput(lockEnabledState.value()), element.getValue.finalContext)))
+      output.collect(new StreamRecord[ValueWithContext[Any]](ValueWithContext(LockOutput(lockEnabledState.value()), element.getValue.finalContext)))
     }
 
     override def processElement2(element: StreamRecord[SampleProcessSignal]): Unit = {

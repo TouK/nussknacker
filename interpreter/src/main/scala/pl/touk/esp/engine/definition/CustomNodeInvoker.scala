@@ -22,7 +22,7 @@ private[definition] class CustomNodeInvokerImpl[T](executor: ObjectWithMethodDef
     extends CustomNodeInvoker[T] {
 
   override def run(lazyDeps: () => CustomNodeInvokerDeps) : T = {
-    executor.invokeMethod(prepareParam(lazyDeps), Seq(() => lazyDeps().exceptionHandler, metaData, node.id)).asInstanceOf[T]
+    executor.invokeMethod(prepareParam(lazyDeps), Seq()).asInstanceOf[T]
   }
 
   private def prepareParam(lazyDeps: () => CustomNodeInvokerDeps)(param: String) : Option[AnyRef] = {
@@ -93,7 +93,7 @@ object CustomStreamTransformerExtractor extends DefinitionExtractor[CustomStream
 
   override protected val returnType = classOf[Any]
 
-  override protected val additionalParameters = Set[Class[_]](classOf[() => EspExceptionHandler], classOf[MetaData], classOf[String])
+  override protected val additionalParameters = Set[Class[_]]()
 
   override protected def extractParameterType(p: java.lang.reflect.Parameter) =
     EspTypeUtils.extractParameterType(p, classOf[LazyInterpreter[_]])

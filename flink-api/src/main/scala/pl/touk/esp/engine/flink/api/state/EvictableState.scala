@@ -1,4 +1,4 @@
-package pl.touk.esp.engine.process.api
+package pl.touk.esp.engine.flink.api.state
 
 import org.apache.flink.api.common.state.{State, ValueState, ValueStateDescriptor}
 import org.apache.flink.api.common.typeutils.base.StringSerializer

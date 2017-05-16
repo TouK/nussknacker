@@ -12,13 +12,11 @@ import pl.touk.esp.engine.api._
 import pl.touk.esp.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
 import pl.touk.esp.engine.api.lazyy.UsingLazyValues
 import pl.touk.esp.engine.api.process._
-import pl.touk.esp.engine.api.test.InvocationCollectors.SinkInvocationCollector
 import pl.touk.esp.engine.api.test.NewLineSplittedTestDataParser
-import pl.touk.esp.engine.flink.api.process.{FlinkSink, FlinkSource, FlinkSourceFactory}
+import pl.touk.esp.engine.flink.api.process._
 import pl.touk.esp.engine.flink.util.exception.VerboselyLoggingExceptionHandler
 import pl.touk.esp.engine.kafka.{KafkaConfig, KafkaSinkFactory}
 import pl.touk.esp.engine.management.sample.signal.{RemoveLockProcessSignalFactory, SampleSignalHandlingTransformer}
-import pl.touk.esp.engine.management.sample.signal.SampleSignalHandlingTransformer.LockStreamTransformer
 
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
@@ -144,7 +142,7 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
     Map(
       "stateful" -> WithCategories(StatefulTransformer, "Category1", "Category2"),
       "customFilter" -> WithCategories(CustomFilter, "Category1", "Category2"),
-      "lockStreamTransformer" -> WithCategories(new SampleSignalHandlingTransformer.LockStreamTransformer(kConfig, signalsTopic), "Category1", "Category2")
+      "lockStreamTransformer" -> WithCategories(new SampleSignalHandlingTransformer.LockStreamTransformer(), "Category1", "Category2")
     )
   }
 
@@ -174,14 +172,13 @@ case object StatefulTransformer extends CustomStreamTransformer {
 
   @MethodToInvoke
   def execute(@ParamName("keyBy") keyBy: LazyInterpreter[String])
-  = (start: DataStream[InterpretationResult], timeout: FiniteDuration) => {
+  = FlinkCustomStreamTransformation((start: DataStream[InterpretationResult]) => {
     start.keyBy(keyBy.syncInterpretationFunction)
-      .mapWithState[Any, List[String]] { case (StringFromIr(ir, sr), oldState) =>
+      .mapWithState[ValueWithContext[Any], List[String]] { case (StringFromIr(ir, sr), oldState) =>
       val nList = sr :: oldState.getOrElse(Nil)
       (ValueWithContext(nList, ir.finalContext), Some(nList))
     }
-
-  }
+  })
 
   object StringFromIr {
     def unapply(ir: InterpretationResult) = Some(ir, ir.finalContext.apply[String]("input"))
@@ -193,8 +190,8 @@ case object CustomFilter extends CustomStreamTransformer {
 
   @MethodToInvoke(returnType = classOf[Void])
   def execute(@ParamName("expression") expression: LazyInterpreter[Boolean])
-   = (start: DataStream[InterpretationResult], timeout: FiniteDuration) =>
-      start.filter(expression.syncInterpretationFunction).map(ValueWithContext(_))
+   = FlinkCustomStreamTransformation((start: DataStream[InterpretationResult]) =>
+      start.filter(expression.syncInterpretationFunction).map(ValueWithContext(_)))
 
 }
 

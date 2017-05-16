@@ -8,16 +8,21 @@ import argonaut.PrettyParams
 import com.typesafe.config.Config
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor
+import org.apache.flink.streaming.api.scala._
 import org.scalatest.{FlatSpec, Inside, Matchers}
 import pl.touk.esp.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.esp.engine.api.process._
+import pl.touk.esp.engine.api.signal.SignalTransformer
 import pl.touk.esp.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.esp.engine.api.test.{EmptyLineSplittedTestDataParser, NewLineSplittedTestDataParser, TestDataParser}
-import pl.touk.esp.engine.api.{MethodToInvoke, ParamName, Service}
+import pl.touk.esp.engine.api._
 import pl.touk.esp.engine.build.EspProcessBuilder
-import pl.touk.esp.engine.flink.api.process.FlinkSourceFactory
+import pl.touk.esp.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation, FlinkSourceFactory}
+import pl.touk.esp.engine.flink.api.signal.FlinkProcessSignalSender
 import pl.touk.esp.engine.flink.util.exception.{VerboselyLoggingExceptionHandler, VerboselyLoggingRestartingExceptionHandler}
-import pl.touk.esp.engine.flink.util.source.CollectionSource
+import pl.touk.esp.engine.flink.util.signal.KafkaSignalStreamConnector
+import pl.touk.esp.engine.flink.util.source.{CollectionSource, EspDeserializationSchema}
+import pl.touk.esp.engine.kafka.{EspSimpleKafkaProducer, KafkaConfig}
 import pl.touk.esp.engine.marshall.ProcessMarshaller
 import pl.touk.esp.engine.process.ProcessTestHelpers._
 import pl.touk.esp.engine.spel
@@ -73,6 +78,33 @@ class ThrowingService(exception: Exception) extends Service {
   }
 }
 
+
+object CustomSignalReader extends CustomStreamTransformer {
+
+  @SignalTransformer(signalClass = classOf[TestProcessSignalFactory])
+  @MethodToInvoke(returnType = classOf[Void])
+  def execute() =
+    FlinkCustomStreamTransformation((start: DataStream[InterpretationResult], context: FlinkCustomNodeContext) => {
+      context.signalSenderProvider.get[TestProcessSignalFactory]
+        .connectWithSignals(start, context.metaData.id, context.nodeId, new EspDeserializationSchema(identity))
+        .map((a:InterpretationResult) => ValueWithContext(a),
+              (_:Array[Byte]) => ValueWithContext[Any]("", Context("id")))
+  })
+}
+
+
+class TestProcessSignalFactory(val kafkaConfig: KafkaConfig, val signalsTopic: String)
+  extends FlinkProcessSignalSender with EspSimpleKafkaProducer with KafkaSignalStreamConnector {
+
+  @MethodToInvoke
+  def sendSignal()(processId: String) = {
+    sendToKafkaWithNewProducer(signalsTopic, Array.empty, "".getBytes())
+  }
+
+}
+
+
+
 class SimpleProcessConfigCreator extends ProcessConfigCreator {
 
   import org.apache.flink.streaming.api.scala._
@@ -91,14 +123,18 @@ class SimpleProcessConfigCreator extends ProcessConfigCreator {
 
   override def listeners(config: Config) = List()
 
-  override def customStreamTransformers(config: Config) = Map("stateCustom" -> WithCategories(StateCustomNode))
+  override def customStreamTransformers(config: Config) = Map("stateCustom" -> WithCategories(StateCustomNode),
+          "signalReader" -> WithCategories(CustomSignalReader)
+  )
 
   override def sourceFactories(config: Config) = Map(
     "input" -> WithCategories(TestSources.simpleRecordSource, "cat2"),
     "jsonInput" -> WithCategories(TestSources.jsonSource, "cat2")
   )
 
-  override def signals(config: Config) = Map.empty
+  override def signals(config: Config) = Map("sig1" ->
+          WithCategories(new TestProcessSignalFactory(KafkaConfig("", "", None, None), "")))
+
 
   override def exceptionHandlerFactory(config: Config) =
     ExceptionHandlerFactory.noParams(VerboselyLoggingRestartingExceptionHandler)

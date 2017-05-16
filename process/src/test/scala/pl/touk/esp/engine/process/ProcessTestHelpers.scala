@@ -16,17 +16,16 @@ import pl.touk.esp.engine.api.process._
 import pl.touk.esp.engine.api.signal.ProcessSignalSender
 import pl.touk.esp.engine.api.{LazyInterpreter, _}
 import pl.touk.esp.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionHandler}
-import pl.touk.esp.engine.flink.api.process.{FlinkSink, FlinkSourceFactory}
+import pl.touk.esp.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation, FlinkSink, FlinkSourceFactory}
+import pl.touk.esp.engine.flink.api.state.WithExceptionHandler
 import pl.touk.esp.engine.flink.util.exception._
 import pl.touk.esp.engine.flink.util.listener.NodeCountMetricListener
 import pl.touk.esp.engine.flink.util.service.TimeMeasuringService
 import pl.touk.esp.engine.flink.util.source.CollectionSource
 import pl.touk.esp.engine.graph.EspProcess
-import pl.touk.esp.engine.process.api.WithExceptionHandler
+import pl.touk.esp.engine.process.compiler.StandardFlinkProcessCompiler
 import pl.touk.esp.engine.util.LoggingListener
 
-import scala.collection.mutable.ArrayBuffer
-import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
 object ProcessTestHelpers {
@@ -44,7 +43,7 @@ object ProcessTestHelpers {
     def invoke(process: EspProcess, data: List[SimpleRecord],
                env: StreamExecutionEnvironment = StreamExecutionEnvironment.createLocalEnvironment()) = {
       val creator = prepareCreator(env.getConfig, data)
-      FlinkProcessRegistrar(creator, ConfigFactory.load()).register(env, process)
+      new StandardFlinkProcessCompiler(creator, ConfigFactory.load()).createFlinkProcessRegistrar().register(env, process)
 
       MockService.clear()
       env.execute(process.id)
@@ -82,8 +81,7 @@ object ProcessTestHelpers {
         Map("processHelper" -> WithCategories(ProcessHelper.getClass))
       }
 
-      override def signals(config: Config): Map[String, WithCategories[ProcessSignalSender]] = Map.empty
-
+      override def signals(config: Config): Map[String, WithCategories[ProcessSignalSender]] = Map()
       override def buildInfo(): Map[String, String] = Map.empty
     }
   }
@@ -104,7 +102,7 @@ object ProcessTestHelpers {
 
     @MethodToInvoke(returnType = classOf[SimpleRecordWithPreviousValue])
     def execute(@ParamName("keyBy") keyBy: LazyInterpreter[String],
-               @ParamName("stringVal") stringVal: String)(exceptionHander: ()=>FlinkEspExceptionHandler, metaData: MetaData) = (start: DataStream[InterpretationResult], timeout: FiniteDuration) => {
+               @ParamName("stringVal") stringVal: String) = FlinkCustomStreamTransformation((start: DataStream[InterpretationResult], ctx: FlinkCustomNodeContext) => {
       start.keyBy(keyBy.syncInterpretationFunction)
         .mapWithState[ValueWithContext[Any], Long] {
         //TODO: tu musi byc jakis node id??
@@ -115,10 +113,10 @@ object ProcessTestHelpers {
         case (SimpleFromIr(ir, sr), None) =>
           (ValueWithContext(
            SimpleRecordWithPreviousValue(sr, 0, stringVal), ir.finalContext), Some(sr.value1))
-      }.map(CustomMap(exceptionHander))
+      }.map(CustomMap(ctx.exceptionHandler))
 
 
-    }
+    })
 
     object SimpleFromIr {
       def unapply(ir:InterpretationResult) = Some((ir, ir.finalContext.apply[SimpleRecord]("input")))
@@ -130,12 +128,12 @@ object ProcessTestHelpers {
 
     @MethodToInvoke(returnType = classOf[Void])
     def execute(@ParamName("input") keyBy: LazyInterpreter[String],
-               @ParamName("stringVal") stringVal: String)(exceptionHander: ()=>FlinkEspExceptionHandler) = (start: DataStream[InterpretationResult], timeout: FiniteDuration) => {
+               @ParamName("stringVal") stringVal: String) = FlinkCustomStreamTransformation((start: DataStream[InterpretationResult], context: FlinkCustomNodeContext) => {
 
       start.filter { ir =>
         keyBy.syncInterpretationFunction(ir) == stringVal
       }.map(ValueWithContext(_))
-    }
+    })
   }
 
   case class CustomMap(lazyHandler: ()=>FlinkEspExceptionHandler) extends RichMapFunction[ValueWithContext[Any], ValueWithContext[Any]] with WithExceptionHandler {
