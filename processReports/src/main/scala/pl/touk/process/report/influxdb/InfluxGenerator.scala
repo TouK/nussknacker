@@ -37,9 +37,11 @@ class InfluxGenerator(url: String, user: String, password: String, dbName: Strin
     def query(date: LocalDateTime) = {
       //we use epoch seconds to avoid time zone problems... in influx
       val from = toEpochSeconds(date)
-
+      //two hour window is for possible delays in sending metrics from taskmanager to jobmanager (or upd sending problems...)
+      //it's VERY unclear how large it should be. If it's too large, we may overlap with end and still generate
+      //bad results...
       val query = s"""select action, first(value) as value from "$metricName.count" where process = '$processName' """ +
-        s"and time >= ${from}s and env = '$env' group by slot, action"
+        s"and time >= ${from}s and time < ${from}s + 2h and env = '$env' group by slot, action"
 
       implicit val id = LogCorrelationId(UUID.randomUUID().toString)
       val req = dispatch.url(url)

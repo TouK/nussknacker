@@ -343,7 +343,8 @@ lazy val processReports = (project in file("processReports")).
     libraryDependencies ++= {
       Seq(
         "com.typesafe" % "config" % "1.3.0",
-        "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV
+        "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
+        "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )
     }
   ).dependsOn(httpUtils)

@@ -51,8 +51,8 @@ case class ProcessBaseCounts(all: Long, ends: Map[String, Long], deadEnds: Map[S
   }
 
   private def mapSpecialCharactersInfluxStyle(nodeId: String) = {
-    nodeId.replaceAll("\\.", "\\-")
-      .replaceAll("\\ ", "\\-")
+    nodeId.replaceAll("\\.+", "\\-")
+      .replaceAll("\\ +", "\\-")
   }
 }
 
