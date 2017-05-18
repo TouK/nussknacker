@@ -17,31 +17,9 @@ object ProcessCanonizer {
     CanonicalProcess(
       process.metaData,
       process.exceptionHandlerRef,
-      nodesOnTheSameLevel(process.root)
+      NodeCanonizer.canonize(process.root)
     )
   }
-
-  private def nodesOnTheSameLevel(n: node.Node): List[canonicalnode.CanonicalNode] =
-    n match {
-      case oneOut: node.OneOutputNode =>
-        canonicalnode.FlatNode(oneOut.data) :: nodesOnTheSameLevel(oneOut.next)
-      case node.FilterNode(data, nextTrue, nextFalse) =>
-        canonicalnode.FilterNode(data, nextFalse.toList.flatMap(nodesOnTheSameLevel)) :: nodesOnTheSameLevel(nextTrue)
-      case node.SwitchNode(data, nexts, defaultNext) =>
-        canonicalnode.SwitchNode(
-          data = data,
-          nexts = nexts.map { next =>
-            canonicalnode.Case(next.expression, nodesOnTheSameLevel(next.node))
-          },
-          defaultNext = defaultNext.toList.flatMap(nodesOnTheSameLevel)
-        ) :: Nil
-      case ending: node.EndingNode =>
-        canonicalnode.FlatNode(ending.data) :: Nil
-      case node.SplitNode(bare, nexts) =>
-        canonicalnode.SplitNode(bare, nexts.map(nodesOnTheSameLevel)) :: Nil
-      case node.SubprocessNode(input, nexts) =>
-        canonicalnode.Subprocess(input, nexts.mapValues(nodesOnTheSameLevel)) :: Nil
-    }
 
   def uncanonize(canonicalProcess: CanonicalProcess): ValidatedNel[ProcessUncanonizationError, EspProcess] =
     uncanonizeSource(canonicalProcess.nodes).map(
@@ -92,6 +70,32 @@ object ProcessCanonizer {
       case invalidHead :: _ =>
         invalid(InvalidTailOfBranch(invalidHead.id)).toValidatedNel
       case Nil => invalid(InvalidTailOfBranch(previous.id)).toValidatedNel
+    }
+
+}
+
+object NodeCanonizer {
+
+  def canonize(n: node.Node): List[canonicalnode.CanonicalNode] =
+    n match {
+      case oneOut: node.OneOutputNode =>
+        canonicalnode.FlatNode(oneOut.data) :: canonize(oneOut.next)
+      case node.FilterNode(data, nextTrue, nextFalse) =>
+        canonicalnode.FilterNode(data, nextFalse.toList.flatMap(canonize)) :: canonize(nextTrue)
+      case node.SwitchNode(data, nexts, defaultNext) =>
+        canonicalnode.SwitchNode(
+          data = data,
+          nexts = nexts.map { next =>
+            canonicalnode.Case(next.expression, canonize(next.node))
+          },
+          defaultNext = defaultNext.toList.flatMap(canonize)
+        ) :: Nil
+      case ending: node.EndingNode =>
+        canonicalnode.FlatNode(ending.data) :: Nil
+      case node.SplitNode(bare, nexts) =>
+        canonicalnode.SplitNode(bare, nexts.map(canonize)) :: Nil
+      case node.SubprocessNode(input, nexts) =>
+        canonicalnode.Subprocess(input, nexts.mapValues(canonize)) :: Nil
     }
 
 }
