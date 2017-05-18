@@ -30,7 +30,7 @@ object ProcessCompilationError {
 
   case class MissingPart(nodeId: String) extends ProcessCompilationError with InASingleNode
 
-  case class InvaliRootNode(nodeId: String) extends ProcessUncanonizationError with InASingleNode
+  case class InvalidRootNode(nodeId: String) extends ProcessUncanonizationError with InASingleNode
 
   object EmptyProcess extends ProcessUncanonizationError {
     override def nodeIds = Set()
@@ -130,6 +130,8 @@ object ProcessCompilationError {
   case class UnknownSubprocessOutput(id: String, nodeId: String) extends ProcessCompilationError with InASingleNode
 
   case class UnknownSubprocess(id: String, nodeId: String) extends ProcessCompilationError with InASingleNode
+
+  case class InvalidSubprocess(id: String, nodeId: String) extends ProcessCompilationError with InASingleNode
 
   object UnknownSubprocess {
     def apply(id: String)(implicit nodeId: NodeId): ProcessCompilationError =UnknownSubprocess(id, nodeId.id)

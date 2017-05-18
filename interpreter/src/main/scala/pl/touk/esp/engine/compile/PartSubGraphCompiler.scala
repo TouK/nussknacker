@@ -87,7 +87,10 @@ private[compile] trait PartSubGraphCompilerBase {
     def doCompile(n: SplittedNode[_], ctx: ValidationContext): ValidatedNel[PartSubGraphCompilationError, CompiledNode] = {
       implicit val nodeId = NodeId(n.id)
       n match {
-        case splittednode.SourceNode(graph.node.Source(id, ref, _), next) =>
+        case splittednode.SourceNode(graph.node.Source(id, _, _), next) =>
+          compile(next, ctx).map(nwc => CompiledNode(compiledgraph.node.Source(id, nwc.next), nwc.ctx))
+        case splittednode.SourceNode(SubprocessInputDefinition(id, _, _), next) =>
+          //TODO: should we recognize we're compiling only subprocess?
           compile(next, ctx).map(nwc => CompiledNode(compiledgraph.node.Source(id, nwc.next), nwc.ctx))
         case splittednode.OneOutputSubsequentNode(data: OneOutputSubsequentNodeData, next) =>
           data match {
@@ -165,7 +168,9 @@ private[compile] trait PartSubGraphCompilerBase {
               optionalExpression.map(oe => compile(oe, None, ctx)).sequence.map(compiledgraph.node.Sink(id, ref.typ, _)).map(CompiledNode(_, Map()))
             //no chyba tutaj tego nie powinno byc, bo to bylby pusty podproces??
             case SubprocessInput(id, _, _) => Invalid(NonEmptyList.of(UnresolvedSubprocess(id)))
-            case SubprocessOutputDefinition(id, _, _) => Invalid(NonEmptyList.of(UnresolvedSubprocess(id)))
+            case SubprocessOutputDefinition(id, name, _) =>
+              //TODO: should we validate it's process?
+              Valid(CompiledNode(compiledgraph.node.Sink(id, name, None), Map()))
           }
       }
     }

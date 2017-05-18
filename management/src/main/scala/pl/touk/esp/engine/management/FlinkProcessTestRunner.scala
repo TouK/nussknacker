@@ -30,14 +30,10 @@ class FlinkProcessTestRunner(config: Config, jars: List[URL]) {
     objMirror.reflectMethod(method)
   }
 
-  def test(processId: String, processDeploymentData: ProcessDeploymentData, testData: TestData): TestResults = {
-
+  def test(processId: String, json: String, testData: TestData): TestResults = {
     //we have to use context loader, as in UI we have don't have esp-process on classpath...
     ThreadUtils.withThisAsContextClassLoader(classLoader) {
-      processDeploymentData match {
-        case GraphProcess(json) => tryToInvoke(testData, json).asInstanceOf[TestResults]
-        case _ => throw new IllegalArgumentException(s"Process $processId with deploymentData $processDeploymentData cannot be tested")
-      }
+      tryToInvoke(testData, json).asInstanceOf[TestResults]
     }
   }
 

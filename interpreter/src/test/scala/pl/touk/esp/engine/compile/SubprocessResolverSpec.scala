@@ -3,13 +3,14 @@ package pl.touk.esp.engine.compile
 import cats.data.NonEmptyList
 import cats.data.Validated.Invalid
 import org.scalatest.{FlatSpec, Matchers}
+import pl.touk.esp.engine.api.{MetaData, StreamMetaData}
 import pl.touk.esp.engine.build.EspProcessBuilder
-import pl.touk.esp.engine.canonicalgraph.canonicalnode
+import pl.touk.esp.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.esp.engine.canonicalgraph.canonicalnode.{FlatNode, Subprocess}
 import pl.touk.esp.engine.canonize.ProcessCanonizer
-import pl.touk.esp.engine.compile.ProcessCompilationError.{MissingParameters, RedundantParameters, UnknownSubprocessOutput}
+import pl.touk.esp.engine.compile.ProcessCompilationError.{RedundantParameters, UnknownSubprocessOutput}
+import pl.touk.esp.engine.definition.DefinitionExtractor
 import pl.touk.esp.engine.definition.DefinitionExtractor.ClazzRef
-import pl.touk.esp.engine.graph.SubprocessDefinition
 import pl.touk.esp.engine.graph.evaluatedparam.Parameter
 import pl.touk.esp.engine.graph.node._
 import pl.touk.esp.engine.graph.sink.SinkRef
@@ -28,8 +29,10 @@ class SubprocessResolverSpec extends FlatSpec with Matchers {
       .subprocessOneOut("sub2", "subProcess1", "output", "ala" -> "'makota'")
       .sink("sink", "sink1"))
 
-    val subprocess = SubprocessDefinition("subProcess1", List("ala" -> ClazzRef(classOf[String])),
-      List(canonicalnode.FilterNode(Filter("f1", "false"), List()), FlatNode(SubprocessOutputDefinition("out1", "output")))
+    val subprocess =  CanonicalProcess(MetaData("subProcess1", StreamMetaData()), null,
+      List(
+        canonicalnode.FlatNode(SubprocessInputDefinition("start", List(DefinitionExtractor.Parameter("ala", ClazzRef[String])))),
+        canonicalnode.FilterNode(Filter("f1", "false"), List()), FlatNode(SubprocessOutputDefinition("out1", "output")))
     )
 
     val resolvedValidated = SubprocessResolver(Set(subprocess)).resolve(process)
@@ -53,13 +56,17 @@ class SubprocessResolverSpec extends FlatSpec with Matchers {
       .subprocessOneOut("sub", "subProcess1", "output", "param" -> "'makota'")
       .sink("sink", "sink1"))
 
-    val subprocess = SubprocessDefinition("subProcess2", List("param" -> ClazzRef(classOf[String])),
-      List(canonicalnode.FilterNode(Filter("f1", "#param == 'a'"),
+    val subprocess = CanonicalProcess(MetaData("subProcess2", StreamMetaData()), null,
+      List(
+        canonicalnode.FlatNode(SubprocessInputDefinition("start", List(DefinitionExtractor.Parameter("param", ClazzRef[String])))),
+        canonicalnode.FilterNode(Filter("f1", "#param == 'a'"),
         List(canonicalnode.FlatNode(Sink("deadEnd", SinkRef("sink1", List()), Some("'deadEnd'"))))
       ), canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "output"))))
 
-    val nested = SubprocessDefinition("subProcess1", List("param" -> ClazzRef[String]),
-      List(canonicalnode.Subprocess(SubprocessInput("sub2",
+    val nested =  CanonicalProcess(MetaData("subProcess1", StreamMetaData()), null,
+      List(
+        canonicalnode.FlatNode(SubprocessInputDefinition("start", List(DefinitionExtractor.Parameter("param", ClazzRef[String])))),
+        canonicalnode.Subprocess(SubprocessInput("sub2",
         SubprocessRef("subProcess2", List(Parameter("param", "#param")))), Map("output" -> List(FlatNode(SubprocessOutputDefinition("sub2Out", "output"))))))
     )
 
@@ -87,8 +94,10 @@ class SubprocessResolverSpec extends FlatSpec with Matchers {
       .subprocessOneOut("sub", "subProcess1", "output", "badala" -> "'makota'")
       .sink("sink", "sink1"))
 
-    val subprocess = SubprocessDefinition("subProcess1", List("ala" -> ClazzRef(classOf[String])),
-      List(canonicalnode.FilterNode(Filter("f1", "false"), List()), FlatNode(SubprocessOutputDefinition("out1", "output")))
+    val subprocess = CanonicalProcess(MetaData("subProcess1", StreamMetaData()), null,
+      List(
+        canonicalnode.FlatNode(SubprocessInputDefinition("start", List(DefinitionExtractor.Parameter("param", ClazzRef[String])))),
+        canonicalnode.FilterNode(Filter("f1", "false"), List()), FlatNode(SubprocessOutputDefinition("out1", "output")))
     )
 
     val resolvedValidated = SubprocessResolver(Set(subprocess)).resolve(process)
@@ -105,8 +114,11 @@ class SubprocessResolverSpec extends FlatSpec with Matchers {
       .subprocessOneOut("sub", "subProcess1", "output", "ala" -> "'makota'")
       .sink("sink", "sink1"))
 
-    val subprocess = SubprocessDefinition("subProcess1", List("ala" -> ClazzRef(classOf[String])),
-      List(canonicalnode.FilterNode(Filter("f1", "false"), List()), FlatNode(SubprocessOutputDefinition("out1", "badoutput")))
+    val subprocess = CanonicalProcess(MetaData("subProcess1", StreamMetaData()),
+      null,
+      List(
+        canonicalnode.FlatNode(SubprocessInputDefinition("start", List(DefinitionExtractor.Parameter("ala", ClazzRef[String])))),
+        canonicalnode.FilterNode(Filter("f1", "false"), List()), FlatNode(SubprocessOutputDefinition("out1", "badoutput")))
     )
 
     val resolvedValidated = SubprocessResolver(Set(subprocess)).resolve(process)
@@ -122,8 +134,10 @@ class SubprocessResolverSpec extends FlatSpec with Matchers {
       .source("source", "source1")
       .subprocessEnd("sub", "subProcess1", "ala" -> "'makota'"))
 
-    val subprocess = SubprocessDefinition("subProcess1", List("ala" -> ClazzRef(classOf[String])),
-      List(canonicalnode.FilterNode(Filter("f1", "false"), List()), FlatNode(Sink("end", SinkRef("sink1", List()))))
+    val subprocess = CanonicalProcess(MetaData("subProcess1", StreamMetaData()), null,
+      List(
+        canonicalnode.FlatNode(SubprocessInputDefinition("start", List(DefinitionExtractor.Parameter("ala", ClazzRef[String])))),
+        canonicalnode.FilterNode(Filter("f1", "false"), List()), FlatNode(Sink("end", SinkRef("sink1", List()))))
     )
 
     val resolvedValidated = SubprocessResolver(Set(subprocess)).resolve(process)

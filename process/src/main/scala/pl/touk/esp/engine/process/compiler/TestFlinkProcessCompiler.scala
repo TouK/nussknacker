@@ -20,6 +20,7 @@ import pl.touk.esp.engine.flink.api.signal.FlinkProcessSignalSender
 import pl.touk.esp.engine.flink.util.exception.ConsumingNonTransientExceptions
 import pl.touk.esp.engine.flink.util.source.CollectionSource
 import pl.touk.esp.engine.graph.EspProcess
+import pl.touk.esp.engine.graph.node.Source
 
 class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
                                config: Config,
@@ -38,7 +39,8 @@ class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
   override protected def definitions(): ProcessDefinitionExtractor.ProcessDefinition[ObjectWithMethodDef] = {
     val createdDefinitions = super.definitions()
 
-    val sourceType = process.root.data.ref.typ
+    //FIXME: asInstanceOf, should be proper handling of SubprocessInputDefinition
+    val sourceType = process.root.data.asInstanceOf[Source].ref.typ
     val testSource = createdDefinitions.sourceFactories.get(sourceType)
       .flatMap(prepareTestDataSourceFactory(executionConfig))
       .getOrElse(throw new IllegalArgumentException(s"Source $sourceType cannot be tested"))

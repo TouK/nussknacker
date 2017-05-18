@@ -120,8 +120,8 @@ class FlinkProcessManager(config: Config,
   }
 
 
-  override def test(processId: String, processDeploymentData: ProcessDeploymentData, testData: TestData) = {
-    Future(testRunner.test(processId, processDeploymentData, testData))
+  override def test(processId: String, json: String, testData: TestData) = {
+    Future(testRunner.test(processId, json, testData))
   }
 
   private lazy val buildInfoJson = {

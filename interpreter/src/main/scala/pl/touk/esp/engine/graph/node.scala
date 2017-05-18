@@ -1,5 +1,6 @@
 package pl.touk.esp.engine.graph
 
+import pl.touk.esp.engine.definition.DefinitionExtractor
 import pl.touk.esp.engine.graph.evaluatedparam.Parameter
 import sink.SinkRef
 import pl.touk.esp.engine.graph.expression.Expression
@@ -19,7 +20,7 @@ object node {
     def next: SubsequentNode
   }
 
-  case class SourceNode(data: Source, next: SubsequentNode) extends OneOutputNode
+  case class SourceNode(data: StartingNodeData, next: SubsequentNode) extends OneOutputNode
 
   sealed trait SubsequentNode extends Node
 
@@ -49,14 +50,18 @@ object node {
     def isDisabled: Option[Boolean]
   }
 
-  case class Source(id: String, ref: SourceRef, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends NodeData
+  sealed trait OneOutputSubsequentNodeData extends NodeData
+
+  sealed trait EndingNodeData extends NodeData
+
+  sealed trait StartingNodeData extends NodeData
+
+  case class Source(id: String, ref: SourceRef, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends StartingNodeData
 
   case class Filter(id: String, expression: Expression, isDisabled: Option[Boolean] = None,
                     additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends NodeData with Disableable
 
   case class Switch(id: String, expression: Expression, exprVal: String, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends NodeData
-
-  sealed trait OneOutputSubsequentNodeData extends NodeData
 
   case class VariableBuilder(id: String, varName: String, fields: List[Field], additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends OneOutputSubsequentNodeData
 
@@ -68,8 +73,6 @@ object node {
 
   case class Split(id: String, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends NodeData
 
-  sealed trait EndingNodeData extends NodeData
-
   case class Processor(id: String, service: ServiceRef, isDisabled: Option[Boolean] = None, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends OneOutputSubsequentNodeData with EndingNodeData with Disableable
 
   case class Sink(id: String, ref: SinkRef, endResult: Option[Expression] = None, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends EndingNodeData
@@ -77,9 +80,18 @@ object node {
   case class SubprocessInput(id: String, ref: SubprocessRef,
                              additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends OneOutputSubsequentNodeData with EndingNodeData
 
+
+  //this is used after resolving subprocess, used for detecting when subprocess ends and context should change
   case class SubprocessOutput(id: String, outputName: String, additionalFields: Option[UserDefinedAdditionalNodeFields] = None)
     extends OneOutputSubsequentNodeData
 
+  //this is used only in subprocess definition
+  case class SubprocessInputDefinition(id: String,
+                                      //TODO: inna klasa?
+                                       parameters: List[DefinitionExtractor.Parameter],
+                                       additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends StartingNodeData
+
+  //this is used only in subprocess definition
   case class SubprocessOutputDefinition(id: String, outputName: String, additionalFields: Option[UserDefinedAdditionalNodeFields] = None)
     extends EndingNodeData
 

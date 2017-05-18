@@ -8,6 +8,8 @@ import pl.touk.esp.engine.graph.node._
 
 sealed trait CanonicalTreeNode
 case class CanonicalProcess(metaData: MetaData,
+                           //TODO: this makes sense only for StreamProcess, it should be moved to StreamMetadata
+                           //not so easy to do, as it has classes from interprete and StreamMetadata is in API
                             exceptionHandlerRef: ExceptionHandlerRef,
                             nodes: List[CanonicalNode]) extends CanonicalTreeNode
 

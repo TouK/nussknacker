@@ -19,6 +19,7 @@ import pl.touk.esp.engine.compiledgraph.part._
 import pl.touk.esp.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.esp.engine.definition.ProcessDefinitionExtractor
 import pl.touk.esp.engine.graph.EspProcess
+import pl.touk.esp.engine.graph.node.Source
 import pl.touk.esp.engine.splittedgraph.splittednode.{NextNode, PartRef, SplittedNode}
 import pl.touk.esp.engine.standalone.StandaloneProcessInterpreter.{GenericResultType, OutType}
 import pl.touk.esp.engine.standalone.metrics.InvocationMetrics
@@ -64,7 +65,8 @@ object StandaloneProcessInterpreter {
     val sub = PartSubGraphCompiler.default(definitions.services, definitions.globalVariables.mapValuesNow(_.value), creator.getClass.getClassLoader)
     val interpreter = Interpreter(definitions.services, FiniteDuration(10, TimeUnit.SECONDS), creator.listeners(config) ++ additionalListeners)
 
-    val sourceFactory = definitions.sourceFactories(process.root.data.ref.typ).obj.asInstanceOf[StandaloneSourceFactory[Any]]
+    //FIXME: asInstanceOf, should be proper handling of SubprocessInputDefinition
+    val sourceFactory = definitions.sourceFactories(process.root.data.asInstanceOf[Source].ref.typ).obj.asInstanceOf[StandaloneSourceFactory[Any]]
 
     new ProcessCompiler(sub, definitions).compile(process)
       .andThen(StandaloneInvokerCompiler(sub, _, interpreter).compile)

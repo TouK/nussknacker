@@ -6,12 +6,14 @@ import pl.touk.esp.engine.build.EspProcessBuilder
 import pl.touk.esp.engine.process.ProcessTestHelpers.{MockService, SimpleRecord, processInvoker}
 import java.util.Date
 
-import pl.touk.esp.engine.canonicalgraph.canonicalnode
+import pl.touk.esp.engine.api.{MetaData, StreamMetaData}
+import pl.touk.esp.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.esp.engine.canonize.ProcessCanonizer
 import pl.touk.esp.engine.compile.SubprocessResolver
+import pl.touk.esp.engine.definition.DefinitionExtractor
 import pl.touk.esp.engine.definition.DefinitionExtractor.ClazzRef
-import pl.touk.esp.engine.graph.{EspProcess, SubprocessDefinition}
-import pl.touk.esp.engine.graph.node.{Filter, Sink, SubprocessOutputDefinition}
+import pl.touk.esp.engine.graph.EspProcess
+import pl.touk.esp.engine.graph.node.{Filter, Sink, SubprocessInputDefinition, SubprocessOutputDefinition}
 import pl.touk.esp.engine.graph.sink.SinkRef
 
 class SubprocessSpec extends FlatSpec with Matchers {
@@ -38,8 +40,10 @@ class SubprocessSpec extends FlatSpec with Matchers {
   }
 
   private def resolve(espProcess: EspProcess) = {
-    val subprocess = SubprocessDefinition("subProcess1", List("param" -> ClazzRef(classOf[String])),
-      List(canonicalnode.FilterNode(Filter("f1", "#param == 'a'"),
+    val subprocess = CanonicalProcess(MetaData("subProcess1", StreamMetaData()), null,
+      List(
+        canonicalnode.FlatNode(SubprocessInputDefinition("start", List(DefinitionExtractor.Parameter("param", ClazzRef[String])))),
+        canonicalnode.FilterNode(Filter("f1", "#param == 'a'"),
         List(canonicalnode.FlatNode(Sink("end1", SinkRef("monitor", List()), Some("'deadEnd'"))))
       ), canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "output"))))
 
