@@ -1,0 +1,1 @@
+ALTER TABLE "processes" ADD COLUMN "is_subprocess" BOOLEAN DEFAULT FALSE;

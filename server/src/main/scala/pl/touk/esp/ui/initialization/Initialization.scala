@@ -12,7 +12,8 @@ import pl.touk.esp.ui.EspError
 import pl.touk.esp.ui.EspError.XError
 import pl.touk.esp.ui.db.EspTables
 import pl.touk.esp.ui.db.entity.EnvironmentsEntity.EnvironmentsEntityData
-import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType
+import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessType.ProcessType
+import pl.touk.esp.ui.db.entity.ProcessEntity.{ProcessType, ProcessingType}
 import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
 import pl.touk.esp.ui.db.migration.SampleDataInserter
 import pl.touk.esp.ui.process.repository.ProcessRepository
@@ -37,6 +38,9 @@ class Initialization(processRepository: ProcessRepository,
   def insertInitialProcesses(): Unit = {
 
     insertInitialProcesses("processes", ProcessingType.Streaming)
+    //TODO: standalone subprocesses?
+    insertInitialProcesses("subprocesses", ProcessingType.Streaming, isSubprocess = true)
+
     updateTechnicalProcesses()
   }
 
@@ -46,7 +50,7 @@ class Initialization(processRepository: ProcessRepository,
     }
   }
 
-  def insertInitialProcesses(dirName: String, processingType: ProcessingType): Unit = {
+  def insertInitialProcesses(dirName: String, processingType: ProcessingType, isSubprocess: Boolean = false): Unit = {
     val processesDir = new File(initialProcessDirectory, dirName)
     processesDir.mkdirs()
     processesDir.listFiles().filter(_.isDirectory).foreach { categoryDir =>
@@ -56,8 +60,7 @@ class Initialization(processRepository: ProcessRepository,
       categoryDir.listFiles().foreach { file =>
         val processId = file.getName.replaceAll("\\..*", "")
         val processJson = fromFile(file).mkString
-        val deploymentData = GraphProcess(processJson)
-        saveOrUpdate(processId, category, deploymentData, processingType).map(_.toEither).map(removeFileOnSuccess(file, _))
+        saveOrUpdate(processId, category, GraphProcess(processJson), processingType, isSubprocess).map(_.toEither).map(removeFileOnSuccess(file, _))
       }
     }
   }
@@ -69,7 +72,7 @@ class Initialization(processRepository: ProcessRepository,
         val processId = entry.getKey
         val deploymentData = CustomProcess(entry.getValue.unwrapped().toString)
         logger.info(s"Saving custom process $processId")
-        saveOrUpdate(processId, "Technical", deploymentData, ProcessingType.Streaming)
+        saveOrUpdate(processId, "Technical", deploymentData, ProcessingType.Streaming, isSubprocess = false)
       }.toList
     Future.sequence(futures).foreach { potentialErrors =>
       val potentialError = potentialErrors.map(_.toEither).find(_.isLeft).getOrElse(util.Right(()))
@@ -85,12 +88,13 @@ class Initialization(processRepository: ProcessRepository,
       file.delete()
   }
 
-  private def saveOrUpdate(processId: String, category: String, deploymentData: ProcessDeploymentData, processingType: ProcessingType): Future[XError[Unit]] = {
+  private def saveOrUpdate(processId: String, category: String, deploymentData: ProcessDeploymentData,
+                           processingType: ProcessingType, isSubprocess: Boolean): Future[XError[Unit]] = {
     val updateProcess = for {
       latestVersion <- processRepository.fetchLatestProcessVersion(processId)
       _ <- {
         latestVersion match {
-          case None => processRepository.saveNewProcess(processId, category, deploymentData, processingType)
+          case None => processRepository.saveNewProcess(processId, category, deploymentData, processingType, isSubprocess)
           case Some(version) if version.user == toukUser.id => processRepository.updateProcess(processId, deploymentData)
           case _ => logger.info(s"Process $processId not updated. DB version is: \n${latestVersion.flatMap(_.json).getOrElse("")}\n " +
             s" and version from file is: \n$deploymentData")

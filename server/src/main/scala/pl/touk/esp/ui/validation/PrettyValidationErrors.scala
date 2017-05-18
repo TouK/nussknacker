@@ -16,7 +16,7 @@ object PrettyValidationErrors {
         s"There is problem with expression in field $fieldName - it could not be parsed.", isFatal = false, fieldName)
       case DuplicatedNodeIds(ids) => node(s"Duplicate node ids: ${ids.mkString(", ")}", "Two nodes cannot have same id", isFatal = true)
       case EmptyProcess => node("Empty process", "Process is empty, please add some nodes")
-      case InvaliRootNode(_) => node("Invalid root node", "Process can start only from source node")
+      case InvalidRootNode(_) => node("Invalid root node", "Process can start only from source node")
       case InvalidTailOfBranch(_) => node("Invalid end of process", "Process branch can only end with sink or processor")
 
       case MissingParameters(params, ProcessCompilationError.ProcessNodeId) =>
@@ -36,7 +36,9 @@ object PrettyValidationErrors {
       case MissingPart(id) => node("MissingPart", s"Node $id has missing part")
       case WrongProcessType() => node("Wrong process type", "Process type doesn't match category - please check configuration")
       case UnsupportedPart(id) => node("UnsupportedPart", s"Type of node $id is unsupported right now")
-      case UnknownSubprocess(id, nodeId) => node("Unknown subprocess", s"Node $id uses subprocess $nodeId which is missing")
+      case UnknownSubprocess(id, nodeId) => node("Unknown subprocess", s"Node $nodeId uses subprocess $id which is missing")
+      case InvalidSubprocess(id, nodeId) => node("Invalid subprocess", s"Node $nodeId uses subprocess $id which is invalid")
+
       case UnresolvedSubprocess(id) => node("Unresolved subprocess", s"Subprocess $id encountered, this should not happen")
       case NoParentContext(_) => node("No parent context", "Please check subprocess definition")
       case UnknownSubprocessOutput(id, _) => node(s"Unknown subprocess output $id", "Please check subprocess definition")

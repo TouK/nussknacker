@@ -1,14 +1,26 @@
 {
-  "id" : "test1",
-  "parameters" : [
-    [
-      "param1",
-      {
-        "refClazzName" : "java.lang.String"
-      }
-    ]
-  ],
+  "metaData": {
+    "id" : "test1",
+    "typeSpecificData": {
+      "type": "StreamMetaData"
+    }
+  },
+  "exceptionHandlerRef": {
+    "parameters": []
+  },
   "nodes" : [
+    {
+      "id": "start",
+      "type": "SubprocessInputDefinition",
+      "parameters" : [
+          {
+            "name": "param1",
+            "typ" : {
+              "refClazzName": "java.lang.String"
+            }
+          }
+      ]
+    },
     {
       "type" : "Filter",
       "id" : "filter",

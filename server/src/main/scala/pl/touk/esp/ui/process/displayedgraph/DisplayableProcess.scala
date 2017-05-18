@@ -19,10 +19,11 @@ case class DisplayableProcess(id: String,
   def validated(validation: ProcessValidation) =
     copy(validationResult = Some(validation.validate(this)))
 
-  val metaData = MetaData(id, properties.typeSpecificProperties, properties.additionalFields)
+  val metaData = MetaData(id, properties.typeSpecificProperties, properties.isSubprocess, properties.additionalFields)
 
 }
 
 case class ProcessProperties(typeSpecificProperties: TypeSpecificData,
                              exceptionHandler: ExceptionHandlerRef,
-                             additionalFields: Option[UserDefinedProcessAdditionalFields])
+                             isSubprocess: Boolean = false,
+                             additionalFields: Option[UserDefinedProcessAdditionalFields] = None)

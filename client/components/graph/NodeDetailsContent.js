@@ -46,6 +46,24 @@ export default class NodeDetailsContent extends React.Component {
       case 'Sink':
         const toAppend = this.createField("textarea", "Expression", "endResult.expression", "expression")
         return this.sourceSinkCommon(toAppend)
+      case 'SubprocessInputDefinition':
+        //FIXME: dopisywanie parametrow...
+        return (
+          <div className="node-table-body">
+            {this.createField("input", "Id", "id")}
+
+            {this.doCreateField("textarea", "Parameters", "parameters", JSON.stringify(this.state.editedNode.parameters || []), (newValue) => this.setNodeDataAt("parameters", JSON.parse(newValue)))}
+            {this.descriptionField()}
+          </div>
+        )
+      case 'SubprocessOutputDefinition':
+        return (
+          <div className="node-table-body">
+            {this.createField("input", "Id", "id")}
+            {this.createField("input", "Output name", "outputName")}
+            {this.descriptionField()}
+          </div>
+        )
       case 'Filter':
         return (
           <div className="node-table-body">

@@ -64,12 +64,16 @@ export default {
     }))
   },
 
-  fetchProcessDefinitionData(processingType) {
-    return promiseWrap($.get(`${appConfig.API_URL}/processDefinitionData/${processingType}`))
+  fetchProcessDefinitionData(processingType, isSubprocess) {
+    return promiseWrap($.get(`${appConfig.API_URL}/processDefinitionData/${processingType}?isSubprocess=${isSubprocess}`))
   },
 
   fetchProcesses() {
     return promiseWrap($.get(appConfig.API_URL + '/processes'))
+  },
+
+  fetchSubProcesses() {
+    return promiseWrap($.get(appConfig.API_URL + '/subProcesses'))
   },
 
   fetchProcessDetails(processId, versionId) {
@@ -209,9 +213,9 @@ export default {
       .catch((error) => this.addError(`Failed to save`, error));
   },
 
-  createProcess(processId, processCategory, callback) {
+  createProcess(processId, processCategory, callback, isSubprocess) {
     return ajaxCall({
-      url: `${appConfig.API_URL}/processes/${processId}/${processCategory}`,
+      url: `${appConfig.API_URL}/processes/${processId}/${processCategory}?isSubprocess=${isSubprocess}`,
       type: 'POST'
     }).then(callback, (error) => {
       this.addError(`Failed to create process:`, error, true);

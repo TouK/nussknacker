@@ -16,9 +16,9 @@ export function fetchProcessToDisplay(processId, versionId) {
   }
 }
 
-export function fetchProcessDefinition(processingType) {
+export function fetchProcessDefinition(processingType, isSubprocess) {
   return (dispatch) => {
-    HttpService.fetchProcessDefinitionData(processingType).then((data) =>
+    HttpService.fetchProcessDefinitionData(processingType, isSubprocess).then((data) =>
       dispatch({type: "PROCESS_DEFINITION_DATA", processDefinitionData: data})
     )
   }

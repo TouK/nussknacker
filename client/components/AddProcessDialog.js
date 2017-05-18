@@ -17,7 +17,8 @@ class AddProcessDialog extends React.Component {
   static propTypes = {
     categories: React.PropTypes.array.isRequired,
     isOpen: React.PropTypes.bool.isRequired,
-    onClose: React.PropTypes.func.isRequired
+    onClose: React.PropTypes.func.isRequired,
+    isSubprocess: React.PropTypes.bool
   }
 
   initialState(props) {
@@ -42,7 +43,7 @@ class AddProcessDialog extends React.Component {
     HttpService.createProcess(this.state.processId, this.state.processCategory, () => {
       this.closeDialog()
       browserHistory.push('/visualization/' + processId)
-    })
+    }, this.props.isSubprocess)
   }
 
   render() {

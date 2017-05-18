@@ -23,6 +23,15 @@ describe("process available variables finder", () => {
   })
 
 
+  it("should find subprocess parameters as variables with its types", () => {
+    const availableVariables = ProcessUtils.findAvailableVariables("endEnriched", subprocess, processDefinition)
+    expect(availableVariables).toEqual({
+      "#date": "java.time.LocalDate",
+      "#subprocessParam": "java.lang.String"
+    })
+  })
+
+
   it("should return only global variables for dangling node", () => {
     const danglingNodeId = "someFilterNode"
     const newEdges = _.reject(process.edges, (edge) => {return edge.from == danglingNodeId || edge.to == danglingNodeId})
@@ -76,6 +85,22 @@ const process = {
   ],
   "validationResult": { "errors": {"invalidNodes": {}}}
 }
+
+const subprocess = {
+  "id": "subprocess1",
+  "properties": { "parallelism": 2, "exceptionHandler": { "parameters": [{ "name": "errorsTopic", "value": "transaction.errors"}]}},
+  "nodes": [
+    { "type": "SubprocessInputDefinition", "id": "start", "parameters": [{ "name": "subprocessParam", "typ":{ "refClazzName": "java.lang.String"}}]},
+    { "type": "Filter", "id": "filter1", "expression": { "language": "spel", "expression": "#input.PATH != 'Anonymous'"}},
+    { "type": "Sink", "id": "endEnriched", "ref": { "typ": "transactionSink", "parameters": [{ "name": "topic", "value": "transaction.topic"}]}, "endResult": { "language": "spel", "expression": "#finalTransaction.toJson()"}}
+  ],
+  "edges": [
+    { "from": "start", "to": "filter1"},
+    { "from": "filter1", "to": "endEnriched"}
+  ],
+  "validationResult": { "errors": {"invalidNodes": {}}}
+}
+
 
 
 describe("process utils", () => {

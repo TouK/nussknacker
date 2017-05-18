@@ -24,7 +24,8 @@ object SampleData {
       process.id,
       Some("Sample process description"),
       ProcessType.Graph, "Category1",
-      ProcessingType.Streaming
+      ProcessingType.Streaming,
+      isSubprocess = false
     )
   }
 

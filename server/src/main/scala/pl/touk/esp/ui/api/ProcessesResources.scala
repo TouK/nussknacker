@@ -19,7 +19,7 @@ import pl.touk.esp.ui.process.marshall.{ProcessConverter, UiProcessMarshaller}
 import pl.touk.esp.ui.process.repository.{ProcessActivityRepository, ProcessRepository}
 import pl.touk.esp.ui.process.repository.ProcessRepository._
 import pl.touk.esp.ui.security.{LoggedUser, Permission}
-import pl.touk.esp.ui.util.{AkkaHttpResponse, Argonaut62Support, MultipartUtils, PdfExporter}
+import pl.touk.esp.ui.util._
 import pl.touk.esp.ui.{BadRequestError, EspError, FatalError, NotFoundError}
 import akka.pattern.ask
 import akka.util.Timeout
@@ -27,10 +27,10 @@ import akka.util.Timeout
 import scala.concurrent.duration._
 import EspErrorToHttp._
 import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
+import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessType.ProcessType
 import pl.touk.esp.ui.validation.ProcessValidation
-import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType
+import pl.touk.esp.ui.db.entity.ProcessEntity.{ProcessType, ProcessingType}
 import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
-import pl.touk.esp.ui.db.entity.ProcessVersionEntity.ProcessVersionEntityData
 import pl.touk.esp.ui.process.ProcessToSave
 import pl.touk.esp.ui.process.ProcessTypesForCategories
 import pl.touk.esp.ui.process.repository.ProcessActivityRepository.ProcessActivity
@@ -42,7 +42,7 @@ class ProcessesResources(repository: ProcessRepository,
                          processActivityRepository: ProcessActivityRepository,
                          processValidation: ProcessValidation, typesForCategories: ProcessTypesForCategories)
                         (implicit ec: ExecutionContext, mat: Materializer)
-  extends Directives with Argonaut62Support {
+  extends Directives with Argonaut62Support with EspPathMatchers {
 
   import argonaut.ArgonautShapeless._
   import pl.touk.esp.ui.codec.UiCodecs._
@@ -61,6 +61,12 @@ class ProcessesResources(repository: ProcessRepository,
         get {
           complete {
             repository.fetchProcessesDetails()
+          }
+        }
+      } ~ path("subProcesses") {
+        get {
+          complete {
+            repository.fetchSubProcessesDetails()
           }
         }
       } ~ path("processes" / "status") {
@@ -99,10 +105,11 @@ class ProcessesResources(repository: ProcessRepository,
               val displayableProcess = processToSave.process
               val canonical = ProcessConverter.fromDisplayable(displayableProcess)
               val json = uiProcessMarshaller.toJson(canonical, PrettyParams.nospace)
+              val deploymentData = GraphProcess(json)
 
               (for {
                 validation <- XorT.fromXor[Future](processValidation.validate(displayableProcess).fatalAsError)
-                result <- XorT(repository.updateProcess(processId, GraphProcess(json)))
+                result <- XorT(repository.updateProcess(processId, deploymentData))
                 _ <- XorT.right[Future, pl.touk.esp.ui.EspError, Unit](
                   result.map { version =>
                     processActivityRepository.addComment(processId, version.id, processToSave.comment)
@@ -114,21 +121,24 @@ class ProcessesResources(repository: ProcessRepository,
         }
       } ~ path("processes" / Segment / Segment) { (processId, category) =>
         authorize(user.categories.contains(category)) {
-          post {
-            complete {
-              typesForCategories.getTypeForCategory(category) match {
-                case Some(processingType) =>
-                  val emptyProcess = makeEmptyProcess(processId, processingType)
-                  repository.fetchLatestProcessDetailsForProcessId(processId).flatMap {
-                    case Some(_) => Future(HttpResponse(status = StatusCodes.BadRequest, entity = "Process already exists"))
-                    case None => repository.saveNewProcess(processId, category, GraphProcess(emptyProcess), processingType).map(toResponse(StatusCodes.Created))
-                  }
-                case None => Future(HttpResponse(status = StatusCodes.BadRequest, entity = "Process category not found"))
+          parameter('isSubprocess) { (isSubprocessStr) =>
+            val isSubprocess = java.lang.Boolean.valueOf(isSubprocessStr)
+            post {
+              complete {
+                typesForCategories.getTypeForCategory(category) match {
+                  case Some(processingType) =>
+                    val emptyProcess = makeEmptyProcess(processId, processingType, isSubprocess)
+                    repository.fetchLatestProcessDetailsForProcessId(processId).flatMap {
+                      case Some(_) => Future(HttpResponse(status = StatusCodes.BadRequest, entity = "Process already exists"))
+                      case None => repository.saveNewProcess(processId, category, emptyProcess, processingType, isSubprocess)
+                        .map(toResponse(StatusCodes.Created))
+                    }
+                  case None => Future(HttpResponse(status = StatusCodes.BadRequest, entity = "Process category not found"))
+                }
               }
             }
           }
         }
-
       } ~ path("processes" / Segment / "status") { processId =>
         get {
           complete {
@@ -177,7 +187,7 @@ class ProcessesResources(repository: ProcessRepository,
                   case Valid(process) =>
                     repository.fetchLatestProcessDetailsForProcessIdXor(processId).map { detailsXor =>
                       val validatedProcess = detailsXor.map(details =>
-                        ProcessConverter.toDisplayable(process, details.processingType).validated(processValidation)
+                        ProcessConverter.toDisplayable(process, details.processingType, details.processType).validated(processValidation)
                       )
                       toResponseXor(validatedProcess)
                     }
@@ -227,13 +237,15 @@ class ProcessesResources(repository: ProcessRepository,
     (managerActor ? CheckStatus(processName, user)).mapTo[Option[ProcessStatus]]
   }
 
-  private def makeEmptyProcess(processId: String, processingType: ProcessingType) = {
+  private def makeEmptyProcess(processId: String, processingType: ProcessingType, isSubprocess: Boolean) = {
     val specificMetaData = processingType match {
       case ProcessingType.Streaming => StreamMetaData()
       case ProcessingType.RequestResponse => StandaloneMetaData(None)
     }
-    val emptyCanonical = CanonicalProcess(MetaData(id = processId, typeSpecificData = specificMetaData), ExceptionHandlerRef(List()), List())
-    uiProcessMarshaller.toJson(emptyCanonical, PrettyParams.nospace)
+    val emptyCanonical = CanonicalProcess(MetaData(id = processId,
+      isSubprocess = isSubprocess,
+      typeSpecificData = specificMetaData), ExceptionHandlerRef(List()), List())
+    GraphProcess(uiProcessMarshaller.toJson(emptyCanonical, PrettyParams.nospace))
   }
 
 }

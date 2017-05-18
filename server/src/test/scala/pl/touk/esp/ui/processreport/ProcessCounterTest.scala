@@ -3,9 +3,9 @@ package pl.touk.esp.ui.processreport
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.esp.engine.api.{MetaData, StreamMetaData}
 import pl.touk.esp.engine.build.EspProcessBuilder
+import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
 import pl.touk.esp.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.esp.engine.canonize.ProcessCanonizer
-import pl.touk.esp.engine.graph.SubprocessDefinition
 import pl.touk.esp.engine.graph.node.{Filter, SubprocessOutputDefinition}
 import pl.touk.esp.engine.spel
 import pl.touk.esp.ui.process.displayedgraph.displayablenode.{Group, ProcessAdditionalFields}
@@ -40,7 +40,7 @@ class ProcessCounterTest extends FlatSpec with Matchers {
       .id("test").parallelism(1).exceptionHandler()
       .source("source1", "")
       .filter("filter1", "")
-      .sink("sink11", "")).copy(metaData = MetaData("test", StreamMetaData(),
+      .sink("sink11", "")).copy(metaData = MetaData("test", StreamMetaData(), false,
         Some(ProcessAdditionalFields(Some(""), Set(Group("gr1", Set("filter1", "sink11")))))))
     val processCounter = new ProcessCounter(subprocessRepository(Set()))
 
@@ -65,7 +65,7 @@ class ProcessCounterTest extends FlatSpec with Matchers {
 
 
     val counter = new ProcessCounter(subprocessRepository(Set(
-        SubprocessDefinition("subprocess1", List(),
+      CanonicalProcess(MetaData("subprocess1", null), null,
           List(FlatNode(Filter("subFilter1", "")),
             FlatNode(Filter("subFilter2", "")), FlatNode(SubprocessOutputDefinition("outId1", "out1")))
         )
@@ -91,9 +91,9 @@ class ProcessCounterTest extends FlatSpec with Matchers {
   }
 
 
-  private def subprocessRepository(processes: Set[SubprocessDefinition]) = {
+  private def subprocessRepository(processes: Set[CanonicalProcess]) = {
     new SubprocessRepository {
-      override def loadSubprocesses(): Set[SubprocessDefinition] = processes
+      override def loadSubprocesses(): Set[CanonicalProcess] = processes
     }
   }
 }

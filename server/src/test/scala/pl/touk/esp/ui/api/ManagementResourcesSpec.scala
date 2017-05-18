@@ -14,7 +14,7 @@ import pl.touk.esp.engine.canonize.ProcessCanonizer
 import pl.touk.esp.ui.api.helpers.{EspItTest, TestFactory}
 import pl.touk.esp.ui.api.helpers.TestFactory._
 import pl.touk.esp.ui.codec.UiCodecs
-import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType
+import pl.touk.esp.ui.db.entity.ProcessEntity.{ProcessType, ProcessingType}
 import pl.touk.esp.ui.process.marshall.ProcessConverter
 import pl.touk.esp.ui.process.repository.ProcessRepository
 import pl.touk.esp.ui.process.repository.ProcessRepository.ProcessDetails
@@ -59,7 +59,7 @@ class ManagementResourcesSpec extends FlatSpec with ScalatestRouteTest
   it should "deploy technical process and mark it as deployed" in {
     implicit val loggedUser = user().copy(categories = List(testCategory))
     val processId = "Process1"
-    whenReady(processRepository.saveNewProcess(processId, testCategory, CustomProcess(""), ProcessingType.Streaming)) { res =>
+    whenReady(processRepository.saveNewProcess(processId, testCategory, CustomProcess(""), ProcessingType.Streaming, false)) { res =>
       deployProcess(processId) ~> check { status shouldBe StatusCodes.OK }
       getProcess(processId) ~> check {
         val processDetails = responseAs[String].decodeOption[ProcessDetails].get
@@ -165,7 +165,8 @@ class ManagementResourcesSpec extends FlatSpec with ScalatestRouteTest
 
   it should "return test results" in {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-    val displayableProcess = ProcessConverter.toDisplayable(ProcessCanonizer.canonize(SampleProcess.process), ProcessingType.Streaming)
+    val displayableProcess = ProcessConverter.toDisplayable(ProcessCanonizer.canonize(SampleProcess.process)
+      , ProcessingType.Streaming)
     val displayableProcessJson = UiCodecs.displayableProcessCodec.encode(displayableProcess).nospaces
     val multiPart = MultipartUtils.prepareMultiParts("testData" -> "ala\nbela", "processJson" -> displayableProcessJson)()
     Post(s"/processManagement/test/${SampleProcess.process.id}", multiPart) ~> withPermissions(deployRoute, Permission.Deploy) ~> check {

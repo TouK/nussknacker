@@ -6,8 +6,22 @@
       "color": "white"
     }
   },
+  "SubprocessInputDefinition": {
+    "name": "SubprocessInputDefinition",
+    "styles": {
+      "fill": "#2d8e54",
+      "color": "white"
+    }
+  },
   "Sink": {
     "name": "Sink",
+    "styles": {
+      "fill": "#db4646",
+      "color": "white"
+    }
+  },
+  "SubprocessOutputDefinition": {
+    "name": "SubprocessInputDefinition",
     "styles": {
       "fill": "#db4646",
       "color": "white"
