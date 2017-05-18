@@ -68,6 +68,9 @@ class ProcessUtils {
       case "Source": {
         return [{"input": clazzName}]
       }
+      case "SubprocessInputDefinition": {
+        return node.parameters.map(param => ({[param.name]: param.typ.refClazzName }))
+      }
       case "Enricher": {
         return [{[node.output]: clazzName}]
       }

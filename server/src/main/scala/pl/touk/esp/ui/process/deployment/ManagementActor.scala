@@ -103,16 +103,15 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
     }
   }
 
-  //FIXME: to powinno dziac sie gdzie indziej... ale gdzie??
-  private def resolveGraph(canonicalJson: String) : GraphProcess = {
-    GraphProcess(marshaller.toJson(marshaller.fromJson(canonicalJson).andThen(subprocessResolver.resolveSubprocesses).toOption.get, PrettyParams.spaces2))
+  private def resolveGraph(canonicalJson: String) : String = {
+    marshaller.toJson(marshaller.fromJson(canonicalJson).andThen(subprocessResolver.resolveSubprocesses).toOption.get, PrettyParams.spaces2)
   }
 
   private def deployAndSaveProcess(latestVersion: ProcessVersionEntityData, processManager: ProcessManager)(implicit user: LoggedUser): Future[Unit] = {
     val processId = latestVersion.processId
     logger.debug(s"Deploy of $processId started")
     val deployment = latestVersion.deploymentData match {
-      case GraphProcess(canonical) => resolveGraph(canonical)
+      case GraphProcess(canonical) => GraphProcess(resolveGraph(canonical))
       case a => a
     }
     processManager.deploy(processId, deployment).flatMap { _ =>

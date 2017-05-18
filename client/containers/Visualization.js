@@ -22,7 +22,8 @@ const Visualization = withRouter(React.createClass({
   },
 
   componentDidMount() {
-    this.fetchProcessDetails().then((details) => this.props.actions.fetchProcessDefinition(details.fetchedProcessDetails.processingType));
+    this.fetchProcessDetails().then((details) => this.props.actions.fetchProcessDefinition(
+      details.fetchedProcessDetails.processingType, _.get(details, "fetchedProcessDetails.json.properties.isSubprocess")));
     this.fetchProcessStatus();
     window.onkeydown = (event) => {
       if (event.ctrlKey && !event.shiftKey && event.key.toLowerCase() == "z") {

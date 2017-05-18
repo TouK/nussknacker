@@ -6,11 +6,12 @@ import cats.data._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
 import pl.touk.esp.engine.api.deployment.{CustomProcess, GraphProcess, ProcessDeploymentData}
+import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
 import pl.touk.esp.ui.EspError._
 import pl.touk.esp.ui.validation.ProcessValidation
 import pl.touk.esp.ui.app.BuildInfo
 import pl.touk.esp.ui.db.entity.ProcessDeploymentInfoEntity.{DeployedProcessVersionEntityData, DeploymentAction}
-import pl.touk.esp.ui.db.entity.ProcessEntity.{ProcessEntityData, ProcessType}
+import pl.touk.esp.ui.db.entity.ProcessEntity.{ProcessEntity, ProcessEntityData, ProcessType, ProcessingType}
 import pl.touk.esp.ui.db.entity.ProcessVersionEntity.ProcessVersionEntityData
 import pl.touk.esp.ui.db.entity.TagsEntity.TagsEntityData
 import pl.touk.esp.ui.db.EspTables._
@@ -23,6 +24,7 @@ import pl.touk.esp.ui.security.LoggedUser
 import pl.touk.esp.ui.util.DateUtils
 import pl.touk.esp.ui.{BadRequestError, EspError, NotFoundError}
 import slick.jdbc.{JdbcBackend, JdbcProfile}
+import slick.lifted.CanBeQueryCondition
 
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.language.higherKinds
@@ -30,15 +32,18 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 class ProcessRepository(db: JdbcBackend.Database,
                         driver: JdbcProfile,
-                        processValidation: ProcessValidation) extends LazyLogging {
+                        processValidation: ProcessValidation, ec: ExecutionContext) extends LazyLogging {
   import driver.api._
+  implicit private val iec = ec
 
-  def saveNewProcess(processId: String, category: String, processDeploymentData: ProcessDeploymentData, processingType: ProcessingType)
-                    (implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[XError[Unit]] = {
+  def saveNewProcess(processId: String, category: String, processDeploymentData: ProcessDeploymentData,
+                     processingType: ProcessingType, isSubprocess: Boolean)
+                    (implicit loggedUser: LoggedUser): Future[XError[Unit]] = {
     logger.info(s"Saving process $processId by user $loggedUser")
 
     val processToSave = ProcessEntityData(id = processId, name = processId, processCategory = category,
-              description = None, processType = processType(processDeploymentData), processingType = processingType)
+              description = None, processType = processType(processDeploymentData),
+                processingType = processingType, isSubprocess = isSubprocess)
 
     val insertAction =
       (processesTable += processToSave).andThen(updateProcessInternal(processId, processDeploymentData))
@@ -46,7 +51,7 @@ class ProcessRepository(db: JdbcBackend.Database,
   }
 
   def updateProcess(processId: String, processDeploymentData: ProcessDeploymentData)
-                 (implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[XError[Option[ProcessVersionEntityData]]] = {
+                 (implicit loggedUser: LoggedUser): Future[XError[Option[ProcessVersionEntityData]]] = {
     val update = updateProcessInternal(processId, processDeploymentData)
     db.run(update.transactionally)
   }
@@ -59,7 +64,7 @@ class ProcessRepository(db: JdbcBackend.Database,
   }
 
   private def updateProcessInternal(processId: String, processDeploymentData: ProcessDeploymentData)
-                   (implicit ec: ExecutionContext, loggedUser: LoggedUser): DB[XError[Option[ProcessVersionEntityData]]] = {
+                   (implicit loggedUser: LoggedUser): DB[XError[Option[ProcessVersionEntityData]]] = {
     logger.info(s"Updating process $processId by user $loggedUser")
     val (maybeJson, maybeMainClass) = processDeploymentData match {
       case GraphProcess(json) => (Some(json), None)
@@ -96,14 +101,22 @@ class ProcessRepository(db: JdbcBackend.Database,
   private def processTableFilteredByUser(implicit loggedUser: LoggedUser) =
     if (loggedUser.isAdmin) processesTable else processesTable.filter(_.processCategory inSet loggedUser.categories)
 
-  def fetchProcessesDetails()
-                           (implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[List[ProcessDetails]] = {
+  def fetchProcessesDetails()(implicit loggedUser: LoggedUser): Future[List[ProcessDetails]] = {
+    fetchProcessesDetailsByQuery(!_.isSubprocess)
+  }
+
+  def fetchSubProcessesDetails()(implicit loggedUser: LoggedUser): Future[List[ProcessDetails]] = {
+    fetchProcessesDetailsByQuery(_.isSubprocess)
+  }
+
+  private def fetchProcessesDetailsByQuery(query: ProcessEntity => Rep[Boolean])
+                           (implicit loggedUser: LoggedUser): Future[List[ProcessDetails]] = {
     val action = for {
       tagsForProcesses <- tagsTable.result.map(_.toList.groupBy(_.processId).withDefaultValue(Nil))
       latestProcesses <- processVersionsTable.groupBy(_.processId).map { case (n, group) => (n, group.map(_.createDate).max) }
         .join(processVersionsTable).on { case (((processId, latestVersionDate)), processVersion) =>
         processVersion.processId === processId && processVersion.createDate === latestVersionDate
-      }.join(processTableFilteredByUser).on { case ((_, latestVersion), process) => latestVersion.processId === process.id }
+      }.join(processTableFilteredByUser.filter(query)).on { case ((_, latestVersion), process) => latestVersion.processId === process.id }
         .result
       deployedPerEnv <- latestDeployedProcessesVersionsPerEnvironment.result
     } yield latestProcesses.map { case ((_, processVersion), process) =>
@@ -113,8 +126,22 @@ class ProcessRepository(db: JdbcBackend.Database,
     db.run(action).map(_.toList)
   }
 
+  def listSubprocesses() : Future[Set[CanonicalProcess]] = {
+    val action = for {
+      latestProcesses <- processVersionsTable.groupBy(_.processId).map { case (n, group) => (n, group.map(_.createDate).max) }
+        .join(processVersionsTable).on { case (((processId, latestVersionDate)), processVersion) =>
+        processVersion.processId === processId && processVersion.createDate === latestVersionDate
+      }.join(processesTable.filter(_.isSubprocess))
+        .on { case ((_, latestVersion), process) => latestVersion.processId === process.id }
+        .result
+    } yield latestProcesses.map { case ((_, processVersion), _) =>
+      processVersion.json.map(ProcessConverter.toCanonicalOrDie)
+    }
+    db.run(action).map(_.flatten.toSet)
+  }
+
   def fetchLatestProcessDetailsForProcessId(id: String)
-                                           (implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Option[ProcessDetails]] = {
+                                           (implicit loggedUser: LoggedUser): Future[Option[ProcessDetails]] = {
     val action = for {
       latestProcessVersion <- OptionT[DB, ProcessVersionEntityData](latestProcessVersions(id).result.headOption)
       processDetails <- fetchProcessDetailsForVersion(latestProcessVersion, isLatestVersion = true)
@@ -123,7 +150,7 @@ class ProcessRepository(db: JdbcBackend.Database,
   }
 
   def fetchLatestProcessDetailsForProcessIdXor(id: String)
-                                           (implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[XError[ProcessDetails]] = {
+                                           (implicit loggedUser: LoggedUser): Future[XError[ProcessDetails]] = {
     fetchLatestProcessDetailsForProcessId(id).map {
       case None => Xor.Left(ProcessNotFoundError(id))
       case Some(p) => Xor.Right(p)
@@ -131,7 +158,7 @@ class ProcessRepository(db: JdbcBackend.Database,
   }
 
   def fetchProcessDetailsForId(processId: String, versionId: Long)
-                              (implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Option[ProcessDetails]] = {
+                              (implicit loggedUser: LoggedUser): Future[Option[ProcessDetails]] = {
     val action = for {
       latestProcessVersion <- OptionT[DB, ProcessVersionEntityData](latestProcessVersions(processId).result.headOption)
       processVersion <- OptionT[DB, ProcessVersionEntityData](latestProcessVersions(processId).filter(pv => pv.id === versionId).result.headOption)
@@ -141,7 +168,7 @@ class ProcessRepository(db: JdbcBackend.Database,
   }
 
   private def fetchProcessDetailsForVersion(processVersion: ProcessVersionEntityData, isLatestVersion: Boolean)
-                                           (implicit ec: ExecutionContext, loggedUser: LoggedUser)= {
+                                           (implicit loggedUser: LoggedUser)= {
     val id = processVersion.processId
     for {
       process <- OptionT[DB, ProcessEntityData](processTableFilteredByUser.filter(_.id === id).result.headOption)
@@ -176,13 +203,14 @@ class ProcessRepository(db: JdbcBackend.Database,
       currentlyDeployedAt = currentlyDeployedAt,
       tags = tags.map(_.name).toList,
       modificationDate = DateUtils.toLocalDateTime(processVersion.createDate),
-      json = processVersion.json.map(json => ProcessConverter.toDisplayableOrDie(json, process.processingType).validated(processValidation)),
+      json = processVersion.json.map(json => ProcessConverter.toDisplayableOrDie(json, process.processingType, process.processType)
+        .validated(processValidation)),
       history = history.toList
     )
   }
 
   def fetchLatestProcessVersion(processId: String)
-                               (implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Option[ProcessVersionEntityData]] = {
+                               (implicit loggedUser: LoggedUser): Future[Option[ProcessVersionEntityData]] = {
     val action = latestProcessVersions(processId).result.headOption
     db.run(action)
   }
@@ -202,12 +230,12 @@ class ProcessRepository(db: JdbcBackend.Database,
     }.map { case ((env, _), deployedVersion) => env -> deployedVersion }.filter(_._2.deploymentAction === DeploymentAction.Deploy)
   }
 
-
-
   private def processType(processDeploymentData: ProcessDeploymentData) = processDeploymentData match {
     case a:GraphProcess => ProcessType.Graph
     case a:CustomProcess => ProcessType.Custom
   }
+
+
 }
 
 object ProcessRepository {

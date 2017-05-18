@@ -45,14 +45,14 @@ class UserRightPanel extends Component {
 
     const config =
       [
-        {
+        (this.props.isSubprocess ? null : {
           panelName: "Deployment",
           buttons:[
             {name: "deploy", visible: this.props.loggedUser.canDeploy, disabled: !deployPossible, onClick: this.deploy, icon: InlinedSvgs.buttonDeploy},
             {name: "stop", visible: this.props.loggedUser.canDeploy, disabled: !this.isRunning(), onClick: this.stop, icon: InlinedSvgs.buttonStop},
             {name: "metrics", onClick: this.showMetrics, icon: InlinedSvgs.buttonMetrics}
           ]
-        },
+        }),
         {
         panelName: "Process",
         buttons: [
@@ -73,14 +73,15 @@ class UserRightPanel extends Component {
             {name: "undo", onClick: this.undo, icon: InlinedSvgs.buttonUndo},
             {name: "redo", onClick: this.redo, icon: InlinedSvgs.buttonRedo},
             {name: "align", onClick: this.props.graphLayoutFunction, icon: InlinedSvgs.buttonAlign},
-            {name: "properties", onClick: this.showProperties, icon: InlinedSvgs.buttonSettings},
+            {name: "properties", onClick: this.showProperties, icon: InlinedSvgs.buttonSettings, visible: !this.props.isSubprocess},
             {name: "duplicate", onClick: this.duplicateNode, icon: InlinedSvgs.duplicateButton,
               //cloning groups can be tricky...
               disabled: this.noChosenNode(this.props.nodeToDisplay) || NodeUtils.nodeIsGroup(this.props.nodeToDisplay)},
             {name: "delete", onClick: this.deleteNode, icon: InlinedSvgs.buttonDelete, disabled: this.noChosenNode(this.props.nodeToDisplay) }
           ]
         },
-        {
+        //TODO: testing subprocesses should work, but currently we don't know how to pass parameters in sane way...
+        (this.props.isSubprocess ? null : {
           panelName: "Test",
           buttons: [
             {name: "from file", onClick: this.testProcess, icon: InlinedSvgs.buttonFromFile, dropzone: true,
@@ -88,9 +89,10 @@ class UserRightPanel extends Component {
             {name: "hide", onClick: this.hideRunProcessDetails, icon: InlinedSvgs.buttonHide, disabled: !this.props.showRunProcessDetails},
             {name: "generate", onClick: this.generateData, icon: InlinedSvgs.buttonGenerate,
               disabled: !this.props.processIsLatestVersion || !this.props.testCapabilities.canGenerateTestData},
-            {name: "counts", onClick: this.fetchProcessCounts, icon: InlinedSvgs.buttonCounts, visible: this.props.featuresSettings.counts},
+            {name: "counts", onClick: this.fetchProcessCounts, icon: InlinedSvgs.buttonCounts,
+              visible: this.props.featuresSettings.counts && !this.props.isSubprocess},
           ]
-        },
+        }),
         {
           panelName: "Group",
           buttons: [
@@ -104,7 +106,7 @@ class UserRightPanel extends Component {
     return (
       <div id="espSidenav" className={this.renderClassName()}>
         <Scrollbars renderThumbVertical={props => <div {...props} className="thumbVertical"/>} hideTracksWhenNotNeeded={true}>
-          {config.map ((panel, panelIdx) => {
+          {config.filter(obj => obj).map ((panel, panelIdx) => {
             return (
               <Panel key={panelIdx} collapsible defaultExpanded header={panel.panelName}>
                 {panel.properties ? panel.properties : null }
@@ -271,7 +273,8 @@ function mapState(state) {
     processIsLatestVersion: _.get(fetchedProcessDetails, 'isLatestVersion', false),
     nodeToDisplay: state.graphReducer.nodeToDisplay,
     groupingState: state.graphReducer.groupingState,
-    featuresSettings: state.settings.featuresSettings
+    featuresSettings: state.settings.featuresSettings,
+    isSubprocess: _.get(fetchedProcessDetails, "properties.isSubprocess", false)
   };
 }
 

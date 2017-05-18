@@ -14,7 +14,7 @@ import pl.touk.esp.engine.graph.sink.SinkRef
 import pl.touk.esp.engine.graph.source.SourceRef
 import pl.touk.esp.ui.api.helpers.TestCodecs
 import pl.touk.esp.ui.api.helpers.TestFactory._
-import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType
+import pl.touk.esp.ui.db.entity.ProcessEntity.{ProcessType, ProcessingType}
 import pl.touk.esp.ui.process.displayedgraph.displayablenode.Edge
 import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.esp.ui.security.Permission
@@ -96,7 +96,7 @@ class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with Matc
   def newDisplayableProcess(id: String, nodes: List[NodeData], edges: List[Edge]) = {
     DisplayableProcess(
       id = id,
-      properties = ProcessProperties(StreamMetaData(Some(2), Some(false)), ExceptionHandlerRef(List()), None),
+      properties = ProcessProperties(StreamMetaData(Some(2), Some(false)), ExceptionHandlerRef(List()), false, None),
       nodes = nodes,
       edges = edges,
       processingType = ProcessingType.Streaming,

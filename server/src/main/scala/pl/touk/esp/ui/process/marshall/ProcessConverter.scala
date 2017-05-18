@@ -5,6 +5,8 @@ import pl.touk.esp.engine.api.MetaData
 import pl.touk.esp.engine.canonicalgraph.canonicalnode._
 import pl.touk.esp.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.esp.engine.graph.node._
+import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessType
+import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessType.ProcessType
 import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
 import pl.touk.esp.ui.process.displayedgraph.displayablenode.EdgeType.SubprocessOutput
 import pl.touk.esp.ui.process.displayedgraph.displayablenode.{Edge, EdgeType}
@@ -14,18 +16,23 @@ object ProcessConverter {
 
   val processMarshaller = UiProcessMarshaller()
 
-  def toDisplayableOrDie(canonicalJson: String, processingType: ProcessingType): DisplayableProcess = {
+  def toCanonicalOrDie(canonicalJson: String) : CanonicalProcess = {
     processMarshaller.fromJson(canonicalJson) match {
-      case Valid(canonical) => toDisplayable(canonical, processingType)
+      case Valid(canonical) => canonical
       case Invalid(err) => throw new IllegalArgumentException(err.msg + "\n" + canonicalJson)
     }
   }
 
-  def toDisplayable(process: CanonicalProcess, processingType: ProcessingType): DisplayableProcess = {
+  def toDisplayableOrDie(canonicalJson: String, processingType: ProcessingType, processType: ProcessType = ProcessType.Graph): DisplayableProcess = {
+    toDisplayable(toCanonicalOrDie(canonicalJson), processingType, processType)
+  }
+
+  //FIXME: without default param
+  def toDisplayable(process: CanonicalProcess, processingType: ProcessingType, processType: ProcessType = ProcessType.Graph): DisplayableProcess = {
     val nodesEdges = toGraphInner(process.nodes)
     val (nodes, edges) = nodesEdges
 
-    val props = ProcessProperties(process.metaData.typeSpecificData, process.exceptionHandlerRef, process.metaData.additionalFields)
+    val props = ProcessProperties(process.metaData.typeSpecificData, process.exceptionHandlerRef, process.metaData.isSubprocess, process.metaData.additionalFields)
     DisplayableProcess(process.metaData.id, props, nodes, edges, processingType)
   }
 

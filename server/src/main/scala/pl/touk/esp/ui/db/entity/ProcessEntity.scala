@@ -32,7 +32,9 @@ object ProcessEntity {
 
     def processingType = column[ProcessingType]("processing_type", NotNull)
 
-    def * = (id, name, description, processType, processCategory, processingType) <> (ProcessEntityData.apply _ tupled, ProcessEntityData.unapply)
+    def isSubprocess = column[Boolean]("is_subprocess", NotNull)
+
+    def * = (id, name, description, processType, processCategory, processingType, isSubprocess) <> (ProcessEntityData.apply _ tupled, ProcessEntityData.unapply)
 
   }
 
@@ -41,7 +43,8 @@ object ProcessEntity {
                                description: Option[String],
                                processType: ProcessType,
                                processCategory: String,
-                               processingType: ProcessingType
+                               processingType: ProcessingType,
+                               isSubprocess: Boolean
                               )
 
   object ProcessType extends Enumeration {

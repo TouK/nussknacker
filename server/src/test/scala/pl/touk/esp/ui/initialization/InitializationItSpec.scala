@@ -48,7 +48,7 @@ class InitializationItSpec extends FlatSpec with ScalatestRouteTest with Matcher
   }
 
   private def getAllProcesses: Future[List[ProcessDetails]] = {
-    processRepository.fetchProcessesDetails()(scala.concurrent.ExecutionContext.Implicits.global, toukuser)
+    processRepository.fetchProcessesDetails()(toukuser)
   }
 
   private def listFilesFromDir(dir: File) = {

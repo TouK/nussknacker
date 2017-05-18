@@ -5,6 +5,7 @@ import { browserHistory, Router, Route, IndexRoute, Link } from 'react-router'
 
 import { App } from './MainPage';
 import Processes from './Processes';
+import SubProcesses from './SubProcesses';
 import Visualization from './Visualization';
 import Metrics from './Metrics';
 import Search from './Search';
@@ -25,6 +26,7 @@ export default class EspAppRouter extends React.Component {
     return (
       <Router history={browserHistory} >
         <Route path={App.path} component={App}>
+          <Route path={SubProcesses.path} component={SubProcesses} />
           <Route path={Processes.path} component={Processes} />
           <Route path={Visualization.path} component={Visualization} />
           <Route path={Metrics.path} component={Metrics} />

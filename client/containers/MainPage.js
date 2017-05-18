@@ -3,6 +3,7 @@ import {render} from "react-dom";
 import {browserHistory, Router, Route, Link} from "react-router";
 import _ from "lodash";
 import Processes from "./Processes";
+import SubProcesses from "./SubProcesses";
 import "../stylesheets/mainMenu.styl";
 import "../stylesheets/main.styl";
 
@@ -66,6 +67,8 @@ const App_ = React.createClass({
             <div className="collapse navbar-collapse">
               <ul id="menu-items" className="nav navbar-nav navbar-right nav-pills nav-stacked">
                 <li><Link to={Processes.path}>{Processes.header}</Link></li>
+                <li><Link to={SubProcesses.path}>{SubProcesses.header}</Link></li>
+
                 {!_.isEmpty(this.props.featuresSettings.metrics) ?
                   <li><Link to={Metrics.basePath}>{Metrics.header}</Link></li> : null}
                 {!_.isEmpty(this.props.featuresSettings.search) ?

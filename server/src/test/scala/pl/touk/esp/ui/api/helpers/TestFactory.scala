@@ -7,18 +7,19 @@ import com.typesafe.config.{Config, ConfigFactory}
 import db.migration.DefaultJdbcProfile
 import pl.touk.esp.engine.api.deployment.test.{TestData, TestResults}
 import pl.touk.esp.engine.api.deployment.{ProcessDeploymentData, ProcessManager, ProcessState}
+import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
 import pl.touk.esp.engine.management.FlinkProcessManager
 import pl.touk.esp.ui.validation.ProcessValidation
 import pl.touk.esp.ui.api.{ProcessPosting, ProcessTestData}
 import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.esp.ui.process.marshall.ProcessConverter
 import pl.touk.esp.ui.process.repository.{DeployedProcessRepository, ProcessActivityRepository, ProcessRepository}
-import pl.touk.esp.ui.process.subprocess.{SampleSubprocessRepository, SubprocessResolver}
+import pl.touk.esp.ui.process.subprocess.{SubprocessRepository, SubprocessResolver}
 import pl.touk.esp.ui.security.{LoggedUser, Permission}
 import pl.touk.esp.ui.security.Permission.Permission
 import slick.jdbc.JdbcBackend
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 object TestFactory {
 
@@ -31,7 +32,8 @@ object TestFactory {
   val processValidation = new ProcessValidation(Map(ProcessingType.Streaming -> ProcessTestData.validator), sampleResolver)
   val posting = new ProcessPosting
 
-  def newProcessRepository(db: JdbcBackend.Database) = new ProcessRepository(db, DefaultJdbcProfile.profile, processValidation)
+  def newProcessRepository(db: JdbcBackend.Database) = new ProcessRepository(db, DefaultJdbcProfile.profile, processValidation,
+    ExecutionContext.Implicits.global)
 
   val buildInfo = Map("engine-version" -> "0.1")
 
@@ -69,4 +71,7 @@ object TestFactory {
   def withPermissions(route: LoggedUser => Route, permissions: Permission*) = route(user(permissions : _*))
   def withAllPermissions(route: LoggedUser => Route) = route(user(allPermissions: _*))
 
+  object SampleSubprocessRepository extends SubprocessRepository {
+    override def loadSubprocesses(): Set[CanonicalProcess] = Set()
+  }
 }

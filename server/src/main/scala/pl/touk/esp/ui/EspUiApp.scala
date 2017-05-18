@@ -18,7 +18,7 @@ import pl.touk.esp.ui.process.{ProcessTypesForCategories, ProcessingTypeDeps}
 import pl.touk.esp.ui.process.deployment.ManagementActor
 import pl.touk.esp.ui.process.migrate.HttpProcessMigrator
 import pl.touk.esp.ui.process.repository.{DeployedProcessRepository, ProcessActivityRepository, ProcessRepository}
-import pl.touk.esp.ui.process.subprocess.{FileSubprocessRepository, SubprocessResolver}
+import pl.touk.esp.ui.process.subprocess.{ProcessRepositorySubprocessRepository, SubprocessResolver}
 import pl.touk.esp.ui.processreport.ProcessCounter
 import pl.touk.esp.ui.security.SimpleAuthenticator
 import pl.touk.process.report.influxdb.InfluxReporter
@@ -44,14 +44,17 @@ object EspUiApp extends App with Directives with LazyLogging {
 
   val port = args(0).toInt
   val initialProcessDirectory = new File(args(1))
-  val ProcessingTypeDeps(processDefinitions, validators, managers, buildInfo, standaloneModeEnabled) = ProcessingTypeDeps(config, featureTogglesConfig.standaloneMode)
+  val ProcessingTypeDeps(processDefinitions, validators, managers, buildInfo, standaloneModeEnabled) =
+    ProcessingTypeDeps(config, featureTogglesConfig.standaloneMode)
 
-  val subprocessRepository = new FileSubprocessRepository(new File(initialProcessDirectory, "subprocesses"))
+  val processRepositoryForSub = new ProcessRepository(db, DefaultJdbcProfile.profile, null, system.dispatcher)
+
+  val subprocessRepository = new ProcessRepositorySubprocessRepository(processRepositoryForSub)
   val subprocessResolver = new SubprocessResolver(subprocessRepository)
 
   val processValidation = new ProcessValidation(validators, subprocessResolver)
 
-  val processRepository = new ProcessRepository(db, DefaultJdbcProfile.profile, processValidation)
+  val processRepository = new ProcessRepository(db, DefaultJdbcProfile.profile, processValidation, system.dispatcher)
   val deploymentProcessRepository = new DeployedProcessRepository(db, DefaultJdbcProfile.profile, buildInfo)
   val processActivityRepository = new ProcessActivityRepository(db, DefaultJdbcProfile.profile)
   val attachmentService = new ProcessAttachmentService(config.getString("attachmentsPath"), processActivityRepository)

@@ -47,7 +47,7 @@ trait EspItTest extends LazyLogging with TestCodecs { self: ScalatestRouteTest w
   val processActivityRoute = (u:LoggedUser) =>  new ProcessActivityResource(processActivityRepository, attachmentService).route(u)
 
   def saveProcess(processId: String, process: EspProcess)(testCode: => Assertion): Assertion = {
-    Post(s"/processes/$processId/$testCategory") ~> processesRouteWithAllPermissions ~> check {
+    Post(s"/processes/$processId/$testCategory?isSubprocess=false") ~> processesRouteWithAllPermissions ~> check {
       status shouldBe StatusCodes.Created
       updateProcess(processId, process)(testCode)
     }
@@ -55,7 +55,7 @@ trait EspItTest extends LazyLogging with TestCodecs { self: ScalatestRouteTest w
 
   def saveProcess(process: DisplayableProcess)(testCode: => Assertion): Assertion = {
     val processId = process.id
-    Post(s"/processes/$processId/$testCategory") ~> processesRouteWithAllPermissions ~> check {
+    Post(s"/processes/$processId/$testCategory?isSubprocess=false") ~> processesRouteWithAllPermissions ~> check {
       status shouldBe StatusCodes.Created
       updateProcess(process)(testCode)
     }

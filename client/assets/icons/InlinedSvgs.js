@@ -29,6 +29,8 @@ InlinedSvgs.nodeGroup = `<svg viewBox="-470 -470 3000 3000" xmlns="http://www.w3
 InlinedSvgs.svgs = {
   "Source": InlinedSvgs.nodeSource,
   "Sink": InlinedSvgs.nodeSink,
+  "SubprocessInputDefinition": InlinedSvgs.nodeSource,
+  "SubprocessOutputDefinition": InlinedSvgs.nodeSink,
   "Filter": InlinedSvgs.nodeFilter,
   "Switch": InlinedSvgs.nodeSwitch,
   "VariableBuilder": InlinedSvgs.nodeVariable,

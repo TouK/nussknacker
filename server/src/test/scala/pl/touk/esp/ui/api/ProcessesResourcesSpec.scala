@@ -13,10 +13,11 @@ import pl.touk.esp.engine.api.deployment._
 import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
 import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.esp.engine.graph.node
+import pl.touk.esp.engine.graph.node.Source
 import pl.touk.esp.engine.graph.param.Parameter
 import pl.touk.esp.ui.api.helpers.{EspItTest, TestFactory}
 import pl.touk.esp.ui.api.helpers.TestFactory._
-import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType
+import pl.touk.esp.ui.db.entity.ProcessEntity.{ProcessType, ProcessingType}
 import pl.touk.esp.ui.process.ProcessToSave
 import pl.touk.esp.ui.process.displayedgraph.displayablenode.ProcessAdditionalFields
 import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties}
@@ -73,7 +74,7 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
   }
 
   it should "return 400 when trying to update json of custom process" in {
-    whenReady(processRepository.saveNewProcess("customProcess", testCategory, CustomProcess(""), ProcessingType.Streaming)) { res =>
+    whenReady(processRepository.saveNewProcess("customProcess", testCategory, CustomProcess(""), ProcessingType.Streaming, false)) { res =>
       updateProcess("customProcess", SampleProcess.process) {
         status shouldEqual StatusCodes.BadRequest
       }
@@ -169,7 +170,9 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
     saveProcess(SampleProcess.process.id, ProcessTestData.validProcess) {
       status shouldEqual StatusCodes.OK
     }
-    updateProcess(SampleProcess.process.id, ProcessTestData.validProcess.copy(root = ProcessTestData.validProcess.root.copy(data = ProcessTestData.validProcess.root.data.copy(id = "AARGH")))) {
+
+    updateProcess(SampleProcess.process.id, ProcessTestData.validProcess.copy(root = ProcessTestData.validProcess
+      .root.copy(data = ProcessTestData.validProcess.root.data.asInstanceOf[Source].copy(id = "AARGH")))) {
       status shouldEqual StatusCodes.OK
     }
     Get(s"/processes/${SampleProcess.process.id}") ~> routWithAllPermissions ~> check {
@@ -226,7 +229,7 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
 
     val modifiedParallelism = 123
     val modifiedName = "fooBarName"
-    val props = ProcessProperties(StreamMetaData(Some(modifiedParallelism)), ExceptionHandlerRef(List(Parameter(modifiedName, modifiedName))), None)
+    val props = ProcessProperties(StreamMetaData(Some(modifiedParallelism)), ExceptionHandlerRef(List(Parameter(modifiedName, modifiedName))), false, None)
     Put(s"/processes/$testCategory/$processId/json/properties", posting.toEntity(props)) ~> routeWithRead ~> check {
       rejection shouldBe server.AuthorizationFailedRejection
     }
@@ -338,7 +341,7 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
 
   it should "save new process with empty json" in {
     val newProcessId = "tst1"
-    Post(s"/processes/$newProcessId/$testCategory") ~> routWithAdminPermission ~> check {
+    Post(s"/processes/$newProcessId/$testCategory?isSubprocess=false") ~> routWithAdminPermission ~> check {
       status shouldEqual StatusCodes.Created
 
       Get(s"/processes/$newProcessId") ~> routWithAdminPermission ~> check {
@@ -353,7 +356,7 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
     val processToSave = ProcessTestData.sampleDisplayableProcess
     saveProcess(processToSave) {
       status shouldEqual StatusCodes.OK
-      Post(s"/processes/${processToSave.id}/$testCategory") ~> routWithAdminPermission ~> check {
+      Post(s"/processes/${processToSave.id}/$testCategory?isSubprocess=false") ~> routWithAdminPermission ~> check {
         status shouldEqual StatusCodes.BadRequest
 
       }
