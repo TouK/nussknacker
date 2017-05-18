@@ -22,6 +22,7 @@ import pl.touk.esp.engine.definition.DefinitionExtractor.{ObjectDefinition, Obje
 import pl.touk.esp.engine.definition.ProcessDefinitionExtractor.{ObjectProcessDefinition, ProcessDefinition}
 import pl.touk.esp.engine.definition._
 import pl.touk.esp.engine.graph.EspProcess
+import pl.touk.esp.engine.graph.node.Source
 import pl.touk.esp.engine.marshall.ProcessMarshaller
 import pl.touk.esp.engine.standalone.StandaloneProcessInterpreter
 import pl.touk.esp.engine.standalone.utils.{StandaloneContext, StandaloneContextPreparer}
@@ -74,8 +75,8 @@ class StandaloneProcessManager(config: Config)
   }
 
 
-  override def test(processId: String, processDeploymentData: ProcessDeploymentData, testData: TestData): Future[TestResults] = {
-    Future(testRunner.test(processId, processDeploymentData, testData))
+  override def test(processId: String, processJson: String, testData: TestData): Future[TestResults] = {
+    Future(testRunner.test(processId, processJson, testData))
   }
 
   override def findJobStatus(name: String): Future[Option[ProcessState]] = {
@@ -171,7 +172,8 @@ class StandaloneTestMain(config: Config, testData: TestData, process: EspProcess
 
 
   private def readTestData(definitions: ProcessDefinition[ObjectWithMethodDef]): List[Any] = {
-    val sourceType = process.root.data.ref.typ
+    //FIXME: asInstanceOf, should be proper handling of SubprocessInputDefinition
+    val sourceType = process.root.data.asInstanceOf[Source].ref.typ
     val objectWithMethodDef = definitions.sourceFactories(sourceType)
     val originalSource = objectWithMethodDef.obj.asInstanceOf[SourceFactory[Any]]
     val parsedTestData = originalSource.testDataParser.map { testDataParser =>
@@ -239,13 +241,10 @@ object TestUtils {
       objMirror.reflectMethod(method)
     }
 
-    def test(processId: String, processDeploymentData: ProcessDeploymentData, testData: TestData): TestResults = {
+    def test(processId: String, processJson: String, testData: TestData): TestResults = {
       //we have to use context loader, as in UI we have don't have esp-process on classpath...
       ThreadUtils.withThisAsContextClassLoader(classLoader) {
-        processDeploymentData match {
-          case GraphProcess(json) => tryToInvoke(testData, json).asInstanceOf[TestResults]
-          case _ => throw new IllegalArgumentException(s"Process $processId with deploymentData $processDeploymentData cannot be tested")
-        }
+        tryToInvoke(testData, processJson).asInstanceOf[TestResults]
       }
     }
 

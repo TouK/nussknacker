@@ -15,7 +15,7 @@ object splittednode {
     def next: Next
   }
 
-  case class SourceNode(data: Source, next: Next) extends OneOutputNode[Source]
+  case class SourceNode(data: StartingNodeData, next: Next) extends OneOutputNode[StartingNodeData]
 
   sealed trait SubsequentNode[T <: NodeData] extends SplittedNode[T]
 

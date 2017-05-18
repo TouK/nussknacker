@@ -31,7 +31,7 @@ class FlinkProcessTestRunnerSpec extends FlatSpec with Matchers with ScalaFuture
     val processId = UUID.randomUUID().toString
 
     val process = SampleProcess.prepareProcess(processId)
-    val processData = GraphProcess(ProcessMarshaller.toJson(process, PrettyParams.spaces2))
+    val processData = ProcessMarshaller.toJson(process, PrettyParams.spaces2)
 
 
     val results = Await.result(processManager.test(processId, processData,
@@ -56,7 +56,7 @@ class FlinkProcessTestRunnerSpec extends FlatSpec with Matchers with ScalaFuture
     val config = ConfigFactory.load()
     val processManager = FlinkProcessManager(config)
 
-    val processData = GraphProcess(ProcessMarshaller.toJson(process, PrettyParams.spaces2))
+    val processData = ProcessMarshaller.toJson(process, PrettyParams.spaces2)
 
 
     val caught = intercept[IllegalArgumentException] {

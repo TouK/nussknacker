@@ -17,7 +17,7 @@ object part {
 
   case class SourcePart(obj: api.process.Source[Any], node: splittednode.SourceNode,
                         nextParts: List[SubsequentPart], ends: List[End]) extends ProcessPart {
-    override type T = Source
+    override type T = StartingNodeData
   }
 
   sealed trait SubsequentPart extends ProcessPart

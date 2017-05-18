@@ -13,7 +13,7 @@ object part {
   }
 
   case class SourcePart(node: SourceNode, nextParts: List[SubsequentPart], ends: List[End]) extends ProcessPart {
-    override type T = Source
+    override type T = StartingNodeData
   }
 
   sealed trait SubsequentPart extends ProcessPart

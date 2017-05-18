@@ -5,7 +5,7 @@ import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.instances.list._
 import pl.touk.esp.engine._
 import pl.touk.esp.engine.api.MetaData
-import pl.touk.esp.engine.api.exception.EspExceptionHandler
+import pl.touk.esp.engine.api.exception.{EspExceptionHandler, EspExceptionInfo}
 import pl.touk.esp.engine.api.process._
 import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
 import pl.touk.esp.engine.canonize.ProcessCanonizer
@@ -19,9 +19,8 @@ import pl.touk.esp.engine.definition.DefinitionExtractor._
 import pl.touk.esp.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
 import pl.touk.esp.engine.definition._
 import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
-import pl.touk.esp.engine.graph.node.CustomNode
+import pl.touk.esp.engine.graph.node.{CustomNode, StartingNodeData, SubprocessInputDefinition}
 import pl.touk.esp.engine.graph.sink.SinkRef
-import pl.touk.esp.engine.graph.source.SourceRef
 import pl.touk.esp.engine.graph.{EspProcess, param}
 import pl.touk.esp.engine.split._
 import pl.touk.esp.engine.splittedgraph._
@@ -160,26 +159,40 @@ protected trait ProcessCompilerBase {
   private def compile(source: SourcePart)
                      (implicit metaData: MetaData): ValidatedNel[ProcessCompilationError, compiledgraph.part.SourcePart] = {
     implicit val nodeId = NodeId(source.id)
-    val variables = sourceFactories.get(source.node.data.ref.typ)
-      .map(sf => Map(Interpreter.InputParamName -> sf.returnType)).getOrElse(Map.empty)
-    A.map2(validate(source.node, ValidationContext(variables, typesInformation)), compile(source.node.data.ref)) { (ctx, obj) =>
+    val variables = computeInitialVariables(source.node.data)
+    A.map2(validate(source.node, ValidationContext(variables, typesInformation)), compile(source.node.data)) { (ctx, obj) =>
       compile(source.nextParts, ctx).map { nextParts =>
         compiledgraph.part.SourcePart(obj, source.node, nextParts, source.ends)
       }
     }.andThen(identity)
   }
 
+  private def computeInitialVariables(nodeData: StartingNodeData) : Map[String, ClazzRef] = nodeData match {
+    case pl.touk.esp.engine.graph.node.Source(_, ref, _) =>  sourceFactories.get(ref.typ)
+          .map(sf => Map(Interpreter.InputParamName -> sf.returnType)).getOrElse(Map.empty)
+    case SubprocessInputDefinition(_, params, _) => params.map(p => p.name -> p.typ).toMap
+  }
+
   private def compile(ref: ExceptionHandlerRef)
                       (implicit metaData: MetaData): ValidatedNel[ProcessCompilationError, EspExceptionHandler] = {
     implicit val nodeId = NodeId(ProcessCompilationError.ProcessNodeId)
-    compileProcessObject[EspExceptionHandler](exceptionHandlerFactory, ref.parameters)
+    if (metaData.isSubprocess) {
+      //FIXME: co tutaj?
+      Valid(new EspExceptionHandler {
+        override def handle(exceptionInfo: EspExceptionInfo[_ <: Throwable]): Unit = {}
+      })
+    } else {
+      compileProcessObject[EspExceptionHandler](exceptionHandlerFactory, ref.parameters)
+    }
   }
 
-  private def compile(ref: SourceRef)
+  private def compile(nodeData: StartingNodeData)
                      (implicit nodeId: NodeId,
-                      metaData: MetaData): ValidatedNel[ProcessCompilationError, api.process.Source[Any]] = {
-    val validSourceFactory = sourceFactories.get(ref.typ).map(valid).getOrElse(invalid(MissingSourceFactory(ref.typ))).toValidatedNel
-    validSourceFactory.andThen(sourceFactory => compileProcessObject[Source[Any]](sourceFactory, ref.parameters))
+                      metaData: MetaData): ValidatedNel[ProcessCompilationError, api.process.Source[Any]] = nodeData match {
+    case pl.touk.esp.engine.graph.node.Source(_, ref, _) =>
+      val validSourceFactory = sourceFactories.get(ref.typ).map(valid).getOrElse(invalid(MissingSourceFactory(ref.typ))).toValidatedNel
+        validSourceFactory.andThen(sourceFactory => compileProcessObject[Source[Any]](sourceFactory, ref.parameters))
+    case SubprocessInputDefinition(_, _, _) => Valid(new Source[Any]{}) //FIXME: How should this be handled?
   }
 
   private def compile(ref: SinkRef)

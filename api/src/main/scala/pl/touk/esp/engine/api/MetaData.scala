@@ -6,8 +6,9 @@ import scala.concurrent.duration.Duration
 
 trait UserDefinedProcessAdditionalFields
 
-case class MetaData(id: String,
+case class MetaData(id: String, 
                     typeSpecificData: TypeSpecificData,
+                    isSubprocess: Boolean = false,
                     additionalFields: Option[UserDefinedProcessAdditionalFields] = None)
 
 sealed trait TypeSpecificData

@@ -9,7 +9,7 @@ import pl.touk.esp.engine.api.{MetaData, TypeSpecificData, UserDefinedProcessAdd
 import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
 import pl.touk.esp.engine.canonicalgraph.canonicalnode._
 import pl.touk.esp.engine.canonize.ProcessCanonizer
-import pl.touk.esp.engine.graph.{EspProcess, SubprocessDefinition, node}
+import pl.touk.esp.engine.graph.{EspProcess, node}
 import pl.touk.esp.engine.graph.node.{Case => _, FilterNode => _, SplitNode => _, SwitchNode => _, _}
 import pl.touk.esp.engine.marshall.ProcessUnmarshallError._
 
@@ -111,14 +111,6 @@ class ProcessMarshaller(implicit
 
   def fromJson(json: String): Validated[ProcessJsonDecodeError, CanonicalProcess] = {
     Validated.fromEither(json.decodeEither[CanonicalProcess]).leftMap(ProcessJsonDecodeError)
-  }
-
-  def toJsonSubprocess(canonical: SubprocessDefinition, prettyParams: PrettyParams): String = {
-    canonical.asJson.pretty(prettyParams.copy(dropNullKeys = true, preserveOrder = true))
-  }
-
-  def fromJsonSubprocess(json: String): Validated[ProcessJsonDecodeError, SubprocessDefinition] = {
-    Validated.fromEither(json.decodeEither[SubprocessDefinition]).leftMap(ProcessJsonDecodeError)
   }
 
 }

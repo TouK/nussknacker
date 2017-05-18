@@ -8,7 +8,7 @@ trait ProcessManager {
 
   def deploy(processId: String, processDeploymentData: ProcessDeploymentData) : Future[Unit]
 
-  def test(processId: String, processDeploymentData: ProcessDeploymentData, testData: TestData): Future[TestResults]
+  def test(processId: String, json: String, testData: TestData): Future[TestResults]
 
   def findJobStatus(name: String) : Future[Option[ProcessState]]
 

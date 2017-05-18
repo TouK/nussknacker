@@ -3,19 +3,19 @@ package pl.touk.esp.engine.compile
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.implicits._
+import pl.touk.esp.engine.api.{MetaData, StreamMetaData}
 import pl.touk.esp.engine.canonicalgraph.canonicalnode.{CanonicalNode, FlatNode}
 import pl.touk.esp.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
-import pl.touk.esp.engine.compile.ProcessCompilationError.{NodeId, UnknownSubprocess, UnknownSubprocessOutput}
-import pl.touk.esp.engine.graph.SubprocessDefinition
+import pl.touk.esp.engine.compile.ProcessCompilationError.{InvalidSubprocess, NodeId, UnknownSubprocess, UnknownSubprocessOutput}
 import pl.touk.esp.engine.graph.node._
 import pl.touk.esp.engine.graph.subprocess.SubprocessRef
 
 object SubprocessResolver {
-  def apply(subprocesses: Iterable[SubprocessDefinition]): SubprocessResolver =
-    SubprocessResolver(subprocesses.map(a => a.id -> a).toMap)
+  def apply(subprocesses: Iterable[CanonicalProcess]): SubprocessResolver =
+    SubprocessResolver(subprocesses.map(a => a.metaData.id -> a).toMap)
 }
 
-case class SubprocessResolver(subprocesses: Map[String, SubprocessDefinition]) {
+case class SubprocessResolver(subprocesses: Map[String, CanonicalProcess]) {
 
   type CompilationValid[A] = ValidatedNel[ProcessCompilationError, A]
 
@@ -30,8 +30,8 @@ case class SubprocessResolver(subprocesses: Map[String, SubprocessDefinition]) {
     iterateOverCanonicals({
       case canonicalnode.Subprocess(data, nextNodes) =>
         subprocesses.get(data.ref.id) match {
-          case Some(SubprocessDefinition(_, parameters, nodes)) =>
-            checkProcessParameters(data.ref, parameters.map(_._1), data.id).andThen { _ =>
+          case Some(CanonicalProcess(MetaData(id, _, _, _), _, FlatNode(SubprocessInputDefinition(_, parameters, _))::nodes)) =>
+            checkProcessParameters(data.ref, parameters.map(_.name), data.id).andThen { _ =>
               val nextResolvedV = nextNodes.map { case (k, v) =>
                 resolveCanonical(idPrefix)(v).map((k, _))
               }.toList.sequence[CompilationValid, (String, List[CanonicalNode])].map(_.toMap)
@@ -40,6 +40,7 @@ case class SubprocessResolver(subprocesses: Map[String, SubprocessDefinition]) {
                 replaceCanonicalList(nodeResolved)(nextResolved)
               }.andThen(identity).map(replaced => FlatNode(NodeDataFun.nodeIdPrefix(idPrefix)(data)) :: replaced)
             }
+          case Some(_) => Invalid(NonEmptyList.of(InvalidSubprocess(data.id, data.ref.id)))
           case _ => Invalid(NonEmptyList.of(UnknownSubprocess(data.id, data.ref.id)))
         }
     }, NodeDataFun.nodeIdPrefix(idPrefix))

@@ -10,7 +10,7 @@ import pl.touk.esp.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.esp.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.esp.engine.canonicalgraph.canonicalnode.{CanonicalNode, FlatNode}
 import pl.touk.esp.engine.canonize.ProcessCanonizer
-import pl.touk.esp.engine.compile.ProcessCompilationError.{InvaliRootNode, InvalidTailOfBranch}
+import pl.touk.esp.engine.compile.ProcessCompilationError.{InvalidRootNode, InvalidTailOfBranch}
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.esp.engine.graph.expression.Expression

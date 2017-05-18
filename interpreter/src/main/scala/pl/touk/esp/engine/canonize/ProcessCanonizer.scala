@@ -27,10 +27,10 @@ object ProcessCanonizer {
 
   private def uncanonizeSource(canonicalNode: List[canonicalnode.CanonicalNode]): ValidatedNel[ProcessUncanonizationError, node.SourceNode] =
     canonicalNode match {
-      case (a@canonicalnode.FlatNode(data: node.Source)) :: tail =>
+      case (a@canonicalnode.FlatNode(data: node.StartingNodeData)) :: tail =>
         uncanonize(a, tail).map(node.SourceNode(data, _))
       case other :: tail =>
-        invalid(InvaliRootNode(other.id)).toValidatedNel
+        invalid(InvalidRootNode(other.id)).toValidatedNel
       case invalidTail =>
         invalid(EmptyProcess).toValidatedNel
     }

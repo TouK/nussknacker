@@ -87,8 +87,7 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessW
     val processWithDeps = compiledProcessWithDeps()
     val process = processWithDeps.compiledProcess
     val streamMetaData = MetaDataExtractor.extractStreamMetaDataOrFail(process.metaData)
-    //FIXME: ladniej bez casta
-    env.setRestartStrategy(process.exceptionHandler.asInstanceOf[FlinkEspExceptionHandler].restartStrategy)
+    env.setRestartStrategy(processWithDeps.exceptionHandler.restartStrategy)
     streamMetaData.parallelism.foreach(env.setParallelism)
     env.enableCheckpointing(streamMetaData.checkpointIntervalDuration.getOrElse(checkpointInterval).toMillis)
 
