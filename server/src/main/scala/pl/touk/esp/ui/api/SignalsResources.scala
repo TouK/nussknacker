@@ -11,7 +11,7 @@ import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
 import pl.touk.esp.ui.process.repository.ProcessRepository
 import pl.touk.esp.ui.process.repository.ProcessRepository.ProcessDetails
 import pl.touk.esp.ui.security.{LoggedUser, Permission}
-import pl.touk.esp.ui.util.Argonaut62Support
+import pl.touk.http.argonaut.Argonaut62Support
 import shapeless.syntax.typeable._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -21,7 +21,6 @@ class SignalsResources(signalDispatcher: Map[ProcessingType, SignalDispatcher],
                        processRepository: ProcessRepository)
                       (implicit ec: ExecutionContext) extends Directives with Argonaut62Support {
 
-  import argonaut.ArgonautShapeless._
   import pl.touk.esp.ui.codec.UiCodecs._
 
   //na razie dla standalone nie chcemy sygnalow

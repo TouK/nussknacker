@@ -25,7 +25,7 @@ import pl.touk.esp.ui.security.{LoggedUser, Permission}
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
-trait EspItTest extends LazyLogging with TestCodecs { self: ScalatestRouteTest with Suite with BeforeAndAfterEach with Matchers =>
+trait EspItTest extends LazyLogging { self: ScalatestRouteTest with Suite with BeforeAndAfterEach with Matchers =>
 
   val env = "test"
   val db = DbTesting.db

@@ -2,7 +2,7 @@ package pl.touk.esp.ui.codec
 
 import java.time.LocalDateTime
 
-import argonaut.Argonaut
+import argonaut.Parse
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.esp.engine.api
 import pl.touk.esp.engine.api.Displayable
@@ -10,9 +10,7 @@ import pl.touk.esp.engine.definition.DefinitionExtractor.TypesInformation
 
 class UiCodecsSpec extends FlatSpec with Matchers {
 
-  import argonaut._
-  import Argonaut._
-  import ArgonautShapeless._
+  import UiCodecs._
 
   it should "should encode record" in {
 
@@ -50,9 +48,9 @@ class UiCodecsSpec extends FlatSpec with Matchers {
     override def originalDisplay: Option[String] = Some(fields.mkString("|"))
 
     override def display = {
-      Argonaut.jObjectFields(
-        "fieldA" -> Argonaut.jString(fieldA),
-        "fieldB" -> Argonaut.jString(fieldB)
+      jObjectFields(
+        "fieldA" -> jString(fieldA),
+        "fieldB" -> jString(fieldB)
       )
     }
     val fieldA = fields(0)

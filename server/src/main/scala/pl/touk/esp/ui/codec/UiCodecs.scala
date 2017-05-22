@@ -3,7 +3,7 @@ package pl.touk.esp.ui.codec
 import java.time.LocalDateTime
 
 import argonaut._
-import argonaut.derive.{JsonSumCodec, JsonSumCodecFor}
+import argonaut.derive.{DerivedInstances, JsonSumCodec, JsonSumCodecFor, SingletonInstances}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.esp.engine.api
 import pl.touk.esp.engine.api.{Displayable, TypeSpecificData, UserDefinedProcessAdditionalFields}
@@ -14,7 +14,9 @@ import pl.touk.esp.engine.graph.expression.Expression
 import pl.touk.esp.engine.definition.TestingCapabilities
 import pl.touk.esp.engine.graph.node
 import pl.touk.esp.engine.marshall.ProcessMarshaller
+import pl.touk.esp.engine.util.Codecs
 import pl.touk.esp.ui.api.{DisplayableUser, GrafanaSettings, ProcessObjects, ResultsWithCounts}
+import pl.touk.esp.ui.db.entity.ProcessEntity.{ProcessType, ProcessingType}
 import pl.touk.esp.ui.process.displayedgraph.displayablenode.{EdgeType, NodeAdditionalFields, ProcessAdditionalFields}
 import pl.touk.esp.ui.process.displayedgraph._
 import pl.touk.esp.ui.process.repository.ProcessActivityRepository.{Comment, ProcessActivity}
@@ -22,14 +24,12 @@ import pl.touk.esp.ui.process.repository.ProcessRepository.{ProcessDetails, Proc
 import pl.touk.esp.ui.processreport.NodeCount
 import pl.touk.esp.ui.validation.ValidationResults.ValidationResult
 
-object UiCodecs {
+object UiCodecs extends UiCodecs
 
-  import ArgonautShapeless._
-  import Argonaut._
+trait UiCodecs extends Codecs with Argonauts with SingletonInstances with DerivedInstances {
 
   private implicit def typeFieldJsonSumCodecFor[S]: JsonSumCodecFor[S] =
     JsonSumCodecFor(JsonSumCodec.typeField)
-
 
   //w sumie nie rozumiem czemu tak... ale probowalem roznych rzeczy i rozne wyjatki mi rzucalo... lacznie ze stackoverflow...
   implicit def typeCodec : CodecJson[TypeSpecificData] = new ProcessMarshaller().typeSpecificEncoder
@@ -48,10 +48,6 @@ object UiCodecs {
   implicit def testingCapabilitiesCodec: CodecJson[TestingCapabilities] = CodecJson.derive[TestingCapabilities]
 
   implicit def propertiesCodec: CodecJson[ProcessProperties] = CodecJson.derive[ProcessProperties]
-
-  implicit def localDateTimeEncode = EncodeJson.of[String].contramap[LocalDateTime](_.toString)
-
-  implicit def localDateTimeDecode = DecodeJson.of[String].map[LocalDateTime](s => LocalDateTime.parse(s))
 
   implicit def validationResultEncode = EncodeJson.of[ValidationResult]
 
@@ -79,6 +75,10 @@ object UiCodecs {
     } yield edgeTypeObj
   }
 
+  implicit val processTypeCodec = Codecs.enumCodec(ProcessType)
+
+  implicit val processingTypeCodec = Codecs.enumCodec(ProcessingType)
+
   implicit def edgeEncode = EncodeJson.of[displayablenode.Edge]
 
   implicit def displayableProcessCodec: CodecJson[DisplayableProcess] = CodecJson.derive[DisplayableProcess]
@@ -89,10 +89,6 @@ object UiCodecs {
 
   implicit def processObjectsEncodeEncode = EncodeJson.of[ProcessObjects]
 
-  implicit def processTypeCodec = ProcessTypeCodec.codec
-
-  implicit def processingTypeCodec = ProcessingTypeCodec.codec
-
   implicit def processHistory = EncodeJson.of[ProcessHistoryEntry]
 
   implicit def processListEncode = EncodeJson.of[List[ProcessDetails]]
@@ -100,6 +96,8 @@ object UiCodecs {
   implicit def grafanaEncode = EncodeJson.of[GrafanaSettings]
 
   implicit def userEncodeEncode = EncodeJson.of[DisplayableUser]
+
+  implicit val processDetails : CodecJson[ProcessDetails] = CodecJson.derive[ProcessDetails]
 
   implicit def printer: Json => String =
     PrettyParams.spaces2.copy(dropNullKeys = true, preserveOrder = true).pretty

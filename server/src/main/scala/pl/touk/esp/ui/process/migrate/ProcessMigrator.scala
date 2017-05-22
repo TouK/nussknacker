@@ -11,14 +11,16 @@ import argonaut.DecodeJson
 import cats.data.EitherT
 import cats.implicits._
 import pl.touk.esp.ui.EspError
+import pl.touk.esp.ui.codec.UiCodecs
 import pl.touk.esp.ui.process.ProcessToSave
 import pl.touk.esp.ui.process.displayedgraph.DisplayableProcess
 import pl.touk.esp.ui.process.marshall.UiProcessMarshaller
 import pl.touk.esp.ui.process.repository.ProcessRepository.{InvalidProcessTypeError, ProcessDetails}
 import pl.touk.esp.ui.security.LoggedUser
 import pl.touk.esp.ui.util.ProcessComparator.Difference
-import pl.touk.esp.ui.util.{Argonaut62Support, ProcessComparator}
+import pl.touk.esp.ui.util.ProcessComparator
 import pl.touk.esp.ui.validation.ValidationResults.{ValidationErrors, ValidationResult}
+import pl.touk.http.argonaut.Argonaut62Support
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -57,14 +59,11 @@ class HttpProcessMigrator(config: HttpMigratorTargetEnvironmentConfig, val envir
   }
 }
 
-trait StandardProcessMigrator extends Argonaut62Support with ProcessMigrator {
+trait StandardProcessMigrator extends Argonaut62Support with ProcessMigrator with UiCodecs {
 
   def environmentId: String
 
   implicit def materializer: Materializer
-
-  import argonaut.ArgonautShapeless._
-  import pl.touk.esp.ui.codec.UiCodecs._
 
   val uiProcessMarshaller = UiProcessMarshaller()
 

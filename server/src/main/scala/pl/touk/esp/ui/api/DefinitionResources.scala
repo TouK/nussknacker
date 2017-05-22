@@ -20,7 +20,8 @@ import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
 import pl.touk.esp.ui.process.displayedgraph.displayablenode.EdgeType
 import pl.touk.esp.ui.process.subprocess.SubprocessRepository
 import pl.touk.esp.ui.security.LoggedUser
-import pl.touk.esp.ui.util.{Argonaut62Support, EspPathMatchers}
+import pl.touk.esp.ui.util.EspPathMatchers
+import pl.touk.http.argonaut.Argonaut62Support
 
 import scala.concurrent.ExecutionContext
 import scala.runtime.BoxedUnit

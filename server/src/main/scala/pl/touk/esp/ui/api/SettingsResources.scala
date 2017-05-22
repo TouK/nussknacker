@@ -3,7 +3,7 @@ package pl.touk.esp.ui.api
 import akka.http.scaladsl.server.Directives
 import pl.touk.esp.ui.config.FeatureTogglesConfig
 import pl.touk.esp.ui.security.LoggedUser
-import pl.touk.esp.ui.util.Argonaut62Support
+import pl.touk.http.argonaut.Argonaut62Support
 
 import scala.concurrent.ExecutionContext
 

@@ -12,7 +12,8 @@ import akka.stream.{ActorAttributes, Materializer}
 import akka.stream.scaladsl.FileIO
 import pl.touk.esp.ui.process.repository.ProcessActivityRepository
 import pl.touk.esp.ui.security.LoggedUser
-import pl.touk.esp.ui.util.{AkkaHttpResponse, Argonaut62Support, CatsSyntax}
+import pl.touk.esp.ui.util.{AkkaHttpResponse, CatsSyntax}
+import pl.touk.http.argonaut.Argonaut62Support
 
 import scala.concurrent.ExecutionContext
 

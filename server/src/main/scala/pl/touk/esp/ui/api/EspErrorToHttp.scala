@@ -6,9 +6,9 @@ import argonaut.EncodeJson
 import cats.data.Xor
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.esp.ui.process.deployment.ProcessIsBeingDeployed
-import pl.touk.esp.ui.util.Argonaut62Support
 import pl.touk.esp.ui.validation.ValidationResults.{FatalValidationError, ValidationResult}
 import pl.touk.esp.ui.{BadRequestError, EspError, FatalError, NotFoundError}
+import pl.touk.http.argonaut.Argonaut62Support
 
 import scala.language.implicitConversions
 

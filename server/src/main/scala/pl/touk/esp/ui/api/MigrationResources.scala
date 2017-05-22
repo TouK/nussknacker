@@ -8,7 +8,7 @@ import pl.touk.esp.ui.process.migrate.ProcessMigrator
 import pl.touk.esp.ui.process.repository.ProcessRepository
 import pl.touk.esp.ui.process.repository.ProcessRepository.ProcessNotFoundError
 import pl.touk.esp.ui.security.{LoggedUser, Permission}
-import pl.touk.esp.ui.util.Argonaut62Support
+import pl.touk.http.argonaut.Argonaut62Support
 
 import scala.concurrent.{ExecutionContext, Future}
 

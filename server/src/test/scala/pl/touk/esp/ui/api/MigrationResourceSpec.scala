@@ -6,8 +6,7 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Inside, Matchers}
 import pl.touk.esp.engine.canonize.ProcessCanonizer
-import pl.touk.esp.engine.compile.ProcessValidator
-import pl.touk.esp.ui.api.helpers.{EspItTest, TestCodecs}
+import pl.touk.esp.ui.api.helpers.EspItTest
 import pl.touk.esp.ui.api.helpers.TestFactory._
 import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.esp.ui.process.displayedgraph.DisplayableProcess
@@ -21,11 +20,10 @@ import pl.touk.esp.ui.validation.ValidationResults.ValidationResult
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 
-import argonaut.Argonaut._
 import argonaut.ArgonautShapeless._
 
 class MigrationResourceSpec extends FlatSpec with ScalatestRouteTest with ScalaFutures with Matchers
-  with BeforeAndAfterEach with Inside with TestCodecs with EspItTest {
+  with BeforeAndAfterEach with Inside with EspItTest {
 
 
   implicit override val patienceConfig = PatienceConfig(timeout = scaled(Span(1, Seconds)), interval = scaled(Span(100, Millis)))
@@ -59,7 +57,7 @@ class MigrationResourceSpec extends FlatSpec with ScalatestRouteTest with ScalaF
   it should "invoke migrator for found process" in {
     val migrator = new MockMigrator
     val route = withPermissions(new MigrationResources(migrator, processRepository).route, Permission.Deploy)
-    import pl.touk.esp.ui.util.Argonaut62Support._
+    import pl.touk.http.argonaut.Argonaut62Support._
 
     saveProcess(processId, ProcessTestData.validProcess) {
       Get(s"/migration/compare/$processId") ~> route ~> check {

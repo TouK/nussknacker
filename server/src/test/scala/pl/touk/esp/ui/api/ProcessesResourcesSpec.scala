@@ -3,7 +3,6 @@ package pl.touk.esp.ui.api
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server
 import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
-import argonaut.Argonaut._
 import argonaut.PrettyParams
 import org.scalatest._
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
@@ -15,9 +14,10 @@ import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.esp.engine.graph.node
 import pl.touk.esp.engine.graph.node.Source
 import pl.touk.esp.engine.graph.param.Parameter
-import pl.touk.esp.ui.api.helpers.{EspItTest, TestFactory}
+import pl.touk.esp.ui.api.helpers.EspItTest
 import pl.touk.esp.ui.api.helpers.TestFactory._
-import pl.touk.esp.ui.db.entity.ProcessEntity.{ProcessType, ProcessingType}
+import pl.touk.esp.ui.codec.UiCodecs
+import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.esp.ui.process.ProcessToSave
 import pl.touk.esp.ui.process.displayedgraph.displayablenode.ProcessAdditionalFields
 import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties}
@@ -31,6 +31,7 @@ import pl.touk.esp.ui.util.{FileUploadUtils, MultipartUtils}
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.language.higherKinds
+import UiCodecs._
 
 class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Matchers with Inside
   with ScalaFutures with OptionValues with Eventually with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
@@ -372,7 +373,6 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
   }
 
   it should "should be able to add comment when updating a process" in {
-    import pl.touk.esp.ui.codec.UiCodecs._
     val processToSave = ProcessTestData.sampleDisplayableProcess
     val updatedProcess = ProcessToSave(
       processToSave.copy(nodes = processToSave.nodes.head.asInstanceOf[node.Source].copy(id = "newId") :: processToSave.nodes.tail),
