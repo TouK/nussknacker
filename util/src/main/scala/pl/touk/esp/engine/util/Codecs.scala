@@ -7,7 +7,7 @@ import argonaut._
 
 import scala.util.{Failure, Success, Try}
 
-object Codecs {
+trait Codecs {
 
   def enumCodec[T <: Enumeration](enumCompanion: T) : CodecJson[enumCompanion.Value] = CodecJson[enumCompanion.Value](
     value => jString(value.toString),
@@ -25,3 +25,5 @@ object Codecs {
   implicit def localDateTimeDecode : DecodeJson[LocalDateTime] = DecodeJson.of[String].map[LocalDateTime](s => LocalDateTime.parse(s))
 
 }
+
+object Codecs extends Codecs
