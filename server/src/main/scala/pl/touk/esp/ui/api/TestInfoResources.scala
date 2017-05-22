@@ -9,7 +9,7 @@ import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
 import pl.touk.esp.ui.process.displayedgraph.DisplayableProcess
 import pl.touk.esp.ui.process.repository.ProcessRepository
 import pl.touk.esp.ui.security.{LoggedUser, Permission}
-import pl.touk.esp.ui.util.Argonaut62Support
+import pl.touk.http.argonaut.Argonaut62Support
 import shapeless.syntax.typeable._
 
 import scala.concurrent.ExecutionContext

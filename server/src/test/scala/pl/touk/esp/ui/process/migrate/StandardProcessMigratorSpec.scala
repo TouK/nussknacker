@@ -8,12 +8,13 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.esp.engine.canonize.ProcessCanonizer
 import pl.touk.esp.ui.api.ProcessTestData
+import pl.touk.esp.ui.codec.UiCodecs._
 import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.esp.ui.process.ProcessToSave
 import pl.touk.esp.ui.process.marshall.ProcessConverter
 import pl.touk.esp.ui.security.LoggedUser
-import pl.touk.esp.ui.util.Argonaut62Support
 import pl.touk.esp.ui.validation.ValidationResults.{NodeValidationError, ValidationErrors, ValidationResult}
+import pl.touk.http.argonaut.Argonaut62Support
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -23,8 +24,6 @@ class StandardProcessMigratorSpec extends FlatSpec with Matchers with ScalaFutur
   implicit val system = ActorSystem("esp-ui")
 
   implicit val user = LoggedUser("test", "", List(), List())
-
-  import pl.touk.esp.ui.codec.UiCodecs.validationResultEncode
 
   trait MockMigrator extends StandardProcessMigrator {
 

@@ -5,7 +5,7 @@ import pl.touk.esp.ui.validation.ProcessValidation
 import pl.touk.esp.ui.process.displayedgraph.DisplayableProcess
 import pl.touk.esp.ui.process.marshall.ProcessConverter
 import pl.touk.esp.ui.security.LoggedUser
-import pl.touk.esp.ui.util.Argonaut62Support
+import pl.touk.http.argonaut.Argonaut62Support
 
 import scala.concurrent.ExecutionContext
 

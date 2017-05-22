@@ -4,7 +4,6 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server
 import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
-import argonaut.Argonaut._
 import argonaut.Parse
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
@@ -14,7 +13,7 @@ import pl.touk.esp.engine.canonize.ProcessCanonizer
 import pl.touk.esp.ui.api.helpers.{EspItTest, TestFactory}
 import pl.touk.esp.ui.api.helpers.TestFactory._
 import pl.touk.esp.ui.codec.UiCodecs
-import pl.touk.esp.ui.db.entity.ProcessEntity.{ProcessType, ProcessingType}
+import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.esp.ui.process.marshall.ProcessConverter
 import pl.touk.esp.ui.process.repository.ProcessRepository
 import pl.touk.esp.ui.process.repository.ProcessRepository.ProcessDetails
@@ -27,11 +26,15 @@ import scala.concurrent.duration._
 class ManagementResourcesSpec extends FlatSpec with ScalatestRouteTest
   with Matchers with ScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
+  import UiCodecs._
+
   implicit override val patienceConfig = PatienceConfig(timeout = scaled(Span(2, Seconds)), interval = scaled(Span(100, Millis)))
 
   implicit def default(implicit system: ActorSystem) = RouteTestTimeout(5 seconds)
 
+
   it should "process deployment should be visible in process history" in {
+
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
     deployProcess() ~> check {
       status shouldBe StatusCodes.OK
@@ -167,8 +170,7 @@ class ManagementResourcesSpec extends FlatSpec with ScalatestRouteTest
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
     val displayableProcess = ProcessConverter.toDisplayable(ProcessCanonizer.canonize(SampleProcess.process)
       , ProcessingType.Streaming)
-    val displayableProcessJson = UiCodecs.displayableProcessCodec.encode(displayableProcess).nospaces
-    val multiPart = MultipartUtils.prepareMultiParts("testData" -> "ala\nbela", "processJson" -> displayableProcessJson)()
+    val multiPart = MultipartUtils.prepareMultiParts("testData" -> "ala\nbela", "processJson" -> displayableProcess.asJson.nospaces)()
     Post(s"/processManagement/test/${SampleProcess.process.id}", multiPart) ~> withPermissions(deployRoute, Permission.Deploy) ~> check {
       status shouldEqual StatusCodes.OK
       val results = Parse.parse(responseAs[String]).right.get

@@ -1,18 +1,17 @@
 package pl.touk.esp.ui.api
 
 import akka.actor.ActorRef
-import akka.http.scaladsl.model.{HttpResponse, StatusCode, StatusCodes}
+import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.http.scaladsl.server._
 import akka.util.Timeout
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.flink.runtime.messages.JobClientMessages.JobManagerActorRef
 import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
 import pl.touk.esp.ui.process.deployment.CheckStatus
 import pl.touk.esp.ui.process.displayedgraph.ProcessStatus
 import pl.touk.esp.ui.process.repository.ProcessRepository
 import pl.touk.esp.ui.process.repository.ProcessRepository.ProcessDetails
 import pl.touk.esp.ui.security.LoggedUser
-import pl.touk.esp.ui.util.Argonaut62Support
+import pl.touk.http.argonaut.Argonaut62Support
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal

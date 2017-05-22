@@ -3,7 +3,6 @@ package pl.touk.esp.ui.api
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import org.scalatest._
-import argonaut.Argonaut._
 import pl.touk.esp.engine.api.StreamMetaData
 import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.esp.engine.graph.expression.Expression
@@ -12,15 +11,15 @@ import pl.touk.esp.engine.graph.node.{NodeData, Source}
 import pl.touk.esp.engine.graph.service.ServiceRef
 import pl.touk.esp.engine.graph.sink.SinkRef
 import pl.touk.esp.engine.graph.source.SourceRef
-import pl.touk.esp.ui.api.helpers.TestCodecs
+import pl.touk.esp.ui.api.helpers.TestCodecs._
 import pl.touk.esp.ui.api.helpers.TestFactory._
-import pl.touk.esp.ui.db.entity.ProcessEntity.{ProcessType, ProcessingType}
+import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.esp.ui.process.displayedgraph.displayablenode.Edge
 import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.esp.ui.security.Permission
 import pl.touk.esp.ui.validation.ValidationResults.ValidationResult
 
-class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with Matchers with Inside with TestCodecs {
+class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with Matchers with Inside {
 
   val route = withPermissions(new ValidationResources(processValidation).route, Permission.Read)
 

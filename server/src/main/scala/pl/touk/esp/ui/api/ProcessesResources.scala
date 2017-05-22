@@ -1,5 +1,6 @@
 package pl.touk.esp.ui.api
 
+
 import akka.actor.ActorRef
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model._
@@ -27,13 +28,14 @@ import akka.util.Timeout
 import scala.concurrent.duration._
 import EspErrorToHttp._
 import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
-import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessType.ProcessType
+import pl.touk.esp.ui.codec.UiCodecs
 import pl.touk.esp.ui.validation.ProcessValidation
-import pl.touk.esp.ui.db.entity.ProcessEntity.{ProcessType, ProcessingType}
+import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
 import pl.touk.esp.ui.process.ProcessToSave
 import pl.touk.esp.ui.process.ProcessTypesForCategories
 import pl.touk.esp.ui.process.repository.ProcessActivityRepository.ProcessActivity
+import pl.touk.http.argonaut.Argonaut62Support
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -42,10 +44,7 @@ class ProcessesResources(repository: ProcessRepository,
                          processActivityRepository: ProcessActivityRepository,
                          processValidation: ProcessValidation, typesForCategories: ProcessTypesForCategories)
                         (implicit ec: ExecutionContext, mat: Materializer)
-  extends Directives with Argonaut62Support with EspPathMatchers {
-
-  import argonaut.ArgonautShapeless._
-  import pl.touk.esp.ui.codec.UiCodecs._
+  extends Directives with Argonaut62Support with EspPathMatchers with UiCodecs {
 
   val uiProcessMarshaller = UiProcessMarshaller()
 
