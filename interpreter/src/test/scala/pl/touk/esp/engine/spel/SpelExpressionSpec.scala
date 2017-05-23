@@ -142,6 +142,13 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
     }
   }
 
+  it should "not allow vars without hashes in equality condition" in {
+    parse("nonexisting == 'ala'", ctx, Map()) should matchPattern {
+      case Invalid(ExpressionParseError("Non reference 'nonexisting' occurred. Maybe you missed '#' in front of it?")) =>
+    }
+  }
+
+
   it should "validate expression with projection and filtering" in {
     val ctxWithInput = ctx.withVariable("input", SampleObject(List(SampleValue(444))))
     parse("(#input.list.?[value == 5]).![value].contains(5)", ctxWithInput, Map()) shouldBe 'valid

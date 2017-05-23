@@ -48,7 +48,7 @@ class SpelExpressionValidator(expr: Expression, ctx: ValidationContext) {
       //TODO: walidacja zmiennych w srodku Projection/Selection
       case ce: CompoundExpression if ce.childrenHead.isInstanceOf[PropertyOrFieldReference] =>
         Validated.invalid(ExpressionParseError(s"Non reference '${ce.childrenHead.toStringAST}' occurred. Maybe you missed '#' in front of it?"))
-      case prop: PropertyOrFieldReference if (rootClass.isEmpty && parent.exists(_.isInstanceOf[MethodReference])) || parent.isEmpty =>
+      case prop: PropertyOrFieldReference if (rootClass.isEmpty && parent.exists(par => par.isInstanceOf[MethodReference] || par.isInstanceOf[Operator])) || parent.isEmpty =>
         Validated.invalid(ExpressionParseError(s"Non reference '${prop.toStringAST}' occurred. Maybe you missed '#' in front of it?"))
       //TODO: walidacja zmiennych w srodku Projection/Selection, ale wtedy musielibysmy znac typ zawartosci listy...
       case prop: Projection =>
