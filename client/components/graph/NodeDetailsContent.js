@@ -39,6 +39,10 @@ export default class NodeDetailsContent extends React.Component {
     }
   }
 
+  findParamByName(paramName) {
+    return (_.get(this.nodeObjectDetails, 'parameters', [])).find((param) => param.name === paramName)
+  }
+
   customNode = () => {
     switch (NodeUtils.nodeType(this.props.node)) {
       case 'Source':
@@ -79,10 +83,10 @@ export default class NodeDetailsContent extends React.Component {
           <div className="node-table-body">
             {this.createField("input", "Id", "id")}
             {this.createReadonlyField("input", "Service Id", "service.id")}
-            {this.state.editedNode.service.parameters.map((params, index) => {
+            {this.state.editedNode.service.parameters.map((param, index) => {
               return (
                 <div className="node-block" key={index}>
-                  {this.createListField("textarea", params.name, params, 'expression.expression', `service.parameters[${index}]`, params.name)}
+                  {this.createListField("textarea", param.name, param, 'expression.expression', `service.parameters[${index}]`, param.name)}
                 </div>
               )
             })}
@@ -112,10 +116,10 @@ export default class NodeDetailsContent extends React.Component {
             {this.createField("input", "Id", "id")}
             {_.has(this.state.editedNode, 'outputVar') ? this.createField("input", "Output", "outputVar") : null}
             {this.createReadonlyField("input", "Node type", "nodeType")}
-            {this.state.editedNode.parameters.map((params, index) => {
+            {this.state.editedNode.parameters.map((param, index) => {
               return (
                 <div className="node-block" key={index}>
-                  {this.createListField("textarea", params.name, params, 'expression.expression', `parameters[${index}]`, params.name)}
+                  {this.createListField("textarea", param.name, param, 'expression.expression', `parameters[${index}]`, param.name)}
                 </div>
               )
             })}
@@ -237,7 +241,8 @@ export default class NodeDetailsContent extends React.Component {
   }
 
   createListField = (fieldType, fieldLabel, obj, fieldProperty, listFieldProperty, fieldName) => {
-    return this.doCreateField(fieldType, fieldLabel, fieldName, _.get(obj, fieldProperty), ((newValue) => this.setNodeDataAt(`${listFieldProperty}.${fieldProperty}`, newValue) ))
+    return this.doCreateField(fieldType, fieldLabel, fieldName, _.get(obj, fieldProperty),
+      ((newValue) => this.setNodeDataAt(`${listFieldProperty}.${fieldProperty}`, newValue) ))
   }
 
   wrapWithTestResult = (fieldName, field) => {
@@ -273,8 +278,23 @@ export default class NodeDetailsContent extends React.Component {
   }
 
   doCreateField = (fieldType, fieldLabel, fieldName, fieldValue, handleChange, forceReadonly) => {
-
     const readOnly = !this.props.isEditMode || forceReadonly
+    const restriction = (this.findParamByName(fieldName) || {}).restriction
+
+    if (restriction && restriction.type === 'StringValues') {
+      const values = restriction.values
+      return (
+        <div className="node-row">
+          {this.renderFieldLabel(fieldLabel)}
+          <div className="node-value">
+            <select className="node-input" value={fieldValue} onChange={(e) => handleChange(e.target.value)} readOnly={readOnly}>
+              {values.map((value, index) => (<option key={index} value={`'${value}'`}>{value}</option>))}
+            </select>
+          </div>
+        </div>
+      )
+    }
+
     switch (fieldType) {
       case 'input':
         return (
@@ -331,6 +351,7 @@ export default class NodeDetailsContent extends React.Component {
         )
     }
   }
+
 
   setNodeDataAt = (propToMutate, newValue) => {
     var newtempNodeData = _.cloneDeep(this.state.editedNode)
@@ -428,7 +449,7 @@ export default class NodeDetailsContent extends React.Component {
   }
 
   renderFieldLabel = (label) => {
-    const parameter = (_.get(this.nodeObjectDetails, 'parameters', [])).find((param) => param.name == label)
+    const parameter = this.findParamByName(label)
     return (
       <div className="node-label" title={label}>{label}:
         {parameter ? <div className="labelFooter">{ProcessUtils.humanReadableType(parameter.typ.refClazzName)}</div> : null}
