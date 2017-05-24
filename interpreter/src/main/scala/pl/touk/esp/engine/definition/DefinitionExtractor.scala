@@ -43,11 +43,15 @@ trait DefinitionExtractor[T] {
         val name = Option(p.getAnnotation(classOf[ParamName]))
           .map(_.value())
           .getOrElse(throw new IllegalArgumentException(s"Parameter $p of $obj and method : ${method.getName} has missing @ParamName annotation"))
-        Left(Parameter(name, ClazzRef(extractParameterType(p))))
+        val paramType = extractParameterType(p)
+        Left(Parameter(name, ClazzRef(paramType), ParameterTypeMapper.prepareRestrictions(paramType, p)))
       }
     }.toList
     MethodDefinition(method, extractReturnTypeFromMethod(obj, method), new OrderedParameters(params))
   }
+
+
+
   protected def extractReturnTypeFromMethod(obj: T, method: Method) = {
     val typeFromAnnotation = Option(method.getAnnotation(classOf[MethodToInvoke]))
       .filterNot(_.returnType() == classOf[Object])
@@ -134,7 +138,15 @@ object DefinitionExtractor {
   case class ObjectDefinition(parameters: List[Parameter],
                               returnType: ClazzRef, categories: List[String]) extends ObjectMetadata
 
-  case class Parameter(name: String, typ: ClazzRef)
+  case class Parameter(name: String, typ: ClazzRef, restriction: Option[ParameterRestriction] = None)
+
+  //TODO: add validation of restrictions during compilation...
+  //this can be used for different restrictions than list of values, e.g. encode '> 0' conditions and so on...
+  sealed trait ParameterRestriction
+
+  case class StringValues(values: List[String]) extends ParameterRestriction
+
+
 
   private[definition] class OrderedParameters(baseOrAdditional: List[Either[Parameter, Class[_]]]) {
 
