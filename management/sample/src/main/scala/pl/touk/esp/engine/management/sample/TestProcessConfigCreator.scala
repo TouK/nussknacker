@@ -217,7 +217,7 @@ case object EmptyService extends Service {
 }
 
 case object OneParamService extends Service {
-  def invoke(@ParamName("param") param: String) = Future.successful(param)
+  def invoke(@PossibleValues(value = Array("a", "b", "c")) @ParamName("param") param: String) = Future.successful(param)
 }
 
 case object Enricher extends Service {
