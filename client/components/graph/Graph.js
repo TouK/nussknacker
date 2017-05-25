@@ -15,6 +15,7 @@ import { DropTarget } from 'react-dnd';
 import '../../stylesheets/graph.styl'
 import SVGUtils from '../../common/SVGUtils';
 import NodeUtils from './NodeUtils.js'
+import cssVariables from "../../stylesheets/_variables.styl"
 
 
 class Graph extends React.Component {
@@ -50,7 +51,7 @@ class Graph extends React.Component {
         this.drawGraph(this.props.processToDisplay, this.props.layout, this.props.processCounts, false, this.props.expandedGroups)
         this.panAndZoom = this.enablePanZoom();
         this.changeNodeDetailsOnClick();
-        this.labelToFrontOnHover();
+        this.hooverHandling();
         this.cursorBehaviour();
         this.highlightNodes(this.props.processToDisplay, this.props.nodeToDisplay);
 
@@ -111,12 +112,14 @@ class Graph extends React.Component {
             model: this.graph,
             snapLinks: { radius: 75 },
             interactive: function(cellView) {
+                const model = cellView.model
                 if (!canWrite) {
                   return false;
-                } else if (cellView.model instanceof joint.dia.Link) {
+                } else if (model instanceof joint.dia.Link) {
                     // Disable the default vertex add functionality on pointerdown.
                     return { vertexAdd: false };
-                } else if (cellView.get && cellView.get('backgroundObject')) {
+                } else if (model.get && model.get('backgroundObject')) {
+                  //Disable moving group rect
                   return false
                 } else {
                   return true;
@@ -165,7 +168,9 @@ class Graph extends React.Component {
       t = this.time(t, 'links')
 
       const boundingRects = NodeUtils.getExpandedGroups(process, expandedGroups)
-        .map(expandedGroup => ({group: expandedGroup, rect: EspNode.boundingRect(nodes, expandedGroup, layout,
+        .map(expandedGroup => ({group: expandedGroup,
+          
+          rect: EspNode.boundingRect(nodes, expandedGroup, layout,
           NodeUtils.createGroup(nodesWithGroups, expandedGroup))}))
       t = this.time(t, 'bounding')
 
@@ -310,19 +315,70 @@ class Graph extends React.Component {
         }
       })
       this.processGraphPaper.on('cell:pointerclick', (cellView, evt, x, y) => {
-        if (cellView.model.attributes.nodeData) {
+        const nodeData = cellView.model.attributes.nodeData
+        if (nodeData) {
           this.props.actions.displayNodeDetails(cellView.model.attributes.nodeData)
+        }
+        
+        //TODO: is this the best place for this? if no, where should it be?
+        const targetClass = _.get(evt, 'originalEvent.target.className.baseVal')
+        if (targetClass.includes('collapseIcon') && nodeData) {
+          this.props.actions.collapseGroup(nodeData.id)
+        }
+        if (targetClass.includes('expandIcon') && nodeData) {
+          this.props.actions.expandGroup(nodeData.id)
         }
       })
     }
 
-    labelToFrontOnHover () {
-        this.processGraphPaper.on('cell:mouseover', (cellView, evt, x, y) => {
-          if (cellView.get && !cellView.get('backgroundObject')) {
-            cellView.model.toFront();
-          }
+    hooverHandling () {
+        this.processGraphPaper.on('cell:mouseover', (cellView) => {
+          const model = cellView.model
+          this.showLabelOnHover(model);
+          this.showBackgroundIcon(model);
+        });
+        this.processGraphPaper.on('cell:mouseout', (cellView, evt) => {
+          this.hideBackgroundIcon(cellView.model, evt);
         });
     }
+
+  //needed for proper switch/filter label handling
+  showLabelOnHover(model) {
+    if (model.get && !model.get('backgroundObject')) {
+      model.toFront();
+    }
+    return model;
+  }
+
+  //background is below normal node, we cannot use normal hover/mouseover/mouseout...
+  showBackgroundIcon(model) {
+    if (model.get && model.get('backgroundObject')) {
+      const el = this.processGraphPaper.findViewByModel(model).vel
+      el.addClass('nodeIconForceHoverBox')
+      el.removeClass('nodeIconForceNoHoverBox')
+    }
+  }
+
+  //background is below normal node, we cannot use normal hover/mouseover/mouseout...
+  hideBackgroundIcon(model, evt) {
+    if (model.get && model.get('backgroundObject')) {
+      if (!this.checkIfCursorInRect(model, evt)) {
+        const el = this.processGraphPaper.findViewByModel(model).vel
+        el.removeClass('nodeIconForceHoverBox')
+        el.addClass('nodeIconForceNoHoverBox')
+      }
+
+    }
+  }
+
+  checkIfCursorInRect(model, evt) {
+      const relOffset = this.computeRelOffset({x: evt.clientX, y: evt.clientY})
+      const position = model.attributes.position
+      const size = model.attributes.size
+      return relOffset.x >= position.x && relOffset.y >= position.y &&
+                    relOffset.x <= position.x + size.width && relOffset.y <= position.y + size.height;
+    }
+
     // FIXME - w chrome 52.0.2743.82 (64-bit) nie działa na esp-graph
     // Trzeba sprawdzić na innych wersjach Chrome u innych, bo może to być kwestia tylko tej wersji chrome
     cursorBehaviour () {
@@ -336,6 +392,18 @@ class Graph extends React.Component {
           this.refs.espGraph.style.cursor = "auto"
         }
       })
+    }
+
+    computeRelOffset(pointerOffset) {
+      const pan = this.panAndZoom ? this.panAndZoom.getPan() : {x: 0, y: 0}
+      const zoom = this.panAndZoom ? this.panAndZoom.getSizes().realZoom : 1
+
+      //TODO: is it REALLY ok?
+      const paddingLeft = cssVariables.svgGraphPaddingLeft
+      const paddingTop = cssVariables.svgGraphPaddingTop
+
+      const graphPosition = $('#esp-graph svg').position()
+      return { x: (pointerOffset.x - pan.x - graphPosition.left - paddingLeft)/zoom, y : (pointerOffset.y - pan.y - graphPosition.top - paddingTop)/zoom }
     }
 
     render() {
@@ -367,14 +435,7 @@ function mapState(state) {
 
 var spec = {
   drop: (props, monitor, component) => {
-    const pan = component.panAndZoom ? component.panAndZoom.getPan() : {x: 0, y: 0}
-    var zoom = component.panAndZoom ? component.panAndZoom.getSizes().realZoom : 1
-
-    var pointerOffset = monitor.getClientOffset()
-    var rect = findDOMNode(component).getBoundingClientRect();
-    //czegos tu chyba jeszcze brakuje... ale nie wiem czego :|
-    const graphPosition = $('#esp-graph svg').position()
-    var relOffset = { x: (pointerOffset.x - rect.left - pan.x - graphPosition.left)/zoom, y : (pointerOffset.y - rect.top - pan.y - graphPosition.top)/zoom }
+    var relOffset = component.computeRelOffset(monitor.getClientOffset())
     component.addNode(monitor.getItem(), relOffset)
 
   }

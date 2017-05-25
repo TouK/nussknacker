@@ -3,7 +3,12 @@ import _ from 'lodash'
 import NodeUtils from './NodeUtils'
 import GraphUtils from './GraphUtils'
 
-import markup from './markups/markup.html';
+import nodeMarkup from './markups/node.html';
+import boundingMarkup from './markups/bounding.html';
+import expandIcon from '../../assets/img/expand.svg'
+import collapseIcon from '../../assets/img/collapse.svg'
+
+
 import InlinedSvgs from '../../assets/icons/InlinedSvgs'
 
 const rectWidth = 300
@@ -89,7 +94,7 @@ const attrsConfig = () => {
 
 joint.shapes.devs.EspNode = joint.shapes.basic.Generic.extend(_.extend({}, joint.shapes.basic.PortsModelInterface, {
 
-    markup: markup,
+    markup: nodeMarkup,
     portMarkup: '<g class="port port<%= id %>"><circle class="port-body"/></g>',
 
     defaults: joint.util.deepSupplement({
@@ -181,6 +186,16 @@ export default {
             fill: hasErrors ? 'red' : 'white',
             'ref-x': width + rectHeight/2
           },
+          '.groupElements': {
+            'display': NodeUtils.nodeIsGroup(node) ? 'block' : 'none'
+          },
+          '.expandIcon': {
+            'xlink:href': expandIcon,
+            width: 26,
+            height: 26,
+            'ref-x': width - 13,
+            'ref-y': - 13
+          }
         };
 
         var inPorts = [];
@@ -215,11 +230,23 @@ export default {
 
       return new joint.shapes.basic.Rect({
           id: group.id,
+          markup: boundingMarkup,
           position: { x: boundingRect.x, y: boundingRect.y },
           backgroundObject: true,
           nodeData: group,
           size: { width: boundingRect.width, height: boundingRect.height },
-          attrs: { rect: { fill: 'green', opacity: 0.1 }},
+          attrs: {
+            rect: {
+              fill: 'green', opacity: 0.1
+            },
+            '.collapseIcon': {
+              'xlink:href': collapseIcon,
+              'ref-x': boundingRect.width - 13,
+              'ref-y': - 13,
+              width: 26,
+              height: 26,
+            },
+          },
           definitionToCompare: {
             boundingRect: boundingRect,
             group
