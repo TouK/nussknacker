@@ -16,7 +16,7 @@
   svg
     width: 100%
     height 100%
-    padding: 30px 15px
+    padding: svgGraphPaddingTop svgGraphPaddingLeft
 
 node-highlight(strokeColor, backgroundFill)
   .body
@@ -350,6 +350,29 @@ espButtonIcon()
 .testResultsPlaceholder
   fill: buttonBorderColor
   border: 0
+
+.nodeIcon
+  &:not(:hover)
+    opacity 0.75
+  &:hover
+    opacity 1
+
+.nodeIconHoverBox
+  &:not(:hover)
+    .nodeIcon
+      display: none
+  &:hover
+    .nodeIcon
+      display: block
+
+.nodeIconForceHoverBox
+  .nodeIcon
+    display: block
+
+.nodeIconForceNoHoverBox
+  .nodeIcon
+    display: none
+
 
 .fadeout {
   position: relative;
