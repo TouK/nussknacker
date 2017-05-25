@@ -72,7 +72,7 @@ const process = {
     { "type": "Enricher", "id": "decodeHtml", "service": { "id": "transactionParser", "parameters": [{ "name": "transaction", "expression": { "language": "spel", "expression": "#input"}}]}, "output": "parsedTransaction"},
     { "type": "Filter", "id": "someFilterNode", "expression": { "language": "spel", "expression": "true"}},
     { "type": "CustomNode", "id": "aggregateId", "outputVar": "aggregateResult", "nodeType": "transactionAggregator", "parameters": []},
-    { "type": "Sink", "id": "endEnriched", "ref": { "typ": "transactionSink", "parameters": [{ "name": "topic", "value": "transaction.topic"}]}, "endResult": { "language": "spel", "expression": "#finalTransaction.toJson()"}}
+    { "type": "Sink", "id": "endEnriched", "ref": { "typ": "transactionSink", "parameters": [{ "name": "topic", "value": "transaction.errors"}]}, "endResult": { "language": "spel", "expression": "#finalTransaction.toJson()"}}
   ],
   "edges": [
     { "from": "start", "to": "processVariables"},
@@ -92,7 +92,7 @@ const subprocess = {
   "nodes": [
     { "type": "SubprocessInputDefinition", "id": "start", "parameters": [{ "name": "subprocessParam", "typ":{ "refClazzName": "java.lang.String"}}]},
     { "type": "Filter", "id": "filter1", "expression": { "language": "spel", "expression": "#input.PATH != 'Anonymous'"}},
-    { "type": "Sink", "id": "endEnriched", "ref": { "typ": "transactionSink", "parameters": [{ "name": "topic", "value": "transaction.topic"}]}, "endResult": { "language": "spel", "expression": "#finalTransaction.toJson()"}}
+    { "type": "Sink", "id": "endEnriched", "ref": { "typ": "transactionSink", "parameters": [{ "name": "topic", "value": "transaction.errors"}]}, "endResult": { "language": "spel", "expression": "#finalTransaction.toJson()"}}
   ],
   "edges": [
     { "from": "start", "to": "filter1"},

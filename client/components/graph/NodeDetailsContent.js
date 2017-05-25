@@ -394,7 +394,7 @@ export default class NodeDetailsContent extends React.Component {
             <select className="node-input selectTestResults" onChange={(e) => this.selectTestResults(e.target.value)}
                     value={this.state.testResultsIdToShow}>
               { TestResultUtils.availableContexts(this.props.testResults).map((ctx, idx) =>
-                //ten toString jest b. slaby w wielu przypadkach - trzeba cos z nim zrobic :|
+                //ten toString jest b. slaby w wielu przypadkach
                 (<option key={idx} value={ctx.id}>{ctx.id} ({(ctx.input.original || ctx.input || "").toString().substring(0, 50)})</option>)
               )}
             </select>
