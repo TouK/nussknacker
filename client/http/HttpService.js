@@ -37,6 +37,15 @@ export default {
     }
   },
 
+  availableQueryableStates() {
+    return promiseWrap($.get(`${appConfig.API_URL}/queryableState/list`))
+  },
+
+  queryState(processId, queryName, key) {
+    return promiseWrap($.get(`${appConfig.API_URL}/queryableState/fetch`, {processId, queryName, key}))
+      .catch((error) => this.addError(`Cannot fetch state`, error));
+  },
+
   fetchBuildInfo() {
     return promiseWrap($.get(appConfig.API_URL + '/app/buildInfo'))
   },

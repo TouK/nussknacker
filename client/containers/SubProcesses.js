@@ -88,7 +88,7 @@ const SubProcesses = React.createClass({
         </div>
         <AddProcessDialog onClose={() => this.setState({showAddProcess : false})} isSubprocess={true} isOpen={this.state.showAddProcess} />
         <LoaderSpinner show={this.state.showLoader}/>
-        <Table id="process-table" className="table"
+        <Table className="esp-table"
                onSort={sort => this.setState({sort: sort})}
                onPageChange={currentPage => this.setState({currentPage: currentPage})}
            noDataText="No matching records found."

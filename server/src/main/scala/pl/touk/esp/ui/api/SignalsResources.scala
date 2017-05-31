@@ -1,13 +1,18 @@
 package pl.touk.esp.ui.api
 
 import akka.http.scaladsl.server.{Directives, Route}
-import argonaut.Argonaut
-import pl.touk.esp.engine.definition.DefinitionExtractor.{ObjectDefinition, Parameter}
-import pl.touk.esp.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
+import argonaut.Parse
+import argonaut.Json
+import cats.data.OptionT
+import pl.touk.esp.engine.definition.DefinitionExtractor.ObjectDefinition
+import pl.touk.esp.engine.definition.ProcessDefinitionExtractor.{ProcessDefinition, QueryableStateName}
 import pl.touk.esp.engine.definition.SignalDispatcher
+import pl.touk.esp.engine.flink.queryablestate.EspQueryableClient
 import pl.touk.esp.engine.graph.node.{CustomNode, NodeData}
 import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
+import pl.touk.esp.ui.process.{JobStatusService, ProcessObjectsFinder}
+import pl.touk.esp.ui.process.displayedgraph.ProcessStatus
 import pl.touk.esp.ui.process.repository.ProcessRepository
 import pl.touk.esp.ui.process.repository.ProcessRepository.ProcessDetails
 import pl.touk.esp.ui.security.{LoggedUser, Permission}
@@ -15,6 +20,7 @@ import pl.touk.http.argonaut.Argonaut62Support
 import shapeless.syntax.typeable._
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.math.Ordering
 
 class SignalsResources(signalDispatcher: Map[ProcessingType, SignalDispatcher],
                        processDefinition: Map[ProcessingType, ProcessDefinition[ObjectDefinition]],
@@ -45,34 +51,17 @@ class SignalsResources(signalDispatcher: Map[ProcessingType, SignalDispatcher],
             prepareSignalDefinitions(processingType)
           }
         }
-
       }
     }
   }
 
-  private def prepareSignalDefinitions(processingType: ProcessingType)(implicit user: LoggedUser): Future[List[SignalDefinition]] = {
-    processRepository.fetchProcessesDetails().map { processList =>
-      processDefinition(processingType).signalsWithTransformers.map { case (name, (definition, transformers)) =>
-        val processes = findProcessesWithTransformers(processList, transformers)
-        SignalDefinition(name, definition.parameters.map(_.name), processes)
-      }.toList
+  private def prepareSignalDefinitions(processingType: ProcessingType)(implicit user: LoggedUser): Future[Map[String, SignalDefinition]] = {
+    //TODO: tylko procesy ktore sa zdeployowane??
+    processRepository.fetchDisplayableProcesses().map { processList =>
+      ProcessObjectsFinder.findSignals(processList, processDefinition(processingType))
     }
   }
 
-  //TODO: tylko procesy ktore sa zdeployowane??
-  private def findProcessesWithTransformers(processList: List[ProcessDetails],
-                                            transformers: Set[String])(implicit user: LoggedUser): List[String] = {
-    processList.filter(processContainsData(nodeIsSignalTransformer(transformers))).map(_.id)
-  }
-
-  private def nodeIsSignalTransformer(transformers: Set[String])(node: NodeData) = {
-    def isCustomNodeFromList = (c:CustomNode) => transformers.contains(c.nodeType)
-    node.cast[CustomNode].exists(isCustomNodeFromList)
-  }
-
-  private def processContainsData(predicate: NodeData=>Boolean)(process: ProcessDetails) : Boolean = {
-    process.json.exists(_.nodes.exists(predicate))
-  }
 }
 
 

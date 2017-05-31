@@ -14,7 +14,7 @@ import pl.touk.esp.ui.config.FeatureTogglesConfig
 import pl.touk.esp.ui.validation.ProcessValidation
 import pl.touk.esp.ui.db.DatabaseInitializer
 import pl.touk.esp.ui.initialization.Initialization
-import pl.touk.esp.ui.process.{ProcessTypesForCategories, ProcessingTypeDeps}
+import pl.touk.esp.ui.process.{JobStatusService, ProcessTypesForCategories, ProcessingTypeDeps}
 import pl.touk.esp.ui.process.deployment.ManagementActor
 import pl.touk.esp.ui.process.migrate.HttpProcessMigrator
 import pl.touk.esp.ui.process.repository.{DeployedProcessRepository, ProcessActivityRepository, ProcessRepository}
@@ -44,7 +44,7 @@ object EspUiApp extends App with Directives with LazyLogging {
 
   val port = args(0).toInt
   val initialProcessDirectory = new File(args(1))
-  val ProcessingTypeDeps(processDefinitions, validators, managers, buildInfo, standaloneModeEnabled) =
+  val ProcessingTypeDeps(processDefinitions, validators, managers, espQueryableClient, buildInfo, standaloneModeEnabled) =
     ProcessingTypeDeps(config, featureTogglesConfig.standaloneMode)
 
   val processRepositoryForSub = new ProcessRepository(db, DefaultJdbcProfile.profile, null, system.dispatcher)
@@ -65,6 +65,7 @@ object EspUiApp extends App with Directives with LazyLogging {
   initHttp()
 
   val managementActor = ManagementActor(environment, managers, processRepository, deploymentProcessRepository, subprocessResolver)
+  val jobStatusService = new JobStatusService(managementActor)
 
   val typesForCategories = new ProcessTypesForCategories(config)
 
@@ -76,15 +77,16 @@ object EspUiApp extends App with Directives with LazyLogging {
 
             pathPrefix("api") {
               val routes = List(
-                new ProcessesResources(processRepository, managementActor, processActivityRepository, processValidation, typesForCategories).route(user),
+                new ProcessesResources(processRepository, jobStatusService, processActivityRepository, processValidation, typesForCategories).route(user),
                   new ProcessActivityResource(processActivityRepository, attachmentService).route(user),
                   new ManagementResources(processDefinitions.values.flatMap(_.typesInformation).toList, counter, managementActor).route(user),
                   new ValidationResources(processValidation).route(user),
                   new DefinitionResources(processDefinitions, subprocessRepository).route(user),
                   new SignalsResources(managers, processDefinitions, processRepository).route(user),
+                  new QueryableStateResources(processDefinitions, processRepository, espQueryableClient, jobStatusService).route(user),
                   new UserResources().route(user),
                   new SettingsResources(featureTogglesConfig).route(user),
-                  new AppResources(buildInfo, processRepository, managementActor).route(user),
+                  new AppResources(buildInfo, processRepository, jobStatusService).route(user),
                   new TestInfoResources(managers, processRepository).route(user)
               )
               val optionalRoutes = List(

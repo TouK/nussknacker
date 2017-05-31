@@ -32,15 +32,14 @@ import pl.touk.esp.ui.codec.UiCodecs
 import pl.touk.esp.ui.validation.ProcessValidation
 import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
-import pl.touk.esp.ui.process.ProcessToSave
-import pl.touk.esp.ui.process.ProcessTypesForCategories
+import pl.touk.esp.ui.process.{JobStatusService, ProcessToSave, ProcessTypesForCategories}
 import pl.touk.esp.ui.process.repository.ProcessActivityRepository.ProcessActivity
 import pl.touk.http.argonaut.Argonaut62Support
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class ProcessesResources(repository: ProcessRepository,
-                         managerActor: ActorRef,
+                         jobStatusService: JobStatusService,
                          processActivityRepository: ProcessActivityRepository,
                          processValidation: ProcessValidation, typesForCategories: ProcessTypesForCategories)
                         (implicit ec: ExecutionContext, mat: Materializer)
@@ -232,8 +231,7 @@ class ProcessesResources(repository: ProcessRepository,
   }
 
   private def findJobStatus(processName: String, processingType: ProcessingType)(implicit ec: ExecutionContext, user: LoggedUser): Future[Option[ProcessStatus]] = {
-    implicit val timeout = Timeout(1 minute)
-    (managerActor ? CheckStatus(processName, user)).mapTo[Option[ProcessStatus]]
+    jobStatusService.retrieveJobStatus(processName)
   }
 
   private def makeEmptyProcess(processId: String, processingType: ProcessingType, isSubprocess: Boolean) = {
