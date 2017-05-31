@@ -201,7 +201,7 @@ lazy val process = (project in file("process")).
         "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )
     }
-  ).dependsOn(flinkApi, flinkUtil, interpreter, kafka % "test", kafkaTestUtil % "test", kafkaFlinkUtil % "test")
+  ).dependsOn(flinkApi, flinkUtil, interpreter, kafka % "test", kafkaTestUtil % "test", kafkaFlinkUtil % "test", flinkTestUtil % "test")
 
 lazy val interpreter = (project in file("interpreter")).
   settings(commonSettings).
@@ -293,6 +293,19 @@ lazy val flinkUtil = (project in file("flink-util")).
       )
     }
   ).dependsOn(util, flinkApi)
+
+lazy val flinkTestUtil = (project in file("flink-test-util")).
+  settings(commonSettings).
+  settings(
+    name := "esp-flink-test-util",
+    libraryDependencies ++= {
+      Seq(
+        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
+        "org.apache.flink" % "flink-metrics-dropwizard" % flinkV,
+        "org.scalatest" %% "scalatest" % scalaTestV % "test"
+      )
+    }
+  )
 
 lazy val standaloneUtil = (project in file("standalone-util")).
   settings(commonSettings).
