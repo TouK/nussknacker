@@ -1,6 +1,7 @@
 package pl.touk.esp.engine.definition
 
 import com.typesafe.config.Config
+import pl.touk.esp.engine.api.QueryableStateNames
 import pl.touk.esp.engine.api.process.{ProcessConfigCreator, WithCategories}
 import pl.touk.esp.engine.api.signal.SignalTransformer
 import pl.touk.esp.engine.definition.DefinitionExtractor._
@@ -24,12 +25,15 @@ object ProcessDefinitionExtractor {
     }
 
     val customStreamTransformersDefs = customStreamTransformers.mapValuesNow { executor =>
-      ObjectWithMethodDef(executor, ProcessObjectDefinitionExtractor.customNodeExecutor)
+      val objectWithDef = ObjectWithMethodDef(executor, ProcessObjectDefinitionExtractor.customNodeExecutor)
+      val queryNamesAnnotation = objectWithDef.methodDef.method.getAnnotation(classOf[QueryableStateNames])
+      val queryNames = Option(queryNamesAnnotation).toList.flatMap(_.values().toList).toSet
+      (objectWithDef, queryNames)
     }
 
     val signalsDefs = signals.map { case (signalName, signal) =>
       val signalSender = ObjectWithMethodDef(signal, ProcessObjectDefinitionExtractor.signals)
-      val transformers = customStreamTransformersDefs.filter { case (_, transformerDef) =>
+      val transformers = customStreamTransformersDefs.filter { case (_, (transformerDef, _)) =>
           Option(transformerDef.methodDef.method.getAnnotation(classOf[SignalTransformer])).exists(_.signalClass() == signal.value.getClass)
       }.keySet
       (signalName, (signalSender, transformers))
@@ -50,7 +54,7 @@ object ProcessDefinitionExtractor {
 
     val typesInformation = TypesInformation.extract(servicesDefs.values,
       sourceFactoriesDefs.values,
-      customStreamTransformersDefs.values,
+      customStreamTransformersDefs.values.map(_._1),
       signalsDefs.values.map(_._1),
       globalVariables.values.map(_.value)
     )
@@ -60,11 +64,13 @@ object ProcessDefinitionExtractor {
       customStreamTransformersDefs, signalsDefs, exceptionHandlerFactoryDefs, globalVariablesDefs, typesInformation)
   }
 
+  type TransformerId = String
+  type QueryableStateName = String
   case class ProcessDefinition[T <: ObjectMetadata](services: Map[String, T],
                                                     sourceFactories: Map[String, T],
                                                     sinkFactories: Map[String, T],
-                                                    customStreamTransformers: Map[String, T],
-                                                    signalsWithTransformers: Map[String, (T, Set[String])],
+                                                    customStreamTransformers: Map[String, (T, Set[QueryableStateName])],
+                                                    signalsWithTransformers: Map[String, (T, Set[TransformerId])],
                                                     exceptionHandlerFactory: T,
                                                     globalVariables: Map[String, WithCategories[ClazzRef]],
                                                     typesInformation: List[PlainClazzDefinition]) {
@@ -79,7 +85,7 @@ object ProcessDefinitionExtractor {
         definition.services.mapValuesNow(_.objectDefinition),
         definition.sourceFactories.mapValuesNow(_.objectDefinition),
         definition.sinkFactories.mapValuesNow(_.objectDefinition),
-        definition.customStreamTransformers.mapValuesNow(_.objectDefinition),
+        definition.customStreamTransformers.mapValuesNow { case (transformer, queryNames) => (transformer.objectDefinition, queryNames)},
         definition.signalsWithTransformers.mapValuesNow(sign => (sign._1.objectDefinition, sign._2)),
         definition.exceptionHandlerFactory.objectDefinition,
         definition.globalVariables,
@@ -100,8 +106,12 @@ object ProcessDefinitionExtractor {
     def withExceptionHandlerFactory(params: Parameter*) =
       definition.copy(exceptionHandlerFactory = ObjectDefinition.withParams(params.toList))
 
-    def withCustomStreamTransformer(id: String, returnType: Class[_], params: Parameter*) =
-      definition.copy(customStreamTransformers = definition.customStreamTransformers + (id -> ObjectDefinition(params.toList, returnType, List())))
+    def withCustomStreamTransformer(id: String, returnType: Class[_], queryNames: Set[String], params: Parameter*) =
+      definition.copy(customStreamTransformers = definition.customStreamTransformers + (id -> (ObjectDefinition(params.toList, returnType, List()), queryNames)))
+
+    def withSignalsWithTransformers(id: String, returnType: Class[_], transformers: Set[String], params: Parameter*) =
+      definition.copy(signalsWithTransformers = definition.signalsWithTransformers + (id -> (ObjectDefinition(params.toList, returnType, List()), transformers)))
+
   }
 }
 

@@ -214,7 +214,7 @@ protected trait ProcessCompilerBase {
 
   private def getCustomNodeDefinition(node: SplittedNode[graph.node.CustomNode])(implicit nodeId: NodeId, metaData: MetaData) = {
     val ref = node.data.nodeType
-    fromOption[ProcessCompilationError, ParameterProviderT](customStreamTransformers.get(ref), MissingCustomNodeExecutor(ref))
+    fromOption[ProcessCompilationError, ParameterProviderT](customStreamTransformers.get(ref).map(_._1), MissingCustomNodeExecutor(ref))
           .toValidatedNel
   }
 

@@ -166,7 +166,7 @@ lazy val management = (project in file("management")).
         "org.scalatest" %% "scalatest" % scalaTestV % "it,test"
       )
     }
-  ).dependsOn(interpreter, kafkaTestUtil % "it,test")
+  ).dependsOn(interpreter, queryableState, kafkaTestUtil % "it,test")
 
 val managementSampleName = "esp-management-sample"
 
@@ -187,7 +187,7 @@ lazy val management_sample = (project in file("management/sample")).
     }
   ).
   settings(addArtifact(artifact in (Compile, assembly), assembly)).
-  dependsOn(flinkUtil, kafka, kafkaFlinkUtil, process % "runtime,test")
+  dependsOn(flinkUtil, kafka, kafkaFlinkUtil, process % "runtime,test", flinkTestUtil % "test", kafkaTestUtil % "test")
 
 lazy val process = (project in file("process")).
   settings(commonSettings).
@@ -301,11 +301,13 @@ lazy val flinkTestUtil = (project in file("flink-test-util")).
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
+        "org.apache.flink" %% "flink-test-utils" % flinkV,
         "org.apache.flink" % "flink-metrics-dropwizard" % flinkV,
-        "org.scalatest" %% "scalatest" % scalaTestV % "test"
+        "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
+        "org.scalatest" %% "scalatest" % scalaTestV
       )
     }
-  )
+  ).dependsOn(queryableState)
 
 lazy val standaloneUtil = (project in file("standalone-util")).
   settings(commonSettings).
@@ -388,6 +390,20 @@ lazy val argonautUtils = (project in file("argonautUtils")).
         "io.argonaut" %% "argonaut" % argonautV,
         "com.github.alexarchambault" %% s"argonaut-shapeless_$argonautMajorV" % argonautShapelessV,
         "com.typesafe.akka" %% "akka-http-experimental" % akkaHttpV force()
+      )
+    }
+  )
+
+//osobny modul bo chcemy uzyc klienta do testowania w management_sample
+lazy val queryableState = (project in file("queryableState")).
+  settings(commonSettings).
+  settings(
+    name := "esp-queryable-state",
+    libraryDependencies ++= {
+      Seq(
+        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
+        "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
+        "com.typesafe" % "config" % configV
       )
     }
   )

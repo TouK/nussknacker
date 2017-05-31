@@ -25,9 +25,9 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
       ClazzRef(classOf[String]))), classOf[SimpleRecord], List())),
     Map("source" -> ObjectDefinition(List.empty, classOf[SimpleRecord], List())),
     Map("sink" -> ObjectDefinition.noParam),
-    Map("customTransformer" -> ObjectDefinition(List.empty, classOf[SimpleRecord], List()),
-      "withParamsTransformer" -> ObjectDefinition(List(Parameter("par1", ClazzRef(classOf[String]))), classOf[SimpleRecord], List()),
-      "withoutReturnType" -> ObjectDefinition(List(Parameter("par1", ClazzRef(classOf[String]))), classOf[Void], List())
+    Map("customTransformer" -> (ObjectDefinition(List.empty, classOf[SimpleRecord], List()), Set.empty[String]),
+      "withParamsTransformer" -> (ObjectDefinition(List(Parameter("par1", ClazzRef(classOf[String]))), classOf[SimpleRecord], List()), Set.empty[String]),
+      "withoutReturnType" -> (ObjectDefinition(List(Parameter("par1", ClazzRef(classOf[String]))), classOf[Void], List()), Set.empty[String])
     ),
     Map.empty,
     ObjectDefinition.noParam,
@@ -326,7 +326,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
     = Map("source" -> ObjectDefinition.noParam.copy(returnType = ClazzRef(classOf[SimpleRecord]))))
 
   private val definitionWithTypedSourceAndTransformNode =
-    definitionWithTypedSource.withCustomStreamTransformer("custom", classOf[AnotherSimpleRecord], Parameter("par1", ClazzRef(classOf[String])))
+    definitionWithTypedSource.withCustomStreamTransformer("custom", classOf[AnotherSimpleRecord], Set.empty, Parameter("par1", ClazzRef(classOf[String])))
 
   it should "find usage of fields that does not exist in option object" in {
     val process = EspProcessBuilder
