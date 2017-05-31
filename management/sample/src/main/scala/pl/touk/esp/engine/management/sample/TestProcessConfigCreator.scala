@@ -1,12 +1,19 @@
 package pl.touk.esp.engine.management.sample
 
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
+
 import argonaut.{Argonaut, Json}
 import com.typesafe.config.Config
+import org.apache.flink.api.common.functions.{MapFunction, RichMapFunction}
+import org.apache.flink.api.common.state.{ValueState, ValueStateDescriptor}
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext
+import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor
 import org.apache.flink.streaming.api.scala._
+import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.util.serialization.KeyedSerializationSchema
 import pl.touk.esp.engine.api._
 import pl.touk.esp.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
@@ -19,7 +26,6 @@ import pl.touk.esp.engine.kafka.{KafkaConfig, KafkaSinkFactory}
 import pl.touk.esp.engine.management.sample.signal.{RemoveLockProcessSignalFactory, SampleSignalHandlingTransformer}
 
 import scala.concurrent.Future
-import scala.concurrent.duration.FiniteDuration
 
 class TestProcessConfigCreator extends ProcessConfigCreator {
 
@@ -104,18 +110,27 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
     new FlinkSource[String] {
       override def typeInformation = implicitly[TypeInformation[String]]
 
-      override def timestampAssigner = None
+      override def timestampAssigner = Option(new BoundedOutOfOrdernessTimestampExtractor[String](Time.minutes(10)) {
+        override def extractTimestamp(element: String): Long = System.currentTimeMillis()
+      })
 
       override def toFlinkSource = new SourceFunction[String] {
         var running = true
+        var counter = new AtomicLong()
+        val afterFirstRun = new AtomicBoolean(false)
 
         override def cancel() = {
           running = false
         }
 
         override def run(ctx: SourceContext[String]) = {
+          val r = new scala.util.Random
           while (running) {
-            ctx.collect("TestInput" + System.currentTimeMillis())
+            if (afterFirstRun.getAndSet(true)) {
+              ctx.collect("TestInput" + r.nextInt(10))
+            } else {
+              ctx.collect("TestInput1")
+            }
             Thread.sleep(2000)
           }
         }
@@ -142,6 +157,7 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
     Map(
       "stateful" -> WithCategories(StatefulTransformer, "Category1", "Category2"),
       "customFilter" -> WithCategories(CustomFilter, "Category1", "Category2"),
+      "constantStateTransformer" -> WithCategories(ConstantStateTransformer, "Category1", "Category2"),
       "lockStreamTransformer" -> WithCategories(new SampleSignalHandlingTransformer.LockStreamTransformer(), "Category1", "Category2")
     )
   }
@@ -185,6 +201,40 @@ case object StatefulTransformer extends CustomStreamTransformer {
   }
 
 }
+
+case object ConstantStateTransformer extends CustomStreamTransformer {
+
+  import argonaut.Argonaut._
+  import argonaut.ArgonautShapeless._
+
+  case class ConstantState(id: String, transactionId: Int, elements: List[String])
+
+  final val stateName = "constantState"
+
+  @MethodToInvoke
+  @QueryableStateNames(values = Array(stateName))
+  def execute() = FlinkCustomStreamTransformation((start: DataStream[InterpretationResult]) => {
+    start
+      .keyBy(_ => "1")
+      .map(new RichMapFunction[InterpretationResult, ValueWithContext[Any]] {
+
+        var constantState: ValueState[String] = _
+
+        override def open(parameters: Configuration): Unit = {
+          super.open(parameters)
+          val descriptor = new ValueStateDescriptor[String]("constantState", implicitly[TypeInformation[String]])
+          descriptor.setQueryable(stateName)
+          constantState = getRuntimeContext.getState(descriptor)
+        }
+
+        override def map(value: InterpretationResult): ValueWithContext[Any] = {
+          constantState.update(ConstantState("stateId", 1234, List("elem1", "elem2", "elem3")).asJson.nospaces)
+          ValueWithContext[Any](value, value.finalContext)
+        }
+      })
+  })
+}
+
 
 case object CustomFilter extends CustomStreamTransformer {
 

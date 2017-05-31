@@ -11,14 +11,14 @@ class ProcessDefinitionMarshallerTest extends FlatSpec with Matchers {
 
   it should "work round-trip" in {
     val definition = ProcessDefinition(
-      Map("fooService" -> ObjectDefinition.withParamsAndCategories(List(Parameter(name = "foo", typ = ClazzRef(classOf[String]))), List("cat1"))),
-      Map("fooSourceFactory" -> ObjectDefinition.withParamsAndCategories(List(Parameter(name = "foo", typ = ClazzRef(classOf[String]))), List("cat1"))),
-      Map("fooSinkFactory" -> ObjectDefinition.withParamsAndCategories(List(Parameter(name = "foo", typ = ClazzRef(classOf[String]))), List("cat1", "cat2"))),
-      Map("fooExecutorServiceFactory" -> ObjectDefinition.withParamsAndCategories(List(Parameter(name = "foo", typ = ClazzRef(classOf[String]))), List("cat1"))),
-      Map.empty,
-      ObjectDefinition.noParam,
-      Map.empty,
-      EspTypeUtils.clazzAndItsChildrenDefinition(List.empty)
+      services = Map("fooService" -> ObjectDefinition.withParamsAndCategories(List(Parameter(name = "foo", typ = ClazzRef(classOf[String]))), List("cat1"))),
+      sourceFactories = Map("fooSourceFactory" -> ObjectDefinition.withParamsAndCategories(List(Parameter(name = "foo", typ = ClazzRef(classOf[String]))), List("cat1"))),
+      sinkFactories = Map("fooSinkFactory" -> ObjectDefinition.withParamsAndCategories(List(Parameter(name = "foo", typ = ClazzRef(classOf[String]))), List("cat1", "cat2"))),
+      customStreamTransformers = Map("fooExecutorServiceFactory" -> (ObjectDefinition.withParamsAndCategories(List(Parameter(name = "foo", typ = ClazzRef(classOf[String]))), List("cat1")), Set.empty[String])),
+      signalsWithTransformers = Map.empty,
+      exceptionHandlerFactory = ObjectDefinition.noParam,
+      globalVariables = Map.empty,
+      typesInformation = EspTypeUtils.clazzAndItsChildrenDefinition(List.empty)
     )
 
     val json = ProcessDefinitionMarshaller.toJson(definition, PrettyParams.spaces2)

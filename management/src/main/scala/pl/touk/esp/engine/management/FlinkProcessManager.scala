@@ -20,6 +20,7 @@ import pl.touk.esp.engine.api.deployment.test.TestData
 import pl.touk.esp.engine.api.process.ProcessConfigCreator
 import pl.touk.esp.engine.definition.ProcessDefinitionExtractor.ObjectProcessDefinition
 import pl.touk.esp.engine.definition._
+import pl.touk.esp.engine.flink.queryablestate.{EspQueryableClient, QueryableClientProvider}
 import pl.touk.esp.engine.marshall.ProcessMarshaller
 import pl.touk.esp.engine.util.ThreadUtils
 
@@ -54,7 +55,7 @@ object FlinkProcessManager {
 class FlinkProcessManager(config: Config,
                           gateway: FlinkGateway) extends ProcessManager
                             with ConfigCreatorTestInfoProvider
-                            with ProcessDefinitionProvider with ConfigCreatorSignalDispatcher with LazyLogging {
+                            with ProcessDefinitionProvider with ConfigCreatorSignalDispatcher with QueryableClientProvider with LazyLogging {
 
   import argonaut.Argonaut._
 
@@ -62,6 +63,8 @@ class FlinkProcessManager(config: Config,
   implicit val ec = ExecutionContext.Implicits.global
 
   private val flinkConf = config.getConfig("flinkConfig")
+
+  override def queryableClient: EspQueryableClient = EspQueryableClient(flinkConf)
 
   private val jarFile = new File(flinkConf.getString("jarPath"))
 
