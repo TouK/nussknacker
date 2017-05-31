@@ -1,12 +1,10 @@
 package pl.touk.esp.ui.api
 
-import akka.actor.ActorRef
 import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.http.scaladsl.server._
-import akka.util.Timeout
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
-import pl.touk.esp.ui.process.deployment.CheckStatus
+import pl.touk.esp.ui.process.JobStatusService
 import pl.touk.esp.ui.process.displayedgraph.ProcessStatus
 import pl.touk.esp.ui.process.repository.ProcessRepository
 import pl.touk.esp.ui.process.repository.ProcessRepository.ProcessDetails
@@ -18,7 +16,7 @@ import scala.util.control.NonFatal
 
 class AppResources(buildInfo: Map[String, String],
                    processRepository: ProcessRepository,
-                   managerActor: ActorRef)(implicit ec: ExecutionContext)
+                   jobStatusService: JobStatusService)(implicit ec: ExecutionContext)
   extends Directives with Argonaut62Support with LazyLogging {
 
   import argonaut.ArgonautShapeless._
@@ -86,9 +84,6 @@ class AppResources(buildInfo: Map[String, String],
     processes.filterNot(_.currentlyDeployedAt.isEmpty).map(process => findJobStatus(process.name, process.processingType).map((process.name, _)))
 
   private def findJobStatus(processName: String, processingType: ProcessingType)(implicit ec: ExecutionContext, user: LoggedUser): Future[Option[ProcessStatus]] = {
-    import scala.concurrent.duration._
-    import akka.pattern.ask
-    implicit val timeout = Timeout(1 minute)
-    (managerActor ? CheckStatus(processName, user)).mapTo[Option[ProcessStatus]]
+    jobStatusService.retrieveJobStatus(processName)
   }
 }

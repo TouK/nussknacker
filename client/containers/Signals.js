@@ -3,6 +3,7 @@ import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
 import ActionsUtils from "../actions/ActionsUtils";
 import HttpService from "../http/HttpService";
+import QueriedStateTable from "./QueriedStateTable";
 import _ from "lodash";
 
 //to jest na razie troche na pale
@@ -15,9 +16,9 @@ class Signals extends React.Component {
 
   componentDidMount() {
     HttpService.fetchSignals().then(signals => {
-      const firstSignal = _.head(signals)
+      const firstSignal = _.head(_.keys(signals))
       this.setState(
-        {signals: signals, signalType: firstSignal.name, processId : _.head(firstSignal.availableProcesses)}
+        {signals: signals, signalType: firstSignal, processId : signals[firstSignal].availableProcesses[0]}
       )
     })
   }
@@ -42,7 +43,7 @@ class Signals extends React.Component {
                   const nextSignalType = e.target.value
                   this.setState({signalType: nextSignalType, signalParams: {}, processId: this.firstProcessForSignal(nextSignalType)})
                 }}>
-                  {_.map(this.state.signals, (sig, index) => (<option key={index} value={sig.name}>{sig.name}</option>))}
+                  {_.map(_.keys(this.state.signals), (sig, index) => (<option key={index} value={sig}>{sig}</option>))}
                 </select>
               </div>
             </div>
@@ -72,6 +73,8 @@ class Signals extends React.Component {
             : null}
         </div>
     </div>
+        <hr/>
+        <QueriedStateTable/>
     </div>
     )
   }
@@ -82,7 +85,7 @@ class Signals extends React.Component {
   }
 
   findSignal = (signalType) => {
-    return _.find(this.state.signals, sig => sig.name == signalType) || {}
+    return this.state.signals[signalType] || {}
   }
 
   sendSignal = (signalType, processId, signalParams) => {

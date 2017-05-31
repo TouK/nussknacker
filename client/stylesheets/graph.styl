@@ -399,3 +399,31 @@ espButtonIcon()
           rgba(20, 20, 20, 1) 100%
   );
 }
+
+//  TODO uzyc tego we wszystkich formatkach
+.esp-form-row
+  labelWidth = 20%
+  margin-bottom: 8px
+  margin-top: 7px
+  margin-left 30px
+  margin-right 30px
+
+  >:first-child
+    width: labelWidth
+    color: modalLabelTextColor
+    display: inline-block
+    vertical-align: top
+    padding-top: 10px
+    font-size: 12px
+    font-weight: 700
+
+  >:nth-child(2)
+    width: 100% - labelWidth
+    height: 40px
+    padding: 0 20px
+    display: inline-block
+    color: modalInputTextColor
+    background-color: modalInputBkgColor
+    border: none
+    font-size: 14px
+    font-weight: 400

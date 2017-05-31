@@ -105,6 +105,10 @@ class ProcessRepository(db: JdbcBackend.Database,
     fetchProcessesDetailsByQuery(!_.isSubprocess)
   }
 
+  def fetchDisplayableProcesses()(implicit loggedUser: LoggedUser): Future[List[DisplayableProcess]] = {
+    fetchProcessesDetails().map(processes => processes.flatMap(_.json.toList))
+  }
+
   def fetchSubProcessesDetails()(implicit loggedUser: LoggedUser): Future[List[ProcessDetails]] = {
     fetchProcessesDetailsByQuery(_.isSubprocess)
   }

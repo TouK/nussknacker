@@ -8,7 +8,7 @@ import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.esp.engine.graph.node
 import pl.touk.esp.engine.graph.sink.SinkRef
 import pl.touk.esp.engine.graph.source.SourceRef
-import pl.touk.esp.ui.db.entity.ProcessEntity.{ProcessType, ProcessingType}
+import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.esp.ui.process.displayedgraph.displayablenode.{Edge, NodeAdditionalFields, ProcessAdditionalFields}
 import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.esp.ui.validation.ValidationResults.ValidationResult
@@ -27,8 +27,8 @@ object ProcessTestData {
         .withSinkFactory(otherExistingSinkFactory)
         .withSinkFactory(existingSinkFactory)
         .withService(existingServiceId)
-        .withCustomStreamTransformer(existingStreamTransformer, classOf[String], CustomTransformerAdditionalData(Set.empty, clearsContext = false))
-        .withCustomStreamTransformer(otherExistingStreamTransformer, classOf[String], CustomTransformerAdditionalData(Set.empty, clearsContext = false))
+        .withCustomStreamTransformer(existingStreamTransformer, classOf[String],  CustomTransformerAdditionalData(Set("query1", "query2"), clearsContext = false))
+        .withCustomStreamTransformer(otherExistingStreamTransformer, classOf[String], CustomTransformerAdditionalData(Set("query3"), clearsContext = false))
 
   val validator = ProcessValidator.default(processDefinition)
 

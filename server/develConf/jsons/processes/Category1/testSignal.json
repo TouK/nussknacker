@@ -25,6 +25,13 @@
     },
     {
       "type" : "CustomNode",
+      "id" : "constantStateTransformer",
+      "outputVar" : "outputVar",
+      "nodeType" : "constantStateTransformer",
+      "parameters" : []
+    },
+    {
+      "type" : "CustomNode",
       "id" : "lockStreamTransformer",
       "outputVar" : "lockOutput",
       "nodeType" : "lockStreamTransformer",

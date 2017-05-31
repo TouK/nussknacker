@@ -57,7 +57,6 @@ class ProcessConverterSpec extends FlatSpec with Matchers with TableDrivenProper
   }
 
   it should "be able to convert process ending not properly" in {
-
     forAll(Table(
       "unexpectedEnd",
       Filter("e", Expression("spel", "0")),

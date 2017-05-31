@@ -24,6 +24,14 @@ export function fetchProcessDefinition(processingType, isSubprocess) {
   }
 }
 
+export function fetchAvailableQueryStates() {
+  return (dispatch) => {
+    HttpService.availableQueryableStates().then((data) =>
+      dispatch({type: "AVAILABLE_QUERY_STATES", availableQueryableStates: data})
+    )
+  }
+}
+
 export function displayCurrentProcessVersion(processId) {
   return fetchProcessToDisplay(processId)
 }

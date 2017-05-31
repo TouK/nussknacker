@@ -100,7 +100,11 @@ libraryDependencies ++= {
   )
 }
 
-resourceGenerators in Test <+= Def.task {
+resourceGenerators in Test <+= copyLocalSampleJar
+
+lazy val copyLocalSampleJar = taskKey[Seq[File]]("copies local esp-management-sample jar to target/testJar.jar")
+
+copyLocalSampleJar := {
   val destFile = target.value / "testJar.jar"
   target.value.mkdirs()
 
@@ -111,7 +115,7 @@ resourceGenerators in Test <+= Def.task {
 
 
   maybeFile.foreach { file =>
-      Files.copy(file.toPath, destFile.toPath, StandardCopyOption.REPLACE_EXISTING)
+    Files.copy(file.toPath, destFile.toPath, StandardCopyOption.REPLACE_EXISTING)
   }
   maybeFile.map(_ => destFile).toSeq
 }

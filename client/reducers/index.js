@@ -26,6 +26,12 @@ function settingsReducer(state = {loggedUser: {}, featuresSettings: {}}, action)
           processDefinitionData: action.processDefinitionData
       }
     }
+    case "AVAILABLE_QUERY_STATES": {
+      return {
+        ...state,
+        availableQueryableStates: action.availableQueryableStates
+      }
+    }
     default:
       return state
   }

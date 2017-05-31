@@ -14,8 +14,7 @@ import pl.touk.esp.ui.api._
 import pl.touk.esp.ui.db.EspTables
 import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.esp.ui.db.migration.SampleData
-import pl.touk.esp.ui.process.ProcessTypesForCategories
-import pl.touk.esp.ui.process.ProcessToSave
+import pl.touk.esp.ui.process.{JobStatusService, ProcessToSave, ProcessTypesForCategories}
 import pl.touk.esp.ui.process.deployment.ManagementActor
 import pl.touk.esp.ui.process.displayedgraph.DisplayableProcess
 import pl.touk.esp.ui.processreport.ProcessCounter
@@ -38,7 +37,9 @@ trait EspItTest extends LazyLogging { self: ScalatestRouteTest with Suite with B
 
   val managementActor = ManagementActor(env,
     Map(ProcessingType.Streaming -> InMemoryMocks.mockProcessManager), processRepository, deploymentProcessRepository, TestFactory.sampleResolver)
-  val processesRoute = (u:LoggedUser) => new ProcessesResources(processRepository, managementActor, processActivityRepository, processValidation, typesForCategories).route(u)
+
+  val jobStatusService = new JobStatusService(managementActor)
+  val processesRoute = (u:LoggedUser) => new ProcessesResources(processRepository, jobStatusService, processActivityRepository, processValidation, typesForCategories).route(u)
 
   val processesRouteWithAllPermissions = withAllPermissions(processesRoute)
   val deployRoute = (u:LoggedUser) =>  new ManagementResources(
