@@ -9,6 +9,7 @@ import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.esp.engine.api.deployment.CustomProcess
+import pl.touk.esp.engine.build.EspProcessBuilder
 import pl.touk.esp.engine.canonize.ProcessCanonizer
 import pl.touk.esp.ui.api.helpers.{EspItTest, TestFactory}
 import pl.touk.esp.ui.api.helpers.TestFactory._
@@ -186,6 +187,30 @@ class ManagementResourcesSpec extends FlatSpec with ScalatestRouteTest
         output.focus shouldBe jString("{message=message}")
         input.focus shouldBe jString("ala")
       }
+    }
+  }
+
+  it should "return test results of errors, including null" in {
+
+    import pl.touk.esp.engine.spel.Implicits._
+
+    val process = {
+        EspProcessBuilder
+          .id("sampleProcess")
+          .parallelism(1)
+          .exceptionHandler("param1" -> "ala")
+          .source("startProcess", "csv-source")
+          .filter("input", "new java.math.BigDecimal(null) == 0")
+          .sink("end", "kafka-string", "topic" -> "end.topic")
+      }
+
+    saveProcessAndAssertSuccess(process.id, process)
+
+    val displayableProcess = ProcessConverter.toDisplayable(ProcessCanonizer.canonize(process), ProcessingType.Streaming)
+
+    val multiPart = MultipartUtils.prepareMultiParts("testData" -> "ala\nbela", "processJson" -> displayableProcess.asJson.nospaces)()
+    Post(s"/processManagement/test/${process.id}", multiPart) ~> withPermissions(deployRoute, Permission.Deploy) ~> check {
+      status shouldEqual StatusCodes.OK
     }
   }
 
