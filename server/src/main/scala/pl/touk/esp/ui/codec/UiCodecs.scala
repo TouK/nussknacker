@@ -113,6 +113,18 @@ trait UiCodecs extends Codecs with Argonauts with SingletonInstances with Derive
       map.filterNot(a => a._2 == None || a._2 == null).mapValues(encodeVariable).asJson
     })
 
+    private def safeJson[T](fun: T => Json) = (value: T) => Option(value) match {
+      case Some(realValue) => fun(realValue)
+      case None => jNull
+    }
+
+    private val safeString = safeJson[String](jString(_))
+    private val safeLong = safeJson[Long](jNumber)
+    private val safeInt = safeJson[Int](jNumber)
+    private val safeDouble = safeJson[Double](jNumber(_))
+    private val safeNumber = safeJson[Number](a => jNumber(a.doubleValue()))
+
+
     //TODO: cos jeszcze??
     private def encodeVariable(any: Any): Json = {
       if (any == null) {
@@ -121,11 +133,11 @@ trait UiCodecs extends Codecs with Argonauts with SingletonInstances with Derive
         val klass = any.getClass
         any match {
           case Some(a) => encodeVariable(a)
-          case s: String => jString(s)
-          case a: Long => jNumber(a)
-          case a: Double => jNumber(a)
-          case a: Int => jNumber(a)
-          case a: Number => jNumber(a.doubleValue())
+          case s: String => safeString(s)
+          case a: Long => safeLong(a)
+          case a: Double => safeDouble(a)
+          case a: Int => safeInt(a)
+          case a: Number => safeNumber(a.doubleValue())
           case a: LocalDateTime => a.asJson
           case a: Displayable => displayableToJson(a)
           //TODO: a to??
@@ -133,7 +145,7 @@ trait UiCodecs extends Codecs with Argonauts with SingletonInstances with Derive
           //TODO: co tu w sumie lepiej pokazywac??
           //case _ if typesWithMethodNames.contains(klass.getName) =>
           //  printKnownType(any, klass)
-          case _ => jString(any.toString)
+          case _ => safeString(any.toString)
         }
       }
     }
@@ -141,8 +153,8 @@ trait UiCodecs extends Codecs with Argonauts with SingletonInstances with Derive
     private def displayableToJson(displayable: Displayable): Json = {
       val prettyDisplay = displayable.display.spaces2
       displayable.originalDisplay match {
-        case None => jObjectFields("pretty" -> jString(prettyDisplay))
-        case Some(original) => jObjectFields("original" -> jString(original), "pretty" -> jString(prettyDisplay))
+        case None => jObjectFields("pretty" -> safeString(prettyDisplay))
+        case Some(original) => jObjectFields("original" -> safeString(original), "pretty" -> safeString(prettyDisplay))
       }
     }
 
@@ -158,7 +170,7 @@ trait UiCodecs extends Codecs with Argonauts with SingletonInstances with Derive
 
     implicit def ctxEncode = EncodeJson[api.Context] {
       case api.Context(id, vars, _, _) => jObjectFields(
-        "id" -> jString(id),
+        "id" -> safeString(id),
         "variables" -> vars.asJson
       )
     }
@@ -166,7 +178,7 @@ trait UiCodecs extends Codecs with Argonauts with SingletonInstances with Derive
     implicit def exprInvocationResult = EncodeJson[ExpressionInvocationResult] {
       case ExpressionInvocationResult(context, name, result) => jObjectFields(
         "context" -> context.asJson,
-        "name" -> jString(name),
+        "name" -> safeString(name),
         "value" -> encodeVariable(result)
       )
     }
@@ -174,7 +186,7 @@ trait UiCodecs extends Codecs with Argonauts with SingletonInstances with Derive
     implicit def mockedResult = EncodeJson[MockedResult] {
       case MockedResult(context, name, result) => jObjectFields(
         "context" -> context.asJson,
-        "name" -> jString(name),
+        "name" -> safeString(name),
         "value" -> encodeVariable(result)
       )
     }
@@ -183,8 +195,8 @@ trait UiCodecs extends Codecs with Argonauts with SingletonInstances with Derive
       case EspExceptionInfo(nodeId, throwable, ctx) => jObjectFields(
         "nodeId" -> nodeId.asJson,
         "exception" -> jObjectFields(
-          "message" -> jString(throwable.getMessage),
-          "class" -> jString(throwable.getClass.getSimpleName)
+          "message" -> safeString(throwable.getMessage),
+          "class" -> safeString(throwable.getClass.getSimpleName)
         ),
         "context" -> ctx.asJson
       )
