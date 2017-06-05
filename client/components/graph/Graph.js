@@ -171,7 +171,7 @@ class Graph extends React.Component {
         .map(expandedGroup => ({group: expandedGroup,
           
           rect: EspNode.boundingRect(nodes, expandedGroup, layout,
-          NodeUtils.createGroup(nodesWithGroups, expandedGroup))}))
+          NodeUtils.createGroupNode(nodesWithGroups, expandedGroup))}))
       t = this.time(t, 'bounding')
 
       const cells = boundingRects.map(g => g.rect).concat(nodes.concat(edges));

@@ -1,6 +1,5 @@
 import { combineReducers } from 'redux';
 import _ from 'lodash'
-import fp from 'lodash/fp'
 
 import GraphUtils from '../components/graph/GraphUtils'
 import NodeUtils from '../components/graph/NodeUtils'
@@ -210,34 +209,25 @@ function graphReducer(state, action) {
       }
     }
     case "EDIT_NODE": {
-      const processToDisplay = GraphUtils.mapProcessWithNewNode(state.processToDisplay, action.before, action.after)
-      var newLayout = _.map(state.layout, (n) => {
-        if (action.before.id == n.id) {
-          return {
-            ...n,
-            id: action.after.id
-          }
-        } else return n;
-      });
+      const stateAfterNodeRename = updateAfterNodeIdChange(state, action.before.id, action.after.id);
+      const processToDisplay = GraphUtils.mapProcessWithNewNode(stateAfterNodeRename.processToDisplay, action.before, action.after)
       return {
-        ...state,
+        ...stateAfterNodeRename,
         processToDisplay: {
           ...processToDisplay,
           validationResult: action.validationResult
         },
         nodeToDisplay: action.after,
-        layout: newLayout
       }
     }
     case "DELETE_NODE": {
       var idToDelete = action.id
-      const processToDisplay = GraphUtils.deleteNode(state.processToDisplay, idToDelete);
-      var layoutWithoutNode = _.filter(state.layout, (n) => n.id != idToDelete);
+      const stateAfterNodeDelete = updateAfterNodeDelete(state, idToDelete)
+      const processToDisplay = GraphUtils.deleteNode(stateAfterNodeDelete.processToDisplay, idToDelete);
       return {
-        ...state,
+        ...stateAfterNodeDelete,
         processToDisplay: processToDisplay,
         nodeToDisplay: processToDisplay.properties,
-        layout: layoutWithoutNode
       }
     }
     case "URL_CHANGED": {
@@ -316,20 +306,20 @@ function graphReducer(state, action) {
       }
     }
     case "FINISH_GROUPING": {
-      const groupId = state.groupingState.join("-")
-      const updatedGroups = state.groupingState.length > 1 ?
-              update('processToDisplay.properties.additionalFields.groups',
-                (groups) => _.concat((groups || []), [{id: groupId, nodes: state.groupingState}]), fp.set('layout', {}, state)) :  state
-      return _.omit(updatedGroups, 'groupingState')
+      const withUpdatedGroups = state.groupingState.length > 1 ?
+        {
+          ...state,
+          processToDisplay: NodeUtils.createGroup(state.processToDisplay, state.groupingState),
+          layout: []
+        } :  state;
+      return _.omit(withUpdatedGroups, 'groupingState')
     }
     case "CANCEL_GROUPING": {
       return _.omit(state, 'groupingState')
     }
     case "UNGROUP": {
-      const updatedGroups =  update('processToDisplay.properties.additionalFields.groups',
-        (groups) => groups.filter(e => !_.isEqual(e.id, action.groupToRemove)), state)
       return {
-        ...updatedGroups,
+        processToDisplay: NodeUtils.ungroup(state.processToDisplay, action.groupToRemove),
         layout: [],
         nodeToDisplay: state.processToDisplay.properties,
       }
@@ -342,18 +332,17 @@ function graphReducer(state, action) {
       }
     }
     case "EDIT_GROUP": {
-      const groupForState = {id: action.newGroup.id, nodes: action.newGroup.ids}
-      return update('processToDisplay.properties.additionalFields.groups',
-                (groups) => _.concat((groups.filter(g => g.id != action.oldGroupId)), [groupForState]), { ...state, nodeToDisplay: action.newGroup})
+      return {
+        ...state,
+        processToDisplay: NodeUtils.editGroup(state.processToDisplay, action.oldGroupId, action.newGroup),
+        nodeToDisplay: action.newGroup,
+        layout: updateLayoutAfterNodeIdChange(state.layout, action.oldGroupId, action.newGroup.id)
+      }
     }
     default:
       return state
   }
 
-  //TODO: no przeciez to juz powinno byc??
-  function update(path, fun, object) {
-    return fp.set(path, fun(_.get(object, path)), object)
-  }
 
   function canGroup(state, newNode) {
     const newNodeId = newNode.id
@@ -361,6 +350,38 @@ function graphReducer(state, action) {
     return !NodeUtils.nodeIsGroup(newNode) && currentGrouping.length == 0 ||
       currentGrouping.find(nodeId => state.processToDisplay.edges.find(edge => edge.from == nodeId && edge.to == newNodeId ||  edge.to == nodeId && edge.from == newNodeId))
   }
+
+  function updateAfterNodeIdChange(state, oldId, newId) {
+    const newLayout = updateLayoutAfterNodeIdChange(state.layout, oldId, newId);
+    const withGroupsUpdated = NodeUtils.updateGroupsAfterNodeIdChange(state.processToDisplay, oldId, newId);
+    return {
+      ...state,
+      processToDisplay: withGroupsUpdated,
+      layout: newLayout
+    }
+  }
+
+  function updateLayoutAfterNodeIdChange(layout, oldId, newId) {
+    return _.map(layout, (n) => {
+      if (oldId === n.id) {
+        return {
+          ...n,
+          id: newId
+        }
+      } else return n;
+    });
+  }
+
+  function updateAfterNodeDelete(state, idToDelete) {
+    const layoutWithoutNode = _.filter(state.layout, (n) => n.id !== idToDelete);
+    const withGroupsUpdated = NodeUtils.updateGroupsAfterNodeDelete(state.processToDisplay, idToDelete);
+    return {
+      ...state,
+      processToDisplay: withGroupsUpdated,
+      layout: layoutWithoutNode
+    }
+  }
+
 
   function createUniqueNodeId(nodes, nodeCounter) {
     var newId = `node${nodeCounter}`

@@ -94,6 +94,51 @@ describe("edges grouped", () => {
     ])
   })
 
+  it("should change group after node id changes", () => {
+    const process = createProcess([{id: "bigGroup", nodes: ["node1", "node2", "node3"]}])
+    expect(NodeUtils.updateGroupsAfterNodeIdChange(process, "node1", "node1New").properties.additionalFields.groups).toEqual([
+      {
+        "id": "bigGroup",
+        "nodes": ["node1New", "node2", "node3"]
+      }
+    ])
+  })
+
+  it("should change group after node is deleted", () => {
+    const process = createProcess([{id: "bigGroup", nodes: ["node1", "node2", "node3"]}])
+    expect(NodeUtils.updateGroupsAfterNodeDelete(process, "node2").properties.additionalFields.groups).toEqual([
+      {
+        "id": "bigGroup",
+        "nodes": ["node1", "node3"]
+      }
+    ])
+  })
+
+  it("should edit group after group id changes", () => {
+    const process = createProcess([{id: "bigGroup", nodes: ["node1", "node2", "node3"]}])
+    expect(NodeUtils.editGroup(process, "bigGroup", {id: "bigGroupNew", ids: ["node4", "node5"]}).properties.additionalFields.groups).toEqual([
+      {
+        "id": "bigGroupNew",
+        "nodes": ["node4", "node5"]
+      }
+    ])
+  })
+
+  it("should create group", () => {
+    const process = createProcess([])
+    expect(NodeUtils.createGroup(process, ["node1", "node2", "node3"]).properties.additionalFields.groups).toEqual([
+      {
+        "id": "node1-node2-node3",
+        "nodes": ["node1", "node2", "node3"]
+      }
+    ])
+  })
+
+  it("should remove group", () => {
+    const process = createProcess([{id: "bigGroup", nodes: ["node1", "node2", "node3"]}])
+    expect(NodeUtils.ungroup(process, "bigGroup").properties.additionalFields.groups).toEqual([])
+  })
+
 })
 
 
