@@ -1,4 +1,5 @@
 import _ from 'lodash'
+import fp from 'lodash/fp'
 
 class NodeUtils {
 
@@ -20,12 +21,12 @@ class NodeUtils {
     const groups = this.getCollapsedGroups(process, expandedGroups)
     groups.forEach(group => {
       nodes = nodes.filter(node => !_.includes(group.nodes, node.id))
-      nodes = nodes.concat([this.createGroup(process.nodes, group)])
+      nodes = nodes.concat([this.createGroupNode(process.nodes, group)])
     })
     return nodes;
   }
 
-  createGroup = (nodes, group) => {
+  createGroupNode = (nodes, group) => {
     const groupId = group.id
     const groupNodes = nodes.filter(node => _.includes(group.nodes, node.id))
     return {
@@ -74,6 +75,30 @@ class NodeUtils {
     }
   }
 
+  createGroup = (process, newGroup) => {
+    const groupId = newGroup.join("-")
+    return this._update('properties.additionalFields.groups',
+                    (groups) => _.concat((groups || []), [{id: groupId, nodes: newGroup}]), process)
+  }
+
+  ungroup = (process, groupToDeleteId) => {
+    return this._update('properties.additionalFields.groups',
+          (groups) => groups.filter(e => !_.isEqual(e.id, groupToDeleteId)), process)
+  }
+
+  editGroup = (process, oldGroupId, newGroup) => {
+    const groupForState = {id: newGroup.id, nodes: newGroup.ids}
+    return this._update('properties.additionalFields.groups',
+             (groups) => _.concat((groups.filter(g => g.id !== oldGroupId)), [groupForState]), process)
+  }
+
+  updateGroupsAfterNodeIdChange = (process, oldNodeId, newNodeId) => {
+    return this._changeGroupNodes(process, (nodes) => nodes.map((n) => n === oldNodeId ? newNodeId : n));
+  }
+
+  updateGroupsAfterNodeDelete = (process, idToDelete) => {
+    return this._changeGroupNodes(process, (nodes) => nodes.filter((n) => n !== idToDelete));
+  }
 
   edgeLabel = (edge, outgoingEdges) => {
     const edgeTypeToLabel = {
@@ -96,6 +121,22 @@ class NodeUtils {
     return targetHasNoInput && canLinkFromSource
   }
 
+
+  //TODO: no przeciez to juz powinno byc??
+  _update = (path, fun, object) => {
+    return fp.set(path, fun(_.get(object, path)), object)
+  }
+
+
+  _changeGroupNodes = (processToDisplay, nodeOperation) => {
+    return this._update('properties.additionalFields.groups',
+      (groups) => (groups || []).map(group => ({
+                    ...group,
+                    nodes: nodeOperation(group.nodes)
+                  })), processToDisplay
+    );
+  }
+
   _isMultiOutput = (nodeId, nodeOutputs, process) => {
     var node = this._nodeType(nodeId, process)
     return node.type == "Split" || node.type == "Filter" && nodeOutputs.length < 2 || node.type == "Switch"
@@ -112,6 +153,7 @@ class NodeUtils {
   _nodeType = (nodeId, process) => {
     return this.nodesFromProcess(process).find(n => n.id == nodeId)
   }
+
 
 
 }
