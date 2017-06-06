@@ -90,7 +90,8 @@ export default class NodeDetailsContent extends React.Component {
                 </div>
               )
             })}
-            {this.props.node.type == 'Enricher' ? this.createField("input", "Output", "output") : null }
+            {this.props.node.type === 'Enricher' ? this.createField("input", "Output", "output") : null }
+            {this.props.node.type === 'Processor' ? this.createField("checkbox", "Disabled", "isDisabled") : null }
             {this.descriptionField()}
           </div>
         )
