@@ -70,7 +70,10 @@ object ProcessTestHelpers {
       )
 
       override def customStreamTransformers(config: Config) = Map(
-        "stateCustom" -> WithCategories(StateCustomNode), "customFilter" -> WithCategories(CustomFilter))
+        "stateCustom" -> WithCategories(StateCustomNode),
+        "customFilter" -> WithCategories(CustomFilter),
+        "customContextClear" -> WithCategories(CustomContextClear)
+      )
 
       override def listeners(config: Config) = Seq(LoggingListener, new NodeCountMetricListener)
 
@@ -134,6 +137,20 @@ object ProcessTestHelpers {
         keyBy.syncInterpretationFunction(ir) == stringVal
       }.map(ValueWithContext(_))
     })
+  }
+
+  object CustomContextClear extends CustomStreamTransformer {
+
+    override val clearsContext = true
+
+    @MethodToInvoke(returnType = classOf[Void])
+    def execute(@ParamName("value") value: LazyInterpreter[String]) =
+      FlinkCustomStreamTransformation((start: DataStream[InterpretationResult], context: FlinkCustomNodeContext) => {
+        start
+          .map(ir => value.syncInterpretationFunction(ir))
+          .map(ValueWithContext(_, Context("new")))
+    })
+
   }
 
   case class CustomMap(lazyHandler: ()=>FlinkEspExceptionHandler) extends RichMapFunction[ValueWithContext[Any], ValueWithContext[Any]] with WithExceptionHandler {

@@ -4,7 +4,7 @@ import argonaut.PrettyParams
 import cats.data.Validated.Valid
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.esp.engine.definition.DefinitionExtractor.{ClazzRef, ObjectDefinition, Parameter}
-import pl.touk.esp.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
+import pl.touk.esp.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ProcessDefinition}
 import pl.touk.esp.engine.types.EspTypeUtils
 
 class ProcessDefinitionMarshallerTest extends FlatSpec with Matchers {
@@ -14,7 +14,8 @@ class ProcessDefinitionMarshallerTest extends FlatSpec with Matchers {
       services = Map("fooService" -> ObjectDefinition.withParamsAndCategories(List(Parameter(name = "foo", typ = ClazzRef(classOf[String]))), List("cat1"))),
       sourceFactories = Map("fooSourceFactory" -> ObjectDefinition.withParamsAndCategories(List(Parameter(name = "foo", typ = ClazzRef(classOf[String]))), List("cat1"))),
       sinkFactories = Map("fooSinkFactory" -> ObjectDefinition.withParamsAndCategories(List(Parameter(name = "foo", typ = ClazzRef(classOf[String]))), List("cat1", "cat2"))),
-      customStreamTransformers = Map("fooExecutorServiceFactory" -> (ObjectDefinition.withParamsAndCategories(List(Parameter(name = "foo", typ = ClazzRef(classOf[String]))), List("cat1")), Set.empty[String])),
+      customStreamTransformers = Map("fooExecutorServiceFactory" ->
+        (ObjectDefinition.withParamsAndCategories(List(Parameter(name = "foo", typ = ClazzRef(classOf[String]))), List("cat1")), CustomTransformerAdditionalData(Set(), false))),
       signalsWithTransformers = Map.empty,
       exceptionHandlerFactory = ObjectDefinition.noParam,
       globalVariables = Map.empty,
