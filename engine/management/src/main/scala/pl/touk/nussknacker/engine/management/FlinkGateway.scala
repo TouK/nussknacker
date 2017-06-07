@@ -55,9 +55,9 @@ class DefaultFlinkGateway(config: Configuration, timeout: FiniteDuration) extend
 //TODO: maybe move it to ui and use actors??
 class RestartableFlinkGateway(prepareGateway: () => FlinkGateway) extends FlinkGateway with LazyLogging {
 
-  implicit val ec = ExecutionContext.Implicits.global
+  private implicit val ec = ExecutionContext.Implicits.global
 
-  @volatile var gateway: FlinkGateway = null
+  @volatile var gateway: FlinkGateway = _
 
   override def invokeJobManager[Response: ClassTag](req: AnyRef): Future[Response] = {
     tryToInvokeJobManager[Response](req)
@@ -82,7 +82,7 @@ class RestartableFlinkGateway(prepareGateway: () => FlinkGateway) extends FlinkG
         tryToRunProgram(program)
     }.get
   }
-
+  
   private def tryToRunProgram(program: PackagedProgram): Try[Unit] =
     Try(retrieveGateway().run(program))
 

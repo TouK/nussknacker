@@ -4,6 +4,9 @@ if [[ -z "$JOB_MANAGER_RPC_ADDRESS" && -n "$JOB_MANAGER_RPC_ADDRESS_COMMAND" ]];
 fi
 echo "Using JOB_MANAGER_RPC_ADDRESS: $JOB_MANAGER_RPC_ADDRESS"
 
-cat /conf.yml >> $FLINK_HOME/conf/flink-conf.yaml
+mkdir -p /tmp/$SAVEPOINT_DIR_NAME
+chmod -R 777 /tmp/$SAVEPOINT_DIR_NAME
+
+cat /conf.yml | sed s/SAVEPOINT_DIR_NAME/$SAVEPOINT_DIR_NAME/ >> $FLINK_HOME/conf/flink-conf.yaml
 
 /docker-entrypoint.sh "$@"

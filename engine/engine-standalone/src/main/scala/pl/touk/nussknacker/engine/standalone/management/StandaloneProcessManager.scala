@@ -27,6 +27,7 @@ import pl.touk.nussknacker.engine.graph.node.Source
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.standalone.StandaloneProcessInterpreter
 import pl.touk.nussknacker.engine.standalone.utils.{StandaloneContext, StandaloneContextPreparer}
+import pl.touk.nussknacker.engine.util.ReflectUtils.StaticMethodRunner
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.loader.JarClassLoader
 import pl.touk.nussknacker.engine.util.service.{AuditDispatchClient, LogCorrelationId}
@@ -76,7 +77,7 @@ class StandaloneProcessManager(config: Config)
             Future.failed(new UnsupportedOperationException("custom process in standalone engine is not supported"))
         }
     }
-        
+
   }
 
 
@@ -115,7 +116,7 @@ class StandaloneProcessManager(config: Config)
 
 object StandaloneTestRunner {
   def apply(config: Config, jarUrl: URL): TestUtils.StandaloneTestRunner = {
-    new TestUtils.StandaloneTestRunner(config, jarUrl)
+    new TestUtils.StandaloneTestRunner(config, List(jarUrl))
   }
 
 }
@@ -235,33 +236,12 @@ object TestUtils {
     }
   }
 
-  class StandaloneTestRunner(config: Config, jar: URL) {
-    import scala.reflect.runtime.{universe => ru}
-
-    val jarClassLoader = JarClassLoader(jar)
-
-    private val invoker: ru.MethodMirror = {
-      val m = ru.runtimeMirror(jarClassLoader.classLoader)
-      val module = m.staticModule("pl.touk.nussknacker.engine.standalone.management.StandaloneTestMain")
-      val im = m.reflectModule(module)
-      val method = im.symbol.info.decl(ru.TermName("run")).asMethod
-      val objMirror = m.reflect(im.instance)
-      objMirror.reflectMethod(method)
-    }
+  class StandaloneTestRunner(config: Config, jars: List[URL]) extends StaticMethodRunner(jars,
+    "pl.touk.nussknacker.engine.standalone.management.StandaloneTestMain", "run") {
 
     def test(processId: String, processJson: String, testData: TestData): TestResults = {
-      //we have to use context loader, as in UI we have don't have nussknacker-process on classpath...
-      ThreadUtils.withThisAsContextClassLoader(jarClassLoader.classLoader) {
-        tryToInvoke(testData, processJson).asInstanceOf[TestResults]
-      }
+      tryToInvoke(testData, processJson).asInstanceOf[TestResults]
     }
-
-    def tryToInvoke(testData: TestData, json: String): Any = try {
-      invoker(json, config, testData, List(jar))
-    } catch {
-      case e:InvocationTargetException => throw e.getTargetException
-    }
-
   }
 
 }

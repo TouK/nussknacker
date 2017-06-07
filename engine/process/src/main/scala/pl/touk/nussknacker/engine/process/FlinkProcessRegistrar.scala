@@ -145,6 +145,7 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessW
             .flatMap(new InterpretationFunction(compiledProcessWithDeps, part.node))
             .name(s"${process.metaData.id}-${part.id}-function")
             .map(new EndRateMeterFunction(part.ends))
+          //TODO: maybe this logic should be moved to compiler instead?
           val withSinkAdded = testRunId match {
             case None =>
               startAfterSinkEvaluated

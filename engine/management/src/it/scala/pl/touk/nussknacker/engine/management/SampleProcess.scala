@@ -19,6 +19,14 @@ object SampleProcess {
       .sink("endSend", "sendSms")
   }
 
+  def kafkaProcess(id: String, topic: String) : EspProcess = {
+    EspProcessBuilder
+      .id(id)
+      .exceptionHandler("param1" -> "val1")
+      .source("startProcess", "real-kafka", "topic" -> topic)
+      .sink("end", "#input", "kafka-string", "topic" -> s"output-$id")
+  }
+
   private def endWithMessage(idSuffix: String, message: String): SubsequentNode = {
     GraphBuilder
       .buildVariable("message" + idSuffix, "output", "message" -> s"'$message'")

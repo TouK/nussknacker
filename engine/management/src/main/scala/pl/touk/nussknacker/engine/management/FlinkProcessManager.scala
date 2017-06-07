@@ -66,34 +66,22 @@ class FlinkProcessManager(config: Config,
 
   import argonaut.Argonaut._
 
-  private implicit val ec = ExecutionContext.Implicits.global
-
   private val flinkConf = config.getConfig("flinkConfig")
-
-  override def queryableClient : EspQueryableClient = gateway.queryableClient
-  private val jarClassLoader = JarClassLoader(flinkConf.getString("jarPath"))
 
   private val processConfigPart = extractProcessConfig
 
-  val processConfig : Config = processConfigPart.toConfig
+  override val processConfig : Config = processConfigPart.toConfig
 
-  private val testRunner = FlinkProcessTestRunner(processConfig, jarClassLoader.file)
+  private implicit val ec = ExecutionContext.Implicits.global
 
-  lazy val buildInfo: Map[String, String] = configCreator.buildInfo()
+  private val jarClassLoader = JarClassLoader(flinkConf.getString("jarPath"))
 
-  lazy val configCreator: ProcessConfigCreator =
+  private lazy val testRunner = FlinkProcessTestRunner(processConfig, jarClassLoader.file)
+
+  private lazy val verification = FlinkProcessVerifier(processConfig, jarClassLoader.file)
+
+  override lazy val configCreator: ProcessConfigCreator =
     jarClassLoader.createProcessConfigCreator(processConfig.getString("processConfigCreatorClass"))
-
-  private def prepareProgram(processId: String, processDeploymentData: ProcessDeploymentData) : PackagedProgram = {
-    val configPart = processConfigPart.render()
-    processDeploymentData match {
-      case GraphProcess(processAsJson) =>
-        new PackagedProgram(jarClassLoader.file, "pl.touk.nussknacker.engine.process.runner.FlinkProcessMain", List(processAsJson, configPart, buildInfoJson):_*)
-      case CustomProcess(mainClass) =>
-        new PackagedProgram(jarClassLoader.file, mainClass, List(processId, configPart, buildInfoJson): _*)
-    }
-  }
-
 
   override def deploy(processId: String, processDeploymentData: ProcessDeploymentData, savepointPath: Option[String]) = {
     val program = prepareProgram(processId, processDeploymentData)
@@ -105,7 +93,7 @@ class FlinkProcessManager(config: Config,
       maybeOldJob <- OptionT(findJobStatus(processId))
       maybeSavePoint <- {
         { logger.debug(s"Deploying $processId. Status: $maybeOldJob") }
-        OptionT.liftF(stopSavingSavepoint(maybeOldJob))
+        OptionT.liftF(stopSavingSavepoint(maybeOldJob, processDeploymentData))
       }
     } yield {
       logger.info(s"Deploying $processId. Saving savepoint finished")
@@ -115,13 +103,8 @@ class FlinkProcessManager(config: Config,
     stoppingResult.value.map { maybeSavepoint =>
       //savepoint given by user overrides the one created by flink
       prepareSavepointSettings(processId, program, savepointPath.orElse(maybeSavepoint))
-      Try(gateway.run(program)).recover {
-        //TODO: looks like bug in Flink, future is not terminated when there is an exception during savepoint
-        case e:ProgramInvocationException if e.getCause.isInstanceOf[JobTimeoutException] && maybeSavepoint.isDefined =>
-          program.setSavepointRestoreSettings(SavepointRestoreSettings.none())
-          logger.warn(s"Failed to run $processId with savepoint, trying with empty state")
-          gateway.run(program)
-      }.get
+      logger.info(s"Using savepoint ${savepointPath.orElse(maybeSavepoint)}")
+      gateway.run(program)
     }
   }
 
@@ -133,52 +116,16 @@ class FlinkProcessManager(config: Config,
     }
   }
 
-  private def prepareSavepointSettings(processId: String, program: PackagedProgram, maybeSavepoint: Option[String]): Unit = {
-    maybeSavepoint.foreach(path => program.setSavepointRestoreSettings(SavepointRestoreSettings.forPath(path, true)))
-    logger.info(s"Deploying $processId. Setting savepoint (${program.getSavepointSettings}) finished")
-  }
+  override def queryableClient : EspQueryableClient = gateway.queryableClient
 
   override def test(processId: String, json: String, testData: TestData) = {
     Future(testRunner.test(processId, json, testData))
-  }
-
-  private lazy val buildInfoJson = {
-    buildInfo.asJson.pretty(PrettyParams.spaces2.copy(preserveOrder = true))
   }
 
   override def getProcessDefinition = {
     ThreadUtils.withThisAsContextClassLoader(jarClassLoader.classLoader) {
       ObjectProcessDefinition(ProcessDefinitionExtractor.extractObjectWithMethods(configCreator, processConfig))
     }
-  }
-
-  private def stopSavingSavepoint(job: ProcessState): Future[String] = {
-    for {
-      savepointPath <- makeSavepoint(job, None)
-      _ <- cancel(job)
-    } yield savepointPath
-  }
-
-  private def cancel(job: ProcessState) = {
-    val jobId = JobID.fromHexString(job.id)
-    gateway.invokeJobManager[CancellationSuccess](CancelJob(jobId)).map(_ => ())
-  }
-
-  private def makeSavepoint(job: ProcessState, savepointDir: Option[String]): Future[String] = {
-    val jobId = JobID.fromHexString(job.id)
-
-    gateway.invokeJobManager[Any](JobManagerMessages.TriggerSavepoint(jobId, savepointDir)).map {
-      case TriggerSavepointSuccess(_, checkpointId, path, triggerTime) =>
-        path
-      case TriggerSavepointFailure(_, reason) =>
-        logger.error("Savepoint failed", reason)
-        throw reason
-    }
-  }
-
-  private def extractProcessConfig: ConfigObject = {
-    val configName = flinkConf.getString("processConfig")
-    config.getConfig(configName).root()
   }
 
   override def findJobStatus(name: String): Future[Option[ProcessState]] = {
@@ -194,12 +141,74 @@ class FlinkProcessManager(config: Config,
     })
   }
 
+  private def prepareSavepointSettings(processId: String, program: PackagedProgram, maybeSavepoint: Option[String]): Unit = {
+    maybeSavepoint.foreach(path => program.setSavepointRestoreSettings(SavepointRestoreSettings.forPath(path, true)))
+    logger.info(s"Deploying $processId. Setting savepoint (${program.getSavepointSettings}) finished")
+  }
+
+  private lazy val buildInfoJson = {
+    configCreator.buildInfo().asJson.pretty(PrettyParams.spaces2.copy(preserveOrder = true))
+  }
+
+  private def checkIfJobIsCompatible(savepointPath: String, processDeploymentData: ProcessDeploymentData) : Future[Unit] = processDeploymentData match {
+    case GraphProcess(processAsJson) if shouldVerifyBeforeDeploy =>
+      verification.verify(processAsJson, savepointPath)
+    case _ => Future.successful(())
+  }
+
+  private def shouldVerifyBeforeDeploy :Boolean = {
+    val verifyConfigProperty = "verifyBeforeDeploy"
+    !config.hasPath(verifyConfigProperty) || config.getBoolean(verifyConfigProperty)
+  }
+
+  private def stopSavingSavepoint(job: ProcessState, processDeploymentData: ProcessDeploymentData): Future[String] = {
+    for {
+      savepointPath <- makeSavepoint(job, None)
+      _ <- checkIfJobIsCompatible(savepointPath, processDeploymentData)
+      _ <- cancel(job)
+    } yield savepointPath
+  }
+
+  private def cancel(job: ProcessState) = {
+    val jobId = JobID.fromHexString(job.id)
+    gateway.invokeJobManager[CancellationSuccess](CancelJob(jobId)).map(_ => ())
+  }
+
+  private def makeSavepoint(job: ProcessState, savepointDir: Option[String]): Future[String] = {
+    val jobId = JobID.fromHexString(job.id)
+
+    gateway.invokeJobManager[Any](JobManagerMessages.TriggerSavepoint(jobId, savepointDir)).map {
+      case TriggerSavepointSuccess(_, checkpointId, path, triggerTime) =>
+        logger.info(s"Got savepoint: ${path}")
+        path
+      case TriggerSavepointFailure(_, reason) =>
+        logger.error("Savepoint failed", reason)
+        throw reason
+    }
+  }
+
+  private def extractProcessConfig: ConfigObject = {
+    val configName = flinkConf.getString("processConfig")
+    config.getConfig(configName).root()
+  }
+
   private def cancelJobById(jobID: JobID)
   = gateway.invokeJobManager[CancellationSuccess](CancelJob(jobID)).map(_ => ())
 
   private def listJobs(): Future[RunningJobsStatus] = {
     gateway.invokeJobManager[RunningJobsStatus](JobManagerMessages.getRequestRunningJobsStatus)
   }
+
+  private def prepareProgram(processId: String, processDeploymentData: ProcessDeploymentData) : PackagedProgram = {
+    val configPart = processConfigPart.render()
+    processDeploymentData match {
+      case GraphProcess(processAsJson) =>
+        new PackagedProgram(jarClassLoader.file, "pl.touk.nussknacker.engine.process.runner.FlinkProcessMain", List(processAsJson, configPart, buildInfoJson):_*)
+      case CustomProcess(mainClass) =>
+        new PackagedProgram(jarClassLoader.file, mainClass, List(processId, configPart, buildInfoJson): _*)
+    }
+  }
+
 
 
 }

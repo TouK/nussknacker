@@ -7,5 +7,4 @@ trait ProcessDefinitionProvider {
 
   def getProcessDefinition : ProcessDefinition[ObjectDefinition]
 
-  def buildInfo: Map[String, String]
 }

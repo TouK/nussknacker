@@ -1,5 +1,5 @@
 
-state.savepoints.dir: file:///tmp/savepoints
+state.savepoints.dir: file:///tmp/SAVEPOINT_DIR_NAME
 high-availability: zookeeper
 recovery.mode: zookeeper
 high-availability.zookeeper.quorum: zookeeper:2181

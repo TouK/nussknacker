@@ -12,7 +12,6 @@ RUN chmod +x /entrypointWithIP.sh
 
 USER flink
 RUN mkdir -p /tmp/storage
-RUN mkdir -p /tmp/savepoints
 RUN mkdir -p /tmp/storage/1.3/blob/cache
 
 USER root

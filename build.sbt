@@ -196,7 +196,6 @@ lazy val management = (project in engine("management")).
         "org.scalatest" %% "scalatest" % scalaTestV % "it,test",
         "com.whisk" %% "docker-testkit-scalatest" % "0.9.0" % "it,test",
         "com.whisk" %% "docker-testkit-impl-spotify" % "0.9.0" % "it,test",
-        "com.whisk" %% "docker-testkit-impl-spotify" % "0.9.0" % "it,test",
         "ch.qos.logback" % "logback-classic" % logbackV % "it,test",
         "org.slf4j" % "log4j-over-slf4j" % log4jV % "it,test",
         "ch.qos.logback" % "logback-core" % logbackV % "it,test"

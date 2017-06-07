@@ -2,6 +2,8 @@ package pl.touk.nussknacker.engine.management
 
 import java.io.File
 import java.nio.file.Files
+import java.nio.file.attribute.{PosixFilePermission, PosixFilePermissions}
+import java.util.Collections
 
 import com.spotify.docker.client.{DefaultDockerClient, DockerClient}
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
@@ -9,7 +11,7 @@ import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import com.whisk.docker.impl.spotify.SpotifyDockerFactory
 import com.whisk.docker.scalatest.DockerTestKit
-import com.whisk.docker.{ContainerLink, DockerContainer, DockerFactory, DockerReadyChecker, LogLineReceiver}
+import com.whisk.docker.{ContainerLink, DockerContainer, DockerFactory, DockerReadyChecker, LogLineReceiver, VolumeMapping}
 import org.apache.commons.io.FileUtils
 import org.scalatest.Suite
 import org.scalatest.concurrent.ScalaFutures
@@ -37,6 +39,7 @@ trait DockerTest extends DockerTestKit with ScalaFutures with LazyLogging {
     List("Dockerfile", "entrypointWithIP.sh", "conf.yml").foreach { file =>
       FileUtils.copyInputStreamToFile(getClass.getResourceAsStream(s"/docker/$file"), new File(dirFile, file))
     }
+
     client.build(dir, "flinkesp:1.3.1")
   }
 
@@ -59,14 +62,19 @@ trait DockerTest extends DockerTestKit with ScalaFutures with LazyLogging {
 
   def baseFlink(name: String) = DockerContainer("flinkesp:1.3.1", Some(name))
 
-  lazy val jobManagerContainer = baseFlink("jobmanager")
-    .withCommand("jobmanager")
-    .withEnv("JOB_MANAGER_RPC_ADDRESS_COMMAND=grep $HOSTNAME /etc/hosts | awk '{print $1}'")
-    .withReadyChecker(DockerReadyChecker.LogLineContains("New leader reachable").looped(5, 1 second))
-    .withLinks(ContainerLink(zookeeperContainer, "zookeeper"))
-    .withLogLineReceiver(LogLineReceiver(withErr = true, s => {
-      logger.info(s"jobmanager: $s")
-    }))
+  lazy val jobManagerContainer = {
+    val savepointDirName = prepareSavepointDirName()
+    val savepointDir = "/tmp/" + savepointDirName
+    baseFlink("jobmanager")
+      .withCommand("jobmanager")
+      .withEnv("JOB_MANAGER_RPC_ADDRESS_COMMAND=grep $HOSTNAME /etc/hosts | awk '{print $1}'", s"SAVEPOINT_DIR_NAME=$savepointDirName")
+      .withReadyChecker(DockerReadyChecker.LogLineContains("New leader reachable").looped(5, 1 second))
+      .withLinks(ContainerLink(zookeeperContainer, "zookeeper"))
+      .withVolumes(List(VolumeMapping(savepointDir, savepointDir, true)))
+      .withLogLineReceiver(LogLineReceiver(withErr = true, s => {
+        logger.info(s"jobmanager: $s")
+      }))
+  }
 
   lazy val taskManagerContainer = baseFlink("taskmanager")
     .withCommand("taskmanager")
@@ -90,5 +98,15 @@ trait DockerTest extends DockerTestKit with ScalaFutures with LazyLogging {
 
   abstract override def dockerContainers: List[DockerContainer] =
     List(zookeeperContainer, kafkaContainer, jobManagerContainer, taskManagerContainer) ++ super.dockerContainers
+
+  private def prepareSavepointDirName() : String = {
+    import scala.collection.JavaConversions._
+    val tempDir = Files.createTempDirectory("dockerTest",
+      PosixFilePermissions.asFileAttribute(PosixFilePermission.values().toSet[PosixFilePermission]))
+    tempDir.toFile.getName
+  }
+
+  protected lazy val processManager = FlinkProcessManager(config)
+
 
 }

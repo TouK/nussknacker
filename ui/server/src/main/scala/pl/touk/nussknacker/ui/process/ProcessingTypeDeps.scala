@@ -27,7 +27,7 @@ object ProcessingTypeDeps {
     val reqResp = ProcessingType.RequestResponse
     val streamingManager = FlinkProcessManager(config)
     val processDefinition = streamingManager.getProcessDefinition
-    val streamingBuildInfo = BuildInfo.ordered(streamingManager.buildInfo)
+    val streamingBuildInfo = BuildInfo.ordered(streamingManager.configCreator.buildInfo())
     val validator = ProcessValidator.default(processDefinition)
     if (standaloneModeEnabled) {
       val requestResponseManager = new StandaloneProcessManager(config)

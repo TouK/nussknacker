@@ -20,6 +20,7 @@ services:
     volumes:
       - ./app/conf:/conf
       - ${CODE_LOCATION}:/code-assembly.jar
+      - sharedStorage:/opt/flinkData/savepoints
   jobmanager:
     build: ./flink
     expose:
@@ -35,6 +36,7 @@ services:
       - "zookeeper:zookeeper"
     volumes:
       - ./flink/flink-conf.yaml:/opt/flink/conf/flink-conf.yaml
+      - sharedStorage:/opt/flinkData/savepoints
 
   taskmanager:
     build: ./flink
@@ -131,3 +133,7 @@ services:
       - grafana
       - app
       - jobmanager
+
+
+volumes:
+  sharedStorage: {}

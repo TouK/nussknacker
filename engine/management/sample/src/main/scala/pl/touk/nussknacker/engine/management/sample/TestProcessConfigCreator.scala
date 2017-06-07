@@ -15,18 +15,20 @@ import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceCont
 import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.windowing.time.Time
-import org.apache.flink.streaming.util.serialization.KeyedSerializationSchema
+import org.apache.flink.streaming.util.serialization.{KeyedSerializationSchema, SimpleStringSchema}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
 import pl.touk.nussknacker.engine.api.lazyy.UsingLazyValues
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.test.NewLineSplittedTestDataParser
+import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestParsingUtils}
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.util.exception.VerboselyLoggingExceptionHandler
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSinkFactory}
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSinkFactory, KafkaSourceFactory}
 import pl.touk.nussknacker.engine.management.sample.signal.{RemoveLockProcessSignalFactory, SampleSignalHandlingTransformer}
 
 import scala.concurrent.Future
+import argonaut.Argonaut._
+import argonaut.ArgonautShapeless._
 
 class TestProcessConfigCreator extends ProcessConfigCreator {
 
@@ -56,6 +58,8 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
     val kConfig = KafkaConfig(config.getString("kafka.zkAddress"), config.getString("kafka.kafkaAddress"), None, None)
 
     Map(
+      "real-kafka" -> WithCategories(new KafkaSourceFactory[String](kConfig,
+        new SimpleStringSchema, None, TestParsingUtils.newLineSplit), "Category1", "Category2"),
       "kafka-transaction" -> WithCategories(FlinkSourceFactory.noParam(prepareNotEndingSource, Some(new NewLineSplittedTestDataParser[String] {
         override def parseElement(testElement: String): String = testElement
       })), "Category1", "Category2"),
@@ -158,7 +162,9 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
     Map(
       "stateful" -> WithCategories(StatefulTransformer, "Category1", "Category2"),
       "customFilter" -> WithCategories(CustomFilter, "Category1", "Category2"),
-      "constantStateTransformer" -> WithCategories(ConstantStateTransformer, "Category1", "Category2"),
+      "constantStateTransformer" -> WithCategories(ConstantStateTransformer[String](ConstantState("stateId", 1234, List("elem1", "elem2", "elem3")).asJson.nospaces), "Category1", "Category2"),
+      "constantStateTransformerLongValue" -> WithCategories(ConstantStateTransformer[Long](12333), "Category1", "Category2"),
+
       "lockStreamTransformer" -> WithCategories(new SampleSignalHandlingTransformer.LockStreamTransformer(), "Category1", "Category2")
     )
   }
@@ -203,12 +209,8 @@ case object StatefulTransformer extends CustomStreamTransformer {
 
 }
 
-case object ConstantStateTransformer extends CustomStreamTransformer {
+case class ConstantStateTransformer[T:TypeInformation](defaultValue: T) extends CustomStreamTransformer {
 
-  import argonaut.Argonaut._
-  import argonaut.ArgonautShapeless._
-
-  case class ConstantState(id: String, transactionId: Int, elements: List[String])
 
   final val stateName = "constantState"
 
@@ -219,23 +221,22 @@ case object ConstantStateTransformer extends CustomStreamTransformer {
       .keyBy(_ => "1")
       .map(new RichMapFunction[InterpretationResult, ValueWithContext[Any]] {
 
-        var constantState: ValueState[String] = _
+        var constantState: ValueState[T] = _
 
         override def open(parameters: Configuration): Unit = {
           super.open(parameters)
-          val descriptor = new ValueStateDescriptor[String]("constantState", implicitly[TypeInformation[String]])
+          val descriptor = new ValueStateDescriptor[T]("constantState", implicitly[TypeInformation[T]])
           descriptor.setQueryable(stateName)
           constantState = getRuntimeContext.getState(descriptor)
         }
 
         override def map(value: InterpretationResult): ValueWithContext[Any] = {
-          constantState.update(ConstantState("stateId", 1234, List("elem1", "elem2", "elem3")).asJson.nospaces)
+          constantState.update(defaultValue)
           ValueWithContext[Any](value, value.finalContext)
         }
       })
   })
 }
-
 
 case object CustomFilter extends CustomStreamTransformer {
 
@@ -303,3 +304,5 @@ case object MultipleParamsService extends Service {
 object DateProcessHelper {
   def nowTimestamp(): Long = System.currentTimeMillis()
 }
+
+case class ConstantState(id: String, transactionId: Int, elements: List[String])

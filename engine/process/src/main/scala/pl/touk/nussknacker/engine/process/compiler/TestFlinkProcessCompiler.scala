@@ -26,85 +26,46 @@ class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
                                config: Config,
                                collectingListener: ResultsCollectingListener,
                                process: EspProcess,
-                               testData: TestData, executionConfig: ExecutionConfig) extends FlinkProcessCompiler(creator, config) {
+                               testData: TestData, executionConfig: ExecutionConfig) extends StubbedFlinkProcessCompiler(process, creator, config) {
 
   import pl.touk.nussknacker.engine.util.Implicits._
 
 
   override protected def listeners(): Seq[ProcessListener] = List(collectingListener) ++ super.listeners()
 
-  override protected def signalSenders: Map[SignalSenderKey, FlinkProcessSignalSender] =
-    super.signalSenders.mapValuesNow(_ => DummyFlinkSignalSender)
-
-  override protected def definitions(): ProcessDefinitionExtractor.ProcessDefinition[ObjectWithMethodDef] = {
-    val createdDefinitions = super.definitions()
-
-    //FIXME: asInstanceOf, should be proper handling of SubprocessInputDefinition
-    val sourceType = process.root.data.asInstanceOf[Source].ref.typ
-    val testSource = createdDefinitions.sourceFactories.get(sourceType)
-      .flatMap(prepareTestDataSourceFactory(executionConfig))
-      .getOrElse(throw new IllegalArgumentException(s"Source $sourceType cannot be tested"))
-
-    val servicesWithEnabledInvocationCollector = createdDefinitions.services.mapValuesNow { service =>
-      prepareServiceWithEnabledInvocationCollector(collectingListener.runId, service)
-    }
-    createdDefinitions
-      .copy(sourceFactories = createdDefinitions.sourceFactories + (sourceType -> testSource),
-            services = servicesWithEnabledInvocationCollector,
-            exceptionHandlerFactory = prepareDummyExceptionHandler(createdDefinitions.exceptionHandlerFactory)
-      )
-  }
-
-  private def prepareTestDataSourceFactory(executionConfig: ExecutionConfig)(objectWithMethodDef: ObjectWithMethodDef): Option[ObjectWithMethodDef] = {
-    val originalSource = objectWithMethodDef.obj.asInstanceOf[FlinkSourceFactory[Object]]
+  override protected def prepareSourceFactory(sourceFactory: ObjectWithMethodDef): Option[ObjectWithMethodDef] = {
+    val originalSource = sourceFactory.obj.asInstanceOf[FlinkSourceFactory[Object]]
     implicit val typeInfo = originalSource.typeInformation
     originalSource.testDataParser.map { testDataParser =>
       val testObjects = testDataParser.parseTestData(testData.testData)
       val testFactory = CollectionSource[Object](executionConfig, testObjects, originalSource.timestampAssigner)
-      new TestDataInvokingObjectWithMethodDef(testFactory, objectWithMethodDef)
+      overrideObjectWithMethod(sourceFactory, (_, _) => testFactory)
     }
   }
 
-  private def prepareServiceWithEnabledInvocationCollector(runId: TestRunId, service: ObjectWithMethodDef): ObjectWithMethodDef = {
-    new ObjectWithMethodDef(service.obj, service.methodDef, service.objectDefinition) {
-      override def invokeMethod(parameterCreator: String => Option[AnyRef], additional: Seq[AnyRef]): Any = {
-        val newAdditional = additional.map {
-          case c: ServiceInvocationCollector => c.enable(runId)
-          case a => a
-        }
-        service.invokeMethod(parameterCreator, newAdditional)
+  override protected def prepareService(service: ObjectWithMethodDef): ObjectWithMethodDef = {
+    overrideObjectWithMethod(service, (parameterCreator: (String => Option[AnyRef]), additional: Seq[AnyRef]) => {
+      val newAdditional = additional.map {
+        case c: ServiceInvocationCollector => c.enable(collectingListener.runId)
+        case a => a
       }
-    }
+      service.invokeMethod(parameterCreator, newAdditional)
+    })
   }
 
   //exceptions are recorded any way, by listeners
-  private def prepareDummyExceptionHandler(exceptionHandler: ObjectWithMethodDef) : ObjectWithMethodDef = {
-    new ObjectWithMethodDef(exceptionHandler.obj, exceptionHandler.methodDef, exceptionHandler.objectDefinition) {
-      override def invokeMethod(parameterCreator: String => Option[AnyRef], additional: Seq[AnyRef]): Any = {
-        new FlinkEspExceptionHandler with ConsumingNonTransientExceptions{
-          override def restartStrategy: RestartStrategies.RestartStrategyConfiguration = RestartStrategies.noRestart()
+  override protected def prepareExceptionHandler(exceptionHandler: ObjectWithMethodDef): ObjectWithMethodDef = {
+    overrideObjectWithMethod(exceptionHandler, (_, _) =>
+      new FlinkEspExceptionHandler with ConsumingNonTransientExceptions {
+        override def restartStrategy: RestartStrategies.RestartStrategyConfiguration = RestartStrategies.noRestart()
 
-          override protected def consumer: FlinkEspExceptionConsumer = new FlinkEspExceptionConsumer {
-            override def consume(exceptionInfo: EspExceptionInfo[NonTransientException]): Unit = {}
-          }
+        override protected def consumer: FlinkEspExceptionConsumer = new FlinkEspExceptionConsumer {
+          override def consume(exceptionInfo: EspExceptionInfo[NonTransientException]): Unit = {}
         }
       }
-    }
+    )
   }
 
 }
 
-//TODO: well, this is pretty disgusting, but currently don't have idea how to improve it...
-private class TestDataInvokingObjectWithMethodDef(testFactory: AnyRef, original: ObjectWithMethodDef)
-  extends ObjectWithMethodDef(testFactory, original.methodDef, original.objectDefinition) {
-
-  override def invokeMethod(paramFun: String => Option[AnyRef], additional: Seq[AnyRef]) = testFactory
-
-}
-
-private object DummyFlinkSignalSender extends FlinkProcessSignalSender {
-  override def connectWithSignals[InputType, SignalType: TypeInformation](start: DataStream[InputType], processId: String, nodeId: String, schema: DeserializationSchema[SignalType]): ConnectedStreams[InputType, SignalType] = {
-    start.connect(start.executionEnvironment.fromElements[SignalType]())
-  }
-}
 
