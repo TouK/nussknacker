@@ -152,4 +152,22 @@ class CustomNodeProcessSpec extends FlatSpec with Matchers {
 
   }
 
+  it should "not allow input after custom node clearing context" in {
+    val process = EspProcessBuilder.id("proc1")
+      .exceptionHandler()
+      .source("id", "input")
+      .customNodeNoOutput("id1", "customContextClear", "value" -> "'ala'")
+      .processorEnd("proc2", "logService", "all" -> "#input.id")
+
+    val data = List()
+
+    val env = StreamExecutionEnvironment.createLocalEnvironment(1)
+
+    val thrown = the [IllegalArgumentException] thrownBy processInvoker.invoke(process, data, env)
+
+    thrown.getMessage shouldBe "Compilation errors: ExpressionParseError(Unresolved references input,proc2,Some(all),#input.id)"
+
+
+  }
+
 }

@@ -16,7 +16,7 @@ import pl.touk.esp.engine.compiledgraph.CompiledProcessParts
 import pl.touk.esp.engine.splittedgraph.splittednode.PartRef
 import pl.touk.esp.engine.compiledgraph.part.NextWithParts
 import pl.touk.esp.engine.definition.DefinitionExtractor._
-import pl.touk.esp.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
+import pl.touk.esp.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ProcessDefinition}
 import pl.touk.esp.engine.definition._
 import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.esp.engine.graph.node.{CustomNode, StartingNodeData, SubprocessInputDefinition}
@@ -110,16 +110,18 @@ protected trait ProcessCompilerBase {
       invalid(DuplicatedNodeIds(duplicatedIds.toSet))
   }
 
-  private def contextAfterCustomNode(node: CustomNode, nodeDefinition: ParameterProviderT, validationContext: ValidationContext)
-                                    (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, ValidationContext]=
+  private def contextAfterCustomNode(node: CustomNode, nodeDefinition: ParameterProviderT, validationContext: ValidationContext, clearsContext: Boolean)
+                                    (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, ValidationContext] = {
+    val maybeClearedContext = if (clearsContext) validationContext.copy(variables = Map()) else validationContext
     (node.outputVar, nodeDefinition.hasNoReturn) match {
-      case (Some(varName), false) => validationContext.withVariable(varName, nodeDefinition.returnType)
+      case (Some(varName), false) => maybeClearedContext.withVariable(varName, nodeDefinition.returnType)
         //ble... NonEmptyList is invariant...
         .asInstanceOf[ValidatedNel[ProcessCompilationError,ValidationContext]]
-      case (None, true) => Valid(validationContext)
+      case (None, true) => Valid(maybeClearedContext)
       case (Some(_), true) => Invalid(NonEmptyList.of(RedundantParameters(Set("OutputVariable"))))
       case (None, false) => Invalid(NonEmptyList.of(MissingParameters(Set("OutputVariable"))))
     }
+  }
 
   private def compile(part: SubsequentPart, ctx: ValidationContext)
                      (implicit metaData: MetaData): ValidatedNel[ProcessCompilationError, compiledgraph.part.SubsequentPart] = {
@@ -132,8 +134,8 @@ protected trait ProcessCompilerBase {
           }
         }
       case CustomNodePart(node, nextParts, ends) =>
-        getCustomNodeDefinition(node).andThen { nodeDefinition =>
-          contextAfterCustomNode(node.data, nodeDefinition, ctx).andThen { ctxWithVar =>
+        getCustomNodeDefinition(node).andThen { case (nodeDefinition, additionalData) =>
+          contextAfterCustomNode(node.data, nodeDefinition, ctx, additionalData.clearsContext).andThen { ctxWithVar =>
             validate(node, ctxWithVar).andThen { newCtx =>
               compileCustomNodeInvoker(node, nodeDefinition).andThen { nodeInvoker =>
                 compile(nextParts, newCtx).map { nextParts =>
@@ -214,7 +216,7 @@ protected trait ProcessCompilerBase {
 
   private def getCustomNodeDefinition(node: SplittedNode[graph.node.CustomNode])(implicit nodeId: NodeId, metaData: MetaData) = {
     val ref = node.data.nodeType
-    fromOption[ProcessCompilationError, ParameterProviderT](customStreamTransformers.get(ref).map(_._1), MissingCustomNodeExecutor(ref))
+    fromOption[ProcessCompilationError, (ParameterProviderT, CustomTransformerAdditionalData)](customStreamTransformers.get(ref), MissingCustomNodeExecutor(ref))
           .toValidatedNel
   }
 

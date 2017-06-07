@@ -10,7 +10,7 @@ import pl.touk.esp.engine.api.process.WithCategories
 import pl.touk.esp.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.esp.engine.compile.ProcessCompilationError._
 import pl.touk.esp.engine.definition.DefinitionExtractor.{ClazzRef, ObjectDefinition, Parameter}
-import pl.touk.esp.engine.definition.ProcessDefinitionExtractor.{ObjectProcessDefinition, ProcessDefinition}
+import pl.touk.esp.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ObjectProcessDefinition, ProcessDefinition}
 import pl.touk.esp.engine.graph.node.Case
 import pl.touk.esp.engine.types.EspTypeUtils
 
@@ -20,14 +20,18 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
 
   import spel.Implicits._
 
+  private def emptyQueryNamesData(clearsContext: Boolean = false) = CustomTransformerAdditionalData(Set(), clearsContext)
+
   private val baseDefinition = ProcessDefinition(
     Map("sampleEnricher" -> ObjectDefinition(List.empty, classOf[SimpleRecord], List()), "withParamsService" -> ObjectDefinition(List(Parameter("par1",
       ClazzRef(classOf[String]))), classOf[SimpleRecord], List())),
     Map("source" -> ObjectDefinition(List.empty, classOf[SimpleRecord], List())),
     Map("sink" -> ObjectDefinition.noParam),
-    Map("customTransformer" -> (ObjectDefinition(List.empty, classOf[SimpleRecord], List()), Set.empty[String]),
-      "withParamsTransformer" -> (ObjectDefinition(List(Parameter("par1", ClazzRef(classOf[String]))), classOf[SimpleRecord], List()), Set.empty[String]),
-      "withoutReturnType" -> (ObjectDefinition(List(Parameter("par1", ClazzRef(classOf[String]))), classOf[Void], List()), Set.empty[String])
+
+    Map("customTransformer" -> (ObjectDefinition(List.empty, classOf[SimpleRecord], List()), emptyQueryNamesData()),
+      "withParamsTransformer" -> (ObjectDefinition(List(Parameter("par1", ClazzRef(classOf[String]))), classOf[SimpleRecord], List()), emptyQueryNamesData()),
+      "clearingContextTransformer" -> (ObjectDefinition(List.empty, classOf[SimpleRecord], List()), emptyQueryNamesData(true)),
+      "withoutReturnType" -> (ObjectDefinition(List(Parameter("par1", ClazzRef(classOf[String]))), classOf[Void], List()), emptyQueryNamesData())
     ),
     Map.empty,
     ObjectDefinition.noParam,
@@ -326,7 +330,8 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
     = Map("source" -> ObjectDefinition.noParam.copy(returnType = ClazzRef(classOf[SimpleRecord]))))
 
   private val definitionWithTypedSourceAndTransformNode =
-    definitionWithTypedSource.withCustomStreamTransformer("custom", classOf[AnotherSimpleRecord], Set.empty, Parameter("par1", ClazzRef(classOf[String])))
+    definitionWithTypedSource.withCustomStreamTransformer("custom",
+      classOf[AnotherSimpleRecord], emptyQueryNamesData(), Parameter("par1", ClazzRef(classOf[String])))
 
   it should "find usage of fields that does not exist in option object" in {
     val process = EspProcessBuilder
@@ -468,6 +473,20 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
 
     ProcessValidator.default(baseDefinition).validate(processWithInvalidExpresssion) should matchPattern {
       case Invalid(NonEmptyList(RedundantParameters(vars, _), _)) if vars == Set("OutputVariable") =>
+    }
+  }
+
+  it should "detect clearing context in custom transformer" in {
+    val processWithInvalidExpresssion =
+      EspProcessBuilder
+        .id("process1")
+        .exceptionHandler()
+        .source("id1", "source")
+        .customNode("custom", "varName", "clearingContextTransformer")
+        .sink("id2", "#input.toString()", "sink")
+
+    ProcessValidator.default(baseDefinition).validate(processWithInvalidExpresssion) should matchPattern {
+      case Invalid(NonEmptyList(ExpressionParseError("Unresolved references input", "id2", None, "#input.toString()"), _)) =>
     }
   }
 
