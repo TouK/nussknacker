@@ -36,6 +36,8 @@ object ProcessConverter {
     DisplayableProcess(process.metaData.id, props, nodes, edges, processingType)
   }
 
+  def findNodes(process: CanonicalProcess) : List[NodeData] = toGraphInner(process.nodes)._1
+
   private def toGraphInner(nodes: List[canonicalnode.CanonicalNode]): (List[NodeData], List[displayablenode.Edge]) =
     nodes match {
       case canonicalnode.FlatNode(data) :: tail =>
@@ -93,7 +95,6 @@ object ProcessConverter {
   def fromDisplayable(process: DisplayableProcess): CanonicalProcess = {
     val nodesMap = process.nodes.groupBy(_.id).mapValues(_.head)
     val edgesFromMapStart = process.edges.groupBy(_.from)
-    //FIXME: co z luznymi wezlami???
     val nodes = findRootNodes(process).headOption.map(headNode => unFlattenNode(nodesMap)(headNode, edgesFromMapStart)).getOrElse(List())
     CanonicalProcess(process.metaData, process.properties.exceptionHandler, nodes)
   }
@@ -135,16 +136,6 @@ object ProcessConverter {
     (handleNestedNodes orElse (handleDirectNodes andThen { n =>
       n :: getEdges(n.id).flatMap(unflattenEdgeEnd(n.id, _))
     }))(n)
-  }
-
-  def nodeFromDisplayable(n: NodeData): canonicalnode.CanonicalNode = {
-    val handleNestedNodes: PartialFunction[NodeData, canonicalnode.CanonicalNode] = {
-      case data: Filter =>
-        canonicalnode.FilterNode(data, List.empty)
-      case data: Switch =>
-        canonicalnode.SwitchNode(data, List.empty, List.empty)
-    }
-    (handleNestedNodes orElse handleDirectNodes)(n)
   }
 
   private val handleDirectNodes: PartialFunction[NodeData, canonicalnode.CanonicalNode] = {

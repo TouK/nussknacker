@@ -7,6 +7,7 @@ import _ from 'lodash';
 import LaddaButton from 'react-ladda';
 import laddaCss from 'ladda/dist/ladda.min.css'
 import ActionsUtils from '../../actions/ActionsUtils';
+import NodeUtils from './NodeUtils';
 import { ListGroupItem } from 'react-bootstrap';
 import ExpressionSuggest from './ExpressionSuggest'
 import ModalRenderUtils from "./ModalRenderUtils"
@@ -14,6 +15,7 @@ import ModalRenderUtils from "./ModalRenderUtils"
 import EspModalStyles from '../../common/EspModalStyles'
 import {Scrollbars} from "react-custom-scrollbars";
 
+//TODO: this is still pretty switch-specific. 
 class EdgeDetailsModal extends React.Component {
 
   static propTypes = {
@@ -74,7 +76,9 @@ class EdgeDetailsModal extends React.Component {
   }
 
   changeEdgeTypeValue = (edgeTypeValue) => {
-    const defaultEdgeType = this.props.processDefinitionData.edgeTypes[edgeTypeValue]
+    const fromNode = NodeUtils.getNodeById(this.props.edgeToDisplay.from, this.props.processToDisplay)
+    const defaultEdgeType = NodeUtils
+      .edgesForNode(fromNode, this.props.processDefinitionData).edges.find(e => e.type === edgeTypeValue)
     const newEdge = {
       ...this.state.editedEdge,
       edgeType: defaultEdgeType

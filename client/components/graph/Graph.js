@@ -99,7 +99,7 @@ class Graph extends React.Component {
     validateConnection = (cellViewS, magnetS, cellViewT, magnetT) => {
       var from = cellViewS.model.id
       var to = cellViewT.model.id
-      return magnetT && NodeUtils.canMakeLink(from, to, this.props.processToDisplay);
+      return magnetT && NodeUtils.canMakeLink(from, to, this.props.processToDisplay, this.props.processDefinitionData);
     }
 
     createPaper = () => {
@@ -136,7 +136,7 @@ class Graph extends React.Component {
             this.props.actions.nodesConnected(
               c.sourceView.model.attributes.nodeData,
               c.targetView.model.attributes.nodeData,
-              this.props.processDefinitionData.edgeTypes
+              this.props.processDefinitionData
             )
           })
     }

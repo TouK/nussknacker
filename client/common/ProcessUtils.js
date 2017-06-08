@@ -94,6 +94,7 @@ class ProcessUtils {
     }
   }
 
+  //TODO: this should be done without these switches..
   findNodeObjectTypeDefinition = (node, processDefinition) => {
     switch (node.type) {
       case "Source": {
@@ -112,6 +113,29 @@ class ProcessUtils {
       }
       default: {
         return {}
+      }
+    }
+  }
+
+  //TODO: this should be done without these switches..
+  findNodeDefinitionId = (node) => {
+    switch (node.type) {
+      case "Source":
+      case "Sink": {
+        return node.ref.typ
+      }
+      case "SubprocessInput": {
+        return node.ref.id
+      }
+      case "Enricher":
+      case "Processor": {
+        return node.service.id
+      }
+      case "CustomNode": {
+        return node.nodeType
+      }
+      default: {
+        return null;
       }
     }
   }

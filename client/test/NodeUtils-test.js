@@ -139,9 +139,40 @@ describe("edges grouped", () => {
     expect(NodeUtils.ungroup(process, "bigGroup").properties.additionalFields.groups).toEqual([])
   })
 
+  it("should get edge types for node", () => {
+    expect(NodeUtils.edgesForNode({id: "node1", type: "SubprocessInput", ref: {id: "sub1"}}, processDefinitionData)).toEqual({
+          nodeId: { type: "SubprocessInput", id: "sub1"},
+          edges: [{ type: "edge2"}]
+    })
+    expect(NodeUtils.edgesForNode({id: "node1", type: "Filter"}, processDefinitionData)).toEqual({
+      nodeId: { type: "Filter"},
+      edges: [{ type: "edge1"}]
+    })
+
+  })
+
+  it("should get empty types for defaultNode", () => {
+    expect(NodeUtils.edgesForNode({id: "node1", type: "Variable"}, processDefinitionData))
+      .toEqual({edges: [null], canChooseNodes: false})
+    expect(NodeUtils.edgesForNode({id: "node1", type: "Processor", service: {id: "sub1"}}, processDefinitionData))
+      .toEqual({edges: [null], canChooseNodes: false})
+  })
+
 })
 
+const processDefinitionData = {
+  edgesForNodes: [
+    {
+      nodeId: { type: "Filter"},
+      edges: [{ type: "edge1"}]
+    },
+    {
+      nodeId: { type: "SubprocessInput", id: "sub1"},
+      edges: [{ type: "edge2"}]
+    },
+  ]
 
+}
 
 const createProcess = (groups) => ({
   "properties": { additionalFields: { groups: groups || []}},
