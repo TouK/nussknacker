@@ -1,5 +1,6 @@
 import _ from 'lodash'
 import fp from 'lodash/fp'
+import ProcessUtils from '../../common/ProcessUtils.js'
 
 class NodeUtils {
 
@@ -9,11 +10,11 @@ class NodeUtils {
 
   nodeIsProperties = (node) => {
     const type = node && this.nodeType(node)
-    return type == "Properties";
+    return type === "Properties";
   }
 
   nodeIsGroup = (node) => {
-    return node && this.nodeType(node) == "_group"
+    return node && this.nodeType(node) === "_group"
   }
 
   nodesFromProcess = (process, expandedGroups) => {
@@ -51,6 +52,9 @@ class NodeUtils {
     return edges;
   }
 
+  getNodeById = (nodeId, process) => this.nodesFromProcess(process).find(n => n.id === nodeId)
+
+
   getAllGroups = (process) => _.get(process, 'properties.additionalFields.groups', [])
 
   getCollapsedGroups = (process, expandedGroups) => this.getAllGroups(process)
@@ -60,18 +64,14 @@ class NodeUtils {
     .filter(g => _.includes(expandedGroups, g.id))
 
 
-  edgeType = (allEdges, node, edgesFromDefinition) => {
-    if (node.type == "Filter") {
-      const thisFilterConnections = allEdges.filter((edge) => edge.from == node.id)
-      return {type: _.get(thisFilterConnections[0], 'edgeType.type') == 'FilterTrue' ? 'FilterFalse' : 'FilterTrue'}
-    } else if (node.type == "Switch") {
-      return edgesFromDefinition["NextSwitch"]
-    } else if (node.type == "SubprocessInput") {
-      //FIXME: co tutaj??
-      return {type: "SubprocessOutput", name: "output"}
-    }
-    else {
-      return null
+  edgeType = (allEdges, node, processDefinitionData) => {
+    const edgesForNode = this.edgesForNode(node, processDefinitionData)
+
+    if (edgesForNode.canChooseNodes) {
+      return edgesForNode.edges[0]
+    } else {
+      const currentConnectionsTypes = allEdges.filter((edge) => edge.from === node.id).map(e => e.edgeType)
+      return edgesForNode.edges.find(et => !currentConnectionsTypes.includes(et))
     }
   }
 
@@ -100,25 +100,36 @@ class NodeUtils {
     return this._changeGroupNodes(process, (nodes) => nodes.filter((n) => n !== idToDelete));
   }
 
+  edgesForNode = (node, processDefinitionData) => {
+    const nodeObjectTypeDefinition = ProcessUtils.findNodeDefinitionId(node)
+    return processDefinitionData.edgesForNodes
+      //here we use == in second comparison, as we sometimes compare null to undefined :|
+      .find(e => e.nodeId.type === node.type && e.nodeId.id == nodeObjectTypeDefinition) || { edges: [null], canChooseNodes: false}
+  }
+
   edgeLabel = (edge, outgoingEdges) => {
+    const edgeType = _.get(edge, 'edgeType.type')
+    const isSingleOutput = outgoingEdges && outgoingEdges[edge.from].length === 1
+
+    //TODO: should this map be here??
     const edgeTypeToLabel = {
       "FilterFalse": "false",
-      "FilterTrue": "true",
+      "FilterTrue": isSingleOutput ? '' : "true",
       "SwitchDefault": "default",
+      "SubprocessOutput": _.get(edge, 'edgeType.name'),
       "NextSwitch": _.get(edge, 'edgeType.condition.expression')
-    }
-    const edgeType = _.get(edge, 'edgeType.type')
-    return (edgeType == "FilterTrue" && outgoingEdges[edge.from].length == 1 ? '' : edgeTypeToLabel[edgeType]) || ''
+    };
+    return edgeTypeToLabel[edgeType] || ''
   }
 
   //we don't allow multi outputs other than split, filter, switch and no multiple inputs
-  canMakeLink = (from, to, process) => {
-    var nodeInputs = this._nodeInputs(to, process);
-    var nodeOutputs = this._nodeOutputs(from, process);
-    var targetHasNoInput = nodeInputs.length == 0
-    var sourceHasNoOutput = nodeOutputs.length == 0
-    var canLinkFromSource = sourceHasNoOutput || this._isMultiOutput(from, nodeOutputs, process)
-    return targetHasNoInput && canLinkFromSource
+  canMakeLink = (fromId, to, process, processDefinitionData) => {
+    const nodeInputs = this._nodeInputs(to, process);
+    const nodeOutputs = this._nodeOutputs(fromId, process);
+
+    const targetHasNoInput = nodeInputs.length === 0
+    const from = this.getNodeById(fromId, process)
+    return targetHasNoInput && this._canHaveMoreOutputs(from, nodeOutputs, processDefinitionData)
   }
 
 
@@ -126,7 +137,6 @@ class NodeUtils {
   _update = (path, fun, object) => {
     return fp.set(path, fun(_.get(object, path)), object)
   }
-
 
   _changeGroupNodes = (processToDisplay, nodeOperation) => {
     return this._update('properties.additionalFields.groups',
@@ -137,9 +147,10 @@ class NodeUtils {
     );
   }
 
-  _isMultiOutput = (nodeId, nodeOutputs, process) => {
-    var node = this._nodeType(nodeId, process)
-    return node.type == "Split" || node.type == "Filter" && nodeOutputs.length < 2 || node.type == "Switch"
+  _canHaveMoreOutputs = (node, nodeOutputs, processDefinitionData) => {
+    const edgesForNode = this.edgesForNode(node, processDefinitionData)
+    const maxEdgesForNode = edgesForNode.edges.length
+    return edgesForNode.canChooseNodes || nodeOutputs.length < maxEdgesForNode
   }
 
   _nodeInputs = (nodeId, process) => {
@@ -148,10 +159,6 @@ class NodeUtils {
 
   _nodeOutputs = (nodeId, process) => {
     return this.edgesFromProcess(process).filter(e => e.from == nodeId)
-  }
-
-  _nodeType = (nodeId, process) => {
-    return this.nodesFromProcess(process).find(n => n.id == nodeId)
   }
 
 

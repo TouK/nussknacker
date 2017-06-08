@@ -15,9 +15,12 @@ import pl.touk.esp.engine.graph.service.ServiceRef
 import pl.touk.esp.engine.graph.sink.SinkRef
 import pl.touk.esp.engine.graph.source.SourceRef
 import pl.touk.esp.engine.graph.subprocess.SubprocessRef
+import pl.touk.esp.ui.api.DefinitionPreparer.NodeEdges
 import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
 import pl.touk.esp.ui.process.displayedgraph.displayablenode.EdgeType
+import pl.touk.esp.ui.process.displayedgraph.displayablenode.EdgeType.{FilterFalse, FilterTrue}
+import pl.touk.esp.ui.process.marshall.ProcessConverter
 import pl.touk.esp.ui.process.subprocess.SubprocessRepository
 import pl.touk.esp.ui.security.LoggedUser
 import pl.touk.esp.ui.util.EspPathMatchers
@@ -35,12 +38,14 @@ class DefinitionResources(processDefinition: Map[ProcessingType, ProcessDefiniti
 
   val route = (user: LoggedUser) =>
     path("processDefinitionData" / EnumSegment(ProcessingType)) { (processingType) =>
-      parameter('isSubprocess) { (isSubprocess) =>
+      parameter('isSubprocess.as[Boolean]) { (isSubprocess) =>
         get {
           complete {
             val chosenProcessDefinition = processDefinition(processingType)
             ProcessObjects(DefinitionPreparer.prepareNodesToAdd(user, chosenProcessDefinition,
-              java.lang.Boolean.valueOf(isSubprocess), subprocessRepository), chosenProcessDefinition, DefinitionPreparer.prepareEdgeTypes())
+              isSubprocess, subprocessRepository),
+              chosenProcessDefinition,
+              DefinitionPreparer.prepareEdgeTypes(user, chosenProcessDefinition, isSubprocess, subprocessRepository))
           }
         }
       }
@@ -49,7 +54,9 @@ class DefinitionResources(processDefinition: Map[ProcessingType, ProcessDefiniti
 }
 
 //TODO: dalsze czesci? co tu w sumie moze byc??
-case class ProcessObjects(nodesToAdd: List[NodeGroup], processDefinition: ProcessDefinition[ObjectDefinition], edgeTypes: Map[String, EdgeType])
+case class ProcessObjects(nodesToAdd: List[NodeGroup],
+                          processDefinition: ProcessDefinition[ObjectDefinition],
+                          edgesForNodes: List[NodeEdges])
 
 case class NodeToAdd(`type`: String, label: String, node: NodeData, categories: List[String])
 
@@ -134,7 +141,7 @@ object DefinitionPreparer {
         SortedNodeGroup("subprocessDefinition", List(
           NodeToAdd("input", "input", SubprocessInputDefinition("", List()), user.categories),
           NodeToAdd("output", "output", SubprocessOutputDefinition("", "output"), user.categories)
-      )))
+        )))
     }
 
     List(base, services, enrichers, customTransformers) ++ subprocessDependent
@@ -152,14 +159,33 @@ object DefinitionPreparer {
       case "java.util.Map" => "{:}"
       case _ => s"#${param.name}"
     }
-    //TODO: tu beda jeszcze stale!
+    //TODO: enable nicer handling of constants/simple strings (maybe SpEL templates??)
     Parameter(param.name, Expression("spel", defaultExpression))
   }
 
-  def prepareEdgeTypes(): Map[String, EdgeType] = {
-    Map(
-      "SwitchDefault" -> EdgeType.SwitchDefault,
-      "NextSwitch" -> EdgeType.NextSwitch(Expression("spel", "true"))
-    )
+  def prepareEdgeTypes(user: LoggedUser, processDefinition: ProcessDefinition[ObjectDefinition],
+                       isSubprocess: Boolean, subprocessRepo: SubprocessRepository): List[NodeEdges] = {
+
+    val subprocessOutputs = if (isSubprocess) List() else subprocessRepo.loadSubprocesses().map { process =>
+      val outputs = ProcessConverter.findNodes(process).collect {
+        case SubprocessOutputDefinition(_, name, _) => name
+      }
+      //TODO: enable choice of output type
+      NodeEdges(NodeTypeId("SubprocessInput", Some(process.metaData.id)), outputs.map(EdgeType.SubprocessOutput), canChooseNodes = false)
+    }
+
+    List(
+      NodeEdges(NodeTypeId("Split"), List(), canChooseNodes = true),
+      NodeEdges(NodeTypeId("Switch"), List(
+        EdgeType.NextSwitch(Expression("spel", "true")), EdgeType.SwitchDefault), canChooseNodes = true),
+      NodeEdges(NodeTypeId("Filter"), List(FilterTrue, FilterFalse), canChooseNodes = false)
+    ) ++ subprocessOutputs
+
+
   }
+
+  case class NodeTypeId(`type`: String, id: Option[String] = None)
+
+  case class NodeEdges(nodeId: NodeTypeId, edges: List[EdgeType], canChooseNodes: Boolean)
+
 }

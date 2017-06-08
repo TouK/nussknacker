@@ -2,7 +2,7 @@ package pl.touk.esp.ui.validation
 
 import cats.data.NonEmptyList
 import pl.touk.esp.engine.compile.{ProcessCompilationError, ProcessValidator}
-import pl.touk.esp.engine.graph.node.{Disableable, NodeData}
+import pl.touk.esp.engine.graph.node.{Disableable, NodeData, Source, SubprocessInputDefinition}
 import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
 import pl.touk.esp.ui.process.displayedgraph.DisplayableProcess
 import pl.touk.esp.ui.process.marshall.ProcessConverter
@@ -34,11 +34,15 @@ class ProcessValidation(validators: Map[ProcessingType, ProcessValidator], subpr
     ValidationResult.warnings(disabledNodesWarnings)
   }
 
-  private def uiValidation(displayable: DisplayableProcess) : ValidationResult = {
-    validateIds(displayable).add(validateDuplicates(displayable))
+  private def uiValidation(displayable: DisplayableProcess): ValidationResult = {
+    validateIds(displayable)
+      .add(validateDuplicates(displayable))
+      .add(validateLooseNodes(displayable))
+      .add(validateDuplicateSource(displayable))
+      .add(validateEdgeUniqueness(displayable))
   }
 
-  private def validateIds(displayable: DisplayableProcess) : ValidationResult = {
+  private def validateIds(displayable: DisplayableProcess): ValidationResult = {
     val invalidCharsRegexp = "[\"']".r
 
     ValidationResult.errors(
@@ -49,7 +53,42 @@ class ProcessValidation(validators: Map[ProcessingType, ProcessValidator], subpr
     )
   }
 
-  private def validateDuplicates(displayable: DisplayableProcess) : ValidationResult = {
+
+  private def validateEdgeUniqueness(displayableProcess: DisplayableProcess): ValidationResult = {
+    val edgeUniquenessErrors = displayableProcess.edges
+      .groupBy(_.from).map { case (from, edges) =>
+      from -> edges.groupBy(_.edgeType).collect { case (Some(eType), list) if list.size > 1 =>
+        PrettyValidationErrors.nonuniqeEdge(uiValidationError, eType)
+      }.toList
+    }.filterNot(_._2.isEmpty)
+
+    ValidationResult.errors(edgeUniquenessErrors, List(), List())
+  }
+
+
+  private def validateLooseNodes(displayableProcess: DisplayableProcess): ValidationResult = {
+    val looseNodes = displayableProcess.nodes
+      //source & subprocess inputs don't have inputs
+      .filterNot(n => n.isInstanceOf[SubprocessInputDefinition] || n.isInstanceOf[Source])
+      .filterNot(n => displayableProcess.edges.exists(_.to == n.id))
+      .map(n => n.id -> List(PrettyValidationErrors.looseNode(uiValidationError)))
+      .toMap
+    ValidationResult.errors(looseNodes, List(), List())
+  }
+
+  private def validateDuplicateSource(displayableProcess: DisplayableProcess):ValidationResult = {
+    val inputs = displayableProcess.nodes
+      .filter(n => n.isInstanceOf[SubprocessInputDefinition] || n.isInstanceOf[Source])
+      .map(_.id)
+    if (inputs.size > 1) {
+      ValidationResult.errors(Map(), List(), List(PrettyValidationErrors.tooManySources(uiValidationError, inputs)))
+    } else {
+      ValidationResult.success
+    }
+
+  }
+
+  private def validateDuplicates(displayable: DisplayableProcess): ValidationResult = {
     val duplicates = displayable.nodes.groupBy(_.id).filter(_._2.size > 1).keys.toList
     if (duplicates.isEmpty) {
       ValidationResult.success

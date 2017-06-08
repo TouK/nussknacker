@@ -3,7 +3,8 @@
     "id" : "test1",
     "typeSpecificData": {
       "type": "StreamMetaData"
-    }
+    },
+    "isSubprocess": true
   },
   "exceptionHandlerRef": {
     "parameters": []

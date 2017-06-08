@@ -219,8 +219,8 @@ export function editGroup(oldGroupId, newGroup) {
 
 }
 
-export function nodesConnected(fromNode, toNode, edgeTypes) {
-  return {type: "NODES_CONNECTED", fromNode: fromNode, toNode: toNode, edgeTypes: edgeTypes}
+export function nodesConnected(fromNode, toNode, processDefinitionData) {
+  return {type: "NODES_CONNECTED", fromNode: fromNode, toNode: toNode, processDefinitionData: processDefinitionData}
 }
 export function nodesDisconnected(from, to) {
   return {type: "NODES_DISCONNECTED", from: from, to: to}

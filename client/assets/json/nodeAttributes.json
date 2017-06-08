@@ -21,7 +21,7 @@
     }
   },
   "SubprocessOutputDefinition": {
-    "name": "SubprocessInputDefinition",
+    "name": "SubprocessOutputDefinition",
     "styles": {
       "fill": "#db4646",
       "color": "white"

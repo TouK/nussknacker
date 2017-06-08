@@ -3,6 +3,7 @@ package pl.touk.esp.ui.validation
 import pl.touk.esp.engine.compile.ProcessCompilationError
 import pl.touk.esp.engine.compile.ProcessCompilationError._
 import pl.touk.esp.engine.util.ReflectUtils
+import pl.touk.esp.ui.process.displayedgraph.displayablenode.EdgeType
 import pl.touk.esp.ui.validation.ValidationResults.NodeValidationError
 
 object PrettyValidationErrors {
@@ -52,6 +53,21 @@ object PrettyValidationErrors {
   def duplicatedNodeIds(typ: String, duplicates: List[String]) = {
     NodeValidationError(typ: String,
       s"Duplicate node ids: ${duplicates.mkString(", ")}", "Two nodes cannot have same id", fieldName = None, isFatal = true)
+  }
+
+  def nonuniqeEdge(typ: String, etype: EdgeType) = {
+    NodeValidationError(typ, "Edges are not unique",
+      s"Node has duplicate outgoing edges of type: $etype, it cannot be saved properly", isFatal = true, fieldName = None)
+  }
+
+  def looseNode(typ: String) = {
+    NodeValidationError(typ, "Loose node",
+      s"Node is not connected to source, it cannot be saved properly", isFatal = true, fieldName = None)
+  }
+
+  def tooManySources(typ: String, ids: List[String]) = {
+    NodeValidationError(typ, "Too many inputs",
+      s"Process have mulitple inputs: $ids, it cannot be saved properly", isFatal = true, fieldName = None)
   }
 
   def disabledNode(typ: String) = {

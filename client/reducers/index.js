@@ -244,7 +244,7 @@ function graphReducer(state, action) {
     }
     case "NODES_CONNECTED": {
       const baseEdge = {from: action.fromNode.id, to: action.toNode.id}
-      const edgeType = NodeUtils.edgeType(state.processToDisplay.edges, action.fromNode, action.edgeTypes)
+      const edgeType = NodeUtils.edgeType(state.processToDisplay.edges, action.fromNode, action.processDefinitionData)
       const edge = edgeType ? {...baseEdge, edgeType: edgeType} : baseEdge
       return {
         ...state,

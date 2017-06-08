@@ -5,9 +5,13 @@ import java.io.File
 import akka.http.scaladsl.server.Route
 import com.typesafe.config.{Config, ConfigFactory}
 import db.migration.DefaultJdbcProfile
+import pl.touk.esp.engine.api.{MetaData, StreamMetaData}
 import pl.touk.esp.engine.api.deployment.test.{TestData, TestResults}
 import pl.touk.esp.engine.api.deployment.{ProcessDeploymentData, ProcessManager, ProcessState}
 import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
+import pl.touk.esp.engine.canonicalgraph.canonicalnode.{FlatNode, SplitNode}
+import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
+import pl.touk.esp.engine.graph.node.{Split, SubprocessInputDefinition, SubprocessOutputDefinition}
 import pl.touk.esp.engine.management.FlinkProcessManager
 import pl.touk.esp.ui.validation.ProcessValidation
 import pl.touk.esp.ui.api.{ProcessPosting, ProcessTestData}
@@ -72,6 +76,14 @@ object TestFactory {
   def withAllPermissions(route: LoggedUser => Route) = route(user(allPermissions: _*))
 
   object SampleSubprocessRepository extends SubprocessRepository {
-    override def loadSubprocesses(): Set[CanonicalProcess] = Set()
+    override def loadSubprocesses(): Set[CanonicalProcess] = Set(
+      CanonicalProcess(MetaData("sub1", StreamMetaData(), true), ExceptionHandlerRef(List()), List(
+        FlatNode(SubprocessInputDefinition("in", List())),
+        SplitNode(Split("split"), List(
+          List(FlatNode(SubprocessOutputDefinition("out", "out1"))),
+          List(FlatNode(SubprocessOutputDefinition("out2", "out2")))
+        ))
+      ))
+    )
   }
 }
