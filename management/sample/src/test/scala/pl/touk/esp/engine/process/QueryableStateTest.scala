@@ -60,7 +60,7 @@ class QueryableStateTest extends FlatSpec with BeforeAndAfterAll with Matchers w
 
     eventually {
       implicit val booleanTypeInfo = TypeInformation.of(classOf[java.lang.Boolean])
-      val fetchedStateFuture = new EspQueryableClient(QueryableClientTestFactory(stoppableEnv.getJobManagerActorSystem()), None)
+      val fetchedStateFuture = new EspQueryableClient(QueryableClientTestFactory(stoppableEnv.getJobManagerActorSystem()))
         .fetchState[java.lang.Boolean](jobId = jobId, queryName = "single-lock-state", key = "TestInput1")
       val booleanState = Await.result(fetchedStateFuture, Duration("10s"))
       booleanState shouldBe true

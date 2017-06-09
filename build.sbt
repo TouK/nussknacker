@@ -406,7 +406,7 @@ lazy val queryableState = (project in file("queryableState")).
         "com.typesafe" % "config" % configV
       )
     }
-  )
+  ).dependsOn(api)
 
 publishArtifact := false
 

@@ -61,7 +61,7 @@ object SampleSignalHandlingTransformer {
           .keyBy(input.syncInterpretationFunction, _.action.key)
           .transform("lockStreamTransform", new LockStreamFunction(context.metaData))
         ds
-          .keyBy(_ => "all")
+          .keyBy(_ => QueryableState.defaultKey)
           .transform("queryableStateTransform", new MakeStateQueryableTransformer[LockOutputStateChanged, LockOutput](lockQueryName, lockOutput => Argonaut.jObjectFields(
             "lockEnabled" -> jBool(lockOutput.lockEnabled)
           )){}.asInstanceOf[OneInputStreamOperator[Either[LockOutputStateChanged, ValueWithContext[LockOutput]], ValueWithContext[Any]]])
