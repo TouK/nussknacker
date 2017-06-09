@@ -52,12 +52,17 @@ class EspQueryableClient(client: QueryableStateClient, defaultKey: Option[String
 
   def fetchJsonState(jobId: String, queryName: String)
                     (implicit ec: ExecutionContext): Future[String] = {
-    fetchState[String](jobId, queryName, defaultKey.getOrElse(throw new RuntimeException("Default key for queryable state not defined")))
+    fetchState[String](jobId, queryName)
   }
 
   def fetchState[V: TypeInformation](jobId: String, queryName: String)
                 (implicit ec: ExecutionContext): Future[V] = {
-    fetchState[V](jobId, queryName, defaultKey.getOrElse(throw new RuntimeException("Default key for queryable state not defined")))
+    getDefaultKeyOrFail.flatMap(fetchState[V](jobId, queryName, _))
+  }
+
+  private def getDefaultKeyOrFail: Future[String] = defaultKey match {
+    case Some(key) => Future.successful(key)
+    case None => Future.failed(new RuntimeException("Default key for queryable state not defined"))
   }
 
 }
