@@ -8,16 +8,15 @@ import org.apache.flink.runtime.query.QueryableStateClient
 import org.apache.flink.runtime.query.netty.message.KvStateRequestSerializer
 import org.apache.flink.runtime.state.{VoidNamespace, VoidNamespaceSerializer}
 import org.apache.flink.streaming.api.scala._
+import pl.touk.esp.engine.api.QueryableState
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
 
 object EspQueryableClient {
 
   def apply(config: Config): EspQueryableClient = {
     val configuration = mapToFlinkConfiguration(config)
-    val defaultKey = Try(config.getString("queryableState.defaultKey")).toOption
-    new EspQueryableClient(new QueryableStateClient(configuration), defaultKey)
+    new EspQueryableClient(new QueryableStateClient(configuration))
   }
 
   private def mapToFlinkConfiguration(config: Config) = {
@@ -31,7 +30,7 @@ object EspQueryableClient {
   }
 }
 
-class EspQueryableClient(client: QueryableStateClient, defaultKey: Option[String]) {
+class EspQueryableClient(client: QueryableStateClient) {
 
   def fetchState[V: TypeInformation](jobId: String, queryName: String, key: String)
                       (implicit ec: ExecutionContext): Future[V] = {
@@ -57,12 +56,7 @@ class EspQueryableClient(client: QueryableStateClient, defaultKey: Option[String
 
   def fetchState[V: TypeInformation](jobId: String, queryName: String)
                 (implicit ec: ExecutionContext): Future[V] = {
-    getDefaultKeyOrFail.flatMap(fetchState[V](jobId, queryName, _))
-  }
-
-  private def getDefaultKeyOrFail: Future[String] = defaultKey match {
-    case Some(key) => Future.successful(key)
-    case None => Future.failed(new RuntimeException("Default key for queryable state not defined"))
+    fetchState[V](jobId, queryName, QueryableState.defaultKey)
   }
 
 }
