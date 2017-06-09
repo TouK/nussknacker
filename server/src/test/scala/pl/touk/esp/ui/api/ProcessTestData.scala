@@ -3,7 +3,7 @@ package pl.touk.esp.ui.api
 import pl.touk.esp.engine.api.StreamMetaData
 import pl.touk.esp.engine.build.EspProcessBuilder
 import pl.touk.esp.engine.compile.ProcessValidator
-import pl.touk.esp.engine.definition.ProcessDefinitionExtractor.{ObjectProcessDefinition, ProcessDefinition}
+import pl.touk.esp.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ObjectProcessDefinition, ProcessDefinition}
 import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.esp.engine.graph.node
 import pl.touk.esp.engine.graph.sink.SinkRef
@@ -27,8 +27,8 @@ object ProcessTestData {
         .withSinkFactory(otherExistingSinkFactory)
         .withSinkFactory(existingSinkFactory)
         .withService(existingServiceId)
-        .withCustomStreamTransformer(existingStreamTransformer, classOf[String])
-        .withCustomStreamTransformer(otherExistingStreamTransformer, classOf[String])
+        .withCustomStreamTransformer(existingStreamTransformer, classOf[String], CustomTransformerAdditionalData(Set.empty, clearsContext = false))
+        .withCustomStreamTransformer(otherExistingStreamTransformer, classOf[String], CustomTransformerAdditionalData(Set.empty, clearsContext = false))
 
   val validator = ProcessValidator.default(processDefinition)
 

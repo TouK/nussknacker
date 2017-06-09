@@ -97,7 +97,7 @@ object DefinitionPreparer {
 
     val customTransformers = SortedNodeGroup("custom",
       processDefinition.customStreamTransformers.map {
-        case (id, objDefinition) => NodeToAdd("customNode", id,
+        case (id, (objDefinition, _)) => NodeToAdd("customNode", id,
           CustomNode("", if (objDefinition.hasNoReturn) None else Some("outputVar"), id, objDefParams(objDefinition)), filterCategories(objDefinition))
       }.toList
     )
