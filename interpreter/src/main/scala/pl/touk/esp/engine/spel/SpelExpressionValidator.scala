@@ -44,7 +44,14 @@ class SpelExpressionValidator(expr: Expression, ctx: ValidationContext) {
   private def findAllPropertyAccess(n: SpelNode, rootClass: Option[ClazzRef], parent: Option[SpelNode]): Validated[ExpressionParseError, List[SpelPropertyAccess]] = {
     n match {
       case ce: CompoundExpression if ce.childrenHead.isInstanceOf[VariableReference] =>
-        findVariableReferenceAccess(ce.childrenHead.asInstanceOf[VariableReference], ce.children.tail.toList)
+        val childrenTail = ce.children.tail.toList
+        val references = findVariableReferenceAccess(ce.childrenHead.asInstanceOf[VariableReference], childrenTail)
+        //TODO: is everything ok with it??
+        if (childrenTail.headOption.exists(_.isInstanceOf[MethodReference])) {
+          references.andThen(_ => validateChildren(childrenTail, rootClass, Some(n)))
+        } else {
+          references
+        }
       //TODO: walidacja zmiennych w srodku Projection/Selection
       case ce: CompoundExpression if ce.childrenHead.isInstanceOf[PropertyOrFieldReference] =>
         Validated.invalid(ExpressionParseError(s"Non reference '${ce.childrenHead.toStringAST}' occurred. Maybe you missed '#' in front of it?"))

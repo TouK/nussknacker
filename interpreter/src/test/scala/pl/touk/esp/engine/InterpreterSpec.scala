@@ -65,7 +65,7 @@ class InterpreterSpec extends FlatSpec with Matchers {
     val process = EspProcess(metaData, ExceptionHandlerRef(List.empty), node)
     val splitted = ProcessSplitter.split(process)
     val servicesDefs = services.mapValuesNow { service => ObjectWithMethodDef(WithCategories(service), ServiceDefinitionExtractor) }
-    val interpreter = Interpreter(servicesDefs, 5 seconds, listeners)
+    val interpreter = Interpreter(servicesDefs, Map(), 5 seconds, listeners)
     val typesInformation = EspTypeUtils.clazzAndItsChildrenDefinition((servicesDef.values.map(_.getClass) ++ sourceFactories.values.map(c => Class.forName(c.returnType.refClazzName))).toList)
     val compiledNode = compile(servicesDefs, splitted.source.node, ValidationContext(typesInformation = typesInformation, variables = Map(Interpreter.InputParamName -> ClazzRef(classOf[Transaction]))))
     val initialCtx = Context("abc").withVariable(Interpreter.InputParamName, transaction)

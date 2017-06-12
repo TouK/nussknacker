@@ -20,6 +20,7 @@ import scala.util.Try
 import scala.util.control.NonFatal
 
 class Interpreter private(services: Map[String, ServiceInvoker],
+                          globalVariables: Map[String, Any],
                           lazyEvaluationTimeout: FiniteDuration,
                           listeners: Seq[ProcessListener] = Seq(LoggingListener)) {
 
@@ -211,9 +212,10 @@ class Interpreter private(services: Map[String, ServiceInvoker],
       timeout = lazyEvaluationTimeout,
       ctx = ctx
     )
-    val valueWithModifiedContext = expr.evaluate[R](ctx, lazyValuesProvider)
-    listeners.foreach(_.expressionEvaluated(node.id, expressionId, expr.original, ctx, metaData, valueWithModifiedContext.value))
-    valueWithModifiedContext
+    val ctxWithGlobals = ctx.withVariables(globalVariables)
+    val valueWithLazyContext = expr.evaluate[R](ctxWithGlobals, lazyValuesProvider)
+    listeners.foreach(_.expressionEvaluated(node.id, expressionId, expr.original, ctx, metaData, valueWithLazyContext.value))
+    ValueWithContext(valueWithLazyContext.value, ctx.withLazyContext(valueWithLazyContext.lazyContext))
   }
 
   private case class NodeIdExceptionWrapper(nodeId: String, exception: Throwable) extends Exception
@@ -228,9 +230,10 @@ object Interpreter {
   import pl.touk.esp.engine.util.Implicits._
 
   def apply(servicesDefs: Map[String, ObjectWithMethodDef],
+            globalVariables: Map[String, Any],
             lazyEvaluationTimeout: FiniteDuration,
             listeners: Seq[ProcessListener] = Seq(LoggingListener)) = {
-    new Interpreter(servicesDefs.mapValuesNow(ServiceInvoker(_)), lazyEvaluationTimeout, listeners)
+    new Interpreter(servicesDefs.mapValuesNow(ServiceInvoker(_)), globalVariables, lazyEvaluationTimeout, listeners)
   }
 
   private class LazyValuesProviderImpl(services: Map[String, ServiceInvoker],

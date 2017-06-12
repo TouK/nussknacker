@@ -25,6 +25,8 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
   val ctx = Context("abc",
     variables = Map("obj" -> testValue)
   )
+  val ctxWithGlobal : Context = ctx.withVariable("processHelper", SampleGlobalObject)
+
   def dumbLazyProvider = new LazyValuesProvider {
     override def apply[T](ctx: LazyContext, serviceId: String, params: Seq[(String, Any)]) = throw new IllegalStateException("Shouln't be invoked")
   }
@@ -35,8 +37,8 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
     val lazyVal = lazyValue[String](enrichingServiceId).map(_ + " ma kota")
   }
 
-  private def parseOrFail(expr: String, context: Context = ctx, globalProcessVariables: Map[String, ClazzRef] = Map.empty) = {
-    parse(expr, context, globalProcessVariables) match {
+  private def parseOrFail(expr: String, context: Context = ctx) = {
+    parse(expr, context) match {
       case Valid(e) => e
       case Invalid(err) => throw new ParseException(err.message, -1)
     }
@@ -45,13 +47,13 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
 
   import pl.touk.esp.engine.util.Implicits._
 
-  private def parse(expr: String, context: Context = ctx, globalProcessVariables: Map[String, ClazzRef] = Map.empty) = {
+  private def parse(expr: String, context: Context = ctx) = {
     val validationCtx = ValidationContext(
       context.variables.mapValuesNow(_.getClass).mapValuesNow(ClazzRef.apply),
       EspTypeUtils.clazzAndItsChildrenDefinition(context.variables.values.map(_.getClass).toList)
     )
     val expressionFunctions = Map("today" -> classOf[LocalDate].getDeclaredMethod("now"))
-    new SpelExpressionParser(expressionFunctions, globalProcessVariables, getClass.getClassLoader).parse(expr, validationCtx)
+    new SpelExpressionParser(expressionFunctions, getClass.getClassLoader).parse(expr, validationCtx)
   }
 
   it should "invoke simple expression" in {
@@ -102,9 +104,8 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
     parseOrFail("#date.until(#today()).days", withDays).evaluate[Integer](withDays, dumbLazyProvider).value should equal(2)
   }
 
-  it should "register global variables" in {
-    val globalVars = Map("processHelper" -> ClazzRef.apply(SampleGlobalObject.getClass))
-    parseOrFail("#processHelper.add(1, #processHelper.constant())", ctx, globalVars).evaluate[Integer](ctx, dumbLazyProvider).value should equal(5)
+  it should "register static variables" in {
+    parseOrFail("#processHelper.add(1, #processHelper.constant())", ctxWithGlobal).evaluate[Integer](ctxWithGlobal, dumbLazyProvider).value should equal(5)
   }
 
   it should "allow access to maps in dot notation" in {
@@ -115,6 +116,14 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
 
   }
 
+  it should "allow access to statics" in {
+    val withMapVar = ctx.withVariable("longClass", classOf[java.lang.Long])
+    
+    parseOrFail("#longClass.valueOf('44')", withMapVar).evaluate[Long](withMapVar, dumbLazyProvider).value should equal(44l)
+
+  }
+
+
   it should "evaluate using lazy value" in {
     val provided = "ala"
     val lazyValueProvider = new LazyValuesProvider {
@@ -124,26 +133,24 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
 
     val valueWithModifiedContext = parseOrFail("#obj.lazyVal").evaluate[String](ctx, lazyValueProvider)
     valueWithModifiedContext.value shouldEqual "ala ma kota"
-    valueWithModifiedContext.context.lazyContext[String](enrichingServiceId, Map.empty) shouldEqual provided
+    valueWithModifiedContext.lazyContext[String](enrichingServiceId, Map.empty) shouldEqual provided
   }
 
   it should "not allow access to variables without hash in methods" in {
-    val globalVars = Map("processHelper" -> ClazzRef.apply(SampleGlobalObject.getClass))
-    val withNum = ctx.withVariable("a", 5)
-    parse("#processHelper.add(a, 1)", withNum, globalVars) should matchPattern {
+    val withNum = ctx.withVariable("a", 5).withVariable("processHelper", SampleGlobalObject)
+    parse("#processHelper.add(a, 1)", withNum) should matchPattern {
       case Invalid(ExpressionParseError("Non reference 'a' occurred. Maybe you missed '#' in front of it?")) =>
     }
   }
 
   it should "not allow unknown variables in methods" in {
-    val globalVars = Map("processHelper" -> ClazzRef.apply(SampleGlobalObject.getClass))
-    parse("#processHelper.add(#a, 1)", ctx, globalVars) should matchPattern {
+    parse("#processHelper.add(#a, 1)", ctx.withVariable("processHelper", SampleGlobalObject.getClass)) should matchPattern {
       case Invalid(ExpressionParseError("Unresolved references a")) =>
     }
   }
 
   it should "not allow vars without hashes in equality condition" in {
-    parse("nonexisting == 'ala'", ctx, Map()) should matchPattern {
+    parse("nonexisting == 'ala'", ctx) should matchPattern {
       case Invalid(ExpressionParseError("Non reference 'nonexisting' occurred. Maybe you missed '#' in front of it?")) =>
     }
   }
@@ -151,24 +158,23 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
 
   it should "validate expression with projection and filtering" in {
     val ctxWithInput = ctx.withVariable("input", SampleObject(List(SampleValue(444))))
-    parse("(#input.list.?[value == 5]).![value].contains(5)", ctxWithInput, Map()) shouldBe 'valid
+    parse("(#input.list.?[value == 5]).![value].contains(5)", ctxWithInput) shouldBe 'valid
   }
 
   it should "validate map literals" in {
     val ctxWithInput = ctx.withVariable("input", SampleValue(444))
-    parse("{ Field1: 'Field1Value', Field2: 'Field2Value', Field3: #input.value }", ctxWithInput, Map()) shouldBe 'valid
+    parse("{ Field1: 'Field1Value', Field2: 'Field2Value', Field3: #input.value }", ctxWithInput) shouldBe 'valid
   }
 
   it should "not validate plain string " in {
-    parse("abcd", ctx, Map()) shouldNot be ('valid)
+    parse("abcd", ctx) shouldNot be ('valid)
   }
 
   it should "evaluate static field/method using property syntax" in {
-    val globalVars = Map("processHelper" -> ClazzRef.apply(SampleGlobalObject.getClass))
-    parseOrFail("#processHelper.one", globalProcessVariables = globalVars).evaluate[Int](ctx, dumbLazyProvider).value should equal(1)
-    parseOrFail("#processHelper.one()", globalProcessVariables = globalVars).evaluate[Int](ctx, dumbLazyProvider).value should equal(1)
-    parseOrFail("#processHelper.constant", globalProcessVariables = globalVars).evaluate[Int](ctx, dumbLazyProvider).value should equal(4)
-    parseOrFail("#processHelper.constant()", globalProcessVariables = globalVars).evaluate[Int](ctx, dumbLazyProvider).value should equal(4)
+    parseOrFail("#processHelper.one", ctxWithGlobal).evaluate[Int](ctxWithGlobal, dumbLazyProvider).value should equal(1)
+    parseOrFail("#processHelper.one()", ctxWithGlobal).evaluate[Int](ctxWithGlobal, dumbLazyProvider).value should equal(1)
+    parseOrFail("#processHelper.constant", ctxWithGlobal).evaluate[Int](ctxWithGlobal, dumbLazyProvider).value should equal(4)
+    parseOrFail("#processHelper.constant()", ctxWithGlobal).evaluate[Int](ctxWithGlobal, dumbLazyProvider).value should equal(4)
   }
 
 }
