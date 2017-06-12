@@ -21,6 +21,7 @@ import pl.touk.esp.engine.splittedgraph.splittednode.SplittedNode
 import scala.util.Right
 
 class PartSubGraphCompiler(protected val expressionParsers: Map[String, ExpressionParser],
+                           protected val globalVariables: Map[String, ClazzRef],
                            protected val services: Map[String, ObjectWithMethodDef]) extends PartSubGraphCompilerBase {
 
   override type ParametersProviderT = ObjectWithMethodDef
@@ -35,6 +36,7 @@ class PartSubGraphCompiler(protected val expressionParsers: Map[String, Expressi
 }
 
 class PartSubGraphValidator(protected val expressionParsers: Map[String, ExpressionParser],
+                            protected val globalVariables: Map[String, ClazzRef],
                             protected val services: Map[String, ObjectDefinition]) extends PartSubGraphCompilerBase {
 
   override type ParametersProviderT = ObjectDefinition
@@ -70,6 +72,8 @@ private[compile] trait PartSubGraphCompilerBase {
   protected def expressionParsers: Map[String, ExpressionParser]
 
   protected def services: Map[String, ParametersProviderT]
+
+  protected def globalVariables: Map[String, ClazzRef]
 
   protected def compile(n: splittednode.SplittedNode[_]): ValidatedNel[PartSubGraphCompilationError, CompiledNode] = {
     new Compiler(true).doCompile(n, ValidationContext())
@@ -217,15 +221,20 @@ private[compile] trait PartSubGraphCompilerBase {
       val validParser = expressionParsers
         .get(n.language)
         .map(valid)
-        .getOrElse(invalid(NotSupportedExpressionLanguage(n.language)))
-      (validParser andThen { parser =>
-        val parseResult = if (contextValidationEnabled && !skipContextValidation) {
-          parser.parse(n.expression, ctx)
+        .getOrElse(invalid(NotSupportedExpressionLanguage(n.language))).toValidatedNel
+      val ctxWithGlobalVars = globalVariables.foldLeft[ValidatedNel[PartSubGraphCompilationError, ValidationContext]](Valid(ctx)) { case (acc, (k, v)) =>
+          acc.andThen(_.withVariable(k, v))
+      }
+      //TODO: make it nicer..
+      validParser andThen { parser =>
+        if (contextValidationEnabled && !skipContextValidation) {
+          ctxWithGlobalVars.andThen(valid =>
+            parser.parse(n.expression, valid)
+              .leftMap(err => NonEmptyList.of[PartSubGraphCompilationError](ExpressionParseError(err.message, fieldName, n.expression))))
         } else {
-          parser.parseWithoutContextValidation(n.expression)
+          parser.parseWithoutContextValidation(n.expression).leftMap(err => NonEmptyList.of[PartSubGraphCompilationError](ExpressionParseError(err.message, fieldName, n.expression)))
         }
-        parseResult.leftMap(err => ExpressionParseError(err.message, fieldName, n.expression))
-      }).toValidatedNel
+      }
     }
   }
 
@@ -234,8 +243,8 @@ private[compile] trait PartSubGraphCompilerBase {
 
 object PartSubGraphCompilerBase {
 
-  private[compile] def defaultParsers(globalProcessVariables: Map[String, ClazzRef], loader: ClassLoader) = {
-    val parsersSeq = Seq(SpelExpressionParser.default(globalProcessVariables, loader))
+  private[compile] def defaultParsers(loader: ClassLoader) = {
+    val parsersSeq = Seq(SpelExpressionParser.default(loader))
     parsersSeq.map(p => p.languageId -> p).toMap
   }
 
@@ -253,14 +262,14 @@ object PartSubGraphCompiler {
 
   def default(servicesDefs: Map[String, ObjectWithMethodDef],
               globalProcessVariables: Map[String, ClazzRef], loader: ClassLoader): PartSubGraphCompiler = {
-    new PartSubGraphCompiler(PartSubGraphCompilerBase.defaultParsers(globalProcessVariables, loader), servicesDefs)
+    new PartSubGraphCompiler(PartSubGraphCompilerBase.defaultParsers(loader), globalProcessVariables, servicesDefs)
   }
 }
 
 object PartSubGraphValidator {
 
   def default(services: Map[String, ObjectDefinition], globalProcessVariables: Map[String, ClazzRef], loader: ClassLoader) = {
-    new PartSubGraphValidator(PartSubGraphCompilerBase.defaultParsers(globalProcessVariables, loader), services)
+    new PartSubGraphValidator(PartSubGraphCompilerBase.defaultParsers(loader), globalProcessVariables, services)
   }
 
 }

@@ -3,7 +3,8 @@ package pl.touk.esp.engine.spel
 import java.lang.reflect.{Method, Modifier}
 import java.time.{LocalDate, LocalDateTime}
 
-import cats.data.{State, Validated}
+import cats.data.Validated.Valid
+import cats.data.{State, Validated, ValidatedNel}
 import com.typesafe.scalalogging.LazyLogging
 import org.springframework.expression._
 import org.springframework.expression.common.CompositeStringExpression
@@ -13,8 +14,8 @@ import org.springframework.expression.spel.{SpelCompilerMode, SpelParserConfigur
 import pl.touk.esp.engine._
 import pl.touk.esp.engine.api.lazyy.{ContextWithLazyValuesProvider, LazyValuesProvider}
 import pl.touk.esp.engine.api.{Context, ValueWithContext}
-import pl.touk.esp.engine.compile.ValidationContext
-import pl.touk.esp.engine.compiledgraph.expression.{ExpressionParseError, ExpressionParser}
+import pl.touk.esp.engine.compile.{PartSubGraphCompilationError, ValidationContext}
+import pl.touk.esp.engine.compiledgraph.expression.{ExpressionParseError, ExpressionParser, ValueWithLazyContext}
 import pl.touk.esp.engine.definition.DefinitionExtractor.ClazzRef
 import pl.touk.esp.engine.functionUtils.CollectionUtils
 
@@ -29,7 +30,8 @@ class SpelExpression(parsed: org.springframework.expression.Expression,
   import pl.touk.esp.engine.spel.SpelExpressionParser._
 
 
-  override def evaluate[T](ctx: Context, lazyValuesProvider: LazyValuesProvider): ValueWithContext[T] = logOnException(ctx) {
+  override def evaluate[T](ctx: Context,
+                           lazyValuesProvider: LazyValuesProvider): ValueWithLazyContext[T] = logOnException(ctx) {
     val simpleContext = new StandardEvaluationContext()
     simpleContext.setTypeLocator(new StandardTypeLocator(classLoader))
     propertyAccessors.foreach(simpleContext.addPropertyAccessor)
@@ -44,7 +46,7 @@ class SpelExpression(parsed: org.springframework.expression.Expression,
     }
     val value = parsed.getValue(simpleContext).asInstanceOf[T]
     val modifiedContext = simpleContext.lookupVariable(ModifiedContextVariableName).asInstanceOf[Context]
-    ValueWithContext(value, modifiedContext)
+    ValueWithLazyContext(value, modifiedContext.lazyContext)
   }
 
   private def logOnException[A](ctx: Context)(block: => A): A = {
@@ -61,7 +63,7 @@ class SpelExpression(parsed: org.springframework.expression.Expression,
   }
 }
 
-class SpelExpressionParser(expressionFunctions: Map[String, Method], globalProcessVariables: Map[String, ClazzRef],
+class SpelExpressionParser(expressionFunctions: Map[String, Method],
                            classLoader: ClassLoader) extends ExpressionParser {
 
   import pl.touk.esp.engine.spel.SpelExpressionParser._
@@ -87,29 +89,23 @@ class SpelExpressionParser(expressionFunctions: Map[String, Method], globalProce
   )
 
   override def parseWithoutContextValidation(original: String): Validated[ExpressionParseError, compiledgraph.expression.Expression] = {
-    val desugared = desugarStaticReferences(original)
-    Validated.catchNonFatal(parser.parseExpression(desugared)).leftMap(ex => ExpressionParseError(ex.getMessage)).map { parsed =>
-      forceCompile(parsed)
-      new SpelExpression(parsed, original, expressionFunctions, propertyAccessors, classLoader)
+    Validated.catchNonFatal(parser.parseExpression(original)).leftMap(ex => ExpressionParseError(ex.getMessage)).map { parsed =>
+      expression(parsed, original)
+
     }
   }
 
   override def parse(original: String, ctx: ValidationContext): Validated[ExpressionParseError, compiledgraph.expression.Expression] = {
-    val desugared = desugarStaticReferences(original)
-    Validated.catchNonFatal(parser.parseExpression(desugared)).leftMap(ex => ExpressionParseError(ex.getMessage)).andThen { parsed =>
+    Validated.catchNonFatal(parser.parseExpression(original)).leftMap(ex => ExpressionParseError(ex.getMessage)).andThen { parsed =>
       new SpelExpressionValidator(parsed, ctx).validate()
     }.map { withReferencesResolved =>
-      forceCompile(withReferencesResolved)
-      new SpelExpression(withReferencesResolved, original, expressionFunctions, propertyAccessors, classLoader)
+      expression(withReferencesResolved, original)
     }
   }
 
-  //to nie wyglada zbyt profesjonalnie, moze da sie jakos ladniej?
-  private def desugarStaticReferences(original: String) = {
-    globalProcessVariables.foldLeft(original) { case (preprocessed, (globalVariableName, clazzRef)) =>
-      val staticClazz = s"T(${clazzRef.refClazzName.init})"
-      preprocessed.replace(s"#$globalVariableName", staticClazz)
-    }
+  private def expression(expression: Expression, original: String) = {
+    forceCompile(expression)
+    new SpelExpression(expression, original, expressionFunctions, propertyAccessors, classLoader)
   }
 
 }
@@ -144,12 +140,12 @@ object SpelExpressionParser extends LazyLogging {
 
 
   //caching?
-  def default(globalProcessVariables: Map[String, ClazzRef], loader: ClassLoader): SpelExpressionParser = new SpelExpressionParser(Map(
+  def default(loader: ClassLoader): SpelExpressionParser = new SpelExpressionParser(Map(
     "today" -> classOf[LocalDate].getDeclaredMethod("now"),
     "now" -> classOf[LocalDateTime].getDeclaredMethod("now"),
     "distinct" -> classOf[CollectionUtils].getDeclaredMethod("distinct", classOf[java.util.Collection[_]]),
     "sum" -> classOf[CollectionUtils].getDeclaredMethod("sum", classOf[java.util.Collection[_]])
-  ), globalProcessVariables, loader)
+  ), loader)
 
 
   class ScalaPropertyAccessor extends PropertyAccessor with ReadOnly with Caching {

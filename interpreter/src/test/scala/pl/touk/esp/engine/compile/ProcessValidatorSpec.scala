@@ -22,7 +22,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
 
   private def emptyQueryNamesData(clearsContext: Boolean = false) = CustomTransformerAdditionalData(Set(), clearsContext)
 
-  private val baseDefinition = ProcessDefinition(
+  private val baseDefinition = ProcessDefinition[ObjectDefinition](
     Map("sampleEnricher" -> ObjectDefinition(List.empty, classOf[SimpleRecord], List()), "withParamsService" -> ObjectDefinition(List(Parameter("par1",
       ClazzRef(classOf[String]))), classOf[SimpleRecord], List())),
     Map("source" -> ObjectDefinition(List.empty, classOf[SimpleRecord], List())),
@@ -35,7 +35,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
     ),
     Map.empty,
     ObjectDefinition.noParam,
-    Map("processHelper" -> WithCategories(ClazzRef(ProcessHelper.getClass), List("cat1"))),
+    Map("processHelper" -> ObjectDefinition(List(), ClazzRef(ProcessHelper.getClass), List("cat1"))),
     EspTypeUtils.clazzAndItsChildrenDefinition(List(classOf[SampleEnricher], classOf[SimpleRecord], ProcessHelper.getClass))
   )
 

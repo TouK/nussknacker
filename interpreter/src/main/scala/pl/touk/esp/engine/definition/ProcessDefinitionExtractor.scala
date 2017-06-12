@@ -45,15 +45,18 @@ object ProcessDefinitionExtractor {
     val exceptionHandlerFactoryDefs = ObjectWithMethodDef(
       WithCategories(exceptionHandlerFactory, List()), ProcessObjectDefinitionExtractor.exceptionHandler)
 
+    //TODO: this is not so nice...
     val globalVariablesDefs = globalVariables.mapValuesNow { globalVar =>
-      globalVar.map(ClazzRef(_))
+      val klass = globalVar.value.getClass
+      ObjectWithMethodDef(globalVar.value, MethodDefinition(null, klass, new OrderedParameters(List())),
+        ObjectDefinition(List(), klass, globalVar.categories))
     }
 
     val typesInformation = TypesInformation.extract(servicesDefs.values,
       sourceFactoriesDefs.values,
       customStreamTransformersDefs.values,
       signalsDefs.values.map(_._1),
-      globalVariables.values.map(_.value)
+      globalVariablesDefs.values.map(_.methodDef.returnType)
     )
 
     ProcessDefinition[ObjectWithMethodDef](
@@ -80,7 +83,7 @@ object ProcessDefinitionExtractor {
                                                     customStreamTransformers: Map[String, (T, CustomTransformerAdditionalData)],
                                                     signalsWithTransformers: Map[String, (T, Set[TransformerId])],
                                                     exceptionHandlerFactory: T,
-                                                    globalVariables: Map[String, WithCategories[ClazzRef]],
+                                                    globalVariables: Map[String, T],
                                                     typesInformation: List[PlainClazzDefinition]) {
   }
 
@@ -88,7 +91,7 @@ object ProcessDefinitionExtractor {
     def empty: ProcessDefinition[ObjectDefinition] =
       ProcessDefinition(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, ObjectDefinition.noParam, Map.empty, List.empty)
 
-    def apply(definition: ProcessDefinition[ObjectWithMethodDef]) =
+    def apply(definition: ProcessDefinition[ObjectWithMethodDef]) : ProcessDefinition[ObjectDefinition] =
       ProcessDefinition(
         definition.services.mapValuesNow(_.objectDefinition),
         definition.sourceFactories.mapValuesNow(_.objectDefinition),
@@ -96,7 +99,7 @@ object ProcessDefinitionExtractor {
         definition.customStreamTransformers.mapValuesNow { case (transformer, queryNames) => (transformer.objectDefinition, queryNames)},
         definition.signalsWithTransformers.mapValuesNow(sign => (sign._1.objectDefinition, sign._2)),
         definition.exceptionHandlerFactory.objectDefinition,
-        definition.globalVariables,
+        definition.globalVariables.mapValuesNow(_.objectDefinition),
         definition.typesInformation
       )
   }

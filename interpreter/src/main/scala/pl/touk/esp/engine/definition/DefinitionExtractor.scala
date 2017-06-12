@@ -79,7 +79,7 @@ object DefinitionExtractor {
     def categories: List[String]
 
     //TODO: czy to tak?
-    def hasNoReturn = Set(classOf[Void], classOf[Unit], classOf[BoxedUnit]).map(_.getName).contains(returnType.refClazzName)
+    def hasNoReturn : Boolean = Set(classOf[Void], classOf[Unit], classOf[BoxedUnit]).map(_.getName).contains(returnType.refClazzName)
 
   }
 

@@ -62,8 +62,9 @@ object StandaloneProcessInterpreter {
     val services = creator.services(config).map { case (_, service) => service.value }
 
     //for testing environment it's important to take classloader from user jar
-    val sub = PartSubGraphCompiler.default(definitions.services, definitions.globalVariables.mapValuesNow(_.value), creator.getClass.getClassLoader)
-    val interpreter = Interpreter(definitions.services, FiniteDuration(10, TimeUnit.SECONDS), creator.listeners(config) ++ additionalListeners)
+    val sub = PartSubGraphCompiler.default(definitions.services, definitions.globalVariables.mapValuesNow(_.objectDefinition.returnType), creator.getClass.getClassLoader)
+    val interpreter = Interpreter(definitions.services, definitions.globalVariables.mapValuesNow(_.obj),
+      FiniteDuration(10, TimeUnit.SECONDS), creator.listeners(config) ++ additionalListeners)
 
     //FIXME: asInstanceOf, should be proper handling of SubprocessInputDefinition
     val sourceFactory = definitions.sourceFactories(process.root.data.asInstanceOf[Source].ref.typ).obj.asInstanceOf[StandaloneSourceFactory[Any]]

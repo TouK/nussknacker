@@ -53,7 +53,7 @@ class StandaloneProcessConfigCreator extends ProcessConfigCreator with LazyLoggi
     override def handle(exceptionInfo: EspExceptionInfo[_ <: Throwable]): Unit = logger.error("Error", exceptionInfo)
   })
 
-  override def globalProcessVariables(config: Config): Map[String, WithCategories[Class[_]]] = Map.empty
+  override def globalProcessVariables(config: Config): Map[String, WithCategories[AnyRef]] = Map.empty
 
   override def signals(config: Config): Map[String, WithCategories[ProcessSignalSender]] = Map.empty
 

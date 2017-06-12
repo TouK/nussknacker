@@ -37,7 +37,7 @@ class ProcessDefinitionExtractorSpec extends FlatSpec with Matchers {
         override def handle(exceptionInfo: EspExceptionInfo[_ <: Throwable]): Unit = {}
       })
 
-    override def globalProcessVariables(config: Config): Map[String, WithCategories[Class[_]]] = Map()
+    override def globalProcessVariables(config: Config): Map[String, WithCategories[AnyRef]] = Map()
 
     override def buildInfo(): Map[String, String] = Map()
 
