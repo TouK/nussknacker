@@ -36,7 +36,8 @@ sources in (Compile, doc) := Seq.empty
 publishArtifact in (Compile, packageDoc) := false
 assemblyMergeStrategy in assembly := {
   case PathList(ps @ _*) if ps.last == "NumberUtils.class" => MergeStrategy.first
-  case PathList("org", "w3c", "dom", "events",  xs @ _*) => MergeStrategy.first
+  case PathList("org", "w3c", "dom", "events", xs @ _*) => MergeStrategy.first
+  case PathList("akka", xs @ _*) => MergeStrategy.last
   case x =>
     val oldStrategy = (assemblyMergeStrategy in assembly).value
     oldStrategy(x)
