@@ -1,0 +1,163 @@
+################################################################################
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+# limitations under the License.
+################################################################################
+
+
+#==============================================================================
+# Common
+#==============================================================================
+
+# The host on which the JobManager runs. Only used in non-high-availability mode.
+# The JobManager process will use this hostname to bind the listening servers to.
+# The TaskManagers will try to connect to the JobManager on that host.
+
+jobmanager.rpc.address: jobmanager
+
+taskmanager.hostname: taskmanager
+
+env.java.opts: "-Dflink.local.hostname=taskmanager"
+
+# The port where the JobManager's main actor system listens for messages.
+
+jobmanager.rpc.port: 6123
+
+
+# The heap size for the JobManager JVM
+
+jobmanager.heap.mb: 500
+
+
+# The heap size for the TaskManager JVM
+
+taskmanager.heap.mb: 10000
+
+
+# The number of task slots that each TaskManager offers. Each slot runs one parallel pipeline.
+
+taskmanager.numberOfTaskSlots: 40
+
+
+# The parallelism used for programs that did not specify and other parallelism.
+
+parallelism.default: 8
+
+
+#==============================================================================
+# Web Frontend
+#==============================================================================
+
+# The port under which the web-based runtime monitor listens.
+# A value of -1 deactivates the web server.
+
+jobmanager.web.port: 8081
+
+
+# The port uder which the standalone web client
+# (for job upload and submit) listens.
+
+webclient.port: 6080
+
+#recovery.mode: zookeeper
+#recovery.zookeeper.quorum: zookeeper:2181
+#recovery.zookeeper.path.root: /flinkPath
+
+
+state.backend: filesystem
+state.backend.fs.checkpointdir: file:///opt/flinkData/checkpoints
+state.savepoints.dir:  file:///opt/flinkData/savepoints
+recovery.zookeeper.storageDir: file:///opt/flinkData/storage
+
+metrics.reporters: graphite_reporter
+metrics.reporter.graphite_reporter.class: org.apache.flink.metrics.graphite.GraphiteReporter
+metrics.reporter.graphite_reporter.host: influxdb
+metrics.reporter.graphite_reporter.port: 2003
+metrics.reporter.graphite_reporter.protocol: UDP
+
+metrics.scope.jm: cpDemo.<host>.jobmanagerGlobal
+metrics.scope.jm.job: cpDemo.<host>.jobmanagerJob.<job_name>
+metrics.scope.tm: cpDemo.<host>.taskmanagerGlobal.<tm_id>
+metrics.scope.tm.job: cpDemo.<host>.taskmanagerJob.<tm_id>.<job_name>
+metrics.scope.task: cpDemo.<host>.taskmanagerTask.<tm_id>.<job_name>.<task_name>.<subtask_index>
+metrics.scope.operator: cpDemo.<host>.taskmanagerTask.<tm_id>.<job_name>.<operator_name>.<subtask_index>
+
+akka.framesize: 209715200b
+jobmanager.web.history: 50blob.server.port: 6124
+query.server.port: 6125
+blob.server.port: 6124
+query.server.port: 6125
+blob.server.port: 6124
+query.server.port: 6125
+blob.server.port: 6124
+query.server.port: 6125
+blob.server.port: 6124
+query.server.port: 6125
+blob.server.port: 6124
+query.server.port: 6125
+blob.server.port: 6124
+query.server.port: 6125
+blob.server.port: 6124
+query.server.port: 6125
+blob.server.port: 6124
+query.server.port: 6125
+blob.server.port: 6124
+query.server.port: 6125
+blob.server.port: 6124
+query.server.port: 6125
+blob.server.port: 6124
+query.server.port: 6125
+blob.server.port: 6124
+query.server.port: 6125
+blob.server.port: 6124
+query.server.port: 6125
+blob.server.port: 6124
+query.server.port: 6125
+blob.server.port: 6124
+query.server.port: 6125
+blob.server.port: 6124
+query.server.port: 6125
+blob.server.port: 6124
+query.server.port: 6125
+blob.server.port: 6124
+query.server.port: 6125
+blob.server.port: 6124
+query.server.port: 6125
+blob.server.port: 6124
+query.server.port: 6125
+blob.server.port: 6124
+query.server.port: 6125
+blob.server.port: 6124
+query.server.port: 6125
+blob.server.port: 6124
+query.server.port: 6125
+blob.server.port: 6124
+query.server.port: 6125
+blob.server.port: 6124
+query.server.port: 6125
+blob.server.port: 6124
+query.server.port: 6125
+blob.server.port: 6124
+query.server.port: 6125
+blob.server.port: 6124
+query.server.port: 6125
+blob.server.port: 6124
+query.server.port: 6125
+blob.server.port: 6124
+query.server.port: 6125
+blob.server.port: 6124
+query.server.port: 6125
+blob.server.port: 6124
+query.server.port: 6125
