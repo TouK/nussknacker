@@ -54,6 +54,7 @@ class NodeUtils {
 
   getNodeById = (nodeId, process) => this.nodesFromProcess(process).find(n => n.id === nodeId)
 
+  getEdgeById = (edgeId, process) => this.edgesFromProcess(process).find(e => this.edgeId(e) === edgeId)
 
   getAllGroups = (process) => _.get(process, 'properties.additionalFields.groups', [])
 
@@ -161,6 +162,9 @@ class NodeUtils {
     return this.edgesFromProcess(process).filter(e => e.from == nodeId)
   }
 
+  edgeId = (edge) => {
+    return `${edge.from}-${edge.to}`
+  }
 
 
 }

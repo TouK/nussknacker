@@ -22,9 +22,39 @@ const Visualization = withRouter(React.createClass({
   },
 
   componentDidMount() {
-    this.fetchProcessDetails().then((details) => this.props.actions.fetchProcessDefinition(
-      details.fetchedProcessDetails.processingType, _.get(details, "fetchedProcessDetails.json.properties.isSubprocess")));
-    this.fetchProcessStatus();
+    this.fetchProcessDetails().then((details) => {
+      this.props.actions.fetchProcessDefinition(
+        details.fetchedProcessDetails.processingType, _.get(details, "fetchedProcessDetails.json.properties.isSubprocess")
+      ).then(() => {
+        this.showModalDetailsIfNeeded(details.fetchedProcessDetails.json)
+      })
+    })
+    this.fetchProcessStatus()
+    this.bindKeyboardActions()
+    this.props.actions.toggleLeftPanel(true)
+    this.bindUnsavedProcessChangesDialog()
+  },
+
+  showModalDetailsIfNeeded(process) {
+    const urlNodeId = this.props.location.query.nodeId
+    const urlEdgeId = this.props.location.query.edgeId
+    if (!_.isEmpty(urlNodeId)) {
+      this.props.actions.displayModalNodeDetails(NodeUtils.getNodeById(urlNodeId, process))
+    }
+    if (!_.isEmpty(urlEdgeId)) {
+      this.props.actions.displayModalEdgeDetails(NodeUtils.getEdgeById(urlEdgeId, process))
+    }
+  },
+
+  bindUnsavedProcessChangesDialog() {
+    this.props.router.setRouteLeaveHook(this.props.route, (route) => {
+      if (!this.props.nothingToSave) { //najlepiej jakby tutaj pokazywal sie modal, a nie alert, tylko jak w react-router to zrobic...
+        return DialogMessages.unsavedProcessChanges()
+      }
+    })
+  },
+
+  bindKeyboardActions() {
     window.onkeydown = (event) => {
       if (event.ctrlKey && !event.shiftKey && event.key.toLowerCase() == "z") {
         this.undo()
@@ -37,12 +67,6 @@ const Visualization = withRouter(React.createClass({
         this.deleteNode(this.props.currentNodeId)
       }
     }
-    this.props.actions.toggleLeftPanel(true)
-    this.props.router.setRouteLeaveHook(this.props.route, (route) => {
-      if (!this.props.nothingToSave) { //najlepiej jakby tutaj pokazywal sie modal, a nie alert, tylko jak w react-router to zrobic...
-        return DialogMessages.unsavedProcessChanges()
-      }
-    })
   },
 
   componentWillUnmount() {
