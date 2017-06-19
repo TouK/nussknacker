@@ -1,5 +1,7 @@
+import {browserHistory} from "react-router";
 import HttpService from "../http/HttpService";
 import GraphUtils from "../components/graph/GraphUtils";
+import NodeUtils from "../components/graph/NodeUtils";
 import _ from "lodash";
 import * as UndoRedoActions from "../undoredo/UndoRedoActions";
 
@@ -18,7 +20,7 @@ export function fetchProcessToDisplay(processId, versionId) {
 
 export function fetchProcessDefinition(processingType, isSubprocess) {
   return (dispatch) => {
-    HttpService.fetchProcessDefinitionData(processingType, isSubprocess).then((data) =>
+    return HttpService.fetchProcessDefinitionData(processingType, isSubprocess).then((data) =>
       dispatch({type: "PROCESS_DEFINITION_DATA", processDefinitionData: data})
     )
   }
@@ -26,7 +28,7 @@ export function fetchProcessDefinition(processingType, isSubprocess) {
 
 export function fetchAvailableQueryStates() {
   return (dispatch) => {
-    HttpService.availableQueryableStates().then((data) =>
+    return HttpService.availableQueryableStates().then((data) =>
       dispatch({type: "AVAILABLE_QUERY_STATES", availableQueryableStates: data})
     )
   }
@@ -128,6 +130,7 @@ export function clearProcess() {
 }
 
 export function displayModalNodeDetails(node) {
+  browserHistory.replace({ pathname: window.location.pathname, search: `?nodeId=${node.id}`})
   return {
     type: "DISPLAY_MODAL_NODE_DETAILS",
     nodeToDisplay: node
@@ -135,6 +138,7 @@ export function displayModalNodeDetails(node) {
 }
 
 export function displayModalEdgeDetails(edge) {
+  browserHistory.replace({ pathname: window.location.pathname, search: `?edgeId=${NodeUtils.edgeId(edge)}`})
   return {
     type: "DISPLAY_MODAL_EDGE_DETAILS",
     edgeToDisplay: edge
@@ -149,6 +153,7 @@ export function displayNodeDetails(node) {
 }
 
 export function closeModals() {
+  browserHistory.replace({ pathname: window.location.pathname, search: ''})
   return {
     type: "CLOSE_MODALS"
   };
