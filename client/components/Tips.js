@@ -71,7 +71,7 @@ export class Tips extends Component {
 function mapState(state) {
   return {
     currentProcess: state.graphReducer.processToDisplay || {},
-    testing: state.graphReducer.testResults != null,
+    testing: state.graphReducer.testResults || false,
     grouping: state.graphReducer.groupingState != null
   };
 }

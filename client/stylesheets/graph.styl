@@ -90,6 +90,16 @@ espCheckbox()
   margin-left auto
   margin-right auto
   border: 2px solid menuBkgColor
+  .confirmationButtons
+    text-align center
+    button
+      margin-top 80px
+      margin-bottom 10px
+      margin-left 0px
+    button:first-child
+      margin-right 20px
+    button:nth-child(2)
+      margin-left 20px
 
 .confirmationModal
   width 575px
@@ -98,14 +108,35 @@ espCheckbox()
   text-align center
   p
     margin-top 30px
-  button
-    margin-top 80px
-    margin-bottom 10px
-    margin-left 0px
-  button:first-child
-    margin-right 20px
-  button:nth-child(2)
-    margin-left 20px
+
+
+.compareModal
+  max-width 1000
+  max-height 700
+  font-size: 15px
+  font-weight: 700
+  .notPresent
+    margin-bottom: 50px
+    margin-top: 50px
+    margin-left 30px
+    margin-right 30px
+    color: modalLabelTextColor
+  .versionHeader
+    margin-bottom: 15px
+    margin-top: 15px
+    margin-left 30px
+    margin-right 30px
+  .compareContainer
+    zoom: 0.9
+    >:first-child
+      width: 50%
+      display: inline-block
+      vertical-align:top
+
+    >:nth-child(2)
+      width: 50%
+      display: inline-block
+      vertical-align:top
 
 .modalHeader
   text-transform: lowercase
@@ -427,3 +458,4 @@ espButtonIcon()
     border: none
     font-size: 14px
     font-weight: 400
+
