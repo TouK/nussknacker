@@ -14,13 +14,15 @@ import pl.touk.esp.ui.process.marshall.ProcessConverter
 import pl.touk.esp.ui.process.migrate.ProcessMigrator
 import pl.touk.esp.ui.sample.SampleProcess
 import pl.touk.esp.ui.security.{LoggedUser, Permission}
-import pl.touk.esp.ui.util.ProcessComparator.Difference
+import pl.touk.esp.ui.util.ProcessComparator.{Difference, NodeNotPresentInCurrent}
 import pl.touk.esp.ui.validation.ValidationResults.ValidationResult
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
-
 import argonaut.ArgonautShapeless._
+import pl.touk.esp.engine.graph.expression.Expression
+import pl.touk.esp.engine.graph.node.Filter
+import pl.touk.esp.ui.util.ProcessComparator
 
 class MigrationResourceSpec extends FlatSpec with ScalatestRouteTest with ScalaFutures with Matchers
   with BeforeAndAfterEach with Inside with EspItTest {
@@ -37,7 +39,6 @@ class MigrationResourceSpec extends FlatSpec with ScalatestRouteTest with ScalaF
   it should "fail when process does not exist" in {
     val migrator = new MockMigrator
     val route = withPermissions(new MigrationResources(migrator, processRepository).route, Permission.Deploy)
-
 
     Get(s"/migration/compare/$processId") ~> route ~> check {
       status shouldEqual StatusCodes.NotFound
@@ -58,12 +59,13 @@ class MigrationResourceSpec extends FlatSpec with ScalatestRouteTest with ScalaF
     val migrator = new MockMigrator
     val route = withPermissions(new MigrationResources(migrator, processRepository).route, Permission.Deploy)
     import pl.touk.http.argonaut.Argonaut62Support._
+    implicit val codec = ProcessComparator.codec
 
     saveProcess(processId, ProcessTestData.validProcess) {
       Get(s"/migration/compare/$processId") ~> route ~> check {
         status shouldEqual StatusCodes.OK
 
-        responseAs[List[Difference]] shouldBe migrator.mockDifference
+        responseAs[Map[String, Difference]] shouldBe migrator.mockDifference
       }
       migrator.compareInvocations shouldBe List(validDisplayable)
 
@@ -83,7 +85,7 @@ class MigrationResourceSpec extends FlatSpec with ScalatestRouteTest with ScalaF
 
     var compareInvocations = List[DisplayableProcess]()
 
-    val mockDifference = List(Difference("node1", "node not exist"))
+    val mockDifference = Map("node1" -> NodeNotPresentInCurrent("node1", Filter("node1", Expression("spel", "#input == 4"))))
 
     override def migrate(localProcess: DisplayableProcess)(implicit ec: ExecutionContext, user: LoggedUser) = {
       migrateInvocations = localProcess::migrateInvocations

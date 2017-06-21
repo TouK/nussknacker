@@ -8,14 +8,14 @@ import pl.touk.esp.ui.process.migrate.ProcessMigrator
 import pl.touk.esp.ui.process.repository.ProcessRepository
 import pl.touk.esp.ui.process.repository.ProcessRepository.ProcessNotFoundError
 import pl.touk.esp.ui.security.{LoggedUser, Permission}
+import pl.touk.esp.ui.util.ProcessComparator
 import pl.touk.http.argonaut.Argonaut62Support
-
 import scala.concurrent.{ExecutionContext, Future}
+import ProcessComparator._
 
 class MigrationResources(migrator: ProcessMigrator, processRepository: ProcessRepository)(implicit ec: ExecutionContext)
   extends Directives with Argonaut62Support {
 
-  import argonaut.ArgonautShapeless._
 
   def route(user: LoggedUser) : Route = {
     implicit val iu = user
@@ -25,6 +25,7 @@ class MigrationResources(migrator: ProcessMigrator, processRepository: ProcessRe
           path("compare" / Segment) { processId =>
             get {
               complete {
+                implicit val codec = ProcessComparator.codec
                 withProcess(processId, (process) => migrator.compare(process))
               }
             }
@@ -48,5 +49,6 @@ class MigrationResources(migrator: ProcessMigrator, processRepository: ProcessRe
       case None => Future.successful(Left(ProcessNotFoundError(processId)))
     }.map(EspErrorToHttp.toResponseEither[T])
   }
+
 
 }

@@ -1,7 +1,6 @@
 package pl.touk.esp.ui.api
 
 
-import akka.actor.ActorRef
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.{Directive, Directives, Route}
@@ -14,18 +13,14 @@ import pl.touk.esp.engine.api.{MetaData, StandaloneMetaData, StreamMetaData}
 import pl.touk.esp.engine.api.deployment.GraphProcess
 import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.esp.ui.api.ProcessesResources.{UnmarshallError, WrongProcessId}
-import pl.touk.esp.ui.process.deployment.CheckStatus
 import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessStatus}
 import pl.touk.esp.ui.process.marshall.{ProcessConverter, UiProcessMarshaller}
 import pl.touk.esp.ui.process.repository.{ProcessActivityRepository, ProcessRepository}
 import pl.touk.esp.ui.process.repository.ProcessRepository._
 import pl.touk.esp.ui.security.{LoggedUser, Permission}
 import pl.touk.esp.ui.util._
-import pl.touk.esp.ui.{BadRequestError, EspError, FatalError, NotFoundError}
-import akka.pattern.ask
-import akka.util.Timeout
+import pl.touk.esp.ui._
 
-import scala.concurrent.duration._
 import EspErrorToHttp._
 import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
 import pl.touk.esp.ui.codec.UiCodecs
@@ -54,6 +49,7 @@ class ProcessesResources(repository: ProcessRepository,
       //czyli co??? options?
       case _ => Directive.Empty
     }
+
     authorizeMethod {
       path("processes") {
         get {
@@ -97,7 +93,7 @@ class ProcessesResources(repository: ProcessRepository,
           }
         }
       } ~ path("processes" / Segment) { processId =>
-          put {
+        put {
           entity(as[ProcessToSave]) { processToSave =>
             complete {
               val displayableProcess = processToSave.process
@@ -154,22 +150,40 @@ class ProcessesResources(repository: ProcessRepository,
       } ~ path("processes" / "export" / Segment / LongNumber) { (processId, versionId) =>
         get {
           complete {
-            repository.fetchProcessDetailsForId(processId, versionId).map { exportProcess }
+            repository.fetchProcessDetailsForId(processId, versionId).map {
+              exportProcess
+            }
           }
         }
       } ~ path("processes" / "exportToPdf" / Segment / LongNumber) { (processId, versionId) =>
-          post {
-            entity(as[Array[Byte]]) { (svg) =>
-              complete {
-                 repository.fetchProcessDetailsForId(processId, versionId).flatMap { process =>
-                   processActivityRepository.findActivity(processId).map(exportProcessToPdf(new String(svg), process, _)) }
-             }
+        post {
+          entity(as[Array[Byte]]) { (svg) =>
+            complete {
+              repository.fetchProcessDetailsForId(processId, versionId).flatMap { process =>
+                processActivityRepository.findActivity(processId).map(exportProcessToPdf(new String(svg), process, _))
+              }
             }
           }
-      } ~ path("processes" / "export" / Segment ) { processId =>
+        }
+      } ~ path("processes" / Segment / LongNumber / "compare" / LongNumber) { (processId, thisVersion, otherVersion) =>
+
         get {
           complete {
-            repository.fetchLatestProcessDetailsForProcessId(processId).map { exportProcess }
+            withJson(processId, thisVersion) { thisDisplayable =>
+              withJson(processId, otherVersion) { otherDisplayable =>
+                implicit val codec = ProcessComparator.codec
+                ProcessComparator.compare(thisDisplayable, otherDisplayable)
+              }
+            }
+          }
+        }
+
+      } ~ path("processes" / "export" / Segment) { processId =>
+        get {
+          complete {
+            repository.fetchLatestProcessDetailsForProcessId(processId).map {
+              exportProcess
+            }
           }
         }
       } ~ path("processes" / "import" / Segment) { processId =>
@@ -243,6 +257,15 @@ class ProcessesResources(repository: ProcessRepository,
       isSubprocess = isSubprocess,
       typeSpecificData = specificMetaData), ExceptionHandlerRef(List()), List())
     GraphProcess(uiProcessMarshaller.toJson(emptyCanonical, PrettyParams.nospace))
+  }
+
+  private def withJson(processId: String, version: Long)
+                      (process: DisplayableProcess => ToResponseMarshallable)(implicit user: LoggedUser): ToResponseMarshallable
+  = repository.fetchProcessDetailsForId(processId, version).map { maybeProcess =>
+      maybeProcess.flatMap(_.json) match {
+        case Some(displayable) => process(displayable)
+        case None => HttpResponse(status = StatusCodes.NotFound, entity = s"Process $processId in version $version not found"): ToResponseMarshallable
+      }
   }
 
 }

@@ -58,7 +58,7 @@ class UserRightPanel extends Component {
         buttons: [
           {name: "save" + (!saveDisabled ? "*" : ""), visible: this.props.loggedUser.canWrite, disabled: saveDisabled, onClick: this.save, icon: InlinedSvgs.buttonSave},
           {name: "migrate", visible: this.props.loggedUser.canDeploy && !_.isEmpty(this.props.featuresSettings.migration), disabled: !migratePossible, onClick: this.migrate, icon: InlinedSvgs.buttonMigrate},
-
+          {name: "compare", onClick: this.compareVersions, icon: InlinedSvgs.compareButton, disabled: this.hasOneVersion()},
           {name: "import", visible: this.props.loggedUser.canWrite, disabled: false, onClick: this.importProcess, icon: InlinedSvgs.buttonImport, dropzone: true},
           {name: "export", onClick: this.exportProcess, icon: InlinedSvgs.buttonExport},
           {name: "exportPDF", disabled: !this.props.nothingToSave, onClick: this.exportProcessToPdf, icon: InlinedSvgs.buttonExport},
@@ -78,6 +78,7 @@ class UserRightPanel extends Component {
               //cloning groups can be tricky...
               disabled: this.noChosenNode(this.props.nodeToDisplay) || NodeUtils.nodeIsGroup(this.props.nodeToDisplay)},
             {name: "delete", onClick: this.deleteNode, icon: InlinedSvgs.buttonDelete, disabled: this.noChosenNode(this.props.nodeToDisplay) }
+
           ]
         },
         //TODO: testing subprocesses should work, but currently we don't know how to pass parameters in sane way...
@@ -207,6 +208,10 @@ class UserRightPanel extends Component {
     this.props.actions.toggleModalDialog(Dialogs.types.generateTestData)
   }
 
+  compareVersions = () => {
+    this.props.actions.toggleModalDialog(Dialogs.types.compareVersions)
+  }
+
   fetchProcessCounts = () => {
     this.props.actions.toggleModalDialog(Dialogs.types.calculateCounts)
   }
@@ -253,6 +258,8 @@ class UserRightPanel extends Component {
   ungroup = () => {
     this.props.actions.ungroup(this.props.nodeToDisplay)
   }
+
+  hasOneVersion = () => _.get(this.props.fetchedProcessDetails, 'history', []).length <= 1
 
 }
 

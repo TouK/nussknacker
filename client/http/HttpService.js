@@ -268,6 +268,16 @@ export default {
     });
   },
 
+  compareProcesses(processId, thisVersion, otherVersion) {
+    return ajaxCall({
+      url: `${appConfig.API_URL}/processes/${processId}/${thisVersion}/compare/${otherVersion}`,
+      type: 'GET'
+    }).catch(error => {
+      this.addError(`Cannot compare processes`, error, true);
+      return Promise.reject(error)
+    })
+  },
+
   migrateProcess(processId) {
     return ajaxCall({
       url: `${appConfig.API_URL}/migration/migrate/${processId}`,

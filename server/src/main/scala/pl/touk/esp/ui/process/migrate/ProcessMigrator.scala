@@ -28,7 +28,7 @@ trait ProcessMigrator {
 
   def targetEnvironmentId: String
 
-  def compare(localProcess: DisplayableProcess)(implicit ec: ExecutionContext) : Future[Either[EspError, List[Difference]]]
+  def compare(localProcess: DisplayableProcess)(implicit ec: ExecutionContext) : Future[Either[EspError, Map[String, Difference]]]
 
   def migrate(localProcess: DisplayableProcess)(implicit ec: ExecutionContext, loggedUser: LoggedUser) : Future[Either[EspError, Unit]]
 
@@ -37,7 +37,7 @@ trait ProcessMigrator {
 case class MigratorCommunicationError(getMessage: String) extends EspError
 
 case class MigratorValidationError(errors: ValidationErrors) extends EspError {
-  override def getMessage = {
+  override def getMessage : String = {
     val messages = errors.globalErrors.map(_.message) ++
       errors.processPropertiesErrors.map(_.message) ++ errors.invalidNodes.map { case(node, nerror) => s"$node - ${nerror.map(_.message).mkString(", ")}"}
     s"Cannot migrate, following errors occured: ${messages.mkString(", ")}"
@@ -49,7 +49,7 @@ case class HttpMigratorTargetEnvironmentConfig(url: String, user: String, passwo
 
 class HttpProcessMigrator(config: HttpMigratorTargetEnvironmentConfig, val environmentId: String)(implicit as: ActorSystem, val materializer: Materializer) extends StandardProcessMigrator {
 
-  override def targetEnvironmentId = config.environmentId
+  override def targetEnvironmentId : String = config.environmentId
 
   val http = Http()
 
@@ -81,7 +81,7 @@ trait StandardProcessMigrator extends Argonaut62Support with ProcessMigrator wit
 
   protected def request(path: String, method: HttpMethod, request: MessageEntity): Future[HttpResponse]
 
-  override def compare(localProcess: DisplayableProcess)(implicit ec: ExecutionContext) : Future[Either[EspError, List[Difference]]] = {
+  override def compare(localProcess: DisplayableProcess)(implicit ec: ExecutionContext) : Future[Either[EspError, Map[String, Difference]]] = {
     val id = localProcess.id
 
     (for {
@@ -104,7 +104,7 @@ trait StandardProcessMigrator extends Argonaut62Support with ProcessMigrator wit
     } yield ()).value
   }
 
-  private def compareProcess(id: String, localProcess: DisplayableProcess)(remoteProcessDetails: ProcessDetails) : Either[EspError, List[Difference]] = remoteProcessDetails.json match {
+  private def compareProcess(id: String, localProcess: DisplayableProcess)(remoteProcessDetails: ProcessDetails) : Either[EspError, Map[String, Difference]] = remoteProcessDetails.json match {
     case Some(remoteProcess) => Right(ProcessComparator.compare(localProcess, remoteProcess))
     case None => Left(InvalidProcessTypeError(id))
   }
