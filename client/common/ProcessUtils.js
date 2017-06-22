@@ -39,7 +39,7 @@ class ProcessUtils {
   }
 
   findAvailableVariables = (nodeId, process, processDefinition) => {
-    const globalVariables = _.mapValues(processDefinition.globalVariables, (v) => {return v.value.refClazzName})
+    const globalVariables = _.mapValues(processDefinition.globalVariables, (v) => {return v.returnType.refClazzName})
     const variablesDefinedBeforeNode = this._findVariablesDeclaredBeforeNode(nodeId, process, processDefinition);
     const variables = {
       ...globalVariables,
