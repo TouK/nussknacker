@@ -55,7 +55,7 @@ val commonSettings =
 
 //mamy te wersje akki bo flink jej wymaga
 val akkaV = "2.3.7"
-val flinkV = "1.2.0"
+val flinkV = "1.3.1"
 val kafkaV = "0.9.0.1"
 val springV = "5.0.0.M1"
 val scalaTestV = "3.0.0-M15"
@@ -160,6 +160,7 @@ lazy val management = (project in file("management")).
       Seq(
         "org.typelevel" %% "cats-core" % catsV,
         "org.apache.flink" %% "flink-clients" % flinkV % "provided",
+        "org.apache.flink" % "flink-shaded-curator-recipes" % flinkV % "provided",
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
 
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,

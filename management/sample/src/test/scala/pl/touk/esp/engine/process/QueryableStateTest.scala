@@ -15,12 +15,10 @@ import pl.touk.esp.engine.spel
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.runtime.query.QueryableClientTestFactory
 import pl.touk.esp.engine.flink.queryablestate.EspQueryableClient
 import pl.touk.esp.engine.flink.test.StoppableExecutionEnvironment
 import pl.touk.esp.engine.kafka.{KafkaSpec, KafkaZookeeperServer}
 import spel.Implicits._
-
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class QueryableStateTest extends FlatSpec with BeforeAndAfterAll with Matchers with Eventually with KafkaSpec {
@@ -28,10 +26,8 @@ class QueryableStateTest extends FlatSpec with BeforeAndAfterAll with Matchers w
   override implicit def patienceConfig: PatienceConfig = PatienceConfig(timeout = scaled(Span(30, Seconds)), interval = scaled(Span(1, Seconds)))
 
   val creator = new TestProcessConfigCreator
-  val flinkConf = new Configuration()
-  flinkConf.setString("query.server.enable", "true")
 
-  val stoppableEnv = new StoppableExecutionEnvironment(flinkConf)
+  val stoppableEnv = StoppableExecutionEnvironment.withQueryableStateEnabled()
   val env = new StreamExecutionEnvironment(stoppableEnv)
   var registrar: FlinkProcessRegistrar = _
 
@@ -60,7 +56,7 @@ class QueryableStateTest extends FlatSpec with BeforeAndAfterAll with Matchers w
 
     eventually {
       implicit val booleanTypeInfo = TypeInformation.of(classOf[java.lang.Boolean])
-      val fetchedStateFuture = new EspQueryableClient(QueryableClientTestFactory(stoppableEnv.getJobManagerActorSystem()))
+      val fetchedStateFuture = new EspQueryableClient(stoppableEnv.queryableClient())
         .fetchState[java.lang.Boolean](jobId = jobId, queryName = "single-lock-state", key = "TestInput1")
       val booleanState = Await.result(fetchedStateFuture, Duration("10s"))
       booleanState shouldBe true

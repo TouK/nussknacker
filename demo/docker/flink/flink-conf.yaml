@@ -71,15 +71,15 @@ jobmanager.web.port: 8081
 
 webclient.port: 6080
 
-#recovery.mode: zookeeper
-#recovery.zookeeper.quorum: zookeeper:2181
-#recovery.zookeeper.path.root: /flinkPath
-
+high-availability: zookeeper
+high-availability.zookeeper.quorum: zookeeper:2181
+high-availability.zookeeper.path.root: /flinkPath
+high-availability.zookeeper.path.namespace: /flinkDemo
+high-availability.storageDir: file:///tmp/storage
 
 state.backend: filesystem
 state.backend.fs.checkpointdir: file:///opt/flinkData/checkpoints
 state.savepoints.dir:  file:///opt/flinkData/savepoints
-recovery.zookeeper.storageDir: file:///opt/flinkData/storage
 
 metrics.reporters: graphite_reporter
 metrics.reporter.graphite_reporter.class: org.apache.flink.metrics.graphite.GraphiteReporter
@@ -96,52 +96,6 @@ metrics.scope.operator: cpDemo.<host>.taskmanagerTask.<tm_id>.<job_name>.<operat
 
 akka.framesize: 209715200b
 jobmanager.web.history: 50blob.server.port: 6124
-query.server.port: 6125
-blob.server.port: 6124
-query.server.port: 6125
-blob.server.port: 6124
-query.server.port: 6125
-blob.server.port: 6124
-query.server.port: 6125
-blob.server.port: 6124
-query.server.port: 6125
-blob.server.port: 6124
-query.server.port: 6125
-blob.server.port: 6124
-query.server.port: 6125
-blob.server.port: 6124
-query.server.port: 6125
-blob.server.port: 6124
-query.server.port: 6125
-blob.server.port: 6124
-query.server.port: 6125
-blob.server.port: 6124
-query.server.port: 6125
-blob.server.port: 6124
-query.server.port: 6125
-blob.server.port: 6124
-query.server.port: 6125
-blob.server.port: 6124
-query.server.port: 6125
-blob.server.port: 6124
-query.server.port: 6125
-blob.server.port: 6124
-query.server.port: 6125
-blob.server.port: 6124
-query.server.port: 6125
-blob.server.port: 6124
-query.server.port: 6125
-blob.server.port: 6124
-query.server.port: 6125
-blob.server.port: 6124
-query.server.port: 6125
-blob.server.port: 6124
-query.server.port: 6125
-blob.server.port: 6124
-query.server.port: 6125
-blob.server.port: 6124
-query.server.port: 6125
-blob.server.port: 6124
 query.server.port: 6125
 blob.server.port: 6124
 query.server.port: 6125
