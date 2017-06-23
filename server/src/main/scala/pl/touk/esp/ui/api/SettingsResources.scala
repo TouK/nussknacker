@@ -31,10 +31,11 @@ class SettingsResources(config: FeatureTogglesConfig)(implicit ec: ExecutionCont
 case class GrafanaSettings(url: String, dashboard: String, env: String)
 case class KibanaSettings(url: String)
 case class MigrationConfig(targetEnvironmentId: String)
+case class EnvironmentAlert(content: String, cssClass: String)
 
 case class ToggleFeaturesOptions(counts: Boolean,
                                  search: Option[KibanaSettings],
                                  metrics: Option[GrafanaSettings],
                                  migration: Option[MigrationConfig],
-                                 environmentAlert:Option[String]
+                                 environmentAlert: Option[EnvironmentAlert]
                                 )

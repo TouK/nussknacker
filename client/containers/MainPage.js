@@ -41,10 +41,10 @@ const App_ = React.createClass({
       return null
     }
   },
-  environmentAlert: function (content) {
-    if (content)
+  environmentAlert: function (params) {
+    if (params && params.content)
       return (<span className="navbar-brand vert-middle ">
-        <span className="btn btn-danger">{content}</span>
+        <span className={"indicator "+ params.cssClass}>{params.content}</span>
       </span>
     );
   },
