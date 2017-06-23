@@ -1,7 +1,7 @@
 package pl.touk.esp.ui.config
 
 import pl.touk.esp.ui.EspUiApp.config
-import pl.touk.esp.ui.api.{GrafanaSettings, KibanaSettings}
+import pl.touk.esp.ui.api.{EnvironmentAlert, GrafanaSettings, KibanaSettings}
 import pl.touk.esp.ui.process.migrate.HttpMigratorTargetEnvironmentConfig
 import pl.touk.process.report.influxdb.InfluxReporterConfig
 
@@ -13,7 +13,8 @@ case class FeatureTogglesConfig(development: Boolean,
                                 metrics: Option[GrafanaSettings],
                                 migration: Option[HttpMigratorTargetEnvironmentConfig],
                                 counts: Option[InfluxReporterConfig],
-                                environmentAlert:Option[String])
+                                environmentAlert:Option[EnvironmentAlert]
+                               )
 
 object FeatureTogglesConfig {
   import com.typesafe.config.Config
@@ -21,7 +22,7 @@ object FeatureTogglesConfig {
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import argonaut.ArgonautShapeless._
   def create(config: Config, environment: String): FeatureTogglesConfig = {
-    val environmentAlert = Try(config.getString("environmentAlert")).toOption
+    val environmentAlert = Try(config.as[EnvironmentAlert]("environmentAlert")).toOption
     val isDevelopmentMode = config.hasPath("developmentMode") && config.getBoolean("developmentMode")
     val standaloneModeEnabled = config.hasPath("standaloneModeEnabled") && config.getBoolean("standaloneModeEnabled")
     val metrics = Try(config.as[GrafanaSettings]("grafanaSettings")).toOption
