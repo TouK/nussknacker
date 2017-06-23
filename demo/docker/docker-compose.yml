@@ -8,6 +8,7 @@ services:
       - "jobmanager:jobmanager"
       - "kafka:kafka"
       - "influxdb:influxdb"
+      - "zookeeper:zookeeper"
     ports:
       - "127.0.0.1:8080:8080"
     volumes:
@@ -20,10 +21,13 @@ services:
     ports:
       - "8081:8081"
     command: jobmanager
+    depends_on:
+      - zookeeper
     environment:
       - JOB_MANAGER_RPC_ADDRESS=jobmanager
     links:
       - "influxdb:influxdb"
+      - "zookeeper:zookeeper"
     volumes:
       - ./flink/flink-conf.yaml:/opt/flink/conf/flink-conf.yaml
 

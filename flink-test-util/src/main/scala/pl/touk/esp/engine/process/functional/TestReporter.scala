@@ -1,6 +1,6 @@
 package pl.touk.esp.engine.process.functional
 
-import org.apache.flink.configuration.{ConfigConstants, Configuration}
+import org.apache.flink.configuration.{ConfigConstants, Configuration, MetricOptions}
 import org.apache.flink.metrics.reporter.AbstractReporter
 import org.apache.flink.metrics.{Metric, MetricConfig, MetricGroup}
 import org.apache.flink.streaming.api.environment.{StreamExecutionEnvironment => JavaEnv}
@@ -12,7 +12,7 @@ import scala.collection.mutable.ArrayBuffer
 object TestReporterUtil {
 
   def configWithTestMetrics(c: Configuration = new Configuration()): Configuration = {
-    c.setString(ConfigConstants.METRICS_REPORTERS_LIST, "test")
+    c.setString(MetricOptions.REPORTERS_LIST, "test")
     c.setString(ConfigConstants.METRICS_REPORTER_PREFIX + "test.class", classOf[TestReporter].getName)
     c
   }

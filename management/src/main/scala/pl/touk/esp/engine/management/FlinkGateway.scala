@@ -6,30 +6,26 @@ import akka.pattern.AskTimeoutException
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.client.program.{ClusterClient, PackagedProgram, StandaloneClusterClient}
 import org.apache.flink.configuration.Configuration
-import org.apache.flink.runtime.akka.AkkaUtils
-import org.apache.flink.runtime.client.JobClient
-import org.apache.flink.runtime.instance.ActorGateway
-import org.apache.flink.runtime.util.LeaderRetrievalUtils
+import org.apache.flink.runtime.highavailability.HighAvailabilityServices
+import org.apache.flink.runtime.query.QueryableStateClient
+import pl.touk.esp.engine.flink.queryablestate.EspQueryableClient
 
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
 import scala.util.Try
 
 
 class DefaultFlinkGateway(config: Configuration, timeout: FiniteDuration) extends FlinkGateway with LazyLogging {
 
-  implicit val ec = ExecutionContext.Implicits.global
+  private implicit val ec = ExecutionContext.Implicits.global
 
-  var actorSystem = JobClient.startJobClientActorSystem(config)
+  private val (client, haServices) = createClient()
 
-  var gateway: ActorGateway = prepareGateway(config)
-
-  var client: StandaloneClusterClient = createClient()
+  override val queryableClient: EspQueryableClient = new EspQueryableClient(new QueryableStateClient(config, haServices))
 
   override def invokeJobManager[Response: ClassTag](req: AnyRef): Future[Response] = {
-    gateway.ask(req, timeout)
-      .mapTo[Response]
+    client.getJobManagerGateway.ask(req, timeout).mapTo[Response]
   }
 
   override def run(program: PackagedProgram): Unit = {
@@ -39,26 +35,18 @@ class DefaultFlinkGateway(config: Configuration, timeout: FiniteDuration) extend
   }
 
   def shutDown(): Unit = {
-    actorSystem.shutdown()
-    actorSystem.awaitTermination(timeout)
     client.shutdown()
   }
 
-  private def createClient() =
-    new StandaloneClusterClient(config) {
+  private def createClient() : (ClusterClient, HighAvailabilityServices) = {
+    //well, this is a bit of a hack, but we don't want to duplicate code for creating HAServices
+    var haServices: HighAvailabilityServices = null
+    val client = new StandaloneClusterClient(config) {
       setDetached(true)
-
-      //TODO: czy to jest dobry sposob?
-      override def getJobManagerGateway = gateway
+      haServices = this.highAvailabilityServices
     }
-
-  private def prepareGateway(config: Configuration): ActorGateway = {
-    val timeout = AkkaUtils.getClientTimeout(config)
-    val leaderRetrievalService = LeaderRetrievalUtils.createLeaderRetrievalService(config)
-    LeaderRetrievalUtils.retrieveLeaderGateway(leaderRetrievalService, actorSystem, timeout)
+    (client, haServices)
   }
-
-
 
 }
 
@@ -115,12 +103,18 @@ class RestartableFlinkGateway(prepareGateway: () => FlinkGateway) extends FlinkG
     gateway = null
     logger.info("Gateway shut down")
   }
+
+  override def queryableClient: EspQueryableClient = gateway.queryableClient
+
 }
 
 trait FlinkGateway {
+
   def invokeJobManager[Response: ClassTag](req: AnyRef): Future[Response]
 
   def run(program: PackagedProgram): Unit
 
   def shutDown(): Unit
+
+  def queryableClient: EspQueryableClient
 }

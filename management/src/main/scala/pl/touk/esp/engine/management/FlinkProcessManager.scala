@@ -14,14 +14,12 @@ import org.apache.flink.runtime.client.JobTimeoutException
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import org.apache.flink.runtime.messages.JobManagerMessages
 import org.apache.flink.runtime.messages.JobManagerMessages._
-import pl.touk.esp.engine.api.StreamMetaData
 import pl.touk.esp.engine.api.deployment._
 import pl.touk.esp.engine.api.deployment.test.TestData
 import pl.touk.esp.engine.api.process.ProcessConfigCreator
 import pl.touk.esp.engine.definition.ProcessDefinitionExtractor.ObjectProcessDefinition
 import pl.touk.esp.engine.definition._
 import pl.touk.esp.engine.flink.queryablestate.{EspQueryableClient, QueryableClientProvider}
-import pl.touk.esp.engine.marshall.ProcessMarshaller
 import pl.touk.esp.engine.util.ThreadUtils
 
 import scala.collection.JavaConversions._
@@ -64,11 +62,11 @@ class FlinkProcessManager(config: Config,
   import argonaut.Argonaut._
 
   //tyle nam wystarczy, z aktorami to nigdy nic nie wiadomo...
-  implicit val ec = ExecutionContext.Implicits.global
+  private implicit val ec = ExecutionContext.Implicits.global
 
   private val flinkConf = config.getConfig("flinkConfig")
 
-  override def queryableClient: EspQueryableClient = EspQueryableClient(flinkConf)
+  override def queryableClient : EspQueryableClient = gateway.queryableClient
 
   private val jarFile = new File(flinkConf.getString("jarPath"))
 
@@ -76,7 +74,7 @@ class FlinkProcessManager(config: Config,
 
   private val processConfigPart = extractProcessConfig
 
-  val processConfig = processConfigPart.toConfig
+  val processConfig : Config = processConfigPart.toConfig
 
   private val testRunner = FlinkProcessTestRunner(processConfig, jarFile)
 
@@ -169,7 +167,7 @@ class FlinkProcessManager(config: Config,
     val jobId = JobID.fromHexString(job.id)
 
     gateway.invokeJobManager[Any](JobManagerMessages.TriggerSavepoint(jobId, savepointDir)).map {
-      case TriggerSavepointSuccess(_, path) =>
+      case TriggerSavepointSuccess(_, checkpointId, path, triggerTime) =>
         path
       case TriggerSavepointFailure(_, reason) =>
         logger.error("Savepoint failed", reason)
