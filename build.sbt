@@ -95,7 +95,7 @@ lazy val perf_test = (project in file("perf-test")).
       )
     }
   ).
-  dependsOn(management, interpreter, kafka, kafkaTestUtil)
+  dependsOn(management, interpreter, kafkaFlinkUtil, kafkaTestUtil)
 
 
 lazy val perf_test_sample = (project in file("perf-test/sample")).
@@ -114,7 +114,7 @@ lazy val perf_test_sample = (project in file("perf-test/sample")).
     }
   ).
   settings(addArtifact(artifact in (Compile, assembly), assembly)).
-  dependsOn(flinkUtil, kafka, process % "runtime")
+  dependsOn(flinkUtil, kafkaFlinkUtil, process % "runtime")
 
 val akkaHttpV = "2.0.3"
 
@@ -202,7 +202,7 @@ lazy val example = (project in file("example")).
         "ch.qos.logback" % "logback-classic" % logbackV % "test"
       )
     }
-  ).dependsOn(process, kafka, kafkaTestUtil % "test", kafkaFlinkUtil % "test", flinkTestUtil % "test")
+  ).dependsOn(process, kafkaFlinkUtil, kafkaTestUtil % "test", flinkTestUtil % "test")
 
 lazy val process = (project in file("process")).
   settings(commonSettings).
@@ -250,14 +250,11 @@ lazy val kafka = (project in file("kafka")).
     name := "esp-kafka",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" %% "flink-connector-kafka-0.9" % flinkV,
-        "org.apache.flink" %% "flink-streaming-java" % flinkV % "provided", // api dependency
-        "org.apache.kafka" %% "kafka" % kafkaV % "test",
-        "org.scalatest" %% "scalatest" % scalaTestV % "test"
+        "org.apache.kafka" % "kafka-clients" % kafkaV
       )
     }
   ).
-  dependsOn(flinkApi, util, kafkaTestUtil % "test")
+  dependsOn(util)
 
 lazy val kafkaFlinkUtil = (project in file("kafka-flink-util")).
   settings(commonSettings).
@@ -266,11 +263,12 @@ lazy val kafkaFlinkUtil = (project in file("kafka-flink-util")).
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" %% "flink-connector-kafka-0.9" % flinkV,
-        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided"
+        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
+        "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )
     }
   ).
-  dependsOn(kafka, flinkUtil)
+  dependsOn(flinkApi, kafka, flinkUtil, kafkaTestUtil % "test")
 
 lazy val kafkaTestUtil = (project in file("kafka-test-util")).
   settings(commonSettings).
