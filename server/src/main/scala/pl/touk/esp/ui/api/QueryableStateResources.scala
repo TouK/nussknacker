@@ -18,7 +18,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class QueryableStateResources(processDefinition: Map[ProcessingType, ProcessDefinition[ObjectDefinition]],
                               processRepository: ProcessRepository,
-                              queryableClient: EspQueryableClient,
+                              queryableClient: () => EspQueryableClient,
                               jobStatusService: JobStatusService)
                              (implicit ec: ExecutionContext) extends Directives with Argonaut62Support {
 
@@ -70,8 +70,8 @@ class QueryableStateResources(processDefinition: Map[ProcessingType, ProcessDefi
 
   private def fetchState(jobId: String, queryName: String, key: Option[String]): Future[String] = {
     key match {
-      case Some(k) => queryableClient.fetchJsonState(jobId, queryName, k)
-      case None => queryableClient.fetchJsonState(jobId, queryName)
+      case Some(k) => queryableClient().fetchJsonState(jobId, queryName, k)
+      case None => queryableClient().fetchJsonState(jobId, queryName)
     }
   }
 

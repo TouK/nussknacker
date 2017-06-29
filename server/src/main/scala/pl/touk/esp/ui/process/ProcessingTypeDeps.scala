@@ -16,7 +16,7 @@ import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
 case class ProcessingTypeDeps(processDefinitions: Map[ProcessingType, ProcessDefinition[ObjectDefinition]],
                               validators: Map[ProcessingType, ProcessValidator],
                               managers: Map[ProcessingType, ProcessManager with ConfigCreatorTestInfoProvider with ProcessDefinitionProvider with SignalDispatcher],
-                              espQueryableClient: EspQueryableClient,
+                              espQueryableClient: () => EspQueryableClient,
                               buildInfo: Map[String, String],
                               standaloneModeEnabled: Boolean
                              )
@@ -38,7 +38,7 @@ object ProcessingTypeDeps {
         processDefinitions = Map(streaming -> processDefinition, reqResp -> requestResponseProcessDefinition),
         validators = Map(streaming -> validator, reqResp -> requestResponseValidator),
         managers = Map(streaming -> streamingManager, reqResp -> requestResponseManager),
-        espQueryableClient = streamingManager.queryableClient,
+        espQueryableClient = () => streamingManager.queryableClient,
         buildInfo = streamingBuildInfo,
         standaloneModeEnabled = standaloneModeEnabled
       )
@@ -47,7 +47,7 @@ object ProcessingTypeDeps {
         processDefinitions = Map(streaming -> processDefinition),
         validators = Map(streaming -> validator),
         managers = Map(streaming -> streamingManager),
-        espQueryableClient = streamingManager.queryableClient,
+        espQueryableClient = () => streamingManager.queryableClient,
         buildInfo = streamingBuildInfo,
         standaloneModeEnabled = standaloneModeEnabled
       )
