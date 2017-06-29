@@ -137,7 +137,7 @@ class SimpleProcessConfigCreator extends ProcessConfigCreator {
 
 
   override def exceptionHandlerFactory(config: Config) =
-    ExceptionHandlerFactory.noParams(VerboselyLoggingRestartingExceptionHandler)
+    ExceptionHandlerFactory.noParams(VerboselyLoggingRestartingExceptionHandler(_))
 
   override def globalProcessVariables(config: Config): Map[String, WithCategories[AnyRef]] = Map.empty
 
