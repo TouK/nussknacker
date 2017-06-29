@@ -1,4 +1,4 @@
-package pl.touk.esp.engine.util
+package pl.touk.esp.engine.api.util
 
 import scala.collection.immutable.TreeMap
 
@@ -34,4 +34,3 @@ case class MultiMap[K, V](map: TreeMap[K, List[V]]) {
 
 
 }
-

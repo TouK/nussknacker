@@ -51,7 +51,7 @@ object KeyValueTestHelper {
       override def listeners(config: Config) = Seq(LoggingListener)
 
       override def customStreamTransformers(config: Config) = Map()
-      override def exceptionHandlerFactory(config: Config) = ExceptionHandlerFactory.noParams(VerboselyLoggingExceptionHandler)
+      override def exceptionHandlerFactory(config: Config) = ExceptionHandlerFactory.noParams(VerboselyLoggingExceptionHandler(_))
 
       override def globalProcessVariables(config: Config) = Map.empty
 

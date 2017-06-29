@@ -61,7 +61,7 @@ class AggProcessConfigCreator extends ProcessConfigCreator {
   override def customStreamTransformers(config: Config) = Map()
 
   override def exceptionHandlerFactory(config: Config) =
-    ExceptionHandlerFactory.noParams(VerboselyLoggingExceptionHandler)
+    ExceptionHandlerFactory.noParams(VerboselyLoggingExceptionHandler(_))
 
   override def globalProcessVariables(config: Config) = Map.empty
 

@@ -47,25 +47,25 @@ case class BrieflyLoggingExceptionHandler(processMetaData: MetaData)
 
 }
 
-case class VerboselyLoggingExceptionHandler(processMetaData: MetaData)
+case class VerboselyLoggingExceptionHandler(processMetaData: MetaData, params: Map[String, String] = Map.empty)
   extends FlinkEspExceptionHandler
     with ConsumingNonTransientExceptions
     with NotRestartingProcesses {
-  override protected val consumer = new RateMeterExceptionConsumer(VerboselyLoggingExceptionConsumer(processMetaData))
+  override protected val consumer = new RateMeterExceptionConsumer(VerboselyLoggingExceptionConsumer(processMetaData, params))
 
 }
 
-case class VerboselyLoggingRestartingExceptionHandler(processMetaData: MetaData)
+case class VerboselyLoggingRestartingExceptionHandler(processMetaData: MetaData, params: Map[String, String] = Map.empty)
   extends FlinkEspExceptionHandler
     with ConsumingNonTransientExceptions {
-  override protected val consumer = VerboselyLoggingExceptionConsumer(processMetaData)
+  override protected val consumer = VerboselyLoggingExceptionConsumer(processMetaData, params)
 
   override def restartStrategy = new FailureRateRestartStrategyConfiguration(10, Time.seconds(1), Time.seconds(1))
 }
 
-case class VerboselyLoggingExceptionConsumer(processMetaData: MetaData) extends FlinkEspExceptionConsumer with LazyLogging {
+case class VerboselyLoggingExceptionConsumer(processMetaData: MetaData, params: Map[String, String] = Map.empty) extends FlinkEspExceptionConsumer with LazyLogging {
   override def consume(e: EspExceptionInfo[NonTransientException]) = {
-    logger.error(s"${processMetaData.id}: Exception during processing job, context: ${e.context}", e.throwable)
+    logger.error(s"${processMetaData.id}: Exception during processing job, params: $params, context: ${e.context}", e.throwable)
   }
 }
 
