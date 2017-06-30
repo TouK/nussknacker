@@ -62,7 +62,7 @@ object TestFactory {
     val mockProcessManager = new FlinkProcessManager(ConfigFactory.load(), null) {
       override def findJobStatus(name: String): Future[Option[ProcessState]] = Future.successful(None)
       override def cancel(name: String): Future[Unit] = Future.successful(Unit)
-      override def deploy(processId: String, processDeploymentData: ProcessDeploymentData): Future[Unit] = Future {
+      override def deploy(processId: String, processDeploymentData: ProcessDeploymentData, savepoint: Option[String]): Future[Unit] = Future {
         Thread.sleep(sleepBeforeAnswer)
         ()
       }

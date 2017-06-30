@@ -1,6 +1,7 @@
 package pl.touk.esp.ui.api
 
 import akka.actor.ActorRef
+import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.Directives
 import akka.pattern.ask
@@ -16,7 +17,7 @@ import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
 import pl.touk.esp.engine.definition.DefinitionExtractor.PlainClazzDefinition
 import pl.touk.esp.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.esp.ui.codec.UiCodecs
-import pl.touk.esp.ui.process.deployment.{Cancel, Deploy, Test}
+import pl.touk.esp.ui.process.deployment.{Cancel, Deploy, Snapshot, Test}
 import pl.touk.esp.ui.process.displayedgraph.DisplayableProcess
 import pl.touk.esp.ui.process.marshall.{ProcessConverter, UiProcessMarshaller}
 import pl.touk.esp.ui.processreport.{NodeCount, ProcessCounter, RawCount}
@@ -39,15 +40,33 @@ class ManagementResources(typesInformation: List[PlainClazzDefinition], processC
 
   def route(implicit user: LoggedUser): Route = {
     authorize(user.hasPermission(Permission.Deploy)) {
-      path("processManagement" / "deploy" / Segment) { processId =>
-        post {
-          complete {
-            (managementActor ? Deploy(processId, user))
-              .map { _ => HttpResponse(status = StatusCodes.OK) }
-              .recover(EspErrorToHttp.errorToHttp)
+        path("adminProcessManagement" / "snapshot" / Segment / Segment) { (processId, savepointDir) =>
+          post {
+            complete {
+              (managementActor ? Snapshot(processId, user, savepointDir))
+                .mapTo[String].map(path => HttpResponse(entity = path, status = StatusCodes.OK))
+                .recover(EspErrorToHttp.errorToHttp)
+            }
           }
-        }
-      } ~
+        } ~
+        path("adminProcessManagement" / "deploy" / Segment / Segment) { (processId, savepointPath) =>
+         post {
+              complete {
+                (managementActor ? Deploy(processId, user, Some(savepointPath)))
+                  .map { _ => HttpResponse(status = StatusCodes.OK) }
+                  .recover(EspErrorToHttp.errorToHttp)
+              }
+          }
+        } ~
+        path("processManagement" / "deploy" / Segment) { processId =>
+          post {
+            complete {
+              (managementActor ? Deploy(processId, user, None))
+                .map { _ => HttpResponse(status = StatusCodes.OK) }
+                .recover(EspErrorToHttp.errorToHttp)
+            }
+          }
+        } ~
         path("processManagement" / "cancel" / Segment) { processId =>
           post {
             complete {
