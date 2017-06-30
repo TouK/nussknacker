@@ -43,9 +43,11 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
   override def receive = {
     case a: DeploymentAction if isBeingDeployed(a.id) =>
       sender() ! Status.Failure(new ProcessIsBeingDeployed(a.id, beingDeployed(a.id)))
-    case Deploy(id, user) =>
-      val deployRes: Future[_] = deployProcess(id)(user)
+    case Deploy(id, user, savepointPath) =>
+      val deployRes: Future[_] = deployProcess(id, savepointPath)(user)
       reply(withDeploymentInfo(id, user.id, "Deployment", deployRes))
+    case Snapshot(id, user, savepointDir) =>
+      reply(processManager(id)(ec, user).flatMap(_.savepoint(id, savepointDir)))
     case Cancel(id, user) =>
       implicit val loggedUser = user
       val cancelRes = processManager(id).map { manager =>
@@ -94,10 +96,10 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
 
   private def isBeingDeployed(id: String) = beingDeployed.contains(id)
 
-  private def deployProcess(processId: String)(implicit user: LoggedUser) = {
+  private def deployProcess(processId: String, savepointPath: Option[String])(implicit user: LoggedUser) = {
     processManager(processId).flatMap { manager =>
       processRepository.fetchLatestProcessVersion(processId).flatMap {
-        case Some(latestVersion) => deployAndSaveProcess(latestVersion, manager)
+        case Some(latestVersion) => deployAndSaveProcess(latestVersion, manager, savepointPath)
         case None => Future(ProcessNotFoundError(processId))
       }
     }
@@ -107,14 +109,14 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
     marshaller.toJson(marshaller.fromJson(canonicalJson).andThen(subprocessResolver.resolveSubprocesses).toOption.get, PrettyParams.spaces2)
   }
 
-  private def deployAndSaveProcess(latestVersion: ProcessVersionEntityData, processManager: ProcessManager)(implicit user: LoggedUser): Future[Unit] = {
+  private def deployAndSaveProcess(latestVersion: ProcessVersionEntityData, processManager: ProcessManager, savepointPath: Option[String])(implicit user: LoggedUser): Future[Unit] = {
     val processId = latestVersion.processId
     logger.debug(s"Deploy of $processId started")
     val deployment = latestVersion.deploymentData match {
       case GraphProcess(canonical) => GraphProcess(resolveGraph(canonical))
       case a => a
     }
-    processManager.deploy(processId, deployment).flatMap { _ =>
+    processManager.deploy(processId, deployment, savepointPath).flatMap { _ =>
       logger.debug(s"Deploy of $processId finished")
       deployedProcessRepository.markProcessAsDeployed(latestVersion, user.id, environment).recoverWith { case NonFatal(e) =>
         logger.error("Error during marking process as deployed", e)
@@ -137,9 +139,11 @@ trait DeploymentAction {
   def id: String
 }
 
-case class Deploy(id: String, user:LoggedUser) extends DeploymentAction
+case class Deploy(id: String, user:LoggedUser, savepointPath: Option[String]) extends DeploymentAction
 
 case class Cancel(id: String, user:LoggedUser) extends DeploymentAction
+
+case class Snapshot(id: String, user:LoggedUser, savepointPath: String)
 
 case class CheckStatus(id: String, user:LoggedUser)
 
