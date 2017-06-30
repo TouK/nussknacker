@@ -1,18 +1,20 @@
 package pl.touk.esp.engine.management
 
+import java.io.File
 import java.util.UUID
 
 import argonaut.PrettyParams
-import com.typesafe.config.{ConfigFactory, ConfigValue, ConfigValueFactory}
+import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.esp.engine.api.deployment.{CustomProcess, GraphProcess}
 import pl.touk.esp.engine.kafka.KafkaClient
 import pl.touk.esp.engine.marshall.ProcessMarshaller
+import scala.concurrent.ExecutionContext.Implicits.global
 
 import scala.concurrent.duration._
-import pl.touk.esp.engine.kafka.KafkaUtils._
+
 
 class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures with Eventually {
 
@@ -33,7 +35,7 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
     val config = ConfigFactory.load()
     val processManager = FlinkProcessManager(config)
 
-    assert(processManager.deploy(process.id, GraphProcess(marshalled)).isReadyWithin(100 seconds))
+    assert(processManager.deploy(process.id, GraphProcess(marshalled), None).isReadyWithin(100 seconds))
 
     val jobStatus = processManager.findJobStatus(processId).futureValue
     jobStatus.map(_.status) shouldBe Some("RUNNING")
@@ -56,14 +58,14 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
     val config = ConfigFactory.load()
     val processManager = FlinkProcessManager(config)
 
-    assert(processManager.deploy(process.id, GraphProcess(marshalled)).isReadyWithin(100 seconds))
+    assert(processManager.deploy(process.id, GraphProcess(marshalled), None).isReadyWithin(100 seconds))
 
     val jobStatus = processManager.findJobStatus(processId).futureValue
     jobStatus.map(_.status) shouldBe Some("RUNNING")
 
     Thread.sleep(2000)
 
-    assert(processManager.deploy(process.id, GraphProcess(marshalled)).isReadyWithin(100 seconds))
+    assert(processManager.deploy(process.id, GraphProcess(marshalled), None).isReadyWithin(100 seconds))
 
     val jobStatus2 = processManager.findJobStatus(processId).futureValue
     jobStatus2.map(_.status) shouldBe Some("RUNNING")
@@ -96,20 +98,63 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
     kafkaClient.createTopic(outTopic, 1)
 
 
-    assert(processManager.deploy(processEmittingOneElementAfterStart.id, GraphProcess(marshalledProcess)).isReadyWithin(100 seconds))
+    assert(processManager.deploy(processEmittingOneElementAfterStart.id, GraphProcess(marshalledProcess), None).isReadyWithin(100 seconds))
 
     val jobStatus = processManager.findJobStatus(processId).futureValue
     jobStatus.map(_.status) shouldBe Some("RUNNING")
 
     Thread.sleep(2000)
 
-    assert(processManager.deploy(processEmittingOneElementAfterStart.id, GraphProcess(marshalledProcess)).isReadyWithin(100 seconds))
+    assert(processManager.deploy(processEmittingOneElementAfterStart.id, GraphProcess(marshalledProcess), None).isReadyWithin(100 seconds))
 
     val jobStatus2 = processManager.findJobStatus(processId).futureValue
     jobStatus2.map(_.status) shouldBe Some("RUNNING")
 
     val messages = kafkaClient.createConsumer().consume(outTopic).take(2).toList
     println("save state when redeploying messages: " + messages.map(m => new String(m.message())).mkString("\n"))
+
+    val message = messages.last.message()
+    new String(message) shouldBe "List(One element, One element)"
+
+    assert(processManager.cancel(processEmittingOneElementAfterStart.id).isReadyWithin(10 seconds))
+
+  }
+
+  it should "snapshot state and be able to deploy using it" in {
+
+    val processId = UUID.randomUUID().toString
+    val outTopic = s"output-$processId"
+
+    val processEmittingOneElementAfterStart = StatefulSampleProcess.prepareProcess(processId)
+    val marshalledProcess = ProcessMarshaller.toJson(processEmittingOneElementAfterStart, PrettyParams.spaces2)
+
+    val config = ConfigFactory.load()
+    val processManager = FlinkProcessManager(config)
+
+
+    val kafkaClient = new KafkaClient(config.getString("prod.kafka.kafkaAddress"),
+      config.getString("prod.kafka.zkAddress"))
+    kafkaClient.createTopic(outTopic, 1)
+
+
+    assert(processManager.deploy(processEmittingOneElementAfterStart.id, GraphProcess(marshalledProcess), None).isReadyWithin(100 seconds))
+    val jobStatus = processManager.findJobStatus(processId).futureValue
+    jobStatus.map(_.status) shouldBe Some("RUNNING")
+    Thread.sleep(2000)
+
+    val dir = new File("/tmp").toURI.toString
+    val savepointPath = processManager.savepoint(processEmittingOneElementAfterStart.id, dir)
+    assert(savepointPath.isReadyWithin(10 seconds))
+
+    assert(processManager.cancel(processEmittingOneElementAfterStart.id).isReadyWithin(10 seconds))
+
+    assert(savepointPath.flatMap(path => processManager.deploy(processEmittingOneElementAfterStart.id,
+      GraphProcess(marshalledProcess), Some(path))).isReadyWithin(100 seconds))
+
+    val jobStatus2 = processManager.findJobStatus(processId).futureValue
+    jobStatus2.map(_.status) shouldBe Some("RUNNING")
+
+    val messages = kafkaClient.createConsumer().consume(outTopic).take(2).toList
 
     val message = messages.last.message()
     new String(message) shouldBe "List(One element, One element)"
@@ -135,7 +180,7 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
     kafkaClient.createTopic(outTopic)
 
 
-    assert(processManager.deploy(process.id, GraphProcess(marshalled)).isReadyWithin(100 seconds))
+    assert(processManager.deploy(process.id, GraphProcess(marshalled), None).isReadyWithin(100 seconds))
 
     val jobStatus = processManager.findJobStatus(processId).futureValue
     jobStatus.map(_.status) shouldBe Some("RUNNING")
@@ -144,7 +189,7 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
 
     val newMarshalled = ProcessMarshaller.toJson(SampleProcess.prepareProcess(processId), PrettyParams.spaces2)
 
-    assert(processManager.deploy(process.id, GraphProcess(newMarshalled)).isReadyWithin(100 seconds))
+    assert(processManager.deploy(process.id, GraphProcess(newMarshalled), None).isReadyWithin(100 seconds))
 
     val jobStatus2 = processManager.findJobStatus(processId).futureValue
     jobStatus2.map(_.status) shouldBe Some("RUNNING")
@@ -158,7 +203,7 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
     val config = ConfigFactory.load()
     val processManager = FlinkProcessManager(config)
 
-    assert(processManager.deploy(processId, CustomProcess("pl.touk.esp.engine.management.sample.CustomProcess")).isReadyWithin(100 seconds))
+    assert(processManager.deploy(processId, CustomProcess("pl.touk.esp.engine.management.sample.CustomProcess"), None).isReadyWithin(100 seconds))
 
     val jobStatus = processManager.findJobStatus(processId).futureValue
     jobStatus.map(_.status) shouldBe Some("RUNNING")
