@@ -30,8 +30,15 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
 object FlinkProcessManager {
+
   def apply(config: Config): FlinkProcessManager = {
+    new FlinkProcessManager(config, new RestartableFlinkGateway(() => prepareGateway(config)))
+  }
+
+  def prepareGateway(config: Config) : FlinkGateway = {
     val flinkConf = config.getConfig("flinkConfig")
+
+    val timeout = flinkConf.getDuration("jobManagerTimeout", TimeUnit.MILLISECONDS) millis
 
     val clientConfig = new Configuration()
     flinkConf.entrySet().toList.foreach { entry =>
@@ -43,11 +50,8 @@ object FlinkProcessManager {
         case _ =>
       }
     }
-    val timeout = flinkConf.getDuration("jobManagerTimeout", TimeUnit.MILLISECONDS) millis
-
-    new FlinkProcessManager(config, new RestartableFlinkGateway(() => new DefaultFlinkGateway(clientConfig, timeout)))
+    new DefaultFlinkGateway(clientConfig, timeout)
   }
-
 
 }
 
@@ -92,7 +96,7 @@ class FlinkProcessManager(config: Config,
   }
 
 
-  override def deploy(processId: String, processDeploymentData: ProcessDeploymentData) = {
+  override def deploy(processId: String, processDeploymentData: ProcessDeploymentData, savepointPath: Option[String]) = {
     val program = prepareProgram(processId, processDeploymentData)
 
     import cats.data.OptionT
@@ -110,8 +114,8 @@ class FlinkProcessManager(config: Config,
     }
 
     stoppingResult.value.map { maybeSavepoint =>
-      maybeSavepoint.foreach(path => program.setSavepointRestoreSettings(SavepointRestoreSettings.forPath(path, true)))
-      logger.info(s"Deploying $processId. Setting savepoint (${program.getSavepointSettings}) finished")
+      //savepoint given by user overrides the one created by flink
+      prepareSavepointSettings(processId, program, savepointPath.orElse(maybeSavepoint))
       Try(gateway.run(program)).recover {
         //TODO: jest blad we flink, future nie dostaje odpowiedzi jak poleci wyjatek przy savepoincie :|
         case e:ProgramInvocationException if e.getCause.isInstanceOf[JobTimeoutException] && maybeSavepoint.isDefined =>
@@ -122,6 +126,18 @@ class FlinkProcessManager(config: Config,
     }
   }
 
+
+  override def savepoint(processId: String, savepointDir: String): Future[String] = {
+    findJobStatus(processId).flatMap {
+      case Some(processState) => makeSavepoint(processState, Some(savepointDir))
+      case None => Future.failed(new Exception("Process not found"))
+    }
+  }
+
+  private def prepareSavepointSettings(processId: String, program: PackagedProgram, maybeSavepoint: Option[String]): Unit = {
+    maybeSavepoint.foreach(path => program.setSavepointRestoreSettings(SavepointRestoreSettings.forPath(path, true)))
+    logger.info(s"Deploying $processId. Setting savepoint (${program.getSavepointSettings}) finished")
+  }
 
   override def test(processId: String, json: String, testData: TestData) = {
     Future(testRunner.test(processId, json, testData))
@@ -138,19 +154,21 @@ class FlinkProcessManager(config: Config,
   }
 
   private def stopSavingSavepoint(job: ProcessState): Future[String] = {
-    val jobId = JobID.fromHexString(job.id)
     for {
-      savepointPath <- makeSavepoint(jobId)
-      _ <- cancel(jobId)
+      savepointPath <- makeSavepoint(job, None)
+      _ <- cancel(job)
     } yield savepointPath
   }
 
-  private def cancel(jobId: JobID) = {
+  private def cancel(job: ProcessState) = {
+    val jobId = JobID.fromHexString(job.id)
     gateway.invokeJobManager[CancellationSuccess](CancelJob(jobId)).map(_ => ())
   }
 
-  private def makeSavepoint(jobId: JobID): Future[String] = {
-    gateway.invokeJobManager[Any](JobManagerMessages.TriggerSavepoint(jobId)).map {
+  private def makeSavepoint(job: ProcessState, savepointDir: Option[String]): Future[String] = {
+    val jobId = JobID.fromHexString(job.id)
+
+    gateway.invokeJobManager[Any](JobManagerMessages.TriggerSavepoint(jobId, savepointDir)).map {
       case TriggerSavepointSuccess(_, path) =>
         path
       case TriggerSavepointFailure(_, reason) =>

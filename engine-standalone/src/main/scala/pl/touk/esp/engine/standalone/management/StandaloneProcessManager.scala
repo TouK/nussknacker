@@ -62,18 +62,28 @@ class StandaloneProcessManager(config: Config)
 
   import argonaut.ArgonautShapeless._
 
-  override def deploy(processId: String, processDeploymentData: ProcessDeploymentData): Future[Unit] = {
-    implicit val correlationId = LogCorrelationId(UUID.randomUUID().toString)
-    val deployUrl = dispatch.url(managementUrl) / "deploy"
-    processDeploymentData match {
-      case GraphProcess(processAsJson) =>
-        val data = DeploymentData(processId, processAsJson)
-        dispatchClient.postObjectAsJsonWithoutResponseParsing(deployUrl, data).map(_ => ())
-      case CustomProcess(mainClass) =>
-        Future.failed(new UnsupportedOperationException("custom process in standalone engine is not supported"))
+  override def deploy(processId: String, processDeploymentData: ProcessDeploymentData,
+                      savepointPath: Option[String]): Future[Unit] = {
+    savepointPath match {
+      case Some(_) => Future.failed(new UnsupportedOperationException("Cannot make savepoint on standalone process"))
+      case None =>
+        implicit val correlationId = LogCorrelationId(UUID.randomUUID().toString)
+        val deployUrl = dispatch.url(managementUrl) / "deploy"
+        processDeploymentData match {
+          case GraphProcess(processAsJson) =>
+            val data = DeploymentData(processId, processAsJson)
+            dispatchClient.postObjectAsJsonWithoutResponseParsing(deployUrl, data).map(_ => ())
+          case CustomProcess(mainClass) =>
+            Future.failed(new UnsupportedOperationException("custom process in standalone engine is not supported"))
+        }
     }
+        
   }
 
+
+  override def savepoint(processId: String, savepointDir: String): Future[String] = {
+    Future.failed(new UnsupportedOperationException("Cannot make savepoint on standalone process"))
+  }
 
   override def test(processId: String, processJson: String, testData: TestData): Future[TestResults] = {
     Future(testRunner.test(processId, processJson, testData))

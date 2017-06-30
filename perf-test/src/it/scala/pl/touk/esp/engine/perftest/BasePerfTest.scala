@@ -81,7 +81,7 @@ trait BasePerfTest extends ScalaFutures with BeforeAndAfterAll { suite: Suite wi
   protected def deployProcess(process: EspProcess) = {
     val marshalled = ProcessMarshaller.toJson(process, PrettyParams.nospace)
 
-    assert(processManager.deploy(processId, GraphProcess(marshalled)).isReadyWithin(65 seconds))
+    assert(processManager.deploy(processId, GraphProcess(marshalled), None).isReadyWithin(65 seconds))
 
     val jobStatus = processManager.findJobStatus(processId).futureValue
     jobStatus.map(_.status) shouldBe Some("RUNNING")
