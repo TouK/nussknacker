@@ -17,5 +17,7 @@ runAndExitOnFail() {
 #TODO: only temporary, we should have just one sbt project
 cd engine
 runAndExitOnFail "./ciBuild.sh $espEngineToukVersion"
+cd -
 cd ui
 runAndExitOnFail "./ciBuild.sh $espEngineToukVersion"
+cd -
