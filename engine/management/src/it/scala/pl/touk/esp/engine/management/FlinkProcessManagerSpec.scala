@@ -21,7 +21,7 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
   import pl.touk.esp.engine.kafka.KafkaUtils._
 
   override implicit val patienceConfig = PatienceConfig(
-    timeout = Span(10, Seconds),
+    timeout = Span(30, Seconds),
     interval = Span(100, Millis)
   )
 
@@ -208,7 +208,7 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
     val jobStatus = processManager.findJobStatus(processId).futureValue
     jobStatus.map(_.status) shouldBe Some("RUNNING")
 
-    assert(processManager.cancel(processId).isReadyWithin(10 seconds))
+    assert(processManager.cancel(processId).isReadyWithin(30 seconds))
 
     eventually {
       val jobStatusCanceled = processManager.findJobStatus(processId).futureValue
