@@ -1,7 +1,10 @@
+import java.nio.file.{Files, StandardCopyOption}
+
 import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
 import net.virtualvoid.sbt.graph.Plugin._
 import sbt._
 import sbt.Keys._
+import sbtassembly.AssemblyPlugin.autoImport.assembly
 import sbtassembly.MergeStrategy
 
 val scalaV = "2.11.8"
@@ -15,6 +18,11 @@ version in ThisBuild := sys.props.getOrElse("espEngineToukVersion", defaultVersi
 
 credentials in ThisBuild += Credentials("Sonatype Nexus Repository Manager", "nexus.touk.pl", "deployment", "deployment123")
 
+//we want to be able to build
+val includeFlinkAndScala = Option(System.getProperty("includeFlinkAndScala")).exists(_.toBoolean)
+
+val flinkScope = if (includeFlinkAndScala) "compile" else "provided"
+
 publishTo in ThisBuild := {
   if (isSnapshot.value)
     Some("snapshots" at toukNexusRepositories + "snapshots")
@@ -24,6 +32,8 @@ publishTo in ThisBuild := {
 
 def numberUtilsStrategy: String => MergeStrategy = {
   case PathList(ps@_*) if ps.last == "NumberUtils.class" => MergeStrategy.first
+  case PathList("org", "w3c", "dom", "events", xs @ _*) => MergeStrategy.first
+  case PathList("akka", xs @ _*) => MergeStrategy.last
   case x => MergeStrategy.defaultMergeStrategy(x)
 }
 
@@ -74,9 +84,17 @@ val configV = "1.3.0"
 val commonsLangV = "3.3.2"
 val dropWizardV = "3.1.0"
 
+val akkaHttpV = "2.0.3"
+val slickV = "3.2.0-M1" // wsparcie dla select for update jest od 3.2.0
+val hsqldbV = "2.3.4"
+val flywayV = "4.0.3"
+
+
 val perfTestSampleName = "esp-perf-test-sample"
 
-lazy val perf_test = (project in file("perf-test")).
+def engine(name: String) = file(s"engine/$name")
+
+lazy val perf_test = (project in engine("perf-test")).
   configs(IntegrationTest). // po dodaniu własnej konfiguracji, IntellijIdea nie rozpoznaje zależności dla niej
   settings(commonSettings).
   settings(Defaults.itSettings).
@@ -98,7 +116,7 @@ lazy val perf_test = (project in file("perf-test")).
   dependsOn(management, interpreter, kafkaFlinkUtil, kafkaTestUtil)
 
 
-lazy val perf_test_sample = (project in file("perf-test/sample")).
+lazy val perf_test_sample = (project in engine("perf-test/sample")).
   settings(commonSettings).
   settings(
     name := perfTestSampleName,
@@ -116,9 +134,7 @@ lazy val perf_test_sample = (project in file("perf-test/sample")).
   settings(addArtifact(artifact in (Compile, assembly), assembly)).
   dependsOn(flinkUtil, kafkaFlinkUtil, process % "runtime")
 
-val akkaHttpV = "2.0.3"
-
-lazy val engineStandalone = (project in file("engine-standalone")).
+lazy val engineStandalone = (project in engine("engine-standalone")).
   settings(commonSettings).
   settings(
     name := "esp-engine-standalone",
@@ -145,7 +161,7 @@ lazy val engineStandalone = (project in file("engine-standalone")).
   settings(addArtifact(artifact in (Compile, assembly), assembly)).
   dependsOn(interpreter, standaloneUtil, argonautUtils)
 
-lazy val management = (project in file("management")).
+lazy val management = (project in engine("management")).
   configs(IntegrationTest).
   settings(commonSettings).
   settings(Defaults.itSettings).
@@ -172,10 +188,11 @@ lazy val management = (project in file("management")).
 
 val managementSampleName = "esp-management-sample"
 
-lazy val management_sample = (project in file("management/sample")).
+lazy val management_sample = (project in engine("management/sample")).
   settings(commonSettings).
   settings(
     name := managementSampleName,
+    assemblyJarName in assembly := "managementSample.jar",
     assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false, level = Level.Debug),
     libraryDependencies ++= {
       Seq(
@@ -191,7 +208,7 @@ lazy val management_sample = (project in file("management/sample")).
   settings(addArtifact(artifact in (Compile, assembly), assembly)).
   dependsOn(flinkUtil, kafka, kafkaFlinkUtil, process % "runtime,test", flinkTestUtil % "test", kafkaTestUtil % "test")
 
-lazy val example = (project in file("example")).
+lazy val example = (project in engine("example")).
   settings(commonSettings).
   settings(
     name := "esp-example",
@@ -205,7 +222,7 @@ lazy val example = (project in file("example")).
     }
   ).dependsOn(process, kafkaFlinkUtil, kafkaTestUtil % "test", flinkTestUtil % "test")
 
-lazy val process = (project in file("process")).
+lazy val process = (project in engine("process")).
   settings(commonSettings).
   settings(
     name := "esp-process",
@@ -219,7 +236,7 @@ lazy val process = (project in file("process")).
     }
   ).dependsOn(flinkApi, flinkUtil, interpreter, kafka % "test", kafkaTestUtil % "test", kafkaFlinkUtil % "test", flinkTestUtil % "test")
 
-lazy val interpreter = (project in file("interpreter")).
+lazy val interpreter = (project in engine("interpreter")).
   settings(commonSettings).
   settings(
     name := "esp-interpreter",
@@ -245,7 +262,7 @@ lazy val interpreter = (project in file("interpreter")).
   ).
   dependsOn(util)
 
-lazy val kafka = (project in file("kafka")).
+lazy val kafka = (project in engine("kafka")).
   settings(commonSettings).
   settings(
     name := "esp-kafka",
@@ -257,7 +274,7 @@ lazy val kafka = (project in file("kafka")).
   ).
   dependsOn(util)
 
-lazy val kafkaFlinkUtil = (project in file("kafka-flink-util")).
+lazy val kafkaFlinkUtil = (project in engine("kafka-flink-util")).
   settings(commonSettings).
   settings(
     name := "esp-kafka-flink-util",
@@ -271,7 +288,7 @@ lazy val kafkaFlinkUtil = (project in file("kafka-flink-util")).
   ).
   dependsOn(flinkApi, kafka, flinkUtil, kafkaTestUtil % "test")
 
-lazy val kafkaTestUtil = (project in file("kafka-test-util")).
+lazy val kafkaTestUtil = (project in engine("kafka-test-util")).
   settings(commonSettings).
   settings(
     name := "esp-kafka-test-util",
@@ -283,7 +300,7 @@ lazy val kafkaTestUtil = (project in file("kafka-test-util")).
     }
   )
 
-lazy val util = (project in file("util")).
+lazy val util = (project in engine("util")).
   settings(commonSettings).
   settings(
     name := "esp-util",
@@ -296,7 +313,7 @@ lazy val util = (project in file("util")).
 
 
 
-lazy val flinkUtil = (project in file("flink-util")).
+lazy val flinkUtil = (project in engine("flink-util")).
   settings(commonSettings).
   settings(
     name := "esp-flink-util",
@@ -308,7 +325,7 @@ lazy val flinkUtil = (project in file("flink-util")).
     }
   ).dependsOn(util, flinkApi)
 
-lazy val flinkTestUtil = (project in file("flink-test-util")).
+lazy val flinkTestUtil = (project in engine("flink-test-util")).
   settings(commonSettings).
   settings(
     name := "esp-flink-test-util",
@@ -323,7 +340,7 @@ lazy val flinkTestUtil = (project in file("flink-test-util")).
     }
   ).dependsOn(queryableState)
 
-lazy val standaloneUtil = (project in file("standalone-util")).
+lazy val standaloneUtil = (project in engine("standalone-util")).
   settings(commonSettings).
   settings(
     name := "esp-standalone-util",
@@ -338,7 +355,7 @@ lazy val standaloneUtil = (project in file("standalone-util")).
 
 
 
-lazy val api = (project in file("api")).
+lazy val api = (project in engine("api")).
   settings(commonSettings).
   settings(
     name := "esp-api",
@@ -354,7 +371,7 @@ lazy val api = (project in file("api")).
     }
   )
 
-lazy val flinkApi = (project in file("flink-api")).
+lazy val flinkApi = (project in engine("flink-api")).
   settings(commonSettings).
   settings(
     name := "esp-flink-api",
@@ -367,7 +384,7 @@ lazy val flinkApi = (project in file("flink-api")).
     }
   ).dependsOn(api)
 
-lazy val processReports = (project in file("processReports")).
+lazy val processReports = (project in engine("processReports")).
   settings(commonSettings).
   settings(
     name := "esp-process-reports",
@@ -380,7 +397,7 @@ lazy val processReports = (project in file("processReports")).
     }
   ).dependsOn(httpUtils)
 
-lazy val httpUtils = (project in file("httpUtils")).
+lazy val httpUtils = (project in engine("httpUtils")).
   settings(commonSettings).
   settings(
     name := "esp-http-utils",
@@ -395,7 +412,7 @@ lazy val httpUtils = (project in file("httpUtils")).
     }
   )
 
-lazy val argonautUtils = (project in file("argonautUtils")).
+lazy val argonautUtils = (project in engine("argonautUtils")).
   settings(commonSettings).
   settings(
     name := "esp-argonaut-utils",
@@ -409,7 +426,7 @@ lazy val argonautUtils = (project in file("argonautUtils")).
   )
 
 //osobny modul bo chcemy uzyc klienta do testowania w management_sample
-lazy val queryableState = (project in file("queryableState")).
+lazy val queryableState = (project in engine("queryableState")).
   settings(commonSettings).
   settings(
     name := "esp-queryable-state",
@@ -422,7 +439,72 @@ lazy val queryableState = (project in file("queryableState")).
     }
   ).dependsOn(api)
 
-publishArtifact := false
+
+
+lazy val buildUi = taskKey[Unit]("builds ui")
+lazy val testUi = taskKey[Unit]("tests ui")
+
+lazy val ui = (project in file("ui/server"))
+  .settings(commonSettings)
+  .settings(
+    name := "esp-ui",
+    buildUi := {
+      val result = Process("./buildClient.sh", Path.apply("./ui").asFile) !;
+      if (result != 0) throw new RuntimeException("Client build failed")
+    },
+    testUi := {
+      val result = Process("npm test", Path.apply("./ui/client").asFile) !;
+      if (result != 0) throw new RuntimeException("Client tests failed")
+    },
+    parallelExecution in ThisBuild := false,
+    assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = includeFlinkAndScala, level = Level.Debug),
+    Keys.test in Test <<= (Keys.test in Test).dependsOn(
+      //TODO: maybe here there should be engine/demo??
+      (assembly in Compile) in management_sample
+    ).dependsOn(
+      testUi
+    ),
+    assembly in ThisScope <<= (assembly in ThisScope).dependsOn(
+      buildUi
+    ),
+    unmanagedResourceDirectories in Compile += { baseDirectory.value / ".." / "client" / "dist" },
+    libraryDependencies ++= {
+      Seq(
+        "org.apache.flink" %% "flink-streaming-scala" % flinkV % flinkScope
+        excludeAll(
+            ExclusionRule("com.google.code.findbugs", "jsr305"),
+            ExclusionRule("log4j", "log4j"),
+            ExclusionRule("org.slf4j", "slf4j-log4j12")
+          ),
+        "org.apache.flink" %% "flink-clients" % flinkV % flinkScope
+        //tutaj mamy dwie wersje jsr305 we flinku i assembly sie pluje...
+        excludeAll(
+          ExclusionRule("com.google.code.findbugs", "jsr305"),
+          ExclusionRule("log4j", "log4j"),
+          ExclusionRule("org.slf4j", "slf4j-log4j12")
+
+        ),
+        "com.typesafe.akka" %% "akka-http-experimental" % akkaHttpV force(),
+        "com.typesafe.akka" %% "akka-http-testkit-experimental" % akkaHttpV % "test" force(),
+
+        "ch.qos.logback" % "logback-core" % logbackV,
+        "ch.qos.logback" % "logback-classic" % logbackV,
+        "org.slf4j" % "log4j-over-slf4j" % "1.7.21",
+
+        "com.typesafe.slick" %% "slick" % slickV,
+        "com.typesafe.slick" %% "slick-hikaricp" % slickV,
+        "org.hsqldb" % "hsqldb" % hsqldbV,
+        "org.flywaydb" % "flyway-core" % flywayV,
+        "org.apache.xmlgraphics" % "fop" % "2.1",
+
+        "com.typesafe.slick" %% "slick-testkit" % slickV % "test",
+        "org.scalatest" %% "scalatest" % scalaTestV % "test"
+      )
+    }
+  )
+  .dependsOn(management, interpreter, engineStandalone, processReports)
+
+publishArtifact := true
 
 releaseProcess := Seq[ReleaseStep](
   checkSnapshotDependencies,              // : ReleaseStep
@@ -435,4 +517,3 @@ releaseProcess := Seq[ReleaseStep](
   commitNextVersion,                      // : ReleaseStep
   pushChanges                             // : ReleaseStep, also checks that an upstream branch is properly configured
 )
-

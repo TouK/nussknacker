@@ -13,3 +13,5 @@ dist/
 ui/server/src/main/resources/web
 ui/server/develConf/jsons/*
 **/npm-debug.log
+ui/develConf/*.jar
+ui/develConf/jsons/*

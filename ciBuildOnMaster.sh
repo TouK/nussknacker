@@ -13,11 +13,4 @@ runAndExitOnFail() {
     fi
 }
 
-#TODO: only temporary, we should have just one sbt project
-cd engine
-runAndExitOnFail "./ciBuildOnMaster.sh"
-cd -
-cd ui
-runAndExitOnFail "./ciBuild.sh"
-cd -
-
+runAndExitOnFail "./sbtwrapper clean test management/it:test publish"
