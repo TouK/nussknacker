@@ -1,15 +1,17 @@
-Uruchamianie z Idei:
+Running from IntelliJ:
 ====================
 Main class:         pl.touk.esp.ui.EspUiApp
-VM options:         -Dconfig.file=./server/develConf/application.conf -Dlogback.configurationFile=./logback.xml
-Program arguments:  8081 ./server/develConf/jsons
-Env variables:      includeFlinkAndScala=true (do ustawienia w File | Settings | Build, Execution, Deployment | Build Tools | SBT -> JVM Options -> VM Parameters)
+VM options:         -Dconfig.file=./develConf/application.conf -Dlogback.configurationFile=./logback.xml
+Program arguments:  8081 ./develConf/jsons
+Working directory:  should be set to ui/server
+Module classpath:   ui          
+Env variables:      includeFlinkAndScala=true (should be set in File | Settings | Build, Execution, Deployment | Build Tools | SBT -> JVM Options -> VM Parameters)
 
 
-#Uruchomienie backendu do developmentu
+#Running backend for frontend development
 ```./runServer.sh```
 
-##przykladowe enpointy:
+##sample endpoints
 
-###lista procesow
+###process list
 ```http://localhost:8081/api/processes```

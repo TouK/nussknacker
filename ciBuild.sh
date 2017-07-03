@@ -14,10 +14,9 @@ runAndExitOnFail() {
     fi
 }
 
-#TODO: only temporary, we should have just one sbt project
-cd engine
-runAndExitOnFail "./ciBuild.sh $espEngineToukVersion"
-cd -
-cd ui
-runAndExitOnFail "./ciBuild.sh $espEngineToukVersion"
-cd -
+
+runAndExitOnFail "./sbtwrapper clean test management/it:test"
+if [ -n "$espEngineToukVersion" ]
+    then
+        ./sbtwrapper publish -DespEngineToukVersion=$espEngineToukVersion
+fi
