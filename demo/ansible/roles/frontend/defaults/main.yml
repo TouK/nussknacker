@@ -1,0 +1,2 @@
+---
+flink_dir: /home/touk/flink-{{flink_version}}
