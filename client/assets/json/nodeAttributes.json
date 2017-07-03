@@ -1,0 +1,115 @@
+{
+  "Source": {
+    "name": "Source",
+    "styles": {
+      "fill": "#2d8e54",
+      "color": "white"
+    }
+  },
+  "SubprocessInputDefinition": {
+    "name": "SubprocessInputDefinition",
+    "styles": {
+      "fill": "#2d8e54",
+      "color": "white"
+    }
+  },
+  "Sink": {
+    "name": "Sink",
+    "styles": {
+      "fill": "#db4646",
+      "color": "white"
+    }
+  },
+  "SubprocessOutputDefinition": {
+    "name": "SubprocessOutputDefinition",
+    "styles": {
+      "fill": "#db4646",
+      "color": "white"
+    }
+  },
+  "Filter": {
+    "name": "Filter",
+    "styles": {
+      "fill": "#db7e3a",
+      "color": "white"
+    }
+  },
+  "Switch": {
+    "name": "Switch",
+    "styles": {
+      "fill": "#70c6ce",
+      "color": "white"
+    }
+  },
+  "VariableBuilder": {
+    "name": "Variable Builder",
+    "styles": {
+      "fill": "#FEB58A",
+      "color": "white"
+    }
+  },
+  "Variable": {
+    "name": "Variable",
+    "styles": {
+      "fill": "#FEB58A",
+      "color": "white"
+    }
+  },
+  "Enricher": {
+    "name": "Enricher",
+    "styles": {
+      "fill": "#805db2",
+      "color": "white"
+    }
+  },
+  "SubprocessInput": {
+    "name": "SubprocessInput",
+    "styles": {
+      "fill": "#805db2",
+      "color": "white"
+    }
+  },
+  "Split": {
+    "name": "Split",
+    "styles": {
+      "fill": "#FCC56D",
+      "color": "white"
+    }
+  },
+  "Processor": {
+    "name": "Processor",
+    "styles": {
+      "fill": "#4583dd",
+      "color": "white"
+    }
+  },
+  "Aggregate": {
+    "name": "Aggregate",
+    "styles": {
+      "fill": "#e892bd",
+      "color": "white"
+    }
+  },
+  "Properties": {
+    "name": "Properties",
+    "styles": {
+      "fill": "#73E5B7",
+      "color": "white"
+    }
+  },
+  "CustomNode": {
+    "name": "CustomNode",
+    "styles": {
+      "fill": "#1aada6",
+      "color": "white"
+    }
+  },
+  "_group": {
+    "name": "Group",
+    "notEditable": true,
+    "styles": {
+      "fill": "#1aada6",
+      "color": "white"
+    }
+  }
+}

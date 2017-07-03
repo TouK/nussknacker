@@ -1,0 +1,29 @@
+@import "./_variables.styl"
+
+#toolbox
+  font-size 16px
+  font-weight lighter
+  margin-left -15px
+  margin-right 10px
+  .tree-view_item
+    border 1px solid listBorderColor
+    &.disabled
+      opacity 0.4
+      cursor: not-allowed !important
+  .toolWrapper
+    margin-left 17px
+  .tool
+    cursor pointer
+    margin-left -17px
+    margin-bottom -1px
+    img
+      margin-left 15px
+    height 27px
+    border 1px solid listBorderColor
+    &:hover
+      background-color toolHoverBkgColor
+  .toolIcon
+    height 15px
+    display inline-block
+    svg
+      height 15px

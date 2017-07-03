@@ -1,0 +1,60 @@
+@import "./_variables.styl"
+
+#process-history
+  process-history-color=defaultTextColor
+  font-size 12px
+  padding: 0
+  list-style: none
+  margin: 25px 0
+  li.future
+    opacity 0.3
+  li.past
+    opacity 0.80
+  li
+    cursor pointer
+    overflow: hidden
+    position: relative
+    padding: 0 0 10px 35px
+  li::before
+       content: '';
+       position: absolute;
+       left: 7px;
+       top: 7px;
+       width: 20px;
+       height: 999px;
+       border: 2px solid defaultTextColor;
+       border-width: 0px 0 0 2px;
+  li:last-child::before
+    border-width: 0 0 0;
+  li::after
+       content: '';
+       position: absolute;
+       left: 0;
+       top: 0;
+       width: 16px;
+       height: 16px;
+       background: #fff;
+       border: 2px solid defaultTextColor;
+       border-radius: 50%;
+
+  li.current,
+  li.past {
+    color: defaultTextColor;
+  }
+
+  li.current::before {
+    border-color: process-history-color;
+  }
+
+  li.current::after {
+    border-color: process-history-color;
+    background-color defaultTextColor
+  }
+
+  li.past::before,
+  li.past::after {
+    border-color: process-history-color;
+  }
+
+  li.past::after
+    background-color #444444

@@ -1,0 +1,49 @@
+{
+  "metaData" : {
+    "id" : "Test1",
+    "typeSpecificData":{"type":"StreamMetaData"}
+  },
+  "exceptionHandlerRef" : {
+    "parameters" : []
+  },
+  "nodes" : [
+    {
+      "type" : "Source",
+      "id" : "source",
+      "ref" : {
+        "typ" : "oneSource",
+        "parameters" : []
+      }
+    },
+    {
+      "type" : "Filter",
+      "id" : "filter",
+      "expression" : {
+        "language" : "spel",
+        "expression" : "true"
+      },
+      "nextFalse" : []
+    },
+    {
+      "type" : "Enricher",
+      "id" : "enricher",
+      "service" : {
+        "id" : "accountService",
+        "parameters" : []
+      },
+      "output" : "output"
+    },
+    {
+      "type" : "Sink",
+      "id" : "node3",
+      "ref" : {
+        "typ" : "logging",
+        "parameters" : []
+      },
+      "endResult" : {
+        "language" : "spel",
+        "expression" : "#input"
+      }
+    }
+  ]
+}

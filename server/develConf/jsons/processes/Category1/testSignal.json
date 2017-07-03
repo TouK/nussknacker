@@ -1,0 +1,93 @@
+{
+  "metaData" : {
+    "id" : "testSignal",
+    "typeSpecificData" : {
+      "type" : "StreamMetaData",
+      "parallelism" : 1
+    }
+  },
+  "exceptionHandlerRef" : {
+    "parameters" : [
+      {
+        "name" : "param1",
+        "value" : ""
+      }
+    ]
+  },
+  "nodes" : [
+    {
+      "type" : "Source",
+      "id" : "start",
+      "ref" : {
+        "typ" : "kafka-transaction",
+        "parameters" : []
+      }
+    },
+    {
+      "type" : "CustomNode",
+      "id" : "constantStateTransformer",
+      "outputVar" : "outputVar",
+      "nodeType" : "constantStateTransformer",
+      "parameters" : []
+    },
+    {
+      "type" : "CustomNode",
+      "id" : "lockStreamTransformer",
+      "outputVar" : "lockOutput",
+      "nodeType" : "lockStreamTransformer",
+      "parameters" : [
+        {
+          "name" : "input",
+          "expression" : {
+            "language" : "spel",
+            "expression" : "#input"
+          }
+        }
+      ]
+    },
+    {
+      "type" : "Filter",
+      "id" : "lockFilter",
+      "expression" : {
+        "language" : "spel",
+        "expression" : "#lockOutput.lockEnabled"
+      },
+      "nextFalse" : [
+        {
+          "type" : "Sink",
+          "id" : "lockDisabled",
+          "ref" : {
+            "typ" : "kafka-string",
+            "parameters" : [
+              {
+                "name" : "topic",
+                "value" : "testSignal.lockDisabled"
+              }
+            ]
+          },
+          "endResult" : {
+            "language" : "spel",
+            "expression" : "#input + \" lockDisabled\""
+          }
+        }
+      ]
+    },
+    {
+      "type" : "Sink",
+      "id" : "lockEnabled",
+      "ref" : {
+        "typ" : "kafka-string",
+        "parameters" : [
+          {
+            "name" : "topic",
+            "value" : "testSignal.lockEnabled"
+          }
+        ]
+      },
+      "endResult" : {
+        "language" : "spel",
+        "expression" : "#input + \" lockEnabled\""
+      }
+    }
+  ]
+}

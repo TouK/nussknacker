@@ -1,0 +1,73 @@
+@import "./_variables.styl"
+
+#main-menu
+  position: absolute
+  top: 0
+  height: menuBarHeight
+  width: 100%
+  background-color: menuBkgColor
+  border: none
+  border-radius: 0
+  margin-bottom: 0
+  z-index: 100
+
+#brand-name
+  color: menuTxtColor
+  height: 100%
+  display: table
+  padding: 0
+  #app-logo
+    font-size: 25px
+    padding: 0 20px
+    font-weight: 400
+  #app-name
+    font-size: 25px
+    font-weight: 400
+  .vert-middle
+    display: table-cell
+    vertical-align: middle
+
+#menu-items
+  height: 100%
+  li
+    height: 100%
+    margin: 0
+  a
+    color: menuTxtColor
+    font-weight: 400
+    font-size: 18px
+    line-height: menuBarHeight
+    padding: 0 40px
+    border-radius: 0
+    &:hover
+      background-color: rgba(0, 0, 0, 0.1)
+.indicator-green
+  background-color: #5cb85c
+  border-color: #4cae4c
+
+.indicator-blue
+  background-color: #5bc0de
+  border-color: #46b8da
+
+.indicator-yellow
+  background-color: #f0ad4e
+  border-color: #eea236
+
+.indicator-red
+   background-color: #d9534f
+   border-color: #d43f3a
+
+.indicator
+  color: #fff
+  display: inline-block
+  padding: 6px 12px
+  margin-bottom: 0
+  font-size: 14px
+  font-weight: normal
+  line-height: 1.42857143
+  text-align: center
+  white-space: nowrap
+  vertical-align: middle
+  background-image: none
+  border: 1px solid transparent
+  border-radius: 4px

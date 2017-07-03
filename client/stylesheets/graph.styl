@@ -1,0 +1,461 @@
+@import "./_variables.styl"
+
+#process-name
+  position: absolute
+  margin-left: 15px
+
+#esp-graph
+  height: 100%
+  margin-left sidebarWidth
+  margin-right sidebarWidth
+  overflow-y: overlay
+  overflow-x: auto
+  background-color: graphBkgColor
+  #svg-pan-zoom-controls
+    transform: translate(0, 0px) scale(0.75)
+  svg
+    width: 100%
+    height 100%
+    padding: svgGraphPaddingTop svgGraphPaddingLeft
+
+node-highlight(strokeColor, backgroundFill)
+  .body
+    stroke: strokeColor
+    stroke-width: 2px
+  .background
+    fill: backgroundFill
+
+.node-validation-error
+  node-highlight(#a94442, #f2dede)
+
+.node-grouping
+  node-highlight(#5ba935, #caf2d6)
+
+.node-focused
+  node-highlight(#0058a9, #e6ecff)
+
+.ReactModal__Overlay
+  z-index: 100
+  background-color: rgba(23, 22, 21, 0.3) !important //fixme ee nie wiem dlaczego important?
+
+
+espCheckbox()
+  checkboxWidth = 20px
+  input[type='checkbox']
+    text-rendering optimizeSpeed
+    width checkboxWidth
+    height checkboxWidth
+    margin 0
+    margin-right 1px
+    display block
+    position relative
+    cursor pointer
+
+  input[type='checkbox']:after
+    content ""
+    vertical-align middle
+    text-align center
+    line-height checkboxWidth
+    position absolute
+    cursor pointer
+    height checkboxWidth
+    width checkboxWidth
+    font-size checkboxWidth - 6
+    box-shadow inset 0px 1px 1px #000, 0px 1px 0px #444
+    background #45484d
+
+  input[type='checkbox']:hover:after, input[type='checkbox']:checked:hover:after
+    background #2d2d2d
+    content '\2714'
+    color #888
+
+  input[type='checkbox']:checked
+    &:after
+      background #202020
+      content '\2714'
+      color #fff
+
+.espModal
+  max-height modalMaxHeight
+  max-width modalMaxWidth
+  position: absolute;
+  background modalBkgColor
+  background-color modalBkgColor
+  outline: none;
+  border-radius: 0px;
+  padding: 0px;
+  top: 50px
+  left: 20%;
+  right: 20%;
+  margin-left auto
+  margin-right auto
+  border: 2px solid menuBkgColor
+  .confirmationButtons
+    text-align center
+    button
+      margin-top 80px
+      margin-bottom 10px
+      margin-left 0px
+    button:first-child
+      margin-right 20px
+    button:nth-child(2)
+      margin-left 20px
+
+.confirmationModal
+  width 575px
+  font-size 18px
+  font-weight lighter
+  text-align center
+  p
+    margin-top 30px
+
+
+.compareModal
+  max-width 1000
+  max-height 700
+  font-size: 15px
+  font-weight: 700
+  .notPresent
+    margin-bottom: 50px
+    margin-top: 50px
+    margin-left 30px
+    margin-right 30px
+    color: modalLabelTextColor
+  .versionHeader
+    margin-bottom: 15px
+    margin-top: 15px
+    margin-left 30px
+    margin-right 30px
+  .compareContainer
+    zoom: 0.9
+    >:first-child
+      width: 50%
+      display: inline-block
+      vertical-align:top
+
+    >:nth-child(2)
+      width: 50%
+      display: inline-block
+      vertical-align:top
+
+.modalHeader
+  text-transform: lowercase
+  font-size 14px
+  font-weight 600
+  height: modalHeaderHeight
+  min-width modalHeaderWidth
+  display inline-block
+  background-color modalBkgColor
+  span
+    display inline-block
+    margin-left 15px
+    margin-top 3px
+  span::after
+    content: "\00a0\00a0"
+
+.modalContent
+  overflow auto
+  max-height modalContentMaxHeight
+  background-color: modalBkgColor
+  labelWidth = 20%
+  .warning
+    margin 15px
+    color warningColor
+    .icon
+      float left
+      width: 30px
+      height: 30px
+  .node-table
+    margin: 0 30px
+    .node-table-body
+      clear: both
+    .node-row
+      margin-bottom: 8px
+      margin-top: 7px
+    .node-label
+      color: modalLabelTextColor
+      width: labelWidth
+      display: inline-block
+      vertical-align: top
+      padding-top: 10px
+      font-size: 12px
+      font-weight: 700
+      .labelFooter
+        font-weight 500
+        opacity: 0.7
+      span
+        margin-top: 10px
+        margin-left: 10px
+        font-size: 15px
+        &:hover
+          cursor pointer
+    .node-value
+      width: 100% - labelWidth
+      display: inline-block
+      color: #686868
+      textarea
+        overflow hidden
+      espCheckbox()
+      input[type='checkbox']
+        margin-top 10px
+        margin-bottom 10px
+      &.partly-hidden
+        textarea
+          height 100px !important
+    .node-error
+      width: 100%
+      color: warningColor
+      font-size: 14px
+      font-weight: 400
+      margin-bottom: 10px
+      margin-top: 10px
+    .node-tip
+      margin-left: 10px
+      width: 15px
+      height: 15px
+    .node-test-results
+      border: 1px solid testResultsColor
+      padding: 5px
+    .node-input
+      width: 100%
+      height: 40px
+      padding: 0 20px
+      border: none
+      background-color: modalInputBkgColor
+      color: modalInputTextColor
+      font-weight: 400
+      font-size: 14px
+    .node-group
+      padding-top 15px
+      width: 100%
+      padding-left: 50px
+      .node-label
+        text-transform: none
+    textarea.node-input
+      resize: vertical
+      line-height: 1.5
+      padding-top: 10px
+      padding-bottom: 10px
+    input[type=checkbox].node-input
+      height: 20px
+    &.node-editable
+      .node-input
+        border-bottom: 1px solid gray
+    .testResultDownload
+      padding-left: 15px
+      font-size: 14
+      a
+        color: modalLabelTextColor
+        text-decoration none
+        &:hover
+          color: processesHoverColor
+
+
+.modalFooter
+  margin-top: 5px
+  border-top: 2px solid menuBkgColor
+  height modalFooterHeight
+  background-color modalFooterBkgColor
+  .footerButtons
+    float right
+    button
+      margin-right 20px
+      text-transform uppercase
+    .modalConfirmButton
+      color modalConfirmButtonColor
+
+espButton()
+  width: 180px
+  height: 44px
+  border: none
+  border-radius: 0px
+  font-weight: 600
+  font-size: 18px
+  background-color: buttonBkgColor
+  color: buttonTextColor
+  transition: background-color 0.3s
+
+  &:disabled,&.disabled
+    opacity 0.3
+    cursor: not-allowed !important
+  &:not(:disabled):hover,&:not(.disabled):hover
+    background-color: buttonBkgHover
+
+espButtonIcon()
+  width: buttonSize
+  height: buttonSize
+  font-size rightPanelButtonFontSize
+  border 1px solid buttonBorderColor
+  margin 10px buttonPadding 10px 0
+  img
+    display block
+    margin auto
+  svg
+    width 40px
+    display block
+    margin auto
+  &.dropzone
+    padding-top 4px //nie wiem o co chodzi...
+    display inline-block
+
+.espButton
+  espButton()
+  width: 120px
+  height: 25px
+  font-size: 15px
+  &.right-panel
+    espButtonIcon()
+  &.add-comment
+    espButtonIcon()
+    width 40px
+    height 30px
+  &.download-button
+    width 27px
+    height 27px
+    border 1px solid buttonBorderColor
+  &.attachment-button
+    svg
+      margin-top 10px
+      width 27px
+      height 27px
+
+.modalButton
+  width: 120px;
+  height 30px
+  font-size: 18px;
+  margin-top: 10px;
+  font-weight: 600;
+  color: buttonTextColor;
+  background-color: buttonBkgColor;
+  border: 1px solid buttonBorderColor;
+  margin-left 10px
+
+.ladda-button
+  padding 0
+  outline: none
+  &:hover
+    background: transparent
+
+.error
+  background-color: red
+
+.element
+  cursor: pointer
+
+.link
+  .connection-wrap
+    &:hover
+      stroke: transparent
+      stroke-width: 10px
+      stroke-linecap: initial
+  .esp-label
+    rect
+      transform: translateY(0.1em) scale(1.2, 1.4)
+    &:hover
+      cursor: zoom-in
+      display: table
+      rect
+        transform: translateY(0.8em) scale(2.5, 3.5)
+      text
+        font-size: 16
+        display: table-cell
+  &:hover
+    .connection
+      stroke: #46BFDB
+    .marker-target, .marker-source
+      fill: #46BFDB
+    .marker-vertices circle
+      fill: #B5B5B5
+      r: 6px
+
+.code-completion
+  color: #686868
+  position: relative
+  top: -25px
+  float: right
+
+.testResultsSummary
+  font-size: 20
+  font-weight: bold
+
+.testResultsPlaceholder
+  fill: buttonBorderColor
+  border: 0
+
+.nodeIcon
+  &:not(:hover)
+    opacity 0.75
+  &:hover
+    opacity 1
+
+.nodeIconHoverBox
+  &:not(:hover)
+    .nodeIcon
+      display: none
+  &:hover
+    .nodeIcon
+      display: block
+
+.nodeIconForceHoverBox
+  .nodeIcon
+    display: block
+
+.nodeIconForceNoHoverBox
+  .nodeIcon
+    display: none
+
+
+.fadeout {
+  position: relative;
+  bottom: 4em;
+  height: 4em;
+  background: -webkit-linear-gradient(
+          rgba(20, 20, 20, 0) 0%,
+          rgba(20, 20, 20, 1) 100%
+  );
+  background-image: -moz-linear-gradient(
+          rgba(20, 20, 20, 0) 0%,
+          rgba(20, 20, 20, 1) 100%
+  );
+  background-image: -o-linear-gradient(
+          rgba(20, 20, 20, 0) 0%,
+          rgba(20, 20, 20, 1) 100%
+  );
+  background-image: linear-gradient(
+          rgba(20, 20, 20, 0) 0%,
+          rgba(20, 20, 20, 1) 100%
+  );
+  background-image: -ms-linear-gradient(
+          rgba(20, 20, 20, 0) 0%,
+          rgba(20, 20, 20, 1) 100%
+  );
+}
+
+//  TODO uzyc tego we wszystkich formatkach
+.esp-form-row
+  labelWidth = 20%
+  margin-bottom: 8px
+  margin-top: 7px
+  margin-left 30px
+  margin-right 30px
+
+  >:first-child
+    width: labelWidth
+    color: modalLabelTextColor
+    display: inline-block
+    vertical-align: top
+    padding-top: 10px
+    font-size: 12px
+    font-weight: 700
+
+  >:nth-child(2)
+    width: 100% - labelWidth
+    height: 40px
+    padding: 0 20px
+    display: inline-block
+    color: modalInputTextColor
+    background-color: modalInputBkgColor
+    border: none
+    font-size: 14px
+    font-weight: 400
+

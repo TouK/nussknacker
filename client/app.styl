@@ -1,0 +1,228 @@
+@import "stylesheets/_variables.styl"
+
+html,
+body
+  margin: 0
+  padding: 0
+  width: 100%
+  height: 100%
+  font-family: _fontFamily !important
+  color: defaultTextColor
+  font-size: defaultFontSize
+
+#app-container
+  position: absolute
+  top: 0
+  width: 100%
+  height: 100%
+
+  .top-left-button
+    position: absolute
+    left: 0
+    top: 20px
+    img
+      cursor: pointer
+      margin: ((menuBarHeight - 30px)/2) 10px ((menuBarHeight - 35px)/2) 20px
+    span
+      color white
+      font-size 30px
+      cursor: pointer
+
+  main
+    position: absolute
+    top: 0
+    bottom: 0
+    width: 100%
+    padding-top: menuBarHeight
+
+ul.breadcrumbs-list
+  margin: 0
+  padding: 0
+  li
+    display: inline-block
+    margin-right: 20px
+    a:not(.breadcrumb-active)
+      font-weight: bold
+      margin-right: 20px
+    a.breadcrumb-active
+        text-decoration: none
+        cursor: default
+
+.container-fluid
+  padding-left: containerPadding
+  padding-right: containerPadding
+
+.hide
+  display none
+
+.react-autosuggest__container {
+  position: relative;
+}
+
+.react-autosuggest__input {
+  width: 540px;
+  height: 30px;
+  padding: 10px 20px;
+  font-family: Helvetica, sans-serif;
+  font-weight: 300;
+  font-size: 16px;
+  border: 1px solid buttonBkgColor;
+  border-radius: 4px;
+}
+
+.react-autosuggest__input:focus {
+  outline: none;
+}
+
+.react-autosuggest__container--open .react-autosuggest__input {
+  font-size 11px
+}
+
+.react-autosuggest__suggestions-container
+  display: none;
+  border-radius 0px
+  font-size 10px
+
+//na razie uzywamy webkitowego scrolla bo nie umiem wpiac uzyc react-custom-scrollbars w react-autosuggest
+.react-autosuggest__suggestions-container::-webkit-scrollbar
+  width 6px
+  background-color modalBkgColor;
+
+.react-autosuggest__suggestions-container::-webkit-scrollbar-thumb
+  background-color scrollbarColor
+
+.react-autosuggest__container--open .react-autosuggest__suggestions-container {
+  display: block;
+  position: fixed;
+  top: 0px;
+  width: 380px;
+  border: 1px solid black
+  background-color: #fff;
+  font-family: Helvetica, sans-serif;
+  font-weight: 300;
+  font-size: 14px;
+  z-index: 10;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.react-autosuggest__suggestions-list {
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+}
+
+.react-autosuggest__suggestion
+  cursor: pointer;
+  padding: 10px 20px;
+  border-bottom 1px solid listBorderColor
+  background-color panelHeaderBkgColor
+  color defaultTextColor
+
+.react-autosuggest__suggestion--focused
+  background-color buttonBkgHover
+
+
+processActivityList()
+  width 100%
+  font-size 10px
+  float left
+  padding 10px 5px 0 0
+  .header
+    display inline-block
+    span
+      margin-right 5px
+      &.date
+        color panelTitleTextColor
+        font-style italic
+    p
+      font-style italic
+      color panelTitleTextColor
+  .footer
+    font-style italic
+    p
+      margin-bottom 0
+  p
+    font-size 12px
+
+.process-comments
+  margin-bottom 10px
+  .process-comments-list
+    processActivityList()
+    .header
+      width 100%
+      .remove
+        float right
+        &:hover
+          cursor pointer
+          opacity 0.5
+  .add-comment
+    font-size 12px
+    textarea
+      width 90%
+      height 30px
+      font-size 12px
+      font-weight lighter
+      border 1px solid commentBorderColor
+      background-color commentBkgColor
+      &:focus
+        outline-color: defaultTextColor
+    button
+      margin-top 10px
+
+
+.process-attachments
+  cursor: default
+  margin-bottom 10px
+  .process-attachments-list
+    processActivityList()
+
+  .details
+    display inline-block
+
+  .download-attachment
+    margin-right 5px
+    cursor: pointer
+    display inline-block
+    font-size 25px
+
+  .add-attachments
+    font-size 12px
+    display inline-block
+    width 90%
+    height: 90px
+    border 1px solid buttonBorderColor
+    .dropZone
+      width 100%
+      height 100%
+      font-size 12px
+      font-weight normal
+      padding 0
+    .attachment-button-text
+      margin-top -50px
+      &:hover
+        background-color buttonBkgHover
+
+.label-info
+  background-color labelBkgColor
+
+.typeSuggestion
+  float: right
+  opacity: 0.7
+
+.modalContent
+  input
+  textarea
+    width 90%
+    font-size 12px
+    font-weight lighter
+    border 1px solid commentBorderColor
+    background-color commentBkgColor
+    &:focus
+      outline-color: defaultTextColor
+
+
+.full-dark
+  width: 100%
+  height: 100%
+  background-color modalBkgColor
