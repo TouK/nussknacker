@@ -325,6 +325,7 @@ function graphReducer(state, action) {
     }
     case "UNGROUP": {
       return {
+        ...state,
         processToDisplay: NodeUtils.ungroup(state.processToDisplay, action.groupToRemove),
         layout: [],
         nodeToDisplay: state.processToDisplay.properties,
