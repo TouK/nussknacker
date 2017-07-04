@@ -1,0 +1,15 @@
+.idea/
+target/
+*.iml
+.*orig
+node_modules/
+dist/
+**/db.log
+**/db.properties
+**/db.script
+**/db.lck
+**/db.tmp
+*.jar
+ui/server/src/main/resources/web
+ui/server/develConf/jsons/*
+**/npm-debug.log
