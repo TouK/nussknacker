@@ -27,6 +27,7 @@ import pl.touk.esp.engine.marshall.ProcessMarshaller
 import pl.touk.esp.engine.standalone.StandaloneProcessInterpreter
 import pl.touk.esp.engine.standalone.utils.{StandaloneContext, StandaloneContextPreparer}
 import pl.touk.esp.engine.util.ThreadUtils
+import pl.touk.esp.engine.util.loader.JarClassLoader
 import pl.touk.esp.engine.util.service.{AuditDispatchClient, LogCorrelationId}
 
 import scala.concurrent.duration.FiniteDuration
@@ -40,9 +41,7 @@ class StandaloneProcessManager(config: Config)
 
   private val standaloneConf = config.getConfig("standaloneConfig")
 
-  private val jarFile = new File(standaloneConf.getString("jarPath"))
-
-  private val classLoader = new URLClassLoader(Array(jarFile.toURI.toURL), getClass.getClassLoader)
+  private val jarClassLoader = JarClassLoader(standaloneConf.getString("jarPath"))
 
   private val httpClient = Http.apply()
   private val dispatchClient = new AuditDispatchClient {
@@ -58,7 +57,7 @@ class StandaloneProcessManager(config: Config)
 
   val processConfig = processConfigPart.toConfig
 
-  private val testRunner = StandaloneTestRunner(processConfig, jarFile)
+  private val testRunner = StandaloneTestRunner(processConfig, jarClassLoader.jarUrl)
 
   import argonaut.ArgonautShapeless._
 
@@ -102,10 +101,10 @@ class StandaloneProcessManager(config: Config)
   }
 
   lazy val configCreator: ProcessConfigCreator =
-    classLoader.loadClass(processConfig.getString("processConfigCreatorClass")).newInstance().asInstanceOf[ProcessConfigCreator]
+    jarClassLoader.createProcessConfigCreator(processConfig.getString("processConfigCreatorClass"))
 
   override def getProcessDefinition: ProcessDefinition[ObjectDefinition] = {
-    ThreadUtils.withThisAsContextClassLoader(classLoader) {
+    ThreadUtils.withThisAsContextClassLoader(jarClassLoader.classLoader) {
       ObjectProcessDefinition(ProcessDefinitionExtractor.extractObjectWithMethods(configCreator, processConfig))
     }
   }
@@ -115,8 +114,8 @@ class StandaloneProcessManager(config: Config)
 
 
 object StandaloneTestRunner {
-  def apply(config: Config, jarFile: File) = {
-    new TestUtils.StandaloneTestRunner(config, List(jarFile.toURI.toURL))
+  def apply(config: Config, jarUrl: URL): TestUtils.StandaloneTestRunner = {
+    new TestUtils.StandaloneTestRunner(config, jarUrl)
   }
 
 }
@@ -237,13 +236,13 @@ object TestUtils {
   }
 
   //fixme to chyba cale bedzie mozna wydzielic
-  class StandaloneTestRunner(config: Config, jars: List[URL]) {
+  class StandaloneTestRunner(config: Config, jar: URL) {
     import scala.reflect.runtime.{universe => ru}
 
-    val classLoader = new URLClassLoader(jars.toArray, getClass.getClassLoader)
+    val jarClassLoader = JarClassLoader(jar)
 
     private val invoker: ru.MethodMirror = {
-      val m = ru.runtimeMirror(classLoader)
+      val m = ru.runtimeMirror(jarClassLoader.classLoader)
       val module = m.staticModule("pl.touk.esp.engine.standalone.management.StandaloneTestMain")
       val im = m.reflectModule(module)
       val method = im.symbol.info.decl(ru.TermName("run")).asMethod
@@ -253,13 +252,13 @@ object TestUtils {
 
     def test(processId: String, processJson: String, testData: TestData): TestResults = {
       //we have to use context loader, as in UI we have don't have esp-process on classpath...
-      ThreadUtils.withThisAsContextClassLoader(classLoader) {
+      ThreadUtils.withThisAsContextClassLoader(jarClassLoader.classLoader) {
         tryToInvoke(testData, processJson).asInstanceOf[TestResults]
       }
     }
 
     def tryToInvoke(testData: TestData, json: String): Any = try {
-      invoker(json, config, testData, jars)
+      invoker(json, config, testData, List(jar))
     } catch {
       case e:InvocationTargetException => throw e.getTargetException
     }

@@ -15,6 +15,7 @@ import pl.touk.esp.engine.api.process.ProcessConfigCreator
 import pl.touk.esp.engine.standalone.management.DeploymentService
 import pl.touk.esp.engine.standalone.utils.StandaloneContextPreparer
 import pl.touk.esp.engine.util.ThreadUtils
+import pl.touk.esp.engine.util.loader.JarClassLoader
 import pl.touk.http.argonaut.Argonaut62Support
 
 import scala.util.Try
@@ -76,9 +77,7 @@ object StandaloneHttpApp extends Directives with Argonaut62Support with LazyLogg
     if (!config.hasPath("jarPath")) { //to troche slabe, ale na razie chcemy jakos testowac bez jara...
       getClass.getClassLoader
     } else {
-      val jarFile = new File(config.getString("jarPath"))
-      val classLoader = new URLClassLoader(Array(jarFile.toURI.toURL), getClass.getClassLoader)
-      classLoader
+      JarClassLoader(config.getString("jarPath")).classLoader
     }
   }
 
