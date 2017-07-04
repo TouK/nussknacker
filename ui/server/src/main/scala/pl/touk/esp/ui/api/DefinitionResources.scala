@@ -22,6 +22,7 @@ import pl.touk.esp.ui.process.displayedgraph.displayablenode.EdgeType
 import pl.touk.esp.ui.process.displayedgraph.displayablenode.EdgeType.{FilterFalse, FilterTrue}
 import pl.touk.esp.ui.process.marshall.ProcessConverter
 import pl.touk.esp.ui.process.subprocess.SubprocessRepository
+import pl.touk.esp.ui.process.values.{ParameterDefaultValueExtractorStrategy, ParameterEvaluatorExtractor}
 import pl.touk.esp.ui.security.LoggedUser
 import pl.touk.esp.ui.util.EspPathMatchers
 import pl.touk.http.argonaut.Argonaut62Support
@@ -29,7 +30,9 @@ import pl.touk.http.argonaut.Argonaut62Support
 import scala.concurrent.ExecutionContext
 import scala.runtime.BoxedUnit
 
-class DefinitionResources(processDefinition: Map[ProcessingType, ProcessDefinition[ObjectDefinition]], subprocessRepository: SubprocessRepository)
+class DefinitionResources(processDefinition: Map[ProcessingType, ProcessDefinition[ObjectDefinition]],
+                          subprocessRepository: SubprocessRepository,
+                          parameterDefaultValueExtractorStrategyFactory: ParameterDefaultValueExtractorStrategy)
                          (implicit ec: ExecutionContext)
   extends Directives with Argonaut62Support with EspPathMatchers {
 
@@ -42,8 +45,8 @@ class DefinitionResources(processDefinition: Map[ProcessingType, ProcessDefiniti
         get {
           complete {
             val chosenProcessDefinition = processDefinition(processingType)
-            ProcessObjects(DefinitionPreparer.prepareNodesToAdd(user, chosenProcessDefinition,
-              isSubprocess, subprocessRepository),
+            ProcessObjects(DefinitionPreparer.prepareNodesToAdd(user = user, processDefinition = chosenProcessDefinition,
+              isSubprocess = isSubprocess, subprocessRepo = subprocessRepository, extractorFactory=parameterDefaultValueExtractorStrategyFactory),
               chosenProcessDefinition,
               DefinitionPreparer.prepareEdgeTypes(user, chosenProcessDefinition, isSubprocess, subprocessRepository))
           }
@@ -65,18 +68,21 @@ object SortedNodeGroup {
 }
 
 case class NodeGroup(name: String, possibleNodes: List[NodeToAdd])
+case class NodeDefinition(id: String, parameters: List[DefinitionExtractor.Parameter])
 
 //TODO: czy to da sie ladniej?
 object DefinitionPreparer {
 
   def prepareNodesToAdd(user: LoggedUser, processDefinition: ProcessDefinition[ObjectDefinition],
-                        isSubprocess: Boolean, subprocessRepo: SubprocessRepository): List[NodeGroup] = {
+                        isSubprocess: Boolean, subprocessRepo: SubprocessRepository,
+                        extractorFactory: ParameterDefaultValueExtractorStrategy): List[NodeGroup] = {
+    val evaluator = new ParameterEvaluatorExtractor(extractorFactory)
 
     def filterCategories(objectDefinition: ObjectDefinition) = user.categories.intersect(objectDefinition.categories)
 
-    def objDefParams(objDefinition: ObjectDefinition) = objDefinition.parameters.map(mapDefinitionParamToEvaluatedParam)
+    def objDefParams(nodeDefinition: NodeDefinition): List[Parameter] = evaluator.evaluateParameters( nodeDefinition)
 
-    def serviceRef(id: String, objDefinition: ObjectDefinition) = ServiceRef(id, objDefParams(objDefinition))
+    def serviceRef(id: String, objDefinition: ObjectDefinition) = ServiceRef(id, objDefParams(NodeDefinition(id, objDefinition.parameters)))
 
     val returnsUnit = ((id: String, objectDefinition: ObjectDefinition)
     => objectDefinition.returnType.refClazzName == classOf[BoxedUnit].getName).tupled
@@ -105,7 +111,7 @@ object DefinitionPreparer {
     val customTransformers = SortedNodeGroup("custom",
       processDefinition.customStreamTransformers.map {
         case (id, (objDefinition, _)) => NodeToAdd("customNode", id,
-          CustomNode("", if (objDefinition.hasNoReturn) None else Some("outputVar"), id, objDefParams(objDefinition)), filterCategories(objDefinition))
+          CustomNode("", if (objDefinition.hasNoReturn) None else Some("outputVar"), id, objDefParams(NodeDefinition(id,objDefinition.parameters))), filterCategories(objDefinition))
       }.toList
     )
 
@@ -132,7 +138,7 @@ object DefinitionPreparer {
             case CanonicalProcess(MetaData(id, _, _, _), _, FlatNode(SubprocessInputDefinition(_, parameters, _)) :: _) => NodeToAdd("subprocess", id,
               SubprocessInput("", SubprocessRef(id,
                 //FIXME: kategorie
-                parameters.map(mapDefinitionParamToEvaluatedParam))), user.categories)
+                evaluator.evaluateParameters(NodeDefinition(id, parameters)))), user.categories)
           }.toList
         )
       )
@@ -145,22 +151,6 @@ object DefinitionPreparer {
     }
 
     List(base, services, enrichers, customTransformers) ++ subprocessDependent
-  }
-
-  private def mapDefinitionParamToEvaluatedParam(param: DefinitionExtractor.Parameter)
-
-  = {
-    val defaultExpression = param.typ.refClazzName match {
-      case "long" | "short" | "int" | "java.lang.Number" => "0"
-      case "float" | "double" | "java.math.BigDecimal" => "0.0"
-      case "boolean" => "true"
-      case "java.lang.String" => "''"
-      case "java.util.List" => "{}"
-      case "java.util.Map" => "{:}"
-      case _ => s"#${param.name}"
-    }
-    //TODO: enable nicer handling of constants/simple strings (maybe SpEL templates??)
-    Parameter(param.name, Expression("spel", defaultExpression))
   }
 
   def prepareEdgeTypes(user: LoggedUser, processDefinition: ProcessDefinition[ObjectDefinition],

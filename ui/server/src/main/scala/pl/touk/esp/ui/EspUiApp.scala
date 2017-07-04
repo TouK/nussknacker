@@ -19,10 +19,13 @@ import pl.touk.esp.ui.process.deployment.ManagementActor
 import pl.touk.esp.ui.process.migrate.HttpProcessMigrator
 import pl.touk.esp.ui.process.repository.{DeployedProcessRepository, ProcessActivityRepository, ProcessRepository}
 import pl.touk.esp.ui.process.subprocess.{ProcessRepositorySubprocessRepository, SubprocessResolver}
+import pl.touk.esp.ui.process.values.{ParamDefaultValueConfig, TypeAfterConfig}
 import pl.touk.esp.ui.processreport.ProcessCounter
 import pl.touk.esp.ui.security.SimpleAuthenticator
 import pl.touk.process.report.influxdb.InfluxReporter
 import slick.jdbc.JdbcBackend
+import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
 object EspUiApp extends App with Directives with LazyLogging {
 
@@ -48,6 +51,8 @@ object EspUiApp extends App with Directives with LazyLogging {
     ProcessingTypeDeps(config, featureTogglesConfig.standaloneMode)
 
   val processRepositoryForSub = new ProcessRepository(db, DefaultJdbcProfile.profile, null, system.dispatcher)
+  val defaultParametersValues = config.as[ParamDefaultValueConfig](s"$environment.defaultValues")
+  val extractValueParameterByConfigThenType = new TypeAfterConfig(defaultParametersValues)
 
   val subprocessRepository = new ProcessRepositorySubprocessRepository(processRepositoryForSub)
   val subprocessResolver = new SubprocessResolver(subprocessRepository)
@@ -81,7 +86,7 @@ object EspUiApp extends App with Directives with LazyLogging {
                   new ProcessActivityResource(processActivityRepository, attachmentService).route(user),
                   new ManagementResources(processDefinitions.values.flatMap(_.typesInformation).toList, counter, managementActor).route(user),
                   new ValidationResources(processValidation).route(user),
-                  new DefinitionResources(processDefinitions, subprocessRepository).route(user),
+                  new DefinitionResources(processDefinitions, subprocessRepository, extractValueParameterByConfigThenType).route(user),
                   new SignalsResources(managers, processDefinitions, processRepository).route(user),
                   new QueryableStateResources(processDefinitions, processRepository, espQueryableClient, jobStatusService).route(user),
                   new UserResources().route(user),
