@@ -21,6 +21,7 @@ import pl.touk.esp.engine.definition.ProcessDefinitionExtractor.ObjectProcessDef
 import pl.touk.esp.engine.definition._
 import pl.touk.esp.engine.flink.queryablestate.{EspQueryableClient, QueryableClientProvider}
 import pl.touk.esp.engine.util.ThreadUtils
+import pl.touk.esp.engine.util.loader.JarClassLoader
 
 import scala.collection.JavaConversions._
 import scala.concurrent.duration._
@@ -67,29 +68,26 @@ class FlinkProcessManager(config: Config,
   private val flinkConf = config.getConfig("flinkConfig")
 
   override def queryableClient : EspQueryableClient = gateway.queryableClient
-
-  private val jarFile = new File(flinkConf.getString("jarPath"))
-
-  private val classLoader = new URLClassLoader(Array(jarFile.toURI.toURL), getClass.getClassLoader)
+  private val jarClassLoader = JarClassLoader(flinkConf.getString("jarPath"))
 
   private val processConfigPart = extractProcessConfig
 
   val processConfig : Config = processConfigPart.toConfig
 
-  private val testRunner = FlinkProcessTestRunner(processConfig, jarFile)
+  private val testRunner = FlinkProcessTestRunner(processConfig, jarClassLoader.file)
 
   lazy val buildInfo: Map[String, String] = configCreator.buildInfo()
 
   lazy val configCreator: ProcessConfigCreator =
-    classLoader.loadClass(processConfig.getString("processConfigCreatorClass")).newInstance().asInstanceOf[ProcessConfigCreator]
+    jarClassLoader.createProcessConfigCreator(processConfig.getString("processConfigCreatorClass"))
 
   private def prepareProgram(processId: String, processDeploymentData: ProcessDeploymentData) : PackagedProgram = {
     val configPart = processConfigPart.render()
     processDeploymentData match {
       case GraphProcess(processAsJson) =>
-        new PackagedProgram(jarFile, "pl.touk.esp.engine.process.runner.FlinkProcessMain", List(processAsJson, configPart, buildInfoJson):_*)
+        new PackagedProgram(jarClassLoader.file, "pl.touk.esp.engine.process.runner.FlinkProcessMain", List(processAsJson, configPart, buildInfoJson):_*)
       case CustomProcess(mainClass) =>
-        new PackagedProgram(jarFile, mainClass, List(processId, configPart, buildInfoJson): _*)
+        new PackagedProgram(jarClassLoader.file, mainClass, List(processId, configPart, buildInfoJson): _*)
     }
   }
 
@@ -146,7 +144,7 @@ class FlinkProcessManager(config: Config,
   }
 
   override def getProcessDefinition = {
-    ThreadUtils.withThisAsContextClassLoader(classLoader) {
+    ThreadUtils.withThisAsContextClassLoader(jarClassLoader.classLoader) {
       ObjectProcessDefinition(ProcessDefinitionExtractor.extractObjectWithMethods(configCreator, processConfig))
     }
   }
