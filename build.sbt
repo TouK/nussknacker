@@ -18,8 +18,8 @@ version in ThisBuild := sys.props.getOrElse("espEngineToukVersion", defaultVersi
 
 credentials in ThisBuild += Credentials("Sonatype Nexus Repository Manager", "nexus.touk.pl", "deployment", "deployment123")
 
-//we want to be able to build
-val includeFlinkAndScala = Option(System.getProperty("includeFlinkAndScala")).exists(_.toBoolean)
+//by default we include flink and scala, we want to be able to disable this behaviour for performance reasons
+val includeFlinkAndScala = Option(System.getProperty("includeFlinkAndScala", "true")).exists(_.toBoolean)
 
 val flinkScope = if (includeFlinkAndScala) "compile" else "provided"
 
@@ -444,17 +444,24 @@ lazy val queryableState = (project in engine("queryableState")).
 lazy val buildUi = taskKey[Unit]("builds ui")
 lazy val testUi = taskKey[Unit]("tests ui")
 
+def runNpm(command: String, errorMessage: String) = {
+  val path = Path.apply("ui/client").asFile
+  println("Using path: " + path.getAbsolutePath)
+  val installResult = Process("npm install", path) !;
+  if (installResult != 0) throw new RuntimeException("NPM install failed")
+  val result = Process(s"npm $command", path) !;
+  if (result != 0) throw new RuntimeException(errorMessage)
+}
+
 lazy val ui = (project in file("ui/server"))
   .settings(commonSettings)
   .settings(
     name := "esp-ui",
     buildUi := {
-      val result = Process("./buildClient.sh", Path.apply("./ui").asFile) !;
-      if (result != 0) throw new RuntimeException("Client build failed")
+      runNpm("run build", "Client build failed")
     },
     testUi := {
-      val result = Process("npm test", Path.apply("./ui/client").asFile) !;
-      if (result != 0) throw new RuntimeException("Client tests failed")
+      runNpm("test", "Client tests failed")
     },
     parallelExecution in ThisBuild := false,
     assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = includeFlinkAndScala, level = Level.Debug),
