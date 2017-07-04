@@ -8,19 +8,30 @@ class HealthCheck extends React.Component {
 
   constructor(props) {
     super(props);
-    this.state = {healthCheck: {state: 'error', error: 'State unknown'}};
+
+    this.state = {
+      healthCheck: undefined,
+    };
   }
 
-  componentWillMount() {
-    HttpService.fetchHealthCheck().then((check) => this.setState({healthCheck: check}))
+  componentDidMount() {
+    HttpService.fetchHealthCheck().then(
+      (check) => this.setState({ healthCheck: check })
+    );
   }
 
   render() {
-    return !this.state.healthCheck || this.state.healthCheck.error ?
-      (<div className="healthCheck">
+    const { healthCheck } = this.state;
+    if (!healthCheck || !healthCheck.error) {
+      return null;
+    }
+
+    return (
+      <div className="healthCheck">
         <div className="icon" title="Warning" dangerouslySetInnerHTML={{__html: InlinedSvgs.tipsWarning}} />
-        <span className="errorText">{this.state.healthCheck.error}</span>
-      </div>) : null
+        <span className="errorText">{healthCheck.error}</span>
+      </div>
+    );
 
   }
 }
