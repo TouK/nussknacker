@@ -1,8 +1,7 @@
 package pl.touk.esp.engine.process.util
 
-import org.apache.flink.contrib.streaming.state.{OptionsFactory, RocksDBStateBackend}
+import org.apache.flink.contrib.streaming.state.{PredefinedOptions, RocksDBStateBackend}
 import org.apache.flink.runtime.state.AbstractStateBackend
-import org.rocksdb.{ColumnFamilyOptions, DBOptions}
 
 
 object StateConfiguration {
@@ -12,7 +11,9 @@ object StateConfiguration {
     val rocksDBStateBackend = new RocksDBStateBackend(config.checkpointDataUri)
     config.dbStoragePath.foreach(rocksDBStateBackend.setDbStoragePath)
 
-    rocksDBStateBackend.setOptions(new OptionsFactory {
+    rocksDBStateBackend.setPredefinedOptions(PredefinedOptions.SPINNING_DISK_OPTIMIZED)
+    //it seems that this class cannot be deserialized properly - it uses flink classloader, not the user one
+    /*rocksDBStateBackend.setOptions(new OptionsFactory {
       override def createColumnOptions(columnFamilyOptions: ColumnFamilyOptions) = {
         columnFamilyOptions
       }
@@ -25,7 +26,7 @@ object StateConfiguration {
         config.maxOpenFiles.foreach(options.setMaxOpenFiles)
         options
       }
-    })
+    })*/
 
     rocksDBStateBackend
 
