@@ -227,8 +227,8 @@ export default class NodeDetailsContent extends React.Component {
             </div>
           )
         })}
-        {this.descriptionField()}
         {toAppend}
+        {this.descriptionField()}
       </div>
     )
   }
@@ -336,7 +336,7 @@ export default class NodeDetailsContent extends React.Component {
                 rows: 1, cols: 50, className: "node-input", value: fieldValue,
                 onValueChange: handleChange, readOnly: !this.props.isEditMode}}/>) :
                 (<Textarea rows="1"  cols="50" className="node-input" value={fieldValue} readOnly="true" />)
-              }  
+              }
               {process.env.NODE_ENV == false ?
                 <div style={{color: "red"}}>
                   <p>ONLY_IN_DEV_MODE</p>
