@@ -72,7 +72,7 @@ class NodeUtils {
       return edgesForNode.edges[0]
     } else {
       const currentConnectionsTypes = allEdges.filter((edge) => edge.from === node.id).map(e => e.edgeType)
-      return edgesForNode.edges.find(et => !currentConnectionsTypes.includes(et))
+      return edgesForNode.edges.find(et => !currentConnectionsTypes.find(currentType => _.isEqual(currentType, et)))
     }
   }
 

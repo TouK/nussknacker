@@ -139,14 +139,28 @@ describe("edges grouped", () => {
     expect(NodeUtils.ungroup(process, "bigGroup").properties.additionalFields.groups).toEqual([])
   })
 
+
+
+})
+
+
+describe("edgeType retrieved", () => {
+
+
+  it("should choose unused edge type", () => {
+    expect(NodeUtils.edgeType([{ from: "node1", edgeType: {type: "edge1"}}], {id: "node1", type: "Filter"}, processDefinitionData))
+      .toEqual({ type: "edge2"})
+
+  })
+
   it("should get edge types for node", () => {
     expect(NodeUtils.edgesForNode({id: "node1", type: "SubprocessInput", ref: {id: "sub1"}}, processDefinitionData)).toEqual({
           nodeId: { type: "SubprocessInput", id: "sub1"},
-          edges: [{ type: "edge2"}]
+          edges: [{ type: "edge3"}]
     })
     expect(NodeUtils.edgesForNode({id: "node1", type: "Filter"}, processDefinitionData)).toEqual({
       nodeId: { type: "Filter"},
-      edges: [{ type: "edge1"}]
+      edges: [{ type: "edge1"}, { type: "edge2"}]
     })
 
   })
@@ -157,18 +171,17 @@ describe("edges grouped", () => {
     expect(NodeUtils.edgesForNode({id: "node1", type: "Processor", service: {id: "sub1"}}, processDefinitionData))
       .toEqual({edges: [null], canChooseNodes: false})
   })
-
 })
 
 const processDefinitionData = {
   edgesForNodes: [
     {
       nodeId: { type: "Filter"},
-      edges: [{ type: "edge1"}]
+      edges: [{ type: "edge1"}, {type: "edge2"}]
     },
     {
       nodeId: { type: "SubprocessInput", id: "sub1"},
-      edges: [{ type: "edge2"}]
+      edges: [{ type: "edge3"}]
     },
   ]
 
