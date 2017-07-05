@@ -246,6 +246,7 @@ case object CustomFilter extends CustomStreamTransformer {
 }
 
 case object ParamExceptionHandler extends ExceptionHandlerFactory {
+  @MethodToInvoke
   def create(@ParamName("param1") param: String, metaData: MetaData): EspExceptionHandler = VerboselyLoggingExceptionHandler(metaData)
 
 }
@@ -263,14 +264,17 @@ case object EmptySink extends FlinkSink {
 }
 
 case object EmptyService extends Service {
+  @MethodToInvoke
   def invoke() = Future.successful(Unit)
 }
 
 case object OneParamService extends Service {
+  @MethodToInvoke
   def invoke(@PossibleValues(value = Array("a", "b", "c")) @ParamName("param") param: String) = Future.successful(param)
 }
 
 case object Enricher extends Service {
+  @MethodToInvoke
   def invoke(@ParamName("param") param: String) = Future.successful(RichObject(param, 123L, Some("rrrr")))
 }
 
@@ -288,6 +292,7 @@ case class CsvRecord(fields: List[String]) extends UsingLazyValues with Displaya
 }
 
 case object MultipleParamsService extends Service {
+  @MethodToInvoke
   def invoke(@ParamName("foo") foo: String,
              @ParamName("bar") bar: String,
              @ParamName("baz") baz: String,

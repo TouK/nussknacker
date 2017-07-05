@@ -1,10 +1,12 @@
-package pl.touk.esp.engine.example
+package pl.touk.esp.engine.example.custom
 
+import org.apache.flink.api.scala._
 import org.apache.flink.streaming.api.scala.DataStream
 import pl.touk.esp.engine.api._
+import pl.touk.esp.engine.example.Transaction
 import pl.touk.esp.engine.flink.api.process.FlinkCustomStreamTransformation
-import org.apache.flink.api.scala._
 
+/** Sums all-time transaction amount for each client */
 class TransactionAmountAggregator extends CustomStreamTransformer {
 
   @MethodToInvoke(returnType = classOf[AggregatedAmount])

@@ -25,6 +25,7 @@ trait DefinitionExtractor[T] {
   def extractMethodDefinition(obj: T): MethodDefinition = {
     val methods = obj.getClass.getMethods
 
+    //TODO disable `findByReturnType` feature
     def findByReturnType = methods.find { m =>
       returnType.isAssignableFrom(m.getReturnType)
     }

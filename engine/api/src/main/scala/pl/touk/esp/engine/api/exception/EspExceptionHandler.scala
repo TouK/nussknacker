@@ -1,6 +1,6 @@
 package pl.touk.esp.engine.api.exception
 
-import pl.touk.esp.engine.api.{Context, MetaData}
+import pl.touk.esp.engine.api.{Context, MetaData, MethodToInvoke}
 
 import scala.util.control.NonFatal
 
@@ -18,6 +18,10 @@ trait EspExceptionHandler {
 
 }
 
+/**
+  * [[pl.touk.esp.engine.api.exception.ExceptionHandlerFactory]] has to have method annotated with [[pl.touk.esp.engine.api.MethodToInvoke]]
+  * that returns [[pl.touk.esp.engine.api.exception.EspExceptionHandler]]
+* */
 trait ExceptionHandlerFactory {}
 
 object ExceptionHandlerFactory {
@@ -26,6 +30,7 @@ object ExceptionHandlerFactory {
     new NoParamExceptionHandlerFactory(eh)
 
   class NoParamExceptionHandlerFactory(eh: MetaData => EspExceptionHandler) extends ExceptionHandlerFactory {
+    @MethodToInvoke
     def create(metaData: MetaData): EspExceptionHandler = eh(metaData)
   }
 

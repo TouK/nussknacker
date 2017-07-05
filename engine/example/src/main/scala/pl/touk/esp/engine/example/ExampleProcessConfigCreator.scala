@@ -19,6 +19,8 @@ import pl.touk.esp.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.esp.engine.api.process.{ProcessConfigCreator, SinkFactory, SourceFactory, WithCategories}
 import pl.touk.esp.engine.api.signal.ProcessSignalSender
 import pl.touk.esp.engine.api.test.{TestDataSplit, TestParsingUtils}
+import pl.touk.esp.engine.example.custom.{EventsCounter, TransactionAmountAggregator}
+import pl.touk.esp.engine.example.service.ClientService
 import pl.touk.esp.engine.flink.util.exception.VerboselyLoggingExceptionHandler
 import pl.touk.esp.engine.flink.util.source.EspDeserializationSchema
 import pl.touk.esp.engine.kafka.{KafkaConfig, KafkaSinkFactory, KafkaSourceFactory}

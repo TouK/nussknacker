@@ -6,12 +6,15 @@ trait Source[T] {
 
 }
 
-trait TestDataGenerator {
+trait TestDataGenerator { self: Source[_] =>
   def generateTestData(size: Int) : Array[Byte]
 }
 
 
-
+/**
+  * [[pl.touk.esp.engine.api.process.SourceFactory]] has to have method annotated with [[pl.touk.esp.engine.api.MethodToInvoke]]
+  * that returns [[pl.touk.esp.engine.api.process.Source]]
+* */
 trait SourceFactory[T] extends Serializable {
   def clazz : Class[_]
 

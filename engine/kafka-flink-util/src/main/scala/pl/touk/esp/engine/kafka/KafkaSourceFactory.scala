@@ -7,16 +7,25 @@ import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer09
 import org.apache.flink.streaming.util.serialization.DeserializationSchema
 import pl.touk.esp.engine.api.process.{Source, TestDataGenerator}
 import pl.touk.esp.engine.api.test.{TestDataParser, TestDataSplit}
-import pl.touk.esp.engine.api.{MetaData, ParamName}
+import pl.touk.esp.engine.api.{MetaData, MethodToInvoke, ParamName}
 import pl.touk.esp.engine.flink.api.process.{FlinkSource, FlinkSourceFactory}
 import pl.touk.esp.engine.kafka.KafkaSourceFactory._
 
-
+/**<pre>
+  * Wrapper for [[org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer09]]
+  * Features:
+  *   - fetch latest N records which can be later used to test process in UI
+  *     Fetching data is defined in [[pl.touk.esp.engine.kafka.KafkaSourceFactory.KafkaSource]] which
+  *     extends [[pl.touk.esp.engine.api.process.TestDataGenerator]]. See [[pl.touk.esp.engine.kafka.KafkaEspUtils#readLastMessages]]
+  *   - reset Kafka's offset to latest value - `forceLatestRead` property, see [[pl.touk.esp.engine.kafka.KafkaEspUtils#setOffsetToLatest]]
+  *</pre>
+* */
 class KafkaSourceFactory[T: TypeInformation](config: KafkaConfig,
                                              schema: DeserializationSchema[T],
                                              timestampAssigner: Option[TimestampAssigner[T]],
                                              testPrepareInfo: TestDataSplit) extends FlinkSourceFactory[T] with Serializable {
 
+  @MethodToInvoke
   def create(processMetaData: MetaData, @ParamName(`TopicParamName`) topic: String): Source[T] with TestDataGenerator = {
     val espKafkaProperties = config.kafkaEspProperties.getOrElse(Map.empty)
     if (espKafkaProperties.get("forceLatestRead").exists(java.lang.Boolean.parseBoolean)) {

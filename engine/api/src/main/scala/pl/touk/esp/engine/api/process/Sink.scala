@@ -1,5 +1,7 @@
 package pl.touk.esp.engine.api.process
 
+import pl.touk.esp.engine.api.MethodToInvoke
+
 
 trait Sink {
 
@@ -8,6 +10,10 @@ trait Sink {
 
 }
 
+/**
+  * [[pl.touk.esp.engine.api.process.SinkFactory]] has to have method annotated with [[pl.touk.esp.engine.api.MethodToInvoke]]
+  * that returns [[pl.touk.esp.engine.api.process.Sink]]
+* */
 trait SinkFactory extends Serializable {
 
 }
@@ -18,6 +24,7 @@ object SinkFactory {
     new NoParamSinkFactory(sink)
 
   class NoParamSinkFactory(sink: Sink) extends SinkFactory {
+    @MethodToInvoke
     def create(): Sink = sink
   }
 
