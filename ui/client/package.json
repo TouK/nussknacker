@@ -3,6 +3,8 @@
   "version": "0.0.0",
   "description": "ESP UI - client",
   "main": "server.js",
+  "license": "UNLICENSED",
+  "private": true,
   "scripts": {
     "start": "node server.js",
     "build": "NODE_ENV=production ./node_modules/webpack/bin/webpack.js --config ./webpack.production.config.js --progress && cp -R assets/icons/license dist",
