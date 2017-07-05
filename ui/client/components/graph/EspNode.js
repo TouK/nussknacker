@@ -302,7 +302,6 @@ export default {
         edgeData: edge,
         definitionToCompare: {
           edge: edge,
-          label: label,
           forExport: forExport
         }
      });
