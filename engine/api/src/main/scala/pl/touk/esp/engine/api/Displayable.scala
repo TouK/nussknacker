@@ -4,7 +4,10 @@ import argonaut.Argonaut._
 import argonaut.ArgonautShapeless._
 import argonaut.{EncodeJson, Json, _}
 
-//used eg. to show variables on fe
+/** Used to show variables in UI
+  * [[pl.touk.esp.engine.api.Displayable#originalDisplay]] method can be used to show original input if needed (i.e useful for csv record),
+  * so in UI variable will be pretty-printed in json format and raw-printed.
+**/
 trait Displayable {
 
   def originalDisplay: Option[String]
@@ -15,9 +18,7 @@ trait Displayable {
 
 
 abstract class DisplayableAsJson[T : EncodeJson] extends Displayable { self : T =>
-  //tutaj przypisujemy encoder, bo przy testowaniu z UI jest jakis problem z classloaderem,
-  // a jak tutaj zachlannie zaladujemy klase wygenerowana przez argonauta to wszystko dziala...
-  //z tego samego powodu uzywam wszedzie `.spaces2` zamiast zrobic metode np ArgonautUtils bo rowniez jest problem z doczytaniem klasy
+  //eager encoder loading due to some classloading issues
   val encoder = implicitly[EncodeJson[T]]
   override def display: Json = self.asInstanceOf[T].asJson(encoder)
   override def originalDisplay: Option[String] = None

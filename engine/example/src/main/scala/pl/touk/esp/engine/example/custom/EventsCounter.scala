@@ -1,16 +1,17 @@
-package pl.touk.esp.engine.example
+package pl.touk.esp.engine.example.custom
 
 import org.apache.flink.api.common.state.ValueStateDescriptor
+import org.apache.flink.api.scala._
 import org.apache.flink.streaming.api.scala.DataStream
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
 import pl.touk.esp.engine.api._
-import pl.touk.esp.engine.flink.api.process.FlinkCustomStreamTransformation
-import org.apache.flink.api.scala._
 import pl.touk.esp.engine.api.util.MultiMap
+import pl.touk.esp.engine.flink.api.process.FlinkCustomStreamTransformation
 import pl.touk.esp.engine.flink.api.state.TimestampedEvictableState
 
 import scala.concurrent.duration.Duration
 
+/** Counts passing events for configurable key (i.e. for every client) in given time window */
 class EventsCounter() extends CustomStreamTransformer {
 
   @MethodToInvoke(returnType = classOf[EventCount])

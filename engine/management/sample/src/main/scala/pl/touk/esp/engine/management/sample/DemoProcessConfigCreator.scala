@@ -130,6 +130,7 @@ class DemoProcessConfigCreator extends ProcessConfigCreator {
       override def parseElement(testElement: String) = parser(testElement.split('|').toList)
     })
 
+    @MethodToInvoke
     def create(@ParamName("ratePerMinute") rate: String /*tutaj z jakiegos powodu musi byc string?*/) = {
       new FlinkSource[T] with Serializable with TestDataGenerator {
 
