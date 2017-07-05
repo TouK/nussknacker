@@ -4,9 +4,16 @@ import React from "react";
 import FileSaver from "file-saver";
 import InlinedSvgs from "../assets/icons/InlinedSvgs";
 
+if (process.env.NODE_ENV !== 'production') {
+  var user = "admin";
+  $.ajaxSetup({
+    headers: {
+      'Authorization': "Basic " + btoa(`${user}:${user}`)
+    }
+  });
+}
 
 export default {
-
 
   setNotificationSystem(ns) {
     notificationSystem = ns;
