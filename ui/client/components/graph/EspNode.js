@@ -135,7 +135,7 @@ export default {
     makeElement(node, processCounts, forExport) {
         const hasCounts = !_.isEmpty(processCounts)
         var descr = (node.additionalFields || {}).description
-        var customAttrs = require('json!../../assets/json/nodeAttributes.json');
+        var customAttrs = require('../../assets/json/nodeAttributes.json');
 
         var bodyContent = node.id ? node.id : "";
         //TODO: displaying counts for subprocesses

@@ -66,7 +66,7 @@ class NodeDetailsModal extends React.Component {
   }
 
   nodeAttributes = () => {
-    var nodeAttributes = require('json!../../assets/json/nodeAttributes.json');
+    var nodeAttributes = require('../../assets/json/nodeAttributes.json');
     return nodeAttributes[NodeUtils.nodeType(this.props.nodeToDisplay)];
   }
 

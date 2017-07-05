@@ -1,6 +1,6 @@
 const initialState = {
   loggedUser: {},
-  featuresSettings: {}
+  featuresSettings: {},
 };
 
 export function reducer(state = initialState, action) {
@@ -8,7 +8,7 @@ export function reducer(state = initialState, action) {
     case "LOGGED_USER": {
       return {
         ...state,
-          loggedUser: action.user
+        loggedUser: action.user,
       }
     }
     case "FEATURES_SETTINGS": {

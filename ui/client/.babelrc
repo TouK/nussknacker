@@ -1,10 +1,15 @@
 {
-  "presets": ["es2015-loose", "stage-0", "react"],
+  "presets": [
+    "es2015",
+    "stage-0",
+    "react",
+  ],
   "env": {
     "development": {
-        "presets": ["react-hmre"], //to jest potrzebne do autoreloada w przegladarce
-        "plugins": ["react-hot-loader/babel"]
-    }
-  }
-
+      "presets": ["react-hmre"], //to jest potrzebne do autoreloada w przegladarce
+      "plugins": [
+        "react-hot-loader/babel",
+      ]
+    },
+  },
 }

@@ -1,5 +1,5 @@
 import $ from "jquery";
-import appConfig from "appConfig";
+import { API_URL } from "../config";
 import React from "react";
 import FileSaver from "file-saver";
 import InlinedSvgs from "../assets/icons/InlinedSvgs";
@@ -45,30 +45,30 @@ export default {
   },
 
   availableQueryableStates() {
-    return promiseWrap($.get(`${appConfig.API_URL}/queryableState/list`))
+    return promiseWrap($.get(`${API_URL}/queryableState/list`))
   },
 
   queryState(processId, queryName, key) {
-    return promiseWrap($.get(`${appConfig.API_URL}/queryableState/fetch`, {processId, queryName, key}))
+    return promiseWrap($.get(`${API_URL}/queryableState/fetch`, {processId, queryName, key}))
       .catch((error) => this.addError(`Cannot fetch state`, error));
   },
 
   fetchBuildInfo() {
-    return promiseWrap($.get(appConfig.API_URL + '/app/buildInfo'))
+    return promiseWrap($.get(API_URL + '/app/buildInfo'))
   },
 
   fetchHealthCheck() {
-    return promiseWrap($.get(appConfig.API_URL + '/app/healthCheck'))
+    return promiseWrap($.get(API_URL + '/app/healthCheck'))
       .then(() => ({state: "ok"}))
       .catch((error) => ({state: "error", error: error.responseText}))
   },
 
   fetchSettings() {
-    return promiseWrap($.get(appConfig.API_URL + '/settings'))
+    return promiseWrap($.get(API_URL + '/settings'))
   },
 
   fetchLoggedUser() {
-    return promiseWrap($.get(appConfig.API_URL + '/user')).then((user) => ({
+    return promiseWrap($.get(API_URL + '/user')).then((user) => ({
       id: user.id,
       categories: user.categories,
       hasPermission(name) {
@@ -81,53 +81,53 @@ export default {
   },
 
   fetchProcessDefinitionData(processingType, isSubprocess) {
-    return promiseWrap($.get(`${appConfig.API_URL}/processDefinitionData/${processingType}?isSubprocess=${isSubprocess}`))
+    return promiseWrap($.get(`${API_URL}/processDefinitionData/${processingType}?isSubprocess=${isSubprocess}`))
   },
 
   fetchProcesses() {
-    return promiseWrap($.get(appConfig.API_URL + '/processes'))
+    return promiseWrap($.get(API_URL + '/processes'))
   },
 
   fetchSubProcesses() {
-    return promiseWrap($.get(appConfig.API_URL + '/subProcesses'))
+    return promiseWrap($.get(API_URL + '/subProcesses'))
   },
 
   fetchProcessDetails(processId, versionId) {
     return versionId ?
-      promiseWrap($.get(appConfig.API_URL + '/processes/' + processId + '/' + versionId)) :
-      promiseWrap($.get(appConfig.API_URL + '/processes/' + processId))
+      promiseWrap($.get(API_URL + '/processes/' + processId + '/' + versionId)) :
+      promiseWrap($.get(API_URL + '/processes/' + processId))
   },
 
   fetchProcessesStatus() {
-    return promiseWrap($.get(appConfig.API_URL + '/processes/status'))
+    return promiseWrap($.get(API_URL + '/processes/status'))
       .catch((error) => this.addError(`Cannot fetch statuses`, error));
   },
 
   fetchSingleProcessStatus(processId) {
-    return promiseWrap($.get(appConfig.API_URL + `/processes/${processId}/status`))
+    return promiseWrap($.get(API_URL + `/processes/${processId}/status`))
       .catch((error) => this.addError(`Cannot fetch status`, error));
 
   },
 
   deploy(processId) {
-    return promiseWrap($.post(appConfig.API_URL + '/processManagement/deploy/' + processId))
+    return promiseWrap($.post(API_URL + '/processManagement/deploy/' + processId))
       .then(() => this.addInfo(`Process ${processId} was deployed`))
       .catch((error) => this.addError(`Failed to deploy ${processId}`, error, true));
   },
 
   stop(processId) {
-    return promiseWrap($.post(appConfig.API_URL + '/processManagement/cancel/' + processId))
+    return promiseWrap($.post(API_URL + '/processManagement/cancel/' + processId))
       .then(() => this.addInfo(`Process ${processId} was stopped`))
       .catch((error) => this.addError(`Failed to stop ${processId}`, error, true));
   },
 
   fetchProcessActivity(processId) {
-    return promiseWrap($.get(`${appConfig.API_URL}/processes/${processId}/activity`))
+    return promiseWrap($.get(`${API_URL}/processes/${processId}/activity`))
   },
 
   addComment(processId, versionId, comment) {
     return ajaxCall({
-      url: `${appConfig.API_URL}/processes/${processId}/${versionId}/activity/comments`,
+      url: `${API_URL}/processes/${processId}/${versionId}/activity/comments`,
       type: 'POST',
       data: comment
     }).then(() => this.addInfo(`Comment added`))
@@ -136,7 +136,7 @@ export default {
 
   deleteComment(processId, commentId) {
     return ajaxCall({
-      url: `${appConfig.API_URL}/processes/${processId}/activity/comments/${commentId}`,
+      url: `${API_URL}/processes/${processId}/activity/comments/${commentId}`,
       type: 'DELETE'
     }).then(() => this.addInfo(`Comment deleted`))
       .catch((error) => this.addError(`Failed to delete comment`, error));
@@ -147,7 +147,7 @@ export default {
     formData.append("attachment", file)
 
     return ajaxCallWithoutContentType({
-      url: `${appConfig.API_URL}/processes/${processId}/${versionId}/activity/attachments`,
+      url: `${API_URL}/processes/${processId}/${versionId}/activity/attachments`,
       type: 'POST',
       processData: false,
       contentType: false,
@@ -157,15 +157,15 @@ export default {
   },
 
   downloadAttachment(processId, processVersionId, attachmentId) {
-    window.open(`${appConfig.API_URL}/processes/${processId}/${processVersionId}/activity/attachments/${attachmentId}`)
+    window.open(`${API_URL}/processes/${processId}/${processVersionId}/activity/attachments/${attachmentId}`)
   },
 
   exportProcess(processId, versionId) {
-    window.open(`${appConfig.API_URL}/processes/export/${processId}/${versionId}`);
+    window.open(`${API_URL}/processes/export/${processId}/${versionId}`);
   },
 
   exportProcessToPdf(processId, versionId, data) {
-    fetch(`${appConfig.API_URL}/processes/exportToPdf/${processId}/${versionId}`,
+    fetch(`${API_URL}/processes/exportToPdf/${processId}/${versionId}`,
       {
           method: 'POST',
           body: data,
@@ -178,7 +178,7 @@ export default {
 
   validateProcess(process) {
     return ajaxCall({
-      url: appConfig.API_URL + '/processValidation',
+      url: API_URL + '/processValidation',
       type: 'POST',
       data: JSON.stringify(process)
     }).catch(error => {this.addError(`Fatal validation error, cannot save`, error, true); return Promise.reject(error)})
@@ -186,14 +186,14 @@ export default {
 
   getTestCapabilities(process) {
     return ajaxCall({
-      url: appConfig.API_URL + '/testInfo/capabilities',
+      url: API_URL + '/testInfo/capabilities',
       type: 'POST',
       data: JSON.stringify(process)
     });
   },
 
   generateTestData(processId, testSampleSize, processJson) {
-    return fetch(`${appConfig.API_URL}/testInfo/generate/${testSampleSize}`,
+    return fetch(`${API_URL}/testInfo/generate/${testSampleSize}`,
       {
           method: 'POST',
           body: JSON.stringify(processJson),
@@ -209,7 +209,7 @@ export default {
 
   fetchProcessCounts(processId, dateFrom, dateTo) {
     return ajaxCall({
-      url: appConfig.API_URL + '/processCounts/' + processId,
+      url: API_URL + '/processCounts/' + processId,
       type: 'GET',
       data: { dateFrom: dateFrom, dateTo: dateTo }
     }).catch(error => {
@@ -221,7 +221,7 @@ export default {
   saveProcess(processId, processJson, comment) {
     const processToSave = {process: processJson, comment: comment}
     return ajaxCall({
-      url: `${appConfig.API_URL}/processes/${processId}`,
+      url: `${API_URL}/processes/${processId}`,
       type: 'PUT',
       data: JSON.stringify(processToSave)
     })
@@ -231,7 +231,7 @@ export default {
 
   createProcess(processId, processCategory, callback, isSubprocess) {
     return ajaxCall({
-      url: `${appConfig.API_URL}/processes/${processId}/${processCategory}?isSubprocess=${isSubprocess}`,
+      url: `${API_URL}/processes/${processId}/${processCategory}?isSubprocess=${isSubprocess}`,
       type: 'POST'
     }).then(callback, (error) => {
       this.addError(`Failed to create process:`, error, true);
@@ -243,7 +243,7 @@ export default {
     formData.append("process", file)
 
     return ajaxCallWithoutContentType({
-      url: appConfig.API_URL + '/processes/import/' + processId,
+      url: API_URL + '/processes/import/' + processId,
       type: 'POST',
       processData: false,
       contentType: false,
@@ -262,7 +262,7 @@ export default {
     formData.append("processJson", new Blob([JSON.stringify(processJson)], {type : 'application/json'}))
 
     return ajaxCallWithoutContentType({
-      url: appConfig.API_URL + '/processManagement/test/' + processId,
+      url: API_URL + '/processManagement/test/' + processId,
       type: 'POST',
       processData: false,
       contentType: false,
@@ -277,7 +277,7 @@ export default {
 
   compareProcesses(processId, thisVersion, otherVersion) {
     return ajaxCall({
-      url: `${appConfig.API_URL}/processes/${processId}/${thisVersion}/compare/${otherVersion}`,
+      url: `${API_URL}/processes/${processId}/${thisVersion}/compare/${otherVersion}`,
       type: 'GET'
     }).catch(error => {
       this.addError(`Cannot compare processes`, error, true);
@@ -287,7 +287,7 @@ export default {
 
   migrateProcess(processId) {
     return ajaxCall({
-      url: `${appConfig.API_URL}/migration/migrate/${processId}`,
+      url: `${API_URL}/migration/migrate/${processId}`,
       type: 'POST',
     })
       .then(() => this.addInfo(`Process ${processId} was migrated`))
@@ -296,14 +296,14 @@ export default {
 
   fetchSignals() {
     return ajaxCall({
-      url: `${appConfig.API_URL}/signal`,
+      url: `${API_URL}/signal`,
       type: 'GET',
     }).catch((error) => this.addError(`Failed to fetch signals`, error));
   },
 
   sendSignal(signalType, processId, params) {
     return ajaxCall({
-      url: `${appConfig.API_URL}/signal/${signalType}/${processId}`,
+      url: `${API_URL}/signal/${signalType}/${processId}`,
       type: 'POST',
       data: JSON.stringify(params)
     }).then(() => this.addInfo(`Signal send`))
