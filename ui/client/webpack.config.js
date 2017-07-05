@@ -1,48 +1,53 @@
-var path = require('path');
-var webpack = require('webpack');
-var childProcess = require('child_process'),
-GIT_HASH = childProcess.execSync('git log -1 --format=%H').toString();
-GIT_DATE = childProcess.execSync('git log -1 --format=%cd').toString();
+const path = require('path');
+const webpack = require('webpack');
+const childProcess = require('child_process');
+
+const NODE_ENV = process.env.NODE_ENV || 'development';
+const GIT_HASH = childProcess.execSync('git log -1 --format=%H').toString();
+const GIT_DATE = childProcess.execSync('git log -1 --format=%cd').toString();
+const isProd = NODE_ENV === 'production';
+
 
 module.exports = {
-  devtool: 'eval',
   entry: [
     'webpack-dev-server/client?http://localhost:3000',
     'webpack/hot/only-dev-server',
     'react-hot-loader/patch',
-    './index'
+    './index',
   ],
   output: {
     path: path.join(__dirname, 'dist', 'web', 'static'),
     filename: 'bundle.js',
     publicPath: '/static/'
   },
+  devtool: isProd ? 'hidden-source-map' : 'eval-source-map',
+  devServer: {
+    contentBase: __dirname,
+    historyApiFallback: {
+      index: 'main.html'
+    },
+    hot: true,
+    hotOnly: true,
+    port: 3000,
+  },
   plugins: [
-    new webpack.HotModuleReplacementPlugin(),
+    isProd ? null : new webpack.NamedModulesPlugin(),
+    isProd ? null : new webpack.HotModuleReplacementPlugin(),
     new webpack.DefinePlugin({
+      '__DEV__': !isProd,
       'process.env': {
-        'NODE_ENV': JSON.stringify('development')
+        'NODE_ENV': JSON.stringify(NODE_ENV)
       },
       'GIT': {
         'HASH': JSON.stringify(GIT_HASH),
         'DATE': JSON.stringify(GIT_DATE)
       }
     })
-  ],
-  resolve: {
-    alias: {
-      'react': path.join(__dirname, 'node_modules', 'react'),
-      'appConfig': path.join(__dirname, 'config', process.env.NODE_ENV || 'development')
-    },
-    extensions: ['', '.js']
-  },
-  resolveLoader: {
-    'fallback': path.join(__dirname, 'node_modules')
-  },
+  ].filter(p => p !== null),
   module: {
     loaders: [{
-        test: /\.html$/,
-        loader: "html-loader?minimize=false"
+      test: /\.html$/,
+      loader: "html-loader?minimize=false"
     }, {
       test: /\.js$/,
       loaders: ['babel'],
@@ -64,6 +69,9 @@ module.exports = {
       test: /\.(eot|svg|png|ttf|woff|woff2)$/,
       loader: 'file?name=assets/fonts/[name].[ext]',
       include: __dirname
+    }, {
+      test: /\.json$/,
+      loaders: ['json-loader'],
     }]
-  }
+  },
 };

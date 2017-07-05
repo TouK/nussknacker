@@ -6,7 +6,7 @@ const emptyUiState = {
   showEdgeDetailsModal: false,
   confirmDialog: {},
   modalDialog: {},
-  expandedGroups: []
+  expandedGroups: [],
 };
 
 export function reducer(state = emptyUiState, action) {
