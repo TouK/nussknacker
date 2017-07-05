@@ -15,5 +15,5 @@ As a initial template was used todomvc example from https://github.com/gaearon/r
 It contains:
 - react in version 15.0.1
 - redux in version 3.1.1
-- redux state monitoring toolbox (ctrl-H to hide) 
+- application embraces [react-devtools-extension](https://github.com/zalmoxisus/redux-devtools-extension)
 - react-hot-loader in version 3.0.0-beta.1
