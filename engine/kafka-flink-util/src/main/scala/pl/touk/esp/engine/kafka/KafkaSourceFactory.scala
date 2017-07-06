@@ -29,7 +29,6 @@ class KafkaSourceFactory[T: TypeInformation](config: KafkaConfig,
   def create(processMetaData: MetaData, @ParamName(`TopicParamName`) topic: String): Source[T] with TestDataGenerator = {
     val espKafkaProperties = config.kafkaEspProperties.getOrElse(Map.empty)
     if (espKafkaProperties.get("forceLatestRead").exists(java.lang.Boolean.parseBoolean)) {
-      //moznaby definiowac chec resetowania offsetu przy definicji procesu, ale nie jestem pewien czy tak chcemy?
       KafkaEspUtils.setOffsetToLatest(topic, processMetaData.id, config)
     } else {
       ()

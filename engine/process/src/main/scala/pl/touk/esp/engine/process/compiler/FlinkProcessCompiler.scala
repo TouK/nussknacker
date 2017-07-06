@@ -24,7 +24,6 @@ abstract class FlinkProcessCompiler(creator: ProcessConfigCreator, config: Confi
   import pl.touk.esp.engine.util.Implicits._
 
   protected def definitions(): ProcessDefinition[ObjectWithMethodDef] = {
-    //definitionsPostProcessor(ProcessDefinitionExtractor.extractObjectWithMethods(creator, config))
     ProcessDefinitionExtractor.extractObjectWithMethods(creator, config)
   }
 

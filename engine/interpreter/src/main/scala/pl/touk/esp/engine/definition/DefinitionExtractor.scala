@@ -79,7 +79,6 @@ object DefinitionExtractor {
 
     def categories: List[String]
 
-    //TODO: czy to tak?
     def hasNoReturn : Boolean = Set(classOf[Void], classOf[Unit], classOf[BoxedUnit]).map(_.getName).contains(returnType.refClazzName)
 
   }
@@ -190,7 +189,7 @@ object DefinitionExtractor {
                 signalsFactories: Iterable[ObjectWithMethodDef],
                 globalProcessVariables: Iterable[Class[_]]): List[PlainClazzDefinition] = {
 
-      //TODO: czy tutaj potrzebujemy serwisów jako takich?
+      //TODO: do we need services here?
       val classesToExtractDefinitions =
       globalProcessVariables ++
         (services ++ customNodeTransformers ++ sourceFactories ++ signalsFactories).map(sv => sv.methodDef.returnType)

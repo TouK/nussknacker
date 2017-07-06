@@ -11,7 +11,7 @@ import SaveIcon from "../assets/img/save-icon.svg";
 import CloseIcon from "../assets/img/close-icon.svg";
 import HttpService from "../http/HttpService";
 
-//TODO: uwspolnic z modals
+//TODO: Consider integrating with GenericModalDialog 
 class AddProcessDialog extends React.Component {
 
   static propTypes = {

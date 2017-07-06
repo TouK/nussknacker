@@ -104,7 +104,7 @@ object EspUiApp extends App with Directives with LazyLogging {
               ).flatten
               (routes ++ optionalRoutes).reduce(_ ~ _)
             } ~
-              //nie chcemy api, zeby nie miec problemow z autentykacja...
+              //this is separated from api to do serve it without authentication
               pathPrefixTest(!"api") {
                 WebResources.route
               }

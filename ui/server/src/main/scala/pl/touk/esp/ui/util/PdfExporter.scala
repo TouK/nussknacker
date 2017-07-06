@@ -32,7 +32,7 @@ object PdfExporter extends LazyLogging {
 
   def exportToPdf(svg: String, processDetails: ProcessDetails, processActivity: ProcessActivity, displayableProcess: DisplayableProcess): Array[Byte] = {
 
-    //robimy to za kazdym razem, zeby sie nie okazalo ze /tmp zostal wyczyszczony...
+    //initFontsIfNeeded is invoked every time to make sure that /tmp content is not deleted
     initFontsIfNeeded()
     //FIXME: cannot render polish signs..., better to strip them than not render anything...
     //\u00A0 - non-breaking space in not ASCII :)...
@@ -41,7 +41,7 @@ object PdfExporter extends LazyLogging {
     createPdf(fopXml)
   }
 
-  //TODO: to jest dosc brzydki hack, ale nie potrafie inaczej zmusic fopa do czytania fontow z classpatha :(
+  //TODO: this is one nasty hack, is there a better way to make fop read fonts from classpath?
   private def initFontsIfNeeded(): Unit = synchronized {
     val dir = new File("/tmp/fop/fonts")
     dir.mkdirs()
@@ -70,7 +70,7 @@ object PdfExporter extends LazyLogging {
 
   val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
-  //TODO: dokladniejsze opisy wezlow, style, historia zmian/komentarze??
+  //TODO: better description, styles, history, comments??
   private def prepareFopXml(svg: String, processDetails: ProcessDetails, processActivity: ProcessActivity, displayableProcess: DisplayableProcess) = {
     val diagram = XML.loadString(svg)
     val currentVersion = processDetails.history.find(_.processVersionId == processDetails.processVersionId).get
@@ -182,7 +182,7 @@ object PdfExporter extends LazyLogging {
       case Source(_, SourceRef(typ, params), _) => ("Type", typ) :: params.map(p => (p.name, p.value))
       case Filter(_, expression, _, _) => List(("Expression", expression.expression))
       case Enricher(_, ServiceRef(typ, params), output, _) => ("Type", typ) :: ("Output", output) :: params.map(p => (p.name, p.expression.expression))
-        //TODO: jak zwykle - co ze switchem??
+        //TODO: what about Swtich??
       case Switch(_, expression, exprVal, _) => List(("Expression", expression.expression))
       case Processor(_, ServiceRef(typ, params), _, _) => ("Type", typ) :: params.map(p => (p.name, p.expression.expression))
       case Sink(_, SinkRef(typ, params), output, _) => ("Type", typ) :: output.map(expr => ("Output", expr.expression)).toList ++ params.map(p => (p.name, p.value))

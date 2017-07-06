@@ -16,7 +16,7 @@ class ProcessUtils {
     return state.graphReducer.groupingState != null
   }
 
-  //fixme powinnismy zwracac flage z backendu typu hasErrors, hasWarnings, ale to moze nie byc takie latwe...
+  //fixme maybe return hasErrors flag from backend?
   hasNoErrorsNorWarnings = (process) => {
     return this.hasNoErrors(process) && this.hasNoWarnings(process)
   }
@@ -80,10 +80,10 @@ class ProcessUtils {
         return _.isEmpty(outputClazz) ? [] : [ {[outputVariableName]: outputClazz} ]
       }
       case "VariableBuilder": {
-        return [{[node.varName]: "java.lang.Object"}] //fixme co tutaj?
+        return [{[node.varName]: "java.lang.Object"}]
       }
       case "Variable": {
-        return [{[node.varName]: "java.lang.Object"}] //fixme co tutaj?
+        return [{[node.varName]: "java.lang.Object"}]
       }
       case "Switch": {
         return [{[node.exprVal]: "java.lang.Object"}]

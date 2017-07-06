@@ -25,7 +25,7 @@ abstract class EvictableState[In, Out] extends AbstractStreamOperator[Out]
   def getState: State
 
   override def onProcessingTime(timer: InternalTimer[String, String]) = {
-    //FIXME: a moze blad??
+    //FIXME: or maybe there should be an error??
   }
 
   override def onEventTime(timer: InternalTimer[String, String]) = {

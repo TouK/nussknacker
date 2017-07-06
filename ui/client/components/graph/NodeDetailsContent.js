@@ -11,9 +11,8 @@ import TestResultUtils from "../../common/TestResultUtils";
 import NodeParametersMerger from "./NodeParametersMerger";
 import ProcessUtils from '../../common/ProcessUtils';
 
-//zastanowic sie czy this.state tutaj nie powinien byc przepychany przez reduxa,
-// bo obecnie ten stan moze byc przypadkowo resetowany kiedy parent component dostanie nowe propsy - bo tak mamy
-// zaimplementowane `componentDidUpdate` zeby przy wyjsciu z node'a niezapisane zmiany sie cofaly
+//move state to redux?
+// here `componentDidUpdate` is complicated to clear unsaved changes in modal
 export default class NodeDetailsContent extends React.Component {
 
   constructor(props) {
@@ -51,7 +50,7 @@ export default class NodeDetailsContent extends React.Component {
         const toAppend = this.createField("textarea", "Expression", "endResult.expression", "expression")
         return this.sourceSinkCommon(toAppend)
       case 'SubprocessInputDefinition':
-        //FIXME: dopisywanie parametrow...
+        //FIXME: currently there is no way to add new parameters or display them correctly
         return (
           <div className="node-table-body">
             {this.createField("input", "Id", "id")}
@@ -154,7 +153,6 @@ export default class NodeDetailsContent extends React.Component {
             {this.createField("input", "Id", "id")}
             {this.createField("input", "Variable Name", "varName")}
             {
-              //TODO: to sie dobrze nie wyswietli...
               this.createField("textarea", "Expression", "value.expression", "expression")}
             {this.descriptionField()}
           </div>
@@ -177,7 +175,7 @@ export default class NodeDetailsContent extends React.Component {
         )
       case 'Properties':
         const type = this.props.node.typeSpecificProperties.type;
-        //FIXME: czy to tak powinno byc? czy konfiguracja gdzies indziej?
+        //fixme move this configuration to some better place?
         const fields = type == "StreamMetaData" ? [
           this.createField("input", "Parallelism", "typeSpecificProperties.parallelism", "parallelism"),
           this.createField("input", "Checkpoint interval in seconds", "typeSpecificProperties.checkpointIntervalInSeconds", "checkpointIntervalInSeconds"),
@@ -397,7 +395,7 @@ export default class NodeDetailsContent extends React.Component {
             <select className="node-input selectTestResults" onChange={(e) => this.selectTestResults(e.target.value)}
                     value={this.state.testResultsIdToShow}>
               { TestResultUtils.availableContexts(this.props.testResults).map((ctx, idx) =>
-                //ten toString jest b. slaby w wielu przypadkach
+                //toString is lame in some cases
                 (<option key={idx} value={ctx.id}>{ctx.id} ({(ctx.input.original || ctx.input || "").toString().substring(0, 50)})</option>)
               )}
             </select>

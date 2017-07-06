@@ -10,7 +10,7 @@ object LoggingListener extends ProcessListener with Serializable {
 
   val className = getClass.getName.init
 
-  //nie cachujemy bo logback sam juz to robi
+  //don't need to cache loggers, because logback already does it
   private def debug(keys: List[String], message: => String) = {
     val loggerKey = keys.mkString(".")
     val logger = LoggerFactory.getLogger(s"$className.$loggerKey")

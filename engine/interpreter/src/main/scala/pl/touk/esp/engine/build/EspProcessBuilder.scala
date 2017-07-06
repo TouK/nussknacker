@@ -7,11 +7,11 @@ import pl.touk.esp.engine.graph.{EspProcess, param}
 
 class ProcessMetaDataBuilder private[build](metaData: MetaData) {
 
-  //TODO: wywalac sie jak nie stream?
+  //TODO: exception when non-streaming process?
   def parallelism(p: Int) =
    new ProcessMetaDataBuilder(metaData.copy(typeSpecificData = StreamMetaData(Some(p))))
 
-  //TODO: wywalac sie jak nie standalone?
+  //TODO: exception when non-standalone process?
   def path(p: Option[String]) =
    new ProcessMetaDataBuilder(metaData.copy(typeSpecificData = StandaloneMetaData(p)))
 

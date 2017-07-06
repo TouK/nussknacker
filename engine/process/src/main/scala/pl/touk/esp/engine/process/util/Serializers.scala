@@ -34,7 +34,7 @@ object Serializers extends LazyLogging {
     env.getConfig.getDefaultKryoSerializers.put(klass, new ExecutionConfig.SerializableSerializer(serializer))
   }
 
-  //to nadal nie jest jakies super, ale od czegos trzeba zaczac...
+  //this is not so great, but is OK for now
   object CaseClassSerializer extends Serializer[Product](false, true) with Serializable {
     override def write(kryo: Kryo, output: Output, obj: Product) = {
       output.writeInt(obj.productArity)
@@ -50,7 +50,7 @@ object Serializers extends LazyLogging {
       val arity = input.readInt()
       val constructors = obj.getConstructors
 
-      //TODO: a co z np. case class bez parametrow??
+      //TODO: what about case class without parameters??
       if (arity == 0 && constructors.isEmpty) {
         Try(EspTypeUtils.getCompanionObject(obj)).recover {
           case e => logger.error(s"Failed to load companion for ${obj.getClass}"); Failure(e)

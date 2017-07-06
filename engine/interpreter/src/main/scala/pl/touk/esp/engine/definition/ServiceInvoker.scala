@@ -16,7 +16,7 @@ private[definition] class ServiceInvokerImpl(objectWithMethodDef: ObjectWithMeth
 
   override def invoke(params: Map[String, Any], nodeContext: NodeContext)
                      (implicit ec: ExecutionContext): Future[Any] = {
-    //FIXME: skad ten instanceOf???
+    //FIXME: why is this instanceOf necessary???
       objectWithMethodDef.invokeMethod((params.get _)
         .andThen(_.map(_.asInstanceOf[AnyRef])), Seq(ec, ServiceInvocationCollector(nodeContext))).asInstanceOf[Future[Any]]
   }

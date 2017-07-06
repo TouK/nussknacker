@@ -10,8 +10,8 @@ object WebResources extends Directives {
         getFromResourceDirectory("web/static")
       }
     } ~ get {
-      //to jest main a nie index.html zeby nie gryzlo sie z niektorymi rzeczami z flinka...
-      getFromResource("web/main.html") //defaultowo zwracamy strone aplikacji, bez tego nie dzialaja linki we frontendzie
+      //main.html instead of index.html to not interfere with flink's static resources...
+      getFromResource("web/main.html") //return UI page by default to make links work
     }
 
 }

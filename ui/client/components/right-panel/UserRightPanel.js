@@ -162,7 +162,6 @@ class UserRightPanel extends Component {
   deploy = () => {
     this.props.actions.toggleConfirmDialog(true, DialogMessages.deploy(this.processId()), () => {
       return HttpService.deploy(this.processId()).then((resp) => {
-        //ten kod wykonuje sie nawet kiedy deploy sie nie uda, bo wyzej robimy catch i w przypadku bledu tutaj dostajemy undefined, pomyslec jak ladnie to rozwiazac
         this.fetchProcessDetails()
       })
     })
@@ -171,7 +170,6 @@ class UserRightPanel extends Component {
   stop = () => {
     this.props.actions.toggleConfirmDialog(true, DialogMessages.stop(this.processId()), () => {
       return HttpService.stop(this.processId()).then((resp) => {
-        //ten kod wykonuje sie nawet kiedy deploy sie nie uda, bo wyzej robimy catch i w przypadku bledu tutaj dostajemy undefined, pomyslec jak ladnie to rozwiazac
         this.fetchProcessDetails()
       })
     })
@@ -233,7 +231,7 @@ class UserRightPanel extends Component {
   }
 
   undo = () => {
-    //ten if moze powinien byc blisko reducera, tylko jak to ladnie zrobic?
+    //this `if` should be closer to reducer?
     if (this.props.keyActionsAvailable) {
       this.props.undoRedoActions.undo()
     }

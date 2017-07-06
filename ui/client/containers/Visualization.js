@@ -48,7 +48,7 @@ const Visualization = withRouter(React.createClass({
 
   bindUnsavedProcessChangesDialog() {
     this.props.router.setRouteLeaveHook(this.props.route, (route) => {
-      if (!this.props.nothingToSave) { //najlepiej jakby tutaj pokazywal sie modal, a nie alert, tylko jak w react-router to zrobic...
+      if (!this.props.nothingToSave) { //it should be modal instead of alert here, but how to do this in react-router?
         return DialogMessages.unsavedProcessChanges()
       }
     })
@@ -100,7 +100,7 @@ const Visualization = withRouter(React.createClass({
   },
 
   undo() {
-    //ten if moze powinien byc blisko reducera, tylko jak to ladnie zrobic?
+    //this `if` should be closer to reducer?
     if (this.props.undoRedoAvailable) {
       this.props.undoRedoActions.undo()
     }
@@ -119,7 +119,7 @@ const Visualization = withRouter(React.createClass({
   },
 
   render: function() {
-    //niestety tak musi byc, bo graph jest reduxowym komponentem
+    //it has to be that way, because graph is redux component
     var getGraph = () => this.refs.graph.getWrappedInstance().getDecoratedComponentInstance();
     const graphFun = (fun) => (() => !_.isEmpty(this.refs.graph) ? fun(getGraph()) : () => null)
 

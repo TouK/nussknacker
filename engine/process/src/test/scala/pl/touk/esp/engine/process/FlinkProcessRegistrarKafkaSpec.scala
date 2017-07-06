@@ -35,7 +35,6 @@ class FlinkProcessRegistrarKafkaSpec
 
   import spel.Implicits._
 
-  //FIXME: brak testu
   it should "aggregate records with triggering" in {
     val id = "itest.agg." + UUID.randomUUID().toString
     val inTopic = id + ".in"

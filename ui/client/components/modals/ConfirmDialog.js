@@ -9,14 +9,14 @@ import "../../stylesheets/visualization.styl";
 import InlinedSvgs from '../../assets/icons/InlinedSvgs'
 
 
-//TODO: uwspolnic z innymi modals
+//TODO: consider extending GenericModalDialog
 class ConfirmDialog extends React.Component {
 
   componentDidMount = () => {
-    //gdzie to powinno byc?
+    //is this right place for it?
     window.onbeforeunload = (e) => {
       if (!this.props.nothingToSave) {
-        return "" // powoduje przegladarkowy alert przy reloadzie i zamknieciu taba, z defaultowa wiadomoscia, ktorej nie da sie zmienic
+        return "" // it causes browser alert on reload/close tab with default message that cannot be changed
       }
     }
   }

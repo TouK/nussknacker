@@ -26,7 +26,7 @@ class StandaloneProcessConfigCreator extends ProcessConfigCreator with LazyLoggi
   val processorService = new ProcessorService
 
   {
-    //no troche slabe, ale na staticach nie da sie chyba polegac
+    //this is lame, but statics are not reliable
     StandaloneProcessConfigCreator.processorService.set(processorService)
   }
 

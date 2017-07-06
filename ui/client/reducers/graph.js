@@ -49,7 +49,7 @@ export function reducer(state, action) {
         fetchedProcessDetails: action.fetchedProcessDetails,
         graphLoading: false,
         nodeToDisplay: action.fetchedProcessDetails.json.properties,
-        layout: [] //potrzebne np przy pokazywaniu historycznej wersji
+        layout: [] //needed for displaying historical version
       }
     }
     case "LOADING_FAILED": {
@@ -72,7 +72,6 @@ export function reducer(state, action) {
         const newNodeId = action.nodeToDisplay.id
         return {
            ...state,
-          //FIXME: dodanie do grupy
           groupingState: canGroup(state, action.nodeToDisplay) ?
             _.concat(state.groupingState, newNodeId) : state.groupingState
         }
@@ -168,7 +167,7 @@ export function reducer(state, action) {
         layout: _.concat(state.layout, {id: newId, position: action.position})
       }
     }
-    //TODO: jakos inaczej to obsluzyc??
+    //TODO: handle it differently?
     case "LAYOUT_CHANGED": {
       return {
         ...state,

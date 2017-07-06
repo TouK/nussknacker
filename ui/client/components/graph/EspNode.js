@@ -257,7 +257,7 @@ export default {
     makeLink(edge, outgoingEdges, forExport) {
       const label = NodeUtils.edgeLabel(edge, outgoingEdges)
       return new joint.dia.Link({
-        //TODO: czy da sie jakos inaczej, ale unikanie i deterministycznie?
+        //TODO: some different way to create id? Must be deterministic and unique
         id: `${edge.from}-${edge.to}-${label}`,
         markup: [
             '<path class="connection"/>',

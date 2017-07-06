@@ -58,7 +58,7 @@ class SpelExpression(parsed: org.springframework.expression.Expression,
     } catch {
       case NonFatal(e) =>
         logger.info(s"Expression evaluation failed. Original {}, ctxId: {}, message: {}", original, ctx.id, e.getMessage)
-        //robimy to dwa razy bo LazyLogging nie umozliwia jednoczesnego: 1. leniwego wypisania kontekstu 2. wypisania stacktrace'u
+        //we log twice here because LazyLogging cannot print context and stacktrace at the same time
         logger.debug("Expression evaluation failed. Original: {}. Context: {}", original, ctx)
         logger.debug("Expression evaluation failed", e)
         throw e

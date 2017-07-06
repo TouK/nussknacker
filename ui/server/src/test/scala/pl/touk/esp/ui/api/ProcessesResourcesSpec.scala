@@ -366,7 +366,7 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
 
   it should "not allow to save process with category not allowed for user" in {
     Post(s"/processes/p11/abcd/${ProcessingType.Streaming}") ~> routWithAdminPermission ~> check {
-      //to ponizej nie dziala, bo nie potrafie tak ustawic dyrektyw path i authorize zeby przeszlo tak jak chce :(
+      //this one below does not work, but I cannot compose path and authorize directives in a right way
       //rejection shouldBe server.AuthorizationFailedRejection
       handled shouldBe false
     }

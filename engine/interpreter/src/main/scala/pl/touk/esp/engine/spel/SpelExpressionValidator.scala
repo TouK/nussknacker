@@ -52,12 +52,12 @@ class SpelExpressionValidator(expr: Expression, ctx: ValidationContext) {
         } else {
           references
         }
-      //TODO: walidacja zmiennych w srodku Projection/Selection
+      //TODO: variables validation in Projection/Selection
       case ce: CompoundExpression if ce.childrenHead.isInstanceOf[PropertyOrFieldReference] =>
         Validated.invalid(ExpressionParseError(s"Non reference '${ce.childrenHead.toStringAST}' occurred. Maybe you missed '#' in front of it?"))
       case prop: PropertyOrFieldReference if (rootClass.isEmpty && parent.exists(par => par.isInstanceOf[MethodReference] || par.isInstanceOf[Operator])) || parent.isEmpty =>
         Validated.invalid(ExpressionParseError(s"Non reference '${prop.toStringAST}' occurred. Maybe you missed '#' in front of it?"))
-      //TODO: walidacja zmiennych w srodku Projection/Selection, ale wtedy musielibysmy znac typ zawartosci listy...
+      //TODO: variables validation in Projection/Selection, but we need to know type of list content first...
       case prop: Projection =>
         validateChildren(n.children, Some(ClazzRef(classOf[Object])), Some(n))
       case sel: Selection =>
@@ -77,9 +77,9 @@ class SpelExpressionValidator(expr: Expression, ctx: ValidationContext) {
 
   private def findVariableReferenceAccess(reference: VariableReference, children: List[SpelNode] = List()) = {
     val variableName = reference.toStringAST.tail
-    val references = children.takeWhile(_.isInstanceOf[PropertyOrFieldReference]).map(_.toStringAST) //nie bierzemy jeszcze wszystkich co nie jest do konca poprawnne, np w `#obj.children.?[id == '55'].empty`
+    val references = children.takeWhile(_.isInstanceOf[PropertyOrFieldReference]).map(_.toStringAST) //we don't validate all of children which is not correct in all cases i.e `#obj.children.?[id == '55'].empty`
     val clazzRef = ctx.apply(variableName)
-    if (ignoredTypes.contains(clazzRef)) Validated.valid(List.empty) //odpuszczamy na razie walidowanie spelowych Map i wtedy kiedy nie jestesmy pewni typu
+    if (ignoredTypes.contains(clazzRef)) Validated.valid(List.empty) //we skip validation in case of SpEL Maps and when we are not sure about type
     else {
       Validated.valid(List(SpelPropertyAccess(variableName, references, ctx.apply(variableName))))
     }

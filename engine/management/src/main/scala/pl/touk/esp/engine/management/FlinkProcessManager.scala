@@ -62,7 +62,6 @@ class FlinkProcessManager(config: Config,
 
   import argonaut.Argonaut._
 
-  //tyle nam wystarczy, z aktorami to nigdy nic nie wiadomo...
   private implicit val ec = ExecutionContext.Implicits.global
 
   private val flinkConf = config.getConfig("flinkConfig")
@@ -113,7 +112,7 @@ class FlinkProcessManager(config: Config,
       //savepoint given by user overrides the one created by flink
       prepareSavepointSettings(processId, program, savepointPath.orElse(maybeSavepoint))
       Try(gateway.run(program)).recover {
-        //TODO: jest blad we flink, future nie dostaje odpowiedzi jak poleci wyjatek przy savepoincie :|
+        //TODO: looks like bug in Flink, future is not terminated when there is an exception during savepoint
         case e:ProgramInvocationException if e.getCause.isInstanceOf[JobTimeoutException] && maybeSavepoint.isDefined =>
           program.setSavepointRestoreSettings(SavepointRestoreSettings.none())
           logger.warn(s"Failed to run $processId with savepoint, trying with empty state")

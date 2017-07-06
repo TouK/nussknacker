@@ -17,7 +17,7 @@ describe("process available variables finder", () => {
       "#date": "java.time.LocalDate",
       "#parsedTransaction": "org.esp.esp.model.Transaction",
       "#aggregateResult": "java.lang.String",
-      "#processVariables": "java.lang.Object", //fixme co z variable builderem? jak go chcemy obslugiwac?
+      "#processVariables": "java.lang.Object", //fixme how to handle variableBuilder here?
       "#someVariableName": "java.lang.Object"
     })
   })

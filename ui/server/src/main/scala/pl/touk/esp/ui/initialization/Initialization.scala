@@ -100,7 +100,7 @@ class Initialization(processRepository: ProcessRepository,
                     Future.successful(Right(()))
         }
       }
-      //no to znowu jest nietransakcyjnie, ale przy inicjalizacji moze jakos przezyjemy...
+      //this is non-transactional, but in initialization it should work just fine
     } yield processRepository.updateCategory(processId, category)
     Await.result(updateProcess, 1 second)
   }

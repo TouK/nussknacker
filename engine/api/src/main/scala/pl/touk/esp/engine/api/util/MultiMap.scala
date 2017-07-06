@@ -19,7 +19,7 @@ case class MultiMap[K, V](map: TreeMap[K, List[V]]) {
   def remove(key: K, value: V) : MultiMap[K, V] = {
     map.get(key) match {
       case Some(list) =>
-        //TODO: to jest jedyna nieefektywna operacja, ale w naszych przypadkach listy powinny byc dosc krotkie ;)
+        //TODO: this is only ineffective operation, but in our case lists should be rather short
         val withRemovedEl = list.filterNot(_ == value)
         MultiMap(map + (key -> withRemovedEl))
       case None =>

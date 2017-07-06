@@ -15,7 +15,7 @@ trait InvocationMetrics extends WithEspTimers {
 
   private val nodeErrorTimers : collection.concurrent.TrieMap[String, EspTimer] = collection.concurrent.TrieMap()
 
-  //TODO: a moze po prostu var przypisywany na open?
+  //TODO: maybe var initialized in `open`?
   private lazy val succesTimer = espTimer("success")
 
   def measureTime[T](invocation: => Future[Either[NonEmptyList[EspExceptionInfo[_ <: Throwable]], T]])(implicit ec: ExecutionContext) :

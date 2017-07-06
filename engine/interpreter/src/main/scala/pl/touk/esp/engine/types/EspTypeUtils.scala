@@ -117,7 +117,7 @@ object EspTypeUtils {
     else None
   }
 
-  //TODO to nie dziala poprawnie np. dla primitywow i skomplikowanych hierarchii, ale na razie chyba wystarczy
+  //TODO this is not correct for primitives and complicated hierarchies, but should work in most cases
   //http://docs.oracle.com/javase/8/docs/api/java/lang/reflect/ParameterizedType.html#getActualTypeArguments--
   private def inferGenericMonadType(genericReturnType: Type): Option[Class[_]] = {
     val genericMethodType = genericReturnType.asInstanceOf[ParameterizedTypeImpl]

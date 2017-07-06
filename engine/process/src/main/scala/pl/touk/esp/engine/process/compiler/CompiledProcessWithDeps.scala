@@ -54,7 +54,7 @@ case class CompiledProcessWithDeps(compiledProcess: CompiledProcessParts,
 
   private class ListeningExceptionHandler extends FlinkEspExceptionHandler {
 
-    //FIXME: ladniej bez castow...
+    //FIXME: remove casting...
     private def flinkExceptionHandler = compiledProcess.exceptionHandler.asInstanceOf[FlinkEspExceptionHandler]
 
     override def open(runtimeContext: RuntimeContext) = {

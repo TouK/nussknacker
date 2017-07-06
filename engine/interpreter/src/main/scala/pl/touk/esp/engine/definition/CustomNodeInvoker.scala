@@ -57,7 +57,7 @@ case class CompilerLazyInterpreter[T](lazyDeps: () => CustomNodeInvokerDeps,
     }(ec)
   }
 
-  //lazy val jest po to, zeby za kazdym razem nie tworzyc interpretera - bo to kosztowne b.
+  //lazy val is used, interpreter creation is expensive
   @transient override lazy val syncInterpretationFunction = new SyncFunction
 
   class SyncFunction extends (InterpretationResult => T) with Serializable {

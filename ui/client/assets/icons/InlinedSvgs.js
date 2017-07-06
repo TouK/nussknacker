@@ -1,7 +1,6 @@
 export default class InlinedSvgs {}
 
-//fixme zamienic wszystkie img z svg na te ponizsze? (zeby moc je stylowac w cssach)
-//fixme tutaj pewno bedzie trzeba parametryzowac kolor...
+//TODO put all svg's in one place, in code or in assets
 InlinedSvgs.nodeCustom = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"> <defs> <style> .a { fill: white; } .b { fill: none; } </style> </defs> <title>node-custom</title> <g> <path class="a" d="M17.43,12.77a1.14,1.14,0,0,1-.6,1L10.54,17.2a1.11,1.11,0,0,1-1.09,0L3.17,13.77a1.14,1.14,0,0,1-.6-1V5.91a1.14,1.14,0,0,1,.75-1.07L9.61,2.56a1.12,1.12,0,0,1,.79,0l6.29,2.29a1.14,1.14,0,0,1,.75,1.07ZM16.23,5.9,10,3.63,3.77,5.9,10,8.16Zm.05,6.87V7.09L10.57,9.17v6.71Z"/> <rect class="b" width="20" height="20"/> </g>
 </svg>
 `
@@ -92,7 +91,7 @@ InlinedSvgs.tipsInfo = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 
 
 InlinedSvgs.tipsWarning = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"> <defs> <style>.warning { fill: #fbb03b; } .b { fill: none; } </style> </defs> <title>tips-warning</title> <g> <path class="warning" d="M15.49,15.46H.51A1.73,1.73,0,0,1,.51,13L7,1A1.73,1.73,0,0,1,9.43,1l6.07,12A1.73,1.73,0,0,1,15.49,15.46ZM6.56,4.65l.72,5.91H8.72l.72-5.91ZM8,11.42a1.15,1.15,0,1,0,1.15,1.15A1.15,1.15,0,0,0,8,11.42Z"/> <rect class="b" width="16" height="16"/> </g> </svg>`
 
-/*font-awesome to jest wziete z https://github.com/encharm/Font-Awesome-SVG-PNG/tree/master/black/svg*/
+// from https://github.com/encharm/Font-Awesome-SVG-PNG/tree/master/black/svg
 InlinedSvgs.buttonDelete = `<svg viewBox="0 0 1792 1792" xmlns="http://www.w3.org/2000/svg"><defs> <style>.a {fill: #999}</style> </defs><path class="a" d="M1490 1322q0 40-28 68l-136 136q-28 28-68 28t-68-28l-294-294-294 294q-28 28-68 28t-68-28l-136-136q-28-28-28-68t28-68l294-294-294-294q-28-28-28-68t28-68l136-136q28-28 68-28t68 28l294 294 294-294q28-28 68-28t68 28l136 136q28 28 28 68t-28 68l-294 294 294 294q28 28 28 68z"/><rect class="b" width="32" height="32"/></svg>`
 
 InlinedSvgs.buttonGroup = `<svg viewBox="-470 -470 3000 3000" xmlns="http://www.w3.org/2000/svg"><defs> <style>.a {fill: #999}</style> </defs><path class="a" d="M1920 384h-128v1024h128v384h-384v-128h-1280v128h-384v-384h128v-1024h-128v-384h384v128h1280v-128h384v384zm-256-256v128h128v-128h-128zm-1664 0v128h128v-128h-128zm128 1536v-128h-128v128h128zm1408-128v-128h128v-1024h-128v-128h-1280v128h-128v1024h128v128h1280zm256 128v-128h-128v128h128zm-640-1024h384v768h-896v-256h-384v-768h896v256zm-768 384h640v-512h-640v512zm1024 256v-512h-256v384h-384v128h640z"/><rect class="b" width="32" height="32"/></svg>`

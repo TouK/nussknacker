@@ -34,7 +34,7 @@ class ProcessRoute(processesClassLoader: ClassLoader, deploymentService: Deploym
             case Some(processInterpreter) =>
               val input = processInterpreter.source.toObject(bytes)
               complete {
-                //TODO: wiele wynikow??
+                //TODO: handle multiple outputs?
                 processInterpreter.invoke(input).map(toResponse)
               }
           }
@@ -43,7 +43,7 @@ class ProcessRoute(processesClassLoader: ClassLoader, deploymentService: Deploym
     }
   }
 
-  //TODO: czy to jest tak jak powinno byc??
+  //TODO: is it ok?
   def toResponse(either: GenericResultType[Any, EspExceptionInfo[_<:Throwable]]) : ToResponseMarshallable = {
     val withErrorsMapped : GenericResultType[Any, EspError] = either.left
       .map(_.map(exception => EspError(exception.nodeId, exception.throwable.getMessage)))

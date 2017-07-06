@@ -7,7 +7,7 @@ trait RateMeter {
   def mark(): Unit
 }
 
-//To jest bardzo slaba implementacja, ale na nasze potrzeby moze wystarczy...
+//this is poor implementation, but should be ok for our needs
 trait GenericInstantRateMeter extends RateMeter {
 
   val counter = new LongAdder

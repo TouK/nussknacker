@@ -26,7 +26,7 @@ class InitializationItSpec extends FlatSpec with ScalatestRouteTest with Matcher
     processesDir = Files.createTempDirectory("processesJsons").toFile
     val sampleProcessesDir = new File(getClass.getResource("/jsons").getFile)
     FileUtils.copyDirectory(sampleProcessesDir, processesDir)
-    Files.deleteIfExists(Paths.get(processesDir.getAbsolutePath + "/standaloneProcesses/StandaloneCategory1/RequestResponseTest1.json")) //fixme umozliwic testowanie request-response
+    Files.deleteIfExists(Paths.get(processesDir.getAbsolutePath + "/standaloneProcesses/StandaloneCategory1/RequestResponseTest1.json")) //fixme make standalone mode testing easier
   }
 
   override protected def afterEach(): Unit = {

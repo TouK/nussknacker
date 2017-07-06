@@ -7,9 +7,9 @@ import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 
 import scala.collection.JavaConversions._
 
-// Domyslnie lista w SPEL'u (tzn. "{'a', 'b'}") konwertuje sie do java.util.Collections.UnmodifiableCollection,
-// ktora nie chce sie serializowac przez Kryo, bo Kryo uzywa metody java.util.Collection.add(), ktora to w przypadku
-// niemodyfikowalnych kolekcji rzuca wyjatkiem... Dlatego to serializowanie javowych List bierzemy w swoje rece
+//By default SpEL list (i.e "{'a', 'b'}") is represented as java.util.Collections.UnmodifiableCollection, which
+//Kryo won't serialize properly since Kry uses java.util.Collection.add() method which in case of UnmodifiableCollection
+//throws an exception. That's why we need out own serialization of java.util.List
 object SpelHack extends Serializer[java.util.List[_]](false, true) with Serializable {
 
   override def write(kryo: Kryo, out: Output, obj: java.util.List[_]): Unit = {

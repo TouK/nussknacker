@@ -108,8 +108,6 @@ object ProcessTestHelpers {
                @ParamName("stringVal") stringVal: String) = FlinkCustomStreamTransformation((start: DataStream[InterpretationResult], ctx: FlinkCustomNodeContext) => {
       start.keyBy(keyBy.syncInterpretationFunction)
         .mapWithState[ValueWithContext[Any], Long] {
-        //TODO: tu musi byc jakis node id??
-        //na razie zawsze wszystko zwracamy..
         case (SimpleFromIr(ir, sr), Some(oldState)) =>
           (ValueWithContext(
           SimpleRecordWithPreviousValue(sr, oldState, stringVal), ir.finalContext), Some(sr.value1))
@@ -155,7 +153,7 @@ object ProcessTestHelpers {
 
   case class CustomMap(lazyHandler: ()=>FlinkEspExceptionHandler) extends RichMapFunction[ValueWithContext[Any], ValueWithContext[Any]] with WithExceptionHandler {
     override def map(value: ValueWithContext[Any]) = {
-       //tu nic madrego nie robimy, tylko zeby zobaczyc czy Exceptionhandler jest wstrzykniety
+      //just using Exceptionhandler here to see that its injected properly
       try {
         value
       } catch {

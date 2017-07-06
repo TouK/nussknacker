@@ -50,7 +50,7 @@ class DefaultFlinkGateway(config: Configuration, timeout: FiniteDuration) extend
 
 }
 
-//TODO: tak w sumie to przydaloby sie to zrobic na aktorach w ui moze??
+//TODO: maybe move it to ui and use actors??
 class RestartableFlinkGateway(prepareGateway: () => FlinkGateway) extends FlinkGateway with LazyLogging {
 
   implicit val ec = ExecutionContext.Implicits.global
@@ -73,7 +73,7 @@ class RestartableFlinkGateway(prepareGateway: () => FlinkGateway) extends FlinkG
 
   override def run(program: PackagedProgram): Unit = {
     tryToRunProgram(program).recover {
-      //TODO: jaki powinien byc ten wyjatek??
+      //TODO: is this right exception to detect??
       case e: TimeoutException =>
         logger.error("Failed to connect to Flink, restarting", e)
         restart()

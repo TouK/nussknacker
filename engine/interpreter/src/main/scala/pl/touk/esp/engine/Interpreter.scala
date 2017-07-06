@@ -171,7 +171,7 @@ class Interpreter private(services: Map[String, ServiceInvoker],
       case PartRef(ref) => Future.successful(InterpretationResult(NextPartReference(ref), outputValue(ctx), ctx))
     }
 
-  //hmm... to tak ma byc?
+  //hmm... is this OK?
   private def outputValue(ctx: Context): Any =
   ctx.getOrElse[Any](OutputParamName, new java.util.HashMap[String, Any]())
 
@@ -204,7 +204,7 @@ class Interpreter private(services: Map[String, ServiceInvoker],
     }.flatMap { case (newCtx, preparedParams) =>
       val resultFuture = ref.invoker.invoke(preparedParams, NodeContext(ctx.id, node.id, ref.id))
       resultFuture.onComplete { result =>
-        //TODO: a implicit tez??
+        //TODO: what about implicit??
         listeners.foreach(_.serviceInvoked(node.id, ref.id, ctx, metaData, preparedParams, result))
       }
       resultFuture.map(ValueWithContext(_, newCtx))

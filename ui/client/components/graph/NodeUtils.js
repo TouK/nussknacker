@@ -134,7 +134,7 @@ class NodeUtils {
   }
 
 
-  //TODO: no przeciez to juz powinno byc??
+  //TODO: this function should already exists in lodash?
   _update = (path, fun, object) => {
     return fp.set(path, fun(_.get(object, path)), object)
   }

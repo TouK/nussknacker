@@ -1,6 +1,6 @@
 import React from 'react';
 import { shallow, mount, render } from 'enzyme';
-import { ProcessHistory_ } from '../components/ProcessHistory'; //importujemy kompnent niezalezny od reduxa
+import { ProcessHistory_ } from '../components/ProcessHistory'; //import redux-independent component
 
 describe("ProcessHistory suite", () => {
   it("should mark latest history entry as current and other as past", () => {
@@ -18,7 +18,7 @@ describe("ProcessHistory suite", () => {
     expect(contains(pastHistoryEntries.at(1).text(), "v1")).toBe(true)
   })
 
-  //z jakiegos powodu es6 'String.includes' nie dziala w testach, ale nie wiem jeszcze dlaczego
+  //for some reason es6 'String.includes' does not work in tests...
   const contains = (str, con) => {
     return str.substring(con) !== -1
   }

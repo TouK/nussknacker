@@ -18,7 +18,7 @@ import scala.concurrent.ExecutionContext
 
 object DeploymentService {
 
-  //TODO: to jest rozwiazanie tymczasowe, docelowo powinnismy np. zapisywac do zk te procesy...
+  //TODO this is temporary solution, we should keep these processes in ZK
   def apply(context: StandaloneContextPreparer, creator: ProcessConfigCreator, config: Config): DeploymentService =
     new DeploymentService(context, creator, config, FileProcessRepository(config.getString("standaloneEngineProcessLocation")))
 

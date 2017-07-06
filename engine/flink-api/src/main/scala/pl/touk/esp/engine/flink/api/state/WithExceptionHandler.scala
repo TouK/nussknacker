@@ -4,7 +4,6 @@ import org.apache.flink.api.common.functions.RichFunction
 import org.apache.flink.configuration.Configuration
 import pl.touk.esp.engine.flink.api.exception.FlinkEspExceptionHandler
 
-//wydzielic do flink-api?
 trait WithExceptionHandler extends RichFunction {
   @transient lazy val exceptionHandler = lazyHandler()
 

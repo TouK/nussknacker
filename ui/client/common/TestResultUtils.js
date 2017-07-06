@@ -1,6 +1,6 @@
 import _ from 'lodash'
 
-//TODO: a moze to tez da sie dac do backendu??
+//TODO move it to backend
 class TestResultUtils {
 
 

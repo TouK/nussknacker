@@ -31,10 +31,10 @@ trait UiCodecs extends Codecs with Argonauts with SingletonInstances with Derive
   private implicit def typeFieldJsonSumCodecFor[S]: JsonSumCodecFor[S] =
     JsonSumCodecFor(JsonSumCodec.typeField)
 
-  //w sumie nie rozumiem czemu tak... ale probowalem roznych rzeczy i rozne wyjatki mi rzucalo... lacznie ze stackoverflow...
+  //not sure why it works, another argonaut issue...
   implicit def typeCodec : CodecJson[TypeSpecificData] = new ProcessMarshaller().typeSpecificEncoder
 
-  //rzutujemy bo argonaut nie lubi kowariancji...
+  //argonaut does not like covariation so wee need to cast
   implicit def nodeAdditionalFieldsOptCodec: CodecJson[Option[node.UserDefinedAdditionalNodeFields]] = {
     CodecJson.derived[Option[NodeAdditionalFields]]
       .asInstanceOf[CodecJson[Option[node.UserDefinedAdditionalNodeFields]]]
@@ -51,7 +51,7 @@ trait UiCodecs extends Codecs with Argonauts with SingletonInstances with Derive
 
   implicit def validationResultEncode = EncodeJson.of[ValidationResult]
 
-  //fixme jak to zrobic automatycznie?
+  //fixme how to do this automatically?
   implicit def edgeTypeEncode: EncodeJson[EdgeType] = EncodeJson[EdgeType] {
     case EdgeType.FilterFalse => jObjectFields("type" -> jString("FilterFalse"))
     case EdgeType.FilterTrue => jObjectFields("type" -> jString("FilterTrue"))
@@ -125,7 +125,6 @@ trait UiCodecs extends Codecs with Argonauts with SingletonInstances with Derive
     private val safeNumber = safeJson[Number](a => jNumber(a.doubleValue()))
 
 
-    //TODO: cos jeszcze??
     private def encodeVariable(any: Any): Json = {
       if (any == null) {
         jNull
@@ -140,11 +139,6 @@ trait UiCodecs extends Codecs with Argonauts with SingletonInstances with Derive
           case a: Number => safeNumber(a.doubleValue())
           case a: LocalDateTime => a.asJson
           case a: Displayable => displayableToJson(a)
-          //TODO: a to??
-          //case a: LocalDate => a.asJson
-          //TODO: co tu w sumie lepiej pokazywac??
-          //case _ if typesWithMethodNames.contains(klass.getName) =>
-          //  printKnownType(any, klass)
           case _ => safeString(any.toString)
         }
       }

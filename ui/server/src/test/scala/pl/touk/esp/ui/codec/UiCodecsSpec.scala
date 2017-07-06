@@ -32,7 +32,7 @@ class UiCodecsSpec extends FlatSpec with Matchers {
     } yield List(var1.focus, var2.focus)).toList.flatten
 
     variables.size shouldBe 2
-    //jak to zrobic ladniej?
+    //how to make it prettier?
     variables(0) shouldBe Parse.parse("{\"pretty\":\"{\\n  \\\"date\\\" : \\\"2010-01-01T01:01\\\",\\n  \\\"some\\\" : \\\"b\\\",\\n  \\\"number\\\" : 1,\\n  \\\"id\\\" : \\\"a\\\"\\n}\"}").right.get
     variables(1) shouldBe Parse.parse("{\"original\":\"aa|bb\",\"pretty\":\"{\\n  \\\"fieldA\\\" : \\\"aa\\\",\\n  \\\"fieldB\\\" : \\\"bb\\\"\\n}\"}").right.get
   }

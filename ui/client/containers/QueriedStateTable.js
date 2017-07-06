@@ -80,7 +80,7 @@ class QueriedStateTable extends React.Component {
     })
   }
 
-  //to jest troche hack, ale lepsze hacki tutaj niz w engine
+  //this is kind of hack, but better here than in engine
   genericPrettyPrintedState = (fetchedState) => {
     if (_.isArray(fetchedState)) {
       return fetchedState.map((entry, idx) => {

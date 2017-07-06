@@ -266,7 +266,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
     }
   }
 
-  //TODO: zrobic cos zeby dalo sie jednak cos tu walidowac...
+  //TODO: implement validation to make it test fail
   it should "allow unknown vars in custom node params" in {
     val process = EspProcessBuilder
       .id("process1")

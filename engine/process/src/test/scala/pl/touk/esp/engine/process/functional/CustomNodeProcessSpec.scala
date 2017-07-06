@@ -52,7 +52,7 @@ class CustomNodeProcessSpec extends FlatSpec with Matchers {
       .customNode("custom", "outRec", "stateCustom", "keyBy" -> "#input.id", "stringVal" -> "'terefere'")
       .split("split",
         GraphBuilder.processorEnd("proc3", "logService", "all" -> "'allRec-' + #outRec.record.value1"),
-        //additionalFilterBranch jest bo przy kompilacji wychodzily rozne ciekawe rzeczy...
+        //additionalFilterBranch added, to make this case more complicated
         GraphBuilder.filter("delta", "#outRec.record.value1 > #outRec.previous + 5", additionalFilterBranch)
           .processor("proc2", "logService", "all" -> "#outRec.record.value1 + '-' + #outRec.added").sink("out", "monitor")
       )
