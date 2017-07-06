@@ -22,14 +22,14 @@ class HealthCheck extends React.Component {
 
   render() {
     const { healthCheck } = this.state;
-    if (!healthCheck || !healthCheck.error) {
+    if (!healthCheck || healthCheck.state === 'ok') {
       return null;
     }
 
     return (
       <div className="healthCheck">
         <div className="icon" title="Warning" dangerouslySetInnerHTML={{__html: InlinedSvgs.tipsWarning}} />
-        <span className="errorText">{healthCheck.error}</span>
+        <span className="errorText">{healthCheck.error || 'State unknown'}</span>
       </div>
     );
 
