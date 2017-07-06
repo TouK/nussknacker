@@ -90,7 +90,7 @@ object KafkaEspUtils extends LazyLogging {
   }
 
   private def doWithTempKafkaConsumer[T](config: KafkaConfig, groupId: Option[String])(fun: KafkaConsumer[Array[Byte], Array[Byte]] => T) = {
-    // musimy tutaj ustawic classloader z kafki, bo inaczej nie dziala
+    // there has to be Kafka's classloader
     // http://stackoverflow.com/questions/40037857/intermittent-exception-in-tests-using-the-java-kafka-client
     ThreadUtils.withThisAsContextClassLoader(classOf[KafkaClient].getClassLoader) {
       val consumer: KafkaConsumer[Array[Byte], Array[Byte]] = new KafkaConsumer(toPropertiesForTempConsumer(config, groupId))
@@ -109,7 +109,7 @@ object KafkaEspUtils extends LazyLogging {
     val partitions = consumer.partitionsFor(topic).map { partition => new TopicPartition(partition.topic(), partition.partition()) }
     consumer.assign(partitions)
     consumer.seekToEnd(partitions: _*)
-    partitions.foreach(p => consumer.position(p)) //wolamy `position` bo seekToEnd jest domyslnie leniwe i ta metoda to ewaluuje
+    partitions.foreach(p => consumer.position(p)) //`seekToEnd` is lazy, we have to invoke `position` to change offset
     consumer.commitSync()
   }
 

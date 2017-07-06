@@ -81,9 +81,9 @@ private[compile] trait PartSubGraphCompilerBase {
 
   protected def createServiceInvoker(obj: ParametersProviderT): ServiceInvoker
 
-  //TODO: no to wyglada troche strasznie, nie??
-  //ten kod kompiluje pojedynczego parta (to co bedzie w jednym wezle flinka)
-  //na wyjsciu dostajemy takze informacje o tym jakie moga byc dalsze kroki (PartRef) i jakie wtedy sa tam zmienne
+  //TODO: make it simpler
+  //this code compiles single Part (which will be single Flink node)
+  //it returns info about next steps (PartRef) and variables withing each part
   private class Compiler(contextValidationEnabled: Boolean) {
 
     type ValidatedWithCompiler[A] = ValidatedNel[PartSubGraphCompilationError, A]
@@ -99,13 +99,13 @@ private[compile] trait PartSubGraphCompilerBase {
         case splittednode.OneOutputSubsequentNode(data: OneOutputSubsequentNodeData, next) =>
           data match {
             case graph.node.Variable(id, varName, expression, _) =>
-              ctx.withVariable(varName, ClazzRef(classOf[Any])).andThen { newCtx => //jak wyciagnac informacie o typie zmiennej?
+              ctx.withVariable(varName, ClazzRef(classOf[Any])).andThen { newCtx => //how to infere type of variable?
                 A.map2(compile(expression, None, ctx), compile(next, newCtx))(
                   (compiledExpression, nextWithCtx) =>
                     CompiledNode(compiledgraph.node.VariableBuilder(id, varName, Left(compiledExpression), nextWithCtx.next), nextWithCtx.ctx))
               }
             case graph.node.VariableBuilder(id, varName, fields, _) =>
-              ctx.withVariable(varName, ClazzRef(classOf[Map[String, Any]])).andThen { newCtx =>  //jak wyciagnac informacie o typach zmiennych w mapie?
+              ctx.withVariable(varName, ClazzRef(classOf[Map[String, Any]])).andThen { newCtx =>  //how to infere type of variables in map?
                 A.map2(fields.map(f => compile(f, ctx)).sequence, compile(next, newCtx))(
                   (fields, nextWithCtx) =>
                     CompiledNode(compiledgraph.node.VariableBuilder(id, varName, Right(fields), nextWithCtx.next), nextWithCtx.ctx))
@@ -122,15 +122,15 @@ private[compile] trait PartSubGraphCompilerBase {
                   CompiledNode(compiledgraph.node.Enricher(id, ref, outName, nextWithCtx.next), nextWithCtx.ctx))
               }
 
-            //tu nie dodajemy do kontekstu zmiennej, bo to jest obslugiwane gdzie indziej (teraz we flinku :|)
+            //we don't put variable in context here, as it's handled in flink currently (maybe try to change it?)
             case graph.node.CustomNode(id, _, customNodeRef, parameters, _) =>
-              //TODO: na razie zakladamy ze nie resetujemy kontekstu, output mamy z gory
-              //TODO: nie walidujemy parametrow ze zmiennymi, bo nie wiemy co doda CustomNode
+              //TODO: so far we assume we don't reset context, we get output var from outside
+              //TODO: we don't do parameter context validation, because custom node can add any vars...
               val validParams = parameters.map(p => compileParam(p, ctx, skipContextValidation = true)).sequence
               A.map2(validParams, compile(next, ctx))((params, nextWithCtx) =>
                 CompiledNode(compiledgraph.node.CustomNode(id, params, nextWithCtx.next), nextWithCtx.ctx))
             case SubprocessInput(id, ref, _) =>
-              //TODO: typowanie zmiennych?
+              //TODO: variables should be typed?
               ref.parameters.foldLeft(Valid(ctx.pushNewContext()).asInstanceOf[ValidatedNel[PartSubGraphCompilationError, ValidationContext]])
                 { case (accCtx, param) => accCtx.andThen(_.withVariable(param.name, ClazzRef[Any]))}.andThen { ctxWithVars =>
                   val validParams = ref.parameters.map(p => compileParam(p, ctx)).sequence
@@ -164,13 +164,13 @@ private[compile] trait PartSubGraphCompilerBase {
           }
 
         case splittednode.EndingNode(data: EndingNodeData) =>
-          //tu dajemy puste mapy, bo dalej nic juz nie powinno byc
+          //we give empty maps in CompiledNode, there shouldn't be anything here anyway
           data match {
             case graph.node.Processor(id, ref, disabled, _) =>
               compile(ref, ctx).map(compiledgraph.node.EndingProcessor(id, _, disabled.contains(true))).map(CompiledNode(_, Map()))
             case graph.node.Sink(id, ref, optionalExpression, _) =>
               optionalExpression.map(oe => compile(oe, None, ctx)).sequence.map(compiledgraph.node.Sink(id, ref.typ, _)).map(CompiledNode(_, Map()))
-            //no chyba tutaj tego nie powinno byc, bo to bylby pusty podproces??
+            //probably this shouldn't occur - otherwise we'd have empty subprocess?
             case SubprocessInput(id, _, _) => Invalid(NonEmptyList.of(UnresolvedSubprocess(id)))
             case SubprocessOutputDefinition(id, name, _) =>
               //TODO: should we validate it's process?

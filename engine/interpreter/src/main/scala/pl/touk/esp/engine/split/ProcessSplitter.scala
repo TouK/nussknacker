@@ -87,7 +87,7 @@ object ProcessSplitter {
         NextWithParts(PartRef(sink.id), List(part), List.empty)
       case EndingNode(other) =>
         NextWithParts(NextNode(splittednode.EndingNode(other)), List.empty, List(NormalEnd(other.id)))
-      //TODO: jakos inaczej?
+      //TODO: what should be here?
       case SubprocessNode(id, _) =>
         throw new RuntimeException("Should not happen")
     }

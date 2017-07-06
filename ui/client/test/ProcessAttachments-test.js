@@ -1,6 +1,6 @@
 import React from 'react';
 import { shallow, mount, render } from 'enzyme';
-import { ProcessAttachments_ } from '../components/ProcessAttachments'; //importujemy kompnent niezalezny od reduxa
+import { ProcessAttachments_ } from '../components/ProcessAttachments'; //import redux-independent component
 
 describe("ProcessAttachments suite", () => {
   it("should render with no problems", () => {

@@ -18,7 +18,7 @@ trait FlinkSource[T] extends Source[T] {
 }
 
 
-//bez `extends Serializable` serializacja np. kafkaMocks.MockSourceFactory nie dziala...
+//Serializable to make Flink happy, e.g. kafkaMocks.MockSourceFactory won't work properly otherwise
 abstract class FlinkSourceFactory[T: TypeInformation] extends SourceFactory[T] with Serializable {
   def clazz = typeInformation.getTypeClass
 

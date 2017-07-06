@@ -29,7 +29,7 @@ class ProcessCounter(subprocessRepository: SubprocessRepository) {
         case SplitNode(node, nexts) => computeCountsSamePrefixes(nexts.flatten) + (node.id -> nodeCount(node.id))
         case Subprocess(node, outputs) =>
           computeCountsSamePrefixes(outputs.values.flatten) + (node.id -> nodeCount(node.id,
-            //TODO: walidacja czy proces istnieje
+            //TODO: validate that process exists
             computeCounts(prefixes :+ node.id)(subprocessRepository.get(node.ref.id).get.nodes)))
       }.toMap
 

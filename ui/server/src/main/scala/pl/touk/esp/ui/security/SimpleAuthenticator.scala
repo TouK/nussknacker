@@ -12,7 +12,7 @@ import net.ceedubs.ficus.readers.EnumerationReader._
 
 class SimpleAuthenticator(path: String) extends SecurityDirectives.Authenticator[LoggedUser] {
 
-  //TODO: przeladowywanie konfiguracji
+  //TODO: config reload
   val users = prepareUsers()
 
   def prepareUsers() : Map[String, LoggedUser] = {

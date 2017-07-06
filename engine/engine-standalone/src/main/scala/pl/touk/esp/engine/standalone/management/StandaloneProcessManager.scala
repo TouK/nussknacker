@@ -49,7 +49,6 @@ class StandaloneProcessManager(config: Config)
   }
   private val managementUrl = standaloneConf.getString("managementUrl")
 
-  // fixme zdeduplikowac?
   private val processConfigPart = {
     val configName = standaloneConf.getString("processConfig")
     config.getConfig(configName).root()
@@ -149,7 +148,7 @@ class StandaloneTestMain(config: Config, testData: TestData, process: EspProcess
     //in tests we don't send metrics anywhere
     val testContext = new StandaloneContextPreparer(new MetricRegistry)
 
-    //FIXME: walidacja??
+    //FIXME: validation??
     val standaloneInterpreter = StandaloneProcessInterpreter(process, testContext, creator, config,
       definitionsPostProcessor = prepareMocksForTest(collectingListener),
       additionalListeners = List(collectingListener)
@@ -202,12 +201,11 @@ class StandaloneTestMain(config: Config, testData: TestData, process: EspProcess
 
 }
 
-//fixme rzeczy do zdeduplikowania
-//fixme a moze lepiej testowac po http, a nie lokalnie przez refleksje?
+//FIXME deduplicate with pl.touk.esp.engine.process.runner.FlinkRunner?
+// maybe we should test processes via HTTP instead of reflection?
 object TestUtils {
   private val ProcessMarshaller = new ProcessMarshaller
 
-  //fixme zdeduplikowac?
   def readProcessFromArg(arg: String): EspProcess = {
     val canonicalJson = if (arg.startsWith("@")) {
       scala.io.Source.fromFile(arg.substring(1)).mkString
@@ -222,7 +220,6 @@ object TestUtils {
     }
   }
 
-  //fixme zdeduplikowac
   def prepareServiceWithEnabledInvocationCollector(runId: TestRunId, service: ObjectWithMethodDef): ObjectWithMethodDef = {
     new ObjectWithMethodDef(service.obj, service.methodDef, service.objectDefinition) {
       override def invokeMethod(parameterCreator: String => Option[AnyRef], additional: Seq[AnyRef]): Any = {
@@ -235,7 +232,6 @@ object TestUtils {
     }
   }
 
-  //fixme to chyba cale bedzie mozna wydzielic
   class StandaloneTestRunner(config: Config, jar: URL) {
     import scala.reflect.runtime.{universe => ru}
 

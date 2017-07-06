@@ -9,7 +9,7 @@ import pl.touk.esp.engine.definition.DefinitionExtractor._
 object ProcessDefinitionExtractor {
 
   import pl.touk.esp.engine.util.Implicits._
-  //TODO: a moze to do ProcessConfigCreator??
+  //TODO: move it to ProcessConfigCreator??
   def extractObjectWithMethods(creator: ProcessConfigCreator, config: Config) : ProcessDefinition[ObjectWithMethodDef] = {
 
     val services = creator.services(config)

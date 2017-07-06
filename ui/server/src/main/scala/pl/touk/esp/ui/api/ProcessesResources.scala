@@ -47,7 +47,6 @@ class ProcessesResources(repository: ProcessRepository,
     def authorizeMethod = extractMethod.flatMap[Unit] {
       case HttpMethods.POST | HttpMethods.PUT | HttpMethods.DELETE => authorize(user.hasPermission(Permission.Write))
       case HttpMethods.GET => authorize(user.hasPermission(Permission.Read))
-      //czyli co??? options?
       case _ => Directive.Empty
     }
 

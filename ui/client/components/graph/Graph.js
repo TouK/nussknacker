@@ -261,7 +261,7 @@ class Graph extends React.Component {
 
     highlightNode = (nodeId, highlightClass) => {
       const cell = this.graph.getCell(nodeId)
-      if (cell) { //zabezpieczenie przed dostaniem sie do node'a propertiesow procesu, ktorego to nie pokazujemy na grafie
+      if (cell) { //prevent `properties` node highlighting
         this.highlightCell(cell, highlightClass)
       }
     }
@@ -301,7 +301,7 @@ class Graph extends React.Component {
 
   fitSmallAndLargeGraphs = (panAndZoom) => {
     const realZoom = panAndZoom.getSizes().realZoom
-    const toZoomBy = realZoom > 1 ? 1 / realZoom : 0.90 //jak jest za duze powiekszenie to oddalamy bardziej
+    const toZoomBy = realZoom > 1 ? 1 / realZoom : 0.90 //the bigger zoom, the further we get
     panAndZoom.zoomBy(toZoomBy)
   }
 
@@ -379,8 +379,6 @@ class Graph extends React.Component {
                     relOffset.x <= position.x + size.width && relOffset.y <= position.y + size.height;
     }
 
-    // FIXME - w chrome 52.0.2743.82 (64-bit) nie działa na esp-graph
-    // Trzeba sprawdzić na innych wersjach Chrome u innych, bo może to być kwestia tylko tej wersji chrome
     cursorBehaviour () {
       this.processGraphPaper.on('blank:pointerdown', (evt, x, y) => {
         if (this.refs.espGraph) {
@@ -441,7 +439,7 @@ var spec = {
   }
 };
 
-//withRef jest po to, zeby parent mogl sie dostac
+//we need withRef so that parent component can acces Graph and invoke method on it
 export default connect(mapState, ActionsUtils.mapDispatchWithEspActions, null, {withRef: true})(DropTarget("element", spec, (connect, monitor) => ({
   connectDropTarget: connect.dropTarget()
 }))(Graph));

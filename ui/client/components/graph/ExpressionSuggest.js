@@ -10,10 +10,9 @@ import ExpressionSuggester from './ExpressionSuggester'
 import Autosuggest from "react-autosuggest";
 import $ from "jquery";
 
-//do poprawy
-// - uwzglednic kategorie dla zmiennych globalnych?
-// - moze ESC powinien byc dozwolony? tzn nie zamykalby sie modal tylko chowaloby sie podpowiadanie?
-// - wiecej milosci
+//to reconsider
+// - respect categories for global variables?
+// - maybe ESC should be allowed to hide suggestions but leave modal open?
 
 var inputExprIdCounter = 0
 class ExpressionSuggest extends React.Component {
@@ -34,8 +33,8 @@ class ExpressionSuggest extends React.Component {
     this.expressionSuggester = this.createExpressionSuggester(props)
   }
 
-  //fixme czy o wystarczy?
-  // to jest po to, zeby przy wielu instancjach tego komponentu na stronie do rerenderowania brac pod uwage tylko te ktore naprawde mogly sie zmienic
+  //fixme is this enough?
+  //this shouldComponentUpdate is for cases when there are multiple instances of suggestion component in one view and to make them not interfere with each other
   shouldComponentUpdate(nextProps, nextState) {
     return !(_.isEqual(this.state.suggestions, nextState.suggestions) &&
       _.isEqual(this.state.expectedCaretPosition, nextState.expectedCaretPosition) &&
@@ -80,7 +79,7 @@ class ExpressionSuggest extends React.Component {
   }
 
   onSuggestionSelected = (event, { suggestion, suggestionValue, sectionIndex, method }) => {
-    event.preventDefault() //zeby przy textarea po wybraniu podpowiadanej opcji nie przechodzic do nowej linii
+    event.preventDefault() //to prevent newline in textarea after choosing an option
     const suggestionApplied = this.expressionSuggester.applySuggestion(suggestion, this.state.value, this.getCaretPosition())
     this.setState({
       value: suggestionApplied.value,
@@ -95,7 +94,7 @@ class ExpressionSuggest extends React.Component {
     })
   }
 
-  //fixme jak to zamienic na ref?
+  //fixme change to ref?
   getInputExprElement = () => {
     return $('#' + this.state.id)[0]
   }
@@ -124,7 +123,7 @@ class ExpressionSuggest extends React.Component {
   render() {
     if (this.props.dataResolved) {
       const inputProps = {
-        ..._.omit(this.props.inputProps, "onValueChange"), //wyrzucamy bo pluje warningami
+        ..._.omit(this.props.inputProps, "onValueChange"), //we leave this out, because warnings
         value: this.state.value,
         onChange: (event, {newValue}) => {
           this.onChange(newValue)

@@ -17,7 +17,7 @@ class ProcessMarshaller(implicit
                         additionalNodeDataFieldsCodec: CodecJson[Option[node.UserDefinedAdditionalNodeFields]] = ProcessMarshaller.additionalNodeDataFieldsCodec,
                         additionalProcessFieldsCodec: CodecJson[Option[UserDefinedProcessAdditionalFields]] = ProcessMarshaller.additionalProcessFieldsCodec ) {
 
-  //TODO: w sumie to potzebne w UI, ale tam cos mialem problemy z kompilacja... :|
+  //TODO: UI needs it - unfortunately there were some argonaut/compile issues...
   val typeSpecificEncoder =  CodecJson.derived[TypeSpecificData]
 
   private implicit def typeFieldJsonSumCodecFor[S]: JsonSumCodecFor[S] =

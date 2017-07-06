@@ -41,7 +41,7 @@ object StandaloneProcessInterpreter {
   type OutFunType = (Context, ExecutionContext) => OutType
 
   def foldResults[T, Error](results: List[GenericResultType[T, Error]]) = {
-    //hmm... moze Validated tu by sie bardziej przydal?
+    //Validated would be better here?
     results.foldLeft[GenericResultType[T, Error]](Right(Nil)) {
       case (Right(a), Right(b)) => Right(a ++ b)
       case (Left(a), Right(_)) => Left(a)
@@ -92,7 +92,7 @@ object StandaloneProcessInterpreter {
         compileWithCompilationErrors(node).andThen(partInvoker(_, nextParts))
       case part@SinkPart(_, endNode) =>
         compileWithCompilationErrors(endNode).andThen(partInvoker(_, List()))
-      //TODO: czy to musi byc takie skomplikowane - i tutaj i w FlinkProcessRegistrar
+      //TODO: does it have to be so complicated? here and in FlinkProcessRegistrar
       case SplitPart(_, nexts) =>
         val splitParts = nexts.map {
           case NextWithParts(NextNode(node), parts, ends) => compileWithCompilationErrors(node).andThen(partInvoker(_, parts))

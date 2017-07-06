@@ -296,7 +296,7 @@ object FlinkProcessRegistrar {
   }
 
   case class NodeCountMetricFunction[T](nodeId: String) extends RichMapFunction[T, T] {
-    
+
     private var counter : Counter = _
 
     override def open(parameters: Configuration): Unit = {

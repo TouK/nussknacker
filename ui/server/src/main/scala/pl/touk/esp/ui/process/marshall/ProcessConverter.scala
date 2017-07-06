@@ -128,7 +128,7 @@ object ProcessConverter {
         val nexts = getEdges(data.id).map(unflattenEdgeEnd(data.id, _))
         canonicalnode.SplitNode(data, nexts) :: Nil
       case data: SubprocessInput =>
-        //TODO: obsluga jakis bledow?
+        //TODO error handling?
         val nexts = getEdges(data.id).map(e => e.edgeType.get.asInstanceOf[SubprocessOutput].name -> unflattenEdgeEnd(data.id, e)).toMap
         canonicalnode.Subprocess(data, nexts) :: Nil
 

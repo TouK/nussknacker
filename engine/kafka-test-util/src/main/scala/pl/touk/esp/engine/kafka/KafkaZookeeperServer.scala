@@ -41,7 +41,7 @@ object KafkaZookeeperServer {
     properties.setProperty("hostname", localhost)
     properties.setProperty("advertised.host.name", localhost)
     properties.setProperty("num.partitions", "1")
-    properties.setProperty("log.cleaner.dedupe.buffer.size", (2 * 1024 * 1024L).toString) //dajemy 2MB, bo wiecej do testow raczej nie potrzeba
+    properties.setProperty("log.cleaner.dedupe.buffer.size", (2 * 1024 * 1024L).toString) //2MB should be enough for tests
 
     properties.setProperty("port", s"$kafkaPort")
     properties.setProperty("log.dir", tempDir().getAbsolutePath)

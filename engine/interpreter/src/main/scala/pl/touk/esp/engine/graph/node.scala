@@ -87,7 +87,7 @@ object node {
 
   //this is used only in subprocess definition
   case class SubprocessInputDefinition(id: String,
-                                      //TODO: inna klasa?
+                                      //TODO: should it be separate class?
                                        parameters: List[DefinitionExtractor.Parameter],
                                        additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends StartingNodeData
 

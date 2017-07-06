@@ -179,7 +179,7 @@ protected trait ProcessCompilerBase {
                       (implicit metaData: MetaData): ValidatedNel[ProcessCompilationError, EspExceptionHandler] = {
     implicit val nodeId = NodeId(ProcessCompilationError.ProcessNodeId)
     if (metaData.isSubprocess) {
-      //FIXME: co tutaj?
+      //FIXME: what should be here?
       Valid(new EspExceptionHandler {
         override def handle(exceptionInfo: EspExceptionInfo[_ <: Throwable]): Unit = {}
       })
@@ -256,7 +256,7 @@ protected trait ProcessCompilerBase {
 
   private def validate(n: Next, ctx: ValidationContext): ValidatedNel[ProcessCompilationError, ContextsForParts] = n match {
     case NextNode(node) => sub.validate(node, ctx).leftMap(_.map(identity[ProcessCompilationError]))
-    //TODO: a moze cos tu innego powinno byc??
+    //TODO: what should be here??
     case PartRef(id) => Validated.valid(Map(id -> ctx))
   }
 

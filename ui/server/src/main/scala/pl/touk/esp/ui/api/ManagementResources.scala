@@ -78,9 +78,7 @@ class ManagementResources(typesInformation: List[PlainClazzDefinition], processC
         } ~
         path("processManagement" / "test" / Segment) { processId =>
           post {
-            //Jest bug w akka http przy uzyciu formFields (korzystajac z MultipartUtils tez wystepuje -
-            // zaczelo sie wtedy kiedy dodalem drugie (processJson) pole do formularza).
-            //Bug niestety nie objawia sie na kazdej maszynie, juz mi sie nie chce teraz dochodzic dlaczego
+            //There is bug in akka-http in formFields, so we use custom toStrict method
             //issue: https://github.com/akka/akka/issues/19506
             //workaround: https://gist.github.com/rklaehn/d4d3ee43443b0f4741fb#file-uploadhandlertostrict-scala
             toStrict(5.second) {

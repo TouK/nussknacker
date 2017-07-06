@@ -56,7 +56,6 @@ class DefinitionResources(processDefinition: Map[ProcessingType, ProcessDefiniti
 
 }
 
-//TODO: dalsze czesci? co tu w sumie moze byc??
 case class ProcessObjects(nodesToAdd: List[NodeGroup],
                           processDefinition: ProcessDefinition[ObjectDefinition],
                           edgesForNodes: List[NodeEdges])
@@ -70,7 +69,7 @@ object SortedNodeGroup {
 case class NodeGroup(name: String, possibleNodes: List[NodeToAdd])
 case class NodeDefinition(id: String, parameters: List[DefinitionExtractor.Parameter])
 
-//TODO: czy to da sie ladniej?
+//TODO: some refactoring?
 object DefinitionPreparer {
 
   def prepareNodesToAdd(user: LoggedUser, processDefinition: ProcessDefinition[ObjectDefinition],
@@ -92,7 +91,6 @@ object DefinitionPreparer {
       NodeToAdd("split", "Split", Split(""), user.categories),
       NodeToAdd("switch", "Switch", Switch("", Expression("spel", "true"), "output"), user.categories),
       NodeToAdd("variable", "Variable", Variable("", "varName", Expression("spel", "'value'")), user.categories)
-      //TODO: jak robic VariableBuilder??
     ))
     val services = SortedNodeGroup("services",
       processDefinition.services.filter(returnsUnit).map {
@@ -137,7 +135,7 @@ object DefinitionPreparer {
           subprocessRepo.loadSubprocesses().collect {
             case CanonicalProcess(MetaData(id, _, _, _), _, FlatNode(SubprocessInputDefinition(_, parameters, _)) :: _) => NodeToAdd("subprocess", id,
               SubprocessInput("", SubprocessRef(id,
-                //FIXME: kategorie
+                //FIXME: categories
                 evaluator.evaluateParameters(NodeDefinition(id, parameters)))), user.categories)
           }.toList
         )

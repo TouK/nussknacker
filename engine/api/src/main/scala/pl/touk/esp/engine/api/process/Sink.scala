@@ -5,7 +5,7 @@ import pl.touk.esp.engine.api.MethodToInvoke
 
 trait Sink {
 
-  //a moze tutaj nie bawic sie w option tylko zawsze cos miec?? ew. czy nie zadac Displayable?
+  //remove Option from return type? or maybe Displayable instead of String?
   def testDataOutput: Option[Any => String]
 
 }

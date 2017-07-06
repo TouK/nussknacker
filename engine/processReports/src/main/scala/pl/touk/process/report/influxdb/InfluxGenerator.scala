@@ -57,7 +57,7 @@ class InfluxGenerator(url: String, user: String, password: String, dbName: Strin
             .groupBy(_._1.asInstanceOf[String]).mapValues(_.map(_._2.asInstanceOf[Number].longValue()).sum)
         }.map(_.map {
         case (k,v) =>
-          //jak to zrobic w asyncHttpClient?
+          //how to do this in asyncHttpClient?
           val conv = new String(k.getBytes("ISO-8859-1"), "UTF-8")
           (conv, v)
       })

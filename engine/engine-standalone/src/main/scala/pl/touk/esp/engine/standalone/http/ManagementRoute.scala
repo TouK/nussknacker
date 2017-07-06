@@ -51,7 +51,7 @@ class ManagementRoute(processesClassLoader: ClassLoader, deploymentService: Depl
     case Right(unit) =>
       unit
     case Left(error) =>
-      //TODDO: cos lepszego?
+      //TODO: something better?
       HttpResponse(status = StatusCodes.BadRequest, entity = error.toList.mkString(", "))
   }
 

@@ -41,7 +41,7 @@ class FlinkProcessRegistrarSpec extends FlatSpec with Matchers with Eventually {
     }
   }
 
-  //TODO: jakies lepsze sprawdzenia niz "nie wywala sie"??
+  //TODO: some better check than "it does not crash"?
   it should "use rocksDB backend" in {
     val process = EspProcess(MetaData("proc1", StreamMetaData(splitStateToDisk = Some(true))),
       ExceptionHandlerRef(List.empty),

@@ -52,7 +52,7 @@ class NodeDetailsModal extends React.Component {
 
   performNodeEdit = () => {
     if (this.isGroup()) {
-      //FIXME: a czy tutaj nie chcemy walidowac???
+      //Fixme validate here?
       this.props.actions.editGroup(this.props.nodeToDisplay.id, this.state.editedNode)
       this.closeModal()
     } else {

@@ -17,7 +17,7 @@ case class SignalSenderKey(id: String, klass: Class[_])
 
 class FlinkProcessSignalSenderProvider(signalSenders: Map[SignalSenderKey, FlinkProcessSignalSender]) {
 
-  //TODO: a nazwa??
+  //TODO: maybe search by id from SignalSenderKey??
   def get[T<:FlinkProcessSignalSender](implicit tag: ClassTag[T]): FlinkProcessSignalSender = {
     val clazz = tag.runtimeClass
     signalSenders.find { case (SignalSenderKey(_, klass), _) => clazz.isAssignableFrom(klass) }

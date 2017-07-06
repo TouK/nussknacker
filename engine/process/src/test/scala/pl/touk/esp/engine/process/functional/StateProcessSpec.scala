@@ -12,7 +12,7 @@ import scala.concurrent.duration._
 
 class StateProcessSpec extends FlatSpec with Matchers {
 
-  //FIXME: brak testu
+  //FIXME: ignored for now
   ignore should "fire alert when aggregate threshold exceeded" in {
     import spel.Implicits._
 

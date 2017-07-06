@@ -105,7 +105,7 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
   }
 
 
-  //potrzebujemy czegos takiego bo CollectionSource konczy sie sam i testy mi glupich rzeczy nie wykrywaly :)
+  //this not ending source is more reliable in tests than CollectionSource, which terminates quickly
   def prepareNotEndingSource: FlinkSource[String] = {
     new FlinkSource[String] {
       override def typeInformation = implicitly[TypeInformation[String]]

@@ -50,7 +50,7 @@ object SampleSignalHandlingTransformer {
   }
 
   class LockStreamTransformer extends CustomStreamTransformer {
-    final val lockQueryName = "locks-state" //musi byc final bo javowa adnotacja inaczej nie przyjmie
+    final val lockQueryName = "locks-state" //it has to be `final` to use it as value in Java annoatation, otherwise it won't compile
 
     @SignalTransformer(signalClass = classOf[RemoveLockProcessSignalFactory])
     @QueryableStateNames(values = Array(lockQueryName))
@@ -127,7 +127,7 @@ object SampleSignalHandlingTransformer {
 
     override def open(): Unit = {
       super.open()
-      val queriedStateDescriptor = new ValueStateDescriptor("queriedStates", implicitly[TypeInformation[String]]) //tutaj musi byc zgodnosc z tym jak pobierajacy klient reprezentuje sobie typ
+      val queriedStateDescriptor = new ValueStateDescriptor("queriedStates", implicitly[TypeInformation[String]]) //this TypeInformation has to be matched by the one used during quering state
       queriedStateDescriptor.setQueryable(queryName)
       queriedStates = getRuntimeContext.getState(queriedStateDescriptor)
     }

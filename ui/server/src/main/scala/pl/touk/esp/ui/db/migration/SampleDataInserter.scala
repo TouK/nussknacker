@@ -13,9 +13,8 @@ object SampleDataInserter {
   import DefaultJdbcProfile.profile.api._
   implicit val ec = scala.concurrent.ExecutionContext.global
   def insert(db: JdbcBackend.DatabaseDef) = {
-    //Tu powinien byc upsert, ale slick niestety nie do konca umie https://github.com/slick/slick/issues/966
-    //przez co inserty sie wywalaja jak ktos ma juz dzialajaca baze.
-    //Robimy tak brzydko, bo nie chcemy pisac generycznego upserta do testowych insertow
+    // There is some slick issue with uppsert https://github.com/slick/slick/issues/966
+    // So we do some quick and dirty uppserts, but it's ok because it's development data
     TryWithAwait(db.run(EspTables.environmentsTable += SampleData.environment))
     TryWithAwait(db.run(EspTables.processesTable += SampleData.process))
     TryWithAwait(db.run(EspTables.processVersionsTable += SampleData.processVersion))

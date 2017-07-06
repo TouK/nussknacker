@@ -14,7 +14,7 @@ class JsonStandaloneSourceFactory[T:DecodeJson:ClassTag] extends StandaloneSourc
     new Source[T] {}
   }
 
-  //TODO: lepsza obsluga bledow?
+  //TODO: error handling?
   private def parse(str: String): T = Parse.parse(str).right.get.jdecode[T].result.right.get
 
   override def toObject(obj: Array[Byte]): T = {

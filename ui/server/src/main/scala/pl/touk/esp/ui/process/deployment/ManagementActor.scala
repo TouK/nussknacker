@@ -67,8 +67,8 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
       logger.info(s"Finishing ${beingDeployed.get(id)} of $id")
       beingDeployed -= id
     case Test(processId, processJson, testData, user) =>
-      //to b. smutne, ale Flink przechowuje przy deploymencie za pomoca Client.run niektore rzeczy w staticu
-      //i leci wyjatek jak sie testy rownlolegle pusci...
+      //during deployment using Client.run Flink holds some data in statics and there is an exception when
+      //test run in parallel
       implicit val loggedUser = user
       if (beingDeployed.nonEmpty) {
         sender() ! Status.Failure(ProcessIsBeingDeployedNoTestAllowed)

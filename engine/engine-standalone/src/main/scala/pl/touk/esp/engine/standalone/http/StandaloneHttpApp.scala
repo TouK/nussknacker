@@ -74,7 +74,7 @@ object StandaloneHttpApp extends Directives with Argonaut62Support with LazyLogg
   }
 
   def loadProcessesClassloader(config: Config): ClassLoader = {
-    if (!config.hasPath("jarPath")) { //to troche slabe, ale na razie chcemy jakos testowac bez jara...
+    if (!config.hasPath("jarPath")) { //this is ugly but we want to be able to test without jar for now
       getClass.getClassLoader
     } else {
       JarClassLoader(config.getString("jarPath")).classLoader

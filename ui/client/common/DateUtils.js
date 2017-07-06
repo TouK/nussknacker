@@ -3,7 +3,7 @@ export default {
 
 
   format(dateTimeString) {
-    //TODO: cos lepszego
+    //TODO: something better?
     return dateTimeString.replace("T", " | ").substring(0, 18)
   }
 

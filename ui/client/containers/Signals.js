@@ -6,7 +6,7 @@ import HttpService from "../http/HttpService";
 import QueriedStateTable from "./QueriedStateTable";
 import _ from "lodash";
 
-//to jest na razie troche na pale
+//this needs some love
 class Signals extends React.Component {
 
   constructor(props) {
@@ -29,8 +29,7 @@ class Signals extends React.Component {
 
   render() {
     const currentSignal = this.findSignal(this.state.signalType)
-    //fixme usunac odniesienia do modalowych klas
-    //fixme da sie to bez tylu zagniezdzen?
+    //fixme simplify this view as in QueriedStateTable
     return (
       <div className="full-dark">
       <div className="modalContent">

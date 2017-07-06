@@ -29,7 +29,7 @@ class SignalsResources(signalDispatcher: Map[ProcessingType, SignalDispatcher],
 
   import pl.touk.esp.ui.codec.UiCodecs._
 
-  //na razie dla standalone nie chcemy sygnalow
+  //we don't need signals for standalone mode
   val processingType = ProcessingType.Streaming
 
   def route(implicit user: LoggedUser): Route = {
@@ -37,7 +37,7 @@ class SignalsResources(signalDispatcher: Map[ProcessingType, SignalDispatcher],
       pathPrefix("signal" / Segment / Segment) { (signalType, processId) =>
         post {
 
-          //na razie Map[String, String] wystarczy
+          //Map[String, String] should be enough for now
           entity(as[Map[String, String]]) { params =>
             complete {
               val dispatcher = signalDispatcher(processingType)
@@ -56,7 +56,7 @@ class SignalsResources(signalDispatcher: Map[ProcessingType, SignalDispatcher],
   }
 
   private def prepareSignalDefinitions(processingType: ProcessingType)(implicit user: LoggedUser): Future[Map[String, SignalDefinition]] = {
-    //TODO: tylko procesy ktore sa zdeployowane??
+    //TODO: only processes that are deployed right now??
     processRepository.fetchDisplayableProcesses().map { processList =>
       ProcessObjectsFinder.findSignals(processList, processDefinition(processingType))
     }
@@ -65,5 +65,5 @@ class SignalsResources(signalDispatcher: Map[ProcessingType, SignalDispatcher],
 }
 
 
-//TODO: mam tu jakis durny problem z argonaut, jak parameters jest List[Parameter]... :(
+//TODO: when parameters are List[Parameter] there is some argonaut issue
 case class SignalDefinition(name: String, parameters: List[String], availableProcesses: List[String])
