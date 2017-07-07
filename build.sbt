@@ -362,6 +362,7 @@ lazy val api = (project in engine("api")).
         //TODO: czy faktycznie tak chcemy??
         "com.github.alexarchambault" %% s"argonaut-shapeless_$argonautMajorV" % argonautShapelessV,
         "org.typelevel" %% "cats-core" % catsV,
+        "org.typelevel" %% "cats-effect" % "0.3",
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
         "com.typesafe" % "config" % configV
 

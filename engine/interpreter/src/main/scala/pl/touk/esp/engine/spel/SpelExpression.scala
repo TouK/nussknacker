@@ -2,9 +2,10 @@ package pl.touk.esp.engine.spel
 
 import java.lang.reflect.{Method, Modifier}
 import java.time.{LocalDate, LocalDateTime}
+import java.util.concurrent.TimeoutException
 
-import cats.data.Validated.Valid
-import cats.data.{State, Validated, ValidatedNel}
+import cats.data.{State, StateT, Validated}
+import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
 import org.springframework.expression._
 import org.springframework.expression.common.CompositeStringExpression
@@ -12,14 +13,15 @@ import org.springframework.expression.spel.ast.SpelNodeImpl
 import org.springframework.expression.spel.support.{StandardEvaluationContext, StandardTypeLocator}
 import org.springframework.expression.spel.{SpelCompilerMode, SpelParserConfiguration, standard}
 import pl.touk.esp.engine._
-import pl.touk.esp.engine.api.lazyy.{ContextWithLazyValuesProvider, LazyValuesProvider}
-import pl.touk.esp.engine.api.{Context, ValueWithContext}
-import pl.touk.esp.engine.compile.{PartSubGraphCompilationError, ValidationContext}
+import pl.touk.esp.engine.api.Context
+import pl.touk.esp.engine.api.lazyy.{ContextWithLazyValuesProvider, LazyContext, LazyValuesProvider}
+import pl.touk.esp.engine.compile.ValidationContext
 import pl.touk.esp.engine.compiledgraph.expression.{ExpressionParseError, ExpressionParser, ValueWithLazyContext}
-import pl.touk.esp.engine.definition.DefinitionExtractor.ClazzRef
 import pl.touk.esp.engine.functionUtils.CollectionUtils
 
 import scala.collection.concurrent.TrieMap
+import scala.concurrent.duration._
+import scala.concurrent.{Await, Future}
 import scala.util.control.NonFatal
 
 class SpelExpression(parsed: org.springframework.expression.Expression,
@@ -31,7 +33,7 @@ class SpelExpression(parsed: org.springframework.expression.Expression,
 
 
   override def evaluate[T](ctx: Context,
-                           lazyValuesProvider: LazyValuesProvider): ValueWithLazyContext[T] = logOnException(ctx) {
+                           lazyValuesProvider: LazyValuesProvider): Future[ValueWithLazyContext[T]] = logOnException(ctx) {
     val simpleContext = new StandardEvaluationContext()
     simpleContext.setTypeLocator(new StandardTypeLocator(classLoader))
     propertyAccessors.foreach(simpleContext.addPropertyAccessor)
@@ -40,13 +42,14 @@ class SpelExpression(parsed: org.springframework.expression.Expression,
       case (k, v) => simpleContext.setVariable(k, v)
     }
     simpleContext.setVariable(LazyValuesProviderVariableName, lazyValuesProvider)
-    simpleContext.setVariable(ModifiedContextVariableName, ctx)
+    simpleContext.setVariable(LazyContextVariableName, ctx.lazyContext)
     expressionFunctions.foreach {
       case (k, v) => simpleContext.registerFunction(k, v)
     }
+    //TODO: async evaluation of lazy vals...
     val value = parsed.getValue(simpleContext).asInstanceOf[T]
-    val modifiedContext = simpleContext.lookupVariable(ModifiedContextVariableName).asInstanceOf[Context]
-    ValueWithLazyContext(value, modifiedContext.lazyContext)
+    val modifiedLazyContext = simpleContext.lookupVariable(LazyContextVariableName).asInstanceOf[LazyContext]
+    Future.successful(ValueWithLazyContext(value, modifiedLazyContext))
   }
 
   private def logOnException[A](ctx: Context)(block: => A): A = {
@@ -64,7 +67,7 @@ class SpelExpression(parsed: org.springframework.expression.Expression,
 }
 
 class SpelExpressionParser(expressionFunctions: Map[String, Method],
-                           classLoader: ClassLoader) extends ExpressionParser {
+                           classLoader: ClassLoader, lazyValuesTimeout: Duration) extends ExpressionParser {
 
   import pl.touk.esp.engine.spel.SpelExpressionParser._
 
@@ -75,7 +78,7 @@ class SpelExpressionParser(expressionFunctions: Map[String, Method],
     new SpelParserConfiguration(SpelCompilerMode.IMMEDIATE, classLoader)
   )
 
-  private val scalaLazyPropertyAccessor = new ScalaLazyPropertyAccessor
+  private val scalaLazyPropertyAccessor = new ScalaLazyPropertyAccessor(lazyValuesTimeout)
   private val scalaPropertyAccessor = new ScalaPropertyAccessor
   private val scalaOptionOrNullPropertyAccessor = new ScalaOptionOrNullPropertyAccessor
   private val staticPropertyAccessor = new StaticPropertyAccessor
@@ -115,7 +118,7 @@ object SpelExpressionParser extends LazyLogging {
   val languageId: String = "spel"
 
   private[spel] final val LazyValuesProviderVariableName: String = "$lazy"
-  private[spel] final val ModifiedContextVariableName: String = "$modifiedContext"
+  private[spel] final val LazyContextVariableName: String = "$lazyContext"
 
 
   private[spel] def forceCompile(parsed: Expression): Unit = {
@@ -145,7 +148,8 @@ object SpelExpressionParser extends LazyLogging {
     "now" -> classOf[LocalDateTime].getDeclaredMethod("now"),
     "distinct" -> classOf[CollectionUtils].getDeclaredMethod("distinct", classOf[java.util.Collection[_]]),
     "sum" -> classOf[CollectionUtils].getDeclaredMethod("sum", classOf[java.util.Collection[_]])
-  ), loader)
+  ), //FIXME: configurable timeout...
+    loader, 1 minute)
 
 
   class ScalaPropertyAccessor extends PropertyAccessor with ReadOnly with Caching {
@@ -189,7 +193,8 @@ object SpelExpressionParser extends LazyLogging {
     override def getSpecificTargetClasses = null
   }
 
-  class ScalaLazyPropertyAccessor extends PropertyAccessor with ReadOnly with Caching {
+
+  class ScalaLazyPropertyAccessor(lazyValuesTimeout: Duration) extends PropertyAccessor with ReadOnly with Caching {
 
     override protected def reallyFindMethod(name: String, target: Class[_]) : Option[Method] =
       target.getMethods.find(
@@ -200,11 +205,14 @@ object SpelExpressionParser extends LazyLogging {
     override protected def invokeMethod(method: Method, target: Any, context: EvaluationContext)  = {
       val f = method
         .invoke(target)
-        .asInstanceOf[State[ContextWithLazyValuesProvider, Any]]
+        .asInstanceOf[StateT[IO, ContextWithLazyValuesProvider, Any]]
       val lazyProvider = context.lookupVariable(LazyValuesProviderVariableName).asInstanceOf[LazyValuesProvider]
-      val ctx = context.lookupVariable(ModifiedContextVariableName).asInstanceOf[Context]
-      val (modifiedContext, value) = f.run(ContextWithLazyValuesProvider(ctx, lazyProvider)).value
-      context.setVariable(ModifiedContextVariableName, modifiedContext.context)
+      val ctx = context.lookupVariable(LazyContextVariableName).asInstanceOf[LazyContext]
+      val futureResult = f.run(ContextWithLazyValuesProvider(ctx, lazyProvider))
+      //TODO: async invocation :)
+      val (modifiedContext, value) = futureResult.unsafeRunTimed(lazyValuesTimeout)
+        .getOrElse(throw new TimeoutException(s"Timout on evaluation ${method.getDeclaringClass}:${method.getName}"))
+      context.setVariable(LazyContextVariableName, modifiedContext.context)
       value
     }
 
@@ -269,3 +277,4 @@ object SpelExpressionParser extends LazyLogging {
   }
 
 }
+

@@ -1,20 +1,21 @@
 package pl.touk.esp.engine.api.lazyy
 
-import cats.data.State
-import pl.touk.esp.engine.api.Context
-
-import scala.language.implicitConversions
+import cats.data.StateT
+import cats.effect.IO
 
 trait UsingLazyValues {
 
-  protected def lazyValue[T](serviceId: String, params: (String, Any)*): State[ContextWithLazyValuesProvider, T] =
-    State(_.lazyValue(serviceId, params))
+  type LazyState[T] = StateT[IO, ContextWithLazyValuesProvider, T]
 
+  protected def lazyValue[T](serviceId: String, params: (String, Any)*): LazyState[T]
+    = StateT(_.lazyValue(serviceId, params))
 }
 
-case class ContextWithLazyValuesProvider(context: Context, lazyValuesProvider: LazyValuesProvider) {
-  def lazyValue[T](serviceId: String, params: Seq[(String, Any)]): (ContextWithLazyValuesProvider, T) = {
-    val (modifiedLazyContext, value) = lazyValuesProvider[T](context.lazyContext, serviceId, params)
-    (copy(context = context.withLazyContext(modifiedLazyContext)), value)
+case class ContextWithLazyValuesProvider(context: LazyContext, lazyValuesProvider: LazyValuesProvider)  {
+
+  def lazyValue[T](serviceId: String, params: Seq[(String, Any)]): IO[(ContextWithLazyValuesProvider, T)] = {
+    lazyValuesProvider[T](context, serviceId, params).map { case (modifiedLazyContext, value) =>
+      (copy(context = modifiedLazyContext), value)
+    }
   }
 }

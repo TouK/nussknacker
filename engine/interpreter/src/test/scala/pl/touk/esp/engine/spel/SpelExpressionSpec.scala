@@ -7,17 +7,28 @@ import java.util
 import java.util.Collections
 
 import cats.data.Validated.{Invalid, Valid}
+import cats.effect.IO
 import org.scalatest.{FlatSpec, Matchers}
-import pl.touk.esp.engine.api.Context
+import pl.touk.esp.engine.api.{Context, ValueWithContext}
 import pl.touk.esp.engine.api.lazyy.{LazyContext, LazyValuesProvider, UsingLazyValues}
 import pl.touk.esp.engine.compile.ValidationContext
-import pl.touk.esp.engine.compiledgraph.expression.ExpressionParseError
+import pl.touk.esp.engine.compiledgraph.expression.{Expression, ExpressionParseError, ValueWithLazyContext}
 import pl.touk.esp.engine.definition.DefinitionExtractor.ClazzRef
 import pl.touk.esp.engine.types.EspTypeUtils
 
+import scala.concurrent.duration._
 import scala.collection.JavaConverters._
+import scala.concurrent.{Await, Future}
+import scala.language.implicitConversions
 
 class SpelExpressionSpec extends FlatSpec with Matchers {
+
+  private class EvaluateSync(expression: Expression) {
+    def evaluateSync[T](ctx: Context, lvp: LazyValuesProvider) : ValueWithLazyContext[T]
+      = Await.result(expression.evaluate[T](ctx, lvp), 5 seconds)
+  }
+
+  private implicit def toEvaluateSync(expression: Expression) : EvaluateSync = new EvaluateSync(expression)
 
   private val bigValue = BigDecimal.valueOf(4187338076L)
 
@@ -53,73 +64,73 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
       EspTypeUtils.clazzAndItsChildrenDefinition(context.variables.values.map(_.getClass).toList)
     )
     val expressionFunctions = Map("today" -> classOf[LocalDate].getDeclaredMethod("now"))
-    new SpelExpressionParser(expressionFunctions, getClass.getClassLoader).parse(expr, validationCtx)
+    new SpelExpressionParser(expressionFunctions, getClass.getClassLoader, 1 minute).parse(expr, validationCtx)
   }
 
   it should "invoke simple expression" in {
-    parseOrFail("#obj.value + 4").evaluate[Long](ctx, dumbLazyProvider).value should equal(6)
+    parseOrFail("#obj.value + 4").evaluateSync[Long](ctx, dumbLazyProvider).value should equal(6)
   }
 
   it should "invoke simple list expression" in {
-    parseOrFail("{'1', '2'}.contains('2')").evaluate[Boolean](ctx, dumbLazyProvider).value shouldBe true
+    parseOrFail("{'1', '2'}.contains('2')").evaluateSync[Boolean](ctx, dumbLazyProvider).value shouldBe true
   }
 
   it should "handle big decimals" in {
     bigValue.compareTo(BigDecimal.valueOf(50*1024*1024)) should be > 0
     bigValue.compareTo(BigDecimal.valueOf(50*1024*1024L)) should be > 0
-    parseOrFail("#obj.bigValue").evaluate[BigDecimal](ctx, dumbLazyProvider).value should equal(bigValue)
-    parseOrFail("#obj.bigValue < 50*1024*1024").evaluate[Boolean](ctx, dumbLazyProvider).value should equal(false)
-    parseOrFail("#obj.bigValue < 50*1024*1024L").evaluate[Boolean](ctx, dumbLazyProvider).value should equal(false)
+    parseOrFail("#obj.bigValue").evaluateSync[BigDecimal](ctx, dumbLazyProvider).value should equal(bigValue)
+    parseOrFail("#obj.bigValue < 50*1024*1024").evaluateSync[Boolean](ctx, dumbLazyProvider).value should equal(false)
+    parseOrFail("#obj.bigValue < 50*1024*1024L").evaluateSync[Boolean](ctx, dumbLazyProvider).value should equal(false)
   }
 
   it should "filter by list predicates" in {
 
-    parseOrFail("#obj.children.?[id == '55'].empty").evaluate[Boolean](ctx, dumbLazyProvider).value should equal(true)
-    parseOrFail("#obj.children.?[id == '55' || id == '66'].empty").evaluate[Boolean](ctx, dumbLazyProvider).value should equal(true)
-    parseOrFail("#obj.children.?[id == '5'].size()").evaluate[Integer](ctx, dumbLazyProvider).value should equal(1: Integer)
-    parseOrFail("#obj.children.?[id == '5' || id == '3'].size()").evaluate[Integer](ctx, dumbLazyProvider).value should equal(2: Integer)
+    parseOrFail("#obj.children.?[id == '55'].empty").evaluateSync[Boolean](ctx, dumbLazyProvider).value should equal(true)
+    parseOrFail("#obj.children.?[id == '55' || id == '66'].empty").evaluateSync[Boolean](ctx, dumbLazyProvider).value should equal(true)
+    parseOrFail("#obj.children.?[id == '5'].size()").evaluateSync[Integer](ctx, dumbLazyProvider).value should equal(1: Integer)
+    parseOrFail("#obj.children.?[id == '5' || id == '3'].size()").evaluateSync[Integer](ctx, dumbLazyProvider).value should equal(2: Integer)
     parseOrFail("#obj.children.?[id == '5' || id == '3'].![value]")
-      .evaluate[util.ArrayList[Long]](ctx, dumbLazyProvider).value should equal(new util.ArrayList(util.Arrays.asList(4L, 6L)))
+      .evaluateSync[util.ArrayList[Long]](ctx, dumbLazyProvider).value should equal(new util.ArrayList(util.Arrays.asList(4L, 6L)))
     parseOrFail("(#obj.children.?[id == '5' || id == '3'].![value]).contains(4L)")
-      .evaluate[Boolean](ctx, dumbLazyProvider).value should equal(true)
+      .evaluateSync[Boolean](ctx, dumbLazyProvider).value should equal(true)
 
   }
 
   it should "evaluate map " in {
     val ctxWithVar = ctx.withVariable("processVariables", Collections.singletonMap("processingStartTime", 11L))
-    parseOrFail("#processVariables['processingStartTime']", ctxWithVar).evaluate[Long](ctxWithVar, dumbLazyProvider).value should equal(11L)
+    parseOrFail("#processVariables['processingStartTime']", ctxWithVar).evaluateSync[Long](ctxWithVar, dumbLazyProvider).value should equal(11L)
   }
 
   it should "perform date operations" in {
     val twoDaysAgo = LocalDate.now().minusDays(2)
     val withDays = ctx.withVariable("date", twoDaysAgo)
 
-    parseOrFail("#date.until(T(java.time.LocalDate).now()).days", withDays).evaluate[Integer](withDays, dumbLazyProvider).value should equal(2)
+    parseOrFail("#date.until(T(java.time.LocalDate).now()).days", withDays).evaluateSync[Integer](withDays, dumbLazyProvider).value should equal(2)
   }
 
   it should "register functions" in {
     val twoDaysAgo = LocalDate.now().minusDays(2)
     val withDays = ctx.withVariable("date", twoDaysAgo)
 
-    parseOrFail("#date.until(#today()).days", withDays).evaluate[Integer](withDays, dumbLazyProvider).value should equal(2)
+    parseOrFail("#date.until(#today()).days", withDays).evaluateSync[Integer](withDays, dumbLazyProvider).value should equal(2)
   }
 
   it should "register static variables" in {
-    parseOrFail("#processHelper.add(1, #processHelper.constant())", ctxWithGlobal).evaluate[Integer](ctxWithGlobal, dumbLazyProvider).value should equal(5)
+    parseOrFail("#processHelper.add(1, #processHelper.constant())", ctxWithGlobal).evaluateSync[Integer](ctxWithGlobal, dumbLazyProvider).value should equal(5)
   }
 
   it should "allow access to maps in dot notation" in {
     val withMapVar = ctx.withVariable("map", Map("key1" -> "value1", "key2" -> 20).asJava)
 
-    parseOrFail("#map.key1", withMapVar).evaluate[String](withMapVar, dumbLazyProvider).value should equal("value1")
-    parseOrFail("#map.key2", withMapVar).evaluate[Integer](withMapVar, dumbLazyProvider).value should equal(20)
+    parseOrFail("#map.key1", withMapVar).evaluateSync[String](withMapVar, dumbLazyProvider).value should equal("value1")
+    parseOrFail("#map.key2", withMapVar).evaluateSync[Integer](withMapVar, dumbLazyProvider).value should equal(20)
 
   }
 
   it should "allow access to statics" in {
     val withMapVar = ctx.withVariable("longClass", classOf[java.lang.Long])
     
-    parseOrFail("#longClass.valueOf('44')", withMapVar).evaluate[Long](withMapVar, dumbLazyProvider).value should equal(44l)
+    parseOrFail("#longClass.valueOf('44')", withMapVar).evaluateSync[Long](withMapVar, dumbLazyProvider).value should equal(44l)
 
   }
 
@@ -128,10 +139,10 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
     val provided = "ala"
     val lazyValueProvider = new LazyValuesProvider {
       override def apply[T](context: LazyContext, serviceId: String, params: Seq[(String, Any)]) =
-        (context.withEvaluatedValue(enrichingServiceId, params.toMap, provided), provided.asInstanceOf[T])
+        IO.pure((context.withEvaluatedValue(enrichingServiceId, params.toMap, Left(provided)), provided.asInstanceOf[T]))
     }
 
-    val valueWithModifiedContext = parseOrFail("#obj.lazyVal").evaluate[String](ctx, lazyValueProvider)
+    val valueWithModifiedContext = parseOrFail("#obj.lazyVal").evaluateSync[String](ctx, lazyValueProvider)
     valueWithModifiedContext.value shouldEqual "ala ma kota"
     valueWithModifiedContext.lazyContext[String](enrichingServiceId, Map.empty) shouldEqual provided
   }
@@ -171,10 +182,10 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
   }
 
   it should "evaluate static field/method using property syntax" in {
-    parseOrFail("#processHelper.one", ctxWithGlobal).evaluate[Int](ctxWithGlobal, dumbLazyProvider).value should equal(1)
-    parseOrFail("#processHelper.one()", ctxWithGlobal).evaluate[Int](ctxWithGlobal, dumbLazyProvider).value should equal(1)
-    parseOrFail("#processHelper.constant", ctxWithGlobal).evaluate[Int](ctxWithGlobal, dumbLazyProvider).value should equal(4)
-    parseOrFail("#processHelper.constant()", ctxWithGlobal).evaluate[Int](ctxWithGlobal, dumbLazyProvider).value should equal(4)
+    parseOrFail("#processHelper.one", ctxWithGlobal).evaluateSync[Int](ctxWithGlobal, dumbLazyProvider).value should equal(1)
+    parseOrFail("#processHelper.one()", ctxWithGlobal).evaluateSync[Int](ctxWithGlobal, dumbLazyProvider).value should equal(1)
+    parseOrFail("#processHelper.constant", ctxWithGlobal).evaluateSync[Int](ctxWithGlobal, dumbLazyProvider).value should equal(4)
+    parseOrFail("#processHelper.constant()", ctxWithGlobal).evaluateSync[Int](ctxWithGlobal, dumbLazyProvider).value should equal(4)
   }
 
 }

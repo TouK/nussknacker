@@ -6,6 +6,7 @@ import pl.touk.esp.engine.api.{Context, ValueWithContext}
 import pl.touk.esp.engine.compile.ValidationContext
 import pl.touk.esp.engine.compiledgraph
 
+import scala.concurrent.Future
 import scala.language.implicitConversions
 
 object expression {
@@ -13,7 +14,7 @@ object expression {
   trait Expression {
     def original: String
 
-    def evaluate[T](ctx: Context, lazyValuesProvider: LazyValuesProvider): ValueWithLazyContext[T]
+    def evaluate[T](ctx: Context, lazyValuesProvider: LazyValuesProvider): Future[ValueWithLazyContext[T]]
   }
 
   trait ExpressionParser {
