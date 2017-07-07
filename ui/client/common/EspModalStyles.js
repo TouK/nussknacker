@@ -39,5 +39,5 @@ class EspModalStyles {
   }
 
 }
-
+//TODO this pattern is not necessary, just export every public function as in actions.js
 export default new EspModalStyles()
