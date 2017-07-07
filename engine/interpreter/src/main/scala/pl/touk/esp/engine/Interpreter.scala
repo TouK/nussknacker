@@ -1,5 +1,7 @@
 package pl.touk.esp.engine
 
+import cats.Now
+import cats.effect.IO
 import pl.touk.esp.engine.Interpreter._
 import pl.touk.esp.engine.api.InterpreterMode._
 import pl.touk.esp.engine.api._
@@ -21,7 +23,6 @@ import scala.util.control.NonFatal
 
 class Interpreter private(services: Map[String, ServiceInvoker],
                           globalVariables: Map[String, Any],
-                          lazyEvaluationTimeout: FiniteDuration,
                           listeners: Seq[ProcessListener] = Seq(LoggingListener)) {
 
   def interpret(node: Node,
@@ -63,20 +64,24 @@ class Interpreter private(services: Map[String, ServiceInvoker],
       case (Source(_, next), Traverse) =>
         interpretNext(next, ctx)
       case (VariableBuilder(_, varName, Right(fields), next), Traverse) =>
-        interpretNext(next, createOrUpdateVariable(ctx, varName, fields))
+        createOrUpdateVariable(ctx, varName, fields).flatMap(interpretNext(next, _))
       case (VariableBuilder(_, varName, Left(expression), next), Traverse) =>
-        val valueWithModifiedContext = evaluate[Any](expression, varName, ctx)
-        interpretNext(next, ctx.withVariable(varName, valueWithModifiedContext.value))
-      case (SubprocessStart(_, params, next), Traverse) =>
-
-        val (newCtx, vars) = params.foldLeft((ctx, Map[String,Any]())){ case ((newCtx, vars), param) =>
-          val valueWithCtx = evaluate[Any](param.expression, param.name, newCtx)
-          (valueWithCtx.context, vars + (param.name -> valueWithCtx.value))
+        evaluate[Any](expression, varName, ctx).flatMap { valueWithModifiedContext =>
+          interpretNext(next, ctx.withVariable(varName, valueWithModifiedContext.value))
         }
-        interpretNext(next, newCtx.pushNewContext(vars))
+      case (SubprocessStart(_, params, next), Traverse) =>
+        val futureCtxWithVars = params.foldLeft(Future.successful((ctx, Map[String,Any]()))){ case (futureWithVars, param) =>
+          futureWithVars.flatMap { case (newCtx, vars) =>
+            evaluate[Any](param.expression, param.name, newCtx).map { valueWithCtx =>
+              (valueWithCtx.context, vars + (param.name -> valueWithCtx.value))
+            }
+          }
+        }
+        futureCtxWithVars.flatMap { case (newCtx, vars) =>
+          interpretNext(next, newCtx.pushNewContext(vars))
+        }
       case (SubprocessEnd(id, next), Traverse) =>
         interpretNext(next, ctx.popContext)
-
       case (Processor(_, ref, next, false), Traverse) =>
         invoke(ref, ctx).flatMap {
           case ValueWithContext(_, newCtx) => interpretNext(next, newCtx)
@@ -96,46 +101,48 @@ class Interpreter private(services: Map[String, ServiceInvoker],
             interpretNext(next, newCtx.withVariable(outName, out))
         }
       case (Filter(_, expression, nextTrue, nextFalse, disabled), Traverse) =>
-        val valueWithModifiedContext = evaluateExpression[Boolean](expression, ctx)
-        if (disabled || valueWithModifiedContext.value)
-          interpretNext(nextTrue, valueWithModifiedContext.context)
-        else
-          interpretOptionalNext(node, nextFalse, valueWithModifiedContext.context)
+        evaluateExpression[Boolean](expression, ctx).flatMap { valueWithModifiedContext =>
+          if (disabled || valueWithModifiedContext.value)
+            interpretNext(nextTrue, valueWithModifiedContext.context)
+          else
+            interpretOptionalNext(node, nextFalse, valueWithModifiedContext.context)
+        }
       case (Switch(_, expression, exprVal, nexts, defaultNext), Traverse) =>
         val valueWithModifiedContext = evaluateExpression[Any](expression, ctx)
-        val newCtx = valueWithModifiedContext.context.withVariable(exprVal, valueWithModifiedContext.value)
-        nexts.foldLeft((newCtx, Option.empty[Next])) {
-          case ((accCtx, None), casee) =>
-            //TODO: jakies inne expressionId??
-            val valueWithModifiedContext = evaluateExpression[Boolean](casee.expression, accCtx)
-            if (valueWithModifiedContext.value) {
-              (valueWithModifiedContext.context, Some(casee.node))
-            } else {
-              (valueWithModifiedContext.context, None)
+        val newCtx = valueWithModifiedContext.map( vmc =>
+          (vmc.context.withVariable(exprVal, vmc.value), Option.empty[Next]))
+        nexts.foldLeft(newCtx) { case (acc, casee) =>
+          acc.flatMap {
+            case (accCtx, None) => evaluateExpression[Boolean](casee.expression, accCtx).map { valueWithModifiedContext =>
+              if (valueWithModifiedContext.value) {
+                (valueWithModifiedContext.context, Some(casee.node))
+              } else {
+                (valueWithModifiedContext.context, None)
+              }
             }
-          case (found, _) =>
-            found
-        } match {
+            case a => Future.successful(a)
+          }
+        }.flatMap {
           case (accCtx, Some(nextNode)) =>
             interpretNext(nextNode, accCtx)
           case (accCtx, None) =>
             interpretOptionalNext(node, defaultNext, accCtx)
         }
       case (Sink(id, ref, optionalExpression), Traverse) =>
-        val valueWithModifiedContext = optionalExpression match {
+        (optionalExpression match {
           case Some(expression) =>
             evaluateExpression[Any](expression, ctx)
           case None =>
-            ValueWithContext(outputValue(ctx), ctx)
+            Future.successful(ValueWithContext(outputValue(ctx), ctx))
+        }).map { valueWithModifiedContext =>
+          listeners.foreach(_.sinkInvoked(node.id, ref, ctx, metaData, valueWithModifiedContext.value))
+          InterpretationResult(EndReference(id), valueWithModifiedContext)
         }
-        listeners.foreach(_.sinkInvoked(node.id, ref, ctx, metaData, valueWithModifiedContext.value))
-        Future.successful(InterpretationResult(EndReference(id), valueWithModifiedContext))
       case (CustomNode(id, parameters, _), CustomNodeExpression(expressionName)) =>
-        Future.successful(InterpretationResult(
-          NextPartReference(id),
-          evaluate(parameters.find(_.name == expressionName)
-            .map(_.expression)
-            .getOrElse(throw new IllegalArgumentException(s"Parameter $mode is not defined")), expressionName, ctx)))
+        val paramToEvaluate = parameters.find(_.name == expressionName)
+                             .map(_.expression)
+                             .getOrElse(throw new IllegalArgumentException(s"Parameter $mode is not defined"))
+         evaluate[Any](paramToEvaluate, expressionName, ctx).map(InterpretationResult(NextPartReference(id), _))
       case (cust: CustomNode, Traverse) =>
         interpretNext(cust.next, ctx)
       //FIXME: yyyy czy to kiedykolwiek moze nastapic??
@@ -169,53 +176,56 @@ class Interpreter private(services: Map[String, ServiceInvoker],
   ctx.getOrElse[Any](OutputParamName, new java.util.HashMap[String, Any]())
 
   private def createOrUpdateVariable(ctx: Context, varName: String, fields: Seq[Field])
-                                    (implicit ec: ExecutionContext, metaData: MetaData, node: Node): Context = {
+                                    (implicit ec: ExecutionContext, metaData: MetaData, node: Node): Future[Context] = {
     val contextWithInitialVariable = ctx.modifyOptionalVariable[java.util.Map[String, Any]](varName, _.getOrElse(new java.util.HashMap[String, Any]()))
-    fields.foldLeft(contextWithInitialVariable) {
+
+    fields.foldLeft(Future.successful(contextWithInitialVariable)) {
       case (context, field) =>
-        val valueWithModifiedContext = evaluate[Any](field.expression, field.name, context)
-        valueWithModifiedContext.context.modifyVariable[java.util.Map[String, Any]](varName, { m =>
-          val newMap = new java.util.HashMap[String, Any](m)
-          newMap.put(field.name, valueWithModifiedContext.value)
-          newMap
-        })
+        context.flatMap(evaluate[Any](field.expression, field.name, _)).map { valueWithContext =>
+          valueWithContext.context.modifyVariable[java.util.Map[String, Any]](varName, { m =>
+            val newMap = new java.util.HashMap[String, Any](m)
+            newMap.put(field.name, valueWithContext.value)
+            newMap
+          })
+        }
     }
   }
 
   private def invoke(ref: ServiceRef, ctx: Context)
                     (implicit executionContext: ExecutionContext, metaData: MetaData, node: Node): Future[ValueWithContext[Any]] = {
-    val (newCtx, preparedParams) = ref.parameters.foldLeft((ctx, Map.empty[String, Any])) {
-      case ((accCtx, accParams), param) =>
-        val valueWithModifiedContext = evaluate[Any](param.expression, param.name, accCtx)
-        val newAccParams = accParams + (param.name -> valueWithModifiedContext.value)
-        (valueWithModifiedContext.context, newAccParams)
+    ref.parameters.foldLeft(Future.successful((ctx, Map.empty[String, Any]))) {
+      case (fut, param) => fut.flatMap { case (accCtx, accParams) =>
+        evaluate[Any](param.expression, param.name, accCtx).map { valueWithModifiedContext =>
+          val newAccParams = accParams + (param.name -> valueWithModifiedContext.value)
+          (valueWithModifiedContext.context, newAccParams)
+        }
+      }
 
-    }
-    val resultFuture = ref.invoker.invoke(preparedParams, NodeContext(ctx.id, node.id, ref.id))
-    resultFuture.onComplete { result =>
-      //TODO: a implicit tez??
-      listeners.foreach(_.serviceInvoked(node.id, ref.id, ctx, metaData, preparedParams, result))
-    }
-    resultFuture.map { result =>
-      ValueWithContext(result, newCtx)
+    }.flatMap { case (newCtx, preparedParams) =>
+      val resultFuture = ref.invoker.invoke(preparedParams, NodeContext(ctx.id, node.id, ref.id))
+      resultFuture.onComplete { result =>
+        //TODO: a implicit tez??
+        listeners.foreach(_.serviceInvoked(node.id, ref.id, ctx, metaData, preparedParams, result))
+      }
+      resultFuture.map(ValueWithContext(_, newCtx))
     }
   }
 
   private def evaluateExpression[R](expr: Expression, ctx: Context)
-                                   (implicit ec: ExecutionContext, metaData: MetaData, node: Node): ValueWithContext[R]
+                                   (implicit ec: ExecutionContext, metaData: MetaData, node: Node):  Future[ValueWithContext[R]]
   = evaluate(expr, "expression", ctx)
 
   private def evaluate[R](expr: Expression, expressionId: String, ctx: Context)
-                         (implicit ec: ExecutionContext, metaData: MetaData, node: Node): ValueWithContext[R] = {
+                         (implicit ec: ExecutionContext, metaData: MetaData, node: Node): Future[ValueWithContext[R]] = {
     val lazyValuesProvider = new LazyValuesProviderImpl(
       services = services,
-      timeout = lazyEvaluationTimeout,
       ctx = ctx
     )
     val ctxWithGlobals = ctx.withVariables(globalVariables)
-    val valueWithLazyContext = expr.evaluate[R](ctxWithGlobals, lazyValuesProvider)
-    listeners.foreach(_.expressionEvaluated(node.id, expressionId, expr.original, ctx, metaData, valueWithLazyContext.value))
-    ValueWithContext(valueWithLazyContext.value, ctx.withLazyContext(valueWithLazyContext.lazyContext))
+    expr.evaluate[R](ctxWithGlobals, lazyValuesProvider).map { valueWithLazyContext =>
+      listeners.foreach(_.expressionEvaluated(node.id, expressionId, expr.original, ctx, metaData, valueWithLazyContext.value))
+      ValueWithContext(valueWithLazyContext.value, ctx.withLazyContext(valueWithLazyContext.lazyContext))
+    }
   }
 
   private case class NodeIdExceptionWrapper(nodeId: String, exception: Throwable) extends Exception
@@ -233,34 +243,32 @@ object Interpreter {
             globalVariables: Map[String, Any],
             lazyEvaluationTimeout: FiniteDuration,
             listeners: Seq[ProcessListener] = Seq(LoggingListener)) = {
-    new Interpreter(servicesDefs.mapValuesNow(ServiceInvoker(_)), globalVariables, lazyEvaluationTimeout, listeners)
+    new Interpreter(servicesDefs.mapValuesNow(ServiceInvoker(_)), globalVariables, listeners)
   }
 
-  private class LazyValuesProviderImpl(services: Map[String, ServiceInvoker],
-                                       timeout: FiniteDuration,
-                                       ctx: Context)
+  private class LazyValuesProviderImpl(services: Map[String, ServiceInvoker], ctx: Context)
                                       (implicit ec: ExecutionContext, node: Node) extends LazyValuesProvider {
 
-    override def apply[T](context: LazyContext, serviceId: String, params: Seq[(String, Any)]): (LazyContext, T) = {
+    override def apply[T](context: LazyContext, serviceId: String, params: Seq[(String, Any)]): IO[(LazyContext, T)] = {
       val paramsMap = params.toMap
       context.get[T](serviceId, paramsMap) match {
         case Some(value) =>
-          (context, value)
+          IO.pure((context, value))
         case None =>
-          val value = evaluateValue[T](serviceId, paramsMap)
-          (context.withEvaluatedValue(serviceId, paramsMap, value), value)
+          //TODO: maybe it should be Later here???
+          IO.fromFuture(Now(evaluateValue[T](serviceId, paramsMap).map { value =>
+            //TODO: exception?
+            (context.withEvaluatedValue(serviceId, paramsMap, Left(value)), value)
+          }))
       }
     }
 
-    private def evaluateValue[T](serviceId: String, paramsMap: Map[String, Any]): T = {
-      val service = services.getOrElse(
-        serviceId,
-        throw new IllegalArgumentException(s"Service with id: $serviceId doesn't exist"))
-      val resultFuture = service.invoke(paramsMap, NodeContext(ctx.id, node.id, serviceId))
-      // await jest niestety niezbędny tutaj, bo implementacje wyrażeń (spel) nie potrafią przetwarzać asynchronicznie
-      Await.result(resultFuture, timeout).asInstanceOf[T]
+    private def evaluateValue[T](serviceId: String, paramsMap: Map[String, Any]): Future[T] = {
+      services.get(serviceId) match {
+        case None => Future.failed(new IllegalArgumentException(s"Service with id: $serviceId doesn't exist"))
+        case Some(service) => service.invoke(paramsMap, NodeContext(ctx.id, node.id, serviceId)).map(_.asInstanceOf[T])
+      }
     }
-
   }
 
 }
