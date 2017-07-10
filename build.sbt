@@ -1,5 +1,3 @@
-import java.nio.file.{Files, StandardCopyOption}
-
 import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
 import net.virtualvoid.sbt.graph.Plugin._
 import sbt._
@@ -73,7 +71,7 @@ val logbackV = "1.1.3"
 val argonautShapelessV = "1.2.0-M1"
 val argonautMajorV = "6.2"
 val argonautV = s"$argonautMajorV-M3"
-val catsV = "0.7.0"
+val catsV = "0.9.0"
 val monocleV = "1.2.2"
 val scalaParsersV = "1.0.4"
 val dispatchV = "0.11.3"

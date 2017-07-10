@@ -1,10 +1,9 @@
 package pl.touk.esp.ui
 
-import cats.data.Xor
 
 object EspError {
 
-  type XError[A] = Xor[EspError, A]
+  type XError[A] = Either[EspError, A]
 
 }
 
