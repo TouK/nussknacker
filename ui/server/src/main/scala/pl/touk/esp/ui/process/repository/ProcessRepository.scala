@@ -24,9 +24,8 @@ import pl.touk.esp.ui.security.LoggedUser
 import pl.touk.esp.ui.util.DateUtils
 import pl.touk.esp.ui.{BadRequestError, EspError, NotFoundError}
 import slick.jdbc.{JdbcBackend, JdbcProfile}
-import slick.lifted.CanBeQueryCondition
-
-import scala.concurrent.{Await, ExecutionContext, Future}
+import cats.syntax.either._
+import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -58,8 +57,8 @@ class ProcessRepository(db: JdbcBackend.Database,
 
   def deleteProcess(processId: String) : Future[XError[Unit]] = {
     db.run(processesTable.filter(_.id === processId).delete.transactionally).map {
-      case 0 => Xor.left(ProcessNotFoundError(processId))
-      case 1 => Xor.right(())
+      case 0 => Left(ProcessNotFoundError(processId))
+      case 1 => Right(())
     }
   }
 
@@ -78,13 +77,13 @@ class ProcessRepository(db: JdbcBackend.Database,
         json = maybeJson, mainClass = maybeMainClass, createDate = DateUtils.now, user = loggedUser.id))
     }
     val insertAction = for {
-      maybeProcess <- XorT.right[DB, EspError, Option[ProcessEntityData]](processTableFilteredByUser.filter(_.id === processId).result.headOption)
-      process <- XorT.fromXor(Xor.fromOption(maybeProcess, ProcessNotFoundError(processId)))
-      _ <- XorT.fromEither(Either.cond(process.processType == processType(processDeploymentData), (), InvalidProcessTypeError(processId)))
-      processesVersionCount <- XorT.right[DB, EspError, Int](processVersionsTable.filter(p => p.processId === processId).length.result)
-      latestProcessVersion <- XorT.right[DB, EspError, Option[ProcessVersionEntityData]](latestProcessVersions(processId).result.headOption)
-      newProcessVersion <- XorT.fromXor(Xor.right(versionToInsert(latestProcessVersion, processesVersionCount)))
-      _ <- XorT.right[DB, EspError, Int](newProcessVersion.map(processVersionsTable += _).getOrElse(dbMonad.pure(0)))
+      maybeProcess <- EitherT.right[DB, EspError, Option[ProcessEntityData]](processTableFilteredByUser.filter(_.id === processId).result.headOption)
+      process <- EitherT.fromEither(Either.fromOption(maybeProcess, ProcessNotFoundError(processId)))
+      _ <- EitherT.fromEither(Either.cond(process.processType == processType(processDeploymentData), (), InvalidProcessTypeError(processId)))
+      processesVersionCount <- EitherT.right[DB, EspError, Int](processVersionsTable.filter(p => p.processId === processId).length.result)
+      latestProcessVersion <- EitherT.right[DB, EspError, Option[ProcessVersionEntityData]](latestProcessVersions(processId).result.headOption)
+      newProcessVersion <- EitherT.fromEither(Right(versionToInsert(latestProcessVersion, processesVersionCount)))
+      _ <- EitherT.right[DB, EspError, Int](newProcessVersion.map(processVersionsTable += _).getOrElse(dbMonad.pure(0)))
     } yield newProcessVersion
     insertAction.value
   }
@@ -93,8 +92,8 @@ class ProcessRepository(db: JdbcBackend.Database,
   def updateCategory(processId: String, category: String)(implicit loggedUser: LoggedUser) : Future[XError[Unit]] = {
     val processCat = for { c <- processesTable if c.id === processId } yield c.processCategory
     db.run(processCat.update(category).map {
-      case 0 => Xor.left(ProcessNotFoundError(processId))
-      case 1 => Xor.right(())
+      case 0 => Left(ProcessNotFoundError(processId))
+      case 1 => Right(())
     })
   }
 
@@ -153,11 +152,11 @@ class ProcessRepository(db: JdbcBackend.Database,
     db.run(action.value)
   }
 
-  def fetchLatestProcessDetailsForProcessIdXor(id: String)
-                                           (implicit loggedUser: LoggedUser): Future[XError[ProcessDetails]] = {
+  def fetchLatestProcessDetailsForProcessIdEither(id: String)
+                                                 (implicit loggedUser: LoggedUser): Future[XError[ProcessDetails]] = {
     fetchLatestProcessDetailsForProcessId(id).map {
-      case None => Xor.Left(ProcessNotFoundError(id))
-      case Some(p) => Xor.Right(p)
+      case None => Left(ProcessNotFoundError(id))
+      case Some(p) => Right(p)
     }
   }
 

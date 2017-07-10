@@ -1,6 +1,5 @@
 package pl.touk.esp.ui.validation
 
-import cats.data.Xor
 import cats.implicits._
 import pl.touk.esp.ui.EspError
 
@@ -21,11 +20,11 @@ object ValidationResults {
       (errors.invalidNodes.values.flatten ++ errors.processPropertiesErrors ++ errors.globalErrors).filter(_.isFatal).toList
     }
 
-    def fatalAsError: Xor[EspError, ValidationResult] = {
+    def fatalAsError: Either[EspError, ValidationResult] = {
       if (fatalErrors.isEmpty) {
-        Xor.right(this)
+        Right(this)
       } else {
-        Xor.left[EspError, ValidationResult](FatalValidationError(fatalErrors.map(_.message).mkString(",")))
+        Left[EspError, ValidationResult](FatalValidationError(fatalErrors.map(_.message).mkString(",")))
       }
     }
   }

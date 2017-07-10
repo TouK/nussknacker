@@ -7,8 +7,9 @@ import akka.http.scaladsl.server.{Directive, Directives, Route}
 import akka.stream.Materializer
 import argonaut._
 import cats.data.Validated.{Invalid, Valid}
-import cats.data.XorT
 import cats.instances.future._
+import cats.data.EitherT
+import cats.syntax.either._
 import pl.touk.esp.engine.api.{MetaData, StandaloneMetaData, StreamMetaData}
 import pl.touk.esp.engine.api.deployment.GraphProcess
 import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
@@ -20,7 +21,6 @@ import pl.touk.esp.ui.process.repository.ProcessRepository._
 import pl.touk.esp.ui.security.{LoggedUser, Permission}
 import pl.touk.esp.ui.util._
 import pl.touk.esp.ui._
-
 import EspErrorToHttp._
 import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
 import pl.touk.esp.ui.codec.UiCodecs
@@ -30,6 +30,7 @@ import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
 import pl.touk.esp.ui.process.{JobStatusService, ProcessToSave, ProcessTypesForCategories}
 import pl.touk.esp.ui.process.repository.ProcessActivityRepository.ProcessActivity
 import pl.touk.http.argonaut.Argonaut62Support
+
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -102,9 +103,9 @@ class ProcessesResources(repository: ProcessRepository,
               val deploymentData = GraphProcess(json)
 
               (for {
-                validation <- XorT.fromXor[Future](processValidation.validate(displayableProcess).fatalAsError)
-                result <- XorT(repository.updateProcess(processId, deploymentData))
-                _ <- XorT.right[Future, pl.touk.esp.ui.EspError, Unit](
+                validation <- EitherT.fromEither[Future](processValidation.validate(displayableProcess).fatalAsError)
+                result <- EitherT(repository.updateProcess(processId, deploymentData))
+                _ <- EitherT.right[Future, pl.touk.esp.ui.EspError, Unit](
                   result.map { version =>
                     processActivityRepository.addComment(processId, version.id, processToSave.comment)
                   }.getOrElse(Future.successful(()))
@@ -197,7 +198,7 @@ class ProcessesResources(repository: ProcessRepository,
                   case Invalid(unmarshallError) => Invalid(UnmarshallError(unmarshallError.msg))
                 }) match {
                   case Valid(process) =>
-                    repository.fetchLatestProcessDetailsForProcessIdXor(processId).map { detailsXor =>
+                    repository.fetchLatestProcessDetailsForProcessIdEither(processId).map { detailsXor =>
                       val validatedProcess = detailsXor.map(details =>
                         ProcessConverter.toDisplayable(process, details.processingType, details.processType).validated(processValidation)
                       )

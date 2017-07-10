@@ -4,7 +4,6 @@ import java.io.File
 import java.util.Map.Entry
 
 import _root_.db.migration.DefaultJdbcProfile
-import cats.data.Xor
 import com.typesafe.config.{ConfigFactory, ConfigValue}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.esp.engine.api.deployment.{CustomProcess, GraphProcess, ProcessDeploymentData}
@@ -60,7 +59,7 @@ class Initialization(processRepository: ProcessRepository,
       categoryDir.listFiles().foreach { file =>
         val processId = file.getName.replaceAll("\\..*", "")
         val processJson = fromFile(file).mkString
-        saveOrUpdate(processId, category, GraphProcess(processJson), processingType, isSubprocess).map(_.toEither).map(removeFileOnSuccess(file, _))
+        saveOrUpdate(processId, category, GraphProcess(processJson), processingType, isSubprocess).map(removeFileOnSuccess(file, _))
       }
     }
   }
@@ -75,7 +74,7 @@ class Initialization(processRepository: ProcessRepository,
         saveOrUpdate(processId, "Technical", deploymentData, ProcessingType.Streaming, isSubprocess = false)
       }.toList
     Future.sequence(futures).foreach { potentialErrors =>
-      val potentialError = potentialErrors.map(_.toEither).find(_.isLeft).getOrElse(util.Right(()))
+      val potentialError = potentialErrors.find(_.isLeft).getOrElse(util.Right(()))
       removeFileOnSuccess(customProcessesFile, potentialError)
     }
   }
@@ -98,7 +97,7 @@ class Initialization(processRepository: ProcessRepository,
           case Some(version) if version.user == toukUser.id => processRepository.updateProcess(processId, deploymentData)
           case _ => logger.info(s"Process $processId not updated. DB version is: \n${latestVersion.flatMap(_.json).getOrElse("")}\n " +
             s" and version from file is: \n$deploymentData")
-                    Future.successful(Xor.right(()))
+                    Future.successful(Right(()))
         }
       }
       //no to znowu jest nietransakcyjnie, ale przy inicjalizacji moze jakos przezyjemy...
