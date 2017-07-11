@@ -11,7 +11,7 @@ import org.apache.flink.api.common.functions._
 import org.apache.flink.api.java.tuple
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.dropwizard.metrics.DropwizardHistogramWrapper
-import org.apache.flink.metrics.Gauge
+import org.apache.flink.metrics.{Counter, Gauge, MetricGroup}
 import org.apache.flink.runtime.state.AbstractStateBackend
 import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.collector.selector.OutputSelector
@@ -31,7 +31,6 @@ import pl.touk.esp.engine.api.test.InvocationCollectors.SinkInvocationCollector
 import pl.touk.esp.engine.api.test.TestRunId
 import pl.touk.esp.engine.compiledgraph.part._
 import pl.touk.esp.engine.definition.CustomNodeInvoker
-import pl.touk.esp.engine.flink.api.exception.FlinkEspExceptionHandler
 import pl.touk.esp.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation, FlinkSink, FlinkSource}
 import pl.touk.esp.engine.flink.util.ContextInitializingFunction
 import pl.touk.esp.engine.flink.util.metrics.InstantRateMeterWithCount
@@ -71,9 +70,9 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessW
     initializeStateDescriptors(env)
   }
 
-  //Flink przy serializacji grafu (StateDescriptor:233) inicjalizuje KryoSerializer bez konfiguracji z env
-  //to jest chyba blad - do zgloszenia (?)
-  //TODO: czy to jedyny przypadek kiedy powinnismy tak robic??
+  //When serializing process graph (StateDescriptor:233) KryoSerializer is initialized without env configuration
+  //Maybe it's a bug in flink??
+  //TODO: is it the only place where we should do it??
   private def initializeStateDescriptors(env: StreamExecutionEnvironment): Unit = {
     val config = env.getConfig
     env.getStreamGraph.getOperators.toSet[tuple.Tuple2[Integer, StreamOperator[_]]].map(_.f1).collect {
@@ -102,7 +101,7 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessW
     registerSourcePart(process.source)
 
     def registerSourcePart(part: SourcePart): Unit = {
-      //FIXME: ladniej bez casta
+      //TODO: get rid of cast (but how??)
       val source = part.obj.asInstanceOf[FlinkSource[Any]]
 
       val timestampAssigner = source.timestampAssigner
@@ -163,10 +162,12 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessW
           throw new IllegalArgumentException(s"Process can only use flink sinks, instead given: ${part.obj}")
         case SplitPart(splitNode, nexts) =>
           val nextIds = nexts.map(_.next.id)
-          //TODO: bug we flinku jesli sa 2 splity pod rzad - to jest workaround, trzeba zglosic i poprawic...
-          val newStart = start.map(identity[InterpretationResult] _).split(_ => nextIds)
+          //TODO: there is bug in flink - if there are 2 splits in a row, without map
+          val newStart = start
+            //TODO: this is only place where we count outside interpreter - is it really needed?
+            .map(NodeCountMetricFunction[InterpretationResult](splitNode.id)).split(_ => nextIds)
           nexts.foreach {
-            //FIXME: czy to wszystko tutaj jest w porzadku???
+            //TODO: is this part really ok && needed?
             case NextWithParts(NextNode(nextNode), parts, ends) =>
               val interpreted = newStart.select(nextNode.id)
                   .map(_.finalContext)
@@ -292,6 +293,21 @@ object FlinkProcessRegistrar {
 
     override def map(input: Any) = newContext.withVariable(Interpreter.InputParamName, input)
 
+  }
+
+  case class NodeCountMetricFunction[T](nodeId: String) extends RichMapFunction[T, T] {
+    
+    private var counter : Counter = _
+
+    override def open(parameters: Configuration): Unit = {
+      super.open(parameters)
+      counter = getRuntimeContext.getMetricGroup.addGroup("nodeCount").counter(nodeId)
+    }
+
+    override def map(value: T): T = {
+      counter.inc()
+      value
+    }
   }
 
   class EventTimeDelayMeterFunction[T](groupId: String, slidingWindow: FiniteDuration)

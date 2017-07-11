@@ -145,7 +145,7 @@ class Interpreter private(services: Map[String, ServiceInvoker],
          evaluate[Any](paramToEvaluate, expressionName, ctx).map(InterpretationResult(NextPartReference(id), _))
       case (cust: CustomNode, Traverse) =>
         interpretNext(cust.next, ctx)
-      //FIXME: yyyy czy to kiedykolwiek moze nastapic??
+      //FIXME: can this ever happen?
       case (cust: SplitNode, Traverse) =>
         throw new IllegalArgumentException(s"Split node encountered, should not happen: $cust")
       case (_, CustomNodeExpression(_)) =>

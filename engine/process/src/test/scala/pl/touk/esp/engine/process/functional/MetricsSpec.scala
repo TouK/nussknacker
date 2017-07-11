@@ -5,7 +5,7 @@ import java.util.Date
 import org.scalatest.concurrent.Eventually
 import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
-import pl.touk.esp.engine.build.EspProcessBuilder
+import pl.touk.esp.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.process.ProcessTestHelpers.{MockService, SimpleRecord, processInvoker}
 import pl.touk.esp.engine.spel
@@ -75,8 +75,14 @@ class MetricsSpec extends FlatSpec with Matchers with Eventually with BeforeAndA
       .exceptionHandler()
       .source("source1", "input")
       .filter("filter1", "#input.value1 == 10")
-      .processor("proc2", "logService", "all" -> "#input.value2")
-      .sink("out", "monitor")
+      .split("split1",
+        GraphBuilder.sink("out2", "monitor"),
+        GraphBuilder
+          .processor("proc2", "logService", "all" -> "#input.value2")
+          .sink("out", "monitor")
+      )
+
+
     val data = List(
       SimpleRecord("1", 12, "a", new Date(0)),
       SimpleRecord("1", 10, "a", new Date(0))
@@ -90,8 +96,10 @@ class MetricsSpec extends FlatSpec with Matchers with Eventually with BeforeAndA
     eventually {
       counter("nodeCount.source1") shouldBe 2L
       counter("nodeCount.filter1") shouldBe 2L
+      counter("nodeCount.split1") shouldBe 1L
       counter("nodeCount.proc2") shouldBe 1L
       counter("nodeCount.out") shouldBe 1L
+      counter("nodeCount.out2") shouldBe 1L
     }
   }
 

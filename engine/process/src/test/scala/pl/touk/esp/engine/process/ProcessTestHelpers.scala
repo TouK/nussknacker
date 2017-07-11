@@ -75,7 +75,7 @@ object ProcessTestHelpers {
         "customContextClear" -> WithCategories(CustomContextClear)
       )
 
-      override def listeners(config: Config) = Seq(LoggingListener, new NodeCountMetricListener)
+      override def listeners(config: Config) = List()
 
       override def exceptionHandlerFactory(config: Config) =
         ExceptionHandlerFactory.noParams(RecordingExceptionHandler(_))
