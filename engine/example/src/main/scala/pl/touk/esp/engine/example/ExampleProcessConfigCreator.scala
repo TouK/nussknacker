@@ -28,9 +28,9 @@ import pl.touk.esp.engine.util.LoggingListener
 
 class ExampleProcessConfigCreator extends ProcessConfigCreator {
 
-  def marketing[T](value: T) = WithCategories(value, List("marketing"))
-  def fraud[T](value: T) = WithCategories(value, List("fraud"))
-  def all[T](value: T) = WithCategories(value, List("marketing", "fraud"))
+  def marketing[T](value: T) = WithCategories(value, List("Recommendations"))
+  def fraud[T](value: T) = WithCategories(value, List("FraudDetection"))
+  def all[T](value: T) = WithCategories(value, List("Recommendations", "FraudDetection"))
 
   override def customStreamTransformers(config: Config): Map[String, WithCategories[CustomStreamTransformer]] = {
     Map(

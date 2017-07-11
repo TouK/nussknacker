@@ -1,0 +1,51 @@
+{
+  "metaData" : {
+    "id" : "Process1",
+    "typeSpecificData" : {
+      "type" : "StreamMetaData"
+    },
+    "additionalFields" : {
+
+    }
+  },
+  "exceptionHandlerRef" : {
+    "parameters" : [
+      {
+        "name" : "sampleParam",
+        "value" : "1"
+      }
+    ]
+  },
+  "nodes" : [
+    {
+      "type" : "Source",
+      "id" : "node0",
+      "ref" : {
+        "typ" : "kafka-transaction",
+        "parameters" : [
+          {
+            "name" : "topic",
+            "value" : "transactions"
+          }
+        ]
+      }
+    },
+    {
+      "type" : "Sink",
+      "id" : "node1",
+      "ref" : {
+        "typ" : "kafka-stringSink",
+        "parameters" : [
+          {
+            "name" : "topic",
+            "value" : "processedEvents"
+          }
+        ]
+      },
+      "endResult" : {
+        "language" : "spel",
+        "expression" : "#input"
+      }
+    }
+  ]
+}
