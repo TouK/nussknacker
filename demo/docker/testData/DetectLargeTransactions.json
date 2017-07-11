@@ -1,0 +1,60 @@
+{
+  "metaData" : {
+    "id" : "DetectLargeTransactions",
+    "typeSpecificData" : {
+      "type" : "StreamMetaData"
+    },
+    "additionalFields" : {
+      
+    }
+  },
+  "exceptionHandlerRef" : {
+    "parameters" : [
+      {
+        "name" : "sampleParam",
+        "value" : "1"
+      }
+    ]
+  },
+  "nodes" : [
+    {
+      "type" : "Source",
+      "id" : "transactions",
+      "ref" : {
+        "typ" : "kafka-transaction",
+        "parameters" : [
+          {
+            "name" : "topic",
+            "value" : "transactions"
+          }
+        ]
+      }
+    },
+    {
+      "type" : "Filter",
+      "id" : "only large ones",
+      "expression" : {
+        "language" : "spel",
+        "expression" : "#input.amount > 20"
+      },
+      "nextFalse" : []
+    },
+    {
+      "type" : "Sink",
+      "id" : "save to elastic",
+      "ref" : {
+        "typ" : "kafka-stringSink",
+        "parameters" : [
+          {
+            "name" : "topic",
+            "value" : "processedEvents"
+          }
+        ]
+      },
+      "endResult" : {
+        "language" : "spel",
+        "expression" : "#input"
+      }
+    }
+  ]
+}

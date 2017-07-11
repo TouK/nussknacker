@@ -5,7 +5,7 @@ import java.net.URLClassLoader
 import java.util.concurrent.TimeUnit
 
 import argonaut.PrettyParams
-import com.typesafe.config.{Config, ConfigObject, ConfigValueType}
+import com.typesafe.config.{Config, ConfigObject, ConfigValueFactory, ConfigValueType}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.JobID
 import org.apache.flink.client.program.{PackagedProgram, ProgramInvocationException}
@@ -35,7 +35,7 @@ object FlinkProcessManager {
   }
 
   def prepareGateway(config: Config) : FlinkGateway = {
-    val flinkConf = config.getConfig("flinkConfig")
+    val flinkConf = prepareFlinkConfig(config)
 
     val timeout = flinkConf.getDuration("jobManagerTimeout", TimeUnit.MILLISECONDS) millis
 
@@ -51,6 +51,10 @@ object FlinkProcessManager {
     }
     new DefaultFlinkGateway(clientConfig, timeout)
   }
+
+  private def prepareFlinkConfig(config: Config) : Config = config.getConfig("flinkConfig")
+    //TODO: flink requires this value, although it's not used by client...
+    .withValue("high-availability.storageDir", ConfigValueFactory.fromAnyRef("file:///dev/null"))
 
 }
 

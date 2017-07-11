@@ -87,31 +87,12 @@ metrics.reporter.graphite_reporter.host: influxdb
 metrics.reporter.graphite_reporter.port: 2003
 metrics.reporter.graphite_reporter.protocol: UDP
 
-metrics.scope.jm: cpDemo.<host>.jobmanagerGlobal
-metrics.scope.jm.job: cpDemo.<host>.jobmanagerJob.<job_name>
-metrics.scope.tm: cpDemo.<host>.taskmanagerGlobal.<tm_id>
-metrics.scope.tm.job: cpDemo.<host>.taskmanagerJob.<tm_id>.<job_name>
-metrics.scope.task: cpDemo.<host>.taskmanagerTask.<tm_id>.<job_name>.<task_name>.<subtask_index>
-metrics.scope.operator: cpDemo.<host>.taskmanagerTask.<tm_id>.<job_name>.<operator_name>.<subtask_index>
+metrics.scope.jm: demo.<host>.jobmanagerGlobal
+metrics.scope.jm.job: demo.<host>.jobmanagerJob.<job_name>
+metrics.scope.tm: demo.<host>.taskmanagerGlobal.<tm_id>
+metrics.scope.tm.job: demo.<host>.taskmanagerJob.<tm_id>.<job_name>
+metrics.scope.task: demo.<host>.taskmanagerTask.<tm_id>.<job_name>.<task_name>.<subtask_index>
+metrics.scope.operator: demo.<host>.taskmanagerTask.<tm_id>.<job_name>.<operator_name>.<subtask_index>
 
 akka.framesize: 209715200b
-jobmanager.web.history: 50blob.server.port: 6124
-query.server.port: 6125
-blob.server.port: 6124
-query.server.port: 6125
-blob.server.port: 6124
-query.server.port: 6125
-blob.server.port: 6124
-query.server.port: 6125
-blob.server.port: 6124
-query.server.port: 6125
-blob.server.port: 6124
-query.server.port: 6125
-blob.server.port: 6124
-query.server.port: 6125
-blob.server.port: 6124
-query.server.port: 6125
-blob.server.port: 6124
-query.server.port: 6125
-blob.server.port: 6124
-query.server.port: 6125
+jobmanager.web.history: 50
