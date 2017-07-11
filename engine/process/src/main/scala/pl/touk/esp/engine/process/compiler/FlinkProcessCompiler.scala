@@ -12,8 +12,10 @@ import pl.touk.esp.engine.definition.ProcessDefinitionExtractor
 import pl.touk.esp.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
 import pl.touk.esp.engine.flink.api.process.{FlinkProcessSignalSenderProvider, SignalSenderKey}
 import pl.touk.esp.engine.flink.api.signal.FlinkProcessSignalSender
+import pl.touk.esp.engine.flink.util.listener.NodeCountMetricListener
 import pl.touk.esp.engine.graph.EspProcess
 import pl.touk.esp.engine.process.{FlinkProcessRegistrar, WithLifecycle}
+import pl.touk.esp.engine.util.LoggingListener
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -26,7 +28,11 @@ abstract class FlinkProcessCompiler(creator: ProcessConfigCreator, config: Confi
     ProcessDefinitionExtractor.extractObjectWithMethods(creator, config)
   }
 
-  protected def listeners(): Seq[ProcessListener] = creator.listeners(config)
+  protected def listeners(): Seq[ProcessListener] = {
+    //TODO: should this be configurable somehow?
+    //if it's configurable, it also has to affect NodeCountMetricFunction!
+    List(LoggingListener, new NodeCountMetricListener) ++ creator.listeners(config)
+  }
 
   private def validateOrFailProcessCompilation[T](validated: ValidatedNel[ProcessCompilationError, T]): T = validated match {
     case Valid(r) => r
