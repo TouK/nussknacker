@@ -7,6 +7,7 @@ To run this quickstart you have to
 ##Running
 
 * Checkout Nussknacker project and enter demo/docker folder
+* Run prepare.sh script
 * Run docker-compose up
 * Go to http://localhost:8080
 
