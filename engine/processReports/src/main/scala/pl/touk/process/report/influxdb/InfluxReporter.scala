@@ -5,7 +5,6 @@ import java.time.LocalDateTime
 import com.typesafe.scalalogging.LazyLogging
 
 import scala.concurrent.Future
-import scala.util.{Failure, Success}
 
 class InfluxReporter(env: String, config: InfluxReporterConfig) extends LazyLogging {
   import scala.concurrent.ExecutionContext.Implicits.global
@@ -17,11 +16,8 @@ class InfluxReporter(env: String, config: InfluxReporterConfig) extends LazyLogg
 
     val reportData = for {
       allCount <- influxGenerator.query(processId, "source", dateFrom, dateTo).map(_.getOrElse("count", 0L))
-      //TODO: do we need these counts now?
-      endCount <- influxGenerator.query(processId, "end.count", dateFrom, dateTo)
-      deadEndCount <- influxGenerator.query(processId, "dead_end.count", dateFrom, dateTo)
       nodes <- influxGenerator.query(processId, "nodeCount", dateFrom, dateTo)
-    } yield ProcessBaseCounts(all = allCount, ends = endCount, deadEnds = deadEndCount, nodes = nodes)
+    } yield ProcessBaseCounts(all = allCount, nodes = nodes)
     reportData.onFailure {
       case ex => logger.error("Failed to generate", ex)
     }
@@ -33,22 +29,12 @@ class InfluxReporter(env: String, config: InfluxReporterConfig) extends LazyLogg
 
 }
 
-case class ProcessBaseCounts(all: Long, ends: Map[String, Long], deadEnds: Map[String, Long], nodes: Map[String, Long]) {
+case class ProcessBaseCounts(all: Long, nodes: Map[String, Long]) {
 
   //node ids in influx are different than original ones, i.e influx converts spaces and dots to dashes '-'
   //that's wy we need reverse transformation
-  def mapToOriginalNodeIds(allNodeIds: List[String]): ProcessBaseCounts = {
-    copy(ends = mapToOriginalNodeIds(allNodeIds, ends))
-      .copy(deadEnds = mapToOriginalNodeIds(allNodeIds, deadEnds))
-        .copy(nodes = mapToOriginalNodeIds(allNodeIds, nodes))
-  }
-
-  private def mapToOriginalNodeIds(allNodeIds: List[String], counts: Map[String, Long]): Map[String, Long] = {
-    allNodeIds.flatMap { nodeId =>
-      counts.get(mapSpecialCharactersInfluxStyle(nodeId)).map { nodeCount =>
-        nodeId -> nodeCount
-      }
-    }.toMap
+  def getCountForNodeId(nodeId: String) : Option[Long] = {
+    nodes.get(mapSpecialCharactersInfluxStyle(nodeId))
   }
 
   private def mapSpecialCharactersInfluxStyle(nodeId: String) = {

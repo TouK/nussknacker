@@ -2,6 +2,7 @@ package pl.touk.esp.ui.processreport
 
 import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
 import pl.touk.esp.engine.canonicalgraph.canonicalnode._
+import pl.touk.esp.engine.graph.node.SubprocessInputDefinition
 import pl.touk.esp.ui.process.displayedgraph.displayablenode.ProcessAdditionalFields
 import pl.touk.esp.ui.process.subprocess.SubprocessRepository
 import shapeless.syntax.typeable._
@@ -9,19 +10,24 @@ import shapeless.syntax.typeable._
 class ProcessCounter(subprocessRepository: SubprocessRepository) {
 
 
-  def computeCounts(canonicalProcess: CanonicalProcess, counts: Map[String, RawCount]) : Map[String, NodeCount] = {
+  def computeCounts(canonicalProcess: CanonicalProcess, counts: String => Option[RawCount]) : Map[String, NodeCount] = {
 
     def computeCounts(prefixes: List[String])(nodes: Iterable[CanonicalNode]) : Map[String, NodeCount] = {
 
       val computeCountsSamePrefixes = computeCounts(prefixes) _
 
-      def nodeCount(id: String, subProcessCounts: Map[String, NodeCount] = Map()) = {
-        val countId = (prefixes :+ id).mkString("-")
-        val count = counts.getOrElse(countId, RawCount(0L, 0L))
+      def nodeCount(id: String, subProcessCounts: Map[String, NodeCount] = Map()) : NodeCount =
+        nodeCountOption(Some(id), subProcessCounts)
+
+      def nodeCountOption(id: Option[String], subProcessCounts: Map[String, NodeCount] = Map()) : NodeCount = {
+        val countId = (prefixes ++ id).mkString("-")
+        val count = counts(countId).getOrElse(RawCount(0L, 0L))
         NodeCount(count.all, count.errors, subProcessCounts)
       }
 
       nodes.flatMap {
+        //TODO: this is a bit of a hack. Metric for subprocess input is counted in node with subprocess occurrence id...
+        case FlatNode(SubprocessInputDefinition(id, _, _)) => Map(id -> nodeCountOption(None))
         case FlatNode(node) => Map(node.id -> nodeCount(node.id))
         case FilterNode(node, nextFalse) => computeCountsSamePrefixes(nextFalse) + (node.id -> nodeCount(node.id))
         case SwitchNode(node, nexts, defaultNext) =>
