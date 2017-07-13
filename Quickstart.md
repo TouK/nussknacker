@@ -9,7 +9,7 @@ To run this quickstart you have to
 * Checkout Nussknacker project and enter demo/docker folder
 * Run prepare.sh script
 * Run docker-compose up
-* Go to http://localhost:8080
+* Go to http://localhost:8080, user/password is admin/admin
 
 ##Defining new process
 
@@ -22,8 +22,10 @@ To run this quickstart you have to
 
 ##Test process with data
 * Run ./testData/sendTestTransactions.sh script few time
-* Go to http://localhost:8080/metrics/DetectLargeTransactions - you should see metrics
-* TODO - grafana... 
+* Go to Metrics tab on Nussknacker main panel - you should see changed metrics
+* Go to Search tab on Nussknacker main panel 
+  * Define processedevents* as default index pattern
+  * You will see filtered events
 
 ##Unit test your process
 * TODO
