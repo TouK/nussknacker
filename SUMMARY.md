@@ -1,5 +1,6 @@
 * [What is Nussknacker and what it's good for](Introduction.md)
 * [Architecture](Architecture.md)
+* [Quickstart](Quickstart.md)
 * [How to install](Install.md)
 * [UI](UI.md)
 * [API](API.md)
