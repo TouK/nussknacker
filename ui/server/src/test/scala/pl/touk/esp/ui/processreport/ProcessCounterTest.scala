@@ -6,7 +6,7 @@ import pl.touk.esp.engine.build.EspProcessBuilder
 import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
 import pl.touk.esp.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.esp.engine.canonize.ProcessCanonizer
-import pl.touk.esp.engine.graph.node.{Filter, SubprocessOutputDefinition}
+import pl.touk.esp.engine.graph.node.{Filter, SubprocessInputDefinition, SubprocessOutputDefinition}
 import pl.touk.esp.engine.spel
 import pl.touk.esp.ui.process.displayedgraph.displayablenode.{Group, ProcessAdditionalFields}
 import pl.touk.esp.ui.process.subprocess.SubprocessRepository
@@ -26,7 +26,7 @@ class ProcessCounterTest extends FlatSpec with Matchers {
     val counter = new ProcessCounter(subprocessRepository(Set()))
 
     val computed = counter.computeCounts(process, Map("source1" -> RawCount(30L, 5L),
-      "filter1" -> RawCount(20, 10)))
+      "filter1" -> RawCount(20, 10)).get)
 
     computed shouldBe Map(
       "source1" -> NodeCount(30, 5),
@@ -45,7 +45,7 @@ class ProcessCounterTest extends FlatSpec with Matchers {
     val processCounter = new ProcessCounter(subprocessRepository(Set()))
 
     val computed = processCounter.computeCounts(process, Map("source1" -> RawCount(50, 0L),
-      "filter1" -> RawCount(40, 9), "sink11" -> RawCount(30, 8)))
+      "filter1" -> RawCount(40, 9), "sink11" -> RawCount(30, 8)).get)
 
     computed shouldBe Map(
       "source1" -> NodeCount(50, 0),
@@ -66,8 +66,11 @@ class ProcessCounterTest extends FlatSpec with Matchers {
 
     val counter = new ProcessCounter(subprocessRepository(Set(
       CanonicalProcess(MetaData("subprocess1", null), null,
-          List(FlatNode(Filter("subFilter1", "")),
-            FlatNode(Filter("subFilter2", "")), FlatNode(SubprocessOutputDefinition("outId1", "out1")))
+          List(
+            FlatNode(SubprocessInputDefinition("subInput1", List())),
+            FlatNode(Filter("subFilter1", "")),
+            FlatNode(Filter("subFilter2", "")),
+            FlatNode(SubprocessOutputDefinition("outId1", "out1")))
         )
     )))
 
@@ -76,15 +79,17 @@ class ProcessCounterTest extends FlatSpec with Matchers {
       "sub1" -> RawCount(55, 2),
       "sub1-subFilter1" -> RawCount(45, 4),
       "sub1-outId1" -> RawCount(35, 5),
-      "sink11" -> RawCount(30, 10)))
+      "sink11" -> RawCount(30, 10)).get)
 
     computed shouldBe Map(
       "source1" -> NodeCount(70, 0),
       "filter1" -> NodeCount(60, 1),
       "sub1" -> NodeCount(55, 2
-        , Map("subFilter1" -> NodeCount(45, 4),
-        "subFilter2" -> NodeCount(0, 0),
-        "outId1" -> NodeCount(35, 5)
+        , Map(
+          "subInput1" -> NodeCount(55, 2),
+          "subFilter1" -> NodeCount(45, 4),
+          "subFilter2" -> NodeCount(0, 0),
+          "outId1" -> NodeCount(35, 5)
       )),
       "sink11" -> NodeCount(30, 10)
     )

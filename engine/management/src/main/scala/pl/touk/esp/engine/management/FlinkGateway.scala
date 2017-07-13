@@ -25,6 +25,8 @@ class DefaultFlinkGateway(config: Configuration, timeout: FiniteDuration) extend
   override val queryableClient: EspQueryableClient = new EspQueryableClient(new QueryableStateClient(config, haServices))
 
   override def invokeJobManager[Response: ClassTag](req: AnyRef): Future[Response] = {
+    //TODO: this starts/stops leader retrieval service for each invocation. Can we put it into var? But then
+    //what about leader changes?
     client.getJobManagerGateway.ask(req, timeout).mapTo[Response]
   }
 

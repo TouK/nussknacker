@@ -10,7 +10,7 @@ import pl.touk.esp.ui.process.displayedgraph.DisplayableProcess
 import pl.touk.esp.ui.process.marshall.ProcessConverter
 import pl.touk.esp.ui.process.repository.ProcessRepository
 import pl.touk.esp.ui.process.repository.ProcessRepository.ProcessDetails
-import pl.touk.esp.ui.processreport.{NodeCount, ProcessCounter, RawCount}
+import pl.touk.esp.ui.processreport.{ProcessCounter, RawCount}
 import pl.touk.esp.ui.security.LoggedUser
 import pl.touk.esp.ui.util.DateUtils
 import pl.touk.http.argonaut.Argonaut62Support
@@ -51,10 +51,8 @@ class ProcessReportResources(influxReporter: InfluxReporter, processCounter: Pro
 
   private def computeCounts(displayable: DisplayableProcess, dateFrom: LocalDateTime, dateTo: LocalDateTime) : Future[ToResponseMarshallable] = {
     influxReporter.fetchBaseProcessCounts(displayable.id, dateFrom, dateTo).map { nodeResultsCount =>
-      val nodeIds = displayable.nodes.map(_.id)
-      val baseCounts = nodeResultsCount.mapToOriginalNodeIds(nodeIds)
       val computedCounts = processCounter.computeCounts(ProcessConverter.fromDisplayable(displayable),
-        baseCounts.nodes.mapValues(value =>  RawCount(value, 0)))
+        (nodeId) => nodeResultsCount.getCountForNodeId(nodeId).map(count => RawCount(count, 0)))
       computedCounts.asJson
     }
   }

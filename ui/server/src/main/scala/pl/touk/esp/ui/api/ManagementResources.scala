@@ -113,7 +113,7 @@ class ManagementResources(typesInformation: List[PlainClazzDefinition], processC
     val counts = results.nodeResults.map { case (key, nresults) =>
       key -> RawCount(nresults.size.toLong, results.exceptions.find(_.nodeId.contains(key)).size.toLong)
     }
-    processCounter.computeCounts(canonical, counts)
+    processCounter.computeCounts(canonical, counts.get)
   }
 
   private def toStrict(timeout: FiniteDuration): Directive[Unit] = {

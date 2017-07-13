@@ -26,7 +26,7 @@ class Graph extends React.Component {
         processToDisplay: React.PropTypes.object.isRequired,
         groupingState: React.PropTypes.array,
         loggedUser: React.PropTypes.object.isRequired,
-        connectDropTarget: React.PropTypes.func.isRequired
+        connectDropTarget: React.PropTypes.func
     }
 
     constructor(props) {
@@ -103,7 +103,7 @@ class Graph extends React.Component {
     }
 
     createPaper = () => {
-        const canWrite = this.props.loggedUser.canWrite
+        const canWrite = (this.props.loggedUser.canWrite && this.props.isMain)
         return new joint.dia.Paper({
             el: this.refs.espGraph,
             gridSize: 1,
@@ -273,7 +273,7 @@ class Graph extends React.Component {
           return { id: el.id, position: pos }
       })
       if (!_.isEqual(this.props.layout, newLayout)) {
-        this.props.actions.layoutChanged(newLayout)
+        this.props.actions && this.props.actions.layoutChanged(newLayout)
       }
     }
 
@@ -306,6 +306,9 @@ class Graph extends React.Component {
   }
 
     changeNodeDetailsOnClick () {
+      if (!this.props.isMain) {
+        return;
+      }
       this.processGraphPaper.on('cell:pointerdblclick', (cellView, evt, x, y) => {
         if (cellView.model.attributes.nodeData) {
           this.props.actions.displayModalNodeDetails(cellView.model.attributes.nodeData)
@@ -400,25 +403,38 @@ class Graph extends React.Component {
       const paddingLeft = cssVariables.svgGraphPaddingLeft
       const paddingTop = cssVariables.svgGraphPaddingTop
 
-      const graphPosition = $('#esp-graph svg').position()
+      const graphPosition = $(`#${this.nodeId()} svg`).position()
       return { x: (pointerOffset.x - pan.x - graphPosition.left - paddingLeft)/zoom, y : (pointerOffset.y - pan.y - graphPosition.top - paddingTop)/zoom }
     }
 
+    nodeId() {
+      return this.props.isMain ? "esp-graph" : "esp-graph-subprocess"
+    }
+
     render() {
-
-        return this.props.connectDropTarget(
-            <div>
-                {!_.isEmpty(this.props.nodeToDisplay) ? <NodeDetailsModal/> : null }
-                {!_.isEmpty(this.props.edgeToDisplay) ? <EdgeDetailsModal/> : null }
-                <div ref="espGraph" id="esp-graph"></div>
-            </div>
-        );
-
+      if (this.props.isMain) {
+        return this.props.connectDropTarget(<div>
+                        {!_.isEmpty(this.props.nodeToDisplay) ? <NodeDetailsModal/> : null }
+                        {!_.isEmpty(this.props.edgeToDisplay) ? <EdgeDetailsModal/> : null }
+                        <div ref="espGraph" id={this.nodeId()} ></div>
+          </div>);
+      } else {
+        return <div ref="espGraph" id={this.nodeId()}></div>;
+      }
     }
 }
 
-function mapState(state) {
+const spec = {
+  drop: (props, monitor, component) => {
+    const relOffset = component.computeRelOffset(monitor.getClientOffset())
+    component.addNode(monitor.getItem(), relOffset)
+
+  }
+};
+
+function mapState(state, props) {
     return {
+        isMain: true,
         nodeToDisplay: state.graphReducer.nodeToDisplay,
         edgeToDisplay: state.graphReducer.edgeToDisplay,
         groupingState: state.graphReducer.groupingState,
@@ -431,16 +447,19 @@ function mapState(state) {
     };
 }
 
-var spec = {
-  drop: (props, monitor, component) => {
-    var relOffset = component.computeRelOffset(monitor.getClientOffset())
-    component.addNode(monitor.getItem(), relOffset)
-
+function mapSubprocessState(state, props) {
+  return {
+        processToDisplay: props.processToDisplay,
+        loggedUser: state.settings.loggedUser,
+        processDefinitionData: state.settings.processDefinitionData,
+        processCounts: props.processCounts
   }
-};
+}
 
-//we need withRef so that parent component can acces Graph and invoke method on it
-export default connect(mapState, ActionsUtils.mapDispatchWithEspActions, null, {withRef: true})(DropTarget("element", spec, (connect, monitor) => ({
+export let BareGraph = connect(mapSubprocessState)(Graph)
+
+//withRef is here so that parent can access methods in graph
+export default connect(mapState, ActionsUtils.mapDispatchWithEspActions,
+  null, {withRef: true})(DropTarget("element", spec, (connect, monitor) => ({
   connectDropTarget: connect.dropTarget()
 }))(Graph));
-
