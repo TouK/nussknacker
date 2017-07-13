@@ -32,13 +32,14 @@ class ProcessReportResources(influxReporter: InfluxReporter, processCounter: Pro
           complete {
             processRepository.fetchLatestProcessDetailsForProcessId(processId).flatMap[ToResponseMarshallable] {
               case Some(process) =>
-                deploymentsBetweenDates(process, dateFrom, dateToToUse) match {
-                  case Some(date) =>
-                    Future.successful(HttpResponse(status = StatusCodes.BadRequest, entity = s"Counts unavailable, as process was deployed on $date"))
-                  case None => process.json match {
+                restartsBetweenDates(process, dateFrom, dateToToUse).flatMap {
+                  case Nil => process.json match {
                     case Some(displayable) => computeCounts(displayable, dateFrom, dateToToUse)
                     case None => Future.successful(HttpResponse(status = StatusCodes.NotFound, entity = "Counts unavailable for this process"))
                   }
+                  case dates => Future.successful(HttpResponse(status = StatusCodes.BadRequest,
+                    entity = s"Counts unavailable, as process was restarted/deployed on " +
+                      s" following dates: ${dates.map(_.format(DateUtils.dateTimeFormatter)).mkString(", ")}"))
                 }
               case None => Future.successful(HttpResponse(status = StatusCodes.NotFound, entity = "Process not found"))
             }
@@ -58,9 +59,8 @@ class ProcessReportResources(influxReporter: InfluxReporter, processCounter: Pro
     }
   }
 
-  //TODO: this doesn't take into account redeploys done only in flink (e.g. restarting after error)
-  private def deploymentsBetweenDates(process: ProcessDetails, fromDate: LocalDateTime, toDate: LocalDateTime) : Option[LocalDateTime] = {
-    process.history.flatMap(_.deployments).map(_.deployedAt).find(d => fromDate.isBefore(d) && toDate.isAfter(d))
+  private def restartsBetweenDates(process: ProcessDetails, fromDate: LocalDateTime, toDate: LocalDateTime) : Future[List[LocalDateTime]] = {
+    influxReporter.detectRestarts(process.id, fromDate, toDate)
   }
 
 }

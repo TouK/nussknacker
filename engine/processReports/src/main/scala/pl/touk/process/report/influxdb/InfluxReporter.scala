@@ -10,9 +10,11 @@ import scala.util.{Failure, Success}
 class InfluxReporter(env: String, config: InfluxReporterConfig) extends LazyLogging {
   import scala.concurrent.ExecutionContext.Implicits.global
 
+  //TODO this inlfuxUrl can be fetched using grafana API
+  val influxGenerator = new InfluxGenerator(config.influxUrl, config.user, config.password, config.database, env)
+
   def fetchBaseProcessCounts(processId: String, dateFrom: LocalDateTime, dateTo: LocalDateTime): Future[ProcessBaseCounts] = {
-    //TODO this inlfuxUrl can be fetched using grafana API
-    val influxGenerator = new InfluxGenerator(config.influxUrl, config.user, config.password, config.database, env)
+
     val reportData = for {
       allCount <- influxGenerator.query(processId, "source", dateFrom, dateTo).map(_.getOrElse("count", 0L))
       //TODO: do we need these counts now?
@@ -20,15 +22,14 @@ class InfluxReporter(env: String, config: InfluxReporterConfig) extends LazyLogg
       deadEndCount <- influxGenerator.query(processId, "dead_end.count", dateFrom, dateTo)
       nodes <- influxGenerator.query(processId, "nodeCount", dateFrom, dateTo)
     } yield ProcessBaseCounts(all = allCount, ends = endCount, deadEnds = deadEndCount, nodes = nodes)
-    reportData.onComplete {
-      case Success(_) =>
-        influxGenerator.close()
-      case Failure(ex) =>
-        logger.error("Failed to generate", ex)
-        influxGenerator.close()
+    reportData.onFailure {
+      case ex => logger.error("Failed to generate", ex)
     }
     reportData
   }
+
+  def detectRestarts(processName: String, dateFrom: LocalDateTime, dateTo: LocalDateTime) : Future[List[LocalDateTime]]
+    = influxGenerator.detectRestarts(processName, dateFrom, dateTo)
 
 }
 
