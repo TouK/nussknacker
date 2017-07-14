@@ -5,7 +5,7 @@ import pl.touk.esp.engine.graph.expression.Expression
 import pl.touk.esp.ui.api.DefinitionPreparer.{NodeEdges, NodeTypeId}
 import pl.touk.esp.ui.api.helpers.TestFactory
 import pl.touk.esp.ui.process.displayedgraph.displayablenode.EdgeType._
-import pl.touk.esp.ui.process.values.{ParamDefaultValueConfig, TypeAfterConfig}
+import pl.touk.esp.ui.process.uiconfig.defaults.{ParamDefaultValueConfig, TypeAfterConfig}
 import pl.touk.esp.ui.security.{LoggedUser, Permission}
 
 class DefinitionPreparerSpec extends FlatSpec with Matchers {

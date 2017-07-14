@@ -1,4 +1,4 @@
-package pl.touk.esp.ui.process.values
+package pl.touk.esp.ui.process.uiconfig.defaults
 
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.esp.engine.definition.DefinitionExtractor

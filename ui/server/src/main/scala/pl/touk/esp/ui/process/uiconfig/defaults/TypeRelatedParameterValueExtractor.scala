@@ -1,4 +1,4 @@
-package pl.touk.esp.ui.process.values
+package pl.touk.esp.ui.process.uiconfig.defaults
 
 import pl.touk.esp.engine.definition.DefinitionExtractor
 import pl.touk.esp.ui.api.NodeDefinition
@@ -9,7 +9,7 @@ object TypeRelatedParameterValueExtractor extends ParameterDefaultValueExtractor
     Some(evaluateTypeRelatedParamValue(parameter.name, parameter.typ.refClazzName))
   }
 
-  private[values] def evaluateTypeRelatedParamValue(name: String, refClassName: String): String = {
+  private[defaults] def evaluateTypeRelatedParamValue(name: String, refClassName: String): String = {
     refClassName match {
       case "long" | "short" | "int" | "java.lang.Number" => "0"
       case "float" | "double" | "java.math.BigDecimal" => "0.0"

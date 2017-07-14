@@ -1,7 +1,7 @@
 import React from 'react'
 import {render} from "react-dom";
 import { DragSource } from 'react-dnd';
-import InlinedSvgs from '../assets/icons/InlinedSvgs'
+import * as LoaderUtils from '../common/LoaderUtils'
 import "../stylesheets/toolBox.styl";
 
 class Tool extends React.Component {
@@ -13,7 +13,7 @@ class Tool extends React.Component {
   };
 
   render() {
-    const icon = InlinedSvgs.svgs[this.props.nodeModel.type]
+    const icon = LoaderUtils.loadNodeSvgContent(`${this.props.nodeModel.type}.svg`)
 
     return this.props.connectDragSource(
       <div className="tool">

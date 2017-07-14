@@ -2,20 +2,18 @@ import joint from 'jointjs'
 import _ from 'lodash'
 import NodeUtils from './NodeUtils'
 import GraphUtils from './GraphUtils'
+import ProcessUtils from '../../common/ProcessUtils';
+import * as LoaderUtils from '../../common/LoaderUtils'
 
 import nodeMarkup from './markups/node.html';
 import boundingMarkup from './markups/bounding.html';
 import expandIcon from '../../assets/img/expand.svg'
 import collapseIcon from '../../assets/img/collapse.svg'
 
-
-import InlinedSvgs from '../../assets/icons/InlinedSvgs'
-
 const rectWidth = 300
 const rectHeight = 60
 const nodeLabelFontSize = 15
 const edgeStroke = '#b3b3b3'
-
 
 const attrsConfig = () => {
   return {
@@ -132,13 +130,12 @@ joint.shapes.devs.EspNode = joint.shapes.basic.Generic.extend(_.extend({}, joint
 
 export default {
 
-    makeElement(node, processCounts, forExport) {
+    makeElement(node, processCounts, forExport, nodesSettings) {
         const hasCounts = !_.isEmpty(processCounts)
         var descr = (node.additionalFields || {}).description
         var customAttrs = require('../../assets/json/nodeAttributes.json');
 
         var bodyContent = node.id ? node.id : "";
-        //TODO: displaying counts for subprocesses
         //FIXME: proper width for large numbers
         var countsContent = hasCounts ? (processCounts ? processCounts.all : "0") : ""
         var hasErrors = hasCounts && processCounts && processCounts.errors > 0
@@ -153,7 +150,8 @@ export default {
         var calculatedWidth = 1.2 * (letterSize * (0.6 * maxLineLength));
         var width = _.max([rectWidth, calculatedWidth]);
         var height = 150;
-        var icon = InlinedSvgs.svgs[node.type]
+        const iconFromConfig = (nodesSettings[ProcessUtils.findNodeDefinitionId(node)] || {}).icon
+        var icon = iconFromConfig ? LoaderUtils.loadNodeSvgContent(iconFromConfig) : LoaderUtils.loadNodeSvgContent(`${node.type}.svg`)
 
         var widthWithTestResults = width + (hasCounts ? rectHeight : 0)
 
@@ -172,7 +170,7 @@ export default {
             opacity: node.isDisabled ? 0.5 : 1
           },
           '.nodeIconItself': {
-            'xlink:href': 'data:image/svg+xml;utf8,' + encodeURIComponent(icon)
+            'xlink:href': 'data:image/svg+xml;utf8,' + encodeURIComponent(icon) //we encode icon data to have standalone svg that can be used to generate pdf
           },
           '.contentText': {
             text: bodyContent

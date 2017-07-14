@@ -1,4 +1,4 @@
-package pl.touk.esp.ui.process.values
+package pl.touk.esp.ui.process.uiconfig.defaults
 
 import pl.touk.esp.engine.definition.DefinitionExtractor
 import pl.touk.esp.ui.api.NodeDefinition
