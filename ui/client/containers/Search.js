@@ -28,7 +28,7 @@ Search.header = "Search"
 
 function mapState(state) {
   return {
-    settings: state.settings.featuresSettings.search
+    settings: state.settings.featuresSettings.search || {}
   };
 }
 
