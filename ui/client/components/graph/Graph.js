@@ -161,7 +161,7 @@ class Graph extends React.Component {
       const outgoingEdgesGrouped = _.groupBy(edgesWithGroups, "from")
       t = this.time(t, 'start')
 
-      const nodes = _.map(nodesWithGroups, (n) => { return EspNode.makeElement(n, processCounts[n.id], forExport) });
+      const nodes = _.map(nodesWithGroups, (n) => { return EspNode.makeElement(n, processCounts[n.id], forExport, this.props.nodesSettings) });
       t = this.time(t, 'nodes')
 
       const edges = _.map(edgesWithGroups, (e) => { return EspNode.makeLink(e, outgoingEdgesGrouped, forExport) });
@@ -443,7 +443,8 @@ function mapState(state, props) {
         layout: state.graphReducer.layout,
         processCounts: state.graphReducer.processCounts || {},
         processDefinitionData: state.settings.processDefinitionData,
-        expandedGroups: state.ui.expandedGroups
+        expandedGroups: state.ui.expandedGroups,
+        nodesSettings: state.settings.nodesSettings
     };
 }
 

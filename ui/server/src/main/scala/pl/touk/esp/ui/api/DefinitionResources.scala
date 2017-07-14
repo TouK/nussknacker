@@ -22,7 +22,7 @@ import pl.touk.esp.ui.process.displayedgraph.displayablenode.EdgeType
 import pl.touk.esp.ui.process.displayedgraph.displayablenode.EdgeType.{FilterFalse, FilterTrue}
 import pl.touk.esp.ui.process.marshall.ProcessConverter
 import pl.touk.esp.ui.process.subprocess.SubprocessRepository
-import pl.touk.esp.ui.process.values.{ParameterDefaultValueExtractorStrategy, ParameterEvaluatorExtractor}
+import pl.touk.esp.ui.process.uiconfig.defaults.{ParameterDefaultValueExtractorStrategy, ParameterEvaluatorExtractor}
 import pl.touk.esp.ui.security.LoggedUser
 import pl.touk.esp.ui.util.EspPathMatchers
 import pl.touk.http.argonaut.Argonaut62Support

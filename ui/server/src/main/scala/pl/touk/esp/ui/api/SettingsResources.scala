@@ -2,12 +2,13 @@ package pl.touk.esp.ui.api
 
 import akka.http.scaladsl.server.Directives
 import pl.touk.esp.ui.config.FeatureTogglesConfig
+import pl.touk.esp.ui.process.uiconfig.SingleNodeConfig
 import pl.touk.esp.ui.security.LoggedUser
 import pl.touk.http.argonaut.Argonaut62Support
 
 import scala.concurrent.ExecutionContext
 
-class SettingsResources(config: FeatureTogglesConfig)(implicit ec: ExecutionContext)
+class SettingsResources(config: FeatureTogglesConfig, nodesConfig: Map[String, SingleNodeConfig])(implicit ec: ExecutionContext)
   extends Directives with Argonaut62Support {
 
   import argonaut.ArgonautShapeless._
@@ -16,13 +17,14 @@ class SettingsResources(config: FeatureTogglesConfig)(implicit ec: ExecutionCont
     pathPrefix("settings") {
       get {
         complete {
-          ToggleFeaturesOptions(
+          val toggleOptions = ToggleFeaturesOptions(
             counts = config.counts.isDefined,
             search = config.search,
             metrics = config.metrics,
             migration = config.migration.map(c => MigrationConfig(c.environmentId)),
             environmentAlert = config.environmentAlert
           )
+          UISettings(toggleOptions, nodesConfig)
         }
       }
     }
@@ -39,3 +41,5 @@ case class ToggleFeaturesOptions(counts: Boolean,
                                  migration: Option[MigrationConfig],
                                  environmentAlert: Option[EnvironmentAlert]
                                 )
+
+case class UISettings(features: ToggleFeaturesOptions, nodes: Map[String, SingleNodeConfig])

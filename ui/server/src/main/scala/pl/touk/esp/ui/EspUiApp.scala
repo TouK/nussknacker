@@ -19,13 +19,16 @@ import pl.touk.esp.ui.process.deployment.ManagementActor
 import pl.touk.esp.ui.process.migrate.HttpProcessMigrator
 import pl.touk.esp.ui.process.repository.{DeployedProcessRepository, ProcessActivityRepository, ProcessRepository}
 import pl.touk.esp.ui.process.subprocess.{ProcessRepositorySubprocessRepository, SubprocessResolver}
-import pl.touk.esp.ui.process.values.{ParamDefaultValueConfig, TypeAfterConfig}
+import pl.touk.esp.ui.process.uiconfig.SingleNodeConfig
+import pl.touk.esp.ui.process.uiconfig.defaults.{ParamDefaultValueConfig, TypeAfterConfig}
 import pl.touk.esp.ui.processreport.ProcessCounter
 import pl.touk.esp.ui.security.SimpleAuthenticator
 import pl.touk.process.report.influxdb.InfluxReporter
 import slick.jdbc.JdbcBackend
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+
+import scala.util.Try
 
 object EspUiApp extends App with Directives with LazyLogging {
 
@@ -38,6 +41,8 @@ object EspUiApp extends App with Directives with LazyLogging {
   val config = system.settings.config
   val environment = config.getString("environment")
   val featureTogglesConfig = FeatureTogglesConfig.create(config, environment)
+  val nodesConfig = Try(config.as[Map[String, SingleNodeConfig]](s"$environment.nodes")).getOrElse(Map.empty)
+  logger.info(s"Ui config loaded: \nfeatureTogglesConfig: $featureTogglesConfig\nnodesConfig:$nodesConfig")
 
   val db: JdbcBackend.DatabaseDef = {
     val db = JdbcBackend.Database.forConfig("db", config)
@@ -51,7 +56,7 @@ object EspUiApp extends App with Directives with LazyLogging {
     ProcessingTypeDeps(config, featureTogglesConfig.standaloneMode)
 
   val processRepositoryForSub = new ProcessRepository(db, DefaultJdbcProfile.profile, null, system.dispatcher)
-  val defaultParametersValues = config.as[ParamDefaultValueConfig](s"$environment.defaultValues")
+  val defaultParametersValues = ParamDefaultValueConfig(nodesConfig.map {case (k, v) => (k, v.defaultValues.getOrElse(Map.empty))})
   val extractValueParameterByConfigThenType = new TypeAfterConfig(defaultParametersValues)
 
   val subprocessRepository = new ProcessRepositorySubprocessRepository(processRepositoryForSub)
@@ -90,7 +95,7 @@ object EspUiApp extends App with Directives with LazyLogging {
                   new SignalsResources(managers, processDefinitions, processRepository).route(user),
                   new QueryableStateResources(processDefinitions, processRepository, espQueryableClient, jobStatusService).route(user),
                   new UserResources().route(user),
-                  new SettingsResources(featureTogglesConfig).route(user),
+                  new SettingsResources(featureTogglesConfig, nodesConfig).route(user),
                   new AppResources(buildInfo, processRepository, jobStatusService).route(user),
                   new TestInfoResources(managers, processRepository).route(user)
               )

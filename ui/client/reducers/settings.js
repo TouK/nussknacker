@@ -11,10 +11,11 @@ export function reducer(state = initialState, action) {
         loggedUser: action.user,
       }
     }
-    case "FEATURES_SETTINGS": {
+    case "UI_SETTINGS": {
       return {
         ...state,
-        featuresSettings: action.featuresSettings
+        featuresSettings: action.settings.features,
+        nodesSettings: action.settings.nodes
       }
     }
     case "PROCESS_DEFINITION_DATA": {
