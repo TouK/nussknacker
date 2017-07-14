@@ -4,35 +4,29 @@ import java.io.File
 import java.util.UUID
 
 import argonaut.PrettyParams
-import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
+import com.typesafe.config.ConfigValueFactory
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
-import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.esp.engine.api.deployment.{CustomProcess, GraphProcess}
 import pl.touk.esp.engine.kafka.KafkaClient
 import pl.touk.esp.engine.marshall.ProcessMarshaller
-import scala.concurrent.ExecutionContext.Implicits.global
 
 import scala.concurrent.duration._
 
-
-class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures with Eventually {
+//TODO: get rid of at least some Thread.sleep
+class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures with Eventually with DockerTest {
 
   import pl.touk.esp.engine.kafka.KafkaUtils._
 
-  override implicit val patienceConfig = PatienceConfig(
-    timeout = Span(30, Seconds),
-    interval = Span(100, Millis)
-  )
-
   val ProcessMarshaller = new ProcessMarshaller
+
   it should "deploy process in running flink" in {
+
     val processId = UUID.randomUUID().toString
 
     val process = SampleProcess.prepareProcess(processId)
     val marshalled = ProcessMarshaller.toJson(process, PrettyParams.spaces2)
 
-    val config = ConfigFactory.load()
     val processManager = FlinkProcessManager(config)
 
     assert(processManager.deploy(process.id, GraphProcess(marshalled), None).isReadyWithin(100 seconds))
@@ -55,7 +49,6 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
     val process = SampleProcess.prepareProcess(processId)
     val marshalled = ProcessMarshaller.toJson(process, PrettyParams.spaces2)
 
-    val config = ConfigFactory.load()
     val processManager = FlinkProcessManager(config)
 
     assert(processManager.deploy(process.id, GraphProcess(marshalled), None).isReadyWithin(100 seconds))
@@ -79,8 +72,6 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
     }
   }
 
-
-
   it should "save state when redeploying" in {
 
     val processId = UUID.randomUUID().toString
@@ -89,7 +80,6 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
     val processEmittingOneElementAfterStart = StatefulSampleProcess.prepareProcess(processId)
     val marshalledProcess = ProcessMarshaller.toJson(processEmittingOneElementAfterStart, PrettyParams.spaces2)
 
-    val config = ConfigFactory.load()
     val processManager = FlinkProcessManager(config)
 
 
@@ -128,25 +118,25 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
     val processEmittingOneElementAfterStart = StatefulSampleProcess.prepareProcess(processId)
     val marshalledProcess = ProcessMarshaller.toJson(processEmittingOneElementAfterStart, PrettyParams.spaces2)
 
-    val config = ConfigFactory.load()
     val processManager = FlinkProcessManager(config)
 
 
     val kafkaClient = new KafkaClient(config.getString("prod.kafka.kafkaAddress"),
       config.getString("prod.kafka.zkAddress"))
-    kafkaClient.createTopic(outTopic, 1)
 
+    kafkaClient.createTopic(outTopic, 1)
 
     assert(processManager.deploy(processEmittingOneElementAfterStart.id, GraphProcess(marshalledProcess), None).isReadyWithin(100 seconds))
     val jobStatus = processManager.findJobStatus(processId).futureValue
     jobStatus.map(_.status) shouldBe Some("RUNNING")
-    Thread.sleep(2000)
+    Thread.sleep(4000)
 
     val dir = new File("/tmp").toURI.toString
     val savepointPath = processManager.savepoint(processEmittingOneElementAfterStart.id, dir)
     assert(savepointPath.isReadyWithin(10 seconds))
 
     assert(processManager.cancel(processEmittingOneElementAfterStart.id).isReadyWithin(10 seconds))
+    Thread.sleep(4000)
 
     assert(savepointPath.flatMap(path => processManager.deploy(processEmittingOneElementAfterStart.id,
       GraphProcess(marshalledProcess), Some(path))).isReadyWithin(100 seconds))
@@ -171,7 +161,6 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
     val marshalled = ProcessMarshaller.toJson(process, PrettyParams.spaces2)
 
 
-    val config = ConfigFactory.load()
     val processManager = FlinkProcessManager(config)
 
 
@@ -185,7 +174,7 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
     val jobStatus = processManager.findJobStatus(processId).futureValue
     jobStatus.map(_.status) shouldBe Some("RUNNING")
 
-    Thread.sleep(1000)
+    Thread.sleep(3000)
 
     val newMarshalled = ProcessMarshaller.toJson(SampleProcess.prepareProcess(processId), PrettyParams.spaces2)
 
@@ -200,7 +189,6 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
   it should "deploy custom process" in {
     val processId = UUID.randomUUID().toString
 
-    val config = ConfigFactory.load()
     val processManager = FlinkProcessManager(config)
 
     assert(processManager.deploy(processId, CustomProcess("pl.touk.esp.engine.management.sample.CustomProcess"), None).isReadyWithin(100 seconds))
@@ -218,7 +206,6 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
   }
 
   it should "extract process definition" in {
-    val config = ConfigFactory.load()
     val processManager = FlinkProcessManager(config)
 
 
@@ -229,10 +216,12 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
 
   it should "dispatch process signal to kafka" in {
     val signalsTopic = s"esp.signal-${UUID.randomUUID()}"
-    val config = ConfigFactory.load()
+    val configWithSignals = config
       .withValue("prod.signals.topic", ConfigValueFactory.fromAnyRef(signalsTopic))
-    val processManager = FlinkProcessManager(config)
-    val kafkaClient = new KafkaClient(config.getString("prod.kafka.kafkaAddress"), config.getString("prod.kafka.zkAddress"))
+    val processManager = FlinkProcessManager(configWithSignals)
+    val kafkaClient = new KafkaClient(
+      configWithSignals.getString("prod.kafka.kafkaAddress"),
+      configWithSignals.getString("prod.kafka.zkAddress"))
     val consumer = kafkaClient.createConsumer()
 
     processManager.dispatchSignal("removeLockSignal", "test-process", Map("lockId" -> "test-lockId"))
@@ -242,5 +231,5 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
     signalJson.field("processId").get.nospaces shouldBe "\"test-process\""
     signalJson.field("action").get.field("type").get.nospaces shouldBe "\"RemoveLock\""
     signalJson.field("action").get.field("lockId").get.nospaces shouldBe "\"test-lockId\""
-  }
+  }                    
 }

@@ -179,7 +179,9 @@ lazy val management = (project in engine("management")).
 
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
 
-        "org.scalatest" %% "scalatest" % scalaTestV % "it,test"
+        "org.scalatest" %% "scalatest" % scalaTestV % "it,test",
+        "com.whisk" %% "docker-testkit-scalatest" % "0.9.0" % "it,test",
+        "com.whisk" %% "docker-testkit-impl-spotify" % "0.9.0" % "it,test"
       )
     }
   ).dependsOn(interpreter, queryableState, kafkaTestUtil % "it,test")
