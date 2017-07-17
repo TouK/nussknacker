@@ -19,7 +19,7 @@ import pl.touk.esp.ui.api.helpers.TestFactory._
 import pl.touk.esp.ui.codec.UiCodecs
 import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.esp.ui.process.ProcessToSave
-import pl.touk.esp.ui.process.displayedgraph.displayablenode.ProcessAdditionalFields
+import pl.touk.esp.ui.process.displayedgraph.displayablenode.{Edge, ProcessAdditionalFields}
 import pl.touk.esp.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.esp.ui.process.marshall.UiProcessMarshaller
 import pl.touk.esp.ui.process.repository.ProcessActivityRepository.ProcessActivity
@@ -268,78 +268,6 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
 
   }
 
-  it should "export process and import it" in {
-    val processToSave = ProcessTestData.sampleDisplayableProcess
-    saveProcess(processToSave) {
-      status shouldEqual StatusCodes.OK
-    }
-
-    Get(s"/processes/export/${processToSave.id}/2") ~> routWithAllPermissions ~> check {
-      val processDetails = marshaller.fromJson(responseAs[String]).toOption.get
-      val modified = processDetails.copy(metaData = processDetails.metaData.copy(typeSpecificData = StreamMetaData(Some(987))))
-
-      val multipartForm =
-        MultipartUtils.prepareMultiPart(marshaller.toJson(modified, PrettyParams.spaces2), "process")
-
-      Post(s"/processes/import/${processToSave.id}", multipartForm) ~> routWithAllPermissions ~> check {
-        status shouldEqual StatusCodes.OK
-        val imported = responseAs[String].decodeOption[DisplayableProcess].get
-        imported.properties.typeSpecificProperties.asInstanceOf[StreamMetaData].parallelism shouldBe Some(987)
-        imported.id shouldBe processToSave.id
-        imported.nodes shouldBe processToSave.nodes
-      }
-
-
-    }
-  }
-
-  it should "export process in new version" in {
-    val description = "alamakota"
-    val processToSave = ProcessTestData.sampleDisplayableProcess
-    val processWithDescription = processToSave.copy(properties = processToSave.properties.copy(additionalFields = Some(ProcessAdditionalFields(Some(description)))))
-
-    saveProcess(processToSave) {
-      status shouldEqual StatusCodes.OK
-    }
-    updateProcess(processWithDescription) {
-      status shouldEqual StatusCodes.OK
-    }
-
-    Get(s"/processes/export/${processToSave.id}/2") ~> routWithAllPermissions ~> check {
-      responseAs[String] shouldNot include(description)
-    }
-
-    Get(s"/processes/export/${processToSave.id}/3") ~> routWithAllPermissions ~> check {
-      val latestProcessVersion = responseAs[String]
-      latestProcessVersion should include(description)
-
-      Get(s"/processes/export/${processToSave.id}") ~> routWithAllPermissions ~> check {
-        responseAs[String] shouldBe latestProcessVersion
-      }
-
-    }
-
-  }
-
-  it should "fail to import process with different id" in {
-    val processToSave = ProcessTestData.sampleDisplayableProcess
-    saveProcess(processToSave) {
-      status shouldEqual StatusCodes.OK
-    }
-
-    Get(s"/processes/export/${processToSave.id}/2") ~> routWithAllPermissions ~> check {
-      val processDetails = marshaller.fromJson(responseAs[String]).toOption.get
-      val modified = processDetails.copy(metaData = processDetails.metaData.copy(id = "SOMEVERYFAKEID"))
-
-      val multipartForm =
-        FileUploadUtils.prepareMultiPart(marshaller.toJson(modified, PrettyParams.spaces2), "process")
-
-      Post(s"/processes/import/${processToSave.id}", multipartForm) ~> routWithAllPermissions ~> check {
-        status shouldEqual StatusCodes.BadRequest
-      }
-    }
-  }
-
   it should "save new process with empty json" in {
     val newProcessId = "tst1"
     Post(s"/processes/$newProcessId/$testCategory?isSubprocess=false") ~> routWithAdminPermission ~> check {
@@ -369,28 +297,6 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
       //this one below does not work, but I cannot compose path and authorize directives in a right way
       //rejection shouldBe server.AuthorizationFailedRejection
       handled shouldBe false
-    }
-  }
-
-  it should "should be able to add comment when updating a process" in {
-    val processToSave = ProcessTestData.sampleDisplayableProcess
-    val updatedProcess = ProcessToSave(
-      processToSave.copy(nodes = processToSave.nodes.head.asInstanceOf[node.Source].copy(id = "newId") :: processToSave.nodes.tail),
-      "source id changed"
-    )
-    val processId = processToSave.id
-
-    saveProcess(processToSave) {
-      updateProcess(updatedProcess) {
-        status shouldEqual StatusCodes.OK
-        Get(s"/processes/${processId}/activity") ~> processActivityRouteWithAllPermission ~> check {
-          status shouldEqual StatusCodes.OK
-          val processActivity = responseAs[String].decodeOption[ProcessActivity].get
-          val firstComment = processActivity.comments.head
-          firstComment.content shouldBe updatedProcess.comment
-          firstComment.processVersionId shouldBe 3
-        }
-      }
     }
   }
 

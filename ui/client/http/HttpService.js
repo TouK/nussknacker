@@ -92,10 +92,11 @@ export default {
     return promiseWrap($.get(API_URL + '/subProcesses'))
   },
 
-  fetchProcessDetails(processId, versionId) {
+  fetchProcessDetails(processId, versionId, businessView) {
+    const queryParams = this.businessViewQueryParams(businessView)
     return versionId ?
-      promiseWrap($.get(API_URL + '/processes/' + processId + '/' + versionId)) :
-      promiseWrap($.get(API_URL + '/processes/' + processId))
+      promiseWrap($.get(API_URL + '/processes/' + processId + '/' + versionId, queryParams)) :
+      promiseWrap($.get(API_URL + '/processes/' + processId, queryParams))
   },
 
   fetchProcessesStatus() {
@@ -164,8 +165,10 @@ export default {
     window.open(`${API_URL}/processes/export/${processId}/${versionId}`);
   },
 
-  exportProcessToPdf(processId, versionId, data) {
-    fetch(`${API_URL}/processes/exportToPdf/${processId}/${versionId}`,
+  exportProcessToPdf(processId, versionId, data, businessView) {
+    const url = `${API_URL}/processes/exportToPdf/${processId}/${versionId}`
+    const queryParams = this.businessViewQueryParams(businessView)
+    fetch(queryParams ? `${url}?${queryParams}` : url,
       {
           method: 'POST',
           body: data,
@@ -275,10 +278,12 @@ export default {
     });
   },
 
-  compareProcesses(processId, thisVersion, otherVersion) {
+  compareProcesses(processId, thisVersion, otherVersion, businessView) {
+    const queryParams = this.businessViewQueryParams(businessView)
     return ajaxCall({
       url: `${API_URL}/processes/${processId}/${thisVersion}/compare/${otherVersion}`,
-      type: 'GET'
+      type: 'GET',
+      data: queryParams
     }).catch(error => {
       this.addError(`Cannot compare processes`, error, true);
       return Promise.reject(error)
@@ -308,8 +313,11 @@ export default {
       data: JSON.stringify(params)
     }).then(() => this.addInfo(`Signal send`))
       .catch((error) => this.addError(`Failed to send signal`, error));
-  }
+  },
 
+  businessViewQueryParams(businessView) {
+    return businessView ? $.param({businessView}) : {}
+  }
 }
 
 

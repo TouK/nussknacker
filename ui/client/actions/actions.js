@@ -5,12 +5,12 @@ import NodeUtils from "../components/graph/NodeUtils";
 import _ from "lodash";
 import * as UndoRedoActions from "../undoredo/UndoRedoActions";
 
-export function fetchProcessToDisplay(processId, versionId) {
+export function fetchProcessToDisplay(processId, versionId, businessView) {
   return (dispatch) => {
     dispatch({
       type: "PROCESS_LOADING"
     })
-    return HttpService.fetchProcessDetails(processId, versionId)
+    return HttpService.fetchProcessDetails(processId, versionId, businessView)
       .then((processDetails) => {
         displayTestCapabilites(processDetails.json, processDetails.processingType)(dispatch)
         return dispatch(displayProcess(processDetails))
@@ -313,4 +313,11 @@ export function expandGroup(id) {
 
 export function collapseGroup(id) {
   return {type: "COLLAPSE_GROUP", id: id}
+}
+
+export function businessViewChanged(value) {
+  return {
+    type: "BUSINESS_VIEW_CHANGED",
+    businessView: value
+  }
 }

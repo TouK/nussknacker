@@ -23,17 +23,43 @@ object ProcessConverter {
     }
   }
 
-  def toDisplayableOrDie(canonicalJson: String, processingType: ProcessingType, processType: ProcessType = ProcessType.Graph): DisplayableProcess = {
-    toDisplayable(toCanonicalOrDie(canonicalJson), processingType, processType)
+  def toDisplayableOrDie(canonicalJson: String, processingType: ProcessingType, processType: ProcessType = ProcessType.Graph, businessView: Boolean = false): DisplayableProcess = {
+    toDisplayable(toCanonicalOrDie(canonicalJson), processingType, processType = processType, businessView = businessView)
   }
 
   //FIXME: without default param
-  def toDisplayable(process: CanonicalProcess, processingType: ProcessingType, processType: ProcessType = ProcessType.Graph): DisplayableProcess = {
-    val nodesEdges = toGraphInner(process.nodes)
-    val (nodes, edges) = nodesEdges
-
+  def toDisplayable(process: CanonicalProcess, processingType: ProcessingType, processType: ProcessType = ProcessType.Graph, businessView: Boolean = false): DisplayableProcess = {
+    val (nodes, edges) = if (businessView) {
+      toGraphInner(process.nodes.flatMap(toBusinessNode))
+    } else {
+      toGraphInner(process.nodes)
+    }
     val props = ProcessProperties(process.metaData.typeSpecificData, process.exceptionHandlerRef, process.metaData.isSubprocess, process.metaData.additionalFields)
     DisplayableProcess(process.metaData.id, props, nodes, edges, processingType)
+  }
+
+  private def toBusinessNode(canonicalNode: CanonicalNode): Option[CanonicalNode] = {
+    canonicalNode match {
+      case canonicalnode.FlatNode(data) => data match {
+        case _: Enricher => None
+        case _: VariableBuilder => None
+        case _: Variable => None
+        case _ => Some(canonicalNode)
+      }
+      case canonicalnode.FilterNode(data, nexts) =>
+        val newNexts = nexts.flatMap(toBusinessNode)
+        Some(canonicalnode.FilterNode(data, newNexts))
+      case canonicalnode.SwitchNode(data, nexts, defaultNext) =>
+        val newNodes = nexts.map(c => c.copy(nodes = c.nodes.flatMap(toBusinessNode)))
+        val newDefaults = defaultNext.flatMap(toBusinessNode)
+        Some(canonicalnode.SwitchNode(data, newNodes, newDefaults))
+      case canonicalnode.SplitNode(data, nexts) =>
+        val newNexts = nexts.map(_.flatMap(toBusinessNode))
+        Some(canonicalnode.SplitNode(data, newNexts))
+      case canonicalnode.Subprocess(data, outputs) =>
+        val newOutputs = outputs.mapValues(_.flatMap(toBusinessNode)).filter(_._2.nonEmpty)
+        Some(canonicalnode.Subprocess(data, newOutputs))
+    }
   }
 
   def findNodes(process: CanonicalProcess) : List[NodeData] = toGraphInner(process.nodes)._1
