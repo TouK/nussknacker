@@ -51,8 +51,7 @@ node-highlight(strokeColor, backgroundFill)
   background-color: rgba(23, 22, 21, 0.3) !important //fixme ee nie wiem dlaczego important?
 
 
-espCheckbox()
-  checkboxWidth = 20px
+espCheckbox(checkboxWidth)
   input[type='checkbox']
     text-rendering optimizeSpeed
     width checkboxWidth
@@ -75,11 +74,6 @@ espCheckbox()
     font-size checkboxWidth - 6
     box-shadow inset 0px 1px 1px #000, 0px 1px 0px #444
     background #45484d
-
-  input[type='checkbox']:hover:after, input[type='checkbox']:checked:hover:after
-    background #2d2d2d
-    content '\2714'
-    color #888
 
   input[type='checkbox']:checked
     &:after
@@ -207,7 +201,7 @@ espCheckbox()
       color: #686868
       textarea
         overflow hidden
-      espCheckbox()
+      espCheckbox(20px)
       input[type='checkbox']
         margin-top 10px
         margin-bottom 10px

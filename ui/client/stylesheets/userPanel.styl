@@ -1,4 +1,5 @@
 @import "./_variables.styl"
+@import "./graph.styl"
 
 #espSidenav
   width: sidebarWidth
@@ -66,25 +67,32 @@ sidenavMixin()
     width: 100%
     height: 100%
 
+.panel-properties
+  padding: 0 0 0 buttonPadding
+  margin-top 5px
+  margin-bottom 5px
+
+  label
+    display inline-block
+    font-weight normal
+  espCheckbox(15px)
+  input[type='checkbox']
+    display inline
+    margin-right 3px
+  input[type="text"]
+    display inline-block
+    border none
+    background-color modalInputBkgColor
+    float: right
+    margin-right 10px
+  input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button
+    -webkit-appearance: none;
+    margin: 0;
+
 .panel-body
   padding: 0 0 0 buttonPadding !important
   background-color: panelBkgColor
   border: none !important
-
-  .properties
-    margin-top 5px
-    label
-      display inline-block
-      font-weight 500
-    input
-      display inline-block
-      border none
-      background-color modalInputBkgColor
-      float: right
-      margin-right 10px
-    input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button
-      -webkit-appearance: none;
-      margin: 0;
 
 .panel
   margin-bottom: 1px !important

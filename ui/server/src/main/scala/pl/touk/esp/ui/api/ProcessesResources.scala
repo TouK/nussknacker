@@ -71,11 +71,13 @@ class ProcessesResources(repository: ProcessRepository,
         }
 
       } ~ path("processes" / Segment) { processId =>
-        get {
-          complete {
-            repository.fetchLatestProcessDetailsForProcessId(processId).map[ToResponseMarshallable] {
-              case Some(process) => process
-              case None => HttpResponse(status = StatusCodes.NotFound, entity = "Process not found")
+        parameter('businessView ? false) { (businessView) =>
+          get {
+            complete {
+              repository.fetchLatestProcessDetailsForProcessId(processId, businessView).map[ToResponseMarshallable] {
+                case Some(process) => process
+                case None => HttpResponse(status = StatusCodes.NotFound, entity = "Process not found")
+              }
             }
           }
         } ~ delete {
@@ -84,11 +86,13 @@ class ProcessesResources(repository: ProcessRepository,
           }
         }
       } ~ path("processes" / Segment / LongNumber) { (processId, versionId) =>
-        get {
-          complete {
-            repository.fetchProcessDetailsForId(processId, versionId).map[ToResponseMarshallable] {
-              case Some(process) => process
-              case None => HttpResponse(status = StatusCodes.NotFound, entity = "Process not found")
+        parameter('businessView ? false) { (businessView) =>
+          get {
+            complete {
+              repository.fetchProcessDetailsForId(processId, versionId, businessView).map[ToResponseMarshallable] {
+                case Some(process) => process
+                case None => HttpResponse(status = StatusCodes.NotFound, entity = "Process not found")
+              }
             }
           }
         }
@@ -115,8 +119,7 @@ class ProcessesResources(repository: ProcessRepository,
         }
       } ~ path("processes" / Segment / Segment) { (processId, category) =>
         authorize(user.categories.contains(category)) {
-          parameter('isSubprocess) { (isSubprocessStr) =>
-            val isSubprocess = java.lang.Boolean.valueOf(isSubprocessStr)
+          parameter('isSubprocess ? false) { (isSubprocess) =>
             post {
               complete {
                 typesForCategories.getTypeForCategory(category) match {
@@ -150,29 +153,32 @@ class ProcessesResources(repository: ProcessRepository,
       } ~ path("processes" / "export" / Segment / LongNumber) { (processId, versionId) =>
         get {
           complete {
-            repository.fetchProcessDetailsForId(processId, versionId).map {
+            repository.fetchProcessDetailsForId(processId, versionId, businessView = false).map {
               exportProcess
             }
           }
         }
       } ~ path("processes" / "exportToPdf" / Segment / LongNumber) { (processId, versionId) =>
-        post {
-          entity(as[Array[Byte]]) { (svg) =>
-            complete {
-              repository.fetchProcessDetailsForId(processId, versionId).flatMap { process =>
-                processActivityRepository.findActivity(processId).map(exportProcessToPdf(new String(svg), process, _))
+        parameter('businessView ? false) { (businessView) =>
+          post {
+            entity(as[Array[Byte]]) { (svg) =>
+              complete {
+                repository.fetchProcessDetailsForId(processId, versionId, businessView).flatMap { process =>
+                  processActivityRepository.findActivity(processId).map(exportProcessToPdf(new String(svg), process, _))
+                }
               }
             }
           }
         }
       } ~ path("processes" / Segment / LongNumber / "compare" / LongNumber) { (processId, thisVersion, otherVersion) =>
-
-        get {
-          complete {
-            withJson(processId, thisVersion) { thisDisplayable =>
-              withJson(processId, otherVersion) { otherDisplayable =>
-                implicit val codec = ProcessComparator.codec
-                ProcessComparator.compare(thisDisplayable, otherDisplayable)
+        parameter('businessView ? false) { (businessView) =>
+          get {
+            complete {
+              withJson(processId, thisVersion, businessView) { thisDisplayable =>
+                withJson(processId, otherVersion, businessView) { otherDisplayable =>
+                  implicit val codec = ProcessComparator.codec
+                  ProcessComparator.compare(thisDisplayable, otherDisplayable)
+                }
               }
             }
           }
@@ -259,9 +265,9 @@ class ProcessesResources(repository: ProcessRepository,
     GraphProcess(uiProcessMarshaller.toJson(emptyCanonical, PrettyParams.nospace))
   }
 
-  private def withJson(processId: String, version: Long)
+  private def withJson(processId: String, version: Long, businessView: Boolean)
                       (process: DisplayableProcess => ToResponseMarshallable)(implicit user: LoggedUser): ToResponseMarshallable
-  = repository.fetchProcessDetailsForId(processId, version).map { maybeProcess =>
+  = repository.fetchProcessDetailsForId(processId, version, businessView).map { maybeProcess =>
       maybeProcess.flatMap(_.json) match {
         case Some(displayable) => process(displayable)
         case None => HttpResponse(status = StatusCodes.NotFound, entity = s"Process $processId in version $version not found"): ToResponseMarshallable

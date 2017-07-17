@@ -13,7 +13,8 @@ const emptyGraphState = {
   testCapabilities: {},
   groupingState: null,
   processCounts: {},
-  testResults: {}
+  testResults: {},
+  businessView: false
 };
 
 export function reducer(state, action) {
@@ -234,6 +235,12 @@ export function reducer(state, action) {
         processToDisplay: NodeUtils.editGroup(state.processToDisplay, action.oldGroupId, action.newGroup),
         nodeToDisplay: action.newGroup,
         layout: updateLayoutAfterNodeIdChange(state.layout, action.oldGroupId, action.newGroup.id)
+      }
+    }
+    case "BUSINESS_VIEW_CHANGED": {
+      return {
+        ...state,
+        businessView: action.businessView
       }
     }
     default:

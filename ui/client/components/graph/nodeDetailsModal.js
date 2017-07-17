@@ -43,7 +43,7 @@ class NodeDetailsModal extends React.Component {
     })
     //TODO: make handling receiving callback with process more smooth on UI - maybe cache subprocesses??
     if (props.nodeToDisplay && (NodeUtils.nodeType(props.nodeToDisplay) === "SubprocessInput")) {
-      HttpService.fetchProcessDetails(props.nodeToDisplay.ref.id)
+      HttpService.fetchProcessDetails(props.nodeToDisplay.ref.id, null, this.props.businessView)
         .then((processDetails) =>
           this.setState((state) => ({
             ...state,
@@ -186,12 +186,13 @@ function mapState(state) {
     processId: state.graphReducer.processToDisplay.id,
     nodeErrors: errors,
     processToDisplay: state.graphReducer.processToDisplay,
-    readOnly: !state.settings.loggedUser.canWrite,
+    readOnly: !state.settings.loggedUser.canWrite || state.graphReducer.businessView || false,
     showNodeDetailsModal: state.ui.showNodeDetailsModal,
     testResults: state.graphReducer.testResults,
     processDefinitionData: state.settings.processDefinitionData,
     expandedGroups: state.ui.expandedGroups,
-    processCounts: state.graphReducer.processCounts || {}
+    processCounts: state.graphReducer.processCounts || {},
+    businessView: state.graphReducer.businessView
 
   };
 }

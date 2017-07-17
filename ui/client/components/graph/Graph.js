@@ -103,7 +103,7 @@ class Graph extends React.Component {
     }
 
     createPaper = () => {
-        const canWrite = (this.props.loggedUser.canWrite && this.props.isMain)
+        const canWrite = (this.props.loggedUser.canWrite && !this.props.readonly)
         return new joint.dia.Paper({
             el: this.refs.espGraph,
             gridSize: 1,
@@ -434,6 +434,7 @@ const spec = {
 
 function mapState(state, props) {
     return {
+        readonly: state.graphReducer.businessView,
         isMain: true,
         nodeToDisplay: state.graphReducer.nodeToDisplay,
         edgeToDisplay: state.graphReducer.edgeToDisplay,
@@ -450,6 +451,7 @@ function mapState(state, props) {
 
 function mapSubprocessState(state, props) {
   return {
+        readonly: true,
         processToDisplay: props.processToDisplay,
         loggedUser: state.settings.loggedUser,
         processDefinitionData: state.settings.processDefinitionData,

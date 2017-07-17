@@ -6,6 +6,8 @@ import pl.touk.esp.ui.EspError
 object ValidationResults {
 
   case class ValidationResult(errors: ValidationErrors, warnings: ValidationWarnings) {
+    val isOk = errors == ValidationErrors.success && warnings == ValidationWarnings.success
+
     def add(other: ValidationResult) = ValidationResult(
       ValidationErrors(
         errors.invalidNodes.combine(other.errors.invalidNodes),

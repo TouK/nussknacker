@@ -18,6 +18,9 @@ case class DisplayableProcess(id: String,
                               validationResult: Option[ValidationResult] = None) {
   def validated(validation: ProcessValidation) =
     copy(validationResult = Some(validation.validate(this)))
+  def withSuccessValidation() = {
+    copy(validationResult = Some(ValidationResult.success))
+  }
 
   val metaData = MetaData(id, properties.typeSpecificProperties, properties.isSubprocess, properties.additionalFields)
 

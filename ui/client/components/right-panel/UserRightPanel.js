@@ -42,7 +42,16 @@ class UserRightPanel extends Component {
     const saveDisabled = this.props.nothingToSave && this.props.processIsLatestVersion
     const deployPossible = this.props.processIsLatestVersion && ProcessUtils.hasNoErrors(this.props.processToDisplay) && this.props.nothingToSave
     const migratePossible = this.props.processIsLatestVersion && ProcessUtils.hasNoErrors(this.props.processToDisplay) && this.props.nothingToSave
-
+    const buttonsInBusinessView = [
+      "metrics",
+      "compare",
+      "export",
+      "exportPDF",
+      "zoomIn",
+      "zoomOut",
+      "properties",
+      "counts",
+    ]
     const config =
       [
         (this.props.isSubprocess ? null : {
@@ -107,11 +116,19 @@ class UserRightPanel extends Component {
     return (
       <div id="espSidenav" className={this.renderClassName()}>
         <Scrollbars renderThumbVertical={props => <div {...props} className="thumbVertical"/>} hideTracksWhenNotNeeded={true}>
+          <div className="panel-properties">
+            <label>
+              <input type="checkbox" onChange={(e) => {
+                this.props.actions.businessViewChanged(e.target.checked)
+                this.props.actions.fetchProcessToDisplay(this.processId(), this.versionId(), e.target.checked)
+              }}/>
+              Business view
+            </label>
+          </div>
           {config.filter(obj => obj).map ((panel, panelIdx) => {
             return (
               <Panel key={panelIdx} collapsible defaultExpanded header={panel.panelName}>
-                {panel.properties ? panel.properties : null }
-                {panel.buttons.map((panelButton, idx) => this.renderPanelButton(panelButton, idx))}
+                {panel.buttons.map((panelButton, idx) => this.renderPanelButton(panelButton, idx, buttonsInBusinessView))}
               </Panel>
             )}
           )}
@@ -123,17 +140,17 @@ class UserRightPanel extends Component {
     )
   }
 
-  renderPanelButton = (panelButton, idx) => {
+  renderPanelButton = (panelButton, idx, buttonsInBusinessView) => {
     const buttonClass = "espButton right-panel"
-    return panelButton.visible == false ? null :
+    return panelButton.visible === false || (this.props.businessView === true && !_.includes(buttonsInBusinessView, panelButton.name)) ? null :
       panelButton.dropzone ?
-        <Dropzone key={idx} disableClick={panelButton.disabled == true} onDrop={panelButton.onClick}
-                   className={"dropZone " + buttonClass + (panelButton.disabled == true ? " disabled" : "")}>
+        <Dropzone key={idx} disableClick={panelButton.disabled === true} onDrop={panelButton.onClick}
+                  className={"dropZone " + buttonClass + (panelButton.disabled === true ? " disabled" : "")}>
             <div dangerouslySetInnerHTML={{__html: panelButton.icon}} />
             <div>{panelButton.name}</div>
           </Dropzone>
         :
-        <button key={idx} type="button" className={buttonClass} disabled={panelButton.disabled == true}
+        <button key={idx} type="button" className={buttonClass} disabled={panelButton.disabled === true}
                 onClick={panelButton.onClick}>
           <div dangerouslySetInnerHTML={{__html: panelButton.icon}} /> {panelButton.name}
         </button>
@@ -199,7 +216,7 @@ class UserRightPanel extends Component {
 
   exportProcessToPdf = () => {
     const data = this.props.exportGraph()
-    HttpService.exportProcessToPdf(this.processId(), this.versionId(), data)
+    HttpService.exportProcessToPdf(this.processId(), this.versionId(), data, this.props.businessView)
   }
 
   generateData = () => {
@@ -279,7 +296,8 @@ function mapState(state) {
     nodeToDisplay: state.graphReducer.nodeToDisplay,
     groupingState: state.graphReducer.groupingState,
     featuresSettings: state.settings.featuresSettings,
-    isSubprocess: _.get(fetchedProcessDetails, "properties.isSubprocess", false)
+    isSubprocess: _.get(fetchedProcessDetails, "properties.isSubprocess", false),
+    businessView: state.graphReducer.businessView
   };
 }
 

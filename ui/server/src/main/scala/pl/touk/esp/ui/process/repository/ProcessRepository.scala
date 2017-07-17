@@ -3,31 +3,32 @@ package pl.touk.esp.ui.process.repository
 import java.time.LocalDateTime
 
 import cats.data._
+import cats.syntax.either._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
 import pl.touk.esp.engine.api.deployment.{CustomProcess, GraphProcess, ProcessDeploymentData}
 import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
 import pl.touk.esp.ui.EspError._
-import pl.touk.esp.ui.validation.ProcessValidation
 import pl.touk.esp.ui.app.BuildInfo
-import pl.touk.esp.ui.db.entity.ProcessDeploymentInfoEntity.{DeployedProcessVersionEntityData, DeploymentAction}
-import pl.touk.esp.ui.db.entity.ProcessEntity.{ProcessEntity, ProcessEntityData, ProcessType, ProcessingType}
-import pl.touk.esp.ui.db.entity.ProcessVersionEntity.ProcessVersionEntityData
-import pl.touk.esp.ui.db.entity.TagsEntity.TagsEntityData
 import pl.touk.esp.ui.db.EspTables._
+import pl.touk.esp.ui.db.entity.ProcessDeploymentInfoEntity.{DeployedProcessVersionEntityData, DeploymentAction}
 import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessType.ProcessType
 import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
+import pl.touk.esp.ui.db.entity.ProcessEntity.{ProcessEntity, ProcessEntityData, ProcessType}
+import pl.touk.esp.ui.db.entity.ProcessVersionEntity.ProcessVersionEntityData
+import pl.touk.esp.ui.db.entity.TagsEntity.TagsEntityData
 import pl.touk.esp.ui.process.displayedgraph.DisplayableProcess
 import pl.touk.esp.ui.process.marshall.ProcessConverter
 import pl.touk.esp.ui.process.repository.ProcessRepository._
 import pl.touk.esp.ui.security.LoggedUser
 import pl.touk.esp.ui.util.DateUtils
+import pl.touk.esp.ui.validation.ProcessValidation
 import pl.touk.esp.ui.{BadRequestError, EspError, NotFoundError}
 import slick.jdbc.{JdbcBackend, JdbcProfile}
-import cats.syntax.either._
+
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
-import scala.concurrent.ExecutionContext.Implicits.global
 
 class ProcessRepository(db: JdbcBackend.Database,
                         driver: JdbcProfile,
@@ -125,7 +126,7 @@ class ProcessRepository(db: JdbcBackend.Database,
     } yield latestProcesses.map { case ((_, processVersion), process) =>
       createFullDetails(process, processVersion, isLatestVersion = true,
         deployedPerEnv.map(_._1).filter(_._1 == process.id).map(_._2).toSet,
-        tagsForProcesses(process.name), List.empty) }
+        tagsForProcesses(process.name), List.empty, businessView = false) }
     db.run(action).map(_.toList)
   }
 
@@ -143,11 +144,11 @@ class ProcessRepository(db: JdbcBackend.Database,
     db.run(action).map(_.flatten.toSet)
   }
 
-  def fetchLatestProcessDetailsForProcessId(id: String)
+  def fetchLatestProcessDetailsForProcessId(id: String, businessView: Boolean = false)
                                            (implicit loggedUser: LoggedUser): Future[Option[ProcessDetails]] = {
     val action = for {
       latestProcessVersion <- OptionT[DB, ProcessVersionEntityData](latestProcessVersions(id).result.headOption)
-      processDetails <- fetchProcessDetailsForVersion(latestProcessVersion, isLatestVersion = true)
+      processDetails <- fetchProcessDetailsForVersion(latestProcessVersion, isLatestVersion = true, businessView = businessView)
     } yield processDetails
     db.run(action.value)
   }
@@ -160,18 +161,24 @@ class ProcessRepository(db: JdbcBackend.Database,
     }
   }
 
-  def fetchProcessDetailsForId(processId: String, versionId: Long)
+  def fetchProcessDetailsForId(processId: String, versionId: Long, businessView: Boolean)
                               (implicit loggedUser: LoggedUser): Future[Option[ProcessDetails]] = {
     val action = for {
       latestProcessVersion <- OptionT[DB, ProcessVersionEntityData](latestProcessVersions(processId).result.headOption)
       processVersion <- OptionT[DB, ProcessVersionEntityData](latestProcessVersions(processId).filter(pv => pv.id === versionId).result.headOption)
-      processDetails <- fetchProcessDetailsForVersion(processVersion, isLatestVersion = latestProcessVersion.id == processVersion.id)
+      processDetails <- fetchProcessDetailsForVersion(processVersion, isLatestVersion = latestProcessVersion.id == processVersion.id, businessView = businessView)
     } yield processDetails
     db.run(action.value)
   }
 
-  private def fetchProcessDetailsForVersion(processVersion: ProcessVersionEntityData, isLatestVersion: Boolean)
-                                           (implicit loggedUser: LoggedUser)= {
+  def fetchLatestProcessVersion(processId: String)
+                               (implicit loggedUser: LoggedUser): Future[Option[ProcessVersionEntityData]] = {
+    val action = latestProcessVersions(processId).result.headOption
+    db.run(action)
+  }
+
+  private def fetchProcessDetailsForVersion(processVersion: ProcessVersionEntityData, isLatestVersion: Boolean, businessView: Boolean = false)
+                                           (implicit loggedUser: LoggedUser) = {
     val id = processVersion.processId
     for {
       process <- OptionT[DB, ProcessEntityData](processTableFilteredByUser.filter(_.id === id).result.headOption)
@@ -184,7 +191,8 @@ class ProcessRepository(db: JdbcBackend.Database,
       isLatestVersion = isLatestVersion,
       currentlyDeployedAt = latestDeployedVersionsPerEnv.keySet,
       tags = tags,
-      history = processVersions.map(pvs => ProcessHistoryEntry(process, pvs, latestDeployedVersionsPerEnv))
+      history = processVersions.map(pvs => ProcessHistoryEntry(process, pvs, latestDeployedVersionsPerEnv)),
+      businessView = businessView
     )
   }
 
@@ -193,7 +201,9 @@ class ProcessRepository(db: JdbcBackend.Database,
                                 isLatestVersion: Boolean,
                                 currentlyDeployedAt: Set[String],
                                 tags: Seq[TagsEntityData],
-                                history: Seq[ProcessHistoryEntry]): ProcessDetails = {
+                                history: Seq[ProcessHistoryEntry],
+                                businessView: Boolean)
+                               (implicit loggedUser: LoggedUser): ProcessDetails = {
     ProcessDetails(
       id = process.id,
       name = process.name,
@@ -206,16 +216,18 @@ class ProcessRepository(db: JdbcBackend.Database,
       currentlyDeployedAt = currentlyDeployedAt,
       tags = tags.map(_.name).toList,
       modificationDate = DateUtils.toLocalDateTime(processVersion.createDate),
-      json = processVersion.json.map(json => ProcessConverter.toDisplayableOrDie(json, process.processingType, process.processType)
-        .validated(processValidation)),
+      json = processVersion.json.map(jsonString => displayableFromJson(jsonString, process, businessView)),
       history = history.toList
     )
   }
 
-  def fetchLatestProcessVersion(processId: String)
-                               (implicit loggedUser: LoggedUser): Future[Option[ProcessVersionEntityData]] = {
-    val action = latestProcessVersions(processId).result.headOption
-    db.run(action)
+  private def displayableFromJson(json: String, process: ProcessEntityData, businessView: Boolean) = {
+    val displayable = ProcessConverter.toDisplayableOrDie(json, process.processingType, processType = process.processType, businessView = businessView)
+    if (businessView) {
+      displayable.withSuccessValidation()
+    } else {
+      displayable.validated(processValidation)
+    }
   }
 
   private def latestProcessVersions(processId: String) = {

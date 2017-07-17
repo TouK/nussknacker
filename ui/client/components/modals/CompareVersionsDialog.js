@@ -29,7 +29,7 @@ class CompareVersionsDialog extends React.Component {
 
   loadVersion(versionId) {
     if (versionId) {
-      HttpService.compareProcesses(this.props.processId, this.props.version, versionId)
+      HttpService.compareProcesses(this.props.processId, this.props.version, versionId, this.props.businessView)
         .then((difference) => this.setState({difference: difference, otherVersion: versionId, currentDiffId: null}))
     } else {
       this.setState(this.initState)
@@ -112,7 +112,8 @@ function mapState(state) {
     processId: _.get(state.graphReducer, 'fetchedProcessDetails.id'),
     version: _.get(state.graphReducer, 'fetchedProcessDetails.processVersionId'),
     processDefinitionData: state.settings.processDefinitionData,
-    versions: _.get(state.graphReducer, 'fetchedProcessDetails.history', [])
+    versions: _.get(state.graphReducer, 'fetchedProcessDetails.history', []),
+    businessView: state.graphReducer.businessView
   }
 }
 
