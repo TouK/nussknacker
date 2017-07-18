@@ -99,7 +99,7 @@ lazy val perf_test = (project in engine("perf-test")).
   settings(
     name := "esp-perf-test",
     Keys.test in IntegrationTest <<= (Keys.test in IntegrationTest).dependsOn(
-      publishLocal in (assembly in Compile) in perf_test_sample
+      assembly in Compile in perf_test_sample
     ),
     libraryDependencies ++= {
       Seq(
@@ -124,6 +124,7 @@ lazy val perf_test_sample = (project in engine("perf-test/sample")).
         "com.iheart" %% "ficus" % ficusV
       )
     },
+    assemblyJarName in assembly := "perfTestSample.jar",
     artifact in (Compile, assembly) := {
       val art = (artifact in (Compile, assembly)).value
       art.copy(`classifier` = Some("assembly"))
@@ -166,7 +167,7 @@ lazy val management = (project in engine("management")).
   settings(
     name := "esp-management",
     Keys.test in IntegrationTest <<= (Keys.test in IntegrationTest).dependsOn(
-      publishLocal in (assembly in Compile) in management_sample
+      (assembly in Compile) in management_sample
     ),
     //jest problem we flinku jesli sie naraz deployuje i puszcza testy :|
     parallelExecution in IntegrationTest := false,
