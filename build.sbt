@@ -125,13 +125,8 @@ lazy val perf_test_sample = (project in engine("perf-test/sample")).
         "com.iheart" %% "ficus" % ficusV
       )
     },
-    assemblyJarName in assembly := "perfTestSample.jar",
-    artifact in (Compile, assembly) := {
-      val art = (artifact in (Compile, assembly)).value
-      art.copy(`classifier` = Some("assembly"))
-    }
+    assemblyJarName in assembly := "perfTestSample.jar"
   ).
-  settings(addArtifact(artifact in (Compile, assembly), assembly)).
   dependsOn(flinkUtil, kafkaFlinkUtil, process % "runtime")
 
 lazy val engineStandalone = (project in engine("engine-standalone")).
@@ -201,13 +196,8 @@ lazy val management_sample = (project in engine("management/sample")).
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
         "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )
-    },
-    artifact in (Compile, assembly) := {
-      val art = (artifact in (Compile, assembly)).value
-      art.copy(`classifier` = Some("assembly"))
     }
   ).
-  settings(addArtifact(artifact in (Compile, assembly), assembly)).
   dependsOn(flinkUtil, kafka, kafkaFlinkUtil, process % "runtime,test", flinkTestUtil % "test", kafkaTestUtil % "test")
 
 lazy val example = (project in engine("example")).
@@ -221,8 +211,14 @@ lazy val example = (project in engine("example")).
         "org.scalatest" %% "scalatest" % scalaTestV % "test",
         "ch.qos.logback" % "logback-classic" % logbackV % "test"
       )
+    },
+    artifact in (Compile, assembly) := {
+      val art = (artifact in (Compile, assembly)).value
+      art.copy(`classifier` = Some("assembly"))
     }
-  ).dependsOn(process, kafkaFlinkUtil, kafkaTestUtil % "test", flinkTestUtil % "test")
+  )
+  .settings(addArtifact(artifact in (Compile, assembly), assembly))
+  .dependsOn(process, kafkaFlinkUtil, kafkaTestUtil % "test", flinkTestUtil % "test")
 
 lazy val process = (project in engine("process")).
   settings(commonSettings).
@@ -468,6 +464,10 @@ lazy val ui = (project in file("ui/server"))
     },
     parallelExecution in ThisBuild := false,
     assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = includeFlinkAndScala, level = Level.Debug),
+    artifact in (Compile, assembly) := {
+      val art = (artifact in (Compile, assembly)).value
+      art.copy(`classifier` = Some("assembly"))
+    },
     Keys.test in Test <<= (Keys.test in Test).dependsOn(
       //TODO: maybe here there should be engine/demo??
       (assembly in Compile) in management_sample
@@ -512,6 +512,7 @@ lazy val ui = (project in file("ui/server"))
       )
     }
   )
+  .settings(addArtifact(artifact in (Compile, assembly), assembly))
   .dependsOn(management, interpreter, engineStandalone, processReports)
 
 publishArtifact := true
