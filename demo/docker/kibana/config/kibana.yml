@@ -1,5 +1,7 @@
 server.name: kibana
 server.host: "0"
+server.basePath: /kibana
+
 elasticsearch.url: http://elasticsearch:9200
 
 xpack.security.enabled: false
