@@ -22,10 +22,11 @@ val includeFlinkAndScala = Option(System.getProperty("includeFlinkAndScala", "tr
 val flinkScope = if (includeFlinkAndScala) "compile" else "provided"
 
 publishTo in ThisBuild := {
+  //TODO: configure repos...
   if (isSnapshot.value)
     Some("snapshots" at toukNexusRepositories + "snapshots")
   else
-    Some("releases"  at toukNexusRepositories + "public")
+    Some("releases"  at toukNexusRepositories + "releases")
 }
 
 def numberUtilsStrategy: String => MergeStrategy = {
@@ -522,6 +523,7 @@ releaseProcess := Seq[ReleaseStep](
   setReleaseVersion,                      // : ReleaseStep
   commitReleaseVersion,                   // : ReleaseStep, performs the initial git checks
   tagRelease,                             // : ReleaseStep
+  publishArtifacts,                       // : ReleaseStep, checks whether `publishTo` is properly set up
   setNextVersion,                         // : ReleaseStep
   commitNextVersion,                      // : ReleaseStep
   pushChanges                             // : ReleaseStep, also checks that an upstream branch is properly configured
