@@ -30,8 +30,10 @@ trait DockerTest extends DockerTestKit with ScalaFutures {
   private def prepareDockerImage() = {
     val dir = Files.createTempDirectory("forDockerfile")
     val dirFile = dir.toFile
-    FileUtils.copyInputStreamToFile(getClass.getResourceAsStream("/docker/Dockerfile"), new File(dirFile, "Dockerfile"))
-    FileUtils.copyInputStreamToFile(getClass.getResourceAsStream("/docker/entrypointWithIP.sh"), new File(dirFile, "/entrypointWithIP.sh"))
+
+    List("Dockerfile", "entrypointWithIP.sh", "conf.yml").foreach { file =>
+      FileUtils.copyInputStreamToFile(getClass.getResourceAsStream(s"/docker/$file"), new File(dirFile, file))
+    }
     client.build(dir, "flinkesp:1.3.1")
   }
 
@@ -58,11 +60,10 @@ trait DockerTest extends DockerTestKit with ScalaFutures {
     .withCommand("jobmanager")
     .withEnv("JOB_MANAGER_RPC_ADDRESS_COMMAND=grep $HOSTNAME /etc/hosts | awk '{print $1}'")
     .withReadyChecker(DockerReadyChecker.LogLineContains("New leader reachable"))
-
+    .withLinks(ContainerLink(zookeeperContainer, "zookeeper"))
 
   lazy val taskManagerContainer = baseFlink("taskmanager")
     .withCommand("taskmanager")
-    .withEnv("JOB_MANAGER_RPC_ADDRESS_COMMAND=ping -q -c 1 jobmanager | grep PING | sed -e \"s/).*//\" | sed -e \"s/.*(//\"")
     .withReadyChecker(DockerReadyChecker.LogLineContains("Starting TaskManager actor"))
     .withLinks(
       ContainerLink(kafkaContainer, "kafka"),
@@ -74,6 +75,7 @@ trait DockerTest extends DockerTestKit with ScalaFutures {
     .withValue("flinkConfig.jobmanager.rpc.port", fromAnyRef(FlinkJobManagerPort))
     .withValue("prod.kafka.zkAddress", fromAnyRef(s"${ipOfContainer(zookeeperContainer)}:$ZookeeperDefaultPort"))
     .withValue("prod.kafka.kafkaAddress", fromAnyRef(s"${ipOfContainer(kafkaContainer)}:$KafkaPort"))
+    .withValue("flinkConfig.high-availability.zookeeper.quorum", fromAnyRef(s"${ipOfContainer(zookeeperContainer)}:$ZookeeperDefaultPort"))
 
   private def ipOfContainer(container: DockerContainer) = container.getIpAddresses().futureValue.head
 

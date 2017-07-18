@@ -1,0 +1,10 @@
+
+state.savepoints.dir: file:///tmp/savepoints
+high-availability: zookeeper
+recovery.mode: zookeeper
+high-availability.zookeeper.quorum: zookeeper:2181
+high-availability.zookeeper.path.root: /flink
+high-availability.zookeeper.path.namespace: /1.3
+high-availability.storageDir: file:///tmp/storage
+
+
