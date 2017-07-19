@@ -13,6 +13,7 @@ import org.apache.commons.io.FileUtils
 import org.scalatest.Suite
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
+import scala.concurrent.duration._
 
 trait DockerTest extends DockerTestKit with ScalaFutures {
   self: Suite =>
@@ -52,19 +53,19 @@ trait DockerTest extends DockerTestKit with ScalaFutures {
               "KAFKA_BROKER_ID=0",
               "HOSTNAME_COMMAND=grep $HOSTNAME /etc/hosts | awk '{print $1}'")
     .withLinks(ContainerLink(zookeeperContainer, "zookeeper"))
-    .withReadyChecker(DockerReadyChecker.LogLineContains("started (kafka.server.KafkaServer)"))
+    .withReadyChecker(DockerReadyChecker.LogLineContains("started (kafka.server.KafkaServer)").looped(5, 1 second))
 
   def baseFlink(name: String) = DockerContainer("flinkesp:1.3.1", Some(name))
 
   lazy val jobManagerContainer = baseFlink("jobmanager")
     .withCommand("jobmanager")
     .withEnv("JOB_MANAGER_RPC_ADDRESS_COMMAND=grep $HOSTNAME /etc/hosts | awk '{print $1}'")
-    .withReadyChecker(DockerReadyChecker.LogLineContains("New leader reachable"))
+    .withReadyChecker(DockerReadyChecker.LogLineContains("New leader reachable").looped(5, 1 second))
     .withLinks(ContainerLink(zookeeperContainer, "zookeeper"))
 
   lazy val taskManagerContainer = baseFlink("taskmanager")
     .withCommand("taskmanager")
-    .withReadyChecker(DockerReadyChecker.LogLineContains("Starting TaskManager actor"))
+    .withReadyChecker(DockerReadyChecker.LogLineContains("Starting TaskManager actor").looped(5, 1 second))
     .withLinks(
       ContainerLink(kafkaContainer, "kafka"),
       ContainerLink(zookeeperContainer, "zookeeper"),
