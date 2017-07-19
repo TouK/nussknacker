@@ -7,12 +7,9 @@ import sbtassembly.MergeStrategy
 
 val scalaV = "2.11.8"
 
+//FIXME: replace nexus coordinates with maven central when released
 val toukNexusGroups = "http://nexus.touk.pl/nexus/content/groups/"
 val toukNexusRepositories = "http://nexus.touk.pl/nexus/content/repositories/"
-
-val defaultVersion = "0.1-SNAPSHOT"
-
-version in ThisBuild := sys.props.getOrElse("espEngineToukVersion", defaultVersion)
 
 credentials in ThisBuild += Credentials("Sonatype Nexus Repository Manager", "nexus.touk.pl", "deployment", "deployment123")
 
@@ -43,8 +40,6 @@ val commonSettings =
     scalaVersion  := scalaV,
     resolvers ++= Seq(
       "local" at "file://"+Path.userHome.absolutePath+"/.m2/repository",
-      "touk repo" at "http://nexus.touk.pl/nexus/content/groups/public",
-      "touk snapshots" at "http://nexus.touk.pl/nexus/content/groups/public-snapshots",
       "spring milestone" at "https://repo.spring.io/milestone"
     ),
     scalacOptions := Seq(
