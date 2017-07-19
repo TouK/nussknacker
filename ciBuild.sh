@@ -18,5 +18,5 @@ runAndExitOnFail() {
 runAndExitOnFail "./sbtwrapper clean test management/it:test"
 if [ -n "$espEngineToukVersion" ]
     then
-        ./sbtwrapper publish -DespEngineToukVersion=$espEngineToukVersion
+        ./sbtwrapper "set version in ThisBuild := \"$espEngineToukVersion\"" publish
 fi

@@ -3,7 +3,13 @@ version: '2.1'
 services:
 
   app:
-    build: ./app
+    build:
+      context: ./app
+      args:
+        #TODO: consider sth like:
+        #curl -s https://api.github.com/repos/touk/nussknacker/releases/latest | grep tag_name | awk '{ print $2 }' | sed -e 's/"//g' -e 's/,//g'
+        #to retrieve latest version
+        version: 0.0.2
     links:
       - "jobmanager:jobmanager"
       - "kafka:kafka"
