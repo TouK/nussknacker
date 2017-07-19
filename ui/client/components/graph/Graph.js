@@ -453,7 +453,8 @@ function mapSubprocessState(state, props) {
         processToDisplay: props.processToDisplay,
         loggedUser: state.settings.loggedUser,
         processDefinitionData: state.settings.processDefinitionData,
-        processCounts: props.processCounts
+        processCounts: props.processCounts,
+        nodesSettings: state.settings.nodesSettings
   }
 }
 
