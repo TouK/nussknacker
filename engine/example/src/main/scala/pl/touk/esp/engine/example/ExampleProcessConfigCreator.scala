@@ -4,7 +4,7 @@ import java.util.UUID
 
 import argonaut.Argonaut._
 import argonaut.ArgonautShapeless._
-import argonaut.DecodeJson
+import argonaut.{DecodeJson, Json}
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
@@ -58,7 +58,7 @@ class ExampleProcessConfigCreator extends ProcessConfigCreator {
     kafkaSource[Transaction](kafkaConfig, jsonBytes => {
       val decoder = implicitly[DecodeJson[Transaction]]
       new String(jsonBytes).decodeOption(decoder).get
-    }, Some(transactionTimestampExtractor), TestParsingUtils.emptyLineSplit)
+    }, Some(transactionTimestampExtractor), TestParsingUtils.newLineSplit)
   }
 
   private def kafkaSource[T: TypeInformation](config: KafkaConfig,
@@ -71,13 +71,18 @@ class ExampleProcessConfigCreator extends ProcessConfigCreator {
 
   override def sinkFactories(config: Config): Map[String, WithCategories[SinkFactory]] = {
     val kafkaConfig = config.as[KafkaConfig]("kafka")
-    val stringSink = kafkaSink(kafkaConfig, new KeyedSerializationSchema[Any] {
+    val stringOrJsonSink = kafkaSink(kafkaConfig, new KeyedSerializationSchema[Any] {
       override def serializeKey(element: Any): Array[Byte] = UUID.randomUUID().toString.getBytes()
-      override def serializeValue(element: Any): Array[Byte] = element.asInstanceOf[String].getBytes()
+      override def serializeValue(element: Any): Array[Byte] = element match {
+        case a:Displayable => a.display.nospaces.getBytes
+        case a:Json => a.nospaces.getBytes
+        case a:String => a.getBytes
+        case _ => throw new RuntimeException("Sorry, only strings or json are supported...")
+      }
       override def getTargetTopic(element: Any): String = null
     })
     Map(
-      "kafka-stringSink" -> all(stringSink)
+      "kafka-stringSink" -> all(stringOrJsonSink)
     )
   }
 
