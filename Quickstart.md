@@ -8,8 +8,14 @@ To run this quickstart you have to
 
 * Checkout Nussknacker project and enter demo/docker folder
 * Run ./getSampleAssembly.sh script
-* Run docker-compose up
-* Go to http://localhost:8081, user/password is admin/admin
+* Run docker-compose up a wait a while until all components start
+
+Now you are ready to check your newly created environment:
+
+* [Nussknacker](http://localhost:8081/) - user/password: admin/admin
+* [Apache Flink ui](http://localhost:8081/flink)
+* [Grafana](http://localhost:8081/grafana/)
+* [Kibana](http://localhost:8081/kibana/)
 
 ## Defining new process
 

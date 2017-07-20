@@ -14,8 +14,6 @@ to be able to define all processes with code.
 This is where Nussknacker kicks in.
 
 
-
-
 ##Flow
 We strongly believe that 'zero-code' platforms are a humbug. For each deployment, some development effort
 is needed to define model, integrations with external systems and so on. 
