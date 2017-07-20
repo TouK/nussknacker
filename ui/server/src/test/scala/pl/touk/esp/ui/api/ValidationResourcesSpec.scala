@@ -21,7 +21,7 @@ import pl.touk.esp.ui.validation.ValidationResults.ValidationResult
 
 class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with Matchers with Inside {
 
-  val route = withPermissions(new ValidationResources(processValidation).route, Permission.Read)
+  val route = withPermissions(new ValidationResources(processValidation), Permission.Read)
 
   it should "find errors in a bad process" in {
     Post("/processValidation", posting.toEntity(ProcessTestData.invalidProcess)) ~> route ~> check {

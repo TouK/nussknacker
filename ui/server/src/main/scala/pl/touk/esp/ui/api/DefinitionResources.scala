@@ -1,6 +1,6 @@
 package pl.touk.esp.ui.api
 
-import akka.http.scaladsl.server.Directives
+import akka.http.scaladsl.server.{Directives, Route}
 import pl.touk.esp.engine.api.MetaData
 import pl.touk.esp.engine.canonicalgraph.CanonicalProcess
 import pl.touk.esp.engine.canonicalgraph.canonicalnode.FlatNode
@@ -34,12 +34,12 @@ class DefinitionResources(processDefinition: Map[ProcessingType, ProcessDefiniti
                           subprocessRepository: SubprocessRepository,
                           parameterDefaultValueExtractorStrategyFactory: ParameterDefaultValueExtractorStrategy)
                          (implicit ec: ExecutionContext)
-  extends Directives with Argonaut62Support with EspPathMatchers {
+  extends Directives with Argonaut62Support with EspPathMatchers  with RouteWithUser {
 
   import argonaut.ArgonautShapeless._
   import pl.touk.esp.ui.codec.UiCodecs._
 
-  val route = (user: LoggedUser) =>
+  def route(implicit user: LoggedUser) : Route =
     path("processDefinitionData" / EnumSegment(ProcessingType)) { (processingType) =>
       parameter('isSubprocess.as[Boolean]) { (isSubprocess) =>
         get {

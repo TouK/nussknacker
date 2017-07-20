@@ -39,7 +39,7 @@ class ProcessesResources(repository: ProcessRepository,
                          processActivityRepository: ProcessActivityRepository,
                          processValidation: ProcessValidation, typesForCategories: ProcessTypesForCategories)
                         (implicit ec: ExecutionContext, mat: Materializer)
-  extends Directives with Argonaut62Support with EspPathMatchers with UiCodecs {
+  extends Directives with Argonaut62Support with EspPathMatchers with UiCodecs with RouteWithUser {
 
   val uiProcessMarshaller = UiProcessMarshaller()
 

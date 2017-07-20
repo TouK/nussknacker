@@ -14,7 +14,7 @@ import pl.touk.esp.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.esp.engine.graph.node.{Split, SubprocessInputDefinition, SubprocessOutputDefinition}
 import pl.touk.esp.engine.management.FlinkProcessManager
 import pl.touk.esp.ui.validation.ProcessValidation
-import pl.touk.esp.ui.api.{ProcessPosting, ProcessTestData}
+import pl.touk.esp.ui.api.{ProcessPosting, ProcessTestData, RouteWithUser}
 import pl.touk.esp.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.esp.ui.process.marshall.ProcessConverter
 import pl.touk.esp.ui.process.repository.{DeployedProcessRepository, ProcessActivityRepository, ProcessRepository}
@@ -73,8 +73,8 @@ object TestFactory {
   def user(permissions: Permission*) = LoggedUser("userId", "pass", permissions.toList, List(testCategory))
 
   val allPermissions = List(Permission.Deploy, Permission.Read, Permission.Write)
-  def withPermissions(route: LoggedUser => Route, permissions: Permission*) = route(user(permissions : _*))
-  def withAllPermissions(route: LoggedUser => Route) = route(user(allPermissions: _*))
+  def withPermissions(route: RouteWithUser, permissions: Permission*) = route.route(user(permissions : _*))
+  def withAllPermissions(route: RouteWithUser) = route.route(user(allPermissions: _*))
 
   object SampleSubprocessRepository extends SubprocessRepository {
     override def loadSubprocesses(): Set[CanonicalProcess] = Set(

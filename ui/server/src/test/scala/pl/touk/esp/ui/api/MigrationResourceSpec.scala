@@ -38,7 +38,7 @@ class MigrationResourceSpec extends FlatSpec with ScalatestRouteTest with ScalaF
 
   it should "fail when process does not exist" in {
     val migrator = new MockMigrator
-    val route = withPermissions(new MigrationResources(migrator, processRepository).route, Permission.Deploy)
+    val route = withPermissions(new MigrationResources(migrator, processRepository), Permission.Deploy)
 
     Get(s"/migration/compare/$processId") ~> route ~> check {
       status shouldEqual StatusCodes.NotFound
@@ -57,7 +57,7 @@ class MigrationResourceSpec extends FlatSpec with ScalatestRouteTest with ScalaF
 
   it should "invoke migrator for found process" in {
     val migrator = new MockMigrator
-    val route = withPermissions(new MigrationResources(migrator, processRepository).route, Permission.Deploy)
+    val route = withPermissions(new MigrationResources(migrator, processRepository), Permission.Deploy)
     import pl.touk.http.argonaut.Argonaut62Support._
     implicit val codec = ProcessComparator.codec
 
