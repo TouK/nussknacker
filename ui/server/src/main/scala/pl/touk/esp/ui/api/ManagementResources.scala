@@ -28,7 +28,7 @@ import scala.concurrent.duration._
 
 
 class ManagementResources(typesInformation: List[PlainClazzDefinition], processCounter: ProcessCounter,
-                          val managementActor: ActorRef)(implicit ec: ExecutionContext, mat: Materializer) extends Directives with LazyLogging {
+                          val managementActor: ActorRef)(implicit ec: ExecutionContext, mat: Materializer) extends Directives with LazyLogging  with RouteWithUser {
 
   import pl.touk.esp.ui.codec.UiCodecs.displayableProcessCodec
   val codecs = UiCodecs.ContextCodecs(typesInformation)

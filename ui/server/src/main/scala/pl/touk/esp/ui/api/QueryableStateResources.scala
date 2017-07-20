@@ -20,7 +20,7 @@ class QueryableStateResources(processDefinition: Map[ProcessingType, ProcessDefi
                               processRepository: ProcessRepository,
                               queryableClient: () => EspQueryableClient,
                               jobStatusService: JobStatusService)
-                             (implicit ec: ExecutionContext) extends Directives with Argonaut62Support {
+                             (implicit ec: ExecutionContext) extends Directives with Argonaut62Support  with RouteWithUser {
 
   import pl.touk.esp.ui.codec.UiCodecs._
   import pl.touk.esp.ui.util.CollectionsEnrichments._

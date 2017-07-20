@@ -17,7 +17,7 @@ import scala.concurrent.duration._
 
 class TestInfoResources(providers: Map[ProcessingType, TestInfoProvider],
                         processRepository: ProcessRepository)
-                       (implicit ec: ExecutionContext) extends Directives with Argonaut62Support {
+                       (implicit ec: ExecutionContext) extends Directives with Argonaut62Support with RouteWithUser {
   import argonaut.ArgonautShapeless._
   import pl.touk.esp.ui.codec.UiCodecs._
 

@@ -39,13 +39,13 @@ trait EspItTest extends LazyLogging { self: ScalatestRouteTest with Suite with B
     Map(ProcessingType.Streaming -> InMemoryMocks.mockProcessManager), processRepository, deploymentProcessRepository, TestFactory.sampleResolver)
 
   val jobStatusService = new JobStatusService(managementActor)
-  val processesRoute = (u:LoggedUser) => new ProcessesResources(processRepository, jobStatusService, processActivityRepository, processValidation, typesForCategories).route(u)
+  val processesRoute = new ProcessesResources(processRepository, jobStatusService, processActivityRepository, processValidation, typesForCategories)
 
   val processesRouteWithAllPermissions = withAllPermissions(processesRoute)
-  val deployRoute = (u:LoggedUser) =>  new ManagementResources(
-    InMemoryMocks.mockProcessManager.getProcessDefinition.typesInformation, new ProcessCounter(TestFactory.sampleSubprocessRepository), managementActor).route(u)
+  val deployRoute = new ManagementResources(
+    InMemoryMocks.mockProcessManager.getProcessDefinition.typesInformation, new ProcessCounter(TestFactory.sampleSubprocessRepository), managementActor)
   val attachmentService = new ProcessAttachmentService(attachmentsPath, processActivityRepository)
-  val processActivityRoute = (u:LoggedUser) =>  new ProcessActivityResource(processActivityRepository, attachmentService).route(u)
+  val processActivityRoute = new ProcessActivityResource(processActivityRepository, attachmentService)
 
   def saveProcess(processId: String, process: EspProcess)(testCode: => Assertion): Assertion = {
     Post(s"/processes/$processId/$testCategory?isSubprocess=false") ~> processesRouteWithAllPermissions ~> check {

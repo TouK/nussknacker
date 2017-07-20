@@ -19,7 +19,7 @@ import pl.touk.process.report.influxdb.InfluxReporter
 import scala.concurrent.{ExecutionContext, Future}
 
 class ProcessReportResources(influxReporter: InfluxReporter, processCounter: ProcessCounter, processRepository: ProcessRepository)
-                            (implicit ec: ExecutionContext) extends Directives with Argonaut62Support with UiCodecs {
+                            (implicit ec: ExecutionContext) extends Directives with Argonaut62Support with UiCodecs with RouteWithUser {
 
   def route(implicit loggedUser: LoggedUser): Route = {
     path("processCounts" / Segment) { processId =>

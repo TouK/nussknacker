@@ -1,6 +1,6 @@
 package pl.touk.esp.ui.api
 
-import akka.http.scaladsl.server.Directives
+import akka.http.scaladsl.server.{Directives, Route}
 import pl.touk.esp.ui.config.FeatureTogglesConfig
 import pl.touk.esp.ui.process.uiconfig.SingleNodeConfig
 import pl.touk.esp.ui.security.LoggedUser
@@ -9,11 +9,11 @@ import pl.touk.http.argonaut.Argonaut62Support
 import scala.concurrent.ExecutionContext
 
 class SettingsResources(config: FeatureTogglesConfig, nodesConfig: Map[String, SingleNodeConfig])(implicit ec: ExecutionContext)
-  extends Directives with Argonaut62Support {
+  extends Directives with Argonaut62Support with RouteWithUser {
 
   import argonaut.ArgonautShapeless._
 
-  val route = (user: LoggedUser) =>
+  def route(implicit user: LoggedUser): Route =
     pathPrefix("settings") {
       get {
         complete {

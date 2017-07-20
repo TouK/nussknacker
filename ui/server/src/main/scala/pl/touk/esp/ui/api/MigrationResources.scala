@@ -14,11 +14,10 @@ import scala.concurrent.{ExecutionContext, Future}
 import ProcessComparator._
 
 class MigrationResources(migrator: ProcessMigrator, processRepository: ProcessRepository)(implicit ec: ExecutionContext)
-  extends Directives with Argonaut62Support {
+  extends Directives with Argonaut62Support with RouteWithUser {
 
 
-  def route(user: LoggedUser) : Route = {
-    implicit val iu = user
+  def route(implicit user: LoggedUser) : Route = {
     authorize(user.hasPermission(Permission.Deploy)) {
 
       pathPrefix("migration") {

@@ -25,7 +25,7 @@ import scala.math.Ordering
 class SignalsResources(signalDispatcher: Map[ProcessingType, SignalDispatcher],
                        processDefinition: Map[ProcessingType, ProcessDefinition[ObjectDefinition]],
                        processRepository: ProcessRepository)
-                      (implicit ec: ExecutionContext) extends Directives with Argonaut62Support {
+                      (implicit ec: ExecutionContext) extends Directives with Argonaut62Support  with RouteWithUser {
 
   import pl.touk.esp.ui.codec.UiCodecs._
 

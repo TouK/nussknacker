@@ -79,6 +79,32 @@ object EspUiApp extends App with Directives with LazyLogging {
 
   val typesForCategories = new ProcessTypesForCategories(config)
 
+
+  private val apiResources : List[RouteWithUser] = {
+    val routes = List(
+      new ProcessesResources(processRepository, jobStatusService, processActivityRepository, processValidation, typesForCategories),
+        new ProcessActivityResource(processActivityRepository, attachmentService),
+        new ManagementResources(processDefinitions.values.flatMap(_.typesInformation).toList, counter, managementActor),
+        new ValidationResources(processValidation),
+        new DefinitionResources(processDefinitions, subprocessRepository, extractValueParameterByConfigThenType),
+        new SignalsResources(managers, processDefinitions, processRepository),
+        new QueryableStateResources(processDefinitions, processRepository, espQueryableClient, jobStatusService),
+        new UserResources(),
+        new SettingsResources(featureTogglesConfig, nodesConfig),
+        new AppResources(buildInfo, processRepository, jobStatusService),
+        new TestInfoResources(managers, processRepository)
+    )
+    val optionalRoutes = List(
+      featureTogglesConfig.migration
+        .map(migrationConfig => new HttpProcessMigrator(migrationConfig, environment))
+        .map(migrator => new MigrationResources(migrator, processRepository)),
+      featureTogglesConfig.counts
+        .map(countsConfig => new InfluxReporter(environment, countsConfig))
+        .map(reporter => new ProcessReportResources(reporter, counter, processRepository))
+    ).flatten
+    routes ++ optionalRoutes
+  }
+
   def initHttp() = {
     val route: Route = {
 
@@ -86,28 +112,7 @@ object EspUiApp extends App with Directives with LazyLogging {
           authenticateBasic("esp", authenticator) { user =>
 
             pathPrefix("api") {
-              val routes = List(
-                new ProcessesResources(processRepository, jobStatusService, processActivityRepository, processValidation, typesForCategories).route(user),
-                  new ProcessActivityResource(processActivityRepository, attachmentService).route(user),
-                  new ManagementResources(processDefinitions.values.flatMap(_.typesInformation).toList, counter, managementActor).route(user),
-                  new ValidationResources(processValidation).route(user),
-                  new DefinitionResources(processDefinitions, subprocessRepository, extractValueParameterByConfigThenType).route(user),
-                  new SignalsResources(managers, processDefinitions, processRepository).route(user),
-                  new QueryableStateResources(processDefinitions, processRepository, espQueryableClient, jobStatusService).route(user),
-                  new UserResources().route(user),
-                  new SettingsResources(featureTogglesConfig, nodesConfig).route(user),
-                  new AppResources(buildInfo, processRepository, jobStatusService).route(user),
-                  new TestInfoResources(managers, processRepository).route(user)
-              )
-              val optionalRoutes = List(
-                featureTogglesConfig.migration
-                  .map(migrationConfig => new HttpProcessMigrator(migrationConfig, environment))
-                  .map(migrator => new MigrationResources(migrator, processRepository).route(user)),
-                featureTogglesConfig.counts
-                  .map(countsConfig => new InfluxReporter(environment, countsConfig))
-                  .map(reporter => new ProcessReportResources(reporter, counter, processRepository).route(user))
-              ).flatten
-              (routes ++ optionalRoutes).reduce(_ ~ _)
+              apiResources.map(_.route(user)).reduce(_ ~ _)
             } ~
               //this is separated from api to do serve it without authentication
               pathPrefixTest(!"api") {

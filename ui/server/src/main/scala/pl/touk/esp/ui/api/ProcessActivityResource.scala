@@ -19,7 +19,7 @@ import scala.concurrent.ExecutionContext
 
 class ProcessActivityResource(processActivityRepository: ProcessActivityRepository,
                               attachmentService: ProcessAttachmentService)
-                             (implicit ec: ExecutionContext, mat: Materializer) extends Directives with Argonaut62Support {
+                             (implicit ec: ExecutionContext, mat: Materializer) extends Directives with Argonaut62Support with RouteWithUser {
 
   import argonaut.ArgonautShapeless._
   import pl.touk.esp.ui.codec.UiCodecs._

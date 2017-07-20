@@ -17,7 +17,7 @@ import scala.util.control.NonFatal
 class AppResources(buildInfo: Map[String, String],
                    processRepository: ProcessRepository,
                    jobStatusService: JobStatusService)(implicit ec: ExecutionContext)
-  extends Directives with Argonaut62Support with LazyLogging {
+  extends Directives with Argonaut62Support with LazyLogging with RouteWithUser {
 
   import argonaut.ArgonautShapeless._
 
