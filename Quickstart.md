@@ -7,18 +7,18 @@ To run this quickstart you have to
 ## Running
 
 * Checkout Nussknacker project and enter demo/docker folder
-* Run prepare.sh script
+* Run ./getSampleAssembly.sh script
 * Run docker-compose up
-* Go to http://localhost:8080, user/password is admin/admin
+* Go to http://localhost:8081, user/password is admin/admin
 
 ## Defining new process
 
-* Go to http://localhost:8080
+* Go to http://localhost:8081
 * Click 'Create new process' button - name it 'DetectLargeTransactions'
 * You'll see empty diagram
 * Click 'Import' on right panel and upload 'testData/DetectLargeTransactions.json'
 * Click 'Save' and then 'Deploy'
-* Verify on Flink GUI at http://localhost:8081 that your process is running
+* Verify on Flink GUI at http://localhost:8081/flink that your process is running
 
 ## Test process with data
 * Run ./testData/sendTestTransactions.sh script few time
@@ -27,8 +27,11 @@ To run this quickstart you have to
   * Define processedevents* as default index pattern
   * You will see filtered events
 
-## Unit test your process
-* TODO
+## Test your process in sandbox environment
+* Clink 'generate' button in right panel of application (assuming you have already some test data on kafka)
+  * Latest records from Kafka will be downloaded to file
+* Click 'from file' button and upload file generated in last step
+* After a while you will see test results - how many records passed filters, and what where variables values
 
 ## What's inside?
 The quickstart starts several Docker containers. Let's look at them in detail:
@@ -45,3 +48,5 @@ The quickstart starts several Docker containers. Let's look at them in detail:
   * Logstash
   * Elasticsearch
   * Kibana
+* Nginx
+  * To be able to view all applications on single port
