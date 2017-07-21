@@ -290,6 +290,32 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside with BeforeAn
 
   }
 
+  it should "be able to test process with time windows" in {
+    val process =
+      EspProcessBuilder
+        .id("proc1")
+        .exceptionHandler()
+        .source("id", "input")
+        .customNode("cid", "count", "transformWithTime", "seconds" -> "10")
+        .sink("out", "#count", "monitor")
+
+    def recordWithSeconds(duration: FiniteDuration) = s"0|0|0|${duration.toMillis}|0|0|0"
+
+    val results = FlinkTestMain.run(ProcessMarshaller.toJson(process, PrettyParams.spaces2),
+      ConfigFactory.load(), TestData(List(
+        recordWithSeconds(1 second),
+        recordWithSeconds(2 second),
+        recordWithSeconds(5 second),
+        recordWithSeconds(9 second),
+        recordWithSeconds(20 second)
+      ).mkString("\n")), List())
+
+    val nodeResults = results.nodeResults
+
+    nodeResults("out").map(_.context.variables) shouldBe List(Map("count" -> 4), Map("count" -> 1))
+
+  }
+
   def nodeResult(count: Int, vars: (String, Any)*) = NodeResult(Context(s"proc1-id-0-$count", Map(vars: _*)))
 
 }

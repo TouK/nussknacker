@@ -396,7 +396,7 @@ export default class NodeDetailsContent extends React.Component {
                     value={this.state.testResultsIdToShow}>
               { TestResultUtils.availableContexts(this.props.testResults).map((ctx, idx) =>
                 //toString is lame in some cases
-                (<option key={idx} value={ctx.id}>{ctx.id} ({(ctx.input.original || ctx.input || "").toString().substring(0, 50)})</option>)
+                (<option key={idx} value={ctx.id}>{ctx.id} ({ctx.display})</option>)
               )}
             </select>
           </div>

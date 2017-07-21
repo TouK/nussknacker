@@ -64,4 +64,5 @@ class FlinkProcessTestRunnerSpec extends FlatSpec with Matchers with ScalaFuture
     }
     caught.getMessage shouldBe "Compilation errors: MissingParameters(Set(param1),$process)"
   }
+
 }

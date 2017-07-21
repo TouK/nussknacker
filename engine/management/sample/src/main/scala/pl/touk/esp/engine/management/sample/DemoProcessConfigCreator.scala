@@ -130,6 +130,10 @@ class DemoProcessConfigCreator extends ProcessConfigCreator {
       override def parseElement(testElement: String) = parser(testElement.split('|').toList)
     })
 
+    override val timestampAssigner = Some(new BoundedOutOfOrdernessTimestampExtractor[T](Time.minutes(10)) {
+      override def extractTimestamp(element: T): Long = timestamp(element)
+    })
+
     @MethodToInvoke
     def create(@ParamName("ratePerMinute") rate: String /*tutaj z jakiegos powodu musi byc string?*/) = {
       new FlinkSource[T] with Serializable with TestDataGenerator {
@@ -153,9 +157,7 @@ class DemoProcessConfigCreator extends ProcessConfigCreator {
           }
         }
 
-        override def timestampAssigner = Some(new BoundedOutOfOrdernessTimestampExtractor[T](Time.minutes(10)) {
-          override def extractTimestamp(element: T): Long = timestamp(element)
-        })
+        override val timestampAssigner = RunningSourceFactory.this.timestampAssigner
 
         override def generateTestData(size: Int): Array[Byte] = {
           (1 to size).map(generate).map(_.originalDisplay.getOrElse("")).mkString("\n").getBytes()

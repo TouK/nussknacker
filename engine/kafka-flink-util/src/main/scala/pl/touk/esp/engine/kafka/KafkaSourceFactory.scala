@@ -22,7 +22,7 @@ import pl.touk.esp.engine.kafka.KafkaSourceFactory._
 * */
 class KafkaSourceFactory[T: TypeInformation](config: KafkaConfig,
                                              schema: DeserializationSchema[T],
-                                             timestampAssigner: Option[TimestampAssigner[T]],
+                                             val timestampAssigner: Option[TimestampAssigner[T]],
                                              testPrepareInfo: TestDataSplit) extends FlinkSourceFactory[T] with Serializable {
 
   @MethodToInvoke
