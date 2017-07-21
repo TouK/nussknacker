@@ -60,7 +60,7 @@ class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
     implicit val typeInfo = originalSource.typeInformation
     originalSource.testDataParser.map { testDataParser =>
       val testObjects = testDataParser.parseTestData(testData.testData)
-      val testFactory = CollectionSource[Object](executionConfig, testObjects, None)
+      val testFactory = CollectionSource[Object](executionConfig, testObjects, originalSource.timestampAssigner)
       new TestDataInvokingObjectWithMethodDef(testFactory, objectWithMethodDef)
     }
   }

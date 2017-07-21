@@ -1,7 +1,7 @@
 package pl.touk.esp.engine.process.runner
 
 import java.net.ConnectException
-import java.util.Date
+import java.util.{Date, UUID}
 import java.util.concurrent.atomic.AtomicInteger
 
 import argonaut.PrettyParams
@@ -9,6 +9,7 @@ import com.typesafe.config.Config
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor
 import org.apache.flink.streaming.api.scala._
+import org.apache.flink.streaming.api.windowing.time.Time
 import org.scalatest.{FlatSpec, Inside, Matchers}
 import pl.touk.esp.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.esp.engine.api.process._
@@ -92,6 +93,22 @@ object CustomSignalReader extends CustomStreamTransformer {
   })
 }
 
+object TransformerWithTime extends CustomStreamTransformer {
+
+  override def clearsContext = true
+
+  @SignalTransformer(signalClass = classOf[TestProcessSignalFactory])
+  @MethodToInvoke(returnType = classOf[Int])
+  def execute(@ParamName("seconds") seconds: Int) =
+    FlinkCustomStreamTransformation((start: DataStream[InterpretationResult], context: FlinkCustomNodeContext) => {
+      start
+        .map(_ => 1)
+        .timeWindowAll(Time.seconds(seconds)).reduce(_ + _)
+        .map(ValueWithContext(_, Context(UUID.randomUUID().toString)))
+  })
+}
+
+
 
 class TestProcessSignalFactory(val kafkaConfig: KafkaConfig, val signalsTopic: String)
   extends FlinkProcessSignalSender with EspSimpleKafkaProducer with KafkaSignalStreamConnector {
@@ -124,7 +141,8 @@ class SimpleProcessConfigCreator extends ProcessConfigCreator {
   override def listeners(config: Config) = List()
 
   override def customStreamTransformers(config: Config) = Map("stateCustom" -> WithCategories(StateCustomNode),
-          "signalReader" -> WithCategories(CustomSignalReader)
+          "signalReader" -> WithCategories(CustomSignalReader),
+          "transformWithTime" -> WithCategories(TransformerWithTime)
   )
 
   override def sourceFactories(config: Config) = Map(
@@ -151,16 +169,21 @@ object TestSources {
   import argonaut.Argonaut._
   import ArgonautShapeless._
 
+  private val ascendingTimestampExtractor = new AscendingTimestampExtractor[SimpleRecord] {
+    override def extractAscendingTimestamp(element: SimpleRecord) = element.date.getTime
+  }
+
+  private val newLineSplittedTestDataParser = new NewLineSplittedTestDataParser[SimpleRecord] {
+    override def parseElement(csv: String): SimpleRecord = {
+      val parts = csv.split("\\|")
+      SimpleRecord(parts(0), parts(1).toLong, parts(2), new Date(parts(3).toLong), Some(BigDecimal(parts(4))), BigDecimal(parts(5)), parts(6))
+    }
+  }
+
   val simpleRecordSource = FlinkSourceFactory.noParam(
-    new CollectionSource[SimpleRecord](new ExecutionConfig, List(), Some(new AscendingTimestampExtractor[SimpleRecord] {
-      override def extractAscendingTimestamp(element: SimpleRecord) = element.date.getTime
-    })), Some(new NewLineSplittedTestDataParser[SimpleRecord] {
-      override def parseElement(csv: String): SimpleRecord = {
-        val parts = csv.split("\\|")
-        SimpleRecord(parts(0), parts(1).toLong, parts(2), new Date(parts(3).toLong), Some(BigDecimal(parts(4))), BigDecimal(parts(5)), parts(6))
-      }
-    })
-  )
+    new CollectionSource[SimpleRecord](new ExecutionConfig, List(),
+      Some(ascendingTimestampExtractor)
+  ), Some(newLineSplittedTestDataParser))
 
 
   val jsonSource = FlinkSourceFactory.noParam(
