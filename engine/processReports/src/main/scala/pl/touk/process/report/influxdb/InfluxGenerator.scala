@@ -1,7 +1,7 @@
 package pl.touk.process.report.influxdb
 
 import java.time.format.DateTimeFormatter
-import java.time.{LocalDateTime, ZoneId}
+import java.time.{LocalDateTime, ZoneId, ZonedDateTime}
 import java.util.UUID
 
 import argonaut.{DecodeJson, DecodeResult}
@@ -92,10 +92,13 @@ class InfluxGenerator(url: String, user: String, password: String, dbName: Strin
 
   private def readRestartsFromSourceCounts(sourceCounts: InfluxSerie) : List[LocalDateTime] = {
     val restarts = sourceCounts.values.collect {
-      case (date:String)::(derivative:BigDecimal)::Nil if derivative < 0 => LocalDateTime.parse(date, DateTimeFormatter.ISO_DATE_TIME)
+      case (date:String)::(derivative:BigDecimal)::Nil if derivative < 0 => parseInfluxDate(date)
     }
     restarts
   }
+
+  private def parseInfluxDate(date:String) : LocalDateTime =
+    ZonedDateTime.parse(date, DateTimeFormatter.ISO_ZONED_DATE_TIME).withZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime
 
   def close(): Unit = {
     httpClient.shutdown()
