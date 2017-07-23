@@ -1,3 +1,9 @@
+Project status
+==============
+Nussknacker is production ready - it's been used in major Polish telcom since beginning of 2017. However, it's still
+under active development, so some parts of the API may change in the future.
+
+
 Nussknacker versions
 ====================
 

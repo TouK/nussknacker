@@ -4,5 +4,4 @@
 * One of the top Polish mobile operators P4 uses Apache Flink and TouK Nussknacker for 
     * Realtime Marketing
     * Realtime Fraud Detection
-* ...
 

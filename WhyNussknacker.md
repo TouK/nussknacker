@@ -30,13 +30,8 @@ will be able to define specific processes using [GUI](DesigningProcesses.md).
 
 Real time event processing is crucial in many area. Below are sample use cases:
 
-###Real time marketing
+* Real time marketing
+* Fraud detection
+* Streaming ETL
+* Traffic data
 
-###Fraud detection
-
-In telco industry and banking 
-
-###Streaming ETL
-
-
-###Traffic data

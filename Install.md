@@ -15,4 +15,6 @@ To install Nussknacer manually you will need following working components. Pleas
 * [ELK stack](https://www.elastic.co/) for realtime document analysis, dashboards and more    
 * Install Nussknacker
   * Download assembly jar
-  * 
+  * Prepare [configuration](Configuration.md)
+  * The application can be run with simple command:
+  ```java -Dconfig.file=./conf/application.conf -cp esp-ui-assembly.jar pl.touk.esp.ui.EspUiApp 8080``` - please see [Quickstart](Quickstart.md) files for additional details
