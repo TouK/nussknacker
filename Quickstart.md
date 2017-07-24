@@ -23,18 +23,26 @@ Now you are ready to check your newly created environment:
 * Click 'Create new process' button - name it 'DetectLargeTransactions'
 * You'll see empty diagram
 * Click 'Import' on right panel and upload 'testData/DetectLargeTransactions.json'
-* Click 'Save' and then 'Deploy'
-* Verify on Flink GUI at http://localhost:8081/flink that your process is running
+* Click 'Save'
 
 ![Adding process](img/quickstart/createProcess.gif)
 
 
 ## Test process with data
-* Run ./testData/sendTestTransactions.sh script few time
+* Click 'Deploy' on right panel
+* Verify on Flink GUI at http://localhost:8081/flink that your process is running
+* Run ./testData/sendTestTransactions.sh script a few times to generate some data (first run may end with error from Kafka - don't worry about it)
 * Go to Metrics tab on Nussknacker main panel - you should see changed metrics
+
+![Deploy](img/quickstart/deployAndMetrics.gif)
+
+## See results in Kibana
+
 * Go to Search tab on Nussknacker main panel 
   * Define processedevents* as default index pattern
   * You will see filtered events
+
+![Search events](img/quickstart/searchInKibana.gif)
 
 ## Test your process in sandbox environment
 * Clink 'generate' button in right panel of application (assuming you have already some test data on kafka)
