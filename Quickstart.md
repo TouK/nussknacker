@@ -26,6 +26,9 @@ Now you are ready to check your newly created environment:
 * Click 'Save' and then 'Deploy'
 * Verify on Flink GUI at http://localhost:8081/flink that your process is running
 
+![Adding process](img/quickstart/createProcess.gif)
+
+
 ## Test process with data
 * Run ./testData/sendTestTransactions.sh script few time
 * Go to Metrics tab on Nussknacker main panel - you should see changed metrics
@@ -38,6 +41,8 @@ Now you are ready to check your newly created environment:
   * Latest records from Kafka will be downloaded to file
 * Click 'from file' button and upload file generated in last step
 * After a while you will see test results - how many records passed filters, and what where variables values
+
+![Test process](img/quickstart/testProcess.gif)
 
 ## What's inside?
 The quickstart starts several Docker containers. Let's look at them in detail:
