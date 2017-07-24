@@ -11,7 +11,7 @@ millions of events per second and process them without losing even one.
 Flink offers unmatched richness of Scala/Java API for performing filtering, enrichment and sophisticated aggregations. 
 
 However, many use cases involve processes that would be best defined or changed by not-so-technical users 
-- anylysts or business people. Furthermore, many companies do not have large enough development teams 
+\- anylysts or business people. Furthermore, many companies do not have large enough development teams 
 to be able to define all processes with code. 
  
 This is where Nussknacker kicks in.
