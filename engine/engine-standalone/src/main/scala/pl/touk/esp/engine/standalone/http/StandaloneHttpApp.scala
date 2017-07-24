@@ -22,7 +22,7 @@ import scala.util.Try
 
 object StandaloneHttpApp extends Directives with Argonaut62Support with LazyLogging {
 
-  implicit val system = ActorSystem("esp-standalone-http")
+  implicit val system = ActorSystem("nussknacker-standalone-http")
 
   import system.dispatcher
 

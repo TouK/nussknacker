@@ -21,7 +21,7 @@ import scala.concurrent.Future
 
 class StandardProcessMigratorSpec extends FlatSpec with Matchers with ScalaFutures with Argonaut62Support {
 
-  implicit val system = ActorSystem("esp-ui")
+  implicit val system = ActorSystem("nussknacker-ui")
 
   implicit val user = LoggedUser("test", "", List(), List())
 

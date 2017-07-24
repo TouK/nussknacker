@@ -47,7 +47,7 @@ val commonSettings =
   graphSettings ++
   Seq(
     licenses += ("Apache-2.0", url("https://www.apache.org/licenses/LICENSE-2.0.html")),
-    organization  := "pl.touk.esp",
+    organization  := "pl.touk.nussknacker",
     scalaVersion  := scalaV,
     resolvers ++= Seq(
       //TODO: we have to get rid of it if we want to publish to maven central
@@ -97,7 +97,7 @@ val hsqldbV = "2.3.4"
 val flywayV = "4.0.3"
 
 
-val perfTestSampleName = "esp-perf-test-sample"
+val perfTestSampleName = "nussknacker-perf-test-sample"
 
 def engine(name: String) = file(s"engine/$name")
 
@@ -106,7 +106,7 @@ lazy val perf_test = (project in engine("perf-test")).
   settings(commonSettings).
   settings(Defaults.itSettings).
   settings(
-    name := "esp-perf-test",
+    name := "nussknacker-perf-test",
     Keys.test in IntegrationTest <<= (Keys.test in IntegrationTest).dependsOn(
       assembly in Compile in perf_test_sample
     ),
@@ -140,7 +140,7 @@ lazy val perf_test_sample = (project in engine("perf-test/sample")).
 lazy val engineStandalone = (project in engine("engine-standalone")).
   settings(commonSettings).
   settings(
-    name := "esp-engine-standalone",
+    name := "nussknacker-engine-standalone",
     assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = true, level = Level.Debug),
     artifact in (Compile, assembly) := {
       val art = (artifact in (Compile, assembly)).value
@@ -169,7 +169,7 @@ lazy val management = (project in engine("management")).
   settings(commonSettings).
   settings(Defaults.itSettings).
   settings(
-    name := "esp-management",
+    name := "nussknacker-management",
     Keys.test in IntegrationTest <<= (Keys.test in IntegrationTest).dependsOn(
       (assembly in Compile) in management_sample
     ),
@@ -191,7 +191,7 @@ lazy val management = (project in engine("management")).
     }
   ).dependsOn(interpreter, queryableState, kafkaTestUtil % "it,test")
 
-val managementSampleName = "esp-management-sample"
+val managementSampleName = "nussknacker-management-sample"
 
 lazy val management_sample = (project in engine("management/sample")).
   settings(commonSettings).
@@ -211,7 +211,7 @@ lazy val management_sample = (project in engine("management/sample")).
 lazy val example = (project in engine("example")).
   settings(commonSettings).
   settings(
-    name := "esp-example",
+    name := "nussknacker-example",
     fork := true, // without this there are some classloading issues
     libraryDependencies ++= {
       Seq(
@@ -231,7 +231,7 @@ lazy val example = (project in engine("example")).
 lazy val process = (project in engine("process")).
   settings(commonSettings).
   settings(
-    name := "esp-process",
+    name := "nussknacker-process",
     fork := true, // without this there are some classloading issues
     libraryDependencies ++= {
       Seq(
@@ -245,7 +245,7 @@ lazy val process = (project in engine("process")).
 lazy val interpreter = (project in engine("interpreter")).
   settings(commonSettings).
   settings(
-    name := "esp-interpreter",
+    name := "nussknacker-interpreter",
     libraryDependencies ++= {
       Seq(
         "org.apache.commons" % "commons-lang3" % commonsLangV,
@@ -271,7 +271,7 @@ lazy val interpreter = (project in engine("interpreter")).
 lazy val kafka = (project in engine("kafka")).
   settings(commonSettings).
   settings(
-    name := "esp-kafka",
+    name := "nussknacker-kafka",
     libraryDependencies ++= {
       Seq(
         "org.apache.kafka" % "kafka-clients" % kafkaV
@@ -283,7 +283,7 @@ lazy val kafka = (project in engine("kafka")).
 lazy val kafkaFlinkUtil = (project in engine("kafka-flink-util")).
   settings(commonSettings).
   settings(
-    name := "esp-kafka-flink-util",
+    name := "nussknacker-kafka-flink-util",
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" %% "flink-connector-kafka-0.9" % flinkV,
@@ -297,7 +297,7 @@ lazy val kafkaFlinkUtil = (project in engine("kafka-flink-util")).
 lazy val kafkaTestUtil = (project in engine("kafka-test-util")).
   settings(commonSettings).
   settings(
-    name := "esp-kafka-test-util",
+    name := "nussknacker-kafka-test-util",
     libraryDependencies ++= {
       Seq(
         "org.apache.kafka" %% "kafka" % kafkaV  excludeAll (
@@ -315,7 +315,7 @@ lazy val kafkaTestUtil = (project in engine("kafka-test-util")).
 lazy val util = (project in engine("util")).
   settings(commonSettings).
   settings(
-    name := "esp-util",
+    name := "nussknacker-util",
     libraryDependencies ++= {
       Seq(
         "com.iheart" %% "ficus" % ficusV
@@ -328,7 +328,7 @@ lazy val util = (project in engine("util")).
 lazy val flinkUtil = (project in engine("flink-util")).
   settings(commonSettings).
   settings(
-    name := "esp-flink-util",
+    name := "nussknacker-flink-util",
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
@@ -340,7 +340,7 @@ lazy val flinkUtil = (project in engine("flink-util")).
 lazy val flinkTestUtil = (project in engine("flink-test-util")).
   settings(commonSettings).
   settings(
-    name := "esp-flink-test-util",
+    name := "nussknacker-flink-test-util",
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
@@ -356,7 +356,7 @@ lazy val flinkTestUtil = (project in engine("flink-test-util")).
 lazy val standaloneUtil = (project in engine("standalone-util")).
   settings(commonSettings).
   settings(
-    name := "esp-standalone-util",
+    name := "nussknacker-standalone-util",
     libraryDependencies ++= {
       Seq(
         "io.dropwizard.metrics" % "metrics-core" % dropWizardV,
@@ -371,7 +371,7 @@ lazy val standaloneUtil = (project in engine("standalone-util")).
 lazy val api = (project in engine("api")).
   settings(commonSettings).
   settings(
-    name := "esp-api",
+    name := "nussknacker-api",
     libraryDependencies ++= {
       Seq(
         //TODO: czy faktycznie tak chcemy??
@@ -388,7 +388,7 @@ lazy val api = (project in engine("api")).
 lazy val flinkApi = (project in engine("flink-api")).
   settings(commonSettings).
   settings(
-    name := "esp-flink-api",
+    name := "nussknacker-flink-api",
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" %% "flink-streaming-java" % flinkV % "provided",
@@ -401,7 +401,7 @@ lazy val flinkApi = (project in engine("flink-api")).
 lazy val processReports = (project in engine("processReports")).
   settings(commonSettings).
   settings(
-    name := "esp-process-reports",
+    name := "nussknacker-process-reports",
     libraryDependencies ++= {
       Seq(
         "com.typesafe" % "config" % "1.3.0",
@@ -414,7 +414,7 @@ lazy val processReports = (project in engine("processReports")).
 lazy val httpUtils = (project in engine("httpUtils")).
   settings(commonSettings).
   settings(
-    name := "esp-http-utils",
+    name := "nussknacker-http-utils",
     libraryDependencies ++= {
       Seq(
         "net.databinder.dispatch" %% "dispatch-core" % dispatchV,// % "optional",
@@ -429,7 +429,7 @@ lazy val httpUtils = (project in engine("httpUtils")).
 lazy val argonautUtils = (project in engine("argonautUtils")).
   settings(commonSettings).
   settings(
-    name := "esp-argonaut-utils",
+    name := "nussknacker-argonaut-utils",
     libraryDependencies ++= {
       Seq(
         "io.argonaut" %% "argonaut" % argonautV,
@@ -443,7 +443,7 @@ lazy val argonautUtils = (project in engine("argonautUtils")).
 lazy val queryableState = (project in engine("queryableState")).
   settings(commonSettings).
   settings(
-    name := "esp-queryable-state",
+    name := "nussknacker-queryable-state",
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
@@ -470,7 +470,7 @@ def runNpm(command: String, errorMessage: String) = {
 lazy val ui = (project in file("ui/server"))
   .settings(commonSettings)
   .settings(
-    name := "esp-ui",
+    name := "nussknacker-ui",
     buildUi := {
       runNpm("run build", "Client build failed")
     },
@@ -489,6 +489,7 @@ lazy val ui = (project in file("ui/server"))
     ).dependsOn(
       testUi
     ),
+    assemblyJarName in assembly := "nussknacker-ui-assembly.jar",
     assembly in ThisScope <<= (assembly in ThisScope).dependsOn(
       buildUi
     ),

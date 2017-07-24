@@ -247,7 +247,7 @@ object TestUtils {
     }
 
     def test(processId: String, processJson: String, testData: TestData): TestResults = {
-      //we have to use context loader, as in UI we have don't have esp-process on classpath...
+      //we have to use context loader, as in UI we have don't have nussknacker-process on classpath...
       ThreadUtils.withThisAsContextClassLoader(jarClassLoader.classLoader) {
         tryToInvoke(testData, processJson).asInstanceOf[TestResults]
       }

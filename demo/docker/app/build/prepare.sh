@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-FILE=esp-ui-assembly.jar
+FILE=nussknacker-ui-assembly.jar
 VERSION=$1
 
 if [ ! -f ./${FILE} ]; then
@@ -14,7 +14,7 @@ if [ ! -f ./${FILE} ]; then
     else
        REPO=releases
     fi
-    wget -O ${FILE} https://philanthropist.touk.pl/nexus/content/repositories/${REPO}/pl/touk/esp/esp-ui_2.11/${VERSION}/esp-ui_2.11-${VERSION}-assembly.jar
+    wget -O ${FILE} https://philanthropist.touk.pl/nexus/content/repositories/${REPO}/pl/touk/nussknacker/nussknacker-ui_2.11/${VERSION}/nussknacker-ui_2.11-${VERSION}-assembly.jar
 else
     echo "Using custom built ${FILE}"
 fi

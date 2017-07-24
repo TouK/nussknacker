@@ -2,11 +2,11 @@
     <jmxConfigurator/>
 
     <appender name="flink" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>esp-ui.log</file>
+        <file>nussknacker-ui.log</file>
         <append>true</append>
 
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>esp-ui.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <fileNamePattern>nussknacker-ui.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxHistory>100</maxHistory>
             <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
                 <maxFileSize>512MB</maxFileSize>

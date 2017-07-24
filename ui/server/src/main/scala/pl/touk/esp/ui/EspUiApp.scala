@@ -32,7 +32,7 @@ import scala.util.Try
 
 object EspUiApp extends App with Directives with LazyLogging {
 
-  implicit val system = ActorSystem("esp-ui")
+  implicit val system = ActorSystem("nussknacker-ui")
 
   import system.dispatcher
 

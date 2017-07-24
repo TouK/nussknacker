@@ -7,7 +7,7 @@ if [[ -z "${VERSION}" ]]; then
     cd ../../
     ./sbtwrapper "set test in Test := {}" example/clean example/assembly
     cd -
-    FILE=`find ../../engine -name 'esp-example-assembly-*'`
+    FILE=`find ../../engine -name 'nussknacker-example-assembly-*'`
     echo "Using file $FILE"
     cp ${FILE} /tmp/code-assembly.jar
 else
@@ -18,5 +18,5 @@ else
     else
        REPO=releases
     fi
-    wget -O /tmp/code-assembly.jar https://philanthropist.touk.pl/nexus/content/repositories/${REPO}/pl/touk/esp/esp-example_2.11/${VERSION}/esp-example_2.11-${VERSION}-assembly.jar
+    wget -O /tmp/code-assembly.jar https://philanthropist.touk.pl/nexus/content/repositories/${REPO}/pl/touk/nussknacker/nussknacker-example_2.11/${VERSION}/nussknacker-example_2.11-${VERSION}-assembly.jar
 fi

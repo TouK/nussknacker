@@ -27,7 +27,7 @@ class FlinkProcessTestRunner(config: Config, jarClassLoader: JarClassLoader) {
   }
 
   def test(processId: String, json: String, testData: TestData): TestResults = {
-    //we have to use context loader, as in UI we have don't have esp-process on classpath...
+    //we have to use context loader, as in UI we have don't have nussknacker-process on classpath...
     ThreadUtils.withThisAsContextClassLoader(jarClassLoader.classLoader) {
       tryToInvoke(testData, json).asInstanceOf[TestResults]
     }

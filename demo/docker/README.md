@@ -1,7 +1,7 @@
 Building images
 =====
 * To build app image you can either:
-  * put esp-ui-assembly.jar in app/build folder
+  * put nussknacker-ui-assembly.jar in app/build folder
   * use released version (you can change it in docker-compose.yml file) 
 
 Running
