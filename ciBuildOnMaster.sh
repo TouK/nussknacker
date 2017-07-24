@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-./sbtwrapper clean test management/it:test publish
+./sbtwrapper  -DnexusPassword=$1 clean test management/it:test publish

@@ -7,23 +7,33 @@ import sbtassembly.MergeStrategy
 
 val scalaV = "2.11.8"
 
-//FIXME: replace nexus coordinates with maven central when released
-val toukNexusGroups = "http://nexus.touk.pl/nexus/content/groups/"
-val toukNexusRepositories = "http://nexus.touk.pl/nexus/content/repositories/"
-
-credentials in ThisBuild += Credentials("Sonatype Nexus Repository Manager", "nexus.touk.pl", "deployment", "deployment123")
-
 //by default we include flink and scala, we want to be able to disable this behaviour for performance reasons
 val includeFlinkAndScala = Option(System.getProperty("includeFlinkAndScala", "true")).exists(_.toBoolean)
 
 val flinkScope = if (includeFlinkAndScala) "compile" else "provided"
 
-publishTo in ThisBuild := {
-  //TODO: configure repos...
+publishMavenStyle  in ThisBuild := true
+
+//TODO: remove philantropist once spring 5.0 is released and we can move to maven central...
+val toukNexusHost = System.getProperty("nexusHost", "philanthropist.touk.pl")
+
+credentials in ThisBuild += Credentials("Sonatype Nexus Repository Manager", toukNexusHost, "deployment", System.getProperty("nexusPassword"))
+publishTo  in ThisBuild := {
+  val toukNexusRepositories = s"https://$toukNexusHost/nexus/content/repositories/"
   if (isSnapshot.value)
     Some("snapshots" at toukNexusRepositories + "snapshots")
   else
     Some("releases"  at toukNexusRepositories + "releases")
+}
+
+publishArtifact  in ThisBuild := true
+
+pomExtra in Global := {
+  <scm>
+    <connection>scm:git:github.com/touk/nussknacker.git</connection>
+    <developerConnection>scm:git:git@github.com:touk/nussknacker.git</developerConnection>
+    <url>github.com/touk/nussknacker</url>
+  </scm>
 }
 
 def numberUtilsStrategy: String => MergeStrategy = {
@@ -36,11 +46,14 @@ def numberUtilsStrategy: String => MergeStrategy = {
 val commonSettings =
   graphSettings ++
   Seq(
+    licenses += ("Apache-2.0", url("https://www.apache.org/licenses/LICENSE-2.0.html")),
     organization  := "pl.touk.esp",
     scalaVersion  := scalaV,
     resolvers ++= Seq(
-      "local" at "file://"+Path.userHome.absolutePath+"/.m2/repository",
-      "spring milestone" at "https://repo.spring.io/milestone"
+      //TODO: we have to get rid of it if we want to publish to maven central
+      "spring milestone" at "https://repo.spring.io/milestone",
+      "philanthropis releases" at "https://philanthropist.touk.pl/nexus/content/repositories/snapshots/",
+      "philanthropis snapshots" at "https://philanthropist.touk.pl/nexus/content/repositories/releases/"
     ),
     scalacOptions := Seq(
       "-unchecked",
@@ -509,8 +522,6 @@ lazy val ui = (project in file("ui/server"))
   )
   .settings(addArtifact(artifact in (Compile, assembly), assembly))
   .dependsOn(management, interpreter, engineStandalone, processReports)
-
-publishArtifact := true
 
 releaseProcess := Seq[ReleaseStep](
   checkSnapshotDependencies,              // : ReleaseStep

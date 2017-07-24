@@ -1,22 +1,14 @@
 #!/usr/bin/env bash
 espEngineToukVersion=$1
+nexusPassword=$2
 
-runAndExitOnFail() {
-    command=$1
-    $command
-    result=${PIPESTATUS[0]}
-    if [[ ${result} -eq 0 ]]
-    then
-        echo "$command SUCCESS!"
-    else
-        echo "$command FAILURE!"
-        exit ${result}
-    fi
-}
+if [ -n "$3" ]; then
+    nexusHostProperty="-DnexusHost=$3"
+else
+    nexusHostProperty=""
+fi
 
-
-runAndExitOnFail "./sbtwrapper clean test management/it:test"
-if [ -n "$espEngineToukVersion" ]
-    then
-        ./sbtwrapper "set version in ThisBuild := \"$espEngineToukVersion\"" publish
+./sbtwrapper clean test management/it:test || { echo 'Failed to build and test nussknacker' ; exit 1; }
+if [ -n "$espEngineToukVersion" ]; then
+    ./sbtwrapper -DnexusPassword=$2 ${nexusHostProperty} "set version in ThisBuild := \"$espEngineToukVersion\"" publish
 fi
