@@ -13,5 +13,10 @@ if [[ -z "${VERSION}" ]]; then
 else
     echo "Downloading example model in version $VERSION"
     #FIXME: replace nexus with maven central
-    wget -O code-assembly.jar http://nexus.touk.pl/nexus/content/repositories/public/pl/touk/esp/esp-example_2.11/${VERSION}/esp-example_2.11-${VERSION}-assembly.jar
+    if [[ "$VERSION" == *-SNAPSHOT ]]; then
+       REPO=snapshots
+    else
+       REPO=releases
+    fi
+    wget -O /tmp/code-assembly.jar https://philanthropist.touk.pl/nexus/content/repositories/${REPO}/pl/touk/esp/esp-example_2.11/${VERSION}/esp-example_2.11-${VERSION}-assembly.jar
 fi
