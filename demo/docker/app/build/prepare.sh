@@ -9,7 +9,12 @@ if [ ! -f ./${FILE} ]; then
     fi
     echo "Using version ${VERSION} from repository"
     #FIXME: replace nexus with maven central
-    wget -O ${FILE} http://nexus.touk.pl/nexus/content/repositories/public/pl/touk/esp/esp-ui_2.11/${VERSION}/esp-ui_2.11-${VERSION}-assembly.jar
+    if [[ "$VERSION" == *-SNAPSHOT ]]; then
+       REPO=snapshots
+    else
+       REPO=releases
+    fi
+    wget -O ${FILE} https://philanthropist.touk.pl/nexus/content/repositories/${REPO}/pl/touk/esp/esp-ui_2.11/${VERSION}/esp-ui_2.11-${VERSION}-assembly.jar
 else
     echo "Using custom built ${FILE}"
 fi
