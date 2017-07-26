@@ -2,9 +2,9 @@ package db.migration
 
 import argonaut.Parse
 import org.scalatest.{FlatSpec, Matchers}
-import pl.touk.esp.engine.api.{MetaData, StreamMetaData}
-import pl.touk.esp.ui.process.displayedgraph.displayablenode.ProcessAdditionalFields
-import pl.touk.esp.ui.process.marshall.UiProcessMarshaller
+import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
+import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.ProcessAdditionalFields
+import pl.touk.nussknacker.ui.process.marshall.UiProcessMarshaller
 
 class V1_016__TypeSpecificMetaDataChangeSpec extends FlatSpec with Matchers {
 

@@ -5,7 +5,7 @@ describe("process available variables finder", () => {
   it("should find available variables with its types in process at the beginning of the process", () => {
     const availableVariables = ProcessUtils.findAvailableVariables("processVariables", process, processDefinition)
     expect(availableVariables).toEqual({
-      "#input": "org.esp.esp.model.Transaction",
+      "#input": "org.nussknacker.model.Transaction",
       "#date": "java.time.LocalDate"
     })
   })
@@ -13,9 +13,9 @@ describe("process available variables finder", () => {
   it("should find available variables with its types in process in the end of the process", () => {
     const availableVariables = ProcessUtils.findAvailableVariables("endEnriched", process, processDefinition)
     expect(availableVariables).toEqual({
-      "#input": "org.esp.esp.model.Transaction",
+      "#input": "org.nussknacker.model.Transaction",
       "#date": "java.time.LocalDate",
-      "#parsedTransaction": "org.esp.esp.model.Transaction",
+      "#parsedTransaction": "org.nussknacker.model.Transaction",
       "#aggregateResult": "java.lang.String",
       "#processVariables": "java.lang.Object", //fixme how to handle variableBuilder here?
       "#someVariableName": "java.lang.Object"
@@ -47,15 +47,15 @@ describe("process available variables finder", () => {
 })
 
 const processDefinition = {
-  "services" : { "transactionParser": { "parameters": [], "returnType": { "refClazzName": "org.esp.esp.model.Transaction"}, "categories": ["Category11"]},},
-  "sourceFactories" : { "kafka-transaction": { "parameters": [ { "name": "topic", "typ": { "refClazzName": "java.lang.String"} }], "returnType": { "refClazzName": "org.esp.esp.model.Transaction"}, "categories": [ "Category11" ]} },
+  "services" : { "transactionParser": { "parameters": [], "returnType": { "refClazzName": "org.nussknacker.model.Transaction"}, "categories": ["Category11"]},},
+  "sourceFactories" : { "kafka-transaction": { "parameters": [ { "name": "topic", "typ": { "refClazzName": "java.lang.String"} }], "returnType": { "refClazzName": "org.nussknacker.model.Transaction"}, "categories": [ "Category11" ]} },
   "sinkFactories" : { "endTransaction" : { "parameters": [ { "name": "topic", "typ": { "refClazzName": "java.lang.String"}}], "returnType" : { "refClazzName": "pl.touk.esp.engine.kafka.KafkaSinkFactory"}, "categories" : [ "Category12", "Category11", "Category1"]}},
   "customStreamTransformers" : { "transactionAggregator" : { "parameters": [], "returnType": { "refClazzName": "java.lang.String"}, "categories": [ "Category12"]}},
-  "exceptionHandlerFactory" : { "parameters" : [ { "name": "errorsTopic", "typ": { "refClazzName": "java.lang.String"}}], "returnType" : { "refClazzName": "org.esp.esp.process.espExceptionHandlerFactory"}, "categories" : []},
+  "exceptionHandlerFactory" : { "parameters" : [ { "name": "errorsTopic", "typ": { "refClazzName": "java.lang.String"}}], "returnType" : { "refClazzName": "org.nussknacker.process.espExceptionHandlerFactory"}, "categories" : []},
   "globalVariables" : { "date": { "returnType": { "refClazzName": "java.time.LocalDate"}, "categories" : [ "Category12", "Category11"]}},
   "typesInformation" : [
-    { "clazzName": { "refClazzName": "org.esp.esp.model.Transaction"}, "methods": { "CUSTOMER_ID": { "refClazzName": "java.lang.String"}}},
-    { "clazzName": { "refClazzName": "pl.touk.esp.model.Account"}, "methods": { "ACCOUNT_NO": { "refClazzName": "java.lang.String"}}},
+    { "clazzName": { "refClazzName": "org.nussknacker.model.Transaction"}, "methods": { "CUSTOMER_ID": { "refClazzName": "java.lang.String"}}},
+    { "clazzName": { "refClazzName": "pl.touk.nussknacker.model.Account"}, "methods": { "ACCOUNT_NO": { "refClazzName": "java.lang.String"}}},
     { "clazzName": { "refClazzName": "java.time.LocalDate"}, "methods": { "atStartOfDay": { "refClazzName": "java.time.ZonedDateTime"}}}
   ]
 }

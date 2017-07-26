@@ -263,7 +263,7 @@ lazy val interpreter = (project in engine("interpreter")).
       "buildTime" -> java.time.LocalDateTime.now().toString,
       "gitCommit" -> git.gitHeadCommit.value.getOrElse("")
     ),
-    buildInfoPackage := "pl.touk.esp.engine.version",
+    buildInfoPackage := "pl.touk.nussknacker.engine.version",
     buildInfoOptions ++= Seq(BuildInfoOption.ToMap)
   ).
   dependsOn(util)

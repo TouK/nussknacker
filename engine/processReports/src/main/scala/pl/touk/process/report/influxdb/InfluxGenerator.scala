@@ -8,7 +8,7 @@ import argonaut.{DecodeJson, DecodeResult}
 import com.ning.http.client.AsyncHttpClient
 import com.typesafe.scalalogging.LazyLogging
 import dispatch.Http
-import pl.touk.esp.engine.util.service.{AuditDispatchClientImpl, LogCorrelationId}
+import pl.touk.nussknacker.engine.util.service.{AuditDispatchClientImpl, LogCorrelationId}
 
 import scala.concurrent.Future
 

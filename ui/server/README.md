@@ -1,6 +1,6 @@
 Running from IntelliJ:
 ====================
-Main class:         pl.touk.esp.ui.EspUiApp
+Main class:         pl.touk.nussknacker.ui.EspUiApp
 VM options:         -Dconfig.file=./develConf/application.conf -Dlogback.configurationFile=./logback.xml
 Program arguments:  8081 ./develConf/jsons
 Working directory:  should be set to ui/server

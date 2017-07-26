@@ -2,7 +2,7 @@ package db.migration
 
 import argonaut.Argonaut._
 import argonaut._
-import pl.touk.esp.ui.db.migration.ProcessJsonMigration
+import pl.touk.nussknacker.ui.db.migration.ProcessJsonMigration
 import slick.jdbc.JdbcProfile
 
 class V1_016__TypeSpecificMetaDataChange extends ProcessJsonMigration {
