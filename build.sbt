@@ -26,7 +26,7 @@ publishTo  in ThisBuild := {
     Some("releases"  at toukNexusRepositories + "releases")
 }
 
-publishArtifact  in ThisBuild := true
+publishArtifact := true
 
 pomExtra in Global := {
   <scm>
@@ -292,7 +292,7 @@ lazy val kafkaFlinkUtil = (project in engine("kafka-flink-util")).
       )
     }
   ).
-  dependsOn(flinkApi, kafka, flinkUtil, kafkaTestUtil % "test")
+  dependsOn(flinkApi, kafka, flinkUtil, kafkaTestUtil % "test", flinkTestUtil % "test")
 
 lazy val kafkaTestUtil = (project in engine("kafka-test-util")).
   settings(commonSettings).
@@ -300,7 +300,13 @@ lazy val kafkaTestUtil = (project in engine("kafka-test-util")).
     name := "esp-kafka-test-util",
     libraryDependencies ++= {
       Seq(
-        "org.apache.kafka" %% "kafka" % kafkaV,
+        "org.apache.kafka" %% "kafka" % kafkaV  excludeAll (
+          ExclusionRule("log4j", "log4j"),
+          ExclusionRule("org.slf4j", "slf4j-log4j12")
+        ),
+        "ch.qos.logback" % "logback-classic" % logbackV,
+        "org.slf4j" % "log4j-over-slf4j" % "1.7.21",
+        "org.slf4j" % "log4j-over-slf4j" % "1.7.21",
         "org.scalatest" %% "scalatest" % scalaTestV
       )
     }
@@ -341,6 +347,7 @@ lazy val flinkTestUtil = (project in engine("flink-test-util")).
         "org.apache.flink" %% "flink-test-utils" % flinkV,
         "org.apache.flink" % "flink-metrics-dropwizard" % flinkV,
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
+        "ch.qos.logback" % "logback-classic" % logbackV,
         "org.scalatest" %% "scalatest" % scalaTestV
       )
     }

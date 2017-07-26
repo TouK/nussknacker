@@ -43,6 +43,8 @@ object ProcessTestHelpers {
     def invoke(process: EspProcess, data: List[SimpleRecord],
                env: StreamExecutionEnvironment = StreamExecutionEnvironment.createLocalEnvironment()) = {
       val creator = prepareCreator(env.getConfig, data)
+      env.getConfig.disableSysoutLogging
+
       new StandardFlinkProcessCompiler(creator, ConfigFactory.load()).createFlinkProcessRegistrar().register(env, process)
 
       MockService.clear()

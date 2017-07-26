@@ -1,5 +1,8 @@
 package pl.touk.esp.engine.process.api
 
+import java.io.File
+import java.nio.file.Files
+
 import org.apache.flink.api.common.state.ValueStateDescriptor
 import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.scala._
@@ -31,7 +34,7 @@ class EvictableStateTest extends FlatSpec with Matchers with BeforeAndAfter with
     env.addSource(StaticSource)
       .keyBy(_ => "staticKey")
       .transform("testOp1", new TestOperator)
-      .print()
+      .addSink(_ => ())
 
     futureResult = Future {
       env.execute()

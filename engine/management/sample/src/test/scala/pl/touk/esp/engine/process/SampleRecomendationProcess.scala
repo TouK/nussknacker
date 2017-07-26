@@ -32,6 +32,7 @@ class SampleRecomendationProcess extends FlatSpec with Matchers {
     new StandardFlinkProcessCompiler(creator, config).createFlinkProcessRegistrar().register(env, process)
 
     Future {
+      env.getConfig.disableSysoutLogging
       env.execute("sample")
     }.failed.foreach(_.printStackTrace())
     Thread.sleep(2000)

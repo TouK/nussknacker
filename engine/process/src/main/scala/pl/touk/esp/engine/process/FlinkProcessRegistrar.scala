@@ -65,7 +65,6 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessW
       env.getConfig.enableObjectReuse()
       logger.info("Object reuse enabled")
     }
-
     register(env, compileProcess(process), testRunId)
     initializeStateDescriptors(env)
   }

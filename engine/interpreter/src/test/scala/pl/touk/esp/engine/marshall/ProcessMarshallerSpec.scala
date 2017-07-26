@@ -40,7 +40,6 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
         .switch("f", "expr4", "eVar", nestedGraph("e"), Case("e1", GraphBuilder.sink("endE1", "")))
 
     val marshalled = ProcessMarshaller.toJson(process, PrettyParams.spaces2)
-    println(marshalled)
 
     val unmarshalled = ProcessMarshaller.fromJson(marshalled).toOption
     val result = ProcessCanonizer.uncanonize(unmarshalled.value).toOption
