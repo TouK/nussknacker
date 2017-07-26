@@ -76,6 +76,44 @@ In the next sections we'll look at
 
 ###Database
 
+###Categories
+Every process has to belong to a group called category. For example, in one Nussknacker installation you can 
+have processes detecting frauds and those implementing marketing campaigns. Category configuration looks like this:
+```
+categoriesConfig: {
+  "marketing": "streaming",
+  "fraud": "streaming",
+}
+```
+
+###Monitoring config
+```
+grafanaSettings {
+  url: "/grafana/"
+  dashboard: "flink-esp"
+  env: "demo"
+}
+```
+
+###Akka configuration
+
+In ```akka``` section you can configure actor system used by GUI, e.g:
+```
+akka {
+  http {
+    server.parsing.max-content-length = 300000000 #300MB
+  }
+}
+
+```
+
+###Other configurations
+
+* usersFile - location of file with user configuration
+* environment - key of environment (used e.g. for alerts) - e.g. test or production
+* attachmentsPath - location on disk where attachments will be stored 
+* testSampleSize - default size of test data sample 
+
 ##Flink configuration
 Configuration of communication with Flink cluster and definition of model
 
@@ -94,7 +132,7 @@ flinkConfig {
   jarPath: "./code-assembly.jar"
 }
 ```
-In this section you can put all configuration values for Flink client, as described [here](https://ci.apache.org/projects/flink/flink-docs-release-1.3/setup/config.html).
+In this section you can put all configuration values for Flink client, as described [here](https://ci.apache.org/projects/flink/flink-docs-release-{{book.flinkMajorVersion}}/setup/config.html).
 
 In addition you can specify following values:
 
@@ -111,4 +149,9 @@ Configuration of model has few common keys:
 *  processConfigCreatorClass - e.g. "pl.touk.esp.engine.example.ExampleProcessConfigCreator". This is FQN of class implementing
 ```ProcessConfigCreator``` interface.
 
-The rest of model configuration depends on your needs
+The rest of model configuration depends on your needs - all the properties defined here will be passed to ```ProcessConfigCreator``` as explained in [API](API.md) documentation.
+
+###Configuration of services
+In model configuration you can also define some attributes of services. These include:
+* default values of fields
+* icons
