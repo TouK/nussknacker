@@ -1,2 +1,0 @@
-cd ../../ui
-./buildServer.sh

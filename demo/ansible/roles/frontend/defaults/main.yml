@@ -1,4 +1,0 @@
----
-flink_dir: /home/touk/flink-{{flink_version}}
-#TODO: set version automatically...
-nussknacker_version: 0.1-SNAPSHOT

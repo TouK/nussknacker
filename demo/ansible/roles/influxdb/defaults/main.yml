@@ -1,3 +1,0 @@
----
-influx_dir: ./influxdb-0.10.0-1
-influx_data_dir: "{{ influxDataDir }}"
