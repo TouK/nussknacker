@@ -18,7 +18,7 @@ module.exports = {
     './index',
   ],
   output: {
-    path: path.join(__dirname, 'dist', 'web', 'static'),
+    path: path.join(__dirname, '..', 'server', 'target', 'scala-2.11', 'classes', 'web', 'static'),
     filename: 'bundle.js',
     publicPath: '/static/'
   },

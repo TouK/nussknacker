@@ -493,7 +493,6 @@ lazy val ui = (project in file("ui/server"))
     assembly in ThisScope <<= (assembly in ThisScope).dependsOn(
       buildUi
     ),
-    unmanagedResourceDirectories in Compile += { baseDirectory.value / ".." / "client" / "dist" },
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % flinkScope
