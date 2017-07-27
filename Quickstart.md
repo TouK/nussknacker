@@ -8,7 +8,8 @@ To run this quickstart you have to
 
 * Checkout Nussknacker project and enter demo/docker folder
 * Run ./getSampleAssembly.sh script
-* Run docker-compose up a wait a while until all components start
+* Run `docker-compose up` and wait a while until all components start
+    * In case of containers restart please use `docker-compose stop` instead of `docker-compose kill` in order to avoid Kafka startup issues.
 
 Now you are ready to check your newly created environment:
 

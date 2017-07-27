@@ -11,7 +11,7 @@ This section describes basic functionalities of user interface.
 
 ##History, comments and attachments
 
-##User right patnel
+##User right panel
 
 ###Testing
 
