@@ -5,7 +5,7 @@ for self-contained Docker demo.
 
 # Step by step install
 
-To install Nussknacer manually you will need following working components. Please see sample configurations in docker demo.
+To install Nussknacker manually you will need following working components. Please see sample configurations in docker demo.
 
 * Apache Flink - please follow [Flink 1.3 Setup Quickstart](https://ci.apache.org/projects/flink/flink-docs-release-1.3/quickstart/setup_quickstart.html)
 * Apache Kafka - if your sources/sinks are running on Apache Kafka (which we recommend)

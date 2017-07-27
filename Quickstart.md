@@ -13,7 +13,7 @@ To run this quickstart you have to
 Now you are ready to check your newly created environment:
 
 * [Nussknacker](http://localhost:8081/) - user/password: admin/admin
-* [Apache Flink ui](http://localhost:8081/flink)
+* [Apache Flink ui](http://localhost:8081/flink/)
 * [Grafana](http://localhost:8081/grafana/)
 * [Kibana](http://localhost:8081/kibana/)
 
@@ -23,29 +23,32 @@ Now you are ready to check your newly created environment:
 * Click 'Create new process' button - name it 'DetectLargeTransactions'
 * You'll see empty diagram
 * Click 'Import' on right panel and upload 'testData/DetectLargeTransactions.json'
+    * This process reads transactions data from Kafka, filter only those with amount greater than some value and writes filtered events back to Kafka. These events are read by Logstash and send to Elasticsearch for further analytics
+    * Double click on nodes to see process logic
 * Click 'Save'
+* You have just created your first process!
 
 ![Adding process](img/quickstart/createProcess.gif)
 
 
 ## Test process with data
 * Click 'Deploy' on right panel
-* Verify on Flink GUI at http://localhost:8081/flink that your process is running
-* Run ./testData/sendTestTransactions.sh script a few times to generate some data (first run may end with error from Kafka - don't worry about it)
-* Go to Metrics tab on Nussknacker main panel - you should see changed metrics
+* Verify on Flink GUI at http://localhost:8081/flink/ that your process is running
+* Run ./testData/sendTestTransactions.sh script a few times to generate some data (first run may end with error from Kafka - don't worry about it). Script will send some json data to "transactions" Kafka topic. 
+* Go to Metrics tab on Nussknacker main panel - you should see changed metrics. Your process just processed data from Kafka and saved filtered results!
 
 ![Deploy](img/quickstart/deployAndMetrics.gif)
 
 ## See results in Kibana
 
-* Go to Search tab on Nussknacker main panel 
+* To see Kibana go to Search tab on Nussknacker main panel 
   * Define processedevents* as default index pattern
   * You will see filtered events
 
 ![Search events](img/quickstart/searchInKibana.gif)
 
 ## Test your process in sandbox environment
-* Clink 'generate' button in right panel of application (assuming you have already some test data on kafka)
+* Clink 'generate' button in right panel of application (assuming you have already some test data on Kafka)
   * Latest records from Kafka will be downloaded to file
 * Click 'from file' button and upload file generated in last step
 * After a while you will see test results - how many records passed filters, and what where variables values

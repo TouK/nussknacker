@@ -1,6 +1,6 @@
 * [What is Nussknacker and what it's good for](WhyNussknacker.md)
-* [Architecture](Architecture.md)
 * [Quickstart](Quickstart.md)
+* [Architecture](Architecture.md)
 * [How to install](Install.md)
 * [UI](UI.md)
 * [Designing processes](DesigningProcesses.md)
@@ -11,3 +11,4 @@
 * [Roadmap](Roadmap.md)
 * [Changelog/Versions](Changelog.md)
 * [Powered by Nussknacker](PoweredBy.md)
+* [Glossary](GLOSSARY.md)
