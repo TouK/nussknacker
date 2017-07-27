@@ -5,7 +5,7 @@ VERSION=$1
 if [[ -z "${VERSION}" ]]; then
     echo "Building current sample app"
     cd ../../
-    ./sbtwrapper "set test in Test := {}" example/clean example/assembly
+    ./sbtwrapper example/clean example/assembly
     cd -
     FILE=`find ../../engine -name 'nussknacker-example-assembly-*'`
     echo "Using file $FILE"

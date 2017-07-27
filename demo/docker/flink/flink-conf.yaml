@@ -66,7 +66,7 @@ parallelism.default: 8
 jobmanager.web.port: 8081
 
 
-# The port uder which the standalone web client
+# The port under which the standalone web client
 # (for job upload and submit) listens.
 
 webclient.port: 6080

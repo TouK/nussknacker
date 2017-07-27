@@ -199,6 +199,7 @@ lazy val management_sample = (project in engine("management/sample")).
     name := managementSampleName,
     assemblyJarName in assembly := "managementSample.jar",
     assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false, level = Level.Debug),
+    test in assembly := {},
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
@@ -220,6 +221,7 @@ lazy val example = (project in engine("example")).
         "ch.qos.logback" % "logback-classic" % logbackV % "test"
       )
     },
+    test in assembly := {},
     artifact in (Compile, assembly) := {
       val art = (artifact in (Compile, assembly)).value
       art.copy(`classifier` = Some("assembly"))
@@ -483,6 +485,7 @@ lazy val ui = (project in file("ui/server"))
       val art = (artifact in (Compile, assembly)).value
       art.copy(`classifier` = Some("assembly"))
     },
+    test in assembly := {},
     Keys.test in Test <<= (Keys.test in Test).dependsOn(
       //TODO: maybe here there should be engine/demo??
       (assembly in Compile) in management_sample

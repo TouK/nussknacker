@@ -1,3 +1,5 @@
+This is part of Nussknacker's [quickstart](https://touk.github.io/nussknacker/Quickstart.html).
+
 Building images
 =====
 * To build app image you can either:
