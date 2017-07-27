@@ -11,30 +11,43 @@ val scalaV = "2.11.8"
 val includeFlinkAndScala = Option(System.getProperty("includeFlinkAndScala", "true")).exists(_.toBoolean)
 
 val flinkScope = if (includeFlinkAndScala) "compile" else "provided"
+val nexusHost = System.getProperty("nexusHost", "oss.sonatype.org")
 
-publishMavenStyle  in ThisBuild := true
+// `publishArtifact := false` should be enough to keep sbt from publishing root module,
+// unfortunately it does not work, so we resort to hack by publishing root module to Resolver.defaultLocal
+//publishArtifact := false
+publishTo := Some(Resolver.defaultLocal)
 
-//TODO: remove philantropist once spring 5.0 is released and we can move to maven central...
-val toukNexusHost = System.getProperty("nexusHost", "philanthropist.touk.pl")
-
-credentials in ThisBuild += Credentials("Sonatype Nexus Repository Manager", toukNexusHost, "deployment", System.getProperty("nexusPassword"))
-publishTo  in ThisBuild := {
-  val toukNexusRepositories = s"https://$toukNexusHost/nexus/content/repositories/"
-  if (isSnapshot.value)
-    Some("snapshots" at toukNexusRepositories + "snapshots")
-  else
-    Some("releases"  at toukNexusRepositories + "releases")
-}
-
-publishArtifact := true
-
-pomExtra in Global := {
-  <scm>
-    <connection>scm:git:github.com/touk/nussknacker.git</connection>
-    <developerConnection>scm:git:git@github.com:touk/nussknacker.git</developerConnection>
-    <url>github.com/touk/nussknacker</url>
-  </scm>
-}
+val publishSettings = Seq(
+  publishMavenStyle := true,
+  publishTo := {
+    val nexus = s"https://$nexusHost/"
+    if (isSnapshot.value)
+      Some("snapshots" at nexus + "content/repositories/snapshots")
+    else
+      Some("releases" at nexus + "service/local/staging/deploy/maven2")
+  },
+  publishArtifact in Test := false,
+  pomExtra in Global := {
+    <scm>
+      <connection>scm:git:github.com/touk/nussknacker.git</connection>
+      <developerConnection>scm:git:git@github.com:touk/nussknacker.git</developerConnection>
+      <url>github.com/touk/nussknacker</url>
+    </scm>
+      <developers>
+        <developer>
+          <id>TouK</id>
+          <name>TouK</name>
+          <url>https://touk.pl</url>
+        </developer>
+      </developers>
+  },
+  organization := "pl.touk.nussknacker",
+  homepage := Some(url(s"https://github.com/touk/nussknacker")),
+  credentials := Seq(Credentials("Sonatype Nexus Repository Manager",
+    nexusHost, System.getProperty("nexusUser", "touk"), System.getProperty("nexusPassword"))
+  )
+)
 
 def numberUtilsStrategy: String => MergeStrategy = {
   case PathList(ps@_*) if ps.last == "NumberUtils.class" => MergeStrategy.first
@@ -45,15 +58,12 @@ def numberUtilsStrategy: String => MergeStrategy = {
 
 val commonSettings =
   graphSettings ++
+  publishSettings ++
   Seq(
     licenses += ("Apache-2.0", url("https://www.apache.org/licenses/LICENSE-2.0.html")),
-    organization  := "pl.touk.nussknacker",
     scalaVersion  := scalaV,
     resolvers ++= Seq(
-      //TODO: we have to get rid of it if we want to publish to maven central
-      "spring milestone" at "https://repo.spring.io/milestone",
-      "philanthropis releases" at "https://philanthropist.touk.pl/nexus/content/repositories/snapshots/",
-      "philanthropis snapshots" at "https://philanthropist.touk.pl/nexus/content/repositories/releases/"
+      "spring milestone" at "https://repo.spring.io/milestone"
     ),
     scalacOptions := Seq(
       "-unchecked",
@@ -65,8 +75,6 @@ val commonSettings =
       "-language:existentials",
       "-target:jvm-1.8"
     ),
-    sources in (Compile, doc) := Seq.empty,
-    publishArtifact in (Compile, packageDoc) := false,
     assemblyMergeStrategy in assembly := numberUtilsStrategy
   )
 
