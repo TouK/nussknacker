@@ -1,8 +1,10 @@
 @import "./_variables.styl"
-@import "./graph.styl"
 
-#espSidenav
+#espLeftNav,
+#espRightNav
   width: sidebarWidth
+  overflow: hidden
+
   .tab-content
     margin-top 10px
   hr
@@ -15,19 +17,29 @@ sidenavMixin()
   position: absolute
   top: 0
   bottom: 0
-  padding-top: menuBarHeight
   background-color: panelBkgColor
   overflow-x: hidden
   & a
     white-space: pre
 
+.sidenav,
+.rightSidenav
+  transition: left 0.5s ease, right 0.5s ease;
+
 .sidenav
   sidenavMixin()
-  left: 0
+  left: -(sidebarWidth)
+
+  &.is-opened
+    left: 0
 
 .rightSidenav
   sidenavMixin()
-  right: 0
+  right: -(sidebarWidth)
+
+  &.is-opened
+    right: 0
+
   #right-panel-tabs .tab-content
     padding 0px 15px 0px 15px
     button

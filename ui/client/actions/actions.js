@@ -246,10 +246,15 @@ export function layoutChanged(layout) {
   }
 }
 
-export function toggleLeftPanel(isOpened) {
+export function toggleLeftPanel() {
   return {
     type: "TOGGLE_LEFT_PANEL",
-    leftPanelIsOpened: isOpened
+  }
+}
+
+export function toggleRightPanel() {
+  return {
+    type: "TOGGLE_RIGHT_PANEL",
   }
 }
 

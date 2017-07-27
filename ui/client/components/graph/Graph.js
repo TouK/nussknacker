@@ -169,7 +169,7 @@ class Graph extends React.Component {
 
       const boundingRects = NodeUtils.getExpandedGroups(process, expandedGroups)
         .map(expandedGroup => ({group: expandedGroup,
-          
+
           rect: EspNode.boundingRect(nodes, expandedGroup, layout,
           NodeUtils.createGroupNode(nodesWithGroups, expandedGroup))}))
       t = this.time(t, 'bounding')
@@ -322,7 +322,7 @@ class Graph extends React.Component {
         if (nodeData) {
           this.props.actions.displayNodeDetails(cellView.model.attributes.nodeData)
         }
-        
+
         //TODO: is this the best place for this? if no, where should it be?
         const targetClass = _.get(evt, 'originalEvent.target.className.baseVal')
         if (targetClass.includes('collapseIcon') && nodeData) {

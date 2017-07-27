@@ -1,0 +1,40 @@
+@import "./_variables.styl"
+
+.togglePanel
+  position: fixed
+  top: menuBarHeight
+  display: flex
+  height: 25px
+  width: 25px
+  background: panelBkgColor
+  align-items: center
+  justify-content: center
+  transition: left 0.5s ease, right 0.5s ease;
+  z-index: 100
+  cursor: pointer
+
+  &.right
+    right: 0
+
+    &.is-opened
+      right: sidebarWidth
+
+  &.left
+    left: 0
+    flex-direction: row-reverse
+
+    &.is-opened
+      left: sidebarWidth
+
+  .arrow
+    width: 0;
+    height: 0;
+    border-style: solid
+
+    &.right
+      border-width: 7.5px 0 7.5px 13.0px
+      border-color: transparent transparent transparent #999
+
+    &.left
+      border-width: 7.5px 13.0px 7.5px 0;
+      border-color: transparent #999 transparent transparent

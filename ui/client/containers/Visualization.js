@@ -31,7 +31,6 @@ const Visualization = withRouter(React.createClass({
     })
     this.fetchProcessStatus()
     this.bindKeyboardActions()
-    this.props.actions.toggleLeftPanel(true)
     this.bindUnsavedProcessChangesDialog()
   },
 
@@ -73,7 +72,6 @@ const Visualization = withRouter(React.createClass({
     clearTimeout(this.state.timeoutId)
     clearInterval(this.state.intervalId)
     this.props.actions.clearProcess()
-    this.props.actions.toggleLeftPanel(false)
   },
 
   startPollingForUpdates() {
@@ -119,6 +117,7 @@ const Visualization = withRouter(React.createClass({
   },
 
   render: function() {
+    const { leftPanelIsOpened, actions } = this.props;
     //it has to be that way, because graph is redux component
     var getGraph = () => this.refs.graph.getWrappedInstance().getDecoratedComponentInstance();
     const graphFun = (fun) => (() => !_.isEmpty(this.refs.graph) ? fun(getGraph()) : () => null)
@@ -130,13 +129,18 @@ const Visualization = withRouter(React.createClass({
 
     return (
       <div className="Page">
-        <div>
-          <UserLeftPanel isOpened={this.props.leftPanelIsOpened}/>
-          <UserRightPanel isOpened={true} graphLayoutFunction={graphLayoutFun}
-                          exportGraph={exportGraphFun} zoomIn={zoomInFun} zoomOut={zoomOutFun}/>
-          {(_.isEmpty(this.props.fetchedProcessDetails) || this.props.graphLoading) ? <LoaderSpinner show={true}/> : <Graph ref="graph"/> }
+          <UserLeftPanel isOpened={leftPanelIsOpened} onToggle={actions.toggleLeftPanel}/>
+          <UserRightPanel
+            graphLayoutFunction={graphLayoutFun}
+            exportGraph={exportGraphFun}
+            zoomIn={zoomInFun}
+            zoomOut={zoomOutFun}
+          />
 
-        </div>
+          {(_.isEmpty(this.props.fetchedProcessDetails) || this.props.graphLoading) ?
+              <LoaderSpinner show={true}/> : <Graph ref="graph"/>
+          }
+
       </div>
     )
   },

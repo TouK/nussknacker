@@ -7,6 +7,8 @@ import {browserHistory} from "react-router";
 import { Panel } from 'react-bootstrap';
 import {bindActionCreators} from "redux";
 import Dropzone from "react-dropzone";
+import cn from "classnames";
+
 import ActionsUtils from "../../actions/ActionsUtils";
 import HttpService from "../../http/HttpService";
 import DialogMessages from "../../common/DialogMessages";
@@ -15,6 +17,9 @@ import SideNodeDetails from "./SideNodeDetails";
 import NodeUtils from '../graph/NodeUtils'
 import InlinedSvgs from "../../assets/icons/InlinedSvgs"
 import Dialogs from "../modals/Dialogs"
+import TogglePanel from "../TogglePanel";
+
+import '../../stylesheets/userPanel.styl';
 
 class UserRightPanel extends Component {
 
@@ -25,23 +30,11 @@ class UserRightPanel extends Component {
     exportGraph: React.PropTypes.func.isRequired,
     zoomIn: React.PropTypes.func.isRequired,
     zoomOut: React.PropTypes.func.isRequired,
-    featuresSettings: React.PropTypes.object.isRequired
-
-  }
-
-  constructor(props) {
-    super(props);
-  }
-
-
-  renderClassName = () => {
-    return this.props.isOpened ? 'rightSidenav is-opened' : 'rightSidenav'
+    featuresSettings: React.PropTypes.object.isRequired,
   }
 
   render() {
-    const saveDisabled = this.props.nothingToSave && this.props.processIsLatestVersion
-    const deployPossible = this.props.processIsLatestVersion && ProcessUtils.hasNoErrors(this.props.processToDisplay) && this.props.nothingToSave
-    const migratePossible = this.props.processIsLatestVersion && ProcessUtils.hasNoErrors(this.props.processToDisplay) && this.props.nothingToSave
+    const { isOpened, actions } = this.props;
     const buttonsInBusinessView = [
       "metrics",
       "compare",
@@ -51,70 +44,13 @@ class UserRightPanel extends Component {
       "zoomOut",
       "properties",
       "counts",
-    ]
-    const config =
-      [
-        (this.props.isSubprocess ? null : {
-          panelName: "Deployment",
-          buttons:[
-            {name: "deploy", visible: this.props.loggedUser.canDeploy, disabled: !deployPossible, onClick: this.deploy, icon: InlinedSvgs.buttonDeploy},
-            {name: "stop", visible: this.props.loggedUser.canDeploy, disabled: !this.isRunning(), onClick: this.stop, icon: InlinedSvgs.buttonStop},
-            {name: "metrics", onClick: this.showMetrics, icon: InlinedSvgs.buttonMetrics}
-          ]
-        }),
-        {
-        panelName: "Process",
-        buttons: [
-          {name: "save" + (!saveDisabled ? "*" : ""), visible: this.props.loggedUser.canWrite, disabled: saveDisabled, onClick: this.save, icon: InlinedSvgs.buttonSave},
-          {name: "migrate", visible: this.props.loggedUser.canDeploy && !_.isEmpty(this.props.featuresSettings.migration), disabled: !migratePossible, onClick: this.migrate, icon: InlinedSvgs.buttonMigrate},
-          {name: "compare", onClick: this.compareVersions, icon: InlinedSvgs.compareButton, disabled: this.hasOneVersion()},
-          {name: "import", visible: this.props.loggedUser.canWrite, disabled: false, onClick: this.importProcess, icon: InlinedSvgs.buttonImport, dropzone: true},
-          {name: "export", onClick: this.exportProcess, icon: InlinedSvgs.buttonExport},
-          {name: "exportPDF", disabled: !this.props.nothingToSave, onClick: this.exportProcessToPdf, icon: InlinedSvgs.buttonExport},
-          {name: "zoomIn", onClick: this.props.zoomIn, icon: InlinedSvgs.buttonZoomIn},
-          {name: "zoomOut", onClick: this.props.zoomOut, icon: InlinedSvgs.buttonZoomOut}
+    ];
 
-        ]
-      },
-        {
-          panelName: "Edit",
-          buttons: [
-            {name: "undo", onClick: this.undo, icon: InlinedSvgs.buttonUndo},
-            {name: "redo", onClick: this.redo, icon: InlinedSvgs.buttonRedo},
-            {name: "align", onClick: this.props.graphLayoutFunction, icon: InlinedSvgs.buttonAlign},
-            {name: "properties", onClick: this.showProperties, icon: InlinedSvgs.buttonSettings, visible: !this.props.isSubprocess},
-            {name: "duplicate", onClick: this.duplicateNode, icon: InlinedSvgs.duplicateButton,
-              //cloning groups can be tricky...
-              disabled: this.noChosenNode(this.props.nodeToDisplay) || NodeUtils.nodeIsGroup(this.props.nodeToDisplay)},
-            {name: "delete", onClick: this.deleteNode, icon: InlinedSvgs.buttonDelete, disabled: this.noChosenNode(this.props.nodeToDisplay) }
+    const config = this.getConfig();
 
-          ]
-        },
-        //TODO: testing subprocesses should work, but currently we don't know how to pass parameters in sane way...
-        (this.props.isSubprocess ? null : {
-          panelName: "Test",
-          buttons: [
-            {name: "from file", onClick: this.testProcess, icon: InlinedSvgs.buttonFromFile, dropzone: true,
-              disabled: !this.props.testCapabilities.canBeTested},
-            {name: "hide", onClick: this.hideRunProcessDetails, icon: InlinedSvgs.buttonHide, disabled: !this.props.showRunProcessDetails},
-            {name: "generate", onClick: this.generateData, icon: InlinedSvgs.buttonGenerate,
-              disabled: !this.props.processIsLatestVersion || !this.props.testCapabilities.canGenerateTestData},
-            {name: "counts", onClick: this.fetchProcessCounts, icon: InlinedSvgs.buttonCounts,
-              visible: this.props.featuresSettings.counts && !this.props.isSubprocess},
-          ]
-        }),
-        {
-          panelName: "Group",
-          buttons: [
-            {name: "start", onClick: this.props.actions.startGrouping, icon: InlinedSvgs.buttonGroup, disabled: this.props.groupingState != null},
-            {name: "finish", onClick: this.props.actions.finishGrouping, icon: InlinedSvgs.buttonGroup, disabled: (this.props.groupingState || []).length <= 1},
-            {name: "cancel", onClick: this.props.actions.cancelGrouping, icon: InlinedSvgs.buttonUngroup, disabled: !this.props.groupingState },
-            {name: "ungroup", onClick: this.ungroup, icon: InlinedSvgs.buttonUngroup, disabled: !NodeUtils.nodeIsGroup(this.props.nodeToDisplay) }
-          ]
-        }
-      ]
     return (
-      <div id="espSidenav" className={this.renderClassName()}>
+      <div id="espRightNav" className={cn('rightSidenav', { 'is-opened': isOpened })}>
+        <TogglePanel type="right" isOpened={isOpened} onToggle={actions.toggleRightPanel}/>
         <Scrollbars renderThumbVertical={props => <div {...props} className="thumbVertical"/>} hideTracksWhenNotNeeded={true}>
           <div className="panel-properties">
             <label>
@@ -138,6 +74,73 @@ class UserRightPanel extends Component {
         </Scrollbars>
       </div>
     )
+  }
+
+  getConfig = () => {
+    const saveDisabled = this.props.nothingToSave && this.props.processIsLatestVersion;
+    const deployPossible = this.props.processIsLatestVersion && ProcessUtils.hasNoErrors(this.props.processToDisplay) && this.props.nothingToSave;
+    const migratePossible = this.props.processIsLatestVersion && ProcessUtils.hasNoErrors(this.props.processToDisplay) && this.props.nothingToSave;
+
+    return [
+      (this.props.isSubprocess ? null : {
+        panelName: "Deployment",
+        buttons:[
+          {name: "deploy", visible: this.props.loggedUser.canDeploy, disabled: !deployPossible, onClick: this.deploy, icon: InlinedSvgs.buttonDeploy},
+          {name: "stop", visible: this.props.loggedUser.canDeploy, disabled: !this.isRunning(), onClick: this.stop, icon: InlinedSvgs.buttonStop},
+          {name: "metrics", onClick: this.showMetrics, icon: InlinedSvgs.buttonMetrics}
+        ]
+      }),
+      {
+      panelName: "Process",
+      buttons: [
+        {name: "save" + (!saveDisabled ? "*" : ""), visible: this.props.loggedUser.canWrite, disabled: saveDisabled, onClick: this.save, icon: InlinedSvgs.buttonSave},
+        {name: "migrate", visible: this.props.loggedUser.canDeploy && !_.isEmpty(this.props.featuresSettings.migration), disabled: !migratePossible, onClick: this.migrate, icon: InlinedSvgs.buttonMigrate},
+        {name: "compare", onClick: this.compareVersions, icon: InlinedSvgs.compareButton, disabled: this.hasOneVersion()},
+        {name: "import", visible: this.props.loggedUser.canWrite, disabled: false, onClick: this.importProcess, icon: InlinedSvgs.buttonImport, dropzone: true},
+        {name: "export", onClick: this.exportProcess, icon: InlinedSvgs.buttonExport},
+        {name: "exportPDF", disabled: !this.props.nothingToSave, onClick: this.exportProcessToPdf, icon: InlinedSvgs.buttonExport},
+        {name: "zoomIn", onClick: this.props.zoomIn, icon: InlinedSvgs.buttonZoomIn},
+        {name: "zoomOut", onClick: this.props.zoomOut, icon: InlinedSvgs.buttonZoomOut}
+
+      ]
+    },
+      {
+        panelName: "Edit",
+        buttons: [
+          {name: "undo", onClick: this.undo, icon: InlinedSvgs.buttonUndo},
+          {name: "redo", onClick: this.redo, icon: InlinedSvgs.buttonRedo},
+          {name: "align", onClick: this.props.graphLayoutFunction, icon: InlinedSvgs.buttonAlign},
+          {name: "properties", onClick: this.showProperties, icon: InlinedSvgs.buttonSettings, visible: !this.props.isSubprocess},
+          {name: "duplicate", onClick: this.duplicateNode, icon: InlinedSvgs.duplicateButton,
+            //cloning groups can be tricky...
+            disabled: this.noChosenNode(this.props.nodeToDisplay) || NodeUtils.nodeIsGroup(this.props.nodeToDisplay)},
+          {name: "delete", onClick: this.deleteNode, icon: InlinedSvgs.buttonDelete, disabled: this.noChosenNode(this.props.nodeToDisplay) }
+
+        ]
+      },
+      //TODO: testing subprocesses should work, but currently we don't know how to pass parameters in sane way...
+      (this.props.isSubprocess ? null : {
+        panelName: "Test",
+        buttons: [
+          {name: "from file", onClick: this.testProcess, icon: InlinedSvgs.buttonFromFile, dropzone: true,
+            disabled: !this.props.testCapabilities.canBeTested},
+          {name: "hide", onClick: this.hideRunProcessDetails, icon: InlinedSvgs.buttonHide, disabled: !this.props.showRunProcessDetails},
+          {name: "generate", onClick: this.generateData, icon: InlinedSvgs.buttonGenerate,
+            disabled: !this.props.processIsLatestVersion || !this.props.testCapabilities.canGenerateTestData},
+          {name: "counts", onClick: this.fetchProcessCounts, icon: InlinedSvgs.buttonCounts,
+            visible: this.props.featuresSettings.counts && !this.props.isSubprocess},
+        ]
+      }),
+      {
+        panelName: "Group",
+        buttons: [
+          {name: "start", onClick: this.props.actions.startGrouping, icon: InlinedSvgs.buttonGroup, disabled: this.props.groupingState != null},
+          {name: "finish", onClick: this.props.actions.finishGrouping, icon: InlinedSvgs.buttonGroup, disabled: (this.props.groupingState || []).length <= 1},
+          {name: "cancel", onClick: this.props.actions.cancelGrouping, icon: InlinedSvgs.buttonUngroup, disabled: !this.props.groupingState },
+          {name: "ungroup", onClick: this.ungroup, icon: InlinedSvgs.buttonUngroup, disabled: !NodeUtils.nodeIsGroup(this.props.nodeToDisplay) }
+        ]
+      }
+    ];
   }
 
   renderPanelButton = (panelButton, idx, buttonsInBusinessView) => {
@@ -281,6 +284,7 @@ class UserRightPanel extends Component {
 function mapState(state) {
   const fetchedProcessDetails = state.graphReducer.fetchedProcessDetails
   return {
+    isOpened: state.ui.rightPanelIsOpened,
     fetchedProcessDetails: fetchedProcessDetails,
     processToDisplay: state.graphReducer.processToDisplay,
     //TODO: now only needed for duplicate, maybe we can do it somehow differently?

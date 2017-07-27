@@ -1,7 +1,8 @@
 import _ from 'lodash'
 
 const emptyUiState = {
-  leftPanelIsOpened: false,
+  leftPanelIsOpened: true,
+  rightPanelIsOpened: true,
   showNodeDetailsModal: false,
   showEdgeDetailsModal: false,
   confirmDialog: {},
@@ -18,7 +19,13 @@ export function reducer(state = emptyUiState, action) {
     case "TOGGLE_LEFT_PANEL": {
       return withAllModalsClosed({
         ...state,
-        leftPanelIsOpened: action.leftPanelIsOpened
+        leftPanelIsOpened: !state.leftPanelIsOpened,
+      })
+    }
+    case "TOGGLE_RIGHT_PANEL": {
+      return withAllModalsClosed({
+        ...state,
+        rightPanelIsOpened: !state.rightPanelIsOpened,
       })
     }
     case "CLOSE_MODALS": {
