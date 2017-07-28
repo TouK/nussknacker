@@ -11,8 +11,9 @@ class ClientService extends Service {
   @MethodToInvoke
   def invoke(@ParamName("clientId") clientId: String)(implicit ec: ExecutionContext): Future[Client] = {
     val clients = Map(
-      "1" -> Client("1", "Alice", "123"),
-      "2" -> Client("1", "Bob", "234")
+      "ClientA" -> Client("ClientA", "Alice", "123"),
+      "ClientB" -> Client("ClientB", "Bob", "234"),
+      "ClientC" -> Client("ClientC", "Charles", "345")
     )
     Future {
       clients.getOrElse(clientId,
