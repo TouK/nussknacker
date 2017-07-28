@@ -13,7 +13,7 @@ const emptyGraphState = {
   testCapabilities: {},
   groupingState: null,
   processCounts: {},
-  testResults: {},
+  testResults: null,
   businessView: false
 };
 
