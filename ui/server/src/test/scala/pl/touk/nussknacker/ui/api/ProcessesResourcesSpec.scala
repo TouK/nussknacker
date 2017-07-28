@@ -59,6 +59,26 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
     }
   }
 
+  it should "update process category for existing process" in {
+    saveProcess(processId, ProcessTestData.validProcess) {
+      val newCategory = "expectedCategory"
+      Post(s"/processes/category/$processId/$newCategory") ~> routWithAllPermissions ~> check {
+        status shouldEqual StatusCodes.OK
+        Get(s"/processes/$processId") ~> routWithAdminPermission ~> check {
+          status shouldEqual StatusCodes.OK
+          val loadedProcess = responseAs[String].decodeOption[ProcessDetails].get
+          loadedProcess.processCategory shouldBe newCategory
+        }
+      }
+    }
+  }
+
+  it should "throw exception on update process category for non existing process" in {
+      Post("/processes/category/unexcistingProcess/newCategory") ~> routWithAllPermissions ~> check {
+        status shouldEqual StatusCodes.NotFound
+      }
+  }
+
   it should "return 404 when no process" in {
     Get("/processes/123") ~> routWithAllPermissions ~> check {
       status shouldEqual StatusCodes.NotFound
@@ -81,7 +101,6 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
       }
     }
   }
-
   it should "save correct process json with ok status" in {
     saveProcess(SampleProcess.process.id, ProcessTestData.validProcess) {
       status shouldEqual StatusCodes.OK
@@ -300,13 +319,13 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
     }
   }
 
-  def checkSampleProcessRootIdEquals(expected: String) = {
+  private def checkSampleProcessRootIdEquals(expected: String): Assertion = {
     fetchSampleProcess()
       .map(_.nodes.head.id)
       .futureValue shouldEqual expected
   }
 
-  def fetchSampleProcess(): Future[CanonicalProcess] = {
+  private def fetchSampleProcess(): Future[CanonicalProcess] = {
     processRepository
       .fetchLatestProcessVersion(SampleProcess.process.id)
       .map(_.getOrElse(sys.error("Sample process missing")))

@@ -150,6 +150,12 @@ class ProcessesResources(repository: ProcessRepository,
             }
           }
         }
+      } ~ path("processes" / "category" / Segment / Segment) { (processId, category) =>
+        post {
+          complete {
+            repository.updateCategory(processId = processId, category = category).map(toResponse(StatusCodes.OK))
+          }
+        }
       } ~ path("processes" / "export" / Segment / LongNumber) { (processId, versionId) =>
         get {
           complete {
