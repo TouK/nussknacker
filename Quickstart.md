@@ -1,3 +1,5 @@
+# Quickstart
+
 ## Prequisites
 
 To run this quickstart you have to 
@@ -29,8 +31,9 @@ Now you are ready to check your newly created environment:
 * Click 'Save'
 * You have just created your first process!
 
-![Adding process](img/quickstart/createProcess.gif)
-
+<video width="100%" controls>
+  <source src="img/quickstart/createProcess.mp4" type="video/mp4">
+</video>
 
 ## Test process with data
 * Click 'Deploy' on right panel
@@ -38,7 +41,9 @@ Now you are ready to check your newly created environment:
 * Run ./testData/sendTestTransactions.sh script a few times to generate some data (first run may end with error from Kafka - don't worry about it). Script will send some json data to "transactions" Kafka topic. 
 * Go to Metrics tab on Nussknacker main panel - you should see changed metrics. Your process just processed data from Kafka and saved filtered results!
 
-![Deploy](img/quickstart/deployAndMetrics.gif)
+<video width="100%" controls>
+  <source src="img/quickstart/deployAndMetrics.mp4" type="video/mp4">
+</video>
 
 ## See results in Kibana
 
@@ -46,7 +51,9 @@ Now you are ready to check your newly created environment:
   * Define processedevents* as default index pattern
   * You will see filtered events
 
-![Search events](img/quickstart/searchInKibana.gif)
+<video width="100%" controls>
+  <source src="img/quickstart/searchInKibana.mp4" type="video/mp4">
+</video>
 
 ## Test your process in sandbox environment
 * Clink 'generate' button in right panel of application (assuming you have already some test data on Kafka)
@@ -54,7 +61,19 @@ Now you are ready to check your newly created environment:
 * Click 'from file' button and upload file generated in last step
 * After a while you will see test results - how many records passed filters, and what where variables values
 
-![Test process](img/quickstart/testProcess.gif)
+<video width="100%" controls>
+  <source src="img/quickstart/testProcess.mp4" type="video/mp4">
+</video>
+
+## Edit process
+* Drag & drop `clientService` from `Creator panel` -> `enrichers` -> `clientService`
+* Double click on new node, fill some node `Id`, set `clientId` to `#input.clientId` and set `Output` variable name as `clientData`. Now you can access enriched data from `clientData` variable in further processing.
+* Let's use enriched data in `save to elastic` node, set `Expression` to `#UTIL.mapAsJson({'clientId': #input.clientId, cardNumber: #clientData.cardNumber})`
+* Now run test on generated data to see if it works!
+
+<video width="100%" controls>
+  <source src="img/quickstart/editProcess.mp4" type="video/mp4">
+</video>
 
 ## What's inside?
 The quickstart starts several Docker containers. Let's look at them in detail:

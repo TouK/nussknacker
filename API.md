@@ -45,11 +45,47 @@ trait ProcessConfigCreator {
 
 ##Creating sources and sinks
 
+##Source
+To create source one needs to extend `pl.touk.nussknacker.engine.api.process.SourceFactory` interface and annotate one method with
+`@MethodToInvoke` and return `Source[T]`.
+
+Nussknacker comes with kafka source `pl.touk.nussknacker.engine.kafka.KafkaSourceFactory` which uses `org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer09` underneath. 
+Let's see how it works
+```scala
+class KafkaSourceFactory[T: TypeInformation](config: KafkaConfig,
+                                             schema: DeserializationSchema[T],
+                                             val timestampAssigner: Option[TimestampAssigner[T]],
+                                             ...) extends FlinkSourceFactory[T] with Serializable {
+  @MethodToInvoke
+  def create(processMetaData: MetaData, @ParamName("topic") topic: String): Source[T] with TestDataGenerator = {
+    ...
+    new KafkaSource(consumerGroupId = processMetaData.id, topic = topic)
+  }
+}
+```
+First let's look at constructor params.
+`config` and `schema` is pretty straightforward. 
+`timestampAssigner` extracts event time from event, so Flink knows event time that can be used in aggregations. 
+Event Time is Flink's crucial concept, see [Event Time](https://ci.apache.org/projects/flink/flink-docs-release-{{book.flinkMajorVersion}}/dev/event_time.html). 
+`Metadata` parameter is injected by Nussknacker and `topic` is just normal parameter that user can set in UI.
+
+### Source test data
+To be able to test process from file `SourceFactory.testDataParser: Option[TestDataParser[T]]` methods has to be implemented.
+
+`Source` can also specify how test data is generated - this can be triggered on `generate` button click - see [Quickstart section](Quickstart.md) for details.
+Data generation logic is provided by extending `pl.touk.nussknacker.engine.api.process.TestDataGenerator`. 
+See `KafkaSourceFactory` implementation for details.
+
+##Sink
+`Sink` creation is similar to `Source` creation. 
+So one needs to extend `pl.touk.nussknacker.engine.api.process.SinkFactory` interface and annotate one method with `@MethodToInvoke` and return `Sink`.
+Nussknacker comes with kafka sink `pl.touk.nussknacker.engine.kafka.KafkaSinkFactory` which uses `org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer09` underneath. 
+
 ##Defining model classes
 
 ##Creating service
 To create service one needs to extend `pl.touk.nussknacker.engine.api.Service` interface and annotate one method with
-`@MethodToInvoke` and return `scala.concurrent.Future`. Annotated method will be invoked by Nussknacker for every element passing through this service.
+`@MethodToInvoke` and return `scala.concurrent.Future` (method name is not important). Annotated method will be invoked by Nussknacker for every element passing through this service.
 Service can do anything - it could be HTTP call or some static mapping.
 
 Service divides in processors and enrichers. Processor does not return anything and enricher return some value. 
