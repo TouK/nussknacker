@@ -30,7 +30,7 @@ import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
 import scala.util.Try
 
-object EspUiApp extends App with Directives with LazyLogging {
+object NussknackerApp extends App with Directives with LazyLogging {
 
   implicit val system = ActorSystem("nussknacker-ui")
 

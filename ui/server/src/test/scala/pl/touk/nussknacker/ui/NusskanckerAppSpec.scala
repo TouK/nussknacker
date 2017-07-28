@@ -8,7 +8,7 @@ import org.scalatest.{BeforeAndAfterEach, FlatSpec}
 import pl.touk.nussknacker.ui.util.AvailablePortFinder
 
 
-class EspUiAppSpec extends FlatSpec with BeforeAndAfterEach {
+class NusskanckerAppSpec extends FlatSpec with BeforeAndAfterEach {
 
   var processesDir: File = _
 
@@ -22,6 +22,6 @@ class EspUiAppSpec extends FlatSpec with BeforeAndAfterEach {
   it should "start app without errors" in {
     val port = AvailablePortFinder.findAvailablePort()
     val args = Array(port.toString, processesDir.getAbsolutePath)
-    EspUiApp.main(args)
+    NussknackerApp.main(args)
   }
 }
