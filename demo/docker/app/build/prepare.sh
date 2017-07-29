@@ -8,13 +8,13 @@ if [ ! -f ./${FILE} ]; then
         exit 1
     fi
     echo "Using version ${VERSION} from repository"
-    #FIXME: replace nexus with maven central
     if [[ "$VERSION" == *-SNAPSHOT ]]; then
-       REPO=snapshots
+       #TODO: what will be default snapshots location??
+       REPO=https://philanthropist.touk.pl/nexus/content/repositories/snapshots
     else
-       REPO=releases
+       REPO=https://repo1.maven.org/maven2
     fi
-    wget -O ${FILE} https://philanthropist.touk.pl/nexus/content/repositories/${REPO}/pl/touk/nussknacker/nussknacker-ui_2.11/${VERSION}/nussknacker-ui_2.11-${VERSION}-assembly.jar
+    wget -O ${FILE} ${REPO}/pl/touk/nussknacker/nussknacker-ui_2.11/${VERSION}/nussknacker-ui_2.11-${VERSION}-assembly.jar
 else
     echo "Using custom built ${FILE}"
 fi

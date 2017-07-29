@@ -12,11 +12,11 @@ if [[ -z "${VERSION}" ]]; then
     cp ${FILE} /tmp/code-assembly.jar
 else
     echo "Downloading example model in version $VERSION"
-    #FIXME: replace nexus with maven central
     if [[ "$VERSION" == *-SNAPSHOT ]]; then
-       REPO=snapshots
+        #TODO: what will be default snapshots location??
+       REPO=https://philanthropist.touk.pl/nexus/content/repositories/snapshots
     else
-       REPO=releases
+       REPO=https://repo1.maven.org/maven2
     fi
-    wget -O /tmp/code-assembly.jar https://philanthropist.touk.pl/nexus/content/repositories/${REPO}/pl/touk/nussknacker/nussknacker-example_2.11/${VERSION}/nussknacker-example_2.11-${VERSION}-assembly.jar
+    wget -O /tmp/code-assembly.jar ${REPO}/pl/touk/nussknacker/nussknacker-example_2.11/${VERSION}/nussknacker-example_2.11-${VERSION}-assembly.jar
 fi
