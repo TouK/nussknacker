@@ -109,12 +109,13 @@ class UserRightPanel extends Component {
         buttons: [
           {name: "undo", onClick: this.undo, icon: InlinedSvgs.buttonUndo},
           {name: "redo", onClick: this.redo, icon: InlinedSvgs.buttonRedo},
-          {name: "align", onClick: this.props.graphLayoutFunction, icon: InlinedSvgs.buttonAlign},
+          {name: "align", onClick: this.props.graphLayoutFunction, icon: InlinedSvgs.buttonAlign, visible: this.props.loggedUser.canWrite},
           {name: "properties", onClick: this.showProperties, icon: InlinedSvgs.buttonSettings, visible: !this.props.isSubprocess},
           {name: "duplicate", onClick: this.duplicateNode, icon: InlinedSvgs.duplicateButton,
             //cloning groups can be tricky...
-            disabled: this.noChosenNode(this.props.nodeToDisplay) || NodeUtils.nodeIsGroup(this.props.nodeToDisplay)},
-          {name: "delete", onClick: this.deleteNode, icon: InlinedSvgs.buttonDelete, disabled: this.noChosenNode(this.props.nodeToDisplay) }
+            disabled: this.noChosenNode(this.props.nodeToDisplay) || NodeUtils.nodeIsGroup(this.props.nodeToDisplay),
+            visible: this.props.loggedUser.canWrite},
+          {name: "delete", onClick: this.deleteNode, icon: InlinedSvgs.buttonDelete, visible: this.props.loggedUser.canWrite, disabled: this.noChosenNode(this.props.nodeToDisplay) }
 
         ]
       },

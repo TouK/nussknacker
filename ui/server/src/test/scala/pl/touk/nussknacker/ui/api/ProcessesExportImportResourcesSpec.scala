@@ -25,7 +25,8 @@ class ProcessesExportImportResourcesSpec extends FlatSpec with ScalatestRouteTes
   implicit override val patienceConfig = PatienceConfig(timeout = scaled(Span(1, Seconds)), interval = scaled(Span(100, Millis)))
   implicit val testtimeout = RouteTestTimeout(2.seconds)
 
-  val routWithAllPermissions = withAllPermissions(processesRoute)
+  import akka.http.scaladsl.server.RouteConcatenation._
+  val routWithAllPermissions = withAllPermissions(processesExportResources) ~ withAllPermissions(processesRoute)
   implicit val loggedUser = LoggedUser("lu", "", List(), List(testCategory))
 
   val marshaller = UiProcessMarshaller()

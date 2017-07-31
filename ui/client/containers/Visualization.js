@@ -117,7 +117,7 @@ const Visualization = withRouter(React.createClass({
   },
 
   render: function() {
-    const { leftPanelIsOpened, actions } = this.props;
+    const { leftPanelIsOpened, actions, loggedUser } = this.props;
     //it has to be that way, because graph is redux component
     var getGraph = () => this.refs.graph.getWrappedInstance().getDecoratedComponentInstance();
     const graphFun = (fun) => (() => !_.isEmpty(this.refs.graph) ? fun(getGraph()) : () => null)
@@ -129,7 +129,7 @@ const Visualization = withRouter(React.createClass({
 
     return (
       <div className="Page">
-          <UserLeftPanel isOpened={leftPanelIsOpened} onToggle={actions.toggleLeftPanel}/>
+          <UserLeftPanel isOpened={leftPanelIsOpened} onToggle={actions.toggleLeftPanel} loggedUser={loggedUser}/>
           <UserRightPanel
             graphLayoutFunction={graphLayoutFun}
             exportGraph={exportGraphFun}
@@ -160,7 +160,8 @@ function mapState(state) {
     leftPanelIsOpened: state.ui.leftPanelIsOpened,
     undoRedoAvailable: state.ui.allModalsClosed,
     nothingToSave: ProcessUtils.nothingToSave(state),
-    canDelete: state.ui.allModalsClosed && !NodeUtils.nodeIsGroup(state.graphReducer.nodeToDisplay)
+    canDelete: state.ui.allModalsClosed && !NodeUtils.nodeIsGroup(state.graphReducer.nodeToDisplay),
+    loggedUser: state.settings.loggedUser
   };
 }
 export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(Visualization);

@@ -18,6 +18,7 @@ export default class UserLeftPanel extends Component {
   static propTypes = {
     isOpened: React.PropTypes.bool.isRequired,
     onToggle: React.PropTypes.func.isRequired,
+    loggedUser: React.PropTypes.object.isRequired,
   }
 
   render() {
@@ -28,9 +29,11 @@ export default class UserLeftPanel extends Component {
         <TogglePanel type="left" isOpened={isOpened} onToggle={onToggle}/>
         <Scrollbars renderThumbVertical={props => <div {...props} className="thumbVertical"/>} hideTracksWhenNotNeeded={true}>
           <Tips />
-          <Panel collapsible defaultExpanded header="Creator panel">
-            <ToolBox/>
-          </Panel>
+          {this.props.loggedUser.canWrite ?
+            <Panel collapsible defaultExpanded header="Creator panel">
+              <ToolBox/>
+            </Panel> : null
+          }
           <Panel collapsible defaultExpanded header="Versions">
             <ProcessHistory/>
           </Panel>

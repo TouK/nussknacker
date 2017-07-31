@@ -28,7 +28,6 @@ import pl.touk.nussknacker.ui.validation.ProcessValidation
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
 import pl.touk.nussknacker.ui.process.{JobStatusService, ProcessToSave, ProcessTypesForCategories}
-import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.ProcessActivity
 import pl.touk.http.argonaut.Argonaut62Support
 
 
@@ -37,7 +36,8 @@ import scala.concurrent.{ExecutionContext, Future}
 class ProcessesResources(repository: ProcessRepository,
                          jobStatusService: JobStatusService,
                          processActivityRepository: ProcessActivityRepository,
-                         processValidation: ProcessValidation, typesForCategories: ProcessTypesForCategories)
+                         processValidation: ProcessValidation,
+                         typesForCategories: ProcessTypesForCategories)
                         (implicit ec: ExecutionContext, mat: Materializer)
   extends Directives with Argonaut62Support with EspPathMatchers with UiCodecs with RouteWithUser {
 
@@ -156,26 +156,6 @@ class ProcessesResources(repository: ProcessRepository,
             repository.updateCategory(processId = processId, category = category).map(toResponse(StatusCodes.OK))
           }
         }
-      } ~ path("processes" / "export" / Segment / LongNumber) { (processId, versionId) =>
-        get {
-          complete {
-            repository.fetchProcessDetailsForId(processId, versionId, businessView = false).map {
-              exportProcess
-            }
-          }
-        }
-      } ~ path("processes" / "exportToPdf" / Segment / LongNumber) { (processId, versionId) =>
-        parameter('businessView ? false) { (businessView) =>
-          post {
-            entity(as[Array[Byte]]) { (svg) =>
-              complete {
-                repository.fetchProcessDetailsForId(processId, versionId, businessView).flatMap { process =>
-                  processActivityRepository.findActivity(processId).map(exportProcessToPdf(new String(svg), process, _))
-                }
-              }
-            }
-          }
-        }
       } ~ path("processes" / Segment / LongNumber / "compare" / LongNumber) { (processId, thisVersion, otherVersion) =>
         parameter('businessView ? false) { (businessView) =>
           get {
@@ -186,15 +166,6 @@ class ProcessesResources(repository: ProcessRepository,
                   ProcessComparator.compare(thisDisplayable, otherDisplayable)
                 }
               }
-            }
-          }
-        }
-
-      } ~ path("processes" / "export" / Segment) { processId =>
-        get {
-          complete {
-            repository.fetchLatestProcessDetailsForProcessId(processId).map {
-              exportProcess
             }
           }
         }
@@ -225,29 +196,6 @@ class ProcessesResources(repository: ProcessRepository,
       }
     }
   }
-
-  private def exportProcess(processDetails: Option[ProcessDetails]) = processDetails match {
-    case Some(process) =>
-      process.json.map { json =>
-        uiProcessMarshaller.toJson(ProcessConverter.fromDisplayable(json), PrettyParams.spaces2)
-      }.map { canonicalJson =>
-        AkkaHttpResponse.asFile(canonicalJson, s"${process.id}.json")
-      }.getOrElse(HttpResponse(status = StatusCodes.NotFound, entity = "Process not found"))
-    case None =>
-      HttpResponse(status = StatusCodes.NotFound, entity = "Process not found")
-  }
-
-  private def exportProcessToPdf(svg: String, processDetails: Option[ProcessDetails], processActivity: ProcessActivity) = processDetails match {
-    case Some(process) =>
-      process.json.map { json =>
-        PdfExporter.exportToPdf(svg, process, processActivity, json)
-      }.map { pdf =>
-        HttpResponse(status = StatusCodes.OK, entity = pdf)
-      }.getOrElse(HttpResponse(status = StatusCodes.NotFound, entity = "Process not found"))
-    case None =>
-      HttpResponse(status = StatusCodes.NotFound, entity = "Process not found")
-  }
-
 
   private def fetchProcessStatesForProcesses(processes: List[ProcessDetails])(implicit user: LoggedUser): Future[Map[String, Option[ProcessStatus]]] = {
     import cats.instances.future._

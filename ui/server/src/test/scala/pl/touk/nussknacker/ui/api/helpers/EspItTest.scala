@@ -40,6 +40,7 @@ trait EspItTest extends LazyLogging { self: ScalatestRouteTest with Suite with B
 
   val jobStatusService = new JobStatusService(managementActor)
   val processesRoute = new ProcessesResources(processRepository, jobStatusService, processActivityRepository, processValidation, typesForCategories)
+  val processesExportResources = new ProcessesExportResources(processRepository, processActivityRepository)
 
   val processesRouteWithAllPermissions = withAllPermissions(processesRoute)
   val deployRoute = new ManagementResources(
