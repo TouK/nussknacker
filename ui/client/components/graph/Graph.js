@@ -158,13 +158,12 @@ class Graph extends React.Component {
 
       const nodesWithGroups = NodeUtils.nodesFromProcess(process, expandedGroups)
       const edgesWithGroups = NodeUtils.edgesFromProcess(process, expandedGroups)
-      const outgoingEdgesGrouped = _.groupBy(edgesWithGroups, "from")
       t = this.time(t, 'start')
 
       const nodes = _.map(nodesWithGroups, (n) => { return EspNode.makeElement(n, processCounts[n.id], forExport, this.props.nodesSettings) });
       t = this.time(t, 'nodes')
 
-      const edges = _.map(edgesWithGroups, (e) => { return EspNode.makeLink(e, outgoingEdgesGrouped, forExport) });
+      const edges = _.map(edgesWithGroups, (e) => { return EspNode.makeLink(e, forExport) });
       t = this.time(t, 'links')
 
       const boundingRects = NodeUtils.getExpandedGroups(process, expandedGroups)

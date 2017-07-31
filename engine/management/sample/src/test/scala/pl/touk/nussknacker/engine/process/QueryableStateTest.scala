@@ -44,7 +44,7 @@ class QueryableStateTest extends FlatSpec with BeforeAndAfterAll with Matchers w
 
   it should "fetch queryable state for all keys" in {
     val lockProcess = EspProcessBuilder
-      .id("proc1")
+      .id("queryableStateProc1")
       .parallelism(1)
       .exceptionHandler("param1" -> "errors")
       .source("start", "kafka-transaction")

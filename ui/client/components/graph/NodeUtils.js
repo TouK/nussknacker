@@ -108,14 +108,13 @@ class NodeUtils {
       .find(e => e.nodeId.type === node.type && e.nodeId.id == nodeObjectTypeDefinition) || { edges: [null], canChooseNodes: false}
   }
 
-  edgeLabel = (edge, outgoingEdges) => {
+  edgeLabel = (edge) => {
     const edgeType = _.get(edge, 'edgeType.type')
-    const isSingleOutput = outgoingEdges && outgoingEdges[edge.from].length === 1
 
     //TODO: should this map be here??
     const edgeTypeToLabel = {
       "FilterFalse": "false",
-      "FilterTrue": isSingleOutput ? '' : "true",
+      "FilterTrue": "true",
       "SwitchDefault": "default",
       "SubprocessOutput": _.get(edge, 'edgeType.name'),
       "NextSwitch": _.get(edge, 'edgeType.condition.expression')

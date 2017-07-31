@@ -319,8 +319,8 @@ export function boundingRect(nodes, expandedGroup, layout, group) {
   })
 }
 
-export function makeLink(edge, outgoingEdges, forExport) {
-  const label = NodeUtils.edgeLabel(edge, outgoingEdges)
+export function makeLink(edge, forExport) {
+  const label = NodeUtils.edgeLabel(edge)
   return new joint.dia.Link({
     //TODO: some different way to create id? Must be deterministic and unique
     id: `${edge.from}-${edge.to}-${label}`,
