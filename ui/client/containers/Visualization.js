@@ -160,7 +160,9 @@ function mapState(state) {
     leftPanelIsOpened: state.ui.leftPanelIsOpened,
     undoRedoAvailable: state.ui.allModalsClosed,
     nothingToSave: ProcessUtils.nothingToSave(state),
-    canDelete: state.ui.allModalsClosed && !NodeUtils.nodeIsGroup(state.graphReducer.nodeToDisplay),
+    canDelete: state.ui.allModalsClosed 
+      && !NodeUtils.nodeIsGroup(state.graphReducer.nodeToDisplay) 
+      && state.settings.loggedUser.canWrite,
     loggedUser: state.settings.loggedUser
   };
 }
