@@ -35,16 +35,6 @@ class UserRightPanel extends Component {
 
   render() {
     const { isOpened, actions } = this.props;
-    const buttonsInBusinessView = [
-      "metrics",
-      "compare",
-      "export",
-      "exportPDF",
-      "zoomIn",
-      "zoomOut",
-      "properties",
-      "counts",
-    ];
 
     const config = this.getConfig();
 
@@ -61,16 +51,20 @@ class UserRightPanel extends Component {
               Business view
             </label>
           </div>
-          {config.filter(obj => obj).map ((panel, panelIdx) => {
-            return (
-              <Panel key={panelIdx} collapsible defaultExpanded header={panel.panelName}>
-                {panel.buttons.map((panelButton, idx) => this.renderPanelButton(panelButton, idx, buttonsInBusinessView))}
-              </Panel>
-            )}
+          {config.filter(panel => panel).map ((panel, panelIdx) => {
+              const visibleButtons = panel.buttons.filter(button => button.visible !== false)
+              return _.isEmpty(visibleButtons) ? null : (
+                <Panel key={panelIdx} collapsible defaultExpanded header={panel.panelName}>
+                  {visibleButtons.map((panelButton, idx) => this.renderPanelButton(panelButton, idx))}
+                </Panel>
+              )
+            }
           )}
-          <Panel collapsible defaultExpanded header="Details">
-            <SideNodeDetails/>
-          </Panel>
+          {this.props.loggedUser.canWrite ? //TODO remove SideNodeDetails? turn out to be not useful
+            (<Panel collapsible defaultExpanded header="Details">
+              <SideNodeDetails/>
+            </Panel>) : null
+          }
         </Scrollbars>
       </div>
     )
@@ -97,7 +91,7 @@ class UserRightPanel extends Component {
         {name: "migrate", visible: this.props.loggedUser.canDeploy && !_.isEmpty(this.props.featuresSettings.migration), disabled: !migratePossible, onClick: this.migrate, icon: InlinedSvgs.buttonMigrate},
         {name: "compare", onClick: this.compareVersions, icon: InlinedSvgs.compareButton, disabled: this.hasOneVersion()},
         {name: "import", visible: this.props.loggedUser.canWrite, disabled: false, onClick: this.importProcess, icon: InlinedSvgs.buttonImport, dropzone: true},
-        {name: "export", onClick: this.exportProcess, icon: InlinedSvgs.buttonExport},
+        {name: "export", visible: this.props.loggedUser.canWrite, onClick: this.exportProcess, icon: InlinedSvgs.buttonExport},
         {name: "exportPDF", disabled: !this.props.nothingToSave, onClick: this.exportProcessToPdf, icon: InlinedSvgs.buttonExport},
         {name: "zoomIn", onClick: this.props.zoomIn, icon: InlinedSvgs.buttonZoomIn},
         {name: "zoomOut", onClick: this.props.zoomOut, icon: InlinedSvgs.buttonZoomOut}
@@ -107,10 +101,10 @@ class UserRightPanel extends Component {
       {
         panelName: "Edit",
         buttons: [
-          {name: "undo", onClick: this.undo, icon: InlinedSvgs.buttonUndo},
-          {name: "redo", onClick: this.redo, icon: InlinedSvgs.buttonRedo},
+          {name: "undo", visible: this.props.loggedUser.canWrite, onClick: this.undo, icon: InlinedSvgs.buttonUndo},
+          {name: "redo", visible: this.props.loggedUser.canWrite, onClick: this.redo, icon: InlinedSvgs.buttonRedo},
           {name: "align", onClick: this.props.graphLayoutFunction, icon: InlinedSvgs.buttonAlign, visible: this.props.loggedUser.canWrite},
-          {name: "properties", onClick: this.showProperties, icon: InlinedSvgs.buttonSettings, visible: !this.props.isSubprocess},
+          {name: "properties", onClick: this.showProperties, icon: InlinedSvgs.buttonSettings, visible: !this.props.isSubprocess && this.props.loggedUser.canWrite},
           {name: "duplicate", onClick: this.duplicateNode, icon: InlinedSvgs.duplicateButton,
             //cloning groups can be tricky...
             disabled: this.noChosenNode(this.props.nodeToDisplay) || NodeUtils.nodeIsGroup(this.props.nodeToDisplay),
@@ -124,10 +118,10 @@ class UserRightPanel extends Component {
         panelName: "Test",
         buttons: [
           {name: "from file", onClick: this.testProcess, icon: InlinedSvgs.buttonFromFile, dropzone: true,
-            disabled: !this.props.testCapabilities.canBeTested},
-          {name: "hide", onClick: this.hideRunProcessDetails, icon: InlinedSvgs.buttonHide, disabled: !this.props.showRunProcessDetails},
+            disabled: !this.props.testCapabilities.canBeTested, visible: this.props.loggedUser.canWrite},
+          {name: "hide", onClick: this.hideRunProcessDetails, icon: InlinedSvgs.buttonHide, disabled: !this.props.showRunProcessDetails, visible: this.props.loggedUser.canWrite},
           {name: "generate", onClick: this.generateData, icon: InlinedSvgs.buttonGenerate,
-            disabled: !this.props.processIsLatestVersion || !this.props.testCapabilities.canGenerateTestData},
+            disabled: !this.props.processIsLatestVersion || !this.props.testCapabilities.canGenerateTestData, visible: this.props.loggedUser.canWrite},
           {name: "counts", onClick: this.fetchProcessCounts, icon: InlinedSvgs.buttonCounts,
             visible: this.props.featuresSettings.counts && !this.props.isSubprocess},
         ]
@@ -135,19 +129,18 @@ class UserRightPanel extends Component {
       {
         panelName: "Group",
         buttons: [
-          {name: "start", onClick: this.props.actions.startGrouping, icon: InlinedSvgs.buttonGroup, disabled: this.props.groupingState != null},
-          {name: "finish", onClick: this.props.actions.finishGrouping, icon: InlinedSvgs.buttonGroup, disabled: (this.props.groupingState || []).length <= 1},
-          {name: "cancel", onClick: this.props.actions.cancelGrouping, icon: InlinedSvgs.buttonUngroup, disabled: !this.props.groupingState },
-          {name: "ungroup", onClick: this.ungroup, icon: InlinedSvgs.buttonUngroup, disabled: !NodeUtils.nodeIsGroup(this.props.nodeToDisplay) }
+          {name: "start", onClick: this.props.actions.startGrouping, icon: InlinedSvgs.buttonGroup, disabled: this.props.groupingState != null, visible: this.props.loggedUser.canWrite},
+          {name: "finish", onClick: this.props.actions.finishGrouping, icon: InlinedSvgs.buttonGroup, disabled: (this.props.groupingState || []).length <= 1, visible: this.props.loggedUser.canWrite},
+          {name: "cancel", onClick: this.props.actions.cancelGrouping, icon: InlinedSvgs.buttonUngroup, disabled: !this.props.groupingState, visible: this.props.loggedUser.canWrite },
+          {name: "ungroup", onClick: this.ungroup, icon: InlinedSvgs.buttonUngroup, disabled: !NodeUtils.nodeIsGroup(this.props.nodeToDisplay), visible: this.props.loggedUser.canWrite }
         ]
       }
     ];
   }
 
-  renderPanelButton = (panelButton, idx, buttonsInBusinessView) => {
+  renderPanelButton = (panelButton, idx) => {
     const buttonClass = "espButton right-panel"
-    return panelButton.visible === false || (this.props.businessView === true && !_.includes(buttonsInBusinessView, panelButton.name)) ? null :
-      panelButton.dropzone ?
+    return panelButton.dropzone ?
         <Dropzone key={idx} disableClick={panelButton.disabled === true} onDrop={panelButton.onClick}
                   className={"dropZone " + buttonClass + (panelButton.disabled === true ? " disabled" : "")}>
             <div dangerouslySetInnerHTML={{__html: panelButton.icon}} />
