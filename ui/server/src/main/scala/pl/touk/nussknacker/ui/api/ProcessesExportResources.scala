@@ -5,6 +5,8 @@ import akka.http.scaladsl.server.{Directives, Route}
 import akka.stream.Materializer
 import argonaut._
 import pl.touk.http.argonaut.Argonaut62Support
+import pl.touk.nussknacker.ui.codec.UiCodecs
+import pl.touk.nussknacker.ui.process.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.ui.process.marshall.{ProcessConverter, UiProcessMarshaller}
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.ProcessActivity
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository._
@@ -17,7 +19,7 @@ import scala.concurrent.ExecutionContext
 class ProcessesExportResources(repository: ProcessRepository,
                                processActivityRepository: ProcessActivityRepository)
                               (implicit ec: ExecutionContext, mat: Materializer)
-  extends Directives with Argonaut62Support with RouteWithUser {
+  extends Directives with Argonaut62Support with RouteWithUser with UiCodecs {
 
   val uiProcessMarshaller = UiProcessMarshaller()
 
@@ -47,6 +49,15 @@ class ProcessesExportResources(repository: ProcessRepository,
                 processActivityRepository.findActivity(processId).map(exportProcessToPdf(new String(svg), process, _))
               }
             }
+          }
+        }
+      }
+    } ~ path("processes" / "convert") {
+      post {
+        entity(as[DisplayableProcess]) { process =>
+          complete {
+            val json = uiProcessMarshaller.toJson(ProcessConverter.fromDisplayable(process), PrettyParams.spaces2)
+            HttpResponse(entity = HttpEntity(ContentType(MediaTypes.`application/json`), json))
           }
         }
       }
