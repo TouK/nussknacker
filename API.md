@@ -150,3 +150,5 @@ to collect HTTP request that you would normally send in production.
 ##Custom stream transformers
 
 ##Process listeners
+
+##Custom processes
