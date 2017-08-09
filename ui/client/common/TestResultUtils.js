@@ -59,7 +59,7 @@ class TestResultUtils {
   _contextDisplay = (context) => {
     //TODO: what should be here? after aggregate input is not always present :|
     //taking first 50 chars can be a bit lame sometimes...
-    const varToInclude = context.variables["input"] || _.head(_.values(context.variables));
+    const varToInclude = context.variables["input"] || _.head(_.values(context.variables)) || {};
     return (varToInclude.original || varToInclude || "").toString().substring(0, 50)
   }
 }

@@ -409,7 +409,7 @@ export default class NodeDetailsContent extends React.Component {
   }
 
   testResults = () => {
-    if (this.state.testResultsToShow && this.state.testResultsToShow.context) {
+    if (this.state.testResultsToShow && !_.isEmpty(this.state.testResultsToShow.context.variables)) {
       var ctx = this.state.testResultsToShow.context.variables
       return (
 

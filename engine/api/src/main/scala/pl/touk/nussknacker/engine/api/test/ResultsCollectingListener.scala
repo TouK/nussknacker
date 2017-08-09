@@ -111,4 +111,12 @@ object InvocationCollectors {
       ResultsCollectingListenerHolder.updateResult(runId, nodeId, MockedResult(result.finalContext, ref, mockedResult))
     }
   }
+
+  case class SplitInvocationCollector(runId: TestRunId, nodeId: String) {
+
+    def collect(result: InterpretationResult): Unit = {
+      ResultsCollectingListenerHolder.updateResult(runId, nodeId, NodeResult(result.finalContext.copy(variables = Map.empty)))
+    }
+  }
+
 }

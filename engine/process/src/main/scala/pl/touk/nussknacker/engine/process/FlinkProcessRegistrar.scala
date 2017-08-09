@@ -27,7 +27,7 @@ import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.Interpreter
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
-import pl.touk.nussknacker.engine.api.test.InvocationCollectors.SinkInvocationCollector
+import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{SinkInvocationCollector, SplitInvocationCollector}
 import pl.touk.nussknacker.engine.api.test.TestRunId
 import pl.touk.nussknacker.engine.compiledgraph.part._
 import pl.touk.nussknacker.engine.definition.CustomNodeInvoker
@@ -162,9 +162,17 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => () => CompiledProcessW
         case SplitPart(splitNode, nexts) =>
           val nextIds = nexts.map(_.next.id)
           //TODO: there is bug in flink - if there are 2 splits in a row, without map
-          val newStart = start
-            //TODO: this is only place where we count outside interpreter - is it really needed?
-            .map(NodeCountMetricFunction[InterpretationResult](splitNode.id)).split(_ => nextIds)
+          //TODO: this is only place where we count outside interpreter - is it really needed?
+          val newStart = (testRunId match {
+            case None =>
+              start.map(NodeCountMetricFunction[InterpretationResult](splitNode.id))
+            case Some(runId) =>
+              val splitCollector = SplitInvocationCollector(runId, splitNode.id)
+              start.map(value => {
+                splitCollector.collect(value)
+                value
+              })
+          }).split(_ => nextIds)
           nexts.foreach {
             //TODO: is this part really ok && needed?
             case NextWithParts(NextNode(nextNode), parts, ends) =>

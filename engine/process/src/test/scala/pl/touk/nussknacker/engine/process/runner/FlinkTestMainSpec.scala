@@ -8,7 +8,7 @@ import org.apache.flink.runtime.client.JobExecutionException
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Inside, Matchers}
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.deployment.test.{ExpressionInvocationResult, MockedResult, NodeResult, TestData}
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.process.ProcessTestHelpers._
 import pl.touk.nussknacker.engine.spel
@@ -66,6 +66,23 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside with BeforeAn
     results.mockedResults("out") shouldBe List(MockedResult(Context("proc1-id-0-1", Map("input" -> input2, "variable1" -> "ala")), "monitor", "11"))
     MonitorEmptySink.invocationsCount.get() shouldBe 0
     LogService.invocationsCount.get() shouldBe 0
+  }
+
+  it should "collect results for split" in {
+    val process =
+      EspProcessBuilder
+        .id("proc1")
+        .exceptionHandler()
+        .source("id", "input")
+        .split("splitId1",
+          GraphBuilder.sink("out1", "'123'", "monitor"),
+          GraphBuilder.sink("out2", "'234'", "monitor")
+        )
+
+    val results = FlinkTestMain.run(ProcessMarshaller.toJson(process, PrettyParams.spaces2),
+      ConfigFactory.load(), TestData(List("0|1|2|3|4|5|6", "0|11|2|3|4|5|6").mkString("\n")), List())
+
+    results.nodeResults("splitId1") shouldBe List(nodeResult(0), nodeResult(1))
   }
 
   it should "return correct result for custom node" in {
