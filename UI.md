@@ -13,7 +13,7 @@ if process crashed there will be red status indicator
 #Process visualization
 ##Left panel
 - toolbox - creator panel with all nodes available for process category. Just drag & drop it to create process 
-- History - every version of process is persisted
+- history - every version of process is persisted
 - comments
 - attachments
 
@@ -47,11 +47,3 @@ if process crashed there will be red status indicator
 - finish - finish grouping
 - cancel
 - ungroup
-
-###Testing
-
-##Editing graph
-
-###Editing nodes
-
-

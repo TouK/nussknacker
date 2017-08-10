@@ -78,8 +78,8 @@ Now you are ready to check your newly created environment:
 ## What's inside?
 The quickstart starts several Docker containers. Let's look at them in detail:
 * Core applications
-  * Apach Flink
-  * Nussnknacker app
+  * Apache Flink
+  * Nussknacker app
 * Data ingestion
   * Zookeeper
   * Kafka

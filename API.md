@@ -9,7 +9,7 @@ and means to retrieve them.
 
 
 #ProcessConfigCreator - entry point of model
-pl.touk.esp.engine.api.process.ProcessConfigCreator
+pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 
 ```scala
 trait ProcessConfigCreator {
@@ -133,9 +133,30 @@ class SendMailProcessor extends Service {
 Collected value can be seen in UI in mocked service after tests, so for example you can use `collector.collect()` 
 to collect HTTP request that you would normally send in production.
 
-###Defining parameters
-
 ###Lazy values (use with caution)
+Instead of using `Enricher` node in graph to enrich data, one can use some syntactic sugar to enrich data in more object-oriented way -it is possible to inject enricher into model class. 
+
+Here's an example.
+
+So let's say we defined `ClientService` as in above, and then we passed it into `ProcessConfigCreator`:
+```scala
+class MyProcessConfigCreator extends ProcessConfigCreator {
+    ...
+    override def services(config: Config): Map[String, WithCategories[Service]] = {
+        Map("clientService" -> all(new ClientService))
+    }
+    ...
+}
+```
+To enrich model, which we assume is `Transaction` with `clientId` field, normally we would put `Enricher` in UI graph, but instead
+you can inject enricher:
+```scala
+case class Transaction(clientId: String) extends UsingLazyValues {
+  lazy val client = lazyValue[Client]("clientService", "clientId" -> clientId)
+}
+```
+After that you'll able to access `client` in expression like this `#input.client` - so potential HTTP call is made behind a scenes, 
+but user cannot really distinguish it from usual field access. 
 
 ##Exception handlers
 

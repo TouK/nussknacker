@@ -56,7 +56,7 @@ kibanaSettings {
 demo {
   timeout: 10s
   checkpointInterval: 10m
-  processConfigCreatorClass: "pl.touk.esp.engine.example.ExampleProcessConfigCreator"
+  processConfigCreatorClass: "pl.touk.nussknacker.engine.example.ExampleProcessConfigCreator"
   restartInterval: "10s"
   kafka = {
     zkAddress = "zookeeper:2181"
@@ -146,7 +146,7 @@ Please remember that configuration of model has to be in block named as value of
 Configuration of model has few common keys:
 *  timeout (e.g. 10s)- for synchronous services
 *  checkpointInterval - e.g. 10m
-*  processConfigCreatorClass - e.g. "pl.touk.esp.engine.example.ExampleProcessConfigCreator". This is FQN of class implementing
+*  processConfigCreatorClass - e.g. "pl.touk.nussknacker.engine.example.ExampleProcessConfigCreator". This is FQN of class implementing
 ```ProcessConfigCreator``` interface.
 
 The rest of model configuration depends on your needs - all the properties defined here will be passed to ```ProcessConfigCreator``` as explained in [API](API.md) documentation.

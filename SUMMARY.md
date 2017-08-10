@@ -11,4 +11,5 @@
 * [Roadmap](Roadmap.md)
 * [Changelog/Versions](Changelog.md)
 * [Powered by Nussknacker](PoweredBy.md)
+* [Get involved](GetInvolved.md)
 * [Glossary](GLOSSARY.md)
