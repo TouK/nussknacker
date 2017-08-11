@@ -19,7 +19,6 @@ class ProcessActivityResourceSpec extends FlatSpec with ScalatestRouteTest with 
 
   import pl.touk.nussknacker.ui.codec.UiCodecs._
   implicit override val patienceConfig = PatienceConfig(timeout = scaled(Span(1, Seconds)), interval = scaled(Span(100, Millis)))
-  implicit val testtimeout = RouteTestTimeout(2.seconds)
 
   val processActivityRouteWithAllPermission = withAllPermissions(processActivityRoute)
 

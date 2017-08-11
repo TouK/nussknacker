@@ -31,9 +31,6 @@ class ManagementResourcesSpec extends FlatSpec with ScalatestRouteTest
 
   implicit override val patienceConfig = PatienceConfig(timeout = scaled(Span(2, Seconds)), interval = scaled(Span(100, Millis)))
 
-  implicit def default(implicit system: ActorSystem) = RouteTestTimeout(5 seconds)
-
-
   it should "process deployment should be visible in process history" in {
 
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)

@@ -23,7 +23,6 @@ class ProcessesExportImportResourcesSpec extends FlatSpec with ScalatestRouteTes
   with ScalaFutures with OptionValues with Eventually with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
   implicit override val patienceConfig = PatienceConfig(timeout = scaled(Span(1, Seconds)), interval = scaled(Span(100, Millis)))
-  implicit val testtimeout = RouteTestTimeout(2.seconds)
 
   import akka.http.scaladsl.server.RouteConcatenation._
   val routWithAllPermissions = withAllPermissions(processesExportResources) ~ withAllPermissions(processesRoute)

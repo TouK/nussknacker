@@ -13,7 +13,10 @@ object CustomProcess {
 
     val env = StreamExecutionEnvironment.getExecutionEnvironment
 
-    env.setParallelism(3)
+    //TODO
+    //parallelism here could be greater than 1, but there is some docker config issue that comes up in travis build
+    //it looks that `taskmanager.numberOfTaskSlots` property is set to 1 in flink task/job manager container, which is obviously too small
+    env.setParallelism(1)
 
     val config = ConfigFactory.parseString(args(1))
 

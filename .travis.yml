@@ -1,0 +1,12 @@
+language: scala
+scala:
+   - 2.11.8
+jdk:
+ - oraclejdk8
+script:
+ - sbt ++$TRAVIS_SCALA_VERSION clean test management/it:test
+
+sudo: required
+
+services:
+  - docker

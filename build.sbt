@@ -85,6 +85,7 @@ val kafkaV = "0.9.0.1"
 val springV = "5.0.0.M1"
 val scalaTestV = "3.0.0-M15"
 val logbackV = "1.1.3"
+val log4jV = "1.7.21"
 val argonautShapelessV = "1.2.0-M1"
 val argonautMajorV = "6.2"
 val argonautV = s"$argonautMajorV-M3"
@@ -194,7 +195,11 @@ lazy val management = (project in engine("management")).
 
         "org.scalatest" %% "scalatest" % scalaTestV % "it,test",
         "com.whisk" %% "docker-testkit-scalatest" % "0.9.0" % "it,test",
-        "com.whisk" %% "docker-testkit-impl-spotify" % "0.9.0" % "it,test"
+        "com.whisk" %% "docker-testkit-impl-spotify" % "0.9.0" % "it,test",
+        "com.whisk" %% "docker-testkit-impl-spotify" % "0.9.0" % "it,test",
+        "ch.qos.logback" % "logback-classic" % logbackV % "it,test",
+        "org.slf4j" % "log4j-over-slf4j" % log4jV % "it,test",
+        "ch.qos.logback" % "logback-core" % logbackV % "it,test"
       )
     }
   ).dependsOn(interpreter, queryableState, kafkaTestUtil % "it,test")

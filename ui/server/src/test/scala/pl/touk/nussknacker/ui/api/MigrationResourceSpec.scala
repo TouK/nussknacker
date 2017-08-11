@@ -29,7 +29,6 @@ class MigrationResourceSpec extends FlatSpec with ScalatestRouteTest with ScalaF
 
 
   implicit override val patienceConfig = PatienceConfig(timeout = scaled(Span(1, Seconds)), interval = scaled(Span(100, Millis)))
-  implicit val testtimeout = RouteTestTimeout(2.seconds)
 
   private val processId: String = SampleProcess.process.id
 

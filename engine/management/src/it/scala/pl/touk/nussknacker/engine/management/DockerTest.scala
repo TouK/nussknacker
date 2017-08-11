@@ -6,16 +6,18 @@ import java.nio.file.Files
 import com.spotify.docker.client.{DefaultDockerClient, DockerClient}
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.scalalogging.LazyLogging
 import com.whisk.docker.impl.spotify.SpotifyDockerFactory
 import com.whisk.docker.scalatest.DockerTestKit
-import com.whisk.docker.{ContainerLink, DockerContainer, DockerFactory, DockerReadyChecker}
+import com.whisk.docker.{ContainerLink, DockerContainer, DockerFactory, DockerReadyChecker, LogLineReceiver}
 import org.apache.commons.io.FileUtils
 import org.scalatest.Suite
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
+
 import scala.concurrent.duration._
 
-trait DockerTest extends DockerTestKit with ScalaFutures {
+trait DockerTest extends DockerTestKit with ScalaFutures with LazyLogging {
   self: Suite =>
 
   private val client: DockerClient = DefaultDockerClient.fromEnv().build()
@@ -62,6 +64,9 @@ trait DockerTest extends DockerTestKit with ScalaFutures {
     .withEnv("JOB_MANAGER_RPC_ADDRESS_COMMAND=grep $HOSTNAME /etc/hosts | awk '{print $1}'")
     .withReadyChecker(DockerReadyChecker.LogLineContains("New leader reachable").looped(5, 1 second))
     .withLinks(ContainerLink(zookeeperContainer, "zookeeper"))
+    .withLogLineReceiver(LogLineReceiver(withErr = true, s => {
+      logger.info(s"jobmanager: $s")
+    }))
 
   lazy val taskManagerContainer = baseFlink("taskmanager")
     .withCommand("taskmanager")
@@ -70,6 +75,9 @@ trait DockerTest extends DockerTestKit with ScalaFutures {
       ContainerLink(kafkaContainer, "kafka"),
       ContainerLink(zookeeperContainer, "zookeeper"),
       ContainerLink(jobManagerContainer, "jobmanager"))
+    .withLogLineReceiver(LogLineReceiver(withErr = true, s => {
+      logger.info(s"taskmanager: $s")
+    }))
 
   def config : Config = ConfigFactory.load()
     .withValue("flinkConfig.jobmanager.rpc.address", fromAnyRef(ipOfContainer(jobManagerContainer)))

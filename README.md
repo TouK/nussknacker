@@ -1,4 +1,5 @@
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/pl.touk.nussknacker/nussknacker-ui_2.11/badge.svg)](https://maven-badges.herokuapp.com/maven-central/pl.touk.nussknacker/nussknacker-ui_2.11)
+[![Build Status](https://travis-ci.org/TouK/nussknacker.svg?branch=master)](https://travis-ci.org/TouK/nussknacker)
 
 # Nussknacker
 

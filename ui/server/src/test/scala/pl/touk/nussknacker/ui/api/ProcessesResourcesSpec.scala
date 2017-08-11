@@ -37,7 +37,6 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
   with ScalaFutures with OptionValues with Eventually with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
   implicit override val patienceConfig = PatienceConfig(timeout = scaled(Span(1, Seconds)), interval = scaled(Span(100, Millis)))
-  implicit val testtimeout = RouteTestTimeout(2.seconds)
 
   val routeWithRead = withPermissions(processesRoute, Permission.Read)
   val routeWithWrite = withPermissions(processesRoute, Permission.Write)
