@@ -163,7 +163,7 @@ const Processes = React.createClass({
       <div className="Page">
         <HealthCheck/>
         <div id="process-top-bar">
-          <div id="process-filter" className="input-group">
+          <div id="table-filter" className="input-group">
             <input type="text" className="form-control" aria-describedby="basic-addon1"
                     value={this.state.filterVal} onChange={this.handleChange}/>
             <span className="input-group-addon" id="basic-addon1">

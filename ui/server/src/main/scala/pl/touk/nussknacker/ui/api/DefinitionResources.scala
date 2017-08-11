@@ -52,6 +52,12 @@ class DefinitionResources(processDefinition: Map[ProcessingType, ProcessDefiniti
           }
         }
       }
+    } ~ path("processDefinitionData" / "objectIds") {
+      get {
+        complete {
+          DefinitionPreparer.objectIds(processDefinition.values.toList, subprocessRepository)
+        }
+      }
     }
 
 }
@@ -168,8 +174,21 @@ object DefinitionPreparer {
         EdgeType.NextSwitch(Expression("spel", "true")), EdgeType.SwitchDefault), canChooseNodes = true),
       NodeEdges(NodeTypeId("Filter"), List(FilterTrue, FilterFalse), canChooseNodes = false)
     ) ++ subprocessOutputs
+  }
 
+  def objectIds(processDefinitions: List[ProcessDefinition[ObjectDefinition]], subprocessRepo: SubprocessRepository): List[String] = {
+    val ids = processDefinitions.flatMap(objectIds)
+    val subprocessIds = subprocessRepo.loadSubprocesses().map(_.metaData.id).toList
+    (ids ++ subprocessIds).sorted
+  }
 
+  private def objectIds(processDefinition: ProcessDefinition[ObjectDefinition]): List[String] = {
+    val ids = processDefinition.services.keys ++
+      processDefinition.sourceFactories.keys ++
+      processDefinition.sinkFactories.keys ++
+      processDefinition.customStreamTransformers.keys ++
+      processDefinition.signalsWithTransformers.keys
+    ids.toList
   }
 
   case class NodeTypeId(`type`: String, id: Option[String] = None)

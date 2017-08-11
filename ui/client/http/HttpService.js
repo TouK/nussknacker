@@ -77,11 +77,16 @@ export default {
       canRead: user.permissions.includes("Read"),
       canDeploy: user.permissions.includes("Deploy"),
       canWrite: user.permissions.includes("Write"),
+      isAdmin: user.permissions.includes("Admin"),
     }))
   },
 
   fetchProcessDefinitionData(processingType, isSubprocess) {
     return promiseWrap($.get(`${API_URL}/processDefinitionData/${processingType}?isSubprocess=${isSubprocess}`))
+  },
+
+  fetchObjectIds() {
+    return promiseWrap($.get(`${API_URL}/processDefinitionData/objectIds`))
   },
 
   fetchProcesses() {

@@ -10,6 +10,7 @@ import "../stylesheets/main.styl";
 import Metrics from "./Metrics";
 import Search from "./Search";
 import Signals from "./Signals";
+import ProcessSearch from "./ProcessSearch";
 import DragArea from "../components/DragArea";
 import {connect} from "react-redux";
 import ActionsUtils from "../actions/ActionsUtils";
@@ -51,7 +52,7 @@ const App_ = React.createClass({
 
   render: function () {
     const AllDialogs = Dialogs.AllDialogs
-    return (
+    return this.props.resolved ? (
       <div id="app-container">
         <nav id="main-menu" className="navbar navbar-default">
           <div id="git" className="hide">{JSON.stringify(GIT)}</div>
@@ -74,6 +75,8 @@ const App_ = React.createClass({
                 {!_.isEmpty(this.props.featuresSettings.search) ?
                   <li><Link to={Search.path}>{Search.header}</Link></li> : null }
                 <li><Link to={Signals.path}>{Signals.header}</Link></li>
+                {this.props.loggedUser.isAdmin ?
+                  <li><Link to={ProcessSearch.path}>{ProcessSearch.header}</Link></li> : null}
               </ul>
             </div>
           </div>
@@ -87,14 +90,17 @@ const App_ = React.createClass({
           </DragArea>
         </main>
       </div>
-    )
+    ) : null
   }
 });
 
 function mapState(state) {
+  const loggedUser = state.settings.loggedUser
   return {
     leftPanelIsOpened: state.ui.leftPanelIsOpened,
-    featuresSettings: state.settings.featuresSettings
+    featuresSettings: state.settings.featuresSettings,
+    loggedUser: loggedUser,
+    resolved: !_.isEmpty(loggedUser)
   };
 }
 

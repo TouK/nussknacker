@@ -10,6 +10,7 @@ import Visualization from './Visualization';
 import Metrics from './Metrics';
 import Search from './Search';
 import Signals from './Signals';
+import ProcessSearch from './ProcessSearch';
 
 import 'bootstrap/dist/css/bootstrap.css';
 import '../assets/fonts/fonts.less'
@@ -32,6 +33,7 @@ export default class EspAppRouter extends React.Component {
           <Route path={Metrics.path} component={Metrics} />
           <Route path={Search.path} component={Search} />
           <Route path={Signals.path} component={Signals} />
+          <Route path={ProcessSearch.path} component={ProcessSearch} />
           <IndexRoute component={Processes} />
         </Route>
       </Router>
