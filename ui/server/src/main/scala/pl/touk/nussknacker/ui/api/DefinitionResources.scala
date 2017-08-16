@@ -179,7 +179,7 @@ object DefinitionPreparer {
   def objectIds(processDefinitions: List[ProcessDefinition[ObjectDefinition]], subprocessRepo: SubprocessRepository): List[String] = {
     val ids = processDefinitions.flatMap(objectIds)
     val subprocessIds = subprocessRepo.loadSubprocesses().map(_.metaData.id).toList
-    (ids ++ subprocessIds).sorted
+    (ids ++ subprocessIds).distinct.sorted
   }
 
   private def objectIds(processDefinition: ProcessDefinition[ObjectDefinition]): List[String] = {
