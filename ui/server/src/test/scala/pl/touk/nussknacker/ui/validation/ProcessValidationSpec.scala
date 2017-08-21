@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
 import pl.touk.nussknacker.ui.api.helpers.TestFactory
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
+import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.EdgeType.{NextSwitch, SwitchDefault}
 import pl.touk.nussknacker.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.{Edge, EdgeType}
 import pl.touk.nussknacker.ui.validation.ValidationResults.{NodeValidationError, ValidationErrors, ValidationResult, ValidationWarnings}
@@ -82,9 +83,43 @@ class ProcessValidationSpec extends FlatSpec with Matchers {
         ValidationWarnings.success
       ) if nodes.isEmpty && global == PrettyValidationErrors.tooManySources(validator.uiValidationError, List("in", "tooMany")) =>
     }
+  }
 
+  it should "check for duplicated ids" in {
+    val process = createProcess(
+      List(
+        Source("inID", SourceRef("barSource", List())),
+        Filter("inID", Expression("spel", "''")),
+        Sink("out", SinkRef("barSink", List()))
+      ),
+      List(Edge("inID", "inID", None), Edge("inID", "out", None))
+    )
+    val result = validator.validate(process)
 
+    result.errors.globalErrors shouldBe List(PrettyValidationErrors.duplicatedNodeIds(validator.uiValidationError, List("inID")))
+    result.errors.invalidNodes shouldBe empty
+    result.warnings shouldBe ValidationWarnings.success
+  }
 
+  it should "check for duplicated ids when duplicated id is switch id" in {
+    val process = createProcess(
+      List(
+        Source("in", SourceRef("barSource", List())),
+        Switch("switchID", Expression("spel", "''"), "expr1"),
+        Sink("out", SinkRef("barSink", List())),
+        Sink("switchID", SinkRef("barSink", List()))
+      ),
+      List(
+        Edge("in", "switchID", None),
+        Edge("switchID", "out", Some(SwitchDefault)),
+        Edge("switchID", "switch", Some(NextSwitch(Expression("spel", "''"))))
+      )
+    )
+    val result = validator.validate(process)
+
+    result.errors.globalErrors shouldBe List(PrettyValidationErrors.duplicatedNodeIds(validator.uiValidationError, List("switchID")))
+    result.errors.invalidNodes shouldBe empty
+    result.warnings shouldBe ValidationWarnings.success
   }
 
   private def createProcess(nodes: List[NodeData], edges: List[Edge]) = {

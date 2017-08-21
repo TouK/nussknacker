@@ -211,7 +211,7 @@ export function editNode(process, before, after) {
         after: after,
         validationResult: validationResult
       })
-    }, Promise.reject)
+    })
   }
 }
 

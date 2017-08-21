@@ -189,7 +189,10 @@ export default {
       url: API_URL + '/processValidation',
       type: 'POST',
       data: JSON.stringify(process)
-    }).catch(error => {this.addError(`Fatal validation error, cannot save`, error, true); return Promise.reject(error)})
+    }).catch(error => {
+      this.addError(`Fatal validation error, cannot save`, error, true)
+      return Promise.reject(error)
+    })
   },
 
   getTestCapabilities(process) {
@@ -234,7 +237,10 @@ export default {
       data: JSON.stringify(processToSave)
     })
       .then(() => this.addInfo(`Process ${processId} was saved`))
-      .catch((error) => this.addError(`Failed to save`, error));
+      .catch((error) => {
+        this.addError(`Failed to save`, error, true);
+        return Promise.reject(error)
+      });
   },
 
   createProcess(processId, processCategory, callback, isSubprocess) {

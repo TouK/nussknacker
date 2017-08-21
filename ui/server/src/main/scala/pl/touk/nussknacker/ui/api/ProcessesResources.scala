@@ -106,7 +106,7 @@ class ProcessesResources(repository: ProcessRepository,
               val deploymentData = GraphProcess(json)
 
               (for {
-                validation <- EitherT.fromEither[Future](processValidation.validate(displayableProcess).fatalAsError)
+                validation <- EitherT.fromEither[Future](processValidation.validate(displayableProcess).saveNotAllowedAsError)
                 result <- EitherT(repository.updateProcess(processId, deploymentData))
                 _ <- EitherT.right[Future, pl.touk.nussknacker.ui.EspError, Unit](
                   result.map { version =>

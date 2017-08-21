@@ -22,7 +22,7 @@ import pl.touk.nussknacker.ui.process.displayedgraph._
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.{Comment, ProcessActivity}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{ProcessDetails, ProcessHistoryEntry}
 import pl.touk.nussknacker.ui.processreport.NodeCount
-import pl.touk.nussknacker.ui.validation.ValidationResults.ValidationResult
+import pl.touk.nussknacker.ui.validation.ValidationResults.{NodeValidationErrorType, ValidationResult}
 
 object UiCodecs extends UiCodecs
 
@@ -48,6 +48,8 @@ trait UiCodecs extends Codecs with Argonauts with SingletonInstances with Derive
   implicit def testingCapabilitiesCodec: CodecJson[TestingCapabilities] = CodecJson.derive[TestingCapabilities]
 
   implicit def propertiesCodec: CodecJson[ProcessProperties] = CodecJson.derive[ProcessProperties]
+
+  implicit def nodeErrorsCodec = Codecs.enumCodec(NodeValidationErrorType)
 
   implicit def validationResultEncode = EncodeJson.of[ValidationResult]
 

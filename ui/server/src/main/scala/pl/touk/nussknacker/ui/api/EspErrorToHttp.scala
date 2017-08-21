@@ -40,7 +40,7 @@ object EspErrorToHttp extends LazyLogging with Argonaut62Support {
 
 
   def toResponse(either: Either[EspError, ValidationResult]): ToResponseMarshallable =
-    either.flatMap(_.fatalAsError) match {
+    either match {
       case Right(validationResult) =>
         validationResult
       case Left(err) =>

@@ -4,18 +4,18 @@ import pl.touk.nussknacker.engine.compile.ProcessCompilationError
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError._
 import pl.touk.nussknacker.engine.util.ReflectUtils
 import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.EdgeType
-import pl.touk.nussknacker.ui.validation.ValidationResults.NodeValidationError
+import pl.touk.nussknacker.ui.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType}
 
 object PrettyValidationErrors {
   def formatErrorMessage(error: ProcessCompilationError): NodeValidationError = {
     val typ = ReflectUtils.fixedClassSimpleNameWithoutParentModule(error.getClass)
     def node(message: String, description: String,
-             isFatal: Boolean = false,
-             fieldName: Option[String] = None) = NodeValidationError(typ, message, description, fieldName, isFatal)
+             errorType: NodeValidationErrorType.Value = NodeValidationErrorType.SaveAllowed,
+             fieldName: Option[String] = None) = NodeValidationError(typ, message, description, fieldName, errorType)
     error match {
       case ExpressionParseError(message, _, fieldName, _) => node(s"Failed to parse expression: $message",
-        s"There is problem with expression in field $fieldName - it could not be parsed.", isFatal = false, fieldName)
-      case DuplicatedNodeIds(ids) => node(s"Duplicate node ids: ${ids.mkString(", ")}", "Two nodes cannot have same id", isFatal = true)
+        s"There is problem with expression in field $fieldName - it could not be parsed.", fieldName = fieldName)
+      case DuplicatedNodeIds(ids) => node(s"Duplicate node ids: ${ids.mkString(", ")}", "Two nodes cannot have same id", errorType = NodeValidationErrorType.RenderNotAllowed)
       case EmptyProcess => node("Empty process", "Process is empty, please add some nodes")
       case InvalidRootNode(_) => node("Invalid root node", "Process can start only from source node")
       case InvalidTailOfBranch(_) => node("Invalid end of process", "Process branch can only end with sink or processor")
@@ -24,7 +24,7 @@ object PrettyValidationErrors {
         node(s"Global process parameters not filled", s"Please fill process properties ${params.mkString(", ")} by clicking 'Properties button'")
       case MissingParameters(params, _) =>
         node(s"Node parameters not filled", s"Please fill missing node parameters: : ${params.mkString(", ")}")
-      //exceptions below should not really happen (unless servieces change and process becomes invalid
+      //exceptions below should not really happen (unless services change and process becomes invalid)
       case MissingCustomNodeExecutor(id, _) => node(s"Missing custom executor: $id", s"Please check the name of custom executor, $id is not available")
       case MissingService(id, _) => node(s"Missing processor/enricher: $id", s"Please check the name of processor/enricher, $id is not available")
       case MissingSinkFactory(id, _) => node(s"Missing sink: $id", s"Please check the name of sink, $id is not available")
@@ -48,29 +48,29 @@ object PrettyValidationErrors {
 
   def invalidCharacters(typ: String) = {
     NodeValidationError(typ, "Node id contains invalid characters",
-      "\" and ' are not allowed in node id", isFatal = true, fieldName = None)
+      "\" and ' are not allowed in node id", fieldName = None, errorType = NodeValidationErrorType.RenderNotAllowed)
   }
   def duplicatedNodeIds(typ: String, duplicates: List[String]) = {
-    NodeValidationError(typ: String,
-      s"Duplicate node ids: ${duplicates.mkString(", ")}", "Two nodes cannot have same id", fieldName = None, isFatal = true)
+    NodeValidationError(typ, "Two nodes cannot have same id", s"Duplicate node ids: ${duplicates.mkString(", ")}", fieldName = None,
+      errorType = NodeValidationErrorType.RenderNotAllowed)
   }
 
   def nonuniqeEdge(typ: String, etype: EdgeType) = {
     NodeValidationError(typ, "Edges are not unique",
-      s"Node has duplicate outgoing edges of type: $etype, it cannot be saved properly", isFatal = true, fieldName = None)
+      s"Node has duplicate outgoing edges of type: $etype, it cannot be saved properly", fieldName = None, errorType = NodeValidationErrorType.SaveNotAllowed)
   }
 
   def looseNode(typ: String) = {
     NodeValidationError(typ, "Loose node",
-      s"Node is not connected to source, it cannot be saved properly", isFatal = true, fieldName = None)
+      s"Node is not connected to source, it cannot be saved properly", fieldName = None, errorType = NodeValidationErrorType.SaveNotAllowed)
   }
 
   def tooManySources(typ: String, ids: List[String]) = {
     NodeValidationError(typ, "Too many inputs",
-      s"Process have mulitple inputs: $ids, it cannot be saved properly", isFatal = true, fieldName = None)
+      s"Process have multiple inputs: $ids, it cannot be saved properly", fieldName = None, errorType = NodeValidationErrorType.SaveNotAllowed)
   }
 
   def disabledNode(typ: String) = {
-    NodeValidationError(typ, s"Node is disabled", "Deploying process with disabled node can have unexpected consequences", fieldName = None, isFatal = false)
+    NodeValidationError(typ, s"Node is disabled", "Deploying process with disabled node can have unexpected consequences", fieldName = None, errorType = NodeValidationErrorType.SaveAllowed)
   }
 }

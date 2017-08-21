@@ -13,7 +13,7 @@ import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.nussknacker.ui.process.ProcessToSave
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.security.LoggedUser
-import pl.touk.nussknacker.ui.validation.ValidationResults.{NodeValidationError, ValidationErrors, ValidationResult}
+import pl.touk.nussknacker.ui.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType, ValidationErrors, ValidationResult}
 import pl.touk.http.argonaut.Argonaut62Support
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -44,7 +44,7 @@ class StandardProcessMigratorSpec extends FlatSpec with Matchers with ScalaFutur
     val migrator = new MockMigrator {
       override protected def request(path: String, method: HttpMethod, request: MessageEntity) : Future[HttpResponse] = {
         if (path.startsWith("processValidation") && method == HttpMethods.POST) {
-          Marshal(ValidationResult.errors(Map("n1" -> List(NodeValidationError("bad", "message", "", None, false))), List(), List())).to[RequestEntity].map { entity =>
+          Marshal(ValidationResult.errors(Map("n1" -> List(NodeValidationError("bad", "message", "", None, NodeValidationErrorType.SaveAllowed))), List(), List())).to[RequestEntity].map { entity =>
             HttpResponse(StatusCodes.OK, entity = entity)
           }
         } else {
@@ -55,7 +55,7 @@ class StandardProcessMigratorSpec extends FlatSpec with Matchers with ScalaFutur
 
     whenReady(migrator.migrate(validProcess)) { result =>
       result shouldBe 'left
-      result.left.get shouldBe MigratorValidationError(ValidationErrors(Map("n1" -> List(NodeValidationError("bad","message","" ,None,false))),List(),List()))
+      result.left.get shouldBe MigratorValidationError(ValidationErrors(Map("n1" -> List(NodeValidationError("bad","message","" ,None, NodeValidationErrorType.SaveAllowed))),List(),List()))
       result.left.get.getMessage shouldBe "Cannot migrate, following errors occured: n1 - message"
     }
 

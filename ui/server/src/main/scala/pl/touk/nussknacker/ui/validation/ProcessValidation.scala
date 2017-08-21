@@ -17,15 +17,20 @@ class ProcessValidation(validators: Map[ProcessingType, ProcessValidator], subpr
 
   def validate(displayable: DisplayableProcess): ValidationResult = {
     val processValidator = validators(displayable.processingType)
-    val canonical = ProcessConverter.fromDisplayable(displayable)
-    val compilationValidationResult =
-      subprocessResolver.resolveSubprocesses(canonical).andThen(processValidator.validate)
-        .leftMap(formatErrors).swap.getOrElse(ValidationResult.success)
     val uiValidationResult = uiValidation(displayable)
-    val validationWarningsResult = warningValidation(displayable)
-    compilationValidationResult
-      .add(uiValidationResult)
-      .add(validationWarningsResult)
+    //there is no point in further validations if ui process structure is invalid
+    //displayable to canonical conversion for invalid ui process structure can have unexpected results
+    if (uiValidationResult.saveAllowed) {
+      val canonical = ProcessConverter.fromDisplayable(displayable)
+      val compilationValidationResult = subprocessResolver.resolveSubprocesses(canonical).andThen(processValidator.validate)
+        .leftMap(formatErrors).swap.getOrElse(ValidationResult.success)
+      val validationWarningsResult = warningValidation(displayable)
+      compilationValidationResult
+        .add(uiValidationResult)
+        .add(validationWarningsResult)
+    } else {
+      uiValidationResult
+    }
   }
 
   private def warningValidation(process: DisplayableProcess): ValidationResult = {

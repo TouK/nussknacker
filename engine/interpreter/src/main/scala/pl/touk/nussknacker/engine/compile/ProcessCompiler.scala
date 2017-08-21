@@ -260,10 +260,6 @@ protected trait ProcessCompilerBase {
     case PartRef(id) => Validated.valid(Map(id -> ctx))
   }
 
-  private def validateWithoutContextValidation(n: splittednode.SplittedNode[_], ctx: ValidationContext): ValidatedNel[ProcessCompilationError, ContextsForParts] = {
-    sub.validateWithoutContextValidation(n).leftMap(_.map(identity[ProcessCompilationError]))
-  }
-
 
 }
 

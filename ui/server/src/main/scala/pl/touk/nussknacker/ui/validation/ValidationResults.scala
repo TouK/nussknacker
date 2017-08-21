@@ -7,6 +7,7 @@ object ValidationResults {
 
   case class ValidationResult(errors: ValidationErrors, warnings: ValidationWarnings) {
     val isOk = errors == ValidationErrors.success && warnings == ValidationWarnings.success
+    val saveAllowed = allErrors.forall(_.errorType == NodeValidationErrorType.SaveAllowed)
 
     def add(other: ValidationResult) = ValidationResult(
       ValidationErrors(
@@ -18,17 +19,38 @@ object ValidationResults {
       )
     )
 
-    def fatalErrors: List[NodeValidationError] = {
-      (errors.invalidNodes.values.flatten ++ errors.processPropertiesErrors ++ errors.globalErrors).filter(_.isFatal).toList
-    }
-
-    def fatalAsError: Either[EspError, ValidationResult] = {
-      if (fatalErrors.isEmpty) {
+    def renderNotAllowedAsError: Either[EspError, ValidationResult] = {
+      if (renderNotAllowedErrors.isEmpty) {
         Right(this)
       } else {
-        Left[EspError, ValidationResult](FatalValidationError(fatalErrors.map(_.message).mkString(",")))
+        Left[EspError, ValidationResult](FatalValidationError(renderNotAllowedErrors.map(formatError).mkString(",")))
       }
     }
+
+    def saveNotAllowedAsError: Either[EspError, ValidationResult] = {
+      if (saveNotAllowedErrors.isEmpty) {
+        Right(this)
+      } else {
+        Left[EspError, ValidationResult](FatalValidationError(saveNotAllowedErrors.map(formatError).mkString(",")))
+      }
+    }
+
+    private def renderNotAllowedErrors: List[NodeValidationError] = {
+      allErrors.filter(_.errorType == NodeValidationErrorType.RenderNotAllowed)
+    }
+
+    private def saveNotAllowedErrors: List[NodeValidationError] = {
+      allErrors.filter(_.errorType == NodeValidationErrorType.SaveNotAllowed)
+    }
+
+    private def allErrors: List[NodeValidationError] = {
+      (errors.invalidNodes.values.flatten ++ errors.processPropertiesErrors ++ errors.globalErrors).toList
+    }
+
+    private def formatError(e: NodeValidationError): String = {
+      s"${e.message}:${e.description}"
+    }
+
   }
 
   case class ValidationErrors(invalidNodes: Map[String, List[NodeValidationError]],
@@ -50,7 +72,7 @@ object ValidationResults {
 
     def errors(invalidNodes: Map[String, List[NodeValidationError]],
                processPropertiesErrors: List[NodeValidationError],
-               globalErrors: List[NodeValidationError]) = {
+               globalErrors: List[NodeValidationError]): ValidationResult = {
       ValidationResult(
         ValidationErrors(invalidNodes = invalidNodes, processPropertiesErrors = processPropertiesErrors,
           globalErrors = globalErrors
@@ -59,7 +81,7 @@ object ValidationResults {
       )
     }
 
-    def warnings(invalidNodes: Map[String, List[NodeValidationError]]) = {
+    def warnings(invalidNodes: Map[String, List[NodeValidationError]]): ValidationResult = {
       ValidationResult(
         ValidationErrors.success,
         ValidationWarnings(invalidNodes = invalidNodes)
@@ -67,7 +89,17 @@ object ValidationResults {
     }
   }
 
-  case class NodeValidationError(typ: String, message: String, description: String, fieldName: Option[String], isFatal: Boolean)
+  case class NodeValidationError(typ: String,
+                                 message: String,
+                                 description: String,
+                                 fieldName: Option[String],
+                                 errorType: NodeValidationErrorType.Value
+                                )
+
+  object NodeValidationErrorType extends Enumeration {
+    type NodeValidationErrorType = Value
+    val RenderNotAllowed, SaveNotAllowed, SaveAllowed = Value
+  }
 
   case class FatalValidationError(message: String) extends EspError {
     override def getMessage = message

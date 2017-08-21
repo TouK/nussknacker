@@ -21,7 +21,7 @@ class ValidationResources(processValidation: ProcessValidation)
       post {
         entity(as[DisplayableProcess]) { displayable =>
           complete {
-            EspErrorToHttp.toResponse(processValidation.validate(displayable).fatalAsError)
+            EspErrorToHttp.toResponse(processValidation.validate(displayable).renderNotAllowedAsError)
           }
         }
       }
