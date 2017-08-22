@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomStreamTransformat
 class TransactionAmountAggregator extends CustomStreamTransformer {
 
   @MethodToInvoke(returnType = classOf[AggregatedAmount])
-  def execute(@ParamName("clientId") clientId: LazyInterpreter[String]) = {
+  def execute(@ParamName("clientId") clientId: LazyInterpreter[String]): FlinkCustomStreamTransformation = {
     FlinkCustomStreamTransformation((start: DataStream[InterpretationResult]) => {
       start
         .keyBy(clientId.syncInterpretationFunction)

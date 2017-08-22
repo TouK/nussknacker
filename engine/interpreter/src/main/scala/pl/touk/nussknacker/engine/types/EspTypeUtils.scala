@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.types
 
-import java.lang.reflect.{Method, ParameterizedType, Type}
+import java.lang.reflect.{Field, Method, ParameterizedType, Type}
 
 import cats.Eval
 import cats.data.StateT
@@ -74,17 +74,31 @@ object EspTypeUtils {
   }
 
   private def clazzDefinition(clazz: Class[_]): PlainClazzDefinition = {
-    PlainClazzDefinition(ClazzRef(clazz), getDeclaredMethods(clazz))
+    PlainClazzDefinition(ClazzRef(clazz), getPublicMethodAndFields(clazz))
   }
 
-  private def getDeclaredMethods(clazz: Class[_]): Map[String, ClazzRef] = {
-    val interestingMethods = clazz.getMethods.filter( m =>
+  private def getPublicMethodAndFields(clazz: Class[_]): Map[String, ClazzRef] = {
+    val methods = publicMethods(clazz)
+    val fields = publicFields(clazz)
+    methods ++ fields
+  }
+
+  private def publicMethods(clazz: Class[_]) = {
+    val interestingMethods = clazz.getMethods.filter(m =>
       !blackilistedMethods.contains(m.getName) && !m.getName.contains("$")
     )
-    val res = interestingMethods.map { method =>
+    interestingMethods.map { method =>
       method.getName -> ClazzRef(getReturnClassForMethod(method))
     }.toMap
-    res
+  }
+
+  private def publicFields(clazz: Class[_]) = {
+    val interestingFields = clazz.getFields.filter(m =>
+      !m.getName.contains("$")
+    )
+    interestingFields.map { field =>
+      field.getName -> ClazzRef(getReturnClassForField(field))
+    }.toMap
   }
 
   def findParameterByParameterName(method: Method, paramName: String) =
@@ -107,14 +121,18 @@ object EspTypeUtils {
     klazz.getField("MODULE$").get(null).asInstanceOf[T]
   }
 
-  def getReturnClassForMethod(method: Method)
-    = getGenericMethodType(method).getOrElse(method.getReturnType)
-
-  def getGenericMethodType(m: Method): Option[Class[_]] = {
-    val genericReturnType = m.getGenericReturnType
+  def getGenericType(genericReturnType: Type): Option[Class[_]] = {
     val hasGenericReturnType = genericReturnType.isInstanceOf[ParameterizedTypeImpl]
     if (hasGenericReturnType) inferGenericMonadType(genericReturnType)
     else None
+  }
+
+  private def getReturnClassForMethod(method: Method): Class[_] = {
+    getGenericType(method.getGenericReturnType).getOrElse(method.getReturnType)
+  }
+
+  private def getReturnClassForField(field: Field): Class[_] = {
+    getGenericType(field.getGenericType).getOrElse(field.getType)
   }
 
   //TODO this is not correct for primitives and complicated hierarchies, but should work in most cases

@@ -57,7 +57,7 @@ trait DefinitionExtractor[T] {
     val typeFromAnnotation = Option(method.getAnnotation(classOf[MethodToInvoke]))
       .filterNot(_.returnType() == classOf[Object])
       .flatMap[Class[_]](ann => Option(ann.returnType()))
-    val typeFromSignature = EspTypeUtils.getGenericMethodType(method)
+    val typeFromSignature = EspTypeUtils.getGenericType(method.getGenericReturnType)
 
     typeFromAnnotation.orElse(typeFromSignature).getOrElse(classOf[Any])
   }

@@ -16,7 +16,7 @@ class EventsCounter() extends CustomStreamTransformer {
 
   @MethodToInvoke(returnType = classOf[EventCount])
   def execute(@ParamName("key") key: LazyInterpreter[String],
-              @ParamName("length") length: String) = {
+              @ParamName("length") length: String): FlinkCustomStreamTransformation = {
     FlinkCustomStreamTransformation((start: DataStream[InterpretationResult]) => {
       val lengthInMillis = Duration(length).toMillis
       start.keyBy(key.syncInterpretationFunction)
@@ -46,5 +46,3 @@ class CounterFunction(lengthInMillis: Long) extends TimestampedEvictableState[In
 }
 
 case class EventCount(count: Long)
-
-case class PreviousTransaction(amount: Int)

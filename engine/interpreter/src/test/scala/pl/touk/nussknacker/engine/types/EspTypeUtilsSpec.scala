@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.types
 
 import org.scalatest.{FlatSpec, Matchers}
 import org.scalatest.prop.TableDrivenPropertyChecks._
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ClazzRef
 
 class EspTypeUtilsSpec extends FlatSpec with Matchers {
 
@@ -25,7 +26,26 @@ class EspTypeUtilsSpec extends FlatSpec with Matchers {
     forAll(signatures) { (signature, value, matches) =>
       EspTypeUtils.signatureElementMatches(signature, value) shouldBe matches
     }
+  }
 
+
+  case class SampleClass(foo: Int, bar: String)
+
+  it should "extract public fields from scala case class, and java class" in {
+    val testCases = Table(("class", "className"),
+      (classOf[SampleClass], "SampleClass"),
+      (classOf[JavaSampleClass], "JavaSampleClass")
+    )
+
+    forAll(testCases) { (clazz, clazzName) =>
+      val infos = EspTypeUtils.clazzAndItsChildrenDefinition(clazz)
+      val sampleClassInfo = infos.find(_.clazzName.refClazzName.contains(clazzName)).get
+
+      sampleClassInfo.methods shouldBe Map(
+        "foo" -> ClazzRef("int"),
+        "bar" -> ClazzRef("java.lang.String")
+      )
+    }
   }
 
 }

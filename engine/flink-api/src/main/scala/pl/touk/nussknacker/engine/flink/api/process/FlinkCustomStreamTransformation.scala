@@ -11,7 +11,7 @@ object FlinkCustomStreamTransformation {
   }
 
   def apply(fun: DataStream[InterpretationResult] => DataStream[ValueWithContext[Any]]) : FlinkCustomStreamTransformation
-    = apply((data, _) => fun(data))
+  = apply((data, _) => fun(data))
 }
 
 trait FlinkCustomStreamTransformation {

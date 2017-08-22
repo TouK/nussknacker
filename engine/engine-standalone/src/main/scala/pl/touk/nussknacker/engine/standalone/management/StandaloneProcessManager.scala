@@ -11,6 +11,7 @@ import com.codahale.metrics.MetricRegistry
 import com.typesafe.config.Config
 import dispatch.Http
 import pl.touk.nussknacker.engine.api.EndingReference
+import pl.touk.nussknacker.engine.api.conversion.ProcessConfigCreatorMapping
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.test.{TestData, TestResults}
 import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, SourceFactory}
@@ -128,8 +129,10 @@ object StandaloneTestMain {
     new StandaloneTestMain(config, testData, process, creator).runTest()
   }
 
-  protected def loadCreator(config: Config): ProcessConfigCreator =
-    ThreadUtils.loadUsingContextLoader(config.getString("processConfigCreatorClass")).newInstance().asInstanceOf[ProcessConfigCreator]
+  protected def loadCreator(config: Config): ProcessConfigCreator = {
+    val creator = ThreadUtils.loadUsingContextLoader(config.getString("processConfigCreatorClass")).newInstance()
+    ProcessConfigCreatorMapping.toProcessConfigCreator(creator)
+  }
 
 }
 

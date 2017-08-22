@@ -5,6 +5,7 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.{BeforeAndAfterAll, Matchers, Suite}
+import pl.touk.nussknacker.engine.api.conversion.ProcessConfigCreatorMapping
 import pl.touk.nussknacker.engine.flink.test.StoppableExecutionEnvironment
 import pl.touk.nussknacker.engine.kafka.{KafkaSpec, KafkaZookeeperServer}
 import pl.touk.nussknacker.engine.process.FlinkProcessRegistrar
@@ -13,7 +14,17 @@ import pl.touk.nussknacker.engine.process.compiler.StandardFlinkProcessCompiler
 trait BaseITest extends KafkaSpec {
   self: Suite with BeforeAndAfterAll with Matchers =>
 
-  val creator = new ExampleProcessConfigCreator
+  val creatorLang: CreatorLang.Value
+
+  lazy val creator = {
+    creatorLang match {
+      case CreatorLang.Java =>
+        ProcessConfigCreatorMapping.toProcessConfigCreator(new pl.touk.nussknacker.engine.javaexample.ExampleProcessConfigCreator)
+      case CreatorLang.Scala =>
+        ProcessConfigCreatorMapping.toProcessConfigCreator(new ExampleProcessConfigCreator)
+    }
+  }
+
   val flinkConf = new Configuration()
   val stoppableEnv = new StoppableExecutionEnvironment(flinkConf)
   val env = new StreamExecutionEnvironment(stoppableEnv)
@@ -40,4 +51,17 @@ object TestConfig {
       .withValue("checkpointInterval", fromAnyRef("10s"))
       .withValue("timeout", fromAnyRef("10s"))
   }
+}
+
+object CreatorLang extends Enumeration {
+  type CreatorLang = Value
+  val Java, Scala = Value
+}
+
+trait BaseJavaITest extends BaseITest { self: Suite with BeforeAndAfterAll with Matchers =>
+  override val creatorLang = CreatorLang.Java
+}
+
+trait BaseScalaITest extends BaseITest { self: Suite with BeforeAndAfterAll with Matchers =>
+  override val creatorLang = CreatorLang.Scala
 }

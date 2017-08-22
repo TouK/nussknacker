@@ -4,12 +4,12 @@ import java.nio.charset.StandardCharsets
 import java.time.{LocalDateTime, ZoneId}
 
 import org.scalatest.concurrent.Eventually
-import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
+import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers, Suite}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.kafka.{KafkaSpec, KafkaUtils}
 import pl.touk.nussknacker.engine.spel
 
-class ExampleItTest1 extends FlatSpec with BeforeAndAfterAll with Matchers with BaseITest with Eventually with ExampleItTest {
+trait ExampleItTest1 extends FlatSpec with BeforeAndAfterAll with Matchers with Eventually with ExampleItTest { self: BaseITest =>
 
   import KafkaUtils._
   import spel.Implicits._
@@ -39,8 +39,7 @@ class ExampleItTest1 extends FlatSpec with BeforeAndAfterAll with Matchers with 
   }
 }
 
-
-class ExampleItTest2 extends FlatSpec with BeforeAndAfterAll with Matchers with BaseITest with Eventually with ExampleItTest {
+trait ExampleItTest2 extends FlatSpec with BeforeAndAfterAll with Matchers with BaseITest with Eventually with ExampleItTest { self: BaseITest =>
 
   import KafkaUtils._
   import spel.Implicits._
@@ -77,8 +76,7 @@ class ExampleItTest2 extends FlatSpec with BeforeAndAfterAll with Matchers with 
   }
 }
 
-
-class ExampleItTest3 extends FlatSpec with BeforeAndAfterAll with Matchers with BaseITest with Eventually with ExampleItTest {
+trait ExampleItTest3 extends FlatSpec with BeforeAndAfterAll with Matchers with BaseITest with Eventually with ExampleItTest { self: BaseITest =>
 
   import KafkaUtils._
   import spel.Implicits._
@@ -116,7 +114,7 @@ class ExampleItTest3 extends FlatSpec with BeforeAndAfterAll with Matchers with 
 }
 
 
-class ExampleItTest4 extends FlatSpec with BeforeAndAfterAll with Matchers with BaseITest with Eventually with ExampleItTest {
+trait ExampleItTest4 extends FlatSpec with BeforeAndAfterAll with Matchers with BaseITest with Eventually with ExampleItTest { self: BaseITest =>
 
   import KafkaUtils._
   import spel.Implicits._
@@ -174,3 +172,13 @@ trait ExampleItTest { self: KafkaSpec =>
   }
 
 }
+
+class ExampleItTest1Java extends ExampleItTest1 with BaseJavaITest
+class ExampleItTest2Java extends ExampleItTest2 with BaseJavaITest
+class ExampleItTest3Java extends ExampleItTest3 with BaseJavaITest
+class ExampleItTest4Java extends ExampleItTest4 with BaseJavaITest
+
+class ExampleItTest1Scala extends ExampleItTest1 with BaseScalaITest
+class ExampleItTest2Scala extends ExampleItTest2 with BaseScalaITest
+class ExampleItTest3Scala extends ExampleItTest3 with BaseScalaITest
+class ExampleItTest4Scala extends ExampleItTest4 with BaseScalaITest

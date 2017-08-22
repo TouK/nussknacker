@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.standalone.utils.StandaloneContextPreparer
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.loader.JarClassLoader
 import pl.touk.http.argonaut.Argonaut62Support
+import pl.touk.nussknacker.engine.api.conversion.ProcessConfigCreatorMapping
 
 import scala.util.Try
 
@@ -69,7 +70,8 @@ object StandaloneHttpApp extends Directives with Argonaut62Support with LazyLogg
 
   def loadCreator(config: Config): ProcessConfigCreator = {
     ThreadUtils.withThisAsContextClassLoader(processesClassLoader) {
-      ThreadUtils.loadUsingContextLoader(config.getString("processConfigCreatorClass")).newInstance().asInstanceOf[ProcessConfigCreator]
+      val creator = ThreadUtils.loadUsingContextLoader(config.getString("processConfigCreatorClass")).newInstance()
+      ProcessConfigCreatorMapping.toProcessConfigCreator(creator)
     }
   }
 

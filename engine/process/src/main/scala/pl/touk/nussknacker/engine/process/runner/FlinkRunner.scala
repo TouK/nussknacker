@@ -6,6 +6,7 @@ import java.nio.charset.StandardCharsets
 import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.commons.io.IOUtils
+import pl.touk.nussknacker.engine.api.conversion.ProcessConfigCreatorMapping
 import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
@@ -23,8 +24,10 @@ trait FlinkRunner {
     readConfigFromArg(optionalConfigArg)
   }
 
-  protected def loadCreator(config: Config): ProcessConfigCreator =
-    ThreadUtils.loadUsingContextLoader(config.getString("processConfigCreatorClass")).newInstance().asInstanceOf[ProcessConfigCreator]
+  protected def loadCreator(config: Config): ProcessConfigCreator = {
+    val creator = ThreadUtils.loadUsingContextLoader(config.getString("processConfigCreatorClass")).newInstance()
+    ProcessConfigCreatorMapping.toProcessConfigCreator(creator)
+  }
 
   protected def readProcessFromArg(arg: String): EspProcess = {
     val canonicalJson = if (arg.startsWith("@")) {
