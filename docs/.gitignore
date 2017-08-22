@@ -1,0 +1,5 @@
+.idea
+*.iml
+_book/
+*.log
+node_modules/
