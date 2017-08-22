@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.util
 
 import java.io.FileOutputStream
+import java.nio.charset.StandardCharsets
 import java.time.LocalDateTime
 
 import org.apache.commons.io.IOUtils
@@ -50,7 +51,7 @@ class PdfExporterSpec extends FlatSpec {
       Comment(1L, "aa", 11, "Jakiś taki dziwny ten proces??", "Wacław Wójcik", LocalDateTime.now())
     ), List())
 
-    val svg: String = Source.fromInputStream(getClass.getResourceAsStream("/svgTest.svg")).getLines().mkString("")
+    val svg: String = Source.fromInputStream(getClass.getResourceAsStream("/svgTest.svg"), StandardCharsets.UTF_8.name()).getLines().mkString("")
     val exported = PdfExporter.exportToPdf(svg, details, activities, displayable)
 
     IOUtils.write(exported, new FileOutputStream("/tmp/out.pdf"))
@@ -69,7 +70,7 @@ class PdfExporterSpec extends FlatSpec {
     )
     val activities = ProcessActivity(List(), List())
 
-    val svg: String = Source.fromInputStream(getClass.getResourceAsStream("/svgTest.svg")).getLines().mkString("")
+    val svg: String = Source.fromInputStream(getClass.getResourceAsStream("/svgTest.svg"), StandardCharsets.UTF_8.name()).getLines().mkString("")
     val exported = PdfExporter.exportToPdf(svg, details, activities, displayable)
 
     IOUtils.write(exported, new FileOutputStream("/tmp/empty.pdf"))

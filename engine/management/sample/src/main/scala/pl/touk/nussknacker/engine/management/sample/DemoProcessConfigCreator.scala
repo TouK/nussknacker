@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.management.sample
 
+import java.nio.charset.StandardCharsets
 import java.time.{LocalDateTime, ZoneOffset}
 
 import argonaut.{Argonaut, Json}
@@ -160,7 +161,7 @@ class DemoProcessConfigCreator extends ProcessConfigCreator {
         override val timestampAssigner = RunningSourceFactory.this.timestampAssigner
 
         override def generateTestData(size: Int): Array[Byte] = {
-          (1 to size).map(generate).map(_.originalDisplay.getOrElse("")).mkString("\n").getBytes()
+          (1 to size).map(generate).map(_.originalDisplay.getOrElse("")).mkString("\n").getBytes(StandardCharsets.UTF_8)
         }
       }
     }

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.example
 
+import java.nio.charset.StandardCharsets
 import java.time.{LocalDateTime, ZoneId}
 
 import org.scalatest.concurrent.Eventually
@@ -31,7 +32,7 @@ class ExampleItTest1 extends FlatSpec with BeforeAndAfterAll with Matchers with 
     env.execute(process().id)
 
     val consumer = kafkaClient.createConsumer()
-    val processed = consumer.consume("topic.out").take(1).map(msg => new String(msg.message())).toList
+    val processed = consumer.consume("topic.out").take(1).map(msg => new String(msg.message(), StandardCharsets.UTF_8)).toList
     processed shouldBe List(
       """{"clientId":"ClientB","amount":"2"}"""
     )
@@ -68,7 +69,7 @@ class ExampleItTest2 extends FlatSpec with BeforeAndAfterAll with Matchers with 
     env.execute(process().id)
 
     val consumer = kafkaClient.createConsumer()
-    val processed = consumer.consume("topic.out").take(2).map(msg => new String(msg.message())).toList
+    val processed = consumer.consume("topic.out").take(2).map(msg => new String(msg.message(), StandardCharsets.UTF_8)).toList
     processed.toSet shouldBe Set(
       """{"clientId":"ClientA","clientName":"Alice","cardNumber":"123"}""",
       """{"clientId":"ClientB","clientName":"Bob","cardNumber":"234"}"""
@@ -106,7 +107,7 @@ class ExampleItTest3 extends FlatSpec with BeforeAndAfterAll with Matchers with 
     env.execute(process().id)
 
     val consumer = kafkaClient.createConsumer()
-    val processed = consumer.consume("topic.out").take(2).map(msg => new String(msg.message())).toList
+    val processed = consumer.consume("topic.out").take(2).map(msg => new String(msg.message(), StandardCharsets.UTF_8)).toList
     processed.toSet shouldBe Set(
       """{"clientId":"ClientA","aggregatedAmount":"11"}""",
       """{"clientId":"ClientC","aggregatedAmount":"13"}"""
@@ -153,7 +154,7 @@ class ExampleItTest4 extends FlatSpec with BeforeAndAfterAll with Matchers with 
     env.execute(process().id)
 
     val consumer = kafkaClient.createConsumer()
-    val processed = consumer.consume("topic.out").take(2).toList.map(msg => new String(msg.message()))
+    val processed = consumer.consume("topic.out").take(2).toList.map(msg => new String(msg.message(), StandardCharsets.UTF_8))
     processed.toSet shouldBe Set(
       """{"clientId":"ClientA","transactionsCount":"2"}""",
       """{"clientId":"ClientC","transactionsCount":"2"}"""

@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.management.sample.signal
 
+import java.nio.charset.StandardCharsets
+
 import pl.touk.nussknacker.engine.flink.util.source.EspDeserializationSchema
 import argonaut.Argonaut._
 import argonaut.ArgonautShapeless._
@@ -33,5 +35,5 @@ object SignalSchema {
   import Signals._
   import ProcessSignalCodecs._
   import org.apache.flink.streaming.api.scala._
-  val deserializationSchema = new EspDeserializationSchema[SampleProcessSignal](jsonBytes => (new String(jsonBytes)).decodeOption(processSignalCodec.Decoder).get)
+  val deserializationSchema = new EspDeserializationSchema[SampleProcessSignal](jsonBytes => new String(jsonBytes,StandardCharsets.UTF_8).decodeOption(processSignalCodec.Decoder).get)
 }

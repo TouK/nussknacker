@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.standalone.management
 
-import java.io.{File, FileWriter}
+import java.io.{File, FileWriter, PrintWriter}
+import java.nio.charset.StandardCharsets
 
 import scala.io.Source
 
@@ -41,11 +42,10 @@ class FileProcessRepository(path: File) extends ProcessRepository {
 
   override def add(id: String, json: String) = {
     val outFile = new File(path, id)
-    val writer = new FileWriter(outFile)
+    val writer = new PrintWriter(outFile, StandardCharsets.UTF_8.name())
     try {
       writer.write(json)
     } finally {
-      writer.flush()
       writer.close()
     }
   }
@@ -53,9 +53,13 @@ class FileProcessRepository(path: File) extends ProcessRepository {
   override def remove(id: String) = {
     new File(path, id).delete()
   }
+  private def fileToString(file: File)={
+    val s = Source.fromFile(file, UTF8)
+    try s.getLines().mkString("\n") finally s.close()
+  }
 
   override def loadAll = path.listFiles().filter(_.isFile).map { file =>
-    file.getName -> Source.fromFile(file, UTF8).getLines().mkString("\n")
+    file.getName -> fileToString(file)
   }.toMap
 
 }

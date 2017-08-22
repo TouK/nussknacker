@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.perftest.sample
 
+import java.nio.charset.StandardCharsets
+
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
@@ -40,7 +42,7 @@ class AggProcessConfigCreator extends ProcessConfigCreator {
     val intSerializationSchema = new KeyedSerializationSchema[Any] {
 
       override def serializeValue(element: Any) = {
-        element.asInstanceOf[Int].toString.getBytes
+        element.asInstanceOf[Int].toString.getBytes(StandardCharsets.UTF_8)
       }
 
       override def serializeKey(element: Any) =

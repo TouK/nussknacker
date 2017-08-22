@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
+import java.nio.charset.StandardCharsets
+
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.stream.Materializer
@@ -46,7 +48,7 @@ class ProcessesExportResources(repository: ProcessRepository,
           entity(as[Array[Byte]]) { (svg) =>
             complete {
               repository.fetchProcessDetailsForId(processId, versionId, businessView).flatMap { process =>
-                processActivityRepository.findActivity(processId).map(exportProcessToPdf(new String(svg), process, _))
+                processActivityRepository.findActivity(processId).map(exportProcessToPdf(new String(svg, StandardCharsets.UTF_8), process, _))
               }
             }
           }

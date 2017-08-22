@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.standalone.test
 
+import java.nio.charset.StandardCharsets
+
 import argonaut.PrettyParams
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
@@ -35,7 +37,7 @@ class StandaloneTestMainSpec extends FlatSpec with Matchers with BeforeAndAfterE
     val config = ConfigFactory.load()
       .withValue("processConfigCreatorClass", fromAnyRef("pl.touk.nussknacker.engine.standalone.StandaloneProcessConfigCreator"))
 
-    val results = StandaloneTestMain.run(ProcessMarshaller.toJson(process, PrettyParams.spaces2), config, new TestData(input.getBytes), List())
+    val results = StandaloneTestMain.run(ProcessMarshaller.toJson(process, PrettyParams.spaces2), config, new TestData(input.getBytes(StandardCharsets.UTF_8)), List())
 
     results.nodeResults("filter1").toSet shouldBe Set(
       NodeResult(Context("proc1-0", Map("input" -> Request1("a","b")))),
@@ -71,7 +73,7 @@ class StandaloneTestMainSpec extends FlatSpec with Matchers with BeforeAndAfterE
     val config = ConfigFactory.load()
       .withValue("processConfigCreatorClass", fromAnyRef("pl.touk.nussknacker.engine.standalone.StandaloneProcessConfigCreator"))
 
-    val results = StandaloneTestMain.run(ProcessMarshaller.toJson(process, PrettyParams.spaces2), config, new TestData(input.getBytes), List())
+    val results = StandaloneTestMain.run(ProcessMarshaller.toJson(process, PrettyParams.spaces2), config, new TestData(input.getBytes(StandardCharsets.UTF_8)), List())
 
     results.invocationResults("occasionallyThrowFilter").toSet shouldBe Set(ExpressionInvocationResult(Context("proc1-1", Map("input" -> Request1("c","d"))), "expression", true))
     results.exceptions should have size 1

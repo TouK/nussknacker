@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.process.runner
 
 import java.io.{File, FileReader}
+import java.nio.charset.StandardCharsets
 
 import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.config.{Config, ConfigFactory}
@@ -27,7 +28,8 @@ trait FlinkRunner {
 
   protected def readProcessFromArg(arg: String): EspProcess = {
     val canonicalJson = if (arg.startsWith("@")) {
-      IOUtils.toString(new FileReader(arg.substring(1)))
+      val source = scala.io.Source.fromFile(arg.substring(1), StandardCharsets.UTF_8.name())
+      try source.mkString finally source.close()
     } else {
       arg
     }

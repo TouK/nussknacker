@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.example
 
+import java.nio.charset.StandardCharsets
 import java.util.UUID
 
 import argonaut.Argonaut._
@@ -57,7 +58,7 @@ class ExampleProcessConfigCreator extends ProcessConfigCreator {
     }
     kafkaSource[Transaction](kafkaConfig, jsonBytes => {
       val decoder = implicitly[DecodeJson[Transaction]]
-      new String(jsonBytes).decodeOption(decoder).get
+      new String(jsonBytes, StandardCharsets.UTF_8).decodeOption(decoder).get
     }, Some(transactionTimestampExtractor), TestParsingUtils.newLineSplit)
   }
 
@@ -72,11 +73,11 @@ class ExampleProcessConfigCreator extends ProcessConfigCreator {
   override def sinkFactories(config: Config): Map[String, WithCategories[SinkFactory]] = {
     val kafkaConfig = config.as[KafkaConfig]("kafka")
     val stringOrJsonSink = kafkaSink(kafkaConfig, new KeyedSerializationSchema[Any] {
-      override def serializeKey(element: Any): Array[Byte] = UUID.randomUUID().toString.getBytes()
+      override def serializeKey(element: Any): Array[Byte] = UUID.randomUUID().toString.getBytes(StandardCharsets.UTF_8)
       override def serializeValue(element: Any): Array[Byte] = element match {
-        case a:Displayable => a.display.nospaces.getBytes
-        case a:Json => a.nospaces.getBytes
-        case a:String => a.getBytes
+        case a:Displayable => a.display.nospaces.getBytes(StandardCharsets.UTF_8)
+        case a:Json => a.nospaces.getBytes(StandardCharsets.UTF_8)
+        case a:String => a.getBytes(StandardCharsets.UTF_8)
         case _ => throw new RuntimeException("Sorry, only strings or json are supported...")
       }
       override def getTargetTopic(element: Any): String = null

@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.util
 
 import java.io._
 import java.net.URI
+import java.nio.charset.StandardCharsets
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import javax.xml.transform.TransformerFactory
@@ -63,7 +64,7 @@ object PdfExporter extends LazyLogging {
   private def createPdf(fopXml: Elem): Array[Byte] = {
     val out = new ByteArrayOutputStream()
     val fop = fopFactory.newFop(MimeConstants.MIME_PDF, out)
-    val src = new StreamSource(new ByteArrayInputStream(fopXml.toString().getBytes))
+    val src = new StreamSource(new ByteArrayInputStream(fopXml.toString().getBytes(StandardCharsets.UTF_8)))
     TransformerFactory.newInstance().newTransformer().transform(src, new SAXResult(fop.getDefaultHandler))
     out.toByteArray
   }

@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.process.runner
 
 import java.net.ConnectException
+import java.nio.charset.StandardCharsets
 import java.util.{Date, UUID}
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -115,7 +116,7 @@ class TestProcessSignalFactory(val kafkaConfig: KafkaConfig, val signalsTopic: S
 
   @MethodToInvoke
   def sendSignal()(processId: String) = {
-    sendToKafkaWithNewProducer(signalsTopic, Array.empty, "".getBytes())
+    sendToKafkaWithNewProducer(signalsTopic, Array.empty, "".getBytes(StandardCharsets.UTF_8))
   }
 
 }

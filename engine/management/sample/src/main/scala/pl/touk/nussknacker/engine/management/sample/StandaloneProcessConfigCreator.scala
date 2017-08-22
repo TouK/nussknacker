@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.management.sample
 
+import java.nio.charset.StandardCharsets
 import java.util.concurrent.atomic.AtomicInteger
 
 import argonaut.{DecodeJson, Parse}
@@ -88,7 +89,7 @@ class Request1SourceFactory extends StandaloneSourceFactory[Request1] {
   }
 
   override def toObject(obj: Array[Byte]): Request1 = {
-    val str = new String(obj)
+    val str = new String(obj, StandardCharsets.UTF_8)
     decoder.decodeJson(Parse.parse(str).right.get).result.right.get
   }
 
@@ -97,7 +98,7 @@ class Request1SourceFactory extends StandaloneSourceFactory[Request1] {
   override def testDataParser: Option[TestDataParser[Request1]] = Some(
     new TestDataParser[Request1] {
       override def parseTestData(data: Array[Byte]): List[Request1] = {
-        val request1List = new String(data).split("\n").toList
+        val request1List = new String(data, StandardCharsets.UTF_8).split("\n").toList
         request1List.map(str => decoder.decodeJson(Parse.parse(str).right.get).result.right.get)
       }
     }

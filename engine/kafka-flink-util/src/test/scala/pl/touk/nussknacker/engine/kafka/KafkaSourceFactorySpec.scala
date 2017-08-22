@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.kafka
 
+import java.nio.charset.StandardCharsets
+
 import org.apache.flink.api.java.typeutils.GenericTypeInfo
 import org.apache.flink.streaming.util.serialization.SimpleStringSchema
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
@@ -30,8 +32,8 @@ class KafkaSourceFactorySpec extends FlatSpec with BeforeAndAfterAll with KafkaS
 
 
     //first partition 1, than 0
-    new String(dataFor3) shouldBe "b\nd\na"
-    new String(dataFor5) shouldBe "b\nd\na\nc"
+    new String(dataFor3, StandardCharsets.UTF_8) shouldBe "b\nd\na"
+    new String(dataFor5, StandardCharsets.UTF_8) shouldBe "b\nd\na\nc"
 
   }
 

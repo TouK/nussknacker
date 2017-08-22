@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.kafka
 
+import java.nio.charset.StandardCharsets
+
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.util.serialization.KeyedSerializationSchema
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory}
@@ -16,7 +18,7 @@ class KafkaSinkFactory(config: KafkaConfig,
       override def toFlinkFunction: SinkFunction[Any] = {
         PartitionByKeyFlinkKafkaProducer09(config.kafkaAddress, topic, serializationSchema, config.kafkaProperties)
       }
-      override def testDataOutput: Option[(Any) => String] = Option(value => new String(serializationSchema.serializeValue(value)))
+      override def testDataOutput: Option[(Any) => String] = Option(value => new String(serializationSchema.serializeValue(value), StandardCharsets.UTF_8))
     }
   }
 }

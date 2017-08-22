@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.management
 
 import java.io.File
+import java.nio.charset.StandardCharsets
 import java.util.UUID
 
 import argonaut.PrettyParams
@@ -101,10 +102,10 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
     jobStatus2.map(_.status) shouldBe Some("RUNNING")
 
     val messages = kafkaClient.createConsumer().consume(outTopic).take(2).toList
-    println("save state when redeploying messages: " + messages.map(m => new String(m.message())).mkString("\n"))
+    println("save state when redeploying messages: " + messages.map(m => new String(m.message(), StandardCharsets.UTF_8)).mkString("\n"))
 
     val message = messages.last.message()
-    new String(message) shouldBe "List(One element, One element)"
+    new String(message, StandardCharsets.UTF_8) shouldBe "List(One element, One element)"
 
     assert(processManager.cancel(processEmittingOneElementAfterStart.id).isReadyWithin(10 seconds))
 
@@ -147,7 +148,7 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
     val messages = kafkaClient.createConsumer().consume(outTopic).take(2).toList
 
     val message = messages.last.message()
-    new String(message) shouldBe "List(One element, One element)"
+    new String(message, StandardCharsets.UTF_8) shouldBe "List(One element, One element)"
 
     assert(processManager.cancel(processEmittingOneElementAfterStart.id).isReadyWithin(10 seconds))
 
@@ -226,7 +227,7 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
 
     processManager.dispatchSignal("removeLockSignal", "test-process", Map("lockId" -> "test-lockId"))
 
-    val readSignals = consumer.consume(signalsTopic).take(1).map(m => new String(m.message())).toList
+    val readSignals = consumer.consume(signalsTopic).take(1).map(m => new String(m.message(), StandardCharsets.UTF_8)).toList
     val signalJson = argonaut.Parse.parse(readSignals(0)).right.get
     signalJson.field("processId").get.nospaces shouldBe "\"test-process\""
     signalJson.field("action").get.field("type").get.nospaces shouldBe "\"RemoveLock\""

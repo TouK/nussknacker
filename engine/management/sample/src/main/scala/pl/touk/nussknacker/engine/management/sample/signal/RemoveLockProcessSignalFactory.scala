@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.management.sample.signal
 
 import java.lang
+import java.nio.charset.StandardCharsets
 
 import argonaut.Argonaut._
 import argonaut.ArgonautShapeless._
@@ -28,7 +29,7 @@ class RemoveLockProcessSignalFactory(val kafkaConfig: KafkaConfig, val signalsTo
   def sendSignal(@ParamName("lockId") lockId: String)(processId: String) = {
     val signal = SampleProcessSignal(processId, System.currentTimeMillis(), RemoveLock(lockId))
     val json = ProcessSignalCodecs.processSignalCodec.Encoder(signal).nospaces
-    sendToKafkaWithNewProducer(signalsTopic, Array.empty, json.getBytes)
+    sendToKafkaWithNewProducer(signalsTopic, Array.empty, json.getBytes(StandardCharsets.UTF_8))
   }
 
 }

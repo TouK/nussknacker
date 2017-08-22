@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.management.sample
 
+import java.nio.charset.StandardCharsets
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
 
 import argonaut.{Argonaut, Json}
@@ -40,7 +41,7 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
       "monitor" -> WithCategories(SinkFactory.noParam(monitorSink), "Category1", "Category2"),
       "kafka-string" -> WithCategories(new KafkaSinkFactory(kConfig,
         new KeyedSerializationSchema[Any] {
-          override def serializeValue(element: Any) = element.toString.getBytes
+          override def serializeValue(element: Any) = element.toString.getBytes(StandardCharsets.UTF_8)
 
           override def serializeKey(element: Any) = null
 
@@ -93,7 +94,7 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
 
         }
 
-        override def generateTestData(size: Int) = "record1|field2\nrecord2|field3".getBytes
+        override def generateTestData(size: Int) = "record1|field2\nrecord2|field3".getBytes(StandardCharsets.UTF_8)
 
         override def timestampAssigner = None
 

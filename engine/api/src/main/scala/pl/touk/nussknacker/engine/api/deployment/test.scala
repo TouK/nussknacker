@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.api.deployment
 
+import java.nio.charset.StandardCharsets
+
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 
@@ -7,7 +9,7 @@ object test {
 
   case class TestData(testData: Array[Byte])
   object TestData {
-    def apply(s: String): TestData = new TestData(s.getBytes)
+    def apply(s: String): TestData = new TestData(s.getBytes(StandardCharsets.UTF_8))
   }
 
   case class TestResults(nodeResults: Map[String, List[NodeResult]] = Map(),
