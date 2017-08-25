@@ -18,6 +18,8 @@ import NodeUtils from '../graph/NodeUtils'
 import InlinedSvgs from "../../assets/icons/InlinedSvgs"
 import Dialogs from "../modals/Dialogs"
 import TogglePanel from "../TogglePanel";
+import * as LoaderUtils from '../../common/LoaderUtils'
+import SvgDiv from "../SvgDiv"
 
 import '../../stylesheets/userPanel.styl';
 
@@ -89,12 +91,12 @@ class UserRightPanel extends Component {
       buttons: [
         {name: "save" + (!saveDisabled ? "*" : ""), visible: this.props.loggedUser.canWrite, disabled: saveDisabled, onClick: this.save, icon: InlinedSvgs.buttonSave},
         {name: "migrate", visible: this.props.loggedUser.canDeploy && !_.isEmpty(this.props.featuresSettings.migration), disabled: !migratePossible, onClick: this.migrate, icon: InlinedSvgs.buttonMigrate},
-        {name: "compare", onClick: this.compareVersions, icon: InlinedSvgs.compareButton, disabled: this.hasOneVersion()},
+        {name: "compare", onClick: this.compareVersions, icon: 'compare.svg', disabled: this.hasOneVersion()},
         {name: "import", visible: this.props.loggedUser.canWrite, disabled: false, onClick: this.importProcess, icon: InlinedSvgs.buttonImport, dropzone: true},
         {name: "export", visible: this.props.loggedUser.canWrite, onClick: this.exportProcess, icon: InlinedSvgs.buttonExport},
         {name: "exportPDF", disabled: !this.props.nothingToSave, onClick: this.exportProcessToPdf, icon: InlinedSvgs.buttonExport},
-        {name: "zoomIn", onClick: this.props.zoomIn, icon: InlinedSvgs.buttonZoomIn},
-        {name: "zoomOut", onClick: this.props.zoomOut, icon: InlinedSvgs.buttonZoomOut}
+        {name: "zoomIn", onClick: this.props.zoomIn, icon: 'zoomin.svg'},
+        {name: "zoomOut", onClick: this.props.zoomOut, icon: 'zoomout.svg'}
 
       ]
     },
@@ -105,11 +107,11 @@ class UserRightPanel extends Component {
           {name: "redo", visible: this.props.loggedUser.canWrite, onClick: this.redo, icon: InlinedSvgs.buttonRedo},
           {name: "align", onClick: this.props.graphLayoutFunction, icon: InlinedSvgs.buttonAlign, visible: this.props.loggedUser.canWrite},
           {name: "properties", onClick: this.showProperties, icon: InlinedSvgs.buttonSettings, visible: !this.props.isSubprocess && this.props.loggedUser.canWrite},
-          {name: "duplicate", onClick: this.duplicateNode, icon: InlinedSvgs.duplicateButton,
+          {name: "duplicate", onClick: this.duplicateNode, icon: 'duplicate.svg',
             //cloning groups can be tricky...
             disabled: this.noChosenNode(this.props.nodeToDisplay) || NodeUtils.nodeIsGroup(this.props.nodeToDisplay),
             visible: this.props.loggedUser.canWrite},
-          {name: "delete", onClick: this.deleteNode, icon: InlinedSvgs.buttonDelete, visible: this.props.loggedUser.canWrite, disabled: this.noChosenNode(this.props.nodeToDisplay) }
+          {name: "delete", onClick: this.deleteNode, icon: 'delete.svg', visible: this.props.loggedUser.canWrite, disabled: this.noChosenNode(this.props.nodeToDisplay) }
 
         ]
       },
@@ -120,9 +122,9 @@ class UserRightPanel extends Component {
           {name: "from file", onClick: this.testProcess, icon: InlinedSvgs.buttonFromFile, dropzone: true,
             disabled: !this.props.testCapabilities.canBeTested, visible: this.props.loggedUser.canWrite},
           {name: "hide", onClick: this.hideRunProcessDetails, icon: InlinedSvgs.buttonHide, disabled: !this.props.showRunProcessDetails, visible: this.props.loggedUser.canWrite},
-          {name: "generate", onClick: this.generateData, icon: InlinedSvgs.buttonGenerate,
+          {name: "generate", onClick: this.generateData, icon: 'generate.svg',
             disabled: !this.props.processIsLatestVersion || !this.props.testCapabilities.canGenerateTestData, visible: this.props.loggedUser.canWrite},
-          {name: "counts", onClick: this.fetchProcessCounts, icon: InlinedSvgs.buttonCounts,
+          {name: "counts", onClick: this.fetchProcessCounts, icon: 'counts.svg',
             visible: this.props.featuresSettings.counts && !this.props.isSubprocess},
         ]
       }),
@@ -140,16 +142,19 @@ class UserRightPanel extends Component {
 
   renderPanelButton = (panelButton, idx) => {
     const buttonClass = "espButton right-panel"
+    //TODO: move other buttons from inlined svgs to files
+    const svgDiv = panelButton.icon.endsWith('.svg') ?  (<SvgDiv svgFile={`buttons/${panelButton.icon}`}/>)
+      : ( <div dangerouslySetInnerHTML={{__html: panelButton.icon}} />)
+
     return panelButton.dropzone ?
         <Dropzone key={idx} disableClick={panelButton.disabled === true} onDrop={panelButton.onClick}
                   className={"dropZone " + buttonClass + (panelButton.disabled === true ? " disabled" : "")}>
-            <div dangerouslySetInnerHTML={{__html: panelButton.icon}} />
-            <div>{panelButton.name}</div>
+            {svgDiv}<div>{panelButton.name}</div>
           </Dropzone>
         :
         <button key={idx} type="button" className={buttonClass} disabled={panelButton.disabled === true}
                 onClick={panelButton.onClick}>
-          <div dangerouslySetInnerHTML={{__html: panelButton.icon}} /> {panelButton.name}
+          {svgDiv}<div>{panelButton.name}</div>
         </button>
   }
 

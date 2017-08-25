@@ -93,7 +93,8 @@ espCheckbox(checkboxWidth)
   right: 20%;
   margin-left auto
   margin-right auto
-  border: 2px solid menuBkgColor
+  border: 2px solid modalBorder
+  box-shadow: 0 0 8px 0 rgba(0,0,0,0.2)
   .confirmationButtons
     text-align center
     button
@@ -253,11 +254,14 @@ espCheckbox(checkboxWidth)
         text-decoration none
         &:hover
           color: processesHoverColor
-
+  hr
+    border-top 1px solid hrColor
+    margin-top 10px
+    margin-bottom 10px
 
 .modalFooter
   margin-top: 5px
-  border-top: 2px solid menuBkgColor
+  border-top: 2px solid modalBorder
   height modalFooterHeight
   background-color modalFooterBkgColor
   .footerButtons
@@ -345,6 +349,10 @@ espButtonIcon()
 
 .element
   cursor: pointer
+  &:active
+    cursor: -moz-grabbing;
+    cursor: -webkit-grabbing;
+    cursor: grabbing;
 
 .link
   .connection-wrap
