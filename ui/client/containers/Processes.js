@@ -18,11 +18,14 @@ import "../stylesheets/processes.styl";
 import filterIcon from '../assets/img/search.svg'
 import createProcessIcon from '../assets/img/create-process.svg'
 import editIcon from '../assets/img/edit-icon.png'
+import PeriodicallyReloadingComponent from './../components/PeriodicallyReloadingComponent'
 
-const Processes = React.createClass({
+class Processes extends PeriodicallyReloadingComponent {
 
-  getInitialState() {
-    return {
+  constructor(props) {
+    super(props);
+
+    this.state = {
       processes: [],
       statuses: {},
       filterVal: '',
@@ -33,30 +36,12 @@ const Processes = React.createClass({
       sort: { column: "id", direction: 1}
 
     }
-  },
+  }
 
-  componentDidMount() {
-    const intervalIds = {
-      reloadStatusesIntervalId: setInterval(() => this.reloadProcesses(), 6000),
-      reloadProcessesIntervalId: setInterval(() => this.reloadStatuses(), 10000)
-    }
-    this.setState(intervalIds)
-    this.reloadProcessesAndStatuses();
-  },
-
-  reloadProcessesAndStatuses() {
+  reload() {
     this.reloadProcesses();
     this.reloadStatuses();
-  },
-
-  componentWillUnmount() {
-    if (this.state.reloadStatusesIntervalId) {
-      clearInterval(this.state.reloadStatusesIntervalId)
-    }
-    if (this.state.reloadProcessesIntervalId) {
-      clearInterval(this.state.reloadProcessesIntervalId)
-    }
-  },
+  }
 
   reloadProcesses() {
     HttpService.fetchProcesses().then ((fetchedProcesses) => {
@@ -64,7 +49,7 @@ const Processes = React.createClass({
         this.setState({processes: fetchedProcesses, showLoader: false})
       }
     }).catch( e => this.setState({ showLoader: false }))
-  },
+  }
 
   reloadStatuses() {
     HttpService.fetchProcessesStatus().then ((statuses) => {
@@ -72,42 +57,42 @@ const Processes = React.createClass({
         this.setState({ statuses: statuses, showLoader: false })
       }
     }).catch( e => this.setState({ showLoader: false }))
-  },
+  }
 
 
   isGraph(process) {
     return process.processType == "graph"
-  },
+  }
 
   showProcess(process) {
     if(this.isGraph(process)) {
       browserHistory.push('/visualization/' + process.id)
     }
-  },
+  }
 
   showMetrics(process) {
     browserHistory.push('/metrics/' + process.id)
-  },
+  }
 
   handleChange(event) {
     this.setState({filterVal: event.target.value});
-  },
+  }
 
   deploy(process) {
     this.props.actions.toggleConfirmDialog(true, DialogMessages.deploy(process.id), () => {
-      return HttpService.deploy(process.id).then(this.reloadProcessesAndStatuses)
+      return HttpService.deploy(process.id).then(this.reload)
     })
-  },
+  }
 
   stop(process) {
     this.props.actions.toggleConfirmDialog(true, DialogMessages.stop(process.id), () => {
-      return HttpService.stop(process.id).then(this.reloadProcessesAndStatuses)
+      return HttpService.stop(process.id).then(this.reload)
     })
-  },
+  }
 
   getFilterValue() {
     return this.state.filterVal.toLowerCase();
-  },
+  }
 
   setFavourite(process) {
     var favouriteArray = this.state.favouriteList;
@@ -117,7 +102,7 @@ const Processes = React.createClass({
       favouriteArray.add(process);
     }
     this.setState({favouriteList: favouriteArray});
-  },
+  }
 
   isFavourite(process){
     var isFavourite = classNames({
@@ -125,14 +110,14 @@ const Processes = React.createClass({
       'is-favourite': this.state.favouriteList.has(process)
     });
     return isFavourite;
-  },
+  }
 
   editIconClass(process){
     return classNames({
       "edit-icon": true,
       "btn disabled edit-disabled": !this.isGraph(process),
     })
-  },
+  }
 
   processStatusClass(process) {
     const processId = process.name;
@@ -144,7 +129,7 @@ const Processes = React.createClass({
     } else if (shouldRun) {
       return statusesKnown ? "status-notrunning" : "status-unknown"
     } else return null;
-  },
+  }
 
   processStatusTitle(processStatusClass) {
     if (processStatusClass == "status-running") {
@@ -156,7 +141,7 @@ const Processes = React.createClass({
     } else {
       return null
     }
-  },
+  }
 
   render() {
     return (
@@ -255,7 +240,7 @@ const Processes = React.createClass({
       </div>
     )
   }
-});
+}
 
 Processes.title = 'Processes'
 Processes.path = '/processes'

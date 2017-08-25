@@ -37,7 +37,7 @@ class AppResources(buildInfo: Map[String, String],
                 HttpResponse(status = StatusCodes.OK)
               } else {
                 logger.warn(s"Processes not running: $set")
-                HttpResponse(status = StatusCodes.InternalServerError, entity = s"Deployed processes not running (probably failed): \n${set.mkString(",")}")
+                HttpResponse(status = StatusCodes.InternalServerError, entity = s"Deployed processes not running (probably failed): \n${set.mkString(", ")}")
               }
             }.recover[HttpResponse] {
               case NonFatal(e) =>
@@ -53,7 +53,7 @@ class AppResources(buildInfo: Map[String, String],
               if (processes.isEmpty) {
                 HttpResponse(status = StatusCodes.OK)
               } else {
-                val message = s"Processes with validation errors: \n${processes.mkString(",")}"
+                val message = s"Processes with validation errors: \n${processes.mkString(", ")}"
                 HttpResponse(status = StatusCodes.InternalServerError, entity = message)
               }
             }

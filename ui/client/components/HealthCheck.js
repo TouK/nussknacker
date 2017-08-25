@@ -3,8 +3,9 @@ import {render} from "react-dom";
 import {connect} from "react-redux";
 import HttpService from "../http/HttpService";
 import InlinedSvgs from '../assets/icons/InlinedSvgs'
+import PeriodicallyReloadingComponent from './PeriodicallyReloadingComponent'
 
-class HealthCheck extends React.Component {
+class HealthCheck extends PeriodicallyReloadingComponent {
 
   constructor(props) {
     super(props);
@@ -14,7 +15,7 @@ class HealthCheck extends React.Component {
     };
   }
 
-  componentDidMount() {
+  reload() {
     HttpService.fetchHealthCheck().then(
       (check) => this.setState({ healthCheck: check })
     );
