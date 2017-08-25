@@ -134,6 +134,16 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
 
   }
 
+  it should "should != correctly for compiled expression - expression is compiled when invoked for the 3rd time" in {
+    //see https://jira.spring.io/browse/SPR-9194 for details
+    val empty = new String("")
+    val withMapVar = ctx.withVariable("emptyStr", empty)
+
+    val expression = parseOrFail("#emptyStr != ''", withMapVar)
+    expression.evaluateSync[Boolean](withMapVar, dumbLazyProvider).value should equal(false)
+    expression.evaluateSync[Boolean](withMapVar, dumbLazyProvider).value should equal(false)
+    expression.evaluateSync[Boolean](withMapVar, dumbLazyProvider).value should equal(false)
+  }
 
   it should "evaluate using lazy value" in {
     val provided = "ala"

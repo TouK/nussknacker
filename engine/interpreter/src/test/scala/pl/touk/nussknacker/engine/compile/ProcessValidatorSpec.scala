@@ -361,7 +361,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
       case Invalid(NonEmptyList(
       ExpressionParseError("Unresolved references terefere", "p1", Some("par1"), _),
       List(
-      ExpressionParseError("EL1044E:(pos 0): Unexpectedly ran out of input", "c1", Some("par1"), _),
+      ExpressionParseError("Expression [{] @0: EL1044E: Unexpectedly ran out of input", "c1", Some("par1"), _),
       ExpressionParseError("Unresolved references terefere22", "v1", Some("par1"), _))
       )) =>
     }
