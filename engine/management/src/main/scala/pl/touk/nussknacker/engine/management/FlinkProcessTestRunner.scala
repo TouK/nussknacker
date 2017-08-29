@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.management
 
-import java.io.File
+import java.io.{File, FileNotFoundException}
 import java.lang.reflect.InvocationTargetException
 
 import com.typesafe.config.Config
@@ -12,7 +12,11 @@ import scala.reflect.runtime.{universe => ru}
 
 object FlinkProcessTestRunner {
   def apply(config: Config, jarFile: File) = {
-    new FlinkProcessTestRunner(config, JarClassLoader(jarFile))
+    if (!jarFile.exists()) {
+      throw new FileNotFoundException(s"No jar file found at given path ${jarFile.getAbsolutePath}")
+    } else {
+      new FlinkProcessTestRunner(config, JarClassLoader(jarFile))
+    }
   }
 }
 

@@ -150,7 +150,7 @@ class Processes extends PeriodicallyReloadingComponent {
         <div id="process-top-bar">
           <div id="table-filter" className="input-group">
             <input type="text" className="form-control" aria-describedby="basic-addon1"
-                    value={this.state.filterVal} onChange={this.handleChange}/>
+                    value={this.state.filterVal} onChange={e => this.handleChange(e)}/>
             <span className="input-group-addon" id="basic-addon1">
               <img id="search-icon" src={filterIcon} />
             </span>
