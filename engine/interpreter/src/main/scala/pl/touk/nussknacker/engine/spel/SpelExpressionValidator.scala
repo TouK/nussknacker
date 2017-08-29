@@ -19,7 +19,9 @@ class SpelExpressionValidator(expr: Expression, ctx: ValidationContext) {
   private val ignoredTypes: Set[ClazzRef] = Set(
     classOf[java.util.Map[_, _]],
     classOf[scala.collection.convert.Wrappers.MapWrapper[_, _]],
-    classOf[Any]
+    classOf[Any],
+    classOf[Object],
+    classOf[AnyRef]
   ).map(ClazzRef.apply)
 
   def validate(): Validated[ExpressionParseError, Expression] = {
