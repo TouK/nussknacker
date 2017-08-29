@@ -76,7 +76,7 @@ object PdfExporter extends LazyLogging {
     val diagram = XML.loadString(svg)
     val currentVersion = processDetails.history.find(_.processVersionId == processDetails.processVersionId).get
 
-    <root xmlns="http://www.w3.org/1999/XSL/Format" font-family="OpenSans" font-size="12pt">
+    <root xmlns="http://www.w3.org/1999/XSL/Format" font-family="OpenSans" font-size="12pt" xml:lang="en" >
 
       <layout-master-set>
         <simple-page-master margin-right="1.5cm" margin-left="1.5cm" margin-bottom="2cm" margin-top="1cm" page-width="21cm" page-height="29.7cm" master-name="left">
@@ -216,7 +216,7 @@ object PdfExporter extends LazyLogging {
               </table-cell>
               <table-cell border="1pt solid black" padding-left="1pt">
                 <block>
-                  {value}
+                  {addEmptySpace(value.toString)}
                 </block>
               </table-cell>
             </table-row>
@@ -225,7 +225,13 @@ object PdfExporter extends LazyLogging {
         </table>
       </block>
     }
+
   }
+
+  //we want to be able to break line for these characters. it's not really perfect solution for long, complex expressions,
+  //but should handle most of the cases../
+  private def addEmptySpace(str: String) = List(")", ".", "(")
+    .foldLeft(str){ (acc, el) => acc.replace(el, el + '\u200b')}
 
   private def nodesSummary(displayableProcess: DisplayableProcess) = {
     <block page-break-before="always" space-after.minimum="3em">
@@ -233,8 +239,8 @@ object PdfExporter extends LazyLogging {
         Nodes summary
       </block>
       <table width="100%" table-layout="fixed">
-        <table-column xmlns:fox="http://xmlgraphics.apache.org/fop/extensions" fox:header="true" column-width="proportional-column-width(2)"/>
-        <table-column column-width="proportional-column-width(1)"/>
+        <table-column xmlns:fox="http://xmlgraphics.apache.org/fop/extensions" fox:header="true" column-width="proportional-column-width(3)"/>
+        <table-column column-width="proportional-column-width(2)"/>
         <table-column column-width="proportional-column-width(3)"/>
         <table-header font-weight="bold">
           <table-row>
