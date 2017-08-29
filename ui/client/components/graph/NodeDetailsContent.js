@@ -29,10 +29,13 @@ export default class NodeDetailsContent extends React.Component {
     this.nodeObjectDetails = ProcessUtils.findNodeObjectTypeDefinition(this.props.node, this.props.processDefinitionData.processDefinition)
   }
 
-  componentDidUpdate(prevProps, prevState) {
-    if (!_.isEqual(prevProps.node, this.props.node)) {
-      this.setState({editedNode: this.props.node})
+  componentWillReceiveProps(nextProps) {
+    if (!_.isEqual(this.props.node, nextProps.props)) {
+      this.setState({editedNode: nextProps.node})
     }
+  }
+
+  componentDidUpdate(prevProps, prevState) {
     if (!_.isEqual(prevProps.node, this.props.node) || !_.isEqual(prevProps.testResults, this.props.testResults)) {
       this.selectTestResults()
     }

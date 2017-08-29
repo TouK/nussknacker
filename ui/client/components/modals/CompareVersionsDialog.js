@@ -69,7 +69,7 @@ class CompareVersionsDialog extends React.Component {
                 </div>
                 {this.state.currentDiffId ?
                   (<Scrollbars hideTracksWhenNotNeeded={true} autoHeightMin={'100px'}
-                               autoHeight autoHeightMax={'350px'}
+                               autoHeight autoHeightMax={'390px'}
                                renderThumbVertical={props => <div {...props} className="thumbVertical"/>}>
                     {this.printDiff(this.state.currentDiffId)}
                   </Scrollbars>) : null }
