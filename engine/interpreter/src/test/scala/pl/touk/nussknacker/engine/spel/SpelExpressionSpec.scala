@@ -101,6 +101,11 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
     parseOrFail("#processVariables['processingStartTime']", ctxWithVar).evaluateSync[Long](ctxWithVar, dumbLazyProvider).value should equal(11L)
   }
 
+  it should "stop validation when property of Any/Object type found" in {
+    val ctxWithVar = ctx.withVariable("obj", SampleValue(11, ""))
+    parse("#obj.anyObject.anyPropertyShouldValidate", ctxWithVar) shouldBe 'valid
+
+  }
 
   it should "return sane error with empty expression " in {
     parse("", ctx) should matchPattern {
@@ -209,7 +214,7 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
 
 case class SampleObject(list: List[SampleValue])
 
-case class SampleValue(value: Int)
+case class SampleValue(value: Int, anyObject: Any = "")
 
 
 object SampleGlobalObject {

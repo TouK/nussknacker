@@ -19,9 +19,8 @@ class SpelExpressionValidator(expr: Expression, ctx: ValidationContext) {
   private val ignoredTypes: Set[ClazzRef] = Set(
     classOf[java.util.Map[_, _]],
     classOf[scala.collection.convert.Wrappers.MapWrapper[_, _]],
-    classOf[Any],
-    classOf[Object],
-    classOf[AnyRef]
+    //this covers: Object, Any and AnyRef...
+    classOf[Any]
   ).map(ClazzRef.apply)
 
   def validate(): Validated[ExpressionParseError, Expression] = {
@@ -80,11 +79,13 @@ class SpelExpressionValidator(expr: Expression, ctx: ValidationContext) {
     accessesWithErrors.map(_.flatten).leftMap(_.head)
   }
 
+  private def isTypeIgnored(clazzRef: ClazzRef) = ignoredTypes.contains(clazzRef)
+
   private def findVariableReferenceAccess(reference: VariableReference, children: List[SpelNode] = List()) = {
     val variableName = reference.toStringAST.tail
     val references = children.takeWhile(_.isInstanceOf[PropertyOrFieldReference]).map(_.toStringAST) //we don't validate all of children which is not correct in all cases i.e `#obj.children.?[id == '55'].empty`
     val clazzRef = ctx.apply(variableName)
-    if (ignoredTypes.contains(clazzRef)) Validated.valid(List.empty) //we skip validation in case of SpEL Maps and when we are not sure about type
+    if (isTypeIgnored(clazzRef)) Validated.valid(List.empty) //we skip validation in case of SpEL Maps and when we are not sure about type
     else {
       Validated.valid(List(SpelPropertyAccess(variableName, references, ctx.apply(variableName))))
     }
@@ -93,7 +94,7 @@ class SpelExpressionValidator(expr: Expression, ctx: ValidationContext) {
 
   private def validatePropertyAccess(propAccess: SpelPropertyAccess): Option[ExpressionParseError] = {
     def checkIfPropertiesExistsOnClass(propsToGo: List[String], clazz: ClazzRef): Option[ExpressionParseError] = {
-      if (propsToGo.isEmpty) None
+      if (propsToGo.isEmpty || isTypeIgnored(clazz)) None
       else {
         val currentProp = propsToGo.head
         val typeInfo = ctx.getTypeInfo(clazz)
