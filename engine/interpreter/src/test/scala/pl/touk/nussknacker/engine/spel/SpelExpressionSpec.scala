@@ -101,6 +101,13 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
     parseOrFail("#processVariables['processingStartTime']", ctxWithVar).evaluateSync[Long](ctxWithVar, dumbLazyProvider).value should equal(11L)
   }
 
+
+  it should "return sane error with empty expression " in {
+    parse("", ctx) should matchPattern {
+      case Invalid(ExpressionParseError("Empty expression")) =>
+    }
+  }
+
   it should "perform date operations" in {
     val twoDaysAgo = LocalDate.now().minusDays(2)
     val withDays = ctx.withVariable("date", twoDaysAgo)

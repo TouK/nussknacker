@@ -25,14 +25,17 @@ class SpelExpressionValidator(expr: Expression, ctx: ValidationContext) {
   ).map(ClazzRef.apply)
 
   def validate(): Validated[ExpressionParseError, Expression] = {
-    val ast = expr.asInstanceOf[standard.SpelExpression].getAST
-    resolveReferences(ast).andThen { _ =>
-      findAllPropertyAccess(ast, None, None).andThen { propertyAccesses =>
-        propertyAccesses.flatMap(validatePropertyAccess).headOption match {
-          case Some(error) => Validated.invalid(error)
-          case None => Validated.valid(expr)
-        }
-      }
+    Validated.fromOption(Option(expr.asInstanceOf[standard.SpelExpression].getAST), ExpressionParseError("Empty expression"))
+      .andThen { ast =>
+        resolveReferences(ast)
+          .andThen { _ =>
+            findAllPropertyAccess(ast, None, None).andThen { propertyAccesses =>
+              propertyAccesses.flatMap(validatePropertyAccess).headOption match {
+                case Some(error) => Validated.invalid(error)
+                case None => Validated.valid(expr)
+              }
+            }
+          }
     }
   }
 
