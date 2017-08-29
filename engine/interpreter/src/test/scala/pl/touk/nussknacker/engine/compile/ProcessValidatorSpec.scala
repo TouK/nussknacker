@@ -4,14 +4,18 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import org.scalatest.{FlatSpec, Inside, Matchers}
 import pl.touk.nussknacker.engine._
-import pl.touk.nussknacker.engine.api.Service
+import pl.touk.nussknacker.engine.api.{MetaData, Service, StreamMetaData}
 import pl.touk.nussknacker.engine.api.lazyy.ContextWithLazyValuesProvider
 import pl.touk.nussknacker.engine.api.process.WithCategories
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError._
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ClazzRef, ObjectDefinition, Parameter}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ObjectProcessDefinition, ProcessDefinition}
-import pl.touk.nussknacker.engine.graph.node.Case
+import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
+import pl.touk.nussknacker.engine.graph.node._
+import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.types.EspTypeUtils
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -312,6 +316,22 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
       case Invalid(NonEmptyList(MissingParameters(missingParam, "$process"), _)) => missingParam shouldBe Set("param1")
     }
   }
+
+
+
+  it should "not validate exception handler params in subprocess" in {
+
+    val subprocess = CanonicalProcess(MetaData("subProcess1", StreamMetaData(), true), ExceptionHandlerRef(List()),
+      List(
+        canonicalnode.FlatNode(SubprocessInputDefinition("start", List(DefinitionExtractor.Parameter("param", ClazzRef[String])))),
+        canonicalnode.FlatNode(Sink("deadEnd", SinkRef("sink", List()), Some("'deadEnd'")))))
+
+    val definitionWithExceptionHandlerWithParams = baseDefinition.copy(exceptionHandlerFactory =
+      ObjectDefinition.withParams(List(Parameter("param1", ClazzRef(classOf[String])))))
+
+    ProcessValidator.default(definitionWithExceptionHandlerWithParams).validate(subprocess) shouldBe 'valid
+  }
+
 
   it should "validate service params" in {
     val process = EspProcessBuilder

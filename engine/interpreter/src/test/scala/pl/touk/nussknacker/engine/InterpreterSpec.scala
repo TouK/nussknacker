@@ -69,8 +69,11 @@ class InterpreterSpec extends FlatSpec with Matchers {
     val typesInformation = EspTypeUtils.clazzAndItsChildrenDefinition((servicesDef.values.map(_.getClass) ++ sourceFactories.values.map(c => Class.forName(c.returnType.refClazzName))).toList)
     val compiledNode = compile(servicesDefs, splitted.source.node, ValidationContext(typesInformation = typesInformation, variables = Map(Interpreter.InputParamName -> ClazzRef(classOf[Transaction]))))
     val initialCtx = Context("abc").withVariable(Interpreter.InputParamName, transaction)
-    val resultBeforeSink = Await.result(interpreter.interpret(compiledNode.node, InterpreterMode.Traverse, process.metaData, initialCtx), 10 seconds)
-      .left.get
+    val resultBeforeSink = Await.result(interpreter.interpret(compiledNode.node, InterpreterMode.Traverse, process.metaData, initialCtx), 10 seconds) match {
+      case Left(result) => result
+      case Right(exceptionInfo) => throw exceptionInfo.throwable
+    }
+
     resultBeforeSink.reference match {
       case NextPartReference(nextPartId) =>
         val sink = splitted.source.nextParts.collectFirst {
@@ -467,7 +470,40 @@ class InterpreterSpec extends FlatSpec with Matchers {
 
   }
 
+  it should "recognize exception thrown from service as direct exception" in {
+
+    val process = GraphBuilder
+      .source("start", "transaction-source")
+      .processor("processor", "p1", "failFuture" -> "false")
+      .sink("end", "'d1'", "")
+
+    intercept[CustomException] {
+      interpretTransaction(process, Transaction(accountId = "123"), services = Map("p1" -> new ThrowingService))
+    }.getMessage shouldBe "Fail?"
+  }
+
+  it should "recognize exception thrown from service as failed future" in {
+
+    val process = GraphBuilder
+      .source("start", "transaction-source")
+      .processor("processor", "p1", "failFuture" -> "true")
+      .sink("end", "'d1'", "")
+
+    intercept[CustomException] {
+      interpretTransaction(process, Transaction(accountId = "123"), services = Map("p1" -> new ThrowingService))
+    }.getMessage shouldBe "Fail?"
+  }
+
 }
+
+class ThrowingService extends Service {
+  @MethodToInvoke
+  def invoke(@ParamName("failFuture") failFuture: Boolean) : Future[Void] = {
+    if (failFuture) Future.failed(new CustomException("Fail?")) else throw new CustomException("Fail?")
+  }
+}
+
+class CustomException(message: String) extends Exception(message)
 
 object InterpreterSpec {
 

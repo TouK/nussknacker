@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.definition
 
-import java.lang.reflect.Method
+import java.lang.reflect.{InvocationTargetException, Method}
 
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.process.WithCategories
@@ -94,10 +94,12 @@ object DefinitionExtractor {
         methodDef.method.invoke(obj, values.toArray: _*)
       } catch {
         case ex: IllegalArgumentException =>
+          //this indicates that parameters do not match or argument list is incorrect
           logger.warn(s"Failed to invoke method: ${methodDef.method}, with params: $values", ex)
           throw ex
-        case NonFatal(ex) =>
-          throw ex
+        //this is somehow an edge case - normally service returns failed future for exceptions
+        case ex: InvocationTargetException =>
+          throw ex.getTargetException
       }
     }
 
