@@ -18,8 +18,8 @@ class GenerateTestDataDialog extends React.Component {
     this.state = this.initState
   }
 
-  confirm = (callbackAfter) => {
-    HttpService.generateTestData(this.props.processId, this.state.testSampleSize, this.props.processToDisplay).then(callbackAfter)
+  confirm = () => {
+    return HttpService.generateTestData(this.props.processId, this.state.testSampleSize, this.props.processToDisplay)
   }
 
   render() {

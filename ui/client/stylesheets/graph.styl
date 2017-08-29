@@ -272,28 +272,31 @@ espCheckbox(checkboxWidth)
     .modalConfirmButton
       color modalConfirmButtonColor
 
-espButton()
-  width: 180px
-  height: 44px
-  border: none
+espButtonBase()
+  border: 1px solid buttonBorderColor;
   border-radius: 0px
-  font-weight: 600
-  font-size: 18px
   background-color: buttonBkgColor
   color: buttonTextColor
-  transition: background-color 0.3s
-
+  transition: background-color 0.2s
   &:disabled,&.disabled
     opacity 0.3
     cursor: not-allowed !important
   &:not(:disabled):hover,&:not(.disabled):hover
     background-color: buttonBkgHover
 
+espButton()
+  espButtonBase()
+  width: 180px
+  height: 44px
+  font-weight: 600
+  font-size: 18px
+
+
 espButtonIcon()
+  espButtonBase()
   width: buttonSize
   height: buttonSize
   font-size rightPanelButtonFontSize
-  border 1px solid buttonBorderColor
   margin 10px buttonPadding 10px 0
   img
     display block
@@ -328,21 +331,17 @@ espButtonIcon()
       height 27px
 
 .modalButton
+  espButtonBase()
   width: 120px;
   height 30px
   font-size: 18px;
   margin-top: 10px;
   font-weight: 600;
-  color: buttonTextColor;
-  background-color: buttonBkgColor;
-  border: 1px solid buttonBorderColor;
   margin-left 10px
 
 .ladda-button
   padding 0
   outline: none
-  &:hover
-    background: transparent
 
 .error
   background-color: red

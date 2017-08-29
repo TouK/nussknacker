@@ -24,10 +24,9 @@ class CalculateCountsDialog extends React.Component {
     this.state = this.initState
   }
 
-  confirm = (callbackAfter) => {
-    HttpService.fetchProcessCounts(this.props.processId, this.state.processCountsDateFrom, this.state.processCountsDateTo)
+  confirm = () => {
+    return HttpService.fetchProcessCounts(this.props.processId, this.state.processCountsDateFrom, this.state.processCountsDateTo)
       .then((processCounts) => this.props.actions.displayProcessCounts(processCounts))
-      .then(callbackAfter)
   }
 
   render() {

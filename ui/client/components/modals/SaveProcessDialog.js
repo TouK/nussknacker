@@ -17,8 +17,8 @@ class SaveProcessDialog extends React.Component {
     this.state = this.initState
   }
 
-  confirm = (callbackAfter) => {
-    this.props.actions.saveProcess(this.props.processId, this.props.processToDisplay, this.state.comment).then(callbackAfter)
+  confirm = () => {
+    return this.props.actions.saveProcess(this.props.processId, this.props.processToDisplay, this.state.comment)
   }
 
   render() {

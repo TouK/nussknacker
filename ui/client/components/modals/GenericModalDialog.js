@@ -5,17 +5,32 @@ import {connect} from "react-redux";
 import _ from "lodash";
 import ActionsUtils from "../../actions/ActionsUtils";
 import "../../stylesheets/visualization.styl";
+import LaddaButton from 'react-ladda';
 
 
 class GenericModalDialog extends React.Component {
 
   constructor(props) {
     super(props);
+    this.state = {
+      pendingRequest: false
+    };
   }
 
   closeDialog = () => {
     this.props.init()
+    this.removePending()
     this.props.actions.toggleModalDialog(null)
+  }
+
+  removePending = () => {
+    this.setState({pendingRequest: false})
+  }
+
+  onOk = () => {
+    this.setState({pendingRequest: true})
+    this.props.confirm(this.closeDialog)
+      .then(this.closeDialog, this.removePending)
   }
 
   render() {
@@ -33,7 +48,9 @@ class GenericModalDialog extends React.Component {
             <button type="button" title="Cancel" className='modalButton' onClick={this.closeDialog}>Cancel</button>
             {
               this.props.confirm ?
-              (<button type="button" title="OK" className='modalButton' onClick={() => this.props.confirm(this.closeDialog)}>OK</button>) : null
+              ( <LaddaButton key="1" title="OK" className='modalButton modalConfirmButton'
+                                                    loading={this.state.pendingRequest}
+                                                    buttonStyle='zoom-in' onClick={() => this.onOk()}>OK</LaddaButton>) : null
             }
           </div>
         </div>
