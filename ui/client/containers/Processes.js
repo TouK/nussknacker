@@ -39,8 +39,11 @@ class Processes extends PeriodicallyReloadingComponent {
   }
 
   reload() {
-    this.reloadProcesses();
     this.reloadStatuses();
+  }
+
+  onMount() {
+    this.reloadProcesses();
   }
 
   reloadProcesses() {

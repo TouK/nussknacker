@@ -11,7 +11,12 @@ class PeriodicallyReloadingComponent extends React.Component {
     //to be overridden
   }
 
+  onMount() {
+    //to be overridden
+  }
+
   componentDidMount() {
+    this.onMount()
     const intervalId = setInterval(() => this.reload(), this.interval());
     this.setState({intervalId});
     this.reload();
