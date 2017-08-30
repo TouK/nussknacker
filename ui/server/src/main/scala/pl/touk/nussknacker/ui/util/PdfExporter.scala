@@ -30,6 +30,7 @@ object PdfExporter extends LazyLogging {
 
   val fopFactory = new FopConfParser(getClass.getResourceAsStream("/fop/config.xml"),
     new URI("http://touk.pl"), ResourceResolverFactory.createDefaultResourceResolver).getFopFactoryBuilder.build
+  val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
   def exportToPdf(svg: String, processDetails: ProcessDetails, processActivity: ProcessActivity, displayableProcess: DisplayableProcess): Array[Byte] = {
 
@@ -47,16 +48,16 @@ object PdfExporter extends LazyLogging {
     val dir = new File("/tmp/fop/fonts")
     dir.mkdirs()
     List("OpenSans-BoldItalic.ttf",
-    "OpenSans-Bold.ttf",
-    "OpenSans-ExtraBoldItalic.ttf",
-    "OpenSans-ExtraBold.ttf",
-    "OpenSans-Italic.ttf",
-    "OpenSans-LightItalic.ttf",
-    "OpenSans-Light.ttf",
-    "OpenSans-Regular.ttf",
-    "OpenSans-SemiboldItalic.ttf",
-    "OpenSans-Semibold.ttf"
-    ).filterNot(name => new File (dir, name).exists()).foreach { name =>
+      "OpenSans-Bold.ttf",
+      "OpenSans-ExtraBoldItalic.ttf",
+      "OpenSans-ExtraBold.ttf",
+      "OpenSans-Italic.ttf",
+      "OpenSans-LightItalic.ttf",
+      "OpenSans-Light.ttf",
+      "OpenSans-Regular.ttf",
+      "OpenSans-SemiboldItalic.ttf",
+      "OpenSans-Semibold.ttf"
+    ).filterNot(name => new File(dir, name).exists()).foreach { name =>
       IOUtils.copy(getClass.getResourceAsStream(s"/fop/fonts/$name"), new FileOutputStream(new File(dir, name)))
     }
   }
@@ -69,14 +70,11 @@ object PdfExporter extends LazyLogging {
     out.toByteArray
   }
 
-  val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-
-  //TODO: better description, styles, history, comments??
   private def prepareFopXml(svg: String, processDetails: ProcessDetails, processActivity: ProcessActivity, displayableProcess: DisplayableProcess) = {
     val diagram = XML.loadString(svg)
     val currentVersion = processDetails.history.find(_.processVersionId == processDetails.processVersionId).get
 
-    <root xmlns="http://www.w3.org/1999/XSL/Format" font-family="OpenSans" font-size="12pt" xml:lang="en" >
+    <root xmlns="http://www.w3.org/1999/XSL/Format" font-family="OpenSans" font-size="12pt" xml:lang="en">
 
       <layout-master-set>
         <simple-page-master margin-right="1.5cm" margin-left="1.5cm" margin-bottom="2cm" margin-top="1cm" page-width="21cm" page-height="29.7cm" master-name="left">
@@ -96,14 +94,21 @@ object PdfExporter extends LazyLogging {
 
         <flow flow-name="xsl-region-body">
           <block font-size="16pt" font-weight="bold" text-align="center">
-            {processDetails.id} ({processDetails.processCategory})
+            {processDetails.id}
+            (
+            {processDetails.processCategory}
+            )
           </block>
           <block>
             <block font-size="14pt" space-before.minimum="1em">
-              Version: {processDetails.processVersionId}
+              Version:
+              {processDetails.processVersionId}
             </block>
             <block font-size="14pt" space-before.minimum="0.5em">
-              Saved by {currentVersion.user} at {currentVersion.createDate.format(formatter)}
+              Saved by
+              {currentVersion.user}
+              at
+              {currentVersion.createDate.format(formatter)}
             </block>
             <block text-align="left" space-before.minimum="0.5em">
               {processDetails.description.getOrElse("")}
@@ -113,14 +118,9 @@ object PdfExporter extends LazyLogging {
                 {diagram}
               </instream-foreign-object>
             </block>
-          </block>
-
-          {nodesSummary(displayableProcess)}
-          <block font-size="15pt" font-weight="bold" text-align="left">
-            Nodes details
-          </block>
-          {displayableProcess.nodes.map(nodeDetails)}
-          {comments(processActivity)}
+          </block>{nodesSummary(displayableProcess)}<block font-size="15pt" font-weight="bold" text-align="left">
+          Nodes details
+        </block>{displayableProcess.nodes.map(nodeDetails)}{comments(processActivity)}{attachments(processActivity)}
         </flow>
       </page-sequence>
 
@@ -133,9 +133,9 @@ object PdfExporter extends LazyLogging {
         Comments
       </block>
       <table width="100%" table-layout="fixed">
-        <table-column xmlns:fox="http://xmlgraphics.apache.org/fop/extensions" fox:header="true" column-width="proportional-column-width(1)"/>
-        <table-column xmlns:fox="http://xmlgraphics.apache.org/fop/extensions" fox:header="true" column-width="proportional-column-width(1)"/>
-        <table-column column-width="proportional-column-width(3)"/>
+        <table-column xmlns:fox="http://xmlgraphics.apache.org/fop/extensions" fox:header="true" column-width="proportional-column-width(3)"/>
+        <table-column xmlns:fox="http://xmlgraphics.apache.org/fop/extensions" fox:header="true" column-width="proportional-column-width(3)"/>
+        <table-column column-width="proportional-column-width(7)"/>
         <table-header font-weight="bold">
           <table-row>
             <table-cell border="1pt solid black" padding-left="1pt">
@@ -150,29 +150,30 @@ object PdfExporter extends LazyLogging {
           </table-row>
         </table-header>
         <table-body>
-          {
-          if (processActivity.comments.isEmpty) {
-            <table-cell><block /></table-cell>
-          } else
-          processActivity.comments.sortBy(_.createDate.atZone(ZoneId.systemDefault()).toInstant.toEpochMilli).map { comment =>
-          <table-row>
-            <table-cell border="1pt solid black" padding-left="1pt">
-               <block>
-                 {comment.createDate.format(formatter)}
-               </block>
-             </table-cell>
-            <table-cell border="1pt solid black" padding-left="1pt">
-              <block>
-                {comment.user}
-              </block>
-            </table-cell>
-            <table-cell border="1pt solid black" padding-left="1pt">
-              <block>
-                {comment.content}
-              </block>
-            </table-cell>
-          </table-row>
-        }}
+          {if (processActivity.comments.isEmpty) {
+          <table-cell>
+            <block/>
+          </table-cell>
+        } else
+          processActivity.comments.sortBy(c => DateUtils.toMillis(c.createDate)).map { comment =>
+            <table-row>
+              <table-cell border="1pt solid black" padding-left="1pt">
+                <block>
+                  {comment.createDate.format(formatter)}
+                </block>
+              </table-cell>
+              <table-cell border="1pt solid black" padding-left="1pt">
+                <block>
+                  {comment.user}
+                </block>
+              </table-cell>
+              <table-cell border="1pt solid black" padding-left="1pt">
+                <block>
+                  {comment.content}
+                </block>
+              </table-cell>
+            </table-row>
+          }}
         </table-body>
       </table>
     </block>
@@ -183,7 +184,7 @@ object PdfExporter extends LazyLogging {
       case Source(_, SourceRef(typ, params), _) => ("Type", typ) :: params.map(p => (p.name, p.value))
       case Filter(_, expression, _, _) => List(("Expression", expression.expression))
       case Enricher(_, ServiceRef(typ, params), output, _) => ("Type", typ) :: ("Output", output) :: params.map(p => (p.name, p.expression.expression))
-        //TODO: what about Swtich??
+      //TODO: what about Swtich??
       case Switch(_, expression, exprVal, _) => List(("Expression", expression.expression))
       case Processor(_, ServiceRef(typ, params), _, _) => ("Type", typ) :: params.map(p => (p.name, p.expression.expression))
       case Sink(_, SinkRef(typ, params), output, _) => ("Type", typ) :: output.map(expr => ("Output", expr.expression)).toList ++ params.map(p => (p.name, p.value))
@@ -201,7 +202,7 @@ object PdfExporter extends LazyLogging {
     } else {
       <block margin-bottom="25pt" margin-top="5pt">
         <block font-size="13pt" font-weight="bold" text-align="left" id={node.id}>
-          {node.getClass.getSimpleName} {node.id}
+          {node.getClass.getSimpleName}{node.id}
         </block>
         <table width="100%" table-layout="fixed">
           <table-column xmlns:fox="http://xmlgraphics.apache.org/fop/extensions" fox:header="true" column-width="proportional-column-width(2)"/>
@@ -231,7 +232,7 @@ object PdfExporter extends LazyLogging {
   //we want to be able to break line for these characters. it's not really perfect solution for long, complex expressions,
   //but should handle most of the cases../
   private def addEmptySpace(str: String) = List(")", ".", "(")
-    .foldLeft(str){ (acc, el) => acc.replace(el, el + '\u200b')}
+    .foldLeft(str) { (acc, el) => acc.replace(el, el + '\u200b') }
 
   private def nodesSummary(displayableProcess: DisplayableProcess) = {
     <block page-break-before="always" space-after.minimum="3em">
@@ -256,38 +257,88 @@ object PdfExporter extends LazyLogging {
           </table-row>
         </table-header>
         <table-body>
-          {
-          if (displayableProcess.nodes.isEmpty) {
-             <table-cell><block /></table-cell>
-           } else
+          {if (displayableProcess.nodes.isEmpty) {
+          <table-cell>
+            <block/>
+          </table-cell>
+        } else
           displayableProcess.nodes.map { node =>
-          <table-row>
-            <table-cell border="1pt solid black" padding-left="1pt" font-weight="bold">
-              <block>
-                <basic-link internal-destination={node.id}>
-                  {node.id}
-                </basic-link>
-              </block>
-            </table-cell>
-            <table-cell border="1pt solid black" padding-left="1pt">
-              <block>
-                {node.getClass.getSimpleName}
-              </block>
-            </table-cell>
-            <table-cell border="1pt solid black" padding-left="1pt">
-              <block>
-                {node.additionalFields.map(_.asInstanceOf[NodeAdditionalFields]).flatMap(_.description).getOrElse("")}
-              </block>
-            </table-cell>
-          </table-row>
-        }}
+            <table-row>
+              <table-cell border="1pt solid black" padding-left="1pt" font-weight="bold">
+                <block>
+                  <basic-link internal-destination={node.id}>
+                    {node.id}
+                  </basic-link>
+                </block>
+              </table-cell>
+              <table-cell border="1pt solid black" padding-left="1pt">
+                <block>
+                  {node.getClass.getSimpleName}
+                </block>
+              </table-cell>
+              <table-cell border="1pt solid black" padding-left="1pt">
+                <block>
+                  {node.additionalFields.map(_.asInstanceOf[NodeAdditionalFields]).flatMap(_.description).getOrElse("")}
+                </block>
+              </table-cell>
+            </table-row>
+          }}
         </table-body>
       </table>
     </block>
   }
 
-  private def attachments(processActivity: ProcessActivity) = {
-      <block/>
+  private def attachments(processActivity: ProcessActivity) = if (processActivity.attachments.isEmpty) {
+    <block/>
+  } else {
+    <block space-after.minimum="3em">
+      <block font-size="15pt" font-weight="bold" text-align="left">
+        Attachments
+      </block>
+      <table width="100%" table-layout="fixed">
+        <table-column xmlns:fox="http://xmlgraphics.apache.org/fop/extensions" fox:header="true"
+                      column-width="proportional-column-width(3)"/>
+        <table-column column-width="proportional-column-width(3)"/>
+        <table-column column-width="proportional-column-width(7)"/>
+        <table-header font-weight="bold">
+          <table-row>
+
+
+            <table-cell border="1pt solid black" padding-left="1pt">
+              <block>Date</block>
+            </table-cell>
+            <table-cell border="1pt solid black" padding-left="1pt">
+              <block>Author</block>
+            </table-cell>
+            <table-cell border="1pt solid black" padding-left="1pt">
+              <block>File name</block>
+            </table-cell>
+          </table-row>
+        </table-header>
+        <table-body>
+          {processActivity.attachments.sortBy(c => DateUtils.toMillis(c.createDate)).map(attachment =>
+            <table-row>
+
+              <table-cell border="1pt solid black" padding-left="1pt">
+                <block>
+                  {attachment.createDate.format(formatter)}
+                </block>
+              </table-cell>
+              <table-cell border="1pt solid black" padding-left="1pt">
+                <block>
+                  {attachment.user}
+                </block>
+              </table-cell>
+              <table-cell border="1pt solid black" padding-left="1pt">
+                <block>
+                  {attachment.fileName}
+                </block>
+              </table-cell>
+            </table-row>
+          )}
+        </table-body>
+      </table>
+    </block>
   }
 
 }
