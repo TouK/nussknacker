@@ -67,7 +67,7 @@ class SpelExpression(parsed: org.springframework.expression.Expression,
 }
 
 class SpelExpressionParser(expressionFunctions: Map[String, Method],
-                           classLoader: ClassLoader, lazyValuesTimeout: Duration) extends ExpressionParser {
+                           classLoader: ClassLoader, lazyValuesTimeout: Duration, enableSpelForceCompile: Boolean) extends ExpressionParser {
 
   import pl.touk.nussknacker.engine.spel.SpelExpressionParser._
 
@@ -107,7 +107,9 @@ class SpelExpressionParser(expressionFunctions: Map[String, Method],
   }
 
   private def expression(expression: Expression, original: String) = {
-    forceCompile(expression)
+    if (enableSpelForceCompile) {
+      forceCompile(expression)
+    }
     new SpelExpression(expression, original, expressionFunctions, propertyAccessors, classLoader)
   }
 
@@ -120,7 +122,9 @@ object SpelExpressionParser extends LazyLogging {
   private[spel] final val LazyValuesProviderVariableName: String = "$lazy"
   private[spel] final val LazyContextVariableName: String = "$lazyContext"
 
-
+  //TODO
+  //this does not work in every situation - e.g expression (#variable != '') is not compiled
+  //maybe we could remove it altogether with "enableSpelForceCompile" flag after some investigation
   private[spel] def forceCompile(parsed: Expression): Unit = {
     parsed match {
       case e:standard.SpelExpression => forceCompile(e)
@@ -143,13 +147,13 @@ object SpelExpressionParser extends LazyLogging {
 
 
   //caching?
-  def default(loader: ClassLoader): SpelExpressionParser = new SpelExpressionParser(Map(
+  def default(loader: ClassLoader, enableSpelForceCompile: Boolean): SpelExpressionParser = new SpelExpressionParser(Map(
     "today" -> classOf[LocalDate].getDeclaredMethod("now"),
     "now" -> classOf[LocalDateTime].getDeclaredMethod("now"),
     "distinct" -> classOf[CollectionUtils].getDeclaredMethod("distinct", classOf[java.util.Collection[_]]),
     "sum" -> classOf[CollectionUtils].getDeclaredMethod("sum", classOf[java.util.Collection[_]])
   ), //FIXME: configurable timeout...
-    loader, 1 minute)
+    loader, 1 minute, enableSpelForceCompile)
 
 
   class ScalaPropertyAccessor extends PropertyAccessor with ReadOnly with Caching {

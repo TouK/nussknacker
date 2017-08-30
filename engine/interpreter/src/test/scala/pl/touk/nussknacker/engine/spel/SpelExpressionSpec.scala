@@ -64,7 +64,7 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
       EspTypeUtils.clazzAndItsChildrenDefinition(context.variables.values.map(_.getClass).toList)
     )
     val expressionFunctions = Map("today" -> classOf[LocalDate].getDeclaredMethod("now"))
-    new SpelExpressionParser(expressionFunctions, getClass.getClassLoader, 1 minute).parse(expr, validationCtx)
+    new SpelExpressionParser(expressionFunctions, getClass.getClassLoader, 1 minute, enableSpelForceCompile = true).parse(expr, validationCtx)
   }
 
   it should "invoke simple expression" in {

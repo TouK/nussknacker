@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine
 import java.util.concurrent.Executor
 
 import cats.data.Validated.{Invalid, Valid}
+import com.typesafe.config.ConfigFactory
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.InterpreterSpec._
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
@@ -90,7 +91,7 @@ class InterpreterSpec extends FlatSpec with Matchers {
   }
 
   def compile(servicesDefs: Map[String, ObjectWithMethodDef], node: splittednode.SplittedNode[_], ctx: ValidationContext): CompiledNode = {
-    PartSubGraphCompiler.default(servicesDefs, Map.empty, getClass.getClassLoader).compileWithoutContextValidation(node) match {
+    PartSubGraphCompiler.default(servicesDefs, Map.empty, getClass.getClassLoader, ConfigFactory.empty()).compileWithoutContextValidation(node) match {
       case Valid(c) => c
       case Invalid(err) => throw new IllegalArgumentException(err.toList.mkString("Compilation errors: ", ", ", ""))
     }

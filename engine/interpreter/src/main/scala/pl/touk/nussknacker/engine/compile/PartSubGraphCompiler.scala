@@ -4,6 +4,7 @@ import cats.data.Validated._
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.instances.list._
 import cats.instances.option._
+import com.typesafe.config.Config
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.compile.PartSubGraphCompilerBase.{CompiledNode, ContextsForParts, NextWithContext}
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError._
@@ -14,7 +15,7 @@ import pl.touk.nussknacker.engine.compiledgraph.node.{NextNode, PartRef, Subproc
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ClazzRef, _}
 import pl.touk.nussknacker.engine.definition._
 import pl.touk.nussknacker.engine.graph.node._
-import pl.touk.nussknacker.engine.spel.SpelExpressionParser
+import pl.touk.nussknacker.engine.spel.{SpelConfig, SpelExpressionParser}
 import pl.touk.nussknacker.engine.splittedgraph._
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 
@@ -243,8 +244,8 @@ private[compile] trait PartSubGraphCompilerBase {
 
 object PartSubGraphCompilerBase {
 
-  private[compile] def defaultParsers(loader: ClassLoader) = {
-    val parsersSeq = Seq(SpelExpressionParser.default(loader))
+  private[compile] def defaultParsers(loader: ClassLoader, enableSpelForceCompile: Boolean) = {
+    val parsersSeq = Seq(SpelExpressionParser.default(loader, enableSpelForceCompile))
     parsersSeq.map(p => p.languageId -> p).toMap
   }
 
@@ -261,15 +262,20 @@ object PartSubGraphCompilerBase {
 object PartSubGraphCompiler {
 
   def default(servicesDefs: Map[String, ObjectWithMethodDef],
-              globalProcessVariables: Map[String, ClazzRef], loader: ClassLoader): PartSubGraphCompiler = {
-    new PartSubGraphCompiler(PartSubGraphCompilerBase.defaultParsers(loader), globalProcessVariables, servicesDefs)
+              globalProcessVariables: Map[String, ClazzRef],
+              loader: ClassLoader,
+              config: Config): PartSubGraphCompiler = {
+    val enableSpelForceCompile = SpelConfig.enableSpelForceCompile(config)
+    new PartSubGraphCompiler(PartSubGraphCompilerBase.defaultParsers(loader, enableSpelForceCompile), globalProcessVariables, servicesDefs)
   }
 }
 
 object PartSubGraphValidator {
 
-  def default(services: Map[String, ObjectDefinition], globalProcessVariables: Map[String, ClazzRef], loader: ClassLoader) = {
-    new PartSubGraphValidator(PartSubGraphCompilerBase.defaultParsers(loader), globalProcessVariables, services)
+  def default(services: Map[String, ObjectDefinition],
+              globalProcessVariables: Map[String, ClazzRef],
+              loader: ClassLoader) = {
+    new PartSubGraphValidator(PartSubGraphCompilerBase.defaultParsers(loader, enableSpelForceCompile = false), globalProcessVariables, services)
   }
 
 }

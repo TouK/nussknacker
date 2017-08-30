@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
 import pl.touk.nussknacker.engine.flink.util.listener.NodeCountMetricListener
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.process.{FlinkProcessRegistrar, WithLifecycle}
+import pl.touk.nussknacker.engine.spel.SpelConfig
 import pl.touk.nussknacker.engine.util.LoggingListener
 
 import scala.concurrent.duration.FiniteDuration
@@ -48,7 +49,7 @@ abstract class FlinkProcessCompiler(creator: ProcessConfigCreator, config: Confi
     val globalVariables = creator.globalProcessVariables(config).mapValuesNow(_.value)
     val subCompiler = PartSubGraphCompiler.default(servicesDefs,
       globalVariables.mapValuesNow(v => ClazzRef(v.getClass)),
-      creator.getClass.getClassLoader)
+      creator.getClass.getClassLoader, config)
     val processCompiler = new ProcessCompiler(subCompiler, definitions())
     val compiledProcess = validateOrFailProcessCompilation(processCompiler.compile(process))
 
