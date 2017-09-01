@@ -1,18 +1,20 @@
 package pl.touk.nussknacker.engine.kafka
 
-import java.util.{Collections, Properties}
 import java.util.concurrent.TimeUnit
+import java.util.{Collections, Properties}
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.KafkaClient
 import org.apache.kafka.clients.consumer.KafkaConsumer
+import org.apache.kafka.clients.producer.{Callback, KafkaProducer, ProducerRecord, RecordMetadata}
 import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.serialization.{ByteArrayDeserializer, ByteArraySerializer}
 import pl.touk.nussknacker.engine.util.ThreadUtils
 
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{Await, Future, Promise}
 import scala.concurrent.duration.Duration
 import scala.collection.JavaConverters._
+import scala.util.{Failure, Success}
 
 object KafkaEspUtils extends LazyLogging {
 
@@ -112,5 +114,35 @@ object KafkaEspUtils extends LazyLogging {
     partitions.foreach(p => consumer.position(p)) //`seekToEnd` is lazy, we have to invoke `position` to change offset
     consumer.commitSync()
   }
+
+  def sendToKafkaWithTempProducer(topic: String, key: Array[Byte], value: Array[Byte])(kafkaConfig: KafkaConfig): Future[RecordMetadata] = {
+    var producer: KafkaProducer[Array[Byte], Array[Byte]] = null
+    try {
+      producer = createProducer(kafkaConfig)
+      sendToKafka(topic, key, value)(producer)
+    } finally {
+      if (producer != null) {
+        producer.close()
+      }
+    }
+  }
+
+  def sendToKafka[K, V](topic: String, key: K, value: V)(producer: KafkaProducer[K, V]): Future[RecordMetadata] = {
+    val promise = Promise[RecordMetadata]()
+    producer.send(new ProducerRecord(topic, key, value), KafkaEspUtils.producerCallback(promise))
+    promise.future
+  }
+
+  def createProducer(kafkaConfig: KafkaConfig): KafkaProducer[Array[Byte], Array[Byte]] = {
+    new KafkaProducer[Array[Byte], Array[Byte]](KafkaEspUtils.toProducerProperties(kafkaConfig))
+  }
+
+  def producerCallback(promise: Promise[RecordMetadata]): Callback =
+    new Callback {
+      override def onCompletion(metadata: RecordMetadata, exception: Exception): Unit = {
+        val result = if (exception == null) Success(metadata) else Failure(exception)
+        promise.complete(result)
+      }
+    }
 
 }

@@ -26,7 +26,7 @@ trait DefaultEspExceptionHandler
 object DefaultEspExceptionHandler {
 
   object DefaultTransientExceptionExtractor
-    extends DeeplyCheckingExceptionExtractor({ case _: ConnectException => })
+    extends DeeplyCheckingExceptionExtractor({ case a: ConnectException => a: Exception })
 
   object DefaultNonTransientExceptionExtractor
     extends DeeplyCheckingExceptionExtractor({ case a: NonTransientException => a })
@@ -72,7 +72,7 @@ case class VerboselyLoggingExceptionConsumer(processMetaData: MetaData, params: 
 trait ConsumingNonTransientExceptions extends LazyLogging {
   self: FlinkEspExceptionHandler =>
 
-  protected val transientExceptionExtractor: ExceptionExtractor[Unit] =
+  protected val transientExceptionExtractor: ExceptionExtractor[Exception] =
     DefaultTransientExceptionExtractor
   protected val nonTransientExceptionExtractor: ExceptionExtractor[NonTransientException] =
     DefaultNonTransientExceptionExtractor

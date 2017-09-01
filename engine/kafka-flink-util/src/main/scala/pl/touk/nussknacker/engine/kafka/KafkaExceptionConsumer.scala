@@ -7,13 +7,13 @@ import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionConsumer
 class KafkaExceptionConsumer(val kafkaConfig: KafkaConfig,
                              topic: String,
                              serializationSchema: SerializationSchema[EspExceptionInfo[NonTransientException]])
-  extends FlinkEspExceptionConsumer with EspSimpleKafkaProducer {
+  extends FlinkEspExceptionConsumer {
 
-  lazy val producer = createProducer()
+  lazy val producer = KafkaEspUtils.createProducer(kafkaConfig)
 
   def consume(exceptionInfo: EspExceptionInfo[NonTransientException]): Unit = {
     val toSend = serializationSchema.serialize(exceptionInfo)
-    sendToKafka(topic, Array.empty, toSend)(producer)
+    KafkaEspUtils.sendToKafka(topic, Array.empty[Byte], toSend)(producer)
   }
 
   override def close(): Unit = {

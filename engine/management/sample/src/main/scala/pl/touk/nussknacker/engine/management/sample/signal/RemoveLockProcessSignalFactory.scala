@@ -17,11 +17,11 @@ import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, _}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation}
 import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
 import pl.touk.nussknacker.engine.flink.util.signal.KafkaSignalStreamConnector
-import pl.touk.nussknacker.engine.kafka.{EspSimpleKafkaProducer, KafkaConfig}
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaEspUtils}
 
 
 class RemoveLockProcessSignalFactory(val kafkaConfig: KafkaConfig, val signalsTopic: String)
-  extends FlinkProcessSignalSender with EspSimpleKafkaProducer with KafkaSignalStreamConnector {
+  extends FlinkProcessSignalSender with KafkaSignalStreamConnector {
 
   import Signals._
 
@@ -29,7 +29,7 @@ class RemoveLockProcessSignalFactory(val kafkaConfig: KafkaConfig, val signalsTo
   def sendSignal(@ParamName("lockId") lockId: String)(processId: String) = {
     val signal = SampleProcessSignal(processId, System.currentTimeMillis(), RemoveLock(lockId))
     val json = ProcessSignalCodecs.processSignalCodec.Encoder(signal).nospaces
-    sendToKafkaWithNewProducer(signalsTopic, Array.empty, json.getBytes(StandardCharsets.UTF_8))
+    KafkaEspUtils.sendToKafkaWithTempProducer(signalsTopic, Array.empty, json.getBytes(StandardCharsets.UTF_8))(kafkaConfig)
   }
 
 }

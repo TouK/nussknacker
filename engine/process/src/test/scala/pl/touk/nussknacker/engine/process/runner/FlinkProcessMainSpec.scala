@@ -24,7 +24,7 @@ import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
 import pl.touk.nussknacker.engine.flink.util.exception.{VerboselyLoggingExceptionHandler, VerboselyLoggingRestartingExceptionHandler}
 import pl.touk.nussknacker.engine.flink.util.signal.KafkaSignalStreamConnector
 import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EspDeserializationSchema}
-import pl.touk.nussknacker.engine.kafka.{EspSimpleKafkaProducer, KafkaConfig}
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaEspUtils}
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.process.ProcessTestHelpers._
 import pl.touk.nussknacker.engine.spel
@@ -112,11 +112,11 @@ object TransformerWithTime extends CustomStreamTransformer {
 
 
 class TestProcessSignalFactory(val kafkaConfig: KafkaConfig, val signalsTopic: String)
-  extends FlinkProcessSignalSender with EspSimpleKafkaProducer with KafkaSignalStreamConnector {
+  extends FlinkProcessSignalSender with KafkaSignalStreamConnector {
 
   @MethodToInvoke
   def sendSignal()(processId: String) = {
-    sendToKafkaWithNewProducer(signalsTopic, Array.empty, "".getBytes(StandardCharsets.UTF_8))
+    KafkaEspUtils.sendToKafkaWithTempProducer(signalsTopic, Array.empty[Byte], "".getBytes(StandardCharsets.UTF_8))(kafkaConfig)
   }
 
 }
