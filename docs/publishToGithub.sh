@@ -5,7 +5,7 @@ if [[ -z $COMMIT ]]; then
   exit 1
 fi
 
-gitbook build
+./buildDoc.sh
 DIR=/tmp/nussknacker_docs
 rm -rf $DIR
 git clone -b gh-pages git@github.com:TouK/nussknacker.git $DIR
