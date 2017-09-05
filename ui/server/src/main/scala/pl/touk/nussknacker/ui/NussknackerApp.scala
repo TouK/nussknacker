@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui
 
 import java.io.File
+import java.lang.Thread.UncaughtExceptionHandler
 
 import _root_.cors.CorsSupport
 import _root_.db.migration.DefaultJdbcProfile
@@ -27,12 +28,15 @@ import pl.touk.process.report.influxdb.InfluxReporter
 import slick.jdbc.JdbcBackend
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import slick.jdbc
 
 import scala.util.Try
 
 object NussknackerApp extends App with Directives with LazyLogging {
 
   implicit val system = ActorSystem("nussknacker-ui")
+
+  prepareUncaughtExceptionHandler()
 
   import system.dispatcher
 
@@ -44,7 +48,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
   val nodesConfig = Try(config.as[Map[String, SingleNodeConfig]](s"$environment.nodes")).getOrElse(Map.empty)
   logger.info(s"Ui config loaded: \nfeatureTogglesConfig: $featureTogglesConfig\nnodesConfig:$nodesConfig")
 
-  val db: JdbcBackend.DatabaseDef = {
+  val db: jdbc.JdbcBackend.DatabaseDef = {
     val db = JdbcBackend.Database.forConfig("db", config)
     new DatabaseInitializer(db).initDatabase()
     db
@@ -106,7 +110,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
     routes ++ optionalRoutes
   }
 
-  def initHttp() = {
+  private def initHttp() = {
     val route: Route = {
 
         CorsSupport.cors(featureTogglesConfig.development) {
@@ -128,6 +132,17 @@ object NussknackerApp extends App with Directives with LazyLogging {
       interface = "0.0.0.0",
       port = port
     )
+  }
+
+  //we do it, because akka creates non-daemon threads, so we have to stop ActorSystem explicitly, if initialization fails
+  private def prepareUncaughtExceptionHandler() = {
+    //TODO: should we set it only on main thread?
+    Thread.currentThread().setUncaughtExceptionHandler(new UncaughtExceptionHandler {
+      override def uncaughtException(t: Thread, e: Throwable): Unit = {
+        logger.error("Main thread stopped unexpectedly, terminating ActorSystem", e)
+        system.shutdown()
+      }
+    })
   }
 
 }

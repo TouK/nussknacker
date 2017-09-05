@@ -5,6 +5,8 @@ import java.net.{URL, URLClassLoader}
 
 import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 
+import scala.util.control.NonFatal
+
 class JarClassLoader private(val classLoader: ClassLoader, val jarUrl: URL) {
 
   def loadClass(className: String): Class[_] =
@@ -13,8 +15,12 @@ class JarClassLoader private(val classLoader: ClassLoader, val jarUrl: URL) {
   def instantiate[T](className: String): T =
     loadClass(className).newInstance().asInstanceOf[T]
 
-  def createProcessConfigCreator(className: String): ProcessConfigCreator =
+  def createProcessConfigCreator(className: String): ProcessConfigCreator = try {
     instantiate[ProcessConfigCreator](className)
+  } catch {
+    case NonFatal(e) => throw new IllegalArgumentException("Failed to instantiate ProcessConfigCreator. " +
+      "Please make sure that model jar is configured correctly (pay special attention to jarPath and processConfigCreatorClass settings)", e)
+  }
 
   lazy val file: File =
     new File(jarUrl.toURI)
