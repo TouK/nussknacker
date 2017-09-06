@@ -9,7 +9,6 @@ if [ ! -f ./${FILE} ]; then
     fi
     echo "Using version ${VERSION} from repository"
     if [[ "$VERSION" == *-SNAPSHOT ]]; then
-       #TODO: what will be default snapshots location??
        REPO=https://oss.sonatype.org/content/repositories/snapshots
     else
        REPO=https://repo1.maven.org/maven2

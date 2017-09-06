@@ -92,3 +92,15 @@ The quickstart starts several Docker containers. Let's look at them in detail:
   * Kibana
 * Nginx
   * To be able to view all applications on single port
+
+## Switch application version
+To switch Nussknacker version 
+* set variable `NUSSKNACKER_VERSION` in `./env`
+* download `assemblu-code.jar` using `./downloadSampleAssembly.sh`
+* rebuild docker image by `docker-compose build --no-cache app`
+
+##  Using own version
+If you have modified Nussknacker sources you have to rebuild docker image 
+by `./buildDockerImageFromSources.sh`. 
+If you have modified example module you have to regenerate `code-assembly.jar` 
+using `./buildSampleAssembly.sh`.
