@@ -24,7 +24,7 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
   val ProcessMarshaller = new ProcessMarshaller
 
   it should "deploy process in running flink" in {
-    val processId = UUID.randomUUID().toString
+    val processId = "runningFlink"
 
     val process = SampleProcess.prepareProcess(processId)
 
@@ -34,7 +34,7 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
   }
 
   it should "cancel before deployment" in {
-    val processId = UUID.randomUUID().toString
+    val processId = "cancelBeforeDeployment"
 
     val process = SampleProcess.prepareProcess(processId)
 
@@ -48,7 +48,7 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
 
   it should "be able verify&redeploy kafka process" in {
 
-    val processId = UUID.randomUUID().toString
+    val processId = "verifyAndRedeploy"
     val outTopic = s"output-$processId"
     val inTopic = s"input-$processId"
 
@@ -77,7 +77,7 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
 
   it should "save state when redeploying" in {
 
-    val processId = UUID.randomUUID().toString
+    val processId = "redeploy"
     val outTopic = s"output-$processId"
 
     val processEmittingOneElementAfterStart = StatefulSampleProcess.prepareProcess(processId)
@@ -87,6 +87,7 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
     kafkaClient.createTopic(outTopic, 1)
 
     deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart)
+    Thread.sleep(3000)
     deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart)
 
     val messages = kafkaClient.createConsumer().consume(outTopic).take(2).toList
@@ -99,7 +100,7 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
 
   it should "snapshot state and be able to deploy using it" in {
 
-    val processId = UUID.randomUUID().toString
+    val processId = "snapshot"
     val outTopic = s"output-$processId"
 
     val processEmittingOneElementAfterStart = StatefulSampleProcess.prepareProcess(processId)
@@ -130,7 +131,7 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
   }
 
   it should "fail to redeploy if old is incompatible" in {
-    val processId = UUID.randomUUID().toString
+    val processId = "redeployFail"
 
     val process = StatefulSampleProcess.prepareProcessStringWithStringState(processId)
 
@@ -141,10 +142,11 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
 
     exception.getMessage shouldBe "State is incompatible, please stop process and start again with clean state"
 
+    cancel(processId)
   }
 
   it should "deploy custom process" in {
-    val processId = UUID.randomUUID().toString
+    val processId = "customProcess"
 
     assert(processManager.deploy(processId, CustomProcess("pl.touk.nussknacker.engine.management.sample.CustomProcess"), None).isReadyWithin(100 seconds))
 

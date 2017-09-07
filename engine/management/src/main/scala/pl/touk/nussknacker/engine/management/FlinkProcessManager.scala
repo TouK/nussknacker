@@ -93,7 +93,7 @@ class FlinkProcessManager(config: Config,
       maybeOldJob <- OptionT(findJobStatus(processId))
       maybeSavePoint <- {
         { logger.debug(s"Deploying $processId. Status: $maybeOldJob") }
-        OptionT.liftF(stopSavingSavepoint(maybeOldJob, processDeploymentData))
+        OptionT.liftF(stopSavingSavepoint(processId, maybeOldJob, processDeploymentData))
       }
     } yield {
       logger.info(s"Deploying $processId. Saving savepoint finished")
@@ -150,9 +150,9 @@ class FlinkProcessManager(config: Config,
     configCreator.buildInfo().asJson.pretty(PrettyParams.spaces2.copy(preserveOrder = true))
   }
 
-  private def checkIfJobIsCompatible(savepointPath: String, processDeploymentData: ProcessDeploymentData) : Future[Unit] = processDeploymentData match {
+  private def checkIfJobIsCompatible(processId: String, savepointPath: String, processDeploymentData: ProcessDeploymentData) : Future[Unit] = processDeploymentData match {
     case GraphProcess(processAsJson) if shouldVerifyBeforeDeploy =>
-      verification.verify(processAsJson, savepointPath)
+      verification.verify(processId, processAsJson, savepointPath)
     case _ => Future.successful(())
   }
 
@@ -161,10 +161,10 @@ class FlinkProcessManager(config: Config,
     !config.hasPath(verifyConfigProperty) || config.getBoolean(verifyConfigProperty)
   }
 
-  private def stopSavingSavepoint(job: ProcessState, processDeploymentData: ProcessDeploymentData): Future[String] = {
+  private def stopSavingSavepoint(processId: String, job: ProcessState, processDeploymentData: ProcessDeploymentData): Future[String] = {
     for {
       savepointPath <- makeSavepoint(job, None)
-      _ <- checkIfJobIsCompatible(savepointPath, processDeploymentData)
+      _ <- checkIfJobIsCompatible(processId, savepointPath, processDeploymentData)
       _ <- cancel(job)
     } yield savepointPath
   }
@@ -182,7 +182,7 @@ class FlinkProcessManager(config: Config,
         logger.info(s"Got savepoint: ${path}")
         path
       case TriggerSavepointFailure(_, reason) =>
-        logger.error("Savepoint failed", reason)
+        logger.error(s"Savepoint failed for $jobId(${job.status}) - $savepointDir", reason)
         throw reason
     }
   }
