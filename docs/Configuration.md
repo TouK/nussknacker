@@ -39,7 +39,6 @@ flinkConfig {
 
   parallelism: 4
   jobManagerTimeout: 1m
-  processConfig: "demo"
   jarPath: "./code-assembly.jar"
 }
 
@@ -53,7 +52,7 @@ kibanaSettings {
   url: "/kibana/"
 }
 
-demo {
+processConfig {
   timeout: 10s
   checkpointInterval: 10m
   processConfigCreatorClass: "pl.touk.nussknacker.engine.example.ExampleProcessConfigCreator"
@@ -140,10 +139,9 @@ In addition you can specify following values:
 * processConfig - name of config part that describes configuration of model (see below)
 * jarPath - location of jar with model for processes
 
-##Model configuration
-Please remember that configuration of model has to be in block named as value of ```flinkConfig.processConfig``` key.
+##Process configuration
 
-Configuration of model has few common keys:
+Configuration of processes has few common keys:
 *  timeout (e.g. 10s)- for synchronous services
 *  checkpointInterval - e.g. 10m
 *  processConfigCreatorClass - e.g. "pl.touk.nussknacker.engine.example.ExampleProcessConfigCreator". This is FQN of class implementing

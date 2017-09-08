@@ -188,8 +188,7 @@ class FlinkProcessManager(config: Config,
   }
 
   private def extractProcessConfig: ConfigObject = {
-    val configName = flinkConf.getString("processConfig")
-    config.getConfig(configName).root()
+    config.getConfig("processConfig").root()
   }
 
   private def cancelJobById(jobID: JobID)

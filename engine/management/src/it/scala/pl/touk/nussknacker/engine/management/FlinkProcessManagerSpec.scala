@@ -55,8 +55,8 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
     val kafkaProcess = SampleProcess.kafkaProcess(processId, inTopic)
 
 
-    val kafkaClient = new KafkaClient(config.getString("prod.kafka.kafkaAddress"),
-      config.getString("prod.kafka.zkAddress"))
+    val kafkaClient = new KafkaClient(config.getString("processConfig.kafka.kafkaAddress"),
+      config.getString("processConfig.kafka.zkAddress"))
     kafkaClient.createTopic(outTopic, 1)
     kafkaClient.createTopic(inTopic, 1)
     val consumer = kafkaClient.createConsumer().consume(outTopic)
@@ -82,8 +82,8 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
 
     val processEmittingOneElementAfterStart = StatefulSampleProcess.prepareProcess(processId)
 
-    val kafkaClient = new KafkaClient(config.getString("prod.kafka.kafkaAddress"),
-      config.getString("prod.kafka.zkAddress"))
+    val kafkaClient = new KafkaClient(config.getString("processConfig.kafka.kafkaAddress"),
+      config.getString("processConfig.kafka.zkAddress"))
     kafkaClient.createTopic(outTopic, 1)
 
     deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart)
@@ -105,8 +105,8 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
 
     val processEmittingOneElementAfterStart = StatefulSampleProcess.prepareProcess(processId)
 
-    val kafkaClient = new KafkaClient(config.getString("prod.kafka.kafkaAddress"),
-      config.getString("prod.kafka.zkAddress"))
+    val kafkaClient = new KafkaClient(config.getString("processConfig.kafka.kafkaAddress"),
+      config.getString("processConfig.kafka.zkAddress"))
 
     kafkaClient.createTopic(outTopic, 1)
 
@@ -166,11 +166,11 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
   it should "dispatch process signal to kafka" in {
     val signalsTopic = s"esp.signal-${UUID.randomUUID()}"
     val configWithSignals = config
-      .withValue("prod.signals.topic", ConfigValueFactory.fromAnyRef(signalsTopic))
+      .withValue("processConfig.signals.topic", ConfigValueFactory.fromAnyRef(signalsTopic))
     val processManager = FlinkProcessManager(configWithSignals)
     val kafkaClient = new KafkaClient(
-      configWithSignals.getString("prod.kafka.kafkaAddress"),
-      configWithSignals.getString("prod.kafka.zkAddress"))
+      configWithSignals.getString("processConfig.kafka.kafkaAddress"),
+      configWithSignals.getString("processConfig.kafka.zkAddress"))
     val consumer = kafkaClient.createConsumer()
 
     processManager.dispatchSignal("removeLockSignal", "test-process", Map("lockId" -> "test-lockId"))

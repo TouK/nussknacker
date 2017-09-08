@@ -90,8 +90,8 @@ trait DockerTest extends DockerTestKit with ScalaFutures with LazyLogging {
   def config : Config = ConfigFactory.load()
     .withValue("flinkConfig.jobmanager.rpc.address", fromAnyRef(ipOfContainer(jobManagerContainer)))
     .withValue("flinkConfig.jobmanager.rpc.port", fromAnyRef(FlinkJobManagerPort))
-    .withValue("prod.kafka.zkAddress", fromAnyRef(s"${ipOfContainer(zookeeperContainer)}:$ZookeeperDefaultPort"))
-    .withValue("prod.kafka.kafkaAddress", fromAnyRef(s"${ipOfContainer(kafkaContainer)}:$KafkaPort"))
+    .withValue("processConfig.kafka.zkAddress", fromAnyRef(s"${ipOfContainer(zookeeperContainer)}:$ZookeeperDefaultPort"))
+    .withValue("processConfig.kafka.kafkaAddress", fromAnyRef(s"${ipOfContainer(kafkaContainer)}:$KafkaPort"))
     .withValue("flinkConfig.high-availability.zookeeper.quorum", fromAnyRef(s"${ipOfContainer(zookeeperContainer)}:$ZookeeperDefaultPort"))
 
   private def ipOfContainer(container: DockerContainer) = container.getIpAddresses().futureValue.head

@@ -52,8 +52,7 @@ class StandaloneProcessManager(config: Config)
   private val managementUrl = standaloneConf.getString("managementUrl")
 
   private val processConfigPart = {
-    val configName = standaloneConf.getString("processConfig")
-    config.getConfig(configName).root()
+    config.getConfig("standaloneProcessConfig").root()
   }
 
   val processConfig = processConfigPart.toConfig
