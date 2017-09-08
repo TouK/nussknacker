@@ -182,8 +182,10 @@ export default class NodeDetailsContent extends React.Component {
         const fields = type == "StreamMetaData" ? [
           this.createField("input", "Parallelism", "typeSpecificProperties.parallelism", "parallelism"),
           this.createField("input", "Checkpoint interval in seconds", "typeSpecificProperties.checkpointIntervalInSeconds", "checkpointIntervalInSeconds"),
-          this.createField("checkbox", "Should split state to disk", "typeSpecificProperties.splitStateToDisk", "splitStateToDisk")] :
-          [this.createField("input", "Query path",  "typeSpecificProperties.path", "path")]
+          this.createField("checkbox", "Should split state to disk", "typeSpecificProperties.splitStateToDisk", "splitStateToDisk"),
+          this.createField("checkbox", "Should use async interpretation (lazy variables not allowed)", "typeSpecificProperties.useAsyncInterpretation", "useAsyncInterpretation")
+
+        ] : [this.createField("input", "Query path",  "typeSpecificProperties.path", "path")]
         const hasExceptionHandlerParams = this.state.editedNode.exceptionHandler.parameters.length > 0
         return (
           <div className="node-table-body">

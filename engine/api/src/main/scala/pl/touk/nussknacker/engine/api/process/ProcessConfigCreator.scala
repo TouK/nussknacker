@@ -29,4 +29,5 @@ trait ProcessConfigCreator extends Serializable {
 
   def signals(config: Config): Map[String, WithCategories[ProcessSignalSender]]
 
+  def asyncExecutionContextPreparer(config: Config): Option[AsyncExecutionContextPreparer] = None
 }

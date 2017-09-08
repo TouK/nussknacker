@@ -45,11 +45,10 @@ trait BaseITest extends KafkaSpec {
 
 object TestConfig {
   def apply(kafkaZookeeperServer: KafkaZookeeperServer) = {
-    ConfigFactory.empty()
+    ConfigFactory.load()
       .withValue("kafka.kafkaAddress", fromAnyRef(kafkaZookeeperServer.kafkaAddress))
       .withValue("kafka.zkAddress", fromAnyRef(kafkaZookeeperServer.zkAddress))
-      .withValue("checkpointInterval", fromAnyRef("10s"))
-      .withValue("timeout", fromAnyRef("10s"))
+      
   }
 }
 

@@ -5,6 +5,7 @@ import cats.data._
 import org.apache.flink.api.common.functions.RuntimeContext
 import pl.touk.nussknacker.engine.Interpreter
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
+import pl.touk.nussknacker.engine.api.process.AsyncExecutionContextPreparer
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessListener, Service}
 import pl.touk.nussknacker.engine.compile.{PartSubGraphCompilationError, PartSubGraphCompiler}
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
@@ -15,7 +16,6 @@ import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, Fli
 import pl.touk.nussknacker.engine.process.WithLifecycle
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 
-import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
 
 case class CompiledProcessWithDeps(compiledProcess: CompiledProcessParts,
@@ -24,10 +24,11 @@ case class CompiledProcessWithDeps(compiledProcess: CompiledProcessParts,
                                    subPartCompiler: PartSubGraphCompiler,
                                    interpreter: Interpreter,
                                    processTimeout: FiniteDuration,
-                                   signalSenders: FlinkProcessSignalSenderProvider
+                                   signalSenders: FlinkProcessSignalSenderProvider,
+                                   asyncExecutionContextPreparer: AsyncExecutionContextPreparer
                                   ) extends CustomNodeInvokerDeps {
 
-  def open(runtimeContext: RuntimeContext)(implicit ec: ExecutionContext): Unit = {
+  def open(runtimeContext: RuntimeContext): Unit = {
     services.open(runtimeContext)
     listeners.open(runtimeContext)
     exceptionHandler.open(runtimeContext)

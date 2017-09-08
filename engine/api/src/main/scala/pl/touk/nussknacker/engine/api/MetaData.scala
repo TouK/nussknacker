@@ -11,12 +11,23 @@ case class MetaData(id: String,
                     isSubprocess: Boolean = false,
                     additionalFields: Option[UserDefinedProcessAdditionalFields] = None)
 
-sealed trait TypeSpecificData
+sealed trait TypeSpecificData {
+  def allowLazyVars : Boolean
+}
 
 case class StreamMetaData(parallelism: Option[Int] = None,
                           splitStateToDisk: Option[Boolean] = None,
+                          useAsyncInterpretation: Option[Boolean] = None,
                           checkpointIntervalInSeconds: Option[Long] = None) extends TypeSpecificData {
-  def checkpointIntervalDuration = checkpointIntervalInSeconds.map(Duration.apply(_, TimeUnit.SECONDS))
+  
+  def checkpointIntervalDuration  : Option[Duration]= checkpointIntervalInSeconds.map(Duration.apply(_, TimeUnit.SECONDS))
+
+  val shouldUseAsyncInterpretation : Boolean = useAsyncInterpretation.getOrElse(false)
+
+  override val allowLazyVars: Boolean = !shouldUseAsyncInterpretation
+
 }
 
-case class StandaloneMetaData(path: Option[String]) extends TypeSpecificData
+case class StandaloneMetaData(path: Option[String]) extends TypeSpecificData {
+  override val allowLazyVars: Boolean = true
+}

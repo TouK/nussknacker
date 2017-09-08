@@ -23,7 +23,7 @@ import scala.util.control.NonFatal
 
 class Interpreter private(services: Map[String, ServiceInvoker],
                           globalVariables: Map[String, Any],
-                          listeners: Seq[ProcessListener] = Seq(LoggingListener)) {
+                          listeners: Seq[ProcessListener], allowLazyVars: Boolean) {
 
   def interpret(node: Node,
                 mode: InterpreterMode,
@@ -217,15 +217,19 @@ class Interpreter private(services: Map[String, ServiceInvoker],
 
   private def evaluate[R](expr: Expression, expressionId: String, ctx: Context)
                          (implicit ec: ExecutionContext, metaData: MetaData, node: Node): Future[ValueWithContext[R]] = {
-    val lazyValuesProvider = new LazyValuesProviderImpl(
-      services = services,
-      ctx = ctx
-    )
+    val lazyValuesProvider = prepareLazyValuesProvider(ctx)
     val ctxWithGlobals = ctx.withVariables(globalVariables)
     expr.evaluate[R](ctxWithGlobals, lazyValuesProvider).map { valueWithLazyContext =>
       listeners.foreach(_.expressionEvaluated(node.id, expressionId, expr.original, ctx, metaData, valueWithLazyContext.value))
       ValueWithContext(valueWithLazyContext.value, ctx.withLazyContext(valueWithLazyContext.lazyContext))
     }
+  }
+
+
+  private def prepareLazyValuesProvider[R](ctx: Context)(implicit ec: ExecutionContext, node: Node) = if (allowLazyVars) {
+    new LazyValuesProviderImpl(services = services, ctx = ctx)
+  } else {
+    ThrowingLazyValuesProvider
   }
 
   private case class NodeIdExceptionWrapper(nodeId: String, exception: Throwable) extends Exception
@@ -241,9 +245,14 @@ object Interpreter {
 
   def apply(servicesDefs: Map[String, ObjectWithMethodDef],
             globalVariables: Map[String, Any],
-            lazyEvaluationTimeout: FiniteDuration,
-            listeners: Seq[ProcessListener] = Seq(LoggingListener)) = {
-    new Interpreter(servicesDefs.mapValuesNow(ServiceInvoker(_)), globalVariables, listeners)
+            listeners: Seq[ProcessListener],
+            allowLazyVars: Boolean) = {
+    new Interpreter(servicesDefs.mapValuesNow(ServiceInvoker(_)), globalVariables, listeners, allowLazyVars)
+  }
+
+  private object ThrowingLazyValuesProvider extends LazyValuesProvider {
+    override def apply[T](context: LazyContext, serviceId: String, params: Seq[(String, Any)]): IO[(LazyContext, T)] =
+      IO.raiseError(new IllegalArgumentException("Lazy values are currently not allowed when async interpretation is used."))
   }
 
   private class LazyValuesProviderImpl(services: Map[String, ServiceInvoker], ctx: Context)

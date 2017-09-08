@@ -101,6 +101,7 @@ object SampleSignalHandlingTransformer {
     }
 
     private def setInitialStateIfStateNotDefined() = {
+      logger.info("Setting lock state to true")
       if (lockEnabledState.value() == null) {
         changeState(true)
       }
@@ -108,6 +109,7 @@ object SampleSignalHandlingTransformer {
 
     def changeState(newValue: Boolean) = {
       if (lockEnabledState.value() != newValue) {
+        logger.info(s"Setting lock state to $newValue")
         lockEnabledState.update(newValue)
         output.collect(new StreamRecord[Either[LockOutputStateChanged, ValueWithContext[LockOutput]]](
           Left(LockOutputStateChanged(key = getCurrentKey.toString, lockEnabled = lockEnabledState.value(), changedTimestamp = System.currentTimeMillis())))

@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.api.conversion
 
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
-import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, SinkFactory, SourceFactory, WithCategories}
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, ProcessListener, Service}
 
@@ -47,6 +47,9 @@ object ProcessConfigCreatorMapping {
       }
       override def signals(config: Config): Map[String, WithCategories[ProcessSignalSender]] = {
         jcreator.signals(config).asScala.toMap
+      }
+      override def asyncExecutionContextPreparer(config: Config): Option[AsyncExecutionContextPreparer] = {
+        Option(jcreator.asyncExecutionContextPreparer(config).orElse(null))
       }
     }
     creator
