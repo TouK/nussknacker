@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, SinkFactory
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.test.{TestDataSplit, TestParsingUtils}
 import pl.touk.nussknacker.engine.example.custom.{EventsCounter, TransactionAmountAggregator}
-import pl.touk.nussknacker.engine.example.service.ClientService
+import pl.touk.nussknacker.engine.example.service.{AlertService, ClientService}
 import pl.touk.nussknacker.engine.flink.util.exception.VerboselyLoggingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.source.EspDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSinkFactory, KafkaSourceFactory}
@@ -42,7 +42,8 @@ class ExampleProcessConfigCreator extends ProcessConfigCreator {
 
   override def services(config: Config): Map[String, WithCategories[Service]] = {
     Map(
-      "clientService" -> all(new ClientService)
+      "clientService" -> all(new ClientService),
+      "alertService" -> all(new AlertService("/tmp/alerts"))
     )
   }
 

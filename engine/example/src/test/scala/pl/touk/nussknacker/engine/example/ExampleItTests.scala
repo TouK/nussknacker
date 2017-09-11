@@ -61,8 +61,8 @@ trait ExampleItTest2 extends FlatSpec with BeforeAndAfterAll with Matchers with 
     sendTransaction(Transaction("ClientX", 3))
 
     //these are happy path events
-    sendTransaction(Transaction("ClientA", 1))
-    sendTransaction(Transaction("ClientB", 2))
+    sendTransaction(Transaction("Client1", 1))
+    sendTransaction(Transaction("Client2", 2))
 
     registrar.register(env, process())
     env.execute(process().id)
@@ -70,8 +70,8 @@ trait ExampleItTest2 extends FlatSpec with BeforeAndAfterAll with Matchers with 
     val consumer = kafkaClient.createConsumer()
     val processed = consumer.consume("topic.out").take(2).map(msg => new String(msg.message(), StandardCharsets.UTF_8)).toList
     processed.toSet shouldBe Set(
-      """{"clientId":"ClientA","clientName":"Alice","cardNumber":"123"}""",
-      """{"clientId":"ClientB","clientName":"Bob","cardNumber":"234"}"""
+      """{"clientId":"Client1","clientName":"Alice","cardNumber":"123"}""",
+      """{"clientId":"Client2","clientName":"Bob","cardNumber":"234"}"""
     )
   }
 }
@@ -95,11 +95,11 @@ trait ExampleItTest3 extends FlatSpec with BeforeAndAfterAll with Matchers with 
       )
 
   it should "perform transaction amount aggregation for every client" in {
-    sendTransaction(Transaction("ClientA", 2))
-    sendTransaction(Transaction("ClientA", 9))
-    sendTransaction(Transaction("ClientB", 1))
-    sendTransaction(Transaction("ClientB", 9))
-    sendTransaction(Transaction("ClientC", 13))
+    sendTransaction(Transaction("Client1", 2))
+    sendTransaction(Transaction("Client1", 9))
+    sendTransaction(Transaction("Client2", 1))
+    sendTransaction(Transaction("Client2", 9))
+    sendTransaction(Transaction("Client3", 13))
 
     registrar.register(env, process())
     env.execute(process().id)
@@ -107,8 +107,8 @@ trait ExampleItTest3 extends FlatSpec with BeforeAndAfterAll with Matchers with 
     val consumer = kafkaClient.createConsumer()
     val processed = consumer.consume("topic.out").take(2).map(msg => new String(msg.message(), StandardCharsets.UTF_8)).toList
     processed.toSet shouldBe Set(
-      """{"clientId":"ClientA","aggregatedAmount":"11"}""",
-      """{"clientId":"ClientC","aggregatedAmount":"13"}"""
+      """{"clientId":"Client1","aggregatedAmount":"11"}""",
+      """{"clientId":"Client3","aggregatedAmount":"13"}"""
     )
   }
 }
@@ -136,17 +136,17 @@ trait ExampleItTest4 extends FlatSpec with BeforeAndAfterAll with Matchers with 
     val now = LocalDateTime.of(2017, 1, 1, 10, 0)
     val windowLengthMinutes = 60
 
-    //transactions for clientId=ClientA are within window so will pass whole process
-    sendTransaction(Transaction("ClientA", 1, toEpoch(now)))
-    sendTransaction(Transaction("ClientA", 2, toEpoch(now.plusMinutes(windowLengthMinutes - 10))))
+    //transactions for clientId=Client1 are within window so will pass whole process
+    sendTransaction(Transaction("Client1", 1, toEpoch(now)))
+    sendTransaction(Transaction("Client1", 2, toEpoch(now.plusMinutes(windowLengthMinutes - 10))))
 
-    //transactions for clientId=ClientB are NOT within window so will NOT pass whole process
-    sendTransaction(Transaction("ClientB", 1, toEpoch(now)))
-    sendTransaction(Transaction("ClientB", 2, toEpoch(now.plusMinutes(windowLengthMinutes + 2))))
+    //transactions for clientId=Client2 are NOT within window so will NOT pass whole process
+    sendTransaction(Transaction("Client2", 1, toEpoch(now)))
+    sendTransaction(Transaction("Client2", 2, toEpoch(now.plusMinutes(windowLengthMinutes + 2))))
 
-    //transactions for clientId=ClientC are within window so will pass whole process
-    sendTransaction(Transaction("ClientC", 1, toEpoch(now.plusMinutes(72))))
-    sendTransaction(Transaction("ClientC", 2, toEpoch(now.plusMinutes(72 + windowLengthMinutes - 2))))
+    //transactions for clientId=Client3 are within window so will pass whole process
+    sendTransaction(Transaction("Client3", 1, toEpoch(now.plusMinutes(72))))
+    sendTransaction(Transaction("Client3", 2, toEpoch(now.plusMinutes(72 + windowLengthMinutes - 2))))
 
     registrar.register(env, process())
     env.execute(process().id)
@@ -154,8 +154,8 @@ trait ExampleItTest4 extends FlatSpec with BeforeAndAfterAll with Matchers with 
     val consumer = kafkaClient.createConsumer()
     val processed = consumer.consume("topic.out").take(2).toList.map(msg => new String(msg.message(), StandardCharsets.UTF_8))
     processed.toSet shouldBe Set(
-      """{"clientId":"ClientA","transactionsCount":"2"}""",
-      """{"clientId":"ClientC","transactionsCount":"2"}"""
+      """{"clientId":"Client1","transactionsCount":"2"}""",
+      """{"clientId":"Client3","transactionsCount":"2"}"""
     )
   }
 

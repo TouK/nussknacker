@@ -1,5 +1,5 @@
-{ "clientId": "ClientA", "amount": 10}
-{ "clientId": "ClientA", "amount": 20}
-{ "clientId": "ClientB", "amount": 54}
-{ "clientId": "ClientA", "amount": 30}
-{ "clientId": "ClientC", "amount": 40}
+{ "clientId": "Client1", "amount": 10}
+{ "clientId": "Client1", "amount": 20}
+{ "clientId": "Client2", "amount": 54}
+{ "clientId": "Client1", "amount": 30}
+{ "clientId": "Client3", "amount": 40}

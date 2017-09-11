@@ -17,9 +17,12 @@ public class ClientService extends Service {
     @MethodToInvoke
     public Future<Client> invoke(@ParamName("clientId") String clientId, ExecutionContext executor) {
         HashMap<String, Client> map = new HashMap<>();
-        map.put("ClientA", new Client("ClientA", "Alice", "123"));
-        map.put("ClientB", new Client("ClientB", "Bob", "234"));
-        map.put("ClientC", new Client("ClientC", "Charles", "345"));
+        map.put("Client1", new Client("Client1", "Alice", "123"));
+        map.put("Client2", new Client("Client2", "Bob", "234"));
+        map.put("Client3", new Client("Client3", "Charles", "345"));
+        map.put("Client4", new Client("Client4", "David", "777"));
+        map.put("Client5", new Client("Client5", "Eve", "888"));
+
         Function0<Client> body = new AbstractFunction0<Client>() {
             @Override
             public Client apply() {

@@ -5,6 +5,7 @@ import org.apache.flink.streaming.api.scala.DataStream
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.example.Transaction
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomStreamTransformation
+import argonaut.ArgonautShapeless._
 
 /** Sums all-time transaction amount for each client */
 class TransactionAmountAggregator extends CustomStreamTransformer {
@@ -17,15 +18,16 @@ class TransactionAmountAggregator extends CustomStreamTransformer {
         .mapWithState[ValueWithContext[Any], AggregatedAmount] {
         case (ir, Some(aggregationSoFar)) =>
           val transaction = ir.finalContext.apply[Transaction]("input")
-          val aggregationResult = aggregationSoFar.copy(amount = aggregationSoFar.amount + transaction.amount)
+          val aggregationResult = aggregationSoFar.copy(amount = aggregationSoFar.amount + transaction.amount,
+            lastTransaction = transaction.eventDate)
           (ValueWithContext(aggregationResult, ir.finalContext), Some(aggregationResult))
         case (ir, None) =>
           val transaction = ir.finalContext.apply[Transaction]("input")
-          val aggregationResult = AggregatedAmount(transaction.clientId, transaction.amount)
+          val aggregationResult = AggregatedAmount(transaction.clientId, transaction.amount, transaction.eventDate)
           (ValueWithContext(aggregationResult, ir.finalContext), Some(aggregationResult))
       }
     })
   }
 }
 
-case class AggregatedAmount(clientId: String, amount: Int)
+case class AggregatedAmount(clientId: String, amount: Int, lastTransaction: Long) extends DisplayableAsJson[AggregatedAmount]
