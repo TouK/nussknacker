@@ -139,7 +139,7 @@ In addition you can specify following values:
 * processConfig - name of config part that describes configuration of model (see below)
 * jarPath - location of jar with model for processes
 
-##Process configuration
+##Process  {#model}
 
 Configuration of processes has few common keys:
 *  timeout (e.g. 10s)- for synchronous services
@@ -153,3 +153,21 @@ The rest of model configuration depends on your needs - all the properties defin
 In model configuration you can also define some attributes of services. These include:
 * default values of fields
 * icons
+
+```
+  nodes {
+    containsDefaultValue {
+      defaultValues {
+        parameterName = "parameterValue"
+      }
+    },
+    hasSpecialIcon {
+      icon: "icon_file.svg"
+    }
+  }
+
+```
+* containsDefaultValue, hasSpecialIcon - nodes names
+* parameterName - node parameter name you'd like to assign default value
+* parameterValue - value of default parameter
+* icon- path to icon file 

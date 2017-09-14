@@ -3,13 +3,16 @@
 Before designing your own processes first you have to define model of your data 
 and means to retrieve them.  
 
-
 #Defining and discovering model
 
-
+All classes of your model should be packed in jar including implementation of 'ProcessConfigCreator'.
+This trait defines nodes which can be used to build Flink jobs. 
+Nodes operates on data structures, which you also have to provide in model. 
 
 #ProcessConfigCreator - entry point of model
-pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
+
+Nussknacker accesses your model by implementation of
+`pl.touk.nussknacker.engine.api.process.ProcessConfigCreator`
 
 ```scala
 trait ProcessConfigCreator {
@@ -36,12 +39,13 @@ trait ProcessConfigCreator {
 ```
 
 ##Passing ProcessConfigCreator to Nussknacker
-
+See [Configuration](Configuration.md#model).
 ##Categories
 
+Each process is assigned to exactly one category. Each node can be accessible in many categories? 
+Category defines if node is accessible in process. 
 
-
-#Basic blocks
+TODO: some code example.
 
 ##Creating sources and sinks
 

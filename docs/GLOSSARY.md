@@ -9,3 +9,7 @@ Logstash is an open source, server-side data processing pipeline that ingests da
 
 ## Kibana
 Kibana lets you visualize your Elasticsearch data and navigate the Elastic Stack, so you can do anything from learning why you're getting paged at 2:00 a.m. to understanding the impact rain might have on your quarterly numbers. See https://www.elastic.co/products/kibana
+
+## model 
+Model describes your processes, 
+includes data structures, and nodes definitions.  

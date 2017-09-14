@@ -5,6 +5,10 @@ import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 
+/**
+  * There Nussknacker fetches information about user defined model.
+  * Any invocation of user defined logic or resource goes through this class.
+  */
 trait ProcessConfigCreator extends Serializable {
 
   def customStreamTransformers(config: Config): Map[String, WithCategories[CustomStreamTransformer]]

@@ -151,8 +151,12 @@ private[compile] trait PartSubGraphCompilerBase {
           }
         case splittednode.FilterNode(f@graph.node.Filter(id, expression, _, _), nextTrue, nextFalse) =>
           A.map3(compile(expression, None, ctx), compile(nextTrue, ctx), nextFalse.map(next => compile(next, ctx)).sequence)(
-            (expr, nextWithCtx, nextWithCtxFalse) => CompiledNode(compiledgraph.node.Filter(id, expr, nextWithCtx.next,
-              nextWithCtxFalse.map(_.next), f.isDisabled.contains(true)),
+            (expr, nextWithCtx, nextWithCtxFalse) => CompiledNode(
+              compiledgraph.node.Filter(id = id,
+              expression = expr,
+              nextTrue = nextWithCtx.next,
+              nextFalse = nextWithCtxFalse.map(_.next),
+              isDisabled = f.isDisabled.contains(true)),
               nextWithCtx.ctx ++ nextWithCtxFalse.map(_.ctx).getOrElse(Map())))
         case splittednode.SwitchNode(graph.node.Switch(id, expression, exprVal, _), nexts, defaultNext) =>
           ctx.withVariable(exprVal, ClazzRef(classOf[Any])).andThen { newCtx =>
