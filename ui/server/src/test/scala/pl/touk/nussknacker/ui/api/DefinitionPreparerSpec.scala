@@ -17,7 +17,9 @@ class DefinitionPreparerSpec extends FlatSpec with Matchers {
       processDefinition = ProcessTestData.processDefinition,
       isSubprocess = false,
       subprocessRepo = TestFactory.sampleSubprocessRepository,
-      extractorFactory = new TypeAfterConfig(new ParamDefaultValueConfig(Map())))
+      extractorFactory = new TypeAfterConfig(new ParamDefaultValueConfig(Map())),
+      subprocessVersions = Map.empty
+    )
 
     groups.foreach { group =>
       group.possibleNodes.sortBy(_.label) shouldBe group.possibleNodes
@@ -30,7 +32,8 @@ class DefinitionPreparerSpec extends FlatSpec with Matchers {
       user = LoggedUser("aa", "", List(Permission.Admin), List()),
       processDefinition = ProcessTestData.processDefinition,
       isSubprocess = false,
-      subprocessRepo = TestFactory.sampleSubprocessRepository)
+      subprocessRepo = TestFactory.sampleSubprocessRepository,
+      subprocessVersions = Map.empty)
 
     edgeTypes.toSet shouldBe Set(
       NodeEdges(NodeTypeId("Split"), List(), true),

@@ -34,9 +34,10 @@ class ProcessCounter(subprocessRepository: SubprocessRepository) {
           computeCountsSamePrefixes(nexts.flatMap(_.nodes)) ++ computeCountsSamePrefixes(defaultNext) + (node.id -> nodeCount(node.id))
         case SplitNode(node, nexts) => computeCountsSamePrefixes(nexts.flatten) + (node.id -> nodeCount(node.id))
         case Subprocess(node, outputs) =>
+          //TODO: validate that process exists
+          val subprocess = getSubprocess(canonicalProcess.metaData.subprocessVersions, node.ref.id).get
           computeCountsSamePrefixes(outputs.values.flatten) + (node.id -> nodeCount(node.id,
-            //TODO: validate that process exists
-            computeCounts(prefixes :+ node.id)(subprocessRepository.get(node.ref.id).get.nodes)))
+            computeCounts(prefixes :+ node.id)(subprocess.nodes)))
       }.toMap
 
     }
@@ -46,6 +47,13 @@ class ProcessCounter(subprocessRepository: SubprocessRepository) {
     valuesWithoutGroups ++ valuesForGroups
   }
 
+  private def getSubprocess(subprocessVersions: Map[String, Long], subprocessId: String): Option[CanonicalProcess] = {
+    val subprocess = subprocessVersions.get(subprocessId) match {
+      case Some(version) => subprocessRepository.get(subprocessId, version)
+      case None => subprocessRepository.get(subprocessId)
+    }
+    subprocess
+  }
 
   private def computeValuesForGroups(valuesWithoutGroups: Map[String, NodeCount], canonicalProcess: CanonicalProcess) = {
     val groups = canonicalProcess.metaData.additionalFields.flatMap(_.cast[ProcessAdditionalFields]).map(_.groups).getOrElse(Set())

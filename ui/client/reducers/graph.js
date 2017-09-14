@@ -106,12 +106,14 @@ export function reducer(state, action) {
       }
     }
     case "EDIT_NODE": {
-      const stateAfterNodeRename = updateAfterNodeIdChange(state, action.before.id, action.after.id);
-      const processToDisplay = GraphUtils.mapProcessWithNewNode(stateAfterNodeRename.processToDisplay, action.before, action.after)
-      return {
+      const stateAfterNodeRename = {
+        ...state,
+        ...updateAfterNodeIdChange(state.layout, action.processAfterChange, action.before.id, action.after.id)
+      }
+        return {
         ...stateAfterNodeRename,
         processToDisplay: {
-          ...processToDisplay,
+          ...stateAfterNodeRename.processToDisplay,
           validationResult: action.validationResult
         },
         nodeToDisplay: action.after,
@@ -120,10 +122,17 @@ export function reducer(state, action) {
     case "DELETE_NODE": {
       var idToDelete = action.id
       const stateAfterNodeDelete = updateAfterNodeDelete(state, idToDelete)
+      const newSubprocessVersions = removeSubprocessVersionForLastSubprocess(stateAfterNodeDelete.processToDisplay, idToDelete)
       const processToDisplay = GraphUtils.deleteNode(stateAfterNodeDelete.processToDisplay, idToDelete);
       return {
         ...stateAfterNodeDelete,
-        processToDisplay: processToDisplay,
+        processToDisplay: {
+          ...processToDisplay,
+          properties: {
+            ...processToDisplay.properties,
+            subprocessVersions: newSubprocessVersions
+          }
+        },
         nodeToDisplay: processToDisplay.properties,
       }
     }
@@ -155,7 +164,7 @@ export function reducer(state, action) {
       }
     }
     case "NODE_ADDED": {
-      var newId = createUniqueNodeId(state.processToDisplay.nodes, state.processToDisplay.nodes.length)
+      const newId = createUniqueNodeId(state.processToDisplay.nodes, state.processToDisplay.nodes.length)
       return {
         ...state,
         processToDisplay: {
@@ -255,11 +264,10 @@ function canGroup(state, newNode) {
     currentGrouping.find(nodeId => state.processToDisplay.edges.find(edge => edge.from == nodeId && edge.to == newNodeId ||  edge.to == nodeId && edge.from == newNodeId))
 }
 
-function updateAfterNodeIdChange(state, oldId, newId) {
-  const newLayout = updateLayoutAfterNodeIdChange(state.layout, oldId, newId);
-  const withGroupsUpdated = NodeUtils.updateGroupsAfterNodeIdChange(state.processToDisplay, oldId, newId);
+function updateAfterNodeIdChange(layout, process, oldId, newId) {
+  const newLayout = updateLayoutAfterNodeIdChange(layout, oldId, newId);
+  const withGroupsUpdated = NodeUtils.updateGroupsAfterNodeIdChange(process, oldId, newId);
   return {
-    ...state,
     processToDisplay: withGroupsUpdated,
     layout: newLayout
   }
@@ -290,4 +298,17 @@ function updateAfterNodeDelete(state, idToDelete) {
 function createUniqueNodeId(nodes, nodeCounter) {
   var newId = `node${nodeCounter}`
   return _.some(nodes, (n) => {return n.id == newId}) ? createUniqueNodeId(nodes, nodeCounter + 1) : newId
+}
+
+function removeSubprocessVersionForLastSubprocess(processToDisplay, idToDelete) {
+  const subprocessVersions = processToDisplay.properties.subprocessVersions
+  const nodeToDelete = processToDisplay.nodes.find((n) => n.id === idToDelete)
+  if (nodeToDelete.type === "SubprocessInput") {
+    const subprocessId = nodeToDelete.ref.id
+    const allSubprocessNodes = processToDisplay.nodes.filter((n) => _.get(n, "ref.id") === subprocessId)
+    const isLastOne = allSubprocessNodes.length === 1
+    return isLastOne ? _.omit(subprocessVersions, subprocessId) : subprocessVersions
+  } else {
+    return subprocessVersions
+  }
 }

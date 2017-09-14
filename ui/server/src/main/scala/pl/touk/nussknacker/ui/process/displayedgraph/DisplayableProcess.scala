@@ -22,11 +22,19 @@ case class DisplayableProcess(id: String,
     copy(validationResult = Some(ValidationResult.success))
   }
 
-  val metaData = MetaData(id, properties.typeSpecificProperties, properties.isSubprocess, properties.additionalFields)
+  val metaData = MetaData(
+    id = id,
+    typeSpecificData = properties.typeSpecificProperties,
+    isSubprocess = properties.isSubprocess,
+    additionalFields = properties.additionalFields,
+    subprocessVersions = properties.subprocessVersions
+  )
 
 }
 
 case class ProcessProperties(typeSpecificProperties: TypeSpecificData,
                              exceptionHandler: ExceptionHandlerRef,
                              isSubprocess: Boolean = false,
-                             additionalFields: Option[UserDefinedProcessAdditionalFields] = None)
+                             additionalFields: Option[UserDefinedProcessAdditionalFields] = None,
+                             subprocessVersions: Map[String, Long]
+                            )

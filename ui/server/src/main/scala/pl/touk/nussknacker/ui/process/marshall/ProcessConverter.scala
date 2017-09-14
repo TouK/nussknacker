@@ -34,7 +34,13 @@ object ProcessConverter {
     } else {
       toGraphInner(process.nodes)
     }
-    val props = ProcessProperties(process.metaData.typeSpecificData, process.exceptionHandlerRef, process.metaData.isSubprocess, process.metaData.additionalFields)
+    val props = ProcessProperties(
+      typeSpecificProperties = process.metaData.typeSpecificData,
+      exceptionHandler = process.exceptionHandlerRef,
+      isSubprocess = process.metaData.isSubprocess,
+      additionalFields = process.metaData.additionalFields,
+      subprocessVersions = process.metaData.subprocessVersions
+    )
     DisplayableProcess(process.metaData.id, props, nodes, edges, processingType)
   }
 

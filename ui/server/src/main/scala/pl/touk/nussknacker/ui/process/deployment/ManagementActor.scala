@@ -106,10 +106,6 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
     }
   }
 
-  private def resolveGraph(canonicalJson: String) : String = {
-    marshaller.toJson(marshaller.fromJson(canonicalJson).andThen(subprocessResolver.resolveSubprocesses).toOption.get, PrettyParams.spaces2)
-  }
-
   private def deployAndSaveProcess(processingType: ProcessingType, latestVersion: ProcessVersionEntityData, savepointPath: Option[String])(implicit user: LoggedUser): Future[Unit] = {
     val processId = latestVersion.processId
     logger.debug(s"Deploy of $processId started")
@@ -125,6 +121,10 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
         processManagerValue.cancel(processId).map(_ => Future.failed(e))
       }
     }
+  }
+
+  private def resolveGraph(canonicalJson: String) : String = {
+    marshaller.toJson(marshaller.fromJson(canonicalJson).andThen(subprocessResolver.resolveSubprocesses).toOption.get, PrettyParams.spaces2)
   }
 
   private def processManager(processId: String)(implicit ec: ExecutionContext, user: LoggedUser) = {

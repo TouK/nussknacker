@@ -7,8 +7,8 @@ import pl.touk.nussknacker.engine.compile.ProcessCompilationError
 class SubprocessResolver(subprocessRepository: SubprocessRepository) {
 
   def resolveSubprocesses(process: CanonicalProcess): ValidatedNel[ProcessCompilationError, CanonicalProcess] = {
-    pl.touk.nussknacker.engine.compile.SubprocessResolver(subprocessRepository.loadSubprocesses()
-      .map(sp => sp.metaData.id -> sp).toMap).resolve(process)
+    val subprocesses = subprocessRepository.loadSubprocesses(process.metaData.subprocessVersions)
+    pl.touk.nussknacker.engine.compile.SubprocessResolver(subprocesses).resolve(process)
   }
 
 }

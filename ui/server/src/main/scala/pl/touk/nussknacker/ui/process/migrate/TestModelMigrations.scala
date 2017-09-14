@@ -48,7 +48,7 @@ class TestModelMigrations(migrations: Map[ProcessingType, ProcessMigrations], va
   private def prepareSubprocessRepository(subprocesses: List[ProcessDetails]) = {
     val canonicalSubprocesses = subprocesses.flatMap(_.json).map(ProcessConverter.fromDisplayable).toSet
     new SubprocessRepository {
-      override def loadSubprocesses(): Set[CanonicalProcess] = canonicalSubprocesses
+      override def loadSubprocesses(versions: Map[String, Long]): Set[CanonicalProcess] = canonicalSubprocesses
     }
   }
 

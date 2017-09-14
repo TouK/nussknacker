@@ -2,16 +2,17 @@ package pl.touk.nussknacker.ui.api
 
 import java.time.LocalDateTime
 
-import pl.touk.nussknacker.engine.api.StreamMetaData
+import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, SplitNode}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compile.ProcessValidator
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ObjectProcessDefinition, ProcessDefinition}
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ClazzRef, Parameter}
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ObjectProcessDefinition}
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
-import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.{EspProcess, node}
-import pl.touk.nussknacker.engine.graph.node.Case
-import pl.touk.nussknacker.engine.graph.service.ServiceRef
+import pl.touk.nussknacker.engine.graph.node.{Case, Split, SubprocessInputDefinition, SubprocessOutputDefinition}
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.spel
@@ -105,7 +106,7 @@ object ProcessTestData {
   val sampleDisplayableProcess = {
     DisplayableProcess(
       id = "fooProcess",
-      properties = ProcessProperties(StreamMetaData(Some(2)), ExceptionHandlerRef(List.empty), false, Some(ProcessAdditionalFields(Some("process description")))),
+      properties = ProcessProperties(StreamMetaData(Some(2)), ExceptionHandlerRef(List.empty), false, Some(ProcessAdditionalFields(Some("process description"))), subprocessVersions = Map.empty),
       nodes = List(
         node.Source(
           id = "sourceId",
@@ -124,4 +125,29 @@ object ProcessTestData {
       validationResult = Some(ValidationResult.success)
     )
   }
+
+  val emptySubprocess = {
+    CanonicalProcess(MetaData("sub1", StreamMetaData(None, None, None), isSubprocess = true, None, Map()), ExceptionHandlerRef(List()), List())
+  }
+  val sampleSubprocess = {
+    CanonicalProcess(MetaData("sub1", StreamMetaData(), isSubprocess = true), ExceptionHandlerRef(List()), List(
+      FlatNode(SubprocessInputDefinition("in", List(Parameter("param1", ClazzRef(classOf[String]))))),
+      SplitNode(Split("split"), List(
+        List(FlatNode(SubprocessOutputDefinition("out", "out1"))),
+        List(FlatNode(SubprocessOutputDefinition("out2", "out2")))
+      ))
+    ))
+  }
+
+  val sampleSubprocess2 = {
+    CanonicalProcess(MetaData("sub1", StreamMetaData(), isSubprocess = true), ExceptionHandlerRef(List()), List(
+      FlatNode(SubprocessInputDefinition("in", List(Parameter("param2", ClazzRef(classOf[String]))))),
+      SplitNode(Split("split"), List(
+        List(FlatNode(SubprocessOutputDefinition("out", "out1"))),
+        List(FlatNode(SubprocessOutputDefinition("out2", "out2"))),
+        List(FlatNode(SubprocessOutputDefinition("out3", "out2")))
+      ))
+    ))
+  }
+
 }

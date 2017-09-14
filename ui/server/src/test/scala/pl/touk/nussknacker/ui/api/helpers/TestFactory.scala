@@ -2,16 +2,12 @@ package pl.touk.nussknacker.ui.api.helpers
 
 import db.migration.DefaultJdbcProfile
 import pl.touk.nussknacker.engine.api.deployment.{ProcessDeploymentData, ProcessState}
-import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, SplitNode}
-import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
-import pl.touk.nussknacker.engine.graph.node.{Split, SubprocessInputDefinition, SubprocessOutputDefinition}
 import pl.touk.nussknacker.engine.management.{FlinkModelData, FlinkProcessManager}
 import pl.touk.nussknacker.ui.api.{ProcessPosting, ProcessTestData, RouteWithUser}
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.nussknacker.ui.process.repository.{DeployedProcessRepository, ProcessActivityRepository, ProcessRepository}
-import pl.touk.nussknacker.ui.process.subprocess.{SubprocessRepository, SubprocessResolver}
+import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, SubprocessRepository, SubprocessResolver}
 import pl.touk.nussknacker.ui.security.Permission.Permission
 import pl.touk.nussknacker.ui.security.{LoggedUser, Permission}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
@@ -34,6 +30,10 @@ object TestFactory {
 
   def newProcessRepository(db: JdbcBackend.Database, modelVersion: Option[Int] = Some(1)) = new ProcessRepository(db, DefaultJdbcProfile.profile, processValidation,
     modelVersion.map(ProcessingType.Streaming -> _).toMap)
+
+  def newSubprocessRepository(db: JdbcBackend.Database) = {
+    new DbSubprocessRepository(db, DefaultJdbcProfile.profile, implicitly[ExecutionContext])
+  }
 
   val buildInfo = Map("engine-version" -> "0.1")
 
@@ -73,14 +73,10 @@ object TestFactory {
   def withAllPermissions(route: RouteWithUser) = route.route(user(allPermissions: _*))
 
   object SampleSubprocessRepository extends SubprocessRepository {
-    override def loadSubprocesses(): Set[CanonicalProcess] = Set(
-      CanonicalProcess(MetaData("sub1", StreamMetaData(), true), ExceptionHandlerRef(List()), List(
-        FlatNode(SubprocessInputDefinition("in", List())),
-        SplitNode(Split("split"), List(
-          List(FlatNode(SubprocessOutputDefinition("out", "out1"))),
-          List(FlatNode(SubprocessOutputDefinition("out2", "out2")))
-        ))
-      ))
-    )
+    val subprocesses = Set(ProcessTestData.sampleSubprocess)
+
+    override def loadSubprocesses(versions: Map[String, Long]): Set[CanonicalProcess] = {
+      subprocesses
+    }
   }
 }

@@ -98,7 +98,7 @@ class ProcessCounterTest extends FlatSpec with Matchers {
 
   private def subprocessRepository(processes: Set[CanonicalProcess]) = {
     new SubprocessRepository {
-      override def loadSubprocesses(): Set[CanonicalProcess] = processes
+      override def loadSubprocesses(versions: Map[String, Long]) = processes
     }
   }
 }

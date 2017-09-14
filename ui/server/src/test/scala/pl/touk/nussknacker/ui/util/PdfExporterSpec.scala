@@ -61,7 +61,7 @@ class PdfExporterSpec extends FlatSpec {
   it should "export empty process to " in {
 
     val displayable: DisplayableProcess = DisplayableProcess(
-      "Proc11", ProcessProperties(StreamMetaData(), ExceptionHandlerRef(List())), List(), List(), ProcessingType.Streaming)
+      "Proc11", ProcessProperties(StreamMetaData(), ExceptionHandlerRef(List()), subprocessVersions = Map.empty), List(), List(), ProcessingType.Streaming)
 
     val details = ProcessDetails("My process", "My process", 11, true,
       Some("My fancy description, which is quite, quite, quite looooooooong. \n And it contains maaaany, maaany strange features..."),

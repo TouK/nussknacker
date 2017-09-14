@@ -161,7 +161,7 @@ function mapState(state) {
     : {processDefinition: { typesInformation: []}}
   const dataResolved = !_.isEmpty(state.settings.processDefinitionData)
   const typesInformation = processDefinitionData.processDefinition.typesInformation
-  const variablesForNode = state.graphReducer.nodeToDisplay.id || state.graphReducer.edgeToDisplay.to
+  const variablesForNode = state.graphReducer.nodeToDisplay.id || _.get(state.graphReducer, ".edgeToDisplay.to") || null
   const variables = ProcessUtils.findAvailableVariables(variablesForNode, state.graphReducer.processToDisplay, processDefinitionData.processDefinition)
   return {
     typesInformation: typesInformation,

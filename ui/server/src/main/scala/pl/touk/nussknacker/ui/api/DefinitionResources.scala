@@ -41,15 +41,20 @@ class DefinitionResources(modelData: Map[ProcessingType, ModelData],
   import pl.touk.nussknacker.ui.codec.UiCodecs._
 
   def route(implicit user: LoggedUser) : Route =
+    //TODO maybe always return data for all subprocesses versions instead of fetching just one-by-one?
     path("processDefinitionData" / EnumSegment(ProcessingType)) { (processingType) =>
       parameter('isSubprocess.as[Boolean]) { (isSubprocess) =>
-        get {
-          complete {
-            val chosenProcessDefinition = modelData(processingType).processDefinition
-            ProcessObjects(DefinitionPreparer.prepareNodesToAdd(user = user, processDefinition = chosenProcessDefinition,
-              isSubprocess = isSubprocess, subprocessRepo = subprocessRepository, extractorFactory=parameterDefaultValueExtractorStrategyFactory),
-              chosenProcessDefinition,
-              DefinitionPreparer.prepareEdgeTypes(user, chosenProcessDefinition, isSubprocess, subprocessRepository))
+        post {
+          entity(as[Map[String, Long]]) { subprocessVersions =>
+            complete {
+              val chosenProcessDefinition = modelData(processingType).processDefinition
+              ProcessObjects(DefinitionPreparer.prepareNodesToAdd(user = user, processDefinition = chosenProcessDefinition,
+                isSubprocess = isSubprocess, subprocessRepo = subprocessRepository, extractorFactory = parameterDefaultValueExtractorStrategyFactory,
+                subprocessVersions = subprocessVersions
+              ),
+                chosenProcessDefinition,
+                DefinitionPreparer.prepareEdgeTypes(user, chosenProcessDefinition, isSubprocess, subprocessRepository, subprocessVersions))
+            }
           }
         }
       }
@@ -81,7 +86,8 @@ object DefinitionPreparer {
 
   def prepareNodesToAdd(user: LoggedUser, processDefinition: ProcessDefinition[ObjectDefinition],
                         isSubprocess: Boolean, subprocessRepo: SubprocessRepository,
-                        extractorFactory: ParameterDefaultValueExtractorStrategy): List[NodeGroup] = {
+                        extractorFactory: ParameterDefaultValueExtractorStrategy,
+                        subprocessVersions: Map[String, Long]): List[NodeGroup] = {
     val evaluator = new ParameterEvaluatorExtractor(extractorFactory)
 
     def filterCategories(objectDefinition: ObjectDefinition) = user.categories.intersect(objectDefinition.categories)
@@ -139,8 +145,8 @@ object DefinitionPreparer {
         ),
         //so far we don't allow nested subprocesses...
         SortedNodeGroup("subprocesses",
-          subprocessRepo.loadSubprocesses().collect {
-            case CanonicalProcess(MetaData(id, _, _, _), _, FlatNode(SubprocessInputDefinition(_, parameters, _)) :: _) => NodeToAdd("subprocess", id,
+          subprocessRepo.loadSubprocesses(subprocessVersions).collect {
+            case CanonicalProcess(MetaData(id, _, _, _, _), _, FlatNode(SubprocessInputDefinition(_, parameters, _)) :: _) => NodeToAdd("subprocess", id,
               SubprocessInput("", SubprocessRef(id,
                 //FIXME: categories
                 evaluator.evaluateParameters(NodeDefinition(id, parameters)))), user.categories)
@@ -159,9 +165,9 @@ object DefinitionPreparer {
   }
 
   def prepareEdgeTypes(user: LoggedUser, processDefinition: ProcessDefinition[ObjectDefinition],
-                       isSubprocess: Boolean, subprocessRepo: SubprocessRepository): List[NodeEdges] = {
+                       isSubprocess: Boolean, subprocessRepo: SubprocessRepository, subprocessVersions: Map[String, Long]): List[NodeEdges] = {
 
-    val subprocessOutputs = if (isSubprocess) List() else subprocessRepo.loadSubprocesses().map { process =>
+    val subprocessOutputs = if (isSubprocess) List() else subprocessRepo.loadSubprocesses(subprocessVersions).map { process =>
       val outputs = ProcessConverter.findNodes(process).collect {
         case SubprocessOutputDefinition(_, name, _) => name
       }

@@ -2,6 +2,7 @@ import {browserHistory} from "react-router";
 import HttpService from "../http/HttpService";
 import GraphUtils from "../components/graph/GraphUtils";
 import NodeUtils from "../components/graph/NodeUtils";
+import * as SubprocessSchemaAligner from "../components/graph/SubprocessSchemaAligner";
 import _ from "lodash";
 import * as UndoRedoActions from "../undoredo/UndoRedoActions";
 
@@ -18,9 +19,9 @@ export function fetchProcessToDisplay(processId, versionId, businessView) {
   }
 }
 
-export function fetchProcessDefinition(processingType, isSubprocess) {
+export function fetchProcessDefinition(processingType, isSubprocess, subprocessVersions) {
   return (dispatch) => {
-    return HttpService.fetchProcessDefinitionData(processingType, isSubprocess).then((data) =>
+    return HttpService.fetchProcessDefinitionData(processingType, isSubprocess, subprocessVersions).then((data) =>
       dispatch({type: "PROCESS_DEFINITION_DATA", processDefinitionData: data})
     )
   }
@@ -203,16 +204,44 @@ export function editEdge(process, before, after) {
 
 export function editNode(process, before, after) {
   return (dispatch) => {
-    const changedProcess = GraphUtils.mapProcessWithNewNode(process, before, after)
-    return HttpService.validateProcess(changedProcess).then((validationResult) => {
-      dispatch({
-        type: "EDIT_NODE",
-        before: before,
-        after: after,
-        validationResult: validationResult
+    const processAfterChange = calculateProcessAfterChange(process, before, after, dispatch)
+    return processAfterChange.then((process) => {
+      return HttpService.validateProcess(process).then((validationResult) => {
+        dispatch({
+          type: "EDIT_NODE",
+          before: before,
+          after: after,
+          validationResult: validationResult,
+          processAfterChange: process
+        })
       })
     })
   }
+}
+
+function calculateProcessAfterChange(process, before, after, dispatch) {
+  if (NodeUtils.nodeIsProperties(after)) {
+    const subprocessVersions = after.subprocessVersions || process.properties.subprocessVersions
+    return dispatch(
+      fetchProcessDefinition(process.processingType, process.properties.isSubprocess, subprocessVersions)
+    ).then((processDef) => {
+      const processWithNewSubprocessSchema = alignSubprocessesWithSchema(process, processDef.processDefinitionData)
+      return GraphUtils.mapProcessWithNewNode(processWithNewSubprocessSchema, before, after)
+    })
+  } else {
+    return Promise.resolve(GraphUtils.mapProcessWithNewNode(process, before, after))
+  }
+}
+
+function alignSubprocessesWithSchema(process, processDefinitionData) {
+  const nodesWithNewSubprocessSchema = _.map(process.nodes, (node) => {
+    if (node.type === "SubprocessInput") {
+      return SubprocessSchemaAligner.alignSubprocessWithSchema(processDefinitionData, node)
+    } else {
+      return node
+    }
+  })
+  return {...process, nodes: nodesWithNewSubprocessSchema};
 }
 
 export function editGroup(oldGroupId, newGroup) {

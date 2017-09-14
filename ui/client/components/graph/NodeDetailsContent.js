@@ -2,13 +2,11 @@ import React, {Component} from "react";
 import {render} from "react-dom";
 import classNames from "classnames";
 import _ from "lodash";
-import {ListGroupItem} from "react-bootstrap";
 import Textarea from "react-textarea-autosize";
 import NodeUtils from "./NodeUtils";
 import ExpressionSuggest from "./ExpressionSuggest";
 import ModalRenderUtils from "./ModalRenderUtils";
 import TestResultUtils from "../../common/TestResultUtils";
-import NodeParametersMerger from "./NodeParametersMerger";
 import ProcessUtils from '../../common/ProcessUtils';
 
 //move state to redux?
@@ -18,7 +16,7 @@ export default class NodeDetailsContent extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      editedNode: NodeParametersMerger.addMissingParametersToNode(props.processDefinitionData, props.node),
+      editedNode: props.node,
       codeCompletionEnabled: true,
       testResultsToHide: new Set()
     }
@@ -30,7 +28,7 @@ export default class NodeDetailsContent extends React.Component {
   }
 
   componentWillReceiveProps(nextProps) {
-    if (!_.isEqual(this.props.node, nextProps.props)) {
+    if (!_.isEqual(this.props.node, nextProps.node)) {
       this.setState({editedNode: nextProps.node})
     }
   }
@@ -178,6 +176,7 @@ export default class NodeDetailsContent extends React.Component {
         )
       case 'Properties':
         const type = this.props.node.typeSpecificProperties.type;
+        const commonFields = this.subprocessVersionFields()
         //fixme move this configuration to some better place?
         const fields = type == "StreamMetaData" ? [
           this.createField("input", "Parallelism", "typeSpecificProperties.parallelism", "parallelism"),
@@ -189,7 +188,7 @@ export default class NodeDetailsContent extends React.Component {
         const hasExceptionHandlerParams = this.state.editedNode.exceptionHandler.parameters.length > 0
         return (
           <div className="node-table-body">
-            {fields}
+            {_.concat(fields, commonFields)}
             { hasExceptionHandlerParams ?
               (<div className="node-row">
                 <div className="node-label">Exception handler:</div>
@@ -216,6 +215,13 @@ export default class NodeDetailsContent extends React.Component {
           </div>
         )
     }
+  }
+
+  subprocessVersionFields() {
+    return [
+      //TODO this should be nice looking selectbox
+      this.doCreateField("textarea", "Subprocess Versions", "subprocessVersions", JSON.stringify(this.state.editedNode.subprocessVersions || {}), (newValue) => this.setNodeDataAt("subprocessVersions", JSON.parse(newValue)))
+    ]
   }
 
   sourceSinkCommon(toAppend) {

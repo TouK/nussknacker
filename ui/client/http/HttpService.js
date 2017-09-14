@@ -81,8 +81,15 @@ export default {
     }))
   },
 
-  fetchProcessDefinitionData(processingType, isSubprocess) {
-    return promiseWrap($.get(`${API_URL}/processDefinitionData/${processingType}?isSubprocess=${isSubprocess}`))
+  fetchProcessDefinitionData(processingType, isSubprocess, subprocessVersions) {
+    return ajaxCall({
+      url: `${API_URL}/processDefinitionData/${processingType}?isSubprocess=${isSubprocess}`,
+      type: 'POST',
+      data: JSON.stringify(subprocessVersions)
+    }).catch((error) => {
+      this.addError(`Cannot find chosen versions`, error, true)
+      return Promise.reject(error)
+    });
   },
 
   fetchObjectIds() {

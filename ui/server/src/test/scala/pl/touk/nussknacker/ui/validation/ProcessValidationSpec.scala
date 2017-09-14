@@ -124,7 +124,7 @@ class ProcessValidationSpec extends FlatSpec with Matchers {
 
   private def createProcess(nodes: List[NodeData], edges: List[Edge]) = {
     DisplayableProcess("test", ProcessProperties(StreamMetaData(),
-      ExceptionHandlerRef(List())), nodes, edges, ProcessingType.Streaming)
+      ExceptionHandlerRef(List()), subprocessVersions = Map.empty), nodes, edges, ProcessingType.Streaming)
   }
 
 

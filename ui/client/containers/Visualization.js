@@ -24,7 +24,9 @@ const Visualization = withRouter(React.createClass({
   componentDidMount() {
     this.fetchProcessDetails().then((details) => {
       this.props.actions.fetchProcessDefinition(
-        details.fetchedProcessDetails.processingType, _.get(details, "fetchedProcessDetails.json.properties.isSubprocess")
+        details.fetchedProcessDetails.processingType,
+        _.get(details, "fetchedProcessDetails.json.properties.isSubprocess"),
+        this.props.subprocessVersions
       ).then(() => {
         this.showModalDetailsIfNeeded(details.fetchedProcessDetails.json)
       })
@@ -155,6 +157,7 @@ Visualization.header = 'Wizualizacja'
 function mapState(state) {
   return {
     fetchedProcessDetails: state.graphReducer.fetchedProcessDetails,
+    subprocessVersions: _.get(state.graphReducer.processToDisplay, "properties.subprocessVersions"),
     currentNodeId: (state.graphReducer.nodeToDisplay || {}).id,
     graphLoading: state.graphReducer.graphLoading,
     leftPanelIsOpened: state.ui.leftPanelIsOpened,

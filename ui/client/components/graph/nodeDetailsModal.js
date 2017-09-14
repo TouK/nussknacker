@@ -36,20 +36,20 @@ class NodeDetailsModal extends React.Component {
   }
 
   componentWillReceiveProps(props) {
-    this.setState({
+    const newState = {
       editedNode: props.nodeToDisplay,
       currentNodeId: props.nodeToDisplay.id,
       subprocessContent: null
-    })
-    //TODO: make handling receiving callback with process more smooth on UI - maybe cache subprocesses??
-    if (props.nodeToDisplay && (NodeUtils.nodeType(props.nodeToDisplay) === "SubprocessInput")) {
-      HttpService.fetchProcessDetails(props.nodeToDisplay.ref.id, null, this.props.businessView)
+    }
+    //TODO more smooth subprocess loading in UI
+    if (props.nodeToDisplay && props.showNodeDetailsModal && (NodeUtils.nodeType(props.nodeToDisplay) === "SubprocessInput")) {
+      const subprocessVersion = props.subprocessVersions[props.nodeToDisplay.ref.id]
+      HttpService.fetchProcessDetails(props.nodeToDisplay.ref.id, subprocessVersion, this.props.businessView)
         .then((processDetails) =>
-          this.setState((state) => ({
-            ...state,
-            subprocessContent: processDetails.json
-          }))
+          this.setState({...newState, subprocessContent: processDetails.json})
         )
+    } else {
+      this.setState(newState)
     }
   }
 
@@ -184,6 +184,7 @@ function mapState(state) {
   return {
     nodeToDisplay: state.graphReducer.nodeToDisplay,
     processId: state.graphReducer.processToDisplay.id,
+    subprocessVersions: state.graphReducer.processToDisplay.properties.subprocessVersions,
     nodeErrors: errors,
     processToDisplay: state.graphReducer.processToDisplay,
     readOnly: !state.settings.loggedUser.canWrite || state.graphReducer.businessView || false,

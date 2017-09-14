@@ -30,7 +30,7 @@ case class SubprocessResolver(subprocesses: Map[String, CanonicalProcess]) {
     iterateOverCanonicals({
       case canonicalnode.Subprocess(data, nextNodes) =>
         subprocesses.get(data.ref.id) match {
-          case Some(CanonicalProcess(MetaData(id, _, _, _), _, FlatNode(SubprocessInputDefinition(_, parameters, _))::nodes)) =>
+          case Some(CanonicalProcess(MetaData(id, _, _, _, _), _, FlatNode(SubprocessInputDefinition(_, parameters, _))::nodes)) =>
             checkProcessParameters(data.ref, parameters.map(_.name), data.id).andThen { _ =>
               val nextResolvedV = nextNodes.map { case (k, v) =>
                 resolveCanonical(idPrefix)(v).map((k, _))

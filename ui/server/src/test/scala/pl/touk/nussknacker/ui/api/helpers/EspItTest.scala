@@ -23,6 +23,7 @@ trait EspItTest extends LazyLogging with WithDbTesting { self: ScalatestRouteTes
   val attachmentsPath = "/tmp/attachments" + System.currentTimeMillis()
 
   val processRepository = newProcessRepository(db)
+  val subprocessRepository = newSubprocessRepository(db)
   val deploymentProcessRepository = newDeploymentProcessRepository(db)
   val processActivityRepository = newProcessActivityRepository(db)
   val typesForCategories = new ProcessTypesForCategories(ConfigFactory.load())
@@ -51,6 +52,14 @@ trait EspItTest extends LazyLogging with WithDbTesting { self: ScalatestRouteTes
   def saveProcess(process: DisplayableProcess)(testCode: => Assertion): Assertion = {
     val processId = process.id
     Post(s"/processes/$processId/$testCategory?isSubprocess=false") ~> processesRouteWithAllPermissions ~> check {
+      status shouldBe StatusCodes.Created
+      updateProcess(process)(testCode)
+    }
+  }
+
+  def saveSubProcess(process: DisplayableProcess)(testCode: => Assertion): Assertion = {
+    val processId = process.id
+    Post(s"/processes/$processId/$testCategory?isSubprocess=true") ~> processesRouteWithAllPermissions ~> check {
       status shouldBe StatusCodes.Created
       updateProcess(process)(testCode)
     }
