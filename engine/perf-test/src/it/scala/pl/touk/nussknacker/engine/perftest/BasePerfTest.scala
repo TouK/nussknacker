@@ -45,10 +45,6 @@ trait BasePerfTest extends ScalaFutures with BeforeAndAfterAll { suite: Suite wi
   protected lazy val config: Config = {
 //    ConfigFactory.load("application-local.conf")
     ConfigFactory.load()
-      .withValue(
-        s"$profile.processConfigCreatorClass",
-        ConfigValueFactory.fromAnyRef(s"pl.touk.nussknacker.engine.perftest.sample.$configCreatorClassName")
-      )
   }
 
   protected lazy val processManager = FlinkProcessManager(config)

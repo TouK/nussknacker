@@ -14,7 +14,7 @@ object FlinkVerificationMain extends FlinkRunner {
 
   def run(processJson: String, config: Config, savepointPath: String, urls: List[URL]): Unit = {
     val process = readProcessFromArg(processJson)
-    val creator: ProcessConfigCreator = loadCreator(config)
+    val creator: ProcessConfigCreator = loadCreator
 
     new FlinkVerificationMain(config, urls, process, creator, savepointPath).runTest()
   }

@@ -81,7 +81,7 @@ class FlinkProcessManager(config: Config,
   private lazy val verification = FlinkProcessVerifier(processConfig, jarClassLoader.file)
 
   override lazy val configCreator: ProcessConfigCreator =
-    jarClassLoader.createProcessConfigCreator(processConfig.getString("processConfigCreatorClass"))
+    jarClassLoader.createProcessConfigCreator
 
   override def deploy(processId: String, processDeploymentData: ProcessDeploymentData, savepointPath: Option[String]) = {
     val program = prepareProgram(processId, processDeploymentData)
@@ -207,8 +207,5 @@ class FlinkProcessManager(config: Config,
         new PackagedProgram(jarClassLoader.file, mainClass, List(processId, configPart, buildInfoJson): _*)
     }
   }
-
-
-
 }
 

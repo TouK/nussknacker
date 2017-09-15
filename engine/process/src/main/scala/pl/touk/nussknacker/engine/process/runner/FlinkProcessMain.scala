@@ -15,7 +15,7 @@ object FlinkProcessMain extends FlinkRunner {
     val process = readProcessFromArg(args(0))
     val config: Config = readConfigFromArgs(args)
     val buildInfo = if (args.length > 2) args(2) else ""
-    val registrar: FlinkProcessRegistrar = prepareRegistrar(loadCreator(config), config)
+    val registrar: FlinkProcessRegistrar = prepareRegistrar(loadCreator, config)
 
     val env = StreamExecutionEnvironment.getExecutionEnvironment
     setBuildInfo(buildInfo, env)

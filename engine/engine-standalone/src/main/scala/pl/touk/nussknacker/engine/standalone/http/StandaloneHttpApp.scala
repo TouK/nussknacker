@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import pl.touk.nussknacker.engine.standalone.management.DeploymentService
 import pl.touk.nussknacker.engine.standalone.utils.StandaloneContextPreparer
 import pl.touk.nussknacker.engine.util.ThreadUtils
-import pl.touk.nussknacker.engine.util.loader.JarClassLoader
+import pl.touk.nussknacker.engine.util.loader.{JarClassLoader, ProcessConfigCreatorServiceLoader}
 import pl.touk.http.argonaut.Argonaut62Support
 import pl.touk.nussknacker.engine.api.conversion.ProcessConfigCreatorMapping
 
@@ -31,7 +31,7 @@ object StandaloneHttpApp extends Directives with Argonaut62Support with LazyLogg
 
   val config = ConfigFactory.load()
   val processesClassLoader = loadProcessesClassloader(config)
-  val creator = loadCreator(config)
+  val creator = loadCreator
 
 
   val deploymentService = DeploymentService(prepareContext(config), creator, config)
@@ -68,11 +68,9 @@ object StandaloneHttpApp extends Directives with Argonaut62Support with LazyLogg
 
   }
 
-  def loadCreator(config: Config): ProcessConfigCreator = {
-    ThreadUtils.withThisAsContextClassLoader(processesClassLoader) {
-      val creator = ThreadUtils.loadUsingContextLoader(config.getString("processConfigCreatorClass")).newInstance()
-      ProcessConfigCreatorMapping.toProcessConfigCreator(creator)
-    }
+  def loadCreator: ProcessConfigCreator = {
+    val creator = ProcessConfigCreatorServiceLoader.createProcessConfigCreator(processesClassLoader)
+    ProcessConfigCreatorMapping.toProcessConfigCreator(creator)
   }
 
   def loadProcessesClassloader(config: Config): ClassLoader = {

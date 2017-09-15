@@ -39,7 +39,12 @@ trait ProcessConfigCreator {
 ```
 
 ##Passing ProcessConfigCreator to Nussknacker
-See [Configuration](Configuration.md#model).
+`ProcessConfigCreator` implementation is provided by 
+[ServiceLoader](https://docs.oracle.com/javase/8/docs/api/java/util/ServiceLoader.html).
+To register implementation, add file `META-INF/services/pl.touk.nussknacker.engine.api.process.ProcessConfigCreator`
+containing FQN of class implementing`ProcessConfigCreator` interface.
+Exactly one implementation have to be provided. 
+Any other case will result throws exception.
 ##Categories
 
 Each process is assigned to exactly one category. Each node can be accessible in many categories? 

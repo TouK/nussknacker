@@ -35,7 +35,6 @@ class StandaloneTestMainSpec extends FlatSpec with Matchers with BeforeAndAfterE
     val input = """{ "field1": "a", "field2": "b" }
       |{ "field1": "c", "field2": "d" }""".stripMargin
     val config = ConfigFactory.load()
-      .withValue("processConfigCreatorClass", fromAnyRef("pl.touk.nussknacker.engine.standalone.StandaloneProcessConfigCreator"))
 
     val results = StandaloneTestMain.run(ProcessMarshaller.toJson(process, PrettyParams.spaces2), config, new TestData(input.getBytes(StandardCharsets.UTF_8)), List())
 
@@ -71,7 +70,6 @@ class StandaloneTestMainSpec extends FlatSpec with Matchers with BeforeAndAfterE
     val input = """{ "field1": "a", "field2": "b" }
                   |{ "field1": "c", "field2": "d" }""".stripMargin
     val config = ConfigFactory.load()
-      .withValue("processConfigCreatorClass", fromAnyRef("pl.touk.nussknacker.engine.standalone.StandaloneProcessConfigCreator"))
 
     val results = StandaloneTestMain.run(ProcessMarshaller.toJson(process, PrettyParams.spaces2), config, new TestData(input.getBytes(StandardCharsets.UTF_8)), List())
 

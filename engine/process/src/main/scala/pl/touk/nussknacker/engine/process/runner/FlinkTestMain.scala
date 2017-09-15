@@ -15,7 +15,7 @@ object FlinkTestMain extends FlinkRunner {
 
   def run(processJson: String, config: Config, testData: TestData, urls: List[URL]): TestResults = {
     val process = readProcessFromArg(processJson)
-    val creator: ProcessConfigCreator = loadCreator(config)
+    val creator: ProcessConfigCreator = loadCreator
 
     new FlinkTestMain(config, testData, urls, process, creator).runTest()
   }

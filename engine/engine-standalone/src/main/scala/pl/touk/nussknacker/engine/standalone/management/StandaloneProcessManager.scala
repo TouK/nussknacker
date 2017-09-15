@@ -29,7 +29,7 @@ import pl.touk.nussknacker.engine.standalone.StandaloneProcessInterpreter
 import pl.touk.nussknacker.engine.standalone.utils.{StandaloneContext, StandaloneContextPreparer}
 import pl.touk.nussknacker.engine.util.ReflectUtils.StaticMethodRunner
 import pl.touk.nussknacker.engine.util.ThreadUtils
-import pl.touk.nussknacker.engine.util.loader.JarClassLoader
+import pl.touk.nussknacker.engine.util.loader.{JarClassLoader, ProcessConfigCreatorServiceLoader}
 import pl.touk.nussknacker.engine.util.service.{AuditDispatchClient, LogCorrelationId}
 
 import scala.concurrent.duration.FiniteDuration
@@ -101,7 +101,7 @@ class StandaloneProcessManager(config: Config)
   }
 
   lazy val configCreator: ProcessConfigCreator =
-    jarClassLoader.createProcessConfigCreator(processConfig.getString("processConfigCreatorClass"))
+    jarClassLoader.createProcessConfigCreator
 
   override def getProcessDefinition: ProcessDefinition[ObjectDefinition] = {
     ThreadUtils.withThisAsContextClassLoader(jarClassLoader.classLoader) {
@@ -124,13 +124,11 @@ object StandaloneTestMain {
 
   def run(processJson: String, config: Config, testData: TestData, urls: List[URL]): TestResults = {
     val process = TestUtils.readProcessFromArg(processJson)
-    val creator: ProcessConfigCreator = loadCreator(config)
-
-    new StandaloneTestMain(config, testData, process, creator).runTest()
+    new StandaloneTestMain(config, testData, process, loadCreator).runTest()
   }
 
-  protected def loadCreator(config: Config): ProcessConfigCreator = {
-    val creator = ThreadUtils.loadUsingContextLoader(config.getString("processConfigCreatorClass")).newInstance()
+  protected def loadCreator: ProcessConfigCreator = {
+    val creator = ProcessConfigCreatorServiceLoader.createProcessConfigCreator(Thread.currentThread().getContextClassLoader)
     ProcessConfigCreatorMapping.toProcessConfigCreator(creator)
   }
 

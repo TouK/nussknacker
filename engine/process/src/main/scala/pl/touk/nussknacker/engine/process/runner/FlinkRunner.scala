@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.util.ThreadUtils
+import pl.touk.nussknacker.engine.util.loader.ProcessConfigCreatorServiceLoader
 
 trait FlinkRunner {
 
@@ -24,8 +25,8 @@ trait FlinkRunner {
     readConfigFromArg(optionalConfigArg)
   }
 
-  protected def loadCreator(config: Config): ProcessConfigCreator = {
-    val creator = ThreadUtils.loadUsingContextLoader(config.getString("processConfigCreatorClass")).newInstance()
+  protected def loadCreator: ProcessConfigCreator = {
+    val creator = ProcessConfigCreatorServiceLoader.createProcessConfigCreator(Thread.currentThread().getContextClassLoader)
     ProcessConfigCreatorMapping.toProcessConfigCreator(creator)
   }
 

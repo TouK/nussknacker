@@ -15,7 +15,7 @@ object FlinkProcessTestRunner {
     if (!jarFile.exists()) {
       throw new FileNotFoundException(s"No jar file found at given path ${jarFile.getAbsolutePath}")
     } else {
-      new FlinkProcessTestRunner(config, JarClassLoader(jarFile))
+      new FlinkProcessTestRunner(config, JarClassLoader(jarFile.toURI.toURL))
     }
   }
 }

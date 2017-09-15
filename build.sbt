@@ -180,7 +180,8 @@ lazy val management = (project in engine("management")).
   settings(
     name := "nussknacker-management",
     Keys.test in IntegrationTest <<= (Keys.test in IntegrationTest).dependsOn(
-      (assembly in Compile) in management_sample
+      (assembly in Compile) in management_sample,
+      (assembly in Compile) in standalone_sample
     ),
     //jest problem we flinku jesli sie naraz deployuje i puszcza testy :|
     parallelExecution in IntegrationTest := false,
@@ -202,6 +203,13 @@ lazy val management = (project in engine("management")).
       )
     }
   ).dependsOn(interpreter, queryableState, kafkaTestUtil % "it,test")
+
+lazy val standalone_sample = (project in engine("engine-standalone/sample")).
+  settings(commonSettings).
+  settings(
+    name := "nussknacker-engine-standalone",
+    assemblyJarName in assembly := "standaloneSample.jar"
+  )
 
 val managementSampleName = "nussknacker-management-sample"
 
