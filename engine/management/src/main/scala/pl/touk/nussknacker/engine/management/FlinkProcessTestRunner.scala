@@ -15,7 +15,7 @@ object FlinkProcessTestRunner {
     if (!jarFile.exists()) {
       throw new FileNotFoundException(s"No jar file found at given path ${jarFile.getAbsolutePath}")
     } else {
-      new FlinkProcessTestRunner(config, JarClassLoader(jarFile.toURI.toURL))
+      new FlinkProcessTestRunner(config, JarClassLoader(jarFile))
     }
   }
 }
@@ -38,7 +38,7 @@ class FlinkProcessTestRunner(config: Config, jarClassLoader: JarClassLoader) {
   }
 
   def tryToInvoke(testData: TestData, json: String): Any = try {
-    invoker(json, config, testData, List(jarClassLoader.jarUrl))
+    invoker(json, config, testData, List(jarClassLoader.file.toURI.toURL))
   } catch {
     case e: InvocationTargetException => throw e.getTargetException
   }

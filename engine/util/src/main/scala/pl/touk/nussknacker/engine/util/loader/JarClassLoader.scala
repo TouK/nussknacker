@@ -1,15 +1,10 @@
 package pl.touk.nussknacker.engine.util.loader
 
 import java.io.File
-import java.net.{URL, URLClassLoader}
-import java.util.ServiceLoader
-
+import java.net.URLClassLoader
 import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 
-class JarClassLoader private(val classLoader: ClassLoader, val jarUrl: URL) {
-
-  lazy val file: File =
-    new File(jarUrl.toURI)
+class JarClassLoader private(val classLoader: ClassLoader, val file: File) {
 
   def createProcessConfigCreator: ProcessConfigCreator = {
     ProcessConfigCreatorServiceLoader.createProcessConfigCreator(classLoader)
@@ -19,16 +14,14 @@ class JarClassLoader private(val classLoader: ClassLoader, val jarUrl: URL) {
 object JarClassLoader {
 
   def apply(path: String): JarClassLoader =
-    JarClassLoader(url(path))
+    JarClassLoader(new File(path))
 
-  def apply(jarUrl: URL): JarClassLoader =
-    new JarClassLoader(classLoader(jarUrl), jarUrl)
+  def apply(file: File): JarClassLoader =
+    new JarClassLoader(classLoader(file), file)
 
-  private def classLoader(jarUrl: URL): URLClassLoader =
+  private def classLoader(file: File): URLClassLoader = {
+    val jarUrl = file.toURI.toURL
     new URLClassLoader(Array(jarUrl), this.getClass.getClassLoader)
-
-  private def url(path: String) =
-    new File(path).toURI.toURL
-
+  }
 
 }

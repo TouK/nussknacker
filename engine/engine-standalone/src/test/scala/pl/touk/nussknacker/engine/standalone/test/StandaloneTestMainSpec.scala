@@ -36,7 +36,11 @@ class StandaloneTestMainSpec extends FlatSpec with Matchers with BeforeAndAfterE
       |{ "field1": "c", "field2": "d" }""".stripMargin
     val config = ConfigFactory.load()
 
-    val results = StandaloneTestMain.run(ProcessMarshaller.toJson(process, PrettyParams.spaces2), config, new TestData(input.getBytes(StandardCharsets.UTF_8)), List())
+    val results = StandaloneTestMain.run(
+      processJson = ProcessMarshaller.toJson(process, PrettyParams.spaces2),
+      config = config,
+      testData = new TestData(input.getBytes(StandardCharsets.UTF_8)),
+      classLoader = getClass.getClassLoader)
 
     results.nodeResults("filter1").toSet shouldBe Set(
       NodeResult(Context("proc1-0", Map("input" -> Request1("a","b")))),
@@ -71,7 +75,11 @@ class StandaloneTestMainSpec extends FlatSpec with Matchers with BeforeAndAfterE
                   |{ "field1": "c", "field2": "d" }""".stripMargin
     val config = ConfigFactory.load()
 
-    val results = StandaloneTestMain.run(ProcessMarshaller.toJson(process, PrettyParams.spaces2), config, new TestData(input.getBytes(StandardCharsets.UTF_8)), List())
+    val results = StandaloneTestMain.run(
+      processJson = ProcessMarshaller.toJson(process, PrettyParams.spaces2),
+      config = config,
+      testData = new TestData(input.getBytes(StandardCharsets.UTF_8)),
+      classLoader = getClass.getClassLoader)
 
     results.invocationResults("occasionallyThrowFilter").toSet shouldBe Set(ExpressionInvocationResult(Context("proc1-1", Map("input" -> Request1("c","d"))), "expression", true))
     results.exceptions should have size 1

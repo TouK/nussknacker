@@ -57,7 +57,7 @@ class StandaloneProcessManager(config: Config)
 
   val processConfig = processConfigPart.toConfig
 
-  private val testRunner = StandaloneTestRunner(processConfig, jarClassLoader.jarUrl)
+
 
   import argonaut.ArgonautShapeless._
 
@@ -85,7 +85,9 @@ class StandaloneProcessManager(config: Config)
   }
 
   override def test(processId: String, processJson: String, testData: TestData): Future[TestResults] = {
-    Future(testRunner.test(processId, processJson, testData))
+    Future{
+      StandaloneTestMain.run(processJson,config,testData, jarClassLoader.classLoader)
+    }
   }
 
   override def findJobStatus(name: String): Future[Option[ProcessState]] = {
@@ -112,23 +114,15 @@ class StandaloneProcessManager(config: Config)
   lazy val buildInfo: Map[String, String] = configCreator.buildInfo()
 }
 
-
-object StandaloneTestRunner {
-  def apply(config: Config, jarUrl: URL): TestUtils.StandaloneTestRunner = {
-    new TestUtils.StandaloneTestRunner(config, List(jarUrl))
-  }
-
-}
-
 object StandaloneTestMain {
 
-  def run(processJson: String, config: Config, testData: TestData, urls: List[URL]): TestResults = {
+  def run(processJson: String, config: Config, testData: TestData, classLoader: ClassLoader): TestResults = {
     val process = TestUtils.readProcessFromArg(processJson)
-    new StandaloneTestMain(config, testData, process, loadCreator).runTest()
+    new StandaloneTestMain(config, testData, process, loadCreator(classLoader)).runTest()
   }
 
-  protected def loadCreator: ProcessConfigCreator = {
-    val creator = ProcessConfigCreatorServiceLoader.createProcessConfigCreator(Thread.currentThread().getContextClassLoader)
+  protected def loadCreator(classLoader: ClassLoader): ProcessConfigCreator = {
+    val creator = ProcessConfigCreatorServiceLoader.createProcessConfigCreator(classLoader)
     ProcessConfigCreatorMapping.toProcessConfigCreator(creator)
   }
 
@@ -230,14 +224,6 @@ object TestUtils {
         }
         service.invokeMethod(parameterCreator, newAdditional)
       }
-    }
-  }
-
-  class StandaloneTestRunner(config: Config, jars: List[URL]) extends StaticMethodRunner(jars,
-    "pl.touk.nussknacker.engine.standalone.management.StandaloneTestMain", "run") {
-
-    def test(processId: String, processJson: String, testData: TestData): TestResults = {
-      tryToInvoke(testData, processJson).asInstanceOf[TestResults]
     }
   }
 
