@@ -6,10 +6,13 @@ import org.apache.flink.streaming.api.watermark.Watermark
 import pl.touk.nussknacker.engine.api.util.MultiMap
 import pl.touk.nussknacker.engine.api.{InterpretationResult, ValueWithContext}
 
+@Deprecated
 abstract class RichEvictableState[T] extends RichEvictableStateGeneric[T, ValueWithContext[Any]]
 
+@Deprecated
 abstract class TimestampedEvictableState[T] extends TimestampedEvictableStateGeneric[T, ValueWithContext[Any]]
 
+@Deprecated
 abstract class TimestampedEvictableStateGeneric[T, OUT] extends RichEvictableStateGeneric[MultiMap[Long, T], OUT] {
 
   override def processWatermark(mark: Watermark) = {
@@ -27,6 +30,8 @@ abstract class TimestampedEvictableStateGeneric[T, OUT] extends RichEvictableSta
 
 }
 
+
+@Deprecated
 abstract class RichEvictableStateGeneric[T, OUT] extends EvictableState[InterpretationResult, OUT] {
 
   setChainingStrategy(ChainingStrategy.ALWAYS)

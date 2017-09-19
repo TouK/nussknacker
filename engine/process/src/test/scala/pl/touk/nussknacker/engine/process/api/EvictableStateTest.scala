@@ -5,12 +5,14 @@ import java.nio.file.Files
 
 import org.apache.flink.api.common.state.ValueStateDescriptor
 import org.apache.flink.streaming.api.TimeCharacteristic
+import org.apache.flink.streaming.api.functions.ProcessFunction
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
+import org.apache.flink.util.Collector
 import org.scalatest.concurrent.Eventually
 import org.scalatest.time.{Seconds, Span}
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
-import pl.touk.nussknacker.engine.flink.api.state.EvictableState
+import pl.touk.nussknacker.engine.flink.api.state.{EvictableState, EvictableStateFunction}
 import pl.touk.nussknacker.engine.flink.util.source.StaticSource
 import pl.touk.nussknacker.engine.flink.util.source.StaticSource.{Data, Watermark}
 
@@ -33,7 +35,7 @@ class EvictableStateTest extends FlatSpec with Matchers with BeforeAndAfter with
 
     env.addSource(StaticSource)
       .keyBy(_ => "staticKey")
-      .transform("testOp1", new TestOperator)
+      .process(new TestOperator)
       .addSink(_ => ())
 
     futureResult = Future {
@@ -77,19 +79,21 @@ class EvictableStateTest extends FlatSpec with Matchers with BeforeAndAfter with
 }
 
 
-class TestOperator extends EvictableState[String, String]  {
-  override def getState = getRuntimeContext.getState(new ValueStateDescriptor("st1", classOf[List[String]]))
+class TestOperator extends EvictableStateFunction[String, String, List[String]]  {
 
-  override def processElement(element: StreamRecord[String]) = {
-    setEvictionTimeForCurrentKey(element.getTimestamp + 5000)
+  override protected def stateDescriptor: ValueStateDescriptor[List[String]] = new ValueStateDescriptor("st1", classOf[List[String]])
 
-    val newState = Option(getState.value()).getOrElse(List()) :+ element.getValue
+  override def processElement(value: String, ctx: ProcessFunction[String, String]#Context, out: Collector[String]): Unit = {
+    moveEvictionTime(5000, ctx)
+
+    val newState = Option(state.value()).getOrElse(List()) :+ value
 
     TestOperator.buffer = TestOperator.buffer :+ newState
-    getState.update(newState)
+    state.update(newState)
 
-    output.collect(element)
+    out.collect(value)
   }
+
 }
 
 object TestOperator{

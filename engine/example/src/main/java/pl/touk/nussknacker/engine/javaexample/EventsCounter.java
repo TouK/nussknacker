@@ -2,13 +2,17 @@ package pl.touk.nussknacker.engine.javaexample;
 
 import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.api.java.functions.KeySelector;
-import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
-import pl.touk.nussknacker.engine.api.*;
+import org.apache.flink.util.Collector;
+import pl.touk.nussknacker.engine.api.CustomStreamTransformer;
+import pl.touk.nussknacker.engine.api.InterpretationResult;
+import pl.touk.nussknacker.engine.api.LazyInterpreter;
+import pl.touk.nussknacker.engine.api.MethodToInvoke;
+import pl.touk.nussknacker.engine.api.ParamName;
+import pl.touk.nussknacker.engine.api.ValueWithContext;
 import pl.touk.nussknacker.engine.api.util.MultiMap;
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomStreamTransformation;
-import pl.touk.nussknacker.engine.flink.api.state.TimestampedEvictableState;
+import pl.touk.nussknacker.engine.flink.api.state.TimestampedEvictableStateFunction;
 import pl.touk.nussknacker.engine.flink.javaapi.process.JavaFlinkCustomStreamTransformation;
-import pl.touk.nussknacker.engine.flink.util.TypeInfoHelper$;
 import scala.concurrent.duration.Duration;
 
 import static scala.collection.JavaConversions.asJavaCollection;
@@ -27,8 +31,7 @@ public class EventsCounter extends CustomStreamTransformer {
                             return key.syncInterpretationFunction().apply(ir);
                         }
                     })
-                    .transform("eventsCounter", TypeInfoHelper$.MODULE$.valueWithContextTypeInfo(), new CounterFunction(lengthInMillis))
-                    ;
+                    .process(new CounterFunction(lengthInMillis));
         });
     }
 
@@ -44,7 +47,7 @@ public class EventsCounter extends CustomStreamTransformer {
         }
     }
 
-    public static class CounterFunction extends TimestampedEvictableState<Integer> {
+    public static class CounterFunction extends TimestampedEvictableStateFunction<InterpretationResult, ValueWithContext<Object>, Integer> {
         long lengthInMillis;
 
         public CounterFunction(long lengthInMillis) {
@@ -57,21 +60,22 @@ public class EventsCounter extends CustomStreamTransformer {
         }
 
         @Override
-        public void processElement(StreamRecord<InterpretationResult> element) throws Exception {
-            setEvictionTimeForCurrentKey(element.getTimestamp() + lengthInMillis);
-            getState().update(filterState(element.getTimestamp(), lengthInMillis));
+        public void processElement(InterpretationResult ir, Context ctx, Collector<ValueWithContext<Object>> out) throws Exception {
+            long timestamp = ctx.timestamp();
 
-            InterpretationResult ir = element.getValue();
-            MultiMap<Object, Integer> eventCount = stateValue().add(element.getTimestamp(), 1);
+            moveEvictionTime(lengthInMillis, ctx);
+
+            MultiMap<Object, Integer> eventCount = stateValue().add(timestamp, 1);
             state().update(eventCount);
             //TODO java version of MultiMap?
             int eventsCount = asJavaCollection(eventCount.map().values()).stream()
                     .map(l -> asJavaCollection(l).stream().mapToInt(Integer::intValue).sum())
                     .mapToInt(Integer::intValue).sum();
-            output.collect(new StreamRecord<ValueWithContext<Object>>(
-                    new ValueWithContext<>(new EventCount(eventsCount), ir.finalContext()), element.getTimestamp()
-            ));
+            out.collect(
+                new ValueWithContext<>(new EventCount(eventsCount), ir.finalContext())
+            );
         }
+
     }
 
 }

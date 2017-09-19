@@ -2,12 +2,13 @@ package pl.touk.nussknacker.engine.example.custom
 
 import org.apache.flink.api.common.state.ValueStateDescriptor
 import org.apache.flink.api.scala._
+import org.apache.flink.streaming.api.functions.ProcessFunction
 import org.apache.flink.streaming.api.scala.DataStream
-import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
+import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.util.MultiMap
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomStreamTransformation
-import pl.touk.nussknacker.engine.flink.api.state.TimestampedEvictableState
+import pl.touk.nussknacker.engine.flink.api.state.TimestampedEvictableStateFunction
 
 import scala.concurrent.duration.Duration
 
@@ -20,29 +21,31 @@ class EventsCounter() extends CustomStreamTransformer {
     FlinkCustomStreamTransformation((start: DataStream[InterpretationResult]) => {
       val lengthInMillis = Duration(length).toMillis
       start.keyBy(key.syncInterpretationFunction)
-        .transform("eventsCounter", new CounterFunction(lengthInMillis))
+        .process(new CounterFunction(lengthInMillis))
     })
   }
 }
 
-class CounterFunction(lengthInMillis: Long) extends TimestampedEvictableState[Int] {
+class CounterFunction(lengthInMillis: Long) extends TimestampedEvictableStateFunction[InterpretationResult, ValueWithContext[Any], Int] {
 
   override def stateDescriptor =
     new ValueStateDescriptor[MultiMap[Long, Int]]("state", classOf[MultiMap[Long, Int]])
 
-  override def processElement(element: StreamRecord[InterpretationResult]): Unit = {
-    setEvictionTimeForCurrentKey(element.getTimestamp + lengthInMillis)
-    state.update(filterState(element.getTimestamp, lengthInMillis))
 
-    val ir = element.getValue
-    val eventCount = stateValue.add(element.getTimestamp, 1)
+  override def processElement(ir: InterpretationResult, ctx: ProcessFunction[InterpretationResult, ValueWithContext[Any]]#Context,
+                              out: Collector[ValueWithContext[Any]]): Unit = {
+
+    moveEvictionTime(lengthInMillis, ctx)
+
+    val eventCount = stateValue.add(ctx.timestamp(), 1)
     state.update(eventCount)
 
     val eventsCount = eventCount.map.values.flatten.sum
-    output.collect(new StreamRecord[ValueWithContext[Any]](
-      ValueWithContext(EventCount(count = eventsCount), ir.finalContext), element.getTimestamp)
+    out.collect(
+      ValueWithContext(EventCount(count = eventsCount), ir.finalContext)
     )
   }
+
 }
 
 case class EventCount(count: Long)
