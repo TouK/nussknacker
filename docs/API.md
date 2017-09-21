@@ -105,7 +105,7 @@ Sample enricher looks like this:
 class ClientService extends Service {
   @MethodToInvoke
   def invoke(@ParamName("clientId") clientId: String)
-            (implicit ec: ExecutionContext): Future[Client] = {
+            (implicit ec: ExecutionContext, metaData: MetaData): Future[Client] = {
     val clients = Map(
       "1" -> Client("1", "Alice", "123"), 
       "2" -> Client("1", "Bob", "234") 
@@ -116,6 +116,13 @@ class ClientService extends Service {
 ```
 Every non-implicit parameter should be annotated with `@ParamName` - value from annotation will be used in UI to display parameter name.
 You have full control over non-implicit parameters, on the other hand implicit parameters are injected by Nussknacker.
+
+Apart from parameters - non-implicit and annotated with `@ParamName` you can also have certain implicit parameters in 
+signature of `@MethodToInvoke`. They are optional - you can put any of them in method signature, but you don't have to.
+They are:
+* `scala.concurrent.ExecutionContext` - useful for e.g. invoking asynchronous external services
+* `pl.touk.nussknacker.engine.api.MetaData` - if you want to e.g. have process name passed to external services
+* `pl.touk.nussknacker.engine.api.test.ServiceInvocationCollector` - used in test mode, see next paragraph
 
 ### Service in tests from file
 Service in tests can behave as in production, but sometimes it seems wrong or impractical - for example when service sends mail. 

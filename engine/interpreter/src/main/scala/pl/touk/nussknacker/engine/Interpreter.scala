@@ -226,7 +226,7 @@ class Interpreter private(services: Map[String, ServiceInvoker],
   }
 
 
-  private def prepareLazyValuesProvider[R](ctx: Context)(implicit ec: ExecutionContext, node: Node) = if (allowLazyVars) {
+  private def prepareLazyValuesProvider[R](ctx: Context)(implicit ec: ExecutionContext, metaData: MetaData, node: Node) = if (allowLazyVars) {
     new LazyValuesProviderImpl(services = services, ctx = ctx)
   } else {
     ThrowingLazyValuesProvider
@@ -256,7 +256,7 @@ object Interpreter {
   }
 
   private class LazyValuesProviderImpl(services: Map[String, ServiceInvoker], ctx: Context)
-                                      (implicit ec: ExecutionContext, node: Node) extends LazyValuesProvider {
+                                      (implicit ec: ExecutionContext, metaData: MetaData, node: Node) extends LazyValuesProvider {
 
     override def apply[T](context: LazyContext, serviceId: String, params: Seq[(String, Any)]): IO[(LazyContext, T)] = {
       val paramsMap = params.toMap

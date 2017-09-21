@@ -12,7 +12,7 @@ object dumb {
   object DumbServiceInvoker extends ServiceInvoker {
 
     override def invoke(params: Map[String, Any], nodeContext: NodeContext)
-                       (implicit ec: ExecutionContext) = throw new IllegalAccessException("Dumb service shouldn't be invoked")
+                       (implicit ec: ExecutionContext, metaData: MetaData) = throw new IllegalAccessException("Dumb service shouldn't be invoked")
 
   }
 
