@@ -8,7 +8,7 @@ object StateConfiguration {
 
   def prepareRocksDBStateBackend(config: RocksDBStateBackendConfig): AbstractStateBackend = {
 
-    val rocksDBStateBackend = new RocksDBStateBackend(config.checkpointDataUri)
+    val rocksDBStateBackend = new RocksDBStateBackend(config.checkpointDataUri, config.incrementalCheckpoints)
     config.dbStoragePath.foreach(rocksDBStateBackend.setDbStoragePath)
 
     rocksDBStateBackend.setPredefinedOptions(PredefinedOptions.SPINNING_DISK_OPTIMIZED)
@@ -35,6 +35,6 @@ object StateConfiguration {
   case class RocksDBStateBackendConfig(checkpointDataUri: String,
                                        dbStoragePath: Option[String],
                                        increaseParallelism: Option[Int],
-                                       maxOpenFiles: Option[Int])
+                                       maxOpenFiles: Option[Int], incrementalCheckpoints: Boolean = false)
 
 }
