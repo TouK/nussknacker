@@ -10,25 +10,26 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.stream.ActorMaterializer
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.ui.api._
-import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
-import pl.touk.nussknacker.ui.validation.ProcessValidation
-import pl.touk.nussknacker.ui.db.DatabaseInitializer
-import pl.touk.nussknacker.ui.initialization.Initialization
-import pl.touk.nussknacker.ui.process.{JobStatusService, ProcessTypesForCategories, ProcessingTypeDeps}
-import pl.touk.nussknacker.ui.process.deployment.ManagementActor
-import pl.touk.nussknacker.ui.process.migrate.HttpProcessMigrator
-import pl.touk.nussknacker.ui.process.repository.{DeployedProcessRepository, ProcessActivityRepository, ProcessRepository}
-import pl.touk.nussknacker.ui.process.subprocess.{ProcessRepositorySubprocessRepository, SubprocessResolver}
-import pl.touk.nussknacker.ui.process.uiconfig.SingleNodeConfig
-import pl.touk.nussknacker.ui.process.uiconfig.defaults.{ParamDefaultValueConfig, TypeAfterConfig}
-import pl.touk.nussknacker.ui.processreport.ProcessCounter
-import pl.touk.nussknacker.ui.security.SimpleAuthenticator
-import pl.touk.process.report.influxdb.InfluxReporter
-import slick.jdbc.JdbcBackend
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import pl.touk.nussknacker.ui.api._
+import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
+import pl.touk.nussknacker.ui.db.DatabaseInitializer
+import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
+import pl.touk.nussknacker.ui.initialization.Initialization
+import pl.touk.nussknacker.ui.process.deployment.ManagementActor
+import pl.touk.nussknacker.ui.process.migrate.{HttpProcessMigrator, TestModelMigrations}
+import pl.touk.nussknacker.ui.process.repository.{DeployedProcessRepository, ProcessActivityRepository, ProcessRepository}
+import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, SubprocessResolver}
+import pl.touk.nussknacker.ui.process.uiconfig.SingleNodeConfig
+import pl.touk.nussknacker.ui.process.uiconfig.defaults.{ParamDefaultValueConfig, TypeAfterConfig}
+import pl.touk.nussknacker.ui.process.{JobStatusService, ProcessTypesForCategories, ProcessingTypeDeps}
+import pl.touk.nussknacker.ui.processreport.ProcessCounter
+import pl.touk.nussknacker.ui.security.SimpleAuthenticator
+import pl.touk.nussknacker.ui.validation.ProcessValidation
+import pl.touk.process.report.influxdb.InfluxReporter
 import slick.jdbc
+import slick.jdbc.JdbcBackend
 
 import scala.util.Try
 
@@ -56,26 +57,26 @@ object NussknackerApp extends App with Directives with LazyLogging {
 
   val port = args(0).toInt
   val initialProcessDirectory = new File(args(1))
-  val ProcessingTypeDeps(processDefinitions, validators, managers, espQueryableClient, buildInfo, standaloneModeEnabled) =
+  val ProcessingTypeDeps(managers, espQueryableClient, modelData) =
     ProcessingTypeDeps(config, featureTogglesConfig.standaloneMode)
 
-  val processRepositoryForSub = new ProcessRepository(db, DefaultJdbcProfile.profile, null, system.dispatcher)
   val defaultParametersValues = ParamDefaultValueConfig(nodesConfig.map {case (k, v) => (k, v.defaultValues.getOrElse(Map.empty))})
   val extractValueParameterByConfigThenType = new TypeAfterConfig(defaultParametersValues)
 
-  val subprocessRepository = new ProcessRepositorySubprocessRepository(processRepositoryForSub)
+  val subprocessRepository = new DbSubprocessRepository(db, DefaultJdbcProfile.profile, system.dispatcher)
   val subprocessResolver = new SubprocessResolver(subprocessRepository)
 
-  val processValidation = new ProcessValidation(validators, subprocessResolver)
+  val processValidation = ProcessValidation(modelData, subprocessResolver)
 
-  val processRepository = new ProcessRepository(db, DefaultJdbcProfile.profile, processValidation, system.dispatcher)
-  val deploymentProcessRepository = new DeployedProcessRepository(db, DefaultJdbcProfile.profile, buildInfo)
+  val processRepository = ProcessRepository(db, DefaultJdbcProfile.profile, processValidation, modelData)
+  val deploymentProcessRepository = DeployedProcessRepository(db, DefaultJdbcProfile.profile, modelData)
   val processActivityRepository = new ProcessActivityRepository(db, DefaultJdbcProfile.profile)
   val attachmentService = new ProcessAttachmentService(config.getString("attachmentsPath"), processActivityRepository)
   val authenticator = new SimpleAuthenticator(config.getString("usersFile"))
   val counter = new ProcessCounter(subprocessRepository)
 
-  Initialization.init(processRepository, db, environment, featureTogglesConfig.development, initialProcessDirectory, standaloneModeEnabled)
+  Initialization.init(modelData, processRepository, processActivityRepository,
+    db, environment, featureTogglesConfig.development, initialProcessDirectory)
   initHttp()
 
   val managementActor = ManagementActor(environment, managers, processRepository, deploymentProcessRepository, subprocessResolver)
@@ -89,19 +90,19 @@ object NussknackerApp extends App with Directives with LazyLogging {
       new ProcessesResources(processRepository, jobStatusService, processActivityRepository, processValidation, typesForCategories),
         new ProcessesExportResources(processRepository, processActivityRepository),
         new ProcessActivityResource(processActivityRepository, attachmentService),
-        new ManagementResources(processDefinitions.values.flatMap(_.typesInformation).toList, counter, managementActor),
+        ManagementResources(modelData, counter, managementActor),
         new ValidationResources(processValidation),
-        new DefinitionResources(processDefinitions, subprocessRepository, extractValueParameterByConfigThenType),
-        new SignalsResources(managers, processDefinitions, processRepository),
-        new QueryableStateResources(processDefinitions, processRepository, espQueryableClient, jobStatusService),
+        new DefinitionResources(modelData, subprocessRepository, extractValueParameterByConfigThenType),
+        new SignalsResources(modelData(ProcessingType.Streaming), processRepository),
+        new QueryableStateResources(modelData, processRepository, espQueryableClient, jobStatusService),
         new UserResources(),
         new SettingsResources(featureTogglesConfig, nodesConfig),
-        new AppResources(buildInfo, processRepository, jobStatusService),
-        new TestInfoResources(managers, processRepository)
+        new AppResources(modelData, processRepository, jobStatusService),
+        new TestInfoResources(modelData)
     )
     val optionalRoutes = List(
       featureTogglesConfig.migration
-        .map(migrationConfig => new HttpProcessMigrator(migrationConfig, environment))
+        .map(migrationConfig => new HttpProcessMigrator(migrationConfig, TestModelMigrations(modelData), environment))
         .map(migrator => new MigrationResources(migrator, processRepository)),
       featureTogglesConfig.counts
         .map(countsConfig => new InfluxReporter(environment, countsConfig))

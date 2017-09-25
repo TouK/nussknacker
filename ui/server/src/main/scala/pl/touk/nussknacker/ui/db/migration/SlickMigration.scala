@@ -37,13 +37,13 @@ trait ProcessJsonMigration extends SlickMigration {
   import profile.api._
 
   override def migrateActions = for {
-    processes <- EspTables.processVersionsTable.filter(_.json.isDefined).result
-    seqed <- DBIOAction.sequence(processes.map(updateOne))
+    processes <- EspTables.processVersionsTable.map(pe => (pe.id, pe.processId, pe.json)).filter(_._3.isDefined).result
+    seqed <- DBIOAction.sequence(processes.map((updateOne _).tupled))
   } yield seqed
 
-  private def updateOne(process: ProcessVersionEntityData) = EspTables.processVersionsTable
-          .filter(v => v.id === process.id && v.processId === process.processId)
-          .map(_.json).update(process.json.map(prepareAndUpdateJson))
+  private def updateOne(id: Long, processId: String, json: Option[String]) = EspTables.processVersionsTable
+          .filter(v => v.id === id && v.processId === processId)
+          .map(_.json).update(json.map(prepareAndUpdateJson))
 
   private def prepareAndUpdateJson(json: String) : String = {
     val jsonProcess = Parse.parse(json).right.get

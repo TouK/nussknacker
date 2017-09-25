@@ -12,11 +12,13 @@ import akka.http.scaladsl.server.Directives._
 import argonaut.Argonaut._
 import argonaut.PrettyParams
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.deployment.test.{TestData, TestResults}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.PlainClazzDefinition
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.codec.UiCodecs
+import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
 import pl.touk.nussknacker.ui.process.deployment.{Cancel, Deploy, Snapshot, Test}
 import pl.touk.nussknacker.ui.process.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.ui.process.marshall.{ProcessConverter, UiProcessMarshaller}
@@ -27,7 +29,18 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 
 
-class ManagementResources(typesInformation: List[PlainClazzDefinition], processCounter: ProcessCounter,
+object ManagementResources {
+
+  def apply(modelData: Map[ProcessingType, ModelData], processCounter: ProcessCounter, managementActor: ActorRef)
+           (implicit ec: ExecutionContext, mat: Materializer): ManagementResources = {
+    val types = modelData.values.flatMap(_.processDefinition.typesInformation).toList
+    new ManagementResources(types, processCounter, managementActor)
+  }
+
+}
+
+class ManagementResources(typesInformation: List[PlainClazzDefinition],
+                          processCounter: ProcessCounter,
                           val managementActor: ActorRef)(implicit ec: ExecutionContext, mat: Materializer) extends Directives with LazyLogging  with RouteWithUser {
 
   import pl.touk.nussknacker.ui.codec.UiCodecs.displayableProcessCodec

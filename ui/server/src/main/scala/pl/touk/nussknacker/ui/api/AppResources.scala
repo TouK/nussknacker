@@ -10,11 +10,12 @@ import pl.touk.nussknacker.ui.process.repository.ProcessRepository
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessDetails
 import pl.touk.nussknacker.ui.security.LoggedUser
 import pl.touk.http.argonaut.Argonaut62Support
+import pl.touk.nussknacker.engine.ModelData
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
-class AppResources(buildInfo: Map[String, String],
+class AppResources(modelData: Map[ProcessingType, ModelData],
                    processRepository: ProcessRepository,
                    jobStatusService: JobStatusService)(implicit ec: ExecutionContext)
   extends Directives with Argonaut62Support with LazyLogging with RouteWithUser {
@@ -26,7 +27,9 @@ class AppResources(buildInfo: Map[String, String],
       path("buildInfo") {
         get {
           complete {
-            buildInfo
+            modelData.map {
+              case (k,v) => (k.toString, v.configCreator.buildInfo())
+            }
           }
         }
       } ~ path("healthCheck") {

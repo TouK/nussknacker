@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.validation
 
 import cats.data.NonEmptyList
+import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.compile.{ProcessCompilationError, ProcessValidator}
 import pl.touk.nussknacker.engine.graph.node.{Disableable, NodeData, Source, SubprocessInputDefinition}
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
@@ -9,11 +10,19 @@ import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
 import pl.touk.nussknacker.ui.validation.ValidationResults.ValidationResult
 
+object ProcessValidation{
+
+  def apply(data: Map[ProcessingType, ModelData], subprocessResolver: SubprocessResolver) : ProcessValidation = {
+    new ProcessValidation(data.mapValues(_.validator), subprocessResolver)
+  }
+}
+
 class ProcessValidation(validators: Map[ProcessingType, ProcessValidator], subprocessResolver: SubprocessResolver) {
 
   val uiValidationError = "UiValidation"
 
   import pl.touk.nussknacker.ui.util.CollectionsEnrichments._
+
 
   def validate(displayable: DisplayableProcess): ValidationResult = {
     val processValidator = validators(displayable.processingType)

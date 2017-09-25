@@ -1,15 +1,14 @@
 package pl.touk.nussknacker.engine.standalone.management
 
-import java.io.File
-import java.lang.reflect.InvocationTargetException
-import java.net.{URL, URLClassLoader}
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 import cats.data.Validated.{Invalid, Valid}
 import com.codahale.metrics.MetricRegistry
 import com.typesafe.config.Config
+import com.typesafe.scalalogging.LazyLogging
 import dispatch.Http
+import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.EndingReference
 import pl.touk.nussknacker.engine.api.conversion.ProcessConfigCreatorMapping
 import pl.touk.nussknacker.engine.api.deployment._
@@ -19,45 +18,37 @@ import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{ServiceInvocati
 import pl.touk.nussknacker.engine.api.test.{ResultsCollectingListener, ResultsCollectingListenerHolder, TestRunId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectDefinition, ObjectWithMethodDef}
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ObjectProcessDefinition, ProcessDefinition}
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
 import pl.touk.nussknacker.engine.definition._
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.Source
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.standalone.StandaloneProcessInterpreter
-import pl.touk.nussknacker.engine.standalone.utils.{StandaloneContext, StandaloneContextPreparer}
-import pl.touk.nussknacker.engine.util.ReflectUtils.StaticMethodRunner
-import pl.touk.nussknacker.engine.util.ThreadUtils
-import pl.touk.nussknacker.engine.util.loader.{JarClassLoader, ProcessConfigCreatorServiceLoader}
+import pl.touk.nussknacker.engine.standalone.utils.StandaloneContextPreparer
+import pl.touk.nussknacker.engine.util.loader.ProcessConfigCreatorServiceLoader
 import pl.touk.nussknacker.engine.util.service.{AuditDispatchClient, LogCorrelationId}
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, ExecutionContext, Future}
 
-class StandaloneProcessManager(config: Config)
-  extends ProcessManager with ConfigCreatorTestInfoProvider with ProcessDefinitionProvider with ConfigCreatorSignalDispatcher {
 
+object StandaloneProcessManager {
+  def apply(config: Config) : StandaloneProcessManager = new StandaloneProcessManager(StandaloneModelData(config), config)
+}
 
-  implicit val ec = ExecutionContext.Implicits.global
+class StandaloneProcessManager(modelData: ModelData, config: Config)
+  extends ProcessManager with LazyLogging {
+
+  private implicit val ec = ExecutionContext.Implicits.global
 
   private val standaloneConf = config.getConfig("standaloneConfig")
-
-  private val jarClassLoader = JarClassLoader(standaloneConf.getString("jarPath"))
 
   private val httpClient = Http.apply()
   private val dispatchClient = new AuditDispatchClient {
     override protected def http = httpClient
   }
   private val managementUrl = standaloneConf.getString("managementUrl")
-
-  private val processConfigPart = {
-    config.getConfig("standaloneProcessConfig").root()
-  }
-
-  val processConfig = processConfigPart.toConfig
-
-
 
   import argonaut.ArgonautShapeless._
 
@@ -86,7 +77,7 @@ class StandaloneProcessManager(config: Config)
 
   override def test(processId: String, processJson: String, testData: TestData): Future[TestResults] = {
     Future{
-      StandaloneTestMain.run(processJson,config,testData, jarClassLoader.classLoader)
+      StandaloneTestMain.run(processJson,config,testData, modelData.jarClassLoader.classLoader)
     }
   }
 
@@ -102,16 +93,6 @@ class StandaloneProcessManager(config: Config)
     dispatchClient.sendWithAuditAndStatusChecking(cancelUrl.POST).map(_ => ())
   }
 
-  lazy val configCreator: ProcessConfigCreator =
-    jarClassLoader.createProcessConfigCreator
-
-  override def getProcessDefinition: ProcessDefinition[ObjectDefinition] = {
-    ThreadUtils.withThisAsContextClassLoader(jarClassLoader.classLoader) {
-      ObjectProcessDefinition(ProcessDefinitionExtractor.extractObjectWithMethods(configCreator, processConfig))
-    }
-  }
-
-  lazy val buildInfo: Map[String, String] = configCreator.buildInfo()
 }
 
 object StandaloneTestMain {

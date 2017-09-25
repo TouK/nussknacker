@@ -23,12 +23,12 @@ object ProcessConverter {
     }
   }
 
-  def toDisplayableOrDie(canonicalJson: String, processingType: ProcessingType, processType: ProcessType = ProcessType.Graph, businessView: Boolean = false): DisplayableProcess = {
-    toDisplayable(toCanonicalOrDie(canonicalJson), processingType, processType = processType, businessView = businessView)
+  def toDisplayableOrDie(canonicalJson: String, processingType: ProcessingType, businessView: Boolean = false): DisplayableProcess = {
+    toDisplayable(toCanonicalOrDie(canonicalJson), processingType, businessView = businessView)
   }
 
   //FIXME: without default param
-  def toDisplayable(process: CanonicalProcess, processingType: ProcessingType, processType: ProcessType = ProcessType.Graph, businessView: Boolean = false): DisplayableProcess = {
+  def toDisplayable(process: CanonicalProcess, processingType: ProcessingType, businessView: Boolean = false): DisplayableProcess = {
     val (nodes, edges) = if (businessView) {
       toGraphInner(process.nodes.flatMap(toBusinessNode))
     } else {

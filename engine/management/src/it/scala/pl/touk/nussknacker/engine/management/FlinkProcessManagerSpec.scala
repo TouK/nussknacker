@@ -156,9 +156,10 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
     cancel(processId)
   }
 
+
   it should "extract process definition" in {
 
-    val definition = processManager.getProcessDefinition
+    val definition = FlinkModelData(config).processDefinition
 
     definition.services should contain key "accountService"
   }
@@ -167,13 +168,15 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
     val signalsTopic = s"esp.signal-${UUID.randomUUID()}"
     val configWithSignals = config
       .withValue("processConfig.signals.topic", ConfigValueFactory.fromAnyRef(signalsTopic))
-    val processManager = FlinkProcessManager(configWithSignals)
+    val flinkModelData = FlinkModelData(configWithSignals)
+    val processManager = FlinkProcessManager(flinkModelData, configWithSignals)
+
     val kafkaClient = new KafkaClient(
       configWithSignals.getString("processConfig.kafka.kafkaAddress"),
       configWithSignals.getString("processConfig.kafka.zkAddress"))
     val consumer = kafkaClient.createConsumer()
 
-    processManager.dispatchSignal("removeLockSignal", "test-process", Map("lockId" -> "test-lockId"))
+    flinkModelData.dispatchSignal("removeLockSignal", "test-process", Map("lockId" -> "test-lockId"))
 
     val readSignals = consumer.consume(signalsTopic).take(1).map(m => new String(m.message(), StandardCharsets.UTF_8)).toList
     val signalJson = argonaut.Parse.parse(readSignals(0)).right.get

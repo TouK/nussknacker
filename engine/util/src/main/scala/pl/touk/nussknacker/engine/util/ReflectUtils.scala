@@ -13,10 +13,8 @@ object ReflectUtils {
       .replaceFirst("\\$$", "") // module indicator
   }
 
-  abstract class StaticMethodRunner(jars: List[URL], className: String, methodName: String) {
+  abstract class StaticMethodRunner(classLoader: ClassLoader, className: String, methodName: String) {
     import scala.reflect.runtime.{universe => ru}
-
-    val classLoader = new URLClassLoader(jars.toArray, getClass.getClassLoader)
 
     private val invoker: ru.MethodMirror = {
       val m = ru.runtimeMirror(classLoader)
@@ -27,6 +25,7 @@ object ReflectUtils {
       objMirror.reflectMethod(method)
     }
 
+    //we have to use context loader, as in UI we have don't have e.g. nussknacker-process or user model on classpath...
     def tryToInvoke(args: Any*): Any = ThreadUtils.withThisAsContextClassLoader(classLoader) {
       try {
         invoker(args: _*)

@@ -39,7 +39,8 @@ class InitializationItSpec extends FlatSpec with ScalatestRouteTest with Matcher
     processesFromFilesCount should be > 1
     Await.result(getAllProcesses, Duration.apply(1, TimeUnit.SECONDS)) should have size 0
 
-    Initialization.init(processRepository, db, "test", isDevelopmentMode = false, initialProcessDirectory = processesDir, standaloneModeEnabled = true)
+    Initialization.init(Map(), processRepository, processActivityRepository,
+      db, "test", isDevelopmentMode = false, initialProcessDirectory = processesDir)
 
     eventually {
       listFilesFromDir(processesDir) should have size 0

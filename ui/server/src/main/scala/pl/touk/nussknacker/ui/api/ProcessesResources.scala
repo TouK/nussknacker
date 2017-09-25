@@ -182,7 +182,7 @@ class ProcessesResources(repository: ProcessRepository,
                   case Valid(process) =>
                     repository.fetchLatestProcessDetailsForProcessIdEither(processId).map { detailsXor =>
                       val validatedProcess = detailsXor.map(details =>
-                        ProcessConverter.toDisplayable(process, details.processingType, details.processType).validated(processValidation)
+                        ProcessConverter.toDisplayable(process, details.processingType).validated(processValidation)
                       )
                       toResponseXor(validatedProcess)
                     }

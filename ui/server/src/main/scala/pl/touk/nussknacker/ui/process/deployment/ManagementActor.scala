@@ -97,11 +97,12 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
   private def isBeingDeployed(id: String) = beingDeployed.contains(id)
 
   private def deployProcess(processId: String, savepointPath: Option[String])(implicit user: LoggedUser) = {
-    processManager(processId).flatMap { manager =>
-      processRepository.fetchLatestProcessVersion(processId).flatMap {
-        case Some(latestVersion) => deployAndSaveProcess(latestVersion, manager, savepointPath)
-        case None => Future(ProcessNotFoundError(processId))
-      }
+    for {
+      processingType <- getProcessingType(processId)
+      latestProcessEntity <- processRepository.fetchLatestProcessVersion(processId)
+    } yield latestProcessEntity match {
+      case Some(latestVersion) => deployAndSaveProcess(processingType, latestVersion, savepointPath)
+      case None => Future(ProcessNotFoundError(processId))
     }
   }
 
@@ -109,27 +110,28 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
     marshaller.toJson(marshaller.fromJson(canonicalJson).andThen(subprocessResolver.resolveSubprocesses).toOption.get, PrettyParams.spaces2)
   }
 
-  private def deployAndSaveProcess(latestVersion: ProcessVersionEntityData, processManager: ProcessManager, savepointPath: Option[String])(implicit user: LoggedUser): Future[Unit] = {
+  private def deployAndSaveProcess(processingType: ProcessingType, latestVersion: ProcessVersionEntityData, savepointPath: Option[String])(implicit user: LoggedUser): Future[Unit] = {
     val processId = latestVersion.processId
     logger.debug(s"Deploy of $processId started")
     val deployment = latestVersion.deploymentData match {
       case GraphProcess(canonical) => GraphProcess(resolveGraph(canonical))
       case a => a
     }
-    processManager.deploy(processId, deployment, savepointPath).flatMap { _ =>
+    val processManagerValue = managers(processingType)
+    processManagerValue.deploy(processId, deployment, savepointPath).flatMap { _ =>
       logger.debug(s"Deploy of $processId finished")
-      deployedProcessRepository.markProcessAsDeployed(latestVersion, user.id, environment).recoverWith { case NonFatal(e) =>
+      deployedProcessRepository.markProcessAsDeployed(processingType, latestVersion, user.id, environment).recoverWith { case NonFatal(e) =>
         logger.error("Error during marking process as deployed", e)
-        processManager.cancel(processId).map(_ => Future.failed(e))
+        processManagerValue.cancel(processId).map(_ => Future.failed(e))
       }
     }
   }
 
   private def processManager(processId: String)(implicit ec: ExecutionContext, user: LoggedUser) = {
-    processingType(processId).map(managers)
+    getProcessingType(processId).map(managers)
   }
 
-  private def processingType(id: String)(implicit ec: ExecutionContext, user: LoggedUser) = {
+  private def getProcessingType(id: String)(implicit ec: ExecutionContext, user: LoggedUser) = {
     processRepository.fetchLatestProcessDetailsForProcessId(id).map(_.map(_.processingType)).map(_.getOrElse(throw new RuntimeException(ProcessNotFoundError(id).getMessage)))
   }
 }

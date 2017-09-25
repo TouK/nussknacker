@@ -6,6 +6,7 @@ import cats.data._
 import cats.syntax.either._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
+import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, GraphProcess, ProcessDeploymentData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.ui.EspError._
@@ -30,11 +31,11 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 
+//TODO: clean up methods - especially finders...
 class ProcessRepository(db: JdbcBackend.Database,
                         driver: JdbcProfile,
-                        processValidation: ProcessValidation, ec: ExecutionContext) extends LazyLogging {
+                        processValidation: ProcessValidation, modelVersion: Map[ProcessingType, Int])(implicit ec: ExecutionContext) extends LazyLogging {
   import driver.api._
-  implicit private val iec = ec
 
   def saveNewProcess(processId: String, category: String, processDeploymentData: ProcessDeploymentData,
                      processingType: ProcessingType, isSubprocess: Boolean)
@@ -72,10 +73,11 @@ class ProcessRepository(db: JdbcBackend.Database,
     }
 
     def versionToInsert(latestProcessVersion: Option[ProcessVersionEntityData],
-                        processesVersionCount: Int): Option[ProcessVersionEntityData] = latestProcessVersion match {
+                        processesVersionCount: Int, processingType: ProcessingType): Option[ProcessVersionEntityData] = latestProcessVersion match {
       case Some(version) if version.json == maybeJson && version.mainClass == maybeMainClass => None
       case _ => Option(ProcessVersionEntityData(id = processesVersionCount + 1, processId = processId,
-        json = maybeJson, mainClass = maybeMainClass, createDate = DateUtils.now, user = loggedUser.id))
+        json = maybeJson, mainClass = maybeMainClass, createDate = DateUtils.now,
+        user = loggedUser.id, modelVersion = modelVersion.get(processingType)))
     }
     val insertAction = for {
       maybeProcess <- EitherT.right[DB, EspError, Option[ProcessEntityData]](processTableFilteredByUser.filter(_.id === processId).result.headOption)
@@ -83,7 +85,7 @@ class ProcessRepository(db: JdbcBackend.Database,
       _ <- EitherT.fromEither(Either.cond(process.processType == processType(processDeploymentData), (), InvalidProcessTypeError(processId)))
       processesVersionCount <- EitherT.right[DB, EspError, Int](processVersionsTable.filter(p => p.processId === processId).length.result)
       latestProcessVersion <- EitherT.right[DB, EspError, Option[ProcessVersionEntityData]](latestProcessVersions(processId).result.headOption)
-      newProcessVersion <- EitherT.fromEither(Right(versionToInsert(latestProcessVersion, processesVersionCount)))
+      newProcessVersion <- EitherT.fromEither(Right(versionToInsert(latestProcessVersion, processesVersionCount, process.processingType)))
       _ <- EitherT.right[DB, EspError, Int](newProcessVersion.map(processVersionsTable += _).getOrElse(dbMonad.pure(0)))
     } yield newProcessVersion
     insertAction.value
@@ -105,10 +107,6 @@ class ProcessRepository(db: JdbcBackend.Database,
     fetchProcessesDetailsByQuery(!_.isSubprocess)
   }
 
-  def fetchDisplayableProcesses()(implicit loggedUser: LoggedUser): Future[List[DisplayableProcess]] = {
-    fetchProcessesDetails().map(processes => processes.flatMap(_.json.toList))
-  }
-
   def fetchSubProcessesDetails()(implicit loggedUser: LoggedUser): Future[List[ProcessDetails]] = {
     fetchProcessesDetailsByQuery(_.isSubprocess)
   }
@@ -128,20 +126,6 @@ class ProcessRepository(db: JdbcBackend.Database,
         deployedPerEnv.map(_._1).filter(_._1 == process.id).map(_._2).toSet,
         tagsForProcesses(process.name), List.empty, businessView = false) }
     db.run(action).map(_.toList)
-  }
-
-  def listSubprocesses() : Future[Set[CanonicalProcess]] = {
-    val action = for {
-      latestProcesses <- processVersionsTable.groupBy(_.processId).map { case (n, group) => (n, group.map(_.createDate).max) }
-        .join(processVersionsTable).on { case (((processId, latestVersionDate)), processVersion) =>
-        processVersion.processId === processId && processVersion.createDate === latestVersionDate
-      }.join(processesTable.filter(_.isSubprocess))
-        .on { case ((_, latestVersion), process) => latestVersion.processId === process.id }
-        .result
-    } yield latestProcesses.map { case ((_, processVersion), _) =>
-      processVersion.json.map(ProcessConverter.toCanonicalOrDie)
-    }
-    db.run(action).map(_.flatten.toSet)
   }
 
   def fetchLatestProcessDetailsForProcessId(id: String, businessView: Boolean = false)
@@ -217,12 +201,13 @@ class ProcessRepository(db: JdbcBackend.Database,
       tags = tags.map(_.name).toList,
       modificationDate = DateUtils.toLocalDateTime(processVersion.createDate),
       json = processVersion.json.map(jsonString => displayableFromJson(jsonString, process, businessView)),
-      history = history.toList
+      history = history.toList,
+      modelVersion = processVersion.modelVersion
     )
   }
 
   private def displayableFromJson(json: String, process: ProcessEntityData, businessView: Boolean) = {
-    val displayable = ProcessConverter.toDisplayableOrDie(json, process.processingType, processType = process.processType, businessView = businessView)
+    val displayable = ProcessConverter.toDisplayableOrDie(json, process.processingType, businessView = businessView)
     if (businessView) {
       displayable.withSuccessValidation()
     } else {
@@ -255,6 +240,15 @@ class ProcessRepository(db: JdbcBackend.Database,
 
 object ProcessRepository {
 
+  def apply(db: JdbcBackend.Database,
+                          driver: JdbcProfile,
+                          processValidation: ProcessValidation, modelData: Map[ProcessingType, ModelData])(implicit ec: ExecutionContext) = {
+    val lastMigrations = modelData.mapValues(_.migrations).collect {
+      case (k, Some(migrations)) => (k, migrations.processMigrations.keys.max)
+    }
+    new ProcessRepository(db, driver, processValidation, lastMigrations)
+  }
+
   case class ProcessDetails(
                              id: String,
                              name: String,
@@ -268,7 +262,8 @@ object ProcessRepository {
                              tags: List[String],
                              currentlyDeployedAt: Set[String],
                              json: Option[DisplayableProcess],
-                             history: List[ProcessHistoryEntry]
+                             history: List[ProcessHistoryEntry],
+                             modelVersion: Option[Int]
                            )
 
   case class ProcessHistoryEntry(processId: String,

@@ -1,33 +1,25 @@
 package pl.touk.nussknacker.ui.api.helpers
 
-import java.time.LocalDateTime
 
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
-import db.migration.DefaultJdbcProfile
 import org.scalatest._
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api._
-import pl.touk.nussknacker.ui.db.EspTables
+import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
-import pl.touk.nussknacker.ui.db.migration.SampleData
-import pl.touk.nussknacker.ui.process.{JobStatusService, ProcessToSave, ProcessTypesForCategories}
 import pl.touk.nussknacker.ui.process.deployment.ManagementActor
 import pl.touk.nussknacker.ui.process.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.ui.process.{JobStatusService, ProcessToSave, ProcessTypesForCategories}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.sample.SampleProcess
-import pl.touk.nussknacker.ui.security.{LoggedUser, Permission}
+import pl.touk.nussknacker.ui.security.Permission
 
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
-
-trait EspItTest extends LazyLogging { self: ScalatestRouteTest with Suite with BeforeAndAfterEach with Matchers =>
+trait EspItTest extends LazyLogging with WithDbTesting { self: ScalatestRouteTest with Suite with BeforeAndAfterEach with Matchers =>
 
   val env = "test"
-  val db = DbTesting.db
   val attachmentsPath = "/tmp/attachments" + System.currentTimeMillis()
 
   val processRepository = newProcessRepository(db)
@@ -43,8 +35,9 @@ trait EspItTest extends LazyLogging { self: ScalatestRouteTest with Suite with B
   val processesExportResources = new ProcessesExportResources(processRepository, processActivityRepository)
 
   val processesRouteWithAllPermissions = withAllPermissions(processesRoute)
+
   val deployRoute = new ManagementResources(
-    InMemoryMocks.mockProcessManager.getProcessDefinition.typesInformation, new ProcessCounter(TestFactory.sampleSubprocessRepository), managementActor)
+    ProcessTestData.processDefinition.typesInformation, new ProcessCounter(TestFactory.sampleSubprocessRepository), managementActor)
   val attachmentService = new ProcessAttachmentService(attachmentsPath, processActivityRepository)
   val processActivityRoute = new ProcessActivityResource(processActivityRepository, attachmentService)
 
@@ -116,14 +109,4 @@ trait EspItTest extends LazyLogging { self: ScalatestRouteTest with Suite with B
     Get(s"/processes") ~> withPermissions(processesRoute, Permission.Read)
   }
 
-  override protected def beforeEach(): Unit = {
-    import DefaultJdbcProfile.profile.api._
-    Await.ready(db.run(EspTables.environmentsTable += SampleData.environment), Duration.Inf)
-  }
-
-  override protected def afterEach(): Unit = {
-    DbTesting.cleanDB().failed.foreach { e =>
-      throw new InternalError("Error during cleaning test resources", e) //InternalError bo scalatest polyka inne wyjatki w afterEach
-    }
-  }
 }

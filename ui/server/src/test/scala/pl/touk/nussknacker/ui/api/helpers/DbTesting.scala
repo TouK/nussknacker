@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.ui.api.helpers
 
+import akka.http.scaladsl.testkit.ScalatestRouteTest
 import com.typesafe.scalalogging.LazyLogging
+import org.scalatest.{BeforeAndAfterEach, Suite}
 import pl.touk.nussknacker.ui.db.DatabaseInitializer
 import slick.jdbc.JdbcBackend
 
@@ -28,4 +30,16 @@ object DbTesting extends LazyLogging {
       session.prepareStatement("""delete from "processes"""").execute()
     }
   }
+}
+
+trait WithDbTesting { self: Suite with BeforeAndAfterEach =>
+
+  val db: JdbcBackend.Database = DbTesting.db
+
+  override protected def afterEach(): Unit = {
+    DbTesting.cleanDB().failed.foreach { e =>
+      throw new InternalError("Error during cleaning test resources", e) //InternalError as scalatest swallows other exceptions in afterEach
+    }
+  }
+
 }

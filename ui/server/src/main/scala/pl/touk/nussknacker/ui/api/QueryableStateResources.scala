@@ -3,20 +3,19 @@ package pl.touk.nussknacker.ui.api
 import akka.http.scaladsl.server.{Directives, Route}
 import argonaut.{Json, Parse}
 import cats.data.EitherT
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ProcessDefinition, QueryableStateName}
+import pl.touk.http.argonaut.Argonaut62Support
+import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.QueryableStateName
 import pl.touk.nussknacker.engine.flink.queryablestate.EspQueryableClient
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
-import pl.touk.nussknacker.ui.process.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.ui.process.{JobStatusService, ProcessObjectsFinder}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository
+import pl.touk.nussknacker.ui.process.{JobStatusService, ProcessObjectsFinder}
 import pl.touk.nussknacker.ui.security.{LoggedUser, Permission}
-import pl.touk.http.argonaut.Argonaut62Support
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class QueryableStateResources(processDefinition: Map[ProcessingType, ProcessDefinition[ObjectDefinition]],
+class QueryableStateResources(processDefinition: Map[ProcessingType, ModelData],
                               processRepository: ProcessRepository,
                               queryableClient: () => EspQueryableClient,
                               jobStatusService: JobStatusService)
@@ -46,13 +45,13 @@ class QueryableStateResources(processDefinition: Map[ProcessingType, ProcessDefi
   }
 
   private def prepareQueryableStates()(implicit user: LoggedUser): Future[Map[String, List[QueryableStateName]]] = {
-    processRepository.fetchDisplayableProcesses().map { processList =>
-      ProcessObjectsFinder.findQueries(processList, processDefinition(ProcessingType.Streaming))
+    processRepository.fetchProcessesDetails().map { processList =>
+      ProcessObjectsFinder.findQueries(processList, processDefinition(ProcessingType.Streaming).processDefinition)
     }
   }
 
-  import cats.syntax.either._
   import cats.instances.future._
+  import cats.syntax.either._
   private def queryState(processId: String, queryName: String, key: Option[String])(implicit user: LoggedUser): Future[Json] = {
     import QueryStateErrors._
 

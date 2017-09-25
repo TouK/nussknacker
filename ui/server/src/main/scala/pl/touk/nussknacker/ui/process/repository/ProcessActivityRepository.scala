@@ -44,7 +44,7 @@ class ProcessActivityRepository(db: JdbcBackend.Database,
     val commentToDelete = commentsTable.filter(_.id === commentId)
     val deleteAction = commentToDelete.delete
     db.run(deleteAction).flatMap { deletedRowsCount =>
-      logger.info(s"Tried to delete comment with id: ${commentId}. Deleted rows count: $deletedRowsCount")
+      logger.info(s"Tried to delete comment with id: $commentId. Deleted rows count: $deletedRowsCount")
       if (deletedRowsCount == 0) {
         Future.failed(new RuntimeException(s"Unable to delete comment with id: $commentId"))
       } else {

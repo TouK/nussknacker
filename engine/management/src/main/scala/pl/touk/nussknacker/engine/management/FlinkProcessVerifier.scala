@@ -5,24 +5,20 @@ import java.net.URL
 
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.util.ReflectUtils.StaticMethodRunner
 
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 
-object FlinkProcessVerifier {
-  def apply(config: Config, jarFile: File) = {
-    new FlinkProcessVerifier(config, List(jarFile.toURI.toURL))
-  }
-}
 
-class FlinkProcessVerifier(config: Config, jars: List[URL]) extends StaticMethodRunner(jars,
+class FlinkProcessVerifier(modelData: ModelData) extends StaticMethodRunner(modelData.jarClassLoader.classLoader,
   "pl.touk.nussknacker.engine.process.runner.FlinkVerificationMain", "run") with LazyLogging {
 
   def verify(processId: String, processJson: String, savepointPath: String): Future[Unit] = {
     try {
       logger.info(s"Starting to verify $processId")
-      tryToInvoke(processJson, config, savepointPath, jars)
+      tryToInvoke(modelData, processJson, savepointPath)
       logger.info(s"Verification of $processId successful")
       Future.successful(())
     } catch {

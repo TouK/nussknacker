@@ -1,30 +1,26 @@
 package pl.touk.nussknacker.ui.api.helpers
 
-import java.io.File
-
-import akka.http.scaladsl.server.Route
-import com.typesafe.config.{Config, ConfigFactory}
 import db.migration.DefaultJdbcProfile
+import pl.touk.nussknacker.engine.api.deployment.{ProcessDeploymentData, ProcessState}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
-import pl.touk.nussknacker.engine.api.deployment.test.{TestData, TestResults}
-import pl.touk.nussknacker.engine.api.deployment.{ProcessDeploymentData, ProcessManager, ProcessState}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, SplitNode}
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.{Split, SubprocessInputDefinition, SubprocessOutputDefinition}
-import pl.touk.nussknacker.engine.management.FlinkProcessManager
-import pl.touk.nussknacker.ui.validation.ProcessValidation
+import pl.touk.nussknacker.engine.management.{FlinkModelData, FlinkProcessManager}
 import pl.touk.nussknacker.ui.api.{ProcessPosting, ProcessTestData, RouteWithUser}
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.{DeployedProcessRepository, ProcessActivityRepository, ProcessRepository}
 import pl.touk.nussknacker.ui.process.subprocess.{SubprocessRepository, SubprocessResolver}
-import pl.touk.nussknacker.ui.security.{LoggedUser, Permission}
 import pl.touk.nussknacker.ui.security.Permission.Permission
+import pl.touk.nussknacker.ui.security.{LoggedUser, Permission}
+import pl.touk.nussknacker.ui.validation.ProcessValidation
 import slick.jdbc.JdbcBackend
 
 import scala.concurrent.{ExecutionContext, Future}
+import ExecutionContext.Implicits.global
 
+//TODO: merge with ProcessTestData?
 object TestFactory {
 
   val testCategory = "TESTCAT"
@@ -36,13 +32,13 @@ object TestFactory {
   val processValidation = new ProcessValidation(Map(ProcessingType.Streaming -> ProcessTestData.validator), sampleResolver)
   val posting = new ProcessPosting
 
-  def newProcessRepository(db: JdbcBackend.Database) = new ProcessRepository(db, DefaultJdbcProfile.profile, processValidation,
-    ExecutionContext.Implicits.global)
+  def newProcessRepository(db: JdbcBackend.Database, modelVersion: Option[Int] = Some(1)) = new ProcessRepository(db, DefaultJdbcProfile.profile, processValidation,
+    modelVersion.map(ProcessingType.Streaming -> _).toMap)
 
   val buildInfo = Map("engine-version" -> "0.1")
 
   def newDeploymentProcessRepository(db: JdbcBackend.Database) = new DeployedProcessRepository(db, DefaultJdbcProfile.profile,
-    buildInfo)
+    Map(ProcessingType.Streaming -> buildInfo))
   def newProcessActivityRepository(db: JdbcBackend.Database) = new ProcessActivityRepository(db, DefaultJdbcProfile.profile)
   val mockProcessManager = InMemoryMocks.mockProcessManager
 
@@ -59,7 +55,7 @@ object TestFactory {
       }
     }
 
-    val mockProcessManager = new FlinkProcessManager(ConfigFactory.load(), null) {
+    val mockProcessManager = new FlinkProcessManager(FlinkModelData(), false, null) {
       override def findJobStatus(name: String): Future[Option[ProcessState]] = Future.successful(None)
       override def cancel(name: String): Future[Unit] = Future.successful(Unit)
       import ExecutionContext.Implicits.global

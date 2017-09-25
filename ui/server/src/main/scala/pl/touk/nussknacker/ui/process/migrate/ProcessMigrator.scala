@@ -32,9 +32,10 @@ trait ProcessMigrator {
 
   def migrate(localProcess: DisplayableProcess)(implicit ec: ExecutionContext, loggedUser: LoggedUser) : Future[Either[EspError, Unit]]
 
+  def testMigration(implicit ec: ExecutionContext) : Future[Either[EspError, List[TestMigrationResult]]]
 }
 
-case class MigratorCommunicationError(getMessage: String) extends EspError
+case class MigratorCommunicationError(statusCode: StatusCode, getMessage: String) extends EspError
 
 case class MigratorValidationError(errors: ValidationErrors) extends EspError {
   override def getMessage : String = {
@@ -47,7 +48,9 @@ case class MigratorValidationError(errors: ValidationErrors) extends EspError {
 case class HttpMigratorTargetEnvironmentConfig(url: String, user: String, password: String, environmentId: String)
 
 
-class HttpProcessMigrator(config: HttpMigratorTargetEnvironmentConfig, val environmentId: String)(implicit as: ActorSystem, val materializer: Materializer) extends StandardProcessMigrator {
+class HttpProcessMigrator(config: HttpMigratorTargetEnvironmentConfig,
+                          val testModelMigrations: TestModelMigrations,
+                          val environmentId: String)(implicit as: ActorSystem, val materializer: Materializer) extends StandardProcessMigrator {
 
   override def targetEnvironmentId : String = config.environmentId
 
@@ -63,6 +66,8 @@ trait StandardProcessMigrator extends Argonaut62Support with ProcessMigrator wit
 
   def environmentId: String
 
+  def testModelMigrations: TestModelMigrations
+
   implicit def materializer: Materializer
 
   val uiProcessMarshaller = UiProcessMarshaller()
@@ -74,7 +79,7 @@ trait StandardProcessMigrator extends Argonaut62Support with ProcessMigrator wit
         Unmarshal(response.entity).to[T].map[Either[EspError, T]](Right(_))
       } else {
         Unmarshaller
-          .stringUnmarshaller(response.entity).map(error => Left[EspError, T](MigratorCommunicationError(error)))
+          .stringUnmarshaller(response.entity).map(error => Left[EspError, T](MigratorCommunicationError(response.status, error)))
       }
     }
   }
@@ -109,4 +114,10 @@ trait StandardProcessMigrator extends Argonaut62Support with ProcessMigrator wit
     case None => Left(InvalidProcessTypeError(id))
   }
 
+  override def testMigration(implicit ec: ExecutionContext): Future[Either[EspError, List[TestMigrationResult]]] = {
+    (for {
+      processes <- EitherT(invoke[List[ProcessDetails]]("processes", HttpMethods.GET))
+      subprocesses <- EitherT(invoke[List[ProcessDetails]]("subprocesses", HttpMethods.GET))
+    } yield testModelMigrations.testMigrations(processes, subprocesses)).value
+  }
 }

@@ -26,11 +26,12 @@ import pl.touk.nussknacker.ui.process.uiconfig.defaults.{ParameterDefaultValueEx
 import pl.touk.nussknacker.ui.security.LoggedUser
 import pl.touk.nussknacker.ui.util.EspPathMatchers
 import pl.touk.http.argonaut.Argonaut62Support
+import pl.touk.nussknacker.engine.ModelData
 
 import scala.concurrent.ExecutionContext
 import scala.runtime.BoxedUnit
 
-class DefinitionResources(processDefinition: Map[ProcessingType, ProcessDefinition[ObjectDefinition]],
+class DefinitionResources(modelData: Map[ProcessingType, ModelData],
                           subprocessRepository: SubprocessRepository,
                           parameterDefaultValueExtractorStrategyFactory: ParameterDefaultValueExtractorStrategy)
                          (implicit ec: ExecutionContext)
@@ -44,7 +45,7 @@ class DefinitionResources(processDefinition: Map[ProcessingType, ProcessDefiniti
       parameter('isSubprocess.as[Boolean]) { (isSubprocess) =>
         get {
           complete {
-            val chosenProcessDefinition = processDefinition(processingType)
+            val chosenProcessDefinition = modelData(processingType).processDefinition
             ProcessObjects(DefinitionPreparer.prepareNodesToAdd(user = user, processDefinition = chosenProcessDefinition,
               isSubprocess = isSubprocess, subprocessRepo = subprocessRepository, extractorFactory=parameterDefaultValueExtractorStrategyFactory),
               chosenProcessDefinition,
@@ -55,7 +56,7 @@ class DefinitionResources(processDefinition: Map[ProcessingType, ProcessDefiniti
     } ~ path("processDefinitionData" / "objectIds") {
       get {
         complete {
-          DefinitionPreparer.objectIds(processDefinition.values.toList, subprocessRepository)
+          DefinitionPreparer.objectIds(modelData.values.map(_.processDefinition).toList, subprocessRepository)
         }
       }
     }

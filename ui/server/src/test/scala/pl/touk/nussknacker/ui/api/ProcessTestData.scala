@@ -1,19 +1,27 @@
 package pl.touk.nussknacker.ui.api
 
+import java.time.LocalDateTime
+
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ObjectProcessDefinition, ProcessDefinition}
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.node
+import pl.touk.nussknacker.engine.graph.{EspProcess, node}
 import pl.touk.nussknacker.engine.graph.node.Case
+import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.spel
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
+import pl.touk.nussknacker.ui.db.entity.ProcessEntity.{ProcessType, ProcessingType}
 import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.{Edge, NodeAdditionalFields, ProcessAdditionalFields}
 import pl.touk.nussknacker.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties}
+import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessDetails
+import pl.touk.nussknacker.ui.process.subprocess.{SetSubprocessRepository, SubprocessResolver}
+import pl.touk.nussknacker.ui.validation.ProcessValidation
 import pl.touk.nussknacker.ui.validation.ValidationResults.ValidationResult
 
 object ProcessTestData {
@@ -22,6 +30,8 @@ object ProcessTestData {
   val existingSinkFactory = "barSink"
   val otherExistingSinkFactory = "barSink"
   val existingServiceId = "barService"
+  val otherExistingServiceId = "fooService"
+
   val existingStreamTransformer = "transformer"
   val otherExistingStreamTransformer = "otherTransformer"
 
@@ -30,18 +40,34 @@ object ProcessTestData {
         .withSinkFactory(otherExistingSinkFactory)
         .withSinkFactory(existingSinkFactory)
         .withService(existingServiceId)
+        .withService(otherExistingServiceId)
         .withCustomStreamTransformer(existingStreamTransformer, classOf[String],  CustomTransformerAdditionalData(Set("query1", "query2"), clearsContext = false))
         .withCustomStreamTransformer(otherExistingStreamTransformer, classOf[String], CustomTransformerAdditionalData(Set("query3"), clearsContext = false))
 
   val validator = ProcessValidator.default(processDefinition)
 
-  val validProcess =
+  val validProcess : EspProcess =
     EspProcessBuilder
       .id("fooProcess")
       .exceptionHandler()
       .source("source", existingSourceFactory)
+      .processor("processor", existingServiceId)
       .customNode("custom", "out1", existingStreamTransformer)
       .sink("sink", existingSinkFactory)
+
+  val validDisplayableProcess : DisplayableProcess = toValidatedDisplayable(validProcess)
+
+  def toValidatedDisplayable(espProcess: EspProcess) : DisplayableProcess =
+    ProcessConverter
+     .toDisplayable(ProcessCanonizer.canonize(espProcess), ProcessingType.Streaming)
+     .validated(new ProcessValidation(Map(ProcessingType.Streaming -> validator),
+       new SubprocessResolver(new SetSubprocessRepository(Set()))))
+
+  def toDetails(displayable: DisplayableProcess) : ProcessDetails =
+    ProcessDetails(displayable.id, displayable.id, 1, true, None, ProcessType.Graph,
+      ProcessingType.Streaming, "", LocalDateTime.now(), List(), Set(), Some(displayable), List(), None)
+
+
 
   import spel.Implicits._
 

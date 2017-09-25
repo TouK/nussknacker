@@ -37,7 +37,6 @@ class StandardProcessMigratorSpec extends FlatSpec with Matchers with ScalaFutur
   import argonaut.ArgonautShapeless._
   import pl.touk.nussknacker.ui.codec.UiCodecs._
 
-  val validProcess = ProcessConverter.toDisplayable(ProcessCanonizer.canonize(ProcessTestData.validProcess), ProcessingType.Streaming)
 
   it should "not migrate not validating process" in {
 
@@ -51,9 +50,11 @@ class StandardProcessMigratorSpec extends FlatSpec with Matchers with ScalaFutur
           throw new AssertionError(s"Not expected $path")
         }
       }
+
+      override def testModelMigrations: TestModelMigrations = ???
     }
 
-    whenReady(migrator.migrate(validProcess)) { result =>
+    whenReady(migrator.migrate(ProcessTestData.validDisplayableProcess)) { result =>
       result shouldBe 'left
       result.left.get shouldBe MigratorValidationError(ValidationErrors(Map("n1" -> List(NodeValidationError("bad","message","" ,None, NodeValidationErrorType.SaveAllowed))),List(),List()))
       result.left.get.getMessage shouldBe "Cannot migrate, following errors occured: n1 - message"
@@ -71,7 +72,7 @@ class StandardProcessMigratorSpec extends FlatSpec with Matchers with ScalaFutur
           Marshal(ValidationResult.errors(Map(), List(), List())).to[RequestEntity].map { entity =>
             HttpResponse(StatusCodes.OK, entity = entity)
           }
-        } else if (path.startsWith(s"processes/${validProcess.id}") && method == HttpMethods.PUT) {
+        } else if (path.startsWith(s"processes/${ProcessTestData.validDisplayableProcess.id}") && method == HttpMethods.PUT) {
           migrated = Some(Unmarshal(request).to[ProcessToSave])
           Marshal(ValidationResult.errors(Map(), List(), List())).to[RequestEntity].map { entity =>
             HttpResponse(StatusCodes.OK, entity = entity)
@@ -80,9 +81,12 @@ class StandardProcessMigratorSpec extends FlatSpec with Matchers with ScalaFutur
           throw new AssertionError(s"Not expected $path")
         }
       }
+
+      override def testModelMigrations: TestModelMigrations = ???
+
     }
 
-    whenReady(migrator.migrate(validProcess)) { result =>
+    whenReady(migrator.migrate(ProcessTestData.validDisplayableProcess)) { result =>
       result shouldBe 'right
     }
 
@@ -90,7 +94,7 @@ class StandardProcessMigratorSpec extends FlatSpec with Matchers with ScalaFutur
 
     whenReady(migrated.get) { processToSave =>
       processToSave.comment shouldBe "Process migrated from testEnv by test"
-      processToSave.process shouldBe validProcess
+      processToSave.process shouldBe ProcessTestData.validDisplayableProcess
 
     }
 

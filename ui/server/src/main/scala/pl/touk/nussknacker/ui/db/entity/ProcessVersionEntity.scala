@@ -22,7 +22,10 @@ object ProcessVersionEntity {
 
     def processId = column[String]("process_id", NotNull)
 
-    def * = (id, processId, json, mainClass, createDate, user) <> (ProcessVersionEntityData.apply _ tupled, ProcessVersionEntityData.unapply)
+    def modelVersion = column[Option[Int]]("model_version", NotNull)
+
+
+    def * = (id, processId, json, mainClass, createDate, user, modelVersion) <> (ProcessVersionEntityData.apply _ tupled, ProcessVersionEntityData.unapply)
 
     def pk = primaryKey("pk_process_version", (processId, id))
 
@@ -39,7 +42,8 @@ object ProcessVersionEntity {
                                        json: Option[String],
                                        mainClass: Option[String],
                                        createDate: Timestamp,
-                                       user: String
+                                       user: String,
+                                       modelVersion: Option[Int]
                                      ) {
     def deploymentData = (json, mainClass) match {
       case (Some(j), _) => GraphProcess(j)

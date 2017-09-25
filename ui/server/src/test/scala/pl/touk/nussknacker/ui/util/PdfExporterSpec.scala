@@ -33,7 +33,7 @@ class PdfExporterSpec extends FlatSpec {
     val details = ProcessDetails("My process", "My process", 11, true,
       Some("My fancy description, which is quite, quite, quite looooooooong. \n And it contains maaaany, maaany strange features..."),
       ProcessEntity.ProcessType.Graph, ProcessingType.Streaming, "Category 22", LocalDateTime.now(), List(), Set(), Some(displayable),
-      List(ProcessHistoryEntry("My process",  "My process", 11, LocalDateTime.now(), "Zenon Wojciech", List()) )
+      List(ProcessHistoryEntry("My process",  "My process", 11, LocalDateTime.now(), "Zenon Wojciech", List()) ), None
     )
     val activities = ProcessActivity(List(
       Comment(1L, "aa", 11, "Jakiś taki dziwny ten proces??", "Wacław Wójcik", LocalDateTime.now()),
@@ -66,7 +66,7 @@ class PdfExporterSpec extends FlatSpec {
     val details = ProcessDetails("My process", "My process", 11, true,
       Some("My fancy description, which is quite, quite, quite looooooooong. \n And it contains maaaany, maaany strange features..."),
       ProcessEntity.ProcessType.Graph, ProcessingType.Streaming, "Category 22", LocalDateTime.now(), List(), Set(), Some(displayable),
-      List(ProcessHistoryEntry("My process",  "My process", 11, LocalDateTime.now(), "Zenon Wojciech", List()) )
+      List(ProcessHistoryEntry("My process",  "My process", 11, LocalDateTime.now(), "Zenon Wojciech", List()) ), None
     )
     val activities = ProcessActivity(List(), List())
 

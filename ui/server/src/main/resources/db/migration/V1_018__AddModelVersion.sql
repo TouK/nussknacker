@@ -1,0 +1,1 @@
+ALTER TABLE "process_versions" ADD COLUMN "model_version" NUMBER;

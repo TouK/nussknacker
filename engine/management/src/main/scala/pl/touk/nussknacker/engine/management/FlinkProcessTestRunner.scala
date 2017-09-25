@@ -1,45 +1,16 @@
 package pl.touk.nussknacker.engine.management
 
-import java.io.{File, FileNotFoundException}
-import java.lang.reflect.InvocationTargetException
-
-import com.typesafe.config.Config
+import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.deployment.test.{TestData, TestResults}
-import pl.touk.nussknacker.engine.util.ThreadUtils
-import pl.touk.nussknacker.engine.util.loader.JarClassLoader
+import pl.touk.nussknacker.engine.util.ReflectUtils.StaticMethodRunner
 
-import scala.reflect.runtime.{universe => ru}
+import scala.concurrent.Future
 
-object FlinkProcessTestRunner {
-  def apply(config: Config, jarFile: File) = {
-    if (!jarFile.exists()) {
-      throw new FileNotFoundException(s"No jar file found at given path ${jarFile.getAbsolutePath}")
-    } else {
-      new FlinkProcessTestRunner(config, JarClassLoader(jarFile))
-    }
-  }
-}
+class FlinkProcessTestRunner(modelData: ModelData) extends StaticMethodRunner(modelData.jarClassLoader.classLoader,
+  "pl.touk.nussknacker.engine.process.runner.FlinkTestMain", "run") {
 
-class FlinkProcessTestRunner(config: Config, jarClassLoader: JarClassLoader) {
-  private val invoker: ru.MethodMirror = {
-    val m = ru.runtimeMirror(jarClassLoader.classLoader)
-    val module = m.staticModule("pl.touk.nussknacker.engine.process.runner.FlinkTestMain")
-    val im = m.reflectModule(module)
-    val method = im.symbol.info.decl(ru.TermName("run")).asMethod
-    val objMirror = m.reflect(im.instance)
-    objMirror.reflectMethod(method)
+  def test(processId: String, json: String, testData: TestData): Future[TestResults] = {
+    Future.successful(tryToInvoke(modelData, json, testData).asInstanceOf[TestResults])
   }
 
-  def test(processId: String, json: String, testData: TestData): TestResults = {
-    //we have to use context loader, as in UI we have don't have nussknacker-process on classpath...
-    ThreadUtils.withThisAsContextClassLoader(jarClassLoader.classLoader) {
-      tryToInvoke(testData, json).asInstanceOf[TestResults]
-    }
-  }
-
-  def tryToInvoke(testData: TestData, json: String): Any = try {
-    invoker(json, config, testData, List(jarClassLoader.file.toURI.toURL))
-  } catch {
-    case e: InvocationTargetException => throw e.getTargetException
-  }
 }

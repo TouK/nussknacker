@@ -7,6 +7,7 @@ import org.apache.flink.configuration.{ConfigConstants, Configuration}
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import org.apache.flink.runtime.minicluster.LocalFlinkMiniCluster
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
+import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.process.util.MetaDataExtractor
 
@@ -14,12 +15,12 @@ import scala.collection.JavaConverters._
 
 trait FlinkStubbedRunner {
 
+  protected def modelData: ModelData
+
   protected def process: EspProcess
 
   protected def createEnv : StreamExecutionEnvironment =
     StreamExecutionEnvironment.createLocalEnvironment(MetaDataExtractor.extractStreamMetaDataOrFail(process.metaData).parallelism.getOrElse(1))
-
-  protected def urls: List[URL]
 
   //we use own LocalFlinkMiniCluster, instead of LocalExecutionEnvironment, to be able to pass own classpath...
   protected def execute(env: StreamExecutionEnvironment, savepointRestoreSettings: SavepointRestoreSettings) : JobExecutionResult = {
@@ -27,7 +28,7 @@ trait FlinkStubbedRunner {
     streamGraph.setJobName(process.id)
 
     val jobGraph = streamGraph.getJobGraph
-    jobGraph.setClasspaths(urls.asJava)
+    jobGraph.setClasspaths(modelData.jarClassLoader.urls.asJava)
     jobGraph.setSavepointRestoreSettings(savepointRestoreSettings)
 
     val configuration: Configuration = new Configuration

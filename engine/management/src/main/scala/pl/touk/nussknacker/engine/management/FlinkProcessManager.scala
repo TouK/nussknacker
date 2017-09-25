@@ -1,37 +1,33 @@
 package pl.touk.nussknacker.engine.management
 
-import java.io.File
-import java.net.URLClassLoader
 import java.util.concurrent.TimeUnit
 
 import argonaut.PrettyParams
-import com.typesafe.config.{Config, ConfigObject, ConfigValueFactory, ConfigValueType}
+import com.typesafe.config.{Config, ConfigValueFactory, ConfigValueType}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.JobID
-import org.apache.flink.client.program.{PackagedProgram, ProgramInvocationException}
+import org.apache.flink.client.program.PackagedProgram
 import org.apache.flink.configuration.Configuration
-import org.apache.flink.runtime.client.JobTimeoutException
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import org.apache.flink.runtime.messages.JobManagerMessages
 import org.apache.flink.runtime.messages.JobManagerMessages._
+import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.deployment.test.TestData
-import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ObjectProcessDefinition
-import pl.touk.nussknacker.engine.definition._
+import pl.touk.nussknacker.engine.api.deployment.test.{TestData, TestResults}
 import pl.touk.nussknacker.engine.flink.queryablestate.{EspQueryableClient, QueryableClientProvider}
-import pl.touk.nussknacker.engine.util.ThreadUtils
-import pl.touk.nussknacker.engine.util.loader.JarClassLoader
 
 import scala.collection.JavaConversions._
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
 
 object FlinkProcessManager {
 
   def apply(config: Config): FlinkProcessManager = {
-    new FlinkProcessManager(config, new RestartableFlinkGateway(() => prepareGateway(config)))
+    apply(FlinkModelData(config), config)
+  }
+
+  def apply(modelData: ModelData, config: Config): FlinkProcessManager = {
+    new FlinkProcessManager(modelData, shouldVerifyBeforeDeploy(config), new RestartableFlinkGateway(() => prepareGateway(config)))
   }
 
   def prepareGateway(config: Config) : FlinkGateway = {
@@ -56,32 +52,25 @@ object FlinkProcessManager {
     //TODO: flink requires this value, although it's not used by client...
     .withValue("high-availability.storageDir", ConfigValueFactory.fromAnyRef("file:///dev/null"))
 
+
+  private def shouldVerifyBeforeDeploy(config: Config) :Boolean = {
+    val verifyConfigProperty = "verifyBeforeDeploy"
+    !config.hasPath(verifyConfigProperty) || config.getBoolean(verifyConfigProperty)
+  }
+
 }
 
 
-class FlinkProcessManager(config: Config,
-                          gateway: FlinkGateway) extends ProcessManager
-                            with ConfigCreatorTestInfoProvider
-                            with ProcessDefinitionProvider with ConfigCreatorSignalDispatcher with QueryableClientProvider with LazyLogging {
+class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeploy: Boolean,
+                          gateway: FlinkGateway) extends ProcessManager with QueryableClientProvider with LazyLogging {
 
   import argonaut.Argonaut._
 
-  private val flinkConf = config.getConfig("flinkConfig")
-
-  private val processConfigPart = extractProcessConfig
-
-  override val processConfig : Config = processConfigPart.toConfig
-
   private implicit val ec = ExecutionContext.Implicits.global
+  
+  private lazy val testRunner = new FlinkProcessTestRunner(modelData)
 
-  private val jarClassLoader = JarClassLoader(flinkConf.getString("jarPath"))
-
-  private lazy val testRunner = FlinkProcessTestRunner(processConfig, jarClassLoader.file)
-
-  private lazy val verification = FlinkProcessVerifier(processConfig, jarClassLoader.file)
-
-  override lazy val configCreator: ProcessConfigCreator =
-    jarClassLoader.createProcessConfigCreator
+  private lazy val verification = new FlinkProcessVerifier(modelData)
 
   override def deploy(processId: String, processDeploymentData: ProcessDeploymentData, savepointPath: Option[String]) = {
     val program = prepareProgram(processId, processDeploymentData)
@@ -118,14 +107,8 @@ class FlinkProcessManager(config: Config,
 
   override def queryableClient : EspQueryableClient = gateway.queryableClient
 
-  override def test(processId: String, json: String, testData: TestData) = {
-    Future(testRunner.test(processId, json, testData))
-  }
-
-  override def getProcessDefinition = {
-    ThreadUtils.withThisAsContextClassLoader(jarClassLoader.classLoader) {
-      ObjectProcessDefinition(ProcessDefinitionExtractor.extractObjectWithMethods(configCreator, processConfig))
-    }
+  override def test(processId: String, json: String, testData: TestData) : Future[TestResults] = {
+    testRunner.test(processId, json, testData)
   }
 
   override def findJobStatus(name: String): Future[Option[ProcessState]] = {
@@ -147,7 +130,7 @@ class FlinkProcessManager(config: Config,
   }
 
   private lazy val buildInfoJson = {
-    configCreator.buildInfo().asJson.pretty(PrettyParams.spaces2.copy(preserveOrder = true))
+    modelData.configCreator.buildInfo().asJson.pretty(PrettyParams.spaces2.copy(preserveOrder = true))
   }
 
   private def checkIfJobIsCompatible(processId: String, savepointPath: String, processDeploymentData: ProcessDeploymentData) : Future[Unit] = processDeploymentData match {
@@ -156,10 +139,6 @@ class FlinkProcessManager(config: Config,
     case _ => Future.successful(())
   }
 
-  private def shouldVerifyBeforeDeploy :Boolean = {
-    val verifyConfigProperty = "verifyBeforeDeploy"
-    !config.hasPath(verifyConfigProperty) || config.getBoolean(verifyConfigProperty)
-  }
 
   private def stopSavingSavepoint(processId: String, job: ProcessState, processDeploymentData: ProcessDeploymentData): Future[String] = {
     for {
@@ -179,16 +158,12 @@ class FlinkProcessManager(config: Config,
 
     gateway.invokeJobManager[Any](JobManagerMessages.TriggerSavepoint(jobId, savepointDir)).map {
       case TriggerSavepointSuccess(_, checkpointId, path, triggerTime) =>
-        logger.info(s"Got savepoint: ${path}")
+        logger.info(s"Got savepoint: $path")
         path
       case TriggerSavepointFailure(_, reason) =>
         logger.error(s"Savepoint failed for $jobId(${job.status}) - $savepointDir", reason)
         throw reason
     }
-  }
-
-  private def extractProcessConfig: ConfigObject = {
-    config.getConfig("processConfig").root()
   }
 
   private def cancelJobById(jobID: JobID)
@@ -199,12 +174,13 @@ class FlinkProcessManager(config: Config,
   }
 
   private def prepareProgram(processId: String, processDeploymentData: ProcessDeploymentData) : PackagedProgram = {
-    val configPart = processConfigPart.render()
+    val configPart = modelData.processConfig.root().render()
+    var jarFile = modelData.jarClassLoader.tryToGetFile
     processDeploymentData match {
       case GraphProcess(processAsJson) =>
-        new PackagedProgram(jarClassLoader.file, "pl.touk.nussknacker.engine.process.runner.FlinkProcessMain", List(processAsJson, configPart, buildInfoJson):_*)
+        new PackagedProgram(jarFile, "pl.touk.nussknacker.engine.process.runner.FlinkProcessMain", List(processAsJson, configPart, buildInfoJson):_*)
       case CustomProcess(mainClass) =>
-        new PackagedProgram(jarClassLoader.file, mainClass, List(processId, configPart, buildInfoJson): _*)
+        new PackagedProgram(jarFile, mainClass, List(processId, configPart, buildInfoJson): _*)
     }
   }
 }
