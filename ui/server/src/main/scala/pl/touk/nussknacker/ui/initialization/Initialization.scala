@@ -114,8 +114,6 @@ class Initialization(processRepository: ProcessRepository,
 
 }
 
-class Initial
-
 object Initialization {
 
   implicit val toukUser = LoggedUser("TouK", "", List(Permission.Write, Permission.Admin), List())

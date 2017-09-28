@@ -47,14 +47,15 @@ object ProcessTestData {
 
   val validator = ProcessValidator.default(processDefinition)
 
-  val validProcess : EspProcess =
-    EspProcessBuilder
-      .id("fooProcess")
-      .exceptionHandler()
-      .source("source", existingSourceFactory)
-      .processor("processor", existingServiceId)
-      .customNode("custom", "out1", existingStreamTransformer)
-      .sink("sink", existingSinkFactory)
+  val validProcess : EspProcess = validProcessWithId("fooProcess")
+
+  def validProcessWithId(id: String) : EspProcess = EspProcessBuilder
+        .id(id)
+        .exceptionHandler()
+        .source("source", existingSourceFactory)
+        .processor("processor", existingServiceId)
+        .customNode("custom", "out1", existingStreamTransformer)
+        .sink("sink", existingSinkFactory)
 
   val validDisplayableProcess : DisplayableProcess = toValidatedDisplayable(validProcess)
 

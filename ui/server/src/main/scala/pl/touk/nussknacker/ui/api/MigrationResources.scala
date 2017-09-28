@@ -5,18 +5,14 @@ import akka.http.scaladsl.model.{HttpResponse, MessageEntity, StatusCodes}
 import akka.http.scaladsl.server.{Directives, Route}
 import argonaut.EncodeJson
 import argonaut.ArgonautShapeless._
-import argonaut.Argonaut._
-import argonaut._
-
 import cats.instances.either._
 import cats.instances.list._
 import cats.syntax.traverse._
-
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.process.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.ui.process.migrate.{MigratorCommunicationError, ProcessMigrator, TestMigrationResult}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessNotFoundError
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{ProcessDetails, ProcessNotFoundError}
 import pl.touk.nussknacker.ui.security.{LoggedUser, Permission}
 import pl.touk.nussknacker.ui.util.ProcessComparator
 import pl.touk.http.argonaut.Argonaut62Support
@@ -35,11 +31,23 @@ class MigrationResources(migrator: ProcessMigrator,
 
   private implicit val map = EncodeJson.derive[TestMigrationResult]
   private implicit val encodeResults = EncodeJson.derive[TestMigrationSummary]
+  private implicit val encodeDifference = EncodeJson.derive[ProcessDifference]
+  private implicit val encodeDifference2 = EncodeJson.derive[EnvironmentComparisonResult]
 
   def route(implicit user: LoggedUser) : Route = {
     authorize(user.hasPermission(Permission.Deploy)) {
 
       pathPrefix("migration") {
+          path("compare") {
+            get {
+              complete {
+                for {
+                  processes <- processRepository.fetchProcessesDetails()
+                  comparison <- compareProcesses(processes)
+                } yield EspErrorToHttp.toResponseEither(comparison)
+              }
+            }
+          } ~
           path("compare" / Segment) { processId =>
             get {
               complete {
@@ -54,7 +62,7 @@ class MigrationResources(migrator: ProcessMigrator,
               }
             }
           } ~
-          path("testMigration") {
+          path("testAutomaticMigration") {
             get {
               complete {
                 migrator.testMigration
@@ -68,6 +76,16 @@ class MigrationResources(migrator: ProcessMigrator,
   }
 
 
+  private def compareProcesses(processes: List[ProcessDetails])(implicit ec: ExecutionContext, user: LoggedUser)
+    : Future[Either[EspError, EnvironmentComparisonResult]] = {
+    val results = Future.sequence(processes.flatMap(_.json).map(compareOneProcess))
+    results.map { comparisonResult =>
+      comparisonResult.sequenceU.right
+        .map(_.filterNot(_.areSame))
+        .right
+        .map(EnvironmentComparisonResult)
+    }
+  }
 
   private def testMigrationResponse(testMigrationResults: List[TestMigrationResult]) : Future[HttpResponse] = {
     val failedMigrations = testMigrationResults.filter(_.shouldFail).map(_.converted.id)
@@ -90,7 +108,22 @@ class MigrationResources(migrator: ProcessMigrator,
     }.map(EspErrorToHttp.toResponseEither[T])
   }
 
+  private def compareOneProcess(process: DisplayableProcess)(implicit ec: ExecutionContext, user: LoggedUser)
+    : Future[Either[EspError, ProcessDifference]]= {
+    migrator.compare(process).map {
+      case Right(differences) => Right(ProcessDifference(process.id, true, differences))
+      case Left(MigratorCommunicationError(StatusCodes.NotFound, _)) => Right(ProcessDifference(process.id, false, Map()))
+      case Left(error) => Left(error)
+    }
+  }
 
 }
 
 case class TestMigrationSummary(message: String, testMigrationResults: List[TestMigrationResult])
+
+//we make additional class here to be able to e.g. compare model versions...
+case class EnvironmentComparisonResult(processDifferences:List[ProcessDifference])
+
+case class ProcessDifference(id: String, presentOnOther: Boolean, differences: Map[String, ProcessComparator.Difference]) {
+  def areSame: Boolean = presentOnOther && differences.isEmpty
+}
