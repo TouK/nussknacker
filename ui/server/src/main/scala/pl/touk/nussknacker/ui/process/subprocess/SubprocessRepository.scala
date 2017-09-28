@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.ui.process.subprocess
 
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.ui.db.DbConfig
 import pl.touk.nussknacker.ui.db.EspTables.{processVersionsTable, processesTable}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
-import slick.jdbc.{JdbcBackend, JdbcProfile}
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -25,12 +25,11 @@ class SetSubprocessRepository(processes: Set[CanonicalProcess]) extends Subproce
   override def loadSubprocesses(versions: Map[String, Long]): Set[CanonicalProcess] = processes
 }
 
-class DbSubprocessRepository(db: JdbcBackend.Database,
-                             driver: JdbcProfile, ec: ExecutionContext) extends SubprocessRepository {
+class DbSubprocessRepository(db: DbConfig, ec: ExecutionContext) extends SubprocessRepository {
   //TODO: make it return Future?
   override def loadSubprocesses(versions: Map[String, Long]): Set[CanonicalProcess] = Await.result(listSubprocesses(versions), 10 seconds)
 
-  import driver.api._
+  import db.driver.api._
 
   implicit val iec = ec
 

@@ -14,10 +14,9 @@ import pl.touk.nussknacker.ui.process.displayedgraph.{DisplayableProcess, Proces
 
 object ProcessConverter {
 
-  val processMarshaller = UiProcessMarshaller()
 
   def toCanonicalOrDie(canonicalJson: String) : CanonicalProcess = {
-    processMarshaller.fromJson(canonicalJson) match {
+    UiProcessMarshaller.fromJson(canonicalJson) match {
       case Valid(canonical) => canonical
       case Invalid(err) => throw new IllegalArgumentException(err.msg + "\n" + canonicalJson)
     }

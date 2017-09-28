@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.ui.api.ProcessesResources.{UnmarshallError, WrongProcessId}
 import pl.touk.nussknacker.ui.process.displayedgraph.{DisplayableProcess, ProcessStatus}
 import pl.touk.nussknacker.ui.process.marshall.{ProcessConverter, UiProcessMarshaller}
-import pl.touk.nussknacker.ui.process.repository.{ProcessActivityRepository, ProcessRepository}
+import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, ProcessActivityRepository, ProcessRepository, WriteProcessRepository}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository._
 import pl.touk.nussknacker.ui.util._
 import pl.touk.nussknacker.ui._
@@ -28,19 +28,18 @@ import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
 import pl.touk.nussknacker.ui.process.{JobStatusService, ProcessToSave, ProcessTypesForCategories}
 import pl.touk.http.argonaut.Argonaut62Support
+import pl.touk.nussknacker.ui.process.repository.WriteProcessRepository.UpdateProcessAction
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class ProcessesResources(repository: ProcessRepository,
+class ProcessesResources(repository: FetchingProcessRepository, writeRepository: WriteProcessRepository,
                          jobStatusService: JobStatusService,
                          processActivityRepository: ProcessActivityRepository,
                          processValidation: ProcessValidation,
                          typesForCategories: ProcessTypesForCategories)
                         (implicit ec: ExecutionContext, mat: Materializer)
   extends Directives with Argonaut62Support with EspPathMatchers with UiCodecs with RouteWithUser {
-
-  val uiProcessMarshaller = UiProcessMarshaller()
 
   def route(implicit user: LoggedUser): Route = {
     def authorizeMethod = extractMethod.flatMap[Unit] {
@@ -81,7 +80,7 @@ class ProcessesResources(repository: ProcessRepository,
           }
         } ~ delete {
           complete {
-            repository.deleteProcess(processId).map(toResponse(StatusCodes.OK))
+            writeRepository.deleteProcess(processId).map(toResponse(StatusCodes.OK))
           }
         }
       } ~ path("processes" / Segment / LongNumber) { (processId, versionId) =>
@@ -101,17 +100,12 @@ class ProcessesResources(repository: ProcessRepository,
             complete {
               val displayableProcess = processToSave.process
               val canonical = ProcessConverter.fromDisplayable(displayableProcess)
-              val json = uiProcessMarshaller.toJson(canonical, PrettyParams.nospace)
+              val json = UiProcessMarshaller.toJson(canonical, PrettyParams.nospace)
               val deploymentData = GraphProcess(json)
 
               (for {
                 validation <- EitherT.fromEither[Future](processValidation.validate(displayableProcess).saveNotAllowedAsError)
-                result <- EitherT(repository.updateProcess(processId, deploymentData))
-                _ <- EitherT.right[Future, pl.touk.nussknacker.ui.EspError, Unit](
-                  result.map { version =>
-                    processActivityRepository.addComment(processId, version.id, processToSave.comment)
-                  }.getOrElse(Future.successful(()))
-                )
+                result <- EitherT(writeRepository.updateProcess(UpdateProcessAction(processId, deploymentData, processToSave.comment)))
               } yield validation).value.map(toResponse)
             }
           }
@@ -124,11 +118,8 @@ class ProcessesResources(repository: ProcessRepository,
                 typesForCategories.getTypeForCategory(category) match {
                   case Some(processingType) =>
                     val emptyProcess = makeEmptyProcess(processId, processingType, isSubprocess)
-                    repository.fetchLatestProcessDetailsForProcessId(processId).flatMap {
-                      case Some(_) => Future(HttpResponse(status = StatusCodes.BadRequest, entity = "Process already exists"))
-                      case None => repository.saveNewProcess(processId, category, emptyProcess, processingType, isSubprocess)
+                    writeRepository.saveNewProcess(processId, category, emptyProcess, processingType, isSubprocess)
                         .map(toResponse(StatusCodes.Created))
-                    }
                   case None => Future(HttpResponse(status = StatusCodes.BadRequest, entity = "Process category not found"))
                 }
               }
@@ -152,7 +143,7 @@ class ProcessesResources(repository: ProcessRepository,
       } ~ path("processes" / "category" / Segment / Segment) { (processId, category) =>
         post {
           complete {
-            repository.updateCategory(processId = processId, category = category).map(toResponse(StatusCodes.OK))
+            writeRepository.updateCategory(processId = processId, category = category).map(toResponse(StatusCodes.OK))
           }
         }
       } ~ path("processes" / Segment / LongNumber / "compare" / LongNumber) { (processId, thisVersion, otherVersion) =>
@@ -173,7 +164,7 @@ class ProcessesResources(repository: ProcessRepository,
           fileUpload("process") { case (metadata, byteSource) =>
             complete {
               MultipartUtils.readFile(byteSource).map[ToResponseMarshallable] { json =>
-                (uiProcessMarshaller.fromJson(json) match {
+                (UiProcessMarshaller.fromJson(json) match {
                   case Valid(process) if process.metaData.id != processId => Invalid(WrongProcessId(processId, process.metaData.id))
                   case Valid(process) => Valid(process)
                   case Invalid(unmarshallError) => Invalid(UnmarshallError(unmarshallError.msg))
@@ -215,7 +206,7 @@ class ProcessesResources(repository: ProcessRepository,
     val emptyCanonical = CanonicalProcess(MetaData(id = processId,
       isSubprocess = isSubprocess,
       typeSpecificData = specificMetaData), ExceptionHandlerRef(List()), List())
-    GraphProcess(uiProcessMarshaller.toJson(emptyCanonical, PrettyParams.nospace))
+    GraphProcess(UiProcessMarshaller.toJson(emptyCanonical, PrettyParams.nospace))
   }
 
   private def withJson(processId: String, version: Long, businessView: Boolean)

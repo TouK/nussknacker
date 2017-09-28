@@ -7,12 +7,13 @@ import pl.touk.nussknacker.engine.api.deployment.test.TestData
 import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, GraphProcess, ProcessManager}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.ui.EspError
+import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
 import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntity.ProcessVersionEntityData
 import pl.touk.nussknacker.ui.process.displayedgraph.ProcessStatus
 import pl.touk.nussknacker.ui.process.marshall.UiProcessMarshaller
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessNotFoundError
-import pl.touk.nussknacker.ui.process.repository.{DeployedProcessRepository, ProcessRepository}
+import pl.touk.nussknacker.ui.process.repository.{DeployedProcessRepository, FetchingProcessRepository, ProcessRepository}
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -23,7 +24,7 @@ import scala.util.{Failure, Success}
 object ManagementActor {
   def apply(environment: String,
             managers: Map[ProcessingType, ProcessManager],
-            processRepository: ProcessRepository,
+            processRepository: FetchingProcessRepository,
             deployedProcessRepository: DeployedProcessRepository, subprocessResolver: SubprocessResolver)(implicit context: ActorRefFactory): ActorRef = {
     context.actorOf(Props(classOf[ManagementActor], environment, managers, processRepository, deployedProcessRepository, subprocessResolver))
   }
@@ -31,20 +32,18 @@ object ManagementActor {
 }
 
 class ManagementActor(environment: String, managers: Map[ProcessingType, ProcessManager],
-                      processRepository: ProcessRepository,
+                      processRepository: FetchingProcessRepository,
                       deployedProcessRepository: DeployedProcessRepository, subprocessResolver: SubprocessResolver) extends Actor with LazyLogging {
 
   private var beingDeployed = Map[String, DeployInfo]()
 
   private implicit val ec = context.dispatcher
 
-  private val marshaller = UiProcessMarshaller()
-
   override def receive = {
     case a: DeploymentAction if isBeingDeployed(a.id) =>
       sender() ! Status.Failure(new ProcessIsBeingDeployed(a.id, beingDeployed(a.id)))
     case Deploy(id, user, savepointPath) =>
-      val deployRes: Future[_] = deployProcess(id, savepointPath)(user)
+      val deployRes: Future[Unit] = deployProcess(id, savepointPath)(user)
       reply(withDeploymentInfo(id, user.id, "Deployment", deployRes))
     case Snapshot(id, user, savepointDir) =>
       reply(processManager(id)(ec, user).flatMap(_.savepoint(id, savepointDir)))
@@ -80,7 +79,7 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
       }
   }
 
-  private def withDeploymentInfo(id: String, userId: String, actionName: String, action: => Future[_]) = {
+  private def withDeploymentInfo[T](id: String, userId: String, actionName: String, action: => Future[T]) : Future[T] = {
     beingDeployed += id -> DeployInfo(userId, System.currentTimeMillis(), actionName)
     action.onComplete(_ => self ! DeploymentActionFinished(id))
     action
@@ -96,14 +95,15 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
 
   private def isBeingDeployed(id: String) = beingDeployed.contains(id)
 
-  private def deployProcess(processId: String, savepointPath: Option[String])(implicit user: LoggedUser) = {
+  private def deployProcess(processId: String, savepointPath: Option[String])(implicit user: LoggedUser) : Future[Unit] = {
     for {
       processingType <- getProcessingType(processId)
       latestProcessEntity <- processRepository.fetchLatestProcessVersion(processId)
-    } yield latestProcessEntity match {
-      case Some(latestVersion) => deployAndSaveProcess(processingType, latestVersion, savepointPath)
-      case None => Future(ProcessNotFoundError(processId))
-    }
+      result <- latestProcessEntity match {
+        case Some(latestVersion) => deployAndSaveProcess(processingType, latestVersion, savepointPath)
+        case None => Future.failed(ProcessNotFoundError(processId))
+      }
+    } yield result
   }
 
   private def deployAndSaveProcess(processingType: ProcessingType, latestVersion: ProcessVersionEntityData, savepointPath: Option[String])(implicit user: LoggedUser): Future[Unit] = {
@@ -124,7 +124,7 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
   }
 
   private def resolveGraph(canonicalJson: String) : String = {
-    marshaller.toJson(marshaller.fromJson(canonicalJson).andThen(subprocessResolver.resolveSubprocesses).toOption.get, PrettyParams.spaces2)
+    UiProcessMarshaller.toJson(UiProcessMarshaller.fromJson(canonicalJson).andThen(subprocessResolver.resolveSubprocesses).toOption.get, PrettyParams.spaces2)
   }
 
   private def processManager(processId: String)(implicit ec: ExecutionContext, user: LoggedUser) = {

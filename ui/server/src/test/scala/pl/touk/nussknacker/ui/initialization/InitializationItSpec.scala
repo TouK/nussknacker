@@ -1,32 +1,42 @@
 package pl.touk.nussknacker.ui.initialization
 
 import java.io.File
-import java.nio.file.{Files, Paths}
-import java.util.concurrent.TimeUnit
+import java.nio.file.Files
 
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import org.apache.commons.io.FileUtils
-import org.apache.commons.io.filefilter.TrueFileFilter
+import argonaut.PrettyParams
+import org.apache.commons.io.{FileUtils, IOUtils}
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
+import pl.touk.nussknacker.engine.api.deployment.GraphProcess
+import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
+import pl.touk.nussknacker.ui.api.ProcessTestData
+import pl.touk.nussknacker.ui.api.helpers.{EspItTest, TestFactory, WithDbTesting}
+import pl.touk.nussknacker.ui.db.entity.ProcessEntity.{ProcessType, ProcessingType}
+import pl.touk.nussknacker.ui.process.marshall.UiProcessMarshaller
+import pl.touk.nussknacker.ui.process.migrate.TestMigrations
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, TestFactory}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessDetails
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
-import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, Future}
+class InitializationItSpec extends FlatSpec with ScalatestRouteTest with Matchers with ScalaFutures with BeforeAndAfterEach with WithDbTesting with Eventually {
 
-class InitializationItSpec extends FlatSpec with ScalatestRouteTest with Matchers with ScalaFutures with BeforeAndAfterEach with EspItTest with Eventually {
+  import Initialization.toukUser
 
-  val toukuser = LoggedUser("TouK", "", List(Permission.Write, Permission.Admin), List())
-  var processesDir: File = _
+  private val processId = "proc1"
+
+  private var processesDir: File = _
+  private val migrations = Map(ProcessingType.Streaming -> new TestMigrations(1, 2))
+  private lazy val repository = TestFactory.newProcessRepository(db, Some(1))
+
+  private lazy val writeRepository = TestFactory.newWriteProcessRepository(db)
+
+  private val sampleDeploymentData = GraphProcess(UiProcessMarshaller.toJson(ProcessCanonizer.canonize(ProcessTestData.validProcessWithId(processId)), PrettyParams.nospace))
 
   override protected def beforeEach(): Unit = {
     super.beforeEach()
     processesDir = Files.createTempDirectory("processesJsons").toFile
-    val sampleProcessesDir = new File(getClass.getResource("/jsons").getFile)
-    FileUtils.copyDirectory(sampleProcessesDir, processesDir)
-    Files.deleteIfExists(Paths.get(processesDir.getAbsolutePath + "/standaloneProcesses/StandaloneCategory1/RequestResponseTest1.json")) //fixme make standalone mode testing easier
+
   }
 
   override protected def afterEach(): Unit = {
@@ -34,25 +44,41 @@ class InitializationItSpec extends FlatSpec with ScalatestRouteTest with Matcher
     processesDir.delete()
   }
 
-  it should "save json processes and delete files afterwards" in {
-    val processesFromFilesCount = listFilesFromDir(processesDir).size
-    processesFromFilesCount should be > 1
-    Await.result(getAllProcesses, Duration.apply(1, TimeUnit.SECONDS)) should have size 0
+  it should "add technical processes" in {
 
-    Initialization.init(Map(), processRepository, processActivityRepository,
-      db, "test", isDevelopmentMode = false, initialProcessDirectory = processesDir)
+    prepareCustomProcessFile()
 
-    eventually {
-      listFilesFromDir(processesDir) should have size 0
-      Await.result(getAllProcesses, Duration.apply(1, TimeUnit.SECONDS)) should have size processesFromFilesCount
-    }
+    Initialization.init(migrations, TestFactory.processValidation, db, "env1", processesDir)
+
+    repository.fetchProcessesDetails().futureValue.map(d => (d.id, d.processType)) shouldBe List(("process1", ProcessType.Custom))
   }
 
-  private def getAllProcesses: Future[List[ProcessDetails]] = {
-    processRepository.fetchProcessesDetails()(toukuser)
+  it should "migrate processes" in {
+
+    saveSampleProcess()
+
+    Initialization.init(migrations, TestFactory.processValidation, db, "env1", processesDir)
+
+    repository.fetchProcessesDetails().futureValue.map(d => (d.id, d.modelVersion)) shouldBe List(("proc1", Some(2)))
   }
 
-  private def listFilesFromDir(dir: File) = {
-    FileUtils.listFiles(dir, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE).toArray.toList
+  private def saveSampleProcess() : Unit = {
+    writeRepository.saveNewProcess(processId, "RTM", sampleDeploymentData, ProcessingType.Streaming, false).futureValue
+  }
+
+  it should "run initialization transactionally" in {
+    prepareCustomProcessFile()
+    saveSampleProcess()
+
+    val exception = intercept[RuntimeException](
+      Initialization.init(Map(ProcessingType.Streaming -> new TestMigrations(1, 2, 5)), TestFactory.processValidation, db, "env1", processesDir))
+
+    exception.getMessage shouldBe "made to fail.."
+
+    repository.fetchProcessesDetails().futureValue.map(d => (d.id, d.modelVersion)) shouldBe List(("proc1", Some(1)))
+  }
+
+  private def prepareCustomProcessFile() = {
+    FileUtils.write(new File(processesDir, TechnicalProcessUpdate.customProcessFile), """{ process1: "pl.touk.nussknacker.CustomProcess"}""")
   }
 }

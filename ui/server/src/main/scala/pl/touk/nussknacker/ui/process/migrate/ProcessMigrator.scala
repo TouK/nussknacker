@@ -70,8 +70,6 @@ trait StandardProcessMigrator extends Argonaut62Support with ProcessMigrator wit
 
   implicit def materializer: Materializer
 
-  val uiProcessMarshaller = UiProcessMarshaller()
-
   private def invoke[T:DecodeJson](path: String, method: HttpMethod, requestEntity: RequestEntity = HttpEntity.Empty)(implicit ec: ExecutionContext)
     : Future[Either[EspError, T]]= {
     request(path, method, requestEntity).flatMap { response =>

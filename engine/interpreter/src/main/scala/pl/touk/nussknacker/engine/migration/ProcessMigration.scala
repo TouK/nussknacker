@@ -16,8 +16,21 @@ trait ProcessMigration {
    def migrateProcess(canonicalProcess: CanonicalProcess): CanonicalProcess
 }
 
+object ProcessMigrations {
+
+  def empty : ProcessMigrations = new ProcessMigrations {
+    override def processMigrations: Map[Int, ProcessMigration] = Map()
+  }
+
+}
+
 trait ProcessMigrations {
-   def processMigrations: Map[Int, ProcessMigration]
+
+  def processMigrations: Map[Int, ProcessMigration]
+
+  //we assume 0 is minimal version
+  def version: Int = (processMigrations.keys.toSet + 0).max
+
 }
 
 trait FlatNodeMigration extends ProcessMigration {

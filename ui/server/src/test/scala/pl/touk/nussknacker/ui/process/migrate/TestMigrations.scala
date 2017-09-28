@@ -18,7 +18,8 @@ class TestMigrations(migrationsToAdd:Int*) extends ProcessMigrations {
     1 -> Migration1,
     2 -> Migration2,
     3 -> Migration3,
-    4 -> Migration4
+    4 -> Migration4,
+    5 -> Migration5
   ).filter(m => migrationsToAdd.contains(m._1))
 
   object Migration1 extends FlatNodeMigration {
@@ -67,6 +68,17 @@ class TestMigrations(migrationsToAdd:Int*) extends ProcessMigrations {
         n.copy(service = ServiceRef(ProcessTestData.existingServiceId, Parameter("newParam", "'abc'") :: parameters))
     }
   }
+
+
+  object Migration5 extends FlatNodeMigration {
+
+    override val description = "testMigration5"
+
+    override def failOnNewValidationError: Boolean = false
+
+    override def migrateNode: PartialFunction[node.NodeData, node.NodeData] = throw new RuntimeException("made to fail..")
+  }
+
 
 
 }

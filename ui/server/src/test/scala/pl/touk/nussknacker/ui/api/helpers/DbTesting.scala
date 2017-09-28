@@ -2,25 +2,26 @@ package pl.touk.nussknacker.ui.api.helpers
 
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import com.typesafe.scalalogging.LazyLogging
+import db.migration.DefaultJdbcProfile
 import org.scalatest.{BeforeAndAfterEach, Suite}
-import pl.touk.nussknacker.ui.db.DatabaseInitializer
+import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DbConfig}
 import slick.jdbc.JdbcBackend
 
 import scala.util.Try
 
 object DbTesting extends LazyLogging {
-  val db: JdbcBackend.Database = JdbcBackend.Database.forURL(
+  val db: DbConfig = DbConfig(JdbcBackend.Database.forURL(
     url = s"jdbc:hsqldb:mem:esp;sql.syntax_ora=true",
     driver = "org.hsqldb.jdbc.JDBCDriver",
     user = "SA",
     password = ""
-  )
+  ), DefaultJdbcProfile.profile)
 
-  new DatabaseInitializer(db).initDatabase()
+  new DatabaseInitializer(db.db).initDatabase()
 
   def cleanDB(): Try[Unit] = {
     Try {
-      val session = db.createSession()
+      val session = db.db.createSession()
       session.prepareStatement("""delete from "process_attachments"""").execute()
       session.prepareStatement("""delete from "process_comments"""").execute()
       session.prepareStatement("""delete from "process_deployment_info"""").execute()
@@ -34,7 +35,7 @@ object DbTesting extends LazyLogging {
 
 trait WithDbTesting { self: Suite with BeforeAndAfterEach =>
 
-  val db: JdbcBackend.Database = DbTesting.db
+  val db: DbConfig = DbTesting.db
 
   override protected def afterEach(): Unit = {
     DbTesting.cleanDB().failed.foreach { e =>

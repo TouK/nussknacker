@@ -15,9 +15,7 @@ import pl.touk.nussknacker.ui.validation.ValidationResults.{NodeValidationError,
 object TestModelMigrations {
 
   def apply(modelData: Map[ProcessingType, ModelData]) : TestModelMigrations = {
-    new TestModelMigrations(modelData.mapValues(_.migrations).collect {
-      case (k, Some(migration)) => (k, migration)
-    }, modelData.mapValues(_.validator))
+    new TestModelMigrations(modelData.mapValues(_.migrations), modelData.mapValues(_.validator))
   }
 
 }
@@ -33,11 +31,11 @@ class TestModelMigrations(migrations: Map[ProcessingType, ProcessMigrations], va
   }
 
   private def testSingleMigration(validation: ProcessValidation)(process: ProcessDetails) : Option[TestMigrationResult] = {
-    val migrator = new SingleProcessMigrator(migrations)
+    val migrator = new ProcessModelMigrator(migrations)
 
     for {
       previousResult <- process.json.flatMap(_.validationResult)
-      SingleMigrationResult(newProcess, migrations) <- migrator.migrateProcess(process)
+      MigrationResult(newProcess, migrations) <- migrator.migrateProcess(process)
       displayable = ProcessConverter.toDisplayable(newProcess, process.processingType)
       validated = displayable.validated(validation)
     } yield TestMigrationResult(validated, extractNewErrors(previousResult, validated.validationResult.get), migrations.exists(_.failOnNewValidationError))

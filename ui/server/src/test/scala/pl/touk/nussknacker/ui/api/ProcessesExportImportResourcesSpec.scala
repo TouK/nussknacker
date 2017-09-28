@@ -28,8 +28,6 @@ class ProcessesExportImportResourcesSpec extends FlatSpec with ScalatestRouteTes
   val routWithAllPermissions = withAllPermissions(processesExportResources) ~ withAllPermissions(processesRoute)
   implicit val loggedUser = LoggedUser("lu", "", List(), List(testCategory))
 
-  val marshaller = UiProcessMarshaller()
-
   it should "export process and import it" in {
     val processToSave = ProcessTestData.sampleDisplayableProcess
     saveProcess(processToSave) {
@@ -37,11 +35,11 @@ class ProcessesExportImportResourcesSpec extends FlatSpec with ScalatestRouteTes
     }
 
     Get(s"/processes/export/${processToSave.id}/2") ~> routWithAllPermissions ~> check {
-      val processDetails = marshaller.fromJson(responseAs[String]).toOption.get
+      val processDetails = UiProcessMarshaller.fromJson(responseAs[String]).toOption.get
       val modified = processDetails.copy(metaData = processDetails.metaData.copy(typeSpecificData = StreamMetaData(Some(987))))
 
       val multipartForm =
-        MultipartUtils.prepareMultiPart(marshaller.toJson(modified, PrettyParams.spaces2), "process")
+        MultipartUtils.prepareMultiPart(UiProcessMarshaller.toJson(modified, PrettyParams.spaces2), "process")
 
       Post(s"/processes/import/${processToSave.id}", multipartForm) ~> routWithAllPermissions ~> check {
         status shouldEqual StatusCodes.OK
@@ -90,11 +88,11 @@ class ProcessesExportImportResourcesSpec extends FlatSpec with ScalatestRouteTes
     }
 
     Get(s"/processes/export/${processToSave.id}/2") ~> routWithAllPermissions ~> check {
-      val processDetails = marshaller.fromJson(responseAs[String]).toOption.get
+      val processDetails = UiProcessMarshaller.fromJson(responseAs[String]).toOption.get
       val modified = processDetails.copy(metaData = processDetails.metaData.copy(id = "SOMEVERYFAKEID"))
 
       val multipartForm =
-        FileUploadUtils.prepareMultiPart(marshaller.toJson(modified, PrettyParams.spaces2), "process")
+        FileUploadUtils.prepareMultiPart(UiProcessMarshaller.toJson(modified, PrettyParams.spaces2), "process")
 
       Post(s"/processes/import/${processToSave.id}", multipartForm) ~> routWithAllPermissions ~> check {
         status shouldEqual StatusCodes.BadRequest

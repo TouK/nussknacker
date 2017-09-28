@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.Queryabl
 import pl.touk.nussknacker.engine.flink.queryablestate.EspQueryableClient
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository
+import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.{JobStatusService, ProcessObjectsFinder}
 import pl.touk.http.argonaut.Argonaut62Support
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
@@ -17,7 +17,7 @@ import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import scala.concurrent.{ExecutionContext, Future}
 
 class QueryableStateResources(processDefinition: Map[ProcessingType, ModelData],
-                              processRepository: ProcessRepository,
+                              processRepository: FetchingProcessRepository,
                               queryableClient: () => EspQueryableClient,
                               jobStatusService: JobStatusService)
                              (implicit ec: ExecutionContext) extends Directives with Argonaut62Support  with RouteWithUser {

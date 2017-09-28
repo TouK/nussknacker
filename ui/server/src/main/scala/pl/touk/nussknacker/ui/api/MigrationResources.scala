@@ -3,31 +3,30 @@ package pl.touk.nussknacker.ui.api
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.{HttpResponse, MessageEntity, StatusCodes}
 import akka.http.scaladsl.server.{Directives, Route}
-import argonaut.EncodeJson
 import argonaut.ArgonautShapeless._
+import argonaut.EncodeJson
 import cats.instances.either._
 import cats.instances.list._
 import cats.syntax.traverse._
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.process.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.ui.process.migrate.{MigratorCommunicationError, ProcessMigrator, TestMigrationResult}
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository
+import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{ProcessDetails, ProcessNotFoundError}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessNotFoundError
-import pl.touk.nussknacker.ui.util.ProcessComparator
-import pl.touk.http.argonaut.Argonaut62Support
+import pl.touk.nussknacker.ui.util.{Argonaut62Support, ProcessComparator}
 
 import scala.concurrent.{ExecutionContext, Future}
 import ProcessComparator._
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
 class MigrationResources(migrator: ProcessMigrator,
-                         processRepository: ProcessRepository)(implicit ec: ExecutionContext)
+                         processRepository: FetchingProcessRepository)(implicit ec: ExecutionContext)
   extends Directives with Argonaut62Support with RouteWithUser {
 
+  import argonaut.Argonaut._
   import argonaut.ArgonautShapeless._
   import pl.touk.nussknacker.ui.codec.UiCodecs._
-  import argonaut.Argonaut._
 
   private implicit val differenceCodec = ProcessComparator.codec
 

@@ -21,6 +21,7 @@ object ModelData {
 
 }
 
+//TODO: make this more of a trait, so that it's not always necessary to init full class with classloaders..
 case class ModelData(processConfig: Config, jarClassLoader: JarClassLoader)
   extends ConfigCreatorSignalDispatcher with ConfigCreatorTestInfoProvider {
 
@@ -34,10 +35,10 @@ case class ModelData(processConfig: Config, jarClassLoader: JarClassLoader)
 
   lazy val validator: ProcessValidator = ProcessValidator.default(processDefinition)
 
-  lazy val migrations: Option[ProcessMigrations] = {
+  lazy val migrations: ProcessMigrations = {
     Multiplicity(ScalaServiceLoader.load[ProcessMigrations](jarClassLoader.classLoader)) match {
-      case Empty() => None
-      case One(migrationsDef) => Some(migrationsDef)
+      case Empty() => ProcessMigrations.empty
+      case One(migrationsDef) => migrationsDef
       case Many(moreThanOne) =>
         throw new IllegalArgumentException(s"More than one ProcessMigrations instance found: $moreThanOne")
     }

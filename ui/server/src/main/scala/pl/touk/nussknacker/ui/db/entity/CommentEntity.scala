@@ -1,10 +1,16 @@
 package pl.touk.nussknacker.ui.db.entity
 
 import java.sql.Timestamp
+import java.time.LocalDateTime
 
 import db.migration.DefaultJdbcProfile.profile.api._
+import db.util.DBIOActionInstances.DB
+import pl.touk.nussknacker.ui.db.EspTables.commentsTable
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.DateUtils
 import slick.sql.SqlProfile.ColumnOption.NotNull
+
+import scala.concurrent.ExecutionContext
 
 object CommentEntity {
 
@@ -32,6 +38,26 @@ object CommentEntity {
 
   case class CommentEntityData(id: Long, processId: String, processVersionId: Long, content: String, user: String, createDate: Timestamp) {
     val createDateTime = DateUtils.toLocalDateTime(createDate)
+  }
+
+  def newCommentAction(processId: String, processVersionId: Long, comment: String)
+                  (implicit ec: ExecutionContext, loggedUser: LoggedUser): DB[Unit] = {
+    if (comment.nonEmpty) {
+      val addCommentAction = for {
+        newId <- CommentEntity.nextIdAction
+        _ <- commentsTable += CommentEntityData(
+          id = newId,
+          processId = processId,
+          processVersionId = processVersionId,
+          content = comment,
+          user = loggedUser.id,
+          createDate = Timestamp.valueOf(LocalDateTime.now())
+        )
+      } yield ()
+      addCommentAction.map(_ => ())
+    } else {
+      DBIO.successful(())
+    }
   }
 
 }

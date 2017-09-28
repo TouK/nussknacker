@@ -5,10 +5,11 @@ import java.time.LocalDateTime
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.{Directives, _}
+import pl.touk.http.argonaut.Argonaut62Support
 import pl.touk.nussknacker.ui.codec.UiCodecs
 import pl.touk.nussknacker.ui.process.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository
+import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessDetails
 import pl.touk.nussknacker.ui.processreport.{ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.util.DateUtils
@@ -18,7 +19,7 @@ import pl.touk.process.report.influxdb.InfluxReporter
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class ProcessReportResources(influxReporter: InfluxReporter, processCounter: ProcessCounter, processRepository: ProcessRepository)
+class ProcessReportResources(influxReporter: InfluxReporter, processCounter: ProcessCounter, processRepository: FetchingProcessRepository)
                             (implicit ec: ExecutionContext) extends Directives with Argonaut62Support with UiCodecs with RouteWithUser {
 
   def route(implicit loggedUser: LoggedUser): Route = {

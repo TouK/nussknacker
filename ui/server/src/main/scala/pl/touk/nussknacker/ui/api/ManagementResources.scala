@@ -45,7 +45,6 @@ class ManagementResources(typesInformation: List[PlainClazzDefinition],
 
   import pl.touk.nussknacker.ui.codec.UiCodecs.displayableProcessCodec
   val codecs = UiCodecs.ContextCodecs(typesInformation)
-  val processMarshaller = UiProcessMarshaller()
 
   import codecs._
 
@@ -113,7 +112,7 @@ class ManagementResources(typesInformation: List[PlainClazzDefinition],
     displayableProcessJson.decodeEither[DisplayableProcess] match {
       case Right(process) =>
         val canonical = ProcessConverter.fromDisplayable(process)
-        val canonicalJson = processMarshaller.toJson(canonical, PrettyParams.nospace)
+        val canonicalJson = UiProcessMarshaller.toJson(canonical, PrettyParams.nospace)
         (managementActor ? Test(processId, canonicalJson, TestData(testData), user)).mapTo[TestResults].map { results =>
           ResultsWithCounts(results, computeCounts(canonical, results))
         }

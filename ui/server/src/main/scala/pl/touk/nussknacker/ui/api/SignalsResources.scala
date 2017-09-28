@@ -4,7 +4,7 @@ import akka.http.scaladsl.server.{Directives, Route}
 import pl.touk.http.argonaut.Argonaut62Support
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.ui.process.ProcessObjectsFinder
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository
+import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, ProcessRepository}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessDetails
 import pl.touk.http.argonaut.Argonaut62Support
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
@@ -13,7 +13,7 @@ import shapeless.syntax.typeable._
 import scala.concurrent.{ExecutionContext, Future}
 
 class SignalsResources(modelData: ModelData,
-                       processRepository: ProcessRepository)
+                       processRepository: FetchingProcessRepository)
                       (implicit ec: ExecutionContext) extends Directives with Argonaut62Support  with RouteWithUser {
 
   import pl.touk.nussknacker.ui.codec.UiCodecs._

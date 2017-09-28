@@ -6,7 +6,7 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
 import pl.touk.nussknacker.ui.process.JobStatusService
 import pl.touk.nussknacker.ui.process.displayedgraph.ProcessStatus
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository
+import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, ProcessRepository}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessDetails
 import pl.touk.http.argonaut.Argonaut62Support
 import pl.touk.nussknacker.engine.ModelData
@@ -16,7 +16,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 class AppResources(modelData: Map[ProcessingType, ModelData],
-                   processRepository: ProcessRepository,
+                   processRepository: FetchingProcessRepository,
                    jobStatusService: JobStatusService)(implicit ec: ExecutionContext)
   extends Directives with Argonaut62Support with LazyLogging with RouteWithUser {
 

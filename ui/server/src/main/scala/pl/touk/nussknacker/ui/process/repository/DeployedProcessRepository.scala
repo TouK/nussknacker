@@ -5,26 +5,22 @@ import java.time.LocalDateTime
 
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.ui.app.BuildInfo
-import pl.touk.nussknacker.ui.db.EspTables
+import pl.touk.nussknacker.ui.db.{DbConfig, EspTables}
 import pl.touk.nussknacker.ui.db.entity.ProcessDeploymentInfoEntity.{DeployedProcessVersionEntityData, DeploymentAction}
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
 import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntity.ProcessVersionEntityData
-import slick.jdbc.{JdbcBackend, JdbcProfile}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 
 object DeployedProcessRepository {
-  def apply(db: JdbcBackend.Database,
-            driver: JdbcProfile,
-            modelData: Map[ProcessingType, ModelData]) : DeployedProcessRepository = {
-    new DeployedProcessRepository(db, driver, modelData.mapValues(_.configCreator.buildInfo()))
+  def create(dbConfig: DbConfig, modelData: Map[ProcessingType, ModelData]) : DeployedProcessRepository = {
+    new DeployedProcessRepository(dbConfig, modelData.mapValues(_.configCreator.buildInfo()))
   }
 }
 
-class DeployedProcessRepository(db: JdbcBackend.Database,
-                                driver: JdbcProfile,
-                                buildInfos: Map[ProcessingType, Map[String, String]]) {
+case class DeployedProcessRepository(dbConfig: DbConfig,
+                                buildInfos: Map[ProcessingType, Map[String, String]]) extends BasicRepository {
   import driver.api._
 
   def markProcessAsDeployed(processingType: ProcessingType,
@@ -39,7 +35,7 @@ class DeployedProcessRepository(db: JdbcBackend.Database,
       DeploymentAction.Deploy,
       buildInfos.get(processingType).map(BuildInfo.writeAsJson)
     )
-    db.run(insertAction).map(_ => ())
+    run(insertAction).map(_ => ())
   }
 
   def markProcessAsCancelled(processId: String, userId: String, environment: String)
@@ -54,7 +50,7 @@ class DeployedProcessRepository(db: JdbcBackend.Database,
       DeploymentAction.Cancel,
       None
     )
-    db.run(insertAction).map(_ => ())
+    run(insertAction).map(_ => ())
   }
 
 }

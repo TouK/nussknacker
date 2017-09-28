@@ -14,12 +14,12 @@ import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
-import pl.touk.nussknacker.ui.db.DatabaseInitializer
+import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DbConfig}
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.process.deployment.ManagementActor
 import pl.touk.nussknacker.ui.process.migrate.{HttpProcessMigrator, TestModelMigrations}
-import pl.touk.nussknacker.ui.process.repository.{DeployedProcessRepository, ProcessActivityRepository, ProcessRepository}
+import pl.touk.nussknacker.ui.process.repository.{DBFetchingProcessRepository, DeployedProcessRepository, ProcessActivityRepository, WriteProcessRepository}
 import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, SubprocessResolver}
 import pl.touk.nussknacker.ui.process.uiconfig.SingleNodeConfig
 import pl.touk.nussknacker.ui.process.uiconfig.defaults.{ParamDefaultValueConfig, TypeAfterConfig}
@@ -52,10 +52,10 @@ object NussknackerApp extends App with Directives with LazyLogging {
   val nodesConfig = Try(config.as[Map[String, SingleNodeConfig]](s"$environment.nodes")).getOrElse(Map.empty)
   logger.info(s"Ui config loaded: \nfeatureTogglesConfig: $featureTogglesConfig\nnodesConfig:$nodesConfig")
 
-  val db: jdbc.JdbcBackend.DatabaseDef = {
+  val db: DbConfig = {
     val db = JdbcBackend.Database.forConfig("db", config)
     new DatabaseInitializer(db).initDatabase()
-    db
+    DbConfig(db, DefaultJdbcProfile.profile)
   }
 
   val port = args(0).toInt
@@ -66,22 +66,24 @@ object NussknackerApp extends App with Directives with LazyLogging {
   val defaultParametersValues = ParamDefaultValueConfig(nodesConfig.map {case (k, v) => (k, v.defaultValues.getOrElse(Map.empty))})
   val extractValueParameterByConfigThenType = new TypeAfterConfig(defaultParametersValues)
 
-  val subprocessRepository = new DbSubprocessRepository(db, DefaultJdbcProfile.profile, system.dispatcher)
+  val subprocessRepository = new DbSubprocessRepository(db, system.dispatcher)
   val subprocessResolver = new SubprocessResolver(subprocessRepository)
 
   val processValidation = ProcessValidation(modelData, subprocessResolver)
 
-  val processRepository = ProcessRepository(db, DefaultJdbcProfile.profile, processValidation, modelData)
-  val deploymentProcessRepository = DeployedProcessRepository(db, DefaultJdbcProfile.profile, modelData)
-  val processActivityRepository = new ProcessActivityRepository(db, DefaultJdbcProfile.profile)
+  val processRepository = DBFetchingProcessRepository.create(db, processValidation)
+  val writeProcessRepositor = WriteProcessRepository.create(db, processValidation, modelData)
+
+  val deploymentProcessRepository = DeployedProcessRepository.create(db, modelData)
+  val processActivityRepository = new ProcessActivityRepository(db)
   val attachmentService = new ProcessAttachmentService(config.getString("attachmentsPath"), processActivityRepository)
   val authenticationJarPath = "../../engine/config-user-authentication/target/scala-2.11/configUserAuthentication.jar"
   val authenticator = createAuthenticator(authenticationJarPath)
 
   val counter = new ProcessCounter(subprocessRepository)
 
-  Initialization.init(modelData, processRepository, processActivityRepository,
-    db, environment, featureTogglesConfig.development, initialProcessDirectory)
+  Initialization.init(modelData.mapValues(_.migrations), processValidation, db, environment, initialProcessDirectory)
+
   initHttp()
 
   val managementActor = ManagementActor(environment, managers, processRepository, deploymentProcessRepository, subprocessResolver)
@@ -92,7 +94,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
 
   private val apiResources : List[RouteWithUser] = {
     val routes = List(
-      new ProcessesResources(processRepository, jobStatusService, processActivityRepository, processValidation, typesForCategories),
+      new ProcessesResources(processRepository, writeProcessRepositor, jobStatusService, processActivityRepository, processValidation, typesForCategories),
         new ProcessesExportResources(processRepository, processActivityRepository),
         new ProcessActivityResource(processActivityRepository, attachmentService),
         ManagementResources(modelData, counter, managementActor),

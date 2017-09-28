@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.db.entity
 
 import db.migration.DefaultJdbcProfile.profile.api._
+import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, GraphProcess, ProcessDeploymentData}
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessType.ProcessType
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
 import slick.sql.SqlProfile.ColumnOption.NotNull
@@ -51,6 +52,12 @@ object ProcessEntity {
     type ProcessType = Value
     val Graph = Value("graph")
     val Custom = Value("custom")
+
+    def fromDeploymentData(processDeploymentData: ProcessDeploymentData) : ProcessType = processDeploymentData match {
+      case _:GraphProcess => ProcessType.Graph
+      case _:CustomProcess => ProcessType.Custom
+    }
+
   }
 
   object ProcessingType extends Enumeration {

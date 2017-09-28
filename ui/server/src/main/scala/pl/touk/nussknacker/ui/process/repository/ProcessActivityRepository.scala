@@ -5,45 +5,29 @@ import java.time.LocalDateTime
 
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.ui.api.ProcessAttachmentService.AttachmentToAdd
+import pl.touk.nussknacker.ui.db.DbConfig
 import pl.touk.nussknacker.ui.db.EspTables._
 import pl.touk.nussknacker.ui.db.entity.AttachmentEntity.AttachmentEntityData
 import pl.touk.nussknacker.ui.db.entity.CommentEntity
 import pl.touk.nussknacker.ui.db.entity.CommentEntity.CommentEntityData
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.{Attachment, Comment, ProcessActivity}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import slick.jdbc.{JdbcBackend, JdbcProfile}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class ProcessActivityRepository(db: JdbcBackend.Database,
-                                driver: JdbcProfile) extends LazyLogging {
+case class ProcessActivityRepository(dbConfig: DbConfig) extends LazyLogging with BasicRepository {
 
   import driver.api._
 
   def addComment(processId: String, processVersionId: Long, comment: String)
                 (implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Unit] = {
-    if (comment.nonEmpty) {
-      val addCommentAction = for {
-        newId <- CommentEntity.nextIdAction
-        _ <- commentsTable += CommentEntityData(
-          id = newId,
-          processId = processId,
-          processVersionId = processVersionId,
-          content = comment,
-          user = loggedUser.id,
-          createDate = Timestamp.valueOf(LocalDateTime.now())
-        )
-      } yield ()
-      db.run(addCommentAction).map(_ => ())
-    } else {
-      Future.successful(())
-    }
+    run(CommentEntity.newCommentAction(processId, processVersionId, comment))
   }
 
   def deleteComment(commentId: Long)(implicit ec: ExecutionContext): Future[Unit] = {
     val commentToDelete = commentsTable.filter(_.id === commentId)
     val deleteAction = commentToDelete.delete
-    db.run(deleteAction).flatMap { deletedRowsCount =>
+    run(deleteAction).flatMap { deletedRowsCount =>
       logger.info(s"Tried to delete comment with id: $commentId. Deleted rows count: $deletedRowsCount")
       if (deletedRowsCount == 0) {
         Future.failed(new RuntimeException(s"Unable to delete comment with id: $commentId"))
@@ -61,7 +45,7 @@ class ProcessActivityRepository(db: JdbcBackend.Database,
       attachments = fetchedAttachments.map(c => Attachment(c)).toList
     } yield ProcessActivity(comments, attachments)
 
-    db.run(findProcessActivityAction)
+    run(findProcessActivityAction)
   }
 
   def addAttachment(attachmentToAdd: AttachmentToAdd)(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Unit] = {
@@ -78,12 +62,12 @@ class ProcessActivityRepository(db: JdbcBackend.Database,
       )
     } yield ()
 
-    db.run(addAttachmentAction)
+    run(addAttachmentAction)
   }
 
   def findAttachment(attachmentId: Long)(implicit ec: ExecutionContext): Future[Option[AttachmentEntityData]] = {
     val findAttachmentAction = attachmentsTable.filter(_.id === attachmentId).result.headOption
-    db.run(findAttachmentAction)
+    run(findAttachmentAction)
   }
 }
 

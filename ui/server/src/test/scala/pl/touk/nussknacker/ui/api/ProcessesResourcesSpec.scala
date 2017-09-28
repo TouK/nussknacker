@@ -45,8 +45,6 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
   val processActivityRouteWithAllPermission = withAllPermissions(processActivityRoute)
   implicit val loggedUser = LoggedUser("lu", "", List(), List(testCategory))
 
-  val marshaller = UiProcessMarshaller()
-
   private val processId: String = SampleProcess.process.id
 
   it should "return list of process details" in {
@@ -94,7 +92,7 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
   }
 
   it should "return 400 when trying to update json of custom process" in {
-    whenReady(processRepository.saveNewProcess("customProcess", testCategory, CustomProcess(""), ProcessingType.Streaming, false)) { res =>
+    whenReady(writeProcessRepository.saveNewProcess("customProcess", testCategory, CustomProcess(""), ProcessingType.Streaming, false)) { res =>
       updateProcess("customProcess", SampleProcess.process) {
         status shouldEqual StatusCodes.BadRequest
       }
@@ -139,7 +137,7 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
     saveProcess(SampleProcess.process.id, ProcessTestData.validProcess) {
       status shouldEqual StatusCodes.OK
     }
-    processRepository.updateCategory(SampleProcess.process.id, testCategory)
+    writeProcessRepository.updateCategory(SampleProcess.process.id, testCategory)
 
     Get(s"/processes/${SampleProcess.process.id}") ~> routWithAllPermissions ~> check {
       val processDetails = responseAs[String].decodeOption[ProcessDetails].get
@@ -157,7 +155,7 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
     saveProcess(SampleProcess.process.id, ProcessTestData.validProcess) {
       status shouldEqual StatusCodes.OK
     }
-    processRepository.updateCategory(SampleProcess.process.id, "newCategory")
+    writeProcessRepository.updateCategory(SampleProcess.process.id, "newCategory")
     Get(s"/processes/${SampleProcess.process.id}") ~> routeWithRead ~> check {
       status shouldEqual StatusCodes.NotFound
     }
@@ -172,7 +170,7 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
     saveProcess(SampleProcess.process.id, ProcessTestData.validProcess) {
       status shouldEqual StatusCodes.OK
     }
-    processRepository.updateCategory(SampleProcess.process.id, "newCategory")
+    writeProcessRepository.updateCategory(SampleProcess.process.id, "newCategory")
 
     Get(s"/processes/${SampleProcess.process.id}") ~> routWithAdminPermission ~> check {
       val processDetails = responseAs[String].decodeOption[ProcessDetails].get
@@ -329,7 +327,7 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
       .fetchLatestProcessVersion(SampleProcess.process.id)
       .map(_.getOrElse(sys.error("Sample process missing")))
       .map { version =>
-        val parsed = UiProcessMarshaller().fromJson(version.json.get)
+        val parsed = UiProcessMarshaller.fromJson(version.json.get)
         parsed.valueOr(_ => sys.error("Invalid process json"))
       }
   }

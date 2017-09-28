@@ -60,7 +60,7 @@ class ManagementResourcesSpec extends FlatSpec with ScalatestRouteTest
   it should "deploy technical process and mark it as deployed" in {
     implicit val loggedUser = user().copy(categories = List(testCategory))
     val processId = "Process1"
-    whenReady(processRepository.saveNewProcess(processId, testCategory, CustomProcess(""), ProcessingType.Streaming, false)) { res =>
+    whenReady(writeProcessRepository.saveNewProcess(processId, testCategory, CustomProcess(""), ProcessingType.Streaming, false)) { res =>
       deployProcess(processId) ~> check { status shouldBe StatusCodes.OK }
       getProcess(processId) ~> check {
         val processDetails = responseAs[String].decodeOption[ProcessDetails].get
