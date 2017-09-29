@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import pl.touk.nussknacker.engine.standalone.management.DeploymentService
 import pl.touk.nussknacker.engine.standalone.utils.StandaloneContextPreparer
 import pl.touk.nussknacker.engine.util.ThreadUtils
-import pl.touk.nussknacker.engine.util.loader.{JarClassLoader, ProcessConfigCreatorServiceLoader}
+import pl.touk.nussknacker.engine.util.loader.{JarClassLoader, ProcessConfigCreatorLoader, SingleServiceLoader}
 import pl.touk.http.argonaut.Argonaut62Support
 import pl.touk.nussknacker.engine.api.conversion.ProcessConfigCreatorMapping
 
@@ -27,14 +27,15 @@ object StandaloneHttpApp extends Directives with Argonaut62Support with LazyLogg
 
   import system.dispatcher
 
-  implicit val materializer = ActorMaterializer()
+  implicit private val materializer = ActorMaterializer()
 
-  val config = ConfigFactory.load()
-  val processesClassLoader = loadProcessesClassloader(config)
-  val creator = loadCreator
+  private val config = ConfigFactory.load()
+  private val processesClassLoader = loadProcessesClassloader(config)
+  private val creator =  ProcessConfigCreatorLoader.loadProcessConfigCreator(processesClassLoader)
 
 
-  val deploymentService = DeploymentService(prepareContext(config), creator, config)
+
+  private val deploymentService = DeploymentService(prepareContext(config), creator, config)
 
   def main(args: Array[String]): Unit = {
     val ports = for {
@@ -66,11 +67,6 @@ object StandaloneHttpApp extends Directives with Argonaut62Support with LazyLogg
       port = processesPort
     )
 
-  }
-
-  def loadCreator: ProcessConfigCreator = {
-    val creator = ProcessConfigCreatorServiceLoader.createProcessConfigCreator(processesClassLoader)
-    ProcessConfigCreatorMapping.toProcessConfigCreator(creator)
   }
 
   def loadProcessesClassloader(config: Config): ClassLoader = {

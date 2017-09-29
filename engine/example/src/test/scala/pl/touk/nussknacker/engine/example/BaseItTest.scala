@@ -21,7 +21,7 @@ trait BaseITest extends KafkaSpec {
       case CreatorLang.Java =>
         ProcessConfigCreatorMapping.toProcessConfigCreator(new pl.touk.nussknacker.engine.javaexample.ExampleProcessConfigCreator)
       case CreatorLang.Scala =>
-        ProcessConfigCreatorMapping.toProcessConfigCreator(new ExampleProcessConfigCreator)
+        new ExampleProcessConfigCreator
     }
   }
 

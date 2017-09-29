@@ -10,14 +10,8 @@ object ProcessConfigCreatorMapping {
 
   import scala.collection.JavaConverters._
 
-  def toProcessConfigCreator(creator: Any): ProcessConfigCreator = {
-    creator match {
-      case scalaCreator: ProcessConfigCreator =>
-        scalaCreator
-      case javaCreator: pl.touk.nussknacker.engine.javaapi.process.ProcessConfigCreator =>
-        javaToScala(javaCreator)
-    }
-  }
+    def toProcessConfigCreator(creator: pl.touk.nussknacker.engine.javaapi.process.ProcessConfigCreator): ProcessConfigCreator =
+      javaToScala(creator)
 
   private def javaToScala(jcreator: pl.touk.nussknacker.engine.javaapi.process.ProcessConfigCreator): ProcessConfigCreator = {
     val creator = new ProcessConfigCreator {

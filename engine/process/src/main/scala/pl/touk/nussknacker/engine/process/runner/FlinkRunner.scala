@@ -1,19 +1,16 @@
 package pl.touk.nussknacker.engine.process.runner
-
-import java.io.{File, FileReader}
+import java.io.File
 import java.nio.charset.StandardCharsets
 
 import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.config.{Config, ConfigFactory}
-import org.apache.commons.io.IOUtils
 import pl.touk.nussknacker.engine.api.conversion.ProcessConfigCreatorMapping
 import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.engine.util.ThreadUtils
-import pl.touk.nussknacker.engine.util.loader.ProcessConfigCreatorServiceLoader
+import pl.touk.nussknacker.engine.util.loader.ProcessConfigCreatorLoader
 
 trait FlinkRunner {
 
@@ -23,11 +20,6 @@ trait FlinkRunner {
   protected def readConfigFromArgs(args: Array[String]): Config = {
     val optionalConfigArg = if (args.length > 1) Some(args(1)) else None
     readConfigFromArg(optionalConfigArg)
-  }
-
-  protected def loadCreator: ProcessConfigCreator = {
-    val creator = ProcessConfigCreatorServiceLoader.createProcessConfigCreator(Thread.currentThread().getContextClassLoader)
-    ProcessConfigCreatorMapping.toProcessConfigCreator(creator)
   }
 
   protected def readProcessFromArg(arg: String): EspProcess = {

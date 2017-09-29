@@ -26,7 +26,8 @@ import pl.touk.nussknacker.engine.graph.node.Source
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.standalone.StandaloneProcessInterpreter
 import pl.touk.nussknacker.engine.standalone.utils.StandaloneContextPreparer
-import pl.touk.nussknacker.engine.util.loader.ProcessConfigCreatorServiceLoader
+import pl.touk.nussknacker.engine.util.ThreadUtils
+import pl.touk.nussknacker.engine.util.loader.{JarClassLoader, ProcessConfigCreatorLoader, SingleServiceLoader}
 import pl.touk.nussknacker.engine.util.service.{AuditDispatchClient, LogCorrelationId}
 
 import scala.concurrent.duration.FiniteDuration
@@ -98,13 +99,11 @@ class StandaloneProcessManager(modelData: ModelData, config: Config)
 object StandaloneTestMain {
 
   def run(processJson: String, config: Config, testData: TestData, classLoader: ClassLoader): TestResults = {
-    val process = TestUtils.readProcessFromArg(processJson)
-    new StandaloneTestMain(config, testData, process, loadCreator(classLoader)).runTest()
-  }
-
-  protected def loadCreator(classLoader: ClassLoader): ProcessConfigCreator = {
-    val creator = ProcessConfigCreatorServiceLoader.createProcessConfigCreator(classLoader)
-    ProcessConfigCreatorMapping.toProcessConfigCreator(creator)
+    new StandaloneTestMain(
+      config = config,
+      testData = testData,
+      process = TestUtils.readProcessFromArg(processJson),
+      creator = ProcessConfigCreatorLoader.loadProcessConfigCreator(classLoader)).runTest()
   }
 
 }

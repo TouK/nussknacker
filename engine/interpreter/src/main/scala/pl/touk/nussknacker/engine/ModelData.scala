@@ -8,7 +8,8 @@ import pl.touk.nussknacker.engine.definition.{ConfigCreatorSignalDispatcher, Con
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ObjectProcessDefinition, ProcessDefinition}
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.engine.util.ThreadUtils
-import pl.touk.nussknacker.engine.util.loader.JarClassLoader
+import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, One}
+import pl.touk.nussknacker.engine.util.loader.{JarClassLoader, ProcessConfigCreatorLoader, SingleServiceLoader}
 
 object ModelData {
 
@@ -24,20 +25,22 @@ case class ModelData(processConfig: Config, jarClassLoader: JarClassLoader)
   extends ConfigCreatorSignalDispatcher with ConfigCreatorTestInfoProvider {
 
   //this is not lazy, to be able to detect if creator can be created...
-  val configCreator : ProcessConfigCreator = jarClassLoader.createProcessConfigCreator
+  val configCreator : ProcessConfigCreator = ProcessConfigCreatorLoader.loadProcessConfigCreator(jarClassLoader.classLoader)
 
-  lazy val processDefinition : ProcessDefinition[ObjectDefinition] = ThreadUtils.withThisAsContextClassLoader(jarClassLoader.classLoader) {
-    ObjectProcessDefinition(ProcessDefinitionExtractor.extractObjectWithMethods(configCreator, processConfig))
-  }
+  lazy val processDefinition: ProcessDefinition[ObjectDefinition] =
+    ThreadUtils.withThisAsContextClassLoader(jarClassLoader.classLoader) {
+      ObjectProcessDefinition(ProcessDefinitionExtractor.extractObjectWithMethods(configCreator, processConfig))
+    }
 
-  lazy val validator : ProcessValidator = ProcessValidator.default(processDefinition)
+  lazy val validator: ProcessValidator = ProcessValidator.default(processDefinition)
 
-  lazy val migrations : Option[ProcessMigrations] = {
-    jarClassLoader.loadServices[ProcessMigrations] match {
-      case Nil => None
-      case migrationsDef :: Nil => Some(migrationsDef)
-      case moreThanOne => throw new IllegalArgumentException(s"More than one ProcessMigrations instance found: $moreThanOne")
+  lazy val migrations: Option[ProcessMigrations] = {
+    SingleServiceLoader.load[ProcessMigrations](jarClassLoader.classLoader)match {
+      case Empty() => None
+      case One(migrationsDef) => Some(migrationsDef)
+      case Many(moreThanOne) =>
+        throw new IllegalArgumentException(s"More than one ProcessMigrations instance found: $moreThanOne")
     }
   }
-  
+
 }

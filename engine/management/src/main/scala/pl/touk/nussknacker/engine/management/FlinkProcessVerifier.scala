@@ -1,9 +1,5 @@
 package pl.touk.nussknacker.engine.management
 
-import java.io.File
-import java.net.URL
-
-import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.util.ReflectUtils.StaticMethodRunner

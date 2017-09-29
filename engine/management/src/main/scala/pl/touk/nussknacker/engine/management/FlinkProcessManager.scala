@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.test.{TestData, TestResults}
 import pl.touk.nussknacker.engine.flink.queryablestate.{EspQueryableClient, QueryableClientProvider}
 
+
 import scala.collection.JavaConversions._
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -71,6 +72,7 @@ class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeploy: Boolea
   private lazy val testRunner = new FlinkProcessTestRunner(modelData)
 
   private lazy val verification = new FlinkProcessVerifier(modelData)
+
 
   override def deploy(processId: String, processDeploymentData: ProcessDeploymentData, savepointPath: Option[String]) = {
     val program = prepareProgram(processId, processDeploymentData)

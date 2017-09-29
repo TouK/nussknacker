@@ -340,7 +340,9 @@ lazy val util = (project in engine("util")).
     name := "nussknacker-util",
     libraryDependencies ++= {
       Seq(
-        "com.iheart" %% "ficus" % ficusV
+        "com.iheart" %% "ficus" % ficusV,
+        "org.scalatest" %% "scalatest" % scalaTestV % "test"
+
       )
     }
   ).dependsOn(api, httpUtils)
