@@ -9,7 +9,6 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, EspExceptionInfo, ExceptionHandlerFactory}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
-import pl.touk.nussknacker.engine.api.test.TestDataParser
 import pl.touk.nussknacker.engine.util.LoggingListener
 import argonaut.ArgonautShapeless._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender

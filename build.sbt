@@ -207,9 +207,9 @@ lazy val management = (project in engine("management")).
 lazy val standalone_sample = (project in engine("engine-standalone/sample")).
   settings(commonSettings).
   settings(
-    name := "nussknacker-engine-standalone",
+    name := "nussknacker-standalone-sample",
     assemblyJarName in assembly := "standaloneSample.jar"
-  )
+  ).dependsOn(util)
 
 val managementSampleName = "nussknacker-management-sample"
 

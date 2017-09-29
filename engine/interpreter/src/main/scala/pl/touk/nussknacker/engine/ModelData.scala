@@ -23,7 +23,8 @@ object ModelData {
 case class ModelData(processConfig: Config, jarClassLoader: JarClassLoader)
   extends ConfigCreatorSignalDispatcher with ConfigCreatorTestInfoProvider {
 
-  lazy val configCreator : ProcessConfigCreator = jarClassLoader.createProcessConfigCreator
+  //this is not lazy, to be able to detect if creator can be created...
+  val configCreator : ProcessConfigCreator = jarClassLoader.createProcessConfigCreator
 
   lazy val processDefinition : ProcessDefinition[ObjectDefinition] = ThreadUtils.withThisAsContextClassLoader(jarClassLoader.classLoader) {
     ObjectProcessDefinition(ProcessDefinitionExtractor.extractObjectWithMethods(configCreator, processConfig))
