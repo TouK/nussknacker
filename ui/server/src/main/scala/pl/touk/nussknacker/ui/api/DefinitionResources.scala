@@ -23,10 +23,10 @@ import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.EdgeType.{F
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessRepository
 import pl.touk.nussknacker.ui.process.uiconfig.defaults.{ParameterDefaultValueExtractorStrategy, ParameterEvaluatorExtractor}
-import pl.touk.nussknacker.ui.security.LoggedUser
 import pl.touk.nussknacker.ui.util.EspPathMatchers
 import pl.touk.http.argonaut.Argonaut62Support
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.ExecutionContext
 import scala.runtime.BoxedUnit

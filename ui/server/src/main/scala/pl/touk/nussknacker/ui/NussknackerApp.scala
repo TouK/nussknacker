@@ -25,12 +25,15 @@ import pl.touk.nussknacker.ui.process.uiconfig.SingleNodeConfig
 import pl.touk.nussknacker.ui.process.uiconfig.defaults.{ParamDefaultValueConfig, TypeAfterConfig}
 import pl.touk.nussknacker.ui.process.{JobStatusService, ProcessTypesForCategories, ProcessingTypeDeps}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
-import pl.touk.nussknacker.ui.security.SimpleAuthenticator
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 import pl.touk.process.report.influxdb.InfluxReporter
+import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import pl.touk.nussknacker.ui.security.AuthenticatorProvider
 import slick.jdbc
 import slick.jdbc.JdbcBackend
 
+import scala.reflect.internal.util.ScalaClassLoader.URLClassLoader
 import scala.util.Try
 
 object NussknackerApp extends App with Directives with LazyLogging {
@@ -72,7 +75,9 @@ object NussknackerApp extends App with Directives with LazyLogging {
   val deploymentProcessRepository = DeployedProcessRepository(db, DefaultJdbcProfile.profile, modelData)
   val processActivityRepository = new ProcessActivityRepository(db, DefaultJdbcProfile.profile)
   val attachmentService = new ProcessAttachmentService(config.getString("attachmentsPath"), processActivityRepository)
-  val authenticator = new SimpleAuthenticator(config.getString("usersFile"))
+  val authenticationJarPath = "../../engine/config-user-authentication/target/scala-2.11/configUserAuthentication.jar"
+  val authenticator = createAuthenticator(authenticationJarPath)
+
   val counter = new ProcessCounter(subprocessRepository)
 
   Initialization.init(modelData, processRepository, processActivityRepository,
@@ -134,7 +139,12 @@ object NussknackerApp extends App with Directives with LazyLogging {
       port = port
     )
   }
-
+  private def createAuthenticator(authenticationJarPath: String) = {
+    val classLoader = new URLClassLoader(
+      new File(authenticationJarPath).toURI.toURL :: Nil,
+      this.getClass.getClassLoader)
+    AuthenticatorProvider(config, classLoader)
+  }
   //we do it, because akka creates non-daemon threads, so we have to stop ActorSystem explicitly, if initialization fails
   private def prepareUncaughtExceptionHandler() = {
     //TODO: should we set it only on main thread?

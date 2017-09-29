@@ -23,7 +23,7 @@ import pl.touk.nussknacker.ui.process.deployment.{Cancel, Deploy, Snapshot, Test
 import pl.touk.nussknacker.ui.process.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.ui.process.marshall.{ProcessConverter, UiProcessMarshaller}
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
-import pl.touk.nussknacker.ui.security.{LoggedUser, Permission}
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._

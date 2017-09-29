@@ -6,7 +6,7 @@ import pl.touk.nussknacker.ui.api.DefinitionPreparer.{NodeEdges, NodeTypeId}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory
 import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.EdgeType._
 import pl.touk.nussknacker.ui.process.uiconfig.defaults.{ParamDefaultValueConfig, TypeAfterConfig}
-import pl.touk.nussknacker.ui.security.{LoggedUser, Permission}
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
 class DefinitionPreparerSpec extends FlatSpec with Matchers {
 

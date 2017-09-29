@@ -4,8 +4,8 @@ import akka.http.scaladsl.server.{Directives, Route}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 import pl.touk.nussknacker.ui.process.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
-import pl.touk.nussknacker.ui.security.LoggedUser
 import pl.touk.http.argonaut.Argonaut62Support
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.ExecutionContext
 

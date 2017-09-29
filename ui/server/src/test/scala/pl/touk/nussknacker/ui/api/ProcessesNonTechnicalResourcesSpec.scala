@@ -9,7 +9,7 @@ import pl.touk.nussknacker.ui.api.helpers.EspItTest
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.codec.UiCodecs._
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessDetails
-import pl.touk.nussknacker.ui.security.{LoggedUser, Permission}
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
 import scala.concurrent.duration._
 import scala.language.higherKinds

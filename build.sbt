@@ -202,7 +202,7 @@ lazy val management = (project in engine("management")).
         "ch.qos.logback" % "logback-core" % logbackV % "it,test"
       )
     }
-  ).dependsOn(interpreter, queryableState, kafkaTestUtil % "it,test")
+  ).dependsOn(interpreter, queryableState, kafkaTestUtil % "it,test",securityApi)
 
 lazy val standalone_sample = (project in engine("engine-standalone/sample")).
   settings(commonSettings).
@@ -227,7 +227,8 @@ lazy val management_sample = (project in engine("management/sample")).
       )
     }
   ).
-  dependsOn(flinkUtil, kafka, kafkaFlinkUtil, process % "runtime,test", flinkTestUtil % "test", kafkaTestUtil % "test")
+  dependsOn(flinkUtil, kafka, kafkaFlinkUtil, process % "runtime,test", flinkTestUtil % "test", kafkaTestUtil % "test",
+    securityApi)
 
 lazy val example = (project in engine("example")).
   settings(commonSettings).
@@ -342,7 +343,6 @@ lazy val util = (project in engine("util")).
       Seq(
         "com.iheart" %% "ficus" % ficusV,
         "org.scalatest" %% "scalatest" % scalaTestV % "test"
-
       )
     }
   ).dependsOn(api, httpUtils)
@@ -408,6 +408,39 @@ lazy val api = (project in engine("api")).
       )
     }
   )
+
+lazy val securityApi = (project in engine("security-api")).
+  settings(commonSettings).
+  settings(
+    name := "securityApi",
+    libraryDependencies ++= {
+      Seq(
+        "org.scalatest" %% "scalatest" % scalaTestV % "test",
+        "com.typesafe.akka" %% "akka-http-experimental" % akkaHttpV force(),
+
+        "com.typesafe" % "config" % configV
+      )
+    }
+  )
+  .dependsOn(util)
+
+lazy val configUserAuthentication = (project in engine("config-user-authentication")).
+  settings(commonSettings).
+  settings(
+    name := "configUserAuthentication",
+    assemblyJarName in assembly := "configUserAuthentication.jar",
+    test in assembly := {},
+    libraryDependencies ++= {
+      Seq(
+        "org.scalatest" %% "scalatest" % scalaTestV % "test",
+        "com.typesafe.akka" %% "akka-http-experimental" % akkaHttpV force(),
+
+        "com.typesafe" % "config" % configV,
+        "com.iheart" %% "ficus" % ficusV
+      )
+    }
+  )
+  .dependsOn(securityApi)
 
 lazy val flinkApi = (project in engine("flink-api")).
   settings(commonSettings).
@@ -553,7 +586,7 @@ lazy val ui = (project in file("ui/server"))
     }
   )
   .settings(addArtifact(artifact in (Compile, assembly), assembly))
-  .dependsOn(management, interpreter, engineStandalone, processReports)
+  .dependsOn(management, interpreter, engineStandalone, processReports, securityApi)
 
 releaseProcess := Seq[ReleaseStep](
   checkSnapshotDependencies,              // : ReleaseStep

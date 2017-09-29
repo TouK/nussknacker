@@ -9,7 +9,7 @@ import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingT
 import pl.touk.nussknacker.ui.process.marshall.{ProcessConverter, UiProcessMarshaller}
 import pl.touk.nussknacker.ui.process.repository.{ProcessActivityRepository, ProcessRepository}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessDetails
-import pl.touk.nussknacker.ui.security.LoggedUser
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
 

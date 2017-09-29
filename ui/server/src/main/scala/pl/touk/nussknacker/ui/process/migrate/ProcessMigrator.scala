@@ -16,11 +16,11 @@ import pl.touk.nussknacker.ui.process.ProcessToSave
 import pl.touk.nussknacker.ui.process.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.ui.process.marshall.UiProcessMarshaller
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{InvalidProcessTypeError, ProcessDetails}
-import pl.touk.nussknacker.ui.security.LoggedUser
 import pl.touk.nussknacker.ui.util.ProcessComparator.Difference
 import pl.touk.nussknacker.ui.util.ProcessComparator
 import pl.touk.nussknacker.ui.validation.ValidationResults.{ValidationErrors, ValidationResult}
 import pl.touk.http.argonaut.Argonaut62Support
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
 

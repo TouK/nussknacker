@@ -7,8 +7,8 @@ import pl.touk.nussknacker.engine.definition.{TestInfoProvider, TestingCapabilit
 import pl.touk.nussknacker.engine.graph.node.Source
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
 import pl.touk.nussknacker.ui.process.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.ui.security.{LoggedUser, Permission}
 import pl.touk.http.argonaut.Argonaut62Support
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import shapeless.syntax.typeable._
 
 import scala.concurrent.ExecutionContext

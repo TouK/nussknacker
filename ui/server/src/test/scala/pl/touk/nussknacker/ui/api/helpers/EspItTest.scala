@@ -15,7 +15,7 @@ import pl.touk.nussknacker.ui.process.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.ui.process.{JobStatusService, ProcessToSave, ProcessTypesForCategories}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.sample.SampleProcess
-import pl.touk.nussknacker.ui.security.Permission
+import pl.touk.nussknacker.ui.security.api.Permission
 
 trait EspItTest extends LazyLogging with WithDbTesting { self: ScalatestRouteTest with Suite with BeforeAndAfterEach with Matchers =>
 

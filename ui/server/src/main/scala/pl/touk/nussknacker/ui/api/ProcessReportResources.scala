@@ -11,9 +11,9 @@ import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessDetails
 import pl.touk.nussknacker.ui.processreport.{ProcessCounter, RawCount}
-import pl.touk.nussknacker.ui.security.LoggedUser
 import pl.touk.nussknacker.ui.util.DateUtils
 import pl.touk.http.argonaut.Argonaut62Support
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.process.report.influxdb.InfluxReporter
 
 import scala.concurrent.{ExecutionContext, Future}

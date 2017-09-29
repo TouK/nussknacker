@@ -8,9 +8,9 @@ import pl.touk.nussknacker.ui.process.JobStatusService
 import pl.touk.nussknacker.ui.process.displayedgraph.ProcessStatus
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessDetails
-import pl.touk.nussknacker.ui.security.LoggedUser
 import pl.touk.http.argonaut.Argonaut62Support
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal

@@ -18,7 +18,6 @@ import pl.touk.nussknacker.ui.process.displayedgraph.{DisplayableProcess, Proces
 import pl.touk.nussknacker.ui.process.marshall.{ProcessConverter, UiProcessMarshaller}
 import pl.touk.nussknacker.ui.process.repository.{ProcessActivityRepository, ProcessRepository}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository._
-import pl.touk.nussknacker.ui.security.{LoggedUser, Permission}
 import pl.touk.nussknacker.ui.util._
 import pl.touk.nussknacker.ui._
 import EspErrorToHttp._
@@ -29,7 +28,7 @@ import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
 import pl.touk.nussknacker.ui.process.{JobStatusService, ProcessToSave, ProcessTypesForCategories}
 import pl.touk.http.argonaut.Argonaut62Support
-
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
 import scala.concurrent.{ExecutionContext, Future}
 

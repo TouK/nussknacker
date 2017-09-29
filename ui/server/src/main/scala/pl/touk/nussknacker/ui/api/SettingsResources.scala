@@ -3,8 +3,8 @@ package pl.touk.nussknacker.ui.api
 import akka.http.scaladsl.server.{Directives, Route}
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
 import pl.touk.nussknacker.ui.process.uiconfig.SingleNodeConfig
-import pl.touk.nussknacker.ui.security.LoggedUser
 import pl.touk.http.argonaut.Argonaut62Support
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.ExecutionContext
 

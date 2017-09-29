@@ -25,13 +25,13 @@ import pl.touk.nussknacker.ui.process.marshall.UiProcessMarshaller
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.ProcessActivity
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessDetails
 import pl.touk.nussknacker.ui.sample.SampleProcess
-import pl.touk.nussknacker.ui.security.{LoggedUser, Permission}
 import pl.touk.nussknacker.ui.util.{FileUploadUtils, MultipartUtils}
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.language.higherKinds
 import UiCodecs._
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
 class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Matchers with Inside
   with ScalaFutures with OptionValues with Eventually with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {

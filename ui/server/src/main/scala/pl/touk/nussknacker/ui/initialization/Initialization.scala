@@ -17,7 +17,8 @@ import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingT
 import pl.touk.nussknacker.ui.db.migration.SampleDataInserter
 import pl.touk.nussknacker.ui.process.migrate.ProcessModelMigrator
 import pl.touk.nussknacker.ui.process.repository.{ProcessActivityRepository, ProcessRepository}
-import pl.touk.nussknacker.ui.security.{LoggedUser, Permission}
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import slick.jdbc.JdbcBackend
 
 import scala.collection.JavaConversions._

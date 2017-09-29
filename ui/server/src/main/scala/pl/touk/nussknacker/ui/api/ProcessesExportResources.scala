@@ -13,7 +13,7 @@ import pl.touk.nussknacker.ui.process.marshall.{ProcessConverter, UiProcessMarsh
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.ProcessActivity
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository._
 import pl.touk.nussknacker.ui.process.repository.{ProcessActivityRepository, ProcessRepository}
-import pl.touk.nussknacker.ui.security.LoggedUser
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util._
 
 import scala.concurrent.ExecutionContext

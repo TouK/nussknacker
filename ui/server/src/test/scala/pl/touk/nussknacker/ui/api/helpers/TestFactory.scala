@@ -7,10 +7,12 @@ import pl.touk.nussknacker.engine.management.{FlinkModelData, FlinkProcessManage
 import pl.touk.nussknacker.ui.api.{ProcessPosting, ProcessTestData, RouteWithUser}
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.nussknacker.ui.process.repository.{DeployedProcessRepository, ProcessActivityRepository, ProcessRepository}
-import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, SubprocessRepository, SubprocessResolver}
-import pl.touk.nussknacker.ui.security.Permission.Permission
-import pl.touk.nussknacker.ui.security.{LoggedUser, Permission}
+import pl.touk.nussknacker.ui.process.subprocess.DbSubprocessRepository
 import pl.touk.nussknacker.ui.validation.ProcessValidation
+import pl.touk.nussknacker.ui.process.subprocess.{SubprocessRepository, SubprocessResolver}
+import pl.touk.nussknacker.ui.security.api.Permission.Permission
+
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import slick.jdbc.JdbcBackend
 
 import scala.concurrent.{ExecutionContext, Future}

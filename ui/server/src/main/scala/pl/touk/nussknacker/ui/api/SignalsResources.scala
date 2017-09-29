@@ -5,7 +5,10 @@ import pl.touk.http.argonaut.Argonaut62Support
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.ui.process.ProcessObjectsFinder
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository
-import pl.touk.nussknacker.ui.security.{LoggedUser, Permission}
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessDetails
+import pl.touk.http.argonaut.Argonaut62Support
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
+import shapeless.syntax.typeable._
 
 import scala.concurrent.{ExecutionContext, Future}
 

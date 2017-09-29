@@ -14,7 +14,7 @@ import pl.touk.nussknacker.ui.api.helpers.{TestFactory, WithDbTesting}
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.nussknacker.ui.process.marshall.UiProcessMarshaller
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessDetails
-import pl.touk.nussknacker.ui.security.{LoggedUser, Permission}
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import shapeless.Typeable._
 import shapeless.syntax.typeable.typeableOps
 

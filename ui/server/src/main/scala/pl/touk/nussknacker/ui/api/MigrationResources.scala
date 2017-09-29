@@ -13,11 +13,13 @@ import pl.touk.nussknacker.ui.process.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.ui.process.migrate.{MigratorCommunicationError, ProcessMigrator, TestMigrationResult}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{ProcessDetails, ProcessNotFoundError}
-import pl.touk.nussknacker.ui.security.{LoggedUser, Permission}
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.util.ProcessComparator
 import pl.touk.http.argonaut.Argonaut62Support
 
 import scala.concurrent.{ExecutionContext, Future}
+import ProcessComparator._
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
 class MigrationResources(migrator: ProcessMigrator,
                          processRepository: ProcessRepository)(implicit ec: ExecutionContext)

@@ -10,8 +10,8 @@ import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.process.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.ui.process.migrate.{MigratorCommunicationError, ProcessMigrator, TestMigrationResult}
 import pl.touk.nussknacker.ui.sample.SampleProcess
-import pl.touk.nussknacker.ui.security.{LoggedUser, Permission}
 import pl.touk.nussknacker.ui.util.ProcessComparator.{Difference, NodeNotPresentInCurrent, NodeNotPresentInOther}
+import pl.touk.nussknacker.ui.util.ProcessComparator.{Difference, NodeNotPresentInCurrent}
 import pl.touk.nussknacker.ui.validation.ValidationResults.ValidationResult
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -20,6 +20,7 @@ import argonaut.DecodeJson
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.Filter
 import pl.touk.nussknacker.ui.EspError
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import pl.touk.nussknacker.ui.util.ProcessComparator
 
 class MigrationResourceSpec extends FlatSpec with ScalatestRouteTest with ScalaFutures with Matchers

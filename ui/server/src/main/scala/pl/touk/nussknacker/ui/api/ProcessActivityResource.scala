@@ -11,9 +11,9 @@ import akka.http.scaladsl.server.directives.ContentTypeResolver
 import akka.stream.{ActorAttributes, Materializer}
 import akka.stream.scaladsl.FileIO
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository
-import pl.touk.nussknacker.ui.security.LoggedUser
 import pl.touk.nussknacker.ui.util.{AkkaHttpResponse, CatsSyntax}
 import pl.touk.http.argonaut.Argonaut62Support
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.ExecutionContext
 
