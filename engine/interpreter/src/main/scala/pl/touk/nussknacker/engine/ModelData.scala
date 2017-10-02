@@ -8,8 +8,8 @@ import pl.touk.nussknacker.engine.definition.{ConfigCreatorSignalDispatcher, Con
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ObjectProcessDefinition, ProcessDefinition}
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.engine.util.ThreadUtils
-import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, One}
-import pl.touk.nussknacker.engine.util.loader.{JarClassLoader, ProcessConfigCreatorLoader, SingleServiceLoader}
+import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
+import pl.touk.nussknacker.engine.util.loader.{JarClassLoader, ProcessConfigCreatorLoader, ScalaServiceLoader}
 
 object ModelData {
 
@@ -35,7 +35,7 @@ case class ModelData(processConfig: Config, jarClassLoader: JarClassLoader)
   lazy val validator: ProcessValidator = ProcessValidator.default(processDefinition)
 
   lazy val migrations: Option[ProcessMigrations] = {
-    SingleServiceLoader.load[ProcessMigrations](jarClassLoader.classLoader)match {
+    Multiplicity(ScalaServiceLoader.load[ProcessMigrations](jarClassLoader.classLoader)) match {
       case Empty() => None
       case One(migrationsDef) => Some(migrationsDef)
       case Many(moreThanOne) =>

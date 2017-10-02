@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import pl.touk.nussknacker.engine.standalone.management.DeploymentService
 import pl.touk.nussknacker.engine.standalone.utils.StandaloneContextPreparer
 import pl.touk.nussknacker.engine.util.ThreadUtils
-import pl.touk.nussknacker.engine.util.loader.{JarClassLoader, ProcessConfigCreatorLoader, SingleServiceLoader}
+import pl.touk.nussknacker.engine.util.loader.{JarClassLoader, ProcessConfigCreatorLoader, ScalaServiceLoader}
 import pl.touk.http.argonaut.Argonaut62Support
 import pl.touk.nussknacker.engine.api.conversion.ProcessConfigCreatorMapping
 

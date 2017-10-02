@@ -18,14 +18,14 @@ object AuthenticatorProvider {
       default = SimpleAuthenticatorFactory(),
       loaded = ServiceLoader.load(classOf[AuthenticatorFactory], classLoader)
         .asScala
-        .toSeq) match {
+        .toList) match {
       case Success(auth) => auth.createAuthenticator(config)
       case Failure(e) => throw e
     }
   }
 
   private[security] def chooseAuthenticator(default: AuthenticatorFactory,
-                                            loaded: Seq[AuthenticatorFactory]): Try[AuthenticatorFactory] = {
+                                            loaded: List[AuthenticatorFactory]): Try[AuthenticatorFactory] = {
     (Multiplicity(loaded), default) match {
       case (One(only), _) => Success(only)
       case (Empty(), default_) => Success(default_)

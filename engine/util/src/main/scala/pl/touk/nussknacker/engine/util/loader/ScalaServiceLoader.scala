@@ -7,15 +7,14 @@ import pl.touk.nussknacker.engine.util.multiplicity.Multiplicity
 import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
 
-object SingleServiceLoader {
-  def load[T](classLoader: ClassLoader)(implicit classTag: ClassTag[T]): Multiplicity[T] = {
+object ScalaServiceLoader {
+  def load[T](classLoader: ClassLoader)(implicit classTag: ClassTag[T]): List[T] = {
     val claz: Class[T] = toClass(classTag)
-    val services = ServiceLoader
+    ServiceLoader
       .load(claz, classLoader)
       .iterator()
       .asScala
       .toList
-    Multiplicity(services)
   }
 
   private def toClass[T](implicit classTag: ClassTag[T]) = {
