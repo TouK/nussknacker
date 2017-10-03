@@ -55,7 +55,7 @@ def numberUtilsStrategy: String => MergeStrategy = {
   case PathList("akka", xs @ _*) => MergeStrategy.last
   case x => MergeStrategy.defaultMergeStrategy(x)
 }
-
+val scalaTestReports = Tests.Argument(TestFrameworks.ScalaTest, "-u", "target/surefire-reports", "-oFGD")
 val commonSettings =
   graphSettings ++
   publishSettings ++
@@ -65,7 +65,8 @@ val commonSettings =
     resolvers ++= Seq(
       "spring milestone" at "https://repo.spring.io/milestone"
     ),
-    testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-u", "target/surefire-reports", "-oD"),
+    testOptions in Test += scalaTestReports,
+    testOptions in IntegrationTest += scalaTestReports,
     scalacOptions := Seq(
       "-unchecked",
       "-deprecation",
