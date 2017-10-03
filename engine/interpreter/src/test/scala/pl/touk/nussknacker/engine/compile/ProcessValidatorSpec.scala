@@ -6,7 +6,7 @@ import org.scalatest.{FlatSpec, Inside, Matchers}
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.{MetaData, Service, StreamMetaData}
 import pl.touk.nussknacker.engine.api.lazyy.ContextWithLazyValuesProvider
-import pl.touk.nussknacker.engine.api.process.WithCategories
+import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, WithCategories}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError._
@@ -40,7 +40,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
     Map.empty,
     ObjectDefinition.noParam,
     Map("processHelper" -> ObjectDefinition(List(), ClazzRef(ProcessHelper.getClass), List("cat1"))),
-    EspTypeUtils.clazzAndItsChildrenDefinition(List(classOf[SampleEnricher], classOf[SimpleRecord], ProcessHelper.getClass))
+    EspTypeUtils.clazzAndItsChildrenDefinition(List(classOf[SampleEnricher], classOf[SimpleRecord], ProcessHelper.getClass))(ClassExtractionSettings.Default)
   )
 
   it should "validated with success" in {

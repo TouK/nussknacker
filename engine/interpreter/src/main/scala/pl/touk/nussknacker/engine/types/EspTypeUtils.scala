@@ -1,11 +1,12 @@
 package pl.touk.nussknacker.engine.types
 
-import java.lang.reflect.{Field, Method, ParameterizedType, Type}
+import java.lang.reflect._
 
 import cats.Eval
 import cats.data.StateT
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.ParamName
+import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ClazzRef, PlainClazzDefinition}
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl
@@ -46,18 +47,19 @@ object EspTypeUtils {
 
   private val boxedToPrimitives = primitiveTypesToBoxed.map(_.swap)
 
-
   private val primitiveTypesSimpleNames = primitiveTypesToBoxed.keys.map(_.getName).toSet
 
   private def methodNames(clazz: Class[_]): List[String] = {
     clazz.getMethods.map(_.getName).toList
   }
 
-  def clazzAndItsChildrenDefinition(clazzes: List[Class[_]]): List[PlainClazzDefinition] = {
+  def clazzAndItsChildrenDefinition(clazzes: List[Class[_]])
+                                   (implicit settings: ClassExtractionSettings): List[PlainClazzDefinition] = {
     clazzes.flatMap(clazzAndItsChildrenDefinition).distinct
   }
 
-  def clazzAndItsChildrenDefinition(clazz: Class[_]): List[PlainClazzDefinition] = {
+  def clazzAndItsChildrenDefinition(clazz: Class[_])
+                                   (implicit settings: ClassExtractionSettings): List[PlainClazzDefinition] = {
     val result = if (clazz.isPrimitive || baseClazzPackagePrefix.exists(clazz.getName.startsWith)) {
       List(clazzDefinition(clazz))
     } else {
@@ -73,29 +75,38 @@ object EspTypeUtils {
     result.distinct
   }
 
-  private def clazzDefinition(clazz: Class[_]): PlainClazzDefinition = {
+  private def clazzDefinition(clazz: Class[_])
+                             (implicit settings: ClassExtractionSettings): PlainClazzDefinition =
     PlainClazzDefinition(ClazzRef(clazz), getPublicMethodAndFields(clazz))
-  }
 
-  private def getPublicMethodAndFields(clazz: Class[_]): Map[String, ClazzRef] = {
+  private def getPublicMethodAndFields(clazz: Class[_])
+                                      (implicit settings: ClassExtractionSettings): Map[String, ClazzRef] = {
     val methods = publicMethods(clazz)
     val fields = publicFields(clazz)
     methods ++ fields
   }
 
-  private def publicMethods(clazz: Class[_]) = {
-    val interestingMethods = clazz.getMethods.filter(m =>
-      !blackilistedMethods.contains(m.getName) && !m.getName.contains("$")
-    )
+  private def publicMethods(clazz: Class[_])
+                           (implicit settings: ClassExtractionSettings) = {
+    val interestingMethods = clazz.getMethods
+        .filterNot(m => Modifier.isStatic(m.getModifiers))
+        .filterNot(settings.isBlacklisted)
+        .filter(m =>
+          !blackilistedMethods.contains(m.getName) && !m.getName.contains("$")
+        )
     interestingMethods.map { method =>
       method.getName -> ClazzRef(getReturnClassForMethod(method))
     }.toMap
   }
 
-  private def publicFields(clazz: Class[_]) = {
-    val interestingFields = clazz.getFields.filter(m =>
-      !m.getName.contains("$")
-    )
+  private def publicFields(clazz: Class[_])
+                          (implicit settings: ClassExtractionSettings) = {
+    val interestingFields = clazz.getFields
+      .filterNot(f => Modifier.isStatic(f.getModifiers))
+      .filterNot(settings.isBlacklisted)
+      .filter(m =>
+        !m.getName.contains("$")
+      )
     interestingFields.map { field =>
       field.getName -> ClazzRef(getReturnClassForField(field))
     }.toMap

@@ -1,19 +1,17 @@
 package pl.touk.nussknacker.engine.javaapi.process;
 
 import com.typesafe.config.Config;
-import java.io.Serializable;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Optional;
 import pl.touk.nussknacker.engine.api.CustomStreamTransformer;
 import pl.touk.nussknacker.engine.api.ProcessListener;
 import pl.touk.nussknacker.engine.api.Service;
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory;
-import pl.touk.nussknacker.engine.api.process.AsyncExecutionContextPreparer;
-import pl.touk.nussknacker.engine.api.process.SinkFactory;
-import pl.touk.nussknacker.engine.api.process.SourceFactory;
-import pl.touk.nussknacker.engine.api.process.WithCategories;
+import pl.touk.nussknacker.engine.api.process.*;
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender;
+
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Optional;
 
 public interface ProcessConfigCreator extends Serializable {
 
@@ -29,6 +27,8 @@ public interface ProcessConfigCreator extends Serializable {
     default Optional<AsyncExecutionContextPreparer> asyncExecutionContextPreparer(Config config) {
       return Optional.empty();
     }
-
+    default ClassExtractionSettings classExtractionSettings(Config config) {
+        return ClassExtractionSettings.DEFAULT;
+    }
 
 }

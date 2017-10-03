@@ -8,9 +8,11 @@ import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.InterpreterSpec._
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.lazyy.UsingLazyValues
-import pl.touk.nussknacker.engine.api.process.WithCategories
+import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, WithCategories}
 import pl.touk.nussknacker.engine.api.{Service, _}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
+import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compile.PartSubGraphCompilerBase.CompiledNode
 import pl.touk.nussknacker.engine.compile.{PartSubGraphCompiler, SubprocessResolver, ValidationContext}
@@ -24,10 +26,8 @@ import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
-import pl.touk.nussknacker.engine.split.ProcessSplitter
-import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
-import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
+import pl.touk.nussknacker.engine.split.ProcessSplitter
 import pl.touk.nussknacker.engine.splittedgraph.part.SinkPart
 import pl.touk.nussknacker.engine.splittedgraph.splittednode
 import pl.touk.nussknacker.engine.types.EspTypeUtils
@@ -40,8 +40,8 @@ import scala.util.{Success, Try}
 
 class InterpreterSpec extends FlatSpec with Matchers {
 
-  import spel.Implicits._
   import pl.touk.nussknacker.engine.util.Implicits._
+  import spel.Implicits._
 
   implicit val synchronousExecutionContext = ExecutionContext.fromExecutor(new Executor {
     def execute(task: Runnable) = task.run()
@@ -67,7 +67,8 @@ class InterpreterSpec extends FlatSpec with Matchers {
     val splitted = ProcessSplitter.split(process)
     val servicesDefs = services.mapValuesNow { service => ObjectWithMethodDef(WithCategories(service), ServiceDefinitionExtractor) }
     val interpreter = Interpreter(servicesDefs, Map(), listeners, true)
-    val typesInformation = EspTypeUtils.clazzAndItsChildrenDefinition((servicesDef.values.map(_.getClass) ++ sourceFactories.values.map(c => Class.forName(c.returnType.refClazzName))).toList)
+    val classes = (servicesDef.values.map(_.getClass) ++ sourceFactories.values.map(c => Class.forName(c.returnType.refClazzName))).toList
+    val typesInformation = EspTypeUtils.clazzAndItsChildrenDefinition(classes)(ClassExtractionSettings.Default)
     val compiledNode = compile(servicesDefs, splitted.source.node, ValidationContext(typesInformation = typesInformation, variables = Map(Interpreter.InputParamName -> ClazzRef(classOf[Transaction]))))
     val initialCtx = Context("abc").withVariable(Interpreter.InputParamName, transaction)
     val resultBeforeSink = Await.result(interpreter.interpret(compiledNode.node, InterpreterMode.Traverse, process.metaData, initialCtx), 10 seconds) match {

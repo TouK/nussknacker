@@ -3,14 +3,13 @@ package pl.touk.nussknacker.engine.definition
 import java.lang.reflect.{InvocationTargetException, Method}
 
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.process.WithCategories
+import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, WithCategories}
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import pl.touk.nussknacker.engine.types.EspTypeUtils
 
 import scala.reflect.ClassTag
 import scala.runtime.BoxedUnit
-import scala.util.control.NonFatal
 
 trait DefinitionExtractor[T] {
 
@@ -189,7 +188,8 @@ object DefinitionExtractor {
                 sourceFactories: Iterable[ObjectWithMethodDef],
                 customNodeTransformers: Iterable[ObjectWithMethodDef],
                 signalsFactories: Iterable[ObjectWithMethodDef],
-                globalProcessVariables: Iterable[Class[_]]): List[PlainClazzDefinition] = {
+                globalProcessVariables: Iterable[Class[_]])
+               (implicit settings: ClassExtractionSettings): List[PlainClazzDefinition] = {
 
       //TODO: do we need services here?
       val classesToExtractDefinitions =

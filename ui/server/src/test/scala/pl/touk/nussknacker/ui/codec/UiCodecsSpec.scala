@@ -6,6 +6,7 @@ import argonaut.Parse
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api.Displayable
+import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.TypesInformation
 
 class UiCodecsSpec extends FlatSpec with Matchers {
@@ -14,7 +15,7 @@ class UiCodecsSpec extends FlatSpec with Matchers {
 
   it should "should encode record" in {
 
-    val codec = UiCodecs.ContextCodecs(TypesInformation.extract(List(), List(), List(), List(), List(classOf[TestRecord])))
+    val codec = UiCodecs.ContextCodecs(TypesInformation.extract(List(), List(), List(), List(), List(classOf[TestRecord]))(ClassExtractionSettings.Default))
     import codec._
 
     val date = LocalDateTime.of(2010, 1, 1, 1, 1)

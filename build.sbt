@@ -273,7 +273,6 @@ lazy val interpreter = (project in engine("interpreter")).
     name := "nussknacker-interpreter",
     libraryDependencies ++= {
       Seq(
-        "org.apache.commons" % "commons-lang3" % commonsLangV,
         "org.springframework" % "spring-expression" % springV,
         "com.github.alexarchambault" %% s"argonaut-shapeless_$argonautMajorV" % argonautShapelessV,
         "ch.qos.logback" % "logback-classic" % logbackV % "test",
@@ -402,6 +401,7 @@ lazy val api = (project in engine("api")).
       Seq(
         //TODO: czy faktycznie tak chcemy??
         "com.github.alexarchambault" %% s"argonaut-shapeless_$argonautMajorV" % argonautShapelessV,
+        "org.apache.commons" % "commons-lang3" % commonsLangV,
         "org.typelevel" %% "cats-core" % catsV,
         "org.typelevel" %% "cats-effect" % "0.3",
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,

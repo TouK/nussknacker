@@ -11,6 +11,7 @@ import cats.effect.IO
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
 import pl.touk.nussknacker.engine.api.lazyy.{LazyContext, LazyValuesProvider, UsingLazyValues}
+import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.compile.ValidationContext
 import pl.touk.nussknacker.engine.compiledgraph.expression.{Expression, ExpressionParseError, ValueWithLazyContext}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ClazzRef
@@ -61,7 +62,7 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
   private def parse(expr: String, context: Context = ctx) = {
     val validationCtx = ValidationContext(
       context.variables.mapValuesNow(_.getClass).mapValuesNow(ClazzRef.apply),
-      EspTypeUtils.clazzAndItsChildrenDefinition(context.variables.values.map(_.getClass).toList)
+      EspTypeUtils.clazzAndItsChildrenDefinition(context.variables.values.map(_.getClass).toList)(ClassExtractionSettings.Default)
     )
     val expressionFunctions = Map("today" -> classOf[LocalDate].getDeclaredMethod("now"))
     new SpelExpressionParser(expressionFunctions, getClass.getClassLoader, 1 minute, enableSpelForceCompile = true).parse(expr, validationCtx)

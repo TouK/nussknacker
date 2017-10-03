@@ -36,7 +36,7 @@ class KafkaSourceFactory[T: TypeInformation](config: KafkaConfig,
     new KafkaSource(consumerGroupId = processMetaData.id, topic = topic)
   }
 
-  override def testDataParser = Some(new TestDataParser[T] {
+  override def testDataParser: Option[TestDataParser[T]] = Some(new TestDataParser[T] {
     override def parseTestData(data: Array[Byte]) = testPrepareInfo.splitData(data).map(schema.deserialize)
   })
 

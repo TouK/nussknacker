@@ -1,7 +1,10 @@
 package pl.touk.nussknacker.engine.types
 
+import java.util.regex.Pattern
+
 import org.scalatest.{FlatSpec, Matchers}
 import org.scalatest.prop.TableDrivenPropertyChecks._
+import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, ClassMemberPatternPredicate}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ClazzRef
 
 class EspTypeUtilsSpec extends FlatSpec with Matchers {
@@ -28,8 +31,7 @@ class EspTypeUtilsSpec extends FlatSpec with Matchers {
     }
   }
 
-
-  case class SampleClass(foo: Int, bar: String)
+  case class SampleClass(foo: Int, bar: String) extends SampleAbstractClass with SampleInterface
 
   it should "extract public fields from scala case class, and java class" in {
     val testCases = Table(("class", "className"),
@@ -38,7 +40,7 @@ class EspTypeUtilsSpec extends FlatSpec with Matchers {
     )
 
     forAll(testCases) { (clazz, clazzName) =>
-      val infos = EspTypeUtils.clazzAndItsChildrenDefinition(clazz)
+      val infos = EspTypeUtils.clazzAndItsChildrenDefinition(clazz)(ClassExtractionSettings.Default)
       val sampleClassInfo = infos.find(_.clazzName.refClazzName.contains(clazzName)).get
 
       sampleClassInfo.methods shouldBe Map(
@@ -47,5 +49,32 @@ class EspTypeUtilsSpec extends FlatSpec with Matchers {
       )
     }
   }
+
+  it should "skip blacklisted properties" in {
+    val testCasses = Table(("class", "className"),
+      (classOf[SampleClass], "SampleClass"),
+      (classOf[JavaSampleClass], "JavaSampleClass")
+    )
+
+    val testClassPatterns = Table("classPattern",
+      ".*SampleClass",
+      ".*SampleAbstractClass",
+      ".*SampleInterface"
+    )
+
+    forAll(testCasses) { (clazz, clazzName) =>
+      forAll(testClassPatterns) { classPattern =>
+        val infos = EspTypeUtils.clazzAndItsChildrenDefinition(clazz)(ClassExtractionSettings(Seq(
+          ClassMemberPatternPredicate(Pattern.compile(classPattern), Pattern.compile("ba.*"))
+        )))
+        val sampleClassInfo = infos.find(_.clazzName.refClazzName.contains(clazzName)).get
+
+        sampleClassInfo.methods shouldBe Map(
+          "foo" -> ClazzRef("int")
+        )
+      }
+    }
+  }
+
 
 }

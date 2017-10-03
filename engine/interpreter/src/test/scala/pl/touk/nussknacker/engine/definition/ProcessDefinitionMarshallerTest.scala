@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.definition
 import argonaut.PrettyParams
 import cats.data.Validated.Valid
 import org.scalatest.{FlatSpec, Matchers}
+import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ClazzRef, ObjectDefinition, Parameter}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ProcessDefinition}
 import pl.touk.nussknacker.engine.types.EspTypeUtils
@@ -19,7 +20,7 @@ class ProcessDefinitionMarshallerTest extends FlatSpec with Matchers {
       signalsWithTransformers = Map.empty,
       exceptionHandlerFactory = ObjectDefinition.noParam,
       globalVariables = Map.empty,
-      typesInformation = EspTypeUtils.clazzAndItsChildrenDefinition(List.empty)
+      typesInformation = EspTypeUtils.clazzAndItsChildrenDefinition(List.empty)(ClassExtractionSettings.Default)
     )
 
     val json = ProcessDefinitionMarshaller.toJson(definition, PrettyParams.spaces2)

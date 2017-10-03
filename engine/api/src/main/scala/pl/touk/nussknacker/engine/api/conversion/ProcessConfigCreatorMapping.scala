@@ -45,7 +45,12 @@ object ProcessConfigCreatorMapping {
       override def asyncExecutionContextPreparer(config: Config): Option[AsyncExecutionContextPreparer] = {
         Option(jcreator.asyncExecutionContextPreparer(config).orElse(null))
       }
+      override def classExtractionSettings(config: Config): ClassExtractionSettings = {
+        val jSettings = jcreator.classExtractionSettings(config)
+        ClassExtractionSettings(jSettings.getBlacklistedClassMemberPredicates.asScala)
+      }
     }
     creator
   }
+
 }

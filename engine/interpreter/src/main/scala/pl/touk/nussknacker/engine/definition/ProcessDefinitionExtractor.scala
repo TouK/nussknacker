@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.engine.definition
 
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, QueryableStateNames}
 import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, WithCategories}
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
+import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, QueryableStateNames}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 
 object ProcessDefinitionExtractor {
@@ -57,7 +57,7 @@ object ProcessDefinitionExtractor {
       customStreamTransformersDefs.values,
       signalsDefs.values.map(_._1),
       globalVariablesDefs.values.map(_.methodDef.returnType)
-    )
+    )(creator.classExtractionSettings(config))
 
     ProcessDefinition[ObjectWithMethodDef](
       servicesDefs, sourceFactoriesDefs, sinkFactoriesDefs,
@@ -126,4 +126,3 @@ object ProcessDefinitionExtractor {
 
   }
 }
-
