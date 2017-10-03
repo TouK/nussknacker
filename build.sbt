@@ -65,6 +65,7 @@ val commonSettings =
     resolvers ++= Seq(
       "spring milestone" at "https://repo.spring.io/milestone"
     ),
+    testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-u", "target/surefire-reports", "-oD"),
     scalacOptions := Seq(
       "-unchecked",
       "-deprecation",
