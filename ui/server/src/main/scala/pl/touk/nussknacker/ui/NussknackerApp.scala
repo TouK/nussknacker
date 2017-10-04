@@ -49,7 +49,9 @@ object NussknackerApp extends App with Directives with LazyLogging {
   val config = system.settings.config
   val environment = config.getString("environment")
   val featureTogglesConfig = FeatureTogglesConfig.create(config, environment)
-  val nodesConfig = Try(config.as[Map[String, SingleNodeConfig]](s"$environment.nodes")).getOrElse(Map.empty)
+  //TODO clean up config and make it more typed
+  //TODO add nodesConfig support for standalone mode
+  val nodesConfig = Try(config.as[Map[String, SingleNodeConfig]]("processConfig.nodes")).getOrElse(Map.empty)
   logger.info(s"Ui config loaded: \nfeatureTogglesConfig: $featureTogglesConfig\nnodesConfig:$nodesConfig")
 
   val db: DbConfig = {

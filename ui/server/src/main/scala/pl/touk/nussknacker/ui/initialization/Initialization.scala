@@ -80,9 +80,17 @@ trait InitialOperation extends LazyLogging {
 
 class EnvironmentInsert(environmentName: String, dbConfig: DbConfig) extends InitialOperation {
   override def runOperation(implicit ec: ExecutionContext, lu: LoggedUser): DB[Unit] = {
+    //`insertOrUpdate` in Slick v.3.2.0-M1 seems not to work
     import DefaultJdbcProfile.profile.api._
-    val insertAction = EspTables.environmentsTable += EnvironmentsEntityData(environmentName)
-    insertAction.map(_ => ())
+    val uppsertEnvironmentAction = for {
+      alreadyExists <- EspTables.environmentsTable.filter(_.name === environmentName).exists.result
+      _ <- if (alreadyExists) {
+        DBIO.successful(())
+      } else {
+        EspTables.environmentsTable += EnvironmentsEntityData(environmentName)
+      }
+    } yield ()
+    uppsertEnvironmentAction
   }
 }
 
