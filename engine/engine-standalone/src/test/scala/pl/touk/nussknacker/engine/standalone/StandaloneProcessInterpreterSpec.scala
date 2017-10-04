@@ -119,4 +119,29 @@ class StandaloneProcessInterpreterSpec extends FlatSpec with Matchers with Event
 
   }
 
+  it should "collect results after element split" in {
+    val process = EspProcessBuilder
+      .id("proc1")
+      .exceptionHandler()
+      .source("start", "request1-source")
+      .customNode("split", "outPart", "splitter", "parts" -> "#input.toList()")
+      .sink("sink1", "#outPart", "response-sink")
+
+    val input = Request1("a", "b")
+    val config = ConfigFactory.load()
+    val creator = new StandaloneProcessConfigCreator
+    val ctx = new StandaloneContextPreparer(new MetricRegistry)
+
+    val maybeinterpreter = StandaloneProcessInterpreter(process, ctx, creator, config)
+
+    maybeinterpreter shouldBe 'valid
+    val interpreter = maybeinterpreter.toOption.get
+    interpreter.open()
+
+    val result = interpreter.invoke(input)
+
+    Await.result(result, Duration(5, TimeUnit.SECONDS)) shouldBe Right(List("a", "b"))
+    interpreter.close()
+  }
+
 }

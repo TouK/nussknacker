@@ -44,14 +44,13 @@ case class CompilerLazyInterpreter[T](lazyDeps: () => CustomNodeInvokerDeps,
                                    metaData: MetaData,
                                    node: SplittedNode[CustomNode], param: String) extends LazyInterpreter[T] {
 
-  override def createInterpreter(ec: ExecutionContext) = {
-    createInterpreter(ec, lazyDeps())
-  }
+  override def createInterpreter = (ec: ExecutionContext, context: Context) =>
+    createInterpreter(ec, lazyDeps())(context)
 
-  private[definition] def createInterpreter(ec: ExecutionContext, deps: CustomNodeInvokerDeps): (InterpretationResult) => Future[T] = {
+  private[definition] def createInterpreter(ec: ExecutionContext, deps: CustomNodeInvokerDeps): (Context) => Future[T] = {
     val compiled = deps.subPartCompiler.compileWithoutContextValidation(node).getOrElse(throw new scala.IllegalArgumentException("Cannot compile"))
-    (ir: InterpretationResult) => deps.interpreter.interpret(compiled.node, CustomNodeExpression(param), metaData,
-      ir.finalContext)(ec).flatMap {
+    (context: Context) => deps.interpreter.interpret(compiled.node, CustomNodeExpression(param), metaData,
+      context)(ec).flatMap {
       case Left(result) => Future.successful(result.output.asInstanceOf[T])
       case Right(result) => Future.failed(result.throwable)
     }(ec)
@@ -66,7 +65,7 @@ case class CompilerLazyInterpreter[T](lazyDeps: () => CustomNodeInvokerDeps,
     lazy val interpreter = createInterpreter(ec, deps)
 
     override def apply(v1: InterpretationResult) = {
-      Await.result(interpreter(v1), deps.processTimeout)
+      Await.result(interpreter(v1.finalContext), deps.processTimeout)
     }
 
   }
@@ -86,7 +85,6 @@ trait CustomNodeInvokerDeps {
   def interpreter: Interpreter
   def subPartCompiler: PartSubGraphCompiler
   def processTimeout: FiniteDuration
-  def exceptionHandler: EspExceptionHandler
 }
 
 object CustomStreamTransformerExtractor extends DefinitionExtractor[CustomStreamTransformer] {

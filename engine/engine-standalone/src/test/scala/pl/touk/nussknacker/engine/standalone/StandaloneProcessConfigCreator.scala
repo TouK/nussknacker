@@ -2,17 +2,18 @@ package pl.touk.nussknacker.engine.standalone
 
 import java.util.concurrent.atomic.AtomicInteger
 
-import argonaut.{DecodeJson, Parse}
+import argonaut.ArgonautShapeless._
+import argonaut.DecodeJson
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, EspExceptionInfo, ExceptionHandlerFactory}
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
-import pl.touk.nussknacker.engine.util.LoggingListener
-import argonaut.ArgonautShapeless._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
+import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
+import pl.touk.nussknacker.engine.standalone.customtransformers.ProcessSplitter
 import pl.touk.nussknacker.engine.standalone.utils.{JsonStandaloneSourceFactory, StandaloneSinkFactory}
+import pl.touk.nussknacker.engine.util.LoggingListener
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -29,7 +30,9 @@ class StandaloneProcessConfigCreator extends ProcessConfigCreator with LazyLoggi
     StandaloneProcessConfigCreator.processorService.set(processorService)
   }
 
-  override def customStreamTransformers(config: Config): Map[String, WithCategories[CustomStreamTransformer]] = Map.empty
+  override def customStreamTransformers(config: Config): Map[String, WithCategories[CustomStreamTransformer]] = Map(
+    "splitter" -> WithCategories(ProcessSplitter)
+  )
 
   override def services(config: Config): Map[String, WithCategories[Service]] = Map(
     "enricherService" -> WithCategories(new EnricherService),
@@ -59,7 +62,9 @@ class StandaloneProcessConfigCreator extends ProcessConfigCreator with LazyLoggi
   override def buildInfo(): Map[String, String] = Map.empty
 }
 
-case class Request1(field1: String, field2: String)
+case class Request1(field1: String, field2: String) {
+  def toList: List[String] = List(field1, field2)
+}
 case class Request2(field12: String, field22: String)
 case class Request3(field13: String, field23: String)
 
@@ -88,3 +93,5 @@ class ProcessorService extends Service {
   }
 
 }
+
+

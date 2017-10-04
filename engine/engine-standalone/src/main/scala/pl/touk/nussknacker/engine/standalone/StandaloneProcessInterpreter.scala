@@ -10,22 +10,23 @@ import com.codahale.metrics.{Metric, MetricFilter}
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.{Interpreter, compiledgraph}
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
+import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, EspExceptionInfo}
 import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, StandaloneSourceFactory}
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError.{MissingPart, UnsupportedPart}
 import pl.touk.nussknacker.engine.compile.{PartSubGraphCompiler, ProcessCompilationError, ProcessCompiler}
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.compiledgraph.part._
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.{CustomNodeInvoker, CustomNodeInvokerDeps, ProcessDefinitionExtractor}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.Source
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.{NextNode, PartRef, SplittedNode}
 import pl.touk.nussknacker.engine.standalone.StandaloneProcessInterpreter.{GenericResultType, OutType}
+import pl.touk.nussknacker.engine.standalone.api.StandaloneCustomTransformer
 import pl.touk.nussknacker.engine.standalone.metrics.InvocationMetrics
 import pl.touk.nussknacker.engine.standalone.utils.{StandaloneContext, StandaloneContextLifecycle, StandaloneContextPreparer}
 
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 object StandaloneProcessInterpreter {
@@ -40,8 +41,9 @@ object StandaloneProcessInterpreter {
 
   type OutFunType = (Context, ExecutionContext) => OutType
 
-  def foldResults[T, Error](results: List[GenericResultType[T, Error]]) = {
+  def foldResults[T, Error](results: List[GenericResultType[T, Error]]): GenericResultType[T, Error] = {
     //Validated would be better here?
+    //TODO: can we replace it with sequenceU??
     results.foldLeft[GenericResultType[T, Error]](Right(Nil)) {
       case (Right(a), Right(b)) => Right(a ++ b)
       case (Left(a), Right(_)) => Left(a)
@@ -88,15 +90,15 @@ object StandaloneProcessInterpreter {
       sub.compileWithoutContextValidation(node).bimap(_.map(_.asInstanceOf[ProcessCompilationError]), _.node)
 
     private def compiledPartInvoker(processPart: ProcessPart): data.ValidatedNel[ProcessCompilationError, OutFunType] = processPart match {
-      case SourcePart(source, node, nextParts, ends) =>
+      case SourcePart(source, node, nextParts, _) =>
         compileWithCompilationErrors(node).andThen(partInvoker(_, nextParts))
       case part@SinkPart(_, endNode) =>
         compileWithCompilationErrors(endNode).andThen(partInvoker(_, List()))
       //TODO: does it have to be so complicated? here and in FlinkProcessRegistrar
       case SplitPart(_, nexts) =>
         val splitParts = nexts.map {
-          case NextWithParts(NextNode(node), parts, ends) => compileWithCompilationErrors(node).andThen(partInvoker(_, parts))
-          case NextWithParts(PartRef(id), parts, ends) => parts.find(_.id == id) match {
+          case NextWithParts(NextNode(node), parts, _) => compileWithCompilationErrors(node).andThen(partInvoker(_, parts))
+          case NextWithParts(PartRef(id), parts, _) => parts.find(_.id == id) match {
             case Some(part) => compiledPartInvoker(part)
             case None => Invalid(NonEmptyList.of[ProcessCompilationError](MissingPart(id)))
           }
@@ -109,7 +111,12 @@ object StandaloneProcessInterpreter {
           }
         }
 
+      case CustomNodePart(executor:
+                CustomNodeInvoker[StandaloneCustomTransformer@unchecked], node, parts, _) => val result = compileWithCompilationErrors(node).andThen(partInvoker(_, parts))
+        val transformer = executor.run(() => StandaloneCustomNodeInvokerDeps(interpreter, sub))
+        result.map(transformer.createTransformation(node.data.outputVar.get))
       case a: CustomNodePart => Invalid(NonEmptyList.of(UnsupportedPart(a.id)))
+
     }
 
     private def compilePartInvokers(parts: List[SubsequentPart]) : CompilationResult[Map[String, OutFunType]] =
@@ -175,5 +182,12 @@ case class StandaloneProcessInterpreter(id: String, context: StandaloneContext,
     services.foreach(_.close())
     context.close()
   }
+
+}
+
+case class StandaloneCustomNodeInvokerDeps(interpreter: Interpreter, subPartCompiler: PartSubGraphCompiler)
+  extends CustomNodeInvokerDeps {
+
+  override def processTimeout: FiniteDuration = throw new RuntimeException("Synchronous operations should not be used in standalone mode")
 
 }

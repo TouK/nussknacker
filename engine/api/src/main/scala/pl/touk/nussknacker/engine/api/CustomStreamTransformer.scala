@@ -19,7 +19,7 @@ abstract class CustomStreamTransformer {
 
 trait LazyInterpreter[T] {
 
-  def createInterpreter(ec: ExecutionContext) : (InterpretationResult => Future[T])
+  def createInterpreter: ((ExecutionContext, Context) => Future[T])
 
   def syncInterpretationFunction : InterpretationResult => T
 
