@@ -23,7 +23,7 @@ import pl.touk.nussknacker.ui.process.repository.{DBFetchingProcessRepository, D
 import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, SubprocessResolver}
 import pl.touk.nussknacker.ui.process.uiconfig.SingleNodeConfig
 import pl.touk.nussknacker.ui.process.uiconfig.defaults.{ParamDefaultValueConfig, TypeAfterConfig}
-import pl.touk.nussknacker.ui.process.{JobStatusService, ProcessTypesForCategories, ProcessingTypeDeps}
+import pl.touk.nussknacker.ui.process.{JobStatusService, NewProcessPreparer, ProcessTypesForCategories, ProcessingTypeDeps}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 import pl.touk.process.report.influxdb.InfluxReporter
@@ -92,11 +92,11 @@ object NussknackerApp extends App with Directives with LazyLogging {
   val jobStatusService = new JobStatusService(managementActor)
 
   val typesForCategories = new ProcessTypesForCategories(config)
-
+  val newProcessPreparer = new NewProcessPreparer(modelData.mapValues(_.processDefinition))
 
   private val apiResources : List[RouteWithUser] = {
     val routes = List(
-      new ProcessesResources(processRepository, writeProcessRepositor, jobStatusService, processActivityRepository, processValidation, typesForCategories),
+      new ProcessesResources(processRepository, writeProcessRepositor, jobStatusService, processActivityRepository, processValidation, typesForCategories, newProcessPreparer),
         new ProcessesExportResources(processRepository, processActivityRepository),
         new ProcessActivityResource(processActivityRepository, attachmentService),
         ManagementResources(modelData, counter, managementActor),

@@ -10,34 +10,32 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.instances.future._
 import cats.data.EitherT
 import cats.syntax.either._
-import pl.touk.nussknacker.engine.api.{MetaData, StandaloneMetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.api.deployment.GraphProcess
-import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.ui.api.ProcessesResources.{UnmarshallError, WrongProcessId}
 import pl.touk.nussknacker.ui.process.displayedgraph.{DisplayableProcess, ProcessStatus}
 import pl.touk.nussknacker.ui.process.marshall.{ProcessConverter, UiProcessMarshaller}
-import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, ProcessActivityRepository, ProcessRepository, WriteProcessRepository}
+import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, ProcessActivityRepository, WriteProcessRepository}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository._
 import pl.touk.nussknacker.ui.util._
 import pl.touk.nussknacker.ui._
 import EspErrorToHttp._
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.ui.codec.UiCodecs
 import pl.touk.nussknacker.ui.validation.ProcessValidation
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
-import pl.touk.nussknacker.ui.process.{JobStatusService, ProcessToSave, ProcessTypesForCategories}
+import pl.touk.nussknacker.ui.process.{JobStatusService, NewProcessPreparer, ProcessToSave, ProcessTypesForCategories}
 import pl.touk.http.argonaut.Argonaut62Support
 import pl.touk.nussknacker.ui.process.repository.WriteProcessRepository.UpdateProcessAction
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class ProcessesResources(repository: FetchingProcessRepository, writeRepository: WriteProcessRepository,
+class ProcessesResources(repository: FetchingProcessRepository,
+                         writeRepository: WriteProcessRepository,
                          jobStatusService: JobStatusService,
                          processActivityRepository: ProcessActivityRepository,
                          processValidation: ProcessValidation,
-                         typesForCategories: ProcessTypesForCategories)
+                         typesForCategories: ProcessTypesForCategories,
+                         newProcessPreparer: NewProcessPreparer)
                         (implicit ec: ExecutionContext, mat: Materializer)
   extends Directives with Argonaut62Support with EspPathMatchers with UiCodecs with RouteWithUser {
 
@@ -199,13 +197,7 @@ class ProcessesResources(repository: FetchingProcessRepository, writeRepository:
   }
 
   private def makeEmptyProcess(processId: String, processingType: ProcessingType, isSubprocess: Boolean) = {
-    val specificMetaData = processingType match {
-      case ProcessingType.Streaming => StreamMetaData()
-      case ProcessingType.RequestResponse => StandaloneMetaData(None)
-    }
-    val emptyCanonical = CanonicalProcess(MetaData(id = processId,
-      isSubprocess = isSubprocess,
-      typeSpecificData = specificMetaData), ExceptionHandlerRef(List()), List())
+    val emptyCanonical = newProcessPreparer.prepareEmptyProcess(processId, processingType, isSubprocess)
     GraphProcess(UiProcessMarshaller.toJson(emptyCanonical, PrettyParams.nospace))
   }
 

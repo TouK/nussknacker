@@ -12,7 +12,7 @@ import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.nussknacker.ui.process.deployment.ManagementActor
 import pl.touk.nussknacker.ui.process.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.ui.process.{JobStatusService, ProcessToSave, ProcessTypesForCategories}
+import pl.touk.nussknacker.ui.process.{JobStatusService, NewProcessPreparer, ProcessToSave, ProcessTypesForCategories}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.sample.SampleProcess
 import pl.touk.nussknacker.ui.security.api.Permission
@@ -34,7 +34,8 @@ trait EspItTest extends LazyLogging with WithDbTesting { self: ScalatestRouteTes
     Map(ProcessingType.Streaming -> InMemoryMocks.mockProcessManager), processRepository, deploymentProcessRepository, TestFactory.sampleResolver)
 
   val jobStatusService = new JobStatusService(managementActor)
-  val processesRoute = new ProcessesResources(processRepository, writeProcessRepository, jobStatusService, processActivityRepository, processValidation, typesForCategories)
+  val newProcessPreparer = new NewProcessPreparer(Map(ProcessingType.Streaming -> ProcessTestData.processDefinition))
+  val processesRoute = new ProcessesResources(processRepository, writeProcessRepository, jobStatusService, processActivityRepository, processValidation, typesForCategories, newProcessPreparer)
   val processesExportResources = new ProcessesExportResources(processRepository, processActivityRepository)
 
   val processesRouteWithAllPermissions = withAllPermissions(processesRoute)
