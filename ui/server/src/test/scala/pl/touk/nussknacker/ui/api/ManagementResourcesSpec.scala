@@ -145,7 +145,7 @@ class ManagementResourcesSpec extends FlatSpec with ScalatestRouteTest
 
   }
 
-  it should "allow concurrent deployment of different processes" in {
+  it should "not allow concurrent deployment of different processes" in {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
 
     val secondId = SampleProcess.process.id + "-2"
@@ -154,7 +154,7 @@ class ManagementResourcesSpec extends FlatSpec with ScalatestRouteTest
     InMemoryMocks.withLongerSleepBeforeAnswer {
       val firstRun = deployProcess() ~> runRoute
       deployProcess(secondId) ~> check {
-        status shouldBe StatusCodes.OK
+        status shouldBe StatusCodes.Conflict
       }
       runRoute ~> check {
         status shouldBe StatusCodes.OK

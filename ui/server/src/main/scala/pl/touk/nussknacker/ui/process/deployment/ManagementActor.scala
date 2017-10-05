@@ -4,16 +4,14 @@ import akka.actor.{Actor, ActorRef, ActorRefFactory, Props, Status}
 import argonaut.PrettyParams
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment.test.TestData
-import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, GraphProcess, ProcessManager}
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
+import pl.touk.nussknacker.engine.api.deployment.{GraphProcess, ProcessManager}
 import pl.touk.nussknacker.ui.EspError
-import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
 import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntity.ProcessVersionEntityData
 import pl.touk.nussknacker.ui.process.displayedgraph.ProcessStatus
 import pl.touk.nussknacker.ui.process.marshall.UiProcessMarshaller
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessNotFoundError
-import pl.touk.nussknacker.ui.process.repository.{DeployedProcessRepository, FetchingProcessRepository, ProcessRepository}
+import pl.touk.nussknacker.ui.process.repository.{DeployedProcessRepository, FetchingProcessRepository}
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -40,19 +38,21 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
   private implicit val ec = context.dispatcher
 
   override def receive = {
-    case a: DeploymentAction if isBeingDeployed(a.id) =>
-      sender() ! Status.Failure(new ProcessIsBeingDeployed(a.id, beingDeployed(a.id)))
     case Deploy(id, user, savepointPath) =>
-      val deployRes: Future[Unit] = deployProcess(id, savepointPath)(user)
-      reply(withDeploymentInfo(id, user.id, "Deployment", deployRes))
+      ensureNoDeploymentRunning {
+        val deployRes: Future[Unit] = deployProcess(id, savepointPath)(user)
+        reply(withDeploymentInfo(id, user.id, "Deployment", deployRes))
+      }
     case Snapshot(id, user, savepointDir) =>
       reply(processManager(id)(ec, user).flatMap(_.savepoint(id, savepointDir)))
     case Cancel(id, user) =>
-      implicit val loggedUser = user
-      val cancelRes = processManager(id).map { manager =>
-        manager.cancel(id).flatMap(_ => deployedProcessRepository.markProcessAsCancelled(id, user.id, environment))
+      ensureNoDeploymentRunning {
+        implicit val loggedUser = user
+        val cancelRes = processManager(id).map { manager =>
+          manager.cancel(id).flatMap(_ => deployedProcessRepository.markProcessAsCancelled(id, user.id, environment))
+        }
+        reply(withDeploymentInfo(id, user.id, "Cancel", cancelRes))
       }
-      reply(withDeploymentInfo(id, user.id, "Cancel", cancelRes))
     case CheckStatus(id, user) if isBeingDeployed(id) =>
       val info = beingDeployed(id)
       sender() ! Some(ProcessStatus(None, s"${info.action} IN PROGRESS", info.time, false, true))
@@ -66,12 +66,8 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
       logger.info(s"Finishing ${beingDeployed.get(id)} of $id")
       beingDeployed -= id
     case Test(processId, processJson, testData, user) =>
-      //during deployment using Client.run Flink holds some data in statics and there is an exception when
-      //test run in parallel
-      implicit val loggedUser = user
-      if (beingDeployed.nonEmpty) {
-        sender() ! Status.Failure(ProcessIsBeingDeployedNoTestAllowed)
-      } else {
+      ensureNoDeploymentRunning {
+        implicit val loggedUser = user
         val testAction = processManager(processId).flatMap { manager =>
           manager.test(processId, resolveGraph(processJson), testData)
         }
@@ -79,7 +75,7 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
       }
   }
 
-  private def withDeploymentInfo[T](id: String, userId: String, actionName: String, action: => Future[T]) : Future[T] = {
+  private def withDeploymentInfo[T](id: String, userId: String, actionName: String, action: => Future[T]): Future[T] = {
     beingDeployed += id -> DeployInfo(userId, System.currentTimeMillis(), actionName)
     action.onComplete(_ => self ! DeploymentActionFinished(id))
     action
@@ -95,7 +91,7 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
 
   private def isBeingDeployed(id: String) = beingDeployed.contains(id)
 
-  private def deployProcess(processId: String, savepointPath: Option[String])(implicit user: LoggedUser) : Future[Unit] = {
+  private def deployProcess(processId: String, savepointPath: Option[String])(implicit user: LoggedUser): Future[Unit] = {
     for {
       processingType <- getProcessingType(processId)
       latestProcessEntity <- processRepository.fetchLatestProcessVersion(processId)
@@ -123,7 +119,7 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
     }
   }
 
-  private def resolveGraph(canonicalJson: String) : String = {
+  private def resolveGraph(canonicalJson: String): String = {
     UiProcessMarshaller.toJson(UiProcessMarshaller.fromJson(canonicalJson).andThen(subprocessResolver.resolveSubprocesses).toOption.get, PrettyParams.spaces2)
   }
 
@@ -134,6 +130,17 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
   private def getProcessingType(id: String)(implicit ec: ExecutionContext, user: LoggedUser) = {
     processRepository.fetchLatestProcessDetailsForProcessId(id).map(_.map(_.processingType)).map(_.getOrElse(throw new RuntimeException(ProcessNotFoundError(id).getMessage)))
   }
+
+  //during deployment using Client.run Flink holds some data in statics and there is an exception when
+  //test or verification run in parallel
+  private def ensureNoDeploymentRunning(action: => Unit) = {
+    if (beingDeployed.nonEmpty) {
+      sender() ! Status.Failure(new ProcessIsBeingDeployed(beingDeployed))
+    } else {
+      action
+    }
+  }
+
 }
 
 
@@ -141,23 +148,24 @@ trait DeploymentAction {
   def id: String
 }
 
-case class Deploy(id: String, user:LoggedUser, savepointPath: Option[String]) extends DeploymentAction
+case class Deploy(id: String, user: LoggedUser, savepointPath: Option[String]) extends DeploymentAction
 
-case class Cancel(id: String, user:LoggedUser) extends DeploymentAction
+case class Cancel(id: String, user: LoggedUser) extends DeploymentAction
 
-case class Snapshot(id: String, user:LoggedUser, savepointPath: String)
+case class Snapshot(id: String, user: LoggedUser, savepointPath: String)
 
-case class CheckStatus(id: String, user:LoggedUser)
+case class CheckStatus(id: String, user: LoggedUser)
 
-case class Test(processId: String, processJson: String, test: TestData, user:LoggedUser)
+case class Test(processId: String, processJson: String, test: TestData, user: LoggedUser)
 
 case class DeploymentActionFinished(id: String)
 
 case class DeployInfo(userId: String, time: Long, action: String)
 
-class ProcessIsBeingDeployed(id: String, info: DeployInfo) extends
-  Exception(s"${info.action} is currently performed on $id by ${info.userId}") with EspError
-
-object ProcessIsBeingDeployedNoTestAllowed extends
-  Exception("Cannot run tests when deployment in progress. Please wait...") with EspError
+class ProcessIsBeingDeployed(deployments: Map[String, DeployInfo]) extends
+  Exception(s"Cannot deploy/test as following deployments are in progress: ${
+    deployments.map {
+      case (id, info) => s"${info.action} on $id by ${info.userId}"
+    }.mkString(", ")
+  }") with EspError
 
