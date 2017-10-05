@@ -74,6 +74,11 @@ class Graph extends React.Component {
     }
 
     directedLayout() {
+      //TODO `layout` method can take graph or cells
+      //when joint.layout.DirectedGraph.layout(this.graph) is used here
+      //  then `toFront()` method works as expected but there are issues with group fold/unfold
+      //when joint.layout.DirectedGraph.layout(this.graph.getCells().filter(cell => !cell.get('backgroundObject')) is used here
+      // then `toFront()` method does not work at all, but group fold/unfold works just fine
       joint.layout.DirectedGraph.layout(this.graph.getCells().filter(cell => !cell.get('backgroundObject')), {
           nodeSep: 0,
           edgeSep: 0,
