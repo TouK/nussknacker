@@ -90,7 +90,7 @@ class UserRightPanel extends Component {
       panelName: "Process",
       buttons: [
         {name: "save" + (!saveDisabled ? "*" : ""), visible: this.props.loggedUser.canWrite, disabled: saveDisabled, onClick: this.save, icon: InlinedSvgs.buttonSave},
-        {name: "migrate", visible: this.props.loggedUser.canDeploy && !_.isEmpty(this.props.featuresSettings.migration), disabled: !migratePossible, onClick: this.migrate, icon: InlinedSvgs.buttonMigrate},
+        {name: "migrate", visible: this.props.loggedUser.canDeploy && !_.isEmpty(this.props.featuresSettings.remoteEnvironment), disabled: !migratePossible, onClick: this.migrate, icon: InlinedSvgs.buttonMigrate},
         {name: "compare", onClick: this.compareVersions, icon: 'compare.svg', disabled: this.hasOneVersion()},
         {name: "import", visible: this.props.loggedUser.canWrite, disabled: false, onClick: this.importProcess, icon: InlinedSvgs.buttonImport, dropzone: true},
         {name: "export", visible: this.props.loggedUser.canWrite, onClick: this.exportProcess, icon: InlinedSvgs.buttonExport},
@@ -173,7 +173,7 @@ class UserRightPanel extends Component {
   }
 
   migrate = () => {
-    this.props.actions.toggleConfirmDialog(true, DialogMessages.migrate(this.processId(), this.props.featuresSettings.migration.targetEnvironmentId), () => {
+    this.props.actions.toggleConfirmDialog(true, DialogMessages.migrate(this.processId(), this.props.featuresSettings.remoteEnvironment.targetEnvironmentId), () => {
       HttpService.migrateProcess(this.processId())
     })
   }

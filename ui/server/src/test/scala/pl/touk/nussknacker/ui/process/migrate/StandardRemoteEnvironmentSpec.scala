@@ -19,13 +19,13 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class StandardProcessMigratorSpec extends FlatSpec with Matchers with ScalaFutures with Argonaut62Support {
+class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with ScalaFutures with Argonaut62Support {
 
   implicit val system = ActorSystem("nussknacker-ui")
 
   implicit val user = LoggedUser("test", "", List(), List())
 
-  trait MockMigrator extends StandardProcessMigrator {
+  trait MockRemoteEnvironment extends StandardRemoteEnvironment {
 
     override def environmentId = "testEnv"
 
@@ -40,7 +40,7 @@ class StandardProcessMigratorSpec extends FlatSpec with Matchers with ScalaFutur
 
   it should "not migrate not validating process" in {
 
-    val migrator = new MockMigrator {
+    val remoteEnvironment = new MockRemoteEnvironment {
       override protected def request(path: String, method: HttpMethod, request: MessageEntity) : Future[HttpResponse] = {
         if (path.startsWith("processValidation") && method == HttpMethods.POST) {
           Marshal(ValidationResult.errors(Map("n1" -> List(NodeValidationError("bad", "message", "", None, NodeValidationErrorType.SaveAllowed))), List(), List())).to[RequestEntity].map { entity =>
@@ -54,9 +54,9 @@ class StandardProcessMigratorSpec extends FlatSpec with Matchers with ScalaFutur
       override def testModelMigrations: TestModelMigrations = ???
     }
 
-    whenReady(migrator.migrate(ProcessTestData.validDisplayableProcess)) { result =>
+    whenReady(remoteEnvironment.migrate(ProcessTestData.validDisplayableProcess)) { result =>
       result shouldBe 'left
-      result.left.get shouldBe MigratorValidationError(ValidationErrors(Map("n1" -> List(NodeValidationError("bad","message","" ,None, NodeValidationErrorType.SaveAllowed))),List(),List()))
+      result.left.get shouldBe MigrationValidationError(ValidationErrors(Map("n1" -> List(NodeValidationError("bad","message","" ,None, NodeValidationErrorType.SaveAllowed))),List(),List()))
       result.left.get.getMessage shouldBe "Cannot migrate, following errors occured: n1 - message"
     }
 
@@ -66,7 +66,7 @@ class StandardProcessMigratorSpec extends FlatSpec with Matchers with ScalaFutur
 
     var migrated : Option[Future[ProcessToSave]] = None
 
-    val migrator = new MockMigrator {
+    val remoteEnvironment = new MockRemoteEnvironment {
       override protected def request(path: String, method: HttpMethod, request: MessageEntity) : Future[HttpResponse] = {
         if (path.startsWith("processValidation") && method == HttpMethods.POST) {
           Marshal(ValidationResult.errors(Map(), List(), List())).to[RequestEntity].map { entity =>
@@ -86,7 +86,7 @@ class StandardProcessMigratorSpec extends FlatSpec with Matchers with ScalaFutur
 
     }
 
-    whenReady(migrator.migrate(ProcessTestData.validDisplayableProcess)) { result =>
+    whenReady(remoteEnvironment.migrate(ProcessTestData.validDisplayableProcess)) { result =>
       result shouldBe 'right
     }
 

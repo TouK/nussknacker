@@ -10,7 +10,7 @@ import cats.instances.list._
 import cats.syntax.traverse._
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.process.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.ui.process.migrate.{MigratorCommunicationError, ProcessMigrator, TestMigrationResult}
+import pl.touk.nussknacker.ui.process.migrate.{RemoteEnvironmentCommunicationError, RemoteEnvironment, TestMigrationResult}
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{ProcessDetails, ProcessNotFoundError}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessNotFoundError
@@ -20,8 +20,8 @@ import scala.concurrent.{ExecutionContext, Future}
 import ProcessComparator._
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
-class MigrationResources(migrator: ProcessMigrator,
-                         processRepository: FetchingProcessRepository)(implicit ec: ExecutionContext)
+class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
+                                 processRepository: FetchingProcessRepository)(implicit ec: ExecutionContext)
   extends Directives with Argonaut62Support with RouteWithUser {
 
   import argonaut.Argonaut._
@@ -38,7 +38,7 @@ class MigrationResources(migrator: ProcessMigrator,
   def route(implicit user: LoggedUser) : Route = {
     authorize(user.hasPermission(Permission.Deploy)) {
 
-      pathPrefix("migration") {
+      pathPrefix("remoteEnvironment") {
           path("compare") {
             get {
               complete {
@@ -49,24 +49,33 @@ class MigrationResources(migrator: ProcessMigrator,
               }
             }
           } ~
-          path("compare" / Segment) { processId =>
-            get {
-              complete {
-                withProcess(processId, (process) => migrator.compare(process))
+          path(Segment / LongNumber / "compare" / LongNumber) { (processId, version, otherVersion) =>
+            parameter('businessView ? false) { (businessView) =>
+              get {
+                complete {
+                  withProcess(processId, version, businessView, (process) => remoteEnvironment.compare(process, Some(otherVersion), businessView))
+                }
               }
             }
           } ~
-          path("migrate" / Segment) { processId =>
+          path(Segment / LongNumber / "migrate") { (processId, version) =>
             post {
               complete {
-                withProcess(processId, (process) => migrator.migrate(process))
+                withProcess(processId, version, false, (process) => remoteEnvironment.migrate(process))
+              }
+            }
+          } ~
+          path(Segment / "versions") { (processId) =>
+            get {
+              complete {
+                remoteEnvironment.processVersions(processId)
               }
             }
           } ~
           path("testAutomaticMigration") {
             get {
               complete {
-                migrator.testMigration
+                remoteEnvironment.testMigration
                   .flatMap(_.fold((Future.successful[HttpResponse] _)
                     .compose(EspErrorToHttp.espErrorToHttp), testMigrationResponse))
               }
@@ -100,8 +109,9 @@ class MigrationResources(migrator: ProcessMigrator,
     Marshal(summary).to[MessageEntity].map(e => HttpResponse(status = status, entity = e))
   }
 
-  private def withProcess[T:EncodeJson](processId: String, fun: (DisplayableProcess) => Future[Either[EspError, T]])(implicit user: LoggedUser) = {
-    processRepository.fetchLatestProcessDetailsForProcessId(processId).map {
+  private def withProcess[T:EncodeJson](processId: String, version: Long, businessView: Boolean,
+                                        fun: (DisplayableProcess) => Future[Either[EspError, T]])(implicit user: LoggedUser) = {
+    processRepository.fetchProcessDetailsForId(processId, version, businessView).map {
       _.flatMap(_.json)
     }.flatMap {
       case Some(dispProcess) => fun(dispProcess)
@@ -111,9 +121,9 @@ class MigrationResources(migrator: ProcessMigrator,
 
   private def compareOneProcess(process: DisplayableProcess)(implicit ec: ExecutionContext, user: LoggedUser)
     : Future[Either[EspError, ProcessDifference]]= {
-    migrator.compare(process).map {
+    remoteEnvironment.compare(process, None).map {
       case Right(differences) => Right(ProcessDifference(process.id, true, differences))
-      case Left(MigratorCommunicationError(StatusCodes.NotFound, _)) => Right(ProcessDifference(process.id, false, Map()))
+      case Left(RemoteEnvironmentCommunicationError(StatusCodes.NotFound, _)) => Right(ProcessDifference(process.id, false, Map()))
       case Left(error) => Left(error)
     }
   }

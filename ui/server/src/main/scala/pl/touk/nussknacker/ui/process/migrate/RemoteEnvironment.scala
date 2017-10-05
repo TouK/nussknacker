@@ -15,7 +15,7 @@ import pl.touk.nussknacker.ui.codec.UiCodecs
 import pl.touk.nussknacker.ui.process.ProcessToSave
 import pl.touk.nussknacker.ui.process.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.ui.process.marshall.UiProcessMarshaller
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{InvalidProcessTypeError, ProcessDetails}
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{InvalidProcessTypeError, ProcessDetails, ProcessHistoryEntry}
 import pl.touk.nussknacker.ui.util.ProcessComparator.Difference
 import pl.touk.nussknacker.ui.util.ProcessComparator
 import pl.touk.nussknacker.ui.validation.ValidationResults.{ValidationErrors, ValidationResult}
@@ -24,20 +24,23 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
 
-trait ProcessMigrator {
+trait RemoteEnvironment {
 
   def targetEnvironmentId: String
 
-  def compare(localProcess: DisplayableProcess)(implicit ec: ExecutionContext) : Future[Either[EspError, Map[String, Difference]]]
+  def compare(localProcess: DisplayableProcess, remoteProcessVersion: Option[Long],
+              businessView: Boolean = false)(implicit ec: ExecutionContext) : Future[Either[EspError, Map[String, Difference]]]
+
+  def processVersions(processId: String)(implicit ec: ExecutionContext) : Future[List[ProcessHistoryEntry]]
 
   def migrate(localProcess: DisplayableProcess)(implicit ec: ExecutionContext, loggedUser: LoggedUser) : Future[Either[EspError, Unit]]
 
   def testMigration(implicit ec: ExecutionContext) : Future[Either[EspError, List[TestMigrationResult]]]
 }
 
-case class MigratorCommunicationError(statusCode: StatusCode, getMessage: String) extends EspError
+case class RemoteEnvironmentCommunicationError(statusCode: StatusCode, getMessage: String) extends EspError
 
-case class MigratorValidationError(errors: ValidationErrors) extends EspError {
+case class MigrationValidationError(errors: ValidationErrors) extends EspError {
   override def getMessage : String = {
     val messages = errors.globalErrors.map(_.message) ++
       errors.processPropertiesErrors.map(_.message) ++ errors.invalidNodes.map { case(node, nerror) => s"$node - ${nerror.map(_.message).mkString(", ")}"}
@@ -45,12 +48,12 @@ case class MigratorValidationError(errors: ValidationErrors) extends EspError {
   }
 }
 
-case class HttpMigratorTargetEnvironmentConfig(url: String, user: String, password: String, environmentId: String)
+case class HttpRemoteEnvironmentConfig(url: String, user: String, password: String, environmentId: String)
 
 
-class HttpProcessMigrator(config: HttpMigratorTargetEnvironmentConfig,
-                          val testModelMigrations: TestModelMigrations,
-                          val environmentId: String)(implicit as: ActorSystem, val materializer: Materializer) extends StandardProcessMigrator {
+class HttpRemoteEnvironment(config: HttpRemoteEnvironmentConfig,
+                            val testModelMigrations: TestModelMigrations,
+                            val environmentId: String)(implicit as: ActorSystem, val materializer: Materializer) extends StandardRemoteEnvironment {
 
   override def targetEnvironmentId : String = config.environmentId
 
@@ -62,7 +65,8 @@ class HttpProcessMigrator(config: HttpMigratorTargetEnvironmentConfig,
   }
 }
 
-trait StandardProcessMigrator extends Argonaut62Support with ProcessMigrator with UiCodecs {
+//TODO: extract interface to remote environment?
+trait StandardRemoteEnvironment extends Argonaut62Support with RemoteEnvironment with UiCodecs {
 
   def environmentId: String
 
@@ -77,19 +81,25 @@ trait StandardProcessMigrator extends Argonaut62Support with ProcessMigrator wit
         Unmarshal(response.entity).to[T].map[Either[EspError, T]](Right(_))
       } else {
         Unmarshaller
-          .stringUnmarshaller(response.entity).map(error => Left[EspError, T](MigratorCommunicationError(response.status, error)))
+          .stringUnmarshaller(response.entity).map(error => Left[EspError, T](RemoteEnvironmentCommunicationError(response.status, error)))
       }
     }
   }
 
+
+  override def processVersions(processId: String)(implicit ec: ExecutionContext): Future[List[ProcessHistoryEntry]] =
+    invoke[ProcessDetails](s"processes/$processId?businessView=true", HttpMethods.GET).map { result =>
+      result.fold(_ => List(), _.history)
+    }
+
   protected def request(path: String, method: HttpMethod, request: MessageEntity): Future[HttpResponse]
 
-  override def compare(localProcess: DisplayableProcess)(implicit ec: ExecutionContext) : Future[Either[EspError, Map[String, Difference]]] = {
+  override def compare(localProcess: DisplayableProcess, remoteProcessVersion: Option[Long], businessView: Boolean = false)(implicit ec: ExecutionContext) : Future[Either[EspError, Map[String, Difference]]] = {
     val id = localProcess.id
 
     (for {
       //TODO: move urls to some constants...
-      process <- EitherT(invoke[ProcessDetails](s"processes/$id", HttpMethods.GET))
+      process <- EitherT(invoke[ProcessDetails](s"processes/$id${remoteProcessVersion.map("/" + _).getOrElse("")}?businessView=$businessView", HttpMethods.GET))
       compared <- EitherT.fromEither[Future](compareProcess(id, localProcess)(process))
     } yield compared).value
 
@@ -101,7 +111,7 @@ trait StandardProcessMigrator extends Argonaut62Support with ProcessMigrator wit
     (for {
       processToValidate <- EitherT.right(Marshal(localProcess).to[MessageEntity])
       validation <- EitherT(invoke[ValidationResult]("processValidation", HttpMethods.POST, processToValidate))
-      _ <- EitherT.fromEither[Future](if (validation.errors != ValidationErrors.success) Left[EspError, Unit](MigratorValidationError(validation.errors)) else Right(()))
+      _ <- EitherT.fromEither[Future](if (validation.errors != ValidationErrors.success) Left[EspError, Unit](MigrationValidationError(validation.errors)) else Right(()))
       processToSave <- EitherT.right(Marshal(ProcessToSave(localProcess, comment)).to[MessageEntity])
       result <- EitherT(invoke[ValidationResult](s"processes/${localProcess.id}", HttpMethods.PUT, processToSave))
     } yield ()).value

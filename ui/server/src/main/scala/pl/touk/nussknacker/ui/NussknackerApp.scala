@@ -18,7 +18,7 @@ import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DbConfig}
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.process.deployment.ManagementActor
-import pl.touk.nussknacker.ui.process.migrate.{HttpProcessMigrator, TestModelMigrations}
+import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, TestModelMigrations}
 import pl.touk.nussknacker.ui.process.repository.{DBFetchingProcessRepository, DeployedProcessRepository, ProcessActivityRepository, WriteProcessRepository}
 import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, SubprocessResolver}
 import pl.touk.nussknacker.ui.process.uiconfig.SingleNodeConfig
@@ -110,9 +110,9 @@ object NussknackerApp extends App with Directives with LazyLogging {
         new TestInfoResources(modelData)
     )
     val optionalRoutes = List(
-      featureTogglesConfig.migration
-        .map(migrationConfig => new HttpProcessMigrator(migrationConfig, TestModelMigrations(modelData), environment))
-        .map(migrator => new MigrationResources(migrator, processRepository)),
+      featureTogglesConfig.remoteEnvironment
+        .map(migrationConfig => new HttpRemoteEnvironment(migrationConfig, TestModelMigrations(modelData), environment))
+        .map(remoteEnvironment => new RemoteEnvironmentResources(remoteEnvironment, processRepository)),
       featureTogglesConfig.counts
         .map(countsConfig => new InfluxReporter(environment, countsConfig))
         .map(reporter => new ProcessReportResources(reporter, counter, processRepository))

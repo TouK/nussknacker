@@ -296,10 +296,12 @@ export default {
     });
   },
 
-  compareProcesses(processId, thisVersion, otherVersion, businessView) {
+  compareProcesses(processId, thisVersion, otherVersion, businessView, remoteEnv) {
     const queryParams = this.businessViewQueryParams(businessView)
+
+    const path = remoteEnv ? 'remoteEnvironment' : 'processes'
     return ajaxCall({
-      url: `${API_URL}/processes/${processId}/${thisVersion}/compare/${otherVersion}`,
+      url: `${API_URL}/${path}/${processId}/${thisVersion}/compare/${otherVersion}`,
       type: 'GET',
       data: queryParams
     }).catch(error => {
@@ -308,9 +310,16 @@ export default {
     })
   },
 
-  migrateProcess(processId) {
+  fetchRemoteVersions(processId) {
     return ajaxCall({
-      url: `${API_URL}/migration/migrate/${processId}`,
+      url: `${API_URL}/remoteEnvironment/${processId}/versions`,
+      type: 'GET',
+    }).catch((error) => this.addError(`Failed to get versions`, error));
+  },
+
+  migrateProcess(processId, versionId) {
+    return ajaxCall({
+      url: `${API_URL}/remoteEnvironment/${processId}/${versionId}/migrate`,
       type: 'POST',
     })
       .then(() => this.addInfo(`Process ${processId} was migrated`))

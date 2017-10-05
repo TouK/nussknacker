@@ -17,24 +17,53 @@ import Scrollbars from "react-custom-scrollbars";
 //TODO: handle different textarea heights
 class CompareVersionsDialog extends React.Component {
 
+  //TODO: better way of detecting remote version? also: how to sort versions??
+  remotePrefix = "remote-"
+
   constructor(props) {
     super(props);
     this.initState = {
       otherVersion: null,
       currentDiffId: null,
-      difference: null
+      difference: null,
+      remoteVersions: []
     };
     this.state = this.initState
   }
 
+  componentWillReceiveProps(nextProps) {
+    if (nextProps.processId && nextProps.otherEnvironment) {
+      HttpService.fetchRemoteVersions(nextProps.processId).then(list => this.setState({remoteVersions: list}))
+    }
+  }
+    
   loadVersion(versionId) {
     if (versionId) {
-      HttpService.compareProcesses(this.props.processId, this.props.version, versionId, this.props.businessView)
+      HttpService.compareProcesses(this.props.processId, this.props.version, this.versionToPass(versionId), this.props.businessView, this.isRemote(versionId))
         .then((difference) => this.setState({difference: difference, otherVersion: versionId, currentDiffId: null}))
     } else {
       this.setState(this.initState)
     }
 
+  }
+
+  isRemote(versionId) {
+    return versionId.startsWith(this.remotePrefix)
+  }
+
+  versionToPass(versionId) {
+    return versionId.replace(this.remotePrefix, "")
+  }
+
+  versionDisplayString(versionId) {
+    return this.isRemote(versionId) ? `${this.versionToPass(versionId)} on ${this.props.otherEnvironment}` : versionId;
+  }
+
+  createVersionElement(version, versionPrefix) {
+    const versionId = (versionPrefix || '') + version.processVersionId
+    return (
+      <option key={versionId} value={versionId}>
+        {this.versionDisplayString(versionId)} - created by {version.user} &nbsp;on {Moment(version.createDate).format("YYYY-MM-DD HH:mm:ss")}</option>)
   }
 
   render() {
@@ -47,10 +76,8 @@ class CompareVersionsDialog extends React.Component {
           <select id="otherVersion" className="node-input" value={this.state.otherVersion || ''}
                   onChange={(e) => this.loadVersion(e.target.value)}>
             <option key="" value=""/>
-            {this.props.versions.filter(version => this.props.version !== version.processVersionId).map((version, index) => (
-              <option key={version.processVersionId} value={version.processVersionId}>
-                {version.processVersionId} - created by {version.user}
-                &nbsp;on {Moment(version.createDate).format("YYYY-MM-DD HH:mm:ss")}</option>))}
+            {this.props.versions.filter(version => this.props.version !== version.processVersionId).map((version, index) => this.createVersionElement(version))}
+            {this.state.remoteVersions.map((version, index) => this.createVersionElement(version, this.remotePrefix))}
           </select>
         </div>
         {
@@ -89,7 +116,7 @@ class CompareVersionsDialog extends React.Component {
           {this.printNode(diff.currentNode)}
         </div>
         <div>
-          <div className="versionHeader">Version {this.state.otherVersion}</div>
+          <div className="versionHeader">Version {this.versionDisplayString(this.state.otherVersion)}</div>
           {this.printNode(diff.otherNode)}
         </div>
       </div>
@@ -112,6 +139,7 @@ function mapState(state) {
     processId: _.get(state.graphReducer, 'fetchedProcessDetails.id'),
     version: _.get(state.graphReducer, 'fetchedProcessDetails.processVersionId'),
     processDefinitionData: state.settings.processDefinitionData,
+    otherEnvironment: _.get(state.settings, "featuresSettings.remoteEnvironment.targetEnvironmentId"),
     versions: _.get(state.graphReducer, 'fetchedProcessDetails.history', []),
     businessView: state.graphReducer.businessView
   }

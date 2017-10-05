@@ -21,7 +21,7 @@ class SettingsResources(config: FeatureTogglesConfig, nodesConfig: Map[String, S
             counts = config.counts.isDefined,
             search = config.search,
             metrics = config.metrics,
-            migration = config.migration.map(c => MigrationConfig(c.environmentId)),
+            remoteEnvironment = config.remoteEnvironment.map(c => RemoteEnvironmentConfig(c.environmentId)),
             environmentAlert = config.environmentAlert
           )
           UISettings(toggleOptions, nodesConfig)
@@ -32,13 +32,13 @@ class SettingsResources(config: FeatureTogglesConfig, nodesConfig: Map[String, S
 
 case class GrafanaSettings(url: String, dashboard: String, env: String)
 case class KibanaSettings(url: String)
-case class MigrationConfig(targetEnvironmentId: String)
+case class RemoteEnvironmentConfig(targetEnvironmentId: String)
 case class EnvironmentAlert(content: String, cssClass: String)
 
 case class ToggleFeaturesOptions(counts: Boolean,
                                  search: Option[KibanaSettings],
                                  metrics: Option[GrafanaSettings],
-                                 migration: Option[MigrationConfig],
+                                 remoteEnvironment: Option[RemoteEnvironmentConfig],
                                  environmentAlert: Option[EnvironmentAlert]
                                 )
 
