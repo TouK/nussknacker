@@ -76,6 +76,11 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
     parseOrFail("{'1', '2'}.contains('2')").evaluateSync[Boolean](ctx, dumbLazyProvider).value shouldBe true
   }
 
+  it should "be possible to use SpEL's #this object" in {
+    parseOrFail("{1, 2, 3}.?[ #this > 1]").evaluateSync[java.util.List[Integer]](ctx, dumbLazyProvider).value shouldBe util.Arrays.asList(2, 3)
+    parseOrFail("{1, 2, 3}.![ #this > 1]").evaluateSync[java.util.List[Boolean]](ctx, dumbLazyProvider).value shouldBe util.Arrays.asList(false, true, true)
+  }
+
   it should "handle big decimals" in {
     bigValue.compareTo(BigDecimal.valueOf(50*1024*1024)) should be > 0
     bigValue.compareTo(BigDecimal.valueOf(50*1024*1024L)) should be > 0
@@ -142,7 +147,7 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
 
   it should "allow access to statics" in {
     val withMapVar = ctx.withVariable("longClass", classOf[java.lang.Long])
-    
+
     parseOrFail("#longClass.valueOf('44')", withMapVar).evaluateSync[Long](withMapVar, dumbLazyProvider).value should equal(44l)
 
   }

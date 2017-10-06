@@ -23,6 +23,8 @@ class SpelExpressionValidator(expr: Expression, ctx: ValidationContext) {
     classOf[Any]
   ).map(ClazzRef.apply)
 
+  private val wellKnownSpelVariables = List("this", "root") //taken from org.springframework.expression.spel.ast.VariableReference
+
   def validate(): Validated[ExpressionParseError, Expression] = {
     Validated.fromOption(Option(expr.asInstanceOf[standard.SpelExpression].getAST), ExpressionParseError("Empty expression"))
       .andThen { ast =>
@@ -40,7 +42,7 @@ class SpelExpressionValidator(expr: Expression, ctx: ValidationContext) {
 
   private def resolveReferences(node: SpelNode): Validated[ExpressionParseError, Expression] = {
     val references = findAllVariableReferences(node)
-    val notResolved = references.filterNot(ctx.contains)
+    val notResolved = references.filterNot(ctx.contains).filterNot(wellKnownSpelVariables.contains)
     if (notResolved.isEmpty) Validated.valid(expr)
     else Validated.Invalid(ExpressionParseError(s"Unresolved references ${notResolved.mkString(", ")}"))
   }
