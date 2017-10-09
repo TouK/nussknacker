@@ -23,7 +23,9 @@ class SpelExpressionValidator(expr: Expression, ctx: ValidationContext) {
     classOf[Any]
   ).map(ClazzRef.apply)
 
-  private val wellKnownSpelVariables = List("this", "root") //taken from org.springframework.expression.spel.ast.VariableReference
+  //taken from org.springframework.expression.spel.ast.VariableReference
+  //TODO: this is not really correct, we should only let use it in projection/selection...
+  private val wellKnownSpelVariables = List("this", "root")
 
   def validate(): Validated[ExpressionParseError, Expression] = {
     Validated.fromOption(Option(expr.asInstanceOf[standard.SpelExpression].getAST), ExpressionParseError("Empty expression"))
@@ -86,11 +88,17 @@ class SpelExpressionValidator(expr: Expression, ctx: ValidationContext) {
   private def findVariableReferenceAccess(reference: VariableReference, children: List[SpelNode] = List()) = {
     val variableName = reference.toStringAST.tail
     val references = children.takeWhile(_.isInstanceOf[PropertyOrFieldReference]).map(_.toStringAST) //we don't validate all of children which is not correct in all cases i.e `#obj.children.?[id == '55'].empty`
-    val clazzRef = ctx.apply(variableName)
+    val clazzRef = getVariableFromCtx(ctx, variableName)
     if (isTypeIgnored(clazzRef)) Validated.valid(List.empty) //we skip validation in case of SpEL Maps and when we are not sure about type
     else {
-      Validated.valid(List(SpelPropertyAccess(variableName, references, ctx.apply(variableName))))
+      Validated.valid(List(SpelPropertyAccess(variableName, references, clazzRef)))
     }
+  }
+
+  private def getVariableFromCtx(ctx: ValidationContext, name: String) : ClazzRef = if (wellKnownSpelVariables.contains(name)) {
+    ClazzRef[Any]
+  } else {
+    ctx(name)
   }
 
 
