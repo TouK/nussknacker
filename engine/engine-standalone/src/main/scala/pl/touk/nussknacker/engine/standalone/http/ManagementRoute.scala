@@ -7,16 +7,15 @@ import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.standalone.management.{DeploymentError, DeploymentService}
-import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.http.argonaut.Argonaut62Support
 
 import scala.concurrent.ExecutionContext
 
-class ManagementRoute(processesClassLoader: ClassLoader, deploymentService: DeploymentService) extends Directives with Argonaut62Support with LazyLogging  {
+class ManagementRoute(deploymentService: DeploymentService) extends Directives with Argonaut62Support with LazyLogging  {
 
   import argonaut.ArgonautShapeless._
 
-  def route(implicit ec: ExecutionContext): Route = ThreadUtils.withThisAsContextClassLoader(processesClassLoader) {
+  def route(implicit ec: ExecutionContext): Route =
     path("deploy") {
       post {
         entity(as[DeploymentData]) { data =>
@@ -44,7 +43,6 @@ class ManagementRoute(processesClassLoader: ClassLoader, deploymentService: Depl
         }
       }
     }
-  }
 
 
   def toResponse(either: Either[NonEmptyList[DeploymentError], Unit]): ToResponseMarshallable = either match {

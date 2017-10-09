@@ -6,30 +6,34 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.StandaloneMetaData
 import pl.touk.nussknacker.engine.api.deployment.ProcessState
-import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError
 import pl.touk.nussknacker.engine.marshall.{ProcessMarshaller, ProcessUnmarshallError}
-import pl.touk.nussknacker.engine.standalone.StandaloneProcessInterpreter
-import pl.touk.nussknacker.engine.standalone.utils.{StandaloneContext, StandaloneContextPreparer}
+import pl.touk.nussknacker.engine.standalone.StandaloneRequestHandler
+import pl.touk.nussknacker.engine.standalone.utils.StandaloneContextPreparer
+import pl.touk.nussknacker.engine.util.loader.JarClassLoader
+import pl.touk.nussknacker.engine.{ClassLoaderModelData, ModelData}
 
 import scala.concurrent.ExecutionContext
 
 object DeploymentService {
 
-  //TODO this is temporary solution, we should keep these processes in ZK
-  def apply(context: StandaloneContextPreparer, creator: ProcessConfigCreator, config: Config): DeploymentService =
-    new DeploymentService(context, creator, config, FileProcessRepository(config.getString("standaloneEngineProcessLocation")))
+  //TODO this is temporary solution, we should keep these processes e.g. in ZK
+  //also: how to pass model data around?
+  def apply(context: StandaloneContextPreparer, config: Config): DeploymentService = {
+    val modelData = ClassLoaderModelData(config, JarClassLoader("jarPath"))
+    new DeploymentService(context, modelData, FileProcessRepository(config.getString("standaloneEngineProcessLocation")))
+  }
 
 }
 
-class DeploymentService(context: StandaloneContextPreparer,
-                        creator: ProcessConfigCreator, config: Config, processRepository: ProcessRepository) extends LazyLogging {
+class DeploymentService(context: StandaloneContextPreparer, modelData: ModelData,
+                        processRepository: ProcessRepository) extends LazyLogging {
 
-  val processInterpreters: collection.concurrent.TrieMap[String, (StandaloneProcessInterpreter, Long)] = collection.concurrent.TrieMap()
+  val processInterpreters: collection.concurrent.TrieMap[String, (StandaloneRequestHandler, Long)] = collection.concurrent.TrieMap()
 
-  val pathToInterpreterMap: collection.concurrent.TrieMap[String, StandaloneProcessInterpreter] = collection.concurrent.TrieMap()
+  val pathToInterpreterMap: collection.concurrent.TrieMap[String, StandaloneRequestHandler] = collection.concurrent.TrieMap()
 
   val processMarshaller = new ProcessMarshaller()
 
@@ -90,13 +94,13 @@ class DeploymentService(context: StandaloneContextPreparer,
     removed.map(_ => ())
   }
 
-  def getInterpreterByPath(path: String): Option[StandaloneProcessInterpreter] = {
+  def getInterpreterByPath(path: String): Option[StandaloneRequestHandler] = {
     pathToInterpreterMap.get(path)
   }
 
   private def newInterpreter(canonicalProcess: CanonicalProcess) =
     ProcessCanonizer.uncanonize(canonicalProcess)
-      .andThen(StandaloneProcessInterpreter(_, context, creator, config)).leftMap(_.map(DeploymentError(_)))
+      .andThen(StandaloneRequestHandler(_, context, modelData)).leftMap(_.map(DeploymentError(_)))
 
 
   private def toEspProcess(processJson: String): ValidatedNel[DeploymentError, CanonicalProcess] =
@@ -113,4 +117,3 @@ object DeploymentError {
   def apply(error: ProcessUnmarshallError) : DeploymentError = DeploymentError(error.nodeIds, error.toString)
 
 }
-

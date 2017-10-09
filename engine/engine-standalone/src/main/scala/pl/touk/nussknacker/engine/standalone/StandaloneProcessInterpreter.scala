@@ -8,7 +8,7 @@ import cats.data.Validated.Invalid
 import cats.data.{NonEmptyList, ValidatedNel}
 import com.codahale.metrics.{Metric, MetricFilter}
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.{Interpreter, compiledgraph}
+import pl.touk.nussknacker.engine.{Interpreter, ModelData, compiledgraph}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, EspExceptionInfo}
 import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, StandaloneSourceFactory}
@@ -52,11 +52,14 @@ object StandaloneProcessInterpreter {
     }
   }
 
-  def apply(process: EspProcess, contextPreparer: StandaloneContextPreparer, creator: ProcessConfigCreator, config: Config,
+  def apply(process: EspProcess, contextPreparer: StandaloneContextPreparer, modelData: ModelData,
             additionalListeners: List[ProcessListener] = List(),
             definitionsPostProcessor: (ProcessDefinitionExtractor.ProcessDefinition[ObjectWithMethodDef]
               => ProcessDefinitionExtractor.ProcessDefinition[ObjectWithMethodDef]) = identity)
   : ValidatedNel[ProcessCompilationError, StandaloneProcessInterpreter] = {
+
+    val creator = modelData.configCreator
+    val config = modelData.processConfig
 
     import pl.touk.nussknacker.engine.util.Implicits._
 
@@ -73,7 +76,7 @@ object StandaloneProcessInterpreter {
 
     new ProcessCompiler(sub, definitions).compile(process)
       .andThen(StandaloneInvokerCompiler(sub, _, interpreter).compile)
-      .map(StandaloneProcessInterpreter(process.id, contextPreparer.prepare(process.id), _, services, sourceFactory))
+      .map(StandaloneProcessInterpreter(process.id, contextPreparer.prepare(process.id), _, services, sourceFactory, modelData))
 
   }
 
@@ -152,10 +155,12 @@ object StandaloneProcessInterpreter {
 }
 
 
+
+
 case class StandaloneProcessInterpreter(id: String, context: StandaloneContext,
                                         invoker: StandaloneProcessInterpreter.OutFunType,
                                         services: Iterable[Service],
-                                        source: StandaloneSourceFactory[Any]) extends InvocationMetrics {
+                                        source: StandaloneSourceFactory[Any], modelData: ModelData) extends InvocationMetrics {
 
   private val counter = new AtomicLong(0)
 
@@ -163,7 +168,7 @@ case class StandaloneProcessInterpreter(id: String, context: StandaloneContext,
     invokeToResult(input).map(_.right.map(_.map(_.output)))
   }
 
-  def invokeToResult(input: Any)(implicit ec: ExecutionContext): OutType = {
+  def invokeToResult(input: Any)(implicit ec: ExecutionContext): OutType = modelData.withThisAsContextClassLoader {
     val contextId = s"$id-${counter.getAndIncrement()}"
     measureTime {
       val ctx = Context(contextId).withVariable(Interpreter.InputParamName, input)
@@ -171,7 +176,7 @@ case class StandaloneProcessInterpreter(id: String, context: StandaloneContext,
     }
   }
 
-  def open()(implicit ec: ExecutionContext): Unit = {
+  def open(): Unit = {
     services.foreach {
       case a:StandaloneContextLifecycle => a.open(context)
       case a => a.open()

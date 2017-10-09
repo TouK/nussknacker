@@ -78,7 +78,7 @@ class StandaloneProcessManager(modelData: ModelData, config: Config)
 
   override def test(processId: String, processJson: String, testData: TestData): Future[TestResults] = {
     Future{
-      StandaloneTestMain.run(processJson,config,testData, modelData.jarClassLoader.classLoader)
+      StandaloneTestMain.run(processJson, testData, modelData)
     }
   }
 
@@ -98,23 +98,25 @@ class StandaloneProcessManager(modelData: ModelData, config: Config)
 
 object StandaloneTestMain {
 
-  def run(processJson: String, config: Config, testData: TestData, classLoader: ClassLoader): TestResults = {
+  def run(processJson: String, testData: TestData, modelData: ModelData): TestResults = {
     new StandaloneTestMain(
-      config = config,
       testData = testData,
       process = TestUtils.readProcessFromArg(processJson),
-      creator = ProcessConfigCreatorLoader.loadProcessConfigCreator(classLoader)).runTest()
+      modelData).runTest()
   }
 
 }
 
-class StandaloneTestMain(config: Config, testData: TestData, process: EspProcess, creator: ProcessConfigCreator) {
+class StandaloneTestMain(testData: TestData, process: EspProcess, modelData: ModelData) {
 
   private val timeout = FiniteDuration(10, TimeUnit.SECONDS)
 
   import ExecutionContext.Implicits.global
 
   def runTest(): TestResults = {
+    val creator = modelData.configCreator
+    val config = modelData.processConfig
+
     val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(creator, config)
     val parsedTestData = readTestData(definitions)
 
@@ -124,7 +126,7 @@ class StandaloneTestMain(config: Config, testData: TestData, process: EspProcess
     val testContext = new StandaloneContextPreparer(new MetricRegistry)
 
     //FIXME: validation??
-    val standaloneInterpreter = StandaloneProcessInterpreter(process, testContext, creator, config,
+    val standaloneInterpreter = StandaloneProcessInterpreter(process, testContext, modelData,
       definitionsPostProcessor = prepareMocksForTest(collectingListener),
       additionalListeners = List(collectingListener)
     ).toOption.get

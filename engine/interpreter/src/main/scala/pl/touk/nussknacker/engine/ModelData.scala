@@ -16,24 +16,16 @@ object ModelData {
   def apply(config: Config, jarPathKey: String, configKey: String) : ModelData = {
     val processConfig = config.getConfig(configKey)
     val jarClassLoader = JarClassLoader(config.getString(jarPathKey))
-    ModelData(processConfig, jarClassLoader)
+    ClassLoaderModelData(processConfig, jarClassLoader)
   }
 
 }
 
-//TODO: make this more of a trait, so that it's not always necessary to init full class with classloaders..
-case class ModelData(processConfig: Config, jarClassLoader: JarClassLoader)
-  extends ConfigCreatorSignalDispatcher with ConfigCreatorTestInfoProvider {
+case class ClassLoaderModelData(processConfig: Config, jarClassLoader: JarClassLoader)
+  extends ModelData {
 
   //this is not lazy, to be able to detect if creator can be created...
   val configCreator : ProcessConfigCreator = ProcessConfigCreatorLoader.loadProcessConfigCreator(jarClassLoader.classLoader)
-
-  lazy val processDefinition: ProcessDefinition[ObjectDefinition] =
-    ThreadUtils.withThisAsContextClassLoader(jarClassLoader.classLoader) {
-      ObjectProcessDefinition(ProcessDefinitionExtractor.extractObjectWithMethods(configCreator, processConfig))
-    }
-
-  lazy val validator: ProcessValidator = ProcessValidator.default(processDefinition)
 
   lazy val migrations: ProcessMigrations = {
     Multiplicity(ScalaServiceLoader.load[ProcessMigrations](jarClassLoader.classLoader)) match {
@@ -44,4 +36,27 @@ case class ModelData(processConfig: Config, jarClassLoader: JarClassLoader)
     }
   }
 
+
+}
+
+trait ModelData extends ConfigCreatorSignalDispatcher with ConfigCreatorTestInfoProvider{
+
+  def migrations: ProcessMigrations
+
+  def configCreator : ProcessConfigCreator
+
+  lazy val processDefinition: ProcessDefinition[ObjectDefinition] =
+    withThisAsContextClassLoader {
+      ObjectProcessDefinition(ProcessDefinitionExtractor.extractObjectWithMethods(configCreator, processConfig))
+    }
+
+  lazy val validator: ProcessValidator = ProcessValidator.default(processDefinition)
+
+  def withThisAsContextClassLoader[T](block: => T) : T = {
+    ThreadUtils.withThisAsContextClassLoader(jarClassLoader.classLoader) {
+      block
+    }
+  }
+
+  def jarClassLoader : JarClassLoader
 }

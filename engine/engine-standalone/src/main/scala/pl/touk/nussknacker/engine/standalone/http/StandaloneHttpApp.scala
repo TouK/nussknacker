@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.standalone.utils.StandaloneContextPreparer
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.loader.{JarClassLoader, ProcessConfigCreatorLoader, ScalaServiceLoader}
 import pl.touk.http.argonaut.Argonaut62Support
+import pl.touk.nussknacker.engine.{ClassLoaderModelData, ModelData}
 import pl.touk.nussknacker.engine.api.conversion.ProcessConfigCreatorMapping
 
 import scala.util.Try
@@ -30,12 +31,8 @@ object StandaloneHttpApp extends Directives with Argonaut62Support with LazyLogg
   implicit private val materializer = ActorMaterializer()
 
   private val config = ConfigFactory.load()
-  private val processesClassLoader = loadProcessesClassloader(config)
-  private val creator =  ProcessConfigCreatorLoader.loadProcessConfigCreator(processesClassLoader)
 
-
-
-  private val deploymentService = DeploymentService(prepareContext(config), creator, config)
+  private val deploymentService = DeploymentService(prepareContext(config), config)
 
   def main(args: Array[String]): Unit = {
     val ports = for {
@@ -48,10 +45,9 @@ object StandaloneHttpApp extends Directives with Argonaut62Support with LazyLogg
     }
   }
 
+  val managementRoute = new ManagementRoute(deploymentService)
 
-  val managementRoute = new ManagementRoute(processesClassLoader, deploymentService)
-
-  val processRoute = new ProcessRoute(processesClassLoader, deploymentService)
+  val processRoute = new ProcessRoute(deploymentService)
 
 
   def initHttp(managementPort: Int = 8070, processesPort: Int = 8080) = {

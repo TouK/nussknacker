@@ -4,23 +4,23 @@ import java.nio.charset.StandardCharsets
 
 import argonaut.PrettyParams
 import com.typesafe.config.ConfigFactory
-import com.typesafe.config.ConfigValueFactory.fromAnyRef
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FlatSpec, Matchers}
+import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.deployment.test._
-import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.standalone.management.StandaloneTestMain
-import pl.touk.nussknacker.engine.standalone.{ProcessorService, Request1, Response, StandaloneProcessConfigCreator}
+import pl.touk.nussknacker.engine.standalone.{Request1, Response, StandaloneProcessConfigCreator}
+import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.spel
 
 class StandaloneTestMainSpec extends FlatSpec with Matchers with BeforeAndAfterEach {
 
   import spel.Implicits._
-  import scala.concurrent.ExecutionContext.Implicits.global
 
   val ProcessMarshaller = new ProcessMarshaller
+
+  val modelData = LocalModelData(ConfigFactory.load(), new StandaloneProcessConfigCreator)
 
   it should "perform test on mocks" in {
     val process = EspProcessBuilder
@@ -38,9 +38,8 @@ class StandaloneTestMainSpec extends FlatSpec with Matchers with BeforeAndAfterE
 
     val results = StandaloneTestMain.run(
       processJson = ProcessMarshaller.toJson(process, PrettyParams.spaces2),
-      config = config,
-      testData = new TestData(input.getBytes(StandardCharsets.UTF_8)),
-      classLoader = getClass.getClassLoader)
+      modelData = modelData,
+      testData = new TestData(input.getBytes(StandardCharsets.UTF_8)))
 
     results.nodeResults("filter1").toSet shouldBe Set(
       NodeResult(Context("proc1-0", Map("input" -> Request1("a","b")))),
@@ -77,9 +76,8 @@ class StandaloneTestMainSpec extends FlatSpec with Matchers with BeforeAndAfterE
 
     val results = StandaloneTestMain.run(
       processJson = ProcessMarshaller.toJson(process, PrettyParams.spaces2),
-      config = config,
-      testData = new TestData(input.getBytes(StandardCharsets.UTF_8)),
-      classLoader = getClass.getClassLoader)
+      modelData = modelData,
+      testData = new TestData(input.getBytes(StandardCharsets.UTF_8)))
 
     results.invocationResults("occasionallyThrowFilter").toSet shouldBe Set(ExpressionInvocationResult(Context("proc1-1", Map("input" -> Request1("c","d"))), "expression", true))
     results.exceptions should have size 1

@@ -12,16 +12,16 @@ import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.standalone.StandaloneProcessInterpreter
 import pl.touk.nussknacker.engine.standalone.StandaloneProcessInterpreter.GenericResultType
 import pl.touk.nussknacker.engine.standalone.management.DeploymentService
-import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.http.argonaut.Argonaut62Support
+import pl.touk.nussknacker.engine.ModelData
 
 import scala.concurrent.ExecutionContext
 
-class ProcessRoute(processesClassLoader: ClassLoader, deploymentService: DeploymentService)  extends Directives with Argonaut62Support with LazyLogging {
+class ProcessRoute(deploymentService: DeploymentService)  extends Directives with Argonaut62Support with LazyLogging {
 
   import argonaut.ArgonautShapeless._
 
-  def route(implicit ec: ExecutionContext): Route = ThreadUtils.withThisAsContextClassLoader(processesClassLoader) {
+  def route(implicit ec: ExecutionContext): Route =
     path(Segment) { processPath =>
       post {
         entity(as[Array[Byte]]) { bytes =>
@@ -32,36 +32,20 @@ class ProcessRoute(processesClassLoader: ClassLoader, deploymentService: Deploym
                 HttpResponse(status = StatusCodes.NotFound)
               }
             case Some(processInterpreter) =>
-              val input = processInterpreter.source.toObject(bytes)
               complete {
-                //TODO: handle multiple outputs?
-                processInterpreter.invoke(input).map(toResponse)
+                processInterpreter.invoke(bytes).map(toResponse)
               }
           }
         }
       }
-    }
   }
+
 
   //TODO: is it ok?
-  def toResponse(either: GenericResultType[Any, EspExceptionInfo[_<:Throwable]]) : ToResponseMarshallable = {
-    val withErrorsMapped : GenericResultType[Any, EspError] = either.left
-      .map(_.map(exception => EspError(exception.nodeId, exception.throwable.getMessage)))
-
-    val withJsonsConverted  : GenericResultType[GenericResultType[Json, EspError], EspError] = withErrorsMapped.right.map(toJsonOrErrors)
-
-    withJsonsConverted.right.flatMap[NonEmptyList[EspError], List[Json]](StandaloneProcessInterpreter.foldResults)
-  }
-
-  private def toJsonOrErrors(values: List[Any]) : List[GenericResultType[Json, EspError]] = values.map(toJsonOrError)
-
-  private def toJsonOrError(value: Any) : GenericResultType[Json, EspError] = value match {
-    case a:Displayable => Right(List(a.display))
-    case a:String => Right(List(Json.jString(a)))
-    case a => Left(NonEmptyList.of(EspError(None, s"Invalid result type: ${a.getClass}")))
+  def toResponse(either: GenericResultType[Json, EspExceptionInfo[_<:Throwable]]) : ToResponseMarshallable = {
+    either.left.map(_.map(info => EspError(info.nodeId, info.throwable.getMessage)))
   }
 
   case class EspError(nodeId: Option[String], message: String)
-
 
 }

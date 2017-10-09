@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.standalone.StandaloneProcessConfigCreator
 import pl.touk.nussknacker.engine.standalone.utils.{StandaloneContext, StandaloneContextPreparer}
+import pl.touk.nussknacker.engine.testing.LocalModelData
 
 class DeploymentServiceSpec extends FlatSpec with Matchers {
 
@@ -23,8 +24,9 @@ class DeploymentServiceSpec extends FlatSpec with Matchers {
 
   val tmpDir = Files.createTempDirectory("deploymentSpec")
 
-  def createService() = DeploymentService(new StandaloneContextPreparer(new MetricRegistry), new StandaloneProcessConfigCreator,
-    ConfigFactory.load().withValue("standaloneEngineProcessLocation", ConfigValueFactory.fromAnyRef(tmpDir.toFile.getAbsolutePath)))
+  def createService() = new DeploymentService(new StandaloneContextPreparer(new MetricRegistry),
+    LocalModelData(ConfigFactory.load(), new StandaloneProcessConfigCreator),
+    new FileProcessRepository(tmpDir.toFile))
 
   it should "preserve processes between deployments" in {
 

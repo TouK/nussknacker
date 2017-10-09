@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.process.ProcessTestHelpers._
 import pl.touk.nussknacker.engine.util.loader.JarClassLoader
-import pl.touk.nussknacker.engine.{ModelData, spel}
+import pl.touk.nussknacker.engine.{ClassLoaderModelData, ModelData, spel}
 
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -31,7 +31,7 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside with BeforeAn
 
   val ProcessMarshaller = new ProcessMarshaller
 
-  val modelData = ModelData(ConfigFactory.load(), JarClassLoader.empty)
+  val modelData = ClassLoaderModelData(ConfigFactory.load(), JarClassLoader.empty)
   
   it should "be able to return test results" in {
     val process =

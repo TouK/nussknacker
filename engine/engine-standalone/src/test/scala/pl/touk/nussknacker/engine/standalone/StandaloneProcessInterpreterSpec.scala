@@ -10,6 +10,7 @@ import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.standalone.utils.StandaloneContextPreparer
+import pl.touk.nussknacker.engine.testing.LocalModelData
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
@@ -25,6 +26,8 @@ class StandaloneProcessInterpreterSpec extends FlatSpec with Matchers with Event
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
+
+
   it should "run process in request response mode" in {
 
     val process = EspProcessBuilder
@@ -37,10 +40,10 @@ class StandaloneProcessInterpreterSpec extends FlatSpec with Matchers with Event
       .sink("endNodeIID", "#var1", "response-sink")
 
     val input = Request1("a", "b")
-    val config = ConfigFactory.load()
-    val creator = new StandaloneProcessConfigCreator
     val ctx = new StandaloneContextPreparer(new MetricRegistry)
-    val maybeinterpreter = StandaloneProcessInterpreter(process, ctx, creator, config)
+    val creator = new StandaloneProcessConfigCreator
+    val simpleModelData = LocalModelData(ConfigFactory.load(), creator)
+    val maybeinterpreter = StandaloneProcessInterpreter(process, ctx, simpleModelData)
 
 
     maybeinterpreter shouldBe 'valid
@@ -66,11 +69,11 @@ class StandaloneProcessInterpreterSpec extends FlatSpec with Matchers with Event
         )
 
     val input = Request1("a", "b")
-    val config = ConfigFactory.load()
-    val creator = new StandaloneProcessConfigCreator
     val ctx = new StandaloneContextPreparer(new MetricRegistry)
+    val creator = new StandaloneProcessConfigCreator
+    val simpleModelData = LocalModelData(ConfigFactory.load(), creator)
 
-    val maybeinterpreter = StandaloneProcessInterpreter(process, ctx, creator, config)
+    val maybeinterpreter = StandaloneProcessInterpreter(process, ctx, simpleModelData)
 
     maybeinterpreter shouldBe 'valid
     val interpreter = maybeinterpreter.toOption.get
@@ -94,11 +97,11 @@ class StandaloneProcessInterpreterSpec extends FlatSpec with Matchers with Event
       .sink("endNodeIID", "#var1", "response-sink")
 
     val input = Request1("a", "b")
-    val config = ConfigFactory.load()
     val creator = new StandaloneProcessConfigCreator
+    val simpleModelData = LocalModelData(ConfigFactory.load(), creator)
     val metricRegistry = new MetricRegistry
     val ctx = new StandaloneContextPreparer(metricRegistry)
-    val maybeinterpreter = StandaloneProcessInterpreter(process, ctx, creator, config)
+    val maybeinterpreter = StandaloneProcessInterpreter(process, ctx, simpleModelData)
 
 
     maybeinterpreter shouldBe 'valid
@@ -128,11 +131,12 @@ class StandaloneProcessInterpreterSpec extends FlatSpec with Matchers with Event
       .sink("sink1", "#outPart", "response-sink")
 
     val input = Request1("a", "b")
-    val config = ConfigFactory.load()
+
     val creator = new StandaloneProcessConfigCreator
+    val simpleModelData = LocalModelData(ConfigFactory.load(), creator)
     val ctx = new StandaloneContextPreparer(new MetricRegistry)
 
-    val maybeinterpreter = StandaloneProcessInterpreter(process, ctx, creator, config)
+    val maybeinterpreter = StandaloneProcessInterpreter(process, ctx, simpleModelData)
 
     maybeinterpreter shouldBe 'valid
     val interpreter = maybeinterpreter.toOption.get
