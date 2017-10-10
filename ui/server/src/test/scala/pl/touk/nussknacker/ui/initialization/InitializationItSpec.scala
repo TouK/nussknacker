@@ -27,11 +27,14 @@ class InitializationItSpec extends FlatSpec with ScalatestRouteTest with Matcher
 
   private var processesDir: File = _
   private val migrations = Map(ProcessingType.Streaming -> new TestMigrations(1, 2))
+  private val validations = Map(ProcessingType.Streaming -> ProcessTestData.validator)
+
   private lazy val repository = TestFactory.newProcessRepository(db, Some(1))
 
   private lazy val writeRepository = TestFactory.newWriteProcessRepository(db)
 
-  private val sampleDeploymentData = GraphProcess(UiProcessMarshaller.toJson(ProcessCanonizer.canonize(ProcessTestData.validProcessWithId(processId)), PrettyParams.nospace))
+  private def sampleDeploymentData(processId: String) = GraphProcess(UiProcessMarshaller.toJson(ProcessCanonizer.canonize(
+    ProcessTestData.validProcessWithId(processId)), PrettyParams.nospace))
 
   override protected def beforeEach(): Unit = {
     super.beforeEach()
@@ -48,7 +51,7 @@ class InitializationItSpec extends FlatSpec with ScalatestRouteTest with Matcher
 
     prepareCustomProcessFile()
 
-    Initialization.init(migrations, TestFactory.processValidation, db, "env1", processesDir)
+    Initialization.init(migrations, validations, db, "env1", processesDir)
 
     repository.fetchProcessesDetails().futureValue.map(d => (d.id, d.processType)) shouldBe List(("process1", ProcessType.Custom))
   }
@@ -57,13 +60,28 @@ class InitializationItSpec extends FlatSpec with ScalatestRouteTest with Matcher
 
     saveSampleProcess()
 
-    Initialization.init(migrations, TestFactory.processValidation, db, "env1", processesDir)
+    Initialization.init(migrations, validations, db, "env1", processesDir)
 
     repository.fetchProcessesDetails().futureValue.map(d => (d.id, d.modelVersion)) shouldBe List(("proc1", Some(2)))
   }
 
-  private def saveSampleProcess() : Unit = {
-    writeRepository.saveNewProcess(processId, "RTM", sampleDeploymentData, ProcessingType.Streaming, false).futureValue
+  it should "migrate processes when subprocesses present" in {
+    (1 to 20).foreach { id =>
+      saveSampleProcess(s"sub$id", subprocess = true)
+    }
+
+    (1 to 20).foreach { id =>
+      saveSampleProcess(s"id$id")
+    }
+
+    Initialization.init(migrations, validations, db, "env1", processesDir)
+
+    repository.fetchProcessesDetails().futureValue.map(d => (d.id, d.modelVersion)).toSet shouldBe (1 to 20).map(id => (s"id$id", Some(2))).toSet
+
+  }
+
+  private def saveSampleProcess(processId: String = processId, subprocess: Boolean = false) : Unit = {
+    writeRepository.saveNewProcess(processId, "RTM", sampleDeploymentData(processId), ProcessingType.Streaming, subprocess).futureValue
   }
 
   it should "run initialization transactionally" in {
@@ -71,7 +89,7 @@ class InitializationItSpec extends FlatSpec with ScalatestRouteTest with Matcher
     saveSampleProcess()
 
     val exception = intercept[RuntimeException](
-      Initialization.init(Map(ProcessingType.Streaming -> new TestMigrations(1, 2, 5)), TestFactory.processValidation, db, "env1", processesDir))
+      Initialization.init(Map(ProcessingType.Streaming -> new TestMigrations(1, 2, 5)), validations, db, "env1", processesDir))
 
     exception.getMessage shouldBe "made to fail.."
 

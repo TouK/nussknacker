@@ -84,7 +84,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
 
   val counter = new ProcessCounter(subprocessRepository)
 
-  Initialization.init(modelData.mapValues(_.migrations), processValidation, db, environment, initialProcessDirectory)
+  Initialization.init(modelData.mapValues(_.migrations), modelData.mapValues(_.validator), db, environment, initialProcessDirectory)
 
   initHttp()
 
