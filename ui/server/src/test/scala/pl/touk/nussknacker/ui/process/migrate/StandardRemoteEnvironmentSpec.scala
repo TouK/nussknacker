@@ -54,7 +54,7 @@ class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with ScalaFut
       override def testModelMigrations: TestModelMigrations = ???
     }
 
-    whenReady(remoteEnvironment.migrate(ProcessTestData.validDisplayableProcess)) { result =>
+    whenReady(remoteEnvironment.migrate(ProcessTestData.validDisplayableProcess.toDisplayable)) { result =>
       result shouldBe 'left
       result.left.get shouldBe MigrationValidationError(ValidationErrors(Map("n1" -> List(NodeValidationError("bad","message","" ,None, NodeValidationErrorType.SaveAllowed))),List(),List()))
       result.left.get.getMessage shouldBe "Cannot migrate, following errors occured: n1 - message"
@@ -86,7 +86,7 @@ class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with ScalaFut
 
     }
 
-    whenReady(remoteEnvironment.migrate(ProcessTestData.validDisplayableProcess)) { result =>
+    whenReady(remoteEnvironment.migrate(ProcessTestData.validDisplayableProcess.toDisplayable)) { result =>
       result shouldBe 'right
     }
 
@@ -94,7 +94,7 @@ class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with ScalaFut
 
     whenReady(migrated.get) { processToSave =>
       processToSave.comment shouldBe "Process migrated from testEnv by test"
-      processToSave.process shouldBe ProcessTestData.validDisplayableProcess
+      processToSave.process shouldBe ProcessTestData.validDisplayableProcess.toDisplayable
 
     }
 

@@ -52,7 +52,7 @@ class ProcessModelMigratorSpec extends FlatSpec with BeforeAndAfterEach with Sca
 
   private def migrateByVersions(startFrom: Option[Int], migrations: Int*) : MigrationResult =
     migrator(migrations: _*).migrateProcess(
-      ProcessTestData.toDetails(ProcessTestData.validDisplayableProcess).copy(modelVersion = startFrom)).get
+      ProcessTestData.toDetails(ProcessTestData.validDisplayableProcess.toDisplayable).copy(modelVersion = startFrom)).get
 
 
   private def extractProcessor(migrationResult: MigrationResult) = {

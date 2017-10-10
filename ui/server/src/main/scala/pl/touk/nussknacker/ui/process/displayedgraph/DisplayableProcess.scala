@@ -14,12 +14,13 @@ case class DisplayableProcess(id: String,
                               properties: ProcessProperties,
                               nodes: List[NodeData],
                               edges: List[Edge],
-                              processingType: ProcessingType,
-                              validationResult: Option[ValidationResult] = None) {
+                              processingType: ProcessingType) {
+
   def validated(validation: ProcessValidation) =
-    copy(validationResult = Some(validation.validate(this)))
+    new ValidatedDisplayableProcess(this, validation.validate(this))
+  
   def withSuccessValidation() = {
-    copy(validationResult = Some(ValidationResult.success))
+    new ValidatedDisplayableProcess(this, ValidationResult.success)
   }
 
   val metaData = MetaData(
@@ -39,13 +40,17 @@ case class ValidatedDisplayableProcess(id: String,
                               processingType: ProcessingType,
                               validationResult: ValidationResult) {
 
-  val metaData = MetaData(
-    id = id,
-    typeSpecificData = properties.typeSpecificProperties,
-    isSubprocess = properties.isSubprocess,
-    additionalFields = properties.additionalFields,
-    subprocessVersions = properties.subprocessVersions
-  )
+  def this(displayableProcess: DisplayableProcess, validationResult: ValidationResult) =
+    this(
+      displayableProcess.id,
+      displayableProcess.properties,
+      displayableProcess.nodes,
+      displayableProcess.edges,
+      displayableProcess.processingType,
+      validationResult
+    )
+
+  def toDisplayable = DisplayableProcess(id, properties, nodes, edges, processingType)
 
 }
 

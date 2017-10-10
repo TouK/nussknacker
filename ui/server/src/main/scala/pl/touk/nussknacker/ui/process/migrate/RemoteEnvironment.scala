@@ -15,7 +15,7 @@ import pl.touk.nussknacker.ui.codec.UiCodecs
 import pl.touk.nussknacker.ui.process.ProcessToSave
 import pl.touk.nussknacker.ui.process.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.ui.process.marshall.UiProcessMarshaller
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{InvalidProcessTypeError, ProcessDetails, ProcessHistoryEntry}
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{InvalidProcessTypeError, ProcessDetails, ProcessHistoryEntry, ValidatedProcessDetails}
 import pl.touk.nussknacker.ui.util.ProcessComparator.Difference
 import pl.touk.nussknacker.ui.util.ProcessComparator
 import pl.touk.nussknacker.ui.validation.ValidationResults.{ValidationErrors, ValidationResult}
@@ -124,7 +124,7 @@ trait StandardRemoteEnvironment extends Argonaut62Support with RemoteEnvironment
 
   override def testMigration(implicit ec: ExecutionContext): Future[Either[EspError, List[TestMigrationResult]]] = {
     (for {
-      processes <- EitherT(invoke[List[ProcessDetails]]("processes", HttpMethods.GET))
+      processes <- EitherT(invoke[List[ValidatedProcessDetails]]("processes", HttpMethods.GET))
       subprocesses <- EitherT(invoke[List[ProcessDetails]]("subprocesses", HttpMethods.GET))
     } yield testModelMigrations.testMigrations(processes, subprocesses)).value
   }

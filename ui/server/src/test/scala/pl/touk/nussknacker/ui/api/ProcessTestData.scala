@@ -18,9 +18,9 @@ import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.{ProcessType, ProcessingType}
 import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.{Edge, NodeAdditionalFields, ProcessAdditionalFields}
-import pl.touk.nussknacker.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties}
+import pl.touk.nussknacker.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{BaseProcessDetails, ProcessDetails}
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{BaseProcessDetails, ProcessDetails, ValidatedProcessDetails}
 import pl.touk.nussknacker.ui.process.subprocess.{SetSubprocessRepository, SubprocessResolver}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 import pl.touk.nussknacker.ui.validation.ValidationResults.ValidationResult
@@ -57,9 +57,9 @@ object ProcessTestData {
         .customNode("custom", "out1", existingStreamTransformer)
         .sink("sink", existingSinkFactory)
 
-  val validDisplayableProcess : DisplayableProcess = toValidatedDisplayable(validProcess)
+  val validDisplayableProcess : ValidatedDisplayableProcess = toValidatedDisplayable(validProcess)
 
-  def toValidatedDisplayable(espProcess: EspProcess) : DisplayableProcess =
+  def toValidatedDisplayable(espProcess: EspProcess) : ValidatedDisplayableProcess =
     ProcessConverter
      .toDisplayable(ProcessCanonizer.canonize(espProcess), ProcessingType.Streaming)
      .validated(new ProcessValidation(Map(ProcessingType.Streaming -> validator),
@@ -67,6 +67,10 @@ object ProcessTestData {
 
   def toDetails(displayable: DisplayableProcess) : ProcessDetails =
     BaseProcessDetails[DisplayableProcess](displayable.id, displayable.id, 1, true, None, ProcessType.Graph,
+      ProcessingType.Streaming, "", LocalDateTime.now(), List(), Set(), Some(displayable), List(), None)
+
+  def toDetails(displayable: ValidatedDisplayableProcess) : ValidatedProcessDetails =
+    BaseProcessDetails[ValidatedDisplayableProcess](displayable.id, displayable.id, 1, true, None, ProcessType.Graph,
       ProcessingType.Streaming, "", LocalDateTime.now(), List(), Set(), Some(displayable), List(), None)
 
 
@@ -122,8 +126,7 @@ object ProcessTestData {
         )
       ),
       edges = List(Edge(from = "sourceId", to = "sinkId", edgeType = None)),
-      processingType = ProcessingType.Streaming,
-      validationResult = Some(ValidationResult.success)
+      processingType = ProcessingType.Streaming
     )
   }
 

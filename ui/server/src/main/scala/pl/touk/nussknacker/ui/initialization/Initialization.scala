@@ -19,7 +19,7 @@ import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingT
 import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntity.ProcessVersionEntityData
 import pl.touk.nussknacker.ui.db.{DbConfig, EspTables}
 import pl.touk.nussknacker.ui.process.migrate.ProcessModelMigrator
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessDetails
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{ProcessDetails, ValidatedProcessDetails}
 import pl.touk.nussknacker.ui.process.repository.WriteProcessRepository.UpdateProcessAction
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}

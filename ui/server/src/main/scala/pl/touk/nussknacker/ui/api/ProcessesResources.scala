@@ -12,7 +12,7 @@ import cats.data.EitherT
 import cats.syntax.either._
 import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.ui.api.ProcessesResources.{UnmarshallError, WrongProcessId}
-import pl.touk.nussknacker.ui.process.displayedgraph.{DisplayableProcess, ProcessStatus}
+import pl.touk.nussknacker.ui.process.displayedgraph.{DisplayableProcess, ProcessStatus, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.ui.process.marshall.{ProcessConverter, UiProcessMarshaller}
 import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, ProcessActivityRepository, WriteProcessRepository}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository._
@@ -212,20 +212,15 @@ class ProcessesResources(repository: FetchingProcessRepository,
       }
   }
 
-  private def validate(processDetails: ProcessDetails, businessView: Boolean): Future[ProcessDetails] = {
-    if (businessView) Future.successful(
-      processDetails.copy(json = processDetails.json.map(_.withSuccessValidation()))
-    ) else validate(processDetails)
+  private def validate(processDetails: ProcessDetails, businessView: Boolean): Future[ValidatedProcessDetails] = {
+    if (businessView) Future.successful(processDetails.mapProcess(_.withSuccessValidation())) else validate(processDetails)
   }
 
-  private def validate(processDetails: ProcessDetails) : Future[ProcessDetails] = {
-    Future.successful(processDetails.json match {
-      case Some(displayable) => processDetails.copy(json = Some(displayable.validated(processValidation)))
-      case None => processDetails
-    })
+  private def validate(processDetails: ProcessDetails) : Future[ValidatedProcessDetails] = {
+    Future.successful(processDetails.mapProcess(_.validated(processValidation)))
   }
 
-  private def validateAll(processDetails: Future[List[ProcessDetails]]) : Future[List[ProcessDetails]] = {
+  private def validateAll(processDetails: Future[List[ProcessDetails]]) : Future[List[ValidatedProcessDetails]] = {
     processDetails.flatMap(all => Future.sequence(all.map(validate)))
   }
 

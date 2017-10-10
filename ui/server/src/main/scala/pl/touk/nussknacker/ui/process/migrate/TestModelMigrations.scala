@@ -5,9 +5,9 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
-import pl.touk.nussknacker.ui.process.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.ui.process.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessDetails
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{ProcessDetails, ValidatedProcessDetails}
 import pl.touk.nussknacker.ui.process.subprocess.{SubprocessRepository, SubprocessResolver}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 import pl.touk.nussknacker.ui.validation.ValidationResults.{NodeValidationError, ValidationErrors, ValidationResult, ValidationWarnings}
@@ -23,22 +23,23 @@ object TestModelMigrations {
 class TestModelMigrations(migrations: Map[ProcessingType, ProcessMigrations], validators: Map[ProcessingType, ProcessValidator]) {
 
 
-  def testMigrations(processes: List[ProcessDetails], subprocesses: List[ProcessDetails]) : List[TestMigrationResult] = {
+  def testMigrations(processes: List[ValidatedProcessDetails], subprocesses: List[ProcessDetails]) : List[TestMigrationResult] = {
 
     val validation = new ProcessValidation(validators, new SubprocessResolver(prepareSubprocessRepository(subprocesses)))
 
     processes.flatMap(testSingleMigration(validation) _)
   }
 
-  private def testSingleMigration(validation: ProcessValidation)(process: ProcessDetails) : Option[TestMigrationResult] = {
+  private def testSingleMigration(validation: ProcessValidation)(process: ValidatedProcessDetails) : Option[TestMigrationResult] = {
     val migrator = new ProcessModelMigrator(migrations)
 
     for {
-      previousResult <- process.json.flatMap(_.validationResult)
-      MigrationResult(newProcess, migrations) <- migrator.migrateProcess(process)
+      previousResult <- process.json.map(_.validationResult)
+      MigrationResult(newProcess, migrations) <- migrator.migrateProcess(process.mapProcess(_.toDisplayable))
       displayable = ProcessConverter.toDisplayable(newProcess, process.processingType)
       validated = displayable.validated(validation)
-    } yield TestMigrationResult(validated, extractNewErrors(previousResult, validated.validationResult.get), migrations.exists(_.failOnNewValidationError))
+    } yield TestMigrationResult(validated, extractNewErrors(previousResult, validated.validationResult),
+        migrations.exists(_.failOnNewValidationError))
 
 
   }
@@ -71,5 +72,5 @@ class TestModelMigrations(migrations: Map[ProcessingType, ProcessMigrations], va
 
 }
 
-case class TestMigrationResult(converted: DisplayableProcess, newErrors: ValidationResult, shouldFail: Boolean)
+case class TestMigrationResult(converted: ValidatedDisplayableProcess, newErrors: ValidationResult, shouldFail: Boolean)
 

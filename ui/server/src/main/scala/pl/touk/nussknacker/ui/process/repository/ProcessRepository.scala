@@ -11,7 +11,7 @@ import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessType.ProcessType
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
 import pl.touk.nussknacker.ui.db.entity.{ProcessEntity, ProcessVersionEntity}
 import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntity.ProcessVersionEntityData
-import pl.touk.nussknacker.ui.process.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.ui.process.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.DateUtils
 import pl.touk.nussknacker.ui.{BadRequestError, NotFoundError}
@@ -50,9 +50,13 @@ object ProcessRepository {
                              json: Option[ProcessShape],
                              history: List[ProcessHistoryEntry],
                              modelVersion: Option[Int]
-                           )
+                           ) {
+    def mapProcess[NewShape](action: ProcessShape => NewShape) : BaseProcessDetails[NewShape] = copy(json = json.map(action))
+  }
 
   type ProcessDetails = BaseProcessDetails[DisplayableProcess]
+
+  type ValidatedProcessDetails = BaseProcessDetails[ValidatedDisplayableProcess]
 
 
   case class ProcessHistoryEntry(processId: String,

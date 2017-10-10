@@ -82,7 +82,7 @@ class AppResources(modelData: Map[ProcessingType, ModelData],
     processRepository.fetchProcessesDetails().map { processes =>
       val processesWithErrors = processes.flatMap(_.json)
         .map(_.validated(processValidation))
-        .filter(process => process.validationResult.exists(!_.errors.isEmpty))
+        .filter(process => !process.validationResult.errors.isEmpty)
       processesWithErrors.map(_.id)
     }
   }

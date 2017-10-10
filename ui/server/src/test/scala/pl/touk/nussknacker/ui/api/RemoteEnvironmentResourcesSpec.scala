@@ -69,13 +69,13 @@ class RemoteEnvironmentResourcesSpec extends FlatSpec with ScalatestRouteTest wi
 
         responseAs[Map[String, Difference]] shouldBe difference
       }
-      remoteEnvironment.compareInvocations shouldBe List(ProcessTestData.validDisplayableProcess.copy(validationResult = None))
+      remoteEnvironment.compareInvocations shouldBe List(ProcessTestData.validDisplayableProcess.toDisplayable)
 
 
       Post(s"/remoteEnvironment/$processId/2/migrate") ~> route ~> check {
         status shouldEqual StatusCodes.OK
       }
-      remoteEnvironment.migrateInvocations shouldBe List(ProcessTestData.validDisplayableProcess.copy(validationResult = None))
+      remoteEnvironment.migrateInvocations shouldBe List(ProcessTestData.validDisplayableProcess.toDisplayable)
 
     }
   }

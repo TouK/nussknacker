@@ -86,6 +86,8 @@ trait UiCodecs extends Codecs with Argonauts with SingletonInstances with Derive
 
   implicit def displayableProcessCodec: CodecJson[DisplayableProcess] = CodecJson.derive[DisplayableProcess]
 
+  implicit def validatedDisplayableProcessCodec: CodecJson[ValidatedDisplayableProcess] = CodecJson.derive[ValidatedDisplayableProcess]
+
   implicit def commentCodec = CodecJson.derived[Comment]
 
   implicit def processActivityCodec = CodecJson.derive[ProcessActivity]

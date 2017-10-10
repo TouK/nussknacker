@@ -98,8 +98,7 @@ class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with Matc
       properties = ProcessProperties(StreamMetaData(Some(2), Some(false)), ExceptionHandlerRef(List()), false, None, subprocessVersions = Map.empty),
       nodes = nodes,
       edges = edges,
-      processingType = ProcessingType.Streaming,
-      validationResult = Some(ValidationResult.success)
+      processingType = ProcessingType.Streaming
     )
   }
 

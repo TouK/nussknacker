@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.ui.api.ProcessTestData
 import pl.touk.nussknacker.ui.api.ProcessTestData.{existingServiceId, existingSinkFactory, existingSourceFactory, existingStreamTransformer}
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
-import pl.touk.nussknacker.ui.process.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.ui.process.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.ui.validation.ValidationResults
 import pl.touk.nussknacker.ui.validation.ValidationResults.{ValidationErrors, ValidationResult, ValidationWarnings}
 
@@ -65,7 +65,7 @@ class TestModelMigrationsSpec extends FlatSpec with Matchers {
       Map(ProcessingType.Streaming -> ProcessTestData.validator))
 
 
-    val invalidProcess : DisplayableProcess =
+    val invalidProcess : ValidatedDisplayableProcess =
       ProcessTestData.toValidatedDisplayable(EspProcessBuilder
         .id("fooProcess")
         .exceptionHandler()

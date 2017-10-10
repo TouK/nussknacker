@@ -8,7 +8,7 @@ import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.nussknacker.ui.api.helpers.EspItTest
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.codec.UiCodecs._
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessDetails
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{ProcessDetails, ValidatedProcessDetails}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
 import scala.concurrent.duration._
@@ -63,17 +63,17 @@ class ProcessesNonTechnicalResourcesSpec extends FlatSpec with ScalatestRouteTes
     saveProcess(processToSave.id, processToSave) {
       status shouldEqual StatusCodes.OK
       Get(s"/processes/${processToSave.id}/2?businessView=false") ~> routeWithAllPermissions ~> check {
-        val processDetails = responseAs[String].decodeOption[ProcessDetails].get
+        val processDetails = responseAs[String].decodeOption[ValidatedProcessDetails].get
         processDetails.json.get.nodes.map(_.id) shouldBe allNodeIds
         processDetails.json.get.edges.map(e => (e.from, e.to)) shouldBe allEdges
-        processDetails.json.get.validationResult.get.isOk shouldBe true
+        processDetails.json.get.validationResult.isOk shouldBe true
       }
 
       Get(s"/processes/${processToSave.id}/2?businessView=true") ~> routeWithAllPermissions ~> check {
-        val processDetails = responseAs[String].decodeOption[ProcessDetails].get
+        val processDetails = responseAs[String].decodeOption[ValidatedProcessDetails].get
         processDetails.json.get.nodes.map(_.id) shouldBe nonTechnicalNodeIds
         processDetails.json.get.edges.map(e => (e.from, e.to)) shouldBe nonTechnicalAdges
-        processDetails.json.get.validationResult.get.isOk shouldBe true
+        processDetails.json.get.validationResult.isOk shouldBe true
       }
     }
   }
