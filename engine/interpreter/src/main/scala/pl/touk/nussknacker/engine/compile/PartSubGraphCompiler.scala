@@ -139,7 +139,9 @@ private[compile] trait PartSubGraphCompilerBase {
                     CompiledNode(compiledgraph.node.SubprocessStart(id, params, nextWithCtx.next), nextWithCtx.ctx))
                   }
             case SubprocessOutput(id, _, _) =>
-              ctx.popContext.andThen { popContext =>
+              //consider handling contextValidation on different level? not by flag, but as special contextValidation
+              val poppedContext = if (contextValidationEnabled) ctx.popContext else Valid(ctx)
+              poppedContext.andThen { popContext =>
                 compile(next, popContext).map { nextWithCtx =>
                   CompiledNode(SubprocessEnd(id, nextWithCtx.next), nextWithCtx.ctx)
                 }
