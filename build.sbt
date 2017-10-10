@@ -108,45 +108,7 @@ val hsqldbV = "2.3.4"
 val flywayV = "4.0.3"
 
 
-val perfTestSampleName = "nussknacker-perf-test-sample"
-
 def engine(name: String) = file(s"engine/$name")
-
-lazy val perf_test = (project in engine("perf-test")).
-  configs(IntegrationTest). // po dodaniu własnej konfiguracji, IntellijIdea nie rozpoznaje zależności dla niej
-  settings(commonSettings).
-  settings(Defaults.itSettings).
-  settings(
-    name := "nussknacker-perf-test",
-    Keys.test in IntegrationTest <<= (Keys.test in IntegrationTest).dependsOn(
-      assembly in Compile in perf_test_sample
-    ),
-    libraryDependencies ++= {
-      Seq(
-        "org.scalatest" %% "scalatest" % scalaTestV % "it,test",
-        "org.slf4j" % "jul-to-slf4j" % slf4jV,
-        "org.apache.flink" %% "flink-clients" % flinkV % "provided",
-        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "runtime", // na potrzeby optymalizacji procesów
-        "com.iheart" %% "ficus" % ficusV
-      )
-    }
-  ).
-  dependsOn(management, interpreter, kafkaFlinkUtil, kafkaTestUtil)
-
-
-lazy val perf_test_sample = (project in engine("perf-test/sample")).
-  settings(commonSettings).
-  settings(
-    name := perfTestSampleName,
-    libraryDependencies ++= {
-      Seq(
-        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
-        "com.iheart" %% "ficus" % ficusV
-      )
-    },
-    assemblyJarName in assembly := "perfTestSample.jar"
-  ).
-  dependsOn(flinkUtil, kafkaFlinkUtil, process % "runtime")
 
 lazy val engineStandalone = (project in engine("engine-standalone")).
   settings(commonSettings).
