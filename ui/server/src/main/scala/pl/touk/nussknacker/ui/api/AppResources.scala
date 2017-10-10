@@ -11,12 +11,14 @@ import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessDetail
 import pl.touk.http.argonaut.Argonaut62Support
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.validation.ProcessValidation
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 class AppResources(modelData: Map[ProcessingType, ModelData],
                    processRepository: FetchingProcessRepository,
+                   processValidation: ProcessValidation,
                    jobStatusService: JobStatusService)(implicit ec: ExecutionContext)
   extends Directives with Argonaut62Support with LazyLogging with RouteWithUser {
 
@@ -78,7 +80,9 @@ class AppResources(modelData: Map[ProcessingType, ModelData],
 
   private def processesWithValidationErrors(implicit ec: ExecutionContext, user: LoggedUser): Future[List[String]] = {
     processRepository.fetchProcessesDetails().map { processes =>
-      val processesWithErrors = processes.flatMap(_.json).filter(process => process.validationResult.exists(!_.errors.isEmpty))
+      val processesWithErrors = processes.flatMap(_.json)
+        .map(_.validated(processValidation))
+        .filter(process => process.validationResult.exists(!_.errors.isEmpty))
       processesWithErrors.map(_.id)
     }
   }

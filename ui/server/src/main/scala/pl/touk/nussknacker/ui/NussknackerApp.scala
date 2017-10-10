@@ -73,8 +73,8 @@ object NussknackerApp extends App with Directives with LazyLogging {
 
   val processValidation = ProcessValidation(modelData, subprocessResolver)
 
-  val processRepository = DBFetchingProcessRepository.create(db, processValidation)
-  val writeProcessRepositor = WriteProcessRepository.create(db, processValidation, modelData)
+  val processRepository = DBFetchingProcessRepository.create(db)
+  val writeProcessRepository = WriteProcessRepository.create(db, modelData)
 
   val deploymentProcessRepository = DeployedProcessRepository.create(db, modelData)
   val processActivityRepository = new ProcessActivityRepository(db)
@@ -84,7 +84,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
 
   val counter = new ProcessCounter(subprocessRepository)
 
-  Initialization.init(modelData.mapValues(_.migrations), modelData.mapValues(_.validator), db, environment, initialProcessDirectory)
+  Initialization.init(modelData.mapValues(_.migrations), db, environment, initialProcessDirectory)
 
   initHttp()
 
@@ -96,7 +96,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
 
   private val apiResources : List[RouteWithUser] = {
     val routes = List(
-      new ProcessesResources(processRepository, writeProcessRepositor, jobStatusService, processActivityRepository, processValidation, typesForCategories, newProcessPreparer),
+      new ProcessesResources(processRepository, writeProcessRepository, jobStatusService, processActivityRepository, processValidation, typesForCategories, newProcessPreparer),
         new ProcessesExportResources(processRepository, processActivityRepository),
         new ProcessActivityResource(processActivityRepository, attachmentService),
         ManagementResources(modelData, counter, managementActor),
@@ -106,7 +106,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
         new QueryableStateResources(modelData, processRepository, espQueryableClient, jobStatusService),
         new UserResources(),
         new SettingsResources(featureTogglesConfig, nodesConfig),
-        new AppResources(modelData, processRepository, jobStatusService),
+        new AppResources(modelData, processRepository, processValidation, jobStatusService),
         new TestInfoResources(modelData)
     )
     val optionalRoutes = List(

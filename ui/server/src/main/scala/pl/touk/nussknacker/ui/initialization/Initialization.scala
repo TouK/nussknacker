@@ -10,9 +10,7 @@ import cats.syntax.traverse._
 import com.typesafe.config.{ConfigFactory, ConfigValue}
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
-import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, ProcessDeploymentData}
-import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.db.entity.EnvironmentsEntity.EnvironmentsEntityData
@@ -24,12 +22,8 @@ import pl.touk.nussknacker.ui.process.migrate.ProcessModelMigrator
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessDetails
 import pl.touk.nussknacker.ui.process.repository.WriteProcessRepository.UpdateProcessAction
 import pl.touk.nussknacker.ui.process.repository._
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository
-import pl.touk.nussknacker.ui.process.subprocess.{SetSubprocessRepository, SubprocessResolver}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
-import pl.touk.nussknacker.ui.validation.ProcessValidation
 import slick.dbio.DBIOAction
-import slick.jdbc.JdbcProfile
 
 import scala.collection.JavaConversions._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -42,19 +36,14 @@ object Initialization {
   implicit val toukUser = LoggedUser("Nussknacker", "", List(Permission.Write, Permission.Admin), List())
 
   def init(migrations: Map[ProcessingType, ProcessMigrations],
-           validators: Map[ProcessingType, ProcessValidator],
            db: DbConfig,
            environment: String,
            initialProcessDirectory: File) : Unit = {
 
-    //FIXME: current subprocess repository implementation is broken - it shouldn't do Await.result.
-    //for now we do dummy validation - it will be ignored anyway
-    val simpleValidation = new ProcessValidation(validators, new SubprocessResolver(new SetSubprocessRepository(Set())))
-
     val transactionalRepository = new DbWriteProcessRepository[DB](db, migrations.mapValues(_.version)) {
       override def run[R]: (DB[R]) => DB[R] = identity
     }
-    val transactionalFetchingRepository = new DBFetchingProcessRepository[DB](db, simpleValidation) {
+    val transactionalFetchingRepository = new DBFetchingProcessRepository[DB](db) {
       override def run[R]: (DB[R]) => DB[R] = identity
     }
 

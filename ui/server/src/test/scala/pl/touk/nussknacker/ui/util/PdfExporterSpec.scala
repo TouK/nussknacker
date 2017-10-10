@@ -16,7 +16,7 @@ import pl.touk.nussknacker.ui.process.displayedgraph.{DisplayableProcess, Proces
 import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.NodeAdditionalFields
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.{Comment, ProcessActivity}
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{ProcessDetails, ProcessHistoryEntry}
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{BaseProcessDetails, ProcessDetails, ProcessHistoryEntry}
 import pl.touk.nussknacker.ui.sample.SampleProcess
 
 import scala.io.Source
@@ -30,7 +30,7 @@ class PdfExporterSpec extends FlatSpec {
         case a:Filter => a.copy(additionalFields = Some(NodeAdditionalFields(Some("mój wnikliwy komętaż"))))
         case a => a
     })
-    val details = ProcessDetails("My process", "My process", 11, true,
+    val details = BaseProcessDetails("My process", "My process", 11, true,
       Some("My fancy description, which is quite, quite, quite looooooooong. \n And it contains maaaany, maaany strange features..."),
       ProcessEntity.ProcessType.Graph, ProcessingType.Streaming, "Category 22", LocalDateTime.now(), List(), Set(), Some(displayable),
       List(ProcessHistoryEntry("My process",  "My process", 11, LocalDateTime.now(), "Zenon Wojciech", List()) ), None
@@ -63,7 +63,7 @@ class PdfExporterSpec extends FlatSpec {
     val displayable: DisplayableProcess = DisplayableProcess(
       "Proc11", ProcessProperties(StreamMetaData(), ExceptionHandlerRef(List()), subprocessVersions = Map.empty), List(), List(), ProcessingType.Streaming)
 
-    val details = ProcessDetails("My process", "My process", 11, true,
+    val details = BaseProcessDetails("My process", "My process", 11, true,
       Some("My fancy description, which is quite, quite, quite looooooooong. \n And it contains maaaany, maaany strange features..."),
       ProcessEntity.ProcessType.Graph, ProcessingType.Streaming, "Category 22", LocalDateTime.now(), List(), Set(), Some(displayable),
       List(ProcessHistoryEntry("My process",  "My process", 11, LocalDateTime.now(), "Zenon Wojciech", List()) ), None

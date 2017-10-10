@@ -27,7 +27,6 @@ class InitializationItSpec extends FlatSpec with ScalatestRouteTest with Matcher
 
   private var processesDir: File = _
   private val migrations = Map(ProcessingType.Streaming -> new TestMigrations(1, 2))
-  private val validations = Map(ProcessingType.Streaming -> ProcessTestData.validator)
 
   private lazy val repository = TestFactory.newProcessRepository(db, Some(1))
 
@@ -39,7 +38,6 @@ class InitializationItSpec extends FlatSpec with ScalatestRouteTest with Matcher
   override protected def beforeEach(): Unit = {
     super.beforeEach()
     processesDir = Files.createTempDirectory("processesJsons").toFile
-
   }
 
   override protected def afterEach(): Unit = {
@@ -51,7 +49,7 @@ class InitializationItSpec extends FlatSpec with ScalatestRouteTest with Matcher
 
     prepareCustomProcessFile()
 
-    Initialization.init(migrations, validations, db, "env1", processesDir)
+    Initialization.init(migrations, db, "env1", processesDir)
 
     repository.fetchProcessesDetails().futureValue.map(d => (d.id, d.processType)) shouldBe List(("process1", ProcessType.Custom))
   }
@@ -60,7 +58,7 @@ class InitializationItSpec extends FlatSpec with ScalatestRouteTest with Matcher
 
     saveSampleProcess()
 
-    Initialization.init(migrations, validations, db, "env1", processesDir)
+    Initialization.init(migrations, db, "env1", processesDir)
 
     repository.fetchProcessesDetails().futureValue.map(d => (d.id, d.modelVersion)) shouldBe List(("proc1", Some(2)))
   }
@@ -74,7 +72,7 @@ class InitializationItSpec extends FlatSpec with ScalatestRouteTest with Matcher
       saveSampleProcess(s"id$id")
     }
 
-    Initialization.init(migrations, validations, db, "env1", processesDir)
+    Initialization.init(migrations, db, "env1", processesDir)
 
     repository.fetchProcessesDetails().futureValue.map(d => (d.id, d.modelVersion)).toSet shouldBe (1 to 20).map(id => (s"id$id", Some(2))).toSet
 
@@ -89,7 +87,7 @@ class InitializationItSpec extends FlatSpec with ScalatestRouteTest with Matcher
     saveSampleProcess()
 
     val exception = intercept[RuntimeException](
-      Initialization.init(Map(ProcessingType.Streaming -> new TestMigrations(1, 2, 5)), validations, db, "env1", processesDir))
+      Initialization.init(Map(ProcessingType.Streaming -> new TestMigrations(1, 2, 5)), db, "env1", processesDir))
 
     exception.getMessage shouldBe "made to fail.."
 

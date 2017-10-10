@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.process.repository
 
 import java.time.LocalDateTime
 
+import argonaut.CodecJson
 import pl.touk.nussknacker.ui.app.BuildInfo
 import pl.touk.nussknacker.ui.db.EspTables._
 import pl.touk.nussknacker.ui.db.entity.ProcessDeploymentInfoEntity.DeployedProcessVersionEntityData
@@ -34,7 +35,7 @@ trait ProcessRepository[F[_]] extends Repository[F] {
 
 object ProcessRepository {
 
-  case class ProcessDetails(
+  case class BaseProcessDetails[ProcessShape](
                              id: String,
                              name: String,
                              processVersionId: Long,
@@ -46,11 +47,13 @@ object ProcessRepository {
                              modificationDate: LocalDateTime,
                              tags: List[String],
                              currentlyDeployedAt: Set[String],
-                           //TODO: make DisplayableProcess type parameter, so validation doesn't have to happen in repository...
-                             json: Option[DisplayableProcess],
+                             json: Option[ProcessShape],
                              history: List[ProcessHistoryEntry],
                              modelVersion: Option[Int]
                            )
+
+  type ProcessDetails = BaseProcessDetails[DisplayableProcess]
+
 
   case class ProcessHistoryEntry(processId: String,
                                  processName: String,

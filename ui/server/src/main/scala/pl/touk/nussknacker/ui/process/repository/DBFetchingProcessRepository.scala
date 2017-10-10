@@ -9,24 +9,25 @@ import pl.touk.nussknacker.ui.db.entity.ProcessEntity.{ProcessEntity, ProcessEnt
 import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntity.ProcessVersionEntityData
 import pl.touk.nussknacker.ui.db.entity.TagsEntity.TagsEntityData
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{ProcessDetails, ProcessHistoryEntry}
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{BaseProcessDetails, ProcessDetails, ProcessHistoryEntry}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.DateUtils
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.ui.db.DbConfig
+import pl.touk.nussknacker.ui.process.displayedgraph.DisplayableProcess
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 
 object DBFetchingProcessRepository {
 
-  def create(dbConfig: DbConfig, processValidation: ProcessValidation) =
-    new DBFetchingProcessRepository[Future](dbConfig, processValidation) with FetchingProcessRepository with BasicRepository
+  def create(dbConfig: DbConfig) =
+    new DBFetchingProcessRepository[Future](dbConfig) with FetchingProcessRepository with BasicRepository
 
 }
 
-abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig, val processValidation: ProcessValidation) extends ProcessRepository[F] with LazyLogging {
+abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends ProcessRepository[F] with LazyLogging {
 
   import api._
 
@@ -109,7 +110,7 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig, val pro
                                 history: Seq[ProcessHistoryEntry],
                                 businessView: Boolean)
                                (implicit loggedUser: LoggedUser): ProcessDetails = {
-    ProcessDetails(
+    BaseProcessDetails[DisplayableProcess](
       id = process.id,
       name = process.name,
       processVersionId = processVersion.id,
@@ -128,12 +129,7 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig, val pro
   }
 
   private def displayableFromJson(json: String, process: ProcessEntityData, businessView: Boolean) = {
-    val displayable = ProcessConverter.toDisplayableOrDie(json, process.processingType, businessView = businessView)
-    if (businessView) {
-      displayable.withSuccessValidation()
-    } else {
-      displayable.validated(processValidation)
-    }
+    ProcessConverter.toDisplayableOrDie(json, process.processingType, businessView = businessView)
   }
 
   private def latestDeployedProcessVersionsPerEnvironment(processId: String) = {

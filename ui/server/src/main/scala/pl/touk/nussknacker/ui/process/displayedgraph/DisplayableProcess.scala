@@ -32,6 +32,26 @@ case class DisplayableProcess(id: String,
 
 }
 
+case class ValidatedDisplayableProcess(id: String,
+                              properties: ProcessProperties,
+                              nodes: List[NodeData],
+                              edges: List[Edge],
+                              processingType: ProcessingType,
+                              validationResult: ValidationResult) {
+
+  val metaData = MetaData(
+    id = id,
+    typeSpecificData = properties.typeSpecificProperties,
+    isSubprocess = properties.isSubprocess,
+    additionalFields = properties.additionalFields,
+    subprocessVersions = properties.subprocessVersions
+  )
+
+}
+
+
+
+
 case class ProcessProperties(typeSpecificProperties: TypeSpecificData,
                              exceptionHandler: ExceptionHandlerRef,
                              isSubprocess: Boolean = false,

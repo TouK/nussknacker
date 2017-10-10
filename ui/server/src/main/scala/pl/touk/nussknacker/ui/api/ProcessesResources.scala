@@ -37,7 +37,9 @@ class ProcessesResources(repository: FetchingProcessRepository,
                          typesForCategories: ProcessTypesForCategories,
                          newProcessPreparer: NewProcessPreparer)
                         (implicit ec: ExecutionContext, mat: Materializer)
-  extends Directives with Argonaut62Support with EspPathMatchers with UiCodecs with RouteWithUser {
+  extends Directives with Argonaut62Support with EspPathMatchers with RouteWithUser {
+
+  import UiCodecs._
 
   def route(implicit user: LoggedUser): Route = {
     def authorizeMethod = extractMethod.flatMap[Unit] {
@@ -50,13 +52,13 @@ class ProcessesResources(repository: FetchingProcessRepository,
       path("processes") {
         get {
           complete {
-            repository.fetchProcessesDetails()
+            validateAll(repository.fetchProcessesDetails())
           }
         }
       } ~ path("subProcesses") {
         get {
           complete {
-            repository.fetchSubProcessesDetails()
+            validateAll(repository.fetchSubProcessesDetails())
           }
         }
       } ~ path("processes" / "status") {
@@ -71,7 +73,7 @@ class ProcessesResources(repository: FetchingProcessRepository,
           get {
             complete {
               repository.fetchLatestProcessDetailsForProcessId(processId, businessView).map[ToResponseMarshallable] {
-                case Some(process) => process
+                case Some(process) => validate(process, businessView)
                 case None => HttpResponse(status = StatusCodes.NotFound, entity = "Process not found")
               }
             }
@@ -86,7 +88,7 @@ class ProcessesResources(repository: FetchingProcessRepository,
           get {
             complete {
               repository.fetchProcessDetailsForId(processId, versionId, businessView).map[ToResponseMarshallable] {
-                case Some(process) => process
+                case Some(process) => validate(process,  businessView)
                 case None => HttpResponse(status = StatusCodes.NotFound, entity = "Process not found")
               }
             }
@@ -208,6 +210,23 @@ class ProcessesResources(repository: FetchingProcessRepository,
         case Some(displayable) => process(displayable)
         case None => HttpResponse(status = StatusCodes.NotFound, entity = s"Process $processId in version $version not found"): ToResponseMarshallable
       }
+  }
+
+  private def validate(processDetails: ProcessDetails, businessView: Boolean): Future[ProcessDetails] = {
+    if (businessView) Future.successful(
+      processDetails.copy(json = processDetails.json.map(_.withSuccessValidation()))
+    ) else validate(processDetails)
+  }
+
+  private def validate(processDetails: ProcessDetails) : Future[ProcessDetails] = {
+    Future.successful(processDetails.json match {
+      case Some(displayable) => processDetails.copy(json = Some(displayable.validated(processValidation)))
+      case None => processDetails
+    })
+  }
+
+  private def validateAll(processDetails: Future[List[ProcessDetails]]) : Future[List[ProcessDetails]] = {
+    processDetails.flatMap(all => Future.sequence(all.map(validate)))
   }
 
 }

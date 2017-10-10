@@ -20,7 +20,7 @@ import pl.touk.nussknacker.ui.db.entity.ProcessEntity.{ProcessType, ProcessingTy
 import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.{Edge, NodeAdditionalFields, ProcessAdditionalFields}
 import pl.touk.nussknacker.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessDetails
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{BaseProcessDetails, ProcessDetails}
 import pl.touk.nussknacker.ui.process.subprocess.{SetSubprocessRepository, SubprocessResolver}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 import pl.touk.nussknacker.ui.validation.ValidationResults.ValidationResult
@@ -66,7 +66,7 @@ object ProcessTestData {
        new SubprocessResolver(new SetSubprocessRepository(Set()))))
 
   def toDetails(displayable: DisplayableProcess) : ProcessDetails =
-    ProcessDetails(displayable.id, displayable.id, 1, true, None, ProcessType.Graph,
+    BaseProcessDetails[DisplayableProcess](displayable.id, displayable.id, 1, true, None, ProcessType.Graph,
       ProcessingType.Streaming, "", LocalDateTime.now(), List(), Set(), Some(displayable), List(), None)
 
 

@@ -27,7 +27,7 @@ import scala.language.higherKinds
 
 object WriteProcessRepository {
 
-  def create(dbConfig: DbConfig, validations: ProcessValidation, modelData: Map[ProcessingType, ModelData]) : WriteProcessRepository =
+  def create(dbConfig: DbConfig, modelData: Map[ProcessingType, ModelData]) : WriteProcessRepository =
 
     new DbWriteProcessRepository[Future](dbConfig, modelData.mapValues(_.migrations.version)) with WriteProcessRepository with BasicRepository
 

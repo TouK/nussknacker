@@ -20,9 +20,10 @@ import pl.touk.nussknacker.ui.db.entity.ProcessEntity.{ProcessType, ProcessingTy
 import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.{EdgeType, NodeAdditionalFields, ProcessAdditionalFields}
 import pl.touk.nussknacker.ui.process.displayedgraph._
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.{Comment, ProcessActivity}
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{ProcessDetails, ProcessHistoryEntry}
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{BaseProcessDetails, ProcessDetails, ProcessHistoryEntry}
 import pl.touk.nussknacker.ui.processreport.NodeCount
 import pl.touk.nussknacker.ui.validation.ValidationResults.{NodeValidationErrorType, ValidationResult}
+import ArgonautShapeless._
 
 object UiCodecs extends UiCodecs
 
@@ -98,8 +99,6 @@ trait UiCodecs extends Codecs with Argonauts with SingletonInstances with Derive
   implicit def grafanaEncode = EncodeJson.of[GrafanaSettings]
 
   implicit def userEncodeEncode = EncodeJson.of[DisplayableUser]
-
-  implicit val processDetails : CodecJson[ProcessDetails] = CodecJson.derive[ProcessDetails]
 
   implicit def printer: Json => String =
     PrettyParams.spaces2.copy(dropNullKeys = true, preserveOrder = true).pretty

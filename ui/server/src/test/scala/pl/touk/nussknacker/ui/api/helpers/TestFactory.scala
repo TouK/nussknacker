@@ -35,8 +35,7 @@ object TestFactory {
   val allPermissions = List(Permission.Deploy, Permission.Read, Permission.Write)
 
   def newProcessRepository(dbs: DbConfig, modelVersions: Option[Int] = Some(1)) =
-    new DBFetchingProcessRepository[Future](dbs, processValidation)
-      with FetchingProcessRepository with BasicRepository
+    new DBFetchingProcessRepository[Future](dbs) with FetchingProcessRepository with BasicRepository
 
   def newWriteProcessRepository(dbs: DbConfig, modelVersions: Option[Int] = Some(1)) =
     new DbWriteProcessRepository[Future](dbs, modelVersions.map(ProcessingType.Streaming -> _).toMap)
