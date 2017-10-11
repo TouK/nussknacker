@@ -1,19 +1,26 @@
 #!/usr/bin/env bash
-COMMIT=$1
-if [[ -z $COMMIT ]]; then
-  echo "You have to provide commit message..."
+
+githubToken=$1
+
+if [[ -z $githubToken ]]; then
+  echo "You need to pass github oauth token!"
+  echo ""
+  echo "Usage: $0 github_token"
   exit 1
 fi
 
+set -e
+
+cd `dirname $0`
+
+gitbook install
 ./buildDoc.sh
-DIR=/tmp/nussknacker_docs
-rm -rf $DIR
-git clone -b gh-pages git@github.com:TouK/nussknacker.git $DIR
-cp -r _book/* $DIR
-cd $DIR
-git add .
-git commit -m "${COMMIT}"
-git push origin gh-pages
 
-
-
+git remote | grep github || git remote add github "https://$githubToken:x-oauth-basic@github.com/touk/nussknacker"
+git fetch github
+msg="`git log -1 --pretty=%B | head -n 1` - book update"
+git checkout github/gh-pages -B gh-pages
+cp -r _book/* ..
+git add ..
+git commit -m "$msg"
+git push github gh-pages
