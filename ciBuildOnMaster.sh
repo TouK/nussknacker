@@ -25,7 +25,7 @@ if [[ ! -z $githubToken ]]; then
   # push to github mirror
   git remote | grep github || git remote add github "https://$githubToken:x-oauth-basic@github.com/touk/nussknacker"
   git fetch github
-  git push github master
+  git push github HEAD:master
   
   # build & publish github doc
   [ -f node_modules/.bin/gitbook ] || npm install gitbook-cli
