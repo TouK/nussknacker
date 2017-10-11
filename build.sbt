@@ -376,12 +376,11 @@ lazy val api = (project in engine("api")).
 lazy val securityApi = (project in engine("security-api")).
   settings(commonSettings).
   settings(
-    name := "securityApi",
+    name := "nussknacker-security-api",
     libraryDependencies ++= {
       Seq(
         "org.scalatest" %% "scalatest" % scalaTestV % "test",
         "com.typesafe.akka" %% "akka-http-experimental" % akkaHttpV force(),
-
         "com.typesafe" % "config" % configV
       )
     }
