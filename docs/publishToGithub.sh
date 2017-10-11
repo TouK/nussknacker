@@ -16,11 +16,12 @@ cd `dirname $0`
 gitbook install
 ./buildDoc.sh
 
-git remote | grep github || git remote add github "https://$githubToken:x-oauth-basic@github.com/touk/nussknacker"
-git fetch github
+dir=/tmp/nussknacker_docs
 msg="`git log -1 --pretty=%B | head -n 1` - book update"
-git checkout github/gh-pages -B gh-pages
-cp -r _book/* ..
-git add ..
+rm -rf $dir
+git clone --single-branch -b gh-pages "https://$githubToken:x-oauth-basic@github.com/touk/nussknacker" $dir
+cp -r _book/* $dir
+cd $dir
+git add .
 git commit -m "$msg"
-git push github gh-pages
+git push origin gh-pages
