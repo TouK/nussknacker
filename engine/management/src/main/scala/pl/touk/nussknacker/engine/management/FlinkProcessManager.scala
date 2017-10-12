@@ -1,5 +1,8 @@
 package pl.touk.nussknacker.engine.management
 
+import java.io.{File, FileOutputStream}
+import java.net.URL
+import java.nio.file.Files
 import java.util.concurrent.TimeUnit
 
 import argonaut.PrettyParams
@@ -15,7 +18,6 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.test.{TestData, TestResults}
 import pl.touk.nussknacker.engine.flink.queryablestate.{EspQueryableClient, QueryableClientProvider}
-
 
 import scala.collection.JavaConversions._
 import scala.concurrent.duration._
@@ -177,7 +179,8 @@ class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeploy: Boolea
 
   private def prepareProgram(processId: String, processDeploymentData: ProcessDeploymentData) : PackagedProgram = {
     val configPart = modelData.processConfig.root().render()
-    var jarFile = modelData.jarClassLoader.tryToGetFile
+
+    val jarFile = FlinkModelJar.buildJobJar(modelData)
     processDeploymentData match {
       case GraphProcess(processAsJson) =>
         new PackagedProgram(jarFile, "pl.touk.nussknacker.engine.process.runner.FlinkProcessMain", List(processAsJson, configPart, buildInfoJson):_*)
@@ -185,5 +188,8 @@ class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeploy: Boolea
         new PackagedProgram(jarFile, mainClass, List(processId, configPart, buildInfoJson): _*)
     }
   }
+
+
+
 }
 

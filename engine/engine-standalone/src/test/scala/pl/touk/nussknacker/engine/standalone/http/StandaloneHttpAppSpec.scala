@@ -2,12 +2,14 @@ package pl.touk.nussknacker.engine.standalone.http
 
 import java.io.File
 import java.nio.file.Files
+import java.util
 import java.util.UUID
 
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, RequestEntity, StatusCodes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import argonaut.{DecodeJson, EncodeJson, PrettyParams}
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable}
+import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentData, ProcessState}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, StandaloneProcessBuilder}
@@ -15,7 +17,8 @@ import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.spel
-import pl.touk.nussknacker.engine.standalone.Request1
+import pl.touk.nussknacker.engine.standalone.{Request1, StandaloneProcessConfigCreator}
+import pl.touk.nussknacker.engine.testing.ModelJarBuilder
 
 class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTest with BeforeAndAfterEach {
 
@@ -26,7 +29,6 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
   var procId : String = _
 
   override protected def beforeEach() = {
-    new File(ConfigFactory.load().getString("standaloneEngineProcessLocation")).listFiles().foreach(_.delete())
     procId = UUID.randomUUID().toString
   }
 
@@ -72,8 +74,16 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
     processMarshaller.toJson(canonical, PrettyParams.spaces2)
   }
 
-  
-  val exampleApp = StandaloneHttpApp
+
+  val config = ConfigFactory.load()
+    .withValue("standaloneEngineProcessLocation", fromAnyRef(Files.createTempDirectory("standaloneLocation")
+      .toFile.getAbsolutePath))
+    .withValue("standaloneConfig.classpath", fromIterable(
+      util.Arrays.asList(
+        ModelJarBuilder.buildJarWithConfigCreator[StandaloneProcessConfigCreator]().getAbsolutePath)))
+
+
+  val exampleApp = new StandaloneHttpApp(config)
 
   val managementRoute = exampleApp.managementRoute.route
   val processesRoute = exampleApp.processRoute.route

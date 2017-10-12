@@ -28,7 +28,7 @@ trait FlinkStubbedRunner {
     streamGraph.setJobName(process.id)
 
     val jobGraph = streamGraph.getJobGraph
-    jobGraph.setClasspaths(modelData.jarClassLoader.urls.asJava)
+    jobGraph.setClasspaths(modelData.modelClassLoader.urls.asJava)
     jobGraph.setSavepointRestoreSettings(savepointRestoreSettings)
 
     val configuration: Configuration = new Configuration

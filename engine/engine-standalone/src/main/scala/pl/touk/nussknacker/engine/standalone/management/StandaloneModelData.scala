@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.ModelData
 object StandaloneModelData {
 
   def apply(config: Config = ConfigFactory.load()): ModelData = {
-    ModelData(config, "standaloneConfig.jarPath", "standaloneProcessConfig")
+    ModelData(config, "standaloneConfig", "standaloneProcessConfig")
   }
 
 }

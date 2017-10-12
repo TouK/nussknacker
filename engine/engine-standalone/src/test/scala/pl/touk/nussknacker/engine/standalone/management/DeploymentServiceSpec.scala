@@ -3,26 +3,24 @@ package pl.touk.nussknacker.engine.standalone.management
 import java.nio.file.Files
 
 import argonaut.PrettyParams
-import cats.data.NonEmptyList
 import com.codahale.metrics.MetricRegistry
-import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
+import com.typesafe.config.ConfigFactory
 import org.scalatest.{FlatSpec, Matchers}
-import pl.touk.nussknacker.engine.api.{MetaData, StandaloneMetaData}
-import pl.touk.nussknacker.engine.build.{EspProcessBuilder, StandaloneProcessBuilder}
+import pl.touk.nussknacker.engine.build.StandaloneProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.standalone.StandaloneProcessConfigCreator
-import pl.touk.nussknacker.engine.standalone.utils.{StandaloneContext, StandaloneContextPreparer}
+import pl.touk.nussknacker.engine.standalone.utils.StandaloneContextPreparer
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
 class DeploymentServiceSpec extends FlatSpec with Matchers {
 
-  import scala.concurrent.ExecutionContext.Implicits.global
   import spel.Implicits._
 
+  import scala.concurrent.ExecutionContext.Implicits.global
 
-  val tmpDir = Files.createTempDirectory("deploymentSpec")
+  private val tmpDir = Files.createTempDirectory("deploymentSpec")
 
   def createService() = new DeploymentService(new StandaloneContextPreparer(new MetricRegistry),
     LocalModelData(ConfigFactory.load(), new StandaloneProcessConfigCreator),

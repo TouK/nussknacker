@@ -11,8 +11,8 @@ import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.standalone.management.StandaloneTestMain
 import pl.touk.nussknacker.engine.standalone.{Request1, Response, StandaloneProcessConfigCreator}
-import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.spel
+import pl.touk.nussknacker.engine.testing.LocalModelData
 
 class StandaloneTestMainSpec extends FlatSpec with Matchers with BeforeAndAfterEach {
 

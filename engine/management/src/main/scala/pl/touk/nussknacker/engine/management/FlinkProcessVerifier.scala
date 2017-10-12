@@ -8,7 +8,7 @@ import scala.concurrent.Future
 import scala.util.control.NonFatal
 
 
-class FlinkProcessVerifier(modelData: ModelData) extends StaticMethodRunner(modelData.jarClassLoader.classLoader,
+class FlinkProcessVerifier(modelData: ModelData) extends StaticMethodRunner(modelData.modelClassLoader.classLoader,
   "pl.touk.nussknacker.engine.process.runner.FlinkVerificationMain", "run") with LazyLogging {
 
   def verify(processId: String, processJson: String, savepointPath: String): Future[Unit] = {

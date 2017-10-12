@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.util.ReflectUtils.StaticMethodRunner
 
 import scala.concurrent.Future
 
-class FlinkProcessTestRunner(modelData: ModelData) extends StaticMethodRunner(modelData.jarClassLoader.classLoader,
+class FlinkProcessTestRunner(modelData: ModelData) extends StaticMethodRunner(modelData.modelClassLoader.classLoader,
   "pl.touk.nussknacker.engine.process.runner.FlinkTestMain", "run") {
 
   def test(processId: String, json: String, testData: TestData): Future[TestResults] = {

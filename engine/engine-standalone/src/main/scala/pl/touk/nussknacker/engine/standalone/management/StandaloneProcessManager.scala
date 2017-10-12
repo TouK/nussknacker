@@ -10,10 +10,9 @@ import com.typesafe.scalalogging.LazyLogging
 import dispatch.Http
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.EndingReference
-import pl.touk.nussknacker.engine.api.conversion.ProcessConfigCreatorMapping
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.test.{TestData, TestResults}
-import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, SourceFactory}
+import pl.touk.nussknacker.engine.api.process.SourceFactory
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{ServiceInvocationCollector, SinkInvocationCollector}
 import pl.touk.nussknacker.engine.api.test.{ResultsCollectingListener, ResultsCollectingListenerHolder, TestRunId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -26,8 +25,6 @@ import pl.touk.nussknacker.engine.graph.node.Source
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.standalone.StandaloneProcessInterpreter
 import pl.touk.nussknacker.engine.standalone.utils.StandaloneContextPreparer
-import pl.touk.nussknacker.engine.util.ThreadUtils
-import pl.touk.nussknacker.engine.util.loader.{JarClassLoader, ProcessConfigCreatorLoader, ScalaServiceLoader}
 import pl.touk.nussknacker.engine.util.service.{AuditDispatchClient, LogCorrelationId}
 
 import scala.concurrent.duration.FiniteDuration

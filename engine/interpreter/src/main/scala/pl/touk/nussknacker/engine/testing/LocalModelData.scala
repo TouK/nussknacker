@@ -4,10 +4,9 @@ import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
-import pl.touk.nussknacker.engine.util.loader.JarClassLoader
-
+import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 
 case class LocalModelData(processConfig: Config,
                           configCreator: ProcessConfigCreator,
                           migrations: ProcessMigrations = ProcessMigrations.empty,
-                          jarClassLoader: JarClassLoader = JarClassLoader.empty) extends ModelData
+                          modelClassLoader: ModelClassLoader = ModelClassLoader.empty) extends ModelData
