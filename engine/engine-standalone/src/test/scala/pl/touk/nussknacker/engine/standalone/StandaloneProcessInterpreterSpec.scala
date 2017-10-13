@@ -1,21 +1,17 @@
 package pl.touk.nussknacker.engine.standalone
 
-import java.util.concurrent.TimeUnit
-
 import com.codahale.metrics.MetricRegistry
 import com.typesafe.config.ConfigFactory
-import org.scalatest.concurrent.Eventually
+import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.standalone.utils.StandaloneContextPreparer
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
-
-class StandaloneProcessInterpreterSpec extends FlatSpec with Matchers with Eventually  {
+class StandaloneProcessInterpreterSpec extends FlatSpec with Matchers with Eventually with ScalaFutures {
 
   override implicit val patienceConfig = PatienceConfig(
     timeout = Span(10, Seconds),
@@ -25,7 +21,6 @@ class StandaloneProcessInterpreterSpec extends FlatSpec with Matchers with Event
   import spel.Implicits._
 
   import scala.concurrent.ExecutionContext.Implicits.global
-
 
 
   it should "run process in request response mode" in {
@@ -39,23 +34,11 @@ class StandaloneProcessInterpreterSpec extends FlatSpec with Matchers with Event
       .processor("processor", "processorService")
       .sink("endNodeIID", "#var1", "response-sink")
 
-    val input = Request1("a", "b")
-    val ctx = new StandaloneContextPreparer(new MetricRegistry)
     val creator = new StandaloneProcessConfigCreator
-    val simpleModelData = LocalModelData(ConfigFactory.load(), creator)
-    val maybeinterpreter = StandaloneProcessInterpreter(process, ctx, simpleModelData)
+    val result = runProcess(process, Request1("a", "b"), creator)
 
-
-    maybeinterpreter shouldBe 'valid
-    val interpreter = maybeinterpreter.toOption.get
-    interpreter.open()
-
-    val result = interpreter.invoke(input)
-
-    Await.result(result, Duration(5, TimeUnit.SECONDS)) shouldBe Right(List(Response("alamakota")))
+    result shouldBe Right(List(Response("alamakota")))
     creator.processorService.invocationsCount.get() shouldBe 1
-
-    interpreter.close()
   }
 
   it should "collect results after split" in {
@@ -68,21 +51,9 @@ class StandaloneProcessInterpreterSpec extends FlatSpec with Matchers with Event
           GraphBuilder.sink("sink2", "#input.field2", "response-sink")
         )
 
-    val input = Request1("a", "b")
-    val ctx = new StandaloneContextPreparer(new MetricRegistry)
-    val creator = new StandaloneProcessConfigCreator
-    val simpleModelData = LocalModelData(ConfigFactory.load(), creator)
+    val result = runProcess(process, Request1("a", "b"))
 
-    val maybeinterpreter = StandaloneProcessInterpreter(process, ctx, simpleModelData)
-
-    maybeinterpreter shouldBe 'valid
-    val interpreter = maybeinterpreter.toOption.get
-    interpreter.open()
-
-    val result = interpreter.invoke(input)
-
-    Await.result(result, Duration(5, TimeUnit.SECONDS)) shouldBe Right(List("a", "b"))
-    interpreter.close()
+    result shouldBe Right(List("a", "b"))
   }
 
   it should "collect metrics" in {
@@ -96,21 +67,14 @@ class StandaloneProcessInterpreterSpec extends FlatSpec with Matchers with Event
       .processor("processor", "processorService")
       .sink("endNodeIID", "#var1", "response-sink")
 
-    val input = Request1("a", "b")
     val creator = new StandaloneProcessConfigCreator
-    val simpleModelData = LocalModelData(ConfigFactory.load(), creator)
     val metricRegistry = new MetricRegistry
-    val ctx = new StandaloneContextPreparer(metricRegistry)
-    val maybeinterpreter = StandaloneProcessInterpreter(process, ctx, simpleModelData)
 
-
-    maybeinterpreter shouldBe 'valid
-    val interpreter = maybeinterpreter.toOption.get
+    val interpreter = prepareInterpreter(process, creator, metricRegistry)
     interpreter.open()
+    val result = interpreter.invoke(Request1("a", "b")).futureValue
 
-    val result = interpreter.invoke(input)
-
-    Await.result(result, Duration(5, TimeUnit.SECONDS)) shouldBe Right(List(Response("alamakota")))
+    result shouldBe Right(List(Response("alamakota")))
     creator.processorService.invocationsCount.get() shouldBe 1
 
     eventually {
@@ -119,7 +83,6 @@ class StandaloneProcessInterpreterSpec extends FlatSpec with Matchers with Event
     }
 
     interpreter.close()
-
   }
 
   it should "collect results after element split" in {
@@ -130,22 +93,76 @@ class StandaloneProcessInterpreterSpec extends FlatSpec with Matchers with Event
       .customNode("split", "outPart", "splitter", "parts" -> "#input.toList()")
       .sink("sink1", "#outPart", "response-sink")
 
-    val input = Request1("a", "b")
+    val result = runProcess(process, Request1("a", "b"))
 
-    val creator = new StandaloneProcessConfigCreator
+    result shouldBe Right(List("a", "b"))
+  }
+
+  it should "init call open method for service" in {
+    val process = EspProcessBuilder
+      .id("proc1")
+      .exceptionHandler()
+      .source("start", "request1-source")
+      .enricher("enricherWithOpenService", "response", "enricherWithOpenService")
+      .sink("sink1", "#response.field1", "response-sink")
+
+    val result = runProcess(process, Request1("a", "b"))
+
+    result shouldBe Right(List("initialized!"))
+  }
+
+  it should "collect metrics for individual services" in {
+    val process = EspProcessBuilder
+      .id("proc1")
+      .exceptionHandler()
+      .source("start", "request1-source")
+      .enricher("enricherWithOpenService", "response", "enricherWithOpenService")
+      .sink("sink1", "#response.field1", "response-sink")
+
+    val metricRegistry = new MetricRegistry
+
+    val interpreter = prepareInterpreter(process, metricRegistry = metricRegistry)
+    interpreter.open()
+    val result = interpreter.invoke(Request1("a", "b")).futureValue
+
+    result shouldBe Right(List("initialized!"))
+
+    eventually {
+      metricRegistry.getGauges().get("proc1.instant.success").getValue.asInstanceOf[Double] should not be 0
+      metricRegistry.getHistograms().get("proc1.times.success").getCount shouldBe 1
+      metricRegistry.getGauges().get("proc1.instant.enricherWithOpenService.OK").getValue.asInstanceOf[Double] should not be 0
+      metricRegistry.getHistograms().get("proc1.times.enricherWithOpenService.OK").getCount shouldBe 1
+    }
+    interpreter.close()
+  }
+
+
+  def runProcess(process: EspProcess,
+                 input: Any,
+                 creator: StandaloneProcessConfigCreator = new StandaloneProcessConfigCreator,
+                 metricRegistry: MetricRegistry = new MetricRegistry) = {
+    val interpreter = prepareInterpreter(
+      process = process,
+      creator = creator,
+      metricRegistry = metricRegistry
+    )
+    interpreter.open()
+    val result = interpreter.invoke(input).futureValue
+    interpreter.close()
+    result
+  }
+
+  def prepareInterpreter(process: EspProcess,
+                         creator: StandaloneProcessConfigCreator = new StandaloneProcessConfigCreator,
+                         metricRegistry: MetricRegistry = new MetricRegistry) = {
     val simpleModelData = LocalModelData(ConfigFactory.load(), creator)
-    val ctx = new StandaloneContextPreparer(new MetricRegistry)
+    val ctx = new StandaloneContextPreparer(metricRegistry)
 
     val maybeinterpreter = StandaloneProcessInterpreter(process, ctx, simpleModelData)
 
     maybeinterpreter shouldBe 'valid
     val interpreter = maybeinterpreter.toOption.get
-    interpreter.open()
-
-    val result = interpreter.invoke(input)
-
-    Await.result(result, Duration(5, TimeUnit.SECONDS)) shouldBe Right(List("a", "b"))
-    interpreter.close()
+    interpreter
   }
 
 }

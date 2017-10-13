@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.standalone.customtransformers.ProcessSplitter
+import pl.touk.nussknacker.engine.standalone.utils.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.standalone.utils.{JsonStandaloneSourceFactory, StandaloneSinkFactory}
 import pl.touk.nussknacker.engine.util.LoggingListener
 
@@ -36,6 +37,7 @@ class StandaloneProcessConfigCreator extends ProcessConfigCreator with LazyLoggi
 
   override def services(config: Config): Map[String, WithCategories[Service]] = Map(
     "enricherService" -> WithCategories(new EnricherService),
+    "enricherWithOpenService" -> WithCategories(new EnricherWithOpenService),
     "processorService" -> WithCategories(processorService)
   )
 
@@ -77,6 +79,26 @@ class EnricherService extends Service {
     Future.successful(Response("alamakota"))
   }
 }
+
+class EnricherWithOpenService extends Service with TimeMeasuringService {
+
+  override protected def serviceName = "enricherWithOpenService"
+  var internalVar: String = _
+
+  override def open(): Unit = {
+    super.open()
+    internalVar = "initialized!"
+  }
+
+  @MethodToInvoke
+  def invoke()(implicit ex: ExecutionContext, collector: ServiceInvocationCollector): Future[Response] = {
+    measuring {
+      Future.successful(Response(internalVar))
+    }
+  }
+
+}
+
 
 class ProcessorService extends Service {
 

@@ -1,17 +1,13 @@
 package pl.touk.nussknacker.engine.standalone
 
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
 
 import cats.data
 import cats.data.Validated.Invalid
 import cats.data.{NonEmptyList, ValidatedNel}
-import com.codahale.metrics.{Metric, MetricFilter}
-import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.{Interpreter, ModelData, compiledgraph}
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, EspExceptionInfo}
-import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, StandaloneSourceFactory}
+import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
+import pl.touk.nussknacker.engine.api.process.StandaloneSourceFactory
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError.{MissingPart, UnsupportedPart}
 import pl.touk.nussknacker.engine.compile.{PartSubGraphCompiler, ProcessCompilationError, ProcessCompiler}
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
@@ -25,6 +21,7 @@ import pl.touk.nussknacker.engine.standalone.StandaloneProcessInterpreter.{Gener
 import pl.touk.nussknacker.engine.standalone.api.StandaloneCustomTransformer
 import pl.touk.nussknacker.engine.standalone.metrics.InvocationMetrics
 import pl.touk.nussknacker.engine.standalone.utils.{StandaloneContext, StandaloneContextLifecycle, StandaloneContextPreparer}
+import pl.touk.nussknacker.engine.{Interpreter, ModelData, compiledgraph}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -64,19 +61,22 @@ object StandaloneProcessInterpreter {
     import pl.touk.nussknacker.engine.util.Implicits._
 
     val definitions = definitionsPostProcessor(ProcessDefinitionExtractor.extractObjectWithMethods(creator, config))
-    val services = creator.services(config).map { case (_, service) => service.value }
-
-    //for testing environment it's important to take classloader from user jar
-    val sub = PartSubGraphCompiler.default(definitions.services, definitions.globalVariables.mapValuesNow(_.objectDefinition.returnType), creator.getClass.getClassLoader, config)
-    val interpreter = Interpreter(definitions.services, definitions.globalVariables.mapValuesNow(_.obj),
-      creator.listeners(config) ++ additionalListeners, process.metaData.typeSpecificData.allowLazyVars)
-
+    val globalVariablesTypes = definitions.globalVariables.mapValuesNow(_.objectDefinition.returnType)
+    val globalVariables = definitions.globalVariables.mapValuesNow(_.obj)
+    val listeners = creator.listeners(config) ++ additionalListeners
+    val services = definitions.services.map(_._2.obj.asInstanceOf[Service])
     //FIXME: asInstanceOf, should be proper handling of SubprocessInputDefinition
     val sourceFactory = definitions.sourceFactories(process.root.data.asInstanceOf[Source].ref.typ).obj.asInstanceOf[StandaloneSourceFactory[Any]]
 
-    new ProcessCompiler(sub, definitions).compile(process)
-      .andThen(StandaloneInvokerCompiler(sub, _, interpreter).compile)
-      .map(StandaloneProcessInterpreter(process.id, contextPreparer.prepare(process.id), _, services, sourceFactory, modelData))
+    //for testing environment it's important to take classloader from user jar
+    val sub = PartSubGraphCompiler.default(definitions.services, globalVariablesTypes, creator.getClass.getClassLoader, config)
+    val interpreter = Interpreter(definitions.services, globalVariables, listeners, process.metaData.typeSpecificData.allowLazyVars)
+    val compiler = new ProcessCompiler(sub, definitions)
+    compiler.compile(process).andThen { compiledProcessParts =>
+      StandaloneInvokerCompiler(sub, compiledProcessParts, interpreter).compile
+    }.map { invoker =>
+      StandaloneProcessInterpreter(process.id, contextPreparer.prepare(process.id), invoker, services, sourceFactory, modelData)
+    }
 
   }
 
