@@ -387,24 +387,6 @@ lazy val securityApi = (project in engine("security-api")).
   )
   .dependsOn(util)
 
-lazy val configUserAuthentication = (project in engine("config-user-authentication")).
-  settings(commonSettings).
-  settings(
-    name := "configUserAuthentication",
-    assemblyJarName in assembly := "configUserAuthentication.jar",
-    test in assembly := {},
-    libraryDependencies ++= {
-      Seq(
-        "org.scalatest" %% "scalatest" % scalaTestV % "test",
-        "com.typesafe.akka" %% "akka-http-experimental" % akkaHttpV force(),
-
-        "com.typesafe" % "config" % configV,
-        "com.iheart" %% "ficus" % ficusV
-      )
-    }
-  )
-  .dependsOn(securityApi)
-
 lazy val flinkApi = (project in engine("flink-api")).
   settings(commonSettings).
   settings(

@@ -79,8 +79,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
   val deploymentProcessRepository = DeployedProcessRepository.create(db, modelData)
   val processActivityRepository = new ProcessActivityRepository(db)
   val attachmentService = new ProcessAttachmentService(config.getString("attachmentsPath"), processActivityRepository)
-  val authenticationJarPath = "../../engine/config-user-authentication/target/scala-2.11/configUserAuthentication.jar"
-  val authenticator = createAuthenticator(authenticationJarPath)
+  val authenticator =  AuthenticatorProvider(config, getClass.getClassLoader)
 
   val counter = new ProcessCounter(subprocessRepository)
 
@@ -142,12 +141,6 @@ object NussknackerApp extends App with Directives with LazyLogging {
       interface = "0.0.0.0",
       port = port
     )
-  }
-  private def createAuthenticator(authenticationJarPath: String) = {
-    val classLoader = new URLClassLoader(
-      new File(authenticationJarPath).toURI.toURL :: Nil,
-      this.getClass.getClassLoader)
-    AuthenticatorProvider(config, classLoader)
   }
   //we do it, because akka creates non-daemon threads, so we have to stop ActorSystem explicitly, if initialization fails
   private def prepareUncaughtExceptionHandler() = {
