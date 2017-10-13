@@ -1,8 +1,19 @@
 package pl.touk.nussknacker.ui.security.api
 
-import akka.http.scaladsl.server.directives.SecurityDirectives
+import akka.http.scaladsl.server.directives.AuthenticationDirective
 import com.typesafe.config.Config
 
 trait AuthenticatorFactory {
-  def createAuthenticator(config: Config): SecurityDirectives.Authenticator[LoggedUser]
+
+  import AuthenticatorFactory._
+
+  def createAuthenticator(config: Config): LoggedUserAuth
 }
+
+object AuthenticatorFactory {
+  type LoggedUserAuth = AuthenticationDirective[LoggedUser]
+
+}
+
+
+

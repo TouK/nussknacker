@@ -43,7 +43,7 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
   val routWithAllPermissions = withAllPermissions(processesRoute)
   val routWithAdminPermission = withPermissions(processesRoute, Permission.Admin)
   val processActivityRouteWithAllPermission = withAllPermissions(processActivityRoute)
-  implicit val loggedUser = LoggedUser("lu", "", List(), List(testCategory))
+  implicit val loggedUser = LoggedUser("lu", List(), List(testCategory))
 
   private val processId: String = SampleProcess.process.id
 

@@ -25,7 +25,7 @@ class ProcessModelMigratorSpec extends FlatSpec with BeforeAndAfterEach with Sca
   val processId = "fooProcess"
 
 
-  private implicit val user = LoggedUser("test1", "", List(Permission.Admin), List())
+  private implicit val user = LoggedUser("test1", List(Permission.Admin), List())
 
   it should "migrate processes to new versions when not migrated" in {
 

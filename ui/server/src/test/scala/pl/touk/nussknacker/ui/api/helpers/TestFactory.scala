@@ -52,7 +52,7 @@ object TestFactory {
 
   def withPermissions(route: RouteWithUser, permissions: Permission*) = route.route(user(permissions: _*))
 
-  def user(permissions: Permission*) = LoggedUser("userId", "pass", permissions.toList, List(testCategory))
+  def user(permissions: Permission*) = LoggedUser("userId", permissions.toList, List(testCategory))
 
   def withAllPermissions(route: RouteWithUser) = route.route(user(allPermissions: _*))
 

@@ -33,7 +33,7 @@ import scala.concurrent.{Await, ExecutionContext}
 
 object Initialization {
 
-  implicit val toukUser = LoggedUser("Nussknacker", "", List(Permission.Write, Permission.Admin), List())
+  implicit val toukUser = LoggedUser("Nussknacker", List(Permission.Write, Permission.Admin), List())
 
   def init(migrations: Map[ProcessingType, ProcessMigrations],
            db: DbConfig,

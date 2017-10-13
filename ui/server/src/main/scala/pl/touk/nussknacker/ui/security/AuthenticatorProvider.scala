@@ -2,10 +2,10 @@ package pl.touk.nussknacker.ui.security
 
 import java.util.ServiceLoader
 
-import akka.http.scaladsl.server.directives.SecurityDirectives
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Multiplicity, One}
-import pl.touk.nussknacker.ui.security.api.{AuthenticatorFactory, LoggedUser}
+import pl.touk.nussknacker.ui.security.api.AuthenticatorFactory
+import pl.touk.nussknacker.ui.security.api.AuthenticatorFactory.LoggedUserAuth
 
 import scala.util.{Failure, Success, Try}
 
@@ -13,9 +13,9 @@ object AuthenticatorProvider {
 
   import scala.collection.JavaConverters._
 
-  def apply(config: Config, classLoader: ClassLoader): SecurityDirectives.Authenticator[LoggedUser] = {
+  def apply(config: Config, classLoader: ClassLoader): LoggedUserAuth = {
     chooseAuthenticator(
-      default = SimpleAuthenticatorFactory(),
+      default = BasicAuthenticatorFactory(),
       loaded = ServiceLoader.load(classOf[AuthenticatorFactory], classLoader)
         .asScala
         .toList) match {

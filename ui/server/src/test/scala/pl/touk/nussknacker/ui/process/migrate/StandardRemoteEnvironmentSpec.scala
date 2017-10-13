@@ -23,7 +23,7 @@ class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with ScalaFut
 
   implicit val system = ActorSystem("nussknacker-ui")
 
-  implicit val user = LoggedUser("test", "", List(), List())
+  implicit val user = LoggedUser("test",  List(), List())
 
   trait MockRemoteEnvironment extends StandardRemoteEnvironment {
 

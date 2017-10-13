@@ -30,10 +30,8 @@ import pl.touk.process.report.influxdb.InfluxReporter
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import pl.touk.nussknacker.ui.security.AuthenticatorProvider
-import slick.jdbc
 import slick.jdbc.JdbcBackend
 
-import scala.reflect.internal.util.ScalaClassLoader.URLClassLoader
 import scala.util.Try
 
 object NussknackerApp extends App with Directives with LazyLogging {
@@ -122,16 +120,15 @@ object NussknackerApp extends App with Directives with LazyLogging {
   private def initHttp() = {
     val route: Route = {
 
-        CorsSupport.cors(featureTogglesConfig.development) {
-          authenticateBasic("nussknacker", authenticator) { user =>
-
-            pathPrefix("api") {
-              apiResources.map(_.route(user)).reduce(_ ~ _)
-            } ~
-              //this is separated from api to do serve it without authentication
-              pathPrefixTest(!"api") {
-                WebResources.route
-              }
+      CorsSupport.cors(featureTogglesConfig.development) {
+        authenticator { user =>
+          pathPrefix("api") {
+            apiResources.map(_.route(user)).reduce(_ ~ _)
+          } ~
+            //this is separated from api to do serve it without authentication
+            pathPrefixTest(!"api") {
+              WebResources.route
+            }
           }
         }
       }

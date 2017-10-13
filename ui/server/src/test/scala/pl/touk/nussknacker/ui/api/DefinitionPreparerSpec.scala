@@ -13,7 +13,7 @@ class DefinitionPreparerSpec extends FlatSpec with Matchers {
   it should "return objects sorted by label" in {
 
     val groups = DefinitionPreparer.prepareNodesToAdd(
-      user = LoggedUser("aa", "", List(Permission.Admin), List()),
+      user = LoggedUser("aa", List(Permission.Admin), List()),
       processDefinition = ProcessTestData.processDefinition,
       isSubprocess = false,
       subprocessRepo = TestFactory.sampleSubprocessRepository,
@@ -29,7 +29,7 @@ class DefinitionPreparerSpec extends FlatSpec with Matchers {
   it should "return edge types for subprocess, filters and switches" in {
 
     val edgeTypes = DefinitionPreparer.prepareEdgeTypes(
-      user = LoggedUser("aa", "", List(Permission.Admin), List()),
+      user = LoggedUser("aa", List(Permission.Admin), List()),
       processDefinition = ProcessTestData.processDefinition,
       isSubprocess = false,
       subprocessRepo = TestFactory.sampleSubprocessRepository,

@@ -381,6 +381,7 @@ lazy val securityApi = (project in engine("security-api")).
       Seq(
         "org.scalatest" %% "scalatest" % scalaTestV % "test",
         "com.typesafe.akka" %% "akka-http-experimental" % akkaHttpV force(),
+        "com.typesafe.akka" %% "akka-http-testkit-experimental" % akkaHttpV % "test" force(),
         "com.typesafe" % "config" % configV
       )
     }

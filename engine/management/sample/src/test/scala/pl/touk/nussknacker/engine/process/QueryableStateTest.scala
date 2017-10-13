@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.process
 
+import java.lang
+
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.scalalogging.LazyLogging
@@ -13,14 +15,14 @@ import pl.touk.nussknacker.engine.management.sample.TestProcessConfigCreator
 import pl.touk.nussknacker.engine.process.compiler.StandardFlinkProcessCompiler
 import pl.touk.nussknacker.engine.spel
 
-import scala.concurrent.Await
+import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.flink.queryablestate.EspQueryableClient
 import pl.touk.nussknacker.engine.flink.test.StoppableExecutionEnvironment
 import pl.touk.nussknacker.engine.kafka.{KafkaSpec, KafkaZookeeperServer}
 import spel.Implicits._
-
+import scala.collection.JavaConversions._
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class QueryableStateTest extends FlatSpec with BeforeAndAfterAll with Matchers with Eventually with KafkaSpec with LazyLogging with ScalaFutures {
@@ -60,16 +62,23 @@ class QueryableStateTest extends FlatSpec with BeforeAndAfterAll with Matchers w
     val client = new EspQueryableClient(stoppableEnv.queryableClient())
 
 
-    def queryState() = client.fetchState[java.lang.Boolean](jobId = jobId, queryName = "single-lock-state", key = "TestInput1")
+    def queryState(jobId: String): Future[Boolean] =
+      client
+        .fetchState[java.lang.Boolean](
+          jobId = jobId,
+          queryName = "single-lock-state",
+          key = "TestInput1")
+        .map {
+          Boolean.box(_)
+        }
 
     //we have to be sure the job is *really* working
     eventually {
-      Await.ready(queryState(), 5 seconds).value.get shouldBe 'success
+      val state = queryState(jobId)
+      Await.ready(state, 5 seconds).value.get shouldBe 'success
+      state.futureValue shouldBe true
     }
 
-    eventually {
-      queryState().futureValue shouldBe true
-    }
   }
 }
 

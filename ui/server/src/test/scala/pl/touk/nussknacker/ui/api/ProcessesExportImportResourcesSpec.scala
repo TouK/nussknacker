@@ -26,7 +26,7 @@ class ProcessesExportImportResourcesSpec extends FlatSpec with ScalatestRouteTes
 
   import akka.http.scaladsl.server.RouteConcatenation._
   val routWithAllPermissions = withAllPermissions(processesExportResources) ~ withAllPermissions(processesRoute)
-  implicit val loggedUser = LoggedUser("lu", "", List(), List(testCategory))
+  implicit val loggedUser = LoggedUser("lu", List(), List(testCategory))
 
   it should "export process and import it" in {
     val processToSave = ProcessTestData.sampleDisplayableProcess
