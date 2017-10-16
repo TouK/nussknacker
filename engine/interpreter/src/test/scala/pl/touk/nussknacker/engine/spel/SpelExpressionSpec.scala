@@ -76,6 +76,27 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
     parseOrFail("{'1', '2'}.contains('2')").evaluateSync[Boolean](ctx, dumbLazyProvider).value shouldBe true
   }
 
+  /**
+    * TODO: this is test to document unexpected behaviour of SpEL.
+    * Variable reference is compiled only after evaluation (forceCompile won't help)
+    * and then return type of last evaluation is taken as return type of expression. In our case this leads to class cast exception,
+    * as during compilation variable value is of ArrayList type, and afterwards we want to pass different List subclass.
+    * Unfortunately, we cannot find easy fix/workaround so far.
+    */
+  ignore  should "invoke list variable reference with different concrete type after compilation" in {
+    def contextWithList(value: Any) = ctx.withVariable("list", value)
+    val expr = parseOrFail("#list", contextWithList(Collections.emptyList()))
+
+    //first run - nothing happens, we bump the counter
+    expr.evaluateSync[Any](contextWithList(null), dumbLazyProvider).value
+    //second run - exitTypeDescriptor is set, expression is compiled
+    expr.evaluateSync[Any](contextWithList(new util.ArrayList[String]()), dumbLazyProvider).value
+    //third run - expression is compiled as ArrayList and we fail :(
+    expr.evaluateSync[Any](contextWithList(Collections.emptyList()), dumbLazyProvider).value
+
+
+  }
+
   it should "be possible to use SpEL's #this object" in {
     parseOrFail("{1, 2, 3}.?[ #this > 1]").evaluateSync[java.util.List[Integer]](ctx, dumbLazyProvider).value shouldBe util.Arrays.asList(2, 3)
     parseOrFail("{1, 2, 3}.![ #this > 1]").evaluateSync[java.util.List[Boolean]](ctx, dumbLazyProvider).value shouldBe util.Arrays.asList(false, true, true)
