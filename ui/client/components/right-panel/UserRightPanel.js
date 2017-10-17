@@ -174,7 +174,7 @@ class UserRightPanel extends Component {
 
   migrate = () => {
     this.props.actions.toggleConfirmDialog(true, DialogMessages.migrate(this.processId(), this.props.featuresSettings.remoteEnvironment.targetEnvironmentId), () => {
-      HttpService.migrateProcess(this.processId())
+      HttpService.migrateProcess(this.processId(), this.versionId() )
     })
   }
 
