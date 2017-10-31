@@ -33,9 +33,7 @@ class ProcessDefinitionExtractorSpec extends FlatSpec with Matchers {
     override def listeners(config: Config): Seq[ProcessListener] = List()
 
     override def exceptionHandlerFactory(config: Config): ExceptionHandlerFactory =
-      ExceptionHandlerFactory.noParams((a) => new EspExceptionHandler {
-        override def handle(exceptionInfo: EspExceptionInfo[_ <: Throwable]): Unit = {}
-      })
+      ExceptionHandlerFactory.noParams(_ => EspExceptionHandler.empty)
 
     override def globalProcessVariables(config: Config): Map[String, WithCategories[AnyRef]] = Map()
 

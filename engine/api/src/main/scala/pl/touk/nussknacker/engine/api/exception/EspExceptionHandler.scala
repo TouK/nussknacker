@@ -8,7 +8,7 @@ trait EspExceptionHandler {
 
   def handle(exceptionInfo: EspExceptionInfo[_ <: Throwable]): Unit
 
-  def handling[T](nodeId: Option[String], context: Context)(action : => T) : Option[T] =
+  def handling[T](nodeId: Option[String], context: Context)(action: => T): Option[T] =
     try {
       Some(action)
     } catch {
@@ -18,10 +18,16 @@ trait EspExceptionHandler {
 
 }
 
+object EspExceptionHandler {
+  val empty = new EspExceptionHandler {
+    override def handle(exceptionInfo: EspExceptionInfo[_ <: Throwable]): Unit = {}
+  }
+}
+
 /**
   * [[pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory]] has to have method annotated with [[pl.touk.nussknacker.engine.api.MethodToInvoke]]
   * that returns [[pl.touk.nussknacker.engine.api.exception.EspExceptionHandler]]
-* */
+  **/
 trait ExceptionHandlerFactory {}
 
 object ExceptionHandlerFactory {
@@ -35,7 +41,6 @@ object ExceptionHandlerFactory {
   }
 
 }
-
 
 
 case class EspExceptionInfo[T <: Throwable](nodeId: Option[String], throwable: T, context: Context) extends Serializable

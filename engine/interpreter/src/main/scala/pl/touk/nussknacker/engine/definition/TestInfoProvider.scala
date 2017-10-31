@@ -19,7 +19,7 @@ trait TestInfoProvider {
 case class TestingCapabilities(canBeTested: Boolean, canGenerateTestData: Boolean)
 
 trait ConfigCreatorTestInfoProvider extends TestInfoProvider {
-
+//FIXME: Two below methods names are confusing
   def configCreator: ProcessConfigCreator
 
   def processConfig: Config
