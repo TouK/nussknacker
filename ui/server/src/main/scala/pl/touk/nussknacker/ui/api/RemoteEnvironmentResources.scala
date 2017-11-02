@@ -44,7 +44,8 @@ class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
               complete {
                 for {
                   processes <- processRepository.fetchProcessesDetails()
-                  comparison <- compareProcesses(processes)
+                  subprocesses <- processRepository.fetchSubProcessesDetails()
+                  comparison <- compareProcesses(processes ++ subprocesses)
                 } yield EspErrorToHttp.toResponseEither(comparison)
               }
             }

@@ -299,7 +299,7 @@ function mapState(state) {
     nodeToDisplay: state.graphReducer.nodeToDisplay,
     groupingState: state.graphReducer.groupingState,
     featuresSettings: state.settings.featuresSettings,
-    isSubprocess: _.get(fetchedProcessDetails, "properties.isSubprocess", false),
+    isSubprocess: _.get(state.graphReducer.processToDisplay, "properties.isSubprocess", false),
     businessView: state.graphReducer.businessView
   };
 }
