@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMetho
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.flink.api.process.SignalSenderKey
 import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
+import pl.touk.nussknacker.engine.flink.util.source.EmptySourceFunction
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.Source
 
@@ -55,7 +56,7 @@ abstract class StubbedFlinkProcessCompiler(process: EspProcess, creator: Process
 
 private object DummyFlinkSignalSender extends FlinkProcessSignalSender {
   override def connectWithSignals[InputType, SignalType: TypeInformation](start: DataStream[InputType], processId: String, nodeId: String, schema: DeserializationSchema[SignalType]): ConnectedStreams[InputType, SignalType] = {
-    start.connect(start.executionEnvironment.fromElements[SignalType]())
+    start.connect(start.executionEnvironment.addSource(new EmptySourceFunction[SignalType]))
   }
 }
 
