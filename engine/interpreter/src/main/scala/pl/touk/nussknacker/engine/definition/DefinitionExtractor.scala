@@ -3,15 +3,16 @@ package pl.touk.nussknacker.engine.definition
 import java.lang.reflect.{InvocationTargetException, Method}
 
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.api.MethodToInvoke
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, WithCategories}
-import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
+import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.MethodDefinition
 import pl.touk.nussknacker.engine.types.EspTypeUtils
 
 import scala.reflect.ClassTag
 import scala.runtime.BoxedUnit
 
-trait DefinitionExtractor[T] {
+class DefinitionExtractor[T](methodDefinitionExtractor: MethodDefinitionExtractor[T]) {
 
   def extract(obj: T, methodDef: MethodDefinition, categories: List[String]): ObjectDefinition = {
     ObjectDefinition(
@@ -22,50 +23,23 @@ trait DefinitionExtractor[T] {
   }
 
   def extractMethodDefinition(obj: T): MethodDefinition = {
-    val methods = obj.getClass.getMethods
+    methodDefinitionExtractor.extractMethodDefinition(obj, findMethodToInvoke(obj))
+      .fold(msg => throw new IllegalArgumentException(msg), identity)
+  }
 
-    //TODO disable `findByReturnType` feature
-    def findByReturnType = methods.find { m =>
-      returnType.isAssignableFrom(m.getReturnType)
-    }
-    def findByAnnotation = methods.find { m =>
+  private def findMethodToInvoke(obj: T): Method = {
+    val methodsToInvoke = obj.getClass.getMethods.toList.filter { m =>
       m.getAnnotation(classOf[MethodToInvoke]) != null
     }
-
-    val method = findByAnnotation orElse findByReturnType getOrElse {
-      throw new IllegalArgumentException(s"Missing method with return type: $returnType on $obj")
+    methodsToInvoke match {
+      case Nil =>
+        throw new IllegalArgumentException(s"Missing method to invoke for object: " + obj)
+      case head :: Nil =>
+        head
+      case moreThanOne =>
+        throw new IllegalArgumentException(s"More than one method to invoke: " + moreThanOne + " in object: " + obj)
     }
-
-    val params = method.getParameters.map { p =>
-      if (additionalParameters.contains(p.getType) && p.getAnnotation(classOf[ParamName]) == null) {
-        Right(p.getType)
-      } else {
-        val name = Option(p.getAnnotation(classOf[ParamName]))
-          .map(_.value())
-          .getOrElse(throw new IllegalArgumentException(s"Parameter $p of $obj and method : ${method.getName} has missing @ParamName annotation"))
-        val paramType = extractParameterType(p)
-        Left(Parameter(name, ClazzRef(paramType), ParameterTypeMapper.prepareRestrictions(paramType, p)))
-      }
-    }.toList
-    MethodDefinition(method, extractReturnTypeFromMethod(obj, method), new OrderedParameters(params))
   }
-
-
-
-  protected def extractReturnTypeFromMethod(obj: T, method: Method) = {
-    val typeFromAnnotation = Option(method.getAnnotation(classOf[MethodToInvoke]))
-      .filterNot(_.returnType() == classOf[Object])
-      .flatMap[Class[_]](ann => Option(ann.returnType()))
-    val typeFromSignature = EspTypeUtils.getGenericType(method.getGenericReturnType)
-
-    typeFromAnnotation.orElse(typeFromSignature).getOrElse(classOf[Any])
-  }
-
-  protected def returnType: Class[_]
-
-  protected def additionalParameters: Set[Class[_]]
-
-  protected def extractParameterType(p: java.lang.reflect.Parameter) = p.getType
 
 }
 
@@ -104,6 +78,7 @@ object DefinitionExtractor {
 
     override def parameters = methodDef.orderedParameters.definedParameters
 
+    def additionalParameters = methodDef.orderedParameters.additionalParameters
 
     override def categories = objectDefinition.categories
 
@@ -126,8 +101,6 @@ object DefinitionExtractor {
 
   }
 
-  case class MethodDefinition(method: Method, returnType: Class[_], orderedParameters: OrderedParameters)
-
   case class ClazzRef(refClazzName: String)
 
   case class PlainClazzDefinition(clazzName: ClazzRef, methods: Map[String, ClazzRef]) {
@@ -147,30 +120,11 @@ object DefinitionExtractor {
 
   case class StringValues(values: List[String]) extends ParameterRestriction
 
-
-
-  private[definition] class OrderedParameters(baseOrAdditional: List[Either[Parameter, Class[_]]]) {
-
-    lazy val definedParameters: List[Parameter] = baseOrAdditional.collect {
-      case Left(param) => param
-    }
-
-    def prepareValues(prepareValue: String => Option[AnyRef],
-                      additionalParameters: Seq[AnyRef]): List[(String, AnyRef)] = {
-      baseOrAdditional.map {
-        case Left(param) =>
-          (param.name, prepareValue(param.name).getOrElse(throw new IllegalArgumentException(s"Missing parameter: ${param.name}")))
-        case Right(classOfAdditional) =>
-          (classOfAdditional.getName, additionalParameters.find(classOfAdditional.isInstance).getOrElse(
-            throw new IllegalArgumentException(s"Missing additional parameter of class: ${classOfAdditional.getName}")))
-      }
-    }
-  }
-
   object ObjectWithMethodDef {
-    def apply[T](obj: WithCategories[_<:T], extractor: DefinitionExtractor[T]): ObjectWithMethodDef = {
-      val methodDefinition = extractor.extractMethodDefinition(obj.value)
-      ObjectWithMethodDef(obj.value, methodDefinition, extractor.extract(obj.value, methodDefinition, obj.categories))
+    def apply[T](obj: WithCategories[_<:T], methodExtractor: MethodDefinitionExtractor[T]): ObjectWithMethodDef = {
+      val objectExtractor = new DefinitionExtractor(methodExtractor)
+      val methodDefinition = objectExtractor.extractMethodDefinition(obj.value)
+      ObjectWithMethodDef(obj.value, methodDefinition, objectExtractor.extract(obj.value, methodDefinition, obj.categories))
     }
   }
 

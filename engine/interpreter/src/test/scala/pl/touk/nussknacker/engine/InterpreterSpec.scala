@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compile.PartSubGraphCompilerBase.CompiledNode
 import pl.touk.nussknacker.engine.compile.{PartSubGraphCompiler, SubprocessResolver, ValidationContext}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ClazzRef, ObjectDefinition, ObjectWithMethodDef}
-import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ServiceDefinitionExtractor}
+import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ServiceInvoker}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
@@ -65,7 +65,7 @@ class InterpreterSpec extends FlatSpec with Matchers {
     val metaData = MetaData("process1", StreamMetaData())
     val process = EspProcess(metaData, ExceptionHandlerRef(List.empty), node)
     val splitted = ProcessSplitter.split(process)
-    val servicesDefs = services.mapValuesNow { service => ObjectWithMethodDef(WithCategories(service), ServiceDefinitionExtractor) }
+    val servicesDefs = services.mapValuesNow { service => ObjectWithMethodDef(WithCategories(service), ServiceInvoker.Extractor) }
     val interpreter = Interpreter(servicesDefs, Map(), listeners, true)
     val classes = (servicesDef.values.map(_.getClass) ++ sourceFactories.values.map(c => Class.forName(c.returnType.refClazzName))).toList
     val typesInformation = EspTypeUtils.clazzAndItsChildrenDefinition(classes)(ClassExtractionSettings.Default)
@@ -136,6 +136,7 @@ class InterpreterSpec extends FlatSpec with Matchers {
 
     val services = Map("service" ->
       new Service {
+        @MethodToInvoke
         def invoke(@ParamName("id") id: Any)(implicit ec: ExecutionContext) = Future.successful(nodes = id::nodes)
       }
     )
@@ -163,6 +164,7 @@ class InterpreterSpec extends FlatSpec with Matchers {
 
     val services = Map("transactionService" ->
       new Service {
+        @MethodToInvoke
         def invoke(@ParamName("id") id: Any)
                   (implicit ec: ExecutionContext) = Future(result = id)
       }
@@ -186,6 +188,7 @@ class InterpreterSpec extends FlatSpec with Matchers {
 
     val services = Map("transactionService" ->
       new Service {
+        @MethodToInvoke
         def invoke(@ParamName("id") id: Any)
                   (implicit ec: ExecutionContext) = Future(result = id)
       }
@@ -532,6 +535,7 @@ object InterpreterSpec {
 
   object AccountService extends Service {
 
+    @MethodToInvoke
     def invoke(@ParamName("id") id: String)
               (implicit ec: ExecutionContext) = {
       invocations += 1
@@ -548,6 +552,7 @@ object InterpreterSpec {
 
   object NameDictService extends Service {
 
+    @MethodToInvoke
     def invoke(@ParamName("name") name: String) = {
       invocations += 1
       Future.successful("translated" + name)

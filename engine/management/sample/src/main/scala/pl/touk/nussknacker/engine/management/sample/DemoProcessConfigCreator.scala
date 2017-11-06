@@ -87,6 +87,7 @@ class DemoProcessConfigCreator extends ProcessConfigCreator {
 
   class TopicHandlerFactory extends ExceptionHandlerFactory {
 
+    @MethodToInvoke
     def create(@ParamName("topic") topic: String, metaData: MetaData) = VerboselyLoggingExceptionHandler(metaData)
 
   }

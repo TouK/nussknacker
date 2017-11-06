@@ -5,6 +5,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, WithCategor
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, QueryableStateNames}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
+import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedParameters}
 
 object ProcessDefinitionExtractor {
 

@@ -236,6 +236,7 @@ lazy val interpreter = (project in engine("interpreter")).
     libraryDependencies ++= {
       Seq(
         "org.springframework" % "spring-expression" % springV,
+        "org.scala-lang.modules" %% "scala-java8-compat" % "0.8.0",
         "com.github.alexarchambault" %% s"argonaut-shapeless_$argonautMajorV" % argonautShapelessV,
         "ch.qos.logback" % "logback-classic" % logbackV % "test",
         "org.scalatest" %% "scalatest" % scalaTestV % "test"

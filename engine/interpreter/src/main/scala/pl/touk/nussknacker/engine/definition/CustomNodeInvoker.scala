@@ -87,9 +87,9 @@ trait CustomNodeInvokerDeps {
   def processTimeout: FiniteDuration
 }
 
-object CustomStreamTransformerExtractor extends DefinitionExtractor[CustomStreamTransformer] {
+object CustomStreamTransformerExtractor extends AbstractMethodDefinitionExtractor[CustomStreamTransformer] {
 
-  override protected val returnType = classOf[Any]
+  override protected val expectedReturnType: Option[Class[_]] = None
 
   override protected val additionalParameters = Set[Class[_]]()
 

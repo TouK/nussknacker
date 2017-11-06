@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.definition
 import java.lang.reflect.Method
 
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, MetaData}
+import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
@@ -11,8 +11,6 @@ import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import pl.touk.nussknacker.engine.graph
 
 import scala.reflect.ClassTag
-import scala.runtime.BoxedUnit
-import scala.util.control.NonFatal
 
 trait ProcessObjectFactory[T] {
   def create(processMetaData: MetaData, params: List[graph.param.Parameter]): T
@@ -34,9 +32,9 @@ object ProcessObjectFactory {
 
 }
 
-class ProcessObjectDefinitionExtractor[F, T: ClassTag] extends DefinitionExtractor[F] {
+class ProcessObjectDefinitionExtractor[F, T: ClassTag] extends AbstractMethodDefinitionExtractor[F] {
 
-  override protected def returnType = implicitly[ClassTag[T]].runtimeClass
+  override protected def expectedReturnType: Option[Class[_]] = Some(implicitly[ClassTag[T]].runtimeClass)
   override protected def additionalParameters = Set[Class[_]](classOf[MetaData])
 
 }
@@ -46,9 +44,10 @@ class SourceProcessObjectDefinitionExtractor extends ProcessObjectDefinitionExtr
   override def extractReturnTypeFromMethod(sourceFactory: SourceFactory[_], method: Method) = sourceFactory.clazz
 }
 
-object SignalsDefinitionExtractor extends DefinitionExtractor[ProcessSignalSender] {
+object SignalsDefinitionExtractor extends AbstractMethodDefinitionExtractor[ProcessSignalSender] {
 
-  override protected val returnType = classOf[BoxedUnit]
+  // could expect void but because of often skipping return type declaration in methods and type inference, would be to rigorous
+  override protected val expectedReturnType: Option[Class[_]] = None
   override protected val additionalParameters = Set[Class[_]](classOf[String])
 
 }
@@ -59,7 +58,7 @@ object ProcessObjectDefinitionExtractor {
   val sink = new ProcessObjectDefinitionExtractor[SinkFactory, Sink]
   val exceptionHandler = new ProcessObjectDefinitionExtractor[ExceptionHandlerFactory, EspExceptionHandler]
   val customNodeExecutor = CustomStreamTransformerExtractor
-  val service = ServiceDefinitionExtractor
+  val service = ServiceInvoker.Extractor
   val signals = SignalsDefinitionExtractor
 
 

@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.flink.javaapi.process.JavaFlinkCustomStreamTra
 
 public class TransactionAmountAggregator extends CustomStreamTransformer {
 
+    @MethodToInvoke
     public FlinkCustomStreamTransformation execute(@ParamName("clientId") LazyInterpreter<String> clientId) {
         return JavaFlinkCustomStreamTransformation.apply(start -> {
             return

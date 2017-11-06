@@ -73,6 +73,7 @@ object LogService extends Service {
 }
 
 class ThrowingService(exception: Exception) extends Service {
+  @MethodToInvoke
   def invoke(@ParamName("throw") throwing: Boolean): Future[Unit] = {
     if (throwing) {
       Future.failed(exception)
@@ -115,7 +116,7 @@ class TestProcessSignalFactory(val kafkaConfig: KafkaConfig, val signalsTopic: S
   extends FlinkProcessSignalSender with KafkaSignalStreamConnector {
 
   @MethodToInvoke
-  def sendSignal()(processId: String) = {
+  def sendSignal()(processId: String): Unit = {
     KafkaEspUtils.sendToKafkaWithTempProducer(signalsTopic, Array.empty[Byte], "".getBytes(StandardCharsets.UTF_8))(kafkaConfig)
   }
 
@@ -135,7 +136,10 @@ class SimpleProcessConfigCreator extends ProcessConfigCreator {
   )
 
   override def sinkFactories(config: Config) = Map(
-    "monitor" -> WithCategories(new SinkFactory { def create(): Sink = MonitorEmptySink}, "c2"),
+    "monitor" -> WithCategories(new SinkFactory {
+      @MethodToInvoke
+      def create(): Sink = MonitorEmptySink
+    }, "c2"),
     "sinkForInts" -> WithCategories(SinkFactory.noParam(SinkForInts))
   )
 
