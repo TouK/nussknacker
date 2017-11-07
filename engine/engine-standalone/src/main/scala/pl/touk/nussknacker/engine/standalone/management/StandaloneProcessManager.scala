@@ -26,6 +26,7 @@ import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.standalone.StandaloneProcessInterpreter
 import pl.touk.nussknacker.engine.standalone.utils.StandaloneContextPreparer
 import pl.touk.nussknacker.engine.util.service.{AuditDispatchClient, LogCorrelationId}
+import pl.touk.nussknacker.engine.standalone.api.types._
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -139,7 +140,7 @@ class StandaloneTestMain(testData: TestData, process: EspProcess, modelData: Mod
 
   }
 
-  private def collectSinkResults(runId: TestRunId, results: List[StandaloneProcessInterpreter.InterpretationResultType]) = {
+  private def collectSinkResults(runId: TestRunId, results: List[InterpretationResultType]) = {
     val successfulResults = results.flatMap(_.right.toOption.toList.flatten)
     successfulResults.foreach { result =>
       val node = result.reference.asInstanceOf[EndingReference].nodeId
@@ -147,7 +148,7 @@ class StandaloneTestMain(testData: TestData, process: EspProcess, modelData: Mod
     }
   }
 
-  private def collectExceptions(listener: ResultsCollectingListener, results: List[StandaloneProcessInterpreter.InterpretationResultType]) = {
+  private def collectExceptions(listener: ResultsCollectingListener, results: List[InterpretationResultType]) = {
     val exceptions = results.flatMap(_.left.toOption)
     exceptions.flatMap(_.toList).foreach(listener.exceptionThrown)
   }

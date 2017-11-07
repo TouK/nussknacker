@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.test.TestDataParser
+import pl.touk.nussknacker.engine.standalone.api.{DecodingError, StandaloneGetFactory, StandalonePostFactory, StandaloneSourceFactory}
 import pl.touk.nussknacker.engine.util.LoggingListener
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -79,18 +80,21 @@ class ProcessorService extends Service {
 
 }
 
-class Request1SourceFactory extends StandaloneSourceFactory[Request1] {
+class Request1SourceFactory extends StandalonePostFactory[Request1] with StandaloneGetFactory[Request1] {
   val decoder = DecodeJson.derive[Request1]
 
-  @MethodToInvoke
-  def create(): Source[Request1] = {
-    new Source[Request1] {
+
+  override def parse(data: Array[Byte]): Request1 = {
+    val str = new String(data, StandardCharsets.UTF_8)
+    decoder.decodeJson(Parse.parse(str).right.get).result match {
+      case Left(req) => throw DecodingError(s"Failed to decode on: ${req._1}")
+      case Right(req) => req
     }
   }
 
-  override def toObject(obj: Array[Byte]): Request1 = {
-    val str = new String(obj, StandardCharsets.UTF_8)
-    decoder.decodeJson(Parse.parse(str).right.get).result.right.get
+  override def parse(parameters: Map[String, List[String]]): Request1 = {
+    def takeFirst(id: String) = parameters.getOrElse(id, List()).headOption.getOrElse("")
+    Request1(takeFirst("field1"), takeFirst("field2"))
   }
 
   override def clazz: Class[_] = classOf[Request1]

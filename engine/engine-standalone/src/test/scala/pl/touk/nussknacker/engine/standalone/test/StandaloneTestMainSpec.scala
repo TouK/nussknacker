@@ -26,7 +26,7 @@ class StandaloneTestMainSpec extends FlatSpec with Matchers with BeforeAndAfterE
     val process = EspProcessBuilder
       .id("proc1")
       .exceptionHandler()
-      .source("start", "request1-source")
+      .source("start", "request1-post-source")
       .filter("filter1", "#input.field1() == 'a'")
       .enricher("enricher", "var1", "enricherService")
       .processor("processor", "processorService")
@@ -63,7 +63,7 @@ class StandaloneTestMainSpec extends FlatSpec with Matchers with BeforeAndAfterE
     val process = EspProcessBuilder
       .id("proc1")
       .exceptionHandler()
-      .source("start", "request1-source")
+      .source("start", "request1-post-source")
       .filter("occasionallyThrowFilter", "#input.field1() == 'a' ? 1/0 == 0 : true")
       .filter("filter1", "#input.field1() == 'a'")
       .enricher("enricher", "var1", "enricherService")

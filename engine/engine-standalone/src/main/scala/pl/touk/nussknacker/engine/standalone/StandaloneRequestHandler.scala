@@ -1,13 +1,15 @@
 package pl.touk.nussknacker.engine.standalone
 
+import akka.http.scaladsl.server.{Directive1, Directives}
+import argonaut.ArgonautShapeless._
 import argonaut.Json
-import cats.data.{NonEmptyList, Validated}
+import cats.data.{EitherT, NonEmptyList, Validated}
+import cats.instances.future._
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.{Context, Displayable}
-import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.standalone.StandaloneProcessInterpreter.GenericResultType
+import pl.touk.nussknacker.engine.standalone.api.types.GenericResultType
+import pl.touk.nussknacker.engine.standalone.api.{DefaultResponseEncoder, StandaloneGetFactory, StandalonePostFactory}
 import pl.touk.nussknacker.engine.standalone.utils.StandaloneContextPreparer
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -15,7 +17,7 @@ import scala.concurrent.{ExecutionContext, Future}
 object StandaloneRequestHandler {
 
   def apply(process: EspProcess, contextPreparer: StandaloneContextPreparer, modelData: ModelData)
-    : Validated[NonEmptyList[ProcessCompilationError], StandaloneRequestHandler]= {
+  : Validated[NonEmptyList[ProcessCompilationError], StandaloneRequestHandler] = {
     modelData.withThisAsContextClassLoader {
       StandaloneProcessInterpreter(process, contextPreparer, modelData).map(new StandaloneRequestHandler(_))
     }
@@ -25,14 +27,31 @@ object StandaloneRequestHandler {
 
 //this class handles parsing, displaying and invoking interpreter. This is the only place we interact with model, hence
 //only here we care about context classloaders
-class StandaloneRequestHandler(standaloneProcessInterpreter: StandaloneProcessInterpreter) {
+class StandaloneRequestHandler(standaloneProcessInterpreter: StandaloneProcessInterpreter) extends Directives  {
 
-  type Result[T] = GenericResultType[T, EspExceptionInfo[_<:Throwable]]
+  val id: String = standaloneProcessInterpreter.id
 
-  def invoke(bytes: Array[Byte])(implicit ec: ExecutionContext) : Future[Result[Json]] = standaloneProcessInterpreter.modelData.withThisAsContextClassLoader {
-    val sourceObject = standaloneProcessInterpreter.source.toObject(bytes)
-    standaloneProcessInterpreter.invoke(sourceObject).map(toResponse)
+  //TODO: make it configurable
+  private val encoder = DefaultResponseEncoder
+
+  private val extractInput: Directive1[Any] = standaloneProcessInterpreter.source match {
+    case a: StandalonePostFactory[Any] =>
+      post & entity(as[Array[Byte]]).map(a.parse)
+    case a: StandaloneGetFactory[Any] =>
+      get & parameterMultiMap.map(a.parse)
   }
+
+  val invoke: Directive1[GenericResultType[Json]] =
+    extractExecutionContext.flatMap { implicit ec =>
+      extractInput
+        .map(invokeInterpreter)
+        .flatMap(onSuccess(_))
+    }
+
+  private def invokeInterpreter(input: Any)(implicit ec: ExecutionContext): Future[GenericResultType[Json]] = (for {
+    invocationResult <- EitherT(standaloneProcessInterpreter.invoke(input))
+    encodedResult <- EitherT.fromEither(encoder.toJsonResponse(input, invocationResult))
+  } yield encodedResult).value
 
   def close(): Unit = standaloneProcessInterpreter.modelData.withThisAsContextClassLoader {
     standaloneProcessInterpreter.close()
@@ -40,24 +59,6 @@ class StandaloneRequestHandler(standaloneProcessInterpreter: StandaloneProcessIn
 
   def open(): Unit = standaloneProcessInterpreter.modelData.withThisAsContextClassLoader {
     standaloneProcessInterpreter.open()
-  }
-
-  def id : String = standaloneProcessInterpreter.id
-
-  private def toResponse(result: Result[Any]) : Result[Json] = {
-
-    val withJsonsConverted  : Result[Result[Json]] = result.right.map(toJsonOrErrors)
-
-    withJsonsConverted.right.flatMap[NonEmptyList[EspExceptionInfo[_<:Throwable]], List[Json]](StandaloneProcessInterpreter.foldResults)
-  }
-
-  private def toJsonOrErrors(values: List[Any]) : List[Result[Json]] = values.map(toJsonOrError)
-
-  private def toJsonOrError(value: Any) : Result[Json] = value match {
-    case a:Displayable => Right(List(a.display))
-    case a:String => Right(List(Json.jString(a)))
-    case a => Left(NonEmptyList.of(EspExceptionInfo(None, new IllegalArgumentException(s"Invalid result type: ${a.getClass}"),
-      Context(""))))
   }
 
 }

@@ -8,7 +8,6 @@ import pl.touk.nussknacker.ui.process.deployment.ProcessIsBeingDeployed
 import pl.touk.nussknacker.ui.validation.ValidationResults.{FatalValidationError, ValidationResult}
 import pl.touk.nussknacker.ui.{BadRequestError, EspError, FatalError, NotFoundError}
 import pl.touk.http.argonaut.Argonaut62Support
-import cats.syntax.either._
 
 import scala.language.implicitConversions
 

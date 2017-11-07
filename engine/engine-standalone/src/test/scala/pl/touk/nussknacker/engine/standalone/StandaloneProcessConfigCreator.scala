@@ -11,7 +11,9 @@ import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, EspExcepti
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
-import pl.touk.nussknacker.engine.standalone.customtransformers.ProcessSplitter
+import pl.touk.nussknacker.engine.api.test.TestDataParser
+import pl.touk.nussknacker.engine.standalone.api.StandaloneGetFactory
+import pl.touk.nussknacker.engine.standalone.utils.customtransformers.ProcessSplitter
 import pl.touk.nussknacker.engine.standalone.utils.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.standalone.utils.{JsonStandaloneSourceFactory, StandaloneContext, StandaloneContextLifecycle, StandaloneSinkFactory}
 import pl.touk.nussknacker.engine.util.LoggingListener
@@ -45,7 +47,9 @@ class StandaloneProcessConfigCreator extends ProcessConfigCreator with LazyLoggi
   implicit val decoder = DecodeJson.derive[Request1]
 
   override def sourceFactories(config: Config): Map[String, WithCategories[SourceFactory[_]]] = Map(
-    "request1-source" -> WithCategories(new JsonStandaloneSourceFactory[Request1])
+    "request1-post-source" -> WithCategories(new JsonStandaloneSourceFactory[Request1]),
+    "request1-get-source" -> WithCategories(Request1GetSource)
+
   )
 
   override def sinkFactories(config: Config): Map[String, WithCategories[SinkFactory]] = Map(
@@ -72,6 +76,19 @@ case class Request2(field12: String, field22: String)
 case class Request3(field13: String, field23: String)
 
 case class Response(field1: String) extends DisplayableAsJson[Response]
+
+object Request1GetSource extends StandaloneGetFactory[Request1] {
+
+  override def clazz: Class[_] = classOf[Request1]
+
+  override def testDataParser: Option[TestDataParser[Request1]] = None
+
+  override def parse(parameters: Map[String, List[String]]): Request1 = {
+    def takeFirst(id: String) = parameters.getOrElse(id, List()).headOption.getOrElse("")
+    Request1(takeFirst("field1"), takeFirst("field2"))
+  }
+}
+
 
 
 class EnricherService extends Service {

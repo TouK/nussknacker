@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.standalone.customtransformers
+package pl.touk.nussknacker.engine.standalone.utils.customtransformers
 
 import cats.data.NonEmptyList
 import cats.instances.either._
@@ -6,8 +6,9 @@ import cats.instances.list._
 import cats.syntax.traverse._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
-import pl.touk.nussknacker.engine.standalone.StandaloneProcessInterpreter.OutFunType
 import pl.touk.nussknacker.engine.standalone.api.StandaloneCustomTransformer
+import pl.touk.nussknacker.engine.standalone.api.types.InterpreterType
+
 import scala.concurrent.{ExecutionContext, Future}
 
 object ProcessSplitter extends CustomStreamTransformer {
@@ -24,7 +25,7 @@ class ProcessSplitter(partsInterpreter: (ExecutionContext, Context) => Future[Tr
   extends StandaloneCustomTransformer {
 
   override def createTransformation(outputVariable: String): StandaloneCustomTransformation =
-    (continuation: OutFunType) => (ctx, ec) => {
+    (continuation: InterpreterType) => (ctx, ec) => {
       implicit val ecc = ec
       //TODO: should this null be here?
 

@@ -173,7 +173,7 @@ lazy val standalone_sample = (project in engine("engine-standalone/sample")).
   settings(
     name := "nussknacker-standalone-sample",
     assemblyJarName in assembly := "standaloneSample.jar"
-  ).dependsOn(util)
+  ).dependsOn(util, standaloneApi)
 
 val managementSampleName = "nussknacker-management-sample"
 
@@ -350,8 +350,13 @@ lazy val standaloneUtil = (project in engine("standalone-util")).
         "io.dropwizard.metrics" % "metrics-graphite" % dropWizardV
       )
     }
-  ).dependsOn(util)
+  ).dependsOn(util, standaloneApi)
 
+lazy val standaloneApi = (project in engine("standalone-api")).
+  settings(commonSettings).
+  settings(
+    name := "nussknacker-standalone-api"
+  ).dependsOn(api)
 
 
 

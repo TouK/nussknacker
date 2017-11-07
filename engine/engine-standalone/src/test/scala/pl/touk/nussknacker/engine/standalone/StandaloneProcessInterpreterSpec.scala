@@ -28,7 +28,7 @@ class StandaloneProcessInterpreterSpec extends FlatSpec with Matchers with Event
     val process = EspProcessBuilder
       .id("proc1")
       .exceptionHandler()
-      .source("start", "request1-source")
+      .source("start", "request1-post-source")
       .filter("filter1", "#input.field1 == 'a'")
       .enricher("enricher", "var1", "enricherService")
       .processor("processor", "processorService")
@@ -45,7 +45,7 @@ class StandaloneProcessInterpreterSpec extends FlatSpec with Matchers with Event
     val process = EspProcessBuilder
       .id("proc1")
       .exceptionHandler()
-      .source("start", "request1-source")
+      .source("start", "request1-post-source")
         .split("split",
           GraphBuilder.sink("sink1", "#input.field1", "response-sink"),
           GraphBuilder.sink("sink2", "#input.field2", "response-sink")
@@ -61,7 +61,7 @@ class StandaloneProcessInterpreterSpec extends FlatSpec with Matchers with Event
     val process = EspProcessBuilder
       .id("proc1")
       .exceptionHandler()
-      .source("start", "request1-source")
+      .source("start", "request1-post-source")
       .filter("filter1", "#input.field1 == 'a'")
       .enricher("enricher", "var1", "enricherService")
       .processor("processor", "processorService")
@@ -89,7 +89,7 @@ class StandaloneProcessInterpreterSpec extends FlatSpec with Matchers with Event
     val process = EspProcessBuilder
       .id("proc1")
       .exceptionHandler()
-      .source("start", "request1-source")
+      .source("start", "request1-post-source")
       .customNode("split", "outPart", "splitter", "parts" -> "#input.toList()")
       .sink("sink1", "#outPart", "response-sink")
 
@@ -102,7 +102,7 @@ class StandaloneProcessInterpreterSpec extends FlatSpec with Matchers with Event
     val process = EspProcessBuilder
       .id("proc1")
       .exceptionHandler()
-      .source("start", "request1-source")
+      .source("start", "request1-post-source")
       .enricher("enricherWithOpenService", "response", "enricherWithOpenService")
       .sink("sink1", "#response.field1", "response-sink")
 
@@ -115,7 +115,7 @@ class StandaloneProcessInterpreterSpec extends FlatSpec with Matchers with Event
     val process = EspProcessBuilder
       .id("proc1")
       .exceptionHandler()
-      .source("start", "request1-source")
+      .source("start", "request1-post-source")
       .enricher("enricherWithOpenService", "response", "enricherWithOpenService")
       .sink("sink1", "#response.field1", "response-sink")
 

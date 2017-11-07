@@ -1,18 +1,18 @@
 package pl.touk.nussknacker.engine.standalone.http
 
-import java.io.File
 import java.nio.file.Files
 import java.util
 import java.util.UUID
 
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity, RequestEntity, StatusCodes}
+import akka.http.scaladsl.model._
+import akka.http.scaladsl.server.MethodRejection
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import argonaut.{DecodeJson, EncodeJson, PrettyParams}
+import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable}
-import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentData, ProcessState}
-import pl.touk.nussknacker.engine.build.{EspProcessBuilder, StandaloneProcessBuilder}
+import pl.touk.nussknacker.engine.build.StandaloneProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
@@ -37,18 +37,26 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
   def processJson = processToJson(StandaloneProcessBuilder
     .id(procId)
     .exceptionHandler()
-    .source("start", "request1-source")
+    .source("start", "request1-post-source")
     .filter("filter1", "#input.field1() == 'a'")
     .enricher("enricher", "var1", "enricherService")
     .processor("processor", "processorService")
     .sink("endNodeIID", "#var1", "response-sink"))
 
 
+  def processJsonWithGet = processToJson(StandaloneProcessBuilder
+    .id(procId)
+    .exceptionHandler()
+    .source("start", "request1-get-source")
+    .filter("filter1", "#input.field1() == 'a'")
+    .sink("endNodeIID", "#input.field2", "response-sink"))
+
+
   def processWithPathJson = processToJson(StandaloneProcessBuilder
     .id(procId)
       .path(Some("customPath1"))
     .exceptionHandler()
-    .source("start", "request1-source")
+    .source("start", "request1-post-source")
     .filter("filter1", "#input.field1() == 'a'")
     .enricher("enricher", "var1", "enricherService")
     .processor("processor", "processorService")
@@ -57,7 +65,7 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
   def noFilterProcessJson = processToJson(StandaloneProcessBuilder
     .id(procId)
     .exceptionHandler()
-    .source("start", "request1-source")
+    .source("start", "request1-post-source")
     .enricher("enricher", "var1", "enricherService")
     .processor("processor", "processorService")
     .sink("endNodeIID", "#var1", "response-sink"))
@@ -65,8 +73,16 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
   def invalidProcessJson = processToJson(StandaloneProcessBuilder
     .id(procId)
     .exceptionHandler()
-    .source("start", "request1-source")
+    .source("start", "request1-post-source")
     .sink("endNodeIID", "#var1", "response-sink"))
+
+  def failingProcessJson = processToJson(StandaloneProcessBuilder
+    .id(procId)
+    .exceptionHandler()
+    .source("start", "request1-post-source")
+    .filter("filter1", "1/#input.field1.length()")
+    .sink("endNodeIID", "''", "response-sink"))
+
 
 
   def processToJson(espProcess: EspProcess): String = {
@@ -116,9 +132,48 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
         responseAs[String] shouldBe "[{\"field1\":\"alamakota\"}]"
         cancelProcess(procId)
       }
+
     }
   }
-       
+
+
+  it should "be able to invoke with GET for GET source" in {
+    assertProcessNotRunning(procId)
+    Post("/deploy", toEntity(DeploymentData(procId, processJsonWithGet))) ~> managementRoute ~> check {
+      status shouldBe StatusCodes.OK
+      Get(s"/$procId?field1=a&field2=b") ~> processesRoute ~> check {
+        status shouldBe StatusCodes.OK
+        responseAs[String] shouldBe "[\"b\"]"
+        cancelProcess(procId)
+      }
+    }
+  }
+
+  it should "not be able to invoke with GET for POST source" in {
+    assertProcessNotRunning(procId)
+    Post("/deploy", toEntity(DeploymentData(procId, processJson))) ~> managementRoute ~> check {
+      status shouldBe StatusCodes.OK
+      Get(s"/$procId?field1=a&field2=b") ~> processesRoute ~> check {
+        rejection shouldBe MethodRejection(HttpMethods.POST)
+        cancelProcess(procId)
+      }
+    }
+  }
+
+
+  it should "not be able to invoke with POST for GET source" in {
+    assertProcessNotRunning(procId)
+    Post("/deploy", toEntity(DeploymentData(procId, processJsonWithGet))) ~> managementRoute ~> check {
+      status shouldBe StatusCodes.OK
+      Post(s"/$procId", toEntity(Request1("a", "b"))) ~> processesRoute ~> check {
+        rejection shouldBe MethodRejection(HttpMethods.GET)
+        cancelProcess(procId)
+      }
+    }
+  }
+
+
+
   it should "not run not deployed process" in {
     assertProcessNotRunning(procId)
     Post("/proc1", toEntity(Request1("a", "b"))) ~> processesRoute ~> check {
@@ -144,6 +199,18 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
       Post(s"/$procId", toEntity(Request1("c", "d"))) ~> processesRoute ~> check {
         status shouldBe StatusCodes.OK
         responseAs[String] shouldBe "[]"
+        cancelProcess(procId)
+      }
+    }
+  }
+
+  it should "display error messages for process" in {
+    assertProcessNotRunning(procId)
+    Post("/deploy", toEntity(DeploymentData(procId, failingProcessJson))) ~> managementRoute ~> check {
+      status shouldBe StatusCodes.OK
+      Post(s"/$procId", toEntity(Request1("", "d"))) ~> processesRoute ~> check {
+        status shouldBe StatusCodes.InternalServerError
+        responseAs[String] shouldBe "[{\"message\":\"/ by zero\",\"nodeId\":\"filter1\"}]"
         cancelProcess(procId)
       }
     }
