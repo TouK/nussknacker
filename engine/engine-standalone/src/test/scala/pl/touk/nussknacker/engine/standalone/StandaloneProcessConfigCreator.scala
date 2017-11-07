@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.standalone.customtransformers.ProcessSplitter
 import pl.touk.nussknacker.engine.standalone.utils.service.TimeMeasuringService
-import pl.touk.nussknacker.engine.standalone.utils.{JsonStandaloneSourceFactory, StandaloneSinkFactory}
+import pl.touk.nussknacker.engine.standalone.utils.{JsonStandaloneSourceFactory, StandaloneContext, StandaloneContextLifecycle, StandaloneSinkFactory}
 import pl.touk.nussknacker.engine.util.LoggingListener
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -38,7 +38,8 @@ class StandaloneProcessConfigCreator extends ProcessConfigCreator with LazyLoggi
   override def services(config: Config): Map[String, WithCategories[Service]] = Map(
     "enricherService" -> WithCategories(new EnricherService),
     "enricherWithOpenService" -> WithCategories(new EnricherWithOpenService),
-    "processorService" -> WithCategories(processorService)
+    "processorService" -> WithCategories(processorService),
+    "lifecycleService" -> WithCategories(LifecycleService)
   )
 
   implicit val decoder = DecodeJson.derive[Request1]
@@ -77,6 +78,27 @@ class EnricherService extends Service {
   @MethodToInvoke
   def invoke()(implicit ex: ExecutionContext, collector: ServiceInvocationCollector): Future[Response] = {
     Future.successful(Response("alamakota"))
+  }
+}
+
+
+object LifecycleService extends Service with StandaloneContextLifecycle {
+
+  var opened: Boolean = false
+  var closed: Boolean = false
+
+
+  override def open(context: StandaloneContext): Unit = {
+    opened = true
+  }
+
+  override def close(): Unit = {
+    closed = true
+  }
+
+  @MethodToInvoke
+  def invoke(): Future[Unit] = {
+    Future.successful(())
   }
 }
 

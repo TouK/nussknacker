@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.spel
-import pl.touk.nussknacker.engine.standalone.{Request1, StandaloneProcessConfigCreator}
+import pl.touk.nussknacker.engine.standalone.{LifecycleService, Request1, StandaloneProcessConfigCreator}
 import pl.touk.nussknacker.engine.testing.ModelJarBuilder
 
 class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTest with BeforeAndAfterEach {
@@ -124,6 +124,17 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
     Post("/proc1", toEntity(Request1("a", "b"))) ~> processesRoute ~> check {
       status shouldBe StatusCodes.NotFound
     }
+  }
+
+  it should "open and close services" in {
+    assertProcessNotRunning(procId)
+    Post("/deploy", toEntity(DeploymentData(procId, processWithPathJson))) ~> managementRoute ~> check {
+      status shouldBe StatusCodes.OK
+      LifecycleService.opened shouldBe true
+      cancelProcess(procId)
+      LifecycleService.closed shouldBe true
+    }
+
   }
 
   it should "run process that produces empty response" in {

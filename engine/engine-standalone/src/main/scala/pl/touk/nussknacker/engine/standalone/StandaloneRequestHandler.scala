@@ -34,9 +34,13 @@ class StandaloneRequestHandler(standaloneProcessInterpreter: StandaloneProcessIn
     standaloneProcessInterpreter.invoke(sourceObject).map(toResponse)
   }
 
-  def close(): Unit = standaloneProcessInterpreter.modelData.withThisAsContextClassLoader(standaloneProcessInterpreter.close _)
+  def close(): Unit = standaloneProcessInterpreter.modelData.withThisAsContextClassLoader {
+    standaloneProcessInterpreter.close()
+  }
 
-  def open(): Unit = standaloneProcessInterpreter.modelData.withThisAsContextClassLoader(standaloneProcessInterpreter.open _)
+  def open(): Unit = standaloneProcessInterpreter.modelData.withThisAsContextClassLoader {
+    standaloneProcessInterpreter.open()
+  }
 
   def id : String = standaloneProcessInterpreter.id
 
