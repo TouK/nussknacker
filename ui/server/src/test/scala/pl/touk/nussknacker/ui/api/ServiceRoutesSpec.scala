@@ -10,12 +10,11 @@ import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
 class ServiceRoutesSpec extends FlatSpec with Matchers with ScalatestRouteTest {
 
-  import ServiceRoutes._
   import ServiceRoutesSpec._
 
   private implicit val ec = scala.concurrent.ExecutionContext.Implicits.global
   private implicit val user = LoggedUser("admin", Permission.Admin :: Nil, Nil)
-  val serviceRoutes = new ServiceRoutes(Map(ProcessingType.Streaming -> FlinkModelData()))
+  private val serviceRoutes = new ServiceRoutes(Map(ProcessingType.Streaming -> FlinkModelData()))
 
   it should "invoke service" in {
     val entity = HttpEntity(MediaTypes.`application/json`,
@@ -43,13 +42,6 @@ class ServiceRoutesSpec extends FlatSpec with Matchers with ScalatestRouteTest {
       status shouldEqual StatusCodes.NotFound
       responseAs[String] shouldEqual "Service 'unexcitingService' not found."
     }
-  }
-  it should "copy Any to JSON" in {
-    val response: Any = Response(22, "Joe")
-    anyToJson(response) shouldBe
-      """
-        |{"name":"Joe","age":22}
-      """.stripMargin.trim
   }
 }
 

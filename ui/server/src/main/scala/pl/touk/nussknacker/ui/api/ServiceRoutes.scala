@@ -1,10 +1,11 @@
 package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
-import akka.http.scaladsl.server.{Directives, ExceptionHandler}
+import akka.http.scaladsl.server.{Directives, ExceptionHandler, Route}
 import pl.touk.http.argonaut.Argonaut62Support
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.Displayable
+import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.engine.util.service.query.ServiceQuery
 import pl.touk.nussknacker.engine.util.service.query.ServiceQuery.ServiceNotFoundException
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
@@ -20,7 +21,11 @@ class ServiceRoutes(modelDataMap: Map[ProcessingType, ModelData])
     with RouteWithUser
     with Argonaut62Support {
 
-  implicit def serviceExceptionHandler: ExceptionHandler =
+  private val encoder = BestEffortJsonEncoder(failOnUnkown = false)
+
+  private implicit val metaData = ServiceQuery.Implicits.metaData
+
+  private implicit def serviceExceptionHandler: ExceptionHandler =
     ExceptionHandler {
       case ServiceNotFoundException(serviceName) =>
         complete(HttpResponse(StatusCodes.NotFound, entity = s"Service '$serviceName' not found."))
@@ -35,30 +40,19 @@ class ServiceRoutes(modelDataMap: Map[ProcessingType, ModelData])
         val modelData = modelDataMap(processingType)
         entity(as[Map[String, String]]) { params =>
           complete {
-            new ServiceQuery(modelData).invoke(serviceName, params)
-              .map {
-                ServiceRoutes.anyToJson(_) //TODO: should be JSON
-              }
+            new ServiceQuery(modelData)
+              .invoke(serviceName, params)
+              .map(encoder.encode)
           }
         }
       }
     }
-  private implicit val metaData = ServiceQuery.Implicits.metaData
 
-  override def route(implicit user: LoggedUser) = {
+  override def route(implicit user: LoggedUser): Route = {
     authorize(user.isAdmin) {
       handleExceptions(serviceExceptionHandler) {
         invokeServicePath
       }
-    }
-  }
-}
-
-object ServiceRoutes {
-  private[api] def anyToJson(any: Any): String = {
-    any match {
-      case d: Displayable => d.display.nospaces
-      case _ => any.toString
     }
   }
 }

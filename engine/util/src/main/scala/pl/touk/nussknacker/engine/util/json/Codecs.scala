@@ -1,9 +1,10 @@
-package pl.touk.nussknacker.engine.util
+package pl.touk.nussknacker.engine.util.json
 
 import java.time.LocalDateTime
 
 import argonaut.Json.jString
 import argonaut._
+import pl.touk.nussknacker.engine.util.ReflectUtils
 
 import scala.util.{Failure, Success, Try}
 

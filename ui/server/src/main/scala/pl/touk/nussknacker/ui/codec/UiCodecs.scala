@@ -1,7 +1,5 @@
 package pl.touk.nussknacker.ui.codec
 
-import java.time.LocalDateTime
-
 import argonaut._
 import argonaut.derive.{DerivedInstances, JsonSumCodec, JsonSumCodecFor, SingletonInstances}
 import com.typesafe.scalalogging.LazyLogging
@@ -14,7 +12,6 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.definition.TestingCapabilities
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.engine.util.Codecs
 import pl.touk.nussknacker.ui.api.{DisplayableUser, GrafanaSettings, ProcessObjects, ResultsWithCounts}
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.{ProcessType, ProcessingType}
 import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.{EdgeType, NodeAdditionalFields, ProcessAdditionalFields}
@@ -24,6 +21,7 @@ import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{BaseProcessD
 import pl.touk.nussknacker.ui.processreport.NodeCount
 import pl.touk.nussknacker.ui.validation.ValidationResults.{NodeValidationErrorType, ValidationResult}
 import ArgonautShapeless._
+import pl.touk.nussknacker.engine.util.json.{BestEffortJsonEncoder, Codecs}
 
 object UiCodecs extends UiCodecs
 
@@ -116,44 +114,18 @@ trait UiCodecs extends Codecs with Argonauts with SingletonInstances with Derive
       map.filterNot(a => a._2 == None || a._2 == null).mapValues(encodeVariable).asJson
     })
 
-    private def safeJson[T](fun: T => Json) = (value: T) => Option(value) match {
-      case Some(realValue) => fun(realValue)
-      case None => jNull
-    }
+    private def safeString(a: String) = Option(a).map(jString).getOrElse(jNull)
 
-    private val safeString = safeJson[String](jString(_))
-    private val safeLong = safeJson[Long](jNumber)
-    private val safeInt = safeJson[Int](jNumber)
-    private val safeDouble = safeJson[Double](jNumber(_))
-    private val safeNumber = safeJson[Number](a => jNumber(a.doubleValue()))
-
-
-    private def encodeVariable(any: Any): Json = {
-      if (any == null) {
-        jNull
-      } else {
-        val klass = any.getClass
-        any match {
-          case Some(a) => encodeVariable(a)
-          case s: String => safeString(s)
-          case a: Long => safeLong(a)
-          case a: Double => safeDouble(a)
-          case a: Int => safeInt(a)
-          case a: Number => safeNumber(a.doubleValue())
-          case a: LocalDateTime => a.asJson
-          case a: Displayable => displayableToJson(a)
-          case _ => safeString(any.toString)
+    private val displayableToJsonEncoder = BestEffortJsonEncoder(failOnUnkown = false, {
+      case displayable: Displayable =>
+        val prettyDisplay = displayable.display.spaces2
+        displayable.originalDisplay match {
+          case None => jObjectFields("pretty" -> safeString(prettyDisplay))
+          case Some(original) => jObjectFields("original" -> safeString(original), "pretty" -> safeString(prettyDisplay))
         }
-      }
-    }
+    })
 
-    private def displayableToJson(displayable: Displayable): Json = {
-      val prettyDisplay = displayable.display.spaces2
-      displayable.originalDisplay match {
-        case None => jObjectFields("pretty" -> safeString(prettyDisplay))
-        case Some(original) => jObjectFields("original" -> safeString(original), "pretty" -> safeString(prettyDisplay))
-      }
-    }
+    private def encodeVariable(any: Any): Json = displayableToJsonEncoder.encode(any)
 
     def printKnownType(any: Any, klass: Class[_]): Json = {
       val methods = typesWithMethodNames(klass.getName)

@@ -15,7 +15,7 @@ class ServiceQuery(modelData: ModelData) {
   import ServiceQuery._
   import pl.touk.nussknacker.engine.util.Implicits._
 
-  private val serviceMoethodMap: Map[String, ObjectWithMethodDef] =
+  private val serviceMethodMap: Map[String, ObjectWithMethodDef] =
     modelData.withThisAsContextClassLoader {
       val servicesMap = modelData.configCreator.services(modelData.processConfig)
 
@@ -30,7 +30,7 @@ class ServiceQuery(modelData: ModelData) {
 
   def invoke(serviceName: String, serviceParameters: Map[String, Any], nodeContext: NodeContext = dummyNodeContext)
             (implicit executionContext: ExecutionContext, metaData: MetaData): Future[Any] = {
-    val methodDef: ObjectWithMethodDef = serviceMoethodMap
+    val methodDef: ObjectWithMethodDef = serviceMethodMap
       .getOrElse(serviceName, throw ServiceNotFoundException(serviceName))
     val lifecycle = closableService(methodDef)
     lifecycle.open()
