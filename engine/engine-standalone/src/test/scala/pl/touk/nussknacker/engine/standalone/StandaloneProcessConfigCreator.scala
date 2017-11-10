@@ -2,8 +2,10 @@ package pl.touk.nussknacker.engine.standalone
 
 import java.util.concurrent.atomic.AtomicInteger
 
-import argonaut.ArgonautShapeless._
-import argonaut.DecodeJson
+import argonaut._
+import Argonaut._
+import ArgonautShapeless._
+
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api._
@@ -12,11 +14,13 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.test.TestDataParser
-import pl.touk.nussknacker.engine.standalone.api.StandaloneGetFactory
+import pl.touk.nussknacker.engine.standalone.api.types.GenericResultType
+import pl.touk.nussknacker.engine.standalone.api.{ResponseEncoder, StandaloneGetFactory}
 import pl.touk.nussknacker.engine.standalone.utils.customtransformers.ProcessSplitter
 import pl.touk.nussknacker.engine.standalone.utils.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.standalone.utils.{JsonStandaloneSourceFactory, StandaloneContext, StandaloneContextLifecycle, StandaloneSinkFactory}
 import pl.touk.nussknacker.engine.util.LoggingListener
+import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -79,6 +83,8 @@ case class Response(field1: String) extends DisplayableAsJson[Response]
 
 object Request1GetSource extends StandaloneGetFactory[Request1] {
 
+  private val encoder = BestEffortJsonEncoder(failOnUnkown = true)
+
   override def clazz: Class[_] = classOf[Request1]
 
   override def testDataParser: Option[TestDataParser[Request1]] = None
@@ -87,6 +93,12 @@ object Request1GetSource extends StandaloneGetFactory[Request1] {
     def takeFirst(id: String) = parameters.getOrElse(id, List()).headOption.getOrElse("")
     Request1(takeFirst("field1"), takeFirst("field2"))
   }
+
+  override def responseEncoder = Some(new ResponseEncoder[Request1] {
+    override def toJsonResponse(input: Request1, result: List[Any]): GenericResultType[Json] = {
+      Right(jObjectFields("inputField1" -> jString(input.field1), "list" -> jArrayElements(result.map(encoder.encode):_*)))
+    }
+  })
 }
 
 

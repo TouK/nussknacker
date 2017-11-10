@@ -19,7 +19,7 @@ object StandaloneRequestHandler {
   def apply(process: EspProcess, contextPreparer: StandaloneContextPreparer, modelData: ModelData)
   : Validated[NonEmptyList[ProcessCompilationError], StandaloneRequestHandler] = {
     modelData.withThisAsContextClassLoader {
-      StandaloneProcessInterpreter(process, contextPreparer, modelData).map(new StandaloneRequestHandler(_))
+      StandaloneProcessInterpreter(process, contextPreparer, modelData).map(new StandaloneRequestHandler(process.id, _, modelData))
     }
   }
 
@@ -27,14 +27,13 @@ object StandaloneRequestHandler {
 
 //this class handles parsing, displaying and invoking interpreter. This is the only place we interact with model, hence
 //only here we care about context classloaders
-class StandaloneRequestHandler(standaloneProcessInterpreter: StandaloneProcessInterpreter) extends Directives  {
+class StandaloneRequestHandler(val id: String, standaloneProcessInterpreter: StandaloneProcessInterpreter, modelData: ModelData) extends Directives  {
 
-  val id: String = standaloneProcessInterpreter.id
+  private val source = standaloneProcessInterpreter.source
 
-  //TODO: make it configurable
-  private val encoder = DefaultResponseEncoder
+  private val encoder = source.responseEncoder.getOrElse(DefaultResponseEncoder)
 
-  private val extractInput: Directive1[Any] = standaloneProcessInterpreter.source match {
+  private val extractInput: Directive1[Any] = source match {
     case a: StandalonePostFactory[Any] =>
       post & entity(as[Array[Byte]]).map(a.parse)
     case a: StandaloneGetFactory[Any] =>
@@ -53,11 +52,11 @@ class StandaloneRequestHandler(standaloneProcessInterpreter: StandaloneProcessIn
     encodedResult <- EitherT.fromEither(encoder.toJsonResponse(input, invocationResult))
   } yield encodedResult).value
 
-  def close(): Unit = standaloneProcessInterpreter.modelData.withThisAsContextClassLoader {
+  def close(): Unit = modelData.withThisAsContextClassLoader {
     standaloneProcessInterpreter.close()
   }
 
-  def open(): Unit = standaloneProcessInterpreter.modelData.withThisAsContextClassLoader {
+  def open(): Unit = modelData.withThisAsContextClassLoader {
     standaloneProcessInterpreter.open()
   }
 

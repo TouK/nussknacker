@@ -143,7 +143,7 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
       status shouldBe StatusCodes.OK
       Get(s"/$procId?field1=a&field2=b") ~> processesRoute ~> check {
         status shouldBe StatusCodes.OK
-        responseAs[String] shouldBe "[\"b\"]"
+        responseAs[String] shouldBe "{\"inputField1\":\"a\",\"list\":[\"b\"]}"
         cancelProcess(procId)
       }
     }

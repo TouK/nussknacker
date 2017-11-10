@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
 import scala.util.control.NonFatal
 
-object DefaultResponseEncoder extends ResponseEncoder {
+object DefaultResponseEncoder extends ResponseEncoder[Any] {
 
   val bestEffortEncoder = BestEffortJsonEncoder(failOnUnkown = true)
 

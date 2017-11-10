@@ -6,7 +6,6 @@ import cats.data
 import cats.data.Validated.Invalid
 import cats.data.{NonEmptyList, ValidatedNel}
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError.{MissingPart, UnsupportedPart}
 import pl.touk.nussknacker.engine.compile.{PartSubGraphCompiler, ProcessCompilationError, ProcessCompiler}
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
@@ -67,7 +66,7 @@ object StandaloneProcessInterpreter {
     compiler.compile(process).andThen { compiledProcessParts =>
       StandaloneInvokerCompiler(sub, compiledProcessParts, interpreter).compile
     }.map { invoker =>
-      StandaloneProcessInterpreter(process.id, contextPreparer.prepare(process.id), invoker, services, sourceFactory, modelData)
+      StandaloneProcessInterpreter(contextPreparer.prepare(process.id), sourceFactory, invoker, services, modelData)
     }
 
   }
@@ -149,10 +148,12 @@ object StandaloneProcessInterpreter {
 
 
 
-case class StandaloneProcessInterpreter(id: String, context: StandaloneContext,
-                                        invoker: types.InterpreterType,
-                                        services: Iterable[Service],
-                                        source: StandaloneSourceFactory[Any], modelData: ModelData) extends InvocationMetrics {
+case class StandaloneProcessInterpreter(context: StandaloneContext,
+                                       //TODO: how to get rid of that?
+                                        source: StandaloneSourceFactory[Any],
+                                        private val invoker: types.InterpreterType,
+                                        private val services: Iterable[Service],
+                                        private val modelData: ModelData) extends InvocationMetrics {
 
   private val counter = new AtomicLong(0)
 
@@ -161,7 +162,7 @@ case class StandaloneProcessInterpreter(id: String, context: StandaloneContext,
   }
 
   def invokeToResult(input: Any)(implicit ec: ExecutionContext): InterpreterOutputType = modelData.withThisAsContextClassLoader {
-    val contextId = s"$id-${counter.getAndIncrement()}"
+    val contextId = s"${context.processId}-${counter.getAndIncrement()}"
     measureTime {
       val ctx = Context(contextId).withVariable(Interpreter.InputParamName, input)
       invoker(ctx, ec)
