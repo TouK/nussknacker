@@ -1,15 +1,14 @@
 package pl.touk.nussknacker.engine.standalone.management
 
-import java.util.UUID
-
+import com.ning.http.client.Response
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import dispatch.Http
+import dispatch.{Http, StatusCode}
 import pl.touk.nussknacker.engine.api.deployment.ProcessState
+import pl.touk.nussknacker.engine.dispatch.LoggingDispatchClient
 import pl.touk.nussknacker.engine.standalone.api.DeploymentData
-import pl.touk.nussknacker.engine.util.service.{AuditDispatchClient, LogCorrelationId}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
 object StandaloneProcessClient {
 
@@ -36,7 +35,7 @@ trait StandaloneProcessClient {
 //but we're making user aware of problem and let him/her fix it
 class MultiInstanceStandaloneProcessClient(clients: List[StandaloneProcessClient]) extends StandaloneProcessClient with LazyLogging {
 
-  private implicit val ec = ExecutionContext.Implicits.global
+  private implicit val ec: ExecutionContextExecutor = ExecutionContext.Implicits.global
 
 
   override def deploy(deploymentData: DeploymentData): Future[Unit] = {
@@ -50,7 +49,7 @@ class MultiInstanceStandaloneProcessClient(clients: List[StandaloneProcessClient
   override def findStatus(name: String): Future[Option[ProcessState]] = {
     Future.sequence(clients.map(_.findStatus(name))).map { statuses =>
       statuses.distinct match {
-        case None::Nil => None
+        case `None`::Nil => None
         case Some(status)::Nil => Some(status)
         case a =>
           //TODO: more precise information
@@ -64,31 +63,41 @@ class MultiInstanceStandaloneProcessClient(clients: List[StandaloneProcessClient
 
 class DispatchStandalonProcessClient(managementUrl: String, http: Http = Http) extends StandaloneProcessClient {
 
-  private implicit val ec = ExecutionContext.Implicits.global
 
-  private val httpClient = Http()
-  private val dispatchClient = new AuditDispatchClient {
-    override protected def http: Http = httpClient
-  }
+  private implicit val ec: ExecutionContextExecutor = ExecutionContext.Implicits.global
+  import pl.touk.nussknacker.engine.dispatch.utils._
+  private val dispatchClient = LoggingDispatchClient(this.getClass)
 
   import argonaut.ArgonautShapeless._
 
   def deploy(deploymentData: DeploymentData): Future[Unit] = {
-    implicit val correlationId = LogCorrelationId(UUID.randomUUID().toString)
     val deployUrl = dispatch.url(managementUrl) / "deploy"
-    dispatchClient.postObjectAsJsonWithoutResponseParsing(deployUrl, deploymentData).map(_ => ())
+    dispatchClient {
+      postJson  (deployUrl, deploymentData) OK asUnit
+    }
   }
 
   def cancel(name: String): Future[Unit] = {
-    implicit val correlationId = LogCorrelationId(UUID.randomUUID().toString)
     val cancelUrl = dispatch.url(managementUrl) / "cancel" / name
-    dispatchClient.sendWithAuditAndStatusChecking(cancelUrl.POST).map(_ => ())
+    dispatchClient {
+      cancelUrl.POST OK asUnit
+    }
   }
 
   def findStatus(name: String): Future[Option[ProcessState]] = {
-    implicit val correlationId = LogCorrelationId(UUID.randomUUID().toString)
+    def notFoundHandler(r: Response): Option[ProcessState] = {
+      if (r.getStatusCode == 404)
+        None
+      else if (r.getStatusCode / 100 == 2)
+        Some(asJson[ProcessState](r))
+      else
+        throw StatusCode(r.getStatusCode)
+    }
+
     val jobStatusUrl = dispatch.url(managementUrl) / "checkStatus" / name
-    dispatchClient.getPossiblyUnavailableJsonAsObject[ProcessState](jobStatusUrl)
+    dispatchClient {
+      jobStatusUrl > notFoundHandler _
+    }
   }
 
 }

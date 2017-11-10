@@ -2,13 +2,12 @@ package pl.touk.process.report.influxdb
 
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDateTime, ZoneId, ZonedDateTime}
-import java.util.UUID
 
 import argonaut.{DecodeJson, DecodeResult}
-import com.ning.http.client.AsyncHttpClient
 import com.typesafe.scalalogging.LazyLogging
-import dispatch.Http
-import pl.touk.nussknacker.engine.util.service.{AuditDispatchClientImpl, LogCorrelationId}
+import dispatch._
+import pl.touk.nussknacker.engine.dispatch.LoggingDispatchClient
+import pl.touk.nussknacker.engine.dispatch.utils._
 
 import scala.concurrent.Future
 
@@ -18,7 +17,7 @@ class InfluxGenerator(url: String, user: String, password: String, dbName: Strin
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
-  val httpClient = new AuditDispatchClientImpl(http = Http(new AsyncHttpClient()))
+  val httpClient = LoggingDispatchClient(classOf[InfluxGenerator])
 
   implicit val numberOrStringDecoder = DecodeJson.apply[Any] { cursor =>
     val focused = cursor.focus
@@ -61,16 +60,13 @@ class InfluxGenerator(url: String, user: String, password: String, dbName: Strin
   }
 
   private def query(query: String): Future[List[InfluxSerie]] = {
-    implicit val id = LogCorrelationId(UUID.randomUUID().toString)
-    val req = dispatch.url(url)
-      .addQueryParameter("db", dbName)
-      .addQueryParameter("q", query)
-      .as_!(user, password)
-
-    httpClient.getJsonAsObject[InfluxResponse](req)
-      .map { qr =>
-        qr.results.head.series
-      }
+    httpClient {
+      dispatch
+        .url(url) <<? Map("db" -> dbName, "q" -> query) as_!(user, password) OK
+        asJson[InfluxResponse]
+    }.map { qr =>
+      qr.results.head.series
+    }
   }
 
   private def toEpochSeconds(d: LocalDateTime): Long = {
