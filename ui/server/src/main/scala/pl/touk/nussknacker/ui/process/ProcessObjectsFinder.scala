@@ -5,10 +5,12 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{Process
 import pl.touk.nussknacker.engine.graph.node.{CustomNode, NodeData}
 import pl.touk.nussknacker.ui.api.SignalDefinition
 import pl.touk.nussknacker.ui.process.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessDetails
+import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
 import shapeless.syntax.typeable._
 
-object ProcessObjectsFinder {
+class ProcessObjectsFinder(subprocessResolver: SubprocessResolver) {
   import pl.touk.nussknacker.ui.util.CollectionsEnrichments._
 
   def findSignals(processes: List[ProcessDetails],
@@ -29,16 +31,21 @@ object ProcessObjectsFinder {
   private def findProcessesWithTransformers(processList: List[ProcessDetails], transformers: Set[String]): List[String] = {
     processList
       .flatMap(_.json.toList)
+      .flatMap(resolveGraph _)
       .filter(processContainsData(nodeIsSignalTransformer(transformers))).map(_.id)
   }
 
+  private def resolveGraph(displayable: DisplayableProcess): Option[DisplayableProcess] = {
+    val canonical = subprocessResolver.resolveSubprocesses(ProcessConverter.fromDisplayable(displayable)).toOption
+    canonical.map(c => ProcessConverter.toDisplayable(c, displayable.processingType))
+  }
 
   private def nodeIsSignalTransformer(transformers: Set[String])(node: NodeData) = {
     def isCustomNodeFromList = (c:CustomNode) => transformers.contains(c.nodeType)
     node.cast[CustomNode].exists(isCustomNodeFromList)
   }
 
-  private def processContainsData(predicate: NodeData=>Boolean)(process: DisplayableProcess) : Boolean = {
+  private def processContainsData(predicate: NodeData => Boolean)(process: DisplayableProcess) : Boolean = {
     process.nodes.exists(predicate)
   }
 }

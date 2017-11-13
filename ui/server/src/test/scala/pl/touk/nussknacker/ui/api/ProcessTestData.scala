@@ -23,7 +23,6 @@ import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{BaseProcessDetails, ProcessDetails, ValidatedProcessDetails}
 import pl.touk.nussknacker.ui.process.subprocess.{SetSubprocessRepository, SubprocessResolver}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
-import pl.touk.nussknacker.ui.validation.ValidationResults.ValidationResult
 
 object ProcessTestData {
 
@@ -35,6 +34,7 @@ object ProcessTestData {
 
   val existingStreamTransformer = "transformer"
   val otherExistingStreamTransformer = "otherTransformer"
+  val otherExistingStreamTransformer2 = "otherTransformer2"
 
   val processDefinition = ObjectProcessDefinition.empty
         .withSourceFactory(existingSourceFactory)
@@ -44,6 +44,7 @@ object ProcessTestData {
         .withService(otherExistingServiceId)
         .withCustomStreamTransformer(existingStreamTransformer, classOf[String],  CustomTransformerAdditionalData(Set("query1", "query2"), clearsContext = false))
         .withCustomStreamTransformer(otherExistingStreamTransformer, classOf[String], CustomTransformerAdditionalData(Set("query3"), clearsContext = false))
+        .withCustomStreamTransformer(otherExistingStreamTransformer2, classOf[String], CustomTransformerAdditionalData(Set("query4"), clearsContext = false))
 
   val validator = ProcessValidator.default(processDefinition)
 

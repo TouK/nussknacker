@@ -13,7 +13,8 @@ import shapeless.syntax.typeable._
 import scala.concurrent.{ExecutionContext, Future}
 
 class SignalsResources(modelData: ModelData,
-                       processRepository: FetchingProcessRepository)
+                       processRepository: FetchingProcessRepository,
+                       processObjectsFinder: ProcessObjectsFinder)
                       (implicit ec: ExecutionContext) extends Directives with Argonaut62Support  with RouteWithUser {
 
   import pl.touk.nussknacker.ui.codec.UiCodecs._
@@ -43,7 +44,7 @@ class SignalsResources(modelData: ModelData,
   private def prepareSignalDefinitions(implicit user: LoggedUser): Future[Map[String, SignalDefinition]] = {
     //TODO: only processes that are deployed right now??
     processRepository.fetchProcessesDetails().map { processList =>
-      ProcessObjectsFinder.findSignals(processList, modelData.processDefinition)
+      processObjectsFinder.findSignals(processList, modelData.processDefinition)
     }
   }
 

@@ -23,7 +23,7 @@ import pl.touk.nussknacker.ui.process.repository.{DBFetchingProcessRepository, D
 import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, SubprocessResolver}
 import pl.touk.nussknacker.ui.process.uiconfig.SingleNodeConfig
 import pl.touk.nussknacker.ui.process.uiconfig.defaults.{ParamDefaultValueConfig, TypeAfterConfig}
-import pl.touk.nussknacker.ui.process.{JobStatusService, NewProcessPreparer, ProcessTypesForCategories, ProcessingTypeDeps}
+import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 import pl.touk.process.report.influxdb.InfluxReporter
@@ -69,6 +69,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
   val subprocessRepository = new DbSubprocessRepository(db, system.dispatcher)
   val subprocessResolver = new SubprocessResolver(subprocessRepository)
 
+  val processObjectsFinder = new ProcessObjectsFinder(subprocessResolver)
   val processValidation = ProcessValidation(modelData, subprocessResolver)
 
   val processRepository = DBFetchingProcessRepository.create(db)
@@ -99,8 +100,8 @@ object NussknackerApp extends App with Directives with LazyLogging {
         ManagementResources(modelData, counter, managementActor),
         new ValidationResources(processValidation),
         new DefinitionResources(modelData, subprocessRepository, extractValueParameterByConfigThenType),
-        new SignalsResources(modelData(ProcessingType.Streaming), processRepository),
-        new QueryableStateResources(modelData, processRepository, espQueryableClient, jobStatusService),
+        new SignalsResources(modelData(ProcessingType.Streaming), processRepository, processObjectsFinder),
+        new QueryableStateResources(modelData, processRepository, espQueryableClient, jobStatusService, processObjectsFinder),
         new UserResources(),
         new SettingsResources(featureTogglesConfig, nodesConfig),
         new AppResources(modelData, processRepository, processValidation, jobStatusService),
