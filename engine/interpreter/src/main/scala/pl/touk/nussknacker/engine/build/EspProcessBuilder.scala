@@ -16,6 +16,9 @@ class ProcessMetaDataBuilder private[build](metaData: MetaData) {
   def path(p: Option[String]) =
    new ProcessMetaDataBuilder(metaData.copy(typeSpecificData = StandaloneMetaData(p)))
 
+  def subprocessVersions(subprocessVersions: Map[String, Long]) =
+   new ProcessMetaDataBuilder(metaData.copy(subprocessVersions = subprocessVersions))
+
 
   def exceptionHandler(params: (String, Expression)*) =
     new ProcessExceptionHandlerBuilder(ExceptionHandlerRef(params.map(evaluatedparam.Parameter.tupled).toList))

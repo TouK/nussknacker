@@ -45,6 +45,7 @@ object ProcessRepository {
                              processingType: ProcessingType,
                              processCategory: String,
                              modificationDate: LocalDateTime,
+                             subprocessesModificationDate: Option[Map[String, LocalDateTime]],
                              tags: List[String],
                              currentlyDeployedAt: Set[String],
                              json: Option[ProcessShape],

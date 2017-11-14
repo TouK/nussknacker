@@ -8,8 +8,8 @@ object DateUtils {
 
   val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
-  def now = {
-    Timestamp.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant)
+  def toTimestamp(localDateTime: LocalDateTime) = {
+    Timestamp.from(localDateTime.atZone(ZoneId.systemDefault()).toInstant)
   }
 
   def toLocalDateTime(t: Timestamp) = {

@@ -1,5 +1,8 @@
 package pl.touk.nussknacker.ui.process.repository
 
+import java.sql.Timestamp
+import java.time.LocalDateTime
+
 import cats.data._
 import cats.syntax.either._
 import com.typesafe.scalalogging.LazyLogging
@@ -92,7 +95,7 @@ abstract class DbWriteProcessRepository[F[_]](val dbConfig: DbConfig,
                         processesVersionCount: Int, processingType: ProcessingType): Option[ProcessVersionEntityData] = latestProcessVersion match {
       case Some(version) if version.json == maybeJson && version.mainClass == maybeMainClass => None
       case _ => Option(ProcessVersionEntityData(id = processesVersionCount + 1, processId = processId,
-        json = maybeJson, mainClass = maybeMainClass, createDate = DateUtils.now,
+        json = maybeJson, mainClass = maybeMainClass, createDate = DateUtils.toTimestamp(now),
         user = loggedUser.id, modelVersion = modelVersion.get(processingType)))
     }
 
@@ -125,5 +128,8 @@ abstract class DbWriteProcessRepository[F[_]](val dbConfig: DbConfig,
     }
     run(action)
   }
+
+  //to override in tests
+  protected def now: LocalDateTime = LocalDateTime.now()
 
 }

@@ -68,11 +68,11 @@ object ProcessTestData {
 
   def toDetails(displayable: DisplayableProcess) : ProcessDetails =
     BaseProcessDetails[DisplayableProcess](displayable.id, displayable.id, 1, true, None, ProcessType.Graph,
-      ProcessingType.Streaming, "", LocalDateTime.now(), List(), Set(), Some(displayable), List(), None)
+      ProcessingType.Streaming, "", LocalDateTime.now(), None, List(), Set(), Some(displayable), List(), None)
 
   def toDetails(displayable: ValidatedDisplayableProcess) : ValidatedProcessDetails =
     BaseProcessDetails[ValidatedDisplayableProcess](displayable.id, displayable.id, 1, true, None, ProcessType.Graph,
-      ProcessingType.Streaming, "", LocalDateTime.now(), List(), Set(), Some(displayable), List(), None)
+      ProcessingType.Streaming, "", LocalDateTime.now(), None, List(), Set(), Some(displayable), List(), None)
 
 
 
