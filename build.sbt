@@ -113,7 +113,7 @@ def engine(name: String) = file(s"engine/$name")
 lazy val engineStandalone = (project in engine("standalone/engine")).
   settings(commonSettings).
   settings(
-    name := "nussknacker-engine-standalone",
+    name := "nussknacker-standalone-engine",
     libraryDependencies ++= {
       Seq(
         "org.typelevel" %% "cats-core" % catsV,
@@ -130,7 +130,7 @@ lazy val engineStandalone = (project in engine("standalone/engine")).
 lazy val standaloneApp = (project in engine("standalone/app")).
   settings(commonSettings).
   settings(
-    name := "nussknacker-engine-app",
+    name := "nussknacker-standalone-app",
     assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = true, level = Level.Debug),
     artifact in (Compile, assembly) := {
       val art = (artifact in (Compile, assembly)).value
