@@ -110,10 +110,27 @@ val flywayV = "4.0.3"
 
 def engine(name: String) = file(s"engine/$name")
 
-lazy val engineStandalone = (project in engine("engine-standalone")).
+lazy val engineStandalone = (project in engine("standalone/engine")).
   settings(commonSettings).
   settings(
     name := "nussknacker-engine-standalone",
+    libraryDependencies ++= {
+      Seq(
+        "org.typelevel" %% "cats-core" % catsV,
+        "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
+        "io.argonaut" %% "argonaut" % argonautV,
+        "com.github.alexarchambault" %% s"argonaut-shapeless_$argonautMajorV" % argonautShapelessV,
+        "org.scalatest" %% "scalatest" % scalaTestV % "test",
+        "ch.qos.logback" % "logback-classic" % logbackV % "test"
+      )
+    }
+  ).
+  dependsOn(interpreter, standaloneUtil, argonautUtils)
+
+lazy val standaloneApp = (project in engine("standalone/app")).
+  settings(commonSettings).
+  settings(
+    name := "nussknacker-engine-app",
     assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = true, level = Level.Debug),
     artifact in (Compile, assembly) := {
       val art = (artifact in (Compile, assembly)).value
@@ -121,33 +138,28 @@ lazy val engineStandalone = (project in engine("engine-standalone")).
     },
     libraryDependencies ++= {
       Seq(
-        "org.typelevel" %% "cats-core" % catsV,
-        "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
-
+        "org.scalatest" %% "scalatest" % scalaTestV % "test",
         "com.typesafe.akka" %% "akka-http-experimental" % akkaHttpV force(),
         "com.typesafe.akka" %% "akka-http-testkit-experimental" % akkaHttpV % "test" force(),
-        "io.argonaut" %% "argonaut" % argonautV,
-        "com.github.alexarchambault" %% s"argonaut-shapeless_$argonautMajorV" % argonautShapelessV,
-
-        "org.scalatest" %% "scalatest" % scalaTestV % "test",
-        "ch.qos.logback" % "logback-classic" % logbackV % "test"
+        "com.typesafe.akka" %% "akka-slf4j" % akkaV,
+        "ch.qos.logback" % "logback-classic" % logbackV
       )
     }
   ).
   settings(addArtifact(artifact in (Compile, assembly), assembly)).
-  dependsOn(interpreter, standaloneUtil, argonautUtils)
+  dependsOn(engineStandalone)
 
-lazy val management = (project in engine("management")).
+
+lazy val management = (project in engine("flink/management")).
   configs(IntegrationTest).
   settings(commonSettings).
   settings(Defaults.itSettings).
   settings(
     name := "nussknacker-management",
     Keys.test in IntegrationTest <<= (Keys.test in IntegrationTest).dependsOn(
-      (assembly in Compile) in management_sample,
-      (assembly in Compile) in standalone_sample
+      (assembly in Compile) in management_sample
     ),
-    //jest problem we flinku jesli sie naraz deployuje i puszcza testy :|
+    //flink cannot run tests and deployment concurrently
     parallelExecution in IntegrationTest := false,
     libraryDependencies ++= {
       Seq(
@@ -177,7 +189,7 @@ lazy val standalone_sample = (project in engine("engine-standalone/sample")).
 
 val managementSampleName = "nussknacker-management-sample"
 
-lazy val management_sample = (project in engine("management/sample")).
+lazy val management_sample = (project in engine("flink/management/sample")).
   settings(commonSettings).
   settings(
     name := managementSampleName,
@@ -215,7 +227,7 @@ lazy val example = (project in engine("example")).
   .settings(addArtifact(artifact in (Compile, assembly), assembly))
   .dependsOn(process, kafkaFlinkUtil, kafkaTestUtil % "test", flinkTestUtil % "test")
 
-lazy val process = (project in engine("process")).
+lazy val process = (project in engine("flink/process")).
   settings(commonSettings).
   settings(
     name := "nussknacker-process",
@@ -267,7 +279,7 @@ lazy val kafka = (project in engine("kafka")).
   ).
   dependsOn(util)
 
-lazy val kafkaFlinkUtil = (project in engine("kafka-flink-util")).
+lazy val kafkaFlinkUtil = (project in engine("flink/kafka-util")).
   settings(commonSettings).
   settings(
     name := "nussknacker-kafka-flink-util",
@@ -313,7 +325,7 @@ lazy val util = (project in engine("util")).
 
 
 
-lazy val flinkUtil = (project in engine("flink-util")).
+lazy val flinkUtil = (project in engine("flink/util")).
   settings(commonSettings).
   settings(
     name := "nussknacker-flink-util",
@@ -325,7 +337,7 @@ lazy val flinkUtil = (project in engine("flink-util")).
     }
   ).dependsOn(util, flinkApi)
 
-lazy val flinkTestUtil = (project in engine("flink-test-util")).
+lazy val flinkTestUtil = (project in engine("flink/test-util")).
   settings(commonSettings).
   settings(
     name := "nussknacker-flink-test-util",
@@ -341,7 +353,7 @@ lazy val flinkTestUtil = (project in engine("flink-test-util")).
     }
   ).dependsOn(queryableState)
 
-lazy val standaloneUtil = (project in engine("standalone-util")).
+lazy val standaloneUtil = (project in engine("standalone/util")).
   settings(commonSettings).
   settings(
     name := "nussknacker-standalone-util",
@@ -353,7 +365,7 @@ lazy val standaloneUtil = (project in engine("standalone-util")).
     }
   ).dependsOn(util, standaloneApi)
 
-lazy val standaloneApi = (project in engine("standalone-api")).
+lazy val standaloneApi = (project in engine("standalone/api")).
   settings(commonSettings).
   settings(
     name := "nussknacker-standalone-api"
@@ -394,7 +406,7 @@ lazy val securityApi = (project in engine("security-api")).
   )
   .dependsOn(util)
 
-lazy val flinkApi = (project in engine("flink-api")).
+lazy val flinkApi = (project in engine("flink/api")).
   settings(commonSettings).
   settings(
     name := "nussknacker-flink-api",

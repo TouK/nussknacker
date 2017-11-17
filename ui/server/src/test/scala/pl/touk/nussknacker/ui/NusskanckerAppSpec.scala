@@ -19,8 +19,6 @@ import pl.touk.nussknacker.ui.util.{AvailablePortFinder, MultipartUtils}
 
 import scala.concurrent.Future
 
-//This test does not work in Idea
-//delete /engine/engine-standalone/sample/src/main/resources/META-INF/services/pl.touk.nussknacker.engine.api.process.ProcessConfigCreator to make it work in Idea...
 class NusskanckerAppSpec extends FlatSpec with BeforeAndAfterEach with Matchers with ScalaFutures {
 
   override implicit def patienceConfig: PatienceConfig = PatienceConfig(timeout = scaled(Span(30, Seconds)), interval = scaled(Span(1, Seconds)))

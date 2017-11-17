@@ -5,7 +5,8 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.deployment.ProcessManager
 import pl.touk.nussknacker.engine.flink.queryablestate.EspQueryableClient
 import pl.touk.nussknacker.engine.management.{FlinkModelData, FlinkProcessManager}
-import pl.touk.nussknacker.engine.standalone.management.{StandaloneModelData, StandaloneProcessManager}
+import pl.touk.nussknacker.engine.standalone.StandaloneModelData
+import pl.touk.nussknacker.engine.standalone.management.StandaloneProcessManager
 import pl.touk.nussknacker.ui.app.BuildInfo
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
