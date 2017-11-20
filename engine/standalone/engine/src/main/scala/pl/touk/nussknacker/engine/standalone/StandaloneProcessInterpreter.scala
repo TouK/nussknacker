@@ -42,7 +42,7 @@ object StandaloneProcessInterpreter {
             additionalListeners: List[ProcessListener] = List(),
             definitionsPostProcessor: (ProcessDefinitionExtractor.ProcessDefinition[ObjectWithMethodDef]
               => ProcessDefinitionExtractor.ProcessDefinition[ObjectWithMethodDef]) = identity)
-  : ValidatedNel[ProcessCompilationError, StandaloneProcessInterpreter] = {
+  : ValidatedNel[ProcessCompilationError, StandaloneProcessInterpreter] = modelData.withThisAsContextClassLoader {
 
     val creator = modelData.configCreator
     val config = modelData.processConfig
