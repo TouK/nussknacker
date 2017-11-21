@@ -29,6 +29,7 @@ import pl.touk.nussknacker.engine.management.sample.signal.{RemoveLockProcessSig
 import scala.concurrent.Future
 import argonaut.Argonaut._
 import argonaut.ArgonautShapeless._
+import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 
 class TestProcessConfigCreator extends ProcessConfigCreator {
 
@@ -253,17 +254,6 @@ case object ParamExceptionHandler extends ExceptionHandlerFactory {
 
 }
 
-case object EmptySink extends FlinkSink {
-
-  override def testDataOutput: Option[(Any) => String] = Option {
-    case a: Displayable => a.display.spaces2
-    case b => b.toString
-  }
-
-  override def toFlinkFunction: SinkFunction[Any] = new SinkFunction[Any] {
-    override def invoke(value: Any): Unit = ()
-  }
-}
 
 case object EmptyService extends Service {
   @MethodToInvoke

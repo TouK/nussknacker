@@ -165,7 +165,7 @@ class CustomNodeProcessSpec extends FlatSpec with Matchers {
 
     val thrown = the [IllegalArgumentException] thrownBy processInvoker.invoke(process, data, env)
 
-    thrown.getMessage shouldBe "Compilation errors: ExpressionParseError(Unresolved references input,proc2,Some(all),#input.id)"
+    thrown.getMessage shouldBe "Compilation errors: ExpressionParseError(Unresolved reference input,proc2,Some(all),#input.id)"
 
 
   }

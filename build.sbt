@@ -157,7 +157,8 @@ lazy val management = (project in engine("flink/management")).
   settings(
     name := "nussknacker-management",
     Keys.test in IntegrationTest <<= (Keys.test in IntegrationTest).dependsOn(
-      (assembly in Compile) in management_sample
+      (assembly in Compile) in management_sample,
+      (assembly in Compile) in management_java_sample
     ),
     //flink cannot run tests and deployment concurrently
     parallelExecution in IntegrationTest := false,
@@ -206,6 +207,22 @@ lazy val management_sample = (project in engine("flink/management/sample")).
   dependsOn(flinkUtil, kafka, kafkaFlinkUtil, process % "runtime,test", flinkTestUtil % "test", kafkaTestUtil % "test",
     securityApi)
 
+lazy val management_java_sample = (project in engine("flink/management/java_sample")).
+  settings(commonSettings).
+  settings(
+    name := managementSampleName,
+    assemblyJarName in assembly := "managementJavaSample.jar",
+    assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false, level = Level.Debug),
+    test in assembly := {},
+    libraryDependencies ++= {
+      Seq(
+        "org.scala-lang.modules" %% "scala-java8-compat" % "0.8.0",
+        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided"
+      )
+    }
+  ).dependsOn(flinkUtil, process % "runtime")
+
+
 lazy val example = (project in engine("example")).
   settings(commonSettings).
   settings(
@@ -235,6 +252,7 @@ lazy val process = (project in engine("flink/process")).
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
+        "org.apache.flink" %% "flink-runtime" % flinkV % "provided",
         "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV,
         "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )

@@ -40,7 +40,7 @@ private[definition] class CustomNodeInvokerImpl[T](executor: ObjectWithMethodDef
 
 
 
-case class CompilerLazyInterpreter[T](lazyDeps: () => CustomNodeInvokerDeps,
+private[definition] case class CompilerLazyInterpreter[T](lazyDeps: () => CustomNodeInvokerDeps,
                                    metaData: MetaData,
                                    node: SplittedNode[CustomNode], param: String) extends LazyInterpreter[T] {
 
@@ -60,6 +60,7 @@ case class CompilerLazyInterpreter[T](lazyDeps: () => CustomNodeInvokerDeps,
   @transient override lazy val syncInterpretationFunction = new SyncFunction
 
   class SyncFunction extends (InterpretationResult => T) with Serializable {
+
     lazy implicit val ec = SynchronousExecutionContext.ctx
     lazy val deps = lazyDeps()
     lazy val interpreter = createInterpreter(ec, deps)

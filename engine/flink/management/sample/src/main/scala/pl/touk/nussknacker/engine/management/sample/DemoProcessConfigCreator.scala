@@ -21,6 +21,7 @@ import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionHandler
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkSource, FlinkSourceFactory}
 import pl.touk.nussknacker.engine.flink.util.exception.VerboselyLoggingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
+import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Random, Try}

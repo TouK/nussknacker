@@ -5,9 +5,10 @@ import org.apache.flink.configuration.Configuration
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionHandler
 
 trait WithExceptionHandler extends RichFunction {
-  @transient lazy val exceptionHandler = lazyHandler()
 
-  def lazyHandler: () => FlinkEspExceptionHandler
+  @transient lazy val exceptionHandler = lazyHandler(getRuntimeContext.getUserCodeClassLoader)
+
+  def lazyHandler: (ClassLoader) => FlinkEspExceptionHandler
 
   override def close() = {
     exceptionHandler.close()

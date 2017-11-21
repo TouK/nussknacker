@@ -153,7 +153,9 @@ object ProcessTestHelpers {
 
   }
 
-  case class CustomMap(lazyHandler: ()=>FlinkEspExceptionHandler) extends RichMapFunction[ValueWithContext[Any], ValueWithContext[Any]] with WithExceptionHandler {
+  case class CustomMap(lazyHandler: (ClassLoader)=>FlinkEspExceptionHandler)
+    extends RichMapFunction[ValueWithContext[Any], ValueWithContext[Any]] with WithExceptionHandler {
+
     override def map(value: ValueWithContext[Any]) = {
       //just using Exceptionhandler here to see that its injected properly
       try {

@@ -74,7 +74,7 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
     .id(procId)
     .exceptionHandler()
     .source("start", "request1-post-source")
-    .filter("filter1", "1/#input.field1.length()")
+    .filter("filter1", "1/#input.field1.length() > 0")
     .sink("endNodeIID", "''", "response-sink"))
 
 

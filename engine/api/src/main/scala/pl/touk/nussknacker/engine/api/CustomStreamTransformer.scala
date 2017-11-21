@@ -17,6 +17,7 @@ abstract class CustomStreamTransformer {
 
 }
 
+//TODO: refactor to pass user classloader explicitly
 trait LazyInterpreter[T] {
 
   def createInterpreter: ((ExecutionContext, Context) => Future[T])

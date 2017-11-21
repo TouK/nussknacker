@@ -72,7 +72,7 @@ trait ModelData extends ConfigCreatorSignalDispatcher with ConfigCreatorTestInfo
       ObjectProcessDefinition(ProcessDefinitionExtractor.extractObjectWithMethods(configCreator, processConfig))
     }
 
-  lazy val validator: ProcessValidator = ProcessValidator.default(processDefinition)
+  lazy val validator: ProcessValidator = ProcessValidator.default(processDefinition, modelClassLoader.classLoader)
 
   def withThisAsContextClassLoader[T](block: => T) : T = {
     ThreadUtils.withThisAsContextClassLoader(modelClassLoader.classLoader) {

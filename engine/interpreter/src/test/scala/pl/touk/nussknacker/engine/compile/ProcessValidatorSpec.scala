@@ -151,7 +151,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
 
     val definition = ObjectProcessDefinition.empty.withService(serviceId, Parameter(name = "foo", typ = ClazzRef(classOf[String])))
     ProcessValidator.default(definition).validate(processWithRefToMissingService) should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("Unresolved references input", "filter", None, "#input != null"), List(MissingSourceFactory(_, _)))) =>
+      case Invalid(NonEmptyList(ExpressionParseError("Unresolved reference input", "filter", None, "#input != null"), List(MissingSourceFactory(_, _)))) =>
     }
   }
 
@@ -188,7 +188,9 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
       .filter("sampleFilter", "#doesExist['v1'] + #doesNotExist1 + #doesNotExist2 > 10")
       .sink("id2", "sink")
     ProcessValidator.default(baseDefinition).validate(process) should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("Unresolved references doesNotExist1, doesNotExist2", "sampleFilter", None, _), _)) =>
+      case Invalid(NonEmptyList(
+      ExpressionParseError("Unresolved reference doesNotExist1", "sampleFilter", None, _),
+      List(ExpressionParseError("Unresolved reference doesNotExist2", "sampleFilter", None, _)))) =>
     }
   }
 
@@ -258,7 +260,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
       .source("id1", "source")
       .customNodeNoOutput("noOutput", "withoutReturnType", "par1" -> "'1'")
       .customNode("cNode1", "out1", "custom", "par1" -> "'1'")
-      .filter("sampleFilter1", "#out1.value2")
+      .filter("sampleFilter1", "#out1.value2 > 0")
       .filter("sampleFilter2", "#out1.terefere")
       .sink("id2", "sink")
     val definitionWithCustomNode = definitionWithTypedSourceAndTransformNode
@@ -379,10 +381,10 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
 
     ProcessValidator.default(definitionWithTypedSource).validate(process) should matchPattern {
       case Invalid(NonEmptyList(
-      ExpressionParseError("Unresolved references terefere", "p1", Some("par1"), _),
+      ExpressionParseError("Unresolved reference terefere", "p1", Some("par1"), _),
       List(
       ExpressionParseError("Expression [{] @0: EL1044E: Unexpectedly ran out of input", "c1", Some("par1"), _),
-      ExpressionParseError("Unresolved references terefere22", "v1", Some("par1"), _))
+      ExpressionParseError("Unresolved reference terefere22", "v1", Some("par1"), _))
       )) =>
     }
   }
@@ -461,7 +463,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
       .source("id1", "source")
       .switch("switch", "''", "var2",
         GraphBuilder.buildSimpleVariable("var3", "var3", "''").sink("id2", "sink"),
-         Case("''", GraphBuilder.buildSimpleVariable("var3b", "var3", "''").sink("id3", "sink")))
+         Case("true", GraphBuilder.buildSimpleVariable("var3b", "var3", "''").sink("id3", "sink")))
 
     ProcessValidator.default(definitionWithTypedSource).validate(process) should matchPattern {
       case Valid(_) =>
@@ -475,10 +477,10 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
       .source("id1", "source")
       .switch("switch", "''", "var2",
         GraphBuilder.buildSimpleVariable("var3", "var3", "''").sink("id2", "sink"),
-         Case("''", GraphBuilder.sink("id3", "#var3", "sink")))
+         Case("false", GraphBuilder.sink("id3", "#var3", "sink")))
 
     ProcessValidator.default(definitionWithTypedSource).validate(process) should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("Unresolved references var3", "id3", None, "#var3"), _)) =>
+      case Invalid(NonEmptyList(ExpressionParseError("Unresolved reference var3", "id3", None, "#var3"), _)) =>
     }
   }
 
@@ -506,7 +508,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
         .sink("id2", "#input.toString()", "sink")
 
     ProcessValidator.default(baseDefinition).validate(processWithInvalidExpresssion) should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("Unresolved references input", "id2", None, "#input.toString()"), _)) =>
+      case Invalid(NonEmptyList(ExpressionParseError("Unresolved reference input", "id2", None, "#input.toString()"), _)) =>
     }
   }
 

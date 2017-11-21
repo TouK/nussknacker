@@ -4,8 +4,8 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data.ValidatedNel
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.Interpreter
+import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import pl.touk.nussknacker.engine.api.{ProcessListener, Service}
-import pl.touk.nussknacker.engine.api.process.{AsyncExecutionContextPreparer, ProcessConfigCreator}
 import pl.touk.nussknacker.engine.compile.{PartSubGraphCompiler, ProcessCompilationError, ProcessCompiler}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ClazzRef, ObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
@@ -44,14 +44,13 @@ abstract class FlinkProcessCompiler(creator: ProcessConfigCreator, config: Confi
     = definitions().signalsWithTransformers.mapValuesNow(_._1.as[FlinkProcessSignalSender])
       .map { case (k,v) => SignalSenderKey(k, v.getClass) -> v }
 
-  def compileProcess(process: EspProcess)(): CompiledProcessWithDeps = {
+  def compileProcess(process: EspProcess)(userCodeClassLoader: ClassLoader): CompiledProcessWithDeps = {
     val servicesDefs = definitions().services
     //for testing environment it's important to take classloader from user jar
     val globalVariables = creator.globalProcessVariables(config).mapValuesNow(_.value)
     val subCompiler = PartSubGraphCompiler.default(servicesDefs,
-      globalVariables.mapValuesNow(v => ClazzRef(v.getClass)),
-      creator.getClass.getClassLoader, config)
-    val processCompiler = new ProcessCompiler(subCompiler, definitions())
+      globalVariables.mapValuesNow(v => ClazzRef(v.getClass)), userCodeClassLoader, config)
+    val processCompiler = new ProcessCompiler(userCodeClassLoader, subCompiler, definitions())
     val compiledProcess = validateOrFailProcessCompilation(processCompiler.compile(process))
 
     //TODO: this should be somewhere else?

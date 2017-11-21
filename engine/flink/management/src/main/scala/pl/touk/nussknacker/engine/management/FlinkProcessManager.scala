@@ -75,6 +75,7 @@ class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeploy: Boolea
 
   private lazy val verification = new FlinkProcessVerifier(modelData)
 
+  private val modelJar = new FlinkModelJar
 
   override def deploy(processId: String, processDeploymentData: ProcessDeploymentData, savepointPath: Option[String]) = {
     val program = prepareProgram(processId, processDeploymentData)
@@ -180,7 +181,7 @@ class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeploy: Boolea
   private def prepareProgram(processId: String, processDeploymentData: ProcessDeploymentData) : PackagedProgram = {
     val configPart = modelData.processConfig.root().render()
 
-    val jarFile = FlinkModelJar.buildJobJar(modelData)
+    val jarFile = modelJar.buildJobJar(modelData)
     processDeploymentData match {
       case GraphProcess(processAsJson) =>
         new PackagedProgram(jarFile, "pl.touk.nussknacker.engine.process.runner.FlinkProcessMain", List(processAsJson, configPart, buildInfoJson):_*)

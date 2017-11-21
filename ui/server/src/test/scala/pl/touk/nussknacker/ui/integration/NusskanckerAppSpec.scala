@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui
+package pl.touk.nussknacker.ui.integration
 
 import java.io.File
 import java.nio.file.Files
@@ -13,12 +13,14 @@ import org.apache.commons.io.FileUtils
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Seconds, Span}
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
+import pl.touk.nussknacker.ui.NussknackerApp
 import pl.touk.nussknacker.ui.api.UISettings
 import pl.touk.nussknacker.ui.process.uiconfig.SingleNodeConfig
 import pl.touk.nussknacker.ui.util.{AvailablePortFinder, MultipartUtils}
 
 import scala.concurrent.Future
 
+//TODO: consider rewriting to use NussknackerApp.initializeRoute without running full app on real http server
 class NusskanckerAppSpec extends FlatSpec with BeforeAndAfterEach with Matchers with ScalaFutures {
 
   override implicit def patienceConfig: PatienceConfig = PatienceConfig(timeout = scaled(Span(30, Seconds)), interval = scaled(Span(1, Seconds)))
@@ -33,6 +35,7 @@ class NusskanckerAppSpec extends FlatSpec with BeforeAndAfterEach with Matchers 
   }
 
   import argonaut.ArgonautShapeless._
+
   import scala.concurrent.ExecutionContext.Implicits.global
 
   it should "ensure config is properly parsed e2e style" in {

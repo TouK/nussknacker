@@ -10,7 +10,8 @@ import scala.reflect.ClassTag
 case class FlinkCustomNodeContext(metaData: MetaData,
                                   nodeId: String,
                                   timeout: FiniteDuration,
-                                  exceptionHandler: ()=>FlinkEspExceptionHandler,
+                                  //This *has* to be opened/closed by user code - TODO: enforce/document it somehow??
+                                  exceptionHandler: (ClassLoader)=>FlinkEspExceptionHandler,
                                   signalSenderProvider: FlinkProcessSignalSenderProvider)
 
 case class SignalSenderKey(id: String, klass: Class[_])

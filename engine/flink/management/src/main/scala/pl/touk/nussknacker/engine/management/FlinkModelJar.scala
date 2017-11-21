@@ -8,7 +8,7 @@ import java.util.jar.{JarEntry, JarOutputStream}
 import org.apache.commons.io.IOUtils
 import pl.touk.nussknacker.engine.ModelData
 
-object FlinkModelJar {
+class FlinkModelJar {
 
   //TODO: handle multiple models?
   private var modelFile: Option[File] = None
