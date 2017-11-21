@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnod
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compile.PartSubGraphCompilerBase.CompiledNode
 import pl.touk.nussknacker.engine.compile.{PartSubGraphCompiler, SubprocessResolver, ValidationContext}
+import pl.touk.nussknacker.engine.compiledgraph.typing.Typed
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ClazzRef, ObjectDefinition, ObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ServiceInvoker}
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -69,7 +70,7 @@ class InterpreterSpec extends FlatSpec with Matchers {
     val interpreter = Interpreter(servicesDefs, Map(), listeners, true)
     val classes = (servicesDef.values.map(_.getClass) ++ sourceFactories.values.map(c => Class.forName(c.returnType.refClazzName))).toList
     val typesInformation = EspTypeUtils.clazzAndItsChildrenDefinition(classes)(ClassExtractionSettings.Default)
-    val compiledNode = compile(servicesDefs, splitted.source.node, ValidationContext(typesInformation = typesInformation, variables = Map(Interpreter.InputParamName -> ClazzRef(classOf[Transaction]))))
+    val compiledNode = compile(servicesDefs, splitted.source.node, ValidationContext(typesInformation = typesInformation, variables = Map(Interpreter.InputParamName -> Typed[Transaction])))
     val initialCtx = Context("abc").withVariable(Interpreter.InputParamName, transaction)
     val resultBeforeSink = Await.result(interpreter.interpret(compiledNode.node, InterpreterMode.Traverse, process.metaData, initialCtx), 10 seconds) match {
       case Left(result) => result

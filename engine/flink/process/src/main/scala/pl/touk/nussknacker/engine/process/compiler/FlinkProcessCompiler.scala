@@ -48,10 +48,10 @@ abstract class FlinkProcessCompiler(creator: ProcessConfigCreator, config: Confi
     val servicesDefs = definitions().services
     //for testing environment it's important to take classloader from user jar
     val globalVariables = creator.globalProcessVariables(config).mapValuesNow(_.value)
+    val userClassLoader = creator.getClass.getClassLoader
     val subCompiler = PartSubGraphCompiler.default(servicesDefs,
-      globalVariables.mapValuesNow(v => ClazzRef(v.getClass)),
-      creator.getClass.getClassLoader, config)
-    val processCompiler = new ProcessCompiler(subCompiler, definitions())
+      globalVariables.mapValuesNow(v => ClazzRef(v.getClass)), userClassLoader, config)
+    val processCompiler = new ProcessCompiler(userClassLoader, subCompiler, definitions())
     val compiledProcess = validateOrFailProcessCompilation(processCompiler.compile(process))
 
     //TODO: this should be somewhere else?
