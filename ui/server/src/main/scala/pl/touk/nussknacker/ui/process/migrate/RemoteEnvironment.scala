@@ -125,7 +125,7 @@ trait StandardRemoteEnvironment extends Argonaut62Support with RemoteEnvironment
   override def testMigration(implicit ec: ExecutionContext): Future[Either[EspError, List[TestMigrationResult]]] = {
     (for {
       processes <- EitherT(invoke[List[ValidatedProcessDetails]]("processes", HttpMethods.GET))
-      subprocesses <- EitherT(invoke[List[ProcessDetails]]("subprocesses", HttpMethods.GET))
+      subprocesses <- EitherT(invoke[List[ProcessDetails]]("subProcesses", HttpMethods.GET))
     } yield testModelMigrations.testMigrations(processes, subprocesses)).value
   }
 }
