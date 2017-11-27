@@ -125,7 +125,7 @@ lazy val engineStandalone = (project in engine("standalone/engine")).
       )
     }
   ).
-  dependsOn(interpreter, standaloneUtil, argonautUtils)
+  dependsOn(interpreter, standaloneUtil, argonautUtils, httpUtils)
 
 lazy val standaloneApp = (project in engine("standalone/app")).
   settings(commonSettings).
@@ -321,7 +321,7 @@ lazy val util = (project in engine("util")).
         "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )
     }
-  ).dependsOn(api, httpUtils)
+  ).dependsOn(api)
 
 
 

@@ -1,13 +1,11 @@
 package pl.touk.nussknacker.engine.standalone.management
 
-import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 import cats.data.Validated.{Invalid, Valid}
 import com.codahale.metrics.MetricRegistry
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import dispatch.Http
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.EndingReference
 import pl.touk.nussknacker.engine.api.deployment._
@@ -23,9 +21,9 @@ import pl.touk.nussknacker.engine.definition._
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.Source
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
+import pl.touk.nussknacker.engine.standalone.api.DeploymentData
 import pl.touk.nussknacker.engine.standalone.{StandaloneModelData, StandaloneProcessInterpreter}
 import pl.touk.nussknacker.engine.standalone.utils.StandaloneContextPreparer
-import pl.touk.nussknacker.engine.util.service.{AuditDispatchClient, LogCorrelationId}
 import pl.touk.nussknacker.engine.standalone.api.types._
 
 import scala.concurrent.duration.FiniteDuration
@@ -33,21 +31,13 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 
 
 object StandaloneProcessManager {
-  def apply(config: Config) : StandaloneProcessManager = new StandaloneProcessManager(StandaloneModelData(config), config)
+  def apply(modelData: ModelData, config: Config) : StandaloneProcessManager = new StandaloneProcessManager(modelData, StandaloneProcessClient(config))
 }
 
-class StandaloneProcessManager(modelData: ModelData, config: Config)
+class StandaloneProcessManager(modelData: ModelData, client: StandaloneProcessClient)
   extends ProcessManager with LazyLogging {
 
   private implicit val ec = ExecutionContext.Implicits.global
-
-  private val standaloneConf = config.getConfig("standaloneConfig")
-
-  private val httpClient = Http.apply()
-  private val dispatchClient = new AuditDispatchClient {
-    override protected def http = httpClient
-  }
-  private val managementUrl = standaloneConf.getString("managementUrl")
 
   import argonaut.ArgonautShapeless._
 
@@ -56,19 +46,15 @@ class StandaloneProcessManager(modelData: ModelData, config: Config)
     savepointPath match {
       case Some(_) => Future.failed(new UnsupportedOperationException("Cannot make savepoint on standalone process"))
       case None =>
-        implicit val correlationId = LogCorrelationId(UUID.randomUUID().toString)
-        val deployUrl = dispatch.url(managementUrl) / "deploy"
         processDeploymentData match {
           case GraphProcess(processAsJson) =>
-            val data = DeploymentData(processId, processAsJson)
-            dispatchClient.postObjectAsJsonWithoutResponseParsing(deployUrl, data).map(_ => ())
+            client.deploy(DeploymentData(processId, processAsJson, System.currentTimeMillis()))
           case CustomProcess(mainClass) =>
             Future.failed(new UnsupportedOperationException("custom process in standalone engine is not supported"))
         }
     }
 
   }
-
 
   override def savepoint(processId: String, savepointDir: String): Future[String] = {
     Future.failed(new UnsupportedOperationException("Cannot make savepoint on standalone process"))
@@ -81,15 +67,11 @@ class StandaloneProcessManager(modelData: ModelData, config: Config)
   }
 
   override def findJobStatus(name: String): Future[Option[ProcessState]] = {
-    implicit val correlationId = LogCorrelationId(UUID.randomUUID().toString)
-    val jobStatusUrl = dispatch.url(managementUrl) / "checkStatus" / name
-    dispatchClient.getPossiblyUnavailableJsonAsObject[ProcessState](jobStatusUrl)
+    client.findStatus(name)
   }
 
   override def cancel(name: String): Future[Unit] = {
-    implicit val correlationId = LogCorrelationId(UUID.randomUUID().toString)
-    val cancelUrl = dispatch.url(managementUrl) / "cancel" / name
-    dispatchClient.sendWithAuditAndStatusChecking(cancelUrl.POST).map(_ => ())
+    client.cancel(name)
   }
 
 }

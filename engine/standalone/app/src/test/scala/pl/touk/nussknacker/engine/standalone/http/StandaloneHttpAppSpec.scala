@@ -12,12 +12,13 @@ import argonaut.{DecodeJson, EncodeJson, PrettyParams}
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable}
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentData, ProcessState}
+import pl.touk.nussknacker.engine.api.deployment.ProcessState
 import pl.touk.nussknacker.engine.build.StandaloneProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.spel
+import pl.touk.nussknacker.engine.standalone.api.DeploymentData
 import pl.touk.nussknacker.engine.testing.ModelJarBuilder
 
 class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTest with BeforeAndAfterEach {

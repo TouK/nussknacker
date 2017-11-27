@@ -3,21 +3,23 @@ package pl.touk.nussknacker.engine.standalone.deployment
 import java.io.{File, PrintWriter}
 import java.nio.charset.StandardCharsets
 
+import pl.touk.nussknacker.engine.standalone.api.DeploymentData
+
 import scala.io.Source
 
 trait ProcessRepository {
 
-  def add(id: String, json: String) : Unit
+  def add(id: String, deploymentData: DeploymentData) : Unit
 
   def remove(id: String) : Unit
 
-  def loadAll: Map[String, String]
+  def loadAll: Map[String, DeploymentData]
 
 }
 
 class EmptyProcessRepository extends ProcessRepository {
 
-  override def add(id: String, json: String) = {}
+  override def add(id: String, deploymentData: DeploymentData) = {}
 
   override def remove(id: String) = {}
 
@@ -40,11 +42,14 @@ class FileProcessRepository(path: File) extends ProcessRepository {
 
   val UTF8 = "UTF-8"
 
-  override def add(id: String, json: String) = {
+  import argonaut.Argonaut._
+  import argonaut.ArgonautShapeless._
+
+  override def add(id: String, deploymentData: DeploymentData) = {
     val outFile = new File(path, id)
     val writer = new PrintWriter(outFile, StandardCharsets.UTF_8.name())
     try {
-      writer.write(json)
+      writer.write(deploymentData.asJson.spaces2)
     } finally {
       writer.close()
     }
@@ -59,7 +64,7 @@ class FileProcessRepository(path: File) extends ProcessRepository {
   }
 
   override def loadAll = path.listFiles().filter(_.isFile).map { file =>
-    file.getName -> fileToString(file)
+    file.getName -> fileToString(file).decodeOption[DeploymentData].get
   }.toMap
 
 }

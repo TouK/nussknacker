@@ -11,8 +11,8 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError
 import pl.touk.nussknacker.engine.marshall.{ProcessMarshaller, ProcessUnmarshallError}
+import pl.touk.nussknacker.engine.standalone.api.DeploymentData
 import pl.touk.nussknacker.engine.standalone.{StandaloneModelData, StandaloneProcessInterpreter}
-import pl.touk.nussknacker.engine.standalone.management._
 import pl.touk.nussknacker.engine.standalone.utils.StandaloneContextPreparer
 
 import scala.concurrent.ExecutionContext
@@ -40,17 +40,18 @@ class DeploymentService(context: StandaloneContextPreparer, modelData: ModelData
   initProcesses()
 
   private def initProcesses() : Unit = {
-    val deploymentResults = processRepository.loadAll.map { case (id, json) =>
-      (id, deploy(id, json)(ExecutionContext.Implicits.global))
+    val deploymentResults = processRepository.loadAll.map { case (id, deploymentData) =>
+      (id, deploy(deploymentData)(ExecutionContext.Implicits.global))
     }
     deploymentResults.collect {
       case (id, Left(errors)) => logger.error(s"Failed to deploy $id, errors: $errors")
     }
   }
 
-  def deploy(processId: String, processJson: String)(implicit ec: ExecutionContext): Either[NonEmptyList[DeploymentError], Unit] = {
+  def deploy(deploymentData: DeploymentData)(implicit ec: ExecutionContext): Either[NonEmptyList[DeploymentError], Unit] = {
+    val processId = deploymentData.processId
 
-    toEspProcess(processJson).andThen { process =>
+    toEspProcess(deploymentData.processJson).andThen { process =>
       process.metaData.typeSpecificData match {
         case StandaloneMetaData(path) =>
           val pathToDeploy = path.getOrElse(processId)
@@ -62,8 +63,8 @@ class DeploymentService(context: StandaloneContextPreparer, modelData: ModelData
               val interpreter = newInterpreter(process)
               interpreter.foreach { processInterpreter =>
                 cancel(processId)
-                processRepository.add(processId, processJson)
-                processInterpreters.put(processId, (processInterpreter, System.currentTimeMillis()))
+                processRepository.add(processId, deploymentData)
+                processInterpreters.put(processId, (processInterpreter, deploymentData.deploymentTime))
                 pathToInterpreterMap.put(path.getOrElse(processId), processInterpreter)
                 processInterpreter.open()
                 logger.info(s"Successfully deployed process $processId")

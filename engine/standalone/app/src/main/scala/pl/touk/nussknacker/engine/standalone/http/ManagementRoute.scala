@@ -5,8 +5,8 @@ import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.{Directives, Route}
 import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.http.argonaut.Argonaut62Support
+import pl.touk.nussknacker.engine.standalone.api.DeploymentData
 import pl.touk.nussknacker.engine.standalone.deployment.{DeploymentError, DeploymentService}
 
 import scala.concurrent.ExecutionContext
@@ -20,7 +20,7 @@ class ManagementRoute(deploymentService: DeploymentService) extends Directives w
       post {
         entity(as[DeploymentData]) { data =>
           complete {
-            toResponse(deploymentService.deploy(data.processId, data.processJson))
+            toResponse(deploymentService.deploy(data))
           }
         }
       }

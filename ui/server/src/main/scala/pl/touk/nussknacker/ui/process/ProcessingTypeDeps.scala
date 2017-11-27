@@ -24,7 +24,7 @@ object ProcessingTypeDeps {
 
     if (standaloneModeEnabled) {
       val requestResponseData = StandaloneModelData(config)
-      val requestResponseManager = new StandaloneProcessManager(requestResponseData, config)
+      val requestResponseManager = StandaloneProcessManager(requestResponseData, config)
 
       ProcessingTypeDeps(
         managers = Map(streaming -> streamingManager, reqResp -> requestResponseManager),

@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.standalone.management
+package pl.touk.nussknacker.engine.standalone.deployment
 
 import java.nio.file.Files
 
@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.standalone.StandaloneProcessConfigCreator
-import pl.touk.nussknacker.engine.standalone.deployment.{DeploymentService, FileProcessRepository}
+import pl.touk.nussknacker.engine.standalone.api.DeploymentData
 import pl.touk.nussknacker.engine.standalone.utils.StandaloneContextPreparer
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
@@ -38,7 +38,7 @@ class DeploymentServiceSpec extends FlatSpec with Matchers {
       service = createService()
     }
 
-    service.deploy(id, json).right.toOption shouldBe 'defined
+    service.deploy(json).right.toOption shouldBe 'defined
 
     service.checkStatus(id) shouldBe 'defined
 
@@ -57,13 +57,13 @@ class DeploymentServiceSpec extends FlatSpec with Matchers {
 
     val service = createService()
 
-    service.deploy(id, processWithIdAndPath(id, None))  shouldBe 'right
+    service.deploy(processWithIdAndPath(id, None))  shouldBe 'right
 
     service.getInterpreterByPath("process1") shouldBe 'defined
 
     service.checkStatus("process1") shouldBe 'defined
 
-    service.deploy(id, processWithIdAndPath(id, Some("alamakota"))) shouldBe 'right
+    service.deploy(processWithIdAndPath(id, Some("alamakota"))) shouldBe 'right
 
     service.getInterpreterByPath("process1") shouldBe 'empty
 
@@ -82,13 +82,13 @@ class DeploymentServiceSpec extends FlatSpec with Matchers {
 
     val service = createService()
 
-    service.deploy(id, processWithIdAndPath(id, None))
+    service.deploy(processWithIdAndPath(id, None))
 
-    service.deploy(id2, processWithIdAndPath(id2, Some("process1"))) shouldBe 'left
+    service.deploy(processWithIdAndPath(id2, Some("process1"))) shouldBe 'left
 
-    service.deploy(id, processWithIdAndPath(id, Some("alamakota"))) shouldBe 'right
+    service.deploy(processWithIdAndPath(id, Some("alamakota"))) shouldBe 'right
 
-    service.deploy(id2, processWithIdAndPath(id2, Some("process1"))) shouldBe 'right
+    service.deploy(processWithIdAndPath(id2, Some("process1"))) shouldBe 'right
 
   }
 
@@ -99,6 +99,6 @@ class DeploymentServiceSpec extends FlatSpec with Matchers {
         .exceptionHandler()
         .source("start", "request1-post-source")
         .sink("endNodeIID", "''", "response-sink"))
-    new ProcessMarshaller().toJson(canonical, PrettyParams.spaces2)
+    DeploymentData(id, new ProcessMarshaller().toJson(canonical, PrettyParams.spaces2), 0)
   }
 }
