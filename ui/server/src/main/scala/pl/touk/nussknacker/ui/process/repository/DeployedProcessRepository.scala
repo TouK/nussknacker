@@ -23,12 +23,12 @@ case class DeployedProcessRepository(dbConfig: DbConfig,
                                 buildInfos: Map[ProcessingType, Map[String, String]]) extends BasicRepository {
   import driver.api._
 
-  def markProcessAsDeployed(processingType: ProcessingType,
-                             processVersion: ProcessVersionEntityData, userId: String, environment: String)
+  def markProcessAsDeployed(processId: String, processVersion: Long, processingType: ProcessingType,
+                             userId: String, environment: String)
                            (implicit ec: ExecutionContext): Future[Unit] = {
     val insertAction = EspTables.deployedProcessesTable += DeployedProcessVersionEntityData(
-      processVersion.processId,
-      Some(processVersion.id),
+      processId,
+      Some(processVersion),
       environment,
       userId,
       Timestamp.valueOf(LocalDateTime.now()),

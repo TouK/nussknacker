@@ -87,10 +87,17 @@ class AppResources(modelData: Map[ProcessingType, ModelData],
     }
   }
 
-  private def statusList(processes: Seq[ProcessDetails])(implicit user: LoggedUser) : Seq[Future[(String, Option[ProcessStatus])]] =
-    processes.filterNot(_.currentlyDeployedAt.isEmpty).map(process => findJobStatus(process.name, process.processingType).map((process.name, _)))
+  private def statusList(processes: Seq[ProcessDetails])(implicit user: LoggedUser) : Seq[Future[(String, Option[ProcessStatus])]] = {
+    processes
+      .filterNot(_.currentlyDeployedAt.isEmpty)
+      .map(process => findJobStatus(process.name, process.processingType).map((process.name, _)))
+  }
 
   private def findJobStatus(processName: String, processingType: ProcessingType)(implicit ec: ExecutionContext, user: LoggedUser): Future[Option[ProcessStatus]] = {
-    jobStatusService.retrieveJobStatus(processName)
+    jobStatusService.retrieveJobStatus(processName).recover {
+      case NonFatal(e) =>
+        logger.warn(s"Failed to get status of $processName: ${e.getMessage}", e)
+        Some(ProcessStatus.failedToGet)
+    }
   }
 }

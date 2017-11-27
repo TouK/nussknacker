@@ -14,4 +14,6 @@ object ProcessStatus {
       isDeployInProgress = false
     )
   }
+
+  def failedToGet = ProcessStatus(None, "UNKOWN", 0L, isRunning = false, isDeployInProgress = false)
 }

@@ -112,7 +112,8 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
     val processManagerValue = managers(processingType)
     processManagerValue.deploy(processId, deployment, savepointPath).flatMap { _ =>
       logger.debug(s"Deploy of $processId finished")
-      deployedProcessRepository.markProcessAsDeployed(processingType, latestVersion, user.id, environment).recoverWith { case NonFatal(e) =>
+      deployedProcessRepository.markProcessAsDeployed(processId, latestVersion.id,
+        processingType, user.id, environment).recoverWith { case NonFatal(e) =>
         logger.error("Error during marking process as deployed", e)
         processManagerValue.cancel(processId).map(_ => Future.failed(e))
       }
