@@ -1,11 +1,8 @@
-import React, {PropTypes, Component} from "react";
-import {render} from "react-dom";
+import React, {Component} from "react";
 import {connect} from "react-redux";
-import {Tabs, Tab} from "react-bootstrap";
-import { Scrollbars } from 'react-custom-scrollbars';
+import {Panel, Tab, Tabs} from "react-bootstrap";
+import {Scrollbars} from 'react-custom-scrollbars';
 import {browserHistory} from "react-router";
-import { Panel } from 'react-bootstrap';
-import {bindActionCreators} from "redux";
 import Dropzone from "react-dropzone";
 import cn from "classnames";
 
@@ -18,7 +15,6 @@ import NodeUtils from '../graph/NodeUtils'
 import InlinedSvgs from "../../assets/icons/InlinedSvgs"
 import Dialogs from "../modals/Dialogs"
 import TogglePanel from "../TogglePanel";
-import * as LoaderUtils from '../../common/LoaderUtils'
 import SvgDiv from "../SvgDiv"
 
 import '../../stylesheets/userPanel.styl';
@@ -96,7 +92,8 @@ class UserRightPanel extends Component {
         {name: "export", visible: this.props.loggedUser.canWrite, onClick: this.exportProcess, icon: InlinedSvgs.buttonExport},
         {name: "exportPDF", disabled: !this.props.nothingToSave, onClick: this.exportProcessToPdf, icon: InlinedSvgs.buttonExport},
         {name: "zoomIn", onClick: this.props.zoomIn, icon: 'zoomin.svg'},
-        {name: "zoomOut", onClick: this.props.zoomOut, icon: 'zoomout.svg'}
+        {name: "zoomOut", onClick: this.props.zoomOut, icon: 'zoomout.svg'},
+        {name: "delete", onClick: this.deleteProcess, icon: 'trash.svg', visible: this.props.loggedUser.canWrite}
 
       ]
     },
@@ -219,6 +216,13 @@ class UserRightPanel extends Component {
   exportProcessToPdf = () => {
     const data = this.props.exportGraph()
     HttpService.exportProcessToPdf(this.processId(), this.versionId(), data, this.props.businessView)
+  }
+
+  deleteProcess = () => {
+    this.props.actions.toggleConfirmDialog(true, DialogMessages.deleteProcess(this.processId()), () => {
+        return HttpService.deleteProcess(this.processId()).then((resp) =>
+            browserHistory.push('/processes'))
+    })
   }
 
   generateData = () => {

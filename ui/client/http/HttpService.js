@@ -250,6 +250,18 @@ export default {
       });
   },
 
+  deleteProcess(processId) {
+      return ajaxCall({
+          url: `${API_URL}/processes/${processId}`,
+          type: 'DELETE'
+      })
+          .then(() => this.addInfo(`Process ${processId} was deleted`))
+          .catch((error) => {
+              this.addError(`Failed to delete`, error, true);
+              return Promise.reject(error)
+          });
+  },
+
   createProcess(processId, processCategory, callback, isSubprocess) {
     return ajaxCall({
       url: `${API_URL}/processes/${processId}/${processCategory}?isSubprocess=${isSubprocess}`,

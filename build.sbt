@@ -180,7 +180,7 @@ lazy val management = (project in engine("flink/management")).
     }
   ).dependsOn(interpreter, queryableState, kafkaTestUtil % "it,test",securityApi)
 
-lazy val standalone_sample = (project in engine("engine-standalone/sample")).
+lazy val standalone_sample = (project in engine("standalone/engine/sample")).
   settings(commonSettings).
   settings(
     name := "nussknacker-standalone-sample",

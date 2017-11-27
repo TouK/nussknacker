@@ -14,6 +14,10 @@ class DialogMessages {
     return `Are you sure you want to stop ${processId}?`
   }
 
+  deleteProcess = (processId) => {
+      return `Are you sure you want to delete ${processId}?`
+  }
+
   deleteComment = () => {
     return 'Are you sure you want to delete comment?'
   }
