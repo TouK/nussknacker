@@ -54,7 +54,10 @@ object ProcessTestHelpers {
 
     def prepareCreator(exConfig: ExecutionConfig, data: List[SimpleRecord]) = new ProcessConfigCreator {
 
-      override def services(config: Config) = Map("logService" -> WithCategories(new MockService))
+      override def services(config: Config) = Map(
+        "logService" -> WithCategories(new MockService),
+        "enricherWithOpenService" -> WithCategories(new EnricherWithOpenService)
+      )
 
       override def sourceFactories(config: Config) = Map(
         "input" -> WithCategories(FlinkSourceFactory.noParam(new CollectionSource[SimpleRecord](
@@ -68,7 +71,8 @@ object ProcessTestHelpers {
 
       override def sinkFactories(config: Config) = Map(
         "monitor" -> WithCategories(SinkFactory.noParam(MonitorEmptySink)),
-        "sinkForInts" -> WithCategories(SinkFactory.noParam(SinkForInts))
+        "sinkForInts" -> WithCategories(SinkFactory.noParam(SinkForInts)),
+        "sinkForStrings" -> WithCategories(SinkFactory.noParam(SinkForStrings))
       )
 
       override def customStreamTransformers(config: Config) = Map(
@@ -182,6 +186,25 @@ object ProcessTestHelpers {
     }
   }
 
+  class EnricherWithOpenService extends Service with TimeMeasuringService {
+
+    val serviceName = "enricherWithOpenService"
+
+    var internalVar: String = _
+
+    override def open(): Unit = {
+      super.open()
+      internalVar = "initialized!"
+    }
+
+    @MethodToInvoke
+    def invoke()(implicit ec: ExecutionContext): Future[String] = {
+      measuring(Future.successful {
+        internalVar
+      })
+    }
+  }
+
   case object MonitorEmptySink extends FlinkSink {
     val invocationsCount = new AtomicInteger(0)
 
@@ -207,6 +230,16 @@ object ProcessTestHelpers {
     //stupid but have to make an error :|
     override def testDataOutput : Option[Any => String] = Some(_.toString.toInt.toString)
   }
+
+  case object SinkForStrings extends FlinkSink with Serializable with WithDataList[String] {
+    override def toFlinkFunction = new SinkFunction[Any] {
+      override def invoke(value: Any) = {
+        add(value.toString)
+      }
+    }
+    override def testDataOutput : Option[Any => String] = None
+  }
+
 
   object EmptyService extends Service {
     def invoke() = Future.successful(Unit)

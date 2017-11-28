@@ -7,7 +7,7 @@ import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.process.ProcessTestHelpers.{MockService, SimpleRecord, processInvoker}
+import pl.touk.nussknacker.engine.process.ProcessTestHelpers.{MockService, SimpleRecord, SinkForStrings, processInvoker}
 import pl.touk.nussknacker.engine.spel
 
 
@@ -100,6 +100,25 @@ class MetricsSpec extends FlatSpec with Matchers with Eventually with BeforeAndA
       counter("nodeCount.proc2") shouldBe 1L
       counter("nodeCount.out") shouldBe 1L
       counter("nodeCount.out2") shouldBe 1L
+    }
+  }
+
+  it should "open measuring service" in {
+    import spel.Implicits._
+
+    val process = EspProcessBuilder.id("proc1")
+      .exceptionHandler()
+      .source("id", "input")
+      .enricher("enricher1", "outputValue", "enricherWithOpenService")
+      .sink("out", "#outputValue", "sinkForStrings")
+
+    val data = List(
+      SimpleRecord("1", 12, "a", new Date(0))
+    )
+
+    invoke(process, data)
+    eventually {
+      SinkForStrings.data shouldBe List("initialized!")
     }
   }
 
