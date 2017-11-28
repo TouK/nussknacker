@@ -40,108 +40,107 @@ object NussknackerApp extends App with Directives with LazyLogging {
 
   prepareUncaughtExceptionHandler()
 
+  import system.dispatcher
+
   implicit val materializer = ActorMaterializer()
 
-  val initialProcessDirectory = new File(args(1))
+  val config = system.settings.config
+  val environment = config.getString("environment")
+  val featureTogglesConfig = FeatureTogglesConfig.create(config, environment)
+  //TODO clean up config and make it more typed
+  //TODO add nodesConfig support for standalone mode
+  val nodesConfig = Try(config.as[Map[String, SingleNodeConfig]]("processConfig.nodes")).getOrElse(Map.empty)
+  logger.info(s"Ui config loaded: \nfeatureTogglesConfig: $featureTogglesConfig\nnodesConfig:$nodesConfig")
+
+  val db: DbConfig = {
+    val db = JdbcBackend.Database.forConfig("db", config)
+    new DatabaseInitializer(db).initDatabase()
+    DbConfig(db, DefaultJdbcProfile.profile)
+  }
+
   val port = args(0).toInt
+  val initialProcessDirectory = new File(args(1))
+  val ProcessingTypeDeps(managers, espQueryableClient, modelData) =
+    ProcessingTypeDeps(config, featureTogglesConfig.standaloneMode)
 
+  val defaultParametersValues = ParamDefaultValueConfig(nodesConfig.map {case (k, v) => (k, v.defaultValues.getOrElse(Map.empty))})
+  val extractValueParameterByConfigThenType = new TypeAfterConfig(defaultParametersValues)
 
-  Http().bindAndHandle(
-    initializeRoute(initialProcessDirectory),
-    interface = "0.0.0.0",
-    port = port
-  )
+  val subprocessRepository = new DbSubprocessRepository(db, system.dispatcher)
+  val subprocessResolver = new SubprocessResolver(subprocessRepository)
 
-  def initializeRoute(initialProcessDirectory: File)(implicit system: ActorSystem, materializer: ActorMaterializer) : Route = {
+  val processObjectsFinder = new ProcessObjectsFinder(subprocessResolver)
+  val processValidation = ProcessValidation(modelData, subprocessResolver)
 
-    import system.dispatcher
+  val processRepository = DBFetchingProcessRepository.create(db)
+  val writeProcessRepository = WriteProcessRepository.create(db, modelData)
 
-    val config = system.settings.config
-    val environment = config.getString("environment")
-    val featureTogglesConfig = FeatureTogglesConfig.create(config, environment)
-    //TODO clean up config and make it more typed
-    //TODO add nodesConfig support for standalone mode
-    val nodesConfig = Try(config.as[Map[String, SingleNodeConfig]]("processConfig.nodes")).getOrElse(Map.empty)
-    logger.info(s"Ui config loaded: \nfeatureTogglesConfig: $featureTogglesConfig\nnodesConfig:$nodesConfig")
+  val deploymentProcessRepository = DeployedProcessRepository.create(db, modelData)
+  val processActivityRepository = new ProcessActivityRepository(db)
+  val attachmentService = new ProcessAttachmentService(config.getString("attachmentsPath"), processActivityRepository)
+  val authenticator =  AuthenticatorProvider(config, getClass.getClassLoader)
 
-    val db: DbConfig = {
-      val db = JdbcBackend.Database.forConfig("db", config)
-      new DatabaseInitializer(db).initDatabase()
-      DbConfig(db, DefaultJdbcProfile.profile)
-    }
+  val counter = new ProcessCounter(subprocessRepository)
 
-    val ProcessingTypeDeps(managers, espQueryableClient, modelData) =
-      ProcessingTypeDeps(config, featureTogglesConfig.standaloneMode)
+  Initialization.init(modelData.mapValues(_.migrations), db, environment, initialProcessDirectory)
 
-    val defaultParametersValues = ParamDefaultValueConfig(nodesConfig.map {case (k, v) => (k, v.defaultValues.getOrElse(Map.empty))})
-    val extractValueParameterByConfigThenType = new TypeAfterConfig(defaultParametersValues)
+  initHttp()
 
-    val subprocessRepository = new DbSubprocessRepository(db, system.dispatcher)
-    val subprocessResolver = new SubprocessResolver(subprocessRepository)
+  val managementActor = ManagementActor(environment, managers, processRepository, deploymentProcessRepository, subprocessResolver)
+  val jobStatusService = new JobStatusService(managementActor)
 
-    val processObjectsFinder = new ProcessObjectsFinder(subprocessResolver)
-    val processValidation = ProcessValidation(modelData, subprocessResolver)
+  val typesForCategories = new ProcessTypesForCategories(config)
+  val newProcessPreparer = new NewProcessPreparer(modelData.mapValues(_.processDefinition))
 
-    val processRepository = DBFetchingProcessRepository.create(db)
-    val writeProcessRepository = WriteProcessRepository.create(db, modelData)
+  private val apiResources : List[RouteWithUser] = {
+    val routes = List(
+      new ProcessesResources(processRepository, writeProcessRepository, jobStatusService, processActivityRepository, processValidation, typesForCategories, newProcessPreparer),
+        new ProcessesExportResources(processRepository, processActivityRepository),
+        new ProcessActivityResource(processActivityRepository, attachmentService),
+        ManagementResources(modelData, counter, managementActor),
+        new ValidationResources(processValidation),
+        new DefinitionResources(modelData, subprocessRepository, extractValueParameterByConfigThenType),
+        new SignalsResources(modelData(ProcessingType.Streaming), processRepository, processObjectsFinder),
+        new QueryableStateResources(modelData, processRepository, espQueryableClient, jobStatusService, processObjectsFinder),
+        new UserResources(),
+        new SettingsResources(featureTogglesConfig, nodesConfig),
+        new AppResources(modelData, processRepository, processValidation, jobStatusService),
+        new TestInfoResources(modelData),
+      new ServiceRoutes(modelData)
+    )
+    val optionalRoutes = List(
+      featureTogglesConfig.remoteEnvironment
+        .map(migrationConfig => new HttpRemoteEnvironment(migrationConfig, TestModelMigrations(modelData), environment))
+        .map(remoteEnvironment => new RemoteEnvironmentResources(remoteEnvironment, processRepository)),
+      featureTogglesConfig.counts
+        .map(countsConfig => new InfluxReporter(environment, countsConfig))
+        .map(reporter => new ProcessReportResources(reporter, counter, processRepository))
+    ).flatten
+    routes ++ optionalRoutes
+  }
 
-    val deploymentProcessRepository = DeployedProcessRepository.create(db, modelData)
-    val processActivityRepository = new ProcessActivityRepository(db)
-    val attachmentService = new ProcessAttachmentService(config.getString("attachmentsPath"), processActivityRepository)
-    val authenticator =  AuthenticatorProvider(config, getClass.getClassLoader)
+  private def initHttp() = {
+    val route: Route = {
 
-    val counter = new ProcessCounter(subprocessRepository)
-
-    Initialization.init(modelData.mapValues(_.migrations), db, environment, initialProcessDirectory)
-
-    val managementActor = ManagementActor(environment, managers, processRepository, deploymentProcessRepository, subprocessResolver)
-    val jobStatusService = new JobStatusService(managementActor)
-
-    val typesForCategories = new ProcessTypesForCategories(config)
-    val newProcessPreparer = new NewProcessPreparer(modelData.mapValues(_.processDefinition))
-
-    val apiResources : List[RouteWithUser] = {
-      val routes = List(
-          new ProcessesResources(processRepository, writeProcessRepository, jobStatusService,
-          processActivityRepository, processValidation, typesForCategories, newProcessPreparer),
-          new ProcessesExportResources(processRepository, processActivityRepository),
-          new ProcessActivityResource(processActivityRepository, attachmentService),
-          ManagementResources(modelData, counter, managementActor),
-          new ValidationResources(processValidation),
-          new DefinitionResources(modelData, subprocessRepository, extractValueParameterByConfigThenType),
-          new SignalsResources(modelData(ProcessingType.Streaming), processRepository, processObjectsFinder),
-          new QueryableStateResources(modelData, processRepository, espQueryableClient, jobStatusService, processObjectsFinder),
-          new UserResources(),
-          new SettingsResources(featureTogglesConfig, nodesConfig),
-          new AppResources(modelData, processRepository, processValidation, jobStatusService),
-          new TestInfoResources(modelData),
-        new ServiceRoutes(modelData)
-      )
-      val optionalRoutes = List(
-        featureTogglesConfig.remoteEnvironment
-          .map(migrationConfig => new HttpRemoteEnvironment(migrationConfig, TestModelMigrations(modelData), environment))
-          .map(remoteEnvironment => new RemoteEnvironmentResources(remoteEnvironment, processRepository)),
-        featureTogglesConfig.counts
-          .map(countsConfig => new InfluxReporter(environment, countsConfig))
-          .map(reporter => new ProcessReportResources(reporter, counter, processRepository))
-      ).flatten
-      routes ++ optionalRoutes
-    }
-
-    CorsSupport.cors(featureTogglesConfig.development) {
-      authenticator { user =>
-        pathPrefix("api") {
-          apiResources.map(_.route(user)).reduce(_ ~ _)
-        } ~
-          //this is separated from api to do serve it without authentication
-          pathPrefixTest(!"api") {
-            WebResources.route
+      CorsSupport.cors(featureTogglesConfig.development) {
+        authenticator { user =>
+          pathPrefix("api") {
+            apiResources.map(_.route(user)).reduce(_ ~ _)
+          } ~
+            //this is separated from api to do serve it without authentication
+            pathPrefixTest(!"api") {
+              WebResources.route
+            }
           }
         }
       }
 
+    Http().bindAndHandle(
+      route,
+      interface = "0.0.0.0",
+      port = port
+    )
   }
-
   //we do it, because akka creates non-daemon threads, so we have to stop ActorSystem explicitly, if initialization fails
   private def prepareUncaughtExceptionHandler() = {
     //TODO: should we set it only on main thread?

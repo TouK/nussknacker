@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.definition
 import java.lang.reflect.{InvocationTargetException, Method}
 
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.MethodToInvoke
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, WithCategories}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
@@ -102,9 +101,7 @@ object DefinitionExtractor {
 
   }
 
-  case class ClazzRef(refClazzName: String) {
-    def toClass(classLoader: ClassLoader) : Class[_] = ClassUtils.getClass(classLoader, refClazzName)
-  }
+  case class ClazzRef(refClazzName: String)
 
   case class PlainClazzDefinition(clazzName: ClazzRef, methods: Map[String, ClazzRef]) {
     def getMethod(methodName: String): Option[ClazzRef] = {
@@ -153,7 +150,7 @@ object DefinitionExtractor {
       globalProcessVariables ++
         (services ++ customNodeTransformers ++ sourceFactories ++ signalsFactories).map(sv => sv.methodDef.returnType)
 
-      EspTypeUtils.clazzAndItsChildrenDefinition(classesToExtractDefinitions)
+      classesToExtractDefinitions.flatMap(EspTypeUtils.clazzAndItsChildrenDefinition).toList.distinct
     }
   }
 

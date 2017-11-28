@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.functionUtils;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class CollectionUtils {
 
@@ -12,7 +13,8 @@ public class CollectionUtils {
 
     public static Number sum(Collection<Number> collection) {
         return collection.stream()
-            .map(Number::longValue).reduce(0L, (a, b) -> a + b);
+                .map(Number::longValue)
+                .collect(Collectors.reducing(0L, (a, b) -> a + b));
     }
 
 }

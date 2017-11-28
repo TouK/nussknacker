@@ -13,8 +13,8 @@ import pl.touk.nussknacker.engine.compile.PartSubGraphCompilerBase.ContextsForPa
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError._
 import pl.touk.nussknacker.engine.compile.dumb._
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
+import pl.touk.nussknacker.engine.splittedgraph.splittednode.PartRef
 import pl.touk.nussknacker.engine.compiledgraph.part.NextWithParts
-import pl.touk.nussknacker.engine.compiledgraph.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ProcessDefinition}
 import pl.touk.nussknacker.engine.definition._
@@ -25,10 +25,9 @@ import pl.touk.nussknacker.engine.graph.{EspProcess, param}
 import pl.touk.nussknacker.engine.split._
 import pl.touk.nussknacker.engine.splittedgraph._
 import pl.touk.nussknacker.engine.splittedgraph.part._
-import pl.touk.nussknacker.engine.splittedgraph.splittednode.{Next, NextNode, PartRef, SplittedNode}
+import pl.touk.nussknacker.engine.splittedgraph.splittednode.{Next, NextNode, SplittedNode}
 
-class ProcessCompiler( protected val classLoader: ClassLoader,
-                       protected val sub: PartSubGraphCompilerBase,
+class ProcessCompiler(protected val sub: PartSubGraphCompilerBase,
                       protected val definitions: ProcessDefinition[ObjectWithMethodDef]) extends ProcessCompilerBase {
 
   override type ParameterProviderT = ObjectWithMethodDef
@@ -45,8 +44,7 @@ class ProcessCompiler( protected val classLoader: ClassLoader,
 
 }
 
-class ProcessValidator(protected val classLoader: ClassLoader,
-                       protected val sub: PartSubGraphCompilerBase,
+class ProcessValidator(protected val sub: PartSubGraphCompilerBase,
                        protected val definitions: ProcessDefinition[ObjectDefinition]) extends ProcessCompilerBase {
 
   override type ParameterProviderT = ObjectDefinition
@@ -73,8 +71,6 @@ protected trait ProcessCompilerBase {
 
   private val syntax = ValidatedSyntax[ProcessCompilationError]
   import syntax._
-
-  protected def classLoader: ClassLoader
 
   def validate(canonical: CanonicalProcess): ValidatedNel[ProcessCompilationError, Unit] = {
     ProcessCanonizer.uncanonize(canonical).leftMap(_.map(identity[ProcessCompilationError])) andThen { process =>
@@ -118,7 +114,7 @@ protected trait ProcessCompilerBase {
                                     (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, ValidationContext] = {
     val maybeClearedContext = if (clearsContext) validationContext.copy(variables = Map()) else validationContext
     (node.outputVar, nodeDefinition.hasNoReturn) match {
-      case (Some(varName), false) => maybeClearedContext.withVariable(varName, Typed(nodeDefinition.returnType)(classLoader))
+      case (Some(varName), false) => maybeClearedContext.withVariable(varName, nodeDefinition.returnType)
         //ble... NonEmptyList is invariant...
         .asInstanceOf[ValidatedNel[ProcessCompilationError,ValidationContext]]
       case (None, true) => Valid(maybeClearedContext)
@@ -173,10 +169,10 @@ protected trait ProcessCompilerBase {
     }.andThen(identity)
   }
 
-  private def computeInitialVariables(nodeData: StartingNodeData) : Map[String, TypingResult] = nodeData match {
+  private def computeInitialVariables(nodeData: StartingNodeData) : Map[String, ClazzRef] = nodeData match {
     case pl.touk.nussknacker.engine.graph.node.Source(_, ref, _) =>  sourceFactories.get(ref.typ)
-          .map(sf => Map(Interpreter.InputParamName -> Typed(sf.returnType)(classLoader))).getOrElse(Map.empty)
-    case SubprocessInputDefinition(_, params, _) => params.map(p => p.name -> Typed(p.typ)(classLoader)).toMap
+          .map(sf => Map(Interpreter.InputParamName -> sf.returnType)).getOrElse(Map.empty)
+    case SubprocessInputDefinition(_, params, _) => params.map(p => p.name -> p.typ).toMap
   }
 
   private def compile(ref: ExceptionHandlerRef)
@@ -273,7 +269,7 @@ object ProcessValidator {
 
   def default(definition: ProcessDefinition[ObjectDefinition], loader: ClassLoader = getClass.getClassLoader): ProcessValidator = {
     val sub = PartSubGraphValidator.default(definition.services, definition.globalVariables.mapValuesNow(_.returnType), loader)
-    new ProcessValidator(loader, sub, definition)
+    new ProcessValidator(sub, definition)
   }
 
 }

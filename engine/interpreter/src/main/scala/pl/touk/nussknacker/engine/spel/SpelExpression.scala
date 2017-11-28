@@ -4,7 +4,7 @@ import java.lang.reflect.{Method, Modifier}
 import java.time.{LocalDate, LocalDateTime}
 import java.util.concurrent.TimeoutException
 
-import cats.data.{NonEmptyList, State, StateT, Validated}
+import cats.data.{State, StateT, Validated}
 import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
 import org.springframework.expression._
@@ -18,8 +18,6 @@ import pl.touk.nussknacker.engine.api.lazyy.{ContextWithLazyValuesProvider, Lazy
 import pl.touk.nussknacker.engine.compile.ValidationContext
 import pl.touk.nussknacker.engine.compiledgraph.expression.{ExpressionParseError, ExpressionParser, ValueWithLazyContext}
 import pl.touk.nussknacker.engine.functionUtils.CollectionUtils
-import pl.touk.nussknacker.engine.compiledgraph.typing.TypingResult
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ClazzRef
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
@@ -28,14 +26,11 @@ import scala.util.control.NonFatal
 
 class SpelExpression(parsed: org.springframework.expression.Expression,
                      val original: String,
-                     expectedReturnType: ClazzRef,
                      expressionFunctions: Map[String, Method],
-                     propertyAccessors: Seq[PropertyAccessor],
-                     classLoader: ClassLoader) extends compiledgraph.expression.Expression with LazyLogging {
+                     propertyAccessors: Seq[PropertyAccessor], classLoader: ClassLoader) extends compiledgraph.expression.Expression with LazyLogging {
 
   import pl.touk.nussknacker.engine.spel.SpelExpressionParser._
 
-  private val expectedClass = expectedReturnType.toClass(classLoader)
 
   override def evaluate[T](ctx: Context,
                            lazyValuesProvider: LazyValuesProvider): Future[ValueWithLazyContext[T]] = logOnException(ctx) {
@@ -52,7 +47,7 @@ class SpelExpression(parsed: org.springframework.expression.Expression,
       case (k, v) => simpleContext.registerFunction(k, v)
     }
     //TODO: async evaluation of lazy vals...
-    val value = parsed.getValue(simpleContext, expectedClass).asInstanceOf[T]
+    val value = parsed.getValue(simpleContext).asInstanceOf[T]
     val modifiedLazyContext = simpleContext.lookupVariable(LazyContextVariableName).asInstanceOf[LazyContext]
     Future.successful(ValueWithLazyContext(value, modifiedLazyContext))
   }
@@ -96,28 +91,26 @@ class SpelExpressionParser(expressionFunctions: Map[String, Method],
     MapPropertyAccessor
   )
 
-  private val validator = new SpelExpressionValidator()(classLoader)
-
-  override def parseWithoutContextValidation(original: String, expectedType: ClazzRef): Validated[ExpressionParseError, compiledgraph.expression.Expression] = {
+  override def parseWithoutContextValidation(original: String): Validated[ExpressionParseError, compiledgraph.expression.Expression] = {
     Validated.catchNonFatal(parser.parseExpression(original)).leftMap(ex => ExpressionParseError(ex.getMessage)).map { parsed =>
-      expression(parsed, original, expectedType)
+      expression(parsed, original)
 
     }
   }
 
-  override def parse(original: String, ctx: ValidationContext, expectedType: ClazzRef): Validated[NonEmptyList[ExpressionParseError], (TypingResult, compiledgraph.expression.Expression)] = {
-    Validated.catchNonFatal(parser.parseExpression(original)).leftMap(ex => NonEmptyList.of(ExpressionParseError(ex.getMessage))).andThen { parsed =>
-      validator.validate(parsed, ctx, expectedType).map((_, parsed))
-    }.map { case (typingResult, parsed) =>
-      (typingResult, expression(parsed, original, expectedType))
+  override def parse(original: String, ctx: ValidationContext): Validated[ExpressionParseError, compiledgraph.expression.Expression] = {
+    Validated.catchNonFatal(parser.parseExpression(original)).leftMap(ex => ExpressionParseError(ex.getMessage)).andThen { parsed =>
+      new SpelExpressionValidator(parsed, ctx).validate()
+    }.map { withReferencesResolved =>
+      expression(withReferencesResolved, original)
     }
   }
 
-  private def expression(expression: Expression, original: String, expectedType: ClazzRef) = {
+  private def expression(expression: Expression, original: String) = {
     if (enableSpelForceCompile) {
       forceCompile(expression)
     }
-    new SpelExpression(expression, original, expectedType, expressionFunctions, propertyAccessors, classLoader)
+    new SpelExpression(expression, original, expressionFunctions, propertyAccessors, classLoader)
   }
 
 }

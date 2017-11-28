@@ -45,16 +45,6 @@ object EspTypeUtils {
     java.lang.Character.TYPE -> classOf[java.lang.Character]
   )
 
-  //they can always appear...
-  //TODO: what else should be here?
-  private val mandatoryClasses = Set(
-    classOf[java.util.List[_]],
-    classOf[java.util.Map[_, _]],
-    classOf[java.math.BigDecimal],
-    classOf[Number],
-    classOf[String]
-  ) ++ primitiveTypesToBoxed.keys ++ primitiveTypesToBoxed.values
-
   private val boxedToPrimitives = primitiveTypesToBoxed.map(_.swap)
 
   private val primitiveTypesSimpleNames = primitiveTypesToBoxed.keys.map(_.getName).toSet
@@ -63,12 +53,12 @@ object EspTypeUtils {
     clazz.getMethods.map(_.getName).toList
   }
 
-  def clazzAndItsChildrenDefinition(clazzes: Iterable[Class[_]])
+  def clazzAndItsChildrenDefinition(clazzes: List[Class[_]])
                                    (implicit settings: ClassExtractionSettings): List[PlainClazzDefinition] = {
-    (clazzes ++ mandatoryClasses).flatMap(clazzAndItsChildrenDefinition).toList.distinct
+    clazzes.flatMap(clazzAndItsChildrenDefinition).distinct
   }
 
-  private def clazzAndItsChildrenDefinition(clazz: Class[_])
+  def clazzAndItsChildrenDefinition(clazz: Class[_])
                                    (implicit settings: ClassExtractionSettings): List[PlainClazzDefinition] = {
     val result = if (clazz.isPrimitive || baseClazzPackagePrefix.exists(clazz.getName.startsWith)) {
       List(clazzDefinition(clazz))

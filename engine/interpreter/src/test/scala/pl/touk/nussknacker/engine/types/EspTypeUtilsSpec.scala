@@ -40,7 +40,7 @@ class EspTypeUtilsSpec extends FlatSpec with Matchers {
     )
 
     forAll(testCases) { (clazz, clazzName) =>
-      val infos = EspTypeUtils.clazzAndItsChildrenDefinition(List(clazz))(ClassExtractionSettings.Default)
+      val infos = EspTypeUtils.clazzAndItsChildrenDefinition(clazz)(ClassExtractionSettings.Default)
       val sampleClassInfo = infos.find(_.clazzName.refClazzName.contains(clazzName)).get
 
       sampleClassInfo.methods shouldBe Map(
@@ -64,7 +64,7 @@ class EspTypeUtilsSpec extends FlatSpec with Matchers {
 
     forAll(testCasses) { (clazz, clazzName) =>
       forAll(testClassPatterns) { classPattern =>
-        val infos = EspTypeUtils.clazzAndItsChildrenDefinition(List(clazz))(ClassExtractionSettings(Seq(
+        val infos = EspTypeUtils.clazzAndItsChildrenDefinition(clazz)(ClassExtractionSettings(Seq(
           ClassMemberPatternPredicate(Pattern.compile(classPattern), Pattern.compile("ba.*"))
         )))
         val sampleClassInfo = infos.find(_.clazzName.refClazzName.contains(clazzName)).get

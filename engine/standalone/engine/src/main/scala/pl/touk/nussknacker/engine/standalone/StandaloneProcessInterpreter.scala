@@ -62,7 +62,7 @@ object StandaloneProcessInterpreter {
     //for testing environment it's important to take classloader from user jar
     val sub = PartSubGraphCompiler.default(definitions.services, globalVariablesTypes, creator.getClass.getClassLoader, config)
     val interpreter = Interpreter(definitions.services, globalVariables, listeners, process.metaData.typeSpecificData.allowLazyVars)
-    val compiler = new ProcessCompiler(modelData.modelClassLoader.classLoader, sub, definitions)
+    val compiler = new ProcessCompiler(sub, definitions)
     compiler.compile(process).andThen { compiledProcessParts =>
       StandaloneInvokerCompiler(sub, compiledProcessParts, interpreter).compile
     }.map { invoker =>
