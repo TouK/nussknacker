@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.dispatch
 
+import java.nio.charset.{Charset, StandardCharsets}
+
 import com.ning.http.client
 import dispatch.{Req, as}
 
@@ -20,39 +22,43 @@ object utils {
 
   case class InvalidJsonResponseException(message: String) extends RuntimeException(message)
 
+  //TODO: ability to use different charsets
   object asJson {
     def apply[Resp: DecodeJson](r: client.Response): Resp = {
-      val response = as.String(r)
+      val response = as.String.charset(StandardCharsets.UTF_8)(r)
       response
         .decodeOption[Resp]
         .getOrElse(throw InvalidJsonResponseException(response))
     }
   }
 
+  //TODO: ability to use different charsets
   object asXml {
     def apply(r: client.Response): Elem = {
-      val body = as.String(r)
+      val body = as.String.charset(StandardCharsets.UTF_8)(r)
       XML
         .withSAXParser(factory.newSAXParser)
         .loadString(body)
     }
   }
 
+  //TODO: ability to use different charsets
   object postJson {
-    def apply[Body: EncodeJson](subject: Req, body: Body): Req = {
+    def apply[Body: EncodeJson](subject: Req, body: Body, charset: Charset = StandardCharsets.UTF_8): Req = {
       subject
         .POST
-        .setContentType("application/json", "utf-8") <<
+        .setContentType("application/json", StandardCharsets.UTF_8.toString) <<
         body.asJson.spaces2
     }
   }
 
+  //TODO: ability to use different charsets
   object postXml {
     def apply(subject: Req, body: NodeSeq): Req = {
       subject
         .POST
         .setHeader("Accept", "application/xml")
-        .setContentType("application/xml", "UTF-8") <<
+        .setContentType("application/xml", StandardCharsets.UTF_8.toString) <<
         body.toString()
     }
   }
