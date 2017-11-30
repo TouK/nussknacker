@@ -73,7 +73,8 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
       EspTypeUtils.clazzAndItsChildrenDefinition(context.variables.values.map(_.getClass).toList)(ClassExtractionSettings.Default)
     )
     val expressionFunctions = Map("today" -> classOf[LocalDate].getDeclaredMethod("now"))
-    new SpelExpressionParser(expressionFunctions, getClass.getClassLoader, 1 minute, enableSpelForceCompile = true)
+    val imports = List(SampleValue.getClass.getPackage.getName)
+    new SpelExpressionParser(expressionFunctions, imports, getClass.getClassLoader, 1 minute, enableSpelForceCompile = true)
       .parse(expr, validationCtx, ClazzRef[T])
   }
 
@@ -294,6 +295,11 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
     shouldHaveBadType( parse[java.util.Map[_, _]]("'alaMa'", ctx), "Bad expression type, expected: java.util.Map, found: type 'java.lang.String'" )
     shouldHaveBadType( parse[Int]("#strVal", ctx), "Bad expression type, expected: int, found: type 'java.lang.String'" )
 
+  }
+
+  it should "resolve imported package" in {
+    val givenValue = 123
+    parseOrFail[Int](s"new SampleValue($givenValue, '').value").evaluateSync(ctx, dumbLazyProvider).value should equal(givenValue)
   }
 
 }

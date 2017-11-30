@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnod
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError._
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ClazzRef, ObjectDefinition, Parameter}
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ObjectProcessDefinition, ProcessDefinition}
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ExpressionDefinition, ObjectProcessDefinition, ProcessDefinition}
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
@@ -39,7 +39,10 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
     ),
     Map.empty,
     ObjectDefinition.noParam,
-    Map("processHelper" -> ObjectDefinition(List(), ClazzRef(ProcessHelper.getClass), List("cat1"))),
+    ExpressionDefinition(
+      Map("processHelper" -> ObjectDefinition(List(), ClazzRef(ProcessHelper.getClass), List("cat1"))),
+      List.empty
+    ),
     EspTypeUtils.clazzAndItsChildrenDefinition(List(classOf[SampleEnricher], classOf[SimpleRecord], ProcessHelper.getClass))(ClassExtractionSettings.Default)
   )
 

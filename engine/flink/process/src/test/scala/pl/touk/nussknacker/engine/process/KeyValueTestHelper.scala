@@ -11,7 +11,7 @@ import org.apache.flink.streaming.api.windowing.time.Time
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment.test.TestData
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
-import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, WithCategories}
+import pl.touk.nussknacker.engine.api.process.{ExpressionConfig, ProcessConfigCreator, WithCategories}
 import pl.touk.nussknacker.engine.api.test.TestParsingUtils
 import pl.touk.nussknacker.engine.flink.util.exception.VerboselyLoggingExceptionHandler
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -53,7 +53,7 @@ object KeyValueTestHelper {
       override def customStreamTransformers(config: Config) = Map()
       override def exceptionHandlerFactory(config: Config) = ExceptionHandlerFactory.noParams(VerboselyLoggingExceptionHandler(_))
 
-      override def globalProcessVariables(config: Config) = Map.empty
+      override def expressionConfig(config: Config) = ExpressionConfig(Map.empty, List.empty)
 
       override def signals(config: Config) = Map()
 

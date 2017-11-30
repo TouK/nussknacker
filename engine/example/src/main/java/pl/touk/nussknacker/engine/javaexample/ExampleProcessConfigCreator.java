@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.api.process.WithCategories;
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender;
 import pl.touk.nussknacker.engine.api.test.TestParsingUtils;
 import pl.touk.nussknacker.engine.example.LoggingExceptionHandlerFactory;
+import pl.touk.nussknacker.engine.javaapi.process.ExpressionConfig;
 import pl.touk.nussknacker.engine.javaapi.process.ProcessConfigCreator;
 import pl.touk.nussknacker.engine.kafka.KafkaConfig;
 import pl.touk.nussknacker.engine.kafka.KafkaSinkFactory;
@@ -135,8 +136,11 @@ public class ExampleProcessConfigCreator implements ProcessConfigCreator {
     }
 
     @Override
-    public Map<String, WithCategories<Object>> globalProcessVariables(Config config) {
-        return Collections.singletonMap("UTIL", all(new UtilProcessHelper()));
+    public ExpressionConfig expressionConfig(Config config) {
+        return new ExpressionConfig(
+                Collections.singletonMap("UTIL", all(new UtilProcessHelper())),
+                Collections.emptyList()
+        );
     }
 
     @Override

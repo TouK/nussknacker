@@ -17,7 +17,7 @@ import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.util.serialization.KeyedSerializationSchema
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
-import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, SinkFactory, SourceFactory, WithCategories}
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.test.{TestDataSplit, TestParsingUtils}
 import pl.touk.nussknacker.engine.example.custom.{EventsCounter, TransactionAmountAggregator}
@@ -100,10 +100,11 @@ class ExampleProcessConfigCreator extends ProcessConfigCreator {
     new LoggingExceptionHandlerFactory
   }
 
-  override def globalProcessVariables(config: Config): Map[String, WithCategories[AnyRef]] = {
-    Map(
+  override def expressionConfig(config: Config) = {
+    val globalProcessVariables = Map(
       "UTIL" -> all(UtilProcessHelper)
     )
+    ExpressionConfig(globalProcessVariables, List.empty)
   }
 
   override def buildInfo(): Map[String, String] = {

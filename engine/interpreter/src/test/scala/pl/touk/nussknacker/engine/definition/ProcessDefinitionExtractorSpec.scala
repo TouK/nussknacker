@@ -4,7 +4,7 @@ import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, EspExceptionInfo, ExceptionHandlerFactory}
-import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, SinkFactory, SourceFactory, WithCategories}
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.{ProcessSignalSender, SignalTransformer}
 
 class ProcessDefinitionExtractorSpec extends FlatSpec with Matchers {
@@ -35,7 +35,7 @@ class ProcessDefinitionExtractorSpec extends FlatSpec with Matchers {
     override def exceptionHandlerFactory(config: Config): ExceptionHandlerFactory =
       ExceptionHandlerFactory.noParams(_ => EspExceptionHandler.empty)
 
-    override def globalProcessVariables(config: Config): Map[String, WithCategories[AnyRef]] = Map()
+    override def expressionConfig(config: Config) = ExpressionConfig(Map.empty, List.empty)
 
     override def buildInfo(): Map[String, String] = Map()
 

@@ -93,7 +93,7 @@ class InterpreterSpec extends FlatSpec with Matchers {
   }
 
   def compile(servicesDefs: Map[String, ObjectWithMethodDef], node: splittednode.SplittedNode[_], ctx: ValidationContext): CompiledNode = {
-    PartSubGraphCompiler.default(servicesDefs, Map.empty, getClass.getClassLoader, ConfigFactory.empty()).compileWithoutContextValidation(node) match {
+    PartSubGraphCompiler.default(servicesDefs, Map.empty, List.empty, getClass.getClassLoader, ConfigFactory.empty()).compileWithoutContextValidation(node) match {
       case Valid(c) => c
       case Invalid(err) => throw new IllegalArgumentException(err.toList.mkString("Compilation errors: ", ", ", ""))
     }

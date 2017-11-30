@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.testing
 
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
-import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, SinkFactory, SourceFactory, WithCategories}
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, ProcessListener, Service}
 
@@ -27,8 +27,7 @@ class EmptyProcessConfigCreator
   override def exceptionHandlerFactory(config: Config): ExceptionHandlerFactory =
     ExceptionHandlerFactory.noParams(_ => EspExceptionHandler.empty)
 
-  override def globalProcessVariables(config: Config): Map[String, WithCategories[AnyRef]] =
-    Map.empty
+  override def expressionConfig(config: Config) = ExpressionConfig(Map.empty, List.empty)
 
   override def buildInfo(): Map[String, String] =
     Map.empty

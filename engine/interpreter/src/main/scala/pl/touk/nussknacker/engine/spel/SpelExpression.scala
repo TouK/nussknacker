@@ -30,6 +30,7 @@ class SpelExpression(parsed: org.springframework.expression.Expression,
                      val original: String,
                      expectedReturnType: ClazzRef,
                      expressionFunctions: Map[String, Method],
+                     expressionImports: List[String],
                      propertyAccessors: Seq[PropertyAccessor],
                      classLoader: ClassLoader) extends compiledgraph.expression.Expression with LazyLogging {
 
@@ -40,7 +41,9 @@ class SpelExpression(parsed: org.springframework.expression.Expression,
   override def evaluate[T](ctx: Context,
                            lazyValuesProvider: LazyValuesProvider): Future[ValueWithLazyContext[T]] = logOnException(ctx) {
     val simpleContext = new StandardEvaluationContext()
-    simpleContext.setTypeLocator(new StandardTypeLocator(classLoader))
+    val locator = new StandardTypeLocator(classLoader)
+    expressionImports.foreach(locator.registerImport)
+    simpleContext.setTypeLocator(locator)
     propertyAccessors.foreach(simpleContext.addPropertyAccessor)
 
     ctx.variables.foreach {
@@ -71,7 +74,7 @@ class SpelExpression(parsed: org.springframework.expression.Expression,
   }
 }
 
-class SpelExpressionParser(expressionFunctions: Map[String, Method],
+class SpelExpressionParser(expressionFunctions: Map[String, Method], expressionImports: List[String],
                            classLoader: ClassLoader, lazyValuesTimeout: Duration, enableSpelForceCompile: Boolean) extends ExpressionParser {
 
   import pl.touk.nussknacker.engine.spel.SpelExpressionParser._
@@ -117,7 +120,7 @@ class SpelExpressionParser(expressionFunctions: Map[String, Method],
     if (enableSpelForceCompile) {
       forceCompile(expression)
     }
-    new SpelExpression(expression, original, expectedType, expressionFunctions, propertyAccessors, classLoader)
+    new SpelExpression(expression, original, expectedType, expressionFunctions, expressionImports, propertyAccessors, classLoader)
   }
 
 }
@@ -154,13 +157,13 @@ object SpelExpressionParser extends LazyLogging {
 
 
   //caching?
-  def default(loader: ClassLoader, enableSpelForceCompile: Boolean): SpelExpressionParser = new SpelExpressionParser(Map(
+  def default(loader: ClassLoader, enableSpelForceCompile: Boolean, imports: List[String]): SpelExpressionParser = new SpelExpressionParser(Map(
     "today" -> classOf[LocalDate].getDeclaredMethod("now"),
     "now" -> classOf[LocalDateTime].getDeclaredMethod("now"),
     "distinct" -> classOf[CollectionUtils].getDeclaredMethod("distinct", classOf[java.util.Collection[_]]),
     "sum" -> classOf[CollectionUtils].getDeclaredMethod("sum", classOf[java.util.Collection[_]])
   ), //FIXME: configurable timeout...
-    loader, 1 minute, enableSpelForceCompile)
+    imports, loader, 1 minute, enableSpelForceCompile)
 
 
   class ScalaPropertyAccessor extends PropertyAccessor with ReadOnly with Caching {

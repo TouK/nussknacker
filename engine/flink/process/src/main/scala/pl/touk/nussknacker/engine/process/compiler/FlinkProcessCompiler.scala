@@ -47,9 +47,12 @@ abstract class FlinkProcessCompiler(creator: ProcessConfigCreator, config: Confi
   def compileProcess(process: EspProcess)(userCodeClassLoader: ClassLoader): CompiledProcessWithDeps = {
     val servicesDefs = definitions().services
     //for testing environment it's important to take classloader from user jar
-    val globalVariables = creator.globalProcessVariables(config).mapValuesNow(_.value)
+    val expressionConfig = creator.expressionConfig(config)
+    val globalVariables = expressionConfig.globalProcessVariables.mapValuesNow(_.value)
     val subCompiler = PartSubGraphCompiler.default(servicesDefs,
-      globalVariables.mapValuesNow(v => ClazzRef(v.getClass)), userCodeClassLoader, config)
+      globalVariables.mapValuesNow(v => ClazzRef(v.getClass)),
+      expressionConfig.globalImports.map(_.value),
+      userCodeClassLoader, config)
     val processCompiler = new ProcessCompiler(userCodeClassLoader, subCompiler, definitions())
     val compiledProcess = validateOrFailProcessCompilation(processCompiler.compile(process))
 

@@ -86,8 +86,10 @@ object ProcessTestHelpers {
       override def exceptionHandlerFactory(config: Config) =
         ExceptionHandlerFactory.noParams(RecordingExceptionHandler(_))
 
-      override def globalProcessVariables(config: Config) = {
-        Map("processHelper" -> WithCategories(ProcessHelper))
+
+      override def expressionConfig(config: Config) = {
+        val globalProcessVariables = Map("processHelper" -> WithCategories(ProcessHelper))
+        ExpressionConfig(globalProcessVariables, List.empty)
       }
 
       override def signals(config: Config): Map[String, WithCategories[ProcessSignalSender]] = Map()

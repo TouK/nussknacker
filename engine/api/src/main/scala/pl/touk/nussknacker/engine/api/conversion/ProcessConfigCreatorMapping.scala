@@ -33,8 +33,12 @@ object ProcessConfigCreatorMapping {
       override def exceptionHandlerFactory(config: Config) : ExceptionHandlerFactory = {
         jcreator.exceptionHandlerFactory(config)
       }
-      override def globalProcessVariables(config: Config): Map[String, WithCategories[AnyRef]] = {
-        jcreator.globalProcessVariables(config).asScala.toMap
+      override def expressionConfig(config: Config) = {
+        val jec = jcreator.expressionConfig(config)
+        ExpressionConfig(
+          globalProcessVariables = jec.getGlobalProcessVariables.asScala.toMap,
+          globalImports = jec.getGlobalImports.asScala.toList
+        )
       }
       override def buildInfo(): Map[String, String] = {
         jcreator.buildInfo().asScala.toMap

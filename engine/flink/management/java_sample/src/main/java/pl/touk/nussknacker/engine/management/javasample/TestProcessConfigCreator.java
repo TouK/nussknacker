@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.management.javasample;
 import com.typesafe.config.Config;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import pl.touk.nussknacker.engine.api.CustomStreamTransformer;
 import pl.touk.nussknacker.engine.api.ProcessListener;
@@ -12,6 +13,7 @@ import pl.touk.nussknacker.engine.api.process.SinkFactory;
 import pl.touk.nussknacker.engine.api.process.SourceFactory;
 import pl.touk.nussknacker.engine.api.process.WithCategories;
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender;
+import pl.touk.nussknacker.engine.javaapi.process.ExpressionConfig;
 import pl.touk.nussknacker.engine.javaapi.process.ProcessConfigCreator;
 
 public class TestProcessConfigCreator implements ProcessConfigCreator {
@@ -54,8 +56,8 @@ public class TestProcessConfigCreator implements ProcessConfigCreator {
     }
 
     @Override
-    public Map<String, WithCategories<Object>> globalProcessVariables(Config config) {
-        return Collections.emptyMap();
+    public ExpressionConfig expressionConfig(Config config) {
+        return new ExpressionConfig(Collections.emptyMap(), Collections.emptyList());
     }
 
     @Override

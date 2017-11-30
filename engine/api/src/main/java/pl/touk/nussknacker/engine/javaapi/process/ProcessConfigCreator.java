@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -22,7 +23,7 @@ public interface ProcessConfigCreator extends Serializable {
     Map<String, WithCategories<ProcessSignalSender>> signals(Config config);
     Collection<ProcessListener> listeners(Config config);
     ExceptionHandlerFactory exceptionHandlerFactory(Config config);
-    Map<String, WithCategories<Object>> globalProcessVariables(Config config);
+    ExpressionConfig expressionConfig(Config config);
     Map<String, String> buildInfo();
     default Optional<AsyncExecutionContextPreparer> asyncExecutionContextPreparer(Config config) {
       return Optional.empty();

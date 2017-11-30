@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.api.process
 
-case class WithCategories[T](value: T, categories: List[String]) {
+case class WithCategories[+T](value: T, categories: List[String]) {
   def map[Y](f : T=>Y) = copy(value = f(value))
 }
 

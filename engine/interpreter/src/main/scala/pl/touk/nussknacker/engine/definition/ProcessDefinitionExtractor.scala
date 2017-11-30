@@ -19,7 +19,7 @@ object ProcessDefinitionExtractor {
     val sinkFactories = creator.sinkFactories(config)
     val exceptionHandlerFactory = creator.exceptionHandlerFactory(config)
     val customStreamTransformers = creator.customStreamTransformers(config)
-    val globalVariables = creator.globalProcessVariables(config)
+    val expressionConfig = creator.expressionConfig(config)
 
     val servicesDefs = services.mapValuesNow { factory =>
       ObjectWithMethodDef(factory, ProcessObjectDefinitionExtractor.service)
@@ -47,11 +47,13 @@ object ProcessDefinitionExtractor {
       WithCategories(exceptionHandlerFactory, List()), ProcessObjectDefinitionExtractor.exceptionHandler)
 
     //TODO: this is not so nice...
-    val globalVariablesDefs = globalVariables.mapValuesNow { globalVar =>
+    val globalVariablesDefs = expressionConfig.globalProcessVariables.mapValuesNow { globalVar =>
       val klass = globalVar.value.getClass
       ObjectWithMethodDef(globalVar.value, MethodDefinition(null, klass, new OrderedParameters(List())),
         ObjectDefinition(List(), klass, globalVar.categories))
     }
+
+    val globalImportsDefs = expressionConfig.globalImports.map(_.value)
 
     val typesInformation = TypesInformation.extract(servicesDefs.values,
       sourceFactoriesDefs.values,
@@ -63,7 +65,7 @@ object ProcessDefinitionExtractor {
     ProcessDefinition[ObjectWithMethodDef](
       servicesDefs, sourceFactoriesDefs, sinkFactoriesDefs,
       customStreamTransformersDefs.mapValuesNow(k => (k, extractCustomTransformerData(k))),
-      signalsDefs, exceptionHandlerFactoryDefs, globalVariablesDefs, typesInformation)
+      signalsDefs, exceptionHandlerFactoryDefs, ExpressionDefinition(globalVariablesDefs, globalImportsDefs), typesInformation)
   }
   
   private def extractCustomTransformerData(objectWithMethodDef: ObjectWithMethodDef) = {
@@ -84,25 +86,31 @@ object ProcessDefinitionExtractor {
                                                     customStreamTransformers: Map[String, (T, CustomTransformerAdditionalData)],
                                                     signalsWithTransformers: Map[String, (T, Set[TransformerId])],
                                                     exceptionHandlerFactory: T,
-                                                    globalVariables: Map[String, T],
+                                                    expressionConfig: ExpressionDefinition[T],
                                                     typesInformation: List[PlainClazzDefinition]) {
   }
 
   object ObjectProcessDefinition {
     def empty: ProcessDefinition[ObjectDefinition] =
-      ProcessDefinition(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, ObjectDefinition.noParam, Map.empty, List.empty)
+      ProcessDefinition(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, ObjectDefinition.noParam,
+        ExpressionDefinition(Map.empty, List.empty), List.empty)
 
-    def apply(definition: ProcessDefinition[ObjectWithMethodDef]) : ProcessDefinition[ObjectDefinition] =
+    def apply(definition: ProcessDefinition[ObjectWithMethodDef]) : ProcessDefinition[ObjectDefinition] = {
+      val expressionDefinition = ExpressionDefinition(
+        definition.expressionConfig.globalVariables.mapValuesNow(_.objectDefinition),
+        definition.expressionConfig.globalImports
+      )
       ProcessDefinition(
         definition.services.mapValuesNow(_.objectDefinition),
         definition.sourceFactories.mapValuesNow(_.objectDefinition),
         definition.sinkFactories.mapValuesNow(_.objectDefinition),
-        definition.customStreamTransformers.mapValuesNow { case (transformer, queryNames) => (transformer.objectDefinition, queryNames)},
+        definition.customStreamTransformers.mapValuesNow { case (transformer, queryNames) => (transformer.objectDefinition, queryNames) },
         definition.signalsWithTransformers.mapValuesNow(sign => (sign._1.objectDefinition, sign._2)),
         definition.exceptionHandlerFactory.objectDefinition,
-        definition.globalVariables.mapValuesNow(_.objectDefinition),
+        expressionDefinition,
         definition.typesInformation
       )
+    }
   }
 
   implicit class ObjectProcessDefinition(definition: ProcessDefinition[ObjectDefinition]) {
@@ -126,4 +134,7 @@ object ProcessDefinitionExtractor {
       definition.copy(signalsWithTransformers = definition.signalsWithTransformers + (id -> (ObjectDefinition(params.toList, returnType, List()), transformers)))
 
   }
+
+  case class ExpressionDefinition[T <: ObjectMetadata](globalVariables: Map[String, T], globalImports: List[String])
+
 }

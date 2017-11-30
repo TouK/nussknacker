@@ -13,9 +13,9 @@ import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceCont
 import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.windowing.time.Time
-import pl.touk.nussknacker.engine.api.{Displayable, DisplayableAsJson, MetaData, MethodToInvoke, ParamName, Service, WithFields}
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionInfo, ExceptionHandlerFactory}
-import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, SinkFactory, TestDataGenerator, WithCategories}
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.NewLineSplittedTestDataParser
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionHandler
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkSource, FlinkSourceFactory}
@@ -75,9 +75,12 @@ class DemoProcessConfigCreator extends ProcessConfigCreator {
 
   override def exceptionHandlerFactory(config: Config) = new TopicHandlerFactory
 
-  override def globalProcessVariables(config: Config) = Map(
-    "DATE" -> all(DateProcessHelper)
-  )
+  override def expressionConfig(config: Config) = {
+    val globalProcessVariables = Map(
+      "DATE" -> all(DateProcessHelper)
+    )
+    ExpressionConfig(globalProcessVariables, List.empty)
+  }
 
   override def signals(config: Config) = Map.empty
 

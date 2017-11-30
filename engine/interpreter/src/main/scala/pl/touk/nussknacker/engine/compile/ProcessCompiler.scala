@@ -271,8 +271,8 @@ object ProcessValidator {
 
   import pl.touk.nussknacker.engine.util.Implicits._
 
-  def default(definition: ProcessDefinition[ObjectDefinition], loader: ClassLoader = getClass.getClassLoader): ProcessValidator = {
-    val sub = PartSubGraphValidator.default(definition.services, definition.globalVariables.mapValuesNow(_.returnType), loader)
+  def default(definition: ProcessDefinition[ObjectDefinition], loader: ClassLoader = getClass.getClassLoader, globalImports: List[String] = List.empty): ProcessValidator = {
+    val sub = PartSubGraphValidator.default(definition.services, definition.expressionConfig.globalVariables.mapValuesNow(_.returnType), globalImports, loader)
     new ProcessValidator(loader, sub, definition)
   }
 

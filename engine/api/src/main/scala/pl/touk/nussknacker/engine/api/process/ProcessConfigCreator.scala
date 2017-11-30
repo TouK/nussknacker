@@ -23,8 +23,8 @@ trait ProcessConfigCreator extends Serializable {
 
   def exceptionHandlerFactory(config: Config) : ExceptionHandlerFactory
 
-  def globalProcessVariables(config: Config): Map[String, WithCategories[AnyRef]]
-
+  def expressionConfig(config: Config): ExpressionConfig
+  
   def buildInfo(): Map[String, String]
 
   def signals(config: Config): Map[String, WithCategories[ProcessSignalSender]]

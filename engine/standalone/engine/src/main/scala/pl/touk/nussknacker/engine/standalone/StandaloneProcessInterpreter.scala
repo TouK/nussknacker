@@ -50,8 +50,8 @@ object StandaloneProcessInterpreter {
     import pl.touk.nussknacker.engine.util.Implicits._
 
     val definitions = definitionsPostProcessor(ProcessDefinitionExtractor.extractObjectWithMethods(creator, config))
-    val globalVariablesTypes = definitions.globalVariables.mapValuesNow(_.objectDefinition.returnType)
-    val globalVariables = definitions.globalVariables.mapValuesNow(_.obj)
+    val globalVariablesTypes = definitions.expressionConfig.globalVariables.mapValuesNow(_.objectDefinition.returnType)
+    val globalVariables = definitions.expressionConfig.globalVariables.mapValuesNow(_.obj)
     val listeners = creator.listeners(config) ++ additionalListeners
     val services = definitions.services.map(_._2.obj.asInstanceOf[Service])
     //FIXME: asInstanceOf, should be proper handling of SubprocessInputDefinition
@@ -60,7 +60,7 @@ object StandaloneProcessInterpreter {
       .obj.asInstanceOf[StandaloneSourceFactory[Any]]
 
     //for testing environment it's important to take classloader from user jar
-    val sub = PartSubGraphCompiler.default(definitions.services, globalVariablesTypes, creator.getClass.getClassLoader, config)
+    val sub = PartSubGraphCompiler.default(definitions.services, globalVariablesTypes, definitions.expressionConfig.globalImports, creator.getClass.getClassLoader, config)
     val interpreter = Interpreter(definitions.services, globalVariables, listeners, process.metaData.typeSpecificData.allowLazyVars)
     val compiler = new ProcessCompiler(modelData.modelClassLoader.classLoader, sub, definitions)
     compiler.compile(process).andThen { compiledProcessParts =>
