@@ -27,19 +27,20 @@ object utils {
     def apply[Resp: DecodeJson](r: client.Response): Resp = {
       val response = as.String.charset(StandardCharsets.UTF_8)(r)
       response
-        .decodeOption[Resp]
-        .getOrElse(throw InvalidJsonResponseException(response))
+        .decodeEither[Resp] match {
+        case Left(message) => throw InvalidJsonResponseException(message)
+        case Right(json) => json
+
+      }
     }
   }
 
   //TODO: ability to use different charsets
-  object asXml {
-    def apply(r: client.Response): Elem = {
-      val body = as.String.charset(StandardCharsets.UTF_8)(r)
-      XML
-        .withSAXParser(factory.newSAXParser)
-        .loadString(body)
-    }
+  def asXml(r: client.Response): Elem = {
+    val body = as.String.charset(StandardCharsets.UTF_8)(r)
+    XML
+      .withSAXParser(factory.newSAXParser)
+      .loadString(body)
   }
 
   //TODO: ability to use different charsets
