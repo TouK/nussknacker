@@ -4,6 +4,7 @@ import java.time.format.DateTimeFormatter
 import java.time.{LocalDateTime, ZoneId, ZonedDateTime}
 
 import argonaut.{DecodeJson, DecodeResult}
+import com.ning.http.client.AsyncHttpClient
 import com.typesafe.scalalogging.LazyLogging
 import dispatch._
 import pl.touk.nussknacker.engine.dispatch.LoggingDispatchClient
@@ -17,7 +18,7 @@ class InfluxGenerator(url: String, user: String, password: String, dbName: Strin
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
-  val httpClient = LoggingDispatchClient(classOf[InfluxGenerator], Http())
+  val httpClient = LoggingDispatchClient(classOf[InfluxGenerator].getSimpleName, Http)
 
   implicit val numberOrStringDecoder = DecodeJson.apply[Any] { cursor =>
     val focused = cursor.focus

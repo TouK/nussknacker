@@ -12,7 +12,7 @@ class LoggingDispatchClientSpec extends FlatSpec with Matchers {
     val client = Mocks.asyncHandler {
       isClosed = true
     }
-    LoggingDispatchClient(this.getClass, Http(client)).shutdown()
+    LoggingDispatchClient(this.getClass.getSimpleName, Http(client)).shutdown()
     isClosed shouldBe true
   }
 }
