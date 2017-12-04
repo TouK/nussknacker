@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.flink.api.state
 
+import java.lang
+
 import org.apache.flink.api.common.state.{State, ValueState, ValueStateDescriptor}
 import org.apache.flink.api.common.typeutils.base.StringSerializer
 import org.apache.flink.configuration.Configuration
@@ -92,6 +94,47 @@ abstract class TimestampedEvictableStateFunction[In, Out, StateType] extends Evi
 
   protected def stateValue: MultiMap[Long, StateType] = {
     Option(state.value()).getOrElse(MultiMap[Long, StateType](Ordering.Long))
+  }
+
+}
+
+abstract class LatelyEvictableStateFunction[In, Out, StateType] extends ProcessFunction[In, Out] {
+
+  protected var latestEvictionTimeForKey : ValueState[java.lang.Long] = _
+
+  protected var state: ValueState[StateType] = _
+
+  protected def stateDescriptor: ValueStateDescriptor[StateType]
+
+  override def open(parameters: Configuration): Unit = {
+    super.open(parameters)
+    latestEvictionTimeForKey = getRuntimeContext.getState[java.lang.Long](new ValueStateDescriptor[java.lang.Long]("timers", classOf[java.lang.Long]))
+    state = getRuntimeContext.getState(stateDescriptor)
+  }
+
+  override def onTimer(timestamp: Long, ctx: ProcessFunction[In, Out]#OnTimerContext, out: Collector[Out]): Unit = {
+    val latestEvictionTimeValue = latestEvictionTimeForKey.value()
+    val noLaterEventsArrived = latestEvictionTimeValue == timestamp
+    if (noLaterEventsArrived) {
+      state.clear()
+      latestEvictionTimeForKey.update(null)
+    } else if (latestEvictionTimeValue != null) {
+      ctx.timerService().registerEventTimeTimer(latestEvictionTimeValue)
+    }
+  }
+
+  protected def moveEvictionTime(offset: Long, ctx: ProcessFunction[In, Out]#Context) : Unit= {
+    val time = ctx.timestamp() + offset
+    val latestEvictionTimeValue = latestEvictionTimeForKey.value()
+    val maxEvictionTime = if (latestEvictionTimeValue == null || time > latestEvictionTimeValue) {
+      time
+    } else {
+      latestEvictionTimeValue.longValue()
+    }
+    if (latestEvictionTimeValue == null) {
+      ctx.timerService().registerEventTimeTimer(maxEvictionTime)
+    }
+    latestEvictionTimeForKey.update(maxEvictionTime)
   }
 
 }
