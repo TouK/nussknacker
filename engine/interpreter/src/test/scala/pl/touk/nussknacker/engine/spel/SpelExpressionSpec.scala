@@ -284,15 +284,15 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
 
   it should "detect bad type of literal or variable" in {
 
-    def shouldHaveBadType(valid: Validated[NonEmptyList[ExpressionParseError], _]) = valid should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError(msg), _)) if msg.startsWith("Bad expression type") =>
+    def shouldHaveBadType(valid: Validated[NonEmptyList[ExpressionParseError], _], message: String) = valid should matchPattern {
+      case Invalid(NonEmptyList(ExpressionParseError(msg), _)) if msg == message =>
     }
 
-    shouldHaveBadType( parse[Int]("'abcd'", ctx) )
-    shouldHaveBadType( parse[String]("111", ctx) )
-    shouldHaveBadType( parse[String]("{1, 2, 3}", ctx) )
-    shouldHaveBadType( parse[java.util.Map[_, _]]("'alaMa'", ctx) )
-    shouldHaveBadType( parse[Int]("#strVal", ctx) )
+    shouldHaveBadType( parse[Int]("'abcd'", ctx), "Bad expression type, expected: int, found: type 'java.lang.String'" )
+    shouldHaveBadType( parse[String]("111", ctx), "Bad expression type, expected: java.lang.String, found: type 'java.lang.Integer'" )
+    shouldHaveBadType( parse[String]("{1, 2, 3}", ctx), "Bad expression type, expected: java.lang.String, found: type 'java.util.List'" )
+    shouldHaveBadType( parse[java.util.Map[_, _]]("'alaMa'", ctx), "Bad expression type, expected: java.util.Map, found: type 'java.lang.String'" )
+    shouldHaveBadType( parse[Int]("#strVal", ctx), "Bad expression type, expected: int, found: type 'java.lang.String'" )
 
   }
 

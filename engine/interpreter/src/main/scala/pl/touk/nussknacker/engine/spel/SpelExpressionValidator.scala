@@ -18,7 +18,7 @@ class SpelExpressionValidator(implicit classLoader: ClassLoader) {
       .andThen { ast =>
        typer.typeExpression(ctx, ast).andThen {
         case a: TypingResult if a.canBeSubclassOf(expectedType) => Valid(a)
-        case a: TypingResult => Invalid(NonEmptyList.of(ExpressionParseError(s"Bad expression type, expected: ${expectedType.refClazzName}, found: $a")))
+        case a: TypingResult => Invalid(NonEmptyList.of(ExpressionParseError(s"Bad expression type, expected: ${expectedType.refClazzName}, found: ${a.display}")))
       }
     }
   }

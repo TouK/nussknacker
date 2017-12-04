@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.compiledgraph
 import cats.kernel.CommutativeMonoid
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ClazzRef
+import pl.touk.nussknacker.engine.util.ReflectUtils
 
 import scala.reflect.ClassTag
 
@@ -30,9 +31,12 @@ object typing {
 
     override val display : String = possibleTypes.toList match {
       case Nil => "empty"
-      case h::Nil => s"type '${h.klass.getName}'"
-      case many => many.map(k => ClazzRef(k.klass)).mkString("one of (", ", ", ")")
+      case h::Nil => s"type '${printClass(h)}'"
+      case many => many.map(printClass).mkString("one of (", ", ", ")")
     }
+
+    //TODO: should we use simple name here?
+    private def printClass(h: TypedClass) = h.klass.getName
 
   }
 
