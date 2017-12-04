@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.api
 
+import akka.actor.Status
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.testkit.TestProbe
@@ -34,7 +35,7 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest
     val result = Get("/app/healthCheck") ~> withPermissions(resources, Permission.Read)
 
     val first = statusCheck.expectMsgClass(classOf[CheckStatus])
-    statusCheck.reply(new Exception("Failed to check status"))
+    statusCheck.reply(Status.Failure(new Exception("Failed to check status")))
 
     val second = statusCheck.expectMsgClass(classOf[CheckStatus])
     statusCheck.reply(Some(ProcessStatus(None, "RUNNING", 0l, true, true)))
