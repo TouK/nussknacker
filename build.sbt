@@ -460,7 +460,9 @@ lazy val httpUtils = (project in engine("httpUtils")).
         "org.scala-lang.modules" %% "scala-parser-combinators" % scalaParsersV, // scalaxb deps
         "io.argonaut" %% "argonaut" % argonautV,
         "com.github.alexarchambault" %% s"argonaut-shapeless_$argonautMajorV" % argonautShapelessV,
-        "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV
+        "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
+
+        "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )
     }
   )

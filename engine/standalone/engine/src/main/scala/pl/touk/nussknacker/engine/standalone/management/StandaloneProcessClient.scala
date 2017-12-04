@@ -66,7 +66,7 @@ class DispatchStandalonProcessClient(managementUrl: String, http: Http = Http) e
 
   private implicit val ec: ExecutionContextExecutor = ExecutionContext.Implicits.global
   import pl.touk.nussknacker.engine.dispatch.utils._
-  private val dispatchClient = LoggingDispatchClient(this.getClass)
+  private val dispatchClient = LoggingDispatchClient(this.getClass, http)
 
   import argonaut.ArgonautShapeless._
 

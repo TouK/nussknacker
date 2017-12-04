@@ -17,7 +17,7 @@ class InfluxGenerator(url: String, user: String, password: String, dbName: Strin
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
-  val httpClient = LoggingDispatchClient(classOf[InfluxGenerator])
+  val httpClient = LoggingDispatchClient(classOf[InfluxGenerator], Http())
 
   implicit val numberOrStringDecoder = DecodeJson.apply[Any] { cursor =>
     val focused = cursor.focus
