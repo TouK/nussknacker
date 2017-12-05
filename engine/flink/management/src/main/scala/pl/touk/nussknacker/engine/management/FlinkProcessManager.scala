@@ -77,13 +77,13 @@ class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeploy: Boolea
 
   private val modelJar = new FlinkModelJar
 
-  override def deploy(processId: String, processDeploymentData: ProcessDeploymentData, savepointPath: Option[String]): Future[Unit] = {
+  override def deploy(processId: String, processDeploymentData: ProcessDeploymentData, savepointPath: Option[String]) = {
     val program = prepareProgram(processId, processDeploymentData)
 
     import cats.data.OptionT
     import cats.implicits._
 
-    val stoppingResult = (for {
+    val stoppingResult = for {
       maybeOldJob <- OptionT(findJobStatus(processId))
       maybeSavePoint <- {
         { logger.debug(s"Deploying $processId. Status: $maybeOldJob") }
@@ -92,14 +92,13 @@ class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeploy: Boolea
     } yield {
       logger.info(s"Deploying $processId. Saving savepoint finished")
       maybeSavePoint
-    }).value
+    }
 
-    stoppingResult.flatMap { maybeSavepoint =>
+    stoppingResult.value.map { maybeSavepoint =>
       //savepoint given by user overrides the one created by flink
       prepareSavepointSettings(processId, program, savepointPath.orElse(maybeSavepoint))
       logger.info(s"Using savepoint ${savepointPath.orElse(maybeSavepoint)}")
       gateway.run(program)
-      maybeSavepoint.map(disposeSavepoint).getOrElse(Future.successful(()))
     }
   }
 
@@ -163,21 +162,11 @@ class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeploy: Boolea
     val jobId = JobID.fromHexString(job.id)
 
     gateway.invokeJobManager[Any](JobManagerMessages.TriggerSavepoint(jobId, savepointDir)).map {
-      case TriggerSavepointSuccess(_, checkpointId, path, _) =>
-        logger.info(s"Got savepoint: $path with id $checkpointId")
+      case TriggerSavepointSuccess(_, checkpointId, path, triggerTime) =>
+        logger.info(s"Got savepoint: $path")
         path
       case TriggerSavepointFailure(_, reason) =>
         logger.error(s"Savepoint failed for $jobId(${job.status}) - $savepointDir", reason)
-        throw reason
-    }
-  }
-
-  private def disposeSavepoint(savepointPath: String): Future[Unit] = {
-    gateway.invokeJobManager[Any](JobManagerMessages.DisposeSavepoint(savepointPath)).map {
-      case DisposeSavepointSuccess =>
-        logger.info(s"Deleted savepoint $savepointPath")
-      case DisposeSavepointFailure(reason) =>
-        logger.error(s"Disposing savepoint $savepointPath failed", reason)
         throw reason
     }
   }
