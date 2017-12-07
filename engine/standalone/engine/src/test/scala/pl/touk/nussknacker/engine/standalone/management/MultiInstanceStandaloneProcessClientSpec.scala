@@ -35,14 +35,14 @@ class MultiInstanceStandaloneProcessClientSpec extends FunSuite with Matchers wi
 
     val multiClient = new MultiInstanceStandaloneProcessClient(List(okClient(), okClient()))
 
-    multiClient.deploy(DeploymentData(id, "json")).futureValue shouldBe (())
+    multiClient.deploy(DeploymentData(id, "json", 1000)).futureValue shouldBe (())
 
   }
 
   test("Deployment should fail when one part fails") {
     val multiClient = new MultiInstanceStandaloneProcessClient(List(okClient(), failClient))
 
-    multiClient.deploy(DeploymentData(id, "json")).failed.futureValue shouldBe failure
+    multiClient.deploy(DeploymentData(id, "json", 1000)).failed.futureValue shouldBe failure
 
   }
 
@@ -92,7 +92,7 @@ class MultiInstanceStandaloneProcessClientSpec extends FunSuite with Matchers wi
   }
   private val id = "id"
 
-  def okClient(status: Option[ProcessState] = None) = new StandaloneProcessClient {
+  def okClient(status: Option[ProcessState] = None, expectedTime: Long = 1000) = new StandaloneProcessClient {
 
     override def cancel(name: String): Future[Unit] = {
       name shouldBe id
@@ -101,6 +101,7 @@ class MultiInstanceStandaloneProcessClientSpec extends FunSuite with Matchers wi
 
     override def deploy(deploymentData: DeploymentData): Future[Unit] = {
       deploymentData.processId shouldBe id
+      deploymentData.deploymentTime shouldBe expectedTime
       Future.successful(())
     }
 
