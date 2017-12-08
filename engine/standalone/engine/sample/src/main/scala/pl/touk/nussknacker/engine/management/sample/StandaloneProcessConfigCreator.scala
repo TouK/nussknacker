@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, MethodToInvoke, 
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
-import pl.touk.nussknacker.engine.api.test.TestDataParser
+import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
 import pl.touk.nussknacker.engine.standalone.api.{DecodingError, StandaloneGetFactory, StandalonePostFactory, StandaloneSourceFactory}
 import pl.touk.nussknacker.engine.util.LoggingListener
 
@@ -49,7 +49,8 @@ class StandaloneProcessConfigCreator extends ProcessConfigCreator with LazyLoggi
   override def buildInfo(): Map[String, String] = Map.empty
 }
 
-case class Request1(field1: String, field2: String)
+//field3 is for checking some quircks of classloading...
+case class Request1(field1: String, field2: String, field3: Option[Request2] = None)
 case class Request2(field12: String, field22: String)
 case class Request3(field13: String, field23: String)
 
@@ -81,8 +82,10 @@ class ProcessorService extends Service {
 }
 
 class Request1SourceFactory extends StandalonePostFactory[Request1] with StandaloneGetFactory[Request1] {
-  val decoder = DecodeJson.derive[Request1]
 
+  import argonaut.ArgonautShapeless._
+
+  val decoder = DecodeJson.derive[Request1]
 
   override def parse(data: Array[Byte]): Request1 = {
     val str = new String(data, StandardCharsets.UTF_8)
@@ -100,11 +103,12 @@ class Request1SourceFactory extends StandalonePostFactory[Request1] with Standal
   override def clazz: Class[_] = classOf[Request1]
 
   override def testDataParser: Option[TestDataParser[Request1]] = Some(
-    new TestDataParser[Request1] {
-      override def parseTestData(data: Array[Byte]): List[Request1] = {
-        val request1List = new String(data, StandardCharsets.UTF_8).split("\n").toList
-        request1List.map(str => decoder.decodeJson(Parse.parse(str).right.get).result.right.get)
+    new NewLineSplittedTestDataParser[Request1] {
+
+      override def parseElement(testElement: String): Request1 = {
+        decoder.decodeJson(Parse.parse(testElement).right.get).result.right.get
       }
+
     }
   )
 }

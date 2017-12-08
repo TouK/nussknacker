@@ -111,17 +111,22 @@ val flywayV = "4.0.3"
 def engine(name: String) = file(s"engine/$name")
 
 lazy val engineStandalone = (project in engine("standalone/engine")).
+  configs(IntegrationTest).
   settings(commonSettings).
+  settings(Defaults.itSettings).
   settings(
     name := "nussknacker-standalone-engine",
+    Keys.test in IntegrationTest <<= (Keys.test in IntegrationTest).dependsOn(
+      (assembly in Compile) in standalone_sample
+    ),
     libraryDependencies ++= {
       Seq(
         "org.typelevel" %% "cats-core" % catsV,
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
         "io.argonaut" %% "argonaut" % argonautV,
         "com.github.alexarchambault" %% s"argonaut-shapeless_$argonautMajorV" % argonautShapelessV,
-        "org.scalatest" %% "scalatest" % scalaTestV % "test",
-        "ch.qos.logback" % "logback-classic" % logbackV % "test"
+        "org.scalatest" %% "scalatest" % scalaTestV % "it,test",
+        "ch.qos.logback" % "logback-classic" % logbackV % "it,test"
       )
     }
   ).
@@ -382,6 +387,7 @@ lazy val standaloneUtil = (project in engine("standalone/util")).
       )
     }
   ).dependsOn(util, standaloneApi)
+
 
 lazy val standaloneApi = (project in engine("standalone/api")).
   settings(commonSettings).

@@ -62,7 +62,10 @@ class StandaloneProcessManager(modelData: ModelData, client: StandaloneProcessCl
 
   override def test(processId: String, processJson: String, testData: TestData): Future[TestResults] = {
     Future{
-      StandaloneTestMain.run(processJson, testData, modelData)
+      //TODO: shall we use StaticMethodRunner here?
+      modelData.withThisAsContextClassLoader {
+        StandaloneTestMain.run(processJson, testData, modelData)
+      }
     }
   }
 
