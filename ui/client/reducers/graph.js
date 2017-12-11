@@ -79,7 +79,8 @@ export function reducer(state, action) {
       } else {
         return {
           ...state,
-          nodeToDisplay: action.nodeToDisplay
+          nodeToDisplay: action.nodeToDisplay,
+          nodeToDisplayReadonly: action.nodeToDisplayReadonly
         }
       }
 

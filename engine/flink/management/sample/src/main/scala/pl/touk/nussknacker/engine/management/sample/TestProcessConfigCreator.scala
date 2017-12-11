@@ -181,7 +181,7 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
   override def exceptionHandlerFactory(config: Config) = ParamExceptionHandler
 
   override def globalProcessVariables(config: Config) = Map(
-    "DATE" -> WithCategories(DateProcessHelper.getClass, "Category1", "Category2")
+    "DATE" -> WithCategories(DateProcessHelper, "Category1", "Category2")
   )
 
   override def buildInfo(): Map[String, String] = {

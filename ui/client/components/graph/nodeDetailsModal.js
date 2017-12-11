@@ -187,7 +187,7 @@ function mapState(state) {
     subprocessVersions: state.graphReducer.processToDisplay.properties.subprocessVersions,
     nodeErrors: errors,
     processToDisplay: state.graphReducer.processToDisplay,
-    readOnly: !state.settings.loggedUser.canWrite || state.graphReducer.businessView || false,
+    readOnly: !state.settings.loggedUser.canWrite || state.graphReducer.businessView || state.graphReducer.nodeToDisplayReadonly || false,
     showNodeDetailsModal: state.ui.showNodeDetailsModal,
     testResults: state.graphReducer.testResults,
     processDefinitionData: state.settings.processDefinitionData,

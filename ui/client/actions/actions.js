@@ -130,11 +130,12 @@ export function clearProcess() {
   }
 }
 
-export function displayModalNodeDetails(node) {
+export function displayModalNodeDetails(node, readonly) {
   browserHistory.replace({ pathname: window.location.pathname, search: `?nodeId=${node.id}`})
   return {
     type: "DISPLAY_MODAL_NODE_DETAILS",
-    nodeToDisplay: node
+    nodeToDisplay: node,
+    nodeToDisplayReadonly: readonly
   };
 }
 

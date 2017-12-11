@@ -276,7 +276,7 @@ class Graph extends React.Component {
           var pos = el.get('position');
           return { id: el.id, position: pos }
       })
-      if (!_.isEqual(this.props.layout, newLayout)) {
+      if (!_.isEqual(this.props.layout, newLayout) && !this.props.readonly) {
         this.props.actions && this.props.actions.layoutChanged(newLayout)
       }
     }
@@ -310,32 +310,33 @@ class Graph extends React.Component {
   }
 
     changeNodeDetailsOnClick () {
-      if (!this.props.isMain) {
-        return;
-      }
       this.processGraphPaper.on('cell:pointerdblclick', (cellView, evt, x, y) => {
-        if (cellView.model.attributes.nodeData) {
-          this.props.actions.displayModalNodeDetails(cellView.model.attributes.nodeData)
+        const nodeData = cellView.model.attributes.nodeData;
+        if (nodeData) {
+          const prefixedNodeId = this.props.nodeIdPrefixForSubprocessTests + nodeData.id
+          this.props.actions.displayModalNodeDetails({...nodeData, id: prefixedNodeId}, this.props.readonly)
         }
         if (cellView.model.attributes.edgeData) {
           this.props.actions.displayModalEdgeDetails(cellView.model.attributes.edgeData)
         }
       })
-      this.processGraphPaper.on('cell:pointerclick', (cellView, evt, x, y) => {
-        const nodeData = cellView.model.attributes.nodeData
-        if (nodeData) {
-          this.props.actions.displayNodeDetails(cellView.model.attributes.nodeData)
-        }
+      if (this.props.singleClickNodeDetailsEnabled) {
+        this.processGraphPaper.on('cell:pointerclick', (cellView, evt, x, y) => {
+          const nodeData = cellView.model.attributes.nodeData
+          if (nodeData) {
+            this.props.actions.displayNodeDetails(cellView.model.attributes.nodeData)
+          }
 
-        //TODO: is this the best place for this? if no, where should it be?
-        const targetClass = _.get(evt, 'originalEvent.target.className.baseVal')
-        if (targetClass.includes('collapseIcon') && nodeData) {
-          this.props.actions.collapseGroup(nodeData.id)
-        }
-        if (targetClass.includes('expandIcon') && nodeData) {
-          this.props.actions.expandGroup(nodeData.id)
-        }
-      })
+          //TODO: is this the best place for this? if no, where should it be?
+          const targetClass = _.get(evt, 'originalEvent.target.className.baseVal')
+          if (targetClass.includes('collapseIcon') && nodeData) {
+            this.props.actions.collapseGroup(nodeData.id)
+          }
+          if (targetClass.includes('expandIcon') && nodeData) {
+            this.props.actions.expandGroup(nodeData.id)
+          }
+        })
+      }
     }
 
     hooverHandling () {
@@ -407,24 +408,19 @@ class Graph extends React.Component {
       const paddingLeft = cssVariables.svgGraphPaddingLeft
       const paddingTop = cssVariables.svgGraphPaddingTop
 
-      const graphPosition = $(`#${this.nodeId()} svg`).position()
+      const graphPosition = $(`#${this.props.divId} svg`).position()
       return { x: (pointerOffset.x - pan.x - graphPosition.left - paddingLeft)/zoom, y : (pointerOffset.y - pan.y - graphPosition.top - paddingTop)/zoom }
     }
 
-    nodeId() {
-      return this.props.isMain ? "esp-graph" : "esp-graph-subprocess"
-    }
-
     render() {
-      if (this.props.isMain) {
-        return this.props.connectDropTarget(<div>
-                        {!_.isEmpty(this.props.nodeToDisplay) ? <NodeDetailsModal/> : null }
-                        {!_.isEmpty(this.props.edgeToDisplay) ? <EdgeDetailsModal/> : null }
-                        <div ref="espGraph" id={this.nodeId()} ></div>
-          </div>);
-      } else {
-        return <div ref="espGraph" id={this.nodeId()}></div>;
-      }
+      const toRender = (
+        <div>
+          {!_.isEmpty(this.props.nodeToDisplay) ? <NodeDetailsModal/> : null}
+          {!_.isEmpty(this.props.edgeToDisplay) ? <EdgeDetailsModal/> : null}
+          <div ref="espGraph" id={this.props.divId}></div>
+        </div>
+      )
+      return this.props.connectDropTarget ? this.props.connectDropTarget(toRender) : toRender
     }
 }
 
@@ -438,33 +434,42 @@ const spec = {
 
 function mapState(state, props) {
     return {
+        divId: "esp-graph",
         readonly: state.graphReducer.businessView,
-        isMain: true,
+        singleClickNodeDetailsEnabled: true,
+        nodeIdPrefixForSubprocessTests: "",
+        processToDisplay: state.graphReducer.processToDisplay,
+        processCounts: state.graphReducer.processCounts || {},
         nodeToDisplay: state.graphReducer.nodeToDisplay,
         edgeToDisplay: state.graphReducer.edgeToDisplay,
         groupingState: state.graphReducer.groupingState,
-        processToDisplay: state.graphReducer.processToDisplay,
-        loggedUser: state.settings.loggedUser,
-        layout: state.graphReducer.layout,
-        processCounts: state.graphReducer.processCounts || {},
-        processDefinitionData: state.settings.processDefinitionData,
         expandedGroups: state.ui.expandedGroups,
-        nodesSettings: state.settings.nodesSettings
+        layout: state.graphReducer.layout,
+        ...commonState(state)
     };
 }
 
 function mapSubprocessState(state, props) {
   return {
+        divId: "esp-graph-subprocess",
         readonly: true,
+        singleClickNodeDetailsEnabled: false,
+        nodeIdPrefixForSubprocessTests: state.graphReducer.nodeToDisplay.id + "-", //TODO where should it be?
         processToDisplay: props.processToDisplay,
-        loggedUser: state.settings.loggedUser,
-        processDefinitionData: state.settings.processDefinitionData,
         processCounts: props.processCounts,
-        nodesSettings: state.settings.nodesSettings
+        ...commonState(state)
   }
 }
 
-export let BareGraph = connect(mapSubprocessState)(Graph)
+function commonState(state) {
+  return {
+    loggedUser: state.settings.loggedUser,
+    processDefinitionData: state.settings.processDefinitionData,
+    nodesSettings: state.settings.nodesSettings
+  }
+}
+
+export let BareGraph = connect(mapSubprocessState, ActionsUtils.mapDispatchWithEspActions)(Graph)
 
 //withRef is here so that parent can access methods in graph
 export default connect(mapState, ActionsUtils.mapDispatchWithEspActions,

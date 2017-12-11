@@ -76,7 +76,7 @@ class DemoProcessConfigCreator extends ProcessConfigCreator {
   override def exceptionHandlerFactory(config: Config) = new TopicHandlerFactory
 
   override def globalProcessVariables(config: Config) = Map(
-    "DATE" -> all(DateProcessHelper.getClass)
+    "DATE" -> all(DateProcessHelper)
   )
 
   override def signals(config: Config) = Map.empty
