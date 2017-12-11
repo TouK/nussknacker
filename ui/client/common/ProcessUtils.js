@@ -97,20 +97,23 @@ class ProcessUtils {
 
   //TODO: this should be done without these switches..
   findNodeObjectTypeDefinition = (node, processDefinition) => {
+    const nodeDefinitionId = this.findNodeDefinitionId(node)
     switch (node.type) {
       case "Source": {
-        return _.get(processDefinition, `sourceFactories[${node.ref.typ}]`)
+        return _.get(processDefinition, `sourceFactories[${nodeDefinitionId}]`)
       }
       case "Sink": {
-        return _.get(processDefinition, `sinkFactories[${node.ref.typ}]`)
+        return _.get(processDefinition, `sinkFactories[${nodeDefinitionId}]`)
       }
       case "Enricher":
       case "Processor": {
-        return _.get(processDefinition, `services[${node.service.id}]`)
+        return _.get(processDefinition, `services[${nodeDefinitionId}]`)
       }
       case "CustomNode": {
-        const customNodeType = node.nodeType
-        return _.get(processDefinition, `customStreamTransformers[${customNodeType}]`)
+        return _.get(processDefinition, `customStreamTransformers[${nodeDefinitionId}]`)
+      }
+      case "SubprocessInput": {
+        return _.get(processDefinition, `subprocessInputs[${nodeDefinitionId}]`)
       }
       default: {
         return {}

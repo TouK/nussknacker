@@ -52,7 +52,7 @@ class ProcessCounter(subprocessRepository: SubprocessRepository) {
       case Some(version) => subprocessRepository.get(subprocessId, version)
       case None => subprocessRepository.get(subprocessId)
     }
-    subprocess
+    subprocess.map(_.canonical)
   }
 
   private def computeValuesForGroups(valuesWithoutGroups: Map[String, NodeCount], canonicalProcess: CanonicalProcess) = {

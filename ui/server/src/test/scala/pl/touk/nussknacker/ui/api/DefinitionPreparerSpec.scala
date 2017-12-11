@@ -12,13 +12,13 @@ class DefinitionPreparerSpec extends FlatSpec with Matchers {
 
   it should "return objects sorted by label" in {
 
+    val subprocessesDetails = TestFactory.sampleSubprocessRepository.loadSubprocesses(Map.empty)
     val groups = DefinitionPreparer.prepareNodesToAdd(
       user = LoggedUser("aa", List(Permission.Admin), List()),
       processDefinition = ProcessTestData.processDefinition,
       isSubprocess = false,
-      subprocessRepo = TestFactory.sampleSubprocessRepository,
-      extractorFactory = new TypeAfterConfig(new ParamDefaultValueConfig(Map())),
-      subprocessVersions = Map.empty
+      subprocessesDetails = subprocessesDetails,
+      extractorFactory = new TypeAfterConfig(new ParamDefaultValueConfig(Map()))
     )
 
     groups.foreach { group =>
@@ -27,13 +27,12 @@ class DefinitionPreparerSpec extends FlatSpec with Matchers {
   }
 
   it should "return edge types for subprocess, filters and switches" in {
-
+    val subprocessesDetails = TestFactory.sampleSubprocessRepository.loadSubprocesses(Map.empty)
     val edgeTypes = DefinitionPreparer.prepareEdgeTypes(
       user = LoggedUser("aa", List(Permission.Admin), List()),
       processDefinition = ProcessTestData.processDefinition,
       isSubprocess = false,
-      subprocessRepo = TestFactory.sampleSubprocessRepository,
-      subprocessVersions = Map.empty)
+      subprocessesDetails = subprocessesDetails)
 
     edgeTypes.toSet shouldBe Set(
       NodeEdges(NodeTypeId("Split"), List(), true),

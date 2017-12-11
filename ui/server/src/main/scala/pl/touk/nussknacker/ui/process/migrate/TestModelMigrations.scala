@@ -8,7 +8,7 @@ import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingT
 import pl.touk.nussknacker.ui.process.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{ProcessDetails, ValidatedProcessDetails}
-import pl.touk.nussknacker.ui.process.subprocess.{SubprocessRepository, SubprocessResolver}
+import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessRepository, SubprocessResolver}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 import pl.touk.nussknacker.ui.validation.ValidationResults.{NodeValidationError, ValidationErrors, ValidationResult, ValidationWarnings}
 
@@ -45,9 +45,16 @@ class TestModelMigrations(migrations: Map[ProcessingType, ProcessMigrations], va
   }
 
   private def prepareSubprocessRepository(subprocesses: List[ProcessDetails]) = {
-    val canonicalSubprocesses = subprocesses.flatMap(_.json).map(ProcessConverter.fromDisplayable).toSet
+    val subprocessesDetails = subprocesses.flatMap { details =>
+      details.json.map { displayable =>
+        val canonical = ProcessConverter.fromDisplayable(displayable)
+        SubprocessDetails(canonical, details.processCategory)
+      }
+    }
     new SubprocessRepository {
-      override def loadSubprocesses(versions: Map[String, Long]): Set[CanonicalProcess] = canonicalSubprocesses
+      override def loadSubprocesses(versions: Map[String, Long]): Set[SubprocessDetails] = {
+        subprocessesDetails.toSet
+      }
     }
   }
 

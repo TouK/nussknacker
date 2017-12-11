@@ -15,6 +15,7 @@ import scala.language.higherKinds
 class SubprocessRepositorySpec extends FlatSpec with ScalatestRouteTest with Matchers with ScalaFutures with BeforeAndAfterEach with EspItTest with Eventually {
   override implicit def patienceConfig: PatienceConfig = PatienceConfig(timeout = scaled(Span(30, Seconds)), interval = scaled(Span(1, Seconds)))
 
+  import pl.touk.nussknacker.ui.api.helpers.TestFactory.testCategory
   it should "fetches subprocess by its version" in {
     val sampleSubprocess = ProcessConverter.toDisplayable(ProcessTestData.sampleSubprocess, ProcessingType.Streaming)
     val sampleSubprocess2 = ProcessConverter.toDisplayable(ProcessTestData.sampleSubprocess2, ProcessingType.Streaming)
@@ -24,12 +25,12 @@ class SubprocessRepositorySpec extends FlatSpec with ScalatestRouteTest with Mat
     ProcessTestData.sampleSubprocess.metaData.id shouldBe ProcessTestData.sampleSubprocess2.metaData.id
     ProcessTestData.sampleSubprocess should not be ProcessTestData.sampleSubprocess2
 
-    subprocessRepository.loadSubprocesses() shouldBe Set(ProcessTestData.sampleSubprocess2)
+    subprocessRepository.loadSubprocesses() shouldBe Set(SubprocessDetails(ProcessTestData.sampleSubprocess2, testCategory))
     val subprocessId = ProcessTestData.sampleSubprocess.metaData.id
-    subprocessRepository.loadSubprocesses(Map(subprocessId -> 1)) shouldBe Set(ProcessTestData.emptySubprocess)
-    subprocessRepository.loadSubprocesses(Map(subprocessId -> 2)) shouldBe Set(ProcessTestData.sampleSubprocess)
-    subprocessRepository.loadSubprocesses(Map(subprocessId -> 3)) shouldBe Set(ProcessTestData.sampleSubprocess2)
-    subprocessRepository.loadSubprocesses() shouldBe Set(ProcessTestData.sampleSubprocess2)
+    subprocessRepository.loadSubprocesses(Map(subprocessId -> 1)) shouldBe Set(SubprocessDetails(ProcessTestData.emptySubprocess, testCategory))
+    subprocessRepository.loadSubprocesses(Map(subprocessId -> 2)) shouldBe Set(SubprocessDetails(ProcessTestData.sampleSubprocess, testCategory))
+    subprocessRepository.loadSubprocesses(Map(subprocessId -> 3)) shouldBe Set(SubprocessDetails(ProcessTestData.sampleSubprocess2, testCategory))
+    subprocessRepository.loadSubprocesses() shouldBe Set(SubprocessDetails(ProcessTestData.sampleSubprocess2, testCategory))
   }
 
 }

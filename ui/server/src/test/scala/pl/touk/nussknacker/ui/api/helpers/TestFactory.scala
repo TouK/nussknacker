@@ -8,11 +8,9 @@ import pl.touk.nussknacker.ui.db.DbConfig
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
 import pl.touk.nussknacker.ui.process.repository.{DBFetchingProcessRepository, FetchingProcessRepository, _}
-import pl.touk.nussknacker.ui.process.subprocess.DbSubprocessRepository
+import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, SubprocessDetails, SubprocessRepository, SubprocessResolver}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
-import pl.touk.nussknacker.ui.process.subprocess.{SubprocessRepository, SubprocessResolver}
 import pl.touk.nussknacker.ui.security.api.Permission.Permission
-
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import slick.jdbc.JdbcBackend
 
@@ -85,8 +83,8 @@ object TestFactory {
   object SampleSubprocessRepository extends SubprocessRepository {
     val subprocesses = Set(ProcessTestData.sampleSubprocess)
 
-    override def loadSubprocesses(versions: Map[String, Long]): Set[CanonicalProcess] = {
-      subprocesses
+    override def loadSubprocesses(versions: Map[String, Long]): Set[SubprocessDetails] = {
+      subprocesses.map(c => SubprocessDetails(c, testCategory))
     }
   }
 

@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.db.entity
 import java.sql.Timestamp
 
 import db.migration.DefaultJdbcProfile.profile.api._
-import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, GraphProcess}
+import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, GraphProcess, ProcessDeploymentData}
 import pl.touk.nussknacker.ui.db.EspTables
 import slick.sql.SqlProfile.ColumnOption.NotNull
 
@@ -45,7 +45,7 @@ object ProcessVersionEntity {
                                        user: String,
                                        modelVersion: Option[Int]
                                      ) {
-    def deploymentData = (json, mainClass) match {
+    def deploymentData: ProcessDeploymentData = (json, mainClass) match {
       case (Some(j), _) => GraphProcess(j)
       case (None, Some(mc)) => CustomProcess(mc)
       case _ => throw new IllegalStateException(s"Process version has neither json nor mainClass. ${this}")

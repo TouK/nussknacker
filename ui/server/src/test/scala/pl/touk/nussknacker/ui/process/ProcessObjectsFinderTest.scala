@@ -11,20 +11,20 @@ import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ClazzRef
 import pl.touk.nussknacker.engine.graph.node.{CustomNode, SubprocessInputDefinition, SubprocessOutputDefinition}
 import pl.touk.nussknacker.ui.api.ProcessTestData._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil
-import pl.touk.nussknacker.ui.process.subprocess.{SubprocessRepository, SubprocessResolver}
+import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessRepository, SubprocessResolver}
 
 class ProcessObjectsFinderTest extends FlatSpec with Matchers with TableDrivenPropertyChecks {
 
   import pl.touk.nussknacker.engine.spel.Implicits._
 
   val processObjectsFinder = new ProcessObjectsFinder(new SubprocessResolver(new SubprocessRepository {
-    override def loadSubprocesses(versions: Map[String, Long]): Set[CanonicalProcess] = {
+    override def loadSubprocesses(versions: Map[String, Long]): Set[SubprocessDetails] = {
       val subprocess =  CanonicalProcess(MetaData("subProcess1", StreamMetaData()), null,
         List(
           canonicalnode.FlatNode(SubprocessInputDefinition("start", List(DefinitionExtractor.Parameter("ala", ClazzRef[String])))),
           canonicalnode.FlatNode(CustomNode("f1", None, otherExistingStreamTransformer2, List.empty)), FlatNode(SubprocessOutputDefinition("out1", "output")))
       )
-      Set(subprocess)
+      Set(subprocess).map(c => SubprocessDetails(c, "category1"))
     }
   }))
 

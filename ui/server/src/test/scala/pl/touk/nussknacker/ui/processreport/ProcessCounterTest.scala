@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.node.{Filter, SubprocessInputDefinition, SubprocessOutputDefinition}
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.{Group, ProcessAdditionalFields}
-import pl.touk.nussknacker.ui.process.subprocess.SubprocessRepository
+import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessRepository}
 
 //numbers & processes in this test can be totaly uncorrect and unrealistic, as processCounter does not care
 //about actual values, only assigns them to nodes
@@ -98,7 +98,9 @@ class ProcessCounterTest extends FlatSpec with Matchers {
 
   private def subprocessRepository(processes: Set[CanonicalProcess]) = {
     new SubprocessRepository {
-      override def loadSubprocesses(versions: Map[String, Long]) = processes
+      override def loadSubprocesses(versions: Map[String, Long]) = {
+        processes.map(c => SubprocessDetails(c, "category1"))
+      }
     }
   }
 }

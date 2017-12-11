@@ -4,7 +4,7 @@ import akka.actor.{Actor, ActorRef, ActorRefFactory, Props, Status}
 import argonaut.PrettyParams
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment.test.TestData
-import pl.touk.nussknacker.engine.api.deployment.{GraphProcess, ProcessManager}
+import pl.touk.nussknacker.engine.api.deployment.{GraphProcess, ProcessDeploymentData, ProcessManager}
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
 import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntity.ProcessVersionEntityData
@@ -14,6 +14,7 @@ import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessNotFou
 import pl.touk.nussknacker.ui.process.repository.{DeployedProcessRepository, FetchingProcessRepository}
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.util.CatsSyntax
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
@@ -68,9 +69,11 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
     case Test(processId, processJson, testData, user) =>
       ensureNoDeploymentRunning {
         implicit val loggedUser = user
-        val testAction = processManager(processId).flatMap { manager =>
-          manager.test(processId, resolveGraph(processJson), testData)
-        }
+        val testAction = for {
+          manager <- processManager(processId)
+          resolvedProcess <- resolveGraph(processJson)
+          testResult <- manager.test(processId, resolvedProcess, testData)
+        } yield testResult
         reply(testAction)
       }
   }
@@ -104,24 +107,32 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
 
   private def deployAndSaveProcess(processingType: ProcessingType, latestVersion: ProcessVersionEntityData, savepointPath: Option[String])(implicit user: LoggedUser): Future[Unit] = {
     val processId = latestVersion.processId
-    logger.debug(s"Deploy of $processId started")
-    val deployment = latestVersion.deploymentData match {
-      case GraphProcess(canonical) => GraphProcess(resolveGraph(canonical))
-      case a => a
-    }
+    val resolvedDeploymentData = resolveDeploymentData(latestVersion.deploymentData)
     val processManagerValue = managers(processingType)
-    processManagerValue.deploy(processId, deployment, savepointPath).flatMap { _ =>
-      logger.debug(s"Deploy of $processId finished")
-      deployedProcessRepository.markProcessAsDeployed(processId, latestVersion.id,
-        processingType, user.id, environment).recoverWith { case NonFatal(e) =>
-        logger.error("Error during marking process as deployed", e)
-        processManagerValue.cancel(processId).map(_ => Future.failed(e))
-      }
+    val deploymentResult = for {
+      deploymentResolved <- resolvedDeploymentData
+      _ <- processManagerValue.deploy(processId, deploymentResolved, savepointPath)
+      _ <- deployedProcessRepository.markProcessAsDeployed(processId, latestVersion.id, processingType, user.id, environment)
+    } yield ()
+
+    deploymentResult.recoverWith { case NonFatal(e) =>
+      logger.error("Error during marking process as deployed", e)
+      processManagerValue.cancel(processId).map(_ => Future.failed(e))
     }
   }
 
-  private def resolveGraph(canonicalJson: String): String = {
-    UiProcessMarshaller.toJson(UiProcessMarshaller.fromJson(canonicalJson).andThen(subprocessResolver.resolveSubprocesses).toOption.get, PrettyParams.spaces2)
+  private def resolveDeploymentData(data: ProcessDeploymentData) = data match {
+    case GraphProcess(canonical) =>
+      resolveGraph(canonical).map(GraphProcess)
+    case a =>
+      Future.successful(a)
+  }
+
+  private def resolveGraph(canonicalJson: String): Future[String] = {
+    val validatedGraph = UiProcessMarshaller.fromJson(canonicalJson).toValidatedNel
+      .andThen(subprocessResolver.resolveSubprocesses)
+      .map(UiProcessMarshaller.toJson(_, PrettyParams.spaces2))
+    CatsSyntax.toFuture(validatedGraph)(e => new RuntimeException(e.head.toString))
   }
 
   private def processManager(processId: String)(implicit ec: ExecutionContext, user: LoggedUser) = {
