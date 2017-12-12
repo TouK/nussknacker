@@ -12,11 +12,10 @@ import pl.touk.nussknacker.ui.api.helpers.TestFactory
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.EdgeType.{NextSwitch, SwitchDefault}
 import pl.touk.nussknacker.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties}
-import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.{Edge, EdgeType}
+import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.{Edge, EdgeType, Group, ProcessAdditionalFields}
 import pl.touk.nussknacker.ui.validation.ValidationResults.{NodeValidationError, ValidationErrors, ValidationResult, ValidationWarnings}
 
 import scala.collection.Map
-import scala.collection.immutable.Map.EmptyMap
 
 class ProcessValidationSpec extends FlatSpec with Matchers {
 
@@ -45,6 +44,27 @@ class ProcessValidationSpec extends FlatSpec with Matchers {
         ValidationWarnings.success
       ) if nodes == Map("subIn" -> List(PrettyValidationErrors.nonuniqeEdge(validator.uiValidationError,
           EdgeType.SubprocessOutput("out2")))) =>
+    }
+  }
+
+  it should "check for duplicates in groups" in {
+    val process = createProcess(
+      List(
+        Source("in", SourceRef("barSource", List())),
+        Variable("var", "var1", Expression("spel", "0")),
+        Sink("out", SinkRef("barSink", List()))
+      ),
+      List(
+        Edge("in", "var", None),
+        Edge("var", "out", None)
+      ),
+      Set(Group("in", Set("in", "var1")))
+    )
+    validator.validate(process) should matchPattern {
+      case ValidationResult(
+        ValidationErrors(_, Nil, globalErrors),
+        ValidationWarnings.success
+      ) if globalErrors == List(PrettyValidationErrors.duplicatedNodeIds(validator.uiValidationError, List("in"))) =>
     }
   }
 
@@ -122,9 +142,9 @@ class ProcessValidationSpec extends FlatSpec with Matchers {
     result.warnings shouldBe ValidationWarnings.success
   }
 
-  private def createProcess(nodes: List[NodeData], edges: List[Edge]) = {
+  private def createProcess(nodes: List[NodeData], edges: List[Edge], groups: Set[Group] = Set()) = {
     DisplayableProcess("test", ProcessProperties(StreamMetaData(),
-      ExceptionHandlerRef(List()), subprocessVersions = Map.empty), nodes, edges, ProcessingType.Streaming)
+      ExceptionHandlerRef(List()), subprocessVersions = Map.empty, additionalFields = Some(ProcessAdditionalFields(None, groups))), nodes, edges, ProcessingType.Streaming)
   }
 
 

@@ -6,9 +6,11 @@ import pl.touk.nussknacker.engine.compile.{ProcessCompilationError, ProcessValid
 import pl.touk.nussknacker.engine.graph.node.{Disableable, NodeData, Source, SubprocessInputDefinition}
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
 import pl.touk.nussknacker.ui.process.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.ProcessAdditionalFields
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
 import pl.touk.nussknacker.ui.validation.ValidationResults.ValidationResult
+import shapeless.syntax.typeable._
 
 object ProcessValidation{
 
@@ -103,7 +105,16 @@ class ProcessValidation(validators: Map[ProcessingType, ProcessValidator], subpr
   }
 
   private def validateDuplicates(displayable: DisplayableProcess): ValidationResult = {
-    val duplicates = displayable.nodes.groupBy(_.id).filter(_._2.size > 1).keys.toList
+    val groupIds = displayable.metaData.additionalFields
+      .flatMap(a => a.cast[ProcessAdditionalFields])
+      .toList
+      .flatMap(_.groups)
+      .map(_.id)
+    val nodeIds = displayable.nodes.map(_.id)
+
+    //in theory it would be possible to have group named like one of nodes inside, but it's not worth complicating logic...  
+    val duplicates = (groupIds ++ nodeIds).groupBy(identity).filter(_._2.size > 1).keys.toList
+
     if (duplicates.isEmpty) {
       ValidationResult.success
     } else {

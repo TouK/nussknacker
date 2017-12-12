@@ -188,6 +188,10 @@ export function ungroup(node) {
   return { type: "UNGROUP", groupToRemove: node.id}
 }
 
+//TODO: is it ok how we process validations here? first we *simulate* reducer on
+//current process (which may be outdated...) and after validation we invoke reducer
+//this is error prone... :|
+
 export function editEdge(process, before, after) {
   return (dispatch) => {
     const changedProcess = GraphUtils.mapProcessWithNewEdge(process, before, after)
@@ -245,11 +249,17 @@ function alignSubprocessesWithSchema(process, processDefinitionData) {
   return {...process, nodes: nodesWithNewSubprocessSchema};
 }
 
-export function editGroup(oldGroupId, newGroup) {
-  return {
-    type: "EDIT_GROUP",
-    oldGroupId: oldGroupId,
-    newGroup: newGroup
+export function editGroup(process, oldGroupId, newGroup) {
+  return (dispatch) => {
+    const newProcess = NodeUtils.editGroup(process, oldGroupId, newGroup)
+    return HttpService.validateProcess(newProcess).then((validationResult) => {
+      dispatch({
+        type: "EDIT_GROUP",
+        oldGroupId: oldGroupId,
+        newGroup: newGroup,
+        validationResult: validationResult
+      })
+    })
   }
 
 }

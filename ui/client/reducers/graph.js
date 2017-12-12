@@ -242,7 +242,10 @@ export function reducer(state, action) {
     case "EDIT_GROUP": {
       return {
         ...state,
-        processToDisplay: NodeUtils.editGroup(state.processToDisplay, action.oldGroupId, action.newGroup),
+        processToDisplay: {
+          ...NodeUtils.editGroup(state.processToDisplay, action.oldGroupId, action.newGroup),
+          validationResult: action.validationResult
+        },
         nodeToDisplay: action.newGroup,
         layout: updateLayoutAfterNodeIdChange(state.layout, action.oldGroupId, action.newGroup.id)
       }

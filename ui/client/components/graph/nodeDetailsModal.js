@@ -64,18 +64,17 @@ class NodeDetailsModal extends React.Component {
   }
 
   performNodeEdit = () => {
-    if (this.isGroup()) {
-      //Fixme validate here?
-      this.props.actions.editGroup(this.props.nodeToDisplay.id, this.state.editedNode)
-      this.closeModal()
-    } else {
-      this.setState( { pendingRequest: true})
-      this.props.actions.editNode(this.props.processToDisplay, this.props.nodeToDisplay, this.state.editedNode).then (() => {
-          this.setState( { pendingRequest: false})
-          this.closeModal()
-        }, () => this.setState( { pendingRequest: false})
-      )
-    }
+    this.setState( { pendingRequest: true})
+
+    const actionResult = this.isGroup() ?
+      this.props.actions.editGroup(this.props.processToDisplay, this.props.nodeToDisplay.id, this.state.editedNode)
+      : this.props.actions.editNode(this.props.processToDisplay, this.props.nodeToDisplay, this.state.editedNode)
+
+    actionResult.then (() => {
+        this.setState( { pendingRequest: false})
+        this.closeModal()
+      }, () => this.setState( { pendingRequest: false})
+    )
   }
 
   nodeAttributes = () => {
