@@ -18,8 +18,8 @@ trait WithEspTimers {
 
   def espTimer(name: String) = {
     val histogram = new Histogram(new SlidingTimeWindowReservoir(instantTimerWindowInSeconds, TimeUnit.SECONDS))
-    val registered = context.register(MetricRegistry.name("times", metricName(name): _*), histogram)
-    val meter = context.register(MetricRegistry.name("instant", metricName(name): _*), new InstantRateMeter)
+    val registered = context.register(MetricRegistry.name("serviceTimes", metricName(name): _*), histogram)
+    val meter = context.register(MetricRegistry.name("serviceInstant", metricName(name): _*), new InstantRateMeter)
     EspTimer(meter, registered.update)
   }
 

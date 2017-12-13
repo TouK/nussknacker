@@ -78,8 +78,8 @@ class StandaloneProcessInterpreterSpec extends FlatSpec with Matchers with Event
     creator.processorService.invocationsCount.get() shouldBe 1
 
     eventually {
-      metricRegistry.getGauges().get("proc1.instant.success").getValue.asInstanceOf[Double] should not be 0
-      metricRegistry.getHistograms().get("proc1.times.success").getCount shouldBe 1
+      metricRegistry.getGauges().get("proc1.serviceInstant.success").getValue.asInstanceOf[Double] should not be 0
+      metricRegistry.getHistograms().get("proc1.serviceTimes.success").getCount shouldBe 1
     }
 
     interpreter.close()
@@ -128,10 +128,10 @@ class StandaloneProcessInterpreterSpec extends FlatSpec with Matchers with Event
     result shouldBe Right(List("initialized!"))
 
     eventually {
-      metricRegistry.getGauges().get("proc1.instant.success").getValue.asInstanceOf[Double] should not be 0
-      metricRegistry.getHistograms().get("proc1.times.success").getCount shouldBe 1
-      metricRegistry.getGauges().get("proc1.instant.enricherWithOpenService.OK").getValue.asInstanceOf[Double] should not be 0
-      metricRegistry.getHistograms().get("proc1.times.enricherWithOpenService.OK").getCount shouldBe 1
+      metricRegistry.getGauges().get("proc1.serviceInstant.success").getValue.asInstanceOf[Double] should not be 0
+      metricRegistry.getHistograms().get("proc1.serviceTimes.success").getCount shouldBe 1
+      metricRegistry.getGauges().get("proc1.serviceInstant.enricherWithOpenService.OK").getValue.asInstanceOf[Double] should not be 0
+      metricRegistry.getHistograms().get("proc1.serviceTimes.enricherWithOpenService.OK").getCount shouldBe 1
     }
     interpreter.close()
   }

@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.standalone.http
 
+import java.util.concurrent.TimeUnit
+
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Directives
@@ -53,8 +55,8 @@ class StandaloneHttpApp(config: Config)(implicit as: ActorSystem)
   private def prepareContext(): StandaloneContextPreparer = {
     val metricRegistry = new MetricRegistry
     GraphiteReporter.forRegistry(metricRegistry)
-      .prefixedWith(s"standaloneEngine.${config.getString("hostName")}")
-        .build(new Graphite(config.getString("graphite.hostName"), config.getInt("graphite.port")))
+      .prefixedWith(s"${config.getString("standaloneProcessConfig.environment")}.${config.getString("hostName")}.standaloneEngine")
+        .build(new Graphite(config.getString("graphite.hostName"), config.getInt("graphite.port"))).start(10, TimeUnit.SECONDS)
     new StandaloneContextPreparer(metricRegistry)
   }
 }

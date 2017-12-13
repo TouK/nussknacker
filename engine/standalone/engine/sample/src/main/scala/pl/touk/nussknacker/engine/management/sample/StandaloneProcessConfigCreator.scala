@@ -13,9 +13,11 @@ import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
 import pl.touk.nussknacker.engine.standalone.api.{DecodingError, StandaloneGetFactory, StandalonePostFactory, StandaloneSourceFactory}
+import pl.touk.nussknacker.engine.standalone.utils.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.util.LoggingListener
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Random
 
 class StandaloneProcessConfigCreator extends ProcessConfigCreator with LazyLogging {
 
@@ -25,6 +27,8 @@ class StandaloneProcessConfigCreator extends ProcessConfigCreator with LazyLoggi
 
   override def services(config: Config): Map[String, WithCategories[Service]] = Map(
     "enricherService" -> WithCategories(new EnricherService, standaloneCategory),
+    "timeMeasuringEnricherService" -> WithCategories(new TimeMeasuringEnricherService, standaloneCategory),
+    "slowEnricherService" -> WithCategories(new SlowEnricherService, standaloneCategory),
     "processorService" -> WithCategories(new ProcessorService, standaloneCategory)
   )
 
@@ -59,6 +63,33 @@ class EnricherService extends Service {
   @MethodToInvoke
   def invoke()(implicit ex: ExecutionContext, collector: ServiceInvocationCollector): Future[String] = {
     Future.successful("alamakota")
+  }
+}
+
+class TimeMeasuringEnricherService extends Service with TimeMeasuringService {
+  override protected def serviceName: String = "enricher"
+
+  @MethodToInvoke
+  def invoke()(implicit ex: ExecutionContext, collector: ServiceInvocationCollector): Future[String] = {
+    measuring{
+      Future.successful("alamakota")
+    }
+  }
+}
+
+class SlowEnricherService extends Service with TimeMeasuringService {
+  override protected def serviceName: String = "slowEnricher"
+
+  @MethodToInvoke
+  def invoke()(implicit ex: ExecutionContext, collector: ServiceInvocationCollector): Future[String] = {
+    measuring{
+      Thread.sleep(Random.nextInt(500))
+      if(Random.nextBoolean()){
+        Future.successful("alamakota")
+      }else{
+        Future.failed(new RuntimeException)
+      }
+    }
   }
 }
 
