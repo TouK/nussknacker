@@ -7,7 +7,7 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Directives
 import akka.stream.ActorMaterializer
 import com.codahale.metrics.MetricRegistry
-import com.codahale.metrics.graphite.{Graphite, GraphiteReporter}
+import com.codahale.metrics.graphite.{Graphite, GraphiteReporter, GraphiteUDP}
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.http.argonaut.Argonaut62Support
@@ -56,7 +56,15 @@ class StandaloneHttpApp(config: Config)(implicit as: ActorSystem)
     val metricRegistry = new MetricRegistry
     GraphiteReporter.forRegistry(metricRegistry)
       .prefixedWith(s"${config.getString("standaloneProcessConfig.environment")}.${config.getString("hostName")}.standaloneEngine")
-        .build(new Graphite(config.getString("graphite.hostName"), config.getInt("graphite.port"))).start(10, TimeUnit.SECONDS)
+        .build(graphiteSender).start(10, TimeUnit.SECONDS)
     new StandaloneContextPreparer(metricRegistry)
+  }
+
+  private def graphiteSender = {
+    if (config.hasPath("graphite.protocol") && "udp".equals(config.getString("graphite.protocol"))) {
+      new GraphiteUDP(config.getString("graphite.hostName"), config.getInt("graphite.port"))
+    } else {
+      new Graphite(config.getString("graphite.hostName"), config.getInt("graphite.port"))
+    }
   }
 }
