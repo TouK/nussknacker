@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.migration
 
+import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode._
 import pl.touk.nussknacker.engine.graph.node.NodeData
@@ -35,23 +36,23 @@ trait ProcessMigrations {
 
 trait FlatNodeMigration extends ProcessMigration {
 
-  def migrateNode: PartialFunction[NodeData, NodeData]
+  def migrateNode(metaData: MetaData): PartialFunction[NodeData, NodeData]
 
   override def migrateProcess(canonicalProcess: CanonicalProcess): CanonicalProcess = {
-    canonicalProcess.copy(nodes = migrateNodes(canonicalProcess.nodes))
+    canonicalProcess.copy(nodes = migrateNodes(canonicalProcess.nodes, canonicalProcess.metaData))
   }
 
   //TODO: this is generic case of canonical process iteration, extract it...
-  private def migrateNodes(nodes: List[CanonicalNode]) = nodes.map(migrateSingleNode)
-  
-  private def migrateSingleNode(node: CanonicalNode) : CanonicalNode = node match {
-    case FlatNode(data) => FlatNode(migrateNode.applyOrElse(data, identity[NodeData]))
-    case FilterNode(filter, nextFalse) => FilterNode(filter, nextFalse.map(migrateSingleNode))
-    case SwitchNode(data, nexts, default) => SwitchNode(data, nexts.map(cas => cas.copy(nodes = migrateNodes(cas.nodes))),
-      default.map(migrateSingleNode)
+  private def migrateNodes(nodes: List[CanonicalNode], metaData: MetaData) = nodes.map(migrateSingleNode(_, metaData))
+
+  private def migrateSingleNode(node: CanonicalNode, metaData: MetaData): CanonicalNode = node match {
+    case FlatNode(data) => FlatNode(migrateNode(metaData).applyOrElse(data, identity[NodeData]))
+    case FilterNode(filter, nextFalse) => FilterNode(filter, nextFalse.map(migrateSingleNode(_, metaData)))
+    case SwitchNode(data, nexts, default) => SwitchNode(data, nexts.map(cas => cas.copy(nodes = migrateNodes(cas.nodes, metaData))),
+      default.map(migrateSingleNode(_, metaData))
     )
-    case SplitNode(data, nodes) => SplitNode(data, nodes.map(migrateNodes))
-    case Subprocess(data, outputs) => Subprocess(data, outputs.mapValues(migrateNodes))
+    case SplitNode(data, nodes) => SplitNode(data, nodes.map(migrateNodes(_, metaData)))
+    case Subprocess(data, outputs) => Subprocess(data, outputs.mapValues(migrateNodes(_, metaData)))
   }
 
 }
