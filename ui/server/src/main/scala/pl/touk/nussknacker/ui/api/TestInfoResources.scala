@@ -22,6 +22,7 @@ class TestInfoResources(providers: Map[ProcessingType, TestInfoProvider])
   implicit val timeout = Timeout(1 minute)
 
   def route(implicit user: LoggedUser): Route = {
+    //TODO: is Write enough here?
     authorize(user.hasPermission(Permission.Deploy)) {
       pathPrefix("testInfo") {
         post {

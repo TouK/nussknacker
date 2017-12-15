@@ -36,7 +36,7 @@ class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
   private implicit val encodeDifference2 = EncodeJson.derive[EnvironmentComparisonResult]
 
   def route(implicit user: LoggedUser) : Route = {
-    authorize(user.hasPermission(Permission.Deploy)) {
+    authorizeMethod(Permission.Write, user) {
 
       pathPrefix("remoteEnvironment") {
           path("compare") {

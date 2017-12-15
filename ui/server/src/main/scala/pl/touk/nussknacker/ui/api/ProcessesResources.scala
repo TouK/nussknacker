@@ -42,13 +42,8 @@ class ProcessesResources(repository: FetchingProcessRepository,
   import UiCodecs._
 
   def route(implicit user: LoggedUser): Route = {
-    def authorizeMethod = extractMethod.flatMap[Unit] {
-      case HttpMethods.POST | HttpMethods.PUT | HttpMethods.DELETE => authorize(user.hasPermission(Permission.Write))
-      case HttpMethods.GET => authorize(user.hasPermission(Permission.Read))
-      case _ => Directive.Empty
-    }
 
-    authorizeMethod {
+    authorizeMethod(Permission.Write, user) {
       path("processes") {
         get {
           complete {

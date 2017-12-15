@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.ui.process.migrate
 
+import java.net.{URI, URL}
+
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshalling.Marshal
@@ -59,8 +61,10 @@ class HttpRemoteEnvironment(config: HttpRemoteEnvironmentConfig,
 
   val http = Http()
 
-  override protected def request(path: String, method: HttpMethod, request: MessageEntity): Future[HttpResponse] = {
-    http.singleRequest(HttpRequest(uri = s"${config.url}/$path", method = method, entity = request,
+  override def baseUrl: String = config.url
+
+  override protected def request(uri: Uri, method: HttpMethod, request: MessageEntity): Future[HttpResponse] = {
+    http.singleRequest(HttpRequest(uri = uri, method = method, entity = request,
       headers = List(Authorization(BasicHttpCredentials(config.user, config.password)))))
   }
 }
@@ -72,11 +76,14 @@ trait StandardRemoteEnvironment extends Argonaut62Support with RemoteEnvironment
 
   def testModelMigrations: TestModelMigrations
 
+  def baseUrl: String
+
   implicit def materializer: Materializer
 
   private def invoke[T:DecodeJson](path: String, method: HttpMethod, requestEntity: RequestEntity = HttpEntity.Empty)(implicit ec: ExecutionContext)
     : Future[Either[EspError, T]]= {
-    request(path, method, requestEntity).flatMap { response =>
+    val uri: JsonField = encodeUrl(path)
+    request(uri, method, requestEntity).flatMap { response =>
       if (response.status.isSuccess()) {
         Unmarshal(response.entity).to[T].map[Either[EspError, T]](Right(_))
       } else {
@@ -86,13 +93,17 @@ trait StandardRemoteEnvironment extends Argonaut62Support with RemoteEnvironment
     }
   }
 
+  private def encodeUrl(path: String) = {
+    val url = new URL(s"$baseUrl/$path")
+    new URI(url.getProtocol, url.getUserInfo, url.getHost, url.getPort, url.getPath, url.getQuery, null).toString
+  }
 
   override def processVersions(processId: String)(implicit ec: ExecutionContext): Future[List[ProcessHistoryEntry]] =
     invoke[ProcessDetails](s"processes/$processId?businessView=true", HttpMethods.GET).map { result =>
       result.fold(_ => List(), _.history)
     }
 
-  protected def request(path: String, method: HttpMethod, request: MessageEntity): Future[HttpResponse]
+  protected def request(path: Uri, method: HttpMethod, request: MessageEntity): Future[HttpResponse]
 
   override def compare(localProcess: DisplayableProcess, remoteProcessVersion: Option[Long], businessView: Boolean = false)(implicit ec: ExecutionContext) : Future[Either[EspError, Map[String, Difference]]] = {
     val id = localProcess.id
