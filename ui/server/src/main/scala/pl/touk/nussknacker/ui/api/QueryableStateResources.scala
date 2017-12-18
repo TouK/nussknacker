@@ -19,8 +19,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class QueryableStateResources(processDefinition: Map[ProcessingType, ModelData],
                               processRepository: FetchingProcessRepository,
                               queryableClient: () => EspQueryableClient,
-                              jobStatusService: JobStatusService,
-                              processObjectsFinder: ProcessObjectsFinder)
+                              jobStatusService: JobStatusService)
                              (implicit ec: ExecutionContext) extends Directives with Argonaut62Support  with RouteWithUser {
 
   import pl.touk.nussknacker.ui.codec.UiCodecs._
@@ -47,8 +46,8 @@ class QueryableStateResources(processDefinition: Map[ProcessingType, ModelData],
   }
 
   private def prepareQueryableStates()(implicit user: LoggedUser): Future[Map[String, List[QueryableStateName]]] = {
-    processRepository.fetchProcessesDetails().map { processList =>
-      processObjectsFinder.findQueries(processList, processDefinition(ProcessingType.Streaming).processDefinition)
+    processRepository.fetchAllProcessesDetails().map { processList =>
+      ProcessObjectsFinder.findQueries(processList, processDefinition(ProcessingType.Streaming).processDefinition)
     }
   }
 

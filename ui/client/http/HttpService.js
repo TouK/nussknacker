@@ -92,8 +92,12 @@ export default {
     });
   },
 
-  fetchObjectIds() {
-    return promiseWrap($.get(`${API_URL}/processDefinitionData/objectIds`))
+  fetchComponentIds() {
+    return promiseWrap($.get(`${API_URL}/processDefinitionData/componentIds`))
+  },
+
+  fetchUnusedComponents() {
+    return promiseWrap($.get(`${API_URL}/app/unusedComponents`))
   },
 
   fetchProcesses() {

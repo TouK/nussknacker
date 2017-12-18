@@ -24,6 +24,12 @@ object CollectionsEnrichments {
     }
   }
 
+  implicit class RichStringList(self: List[String]) {
+    def sortCaseInsensitive: List[String] = {
+      self.sortBy(_.toLowerCase)
+    }
+  }
+
   implicit class SafeString(s: String) {
     def safeValue = {
       if (s == null || s == "") None else Some(s)

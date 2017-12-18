@@ -10,7 +10,7 @@ import "../stylesheets/main.styl";
 import Metrics from "./Metrics";
 import Search from "./Search";
 import Signals from "./Signals";
-import ProcessSearch from "./ProcessSearch";
+import AdminPage from "./AdminPage";
 import DragArea from "../components/DragArea";
 import {connect} from "react-redux";
 import ActionsUtils from "../actions/ActionsUtils";
@@ -76,7 +76,7 @@ const App_ = React.createClass({
                   <li><Link to={Search.path}>{Search.header}</Link></li> : null }
                 <li><Link to={Signals.path}>{Signals.header}</Link></li>
                 {this.props.loggedUser.isAdmin ?
-                  <li><Link to={ProcessSearch.path}>{ProcessSearch.header}</Link></li> : null}
+                  <li><Link to={AdminPage.path}>{AdminPage.header}</Link></li> : null}
               </ul>
             </div>
           </div>

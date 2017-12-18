@@ -88,6 +88,15 @@ object ProcessDefinitionExtractor {
                                                     exceptionHandlerFactory: T,
                                                     expressionConfig: ExpressionDefinition[T],
                                                     typesInformation: List[PlainClazzDefinition]) {
+    def componentIds: List[String] = {
+      val ids = services.keys ++
+        sourceFactories.keys ++
+        sinkFactories.keys ++
+        customStreamTransformers.keys ++
+        signalsWithTransformers.keys
+      ids.toList
+    }
+
   }
 
   object ObjectProcessDefinition {

@@ -4,9 +4,9 @@ import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.http.scaladsl.server._
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
-import pl.touk.nussknacker.ui.process.JobStatusService
+import pl.touk.nussknacker.ui.process.{JobStatusService, ProcessObjectsFinder}
 import pl.touk.nussknacker.ui.process.displayedgraph.ProcessStatus
-import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, ProcessRepository}
+import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessDetails
 import pl.touk.http.argonaut.Argonaut62Support
 import pl.touk.nussknacker.engine.ModelData
@@ -61,6 +61,15 @@ class AppResources(modelData: Map[ProcessingType, ModelData],
                 val message = s"Processes with validation errors: \n${processes.mkString(", ")}"
                 HttpResponse(status = StatusCodes.InternalServerError, entity = message)
               }
+            }
+          }
+        }
+      } ~ path("unusedComponents")  {
+        get {
+          complete {
+            val definition = modelData.values.map(_.processDefinition).toList
+            processRepository.fetchAllProcessesDetails().map { processes =>
+              ProcessObjectsFinder.findUnusedComponents(processes, definition)
             }
           }
         }

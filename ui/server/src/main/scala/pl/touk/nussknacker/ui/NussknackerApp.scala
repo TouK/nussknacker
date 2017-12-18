@@ -79,7 +79,6 @@ object NussknackerApp extends App with Directives with LazyLogging {
     val subprocessRepository = new DbSubprocessRepository(db, system.dispatcher)
     val subprocessResolver = new SubprocessResolver(subprocessRepository)
 
-    val processObjectsFinder = new ProcessObjectsFinder(subprocessResolver)
     val processValidation = ProcessValidation(modelData, subprocessResolver)
 
     val processRepository = DBFetchingProcessRepository.create(db)
@@ -109,8 +108,8 @@ object NussknackerApp extends App with Directives with LazyLogging {
           ManagementResources(modelData, counter, managementActor),
           new ValidationResources(processValidation),
           new DefinitionResources(modelData, subprocessRepository, extractValueParameterByConfigThenType),
-          new SignalsResources(modelData(ProcessingType.Streaming), processRepository, processObjectsFinder),
-          new QueryableStateResources(modelData, processRepository, espQueryableClient, jobStatusService, processObjectsFinder),
+          new SignalsResources(modelData(ProcessingType.Streaming), processRepository),
+          new QueryableStateResources(modelData, processRepository, espQueryableClient, jobStatusService),
           new UserResources(),
           new SettingsResources(featureTogglesConfig, nodesConfig),
           new AppResources(modelData, processRepository, processValidation, jobStatusService),

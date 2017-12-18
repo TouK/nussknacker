@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.process
 
 import org.scalatest.prop.TableDrivenPropertyChecks
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
@@ -11,22 +11,20 @@ import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ClazzRef
 import pl.touk.nussknacker.engine.graph.node.{CustomNode, SubprocessInputDefinition, SubprocessOutputDefinition}
 import pl.touk.nussknacker.ui.api.ProcessTestData._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil
-import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessRepository, SubprocessResolver}
+import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
+import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
-class ProcessObjectsFinderTest extends FlatSpec with Matchers with TableDrivenPropertyChecks {
+class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPropertyChecks {
 
   import pl.touk.nussknacker.engine.spel.Implicits._
 
-  val processObjectsFinder = new ProcessObjectsFinder(new SubprocessResolver(new SubprocessRepository {
-    override def loadSubprocesses(versions: Map[String, Long]): Set[SubprocessDetails] = {
-      val subprocess =  CanonicalProcess(MetaData("subProcess1", StreamMetaData()), null,
-        List(
-          canonicalnode.FlatNode(SubprocessInputDefinition("start", List(DefinitionExtractor.Parameter("ala", ClazzRef[String])))),
-          canonicalnode.FlatNode(CustomNode("f1", None, otherExistingStreamTransformer2, List.empty)), FlatNode(SubprocessOutputDefinition("out1", "output")))
-      )
-      Set(subprocess).map(c => SubprocessDetails(c, "category1"))
-    }
-  }))
+  val subprocess = CanonicalProcess(MetaData("subProcess1", StreamMetaData(), isSubprocess = true), null,
+    List(
+      canonicalnode.FlatNode(SubprocessInputDefinition("start", List(DefinitionExtractor.Parameter("ala", ClazzRef[String])))),
+      canonicalnode.FlatNode(CustomNode("f1", None, otherExistingStreamTransformer2, List.empty)), FlatNode(SubprocessOutputDefinition("out1", "output")))
+  )
+
+  val subprocessDetails = toDetails(ProcessConverter.toDisplayable(subprocess, ProcessingType.Streaming))
 
   private val process1 = toDetails(TestProcessUtil.toDisplayable(
     EspProcessBuilder.id("fooProcess1").exceptionHandler()
@@ -52,9 +50,19 @@ class ProcessObjectsFinderTest extends FlatSpec with Matchers with TableDrivenPr
       .subprocessOneOut("sub", "subProcess1", "output", "ala" -> "'makota'")
       .sink("sink", existingSinkFactory)))
 
+  private val invalidProcessWithAllObjects = toDetails(TestProcessUtil.toDisplayable(
+    EspProcessBuilder.id("processWithAllObjects").exceptionHandler()
+      .source("source", existingSourceFactory)
+      .subprocessOneOut("sub", "subProcess1", "output", "ala" -> "'makota'")
+      .customNode("custom", "out1", existingStreamTransformer)
+      .customNode("custom2", "out2", otherExistingStreamTransformer)
+      .processor("processor1", existingServiceId)
+      .processor("processor2", otherExistingServiceId)
+      .filter("filterInvalid", "#variableThatDoesNotExists == 1")
+      .sink("sink", existingSinkFactory)))
 
-  it should "find processes for queries" in {
-    val queriesForProcesses = processObjectsFinder.findQueries(List(process1, process2, process3, process4), processDefinition)
+  test("should find processes for queries") {
+    val queriesForProcesses = ProcessObjectsFinder.findQueries(List(process1, process2, process3, process4, subprocessDetails), processDefinition)
 
     queriesForProcesses shouldBe Map(
       "query1" -> List(process1.id),
@@ -64,7 +72,7 @@ class ProcessObjectsFinderTest extends FlatSpec with Matchers with TableDrivenPr
     )
   }
 
-  it should "find processes for transformers" in {
+  test("should find processes for transformers") {
     val table = Table(
       ("transformers", "expectedProcesses"),
       (Set(existingStreamTransformer), List(process1.id)),
@@ -75,11 +83,23 @@ class ProcessObjectsFinderTest extends FlatSpec with Matchers with TableDrivenPr
     )
     forAll(table) { (transformers, expectedProcesses) =>
       val definition = processDefinition.withSignalsWithTransformers("signal1", classOf[String], transformers)
-      val signalDefinition = processObjectsFinder.findSignals(List(process1, process2, process3, process4), definition)
+      val signalDefinition = ProcessObjectsFinder.findSignals(List(process1, process2, process3, process4, subprocessDetails), definition)
       signalDefinition should have size 1
       signalDefinition("signal1").availableProcesses shouldBe expectedProcesses
     }
+  }
 
+  test("should find unused components") {
+    val table = Table(
+      ("processes", "unusedComponents"),
+      (List(invalidProcessWithAllObjects), List()),
+      (List(process1, process4), List("barService", "fooService")),
+      (List(process1), List("barService", "fooService", "subProcess1"))
+    )
+    forAll(table) { (processes, unusedComponents) =>
+      val result = ProcessObjectsFinder.findUnusedComponents(processes ++ List(subprocessDetails), List(processDefinition))
+      result shouldBe unusedComponents
+    }
   }
 
 }

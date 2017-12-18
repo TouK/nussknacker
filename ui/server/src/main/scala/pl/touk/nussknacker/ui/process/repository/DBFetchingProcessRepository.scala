@@ -39,6 +39,10 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
     fetchProcessesDetailsByQuery(_.isSubprocess)
   }
 
+  def fetchAllProcessesDetails()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[ProcessDetails]] = {
+    fetchProcessesDetailsByQuery(_ => true)
+  }
+
   private def fetchProcessesDetailsByQuery(query: ProcessEntity => Rep[Boolean])
                                           (implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[ProcessDetails]] = {
     val action = (for {

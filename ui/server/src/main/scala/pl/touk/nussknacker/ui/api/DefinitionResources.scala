@@ -26,6 +26,7 @@ import pl.touk.nussknacker.ui.process.uiconfig.defaults.{ParameterDefaultValueEx
 import pl.touk.nussknacker.ui.util.EspPathMatchers
 import pl.touk.http.argonaut.Argonaut62Support
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.ui.process.ProcessObjectsFinder
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.ExecutionContext
@@ -35,7 +36,7 @@ class DefinitionResources(modelData: Map[ProcessingType, ModelData],
                           subprocessRepository: SubprocessRepository,
                           parameterDefaultValueExtractorStrategyFactory: ParameterDefaultValueExtractorStrategy)
                          (implicit ec: ExecutionContext)
-  extends Directives with Argonaut62Support with EspPathMatchers  with RouteWithUser {
+  extends Directives with Argonaut62Support with EspPathMatchers with RouteWithUser {
 
   import argonaut.ArgonautShapeless._
   import pl.touk.nussknacker.ui.codec.UiCodecs._
@@ -60,10 +61,11 @@ class DefinitionResources(modelData: Map[ProcessingType, ModelData],
           }
         }
       }
-    } ~ path("processDefinitionData" / "objectIds") {
+    } ~ path("processDefinitionData" / "componentIds") {
       get {
         complete {
-          DefinitionPreparer.objectIds(modelData.values.map(_.processDefinition).toList, subprocessRepository)
+          val subprocessIds = subprocessRepository.loadSubprocesses().map(_.canonical.metaData.id).toList
+          ProcessObjectsFinder.componentIds(modelData.values.map(_.processDefinition).toList, subprocessIds)
         }
       }
     }
@@ -220,21 +222,6 @@ object DefinitionPreparer {
         EdgeType.NextSwitch(Expression("spel", "true")), EdgeType.SwitchDefault), canChooseNodes = true),
       NodeEdges(NodeTypeId("Filter"), List(FilterTrue, FilterFalse), canChooseNodes = false)
     ) ++ subprocessOutputs
-  }
-
-  def objectIds(processDefinitions: List[ProcessDefinition[ObjectDefinition]], subprocessRepo: SubprocessRepository): List[String] = {
-    val ids = processDefinitions.flatMap(objectIds)
-    val subprocessIds = subprocessRepo.loadSubprocesses().map(_.canonical.metaData.id).toList
-    (ids ++ subprocessIds).distinct.sorted
-  }
-
-  private def objectIds(processDefinition: ProcessDefinition[ObjectDefinition]): List[String] = {
-    val ids = processDefinition.services.keys ++
-      processDefinition.sourceFactories.keys ++
-      processDefinition.sinkFactories.keys ++
-      processDefinition.customStreamTransformers.keys ++
-      processDefinition.signalsWithTransformers.keys
-    ids.toList
   }
 
   case class NodeTypeId(`type`: String, id: Option[String] = None)

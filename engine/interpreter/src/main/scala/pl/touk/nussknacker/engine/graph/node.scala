@@ -50,13 +50,19 @@ object node {
     def isDisabled: Option[Boolean]
   }
 
+  trait WithComponent {
+    def componentId: String
+  }
+
   sealed trait OneOutputSubsequentNodeData extends NodeData
 
   sealed trait EndingNodeData extends NodeData
 
   sealed trait StartingNodeData extends NodeData
 
-  case class Source(id: String, ref: SourceRef, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends StartingNodeData
+  case class Source(id: String, ref: SourceRef, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends StartingNodeData with WithComponent {
+    override val componentId = ref.typ
+  }
 
   case class Filter(id: String, expression: Expression, isDisabled: Option[Boolean] = None,
                     additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends NodeData with Disableable
@@ -67,18 +73,28 @@ object node {
 
   case class Variable(id: String, varName: String, value: Expression, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends OneOutputSubsequentNodeData
 
-  case class Enricher(id: String, service: ServiceRef, output: String, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends OneOutputSubsequentNodeData
+  case class Enricher(id: String, service: ServiceRef, output: String, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends OneOutputSubsequentNodeData with WithComponent {
+    override val componentId = service.id
+  }
 
-  case class CustomNode(id: String, outputVar: Option[String], nodeType: String, parameters: List[Parameter], additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends OneOutputSubsequentNodeData
+  case class CustomNode(id: String, outputVar: Option[String], nodeType: String, parameters: List[Parameter], additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends OneOutputSubsequentNodeData with WithComponent {
+    override val componentId = nodeType
+  }
 
   case class Split(id: String, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends NodeData
 
-  case class Processor(id: String, service: ServiceRef, isDisabled: Option[Boolean] = None, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends OneOutputSubsequentNodeData with EndingNodeData with Disableable
+  case class Processor(id: String, service: ServiceRef, isDisabled: Option[Boolean] = None, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends OneOutputSubsequentNodeData with EndingNodeData with Disableable with WithComponent {
+    override val componentId = service.id
+  }
 
-  case class Sink(id: String, ref: SinkRef, endResult: Option[Expression] = None, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends EndingNodeData
+  case class Sink(id: String, ref: SinkRef, endResult: Option[Expression] = None, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends EndingNodeData with WithComponent {
+    override val componentId = ref.typ
+  }
 
   case class SubprocessInput(id: String, ref: SubprocessRef,
-                             additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends OneOutputSubsequentNodeData with EndingNodeData
+                             additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends OneOutputSubsequentNodeData with EndingNodeData with WithComponent {
+    override val componentId = ref.id
+  }
 
 
   //this is used after resolving subprocess, used for detecting when subprocess ends and context should change

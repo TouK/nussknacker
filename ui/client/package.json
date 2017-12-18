@@ -35,6 +35,7 @@
     "react-redux": "4.4.5",
     "react-resizable-box": "2.0.4",
     "react-router": "2.6.0",
+    "react-tabs": "2.0.0",
     "react-textarea-autosize": "4.0.5",
     "react-treeview": "0.4.6",
     "reactable": "0.14.1",
