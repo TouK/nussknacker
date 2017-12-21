@@ -1,6 +1,7 @@
 import React from 'react'
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
+import HttpService from "../http/HttpService";
 
 class Metrics extends React.Component {
 
@@ -8,13 +9,22 @@ class Metrics extends React.Component {
       settings: React.PropTypes.object.isRequired,
   }
 
+  componentDidMount() {
+    HttpService.fetchProcessDetails(this.props.params.processId).then(details => {
+        this.setState({processingType: details.processingType})
+    })
+  }
+
   render() {
-    if (!this.props.settings.url) {
+    if (!this.props.settings.url || !this.state || !this.state.processingType) {
       return (<div/>)
     }
+    const processingType = this.state.processingType;
+    const processingTypeToDashboard = this.props.settings.processingTypeToDashboard;
+
     var options = {
       grafanaUrl: this.props.settings.url,
-      dashboard: this.props.settings.dashboard,
+      dashboard: (processingTypeToDashboard && processingTypeToDashboard[processingType]) || this.props.settings.defaultDashboard,
       processName: this.props.params.processId || "All",
       theme: 'dark',
       env: this.props.settings.env

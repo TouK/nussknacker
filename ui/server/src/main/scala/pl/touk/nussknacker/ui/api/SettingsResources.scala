@@ -30,7 +30,7 @@ class SettingsResources(config: FeatureTogglesConfig, nodesConfig: Map[String, S
     }
 }
 
-case class GrafanaSettings(url: String, dashboard: String, env: String)
+case class GrafanaSettings(url: String, defaultDashboard: String, processingTypeToDashboard: Option[Map[String,String]], env: String)
 case class KibanaSettings(url: String)
 case class RemoteEnvironmentConfig(targetEnvironmentId: String)
 case class EnvironmentAlert(content: String, cssClass: String)

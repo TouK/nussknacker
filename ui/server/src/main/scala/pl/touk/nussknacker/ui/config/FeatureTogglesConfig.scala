@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.ui.config
 
+import com.typesafe.scalalogging.LazyLogging
+import net.ceedubs.ficus.readers.ValueReader
 import pl.touk.nussknacker.ui.api.{EnvironmentAlert, GrafanaSettings, KibanaSettings}
 import pl.touk.nussknacker.ui.process.migrate.HttpRemoteEnvironmentConfig
 import pl.touk.process.report.influxdb.InfluxReporterConfig
-
-import scala.util.Try
 
 case class FeatureTogglesConfig(development: Boolean,
                                 standaloneMode: Boolean,
@@ -15,20 +15,20 @@ case class FeatureTogglesConfig(development: Boolean,
                                 environmentAlert:Option[EnvironmentAlert]
                                )
 
-object FeatureTogglesConfig {
+object FeatureTogglesConfig extends LazyLogging{
   import argonaut.ArgonautShapeless._
   import com.typesafe.config.Config
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
-  def create(config: Config, environment: String): FeatureTogglesConfig = {
-    val environmentAlert = Try(config.as[EnvironmentAlert]("environmentAlert")).toOption
+  def create(config: Config): FeatureTogglesConfig = {
+    val environmentAlert = parseOptionalConfig[EnvironmentAlert](config,"environmentAlert")
     val isDevelopmentMode = config.hasPath("developmentMode") && config.getBoolean("developmentMode")
     val standaloneModeEnabled = config.hasPath("standaloneModeEnabled") && config.getBoolean("standaloneModeEnabled")
-    val metrics = Try(config.as[GrafanaSettings]("grafanaSettings")).toOption
-    val counts = Try(config.as[InfluxReporterConfig]("grafanaSettings")).toOption
-    val remoteEnvironment = parseRemoteEnvironmentConfig(config, environment)
-    val search = Try(config.as[KibanaSettings]("kibanaSettings")).toOption
+    val metrics = parseOptionalConfig[GrafanaSettings](config,"grafanaSettings")
+    val counts = parseOptionalConfig[InfluxReporterConfig](config,"grafanaSettings")
+    val remoteEnvironment = parseOptionalConfig[HttpRemoteEnvironmentConfig](config, "secondaryEnvironment")
+    val search = parseOptionalConfig[KibanaSettings](config,"kibanaSettings")
     FeatureTogglesConfig(
       development = isDevelopmentMode,
       standaloneMode = standaloneModeEnabled,
@@ -40,8 +40,14 @@ object FeatureTogglesConfig {
     )
   }
 
-  private def parseRemoteEnvironmentConfig(config: Config, environment: String) = {
-    val key = "secondaryEnvironment"
-    if (config.hasPath(key)) Some(config.as[HttpRemoteEnvironmentConfig](key)) else None
+  private def parseOptionalConfig[T](config: Config,path: String)(implicit reader: ValueReader[T]): Option[T] = {
+    if(config.hasPath(path)) {
+      logger.debug(s"Found optional config at path=$path, parsing...")
+      Some(config.as[T](path))
+    } else {
+      logger.debug(s"Optional config at path=$path not found, skipping.")
+      None
+    }
   }
+
 }
