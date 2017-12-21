@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.api.helpers
 
+import com.typesafe.config.ConfigFactory
 import pl.touk.nussknacker.engine.api.deployment.{ProcessDeploymentData, ProcessState}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.management.{FlinkModelData, FlinkProcessManager}
@@ -56,7 +57,7 @@ object TestFactory {
 
   object InMemoryMocks {
 
-    val mockProcessManager = new FlinkProcessManager(FlinkModelData(), false, null) {
+    val mockProcessManager = new FlinkProcessManager(FlinkModelData(ConfigFactory.load()), false, null) {
       override def findJobStatus(name: String): Future[Option[ProcessState]] = Future.successful(None)
 
       override def cancel(name: String): Future[Unit] = Future.successful(Unit)

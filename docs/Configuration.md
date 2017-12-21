@@ -31,11 +31,13 @@ attachmentsPath: "/tmp/touk/esp-frontend/attachments"
 testSampleSize=50
 
 flinkConfig {
-  high-availability: "zookeeper"
-  recovery.mode: "zookeeper"
-  high-availability.zookeeper.quorum: "zookeeper:2181"
-  high-availability.zookeeper.path.root: "/flinkPath"
-  high-availability.zookeeper.path.namespace: "/flinkDemo"
+  customConfig {
+      high-availability: "zookeeper"
+      recovery.mode: "zookeeper"
+      high-availability.zookeeper.quorum: "zookeeper:2181"
+      high-availability.zookeeper.path.root: "/flinkPath"
+      high-availability.zookeeper.path.namespace: "/flinkDemo"
+  }  
 
   parallelism: 4
   jobManagerTimeout: 1m
@@ -117,26 +119,36 @@ Configuration of communication with Flink cluster and definition of model
 
 ```
 flinkConfig {
-  high-availability: "zookeeper"
-  recovery.mode: "zookeeper"
-  high-availability.zookeeper.quorum: "zookeeper:2181"
-  high-availability.zookeeper.path.root: "/flinkPath"
-  high-availability.zookeeper.path.namespace: "/flinkDemo"
-  parallelism: 4
+  customConfig {
+      high-availability: "zookeeper"
+      recovery.mode: "zookeeper"
+      high-availability.zookeeper.quorum: "zookeeper:2181"
+      high-availability.zookeeper.path.root: "/flinkPath"
+      high-availability.zookeeper.path.namespace: "/flinkDemo"
+      parallelism: 4
+  }
+  configLocation: "/opt/flink/conf"  
   
   
   jobManagerTimeout: 1m
   processConfig: "demo"
   jarPath: "./code-assembly.jar"
+  classpath: ["./code-assembly.jar", "http://url.additional.code/link.jar"]
 }
 ```
-In this section you can put all configuration values for Flink client, as described [here](https://ci.apache.org/projects/flink/flink-docs-release-{{book.flinkMajorVersion}}/setup/config.html).
+In this section you can put all configuration values for Flink client, 
+as described [here](https://ci.apache.org/projects/flink/flink-docs-release-{{book.flinkMajorVersion}}/setup/config.html).
+They can be defined in two ways:
+* you can specify folder where flink-conf.yaml is located (especially useful when Nussknacker is on the same VM as Flink)
+  with *configLocation* property
+* you can define all settings (or override some of Flink settings from flink-conf.yaml) by putting them into *customConfig* section  
 
 In addition you can specify following values:
 
 * jobManagerTimeout (e.g. 1m) - timeout used in communication with Flink cluster
 * processConfig - name of config part that describes configuration of model (see below)
-* jarPath - location of jar with model for processes
+* jarPath - location of jar with model for processes *Deprecated - please use classpath*
+* classpath - list of files/URLs with jars with model for processes 
 
 ##Process  {#model}
 

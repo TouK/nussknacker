@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.model.{HttpEntity, MediaTypes, StatusCodes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import com.typesafe.config.ConfigFactory
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.DisplayableAsJson
 import pl.touk.nussknacker.engine.management.FlinkModelData
@@ -14,7 +15,7 @@ class ServiceRoutesSpec extends FlatSpec with Matchers with ScalatestRouteTest {
 
   private implicit val ec = scala.concurrent.ExecutionContext.Implicits.global
   private implicit val user = LoggedUser("admin", Permission.Admin :: Nil, Nil)
-  private val serviceRoutes = new ServiceRoutes(Map(ProcessingType.Streaming -> FlinkModelData()))
+  private val serviceRoutes = new ServiceRoutes(Map(ProcessingType.Streaming -> FlinkModelData(ConfigFactory.load())))
 
   it should "invoke service" in {
     val entity = HttpEntity(MediaTypes.`application/json`,

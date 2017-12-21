@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.ModelData
 
 object FlinkModelData {
 
-  def apply(config: Config = ConfigFactory.load()): ModelData = {
+  def apply(config: Config): ModelData = {
     ModelData(config, "flinkConfig", "processConfig")
   }
 

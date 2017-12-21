@@ -19,7 +19,7 @@ object ProcessingTypeDeps {
   def apply(config: Config, standaloneModeEnabled: Boolean): ProcessingTypeDeps = {
     val streaming = ProcessingType.Streaming
     val reqResp = ProcessingType.RequestResponse
-    val streamingData = FlinkModelData()
+    val streamingData = FlinkModelData(config)
     val streamingManager = FlinkProcessManager(streamingData, config)
 
     if (standaloneModeEnabled) {

@@ -1,16 +1,13 @@
 package pl.touk.nussknacker.engine.management
 
-import java.io.{File, FileOutputStream}
-import java.net.URL
-import java.nio.file.Files
-import java.util.concurrent.TimeUnit
-
 import argonaut.PrettyParams
-import com.typesafe.config.{Config, ConfigValueFactory, ConfigValueType}
+import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory, ConfigValueType}
 import com.typesafe.scalalogging.LazyLogging
+import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import org.apache.flink.api.common.JobID
 import org.apache.flink.client.program.PackagedProgram
-import org.apache.flink.configuration.Configuration
+import org.apache.flink.configuration.{Configuration, GlobalConfiguration}
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import org.apache.flink.runtime.messages.JobManagerMessages
 import org.apache.flink.runtime.messages.JobManagerMessages._
@@ -30,39 +27,43 @@ object FlinkProcessManager {
   }
 
   def apply(modelData: ModelData, config: Config): FlinkProcessManager = {
-    new FlinkProcessManager(modelData, shouldVerifyBeforeDeploy(config), new RestartableFlinkGateway(() => prepareGateway(config)))
+    val flinkConfig = config.as[FlinkConfig]("flinkConfig")
+    new FlinkProcessManager(modelData, flinkConfig.shouldVerifyBeforeDeploy.getOrElse(true),
+      new RestartableFlinkGateway(() => prepareGateway(flinkConfig)))
   }
 
-  def prepareGateway(config: Config) : FlinkGateway = {
-    val flinkConf = prepareFlinkConfig(config)
+  private def prepareGateway(config: FlinkConfig) : FlinkGateway = {
+    val clientConfig: Configuration = prepareFlinkConfig(config)
+    new DefaultFlinkGateway(clientConfig, config.jobManagerTimeout)
+  }
 
-    val timeout = flinkConf.getDuration("jobManagerTimeout", TimeUnit.MILLISECONDS) millis
+  private def prepareFlinkConfig(flinkConf: FlinkConfig) = {
 
-    val clientConfig = new Configuration()
-    flinkConf.entrySet().toList.foreach { entry =>
+    val flinkConfigurationObject
+      = flinkConf.configLocation.map(GlobalConfiguration.loadConfiguration).getOrElse(new Configuration())
+
+    val appendedCustomConfig = flinkConf.customConfig.getOrElse(ConfigFactory.empty())
+      //TODO: flink requires this value, although it's not used by client...
+      .withValue("high-availability.storageDir", ConfigValueFactory.fromAnyRef("file:///dev/null"))
+
+    appendedCustomConfig.entrySet().toList.foreach { entry =>
       val key = entry.getKey
       entry.getValue.valueType() match {
-        case ConfigValueType.BOOLEAN => clientConfig.setBoolean(key, flinkConf.getBoolean(key))
-        case ConfigValueType.NUMBER => clientConfig.setLong(key, flinkConf.getLong(key))
-        case ConfigValueType.STRING => clientConfig.setString(key, flinkConf.getString(key))
+        case ConfigValueType.BOOLEAN => flinkConfigurationObject.setBoolean(key, appendedCustomConfig.getBoolean(key))
+        case ConfigValueType.NUMBER => flinkConfigurationObject.setLong(key, appendedCustomConfig.getLong(key))
+        case ConfigValueType.STRING => flinkConfigurationObject.setString(key, appendedCustomConfig.getString(key))
         case _ =>
       }
     }
-    new DefaultFlinkGateway(clientConfig, timeout)
-  }
-
-  private def prepareFlinkConfig(config: Config) : Config = config.getConfig("flinkConfig")
-    //TODO: flink requires this value, although it's not used by client...
-    .withValue("high-availability.storageDir", ConfigValueFactory.fromAnyRef("file:///dev/null"))
-
-
-  private def shouldVerifyBeforeDeploy(config: Config) :Boolean = {
-    val verifyConfigProperty = "verifyBeforeDeploy"
-    !config.hasPath(verifyConfigProperty) || config.getBoolean(verifyConfigProperty)
+    flinkConfigurationObject
   }
 
 }
 
+case class FlinkConfig(jobManagerTimeout: FiniteDuration,
+                       configLocation: Option[String],
+                       customConfig: Option[Config],
+                       shouldVerifyBeforeDeploy: Option[Boolean])
 
 class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeploy: Boolean,
                           gateway: FlinkGateway) extends ProcessManager with QueryableClientProvider with LazyLogging {
