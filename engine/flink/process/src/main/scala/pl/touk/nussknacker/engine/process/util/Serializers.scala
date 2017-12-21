@@ -6,36 +6,36 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import pl.touk.nussknacker.engine.types.EspTypeUtils
-import shapeless._
-import shapeless.ops.hlist.Mapper._
 
-import scala.reflect.ClassTag
 import scala.util.{Failure, Try}
 
 object Serializers extends LazyLogging {
 
   def registerSerializers(env: StreamExecutionEnvironment): Unit = {
-
-    object registers extends Poly1 {
-      implicit def caseSerializer[T,S](implicit ev0: ClassTag[T], ev1: S <:< Serializer[T] with Serializable) = at[S] { s =>
-        val klass = implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]]
-        val serializer = ev1(s)
-        registerSerializer(env)(klass, serializer)
-      }
-    }
-    (CaseClassSerializer :: SpelHack :: HNil ).map(registers)
+    val registers = registerSerializer(env) _
+    (CaseClassSerializer ::  SpelHack :: Nil).map(registers)
 
     TimeSerializers.addDefaultSerializers(env)
 
   }
 
-  def registerSerializer[T](env: StreamExecutionEnvironment)(klass: Class[T], serializer: Serializer[T] with Serializable) = {
-    env.getConfig.getRegisteredTypesWithKryoSerializers.put(klass, new ExecutionConfig.SerializableSerializer(serializer))
-    env.getConfig.getDefaultKryoSerializers.put(klass, new ExecutionConfig.SerializableSerializer(serializer))
+  private def registerSerializer(env: StreamExecutionEnvironment)(serializer: SerializerWithSpecifiedClass[_]) = {
+    env.getConfig.getRegisteredTypesWithKryoSerializers.put(serializer.clazz, new ExecutionConfig.SerializableSerializer(serializer))
+    env.getConfig.getDefaultKryoSerializers.put(serializer.clazz, new ExecutionConfig.SerializableSerializer(serializer))
+  }
+
+  abstract class SerializerWithSpecifiedClass[T](acceptsNull: Boolean, immutable: Boolean)
+    extends Serializer[T](acceptsNull, immutable) with Serializable {
+
+    def clazz: Class[_]
+
   }
 
   //this is not so great, but is OK for now
-  object CaseClassSerializer extends Serializer[Product](false, true) with Serializable {
+  object CaseClassSerializer extends SerializerWithSpecifiedClass[Product](false, true) with Serializable {
+
+    override def clazz: Class[_] = classOf[Product]
+
     override def write(kryo: Kryo, output: Output, obj: Product) = {
       output.writeInt(obj.productArity)
       output.flush()
