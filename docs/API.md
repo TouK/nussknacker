@@ -29,7 +29,7 @@ trait ProcessConfigCreator {
 
   def exceptionHandlerFactory(config: Config) : ExceptionHandlerFactory
 
-  def globalProcessVariables(config: Config): Map[String, WithCategories[AnyRef]]
+  def expressionConfig(config: Config): ExpressionConfig
 
   def buildInfo(): Map[String, String]
 
@@ -180,7 +180,7 @@ but user cannot really distinguish it from usual field access.
 
 #Advanced subjects
 
-##Global variables
+##Expression Config
 
 ##Signals
 
