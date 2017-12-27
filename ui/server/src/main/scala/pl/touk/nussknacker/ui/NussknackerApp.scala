@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui
 
-import java.io.File
 import java.lang.Thread.UncaughtExceptionHandler
 
 import _root_.cors.CorsSupport
@@ -9,27 +8,26 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.stream.ActorMaterializer
+import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
-import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DbConfig}
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
+import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DbConfig}
 import pl.touk.nussknacker.ui.initialization.Initialization
+import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment.ManagementActor
 import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, TestModelMigrations}
 import pl.touk.nussknacker.ui.process.repository.{DBFetchingProcessRepository, DeployedProcessRepository, ProcessActivityRepository, WriteProcessRepository}
 import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, SubprocessResolver}
 import pl.touk.nussknacker.ui.process.uiconfig.SingleNodeConfig
 import pl.touk.nussknacker.ui.process.uiconfig.defaults.{ParamDefaultValueConfig, TypeAfterConfig}
-import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
+import pl.touk.nussknacker.ui.security.AuthenticatorProvider
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 import pl.touk.process.report.influxdb.InfluxReporter
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-import pl.touk.nussknacker.ui.security.AuthenticatorProvider
 import slick.jdbc.JdbcBackend
 
 import scala.util.Try
@@ -42,17 +40,17 @@ object NussknackerApp extends App with Directives with LazyLogging {
 
   implicit val materializer = ActorMaterializer()
 
-  val initialProcessDirectory = new File(args(1))
+  //TODO: pass port as part of config
   val port = args(0).toInt
 
 
   Http().bindAndHandle(
-    initializeRoute(initialProcessDirectory),
+    initializeRoute(),
     interface = "0.0.0.0",
     port = port
   )
 
-  def initializeRoute(initialProcessDirectory: File)(implicit system: ActorSystem, materializer: ActorMaterializer) : Route = {
+  def initializeRoute()(implicit system: ActorSystem, materializer: ActorMaterializer) : Route = {
 
     import system.dispatcher
 
@@ -91,7 +89,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
 
     val counter = new ProcessCounter(subprocessRepository)
 
-    Initialization.init(modelData.mapValues(_.migrations), db, environment, initialProcessDirectory)
+    Initialization.init(modelData.mapValues(_.migrations), db, environment, config.getAs[Map[String, String]]("customProcesses"))
 
     val managementActor = ManagementActor(environment, managers, processRepository, deploymentProcessRepository, subprocessResolver)
     val jobStatusService = new JobStatusService(managementActor)

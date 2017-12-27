@@ -15,7 +15,7 @@ import pl.touk.nussknacker.ui.api.helpers.TestFactory
 class BaseFlowTest extends FunSuite with ScalatestRouteTest
   with Matchers with ScalaFutures with BeforeAndAfterEach with BeforeAndAfterAll {
 
-  private val mainRoute = NussknackerApp.initializeRoute(Files.createTempDirectory("tst1").toFile)
+  private val mainRoute = NussknackerApp.initializeRoute()
 
   private val processId = UUID.randomUUID().toString
 
@@ -40,6 +40,12 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest
         }
       }
 
+    }
+  }
+
+  test("initializes custom processes") {
+    Get("/api/processes/customProcess1") ~> addCredentials(credentials) ~> mainRoute ~> check {
+      status shouldEqual StatusCodes.OK
     }
   }
 

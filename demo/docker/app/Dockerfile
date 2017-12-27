@@ -8,4 +8,4 @@ RUN ./prepare.sh $version
 
 VOLUME /db
 
-CMD exec java -Dlogback.configurationFile=./conf/logback.xml -Dconfig.file=./conf/application.conf -cp nussknacker-ui-assembly.jar pl.touk.nussknacker.ui.NussknackerApp 8080 jsons
+CMD exec java -Dlogback.configurationFile=./conf/logback.xml -Dconfig.file=./conf/application.conf -cp nussknacker-ui-assembly.jar pl.touk.nussknacker.ui.NussknackerApp 8080

@@ -25,14 +25,6 @@ class NusskanckerAppSpec extends FlatSpec with BeforeAndAfterEach with Matchers 
 
   override implicit def patienceConfig: PatienceConfig = PatienceConfig(timeout = scaled(Span(30, Seconds)), interval = scaled(Span(1, Seconds)))
 
-  var processesDir: File = _
-
-  override protected def beforeEach(): Unit = {
-    super.beforeEach()
-    processesDir = Files.createTempDirectory("processesJsons").toFile
-    val sampleProcessesDir = new File(getClass.getResource("/jsons").getFile)
-    FileUtils.copyDirectory(sampleProcessesDir, processesDir)
-  }
 
   import argonaut.ArgonautShapeless._
 
@@ -40,8 +32,7 @@ class NusskanckerAppSpec extends FlatSpec with BeforeAndAfterEach with Matchers 
 
   it should "ensure config is properly parsed e2e style" in {
     val port = AvailablePortFinder.findAvailablePort()
-    val args = Array(port.toString, processesDir.getAbsolutePath)
-    NussknackerApp.main(args)
+    NussknackerApp.main(Array(port.toString))
 
     val settings = invoke(port, "settings").map { _.decodeOption[UISettings].get }.futureValue
 

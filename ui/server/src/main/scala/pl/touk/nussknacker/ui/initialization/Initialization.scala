@@ -1,13 +1,9 @@
 package pl.touk.nussknacker.ui.initialization
 
-import java.io.File
-import java.util.Map.Entry
-
 import _root_.db.migration.DefaultJdbcProfile
 import cats.data.EitherT
 import cats.instances.list._
 import cats.syntax.traverse._
-import com.typesafe.config.{ConfigFactory, ConfigValue}
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, ProcessDeploymentData}
@@ -19,13 +15,12 @@ import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingT
 import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntity.ProcessVersionEntityData
 import pl.touk.nussknacker.ui.db.{DbConfig, EspTables}
 import pl.touk.nussknacker.ui.process.migrate.ProcessModelMigrator
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{ProcessDetails, ValidatedProcessDetails}
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessDetails
 import pl.touk.nussknacker.ui.process.repository.WriteProcessRepository.UpdateProcessAction
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import slick.dbio.DBIOAction
 
-import scala.collection.JavaConversions._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext}
@@ -38,7 +33,7 @@ object Initialization {
   def init(migrations: Map[ProcessingType, ProcessMigrations],
            db: DbConfig,
            environment: String,
-           initialProcessDirectory: File) : Unit = {
+           customProcesses: Option[Map[String, String]]) : Unit = {
 
     val transactionalRepository = new DbWriteProcessRepository[DB](db, migrations.mapValues(_.version)) {
       override def run[R]: (DB[R]) => DB[R] = identity
@@ -49,9 +44,8 @@ object Initialization {
 
     val operations : List[InitialOperation] = List(
       new EnvironmentInsert(environment, db),
-      new TechnicalProcessUpdate(initialProcessDirectory, transactionalRepository, transactionalFetchingRepository),
       new AutomaticMigration(migrations, transactionalRepository, transactionalFetchingRepository)
-    )
+    ) ++ customProcesses.map(new TechnicalProcessUpdate(_, transactionalRepository, transactionalFetchingRepository))
 
     runOperationsTransactionally(db, operations)
   }
@@ -89,19 +83,13 @@ class EnvironmentInsert(environmentName: String, dbConfig: DbConfig) extends Ini
   }
 }
 
-object TechnicalProcessUpdate {
-  val customProcessFile = "customProcesses.conf"
-}
-
-class TechnicalProcessUpdate(initialProcessDirectory: File, repository: DbWriteProcessRepository[DB], fetchingProcessRepository: DBFetchingProcessRepository[DB])
+class TechnicalProcessUpdate(customProcesses: Map[String, String], repository: DbWriteProcessRepository[DB], fetchingProcessRepository: DBFetchingProcessRepository[DB])
   extends InitialOperation  {
 
   def runOperation(implicit ec: ExecutionContext, lu: LoggedUser): DB[Unit] = {
-    val customProcessesFile = new File(initialProcessDirectory, TechnicalProcessUpdate.customProcessFile)
-    val results: DB[List[Unit]] = ConfigFactory.parseFile(customProcessesFile).entrySet().toSet
-      .map { (entry: Entry[String, ConfigValue]) =>
-        val processId = entry.getKey
-        val deploymentData = CustomProcess(entry.getValue.unwrapped().toString)
+    val results: DB[List[Unit]] = customProcesses
+      .map { case (processId, processClass) =>
+        val deploymentData = CustomProcess(processClass)
         logger.info(s"Saving custom process $processId")
         saveOrUpdate(processId, "Technical", deploymentData, ProcessingType.Streaming, isSubprocess = false)
       }.toList.sequenceU
