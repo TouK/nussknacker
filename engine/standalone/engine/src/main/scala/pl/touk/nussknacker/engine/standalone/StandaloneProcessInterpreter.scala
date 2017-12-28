@@ -19,7 +19,7 @@ import pl.touk.nussknacker.engine.standalone.api.types._
 import pl.touk.nussknacker.engine.standalone.api.{StandaloneCustomTransformer, StandaloneSourceFactory, types}
 import pl.touk.nussknacker.engine.standalone.metrics.InvocationMetrics
 import pl.touk.nussknacker.engine.standalone.utils.{StandaloneContext, StandaloneContextLifecycle, StandaloneContextPreparer}
-import pl.touk.nussknacker.engine.{Interpreter, ModelData, compiledgraph}
+import pl.touk.nussknacker.engine.{ExpressionEvaluator, Interpreter, ModelData, compiledgraph}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -61,10 +61,12 @@ object StandaloneProcessInterpreter {
 
     //for testing environment it's important to take classloader from user jar
     val sub = PartSubGraphCompiler.default(definitions.services, globalVariablesTypes, definitions.expressionConfig.globalImports, creator.getClass.getClassLoader, config)
-    val interpreter = Interpreter(definitions.services, globalVariables, listeners, process.metaData.typeSpecificData.allowLazyVars)
+
+    val expressionEvaluator = ExpressionEvaluator.withLazyVals(globalVariables, listeners, definitions.services)
+    val interpreter = Interpreter(listeners, expressionEvaluator)
     val compiler = new ProcessCompiler(modelData.modelClassLoader.classLoader, sub, definitions)
     compiler.compile(process).andThen { compiledProcessParts =>
-      StandaloneInvokerCompiler(sub, compiledProcessParts, interpreter).compile
+      StandaloneInvokerCompiler(sub, compiledProcessParts, expressionEvaluator, interpreter).compile
     }.map { invoker =>
       StandaloneProcessInterpreter(contextPreparer.prepare(process.id), sourceFactory, invoker, services, modelData)
     }
@@ -72,7 +74,7 @@ object StandaloneProcessInterpreter {
   }
 
   private case class StandaloneInvokerCompiler(sub: PartSubGraphCompiler,
-                                       compiled: CompiledProcessParts, interpreter: Interpreter) {
+                                       compiled: CompiledProcessParts, expressionEvaluator: ExpressionEvaluator, interpreter: Interpreter) {
 
     import cats.implicits._
     type CompilationValidation[K] = ValidatedNel[ProcessCompilationError, K]
@@ -108,7 +110,7 @@ object StandaloneProcessInterpreter {
       case CustomNodePart(executor:
                 CustomNodeInvoker[StandaloneCustomTransformer@unchecked], node, parts, _) => val result = compileWithCompilationErrors(node).andThen(partInvoker(_, parts))
 
-        val transformer = executor.run(() => StandaloneCustomNodeInvokerDeps(interpreter, sub))
+        val transformer = executor.run(() => StandaloneCustomNodeInvokerDeps(expressionEvaluator, sub))
         result.map(transformer.createTransformation(node.data.outputVar.get))
       case a: CustomNodePart => Invalid(NonEmptyList.of(UnsupportedPart(a.id)))
 
@@ -124,7 +126,7 @@ object StandaloneProcessInterpreter {
 
         (ctx: Context, ec: ExecutionContext) => {
           implicit val iec = ec
-          interpreter.interpret(node, InterpreterMode.Traverse, compiled.metaData, ctx).flatMap { maybeResult =>
+          interpreter.interpret(node, compiled.metaData, ctx).flatMap { maybeResult =>
             maybeResult.fold[InterpreterOutputType](ir => {
               ir.reference match {
                 case _: EndReference =>
@@ -186,7 +188,7 @@ case class StandaloneProcessInterpreter(context: StandaloneContext,
 
 }
 
-case class StandaloneCustomNodeInvokerDeps(interpreter: Interpreter, subPartCompiler: PartSubGraphCompiler)
+case class StandaloneCustomNodeInvokerDeps(expressionEvaluator: ExpressionEvaluator, subPartCompiler: PartSubGraphCompiler)
   extends CustomNodeInvokerDeps {
 
   override def processTimeout: FiniteDuration = throw new RuntimeException("Synchronous operations should not be used in standalone mode")

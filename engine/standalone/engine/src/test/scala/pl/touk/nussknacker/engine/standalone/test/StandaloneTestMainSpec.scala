@@ -42,17 +42,17 @@ class StandaloneTestMainSpec extends FlatSpec with Matchers with BeforeAndAfterE
       testData = new TestData(input.getBytes(StandardCharsets.UTF_8)))
 
     results.nodeResults("filter1").toSet shouldBe Set(
-      NodeResult(Context("proc1-0", Map("input" -> Request1("a","b")))),
-      NodeResult(Context("proc1-1", Map("input" -> Request1("c","d"))))
+      NodeResult(Context("proc1-0").withVariable("input", Request1("a","b"))),
+      NodeResult(Context("proc1-1").withVariable("input", Request1("c","d")))
     )
 
     results.invocationResults("filter1").toSet shouldBe Set(
-      ExpressionInvocationResult(Context("proc1-0", Map("input" -> Request1("a","b"))), "expression", true),
-      ExpressionInvocationResult(Context("proc1-1", Map("input" -> Request1("c","d"))), "expression", false)
+      ExpressionInvocationResult(Context("proc1-0").withVariable("input", Request1("a","b")), "expression", true),
+      ExpressionInvocationResult(Context("proc1-1").withVariable("input", Request1("c","d")), "expression", false)
     )
 
     results.mockedResults("processor").toSet shouldBe Set(MockedResult(Context("proc1-0"), "processorService", "processor service invoked"))
-    results.mockedResults("endNodeIID").toSet shouldBe Set(MockedResult(Context("proc1-0", Map("input" -> Request1("a","b"), "var1" -> Response("alamakota"))),
+    results.mockedResults("endNodeIID").toSet shouldBe Set(MockedResult(Context("proc1-0").withVariables(Map("input" -> Request1("a","b"), "var1" -> Response("alamakota"))),
       "endNodeIID", "Response(alamakota)"))
 
     StandaloneProcessConfigCreator.processorService.get().invocationsCount.get shouldBe 0
@@ -79,9 +79,9 @@ class StandaloneTestMainSpec extends FlatSpec with Matchers with BeforeAndAfterE
       modelData = modelData,
       testData = new TestData(input.getBytes(StandardCharsets.UTF_8)))
 
-    results.invocationResults("occasionallyThrowFilter").toSet shouldBe Set(ExpressionInvocationResult(Context("proc1-1", Map("input" -> Request1("c","d"))), "expression", true))
+    results.invocationResults("occasionallyThrowFilter").toSet shouldBe Set(ExpressionInvocationResult(Context("proc1-1").withVariable("input", Request1("c","d")), "expression", true))
     results.exceptions should have size 1
-    results.exceptions.head.context shouldBe Context("proc1-0", Map("input" -> Request1("a","b")))
+    results.exceptions.head.context shouldBe Context("proc1-0").withVariable("input", Request1("a","b"))
     results.exceptions.head.nodeId shouldBe Some("occasionallyThrowFilter")
     results.exceptions.head.throwable.getMessage shouldBe "/ by zero"
   }

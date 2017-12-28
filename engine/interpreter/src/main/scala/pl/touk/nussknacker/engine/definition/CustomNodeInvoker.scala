@@ -1,11 +1,9 @@
 package pl.touk.nussknacker.engine.definition
 
-import pl.touk.nussknacker.engine.Interpreter
-import pl.touk.nussknacker.engine.api.InterpreterMode.CustomNodeExpression
+import pl.touk.nussknacker.engine.{ExpressionEvaluator, Interpreter, compiledgraph}
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.exception.EspExceptionHandler
-import pl.touk.nussknacker.engine.compile.{PartSubGraphCompiler, ValidationContext}
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectWithMethodDef, Parameter}
+import pl.touk.nussknacker.engine.compile.PartSubGraphCompiler
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.graph.node.CustomNode
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 import pl.touk.nussknacker.engine.types.EspTypeUtils
@@ -48,12 +46,18 @@ private[definition] case class CompilerLazyInterpreter[T](lazyDeps: () => Custom
     createInterpreter(ec, lazyDeps())(context)
 
   private[definition] def createInterpreter(ec: ExecutionContext, deps: CustomNodeInvokerDeps): (Context) => Future[T] = {
-    val compiled = deps.subPartCompiler.compileWithoutContextValidation(node).getOrElse(throw new scala.IllegalArgumentException("Cannot compile"))
-    (context: Context) => deps.interpreter.interpret(compiled.node, CustomNodeExpression(param), metaData,
-      context)(ec).flatMap {
-      case Left(result) => Future.successful(result.output.asInstanceOf[T])
-      case Right(result) => Future.failed(result.throwable)
-    }(ec)
+
+    val compiledExpression = deps.subPartCompiler
+      .compileWithoutContextValidation(node)
+      .getOrElse(throw new IllegalArgumentException("Cannot compile"))
+      //FIXME: two lines below are quite nasty :|
+      .node.asInstanceOf[compiledgraph.node.CustomNode]
+      .params.find(_.name == param).getOrElse(throw new IllegalArgumentException("Cannot find param"))
+      .expression
+
+    val evaluator = deps.expressionEvaluator
+        
+    (context: Context) => evaluator.evaluate[T](compiledExpression, param, node.id, context)(ec, metaData).map(_.value)(ec)
   }
 
   //lazy val is used, interpreter creation is expensive
@@ -83,7 +87,7 @@ object CustomNodeInvoker {
 
 
 trait CustomNodeInvokerDeps {
-  def interpreter: Interpreter
+  def expressionEvaluator: ExpressionEvaluator
   def subPartCompiler: PartSubGraphCompiler
   def processTimeout: FiniteDuration
 }

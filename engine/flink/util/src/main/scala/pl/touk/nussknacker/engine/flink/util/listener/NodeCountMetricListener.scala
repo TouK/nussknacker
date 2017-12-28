@@ -15,10 +15,8 @@ class NodeCountMetricListener extends EmptyProcessListener with RuntimeContextLi
     group = runtimeContext.getMetricGroup.addGroup("nodeCount")
   }
 
-  override def nodeEntered(nodeId: String, context: Context, processMetaData: MetaData, mode: InterpreterMode): Unit = {
-    if (mode == InterpreterMode.Traverse) {
-      val counter = counters.getOrElseUpdate(nodeId, group.counter(nodeId))
-      counter.inc()
-    }
+  override def nodeEntered(nodeId: String, context: Context, processMetaData: MetaData): Unit = {
+    val counter = counters.getOrElseUpdate(nodeId, group.counter(nodeId))
+    counter.inc()
   }
 }

@@ -272,7 +272,7 @@ object FlinkProcessRegistrar {
 
     override def flatMap(input: Context, collector: Collector[InterpretationResult]): Unit = {
       (try {
-        Await.result(interpreter.interpret(compiledNode, InterpreterMode.Traverse, metaData, input), processTimeout)
+        Await.result(interpreter.interpret(compiledNode, metaData, input), processTimeout)
       } catch {
         case NonFatal(error) => Right(EspExceptionInfo(Some(node.id), error, input))
       }).fold(collector.collect, exceptionHandler.handle)
@@ -307,7 +307,7 @@ object FlinkProcessRegistrar {
     override def asyncInvoke(input: Context, collector: AsyncCollector[InterpretationResult]) : Unit = {
       implicit val ec = executionContext
       try {
-        interpreter.interpret(compiledNode, InterpreterMode.Traverse, metaData, input)
+        interpreter.interpret(compiledNode, metaData, input)
           .onComplete {
             case Success(Left(result)) => collector.collect(Collections.singletonList[InterpretationResult](result))
             case Success(Right(exInfo)) => handleException(collector, exInfo)

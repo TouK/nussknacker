@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.util
 
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
-import pl.touk.nussknacker.engine.api.{Context, InterpreterMode, MetaData, ProcessListener}
+import pl.touk.nussknacker.engine.api.{Context, MetaData, ProcessListener}
 
 import scala.util.Try
 
@@ -19,9 +19,8 @@ object LoggingListener extends ProcessListener with Serializable {
     }
   }
 
-  override def nodeEntered(nodeId: String, context: Context, metadata: MetaData, mode: InterpreterMode): Unit = {
-    lazy val modeSuffix = if (mode == InterpreterMode.Traverse) "" else " for " + mode
-    debug(List(metadata.id, nodeId), s"Node entered$modeSuffix. Context: $context")
+  override def nodeEntered(nodeId: String, context: Context, metadata: MetaData): Unit = {
+    debug(List(metadata.id, nodeId), s"Node entered. Context: $context")
   }
 
   override def deadEndEncountered(lastNodeId: String, context: Context, metadata: MetaData): Unit = {

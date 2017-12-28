@@ -67,12 +67,14 @@ class InterpreterSpec extends FlatSpec with Matchers {
     val process = EspProcess(metaData, ExceptionHandlerRef(List.empty), node)
     val splitted = ProcessSplitter.split(process)
     val servicesDefs = services.mapValuesNow { service => ObjectWithMethodDef(WithCategories(service), ServiceInvoker.Extractor) }
-    val interpreter = Interpreter(servicesDefs, Map(), listeners, true)
+
+    val evaluator = ExpressionEvaluator.withLazyVals(Map(), listeners, servicesDefs)
+    val interpreter = Interpreter(listeners, evaluator)
     val classes = (servicesDef.values.map(_.getClass) ++ sourceFactories.values.map(c => Class.forName(c.returnType.refClazzName))).toList
     val typesInformation = EspTypeUtils.clazzAndItsChildrenDefinition(classes)(ClassExtractionSettings.Default)
     val compiledNode = compile(servicesDefs, splitted.source.node, ValidationContext(typesInformation = typesInformation, variables = Map(Interpreter.InputParamName -> Typed[Transaction])))
     val initialCtx = Context("abc").withVariable(Interpreter.InputParamName, transaction)
-    val resultBeforeSink = Await.result(interpreter.interpret(compiledNode.node, InterpreterMode.Traverse, process.metaData, initialCtx), 10 seconds) match {
+    val resultBeforeSink = Await.result(interpreter.interpret(compiledNode.node, process.metaData, initialCtx), 10 seconds) match {
       case Left(result) => result
       case Right(exceptionInfo) => throw exceptionInfo.throwable
     }
@@ -84,7 +86,7 @@ class InterpreterSpec extends FlatSpec with Matchers {
             sink.node
         }.get
         Await.result(interpreter.interpret(compile(servicesDefs, sink,
-          compiledNode.ctx(nextPartId)).node, InterpreterMode.Traverse, metaData, resultBeforeSink.finalContext), 10 seconds).left.get.output
+          compiledNode.ctx(nextPartId)).node, metaData, resultBeforeSink.finalContext), 10 seconds).left.get.output
       case _: EndReference =>
         resultBeforeSink.output
       case _: DeadEndReference =>
@@ -291,7 +293,7 @@ class InterpreterSpec extends FlatSpec with Matchers {
 
     val listener = new ProcessListener {
 
-      override def nodeEntered(nodeId: String, context: Context, processMetaData: MetaData, mode: InterpreterMode): Unit = {
+      override def nodeEntered(nodeId: String, context: Context, processMetaData: MetaData): Unit = {
         nodeResults = nodeResults :+ nodeId
       }
 

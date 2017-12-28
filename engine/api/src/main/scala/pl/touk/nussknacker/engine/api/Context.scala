@@ -2,8 +2,14 @@ package pl.touk.nussknacker.engine.api
 
 import pl.touk.nussknacker.engine.api.lazyy.LazyContext
 
-case class Context(id: String, variables: Map[String, Any] = Map.empty,
-                   lazyContext: LazyContext = LazyContext(), parentContext: Option[Context] = None) {
+object Context {
+
+  def apply(id: String) : Context = Context(id, Map.empty, LazyContext(id), None)
+
+}
+
+case class Context(id: String, variables: Map[String, Any],
+                   lazyContext: LazyContext, parentContext: Option[Context]) {
 
   def apply[T](name: String): T =
     getOrElse(name, throw new RuntimeException(s"Unknown variable: $name"))

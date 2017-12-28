@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.process.compiler
 import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import org.apache.flink.api.common.functions.RuntimeContext
-import pl.touk.nussknacker.engine.Interpreter
+import pl.touk.nussknacker.engine.{ExpressionEvaluator, Interpreter}
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.process.AsyncExecutionContextPreparer
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessListener, Service}
@@ -19,14 +19,16 @@ import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 import scala.concurrent.duration.FiniteDuration
 
 case class CompiledProcessWithDeps(compiledProcess: CompiledProcessParts,
-                                   private val services: WithLifecycle[Service],
+                                   services: WithLifecycle[Service],
                                    private val listeners: WithLifecycle[ProcessListener],
                                    subPartCompiler: PartSubGraphCompiler,
-                                   interpreter: Interpreter,
+                                   expressionEvaluator: ExpressionEvaluator,
                                    processTimeout: FiniteDuration,
                                    signalSenders: FlinkProcessSignalSenderProvider,
                                    asyncExecutionContextPreparer: AsyncExecutionContextPreparer
                                   ) extends CustomNodeInvokerDeps {
+
+  val interpreter = Interpreter(listeners.values, expressionEvaluator)
 
   def open(runtimeContext: RuntimeContext): Unit = {
     services.open(runtimeContext)
@@ -43,6 +45,7 @@ case class CompiledProcessWithDeps(compiledProcess: CompiledProcessParts,
   def compileSubPart(node: SplittedNode[_]): Node = {
     validateOrFail(subPartCompiler.compileWithoutContextValidation(node).map(_.node))
   }
+
 
   private def validateOrFail[T](validated: ValidatedNel[PartSubGraphCompilationError, T]): T = validated match {
     case Valid(r) => r

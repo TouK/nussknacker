@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.process.compiler
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.ValidatedNel
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.Interpreter
+import pl.touk.nussknacker.engine.{ExpressionEvaluator, Interpreter}
 import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import pl.touk.nussknacker.engine.api.{ProcessListener, Service}
 import pl.touk.nussknacker.engine.compile.{PartSubGraphCompiler, ProcessCompilationError, ProcessCompiler}
@@ -64,12 +64,14 @@ abstract class FlinkProcessCompiler(creator: ProcessConfigCreator, config: Confi
     )
 
     val listenersToUse =  listeners()
+    //FIXME: allowLazyVars?
+    val expressionEvaluator = ExpressionEvaluator.withLazyVals(globalVariables, listenersToUse, servicesDefs)
     CompiledProcessWithDeps(
       compiledProcess,
       WithLifecycle(servicesDefs.values.map(_.as[Service]).toSeq),
       WithLifecycle(listenersToUse),
       subCompiler,
-      Interpreter(servicesDefs, globalVariables, listenersToUse, process.metaData.typeSpecificData.allowLazyVars),
+      expressionEvaluator,
       timeout,
       new FlinkProcessSignalSenderProvider(signalSenders),
       asyncExecutionContextPreparer

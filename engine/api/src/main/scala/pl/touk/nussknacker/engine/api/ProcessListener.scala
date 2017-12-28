@@ -6,7 +6,7 @@ import scala.util.Try
 
 trait ProcessListener extends Lifecycle {
 
-  def nodeEntered(nodeId: String, context: Context, processMetaData: MetaData, mode: InterpreterMode): Unit
+  def nodeEntered(nodeId: String, context: Context, processMetaData: MetaData): Unit
 
   def deadEndEncountered(lastNodeId: String, context: Context, processMetaData: MetaData): Unit
 
@@ -31,7 +31,7 @@ trait ProcessListener extends Lifecycle {
 }
 
 trait EmptyProcessListener extends ProcessListener {
-  override def nodeEntered(nodeId: String, context: Context, processMetaData: MetaData, mode: InterpreterMode): Unit = {}
+  override def nodeEntered(nodeId: String, context: Context, processMetaData: MetaData): Unit = {}
 
   override def deadEndEncountered(lastNodeId: String, context: Context, processMetaData: MetaData): Unit = {}
 

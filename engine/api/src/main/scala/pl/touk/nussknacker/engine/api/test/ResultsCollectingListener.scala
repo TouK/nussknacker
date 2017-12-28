@@ -18,10 +18,8 @@ case class ResultsCollectingListener(holderClass: String, runId: TestRunId) exte
 
   def clean() = ResultsCollectingListenerHolder.cleanResult(runId)
 
-  override def nodeEntered(nodeId: String, context: Context, processMetaData: MetaData, mode: InterpreterMode) = {
-    if (mode == InterpreterMode.Traverse) {
-      ResultsCollectingListenerHolder.updateResult(runId, nodeId, NodeResult(context))
-    }
+  override def nodeEntered(nodeId: String, context: Context, processMetaData: MetaData) = {
+    ResultsCollectingListenerHolder.updateResult(runId, nodeId, NodeResult(context))
   }
 
   override def deadEndEncountered(lastNodeId: String, context: Context, processMetaData: MetaData) = {}

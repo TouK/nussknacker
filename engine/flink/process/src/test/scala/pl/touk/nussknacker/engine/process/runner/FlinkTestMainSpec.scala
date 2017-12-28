@@ -12,10 +12,10 @@ import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.process.ProcessTestHelpers._
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
-import pl.touk.nussknacker.engine.{ClassLoaderModelData, ModelData, spel}
+import pl.touk.nussknacker.engine.{ClassLoaderModelData, spel}
 
-import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 
 class FlinkTestMainSpec extends FlatSpec with Matchers with Inside with BeforeAndAfterEach {
@@ -61,12 +61,12 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside with BeforeAn
     val invocationResults = results.invocationResults
 
     invocationResults("proc2") shouldBe
-      List(ExpressionInvocationResult(Context("proc1-id-0-1", Map("input" -> input2, "variable1" -> "ala")), "all", "0"))
+      List(ExpressionInvocationResult(Context("proc1-id-0-1").withVariables(Map("input" -> input2, "variable1" -> "ala")), "all", "0"))
     invocationResults("out") shouldBe
-      List(ExpressionInvocationResult(Context("proc1-id-0-1", Map("input" -> input2, "variable1" -> "ala")), "expression", 11))
+      List(ExpressionInvocationResult(Context("proc1-id-0-1").withVariables(Map("input" -> input2, "variable1" -> "ala")), "expression", 11))
 
-    results.mockedResults("proc2") shouldBe List(MockedResult(Context("proc1-id-0-1", Map.empty), "logService", "0-collectedDuringServiceInvocation"))
-    results.mockedResults("out") shouldBe List(MockedResult(Context("proc1-id-0-1", Map("input" -> input2, "variable1" -> "ala")), "monitor", "11"))
+    results.mockedResults("proc2") shouldBe List(MockedResult(Context("proc1-id-0-1"), "logService", "0-collectedDuringServiceInvocation"))
+    results.mockedResults("out") shouldBe List(MockedResult(Context("proc1-id-0-1").withVariables(Map("input" -> input2, "variable1" -> "ala")), "monitor", "11"))
     MonitorEmptySink.invocationsCount.get() shouldBe 0
     LogService.invocationsCount.get() shouldBe 0
   }
@@ -122,20 +122,20 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside with BeforeAn
 
     invocationResults("cid") shouldBe
       List(
-        ExpressionInvocationResult(Context("", Map()), "stringVal", "s"),
-        ExpressionInvocationResult(Context("proc1-id-0-0", Map("input" -> input)), "keyBy", "0"),
-        ExpressionInvocationResult(Context("proc1-id-0-1", Map("input" -> input2)), "keyBy", "0")
+        ExpressionInvocationResult(Context(""), "stringVal", "s"),
+        ExpressionInvocationResult(Context("proc1-id-0-0").withVariable("input", input), "keyBy", "0"),
+        ExpressionInvocationResult(Context("proc1-id-0-1").withVariable("input", input2), "keyBy", "0")
       )
     invocationResults("out") shouldBe
       List(
-        ExpressionInvocationResult(Context("proc1-id-0-0",Map("input" -> input, "out" -> aggregate)), "expression", "1 0"),
-        ExpressionInvocationResult(Context("proc1-id-0-1",Map("input" -> input2, "out" -> aggregate2)), "expression", "11 1")
+        ExpressionInvocationResult(Context("proc1-id-0-0").withVariables(Map("input" -> input, "out" -> aggregate)), "expression", "1 0"),
+        ExpressionInvocationResult(Context("proc1-id-0-1").withVariables(Map("input" -> input2, "out" -> aggregate2)), "expression", "11 1")
       )
 
     results.mockedResults("out") shouldBe
       List(
-        MockedResult(Context("proc1-id-0-0", Map("input" -> input, "out" -> aggregate)), "monitor", "1 0"),
-        MockedResult(Context("proc1-id-0-1", Map("input" -> input2, "out" -> aggregate2)), "monitor", "11 1")
+        MockedResult(Context("proc1-id-0-0").withVariables(Map("input" -> input, "out" -> aggregate)), "monitor", "1 0"),
+        MockedResult(Context("proc1-id-0-1").withVariables(Map("input" -> input2, "out" -> aggregate2)), "monitor", "11 1")
       )
 
   }
@@ -261,9 +261,9 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside with BeforeAn
     results.nodeResults("id") should have size 3
     results.mockedResults("out") shouldBe
       List(
-        MockedResult(Context("proc1-id-0-0",Map("input" -> SimpleJsonRecord("1", "11"))), "monitor", "SimpleJsonRecord(1,11)"),
-        MockedResult(Context("proc1-id-0-1",Map("input" -> SimpleJsonRecord("2", "22"))), "monitor", "SimpleJsonRecord(2,22)"),
-        MockedResult(Context("proc1-id-0-2",Map("input" -> SimpleJsonRecord("3", "33"))), "monitor", "SimpleJsonRecord(3,33)")
+        MockedResult(Context("proc1-id-0-0").withVariable("input", SimpleJsonRecord("1", "11")), "monitor", "SimpleJsonRecord(1,11)"),
+        MockedResult(Context("proc1-id-0-1").withVariable("input", SimpleJsonRecord("2", "22")), "monitor", "SimpleJsonRecord(2,22)"),
+        MockedResult(Context("proc1-id-0-2").withVariable("input", SimpleJsonRecord("3", "33")), "monitor", "SimpleJsonRecord(3,33)")
       )
   }
 
@@ -336,7 +336,7 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside with BeforeAn
 
   }
 
-  def nodeResult(count: Int, vars: (String, Any)*) = NodeResult(Context(s"proc1-id-0-$count", Map(vars: _*)))
+  def nodeResult(count: Int, vars: (String, Any)*) = NodeResult(Context(s"proc1-id-0-$count").withVariables(Map(vars: _*)))
 
 }
 

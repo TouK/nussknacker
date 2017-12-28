@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.api.lazyy
 
 import pl.touk.nussknacker.engine.api.lazyy.LazyContext._
 
-case class LazyContext(evaluatedValues: Map[LazyContext.Key, Either[Any, Throwable]] = Map.empty) {
+case class LazyContext(id: String, evaluatedValues: Map[LazyContext.Key, Either[Any, Throwable]] = Map.empty) {
 
   def apply[T](serviceId: String, params: Params): T =
     getOrElse(serviceId, params, throw new RuntimeException(s"Value for service: $serviceId is not evaluated yet"))

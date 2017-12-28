@@ -20,7 +20,7 @@ class UiCodecsSpec extends FlatSpec with Matchers {
 
     val date = LocalDateTime.of(2010, 1, 1, 1, 1)
     val json =
-      api.Context("terefere", Map(
+      api.Context("terefere").withVariables(Map(
         "var1" -> TestRecord("a", 1, Some("b"), date),
         "var2" -> CsvRecord(List("aa", "bb"))
       )).asJson
