@@ -3,6 +3,8 @@ package pl.touk.nussknacker.ui.validation
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError._
 import pl.touk.nussknacker.engine.util.ReflectUtils
+import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
+import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
 import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.EdgeType
 import pl.touk.nussknacker.ui.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType}
 
@@ -46,31 +48,36 @@ object PrettyValidationErrors {
     }
   }
 
-  def invalidCharacters(typ: String) = {
+  def noValidatorKnown(typ: ProcessingType.Value): NodeValidationError = {
+    NodeValidationError(typ.toString, s"No validator available for $typ", "No validator for process type - please check configuration", fieldName = None,
+      errorType = NodeValidationErrorType.RenderNotAllowed)
+  }
+
+  def invalidCharacters(typ: String): NodeValidationError = {
     NodeValidationError(typ, "Node id contains invalid characters",
       "\" and ' are not allowed in node id", fieldName = None, errorType = NodeValidationErrorType.RenderNotAllowed)
   }
-  def duplicatedNodeIds(typ: String, duplicates: List[String]) = {
+  def duplicatedNodeIds(typ: String, duplicates: List[String]): NodeValidationError = {
     NodeValidationError(typ, "Two nodes cannot have same id", s"Duplicate node ids: ${duplicates.mkString(", ")}", fieldName = None,
       errorType = NodeValidationErrorType.RenderNotAllowed)
   }
 
-  def nonuniqeEdge(typ: String, etype: EdgeType) = {
+  def nonuniqeEdge(typ: String, etype: EdgeType): NodeValidationError = {
     NodeValidationError(typ, "Edges are not unique",
       s"Node has duplicate outgoing edges of type: $etype, it cannot be saved properly", fieldName = None, errorType = NodeValidationErrorType.SaveNotAllowed)
   }
 
-  def looseNode(typ: String) = {
+  def looseNode(typ: String): NodeValidationError = {
     NodeValidationError(typ, "Loose node",
       s"Node is not connected to source, it cannot be saved properly", fieldName = None, errorType = NodeValidationErrorType.SaveNotAllowed)
   }
 
-  def tooManySources(typ: String, ids: List[String]) = {
+  def tooManySources(typ: String, ids: List[String]): NodeValidationError = {
     NodeValidationError(typ, "Too many inputs",
       s"Process have multiple inputs: $ids, it cannot be saved properly", fieldName = None, errorType = NodeValidationErrorType.SaveNotAllowed)
   }
 
-  def disabledNode(typ: String) = {
+  def disabledNode(typ: String): NodeValidationError = {
     NodeValidationError(typ, s"Node is disabled", "Deploying process with disabled node can have unexpected consequences", fieldName = None, errorType = NodeValidationErrorType.SaveAllowed)
   }
 }

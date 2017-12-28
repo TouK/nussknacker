@@ -58,7 +58,7 @@ class ProcessValidationSpec extends FlatSpec with Matchers {
         Edge("in", "var", None),
         Edge("var", "out", None)
       ),
-      Set(Group("in", Set("in", "var1")))
+      groups = Set(Group("in", Set("in", "var1")))
     )
     validator.validate(process) should matchPattern {
       case ValidationResult(
@@ -142,9 +142,25 @@ class ProcessValidationSpec extends FlatSpec with Matchers {
     result.warnings shouldBe ValidationWarnings.success
   }
 
-  private def createProcess(nodes: List[NodeData], edges: List[Edge], groups: Set[Group] = Set()) = {
+  it should "not fail with exception when no processtype validator present" in {
+    val process = createProcess(
+      List(
+        Source("in", SourceRef("barSource", List())),
+        Sink("out", SinkRef("barSink", List()))
+      ),
+      List(Edge("in", "out", None)), `type` = ProcessingType.RequestResponse
+    )
+    validator.validate(process) should matchPattern {
+      case ValidationResult(
+        ValidationErrors(_, Nil, errors),
+        ValidationWarnings.success
+      ) if errors == List(PrettyValidationErrors.noValidatorKnown(ProcessingType.RequestResponse)) =>
+    }
+  }
+
+  private def createProcess(nodes: List[NodeData], edges: List[Edge], `type`: ProcessingType.Value = ProcessingType.Streaming, groups: Set[Group] = Set()) = {
     DisplayableProcess("test", ProcessProperties(StreamMetaData(),
-      ExceptionHandlerRef(List()), subprocessVersions = Map.empty, additionalFields = Some(ProcessAdditionalFields(None, groups))), nodes, edges, ProcessingType.Streaming)
+      ExceptionHandlerRef(List()), subprocessVersions = Map.empty, additionalFields = Some(ProcessAdditionalFields(None, groups))), nodes, edges, `type`)
   }
 
 

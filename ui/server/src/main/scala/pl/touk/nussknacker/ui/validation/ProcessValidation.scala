@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.validation
 
-import cats.data.NonEmptyList
+import cats.data.{NonEmptyList, Validated}
+import cats.data.Validated.Valid
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.compile.{ProcessCompilationError, ProcessValidator}
 import pl.touk.nussknacker.engine.graph.node.{Disableable, NodeData, Source, SubprocessInputDefinition}
@@ -27,21 +28,32 @@ class ProcessValidation(validators: Map[ProcessingType, ProcessValidator], subpr
 
 
   def validate(displayable: DisplayableProcess): ValidationResult = {
-    val processValidator = validators(displayable.processingType)
     val uiValidationResult = uiValidation(displayable)
+      .add(warningValidation(displayable))
+
     //there is no point in further validations if ui process structure is invalid
     //displayable to canonical conversion for invalid ui process structure can have unexpected results
     if (uiValidationResult.saveAllowed) {
-      val canonical = ProcessConverter.fromDisplayable(displayable)
-      val compilationValidationResult = subprocessResolver.resolveSubprocesses(canonical).andThen(processValidator.validate)
-        .leftMap(formatErrors).swap.getOrElse(ValidationResult.success)
-      val validationWarningsResult = warningValidation(displayable)
-      compilationValidationResult
-        .add(uiValidationResult)
-        .add(validationWarningsResult)
+      uiValidationResult.add(processingTypeValidation(displayable))
     } else {
       uiValidationResult
     }
+  }
+
+  private def processingTypeValidation(displayable: DisplayableProcess) = {
+    val processingType = displayable.processingType
+    validators.get(processingType) match {
+      case None =>
+        ValidationResult.errors(Map(), List(), List(PrettyValidationErrors.noValidatorKnown(processingType)))
+      case Some(processValidator) =>
+        validateUsingTypeValidator(displayable, processValidator)
+    }
+  }
+
+  private def validateUsingTypeValidator(displayable: DisplayableProcess, processValidator: ProcessValidator) = {
+    val canonical = ProcessConverter.fromDisplayable(displayable)
+    subprocessResolver.resolveSubprocesses(canonical).andThen(processValidator.validate)
+      .leftMap(formatErrors).swap.getOrElse(ValidationResult.success)
   }
 
   private def warningValidation(process: DisplayableProcess): ValidationResult = {
