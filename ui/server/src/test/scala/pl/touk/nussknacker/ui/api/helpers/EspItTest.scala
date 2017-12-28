@@ -30,8 +30,10 @@ trait EspItTest extends LazyLogging with WithDbTesting { self: ScalatestRouteTes
   val processActivityRepository = newProcessActivityRepository(db)
   val typesForCategories = new ProcessTypesForCategories(ConfigFactory.load())
 
+  val processManager = new MockProcessManager
+
   val managementActor = ManagementActor(env,
-    Map(ProcessingType.Streaming -> InMemoryMocks.mockProcessManager), processRepository, deploymentProcessRepository, TestFactory.sampleResolver)
+    Map(ProcessingType.Streaming -> processManager), processRepository, deploymentProcessRepository, TestFactory.sampleResolver)
 
   val jobStatusService = new JobStatusService(managementActor)
   val newProcessPreparer = new NewProcessPreparer(Map(ProcessingType.Streaming -> ProcessTestData.processDefinition))

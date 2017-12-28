@@ -30,7 +30,6 @@ object TestFactory {
   val processValidation = new ProcessValidation(Map(ProcessingType.Streaming -> ProcessTestData.validator), sampleResolver)
   val posting = new ProcessPosting
   val buildInfo = Map("engine-version" -> "0.1")
-  val mockProcessManager = InMemoryMocks.mockProcessManager
   val allPermissions = List(Permission.Deploy, Permission.Read, Permission.Write)
 
   def newProcessRepository(dbs: DbConfig, modelVersions: Option[Int] = Some(1)) =
@@ -55,28 +54,42 @@ object TestFactory {
 
   def withAllPermissions(route: RouteWithUser) = route.route(user(allPermissions: _*))
 
-  object InMemoryMocks {
+  class MockProcessManager extends FlinkProcessManager(FlinkModelData(ConfigFactory.load()), false, null){
 
-    val mockProcessManager = new FlinkProcessManager(FlinkModelData(ConfigFactory.load()), false, null) {
-      override def findJobStatus(name: String): Future[Option[ProcessState]] = Future.successful(None)
+    override def findJobStatus(name: String): Future[Option[ProcessState]] = Future.successful(None)
 
-      override def cancel(name: String): Future[Unit] = Future.successful(Unit)
+    override def cancel(name: String): Future[Unit] = Future.successful(Unit)
 
-      import ExecutionContext.Implicits.global
+    import ExecutionContext.Implicits.global
 
-      override def deploy(processId: String, processDeploymentData: ProcessDeploymentData, savepoint: Option[String]): Future[Unit] = Future {
-        Thread.sleep(sleepBeforeAnswer)
+    override def deploy(processId: String, processDeploymentData: ProcessDeploymentData, savepoint: Option[String]): Future[Unit] = Future {
+      Thread.sleep(sleepBeforeAnswer)
+      if (failDeployment) {
+        throw new RuntimeException("Failing deployment...")
+      } else {
         ()
       }
     }
+
     private var sleepBeforeAnswer: Long = 0
 
-    def withLongerSleepBeforeAnswer[T](action: => T) = {
+    private var failDeployment: Boolean = false
+
+    def withLongerSleepBeforeAnswer[T](action: => T): T = {
       try {
         sleepBeforeAnswer = 500
         action
       } finally {
         sleepBeforeAnswer = 0
+      }
+    }
+
+    def withFailingDeployment[T](action: => T): T = {
+      try {
+        failDeployment = true
+        action
+      } finally {
+        failDeployment = false
       }
     }
   }

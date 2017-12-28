@@ -111,7 +111,7 @@ class ManagementResourcesSpec extends FlatSpec with ScalatestRouteTest
   it should "not allow concurrent deployment of same process" in {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
 
-    InMemoryMocks.withLongerSleepBeforeAnswer {
+    processManager.withLongerSleepBeforeAnswer {
       val firstRun = deployProcess() ~> runRoute
       deployProcess() ~> check {
         status shouldBe StatusCodes.Conflict
@@ -126,11 +126,10 @@ class ManagementResourcesSpec extends FlatSpec with ScalatestRouteTest
 
   }
 
-
   it should "not allow concurrent deployment and cancel of same process" in {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
 
-    InMemoryMocks.withLongerSleepBeforeAnswer {
+    processManager.withLongerSleepBeforeAnswer {
       val firstRun = deployProcess() ~> runRoute
       cancelProcess() ~> check {
         status shouldBe StatusCodes.Conflict
@@ -151,7 +150,7 @@ class ManagementResourcesSpec extends FlatSpec with ScalatestRouteTest
     val secondId = SampleProcess.process.id + "-2"
     saveProcessAndAssertSuccess(secondId, SampleProcess.process)
 
-    InMemoryMocks.withLongerSleepBeforeAnswer {
+    processManager.withLongerSleepBeforeAnswer {
       val firstRun = deployProcess() ~> runRoute
       deployProcess(secondId) ~> check {
         status shouldBe StatusCodes.Conflict
@@ -162,7 +161,15 @@ class ManagementResourcesSpec extends FlatSpec with ScalatestRouteTest
     }
   }
 
+  it should "return error on deployment failure" in {
+    saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
 
+    processManager.withFailingDeployment {
+      deployProcess() ~> check {
+        status shouldBe StatusCodes.InternalServerError
+      }
+    }
+  }
 
   it should "return test results" in {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)

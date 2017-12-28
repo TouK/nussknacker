@@ -109,16 +109,19 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
     val processId = latestVersion.processId
     val resolvedDeploymentData = resolveDeploymentData(latestVersion.deploymentData)
     val processManagerValue = managers(processingType)
-    val deploymentResult = for {
+
+    def markAsDeployed() : Future[Unit] = deployedProcessRepository
+      .markProcessAsDeployed(processId, latestVersion.id, processingType, user.id, environment)
+      .recoverWith { case NonFatal(e) =>
+        logger.error("Error during marking process as deployed", e)
+        processManagerValue.cancel(processId).flatMap(_ => Future.failed(e))
+      }
+
+    for {
       deploymentResolved <- resolvedDeploymentData
       _ <- processManagerValue.deploy(processId, deploymentResolved, savepointPath)
-      _ <- deployedProcessRepository.markProcessAsDeployed(processId, latestVersion.id, processingType, user.id, environment)
+      _ <- markAsDeployed()
     } yield ()
-
-    deploymentResult.recoverWith { case NonFatal(e) =>
-      logger.error("Error during marking process as deployed", e)
-      processManagerValue.cancel(processId).map(_ => Future.failed(e))
-    }
   }
 
   private def resolveDeploymentData(data: ProcessDeploymentData) = data match {
