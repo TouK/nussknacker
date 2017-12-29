@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.compile
 
+import cats.Traverse.ops.toAllTraverseOps
 import cats.data.Validated._
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.instances.list._
@@ -19,17 +20,25 @@ import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ProcessDefinition}
 import pl.touk.nussknacker.engine.definition._
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.{CustomNode, StartingNodeData, SubprocessInputDefinition}
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
-import pl.touk.nussknacker.engine.graph.{EspProcess, param}
+import pl.touk.nussknacker.engine.graph.{EspProcess, evaluatedparam, param}
 import pl.touk.nussknacker.engine.split._
 import pl.touk.nussknacker.engine.splittedgraph._
 import pl.touk.nussknacker.engine.splittedgraph.part._
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.{Next, NextNode, PartRef, SplittedNode}
+import pl.touk.nussknacker.engine.util.Implicits._
 
 class ProcessCompiler( protected val classLoader: ClassLoader,
                        protected val sub: PartSubGraphCompilerBase,
                       protected val definitions: ProcessDefinition[ObjectWithMethodDef]) extends ProcessCompilerBase {
+
+  //FIXME: should it be here?
+  private val expressionEvaluator = {
+    val globalVars = definitions.expressionConfig.globalVariables.mapValuesNow(_.obj)
+    ExpressionEvaluator.withoutLazyVals(globalVars, List())
+  }
 
   override type ParameterProviderT = ObjectWithMethodDef
 
@@ -41,7 +50,7 @@ class ProcessCompiler( protected val classLoader: ClassLoader,
     CustomNodeInvoker[Any](obj, metaData, node)
 
   override protected def createFactory[T](obj: ObjectWithMethodDef) =
-    ProcessObjectFactory[T](obj)
+    ProcessObjectFactory[T](obj, expressionEvaluator)
 
 }
 
@@ -75,6 +84,9 @@ protected trait ProcessCompilerBase {
   import syntax._
 
   protected def classLoader: ClassLoader
+
+  private val expressionCompiler = ExpressionCompiler.default(classLoader, definitions.expressionConfig,
+      enableSpelForceCompile = false)
 
   def validate(canonical: CanonicalProcess): ValidatedNel[ProcessCompilationError, Unit] = {
     ProcessCanonizer.uncanonize(canonical).leftMap(_.map(identity[ProcessCompilationError])) andThen { process =>
@@ -212,10 +224,18 @@ protected trait ProcessCompilerBase {
                                       parameters: List[param.Parameter])
                                      (implicit nodeId: NodeId,
                                       metaData: MetaData): ValidatedNel[ProcessCompilationError, T] = {
-    validateParameters(parameterProviderT, parameters.map(_.name)).map { _ =>
-      val factory = createFactory[T](parameterProviderT)
-      factory.create(metaData, parameters)
+
+    //FIXME: after first phase, change it to evaluated.Parameter
+    val parametersToCompile = parameters.map(p => evaluatedparam.Parameter(p.name, Expression("spel", p.value)))
+
+    expressionCompiler.compileObjectParameters(parameterProviderT.parameters, parametersToCompile, Some(ValidationContext.empty)).andThen { compiledParams =>
+      validateParameters(parameterProviderT, parameters.map(_.name)).map { _ =>
+        val factory = createFactory[T](parameterProviderT)
+        factory.create(compiledParams)
+      }
     }
+
+
   }
 
   private def getCustomNodeDefinition(node: SplittedNode[graph.node.CustomNode])(implicit nodeId: NodeId, metaData: MetaData) = {
@@ -269,10 +289,8 @@ protected trait ProcessCompilerBase {
 
 object ProcessValidator {
 
-  import pl.touk.nussknacker.engine.util.Implicits._
-
   def default(definition: ProcessDefinition[ObjectDefinition], loader: ClassLoader = getClass.getClassLoader, globalImports: List[String] = List.empty): ProcessValidator = {
-    val sub = PartSubGraphValidator.default(definition.services, definition.expressionConfig.globalVariables.mapValuesNow(_.returnType), globalImports, loader)
+    val sub = PartSubGraphValidator.default(definition.services, definition.expressionConfig, loader)
     new ProcessValidator(loader, sub, definition)
   }
 

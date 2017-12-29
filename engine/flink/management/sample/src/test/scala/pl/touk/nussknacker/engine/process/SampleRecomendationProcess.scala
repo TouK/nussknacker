@@ -23,7 +23,7 @@ class SampleRecomendationProcess extends FlatSpec with Matchers {
       EspProcessBuilder
         .id("sample")
         .parallelism(1)
-        .exceptionHandler("topic" -> "errors")
+        .exceptionHandler("topic" -> "'errors'")
         .source("start", "PageVisits", "ratePerMinute" -> "3")
         .sink("end", "#input", "Recommend")
 

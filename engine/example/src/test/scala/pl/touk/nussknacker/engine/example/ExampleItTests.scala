@@ -18,11 +18,11 @@ trait ExampleItTest1 extends FlatSpec with BeforeAndAfterAll with Matchers with 
     EspProcessBuilder
       .id("example1")
       .parallelism(1)
-      .exceptionHandler("sampleParam" -> "sampleParamValue")
-      .source("start", "kafka-transaction", "topic" -> "topic.transaction")
+      .exceptionHandler("sampleParam" -> "'sampleParamValue'")
+      .source("start", "kafka-transaction", "topic" -> "'topic.transaction'")
       .filter("amountFilter", "#input.amount > 1")
       .sink("end", "#UTIL.mapToJson({'clientId': #input.clientId, 'amount': #input.amount})",
-        "kafka-stringSink", "topic" -> "topic.out")
+        "kafka-stringSink", "topic" -> "'topic.out'")
 
   it should "filter events and save to kafka" in {
     sendTransaction(Transaction("ClientA", 1))
@@ -48,12 +48,12 @@ trait ExampleItTest2 extends FlatSpec with BeforeAndAfterAll with Matchers with 
     EspProcessBuilder
       .id("example2")
       .parallelism(1)
-      .exceptionHandler("sampleParam" -> "sampleParamValue")
-      .source("start", "kafka-transaction", "topic" -> "topic.transaction")
+      .exceptionHandler("sampleParam" -> "'sampleParamValue'")
+      .source("start", "kafka-transaction", "topic" -> "'topic.transaction'")
       .enricher("clientEnricher", "client", "clientService", "clientId" -> "#input.clientId")
       .sink("end",
         "#UTIL.mapToJson({'clientId': #input.clientId, 'clientName': #client.name, 'cardNumber': #client.cardNumber})",
-        "kafka-stringSink", "topic" -> "topic.out"
+        "kafka-stringSink", "topic" -> "'topic.out'"
       )
 
   it should "enrich transaction events with client data" in {
@@ -85,13 +85,13 @@ trait ExampleItTest3 extends FlatSpec with BeforeAndAfterAll with Matchers with 
     EspProcessBuilder
       .id("example3")
       .parallelism(1)
-      .exceptionHandler("sampleParam" -> "sampleParamValue")
-      .source("start", "kafka-transaction", "topic" -> "topic.transaction")
+      .exceptionHandler("sampleParam" -> "'sampleParamValue'")
+      .source("start", "kafka-transaction", "topic" -> "'topic.transaction'")
       .customNode("aggregate", "aggregatedAmount", "transactionAmountAggregator", "clientId" -> "#input.clientId")
       .filter("aggregateFilter", "#aggregatedAmount.amount > 10")
       .sink("end",
         "#UTIL.mapToJson({'clientId': #input.clientId, 'aggregatedAmount': #aggregatedAmount.amount})",
-        "kafka-stringSink", "topic" -> "topic.out"
+        "kafka-stringSink", "topic" -> "'topic.out'"
       )
 
   it should "perform transaction amount aggregation for every client" in {
@@ -123,13 +123,13 @@ trait ExampleItTest4 extends FlatSpec with BeforeAndAfterAll with Matchers with 
     EspProcessBuilder
       .id("example4")
       .parallelism(1)
-      .exceptionHandler("sampleParam" -> "sampleParamValue")
-      .source("start", "kafka-transaction", "topic" -> "topic.transaction")
+      .exceptionHandler("sampleParam" -> "'sampleParamValue'")
+      .source("start", "kafka-transaction", "topic" -> "'topic.transaction'")
       .customNode("transactionCounter", "transactionCounts", "eventsCounter", "key" -> "#input.clientId", "length" -> "'1h'")
       .filter("aggregateFilter", "#transactionCounts.count > 1")
       .sink("end",
         "#UTIL.mapToJson({'clientId': #input.clientId, 'transactionsCount': #transactionCounts.count})",
-        "kafka-stringSink", "topic" -> "topic.out"
+        "kafka-stringSink", "topic" -> "'topic.out'"
       )
 
   it should "count transactions in 1h window" in {

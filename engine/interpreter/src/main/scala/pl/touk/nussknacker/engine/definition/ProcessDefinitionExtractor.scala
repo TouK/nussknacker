@@ -144,6 +144,6 @@ object ProcessDefinitionExtractor {
 
   }
 
-  case class ExpressionDefinition[T <: ObjectMetadata](globalVariables: Map[String, T], globalImports: List[String])
+  case class ExpressionDefinition[+T <: ObjectMetadata](globalVariables: Map[String, T], globalImports: List[String])
 
 }

@@ -6,6 +6,11 @@ import pl.touk.nussknacker.engine.compile.ProcessCompilationError.{NoParentConte
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ClazzRef, PlainClazzDefinition}
 import pl.touk.nussknacker.engine.compiledgraph.typing.TypingResult
 
+object ValidationContext {
+
+  def empty = ValidationContext()
+}
+
 case class ValidationContext(variables: Map[String, TypingResult] = Map.empty,
                              typesInformation: List[PlainClazzDefinition] = List.empty,
                              parent: Option[ValidationContext] = None) {

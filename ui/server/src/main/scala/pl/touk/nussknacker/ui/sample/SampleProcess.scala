@@ -13,7 +13,7 @@ object SampleProcess {
     EspProcessBuilder
       .id("sampleProcess")
       .parallelism(1)
-      .exceptionHandler("param1" -> "ala")
+      .exceptionHandler("param1" -> "'ala'")
       .source("startProcess", "csv-source")
       .filter("input", "#input != 'ala'")
       .to(endWithMessage("suffix", "message"))
@@ -22,7 +22,7 @@ object SampleProcess {
   private def endWithMessage(idSuffix: String, message: String): SubsequentNode = {
     GraphBuilder
       .buildVariable("message" + idSuffix, "output", "message" -> s"'$message'")
-      .sink("end" + idSuffix, "kafka-string", "topic" -> "end.topic")
+      .sink("end" + idSuffix, "kafka-string", "topic" -> "'end.topic'")
   }
 
 }

@@ -251,7 +251,7 @@ object SpelExpressionParser extends LazyLogging {
       !target.isInstanceOf[Class[_]] && findMethod(name, target).isDefined
 
     override protected def extractClassFromTarget(target: Any): Class[_] =
-      target.getClass
+      Option(target).map(_.getClass).orNull
   }
 
   trait StaticMethodCaching extends CachingBase { self: PropertyAccessor =>

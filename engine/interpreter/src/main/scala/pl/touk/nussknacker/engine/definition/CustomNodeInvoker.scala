@@ -50,7 +50,7 @@ private[definition] case class CompilerLazyInterpreter[T](lazyDeps: () => Custom
     val compiledExpression = deps.subPartCompiler
       .compileWithoutContextValidation(node)
       .getOrElse(throw new IllegalArgumentException("Cannot compile"))
-      //FIXME: two lines below are quite nasty :|
+      //FIXME: two lines below are quite nasty, will be fixed in next commits :|
       .node.asInstanceOf[compiledgraph.node.CustomNode]
       .params.find(_.name == param).getOrElse(throw new IllegalArgumentException("Cannot find param"))
       .expression

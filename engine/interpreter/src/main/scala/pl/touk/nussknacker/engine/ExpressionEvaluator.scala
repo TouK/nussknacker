@@ -11,6 +11,12 @@ import pl.touk.nussknacker.engine.definition.ServiceInvoker
 
 import scala.concurrent.{ExecutionContext, Future}
 
+/* We have 3 different places where expressions can be evaluated:
+  - Interpreter - evaluation of service parameters and variable definitions
+  - CompilerLazyInterpreter - evaluation of parameters of CustomStreamTransformers
+  - ProcessObjectFactory - evaluation of exceptionHandler, source and sink parameters
+  They are evaluated with different contexts - e.g. in interpreter we can use process variables, but in source/sink we can use only global ones.
+*/
 object ExpressionEvaluator {
 
   def withLazyVals(globalVariables: Map[String, Any], listeners: Seq[ProcessListener], services: Map[String, ObjectWithMethodDef]) =

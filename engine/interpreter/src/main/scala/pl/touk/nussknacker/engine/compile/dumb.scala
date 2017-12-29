@@ -2,8 +2,9 @@ package pl.touk.nussknacker.engine.compile
 
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.NodeContext
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, MetaData}
+import pl.touk.nussknacker.engine.compile.ProcessCompilationError.NodeId
+import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam
 import pl.touk.nussknacker.engine.definition.{CustomNodeInvoker, CustomNodeInvokerDeps, ProcessObjectFactory, ServiceInvoker}
-import pl.touk.nussknacker.engine.graph.param.Parameter
 
 import scala.concurrent.ExecutionContext
 
@@ -17,7 +18,7 @@ object dumb {
   }
 
   class DumbProcessObjectFactory[T] extends ProcessObjectFactory[T] {
-    override def create(processMetaData: MetaData, params: List[Parameter]) =
+    override  def create(params: List[evaluatedparam.Parameter])(implicit processMetaData: MetaData, nodeId: NodeId): T =
       null.asInstanceOf[T]
   }
 

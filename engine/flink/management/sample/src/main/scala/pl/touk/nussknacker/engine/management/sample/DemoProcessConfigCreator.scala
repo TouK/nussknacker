@@ -141,7 +141,7 @@ class DemoProcessConfigCreator extends ProcessConfigCreator {
     })
 
     @MethodToInvoke
-    def create(@ParamName("ratePerMinute") rate: String /*tutaj z jakiegos powodu musi byc string?*/) = {
+    def create(@ParamName("ratePerMinute") rate: Int) = {
       new FlinkSource[T] with Serializable with TestDataGenerator {
 
         override def typeInformation = implicitly[TypeInformation[T]]
@@ -157,7 +157,7 @@ class DemoProcessConfigCreator extends ProcessConfigCreator {
           }
 
           override def run(ctx: SourceContext[T]) = while (running) {
-            Thread.sleep(1000 * 60/rate.toInt)
+            Thread.sleep(1000 * 60/rate)
             count = count + 1
             ctx.collect(generate(count))
           }

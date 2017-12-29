@@ -60,7 +60,7 @@ object StandaloneProcessInterpreter {
       .obj.asInstanceOf[StandaloneSourceFactory[Any]]
 
     //for testing environment it's important to take classloader from user jar
-    val sub = PartSubGraphCompiler.default(definitions.services, globalVariablesTypes, definitions.expressionConfig.globalImports, creator.getClass.getClassLoader, config)
+    val sub = PartSubGraphCompiler.default(definitions.services, definitions.expressionConfig, creator.getClass.getClassLoader, config)
 
     val expressionEvaluator = ExpressionEvaluator.withLazyVals(globalVariables, listeners, definitions.services)
     val interpreter = Interpreter(listeners, expressionEvaluator)

@@ -3,23 +3,37 @@ package pl.touk.nussknacker.engine.definition
 import java.lang.reflect.Method
 
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.MetaData
+import pl.touk.nussknacker.engine.api.{Context, MetaData}
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
+import pl.touk.nussknacker.engine.compile.ProcessCompilationError.NodeId
+import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
-import pl.touk.nussknacker.engine.graph
+import pl.touk.nussknacker.engine.{ExpressionEvaluator, graph}
+import scala.concurrent.duration._
 
+import scala.concurrent.Await
 import scala.reflect.ClassTag
 
+/**
+  * creates source, sink or exception handler
+  * @tparam T
+  */
 trait ProcessObjectFactory[T] {
-  def create(processMetaData: MetaData, params: List[graph.param.Parameter]): T
+  def create(params: List[evaluatedparam.Parameter])(implicit processMetaData: MetaData, nodeId: NodeId): T
 }
 
-private[definition] class ProcessObjectFactoryImpl[T](objectWithMethodDef: ObjectWithMethodDef) extends ProcessObjectFactory[T] with LazyLogging {
+private[definition] class ProcessObjectFactoryImpl[T](objectWithMethodDef: ObjectWithMethodDef,
+                                                      expressionEvaluator: ExpressionEvaluator) extends ProcessObjectFactory[T] with LazyLogging {
 
-  override def create(processMetaData: MetaData, params: List[graph.param.Parameter]): T = {
-    val paramsMap = params.map(p => p.name -> p.value).toMap
+  override def create(params: List[evaluatedparam.Parameter])(implicit processMetaData: MetaData, nodeId: NodeId): T = {
+    //this has to be synchronous, source/sink/exceptionHandler creation is done only once per process so it doesn't matter
+    import pl.touk.nussknacker.engine.util.SynchronousExecutionContext._
+    val paramsMap = params.map(p => p.name ->
+      //TODO: nicer waiting??
+      Await.result(expressionEvaluator.evaluate[AnyRef](p.expression, p.name, nodeId.id, Context("")).map(_.value), 10 seconds)
+    ).toMap
     objectWithMethodDef.invokeMethod(paramsMap.get, Seq(processMetaData)).asInstanceOf[T]
   }
 
@@ -27,8 +41,8 @@ private[definition] class ProcessObjectFactoryImpl[T](objectWithMethodDef: Objec
 
 object ProcessObjectFactory {
 
-  def apply[T](objectWithMethodDef: ObjectWithMethodDef): ProcessObjectFactory[T] =
-    new ProcessObjectFactoryImpl(objectWithMethodDef)
+  def apply[T](objectWithMethodDef: ObjectWithMethodDef, expressionEvaluator: ExpressionEvaluator): ProcessObjectFactory[T] =
+    new ProcessObjectFactoryImpl(objectWithMethodDef, expressionEvaluator)
 
 }
 

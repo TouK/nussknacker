@@ -52,7 +52,7 @@ class QueryableStateTest extends FlatSpec with BeforeAndAfterAll with Matchers w
     val lockProcess = EspProcessBuilder
       .id("queryableStateProc1")
       .parallelism(1)
-      .exceptionHandler("param1" -> "errors")
+      .exceptionHandler("param1" -> "'errors'")
       .source("start", "kafka-transaction")
       .customNode("lock", "lockOutput", "lockStreamTransformer", "input" -> "#input")
       .sink("sink", "sendSms")

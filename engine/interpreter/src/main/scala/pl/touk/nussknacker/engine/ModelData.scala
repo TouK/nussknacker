@@ -61,7 +61,7 @@ case class ClassLoaderModelData(processConfig: Config, modelClassLoader: ModelCl
 
 }
 
-trait ModelData extends ConfigCreatorSignalDispatcher with ConfigCreatorTestInfoProvider{
+trait ModelData extends ConfigCreatorSignalDispatcher with ConfigCreatorTestInfoProvider {
 
   def migrations: ProcessMigrations
 

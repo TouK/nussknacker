@@ -16,29 +16,29 @@ object StatefulSampleProcess {
 
    EspProcessBuilder
       .id(id)
-      .exceptionHandler("param1" -> "val1")
+     .exceptionHandler("param1" -> "'val1'")
       .source("state", "oneSource")
         .customNode("stateful", "stateVar", "stateful", "keyBy" -> "#input")
-        .sink("end", "#stateVar", "kafka-string", "topic" -> s"output-$id")
+        .sink("end", "#stateVar", "kafka-string", "topic" -> s"'output-$id'")
   }
 
   def prepareProcessStringWithStringState(id: String): EspProcess = {
 
    EspProcessBuilder
       .id(id)
-      .exceptionHandler("param1" -> "val1")
+     .exceptionHandler("param1" -> "'val1'")
       .source("state", "oneSource")
         .customNode("stateful", "stateVar", "constantStateTransformer")
-        .sink("end", "#stateVar", "kafka-string", "topic" -> s"output-$id")
+        .sink("end", "#stateVar", "kafka-string", "topic" -> s"'output-$id'")
   }
 
   def prepareProcessWithLongState(id: String): EspProcess = {
 
    EspProcessBuilder
       .id(id)
-      .exceptionHandler("param1" -> "val1")
+     .exceptionHandler("param1" -> "'val1'")
       .source("state", "oneSource")
         .customNode("stateful", "stateVar", "constantStateTransformerLongValue")
-        .sink("end", "#stateVar", "kafka-string", "topic" -> s"output-$id")
+        .sink("end", "#stateVar", "kafka-string", "topic" -> s"'output-$id'")
   }
 }

@@ -8,7 +8,7 @@ import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.InterpreterSpec._
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.lazyy.UsingLazyValues
-import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, WithCategories}
+import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, ExpressionConfig, WithCategories}
 import pl.touk.nussknacker.engine.api.{Service, _}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
@@ -18,6 +18,7 @@ import pl.touk.nussknacker.engine.compile.PartSubGraphCompilerBase.CompiledNode
 import pl.touk.nussknacker.engine.compile.{PartSubGraphCompiler, SubprocessResolver, ValidationContext}
 import pl.touk.nussknacker.engine.compiledgraph.typing.Typed
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ClazzRef, ObjectDefinition, ObjectWithMethodDef}
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
 import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ServiceInvoker}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
@@ -95,7 +96,7 @@ class InterpreterSpec extends FlatSpec with Matchers {
   }
 
   def compile(servicesDefs: Map[String, ObjectWithMethodDef], node: splittednode.SplittedNode[_], ctx: ValidationContext): CompiledNode = {
-    PartSubGraphCompiler.default(servicesDefs, Map.empty, List.empty, getClass.getClassLoader, ConfigFactory.empty()).compileWithoutContextValidation(node) match {
+    PartSubGraphCompiler.default(servicesDefs, ExpressionDefinition(Map(), List()), getClass.getClassLoader, ConfigFactory.empty()).compileWithoutContextValidation(node) match {
       case Valid(c) => c
       case Invalid(err) => throw new IllegalArgumentException(err.toList.mkString("Compilation errors: ", ", ", ""))
     }
