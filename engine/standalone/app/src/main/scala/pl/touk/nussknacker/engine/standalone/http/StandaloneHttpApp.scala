@@ -24,7 +24,16 @@ object StandaloneHttpApp extends Directives with Argonaut62Support with LazyLogg
 
   implicit private val materializer = ActorMaterializer()
 
-  val standaloneApp = new StandaloneHttpApp(ConfigFactory.load())
+  private val metricRegistry = new MetricRegistry
+
+  private val config = ConfigFactory.load()
+
+  GraphiteReporter.forRegistry(metricRegistry)
+    .prefixedWith(s"${config.getString("standaloneProcessConfig.environment")}.${config.getString("hostName")}.standaloneEngine")
+    .build(graphiteSender).start(10, TimeUnit.SECONDS)
+
+
+  val standaloneApp = new StandaloneHttpApp(config, metricRegistry)
 
   val managementPort = Try(args(0).toInt).getOrElse(8070)
   val processesPort = Try(args(1).toInt).getOrElse(8080)
@@ -41,25 +50,6 @@ object StandaloneHttpApp extends Directives with Argonaut62Support with LazyLogg
     port = processesPort
   )
 
-}
-
-class StandaloneHttpApp(config: Config)(implicit as: ActorSystem)
-  extends Directives with Argonaut62Support with LazyLogging {
-
-  private val deploymentService = DeploymentService(prepareContext(), config)
-
-  val managementRoute = new ManagementRoute(deploymentService)
-
-  val processRoute = new ProcessRoute(deploymentService)
-
-  private def prepareContext(): StandaloneContextPreparer = {
-    val metricRegistry = new MetricRegistry
-    GraphiteReporter.forRegistry(metricRegistry)
-      .prefixedWith(s"${config.getString("standaloneProcessConfig.environment")}.${config.getString("hostName")}.standaloneEngine")
-        .build(graphiteSender).start(10, TimeUnit.SECONDS)
-    new StandaloneContextPreparer(metricRegistry)
-  }
-
   private def graphiteSender = {
     if (config.hasPath("graphite.protocol") && "udp".equals(config.getString("graphite.protocol"))) {
       new GraphiteUDP(config.getString("graphite.hostName"), config.getInt("graphite.port"))
@@ -67,4 +57,18 @@ class StandaloneHttpApp(config: Config)(implicit as: ActorSystem)
       new Graphite(config.getString("graphite.hostName"), config.getInt("graphite.port"))
     }
   }
+
+}
+
+class StandaloneHttpApp(config: Config, metricRegistry: MetricRegistry)(implicit as: ActorSystem)
+  extends Directives with Argonaut62Support with LazyLogging {
+
+  private val contextPreparer = new StandaloneContextPreparer(metricRegistry)
+
+  private val deploymentService = DeploymentService(contextPreparer, config)
+
+  val managementRoute = new ManagementRoute(deploymentService)
+
+  val processRoute = new ProcessRoute(deploymentService)
+
 }

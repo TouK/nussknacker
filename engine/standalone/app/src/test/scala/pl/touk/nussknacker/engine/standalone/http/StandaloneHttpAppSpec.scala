@@ -9,6 +9,7 @@ import akka.http.scaladsl.server.MethodRejection
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import argonaut.Argonaut._
 import argonaut.{DecodeJson, EncodeJson, PrettyParams}
+import com.codahale.metrics.MetricRegistry
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable}
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
@@ -97,7 +98,7 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
         ModelJarBuilder.buildJarWithConfigCreator[TestConfigCreator]().getAbsolutePath)))
 
 
-  val exampleApp = new StandaloneHttpApp(config)
+  val exampleApp = new StandaloneHttpApp(config, new MetricRegistry)
 
   val managementRoute = exampleApp.managementRoute.route
   val processesRoute = exampleApp.processRoute.route
