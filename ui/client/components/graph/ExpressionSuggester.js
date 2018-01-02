@@ -7,7 +7,7 @@ export default class ExpressionSuggester {
     this._variables = variables
   }
 
-  applySuggestion = (suggestion, inputValue, caretPosition) => {
+  _autosuggest_applySuggestion = (suggestion, inputValue, caretPosition) => {
     const beforeCaret = inputValue.slice(0, caretPosition)
     const afterCaret = inputValue.slice(caretPosition)
     const lastExpressionPart = this._focusedLastExpressionPart(inputValue, caretPosition)
@@ -21,7 +21,7 @@ export default class ExpressionSuggester {
     }
   }
 
-  extractMatchingPartFromInput = (suggestion, inputValue, caretPosition) => {
+  _autosuggest_extractMatchingPartFromInput = (suggestion, inputValue, caretPosition) => {
     const justTyped = this._justTypedProperty(this._focusedLastExpressionPartWithoutMethodParens(inputValue, caretPosition))
     const expr = new RegExp(`(.*?)${justTyped}(.*)`, "i")
     const suggestedStartAndEnd = suggestion.methodName.match(expr)

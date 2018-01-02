@@ -12,7 +12,8 @@ case class FeatureTogglesConfig(development: Boolean,
                                 metrics: Option[GrafanaSettings],
                                 remoteEnvironment: Option[HttpRemoteEnvironmentConfig],
                                 counts: Option[InfluxReporterConfig],
-                                environmentAlert:Option[EnvironmentAlert]
+                                environmentAlert:Option[EnvironmentAlert],
+                                advancedCodeSuggestions: Boolean
                                )
 
 object FeatureTogglesConfig extends LazyLogging{
@@ -22,13 +23,14 @@ object FeatureTogglesConfig extends LazyLogging{
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
   def create(config: Config): FeatureTogglesConfig = {
-    val environmentAlert = parseOptionalConfig[EnvironmentAlert](config,"environmentAlert")
+    val environmentAlert = parseOptionalConfig[EnvironmentAlert](config, "environmentAlert")
     val isDevelopmentMode = config.hasPath("developmentMode") && config.getBoolean("developmentMode")
+    val advancedCodeSuggestions = config.hasPath("advancedCodeSuggestions") && config.getBoolean("advancedCodeSuggestions")
     val standaloneModeEnabled = config.hasPath("standaloneModeEnabled") && config.getBoolean("standaloneModeEnabled")
-    val metrics = parseOptionalConfig[GrafanaSettings](config,"grafanaSettings")
-    val counts = parseOptionalConfig[InfluxReporterConfig](config,"grafanaSettings")
+    val metrics = parseOptionalConfig[GrafanaSettings](config, "grafanaSettings")
+    val counts = parseOptionalConfig[InfluxReporterConfig](config, "grafanaSettings")
     val remoteEnvironment = parseOptionalConfig[HttpRemoteEnvironmentConfig](config, "secondaryEnvironment")
-    val search = parseOptionalConfig[KibanaSettings](config,"kibanaSettings")
+    val search = parseOptionalConfig[KibanaSettings](config, "kibanaSettings")
     FeatureTogglesConfig(
       development = isDevelopmentMode,
       standaloneMode = standaloneModeEnabled,
@@ -36,7 +38,8 @@ object FeatureTogglesConfig extends LazyLogging{
       metrics = metrics,
       remoteEnvironment = remoteEnvironment,
       counts = counts,
-      environmentAlert=environmentAlert
+      environmentAlert = environmentAlert,
+      advancedCodeSuggestions = advancedCodeSuggestions
     )
   }
 

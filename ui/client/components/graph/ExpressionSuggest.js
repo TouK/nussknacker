@@ -1,7 +1,5 @@
-import React, {Component} from "react";
-import {render} from "react-dom";
-import {ListGroupItem} from "react-bootstrap";
-import { connect } from 'react-redux';
+import React from "react";
+import {connect} from 'react-redux';
 import Textarea from 'react-textarea-autosize';
 import _ from 'lodash';
 import ActionsUtils from '../../actions/ActionsUtils';
@@ -9,6 +7,15 @@ import ProcessUtils from '../../common/ProcessUtils';
 import ExpressionSuggester from './ExpressionSuggester'
 import Autosuggest from "react-autosuggest";
 import $ from "jquery";
+
+import AceEditor from 'react-ace';
+import 'brace/mode/jsx';
+
+import 'brace/ext/language_tools'
+import 'brace/ext/searchbox';
+
+require(`../../brace/mode/spel`)
+require(`../../brace/theme/nussknacker`)
 
 //to reconsider
 // - respect categories for global variables?
@@ -21,13 +28,25 @@ class ExpressionSuggest extends React.Component {
     inputProps: React.PropTypes.object.isRequired
   }
 
+  customAceEditorCompleter = {
+    getCompletions: (editor, session, pos, prefix, callback) => {
+      const suggestions = this.expressionSuggester.suggestionsFor(this.state.value, pos.column)
+      callback(null, _.map(suggestions, (s) => {
+        //unfortunately Ace treats `#` as special case, we have to remove `#` from suggestions or it will be duplicated
+        //maybe it depends on language mode?
+        const methodName = s.methodName.replace("#", "")
+        return {name: methodName, value: methodName, score: 1, meta: ProcessUtils.humanReadableType(s.refClazzName)}
+      }))
+    }
+  }
+
   constructor(props) {
     super(props);
     inputExprIdCounter+=1;
     this.state = {
       value: props.inputProps.value,
-      suggestions: [],
-      expectedCaretPosition: 0,
+      _autosuggest_suggestions: [],
+      _autosuggest_expectedCaretPosition: 0,
       id: "inputExpr" + inputExprIdCounter
     };
     this.expressionSuggester = this.createExpressionSuggester(props)
@@ -35,16 +54,17 @@ class ExpressionSuggest extends React.Component {
 
   //fixme is this enough?
   //this shouldComponentUpdate is for cases when there are multiple instances of suggestion component in one view and to make them not interfere with each other
+  //fixme maybe use this.state.id here?
   shouldComponentUpdate(nextProps, nextState) {
-    return !(_.isEqual(this.state.suggestions, nextState.suggestions) &&
-      _.isEqual(this.state.expectedCaretPosition, nextState.expectedCaretPosition) &&
+    return !(_.isEqual(this.state._autosuggest_suggestions, nextState._autosuggest_suggestions) &&
+      _.isEqual(this.state._autosuggest_expectedCaretPosition, nextState._autosuggest_expectedCaretPosition) &&
       _.isEqual(this.state.value, nextState.value)
     )
   }
 
   componentDidUpdate(prevProps, prevState) {
     this.expressionSuggester = this.createExpressionSuggester(this.props)
-    this.setCaretPosition(this.state.expectedCaretPosition)
+    this.setCaretPosition(this.state._autosuggest_expectedCaretPosition)
     if (!_.isEqual(this.state.value, prevState.value)) {
       this.props.inputProps.onValueChange(this.state.value)
     }
@@ -54,71 +74,12 @@ class ExpressionSuggest extends React.Component {
     return new ExpressionSuggester(props.typesInformation, props.variables);
   }
 
-  getSuggestionValue = suggestion => {
-    return this.state.value
-  }
-
-  renderSuggestion = suggestion => {
-    const {start, middle, end} = this.expressionSuggester.extractMatchingPartFromInput(suggestion, this.state.value, this.getCaretPosition())
-    const suggestionType = ProcessUtils.humanReadableType(suggestion.refClazzName)
-    return (
-      start || middle || end ?
-        <div>
-          {start}<b>{middle}</b>{end}<span className="typeSuggestion">{suggestionType}</span>
-        </div> :
-        <div>{suggestion.methodName}{suggestionType}</div>
-    );
-  }
-
-  renderInputComponent = inputProps => {
-    return (
-      <div>
-        <Textarea id={this.state.id} {...inputProps} />
-      </div>
-    )
-  }
-
-  onSuggestionSelected = (event, { suggestion, suggestionValue, sectionIndex, method }) => {
-    event.preventDefault() //to prevent newline in textarea after choosing an option
-    const suggestionApplied = this.expressionSuggester.applySuggestion(suggestion, this.state.value, this.getCaretPosition())
-    this.setState({
-      value: suggestionApplied.value,
-      expectedCaretPosition: suggestionApplied.caretPosition
-    })
-  }
-
-  onSuggestionsFetchRequested = ({value}) => {
-    const suggestions = this.expressionSuggester.suggestionsFor(value, this.getCaretPosition())
-    this.setState({
-      suggestions: suggestions
-    })
-  }
-
-  //fixme change to ref?
-  getInputExprElement = () => {
-    return $('#' + this.state.id)[0]
-  }
-
-  getCaretPosition = () => {
-    return this.getInputExprElement().selectionStart
-  }
-
-  setCaretPosition = (position) => {
-    this.getInputExprElement().setSelectionRange(position, position)
-  }
-
   onChange = (newValue) => {
     this.setState({
       value: newValue,
-      expectedCaretPosition: this.getCaretPosition()
+      _autosuggest_expectedCaretPosition: this._autosuggest_getCaretPosition()
     })
   }
-
-  onSuggestionsClearRequested = () => {
-    this.setState({
-      suggestions: []
-    });
-  };
 
   render() {
     if (this.props.dataResolved) {
@@ -129,32 +90,115 @@ class ExpressionSuggest extends React.Component {
           this.onChange(newValue)
         }
     }
-      return (
-        <div>
-          <Autosuggest
-            id={"autosuggest-" + this.props.id}
-            suggestions={this.state.suggestions}
-            onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
-            onSuggestionsClearRequested={this.onSuggestionsClearRequested}
-            getSuggestionValue={this.getSuggestionValue}
-            renderSuggestion={this.renderSuggestion}
-            shouldRenderSuggestions={() => {return true}}
-            renderInputComponent={this.renderInputComponent}
-            inputProps={inputProps}
-            onSuggestionSelected={this.onSuggestionSelected}
-          />
-
-        </div>
-      );
-
+    return this.props.advancedCodeSuggestions ? (
+      <div style={{paddingTop: 10, paddingBottom: 10, paddingLeft: 20 - 4, paddingRight: 20 - 4, backgroundColor: '#333'}}>
+        <AceEditor
+          mode={'spel'}
+          width={"100%"}
+          minLines={1}
+          maxLines={10}
+          theme={'nussknacker'}
+          onChange={this.onChange}
+          value={this.state.value}
+          showPrintMargin={false}
+          cursorStart={-1} //line start
+          showGutter={false}
+          highlightActiveLine={false}
+          highlightGutterLine={false}
+          setOptions={{
+            enableBasicAutocompletion: [this.customAceEditorCompleter],
+            enableLiveAutocompletion: false,
+            enableSnippets: false,
+            showLineNumbers: false,
+            fontSize: 16,
+            fontFamily: "'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace", //monospace font seems to be mandatory to make ace cursor work well,
+            readOnly: this.props.inputProps.readOnly
+          }}
+        />
+      </div>
+    ) :
+      <Autosuggest
+      id={"autosuggest-" + this.props.id}
+      suggestions={this.state._autosuggest_suggestions}
+      onSuggestionsFetchRequested={this._autosuggest_onSuggestionsFetchRequested}
+      onSuggestionsClearRequested={this._autosuggest_onSuggestionsClearRequested}
+      getSuggestionValue={this._autosuggest_getSuggestionValue}
+      renderSuggestion={this._autosuggest_renderSuggestion}
+      shouldRenderSuggestions={() => {return true}}
+      renderInputComponent={this._autosuggest_renderInputComponent}
+      inputProps={inputProps}
+      onSuggestionSelected={this._autosuggest_onSuggestionSelected}
+      />
     } else {
       return null
     }
 
   }
 
-}
+  //TODO remove autosuggest component if AceEditor will turn out to be better
+  _autosuggest_onSuggestionsFetchRequested = ({value}) => {
+    const suggestions = this.expressionSuggester.suggestionsFor(value, this._autosuggest_getCaretPosition())
+    this.setState({
+      _autosuggest_suggestions: suggestions
+    })
+  }
 
+  _autosuggest_onSuggestionsClearRequested = () => {
+    this.setState({
+      _autosuggest_suggestions: []
+    });
+  };
+
+  _autosuggest_getSuggestionValue = suggestion => {
+    return this.state.value
+  }
+
+  _autosuggest_renderSuggestion = suggestion => {
+    const {start, middle, end} = this.expressionSuggester._autosuggest_extractMatchingPartFromInput(suggestion, this.state.value, this._autosuggest_getCaretPosition())
+    const suggestionType = ProcessUtils.humanReadableType(suggestion.refClazzName)
+    return (
+      start || middle || end ?
+        <div>
+          {start}<b>{middle}</b>{end}<span className="typeSuggestion">{suggestionType}</span>
+        </div> :
+        <div>{suggestion.methodName}{suggestionType}</div>
+    );
+  }
+
+  _autosuggest_renderInputComponent = inputProps => {
+    return (
+      <div>
+        <Textarea id={this.state.id} {...inputProps} />
+      </div>
+    )
+  }
+
+  _autosuggest_onSuggestionSelected = (event, { suggestion, suggestionValue, sectionIndex, method }) => {
+    event.preventDefault() //to prevent newline in textarea after choosing an option
+    const suggestionApplied = this.expressionSuggester._autosuggest_applySuggestion(suggestion, this.state.value, this._autosuggest_getCaretPosition())
+    this.setState({
+      value: suggestionApplied.value,
+      _autosuggest_expectedCaretPosition: suggestionApplied.caretPosition
+    })
+  }
+
+  _autosuggest_getCaretPosition = () => {
+    if (this._autosuggest_getInputExprElement()) {
+      return this._autosuggest_getInputExprElement().selectionStart
+    }
+  }
+
+  setCaretPosition = (position) => {
+    if (this._autosuggest_getInputExprElement()) {
+      this._autosuggest_getInputExprElement().setSelectionRange(position, position)
+    }
+  }
+
+  //fixme change to ref?
+  _autosuggest_getInputExprElement = () => {
+    return $('#' + this.state.id)[0]
+  }
+}
 
 function mapState(state) {
   const processDefinitionData = !_.isEmpty(state.settings.processDefinitionData) ? state.settings.processDefinitionData
@@ -166,7 +210,8 @@ function mapState(state) {
   return {
     typesInformation: typesInformation,
     dataResolved: dataResolved,
-    variables: variables
+    variables: variables,
+    advancedCodeSuggestions: state.settings.featuresSettings.advancedCodeSuggestions
   };
 }
 export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(ExpressionSuggest);

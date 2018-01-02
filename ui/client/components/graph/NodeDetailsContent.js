@@ -340,18 +340,9 @@ export default class NodeDetailsContent extends React.Component {
           <div className="node-row">
             {this.renderFieldLabel(fieldLabel)}
             <div className="node-value">
-              { this.props.isEditMode ?
-                (<ExpressionSuggest inputProps={{
+              <ExpressionSuggest inputProps={{
                 rows: 1, cols: 50, className: "node-input", value: fieldValue,
-                onValueChange: handleChange, readOnly: !this.props.isEditMode}}/>) :
-                (<Textarea rows="1"  cols="50" className="node-input" value={fieldValue} readOnly="true" />)
-              }
-              {process.env.NODE_ENV == false ?
-                <div style={{color: "red"}}>
-                  <p>ONLY_IN_DEV_MODE</p>
-                  <p>{fieldValue}</p>
-                </div> : null
-              }
+                onValueChange: handleChange, readOnly: readOnly}}/>
             </div>
           </div>)
         )

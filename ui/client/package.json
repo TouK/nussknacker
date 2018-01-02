@@ -21,6 +21,7 @@
     "npm-font-open-sans": "0.0.3",
     "react": "15.2.1",
     "react-autosuggest": "7.0.1",
+    "react-ace": "5.8.0",
     "react-bootstrap": "0.30.3",
     "react-custom-scrollbars": "4.0.0",
     "react-dnd": "2.1.2",

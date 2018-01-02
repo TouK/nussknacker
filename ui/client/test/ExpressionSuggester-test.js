@@ -121,7 +121,7 @@ describe("expression suggester", () => {
 describe("extract matching part from input", () => {
   it("should extract matching suggestion part from method beginning", () => {
     const fooMethod = { methodName: 'fooString', refClazzName: 'java.lang.String'};
-    const extracted = expressionSuggester.extractMatchingPartFromInput(fooMethod, "#input.foo", "#input.foo".length)
+    const extracted = expressionSuggester._autosuggest_extractMatchingPartFromInput(fooMethod, "#input.foo", "#input.foo".length)
     expect(extracted).toEqual({
       start: "",
       middle: "foo",
@@ -131,7 +131,7 @@ describe("extract matching part from input", () => {
 
   it("should extract matching suggestion part from method middle", () => {
     const fooMethod = { methodName: 'fooString', refClazzName: 'java.lang.String'};
-    const extracted = expressionSuggester.extractMatchingPartFromInput(fooMethod, "#input.oStr", "#input.oStr".length)
+    const extracted = expressionSuggester._autosuggest_extractMatchingPartFromInput(fooMethod, "#input.oStr", "#input.oStr".length)
     expect(extracted).toEqual({
       start: "fo",
       middle: "oStr",
@@ -141,7 +141,7 @@ describe("extract matching part from input", () => {
 
   it("should extract matching suggestion part from global variable beginning", () => {
     const fooMethod = { methodName: '#input'};
-    const extracted = expressionSuggester.extractMatchingPartFromInput(fooMethod, "#inp", "#inp".length)
+    const extracted = expressionSuggester._autosuggest_extractMatchingPartFromInput(fooMethod, "#inp", "#inp".length)
     expect(extracted).toEqual({
       start: "",
       middle: "#inp",
@@ -155,7 +155,7 @@ describe("extract matching part from input", () => {
 describe("suggestion applied", () => {
   it("should apply suggestion for simple case", () => {
     const fooMethod = { methodName: 'fooString', refClazzName: 'java.lang.String'};
-    const suggestionApplied = expressionSuggester.applySuggestion(fooMethod, "#input.foo", "#input.foo".length)
+    const suggestionApplied = expressionSuggester._autosuggest_applySuggestion(fooMethod, "#input.foo", "#input.foo".length)
     expect(suggestionApplied).toEqual({
       value: "#input.fooString",
       caretPosition: "#input.fooString".length
@@ -164,7 +164,7 @@ describe("suggestion applied", () => {
 
   it("should apply suggestion for more complex case", () => {
     const fooMethod = { methodName: 'fooString', refClazzName: 'java.lang.String'};
-    const extracted = expressionSuggester.applySuggestion(fooMethod, "#input.foo + #input.barB.bazC.quax", "#input.foo".length)
+    const extracted = expressionSuggester._autosuggest_applySuggestion(fooMethod, "#input.foo + #input.barB.bazC.quax", "#input.foo".length)
     expect(extracted).toEqual({
       value: "#input.fooString + #input.barB.bazC.quax",
       caretPosition: "#input.fooString".length
@@ -174,7 +174,7 @@ describe("suggestion applied", () => {
   it("should apply suggestion after method with parameters used", () => {
 
     const fooMethod = { methodName: 'quaxString', refClazzName: 'java.lang.String'};
-    const suggestionApplied = expressionSuggester.applySuggestion(fooMethod, "#input.barB.bazC('1').quax", "#input.barB.bazC('1').quax".length)
+    const suggestionApplied = expressionSuggester._autosuggest_applySuggestion(fooMethod, "#input.barB.bazC('1').quax", "#input.barB.bazC('1').quax".length)
     expect(suggestionApplied).toEqual({
       value: "#input.barB.bazC('1').quaxString",
       caretPosition: "#input.barB.bazC('1').quaxString".length
