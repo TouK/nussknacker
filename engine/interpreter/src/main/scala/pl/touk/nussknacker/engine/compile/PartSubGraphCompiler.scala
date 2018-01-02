@@ -54,11 +54,7 @@ private[compile] trait PartSubGraphCompilerBase {
   private val syntax = ValidatedSyntax[PartSubGraphCompilationError]
 
   def validate(n: splittednode.SplittedNode[_], ctx: ValidationContext): ValidatedNel[PartSubGraphCompilationError, ContextsForParts] = {
-    compile(n, ctx).map(_.ctx)
-  }
-
-  protected def compile(n: splittednode.SplittedNode[_], ctx: ValidationContext): ValidatedNel[PartSubGraphCompilationError, CompiledNode] = {
-    new Compiler(true).doCompile(n, ctx)
+    new Compiler(true).doCompile(n, ctx).map(_.ctx)
   }
 
   import syntax._
@@ -67,7 +63,7 @@ private[compile] trait PartSubGraphCompilerBase {
     new Compiler(false).doCompile(n, ValidationContext.empty)
   }
 
-  protected def  expressionCompiler: ExpressionCompiler
+  protected def expressionCompiler: ExpressionCompiler
 
   protected def services: Map[String, ParametersProviderT]
 
@@ -239,26 +235,5 @@ object PartSubGraphCompilerBase {
   case class CompiledNode(node: compiledgraph.node.Node, ctx: ContextsForParts)
 
   case class NextWithContext(next: compiledgraph.node.Next, ctx: ContextsForParts)
-
-}
-
-object PartSubGraphCompiler {
-
-  def default(servicesDefs: Map[String, ObjectWithMethodDef],
-              expressionConfig: ExpressionDefinition[ObjectMetadata],
-              loader: ClassLoader,
-              config: Config): PartSubGraphCompiler = {
-    val enableSpelForceCompile = SpelConfig.enableSpelForceCompile(config)
-    new PartSubGraphCompiler(loader, ExpressionCompiler.default(loader, expressionConfig, enableSpelForceCompile), servicesDefs)
-  }
-}
-
-object PartSubGraphValidator {
-
-  def default(services: Map[String, ObjectDefinition],
-              expressionConfig: ExpressionDefinition[ObjectMetadata],
-              loader: ClassLoader) = {
-    new PartSubGraphValidator(loader, ExpressionCompiler.default(loader, expressionConfig, enableSpelForceCompile = false), services)
-  }
 
 }

@@ -104,8 +104,9 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => (ClassLoader) => Compi
 
     //here we are sure the classloader is ok
     val processWithDeps = compiledProcessWithDeps(UserClassLoader.get("root"))
-    val process = processWithDeps.compiledProcess
-    val streamMetaData = MetaDataExtractor.extractStreamMetaDataOrFail(process.metaData)
+    val metaData = processWithDeps.metaData
+
+    val streamMetaData = MetaDataExtractor.extractStreamMetaDataOrFail(metaData)
     env.setRestartStrategy(processWithDeps.exceptionHandler.restartStrategy)
     streamMetaData.parallelism.foreach(env.setParallelism)
     env.enableCheckpointing(streamMetaData.checkpointIntervalDuration.getOrElse(checkpointInterval).toMillis)
@@ -119,7 +120,7 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => (ClassLoader) => Compi
       case _ => logger.info("Using default state backend")
     }
 
-    registerSourcePart(process.source)
+    registerSourcePart(processWithDeps.source)
 
     def registerSourcePart(part: SourcePart): Unit = {
       //TODO: get rid of cast (but how??)
@@ -131,7 +132,7 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => (ClassLoader) => Compi
 
       val newStart = env
         .addSource[Any](source.toFlinkSource)(source.typeInformation)
-        .name(s"${process.metaData.id}-source")
+        .name(s"${metaData.id}-source")
       val withAssigned = timestampAssigner.map {
         case periodic: AssignerWithPeriodicWatermarks[Any@unchecked] =>
           newStart.assignTimestampsAndWatermarks(periodic)
@@ -140,7 +141,7 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => (ClassLoader) => Compi
       }.map(_.transform("even-time-meter", new EventTimeDelayMeterFunction("eventtimedelay", eventTimeMetricDuration)))
         .getOrElse(newStart)
         .map(new RateMeterFunction[Any]("source"))
-          .map(InitContextFunction(process.metaData.id, part.node.id))
+          .map(InitContextFunction(metaData.id, part.node.id))
 
       val asyncAssigned = wrapAsync(withAssigned, part.node, "interpretation").split(SplitFunction)
 
@@ -175,7 +176,7 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => (ClassLoader) => Compi
               val collectingSink = SinkInvocationCollector(runId, part.id, typ, prepareFunction)
               startAfterSinkEvaluated.addSink(new CollectingSinkFunction(compiledProcessWithDeps, collectingSink, part))
           }
-          withSinkAdded.name(s"${process.metaData.id}-${part.id}-sink")
+          withSinkAdded.name(s"${metaData.id}-${part.id}-sink")
         case part:SinkPart =>
           throw new IllegalArgumentException(s"Process can only use flink sinks, instead given: ${part.obj}")
         case SplitPart(splitNode, nexts) =>
@@ -212,9 +213,9 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => (ClassLoader) => Compi
             case None => ir.context
           }
 
-          val customNodeContext = FlinkCustomNodeContext(process.metaData,
+          val customNodeContext = FlinkCustomNodeContext(metaData,
             node.id, processWithDeps.processTimeout, (classLoader) => compiledProcessWithDeps(classLoader).exceptionHandler, processWithDeps.signalSenders)
-          val newStart = executor.run(() => compiledProcessWithDeps(UserClassLoader.get(node.id))).transform(start, customNodeContext)
+          val newStart = executor.run(() => compiledProcessWithDeps(UserClassLoader.get(node.id)).customNodeInvokerDeps).transform(start, customNodeContext)
               .map(newContextFun)
           val afterSplit = wrapAsync(newStart, node, "customNodeInterpretation")
               .split(SplitFunction)
@@ -231,7 +232,7 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => (ClassLoader) => Compi
           processWithDeps.processTimeout.toMillis, TimeUnit.MILLISECONDS, asyncExecutionContextPreparer.bufferSize))
       } else {
         beforeAsync.flatMap(new SyncInterpretationFunction(compiledProcessWithDeps, node))
-      }.name(s"${process.metaData.id}-${node.id}-$name")
+      }.name(s"${metaData.id}-${node.id}-$name")
     }
   }
 }

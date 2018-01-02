@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.engine.api.exception
 
-import pl.touk.nussknacker.engine.api.{Context, MetaData, MethodToInvoke}
+import pl.touk.nussknacker.engine.api.{Context, Lifecycle, MetaData, MethodToInvoke}
 
 import scala.util.control.NonFatal
 
-trait EspExceptionHandler {
+trait EspExceptionHandler extends Lifecycle {
 
   def handle(exceptionInfo: EspExceptionInfo[_ <: Throwable]): Unit
 

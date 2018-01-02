@@ -1,16 +1,14 @@
 package pl.touk.nussknacker.engine.definition
 
-import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.ExpressionEvaluator
-import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, SourceFactory, TestDataGenerator, WithCategories}
+import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.process.{SourceFactory, TestDataGenerator, WithCategories}
 import pl.touk.nussknacker.engine.api.test.TestDataParser
 import pl.touk.nussknacker.engine.api.{MetaData, process}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError.NodeId
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectDefinition, ObjectWithMethodDef}
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
+import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.node.Source
-import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 import shapeless.syntax.typeable._
 
 trait TestInfoProvider {
@@ -23,23 +21,13 @@ trait TestInfoProvider {
 
 case class TestingCapabilities(canBeTested: Boolean, canGenerateTestData: Boolean)
 
-trait ConfigCreatorTestInfoProvider extends TestInfoProvider {
+class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider {
 
-//FIXME: Two below methods names are confusing
-  def configCreator: ProcessConfigCreator
-
-  def processConfig: Config
-
-  def processDefinition: ProcessDefinition[ObjectDefinition]
-
-  def modelClassLoader : ModelClassLoader
-
-  //FIXME: should it be here??
   private lazy val evaluator = ExpressionEvaluator
-    .withoutLazyVals(configCreator.expressionConfig(processConfig).globalProcessVariables.mapValues(_.value), List())
+    .withoutLazyVals(modelData.configCreator.expressionConfig(modelData.processConfig).globalProcessVariables.mapValues(_.value), List())
 
-  //FIXME???
-  private lazy val expressionCompiler = ExpressionCompiler.default(modelClassLoader.classLoader, processDefinition.expressionConfig, false)
+  private lazy val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData.modelClassLoader.classLoader,
+    modelData.processDefinition.expressionConfig)
 
   override def getTestingCapabilities(metaData: MetaData, source: Source) = {
     val canTest = sourceFactory(source).flatMap[TestDataParser[_]](_.testDataParser).isDefined
@@ -48,7 +36,7 @@ trait ConfigCreatorTestInfoProvider extends TestInfoProvider {
   }
 
   private def sourceFactory(source: Source): Option[SourceFactory[_]] =
-    configCreator.sourceFactories(processConfig).get(source.ref.typ).map(_.value)
+    modelData.configCreator.sourceFactories(modelData.processConfig).get(source.ref.typ).map(_.value)
 
   override def generateTestData(metaData: MetaData, source: Source, size: Int) =
     prepareTestDataGenerator(metaData, source).map(_.generateTestData(size))

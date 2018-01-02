@@ -132,6 +132,9 @@ object DefinitionExtractor {
   }
 
   object ClazzRef {
+
+    def unknown: ClazzRef = ClazzRef[Any]
+
     def apply(clazz: Class[_]): ClazzRef = {
       ClazzRef(clazz.getName)
     }

@@ -65,7 +65,7 @@ object ProcessDefinitionExtractor {
     ProcessDefinition[ObjectWithMethodDef](
       servicesDefs, sourceFactoriesDefs, sinkFactoriesDefs,
       customStreamTransformersDefs.mapValuesNow(k => (k, extractCustomTransformerData(k))),
-      signalsDefs, exceptionHandlerFactoryDefs, ExpressionDefinition(globalVariablesDefs, globalImportsDefs), typesInformation)
+      signalsDefs, exceptionHandlerFactoryDefs, ExpressionDefinition(globalVariablesDefs, globalImportsDefs, expressionConfig.optimizeCompilation), typesInformation)
   }
   
   private def extractCustomTransformerData(objectWithMethodDef: ObjectWithMethodDef) = {
@@ -102,12 +102,13 @@ object ProcessDefinitionExtractor {
   object ObjectProcessDefinition {
     def empty: ProcessDefinition[ObjectDefinition] =
       ProcessDefinition(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, ObjectDefinition.noParam,
-        ExpressionDefinition(Map.empty, List.empty), List.empty)
+        ExpressionDefinition(Map.empty, List.empty, optimizeCompilation = true), List.empty)
 
     def apply(definition: ProcessDefinition[ObjectWithMethodDef]) : ProcessDefinition[ObjectDefinition] = {
       val expressionDefinition = ExpressionDefinition(
         definition.expressionConfig.globalVariables.mapValuesNow(_.objectDefinition),
-        definition.expressionConfig.globalImports
+        definition.expressionConfig.globalImports,
+        definition.expressionConfig.optimizeCompilation
       )
       ProcessDefinition(
         definition.services.mapValuesNow(_.objectDefinition),
@@ -144,6 +145,6 @@ object ProcessDefinitionExtractor {
 
   }
 
-  case class ExpressionDefinition[+T <: ObjectMetadata](globalVariables: Map[String, T], globalImports: List[String])
+  case class ExpressionDefinition[+T <: ObjectMetadata](globalVariables: Map[String, T], globalImports: List[String], optimizeCompilation: Boolean)
 
 }

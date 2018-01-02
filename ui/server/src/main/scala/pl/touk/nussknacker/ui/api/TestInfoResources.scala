@@ -3,16 +3,25 @@ package pl.touk.nussknacker.ui.api
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.server._
 import akka.util.Timeout
-import pl.touk.nussknacker.engine.definition.{TestInfoProvider, TestingCapabilities}
+import pl.touk.nussknacker.engine.definition.{ModelDataTestInfoProvider, TestInfoProvider, TestingCapabilities}
 import pl.touk.nussknacker.engine.graph.node.Source
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
 import pl.touk.nussknacker.ui.process.displayedgraph.DisplayableProcess
 import pl.touk.http.argonaut.Argonaut62Support
+import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import shapeless.syntax.typeable._
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
+import pl.touk.nussknacker.engine.util.Implicits._
+
+object TestInfoResources {
+
+  def apply(providers: Map[ProcessingType, ModelData])(implicit ec: ExecutionContext): TestInfoResources =
+    new TestInfoResources(providers.mapValuesNow(new ModelDataTestInfoProvider(_)))
+
+}
 
 class TestInfoResources(providers: Map[ProcessingType, TestInfoProvider])
                        (implicit ec: ExecutionContext) extends Directives with Argonaut62Support with RouteWithUser {

@@ -21,7 +21,8 @@ class ProcessDefinitionMarshallerTest extends FlatSpec with Matchers {
       exceptionHandlerFactory = ObjectDefinition.noParam,
       expressionConfig = ExpressionDefinition(
         globalVariables = Map.empty,
-        globalImports = List.empty
+        globalImports = List.empty,
+        optimizeCompilation = false
       ),
       typesInformation = EspTypeUtils.clazzAndItsChildrenDefinition(List.empty)(ClassExtractionSettings.Default)
     )

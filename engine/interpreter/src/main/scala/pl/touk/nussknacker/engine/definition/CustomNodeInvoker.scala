@@ -1,9 +1,10 @@
 package pl.touk.nussknacker.engine.definition
 
-import pl.touk.nussknacker.engine.{ExpressionEvaluator, Interpreter, compiledgraph}
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.compile.PartSubGraphCompiler
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
+import pl.touk.nussknacker.engine.compile.ExpressionCompiler
+import pl.touk.nussknacker.engine.compile.ProcessCompilationError.NodeId
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ClazzRef, ObjectWithMethodDef}
+import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.node.CustomNode
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 import pl.touk.nussknacker.engine.types.EspTypeUtils
@@ -40,24 +41,22 @@ private[definition] class CustomNodeInvokerImpl[T](executor: ObjectWithMethodDef
 
 private[definition] case class CompilerLazyInterpreter[T](lazyDeps: () => CustomNodeInvokerDeps,
                                    metaData: MetaData,
-                                   node: SplittedNode[CustomNode], param: String) extends LazyInterpreter[T] {
+                                   node: SplittedNode[CustomNode], paramName: String) extends LazyInterpreter[T] {
 
   override def createInterpreter = (ec: ExecutionContext, context: Context) =>
     createInterpreter(ec, lazyDeps())(context)
 
   private[definition] def createInterpreter(ec: ExecutionContext, deps: CustomNodeInvokerDeps): (Context) => Future[T] = {
+    val parameter = node.data.parameters.find(_.name == paramName)
+      .getOrElse(throw new IllegalArgumentException(s"Cannot find param $paramName")).expression
 
-    val compiledExpression = deps.subPartCompiler
-      .compileWithoutContextValidation(node)
-      .getOrElse(throw new IllegalArgumentException("Cannot compile"))
-      //FIXME: two lines below are quite nasty, will be fixed in next commits :|
-      .node.asInstanceOf[compiledgraph.node.CustomNode]
-      .params.find(_.name == param).getOrElse(throw new IllegalArgumentException("Cannot find param"))
-      .expression
+    val compiledExpression = deps.expressionCompiler
+      .compile(parameter, Some(paramName), None, ClazzRef.unknown)(NodeId(node.id))
+      .getOrElse(throw new IllegalArgumentException(s"Cannot compile $paramName"))._2
 
     val evaluator = deps.expressionEvaluator
         
-    (context: Context) => evaluator.evaluate[T](compiledExpression, param, node.id, context)(ec, metaData).map(_.value)(ec)
+    (context: Context) => evaluator.evaluate[T](compiledExpression, paramName, node.id, context)(ec, metaData).map(_.value)(ec)
   }
 
   //lazy val is used, interpreter creation is expensive
@@ -86,11 +85,9 @@ object CustomNodeInvoker {
 }
 
 
-trait CustomNodeInvokerDeps {
-  def expressionEvaluator: ExpressionEvaluator
-  def subPartCompiler: PartSubGraphCompiler
-  def processTimeout: FiniteDuration
-}
+case class CustomNodeInvokerDeps(expressionEvaluator: ExpressionEvaluator,
+  expressionCompiler: ExpressionCompiler,
+  processTimeout: FiniteDuration)
 
 object CustomStreamTransformerExtractor extends AbstractMethodDefinitionExtractor[CustomStreamTransformer] {
 

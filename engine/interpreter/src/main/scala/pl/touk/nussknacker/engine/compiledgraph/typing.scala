@@ -49,13 +49,14 @@ object typing {
 
   object Typed {
 
-    val any: TypingResult = Typed[Any]
-
     def apply[T:ClassTag] : TypingResult = Typed(Set(TypedClass(implicitly[ClassTag[T]].runtimeClass)))
 
     def apply(klass: ClazzRef)(implicit classLoader: ClassLoader) : TypingResult = {
-      val typed = Typed(Set(TypedClass(klass)))
-      if (typed == Typed.any) Unknown else typed
+      if (klass == ClazzRef.unknown) {
+        Unknown
+      } else {
+        Typed(Set(TypedClass(klass)))
+      }
     }
 
   }

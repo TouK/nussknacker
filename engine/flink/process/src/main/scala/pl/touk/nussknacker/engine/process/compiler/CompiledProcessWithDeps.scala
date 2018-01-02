@@ -3,79 +3,57 @@ package pl.touk.nussknacker.engine.process.compiler
 import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import org.apache.flink.api.common.functions.RuntimeContext
-import pl.touk.nussknacker.engine.{ExpressionEvaluator, Interpreter}
-import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
+import pl.touk.nussknacker.engine.Interpreter
+import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.process.AsyncExecutionContextPreparer
-import pl.touk.nussknacker.engine.api.{MetaData, ProcessListener, Service}
-import pl.touk.nussknacker.engine.compile.{PartSubGraphCompilationError, PartSubGraphCompiler}
+import pl.touk.nussknacker.engine.compile.{CompiledProcess, PartSubGraphCompilationError}
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.compiledgraph.node.Node
+import pl.touk.nussknacker.engine.compiledgraph.part.SourcePart
 import pl.touk.nussknacker.engine.definition.CustomNodeInvokerDeps
+import pl.touk.nussknacker.engine.flink.api.RuntimeContextLifecycle
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionHandler
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkProcessSignalSenderProvider}
-import pl.touk.nussknacker.engine.process.WithLifecycle
+import pl.touk.nussknacker.engine.flink.api.process.FlinkProcessSignalSenderProvider
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 
 import scala.concurrent.duration.FiniteDuration
 
-case class CompiledProcessWithDeps(compiledProcess: CompiledProcessParts,
-                                   services: WithLifecycle[Service],
-                                   private val listeners: WithLifecycle[ProcessListener],
-                                   subPartCompiler: PartSubGraphCompiler,
-                                   expressionEvaluator: ExpressionEvaluator,
-                                   processTimeout: FiniteDuration,
-                                   signalSenders: FlinkProcessSignalSenderProvider,
-                                   asyncExecutionContextPreparer: AsyncExecutionContextPreparer
-                                  ) extends CustomNodeInvokerDeps {
+class CompiledProcessWithDeps(compiledProcess: CompiledProcess,
+                                   val exceptionHandler: FlinkEspExceptionHandler,
+                                   val signalSenders: FlinkProcessSignalSenderProvider,
+                                   val asyncExecutionContextPreparer: AsyncExecutionContextPreparer,
+                                   val processTimeout: FiniteDuration
+                                  ) {
 
-  val interpreter = Interpreter(listeners.values, expressionEvaluator)
-
-  def open(runtimeContext: RuntimeContext): Unit = {
-    services.open(runtimeContext)
-    listeners.open(runtimeContext)
-    exceptionHandler.open(runtimeContext)
+  def open(runtimeContext: RuntimeContext) : Unit = {
+    compiledProcess.lifecycle.foreach {
+      case s:RuntimeContextLifecycle =>
+        s.open()
+        s.open(runtimeContext)
+      case s =>
+        s.open()
+    }
   }
 
-  def close() = {
-    services.close()
-    listeners.close()
-    exceptionHandler.close()
+  def close() : Unit = {
+    compiledProcess.lifecycle.foreach(_.close())
   }
 
   def compileSubPart(node: SplittedNode[_]): Node = {
-    validateOrFail(subPartCompiler.compileWithoutContextValidation(node).map(_.node))
+    validateOrFail(compiledProcess.subPartCompiler.compileWithoutContextValidation(node).map(_.node))
   }
-
 
   private def validateOrFail[T](validated: ValidatedNel[PartSubGraphCompilationError, T]): T = validated match {
     case Valid(r) => r
     case Invalid(err) => throw new scala.IllegalArgumentException(err.toList.mkString("Compilation errors: ", ", ", ""))
   }
 
-  def metaData: MetaData = compiledProcess.metaData
-  
-  val exceptionHandler: FlinkEspExceptionHandler = new ListeningExceptionHandler
+  val metaData: MetaData = compiledProcess.parts.metaData
 
-  private class ListeningExceptionHandler extends FlinkEspExceptionHandler {
+  val interpreter : Interpreter = compiledProcess.interpreter
 
-    //FIXME: remove casting...
-    private def flinkExceptionHandler = compiledProcess.exceptionHandler.asInstanceOf[FlinkEspExceptionHandler]
+  val customNodeInvokerDeps: CustomNodeInvokerDeps = compiledProcess.customNodeInvokerDeps
 
-    override def open(runtimeContext: RuntimeContext) = {
-      flinkExceptionHandler.open(runtimeContext)
-    }
-
-    override def close() = {
-      flinkExceptionHandler.close()
-    }
-
-    override def restartStrategy = flinkExceptionHandler.restartStrategy
-
-    override def handle(exceptionInfo: EspExceptionInfo[_ <: Throwable]) = {
-      listeners.values.foreach(_.exceptionThrown(exceptionInfo))
-      compiledProcess.exceptionHandler.handle(exceptionInfo)
-    }
-  }
-
+  val source: SourcePart = compiledProcess.parts.source
 }
 

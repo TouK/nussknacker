@@ -7,7 +7,7 @@ import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
-import pl.touk.nussknacker.engine.definition.{ConfigCreatorSignalDispatcher, ConfigCreatorTestInfoProvider, ProcessDefinitionExtractor}
+import pl.touk.nussknacker.engine.definition.{ConfigCreatorSignalDispatcher, ProcessDefinitionExtractor}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ObjectProcessDefinition, ProcessDefinition}
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.engine.util.ThreadUtils
@@ -61,7 +61,7 @@ case class ClassLoaderModelData(processConfig: Config, modelClassLoader: ModelCl
 
 }
 
-trait ModelData extends ConfigCreatorSignalDispatcher with ConfigCreatorTestInfoProvider {
+trait ModelData extends ConfigCreatorSignalDispatcher {
 
   def migrations: ProcessMigrations
 

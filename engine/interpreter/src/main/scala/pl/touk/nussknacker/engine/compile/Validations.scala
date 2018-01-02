@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.compile
 import cats.data.Validated.{invalid, valid}
 import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError.{MissingParameters, NodeId, RedundantParameters}
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 
 object Validations {
 

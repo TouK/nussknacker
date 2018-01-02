@@ -1,15 +1,16 @@
-package pl.touk.nussknacker.engine
+package pl.touk.nussknacker.engine.expression
 
 import cats.Now
 import cats.effect.IO
 import pl.touk.nussknacker.engine.api.lazyy.{LazyContext, LazyValuesProvider}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.NodeContext
 import pl.touk.nussknacker.engine.api.{Context, MetaData, ProcessListener, ValueWithContext}
+import pl.touk.nussknacker.engine.compile.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.compiledgraph.expression.Expression
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.ServiceInvoker
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 /* We have 3 different places where expressions can be evaluated:
   - Interpreter - evaluation of service parameters and variable definitions
@@ -64,6 +65,17 @@ class ExpressionEvaluator(globalVariables: Map[String, Any],
                           listeners: Seq[ProcessListener], lazyValuesProviderCreator: (ExecutionContext, MetaData, String) => LazyValuesProvider) {
 
 
+  def evaluateParameters(params: List[pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.Parameter], ctx: Context)
+                                  (implicit nodeId: NodeId, metaData: MetaData, ec: ExecutionContext) : Future[(Context, Map[String, AnyRef])] = {
+    params.foldLeft(Future.successful((ctx, Map.empty[String, AnyRef]))) {
+      case (fut, param) => fut.flatMap { case (accCtx, accParams) =>
+        evaluate[AnyRef](param.expression, param.name, nodeId.id, accCtx).map { valueWithModifiedContext =>
+          val newAccParams = accParams + (param.name -> valueWithModifiedContext.value)
+          (valueWithModifiedContext.context, newAccParams)
+        }
+      }
+    }
+  }
 
   def evaluate[R](expr: Expression, expressionId: String, nodeId: String, ctx: Context)
                          (implicit ec: ExecutionContext, metaData: MetaData): Future[ValueWithContext[R]] = {

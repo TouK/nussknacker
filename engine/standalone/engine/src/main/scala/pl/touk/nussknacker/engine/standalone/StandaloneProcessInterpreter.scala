@@ -7,11 +7,10 @@ import cats.data.Validated.Invalid
 import cats.data.{NonEmptyList, ValidatedNel}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError.{MissingPart, UnsupportedPart}
-import pl.touk.nussknacker.engine.compile.{PartSubGraphCompiler, ProcessCompilationError, ProcessCompiler}
-import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
+import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.compiledgraph.part._
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
-import pl.touk.nussknacker.engine.definition.{CustomNodeInvoker, CustomNodeInvokerDeps, ProcessDefinitionExtractor}
+import pl.touk.nussknacker.engine.definition.{CustomNodeInvoker, ProcessDefinitionExtractor}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.Source
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.{NextNode, PartRef, SplittedNode}
@@ -19,7 +18,7 @@ import pl.touk.nussknacker.engine.standalone.api.types._
 import pl.touk.nussknacker.engine.standalone.api.{StandaloneCustomTransformer, StandaloneSourceFactory, types}
 import pl.touk.nussknacker.engine.standalone.metrics.InvocationMetrics
 import pl.touk.nussknacker.engine.standalone.utils.{StandaloneContext, StandaloneContextLifecycle, StandaloneContextPreparer}
-import pl.touk.nussknacker.engine.{ExpressionEvaluator, Interpreter, ModelData, compiledgraph}
+import pl.touk.nussknacker.engine.{Interpreter, ModelData, compiledgraph}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -47,43 +46,36 @@ object StandaloneProcessInterpreter {
     val creator = modelData.configCreator
     val config = modelData.processConfig
 
-    import pl.touk.nussknacker.engine.util.Implicits._
-
     val definitions = definitionsPostProcessor(ProcessDefinitionExtractor.extractObjectWithMethods(creator, config))
-    val globalVariablesTypes = definitions.expressionConfig.globalVariables.mapValuesNow(_.objectDefinition.returnType)
-    val globalVariables = definitions.expressionConfig.globalVariables.mapValuesNow(_.obj)
     val listeners = creator.listeners(config) ++ additionalListeners
-    val services = definitions.services.map(_._2.obj.asInstanceOf[Service])
+
     //FIXME: asInstanceOf, should be proper handling of SubprocessInputDefinition
     val sourceFactory = definitions
       .sourceFactories(process.root.data.asInstanceOf[Source].ref.typ)
       .obj.asInstanceOf[StandaloneSourceFactory[Any]]
 
-    //for testing environment it's important to take classloader from user jar
-    val sub = PartSubGraphCompiler.default(definitions.services, definitions.expressionConfig, creator.getClass.getClassLoader, config)
-
-    val expressionEvaluator = ExpressionEvaluator.withLazyVals(globalVariables, listeners, definitions.services)
-    val interpreter = Interpreter(listeners, expressionEvaluator)
-    val compiler = new ProcessCompiler(modelData.modelClassLoader.classLoader, sub, definitions)
-    compiler.compile(process).andThen { compiledProcessParts =>
-      StandaloneInvokerCompiler(sub, compiledProcessParts, expressionEvaluator, interpreter).compile
-    }.map { invoker =>
-      StandaloneProcessInterpreter(contextPreparer.prepare(process.id), sourceFactory, invoker, services, modelData)
+    CompiledProcess.compile(process,
+      definitions,
+      listeners,
+      //FIXME: timeout
+      modelData.modelClassLoader.classLoader, 10 seconds
+    ).andThen {
+      compiledProcess =>
+      StandaloneInvokerCompiler(compiledProcess).compile.map { invoker =>
+        StandaloneProcessInterpreter(contextPreparer.prepare(process.id), sourceFactory, invoker, compiledProcess.lifecycle, modelData)
+      }
     }
-
   }
 
-  private case class StandaloneInvokerCompiler(sub: PartSubGraphCompiler,
-                                       compiled: CompiledProcessParts, expressionEvaluator: ExpressionEvaluator, interpreter: Interpreter) {
+  private case class StandaloneInvokerCompiler(compiledProcess: CompiledProcess) {
 
     import cats.implicits._
     type CompilationValidation[K] = ValidatedNel[ProcessCompilationError, K]
     type CompilationResult[K] = ValidatedNel[ProcessCompilationError, K]
 
-
     //NonEmptyList is invariant :(
     private def compileWithCompilationErrors(node: SplittedNode[_]) =
-      sub.compileWithoutContextValidation(node).bimap(_.map(_.asInstanceOf[ProcessCompilationError]), _.node)
+      compiledProcess.subPartCompiler.compileWithoutContextValidation(node).bimap(_.map(_.asInstanceOf[ProcessCompilationError]), _.node)
 
     private def compiledPartInvoker(processPart: ProcessPart): data.ValidatedNel[ProcessCompilationError, InterpreterType] = processPart match {
       case SourcePart(_, node, nextParts, _) =>
@@ -110,7 +102,7 @@ object StandaloneProcessInterpreter {
       case CustomNodePart(executor:
                 CustomNodeInvoker[StandaloneCustomTransformer@unchecked], node, parts, _) => val result = compileWithCompilationErrors(node).andThen(partInvoker(_, parts))
 
-        val transformer = executor.run(() => StandaloneCustomNodeInvokerDeps(expressionEvaluator, sub))
+        val transformer = executor.run(() => compiledProcess.customNodeInvokerDeps)
         result.map(transformer.createTransformation(node.data.outputVar.get))
       case a: CustomNodePart => Invalid(NonEmptyList.of(UnsupportedPart(a.id)))
 
@@ -126,7 +118,7 @@ object StandaloneProcessInterpreter {
 
         (ctx: Context, ec: ExecutionContext) => {
           implicit val iec = ec
-          interpreter.interpret(node, compiled.metaData, ctx).flatMap { maybeResult =>
+          compiledProcess.interpreter.interpret(node, compiledProcess.parts.metaData, ctx).flatMap { maybeResult =>
             maybeResult.fold[InterpreterOutputType](ir => {
               ir.reference match {
                 case _: EndReference =>
@@ -142,7 +134,7 @@ object StandaloneProcessInterpreter {
       }
     }
 
-    def compile: ValidatedNel[ProcessCompilationError, InterpreterType] = compiledPartInvoker(compiled.source)
+    def compile: ValidatedNel[ProcessCompilationError, InterpreterType] = compiledPartInvoker(compiledProcess.parts.source)
 
   }
 
@@ -155,10 +147,10 @@ case class StandaloneProcessInterpreter(context: StandaloneContext,
                                        //TODO: how to get rid of that?
                                         source: StandaloneSourceFactory[Any],
                                         private val invoker: types.InterpreterType,
-                                        private val services: Iterable[Service],
+                                        private val lifecycle: Seq[Lifecycle],
                                         private val modelData: ModelData) extends InvocationMetrics {
 
-  val id = context.processId
+  val id: String = context.processId
 
   private val counter = new AtomicLong(0)
 
@@ -175,22 +167,15 @@ case class StandaloneProcessInterpreter(context: StandaloneContext,
   }
 
   def open(): Unit = modelData.withThisAsContextClassLoader {
-    services.foreach {
+    lifecycle.foreach {
       case a:StandaloneContextLifecycle => a.open(context)
       case a => a.open()
     }
   }
 
   def close(): Unit = modelData.withThisAsContextClassLoader {
-    services.foreach(_.close())
+    lifecycle.foreach(_.close())
     context.close()
   }
-
-}
-
-case class StandaloneCustomNodeInvokerDeps(expressionEvaluator: ExpressionEvaluator, subPartCompiler: PartSubGraphCompiler)
-  extends CustomNodeInvokerDeps {
-
-  override def processTimeout: FiniteDuration = throw new RuntimeException("Synchronous operations should not be used in standalone mode")
 
 }

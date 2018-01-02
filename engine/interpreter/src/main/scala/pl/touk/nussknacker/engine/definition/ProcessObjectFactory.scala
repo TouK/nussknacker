@@ -10,9 +10,10 @@ import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
-import pl.touk.nussknacker.engine.{ExpressionEvaluator, graph}
-import scala.concurrent.duration._
+import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
+import pl.touk.nussknacker.engine.graph
 
+import scala.concurrent.duration._
 import scala.concurrent.Await
 import scala.reflect.ClassTag
 
@@ -30,10 +31,7 @@ private[definition] class ProcessObjectFactoryImpl[T](objectWithMethodDef: Objec
   override def create(params: List[evaluatedparam.Parameter])(implicit processMetaData: MetaData, nodeId: NodeId): T = {
     //this has to be synchronous, source/sink/exceptionHandler creation is done only once per process so it doesn't matter
     import pl.touk.nussknacker.engine.util.SynchronousExecutionContext._
-    val paramsMap = params.map(p => p.name ->
-      //TODO: nicer waiting??
-      Await.result(expressionEvaluator.evaluate[AnyRef](p.expression, p.name, nodeId.id, Context("")).map(_.value), 10 seconds)
-    ).toMap
+    val paramsMap = Await.result(expressionEvaluator.evaluateParameters(params, Context("sourceCreate")).map(_._2), 10 seconds)
     objectWithMethodDef.invokeMethod(paramsMap.get, Seq(processMetaData)).asInstanceOf[T]
   }
 

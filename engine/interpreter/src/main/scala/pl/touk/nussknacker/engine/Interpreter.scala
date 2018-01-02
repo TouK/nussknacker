@@ -4,10 +4,12 @@ import pl.touk.nussknacker.engine.Interpreter._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.NodeContext
+import pl.touk.nussknacker.engine.compile.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.compiledgraph.expression._
 import pl.touk.nussknacker.engine.compiledgraph.node.{Sink, Source, _}
 import pl.touk.nussknacker.engine.compiledgraph.service._
 import pl.touk.nussknacker.engine.compiledgraph.variable._
+import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
@@ -43,6 +45,8 @@ class Interpreter private(listeners: Seq[ProcessListener], expressionEvaluator: 
     case ex: Throwable => NodeIdExceptionWrapper(nodeId, ex)
   }
 
+  private implicit def nodeToId(implicit node: Node) : NodeId = NodeId(node.id)
+
   private def interpretNode(node: Node, ctx: Context)
                            (implicit metaData: MetaData, executor: ExecutionContext): Future[InterpretationResult] = {
     implicit val nodeImplicit = node
@@ -53,18 +57,11 @@ class Interpreter private(listeners: Seq[ProcessListener], expressionEvaluator: 
       case VariableBuilder(_, varName, Right(fields), next) =>
         createOrUpdateVariable(ctx, varName, fields).flatMap(interpretNext(next, _))
       case VariableBuilder(_, varName, Left(expression), next) =>
-        evaluate[Any](expression, varName, ctx).flatMap { valueWithModifiedContext =>
+        expressionEvaluator.evaluate[Any](expression, varName, node.id, ctx).flatMap { valueWithModifiedContext =>
           interpretNext(next, ctx.withVariable(varName, valueWithModifiedContext.value))
         }
       case SubprocessStart(_, params, next) =>
-        val futureCtxWithVars = params.foldLeft(Future.successful((ctx, Map[String,Any]()))){ case (futureWithVars, param) =>
-          futureWithVars.flatMap { case (newCtx, vars) =>
-            evaluate[Any](param.expression, param.name, newCtx).map { valueWithCtx =>
-              (valueWithCtx.context, vars + (param.name -> valueWithCtx.value))
-            }
-          }
-        }
-        futureCtxWithVars.flatMap { case (newCtx, vars) =>
+        expressionEvaluator.evaluateParameters(params, ctx).flatMap { case (newCtx, vars) =>
           interpretNext(next, newCtx.pushNewContext(vars))
         }
       case SubprocessEnd(id, next) =>
@@ -161,7 +158,7 @@ class Interpreter private(listeners: Seq[ProcessListener], expressionEvaluator: 
 
     fields.foldLeft(Future.successful(contextWithInitialVariable)) {
       case (context, field) =>
-        context.flatMap(evaluate[Any](field.expression, field.name, _)).map { valueWithContext =>
+        context.flatMap(expressionEvaluator.evaluate[Any](field.expression, field.name, node.id, _)).map { valueWithContext =>
           valueWithContext.context.modifyVariable[java.util.Map[String, Any]](varName, { m =>
             val newMap = new java.util.HashMap[String, Any](m)
             newMap.put(field.name, valueWithContext.value)
@@ -173,15 +170,7 @@ class Interpreter private(listeners: Seq[ProcessListener], expressionEvaluator: 
 
   private def invoke(ref: ServiceRef, ctx: Context)
                     (implicit executionContext: ExecutionContext, metaData: MetaData, node: Node): Future[ValueWithContext[Any]] = {
-    ref.parameters.foldLeft(Future.successful((ctx, Map.empty[String, Any]))) {
-      case (fut, param) => fut.flatMap { case (accCtx, accParams) =>
-        evaluate[Any](param.expression, param.name, accCtx).map { valueWithModifiedContext =>
-          val newAccParams = accParams + (param.name -> valueWithModifiedContext.value)
-          (valueWithModifiedContext.context, newAccParams)
-        }
-      }
-
-    }.flatMap { case (newCtx, preparedParams) =>
+    expressionEvaluator.evaluateParameters(ref.parameters, ctx).flatMap { case (newCtx, preparedParams) =>
       val resultFuture = ref.invoker.invoke(preparedParams, NodeContext(ctx.id, node.id, ref.id))
       resultFuture.onComplete { result =>
         //TODO: what about implicit??
@@ -193,11 +182,7 @@ class Interpreter private(listeners: Seq[ProcessListener], expressionEvaluator: 
 
   private def evaluateExpression[R](expr: Expression, ctx: Context)
                                    (implicit ec: ExecutionContext, metaData: MetaData, node: Node):  Future[ValueWithContext[R]]
-  = evaluate(expr, "expression", ctx)
-
-  private def evaluate[R](expr: Expression, expressionId: String, ctx: Context)
-                         (implicit ec: ExecutionContext, metaData: MetaData, node: Node): Future[ValueWithContext[R]] =
-    expressionEvaluator.evaluate(expr, expressionId, node.id, ctx)
+  = expressionEvaluator.evaluate(expr, "expression", node.id, ctx)
 
   private case class NodeIdExceptionWrapper(nodeId: String, exception: Throwable) extends Exception
 

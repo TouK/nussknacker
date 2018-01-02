@@ -23,7 +23,7 @@ class ProcessConverterSpec extends FlatSpec with Matchers with TableDrivenProper
 
   val validation = {
     val processDefinition = ProcessDefinition[ObjectDefinition](Map("ref" -> ObjectDefinition.noParam),
-      Map("sourceRef" -> ObjectDefinition.noParam), Map(), Map(), Map(), ObjectDefinition.noParam, ExpressionDefinition(Map.empty, List.empty), List())
+      Map("sourceRef" -> ObjectDefinition.noParam), Map(), Map(), Map(), ObjectDefinition.noParam, ExpressionDefinition(Map.empty, List.empty, optimizeCompilation = false), List())
     val validator = ProcessValidator.default(processDefinition)
     new ProcessValidation(Map(ProcessingType.Streaming -> validator), sampleResolver)
   }
