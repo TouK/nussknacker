@@ -11,6 +11,7 @@ import scala.collection.JavaConversions._
 //By default SpEL list (i.e "{'a', 'b'}") is represented as java.util.Collections.UnmodifiableCollection, which
 //Kryo won't serialize properly since Kry uses java.util.Collection.add() method which in case of UnmodifiableCollection
 //throws an exception. That's why we need out own serialization of java.util.List
+@SerialVersionUID(885416578972888366L)
 object SpelHack extends SerializerWithSpecifiedClass[java.util.List[_]](false, true) with Serializable {
 
   // It is loaded by loadClass because UnmodifiableCollection has private-package access

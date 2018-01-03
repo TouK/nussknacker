@@ -9,6 +9,11 @@ import pl.touk.nussknacker.engine.types.EspTypeUtils
 
 import scala.util.{Failure, Try}
 
+//Watch out, serializers are also serialized. Incompatible SerializationUID on serializer class can lead process state loss (unable to continue from old snapshot).
+//This is why we set SerialVersionUID explicit.
+//Look:
+//org.apache.flink.api.common.typeutils.TypeSerializerSerializationUtil.writeSerializersAndConfigsWithResilience
+//org.apache.flink.api.common.typeutils.TypeSerializerSerializationUtil.readSerializersAndConfigsWithResilience
 object Serializers extends LazyLogging {
 
   def registerSerializers(env: StreamExecutionEnvironment): Unit = {
@@ -31,6 +36,7 @@ object Serializers extends LazyLogging {
 
   }
 
+  @SerialVersionUID(4481573264636646884L)
   //this is not so great, but is OK for now
   object CaseClassSerializer extends SerializerWithSpecifiedClass[Product](false, true) with Serializable {
 
