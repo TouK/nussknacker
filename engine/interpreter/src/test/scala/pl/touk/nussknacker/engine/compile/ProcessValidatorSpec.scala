@@ -68,7 +68,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
 
   it should "find duplicated ids" in {
     val duplicatedId = "id1"
-    val processWithDuplicatedIds = EspProcessBuilder.id("process1").exceptionHandler().source(duplicatedId, "source").sink(duplicatedId, "sink")
+    val processWithDuplicatedIds = EspProcessBuilder.id("process1").exceptionHandler().source(duplicatedId, "source").emptySink(duplicatedId, "sink")
     ProcessValidator.default(baseDefinition).validate(processWithDuplicatedIds) should matchPattern {
       case Invalid(NonEmptyList(DuplicatedNodeIds(_), _)) =>
     }
@@ -82,8 +82,8 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
         .exceptionHandler()
         .source("source", "source")
         .switch("switch", "''", "var",
-          Case("'1'", GraphBuilder.sink(duplicatedId, "sink")),
-          Case("'2'", GraphBuilder.sink(duplicatedId, "sink"))
+          Case("'1'", GraphBuilder.emptySink(duplicatedId, "sink")),
+          Case("'2'", GraphBuilder.emptySink(duplicatedId, "sink"))
         )
     ProcessValidator.default(baseDefinition).validate(processWithDuplicatedIds) should matchPattern {
       case Invalid(NonEmptyList(DuplicatedNodeIds(_), _)) =>
@@ -167,7 +167,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
         .source("id1", "source")
         .customNode("custom", "out", "notExisting", "dummy" -> "input")
         .filter("filter", "#out != null")
-        .sink("id2", "sink")
+        .emptySink("id2", "sink")
 
     ProcessValidator.default(baseDefinition).validate(processWithRefToMissingService) should matchPattern {
       case Invalid(NonEmptyList(MissingCustomNodeExecutor("notExisting", "custom"), Nil)) =>
@@ -175,7 +175,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
   }
 
   it should "find missing parameter for exception handler" in {
-    val process = EspProcessBuilder.id("process1").exceptionHandler().source("id1", "source").sink("id2", "sink")
+    val process = EspProcessBuilder.id("process1").exceptionHandler().source("id1", "source").emptySink("id2", "sink")
     val definition = baseDefinition.withExceptionHandlerFactory(Parameter(name = "foo", typ = ClazzRef(classOf[String])))
     ProcessValidator.default(definition).validate(process) should matchPattern {
       case Invalid(NonEmptyList(MissingParameters(_, _), _)) =>
@@ -189,7 +189,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
       .source("id1", "source")
       .buildVariable("bv1", "doesExist", "v1" -> "42")
       .filter("sampleFilter", "#doesExist['v1'] + #doesNotExist1 + #doesNotExist2 > 10")
-      .sink("id2", "sink")
+      .emptySink("id2", "sink")
     ProcessValidator.default(baseDefinition).validate(process) should matchPattern {
       case Invalid(NonEmptyList(
       ExpressionParseError("Unresolved reference doesNotExist1", "sampleFilter", None, _),
@@ -204,7 +204,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
       .source("id1", "source")
       .filter("sampleFilter1", "#input.plainValue > 10")
       .filter("sampleFilter2", "input.plainValue > 10")
-      .sink("id2", "sink")
+      .emptySink("id2", "sink")
     ProcessValidator.default(baseDefinition).validate(process) should matchPattern {
       case Invalid(NonEmptyList(ExpressionParseError("Non reference 'input' occurred. Maybe you missed '#' in front of it?", "sampleFilter2", None, _), _)) =>
     }
@@ -217,7 +217,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
       .source("id1", "source")
       .filter("sampleFilter1", "#input.value1.value2 > 10")
       .filter("sampleFilter2", "#input.value1.value3 > 10")
-      .sink("id2", "sink")
+      .emptySink("id2", "sink")
     ProcessValidator.default(definitionWithTypedSource).validate(process) should matchPattern {
       case Invalid(NonEmptyList(ExpressionParseError("There is no property 'value3' in type 'pl.touk.nussknacker.engine.compile.ProcessValidatorSpec$AnotherSimpleRecord'", "sampleFilter2", None, _), _)) =>
     }
@@ -231,7 +231,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
       .source("id1", "source")
       .customNode("cNode1", "out1", "custom", "par1" -> "'1'")
       .filter("sampleFilter2", "#input.value1.value3 > 10")
-      .sink("id2", "sink")
+      .emptySink("id2", "sink")
     val definitionWithCustomNode = definitionWithTypedSourceAndTransformNode
 
     ProcessValidator.default(definitionWithCustomNode).validate(process) should matchPattern {
@@ -245,8 +245,8 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
       .exceptionHandler()
       .source("id1", "source")
       .split("split1",
-        GraphBuilder.sink("id2", "sink"),
-        GraphBuilder.filter("sampleFilter2", "#input.value1.value3 > 10").sink("id3", "sink")
+        GraphBuilder.emptySink("id2", "sink"),
+        GraphBuilder.filter("sampleFilter2", "#input.value1.value3 > 10").emptySink("id3", "sink")
       )
 
     val definitionWithCustomNode = definitionWithTypedSourceAndTransformNode
@@ -265,7 +265,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
       .customNode("cNode1", "out1", "custom", "par1" -> "'1'")
       .filter("sampleFilter1", "#out1.value2 > 0")
       .filter("sampleFilter2", "#out1.terefere")
-      .sink("id2", "sink")
+      .emptySink("id2", "sink")
     val definitionWithCustomNode = definitionWithTypedSourceAndTransformNode
 
     ProcessValidator.default(definitionWithCustomNode).validate(process) should matchPattern {
@@ -282,7 +282,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
       .exceptionHandler()
       .source("id1", "source")
       .customNode("cNode1", "out1", "custom", "par1" -> "#strangeVar")
-      .sink("id2", "sink")
+      .emptySink("id2", "sink")
     val definitionWithCustomNode = definitionWithTypedSourceAndTransformNode
 
     ProcessValidator.default(definitionWithCustomNode).validate(process) should matchPattern {
@@ -313,7 +313,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
       .id("process1")
       .exceptionHandler()
       .source("id1", "source")
-      .sink("id2", "sink")
+      .emptySink("id2", "sink")
     val definitionWithExceptionHandlerWithParams = baseDefinition.copy(exceptionHandlerFactory =
       ObjectDefinition.withParams(List(Parameter("param1", ClazzRef(classOf[String])))))
 
@@ -344,7 +344,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
       .exceptionHandler()
       .source("id1", "source")
       .enricher("enricher1", "out", "withParamsService")
-      .sink("id2", "sink")
+      .emptySink("id2", "sink")
 
     inside (ProcessValidator.default(definitionWithTypedSource).validate(process)) {
       case Invalid(NonEmptyList(MissingParameters(missingParam, "enricher1"), _)) => missingParam shouldBe Set("par1")
@@ -364,7 +364,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
       .exceptionHandler()
       .source("id1", "source")
       .filter("sampleFilter1", "#input.plainValueOpt.terefere > 10")
-      .sink("id2", "sink")
+      .emptySink("id2", "sink")
     ProcessValidator.default(definitionWithTypedSource).validate(process) should matchPattern {
       case Invalid(NonEmptyList(ExpressionParseError("There is no property 'terefere' in type 'scala.math.BigDecimal'", "sampleFilter1", None, _), _)) =>
     }
@@ -377,9 +377,9 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
       .source("id1", "source")
       .split("split",
         GraphBuilder.processorEnd("p1", "withParamsService", "par1" -> "#terefere"),
-        GraphBuilder.customNode("c1", "output", "withParamsTransformer", "par1" -> "{").sink("id2", "sink"),
+        GraphBuilder.customNode("c1", "output", "withParamsTransformer", "par1" -> "{").emptySink("id2", "sink"),
         GraphBuilder.buildVariable("v1", "output", "par1" -> "#terefere22")
-          .sink("id3", "sink")
+          .emptySink("id3", "sink")
       )
 
     ProcessValidator.default(definitionWithTypedSource).validate(process) should matchPattern {
@@ -399,7 +399,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
       .source("id1", "source")
       .buildSimpleVariable("var1", "var1", "''")
       .buildSimpleVariable("var1overwrite", "var1", "''")
-      .sink("id2", "sink")
+      .emptySink("id2", "sink")
     ProcessValidator.default(definitionWithTypedSource).validate(process) should matchPattern {
       case Invalid(NonEmptyList(OverwrittenVariable("var1", "var1overwrite"), _)) =>
     }
@@ -411,7 +411,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
       .exceptionHandler()
       .source("id1", "source")
       .buildSimpleVariable("var1", "var1", "''")
-      .switch("var1overwrite", "''", "var1", GraphBuilder.sink("id2", "sink"))
+      .switch("var1overwrite", "''", "var1", GraphBuilder.emptySink("id2", "sink"))
 
     ProcessValidator.default(definitionWithTypedSource).validate(process) should matchPattern {
       case Invalid(NonEmptyList(OverwrittenVariable("var1", "var1overwrite"), _)) =>
@@ -425,7 +425,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
       .source("id1", "source")
       .buildSimpleVariable("var1", "var1", "''")
       .enricher("var1overwrite", "var1", "sampleEnricher")
-      .sink("id2", "sink")
+      .emptySink("id2", "sink")
 
     ProcessValidator.default(definitionWithTypedSource).validate(process) should matchPattern {
       case Invalid(NonEmptyList(OverwrittenVariable("var1", "var1overwrite"), _)) =>
@@ -439,7 +439,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
       .source("id1", "source")
       .buildSimpleVariable("var1", "var1", "''")
       .buildVariable("var1overwrite", "var1", "a" -> "''")
-      .sink("id2", "sink")
+      .emptySink("id2", "sink")
     ProcessValidator.default(definitionWithTypedSource).validate(process) should matchPattern {
       case Invalid(NonEmptyList(OverwrittenVariable("var1", "var1overwrite"), _)) =>
     }
@@ -452,7 +452,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
       .source("id1", "source")
       .buildSimpleVariable("var1", "var1", "''")
       .customNode("var1overwrite", "var1", "custom", "par1" -> "''")
-      .sink("id2", "sink")
+      .emptySink("id2", "sink")
 
     ProcessValidator.default(definitionWithTypedSourceAndTransformNode).validate(process) should matchPattern {
       case Invalid(NonEmptyList(OverwrittenVariable("var1", "var1overwrite"), _)) =>
@@ -465,8 +465,8 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
       .exceptionHandler()
       .source("id1", "source")
       .switch("switch", "''", "var2",
-        GraphBuilder.buildSimpleVariable("var3", "var3", "''").sink("id2", "sink"),
-         Case("true", GraphBuilder.buildSimpleVariable("var3b", "var3", "''").sink("id3", "sink")))
+        GraphBuilder.buildSimpleVariable("var3", "var3", "''").emptySink("id2", "sink"),
+         Case("true", GraphBuilder.buildSimpleVariable("var3b", "var3", "''").emptySink("id3", "sink")))
 
     ProcessValidator.default(definitionWithTypedSource).validate(process) should matchPattern {
       case Valid(_) =>
@@ -479,7 +479,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
       .exceptionHandler()
       .source("id1", "source")
       .switch("switch", "''", "var2",
-        GraphBuilder.buildSimpleVariable("var3", "var3", "''").sink("id2", "sink"),
+        GraphBuilder.buildSimpleVariable("var3", "var3", "''").emptySink("id2", "sink"),
          Case("false", GraphBuilder.sink("id3", "#var3", "sink")))
 
     ProcessValidator.default(definitionWithTypedSource).validate(process) should matchPattern {

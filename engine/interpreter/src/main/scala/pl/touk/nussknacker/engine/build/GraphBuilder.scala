@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.build
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression._
 import pl.touk.nussknacker.engine.graph.node._
-import pl.touk.nussknacker.engine.graph.param
+import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
@@ -43,11 +43,12 @@ trait GraphBuilder[R] {
   def filter(id: String, expression: Expression, nextFalse: SubsequentNode): GraphBuilder[R] =
     build(node => creator(FilterNode(Filter(id, expression), node, Some(nextFalse))))
 
-  def sink(id: String, typ: String, params: (String, String)*): R =
-    creator(EndingNode(Sink(id, SinkRef(typ, params.map(param.Parameter.tupled).toList))))
+  //TODO: cannot have overloaded sink method here, implicit resolution fails...
+  def emptySink(id: String, typ: String, params: (String, Expression)*): R =
+    creator(EndingNode(Sink(id, SinkRef(typ, params.map(evaluatedparam.Parameter.tupled).toList))))
 
-  def sink(id: String, expression: Expression, typ: String, params: (String, String)*): R =
-    creator(EndingNode(Sink(id, SinkRef(typ, params.map(param.Parameter.tupled).toList), Some(expression))))
+  def sink(id: String, expression: Expression, typ: String, params: (String, Expression)*): R =
+    creator(EndingNode(Sink(id, SinkRef(typ, params.map(evaluatedparam.Parameter.tupled).toList), Some(expression))))
 
   def processorEnd(id: String, svcId: String, params: (String, Expression)*): R =
     creator(EndingNode(Processor(id, ServiceRef(svcId, params.map(Parameter.tupled).toList))))
@@ -85,7 +86,7 @@ object GraphBuilder extends GraphBuilder[SubsequentNode] {
 
   override def build(inner: Creator[SubsequentNode]) = new SimpleGraphBuilder[SubsequentNode](inner)
 
-  def source(id: String, typ: String, params: (String, String)*): GraphBuilder[SourceNode] =
-    new SimpleGraphBuilder(SourceNode(Source(id, SourceRef(typ, params.map(param.Parameter.tupled).toList)), _))
+  def source(id: String, typ: String, params: (String, Expression)*): GraphBuilder[SourceNode] =
+    new SimpleGraphBuilder(SourceNode(Source(id, SourceRef(typ, params.map(evaluatedparam.Parameter.tupled).toList)), _))
 
 }

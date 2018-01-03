@@ -16,7 +16,7 @@ object SampleProcess {
       .exceptionHandler("param1" -> "'val1'")
       .source("startProcess", "kafka-transaction")
       .filter("nightFilter", "true", endWithMessage("endNight", "Odrzucenie noc"))
-      .sink("endSend", "sendSms")
+      .emptySink("endSend", "sendSms")
   }
 
   def kafkaProcess(id: String, topic: String) : EspProcess = {
@@ -30,7 +30,7 @@ object SampleProcess {
   private def endWithMessage(idSuffix: String, message: String): SubsequentNode = {
     GraphBuilder
       .buildVariable("message" + idSuffix, "output", "message" -> s"'$message'")
-      .sink("end" + idSuffix, "monitor")
+      .emptySink("end" + idSuffix, "monitor")
   }
 
 }

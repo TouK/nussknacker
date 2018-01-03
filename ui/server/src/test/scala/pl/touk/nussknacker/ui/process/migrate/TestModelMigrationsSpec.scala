@@ -72,7 +72,7 @@ class TestModelMigrationsSpec extends FlatSpec with Matchers {
         .source("source", existingSourceFactory)
         .processor("notExistingService", "IDONTEXIST")
         .processor("processor", existingServiceId)
-        .sink("sink", existingSinkFactory))
+        .emptySink("sink", existingSinkFactory))
 
     val process = ProcessTestData.toDetails(invalidProcess)
 

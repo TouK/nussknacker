@@ -20,7 +20,7 @@ class StateProcessSpec extends FlatSpec with Matchers {
       .exceptionHandler()
       .source("id", "input")
       .processor("proc2", "logService", "all" -> "#input.value2")
-      .sink("out", "monitor")
+      .emptySink("out", "monitor")
     val data = List(
       SimpleRecord("1", 12, "a", new Date(0)),
       SimpleRecord("1", 15, "b", new Date(1000)),

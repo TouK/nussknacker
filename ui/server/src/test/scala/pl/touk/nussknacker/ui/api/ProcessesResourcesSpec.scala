@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.Source
-import pl.touk.nussknacker.engine.graph.param.Parameter
+import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.ui.api.helpers.EspItTest
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.codec.UiCodecs
@@ -246,7 +246,8 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
 
     val modifiedParallelism = 123
     val modifiedName = "fooBarName"
-    val props = ProcessProperties(StreamMetaData(Some(modifiedParallelism)), ExceptionHandlerRef(List(Parameter(modifiedName, modifiedName))), false, None, subprocessVersions = Map.empty)
+    val props = ProcessProperties(StreamMetaData(Some(modifiedParallelism)),
+      ExceptionHandlerRef(List()), false, None, subprocessVersions = Map.empty)
     Put(s"/processes/$testCategory/$processId/json/properties", posting.toEntity(props)) ~> routeWithRead ~> check {
       rejection shouldBe server.AuthorizationFailedRejection
     }

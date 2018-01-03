@@ -16,23 +16,23 @@ class ProcessComparatorSpec extends FlatSpec with Matchers {
   import pl.touk.nussknacker.engine.spel.Implicits._
 
   it should "detect not existing node in other process" in {
-    val current = toDisplayable(_.filter("filter1", "#input == 4").sink("end", "testSink"))
-    val other = toDisplayable(_.sink("end", "testSink"))
+    val current = toDisplayable(_.filter("filter1", "#input == 4").emptySink("end", "testSink"))
+    val other = toDisplayable(_.emptySink("end", "testSink"))
 
     ProcessComparator.compare(current, other) shouldBe Map("filter1" -> NodeNotPresentInOther("filter1", Filter("filter1", "#input == 4")))
 
   }
 
   it should "detect not existing node in current process" in {
-    val current = toDisplayable(_.sink("end", "testSink"))
-    val other = toDisplayable(_.filter("filter1", "#input == 4").sink("end", "testSink"))
+    val current = toDisplayable(_.emptySink("end", "testSink"))
+    val other = toDisplayable(_.filter("filter1", "#input == 4").emptySink("end", "testSink"))
 
     ProcessComparator.compare(current, other) shouldBe Map("filter1" -> NodeNotPresentInCurrent("filter1", Filter("filter1", "#input == 4")))
   }
 
   it should "detect changed nodes" in {
-    val current = toDisplayable(_.filter("filter1", "#input == 4").sink("end", "testSink"))
-    val other = toDisplayable(_.filter("filter1", "#input == 8").sink("end", "testSink"))
+    val current = toDisplayable(_.filter("filter1", "#input == 4").emptySink("end", "testSink"))
+    val other = toDisplayable(_.filter("filter1", "#input == 8").emptySink("end", "testSink"))
 
     ProcessComparator.compare(current, other) shouldBe Map("filter1" -> NodeDifferent("filter1", Filter("filter1", "#input == 4"), Filter("filter1", "#input == 8")))
   }

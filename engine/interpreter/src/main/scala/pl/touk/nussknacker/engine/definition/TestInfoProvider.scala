@@ -2,15 +2,13 @@ package pl.touk.nussknacker.engine.definition
 
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.ExpressionEvaluator
-import pl.touk.nussknacker.engine.api.{MetaData, process}
 import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, SourceFactory, TestDataGenerator, WithCategories}
 import pl.touk.nussknacker.engine.api.test.TestDataParser
+import pl.touk.nussknacker.engine.api.{MetaData, process}
+import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError.NodeId
-import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, PartSubGraphCompiler, PartSubGraphCompilerBase}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectDefinition, ObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
-import pl.touk.nussknacker.engine.graph.evaluatedparam
-import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.Source
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 import shapeless.syntax.typeable._
@@ -69,8 +67,7 @@ trait ConfigCreatorTestInfoProvider extends TestInfoProvider {
   }
 
   private def prepareSourceParams(definition: ObjectWithMethodDef, source: Source)(implicit processMetaData: MetaData, nodeId: NodeId) = {
-    //FXIME
-    val parametersToCompile = source.ref.parameters.map(p => evaluatedparam.Parameter(p.name, Expression("spel", p.value)))
+    val parametersToCompile = source.ref.parameters
     expressionCompiler.compileObjectParameters(definition.parameters, parametersToCompile, None).toOption
   }
 }

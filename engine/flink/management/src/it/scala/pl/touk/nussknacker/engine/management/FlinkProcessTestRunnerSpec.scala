@@ -51,7 +51,7 @@ class FlinkProcessTestRunnerSpec extends FlatSpec with Matchers with ScalaFuture
       .id(processId)
       .exceptionHandler()
       .source("startProcess", "kafka-transaction")
-      .sink("endSend", "sendSms")
+      .emptySink("endSend", "sendSms")
 
     val config = ConfigFactory.load()
     val processManager = FlinkProcessManager(config)

@@ -38,6 +38,7 @@ class ProcessUtils {
     return _.isEmpty(warnings) || Object.keys(warnings.invalidNodes || {}).length == 0
   }
 
+  //FIXME: handle source/sink/exceptionHandler properly here - we don't want to use #input etc here!
   findAvailableVariables = (nodeId, process, processDefinition) => {
     const globalVariablesObject = (processDefinition.expressionConfig || {}).globalVariables
     const globalVariables = _.mapValues(globalVariablesObject, (v) => {return v.returnType.refClazzName})

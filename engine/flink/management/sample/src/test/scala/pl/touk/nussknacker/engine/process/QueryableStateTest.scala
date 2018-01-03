@@ -55,7 +55,7 @@ class QueryableStateTest extends FlatSpec with BeforeAndAfterAll with Matchers w
       .exceptionHandler("param1" -> "'errors'")
       .source("start", "kafka-transaction")
       .customNode("lock", "lockOutput", "lockStreamTransformer", "input" -> "#input")
-      .sink("sink", "sendSms")
+      .emptySink("sink", "sendSms")
 
     registrar.register(env, lockProcess)
     val jobId = env.execute().getJobID.toString

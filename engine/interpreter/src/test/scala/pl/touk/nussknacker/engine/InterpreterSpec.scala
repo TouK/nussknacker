@@ -164,7 +164,7 @@ class InterpreterSpec extends FlatSpec with Matchers {
     val process = GraphBuilder
       .source("start", "transaction-source")
       .processor("process", "transactionService", "id" -> "#input.accountId")
-      .sink("end", "")
+      .emptySink("end", "")
 
     val services = Map("transactionService" ->
       new Service {

@@ -31,24 +31,24 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
       .source("source", existingSourceFactory)
       .customNode("custom", "out1", existingStreamTransformer)
       .customNode("custom2", "out2", otherExistingStreamTransformer)
-      .sink("sink", existingSinkFactory)))
+      .emptySink("sink", existingSinkFactory)))
 
   private val process2 = toDetails(TestProcessUtil.toDisplayable(
     EspProcessBuilder.id("fooProcess2").exceptionHandler()
       .source("source", existingSourceFactory)
       .customNode("custom", "out1", otherExistingStreamTransformer)
-      .sink("sink", existingSinkFactory)))
+      .emptySink("sink", existingSinkFactory)))
 
   private val process3 = toDetails(TestProcessUtil.toDisplayable(
     EspProcessBuilder.id("fooProcess3").exceptionHandler()
       .source("source", existingSourceFactory)
-      .sink("sink", existingSinkFactory)))
+      .emptySink("sink", existingSinkFactory)))
 
   private val process4 = toDetails(TestProcessUtil.toDisplayable(
     EspProcessBuilder.id("fooProcess4").exceptionHandler()
       .source("source", existingSourceFactory)
       .subprocessOneOut("sub", "subProcess1", "output", "ala" -> "'makota'")
-      .sink("sink", existingSinkFactory)))
+      .emptySink("sink", existingSinkFactory)))
 
   private val invalidProcessWithAllObjects = toDetails(TestProcessUtil.toDisplayable(
     EspProcessBuilder.id("processWithAllObjects").exceptionHandler()
@@ -59,7 +59,7 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
       .processor("processor1", existingServiceId)
       .processor("processor2", otherExistingServiceId)
       .filter("filterInvalid", "#variableThatDoesNotExists == 1")
-      .sink("sink", existingSinkFactory)))
+      .emptySink("sink", existingSinkFactory)))
 
   test("should find processes for queries") {
     val queriesForProcesses = ProcessObjectsFinder.findQueries(List(process1, process2, process3, process4, subprocessDetails), processDefinition)

@@ -56,7 +56,7 @@ object ProcessTestData {
         .source("source", existingSourceFactory)
         .processor("processor", existingServiceId)
         .customNode("custom", "out1", existingStreamTransformer)
-        .sink("sink", existingSinkFactory)
+        .emptySink("sink", existingSinkFactory)
 
   val validDisplayableProcess : ValidatedDisplayableProcess = toValidatedDisplayable(validProcess)
 
@@ -90,12 +90,12 @@ object ProcessTestData {
         Case("true", GraphBuilder
         .filter("filter2", "1 != 0")
         .enricher("enricher2", "output2", existingServiceId)
-        .sink("sink1", existingSinkFactory))
+        .emptySink("sink1", existingSinkFactory))
         ,
         Case("false", GraphBuilder
           .filter("filter3", "1 != 0")
           .enricher("enricher3", "output3", existingServiceId)
-          .sink("sink2", existingSinkFactory)
+          .emptySink("sink2", existingSinkFactory)
       ))
 
   val invalidProcess = {
@@ -106,7 +106,7 @@ object ProcessTestData {
       .id("fooProcess")
       .exceptionHandler()
       .source("source", missingSourceFactory)
-      .sink("sink", missingSinkFactory)
+      .emptySink("sink", missingSinkFactory)
   }
 
   val sampleDisplayableProcess = {

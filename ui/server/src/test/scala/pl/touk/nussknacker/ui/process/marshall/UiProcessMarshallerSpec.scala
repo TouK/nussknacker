@@ -13,12 +13,12 @@ class UiProcessMarshallerSpec extends FlatSpec with Matchers {
     s"""
        |{
        |    "metaData" : { "id": "custom", "typeSpecificData": {"type": "StreamMetaData", "parallelism" : 2}, "additionalFields": { "description": "$someProcessDescription"} },
-       |    "exceptionHandlerRef" : { "parameters" : [ { "name": "errorsTopic", "value": "error.topic"}]},
+       |    "exceptionHandlerRef" : { "parameters" : [ { "name": "errorsTopic", "expression": { "language": "spel", "expression": "error.topic" }}]},
        |    "nodes" : [
        |        {
        |            "type" : "Source",
        |            "id" : "start",
-       |            "ref" : { "typ": "kafka-transaction", "parameters": [ { "name": "topic", "value": "in.topic"}]},
+       |            "ref" : { "typ": "kafka-transaction", "parameters": [ { "name": "topic", "expression": { "language": "spel", "expression": "in.topic" }}]},
        |            "additionalFields": { "description": "$someNodeDescription"}
        |        }
        |    ]
@@ -29,12 +29,12 @@ class UiProcessMarshallerSpec extends FlatSpec with Matchers {
     s"""
        |{
        |    "metaData" : { "id": "custom", "typeSpecificData": {"type": "StreamMetaData", "parallelism" : 2}},
-       |    "exceptionHandlerRef" : { "parameters" : [ { "name": "errorsTopic", "value": "error.topic"}]},
+       |    "exceptionHandlerRef" : { "parameters" : [ { "name": "errorsTopic", "expression": { "language": "spel", "expression": "error.topic" }}]},
        |    "nodes" : [
        |        {
        |            "type" : "Source",
        |            "id" : "start",
-       |            "ref" : { "typ": "kafka-transaction", "parameters": [ { "name": "topic", "value": "in.topic"}]}
+       |            "ref" : { "typ": "kafka-transaction", "parameters": [ { "name": "topic", "expression": { "language": "spel", "expression": "in.topic" }}]}
        |        }
        |    ]
        |}

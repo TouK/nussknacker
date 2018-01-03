@@ -27,7 +27,7 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
     def nestedGraph(id: String) =
       GraphBuilder
         .processor(id + "Processor", id + "Service")
-        .sink(id + "End", "")
+        .emptySink(id + "End", "")
 
     val process =
       EspProcessBuilder
@@ -37,7 +37,7 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
         .filter("b", "alamakota == 'true'", nestedGraph("b"))
         .buildVariable("c", "fooVar", "f1" -> "expr1", "f2" -> "expr2")
         .enricher("d", "barVar", "dService", "p1" -> "expr3")
-        .switch("f", "expr4", "eVar", nestedGraph("e"), Case("e1", GraphBuilder.sink("endE1", "")))
+        .switch("f", "expr4", "eVar", nestedGraph("e"), Case("e1", GraphBuilder.emptySink("endE1", "")))
 
     val marshalled = ProcessMarshaller.toJson(process, PrettyParams.spaces2)
 
@@ -64,12 +64,12 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
       """
         |{
         |    "metaData" : { "id": "custom", "typeSpecificData": { "type" : "StreamMetaData", "parallelism" : 2 }, "additionalFields": { "description": "process description"} },
-        |    "exceptionHandlerRef" : { "parameters" : [ { "name": "errorsTopic", "value": "error.topic"}]},
+        |    "exceptionHandlerRef" : { "parameters" : [ { "name": "errorsTopic", "expression": { "language": "spel", "expression": "error.topic" }}]},
         |    "nodes" : [
         |        {
         |            "type" : "Source",
         |            "id" : "start",
-        |            "ref" : { "typ": "kafka-transaction", "parameters": [ { "name": "topic", "value": "in.topic"}]},
+        |            "ref" : { "typ": "kafka-transaction", "parameters": [ { "name": "topic", "expression": { "language": "spel", "expression": "in.topic" }}]},
         |            "additionalFields": { "description": "single node description"}
         |        }
         |    ]
@@ -80,12 +80,12 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
       """
         |{
         |    "metaData" : { "id": "custom", "typeSpecificData": { "type" : "StreamMetaData", "parallelism" : 2 }},
-        |    "exceptionHandlerRef" : { "parameters" : [ { "name": "errorsTopic", "value": "error.topic"}]},
+        |    "exceptionHandlerRef" : { "parameters" : [ { "name": "errorsTopic", "expression": { "language": "spel", "expression": "error.topic" }}]},
         |    "nodes" : [
         |        {
         |            "type" : "Source",
         |            "id" : "start",
-        |            "ref" : { "typ": "kafka-transaction", "parameters": [ { "name": "topic", "value": "in.topic"}]}
+        |            "ref" : { "typ": "kafka-transaction", "parameters": [ { "name": "topic", "expression": { "language": "spel", "expression": "error.topic" }}]}
         |        }
         |    ]
         |}

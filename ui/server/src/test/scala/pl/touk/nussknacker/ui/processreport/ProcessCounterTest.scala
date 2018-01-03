@@ -22,7 +22,7 @@ class ProcessCounterTest extends FlatSpec with Matchers {
       .id("test").parallelism(1).exceptionHandler()
       .source("source1", "")
       .filter("filter1", "")
-      .sink("sink11", ""))
+      .emptySink("sink11", ""))
     val counter = new ProcessCounter(subprocessRepository(Set()))
 
     val computed = counter.computeCounts(process, Map("source1" -> RawCount(30L, 5L),
@@ -40,7 +40,7 @@ class ProcessCounterTest extends FlatSpec with Matchers {
       .id("test").parallelism(1).exceptionHandler()
       .source("source1", "")
       .filter("filter1", "")
-      .sink("sink11", "")).copy(metaData = MetaData("test", StreamMetaData(), false,
+      .emptySink("sink11", "")).copy(metaData = MetaData("test", StreamMetaData(), false,
         Some(ProcessAdditionalFields(Some(""), Set(Group("gr1", Set("filter1", "sink11")))))))
     val processCounter = new ProcessCounter(subprocessRepository(Set()))
 
@@ -61,7 +61,7 @@ class ProcessCounterTest extends FlatSpec with Matchers {
       .source("source1", "")
       .filter("filter1", "")
       .subprocessOneOut("sub1", "subprocess1", "out1")
-      .sink("sink11", ""))
+      .emptySink("sink11", ""))
 
 
     val counter = new ProcessCounter(subprocessRepository(Set(

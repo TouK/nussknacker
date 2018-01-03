@@ -30,7 +30,7 @@ class MetricsSpec extends FlatSpec with Matchers with Eventually with BeforeAndA
       .exceptionHandler()
       .source("id", "input")
       .processor("proc2", "logService", "all" -> "#input.value2")
-      .sink("out", "monitor")
+      .emptySink("out", "monitor")
     val data = List(
       SimpleRecord("1", 12, "a", new Date(0))
     )
@@ -51,7 +51,7 @@ class MetricsSpec extends FlatSpec with Matchers with Eventually with BeforeAndA
       .exceptionHandler()
       .source("id", "input")
       .processor("proc2", "logService", "all" -> "1 / #input.value1")
-      .sink("out", "monitor")
+      .emptySink("out", "monitor")
     val data = List(
       SimpleRecord("1", 0, "a", new Date(0))
     )
@@ -76,10 +76,10 @@ class MetricsSpec extends FlatSpec with Matchers with Eventually with BeforeAndA
       .source("source1", "input")
       .filter("filter1", "#input.value1 == 10")
       .split("split1",
-        GraphBuilder.sink("out2", "monitor"),
+        GraphBuilder.emptySink("out2", "monitor"),
         GraphBuilder
           .processor("proc2", "logService", "all" -> "#input.value2")
-          .sink("out", "monitor")
+          .emptySink("out", "monitor")
       )
 
 

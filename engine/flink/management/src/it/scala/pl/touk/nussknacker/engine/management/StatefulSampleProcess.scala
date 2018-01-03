@@ -4,7 +4,9 @@ import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph._
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel
+
 import scala.concurrent.duration._
 
 object StatefulSampleProcess {
@@ -19,7 +21,7 @@ object StatefulSampleProcess {
      .exceptionHandler("param1" -> "'val1'")
       .source("state", "oneSource")
         .customNode("stateful", "stateVar", "stateful", "keyBy" -> "#input")
-        .sink("end", "#stateVar", "kafka-string", "topic" -> s"'output-$id'")
+        .sink("end", "#stateVar": Expression, "kafka-string", "topic" -> s"'output-$id'")
   }
 
   def prepareProcessStringWithStringState(id: String): EspProcess = {

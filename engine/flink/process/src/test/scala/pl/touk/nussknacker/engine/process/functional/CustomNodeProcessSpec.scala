@@ -21,7 +21,7 @@ class CustomNodeProcessSpec extends FlatSpec with Matchers {
       .customNode("custom", "outRec", "stateCustom", "keyBy" -> "#input.id", "stringVal" -> "'terefere'")
       .filter("delta", "#outRec.record.value1 > #outRec.previous + 5")
       .processor("proc2", "logService", "all" -> "#outRec")
-      .sink("out", "monitor")
+      .emptySink("out", "monitor")
 
     val data = List(
       SimpleRecord("1", 3, "a", new Date(0)),
@@ -44,7 +44,7 @@ class CustomNodeProcessSpec extends FlatSpec with Matchers {
   it should "be able to split after custom node" in {
     val additionalFilterBranch = GraphBuilder.filter("falseFilter", "#outRec.record.value1 > #outRec.previous + 1")
       .customNode("custom2", "outRec2", "stateCustom", "keyBy" -> "#input.id", "stringVal" -> "'terefere'")
-      .sink("outFalse", "monitor")
+      .emptySink("outFalse", "monitor")
 
     val process = EspProcessBuilder.id("proc1")
       .exceptionHandler()
@@ -54,7 +54,7 @@ class CustomNodeProcessSpec extends FlatSpec with Matchers {
         GraphBuilder.processorEnd("proc3", "logService", "all" -> "'allRec-' + #outRec.record.value1"),
         //additionalFilterBranch added, to make this case more complicated
         GraphBuilder.filter("delta", "#outRec.record.value1 > #outRec.previous + 5", additionalFilterBranch)
-          .processor("proc2", "logService", "all" -> "#outRec.record.value1 + '-' + #outRec.added").sink("out", "monitor")
+          .processor("proc2", "logService", "all" -> "#outRec.record.value1 + '-' + #outRec.added").emptySink("out", "monitor")
       )
 
     val data = List(

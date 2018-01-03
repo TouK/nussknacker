@@ -196,7 +196,7 @@ export default class NodeDetailsContent extends React.Component {
                   {this.state.editedNode.exceptionHandler.parameters.map((params, index) => {
                     return (
                       <div className="node-block" key={index}>
-                        {this.createListField("input", params.name, params, "value", `exceptionHandler.parameters[${index}]`)}
+                        {this.createListField("textarea", params.name, params, 'expression.expression', `exceptionHandler.parameters[${index}]`, params.name)}
                         <hr />
                       </div>
                     )
@@ -232,7 +232,7 @@ export default class NodeDetailsContent extends React.Component {
         {this.state.editedNode.ref.parameters.map((params, index) => {
           return (
             <div className="node-block" key={index}>
-              {this.createListField("input", params.name, params, "value", `ref.parameters[${index}]`)}
+              {this.createListField("textarea", params.name, params, 'expression.expression', `ref.parameters[${index}]`, params.name)}
             </div>
           )
         })}

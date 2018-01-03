@@ -45,7 +45,7 @@ class FlinkProcessMainSpec extends FlatSpec with Matchers with Inside {
         .source("id", "input")
         .filter("filter1", "#sum(#input.![value1]) > 24")
         .processor("proc2", "logService", "all" -> "#distinct(#input.![value2])")
-        .sink("out", "monitor")
+        .emptySink("out", "monitor")
 
     FlinkProcessMain.main(Array(ProcessMarshaller.toJson(process, PrettyParams.spaces2)))
   }

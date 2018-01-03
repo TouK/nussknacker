@@ -27,7 +27,7 @@ class SubprocessResolverSpec extends FlatSpec with Matchers {
       .source("source", "source1")
       .subprocessOneOut("sub", "subProcess1", "output", "ala" -> "'makota'")
       .subprocessOneOut("sub2", "subProcess1", "output", "ala" -> "'makota'")
-      .sink("sink", "sink1"))
+      .emptySink("sink", "sink1"))
 
     val subprocess =  CanonicalProcess(MetaData("subProcess1", StreamMetaData()), null,
       List(
@@ -54,7 +54,7 @@ class SubprocessResolverSpec extends FlatSpec with Matchers {
       .exceptionHandler()
       .source("source", "source1")
       .subprocessOneOut("sub", "subProcess1", "output", "param" -> "'makota'")
-      .sink("sink", "sink1"))
+      .emptySink("sink", "sink1"))
 
     val subprocess = CanonicalProcess(MetaData("subProcess2", StreamMetaData()), null,
       List(
@@ -92,7 +92,7 @@ class SubprocessResolverSpec extends FlatSpec with Matchers {
       .exceptionHandler()
       .source("source", "source1")
       .subprocessOneOut("sub", "subProcess1", "output", "badala" -> "'makota'")
-      .sink("sink", "sink1"))
+      .emptySink("sink", "sink1"))
 
     val subprocess = CanonicalProcess(MetaData("subProcess1", StreamMetaData()), null,
       List(
@@ -112,7 +112,7 @@ class SubprocessResolverSpec extends FlatSpec with Matchers {
       .exceptionHandler()
       .source("source", "source1")
       .subprocessOneOut("sub", "subProcess1", "output", "ala" -> "'makota'")
-      .sink("sink", "sink1"))
+      .emptySink("sink", "sink1"))
 
     val subprocess = CanonicalProcess(MetaData("subProcess1", StreamMetaData()),
       null,

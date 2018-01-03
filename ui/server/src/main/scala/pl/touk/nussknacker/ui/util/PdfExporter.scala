@@ -181,13 +181,13 @@ object PdfExporter extends LazyLogging {
 
   private def nodeDetails(node: NodeData) = {
     val nodeData = node match {
-      case Source(_, SourceRef(typ, params), _) => ("Type", typ) :: params.map(p => (p.name, p.value))
+      case Source(_, SourceRef(typ, params), _) => ("Type", typ) :: params.map(p => (p.name, p.expression.expression))
       case Filter(_, expression, _, _) => List(("Expression", expression.expression))
       case Enricher(_, ServiceRef(typ, params), output, _) => ("Type", typ) :: ("Output", output) :: params.map(p => (p.name, p.expression.expression))
       //TODO: what about Swtich??
       case Switch(_, expression, exprVal, _) => List(("Expression", expression.expression))
       case Processor(_, ServiceRef(typ, params), _, _) => ("Type", typ) :: params.map(p => (p.name, p.expression.expression))
-      case Sink(_, SinkRef(typ, params), output, _) => ("Type", typ) :: output.map(expr => ("Output", expr.expression)).toList ++ params.map(p => (p.name, p.value))
+      case Sink(_, SinkRef(typ, params), output, _) => ("Type", typ) :: output.map(expr => ("Output", expr.expression)).toList ++ params.map(p => (p.name, p.expression.expression))
       case CustomNode(_, output, typ, params, _) => ("Type", typ) :: ("Output", output) :: params.map(p => (p.name, p.expression.expression))
       case SubprocessInput(_, SubprocessRef(typ, params), _) => ("Type", typ) :: params.map(p => (p.name, p.expression.expression))
       //TODO: variable, variable builder,

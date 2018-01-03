@@ -205,7 +205,7 @@ class ManagementResourcesSpec extends FlatSpec with ScalatestRouteTest
           .exceptionHandler("param1" -> "'ala'")
           .source("startProcess", "csv-source")
           .filter("input", "new java.math.BigDecimal(null) == 0")
-          .sink("end", "kafka-string", "topic" -> "'end.topic'")
+          .emptySink("end", "kafka-string", "topic" -> "'end.topic'")
       }
 
     saveProcessAndAssertSuccess(process.id, process)

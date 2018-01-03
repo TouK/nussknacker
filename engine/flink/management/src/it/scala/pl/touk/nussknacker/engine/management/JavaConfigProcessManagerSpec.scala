@@ -29,7 +29,7 @@ class JavaConfigProcessManagerSpec extends FunSuite with Matchers with ScalaFutu
           .id(processId)
           .exceptionHandler()
           .source("startProcess", "source")
-          .sink("endSend", "sink")
+          .emptySink("endSend", "sink")
 
     val marshaled = ProcessMarshaller.toJson(process, PrettyParams.spaces2)
     assert(processManager.deploy(process.id, GraphProcess(marshaled), None).isReadyWithin(100 seconds))

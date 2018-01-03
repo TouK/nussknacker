@@ -26,7 +26,7 @@ class FlinkProcessRegistrarSpec extends FlatSpec with Matchers with Eventually {
         .filter("filter5", "#input.value3Opt.abs() + 1 > 1")
         .filter("filter6", "#input.value3.abs + 1 > 1")
         .processor("proc2", "logService", "all" -> "#input.value2")
-        .sink("out", "monitor"))
+        .emptySink("out", "monitor"))
     val data = List(
       SimpleRecord("1", 12, "a", new Date(0), Option(1)),
       SimpleRecord("1", 15, "b", new Date(1000), None),
@@ -48,7 +48,7 @@ class FlinkProcessRegistrarSpec extends FlatSpec with Matchers with Eventually {
       GraphBuilder.source("id", "input")
         .customNode("custom2", "outRec", "stateCustom", "keyBy" -> "#input.id", "stringVal" -> "'terefere'")
         .processor("proc2", "logService", "all" -> "#input.value2")
-        .sink("out", "monitor"))
+        .emptySink("out", "monitor"))
     val data = List(
       SimpleRecord("1", 12, "a", new Date(0), Option(1)),
       SimpleRecord("1", 15, "b", new Date(1000), None),

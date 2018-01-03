@@ -10,7 +10,6 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomT
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node._
-import pl.touk.nussknacker.engine.graph.param
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
@@ -133,9 +132,9 @@ object DefinitionPreparer {
 
     def filterCategories(objectDefinition: ObjectDefinition) = user.categories.intersect(objectDefinition.categories)
 
-    def objDefParams(nodeDefinition: NodeDefinition): List[Parameter] = evaluator.evaluateParameters( nodeDefinition)
+    def objDefParams(id: String, objDefinition: ObjectDefinition): List[Parameter] = evaluator.evaluateParameters(NodeDefinition(id, objDefinition.parameters))
 
-    def serviceRef(id: String, objDefinition: ObjectDefinition) = ServiceRef(id, objDefParams(NodeDefinition(id, objDefinition.parameters)))
+    def serviceRef(id: String, objDefinition: ObjectDefinition) = ServiceRef(id, objDefParams(id, objDefinition))
 
     val returnsUnit = ((id: String, objectDefinition: ObjectDefinition)
     => objectDefinition.returnType.refClazzName == classOf[BoxedUnit].getName).tupled
@@ -163,7 +162,7 @@ object DefinitionPreparer {
     val customTransformers = SortedNodeGroup("custom",
       processDefinition.customStreamTransformers.map {
         case (id, (objDefinition, _)) => NodeToAdd("customNode", id,
-          CustomNode("", if (objDefinition.hasNoReturn) None else Some("outputVar"), id, objDefParams(NodeDefinition(id,objDefinition.parameters))), filterCategories(objDefinition))
+          CustomNode("", if (objDefinition.hasNoReturn) None else Some("outputVar"), id, objDefParams(id, objDefinition)), filterCategories(objDefinition))
       }.toList
     )
 
@@ -172,14 +171,14 @@ object DefinitionPreparer {
         SortedNodeGroup("sinks",
           processDefinition.sinkFactories.map {
             case (id, objDefinition) => NodeToAdd("sink", id,
-              Sink("", SinkRef(id, objDefinition.parameters.map(p => param.Parameter(p.name, "TODO"))),
+              Sink("", SinkRef(id, objDefParams(id, objDefinition)),
                 Some(Expression("spel", "#input"))), filterCategories(objDefinition)
             )
           }.toList),
         SortedNodeGroup("sources",
           processDefinition.sourceFactories.map {
             case (id, objDefinition) => NodeToAdd("source", id,
-              Source("", SourceRef(id, objDefinition.parameters.map(p => param.Parameter(p.name, "TODO")))),
+              Source("", SourceRef(id, objDefParams(id, objDefinition))),
               filterCategories(objDefinition)
             )
           }.toList

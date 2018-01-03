@@ -23,7 +23,7 @@ import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.{CustomNode, StartingNodeData, SubprocessInputDefinition}
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
-import pl.touk.nussknacker.engine.graph.{EspProcess, evaluatedparam, param}
+import pl.touk.nussknacker.engine.graph.{EspProcess, evaluatedparam}
 import pl.touk.nussknacker.engine.split._
 import pl.touk.nussknacker.engine.splittedgraph._
 import pl.touk.nussknacker.engine.splittedgraph.part._
@@ -221,14 +221,11 @@ protected trait ProcessCompilerBase {
   }
 
   private def compileProcessObject[T](parameterProviderT: ParameterProviderT,
-                                      parameters: List[param.Parameter])
+                                      parameters: List[evaluatedparam.Parameter])
                                      (implicit nodeId: NodeId,
                                       metaData: MetaData): ValidatedNel[ProcessCompilationError, T] = {
 
-    //FIXME: after first phase, change it to evaluated.Parameter
-    val parametersToCompile = parameters.map(p => evaluatedparam.Parameter(p.name, Expression("spel", p.value)))
-
-    expressionCompiler.compileObjectParameters(parameterProviderT.parameters, parametersToCompile, Some(ValidationContext.empty)).andThen { compiledParams =>
+    expressionCompiler.compileObjectParameters(parameterProviderT.parameters, parameters, Some(ValidationContext.empty)).andThen { compiledParams =>
       validateParameters(parameterProviderT, parameters.map(_.name)).map { _ =>
         val factory = createFactory[T](parameterProviderT)
         factory.create(compiledParams)
