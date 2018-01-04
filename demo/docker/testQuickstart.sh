@@ -6,6 +6,7 @@ echo "Starting containers"
 #just in case
 docker-compose kill
 docker-compose rm -f -v
+docker-compose build
 docker-compose up -d --no-recreate
 
 trap 'docker-compose kill && docker-compose rm -f -v' EXIT
