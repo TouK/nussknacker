@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-set -e
 echo "Downloading sample"
 ./downloadSampleAssembly.sh
 
@@ -20,27 +19,34 @@ checkCode() {
   echo "Checked $1 with $CODE"
   if [[ $CODE == 200 ]]
   then
-    OK="OK"
+    return 0
   else
-    OK=""
+    return 1
+  fi
+}
+
+waitForOK() {
+  URL_PATH=$1
+  checkCode $URL_PATH
+  local OK=$?
+  while [[ $waitTime < 60 && $OK == 1 ]]
+  do
+    echo "Still not started..."
+    sleep $sleep
+    waitTime=$(($waitTime+$sleep))
+    checkCode $URL_PATH
+    OK=$?
+  done
+  if [[ $OK == 1 ]]
+  then
+    echo "$2"
+    exit 1
   fi
 }
 
 echo "Waiting for frontend to start"
 
-while [[ $waitTime < 60 && $OK == "" ]]
-do
-  echo "Still not started..."
-  sleep $sleep
-  waitTime=$(($waitTime+$sleep))
-  checkCode "api/processes"
-done
-
-if [[ $OK == "" ]]
-then
-  echo "Containers not started"
-  exit 1
-fi
+waitForOK "api/processes" "Frontend not started"
 
 echo "Creating process"
 CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST "http://admin:admin@localhost:8081/api/processes/DetectLargeTransactions/FraudDetection?isSubprocess=false")
@@ -49,6 +55,8 @@ then
   echo "Process creation failed with $CODE"
   exit 1
 fi
+
+waitForOK "api/processes/status" "Cannot connect with Flink"
 
 #TODO:
 #check import process
