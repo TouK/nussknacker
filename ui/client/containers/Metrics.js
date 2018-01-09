@@ -10,21 +10,23 @@ class Metrics extends React.Component {
   }
 
   componentDidMount() {
-    HttpService.fetchProcessDetails(this.props.params.processId).then(details => {
-        this.setState({processingType: details.processingType})
-    })
+    if (this.props.params.processId) {
+      HttpService.fetchProcessDetails(this.props.params.processId).then(details => {
+          this.setState({processingType: details.processingType})
+      })
+    } else {
+      this.setState({processingType: ""})
+    }
   }
 
   render() {
     if (!this.props.settings.url || !this.state || !this.state.processingType) {
       return (<div/>)
     }
-    const processingType = this.state.processingType;
-    const processingTypeToDashboard = this.props.settings.processingTypeToDashboard;
 
     var options = {
       grafanaUrl: this.props.settings.url,
-      dashboard: (processingTypeToDashboard && processingTypeToDashboard[processingType]) || this.props.settings.defaultDashboard,
+      dashboard: this.getDashboardName(),
       processName: this.props.params.processId || "All",
       theme: 'dark',
       env: this.props.settings.env
@@ -36,6 +38,12 @@ class Metrics extends React.Component {
         <iframe ref="metricsFrame" src={iframeUrl} width="100%" height={window.innerHeight} frameBorder="0"></iframe>
       </div>
     )
+  }
+
+  getDashboardName() {
+    const processingType = this.state.processingType;
+    const processingTypeToDashboard = this.props.settings.processingTypeToDashboard;
+    return (processingTypeToDashboard && processingTypeToDashboard[processingType]) || this.props.settings.defaultDashboard
   }
 
 }
