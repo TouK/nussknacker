@@ -8,6 +8,7 @@ import ExpressionSuggest from "./ExpressionSuggest";
 import ModalRenderUtils from "./ModalRenderUtils";
 import TestResultUtils from "../../common/TestResultUtils";
 import ProcessUtils from '../../common/ProcessUtils';
+import * as JsonUtils from '../../common/JsonUtils';
 
 //move state to redux?
 // here `componentDidUpdate` is complicated to clear unsaved changes in modal
@@ -56,7 +57,8 @@ export default class NodeDetailsContent extends React.Component {
           <div className="node-table-body">
             {this.createField("input", "Id", "id")}
 
-            {this.doCreateField("textarea", "Parameters", "parameters", JSON.stringify(this.state.editedNode.parameters || []), (newValue) => this.setNodeDataAt("parameters", JSON.parse(newValue)))}
+            {this.doCreateField("plain-textarea", "Parameters", "parameters",
+              JsonUtils.tryStringify(this.state.editedNode.parameters || []), (newValue) => this.setNodeDataAt("parameters", JsonUtils.tryParse(newValue)))}
             {this.descriptionField()}
           </div>
         )
@@ -220,7 +222,8 @@ export default class NodeDetailsContent extends React.Component {
   subprocessVersionFields() {
     return [
       //TODO this should be nice looking selectbox
-      this.doCreateField("textarea", "Subprocess Versions", "subprocessVersions", JSON.stringify(this.state.editedNode.subprocessVersions || {}), (newValue) => this.setNodeDataAt("subprocessVersions", JSON.parse(newValue)))
+      this.doCreateField("plain-textarea", "Subprocess Versions", "subprocessVersions",
+        JsonUtils.tryStringify(this.state.editedNode.subprocessVersions || {}), (newValue) => this.setNodeDataAt("subprocessVersions", JsonUtils.tryParse(newValue)))
     ]
   }
 
