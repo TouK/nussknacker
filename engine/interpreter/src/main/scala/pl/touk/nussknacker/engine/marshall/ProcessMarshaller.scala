@@ -93,6 +93,7 @@ class ProcessMarshaller(implicit
     }
 
   //order is important here! flatNodeDecode has to be the last
+  //TODO: this can lead to difficult to debug errors, when e.g. subprocess is incorrect it'll be parsed as flatNode...
   private implicit lazy val nodeDecode: DecodeJson[CanonicalNode] =
   filterDecode ||| switchDecode ||| splitDecode||| subprocessDecode ||| flatNodeDecode
 

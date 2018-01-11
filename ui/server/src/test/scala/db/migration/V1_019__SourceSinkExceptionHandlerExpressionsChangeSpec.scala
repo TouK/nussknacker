@@ -210,7 +210,7 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends FlatSpec w
           |"nodes":[
           |  $sourceToConvert,
           |  {
-          |    "type" : "Subprocess",
+          |    "type" : "SubprocessInput",
           |    "id" : "subprocess",
           |    "ref" : {
           |      "id" : "subprocess1",
@@ -225,7 +225,7 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends FlatSpec w
           |""".stripMargin).right.get
 
     val converted = migrateAndConvert(oldJson)
-
+    
     val sink1 = converted.nodes(1).asInstanceOf[Subprocess].outputs("output1").head.data.asInstanceOf[Sink]
     sink1 shouldBe sinkToVerify("sink1")
 
@@ -238,7 +238,7 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends FlatSpec w
 
   private def migrateAndConvert(oldJson: Json) : CanonicalProcess = {
     val migrated = migration.updateProcessJson(oldJson).get
-
+    
     marshaller.fromJson(migrated.nospaces) match {
       case Invalid(errors) => throw new AssertionError(errors)
       case Valid(converted) => converted

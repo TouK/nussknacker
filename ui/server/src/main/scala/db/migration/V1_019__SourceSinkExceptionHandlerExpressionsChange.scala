@@ -39,7 +39,7 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChange extends ProcessJsonMig
         updateField(node, "nextFalse", updateCanonicalNodes)
       case "Split" =>
         updateField(node, "nexts", updateNodes(_, updateCanonicalNodes))
-      case "Subprocess" =>
+      case "SubprocessInput" =>
         updateField(node, "outputs", outputs => {
           jObjectAssocList(outputs.objectFieldsOrEmpty.map(f => f -> updateCanonicalNodes(outputs.fieldOrEmptyArray(f))))
         })
