@@ -33,11 +33,27 @@ export default class ExpressionSuggester {
     return {start, middle, end}
   }
 
-  suggestionsFor = (inputValue, caretPosition) => {
-    const lastExpressionPart = this._focusedLastExpressionPartWithoutMethodParens(inputValue, caretPosition)
+  suggestionsFor = (inputValue, caretPosition2d) => {
+    const normalized = this._normalizeMultilineInputToSingleLine(inputValue, caretPosition2d)
+    const lastExpressionPart = this._focusedLastExpressionPartWithoutMethodParens(normalized.normalizedInput, normalized.normalizedCaretPosition)
     const properties = this._alreadyTypedProperties(lastExpressionPart)
     const focusedClazz = this._findRootClazz(properties)
     return this._getSuggestions(lastExpressionPart, focusedClazz)
+  }
+
+  _normalizeMultilineInputToSingleLine = (inputValue, caretPosition2d) => {
+    const rows = inputValue.split("\n")
+    const trimmedRows = _.map(rows, (row) => {
+      const trimmedAtStartRow = _.dropWhile(row, (c) => c === " ").join("")
+      return { trimmedAtStartRow: trimmedAtStartRow, trimmedCount: row.length - trimmedAtStartRow.length }
+    })
+    const beforeCaretInputLength = _.sum(_.map(_.take(trimmedRows, caretPosition2d.row), (row) => row.trimmedAtStartRow.length));
+    const normalizedCaretPosition = caretPosition2d.column - trimmedRows[caretPosition2d.row].trimmedCount + beforeCaretInputLength
+    const normalizedInput = _.map(trimmedRows, (row) => row.trimmedAtStartRow).join("")
+    return {
+      normalizedInput: normalizedInput,
+      normalizedCaretPosition: normalizedCaretPosition
+    }
   }
 
   _getSuggestions = (value, focusedClazz) => {

@@ -14,8 +14,8 @@ import 'brace/mode/jsx';
 import 'brace/ext/language_tools'
 import 'brace/ext/searchbox';
 
-require(`../../brace/mode/spel`)
-require(`../../brace/theme/nussknacker`)
+import '../../brace/mode/spel'
+import '../../brace/theme/nussknacker'
 
 //to reconsider
 // - respect categories for global variables?
@@ -29,8 +29,8 @@ class ExpressionSuggest extends React.Component {
   }
 
   customAceEditorCompleter = {
-    getCompletions: (editor, session, pos, prefix, callback) => {
-      const suggestions = this.expressionSuggester.suggestionsFor(this.state.value, pos.column)
+    getCompletions: (editor, session, caretPosition2d, prefix, callback) => {
+      const suggestions = this.expressionSuggester.suggestionsFor(this.state.value, caretPosition2d)
       callback(null, _.map(suggestions, (s) => {
         //unfortunately Ace treats `#` as special case, we have to remove `#` from suggestions or it will be duplicated
         //maybe it depends on language mode?
@@ -137,7 +137,8 @@ class ExpressionSuggest extends React.Component {
 
   //TODO remove autosuggest component if AceEditor will turn out to be better
   _autosuggest_onSuggestionsFetchRequested = ({value}) => {
-    const suggestions = this.expressionSuggester.suggestionsFor(value, this._autosuggest_getCaretPosition())
+    const caretPosition2d = {column: this._autosuggest_getCaretPosition(), row: 0 }
+    const suggestions = this.expressionSuggester.suggestionsFor(value, caretPosition2d)
     this.setState({
       _autosuggest_suggestions: suggestions
     })
