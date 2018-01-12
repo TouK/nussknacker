@@ -3,10 +3,11 @@ package pl.touk.nussknacker.engine.compile
 import cats.data.Validated.{Valid, invalid, valid}
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.instances.list._
+import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError._
 import pl.touk.nussknacker.engine.compiledgraph.expression.ExpressionParser
-import pl.touk.nussknacker.engine.compiledgraph.typing.{Typed, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ClazzRef, ObjectDefinition, ObjectMetadata, Parameter}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectMetadata, Parameter}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
@@ -23,7 +24,7 @@ object ExpressionCompiler {
   private def default(loader: ClassLoader, expressionConfig: ExpressionDefinition[ObjectMetadata], optimizeCompilation: Boolean): ExpressionCompiler = {
     val parsersSeq = Seq(SpelExpressionParser.default(loader, optimizeCompilation, expressionConfig.globalImports))
     val parsers = parsersSeq.map(p => p.languageId -> p).toMap
-    new ExpressionCompiler(parsers, expressionConfig.globalVariables.mapValues(obj => Typed(obj.returnType)(loader)))
+    new ExpressionCompiler(parsers, expressionConfig.globalVariables.mapValues(_.returnType))
   }
 
 }

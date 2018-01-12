@@ -10,10 +10,10 @@ import org.springframework.expression.spel.SpelNode
 import org.springframework.expression.spel.ast._
 import pl.touk.nussknacker.engine.compile.ValidationContext
 import pl.touk.nussknacker.engine.compiledgraph.expression.ExpressionParseError
-import pl.touk.nussknacker.engine.compiledgraph.typing._
+import pl.touk.nussknacker.engine.api.typed.typing._
 import cats.syntax.traverse._
 import cats.instances.list._
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ClazzRef
+import pl.touk.nussknacker.engine.api.typed.ClazzRef
 
 import scala.reflect.ClassTag
 
@@ -65,12 +65,19 @@ private[spel] class Typer(implicit classLoader: ClassLoader) {
         val zipped = e.children.zipWithIndex
         val keys = zipped.filter(_._2 % 2 == 0).map(_._1)
         val values = zipped.filter(_._2 % 2 == 1).map(_._1)
-        //literal keys are handled separately...
-        val nonLiteralKeys = keys.filterNot(_.isInstanceOf[PropertyOrFieldReference])
-        (values ++ nonLiteralKeys).map(typeExpression(validationContext, _, current)).sequenceU.map { _ =>
-          Typed[java.util.Map[_, _]]
-        }
+        val literalKeys = keys
+          .collect {
+            case a:PropertyOrFieldReference => a.getName
+            case b:StringLiteral => b.getLiteralValue.getValue.toString
+          }
 
+        if (literalKeys.size != keys.size) {
+          invalid("Currently inline maps with not literal keys (e.g. expressions as keys) are not supported")
+        } else {
+          values.map(typeExpression(validationContext, _, current)).sequenceU.map { typedValues =>
+            TypedMapTypingResult(literalKeys.zip(typedValues).toMap)
+          }
+        }
       case e:IntLiteral => Valid(Typed[java.lang.Integer])
       //case e:Literal => Valid(classOf[Any])
       case e:LongLiteral => Valid(Typed[java.lang.Long])
@@ -121,6 +128,11 @@ private[spel] class Typer(implicit classLoader: ClassLoader) {
         case None => invalid(s"Non reference '${e.toStringAST}' occurred. Maybe you missed '#' in front of it?")
         case Some(Unknown) => Valid(Unknown)
         case Some(typed:Typed) if typed.canBeSubclassOf(ClazzRef[java.util.Map[_, _]]) => Valid(Unknown)
+        case Some(typed:TypedMapTypingResult) =>
+          typed.fields.get(e.getName) match {
+            case None => invalid(s"There is no property '${e.getName}' in ${typed.display}")
+            case Some(result) => Valid(result)
+          }
         case Some(typed@Typed(possible)) =>
           val possibleResults =
             possible.flatMap(ki => validationContext.getTypeInfo(ClazzRef(ki.klass)))

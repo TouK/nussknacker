@@ -2,8 +2,9 @@ package pl.touk.nussknacker.engine.definition
 
 import java.lang.reflect.Method
 
+import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName}
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ClazzRef, Parameter}
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor.Parameter
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedParameters}
 import pl.touk.nussknacker.engine.types.EspTypeUtils
 

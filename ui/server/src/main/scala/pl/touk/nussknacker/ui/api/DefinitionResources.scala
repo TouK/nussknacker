@@ -25,6 +25,7 @@ import pl.touk.nussknacker.ui.process.uiconfig.defaults.{ParameterDefaultValueEx
 import pl.touk.nussknacker.ui.util.EspPathMatchers
 import pl.touk.http.argonaut.Argonaut62Support
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import pl.touk.nussknacker.ui.process.ProcessObjectsFinder
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -138,7 +139,7 @@ object DefinitionPreparer {
     def serviceRef(id: String, objDefinition: ObjectDefinition) = ServiceRef(id, objDefParams(id, objDefinition))
 
     val returnsUnit = ((id: String, objectDefinition: ObjectDefinition)
-    => objectDefinition.returnType.refClazzName == classOf[BoxedUnit].getName).tupled
+    => objectDefinition.returnType == Typed[BoxedUnit]).tupled
 
     val base = SortedNodeGroup("base", List(
       NodeToAdd("filter", "Filter", Filter("", Expression("spel", "true")), user.categories),

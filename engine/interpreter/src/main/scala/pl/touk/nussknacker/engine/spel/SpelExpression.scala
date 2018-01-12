@@ -18,15 +18,15 @@ import org.springframework.expression.spel.{SpelCompilerMode, SpelParserConfigur
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.lazyy.{ContextWithLazyValuesProvider, LazyContext, LazyValuesProvider}
+import pl.touk.nussknacker.engine.api.typed.{ClazzRef, TypedMap, TypedMapDefinition}
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.compile.ValidationContext
 import pl.touk.nussknacker.engine.compiledgraph.expression.{ExpressionParseError, ExpressionParser, ValueWithLazyContext}
 import pl.touk.nussknacker.engine.functionUtils.CollectionUtils
-import pl.touk.nussknacker.engine.compiledgraph.typing.TypingResult
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ClazzRef
 
 import scala.collection.concurrent.TrieMap
+import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
 import scala.util.control.NonFatal
 
 class SpelExpression(parsed: org.springframework.expression.Expression,
@@ -111,7 +111,8 @@ class SpelExpressionParser(expressionFunctions: Map[String, Method], expressionI
     scalaOptionOrNullPropertyAccessor, // // must be before scalaPropertyAccessor
     scalaPropertyAccessor,
     staticPropertyAccessor,
-    MapPropertyAccessor
+    MapPropertyAccessor,
+    TypedMapPropertyAccessor
   )
 
   private val validator = new SpelExpressionValidator()(classLoader)
@@ -173,6 +174,7 @@ object SpelExpressionParser extends LazyLogging {
 
   //caching?
   def default(loader: ClassLoader, enableSpelForceCompile: Boolean, imports: List[String]): SpelExpressionParser = new SpelExpressionParser(Map(
+    "typedMapDefinition" -> classOf[TypedMapDefinition].getDeclaredMethod("create", classOf[java.util.Map[_, _]]),
     "today" -> classOf[LocalDate].getDeclaredMethod("now"),
     "now" -> classOf[LocalDateTime].getDeclaredMethod("now"),
     "distinct" -> classOf[CollectionUtils].getDeclaredMethod("distinct", classOf[java.util.Collection[_]]),
@@ -258,6 +260,17 @@ object SpelExpressionParser extends LazyLogging {
       new TypedValue(target.asInstanceOf[java.util.Map[_, _]].get(name))
 
     override def getSpecificTargetClasses = Array(classOf[java.util.Map[_, _]])
+  }
+
+  object TypedMapPropertyAccessor extends PropertyAccessor with ReadOnly {
+    //in theory this always happends, because we typed it properly ;)
+    override def canRead(context: EvaluationContext, target: scala.Any, name: String) =
+      target.asInstanceOf[TypedMap].fields.contains(name)
+
+    override def read(context: EvaluationContext, target: scala.Any, name: String) =
+      new TypedValue(target.asInstanceOf[TypedMap].fields(name))
+
+    override def getSpecificTargetClasses = Array(classOf[TypedMap])
   }
 
   trait Caching extends CachingBase { self: PropertyAccessor =>

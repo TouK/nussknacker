@@ -1,13 +1,16 @@
 package pl.touk.nussknacker.engine.compile
 
+import java.util.concurrent.TimeUnit
+
 import cats.Traverse.ops.toAllTraverseOps
 import cats.data.Validated._
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.instances.list._
 import pl.touk.nussknacker.engine._
-import pl.touk.nussknacker.engine.api.MetaData
+import pl.touk.nussknacker.engine.api.{Context, MetaData}
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, EspExceptionInfo}
 import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.api.typed.{ClazzRef, TypedMap, TypedMapDefinition}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compile.PartSubGraphCompilerBase.ContextsForParts
@@ -15,7 +18,7 @@ import pl.touk.nussknacker.engine.compile.ProcessCompilationError._
 import pl.touk.nussknacker.engine.compile.dumb._
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.compiledgraph.part.NextWithParts
-import pl.touk.nussknacker.engine.compiledgraph.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedMapTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ProcessDefinition}
 import pl.touk.nussknacker.engine.definition._
@@ -30,6 +33,9 @@ import pl.touk.nussknacker.engine.splittedgraph._
 import pl.touk.nussknacker.engine.splittedgraph.part._
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.{Next, NextNode, PartRef, SplittedNode}
 import pl.touk.nussknacker.engine.util.Implicits._
+
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 
 import scala.util.control.NonFatal
 
@@ -136,7 +142,7 @@ protected trait ProcessCompilerBase {
                                     (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, ValidationContext] = {
     val maybeClearedContext = if (clearsContext) validationContext.copy(variables = Map()) else validationContext
     (node.outputVar, nodeDefinition.hasNoReturn) match {
-      case (Some(varName), false) => maybeClearedContext.withVariable(varName, Typed(nodeDefinition.returnType)(classLoader))
+      case (Some(varName), false) => maybeClearedContext.withVariable(varName, nodeDefinition.returnType)
         //ble... NonEmptyList is invariant...
         .asInstanceOf[ValidatedNel[ProcessCompilationError,ValidationContext]]
       case (None, true) => Valid(maybeClearedContext)
@@ -191,9 +197,11 @@ protected trait ProcessCompilerBase {
     }.andThen(identity)
   }
 
-  private def computeInitialVariables(nodeData: StartingNodeData) : Map[String, TypingResult] = nodeData match {
+  private def computeInitialVariables(nodeData: StartingNodeData)(implicit metaData: MetaData, nodeId: NodeId) : Map[String, TypingResult] = nodeData match {
+    //TODO: here more elaborate return types (e.g. TypedMap should be handled).
+    // Currently it's not easy, as parameters are involved...
     case pl.touk.nussknacker.engine.graph.node.Source(_, ref, _) =>  sourceFactories.get(ref.typ)
-          .map(sf => Map(Interpreter.InputParamName -> Typed(sf.returnType)(classLoader))).getOrElse(Map.empty)
+          .map(sf => Map(Interpreter.InputParamName -> sf.returnType)).getOrElse(Map.empty)
     case SubprocessInputDefinition(_, params, _) => params.map(p => p.name -> Typed(p.typ)(classLoader)).toMap
   }
 

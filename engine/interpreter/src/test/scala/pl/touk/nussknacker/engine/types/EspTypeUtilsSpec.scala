@@ -6,7 +6,7 @@ import org.scalatest.{FlatSpec, FunSuite, Matchers}
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, ClassMemberPatternPredicate}
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ClazzRef
+import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.definition.TypeInfos.{MethodInfo, Parameter}
 
 import scala.annotation.meta.{field, getter}

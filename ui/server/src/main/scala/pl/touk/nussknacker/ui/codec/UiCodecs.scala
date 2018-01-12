@@ -2,8 +2,6 @@ package pl.touk.nussknacker.ui.codec
 
 import argonaut._
 import argonaut.derive.{DerivedInstances, JsonSumCodec, JsonSumCodecFor, SingletonInstances}
-import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api.{Displayable, TypeSpecificData, UserDefinedProcessAdditionalFields}
 import pl.touk.nussknacker.engine.api.deployment.test.{ExceptionResult, ExpressionInvocationResult, MockedResult, TestResults}
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
@@ -20,7 +18,8 @@ import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{BaseProcessD
 import pl.touk.nussknacker.ui.processreport.NodeCount
 import pl.touk.nussknacker.ui.validation.ValidationResults.{NodeValidationErrorType, ValidationResult}
 import ArgonautShapeless._
-import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
+import pl.touk.nussknacker.engine.api.typed.{ClazzRef, typing}
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.util.json.{BestEffortJsonEncoder, Codecs}
 
 object UiCodecs extends UiCodecs
@@ -89,6 +88,13 @@ trait UiCodecs extends Codecs with Argonauts with SingletonInstances with Derive
   implicit def commentCodec = CodecJson.derived[Comment]
 
   implicit def processActivityCodec = CodecJson.derive[ProcessActivity]
+
+  //FIXME: for now we present it as ClazzRef - TypedMap becomes normal map...
+  implicit def typingResultEncode : EncodeJson[TypingResult] = EncodeJson.of[ClazzRef].contramap[TypingResult] {
+    case typing.Unknown => ClazzRef[Any]
+    case a: typing.Typed => ClazzRef(a.possibleTypes.head.klass)
+    case a: typing.TypedMapTypingResult => ClazzRef[java.util.Map[_, _]]
+  }
 
   implicit def processObjectsEncodeEncode = EncodeJson.of[ProcessObjects]
 

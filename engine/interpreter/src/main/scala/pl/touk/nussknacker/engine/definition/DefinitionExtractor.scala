@@ -3,14 +3,14 @@ package pl.touk.nussknacker.engine.definition
 import java.lang.reflect.{InvocationTargetException, Method}
 
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.MethodToInvoke
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, WithCategories}
+import pl.touk.nussknacker.engine.api.typed.ClazzRef
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.MethodDefinition
 import pl.touk.nussknacker.engine.types.EspTypeUtils
 
-import scala.reflect.ClassTag
 import scala.runtime.BoxedUnit
 
 class DefinitionExtractor[T](methodDefinitionExtractor: MethodDefinitionExtractor[T]) {
@@ -18,7 +18,7 @@ class DefinitionExtractor[T](methodDefinitionExtractor: MethodDefinitionExtracto
   def extract(obj: T, methodDef: MethodDefinition, categories: List[String]): ObjectDefinition = {
     ObjectDefinition(
       methodDef.orderedParameters.definedParameters,
-      ClazzRef(methodDef.returnType),
+      Typed(ClazzRef(methodDef.returnType))(obj.getClass.getClassLoader),
       categories
     )
   }
@@ -50,11 +50,11 @@ object DefinitionExtractor {
   trait ObjectMetadata {
     def parameters: List[Parameter]
 
-    def returnType: ClazzRef
+    def returnType: TypingResult
 
     def categories: List[String]
 
-    def hasNoReturn : Boolean = Set(classOf[Void], classOf[Unit], classOf[BoxedUnit]).map(_.getName).contains(returnType.refClazzName)
+    def hasNoReturn : Boolean = Set(Typed[Void], Typed[Unit], Typed[BoxedUnit]).contains(returnType)
 
   }
 
@@ -103,12 +103,14 @@ object DefinitionExtractor {
 
   }
 
-  case class ClazzRef(refClazzName: String) {
-    def toClass(classLoader: ClassLoader) : Class[_] = ClassUtils.getClass(classLoader, refClazzName)
+  case class PlainClazzDefinition(clazzName: ClazzRef, methods: Map[String, ClazzRef]) {
+    def getMethod(methodName: String): Option[ClazzRef] = {
+      methods.get(methodName)
+    }
   }
 
   case class ObjectDefinition(parameters: List[Parameter],
-                              returnType: ClazzRef, categories: List[String]) extends ObjectMetadata
+                              returnType: TypingResult, categories: List[String]) extends ObjectMetadata
 
   case class Parameter(name: String, typ: ClazzRef, restriction: Option[ParameterRestriction] = None)
 
@@ -123,18 +125,6 @@ object DefinitionExtractor {
       val objectExtractor = new DefinitionExtractor(methodExtractor)
       val methodDefinition = objectExtractor.extractMethodDefinition(obj.value)
       ObjectWithMethodDef(obj.value, methodDefinition, objectExtractor.extract(obj.value, methodDefinition, obj.categories))
-    }
-  }
-
-  object ClazzRef {
-
-    def unknown: ClazzRef = ClazzRef[Any]
-
-    def apply(clazz: Class[_]): ClazzRef = {
-      ClazzRef(clazz.getName)
-    }
-    def apply[T:ClassTag]: ClazzRef = {
-      ClazzRef(implicitly[ClassTag[T]].runtimeClass.getName)
     }
   }
 
@@ -156,15 +146,16 @@ object DefinitionExtractor {
   }
 
   object ObjectDefinition {
-    def noParam: ObjectDefinition = ObjectDefinition(List.empty, ClazzRef(classOf[Null]), List())
 
-    def withParams(params: List[Parameter]): ObjectDefinition = ObjectDefinition(params, ClazzRef(classOf[Null]), List())
+    def noParam: ObjectDefinition = ObjectDefinition(List.empty, Typed[Null], List())
+
+    def withParams(params: List[Parameter]): ObjectDefinition = ObjectDefinition(params, Typed[Null], List())
 
     def withParamsAndCategories(params: List[Parameter], categories: List[String]): ObjectDefinition =
-      ObjectDefinition(params, ClazzRef(classOf[Null]), categories)
+      ObjectDefinition(params, Typed[Null], categories)
 
     def apply(parameters: List[Parameter], returnType: Class[_], categories: List[String]): ObjectDefinition = {
-      ObjectDefinition(parameters, ClazzRef(returnType), categories)
+      ObjectDefinition(parameters, Typed(ClazzRef(returnType))(returnType.getClassLoader), categories)
     }
   }
 

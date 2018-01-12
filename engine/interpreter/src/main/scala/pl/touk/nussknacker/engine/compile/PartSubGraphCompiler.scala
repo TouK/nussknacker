@@ -1,24 +1,21 @@
 package pl.touk.nussknacker.engine.compile
 
 import cats.data.Validated._
-import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.data.{NonEmptyList, ValidatedNel}
 import cats.instances.list._
 import cats.instances.option._
-import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.{compiledgraph, _}
+import pl.touk.nussknacker.engine.api.typed.ClazzRef
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedMapTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.compile.PartSubGraphCompilerBase.{CompiledNode, ContextsForParts, NextWithContext}
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError._
 import pl.touk.nussknacker.engine.compile.dumb._
 import pl.touk.nussknacker.engine.compiledgraph.node.SubprocessEnd
-import pl.touk.nussknacker.engine.compiledgraph.typing.{Typed, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ClazzRef, _}
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import pl.touk.nussknacker.engine.definition._
-import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.node._
-import pl.touk.nussknacker.engine.spel.{SpelConfig, SpelExpressionParser}
 import pl.touk.nussknacker.engine.splittedgraph._
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
+import pl.touk.nussknacker.engine.{compiledgraph, _}
 
 import scala.util.Right
 
@@ -97,10 +94,12 @@ private[compile] trait PartSubGraphCompilerBase {
                   }
               }
             case graph.node.VariableBuilder(id, varName, fields, _) =>
-              ctx.withVariable(varName, Typed[java.util.Map[String, Any]]).andThen { newCtx =>  //how to infere type of variables in map?
-                A.map2(fields.map(f => compile(f, ctx)).sequence, compile(next, newCtx))(
-                  (fields, nextWithCtx) =>
-                    CompiledNode(compiledgraph.node.VariableBuilder(id, varName, Right(fields), nextWithCtx.next), nextWithCtx.ctx))
+              fields.map(f => compile(f, ctx)).sequence.andThen { compiledFields =>
+                val variableType = TypedMapTypingResult(compiledFields.map(res => (res._1.name, res._2)).toMap)
+                ctx.withVariable(varName, variableType).andThen { newCtx =>
+                  compile(next, newCtx).map(nextWithCtx =>
+                    CompiledNode(compiledgraph.node.VariableBuilder(id, varName, Right(compiledFields.map(_._1)), nextWithCtx.next), nextWithCtx.ctx))
+                }
               }
 
             case graph.node.Processor(id, ref, isDisabled, _) =>
@@ -108,7 +107,7 @@ private[compile] trait PartSubGraphCompilerBase {
                 CompiledNode(compiledgraph.node.Processor(id, ref, nextWithCtx.next, isDisabled.contains(true)), nextWithCtx.ctx))
             case graph.node.Enricher(id, ref, outName, _) =>
               services.get(ref.id).map { definition =>
-                ctx.withVariable(outName, Typed(definition.returnType)(classLoader))
+                ctx.withVariable(outName, definition.returnType)
               }.getOrElse(Valid(ctx)).andThen { newCtx =>
                 A.map2(compile(ref, newCtx), compile(next, newCtx))((ref, nextWithCtx) =>
                   CompiledNode(compiledgraph.node.Enricher(id, ref, outName, nextWithCtx.next), nextWithCtx.ctx))
@@ -208,9 +207,9 @@ private[compile] trait PartSubGraphCompilerBase {
       A.map2(compile(n.expression, None, ctx, ClazzRef[Boolean]), compile(n.node, ctx))((expr, nextWithCtx) => (compiledgraph.node.Case(expr._2, nextWithCtx.next), nextWithCtx.ctx))
 
     private def compile(n: graph.variable.Field, ctx: ValidationContext)
-                       (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, compiledgraph.variable.Field] =
+                       (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, (compiledgraph.variable.Field, TypingResult)] =
       compile(n.expression, Some(n.name), ctx, ClazzRef[Any])
-        .map(typed => compiledgraph.variable.Field(n.name, typed._2))
+        .map(typed => (compiledgraph.variable.Field(n.name, typed._2), typed._1))
 
     private def compile(n: graph.expression.Expression,
                         fieldName: Option[String],

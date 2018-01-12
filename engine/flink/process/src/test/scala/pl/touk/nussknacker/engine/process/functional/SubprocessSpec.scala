@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.process.functional
 
 import java.util.Date
 
+import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
@@ -9,7 +10,6 @@ import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnod
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compile.SubprocessResolver
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ClazzRef
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.sink.SinkRef

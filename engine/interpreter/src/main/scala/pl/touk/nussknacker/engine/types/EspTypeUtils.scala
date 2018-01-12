@@ -7,7 +7,7 @@ import cats.data.StateT
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ClazzRef
+import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter}
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl

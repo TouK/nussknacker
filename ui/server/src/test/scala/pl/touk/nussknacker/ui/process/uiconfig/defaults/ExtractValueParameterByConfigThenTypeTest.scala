@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.ui.process.uiconfig.defaults
 
 import org.scalatest.{FlatSpec, Matchers}
+import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ClazzRef
 import pl.touk.nussknacker.ui.api.NodeDefinition
 
 class ExtractValueParameterByConfigThenTypeTest extends FlatSpec with Matchers {

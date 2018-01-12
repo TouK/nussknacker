@@ -1,9 +1,10 @@
 package pl.touk.nussknacker.engine.definition
 
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError.NodeId
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ClazzRef, ObjectWithMethodDef}
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.node.CustomNode
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode

@@ -2,9 +2,9 @@ package pl.touk.nussknacker.engine.compile
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{ValidatedNel, _}
+import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError.{NoParentContext, NodeId, OverwrittenVariable}
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ClazzRef
-import pl.touk.nussknacker.engine.compiledgraph.typing.TypingResult
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 
 object ValidationContext {

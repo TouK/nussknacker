@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.process
 
 import org.scalatest.{FlatSpec, Matchers}
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ClazzRef
+import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.ui.api.ProcessTestData

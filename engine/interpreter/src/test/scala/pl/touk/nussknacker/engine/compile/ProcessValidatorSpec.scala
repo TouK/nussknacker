@@ -7,11 +7,13 @@ import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.{MetaData, Service, StreamMetaData}
 import pl.touk.nussknacker.engine.api.lazyy.ContextWithLazyValuesProvider
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, WithCategories}
+import pl.touk.nussknacker.engine.api.typed.{ClazzRef, TypedMap, TypedMapDefinition}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError._
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ClazzRef, ObjectDefinition, Parameter}
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectDefinition, Parameter}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ExpressionDefinition, ObjectProcessDefinition, ProcessDefinition}
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node._
@@ -29,7 +31,9 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
   private val baseDefinition = ProcessDefinition[ObjectDefinition](
     Map("sampleEnricher" -> ObjectDefinition(List.empty, classOf[SimpleRecord], List()), "withParamsService" -> ObjectDefinition(List(Parameter("par1",
       ClazzRef(classOf[String]))), classOf[SimpleRecord], List())),
-    Map("source" -> ObjectDefinition(List.empty, classOf[SimpleRecord], List())),
+    Map("source" -> ObjectDefinition(List.empty, classOf[SimpleRecord], List()),
+        "typedMapSource" -> ObjectDefinition(List(Parameter("type", ClazzRef[TypedMapDefinition])), classOf[TypedMap], List())
+    ),
     Map("sink" -> ObjectDefinition.noParam),
 
     Map("customTransformer" -> (ObjectDefinition(List.empty, classOf[SimpleRecord], List()), emptyQueryNamesData()),
@@ -40,7 +44,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
     Map.empty,
     ObjectDefinition.noParam,
     ExpressionDefinition(
-      Map("processHelper" -> ObjectDefinition(List(), ClazzRef(ProcessHelper.getClass), List("cat1"))),
+      Map("processHelper" -> ObjectDefinition(List(), Typed(ProcessHelper.getClass), List("cat1"))),
       List.empty, optimizeCompilation = false
     ),
     EspTypeUtils.clazzAndItsChildrenDefinition(List(classOf[SampleEnricher], classOf[SimpleRecord], ProcessHelper.getClass))(ClassExtractionSettings.Default)
@@ -352,7 +356,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
   }
 
   private val definitionWithTypedSource = baseDefinition.copy(sourceFactories
-    = Map("source" -> ObjectDefinition.noParam.copy(returnType = ClazzRef(classOf[SimpleRecord]))))
+    = Map("source" -> ObjectDefinition.noParam.copy(returnType = Typed[SimpleRecord])))
 
   private val definitionWithTypedSourceAndTransformNode =
     definitionWithTypedSource.withCustomStreamTransformer("custom",
@@ -445,6 +449,21 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
     }
   }
 
+  it should "validate variable builder fields usage" in {
+    val process = EspProcessBuilder
+      .id("process1")
+      .exceptionHandler()
+      .source("id1", "source")
+      .buildVariable("valr", "var1", "a" -> "''", "b" -> "11")
+      .buildSimpleVariable("working", "var2", "#var1.b > 10")
+      .buildSimpleVariable("notWorking", "var3", "#var1.a > 10")
+      .emptySink("id2", "sink")
+
+    ProcessValidator.default(definitionWithTypedSource).validate(process) should matchPattern {
+      case Invalid(NonEmptyList(ExpressionParseError("Wrong part types", "notWorking", None, "#var1.a > 10"), _)) =>
+    }
+  }
+
   it should "not allow to overwrite variable by custom node" in {
     val process = EspProcessBuilder
       .id("process1")
@@ -529,7 +548,6 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
       case Invalid(NonEmptyList(MissingParameters(vars, _), _)) if vars == Set("OutputVariable") =>
     }
   }
-
 
 
   case class SimpleRecord(value1: AnotherSimpleRecord, plainValue: BigDecimal, plainValueOpt: Option[BigDecimal], intAsAny: Any, list: java.util.List[SimpleRecord]) {

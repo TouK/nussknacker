@@ -6,22 +6,22 @@ import java.time.LocalDate
 import java.util
 import java.util.Collections
 
-import cats.data.{NonEmptyList, Validated}
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.data.Validated.{Invalid, Valid}
 import cats.effect.IO
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.lazyy.{LazyContext, LazyValuesProvider, UsingLazyValues}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
+import pl.touk.nussknacker.engine.api.typed.{ClazzRef, TypedMap}
 import pl.touk.nussknacker.engine.compile.ValidationContext
 import pl.touk.nussknacker.engine.compiledgraph.expression.{Expression, ExpressionParseError, ValueWithLazyContext}
-import pl.touk.nussknacker.engine.compiledgraph.typing.Typed
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ClazzRef
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedMapTypingResult, TypingResult}
+import pl.touk.nussknacker.engine.compile.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.types.EspTypeUtils
 
 import scala.collection.JavaConverters._
 import scala.collection.JavaConversions._
-
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.language.implicitConversions
@@ -56,7 +56,14 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
     val lazyVal = lazyValue[String](enrichingServiceId).map(_ + " ma kota")
   }
 
-  private def parseOrFail[T:ClassTag](expr: String, context: Context = ctx) = {
+  private def parseOrFail[T:ClassTag](expr: String, context: Context = ctx) : Expression = {
+    parse(expr, context) match {
+      case Valid(e) => e._2
+      case Invalid(err) => throw new ParseException(err.map(_.message).toList.mkString, -1)
+    }
+  }
+
+  private def parseOrFail[T:ClassTag](expr: String, context: ValidationContext) : Expression = {
     parse(expr, context) match {
       case Valid(e) => e._2
       case Invalid(err) => throw new ParseException(err.map(_.message).toList.mkString, -1)
@@ -66,11 +73,15 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
 
   import pl.touk.nussknacker.engine.util.Implicits._
 
-  private def parse[T:ClassTag](expr: String, context: Context = ctx) = {
+  private def parse[T:ClassTag](expr: String, context: Context = ctx) : ValidatedNel[ExpressionParseError, (TypingResult, Expression)] = {
     val validationCtx = ValidationContext(
       context.variables.mapValuesNow(_.getClass).mapValuesNow(ClazzRef.apply).mapValuesNow(Typed.apply),
       EspTypeUtils.clazzAndItsChildrenDefinition(context.variables.values.map(_.getClass).toList)(ClassExtractionSettings.Default)
     )
+    parse(expr, validationCtx)
+  }
+
+  private def parse[T:ClassTag](expr: String, validationCtx: ValidationContext) : ValidatedNel[ExpressionParseError, (TypingResult, Expression)] = {
     val expressionFunctions = Map("today" -> classOf[LocalDate].getDeclaredMethod("now"))
     val imports = List(SampleValue.getClass.getPackage.getName)
     new SpelExpressionParser(expressionFunctions, imports, getClass.getClassLoader, 1 minute, enableSpelForceCompile = true)
@@ -263,6 +274,15 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
     val ctxWithInput = ctx.withVariable("input", SampleValue(444))
     parse[Any]("{ Field1: 'Field1Value', Field2: 'Field2Value', Field3: #input.value }", ctxWithInput) shouldBe 'valid
   }
+
+  it should "type map literals" in {
+    val ctxWithInput = ctx.withVariable("input", SampleValue(444))
+    parse[Any]("{ Field1: 'Field1Value', Field2: #input.value }.Field1", ctxWithInput) shouldBe 'valid
+    parse[Any]("{ Field1: 'Field1Value', 'Field2': #input }.Field2.value", ctxWithInput) shouldBe 'valid
+    parse[Any]("{ Field1: 'Field1Value', Field2: #input }.noField", ctxWithInput) shouldNot be ('valid)
+
+  }
+
   
   it should "validate lazy value usage" in {
     val ctxWithInput = ctx.withVariable("input", SampleValue(444))
@@ -299,6 +319,34 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
   it should "resolve imported package" in {
     val givenValue = 123
     parseOrFail[Int](s"new SampleValue($givenValue, '').value").evaluateSync(ctx, dumbLazyProvider).value should equal(givenValue)
+  }
+
+  it should "parse typed map with existing field" in {
+
+    implicit val nid = NodeId("")
+    val ctxWithMap = ValidationContext
+      .empty
+      .withVariable("input", TypedMapTypingResult(Map("str" -> Typed[String], "lon" -> Typed[Long]))).toOption.get
+
+
+    parse[String]("#input.str", ctxWithMap) should be ('valid)
+    parse[Long]("#input.lon", ctxWithMap) should be ('valid)
+
+    parse[Long]("#input.str", ctxWithMap) shouldNot be ('valid)
+    parse[String]("#input.ala", ctxWithMap) shouldNot be ('valid)
+  }
+
+  it should "evaluate parsed map" in {
+    implicit val nid = NodeId("")
+    val valCtxWithMap = ValidationContext
+      .empty
+      .withVariable("input", TypedMapTypingResult(Map("str" -> Typed[String], "lon" -> Typed[Long]))).toOption.get
+
+    val ctx = Context("").withVariable("input", TypedMap(Map("str" -> "aaa", "lon" -> 3444)))
+
+    parseOrFail[String]("#input.str", valCtxWithMap).evaluateSync(ctx, dumbLazyProvider).value shouldBe "aaa"
+    parseOrFail[Long]("#input.lon", valCtxWithMap).evaluateSync(ctx, dumbLazyProvider).value shouldBe 3444
+
   }
 
 }

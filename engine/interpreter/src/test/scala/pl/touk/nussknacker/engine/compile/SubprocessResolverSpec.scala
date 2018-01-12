@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.compile
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.data.Validated.{Invalid, Valid}
 import org.scalatest.{FlatSpec, Inside, Matchers}
+import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.GraphBuilder.Creator
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
@@ -11,7 +12,6 @@ import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, Subpro
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError.{DisablingManyOutputsSubprocess, DisablingNoOutputsSubprocess, RedundantParameters, UnknownSubprocessOutput}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ClazzRef
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node._

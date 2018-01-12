@@ -1,9 +1,7 @@
-package pl.touk.nussknacker.engine.compiledgraph
+package pl.touk.nussknacker.engine.api.typed
 
 import cats.kernel.CommutativeMonoid
 import org.apache.commons.lang3.ClassUtils
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ClazzRef
-import pl.touk.nussknacker.engine.util.ReflectUtils
 
 import scala.reflect.ClassTag
 
@@ -15,6 +13,19 @@ object typing {
 
     def display: String
 
+  }
+
+  object TypedMapTypingResult {
+
+    def apply(definition: TypedMapDefinition)(implicit classLoader: ClassLoader) : TypedMapTypingResult
+      = TypedMapTypingResult(definition.fields.mapValues(Typed(_)))
+  }
+
+  case class TypedMapTypingResult(fields: Map[String, TypingResult]) extends TypingResult {
+
+    override def canBeSubclassOf(clazzRef: ClazzRef)(implicit classLoader: ClassLoader): Boolean = Typed[java.util.Map[_, _]].canBeSubclassOf(clazzRef)
+
+    override def display: String = s"map with fields:${fields.map { case (name, typ) => s"$name of type ${typ.display}"}.mkString(", ")}"
   }
 
   case object Unknown extends TypingResult {
@@ -51,6 +62,8 @@ object typing {
 
     def apply[T:ClassTag] : TypingResult = Typed(Set(TypedClass(implicitly[ClassTag[T]].runtimeClass)))
 
+    def apply(klass: Class[_]) : TypingResult = Typed(Set(TypedClass(klass)))
+
     def apply(klass: ClazzRef)(implicit classLoader: ClassLoader) : TypingResult = {
       if (klass == ClazzRef.unknown) {
         Unknown
@@ -70,6 +83,7 @@ object typing {
       case (Unknown, _) => Unknown
       case (_, Unknown) => Unknown
       case (Typed(set1), Typed(set2)) => Typed(set1 ++ set2)
+      case _ => throw new IllegalArgumentException("NOT IMPLEMENTED YET :)")
     }
 
   }
