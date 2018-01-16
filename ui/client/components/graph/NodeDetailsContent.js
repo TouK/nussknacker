@@ -30,6 +30,7 @@ export default class NodeDetailsContent extends React.Component {
 
   componentWillReceiveProps(nextProps) {
     if (!_.isEqual(this.props.node, nextProps.node)) {
+      this.nodeObjectDetails = ProcessUtils.findNodeObjectTypeDefinition(nextProps.node, nextProps.processDefinitionData.processDefinition)
       this.setState({editedNode: nextProps.node})
     }
   }
@@ -45,6 +46,7 @@ export default class NodeDetailsContent extends React.Component {
   }
 
   customNode = () => {
+
     switch (NodeUtils.nodeType(this.props.node)) {
       case 'Source':
         return this.sourceSinkCommon()
@@ -87,7 +89,7 @@ export default class NodeDetailsContent extends React.Component {
             {this.createReadonlyField("input", "Service Id", "service.id")}
             {this.state.editedNode.service.parameters.map((param, index) => {
               return (
-                <div className="node-block" key={index}>
+                <div className="node-block" key={this.props.node.id + param.name + index}>
                   {this.createListField("textarea", param.name, param, 'expression.expression', `service.parameters[${index}]`, param.name)}
                 </div>
               )
@@ -104,7 +106,7 @@ export default class NodeDetailsContent extends React.Component {
             {this.createReadonlyField("input", "Subprocess Id", "ref.id")}
             {this.state.editedNode.ref.parameters.map((params, index) => {
               return (
-                <div className="node-block" key={index}>
+                <div className="node-block" key={this.props.node.id + params.name + index}>
                   {this.createListField("textarea", params.name, params, 'expression.expression', `ref.parameters[${index}]`, params.name)}
                 </div>
               )
@@ -121,7 +123,7 @@ export default class NodeDetailsContent extends React.Component {
             {this.createReadonlyField("input", "Node type", "nodeType")}
             {this.state.editedNode.parameters.map((param, index) => {
               return (
-                <div className="node-block" key={index}>
+                <div className="node-block" key={this.props.node.id + param.name + index}>
                   {this.createListField("textarea", param.name, param, 'expression.expression', `parameters[${index}]`, param.name)}
                 </div>
               )
@@ -139,7 +141,7 @@ export default class NodeDetailsContent extends React.Component {
               <div className="node-group">
                 {this.state.editedNode.fields.map((params, index) => {
                   return (
-                    <div className="node-block" key={index}>
+                    <div className="node-block" key={this.props.node.id + params.name + index}>
                       {this.createListField("input", "Name", params, "name", `fields[${index}]`)}
                       {this.createListField("textarea", "Expression", params, "expression.expression", `fields[${index}]`, "expression")}
                     </div>
@@ -197,7 +199,7 @@ export default class NodeDetailsContent extends React.Component {
                 <div className="node-group">
                   {this.state.editedNode.exceptionHandler.parameters.map((params, index) => {
                     return (
-                      <div className="node-block" key={index}>
+                      <div className="node-block" key={this.props.node.id + params.name + index}>
                         {this.createListField("textarea", params.name, params, 'expression.expression', `exceptionHandler.parameters[${index}]`, params.name)}
                         <hr />
                       </div>
@@ -234,7 +236,7 @@ export default class NodeDetailsContent extends React.Component {
         {this.createReadonlyField("input", "Ref Type", "ref.typ")}
         {this.state.editedNode.ref.parameters.map((params, index) => {
           return (
-            <div className="node-block" key={index}>
+            <div className="node-block" key={this.props.node.id + params.name + index}>
               {this.createListField("textarea", params.name, params, 'expression.expression', `ref.parameters[${index}]`, params.name)}
             </div>
           )
