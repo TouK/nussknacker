@@ -41,6 +41,7 @@ object PrettyValidationErrors {
       case UnsupportedPart(id) => node("UnsupportedPart", s"Type of node $id is unsupported right now")
       case UnknownSubprocess(id, nodeId) => node("Unknown subprocess", s"Node $nodeId uses subprocess $id which is missing")
       case InvalidSubprocess(id, nodeId) => node("Invalid subprocess", s"Node $nodeId uses subprocess $id which is invalid")
+      case FatalUnknownError(message) => node("Unkown, fatal validation error", s"Fata error: $message, please check configuration")
 
       case UnresolvedSubprocess(id) => node("Unresolved subprocess", s"Subprocess $id encountered, this should not happen")
       case NoParentContext(_) => node("No parent context", "Please check subprocess definition")

@@ -31,6 +31,8 @@ import pl.touk.nussknacker.engine.splittedgraph.part._
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.{Next, NextNode, PartRef, SplittedNode}
 import pl.touk.nussknacker.engine.util.Implicits._
 
+import scala.util.control.NonFatal
+
 class ProcessCompiler( protected val classLoader: ClassLoader,
                        protected val sub: PartSubGraphCompilerBase,
                       protected val definitions: ProcessDefinition[ObjectWithMethodDef]) extends ProcessCompilerBase {
@@ -95,7 +97,11 @@ protected trait ProcessCompilerBase {
   }
 
   def validate(process: EspProcess): ValidatedNel[ProcessCompilationError, Unit] = {
-    compile(process).map(_ => Unit)
+    try {
+      compile(process).map(_ => Unit)
+    } catch {
+      case NonFatal(e) => Invalid(NonEmptyList.of(FatalUnknownError(e.getMessage)))
+    }
   }
 
   protected def compile(process: EspProcess): ValidatedNel[ProcessCompilationError, CompiledProcessParts] = {

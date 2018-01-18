@@ -9,6 +9,7 @@ import ModalRenderUtils from "./ModalRenderUtils";
 import TestResultUtils from "../../common/TestResultUtils";
 import ProcessUtils from '../../common/ProcessUtils';
 import * as JsonUtils from '../../common/JsonUtils';
+import Fields from "../Fields";
 
 //move state to redux?
 // here `componentDidUpdate` is complicated to clear unsaved changes in modal
@@ -59,8 +60,17 @@ export default class NodeDetailsContent extends React.Component {
           <div className="node-table-body">
             {this.createField("input", "Id", "id")}
 
-            {this.doCreateField("plain-textarea", "Parameters", "parameters",
-              JsonUtils.tryStringify(this.state.editedNode.parameters || []), (newValue) => this.setNodeDataAt("parameters", JsonUtils.tryParse(newValue)))}
+            <div className="node-row">
+              {this.renderFieldLabel("Parameters")}
+              <div className="node-value">
+                <Fields fields={this.state.editedNode.parameters || []} fieldCreator={(field, onChange) =>
+                  (<input type="text" className="node-input" value={field.typ.refClazzName}
+                          onChange={(e) => onChange({typ: {refClazzName: e.target.value}})}/>)}
+                  onChange={(fields) => this.setNodeDataAt("parameters", fields)}
+                  newValue={{name: "", typ: {refClazzName: ""}}}
+                />
+              </div>
+            </div>
             {this.descriptionField()}
           </div>
         )
