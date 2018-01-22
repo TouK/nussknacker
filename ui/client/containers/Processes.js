@@ -159,7 +159,7 @@ class Processes extends PeriodicallyReloadingComponent {
             </span>
           </div>
           {this.props.loggedUser.canWrite ? (
-          <div id="process-add-button" className="input-group" role="button"
+          <div id="process-add-button" className="big-blue-button input-group " role="button"
                onClick={() => this.setState({showAddProcess : true})}>CREATE NEW PROCESS
                              <img id="add-icon" src={createProcessIcon} />
                            </div>) : null

@@ -1,51 +1,53 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
+import akka.http.scaladsl.model.StatusCodes._
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.{Directives, ExceptionHandler, Route}
+import com.typesafe.scalalogging.LazyLogging
 import pl.touk.http.argonaut.Argonaut62Support
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.Displayable
+import pl.touk.nussknacker.engine.api.MetaData
+import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
-import pl.touk.nussknacker.engine.util.service.query.ServiceQuery
+import pl.touk.nussknacker.engine.util.service.query.{ExpressionServiceQuery, ServiceQuery}
 import pl.touk.nussknacker.engine.util.service.query.ServiceQuery.ServiceNotFoundException
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
-import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.ExecutionContext
+import scala.util.control.NonFatal
+import argonaut._, Argonaut._, ArgonautShapeless._
 
-// TODO: GUI
 class ServiceRoutes(modelDataMap: Map[ProcessingType, ModelData])
                    (implicit ec: ExecutionContext)
   extends Directives
     with RouteWithUser
-    with Argonaut62Support {
-
+    with Argonaut62Support
+    with LazyLogging{
+  import ServiceRoutes._
   private val encoder = BestEffortJsonEncoder(failOnUnkown = false)
 
-  private implicit val metaData = ServiceQuery.Implicits.metaData
+  private implicit val metaData: MetaData = ServiceQuery.Implicits.metaData
 
   private implicit def serviceExceptionHandler: ExceptionHandler =
     ExceptionHandler {
-      case ServiceNotFoundException(serviceName) =>
-        complete(HttpResponse(StatusCodes.NotFound, entity = s"Service '$serviceName' not found."))
-      case e: IllegalArgumentException =>
-        complete(HttpResponse(StatusCodes.BadRequest, entity = s"Illegal argument ${e.getMessage}"))
-    }
-
-  private def invokeServicePath =
-    path("service" / Segment / Segment) { (processingTypeName, serviceName) =>
-      post {
-        val processingType = ProcessingType.withName(processingTypeName)
-        val modelData = modelDataMap(processingType)
-        entity(as[Map[String, String]]) { params =>
-          complete {
-            new ServiceQuery(modelData)
-              .invoke(serviceName, params)
-              .map(encoder.encode)
-          }
-        }
-      }
+      case e@ServiceNotFoundException(serviceName) =>
+        complete(HttpResponse(
+          status = NotFound,
+          entity = HttpEntity(ContentTypes.`application/json`,JsonThrowable(e)
+            .asJson
+            .toString())
+        ))
+      case NonFatal(e) =>
+        logger.error("service invocation went wrong", e)
+        complete(HttpResponse(
+          status = InternalServerError,
+          entity = HttpEntity(ContentTypes.`application/json`,JsonThrowable(e)
+            .asJson
+            .toString()
+          )
+        ))
     }
 
   override def route(implicit user: LoggedUser): Route = {
@@ -55,4 +57,37 @@ class ServiceRoutes(modelDataMap: Map[ProcessingType, ModelData])
       }
     }
   }
+
+  private def invokeServicePath =
+    path("service" / Segment / Segment) { (processingTypeName, serviceName) =>
+      post {
+        val processingType = ProcessingType.withName(processingTypeName)
+        val modelData = modelDataMap(processingType)
+        entity(as[List[Parameter]]) { params =>
+          complete {
+            invokeService(serviceName, modelData, params)
+              .map(encoder.encode)
+          }
+        }
+      }
+    }
+
+  private def invokeService(serviceName: String, modelData: ModelData, params: List[Parameter]) = {
+    ExpressionServiceQuery(new ServiceQuery(modelData), modelData)
+      .invoke(serviceName, params)
+  }
+}
+
+object ServiceRoutes {
+  case class JsonThrowable(className: String, message: Option[String], stacktrace: List[String])
+
+  object JsonThrowable {
+    def apply(e: Throwable):JsonThrowable =
+      JsonThrowable(
+        className = e.getClass.getCanonicalName,
+        message = Option(e.getMessage),
+        stacktrace = e.getStackTrace.toList.map(_.toString)
+      )
+  }
+
 }

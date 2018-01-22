@@ -53,7 +53,7 @@ class AddProcessDialog extends React.Component {
         <div className="modalHeader" style={headerStyles}>
           <span>Create new process</span>
         </div>
-        <div className="modalContent">
+        <div className="modalContentDark">
           <div className="node-table">
             <div className="node-table-body">
               <div className="node-row">

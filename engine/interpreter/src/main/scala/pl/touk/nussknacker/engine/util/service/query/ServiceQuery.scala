@@ -18,23 +18,20 @@ class ServiceQuery(modelData: ModelData) {
   private val serviceMethodMap: Map[String, ObjectWithMethodDef] =
     modelData.withThisAsContextClassLoader {
       val servicesMap = modelData.configCreator.services(modelData.processConfig)
-
-      def serviceMoehod(factory: WithCategories[Service]) = {
+      def serviceMethod(factory: WithCategories[Service]) = {
         ObjectWithMethodDef(factory, ProcessObjectDefinitionExtractor.service)
       }
 
-      servicesMap.mapValuesNow { factory =>
-        serviceMoehod(factory)
-      }
+      servicesMap.mapValuesNow(serviceMethod)
     }
 
-  def invoke(serviceName: String, serviceParameters: Map[String, Any], nodeContext: NodeContext = dummyNodeContext)
+  def invoke(serviceName: String, serviceParameters: (String, Any)*)
             (implicit executionContext: ExecutionContext, metaData: MetaData): Future[Any] = {
     val methodDef: ObjectWithMethodDef = serviceMethodMap
       .getOrElse(serviceName, throw ServiceNotFoundException(serviceName))
     val lifecycle = closableService(methodDef)
     lifecycle.open()
-    val f = ServiceInvoker(methodDef).invoke(serviceParameters, nodeContext)
+    val f = ServiceInvoker(methodDef).invoke(serviceParameters.toMap, dummyNodeContext)
     closeOnComplete(f, lifecycle)
   }
 

@@ -131,6 +131,19 @@ export default {
       .then(() => this.addInfo(`Process ${processId} was deployed`))
       .catch((error) => this.addError(`Failed to deploy ${processId}`, error, true));
   },
+//TODO: separate reusable invocation.
+  invokeService(processingType, serviceName, parameters) {
+    return fetch(`${API_URL}/service/${processingType}/${serviceName}`,
+      {
+        method: 'POST',
+        body: JSON.stringify(parameters),
+        credentials: 'include',
+        headers: new Headers({
+          'Content-Type': 'application/json'
+        })
+      }
+    )
+  },
 
   stop(processId) {
     return promiseWrap($.post(API_URL + '/processManagement/cancel/' + processId))

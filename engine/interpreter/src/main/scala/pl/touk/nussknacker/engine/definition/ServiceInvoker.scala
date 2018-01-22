@@ -23,9 +23,11 @@ private[definition] class ServiceInvokerImpl(objectWithMethodDef: ObjectWithMeth
 
   override def invoke(params: Map[String, Any], nodeContext: NodeContext)
                      (implicit ec: ExecutionContext, metaData: MetaData): Future[Any] = {
-    objectWithMethodDef.invokeMethod((params.get _)
-      .andThen(_.map(_.asInstanceOf[AnyRef])), Seq(ec,
-      ServiceInvocationCollector(nodeContext), metaData)).asInstanceOf[Future[Any]]
+    objectWithMethodDef.invokeMethod(
+      paramFun = (params.get _)
+        .andThen(_.map(_.asInstanceOf[AnyRef])),
+      additional = Seq(ec, ServiceInvocationCollector(nodeContext), metaData)
+    ).asInstanceOf[Future[Any]]
   }
 
 }

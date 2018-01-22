@@ -148,7 +148,7 @@ class EdgeDetailsModal extends React.Component {
       <div className="objectModal">
         <Modal isOpen={isOpen} className="espModal" shouldCloseOnOverlayClick={false} onRequestClose={this.closeModal}>
           <div className="modalHeader" style={headerStyles}><span>edge</span></div>
-          <div className="modalContent">
+          <div className="modalContentDark">
             {this.renderModalContent()}
           </div>
           <div className="modalFooter">

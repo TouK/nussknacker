@@ -32,7 +32,7 @@ class Signals extends React.Component {
     //fixme simplify this view as in QueriedStateTable
     return (
       <div className="full-dark">
-      <div className="modalContent">
+      <div className="modalContentDark">
         <div className="node-table">
           <div className="node-table-body">
             <div className="node-row">

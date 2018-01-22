@@ -45,7 +45,7 @@ class ServiceQueryOpenCloseSpec
       override def services(config: Config): Map[String, WithCategories[Service]] =
         super.services(config) ++ Map("cast" -> WithCategories(service, Nil))
     }))
-      .invoke("cast", Map("integer" -> arg))
+      .invoke("cast", "integer" -> arg)
   }
 }
 

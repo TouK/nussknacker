@@ -35,7 +35,7 @@ class ConfirmDialog extends React.Component {
       <Modal isOpen={this.props.confirmDialog.isOpen}
              shouldCloseOnOverlayClick={false}
              className="espModal confirmationModal" onRequestClose={this.closeDialog}>
-        <div className="modalContent">
+        <div className="modalContentDark">
           <p>{this.props.confirmDialog.text}</p>
           {this.props.processHasSomeWarnings ?
             <div className="warning">

@@ -157,7 +157,7 @@ espCheckbox(checkboxWidth)
   span::after
     content: "\00a0\00a0"
 
-.modalContent
+modalContent(modalBkgColor,warningColor,modalLabelTextColor,testResultsColor,modalInputTextColor,processesHoverColor,hrColor,modalInputBkgColor)
   overflow auto
   max-height modalContentMaxHeight
   background-color: modalBkgColor
@@ -259,6 +259,22 @@ espCheckbox(checkboxWidth)
     border-top 1px solid hrColor
     margin-top 10px
     margin-bottom 10px
+
+.modalContentDye
+  modalContent(
+          modalBkgColor:white,
+          warningColor:pink,
+          modalLabelTextColor:black,
+          testResultsColor:pink,
+          modalInputTextColor:black,
+          processesHoverColor:pink,
+          hrColor:pink,
+          modalInputBkgColor:white)
+  .node-table .node-input
+    border: solid 1px #ccc
+
+.modalContentDark
+  modalContent(modalBkgColor,warningColor,modalLabelTextColor,testResultsColor,modalInputTextColor,processesHoverColor,hrColor,modalInputBkgColor)
 
 .modalFooter
   margin-top: 5px

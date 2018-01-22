@@ -42,7 +42,7 @@ class GenericModalDialog extends React.Component {
         { this.props.header ? (<div className="modalHeader" style={{color: 'white', 'backgroundColor': '#70c6ce'}}>
           <span>{this.props.header}</span>
         </div>) : null }
-        <div className="modalContent">
+        <div className="modalContentDark">
           {this.props.children}
           <div className="confirmationButtons">
             <button type="button" title="Cancel" className='modalButton' onClick={this.closeDialog}>Cancel</button>
