@@ -37,26 +37,26 @@ describe("expression suggester", () => {
   it("should suggest all global variables if # specified", () => {
     const suggestions = expressionSuggester.suggestionsFor("#", {row: 0, column: "#".length})
     expect(suggestions).toEqual([
-      { methodName: "#input"},
-      { methodName: "#other"},
-      { methodName: "#ANOTHER"}
+      { methodName: "#input", refClazzName: 'org.A'},
+      { methodName: "#other", refClazzName: 'org.C'},
+      { methodName: "#ANOTHER", refClazzName: 'org.A'}
     ])
   })
 
   it("should filter global variables suggestions", () => {
     const suggestions = expressionSuggester.suggestionsFor("#ot", {row: 0, column: "#ot".length })
-    expect(suggestions).toEqual([{methodName: "#other"}])
+    expect(suggestions).toEqual([{methodName: "#other", refClazzName: 'org.C'}])
   })
 
   it("should filter uppercase global variables suggestions", () => {
     const suggestions = expressionSuggester.suggestionsFor("#ANO", {row: 0, column: "#ANO".length })
-    expect(suggestions).toEqual([{methodName: "#ANOTHER"}])
+    expect(suggestions).toEqual([{methodName: "#ANOTHER", refClazzName: 'org.A'}])
   })
 
   it("should suggest global variable", () => {
     const suggestions = expressionSuggester.suggestionsFor("#inpu", {row: 0, column: "#inpu".length })
     expect(suggestions).toEqual([
-      { methodName: "#input"}
+      { methodName: "#input", refClazzName: 'org.A'}
     ])
   })
 

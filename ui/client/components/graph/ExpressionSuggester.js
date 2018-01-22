@@ -66,8 +66,10 @@ export default class ExpressionSuggester {
       const allowedMethodList = _.map(currentType.methods, (val, key) => { return { ...val, methodName: key} })
       return inputValue.length === 0 ? allowedMethodList : this._filterSuggestionsForInput(allowedMethodList, inputValue)
     } else if (variableNotSelected && !_.isEmpty(value)) {
-      const allVariables = _.map(variableNames, (variableName) => { return { methodName: variableName}})
-      return this._filterSuggestionsForInput(allVariables, value)
+      const allVariablesWithClazzRefs = _.map(this._variables, (val, key) => {
+        return {'methodName': key, 'refClazzName': val}
+      })
+      return this._filterSuggestionsForInput(allVariablesWithClazzRefs, value)
     }
     else {
       return []

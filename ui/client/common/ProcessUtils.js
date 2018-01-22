@@ -149,7 +149,7 @@ class ProcessUtils {
       return ""
     } else {
       const typeSplitted = _.split(refClazzName, ".")
-      const lastClazzNamePart = _.last(typeSplitted)
+      const lastClazzNamePart = _.last(typeSplitted).replace("$", "")
       return _.upperFirst(lastClazzNamePart)
     }
   }

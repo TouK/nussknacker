@@ -5,14 +5,10 @@ import _ from "lodash";
 import {bindActionCreators} from "redux";
 import ActionsUtils from "../../actions/ActionsUtils";
 
-
 class SideNodeDetails extends Component {
 
   flatObject = (obj) => {
-    return _.flatMap(_.toPairs(obj), (keyVal) => {
-      const key = keyVal[0]
-      const val = keyVal[1]
-
+    return _.flatMap(obj, (val, key) => {
       if (_.isArray(val)) {
         if (_.isEqual(key, "ids")) {
           return val.join(",")
