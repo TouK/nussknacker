@@ -96,7 +96,7 @@ class ExpressionSuggest extends React.Component {
           mode={'spel'}
           width={"100%"}
           minLines={1}
-          maxLines={10}
+          maxLines={50}
           theme={'nussknacker'}
           onChange={this.onChange}
           value={this.state.value}
@@ -105,7 +105,9 @@ class ExpressionSuggest extends React.Component {
           showGutter={false}
           highlightActiveLine={false}
           highlightGutterLine={false}
+          wrapEnabled={true}
           setOptions={{
+            indentedSoftWrap: false, //removes weird spaces for multiline strings when wrapEnabled=true
             enableBasicAutocompletion: [this.customAceEditorCompleter],
             enableLiveAutocompletion: false,
             enableSnippets: false,
