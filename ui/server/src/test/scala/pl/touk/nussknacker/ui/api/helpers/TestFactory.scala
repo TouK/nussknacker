@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.ui.api.helpers
 
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
+
 import com.typesafe.config.ConfigFactory
 import pl.touk.nussknacker.engine.api.deployment.{ProcessDeploymentData, ProcessState}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -63,33 +65,32 @@ object TestFactory {
     import ExecutionContext.Implicits.global
 
     override def deploy(processId: String, processDeploymentData: ProcessDeploymentData, savepoint: Option[String]): Future[Unit] = Future {
-      Thread.sleep(sleepBeforeAnswer)
-      if (failDeployment) {
+      Thread.sleep(sleepBeforeAnswer.get())
+      if (failDeployment.get()) {
         throw new RuntimeException("Failing deployment...")
       } else {
         ()
       }
     }
 
-    private var sleepBeforeAnswer: Long = 0
-
-    private var failDeployment: Boolean = false
+    private val sleepBeforeAnswer = new AtomicLong(0)
+    private val failDeployment = new AtomicBoolean(false)
 
     def withLongerSleepBeforeAnswer[T](action: => T): T = {
       try {
-        sleepBeforeAnswer = 500
+        sleepBeforeAnswer.set(500)
         action
       } finally {
-        sleepBeforeAnswer = 0
+        sleepBeforeAnswer.set(0)
       }
     }
 
     def withFailingDeployment[T](action: => T): T = {
       try {
-        failDeployment = true
+        failDeployment.set(true)
         action
       } finally {
-        failDeployment = false
+        failDeployment.set(false)
       }
     }
   }
