@@ -1,4 +1,5 @@
 import React from "react";
+import ReactDOMServer from 'react-dom/server'
 import {connect} from 'react-redux';
 import Textarea from 'react-textarea-autosize';
 import _ from 'lodash';
@@ -35,8 +36,22 @@ class ExpressionSuggest extends React.Component {
         //unfortunately Ace treats `#` as special case, we have to remove `#` from suggestions or it will be duplicated
         //maybe it depends on language mode?
         const methodName = s.methodName.replace("#", "")
-        return {name: methodName, value: methodName, score: 1, meta: ProcessUtils.humanReadableType(s.refClazzName)}
+        const returnType = ProcessUtils.humanReadableType(s.refClazzName)
+        return {name: methodName, value: methodName, score: 1, meta: returnType, description: s.description, parameters: s.parameters, returnType: returnType}
       }))
+    },
+    getDocTooltip: (item) => {
+      if (item.description || !_.isEmpty(item.parameters)) {
+        const paramsSignature = item.parameters.map(p => ProcessUtils.humanReadableType(p.refClazzName) + " " + p.name).join(", ")
+        const javaStyleSignature = `${item.returnType} ${item.name}(${paramsSignature})`
+        item.docHTML = ReactDOMServer.renderToStaticMarkup((
+          <div className="function-docs">
+            <b>{javaStyleSignature}</b>
+            <hr/>
+            <p>{item.description}</p>
+          </div>
+        ))
+      }
     }
   }
 

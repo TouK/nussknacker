@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.engine.management.sample
 
 import java.nio.charset.StandardCharsets
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
 
 import argonaut.{Argonaut, Json}
@@ -295,7 +297,29 @@ case object MultipleParamsService extends Service {
 }
 
 object DateProcessHelper {
+  @Documentation(
+    description = "Returns current time in milliseconds." +
+      "\nNote that while the unit of time of the return value is a millisecond," +
+      "\nthe granularity of the value depends on the underlying" +
+      "\noperating system and may be larger. For example, many" +
+      "\noperating systems measure time in units of tens of milliseconds."
+  )
   def nowTimestamp(): Long = System.currentTimeMillis()
+
+  @Documentation(description = "Just parses a date.\n" +
+    "Lorem ipsum dolor sit amet enim. Etiam ullamcorper. Suspendisse a pellentesque dui, non felis. Maecenas malesuada elit lectus felis, malesuada ultricies. Curabitur et ligula")
+  def parseDate(@ParamName("dateString") dateString: String): LocalDateTime = {
+    LocalDateTime.parse(dateString)
+  }
+
+  def noDocsMethod(date: Any, format: String): String = {
+    ""
+  }
+
+  def paramsOnlyMethod(@ParamName("number") number: Int, @ParamName("format") format: String): String = {
+    ""
+  }
+
 }
 
 case class ConstantState(id: String, transactionId: Int, elements: List[String])

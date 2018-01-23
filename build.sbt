@@ -202,6 +202,7 @@ lazy val management_sample = (project in engine("flink/management/sample")).
     assemblyJarName in assembly := "managementSample.jar",
     assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false, level = Level.Debug),
     test in assembly := {},
+    publishArtifact in (Compile, packageDoc) := false, //scaladoc fails so we disable it, we don't need it here anyway
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",

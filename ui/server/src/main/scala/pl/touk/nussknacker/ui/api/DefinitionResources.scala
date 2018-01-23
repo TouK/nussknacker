@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectDefinition, PlainClazzDefinition}
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ProcessDefinition, TransformerId}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -25,6 +25,7 @@ import pl.touk.nussknacker.ui.process.uiconfig.defaults.{ParameterDefaultValueEx
 import pl.touk.nussknacker.ui.util.EspPathMatchers
 import pl.touk.http.argonaut.Argonaut62Support
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import pl.touk.nussknacker.ui.process.ProcessObjectsFinder
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -91,7 +92,7 @@ case class UIProcessDefinition(services: Map[String, ObjectDefinition],
                                signalsWithTransformers: Map[String, (ObjectDefinition, Set[TransformerId])],
                                exceptionHandlerFactory: ObjectDefinition,
                                globalVariables: Map[String, ObjectDefinition],
-                               typesInformation: List[PlainClazzDefinition],
+                               typesInformation: List[ClazzDefinition],
                                subprocessInputs: Map[String, ObjectDefinition]) {
 }
 

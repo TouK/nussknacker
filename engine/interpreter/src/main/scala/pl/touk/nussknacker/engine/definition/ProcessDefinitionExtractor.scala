@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.signal.SignalTransformer
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, QueryableStateNames}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedParameters}
+import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 
 object ProcessDefinitionExtractor {
 
@@ -87,7 +88,7 @@ object ProcessDefinitionExtractor {
                                                     signalsWithTransformers: Map[String, (T, Set[TransformerId])],
                                                     exceptionHandlerFactory: T,
                                                     expressionConfig: ExpressionDefinition[T],
-                                                    typesInformation: List[PlainClazzDefinition]) {
+                                                    typesInformation: List[ClazzDefinition]) {
     def componentIds: List[String] = {
       val ids = services.keys ++
         sourceFactories.keys ++

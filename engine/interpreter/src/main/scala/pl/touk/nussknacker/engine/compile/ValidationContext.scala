@@ -3,8 +3,9 @@ package pl.touk.nussknacker.engine.compile
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{ValidatedNel, _}
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError.{NoParentContext, NodeId, OverwrittenVariable}
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ClazzRef, PlainClazzDefinition}
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ClazzRef
 import pl.touk.nussknacker.engine.compiledgraph.typing.TypingResult
+import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 
 object ValidationContext {
 
@@ -12,7 +13,7 @@ object ValidationContext {
 }
 
 case class ValidationContext(variables: Map[String, TypingResult] = Map.empty,
-                             typesInformation: List[PlainClazzDefinition] = List.empty,
+                             typesInformation: List[ClazzDefinition] = List.empty,
                              parent: Option[ValidationContext] = None) {
 
   def apply(name: String): TypingResult =
@@ -26,7 +27,7 @@ case class ValidationContext(variables: Map[String, TypingResult] = Map.empty,
   def withVariable(name: String, value: TypingResult)(implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, ValidationContext] =
     if (variables.contains(name)) Invalid(NonEmptyList.of(OverwrittenVariable(name))) else Valid(copy(variables = variables + (name -> value)))
 
-  def getTypeInfo(clazzRef: ClazzRef): Option[PlainClazzDefinition] = {
+  def getTypeInfo(clazzRef: ClazzRef): Option[ClazzDefinition] = {
     typesInformation.find(_.clazzName == clazzRef)
   }
 

@@ -7,7 +7,6 @@ import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api.{Displayable, TypeSpecificData, UserDefinedProcessAdditionalFields}
 import pl.touk.nussknacker.engine.api.deployment.test.{ExpressionInvocationResult, MockedResult, TestResults}
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.PlainClazzDefinition
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.definition.TestingCapabilities
 import pl.touk.nussknacker.engine.graph.node
@@ -21,6 +20,7 @@ import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{BaseProcessD
 import pl.touk.nussknacker.ui.processreport.NodeCount
 import pl.touk.nussknacker.ui.validation.ValidationResults.{NodeValidationErrorType, ValidationResult}
 import ArgonautShapeless._
+import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import pl.touk.nussknacker.engine.util.json.{BestEffortJsonEncoder, Codecs}
 
 object UiCodecs extends UiCodecs
@@ -105,7 +105,7 @@ trait UiCodecs extends Codecs with Argonauts with SingletonInstances with Derive
 
   //separated from the rest, as we're doing some hacking here...
   //we have hacky codec here, as we want to encode Map[String, Any] of more or less arbitrary objects
-  case class ContextCodecs(typesInformation: List[PlainClazzDefinition]) extends LazyLogging {
+  case class ContextCodecs(typesInformation: List[ClazzDefinition]) extends LazyLogging {
 
     val typesWithMethodNames: Map[String, Set[String]]
     = typesInformation.map(ti => ti.clazzName.refClazzName -> ti.methods.keys.toSet).toMap

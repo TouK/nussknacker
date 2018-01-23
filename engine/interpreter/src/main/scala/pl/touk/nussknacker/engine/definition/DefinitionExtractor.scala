@@ -45,6 +45,7 @@ class DefinitionExtractor[T](methodDefinitionExtractor: MethodDefinitionExtracto
 }
 
 object DefinitionExtractor {
+  import TypeInfos._
 
   trait ObjectMetadata {
     def parameters: List[Parameter]
@@ -106,12 +107,6 @@ object DefinitionExtractor {
     def toClass(classLoader: ClassLoader) : Class[_] = ClassUtils.getClass(classLoader, refClazzName)
   }
 
-  case class PlainClazzDefinition(clazzName: ClazzRef, methods: Map[String, ClazzRef]) {
-    def getMethod(methodName: String): Option[ClazzRef] = {
-      methods.get(methodName)
-    }
-  }
-
   case class ObjectDefinition(parameters: List[Parameter],
                               returnType: ClazzRef, categories: List[String]) extends ObjectMetadata
 
@@ -149,7 +144,7 @@ object DefinitionExtractor {
                 customNodeTransformers: Iterable[ObjectWithMethodDef],
                 signalsFactories: Iterable[ObjectWithMethodDef],
                 globalProcessVariables: Iterable[Class[_]])
-               (implicit settings: ClassExtractionSettings): List[PlainClazzDefinition] = {
+               (implicit settings: ClassExtractionSettings): List[ClazzDefinition] = {
 
       //TODO: do we need services here?
       val classesToExtractDefinitions =
@@ -170,6 +165,32 @@ object DefinitionExtractor {
 
     def apply(parameters: List[Parameter], returnType: Class[_], categories: List[String]): ObjectDefinition = {
       ObjectDefinition(parameters, ClazzRef(returnType), categories)
+    }
+  }
+
+}
+
+object TypeInfos {
+
+  //FIXME we should use ClazzRef instead of String here, but it will require some frontend changes
+  case class Parameter private(name: String, refClazzName: String)
+  object Parameter {
+    def apply(name: String, clazz: ClazzRef): Parameter = {
+      new Parameter(name, clazz.refClazzName)
+    }
+  }
+
+  //FIXME we should use ClazzRef instead of String here, but it will require some frontend changes
+  case class MethodInfo private(parameters: List[Parameter], refClazzName: String, description: Option[String])
+  object MethodInfo {
+    def apply(parameters: List[Parameter], returnType: ClazzRef, description: Option[String]): MethodInfo = {
+      new MethodInfo(parameters, returnType.refClazzName, description)
+    }
+  }
+
+  case class ClazzDefinition(clazzName: ClazzRef, methods: Map[String, MethodInfo]) {
+    def getMethod(methodName: String): Option[ClazzRef] = {
+      methods.get(methodName).map(m => ClazzRef(m.refClazzName))
     }
   }
 

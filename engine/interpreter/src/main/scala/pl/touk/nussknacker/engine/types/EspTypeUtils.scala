@@ -5,9 +5,10 @@ import java.lang.reflect._
 import cats.Eval
 import cats.data.StateT
 import org.apache.commons.lang3.ClassUtils
-import pl.touk.nussknacker.engine.api.ParamName
+import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ClazzRef, PlainClazzDefinition}
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ClazzRef
+import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter}
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl
 
@@ -64,12 +65,12 @@ object EspTypeUtils {
   }
 
   def clazzAndItsChildrenDefinition(clazzes: Iterable[Class[_]])
-                                   (implicit settings: ClassExtractionSettings): List[PlainClazzDefinition] = {
+                                   (implicit settings: ClassExtractionSettings): List[ClazzDefinition] = {
     (clazzes ++ mandatoryClasses).flatMap(clazzAndItsChildrenDefinition).toList.distinct
   }
 
   private def clazzAndItsChildrenDefinition(clazz: Class[_])
-                                   (implicit settings: ClassExtractionSettings): List[PlainClazzDefinition] = {
+                                   (implicit settings: ClassExtractionSettings): List[ClazzDefinition] = {
     val result = if (clazz.isPrimitive || baseClazzPackagePrefix.exists(clazz.getName.startsWith)) {
       List(clazzDefinition(clazz))
     } else {
@@ -86,18 +87,18 @@ object EspTypeUtils {
   }
 
   private def clazzDefinition(clazz: Class[_])
-                             (implicit settings: ClassExtractionSettings): PlainClazzDefinition =
-    PlainClazzDefinition(ClazzRef(clazz), getPublicMethodAndFields(clazz))
+                             (implicit settings: ClassExtractionSettings): ClazzDefinition =
+    ClazzDefinition(ClazzRef(clazz), getPublicMethodAndFields(clazz))
 
   private def getPublicMethodAndFields(clazz: Class[_])
-                                      (implicit settings: ClassExtractionSettings): Map[String, ClazzRef] = {
+                                      (implicit settings: ClassExtractionSettings): Map[String, MethodInfo] = {
     val methods = publicMethods(clazz)
     val fields = publicFields(clazz)
     methods ++ fields
   }
 
   private def publicMethods(clazz: Class[_])
-                           (implicit settings: ClassExtractionSettings) = {
+                           (implicit settings: ClassExtractionSettings): Map[String, MethodInfo] = {
     val interestingMethods = clazz.getMethods
         .filterNot(m => Modifier.isStatic(m.getModifiers))
         .filterNot(settings.isBlacklisted)
@@ -105,12 +106,12 @@ object EspTypeUtils {
           !blackilistedMethods.contains(m.getName) && !m.getName.contains("$")
         )
     interestingMethods.map { method =>
-      method.getName -> ClazzRef(getReturnClassForMethod(method))
+      method.getName -> MethodInfo(getParamNameParameters(method), ClazzRef(getReturnClassForMethod(method)), getNussknackerDocs(method))
     }.toMap
   }
 
   private def publicFields(clazz: Class[_])
-                          (implicit settings: ClassExtractionSettings) = {
+                          (implicit settings: ClassExtractionSettings): Map[String, MethodInfo] = {
     val interestingFields = clazz.getFields
       .filterNot(f => Modifier.isStatic(f.getModifiers))
       .filterNot(settings.isBlacklisted)
@@ -118,7 +119,7 @@ object EspTypeUtils {
         !m.getName.contains("$")
       )
     interestingFields.map { field =>
-      field.getName -> ClazzRef(getReturnClassForField(field))
+      field.getName -> MethodInfo(List.empty, ClazzRef(getReturnClassForField(field)), getNussknackerDocs(field))
     }.toMap
   }
 
@@ -150,6 +151,17 @@ object EspTypeUtils {
 
   private def getReturnClassForMethod(method: Method): Class[_] = {
     getGenericType(method.getGenericReturnType).getOrElse(method.getReturnType)
+  }
+
+  private def getParamNameParameters(method: Method): List[Parameter] = {
+    method.getParameters.toList.collect { case param if param.getAnnotation(classOf[ParamName]) != null =>
+      val paramName = param.getAnnotation(classOf[ParamName]).value()
+      Parameter(paramName, ClazzRef(param.getType))
+    }
+  }
+
+  private def getNussknackerDocs(accessibleObject: AccessibleObject): Option[String] = {
+    Option(accessibleObject.getAnnotation(classOf[Documentation])).map(_.description())
   }
 
   private def getReturnClassForField(field: Field): Class[_] = {

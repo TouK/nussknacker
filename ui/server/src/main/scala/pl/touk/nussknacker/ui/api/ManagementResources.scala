@@ -15,7 +15,7 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.deployment.test.{TestData, TestResults}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.PlainClazzDefinition
+import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.codec.UiCodecs
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
@@ -39,7 +39,7 @@ object ManagementResources {
 
 }
 
-class ManagementResources(typesInformation: List[PlainClazzDefinition],
+class ManagementResources(typesInformation: List[ClazzDefinition],
                           processCounter: ProcessCounter,
                           val managementActor: ActorRef)(implicit ec: ExecutionContext, mat: Materializer) extends Directives with LazyLogging  with RouteWithUser {
 
