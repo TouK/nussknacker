@@ -1,6 +1,6 @@
 import {browserHistory} from "react-router";
 import HttpService from "../http/HttpService";
-import GraphUtils from "../components/graph/GraphUtils";
+import * as GraphUtils from "../components/graph/GraphUtils";
 import NodeUtils from "../components/graph/NodeUtils";
 import * as SubprocessSchemaAligner from "../components/graph/SubprocessSchemaAligner";
 import _ from "lodash";

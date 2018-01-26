@@ -1,7 +1,7 @@
 import joint from 'jointjs'
 import _ from 'lodash'
 import NodeUtils from './NodeUtils'
-import GraphUtils from './GraphUtils'
+import * as GraphUtils from './GraphUtils'
 import ProcessUtils from '../../common/ProcessUtils';
 import * as LoaderUtils from '../../common/LoaderUtils'
 
@@ -145,7 +145,7 @@ export function makeElement(node, processCounts, forExport, nodesSettings){
 
     const width = rectWidth;
     const widthWithTestResults = hasCounts ? width + rectHeight : width;
-    const height = 150;
+    const height = rectHeight;
     const iconFromConfig = (nodesSettings[ProcessUtils.findNodeDefinitionId(node)] || {}).icon
     var icon = iconFromConfig ? LoaderUtils.loadNodeSvgContent(iconFromConfig) : LoaderUtils.loadNodeSvgContent(`${node.type}.svg`)
 

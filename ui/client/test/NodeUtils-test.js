@@ -173,6 +173,31 @@ describe("edgeType retrieved", () => {
   })
 })
 
+describe("can make link", () => {
+
+  it("cannot make link from non-last node to sink", () => {
+    expect(NodeUtils.canMakeLink("source1", "sink", createSimpleProcess([{ "from": "source1", "to": "variable"}]), simpleProcessDefinition()))
+      .toEqual(false)
+  })
+
+  it("cannot connect from sink to any node", () => {
+    expect(NodeUtils.canMakeLink("sink", "variable", createSimpleProcess([{ "from": "source1", "to": "variable"}]), simpleProcessDefinition()))
+      .toEqual(false)
+  })
+
+  it("can connect from variable to sink", () => {
+    expect(NodeUtils.canMakeLink("variable", "sink", createSimpleProcess([{ "from": "source1", "to": "variable"}]), simpleProcessDefinition()))
+      .toEqual(true)
+  })
+
+  it("cannot connect to source", () => {
+    expect(NodeUtils.canMakeLink("variable", "source2", createSimpleProcess([{ "from": "source1", "to": "variable"}]), simpleProcessDefinition()))
+      .toEqual(false)
+  })
+
+
+})
+
 const processDefinitionData = {
   edgesForNodes: [
     {
@@ -209,4 +234,26 @@ const createProcess = (groups) => ({
     { "from": "node5", "to": "node7"},
     { "from": "node6", "to": "node8"}
   ]
+})
+
+const simpleProcessDefinition = () => {
+  return {
+    "edgesForNodes" : [
+      {"nodeId" : {"type" : "Filter"}, "edges" : [{"type" : "FilterTrue"}, {"type" : "FilterFalse"}], "canChooseNodes" : false},
+      {"nodeId" : {"type" : "Split"}, "edges" : [], "canChooseNodes" : true},
+      {"nodeId" : {"type" : "Switch"}, "edges" : [{"type" : "NextSwitch", "condition" : {"language" : "spel", "expression" : "true"}}, {"type" : "SwitchDefault"}], "canChooseNodes" : true},
+    ]
+  }
+}
+
+
+const createSimpleProcess = (edges) => ({
+  "properties": { additionalFields: { groups: []}},
+  "nodes": [
+    {"type": "Source", "id": "source1", "ref": {"typ": "csv-source", "parameters": []}},
+    {"type": "Source", "id": "source2", "ref": {"typ": "csv-source", "parameters": []}},
+    {"type": "Variable", "id": "variable", "varName": "varName", "value": {"language": "spel", "expression": "'value'"}},
+    {"type": "Sink", "id": "sink", "ref": {"typ": "sendSms", "parameters": []}, "endResult": {"language": "spel", "expression": "#input"}}
+  ],
+  "edges": edges
 })

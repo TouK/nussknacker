@@ -123,13 +123,15 @@ class NodeUtils {
   }
 
   //we don't allow multi outputs other than split, filter, switch and no multiple inputs
-  canMakeLink = (fromId, to, process, processDefinitionData) => {
-    const nodeInputs = this._nodeInputs(to, process);
+  //TODO remove type (Source, Sink) comparisons
+  canMakeLink = (fromId, toId, process, processDefinitionData) => {
+    const nodeInputs = this._nodeInputs(toId, process);
     const nodeOutputs = this._nodeOutputs(fromId, process);
 
     const targetHasNoInput = nodeInputs.length === 0
+    const to = this.getNodeById(toId, process)
     const from = this.getNodeById(fromId, process)
-    return targetHasNoInput && this._canHaveMoreOutputs(from, nodeOutputs, processDefinitionData)
+    return (fromId !== toId) && (to.type != "Source") && targetHasNoInput && this._canHaveMoreOutputs(from, nodeOutputs, processDefinitionData)
   }
 
 
@@ -150,7 +152,7 @@ class NodeUtils {
   _canHaveMoreOutputs = (node, nodeOutputs, processDefinitionData) => {
     const edgesForNode = this.edgesForNode(node, processDefinitionData)
     const maxEdgesForNode = edgesForNode.edges.length
-    return edgesForNode.canChooseNodes || nodeOutputs.length < maxEdgesForNode
+    return node.type != "Sink" && (edgesForNode.canChooseNodes || nodeOutputs.length < maxEdgesForNode)
   }
 
   _nodeInputs = (nodeId, process) => {

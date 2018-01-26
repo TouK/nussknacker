@@ -16,7 +16,8 @@ import '../../stylesheets/graph.styl'
 import SVGUtils from '../../common/SVGUtils';
 import NodeUtils from './NodeUtils.js'
 import cssVariables from "../../stylesheets/_variables.styl"
-
+import * as GraphUtils from "./GraphUtils";
+import * as JointJsGraphUtils from "./JointJsGraphUtils";
 
 class Graph extends React.Component {
 
@@ -82,7 +83,7 @@ class Graph extends React.Component {
       joint.layout.DirectedGraph.layout(this.graph.getCells().filter(cell => !cell.get('backgroundObject')), {
           nodeSep: 0,
           edgeSep: 0,
-          rankSep: -20,
+          rankSep: 75,
           minLen: 0,
           rankDir: "TB"
       });
@@ -134,8 +135,9 @@ class Graph extends React.Component {
             defaultLink: EspNode.makeLink({}),
             validateConnection: this.validateConnection
         })
-          .on("cell:pointerup", (c, e) => {
+          .on("cell:pointerup", (cellView, evt, x, y) => {
             this.changeLayoutIfNeeded()
+            this.handleInjectBetweenNodes(cellView)
           })
           .on("link:connect", (c) => {
             this.props.actions.nodesConnected(
@@ -144,6 +146,20 @@ class Graph extends React.Component {
               this.props.processDefinitionData
             )
           })
+    }
+
+    handleInjectBetweenNodes = (cellView) => {
+      const linkBelowCell = JointJsGraphUtils.findLinkBelowCell(this.graph, cellView, this.processGraphPaper)
+      if (linkBelowCell) {
+        const source = JointJsGraphUtils.findCell(this.graph, linkBelowCell.attributes.source.id)
+        const target = JointJsGraphUtils.findCell(this.graph, linkBelowCell.attributes.target.id)
+        const middleMan = cellView.model
+        if (GraphUtils.canInjectNode(this.props.processToDisplay, source, middleMan, target, this.props.processDefinitionData)) {
+          this.props.actions.nodesDisconnected(source.id, target.id)
+          this.props.actions.nodesConnected(source.attributes.nodeData, middleMan.attributes.nodeData, this.props.processDefinitionData)
+          this.props.actions.nodesConnected(middleMan.attributes.nodeData, target.attributes.nodeData, this.props.processDefinitionData)
+        }
+      }
     }
 
     time = (start, name) => {
@@ -172,10 +188,11 @@ class Graph extends React.Component {
       t = this.time(t, 'links')
 
       const boundingRects = NodeUtils.getExpandedGroups(process, expandedGroups)
-        .map(expandedGroup => ({group: expandedGroup,
-
+        .map(expandedGroup => ({
+          group: expandedGroup,
           rect: EspNode.boundingRect(nodes, expandedGroup, layout,
-          NodeUtils.createGroupNode(nodesWithGroups, expandedGroup))}))
+            NodeUtils.createGroupNode(nodesWithGroups, expandedGroup))
+        }))
       t = this.time(t, 'bounding')
 
       const cells = boundingRects.map(g => g.rect).concat(nodes.concat(edges));

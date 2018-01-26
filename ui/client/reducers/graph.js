@@ -1,6 +1,6 @@
 import _ from 'lodash'
 
-import GraphUtils from '../components/graph/GraphUtils'
+import * as GraphUtils from '../components/graph/GraphUtils'
 import NodeUtils from '../components/graph/NodeUtils'
 
 const emptyGraphState = {
