@@ -1,7 +1,5 @@
 package pl.touk.nussknacker.engine
 
-import java.util.concurrent.Executor
-
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.ValidatedNel
 import com.typesafe.config.{Config, ConfigFactory}
@@ -510,6 +508,16 @@ class InterpreterSpec extends FlatSpec with Matchers {
     intercept[CustomException] {
       interpretTransaction(process, Transaction(accountId = "123"), services = Map("p1" -> new ThrowingService))
     }.getMessage shouldBe "Fail?"
+  }
+
+  it should "not evaluate disabled filters" in {
+
+    val process = GraphBuilder.source("start", "transaction-source")
+      .filter("errorFilter", "1/0 == 0", Option(true))
+      .sink("end", "#input.msisdn", "dummySink")
+
+    interpretTransaction(process, Transaction(msisdn = "125")) should equal("125")
+
   }
 
 }

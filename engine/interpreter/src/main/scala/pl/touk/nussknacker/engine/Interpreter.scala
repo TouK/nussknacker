@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine
 
+import cats.data.Validated.Valid
 import pl.touk.nussknacker.engine.Interpreter._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
@@ -85,7 +86,8 @@ class Interpreter private(listeners: Seq[ProcessListener], expressionEvaluator: 
             interpretNext(next, newCtx.withVariable(outName, out))
         }
       case Filter(_, expression, nextTrue, nextFalse, disabled) =>
-        evaluateExpression[Boolean](expression, ctx).flatMap { valueWithModifiedContext =>
+        val expressionResult = if (disabled) Future.successful(ValueWithContext(true, ctx)) else evaluateExpression[Boolean](expression, ctx)
+        expressionResult.flatMap { valueWithModifiedContext =>
           if (disabled || valueWithModifiedContext.value)
             interpretNext(nextTrue, valueWithModifiedContext.context)
           else
