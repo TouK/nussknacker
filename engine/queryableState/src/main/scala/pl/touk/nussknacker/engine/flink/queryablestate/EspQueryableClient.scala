@@ -1,9 +1,11 @@
 package pl.touk.nussknacker.engine.flink.queryablestate
 
+import org.apache.flink.api.common.state.ValueStateDescriptor
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.common.{ExecutionConfig, JobID}
-import org.apache.flink.runtime.query.QueryableStateClient
-import org.apache.flink.runtime.query.netty.message.KvStateRequestSerializer
+import org.apache.flink.queryablestate.client.QueryableStateClient
+
+import scala.compat.java8.FutureConverters
 import org.apache.flink.runtime.state.{VoidNamespace, VoidNamespaceSerializer}
 import org.apache.flink.streaming.api.scala._
 import pl.touk.nussknacker.engine.api.QueryableState
@@ -13,14 +15,14 @@ import scala.concurrent.{ExecutionContext, Future}
 class EspQueryableClient(client: QueryableStateClient) {
 
   def fetchState[V: TypeInformation](jobId: String, queryName: String, key: String)
-                      (implicit ec: ExecutionContext): Future[V] = {
-    val keySerializer = implicitly[TypeInformation[String]].createSerializer(new ExecutionConfig)
-    val valueSerializer = implicitly[TypeInformation[V]].createSerializer(new ExecutionConfig)
+                                    (implicit ec: ExecutionContext): Future[V] = {
+    val keyTypeInfo = implicitly[TypeInformation[String]]
+    val valueTypeInfo = implicitly[TypeInformation[V]]
     val flinkJobId = JobID.fromHexString(jobId)
-    val serializedKey = KvStateRequestSerializer.serializeKeyAndNamespace(key, keySerializer, VoidNamespace.INSTANCE, VoidNamespaceSerializer.INSTANCE)
+    val stateDescriptor = new ValueStateDescriptor[V](key, valueTypeInfo)
 
-    client.getKvState(flinkJobId, queryName, key.hashCode, serializedKey).map { serializedResult =>
-      KvStateRequestSerializer.deserializeValue(serializedResult, valueSerializer)
+    FutureConverters.toScala(client.getKvState(flinkJobId, queryName, key, keyTypeInfo, stateDescriptor)).map { valueState =>
+      valueState.value()
     }
   }
 

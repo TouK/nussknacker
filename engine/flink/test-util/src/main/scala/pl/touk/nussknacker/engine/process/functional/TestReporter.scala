@@ -17,9 +17,6 @@ object TestReporterUtil {
     c
   }
 
-  def env(configuration: Configuration = configWithTestMetrics()) =
-    new StreamExecutionEnvironment(JavaEnv.createLocalEnvironment(1, configuration))
-
 }
 
 object TestReporter {

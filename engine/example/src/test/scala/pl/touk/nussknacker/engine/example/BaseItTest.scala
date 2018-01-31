@@ -2,11 +2,10 @@ package pl.touk.nussknacker.engine.example
 
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
-import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.{BeforeAndAfterAll, Matchers, Suite}
 import pl.touk.nussknacker.engine.api.conversion.ProcessConfigCreatorMapping
-import pl.touk.nussknacker.engine.flink.test.StoppableExecutionEnvironment
+import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableExecutionEnvironment}
 import pl.touk.nussknacker.engine.kafka.{KafkaSpec, KafkaZookeeperServer}
 import pl.touk.nussknacker.engine.process.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.process.compiler.StandardFlinkProcessCompiler
@@ -25,8 +24,7 @@ trait BaseITest extends KafkaSpec {
     }
   }
 
-  val flinkConf = new Configuration()
-  val stoppableEnv = new StoppableExecutionEnvironment(flinkConf)
+  val stoppableEnv = new StoppableExecutionEnvironment(FlinkTestConfiguration.configuration)
   val env = new StreamExecutionEnvironment(stoppableEnv)
   var registrar: FlinkProcessRegistrar = _
 

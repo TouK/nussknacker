@@ -77,12 +77,16 @@ val commonSettings =
       "-language:existentials",
       "-target:jvm-1.8"
     ),
+    javacOptions := Seq(
+      "-Xlint:deprecation",
+      "-Xlint:unchecked"
+    ),
     assemblyMergeStrategy in assembly := numberUtilsStrategy
   )
 
 //mamy te wersje akki bo flink jej wymaga
-val akkaV = "2.3.7"
-val flinkV = "1.3.1"
+val akkaV = "2.4.20"
+val flinkV = "1.4.0"
 val kafkaV = "0.9.0.1"
 val springV = "5.0.0.M5"
 val scalaTestV = "3.0.3"
@@ -97,16 +101,16 @@ val scalaParsersV = "1.0.4"
 val dispatchV = "0.11.3"
 val slf4jV = "1.7.21"
 val scalaLoggingV = "3.4.0"
+val scalaCompatV = "0.8.0"
 val ficusV = "1.4.1"
 val configV = "1.3.0"
 val commonsLangV = "3.3.2"
-val dropWizardV = "3.1.0"
+val dropWizardV = "3.1.5"
 
-val akkaHttpV = "2.0.3"
+val akkaHttpV = "10.0.10"
 val slickV = "3.2.0-M1" // wsparcie dla select for update jest od 3.2.0
 val hsqldbV = "2.3.4"
 val flywayV = "4.0.3"
-
 
 def engine(name: String) = file(s"engine/$name")
 
@@ -144,8 +148,8 @@ lazy val standaloneApp = (project in engine("standalone/app")).
     libraryDependencies ++= {
       Seq(
         "org.scalatest" %% "scalatest" % scalaTestV % "test",
-        "com.typesafe.akka" %% "akka-http-experimental" % akkaHttpV force(),
-        "com.typesafe.akka" %% "akka-http-testkit-experimental" % akkaHttpV % "test" force(),
+        "com.typesafe.akka" %% "akka-http" % akkaHttpV force(),
+        "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test" force(),
         "com.typesafe.akka" %% "akka-slf4j" % akkaV,
         "ch.qos.logback" % "logback-classic" % logbackV
       )
@@ -162,7 +166,7 @@ lazy val management = (project in engine("flink/management")).
   settings(
     name := "nussknacker-management",
     Keys.test in IntegrationTest <<= (Keys.test in IntegrationTest).dependsOn(
-      (assembly in Compile) in management_sample,
+      (assembly in Compile) in managementSample,
       (assembly in Compile) in management_java_sample
     ),
     //flink cannot run tests and deployment concurrently
@@ -171,7 +175,7 @@ lazy val management = (project in engine("flink/management")).
       Seq(
         "org.typelevel" %% "cats-core" % catsV,
         "org.apache.flink" %% "flink-clients" % flinkV % "provided",
-        "org.apache.flink" % "flink-shaded-curator-recipes" % flinkV % "provided",
+        "org.apache.flink" % "flink-shaded-curator" % flinkV % "provided",
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
 
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
@@ -195,7 +199,7 @@ lazy val standalone_sample = (project in engine("standalone/engine/sample")).
 
 val managementSampleName = "nussknacker-management-sample"
 
-lazy val management_sample = (project in engine("flink/management/sample")).
+lazy val managementSample = (project in engine("flink/management/sample")).
   settings(commonSettings).
   settings(
     name := managementSampleName,
@@ -206,6 +210,7 @@ lazy val management_sample = (project in engine("flink/management/sample")).
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
+        "org.apache.flink" %% "flink-queryable-state-runtime" % flinkV % "test",
         "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )
     }
@@ -236,6 +241,7 @@ lazy val example = (project in engine("example")).
     fork := true, // without this there are some classloading issues
     libraryDependencies ++= {
       Seq(
+        "com.fasterxml.jackson.core" % "jackson-databind" % "2.9.2",
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
         "org.scalatest" %% "scalatest" % scalaTestV % "test",
         "ch.qos.logback" % "logback-classic" % logbackV % "test"
@@ -272,7 +278,7 @@ lazy val interpreter = (project in engine("interpreter")).
     libraryDependencies ++= {
       Seq(
         "org.springframework" % "spring-expression" % springV,
-        "org.scala-lang.modules" %% "scala-java8-compat" % "0.8.0",
+        "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
         "com.github.alexarchambault" %% s"argonaut-shapeless_$argonautMajorV" % argonautShapelessV,
         "ch.qos.logback" % "logback-classic" % logbackV % "test",
         "org.scalatest" %% "scalatest" % scalaTestV % "test"
@@ -423,8 +429,8 @@ lazy val securityApi = (project in engine("security-api")).
     libraryDependencies ++= {
       Seq(
         "org.scalatest" %% "scalatest" % scalaTestV % "test",
-        "com.typesafe.akka" %% "akka-http-experimental" % akkaHttpV force(),
-        "com.typesafe.akka" %% "akka-http-testkit-experimental" % akkaHttpV % "test" force(),
+        "com.typesafe.akka" %% "akka-http" % akkaHttpV force(),
+        "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test" force(),
         "com.typesafe" % "config" % configV
       )
     }
@@ -482,12 +488,12 @@ lazy val argonautUtils = (project in engine("argonautUtils")).
       Seq(
         "io.argonaut" %% "argonaut" % argonautV,
         "com.github.alexarchambault" %% s"argonaut-shapeless_$argonautMajorV" % argonautShapelessV,
-        "com.typesafe.akka" %% "akka-http-experimental" % akkaHttpV force()
+        "com.typesafe.akka" %% "akka-http" % akkaHttpV force()
       )
     }
   )
 
-//osobny modul bo chcemy uzyc klienta do testowania w management_sample
+//osobny modul bo chcemy uzyc klienta do testowania w managementSample
 lazy val queryableState = (project in engine("queryableState")).
   settings(commonSettings).
   settings(
@@ -495,6 +501,7 @@ lazy val queryableState = (project in engine("queryableState")).
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
+        "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
         "com.typesafe" % "config" % configV
       )
@@ -534,7 +541,7 @@ lazy val ui = (project in file("ui/server"))
     test in assembly := {},
     Keys.test in Test <<= (Keys.test in Test).dependsOn(
       //TODO: maybe here there should be engine/demo??
-      (assembly in Compile) in management_sample
+      (assembly in Compile) in managementSample
     ).dependsOn(
       testUi
     ),
@@ -558,8 +565,8 @@ lazy val ui = (project in file("ui/server"))
           ExclusionRule("org.slf4j", "slf4j-log4j12")
 
         ),
-        "com.typesafe.akka" %% "akka-http-experimental" % akkaHttpV force(),
-        "com.typesafe.akka" %% "akka-http-testkit-experimental" % akkaHttpV % "test" force(),
+        "com.typesafe.akka" %% "akka-http" % akkaHttpV force(),
+        "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test" force(),
 
         "ch.qos.logback" % "logback-core" % logbackV,
         "ch.qos.logback" % "logback-classic" % logbackV,

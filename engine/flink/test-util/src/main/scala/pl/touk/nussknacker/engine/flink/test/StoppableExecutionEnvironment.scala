@@ -2,24 +2,22 @@ package pl.touk.nussknacker.engine.flink.test
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.{JobExecutionResult, JobID, JobSubmissionResult}
-import org.apache.flink.configuration.{ConfigConstants, Configuration, QueryableStateOptions}
+import org.apache.flink.configuration._
+import org.apache.flink.queryablestate.client.QueryableStateClient
 import org.apache.flink.runtime.jobgraph.JobGraph
 import org.apache.flink.runtime.minicluster.LocalFlinkMiniCluster
-import org.apache.flink.runtime.query.QueryableStateClient
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.graph.StreamGraph
 import org.apache.flink.test.util.TestBaseUtils
 
 object StoppableExecutionEnvironment {
 
-  def withQueryableStateEnabled(userFlinkClusterConfiguration: Configuration = new Configuration()) : StoppableExecutionEnvironment= {
+  def withQueryableStateEnabled(configuration: Configuration, proxyPortLow: Int, proxyPortHigh: Int) : StoppableExecutionEnvironment= {
+    //blaaa this is needed to make queryableState work with two task manager instances
+    configuration.setInteger(ConfigConstants.LOCAL_NUMBER_TASK_MANAGER, 2)
+    configuration.setString(QueryableStateOptions.PROXY_PORT_RANGE, s"$proxyPortLow-$proxyPortHigh")
 
-    //blaaa this is needed to make queryableState work
-    //LocalFlinkMiniCluster#221 i #237
-    userFlinkClusterConfiguration.setInteger(ConfigConstants.LOCAL_NUMBER_TASK_MANAGER, 2)
-    userFlinkClusterConfiguration.setBoolean(QueryableStateOptions.SERVER_ENABLE, true)
-
-    new StoppableExecutionEnvironment(userFlinkClusterConfiguration, false)
+    new StoppableExecutionEnvironment(configuration, false)
   }
 
 }
@@ -33,8 +31,8 @@ class StoppableExecutionEnvironment(userFlinkClusterConfig: Configuration,
     localFlinkMiniCluster.jobManagerActorSystems.get.head
   }
 
-  def queryableClient() : QueryableStateClient= {
-    new QueryableStateClient(userFlinkClusterConfig, localFlinkMiniCluster.highAvailabilityServices)
+  def queryableClient(proxyPort: Int) : QueryableStateClient= {
+    new QueryableStateClient("localhost", proxyPort)
   }
 
   def runningJobs(): Iterable[JobID] = {

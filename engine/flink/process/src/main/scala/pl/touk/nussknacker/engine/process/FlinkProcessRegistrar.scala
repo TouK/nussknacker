@@ -12,14 +12,12 @@ import org.apache.flink.api.java.tuple
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.dropwizard.metrics.DropwizardHistogramWrapper
 import org.apache.flink.metrics.{Counter, Gauge}
-import org.apache.flink.runtime.execution.librarycache.FlinkUserCodeClassLoader
 import org.apache.flink.runtime.state.AbstractStateBackend
 import org.apache.flink.streaming.api.datastream
 import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.collector.selector.OutputSelector
 import org.apache.flink.streaming.api.environment.RemoteStreamEnvironment
-import org.apache.flink.streaming.api.functions.async.RichAsyncFunction
-import org.apache.flink.streaming.api.functions.async.collector.AsyncCollector
+import org.apache.flink.streaming.api.functions.async.{ResultFuture, RichAsyncFunction}
 import org.apache.flink.streaming.api.functions.sink.{RichSinkFunction, SinkFunction}
 import org.apache.flink.streaming.api.functions.{AssignerWithPeriodicWatermarks, AssignerWithPunctuatedWatermarks}
 import org.apache.flink.streaming.api.operators.{AbstractStreamOperator, ChainingStrategy, OneInputStreamOperator, StreamOperator}
@@ -28,6 +26,7 @@ import org.apache.flink.streaming.api.watermark.Watermark
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.runtime.operators.windowing.WindowOperator
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
+import org.apache.flink.runtime.execution.librarycache.FlinkUserCodeClassLoaders
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.Interpreter
 import pl.touk.nussknacker.engine.api._
@@ -81,7 +80,7 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => (ClassLoader) => Compi
 
   private def usingRightClassloader(env: StreamExecutionEnvironment)(action: => Unit): Unit = {
     if (!env.getJavaEnv.isInstanceOf[RemoteStreamEnvironment]) {
-      val flinkLoaderSimulation =  new FlinkUserCodeClassLoader(Array(), Thread.currentThread().getContextClassLoader)
+      val flinkLoaderSimulation =  FlinkUserCodeClassLoaders.childFirst(Array.empty, Thread.currentThread().getContextClassLoader, Array.empty)
       ThreadUtils.withThisAsContextClassLoader[Unit](flinkLoaderSimulation)(action)
     } else {
       action
@@ -296,21 +295,21 @@ object FlinkProcessRegistrar {
     }
 
 
-    private def handleException(collector: AsyncCollector[InterpretationResult], info: EspExceptionInfo[_<:Throwable]): Unit = {
+    private def handleException(collector: ResultFuture[InterpretationResult], info: EspExceptionInfo[_<:Throwable]): Unit = {
       try {
         exceptionHandler.handle(info)
-        collector.collect(Collections.emptyList[InterpretationResult]())
+        collector.complete(Collections.emptyList[InterpretationResult]())
       } catch {
-        case NonFatal(e) => logger.warn("Unexpected fail, refusing to collect??", e); collector.collect(e)
+        case NonFatal(e) => logger.warn("Unexpected fail, refusing to collect??", e); collector.completeExceptionally(e)
       }
     }
 
-    override def asyncInvoke(input: Context, collector: AsyncCollector[InterpretationResult]) : Unit = {
+    override def asyncInvoke(input: Context, collector: ResultFuture[InterpretationResult]) : Unit = {
       implicit val ec = executionContext
       try {
         interpreter.interpret(compiledNode, metaData, input)
           .onComplete {
-            case Success(Left(result)) => collector.collect(Collections.singletonList[InterpretationResult](result))
+            case Success(Left(result)) => collector.complete(Collections.singletonList[InterpretationResult](result))
             case Success(Right(exInfo)) => handleException(collector, exInfo)
             case Failure(ex) =>
               logger.warn("Unexpected error", ex)

@@ -15,7 +15,7 @@ public class JavaFlinkCustomStreamTransformation {
         return new FlinkCustomStreamTransformation() {
             @Override
             public org.apache.flink.streaming.api.scala.DataStream<ValueWithContext<Object>> transform(org.apache.flink.streaming.api.scala.DataStream<InterpretationResult> start, FlinkCustomNodeContext context) {
-                return new org.apache.flink.streaming.api.scala.DataStream(fun.apply(start.javaStream(), context));
+                return new org.apache.flink.streaming.api.scala.DataStream<>(fun.apply(start.javaStream(), context));
             }
         };
     }

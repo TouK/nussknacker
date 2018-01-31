@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.flink.util.source
 import java.nio.charset.StandardCharsets
 
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.streaming.util.serialization.DeserializationSchema
+import org.apache.flink.api.common.serialization.DeserializationSchema
 
 class CsvSchema[T: TypeInformation](constructor: List[String] => T) extends DeserializationSchema[T] {
   override def isEndOfStream(t: T): Boolean = false

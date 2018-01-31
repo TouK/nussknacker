@@ -1,4 +1,4 @@
-FROM flink:1.3.1
+FROM flink:1.4.0
 
 COPY entrypointWithIP.sh /
 COPY conf.yml /
@@ -12,7 +12,7 @@ RUN chmod +x /entrypointWithIP.sh
 
 USER flink
 RUN mkdir -p /tmp/storage
-RUN mkdir -p /tmp/storage/1.3/blob/cache
+RUN mkdir -p /tmp/storage/1.4/blob/cache
 
 USER root
 ENTRYPOINT ["/entrypointWithIP.sh"]

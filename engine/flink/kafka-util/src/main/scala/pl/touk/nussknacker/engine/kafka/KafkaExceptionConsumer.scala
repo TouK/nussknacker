@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.kafka
 
-import org.apache.flink.streaming.util.serialization.SerializationSchema
+import org.apache.flink.api.common.serialization.SerializationSchema
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionInfo, NonTransientException}
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionConsumer
 

@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.process.runner
 
-import java.net.URL
-
+import org.apache.flink.configuration.Configuration
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.test.TestRunId
@@ -11,16 +10,16 @@ import pl.touk.nussknacker.engine.process.compiler.VerificationFlinkProcessCompi
 
 object FlinkVerificationMain extends FlinkRunner {
 
-  def run(modelData: ModelData, processJson: String, savepointPath: String): Unit = {
+  def run(modelData: ModelData, processJson: String, savepointPath: String, configuration: Configuration): Unit = {
     val process = readProcessFromArg(processJson)
-    new FlinkVerificationMain(modelData, process, savepointPath).runTest()
+    new FlinkVerificationMain(modelData, process, savepointPath, configuration).runTest()
   }
 
 }
 
 
-case class FlinkVerificationMain(modelData: ModelData,
-                                 process: EspProcess, savepointPath: String)
+case class FlinkVerificationMain(modelData: ModelData, process: EspProcess, savepointPath: String,
+                                 configuration: Configuration)
   extends FlinkStubbedRunner {
   
   def runTest(): Unit = {

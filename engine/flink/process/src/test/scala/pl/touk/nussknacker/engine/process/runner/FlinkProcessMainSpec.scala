@@ -2,8 +2,8 @@ package pl.touk.nussknacker.engine.process.runner
 
 import java.net.ConnectException
 import java.nio.charset.StandardCharsets
-import java.util.{Date, UUID}
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.{Date, UUID}
 
 import argonaut.PrettyParams
 import com.typesafe.config.Config
@@ -12,16 +12,17 @@ import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExt
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.scalatest.{FlatSpec, Inside, Matchers}
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
-import pl.touk.nussknacker.engine.api.test.{EmptyLineSplittedTestDataParser, NewLineSplittedTestDataParser, TestDataParser}
-import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.test.{EmptyLineSplittedTestDataParser, NewLineSplittedTestDataParser}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation, FlinkSourceFactory}
 import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
-import pl.touk.nussknacker.engine.flink.util.exception.{VerboselyLoggingExceptionHandler, VerboselyLoggingRestartingExceptionHandler}
+import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
+import pl.touk.nussknacker.engine.flink.util.exception.VerboselyLoggingRestartingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.signal.KafkaSignalStreamConnector
 import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EspDeserializationSchema}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaEspUtils}
@@ -47,6 +48,7 @@ class FlinkProcessMainSpec extends FlatSpec with Matchers with Inside {
         .processor("proc2", "logService", "all" -> "#distinct(#input.![value2])")
         .emptySink("out", "monitor")
 
+    FlinkTestConfiguration.setQueryableStatePortRangesBySystemProperties()
     FlinkProcessMain.main(Array(ProcessMarshaller.toJson(process, PrettyParams.spaces2)))
   }
 
@@ -125,8 +127,6 @@ class TestProcessSignalFactory(val kafkaConfig: KafkaConfig, val signalsTopic: S
 
 
 class SimpleProcessConfigCreator extends ProcessConfigCreator {
-
-  import org.apache.flink.streaming.api.scala._
 
   override def services(config: Config) = Map(
     "logService" -> WithCategories(LogService, "c1"),

@@ -8,6 +8,7 @@ import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.functions.RichMapFunction
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
+import org.apache.flink.configuration.{Configuration, QueryableStateOptions}
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor
 import org.apache.flink.streaming.api.scala._
@@ -18,18 +19,16 @@ import pl.touk.nussknacker.engine.api.{LazyInterpreter, _}
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionHandler}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation, FlinkSink, FlinkSourceFactory}
 import pl.touk.nussknacker.engine.flink.api.state.WithExceptionHandler
+import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
 import pl.touk.nussknacker.engine.flink.util.exception._
-import pl.touk.nussknacker.engine.flink.util.listener.NodeCountMetricListener
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.process.compiler.StandardFlinkProcessCompiler
-import pl.touk.nussknacker.engine.util.LoggingListener
 
 import scala.concurrent.{ExecutionContext, Future}
 
 object ProcessTestHelpers {
-
 
   case class SimpleRecord(id: String, value1: Long, value2: String, date: Date, value3Opt: Option[BigDecimal] = None, value3: BigDecimal = 1, intAsAny: Any = 1)
 
@@ -40,8 +39,12 @@ object ProcessTestHelpers {
   case class SimpleJsonRecord(id: String, field: String)
 
   object processInvoker {
+
     def invoke(process: EspProcess, data: List[SimpleRecord],
-               env: StreamExecutionEnvironment = StreamExecutionEnvironment.createLocalEnvironment()) = {
+               parallelism: Int = 1, config: Configuration = new Configuration()) = {
+
+      FlinkTestConfiguration.addQueryableStatePortRanges(config)
+      val env = StreamExecutionEnvironment.createLocalEnvironment(parallelism, config)
       val creator = prepareCreator(env.getConfig, data)
       env.getConfig.disableSysoutLogging
 

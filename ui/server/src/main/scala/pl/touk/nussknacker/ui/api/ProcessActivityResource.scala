@@ -8,6 +8,7 @@ import akka.http.scaladsl.model.headers.ContentDispositionTypes
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server._
 import akka.http.scaladsl.server.directives.ContentTypeResolver
+import akka.http.scaladsl.settings.RoutingSettings
 import akka.stream.{ActorAttributes, Materializer}
 import akka.stream.scaladsl.FileIO
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository
@@ -71,6 +72,6 @@ class ProcessActivityResource(processActivityRepository: ProcessActivityReposito
   private def fileEntity(settings: RoutingSettings, file: File): ResponseEntity = {
     val contentType = ContentTypeResolver.Default(file.getName)
     HttpEntity.Default(contentType, file.length,
-      FileIO.fromFile(file).withAttributes(ActorAttributes.dispatcher(settings.fileIODispatcher)))
+      FileIO.fromPath(file.toPath).withAttributes(ActorAttributes.dispatcher(settings.fileIODispatcher)))
   }
 }

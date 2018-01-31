@@ -1,39 +1,39 @@
 package pl.touk.nussknacker.engine.process
 
-import java.lang
-
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.flink.configuration.Configuration
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.time.{Seconds, Span}
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.flink.queryablestate.EspQueryableClient
+import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableExecutionEnvironment}
+import pl.touk.nussknacker.engine.kafka.{KafkaSpec, KafkaZookeeperServer}
 import pl.touk.nussknacker.engine.management.sample.TestProcessConfigCreator
 import pl.touk.nussknacker.engine.process.compiler.StandardFlinkProcessCompiler
 import pl.touk.nussknacker.engine.spel
+import pl.touk.nussknacker.engine.spel.Implicits._
 
-import scala.concurrent.{Await, Future}
-import scala.concurrent.duration._
-import org.apache.flink.api.common.typeinfo.TypeInformation
-import pl.touk.nussknacker.engine.flink.queryablestate.EspQueryableClient
-import pl.touk.nussknacker.engine.flink.test.StoppableExecutionEnvironment
-import pl.touk.nussknacker.engine.kafka.{KafkaSpec, KafkaZookeeperServer}
-import spel.Implicits._
-import scala.collection.JavaConversions._
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
+import scala.concurrent.{Await, Future}
 
 class QueryableStateTest extends FlatSpec with BeforeAndAfterAll with Matchers with Eventually with KafkaSpec with LazyLogging with ScalaFutures {
 
-  override implicit def patienceConfig: PatienceConfig = PatienceConfig(timeout = scaled(Span(30, Seconds)), interval = scaled(Span(1, Seconds)))
+  val QueryStateProxyPortLow = 9070
+  val QueryStateProxyPortHigh = 9071
+
+    override implicit def patienceConfig: PatienceConfig = PatienceConfig(timeout = scaled(Span(30, Seconds)), interval = scaled(Span(1, Seconds)))
 
   implicit val booleanTypeInfo = TypeInformation.of(classOf[java.lang.Boolean])
 
   val creator = new TestProcessConfigCreator
 
-  val stoppableEnv = StoppableExecutionEnvironment.withQueryableStateEnabled()
+  val config = FlinkTestConfiguration.configuration
+  val stoppableEnv = StoppableExecutionEnvironment.withQueryableStateEnabled(config, QueryStateProxyPortLow, QueryStateProxyPortHigh)
   val env = new StreamExecutionEnvironment(stoppableEnv)
   var registrar: FlinkProcessRegistrar = _
 
@@ -59,7 +59,7 @@ class QueryableStateTest extends FlatSpec with BeforeAndAfterAll with Matchers w
 
     registrar.register(env, lockProcess)
     val jobId = env.execute().getJobID.toString
-    val client = new EspQueryableClient(stoppableEnv.queryableClient())
+    val client = new EspQueryableClient(stoppableEnv.queryableClient(QueryStateProxyPortLow))
 
 
     def queryState(jobId: String): Future[Boolean] =

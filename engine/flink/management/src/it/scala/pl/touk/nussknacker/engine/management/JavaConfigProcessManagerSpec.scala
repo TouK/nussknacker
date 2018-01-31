@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.management
 import java.util.Collections
 
 import argonaut.PrettyParams
-import com.typesafe.config.{Config, ConfigValueFactory}
+import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.deployment.GraphProcess
@@ -16,8 +16,9 @@ class JavaConfigProcessManagerSpec extends FunSuite with Matchers with ScalaFutu
 
 
   override def config: Config = {
-    super.config.withValue("flinkConfig.classpath", ConfigValueFactory
-      .fromIterable(Collections.singletonList("./engine/flink/management/java_sample/target/scala-2.11/managementJavaSample.jar")))
+    super.config
+      .withValue("flinkConfig.classpath",
+        ConfigValueFactory.fromIterable(Collections.singletonList("./engine/flink/management/java_sample/target/scala-2.11/managementJavaSample.jar")))
   }
 
   val ProcessMarshaller = new ProcessMarshaller

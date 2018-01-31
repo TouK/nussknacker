@@ -21,6 +21,7 @@ import scala.concurrent.duration._
 
 trait DockerTest extends DockerTestKit with ScalaFutures with LazyLogging {
   self: Suite =>
+  private val flinkEsp = "flinkesp:1.4.0"
 
   private val client: DockerClient = DefaultDockerClient.fromEnv().build()
 
@@ -40,7 +41,7 @@ trait DockerTest extends DockerTestKit with ScalaFutures with LazyLogging {
       FileUtils.copyInputStreamToFile(getClass.getResourceAsStream(s"/docker/$file"), new File(dirFile, file))
     }
 
-    client.build(dir, "flinkesp:1.3.1")
+    client.build(dir, flinkEsp)
   }
 
   prepareDockerImage()
@@ -60,7 +61,7 @@ trait DockerTest extends DockerTestKit with ScalaFutures with LazyLogging {
     .withLinks(ContainerLink(zookeeperContainer, "zookeeper"))
     .withReadyChecker(DockerReadyChecker.LogLineContains("started (kafka.server.KafkaServer)").looped(5, 1 second))
 
-  def baseFlink(name: String) = DockerContainer("flinkesp:1.3.1", Some(name))
+  def baseFlink(name: String) = DockerContainer(flinkEsp, Some(name))
 
   lazy val jobManagerContainer = {
     val savepointDirName = prepareSavepointDirName()
@@ -68,7 +69,7 @@ trait DockerTest extends DockerTestKit with ScalaFutures with LazyLogging {
     baseFlink("jobmanager")
       .withCommand("jobmanager")
       .withEnv("JOB_MANAGER_RPC_ADDRESS_COMMAND=grep $HOSTNAME /etc/hosts | awk '{print $1}'", s"SAVEPOINT_DIR_NAME=$savepointDirName")
-      .withReadyChecker(DockerReadyChecker.LogLineContains("New leader reachable").looped(5, 1 second))
+      .withReadyChecker(DockerReadyChecker.LogLineContains("Resource Manager associating").looped(5, 1 second))
       .withLinks(ContainerLink(zookeeperContainer, "zookeeper"))
       .withVolumes(List(VolumeMapping(savepointDir, savepointDir, true)))
       .withLogLineReceiver(LogLineReceiver(withErr = true, s => {

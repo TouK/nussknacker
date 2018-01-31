@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.flink.util.signal
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.scala.{ConnectedStreams, DataStream}
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer09
-import org.apache.flink.streaming.util.serialization.DeserializationSchema
+import org.apache.flink.api.common.serialization.DeserializationSchema
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaEspUtils}
 
 trait KafkaSignalStreamConnector {

@@ -5,7 +5,7 @@ import com.typesafe.config.Config;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor;
 import org.apache.flink.streaming.api.windowing.time.Time;
-import org.apache.flink.streaming.util.serialization.DeserializationSchema;
+import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.streaming.util.serialization.KeyedSerializationSchema;
 import pl.touk.nussknacker.engine.api.CustomStreamTransformer;
 import pl.touk.nussknacker.engine.api.ProcessListener;
@@ -34,7 +34,7 @@ public class ExampleProcessConfigCreator implements ProcessConfigCreator {
         final ArrayList<String> objects = new ArrayList<>();
         objects.add("Recommendations");
         objects.add("FraudDetection");
-        return new WithCategories(value, JavaConversions.collectionAsScalaIterable(objects).toList());
+        return new WithCategories<>(value, JavaConversions.collectionAsScalaIterable(objects).toList());
     }
 
     @Override

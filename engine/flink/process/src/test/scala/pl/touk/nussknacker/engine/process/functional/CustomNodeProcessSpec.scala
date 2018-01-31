@@ -1,9 +1,7 @@
 package pl.touk.nussknacker.engine.process.functional
 
-
 import java.util.Date
 
-import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.process.ProcessTestHelpers.{MockService, SimpleRecord, SimpleRecordWithPreviousValue, processInvoker}
@@ -32,8 +30,7 @@ class CustomNodeProcessSpec extends FlatSpec with Matchers {
 
     )
 
-    val env = StreamExecutionEnvironment.createLocalEnvironment(1)
-    processInvoker.invoke(process, data, env)
+    processInvoker.invoke(process, data)
 
     val mockData = MockService.data.map(_.asInstanceOf[SimpleRecordWithPreviousValue])
     mockData.map(_.record.value1) shouldBe List(12L, 20L)
@@ -66,8 +63,7 @@ class CustomNodeProcessSpec extends FlatSpec with Matchers {
 
     )
 
-    val env = StreamExecutionEnvironment.createLocalEnvironment(1)
-    processInvoker.invoke(process, data, env)
+    processInvoker.invoke(process, data)
 
     val (allMocked, filteredMocked) = MockService.data.map(_.asInstanceOf[String]).partition(_.startsWith("allRec-"))
     allMocked shouldBe List("allRec-3", "allRec-5", "allRec-12", "allRec-14", "allRec-20")
@@ -89,8 +85,7 @@ class CustomNodeProcessSpec extends FlatSpec with Matchers {
       SimpleRecord("1", 3, "a", new Date(0))
     )
 
-    val env = StreamExecutionEnvironment.createLocalEnvironment(1)
-    processInvoker.invoke(process, data, env)
+    processInvoker.invoke(process, data)
 
     MockService.data shouldBe 'empty
 
@@ -110,8 +105,7 @@ class CustomNodeProcessSpec extends FlatSpec with Matchers {
       SimpleRecord("1", 3, "a", new Date(0))
     )
 
-    val env = StreamExecutionEnvironment.createLocalEnvironment(1)
-    processInvoker.invoke(process, data, env)
+    processInvoker.invoke(process, data)
 
     val all = MockService.data.toSet
     all shouldBe Set("f1-alamakota", "f2-alamakota")
@@ -128,8 +122,7 @@ class CustomNodeProcessSpec extends FlatSpec with Matchers {
       .processorEnd("proc2", "logService", "all" -> "#beforeNode")
 
     val data = List(SimpleRecord("1", 3, "a", new Date(0)))
-    val env = StreamExecutionEnvironment.createLocalEnvironment(1)
-    processInvoker.invoke(process, data, env)
+    processInvoker.invoke(process, data)
 
     MockService.data shouldBe List("testBeforeNode")
 
@@ -145,8 +138,7 @@ class CustomNodeProcessSpec extends FlatSpec with Matchers {
 
     val data = List(SimpleRecord("terefere", 3, "a", new Date(0)), SimpleRecord("kuku", 3, "b", new Date(0)))
 
-    val env = StreamExecutionEnvironment.createLocalEnvironment(1)
-    processInvoker.invoke(process, data, env)
+    processInvoker.invoke(process, data)
 
     MockService.data shouldBe List("terefere")
 
@@ -161,9 +153,7 @@ class CustomNodeProcessSpec extends FlatSpec with Matchers {
 
     val data = List()
 
-    val env = StreamExecutionEnvironment.createLocalEnvironment(1)
-
-    val thrown = the [IllegalArgumentException] thrownBy processInvoker.invoke(process, data, env)
+    val thrown = the [IllegalArgumentException] thrownBy processInvoker.invoke(process, data)
 
     thrown.getMessage shouldBe "Compilation errors: ExpressionParseError(Unresolved reference input,proc2,Some(all),#input.id)"
 

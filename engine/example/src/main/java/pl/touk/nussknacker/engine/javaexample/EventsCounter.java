@@ -55,6 +55,7 @@ public class EventsCounter extends CustomStreamTransformer {
         }
 
         @Override
+        @SuppressWarnings("unchecked")
         public ValueStateDescriptor<MultiMap<Object, Integer>> stateDescriptor() {
             return new ValueStateDescriptor("state", MultiMap.class);
         }

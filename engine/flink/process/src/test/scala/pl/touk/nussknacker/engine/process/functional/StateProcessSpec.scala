@@ -2,13 +2,10 @@ package pl.touk.nussknacker.engine.process.functional
 
 import java.util.Date
 
-import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.process.ProcessTestHelpers.{MockService, SimpleRecord, processInvoker}
 import pl.touk.nussknacker.engine.spel
-
-import scala.concurrent.duration._
 
 class StateProcessSpec extends FlatSpec with Matchers {
 
@@ -27,8 +24,7 @@ class StateProcessSpec extends FlatSpec with Matchers {
       SimpleRecord("1", 23, "d", new Date(4000))
     )
 
-    val env = StreamExecutionEnvironment.createLocalEnvironment(1)
-    processInvoker.invoke(process, data, env)
+    processInvoker.invoke(process, data)
 
     MockService.data shouldNot be('empty)
     MockService.data(0) shouldBe Set("a", "b")

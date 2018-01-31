@@ -1,12 +1,10 @@
 package pl.touk.nussknacker.engine.process.functional
 
-import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
-import org.scalatest.{FlatSpec, Matchers}
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
-import pl.touk.nussknacker.engine.process.ProcessTestHelpers.{MockService, SimpleRecord, processInvoker}
 import java.util.Date
 
+import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
+import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compile.SubprocessResolver
@@ -15,6 +13,7 @@ import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ClazzRef
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
+import pl.touk.nussknacker.engine.process.ProcessTestHelpers.{MockService, SimpleRecord, processInvoker}
 
 class SubprocessSpec extends FlatSpec with Matchers {
 
@@ -32,8 +31,7 @@ class SubprocessSpec extends FlatSpec with Matchers {
       SimpleRecord("1", 12, "a", new Date(0))
     )
 
-    val env = StreamExecutionEnvironment.createLocalEnvironment(1)
-    processInvoker.invoke(process, data, env)
+    processInvoker.invoke(process, data)
 
     MockService.data shouldNot be('empty)
     MockService.data.head shouldBe "a"
@@ -51,8 +49,7 @@ class SubprocessSpec extends FlatSpec with Matchers {
       SimpleRecord("1", 12, "a", new Date(0))
     )
 
-    val env = StreamExecutionEnvironment.createLocalEnvironment(1)
-    processInvoker.invoke(process, data, env)
+    processInvoker.invoke(process, data)
 
     MockService.data shouldNot be('empty)
     MockService.data.head shouldBe "a"

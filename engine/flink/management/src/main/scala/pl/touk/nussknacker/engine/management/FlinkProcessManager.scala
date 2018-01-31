@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.management
 
+import java.util.concurrent.TimeUnit
+
 import argonaut.PrettyParams
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory, ConfigValueType}
 import com.typesafe.scalalogging.LazyLogging
@@ -15,6 +17,7 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.test.{TestData, TestResults}
 import pl.touk.nussknacker.engine.flink.queryablestate.{EspQueryableClient, QueryableClientProvider}
+import pl.touk.nussknacker.engine.util.UrlUtils
 
 import scala.collection.JavaConversions._
 import scala.concurrent.duration._
@@ -33,14 +36,15 @@ object FlinkProcessManager {
   }
 
   private def prepareGateway(config: FlinkConfig) : FlinkGateway = {
+    val (queryableStateProxyHost, queryableStateProxyPort) = UrlUtils.parseHostAndPort(config.queryableStateProxyUrl)
     val clientConfig: Configuration = prepareFlinkConfig(config)
-    new DefaultFlinkGateway(clientConfig, config.jobManagerTimeout)
+    new DefaultFlinkGateway(clientConfig, config.jobManagerTimeout,queryableStateProxyHost, queryableStateProxyPort)
   }
 
   private def prepareFlinkConfig(flinkConf: FlinkConfig) = {
 
     val flinkConfigurationObject
-      = flinkConf.configLocation.map(GlobalConfiguration.loadConfiguration).getOrElse(new Configuration())
+    = flinkConf.configLocation.map(GlobalConfiguration.loadConfiguration).getOrElse(new Configuration())
 
     val appendedCustomConfig = flinkConf.customConfig.getOrElse(ConfigFactory.empty())
       //TODO: flink requires this value, although it's not used by client...
@@ -58,11 +62,13 @@ object FlinkProcessManager {
     flinkConfigurationObject
   }
 
+
 }
 
 case class FlinkConfig(jobManagerTimeout: FiniteDuration,
                        configLocation: Option[String],
                        customConfig: Option[Config],
+                       queryableStateProxyUrl: String,
                        shouldVerifyBeforeDeploy: Option[Boolean])
 
 class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeploy: Boolean,

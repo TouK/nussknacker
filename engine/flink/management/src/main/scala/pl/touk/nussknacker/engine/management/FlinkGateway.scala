@@ -6,8 +6,7 @@ import akka.pattern.AskTimeoutException
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.client.program.{ClusterClient, PackagedProgram, StandaloneClusterClient}
 import org.apache.flink.configuration.Configuration
-import org.apache.flink.runtime.highavailability.HighAvailabilityServices
-import org.apache.flink.runtime.query.QueryableStateClient
+import org.apache.flink.queryablestate.client.QueryableStateClient
 import pl.touk.nussknacker.engine.flink.queryablestate.EspQueryableClient
 
 import scala.concurrent.duration.FiniteDuration
@@ -15,14 +14,18 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
 import scala.util.Try
 
-
-class DefaultFlinkGateway(config: Configuration, timeout: FiniteDuration) extends FlinkGateway with LazyLogging {
+class DefaultFlinkGateway(config: Configuration,
+                          timeout: FiniteDuration,
+                          queryableStateProxyHost: String,
+                          queryableStateProxyPort: Int) extends FlinkGateway with LazyLogging {
 
   private implicit val ec = ExecutionContext.Implicits.global
 
-  private val (client, haServices) = createClient()
+  private val client = createClient()
 
-  override val queryableClient: EspQueryableClient = new EspQueryableClient(new QueryableStateClient(config, haServices))
+  override val queryableClient: EspQueryableClient ={
+    new EspQueryableClient(new QueryableStateClient(queryableStateProxyHost, queryableStateProxyPort))
+  }
 
   override def invokeJobManager[Response: ClassTag](req: AnyRef): Future[Response] = {
     //TODO: this starts/stops leader retrieval service for each invocation. Can we put it into var? But then
@@ -40,14 +43,10 @@ class DefaultFlinkGateway(config: Configuration, timeout: FiniteDuration) extend
     client.shutdown()
   }
 
-  private def createClient() : (ClusterClient, HighAvailabilityServices) = {
-    //well, this is a bit of a hack, but we don't want to duplicate code for creating HAServices
-    var haServices: HighAvailabilityServices = null
-    val client = new StandaloneClusterClient(config) {
-      setDetached(true)
-      haServices = this.highAvailabilityServices
-    }
-    (client, haServices)
+  private def createClient() : ClusterClient = {
+    val client = new StandaloneClusterClient(config)
+    client.setDetached(true)
+    client
   }
 
 }

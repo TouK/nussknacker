@@ -44,7 +44,7 @@ public class TransactionAmountAggregator extends CustomStreamTransformer {
                 Transaction transaction = ir.finalContext().apply("input");
                 int aggregatedAmount = transaction.amount + ((state.value() == null) ? 0 : state.value().amount);
                 state.update(new AggregatedAmount(transaction.clientId, aggregatedAmount));
-                return (new ValueWithContext(state.value(), ir.finalContext()));
+                return (new ValueWithContext<>(state.value(), ir.finalContext()));
             }
         };
     }

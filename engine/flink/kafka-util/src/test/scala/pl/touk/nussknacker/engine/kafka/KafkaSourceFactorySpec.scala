@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.kafka
 import java.nio.charset.StandardCharsets
 
 import org.apache.flink.api.java.typeutils.GenericTypeInfo
-import org.apache.flink.streaming.util.serialization.SimpleStringSchema
+import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.api.test.TestParsingUtils

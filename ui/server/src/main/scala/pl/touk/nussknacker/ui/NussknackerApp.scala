@@ -145,7 +145,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
     Thread.currentThread().setUncaughtExceptionHandler(new UncaughtExceptionHandler {
       override def uncaughtException(t: Thread, e: Throwable): Unit = {
         logger.error("Main thread stopped unexpectedly, terminating ActorSystem", e)
-        system.shutdown()
+        system.terminate()
       }
     })
   }

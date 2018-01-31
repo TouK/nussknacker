@@ -1,9 +1,8 @@
 package pl.touk.nussknacker.engine.process.runner
 
-import java.net.URL
-
 import org.apache.flink.api.common.JobExecutionResult
-import org.apache.flink.configuration.{ConfigConstants, Configuration}
+import org.apache.flink.core.fs.FileSystem
+import org.apache.flink.configuration.{ConfigConstants, Configuration, CoreOptions}
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import org.apache.flink.runtime.minicluster.LocalFlinkMiniCluster
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
@@ -19,8 +18,11 @@ trait FlinkStubbedRunner {
 
   protected def process: EspProcess
 
+  protected def configuration: Configuration
+
   protected def createEnv : StreamExecutionEnvironment =
-    StreamExecutionEnvironment.createLocalEnvironment(MetaDataExtractor.extractStreamMetaDataOrFail(process.metaData).parallelism.getOrElse(1))
+    StreamExecutionEnvironment.createLocalEnvironment(
+      MetaDataExtractor.extractStreamMetaDataOrFail(process.metaData).parallelism.getOrElse(1), configuration)
 
   //we use own LocalFlinkMiniCluster, instead of LocalExecutionEnvironment, to be able to pass own classpath...
   protected def execute(env: StreamExecutionEnvironment, savepointRestoreSettings: SavepointRestoreSettings) : JobExecutionResult = {
@@ -34,6 +36,11 @@ trait FlinkStubbedRunner {
     val configuration: Configuration = new Configuration
     configuration.addAll(jobGraph.getJobConfiguration)
     configuration.setInteger(ConfigConstants.TASK_MANAGER_NUM_TASK_SLOTS, env.getParallelism)
+    //FIXME: reversing flink default order
+    configuration.setString(CoreOptions.CLASSLOADER_RESOLVE_ORDER, "parent-first")
+
+    // it is required for proper working of HadoopFileSystem
+    FileSystem.initialize(configuration)
 
     val exec: LocalFlinkMiniCluster = new LocalFlinkMiniCluster(configuration, true)
     try {

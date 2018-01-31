@@ -123,6 +123,6 @@ class MetricsSpec extends FlatSpec with Matchers with Eventually with BeforeAndA
   }
 
   private def invoke(process: EspProcess, data: List[SimpleRecord]) = {
-    processInvoker.invoke(process, data, TestReporterUtil.env())
+    processInvoker.invoke(process, data, 1, TestReporterUtil.configWithTestMetrics())
   }
 }

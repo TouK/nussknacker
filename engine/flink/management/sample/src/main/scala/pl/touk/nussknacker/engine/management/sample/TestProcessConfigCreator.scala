@@ -17,7 +17,8 @@ import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceCont
 import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.windowing.time.Time
-import org.apache.flink.streaming.util.serialization.{KeyedSerializationSchema, SimpleStringSchema}
+import org.apache.flink.streaming.util.serialization.KeyedSerializationSchema
+import org.apache.flink.api.common.serialization.SimpleStringSchema
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
 import pl.touk.nussknacker.engine.api.lazyy.UsingLazyValues
@@ -240,7 +241,7 @@ case class ConstantStateTransformer[T:TypeInformation](defaultValue: T) extends 
           constantState.update(defaultValue)
           ValueWithContext[Any](value, value.finalContext)
         }
-      })
+      }).uid("customStateId")
   })
 }
 

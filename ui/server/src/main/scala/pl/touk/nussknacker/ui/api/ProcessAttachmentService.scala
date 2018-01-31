@@ -22,7 +22,7 @@ class ProcessAttachmentService(attachmentsBasePath: String, processActivityRepos
     val relativeFilePath = s"$processId/${s"${System.currentTimeMillis()}-$originalFileName"}"
     val attachmentFile = getAttachmentFile(relativeFilePath)
     attachmentFile.getParentFile.mkdirs()
-    val fileSink = FileIO.toFile(attachmentFile)
+    val fileSink = FileIO.toPath(attachmentFile.toPath)
     byteSource.runWith(fileSink).flatMap { _ =>
       val attachmentToAdd = AttachmentToAdd(processId, processVersionId, originalFileName, relativeFilePath)
       processActivityRepository.addAttachment(attachmentToAdd).recoverWith { case NonFatal(ex) =>

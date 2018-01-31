@@ -1,12 +1,13 @@
 
 state.savepoints.dir: file:///tmp/SAVEPOINT_DIR_NAME
 high-availability: zookeeper
-recovery.mode: zookeeper
 high-availability.zookeeper.quorum: zookeeper:2181
 high-availability.zookeeper.path.root: /flink
-high-availability.zookeeper.path.namespace: /1.3
+#FIXME: hardcoded flink version
+high-availability.cluster-id: 1.4
 high-availability.storageDir: file:///tmp/storage
 parallelism.default: 8
-
+#FIXME: reversing flink default order
+classloader.resolve-order: parent-first
 
 

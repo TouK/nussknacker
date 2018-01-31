@@ -1,18 +1,15 @@
 package pl.touk.nussknacker.engine.process.api
 
-import java.io.File
-import java.nio.file.Files
-
 import org.apache.flink.api.common.state.ValueStateDescriptor
 import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.functions.ProcessFunction
 import org.apache.flink.streaming.api.scala._
-import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
 import org.apache.flink.util.Collector
 import org.scalatest.concurrent.Eventually
 import org.scalatest.time.{Seconds, Span}
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
-import pl.touk.nussknacker.engine.flink.api.state.{EvictableState, EvictableStateFunction}
+import pl.touk.nussknacker.engine.flink.api.state.EvictableStateFunction
+import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
 import pl.touk.nussknacker.engine.flink.util.source.StaticSource
 import pl.touk.nussknacker.engine.flink.util.source.StaticSource.{Data, Watermark}
 
@@ -29,7 +26,7 @@ class EvictableStateTest extends FlatSpec with Matchers with BeforeAndAfter with
   before {
     StaticSource.running = true
 
-    val env = StreamExecutionEnvironment.createLocalEnvironment(1)
+    val env = StreamExecutionEnvironment.createLocalEnvironment(1, FlinkTestConfiguration.configuration)
     env.enableCheckpointing(500)
     env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
 
