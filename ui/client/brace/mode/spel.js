@@ -31,13 +31,6 @@ var CssHighlightRules = function() {
         "start" : [{
             include : ["strings", "url", "comments"]
         }, {
-            token: "paren.lparen",
-            regex: "\\{",
-            next:  "ruleset"
-        }, {
-            token: "paren.rparen",
-            regex: "\\}"
-        }, {
             token: "string",
             regex: "@",
             next:  "media"
@@ -66,14 +59,6 @@ var CssHighlightRules = function() {
         "media": [{
             include : ["strings", "url", "comments"]
         }, {
-            token: "paren.lparen",
-            regex: "\\{",
-            next:  "start"
-        }, {
-            token: "paren.rparen",
-            regex: "\\}",
-            next:  "start"
-        }, {
             token: "string",
             regex: ";",
             next:  "start"
@@ -99,10 +84,6 @@ var CssHighlightRules = function() {
         "ruleset" : [{
             regex : "-(webkit|ms|moz|o)-",
             token : "text"
-        }, {
-            token : "paren.rparen",
-            regex : "\\}",
-            next : "start"
         }, {
             include : ["strings", "url", "comments"]
         }, {
@@ -149,7 +130,7 @@ var CssHighlightRules = function() {
             regex : "'",
             push : [{
                 token : "string.end",
-                regex : "'|$",
+                regex : "'",
                 next: "pop"
             }, {
                 include : "escapes"
@@ -165,7 +146,7 @@ var CssHighlightRules = function() {
             regex : '"',
             push : [{
                 token : "string.end",
-                regex : '"|$',
+                regex : '"',
                 next: "pop"
             }, {
                 include : "escapes"
