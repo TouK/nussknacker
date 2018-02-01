@@ -7,6 +7,7 @@ import "../../stylesheets/visualization.styl";
 import GenericModalDialog from "./GenericModalDialog";
 import Dialogs from "./Dialogs";
 import HttpService from "../../http/HttpService";
+import * as JsonUtils from "../../common/JsonUtils";
 import {Table, Td, Tr} from "reactable";
 import NodeDetailsContent from "../graph/NodeDetailsContent";
 import Moment from "moment";
@@ -36,7 +37,7 @@ class CompareVersionsDialog extends React.Component {
       HttpService.fetchRemoteVersions(nextProps.processId).then(list => this.setState({remoteVersions: list}))
     }
   }
-    
+
   loadVersion(versionId) {
     if (versionId) {
       HttpService.compareProcesses(this.props.processId, this.props.version, this.versionToPass(versionId), this.props.businessView, this.isRemote(versionId))
@@ -109,29 +110,36 @@ class CompareVersionsDialog extends React.Component {
 
   printDiff(diffId) {
     const diff = this.state.difference[diffId]
+    const differentPaths = this.differentPathsForObjects(diff.currentNode, diff.otherNode)
     return (
       <div className="compareContainer">
         <div>
           <div className="versionHeader">Current version</div>
-          {this.printNode(diff.currentNode)}
+          {this.printNode(diff.currentNode, differentPaths)}
         </div>
         <div>
           <div className="versionHeader">Version {this.versionDisplayString(this.state.otherVersion)}</div>
-          {this.printNode(diff.otherNode)}
+          {this.printNode(diff.otherNode, [])}
         </div>
       </div>
     )
   }
 
-  printNode(node) {
+  differentPathsForObjects(currentNode, otherNode) {
+    const diffObject = JsonUtils.objectDiff(currentNode, otherNode)
+    const flattenObj = JsonUtils.flattenObj(diffObject);
+    return _.keys(flattenObj)
+  }
+
+  printNode(node, pathsToMark) {
     return node ? (<NodeDetailsContent isEditMode={false} node={node}
                                        processDefinitionData={this.props.processDefinitionData}
+                                       pathsToMark={pathsToMark}
                                        onChange={() => {
                                        }}/>) :
       (<div className="notPresent">Node not present</div>)
-
-
   }
+
 }
 
 function mapState(state) {

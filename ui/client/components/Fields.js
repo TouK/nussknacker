@@ -26,22 +26,26 @@ export default class Fields extends React.Component {
   render() {
     return (<div className="fieldsControl">
         {
-          this.state.fields.map((field, index) =>
-            (
+          this.state.fields.map((field, index) => {
+            const markedClass = this.props.isMarked(index) ? " marked" : ""
+            return (
               <div className="node-row" key={index}>
-                <div className="node-value fieldName">
-                  <input className="node-input" type="text" value={field.name}  placeholder="Field name"
+                <div className={"node-value fieldName" + markedClass}>
+                  <input className="node-input" type="text" value={field.name} placeholder="Field name"
                          onChange={e => this.changeName(index, e.target.value)}/>
                 </div>
-                <div className="node-value field" >
+                <div className={"node-value field" + markedClass}>
                   {this.props.fieldCreator(field, (value) => this.changeValue(index, field.name, value))}
                 </div>
                 <div className="node-value fieldRemove">
-                  { /* TODO: add nicer buttons. Awesome font? */ }
-                  <button className="addRemoveButton" title="Remove field" onClick={() => this.removeField(index)}>-</button>
+                  {/* TODO: add nicer buttons. Awesome font? */}
+                  <button className="addRemoveButton" title="Remove field" onClick={() => this.removeField(index)}>-
+                  </button>
                 </div>
               </div>
             )
+
+            }
           )
         }
       <div>

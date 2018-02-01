@@ -68,6 +68,7 @@ export default class NodeDetailsContent extends React.Component {
                           onChange={(e) => onChange({typ: {refClazzName: e.target.value}})}/>)}
                   onChange={(fields) => this.setNodeDataAt("parameters", fields)}
                   newValue={{name: "", typ: {refClazzName: ""}}}
+                  isMarked={index => this.isMarked(`parameters[${index}].name`) || this.isMarked(`parameters[${index}].typ.refClazzName`)}
                 />
               </div>
             </div>
@@ -262,12 +263,17 @@ export default class NodeDetailsContent extends React.Component {
   }
 
   createField = (fieldType, fieldLabel, fieldProperty, fieldName, readonly) => {
-    return this.doCreateField(fieldType, fieldLabel, fieldName, _.get(this.state.editedNode, fieldProperty, ""), ((newValue) => this.setNodeDataAt(fieldProperty, newValue) ), readonly)
+    return this.doCreateField(fieldType, fieldLabel, fieldName, _.get(this.state.editedNode, fieldProperty, ""), ((newValue) => this.setNodeDataAt(fieldProperty, newValue) ), readonly, this.isMarked(fieldProperty))
   }
 
   createListField = (fieldType, fieldLabel, obj, fieldProperty, listFieldProperty, fieldName) => {
+    const path = `${listFieldProperty}.${fieldProperty}`
     return this.doCreateField(fieldType, fieldLabel, fieldName, _.get(obj, fieldProperty),
-      ((newValue) => this.setNodeDataAt(`${listFieldProperty}.${fieldProperty}`, newValue) ))
+      ((newValue) => this.setNodeDataAt(path, newValue) ), null, this.isMarked(path))
+  }
+
+  isMarked = (path) => {
+    return _.includes(this.props.pathsToMark, path)
   }
 
   wrapWithTestResult = (fieldName, field) => {
@@ -302,7 +308,7 @@ export default class NodeDetailsContent extends React.Component {
     this.setState({testResultsToHide: newTestResultsToHide})
   }
 
-  doCreateField = (fieldType, fieldLabel, fieldName, fieldValue, handleChange, forceReadonly) => {
+  doCreateField = (fieldType, fieldLabel, fieldName, fieldValue, handleChange, forceReadonly, isMarked) => {
     const readOnly = !this.props.isEditMode || forceReadonly
     const restriction = (this.findParamByName(fieldName) || {}).restriction
 
@@ -320,12 +326,13 @@ export default class NodeDetailsContent extends React.Component {
       )
     }
 
+    const nodeValueClass = "node-value" + (isMarked ? " marked" : "")
     switch (fieldType) {
       case 'input':
         return (
           <div className="node-row">
             {this.renderFieldLabel(fieldLabel)}
-            <div className="node-value"><input type="text" className="node-input" value={fieldValue}
+            <div className={nodeValueClass}><input type="text" className="node-input" value={fieldValue}
                                                onChange={(e) => handleChange(e.target.value)}
                                                readOnly={readOnly}/></div>
           </div>
@@ -334,7 +341,7 @@ export default class NodeDetailsContent extends React.Component {
         return (
           <div className="node-row">
             {this.renderFieldLabel(fieldLabel)}
-            <div className="node-value"><input type="checkbox" checked={fieldValue}
+            <div className={nodeValueClass}><input type="checkbox" checked={fieldValue}
                                                onChange={(e) => handleChange(fieldValue ? false : true)}
                                                disabled={readOnly ? 'disabled' : ''}/></div>
           </div>
@@ -344,7 +351,7 @@ export default class NodeDetailsContent extends React.Component {
         return (
           <div className="node-row">
             {this.renderFieldLabel(fieldLabel)}
-            <div className="node-value">
+            <div className={nodeValueClass}>
               <Textarea rows={1} cols={50} className="node-input" value={fieldValue}
                         onChange={(e) => handleChange(e.target.value)} readOnly={readOnly}/>
             </div>
@@ -354,7 +361,7 @@ export default class NodeDetailsContent extends React.Component {
         return this.wrapWithTestResult(fieldName, (
           <div className="node-row">
             {this.renderFieldLabel(fieldLabel)}
-            <div className="node-value">
+            <div className={nodeValueClass}>
               <ExpressionSuggest inputProps={{
                 rows: 1, cols: 50, className: "node-input", value: fieldValue,
                 onValueChange: handleChange, readOnly: readOnly}}/>
