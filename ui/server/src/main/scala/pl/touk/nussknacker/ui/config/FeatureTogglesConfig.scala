@@ -12,8 +12,7 @@ case class FeatureTogglesConfig(development: Boolean,
                                 metrics: Option[GrafanaSettings],
                                 remoteEnvironment: Option[HttpRemoteEnvironmentConfig],
                                 counts: Option[InfluxReporterConfig],
-                                environmentAlert:Option[EnvironmentAlert],
-                                advancedCodeSuggestions: Boolean
+                                environmentAlert:Option[EnvironmentAlert]
                                )
 
 object FeatureTogglesConfig extends LazyLogging{
@@ -25,7 +24,6 @@ object FeatureTogglesConfig extends LazyLogging{
   def create(config: Config): FeatureTogglesConfig = {
     val environmentAlert = parseOptionalConfig[EnvironmentAlert](config, "environmentAlert")
     val isDevelopmentMode = config.hasPath("developmentMode") && config.getBoolean("developmentMode")
-    val advancedCodeSuggestions = config.hasPath("advancedCodeSuggestions") && config.getBoolean("advancedCodeSuggestions")
     val standaloneModeEnabled = config.hasPath("standaloneModeEnabled") && config.getBoolean("standaloneModeEnabled")
     val metrics = parseOptionalConfig[GrafanaSettings](config, "grafanaSettings")
     val counts = parseOptionalConfig[InfluxReporterConfig](config, "grafanaSettings")
@@ -38,8 +36,7 @@ object FeatureTogglesConfig extends LazyLogging{
       metrics = metrics,
       remoteEnvironment = remoteEnvironment,
       counts = counts,
-      environmentAlert = environmentAlert,
-      advancedCodeSuggestions = advancedCodeSuggestions
+      environmentAlert = environmentAlert
     )
   }
 

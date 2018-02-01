@@ -7,32 +7,6 @@ export default class ExpressionSuggester {
     this._variables = variables
   }
 
-  _autosuggest_applySuggestion = (suggestion, inputValue, caretPosition) => {
-    const beforeCaret = inputValue.slice(0, caretPosition)
-    const afterCaret = inputValue.slice(caretPosition)
-    const lastExpressionPart = this._focusedLastExpressionPart(inputValue, caretPosition)
-    const firstExpressionPart = _.trimEnd(beforeCaret, lastExpressionPart)
-    const suggestionForLastExpression = _.concat(this._alreadyTypedProperties(lastExpressionPart), suggestion.methodName)
-    const suggestionValueText = this._propertiesToDotSeparated(suggestionForLastExpression)
-    const newBeforeCaret = firstExpressionPart + suggestionValueText
-    return {
-      value: newBeforeCaret + afterCaret,
-      caretPosition: newBeforeCaret.length
-    }
-  }
-
-  _autosuggest_extractMatchingPartFromInput = (suggestion, inputValue, caretPosition) => {
-    const justTyped = this._justTypedProperty(this._focusedLastExpressionPartWithoutMethodParens(inputValue, caretPosition))
-    const expr = new RegExp(`(.*?)${justTyped}(.*)`, "i")
-    const suggestedStartAndEnd = suggestion.methodName.match(expr)
-    const start = _.nth(suggestedStartAndEnd, 1)
-    const end = _.nth(suggestedStartAndEnd, 2)
-    const matchStartIdx = _.get(start, 'length')
-    const matchEndIdx = suggestion.methodName.length - _.get(end, 'length')
-    const middle = suggestion.methodName.slice(matchStartIdx, matchEndIdx)
-    return {start, middle, end}
-  }
-
   suggestionsFor = (inputValue, caretPosition2d) => {
     const normalized = this._normalizeMultilineInputToSingleLine(inputValue, caretPosition2d)
     const lastExpressionPart = this._focusedLastExpressionPartWithoutMethodParens(normalized.normalizedInput, normalized.normalizedCaretPosition)
@@ -108,10 +82,6 @@ export default class ExpressionSuggester {
     return this._lastExpressionPartWithoutMethodParens(this._currentlyFocusedExpressionPart(expression, caretPosition))
   }
 
-  _focusedLastExpressionPart = (expression, caretPosition) => {
-    return this._lastExpressionPart(this._currentlyFocusedExpressionPart(expression, caretPosition))
-  }
-
   _currentlyFocusedExpressionPart = (value, caretPosition) => {
     return value.slice(0, caretPosition)
   }
@@ -119,10 +89,6 @@ export default class ExpressionSuggester {
   _lastExpressionPartWithoutMethodParens = (value) => {
     const valueCleaned = this._removeMethodParensFromProperty(value)
     return _.isEmpty(value) ? "" : "#" + _.last(_.split(valueCleaned, '#'))
-  }
-
-  _lastExpressionPart = (value) => {
-    return _.isEmpty(value) ? "" : "#" + _.last(_.split(value, '#'))
   }
 
   _justTypedProperty = (value) => {
@@ -135,10 +101,6 @@ export default class ExpressionSuggester {
 
   _dotSeparatedToProperties = (value) => {
     return _.split(value, ".")
-  }
-
-  _propertiesToDotSeparated = (properties) => {
-    return _.join(properties, ".")
   }
 
   _removeMethodParensFromProperty = (property) => {
