@@ -5,7 +5,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
 
-import argonaut.{Argonaut, Json}
+import argonaut.{Argonaut, EncodeJson, Json}
 import com.typesafe.config.Config
 import org.apache.flink.api.common.functions.{MapFunction, RichMapFunction}
 import org.apache.flink.api.common.state.{ValueState, ValueStateDescriptor}
@@ -155,8 +155,8 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
       "serviceModelService" -> WithCategories(EmptyService, "Category1", "Category2"),
       "paramService" -> WithCategories(OneParamService, "Category1"),
       "enricher" -> WithCategories(Enricher, "Category1", "Category2"),
-      "multipleParamsService" -> WithCategories(MultipleParamsService, "Category1", "Category2")
-
+      "multipleParamsService" -> WithCategories(MultipleParamsService, "Category1", "Category2"),
+      "complexReturnObjectService" -> WithCategories(ComplexReturnObjectService, "Category1", "Category2")
     )
   }
 
@@ -287,6 +287,34 @@ case class CsvRecord(fields: List[String]) extends UsingLazyValues with Displaya
   override def display = Argonaut.jObjectFields("firstField" -> Json.jString(firstField))
 
   override def originalDisplay: Option[String] = Some(fields.mkString("|"))
+}
+
+case object ComplexReturnObjectService extends Service {
+  @MethodToInvoke
+  def invoke() = {
+    Future.successful(ComplexObject(Map("foo" -> 1, "bar" -> "baz")))
+  }
+}
+
+object ComplexObject {
+  private implicit val mapEncoder = EncodeJson.of[Map[String, Json]]
+    .contramap[Map[String, Any]](_.mapValues {
+    case null => jNull
+    case a:String => jString(a)
+    case a:Long => jNumber(a)
+    case a:Int => jNumber(a)
+    case a:BigDecimal => jNumber(a)
+    case a:Double => jNumber(a)
+    case a:Boolean => jBool(a)
+    case a => jString(a.toString)
+  })
+
+  val complexObjectEncoder = EncodeJson.of[ComplexObject]
+}
+
+case class ComplexObject(foo: Map[String, Any]) extends Displayable {
+  override def display: Json = ComplexObject.complexObjectEncoder(this)
+  override def originalDisplay: Option[String] = None
 }
 
 case object MultipleParamsService extends Service {

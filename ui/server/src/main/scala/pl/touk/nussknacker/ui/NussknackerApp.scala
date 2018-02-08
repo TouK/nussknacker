@@ -45,7 +45,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
 
 
   Http().bindAndHandle(
-    initializeRoute(),
+    handler = initializeRoute(),
     interface = "0.0.0.0",
     port = port
   )

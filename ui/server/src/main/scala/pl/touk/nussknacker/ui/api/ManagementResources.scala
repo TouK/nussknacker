@@ -97,9 +97,21 @@ class ManagementResources(typesInformation: List[ClazzDefinition],
             toStrict(5.second) {
               formFields('testData.as[Array[Byte]], 'processJson) { (testData, displayableProcessJson) =>
                 complete {
-                  performTest(processId, testData, displayableProcessJson).map { results =>
-                    HttpResponse(status = StatusCodes.OK, entity =
-                      HttpEntity(ContentTypes.`application/json`, results.asJson.pretty(PrettyParams.spaces2)))
+                  performTest(processId, testData, displayableProcessJson).flatMap { results =>
+                    try {
+                      Future.successful {
+                        HttpResponse(status = StatusCodes.OK, entity = HttpEntity(ContentTypes.`application/json`, results.asJson.pretty(PrettyParams.spaces2)))
+                      }
+                    }
+                    catch {
+                      //TODO There is some classloading issue here in Nussknacker that causes `results.asJson` throw NoClassDefFoundError
+                      //We don't want to kill whole application in this case so we catch it. As soon as bug is fixed, we should remove this try/catch clause.
+                      //Akka-http ExceptionHandler catches only NonFatal exceptions, so we cannot use it here...
+                      //There is a test case for it in BaseFlowTest class
+                      case t: NoClassDefFoundError =>
+                        logger.error("Error during performing test", t)
+                        Future.failed(t)
+                    }
                   }.recover(EspErrorToHttp.errorToHttp)
                 }
               }
