@@ -41,7 +41,7 @@ class DefinitionResources(modelData: Map[ProcessingType, ModelData],
   import argonaut.ArgonautShapeless._
   import pl.touk.nussknacker.ui.codec.UiCodecs._
 
-  def route(implicit user: LoggedUser) : Route = {
+  def route(implicit user: LoggedUser) : Route = encodeResponse {
     //TODO maybe always return data for all subprocesses versions instead of fetching just one-by-one?
     path("processDefinitionData" / EnumSegment(ProcessingType)) { (processingType) =>
       parameter('isSubprocess.as[Boolean]) { (isSubprocess) =>

@@ -44,135 +44,137 @@ class ProcessesResources(repository: FetchingProcessRepository,
   def route(implicit user: LoggedUser): Route = {
 
     authorizeMethod(Permission.Write, user) {
-      path("processes") {
-        get {
-          complete {
-            validateAll(repository.fetchProcessesDetails())
-          }
-        }
-      } ~ path("subProcesses") {
-        get {
-          complete {
-            validateAll(repository.fetchSubProcessesDetails())
-          }
-        }
-      } ~ path("processes" / "status") {
-        get {
-          complete {
-            repository.fetchProcessesDetails().flatMap(fetchProcessStatesForProcesses)
-          }
-        }
-
-      } ~ path("processes" / Segment) { processId =>
-        parameter('businessView ? false) { (businessView) =>
+      encodeResponse {
+        path("processes") {
           get {
             complete {
-              repository.fetchLatestProcessDetailsForProcessId(processId, businessView).map[ToResponseMarshallable] {
-                case Some(process) => validate(process, businessView)
-                case None => HttpResponse(status = StatusCodes.NotFound, entity = "Process not found")
-              }
+              validateAll(repository.fetchProcessesDetails())
             }
           }
-        } ~ delete {
-          complete {
-            writeRepository.deleteProcess(processId).map(toResponse(StatusCodes.OK))
-          }
-        }
-      } ~ path("processes" / Segment / LongNumber) { (processId, versionId) =>
-        parameter('businessView ? false) { (businessView) =>
+        } ~ path("subProcesses") {
           get {
             complete {
-              repository.fetchProcessDetailsForId(processId, versionId, businessView).map[ToResponseMarshallable] {
-                case Some(process) => validate(process,  businessView)
-                case None => HttpResponse(status = StatusCodes.NotFound, entity = "Process not found")
-              }
+              validateAll(repository.fetchSubProcessesDetails())
             }
           }
-        }
-      } ~ path("processes" / Segment) { processId =>
-        put {
-          entity(as[ProcessToSave]) { processToSave =>
+        } ~ path("processes" / "status") {
+          get {
             complete {
-              val displayableProcess = processToSave.process
-              val canonical = ProcessConverter.fromDisplayable(displayableProcess)
-              val json = UiProcessMarshaller.toJson(canonical, PrettyParams.nospace)
-              val deploymentData = GraphProcess(json)
-
-              (for {
-                validation <- EitherT.fromEither[Future](processValidation.validate(displayableProcess).saveNotAllowedAsError)
-                result <- EitherT(writeRepository.updateProcess(UpdateProcessAction(processId, deploymentData, processToSave.comment)))
-              } yield validation).value.map(toResponse)
+              repository.fetchProcessesDetails().flatMap(fetchProcessStatesForProcesses)
             }
           }
-        }
-      } ~ path("processes" / Segment / Segment) { (processId, category) =>
-        authorize(user.categories.contains(category)) {
-          parameter('isSubprocess ? false) { (isSubprocess) =>
-            post {
+
+        } ~ path("processes" / Segment) { processId =>
+          parameter('businessView ? false) { (businessView) =>
+            get {
               complete {
-                typesForCategories.getTypeForCategory(category) match {
-                  case Some(processingType) =>
-                    val emptyProcess = makeEmptyProcess(processId, processingType, isSubprocess)
-                    writeRepository.saveNewProcess(processId, category, emptyProcess, processingType, isSubprocess)
-                        .map(toResponse(StatusCodes.Created))
-                  case None => Future(HttpResponse(status = StatusCodes.BadRequest, entity = "Process category not found"))
+                repository.fetchLatestProcessDetailsForProcessId(processId, businessView).map[ToResponseMarshallable] {
+                  case Some(process) => validate(process, businessView)
+                  case None => HttpResponse(status = StatusCodes.NotFound, entity = "Process not found")
+                }
+              }
+            }
+          } ~ delete {
+            complete {
+              writeRepository.deleteProcess(processId).map(toResponse(StatusCodes.OK))
+            }
+          }
+        } ~ path("processes" / Segment / LongNumber) { (processId, versionId) =>
+          parameter('businessView ? false) { (businessView) =>
+            get {
+              complete {
+                repository.fetchProcessDetailsForId(processId, versionId, businessView).map[ToResponseMarshallable] {
+                  case Some(process) => validate(process, businessView)
+                  case None => HttpResponse(status = StatusCodes.NotFound, entity = "Process not found")
                 }
               }
             }
           }
-        }
-      } ~ path("processes" / Segment / "status") { processId =>
-        get {
-          complete {
-            repository.fetchLatestProcessDetailsForProcessId(processId).flatMap[ToResponseMarshallable] {
-              case Some(process) =>
-                findJobStatus(process.name, process.processingType).map {
-                  case Some(status) => status
-                  case None => HttpResponse(status = StatusCodes.OK, entity = "Process is not running")
-                }
-              case None =>
-                Future.successful(HttpResponse(status = StatusCodes.NotFound, entity = "Process not found"))
+        } ~ path("processes" / Segment) { processId =>
+          put {
+            entity(as[ProcessToSave]) { processToSave =>
+              complete {
+                val displayableProcess = processToSave.process
+                val canonical = ProcessConverter.fromDisplayable(displayableProcess)
+                val json = UiProcessMarshaller.toJson(canonical, PrettyParams.nospace)
+                val deploymentData = GraphProcess(json)
+
+                (for {
+                  validation <- EitherT.fromEither[Future](processValidation.validate(displayableProcess).saveNotAllowedAsError)
+                  result <- EitherT(writeRepository.updateProcess(UpdateProcessAction(processId, deploymentData, processToSave.comment)))
+                } yield validation).value.map(toResponse)
+              }
             }
           }
-        }
-      } ~ path("processes" / "category" / Segment / Segment) { (processId, category) =>
-        post {
-          complete {
-            writeRepository.updateCategory(processId = processId, category = category).map(toResponse(StatusCodes.OK))
+        } ~ path("processes" / Segment / Segment) { (processId, category) =>
+          authorize(user.categories.contains(category)) {
+            parameter('isSubprocess ? false) { (isSubprocess) =>
+              post {
+                complete {
+                  typesForCategories.getTypeForCategory(category) match {
+                    case Some(processingType) =>
+                      val emptyProcess = makeEmptyProcess(processId, processingType, isSubprocess)
+                      writeRepository.saveNewProcess(processId, category, emptyProcess, processingType, isSubprocess)
+                        .map(toResponse(StatusCodes.Created))
+                    case None => Future(HttpResponse(status = StatusCodes.BadRequest, entity = "Process category not found"))
+                  }
+                }
+              }
+            }
           }
-        }
-      } ~ path("processes" / Segment / LongNumber / "compare" / LongNumber) { (processId, thisVersion, otherVersion) =>
-        parameter('businessView ? false) { (businessView) =>
+        } ~ path("processes" / Segment / "status") { processId =>
           get {
             complete {
-              withJson(processId, thisVersion, businessView) { thisDisplayable =>
-                withJson(processId, otherVersion, businessView) { otherDisplayable =>
-                  implicit val codec = ProcessComparator.codec
-                  ProcessComparator.compare(thisDisplayable, otherDisplayable)
+              repository.fetchLatestProcessDetailsForProcessId(processId).flatMap[ToResponseMarshallable] {
+                case Some(process) =>
+                  findJobStatus(process.name, process.processingType).map {
+                    case Some(status) => status
+                    case None => HttpResponse(status = StatusCodes.OK, entity = "Process is not running")
+                  }
+                case None =>
+                  Future.successful(HttpResponse(status = StatusCodes.NotFound, entity = "Process not found"))
+              }
+            }
+          }
+        } ~ path("processes" / "category" / Segment / Segment) { (processId, category) =>
+          post {
+            complete {
+              writeRepository.updateCategory(processId = processId, category = category).map(toResponse(StatusCodes.OK))
+            }
+          }
+        } ~ path("processes" / Segment / LongNumber / "compare" / LongNumber) { (processId, thisVersion, otherVersion) =>
+          parameter('businessView ? false) { (businessView) =>
+            get {
+              complete {
+                withJson(processId, thisVersion, businessView) { thisDisplayable =>
+                  withJson(processId, otherVersion, businessView) { otherDisplayable =>
+                    implicit val codec = ProcessComparator.codec
+                    ProcessComparator.compare(thisDisplayable, otherDisplayable)
+                  }
                 }
               }
             }
           }
-        }
-      } ~ path("processes" / "import" / Segment) { processId =>
-        post {
-          fileUpload("process") { case (metadata, byteSource) =>
-            complete {
-              MultipartUtils.readFile(byteSource).map[ToResponseMarshallable] { json =>
-                (UiProcessMarshaller.fromJson(json) match {
-                  case Valid(process) if process.metaData.id != processId => Invalid(WrongProcessId(processId, process.metaData.id))
-                  case Valid(process) => Valid(process)
-                  case Invalid(unmarshallError) => Invalid(UnmarshallError(unmarshallError.msg))
-                }) match {
-                  case Valid(process) =>
-                    repository.fetchLatestProcessDetailsForProcessIdEither(processId).map { detailsXor =>
-                      val validatedProcess = detailsXor.map(details =>
-                        ProcessConverter.toDisplayable(process, details.processingType).validated(processValidation)
-                      )
-                      toResponseXor(validatedProcess)
-                    }
+        } ~ path("processes" / "import" / Segment) { processId =>
+          post {
+            fileUpload("process") { case (metadata, byteSource) =>
+              complete {
+                MultipartUtils.readFile(byteSource).map[ToResponseMarshallable] { json =>
+                  (UiProcessMarshaller.fromJson(json) match {
+                    case Valid(process) if process.metaData.id != processId => Invalid(WrongProcessId(processId, process.metaData.id))
+                    case Valid(process) => Valid(process)
+                    case Invalid(unmarshallError) => Invalid(UnmarshallError(unmarshallError.msg))
+                  }) match {
+                    case Valid(process) =>
+                      repository.fetchLatestProcessDetailsForProcessIdEither(processId).map { detailsXor =>
+                        val validatedProcess = detailsXor.map(details =>
+                          ProcessConverter.toDisplayable(process, details.processingType).validated(processValidation)
+                        )
+                        toResponseXor(validatedProcess)
+                      }
 
-                  case Invalid(error) => espErrorToHttp(error)
+                    case Invalid(error) => espErrorToHttp(error)
+                  }
                 }
               }
             }
