@@ -65,6 +65,15 @@ export function reducer(state = emptyUiState, action) {
         }
       })
     }
+    case "TOGGLE_INFO_MODAL": {
+      return withAllModalsClosed({
+        ...state,
+          modalDialog: {
+            openDialog: action.openDialog,
+            text: action.text
+        }
+      })
+    }
     case "EXPAND_GROUP": {
       return {
         ...state,

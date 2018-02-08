@@ -219,10 +219,14 @@ class UserRightPanel extends Component {
   }
 
   deleteProcess = () => {
-    this.props.actions.toggleConfirmDialog(true, DialogMessages.deleteProcess(this.processId()), () => {
-        return HttpService.deleteProcess(this.processId()).then((resp) =>
-            browserHistory.push('/processes'))
-    })
+    if(this.isRunning()){
+      this.props.actions.toggleInfoModal(Dialogs.types.infoModal,DialogMessages.cantDeleteRunningProcess())
+    }else{
+      this.props.actions.toggleConfirmDialog(true, DialogMessages.deleteProcess(this.processId()), () => {
+          return HttpService.deleteProcess(this.processId()).then((resp) =>
+              browserHistory.push('/processes'))
+      })
+    }
   }
 
   generateData = () => {

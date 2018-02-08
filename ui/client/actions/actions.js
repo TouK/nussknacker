@@ -314,6 +314,14 @@ export function toggleModalDialog(openDialog) {
   }
 }
 
+export function toggleInfoModal(openDialog, text) {
+  return {
+    type: "TOGGLE_INFO_MODAL",
+    openDialog: openDialog,
+    text: text
+  }
+}
+
 export function testProcessFromFile(id, testDataFile, process) {
   return (dispatch) => {
     dispatch({

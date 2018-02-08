@@ -22,6 +22,10 @@ class DialogMessages {
     return 'Are you sure you want to delete comment?'
   }
 
+  cantDeleteRunningProcess = () => {
+    return `You can't delete running process! Stop it first and then click 'delete' button again.`
+  }
+
 }
 //TODO this pattern is not necessary, just export every public function as in actions.js
 export default new DialogMessages()
