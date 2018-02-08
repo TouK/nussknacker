@@ -72,6 +72,20 @@ class Graph extends React.Component {
       if (!processNotChanged || !_.isEqual(this.props.nodeToDisplay, nextProps.nodeToDisplay)){
         this.highlightNodes(nextProps.processToDisplay, nextProps.nodeToDisplay, nextProps.groupingState);
       }
+
+
+    }
+
+    componentDidUpdate(previousProps) {
+      //we have to do this after render, otherwise graph is not fully initialized yet
+      const diff = _.difference(this.props.processToDisplay.nodes.map(n => n.id), previousProps.processToDisplay.nodes.map(n => n.id));
+      diff.forEach(nid => {
+        const cell = JointJsGraphUtils.findCell(this.graph, nid);
+        const cellView = this.processGraphPaper.findViewByModel(cell);
+        if (cellView) {
+          this.handleInjectBetweenNodes(cellView);
+        }
+      })
     }
 
     directedLayout() {
