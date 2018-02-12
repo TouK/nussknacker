@@ -149,13 +149,22 @@ espCheckbox(checkboxWidth)
   height: modalHeaderHeight
   min-width modalHeaderWidth
   display inline-block
-  background-color modalBkgColor
   span
     display inline-block
     margin-left 15px
     margin-top 3px
   span::after
     content: "\00a0\00a0"
+  .docsIcon
+    background-color modalBkgColor
+    margin-left 15px
+    float right
+    fill: docsIconColor
+    svg
+      width 26px
+      height 26px
+      &:hover
+        fill: modalLabelTextColor
 
 modalContent(modalBkgColor,warningColor,modalLabelTextColor,testResultsColor,modalInputTextColor,processesHoverColor,hrColor,modalInputBkgColor)
   overflow auto

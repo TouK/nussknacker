@@ -17,6 +17,8 @@ import {Scrollbars} from "react-custom-scrollbars";
 import cssVariables from "../../stylesheets/_variables.styl";
 import {BareGraph} from "./Graph";
 import HttpService from "../../http/HttpService";
+import SvgDiv from "../SvgDiv"
+import ProcessUtils from "../../common/ProcessUtils";
 
 class NodeDetailsModal extends React.Component {
 
@@ -140,6 +142,14 @@ class NodeDetailsModal extends React.Component {
     return (<BareGraph processCounts={subprocessCounts} processToDisplay={this.state.subprocessContent}/>)
   }
 
+  renderDocumentationIcon() {
+    const docsUrl = this.props.nodeSetting.docsUrl
+    return docsUrl ?
+      <a className="docsIcon" target="_blank" href={docsUrl} title="Documentation">
+        <SvgDiv svgFile={'book.svg'}/>
+      </a> : null
+  }
+
   render() {
     var isOpen = !_.isEmpty(this.props.nodeToDisplay) && this.props.showNodeDetailsModal
     var headerStyles = EspModalStyles.headerStyles(this.nodeAttributes().styles.fill, this.nodeAttributes().styles.color)
@@ -150,6 +160,7 @@ class NodeDetailsModal extends React.Component {
         <Modal shouldCloseOnOverlayClick={false} isOpen={isOpen} className="espModal" onRequestClose={this.closeModal}>
           <div className="modalHeader" style={headerStyles}>
             <span>{this.nodeAttributes().name}</span>
+            {this.renderDocumentationIcon()}
           </div>
           <div className="modalContentDark">
             <Scrollbars hideTracksWhenNotNeeded={true} autoHeight autoHeightMax={cssVariables.modalContentMaxHeight} renderThumbVertical={props => <div {...props} className="thumbVertical"/>}>
@@ -180,8 +191,10 @@ function mapState(state) {
   var nodeId = state.graphReducer.nodeToDisplay.id
   var errors = nodeId ? _.get(state.graphReducer.processToDisplay, `validationResult.errors.invalidNodes[${state.graphReducer.nodeToDisplay.id}]`, [])
     : _.get(state.graphReducer.processToDisplay, "validationResult.errors.processPropertiesErrors", [])
+  const nodeToDisplay = state.graphReducer.nodeToDisplay
   return {
-    nodeToDisplay: state.graphReducer.nodeToDisplay,
+    nodeToDisplay: nodeToDisplay,
+    nodeSetting: _.get(state.settings.nodesSettings, ProcessUtils.findNodeDefinitionId(nodeToDisplay)) || {},
     processId: state.graphReducer.processToDisplay.id,
     subprocessVersions: state.graphReducer.processToDisplay.properties.subprocessVersions,
     nodeErrors: errors,
