@@ -14,7 +14,7 @@ import argonaut._
 import Argonaut._
 import ArgonautShapeless._
 import pl.touk.nussknacker.engine.util.service.query.ExpressionServiceQuery.ParametersCompilationException
-import pl.touk.nussknacker.engine.util.service.query.ServiceQuery.ServiceNotFoundException
+import pl.touk.nussknacker.engine.util.service.query.ServiceQuery.{QueryResult, ServiceNotFoundException}
 import pl.touk.nussknacker.ui.util.Argonaut62Support
 
 
@@ -23,6 +23,12 @@ class ServiceRoutesSpec extends FlatSpec with Matchers with ScalatestRouteTest w
   private implicit val ec = scala.concurrent.ExecutionContext.Implicits.global
   private implicit val user = LoggedUser("admin", Permission.Admin :: Nil, Nil)
   private val serviceRoutes = new ServiceRoutes(Map(ProcessingType.Streaming -> FlinkModelData(ConfigFactory.load())))
+
+  implicit val queryResultDecoder = DecodeJson[QueryResult] { c =>
+    for {
+      result <- (c --\ "result").as[String]
+    } yield QueryResult(result, List.empty)
+  }
 
   it should "invoke service" in {
     val entity = HttpEntity(MediaTypes.`application/json`,
@@ -39,8 +45,8 @@ class ServiceRoutesSpec extends FlatSpec with Matchers with ScalatestRouteTest w
       """.stripMargin)
     Post("/service/streaming/enricher", entity) ~> serviceRoutes.route ~> check {
       status shouldEqual StatusCodes.OK
-      responseAs[String] shouldEqual "RichObject(parameterValue,123,Some(rrrr))" //TODO: should be JSON
-
+      val result = entityAs[QueryResult]
+      result.result shouldEqual "RichObject(parameterValue,123,Some(rrrr))" //TODO: should be JSON
     }
   }
   it should "display valuable error message for invalid spell expression" in {

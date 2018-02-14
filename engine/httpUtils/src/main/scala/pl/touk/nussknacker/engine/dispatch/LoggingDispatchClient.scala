@@ -6,11 +6,12 @@ import com.ning.http.client._
 import com.typesafe.scalalogging.Logger
 import dispatch.{Future, Http}
 import org.slf4j.LoggerFactory
+import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.dispatch.LoggingHandler.LogRequest
 
 import scala.concurrent.ExecutionContext
 
-private class LoggingDispatchClient (serviceName: String, http: Http, id: => String)
+private class LoggingDispatchClient (serviceName: String, http: Http, id: => String, collector: Option[ServiceInvocationCollector])
   extends Http(client = http.client) {
   private val logger = Logger(LoggerFactory.getLogger(serviceName))
   override def apply[T](request: Request, handler: AsyncHandler[T])
@@ -27,8 +28,8 @@ private class LoggingDispatchClient (serviceName: String, http: Http, id: => Str
 object LoggingDispatchClient {
   private val uniqueId = new AtomicLong()
 
-  def apply(serviceName: String, http: Http, id: => String = correlationId): Http =
-    new LoggingDispatchClient(serviceName: String, http, id)
+  def apply(serviceName: String, http: Http, id: => String = correlationId, collector: Option[ServiceInvocationCollector] = None): Http =
+    new LoggingDispatchClient(serviceName: String, http, id, collector)
 
   def correlationId: String = uniqueId.incrementAndGet().toString
 }

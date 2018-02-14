@@ -29,9 +29,10 @@ import pl.touk.nussknacker.engine.flink.util.exception.VerboselyLoggingException
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSinkFactory, KafkaSourceFactory}
 import pl.touk.nussknacker.engine.management.sample.signal.{RemoveLockProcessSignalFactory, SampleSignalHandlingTransformer}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import argonaut.Argonaut._
 import argonaut.ArgonautShapeless._
+import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{CollectableAction, ServiceInvocationCollector, TransmissionNames}
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 
 class TestProcessConfigCreator extends ProcessConfigCreator {
@@ -156,7 +157,8 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
       "paramService" -> WithCategories(OneParamService, "Category1"),
       "enricher" -> WithCategories(Enricher, "Category1", "Category2"),
       "multipleParamsService" -> WithCategories(MultipleParamsService, "Category1", "Category2"),
-      "complexReturnObjectService" -> WithCategories(ComplexReturnObjectService, "Category1", "Category2")
+      "complexReturnObjectService" -> WithCategories(ComplexReturnObjectService, "Category1", "Category2"),
+      "clientHttpService" -> WithCategories(new ClientFakeHttpService(), "Category1", "Category2")
     )
   }
 
@@ -295,6 +297,25 @@ case object ComplexReturnObjectService extends Service {
     Future.successful(ComplexObject(Map("foo" -> 1, "bar" -> "baz")))
   }
 }
+
+case class Client(id: String, name: String) extends DisplayableAsJson[Client]
+
+class ClientFakeHttpService() extends Service {
+  import argonaut.ArgonautShapeless._
+
+  case class LogClientRequest(method: String, id: String) extends DisplayableAsJson[LogClientRequest]
+  case class LogClientResponse(body: String) extends DisplayableAsJson[LogClientResponse]
+
+  @MethodToInvoke
+  def invoke(@ParamName("id") id: String)(implicit executionContext: ExecutionContext, collector: ServiceInvocationCollector): Future[Client] = {
+    val req = LogClientRequest("GET", id)
+    collector.collectWithResponse(req, None) ({
+      val client = Client(id, "foo")
+      Future.successful(CollectableAction(() => LogClientResponse(client.asJson.spaces2), client))
+    }, TransmissionNames("request", "response"))
+  }
+}
+
 
 object ComplexObject {
   private implicit val mapEncoder = EncodeJson.of[Map[String, Json]]

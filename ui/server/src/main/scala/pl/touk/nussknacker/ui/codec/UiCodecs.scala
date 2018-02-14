@@ -9,18 +9,20 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.definition.TestingCapabilities
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.ui.api.{DisplayableUser, GrafanaSettings, ProcessObjects, ResultsWithCounts}
+import pl.touk.nussknacker.ui.api.{DisplayableUser, GrafanaSettings, ProcessObjects}
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.{ProcessType, ProcessingType}
 import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.{EdgeType, NodeAdditionalFields, ProcessAdditionalFields}
 import pl.touk.nussknacker.ui.process.displayedgraph._
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.{Comment, ProcessActivity}
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{BaseProcessDetails, ProcessDetails, ProcessHistoryEntry}
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{ProcessDetails, ProcessHistoryEntry}
 import pl.touk.nussknacker.ui.processreport.NodeCount
 import pl.touk.nussknacker.ui.validation.ValidationResults.{NodeValidationErrorType, ValidationResult}
 import ArgonautShapeless._
+import pl.touk.nussknacker.engine.api.test.InvocationCollectors.QueryServiceResult
 import pl.touk.nussknacker.engine.api.typed.{ClazzRef, typing}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.util.json.{BestEffortJsonEncoder, Codecs}
+import pl.touk.nussknacker.engine.util.service.query.ServiceQuery.QueryResult
 
 object UiCodecs extends UiCodecs
 
@@ -149,5 +151,20 @@ trait UiCodecs extends Codecs with Argonauts with SingletonInstances with Derive
         }
     }).encode _
   }
+
+  implicit def queryServiceResult = {
+    implicit val encoder: EncodeJson[Any] = EncodeJson.apply { a =>
+      BestEffortJsonEncoder(failOnUnkown = false).encode(a)
+    }
+    EncodeJson.derive[QueryServiceResult]
+  }
+
+  implicit def queryResult = {
+    implicit val encoder: EncodeJson[Any] = EncodeJson.apply { a =>
+      BestEffortJsonEncoder(failOnUnkown = false).encode(a)
+    }
+    EncodeJson.derive[QueryResult]
+  }
+
 
 }

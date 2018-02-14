@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.definition
 import java.util.concurrent.{CompletionStage, Executor}
 
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{NodeContext, ServiceInvocationCollector}
+import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{NodeContext, ServiceInvocationCollector, TestServiceInvocationCollector}
 import pl.touk.nussknacker.engine.api.{MetaData, Service}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.UnionDefinitionExtractor
@@ -18,7 +18,7 @@ trait ServiceInvoker {
 
 }
 
-private[definition] class ServiceInvokerImpl(objectWithMethodDef: ObjectWithMethodDef)
+private[definition] class ServiceInvokerImpl(objectWithMethodDef: ObjectWithMethodDef, collector: Option[ServiceInvocationCollector] = None)
   extends ServiceInvoker with LazyLogging {
 
   override def invoke(params: Map[String, Any], nodeContext: NodeContext)
@@ -26,19 +26,19 @@ private[definition] class ServiceInvokerImpl(objectWithMethodDef: ObjectWithMeth
     objectWithMethodDef.invokeMethod(
       paramFun = (params.get _)
         .andThen(_.map(_.asInstanceOf[AnyRef])),
-      additional = Seq(ec, ServiceInvocationCollector(nodeContext), metaData)
+      additional = Seq(ec, collector.getOrElse(TestServiceInvocationCollector(nodeContext)), metaData)
     ).asInstanceOf[Future[Any]]
   }
 
 }
 
-private[definition] class JavaServiceInvokerImpl(objectWithMethodDef: ObjectWithMethodDef)
+private[definition] class JavaServiceInvokerImpl(objectWithMethodDef: ObjectWithMethodDef, collector: Option[ServiceInvocationCollector] = None)
   extends ServiceInvoker with LazyLogging {
 
   override def invoke(params: Map[String, Any], nodeContext: NodeContext)
                      (implicit ec: ExecutionContext, metaData: MetaData): Future[Any] = {
     val result = objectWithMethodDef.invokeMethod((params.get _)
-      .andThen(_.map(_.asInstanceOf[AnyRef])), Seq(prepareExecutor(ec), ServiceInvocationCollector(nodeContext), metaData))
+      .andThen(_.map(_.asInstanceOf[AnyRef])), Seq(prepareExecutor(ec), collector.getOrElse(TestServiceInvocationCollector(nodeContext)), metaData))
     FutureConverters.toScala(result.asInstanceOf[CompletionStage[_]])
   }
 
@@ -59,12 +59,12 @@ object ServiceInvoker {
       Nil
   )
 
-  def apply(objectWithMethodDef: ObjectWithMethodDef): ServiceInvoker = {
+  def apply(objectWithMethodDef: ObjectWithMethodDef, collector: Option[ServiceInvocationCollector] = None): ServiceInvoker = {
     val returnType = objectWithMethodDef.methodDef.method.getReturnType
     if (classOf[Future[_]].isAssignableFrom(returnType))
-      new ServiceInvokerImpl(objectWithMethodDef)
+      new ServiceInvokerImpl(objectWithMethodDef, collector)
     else if (classOf[java.util.concurrent.CompletionStage[_]].isAssignableFrom(returnType))
-      new JavaServiceInvokerImpl(objectWithMethodDef)
+      new JavaServiceInvokerImpl(objectWithMethodDef, collector)
     else
       throw new IllegalArgumentException("Illegal return type of extracted method: " +
         returnType + ". Should be Future or CompletionStage")

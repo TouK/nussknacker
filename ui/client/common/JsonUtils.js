@@ -44,3 +44,19 @@ export function objectDiff(object, base) {
   }
   return changes(object, base)
 }
+
+export function removeEmptyProperties(obj) {
+  if (_.isEmpty(obj)) {
+    return obj
+  } else {
+    const objCopy = _.cloneDeep(obj)
+    Object.keys(objCopy).forEach(key => {
+      if (!_.isEmpty(objCopy[key]) && _.isObject(objCopy[key])) {
+        objCopy[key] = this.removeEmptyProperties(objCopy[key])
+      } else if (_.isEmpty(objCopy[key])) {
+        delete objCopy[key]
+      }
+    })
+    return objCopy
+  }
+}

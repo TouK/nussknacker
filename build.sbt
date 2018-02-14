@@ -478,7 +478,7 @@ lazy val httpUtils = (project in engine("httpUtils")).
         "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )
     }
-  )
+  ).dependsOn(api)
 
 lazy val argonautUtils = (project in engine("argonautUtils")).
   settings(commonSettings).

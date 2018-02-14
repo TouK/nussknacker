@@ -8,16 +8,15 @@ import pl.touk.http.argonaut.Argonaut62Support
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
-import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.engine.util.service.query.{ExpressionServiceQuery, ServiceQuery}
-import pl.touk.nussknacker.engine.util.service.query.ServiceQuery.ServiceNotFoundException
+import pl.touk.nussknacker.engine.util.service.query.ServiceQuery.{QueryResult, ServiceNotFoundException}
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
-import argonaut._, Argonaut._, ArgonautShapeless._
+import argonaut._
 
 class ServiceRoutes(modelDataMap: Map[ProcessingType, ModelData])
                    (implicit ec: ExecutionContext)
@@ -25,8 +24,9 @@ class ServiceRoutes(modelDataMap: Map[ProcessingType, ModelData])
     with RouteWithUser
     with Argonaut62Support
     with LazyLogging{
+
   import ServiceRoutes._
-  private val encoder = BestEffortJsonEncoder(failOnUnkown = false)
+  import pl.touk.nussknacker.ui.codec.UiCodecs._
 
   private implicit val metaData: MetaData = ServiceQuery.Implicits.metaData
 
@@ -66,13 +66,12 @@ class ServiceRoutes(modelDataMap: Map[ProcessingType, ModelData])
         entity(as[List[Parameter]]) { params =>
           complete {
             invokeService(serviceName, modelData, params)
-              .map(encoder.encode)
           }
         }
       }
     }
 
-  private def invokeService(serviceName: String, modelData: ModelData, params: List[Parameter]) = {
+  private def invokeService(serviceName: String, modelData: ModelData, params: List[Parameter]): Future[QueryResult] = {
     ExpressionServiceQuery(new ServiceQuery(modelData), modelData)
       .invoke(serviceName, params)
   }

@@ -102,12 +102,10 @@ object ProcessorService {
 class ProcessorService extends Service {
   @MethodToInvoke
   def invoke()(implicit ex: ExecutionContext, collector: ServiceInvocationCollector): Future[Unit] = {
-    if (collector.collectorEnabled) {
-      collector.collect("processor service invoked")
-    } else {
+    collector.collect("processor service invoked", Option(())) {
       ProcessorService.invocationsCount.getAndIncrement()
+      Future.successful(())
     }
-    Future.successful(())
   }
 
 }

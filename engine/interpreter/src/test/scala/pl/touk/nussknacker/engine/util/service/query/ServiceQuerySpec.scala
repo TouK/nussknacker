@@ -3,41 +3,40 @@ package pl.touk.nussknacker.engine.util.service.query
 
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process.WithCategories
 import pl.touk.nussknacker.engine.testing.{EmptyProcessConfigCreator, LocalModelData}
+import pl.touk.nussknacker.engine.util.service.query.ServiceQuery.QueryResult
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class ServiceQuerySpec
-  extends FlatSpec
-    with Matchers
-    with ScalaFutures {
+class ServiceQuerySpec extends FunSuite with Matchers with ScalaFutures {
 
+  import QueryServiceTesting._
+  import ServiceQuery.Implicits.metaData
   import ServiceQuerySpec._
 
   import ExecutionContext.Implicits.global
-  import ServiceQuery.Implicits.metaData
 
-  it should "invoke enricher by name" in {
+  test("should invoke enricher by name") {
     whenReady(invokeCastService(4)) { r =>
-      r shouldBe 4
+      r.result shouldBe 4
     }
   }
-  it should "invoke concat service" in {
+  test("should invoke concat service") {
     whenReady(invokeConcatService("foo", "bar")) { r =>
-      r shouldBe "foobar"
+      r.result shouldBe "foobar"
     }
   }
-  it should "throw IllegalArgumentExcetion on negative argument" in {
+  test("should throw IllegalArgumentExcetion on negative argument") {
     assertThrows[IllegalArgumentException] {
       whenReady(invokeCastService(-1)) { _ =>
         ()
       }
     }
   }
-  it should "throw exception on unexisting service" in {
+  test("should throw exception on unexisting service") {
     assertThrows[ServiceQuery.ServiceNotFoundException] {
       whenReady(CreateQuery("cast", new CastIntToLongService).invoke("add")) { _ =>
         ()
@@ -66,22 +65,6 @@ object ServiceQuerySpec {
       }
     }
   }
-  object InvokeService{
-    def apply(service: Service, args: (String, Any)*)
-             (implicit executionContext: ExecutionContext, metaData: MetaData): Future[Any] = {
-      CreateQuery("srv", service)
-        .invoke("srv", args:_*)
-    }
-  }
-  object CreateQuery{
-    def apply(serviceName:String,service:Service)
-             (implicit executionContext: ExecutionContext, metaData: MetaData): ServiceQuery = {
-      new ServiceQuery(LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator {
-        override def services(config: Config): Map[String, WithCategories[Service]] =
-          super.services(config) ++ Map(serviceName -> WithCategories(service))
-      }))
-    }
-  }
 
   class ConcatService extends Service {
     @MethodToInvoke
@@ -92,4 +75,24 @@ object ServiceQuerySpec {
 
 }
 
+object QueryServiceTesting {
 
+  object InvokeService {
+    def apply(service: Service, args: (String, Any)*)
+             (implicit executionContext: ExecutionContext, metaData: MetaData): Future[QueryResult] = {
+      CreateQuery("srv", service)
+        .invoke("srv", args: _*)
+    }
+  }
+
+  object CreateQuery {
+    def apply(serviceName: String, service: Service)
+             (implicit executionContext: ExecutionContext, metaData: MetaData): ServiceQuery = {
+      new ServiceQuery(LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator {
+        override def services(config: Config): Map[String, WithCategories[Service]] =
+          super.services(config) ++ Map(serviceName -> WithCategories(service))
+      }))
+    }
+  }
+
+}

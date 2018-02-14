@@ -6,7 +6,8 @@ import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.Service
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.testing.{EmptyProcessConfigCreator, LocalModelData}
-import pl.touk.nussknacker.engine.util.service.query.ServiceQuerySpec.{ConcatService, CreateQuery}
+import pl.touk.nussknacker.engine.util.service.query.QueryServiceTesting.CreateQuery
+import pl.touk.nussknacker.engine.util.service.query.ServiceQuerySpec.ConcatService
 
 class ExpressionServiceQuerySpec extends FlatSpec with Matchers with ScalaFutures {
   import ServiceQuery.Implicits.metaData
@@ -18,13 +19,13 @@ class ExpressionServiceQuerySpec extends FlatSpec with Matchers with ScalaFuture
 
   it should "evaluate spel expressions" in {
     whenReady(invokeConcatService("'foo'", "'bar'")) { r =>
-      r shouldBe "foobar"
+      r.result shouldBe "foobar"
     }
   }
 
   it should "evaluate spel expressions with math expression" in {
     whenReady(invokeConcatService("'foo'", "(1 + 2).toString()")) { r =>
-      r shouldBe "foo3"
+      r.result shouldBe "foo3"
     }
   }
 

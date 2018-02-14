@@ -20,10 +20,7 @@ class AlertService(alertFile: String) extends Service with TimeMeasuringService 
       Thread.sleep(Random.nextInt(10))
 
       val messageWithCategory = s"$category: $message"
-      if (collector.collectorEnabled) {
-        collector.collect(messageWithCategory)
-        Future.successful(())
-      } else {
+      collector.collect(messageWithCategory, Option(())) {
         Future {
           FileUtils.writeStringToFile(new File(alertFile), messageWithCategory, true)
         }

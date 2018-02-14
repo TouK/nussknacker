@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.compile.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.util.service.query.ServiceQuery.QueryResult
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -22,13 +23,13 @@ class ExpressionServiceQuery(
   import ExpressionServiceQuery._
 
   def invoke(serviceName: String, args: (String, Expression)*)
-            (implicit executionContext: ExecutionContext, metaData: MetaData): Future[Any] = {
+            (implicit executionContext: ExecutionContext, metaData: MetaData): Future[QueryResult] = {
     val params = args.map(pair => evaluatedparam.Parameter(pair._1, pair._2)).toList
     invoke(serviceName, params)
   }
 
   def invoke(serviceName: String,params: List[evaluatedparam.Parameter])
-            (implicit executionContext: ExecutionContext, metaData: MetaData): Future[Any] = {
+            (implicit executionContext: ExecutionContext, metaData: MetaData): Future[QueryResult] = {
     expressionCompiler.compileValidatedObjectParameters(params, Some(ValidationContext.empty)) match {
       case Valid(p) => expressionEvaluator
         .evaluateParameters(p, ctx)

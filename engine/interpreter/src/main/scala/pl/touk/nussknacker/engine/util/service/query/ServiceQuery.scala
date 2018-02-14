@@ -1,9 +1,12 @@
 package pl.touk.nussknacker.engine.util.service.query
 
+import java.util.UUID
+
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process.WithCategories
-import pl.touk.nussknacker.engine.api.test.InvocationCollectors.NodeContext
+import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{NodeContext, QueryServiceInvocationCollector, QueryServiceResult}
+import pl.touk.nussknacker.engine.api.test.TestRunId
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.{ProcessObjectDefinitionExtractor, ServiceInvoker}
 
@@ -26,23 +29,25 @@ class ServiceQuery(modelData: ModelData) {
     }
 
   def invoke(serviceName: String, serviceParameters: (String, Any)*)
-            (implicit executionContext: ExecutionContext, metaData: MetaData): Future[Any] = {
+            (implicit executionContext: ExecutionContext, metaData: MetaData): Future[QueryResult] = {
     val methodDef: ObjectWithMethodDef = serviceMethodMap
       .getOrElse(serviceName, throw ServiceNotFoundException(serviceName))
     val lifecycle = closableService(methodDef)
     lifecycle.open()
-    val f = ServiceInvoker(methodDef).invoke(serviceParameters.toMap, dummyNodeContext)
-    closeOnComplete(f, lifecycle)
-  }
-
-  private def closeOnComplete(f: Future[Any], lifecycle: Lifecycle)
-                             (implicit executionContext: ExecutionContext) = {
-    f.onComplete {
-      _ => lifecycle.close()
+    val runId = TestRunId(UUID.randomUUID().toString)
+    val collector = QueryServiceInvocationCollector(serviceName).enable(runId)
+    val invocationResult = ServiceInvoker(methodDef, Some(collector)).invoke(serviceParameters.toMap, dummyNodeContext)
+    val queryResult = invocationResult.map { ff =>
+      QueryResult(ff, collector.getResults)
+    }.recover { case ex: Exception =>
+      QueryResult(s"Service query error: ${ex.getMessage}", collector.getResults)
     }
-    f
+    queryResult.onComplete { _ =>
+      lifecycle.close()
+      collector.cleanResults()
+    }
+    queryResult
   }
-
   private def closableService(methodDef: ObjectWithMethodDef): Lifecycle = {
     methodDef match {
       case ObjectWithMethodDef(lifecycle: Lifecycle, _, _) => lifecycle
@@ -52,6 +57,8 @@ class ServiceQuery(modelData: ModelData) {
 }
 
 object ServiceQuery {
+
+  case class QueryResult(result: Any, collectedResults: List[QueryServiceResult])
 
   private val dummyNodeContext = NodeContext(
     contextId = "dummyContextId",

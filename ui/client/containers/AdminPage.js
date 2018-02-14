@@ -6,7 +6,8 @@ import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
 import ActionsUtils from "../actions/ActionsUtils";
 import HttpService from "../http/HttpService";
 import ProcessUtils from "../common/ProcessUtils";
-import Textarea from "react-textarea-autosize";
+import * as JsonUtils from '../common/JsonUtils';
+import JSONTree from 'react-json-tree'
 
 import 'react-tabs/style/react-tabs.css';
 import filterIcon from '../assets/img/search.svg'
@@ -181,7 +182,11 @@ class TestServices extends React.Component {
       serviceName: '',
       nodeParameters: {},
       parametersValues:{},
-      responseText:''
+      queryResult: {
+        response: {},
+        errorMessage: null
+      }
+
     };
     this.services = mapProcessDefinitionToServices(this.props.services);
   }
@@ -207,7 +212,11 @@ class TestServices extends React.Component {
         processingType: service.processingType,
         serviceName: service.name,
         nodeParameters: service.parameters,
-        parametersValues: initializeParametersValues(service.parameters||[])
+        parametersValues: initializeParametersValues(service.parameters||[]),
+        queryResult: {
+          response: {},
+          errorMessage: null
+        }
       })
   };
   serviceList() {
@@ -243,12 +252,11 @@ class TestServices extends React.Component {
 
   invokeService() {
     const showResponse = r => {
-      const textPromise = r.status === 500 ? r.json().then(error => error.message) : r.text();
-      textPromise.then(text =>
-        this.setState({
-          responseText: text
-        })
-      )
+      if (r.status === 500) {
+        r.json().then(error => this.setState({queryResult: {response: {}, errorMessage: error.message}}))
+      } else {
+        r.json().then(response => this.setState({queryResult: {response: response, errorMessage: null}}))
+      }
     }
 
     HttpService.invokeService(
@@ -265,23 +273,54 @@ class TestServices extends React.Component {
       </div>
     </div>)
   }
+
   render() {
     const readonly = value => <input readOnly={true} type="text" className="node-input" value={value}/>
     return (
       <div>
           <div className="modalContentDye">
             <div className="node-table">
-                {this.formRow("service name",this.serviceList(this.services))}
-                {this.formRow("processing type",readonly(this.state.processingType))}
+                {this.formRow("service name", this.serviceList(this.services))}
+                {this.formRow("processing type", readonly(this.state.processingType))}
                 {this.parametersList(this.state.nodeParameters)}
                 <button type="button" className="big-blue-button input-group" onClick={e => this.invokeService()}>INVOKE SERVICE</button>
-                {/*TODO: pretty error and response handling*/}
-                {/*TODO: pointless text area*/}
-                <Textarea className="node-input" readOnly={true} value={this.state.responseText}/>
               </div>
             </div>
+        <div className="queryServiceResults">
+          {!_.isEmpty(this.state.queryResult.response) ?
+            [
+              this.prettyPrint(this.state.queryResult.response.result, "Service result"),
+              <hr/>,
+              this.prettyPrint(JsonUtils.removeEmptyProperties(this.state.queryResult.response.collectedResults), "Collected results")
+            ]
+            : null
+          }
+          {this.state.queryResult.errorMessage ? <p className={"alert alert-danger"}>{this.state.queryResult.errorMessage}</p> : null}
+        </div>
       </div>
     )
+  }
+
+
+  prettyPrint(json, title) {
+    if (_.isEmpty(json)) {
+      return null
+    } else {
+      const toPrint = _.isObject(json) ? json : {"result": json}
+      return (
+        <div>
+          <p>{title}</p>
+          <JSONTree style={{fontSize: 25}} data={toPrint} hideRoot={true} shouldExpandNode={(key, data, level) => level < 3} theme={{
+            label: {
+              fontWeight: 'normal',
+            },
+            tree: {
+              backgroundColor: 'none'
+            }
+          }}/>
+        </div>
+      )
+    }
   }
 
 }

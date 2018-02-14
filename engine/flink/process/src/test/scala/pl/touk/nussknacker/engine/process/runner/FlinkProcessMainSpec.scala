@@ -64,12 +64,9 @@ object LogService extends Service {
 
   @MethodToInvoke
   def invoke(@ParamName("all") all: Any)(implicit ec: ExecutionContext, collector: ServiceInvocationCollector): Future[Unit] = {
-    if (collector.collectorEnabled) {
-      collector.collect(s"$all-collectedDuringServiceInvocation")
-      Future.successful(Unit)
-    } else {
+    collector.collect(s"$all-collectedDuringServiceInvocation", Option(())) {
       invocationsCount.incrementAndGet()
-      Future.successful(Unit)
+      Future.successful(())
     }
   }
 }

@@ -8,7 +8,6 @@ import pl.touk.nussknacker.engine.api.process.WithCategories
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.testing.{EmptyProcessConfigCreator, LocalModelData}
-import pl.touk.nussknacker.engine.util.WithInvocationCollector
 import pl.touk.nussknacker.engine.util.service.GenericTimeMeasuringService
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
@@ -28,7 +27,7 @@ class ServiceQueryOpenCloseSpec
     val service = createService
     service.wasOpen shouldBe false
     whenReady(invokeService(4, service)) { r =>
-      r shouldBe 4
+      r.result shouldBe 4
     }
     service.wasOpen shouldBe true
     eventually {
@@ -70,7 +69,7 @@ object ServiceQueryOpenCloseSpec {
     def cast(@ParamName("integer") n: Int)
             (implicit executionContext: ExecutionContext,
              serviceInvocationCollector: ServiceInvocationCollector): Future[Long] = {
-      WithInvocationCollector(s"invocation $n", 99L) {
+      serviceInvocationCollector.collect(s"invocation $n", Option(99L)) {
         measuring {
           n match {
             case negative if negative < 0 =>

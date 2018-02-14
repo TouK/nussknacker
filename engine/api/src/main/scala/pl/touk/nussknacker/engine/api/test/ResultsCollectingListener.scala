@@ -5,11 +5,10 @@ import java.util.UUID
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment.test._
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
-
+import pl.touk.nussknacker.engine.api.test.InvocationCollectors.QueryServiceResult
 import scala.util.Try
 
 case class TestRunId(id: String)
-  
 
 //FIXME: extract traits and move most of stuff to interpreter, currently there is too much stuff in API...
 case class ResultsCollectingListener(holderClass: String, runId: TestRunId) extends ProcessListener with Serializable {
@@ -62,49 +61,21 @@ object ResultsCollectingListenerHolder {
 
 }
 
-object InvocationCollectors {
+private object QueryResultsHolder {
 
-  case class NodeContext(contextId: String, nodeId: String, ref: String)
+  private var queryResults = Map[TestRunId, List[QueryServiceResult]]()
 
-  case class ServiceInvocationCollector private(runIdOpt: Option[TestRunId], nodeContext: NodeContext) {
-    def enable(runId: TestRunId) = this.copy(runIdOpt = Some(runId))
-    def collectorEnabled = runIdOpt.isDefined
-
-    def collect(testInvocation: Any): Unit = {
-      if (collectorEnabled) {
-        runIdOpt match {
-          case Some(runId) =>
-            //TODO: no variables available here?
-            ResultsCollectingListenerHolder.updateResults(runId, _.updateMockedResult(nodeContext.nodeId, Context(nodeContext.contextId), nodeContext.ref, testInvocation))
-          case None =>
-            throw new IllegalStateException("RunId is not defined")
-        }
-      } else {
-        throw new IllegalStateException("Collector is not enabled")
-      }
-    }
+  private[test] def queryResultsForId(id: TestRunId): List[QueryServiceResult] = {
+    queryResults.getOrElse(id, List.empty)
   }
 
-  object ServiceInvocationCollector {
-    def apply(nodeContext: NodeContext): ServiceInvocationCollector = {
-      ServiceInvocationCollector(runIdOpt = None, nodeContext = nodeContext)
-    }
+  private[test] def updateResult(runId: TestRunId, queryServiceResult: QueryServiceResult) = synchronized {
+    val current = queryResults.getOrElse(runId, List.empty)
+    queryResults += (runId -> (current ++ List(queryServiceResult)))
   }
 
-  case class SinkInvocationCollector(runId: TestRunId, nodeId: String, ref: String, outputPreparer: Any => String) {
-
-    def collect(result: InterpretationResult): Unit = {
-      val mockedResult = outputPreparer(result.output)
-      ResultsCollectingListenerHolder.updateResults(runId, _.updateMockedResult(nodeId, result.finalContext, ref, mockedResult))
-    }
-  }
-
-  case class SplitInvocationCollector(runId: TestRunId, nodeId: String) {
-
-    def collect(result: InterpretationResult): Unit = {
-      //TODO: should we pass variables here?
-      ResultsCollectingListenerHolder.updateResults(runId, _.updateNodeResult(nodeId, Context(result.finalContext.id)))
-    }
+  private[test] def cleanResult(runId: TestRunId): Unit = synchronized {
+    queryResults -= runId
   }
 
 }
