@@ -129,6 +129,11 @@ object ProcessCompilationError {
 
   case class UnknownSubprocessOutput(id: String, nodeId: String) extends ProcessCompilationError with InASingleNode
 
+  case class DisablingManyOutputsSubprocess(id: String, nodeIds: Set[String]) extends ProcessCompilationError
+
+  case class DisablingNoOutputsSubprocess(id: String) extends ProcessCompilationError {
+    override def nodeIds: Set[String] = Set.empty
+  }
   case class UnknownSubprocess(id: String, nodeId: String) extends ProcessCompilationError with InASingleNode
 
   case class InvalidSubprocess(id: String, nodeId: String) extends ProcessCompilationError with InASingleNode

@@ -115,6 +115,7 @@ export default class NodeDetailsContent extends React.Component {
           <div className="node-table-body">
             {this.createField("input", "Id", "id")}
             {this.createReadonlyField("input", "Subprocess Id", "ref.id")}
+            {this.createField("checkbox", "Disabled", "isDisabled")}
             {this.state.editedNode.ref.parameters.map((params, index) => {
               return (
                 <div className="node-block" key={this.props.node.id + params.name + index}>

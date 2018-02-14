@@ -6,7 +6,7 @@ import cats.implicits._
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, FlatNode}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
-import pl.touk.nussknacker.engine.compile.ProcessCompilationError.{InvalidSubprocess, NodeId, UnknownSubprocess, UnknownSubprocessOutput}
+import pl.touk.nussknacker.engine.compile.ProcessCompilationError._
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
 
@@ -28,7 +28,18 @@ case class SubprocessResolver(subprocesses: Map[String, CanonicalProcess]) {
 
   private def resolveCanonical(idPrefix: List[String]) :List[CanonicalNode] => ValidatedNel[ProcessCompilationError, List[CanonicalNode]] = {
     iterateOverCanonicals({
-      case canonicalnode.Subprocess(data, nextNodes) =>
+      case canonicalnode.Subprocess(SubprocessInput(dataId, _, _, Some(true)), nextNodes) if nextNodes.values.size > 1=>
+        Invalid(NonEmptyList.of(DisablingManyOutputsSubprocess(dataId, nextNodes.keySet)))
+      case canonicalnode.Subprocess(SubprocessInput(dataId, _, _, Some(true)), nextNodes) if nextNodes.values.isEmpty =>
+        Invalid(NonEmptyList.of(DisablingNoOutputsSubprocess(dataId)))
+      case canonicalnode.Subprocess(data@SubprocessInput(dataId, _, _, Some(true)), nextNodesMap) =>
+        //TODO: disabling nodes should be in one place
+        val output = nextNodesMap.keys.head
+        resolveCanonical(idPrefix)(nextNodesMap.values.head).map { resolvedNexts =>
+          val outputId = s"${NodeDataFun.nodeIdPrefix(idPrefix)(data).id}-$output"
+          FlatNode(NodeDataFun.nodeIdPrefix(idPrefix)(data))::FlatNode(SubprocessOutput(outputId, output, None))::resolvedNexts
+        }
+      case canonicalnode.Subprocess(data@SubprocessInput(dataId, _, _, isDisabled), nextNodes) =>
         subprocesses.get(data.ref.id) match {
           case Some(CanonicalProcess(MetaData(id, _, _, _, _), _, FlatNode(SubprocessInputDefinition(_, parameters, _))::nodes)) =>
             checkProcessParameters(data.ref, parameters.map(_.name), data.id).andThen { _ =>

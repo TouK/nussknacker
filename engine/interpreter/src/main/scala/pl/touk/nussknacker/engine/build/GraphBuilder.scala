@@ -14,7 +14,7 @@ trait GraphBuilder[R] {
 
   def creator: GraphBuilder.Creator[R]
 
-  protected def build(inner: GraphBuilder.Creator[R]): GraphBuilder[R]
+  def build(inner: GraphBuilder.Creator[R]): GraphBuilder[R]
 
   def buildVariable(id: String, varName: String, fields: (String, Expression)*): GraphBuilder[R] =
     build(node => creator(OneOutputSubsequentNode(VariableBuilder(id, varName, fields.map(Field.tupled).toList), node)))

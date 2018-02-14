@@ -46,6 +46,8 @@ object PrettyValidationErrors {
       case UnresolvedSubprocess(id) => node("Unresolved subprocess", s"Subprocess $id encountered, this should not happen")
       case NoParentContext(_) => node("No parent context", "Please check subprocess definition")
       case UnknownSubprocessOutput(id, _) => node(s"Unknown subprocess output $id", "Please check subprocess definition")
+      case DisablingManyOutputsSubprocess(id, _) => node(s"Cannot disable subprocess $id. Has many outputs", "Please check subprocess definition")
+      case DisablingNoOutputsSubprocess(id) => node(s"Cannot disable subprocess $id. Hasn't outputs", "Please check subprocess definition")
     }
   }
 

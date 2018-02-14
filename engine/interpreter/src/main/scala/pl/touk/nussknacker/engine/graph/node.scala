@@ -92,7 +92,7 @@ object node {
   }
 
   case class SubprocessInput(id: String, ref: SubprocessRef,
-                             additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends OneOutputSubsequentNodeData with EndingNodeData with WithComponent {
+                             additionalFields: Option[UserDefinedAdditionalNodeFields] = None, isDisabled: Option[Boolean] = None) extends OneOutputSubsequentNodeData with EndingNodeData with WithComponent  with Disableable{
     override val componentId = ref.id
   }
 
@@ -105,7 +105,8 @@ object node {
   case class SubprocessInputDefinition(id: String,
                                       //TODO: should it be separate class?
                                        parameters: List[DefinitionExtractor.Parameter],
-                                       additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends StartingNodeData
+                                       additionalFields: Option[UserDefinedAdditionalNodeFields] = None)
+    extends StartingNodeData
 
   //this is used only in subprocess definition
   case class SubprocessOutputDefinition(id: String, outputName: String, additionalFields: Option[UserDefinedAdditionalNodeFields] = None)

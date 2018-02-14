@@ -122,7 +122,7 @@ private[compile] trait PartSubGraphCompilerBase {
 
               A.map2(validParams, compile(next, ctx))((params, nextWithCtx) =>
                 CompiledNode(compiledgraph.node.CustomNode(id, params, nextWithCtx.next), nextWithCtx.ctx))
-            case SubprocessInput(id, ref, _) =>
+            case SubprocessInput(id, ref, _, _) =>
               ref.parameters.foldLeft(Valid(ctx.pushNewContext()).asInstanceOf[ValidatedNel[PartSubGraphCompilationError, ValidationContext]])
                 { case (accCtx, param) => accCtx.andThen(_.withVariable(param.name, Unknown))}.andThen { ctxWithVars =>
                   //TODO: [TYPER] checking types of input variables
@@ -175,7 +175,7 @@ private[compile] trait PartSubGraphCompilerBase {
             case graph.node.Sink(id, ref, optionalExpression, _) =>
               optionalExpression.map(oe => compile(oe, None, ctx, ClazzRef[Any])).sequence.map(typed => compiledgraph.node.Sink(id, ref.typ, typed.map(_._2))).map(CompiledNode(_, Map()))
             //probably this shouldn't occur - otherwise we'd have empty subprocess?
-            case SubprocessInput(id, _, _) => Invalid(NonEmptyList.of(UnresolvedSubprocess(id)))
+            case SubprocessInput(id, _, _, _) => Invalid(NonEmptyList.of(UnresolvedSubprocess(id)))
             case SubprocessOutputDefinition(id, name, _) =>
               //TODO: should we validate it's process?
               Valid(CompiledNode(compiledgraph.node.Sink(id, name, None), Map()))
