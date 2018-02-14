@@ -4,7 +4,7 @@ import java.time.LocalDateTime
 
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, SplitNode}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compile.ProcessValidator
@@ -134,6 +134,14 @@ object ProcessTestData {
   val emptySubprocess = {
     CanonicalProcess(MetaData("sub1", StreamMetaData(None, None, None), isSubprocess = true, None, Map()), ExceptionHandlerRef(List()), List())
   }
+
+  val sampleSubprocessOneOut = {
+    CanonicalProcess(MetaData("sub1", StreamMetaData(), isSubprocess = true), ExceptionHandlerRef(List()), List(
+      FlatNode(SubprocessInputDefinition("in", List(Parameter("param1", ClazzRef(classOf[String]))))),
+      canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "output"))
+    ))
+  }
+
   val sampleSubprocess = {
     CanonicalProcess(MetaData("sub1", StreamMetaData(), isSubprocess = true), ExceptionHandlerRef(List()), List(
       FlatNode(SubprocessInputDefinition("in", List(Parameter("param1", ClazzRef(classOf[String]))))),

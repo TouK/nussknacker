@@ -22,34 +22,32 @@ object TestModelMigrations {
 
 class TestModelMigrations(migrations: Map[ProcessingType, ProcessMigrations], validators: Map[ProcessingType, ProcessValidator]) {
 
-
-  def testMigrations(processes: List[ValidatedProcessDetails], subprocesses: List[ProcessDetails]) : List[TestMigrationResult] = {
-
-    val validation = new ProcessValidation(validators, new SubprocessResolver(prepareSubprocessRepository(subprocesses)))
-
-    processes.flatMap(testSingleMigration(validation) _)
+  def testMigrations(processes: List[ValidatedProcessDetails], subprocesses: List[ValidatedProcessDetails]) : List[TestMigrationResult] = {
+    val migratedSubprocesses = subprocesses.flatMap(migrateProcess)
+    val migratedProcesses = processes.flatMap(migrateProcess)
+    val validation = new ProcessValidation(validators, new SubprocessResolver(prepareSubprocessRepository(migratedSubprocesses.map(s => (s.newProcess, s.processCategory)))))
+    (migratedSubprocesses ++ migratedProcesses).map { migrationDetails =>
+      val validated = migrationDetails.newProcess.validated(validation)
+      val newErrors = extractNewErrors(migrationDetails.oldProcessErrors, validated.validationResult)
+      TestMigrationResult(validated, newErrors, migrationDetails.shouldFail)
+    }
   }
 
-  private def testSingleMigration(validation: ProcessValidation)(process: ValidatedProcessDetails) : Option[TestMigrationResult] = {
+  private def migrateProcess(process: ValidatedProcessDetails) : Option[MigratedProcessDetails] = {
     val migrator = new ProcessModelMigrator(migrations)
-
     for {
       previousResult <- process.json.map(_.validationResult)
       MigrationResult(newProcess, migrations) <- migrator.migrateProcess(process.mapProcess(_.toDisplayable))
       displayable = ProcessConverter.toDisplayable(newProcess, process.processingType)
-      validated = displayable.validated(validation)
-    } yield TestMigrationResult(validated, extractNewErrors(previousResult, validated.validationResult),
-        migrations.exists(_.failOnNewValidationError))
-
-
+    } yield {
+      MigratedProcessDetails(displayable, previousResult, migrations.exists(_.failOnNewValidationError), process.processCategory)
+    }
   }
 
-  private def prepareSubprocessRepository(subprocesses: List[ProcessDetails]) = {
-    val subprocessesDetails = subprocesses.flatMap { details =>
-      details.json.map { displayable =>
-        val canonical = ProcessConverter.fromDisplayable(displayable)
-        SubprocessDetails(canonical, details.processCategory)
-      }
+  private def prepareSubprocessRepository(subprocesses: List[(DisplayableProcess, String)]) = {
+    val subprocessesDetails = subprocesses.map { case (displayable, category) =>
+      val canonical = ProcessConverter.fromDisplayable(displayable)
+      SubprocessDetails(canonical, category)
     }
     new SubprocessRepository {
       override def loadSubprocesses(versions: Map[String, Long]): Set[SubprocessDetails] = {
@@ -79,5 +77,10 @@ class TestModelMigrations(migrations: Map[ProcessingType, ProcessMigrations], va
 
 }
 
-case class TestMigrationResult(converted: ValidatedDisplayableProcess, newErrors: ValidationResult, shouldFail: Boolean)
+case class TestMigrationResult(converted: ValidatedDisplayableProcess, newErrors: ValidationResult, shouldFailOnNewErrors: Boolean) {
+  def shouldFail: Boolean = {
+    shouldFailOnNewErrors && !newErrors.isOk
+  }
+}
+private case class MigratedProcessDetails(newProcess: DisplayableProcess, oldProcessErrors: ValidationResult, shouldFail: Boolean, processCategory: String)
 

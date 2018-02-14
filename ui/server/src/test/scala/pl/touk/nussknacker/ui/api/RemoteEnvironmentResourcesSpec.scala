@@ -8,11 +8,11 @@ import org.scalatest.{BeforeAndAfterEach, FlatSpec, Inside, Matchers}
 import pl.touk.nussknacker.ui.api.helpers.EspItTest
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.process.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.ui.process.migrate.{RemoteEnvironmentCommunicationError, RemoteEnvironment, TestMigrationResult}
+import pl.touk.nussknacker.ui.process.migrate.{RemoteEnvironment, RemoteEnvironmentCommunicationError, TestMigrationResult}
 import pl.touk.nussknacker.ui.sample.SampleProcess
 import pl.touk.nussknacker.ui.util.ProcessComparator.{Difference, NodeNotPresentInCurrent, NodeNotPresentInOther}
 import pl.touk.nussknacker.ui.util.ProcessComparator.{Difference, NodeNotPresentInCurrent}
-import pl.touk.nussknacker.ui.validation.ValidationResults.ValidationResult
+import pl.touk.nussknacker.ui.validation.ValidationResults.{NodeValidationErrorType, ValidationResult}
 
 import scala.concurrent.{ExecutionContext, Future}
 import argonaut.ArgonautShapeless._
@@ -23,6 +23,7 @@ import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessHistoryEntry
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import pl.touk.nussknacker.ui.util.ProcessComparator
+import pl.touk.nussknacker.ui.validation.ValidationResults
 
 class RemoteEnvironmentResourcesSpec extends FlatSpec with ScalatestRouteTest with ScalaFutures with Matchers
   with BeforeAndAfterEach with Inside with EspItTest {
@@ -83,11 +84,13 @@ class RemoteEnvironmentResourcesSpec extends FlatSpec with ScalatestRouteTest wi
   it should "return 500 on failed test migration" in {
     import pl.touk.http.argonaut.Argonaut62Support._
 
+    val error = ValidationResults.NodeValidationError("foo", "bar", "baz", None, NodeValidationErrorType.SaveAllowed)
+    val validationResult = ValidationResult.success.copy(errors = ValidationResult.success.errors.copy(invalidNodes = Map("a" -> List(error))))
+
     val results = List(
-      TestMigrationResult(ProcessTestData.validDisplayableProcess.copy(id = "failingProcess"), ValidationResult.success, true),
+      TestMigrationResult(ProcessTestData.validDisplayableProcess.copy(id = "failingProcess"), validationResult, true),
       TestMigrationResult(ProcessTestData.validDisplayableProcess.copy(id = "notFailing"), ValidationResult.success, false)
     )
-
     val route = withPermissions(new RemoteEnvironmentResources(new MockRemoteEnvironment(results), processRepository), Permission.Read)
 
     Get(s"/remoteEnvironment/testAutomaticMigration") ~> route ~> check {
