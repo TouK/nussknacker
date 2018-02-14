@@ -151,23 +151,25 @@ class UnusedComponents extends React.Component {
 }
 
 export function mapProcessDefinitionToServices(services) {
-  return _.flatMap(services, (typeServices, processingType) =>
-    _.map(typeServices, (service, name) => (
-        {
-          name: name,
-          categories: service.categories,
-          parameters: _.map(service.parameters, p => (
-            {
-              name: p.name,
-              refClazzName:
-              p.typ.refClazzName
-            }
-          )),
-          returnClassName: service.returnType.refClazzName,
-          processingType: processingType
-        }
+  return _.sortBy(
+    _.flatMap(services, (typeServices, processingType) =>
+        _.map(typeServices, (service, name) => (
+          {
+            name: name,
+            categories: service.categories,
+            parameters: _.map(service.parameters, p => (
+              {
+                name: p.name,
+                refClazzName:
+                p.typ.refClazzName
+              }
+            )),
+            returnClassName: service.returnType.refClazzName,
+            processingType: processingType
+          }
+        )
       )
-    )
+    ), s => s.name
   );
 }
 //TODO: parameters should dave default values, like in modal.
@@ -181,11 +183,9 @@ class TestServices extends React.Component {
       parametersValues:{},
       responseText:''
     };
-    console.log(this.props.services)
     this.services = mapProcessDefinitionToServices(this.props.services);
-    console.log(this.services)
-
   }
+
   componentDidMount(){
     this.setService(this.services, this.services[0].name)
   }
@@ -242,16 +242,20 @@ class TestServices extends React.Component {
   }
 
   invokeService() {
-    const showResponse = r => this.setState({
-      responseText: r.toString()
-    });
+    const showResponse = r => {
+      const textPromise = r.status === 500 ? r.json().then(error => error.message) : r.text();
+      textPromise.then(text =>
+        this.setState({
+          responseText: text
+        })
+      )
+    }
+
     HttpService.invokeService(
       this.state.processingType,
       this.state.serviceName,
       this.state.parametersValues
-    )
-      .then(r => r.text().then(showResponse))
-      .catch(showResponse)
+    ).then(showResponse)
   }
 
   formRow(label, input) {

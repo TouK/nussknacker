@@ -2,7 +2,7 @@ import {mapProcessDefinitionToServices} from "../containers/AdminPage";
 
 
 describe("translating process structure to services", () => {
-  it("should work for real data", () => {
+  it("should work for real data", () => {                                    
     expect(mapProcessDefinitionToServices(bigInput)).toEqual(bigResult)
   });
   it("translate serviceless processing types to empty array", () => {
@@ -257,6 +257,40 @@ describe("translating process structure to services", () => {
       "processingType": "streaming"
     },
     {
+      "name": "componentService",
+      "categories": [
+        "Category1",
+        "Category2"
+      ],
+      "parameters": [],
+      "returnClassName": "scala.Unit$",
+      "processingType": "streaming"
+    },
+    {
+      "name": "enricher",
+      "categories": [
+        "Category1",
+        "Category2"
+      ],
+      "parameters": [
+        {
+          "name": "param",
+          "refClazzName": "java.lang.String"
+        }
+      ],
+      "returnClassName": "pl.touk.nussknacker.engine.management.sample.RichObject",
+      "processingType": "streaming"
+    },
+    {
+      "name": "enricherService",
+      "categories": [
+        "StandaloneCategory1"
+      ],
+      "parameters": [],
+      "returnClassName": "java.lang.String",
+      "processingType": "request-response"
+    },
+    {
       "name": "multipleParamsService",
       "categories": [
         "Category1",
@@ -298,6 +332,15 @@ describe("translating process structure to services", () => {
       "processingType": "streaming"
     },
     {
+      "name": "processorService",
+      "categories": [
+        "StandaloneCategory1"
+      ],
+      "parameters": [],
+      "returnClassName": "scala.runtime.BoxedUnit",
+      "processingType": "request-response"
+    },
+    {
       "name": "serviceModelService",
       "categories": [
         "Category1",
@@ -308,41 +351,7 @@ describe("translating process structure to services", () => {
       "processingType": "streaming"
     },
     {
-      "name": "componentService",
-      "categories": [
-        "Category1",
-        "Category2"
-      ],
-      "parameters": [],
-      "returnClassName": "scala.Unit$",
-      "processingType": "streaming"
-    },
-    {
-      "name": "enricher",
-      "categories": [
-        "Category1",
-        "Category2"
-      ],
-      "parameters": [
-        {
-          "name": "param",
-          "refClazzName": "java.lang.String"
-        }
-      ],
-      "returnClassName": "pl.touk.nussknacker.engine.management.sample.RichObject",
-      "processingType": "streaming"
-    },
-    {
-      "name": "transactionService",
-      "categories": [
-        "Category1"
-      ],
-      "parameters": [],
-      "returnClassName": "scala.Unit$",
-      "processingType": "streaming"
-    },
-    {
-      "name": "enricherService",
+      "name": "slowEnricherService",
       "categories": [
         "StandaloneCategory1"
       ],
@@ -360,22 +369,13 @@ describe("translating process structure to services", () => {
       "processingType": "request-response"
     },
     {
-      "name": "slowEnricherService",
+      "name": "transactionService",
       "categories": [
-        "StandaloneCategory1"
+        "Category1"
       ],
       "parameters": [],
-      "returnClassName": "java.lang.String",
-      "processingType": "request-response"
-    },
-    {
-      "name": "processorService",
-      "categories": [
-        "StandaloneCategory1"
-      ],
-      "parameters": [],
-      "returnClassName": "scala.runtime.BoxedUnit",
-      "processingType": "request-response"
+      "returnClassName": "scala.Unit$",
+      "processingType": "streaming"
     }
   ]
 })
