@@ -35,5 +35,4 @@ case class BestEffortJsonEncoder(failOnUnkown: Boolean, highPriority: PartialFun
     case None => jNull
   }
 
-
 }

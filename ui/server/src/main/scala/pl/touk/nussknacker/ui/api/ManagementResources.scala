@@ -10,10 +10,11 @@ import akka.util.Timeout
 import akka.http.scaladsl.server.{Directive, RequestContext, Route, RouteResult}
 import akka.http.scaladsl.server.Directives._
 import argonaut.Argonaut._
-import argonaut.PrettyParams
+import argonaut.{Json, PrettyParams}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.deployment.test.{TestData, TestResults}
+import pl.touk.nussknacker.engine.api.test.TestResultsEncoded
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
@@ -43,10 +44,7 @@ class ManagementResources(typesInformation: List[ClazzDefinition],
                           processCounter: ProcessCounter,
                           val managementActor: ActorRef)(implicit ec: ExecutionContext, mat: Materializer) extends Directives with LazyLogging  with RouteWithUser {
 
-  import pl.touk.nussknacker.ui.codec.UiCodecs.displayableProcessCodec
-  val codecs = UiCodecs.ContextCodecs(typesInformation)
-
-  import codecs._
+  import UiCodecs._
 
   implicit val timeout = Timeout(1 minute)
 
@@ -126,8 +124,8 @@ class ManagementResources(typesInformation: List[ClazzDefinition],
       case Right(process) =>
         val canonical = ProcessConverter.fromDisplayable(process)
         val canonicalJson = UiProcessMarshaller.toJson(canonical, PrettyParams.nospace)
-        (managementActor ? Test(processId, canonicalJson, TestData(testData), user)).mapTo[TestResults].map { results =>
-          ResultsWithCounts(results, computeCounts(canonical, results))
+        (managementActor ? Test(processId, canonicalJson, TestData(testData), user, UiCodecs.testResultsEncoder.encode)).mapTo[TestResultsEncoded[Json]].map { results =>
+          ResultsWithCounts(results.encoded, computeCounts(canonical, results.results))
         }
       case Left(error) =>
         Future.failed(UnmarshallError(error))
@@ -159,4 +157,4 @@ class ManagementResources(typesInformation: List[ClazzDefinition],
 
 }
 
-case class ResultsWithCounts(results: TestResults, counts: Map[String, NodeCount])
+case class ResultsWithCounts(results: Json, counts: Map[String, NodeCount])

@@ -1,11 +1,12 @@
 package pl.touk.nussknacker.ui.process.deployment
 
 import akka.actor.{Actor, ActorRef, ActorRefFactory, Props, Status}
-import argonaut.PrettyParams
+import argonaut.{Json, PrettyParams}
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.deployment.test.TestData
+import pl.touk.nussknacker.engine.api.deployment.test.{TestData, TestResults}
 import pl.touk.nussknacker.engine.api.deployment.{GraphProcess, ProcessDeploymentData, ProcessManager}
 import pl.touk.nussknacker.ui.EspError
+import pl.touk.nussknacker.ui.codec.UiCodecs
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
 import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntity.ProcessVersionEntityData
 import pl.touk.nussknacker.ui.process.displayedgraph.ProcessStatus
@@ -66,13 +67,13 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
     case DeploymentActionFinished(id) =>
       logger.info(s"Finishing ${beingDeployed.get(id)} of $id")
       beingDeployed -= id
-    case Test(processId, processJson, testData, user) =>
+    case Test(processId, processJson, testData, user, encoder) =>
       ensureNoDeploymentRunning {
         implicit val loggedUser = user
         val testAction = for {
           manager <- processManager(processId)
           resolvedProcess <- resolveGraph(processJson)
-          testResult <- manager.test(processId, resolvedProcess, testData)
+          testResult <- manager.test(processId, resolvedProcess, testData, encoder)
         } yield testResult
         reply(testAction)
       }
@@ -164,7 +165,7 @@ case class Snapshot(id: String, user: LoggedUser, savepointPath: String)
 
 case class CheckStatus(id: String, user: LoggedUser)
 
-case class Test(processId: String, processJson: String, test: TestData, user: LoggedUser)
+case class Test[T](processId: String, processJson: String, test: TestData, user: LoggedUser, encoder: TestResults => T)
 
 case class DeploymentActionFinished(id: String)
 

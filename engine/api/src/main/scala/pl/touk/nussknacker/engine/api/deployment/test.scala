@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.api.deployment
 
 import java.nio.charset.StandardCharsets
 
+import argonaut.{EncodeJson, Json}
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 
@@ -32,6 +33,7 @@ object test {
     = resultsSoFar.filterNot(res => res.context.id == invocationResult.context.id && res.name == invocationResult.name) :+ invocationResult
 
     def updateResult(espExceptionInfo: EspExceptionInfo[_ <: Throwable]) = copy(exceptions = exceptions :+ espExceptionInfo)
+
   }
 
   case class NodeResult(context: Context)

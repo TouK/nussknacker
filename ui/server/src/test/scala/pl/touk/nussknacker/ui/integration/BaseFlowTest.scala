@@ -7,8 +7,10 @@ import argonaut.ArgonautShapeless._
 import akka.http.javadsl.model.headers.HttpCredentials
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import argonaut.Json
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
+import pl.touk.nussknacker.engine.api.deployment.test.TestResults
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.spel
@@ -71,7 +73,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest
 
     val multiPart = MultipartUtils.prepareMultiParts("testData" -> "record1|field2", "processJson" -> TestProcessUtil.toJson(process).nospaces)()
     Post(s"/api/processManagement/test/${process.id}", multiPart) ~> addCredentials(credentials) ~> mainRoute ~> check {
-      handled shouldBe true
+      status shouldEqual StatusCodes.OK
     }
   }
 

@@ -31,9 +31,9 @@ class StandaloneProcessManagerSpec extends FunSuite with ScalaFutures with Match
         FlatNode(Sink("sink", SinkRef("response-sink", List())))
       )), PrettyParams.spaces2)
 
-    val results = manager.test("test1", process, TestData("{\"field1\": \"a\", \"field2\": \"b\"}")).futureValue
+    val results = manager.test("test1", process, TestData("{\"field1\": \"a\", \"field2\": \"b\"}"), _ => null).futureValue
 
-    results.nodeResults("sink") should have length (1)
+    results.results.nodeResults("sink") should have length (1)
 
   }
 

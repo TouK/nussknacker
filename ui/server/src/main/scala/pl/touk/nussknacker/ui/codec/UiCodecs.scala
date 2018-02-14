@@ -100,67 +100,58 @@ trait UiCodecs extends Codecs with Argonauts with SingletonInstances with Derive
 
   implicit def userEncodeEncode = EncodeJson.of[DisplayableUser]
 
-  implicit def printer: Json => String =
-    PrettyParams.spaces2.copy(dropNullKeys = true, preserveOrder = true).pretty
+  //unfortunately, this has do be done manually, as argonaut has problems with recursive types...
+  implicit val encodeNodeCount : EncodeJson[NodeCount] = EncodeJson[NodeCount] {
+    case NodeCount(all, errors, subProcessCounts) => jObjectFields(
+      "all" -> jNumber(all),
+      "errors" -> jNumber(errors),
+      "subprocessCounts" -> jObjectFields(subProcessCounts.mapValues(encodeNodeCount(_)).toList: _*)
+    )
+  }
+  
+  val testResultsEncoder : EncodeJson[TestResults] = {
 
-  //separated from the rest, as we're doing some hacking here...
-  //we have hacky codec here, as we want to encode Map[String, Any] of more or less arbitrary objects
-  case class ContextCodecs(typesInformation: List[ClazzDefinition]) extends LazyLogging {
-
-    val typesWithMethodNames: Map[String, Set[String]]
-    = typesInformation.map(ti => ti.clazzName.refClazzName -> ti.methods.keys.toSet).toMap
-
-    implicit def paramsMapEncode = EncodeJson[Map[String, Any]](map => {
-      map.filterNot(a => a._2 == None || a._2 == null).mapValues(encodeVariable).asJson
-    })
-
-    private def safeString(a: String) = Option(a).map(jString).getOrElse(jNull)
-
-    private val displayableToJsonEncoder = BestEffortJsonEncoder(failOnUnkown = false, {
+    val variableEncoder = BestEffortJsonEncoder(failOnUnkown = false, {
       case displayable: Displayable =>
         val prettyDisplay = displayable.display.spaces2
+        def safeString(a: String) = Option(a).map(jString).getOrElse(jNull)
+
         displayable.originalDisplay match {
           case None => jObjectFields("pretty" -> safeString(prettyDisplay))
           case Some(original) => jObjectFields("original" -> safeString(original), "pretty" -> safeString(prettyDisplay))
         }
+    }).encode _
+
+    implicit def paramsMapEncode = EncodeJson[Map[String, Any]](map => {
+      map.filterNot(a => a._2 == None || a._2 == null).mapValues(variableEncoder).asJson
     })
 
-    private def encodeVariable(any: Any): Json = displayableToJsonEncoder.encode(any)
+    def safeString(a: String) = Option(a).map(jString).getOrElse(jNull)
 
-    def printKnownType(any: Any, klass: Class[_]): Json = {
-      val methods = typesWithMethodNames(klass.getName)
-      klass.getDeclaredFields
-        .filter(f => methods.contains(f.getName))
-        .map { field =>
-          field.setAccessible(true)
-          field.getName -> field.get(any).asInstanceOf[Any]
-        }.toMap.asJson
-    }
-
-    implicit def ctxEncode = EncodeJson[api.Context] {
-      case api.Context(id, vars, _, _) => jObjectFields(
+    implicit val ctxEncode = EncodeJson[pl.touk.nussknacker.engine.api.Context] {
+      case pl.touk.nussknacker.engine.api.Context(id, vars, _, _) => jObjectFields(
         "id" -> safeString(id),
         "variables" -> vars.asJson
       )
     }
 
-    implicit def exprInvocationResult = EncodeJson[ExpressionInvocationResult] {
+    implicit val exprInvocationResult = EncodeJson[ExpressionInvocationResult] {
       case ExpressionInvocationResult(context, name, result) => jObjectFields(
         "context" -> context.asJson,
         "name" -> safeString(name),
-        "value" -> encodeVariable(result)
+        "value" -> variableEncoder(result)
       )
     }
 
-    implicit def mockedResult = EncodeJson[MockedResult] {
+    implicit val mockedResult = EncodeJson[MockedResult] {
       case MockedResult(context, name, result) => jObjectFields(
         "context" -> context.asJson,
         "name" -> safeString(name),
-        "value" -> encodeVariable(result)
+        "value" -> variableEncoder(result)
       )
     }
 
-    implicit def exceptionInfo = EncodeJson[EspExceptionInfo[_<:Throwable]] {
+    implicit val exceptionInfo = EncodeJson[EspExceptionInfo[_ <: Throwable]] {
       case EspExceptionInfo(nodeId, throwable, ctx) => jObjectFields(
         "nodeId" -> nodeId.asJson,
         "exception" -> jObjectFields(
@@ -171,22 +162,14 @@ trait UiCodecs extends Codecs with Argonauts with SingletonInstances with Derive
       )
     }
 
-
-    implicit def testResultsEncode = EncodeJson.of[TestResults]
-
-    implicit def resultsWithCountsEncode = EncodeJson.of[ResultsWithCounts]
-    
+    EncodeJson[TestResults] {
+      case TestResults(nodeResults, invocationResults, mockedResults, exceptions) => jObjectFields(
+        "nodeResults" -> nodeResults.asJson,
+        "invocationResults" -> invocationResults.asJson,
+        "mockedResults" -> mockedResults.asJson,
+        "exceptions" -> exceptions.asJson
+      )
+    }
   }
-
-  //unfortunately, this has do be done manually, as argonaut has problems with recursive types...
-  implicit val encodeNodeCount : EncodeJson[NodeCount] = EncodeJson[NodeCount] {
-    case NodeCount(all, errors, subProcessCounts) => jObjectFields(
-      "all" -> jNumber(all),
-      "errors" -> jNumber(errors),
-      "subprocessCounts" -> jObjectFields(subProcessCounts.mapValues(encodeNodeCount(_)).toList: _*)
-    )
-  }
-
-
 
 }

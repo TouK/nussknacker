@@ -39,7 +39,7 @@ class StandaloneTestMainSpec extends FlatSpec with Matchers with BeforeAndAfterE
     val results = StandaloneTestMain.run(
       processJson = ProcessMarshaller.toJson(process, PrettyParams.spaces2),
       modelData = modelData,
-      testData = new TestData(input.getBytes(StandardCharsets.UTF_8)))
+      testData = new TestData(input.getBytes(StandardCharsets.UTF_8)), encoder = identity).results
 
     results.nodeResults("filter1").toSet shouldBe Set(
       NodeResult(Context("proc1-0").withVariable("input", Request1("a","b"))),
@@ -77,7 +77,7 @@ class StandaloneTestMainSpec extends FlatSpec with Matchers with BeforeAndAfterE
     val results = StandaloneTestMain.run(
       processJson = ProcessMarshaller.toJson(process, PrettyParams.spaces2),
       modelData = modelData,
-      testData = new TestData(input.getBytes(StandardCharsets.UTF_8)))
+      testData = new TestData(input.getBytes(StandardCharsets.UTF_8)), encoder = identity).results
 
     results.invocationResults("occasionallyThrowFilter").toSet shouldBe Set(ExpressionInvocationResult(Context("proc1-1").withVariable("input", Request1("c","d")), "expression", true))
     results.exceptions should have size 1

@@ -6,31 +6,33 @@ import argonaut.Parse
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api.Displayable
-import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.TypesInformation
+import pl.touk.nussknacker.engine.api.deployment.test.{NodeResult, TestResults}
 
 class UiCodecsSpec extends FlatSpec with Matchers {
 
-  import UiCodecs._
 
   it should "should encode record" in {
 
-    val codec = UiCodecs.ContextCodecs(TypesInformation.extract(List(), List(), List(), List(), List(classOf[TestRecord]))(ClassExtractionSettings.Default))
-    import codec._
-
     val date = LocalDateTime.of(2010, 1, 1, 1, 1)
-    val json =
-      api.Context("terefere").withVariables(Map(
+    val ctx = api.Context("terefere").withVariables(Map(
         "var1" -> TestRecord("a", 1, Some("b"), date),
         "var2" -> CsvRecord(List("aa", "bb"))
-      )).asJson
+      ))
 
+    val testResults = TestResults(Map("n1" -> List(NodeResult(ctx))), Map(), Map(), List())
+
+    val json = UiCodecs.testResultsEncoder.encode(testResults)
+    
     val variables = (for {
-      ctxId <- json.cursor --\ "id"
-      vars <- json.cursor --\ "variables"
+      nodeResults <- json.cursor --\ "nodeResults"
+      n1Results <- nodeResults --\ "n1"
+      firstResult <- n1Results.\\
+      ctx <- firstResult --\ "context"
+      vars <- ctx --\ "variables"
       var1 <- vars --\ "var1"
       var2 <- vars --\ "var2"
     } yield List(var1.focus, var2.focus)).toList.flatten
+
 
     variables.size shouldBe 2
     //how to make it prettier?

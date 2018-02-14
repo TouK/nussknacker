@@ -25,7 +25,7 @@ trait FlinkStubbedRunner {
       MetaDataExtractor.extractStreamMetaDataOrFail(process.metaData).parallelism.getOrElse(1), configuration)
 
   //we use own LocalFlinkMiniCluster, instead of LocalExecutionEnvironment, to be able to pass own classpath...
-  protected def execute(env: StreamExecutionEnvironment, savepointRestoreSettings: SavepointRestoreSettings) : JobExecutionResult = {
+  protected def execute[T](env: StreamExecutionEnvironment, savepointRestoreSettings: SavepointRestoreSettings) : JobExecutionResult = {
     val streamGraph = env.getStreamGraph
     streamGraph.setJobName(process.id)
 
@@ -47,6 +47,7 @@ trait FlinkStubbedRunner {
       exec.start()
       exec.submitJobAndWait(jobGraph, printUpdates = false)
     } finally {
+
       exec.stop()
     }
   }
