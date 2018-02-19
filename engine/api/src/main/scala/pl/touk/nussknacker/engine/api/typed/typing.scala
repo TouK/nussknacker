@@ -9,7 +9,7 @@ object typing {
 
   sealed trait TypingResult {
 
-    def canBeSubclassOf(clazzRef: ClazzRef)(implicit classLoader: ClassLoader) : Boolean
+    def canBeSubclassOf(clazzRef: ClazzRef) : Boolean
 
     def display: String
 
@@ -17,27 +17,26 @@ object typing {
 
   object TypedMapTypingResult {
 
-    def apply(definition: TypedMapDefinition)(implicit classLoader: ClassLoader) : TypedMapTypingResult
+    def apply(definition: TypedMapDefinition): TypedMapTypingResult
       = TypedMapTypingResult(definition.fields.mapValues(Typed(_)))
   }
 
   case class TypedMapTypingResult(fields: Map[String, TypingResult]) extends TypingResult {
 
-    override def canBeSubclassOf(clazzRef: ClazzRef)(implicit classLoader: ClassLoader): Boolean = Typed[java.util.Map[_, _]].canBeSubclassOf(clazzRef)
+    override def canBeSubclassOf(clazzRef: ClazzRef): Boolean = Typed[java.util.Map[_, _]].canBeSubclassOf(clazzRef)
 
     override def display: String = s"map with fields:${fields.map { case (name, typ) => s"$name of type ${typ.display}"}.mkString(", ")}"
   }
 
   case object Unknown extends TypingResult {
-    override def canBeSubclassOf(clazzRef: ClazzRef)(implicit classLoader: ClassLoader): Boolean = true
+    override def canBeSubclassOf(clazzRef: ClazzRef): Boolean = true
 
     override val display = "unknown"
   }
 
   case class Typed(possibleTypes: Set[TypedClass]) extends TypingResult {
-    override def canBeSubclassOf(clazzRef: ClazzRef)(implicit classLoader: ClassLoader): Boolean = {
-      val typed = TypedClass(clazzRef)
-      possibleTypes.exists(pt => ClassUtils.isAssignable(pt.klass, typed.klass))
+    override def canBeSubclassOf(clazzRef: ClazzRef): Boolean = {
+      possibleTypes.exists(_.canBeSubclassOf(clazzRef))
     }
 
     override val display : String = possibleTypes.toList match {
@@ -51,20 +50,22 @@ object typing {
 
   }
 
-  case class TypedClass(klass: Class[_])
+  //TODO: in near future should be replaced by ClazzRef!
+  case class TypedClass(klass: Class[_], params: List[TypingResult]) {
+    //TOOD: params?
+    def canBeSubclassOf(clazzRef: ClazzRef): Boolean = ClassUtils.isAssignable(klass, clazzRef.clazz)
+  }
 
   object TypedClass {
-    def apply(klass: ClazzRef)(implicit classLoader: ClassLoader) : TypedClass =
-      TypedClass(klass.toClass(classLoader))
+    def apply(klass: ClazzRef) : TypedClass =
+      TypedClass(klass.clazz, klass.params.map(Typed.apply))
   }
 
   object Typed {
 
-    def apply[T:ClassTag] : TypingResult = Typed(Set(TypedClass(implicitly[ClassTag[T]].runtimeClass)))
+    def apply[T:ClassTag] : TypingResult = apply(ClazzRef[T])
 
-    def apply(klass: Class[_]) : TypingResult = Typed(Set(TypedClass(klass)))
-
-    def apply(klass: ClazzRef)(implicit classLoader: ClassLoader) : TypingResult = {
+    def apply(klass: ClazzRef) : TypingResult = {
       if (klass == ClazzRef.unknown) {
         Unknown
       } else {
@@ -73,6 +74,7 @@ object typing {
     }
 
   }
+
 
   implicit val commutativeMonoid: CommutativeMonoid[TypingResult] = new CommutativeMonoid[TypingResult] {
 

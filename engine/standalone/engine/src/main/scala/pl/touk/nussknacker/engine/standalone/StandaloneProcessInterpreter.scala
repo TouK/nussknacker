@@ -74,18 +74,18 @@ object StandaloneProcessInterpreter {
     type CompilationResult[K] = ValidatedNel[ProcessCompilationError, K]
 
     //NonEmptyList is invariant :(
-    private def compileWithCompilationErrors(node: SplittedNode[_]) =
-      compiledProcess.subPartCompiler.compileWithoutContextValidation(node).bimap(_.map(_.asInstanceOf[ProcessCompilationError]), _.node)
+    private def compileWithCompilationErrors(node: SplittedNode[_], validationContext: ValidationContext) =
+      compiledProcess.subPartCompiler.compile(node, validationContext).bimap(_.map(_.asInstanceOf[ProcessCompilationError]), _.node)
 
     private def compiledPartInvoker(processPart: ProcessPart): data.ValidatedNel[ProcessCompilationError, InterpreterType] = processPart match {
-      case SourcePart(_, node, nextParts, _) =>
-        compileWithCompilationErrors(node).andThen(partInvoker(_, nextParts))
-      case part@SinkPart(_, endNode) =>
-        compileWithCompilationErrors(endNode).andThen(partInvoker(_, List()))
+      case SourcePart(_, node, validationContext, nextParts, _) =>
+        compileWithCompilationErrors(node, validationContext).andThen(partInvoker(_, nextParts))
+      case part@SinkPart(_, endNode, validationContext) =>
+        compileWithCompilationErrors(endNode, validationContext).andThen(partInvoker(_, List()))
       //TODO: does it have to be so complicated? here and in FlinkProcessRegistrar
-      case SplitPart(_, nexts) =>
+      case SplitPart(_, validationContext, nexts) =>
         val splitParts = nexts.map {
-          case NextWithParts(NextNode(node), parts, _) => compileWithCompilationErrors(node).andThen(partInvoker(_, parts))
+          case NextWithParts(NextNode(node), parts, _) => compileWithCompilationErrors(node, validationContext).andThen(partInvoker(_, parts))
           case NextWithParts(PartRef(id), parts, _) => parts.find(_.id == id) match {
             case Some(part) => compiledPartInvoker(part)
             case None => Invalid(NonEmptyList.of[ProcessCompilationError](MissingPart(id)))
@@ -100,7 +100,7 @@ object StandaloneProcessInterpreter {
         }
 
       case CustomNodePart(executor:
-                CustomNodeInvoker[StandaloneCustomTransformer@unchecked], node, parts, _) => val result = compileWithCompilationErrors(node).andThen(partInvoker(_, parts))
+                CustomNodeInvoker[StandaloneCustomTransformer@unchecked], node, validationContext, parts, _) => val result = compileWithCompilationErrors(node, validationContext).andThen(partInvoker(_, parts))
 
         val transformer = executor.run(() => compiledProcess.customNodeInvokerDeps)
         result.map(transformer.createTransformation(node.data.outputVar.get))

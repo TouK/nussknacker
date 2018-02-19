@@ -45,13 +45,13 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
     new OrderedParameters(params)
   }
 
-  protected def extractReturnTypeFromMethod(obj: T, method: Method): Class[_] = {
+  protected def extractReturnTypeFromMethod(obj: T, method: Method): ClazzRef = {
     val typeFromAnnotation = Option(method.getAnnotation(classOf[MethodToInvoke]))
       .filterNot(_.returnType() == classOf[Object])
-      .flatMap[Class[_]](ann => Option(ann.returnType()))
+      .flatMap[ClazzRef](ann => Option(ClazzRef(ann.returnType())))
     val typeFromSignature = EspTypeUtils.getGenericType(method.getGenericReturnType)
 
-    typeFromAnnotation.orElse(typeFromSignature).getOrElse(classOf[Any])
+    typeFromAnnotation.orElse(typeFromSignature).getOrElse(ClazzRef[Any])
   }
 
   protected def expectedReturnType: Option[Class[_]]
@@ -65,7 +65,7 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
 
 object MethodDefinitionExtractor {
 
-  case class MethodDefinition(method: Method, returnType: Class[_], orderedParameters: OrderedParameters)
+  case class MethodDefinition(method: Method, returnType: ClazzRef, orderedParameters: OrderedParameters)
 
   private[definition] class OrderedParameters(baseOrAdditional: List[Either[Parameter, Class[_]]]) {
 

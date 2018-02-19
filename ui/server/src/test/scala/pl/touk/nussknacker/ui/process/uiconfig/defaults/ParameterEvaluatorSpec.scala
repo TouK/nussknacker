@@ -15,14 +15,14 @@ class ParameterEvaluatorSpec extends FlatSpec with Matchers {
 
   private def dummyParam(nodeName: String,
                          paramName: String,
-                         classRef: String) =
-    NodeDefinition(nodeName, List(Parameter(paramName, ClazzRef(classRef))))
+                         classRef: ClazzRef) =
+    NodeDefinition(nodeName, List(Parameter(paramName, classRef)))
 
   private def dummyExpectedParam(paramName: String, value: Any) = {
     evaluatedparam.Parameter(paramName, Expression("spel", value.toString))
   }
 
-  private def testTypeRelatedDefaultValue(classRef: String,
+  private def testTypeRelatedDefaultValue(classRef: ClazzRef,
                                           value: Any,
                                           paramName: String = DEFAULT_PARAMETER_NAME,
                                           nodeName: String = DEFAULT_NODE_NAME) = {
@@ -44,7 +44,7 @@ class ParameterEvaluatorSpec extends FlatSpec with Matchers {
     )
   )
   behavior of "ParameterEvaluator"
-  testTypeRelatedDefaultValue(classRef = "int", value = 0)
-  testTypeRelatedDefaultValue(classRef = "double", value = 0f)
-  testTypeRelatedDefaultValue(classRef = "double", value = DEFAULT_PARAMETER_VALUE, nodeName = DEFINED_NODE_NAME)
+  testTypeRelatedDefaultValue(classRef = ClazzRef(Integer.TYPE), value = 0)
+  testTypeRelatedDefaultValue(classRef = ClazzRef(java.lang.Double.TYPE), value = 0f)
+  testTypeRelatedDefaultValue(classRef = ClazzRef(java.lang.Double.TYPE), value = DEFAULT_PARAMETER_VALUE, nodeName = DEFINED_NODE_NAME)
 }

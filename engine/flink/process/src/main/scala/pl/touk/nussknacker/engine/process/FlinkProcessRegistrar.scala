@@ -34,6 +34,7 @@ import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.process.AsyncExecutionContextPreparer
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{SinkInvocationCollector, SplitInvocationCollector}
 import pl.touk.nussknacker.engine.api.test.TestRunId
+import pl.touk.nussknacker.engine.compile.ValidationContext
 import pl.touk.nussknacker.engine.compiledgraph.part._
 import pl.touk.nussknacker.engine.definition.CustomNodeInvoker
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation, FlinkSink, FlinkSource}
@@ -142,7 +143,7 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => (ClassLoader) => Compi
         .map(new RateMeterFunction[Any]("source"))
           .map(InitContextFunction(metaData.id, part.node.id))
 
-      val asyncAssigned = wrapAsync(withAssigned, part.node, "interpretation").split(SplitFunction)
+      val asyncAssigned = wrapAsync(withAssigned, part.node, part.validationContext, "interpretation").split(SplitFunction)
 
       registerParts(asyncAssigned, part.nextParts, part.ends)
     }
@@ -160,8 +161,8 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => (ClassLoader) => Compi
     def registerSubsequentPart[T](start: DataStream[InterpretationResult],
                                   processPart: SubsequentPart): Unit =
       processPart match {
-        case part@SinkPart(sink: FlinkSink, _) =>
-          val startAfterSinkEvaluated = wrapAsync(start.map(_.finalContext), part.node, "function")
+        case part@SinkPart(sink: FlinkSink, _, validationContext) =>
+          val startAfterSinkEvaluated = wrapAsync(start.map(_.finalContext), part.node, validationContext, "function")
             .map(new EndRateMeterFunction(part.ends))
           //TODO: maybe this logic should be moved to compiler instead?
           val withSinkAdded = testRunId match {
@@ -178,7 +179,7 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => (ClassLoader) => Compi
           withSinkAdded.name(s"${metaData.id}-${part.id}-sink")
         case part:SinkPart =>
           throw new IllegalArgumentException(s"Process can only use flink sinks, instead given: ${part.obj}")
-        case SplitPart(splitNode, nexts) =>
+        case SplitPart(splitNode, validationContext, nexts) =>
           val nextIds = nexts.map(_.next.id)
           //TODO: there is bug in flink - if there are 2 splits in a row, without map
           //TODO: this is only place where we count outside interpreter - is it really needed?
@@ -196,7 +197,7 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => (ClassLoader) => Compi
             //TODO: is this part really ok && needed?
             case NextWithParts(NextNode(nextNode), parts, ends) =>
               val beforeAsync = newStart.select(nextNode.id).map(_.finalContext)
-              val interpreted = wrapAsync(beforeAsync, nextNode, "interpretation")
+              val interpreted = wrapAsync(beforeAsync, nextNode, validationContext, "interpretation")
                   .split(SplitFunction)
               registerParts(interpreted, parts, ends)
             case NextWithParts(PartRef(id), parts, ends) =>
@@ -205,7 +206,7 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => (ClassLoader) => Compi
           }
         case part@CustomNodePart(executor:
           CustomNodeInvoker[FlinkCustomStreamTransformation@unchecked],
-              node, nextParts, ends) =>
+              node, validationContext, nextParts, ends) =>
 
           val newContextFun = (ir: ValueWithContext[_]) => node.data.outputVar match {
             case Some(name) => ir.context.withVariable(name, ir.value)
@@ -216,7 +217,7 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => (ClassLoader) => Compi
             node.id, processWithDeps.processTimeout, (classLoader) => compiledProcessWithDeps(classLoader).exceptionHandler, processWithDeps.signalSenders)
           val newStart = executor.run(() => compiledProcessWithDeps(UserClassLoader.get(node.id)).customNodeInvokerDeps).transform(start, customNodeContext)
               .map(newContextFun)
-          val afterSplit = wrapAsync(newStart, node, "customNodeInterpretation")
+          val afterSplit = wrapAsync(newStart, node, validationContext, "customNodeInterpretation")
               .split(SplitFunction)
 
           registerParts(afterSplit, nextParts, ends)
@@ -224,13 +225,13 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => (ClassLoader) => Compi
           throw new IllegalArgumentException(s"Unknown CustomNodeExecutor: ${e.customNodeInvoker}")
       }
 
-    def wrapAsync(beforeAsync: DataStream[Context], node: SplittedNode[_], name: String) : DataStream[InterpretationResult] = {
+    def wrapAsync(beforeAsync: DataStream[Context], node: SplittedNode[_], validationContext: ValidationContext, name: String) : DataStream[InterpretationResult] = {
       if (streamMetaData.shouldUseAsyncInterpretation) {
-        val asyncFunction = new AsyncInterpretationFunction(compiledProcessWithDeps, node, asyncExecutionContextPreparer)
+        val asyncFunction = new AsyncInterpretationFunction(compiledProcessWithDeps, node, validationContext, asyncExecutionContextPreparer)
         new DataStream(datastream.AsyncDataStream.orderedWait(beforeAsync.javaStream, asyncFunction,
           processWithDeps.processTimeout.toMillis, TimeUnit.MILLISECONDS, asyncExecutionContextPreparer.bufferSize))
       } else {
-        beforeAsync.flatMap(new SyncInterpretationFunction(compiledProcessWithDeps, node))
+        beforeAsync.flatMap(new SyncInterpretationFunction(compiledProcessWithDeps, node, validationContext))
       }.name(s"${metaData.id}-${node.id}-$name")
     }
   }
@@ -263,11 +264,11 @@ object FlinkProcessRegistrar {
 
 
   class SyncInterpretationFunction(val compiledProcessWithDepsProvider: (ClassLoader) => CompiledProcessWithDeps,
-                                   node: SplittedNode[_])
+                                   node: SplittedNode[_], validationContext: ValidationContext)
     extends RichFlatMapFunction[Context, InterpretationResult] with WithCompiledProcessDeps {
 
     private lazy implicit val ec = SynchronousExecutionContext.ctx
-    private lazy val compiledNode = compiledProcessWithDeps.compileSubPart(node)
+    private lazy val compiledNode = compiledProcessWithDeps.compileSubPart(node, validationContext)
     import compiledProcessWithDeps._
 
     override def flatMap(input: Context, collector: Collector[InterpretationResult]): Unit = {
@@ -280,11 +281,11 @@ object FlinkProcessRegistrar {
   }
 
   class AsyncInterpretationFunction(val compiledProcessWithDepsProvider: (ClassLoader) => CompiledProcessWithDeps,
-                                    node: SplittedNode[_], asyncExecutionContextPreparer: AsyncExecutionContextPreparer)
+                                    node: SplittedNode[_], validationContext: ValidationContext, asyncExecutionContextPreparer: AsyncExecutionContextPreparer)
     extends RichAsyncFunction[Context, InterpretationResult] with LazyLogging with WithCompiledProcessDeps {
 
 
-    private lazy val compiledNode = compiledProcessWithDeps.compileSubPart(node)
+    private lazy val compiledNode = compiledProcessWithDeps.compileSubPart(node, validationContext)
     import compiledProcessWithDeps._
 
     private var executionContext : ExecutionContext = _

@@ -9,12 +9,12 @@ import pl.touk.nussknacker.engine.definition.DefinitionExtractor.Parameter
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.node.{SubprocessInput, SubprocessInputDefinition}
 import pl.touk.nussknacker.engine.spel
+import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.ui.api.ProcessTestData
 import pl.touk.nussknacker.ui.api.ProcessTestData.{existingServiceId, existingSinkFactory, existingSourceFactory}
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.nussknacker.ui.process.displayedgraph.ValidatedDisplayableProcess
 import pl.touk.nussknacker.ui.validation.ValidationResults.{ValidationErrors, ValidationResult, ValidationWarnings}
-import spel.Implicits._
 
 import scala.reflect.ClassTag
 

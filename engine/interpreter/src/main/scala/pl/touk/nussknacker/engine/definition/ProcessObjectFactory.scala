@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.{Context, MetaData}
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
+import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
@@ -53,7 +54,7 @@ class ProcessObjectDefinitionExtractor[F, T: ClassTag] extends AbstractMethodDef
 
 class SourceProcessObjectDefinitionExtractor extends ProcessObjectDefinitionExtractor[SourceFactory[_], Source[Any]] {
 
-  override def extractReturnTypeFromMethod(sourceFactory: SourceFactory[_], method: Method) = sourceFactory.clazz
+  override def extractReturnTypeFromMethod(sourceFactory: SourceFactory[_], method: Method) = ClazzRef(sourceFactory.clazz)
 }
 
 object SignalsDefinitionExtractor extends AbstractMethodDefinitionExtractor[ProcessSignalSender] {

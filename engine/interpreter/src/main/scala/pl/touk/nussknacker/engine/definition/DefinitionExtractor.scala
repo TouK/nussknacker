@@ -18,7 +18,7 @@ class DefinitionExtractor[T](methodDefinitionExtractor: MethodDefinitionExtracto
   def extract(obj: T, methodDef: MethodDefinition, categories: List[String]): ObjectDefinition = {
     ObjectDefinition(
       methodDef.orderedParameters.definedParameters,
-      Typed(ClazzRef(methodDef.returnType))(obj.getClass.getClassLoader),
+      Typed(methodDef.returnType),
       categories
     )
   }
@@ -133,7 +133,7 @@ object DefinitionExtractor {
                 sourceFactories: Iterable[ObjectWithMethodDef],
                 customNodeTransformers: Iterable[ObjectWithMethodDef],
                 signalsFactories: Iterable[ObjectWithMethodDef],
-                globalProcessVariables: Iterable[Class[_]])
+                globalProcessVariables: Iterable[ClazzRef])
                (implicit settings: ClassExtractionSettings): List[ClazzDefinition] = {
 
       //TODO: do we need services here?
@@ -154,8 +154,8 @@ object DefinitionExtractor {
     def withParamsAndCategories(params: List[Parameter], categories: List[String]): ObjectDefinition =
       ObjectDefinition(params, Typed[Null], categories)
 
-    def apply(parameters: List[Parameter], returnType: Class[_], categories: List[String]): ObjectDefinition = {
-      ObjectDefinition(parameters, Typed(ClazzRef(returnType))(returnType.getClassLoader), categories)
+    def apply(parameters: List[Parameter], returnType: ClazzRef, categories: List[String]): ObjectDefinition = {
+      ObjectDefinition(parameters, Typed(returnType), categories)
     }
   }
 
@@ -164,24 +164,24 @@ object DefinitionExtractor {
 object TypeInfos {
 
   //FIXME we should use ClazzRef instead of String here, but it will require some frontend changes
-  case class Parameter private(name: String, refClazzName: String)
+  case class Parameter private(name: String, refClazz: ClazzRef, refClazzName: String)
   object Parameter {
     def apply(name: String, clazz: ClazzRef): Parameter = {
-      new Parameter(name, clazz.refClazzName)
+      new Parameter(name, clazz, clazz.refClazzName)
     }
   }
 
   //FIXME we should use ClazzRef instead of String here, but it will require some frontend changes
-  case class MethodInfo private(parameters: List[Parameter], refClazzName: String, description: Option[String])
+  case class MethodInfo private(parameters: List[Parameter], refClazz: ClazzRef, refClazzName: String, description: Option[String])
   object MethodInfo {
     def apply(parameters: List[Parameter], returnType: ClazzRef, description: Option[String]): MethodInfo = {
-      new MethodInfo(parameters, returnType.refClazzName, description)
+      new MethodInfo(parameters, returnType, returnType.refClazzName, description)
     }
   }
 
   case class ClazzDefinition(clazzName: ClazzRef, methods: Map[String, MethodInfo]) {
     def getMethod(methodName: String): Option[ClazzRef] = {
-      methods.get(methodName).map(m => ClazzRef(m.refClazzName))
+      methods.get(methodName).map(_.refClazz)
     }
   }
 

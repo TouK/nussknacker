@@ -25,6 +25,7 @@ import pl.touk.nussknacker.ui.process.uiconfig.defaults.{ParameterDefaultValueEx
 import pl.touk.nussknacker.ui.util.EspPathMatchers
 import pl.touk.http.argonaut.Argonaut62Support
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import pl.touk.nussknacker.ui.process.ProcessObjectsFinder
@@ -75,7 +76,7 @@ class DefinitionResources(modelData: Map[ProcessingType, ModelData],
   private def fetchSubprocessInputs(subprocessVersions: Map[String, Long]): Map[String, ObjectDefinition] = {
     val subprocessInputs = subprocessRepository.loadSubprocesses(subprocessVersions).collect {
       case SubprocessDetails(CanonicalProcess(MetaData(id, _, _, _, _), _, FlatNode(SubprocessInputDefinition(_, parameters, _)) :: _), category) =>
-        (id, ObjectDefinition(parameters, classOf[java.util.Map[String, Any]], List(category)))
+        (id, ObjectDefinition(parameters, ClazzRef[java.util.Map[String, Any]], List(category)))
     }.toMap
     subprocessInputs
   }

@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.compile
 
-import cats.data.Validated.{Invalid, Valid}
 import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.Interpreter
 import pl.touk.nussknacker.engine.api.{Lifecycle, ProcessListener}
@@ -56,4 +55,10 @@ object CompiledProcess {
 case class CompiledProcess(parts: CompiledProcessParts,
                            customNodeInvokerDeps: CustomNodeInvokerDeps,
                            subPartCompiler: PartSubGraphCompiler,
-                           interpreter: Interpreter, lifecycle: Seq[Lifecycle])
+                           interpreter: Interpreter, lifecycle: Seq[Lifecycle]) {
+
+  def close(): Unit = {
+    lifecycle.foreach(_.close())
+  }
+
+}

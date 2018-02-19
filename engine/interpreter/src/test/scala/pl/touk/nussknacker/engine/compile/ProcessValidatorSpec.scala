@@ -29,25 +29,25 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
   private def emptyQueryNamesData(clearsContext: Boolean = false) = CustomTransformerAdditionalData(Set(), clearsContext)
 
   private val baseDefinition = ProcessDefinition[ObjectDefinition](
-    Map("sampleEnricher" -> ObjectDefinition(List.empty, classOf[SimpleRecord], List()), "withParamsService" -> ObjectDefinition(List(Parameter("par1",
-      ClazzRef(classOf[String]))), classOf[SimpleRecord], List())),
-    Map("source" -> ObjectDefinition(List.empty, classOf[SimpleRecord], List()),
-        "typedMapSource" -> ObjectDefinition(List(Parameter("type", ClazzRef[TypedMapDefinition])), classOf[TypedMap], List())
+    Map("sampleEnricher" -> ObjectDefinition(List.empty, ClazzRef[SimpleRecord], List()), "withParamsService" -> ObjectDefinition(List(Parameter("par1",
+      ClazzRef(classOf[String]))), ClazzRef[SimpleRecord], List())),
+    Map("source" -> ObjectDefinition(List.empty, ClazzRef[SimpleRecord], List()),
+        "typedMapSource" -> ObjectDefinition(List(Parameter("type", ClazzRef[TypedMapDefinition])), ClazzRef[TypedMap], List())
     ),
     Map("sink" -> ObjectDefinition.noParam),
 
-    Map("customTransformer" -> (ObjectDefinition(List.empty, classOf[SimpleRecord], List()), emptyQueryNamesData()),
-      "withParamsTransformer" -> (ObjectDefinition(List(Parameter("par1", ClazzRef(classOf[String]))), classOf[SimpleRecord], List()), emptyQueryNamesData()),
-      "clearingContextTransformer" -> (ObjectDefinition(List.empty, classOf[SimpleRecord], List()), emptyQueryNamesData(true)),
-      "withoutReturnType" -> (ObjectDefinition(List(Parameter("par1", ClazzRef(classOf[String]))), classOf[Void], List()), emptyQueryNamesData())
+    Map("customTransformer" -> (ObjectDefinition(List.empty, ClazzRef[SimpleRecord], List()), emptyQueryNamesData()),
+      "withParamsTransformer" -> (ObjectDefinition(List(Parameter("par1", ClazzRef(classOf[String]))), ClazzRef[SimpleRecord], List()), emptyQueryNamesData()),
+      "clearingContextTransformer" -> (ObjectDefinition(List.empty, ClazzRef[SimpleRecord], List()), emptyQueryNamesData(true)),
+      "withoutReturnType" -> (ObjectDefinition(List(Parameter("par1", ClazzRef(classOf[String]))), ClazzRef[Void], List()), emptyQueryNamesData())
     ),
     Map.empty,
     ObjectDefinition.noParam,
     ExpressionDefinition(
-      Map("processHelper" -> ObjectDefinition(List(), Typed(ProcessHelper.getClass), List("cat1"))),
+      Map("processHelper" -> ObjectDefinition(List(), Typed(ClazzRef(ProcessHelper.getClass)), List("cat1"))),
       List.empty, optimizeCompilation = false
     ),
-    EspTypeUtils.clazzAndItsChildrenDefinition(List(classOf[SampleEnricher], classOf[SimpleRecord], ProcessHelper.getClass))(ClassExtractionSettings.Default)
+    EspTypeUtils.clazzAndItsChildrenDefinition(List(ClazzRef[SampleEnricher], ClazzRef[SimpleRecord], ClazzRef(ProcessHelper.getClass)))(ClassExtractionSettings.Default)
   )
 
   it should "validated with success" in {

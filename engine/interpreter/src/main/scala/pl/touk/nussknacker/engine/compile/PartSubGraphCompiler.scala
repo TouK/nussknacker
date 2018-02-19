@@ -25,10 +25,6 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
 
   override type ParametersProviderT = ObjectWithMethodDef
 
-  override def compileWithoutContextValidation(n: SplittedNode[_]): ValidatedNel[PartSubGraphCompilationError, CompiledNode] = {
-    super.compileWithoutContextValidation(n)
-  }
-
   override protected def createServiceInvoker(obj: ObjectWithMethodDef) =
     ServiceInvoker(obj)
 
@@ -51,14 +47,14 @@ private[compile] trait PartSubGraphCompilerBase {
   private val syntax = ValidatedSyntax[PartSubGraphCompilationError]
 
   def validate(n: splittednode.SplittedNode[_], ctx: ValidationContext): ValidatedNel[PartSubGraphCompilationError, ContextsForParts] = {
-    new Compiler(true).doCompile(n, ctx).map(_.ctx)
+    doCompile(n, ctx).map(_.ctx)
+  }
+
+  def compile(n: splittednode.SplittedNode[_], ctx: ValidationContext): ValidatedNel[PartSubGraphCompilationError, CompiledNode] = {
+    doCompile(n, ctx)
   }
 
   import syntax._
-
-  protected def compileWithoutContextValidation(n: splittednode.SplittedNode[_]): ValidatedNel[PartSubGraphCompilationError, CompiledNode] = {
-    new Compiler(false).doCompile(n, ValidationContext.empty)
-  }
 
   protected def expressionCompiler: ExpressionCompiler
 
@@ -71,8 +67,6 @@ private[compile] trait PartSubGraphCompilerBase {
   //TODO: make it simpler
   //this code compiles single Part (which will be single Flink node)
   //it returns info about next steps (PartRef) and variables withing each part
-  private class Compiler(contextValidationEnabled: Boolean) {
-
     type ValidatedWithCompiler[A] = ValidatedNel[PartSubGraphCompilationError, A]
 
     def doCompile(n: SplittedNode[_], ctx: ValidationContext): ValidatedNel[PartSubGraphCompilationError, CompiledNode] = {
@@ -132,9 +126,7 @@ private[compile] trait PartSubGraphCompilerBase {
                     CompiledNode(compiledgraph.node.SubprocessStart(id, params, nextWithCtx.next), nextWithCtx.ctx))
                   }
             case SubprocessOutput(id, _, _) =>
-              //consider handling contextValidation on different level? not by flag, but as special contextValidation
-              val poppedContext = if (contextValidationEnabled) ctx.popContext else Valid(ctx)
-              poppedContext.andThen { popContext =>
+              ctx.popContext.andThen { popContext =>
                 compile(next, popContext).map { nextWithCtx =>
                   CompiledNode(SubprocessEnd(id, nextWithCtx.next), nextWithCtx.ctx)
                 }
@@ -219,8 +211,7 @@ private[compile] trait PartSubGraphCompilerBase {
       expressionCompiler.compile(n, fieldName, toOption(ctx), expectedType)
     }
 
-    private def toOption(ctx: ValidationContext) = Some(ctx).filter(_ => contextValidationEnabled)
-  }
+    private def toOption(ctx: ValidationContext) = Some(ctx)
 
 
 }

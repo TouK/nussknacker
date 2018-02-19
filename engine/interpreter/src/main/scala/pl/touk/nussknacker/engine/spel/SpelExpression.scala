@@ -39,7 +39,7 @@ class SpelExpression(parsed: org.springframework.expression.Expression,
 
   import pl.touk.nussknacker.engine.spel.SpelExpressionParser._
 
-  private val expectedClass = expectedReturnType.toClass(classLoader)
+  private val expectedClass = expectedReturnType.clazz
 
   override def evaluate[T](ctx: Context,
                            lazyValuesProvider: LazyValuesProvider): Future[ValueWithLazyContext[T]] = logOnException(ctx) {
@@ -122,7 +122,7 @@ class SpelExpressionParser(expressionFunctions: Map[String, Method], expressionI
       expression(parsed, original, expectedType)
 
     }
-  }
+  } 
 
   override def parse(original: String, ctx: ValidationContext, expectedType: ClazzRef): Validated[NonEmptyList[ExpressionParseError], (TypingResult, compiledgraph.expression.Expression)] = {
     Validated.catchNonFatal(parser.parseExpression(original)).leftMap(ex => NonEmptyList.of(ExpressionParseError(ex.getMessage))).andThen { parsed =>
@@ -174,7 +174,6 @@ object SpelExpressionParser extends LazyLogging {
 
   //caching?
   def default(loader: ClassLoader, enableSpelForceCompile: Boolean, imports: List[String]): SpelExpressionParser = new SpelExpressionParser(Map(
-    "typedMapDefinition" -> classOf[TypedMapDefinition].getDeclaredMethod("create", classOf[java.util.Map[_, _]]),
     "today" -> classOf[LocalDate].getDeclaredMethod("now"),
     "now" -> classOf[LocalDateTime].getDeclaredMethod("now"),
     "distinct" -> classOf[CollectionUtils].getDeclaredMethod("distinct", classOf[java.util.Collection[_]]),

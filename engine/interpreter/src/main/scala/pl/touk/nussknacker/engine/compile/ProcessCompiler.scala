@@ -10,7 +10,6 @@ import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.{Context, MetaData}
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, EspExceptionInfo}
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.typed.{ClazzRef, TypedMap, TypedMapDefinition}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compile.PartSubGraphCompilerBase.ContextsForParts
@@ -158,7 +157,7 @@ protected trait ProcessCompilerBase {
       case SinkPart(node) =>
         validate(node, ctx).andThen { newCtx =>
           compile(node.data.ref).map { obj =>
-            compiledgraph.part.SinkPart(obj, node)
+            compiledgraph.part.SinkPart(obj, node, ctx)
           }
         }
       case CustomNodePart(node, nextParts, ends) =>
@@ -167,7 +166,7 @@ protected trait ProcessCompilerBase {
             validate(node, ctxWithVar).andThen { newCtx =>
               compileCustomNodeInvoker(node, nodeDefinition).andThen { nodeInvoker =>
                 compile(nextParts, newCtx).map { nextParts =>
-                  compiledgraph.part.CustomNodePart(nodeInvoker, node, nextParts, ends)
+                  compiledgraph.part.CustomNodePart(nodeInvoker, node, ctxWithVar, nextParts, ends)
                 }
               }
             }
@@ -180,7 +179,7 @@ protected trait ProcessCompilerBase {
             compile(next.nextParts, newCtx).map(cp => NextWithParts(next.next, cp, next.ends))
           }
         }.sequence.map { nextsWithParts =>
-          compiledgraph.part.SplitPart(node, nextsWithParts)
+          compiledgraph.part.SplitPart(node, ctx, nextsWithParts)
         }
 
     }
@@ -190,9 +189,10 @@ protected trait ProcessCompilerBase {
                      (implicit metaData: MetaData): ValidatedNel[ProcessCompilationError, compiledgraph.part.SourcePart] = {
     implicit val nodeId = NodeId(source.id)
     val variables = computeInitialVariables(source.node.data)
-    A.map2(validate(source.node, ValidationContext(variables, typesInformation)), compile(source.node.data)) { (ctx, obj) =>
+    val initialCtx = ValidationContext(variables, typesInformation)
+    A.map2(validate(source.node, initialCtx), compile(source.node.data)) { (ctx, obj) =>
       compile(source.nextParts, ctx).map { nextParts =>
-        compiledgraph.part.SourcePart(obj, source.node, nextParts, source.ends)
+        compiledgraph.part.SourcePart(obj, source.node, initialCtx, nextParts, source.ends)
       }
     }.andThen(identity)
   }
@@ -202,7 +202,7 @@ protected trait ProcessCompilerBase {
     // Currently it's not easy, as parameters are involved...
     case pl.touk.nussknacker.engine.graph.node.Source(_, ref, _) =>  sourceFactories.get(ref.typ)
           .map(sf => Map(Interpreter.InputParamName -> sf.returnType)).getOrElse(Map.empty)
-    case SubprocessInputDefinition(_, params, _) => params.map(p => p.name -> Typed(p.typ)(classLoader)).toMap
+    case SubprocessInputDefinition(_, params, _) => params.map(p => p.name -> Typed(p.typ)).toMap
   }
 
   private def compile(ref: ExceptionHandlerRef)

@@ -8,8 +8,8 @@ import pl.touk.nussknacker.ui.api.NodeDefinition
 class ExtractValueParameterByConfigThenTypeTest extends FlatSpec with Matchers {
   behavior of "ExtractValueParameterByConfigThenTypeTest"
   private val confMap = Map("node1" -> Map("param1" -> "123"))
-  private val param1 = DefinitionExtractor.Parameter("param1", ClazzRef("int"))
-  private val param2 = DefinitionExtractor.Parameter("param=2", ClazzRef("int"))
+  private val param1 = DefinitionExtractor.Parameter("param1", ClazzRef(Integer.TYPE))
+  private val param2 = DefinitionExtractor.Parameter("param=2", ClazzRef(Integer.TYPE))
   private val node = NodeDefinition("node1", List(param1, param2))
   private val extractor = new TypeAfterConfig(new ParamDefaultValueConfig(confMap))
   it should "evaluate value by type" in {

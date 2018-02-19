@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.definition
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, WithCategories}
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
+import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, QueryableStateNames}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedParameters}
@@ -49,7 +50,7 @@ object ProcessDefinitionExtractor {
 
     //TODO: this is not so nice...
     val globalVariablesDefs = expressionConfig.globalProcessVariables.mapValuesNow { globalVar =>
-      val klass = globalVar.value.getClass
+      val klass = ClazzRef(globalVar.value.getClass)
       ObjectWithMethodDef(globalVar.value, MethodDefinition(null, klass, new OrderedParameters(List())),
         ObjectDefinition(List(), klass, globalVar.categories))
     }
@@ -139,10 +140,10 @@ object ProcessDefinitionExtractor {
 
     def withCustomStreamTransformer(id: String, returnType: Class[_], additionalData: CustomTransformerAdditionalData, params: Parameter*) =
       definition.copy(customStreamTransformers =
-        definition.customStreamTransformers + (id -> (ObjectDefinition(params.toList, returnType, List()), additionalData)))
+        definition.customStreamTransformers + (id -> (ObjectDefinition(params.toList, ClazzRef(returnType), List()), additionalData)))
 
     def withSignalsWithTransformers(id: String, returnType: Class[_], transformers: Set[String], params: Parameter*) =
-      definition.copy(signalsWithTransformers = definition.signalsWithTransformers + (id -> (ObjectDefinition(params.toList, returnType, List()), transformers)))
+      definition.copy(signalsWithTransformers = definition.signalsWithTransformers + (id -> (ObjectDefinition(params.toList, ClazzRef(returnType), List()), transformers)))
 
   }
 

@@ -48,13 +48,13 @@ object EspTypeUtils {
 
   //they can always appear...
   //TODO: what else should be here?
-  private val mandatoryClasses = Set(
+  private val mandatoryClasses = (Set(
     classOf[java.util.List[_]],
     classOf[java.util.Map[_, _]],
     classOf[java.math.BigDecimal],
     classOf[Number],
     classOf[String]
-  ) ++ primitiveTypesToBoxed.keys ++ primitiveTypesToBoxed.values
+  ) ++ primitiveTypesToBoxed.keys ++ primitiveTypesToBoxed.values).map(ClazzRef(_))
 
   private val boxedToPrimitives = primitiveTypesToBoxed.map(_.swap)
 
@@ -64,13 +64,14 @@ object EspTypeUtils {
     clazz.getMethods.map(_.getName).toList
   }
 
-  def clazzAndItsChildrenDefinition(clazzes: Iterable[Class[_]])
+  def clazzAndItsChildrenDefinition(clazzes: Iterable[ClazzRef])
                                    (implicit settings: ClassExtractionSettings): List[ClazzDefinition] = {
     (clazzes ++ mandatoryClasses).flatMap(clazzAndItsChildrenDefinition).toList.distinct
   }
 
-  private def clazzAndItsChildrenDefinition(clazz: Class[_])
+  private def clazzAndItsChildrenDefinition(clazzRef: ClazzRef)
                                    (implicit settings: ClassExtractionSettings): List[ClazzDefinition] = {
+    val clazz = clazzRef.clazz
     val result = if (clazz.isPrimitive || baseClazzPackagePrefix.exists(clazz.getName.startsWith)) {
       List(clazzDefinition(clazz))
     } else {
@@ -79,8 +80,8 @@ object EspTypeUtils {
         .filter(m => !primitiveTypesSimpleNames.contains(m.refClazzName) && m.refClazzName != clazz.getName)
         .filter(m => !blacklistedClazzPackagePrefix.exists(m.refClazzName.startsWith))
         .filter(m => !m.refClazzName.startsWith("["))
-        .map(_.refClazzName).distinct
-        .flatMap(m => clazzAndItsChildrenDefinition(ThreadUtils.loadUsingContextLoader(m)))
+        .map(_.refClazz).distinct
+        .flatMap(m => clazzAndItsChildrenDefinition(m))
       mainClazzDefinition :: recursiveClazzes
     }
     result.distinct
@@ -106,7 +107,7 @@ object EspTypeUtils {
           !blackilistedMethods.contains(m.getName) && !m.getName.contains("$")
         )
     interestingMethods.map { method =>
-      method.getName -> MethodInfo(getParamNameParameters(method), ClazzRef(getReturnClassForMethod(method)), getNussknackerDocs(method))
+      method.getName -> MethodInfo(getParamNameParameters(method), getReturnClassForMethod(method), getNussknackerDocs(method))
     }.toMap
   }
 
@@ -119,7 +120,7 @@ object EspTypeUtils {
         !m.getName.contains("$")
       )
     interestingFields.map { field =>
-      field.getName -> MethodInfo(List.empty, ClazzRef(getReturnClassForField(field)), getNussknackerDocs(field))
+      field.getName -> MethodInfo(List.empty, getReturnClassForField(field), getNussknackerDocs(field))
     }.toMap
   }
 
@@ -143,14 +144,14 @@ object EspTypeUtils {
     klazz.getField("MODULE$").get(null).asInstanceOf[T]
   }
 
-  def getGenericType(genericReturnType: Type): Option[Class[_]] = {
+  def getGenericType(genericReturnType: Type): Option[ClazzRef] = {
     val hasGenericReturnType = genericReturnType.isInstanceOf[ParameterizedTypeImpl]
-    if (hasGenericReturnType) inferGenericMonadType(genericReturnType)
+    if (hasGenericReturnType) inferGenericMonadType(genericReturnType.asInstanceOf[ParameterizedTypeImpl])
     else None
   }
 
-  private def getReturnClassForMethod(method: Method): Class[_] = {
-    getGenericType(method.getGenericReturnType).getOrElse(method.getReturnType)
+  private def getReturnClassForMethod(method: Method): ClazzRef = {
+    getGenericType(method.getGenericReturnType).getOrElse(ClazzRef(method.getReturnType))
   }
 
   private def getParamNameParameters(method: Method): List[Parameter] = {
@@ -164,35 +165,45 @@ object EspTypeUtils {
     Option(accessibleObject.getAnnotation(classOf[Documentation])).map(_.description())
   }
 
-  private def getReturnClassForField(field: Field): Class[_] = {
-    getGenericType(field.getGenericType).getOrElse(field.getType)
+  private def getReturnClassForField(field: Field): ClazzRef = {
+    getGenericType(field.getGenericType).getOrElse(ClazzRef(field.getType))
   }
 
   //TODO this is not correct for primitives and complicated hierarchies, but should work in most cases
   //http://docs.oracle.com/javase/8/docs/api/java/lang/reflect/ParameterizedType.html#getActualTypeArguments--
-  private def inferGenericMonadType(genericReturnType: Type): Option[Class[_]] = {
-    val genericMethodType = genericReturnType.asInstanceOf[ParameterizedTypeImpl]
-    if (classOf[StateT[Eval, _, _]].isAssignableFrom(genericMethodType.getRawType)) {
+  private def inferGenericMonadType(genericMethodType: ParameterizedTypeImpl): Option[ClazzRef] = {
+    val rawType = genericMethodType.getRawType
+
+    if (classOf[StateT[Eval, _, _]].isAssignableFrom(rawType)) {
       val returnType = genericMethodType.getActualTypeArguments.apply(2) // bo StateT[Eval, S, A]
       extractClass(returnType)
     }
-    else if (classOf[Future[_]].isAssignableFrom(genericMethodType.getRawType)) {
+    else if (classOf[Future[_]].isAssignableFrom(rawType)) {
       val futureGenericType = genericMethodType.getActualTypeArguments.apply(0)
       extractClass(futureGenericType)
     }
-    else if (classOf[Option[_]].isAssignableFrom(genericMethodType.getRawType)) {
+    else if (classOf[Option[_]].isAssignableFrom(rawType)) {
       val optionGenericType = genericMethodType.getActualTypeArguments.apply(0)
       extractClass(optionGenericType)
     }
     else None
   }
 
-  private def extractClass(futureGenericType: Type): Option[Class[_]] = {
+  private def extractClass(futureGenericType: Type): Option[ClazzRef] = {
     futureGenericType match {
-      case t: Class[_] => Some(t)
-      case t: ParameterizedTypeImpl => Some(t.getRawType)
+      case t: Class[_] => Some(ClazzRef(t))
+      case t: ParameterizedTypeImpl => Some(extractGenericParams(t))
       case t => None
     }
+  }
+
+  private def extractGenericParams(paramsType: ParameterizedTypeImpl) : ClazzRef = {
+    val rawType = paramsType.getRawType
+    if (classOf[java.util.Collection[_]].isAssignableFrom(rawType)) {
+      ClazzRef(rawType, paramsType.getActualTypeArguments.toList.flatMap(extractClass))
+    } else if (classOf[scala.collection.Iterable[_]].isAssignableFrom(rawType)) {
+      ClazzRef(rawType, paramsType.getActualTypeArguments.toList.flatMap(extractClass))
+    } else ClazzRef(rawType)
   }
 
   private def tryToUnBox(clazz : Class[_]) = boxedToPrimitives.getOrElse(clazz, clazz)

@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.definition.TypeInfos.{MethodInfo, Parameter}
 
 import scala.annotation.meta.{field, getter}
+import scala.concurrent.Future
 import scala.reflect.ClassTag
 
 class EspTypeUtilsSpec extends FunSuite with Matchers {
@@ -38,10 +39,24 @@ class EspTypeUtilsSpec extends FunSuite with Matchers {
 
   case class SampleClass(foo: Int, bar: String) extends SampleAbstractClass with SampleInterface
 
+  class Returning {
+    def futureOfList: Future[java.util.List[SampleClass]] = ???
+  }
+
+  test("should extract generic return type parameters") {
+
+    val method = classOf[Returning].getMethod("futureOfList")
+
+    val extractedType = EspTypeUtils.getGenericType(method.getGenericReturnType).get
+
+    extractedType.clazz shouldBe classOf[java.util.List[_]]
+    extractedType.params shouldBe List(ClazzRef[SampleClass])
+  }
+
   test("should extract public fields from scala case class, and java class") {
     val testCases = Table(("class", "className"),
-      (classOf[SampleClass], "SampleClass"),
-      (classOf[JavaSampleClass], "JavaSampleClass")
+      (ClazzRef[SampleClass], "SampleClass"),
+      (ClazzRef[JavaSampleClass], "JavaSampleClass")
     )
 
     forAll(testCases) { (clazz, clazzName) =>
@@ -49,16 +64,16 @@ class EspTypeUtilsSpec extends FunSuite with Matchers {
       val sampleClassInfo = infos.find(_.clazzName.refClazzName.contains(clazzName)).get
 
       sampleClassInfo.methods shouldBe Map(
-        "foo" -> MethodInfo(List.empty, ClazzRef("int"), None),
-        "bar" -> MethodInfo(List.empty, ClazzRef("java.lang.String"), None)
+        "foo" -> MethodInfo(List.empty, ClazzRef(Integer.TYPE), None),
+        "bar" -> MethodInfo(List.empty, ClazzRef[String], None)
       )
     }
   }
 
   test("should  skip blacklisted properties") {
     val testCasses = Table(("class", "className"),
-      (classOf[SampleClass], "SampleClass"),
-      (classOf[JavaSampleClass], "JavaSampleClass")
+      (ClazzRef[SampleClass], "SampleClass"),
+      (ClazzRef[JavaSampleClass], "JavaSampleClass")
     )
 
     val testClassPatterns = Table("classPattern",
@@ -75,7 +90,7 @@ class EspTypeUtilsSpec extends FunSuite with Matchers {
         val sampleClassInfo = infos.find(_.clazzName.refClazzName.contains(clazzName)).get
 
         sampleClassInfo.methods shouldBe Map(
-          "foo" -> MethodInfo(List.empty, ClazzRef("int"), None)
+          "foo" -> MethodInfo(List.empty, ClazzRef(Integer.TYPE), None)
         )
       }
     }
@@ -117,10 +132,10 @@ class EspTypeUtilsSpec extends FunSuite with Matchers {
   }
 
   test("should extract description and params from method") {
-    val scalaExtractedInfo = EspTypeUtils.clazzAndItsChildrenDefinition(List(classOf[ScalaSampleDocumentedClass]))(ClassExtractionSettings.Default)
+    val scalaExtractedInfo = EspTypeUtils.clazzAndItsChildrenDefinition(List(ClazzRef[ScalaSampleDocumentedClass]))(ClassExtractionSettings.Default)
     val scalaClazzInfo = scalaExtractedInfo.find(_.clazzName == ClazzRef(classOf[ScalaSampleDocumentedClass])).get
 
-    val javaExtractedInfo = EspTypeUtils.clazzAndItsChildrenDefinition(List(classOf[JavaSampleDocumentedClass]))(ClassExtractionSettings.Default)
+    val javaExtractedInfo = EspTypeUtils.clazzAndItsChildrenDefinition(List(ClazzRef[JavaSampleDocumentedClass]))(ClassExtractionSettings.Default)
     val javaClazzInfo = javaExtractedInfo.find(_.clazzName == ClazzRef(classOf[JavaSampleDocumentedClass])).get
 
     val table = Table(

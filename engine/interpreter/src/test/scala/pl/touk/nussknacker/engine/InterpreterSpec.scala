@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compile._
-import pl.touk.nussknacker.engine.compiledgraph.part.SinkPart
+import pl.touk.nussknacker.engine.compiledgraph.part.{ProcessPart, SinkPart}
 import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessDefinitionExtractor}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
@@ -60,12 +60,12 @@ class InterpreterSpec extends FlatSpec with Matchers {
     val interpreter = compiledProcess.interpreter
     val parts = compiledProcess.parts
 
-    def compileNode(splitted: SplittedNode[_ <: NodeData]) =
-      failOnErrors(compiledProcess.subPartCompiler.compileWithoutContextValidation(splitted)).node
+    def compileNode(part: ProcessPart) =
+      failOnErrors(compiledProcess.subPartCompiler.compile(part.node, part.validationContext)).node
 
     val initialCtx = Context("abc").withVariable(Interpreter.InputParamName, transaction)
 
-    val resultBeforeSink = Await.result(interpreter.interpret(compileNode(parts.source.node), process.metaData, initialCtx), 10 seconds) match {
+    val resultBeforeSink = Await.result(interpreter.interpret(compileNode(parts.source), process.metaData, initialCtx), 10 seconds) match {
       case Left(result) => result
       case Right(exceptionInfo) => throw exceptionInfo.throwable
     }
@@ -73,7 +73,7 @@ class InterpreterSpec extends FlatSpec with Matchers {
     resultBeforeSink.reference match {
       case NextPartReference(nextPartId) =>
         val sink = parts.source.nextParts.collectFirst {
-          case sink: SinkPart if sink.id == nextPartId => sink.node
+          case sink: SinkPart if sink.id == nextPartId => sink
         }.get
         Await.result(interpreter.interpret(compileNode(sink), metaData, resultBeforeSink.finalContext), 10 seconds).left.get.output
       case _: EndReference =>

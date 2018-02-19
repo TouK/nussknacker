@@ -6,6 +6,9 @@ import argonaut.{Json, Parse}
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api.Displayable
+import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
+import pl.touk.nussknacker.engine.api.typed.ClazzRef
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor.TypesInformation
 import pl.touk.nussknacker.engine.api.deployment.test.{NodeResult, ResultContext, TestResults}
 
 class UiCodecsSpec extends FlatSpec with Matchers {

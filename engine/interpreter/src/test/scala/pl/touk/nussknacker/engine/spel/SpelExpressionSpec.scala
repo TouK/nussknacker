@@ -75,8 +75,8 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
 
   private def parse[T:ClassTag](expr: String, context: Context = ctx) : ValidatedNel[ExpressionParseError, (TypingResult, Expression)] = {
     val validationCtx = ValidationContext(
-      context.variables.mapValuesNow(_.getClass).mapValuesNow(ClazzRef.apply).mapValuesNow(Typed.apply),
-      EspTypeUtils.clazzAndItsChildrenDefinition(context.variables.values.map(_.getClass).toList)(ClassExtractionSettings.Default)
+      context.variables.mapValuesNow(_.getClass).mapValuesNow(ClazzRef(_)).mapValuesNow(Typed.apply),
+      EspTypeUtils.clazzAndItsChildrenDefinition(context.variables.values.map(_.getClass).map(ClazzRef(_)).toList)(ClassExtractionSettings.Default)
     )
     parse(expr, validationCtx)
   }
@@ -258,6 +258,21 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
     parse[String]("1 > 2 ? 12 : 23", ctx) should not be 'valid
     parse[Long]("1 > 2 ? 12 : 23", ctx) shouldBe 'valid
     parse[String]("1 > 2 ? 'ss' : 'dd'", ctx) shouldBe 'valid
+  }
+
+  it should "validate selection for inline list" in {
+    parse[Long]("{44, 44}.?[#this.alamakota]", ctx) should not be 'valid
+    parse[java.util.List[_]]("{44, 44}.?[#this > 4]", ctx) shouldBe 'valid
+
+
+  }
+
+  it should "validate selection and projection for list variable" in {
+    implicit val id = NodeId("")
+    val vctx = ValidationContext.empty.withVariable("a", Typed(ClazzRef(classOf[java.util.List[_]], List(ClazzRef[String])))).toOption.get
+
+    parse[java.util.List[_]]("#a.![#this.length()].?[#this > 4]", vctx) shouldBe 'valid
+    parse[java.util.List[_]]("#a.![#this / 5]", vctx) should not be 'valid
   }
 
   it should "allow #this reference inside functions" in {
