@@ -20,7 +20,7 @@ class Metrics extends React.Component {
   }
 
   render() {
-    if (!this.props.settings.url || !this.state || !this.state.processingType) {
+    if (!this.props.settings.url || !this.state) {
       return (<div/>)
     }
 
