@@ -11,9 +11,9 @@ import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.serialization.{ByteArrayDeserializer, ByteArraySerializer}
 import pl.touk.nussknacker.engine.util.ThreadUtils
 
-import scala.concurrent.{Await, Future, Promise}
-import scala.concurrent.duration.Duration
 import scala.collection.JavaConverters._
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future, Promise}
 import scala.util.{Failure, Success}
 
 object KafkaEspUtils extends LazyLogging {
@@ -80,8 +80,15 @@ object KafkaEspUtils extends LazyLogging {
           } else {
             val offsetToSearch = Math.max(0, lastOffset - size)
             consumer.seek(tp, offsetToSearch)
-            consumer.poll(100).records(tp).toList.map(_.value())
-          }
+            val temp = consumer.poll(100).records(tp)
+            // if some of the messages were removed due to retention then in temp we will have zero records
+            if(temp.isEmpty) {
+              consumer.seekToBeginning(tp)
+              consumer.poll(100).records(tp)
+            } else {
+              temp
+            }
+          }.toList.map(_.value()).take(size)
           consumer.unsubscribe()
           result
         }.take(size).toList
