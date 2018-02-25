@@ -5,13 +5,14 @@ import java.util.{Collections, Properties}
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.KafkaClient
-import org.apache.kafka.clients.consumer.KafkaConsumer
+import org.apache.kafka.clients.consumer.{ConsumerRecord, KafkaConsumer}
 import org.apache.kafka.clients.producer.{Callback, KafkaProducer, ProducerRecord, RecordMetadata}
 import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.serialization.{ByteArrayDeserializer, ByteArraySerializer}
 import pl.touk.nussknacker.engine.util.ThreadUtils
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future, Promise}
 import scala.util.{Failure, Success}
@@ -68,6 +69,7 @@ object KafkaEspUtils extends LazyLogging {
     props
   }
 
+
   def readLastMessages(topic: String, size: Int, config: KafkaConfig) : List[Array[Byte]] = {
     doWithTempKafkaConsumer(config, None) { consumer =>
       try {
@@ -75,22 +77,20 @@ object KafkaEspUtils extends LazyLogging {
           consumer.assign(Collections.singletonList(tp))
           consumer.seekToEnd(tp)
           val lastOffset = consumer.position(tp)
-          val result = if (lastOffset == 0) {
-            List()
-          } else {
-            val offsetToSearch = Math.max(0, lastOffset - size)
-            consumer.seek(tp, offsetToSearch)
+          val offsetToSearch = Math.max(0, lastOffset - size)
+          consumer.seek(tp, offsetToSearch)
+          val result = new ArrayBuffer[ConsumerRecord[Array[Byte], Array[Byte]]](size)
+          var currentOffset = offsetToSearch
+          // Trying to poll records until desired size OR till the end of the topic.
+          // So when trying to read 70 msgs from topic with only 50, we will return 50 immediately
+          // instead of waiting for another 20 to be written to the topic.
+          while(result.size() < size && currentOffset < lastOffset) {
             val temp = consumer.poll(100).records(tp)
-            // if some of the messages were removed due to retention then in temp we will have zero records
-            if(temp.isEmpty) {
-              consumer.seekToBeginning(tp)
-              consumer.poll(100).records(tp)
-            } else {
-              temp
-            }
-          }.toList.map(_.value()).take(size)
+            result.appendAll(temp)
+            currentOffset = consumer.position(tp)
+          }
           consumer.unsubscribe()
-          result
+          result.map(_.value()).take(size)
         }.take(size).toList
       } finally {
         consumer.unsubscribe()
