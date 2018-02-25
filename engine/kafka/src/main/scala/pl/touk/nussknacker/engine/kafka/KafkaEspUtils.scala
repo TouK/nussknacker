@@ -80,13 +80,18 @@ object KafkaEspUtils extends LazyLogging {
           val offsetToSearch = Math.max(0, lastOffset - size)
           consumer.seek(tp, offsetToSearch)
           val result = new ArrayBuffer[ConsumerRecord[Array[Byte], Array[Byte]]](size)
-          var currentOffset = offsetToSearch
+          result.addAll(consumer.poll(100).records(tp))
+          // result might be empty if we shift offset to far and there will be
+          // no messages on the topic due to retention
+          if(result.isEmpty){
+            consumer.seekToBeginning(tp)
+          }
+          var currentOffset = consumer.position(tp)
           // Trying to poll records until desired size OR till the end of the topic.
           // So when trying to read 70 msgs from topic with only 50, we will return 50 immediately
           // instead of waiting for another 20 to be written to the topic.
           while(result.size() < size && currentOffset < lastOffset) {
-            val temp = consumer.poll(100).records(tp)
-            result.appendAll(temp)
+            result.appendAll(consumer.poll(100).records(tp))
             currentOffset = consumer.position(tp)
           }
           consumer.unsubscribe()
