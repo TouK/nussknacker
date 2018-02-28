@@ -1,3 +1,4 @@
+
 #Designing processes with UI 
 
 In this section you will learn how to create Nussknacker processes using defined model. In the examples we'll 
@@ -37,11 +38,23 @@ Output could have multiple flows, or none, or could have at least one obligatory
 
 
 ## Filter 
+Filter passes records which satisfies its condition.
+It can have one or two outputs.
+First output is for records satisfying the condition, second (optional) is for others.
+![filter graph](img/filter_graph.png)
+Records from `source` which meets condition go to `true sink`, and others go to `false sink`. 
+
+![filter graph single](img/filter_graph_single.png)
+
+Records from `source` which meets condition go to `blue sink`, and others are filtered out. 
+
 ### Parameters
+![filter window](img/filter_window.png)
 There are two parameters: `Expression`, and `Disabled`.
 
 Expression is written in SpEL. Should be evaluated to logical value. 
-Outgoing data flow depends if result expression is true or false.
+Outgoing data flow depends on expression result.
+
 
 Disabled has logical value. 
 If is checked, expression is't evaluated, and returns value `true`.         
@@ -56,7 +69,64 @@ If there are two outputs, one pipe is named `true` and another `false`.
 Each record which expression evaluates to `true` goes to `true` pipe,
 and other record goes to `false` pipe.  
 
+##Split 
+It doesn't have additional parameters.
+Each output receives all records and processes them independently. 
+![split graph](img/split_graph.png)
 
+Every record from `surce` go to `sink 1` and `sink 2`.
+![filter window](img/split_window.png)
+
+###Flow
+Have at least one output.
+Each output has same record as input, so all aotputs are identical.
+
+##Switch
+Distributes incoming data between outputs. 
+![split graph](img/switch_graph.png)
+Each record form `source` is tested against condition defined on edge. 
+If `color` is `blue` record goes to `blue sink`. 
+If `color` is `green` record goes to `green sink`. 
+For every other value record goes to `sink for others`.
+
+### Parameters 
+![split graph](img/switch_window.png)
+
+There are two important parameters `Expression` and `exprVal`.
+`Expression` contains expression which is evaluated for each record,
+ and expression value is assigned to variable named like `exprVal` value.
+ 
+ In `Switch` node edges can be of one of two types.
+ 
+![split graph](img/switch_edge_condition.png)
+
+ Edge of `Type` `Condition` has `Expression`. 
+ Record go to first output which condition it matches.
+
+![split graph](img/switch_edge_default.png)
+
+ There can be at most one edge of `Type` `Default`,
+  and it gets all records that doesn't match to any `Condition` edge. 
+
+### Flow
+For each record from input switch `Expression` is evaluated and result is assigned to `exprVal` variable.
+After that records are tested against condition `Expressions` from output edges one by one.
+Record goes to first output which condition it satisfies.
+If record doesn't match any conditional output, and default output exists, record goes to default output.
+Otherwise mismatching record is filtered out.
+
+## Variable
+Evaluates `Expression`, and assigns to `Variable Name.`
+
+![split graph](img/variable_graph.png)
+
+Doesn't change records flow. 
+Have to have exactly one output.
+Variable once defined cannot be overwritten.  
+
+![split graph](img/variable_window.png)
+  
+  
 
 ###Subprocesses
 TBD
