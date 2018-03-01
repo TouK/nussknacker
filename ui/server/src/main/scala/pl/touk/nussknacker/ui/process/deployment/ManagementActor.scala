@@ -165,7 +165,7 @@ case class Snapshot(id: String, user: LoggedUser, savepointPath: String)
 
 case class CheckStatus(id: String, user: LoggedUser)
 
-case class Test[T](processId: String, processJson: String, test: TestData, user: LoggedUser, encoder: TestResults => T)
+case class Test[T](processId: String, processJson: String, test: TestData, user: LoggedUser, variableEncoder: Any => T)
 
 case class DeploymentActionFinished(id: String)
 

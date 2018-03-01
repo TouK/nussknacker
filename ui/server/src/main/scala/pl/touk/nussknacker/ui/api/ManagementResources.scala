@@ -14,7 +14,6 @@ import argonaut.{Json, PrettyParams}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.deployment.test.{TestData, TestResults}
-import pl.touk.nussknacker.engine.api.test.TestResultsEncoded
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
@@ -124,15 +123,15 @@ class ManagementResources(typesInformation: List[ClazzDefinition],
       case Right(process) =>
         val canonical = ProcessConverter.fromDisplayable(process)
         val canonicalJson = UiProcessMarshaller.toJson(canonical, PrettyParams.nospace)
-        (managementActor ? Test(processId, canonicalJson, TestData(testData), user, UiCodecs.testResultsEncoder.encode)).mapTo[TestResultsEncoded[Json]].map { results =>
-          ResultsWithCounts(results.encoded, computeCounts(canonical, results.results))
+        (managementActor ? Test(processId, canonicalJson, TestData(testData), user, UiCodecs.testResultsVariableEncoder)).mapTo[TestResults[Json]].map { results =>
+          ResultsWithCounts(results.asJson, computeCounts(canonical, results))
         }
       case Left(error) =>
         Future.failed(UnmarshallError(error))
     }
   }
 
-  private def computeCounts(canonical: CanonicalProcess, results: TestResults) : Map[String, NodeCount] = {
+  private def computeCounts(canonical: CanonicalProcess, results: TestResults[_]) : Map[String, NodeCount] = {
     val counts = results.nodeResults.map { case (key, nresults) =>
       key -> RawCount(nresults.size.toLong, results.exceptions.find(_.nodeId.contains(key)).size.toLong)
     }

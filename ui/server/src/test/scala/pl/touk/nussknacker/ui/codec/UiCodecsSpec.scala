@@ -2,11 +2,11 @@ package pl.touk.nussknacker.ui.codec
 
 import java.time.LocalDateTime
 
-import argonaut.Parse
+import argonaut.{Json, Parse}
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api.Displayable
-import pl.touk.nussknacker.engine.api.deployment.test.{NodeResult, TestResults}
+import pl.touk.nussknacker.engine.api.deployment.test.{NodeResult, ResultContext, TestResults}
 
 class UiCodecsSpec extends FlatSpec with Matchers {
 
@@ -19,10 +19,11 @@ class UiCodecsSpec extends FlatSpec with Matchers {
         "var2" -> CsvRecord(List("aa", "bb"))
       ))
 
-    val testResults = TestResults(Map("n1" -> List(NodeResult(ctx))), Map(), Map(), List())
+    val testResults = TestResults[Json](Map(), Map(), Map(), List(), UiCodecs.testResultsVariableEncoder)
+      .updateNodeResult("n1", ctx)
 
     val json = UiCodecs.testResultsEncoder.encode(testResults)
-    
+
     val variables = (for {
       nodeResults <- json.cursor --\ "nodeResults"
       n1Results <- nodeResults --\ "n1"

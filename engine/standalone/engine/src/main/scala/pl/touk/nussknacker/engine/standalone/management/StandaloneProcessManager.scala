@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.test.{TestData, TestResults}
 import pl.touk.nussknacker.engine.api.process.SourceFactory
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{ServiceInvocationCollector, SinkInvocationCollector}
-import pl.touk.nussknacker.engine.api.test.{ResultsCollectingListener, ResultsCollectingListenerHolder, TestResultsEncoded, TestRunId}
+import pl.touk.nussknacker.engine.api.test.{ResultsCollectingListener, ResultsCollectingListenerHolder, TestRunId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
@@ -60,11 +60,11 @@ class StandaloneProcessManager(modelData: ModelData, client: StandaloneProcessCl
     Future.failed(new UnsupportedOperationException("Cannot make savepoint on standalone process"))
   }
 
-  override def test[T](processId: String, processJson: String, testData: TestData, encoder: TestResults => T): Future[TestResultsEncoded[T]] = {
+  override def test[T](processId: String, processJson: String, testData: TestData, variableEncoder: Any => T): Future[TestResults[T]] = {
     Future{
       //TODO: shall we use StaticMethodRunner here?
       modelData.withThisAsContextClassLoader {
-        StandaloneTestMain.run(processJson, testData, modelData, encoder)
+        StandaloneTestMain.run(processJson, testData, modelData, variableEncoder)
       }
     }
   }
@@ -81,11 +81,11 @@ class StandaloneProcessManager(modelData: ModelData, client: StandaloneProcessCl
 
 object StandaloneTestMain {
 
-  def run[T](processJson: String, testData: TestData, modelData: ModelData, encoder: TestResults => T): TestResultsEncoded[T] = {
+  def run[T](processJson: String, testData: TestData, modelData: ModelData, variableEncoder: Any => T): TestResults[T] = {
     new StandaloneTestMain(
       testData = testData,
       process = TestUtils.readProcessFromArg(processJson),
-      modelData).runTest(encoder)
+      modelData).runTest(variableEncoder)
   }
 
 }
@@ -96,14 +96,14 @@ class StandaloneTestMain(testData: TestData, process: EspProcess, modelData: Mod
 
   import ExecutionContext.Implicits.global
 
-  def runTest[T](encoder: TestResults => T): TestResultsEncoded[T] = {
+  def runTest[T](variableEncoder: Any => T): TestResults[T] = {
     val creator = modelData.configCreator
     val config = modelData.processConfig
 
     val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(creator, config)
     val parsedTestData = readTestData(definitions)
 
-    val collectingListener = ResultsCollectingListenerHolder.registerRun(encoder)
+    val collectingListener = ResultsCollectingListenerHolder.registerRun(variableEncoder)
 
     //in tests we don't send metrics anywhere
     val testContext = new StandaloneContextPreparer(new MetricRegistry)

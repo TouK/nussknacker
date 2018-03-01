@@ -33,7 +33,7 @@ class StandaloneProcessManagerSpec extends FunSuite with ScalaFutures with Match
 
     val results = manager.test("test1", process, TestData("{\"field1\": \"a\", \"field2\": \"b\"}"), _ => null).futureValue
 
-    results.results.nodeResults("sink") should have length (1)
+    results.nodeResults("sink") should have length (1)
 
   }
 

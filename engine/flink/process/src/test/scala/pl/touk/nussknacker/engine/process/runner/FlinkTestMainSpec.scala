@@ -6,8 +6,7 @@ import argonaut.PrettyParams
 import com.typesafe.config.ConfigFactory
 import org.apache.flink.runtime.client.JobExecutionException
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Inside, Matchers}
-import pl.touk.nussknacker.engine.api.Context
-import pl.touk.nussknacker.engine.api.deployment.test.{ExpressionInvocationResult, MockedResult, NodeResult, TestData}
+import pl.touk.nussknacker.engine.api.deployment.test._
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
@@ -49,7 +48,7 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside with BeforeAn
     val input2 = SimpleRecord("0", 11, "2", new Date(3), Some(4), 5, "6")
 
     val results = FlinkTestMain.run(modelData, ProcessMarshaller.toJson(process, PrettyParams.spaces2),
-      TestData(List("0|1|2|3|4|5|6", "0|11|2|3|4|5|6").mkString("\n")), FlinkTestConfiguration.configuration, identity).results
+      TestData(List("0|1|2|3|4|5|6", "0|11|2|3|4|5|6").mkString("\n")), FlinkTestConfiguration.configuration, identity)
 
     val nodeResults = results.nodeResults
 
@@ -62,12 +61,12 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside with BeforeAn
     val invocationResults = results.invocationResults
 
     invocationResults("proc2") shouldBe
-      List(ExpressionInvocationResult(Context("proc1-id-0-1").withVariables(Map("input" -> input2, "variable1" -> "ala")), "all", "0"))
+      List(ExpressionInvocationResult(ResultContext[Any]("proc1-id-0-1", Map("input" -> input2, "variable1" -> "ala")), "all", "0"))
     invocationResults("out") shouldBe
-      List(ExpressionInvocationResult(Context("proc1-id-0-1").withVariables(Map("input" -> input2, "variable1" -> "ala")), "expression", 11))
+      List(ExpressionInvocationResult(ResultContext[Any]("proc1-id-0-1", Map("input" -> input2, "variable1" -> "ala")), "expression", 11))
 
-    results.mockedResults("proc2") shouldBe List(MockedResult(Context("proc1-id-0-1"), "logService", "0-collectedDuringServiceInvocation"))
-    results.mockedResults("out") shouldBe List(MockedResult(Context("proc1-id-0-1").withVariables(Map("input" -> input2, "variable1" -> "ala")), "monitor", "11"))
+    results.mockedResults("proc2") shouldBe List(MockedResult(ResultContext("proc1-id-0-1", Map()), "logService", "0-collectedDuringServiceInvocation"))
+    results.mockedResults("out") shouldBe List(MockedResult(ResultContext("proc1-id-0-1", Map("input" -> input2, "variable1" -> "ala")), "monitor", "11"))
     MonitorEmptySink.invocationsCount.get() shouldBe 0
     LogService.invocationsCount.get() shouldBe 0
   }
@@ -84,7 +83,7 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside with BeforeAn
         )
 
     val results = FlinkTestMain.run(modelData, ProcessMarshaller.toJson(process, PrettyParams.spaces2),
-      TestData(List("0|1|2|3|4|5|6", "0|11|2|3|4|5|6").mkString("\n")), FlinkTestConfiguration.configuration, identity).results
+      TestData(List("0|1|2|3|4|5|6", "0|11|2|3|4|5|6").mkString("\n")), FlinkTestConfiguration.configuration, identity)
 
     results.nodeResults("splitId1") shouldBe List(nodeResult(0), nodeResult(1))
   }
@@ -106,7 +105,7 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside with BeforeAn
 
 
     val results = FlinkTestMain.run(modelData, ProcessMarshaller.toJson(process, PrettyParams.spaces2),
-      TestData(List("0|1|2|3|4|5|6", "0|11|2|3|4|5|6").mkString("\n")), FlinkTestConfiguration.configuration, identity).results
+      TestData(List("0|1|2|3|4|5|6", "0|11|2|3|4|5|6").mkString("\n")), FlinkTestConfiguration.configuration, identity)
 
     val nodeResults = results.nodeResults
 
@@ -123,20 +122,20 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside with BeforeAn
 
     invocationResults("cid") shouldBe
       List(
-        ExpressionInvocationResult(Context(""), "stringVal", "s"),
-        ExpressionInvocationResult(Context("proc1-id-0-0").withVariable("input", input), "keyBy", "0"),
-        ExpressionInvocationResult(Context("proc1-id-0-1").withVariable("input", input2), "keyBy", "0")
+        ExpressionInvocationResult(ResultContext("", Map()), "stringVal", "s"),
+        ExpressionInvocationResult(ResultContext("proc1-id-0-0", Map("input" -> input)), "keyBy", "0"),
+        ExpressionInvocationResult(ResultContext("proc1-id-0-1", Map("input" -> input2)), "keyBy", "0")
       )
     invocationResults("out") shouldBe
       List(
-        ExpressionInvocationResult(Context("proc1-id-0-0").withVariables(Map("input" -> input, "out" -> aggregate)), "expression", "1 0"),
-        ExpressionInvocationResult(Context("proc1-id-0-1").withVariables(Map("input" -> input2, "out" -> aggregate2)), "expression", "11 1")
+        ExpressionInvocationResult(ResultContext("proc1-id-0-0", Map("input" -> input, "out" -> aggregate)), "expression", "1 0"),
+        ExpressionInvocationResult(ResultContext("proc1-id-0-1", Map("input" -> input2, "out" -> aggregate2)), "expression", "11 1")
       )
 
     results.mockedResults("out") shouldBe
       List(
-        MockedResult(Context("proc1-id-0-0").withVariables(Map("input" -> input, "out" -> aggregate)), "monitor", "1 0"),
-        MockedResult(Context("proc1-id-0-1").withVariables(Map("input" -> input2, "out" -> aggregate2)), "monitor", "11 1")
+        MockedResult(ResultContext("proc1-id-0-0", Map("input" -> input, "out" -> aggregate)), "monitor", "1 0"),
+        MockedResult(ResultContext("proc1-id-0-1", Map("input" -> input2, "out" -> aggregate2)), "monitor", "11 1")
       )
 
   }
@@ -151,7 +150,7 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside with BeforeAn
         .sink("out", "#input", "monitor")
 
     val results = FlinkTestMain.run(modelData, ProcessMarshaller.toJson(process, PrettyParams.spaces2),
-      TestData(List("0|1|2|3|4|5|6", "0|11|2|3|4|5|6", "0|11|2|3|4|5|6", "0|11|2|3|4|5|6", "0|11|2|3|4|5|6").mkString("\n")), FlinkTestConfiguration.configuration, identity).results
+      TestData(List("0|1|2|3|4|5|6", "0|11|2|3|4|5|6", "0|11|2|3|4|5|6", "0|11|2|3|4|5|6", "0|11|2|3|4|5|6").mkString("\n")), FlinkTestConfiguration.configuration, identity)
 
     val nodeResults = results.nodeResults
 
@@ -170,7 +169,7 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside with BeforeAn
         .sink("out", "#input", "monitor")
 
     val results = FlinkTestMain.run(modelData, ProcessMarshaller.toJson(process, PrettyParams.spaces2),
-      TestData(List("0|1|2|3|4|5|6", "1|0|2|3|4|5|6", "2|2|2|3|4|5|6", "3|4|2|3|4|5|6").mkString("\n")), FlinkTestConfiguration.configuration, identity).results
+      TestData(List("0|1|2|3|4|5|6", "1|0|2|3|4|5|6", "2|2|2|3|4|5|6", "3|4|2|3|4|5|6").mkString("\n")), FlinkTestConfiguration.configuration, identity)
 
     val nodeResults = results.nodeResults
 
@@ -181,12 +180,12 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside with BeforeAn
 
     val exceptionFromExpression = results.exceptions.head
     exceptionFromExpression.nodeId shouldBe Some("filter")
-    exceptionFromExpression.context.apply[SimpleRecord]("input").id shouldBe "1"
+    exceptionFromExpression.context.variables("input").asInstanceOf[SimpleRecord].id shouldBe "1"
     exceptionFromExpression.throwable.getMessage shouldBe "/ by zero"
 
     val exceptionFromService = results.exceptions.last
     exceptionFromService.nodeId shouldBe Some("failing")
-    exceptionFromService.context.apply[SimpleRecord]("input").id shouldBe "2"
+    exceptionFromService.context.variables("input").asInstanceOf[SimpleRecord].id shouldBe "2"
     exceptionFromService.throwable.getMessage shouldBe "Thrown as expected"
   }
 
@@ -201,7 +200,7 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside with BeforeAn
         .sink("out", "#input", "monitor")
 
     val results = FlinkTestMain.run(modelData, ProcessMarshaller.toJson(process, PrettyParams.spaces2),
-      TestData(List("0|1|2|3|4|5|6", "1|0|2|3|4|5|6", "2|2|2|3|4|5|6", "3|4|2|3|4|5|6").mkString("\n")), FlinkTestConfiguration.configuration, identity).results
+      TestData(List("0|1|2|3|4|5|6", "1|0|2|3|4|5|6", "2|2|2|3|4|5|6", "3|4|2|3|4|5|6").mkString("\n")), FlinkTestConfiguration.configuration, identity)
 
     val nodeResults = results.nodeResults
 
@@ -223,7 +222,7 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside with BeforeAn
 
     val run = Future {
       FlinkTestMain.run(modelData, ProcessMarshaller.toJson(process, PrettyParams.spaces2),
-        TestData(List("2|2|2|3|4|5|6").mkString("\n")), FlinkTestConfiguration.configuration, identity).results
+        TestData(List("2|2|2|3|4|5|6").mkString("\n")), FlinkTestConfiguration.configuration, identity)
     }
 
     intercept[JobExecutionException](Await.result(run, 5 seconds))
@@ -257,14 +256,14 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside with BeforeAn
         |""".stripMargin)
 
     val results = FlinkTestMain.run(modelData, ProcessMarshaller.toJson(process, PrettyParams.spaces2),
-      testJsonData, FlinkTestConfiguration.configuration, identity).results
+      testJsonData, FlinkTestConfiguration.configuration, identity)
 
     results.nodeResults("id") should have size 3
     results.mockedResults("out") shouldBe
       List(
-        MockedResult(Context("proc1-id-0-0").withVariable("input", SimpleJsonRecord("1", "11")), "monitor", "SimpleJsonRecord(1,11)"),
-        MockedResult(Context("proc1-id-0-1").withVariable("input", SimpleJsonRecord("2", "22")), "monitor", "SimpleJsonRecord(2,22)"),
-        MockedResult(Context("proc1-id-0-2").withVariable("input", SimpleJsonRecord("3", "33")), "monitor", "SimpleJsonRecord(3,33)")
+        MockedResult(ResultContext[Any]("proc1-id-0-0", Map("input" -> SimpleJsonRecord("1", "11"))), "monitor", "SimpleJsonRecord(1,11)"),
+        MockedResult(ResultContext[Any]("proc1-id-0-1", Map("input" -> SimpleJsonRecord("2", "22"))), "monitor", "SimpleJsonRecord(2,22)"),
+        MockedResult(ResultContext[Any]("proc1-id-0-2", Map("input" -> SimpleJsonRecord("3", "33"))), "monitor", "SimpleJsonRecord(3,33)")
       )
   }
 
@@ -278,7 +277,7 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside with BeforeAn
 
     val run = Future {
       FlinkTestMain.run(modelData, ProcessMarshaller.toJson(process, PrettyParams.spaces2),
-        TestData("2|2|2|3|4|5|6"), FlinkTestConfiguration.configuration, identity).results
+        TestData("2|2|2|3|4|5|6"), FlinkTestConfiguration.configuration, identity)
     }
 
     val results = Await.result(run, 5 seconds)
@@ -303,7 +302,7 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside with BeforeAn
 
 
     val results = FlinkTestMain.run(modelData, ProcessMarshaller.toJson(process, PrettyParams.spaces2),
-      TestData(List("0|1|2|3|4|5|6").mkString("\n")), FlinkTestConfiguration.configuration, identity).results
+      TestData(List("0|1|2|3|4|5|6").mkString("\n")), FlinkTestConfiguration.configuration, identity)
 
     val nodeResults = results.nodeResults
 
@@ -329,7 +328,7 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside with BeforeAn
         recordWithSeconds(5 second),
         recordWithSeconds(9 second),
         recordWithSeconds(20 second)
-      ).mkString("\n")), FlinkTestConfiguration.configuration, identity).results
+      ).mkString("\n")), FlinkTestConfiguration.configuration, identity)
 
     val nodeResults = results.nodeResults
 
@@ -337,7 +336,8 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside with BeforeAn
 
   }
 
-  def nodeResult(count: Int, vars: (String, Any)*) = NodeResult(Context(s"proc1-id-0-$count").withVariables(Map(vars: _*)))
+  def nodeResult(count: Int, vars: (String, Any)*) 
+    = NodeResult(ResultContext[Any](s"proc1-id-0-$count", Map(vars: _*)))
 
 }
 

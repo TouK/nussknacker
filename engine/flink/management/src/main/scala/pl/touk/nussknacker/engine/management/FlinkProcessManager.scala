@@ -16,7 +16,6 @@ import org.apache.flink.runtime.messages.JobManagerMessages._
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.test.{TestData, TestResults}
-import pl.touk.nussknacker.engine.api.test.TestResultsEncoded
 import pl.touk.nussknacker.engine.flink.queryablestate.{EspQueryableClient, QueryableClientProvider}
 import pl.touk.nussknacker.engine.util.UrlUtils
 
@@ -120,8 +119,8 @@ class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeploy: Boolea
 
   override def queryableClient : EspQueryableClient = gateway.queryableClient
 
-  override def test[T](processId: String, processJson: String, testData: TestData, encoder: TestResults => T): Future[TestResultsEncoded[T]] = {
-    testRunner.test(processId, processJson, testData, encoder)
+  override def test[T](processId: String, processJson: String, testData: TestData, variableEncoder: Any => T): Future[TestResults[T]] = {
+    testRunner.test(processId, processJson, testData, variableEncoder)
   }
 
   override def findJobStatus(name: String): Future[Option[ProcessState]] = {

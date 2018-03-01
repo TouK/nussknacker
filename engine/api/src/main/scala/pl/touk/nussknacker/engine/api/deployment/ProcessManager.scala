@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.api.deployment
 
 import pl.touk.nussknacker.engine.api.deployment.test.{TestData, TestResults}
-import pl.touk.nussknacker.engine.api.test.TestResultsEncoded
 
 import scala.concurrent.Future
 
@@ -10,7 +9,7 @@ trait ProcessManager {
   //TODO: savepointPath is very flink specific, how can we handle that differently?
   def deploy(processId: String, processDeploymentData: ProcessDeploymentData, savepointPath: Option[String]) : Future[Unit]
 
-  def test[T](processId: String, json: String, testData: TestData, encoder: TestResults => T): Future[TestResultsEncoded[T]]
+  def test[T](processId: String, json: String, testData: TestData, variableEncoder: Any => T): Future[TestResults[T]]
 
   def findJobStatus(name: String) : Future[Option[ProcessState]]
 

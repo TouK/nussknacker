@@ -5,7 +5,7 @@ import argonaut.derive.{DerivedInstances, JsonSumCodec, JsonSumCodecFor, Singlet
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api.{Displayable, TypeSpecificData, UserDefinedProcessAdditionalFields}
-import pl.touk.nussknacker.engine.api.deployment.test.{ExpressionInvocationResult, MockedResult, TestResults}
+import pl.touk.nussknacker.engine.api.deployment.test.{ExceptionResult, ExpressionInvocationResult, MockedResult, TestResults}
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.definition.TestingCapabilities
@@ -108,10 +108,31 @@ trait UiCodecs extends Codecs with Argonauts with SingletonInstances with Derive
       "subprocessCounts" -> jObjectFields(subProcessCounts.mapValues(encodeNodeCount(_)).toList: _*)
     )
   }
-  
-  val testResultsEncoder : EncodeJson[TestResults] = {
 
-    val variableEncoder = BestEffortJsonEncoder(failOnUnkown = false, {
+  private def safeString(a: String) = Option(a).map(jString).getOrElse(jNull)
+
+  private implicit val exceptionInfo: EncodeJson[ExceptionResult[Json]] = EncodeJson[ExceptionResult[Json]] {
+    case ExceptionResult(ctx, nodeId, throwable) => jObjectFields(
+      "nodeId" -> nodeId.asJson,
+      "exception" -> jObjectFields(
+        "message" -> safeString(throwable.getMessage),
+        "class" -> safeString(throwable.getClass.getSimpleName)
+      ),
+      "context" -> ctx.asJson
+    )
+  }
+
+  implicit val testResultsEncoder: EncodeJson[TestResults[Json]] = EncodeJson[TestResults[Json]] {
+    case TestResults(nodeResults, invocationResults, mockedResults, exceptions, _) => jObjectFields(
+      "nodeResults" -> nodeResults.asJson,
+      "invocationResults" -> invocationResults.asJson,
+      "mockedResults" -> mockedResults.asJson,
+      "exceptions" -> exceptions.asJson
+    )
+  }
+
+  val testResultsVariableEncoder : Any => Json = {
+    BestEffortJsonEncoder(failOnUnkown = false, {
       case displayable: Displayable =>
         val prettyDisplay = displayable.display.spaces2
         def safeString(a: String) = Option(a).map(jString).getOrElse(jNull)
@@ -121,55 +142,6 @@ trait UiCodecs extends Codecs with Argonauts with SingletonInstances with Derive
           case Some(original) => jObjectFields("original" -> safeString(original), "pretty" -> safeString(prettyDisplay))
         }
     }).encode _
-
-    implicit def paramsMapEncode = EncodeJson[Map[String, Any]](map => {
-      map.filterNot(a => a._2 == None || a._2 == null).mapValues(variableEncoder).asJson
-    })
-
-    def safeString(a: String) = Option(a).map(jString).getOrElse(jNull)
-
-    implicit val ctxEncode = EncodeJson[pl.touk.nussknacker.engine.api.Context] {
-      case pl.touk.nussknacker.engine.api.Context(id, vars, _, _) => jObjectFields(
-        "id" -> safeString(id),
-        "variables" -> vars.asJson
-      )
-    }
-
-    implicit val exprInvocationResult = EncodeJson[ExpressionInvocationResult] {
-      case ExpressionInvocationResult(context, name, result) => jObjectFields(
-        "context" -> context.asJson,
-        "name" -> safeString(name),
-        "value" -> variableEncoder(result)
-      )
-    }
-
-    implicit val mockedResult = EncodeJson[MockedResult] {
-      case MockedResult(context, name, result) => jObjectFields(
-        "context" -> context.asJson,
-        "name" -> safeString(name),
-        "value" -> variableEncoder(result)
-      )
-    }
-
-    implicit val exceptionInfo = EncodeJson[EspExceptionInfo[_ <: Throwable]] {
-      case EspExceptionInfo(nodeId, throwable, ctx) => jObjectFields(
-        "nodeId" -> nodeId.asJson,
-        "exception" -> jObjectFields(
-          "message" -> safeString(throwable.getMessage),
-          "class" -> safeString(throwable.getClass.getSimpleName)
-        ),
-        "context" -> ctx.asJson
-      )
-    }
-
-    EncodeJson[TestResults] {
-      case TestResults(nodeResults, invocationResults, mockedResults, exceptions) => jObjectFields(
-        "nodeResults" -> nodeResults.asJson,
-        "invocationResults" -> invocationResults.asJson,
-        "mockedResults" -> mockedResults.asJson,
-        "exceptions" -> exceptions.asJson
-      )
-    }
   }
 
 }
