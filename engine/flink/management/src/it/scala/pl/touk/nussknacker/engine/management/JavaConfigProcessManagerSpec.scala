@@ -6,6 +6,7 @@ import argonaut.PrettyParams
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.{FunSuite, Matchers}
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
@@ -33,7 +34,7 @@ class JavaConfigProcessManagerSpec extends FunSuite with Matchers with ScalaFutu
           .emptySink("endSend", "sink")
 
     val marshaled = ProcessMarshaller.toJson(process, PrettyParams.spaces2)
-    assert(processManager.deploy(process.id, GraphProcess(marshaled), None).isReadyWithin(100 seconds))
+    assert(processManager.deploy(ProcessVersion.empty.copy(processId=process.id), GraphProcess(marshaled), None).isReadyWithin(100 seconds))
     Thread.sleep(1000)
     val jobStatus = processManager.findJobStatus(process.id).futureValue
     jobStatus.map(_.status) shouldBe Some("RUNNING")

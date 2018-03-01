@@ -2,9 +2,11 @@ package pl.touk.nussknacker.engine.process.functional
 
 import java.util.Date
 
+import org.apache.flink.shaded.testutils.org.jboss.netty.handler.codec.socks.SocksMessage.ProtocolVersion
 import org.scalatest.concurrent.Eventually
 import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.process.ProcessTestHelpers.{MockService, SimpleRecord, SinkForStrings, processInvoker}
@@ -123,6 +125,6 @@ class MetricsSpec extends FlatSpec with Matchers with Eventually with BeforeAndA
   }
 
   private def invoke(process: EspProcess, data: List[SimpleRecord]) = {
-    processInvoker.invoke(process, data, 1, TestReporterUtil.configWithTestMetrics())
+    processInvoker.invoke(process, data, ProcessVersion.empty, 1, TestReporterUtil.configWithTestMetrics())
   }
 }

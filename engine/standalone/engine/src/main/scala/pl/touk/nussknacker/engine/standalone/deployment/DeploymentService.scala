@@ -5,7 +5,7 @@ import cats.data.{NonEmptyList, ValidatedNel}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.StandaloneMetaData
+import pl.touk.nussknacker.engine.api.{ JobData, ProcessVersion, StandaloneMetaData}
 import pl.touk.nussknacker.engine.api.deployment.ProcessState
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
@@ -49,7 +49,7 @@ class DeploymentService(context: StandaloneContextPreparer, modelData: ModelData
   }
 
   def deploy(deploymentData: DeploymentData)(implicit ec: ExecutionContext): Either[NonEmptyList[DeploymentError], Unit] = {
-    val processId = deploymentData.processId
+    val processId = deploymentData.processVersion.processId
 
     toEspProcess(deploymentData.processJson).andThen { process =>
       process.metaData.typeSpecificData match {
@@ -66,7 +66,7 @@ class DeploymentService(context: StandaloneContextPreparer, modelData: ModelData
                 processRepository.add(processId, deploymentData)
                 processInterpreters.put(processId, (processInterpreter, deploymentData.deploymentTime))
                 pathToInterpreterMap.put(path.getOrElse(processId), processInterpreter)
-                processInterpreter.open()
+                processInterpreter.open(JobData(process.metaData, deploymentData.processVersion))
                 logger.info(s"Successfully deployed process $processId")
               }
               interpreter.map(_ => ())

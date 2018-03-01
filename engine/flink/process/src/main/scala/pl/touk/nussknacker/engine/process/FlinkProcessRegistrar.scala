@@ -58,7 +58,7 @@ import scala.util.{Failure, Success}
 import scala.util.control.NonFatal
 
 
-class FlinkProcessRegistrar(compileProcess: EspProcess => (ClassLoader) => CompiledProcessWithDeps,
+class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => (ClassLoader) => CompiledProcessWithDeps,
                             eventTimeMetricDuration: FiniteDuration,
                             checkpointInterval: FiniteDuration,
                             enableObjectReuse: Boolean, diskStateBackend: Option[AbstractStateBackend]
@@ -66,7 +66,7 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => (ClassLoader) => Compi
 
   implicit def millisToTime(duration: Long): Time = Time.of(duration, TimeUnit.MILLISECONDS)
 
-  def register(env: StreamExecutionEnvironment, process: EspProcess, testRunId: Option[TestRunId] = None): Unit = {
+  def register(env: StreamExecutionEnvironment, process: EspProcess, processVersion: ProcessVersion, testRunId: Option[TestRunId] = None): Unit = {
     Serializers.registerSerializers(env)
     if (enableObjectReuse) {
       env.getConfig.enableObjectReuse()
@@ -74,7 +74,7 @@ class FlinkProcessRegistrar(compileProcess: EspProcess => (ClassLoader) => Compi
     }
 
     usingRightClassloader(env) {
-      register(env, compileProcess(process), testRunId)
+      register(env, compileProcess(process, processVersion), testRunId)
     }
     initializeStateDescriptors(env)
   }

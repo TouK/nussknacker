@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.process
 import com.typesafe.config.ConfigFactory
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.{FlatSpec, Matchers}
+import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
 import pl.touk.nussknacker.engine.management.sample.DemoProcessConfigCreator
@@ -31,7 +32,7 @@ class SampleNotificationProcess extends FlatSpec with Matchers {
 
     val config = ConfigFactory.load()
 
-    new StandardFlinkProcessCompiler(creator, config).createFlinkProcessRegistrar().register(env, process)
+    new StandardFlinkProcessCompiler(creator, config).createFlinkProcessRegistrar().register(env, process, ProcessVersion.empty)
 
     Future {
       env.getConfig.disableSysoutLogging

@@ -13,6 +13,7 @@ import com.codahale.metrics.MetricRegistry
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable}
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.ProcessState
 import pl.touk.nussknacker.engine.build.StandaloneProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
@@ -37,7 +38,7 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
 
   private val testEpoch = (math.random * 10000).toLong
 
-  private def deploymentData(processJson: String) = DeploymentData(procId, processJson, testEpoch)
+  private def deploymentData(processJson: String) = DeploymentData(processJson, testEpoch, ProcessVersion.empty.copy(processId=procId))
 
   def processJson = processToJson(StandaloneProcessBuilder
     .id(procId)

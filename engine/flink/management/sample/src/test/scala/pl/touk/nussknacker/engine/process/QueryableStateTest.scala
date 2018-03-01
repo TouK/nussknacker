@@ -8,6 +8,7 @@ import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.time.{Seconds, Span}
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
+import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.flink.queryablestate.EspQueryableClient
 import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableExecutionEnvironment}
@@ -57,7 +58,7 @@ class QueryableStateTest extends FlatSpec with BeforeAndAfterAll with Matchers w
       .customNode("lock", "lockOutput", "lockStreamTransformer", "input" -> "#input")
       .emptySink("sink", "sendSms")
 
-    registrar.register(env, lockProcess)
+    registrar.register(env, lockProcess, ProcessVersion.empty)
     val jobId = env.execute().getJobID.toString
     val client = new EspQueryableClient(stoppableEnv.queryableClient(QueryStateProxyPortLow))
 

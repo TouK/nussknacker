@@ -16,9 +16,10 @@ import scala.concurrent.{ExecutionContext, Future}
 class ServiceInvokerTest extends FlatSpec with ScalaFutures with OptionValues with Matchers {
 
   implicit val metadata = MetaData("proc1", StreamMetaData())
+  val jobData = JobData(metadata, ProcessVersion.empty)
 
   it should "invoke service method with declared parameters as scala params" in {
-    val mock = new MockService
+    val mock = new MockService(jobData)
     val definition = ObjectWithMethodDef[Service](WithCategories(mock), ServiceInvoker.Extractor)
     val invoker = ServiceInvoker(definition)
 
@@ -28,7 +29,7 @@ class ServiceInvokerTest extends FlatSpec with ScalaFutures with OptionValues wi
   }
 
   it should "throw excpetion with nice message when parameters do not match" in {
-    val mock = new MockService
+    val mock = new MockService(jobData)
     val definition = ObjectWithMethodDef[Service](WithCategories(mock), ServiceInvoker.Extractor)
     val invoker = ServiceInvoker(definition)
 
@@ -37,7 +38,7 @@ class ServiceInvokerTest extends FlatSpec with ScalaFutures with OptionValues wi
   }
 
   it should "invoke service method with CompletionStage return type" in {
-    val mock = new MockCompletionStageService
+    val mock = new MockCompletionStageService(jobData)
     val definition = ObjectWithMethodDef[Service](WithCategories(mock), ServiceInvoker.Extractor)
     val invoker = ServiceInvoker(definition)
 
@@ -48,29 +49,29 @@ class ServiceInvokerTest extends FlatSpec with ScalaFutures with OptionValues wi
 
 }
 
-class MockService extends Service {
+class MockService(override val jobData: JobData) extends Service with WithJobData {
 
   @volatile var invoked: Option[(String, Int, MetaData)] = None
 
   @MethodToInvoke
   def invoke(@ParamName("foo") foo: String, @ParamName("bar") bar: Int)
-            (implicit ec: ExecutionContext, metaData: MetaData): Future[Any] = {
-    invoked = Some((foo, bar, metaData))
+            (implicit ec: ExecutionContext): Future[Any] = {
+    invoked = Some((foo, bar, jobData.metaData))
     Future.successful(Unit)
   }
 
 }
 
-class MockCompletionStageService extends Service {
+class MockCompletionStageService(override val jobData: JobData) extends Service with WithJobData {
 
   @volatile var invoked: Option[(String, Int, MetaData)] = None
 
   @MethodToInvoke
   def invoke(@ParamName("foo") foo: String, @ParamName("bar") bar: Int)
-            (implicit executor: Executor, metaData: MetaData): java.util.concurrent.CompletionStage[Any] = {
+            (implicit executor: Executor): java.util.concurrent.CompletionStage[Any] = {
     java.util.concurrent.CompletableFuture.supplyAsync(new Supplier[Any] {
       override def get() = {
-        invoked = Some((foo, bar, metaData))
+        invoked = Some((foo, bar, jobData.metaData))
       }
     }, executor)
   }

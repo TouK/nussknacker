@@ -14,7 +14,6 @@ import scala.concurrent.{ExecutionContext, Future}
 class ServiceQuerySpec extends FunSuite with Matchers with ScalaFutures {
 
   import QueryServiceTesting._
-  import ServiceQuery.Implicits.metaData
   import ServiceQuerySpec._
 
   import ExecutionContext.Implicits.global
@@ -79,15 +78,15 @@ object QueryServiceTesting {
 
   object InvokeService {
     def apply(service: Service, args: (String, Any)*)
-             (implicit executionContext: ExecutionContext, metaData: MetaData): Future[QueryResult] = {
+             (implicit executionContext: ExecutionContext): Future[QueryResult] = {
       CreateQuery("srv", service)
         .invoke("srv", args: _*)
     }
   }
 
-  object CreateQuery {
-    def apply(serviceName: String, service: Service)
-             (implicit executionContext: ExecutionContext, metaData: MetaData): ServiceQuery = {
+  object CreateQuery{
+    def apply(serviceName:String,service:Service)
+             (implicit executionContext: ExecutionContext): ServiceQuery = {
       new ServiceQuery(LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator {
         override def services(config: Config): Map[String, WithCategories[Service]] =
           super.services(config) ++ Map(serviceName -> WithCategories(service))

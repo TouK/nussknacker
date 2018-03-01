@@ -5,6 +5,7 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.{FlatSpec, Matchers}
+import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.spel
@@ -71,7 +72,7 @@ class StandaloneProcessInterpreterSpec extends FlatSpec with Matchers with Event
     val metricRegistry = new MetricRegistry
 
     val interpreter = prepareInterpreter(process, creator, metricRegistry)
-    interpreter.open()
+    interpreter.open(JobData(process.metaData, ProcessVersion.empty))
     val result = interpreter.invoke(Request1("a", "b")).futureValue
 
     result shouldBe Right(List(Response("alamakota")))
@@ -122,7 +123,7 @@ class StandaloneProcessInterpreterSpec extends FlatSpec with Matchers with Event
     val metricRegistry = new MetricRegistry
 
     val interpreter = prepareInterpreter(process, metricRegistry = metricRegistry)
-    interpreter.open()
+    interpreter.open(JobData(process.metaData, ProcessVersion.empty))
     val result = interpreter.invoke(Request1("a", "b")).futureValue
 
     result shouldBe Right(List("initialized!"))
@@ -146,7 +147,7 @@ class StandaloneProcessInterpreterSpec extends FlatSpec with Matchers with Event
       creator = creator,
       metricRegistry = metricRegistry
     )
-    interpreter.open()
+    interpreter.open(JobData(process.metaData,ProcessVersion.empty))
     val result = interpreter.invoke(input).futureValue
     interpreter.close()
     result

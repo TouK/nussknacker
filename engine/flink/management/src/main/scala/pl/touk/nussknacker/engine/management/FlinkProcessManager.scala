@@ -14,6 +14,7 @@ import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import org.apache.flink.runtime.messages.JobManagerMessages
 import org.apache.flink.runtime.messages.JobManagerMessages._
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.test.{TestData, TestResults}
 import pl.touk.nussknacker.engine.flink.queryablestate.{EspQueryableClient, QueryableClientProvider}
@@ -84,8 +85,9 @@ class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeploy: Boolea
 
   private val modelJar = new FlinkModelJar
 
-  override def deploy(processId: String, processDeploymentData: ProcessDeploymentData, savepointPath: Option[String]) = {
-    val program = prepareProgram(processId, processDeploymentData)
+  override def deploy(processVersion: ProcessVersion, processDeploymentData: ProcessDeploymentData, savepointPath: Option[String]) = {
+    val processId = processVersion.processId
+    val program = prepareProgram(processVersion, processDeploymentData)
 
     import cats.data.OptionT
     import cats.implicits._
@@ -94,7 +96,7 @@ class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeploy: Boolea
       maybeOldJob <- OptionT(findJobStatus(processId))
       maybeSavePoint <- {
         { logger.debug(s"Deploying $processId. Status: $maybeOldJob") }
-        OptionT.liftF(stopSavingSavepoint(processId, maybeOldJob, processDeploymentData))
+        OptionT.liftF(stopSavingSavepoint(processVersion, maybeOldJob, processDeploymentData))
       }
     } yield {
       logger.info(s"Deploying $processId. Saving savepoint finished")
@@ -145,17 +147,18 @@ class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeploy: Boolea
     modelData.configCreator.buildInfo().asJson.pretty(PrettyParams.spaces2.copy(preserveOrder = true))
   }
 
-  private def checkIfJobIsCompatible(processId: String, savepointPath: String, processDeploymentData: ProcessDeploymentData) : Future[Unit] = processDeploymentData match {
-    case GraphProcess(processAsJson) if shouldVerifyBeforeDeploy =>
-      verification.verify(processId, processAsJson, savepointPath)
-    case _ => Future.successful(())
-  }
+  private def checkIfJobIsCompatible(savepointPath: String, processDeploymentData: ProcessDeploymentData, processVersion: ProcessVersion): Future[Unit] =
+    processDeploymentData match {
+      case GraphProcess(processAsJson) if shouldVerifyBeforeDeploy =>
+        verification.verify(processVersion, processAsJson, savepointPath)
+      case _ => Future.successful(())
+    }
 
 
-  private def stopSavingSavepoint(processId: String, job: ProcessState, processDeploymentData: ProcessDeploymentData): Future[String] = {
+  private def stopSavingSavepoint(processVersion: ProcessVersion, job: ProcessState, processDeploymentData: ProcessDeploymentData): Future[String] = {
     for {
       savepointPath <- makeSavepoint(job, None)
-      _ <- checkIfJobIsCompatible(processId, savepointPath, processDeploymentData)
+      _ <- checkIfJobIsCompatible(savepointPath, processDeploymentData, processVersion)
       _ <- cancel(job)
     } yield savepointPath
   }
@@ -185,19 +188,20 @@ class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeploy: Boolea
     gateway.invokeJobManager[RunningJobsStatus](JobManagerMessages.getRequestRunningJobsStatus)
   }
 
-  private def prepareProgram(processId: String, processDeploymentData: ProcessDeploymentData) : PackagedProgram = {
+  private def prepareProgram(processVersion: ProcessVersion, processDeploymentData: ProcessDeploymentData) : PackagedProgram = {
     val configPart = modelData.processConfig.root().render()
-
     val jarFile = modelJar.buildJobJar(modelData)
     processDeploymentData match {
       case GraphProcess(processAsJson) =>
-        new PackagedProgram(jarFile, "pl.touk.nussknacker.engine.process.runner.FlinkProcessMain", List(processAsJson, configPart, buildInfoJson):_*)
+        new PackagedProgram(jarFile, "pl.touk.nussknacker.engine.process.runner.FlinkProcessMain", List(processAsJson, toJsonString(processVersion), configPart, buildInfoJson):_*)
       case CustomProcess(mainClass) =>
-        new PackagedProgram(jarFile, mainClass, List(processId, configPart, buildInfoJson): _*)
+        new PackagedProgram(jarFile, mainClass, List(processVersion.processId, configPart, buildInfoJson): _*)
     }
   }
 
-
-
+  private def toJsonString(processVersion: ProcessVersion) = {
+    import argonaut.ArgonautShapeless._
+    processVersion.asJson.toString()
+  }
 }
 

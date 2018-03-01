@@ -6,6 +6,7 @@ import argonaut.PrettyParams
 import com.codahale.metrics.MetricRegistry
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{FlatSpec, Matchers}
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.build.StandaloneProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
@@ -99,6 +100,6 @@ class DeploymentServiceSpec extends FlatSpec with Matchers {
         .exceptionHandler()
         .source("start", "request1-post-source")
         .sink("endNodeIID", "''", "response-sink"))
-    DeploymentData(id, new ProcessMarshaller().toJson(canonical, PrettyParams.spaces2), 0)
+    DeploymentData(new ProcessMarshaller().toJson(canonical, PrettyParams.spaces2), 0, ProcessVersion.empty.copy(processId = id))
   }
 }

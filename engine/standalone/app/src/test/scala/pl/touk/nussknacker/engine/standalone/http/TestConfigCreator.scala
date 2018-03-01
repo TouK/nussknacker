@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.standalone.http
 import argonaut.Argonaut.{jArrayElements, jObjectFields, jString}
 import argonaut.{DecodeJson, Json}
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.api.{MethodToInvoke, Service}
+import pl.touk.nussknacker.engine.api.{JobData, MethodToInvoke, Service}
 import pl.touk.nussknacker.engine.api.process.{SinkFactory, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.api.test.TestDataParser
 import pl.touk.nussknacker.engine.standalone.api.{ResponseEncoder, StandaloneGetFactory}
@@ -63,7 +63,7 @@ object LifecycleService extends Service with StandaloneContextLifecycle {
   var closed: Boolean = false
 
 
-  override def open(context: StandaloneContext): Unit = {
+  override def open(jobData: JobData, context: StandaloneContext): Unit = {
     opened = true
   }
 

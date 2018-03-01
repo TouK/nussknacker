@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.db.entity
 import java.sql.Timestamp
 
 import db.migration.DefaultJdbcProfile.profile.api._
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, GraphProcess, ProcessDeploymentData}
 import pl.touk.nussknacker.ui.db.EspTables
 import slick.sql.SqlProfile.ColumnOption.NotNull
@@ -35,7 +36,6 @@ object ProcessVersionEntity {
       onDelete = ForeignKeyAction.Cascade
     )
   }
-
   case class ProcessVersionEntityData(
                                        id: Long,
                                        processId: String,
@@ -50,7 +50,14 @@ object ProcessVersionEntity {
       case (None, Some(mc)) => CustomProcess(mc)
       case _ => throw new IllegalStateException(s"Process version has neither json nor mainClass. ${this}")
     }
-  }
+
+    def toProcessVersion: ProcessVersion = ProcessVersion(
+      versionId = id,
+      processId = processId,
+      user = user,
+      modelVersion = modelVersion
+    )
+}
 
 }
 

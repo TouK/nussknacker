@@ -166,10 +166,10 @@ case class StandaloneProcessInterpreter(context: StandaloneContext,
     }
   }
 
-  def open(): Unit = modelData.withThisAsContextClassLoader {
+  def open(jobData: JobData): Unit = modelData.withThisAsContextClassLoader {
     lifecycle.foreach {
-      case a:StandaloneContextLifecycle => a.open(context)
-      case a => a.open()
+      case a:StandaloneContextLifecycle => a.open(jobData, context)
+      case a => a.open(jobData)
     }
   }
 

@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.engine.marshall
 
-import argonaut.{EncodeJson, PrettyParams, _}
+import argonaut._
 import Argonaut._
 import ArgonautShapeless._
 import argonaut.derive._
 import cats.data.Validated
-import pl.touk.nussknacker.engine.api.{MetaData, TypeSpecificData, UserDefinedProcessAdditionalFields}
+import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, TypeSpecificData, UserDefinedProcessAdditionalFields}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode._
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
@@ -104,6 +104,10 @@ class ProcessMarshaller(implicit
   def toJson(node: EspProcess, prettyParams: PrettyParams) : String = {
     val canonical = ProcessCanonizer.canonize(node)
     toJson(canonical, prettyParams)
+  }
+
+  def parseProcessVersion(json:String): Validated[String, ProcessVersion] = {
+    Validated.fromEither(json.decodeEither[ProcessVersion])
   }
 
   def toJson(canonical: CanonicalProcess, prettyParams: PrettyParams): String = {

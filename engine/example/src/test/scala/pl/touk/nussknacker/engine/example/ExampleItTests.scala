@@ -5,7 +5,9 @@ import java.time.{LocalDateTime, ZoneId}
 
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers, Suite}
+import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.{KafkaSpec, KafkaUtils}
 import pl.touk.nussknacker.engine.spel
 
@@ -27,8 +29,8 @@ trait ExampleItTest1 extends FlatSpec with BeforeAndAfterAll with Matchers with 
   it should "filter events and save to kafka" in {
     sendTransaction(Transaction("ClientA", 1))
     sendTransaction(Transaction("ClientB", 2))
+    register(this, process())
 
-    registrar.register(env, process())
     env.execute(process().id)
 
     val consumer = kafkaClient.createConsumer()
@@ -64,7 +66,8 @@ trait ExampleItTest2 extends FlatSpec with BeforeAndAfterAll with Matchers with 
     sendTransaction(Transaction("Client1", 1))
     sendTransaction(Transaction("Client2", 2))
 
-    registrar.register(env, process())
+    register(this, process())
+
     env.execute(process().id)
 
     val consumer = kafkaClient.createConsumer()
@@ -101,7 +104,8 @@ trait ExampleItTest3 extends FlatSpec with BeforeAndAfterAll with Matchers with 
     sendTransaction(Transaction("Client2", 9))
     sendTransaction(Transaction("Client3", 13))
 
-    registrar.register(env, process())
+    register(this, process())
+
     env.execute(process().id)
 
     val consumer = kafkaClient.createConsumer()
@@ -148,7 +152,7 @@ trait ExampleItTest4 extends FlatSpec with BeforeAndAfterAll with Matchers with 
     sendTransaction(Transaction("Client3", 1, toEpoch(now.plusMinutes(72))))
     sendTransaction(Transaction("Client3", 2, toEpoch(now.plusMinutes(72 + windowLengthMinutes - 2))))
 
-    registrar.register(env, process())
+    register(this, process())
     env.execute(process().id)
 
     val consumer = kafkaClient.createConsumer()
@@ -162,6 +166,9 @@ trait ExampleItTest4 extends FlatSpec with BeforeAndAfterAll with Matchers with 
 }
 
 trait ExampleItTest { self: KafkaSpec =>
+  def register(self:BaseITest, process: EspProcess):Unit= {
+    self.registrar.register(self.env, process, ProcessVersion.empty)
+  }
 
   def sendTransaction(t: Transaction) = {
     kafkaClient.sendMessage("topic.transaction", t.display.nospaces)

@@ -23,16 +23,16 @@ class ExpressionServiceQuery(
   import ExpressionServiceQuery._
 
   def invoke(serviceName: String, args: (String, Expression)*)
-            (implicit executionContext: ExecutionContext, metaData: MetaData): Future[QueryResult] = {
+            (implicit executionContext: ExecutionContext): Future[QueryResult] = {
     val params = args.map(pair => evaluatedparam.Parameter(pair._1, pair._2)).toList
     invoke(serviceName, params)
   }
 
   def invoke(serviceName: String,params: List[evaluatedparam.Parameter])
-            (implicit executionContext: ExecutionContext, metaData: MetaData): Future[QueryResult] = {
+            (implicit executionContext: ExecutionContext): Future[QueryResult] = {
     expressionCompiler.compileValidatedObjectParameters(params, Some(ValidationContext.empty)) match {
       case Valid(p) => expressionEvaluator
-        .evaluateParameters(p, ctx)
+        .evaluateParameters(p, ctx)(nodeId,ServiceQuery.jobData.metaData, executionContext)
         .flatMap {
           case (_, vars) =>
             serviceQuery

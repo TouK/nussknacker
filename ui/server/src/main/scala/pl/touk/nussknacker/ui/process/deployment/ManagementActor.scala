@@ -107,14 +107,13 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
   }
 
   private def deployAndSaveProcess(processingType: ProcessingType, latestVersion: ProcessVersionEntityData, savepointPath: Option[String])(implicit user: LoggedUser): Future[Unit] = {
-    val processId = latestVersion.processId
     val resolvedDeploymentData = resolveDeploymentData(latestVersion.deploymentData)
     val processManagerValue = managers(processingType)
 
     for {
       deploymentResolved <- resolvedDeploymentData
-      _ <- processManagerValue.deploy(processId, deploymentResolved, savepointPath)
-      _ <- deployedProcessRepository.markProcessAsDeployed(processId, latestVersion.id, processingType, user.id, environment)
+      _ <- processManagerValue.deploy(latestVersion.toProcessVersion, deploymentResolved, savepointPath)
+      _ <- deployedProcessRepository.markProcessAsDeployed(latestVersion.processId, latestVersion.id, processingType, user.id, environment)
     } yield ()
   }
 

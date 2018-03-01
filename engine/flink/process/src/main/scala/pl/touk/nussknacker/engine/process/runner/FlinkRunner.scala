@@ -4,21 +4,26 @@ import java.nio.charset.StandardCharsets
 
 import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.config.{Config, ConfigFactory}
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.conversion.ProcessConfigCreatorMapping
 import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.engine.util.loader.ProcessConfigCreatorLoader
 
 trait FlinkRunner {
 
   private val ProcessMarshaller = new ProcessMarshaller
 
+  protected def parseProcessVersion(json: String): ProcessVersion =
+    ProcessMarshaller.parseProcessVersion(json) match {
+      case Valid(p) => p
+      case Invalid(err) => throw new IllegalArgumentException(s"ProcessVersion parse error $err")
+    }
 
   protected def readConfigFromArgs(args: Array[String]): Config = {
-    val optionalConfigArg = if (args.length > 1) Some(args(1)) else None
+    val optionalConfigArg = if (args.length > 2) Some(args(2)) else None
     readConfigFromArg(optionalConfigArg)
   }
 

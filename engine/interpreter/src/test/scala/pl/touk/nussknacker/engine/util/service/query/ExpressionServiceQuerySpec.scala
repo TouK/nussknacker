@@ -10,7 +10,6 @@ import pl.touk.nussknacker.engine.util.service.query.QueryServiceTesting.CreateQ
 import pl.touk.nussknacker.engine.util.service.query.ServiceQuerySpec.ConcatService
 
 class ExpressionServiceQuerySpec extends FlatSpec with Matchers with ScalaFutures {
-  import ServiceQuery.Implicits.metaData
   import pl.touk.nussknacker.engine.spel.Implicits._
 
   override def spanScaleFactor: Double = 2

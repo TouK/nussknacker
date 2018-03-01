@@ -90,8 +90,8 @@ class EnricherWithOpenService extends Service with TimeMeasuringService {
   override protected def serviceName = "enricherWithOpenService"
   var internalVar: String = _
 
-  override def open(): Unit = {
-    super.open()
+  override def open(jobData: JobData): Unit = {
+    super.open(jobData)
     internalVar = "initialized!"
   }
 

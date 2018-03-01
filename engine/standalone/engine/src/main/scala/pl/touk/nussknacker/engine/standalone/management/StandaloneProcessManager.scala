@@ -7,7 +7,7 @@ import com.codahale.metrics.MetricRegistry
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.EndingReference
+import pl.touk.nussknacker.engine.api.{EndingReference, ProcessVersion}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.test.{TestData, TestResults}
 import pl.touk.nussknacker.engine.api.process.SourceFactory
@@ -41,14 +41,14 @@ class StandaloneProcessManager(modelData: ModelData, client: StandaloneProcessCl
 
   import argonaut.ArgonautShapeless._
 
-  override def deploy(processId: String, processDeploymentData: ProcessDeploymentData,
+  override def deploy(processVersion: ProcessVersion, processDeploymentData: ProcessDeploymentData,
                       savepointPath: Option[String]): Future[Unit] = {
     savepointPath match {
       case Some(_) => Future.failed(new UnsupportedOperationException("Cannot make savepoint on standalone process"))
       case None =>
         processDeploymentData match {
           case GraphProcess(processAsJson) =>
-            client.deploy(DeploymentData(processId, processAsJson, System.currentTimeMillis()))
+            client.deploy(DeploymentData(processAsJson, System.currentTimeMillis(), processVersion))
           case CustomProcess(mainClass) =>
             Future.failed(new UnsupportedOperationException("custom process in standalone engine is not supported"))
         }

@@ -29,11 +29,11 @@ class ServiceQuery(modelData: ModelData) {
     }
 
   def invoke(serviceName: String, serviceParameters: (String, Any)*)
-            (implicit executionContext: ExecutionContext, metaData: MetaData): Future[QueryResult] = {
+            (implicit executionContext: ExecutionContext): Future[QueryResult] = {
     val methodDef: ObjectWithMethodDef = serviceMethodMap
       .getOrElse(serviceName, throw ServiceNotFoundException(serviceName))
     val lifecycle = closableService(methodDef)
-    lifecycle.open()
+    lifecycle.open(jobData)
     val runId = TestRunId(UUID.randomUUID().toString)
     val collector = QueryServiceInvocationCollector(serviceName).enable(runId)
     val invocationResult = ServiceInvoker(methodDef, Some(collector)).invoke(serviceParameters.toMap, dummyNodeContext)
@@ -65,15 +65,12 @@ object ServiceQuery {
     nodeId = "dummyNodeId",
     ref = "dummyRef"
   )
+  implicit val metaData: MetaData = MetaData(
+    id = "testProcess",
+    typeSpecificData = StandaloneMetaData(None),
+    additionalFields = None
+  )
+  val jobData = JobData(metaData, ProcessVersion.empty)
 
   case class ServiceNotFoundException(serviceName: String) extends RuntimeException(s"service $serviceName not found")
-
-  object Implicits {
-    implicit val metaData: MetaData = MetaData(
-      id = "testProcess",
-      typeSpecificData = StandaloneMetaData(None),
-      additionalFields = None
-    )
-  }
-
 }

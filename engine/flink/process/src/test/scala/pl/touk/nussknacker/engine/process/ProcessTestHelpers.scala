@@ -41,14 +41,13 @@ object ProcessTestHelpers {
   object processInvoker {
 
     def invoke(process: EspProcess, data: List[SimpleRecord],
-               parallelism: Int = 1, config: Configuration = new Configuration()) = {
-
+               processVersion: ProcessVersion=ProcessVersion.empty,parallelism: Int = 1, config: Configuration = new Configuration()) = {
       FlinkTestConfiguration.addQueryableStatePortRanges(config)
       val env = StreamExecutionEnvironment.createLocalEnvironment(parallelism, config)
       val creator = prepareCreator(env.getConfig, data)
       env.getConfig.disableSysoutLogging
 
-      new StandardFlinkProcessCompiler(creator, ConfigFactory.load()).createFlinkProcessRegistrar().register(env, process)
+      new StandardFlinkProcessCompiler(creator, ConfigFactory.load()).createFlinkProcessRegistrar().register(env, process, processVersion)
 
       MockService.clear()
       env.execute(process.id)
@@ -197,8 +196,8 @@ object ProcessTestHelpers {
 
     var internalVar: String = _
 
-    override def open(): Unit = {
-      super.open()
+    override def open(jobData: JobData): Unit = {
+      super.open(jobData)
       internalVar = "initialized!"
     }
 

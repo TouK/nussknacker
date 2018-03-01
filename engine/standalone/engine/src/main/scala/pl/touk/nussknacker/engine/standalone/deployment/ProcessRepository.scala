@@ -3,6 +3,8 @@ package pl.touk.nussknacker.engine.standalone.deployment
 import java.io.{File, PrintWriter}
 import java.nio.charset.StandardCharsets
 
+import argonaut.{DecodeJson, EncodeJson}
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.standalone.api.DeploymentData
 
 import scala.io.Source
@@ -41,9 +43,9 @@ object FileProcessRepository {
 class FileProcessRepository(path: File) extends ProcessRepository {
 
   val UTF8 = "UTF-8"
-
-  import argonaut.Argonaut._
-  import argonaut.ArgonautShapeless._
+  import argonaut._
+  import Argonaut._
+  import ArgonautShapeless._
 
   override def add(id: String, deploymentData: DeploymentData) = {
     val outFile = new File(path, id)

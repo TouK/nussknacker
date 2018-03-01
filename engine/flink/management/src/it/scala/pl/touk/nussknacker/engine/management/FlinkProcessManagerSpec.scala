@@ -9,6 +9,7 @@ import com.typesafe.config.ConfigValueFactory
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.{FlatSpec, Matchers}
+import pl.touk.nussknacker.engine.api.{ ProcessVersion}
 import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, GraphProcess}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaClient
@@ -28,7 +29,7 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
 
     val process = SampleProcess.prepareProcess(processId)
 
-    deployProcessAndWaitIfRunning(process)
+    deployProcessAndWaitIfRunning(process, empty(process.id))
 
     cancel(processId)
   }
@@ -38,9 +39,9 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
 
     val process = SampleProcess.prepareProcess(processId)
 
-    deployProcessAndWaitIfRunning(process)
+    deployProcessAndWaitIfRunning(process, empty(process.id))
 
-    deployProcessAndWaitIfRunning(process)
+    deployProcessAndWaitIfRunning(process, empty(process.id))
 
     cancel(processId)
   }
@@ -61,12 +62,12 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
     kafkaClient.createTopic(inTopic, 1)
     val consumer = kafkaClient.createConsumer().consume(outTopic)
 
-    deployProcessAndWaitIfRunning(kafkaProcess)
+    deployProcessAndWaitIfRunning(kafkaProcess, empty(processId))
 
     kafkaClient.producer.send(new ProducerRecord[String, String](inTopic, "1"))
     new String(consumer.head.message(), StandardCharsets.UTF_8) shouldBe "1"
 
-    deployProcessAndWaitIfRunning(kafkaProcess)
+    deployProcessAndWaitIfRunning(kafkaProcess, empty(processId))
 
     kafkaClient.producer.send(new ProducerRecord[String, String](inTopic, "2"))
 
@@ -86,9 +87,9 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
       config.getString("processConfig.kafka.zkAddress"))
     kafkaClient.createTopic(outTopic, 1)
 
-    deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart)
+    deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId))
     Thread.sleep(3000)
-    deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart)
+    deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId))
 
     val messages = kafkaClient.createConsumer().consume(outTopic).take(2).toList
 
@@ -110,7 +111,7 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
 
     kafkaClient.createTopic(outTopic, 1)
 
-    deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart)
+    deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId))
     Thread.sleep(3000)
 
     val dir = new File("/tmp").toURI.toString
@@ -119,7 +120,7 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
 
     cancel(processId)
 
-    deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, Some(savepointPath.futureValue))
+    deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId), Some(savepointPath.futureValue))
 
     val messages = kafkaClient.createConsumer().consume(outTopic).take(2).toList
 
@@ -135,20 +136,21 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
 
     val process = StatefulSampleProcess.prepareProcessStringWithStringState(processId)
 
-    deployProcessAndWaitIfRunning(process)
+    deployProcessAndWaitIfRunning(process, empty(process.id))
 
     val newMarshalled = ProcessMarshaller.toJson(StatefulSampleProcess.prepareProcessWithLongState(processId), PrettyParams.spaces2)
-    val exception = processManager.deploy(process.id, GraphProcess(newMarshalled), None).failed.futureValue
+    val exception = processManager.deploy(empty(process.id), GraphProcess(newMarshalled), None).failed.futureValue
 
     exception.getMessage shouldBe "State is incompatible, please stop process and start again with clean state"
 
     cancel(processId)
   }
 
+  def empty(processId: String): ProcessVersion = ProcessVersion.empty.copy(processId=processId)
   it should "deploy custom process" in {
     val processId = "customProcess"
 
-    assert(processManager.deploy(processId, CustomProcess("pl.touk.nussknacker.engine.management.sample.CustomProcess"), None).isReadyWithin(100 seconds))
+    assert(processManager.deploy(empty(processId), CustomProcess("pl.touk.nussknacker.engine.management.sample.CustomProcess"), None).isReadyWithin(100 seconds))
 
     val jobStatus = processManager.findJobStatus(processId).futureValue
     jobStatus.map(_.status) shouldBe Some("RUNNING")
@@ -185,9 +187,9 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
     signalJson.field("action").get.field("lockId").get.nospaces shouldBe "\"test-lockId\""
   }
 
-  private def deployProcessAndWaitIfRunning(process: EspProcess, savepointPath : Option[String] = None) = {
+  private def deployProcessAndWaitIfRunning(process: EspProcess, processVersion: ProcessVersion, savepointPath : Option[String] = None) = {
     val marshaled = ProcessMarshaller.toJson(process, PrettyParams.spaces2)
-    assert(processManager.deploy(process.id, GraphProcess(marshaled), savepointPath).isReadyWithin(100 seconds))
+    assert(processManager.deploy(processVersion, GraphProcess(marshaled), savepointPath).isReadyWithin(100 seconds))
     Thread.sleep(1000)
     val jobStatus = processManager.findJobStatus(process.id).futureValue
     jobStatus.map(_.status) shouldBe Some("RUNNING")

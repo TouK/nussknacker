@@ -60,11 +60,11 @@ object KeyValueTestHelper {
       override def buildInfo(): Map[String, String] = Map.empty
     }
 
-    def invokeWithKafka(process: EspProcess, config: KafkaConfig) = {
+    def invokeWithKafka(process: EspProcess, config: KafkaConfig, processVersion: ProcessVersion = ProcessVersion.empty) = {
       val env = StreamExecutionEnvironment.createLocalEnvironment(1, FlinkTestConfiguration.configuration)
       val creator = prepareCreator(env.getConfig, List.empty, config)
       val configuration = ConfigFactory.load()
-      new StandardFlinkProcessCompiler(creator, configuration).createFlinkProcessRegistrar().register(env, process)
+      new StandardFlinkProcessCompiler(creator, configuration).createFlinkProcessRegistrar().register(env, process, processVersion)
       MockService.data.clear()
       env.execute()
     }

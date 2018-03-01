@@ -21,7 +21,6 @@ class ServiceQueryOpenCloseSpec
   import ServiceQueryOpenCloseSpec._
 
   private implicit val executionContext: ExecutionContextExecutor = ExecutionContext.Implicits.global
-  private implicit val metaData: MetaData = ServiceQuery.Implicits.metaData
 
   it should "open and close service" in {
     val service = createService
@@ -55,9 +54,9 @@ object ServiceQueryOpenCloseSpec {
     var wasOpen = false
     var wasClose = false
 
-    override def open(): Unit = {
+    override def open(jobData: JobData): Unit = {
       wasOpen = true
-      super.open()
+      super.open(jobData)
     }
 
     override def close(): Unit = {

@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.api.helpers
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
 
 import com.typesafe.config.ConfigFactory
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{ProcessDeploymentData, ProcessState}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.management.{FlinkModelData, FlinkProcessManager}
@@ -64,7 +65,7 @@ object TestFactory {
 
     import ExecutionContext.Implicits.global
 
-    override def deploy(processId: String, processDeploymentData: ProcessDeploymentData, savepoint: Option[String]): Future[Unit] = Future {
+    override def deploy(processId: ProcessVersion, processDeploymentData: ProcessDeploymentData, savepoint: Option[String]): Future[Unit] = Future {
       Thread.sleep(sleepBeforeAnswer.get())
       if (failDeployment.get()) {
         throw new RuntimeException("Failing deployment...")

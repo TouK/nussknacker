@@ -28,8 +28,6 @@ class ServiceRoutes(modelDataMap: Map[ProcessingType, ModelData])
   import ServiceRoutes._
   import pl.touk.nussknacker.ui.codec.UiCodecs._
 
-  private implicit val metaData: MetaData = ServiceQuery.Implicits.metaData
-
   private implicit def serviceExceptionHandler: ExceptionHandler =
     ExceptionHandler {
       case e@ServiceNotFoundException(serviceName) =>

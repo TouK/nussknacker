@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.standalone.management
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.{FunSuite, Matchers}
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.ProcessState
 import pl.touk.nussknacker.engine.standalone.api.DeploymentData
 
@@ -20,7 +21,7 @@ class MultiInstanceStandaloneProcessClientSpec extends FunSuite with Matchers wi
     }
 
     override def deploy(deploymentData: DeploymentData): Future[Unit] = {
-      deploymentData.processId shouldBe id
+      deploymentData.processVersion.processId shouldBe id
       Future.failed(failure)
     }
 
@@ -35,14 +36,14 @@ class MultiInstanceStandaloneProcessClientSpec extends FunSuite with Matchers wi
 
     val multiClient = new MultiInstanceStandaloneProcessClient(List(okClient(), okClient()))
 
-    multiClient.deploy(DeploymentData(id, "json", 1000)).futureValue shouldBe (())
+    multiClient.deploy(DeploymentData("json", 1000, ProcessVersion.empty.copy(processId=id))).futureValue shouldBe (())
 
   }
 
   test("Deployment should fail when one part fails") {
     val multiClient = new MultiInstanceStandaloneProcessClient(List(okClient(), failClient))
 
-    multiClient.deploy(DeploymentData(id, "json", 1000)).failed.futureValue shouldBe failure
+    multiClient.deploy(DeploymentData("json", 1000, ProcessVersion.empty.copy(processId=id))).failed.futureValue shouldBe failure
 
   }
 
@@ -100,7 +101,7 @@ class MultiInstanceStandaloneProcessClientSpec extends FunSuite with Matchers wi
     }
 
     override def deploy(deploymentData: DeploymentData): Future[Unit] = {
-      deploymentData.processId shouldBe id
+      deploymentData.processVersion.processId shouldBe id
       deploymentData.deploymentTime shouldBe expectedTime
       Future.successful(())
     }

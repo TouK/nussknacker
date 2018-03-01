@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.process.compiler
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.ValidatedNel
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.api.ProcessListener
+import pl.touk.nussknacker.engine.api.{JobData, ProcessListener, ProcessVersion}
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import pl.touk.nussknacker.engine.compile._
@@ -27,7 +27,7 @@ abstract class FlinkProcessCompiler(creator: ProcessConfigCreator, config: Confi
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import pl.touk.nussknacker.engine.util.Implicits._
 
-  def compileProcess(process: EspProcess)(userCodeClassLoader: ClassLoader): CompiledProcessWithDeps = {
+  def compileProcess(process: EspProcess, processVersion: ProcessVersion)(userCodeClassLoader: ClassLoader): CompiledProcessWithDeps = {
 
     //TODO: this should be somewhere else?
     val timeout = config.as[FiniteDuration]("timeout")
@@ -47,11 +47,12 @@ abstract class FlinkProcessCompiler(creator: ProcessConfigCreator, config: Confi
       compiledProcess.parts.exceptionHandler.asInstanceOf[FlinkEspExceptionHandler])
 
     new CompiledProcessWithDeps(
-      compiledProcess,
-      listeningExceptionHandler,
-      new FlinkProcessSignalSenderProvider(signalSenders),
-      asyncExecutionContextPreparer,
-      timeout
+      compiledProcess = compiledProcess,
+      jobData = JobData(process.metaData, processVersion),
+      exceptionHandler = listeningExceptionHandler,
+      signalSenders = new FlinkProcessSignalSenderProvider(signalSenders),
+      asyncExecutionContextPreparer = asyncExecutionContextPreparer,
+      processTimeout = timeout
     )
   }
 
