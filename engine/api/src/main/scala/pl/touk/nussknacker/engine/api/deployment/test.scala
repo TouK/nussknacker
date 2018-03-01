@@ -48,9 +48,9 @@ object test {
 
   case class NodeResult[+T](context: ResultContext[T])
 
-  case class ExpressionInvocationResult[+T](context: ResultContext[T], name: String, result: T)
+  case class ExpressionInvocationResult[+T](context: ResultContext[T], name: String, value: T)
 
-  case class MockedResult[+T](context: ResultContext[T], name: String, result: T)
+  case class MockedResult[+T](context: ResultContext[T], name: String, value: T)
 
   case class ExceptionResult[+T](context: ResultContext[T], nodeId: Option[String], throwable: Throwable)
 
