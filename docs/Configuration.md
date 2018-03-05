@@ -28,7 +28,6 @@ categoriesConfig: {
 usersFile: "./conf/users.conf"
 environment: "demo"
 attachmentsPath: "/tmp/touk/esp-frontend/attachments"
-testSampleSize=50
 
 flinkConfig {
   customConfig {
@@ -112,7 +111,6 @@ akka {
 * usersFile - location of file with user configuration
 * environment - key of environment (used e.g. for alerts) - e.g. test or production
 * attachmentsPath - location on disk where attachments will be stored 
-* testSampleSize - default size of test data sample 
 
 ##Flink configuration
 Configuration of communication with Flink cluster and definition of model

@@ -75,7 +75,7 @@ high-availability: zookeeper
 high-availability.zookeeper.quorum: zookeeper:2181
 high-availability.zookeeper.path.root: /flinkPath
 high-availability.zookeeper.path.namespace: /flinkDemo
-high-availability.storageDir: file:///tmp/storage
+high-availability.storageDir: file:///opt/flinkData/storage
 
 state.backend: filesystem
 state.backend.fs.checkpointdir: file:///opt/flinkData/checkpoints
@@ -96,3 +96,5 @@ metrics.scope.operator: demo.<host>.taskmanagerTask.<tm_id>.<job_name>.<operator
 
 akka.framesize: 209715200b
 jobmanager.web.history: 50
+classloader.resolve-order: parent-first
+

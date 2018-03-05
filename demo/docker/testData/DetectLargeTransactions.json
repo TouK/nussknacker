@@ -2,7 +2,8 @@
   "metaData" : {
     "id" : "DetectLargeTransactions",
     "typeSpecificData" : {
-      "type" : "StreamMetaData"
+      "type" : "StreamMetaData",
+      "parallelism" : 2
     },
     "additionalFields" : {
       
@@ -12,7 +13,10 @@
     "parameters" : [
       {
         "name" : "sampleParam",
-        "value" : "1"
+        "expression" : {
+          "language" : "spel",
+          "expression" : "'1'"
+        }
       }
     ]
   },
@@ -25,7 +29,10 @@
         "parameters" : [
           {
             "name" : "topic",
-            "value" : "transactions"
+            "expression" : {
+              "language" : "spel",
+              "expression" : "'transactions'"
+            }
           }
         ]
       }
@@ -47,7 +54,10 @@
         "parameters" : [
           {
             "name" : "topic",
-            "value" : "processedEvents"
+            "expression" : {
+              "language" : "spel",
+              "expression" : "'processedEvents'"
+            }
           }
         ]
       },
