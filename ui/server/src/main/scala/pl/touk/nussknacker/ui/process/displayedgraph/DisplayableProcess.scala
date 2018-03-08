@@ -19,7 +19,7 @@ case class DisplayableProcess(id: String,
   def validated(validation: ProcessValidation) =
     new ValidatedDisplayableProcess(this, validation.validate(this))
   
-  def withSuccessValidation() = {
+  def withSuccessValidation(): ValidatedDisplayableProcess = {
     new ValidatedDisplayableProcess(this, ValidationResult.success)
   }
 

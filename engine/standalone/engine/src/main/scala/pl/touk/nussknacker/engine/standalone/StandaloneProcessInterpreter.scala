@@ -73,9 +73,8 @@ object StandaloneProcessInterpreter {
     type CompilationValidation[K] = ValidatedNel[ProcessCompilationError, K]
     type CompilationResult[K] = ValidatedNel[ProcessCompilationError, K]
 
-    //NonEmptyList is invariant :(
     private def compileWithCompilationErrors(node: SplittedNode[_], validationContext: ValidationContext) =
-      compiledProcess.subPartCompiler.compile(node, validationContext).bimap(_.map(_.asInstanceOf[ProcessCompilationError]), _.node)
+      compiledProcess.subPartCompiler.compile(node, validationContext).result
 
     private def compiledPartInvoker(processPart: ProcessPart): data.ValidatedNel[ProcessCompilationError, InterpreterType] = processPart match {
       case SourcePart(_, node, validationContext, nextParts, _) =>

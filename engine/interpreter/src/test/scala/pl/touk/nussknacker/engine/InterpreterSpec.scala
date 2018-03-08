@@ -62,7 +62,7 @@ class InterpreterSpec extends FlatSpec with Matchers {
     val parts = compiledProcess.parts
 
     def compileNode(part: ProcessPart) =
-      failOnErrors(compiledProcess.subPartCompiler.compile(part.node, part.validationContext)).node
+      failOnErrors(compiledProcess.subPartCompiler.compile(part.node, part.validationContext).result)
 
     val initialCtx = Context("abc").withVariable(Interpreter.InputParamName, transaction)
 

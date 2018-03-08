@@ -41,7 +41,9 @@ class ProcessValidationSpec extends FlatSpec with Matchers {
     validator.validate(process) should matchPattern {
       case ValidationResult(
         ValidationErrors(nodes, Nil, Nil),
-        ValidationWarnings.success
+        ValidationWarnings.success,
+        //TODO: add typing results in this case
+        _
       ) if nodes == Map("subIn" -> List(PrettyValidationErrors.nonuniqeEdge(validator.uiValidationError,
           EdgeType.SubprocessOutput("out2")))) =>
     }
@@ -63,7 +65,9 @@ class ProcessValidationSpec extends FlatSpec with Matchers {
     validator.validate(process) should matchPattern {
       case ValidationResult(
         ValidationErrors(_, Nil, globalErrors),
-        ValidationWarnings.success
+        ValidationWarnings.success,
+        //TODO: add typing results in this case
+        _
       ) if globalErrors == List(PrettyValidationErrors.duplicatedNodeIds(validator.uiValidationError, List("in"))) =>
     }
   }
@@ -81,7 +85,9 @@ class ProcessValidationSpec extends FlatSpec with Matchers {
     validator.validate(process) should matchPattern {
       case ValidationResult(
         ValidationErrors(nodes, Nil, Nil),
-        ValidationWarnings.success
+        ValidationWarnings.success,
+        //TODO: add typing results in this case
+        _
       ) if nodes == Map("loose" -> List(PrettyValidationErrors.looseNode(validator.uiValidationError))) =>
     }
 
@@ -100,7 +106,9 @@ class ProcessValidationSpec extends FlatSpec with Matchers {
     validator.validate(process) should matchPattern {
       case ValidationResult(
         ValidationErrors(nodes, Nil, global::Nil),
-        ValidationWarnings.success
+        ValidationWarnings.success,
+        //TODO: add typing results in this case
+        _
       ) if nodes.isEmpty && global == PrettyValidationErrors.tooManySources(validator.uiValidationError, List("in", "tooMany")) =>
     }
   }
@@ -153,7 +161,8 @@ class ProcessValidationSpec extends FlatSpec with Matchers {
     validator.validate(process) should matchPattern {
       case ValidationResult(
         ValidationErrors(_, Nil, errors),
-        ValidationWarnings.success
+        ValidationWarnings.success,
+        _
       ) if errors == List(PrettyValidationErrors.noValidatorKnown(ProcessingType.RequestResponse)) =>
     }
   }

@@ -6,7 +6,7 @@ import org.apache.flink.api.common.functions.RuntimeContext
 import pl.touk.nussknacker.engine.Interpreter
 import pl.touk.nussknacker.engine.api.{JobData, MetaData}
 import pl.touk.nussknacker.engine.api.process.AsyncExecutionContextPreparer
-import pl.touk.nussknacker.engine.compile.{CompiledProcess, PartSubGraphCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.compile.{CompiledProcess, PartSubGraphCompilationError, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.compiledgraph.node.Node
 import pl.touk.nussknacker.engine.compiledgraph.part.SourcePart
@@ -39,10 +39,10 @@ class CompiledProcessWithDeps(compiledProcess: CompiledProcess,
   }
 
   def compileSubPart(node: SplittedNode[_], validationContext: ValidationContext): Node = {
-    validateOrFail(compiledProcess.subPartCompiler.compile(node, validationContext).map(_.node))
+    validateOrFail(compiledProcess.subPartCompiler.compile(node, validationContext).result)
   }
 
-  private def validateOrFail[T](validated: ValidatedNel[PartSubGraphCompilationError, T]): T = validated match {
+  private def validateOrFail[T](validated: ValidatedNel[ProcessCompilationError, T]): T = validated match {
     case Valid(r) => r
     case Invalid(err) => throw new scala.IllegalArgumentException(err.toList.mkString("Compilation errors: ", ", ", ""))
   }

@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.compile
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data._
-import org.scalatest.{FlatSpec, Inside, Matchers}
+import org.scalatest.{FunSuite, Inside, Matchers}
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.{MetaData, Service, StreamMetaData}
 import pl.touk.nussknacker.engine.api.lazyy.ContextWithLazyValuesProvider
@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.typed.{ClazzRef, TypedMap, TypedMapDefinit
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError._
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedMapTypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectDefinition, Parameter}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ExpressionDefinition, ObjectProcessDefinition, ProcessDefinition}
@@ -23,7 +23,7 @@ import pl.touk.nussknacker.engine.types.{EspTypeUtils, TypesInformationExtractor
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
+class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   import spel.Implicits._
 
@@ -50,8 +50,8 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
     ),
     TypesInformationExtractor.clazzAndItsChildrenDefinition(List(ClazzRef[SampleEnricher], ClazzRef[SimpleRecord], ClazzRef(ProcessHelper.getClass)))(ClassExtractionSettings.Default)
   )
-
-  it should "validated with success" in {
+         
+  test("validated with success") {
     val correctProcess = EspProcessBuilder
       .id("process1")
       .exceptionHandler()
@@ -66,20 +66,40 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
         "funkySpelVariable" -> "(#input.list.?[plainValue == 5]).![plainValue].contains(5)"
       )
       .sink("id2", "#processHelper.add(#processHelper, 2)", "sink")
-    ProcessValidator.default(baseDefinition).validate(correctProcess) should matchPattern {
+
+    val compilationResult = ProcessValidator.default(baseDefinition).validate(correctProcess)
+
+    compilationResult.result should matchPattern {
       case Valid(_) =>
     }
+    compilationResult.variablesInNodes shouldBe Map(
+      "id1" -> Map("input" -> Typed[SimpleRecord]),
+      "filter1" -> Map("input" -> Typed[SimpleRecord]),
+      "filter2" -> Map("input" -> Typed[SimpleRecord]),
+      "filter3" -> Map("input" -> Typed[SimpleRecord]),
+      "sampleProcessor1" -> Map("input" -> Typed[SimpleRecord]),
+      "sampleProcessor2" -> Map("input" -> Typed[SimpleRecord]),
+      "bv1" -> Map("input" -> Typed[SimpleRecord], "out" -> Typed[SimpleRecord]),
+      "id2" -> Map("input" -> Typed[SimpleRecord], "out" -> Typed[SimpleRecord],
+        "vars" -> TypedMapTypingResult(Map(
+          "v1" -> Typed[Integer],
+          "mapVariable" -> TypedMapTypingResult(Map("Field1" -> Typed[String], "Field2" -> Typed[String], "Field3" -> Typed[BigDecimal])),
+          //TODO: compile it?
+          "funkySpelVariable" -> Unknown
+        ))
+      )
+    )
   }
 
-  it should "find duplicated ids" in {
+  test("find duplicated ids") {
     val duplicatedId = "id1"
     val processWithDuplicatedIds = EspProcessBuilder.id("process1").exceptionHandler().source(duplicatedId, "source").emptySink(duplicatedId, "sink")
-    ProcessValidator.default(baseDefinition).validate(processWithDuplicatedIds) should matchPattern {
+    ProcessValidator.default(baseDefinition).validate(processWithDuplicatedIds).result should matchPattern {
       case Invalid(NonEmptyList(DuplicatedNodeIds(_), _)) =>
     }
   }
 
-  it should "find duplicated ids in switch" in {
+  test("find duplicated ids in switch") {
     val duplicatedId = "id1"
     val processWithDuplicatedIds =
       EspProcessBuilder
@@ -90,12 +110,12 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
           Case("'1'", GraphBuilder.emptySink(duplicatedId, "sink")),
           Case("'2'", GraphBuilder.emptySink(duplicatedId, "sink"))
         )
-    ProcessValidator.default(baseDefinition).validate(processWithDuplicatedIds) should matchPattern {
+    ProcessValidator.default(baseDefinition).validate(processWithDuplicatedIds).result should matchPattern {
       case Invalid(NonEmptyList(DuplicatedNodeIds(_), _)) =>
     }
   }
 
-  it should "find expression parse error" in {
+  test("find expression parse error") {
     val processWithInvalidExpresssion =
       EspProcessBuilder
         .id("process1")
@@ -103,12 +123,12 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
         .source("id1", "source")
         .sink("id2", "wtf!!!", "sink")
 
-    ProcessValidator.default(baseDefinition).validate(processWithInvalidExpresssion) should matchPattern {
+    ProcessValidator.default(baseDefinition).validate(processWithInvalidExpresssion).result should matchPattern {
       case Invalid(NonEmptyList(ExpressionParseError(_, _, _, _), _)) =>
     }
   }
 
-  it should "find missing service error" in {
+  test("find missing service error") {
     val missingServiceId = "missingServiceId"
     val processWithRefToMissingService =
       EspProcessBuilder
@@ -119,17 +139,19 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
         .processor("id2", missingServiceId, "foo" -> "'bar'")
         .sink("sink", "#event.plainValue", "sink")
 
-    ProcessValidator.default(baseDefinition).validate(processWithRefToMissingService) should matchPattern {
+    val compilationResult = ProcessValidator.default(baseDefinition).validate(processWithRefToMissingService)
+    compilationResult.result should matchPattern {
       case Invalid(NonEmptyList(MissingService(_, _), _)) =>
     }
+    compilationResult.variablesInNodes("sink") shouldBe Map("input" -> Typed[SimpleRecord], "event" -> Typed[SimpleRecord])
 
     val validDefinition = baseDefinition.withService(missingServiceId, Parameter(name = "foo", typ = ClazzRef(classOf[String])))
-    ProcessValidator.default(validDefinition).validate(processWithRefToMissingService) should matchPattern {
+    ProcessValidator.default(validDefinition).validate(processWithRefToMissingService).result should matchPattern {
       case Valid(_) =>
     }
   }
 
-  it should "find redundant service parameters" in {
+  test("find redundant service parameters") {
     val serviceId = "serviceId"
     val definition = baseDefinition.withService(serviceId)
 
@@ -142,12 +164,12 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
         .source("id1", "source")
         .processorEnd("id2", serviceId, redundantServiceParameter -> "'bar'")
 
-    ProcessValidator.default(definition).validate(processWithInvalidServiceInvocation) should matchPattern {
+    ProcessValidator.default(definition).validate(processWithInvalidServiceInvocation).result should matchPattern {
       case Invalid(NonEmptyList(RedundantParameters(_, _), _)) =>
     }
   }
 
-  it should "find missing source" in {
+  test("find missing source") {
     val serviceId = "serviceId"
     val processWithRefToMissingService =
       EspProcessBuilder
@@ -155,39 +177,42 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
         .exceptionHandler()
         .source("id1", "source")
         .filter("filter", "#input != null")
+        .buildSimpleVariable("simple", "simpleVar", "'simple'")
         .processorEnd("id2", serviceId, "foo" -> "'bar'")
 
     val definition = ObjectProcessDefinition.empty.withService(serviceId, Parameter(name = "foo", typ = ClazzRef(classOf[String])))
-    ProcessValidator.default(definition).validate(processWithRefToMissingService) should matchPattern {
+    val compilationResult = ProcessValidator.default(definition).validate(processWithRefToMissingService)
+    compilationResult.result should matchPattern {
       case Invalid(NonEmptyList(ExpressionParseError("Unresolved reference input", "filter", None, "#input != null"), List(MissingSourceFactory(_, _)))) =>
     }
+    compilationResult.variablesInNodes("id2") shouldBe Map("simpleVar" -> Typed[String])
+
   }
 
 
-  it should "find missing custom node" in {
+  test("find missing custom node") {
     val processWithRefToMissingService =
       EspProcessBuilder
         .id("process1")
         .exceptionHandler()
         .source("id1", "source")
         .customNode("custom", "out", "notExisting", "dummy" -> "input")
-        .filter("filter", "#out != null")
         .emptySink("id2", "sink")
 
-    ProcessValidator.default(baseDefinition).validate(processWithRefToMissingService) should matchPattern {
+    ProcessValidator.default(baseDefinition).validate(processWithRefToMissingService).result should matchPattern {
       case Invalid(NonEmptyList(MissingCustomNodeExecutor("notExisting", "custom"), Nil)) =>
     }
   }
 
-  it should "find missing parameter for exception handler" in {
+  test("find missing parameter for exception handler") {
     val process = EspProcessBuilder.id("process1").exceptionHandler().source("id1", "source").emptySink("id2", "sink")
     val definition = baseDefinition.withExceptionHandlerFactory(Parameter(name = "foo", typ = ClazzRef(classOf[String])))
-    ProcessValidator.default(definition).validate(process) should matchPattern {
+    ProcessValidator.default(definition).validate(process).result should matchPattern {
       case Invalid(NonEmptyList(MissingParameters(_, _), _)) =>
     }
   }
 
-  it should "find usage of unresolved plain variables" in {
+  test("find usage of unresolved plain variables") {
     val process = EspProcessBuilder
       .id("process1")
       .exceptionHandler()
@@ -195,14 +220,14 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
       .buildVariable("bv1", "doesExist", "v1" -> "42")
       .filter("sampleFilter", "#doesExist['v1'] + #doesNotExist1 + #doesNotExist2 > 10")
       .emptySink("id2", "sink")
-    ProcessValidator.default(baseDefinition).validate(process) should matchPattern {
+    ProcessValidator.default(baseDefinition).validate(process).result should matchPattern {
       case Invalid(NonEmptyList(
       ExpressionParseError("Unresolved reference doesNotExist1", "sampleFilter", None, _),
       List(ExpressionParseError("Unresolved reference doesNotExist2", "sampleFilter", None, _)))) =>
     }
   }
 
-  it should "find usage of non references" in {
+  test("find usage of non references") {
     val process = EspProcessBuilder
       .id("process1")
       .exceptionHandler()
@@ -210,12 +235,12 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
       .filter("sampleFilter1", "#input.plainValue > 10")
       .filter("sampleFilter2", "input.plainValue > 10")
       .emptySink("id2", "sink")
-    ProcessValidator.default(baseDefinition).validate(process) should matchPattern {
+    ProcessValidator.default(baseDefinition).validate(process).result should matchPattern {
       case Invalid(NonEmptyList(ExpressionParseError("Non reference 'input' occurred. Maybe you missed '#' in front of it?", "sampleFilter2", None, _), _)) =>
     }
   }
 
-  it should "find usage of fields that does not exist in object" in {
+  test("find usage of fields that does not exist in object") {
     val process = EspProcessBuilder
       .id("process1")
       .exceptionHandler()
@@ -223,13 +248,13 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
       .filter("sampleFilter1", "#input.value1.value2 > 10")
       .filter("sampleFilter2", "#input.value1.value3 > 10")
       .emptySink("id2", "sink")
-    ProcessValidator.default(definitionWithTypedSource).validate(process) should matchPattern {
+    ProcessValidator.default(definitionWithTypedSource).validate(process).result should matchPattern {
       case Invalid(NonEmptyList(ExpressionParseError("There is no property 'value3' in type 'pl.touk.nussknacker.engine.compile.ProcessValidatorSpec$AnotherSimpleRecord'", "sampleFilter2", None, _), _)) =>
     }
   }
 
 
-  it should "find not existing variables after custom node" in {
+  test("find not existing variables after custom node") {
     val process = EspProcessBuilder
       .id("process1")
       .exceptionHandler()
@@ -239,12 +264,12 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
       .emptySink("id2", "sink")
     val definitionWithCustomNode = definitionWithTypedSourceAndTransformNode
 
-    ProcessValidator.default(definitionWithCustomNode).validate(process) should matchPattern {
+    ProcessValidator.default(definitionWithCustomNode).validate(process).result should matchPattern {
       case Invalid(NonEmptyList(ExpressionParseError("There is no property 'value3' in type 'pl.touk.nussknacker.engine.compile.ProcessValidatorSpec$AnotherSimpleRecord'", "sampleFilter2", None, _), _)) =>
     }
   }
 
-  it should "find not existing variables after split" in {
+  test("find not existing variables after split") {
     val process = EspProcessBuilder
       .id("process1")
       .exceptionHandler()
@@ -256,12 +281,16 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
 
     val definitionWithCustomNode = definitionWithTypedSourceAndTransformNode
 
-    ProcessValidator.default(definitionWithCustomNode).validate(process) should matchPattern {
+    val compilationResult = ProcessValidator.default(definitionWithCustomNode).validate(process)
+    compilationResult.result should matchPattern {
       case Invalid(NonEmptyList(ExpressionParseError("There is no property 'value3' in type 'pl.touk.nussknacker.engine.compile.ProcessValidatorSpec$AnotherSimpleRecord'", "sampleFilter2", None, _), _)) =>
     }
+    compilationResult.variablesInNodes("id2") shouldBe Map("input" -> Typed[SimpleRecord])
+    compilationResult.variablesInNodes("id3") shouldBe Map("input" -> Typed[SimpleRecord])
+
   }
 
-  it should "validate custom node return type" in {
+  test("validate custom node return type") {
     val process = EspProcessBuilder
       .id("process1")
       .exceptionHandler()
@@ -273,15 +302,14 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
       .emptySink("id2", "sink")
     val definitionWithCustomNode = definitionWithTypedSourceAndTransformNode
 
-    ProcessValidator.default(definitionWithCustomNode).validate(process) should matchPattern {
+    ProcessValidator.default(definitionWithCustomNode).validate(process).result should matchPattern {
       case Invalid(NonEmptyList(ExpressionParseError("There is no property 'terefere' in type 'pl.touk.nussknacker.engine.compile.ProcessValidatorSpec$AnotherSimpleRecord'",
       "sampleFilter2", None, "#out1.terefere"), _)) =>
-
     }
   }
 
   //TODO: implement validation to make it test fail
-  it should "allow unknown vars in custom node params" in {
+  test("allow unknown vars in custom node params") {
     val process = EspProcessBuilder
       .id("process1")
       .exceptionHandler()
@@ -290,13 +318,13 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
       .emptySink("id2", "sink")
     val definitionWithCustomNode = definitionWithTypedSourceAndTransformNode
 
-    ProcessValidator.default(definitionWithCustomNode).validate(process) should matchPattern {
+    ProcessValidator.default(definitionWithCustomNode).validate(process).result should matchPattern {
       case Valid(_) =>
     }
 
   }
 
-  it should "pass custom node output var" in {
+  test("pass custom node output var") {
     val process = EspProcessBuilder
       .id("process1")
       .exceptionHandler()
@@ -305,14 +333,15 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
       .sink("id2", "#out1", "sink")
     val definitionWithCustomNode = definitionWithTypedSourceAndTransformNode
 
-    ProcessValidator.default(definitionWithCustomNode).validate(process) should matchPattern {
+    val compilationResult = ProcessValidator.default(definitionWithCustomNode).validate(process)
+    compilationResult.result should matchPattern {
       case Valid(_) =>
     }
-
+    compilationResult.variablesInNodes("id2") shouldBe Map("input" -> Typed[SimpleRecord], "out1" -> Typed[AnotherSimpleRecord])
   }
 
 
-  it should "validate exception handler params" in {
+  test("validate exception handler params") {
 
     val process = EspProcessBuilder
       .id("process1")
@@ -322,14 +351,14 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
     val definitionWithExceptionHandlerWithParams = baseDefinition.copy(exceptionHandlerFactory =
       ObjectDefinition.withParams(List(Parameter("param1", ClazzRef(classOf[String])))))
 
-    inside (ProcessValidator.default(definitionWithExceptionHandlerWithParams).validate(process)) {
+    inside (ProcessValidator.default(definitionWithExceptionHandlerWithParams).validate(process).result) {
       case Invalid(NonEmptyList(MissingParameters(missingParam, "$process"), _)) => missingParam shouldBe Set("param1")
     }
   }
 
 
 
-  it should "not validate exception handler params in subprocess" in {
+  test("not validate exception handler params in subprocess") {
 
     val subprocess = CanonicalProcess(MetaData("subProcess1", StreamMetaData(), true), ExceptionHandlerRef(List()),
       List(
@@ -339,11 +368,11 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
     val definitionWithExceptionHandlerWithParams = baseDefinition.copy(exceptionHandlerFactory =
       ObjectDefinition.withParams(List(Parameter("param1", ClazzRef(classOf[String])))))
 
-    ProcessValidator.default(definitionWithExceptionHandlerWithParams).validate(subprocess) shouldBe 'valid
+    ProcessValidator.default(definitionWithExceptionHandlerWithParams).validate(subprocess).result shouldBe 'valid
   }
 
 
-  it should "validate service params" in {
+  test("validate service params") {
     val process = EspProcessBuilder
       .id("process1")
       .exceptionHandler()
@@ -351,31 +380,24 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
       .enricher("enricher1", "out", "withParamsService")
       .emptySink("id2", "sink")
 
-    inside (ProcessValidator.default(definitionWithTypedSource).validate(process)) {
+    inside (ProcessValidator.default(definitionWithTypedSource).validate(process).result) {
       case Invalid(NonEmptyList(MissingParameters(missingParam, "enricher1"), _)) => missingParam shouldBe Set("par1")
     }
   }
 
-  private val definitionWithTypedSource = baseDefinition.copy(sourceFactories
-    = Map("source" -> ObjectDefinition.noParam.copy(returnType = Typed[SimpleRecord])))
-
-  private val definitionWithTypedSourceAndTransformNode =
-    definitionWithTypedSource.withCustomStreamTransformer("custom",
-      classOf[AnotherSimpleRecord], emptyQueryNamesData(), Parameter("par1", ClazzRef(classOf[String])))
-
-  it should "find usage of fields that does not exist in option object" in {
+  test("find usage of fields that does not exist in option object") {
     val process = EspProcessBuilder
       .id("process1")
       .exceptionHandler()
       .source("id1", "source")
       .filter("sampleFilter1", "#input.plainValueOpt.terefere > 10")
       .emptySink("id2", "sink")
-    ProcessValidator.default(definitionWithTypedSource).validate(process) should matchPattern {
+    ProcessValidator.default(definitionWithTypedSource).validate(process).result should matchPattern {
       case Invalid(NonEmptyList(ExpressionParseError("There is no property 'terefere' in type 'scala.math.BigDecimal'", "sampleFilter1", None, _), _)) =>
     }
   }
 
-  it should "return field/property names in errors" in {
+  test("return field/property names in errors") {
     val process = EspProcessBuilder
       .id("process1")
       .exceptionHandler()
@@ -387,7 +409,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
           .emptySink("id3", "sink")
       )
 
-    ProcessValidator.default(definitionWithTypedSource).validate(process) should matchPattern {
+    ProcessValidator.default(definitionWithTypedSource).validate(process).result should matchPattern {
       case Invalid(NonEmptyList(
       ExpressionParseError("Unresolved reference terefere", "p1", Some("par1"), _),
       List(
@@ -397,7 +419,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
     }
   }
 
-  it should "not allow to overwrite variable by variable node" in {
+  test("not allow to overwrite variable by variable node") {
     val process = EspProcessBuilder
       .id("process1")
       .exceptionHandler()
@@ -405,12 +427,14 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
       .buildSimpleVariable("var1", "var1", "''")
       .buildSimpleVariable("var1overwrite", "var1", "''")
       .emptySink("id2", "sink")
-    ProcessValidator.default(definitionWithTypedSource).validate(process) should matchPattern {
+    val compilationResult = ProcessValidator.default(definitionWithTypedSource).validate(process)
+    compilationResult.result should matchPattern {
       case Invalid(NonEmptyList(OverwrittenVariable("var1", "var1overwrite"), _)) =>
     }
+    compilationResult.variablesInNodes("id2") shouldBe Map("input" -> Typed[SimpleRecord], "var1" -> Typed[String])
   }
 
-  it should "not allow to overwrite variable by switch node" in {
+  test("not allow to overwrite variable by switch node") {
     val process = EspProcessBuilder
       .id("process1")
       .exceptionHandler()
@@ -418,12 +442,12 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
       .buildSimpleVariable("var1", "var1", "''")
       .switch("var1overwrite", "''", "var1", GraphBuilder.emptySink("id2", "sink"))
 
-    ProcessValidator.default(definitionWithTypedSource).validate(process) should matchPattern {
+    ProcessValidator.default(definitionWithTypedSource).validate(process).result should matchPattern {
       case Invalid(NonEmptyList(OverwrittenVariable("var1", "var1overwrite"), _)) =>
     }
   }
 
-  it should "not allow to overwrite variable by enricher node" in {
+  test("not allow to overwrite variable by enricher node") {
     val process = EspProcessBuilder
       .id("process1")
       .exceptionHandler()
@@ -432,12 +456,12 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
       .enricher("var1overwrite", "var1", "sampleEnricher")
       .emptySink("id2", "sink")
 
-    ProcessValidator.default(definitionWithTypedSource).validate(process) should matchPattern {
+    ProcessValidator.default(definitionWithTypedSource).validate(process).result should matchPattern {
       case Invalid(NonEmptyList(OverwrittenVariable("var1", "var1overwrite"), _)) =>
     }
   }
 
-  it should "not allow to overwrite variable by variable builder" in {
+  test("not allow to overwrite variable by variable builder") {
     val process = EspProcessBuilder
       .id("process1")
       .exceptionHandler()
@@ -445,12 +469,12 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
       .buildSimpleVariable("var1", "var1", "''")
       .buildVariable("var1overwrite", "var1", "a" -> "''")
       .emptySink("id2", "sink")
-    ProcessValidator.default(definitionWithTypedSource).validate(process) should matchPattern {
+    ProcessValidator.default(definitionWithTypedSource).validate(process).result should matchPattern {
       case Invalid(NonEmptyList(OverwrittenVariable("var1", "var1overwrite"), _)) =>
     }
   }
 
-  it should "validate variable builder fields usage" in {
+  test("validate variable builder fields usage") {
     val process = EspProcessBuilder
       .id("process1")
       .exceptionHandler()
@@ -460,12 +484,12 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
       .buildSimpleVariable("notWorking", "var3", "#var1.a > 10")
       .emptySink("id2", "sink")
 
-    ProcessValidator.default(definitionWithTypedSource).validate(process) should matchPattern {
+    ProcessValidator.default(definitionWithTypedSource).validate(process).result should matchPattern {
       case Invalid(NonEmptyList(ExpressionParseError("Wrong part types", "notWorking", None, "#var1.a > 10"), _)) =>
     }
   }
 
-  it should "not allow to overwrite variable by custom node" in {
+  test("not allow to overwrite variable by custom node") {
     val process = EspProcessBuilder
       .id("process1")
       .exceptionHandler()
@@ -474,26 +498,33 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
       .customNode("var1overwrite", "var1", "custom", "par1" -> "''")
       .emptySink("id2", "sink")
 
-    ProcessValidator.default(definitionWithTypedSourceAndTransformNode).validate(process) should matchPattern {
+    ProcessValidator.default(definitionWithTypedSourceAndTransformNode).validate(process).result should matchPattern {
       case Invalid(NonEmptyList(OverwrittenVariable("var1", "var1overwrite"), _)) =>
     }
   }
 
-  it should "allow different vars in branches" in {
+  test("allow different vars in branches") {
     val process = EspProcessBuilder
       .id("process1")
       .exceptionHandler()
       .source("id1", "source")
       .switch("switch", "''", "var2",
         GraphBuilder.buildSimpleVariable("var3", "var3", "''").emptySink("id2", "sink"),
-         Case("true", GraphBuilder.buildSimpleVariable("var3b", "var3", "''").emptySink("id3", "sink")))
+         Case("true", GraphBuilder.buildSimpleVariable("var3b", "var3", "#var2.length()").emptySink("id3", "sink")))
 
-    ProcessValidator.default(definitionWithTypedSource).validate(process) should matchPattern {
+    val compilationResult = ProcessValidator.default(definitionWithTypedSource).validate(process)
+    compilationResult.result should matchPattern {
       case Valid(_) =>
     }
+    compilationResult.variablesInNodes("id2") shouldBe Map("input" -> Typed[SimpleRecord],
+      "var2" -> Typed[String],
+      "var3" -> Typed[String])
+    compilationResult.variablesInNodes("id3") shouldBe Map("input" -> Typed[SimpleRecord],
+      "var2" -> Typed[String], "var3" -> Unknown)
+
   }
 
-  it should "not allow to use vars from different branches" in {
+  test("not allow to use vars from different branches") {
     val process = EspProcessBuilder
       .id("process1")
       .exceptionHandler()
@@ -502,12 +533,12 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
         GraphBuilder.buildSimpleVariable("var3", "var3", "''").emptySink("id2", "sink"),
          Case("false", GraphBuilder.sink("id3", "#var3", "sink")))
 
-    ProcessValidator.default(definitionWithTypedSource).validate(process) should matchPattern {
+    ProcessValidator.default(definitionWithTypedSource).validate(process).result should matchPattern {
       case Invalid(NonEmptyList(ExpressionParseError("Unresolved reference var3", "id3", None, "#var3"), _)) =>
     }
   }
 
-  it should "not allow customNode outputVar when no return type in definition" in {
+  test("not allow customNode outputVar when no return type in definition") {
     val processWithInvalidExpresssion =
       EspProcessBuilder
         .id("process1")
@@ -516,12 +547,12 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
         .customNode("custom", "varName", "withoutReturnType", "par1" -> "'1'")
         .sink("id2", "''", "sink")
 
-    ProcessValidator.default(baseDefinition).validate(processWithInvalidExpresssion) should matchPattern {
+    ProcessValidator.default(baseDefinition).validate(processWithInvalidExpresssion).result should matchPattern {
       case Invalid(NonEmptyList(RedundantParameters(vars, _), _)) if vars == Set("OutputVariable") =>
     }
   }
 
-  it should "detect clearing context in custom transformer" in {
+  test("detect clearing context in custom transformer") {
     val processWithInvalidExpresssion =
       EspProcessBuilder
         .id("process1")
@@ -530,13 +561,13 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
         .customNode("custom", "varName", "clearingContextTransformer")
         .sink("id2", "#input.toString()", "sink")
 
-    ProcessValidator.default(baseDefinition).validate(processWithInvalidExpresssion) should matchPattern {
+    ProcessValidator.default(baseDefinition).validate(processWithInvalidExpresssion).result should matchPattern {
       case Invalid(NonEmptyList(ExpressionParseError("Unresolved reference input", "id2", None, "#input.toString()"), _)) =>
     }
   }
 
 
-  it should "require customNode outputVar when return type in definition" in {
+  test("require customNode outputVar when return type in definition") {
     val processWithInvalidExpresssion =
       EspProcessBuilder
         .id("process1")
@@ -545,10 +576,18 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
         .customNodeNoOutput("custom", "customTransformer", "par1" -> "'1'")
         .sink("id2", "''", "sink")
 
-    ProcessValidator.default(baseDefinition).validate(processWithInvalidExpresssion) should matchPattern {
-      case Invalid(NonEmptyList(MissingParameters(vars, _), _)) if vars == Set("OutputVariable") =>
+    ProcessValidator.default(baseDefinition).validate(processWithInvalidExpresssion).result should matchPattern {
+      case Invalid(NonEmptyList(RedundantParameters(vars1, "custom"), MissingParameters(vars2, "custom") :: Nil)) if vars1 == Set("par1")  && vars2 == Set("OutputVariable") =>
     }
   }
+  
+
+  private val definitionWithTypedSource = baseDefinition.copy(sourceFactories
+    = Map("source" -> ObjectDefinition.noParam.copy(returnType = Typed[SimpleRecord])))
+
+  private val definitionWithTypedSourceAndTransformNode =
+    definitionWithTypedSource.withCustomStreamTransformer("custom",
+      classOf[AnotherSimpleRecord], emptyQueryNamesData(), Parameter("par1", ClazzRef(classOf[String])))
 
 
   case class SimpleRecord(value1: AnotherSimpleRecord, plainValue: BigDecimal, plainValueOpt: Option[BigDecimal], intAsAny: Any, list: java.util.List[SimpleRecord]) {

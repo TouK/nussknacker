@@ -101,6 +101,9 @@ trait UiCodecs extends Codecs with Argonauts with SingletonInstances with Derive
     case a: typing.TypedMapTypingResult => ClazzRef[java.util.Map[_, _]]
   }
 
+  //FIXME: what should we do here? not always we have classs!
+  implicit val typingResultDummyDecode : DecodeJson[TypingResult] = DecodeJson(_ => DecodeResult.ok(typing.Unknown))
+
   implicit def processObjectsEncodeEncode = EncodeJson.of[ProcessObjects]
 
   implicit def processHistory = EncodeJson.of[ProcessHistoryEntry]

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.validation
 
-import cats.data.{NonEmptyList, Validated}
-import cats.data.Validated.Valid
+import cats.data.{NonEmptyList}
+import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.compile.{ProcessCompilationError, ProcessValidator}
 import pl.touk.nussknacker.engine.graph.node.{Disableable, NodeData, Source, SubprocessInputDefinition}
@@ -50,10 +50,15 @@ class ProcessValidation(validators: Map[ProcessingType, ProcessValidator], subpr
     }
   }
 
-  private def validateUsingTypeValidator(displayable: DisplayableProcess, processValidator: ProcessValidator) = {
+  private def validateUsingTypeValidator(displayable: DisplayableProcess, processValidator: ProcessValidator): ValidationResult = {
     val canonical = ProcessConverter.fromDisplayable(displayable)
-    subprocessResolver.resolveSubprocesses(canonical).andThen(processValidator.validate)
-      .leftMap(formatErrors).swap.getOrElse(ValidationResult.success)
+    //TODO: handle types when subprocess resolution fails...
+    subprocessResolver.resolveSubprocesses(canonical) match {
+      case Valid(process) =>
+        val validated = processValidator.validate(process)
+        validated.result.fold(formatErrors, _ => ValidationResult.success).withTypes(validated.variablesInNodes)
+      case Invalid(pce) => formatErrors(pce)
+    }
   }
 
   private def warningValidation(process: DisplayableProcess): ValidationResult = {

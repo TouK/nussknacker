@@ -26,7 +26,7 @@ object CompiledProcess {
     val subCompiler = new PartSubGraphCompiler(userCodeClassLoader, expressionCompiler, servicesDefs)
     val processCompiler = new ProcessCompiler(userCodeClassLoader, subCompiler, definitions)
 
-    processCompiler.compile(process).map { compiledProcess =>
+    processCompiler.compile(process).result.map { compiledProcess =>
       val globalVariables = definitions.expressionConfig.globalVariables.mapValues(_.obj)
 
       val expressionEvaluator = if (process.metaData.typeSpecificData.allowLazyVars) {

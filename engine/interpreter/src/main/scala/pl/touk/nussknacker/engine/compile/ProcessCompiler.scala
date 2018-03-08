@@ -1,25 +1,21 @@
 package pl.touk.nussknacker.engine.compile
 
-import java.util.concurrent.TimeUnit
-
-import cats.Traverse.ops.toAllTraverseOps
 import cats.data.Validated._
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.instances.list._
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine._
-import pl.touk.nussknacker.engine.api.{Context, MetaData}
+import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, EspExceptionInfo}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
-import pl.touk.nussknacker.engine.compile.PartSubGraphCompilerBase.ContextsForParts
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError._
 import pl.touk.nussknacker.engine.compile.dumb._
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.compiledgraph.part.NextWithParts
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedMapTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ProcessDefinition}
 import pl.touk.nussknacker.engine.definition._
@@ -51,7 +47,7 @@ class ProcessCompiler( protected val classLoader: ClassLoader,
 
   override type ParameterProviderT = ObjectWithMethodDef
 
-  override def compile(process: EspProcess): ValidatedNel[ProcessCompilationError, CompiledProcessParts] = {
+  override def compile(process: EspProcess): CompilationResult[CompiledProcessParts] = {
     super.compile(process)
   }
 
@@ -95,29 +91,29 @@ protected trait ProcessCompilerBase {
 
   private val expressionCompiler = ExpressionCompiler.withoutOptimization(classLoader, definitions.expressionConfig)
 
-  def validate(canonical: CanonicalProcess): ValidatedNel[ProcessCompilationError, Unit] = {
-    ProcessCanonizer.uncanonize(canonical).leftMap(_.map(identity[ProcessCompilationError])) andThen { process =>
-      validate(process)
-    }
+  def validate(canonical: CanonicalProcess): CompilationResult[Unit] = {
+    //TODO: typing not canonical processs... in most cases (wrong tail) it's easy
+    ProcessCanonizer.uncanonize(canonical).fold(k => CompilationResult(Invalid(k)), validate)
   }
 
-  def validate(process: EspProcess): ValidatedNel[ProcessCompilationError, Unit] = {
+  def validate(process: EspProcess): CompilationResult[Unit] = {
     try {
       compile(process).map(_ => Unit)
     } catch {
-      case NonFatal(e) => Invalid(NonEmptyList.of(FatalUnknownError(e.getMessage)))
+      case NonFatal(e) =>
+        CompilationResult(Invalid(NonEmptyList.of(FatalUnknownError(e.getMessage))))
     }
   }
 
-  protected def compile(process: EspProcess): ValidatedNel[ProcessCompilationError, CompiledProcessParts] = {
+  protected def compile(process: EspProcess): CompilationResult[CompiledProcessParts] = {
     compile(ProcessSplitter.split(process))
   }
 
-  private def compile(splittedProcess: SplittedProcess): ValidatedNel[ProcessCompilationError, CompiledProcessParts] = {
+  private def compile(splittedProcess: SplittedProcess): CompilationResult[CompiledProcessParts] = {
     implicit val metaData = splittedProcess.metaData
-    A.map3(
-      findDuplicates(splittedProcess.source).toValidatedNel,
-      compile(splittedProcess.exceptionHandlerRef),
+    CompilationResult.map3(
+      CompilationResult(findDuplicates(splittedProcess.source).toValidatedNel),
+      CompilationResult(compile(splittedProcess.exceptionHandlerRef)),
       compile(splittedProcess.source)
     ) { (_, exceptionHandler, source) =>
       CompiledProcessParts(splittedProcess.metaData, exceptionHandler, source)
@@ -151,33 +147,33 @@ protected trait ProcessCompilerBase {
   }
 
   private def compile(part: SubsequentPart, ctx: ValidationContext)
-                     (implicit metaData: MetaData): ValidatedNel[ProcessCompilationError, compiledgraph.part.SubsequentPart] = {
+                     (implicit metaData: MetaData): CompilationResult[compiledgraph.part.SubsequentPart] = {
     implicit val nodeId = NodeId(part.id)
     part match {
       case SinkPart(node) =>
-        validate(node, ctx).andThen { newCtx =>
-          compile(node.data.ref).map { obj =>
-            compiledgraph.part.SinkPart(obj, node, ctx)
-          }
-        }
+        CompilationResult.map2(sub.validate(node, ctx), CompilationResult(compile(node.data.ref)))((_, obj) =>
+          compiledgraph.part.SinkPart(obj, node, ctx)
+        )
       case CustomNodePart(node, nextParts, ends) =>
-        getCustomNodeDefinition(node).andThen { case (nodeDefinition, additionalData) =>
-          contextAfterCustomNode(node.data, nodeDefinition, ctx, additionalData.clearsContext).andThen { ctxWithVar =>
-            validate(node, ctxWithVar).andThen { newCtx =>
-              compileCustomNodeInvoker(node, nodeDefinition).andThen { nodeInvoker =>
-                compile(nextParts, newCtx).map { nextParts =>
-                  compiledgraph.part.CustomNodePart(nodeInvoker, node, ctxWithVar, nextParts, ends)
-                }
-              }
-            }
-          }
+        val customNodeDefinition = getCustomNodeDefinition(node)
+        val nextCtx = customNodeDefinition.andThen { case (nodeDefinition, additionalData) =>
+          contextAfterCustomNode(node.data, nodeDefinition, ctx, additionalData.clearsContext)
         }
 
+        val compiledNode = customNodeDefinition.andThen(n => compileCustomNodeInvoker(node, n._1))
+        val nextPartsValidation = sub.validate(node, nextCtx.getOrElse(ctx))
+
+        CompilationResult.map4(CompilationResult(compiledNode), nextPartsValidation,
+          compile(nextParts, nextPartsValidation.typing), CompilationResult(nextCtx)) { (nodeInvoker, _, nextPartsCompiled, validatedNextCtx) =>
+          compiledgraph.part.CustomNodePart(nodeInvoker, node, validatedNextCtx, nextPartsCompiled, ends)
+        }.distinctErrors
+
       case SplitPart(node@splittednode.SplitNode(_, nexts)) =>
+        import CompilationResult._
+
         nexts.map { next =>
-          validate(next.next, ctx).andThen { newCtx =>
-            compile(next.nextParts, newCtx).map(cp => NextWithParts(next.next, cp, next.ends))
-          }
+          val result = validate(next.next, ctx)
+          CompilationResult.map2(result, compile(next.nextParts, result.typing))((_, cp) => NextWithParts(next.next, cp, next.ends))
         }.sequence.map { nextsWithParts =>
           compiledgraph.part.SplitPart(node, ctx, nextsWithParts)
         }
@@ -186,15 +182,16 @@ protected trait ProcessCompilerBase {
   }
 
   private def compile(source: SourcePart)
-                     (implicit metaData: MetaData): ValidatedNel[ProcessCompilationError, compiledgraph.part.SourcePart] = {
+                     (implicit metaData: MetaData): CompilationResult[compiledgraph.part.SourcePart] = {
     implicit val nodeId = NodeId(source.id)
     val variables = computeInitialVariables(source.node.data)
     val initialCtx = ValidationContext(variables)
-    A.map2(validate(source.node, initialCtx), compile(source.node.data)) { (ctx, obj) =>
-      compile(source.nextParts, ctx).map { nextParts =>
-        compiledgraph.part.SourcePart(obj, source.node, initialCtx, nextParts, source.ends)
-      }
-    }.andThen(identity)
+    val validatedSource = sub.validate(source.node, initialCtx)
+    val typesForParts = validatedSource.typing
+
+    CompilationResult.map3(validatedSource, compile(source.nextParts, typesForParts), CompilationResult(compile(source.node.data))) { (_, nextParts, obj) =>
+      compiledgraph.part.SourcePart(obj, source.node, initialCtx, nextParts, source.ends)
+    }
   }
 
   private def computeInitialVariables(nodeData: StartingNodeData)(implicit metaData: MetaData, nodeId: NodeId) : Map[String, TypingResult] = nodeData match {
@@ -270,10 +267,12 @@ protected trait ProcessCompilerBase {
 
   protected def createFactory[T](obj: ParameterProviderT): ProcessObjectFactory[T]
 
-  private def compile(parts: List[SubsequentPart], ctx: ContextsForParts)
-                     (implicit metaData: MetaData): ValidatedNel[ProcessCompilationError, List[compiledgraph.part.SubsequentPart]] = {
+  private def compile(parts: List[SubsequentPart], ctx: Map[String, ValidationContext])
+                     (implicit metaData: MetaData): CompilationResult[List[compiledgraph.part.SubsequentPart]] = {
+    import CompilationResult._
     parts.map(p =>
-      ctx.get(p.id).map(compile(p, _)).getOrElse(Invalid(NonEmptyList.of[ProcessCompilationError](MissingPart(p.id))))).sequence
+      ctx.get(p.id).map(compile(p, _)).getOrElse(CompilationResult(Invalid(NonEmptyList.of[ProcessCompilationError](MissingPart(p.id)))))
+    ).sequence
   }
 
   private def validateParameters(parameterProvider: ParameterProviderT, usedParamsNames: List[String])
@@ -290,14 +289,10 @@ protected trait ProcessCompilerBase {
     ) { (_, _) => parameterProvider }.leftMap(_.map(identity[ProcessCompilationError]))
   }
 
-  private def validate(n: splittednode.SplittedNode[_], ctx: ValidationContext): ValidatedNel[ProcessCompilationError, ContextsForParts] = {
-    sub.validate(n, ctx).leftMap(_.map(identity[ProcessCompilationError]))
-  }
-
-  private def validate(n: Next, ctx: ValidationContext): ValidatedNel[ProcessCompilationError, ContextsForParts] = n match {
-    case NextNode(node) => sub.validate(node, ctx).leftMap(_.map(identity[ProcessCompilationError]))
+  private def validate(n: Next, ctx: ValidationContext): CompilationResult[Unit] = n match {
+    case NextNode(node) => sub.validate(node, ctx)
     //TODO: what should be here??
-    case PartRef(id) => Validated.valid(Map(id -> ctx))
+    case PartRef(id) => CompilationResult(Map(id -> ctx), Valid(()))
   }
 
 

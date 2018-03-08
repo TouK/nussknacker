@@ -1,11 +1,13 @@
 package pl.touk.nussknacker.ui.validation
 
 import cats.implicits._
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.compile.ValidationContext
 import pl.touk.nussknacker.ui.EspError
 
 object ValidationResults {
 
-  case class ValidationResult(errors: ValidationErrors, warnings: ValidationWarnings) {
+  case class ValidationResult(errors: ValidationErrors, warnings: ValidationWarnings, variableTypes: Map[String, Map[String, TypingResult]]) {
     val isOk = errors == ValidationErrors.success && warnings == ValidationWarnings.success
     val saveAllowed = allErrors.forall(_.errorType == NodeValidationErrorType.SaveAllowed)
 
@@ -16,7 +18,8 @@ object ValidationResults {
         errors.globalErrors ++ other.errors.globalErrors),
       ValidationWarnings(
         warnings.invalidNodes.combine(other.warnings.invalidNodes)
-      )
+      ),
+      variableTypes ++ other.variableTypes
     )
 
     def renderNotAllowedAsError: Either[EspError, ValidationResult] = {
@@ -34,6 +37,9 @@ object ValidationResults {
         Left[EspError, ValidationResult](FatalValidationError(saveNotAllowedErrors.map(formatError).mkString(",")))
       }
     }
+
+    def withTypes(variableTypes: Map[String, Map[String, TypingResult]]): ValidationResult
+      = copy(variableTypes = this.variableTypes)
 
     private def renderNotAllowedErrors: List[NodeValidationError] = {
       allErrors.filter(_.errorType == NodeValidationErrorType.RenderNotAllowed)
@@ -68,7 +74,7 @@ object ValidationResults {
   }
 
   object ValidationResult {
-    val success = ValidationResult(ValidationErrors.success, ValidationWarnings.success)
+    val success = ValidationResult(ValidationErrors.success, ValidationWarnings.success, Map())
 
     def errors(invalidNodes: Map[String, List[NodeValidationError]],
                processPropertiesErrors: List[NodeValidationError],
@@ -77,14 +83,14 @@ object ValidationResults {
         ValidationErrors(invalidNodes = invalidNodes, processPropertiesErrors = processPropertiesErrors,
           globalErrors = globalErrors
         ),
-        ValidationWarnings.success
+        ValidationWarnings.success, Map()
       )
     }
 
     def warnings(invalidNodes: Map[String, List[NodeValidationError]]): ValidationResult = {
       ValidationResult(
         ValidationErrors.success,
-        ValidationWarnings(invalidNodes = invalidNodes)
+        ValidationWarnings(invalidNodes = invalidNodes), Map()
       )
     }
   }
