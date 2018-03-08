@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.MethodDefinition
-import pl.touk.nussknacker.engine.types.EspTypeUtils
+import pl.touk.nussknacker.engine.types.{EspTypeUtils, TypesInformationExtractor}
 
 import scala.runtime.BoxedUnit
 
@@ -141,7 +141,7 @@ object DefinitionExtractor {
       globalProcessVariables ++
         (services ++ customNodeTransformers ++ sourceFactories ++ signalsFactories).map(sv => sv.methodDef.returnType)
 
-      EspTypeUtils.clazzAndItsChildrenDefinition(classesToExtractDefinitions)
+      TypesInformationExtractor.clazzAndItsChildrenDefinition(classesToExtractDefinitions)
     }
   }
 

@@ -13,7 +13,6 @@ object ValidationContext {
 }
 
 case class ValidationContext(variables: Map[String, TypingResult] = Map.empty,
-                             typesInformation: List[ClazzDefinition] = List.empty,
                              parent: Option[ValidationContext] = None) {
 
   def apply(name: String): TypingResult =
@@ -27,12 +26,8 @@ case class ValidationContext(variables: Map[String, TypingResult] = Map.empty,
   def withVariable(name: String, value: TypingResult)(implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, ValidationContext] =
     if (variables.contains(name)) Invalid(NonEmptyList.of(OverwrittenVariable(name))) else Valid(copy(variables = variables + (name -> value)))
 
-  def getTypeInfo(clazzRef: ClazzRef): Option[ClazzDefinition] = {
-    typesInformation.find(_.clazzName == clazzRef)
-  }
-
   def pushNewContext() : ValidationContext
-    = ValidationContext(Map(), typesInformation, Some(this))
+    = ValidationContext(Map(), Some(this))
 
   def popContext(implicit nodeId: NodeId) : ValidatedNel[PartSubGraphCompilationError, ValidationContext] = parent match {
     case Some(ctx) => Valid(ctx)

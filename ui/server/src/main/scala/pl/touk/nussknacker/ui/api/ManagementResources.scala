@@ -31,16 +31,14 @@ import scala.concurrent.duration._
 
 object ManagementResources {
 
-  def apply(modelData: Map[ProcessingType, ModelData], processCounter: ProcessCounter, managementActor: ActorRef)
+  def apply(processCounter: ProcessCounter, managementActor: ActorRef)
            (implicit ec: ExecutionContext, mat: Materializer): ManagementResources = {
-    val types = modelData.values.flatMap(_.processDefinition.typesInformation).toList
-    new ManagementResources(types, processCounter, managementActor)
+    new ManagementResources(processCounter, managementActor)
   }
 
 }
 
-class ManagementResources(typesInformation: List[ClazzDefinition],
-                          processCounter: ProcessCounter,
+class ManagementResources(processCounter: ProcessCounter,
                           val managementActor: ActorRef)(implicit ec: ExecutionContext, mat: Materializer) extends Directives with LazyLogging  with RouteWithUser {
 
   import UiCodecs._

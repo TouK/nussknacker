@@ -75,9 +75,7 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
 
   private def parse[T:ClassTag](expr: String, context: Context = ctx) : ValidatedNel[ExpressionParseError, (TypingResult, Expression)] = {
     val validationCtx = ValidationContext(
-      context.variables.mapValuesNow(_.getClass).mapValuesNow(ClazzRef(_)).mapValuesNow(Typed.apply),
-      EspTypeUtils.clazzAndItsChildrenDefinition(context.variables.values.map(_.getClass).map(ClazzRef(_)).toList)(ClassExtractionSettings.Default)
-    )
+      context.variables.mapValuesNow(_.getClass).mapValuesNow(ClazzRef(_)).mapValuesNow(Typed.apply))
     parse(expr, validationCtx)
   }
 
@@ -278,6 +276,10 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
   it should "allow #this reference inside functions" in {
     parseOrFail[java.util.List[String]]("{1, 2, 3}.!['ala'.substring(#this - 1)]", ctx)
       .evaluateSync[java.util.List[String]](ctx, dumbLazyProvider).value.toList shouldBe List("ala", "la", "a")
+  }
+
+  it should "allow property access in unknown classes" in {
+    parse[Any]("#input.anyObject", ValidationContext(Map("input" -> Typed[SampleValue]))) shouldBe 'valid
   }
 
   it should "validate expression with projection and filtering" in {

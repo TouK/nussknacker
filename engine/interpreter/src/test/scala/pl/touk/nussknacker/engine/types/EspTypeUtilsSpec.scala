@@ -53,24 +53,33 @@ class EspTypeUtilsSpec extends FunSuite with Matchers {
     extractedType.params shouldBe List(ClazzRef[SampleClass])
   }
 
-  test("should extract public fields from scala case class, and java class") {
-    val testCases = Table(("class", "className"),
-      (ClazzRef[SampleClass], "SampleClass"),
-      (ClazzRef[JavaSampleClass], "JavaSampleClass")
+  test("should extract public fields from scala case class") {
+
+    val infos = TypesInformationExtractor.clazzAndItsChildrenDefinition(List(ClazzRef[SampleClass]))(ClassExtractionSettings.Default)
+    val sampleClassInfo = infos.find(_.clazzName.refClazzName.contains("SampleClass")).get
+
+    sampleClassInfo.methods shouldBe Map(
+      "foo" -> MethodInfo(List.empty, ClazzRef(Integer.TYPE), None),
+      "bar" -> MethodInfo(List.empty, ClazzRef[String], None)
     )
-
-    forAll(testCases) { (clazz, clazzName) =>
-      val infos = EspTypeUtils.clazzAndItsChildrenDefinition(List(clazz))(ClassExtractionSettings.Default)
-      val sampleClassInfo = infos.find(_.clazzName.refClazzName.contains(clazzName)).get
-
-      sampleClassInfo.methods shouldBe Map(
-        "foo" -> MethodInfo(List.empty, ClazzRef(Integer.TYPE), None),
-        "bar" -> MethodInfo(List.empty, ClazzRef[String], None)
-      )
-    }
   }
 
-  test("should  skip blacklisted properties") {
+  test("shoud detect java beans and fields in java class") {
+
+    EspTypeUtils.clazzDefinition(classOf[JavaSampleClass])(ClassExtractionSettings.Default).methods shouldBe Map(
+      //TODO: getNotProperty has no parameters in list, because we list only parameters annotated with @ParamName - should it be this way?
+      "getNotProperty" -> MethodInfo(List(), ClazzRef[String], None),
+      "bar" -> MethodInfo(List(), ClazzRef[String], None),
+      "getBeanProperty" -> MethodInfo(List(), ClazzRef[String], None),
+      "beanProperty" -> MethodInfo(List(), ClazzRef[String], None),
+      "isBooleanProperty" -> MethodInfo(List(), ClazzRef[Boolean], None),
+      "booleanProperty" -> MethodInfo(List(), ClazzRef[Boolean], None),
+      "foo" -> MethodInfo(List(), ClazzRef(Integer.TYPE), None)
+    )
+
+  }
+
+  test("should skip blacklisted properties") {
     val testCasses = Table(("class", "className"),
       (ClazzRef[SampleClass], "SampleClass"),
       (ClazzRef[JavaSampleClass], "JavaSampleClass")
@@ -84,8 +93,10 @@ class EspTypeUtilsSpec extends FunSuite with Matchers {
 
     forAll(testCasses) { (clazz, clazzName) =>
       forAll(testClassPatterns) { classPattern =>
-        val infos = EspTypeUtils.clazzAndItsChildrenDefinition(List(clazz))(ClassExtractionSettings(Seq(
-          ClassMemberPatternPredicate(Pattern.compile(classPattern), Pattern.compile("ba.*"))
+        val infos = TypesInformationExtractor.clazzAndItsChildrenDefinition(List(clazz))(ClassExtractionSettings(Seq(
+          ClassMemberPatternPredicate(Pattern.compile(classPattern), Pattern.compile("ba.*")),
+          ClassMemberPatternPredicate(Pattern.compile(classPattern), Pattern.compile("get.*")),
+          ClassMemberPatternPredicate(Pattern.compile(classPattern), Pattern.compile("is.*"))
         )))
         val sampleClassInfo = infos.find(_.clazzName.refClazzName.contains(clazzName)).get
 
@@ -132,10 +143,10 @@ class EspTypeUtilsSpec extends FunSuite with Matchers {
   }
 
   test("should extract description and params from method") {
-    val scalaExtractedInfo = EspTypeUtils.clazzAndItsChildrenDefinition(List(ClazzRef[ScalaSampleDocumentedClass]))(ClassExtractionSettings.Default)
+    val scalaExtractedInfo = TypesInformationExtractor.clazzAndItsChildrenDefinition(List(ClazzRef[ScalaSampleDocumentedClass]))(ClassExtractionSettings.Default)
     val scalaClazzInfo = scalaExtractedInfo.find(_.clazzName == ClazzRef(classOf[ScalaSampleDocumentedClass])).get
 
-    val javaExtractedInfo = EspTypeUtils.clazzAndItsChildrenDefinition(List(ClazzRef[JavaSampleDocumentedClass]))(ClassExtractionSettings.Default)
+    val javaExtractedInfo = TypesInformationExtractor.clazzAndItsChildrenDefinition(List(ClazzRef[JavaSampleDocumentedClass]))(ClassExtractionSettings.Default)
     val javaClazzInfo = javaExtractedInfo.find(_.clazzName == ClazzRef(classOf[JavaSampleDocumentedClass])).get
 
     val table = Table(

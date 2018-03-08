@@ -10,10 +10,12 @@ import cats.syntax.monoid._
 import cats.syntax.traverse._
 import org.springframework.expression.spel.SpelNode
 import org.springframework.expression.spel.ast._
+import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.compile.ValidationContext
 import pl.touk.nussknacker.engine.compiledgraph.expression.ExpressionParseError
+import pl.touk.nussknacker.engine.types.EspTypeUtils
 
 import scala.reflect.ClassTag
 
@@ -144,12 +146,17 @@ private[spel] class Typer(implicit classLoader: ClassLoader) {
             case Some(result) => Valid(result)
           }
         case Some(typed@Typed(possible)) =>
-          val possibleResults =
-            possible.flatMap(ki => validationContext.getTypeInfo(ClazzRef(ki.klass)))
-          possibleResults.flatMap(_.getMethod(e.getName).map(Typed(_))).toList match {
-            case Nil => invalid(s"There is no property '${e.getName}' in ${typed.display}")
-            case nonEmpty => Valid(nonEmpty.reduce[TypingResult](_ |+| _))
+          val possibleResults = possible.map(ki => EspTypeUtils.clazzDefinition(ki.klass)(ClassExtractionSettings.Default)).toList
+
+          possibleResults match {
+            //in normal circumstances this should not happen, however we'd rather omit some errors than not allow correct expression
+            case Nil => Valid(Unknown)
+            case _ =>  possibleResults.flatMap(_.getMethod(e.getName).map(Typed(_))) match {
+              case Nil => invalid(s"There is no property '${e.getName}' in ${typed.display}")
+              case nonEmpty => Valid(nonEmpty.reduce[TypingResult](_ |+| _))
+            }
           }
+
       }
       //TODO: what should be here?
       case e: QualifiedIdentifier => fixed(Unknown)

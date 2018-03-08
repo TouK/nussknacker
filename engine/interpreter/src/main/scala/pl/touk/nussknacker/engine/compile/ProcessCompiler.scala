@@ -33,9 +33,6 @@ import pl.touk.nussknacker.engine.splittedgraph.part._
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.{Next, NextNode, PartRef, SplittedNode}
 import pl.touk.nussknacker.engine.util.Implicits._
 
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
-
 import scala.util.control.NonFatal
 
 class ProcessCompiler( protected val classLoader: ClassLoader,
@@ -84,7 +81,6 @@ protected trait ProcessCompilerBase {
   protected def sinkFactories = definitions.sinkFactories
   protected def exceptionHandlerFactory = definitions.exceptionHandlerFactory
   protected val customStreamTransformers = definitions.customStreamTransformers
-  protected val typesInformation = definitions.typesInformation
 
   protected def sub: PartSubGraphCompilerBase
 
@@ -189,7 +185,7 @@ protected trait ProcessCompilerBase {
                      (implicit metaData: MetaData): ValidatedNel[ProcessCompilationError, compiledgraph.part.SourcePart] = {
     implicit val nodeId = NodeId(source.id)
     val variables = computeInitialVariables(source.node.data)
-    val initialCtx = ValidationContext(variables, typesInformation)
+    val initialCtx = ValidationContext(variables)
     A.map2(validate(source.node, initialCtx), compile(source.node.data)) { (ctx, obj) =>
       compile(source.nextParts, ctx).map { nextParts =>
         compiledgraph.part.SourcePart(obj, source.node, initialCtx, nextParts, source.ends)

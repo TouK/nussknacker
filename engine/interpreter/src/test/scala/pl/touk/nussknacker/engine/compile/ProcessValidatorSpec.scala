@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomT
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
-import pl.touk.nussknacker.engine.types.EspTypeUtils
+import pl.touk.nussknacker.engine.types.{EspTypeUtils, TypesInformationExtractor}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -47,7 +47,7 @@ class ProcessValidatorSpec extends FlatSpec with Matchers with Inside {
       Map("processHelper" -> ObjectDefinition(List(), Typed(ClazzRef(ProcessHelper.getClass)), List("cat1"))),
       List.empty, optimizeCompilation = false
     ),
-    EspTypeUtils.clazzAndItsChildrenDefinition(List(ClazzRef[SampleEnricher], ClazzRef[SimpleRecord], ClazzRef(ProcessHelper.getClass)))(ClassExtractionSettings.Default)
+    TypesInformationExtractor.clazzAndItsChildrenDefinition(List(ClazzRef[SampleEnricher], ClazzRef[SimpleRecord], ClazzRef(ProcessHelper.getClass)))(ClassExtractionSettings.Default)
   )
 
   it should "validated with success" in {

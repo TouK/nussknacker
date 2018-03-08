@@ -1,95 +1,67 @@
 package pl.touk.nussknacker.engine.types
 
+import java.lang.reflect
 import java.lang.reflect._
 
 import cats.Eval
 import cats.data.StateT
-import org.apache.commons.lang3.ClassUtils
-import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
+import org.apache.commons.lang3.{ClassUtils, StringUtils}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
+import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter}
-import pl.touk.nussknacker.engine.util.ThreadUtils
 import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl
 
 import scala.concurrent.Future
 
 object EspTypeUtils {
 
-  private object ScalaCaseClassStub {
-    case class DumpCaseClass()
-    object DumpCaseClass
-  }
-  private val blackilistedMethods: Set[String] = {
+  private val blacklistedMethods: Set[String] = {
     (methodNames(classOf[ScalaCaseClassStub.DumpCaseClass]) ++
       methodNames(ScalaCaseClassStub.DumpCaseClass.getClass)).toSet
   }
 
-  private val baseClazzPackagePrefix = Set("java", "scala")
+  def clazzDefinition(clazz: Class[_])
+                     (implicit settings: ClassExtractionSettings): ClazzDefinition =
+    ClazzDefinition(ClazzRef(clazz), getPublicMethodAndFields(clazz))
 
-  private val blacklistedClazzPackagePrefix = Set(
-    "scala.collection", "scala.Function", "scala.xml",
-    "javax.xml", "java.util",
-    "cats", "argonaut", "dispatch",
-    "org.apache.flink.api.common.typeinfo.TypeInformation"
-  )
+  def findParameterByParameterName(method: Method, paramName: String): Option[reflect.Parameter] =
+    method.getParameters.find { p =>
+      Option(p.getAnnotation(classOf[ParamName])).exists(_.value() == paramName)
+    }
 
-  private val primitiveTypesToBoxed : Map[Class[_], Class[_]] = Map(
-    Void.TYPE -> classOf[Void],
-    java.lang.Boolean.TYPE -> classOf[java.lang.Boolean],
-    java.lang.Integer.TYPE -> classOf[java.lang.Integer],
-    java.lang.Long.TYPE -> classOf[java.lang.Long],
-    java.lang.Float.TYPE -> classOf[java.lang.Float],
-    java.lang.Double.TYPE -> classOf[java.lang.Double],
-    java.lang.Byte.TYPE -> classOf[java.lang.Byte],
-    java.lang.Short.TYPE -> classOf[java.lang.Short],
-    java.lang.Character.TYPE -> classOf[java.lang.Character]
-  )
+  def extractParameterType(p: java.lang.reflect.Parameter, classesToExtractGenericFrom: Class[_]*): Class[_] =
+    if (classesToExtractGenericFrom.contains(p.getType)) {
+      val parameterizedType = p.getParameterizedType.asInstanceOf[ParameterizedType]
+      parameterizedType.getActualTypeArguments.apply(0) match {
+        case a: Class[_] => a
+        case b: ParameterizedType => b.getRawType.asInstanceOf[Class[_]]
+      }
+    } else {
+      p.getType
+    }
 
-  //they can always appear...
-  //TODO: what else should be here?
-  private val mandatoryClasses = (Set(
-    classOf[java.util.List[_]],
-    classOf[java.util.Map[_, _]],
-    classOf[java.math.BigDecimal],
-    classOf[Number],
-    classOf[String]
-  ) ++ primitiveTypesToBoxed.keys ++ primitiveTypesToBoxed.values).map(ClazzRef(_))
+  def getCompanionObject[T](klazz: Class[T]): T = {
+    klazz.getField("MODULE$").get(null).asInstanceOf[T]
+  }
 
-  private val boxedToPrimitives = primitiveTypesToBoxed.map(_.swap)
+  def getGenericType(genericReturnType: Type): Option[ClazzRef] = {
+    val hasGenericReturnType = genericReturnType.isInstanceOf[ParameterizedTypeImpl]
+    if (hasGenericReturnType) inferGenericMonadType(genericReturnType.asInstanceOf[ParameterizedTypeImpl])
+    else None
+  }
 
-  private val primitiveTypesSimpleNames = primitiveTypesToBoxed.keys.map(_.getName).toSet
+  //TODO: what is *really* needed here?? is it performant enough??
+  def signatureElementMatches(signatureType: Class[_], passedValueClass: Class[_]): Boolean = {
+    def unbox(typ: Class[_]) = if (ClassUtils.isPrimitiveWrapper(typ)) ClassUtils.wrapperToPrimitive(typ) else typ
+
+    ClassUtils.isAssignable(passedValueClass, signatureType, true) ||
+      ClassUtils.isAssignable(unbox(passedValueClass), unbox(signatureType), true)
+  }
 
   private def methodNames(clazz: Class[_]): List[String] = {
     clazz.getMethods.map(_.getName).toList
   }
-
-  def clazzAndItsChildrenDefinition(clazzes: Iterable[ClazzRef])
-                                   (implicit settings: ClassExtractionSettings): List[ClazzDefinition] = {
-    (clazzes ++ mandatoryClasses).flatMap(clazzAndItsChildrenDefinition).toList.distinct
-  }
-
-  private def clazzAndItsChildrenDefinition(clazzRef: ClazzRef)
-                                   (implicit settings: ClassExtractionSettings): List[ClazzDefinition] = {
-    val clazz = clazzRef.clazz
-    val result = if (clazz.isPrimitive || baseClazzPackagePrefix.exists(clazz.getName.startsWith)) {
-      List(clazzDefinition(clazz))
-    } else {
-      val mainClazzDefinition = clazzDefinition(clazz)
-      val recursiveClazzes = mainClazzDefinition.methods.values.toList
-        .filter(m => !primitiveTypesSimpleNames.contains(m.refClazzName) && m.refClazzName != clazz.getName)
-        .filter(m => !blacklistedClazzPackagePrefix.exists(m.refClazzName.startsWith))
-        .filter(m => !m.refClazzName.startsWith("["))
-        .map(_.refClazz).distinct
-        .flatMap(m => clazzAndItsChildrenDefinition(m))
-      mainClazzDefinition :: recursiveClazzes
-    }
-    result.distinct
-  }
-
-  private def clazzDefinition(clazz: Class[_])
-                             (implicit settings: ClassExtractionSettings): ClazzDefinition =
-    ClazzDefinition(ClazzRef(clazz), getPublicMethodAndFields(clazz))
 
   private def getPublicMethodAndFields(clazz: Class[_])
                                       (implicit settings: ClassExtractionSettings): Map[String, MethodInfo] = {
@@ -101,14 +73,23 @@ object EspTypeUtils {
   private def publicMethods(clazz: Class[_])
                            (implicit settings: ClassExtractionSettings): Map[String, MethodInfo] = {
     val interestingMethods = clazz.getMethods
-        .filterNot(m => Modifier.isStatic(m.getModifiers))
-        .filterNot(settings.isBlacklisted)
-        .filter(m =>
-          !blackilistedMethods.contains(m.getName) && !m.getName.contains("$")
-        )
-    interestingMethods.map { method =>
-      method.getName -> MethodInfo(getParamNameParameters(method), getReturnClassForMethod(method), getNussknackerDocs(method))
+      .filterNot(m => Modifier.isStatic(m.getModifiers))
+      .filterNot(settings.isBlacklisted)
+      .filter(m =>
+        !blacklistedMethods.contains(m.getName) && !m.getName.contains("$")
+      )
+    interestingMethods.flatMap { method =>
+      methodAccessMethods(method).map(_ -> toMethodInfo(method))
     }.toMap
+  }
+
+  private def toMethodInfo(method: Method)
+    = MethodInfo(getParamNameParameters(method), getReturnClassForMethod(method), getNussknackerDocs(method))
+
+  private def methodAccessMethods(method: Method) = {
+    val isGetter = (method.getName.startsWith("get") || method.getName.startsWith("is")) && method.getParameterCount == 0
+    if (isGetter)
+      List(method.getName, StringUtils.uncapitalize(method.getName.replaceAll("^get|^is", ""))) else List(method.getName)
   }
 
   private def publicFields(clazz: Class[_])
@@ -122,32 +103,6 @@ object EspTypeUtils {
     interestingFields.map { field =>
       field.getName -> MethodInfo(List.empty, getReturnClassForField(field), getNussknackerDocs(field))
     }.toMap
-  }
-
-  def findParameterByParameterName(method: Method, paramName: String) =
-    method.getParameters.find { p =>
-      Option(p.getAnnotation(classOf[ParamName])).exists(_.value() == paramName)
-    }
-
-  def extractParameterType(p: java.lang.reflect.Parameter, classesToExtractGenericFrom: Class[_]*) =
-    if (classesToExtractGenericFrom.contains(p.getType)) {
-      val parameterizedType = p.getParameterizedType.asInstanceOf[ParameterizedType]
-      parameterizedType.getActualTypeArguments.apply(0) match {
-        case a:Class[_] => a
-        case b:ParameterizedType => b.getRawType.asInstanceOf[Class[_]]
-      }
-    } else {
-      p.getType
-    }
-
-  def getCompanionObject[T](klazz: Class[T]) : T= {
-    klazz.getField("MODULE$").get(null).asInstanceOf[T]
-  }
-
-  def getGenericType(genericReturnType: Type): Option[ClazzRef] = {
-    val hasGenericReturnType = genericReturnType.isInstanceOf[ParameterizedTypeImpl]
-    if (hasGenericReturnType) inferGenericMonadType(genericReturnType.asInstanceOf[ParameterizedTypeImpl])
-    else None
   }
 
   private def getReturnClassForMethod(method: Method): ClazzRef = {
@@ -197,7 +152,7 @@ object EspTypeUtils {
     }
   }
 
-  private def extractGenericParams(paramsType: ParameterizedTypeImpl) : ClazzRef = {
+  private def extractGenericParams(paramsType: ParameterizedTypeImpl): ClazzRef = {
     val rawType = paramsType.getRawType
     if (classOf[java.util.Collection[_]].isAssignableFrom(rawType)) {
       ClazzRef(rawType, paramsType.getActualTypeArguments.toList.flatMap(extractClass))
@@ -206,12 +161,12 @@ object EspTypeUtils {
     } else ClazzRef(rawType)
   }
 
-  private def tryToUnBox(clazz : Class[_]) = boxedToPrimitives.getOrElse(clazz, clazz)
+  private object ScalaCaseClassStub {
 
-  //TODO: what is *really* needed here?? is it performant enough??
-  def signatureElementMatches(signatureType: Class[_], passedValueClass: Class[_]) : Boolean = {
-    ClassUtils.isAssignable(passedValueClass, signatureType, true) ||
-      ClassUtils.isAssignable(tryToUnBox(passedValueClass), tryToUnBox(signatureType), true)
+    case class DumpCaseClass()
+
+    object DumpCaseClass
+
   }
 
 }
