@@ -16,6 +16,14 @@ case class MultiMap[K, V](map: TreeMap[K, List[V]]) {
     MultiMap(map + (key -> newElement))
   }
 
+  def add(key: K, values: List[V]) : MultiMap[K, V] = {
+    val newElement = map.get(key) match {
+      case Some(list) => values:::list
+      case None => values
+    }
+    MultiMap(map + (key -> newElement))
+  }
+
   def remove(key: K, value: V) : MultiMap[K, V] = {
     map.get(key) match {
       case Some(list) =>

@@ -1,12 +1,18 @@
 package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.server.{Directives, Route}
+import pl.touk.http.argonaut.Argonaut62Support
+import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.MetaData
+import pl.touk.nussknacker.engine.api.typed.ClazzRef
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api.util.MultiMap
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ProcessDefinition, TransformerId}
+import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node._
@@ -14,34 +20,32 @@ import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
-import pl.touk.nussknacker.ui.api.DefinitionPreparer.NodeEdges
+import pl.touk.nussknacker.ui.api.DefinitionPreparer.{NodeEdges, NodeTypeId}
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
+import pl.touk.nussknacker.ui.process.ProcessObjectsFinder
 import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.EdgeType
 import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.EdgeType.{FilterFalse, FilterTrue}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessRepository}
 import pl.touk.nussknacker.ui.process.uiconfig.defaults.{ParameterDefaultValueExtractorStrategy, ParameterEvaluatorExtractor}
-import pl.touk.nussknacker.ui.util.EspPathMatchers
-import pl.touk.http.argonaut.Argonaut62Support
-import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
-import pl.touk.nussknacker.ui.process.ProcessObjectsFinder
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.util.EspPathMatchers
 
 import scala.concurrent.ExecutionContext
 import scala.runtime.BoxedUnit
 
 class DefinitionResources(modelData: Map[ProcessingType, ModelData],
                           subprocessRepository: SubprocessRepository,
-                          parameterDefaultValueExtractorStrategyFactory: ParameterDefaultValueExtractorStrategy)
+                          parameterDefaultValueExtractorStrategyFactory: ParameterDefaultValueExtractorStrategy,
+                          nodeCategoryMapping: Map[String, String])
                          (implicit ec: ExecutionContext)
   extends Directives with Argonaut62Support with EspPathMatchers with RouteWithUser {
 
   import argonaut.ArgonautShapeless._
   import pl.touk.nussknacker.ui.codec.UiCodecs._
+
+  private val definitionPreparer: DefinitionPreparer = new DefinitionPreparer(nodeCategoryMapping)
 
   def route(implicit user: LoggedUser) : Route = encodeResponse {
     //TODO maybe always return data for all subprocesses versions instead of fetching just one-by-one?
@@ -54,11 +58,11 @@ class DefinitionResources(modelData: Map[ProcessingType, ModelData],
               val subprocessInputs = fetchSubprocessInputs(subprocessVersions)
               val subprocessesDetails = subprocessRepository.loadSubprocesses(subprocessVersions)
               val uiProcessDefinition = UIProcessDefinition(chosenProcessDefinition, subprocessInputs)
-              ProcessObjects(DefinitionPreparer.prepareNodesToAdd(user = user, processDefinition = chosenProcessDefinition,
+              ProcessObjects(definitionPreparer.prepareNodesToAdd(user = user, processDefinition = chosenProcessDefinition,
                 isSubprocess = isSubprocess, subprocessesDetails = subprocessesDetails, extractorFactory = parameterDefaultValueExtractorStrategyFactory
               ),
                 uiProcessDefinition,
-                DefinitionPreparer.prepareEdgeTypes(user, chosenProcessDefinition, isSubprocess, subprocessesDetails))
+                definitionPreparer.prepareEdgeTypes(user, chosenProcessDefinition, isSubprocess, subprocessesDetails))
             }
           }
         }
@@ -125,7 +129,7 @@ case class NodeGroup(name: String, possibleNodes: List[NodeToAdd])
 case class NodeDefinition(id: String, parameters: List[DefinitionExtractor.Parameter])
 
 //TODO: some refactoring?
-object DefinitionPreparer {
+class DefinitionPreparer(val nodeCategoryMapping: Map[String, String] = Map()) {
 
   def prepareNodesToAdd(user: LoggedUser, processDefinition: ProcessDefinition[ObjectDefinition],
                         isSubprocess: Boolean,
@@ -142,27 +146,27 @@ object DefinitionPreparer {
     val returnsUnit = ((id: String, objectDefinition: ObjectDefinition)
     => objectDefinition.returnType == Typed[BoxedUnit]).tupled
 
-    val base = SortedNodeGroup("base", List(
+    val base = NodeGroup("base", List(
       NodeToAdd("filter", "Filter", Filter("", Expression("spel", "true")), user.categories),
       NodeToAdd("split", "Split", Split(""), user.categories),
       NodeToAdd("switch", "Switch", Switch("", Expression("spel", "true"), "output"), user.categories),
       NodeToAdd("variable", "Variable", Variable("", "varName", Expression("spel", "'value'")), user.categories)
     ))
-    val services = SortedNodeGroup("services",
+    val services = NodeGroup("services",
       processDefinition.services.filter(returnsUnit).map {
         case (id, objDefinition) => NodeToAdd("processor", id,
           Processor("", serviceRef(id, objDefinition)), filterCategories(objDefinition))
       }.toList
     )
 
-    val enrichers = SortedNodeGroup("enrichers",
+    val enrichers = NodeGroup("enrichers",
       processDefinition.services.filterNot(returnsUnit).map {
         case (id, objDefinition) => NodeToAdd("enricher", id,
           Enricher("", serviceRef(id, objDefinition), "output"), filterCategories(objDefinition))
       }.toList
     )
 
-    val customTransformers = SortedNodeGroup("custom",
+    val customTransformers = NodeGroup("custom",
       processDefinition.customStreamTransformers.map {
         case (id, (objDefinition, _)) => NodeToAdd("customNode", id,
           CustomNode("", if (objDefinition.hasNoReturn) None else Some("outputVar"), id, objDefParams(id, objDefinition)), filterCategories(objDefinition))
@@ -171,40 +175,43 @@ object DefinitionPreparer {
 
     val subprocessDependent = if (!isSubprocess) {
       List(
-        SortedNodeGroup("sinks",
-          processDefinition.sinkFactories.map {
-            case (id, objDefinition) => NodeToAdd("sink", id,
-              Sink("", SinkRef(id, objDefParams(id, objDefinition)),
-                Some(Expression("spel", "#input"))), filterCategories(objDefinition)
-            )
-          }.toList),
-        SortedNodeGroup("sources",
-          processDefinition.sourceFactories.map {
-            case (id, objDefinition) => NodeToAdd("source", id,
-              Source("", SourceRef(id, objDefParams(id, objDefinition))),
-              filterCategories(objDefinition)
-            )
-          }.toList
-        ),
-        //so far we don't allow nested subprocesses...
-        SortedNodeGroup("subprocesses",
-          subprocessesDetails.collect {
-            case SubprocessDetails(CanonicalProcess(MetaData(id, _, _, _, _), _, FlatNode(SubprocessInputDefinition(_, parameters, _)) :: _), category) =>
-              NodeToAdd("subprocess", id,
-                SubprocessInput("", SubprocessRef(id,
-                  evaluator.evaluateParameters(NodeDefinition(id, parameters)))), user.categories.intersect(List(category)))
-          }.toList
-        )
-      )
+      NodeGroup("sinks",
+        processDefinition.sinkFactories.map {
+          case (id, objDefinition) => NodeToAdd("sink", id,
+            Sink("", SinkRef(id, objDefParams(id, objDefinition)),
+              Some(Expression("spel", "#input"))), filterCategories(objDefinition)
+          )
+        }.toList),
+      NodeGroup("sources",
+        processDefinition.sourceFactories.map {
+          case (id, objDefinition) => NodeToAdd("source", id,
+            Source("", SourceRef(id, objDefParams(id, objDefinition))),
+            filterCategories(objDefinition)
+          )
+        }.toList),
+      //so far we don't allow nested subprocesses...
+      NodeGroup("subprocesses",
+        subprocessesDetails.collect {
+          case SubprocessDetails(CanonicalProcess(MetaData(id, _, _, _, _), _, FlatNode(SubprocessInputDefinition(_, parameters, _)) :: _), category) =>
+            NodeToAdd("subprocess", id,
+              SubprocessInput("", SubprocessRef(id,
+                evaluator.evaluateParameters(NodeDefinition(id, parameters)))), user.categories.intersect(List(category)))
+        }.toList))
     } else {
       List(
-        SortedNodeGroup("subprocessDefinition", List(
-          NodeToAdd("input", "input", SubprocessInputDefinition("", List()), user.categories),
-          NodeToAdd("output", "output", SubprocessOutputDefinition("", "output"), user.categories)
-        )))
+      NodeGroup("subprocessDefinition", List(
+        NodeToAdd("input", "input", SubprocessInputDefinition("", List()), user.categories),
+        NodeToAdd("output", "output", SubprocessOutputDefinition("", "output"), user.categories)
+      )))
     }
 
-    List(base, services, enrichers, customTransformers) ++ subprocessDependent
+    (List(base, services, enrichers, customTransformers) ++ subprocessDependent)
+      .groupBy(e => nodeCategoryMapping.getOrElse(e.name, e.name))
+      .mapValues(v => v.flatMap(ng => ng.possibleNodes))
+      .map{case (name: String, elements: List[NodeToAdd]) => SortedNodeGroup(name, elements)}
+      .toList
+      .sortBy(_.name)
+
   }
 
   def prepareEdgeTypes(user: LoggedUser, processDefinition: ProcessDefinition[ObjectDefinition],
@@ -225,9 +232,10 @@ object DefinitionPreparer {
       NodeEdges(NodeTypeId("Filter"), List(FilterTrue, FilterFalse), canChooseNodes = false)
     ) ++ subprocessOutputs
   }
+}
 
+object DefinitionPreparer{
   case class NodeTypeId(`type`: String, id: Option[String] = None)
 
   case class NodeEdges(nodeId: NodeTypeId, edges: List[EdgeType], canChooseNodes: Boolean)
-
 }

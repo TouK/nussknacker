@@ -59,8 +59,10 @@ object NussknackerApp extends App with Directives with LazyLogging {
     val featureTogglesConfig = FeatureTogglesConfig.create(config)
     //TODO clean up config and make it more typed
     //TODO add nodesConfig support for standalone mode
-    val nodesConfig = Try(config.as[Map[String, SingleNodeConfig]]("processConfig.nodes")).getOrElse(Map.empty)
+    val nodesConfig = config.getOrElse[Map[String, SingleNodeConfig]]("processConfig.nodes", Map.empty)
     logger.info(s"Ui config loaded: \nfeatureTogglesConfig: $featureTogglesConfig\nnodesConfig:$nodesConfig")
+
+    val nodeCategoryMapping = config.getOrElse[Map[String, String]]("processConfig.nodeCategoryMapping", Map.empty)
 
     val db: DbConfig = {
       val db = JdbcBackend.Database.forConfig("db", config)
@@ -105,7 +107,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
           new ProcessActivityResource(processActivityRepository, attachmentService),
           ManagementResources(counter, managementActor),
           new ValidationResources(processValidation),
-          new DefinitionResources(modelData, subprocessRepository, extractValueParameterByConfigThenType),
+          new DefinitionResources(modelData, subprocessRepository, extractValueParameterByConfigThenType, nodeCategoryMapping),
           new SignalsResources(modelData(ProcessingType.Streaming), processRepository),
           new QueryableStateResources(modelData, processRepository, espQueryableClient, jobStatusService),
           new UserResources(),
