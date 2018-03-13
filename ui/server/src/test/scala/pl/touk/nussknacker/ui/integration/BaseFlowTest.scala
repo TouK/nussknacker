@@ -7,18 +7,24 @@ import argonaut.ArgonautShapeless._
 import akka.http.javadsl.model.headers.HttpCredentials
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import argonaut.Json
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
-import pl.touk.nussknacker.engine.api.deployment.test.TestResults
+import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
+import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
+import pl.touk.nussknacker.engine.graph.node.{SubprocessInputDefinition, SubprocessOutputDefinition}
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.ui.NussknackerApp
 import pl.touk.nussknacker.ui.api.UISettings
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessUtil}
+import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
+import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.Edge
+import pl.touk.nussknacker.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.ui.process.uiconfig.SingleNodeConfig
 import pl.touk.nussknacker.ui.util.MultipartUtils
+import pl.touk.nussknacker.ui.validation.ValidationResults.{NodeValidationError, ValidationResult}
 
 class BaseFlowTest extends FunSuite with ScalatestRouteTest
   with Matchers with ScalaFutures with BeforeAndAfterEach with BeforeAndAfterAll {
@@ -53,6 +59,37 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest
           "test1" -> SingleNodeConfig(None, Some("Sink.svg"), None),
           "enricher" -> SingleNodeConfig(Some(Map("param" -> "'default value'")), Some("Filter.svg"), None)
         )
+    }
+  }
+
+  test("be able to work with subprocess with custom class inputs") {
+    val processId = UUID.randomUUID().toString
+    val endpoint = s"/api/processes/$processId"
+
+    val process = DisplayableProcess(
+      id = processId,
+      properties = ProcessProperties(StreamMetaData(), ExceptionHandlerRef(List()), isSubprocess = true, subprocessVersions = Map()),
+      nodes = List(SubprocessInputDefinition("input1", List(SubprocessParameter("badParam", SubprocessClazzRef("i.do.not.exist")))),
+        SubprocessOutputDefinition("output1", "out1")),
+      edges = List(Edge("input1", "output1", None)),
+      processingType = ProcessingType.Streaming
+    )
+
+    Post(s"$endpoint/Category1?isSubprocess=true") ~> addCredentials(credentials) ~> mainRoute ~> check {
+      status shouldEqual StatusCodes.Created
+      Put(endpoint, TestFactory.posting.toEntityAsProcessToSave(process)) ~> addCredentials(credentials) ~> mainRoute ~> check {
+        status shouldEqual StatusCodes.OK
+
+        import pl.touk.nussknacker.ui.codec.UiCodecs.validationResultEncode
+        val res = responseAs[String].decodeOption[ValidationResult].get
+        //TODO: in the future should be more local error
+        res.errors.globalErrors.map(_.description) shouldBe List(
+          "Fatal error: Failed to load subprocess parameter: i.do.not.exist for input1, please check configuration")
+
+        Get(endpoint) ~> addCredentials(credentials) ~> mainRoute ~> check {
+          status shouldEqual StatusCodes.OK
+        }
+      }
     }
   }
 

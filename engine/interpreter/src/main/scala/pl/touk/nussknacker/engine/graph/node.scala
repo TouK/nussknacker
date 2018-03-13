@@ -1,13 +1,19 @@
 package pl.touk.nussknacker.engine.graph
 
+import org.apache.commons.lang3.ClassUtils
+import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import sink.SinkRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
 import pl.touk.nussknacker.engine.graph.variable.Field
+
+import scala.reflect.ClassTag
+import scala.util.Try
 
 object node {
 
@@ -103,14 +109,34 @@ object node {
 
   //this is used only in subprocess definition
   case class SubprocessInputDefinition(id: String,
-                                      //TODO: should it be separate class?
-                                       parameters: List[DefinitionExtractor.Parameter],
+                                       parameters: List[SubprocessParameter],
                                        additionalFields: Option[UserDefinedAdditionalNodeFields] = None)
     extends StartingNodeData
 
   //this is used only in subprocess definition
   case class SubprocessOutputDefinition(id: String, outputName: String, additionalFields: Option[UserDefinedAdditionalNodeFields] = None)
     extends EndingNodeData
+
+  //we don't use DefinitionExtractor.Parameter here, because this class should be serializable to json and Parameter has ClazzRef which has *real* class inside  
+  //TODO: probably should be able to handle class parameters or typed maps
+  //shape of this data should probably change, currently we leave it for backward compatibility
+  object SubprocessInputDefinition {
+
+    case class SubprocessParameter(name: String, typ: SubprocessClazzRef)
+
+    object SubprocessClazzRef {
+
+      def apply[T:ClassTag]: SubprocessClazzRef = SubprocessClazzRef(ClazzRef[T].refClazzName)
+
+    }
+
+    case class SubprocessClazzRef(refClazzName: String) {
+
+      def toClazzRef(classLoader: ClassLoader) = Try(ClazzRef(ClassUtils.getClass(classLoader, refClazzName)))
+
+    }
+
+  }
 
   //it has to be here, otherwise it won't compile...
   def prefixNodeId[T<:NodeData](prefix: List[String], nodeData: T) : T = {

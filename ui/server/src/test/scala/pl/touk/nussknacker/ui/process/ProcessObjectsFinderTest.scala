@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor
+import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node.{CustomNode, SubprocessInputDefinition, SubprocessOutputDefinition}
 import pl.touk.nussknacker.ui.api.ProcessTestData._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil
@@ -20,7 +21,7 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
 
   val subprocess = CanonicalProcess(MetaData("subProcess1", StreamMetaData(), isSubprocess = true), null,
     List(
-      canonicalnode.FlatNode(SubprocessInputDefinition("start", List(DefinitionExtractor.Parameter("ala", ClazzRef[String])))),
+      canonicalnode.FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("ala", SubprocessClazzRef[String])))),
       canonicalnode.FlatNode(CustomNode("f1", None, otherExistingStreamTransformer2, List.empty)), FlatNode(SubprocessOutputDefinition("out1", "output")))
   )
 

@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.Parameter
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ObjectProcessDefinition}
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
+import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.{EspProcess, node}
 import pl.touk.nussknacker.engine.graph.node.{Case, Split, SubprocessInputDefinition, SubprocessOutputDefinition}
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
@@ -138,14 +139,14 @@ object ProcessTestData {
 
   val sampleSubprocessOneOut = {
     CanonicalProcess(MetaData("sub1", StreamMetaData(), isSubprocess = true), ExceptionHandlerRef(List()), List(
-      FlatNode(SubprocessInputDefinition("in", List(Parameter("param1", ClazzRef(classOf[String]))))),
+      FlatNode(SubprocessInputDefinition("in", List(SubprocessParameter("param1", SubprocessClazzRef[String])))),
       canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "output"))
     ))
   }
 
   val sampleSubprocess = {
     CanonicalProcess(MetaData("sub1", StreamMetaData(), isSubprocess = true), ExceptionHandlerRef(List()), List(
-      FlatNode(SubprocessInputDefinition("in", List(Parameter("param1", ClazzRef(classOf[String]))))),
+      FlatNode(SubprocessInputDefinition("in", List(SubprocessParameter("param1", SubprocessClazzRef[String])))),
       SplitNode(Split("split"), List(
         List(FlatNode(SubprocessOutputDefinition("out", "out1"))),
         List(FlatNode(SubprocessOutputDefinition("out2", "out2")))
@@ -155,7 +156,7 @@ object ProcessTestData {
 
   val sampleSubprocess2 = {
     CanonicalProcess(MetaData("sub1", StreamMetaData(), isSubprocess = true), ExceptionHandlerRef(List()), List(
-      FlatNode(SubprocessInputDefinition("in", List(Parameter("param2", ClazzRef(classOf[String]))))),
+      FlatNode(SubprocessInputDefinition("in", List(SubprocessParameter("param2", SubprocessClazzRef[String])))),
       SplitNode(Split("split"), List(
         List(FlatNode(SubprocessOutputDefinition("out", "out1"))),
         List(FlatNode(SubprocessOutputDefinition("out2", "out2"))),

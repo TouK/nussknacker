@@ -51,7 +51,7 @@ trait UiCodecs extends Codecs with Argonauts with SingletonInstances with Derive
 
   implicit def nodeErrorsCodec = Codecs.enumCodec(NodeValidationErrorType)
 
-  implicit def validationResultEncode = EncodeJson.of[ValidationResult]
+  implicit def validationResultEncode = CodecJson.derive[ValidationResult]
 
   //fixme how to do this automatically?
   implicit def edgeTypeEncode: EncodeJson[EdgeType] = EncodeJson[EdgeType] {
@@ -92,6 +92,7 @@ trait UiCodecs extends Codecs with Argonauts with SingletonInstances with Derive
   implicit def processActivityCodec = CodecJson.derive[ProcessActivity]
 
   //FIXME: for now we present it as ClazzRef - TypedMap becomes normal map...
+  implicit val encode: EncodeJson[ClazzRef] = EncodeJson[ClazzRef](ref => jObjectFields("refClazzName" -> jString(ref.refClazzName)))
   implicit def typingResultEncode : EncodeJson[TypingResult] = EncodeJson.of[ClazzRef].contramap[TypingResult] {
     case typing.Unknown => ClazzRef[Any]
     case a: typing.Typed => ClazzRef(a.possibleTypes.head.klass)

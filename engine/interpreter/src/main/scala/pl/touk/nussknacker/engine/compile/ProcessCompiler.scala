@@ -6,10 +6,12 @@ import cats.Traverse.ops.toAllTraverseOps
 import cats.data.Validated._
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.instances.list._
+import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.{Context, MetaData}
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, EspExceptionInfo}
 import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compile.PartSubGraphCompilerBase.ContextsForParts
@@ -24,6 +26,7 @@ import pl.touk.nussknacker.engine.definition._
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
 import pl.touk.nussknacker.engine.graph.node.{CustomNode, StartingNodeData, SubprocessInputDefinition}
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.{EspProcess, evaluatedparam}
@@ -33,6 +36,7 @@ import pl.touk.nussknacker.engine.splittedgraph.part._
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.{Next, NextNode, PartRef, SplittedNode}
 import pl.touk.nussknacker.engine.util.Implicits._
 
+import scala.util.Try
 import scala.util.control.NonFatal
 
 class ProcessCompiler( protected val classLoader: ClassLoader,
@@ -198,8 +202,13 @@ protected trait ProcessCompilerBase {
     // Currently it's not easy, as parameters are involved...
     case pl.touk.nussknacker.engine.graph.node.Source(_, ref, _) =>  sourceFactories.get(ref.typ)
           .map(sf => Map(Interpreter.InputParamName -> sf.returnType)).getOrElse(Map.empty)
-    case SubprocessInputDefinition(_, params, _) => params.map(p => p.name -> Typed(p.typ)).toMap
+    case SubprocessInputDefinition(_, params, _) => params.map(p => p.name -> loadFromParameter(p)).toMap
   }
+
+  //TODO: better classloader error handling
+  private def loadFromParameter(subprocessParameter: SubprocessParameter)(implicit nodeId: NodeId) =
+    Typed(subprocessParameter.typ.toClazzRef(classLoader).getOrElse(throw new IllegalArgumentException(
+      s"Failed to load subprocess parameter: ${subprocessParameter.typ.refClazzName} for ${nodeId.id}")))
 
   private def compile(ref: ExceptionHandlerRef)
                       (implicit metaData: MetaData): ValidatedNel[ProcessCompilationError, EspExceptionHandler] = {

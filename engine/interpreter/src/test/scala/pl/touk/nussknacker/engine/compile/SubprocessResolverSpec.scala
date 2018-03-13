@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.compile.ProcessCompilationError.{DisablingMany
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
@@ -33,7 +34,7 @@ class SubprocessResolverSpec extends FlatSpec with Matchers with Inside{
 
     val subprocess =  CanonicalProcess(MetaData("subProcess1", StreamMetaData()), null,
       List(
-        canonicalnode.FlatNode(SubprocessInputDefinition("start", List(DefinitionExtractor.Parameter("ala", ClazzRef[String])))),
+        canonicalnode.FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("ala", SubprocessClazzRef[String])))),
         canonicalnode.FilterNode(Filter("f1", "false"), List()), FlatNode(SubprocessOutputDefinition("out1", "output")))
     )
 
@@ -60,14 +61,14 @@ class SubprocessResolverSpec extends FlatSpec with Matchers with Inside{
 
     val subprocess = CanonicalProcess(MetaData("subProcess2", StreamMetaData()), null,
       List(
-        canonicalnode.FlatNode(SubprocessInputDefinition("start", List(DefinitionExtractor.Parameter("param", ClazzRef[String])))),
+        canonicalnode.FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
         canonicalnode.FilterNode(Filter("f1", "#param == 'a'"),
         List(canonicalnode.FlatNode(Sink("deadEnd", SinkRef("sink1", List()), Some("'deadEnd'"))))
       ), canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "output"))))
 
     val nested =  CanonicalProcess(MetaData("subProcess1", StreamMetaData()), null,
       List(
-        canonicalnode.FlatNode(SubprocessInputDefinition("start", List(DefinitionExtractor.Parameter("param", ClazzRef[String])))),
+        canonicalnode.FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
         canonicalnode.Subprocess(SubprocessInput("sub2",
         SubprocessRef("subProcess2", List(Parameter("param", "#param")))), Map("output" -> List(FlatNode(SubprocessOutputDefinition("sub2Out", "output"))))))
     )
@@ -98,7 +99,7 @@ class SubprocessResolverSpec extends FlatSpec with Matchers with Inside{
 
     val subprocess = CanonicalProcess(MetaData("subProcess1", StreamMetaData()), null,
       List(
-        canonicalnode.FlatNode(SubprocessInputDefinition("start", List(DefinitionExtractor.Parameter("param", ClazzRef[String])))),
+        canonicalnode.FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
         canonicalnode.FilterNode(Filter("f1", "false"), List()), FlatNode(SubprocessOutputDefinition("out1", "output")))
     )
 
@@ -119,7 +120,7 @@ class SubprocessResolverSpec extends FlatSpec with Matchers with Inside{
     val subprocess = CanonicalProcess(MetaData("subProcess1", StreamMetaData()),
       null,
       List(
-        canonicalnode.FlatNode(SubprocessInputDefinition("start", List(DefinitionExtractor.Parameter("ala", ClazzRef[String])))),
+        canonicalnode.FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("ala", SubprocessClazzRef[String])))),
         canonicalnode.FilterNode(Filter("f1", "false"), List()), FlatNode(SubprocessOutputDefinition("out1", "badoutput")))
     )
 
@@ -143,10 +144,7 @@ class SubprocessResolverSpec extends FlatSpec with Matchers with Inside{
       null,
       List(
         canonicalnode.FlatNode(
-          SubprocessInputDefinition("start", List(
-            DefinitionExtractor.Parameter("ala", ClazzRef[String])
-          ))
-        ),
+          SubprocessInputDefinition("start",List(SubprocessParameter("ala", SubprocessClazzRef[String])))),
         canonicalnode.FilterNode(Filter("f1", "false"), List()),
         canonicalnode.SplitNode(
           Split("s"), List(
@@ -173,10 +171,7 @@ class SubprocessResolverSpec extends FlatSpec with Matchers with Inside{
       null,
       List(
         canonicalnode.FlatNode(
-          SubprocessInputDefinition("start", List(
-            DefinitionExtractor.Parameter("ala", ClazzRef[String])
-          ))
-        ),
+          SubprocessInputDefinition("start", List(SubprocessParameter("ala", SubprocessClazzRef[String])))),
         canonicalnode.FilterNode(Filter("f1", "false"), List()),
         canonicalnode.FlatNode(Sink("disabledSubprocessMockedSink", SinkRef("disabledSubprocessMockedSink", List()), Some("'result'")))
       )
@@ -207,10 +202,7 @@ class SubprocessResolverSpec extends FlatSpec with Matchers with Inside{
       null,
       List(
         canonicalnode.FlatNode(
-          SubprocessInputDefinition("start", List(
-            DefinitionExtractor.Parameter("ala", ClazzRef[String])
-          ))
-        ),
+          SubprocessInputDefinition("start", List(SubprocessParameter("ala", SubprocessClazzRef[String])))),
         FlatNode(SubprocessOutputDefinition("out1", "output"))
       )
     )
@@ -218,10 +210,7 @@ class SubprocessResolverSpec extends FlatSpec with Matchers with Inside{
       null,
       List(
         canonicalnode.FlatNode(
-          SubprocessInputDefinition("start", List(
-            DefinitionExtractor.Parameter("ala", ClazzRef[String])
-          ))
-        ),
+          SubprocessInputDefinition("start", List(SubprocessParameter("ala", SubprocessClazzRef[String])))),
         canonicalnode.FilterNode(Filter("f1", "false"), List()),
         FlatNode(SubprocessOutputDefinition("out1", "output"))
       )
@@ -268,7 +257,7 @@ class SubprocessResolverSpec extends FlatSpec with Matchers with Inside{
 
     val subprocess = CanonicalProcess(MetaData("subProcess1", StreamMetaData()), null,
       List(
-        canonicalnode.FlatNode(SubprocessInputDefinition("start", List(DefinitionExtractor.Parameter("ala", ClazzRef[String])))),
+        canonicalnode.FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("ala", SubprocessClazzRef[String])))),
         canonicalnode.FilterNode(Filter("f1", "false"), List()), FlatNode(Sink("end", SinkRef("sink1", List()))))
     )
 

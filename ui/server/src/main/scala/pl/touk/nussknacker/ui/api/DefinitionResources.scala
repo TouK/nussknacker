@@ -54,12 +54,13 @@ class DefinitionResources(modelData: Map[ProcessingType, ModelData],
         post {
           entity(as[Map[String, Long]]) { subprocessVersions =>
             complete {
-              val chosenProcessDefinition = modelData(processingType).processDefinition
-              val subprocessInputs = fetchSubprocessInputs(subprocessVersions)
+              val modelDataForType = modelData(processingType)
+              val chosenProcessDefinition = modelDataForType.processDefinition
+              val subprocessInputs = fetchSubprocessInputs(subprocessVersions, modelDataForType.modelClassLoader.classLoader)
               val subprocessesDetails = subprocessRepository.loadSubprocesses(subprocessVersions)
               val uiProcessDefinition = UIProcessDefinition(chosenProcessDefinition, subprocessInputs)
               ProcessObjects(definitionPreparer.prepareNodesToAdd(user = user, processDefinition = chosenProcessDefinition,
-                isSubprocess = isSubprocess, subprocessesDetails = subprocessesDetails, extractorFactory = parameterDefaultValueExtractorStrategyFactory
+                isSubprocess = isSubprocess, subprocessInputs = subprocessInputs, extractorFactory = parameterDefaultValueExtractorStrategyFactory
               ),
                 uiProcessDefinition,
                 definitionPreparer.prepareEdgeTypes(user, chosenProcessDefinition, isSubprocess, subprocessesDetails))
@@ -77,10 +78,12 @@ class DefinitionResources(modelData: Map[ProcessingType, ModelData],
     }
   }
 
-  private def fetchSubprocessInputs(subprocessVersions: Map[String, Long]): Map[String, ObjectDefinition] = {
+  private def fetchSubprocessInputs(subprocessVersions: Map[String, Long], classLoader: ClassLoader): Map[String, ObjectDefinition] = {
     val subprocessInputs = subprocessRepository.loadSubprocesses(subprocessVersions).collect {
       case SubprocessDetails(CanonicalProcess(MetaData(id, _, _, _, _), _, FlatNode(SubprocessInputDefinition(_, parameters, _)) :: _), category) =>
-        (id, ObjectDefinition(parameters, ClazzRef[java.util.Map[String, Any]], List(category)))
+        //TODO: currently if we cannot parse parameter class we assume it's unknown
+        val clazzRefParams = parameters.map(p => DefinitionExtractor.Parameter(p.name, p.typ.toClazzRef(classLoader).getOrElse(ClazzRef.unknown)))
+        (id, ObjectDefinition(clazzRefParams, ClazzRef[java.util.Map[String, Any]], List(category)))
     }.toMap
     subprocessInputs
   }
@@ -133,7 +136,7 @@ class DefinitionPreparer(val nodeCategoryMapping: Map[String, String] = Map()) {
 
   def prepareNodesToAdd(user: LoggedUser, processDefinition: ProcessDefinition[ObjectDefinition],
                         isSubprocess: Boolean,
-                        subprocessesDetails: Set[SubprocessDetails],
+                        subprocessInputs: Map[String, ObjectDefinition],
                         extractorFactory: ParameterDefaultValueExtractorStrategy): List[NodeGroup] = {
     val evaluator = new ParameterEvaluatorExtractor(extractorFactory)
 
@@ -191,11 +194,10 @@ class DefinitionPreparer(val nodeCategoryMapping: Map[String, String] = Map()) {
         }.toList),
       //so far we don't allow nested subprocesses...
       NodeGroup("subprocesses",
-        subprocessesDetails.collect {
-          case SubprocessDetails(CanonicalProcess(MetaData(id, _, _, _, _), _, FlatNode(SubprocessInputDefinition(_, parameters, _)) :: _), category) =>
-            NodeToAdd("subprocess", id,
-              SubprocessInput("", SubprocessRef(id,
-                evaluator.evaluateParameters(NodeDefinition(id, parameters)))), user.categories.intersect(List(category)))
+        subprocessInputs.map {
+          case (id, definition) =>
+            val nodes = evaluator.evaluateParameters(NodeDefinition(id, definition.parameters))
+            NodeToAdd("subprocess", id, SubprocessInput("", SubprocessRef(id, nodes)), user.categories.intersect(definition.categories))
         }.toList))
     } else {
       List(

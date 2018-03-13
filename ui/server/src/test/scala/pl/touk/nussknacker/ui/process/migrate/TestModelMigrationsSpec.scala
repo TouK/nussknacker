@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError.RedundantParameters
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.Parameter
 import pl.touk.nussknacker.engine.graph.evaluatedparam
+import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node.{SubprocessInput, SubprocessInputDefinition}
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.spel.Implicits._
@@ -98,7 +99,7 @@ class TestModelMigrationsSpec extends FunSuite with Matchers {
     val (subprocessMigrationResult, processMigrationResult) = (results.find(_.converted.id == subprocess.id).get, results.find(_.converted.id == process.id).get)
     subprocessMigrationResult.shouldFail shouldBe false
     processMigrationResult.shouldFail shouldBe false
-    getFirst[SubprocessInputDefinition](subprocessMigrationResult).parameters shouldBe List(Parameter("param42", ClazzRef(classOf[String])))
+    getFirst[SubprocessInputDefinition](subprocessMigrationResult).parameters shouldBe List(SubprocessParameter("param42", SubprocessClazzRef[String]))
     getFirst[SubprocessInput](processMigrationResult).ref.parameters shouldBe List(evaluatedparam.Parameter("param42", "'foo'"))
   }
 

@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
 import org.scalatest.{FlatSpec, Matchers}
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.ui.api.DefinitionPreparer.{NodeEdges, NodeTypeId}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory
@@ -13,11 +14,12 @@ class DefinitionPreparerSpec extends FlatSpec with Matchers {
   it should "return objects sorted by label" in {
 
     val subprocessesDetails = TestFactory.sampleSubprocessRepository.loadSubprocesses(Map.empty)
+    val subprocessInputs = Map[String, ObjectDefinition]()
     val groups = new DefinitionPreparer().prepareNodesToAdd(
       user = LoggedUser("aa", List(Permission.Admin), List()),
       processDefinition = ProcessTestData.processDefinition,
       isSubprocess = false,
-      subprocessesDetails = subprocessesDetails,
+      subprocessInputs = subprocessInputs,
       extractorFactory = new TypeAfterConfig(new ParamDefaultValueConfig(Map()))
     )
     groups.map(_.name) shouldBe sorted
@@ -48,11 +50,13 @@ class DefinitionPreparerSpec extends FlatSpec with Matchers {
   it should "return objects sorted by label with mapped categories" in {
 
     val subprocessesDetails = TestFactory.sampleSubprocessRepository.loadSubprocesses(Map.empty)
+    val subprocessInputs = Map[String, ObjectDefinition]()
+
     val groups = new DefinitionPreparer(Map("custom"->"base")).prepareNodesToAdd(
       user = LoggedUser("aa", List(Permission.Admin), List()),
       processDefinition = ProcessTestData.processDefinition,
       isSubprocess = false,
-      subprocessesDetails = subprocessesDetails,
+      subprocessInputs = subprocessInputs,
       extractorFactory = new TypeAfterConfig(new ParamDefaultValueConfig(Map()))
     )
     groups.map(_.name) shouldBe sorted
