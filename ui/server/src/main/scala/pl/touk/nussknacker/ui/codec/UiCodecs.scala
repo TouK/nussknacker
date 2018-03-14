@@ -3,8 +3,7 @@ package pl.touk.nussknacker.ui.codec
 import argonaut._
 import argonaut.derive.{DerivedInstances, JsonSumCodec, JsonSumCodecFor, SingletonInstances}
 import pl.touk.nussknacker.engine.api.{Displayable, TypeSpecificData, UserDefinedProcessAdditionalFields}
-import pl.touk.nussknacker.engine.api.deployment.test.{ExceptionResult, ExpressionInvocationResult, MockedResult, TestResults}
-import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
+import pl.touk.nussknacker.engine.api.deployment.test.{ExceptionResult, TestResults}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.definition.TestingCapabilities
 import pl.touk.nussknacker.engine.graph.node
@@ -21,6 +20,7 @@ import ArgonautShapeless._
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.QueryServiceResult
 import pl.touk.nussknacker.engine.api.typed.{ClazzRef, typing}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.util.json.{BestEffortJsonEncoder, Codecs}
 import pl.touk.nussknacker.engine.util.service.query.ServiceQuery.QueryResult
 
@@ -33,6 +33,8 @@ trait UiCodecs extends Codecs with Argonauts with SingletonInstances with Derive
 
   //not sure why it works, another argonaut issue...
   implicit def typeCodec : CodecJson[TypeSpecificData] = new ProcessMarshaller().typeSpecificEncoder
+
+  implicit val nodeDataCodec = CodecJson.derived[NodeData]
 
   //argonaut does not like covariation so wee need to cast
   implicit def nodeAdditionalFieldsOptCodec: CodecJson[Option[node.UserDefinedAdditionalNodeFields]] = {
