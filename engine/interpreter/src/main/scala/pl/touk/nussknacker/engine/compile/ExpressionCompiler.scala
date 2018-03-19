@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectMetadata
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
+import pl.touk.nussknacker.engine.sql.SqlExpressionParser
 import pl.touk.nussknacker.engine.{compiledgraph, graph}
 
 object ExpressionCompiler {
@@ -22,7 +23,7 @@ object ExpressionCompiler {
       = default(loader, expressionConfig, optimizeCompilation = false)
 
   private def default(loader: ClassLoader, expressionConfig: ExpressionDefinition[ObjectMetadata], optimizeCompilation: Boolean): ExpressionCompiler = {
-    val parsersSeq = Seq(SpelExpressionParser.default(loader, optimizeCompilation, expressionConfig.globalImports))
+    val parsersSeq = Seq(SpelExpressionParser.default(loader, optimizeCompilation, expressionConfig.globalImports), SqlExpressionParser)
     val parsers = parsersSeq.map(p => p.languageId -> p).toMap
     new ExpressionCompiler(parsers, expressionConfig.globalVariables.mapValues(_.returnType))
   }

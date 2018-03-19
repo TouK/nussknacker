@@ -17,8 +17,9 @@ object typing {
 
   object TypedMapTypingResult {
 
-    def apply(definition: TypedMapDefinition): TypedMapTypingResult
-      = TypedMapTypingResult(definition.fields.mapValues(Typed(_)))
+    def apply(definition: TypedMapDefinition) : TypedMapTypingResult
+    //we don't use mapValues here to avoid lazy evaluation that crashes during serialization...
+      = TypedMapTypingResult(definition.fields.map { case (k, v) => (k, Typed(v))})
   }
 
   case class TypedMapTypingResult(fields: Map[String, TypingResult]) extends TypingResult {

@@ -183,7 +183,7 @@ object ProcessTestHelpers {
     val serviceName = "mockService"
 
     @MethodToInvoke
-    def invoke(@ParamName("all") all: Any)(implicit ec: ExecutionContext) = {
+    def invoke(@ParamName("all") all: Any)(implicit ec: ExecutionContext): Future[Unit] = {
       measuring(Future.successful {
         MockService.add(all)
       })

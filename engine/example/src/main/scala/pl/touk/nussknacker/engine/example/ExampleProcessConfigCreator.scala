@@ -3,9 +3,9 @@ package pl.touk.nussknacker.engine.example
 import java.nio.charset.StandardCharsets
 import java.util.UUID
 
-import argonaut.Argonaut._
-import argonaut.ArgonautShapeless._
-import argonaut.{DecodeJson, Json}
+import argonaut._
+import Argonaut._
+import ArgonautShapeless._
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
