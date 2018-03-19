@@ -3,9 +3,9 @@ package pl.touk.nussknacker.engine.management.sample
 import java.util.Properties
 
 import com.typesafe.config.ConfigFactory
-import org.apache.flink.streaming.api.scala._
-import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer09
 import org.apache.flink.api.common.serialization.SimpleStringSchema
+import org.apache.flink.streaming.api.scala._
+import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer011
 
 object CustomProcess {
 
@@ -24,7 +24,7 @@ object CustomProcess {
     props.setProperty("zookeeper.connect", config.getString("kafka.zkAddress"))
     props.setProperty("bootstrap.servers", config.getString("kafka.kafkaAddress"))
 
-    env.addSource(new FlinkKafkaConsumer09[String]("testTopic", new SimpleStringSchema, props))
+    env.addSource(new FlinkKafkaConsumer011[String]("testTopic", new SimpleStringSchema, props))
       .printToErr()
 
     env.execute(args(0))

@@ -3,8 +3,8 @@ package pl.touk.nussknacker.engine.kafka
 import java.util.Properties
 
 import kafka.admin.AdminUtils
-import kafka.consumer.ConsumerConnector
 import kafka.utils.ZkUtils
+import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.producer.{Callback, KafkaProducer, ProducerRecord, RecordMetadata}
 
 import scala.concurrent.{Future, Promise}
@@ -13,10 +13,10 @@ import scala.util.{Failure, Success, Try}
 class KafkaClient(kafkaAddress: String, zkAddress: String) {
   val producer = createKafkaProducer[String, String]
 
-  val consumers = collection.mutable.HashSet[ConsumerConnector]()
+  private val consumers = collection.mutable.HashSet[KafkaConsumer[Array[Byte], Array[Byte]]]()
 
-  val zkClient = ZkUtils.createZkClient(zkAddress, 10000, 10000)
-  val zkUtils = ZkUtils(zkClient, isZkSecurityEnabled = false)
+  private val zkClient = ZkUtils.createZkClient(zkAddress, 10000, 10000)
+  private val zkUtils = ZkUtils(zkClient, isZkSecurityEnabled = false)
 
   private def createKafkaProducer[T, K]: KafkaProducer[T, K] = {
     KafkaUtils.createKafkaProducer(kafkaAddress)
@@ -68,14 +68,15 @@ class KafkaClient(kafkaAddress: String, zkAddress: String) {
   }
 
   def shutdown() = {
-    consumers.foreach(_.shutdown())
+    consumers.foreach(_.close())
     producer.close()
     zkUtils.close()
     zkClient.close()
   }
 
-  def createConsumer(consumerTimeout: Long = 10000): ConsumerConnector = {
-    val consumer = KafkaUtils.createConsumerConnector(zkAddress, consumerTimeout)
+  def createConsumer(consumerTimeout: Long = 10000): KafkaConsumer[Array[Byte], Array[Byte]] = {
+    val props = KafkaUtils.createConsumerConnectorProperties(kafkaAddress, consumerTimeout)
+    val consumer = new KafkaConsumer[Array[Byte], Array[Byte]](props)
     consumers.add(consumer)
     consumer
   }

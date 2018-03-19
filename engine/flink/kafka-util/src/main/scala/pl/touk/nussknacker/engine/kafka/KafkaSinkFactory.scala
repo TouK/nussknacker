@@ -16,7 +16,7 @@ class KafkaSinkFactory(config: KafkaConfig,
   def create(processMetaData: MetaData, @ParamName(`TopicParamName`) topic: String): Sink = {
     new FlinkSink with Serializable {
       override def toFlinkFunction: SinkFunction[Any] = {
-        PartitionByKeyFlinkKafkaProducer09(config.kafkaAddress, topic, serializationSchema, config.kafkaProperties)
+        PartitionByKeyFlinkKafkaProducer011(config.kafkaAddress, topic, serializationSchema, config.kafkaProperties)
       }
       override def testDataOutput: Option[(Any) => String] = Option(value => new String(serializationSchema.serializeValue(value), StandardCharsets.UTF_8))
     }

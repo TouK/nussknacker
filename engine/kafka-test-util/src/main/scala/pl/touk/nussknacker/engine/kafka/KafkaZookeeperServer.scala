@@ -5,16 +5,15 @@ import java.net.InetSocketAddress
 import java.nio.file.Files
 import java.util.Properties
 
-import kafka.api.OffsetRequest
-import kafka.consumer.{Consumer, ConsumerConfig, ConsumerConnector, KafkaStream}
-import kafka.message.MessageAndMetadata
 import kafka.server.{KafkaConfig, KafkaServer}
-import kafka.utils.SystemTime
+import org.apache.kafka.clients.consumer.{ConsumerRecord, KafkaConsumer}
 import org.apache.kafka.clients.producer.KafkaProducer
-import org.apache.kafka.common.serialization.StringSerializer
+import org.apache.kafka.common.TopicPartition
+import org.apache.kafka.common.serialization.{ByteArrayDeserializer, StringSerializer}
+import org.apache.kafka.common.utils.Time
 import org.apache.zookeeper.server.{NIOServerCnxnFactory, ZooKeeperServer}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.collection.mutable
 
 object KafkaZookeeperServer {
   val localhost = "127.0.0.1"
@@ -41,6 +40,7 @@ object KafkaZookeeperServer {
     properties.setProperty("hostname", localhost)
     properties.setProperty("advertised.host.name", localhost)
     properties.setProperty("num.partitions", "1")
+    properties.setProperty("offsets.topic.replication.factor", "1")
     properties.setProperty("log.cleaner.dedupe.buffer.size", (2 * 1024 * 1024L).toString) //2MB should be enough for tests
 
     properties.setProperty("port", s"$kafkaPort")
@@ -50,7 +50,7 @@ object KafkaZookeeperServer {
       properties.setProperty(key, value)
     }
 
-    val server = new KafkaServer(new KafkaConfig(properties), SystemTime)
+    val server = new KafkaServer(new KafkaConfig(properties), time = Time.SYSTEM)
     server.startup()
 
     server
@@ -80,31 +80,33 @@ object KafkaUtils {
     new KafkaProducer[T, K](props)
   }
 
-  def createConsumer(zookeeperAddress: String): ConsumerConnector = {
-    createConsumerConnector(zookeeperAddress)
-  }
-
-  def createConsumerConnector(zookeeperAddress: String, consumerTimeout: Long = 10000): ConsumerConnector = {
+  def createConsumerConnectorProperties(kafkaAddress: String, consumerTimeout: Long = 10000): Properties = {
     val props = new Properties()
     props.put("group.id", "testGroup")
-    props.put("zookeeper.connect", zookeeperAddress)
-    props.put("auto.offset.reset", OffsetRequest.SmallestTimeString)
+    props.put("bootstrap.servers", kafkaAddress)
+    props.put("auto.offset.reset", "earliest")
     props.put("consumer.timeout.ms", consumerTimeout.toString)
-    Consumer.create(new ConsumerConfig(props))
+    props.put("key.deserializer", classOf[ByteArrayDeserializer])
+    props.put("value.deserializer", classOf[ByteArrayDeserializer])
+    props
   }
 
-  implicit class RichConsumerConnector(c: ConsumerConnector) {
-    def consume(topic: String): KafkaStream[Array[Byte], Array[Byte]] = {
-      c.createMessageStreams(Map(topic -> 1))(topic).head
+  case class KeyMessage[K, V](k: K, msg: V) {
+    def message() = msg
+    def key() = k
+  }
+
+  implicit class RichConsumerConnector(consumer: KafkaConsumer[Array[Byte], Array[Byte]]) {
+    import scala.collection.JavaConversions._
+
+    def consume(topic: String): Stream[KeyMessage[Array[Byte], Array[Byte]]] = {
+      val partitions = consumer.partitionsFor(topic).map(no => new TopicPartition(topic, no.partition()))
+      consumer.assign(partitions)
+
+      Stream.continually(())
+        .flatMap(_ => consumer.poll(1000).toList.toStream)
+        .map(record => KeyMessage(record.key(), record.value()))
     }
-  }
-
-  implicit class RichKafkaStream(stream: KafkaStream[Array[Byte], Array[Byte]]) {
-    def takeNthNonBlocking(n: Int)
-                          (implicit ec: ExecutionContext) =
-      Future {
-        stream.slice(n-1, n).head
-      }
   }
 
 }

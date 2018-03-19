@@ -8,8 +8,8 @@ import argonaut.PrettyParams
 import com.typesafe.config.ConfigValueFactory
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
-import org.scalatest.{FlatSpec, Matchers}
-import pl.touk.nussknacker.engine.api.{ ProcessVersion}
+import org.scalatest.{FlatSpec, FunSpec, FunSuite, Matchers}
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, GraphProcess}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaClient
@@ -18,13 +18,13 @@ import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import scala.concurrent.duration._
 
 //TODO: get rid of at least some Thread.sleep
-class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures with Eventually with DockerTest {
+class FlinkProcessManagerSpec extends FunSuite with Matchers with ScalaFutures with Eventually with DockerTest {
 
   import pl.touk.nussknacker.engine.kafka.KafkaUtils._
 
   val ProcessMarshaller = new ProcessMarshaller
 
-  it should "deploy process in running flink" in {
+  test("deploy process in running flink") {
     val processId = "runningFlink"
 
     val process = SampleProcess.prepareProcess(processId)
@@ -34,7 +34,7 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
     cancel(processId)
   }
 
-  it should "cancel before deployment" in {
+  test("cancel before deployment") {
     val processId = "cancelBeforeDeployment"
 
     val process = SampleProcess.prepareProcess(processId)
@@ -47,7 +47,7 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
   }
 
 
-  it should "be able verify&redeploy kafka process" in {
+  test("be able verify&redeploy kafka process") {
 
     val processId = "verifyAndRedeploy"
     val outTopic = s"output-$processId"
@@ -60,23 +60,26 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
       config.getString("processConfig.kafka.zkAddress"))
     kafkaClient.createTopic(outTopic, 1)
     kafkaClient.createTopic(inTopic, 1)
-    val consumer = kafkaClient.createConsumer().consume(outTopic)
 
     deployProcessAndWaitIfRunning(kafkaProcess, empty(processId))
 
     kafkaClient.producer.send(new ProducerRecord[String, String](inTopic, "1"))
-    new String(consumer.head.message(), StandardCharsets.UTF_8) shouldBe "1"
+
+    val consumer = kafkaClient.createConsumer()
+    val messages1 = consumer.consume(outTopic)
+    new String(messages1.take(1).toIterable.head.message(), StandardCharsets.UTF_8) shouldBe "1"
 
     deployProcessAndWaitIfRunning(kafkaProcess, empty(processId))
 
     kafkaClient.producer.send(new ProducerRecord[String, String](inTopic, "2"))
 
-    new String(consumer.head.message(), StandardCharsets.UTF_8) shouldBe "2"
+    val messages2 = kafkaClient.createConsumer().consume(outTopic)
+    new String(messages2.take(2).toIterable.last.message(), StandardCharsets.UTF_8) shouldBe "2"
 
     assert(processManager.cancel(kafkaProcess.id).isReadyWithin(10 seconds))
   }
 
-  it should "save state when redeploying" in {
+  test("save state when redeploying") {
 
     val processId = "redeploy"
     val outTopic = s"output-$processId"
@@ -99,7 +102,7 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
     cancel(processId)
   }
 
-  it should "snapshot state and be able to deploy using it" in {
+  test("snapshot state and be able to deploy using it") {
 
     val processId = "snapshot"
     val outTopic = s"output-$processId"
@@ -131,7 +134,7 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
 
   }
 
-  it should "fail to redeploy if old is incompatible" in {
+  test("fail to redeploy if old is incompatible") {
     val processId = "redeployFail"
 
     val process = StatefulSampleProcess.prepareProcessStringWithStringState(processId)
@@ -147,7 +150,7 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
   }
 
   def empty(processId: String): ProcessVersion = ProcessVersion.empty.copy(processId=processId)
-  it should "deploy custom process" in {
+  test("deploy custom process") {
     val processId = "customProcess"
 
     assert(processManager.deploy(empty(processId), CustomProcess("pl.touk.nussknacker.engine.management.sample.CustomProcess"), None).isReadyWithin(100 seconds))
@@ -159,14 +162,14 @@ class FlinkProcessManagerSpec extends FlatSpec with Matchers with ScalaFutures w
   }
 
 
-  it should "extract process definition" in {
+  test("extract process definition") {
 
     val definition = FlinkModelData(config).processDefinition
 
     definition.services should contain key "accountService"
   }
 
-  it should "dispatch process signal to kafka" in {
+  test("dispatch process signal to kafka") {
     val signalsTopic = s"esp.signal-${UUID.randomUUID()}"
     val configWithSignals = config
       .withValue("processConfig.signals.topic", ConfigValueFactory.fromAnyRef(signalsTopic))

@@ -74,8 +74,9 @@ object KafkaEspUtils extends LazyLogging {
     doWithTempKafkaConsumer(config, None) { consumer =>
       try {
         consumer.partitionsFor(topic).map(no => new TopicPartition(topic, no.partition())).view.flatMap { tp =>
-          consumer.assign(Collections.singletonList(tp))
-          consumer.seekToEnd(tp)
+          val partitions = Collections.singletonList(tp)
+          consumer.assign(partitions)
+          consumer.seekToEnd(partitions)
           val lastOffset = consumer.position(tp)
           val offsetToSearch = Math.max(0, lastOffset - size)
           consumer.seek(tp, offsetToSearch)
@@ -84,7 +85,7 @@ object KafkaEspUtils extends LazyLogging {
           // result might be empty if we shift offset to far and there will be
           // no messages on the topic due to retention
           if(result.isEmpty){
-            consumer.seekToBeginning(tp)
+            consumer.seekToBeginning(partitions)
           }
           var currentOffset = consumer.position(tp)
           // Trying to poll records until desired size OR till the end of the topic.
@@ -122,7 +123,7 @@ object KafkaEspUtils extends LazyLogging {
   private def setOffsetToLatest(topic: String, consumer: KafkaConsumer[_, _]): Unit = {
     val partitions = consumer.partitionsFor(topic).map { partition => new TopicPartition(partition.topic(), partition.partition()) }
     consumer.assign(partitions)
-    consumer.seekToEnd(partitions: _*)
+    consumer.seekToEnd(partitions)
     partitions.foreach(p => consumer.position(p)) //`seekToEnd` is lazy, we have to invoke `position` to change offset
     consumer.commitSync()
   }

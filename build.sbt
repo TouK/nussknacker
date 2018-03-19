@@ -84,10 +84,10 @@ val commonSettings =
     assemblyMergeStrategy in assembly := numberUtilsStrategy
   )
 
-//mamy te wersje akki bo flink jej wymaga
-val akkaV = "2.4.20"
+val akkaV = "2.4.20" //same version as in Flink
 val flinkV = "1.4.0"
-val kafkaV = "0.9.0.1"
+val kafkaMajorV = "0.11"
+val kafkaV = s"$kafkaMajorV.0.2"
 val springV = "5.0.0.M5"
 val scalaTestV = "3.0.3"
 val logbackV = "1.1.3"
@@ -315,7 +315,7 @@ lazy val kafkaFlinkUtil = (project in engine("flink/kafka-util")).
     name := "nussknacker-kafka-flink-util",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" %% "flink-connector-kafka-0.9" % flinkV,
+        "org.apache.flink" %% s"flink-connector-kafka-$kafkaMajorV" % flinkV,
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
         "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )
