@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.definition
 
+import java.lang.annotation.Annotation
 import java.lang.reflect.Method
 
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
@@ -18,7 +19,9 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
 
   def extractMethodDefinition(obj: T, methodToInvoke: Method): Either[String, MethodDefinition] = {
     findMatchingMethod(obj, methodToInvoke).right.map { method =>
-      MethodDefinition(method, extractReturnTypeFromMethod(obj, method), extractParameters(obj, method))
+      MethodDefinition(methodToInvoke.getName,
+        (obj, args) => method.invoke(obj, args:_*), extractParameters(obj, method),
+        extractReturnTypeFromMethod(obj, method), ClazzRef(method.getReturnType), method.getAnnotations.toList)
     }
   }
 
@@ -39,7 +42,7 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
           .map(_.value())
           .getOrElse(throw new IllegalArgumentException(s"Parameter $p of $obj and method : ${method.getName} has missing @ParamName annotation"))
         val paramType = extractParameterType(p)
-        Left(Parameter(name, ClazzRef(paramType), ParameterTypeMapper.prepareRestrictions(paramType, p)))
+        Left(Parameter(name, ClazzRef(paramType), ClazzRef(p.getType), ParameterTypeMapper.prepareRestrictions(paramType, p)))
       }
     }.toList
     new OrderedParameters(params)
@@ -65,9 +68,13 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
 
 object MethodDefinitionExtractor {
 
-  case class MethodDefinition(method: Method, returnType: ClazzRef, orderedParameters: OrderedParameters)
+  case class MethodDefinition(name: String,
+                              invocation: (Any, Seq[AnyRef]) => Any,
+                              orderedParameters: OrderedParameters,
+                              returnType: ClazzRef,
+                              realReturnType: ClazzRef, annotations: List[Annotation])
 
-  private[definition] class OrderedParameters(baseOrAdditional: List[Either[Parameter, Class[_]]]) {
+  class OrderedParameters(baseOrAdditional: List[Either[Parameter, Class[_]]]) {
 
     lazy val definedParameters: List[Parameter] = baseOrAdditional.collect {
       case Left(param) => param
@@ -78,13 +85,23 @@ object MethodDefinitionExtractor {
     }
 
     def prepareValues(prepareValue: String => Option[AnyRef],
-                      additionalParameters: Seq[AnyRef]): List[(String, AnyRef)] = {
+                      additionalParameters: Seq[AnyRef]): List[AnyRef] = {
       baseOrAdditional.map {
         case Left(param) =>
-          (param.name, prepareValue(param.name).getOrElse(throw new IllegalArgumentException(s"Missing parameter: ${param.name}")))
+          val foundParam = prepareValue(param.name).getOrElse(throw new IllegalArgumentException(s"Missing parameter: ${param.name}"))
+          validateType(param.name, foundParam, param.originalType.clazz)
+          foundParam
         case Right(classOfAdditional) =>
-          (classOfAdditional.getName, additionalParameters.find(classOfAdditional.isInstance).getOrElse(
-            throw new IllegalArgumentException(s"Missing additional parameter of class: ${classOfAdditional.getName}")))
+          val foundParam = additionalParameters.find(classOfAdditional.isInstance).getOrElse(
+                      throw new IllegalArgumentException(s"Missing additional parameter of class: ${classOfAdditional.getName}"))
+          validateType(classOfAdditional.getName, foundParam, classOfAdditional)
+          foundParam
+      }
+    }
+
+    private def validateType(name: String, value: AnyRef, expectedType: Class[_]) : Unit = {
+      if (value != null && !EspTypeUtils.signatureElementMatches(expectedType, value.getClass)) {
+        throw new IllegalArgumentException(s"Parameter $name has invalid class: ${value.getClass.getName}, should be: ${expectedType.getName}")
       }
     }
   }

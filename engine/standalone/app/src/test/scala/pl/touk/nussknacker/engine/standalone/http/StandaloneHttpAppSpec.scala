@@ -55,6 +55,13 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
     .filter("filter1", "#input.field1() == 'a'")
     .sink("endNodeIID", "#input.field2", "response-sink"))
 
+  def processWithGenericGet = processToJson(StandaloneProcessBuilder
+    .id(procId)
+    .exceptionHandler()
+    .source("start", "genericGetSource", "type" -> "{field1: 'java.lang.String', field2: 'java.lang.String'}")
+    .filter("filter1", "#input.field1 == 'a'")
+    .sink("endNodeIID", "#input.field2 + '-' + #input.field1", "response-sink")
+  )
 
   def processWithPathJson = processToJson(StandaloneProcessBuilder
     .id(procId)
@@ -174,8 +181,6 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
     }
   }
 
-
-
   it should "not run not deployed process" in {
     assertProcessNotRunning(procId)
     Post("/proc1", toEntity(Request("a", "b"))) ~> processesRoute ~> check {
@@ -249,7 +254,19 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
     Post("/deploy", toEntity(deploymentData(invalidProcessJson))) ~> managementRoute ~> check {
       status shouldBe StatusCodes.BadRequest
     }
-  }       
+  }
+
+  it should "be able to invoke generic get" in {
+    assertProcessNotRunning(procId)
+    Post("/deploy", toEntity(deploymentData(processWithGenericGet))) ~> managementRoute ~> check {
+      status shouldBe StatusCodes.OK
+      Get(s"/$procId?field1=a&field2=b") ~> processesRoute ~> check {
+        status shouldBe StatusCodes.OK
+        responseAs[String] shouldBe "[\"b-a\"]"
+        cancelProcess(procId)
+      }
+    }
+  }
 
   def cancelProcess(id: String) = {
     Post(s"/cancel/$id") ~> managementRoute ~> check {

@@ -12,7 +12,8 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
-import pl.touk.nussknacker.engine.standalone.api.{DecodingError, StandaloneGetFactory, StandalonePostFactory, StandaloneSourceFactory}
+import pl.touk.nussknacker.engine.standalone.api.{DecodingError, StandaloneGetSource, StandalonePostSource, StandaloneSourceFactory}
+import pl.touk.nussknacker.engine.standalone.utils.JsonStandaloneSourceFactory
 import pl.touk.nussknacker.engine.standalone.utils.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.util.LoggingListener
 
@@ -110,24 +111,33 @@ class ProcessorService extends Service {
 
 }
 
-class Request1SourceFactory extends StandalonePostFactory[Request1] with StandaloneGetFactory[Request1] {
+class Request1SourceFactory extends StandaloneSourceFactory[Request1] {
 
   import argonaut.ArgonautShapeless._
 
   val decoder = DecodeJson.derive[Request1]
 
-  override def parse(data: Array[Byte]): Request1 = {
-    val str = new String(data, StandardCharsets.UTF_8)
-    decoder.decodeJson(Parse.parse(str).right.get).result match {
-      case Left(req) => throw DecodingError(s"Failed to decode on: ${req._1}")
-      case Right(req) => req
+  @MethodToInvoke
+  def create(): Source[Request1] = {
+    new StandalonePostSource[Request1] with StandaloneGetSource[Request1] {
+
+      override def parse(data: Array[Byte]): Request1 = {
+        val str = new String(data, StandardCharsets.UTF_8)
+        decoder.decodeJson(Parse.parse(str).right.get).result match {
+          case Left(req) => throw DecodingError(s"Failed to decode on: ${req._1}")
+          case Right(req) => req
+        }
+      }
+
+      override def parse(parameters: Map[String, List[String]]): Request1 = {
+        def takeFirst(id: String) = parameters.getOrElse(id, List()).headOption.getOrElse("")
+        Request1(takeFirst("field1"), takeFirst("field2"))
+      }
+
     }
   }
 
-  override def parse(parameters: Map[String, List[String]]): Request1 = {
-    def takeFirst(id: String) = parameters.getOrElse(id, List()).headOption.getOrElse("")
-    Request1(takeFirst("field1"), takeFirst("field2"))
-  }
+
 
   override def clazz: Class[_] = classOf[Request1]
 

@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
+import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.sampleResolver
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.{ProcessType, ProcessingType}
@@ -24,7 +25,7 @@ class ProcessConverterSpec extends FlatSpec with Matchers with TableDrivenProper
   val validation = {
     val processDefinition = ProcessDefinition[ObjectDefinition](Map("ref" -> ObjectDefinition.noParam),
       Map("sourceRef" -> ObjectDefinition.noParam), Map(), Map(), Map(), ObjectDefinition.noParam, ExpressionDefinition(Map.empty, List.empty, optimizeCompilation = false), List())
-    val validator = ProcessValidator.default(processDefinition)
+    val validator =  ProcessValidator.default(ProcessDefinitionBuilder.withEmptyObjects(processDefinition))
     new ProcessValidation(Map(ProcessingType.Streaming -> validator), sampleResolver)
   }
 

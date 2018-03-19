@@ -62,15 +62,13 @@ object DefinitionExtractor {
                                  methodDef: MethodDefinition,
                                  objectDefinition: ObjectDefinition) extends ObjectMetadata with LazyLogging {
     def invokeMethod(paramFun: String => Option[AnyRef], additional: Seq[AnyRef]) : Any = {
-      val paramsWithValues = methodDef.orderedParameters.prepareValues(paramFun, additional)
-      validateParameters(paramsWithValues)
-      val values = paramsWithValues.map(_._2)
+      val values = methodDef.orderedParameters.prepareValues(paramFun, additional)
       try {
-        methodDef.method.invoke(obj, values.toArray: _*)
+        methodDef.invocation(obj, values)
       } catch {
         case ex: IllegalArgumentException =>
           //this indicates that parameters do not match or argument list is incorrect
-          logger.warn(s"Failed to invoke method: ${methodDef.method}, with params: $values", ex)
+          logger.warn(s"Failed to invoke method: ${methodDef.name}, with params: $values", ex)
           throw ex
         //this is somehow an edge case - normally service returns failed future for exceptions
         case ex: InvocationTargetException =>
@@ -78,28 +76,13 @@ object DefinitionExtractor {
       }
     }
 
-    override def parameters = methodDef.orderedParameters.definedParameters
-
-    def additionalParameters = methodDef.orderedParameters.additionalParameters
+    override def parameters = objectDefinition.parameters
 
     override def categories = objectDefinition.categories
 
     override def returnType = objectDefinition.returnType
 
     def as[T] : T = obj.asInstanceOf[T]
-
-    private def validateParameters(values: List[(String, AnyRef)]) = {
-      val method = methodDef.method
-      if (method.getParameterCount != values.size) {
-        throw new IllegalArgumentException(s"Failed to invoke method: ${methodDef.method}, " +
-          s"with params: $values, invalid parameter count")
-      }
-      method.getParameterTypes.zip(values).zipWithIndex.foreach { case ((klass, (paramName, value)), idx) =>
-        if (value != null && !EspTypeUtils.signatureElementMatches(klass, value.getClass)) {
-          throw new IllegalArgumentException(s"Parameter $paramName has invalid class: ${value.getClass.getName}, should be: ${klass.getName}")
-        }
-      }
-    }
 
   }
 
@@ -112,7 +95,16 @@ object DefinitionExtractor {
   case class ObjectDefinition(parameters: List[Parameter],
                               returnType: TypingResult, categories: List[String]) extends ObjectMetadata
 
-  case class Parameter(name: String, typ: ClazzRef, restriction: Option[ParameterRestriction] = None)
+  object Parameter {
+    def unknownType(name: String) = Parameter(name, ClazzRef[Any], ClazzRef[Any])
+
+    def apply(name: String, typ: ClazzRef): Parameter = Parameter(name, typ, typ)
+
+  }
+
+
+
+  case class Parameter(name: String, typ: ClazzRef, originalType: ClazzRef, restriction: Option[ParameterRestriction] = None)
 
   //TODO: add validation of restrictions during compilation...
   //this can be used for different restrictions than list of values, e.g. encode '> 0' conditions and so on...

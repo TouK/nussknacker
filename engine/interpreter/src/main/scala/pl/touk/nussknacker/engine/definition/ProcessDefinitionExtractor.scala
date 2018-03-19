@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, QueryableStateNa
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedParameters}
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
+import shapeless.syntax.typeable._
 
 object ProcessDefinitionExtractor {
 
@@ -34,7 +35,7 @@ object ProcessDefinitionExtractor {
     val signalsDefs = signals.map { case (signalName, signal) =>
       val signalSender = ObjectWithMethodDef(signal, ProcessObjectDefinitionExtractor.signals)
       val transformers = customStreamTransformersDefs.filter { case (_, (transformerDef)) =>
-          Option(transformerDef.methodDef.method.getAnnotation(classOf[SignalTransformer])).exists(_.signalClass() == signal.value.getClass)
+          transformerDef.methodDef.annotations.flatMap(_.cast[SignalTransformer]).exists(_.signalClass() == signal.value.getClass)
       }.keySet
       (signalName, (signalSender, transformers))
     }
@@ -49,10 +50,10 @@ object ProcessDefinitionExtractor {
       WithCategories(exceptionHandlerFactory, List()), ProcessObjectDefinitionExtractor.exceptionHandler)
 
     //TODO: this is not so nice...
-    val globalVariablesDefs = expressionConfig.globalProcessVariables.mapValuesNow { globalVar =>
+    val globalVariablesDefs = expressionConfig.globalProcessVariables.map { case (varName, globalVar) =>
       val klass = ClazzRef(globalVar.value.getClass)
-      ObjectWithMethodDef(globalVar.value, MethodDefinition(null, klass, new OrderedParameters(List())),
-        ObjectDefinition(List(), klass, globalVar.categories))
+      (varName, ObjectWithMethodDef(globalVar.value, MethodDefinition(varName, (_, _) => globalVar, new OrderedParameters(List()), klass,  klass, List()),
+        ObjectDefinition(List(), klass, globalVar.categories)))
     }
 
     val globalImportsDefs = expressionConfig.globalImports.map(_.value)
@@ -72,8 +73,8 @@ object ProcessDefinitionExtractor {
   
   private def extractCustomTransformerData(objectWithMethodDef: ObjectWithMethodDef) = {
     val transformer = objectWithMethodDef.obj.asInstanceOf[CustomStreamTransformer]
-    val queryNamesAnnotation = objectWithMethodDef.methodDef.method.getAnnotation(classOf[QueryableStateNames])
-    val queryNames = Option(queryNamesAnnotation).toList.flatMap(_.values().toList).toSet
+    val queryNamesAnnotation = objectWithMethodDef.methodDef.annotations.flatMap(_.cast[QueryableStateNames])
+    val queryNames = queryNamesAnnotation.flatMap(_.values().toList).toSet
     CustomTransformerAdditionalData(queryNames, transformer.clearsContext)
   }
 
@@ -101,50 +102,22 @@ object ProcessDefinitionExtractor {
 
   }
 
-  object ObjectProcessDefinition {
-    def empty: ProcessDefinition[ObjectDefinition] =
-      ProcessDefinition(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, ObjectDefinition.noParam,
-        ExpressionDefinition(Map.empty, List.empty, optimizeCompilation = true), List.empty)
-
-    def apply(definition: ProcessDefinition[ObjectWithMethodDef]) : ProcessDefinition[ObjectDefinition] = {
-      val expressionDefinition = ExpressionDefinition(
-        definition.expressionConfig.globalVariables.mapValuesNow(_.objectDefinition),
-        definition.expressionConfig.globalImports,
-        definition.expressionConfig.optimizeCompilation
-      )
-      ProcessDefinition(
-        definition.services.mapValuesNow(_.objectDefinition),
-        definition.sourceFactories.mapValuesNow(_.objectDefinition),
-        definition.sinkFactories.mapValuesNow(_.objectDefinition),
-        definition.customStreamTransformers.mapValuesNow { case (transformer, queryNames) => (transformer.objectDefinition, queryNames) },
-        definition.signalsWithTransformers.mapValuesNow(sign => (sign._1.objectDefinition, sign._2)),
-        definition.exceptionHandlerFactory.objectDefinition,
-        expressionDefinition,
-        definition.typesInformation
-      )
-    }
-  }
-
-  implicit class ObjectProcessDefinition(definition: ProcessDefinition[ObjectDefinition]) {
-    def withService(id: String, params: Parameter*) =
-      definition.copy(services = definition.services + (id -> ObjectDefinition.withParams(params.toList)))
-
-    def withSourceFactory(typ: String, params: Parameter*) =
-      definition.copy(sourceFactories = definition.sourceFactories + (typ -> ObjectDefinition.withParams(params.toList)))
-
-    def withSinkFactory(typ: String, params: Parameter*) =
-      definition.copy(sinkFactories = definition.sinkFactories + (typ -> ObjectDefinition.withParams(params.toList)))
-
-    def withExceptionHandlerFactory(params: Parameter*) =
-      definition.copy(exceptionHandlerFactory = ObjectDefinition.withParams(params.toList))
-
-    def withCustomStreamTransformer(id: String, returnType: Class[_], additionalData: CustomTransformerAdditionalData, params: Parameter*) =
-      definition.copy(customStreamTransformers =
-        definition.customStreamTransformers + (id -> (ObjectDefinition(params.toList, ClazzRef(returnType), List()), additionalData)))
-
-    def withSignalsWithTransformers(id: String, returnType: Class[_], transformers: Set[String], params: Parameter*) =
-      definition.copy(signalsWithTransformers = definition.signalsWithTransformers + (id -> (ObjectDefinition(params.toList, ClazzRef(returnType), List()), transformers)))
-
+  def toObjectDefinition(definition: ProcessDefinition[ObjectWithMethodDef]) : ProcessDefinition[ObjectDefinition] = {
+    val expressionDefinition = ExpressionDefinition(
+      definition.expressionConfig.globalVariables.mapValuesNow(_.objectDefinition),
+      definition.expressionConfig.globalImports,
+      definition.expressionConfig.optimizeCompilation
+    )
+    ProcessDefinition(
+      definition.services.mapValuesNow(_.objectDefinition),
+      definition.sourceFactories.mapValuesNow(_.objectDefinition),
+      definition.sinkFactories.mapValuesNow(_.objectDefinition),
+      definition.customStreamTransformers.mapValuesNow { case (transformer, queryNames) => (transformer.objectDefinition, queryNames) },
+      definition.signalsWithTransformers.mapValuesNow(sign => (sign._1.objectDefinition, sign._2)),
+      definition.exceptionHandlerFactory.objectDefinition,
+      expressionDefinition,
+      definition.typesInformation
+    )
   }
 
   case class ExpressionDefinition[+T <: ObjectMetadata](globalVariables: Map[String, T], globalImports: List[String], optimizeCompilation: Boolean)

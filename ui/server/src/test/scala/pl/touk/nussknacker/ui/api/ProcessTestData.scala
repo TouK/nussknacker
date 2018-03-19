@@ -2,15 +2,13 @@ package pl.touk.nussknacker.ui.api
 
 import java.time.LocalDateTime
 
-import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, SplitNode}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compile.ProcessValidator
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.Parameter
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ObjectProcessDefinition}
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.CustomTransformerAdditionalData
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.{EspProcess, node}
@@ -18,6 +16,7 @@ import pl.touk.nussknacker.engine.graph.node.{Case, Split, SubprocessInputDefini
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.spel
+import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.{ProcessType, ProcessingType}
 import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.{Edge, NodeAdditionalFields, ProcessAdditionalFields}
 import pl.touk.nussknacker.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
@@ -25,6 +24,7 @@ import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{BaseProcessDetails, ProcessDetails, ValidatedProcessDetails}
 import pl.touk.nussknacker.ui.process.subprocess.{SetSubprocessRepository, SubprocessResolver}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
+import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.ObjectProcessDefinition
 
 object ProcessTestData {
 
@@ -38,7 +38,7 @@ object ProcessTestData {
   val otherExistingStreamTransformer = "otherTransformer"
   val otherExistingStreamTransformer2 = "otherTransformer2"
 
-  val processDefinition = ObjectProcessDefinition.empty
+  val processDefinition = ProcessDefinitionBuilder.empty
         .withSourceFactory(existingSourceFactory)
         .withSinkFactory(otherExistingSinkFactory)
         .withSinkFactory(existingSinkFactory)
@@ -48,7 +48,7 @@ object ProcessTestData {
         .withCustomStreamTransformer(otherExistingStreamTransformer, classOf[String], CustomTransformerAdditionalData(Set("query3"), clearsContext = false))
         .withCustomStreamTransformer(otherExistingStreamTransformer2, classOf[String], CustomTransformerAdditionalData(Set("query4"), clearsContext = false))
 
-  val validator = ProcessValidator.default(processDefinition)
+  val validator = ProcessValidator.default(ProcessDefinitionBuilder.withEmptyObjects(processDefinition))
 
   val validProcess : EspProcess = validProcessWithId("fooProcess")
 

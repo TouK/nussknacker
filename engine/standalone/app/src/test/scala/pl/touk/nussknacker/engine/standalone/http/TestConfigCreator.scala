@@ -1,14 +1,16 @@
 package pl.touk.nussknacker.engine.standalone.http
 
+import java.nio.charset.StandardCharsets
+
 import argonaut.Argonaut.{jArrayElements, jObjectFields, jString}
 import argonaut.{DecodeJson, Json}
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.{JobData, MethodToInvoke, Service}
-import pl.touk.nussknacker.engine.api.process.{SinkFactory, SourceFactory, WithCategories}
+import pl.touk.nussknacker.engine.api.process.{SinkFactory, Source, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.api.test.TestDataParser
-import pl.touk.nussknacker.engine.standalone.api.{ResponseEncoder, StandaloneGetFactory}
+import pl.touk.nussknacker.engine.standalone.api.{ResponseEncoder, StandaloneGetSource, StandalonePostSource, StandaloneSourceFactory}
 import pl.touk.nussknacker.engine.standalone.api.types.GenericResultType
-import pl.touk.nussknacker.engine.standalone.utils.{JsonStandaloneSourceFactory, StandaloneContext, StandaloneContextLifecycle, StandaloneSinkFactory}
+import pl.touk.nussknacker.engine.standalone.utils._
 import pl.touk.nussknacker.engine.testing.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
@@ -20,7 +22,8 @@ class TestConfigCreator extends EmptyProcessConfigCreator {
 
   override def sourceFactories(config: Config): Map[String, WithCategories[SourceFactory[_]]] = Map(
     "request1-post-source" -> WithCategories(new JsonStandaloneSourceFactory[Request]),
-    "request1-get-source" -> WithCategories(RequestGetSource)
+    "request1-get-source" -> WithCategories(RequestGetSourceFactory),
+    "genericGetSource" -> WithCategories(new TypedMapStandaloneSourceFactory)
   )
 
   override def sinkFactories(config: Config): Map[String, WithCategories[SinkFactory]] = Map(
@@ -32,7 +35,7 @@ class TestConfigCreator extends EmptyProcessConfigCreator {
   )
 
 
-  object RequestGetSource extends StandaloneGetFactory[Request] {
+  object RequestGetSourceFactory extends StandaloneSourceFactory[Request] {
 
     private val encoder = BestEffortJsonEncoder(failOnUnkown = true)
 
@@ -40,16 +43,23 @@ class TestConfigCreator extends EmptyProcessConfigCreator {
 
     override def testDataParser: Option[TestDataParser[Request]] = None
 
-    override def parse(parameters: Map[String, List[String]]): Request = {
-      def takeFirst(id: String) = parameters.getOrElse(id, List()).headOption.getOrElse("")
-      Request(takeFirst("field1"), takeFirst("field2"))
+    @MethodToInvoke
+    def create(): Source[Request] = {
+      new StandaloneGetSource[Request] {
+        override def parse(parameters: Map[String, List[String]]): Request = {
+          def takeFirst(id: String) = parameters.getOrElse(id, List()).headOption.getOrElse("")
+          Request(takeFirst("field1"), takeFirst("field2"))
+        }
+
+        override def responseEncoder = Some(new ResponseEncoder[Request] {
+          override def toJsonResponse(input: Request, result: List[Any]): GenericResultType[Json] = {
+            Right(jObjectFields("inputField1" -> jString(input.field1), "list" -> jArrayElements(result.map(encoder.encode):_*)))
+          }
+        })
+      }
+
     }
 
-    override def responseEncoder = Some(new ResponseEncoder[Request] {
-      override def toJsonResponse(input: Request, result: List[Any]): GenericResultType[Json] = {
-        Right(jObjectFields("inputField1" -> jString(input.field1), "list" -> jArrayElements(result.map(encoder.encode):_*)))
-      }
-    })
   }
 
 

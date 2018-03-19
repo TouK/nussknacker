@@ -100,7 +100,7 @@ private[compile] trait PartSubGraphCompilerBase {
           case graph.node.CustomNode(id, _, _, parameters, _) =>
             //TODO: so far we assume we don't reset context, we get output var from outside
             //TODO: we don't do parameter context validation, because custom node can add any vars...
-            val validParams = expressionCompiler.compileObjectParameters(parameters.map(p => Parameter(p.name, ClazzRef[Any])), parameters, None)
+            val validParams = expressionCompiler.compileObjectParameters(parameters.map(p => Parameter(p.name, ClazzRef[Any], ClazzRef[Any])), parameters, None)
             CompilationResult.map2(CompilationResult(validParams), compile(next, ctx))((params, next) =>
               compiledgraph.node.CustomNode(id, params, next))
 
@@ -109,7 +109,7 @@ private[compile] trait PartSubGraphCompilerBase {
                           { case (accCtx, param) => accCtx.andThen(_.withVariable(param.name, Unknown))}
 
             val validParams =
-              expressionCompiler.compileObjectParameters(ref.parameters.map(p => Parameter(p.name, ClazzRef[Any])), ref.parameters, toOption(ctx))
+              expressionCompiler.compileObjectParameters(ref.parameters.map(p => Parameter.unknownType(p.name)), ref.parameters, toOption(ctx))
 
             CompilationResult.map3(CompilationResult(validParams), compile(next, newCtx.getOrElse(ctx.pushNewContext())), CompilationResult(newCtx))((params, next, _) =>
               compiledgraph.node.SubprocessStart(id, params, next))

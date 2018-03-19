@@ -27,8 +27,10 @@ private[definition] class CustomNodeInvokerImpl[T](executor: ObjectWithMethodDef
 
   private def prepareParam(lazyDeps: () => CustomNodeInvokerDeps)(param: String) : Option[AnyRef] = {
     val interpreter = CompilerLazyInterpreter[AnyRef](lazyDeps, metaData, node, param)
-    val methodParam = EspTypeUtils.findParameterByParameterName(executor.methodDef.method, param)
-    if (methodParam.exists(_.getType == classOf[LazyInterpreter[_]])) {
+    val isLazyInterpreter = executor
+      .methodDef.orderedParameters.definedParameters.find(_.name == param).exists(_.originalType == ClazzRef[LazyInterpreter[_]])
+    
+    if (isLazyInterpreter) {
       Some(interpreter)
     } else {
       val emptyResult = InterpretationResult(NextPartReference(node.id), null, Context(""))

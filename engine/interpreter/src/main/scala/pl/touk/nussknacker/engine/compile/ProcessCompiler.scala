@@ -3,17 +3,16 @@ package pl.touk.nussknacker.engine.compile
 import cats.data.Validated._
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.instances.list._
-import org.apache.commons.lang3.ClassUtils
+import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, EspExceptionInfo}
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.ReturningType
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError._
-import pl.touk.nussknacker.engine.compile.dumb._
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.compiledgraph.part.NextWithParts
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
@@ -21,7 +20,6 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomT
 import pl.touk.nussknacker.engine.definition._
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
-import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
 import pl.touk.nussknacker.engine.graph.node.{CustomNode, StartingNodeData, SubprocessInputDefinition}
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
@@ -31,13 +29,13 @@ import pl.touk.nussknacker.engine.splittedgraph._
 import pl.touk.nussknacker.engine.splittedgraph.part._
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.{Next, NextNode, PartRef, SplittedNode}
 import pl.touk.nussknacker.engine.util.Implicits._
+import shapeless.syntax.typeable._
 
-import scala.util.Try
 import scala.util.control.NonFatal
 
 class ProcessCompiler( protected val classLoader: ClassLoader,
                        protected val sub: PartSubGraphCompilerBase,
-                      protected val definitions: ProcessDefinition[ObjectWithMethodDef]) extends ProcessCompilerBase {
+                      protected val definitions: ProcessDefinition[ObjectWithMethodDef]) extends ProcessCompilerBase with ProcessValidator {
 
   //FIXME: should it be here?
   private val expressionEvaluator = {
@@ -59,17 +57,25 @@ class ProcessCompiler( protected val classLoader: ClassLoader,
 
 }
 
-class ProcessValidator(protected val classLoader: ClassLoader,
-                       protected val sub: PartSubGraphCompilerBase,
-                       protected val definitions: ProcessDefinition[ObjectDefinition]) extends ProcessCompilerBase {
+trait ProcessValidator extends LazyLogging {
 
-  override type ParameterProviderT = ObjectDefinition
+  def validate(canonical: CanonicalProcess): CompilationResult[Unit] = {
+    //TODO: typing not canonical processs... in most cases (wrong tail) it's easy
+    ProcessCanonizer.uncanonize(canonical).fold(k => CompilationResult(Invalid(k)), validate)
+  }
 
-  override protected def createFactory[T](obj: ObjectDefinition) =
-    new DumbProcessObjectFactory[T]
+  def validate(process: EspProcess): CompilationResult[Unit] = {
+    try {
+      compile(process).map(_ => Unit)
+    } catch {
+      case NonFatal(e) =>
+        logger.warn(s"Unexpected error during compilation of ${process.id}", e)
+        CompilationResult(Invalid(NonEmptyList.of(FatalUnknownError(e.getMessage))))
+    }
+  }
 
-  override protected def createCustomNodeInvoker(obj: ObjectDefinition, metaData: MetaData, node: SplittedNode[graph.node.CustomNode]) =
-    new DumbCustomNodeInvoker[Any]
+  protected def compile(process : EspProcess): CompilationResult[_]
+
 }
 
 protected trait ProcessCompilerBase {
@@ -90,20 +96,6 @@ protected trait ProcessCompilerBase {
   protected def classLoader: ClassLoader
 
   private val expressionCompiler = ExpressionCompiler.withoutOptimization(classLoader, definitions.expressionConfig)
-
-  def validate(canonical: CanonicalProcess): CompilationResult[Unit] = {
-    //TODO: typing not canonical processs... in most cases (wrong tail) it's easy
-    ProcessCanonizer.uncanonize(canonical).fold(k => CompilationResult(Invalid(k)), validate)
-  }
-
-  def validate(process: EspProcess): CompilationResult[Unit] = {
-    try {
-      compile(process).map(_ => Unit)
-    } catch {
-      case NonFatal(e) =>
-        CompilationResult(Invalid(NonEmptyList.of(FatalUnknownError(e.getMessage))))
-    }
-  }
 
   protected def compile(process: EspProcess): CompilationResult[CompiledProcessParts] = {
     compile(ProcessSplitter.split(process))
@@ -184,23 +176,26 @@ protected trait ProcessCompilerBase {
   private def compile(source: SourcePart)
                      (implicit metaData: MetaData): CompilationResult[compiledgraph.part.SourcePart] = {
     implicit val nodeId = NodeId(source.id)
-    val variables = computeInitialVariables(source.node.data)
-    val initialCtx = ValidationContext(variables)
+
+    val compiledSource = compile(source.node.data)
+
+    val initialCtx = computeInitialVariables(source.node.data, compiledSource)
     val validatedSource = sub.validate(source.node, initialCtx)
     val typesForParts = validatedSource.typing
 
-    CompilationResult.map3(validatedSource, compile(source.nextParts, typesForParts), CompilationResult(compile(source.node.data))) { (_, nextParts, obj) =>
+    CompilationResult.map3(validatedSource, compile(source.nextParts, typesForParts), CompilationResult(compiledSource)) { (_, nextParts, obj) =>
       compiledgraph.part.SourcePart(obj, source.node, initialCtx, nextParts, source.ends)
     }
   }
 
-  private def computeInitialVariables(nodeData: StartingNodeData)(implicit metaData: MetaData, nodeId: NodeId) : Map[String, TypingResult] = nodeData match {
-    //TODO: here more elaborate return types (e.g. TypedMap should be handled).
-    // Currently it's not easy, as parameters are involved...
-    case pl.touk.nussknacker.engine.graph.node.Source(_, ref, _) =>  sourceFactories.get(ref.typ)
-          .map(sf => Map(Interpreter.InputParamName -> sf.returnType)).getOrElse(Map.empty)
+  private def computeInitialVariables(nodeData: StartingNodeData, compiled: ValidatedNel[ProcessCompilationError, Source[_]])(implicit metaData: MetaData, nodeId: NodeId) : ValidationContext = ValidationContext(nodeData match {
+    case pl.touk.nussknacker.engine.graph.node.Source(_, ref, _) =>
+      val resultType = compiled.toOption.flatMap[Source[_]](Option(_))
+        .flatMap(_.cast[ReturningType]).map(_.returnType)
+        .orElse(sourceFactories.get(ref.typ).map(_.returnType)).getOrElse(Unknown)
+      Map(Interpreter.InputParamName -> resultType)
     case SubprocessInputDefinition(_, params, _) => params.map(p => p.name -> loadFromParameter(p)).toMap
-  }
+  })
 
   //TODO: better classloader error handling
   private def loadFromParameter(subprocessParameter: SubprocessParameter)(implicit nodeId: NodeId) =
@@ -300,10 +295,11 @@ protected trait ProcessCompilerBase {
 
 object ProcessValidator {
 
-  def default(definition: ProcessDefinition[ObjectDefinition], loader: ClassLoader = getClass.getClassLoader): ProcessValidator = {
-    val expressionCompiler = ExpressionCompiler.withoutOptimization(loader, definition.expressionConfig)
-    val sub = new PartSubGraphValidator(loader, expressionCompiler, definition.services)
-    new ProcessValidator(loader, sub, definition)
+  def default(definitions: ProcessDefinition[ObjectWithMethodDef], loader: ClassLoader = getClass.getClassLoader): ProcessValidator = {
+    val expressionCompiler = ExpressionCompiler.withOptimization(loader, definitions.expressionConfig)
+
+    val sub = new PartSubGraphCompiler(loader, expressionCompiler, definitions.services)
+    new ProcessCompiler(loader, sub, definitions)
   }
 
 }

@@ -25,11 +25,6 @@ object EspTypeUtils {
                      (implicit settings: ClassExtractionSettings): ClazzDefinition =
     ClazzDefinition(ClazzRef(clazz), getPublicMethodAndFields(clazz))
 
-  def findParameterByParameterName(method: Method, paramName: String): Option[reflect.Parameter] =
-    method.getParameters.find { p =>
-      Option(p.getAnnotation(classOf[ParamName])).exists(_.value() == paramName)
-    }
-
   def extractParameterType(p: java.lang.reflect.Parameter, classesToExtractGenericFrom: Class[_]*): Class[_] =
     if (classesToExtractGenericFrom.contains(p.getType)) {
       val parameterizedType = p.getParameterizedType.asInstanceOf[ParameterizedType]

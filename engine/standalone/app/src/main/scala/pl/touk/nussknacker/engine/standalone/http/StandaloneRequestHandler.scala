@@ -6,7 +6,7 @@ import argonaut.Json
 import cats.data.EitherT
 import cats.instances.future._
 import pl.touk.nussknacker.engine.standalone.api.types.GenericResultType
-import pl.touk.nussknacker.engine.standalone.api.{StandaloneGetFactory, StandalonePostFactory}
+import pl.touk.nussknacker.engine.standalone.api.{StandaloneGetSource, StandalonePostSource, StandaloneSource}
 import pl.touk.nussknacker.engine.standalone.utils.DefaultResponseEncoder
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -21,9 +21,9 @@ class StandaloneRequestHandler(standaloneProcessInterpreter: StandaloneProcessIn
   private val encoder = source.responseEncoder.getOrElse(DefaultResponseEncoder)
 
   private val extractInput: Directive1[Any] = source match {
-    case a: StandalonePostFactory[Any] =>
+    case a: StandalonePostSource[Any] =>
       post & entity(as[Array[Byte]]).map(a.parse)
-    case a: StandaloneGetFactory[Any] =>
+    case a: StandaloneGetSource[Any] =>
       get & parameterMultiMap.map(a.parse)
   }
 

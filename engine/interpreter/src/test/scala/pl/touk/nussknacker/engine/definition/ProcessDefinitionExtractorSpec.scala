@@ -16,7 +16,7 @@ class ProcessDefinitionExtractorSpec extends FlatSpec with Matchers {
     val signal1 = extracted.signalsWithTransformers.get("signal1")
     signal1 shouldBe 'defined
     signal1.get._2 shouldBe Set("transformer1")
-    signal1.get._1.methodDef.method.getName shouldBe "send1"
+    signal1.get._1.methodDef.name shouldBe "send1"
 
   }
 

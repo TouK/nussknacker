@@ -5,30 +5,24 @@ import pl.touk.nussknacker.engine.api.process.{Source, SourceFactory}
 
 //TODO: this is a bit clumsy, we should think about:
 //- responseEncoder in sourceFactory
-//- dummy Source
-//- handling source in StandaloneInterpreter
 //- passing path in standalone parameters and not through source
-trait StandaloneSourceFactory[T] extends SourceFactory[T] {
+trait StandaloneSourceFactory[T] extends SourceFactory[T]
 
-  @MethodToInvoke
-  def create(): Source[T] = {
-    new Source[T] {}
-  }
-
-  def responseEncoder: Option[ResponseEncoder[T]] = None
-
-}
-
-trait StandaloneGetFactory[T] extends StandaloneSourceFactory[T] {
+trait StandaloneGetSource[T] extends StandaloneSource[T] {
 
   def parse(parameters: Map[String, List[String]]): T
 
 }
 
-
-trait StandalonePostFactory[T] extends StandaloneSourceFactory[T] {
+trait StandalonePostSource[T] extends StandaloneSource[T] {
 
   def parse(parameters: Array[Byte]): T
+
+}
+
+trait StandaloneSource[T] extends Source[T] {
+
+  def responseEncoder: Option[ResponseEncoder[T]] = None
 
 }
 

@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.Source
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.{NextNode, PartRef, SplittedNode}
 import pl.touk.nussknacker.engine.standalone.api.types._
-import pl.touk.nussknacker.engine.standalone.api.{StandaloneCustomTransformer, StandaloneSourceFactory, types}
+import pl.touk.nussknacker.engine.standalone.api.{StandaloneCustomTransformer, StandaloneSource, StandaloneSourceFactory, types}
 import pl.touk.nussknacker.engine.standalone.metrics.InvocationMetrics
 import pl.touk.nussknacker.engine.standalone.utils.{StandaloneContext, StandaloneContextLifecycle, StandaloneContextPreparer}
 import pl.touk.nussknacker.engine.{Interpreter, ModelData, compiledgraph}
@@ -49,20 +49,15 @@ object StandaloneProcessInterpreter {
     val definitions = definitionsPostProcessor(ProcessDefinitionExtractor.extractObjectWithMethods(creator, config))
     val listeners = creator.listeners(config) ++ additionalListeners
 
-    //FIXME: asInstanceOf, should be proper handling of SubprocessInputDefinition
-    val sourceFactory = definitions
-      .sourceFactories(process.root.data.asInstanceOf[Source].ref.typ)
-      .obj.asInstanceOf[StandaloneSourceFactory[Any]]
-
     CompiledProcess.compile(process,
       definitions,
       listeners,
       //FIXME: timeout
       modelData.modelClassLoader.classLoader, 10 seconds
-    ).andThen {
-      compiledProcess =>
+    ).andThen { compiledProcess =>
+      val source = compiledProcess.parts.source.obj.asInstanceOf[StandaloneSource[Any]]
       StandaloneInvokerCompiler(compiledProcess).compile.map { invoker =>
-        StandaloneProcessInterpreter(contextPreparer.prepare(process.id), sourceFactory, invoker, compiledProcess.lifecycle, modelData)
+        StandaloneProcessInterpreter(contextPreparer.prepare(process.id), source, invoker, compiledProcess.lifecycle, modelData)
       }
     }
   }
@@ -143,8 +138,7 @@ object StandaloneProcessInterpreter {
 
 
 case class StandaloneProcessInterpreter(context: StandaloneContext,
-                                       //TODO: how to get rid of that?
-                                        source: StandaloneSourceFactory[Any],
+                                        source: StandaloneSource[Any],
                                         private val invoker: types.InterpreterType,
                                         private val lifecycle: Seq[Lifecycle],
                                         private val modelData: ModelData) extends InvocationMetrics {

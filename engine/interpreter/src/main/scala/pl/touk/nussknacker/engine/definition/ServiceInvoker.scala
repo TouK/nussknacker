@@ -60,7 +60,7 @@ object ServiceInvoker {
   )
 
   def apply(objectWithMethodDef: ObjectWithMethodDef, collector: Option[ServiceInvocationCollector] = None): ServiceInvoker = {
-    val returnType = objectWithMethodDef.methodDef.method.getReturnType
+    val returnType = objectWithMethodDef.methodDef.realReturnType.clazz
     if (classOf[Future[_]].isAssignableFrom(returnType))
       new ServiceInvokerImpl(objectWithMethodDef, collector)
     else if (classOf[java.util.concurrent.CompletionStage[_]].isAssignableFrom(returnType))
