@@ -59,6 +59,9 @@ object typing {
   object TypedClass {
     def apply(klass: ClazzRef) : TypedClass =
       TypedClass(klass.clazz, klass.params.map(Typed.apply))
+
+    def apply[T:ClassTag] : TypedClass = TypedClass(ClazzRef[T].clazz, List())
+
   }
 
   object Typed {

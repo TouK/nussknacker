@@ -7,7 +7,7 @@ import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Inside, Matchers}
 import pl.touk.nussknacker.ui.api.helpers.EspItTest
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
-import pl.touk.nussknacker.ui.process.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.ui.process.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.ui.process.migrate.{RemoteEnvironment, RemoteEnvironmentCommunicationError, TestMigrationResult}
 import pl.touk.nussknacker.ui.sample.SampleProcess
 import pl.touk.nussknacker.ui.util.ProcessComparator.{Difference, NodeNotPresentInCurrent, NodeNotPresentInOther}
@@ -17,6 +17,7 @@ import pl.touk.nussknacker.ui.validation.ValidationResults.{NodeValidationErrorT
 import scala.concurrent.{ExecutionContext, Future}
 import argonaut.ArgonautShapeless._
 import argonaut.DecodeJson
+import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.Filter
 import pl.touk.nussknacker.ui.EspError
@@ -87,9 +88,10 @@ class RemoteEnvironmentResourcesSpec extends FlatSpec with ScalatestRouteTest wi
     val error = ValidationResults.NodeValidationError("foo", "bar", "baz", None, NodeValidationErrorType.SaveAllowed)
     val validationResult = ValidationResult.success.copy(errors = ValidationResult.success.errors.copy(invalidNodes = Map("a" -> List(error))))
 
+    val process = withDecodedTypes(ProcessTestData.validDisplayableProcess)
     val results = List(
-      TestMigrationResult(ProcessTestData.validDisplayableProcess.copy(id = "failingProcess"), validationResult, true),
-      TestMigrationResult(ProcessTestData.validDisplayableProcess.copy(id = "notFailing"), ValidationResult.success, false)
+      TestMigrationResult(process.copy(id = "failingProcess"), validationResult, true),
+      TestMigrationResult(process.copy(id = "notFailing"), ValidationResult.success, false)
     )
     val route = withPermissions(new RemoteEnvironmentResources(new MockRemoteEnvironment(results), processRepository), Permission.Read)
 
@@ -103,10 +105,12 @@ class RemoteEnvironmentResourcesSpec extends FlatSpec with ScalatestRouteTest wi
   it should "return result on test migration" in {
     import pl.touk.http.argonaut.Argonaut62Support._
 
+    val process = withDecodedTypes(ProcessTestData.validDisplayableProcess)
     val results = List(
-      TestMigrationResult(ProcessTestData.validDisplayableProcess, ValidationResult.success, false),
-      TestMigrationResult(ProcessTestData.validDisplayableProcess.copy(id = "notFailing"), ValidationResult.success, false)
+      TestMigrationResult(process, ValidationResult.success, true),
+      TestMigrationResult(process.copy(id = "notFailing"), ValidationResult.success, false)
     )
+
     val route = withPermissions(new RemoteEnvironmentResources(new MockRemoteEnvironment(results), processRepository), Permission.Read)
 
     Get(s"/remoteEnvironment/testAutomaticMigration") ~> route ~> check {
@@ -168,6 +172,13 @@ class RemoteEnvironmentResourcesSpec extends FlatSpec with ScalatestRouteTest wi
         }
       }
     }
+  }
+
+  //we replace Types with Unkown because this is how types from RemoteEnvironment are decoded (to avoid classloading issues...)
+  private def withDecodedTypes(process: ValidatedDisplayableProcess) = {
+    val validationResult = process.validationResult
+    process.copy(validationResult = validationResult.copy(variableTypes = validationResult
+        .variableTypes.mapValues(_.mapValues(_ => Unknown))))
   }
 
   class MockRemoteEnvironment(testMigrationResults: List[TestMigrationResult] = List(),

@@ -39,7 +39,7 @@ object ValidationResults {
     }
 
     def withTypes(variableTypes: Map[String, Map[String, TypingResult]]): ValidationResult
-      = copy(variableTypes = this.variableTypes)
+      = copy(variableTypes = variableTypes)
 
     private def renderNotAllowedErrors: List[NodeValidationError] = {
       allErrors.filter(_.errorType == NodeValidationErrorType.RenderNotAllowed)

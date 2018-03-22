@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.management.sample
 import java.nio.charset.StandardCharsets
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
 
 import argonaut.{Argonaut, EncodeJson, Json}
@@ -158,6 +159,7 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
       "enricher" -> WithCategories(Enricher, "Category1", "Category2"),
       "multipleParamsService" -> WithCategories(MultipleParamsService, "Category1", "Category2"),
       "complexReturnObjectService" -> WithCategories(ComplexReturnObjectService, "Category1", "Category2"),
+      "listReturnObjectService" -> WithCategories(ListReturnObjectService, "Category1", "Category2"),
       "clientHttpService" -> WithCategories(new ClientFakeHttpService(), "Category1", "Category2")
     )
   }
@@ -296,6 +298,15 @@ case object ComplexReturnObjectService extends Service {
   def invoke() = {
     Future.successful(ComplexObject(Map("foo" -> 1, "bar" -> "baz")))
   }
+}
+
+case object ListReturnObjectService extends Service {
+
+  @MethodToInvoke
+  def invoke() : Future[java.util.List[RichObject]] = {
+    Future.successful(util.Arrays.asList(RichObject("abcd1", 1234L, Some("defg"))))
+  }
+
 }
 
 case class Client(id: String, name: String) extends DisplayableAsJson[Client]

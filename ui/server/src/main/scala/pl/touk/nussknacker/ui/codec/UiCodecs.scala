@@ -28,6 +28,8 @@ object UiCodecs extends UiCodecs
 
 trait UiCodecs extends Codecs with Argonauts with SingletonInstances with DerivedInstances {
 
+  import pl.touk.nussknacker.engine.api.typed.TypeEncoders._
+
   private implicit def typeFieldJsonSumCodecFor[S]: JsonSumCodecFor[S] =
     JsonSumCodecFor(JsonSumCodec.typeField)
 
@@ -93,13 +95,7 @@ trait UiCodecs extends Codecs with Argonauts with SingletonInstances with Derive
 
   implicit def processActivityCodec = CodecJson.derive[ProcessActivity]
 
-  //FIXME: for now we present it as ClazzRef - TypedMap becomes normal map...
-  implicit val encode: EncodeJson[ClazzRef] = EncodeJson[ClazzRef](ref => jObjectFields("refClazzName" -> jString(ref.refClazzName)))
-  implicit def typingResultEncode : EncodeJson[TypingResult] = EncodeJson.of[ClazzRef].contramap[TypingResult] {
-    case typing.Unknown => ClazzRef[Any]
-    case a: typing.Typed => ClazzRef(a.possibleTypes.head.klass)
-    case a: typing.TypedMapTypingResult => ClazzRef[java.util.Map[_, _]]
-  }
+
 
   //FIXME: what should we do here? not always we have classs!
   implicit val typingResultDummyDecode : DecodeJson[TypingResult] = DecodeJson(_ => DecodeResult.ok(typing.Unknown))
