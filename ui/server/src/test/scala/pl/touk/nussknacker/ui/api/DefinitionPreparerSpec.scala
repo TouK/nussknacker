@@ -1,22 +1,36 @@
 package pl.touk.nussknacker.ui.api
 
+import java.util
+
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.ui.api.DefinitionPreparer.{NodeEdges, NodeTypeId}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory
 import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.EdgeType._
 import pl.touk.nussknacker.ui.process.uiconfig.SingleNodeConfig
 import pl.touk.nussknacker.ui.process.uiconfig.defaults.{ParamDefaultValueConfig, TypeAfterConfig}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
+import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.ObjectProcessDefinition
 
 class DefinitionPreparerSpec extends FlatSpec with Matchers {
 
-  it should "return objects sorted by label" in {
+  it should "return groups sorted by name" in {
 
-    val groups = prepareGroups(Map(), Map())
+    val groups = prepareGroups(Map(), Map("custom" -> "CUSTOM", "sinks"->"BAR"))
 
-    validateGroups(groups, 5)
+    groups.map(_.name) shouldBe List("BAR","base", "CUSTOM", "enrichers", "sources")
+  }
+
+  it should "return objects sorted by label case insensitive" in {
+
+    val groups = prepareGroupsOfNodes(List("foo","alaMaKota","BarFilter"))
+    groups.map(_.possibleNodes.map(n=>n.label)) shouldBe List(
+      List("filter","split","sqlVariable","switch","variable"),
+      List("alaMaKota","BarFilter","foo")
+    )
   }
 
   it should "return edge types for subprocess, filters and switches" in {
@@ -28,10 +42,10 @@ class DefinitionPreparerSpec extends FlatSpec with Matchers {
       subprocessesDetails = subprocessesDetails)
 
     edgeTypes.toSet shouldBe Set(
-      NodeEdges(NodeTypeId("Split"), List(), true),
-      NodeEdges(NodeTypeId("Switch"), List(NextSwitch(Expression("spel", "true")), SwitchDefault), true),
-      NodeEdges(NodeTypeId("Filter"), List(FilterTrue, FilterFalse), false),
-      NodeEdges(NodeTypeId("SubprocessInput", Some("sub1")), List(SubprocessOutput("out1"), SubprocessOutput("out2")), false)
+      NodeEdges(NodeTypeId("split"), List(), true),
+      NodeEdges(NodeTypeId("switch"), List(NextSwitch(Expression("spel", "true")), SwitchDefault), true),
+      NodeEdges(NodeTypeId("filter"), List(FilterTrue, FilterFalse), false),
+      NodeEdges(NodeTypeId("subprocessInput", Some("sub1")), List(SubprocessOutput("out1"), SubprocessOutput("out2")), false)
     )
 
   }
@@ -82,9 +96,6 @@ class DefinitionPreparerSpec extends FlatSpec with Matchers {
   private def validateGroups(groups: List[NodeGroup], expectedSizeOfNotEmptyGroups: Int): Unit = {
     groups.map(_.name) shouldBe sorted
     groups.filterNot(ng => ng.possibleNodes.isEmpty) should have size expectedSizeOfNotEmptyGroups
-    groups.foreach { group =>
-      group.possibleNodes.map(_.label) shouldBe sorted
-    }
   }
 
   private def prepareGroups(nodesConfig: Map[String, String], nodeCategoryMapping: Map[String, String]): List[NodeGroup] = {
@@ -97,6 +108,19 @@ class DefinitionPreparerSpec extends FlatSpec with Matchers {
       isSubprocess = false,
       subprocessInputs = subprocessInputs,
       extractorFactory = new TypeAfterConfig(new ParamDefaultValueConfig(Map()))
+    )
+    groups
+  }
+
+
+  private def prepareGroupsOfNodes(services: List[String]): List[NodeGroup] = {
+
+    val groups = new DefinitionPreparer(Map(), Map()).prepareNodesToAdd(
+      user = LoggedUser("aa", List(Permission.Admin), List()),
+      processDefinition = services.foldRight(ProcessDefinitionBuilder.empty)((s, p) => p.withService(s)),
+      isSubprocess = false,
+      subprocessInputs = Map(),
+      extractorFactory = new TypeAfterConfig(ParamDefaultValueConfig(Map()))
     )
     groups
   }

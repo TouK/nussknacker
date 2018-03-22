@@ -146,10 +146,10 @@ export function makeElement(node, processCounts, forExport, nodesSettings){
     const width = rectWidth;
     const widthWithTestResults = hasCounts ? width + rectHeight : width;
     const height = rectHeight;
-    const iconFromConfig = (nodesSettings[ProcessUtils.findNodeDefinitionId(node)] || {}).icon
-    var icon = iconFromConfig ? LoaderUtils.loadNodeSvgContent(iconFromConfig) : LoaderUtils.loadNodeSvgContent(`${node.type}.svg`)
+    const iconFromConfig = (nodesSettings[ProcessUtils.findNodeConfigName(node)] || {}).icon
+    const icon = iconFromConfig ? LoaderUtils.loadNodeSvgContent(iconFromConfig) : LoaderUtils.loadNodeSvgContent(`${node.type}.svg`)
 
-    var attrs = {
+    let attrs = {
       '.background': {
         width: widthWithTestResults
       },

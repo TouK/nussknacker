@@ -144,6 +144,10 @@ class ProcessUtils {
     }
   }
 
+  findNodeConfigName = (node) => {
+      return this.findNodeDefinitionId(node) || (node.type && node.type.charAt(0).toLowerCase() + node.type.slice(1));
+  }
+
   humanReadableType = (refClazzName) => {
     if (_.isEmpty(refClazzName)) {
       return ""

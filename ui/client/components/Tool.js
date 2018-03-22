@@ -3,6 +3,7 @@ import {render} from "react-dom";
 import { DragSource } from 'react-dnd';
 import * as LoaderUtils from '../common/LoaderUtils'
 import "../stylesheets/toolBox.styl";
+import ProcessUtils from "../common/ProcessUtils";
 
 class Tool extends React.Component {
 
@@ -13,6 +14,7 @@ class Tool extends React.Component {
   };
 
   render() {
+    //FIXME load icon defined in config
     const icon = LoaderUtils.loadNodeSvgContent(`${this.props.nodeModel.type}.svg`)
 
     return this.props.connectDragSource(

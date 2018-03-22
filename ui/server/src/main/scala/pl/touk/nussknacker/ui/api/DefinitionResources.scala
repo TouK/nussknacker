@@ -126,7 +126,7 @@ object UIProcessDefinition {
 case class NodeToAdd(`type`: String, label: String, node: NodeData, categories: List[String])
 
 object SortedNodeGroup {
-  def apply(name: String, possibleNodes: List[NodeToAdd]): NodeGroup = NodeGroup(name, possibleNodes.sortBy(_.label))
+  def apply(name: String, possibleNodes: List[NodeToAdd]): NodeGroup = NodeGroup(name, possibleNodes.sortBy(_.label.toLowerCase))
 }
 
 case class NodeGroup(name: String, possibleNodes: List[NodeToAdd])
@@ -151,11 +151,11 @@ class DefinitionPreparer(val nodesConfig: Map[String, SingleNodeConfig], val nod
     => objectDefinition.returnType == Typed[BoxedUnit]).tupled
 
     val base = NodeGroup("base", List(
-      NodeToAdd("filter", "Filter", Filter("", Expression("spel", "true")), user.categories),
-      NodeToAdd("split", "Split", Split(""), user.categories),
-      NodeToAdd("switch", "Switch", Switch("", Expression("spel", "true"), "output"), user.categories),
-      NodeToAdd("variable", "Variable", Variable("", "varName", Expression("spel", "'value'")), user.categories),
-      NodeToAdd("sqlVariable", "SQL Variable", Variable("", "varName", Expression("sql", "SELECT * FROM input")), user.categories)
+      NodeToAdd("filter", "filter", Filter("", Expression("spel", "true")), user.categories),
+      NodeToAdd("split", "split", Split(""), user.categories),
+      NodeToAdd("switch", "switch", Switch("", Expression("spel", "true"), "output"), user.categories),
+      NodeToAdd("variable", "variable", Variable("", "varName", Expression("spel", "'value'")), user.categories),
+      NodeToAdd("sqlVariable", "sqlVariable", Variable("", "varName", Expression("sql", "SELECT * FROM input")), user.categories)
     ))
     val services = NodeGroup("services",
       processDefinition.services.filter(returnsUnit).map {
@@ -215,7 +215,7 @@ class DefinitionPreparer(val nodesConfig: Map[String, SingleNodeConfig], val nod
       .mapValues(v => v.map(e => e._2))
       .map { case (name: String, elements: List[NodeToAdd]) => SortedNodeGroup(name, elements) }
       .toList
-      .sortBy(_.name)
+      .sortBy(_.name.toLowerCase)
 
   }
 
@@ -231,14 +231,14 @@ class DefinitionPreparer(val nodesConfig: Map[String, SingleNodeConfig], val nod
         case SubprocessOutputDefinition(_, name, _) => name
       }
       //TODO: enable choice of output type
-      NodeEdges(NodeTypeId("SubprocessInput", Some(process.metaData.id)), outputs.map(EdgeType.SubprocessOutput), canChooseNodes = false)
+      NodeEdges(NodeTypeId("subprocessInput", Some(process.metaData.id)), outputs.map(EdgeType.SubprocessOutput), canChooseNodes = false)
     }
 
     List(
-      NodeEdges(NodeTypeId("Split"), List(), canChooseNodes = true),
-      NodeEdges(NodeTypeId("Switch"), List(
+      NodeEdges(NodeTypeId("split"), List(), canChooseNodes = true),
+      NodeEdges(NodeTypeId("switch"), List(
         EdgeType.NextSwitch(Expression("spel", "true")), EdgeType.SwitchDefault), canChooseNodes = true),
-      NodeEdges(NodeTypeId("Filter"), List(FilterTrue, FilterFalse), canChooseNodes = false)
+      NodeEdges(NodeTypeId("filter"), List(FilterTrue, FilterFalse), canChooseNodes = false)
     ) ++ subprocessOutputs
   }
 }

@@ -194,7 +194,7 @@ function mapState(state) {
   const nodeToDisplay = state.graphReducer.nodeToDisplay
   return {
     nodeToDisplay: nodeToDisplay,
-    nodeSetting: _.get(state.settings.nodesSettings, ProcessUtils.findNodeDefinitionId(nodeToDisplay)) || {},
+    nodeSetting: _.get(state.settings.nodesSettings, ProcessUtils.findNodeConfigName(nodeToDisplay)) || {},
     processId: state.graphReducer.processToDisplay.id,
     subprocessVersions: state.graphReducer.processToDisplay.properties.subprocessVersions,
     nodeErrors: errors,
