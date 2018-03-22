@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.ui.api.DefinitionPreparer.{NodeEdges, NodeTypeId}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory
 import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.EdgeType._
+import pl.touk.nussknacker.ui.process.uiconfig.SingleNodeConfig
 import pl.touk.nussknacker.ui.process.uiconfig.defaults.{ParamDefaultValueConfig, TypeAfterConfig}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
@@ -13,26 +14,14 @@ class DefinitionPreparerSpec extends FlatSpec with Matchers {
 
   it should "return objects sorted by label" in {
 
-    val subprocessesDetails = TestFactory.sampleSubprocessRepository.loadSubprocesses(Map.empty)
-    val subprocessInputs = Map[String, ObjectDefinition]()
-    val groups = new DefinitionPreparer().prepareNodesToAdd(
-      user = LoggedUser("aa", List(Permission.Admin), List()),
-      processDefinition = ProcessTestData.processDefinition,
-      isSubprocess = false,
-      subprocessInputs = subprocessInputs,
-      extractorFactory = new TypeAfterConfig(new ParamDefaultValueConfig(Map()))
-    )
-    groups.map(_.name) shouldBe sorted
+    val groups = prepareGroups(Map(), Map())
 
-    groups should have size 7
-    groups.foreach { group =>
-      group.possibleNodes.map(_.label) shouldBe sorted
-    }
+    validateGroups(groups, 5)
   }
 
   it should "return edge types for subprocess, filters and switches" in {
     val subprocessesDetails = TestFactory.sampleSubprocessRepository.loadSubprocesses(Map.empty)
-    val edgeTypes = new DefinitionPreparer().prepareEdgeTypes(
+    val edgeTypes = new DefinitionPreparer(Map(), Map()).prepareEdgeTypes(
       user = LoggedUser("aa", List(Permission.Admin), List()),
       processDefinition = ProcessTestData.processDefinition,
       isSubprocess = false,
@@ -48,24 +37,11 @@ class DefinitionPreparerSpec extends FlatSpec with Matchers {
   }
 
   it should "return objects sorted by label with mapped categories" in {
+    val groups = prepareGroups(Map(), Map("custom" -> "base"))
 
-    val subprocessesDetails = TestFactory.sampleSubprocessRepository.loadSubprocesses(Map.empty)
-    val subprocessInputs = Map[String, ObjectDefinition]()
+    validateGroups(groups, 4)
 
-    val groups = new DefinitionPreparer(Map("custom"->"base")).prepareNodesToAdd(
-      user = LoggedUser("aa", List(Permission.Admin), List()),
-      processDefinition = ProcessTestData.processDefinition,
-      isSubprocess = false,
-      subprocessInputs = subprocessInputs,
-      extractorFactory = new TypeAfterConfig(new ParamDefaultValueConfig(Map()))
-    )
-    groups.map(_.name) shouldBe sorted
-
-    groups should have size 6
     groups.exists(_.name == "custom") shouldBe false
-    groups.foreach { group =>
-      group.possibleNodes.map(_.label) shouldBe sorted
-    }
 
     val baseNodeGroups = groups.filter(_.name == "base")
     baseNodeGroups should have size 1
@@ -76,5 +52,52 @@ class DefinitionPreparerSpec extends FlatSpec with Matchers {
     baseNodes.filter(n => n.`type` == "filter") should have size 1
     baseNodes.filter(n => n.`type` == "customNode") should have size 3
 
+  }
+
+  it should "return objects sorted by label with mapped categories and mapped nodes" in {
+
+    val groups = prepareGroups(
+      Map("barService" -> "foo", "barSource" -> "fooBar"),
+      Map("custom" -> "base"))
+
+    validateGroups(groups, 5)
+
+    groups.exists(_.name == "custom") shouldBe false
+
+    val baseNodeGroups = groups.filter(_.name == "base")
+    baseNodeGroups should have size 1
+
+    val baseNodes = baseNodeGroups.flatMap(_.possibleNodes)
+    // 4 nodes from base + 3 custom nodes
+    baseNodes should have size (4 + 3)
+    baseNodes.filter(n => n.`type` == "filter") should have size 1
+    baseNodes.filter(n => n.`type` == "customNode") should have size 3
+
+    val fooNodes = groups.filter(_.name == "foo").flatMap(_.possibleNodes)
+    fooNodes should have size 1
+    fooNodes.filter(_.label == "barService") should have size 1
+
+  }
+
+  private def validateGroups(groups: List[NodeGroup], expectedSizeOfNotEmptyGroups: Int): Unit = {
+    groups.map(_.name) shouldBe sorted
+    groups.filterNot(ng => ng.possibleNodes.isEmpty) should have size expectedSizeOfNotEmptyGroups
+    groups.foreach { group =>
+      group.possibleNodes.map(_.label) shouldBe sorted
+    }
+  }
+
+  private def prepareGroups(nodesConfig: Map[String, String], nodeCategoryMapping: Map[String, String]): List[NodeGroup] = {
+    val subprocessesDetails = TestFactory.sampleSubprocessRepository.loadSubprocesses(Map.empty)
+    val subprocessInputs = Map[String, ObjectDefinition]()
+
+    val groups = new DefinitionPreparer(nodesConfig.mapValues(v => SingleNodeConfig(None, None, None, Some(v))), nodeCategoryMapping).prepareNodesToAdd(
+      user = LoggedUser("aa", List(Permission.Admin), List()),
+      processDefinition = ProcessTestData.processDefinition,
+      isSubprocess = false,
+      subprocessInputs = subprocessInputs,
+      extractorFactory = new TypeAfterConfig(new ParamDefaultValueConfig(Map()))
+    )
+    groups
   }
 }

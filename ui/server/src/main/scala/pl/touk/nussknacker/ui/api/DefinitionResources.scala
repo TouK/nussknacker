@@ -6,7 +6,6 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.util.MultiMap
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor
@@ -28,6 +27,7 @@ import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.EdgeType
 import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.EdgeType.{FilterFalse, FilterTrue}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessRepository}
+import pl.touk.nussknacker.ui.process.uiconfig.SingleNodeConfig
 import pl.touk.nussknacker.ui.process.uiconfig.defaults.{ParameterDefaultValueExtractorStrategy, ParameterEvaluatorExtractor}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.EspPathMatchers
@@ -38,6 +38,7 @@ import scala.runtime.BoxedUnit
 class DefinitionResources(modelData: Map[ProcessingType, ModelData],
                           subprocessRepository: SubprocessRepository,
                           parameterDefaultValueExtractorStrategyFactory: ParameterDefaultValueExtractorStrategy,
+                          nodesConfig: Map[String, SingleNodeConfig],
                           nodeCategoryMapping: Map[String, String])
                          (implicit ec: ExecutionContext)
   extends Directives with Argonaut62Support with EspPathMatchers with RouteWithUser {
@@ -45,7 +46,7 @@ class DefinitionResources(modelData: Map[ProcessingType, ModelData],
   import argonaut.ArgonautShapeless._
   import pl.touk.nussknacker.ui.codec.UiCodecs._
 
-  private val definitionPreparer: DefinitionPreparer = new DefinitionPreparer(nodeCategoryMapping)
+  private val definitionPreparer: DefinitionPreparer = new DefinitionPreparer(nodesConfig, nodeCategoryMapping)
 
   def route(implicit user: LoggedUser) : Route = encodeResponse {
     //TODO maybe always return data for all subprocesses versions instead of fetching just one-by-one?
@@ -132,7 +133,7 @@ case class NodeGroup(name: String, possibleNodes: List[NodeToAdd])
 case class NodeDefinition(id: String, parameters: List[DefinitionExtractor.Parameter])
 
 //TODO: some refactoring?
-class DefinitionPreparer(val nodeCategoryMapping: Map[String, String] = Map()) {
+class DefinitionPreparer(val nodesConfig: Map[String, SingleNodeConfig], val nodeCategoryMapping: Map[String, String]) {
 
   def prepareNodesToAdd(user: LoggedUser, processDefinition: ProcessDefinition[ObjectDefinition],
                         isSubprocess: Boolean,
@@ -208,12 +209,17 @@ class DefinitionPreparer(val nodeCategoryMapping: Map[String, String] = Map()) {
     }
 
     (List(base, services, enrichers, customTransformers) ++ subprocessDependent)
-      .groupBy(e => nodeCategoryMapping.getOrElse(e.name, e.name))
-      .mapValues(v => v.flatMap(ng => ng.possibleNodes))
-      .map{case (name: String, elements: List[NodeToAdd]) => SortedNodeGroup(name, elements)}
+      .flatMap(e => e.possibleNodes.map(n => (e.name, n)))
+      .groupBy(e => getNodeCategory(e._2.label, e._1))
+      .mapValues(v => v.map(e => e._2))
+      .map { case (name: String, elements: List[NodeToAdd]) => SortedNodeGroup(name, elements) }
       .toList
       .sortBy(_.name)
 
+  }
+
+  private def getNodeCategory(nodeName: String, category: String): String ={
+    nodesConfig.get(nodeName).flatMap(_.category).orElse(nodeCategoryMapping.get(category)).getOrElse(category)
   }
 
   def prepareEdgeTypes(user: LoggedUser, processDefinition: ProcessDefinition[ObjectDefinition],

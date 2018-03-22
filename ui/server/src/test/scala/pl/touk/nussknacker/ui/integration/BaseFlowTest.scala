@@ -56,8 +56,8 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest
       val settings = responseAs[String].decodeOption[UISettings].get
       settings.nodes shouldBe
         Map(
-          "test1" -> SingleNodeConfig(None, Some("Sink.svg"), None),
-          "enricher" -> SingleNodeConfig(Some(Map("param" -> "'default value'")), Some("Filter.svg"), None)
+          "test1" -> SingleNodeConfig(None, Some("Sink.svg"), None, None),
+          "enricher" -> SingleNodeConfig(Some(Map("param" -> "'default value'")), Some("Filter.svg"), None, None)
         )
     }
   }

@@ -107,7 +107,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
           new ProcessActivityResource(processActivityRepository, attachmentService),
           ManagementResources(counter, managementActor),
           new ValidationResources(processValidation),
-          new DefinitionResources(modelData, subprocessRepository, extractValueParameterByConfigThenType, nodeCategoryMapping),
+          new DefinitionResources(modelData, subprocessRepository, extractValueParameterByConfigThenType, nodesConfig, nodeCategoryMapping),
           new SignalsResources(modelData(ProcessingType.Streaming), processRepository),
           new QueryableStateResources(modelData, processRepository, espQueryableClient, jobStatusService),
           new UserResources(),
