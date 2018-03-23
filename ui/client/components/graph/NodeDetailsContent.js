@@ -447,8 +447,8 @@ export default class NodeDetailsContent extends React.Component {
             return (<div className="node-row" key={ikey}>
                 <div className="node-label">{key}:</div>
                 <div className="node-value">
-                  {ctx[key].original ? <Textarea className="node-input" readOnly={true} value={ctx[key].original}/> : null}
-                  <Textarea className="node-input" readOnly={true} value={ctx[key].pretty || ctx[key]}/>
+                  {(ctx[key] || {}).original ? <Textarea className="node-input" readOnly={true} value={ctx[key].original}/> : null}
+                  <Textarea className="node-input" readOnly={true} value={ctx[key] ? (ctx[key].pretty || ctx[key]) : "null"}/>
                 </div>
               </div>
             )
