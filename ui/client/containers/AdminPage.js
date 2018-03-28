@@ -303,7 +303,7 @@ class TestServices extends React.Component {
 
 
   prettyPrint(json, title) {
-    if (_.isEmpty(json)) {
+    if (!this.hasSomeValue(json)) {
       return null
     } else {
       const toPrint = _.isObject(json) ? json : {"result": json}
@@ -321,6 +321,11 @@ class TestServices extends React.Component {
         </div>
       )
     }
+  }
+
+  hasSomeValue = (o) => {
+    //_.isEmpty(123) returns true... more: https://github.com/lodash/lodash/issues/496
+    return (_.isNumber(o) || _.isBoolean(o)) || !_.isEmpty(o)
   }
 
 }
