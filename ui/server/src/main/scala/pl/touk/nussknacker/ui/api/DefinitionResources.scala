@@ -154,7 +154,8 @@ class DefinitionPreparer(val nodesConfig: Map[String, SingleNodeConfig], val nod
       NodeToAdd("filter", "Filter", Filter("", Expression("spel", "true")), user.categories),
       NodeToAdd("split", "Split", Split(""), user.categories),
       NodeToAdd("switch", "Switch", Switch("", Expression("spel", "true"), "output"), user.categories),
-      NodeToAdd("variable", "Variable", Variable("", "varName", Expression("spel", "'value'")), user.categories)
+      NodeToAdd("variable", "Variable", Variable("", "varName", Expression("spel", "'value'")), user.categories),
+      NodeToAdd("sqlVariable", "SQL Variable", Variable("", "varName", Expression("sql", "SELECT * FROM input")), user.categories)
     ))
     val services = NodeGroup("services",
       processDefinition.services.filter(returnsUnit).map {

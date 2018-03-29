@@ -47,8 +47,8 @@ class DefinitionPreparerSpec extends FlatSpec with Matchers {
     baseNodeGroups should have size 1
 
     val baseNodes = baseNodeGroups.flatMap(_.possibleNodes)
-    // 4 nodes from base + 3 custom nodes
-    baseNodes should have size (4 + 3)
+    // 5 nodes from base + 3 custom nodes
+    baseNodes should have size (5 + 3)
     baseNodes.filter(n => n.`type` == "filter") should have size 1
     baseNodes.filter(n => n.`type` == "customNode") should have size 3
 
@@ -68,8 +68,8 @@ class DefinitionPreparerSpec extends FlatSpec with Matchers {
     baseNodeGroups should have size 1
 
     val baseNodes = baseNodeGroups.flatMap(_.possibleNodes)
-    // 4 nodes from base + 3 custom nodes
-    baseNodes should have size (4 + 3)
+    // 5 nodes from base + 3 custom nodes
+    baseNodes should have size (5 + 3)
     baseNodes.filter(n => n.`type` == "filter") should have size 1
     baseNodes.filter(n => n.`type` == "customNode") should have size 3
 
