@@ -35,20 +35,18 @@ object SqlExpressionParser extends ExpressionParser {
       }
     }
   }
-  //TODO: replace with sequence and imports
 
   private[sql] def validateColumnModel(columnModels: Map[String, Validated[InvalidateMessage, ColumnModel]])
   : ValidatedNel[expression.ExpressionParseError, Map[String, ColumnModel]] = {
-    columnModels.collect {
-      case (name, invalid@Invalid(invalidateMesage)) => transform(name, invalidateMesage)
-    }.toList match {
-      case head :: tail =>
-        NonEmptyList(head, tail).invalid
-      case Nil =>
-        columnModels.collect {
-        case (name, Valid(columnModel)) => name -> columnModel
-      }.validNel
+    columnModels.map {
+      case (name, invalid@Invalid(invalidateMesage)) =>
+        transform(name, invalidateMesage).invalidNel
+      case (name, Valid(colModel)) =>
+        (name -> colModel).validNel
     }
+      .toList
+      .sequenceU
+      .map(_.toMap)
   }
 
   private[sql] def transform(columnModelName: String, invalidateMessage: InvalidateMessage): expression.ExpressionParseError = {

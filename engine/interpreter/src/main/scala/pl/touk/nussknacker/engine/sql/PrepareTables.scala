@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.sql
 
-import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import cats.implicits._
 
@@ -23,18 +22,11 @@ object PrepareTables {
     transformValidated(validatedList.toList)
   }
 
-  //TODO: replace with sequence and imports
   private def transformValidated(validatedTables: List[Validated[NotAListException, (String, Table)]])
   : ValidatedNel[NotAListException, Map[String, Table]] = {
-    val errors = validatedTables.collect{
-      case Invalid(nale) => nale
-    }
-    errors match {
-      case head :: tail => NonEmptyList(head, tail).invalid
-      case Nil => validatedTables.collect{
-        case Valid((name, table))=> name->table
-      }.toMap.validNel
-    }
+    validatedTables
+      .traverseU[ValidatedNel[NotAListException, (String, Table)]](_.toValidatedNel)
+      .map(_.toMap)
   }
 
   private[sql] def marshall(name: String,
