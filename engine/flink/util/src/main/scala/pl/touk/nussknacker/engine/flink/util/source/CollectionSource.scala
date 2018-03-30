@@ -13,7 +13,7 @@ case class CollectionSource[T: TypeInformation](config: ExecutionConfig,
                                                 timestampAssigner: Option[TimestampAssigner[T]]) extends FlinkSource[T] {
 
   override def toFlinkSource = new FromElementsFunction[T](
-    typeInformation.createSerializer(config), list.asJava)
+    typeInformation.createSerializer(config), list.filterNot(_ == null).asJava)
 
   override def typeInformation = implicitly[TypeInformation[T]]
 
