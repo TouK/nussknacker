@@ -8,7 +8,7 @@ class TypedMapColumnModelTest extends FunSuite with Matchers {
   test("create column model") {
     val typingResult = TypedMapTypingResult(Map("number" -> Typed[Int], "string" -> Typed[String]))
     val excpected = ColumnModel(List(Column("number", Numeric),Column("string", Varchar)))
-    TypedMapColumnModel.unapply(typingResult) shouldEqual Some(excpected)
+    TypedMapColumnModel.create(typingResult) shouldEqual excpected
   }
 
 }

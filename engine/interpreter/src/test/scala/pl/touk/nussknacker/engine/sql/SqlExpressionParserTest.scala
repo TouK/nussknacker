@@ -31,13 +31,13 @@ class SqlExpressionParserTest extends FunSuite with Matchers {
     resut shouldEqual ExpressionParseError(s"cannot create table 't1'. List of Unknown")
   }
   test("valid query") {
-    SqlExpressionParser.validateQuery("select * from table1", columnModel) shouldBe a[Valid[_]]
+    SqlExpressionParser.getQueryReturnType("select * from table1", columnModel) shouldBe a[Valid[_]]
   }
   test("query with unexciting table variable should invalidates") {
-    SqlExpressionParser.validateQuery("select * from unicorn", columnModel) shouldBe a[Invalid[_]]
+    SqlExpressionParser.getQueryReturnType("select * from unicorn", columnModel) shouldBe a[Invalid[_]]
   }
   test("query with unexciting select column should invalidates") {
-    SqlExpressionParser.validateQuery("select unicorn from table1", columnModel) shouldBe a[Invalid[_]]
+    SqlExpressionParser.getQueryReturnType("select unicorn from table1", columnModel) shouldBe a[Invalid[_]]
   }
   val columnModel = Map("table1" -> ColumnModel(List(Column("col1", Varchar))))
 }

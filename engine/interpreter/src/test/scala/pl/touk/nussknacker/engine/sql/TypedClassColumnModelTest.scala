@@ -11,7 +11,7 @@ import SqlType._
 
 class TypedClassColumnModelTest extends FunSuite with Matchers{
   def typeMe[T](implicit classTag: ClassTag[T]): ColumnModel = TypedClassColumnModel.create(Typed[T].asInstanceOf[Typed])
-  test("ignore ingeritance") {
+  test("ignore inheritance") {
     trait Countable {
       def value = 1
     }

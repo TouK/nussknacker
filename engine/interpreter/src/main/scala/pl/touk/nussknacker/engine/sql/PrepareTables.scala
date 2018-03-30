@@ -5,10 +5,24 @@ import cats.data._
 import cats.implicits._
 
 import scala.collection.JavaConverters.collectionAsScalaIterableConverter
-import scala.collection.immutable
 
+object PrepareTables {
+  def apply(
+             values: Map[String, Any],
+             colModels: Map[String, ColumnModel],
+             readObjectField: ReadObjectField
+           ): ValidatedNel[NotAListException, Map[String, Table]] = {
+    val validatedList = values.filterKeys { key =>
+      colModels.keys.toList.contains(key)
+    }.map { case (key, any) =>
+      val columnModel = colModels(key)
+      marshall(key, readObjectField, columnModel, any).map { list =>
+        key -> Table(columnModel, list)
+      }
+    }
+    transformValidated(validatedList.toList)
+  }
 
-object FillTables {
   //TODO: replace with sequence and imports
   private def transformValidated(validatedTables: List[Validated[NotAListException, (String, Table)]])
   : ValidatedNel[NotAListException, Map[String, Table]] = {
@@ -23,24 +37,6 @@ object FillTables {
     }
   }
 
-  def apply(
-             values: Map[String, Any],
-             colModels: Map[String, ColumnModel],
-             readObjectField: ReadObjectField
-           ): ValidatedNel[NotAListException, Map[String, Table]] = {
-    val validatedList = values
-      .filterKeys { key =>
-        colModels.keys.toList.contains(key)
-      } map { case (key, any) =>
-      val columnModel = colModels(key)
-      marshall(key, readObjectField, columnModel, any)
-        .map { list =>
-          key -> Table(columnModel, list)
-        }
-    }
-    transformValidated(validatedList.toList)
-  }
-
   private[sql] def marshall(name: String,
                             readObjectField: ReadObjectField,
                             columnModel: ColumnModel,
@@ -49,9 +45,8 @@ object FillTables {
     any match {
       case list: Traversable[Any] =>
         list.map { listElement =>
-          columnModel.columns.map {
-            _.name
-          } map { fieldName =>
+          columnModel.columns.map { column =>
+            val fieldName = column.name
             readObjectField.readField(listElement, fieldName)
           }
         }.toList.valid

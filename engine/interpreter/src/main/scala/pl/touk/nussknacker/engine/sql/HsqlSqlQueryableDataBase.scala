@@ -3,12 +3,13 @@ package pl.touk.nussknacker.engine.sql
 import java.sql._
 import java.util.UUID
 
+import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.typed.typing.TypedMapTypingResult
 import pl.touk.nussknacker.engine.api.typed.{ClazzRef, TypedMap, TypedMapDefinition, typing}
 
 import scala.collection.{immutable, mutable}
 
-class HsqlSqlQueryableDataBase extends SqlQueryableDataBase {
+class HsqlSqlQueryableDataBase extends SqlQueryableDataBase with LazyLogging {
 
   import HsqlSqlQueryableDataBase._
 
@@ -19,6 +20,7 @@ class HsqlSqlQueryableDataBase extends SqlQueryableDataBase {
     tables.map { table =>
       createTableQuery(table._1, table._2)
     } foreach { query =>
+      logger.debug(query)
       val statement = connection.prepareStatement(query)
       statement.execute()
       statement.close()
@@ -30,8 +32,16 @@ class HsqlSqlQueryableDataBase extends SqlQueryableDataBase {
       val query = insertTableQuery(name, model)
       val statement = connection.prepareStatement(query)
       rows.foreach { row =>
-        row.zipWithIndex.foreach { case(obj, idx) =>
-          statement.setObject(idx + 1, obj)
+        logger.debug(query)
+        row.zip(Stream.from(1)).foreach { case (obj, idx) =>
+          logger.trace(s"Setting query parameter. ${parameterDetails(statement.getParameterMetaData, idx, obj)}")
+          try {
+            statement.setObject(idx, obj)
+          } catch {
+            case e: SQLSyntaxErrorException =>
+              logger.error(s"Error during setting query parameter. ${parameterDetails(statement.getParameterMetaData, idx, obj)}")
+              throw e
+          }
         }
         statement.execute()
       }
@@ -39,7 +49,15 @@ class HsqlSqlQueryableDataBase extends SqlQueryableDataBase {
     }
   }
 
+  private def parameterDetails(params: ParameterMetaData, idx: Int, obj: Any): String = {
+    val sqlParamType = params.getParameterTypeName(idx)
+    val expectedClass = params.getParameterClassName(idx)
+    val actualClass = if (obj != null) obj.getClass.getCanonicalName else "null"
+    s"Query index: $idx, sql type: $sqlParamType, expected class: $expectedClass, actualClass: $actualClass, value: $obj"
+  }
+
   override def query(query: String): List[TypedMap] = {
+    logger.debug(s"query: $query")
     val statement = connection.prepareStatement(query)
     val result = getData(statement)
     statement.close()
@@ -47,12 +65,10 @@ class HsqlSqlQueryableDataBase extends SqlQueryableDataBase {
   }
 
   override def getTypingResult(query: String): typing.TypingResult = {
+    logger.debug(s"query for typing result: $query")
     val statement = connection.prepareStatement(query)
-    val result = TypedMapTypingResult(
-      toTypedMapDefinition(
-        statement.getMetaData
-      )
-    )
+    val metaData = statement.getMetaData
+    val result = TypedMapTypingResult(toTypedMapDefinition(metaData))
     statement.close()
     result
   }
@@ -63,7 +79,7 @@ class HsqlSqlQueryableDataBase extends SqlQueryableDataBase {
 }
 
 
-private object HsqlSqlQueryableDataBase {
+private object HsqlSqlQueryableDataBase extends LazyLogging {
   import SqlType._
   private val str: SqlType => String = {
     case Numeric => "NUMERIC"
@@ -101,15 +117,23 @@ private object HsqlSqlQueryableDataBase {
     result.toList
   }
 
-  private def toTypedMapDefinition(meta: ResultSetMetaData) = {
+  private def toTypedMapDefinition(meta: ResultSetMetaData): TypedMapDefinition = {
     val cols = (1 to meta.getColumnCount).map { idx =>
-      val name = meta.getColumnName(idx)
+      val name = meta.getColumnLabel(idx)
+      //more mappings?
       val typ = meta.getColumnType(idx) match {
-        case Types.NUMERIC => ClazzRef[Number]
-        case Types.VARCHAR => ClazzRef[String]
-        case Types.BOOLEAN => ClazzRef[Boolean]
-
-        case _ => ClazzRef[Any]
+        case Types.BIT | Types.TINYINT | Types.SMALLINT | Types.INTEGER
+             | Types.BIGINT | Types.FLOAT | Types.REAL | Types.DOUBLE | Types.NUMERIC | Types.DECIMAL =>
+          ClazzRef[Number]
+        case Types.VARCHAR | Types.LONGNVARCHAR =>
+          ClazzRef[String]
+        case Types.CHAR =>
+          ClazzRef[Char]
+        case Types.BOOLEAN =>
+          ClazzRef[Boolean]
+        case a =>
+          logger.warn(s"no type mapping for column type: $a")
+          ClazzRef[Any]
       }
       name -> typ
     }.toMap

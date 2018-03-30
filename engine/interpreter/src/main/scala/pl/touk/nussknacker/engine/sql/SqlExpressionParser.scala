@@ -26,12 +26,13 @@ object SqlExpressionParser extends ExpressionParser {
   override def parse(original: String, ctx: ValidationContext, expectedType: ClazzRef)
   : Validated[NonEmptyList[expression.ExpressionParseError], (typing.TypingResult, expression.Expression)] = {
     val froms: SqlFromsQuery = SqlExpressionParser.parseSqlFromsQuery(original, ctx.variables.keys.toList)
-    validateColumnModel(SqlExpressionParser.createTablesDefinition(ctx, froms, CreateColumnModel(_)))
-      .andThen { colModel =>
-        validateQuery(original, colModel)
-          .map((_, colModel))
-      } map { case (typingResult, colModel) =>
-      createExpression(original, colModel, typingResult)
+    val columnModel = SqlExpressionParser.createTablesDefinition(ctx, froms, CreateColumnModel(_))
+    val validatedColumnModel = validateColumnModel(columnModel)
+    validatedColumnModel.andThen { colModel =>
+      val returnType = getQueryReturnType(original, colModel)
+      returnType.map { typingResult =>
+        createExpression(original, colModel, typingResult)
+      }
     }
   }
   //TODO: replace with sequence and imports
@@ -69,16 +70,16 @@ object SqlExpressionParser extends ExpressionParser {
     (Typed(Set(listResult)), expression)
   }
 
-  private[sql] def validateQuery(original: String, colModel: Map[String, ColumnModel]): Validated[NonEmptyList[expression.ExpressionParseError], TypingResult] = {
-    val base = new HsqlSqlQueryableDataBase()
+  private[sql] def getQueryReturnType(original: String, colModel: Map[String, ColumnModel]): Validated[NonEmptyList[expression.ExpressionParseError], TypingResult] = {
+    val db = new HsqlSqlQueryableDataBase()
     try {
-      base.createTables(colModel)
-      Validated.Valid(base.getTypingResult(original))
+      db.createTables(colModel)
+      Validated.Valid(db.getTypingResult(original))
     } catch {
       case e: SQLSyntaxErrorException =>
         Validated.Invalid(NonEmptyList(expression.ExpressionParseError(e.getMessage), Nil))
     } finally {
-      base.close()
+      db.close()
     }
   }
 
@@ -109,15 +110,15 @@ object SqlExpressionParser extends ExpressionParser {
 
 }
 
-case class SqlExpressEvaluatioonException(notAListExceptions :NonEmptyList[FillTables.NotAListException])
+case class SqlExpressEvaluationException(notAListExceptions :NonEmptyList[PrepareTables.NotAListException])
   extends IllegalArgumentException(notAListExceptions.toString())
 
 class SqlExpression(val original: String, columnModels: Map[String, ColumnModel]) extends Expression {
 
-  private def unvalidate(value: ValidatedNel[FillTables.NotAListException, List[TypedMap]]):List[TypedMap] = {
+  private def unvalidate(value: ValidatedNel[PrepareTables.NotAListException, List[TypedMap]]):List[TypedMap] = {
     value match {
       case Valid(list) => list
-      case Invalid(e) => throw SqlExpressEvaluatioonException(e)
+      case Invalid(e) => throw SqlExpressEvaluationException(e)
     }
   }
 
@@ -128,10 +129,10 @@ class SqlExpression(val original: String, columnModels: Map[String, ColumnModel]
     }
   }
 
-  private def evaluate[T](ctx: Context): ValidatedNel[FillTables.NotAListException, List[TypedMap]] = {
+  private def evaluate[T](ctx: Context): ValidatedNel[PrepareTables.NotAListException, List[TypedMap]] = {
     val db = new HsqlSqlQueryableDataBase
     db.createTables(columnModels)
-    val result = FillTables(ctx.variables, columnModels, ReadObjectField)
+    val result = PrepareTables(ctx.variables, columnModels, ReadObjectField)
       .map { tables =>
         db.insertTables(tables)
         db.query(original)
