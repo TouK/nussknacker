@@ -21,7 +21,7 @@ object CreateColumnModel {
     }
   }
 
-  private[sql] val getListInnerType: TypingResult => Validated[NotAListMessage, TypingResult] = {
+  private[sql] val getListInnerType: TypingResult => Validated[InvalidateMessage, TypingResult] = {
     case t@Typed(klasses) if klasses.size == 1 =>
       val headClass = klasses.head
       val isCollection =
@@ -30,7 +30,7 @@ object CreateColumnModel {
       if (isCollection)
         headClass.params.headOption match {
           case Some(typ) => typ.valid
-          case None => notAList(t)
+          case None => UnknownInner.invalid
         }
       else {
         notAList(t)
