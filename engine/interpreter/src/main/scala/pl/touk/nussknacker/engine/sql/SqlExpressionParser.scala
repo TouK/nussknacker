@@ -86,10 +86,9 @@ object SqlExpressionParser extends ExpressionParser {
                               sqlFromsQuery: SqlFromsQuery,
                               createColumnModel: TypingResult => Validated[InvalidateMessage, ColumnModel]
                             ): Map[String, Validated[InvalidateMessage, ColumnModel]] = {
-    validationContext.variables
-      .filterKeys {
-        sqlFromsQuery.froms.contains
-      } mapValues {
+    validationContext.variables.filterKeys {
+      sqlFromsQuery.froms.contains
+    }.mapValues {
       createColumnModel
     }
   }
@@ -104,7 +103,7 @@ object SqlExpressionParser extends ExpressionParser {
   }
 
   override def parseWithoutContextValidation(original: String, expectedType: ClazzRef): Validated[expression.ExpressionParseError, expression.Expression] =
-    throw new IllegalStateException("shouldn't be useed")
+    throw new IllegalStateException("shouldn't be used")
 
 }
 
@@ -154,6 +153,8 @@ sealed trait SqlType
 object SqlType {
 
   object Numeric extends SqlType
+
+  object Decimal extends SqlType
 
   object Date extends SqlType
 

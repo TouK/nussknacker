@@ -46,7 +46,7 @@ class SqlProcessItTests extends FunSuite with BeforeAndAfterAll with Matchers wi
     result shouldEqual List(pair, pair, pair)
   }
 
-  test("define constant as column in sql") {
+  test("run complex sql process") {
     val process = EspProcessBuilder.id("proc1")
       .exceptionHandler()
       .source("id", "input")
@@ -62,16 +62,20 @@ class SqlProcessItTests extends FunSuite with BeforeAndAfterAll with Matchers wi
       """.stripMargin
         .asSql
     )
+      .buildSimpleVariable("value3List", "value3List", "SELECT value3 FROM list".asSql)
+      .buildSimpleVariable("anotherValue3List", "anotherValue3List", "SELECT value3 FROM value3List".asSql)
       .processor("proc1", "logService", "all" -> "#fromOne")
-      .processorEnd("proc2", "logService", "all" -> "#sumOne")
+      .processor("proc2", "logService", "all" -> "#anotherValue3List")
+      .processorEnd("proc3", "logService", "all" -> "#sumOne")
 
-    invoke(process, List(SimpleRecord("1", 12, "a", new Date(1))))
+    invoke(process, List(SimpleRecord(id = "1", value1 = 12, value2 = "a", date = new Date(1), value3 = BigDecimal(1.51))))
 
     val list = MockService.data.asInstanceOf[List[java.util.List[TypedMap]]]
     val result = list.flatMap(_.toList).flatMap(_.fields).toMap.mapValues(parseNumber)
     result shouldBe Map(
       "ONE" -> BigDecimal(1),
-      "SUM_VALUE" -> BigDecimal(2)
+      "SUM_VALUE" -> BigDecimal(2),
+      "VALUE3" -> BigDecimal(1.51)
     )
   }
 

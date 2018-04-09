@@ -47,27 +47,37 @@ object CreateColumnModel {
   object UnknownInner extends InvalidateMessage
 
   object ClazzToSqlType extends LazyLogging {
-    //TODO: handle cases java.Integer, LocalDateTime, LocalDate, itd.
     val STRING: ClazzRef = ClazzRef[String]
     val INTEGER: ClazzRef = ClazzRef[Int]
     val LONG: ClazzRef = ClazzRef[Long]
     val DOUBLE: ClazzRef = ClazzRef[Double]
+    val BIG_DECIMAL: ClazzRef = ClazzRef[BigDecimal]
+    val J_BIG_DECIMAL: ClazzRef = ClazzRef[java.math.BigDecimal]
+    val J_LONG: ClazzRef = ClazzRef[java.lang.Long]
+    val J_INTEGER: ClazzRef = ClazzRef[java.lang.Integer]
+    val J_DOUBLE: ClazzRef = ClazzRef[java.lang.Double]
+    val J_BOOLEAN: ClazzRef = ClazzRef[java.lang.Boolean]
+    val BOOLEAN: ClazzRef = ClazzRef[Boolean]
     val NUMBER: ClazzRef = ClazzRef[Number]
     val DATE: ClazzRef = ClazzRef[Date]
-    val BOOLEAN: ClazzRef = ClazzRef[Boolean]
 
     def convert(name: String, arg: ClazzRef): Option[SqlType] = {
       import SqlType._
       arg match {
-        case `STRING` =>
+        case STRING =>
           Some(Varchar)
-        case _ if classOf[java.lang.Number].isAssignableFrom(arg.clazz) =>
+        case NUMBER =>
+          Some(Decimal)
+        case DOUBLE | BIG_DECIMAL |
+           J_DOUBLE | J_BIG_DECIMAL =>
+          Some(Decimal)
+        case INTEGER | LONG |
+           J_INTEGER | J_LONG  =>
           Some(Numeric)
-        case `INTEGER` | `DOUBLE` | `LONG`  =>
-          Some(Numeric)
-        case `BOOLEAN` =>
+        case BOOLEAN |
+             J_BOOLEAN =>
           Some(Bool)
-        case `DATE` =>
+        case DATE =>
           Some(SqlType.Date)
         case a =>
           logger.warn(s"no mapping for name: $name and type $a")

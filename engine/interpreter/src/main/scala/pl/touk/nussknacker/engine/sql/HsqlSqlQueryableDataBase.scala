@@ -83,6 +83,7 @@ private object HsqlSqlQueryableDataBase extends LazyLogging {
   import SqlType._
   private val str: SqlType => String = {
     case Numeric => "NUMERIC"
+    case Decimal => "DECIMAL(20, 2)"
     case Varchar => "VARCHAR(50)"
     case Bool => "BIT"
     case Date => "DATETIME"
