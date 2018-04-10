@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.util.LoggingListener
 
 import scala.concurrent.duration.FiniteDuration
 
-abstract class FlinkProcessCompiler(creator: ProcessConfigCreator, config: Config) extends Serializable {
+abstract class FlinkProcessCompiler(creator: ProcessConfigCreator, config: Config, val diskStateBackendSupport: Boolean) extends Serializable {
 
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
@@ -89,4 +89,4 @@ abstract class FlinkProcessCompiler(creator: ProcessConfigCreator, config: Confi
 }
 
 class StandardFlinkProcessCompiler(creator: ProcessConfigCreator, config: Config)
-  extends FlinkProcessCompiler(creator, config)
+  extends FlinkProcessCompiler(creator, config, diskStateBackendSupport = true)

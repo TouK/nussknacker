@@ -257,7 +257,11 @@ object FlinkProcessRegistrar {
       eventTimeMetricDuration = eventTimeMetricDuration,
       checkpointInterval = checkpointInterval,
       enableObjectReuse = enableObjectReuse,
-      diskStateBackend = config.getAs[RocksDBStateBackendConfig]("rocksDB").map(StateConfiguration.prepareRocksDBStateBackend)
+      diskStateBackend =  {
+        if (compiler.diskStateBackendSupport) {
+          config.getAs[RocksDBStateBackendConfig]("rocksDB").map(StateConfiguration.prepareRocksDBStateBackend)
+        } else None
+      }
     )
   }
 
