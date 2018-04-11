@@ -6,7 +6,7 @@ import Textarea from "react-textarea-autosize";
 import NodeUtils from "./NodeUtils";
 import ExpressionSuggest from "./ExpressionSuggest";
 import ModalRenderUtils from "./ModalRenderUtils";
-import TestResultUtils from "../../common/TestResultUtils";
+import * as TestRenderUtils from "./TestRenderUtils";
 import ProcessUtils from '../../common/ProcessUtils';
 import * as JsonUtils from '../../common/JsonUtils';
 import Fields from "../Fields";
@@ -24,7 +24,7 @@ export default class NodeDetailsContent extends React.Component {
     }
     this.state = {
       ...this.state,
-      ...this.stateForSelectTestResults()
+      ...TestRenderUtils.stateForSelectTestResults(null, this.props.testResults)
     }
     this.nodeObjectDetails = ProcessUtils.findNodeObjectTypeDefinition(this.props.node, this.props.processDefinitionData.processDefinition)
   }
@@ -169,8 +169,7 @@ export default class NodeDetailsContent extends React.Component {
           <div className="node-table-body">
             {this.createField("input", "Id", "id")}
             {this.createField("input", "Variable Name", "varName")}
-            {
-              this.createField("textarea", "Expression", "value.expression", "expression")}
+            {this.createField("textarea", "Expression", "value.expression", "expression")}
             {this.descriptionField()}
           </div>
         )
@@ -277,32 +276,6 @@ export default class NodeDetailsContent extends React.Component {
     return _.includes(this.props.pathsToMark, path)
   }
 
-  wrapWithTestResult = (fieldName, field) => {
-    var testValue = fieldName ? (this.state.testResultsToShow && this.state.testResultsToShow.expressionResults[fieldName]) : null
-    const shouldHideTestResults = this.state.testResultsToHide.has(fieldName)
-    const hiddenClassPart = (shouldHideTestResults ? " partly-hidden" : "")
-    const showIconClass = shouldHideTestResults ? "glyphicon glyphicon-eye-close" : "glyphicon glyphicon-eye-open"
-    if (testValue) {
-      return (
-        <div >
-          {field}
-            <div className="node-row node-test-results">
-              <div className="node-label">{ModalRenderUtils.renderInfo('Value evaluated in test case')}
-                {testValue.pretty ? <span className={showIconClass} onClick={this.toggleTestResult.bind(this, fieldName)}/> : null}
-              </div>
-              <div className={"node-value" + hiddenClassPart}>
-                {testValue.original ? <Textarea className="node-input" readOnly={true} value={testValue.original}/> : null}
-                <Textarea rows={1} cols={50} className="node-input" value={testValue.pretty || testValue} readOnly={true}/>
-                {shouldHideTestResults ? <div className="fadeout"></div> : null}
-              </div>
-            </div>
-        </div>
-      )
-    } else {
-      return field
-    }
-  }
-
   toggleTestResult = (fieldName) => {
     const newTestResultsToHide = _.cloneDeep(this.state.testResultsToHide)
     newTestResultsToHide.has(fieldName) ? newTestResultsToHide.delete(fieldName) : newTestResultsToHide.add(fieldName)
@@ -359,7 +332,7 @@ export default class NodeDetailsContent extends React.Component {
           </div>
         )
       case 'textarea':
-        return this.wrapWithTestResult(fieldName, (
+        return TestRenderUtils.wrapWithTestResult(fieldName, this.state.testResultsToShow, this.state.testResultsToHide, this.toggleTestResult, (
           <div className="node-row">
             {this.renderFieldLabel(fieldLabel)}
             <div className={nodeValueClass}>
@@ -390,87 +363,10 @@ export default class NodeDetailsContent extends React.Component {
     return this.createField("plain-textarea", "Description", "additionalFields.description")
   }
 
-  hasTestResults = () => this.props.testResults && TestResultUtils.availableContexts(this.props.testResults).length > 0
-
-  stateForSelectTestResults = (id) => {
-    if (this.hasTestResults()) {
-      const chosenId = id || _.get(_.head(TestResultUtils.availableContexts(this.props.testResults)), "id")
-      return {
-        testResultsToShow: TestResultUtils.nodeResultsForContext(this.props.testResults, chosenId),
-        testResultsIdToShow: chosenId
-      }
-    } else {
-      return null;
-    }
-  }
-
-  selectTestResults = (id) => {
-    const stateForSelect = this.stateForSelectTestResults(id)
+  selectTestResults = (id, testResults) => {
+    const stateForSelect = TestRenderUtils.stateForSelectTestResults(id, testResults)
     if (stateForSelect) {
       this.setState(stateForSelect)
-    }
-  }
-
-  testResultsSelect = () => {
-    if (this.hasTestResults()) {
-      return (
-        <div className="node-row">
-          <div className="node-label">Test case:</div>
-          <div className="node-value">
-            <select className="node-input selectTestResults" onChange={(e) => this.selectTestResults(e.target.value)}
-                    value={this.state.testResultsIdToShow}>
-              { TestResultUtils.availableContexts(this.props.testResults).map((ctx, idx) =>
-                //toString is lame in some cases
-                (<option key={idx} value={ctx.id}>{ctx.id} ({ctx.display})</option>)
-              )}
-            </select>
-          </div>
-        </div>
-      )
-    } else {
-      return null;
-    }
-
-  }
-
-  testResults = () => {
-    if (this.state.testResultsToShow && !_.isEmpty(this.state.testResultsToShow.context.variables)) {
-      var ctx = this.state.testResultsToShow.context.variables
-      return (
-
-        <div className="node-table-body node-test-results">
-        <div className="node-row">
-          <div className="node-label">{ModalRenderUtils.renderInfo('Variables in test case')}</div>
-        </div>
-        {
-          Object.keys(ctx).map((key, ikey) => {
-            return (<div className="node-row" key={ikey}>
-                <div className="node-label">{key}:</div>
-                <div className="node-value">
-                  {(ctx[key] || {}).original ? <Textarea className="node-input" readOnly={true} value={ctx[key].original}/> : null}
-                  <Textarea className="node-input" readOnly={true} value={ctx[key] ? (ctx[key].pretty || ctx[key]) : "null"}/>
-                </div>
-              </div>
-            )
-          })
-        }
-          {this.state.testResultsToShow && !_.isEmpty(this.state.testResultsToShow.mockedResultsForCurrentContext) ?
-            (this.state.testResultsToShow.mockedResultsForCurrentContext).map((mockedValue, index) =>
-              <span className="testResultDownload">
-              <a download={this.props.node.id + "-single-input"} key={index} href={this.downloadableHref(mockedValue.value)}>
-                <span className="glyphicon glyphicon-download"/> Results for this input</a></span>
-            ) : null
-          }
-          {this.state.testResultsToShow && !_.isEmpty(this.state.testResultsToShow.mockedResultsForEveryContext) ?
-            <span className="testResultDownload">
-              <a download={this.props.node.id + "-all-inputs"}
-               href={this.downloadableHref(this.mergedMockedResults(this.state.testResultsToShow.mockedResultsForEveryContext))}>
-              <span className="glyphicon glyphicon-download"/> Results for all inputs</a></span>
-            : null
-          }
-        </div>)
-    } else {
-      return null;
     }
   }
 
@@ -482,42 +378,15 @@ export default class NodeDetailsContent extends React.Component {
     </div>)
   }
 
-  mergedMockedResults = (mockedResults) => {
-    return _.join(mockedResults.map((mockedValue) => mockedValue.value), "\n\n")
-  }
-
-  downloadableHref = (content) => {
-    return "data:application/octet-stream;charset=utf-8," + encodeURIComponent(content)
-  }
-
-  testErrors = () => {
-    if (this.state.testResultsToShow && this.state.testResultsToShow.error) {
-      var error = this.state.testResultsToShow.error
-
-      return (
-          <div className="node-table-body">
-            <div className="node-row">
-              <div className="node-label">{ ModalRenderUtils.renderWarning('Test case error')} </div>
-              <div className="node-value">
-                <div className="node-error">{`${error.message} (${error.class})`}</div>
-              </div>
-            </div>
-          </div>
-      );
-    } else {
-      return null;
-    }
-  }
-
   render() {
     var nodeClass = classNames('node-table', {'node-editable': this.props.isEditMode})
     return (
       <div className={nodeClass}>
         {ModalRenderUtils.renderErrors(this.props.nodeErrors, 'Node has errors')}
-        {this.testResultsSelect()}
-        {this.testErrors()}
+        {TestRenderUtils.testResultsSelect(this.props.testResults, this.state.testResultsIdToShow, this.selectTestResults)}
+        {TestRenderUtils.testErrors(this.state.testResultsToShow)}
         {this.customNode()}
-        {this.testResults()}
+        {TestRenderUtils.testResults(this.props.node.id, this.state.testResultsToShow)}
       </div>
     )
   }
