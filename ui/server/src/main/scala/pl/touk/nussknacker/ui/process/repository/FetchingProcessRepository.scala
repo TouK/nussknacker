@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.process.repository
 
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntity.ProcessVersionEntityData
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{ProcessDetails, ProcessNotFoundError}
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{BasicProcess, ProcessDetails, ProcessNotFoundError}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -25,6 +25,10 @@ trait FetchingProcessRepository {
 
   def fetchLatestProcessVersion(processId: String)
                                (implicit loggedUser: LoggedUser): Future[Option[ProcessVersionEntityData]]
+
+  def fetchProcesses()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[BasicProcess]]
+
+  def fetchSubProcesses()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[BasicProcess]]
 
   def fetchProcessesDetails()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[ProcessDetails]]
 

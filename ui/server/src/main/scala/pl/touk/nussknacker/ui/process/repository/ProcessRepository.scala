@@ -35,6 +35,14 @@ trait ProcessRepository[F[_]] extends Repository[F] {
 
 object ProcessRepository {
 
+  case class BasicProcess(
+                           id: String,
+                           name: String,
+                           processCategory: String,
+                           modificationDate: LocalDateTime,
+                           currentlyDeployedAt: Set[String]
+                         )
+
   case class BaseProcessDetails[ProcessShape](
                              id: String,
                              name: String,
@@ -53,6 +61,8 @@ object ProcessRepository {
                              modelVersion: Option[Int]
                            ) {
     def mapProcess[NewShape](action: ProcessShape => NewShape) : BaseProcessDetails[NewShape] = copy(json = json.map(action))
+
+    def toBasicProcess(): BasicProcess = BasicProcess(id, name, processCategory, modificationDate, currentlyDeployedAt)
   }
 
   type ProcessDetails = BaseProcessDetails[DisplayableProcess]

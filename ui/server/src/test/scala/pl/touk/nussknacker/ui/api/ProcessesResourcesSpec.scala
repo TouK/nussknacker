@@ -23,7 +23,7 @@ import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.{Edge, Proc
 import pl.touk.nussknacker.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.ui.process.marshall.UiProcessMarshaller
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.ProcessActivity
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessDetails
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{BasicProcess, ProcessDetails}
 import pl.touk.nussknacker.ui.sample.SampleProcess
 import pl.touk.nussknacker.ui.util.{FileUploadUtils, MultipartUtils}
 
@@ -126,7 +126,7 @@ class ProcessesResourcesSpec extends FlatSpec with ScalatestRouteTest with Match
 
     Get("/processes") ~> routWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
-      val resp = responseAs[String].decodeOption[List[ProcessDetails]].get
+      val resp = responseAs[String].decodeOption[List[BasicProcess]].get
       withClue(resp) {
         resp.count(_.id == SampleProcess.process.id) shouldBe 1
       }

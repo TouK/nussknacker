@@ -17,7 +17,7 @@ import pl.touk.nussknacker.ui.codec.UiCodecs
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessDetails
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{BasicProcess, ProcessDetails}
 import pl.touk.nussknacker.ui.sample.SampleProcess
 import pl.touk.nussknacker.ui.security.api.Permission
 import pl.touk.nussknacker.ui.util.MultipartUtils
@@ -225,7 +225,7 @@ class ManagementResourcesSpec extends FlatSpec with ScalatestRouteTest
   }
 
 
-  def decodeDetailsFromAll: ProcessRepository.ProcessDetails = {
-    responseAs[String].decodeOption[List[ProcessDetails]].flatMap(_.find(_.id == SampleProcess.process.id)).get
+  def decodeDetailsFromAll: ProcessRepository.BasicProcess = {
+    responseAs[String].decodeOption[List[BasicProcess]].flatMap(_.find(_.id == SampleProcess.process.id)).get
   }
 }

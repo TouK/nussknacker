@@ -12,7 +12,7 @@ import pl.touk.nussknacker.ui.db.entity.ProcessEntity.{ProcessEntity, ProcessEnt
 import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntity.ProcessVersionEntityData
 import pl.touk.nussknacker.ui.db.entity.TagsEntity.TagsEntityData
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{BaseProcessDetails, ProcessDetails, ProcessHistoryEntry}
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{BaseProcessDetails, BasicProcess, ProcessDetails, ProcessHistoryEntry}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.DateUtils
 import db.util.DBIOActionInstances._
@@ -35,36 +35,65 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
 
   import api._
 
+  def fetchProcesses()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BasicProcess]]= {
+    val action = for {
+      processDetails <- fetchProcessDetailsByQueryAction(!_.isSubprocess)
+    } yield processDetails.map(_.toBasicProcess)
+
+    run(action)
+  }
+
+  def fetchSubProcesses()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BasicProcess]]= {
+    val action = for {
+      processDetails <- fetchProcessDetailsByQueryAction(_.isSubprocess)
+    } yield processDetails.map(_.toBasicProcess)
+
+    run(action)
+  }
+
   def fetchProcessesDetails()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[ProcessDetails]] = {
-    fetchProcessesDetailsByQuery(!_.isSubprocess)
+    run(fetchProcessDetailsByQueryAction(!_.isSubprocess))
   }
 
   def fetchSubProcessesDetails()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[ProcessDetails]] = {
-    fetchProcessesDetailsByQuery(_.isSubprocess)
+    run(fetchProcessDetailsByQueryAction(_.isSubprocess))
   }
 
   def fetchAllProcessesDetails()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[ProcessDetails]] = {
-    fetchProcessesDetailsByQuery(_ => true)
+    run(fetchProcessDetailsByQueryAction(_ => true))
   }
 
-  private def fetchProcessesDetailsByQuery(query: ProcessEntity => Rep[Boolean])
-                                          (implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[ProcessDetails]] = {
-    val action = (for {
+  private def fetchProcessDetailsByQueryAction(query: ProcessEntity => Rep[Boolean])
+                                              (implicit loggedUser: LoggedUser, ec: ExecutionContext) = {
+    (for {
       subprocessesVersions <- subprocessLastModificationDates
-      tagsForProcesses <- tagsTable.result.map(_.toList.groupBy(_.processId).withDefaultValue(Nil))
-      latestProcesses <- processVersionsTable.groupBy(_.processId).map { case (n, group) => (n, group.map(_.createDate).max) }
-        .join(processVersionsTable).on { case (((processId, latestVersionDate)), processVersion) =>
-        processVersion.processId === processId && processVersion.createDate === latestVersionDate
-      }.join(processTableFilteredByUser.filter(query)).on { case ((_, latestVersion), process) => latestVersion.processId === process.id }
-        .result
-      deployedPerEnv <- latestDeployedProcessesVersionsPerEnvironment.result
-    } yield latestProcesses.map { case ((_, processVersion), process) =>
-      createFullDetails(process, processVersion, isLatestVersion = true,
-        deployedPerEnv.map(_._1).filter(_._1 == process.id).map(_._2).toSet,
-        tagsForProcesses(process.name), List.empty, businessView = false, subprocessesVersions = subprocessesVersions)
-    }).map(_.toList)
 
-    run(action)
+      tagsForProcesses <- tagsTable.result.map(_.toList.groupBy(_.processId).withDefaultValue(Nil))
+
+      latestProcesses <- processVersionsTable
+        .groupBy(_.processId)
+        .map { case (n, group) => (n, group.map(_.createDate).max) }
+        .join(processVersionsTable)
+        .on { case (((processId, latestVersionDate)), processVersion) => processVersion.processId === processId && processVersion.createDate === latestVersionDate }
+        .join(processTableFilteredByUser.filter(query))
+        .on { case ((_, latestVersion), process) => latestVersion.processId === process.id }
+        .result
+
+      deployedPerEnv <- latestDeployedProcessesVersionsPerEnvironment.result
+
+    } yield
+      latestProcesses.map { case ((_, processVersion), process) =>
+        createFullDetails(
+          process,
+          processVersion,
+          isLatestVersion = true,
+          currentlyDeployedAt = deployedPerEnv.map(_._1).filter(_._1 == process.id).map(_._2).toSet,
+          tags = tagsForProcesses(process.name),
+          history = List.empty,
+          businessView = false,
+          subprocessesVersions = subprocessesVersions
+        )
+      }).map(_.toList)
   }
 
   def fetchLatestProcessDetailsForProcessId(id: String, businessView: Boolean = false)

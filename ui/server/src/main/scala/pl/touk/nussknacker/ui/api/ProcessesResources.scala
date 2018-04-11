@@ -48,10 +48,22 @@ class ProcessesResources(repository: FetchingProcessRepository,
         path("processes") {
           get {
             complete {
+              repository.fetchProcesses()
+            }
+          }
+        } ~ path("processesDetails") {
+          get {
+            complete {
               validateAll(repository.fetchProcessesDetails())
             }
           }
         } ~ path("subProcesses") {
+          get {
+            complete {
+              repository.fetchSubProcesses()
+            }
+          }
+        } ~ path("subProcessesDetails") {
           get {
             complete {
               validateAll(repository.fetchSubProcessesDetails())
