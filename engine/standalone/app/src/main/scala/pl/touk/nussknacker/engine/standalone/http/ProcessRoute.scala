@@ -33,6 +33,13 @@ class ProcessRoute(deploymentService: DeploymentService) extends Directives with
           }
         }
       }
+    } ~ pathEndOrSingleSlash {
+      //healthcheck endpoint
+      get {
+        complete {
+          HttpResponse(status = StatusCodes.OK)
+        }
+      }
     }
 
 
