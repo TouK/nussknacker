@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.engine.compile
 
-import cats.data.Validated.{Valid, invalid, valid}
+import cats.data.Validated.{invalid, valid}
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.instances.list._
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError._
 import pl.touk.nussknacker.engine.compiledgraph.expression.ExpressionParser
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectMetadata, Parameter}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
 import pl.touk.nussknacker.engine.graph.evaluatedparam
@@ -25,13 +25,12 @@ object ExpressionCompiler {
   private def default(loader: ClassLoader, expressionConfig: ExpressionDefinition[ObjectMetadata], optimizeCompilation: Boolean): ExpressionCompiler = {
     val parsersSeq = Seq(SpelExpressionParser.default(loader, optimizeCompilation, expressionConfig.globalImports), SqlExpressionParser)
     val parsers = parsersSeq.map(p => p.languageId -> p).toMap
-    new ExpressionCompiler(parsers, expressionConfig.globalVariables.mapValues(_.returnType))
+    new ExpressionCompiler(parsers)
   }
 
 }
 
-class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser],
-                         globalVariables: Map[String, TypingResult]) {
+class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
 
   private val syntax = ValidatedSyntax[PartSubGraphCompilationError]
 
@@ -81,12 +80,8 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser],
           parser.parseWithoutContextValidation(n.expression, expectedType).map((Unknown, _))
             .leftMap(err => NonEmptyList.of[PartSubGraphCompilationError](ExpressionParseError(err.message, fieldName, n.expression)))
         case Some(ctx) =>
-          val ctxWithGlobalVars = globalVariables.foldLeft[ValidatedNel[PartSubGraphCompilationError, ValidationContext]](Valid(ctx)) { case (acc, (k, v)) =>
-            acc.andThen(_.withVariable(k, v))
-          }
-          ctxWithGlobalVars.andThen(valid =>
-            parser.parse(n.expression, valid, expectedType)
-              .leftMap(errs => errs.map[PartSubGraphCompilationError](err => ExpressionParseError(err.message, fieldName, n.expression))))
+            parser.parse(n.expression, ctx, expectedType)
+              .leftMap(errs => errs.map[PartSubGraphCompilationError](err => ExpressionParseError(err.message, fieldName, n.expression)))
       }
     }
   }

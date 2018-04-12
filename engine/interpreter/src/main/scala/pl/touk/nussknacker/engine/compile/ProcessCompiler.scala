@@ -39,7 +39,7 @@ class ProcessCompiler( protected val classLoader: ClassLoader,
 
   //FIXME: should it be here?
   private val expressionEvaluator = {
-    val globalVars = definitions.expressionConfig.globalVariables.mapValuesNow(_.obj)
+    val globalVars = expressionConfig.globalVariables.mapValuesNow(_.obj)
     ExpressionEvaluator.withoutLazyVals(globalVars, List())
   }
 
@@ -87,6 +87,7 @@ protected trait ProcessCompilerBase {
   protected def sinkFactories = definitions.sinkFactories
   protected def exceptionHandlerFactory = definitions.exceptionHandlerFactory
   protected val customStreamTransformers = definitions.customStreamTransformers
+  protected val expressionConfig = definitions.expressionConfig
 
   protected def sub: PartSubGraphCompilerBase
 
@@ -95,7 +96,7 @@ protected trait ProcessCompilerBase {
 
   protected def classLoader: ClassLoader
 
-  private val expressionCompiler = ExpressionCompiler.withoutOptimization(classLoader, definitions.expressionConfig)
+  private val expressionCompiler = ExpressionCompiler.withoutOptimization(classLoader, expressionConfig)
 
   protected def compile(process: EspProcess): CompilationResult[CompiledProcessParts] = {
     compile(ProcessSplitter.split(process))
@@ -188,13 +189,16 @@ protected trait ProcessCompilerBase {
     }
   }
 
+  private val globalVariableTypes = expressionConfig.globalVariables.mapValuesNow(_.returnType)
+
   private def computeInitialVariables(nodeData: StartingNodeData, compiled: ValidatedNel[ProcessCompilationError, Source[_]])(implicit metaData: MetaData, nodeId: NodeId) : ValidationContext = ValidationContext(nodeData match {
     case pl.touk.nussknacker.engine.graph.node.Source(_, ref, _) =>
       val resultType = compiled.toOption.flatMap[Source[_]](Option(_))
         .flatMap(_.cast[ReturningType]).map(_.returnType)
         .orElse(sourceFactories.get(ref.typ).map(_.returnType)).getOrElse(Unknown)
-      Map(Interpreter.InputParamName -> resultType)
-    case SubprocessInputDefinition(_, params, _) => params.map(p => p.name -> loadFromParameter(p)).toMap
+      Map(Interpreter.InputParamName -> resultType) ++ globalVariableTypes
+      //TODO: here is nasty edge case - what if subprocess parameter is named like global variable?
+    case SubprocessInputDefinition(_, params, _) => params.map(p => p.name -> loadFromParameter(p)).toMap ++ globalVariableTypes
   })
 
   //TODO: better classloader error handling

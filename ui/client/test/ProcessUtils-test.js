@@ -5,20 +5,20 @@ describe("process available variables finder", () => {
   it("should find available variables with its types in process at the beginning of the process", () => {
     const availableVariables = ProcessUtils.findAvailableVariables("processVariables", process, processDefinition)
     expect(availableVariables).toEqual({
-      "#input": "org.nussknacker.model.Transaction",
-      "#date": "java.time.LocalDate"
+      "input": {refClazzName: "org.nussknacker.model.Transaction"},
+      "date": {refClazzName:"java.time.LocalDate"}
     })
   })
 
   it("should find available variables with its types in process in the end of the process", () => {
     const availableVariables = ProcessUtils.findAvailableVariables("endEnriched", process, processDefinition)
     expect(availableVariables).toEqual({
-      "#input": "org.nussknacker.model.Transaction",
-      "#date": "java.time.LocalDate",
-      "#parsedTransaction": "org.nussknacker.model.Transaction",
-      "#aggregateResult": "java.lang.String",
-      "#processVariables": "java.lang.Object", //fixme how to handle variableBuilder here?
-      "#someVariableName": "java.lang.Object"
+      "input": {refClazzName:"org.nussknacker.model.Transaction"},
+      "date": {refClazzName:"java.time.LocalDate"},
+      "parsedTransaction": {refClazzName:"org.nussknacker.model.Transaction"},
+      "aggregateResult": {refClazzName:"java.lang.String"},
+      "processVariables": {refClazzName:"java.lang.Object"}, //fixme how to handle variableBuilder here?
+      "someVariableName": {refClazzName:"java.lang.Object"}
     })
   })
 
@@ -26,8 +26,8 @@ describe("process available variables finder", () => {
   it("should find subprocess parameters as variables with its types", () => {
     const availableVariables = ProcessUtils.findAvailableVariables("endEnriched", subprocess, processDefinition)
     expect(availableVariables).toEqual({
-      "#date": "java.time.LocalDate",
-      "#subprocessParam": "java.lang.String"
+      "date": {refClazzName:"java.time.LocalDate"},
+      "subprocessParam": {refClazzName:"java.lang.String"}
     })
   })
 
@@ -40,7 +40,26 @@ describe("process available variables finder", () => {
     const availableVariables = ProcessUtils.findAvailableVariables(danglingNodeId, processWithDanglingNode, processDefinition)
 
     expect(availableVariables).toEqual({
-      "#date": "java.time.LocalDate"
+      "date": {refClazzName:"java.time.LocalDate"}
+    })
+  })
+
+  it("should use variables from validation results if exist", () => {
+    const availableVariables = ProcessUtils.findAvailableVariables("variableNode", processWithVariableTypes, processDefinition)
+
+    expect(availableVariables).toEqual({
+      "input": {refClazzName:"java.lang.String"}, "processVariables": {refClazzName:"java.util.Map", fields: {field1: {refClazzName: "java.lang.String"}}}
+    })
+  })
+
+  it("should fallback to variables decoded from graph if typing via validation fails", () => {
+    const availableVariables = ProcessUtils.findAvailableVariables("anonymousUserFilter", processWithVariableTypes, processDefinition)
+
+    expect(availableVariables).toEqual({
+      "date": {refClazzName:"java.time.LocalDate"},
+      someVariableName: {refClazzName:"java.lang.Object"},
+      processVariables: {refClazzName:"java.lang.Object"},
+      input: {refClazzName: 'org.nussknacker.model.Transaction'}
     })
   })
 
@@ -86,6 +105,16 @@ const process = {
   "validationResult": { "errors": {"invalidNodes": {}}}
 }
 
+const processWithVariableTypes = {
+  ...process,
+  "validationResult": { "errors": {"invalidNodes": {}}, variableTypes: {
+      "start": {},
+      "processVariables": {"input": {refClazzName:"java.lang.String"}},
+      "variableNode": {"input": {refClazzName:"java.lang.String"}, "processVariables": {refClazzName:"java.util.Map", fields: {field1: {refClazzName: "java.lang.String"}}}}
+    }
+  }
+}
+
 const subprocess = {
   "id": "subprocess1",
   "properties": { "parallelism": 2, "exceptionHandler": { "parameters": [{ "name": "errorsTopic", "value": "transaction.errors"}]}},
@@ -108,4 +137,4 @@ describe("process utils", () => {
     expect(ProcessUtils.humanReadableType("java.lang.String")).toEqual("String")
     expect(ProcessUtils.humanReadableType("int")).toEqual("Int")
   })
-})
+})       

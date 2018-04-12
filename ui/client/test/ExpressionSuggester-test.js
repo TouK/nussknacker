@@ -21,9 +21,9 @@ const typesInformation = [
 ]
 
 const variables = {
-  "#input": "org.A",
-  "#other": "org.C",
-  "#ANOTHER": "org.A"
+  "input": {refClazzName: "org.A"},
+  "other": {refClazzName: "org.C"},
+  "ANOTHER": {refClazzName: "org.A"}
 }
 
 const expressionSuggester = new ExpressionSuggester(typesInformation, variables)

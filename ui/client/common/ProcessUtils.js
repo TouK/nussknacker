@@ -38,15 +38,19 @@ class ProcessUtils {
     return _.isEmpty(warnings) || Object.keys(warnings.invalidNodes || {}).length == 0
   }
 
-  //FIXME: handle source/sink/exceptionHandler properly here - we don't want to use #input etc here!
   findAvailableVariables = (nodeId, process, processDefinition) => {
-    const globalVariables = _.mapValues(processDefinition.globalVariables, (v) => {return v.returnType.refClazzName})
+    const variablesFromValidation = _.get(process.validationResult, "variableTypes." + nodeId)
+    return variablesFromValidation || this._findVariablesBasedOnGraph(nodeId, process, processDefinition)
+  }
+
+  //FIXME: handle source/sink/exceptionHandler properly here - we don't want to use #input etc here!
+  _findVariablesBasedOnGraph = (nodeId, process, processDefinition) => {
+    const globalVariables = _.mapValues(processDefinition.globalVariables, (v) => {return v.returnType})
     const variablesDefinedBeforeNode = this._findVariablesDeclaredBeforeNode(nodeId, process, processDefinition);
-    const variables = {
+    return {
       ...globalVariables,
       ...variablesDefinedBeforeNode
     }
-    return _.mapKeys(variables, (value, variableName) => {return `#${variableName}`})
   }
 
   _findVariablesDeclaredBeforeNode = (nodeId, process, processDefinition) => {
@@ -64,13 +68,13 @@ class ProcessUtils {
   _findVariablesDefinedInProcess = (nodeId, process, processDefinition) => {
     const node = _.find(process.nodes, (node) => node.id == nodeId)
     const nodeObjectTypeDefinition = this.findNodeObjectTypeDefinition(node, processDefinition)
-    const clazzName = _.get(nodeObjectTypeDefinition, 'returnType.refClazzName')
+    const clazzName = _.get(nodeObjectTypeDefinition, 'returnType')
     switch (node.type) {
       case "Source": {
         return [{"input": clazzName}]
       }
       case "SubprocessInputDefinition": {
-        return node.parameters.map(param => ({[param.name]: param.typ.refClazzName }))
+        return node.parameters.map(param => ({[param.name]: param.typ }))
       }
       case "Enricher": {
         return [{[node.output]: clazzName}]
@@ -81,13 +85,13 @@ class ProcessUtils {
         return _.isEmpty(outputClazz) ? [] : [ {[outputVariableName]: outputClazz} ]
       }
       case "VariableBuilder": {
-        return [{[node.varName]: "java.lang.Object"}]
+        return [{[node.varName]: {refClazzName: "java.lang.Object"}}]
       }
       case "Variable": {
-        return [{[node.varName]: "java.lang.Object"}]
+        return [{[node.varName]: {refClazzName: "java.lang.Object"}}]
       }
       case "Switch": {
-        return [{[node.exprVal]: "java.lang.Object"}]
+        return [{[node.exprVal]: {refClazzName: "java.lang.Object"}}]
       }
       default: {
         return []

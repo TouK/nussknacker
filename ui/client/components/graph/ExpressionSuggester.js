@@ -4,7 +4,7 @@ export default class ExpressionSuggester {
 
   constructor(typesInformation, variables) {
     this._typesInformation = typesInformation
-    this._variables = variables
+    this._variables = _.mapKeys(variables, (value, variableName) => {return `#${variableName}`})
   }
 
   suggestionsFor = (inputValue, caretPosition2d) => {
@@ -41,7 +41,7 @@ export default class ExpressionSuggester {
       return inputValue.length === 0 ? allowedMethodList : this._filterSuggestionsForInput(allowedMethodList, inputValue)
     } else if (variableNotSelected && !_.isEmpty(value)) {
       const allVariablesWithClazzRefs = _.map(this._variables, (val, key) => {
-        return {'methodName': key, 'refClazzName': val}
+        return {'methodName': key, 'refClazzName': val.refClazzName}
       })
       return this._filterSuggestionsForInput(allVariablesWithClazzRefs, value)
     }
@@ -59,7 +59,7 @@ export default class ExpressionSuggester {
   _findRootClazz = (properties) => {
     const variableName = properties[0]
     if (_.has(this._variables, variableName)) {
-      const variableClazzName = _.get(this._variables, variableName)
+      const variableClazzName = _.get(this._variables, variableName).refClazzName
       return _.reduce(_.tail(properties), (currentParentClazz, prop) => {
         const parentClazz = this._getTypeInfo(currentParentClazz)
         return _.get(parentClazz.methods, `${prop}.refClazzName`) || ""
