@@ -100,12 +100,20 @@ export default {
     return promiseWrap($.get(`${API_URL}/app/unusedComponents`))
   },
 
+  fetchProcessesDetails() {
+    return promiseWrap($.get(API_URL + '/processesDetails'))
+  },
+
   fetchProcesses() {
     return promiseWrap($.get(API_URL + '/processes'))
   },
 
   fetchSubProcesses() {
     return promiseWrap($.get(API_URL + '/subProcesses'))
+  },
+
+  fetchSubProcessesDetails() {
+    return promiseWrap($.get(API_URL + '/subProcessesDetails'))
   },
 
   fetchProcessDetails(processId, versionId, businessView) {

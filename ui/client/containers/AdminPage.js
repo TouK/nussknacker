@@ -24,8 +24,8 @@ class AdminPage extends React.Component {
   }
 
   componentDidMount() {
-    HttpService.fetchProcesses().then ((processes) => {
-      HttpService.fetchSubProcesses().then((subProcesses) =>{
+    HttpService.fetchProcessesDetails().then ((processes) => {
+      HttpService.fetchSubProcessesDetails().then((subProcesses) =>{
         this.setState({
           processes: _.concat(processes, subProcesses)
         })
