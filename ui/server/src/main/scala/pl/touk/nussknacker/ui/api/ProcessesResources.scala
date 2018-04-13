@@ -19,6 +19,7 @@ import pl.touk.nussknacker.ui.process.repository.ProcessRepository._
 import pl.touk.nussknacker.ui.util._
 import pl.touk.nussknacker.ui._
 import EspErrorToHttp._
+import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.ui.codec.UiCodecs
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
@@ -28,6 +29,7 @@ import pl.touk.nussknacker.ui.process.repository.WriteProcessRepository.UpdatePr
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
 
 class ProcessesResources(repository: FetchingProcessRepository,
                          writeRepository: WriteProcessRepository,
@@ -37,7 +39,7 @@ class ProcessesResources(repository: FetchingProcessRepository,
                          typesForCategories: ProcessTypesForCategories,
                          newProcessPreparer: NewProcessPreparer)
                         (implicit ec: ExecutionContext, mat: Materializer)
-  extends Directives with Argonaut62Support with EspPathMatchers with RouteWithUser {
+  extends Directives with Argonaut62Support with EspPathMatchers with RouteWithUser with LazyLogging {
 
   import UiCodecs._
 
@@ -72,7 +74,7 @@ class ProcessesResources(repository: FetchingProcessRepository,
         } ~ path("processes" / "status") {
           get {
             complete {
-              repository.fetchProcessesDetails().flatMap(fetchProcessStatesForProcesses)
+              repository.fetchProcesses().flatMap(fetchProcessStatesForProcesses)
             }
           }
 
@@ -196,7 +198,7 @@ class ProcessesResources(repository: FetchingProcessRepository,
     }
   }
 
-  private def fetchProcessStatesForProcesses(processes: List[ProcessDetails])(implicit user: LoggedUser): Future[Map[String, Option[ProcessStatus]]] = {
+  private def fetchProcessStatesForProcesses(processes: List[BasicProcess])(implicit user: LoggedUser): Future[Map[String, Option[ProcessStatus]]] = {
     import cats.instances.future._
     import cats.instances.list._
     import cats.syntax.traverse._
@@ -204,7 +206,11 @@ class ProcessesResources(repository: FetchingProcessRepository,
   }
 
   private def findJobStatus(processName: String, processingType: ProcessingType)(implicit ec: ExecutionContext, user: LoggedUser): Future[Option[ProcessStatus]] = {
-    jobStatusService.retrieveJobStatus(processName)
+    jobStatusService.retrieveJobStatus(processName).recover {
+      case NonFatal(e) =>
+        logger.warn(s"Failed to get status of $processName: ${e.getMessage}", e)
+        Some(ProcessStatus.failedToGet)
+    }
   }
 
   private def makeEmptyProcess(processId: String, processingType: ProcessingType, isSubprocess: Boolean) = {
