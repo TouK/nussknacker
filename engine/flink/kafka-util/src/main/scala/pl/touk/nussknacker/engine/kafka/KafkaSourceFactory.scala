@@ -5,6 +5,7 @@ import org.apache.flink.streaming.api.functions.TimestampAssigner
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer011, FlinkKafkaConsumer09}
 import org.apache.flink.api.common.serialization.DeserializationSchema
+import org.apache.flink.configuration.Configuration
 import pl.touk.nussknacker.engine.api.process.{Source, TestDataGenerator}
 import pl.touk.nussknacker.engine.api.test.{TestDataParser, TestDataSplit}
 import pl.touk.nussknacker.engine.api.{MetaData, MethodToInvoke, ParamName}
@@ -68,12 +69,6 @@ abstract class BaseKafkaSourceFactory[T: TypeInformation](config: KafkaConfig,
   })
 
   protected def createSource(processMetaData: MetaData, topic: String): KafkaSource = {
-    val espKafkaProperties = config.kafkaEspProperties.getOrElse(Map.empty)
-    if (espKafkaProperties.get("forceLatestRead").exists(java.lang.Boolean.parseBoolean)) {
-      KafkaEspUtils.setOffsetToLatest(topic, processMetaData.id, config)
-    } else {
-      ()
-    }
     new KafkaSource(consumerGroupId = processMetaData.id, topic = topic)
   }
 
@@ -83,7 +78,17 @@ abstract class BaseKafkaSourceFactory[T: TypeInformation](config: KafkaConfig,
       implicitly[TypeInformation[T]]
 
     override def toFlinkSource: SourceFunction[T] = {
+      //TODO: is this the best place to do it?
+      setToLatestOffsetIfNeeded(topic, consumerGroupId)
       new FlinkKafkaConsumer011[T](topic, schema, KafkaEspUtils.toProperties(config, Some(consumerGroupId)))
+    }
+
+    private def setToLatestOffsetIfNeeded(topic: String, consumerGroupId: String): Unit = {
+      val setToLatestOffset =
+        config.kafkaEspProperties.flatMap(_.get("forceLatestRead")).exists(java.lang.Boolean.parseBoolean)
+      if (setToLatestOffset) {
+        KafkaEspUtils.setOffsetToLatest(topic, consumerGroupId, config)
+      }
     }
 
     override def generateTestData(size: Int): Array[Byte] =
