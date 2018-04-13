@@ -231,14 +231,14 @@ class DefinitionPreparer(val nodesConfig: Map[String, SingleNodeConfig], val nod
         case SubprocessOutputDefinition(_, name, _) => name
       }
       //TODO: enable choice of output type
-      NodeEdges(NodeTypeId("subprocessInput", Some(process.metaData.id)), outputs.map(EdgeType.SubprocessOutput), canChooseNodes = false)
+      NodeEdges(NodeTypeId("SubprocessInput", Some(process.metaData.id)), outputs.map(EdgeType.SubprocessOutput), canChooseNodes = false)
     }
 
     List(
-      NodeEdges(NodeTypeId("split"), List(), canChooseNodes = true),
-      NodeEdges(NodeTypeId("switch"), List(
+      NodeEdges(NodeTypeId("Split"), List(), canChooseNodes = true),
+      NodeEdges(NodeTypeId("Switch"), List(
         EdgeType.NextSwitch(Expression("spel", "true")), EdgeType.SwitchDefault), canChooseNodes = true),
-      NodeEdges(NodeTypeId("filter"), List(FilterTrue, FilterFalse), canChooseNodes = false)
+      NodeEdges(NodeTypeId("Filter"), List(FilterTrue, FilterFalse), canChooseNodes = false)
     ) ++ subprocessOutputs
   }
 }

@@ -1,10 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
-import java.util
-
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.ui.api.DefinitionPreparer.{NodeEdges, NodeTypeId}
@@ -42,10 +39,10 @@ class DefinitionPreparerSpec extends FlatSpec with Matchers {
       subprocessesDetails = subprocessesDetails)
 
     edgeTypes.toSet shouldBe Set(
-      NodeEdges(NodeTypeId("split"), List(), true),
-      NodeEdges(NodeTypeId("switch"), List(NextSwitch(Expression("spel", "true")), SwitchDefault), true),
-      NodeEdges(NodeTypeId("filter"), List(FilterTrue, FilterFalse), false),
-      NodeEdges(NodeTypeId("subprocessInput", Some("sub1")), List(SubprocessOutput("out1"), SubprocessOutput("out2")), false)
+      NodeEdges(NodeTypeId("Split"), List(), true),
+      NodeEdges(NodeTypeId("Switch"), List(NextSwitch(Expression("spel", "true")), SwitchDefault), true),
+      NodeEdges(NodeTypeId("Filter"), List(FilterTrue, FilterFalse), false),
+      NodeEdges(NodeTypeId("SubprocessInput", Some("sub1")), List(SubprocessOutput("out1"), SubprocessOutput("out2")), false)
     )
 
   }
