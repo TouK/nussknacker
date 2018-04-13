@@ -41,7 +41,7 @@ export default class ExpressionSuggester {
       return inputValue.length === 0 ? allowedMethodList : this._filterSuggestionsForInput(allowedMethodList, inputValue)
     } else if (variableNotSelected && !_.isEmpty(value)) {
       const allVariablesWithClazzRefs = _.map(this._variables, (val, key) => {
-        return {'methodName': key, 'refClazzName': val.refClazzName}
+        return {'methodName': key, 'refClazz': val}
       })
       return this._filterSuggestionsForInput(allVariablesWithClazzRefs, value)
     }
@@ -59,23 +59,30 @@ export default class ExpressionSuggester {
   _findRootClazz = (properties) => {
     const variableName = properties[0]
     if (_.has(this._variables, variableName)) {
-      const variableClazzName = _.get(this._variables, variableName).refClazzName
+      const variableClazzName = _.get(this._variables, variableName);
       return _.reduce(_.tail(properties), (currentParentClazz, prop) => {
         const parentClazz = this._getTypeInfo(currentParentClazz)
-        return _.get(parentClazz.methods, `${prop}.refClazzName`) || ""
+        return _.get(parentClazz.methods, `${prop}.refClazz`) || {refClazzName: ''}
       }, variableClazzName)
     } else {
       return null
     }
   }
 
-  _getTypeInfo = (clazzName) => {
-    const typeInfo = _.find(this._typesInformation, { clazzName: { refClazzName: clazzName }})
-    return !_.isEmpty(typeInfo) ? typeInfo : {
-      clazzName: {
-        refClazzName: clazzName,
-        methods: []
-      }}
+  _getTypeInfo = (clazz) => {
+    const methodsFromInfo = this._getMethodsFromGlobalTypeInfo(clazz);
+    const methodsFromFields = _.mapValues((clazz.fields || []), (field) => ({ refClazz: field }));
+    const allMethods = _.merge(methodsFromFields, methodsFromInfo);
+
+    return {
+      ...clazz,
+      methods: allMethods
+    }
+  }
+
+  _getMethodsFromGlobalTypeInfo = (clazz) => {
+    const foundData = _.find(this._typesInformation, { clazzName: { refClazzName: clazz.refClazzName }})
+    return !_.isEmpty(foundData) ? foundData.methods : []
   }
 
   _focusedLastExpressionPartWithoutMethodParens = (expression, caretPosition) => {

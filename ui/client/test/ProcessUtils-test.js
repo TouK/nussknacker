@@ -73,9 +73,9 @@ const processDefinition = {
   "exceptionHandlerFactory" : { "parameters" : [ { "name": "errorsTopic", "typ": { "refClazzName": "java.lang.String"}}], "returnType" : { "refClazzName": "org.nussknacker.process.espExceptionHandlerFactory"}, "categories" : []},
   "globalVariables" : { "date": { "returnType": { "refClazzName": "java.time.LocalDate"}, "categories" : [ "Category12", "Category11"]}},
   "typesInformation" : [
-    { "clazzName": { "refClazzName": "org.nussknacker.model.Transaction"}, "methods": { "CUSTOMER_ID": { "refClazzName": "java.lang.String"}}},
-    { "clazzName": { "refClazzName": "pl.touk.nussknacker.model.Account"}, "methods": { "ACCOUNT_NO": { "refClazzName": "java.lang.String"}}},
-    { "clazzName": { "refClazzName": "java.time.LocalDate"}, "methods": { "atStartOfDay": { "refClazzName": "java.time.ZonedDateTime"}}}
+    { "clazzName": { "refClazzName": "org.nussknacker.model.Transaction"}, "methods": { "CUSTOMER_ID": { "refClazz" : {"refClazzName": "java.lang.String"}}}},
+    { "clazzName": { "refClazzName": "pl.touk.nussknacker.model.Account"}, "methods": { "ACCOUNT_NO": { "refClazz" : { "refClazzName": "java.lang.String"}}}},
+    { "clazzName": { "refClazzName": "java.time.LocalDate"}, "methods": { "atStartOfDay": { "refClazz" : { "refClazzName": "java.time.ZonedDateTime"}}}}
   ]
 }
 

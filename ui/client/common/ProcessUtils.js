@@ -152,7 +152,8 @@ class ProcessUtils {
       return this.findNodeDefinitionId(node) || (node.type && node.type.charAt(0).toLowerCase() + node.type.slice(1));
   }
 
-  humanReadableType = (refClazzName) => {
+  humanReadableType = (refClazzOrName) => {
+    const refClazzName = (refClazzOrName || {}).refClazzName || refClazzOrName
     if (_.isEmpty(refClazzName)) {
       return ""
     } else {

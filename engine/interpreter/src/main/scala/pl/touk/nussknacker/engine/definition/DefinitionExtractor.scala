@@ -155,21 +155,9 @@ object DefinitionExtractor {
 
 object TypeInfos {
 
-  //FIXME we should use ClazzRef instead of String here, but it will require some frontend changes
-  case class Parameter private(name: String, refClazz: ClazzRef, refClazzName: String)
-  object Parameter {
-    def apply(name: String, clazz: ClazzRef): Parameter = {
-      new Parameter(name, clazz, clazz.refClazzName)
-    }
-  }
+  case class Parameter private(name: String, refClazz: ClazzRef)
 
-  //FIXME we should use ClazzRef instead of String here, but it will require some frontend changes
-  case class MethodInfo private(parameters: List[Parameter], refClazz: ClazzRef, refClazzName: String, description: Option[String])
-  object MethodInfo {
-    def apply(parameters: List[Parameter], returnType: ClazzRef, description: Option[String]): MethodInfo = {
-      new MethodInfo(parameters, returnType, returnType.refClazzName, description)
-    }
-  }
+  case class MethodInfo private(parameters: List[Parameter], refClazz: ClazzRef, description: Option[String])
 
   case class ClazzDefinition(clazzName: ClazzRef, methods: Map[String, MethodInfo]) {
     def getMethod(methodName: String): Option[ClazzRef] = {

@@ -16,6 +16,7 @@ object TypeEncoders {
     case Typed(classes) => val headClass = classes.head
       encodeTypedClass(headClass)
     case TypedMapTypingResult(fields) => jObjectAssocList(
+      //FIXME: this assumes that typed map is a map - it's not always the case, map methods are suggested but validation fails?
       encodeTypedClass(TypedClass[java.util.Map[_, _]]).objectOrEmpty.toList
         :+ "fields" -> jObjectAssocList(fields.mapValues(encodeTypingResult).toList)
     )

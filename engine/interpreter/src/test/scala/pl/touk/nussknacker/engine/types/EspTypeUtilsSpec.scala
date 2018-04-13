@@ -151,12 +151,12 @@ class EspTypeUtilsSpec extends FunSuite with Matchers {
 
     val table = Table(
       ("method", "methodInfo"),
-      ("foo", MethodInfo(parameters = List.empty, returnType = ClazzRef[Long], description = None)),
-      ("bar", MethodInfo(parameters = List(param[Long]("barparam1")), returnType = ClazzRef[String], description = None)),
-      ("baz", MethodInfo(parameters = List(param[String]("bazparam1"), param[Int]("bazparam2")), returnType = ClazzRef[Long], description = Some(ScalaSampleDocumentedClass.bazDocs))),
-      ("qux", MethodInfo(parameters = List.empty, returnType = ClazzRef[Long], description = Some(ScalaSampleDocumentedClass.quxDocs))),
-      ("field1", MethodInfo(parameters = List.empty, returnType = ClazzRef[Long], description = None)),
-      ("field2", MethodInfo(parameters = List.empty, returnType = ClazzRef[Long], description = Some(ScalaSampleDocumentedClass.field2Docs)))
+      ("foo", MethodInfo(parameters = List.empty, refClazz = ClazzRef[Long], description = None)),
+      ("bar", MethodInfo(parameters = List(param[Long]("barparam1")), refClazz = ClazzRef[String], description = None)),
+      ("baz", MethodInfo(parameters = List(param[String]("bazparam1"), param[Int]("bazparam2")), refClazz = ClazzRef[Long], description = Some(ScalaSampleDocumentedClass.bazDocs))),
+      ("qux", MethodInfo(parameters = List.empty, refClazz = ClazzRef[Long], description = Some(ScalaSampleDocumentedClass.quxDocs))),
+      ("field1", MethodInfo(parameters = List.empty, refClazz = ClazzRef[Long], description = None)),
+      ("field2", MethodInfo(parameters = List.empty, refClazz = ClazzRef[Long], description = Some(ScalaSampleDocumentedClass.field2Docs)))
     )
     forAll(table){ case (method, methodInfo) =>
         scalaClazzInfo.methods(method) shouldBe methodInfo

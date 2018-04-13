@@ -57,9 +57,9 @@ object TypesInformationExtractor {
     } else {
       val mainClazzDefinition = clazzDefinition(clazz)
       val recursiveClazzes = mainClazzDefinition.methods.values.toList
-        .filter(m => !primitiveTypesSimpleNames.contains(m.refClazzName) && m.refClazzName != clazz.getName)
-        .filter(m => !blacklistedClazzPackagePrefix.exists(m.refClazzName.startsWith))
-        .filter(m => !m.refClazzName.startsWith("["))
+        .filter(m => !primitiveTypesSimpleNames.contains(m.refClazz.refClazzName) && m.refClazz.refClazzName != clazz.getName)
+        .filter(m => !blacklistedClazzPackagePrefix.exists(m.refClazz.refClazzName.startsWith))
+        .filter(m => !m.refClazz.refClazzName.startsWith("["))
         .map(_.refClazz).distinct
         .flatMap(m => clazzAndItsChildrenDefinition(m))
       mainClazzDefinition :: recursiveClazzes
