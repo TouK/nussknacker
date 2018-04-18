@@ -28,6 +28,7 @@ class Processes extends PeriodicallyReloadingComponent {
     this.state = {
       processes: [],
       statuses: {},
+      statusesLoaded: false,
       filterVal: '',
       favouriteList: new Set(),
       showLoader: true,
@@ -57,7 +58,7 @@ class Processes extends PeriodicallyReloadingComponent {
   reloadStatuses() {
     HttpService.fetchProcessesStatus().then ((statuses) => {
       if (!this.state.showAddProcess) {
-        this.setState({ statuses: statuses, showLoader: false })
+        this.setState({ statuses: statuses, showLoader: false, statusesLoaded: true })
       }
     }).catch( e => this.setState({ showLoader: false }))
   }
@@ -125,7 +126,7 @@ class Processes extends PeriodicallyReloadingComponent {
   processStatusClass(process) {
     const processId = process.name;
     const shouldRun = process.currentlyDeployedAt.length > 0;
-    const statusesKnown = this.state.statuses;
+    const statusesKnown = this.state.statusesLoaded;
     const isRunning = statusesKnown && _.get(this.state.statuses[processId], 'isRunning');
     if (isRunning) {
       return "status-running";
