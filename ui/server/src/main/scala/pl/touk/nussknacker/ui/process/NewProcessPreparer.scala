@@ -15,8 +15,10 @@ class NewProcessPreparer(processDefinition: Map[ProcessingType, ProcessDefinitio
     val definition = processDefinition(processingType)
     val exceptionHandlerFactory = definition.exceptionHandlerFactory
     val specificMetaData = processingType match {
-      case ProcessingType.Streaming => StreamMetaData()
-      case ProcessingType.RequestResponse => StandaloneMetaData(None)
+      case ProcessingType.Streaming =>
+        StreamMetaData.empty(isSubprocess = isSubprocess)
+      case ProcessingType.RequestResponse =>
+        StandaloneMetaData(None)
     }
     val emptyCanonical = CanonicalProcess(
       metaData = MetaData(

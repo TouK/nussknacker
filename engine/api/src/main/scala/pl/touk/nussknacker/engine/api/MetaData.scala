@@ -30,6 +30,16 @@ case class StreamMetaData(parallelism: Option[Int] = None,
 
 }
 
+object StreamMetaData {
+  def empty(isSubprocess: Boolean): StreamMetaData = {
+    if (isSubprocess) {
+      StreamMetaData(parallelism = None)
+    } else {
+      StreamMetaData(parallelism = Some(1))
+    }
+  }
+}
+
 case class StandaloneMetaData(path: Option[String]) extends TypeSpecificData {
   override val allowLazyVars: Boolean = true
 }
