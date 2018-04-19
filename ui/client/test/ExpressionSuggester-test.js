@@ -14,6 +14,10 @@ const typesInformation = [
     "methods": {"quaxString": {"refClazz": {"refClazzName": "java.lang.String"} }}
   },
   {
+    "clazzName": {"refClazzName": "org.WithList"},
+    "methods": {"listField": {"refClazz": {"refClazzName": "java.util.List", params: [{refClazzName: "org.A"}]} }}
+  },
+  {
     "clazzName": {"refClazzName": "java.lang.String"},
     "methods": {"toUpperCase": {"refClazz": {"refClazzName": "java.lang.String"} }}
   }
@@ -24,7 +28,8 @@ const variables = {
   "input": {refClazzName: "org.A"},
   "other": {refClazzName: "org.C"},
   "ANOTHER": {refClazzName: "org.A"},
-  "dynamicMap": {refClazzName: "java.util.Map", fields: {'intField': {refClazzName: 'java.lang.Integer'}, 'aField': {refClazzName: "org.A"}} }
+  "dynamicMap": {refClazzName: "java.util.Map", fields: {'intField': {refClazzName: 'java.lang.Integer'}, 'aField': {refClazzName: "org.A"}} },
+  "listVar": {refClazzName: "org.WithList" }
 
 }
 
@@ -42,7 +47,8 @@ describe("expression suggester", () => {
       { methodName: "#input", refClazz: { refClazzName: 'org.A'} },
       { methodName: "#other", refClazz: { refClazzName: 'org.C'} },
       { methodName: "#ANOTHER", refClazz: { refClazzName: 'org.A'} },
-      { methodName: "#dynamicMap", refClazz: {refClazzName: "java.util.Map", fields: {'intField': {refClazzName: 'java.lang.Integer'}, 'aField': {refClazzName: "org.A"}}} }
+      { methodName: "#dynamicMap", refClazz: {refClazzName: "java.util.Map", fields: {'intField': {refClazzName: 'java.lang.Integer'}, 'aField': {refClazzName: "org.A"}}} },
+      { methodName: "#listVar", refClazz: { refClazzName: "org.WithList" } }
     ])
   })
 
@@ -206,7 +212,46 @@ describe("expression suggester", () => {
     expect(suggestions).toEqual([{methodName: "fooString", refClazz: {refClazzName: "java.lang.String"} }])
   })
 
+  it("should suggest #this fields in simple projection", () => {
+    const suggestions = expressionSuggester.suggestionsFor("#listVar.listField.![#this.f]", {row: 0, column: "#listVar.listField.![#this.f".length })
+    expect(suggestions).toEqual([{methodName: "fooString", refClazz: {refClazzName: "java.lang.String"} }])
+  })
 
+  it("should suggest #this fields in projection after selection", () => {
+    const suggestions = expressionSuggester.suggestionsFor("#listVar.listField.?[#this == 'value'].![#this.f]", {row: 0, column: "#listVar.listField.?[#this == 'value'].![#this.f".length })
+    expect(suggestions).toEqual([{methodName: "fooString", refClazz: {refClazzName: "java.lang.String"} }])
+  })
+
+
+
+})
+
+
+describe("remove finished selections from input", () => {
+
+  it("leaves unfinished selection", () => {
+    const original = "#input.one.two.?[#this."
+    const removed = expressionSuggester._removeFinishedSelectionFromExpressionPart(original)
+    expect(removed).toEqual(original)
+  })
+
+  it("leaves projections", () => {
+    const original = "#input.one.two.![#this.value]"
+    const removed = expressionSuggester._removeFinishedSelectionFromExpressionPart(original)
+    expect(removed).toEqual(original)
+  })
+
+  it("removes one selection", () => {
+    const original = "#input.one.two.?[#this.value == 1].three"
+    const removed = expressionSuggester._removeFinishedSelectionFromExpressionPart(original)
+    expect(removed).toEqual("#input.one.two.three")
+  })
+
+  it("removes many selections", () => {
+    const original = "#input.one.two.?[#this.value == 1].three.?[#this.value == 2].four.?[#this.ala =="
+    const removed = expressionSuggester._removeFinishedSelectionFromExpressionPart(original)
+    expect(removed).toEqual("#input.one.two.three.four.?[#this.ala ==")
+  })
 
 })
 

@@ -11,8 +11,9 @@ export default class ExpressionSuggester {
     const normalized = this._normalizeMultilineInputToSingleLine(inputValue, caretPosition2d)
     const lastExpressionPart = this._focusedLastExpressionPartWithoutMethodParens(normalized.normalizedInput, normalized.normalizedCaretPosition)
     const properties = this._alreadyTypedProperties(lastExpressionPart)
-    const focusedClazz = this._findRootClazz(properties)
-    return this._getSuggestions(lastExpressionPart, focusedClazz)
+    const variablesIncludingSelectionOrProjection = this._getAllVariables(normalized);
+    const focusedClazz = this._findRootClazz(properties, variablesIncludingSelectionOrProjection)
+    return this._getSuggestions(lastExpressionPart, focusedClazz, variablesIncludingSelectionOrProjection)
   }
 
   _normalizeMultilineInputToSingleLine = (inputValue, caretPosition2d) => {
@@ -30,8 +31,8 @@ export default class ExpressionSuggester {
     }
   }
 
-  _getSuggestions = (value, focusedClazz) => {
-    const variableNames = _.keys(this._variables)
+  _getSuggestions = (value, focusedClazz, variables) => {
+    const variableNames = _.keys(variables)
     const variableAlreadySelected = _.some(variableNames, (variable) => { return _.includes(value, `${variable}.`) })
     const variableNotSelected = _.some(variableNames, (variable) => { return _.startsWith(variable.toLowerCase(), value.toLowerCase()) })
     if (variableAlreadySelected && focusedClazz) {
@@ -40,7 +41,7 @@ export default class ExpressionSuggester {
       const allowedMethodList = _.map(currentType.methods, (val, key) => { return { ...val, methodName: key} })
       return inputValue.length === 0 ? allowedMethodList : this._filterSuggestionsForInput(allowedMethodList, inputValue)
     } else if (variableNotSelected && !_.isEmpty(value)) {
-      const allVariablesWithClazzRefs = _.map(this._variables, (val, key) => {
+      const allVariablesWithClazzRefs = _.map(variables, (val, key) => {
         return {'methodName': key, 'refClazz': val}
       })
       return this._filterSuggestionsForInput(allVariablesWithClazzRefs, value)
@@ -56,10 +57,10 @@ export default class ExpressionSuggester {
     })
   }
 
-  _findRootClazz = (properties) => {
+  _findRootClazz = (properties, variables) => {
     const variableName = properties[0]
-    if (_.has(this._variables, variableName)) {
-      const variableClazzName = _.get(this._variables, variableName);
+    if (_.has(variables, variableName)) {
+      const variableClazzName = _.get(variables, variableName);
       return _.reduce(_.tail(properties), (currentParentClazz, prop) => {
         const parentClazz = this._getTypeInfo(currentParentClazz)
         return _.get(parentClazz.methods, `${prop}.refClazz`) || {refClazzName: ''}
@@ -90,7 +91,12 @@ export default class ExpressionSuggester {
   }
 
   _currentlyFocusedExpressionPart = (value, caretPosition) => {
-    return value.slice(0, caretPosition)
+    return this._removeFinishedSelectionFromExpressionPart(value.slice(0, caretPosition))
+  }
+
+  //TODO: this does not handle map indices properly... e.g. #input.value.?[#this[""] > 4]
+  _removeFinishedSelectionFromExpressionPart = (currentExpression) => {
+    return currentExpression.replace(/\.\?\[[^\]]*]/g, "")
   }
 
   _lastExpressionPartWithoutMethodParens = (value) => {
@@ -112,6 +118,36 @@ export default class ExpressionSuggester {
 
   _removeMethodParensFromProperty = (property) => {
     return property.replace(/\(.*\)/, "")
+  }
+
+  _getAllVariables = (normalized) => {
+    const thisClazz = this._findProjectionOrSelectionRootClazz(normalized)
+    const data = thisClazz ? { '#this' : thisClazz } : {};
+    return _.merge(data, this._variables)
+  }
+
+  _findProjectionOrSelectionRootClazz = (normalized) => {
+    const currentProjectionOrSelection = this._findCurrentProjectionOrSelection(normalized)
+    if (currentProjectionOrSelection) {
+      const properties = this._alreadyTypedProperties(currentProjectionOrSelection)
+      //TODO: currently we don't assume nested selections/projections
+      const focusedClazz = this._findRootClazz(properties, this._variables)
+      return (focusedClazz || {}).params ? focusedClazz.params[0] : null
+    } else {
+      return null
+    }
+  }
+
+  _findCurrentProjectionOrSelection = (normalized) => {
+    const input = normalized.normalizedInput;
+    const caretPosition = normalized.normalizedCaretPosition;
+    const currentPart = this._currentlyFocusedExpressionPart(input, caretPosition)
+    //TODO: detect if it's *really* selection/projection (can be in quoted string, or method index??)
+    const lastOpening = Math.max(currentPart.lastIndexOf("!["), currentPart.lastIndexOf("?["))
+    if (lastOpening > currentPart.indexOf("]")) {
+      return currentPart.slice(0, lastOpening)
+    }
+    return null;
   }
 
 }
