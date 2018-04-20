@@ -98,6 +98,8 @@ protected trait ProcessCompilerBase {
 
   private val expressionCompiler = ExpressionCompiler.withoutOptimization(classLoader, expressionConfig)
 
+  private val globalVariableTypes = expressionConfig.globalVariables.mapValuesNow(_.returnType)
+
   protected def compile(process: EspProcess): CompilationResult[CompiledProcessParts] = {
     compile(ProcessSplitter.split(process))
   }
@@ -128,7 +130,7 @@ protected trait ProcessCompilerBase {
 
   private def contextAfterCustomNode(node: CustomNode, nodeDefinition: ParameterProviderT, validationContext: ValidationContext, clearsContext: Boolean)
                                     (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, ValidationContext] = {
-    val maybeClearedContext = if (clearsContext) validationContext.copy(variables = Map()) else validationContext
+    val maybeClearedContext = if (clearsContext) validationContext.copy(variables = globalVariableTypes) else validationContext
     (node.outputVar, nodeDefinition.hasNoReturn) match {
       case (Some(varName), false) => maybeClearedContext.withVariable(varName, nodeDefinition.returnType)
         //ble... NonEmptyList is invariant...
@@ -188,8 +190,6 @@ protected trait ProcessCompilerBase {
       compiledgraph.part.SourcePart(obj, source.node, initialCtx, nextParts, source.ends)
     }
   }
-
-  private val globalVariableTypes = expressionConfig.globalVariables.mapValuesNow(_.returnType)
 
   private def computeInitialVariables(nodeData: StartingNodeData, compiled: ValidatedNel[ProcessCompilationError, Source[_]])(implicit metaData: MetaData, nodeId: NodeId) : ValidationContext = ValidationContext(nodeData match {
     case pl.touk.nussknacker.engine.graph.node.Source(_, ref, _) =>
@@ -302,7 +302,7 @@ object ProcessValidator {
   def default(definitions: ProcessDefinition[ObjectWithMethodDef], loader: ClassLoader = getClass.getClassLoader): ProcessValidator = {
     val expressionCompiler = ExpressionCompiler.withOptimization(loader, definitions.expressionConfig)
 
-    val sub = new PartSubGraphCompiler(loader, expressionCompiler, definitions.services)
+    val sub = new PartSubGraphCompiler(expressionCompiler, definitions.expressionConfig, definitions.services)
     new ProcessCompiler(loader, sub, definitions)
   }
 

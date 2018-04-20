@@ -5,20 +5,22 @@ import cats.data.{NonEmptyList, ValidatedNel}
 import cats.instances.list._
 import cats.instances.option._
 import cats.kernel.Semigroup
+import pl.touk.nussknacker.engine.api.process.ExpressionConfig
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.typed.typing.{TypedMapTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError._
 import pl.touk.nussknacker.engine.compile.dumb._
 import pl.touk.nussknacker.engine.compiledgraph.node.SubprocessEnd
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
 import pl.touk.nussknacker.engine.definition._
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.splittedgraph._
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 import pl.touk.nussknacker.engine.{compiledgraph, _}
 
-class PartSubGraphCompiler(protected val classLoader: ClassLoader,
-                           protected val expressionCompiler: ExpressionCompiler,
+class PartSubGraphCompiler(protected val expressionCompiler: ExpressionCompiler,
+                           protected val expressionConfig: ExpressionDefinition[ObjectWithMethodDef],
                            protected val services: Map[String, ObjectWithMethodDef]) extends PartSubGraphCompilerBase {
 
   override type ParametersProviderT = ObjectWithMethodDef
@@ -28,8 +30,8 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
 
 }
 
-class PartSubGraphValidator(protected val classLoader: ClassLoader,
-                            protected val expressionCompiler: ExpressionCompiler,
+class PartSubGraphValidator(protected val expressionCompiler: ExpressionCompiler,
+                            protected val expressionConfig: ExpressionDefinition[ObjectWithMethodDef],
                             protected val services: Map[String, ObjectDefinition]) extends PartSubGraphCompilerBase {
 
   override type ParametersProviderT = ObjectDefinition
@@ -54,11 +56,13 @@ private[compile] trait PartSubGraphCompilerBase {
 
   protected def expressionCompiler: ExpressionCompiler
 
+  protected def expressionConfig: ExpressionDefinition[ObjectWithMethodDef]
+
   protected def services: Map[String, ParametersProviderT]
 
-  protected def classLoader: ClassLoader
-
   protected def createServiceInvoker(obj: ParametersProviderT): ServiceInvoker
+
+  private val globalVariableTypes = expressionConfig.globalVariables.mapValues(_.returnType)
 
   def compile(n: SplittedNode[_], ctx: ValidationContext) : CompilationResult[compiledgraph.node.Node] = {
     implicit val nodeId = NodeId(n.id)
@@ -105,13 +109,14 @@ private[compile] trait PartSubGraphCompilerBase {
               compiledgraph.node.CustomNode(id, params, next))
 
           case SubprocessInput(id, ref, _, _) =>
-            val newCtx = ref.parameters.foldLeft[ValidatedNel[ProcessCompilationError, ValidationContext]](Valid(ctx.pushNewContext()))
-                          { case (accCtx, param) => accCtx.andThen(_.withVariable(param.name, Unknown))}
+            val childCtx = ctx.pushNewContext(globalVariableTypes)
 
+            val newCtx = ref.parameters.foldLeft[ValidatedNel[ProcessCompilationError, ValidationContext]](Valid(childCtx))
+                          { case (accCtx, param) => accCtx.andThen(_.withVariable(param.name, Unknown))}
             val validParams =
               expressionCompiler.compileObjectParameters(ref.parameters.map(p => Parameter.unknownType(p.name)), ref.parameters, toOption(ctx))
 
-            CompilationResult.map3(CompilationResult(validParams), compile(next, newCtx.getOrElse(ctx.pushNewContext())), CompilationResult(newCtx))((params, next, _) =>
+            CompilationResult.map3(CompilationResult(validParams), compile(next, newCtx.getOrElse(childCtx)), CompilationResult(newCtx))((params, next, _) =>
               compiledgraph.node.SubprocessStart(id, params, next))
 
           case SubprocessOutput(id, _, _) =>

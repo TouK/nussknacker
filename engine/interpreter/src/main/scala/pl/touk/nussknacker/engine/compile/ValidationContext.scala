@@ -26,8 +26,8 @@ case class ValidationContext(variables: Map[String, TypingResult] = Map.empty,
   def withVariable(name: String, value: TypingResult)(implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, ValidationContext] =
     if (variables.contains(name)) Invalid(NonEmptyList.of(OverwrittenVariable(name))) else Valid(copy(variables = variables + (name -> value)))
 
-  def pushNewContext() : ValidationContext
-    = ValidationContext(Map(), Some(this))
+  def pushNewContext(initialVariables: Map[String, TypingResult]) : ValidationContext
+    = ValidationContext(initialVariables, Some(this))
 
   def popContext(implicit nodeId: NodeId) : ValidatedNel[PartSubGraphCompilationError, ValidationContext] = parent match {
     case Some(ctx) => Valid(ctx)

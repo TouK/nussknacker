@@ -56,6 +56,23 @@ class SubprocessSpec extends FlatSpec with Matchers {
     MockService.data.head shouldBe "a"
   }
 
+  it should "be possible to use global vars in subprocess" in {
+    val process = resolve(EspProcessBuilder.id("proc1")
+      .exceptionHandler()
+      .source("id", "input")
+      .subprocessOneOut("sub", "subProcessGlobal", "output")
+      .processorEnd("end1", "logService", "all" -> "#input.value2"))
+
+    val data = List(
+      SimpleRecord("1", 12, "a", new Date(0))
+    )
+
+    processInvoker.invoke(process, data)
+
+    MockService.data shouldNot be('empty)
+    MockService.data.head shouldBe "a"
+  }
+
   private def resolve(espProcess: EspProcess) = {
     val subprocess = CanonicalProcess(MetaData("subProcess1", StreamMetaData()), null,
       List(
@@ -73,7 +90,14 @@ class SubprocessSpec extends FlatSpec with Matchers {
         ))
       ))
 
-    val resolved = SubprocessResolver(Set(subprocessWithSplit, subprocess)).resolve(ProcessCanonizer.canonize(espProcess))
+    val subprocessWithGlobalVar = CanonicalProcess(MetaData("subProcessGlobal", StreamMetaData()), null,
+          List(
+            canonicalnode.FlatNode(SubprocessInputDefinition("start", List())),
+            canonicalnode.FilterNode(Filter("f1", "#processHelper.constant == 4"),
+            List()
+          ), canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "output"))))
+
+    val resolved = SubprocessResolver(Set(subprocessWithSplit, subprocess, subprocessWithGlobalVar)).resolve(ProcessCanonizer.canonize(espProcess))
       .andThen(ProcessCanonizer.uncanonize)
 
     resolved shouldBe 'valid

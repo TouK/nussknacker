@@ -576,6 +576,19 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     }
   }
 
+  test("can use global variables after clearing context") {
+    val processWithInvalidExpresssion =
+      EspProcessBuilder
+        .id("process1")
+        .exceptionHandler()
+        .source("id1", "source")
+        .customNode("custom", "varName", "clearingContextTransformer")
+        .sink("id2", "#processHelper.toString()", "sink")
+
+    validate(processWithInvalidExpresssion, baseDefinition).result should matchPattern {
+      case Valid(_) =>
+    }
+  }
 
   test("require customNode outputVar when return type in definition") {
     val processWithInvalidExpresssion =
