@@ -11,6 +11,24 @@ class CustomNodeProcessSpec extends FlatSpec with Matchers {
 
   import spel.Implicits._
 
+  it should "be able to use maps and lists after custom nodes" in {
+    val process = EspProcessBuilder.id("proc1")
+      .exceptionHandler()
+      .source("id", "input")
+      .buildSimpleVariable("map", "map", "{:}")
+      .buildSimpleVariable("list", "list", "{}")
+      .customNode("custom", "outRec", "stateCustom", "keyBy" -> "#input.id", "stringVal" -> "''")
+      .buildSimpleVariable("mapToString", "mapToString", "#map.toString()")
+      .buildSimpleVariable("listToString", "listToString", "#list.toString()")
+      .emptySink("out", "monitor")
+
+    val data = List(SimpleRecord("1", 3, "a", new Date(0)))
+
+    //without certain hack (see SpelHack & SpelMapHack) this throws exception.
+    processInvoker.invoke(process, data)
+
+  }
+
   it should "fire alert when aggregate threshold exceeded" in {
 
     val process = EspProcessBuilder.id("proc1")

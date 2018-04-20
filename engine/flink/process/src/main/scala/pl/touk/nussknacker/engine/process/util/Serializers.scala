@@ -18,7 +18,7 @@ object Serializers extends LazyLogging {
 
   def registerSerializers(env: StreamExecutionEnvironment): Unit = {
     val registers = registerSerializer(env) _
-    (CaseClassSerializer ::  SpelHack :: Nil).map(registers)
+    (CaseClassSerializer ::  SpelHack :: SpelMapHack :: Nil).map(registers)
 
     TimeSerializers.addDefaultSerializers(env)
 
