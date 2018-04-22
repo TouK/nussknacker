@@ -7,7 +7,7 @@ import org.scalatest.prop.TableDrivenPropertyChecks._
 import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, ClassMemberPatternPredicate}
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.definition.TypeInfos.{MethodInfo, Parameter}
+import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter}
 
 import scala.annotation.meta.{field, getter}
 import scala.concurrent.Future
@@ -107,6 +107,16 @@ class EspTypeUtilsSpec extends FunSuite with Matchers {
     }
   }
 
+  test("should extract parameters from embedded lists") {
+
+    val typeUtils = TypesInformationExtractor.clazzAndItsChildrenDefinition(List(ClazzRef[Embeddable]))(ClassExtractionSettings.Default)
+
+    typeUtils.find(_.clazzName == ClazzRef[TestEmbedded]) shouldBe Some(ClazzDefinition(ClazzRef[TestEmbedded], Map(
+      "a" -> MethodInfo(List(), ClazzRef[String], None)
+    )))
+
+  }
+
 
   case class ScalaSampleDocumentedClass() {
 
@@ -134,6 +144,14 @@ class EspTypeUtilsSpec extends FunSuite with Matchers {
     def qux(quxParam1: String): Long = {
       0L
     }
+  }
+
+  case class TestEmbedded(a: String)
+
+  class Embeddable {
+
+    def data: Future[List[TestEmbedded]] = ???
+
   }
 
   object ScalaSampleDocumentedClass {

@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.types
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
+import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo}
 import pl.touk.nussknacker.engine.types.EspTypeUtils.clazzDefinition
 
 object TypesInformationExtractor {
@@ -44,27 +44,36 @@ object TypesInformationExtractor {
 
   def clazzAndItsChildrenDefinition(clazzes: Iterable[ClazzRef])
                                    (implicit settings: ClassExtractionSettings): List[ClazzDefinition] = {
-    (clazzes ++ mandatoryClasses).flatMap(clazzAndItsChildrenDefinition).toList.distinct
+    (clazzes ++ mandatoryClasses).flatMap(clazzAndItsChildrenDefinition).toList
   }
 
-  //TODO: make it work for cases like: def list: Future[List[Value]]
-  //also better handling of recursive data
+  //TODO: better handling of recursive data?
   private def clazzAndItsChildrenDefinition(clazzRef: ClazzRef)
-                                   (implicit settings: ClassExtractionSettings): List[ClazzDefinition] = {
+                                   (implicit settings: ClassExtractionSettings): Set[ClazzDefinition] = {
     val clazz = clazzRef.clazz
-    val result = if (clazz.isPrimitive || baseClazzPackagePrefix.exists(clazz.getName.startsWith)) {
-      List(clazzDefinition(clazz))
-    } else {
-      val mainClazzDefinition = clazzDefinition(clazz)
-      val recursiveClazzes = mainClazzDefinition.methods.values.toList
-        .filter(m => !primitiveTypesSimpleNames.contains(m.refClazz.refClazzName) && m.refClazz.refClazzName != clazz.getName)
-        .filter(m => !blacklistedClazzPackagePrefix.exists(m.refClazz.refClazzName.startsWith))
-        .filter(m => !m.refClazz.refClazzName.startsWith("["))
-        .map(_.refClazz).distinct
-        .flatMap(m => clazzAndItsChildrenDefinition(m))
-      mainClazzDefinition :: recursiveClazzes
-    }
-    result.distinct
+
+    val ignoreClass = primitiveTypesSimpleNames.contains(clazzRef.refClazzName) || blacklistedClazzPackagePrefix.exists(clazzRef.refClazzName.startsWith)
+    val ignoreMethods = clazz.isPrimitive || baseClazzPackagePrefix.exists(clazz.getName.startsWith)
+
+    definitionsFromParameters(clazzRef) ++
+      (if (ignoreClass || ignoreMethods) Set() else definitionsFromMethods(clazzRef)) ++
+      (if (ignoreClass) Set() else Set(clazzDefinition(clazz)))
+  }
+
+  private def definitionsFromParameters(clazzRef: ClazzRef)
+                                       (implicit settings: ClassExtractionSettings): Set[ClazzDefinition] = {
+    clazzRef.params.toSet.flatMap((k: ClazzRef) => clazzAndItsChildrenDefinition(k))
+  }
+
+  private def definitionsFromMethods(clazzRef: ClazzRef)
+                                     (implicit settings: ClassExtractionSettings): Set[ClazzDefinition] = {
+
+    clazzDefinition(clazzRef.clazz).methods.values.toSet
+            .flatMap((kl: MethodInfo) => kl.refClazz +: kl.parameters.map(_.refClazz))
+            .filterNot(m => m == clazzRef)
+            .filterNot(m => m.refClazzName.startsWith("["))
+            .flatMap(m => clazzAndItsChildrenDefinition(m))
+
   }
 
 }
