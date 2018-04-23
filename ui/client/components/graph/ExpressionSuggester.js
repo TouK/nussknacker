@@ -144,10 +144,15 @@ export default class ExpressionSuggester {
     const currentPart = this._currentlyFocusedExpressionPart(input, caretPosition)
     //TODO: detect if it's *really* selection/projection (can be in quoted string, or method index??)
     const lastOpening = Math.max(currentPart.lastIndexOf("!["), currentPart.lastIndexOf("?["))
-    if (lastOpening > currentPart.indexOf("]")) {
-      return currentPart.slice(0, lastOpening)
+    const isInMiddleOfProjectionSelection = lastOpening > currentPart.indexOf("]")
+    if (isInMiddleOfProjectionSelection) {
+      const currentSelectionProjectionPart = currentPart.slice(0, lastOpening)
+      //TODO: this won't handle former projections - but we don't support them now anyway...
+      return this._lastExpressionPartWithoutMethodParens(currentSelectionProjectionPart)
+    } else {
+      return null;
     }
-    return null;
+
   }
 
 }

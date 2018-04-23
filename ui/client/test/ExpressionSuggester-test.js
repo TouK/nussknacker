@@ -222,6 +222,10 @@ describe("expression suggester", () => {
     expect(suggestions).toEqual([{methodName: "fooString", refClazz: {refClazzName: "java.lang.String"} }])
   })
 
+  it("handles negated parameters with projections and selections", () => {
+    const suggestions = expressionSuggester.suggestionsFor("!#listVar.listField.?[#this == 'value'].![#this.f]", {row: 0, column: "!#listVar.listField.?[#this == 'value'].![#this.f".length })
+    expect(suggestions).toEqual([{methodName: "fooString", refClazz: {refClazzName: "java.lang.String"} }])
+  })
 
 
 })
