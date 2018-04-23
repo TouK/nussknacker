@@ -103,13 +103,13 @@ private[compile] trait PartSubGraphCompilerBase {
   private def compileEndingNode(ctx: ValidationContext, data: EndingNodeData)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Node] = data match {
     case graph.node.Processor(id, ref, disabled, _) =>
       compile(ref, ctx).map(compiledgraph.node.EndingProcessor(id, _, disabled.contains(true)))
-    case graph.node.Sink(id, ref, optionalExpression, _) =>
-      optionalExpression.map(oe => compile(oe, None, ctx, ClazzRef[Any])._2).sequence.map(typed => compiledgraph.node.Sink(id, ref.typ, typed))
+    case graph.node.Sink(id, ref, optionalExpression, disabled, _) =>
+      optionalExpression.map(oe => compile(oe, None, ctx, ClazzRef[Any])._2).sequence.map(typed => compiledgraph.node.Sink(id, ref.typ, typed, disabled.contains(true)))
     //probably this shouldn't occur - otherwise we'd have empty subprocess?
     case SubprocessInput(id, _, _, _) => Invalid(NonEmptyList.of(UnresolvedSubprocess(id)))   
-    case SubprocessOutputDefinition(id, name, _) =>
+    case SubprocessOutputDefinition(id, name, disabled) =>
       //TODO: should we validate it's process?
-      Valid(compiledgraph.node.Sink(id, name, None))
+      Valid(compiledgraph.node.Sink(id, name, None, disabled.contains(true)))
   }
 
   private def compileSubsequent(ctx: ValidationContext, data: OneOutputSubsequentNodeData, next: Next)(implicit nodeId: NodeId): CompilationResult[Node] = data match {

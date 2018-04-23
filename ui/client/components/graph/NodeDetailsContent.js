@@ -52,7 +52,11 @@ export default class NodeDetailsContent extends React.Component {
       case 'Source':
         return this.sourceSinkCommon()
       case 'Sink':
-        const toAppend = this.createField("textarea", "Expression", "endResult.expression", "expression")
+        const toAppend =
+          <div>
+            {this.createField("textarea", "Expression", "endResult.expression", "expression")}
+            {this.createField("checkbox", "Disabled", "isDisabled")}
+          </div>
         return this.sourceSinkCommon(toAppend)
       case 'SubprocessInputDefinition':
         //FIXME: currently there is no way to add new parameters or display them correctly

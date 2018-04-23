@@ -239,7 +239,7 @@ class SubprocessResolverSpec extends FlatSpec with Matchers with Inside{
           case e => fail(e.toString)
         }
         flatNodes(4) match {
-          case FlatNode(Sink(id, _, _, _)) =>
+          case FlatNode(Sink(id, _, _, _, _)) =>
             id shouldBe "sink"
           case e => fail(e.toString)
         }

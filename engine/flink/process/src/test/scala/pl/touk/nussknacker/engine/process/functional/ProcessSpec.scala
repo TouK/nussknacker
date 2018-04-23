@@ -3,8 +3,14 @@ package pl.touk.nussknacker.engine.process.functional
 import java.util.Date
 
 import org.scalatest.{FlatSpec, Matchers}
+import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
-import pl.touk.nussknacker.engine.process.ProcessTestHelpers.{MockService, SimpleRecord, SimpleRecordWithPreviousValue, processInvoker}
+import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
+import pl.touk.nussknacker.engine.graph.node.{EndingNode, Sink, Source, SourceNode}
+import pl.touk.nussknacker.engine.graph.sink.SinkRef
+import pl.touk.nussknacker.engine.graph.source.SourceRef
+import pl.touk.nussknacker.engine.process.ProcessTestHelpers.{MockService, SimpleRecord, processInvoker}
 import pl.touk.nussknacker.engine.spel
 
 class ProcessSpec extends FlatSpec with Matchers {
@@ -34,5 +40,21 @@ class ProcessSpec extends FlatSpec with Matchers {
 
     MockService.data should have size 5
 
+  }
+
+  it should "ignore disabled sinks" in {
+    val processRoot = SourceNode(
+      Source("id", SourceRef("input", List.empty)),
+      EndingNode(Sink("out", SinkRef("monitor", List.empty), isDisabled = Some(true)))
+    )
+    val process = EspProcess(MetaData("", StreamMetaData()), ExceptionHandlerRef(List.empty), processRoot)
+
+    val data = List(
+      SimpleRecord("1", 3, "a", new Date(0))
+    )
+
+    processInvoker.invoke(process, data)
+
+    MockService.data should have size 0
   }
 }

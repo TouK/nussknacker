@@ -87,13 +87,19 @@ object node {
     override val componentId = nodeType
   }
 
-  case class Split(id: String, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends NodeData
+  case class Split(id: String, isDisabled: Boolean = false, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends NodeData
 
   case class Processor(id: String, service: ServiceRef, isDisabled: Option[Boolean] = None, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends OneOutputSubsequentNodeData with EndingNodeData with Disableable with WithComponent {
     override val componentId = service.id
   }
 
-  case class Sink(id: String, ref: SinkRef, endResult: Option[Expression] = None, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends EndingNodeData with WithComponent {
+  case class Sink(
+                   id: String,
+                   ref: SinkRef,
+                   endResult: Option[Expression] = None,
+                   isDisabled: Option[Boolean] = None,
+                   additionalFields: Option[UserDefinedAdditionalNodeFields] = None
+                 ) extends EndingNodeData with WithComponent with Disableable {
     override val componentId = ref.typ
   }
 

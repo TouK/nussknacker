@@ -77,7 +77,7 @@ class Interpreter private(listeners: Seq[ProcessListener], expressionEvaluator: 
           case ValueWithContext(output, newCtx) =>
             InterpretationResult(EndReference(id), output, newCtx)
         }
-      case EndingProcessor(id, ref, true) =>
+      case EndingProcessor(id, _, true) =>
         //FIXME: null??
         Future.successful(InterpretationResult(EndReference(id), null, ctx))
       case Enricher(_, ref, outName, next) =>
@@ -114,7 +114,9 @@ class Interpreter private(listeners: Seq[ProcessListener], expressionEvaluator: 
           case (accCtx, None) =>
             interpretOptionalNext(node, defaultNext, accCtx)
         }
-      case Sink(id, ref, optionalExpression) =>
+      case Sink(id, _, _, true) =>
+        Future.successful(InterpretationResult(EndReference(id), null, ctx))
+      case Sink(id, ref, optionalExpression, false) =>
         (optionalExpression match {
           case Some(expression) =>
             evaluateExpression[Any](expression, ctx)

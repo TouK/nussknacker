@@ -9,7 +9,6 @@ import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.lazyy.UsingLazyValues
 import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, SinkFactory, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.api.test.TestDataParser
-import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.{Service, _}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
@@ -17,7 +16,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnod
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.compiledgraph.part.{ProcessPart, SinkPart}
-import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessDefinitionExtractor}
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
@@ -28,7 +27,6 @@ import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
-import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 import pl.touk.nussknacker.engine.testing.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.util.{LoggingListener, SynchronousExecutionContext}
 
@@ -139,6 +137,15 @@ class InterpreterSpec extends FlatSpec with Matchers {
       .sink("end", "'d1'", "dummySink")
 
     interpretTransaction(process, Transaction(accountId = "123")) should equal("d1")
+  }
+
+  it should "ignore disabled sinks" in {
+    val process = SourceNode(
+          Source("start", SourceRef("transaction-source", List.empty)),
+          EndingNode(Sink("end", SinkRef("dummySink", List.empty), isDisabled = Some(true)))
+        )
+
+    assert(interpretTransaction(process, Transaction(accountId = "123")) == null)
   }
 
   it should "ignore disabled processors" in {

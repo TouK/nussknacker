@@ -40,6 +40,7 @@ import pl.touk.nussknacker.engine.definition.CustomNodeInvoker
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation, FlinkSink, FlinkSource}
 import pl.touk.nussknacker.engine.flink.util.ContextInitializingFunction
 import pl.touk.nussknacker.engine.flink.util.metrics.InstantRateMeterWithCount
+import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.process.FlinkProcessRegistrar._
 import pl.touk.nussknacker.engine.process.compiler.{CompiledProcessWithDeps, FlinkProcessCompiler}
@@ -161,22 +162,31 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => (Cla
     def registerSubsequentPart[T](start: DataStream[InterpretationResult],
                                   processPart: SubsequentPart): Unit =
       processPart match {
-        case part@SinkPart(sink: FlinkSink, _, validationContext) =>
+
+        case part@SinkPart(sink: FlinkSink, sinkDef, validationContext) => {
           val startAfterSinkEvaluated = wrapAsync(start.map(_.finalContext), part.node, validationContext, "function")
             .map(new EndRateMeterFunction(part.ends))
-          //TODO: maybe this logic should be moved to compiler instead?
-          val withSinkAdded = testRunId match {
-            case None =>
-              startAfterSinkEvaluated
-                .map(_.output)
-                .addSink(sink.toFlinkFunction)
-            case Some(runId) =>
-              val typ = part.node.data.ref.typ
-              val prepareFunction = sink.testDataOutput.getOrElse(throw new IllegalArgumentException(s"Sink $typ cannot be mocked"))
-              val collectingSink = SinkInvocationCollector(runId, part.id, typ, prepareFunction)
-              startAfterSinkEvaluated.addSink(new CollectingSinkFunction(compiledProcessWithDeps, collectingSink, part))
+
+          val disabled = sinkDef.data.isDisabled.contains(true)
+
+          val withSinkAdded = if (disabled) {
+            startAfterSinkEvaluated.map(_.output).addSink(EmptySink.toFlinkFunction)
+          } else {
+            //TODO: maybe this logic should be moved to compiler instead?
+            testRunId match {
+              case None =>
+                startAfterSinkEvaluated
+                  .map(_.output)
+                  .addSink(sink.toFlinkFunction)
+              case Some(runId) =>
+                val typ = part.node.data.ref.typ
+                val prepareFunction = sink.testDataOutput.getOrElse(throw new IllegalArgumentException(s"Sink $typ cannot be mocked"))
+                val collectingSink = SinkInvocationCollector(runId, part.id, typ, prepareFunction)
+                startAfterSinkEvaluated.addSink(new CollectingSinkFunction(compiledProcessWithDeps, collectingSink, part))
+            }
           }
           withSinkAdded.name(s"${metaData.id}-${part.id}-sink")
+        }
         case part:SinkPart =>
           throw new IllegalArgumentException(s"Process can only use flink sinks, instead given: ${part.obj}")
         case SplitPart(splitNode, validationContext, nexts) =>

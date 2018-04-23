@@ -13,7 +13,7 @@ object node {
 
   case class Source(id: String, next: Next) extends Node
 
-  case class Sink(id: String, ref: String, endResult: Option[Expression]) extends Node
+  case class Sink(id: String, ref: String, endResult: Option[Expression], isDisabled: Boolean) extends Node
 
   case class VariableBuilder(id: String, varName: String, value: Either[Expression, List[Field]], next: Next) extends Node
 
