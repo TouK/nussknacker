@@ -11,7 +11,7 @@ object WebResources extends Directives {
       }
     } ~ get {
       //main.html instead of index.html to not interfere with flink's static resources...
-      getFromResource("web/main.html") //return UI page by default to make links work
+      getFromResource("web/static/main.html") //return UI page by default to make links work
     }
 
 }

@@ -12,10 +12,17 @@ import EspAppRouter from './containers/EspAppRouter';
 
 import "./stylesheets/notifications.styl";
 
+const createRootApp = () =>{
+  const rootApp = document.createElement('div');
+  rootApp.setAttribute("id", "rootApp")
+  document.body.append(rootApp)
+  return rootApp
+}
+
 const store = configureStore();
 Settings.updateSettings(store);
 
-const render = Component => {
+const render = (Component, root) => {
   ReactDOM.render(
     <AppContainer>
       <Provider store={store}>
@@ -26,11 +33,12 @@ const render = Component => {
       </Provider>
     </AppContainer>
     ,
-    document.getElementById('rootApp')
+    root
   );
 };
 
-render(EspAppRouter);
+const root = createRootApp();
+render(EspAppRouter, root);
 
 if (module.hot) {
   module.hot.accept('./containers/EspAppRouter', () => { render(EspAppRouter) });

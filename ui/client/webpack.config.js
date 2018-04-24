@@ -1,6 +1,7 @@
 const path = require('path');
 const webpack = require('webpack');
 const childProcess = require('child_process');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 const NODE_ENV = process.env.NODE_ENV || 'development';
 const GIT_HASH = childProcess.execSync('git log -1 --format=%H').toString();
@@ -26,13 +27,14 @@ module.exports = {
   devServer: {
     contentBase: __dirname,
     historyApiFallback: {
-      index: 'main.html'
+      index: '/static/main.html'
     },
     hot: true,
     hotOnly: true,
     port: 3000,
   },
   plugins: [
+    new HtmlWebpackPlugin({title: "Nussknacker", hash: true, filename: 'main.html', template: "index_template_no_doctype.ejs"}),
     isProd ? null : new webpack.NamedModulesPlugin(),
     isProd ? null : new webpack.HotModuleReplacementPlugin(),
     new webpack.DefinePlugin({
