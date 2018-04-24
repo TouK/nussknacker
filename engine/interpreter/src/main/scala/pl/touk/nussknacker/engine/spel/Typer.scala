@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.compile.ValidationContext
 import pl.touk.nussknacker.engine.compiledgraph.expression.ExpressionParseError
+import pl.touk.nussknacker.engine.spel.typer.TypeMethodReference
 import pl.touk.nussknacker.engine.types.EspTypeUtils
 
 import scala.reflect.ClassTag
@@ -89,10 +90,11 @@ private[spel] class Typer(implicit classLoader: ClassLoader) {
       //case e:Literal => Valid(classOf[Any])
       case e: LongLiteral => Valid(Typed[java.lang.Long])
 
-      //TODO: how this should be better validated
-      //currently we don't validate that method params are ok, nor return type - but choosing appropriate method (overloading??)
-      //may be tricky. Maybe we should do better validation only when no overloading occurs?
-      case e: MethodReference => fixedWithNewCurrent(current.tail)(Unknown)
+      case e: MethodReference =>
+        TypeMethodReference(e, current) match {
+          case Right(typingResult) => fixedWithNewCurrent(current.tail)(typingResult)
+          case Left(errorMsg) => invalid(errorMsg)
+        }
 
       case e: NullLiteral => Valid(Unknown)
 
@@ -136,7 +138,8 @@ private[spel] class Typer(implicit classLoader: ClassLoader) {
           }
       }
 
-      case e: PropertyOrFieldReference => current.headOption match {
+      case e: PropertyOrFieldReference =>
+        current.headOption match {
         case None => invalid(s"Non reference '${e.toStringAST}' occurred. Maybe you missed '#' in front of it?")
         case Some(Unknown) => Valid(Unknown)
         case Some(typed: Typed) if typed.canBeSubclassOf(ClazzRef[java.util.Map[_, _]]) => Valid(Unknown)
@@ -146,14 +149,21 @@ private[spel] class Typer(implicit classLoader: ClassLoader) {
             case Some(result) => Valid(result)
           }
         case Some(typed@Typed(possible)) =>
-          val possibleResults = possible.map(ki => EspTypeUtils.clazzDefinition(ki.klass)(ClassExtractionSettings.Default)).toList
+          val clazzDefinitions = possible.map(typedClass =>
+            EspTypeUtils.clazzDefinition(typedClass.klass)(ClassExtractionSettings.Default)
+          ).toList
 
-          possibleResults match {
+          clazzDefinitions match {
             //in normal circumstances this should not happen, however we'd rather omit some errors than not allow correct expression
-            case Nil => Valid(Unknown)
-            case _ =>  possibleResults.flatMap(_.getMethod(e.getName).map(Typed(_))) match {
-              case Nil => invalid(s"There is no property '${e.getName}' in ${typed.display}")
-              case nonEmpty => Valid(nonEmpty.reduce[TypingResult](_ |+| _))
+            case Nil =>
+              Valid(Unknown)
+            case _ =>
+              clazzDefinitions.flatMap(_.getPropertyOrFieldClazzRef(e.getName).map(Typed(_))) match {
+                case Nil =>
+                  invalid(s"There is no property '${e.getName}' in ${typed.display}")
+                case nonEmpty =>
+                  val reduced = nonEmpty.reduce[TypingResult](_ |+| _)
+                  Valid(reduced)
             }
           }
 

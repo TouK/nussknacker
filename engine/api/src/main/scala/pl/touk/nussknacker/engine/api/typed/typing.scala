@@ -86,8 +86,8 @@ object typing {
     override def empty: TypingResult = Typed[Any]
 
     override def combine(x: TypingResult, y: TypingResult): TypingResult = (x, y) match {
-      case (Unknown, _) => Unknown
-      case (_, Unknown) => Unknown
+      case (Unknown, typed) => typed
+      case (typed, Unknown) => typed
       case (Typed(set1), Typed(set2)) => Typed(set1 ++ set2)
       case _ => throw new IllegalArgumentException("NOT IMPLEMENTED YET :)")
     }

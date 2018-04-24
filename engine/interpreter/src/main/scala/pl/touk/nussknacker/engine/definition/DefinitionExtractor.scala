@@ -160,8 +160,14 @@ object TypeInfos {
   case class MethodInfo private(parameters: List[Parameter], refClazz: ClazzRef, description: Option[String])
 
   case class ClazzDefinition(clazzName: ClazzRef, methods: Map[String, MethodInfo]) {
-    def getMethod(methodName: String): Option[ClazzRef] = {
+    def getMethodClazzRef(methodName: String): Option[ClazzRef] = {
       methods.get(methodName).map(_.refClazz)
+    }
+
+    def getPropertyOrFieldClazzRef(methodName: String): Option[ClazzRef] = {
+      val filteredMethods = methods.filter(_._2.parameters.size == 0)
+      val methodInfoes = filteredMethods.get(methodName)
+      methodInfoes.map(_.refClazz)
     }
   }
 

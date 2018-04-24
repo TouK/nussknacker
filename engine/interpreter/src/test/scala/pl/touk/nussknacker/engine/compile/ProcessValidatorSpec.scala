@@ -67,7 +67,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       .enricher("sampleProcessor2", "out", "sampleEnricher")
       .buildVariable("bv1", "vars", "v1" -> "42",
         "mapVariable" -> "{ Field1: 'Field1Value', Field2: 'Field2Value', Field3: #input.plainValue }",
-        "funkySpelVariable" -> "(#input.list.?[plainValue == 5]).![plainValue].contains(5)"
+        "spelVariable" -> "(#input.list.?[plainValue == 5]).![plainValue].contains(5)"
       )
       .sink("id2", "#processHelper.add(#processHelper, 2)", "sink")
 
@@ -89,12 +89,11 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         "vars" -> TypedMapTypingResult(Map(
           "v1" -> Typed[Integer],
           "mapVariable" -> TypedMapTypingResult(Map("Field1" -> Typed[String], "Field2" -> Typed[String], "Field3" -> Typed[BigDecimal])),
-          //TODO: compile it?
-          "funkySpelVariable" -> Unknown
+          "spelVariable" ->  Typed(ClazzRef[Boolean])
+
         ))
       )
     )
-
   }
 
   test("find duplicated ids") {
@@ -530,7 +529,9 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       "var3" -> Typed[String])
     compilationResult.variablesInNodes("id3") shouldBe Map("input" -> Typed[SimpleRecord],
       "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass)),
-      "var2" -> Typed[String], "var3" -> Unknown)
+      "var2" -> Typed[String],
+      "var3" -> Typed(ClazzRef[Int])
+    )
 
   }
 

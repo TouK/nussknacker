@@ -67,19 +67,27 @@ object EspTypeUtils {
 
   private def publicMethods(clazz: Class[_])
                            (implicit settings: ClassExtractionSettings): Map[String, MethodInfo] = {
-    val interestingMethods = clazz.getMethods
+    val filteredMethods = clazz.getMethods
       .filterNot(m => Modifier.isStatic(m.getModifiers))
       .filterNot(settings.isBlacklisted)
       .filter(m =>
         !blacklistedMethods.contains(m.getName) && !m.getName.contains("$")
       )
-    interestingMethods.flatMap { method =>
+
+    val methodNameAndInfoList = filteredMethods.flatMap { method =>
       methodAccessMethods(method).map(_ -> toMethodInfo(method))
-    }.toMap
+    }
+
+    val sortedByArityDesc = methodNameAndInfoList.sortBy(- _._2.parameters.size)
+
+    // Currently SpEL methods are naively and optimistically type checked. This is, for overloaded methods with
+    // different arity, validation is successful when SpEL MethodReference provides the number of parameters greater
+    // or equal to method with the smallest arity.
+    sortedByArityDesc.toMap
   }
 
   private def toMethodInfo(method: Method)
-    = MethodInfo(getParamNameParameters(method), getReturnClassForMethod(method), getNussknackerDocs(method))
+    = MethodInfo(getParameters(method), getReturnClassForMethod(method), getNussknackerDocs(method))
 
   private def methodAccessMethods(method: Method) = {
     val isGetter = (method.getName.startsWith("get") || method.getName.startsWith("is")) && method.getParameterCount == 0
@@ -104,11 +112,13 @@ object EspTypeUtils {
     getGenericType(method.getGenericReturnType).orElse(extractClass(method.getGenericReturnType)).getOrElse(ClazzRef(method.getReturnType))
   }
 
-  private def getParamNameParameters(method: Method): List[Parameter] = {
-    method.getParameters.toList.collect { case param if param.getAnnotation(classOf[ParamName]) != null =>
-      val paramName = param.getAnnotation(classOf[ParamName]).value()
-      Parameter(paramName, ClazzRef(param.getType))
-    }
+  private def getParameters(method: Method): List[Parameter] = {
+    for {
+      param <- method.getParameters.toList
+      annotationOption = Option(param.getAnnotation(classOf[ParamName]))
+      name = annotationOption.map(_.value).getOrElse(param.getName)
+      clazzRef = ClazzRef(param.getType)
+    } yield Parameter(name, clazzRef)
   }
 
   private def getNussknackerDocs(accessibleObject: AccessibleObject): Option[String] = {
