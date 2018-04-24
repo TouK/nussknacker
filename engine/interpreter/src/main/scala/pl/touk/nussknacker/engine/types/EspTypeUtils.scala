@@ -101,7 +101,7 @@ object EspTypeUtils {
   }
 
   private def getReturnClassForMethod(method: Method): ClazzRef = {
-    getGenericType(method.getGenericReturnType).getOrElse(ClazzRef(method.getReturnType))
+    getGenericType(method.getGenericReturnType).orElse(extractClass(method.getGenericReturnType)).getOrElse(ClazzRef(method.getReturnType))
   }
 
   private def getParamNameParameters(method: Method): List[Parameter] = {
@@ -116,7 +116,7 @@ object EspTypeUtils {
   }
 
   private def getReturnClassForField(field: Field): ClazzRef = {
-    getGenericType(field.getGenericType).getOrElse(ClazzRef(field.getType))
+    getGenericType(field.getGenericType).orElse(extractClass(field.getType)).getOrElse(ClazzRef(field.getType))
   }
 
   //TODO this is not correct for primitives and complicated hierarchies, but should work in most cases

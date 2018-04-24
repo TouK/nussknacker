@@ -112,7 +112,9 @@ class EspTypeUtilsSpec extends FunSuite with Matchers {
     val typeUtils = TypesInformationExtractor.clazzAndItsChildrenDefinition(List(ClazzRef[Embeddable]))(ClassExtractionSettings.Default)
 
     typeUtils.find(_.clazzName == ClazzRef[TestEmbedded]) shouldBe Some(ClazzDefinition(ClazzRef[TestEmbedded], Map(
-      "a" -> MethodInfo(List(), ClazzRef[String], None)
+      "string" -> MethodInfo(List(), ClazzRef[String], None),
+      "javaList" -> MethodInfo(List(), ClazzRef(classOf[java.util.List[_]], List(ClazzRef[String])), None),
+      "scalaList" -> MethodInfo(List(), ClazzRef(classOf[List[_]], List(ClazzRef[String])), None)
     )))
 
   }
@@ -146,7 +148,7 @@ class EspTypeUtilsSpec extends FunSuite with Matchers {
     }
   }
 
-  case class TestEmbedded(a: String)
+  case class TestEmbedded(string: String, javaList: java.util.List[String], scalaList: List[String])
 
   class Embeddable {
 

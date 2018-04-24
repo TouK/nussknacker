@@ -44,35 +44,36 @@ object TypesInformationExtractor {
 
   def clazzAndItsChildrenDefinition(clazzes: Iterable[ClazzRef])
                                    (implicit settings: ClassExtractionSettings): List[ClazzDefinition] = {
-    (clazzes ++ mandatoryClasses).flatMap(clazzAndItsChildrenDefinition).toList
+    (clazzes ++ mandatoryClasses).flatMap(clazzAndItsChildrenDefinition(_, Set())).toList
   }
 
-  //TODO: better handling of recursive data?
-  private def clazzAndItsChildrenDefinition(clazzRef: ClazzRef)
+  private def clazzAndItsChildrenDefinition(clazzRef: ClazzRef, currentSet: Set[ClazzRef])
                                    (implicit settings: ClassExtractionSettings): Set[ClazzDefinition] = {
     val clazz = clazzRef.clazz
+    val newSet = currentSet + clazzRef
 
     val ignoreClass = primitiveTypesSimpleNames.contains(clazzRef.refClazzName) || blacklistedClazzPackagePrefix.exists(clazzRef.refClazzName.startsWith)
     val ignoreMethods = clazz.isPrimitive || baseClazzPackagePrefix.exists(clazz.getName.startsWith)
 
-    definitionsFromParameters(clazzRef) ++
-      (if (ignoreClass || ignoreMethods) Set() else definitionsFromMethods(clazzRef)) ++
+    definitionsFromParameters(clazzRef, newSet) ++
+      (if (ignoreClass || ignoreMethods) Set() else definitionsFromMethods(clazzRef, newSet)) ++
       (if (ignoreClass) Set() else Set(clazzDefinition(clazz)))
   }
 
-  private def definitionsFromParameters(clazzRef: ClazzRef)
+  private def definitionsFromParameters(clazzRef: ClazzRef, currentSet: Set[ClazzRef])
                                        (implicit settings: ClassExtractionSettings): Set[ClazzDefinition] = {
-    clazzRef.params.toSet.flatMap((k: ClazzRef) => clazzAndItsChildrenDefinition(k))
+    clazzRef.params.toSet.diff(currentSet)
+      .flatMap((k: ClazzRef) => clazzAndItsChildrenDefinition(k, currentSet))
   }
 
-  private def definitionsFromMethods(clazzRef: ClazzRef)
+  private def definitionsFromMethods(clazzRef: ClazzRef, currentSet: Set[ClazzRef])
                                      (implicit settings: ClassExtractionSettings): Set[ClazzDefinition] = {
 
     clazzDefinition(clazzRef.clazz).methods.values.toSet
             .flatMap((kl: MethodInfo) => kl.refClazz +: kl.parameters.map(_.refClazz))
-            .filterNot(m => m == clazzRef)
+            .diff(currentSet)
             .filterNot(m => m.refClazzName.startsWith("["))
-            .flatMap(m => clazzAndItsChildrenDefinition(m))
+            .flatMap(m => clazzAndItsChildrenDefinition(m, currentSet))
 
   }
 
