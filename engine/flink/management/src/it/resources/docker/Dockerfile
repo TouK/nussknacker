@@ -1,4 +1,4 @@
-FROM flink:1.4.0
+FROM flink:1.4.2
 
 COPY entrypointWithIP.sh /
 COPY conf.yml /
