@@ -5,7 +5,7 @@ import sbt.Keys._
 import sbtassembly.AssemblyPlugin.autoImport.assembly
 import sbtassembly.MergeStrategy
 
-val scalaV = "2.11.8"
+val scalaV = "2.11.12"
 
 //by default we include flink and scala, we want to be able to disable this behaviour for performance reasons
 val includeFlinkAndScala = Option(System.getProperty("includeFlinkAndScala", "true")).exists(_.toBoolean)
