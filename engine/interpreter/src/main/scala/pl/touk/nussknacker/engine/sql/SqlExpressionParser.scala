@@ -18,9 +18,11 @@ import cats.data._
 import cats.data.Validated._
 import cats.implicits._
 
+import scala.util.Try
+
 //TODO: reflection is quite naive. works for case classes and TypedMap
-//TODO: requires optimization. Each expression evaluation creates database, inserts data, etc.
 object SqlExpressionParser extends ExpressionParser {
+
   override val languageId: String = "sql"
 
   override def parse(original: String, ctx: ValidationContext, expectedType: ClazzRef)
@@ -63,16 +65,16 @@ object SqlExpressionParser extends ExpressionParser {
                                 colModel: Map[String, ColumnModel],
                                 typingResult: TypingResult
                               ): (typing.TypingResult, expression.Expression) = {
+
     val expression = new SqlExpression(original = original, columnModels = colModel)
     val listResult = TypedClass(classOf[List[_]], List(typingResult))
     (Typed(Set(listResult)), expression)
   }
 
   private[sql] def getQueryReturnType(original: String, colModel: Map[String, ColumnModel]): Validated[NonEmptyList[expression.ExpressionParseError], TypingResult] = {
-    val db = new HsqlSqlQueryableDataBase()
+    val db = new HsqlSqlQueryableDataBase(original, colModel)
     try {
-      db.createTables(colModel)
-      Validated.Valid(db.getTypingResult(original))
+      Validated.Valid(db.getTypingResult)
     } catch {
       case e: SQLSyntaxErrorException =>
         Validated.Invalid(NonEmptyList(expression.ExpressionParseError(e.getMessage), Nil))
@@ -110,33 +112,32 @@ object SqlExpressionParser extends ExpressionParser {
 case class SqlExpressEvaluationException(notAListExceptions :NonEmptyList[PrepareTables.NotAListException])
   extends IllegalArgumentException(notAListExceptions.toString())
 
-class SqlExpression(val original: String, columnModels: Map[String, ColumnModel]) extends Expression {
+//FIXME: take care of cleaning up, current implementation may lead to resource leaks...
+class SqlExpression(columnModels: Map[String, ColumnModel],
+                    val original: String) extends Expression {
 
-  private def unvalidate(value: ValidatedNel[PrepareTables.NotAListException, List[TypedMap]]):List[TypedMap] = {
-    value match {
-      case Valid(list) => list
-      case Invalid(e) => throw SqlExpressEvaluationException(e)
-    }
+  private val databaseHolder = new ThreadLocal[SqlQueryableDataBase] {
+    override def initialValue(): SqlQueryableDataBase = newDatabase()
+  }
+
+  private def newDatabase(): SqlQueryableDataBase = synchronized {
+    new HsqlSqlQueryableDataBase(original, columnModels)
   }
 
   override def evaluate[T](ctx: Context, lazyValuesProvider: LazyValuesProvider): Future[expression.ValueWithLazyContext[T]] = {
     Future.successful {
-      val result = unvalidate(evaluate(ctx)).asJava.asInstanceOf[T]
+      val result = evaluate(ctx).asJava.asInstanceOf[T]
       ValueWithLazyContext(result, ctx.lazyContext)
     }
   }
 
-  private def evaluate[T](ctx: Context): ValidatedNel[PrepareTables.NotAListException, List[TypedMap]] = {
-    val db = new HsqlSqlQueryableDataBase
-    db.createTables(columnModels)
-    val result = PrepareTables(ctx.variables, columnModels, ReadObjectField)
-      .map { tables =>
-        db.insertTables(tables)
-        db.query(original)
-      }
-    db.close()
-    result
+  private def evaluate[T](ctx: Context): List[TypedMap] = {
+    val db = databaseHolder.get()
+    PrepareTables(ctx.variables, columnModels, ReadObjectField)
+      .map(db.query)
+      .valueOr(error => throw SqlExpressEvaluationException(error))
   }
+
 }
 
 

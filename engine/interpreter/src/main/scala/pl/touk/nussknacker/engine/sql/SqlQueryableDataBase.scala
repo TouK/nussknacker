@@ -4,13 +4,9 @@ import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 
 trait SqlQueryableDataBase extends AutoCloseable {
-  def createTables(tables: Map[String, ColumnModel]): Unit
 
-  def getTypingResult(query: String): TypingResult
+  def getTypingResult: TypingResult
 
-  def insertTables(tables: Map[String, Table]): Unit
-
-  //TODO: split to compile query and execute query
-  def query(query: String): List[TypedMap]
+  def query(tables: Map[String, Table]): List[TypedMap]
 
 }

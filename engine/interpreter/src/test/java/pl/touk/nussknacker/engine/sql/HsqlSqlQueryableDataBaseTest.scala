@@ -6,18 +6,33 @@ import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedMapTypingResult}
 
 class HsqlSqlQueryableDataBaseTest extends FunSuite with Matchers {
+
+  val dogoModel = ColumnModel(List(Column("name", Varchar)))
+  val dogQuery = "select name from dogos"
+
   test("complete whole query") {
-    val impl = new HsqlSqlQueryableDataBase()
-    val dogoModel = ColumnModel(List(Column("name", Varchar)))
-    impl.createTables(Map("dogos" -> dogoModel))
-    impl.insertTables(Map("dogos" -> Table(dogoModel, List(List("Azor"), List("Reksio")))))
-    val result = impl.query("select name from dogos")
+
+    val impl = new HsqlSqlQueryableDataBase(dogQuery, Map("dogos" -> dogoModel))
+
+    val result = impl.query(Map("dogos" -> Table(dogoModel, List(List("Azor"), List("Reksio")))))
 
     def dogoMap(name: String) = TypedMap(Map("NAME" -> name))
 
     result shouldEqual List(dogoMap("Azor"), dogoMap("Reksio"))
 
   }
+
+  test("reuse connection correctly in next query") {
+
+    val impl = new HsqlSqlQueryableDataBase(dogQuery, Map("dogos" -> dogoModel))
+
+    val result1 = impl.query(Map("dogos" -> Table(dogoModel, List(List("Azor")))))
+    val result2 = impl.query(Map("dogos" -> Table(dogoModel, List(List("Reksio")))))
+
+    result1 should have length 1
+    result1 should have length 1
+  }
+
   private val obj = HsqlSqlQueryableDataBase
   test("create table") {
     val result = obj.createTableQuery("tab1", ColumnModel(List(Column("col1", Numeric))))

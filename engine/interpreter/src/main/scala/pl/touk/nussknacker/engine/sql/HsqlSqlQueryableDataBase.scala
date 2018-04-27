@@ -7,16 +7,26 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.typed.typing.TypedMapTypingResult
 import pl.touk.nussknacker.engine.api.typed.{ClazzRef, TypedMap, TypedMapDefinition, typing}
 
-import scala.collection.{immutable, mutable}
+import scala.collection.mutable
 
-class HsqlSqlQueryableDataBase extends SqlQueryableDataBase with LazyLogging {
+/** This class is *not* thread safe. One connection is used to handle all operations
+  the idea is that we prepare all tables, and compile all queries during (lazy) initialization
+  Afterwards query consists of three steps:
+  - insert (in batch) all data
+  - perform query
+  - rollback transaction to reuse connection and not care about deleting/truncating tables
+*/
+class HsqlSqlQueryableDataBase(query: String, tables: Map[String, ColumnModel]) extends SqlQueryableDataBase with LazyLogging {
 
   import HsqlSqlQueryableDataBase._
 
   private val connection: Connection =
     DriverManager.getConnection(s"jdbc:hsqldb:mem:${UUID.randomUUID()};shutdown=true", "SA", "")
 
-  override def createTables(tables: Map[String, ColumnModel]): Unit = {
+  init()
+
+  private def init(): Unit = {
+    connection.setAutoCommit(false)
     tables.map { table =>
       createTableQuery(table._1, table._2)
     } foreach { query =>
@@ -27,26 +37,39 @@ class HsqlSqlQueryableDataBase extends SqlQueryableDataBase with LazyLogging {
     }
   }
 
-  override def insertTables(tables: Map[String, Table]): Unit = {
-    tables.foreach { case (name, Table(model, rows)) =>
+  private lazy val insertTableStatements: Map[String, PreparedStatement] = tables.map {
+    case (name, model) =>
       val query = insertTableQuery(name, model)
-      val statement = connection.prepareStatement(query)
-      rows.foreach { row =>
-        logger.debug(query)
-        row.zip(Stream.from(1)).foreach { case (obj, idx) =>
-          logger.trace(s"Setting query parameter. ${parameterDetails(statement.getParameterMetaData, idx, obj)}")
-          try {
-            statement.setObject(idx, obj)
-          } catch {
-            case e: SQLSyntaxErrorException =>
-              logger.error(s"Error during setting query parameter. ${parameterDetails(statement.getParameterMetaData, idx, obj)}")
-              throw e
-          }
-        }
-        statement.execute()
-      }
-      statement.close()
+      (name, connection.prepareStatement(query))
+  }
+
+  private lazy val queryStatement = connection.prepareStatement(query)
+
+  private def insertTables(tables: Map[String, Table]): Unit = {
+    tables.foreach { case (name, Table(_, rows)) =>
+      insertTable(name, rows)
     }
+  }
+
+  private def insertTable(name: String, rows: List[List[Any]]): Unit = {
+    val statement = insertTableStatements(name)
+    rows.foreach(insertRow(statement, _))
+    statement.executeBatch()
+  }
+
+  private def insertRow(statement: PreparedStatement, row: List[Any]): Unit = {
+    logger.debug(query)
+    row.zip(Stream.from(1)).foreach { case (obj, idx) =>
+      logger.trace(s"Setting query parameter. ${parameterDetails(statement.getParameterMetaData, idx, obj)}")
+      try {
+        statement.setObject(idx, obj)
+      } catch {
+        case e: SQLSyntaxErrorException =>
+          logger.error(s"Error during setting query parameter. ${parameterDetails(statement.getParameterMetaData, idx, obj)}")
+          throw e
+      }
+    }
+    statement.addBatch()
   }
 
   private def parameterDetails(params: ParameterMetaData, idx: Int, obj: Any): String = {
@@ -56,21 +79,18 @@ class HsqlSqlQueryableDataBase extends SqlQueryableDataBase with LazyLogging {
     s"Query index: $idx, sql type: $sqlParamType, expected class: $expectedClass, actualClass: $actualClass, value: $obj"
   }
 
-  override def query(query: String): List[TypedMap] = {
-    logger.debug(s"query: $query")
-    val statement = connection.prepareStatement(query)
-    val result = getData(statement)
-    statement.close()
-    result
+  override def query(tables: Map[String, Table]): List[TypedMap] = {
+    logger.trace(s"Executing query: $query with $tables")
+    //
+    insertTables(tables)
+    val data = executeQuery(queryStatement)
+    connection.rollback()
+    data
   }
 
-  override def getTypingResult(query: String): typing.TypingResult = {
-    logger.debug(s"query for typing result: $query")
-    val statement = connection.prepareStatement(query)
-    val metaData = statement.getMetaData
-    val result = TypedMapTypingResult(toTypedMapDefinition(metaData))
-    statement.close()
-    result
+  override def getTypingResult: typing.TypingResult = {
+    val metaData = queryStatement.getMetaData
+    TypedMapTypingResult(toTypedMapDefinition(metaData))
   }
 
   override def close(): Unit = {
@@ -89,7 +109,7 @@ private object HsqlSqlQueryableDataBase extends LazyLogging {
     case Date => "DATETIME"
   }
 
-  def createTableQuery(name: String, columnModel: ColumnModel): String = {
+  private[sql] def createTableQuery(name: String, columnModel: ColumnModel): String = {
     val columns = columnModel.columns
       .map { c =>
         s"${c.name} ${str(c.typ)}"
@@ -97,13 +117,13 @@ private object HsqlSqlQueryableDataBase extends LazyLogging {
     s"CREATE TABLE $name ($columns)"
   }
 
-  def insertTableQuery(name: String, columnModel: ColumnModel): String = {
+  private[sql] def insertTableQuery(name: String, columnModel: ColumnModel): String = {
     val columns = columnModel.columns.map(_.name).mkString(", ")
     val values = columnModel.columns.map(_ => "?").mkString(", ")
     s"INSERT INTO $name ($columns) VALUES ($values)"
   }
 
-  def getData(statement: PreparedStatement): List[TypedMap] = {
+  private def executeQuery(statement: PreparedStatement): List[TypedMap] = {
     val rs = statement.executeQuery()
     val result = mutable.Buffer[TypedMap]()
     val types = toTypedMapDefinition(statement.getMetaData)
