@@ -36,4 +36,6 @@ trait FetchingProcessRepository {
 
   def fetchAllProcessesDetails()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[ProcessDetails]]
 
+  def fetchArchivedProcesses()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[BasicProcess]]
+
 }

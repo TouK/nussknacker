@@ -91,7 +91,13 @@ class TechnicalProcessUpdate(customProcesses: Map[String, String], repository: D
       .map { case (processId, processClass) =>
         val deploymentData = CustomProcess(processClass)
         logger.info(s"Saving custom process $processId")
-        saveOrUpdate(processId, "Technical", deploymentData, ProcessingType.Streaming, isSubprocess = false)
+        saveOrUpdate(
+          processId = processId,
+          category = "Technical",
+          deploymentData = deploymentData,
+          processingType = ProcessingType.Streaming,
+          isSubprocess = false
+        )
       }.toList.sequenceU
     results.map(_ => ())
   }
@@ -102,7 +108,13 @@ class TechnicalProcessUpdate(customProcesses: Map[String, String], repository: D
       latestVersion <- EitherT.right[DB, EspError, Option[ProcessVersionEntityData]](fetchingProcessRepository.fetchLatestProcessVersion(processId))
       _ <- EitherT {
         latestVersion match {
-          case None => repository.saveNewProcess(processId, category, deploymentData, processingType, isSubprocess)
+          case None => repository.saveNewProcess(
+            processId = processId,
+            category = category,
+            processDeploymentData = deploymentData,
+            processingType = processingType,
+            isSubprocess = isSubprocess
+          )
           case Some(version) if version.user == Initialization.toukUser.id =>
             repository.updateProcess(UpdateProcessAction(processId, deploymentData, "External update")).map(_.right.map(_ => ()))
           case _ => logger.info(s"Process $processId not updated. DB version is: \n${latestVersion.flatMap(_.json).getOrElse("")}\n " +

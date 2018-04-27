@@ -2,6 +2,6 @@
 
 cd ..
 ./sbtwrapper managementSample/assembly
-./sbtwrapper standalone_sample/assembly
+./sbtwrapper standaloneSample/assembly
 ./sbtwrapper ui/assembly
 cd -

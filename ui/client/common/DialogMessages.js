@@ -14,16 +14,16 @@ class DialogMessages {
     return `Are you sure you want to stop ${processId}?`
   }
 
-  deleteProcess = (processId) => {
-      return `Are you sure you want to delete ${processId}?`
+  archiveProcess = (processId) => {
+      return `Are you sure you want to archive ${processId}?`
   }
 
   deleteComment = () => {
     return 'Are you sure you want to delete comment?'
   }
 
-  cantDeleteRunningProcess = () => {
-    return `You can't delete running process! Stop it first and then click 'delete' button again.`
+  cantArchiveRunningProcess = () => {
+    return `You can't archive running process! Stop it first and then click 'archive' button again.`
   }
 
 }

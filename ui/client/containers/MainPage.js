@@ -16,6 +16,7 @@ import {connect} from "react-redux";
 import ActionsUtils from "../actions/ActionsUtils";
 import Dialogs from "../components/modals/Dialogs";
 import * as VisualizationUrl from '../common/VisualizationUrl'
+import Archive from "./Archive";
 
 const App_ = React.createClass({
 
@@ -75,6 +76,7 @@ const App_ = React.createClass({
                 {!_.isEmpty(this.props.featuresSettings.search) ?
                   <li><Link to={Search.path}>{Search.header}</Link></li> : null }
                 <li><Link to={Signals.path}>{Signals.header}</Link></li>
+                <li><Link to={Archive.path}>{Archive.header}</Link></li>
                 {this.props.loggedUser.isAdmin ?
                   <li><Link to={AdminPage.path}>{AdminPage.header}</Link></li> : null}
               </ul>

@@ -112,6 +112,10 @@ export default {
     return promiseWrap($.get(API_URL + '/subProcesses'))
   },
 
+  fetchArchivedProcesses() {
+    return promiseWrap($.get(`${API_URL}/archive`))
+  },
+
   fetchSubProcessesDetails() {
     return promiseWrap($.get(API_URL + '/subProcessesDetails'))
   },
@@ -275,18 +279,13 @@ export default {
       });
   },
 
-  deleteProcess(processId) {
-      return ajaxCall({
-          url: `${API_URL}/processes/${processId}`,
-          type: 'DELETE'
-      })
-          .then(() => this.addInfo(`Process ${processId} was deleted`))
-          .catch((error) => {
-              this.addError(`Failed to delete`, error, true);
-              return Promise.reject(error)
-          });
+  archiveProcess(processId) {
+    return ajaxCall({
+      url: `${API_URL}/archive/${processId}`,
+      type: 'POST',
+      data: JSON.stringify({isArchived:true})
+    })
   },
-
   createProcess(processId, processCategory, callback, isSubprocess) {
     return ajaxCall({
       url: `${API_URL}/processes/${processId}/${processCategory}?isSubprocess=${isSubprocess}`,

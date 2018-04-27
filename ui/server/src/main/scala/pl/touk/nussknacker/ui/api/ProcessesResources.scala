@@ -21,10 +21,12 @@ import pl.touk.nussknacker.ui._
 import EspErrorToHttp._
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.ui.codec.UiCodecs
-import pl.touk.nussknacker.ui.validation.ProcessValidation
+import pl.touk.nussknacker.ui.validation.{ProcessValidation, ValidationResults}
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
 import pl.touk.nussknacker.ui.process.{JobStatusService, NewProcessPreparer, ProcessToSave, ProcessTypesForCategories}
 import pl.touk.http.argonaut.Argonaut62Support
+import pl.touk.nussknacker.engine.graph.node.{NodeData, SubprocessInput}
+import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
 import pl.touk.nussknacker.ui.process.repository.WriteProcessRepository.UpdateProcessAction
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
@@ -42,12 +44,28 @@ class ProcessesResources(repository: FetchingProcessRepository,
   extends Directives with Argonaut62Support with EspPathMatchers with RouteWithUser with LazyLogging {
 
   import UiCodecs._
-
   def route(implicit user: LoggedUser): Route = {
 
     authorizeMethod(Permission.Write, user) {
       encodeResponse {
-        path("processes") {
+        path("archive") {
+          get {
+              complete {
+                repository.fetchArchivedProcesses()
+              }
+          }
+        } ~ path("unarchive" / Segment) { processId =>
+          post {
+            complete(writeArchive(processId, isArchived = false))
+          }
+        } ~ path("archive" / Segment) { processId =>
+          post {
+            /*
+            should not allow to archive still used subprocess IGNORED TEST
+             */
+           complete(writeArchive(processId, isArchived = true))
+          }
+        }  ~ path("processes") {
           get {
             complete {
               repository.fetchProcesses()
@@ -108,15 +126,12 @@ class ProcessesResources(repository: FetchingProcessRepository,
           put {
             entity(as[ProcessToSave]) { processToSave =>
               complete {
-                val displayableProcess = processToSave.process
-                val canonical = ProcessConverter.fromDisplayable(displayableProcess)
-                val json = UiProcessMarshaller.toJson(canonical, PrettyParams.nospace)
-                val deploymentData = GraphProcess(json)
-
-                (for {
-                  validation <- EitherT.fromEither[Future](processValidation.validate(displayableProcess).saveNotAllowedAsError)
-                  result <- EitherT(writeRepository.updateProcess(UpdateProcessAction(processId, deploymentData, processToSave.comment)))
-                } yield validation).value.map(toResponse)
+                isArchived(processId).flatMap[ToResponseMarshallable]{
+                  case true =>
+                    rejectSavingArchivedProcess
+                  case false =>
+                    saveProcess(processToSave, processId).map(toResponse)
+                }
               }
             }
           }
@@ -128,7 +143,13 @@ class ProcessesResources(repository: FetchingProcessRepository,
                   typesForCategories.getTypeForCategory(category) match {
                     case Some(processingType) =>
                       val emptyProcess = makeEmptyProcess(processId, processingType, isSubprocess)
-                      writeRepository.saveNewProcess(processId, category, emptyProcess, processingType, isSubprocess)
+                      writeRepository.saveNewProcess(
+                        processId = processId,
+                        category = category,
+                        processDeploymentData = emptyProcess,
+                        processingType = processingType,
+                        isSubprocess = isSubprocess
+                      )
                         .map(toResponse(StatusCodes.Created))
                     case None => Future(HttpResponse(status = StatusCodes.BadRequest, entity = "Process category not found"))
                   }
@@ -197,6 +218,30 @@ class ProcessesResources(repository: FetchingProcessRepository,
       }
     }
   }
+  private def writeArchive(processId:String,isArchived:Boolean) = {
+    writeRepository.archive(processId = processId, isArchived = isArchived)
+      .map(toResponse(StatusCodes.OK))
+  }
+  private def  isArchived(processId: String)(implicit loggedUser: LoggedUser): Future[Boolean] =
+    repository.fetchLatestProcessDetailsForProcessId(processId)
+      .map {
+        case Some(details) => details.isArchived
+        case _ => false
+      }
+  private def saveProcess(processToSave: ProcessToSave, processId: String)
+                         (implicit loggedUser: LoggedUser):Future[Either[EspError, ValidationResults.ValidationResult]] = {
+    val displayableProcess = processToSave.process
+    val canonical = ProcessConverter.fromDisplayable(displayableProcess)
+    val json = UiProcessMarshaller.toJson(canonical, PrettyParams.nospace)
+    val deploymentData = GraphProcess(json)
+
+    (for {
+      validation <- EitherT.fromEither[Future](processValidation.validate(displayableProcess).saveNotAllowedAsError)
+      result <- EitherT(writeRepository.updateProcess(UpdateProcessAction(processId, deploymentData, processToSave.comment)))
+    } yield validation).value
+  }
+  private def rejectSavingArchivedProcess: Future[ToResponseMarshallable]=
+    Future.successful(HttpResponse(status = StatusCodes.Forbidden, entity = "Cannot save archived process"))
 
   private def fetchProcessStatesForProcesses(processes: List[BasicProcess])(implicit user: LoggedUser): Future[Map[String, Option[ProcessStatus]]] = {
     import cats.instances.future._
@@ -242,7 +287,6 @@ class ProcessesResources(repository: FetchingProcessRepository,
 }
 
 object ProcessesResources {
-
   case class UnmarshallError(message: String) extends Exception(message) with FatalError
 
   case class WrongProcessId(processId: String, givenId: String) extends Exception(s"Process has id $givenId instead of $processId") with BadRequestError

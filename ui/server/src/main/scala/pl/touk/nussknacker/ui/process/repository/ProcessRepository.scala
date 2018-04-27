@@ -41,6 +41,7 @@ object ProcessRepository {
                            processCategory: String,
                            processType: ProcessType,
                            processingType: ProcessingType,
+                           isArchived:Boolean,
                            modificationDate: LocalDateTime,
                            currentlyDeployedAt: Set[String]
                          )
@@ -51,6 +52,7 @@ object ProcessRepository {
                              processVersionId: Long,
                              isLatestVersion: Boolean,
                              description: Option[String],
+                             isArchived:Boolean,
                              processType: ProcessType,
                              processingType: ProcessingType,
                              processCategory: String,
@@ -64,7 +66,16 @@ object ProcessRepository {
                            ) {
     def mapProcess[NewShape](action: ProcessShape => NewShape) : BaseProcessDetails[NewShape] = copy(json = json.map(action))
 
-    def toBasicProcess(): BasicProcess = BasicProcess(id, name, processCategory, processType, processingType, modificationDate, currentlyDeployedAt)
+    def toBasicProcess(): BasicProcess = BasicProcess(
+      id = id,
+      name = name,
+      processCategory = processCategory,
+      processType = processType,
+      processingType = processingType,
+      isArchived = isArchived,
+      modificationDate = modificationDate,
+      currentlyDeployedAt = currentlyDeployedAt
+    )
   }
 
   type ProcessDetails = BaseProcessDetails[DisplayableProcess]

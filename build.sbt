@@ -121,7 +121,7 @@ lazy val engineStandalone = (project in engine("standalone/engine")).
   settings(
     name := "nussknacker-standalone-engine",
     Keys.test in IntegrationTest <<= (Keys.test in IntegrationTest).dependsOn(
-      (assembly in Compile) in standalone_sample
+      (assembly in Compile) in standaloneSample
     ),
     libraryDependencies ++= {
       Seq(
@@ -167,7 +167,7 @@ lazy val management = (project in engine("flink/management")).
     name := "nussknacker-management",
     Keys.test in IntegrationTest <<= (Keys.test in IntegrationTest).dependsOn(
       (assembly in Compile) in managementSample,
-      (assembly in Compile) in management_java_sample
+      (assembly in Compile) in managementJavaSample
     ),
     //flink cannot run tests and deployment concurrently
     parallelExecution in IntegrationTest := false,
@@ -190,7 +190,7 @@ lazy val management = (project in engine("flink/management")).
     }
   ).dependsOn(interpreter, queryableState, kafkaTestUtil % "it,test",securityApi)
 
-lazy val standalone_sample = (project in engine("standalone/engine/sample")).
+lazy val standaloneSample = (project in engine("standalone/engine/sample")).
   settings(commonSettings).
   settings(
     name := "nussknacker-standalone-sample",
@@ -218,7 +218,7 @@ lazy val managementSample = (project in engine("flink/management/sample")).
   dependsOn(flinkUtil, kafka, kafkaFlinkUtil, process % "runtime,test", flinkTestUtil % "test", kafkaTestUtil % "test",
     securityApi)
 
-lazy val management_java_sample = (project in engine("flink/management/java_sample")).
+lazy val managementJavaSample = (project in engine("flink/management/java_sample")).
   settings(commonSettings).
   settings(
     name := managementSampleName,

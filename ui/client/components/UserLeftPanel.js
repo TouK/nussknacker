@@ -29,7 +29,7 @@ export default class UserLeftPanel extends Component {
         <TogglePanel type="left" isOpened={isOpened} onToggle={onToggle}/>
         <Scrollbars renderThumbVertical={props => <div {...props} className="thumbVertical"/>} hideTracksWhenNotNeeded={true}>
           <Tips />
-          {this.props.loggedUser.canWrite ?
+          {this.props.capabilities.write ?
             <Panel collapsible defaultExpanded header="Creator panel">
               <ToolBox/>
             </Panel> : null

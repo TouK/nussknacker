@@ -18,6 +18,7 @@ import TogglePanel from "../TogglePanel";
 import SvgDiv from "../SvgDiv"
 
 import '../../stylesheets/userPanel.styl';
+import Archive from "../../containers/Archive";
 
 class UserRightPanel extends Component {
 
@@ -58,7 +59,7 @@ class UserRightPanel extends Component {
               )
             }
           )}
-          {this.props.loggedUser.canWrite ? //TODO remove SideNodeDetails? turn out to be not useful
+          {this.props.capabilities.write ? //TODO remove SideNodeDetails? turn out to be not useful
             (<Panel collapsible defaultExpanded header="Details">
               <SideNodeDetails/>
             </Panel>) : null
@@ -77,38 +78,38 @@ class UserRightPanel extends Component {
       (this.props.isSubprocess ? null : {
         panelName: "Deployment",
         buttons:[
-          {name: "deploy", visible: this.props.loggedUser.canDeploy, disabled: !deployPossible, onClick: this.deploy, icon: InlinedSvgs.buttonDeploy},
-          {name: "stop", visible: this.props.loggedUser.canDeploy, disabled: !this.isRunning(), onClick: this.stop, icon: InlinedSvgs.buttonStop},
+          {name: "deploy", visible: this.props.capabilities.deploy, disabled: !deployPossible, onClick: this.deploy, icon: InlinedSvgs.buttonDeploy},
+          {name: "stop", visible: this.props.capabilities.deploy, disabled: !this.isRunning(), onClick: this.stop, icon: InlinedSvgs.buttonStop},
           {name: "metrics", onClick: this.showMetrics, icon: InlinedSvgs.buttonMetrics}
         ]
       }),
       {
       panelName: "Process",
       buttons: [
-        {name: "save" + (!saveDisabled ? "*" : ""), visible: this.props.loggedUser.canWrite, disabled: saveDisabled, onClick: this.save, icon: InlinedSvgs.buttonSave},
-        {name: "migrate", visible: this.props.loggedUser.canDeploy && !_.isEmpty(this.props.featuresSettings.remoteEnvironment), disabled: !migratePossible, onClick: this.migrate, icon: InlinedSvgs.buttonMigrate},
+        {name: "save" + (!saveDisabled ? "*" : ""), visible: this.props.capabilities.write, disabled: saveDisabled, onClick: this.save, icon: InlinedSvgs.buttonSave},
+        {name: "migrate", visible: this.props.capabilities.deploy && !_.isEmpty(this.props.featuresSettings.remoteEnvironment), disabled: !migratePossible, onClick: this.migrate, icon: InlinedSvgs.buttonMigrate},
         {name: "compare", onClick: this.compareVersions, icon: 'compare.svg', disabled: this.hasOneVersion()},
-        {name: "import", visible: this.props.loggedUser.canWrite, disabled: false, onClick: this.importProcess, icon: InlinedSvgs.buttonImport, dropzone: true},
-        {name: "export", visible: this.props.loggedUser.canWrite, onClick: this.exportProcess, icon: InlinedSvgs.buttonExport},
+        {name: "import", visible: this.props.capabilities.write, disabled: false, onClick: this.importProcess, icon: InlinedSvgs.buttonImport, dropzone: true},
+        {name: "export", onClick: this.exportProcess, icon: InlinedSvgs.buttonExport},
         {name: "exportPDF", disabled: !this.props.nothingToSave, onClick: this.exportProcessToPdf, icon: InlinedSvgs.buttonExport},
         {name: "zoomIn", onClick: this.props.zoomIn, icon: 'zoomin.svg'},
         {name: "zoomOut", onClick: this.props.zoomOut, icon: 'zoomout.svg'},
-        {name: "delete", onClick: this.deleteProcess, icon: 'trash.svg', visible: this.props.loggedUser.canWrite}
+        {name: "archive", onClick: this.archiveProcess, icon: 'trash.svg', visible: this.props.capabilities.write}
 
       ]
     },
       {
         panelName: "Edit",
         buttons: [
-          {name: "undo", visible: this.props.loggedUser.canWrite, onClick: this.undo, icon: InlinedSvgs.buttonUndo},
-          {name: "redo", visible: this.props.loggedUser.canWrite, onClick: this.redo, icon: InlinedSvgs.buttonRedo},
-          {name: "align", onClick: this.props.graphLayoutFunction, icon: InlinedSvgs.buttonAlign, visible: this.props.loggedUser.canWrite},
-          {name: "properties", onClick: this.showProperties, icon: InlinedSvgs.buttonSettings, visible: !this.props.isSubprocess && this.props.loggedUser.canWrite},
+          {name: "undo", visible: this.props.capabilities.write, onClick: this.undo, icon: InlinedSvgs.buttonUndo},
+          {name: "redo", visible: this.props.capabilities.write, onClick: this.redo, icon: InlinedSvgs.buttonRedo},
+          {name: "align", onClick: this.props.graphLayoutFunction, icon: InlinedSvgs.buttonAlign, visible: this.props.capabilities.write},
+          {name: "properties", onClick: this.showProperties, icon: InlinedSvgs.buttonSettings, visible: !this.props.isSubprocess},
           {name: "duplicate", onClick: this.duplicateNode, icon: 'duplicate.svg',
             //cloning groups can be tricky...
             disabled: this.noChosenNode(this.props.nodeToDisplay) || NodeUtils.nodeIsGroup(this.props.nodeToDisplay),
-            visible: this.props.loggedUser.canWrite},
-          {name: "delete", onClick: this.deleteNode, icon: 'delete.svg', visible: this.props.loggedUser.canWrite, disabled: this.noChosenNode(this.props.nodeToDisplay) }
+            visible: this.props.capabilities.write},
+          {name: "delete", onClick: this.deleteNode, icon: 'delete.svg', visible: this.props.capabilities.write, disabled: this.noChosenNode(this.props.nodeToDisplay) }
 
         ]
       },
@@ -117,10 +118,11 @@ class UserRightPanel extends Component {
         panelName: "Test",
         buttons: [
           {name: "from file", onClick: this.testProcess, icon: InlinedSvgs.buttonFromFile, dropzone: true,
-            disabled: !this.props.testCapabilities.canBeTested, visible: this.props.loggedUser.canWrite},
-          {name: "hide", onClick: this.hideRunProcessDetails, icon: InlinedSvgs.buttonHide, disabled: !this.props.showRunProcessDetails, visible: this.props.loggedUser.canWrite},
+            disabled: !this.props.testCapabilities.canBeTested, visible: this.props.capabilities.write},
+          {name: "hide", onClick: this.hideRunProcessDetails, icon: InlinedSvgs.buttonHide, disabled: !this.props.showRunProcessDetails, visible: this.props.capabilities.write},
           {name: "generate", onClick: this.generateData, icon: 'generate.svg',
-            disabled: !this.props.processIsLatestVersion || !this.props.testCapabilities.canGenerateTestData, visible: this.props.loggedUser.canWrite},
+            disabled: !this.props.processIsLatestVersion || !this.props.testCapabilities.canGenerateTestData, visible: this.props.capabilities.write},
+//TODO: counts and metrics should not be visible in archived process
           {name: "counts", onClick: this.fetchProcessCounts, icon: 'counts.svg',
             visible: this.props.featuresSettings.counts && !this.props.isSubprocess},
         ]
@@ -128,10 +130,10 @@ class UserRightPanel extends Component {
       {
         panelName: "Group",
         buttons: [
-          {name: "start", onClick: this.props.actions.startGrouping, icon: InlinedSvgs.buttonGroup, disabled: this.props.groupingState != null, visible: this.props.loggedUser.canWrite},
-          {name: "finish", onClick: this.props.actions.finishGrouping, icon: InlinedSvgs.buttonGroup, disabled: (this.props.groupingState || []).length <= 1, visible: this.props.loggedUser.canWrite},
-          {name: "cancel", onClick: this.props.actions.cancelGrouping, icon: InlinedSvgs.buttonUngroup, disabled: !this.props.groupingState, visible: this.props.loggedUser.canWrite },
-          {name: "ungroup", onClick: this.ungroup, icon: InlinedSvgs.buttonUngroup, disabled: !NodeUtils.nodeIsGroup(this.props.nodeToDisplay), visible: this.props.loggedUser.canWrite }
+          {name: "start", onClick: this.props.actions.startGrouping, icon: InlinedSvgs.buttonGroup, disabled: this.props.groupingState != null, visible: this.props.capabilities.write},
+          {name: "finish", onClick: this.props.actions.finishGrouping, icon: InlinedSvgs.buttonGroup, disabled: (this.props.groupingState || []).length <= 1, visible: this.props.capabilities.write},
+          {name: "cancel", onClick: this.props.actions.cancelGrouping, icon: InlinedSvgs.buttonUngroup, disabled: !this.props.groupingState, visible: this.props.capabilities.write },
+          {name: "ungroup", onClick: this.ungroup, icon: InlinedSvgs.buttonUngroup, disabled: !NodeUtils.nodeIsGroup(this.props.nodeToDisplay), visible: this.props.capabilities.write }
         ]
       }
     ];
@@ -218,13 +220,13 @@ class UserRightPanel extends Component {
     HttpService.exportProcessToPdf(this.processId(), this.versionId(), data, this.props.businessView)
   }
 
-  deleteProcess = () => {
+  archiveProcess = () => {
     if(this.isRunning()){
-      this.props.actions.toggleInfoModal(Dialogs.types.infoModal,DialogMessages.cantDeleteRunningProcess())
+      this.props.actions.toggleInfoModal(Dialogs.types.infoModal,DialogMessages.cantArchiveRunningProcess())
     }else{
-      this.props.actions.toggleConfirmDialog(true, DialogMessages.deleteProcess(this.processId()), () => {
-          return HttpService.deleteProcess(this.processId()).then((resp) =>
-              browserHistory.push('/processes'))
+      this.props.actions.toggleConfirmDialog(true, DialogMessages.archiveProcess(this.processId()), () => {
+          return HttpService.archiveProcess(this.processId()).then((resp) =>
+              browserHistory.push(Archive.path))
       })
     }
   }

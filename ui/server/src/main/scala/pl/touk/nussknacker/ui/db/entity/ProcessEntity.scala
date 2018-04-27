@@ -35,7 +35,9 @@ object ProcessEntity {
 
     def isSubprocess = column[Boolean]("is_subprocess", NotNull)
 
-    def * = (id, name, description, processType, processCategory, processingType, isSubprocess) <> (ProcessEntityData.apply _ tupled, ProcessEntityData.unapply)
+    def isArchived = column[Boolean]("is_archived", NotNull)
+
+    def * = (id, name, description, processType, processCategory, processingType, isSubprocess, isArchived) <> (ProcessEntityData.apply _ tupled, ProcessEntityData.unapply)
 
   }
 
@@ -45,7 +47,8 @@ object ProcessEntity {
                                processType: ProcessType,
                                processCategory: String,
                                processingType: ProcessingType,
-                               isSubprocess: Boolean
+                               isSubprocess: Boolean,
+                               isArchived:Boolean
                               )
 
   object ProcessType extends Enumeration {

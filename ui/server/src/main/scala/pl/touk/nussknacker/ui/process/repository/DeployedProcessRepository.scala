@@ -24,31 +24,31 @@ case class DeployedProcessRepository(dbConfig: DbConfig,
   import driver.api._
 
   def markProcessAsDeployed(processId: String, processVersion: Long, processingType: ProcessingType,
-                             userId: String, environment: String)
+                            userId: String, environment: String)
                            (implicit ec: ExecutionContext): Future[Unit] = {
     val insertAction = EspTables.deployedProcessesTable += DeployedProcessVersionEntityData(
-      processId,
-      Some(processVersion),
-      environment,
-      userId,
-      Timestamp.valueOf(LocalDateTime.now()),
-      DeploymentAction.Deploy,
-      buildInfos.get(processingType).map(BuildInfo.writeAsJson)
+      processId = processId,
+      processVersionId = Some(processVersion),
+      environment = environment,
+      user = userId,
+      deployedAt = Timestamp.valueOf(LocalDateTime.now()),
+      deploymentAction = DeploymentAction.Deploy,
+      buildInfo = buildInfos.get(processingType).map(BuildInfo.writeAsJson)
     )
     run(insertAction).map(_ => ())
   }
 
   def markProcessAsCancelled(processId: String, userId: String, environment: String)
-                             (implicit ec: ExecutionContext): Future[Unit] = {
+                            (implicit ec: ExecutionContext): Future[Unit] = {
 
     val insertAction = EspTables.deployedProcessesTable += DeployedProcessVersionEntityData(
-      processId,
-      None,
-      environment,
-      userId,
-      Timestamp.valueOf(LocalDateTime.now()),
-      DeploymentAction.Cancel,
-      None
+      processId = processId,
+      processVersionId = None,
+      environment = environment,
+      user = userId,
+      deployedAt = Timestamp.valueOf(LocalDateTime.now()),
+      deploymentAction = DeploymentAction.Cancel,
+      buildInfo = None
     )
     run(insertAction).map(_ => ())
   }

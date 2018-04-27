@@ -36,33 +36,32 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
   import api._
 
   def fetchProcesses()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BasicProcess]]= {
-    val action = for {
-      processDetails <- fetchProcessDetailsByQueryAction(!_.isSubprocess)
-    } yield processDetails.map(_.toBasicProcess)
-
-    run(action)
+    run(fetchProcessDetailsByQueryActionUnarchived(p => !p.isSubprocess).toBasicProcess)
   }
 
   def fetchSubProcesses()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BasicProcess]]= {
-    val action = for {
-      processDetails <- fetchProcessDetailsByQueryAction(_.isSubprocess)
-    } yield processDetails.map(_.toBasicProcess)
-
-    run(action)
+    run(fetchProcessDetailsByQueryActionUnarchived(p => p.isSubprocess).toBasicProcess)
   }
 
   def fetchProcessesDetails()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[ProcessDetails]] = {
-    run(fetchProcessDetailsByQueryAction(!_.isSubprocess))
+    run(fetchProcessDetailsByQueryActionUnarchived(p => !p.isSubprocess))
   }
 
   def fetchSubProcessesDetails()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[ProcessDetails]] = {
-    run(fetchProcessDetailsByQueryAction(_.isSubprocess))
+    run(fetchProcessDetailsByQueryActionUnarchived(p => p.isSubprocess))
   }
 
   def fetchAllProcessesDetails()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[ProcessDetails]] = {
-    run(fetchProcessDetailsByQueryAction(_ => true))
+    run(fetchProcessDetailsByQueryActionUnarchived(_ =>true))
   }
 
+  def fetchArchivedProcesses()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BasicProcess]] = {
+    run(fetchProcessDetailsByQueryAction(_.isArchived).toBasicProcess)
+  }
+  private def fetchProcessDetailsByQueryActionUnarchived(query: ProcessEntity => Rep[Boolean])
+                                                (implicit loggedUser: LoggedUser, ec: ExecutionContext) =
+    fetchProcessDetailsByQueryAction(e => query(e) && !e.isArchived)
+  
   private def fetchProcessDetailsByQueryAction(query: ProcessEntity => Rep[Boolean])
                                               (implicit loggedUser: LoggedUser, ec: ExecutionContext) = {
     (for {
@@ -160,6 +159,7 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
       name = process.name,
       processVersionId = processVersion.id,
       isLatestVersion = isLatestVersion,
+      isArchived = process.isArchived,
       description = process.description,
       processType = process.processType,
       processingType = process.processingType,
@@ -214,6 +214,13 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
     }.map { case ((env, _), deployedVersion) => env -> deployedVersion }.filter(_._2.deploymentAction === DeploymentAction.Deploy)
   }
 
+  private implicit class ToBasicConverter(action:  DBIOAction[List[ProcessDetails], NoStream, Effect.All]) {
+    def toBasicProcess(implicit executionContext: ExecutionContext) = action.map {
+      _.map {
+        _.toBasicProcess()
+      }
+    }
+  }
 }
 
 

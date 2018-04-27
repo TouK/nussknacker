@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.CustomTr
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.{EspProcess, node}
-import pl.touk.nussknacker.engine.graph.node.{Case, Split, SubprocessInputDefinition, SubprocessOutputDefinition}
+import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.spel
@@ -69,12 +69,44 @@ object ProcessTestData {
        new SubprocessResolver(new SetSubprocessRepository(Set()))))
 
   def toDetails(displayable: DisplayableProcess) : ProcessDetails =
-    BaseProcessDetails[DisplayableProcess](displayable.id, displayable.id, 1, true, None, ProcessType.Graph,
-      ProcessingType.Streaming, "", LocalDateTime.now(), None, List(), Set(), Some(displayable), List(), None)
+    BaseProcessDetails[DisplayableProcess](
+      id = displayable.id,
+      name = displayable.id,
+      processVersionId = 1,
+      isLatestVersion = true,
+      description = None,
+      isArchived = false,
+      processType = ProcessType.Graph,
+      processingType = ProcessingType.Streaming,
+      processCategory = "",
+      modificationDate = LocalDateTime.now(),
+      subprocessesModificationDate = None,
+      tags = List(),
+      currentlyDeployedAt = Set(),
+      json = Some(displayable),
+      history = List(),
+      modelVersion = None
+    )
 
   def toDetails(displayable: ValidatedDisplayableProcess) : ValidatedProcessDetails =
-    BaseProcessDetails[ValidatedDisplayableProcess](displayable.id, displayable.id, 1, true, None, ProcessType.Graph,
-      ProcessingType.Streaming, "", LocalDateTime.now(), None, List(), Set(), Some(displayable), List(), None)
+    BaseProcessDetails[ValidatedDisplayableProcess](
+      id = displayable.id,
+      name = displayable.id,
+      processVersionId = 1,
+      isLatestVersion = true,
+      description = None,
+      isArchived = false,
+      processType = ProcessType.Graph,
+      processingType = ProcessingType.Streaming,
+      processCategory = "",
+      modificationDate = LocalDateTime.now(),
+      subprocessesModificationDate = None,
+      tags = List(),
+      currentlyDeployedAt = Set(),
+      json = Some(displayable),
+      history = List(),
+      modelVersion = None
+    )
 
 
 
@@ -165,4 +197,18 @@ object ProcessTestData {
     ))
   }
 
+  def validProcessWithSubprocess(id: String, subprocess: CanonicalProcess=sampleSubprocessOneOut): ProcessUsingSubprocess = {
+    ProcessUsingSubprocess(
+      process = EspProcessBuilder
+        .id(id)
+        .exceptionHandler()
+        .source("source", existingSourceFactory)
+        .subprocess(subprocess.metaData.id, subprocess.metaData.id,Nil,Map(
+          "output1" -> GraphBuilder.sink("sink", "'result1'", existingSinkFactory)
+        )),
+      subprocess = subprocess
+    )
+  }
+
+  case class ProcessUsingSubprocess(process: EspProcess, subprocess: CanonicalProcess)
 }

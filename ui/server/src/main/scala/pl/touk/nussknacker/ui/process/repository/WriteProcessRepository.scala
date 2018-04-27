@@ -36,7 +36,6 @@ object WriteProcessRepository {
 
   case class UpdateProcessAction(id: String, deploymentData: ProcessDeploymentData, comment: String)
 }
-
 trait WriteProcessRepository {
 
   def saveNewProcess(processId: String, category: String, processDeploymentData: ProcessDeploymentData,
@@ -46,6 +45,8 @@ trait WriteProcessRepository {
                    (implicit loggedUser: LoggedUser): Future[XError[Option[ProcessVersionEntityData]]]
 
   def updateCategory(processId: String, category: String)(implicit loggedUser: LoggedUser): Future[XError[Unit]]
+
+  def archive(processId: String, isArchived: Boolean): Future[XError[Unit]]
 
   def deleteProcess(processId: String): Future[XError[Unit]]
 
@@ -63,7 +64,7 @@ abstract class DbWriteProcessRepository[F[_]](val dbConfig: DbConfig,
 
     val processToSave = ProcessEntityData(id = processId, name = processId, processCategory = category,
       description = None, processType = ProcessType.fromDeploymentData(processDeploymentData),
-      processingType = processingType, isSubprocess = isSubprocess)
+      processingType = processingType, isSubprocess = isSubprocess, isArchived = false)
 
     val insertAction = latestProcessVersions(processId).result.headOption.flatMap {
       case Some(_) => DBIOAction.successful(Left(ProcessAlreadyExists(processId)))
@@ -113,6 +114,14 @@ abstract class DbWriteProcessRepository[F[_]](val dbConfig: DbConfig,
 
   def deleteProcess(processId: String): F[XError[Unit]] = {
     val action : DB[XError[Unit]] = processesTable.filter(_.id === processId).delete.map {
+      case 0 => Left(ProcessNotFoundError(processId))
+      case 1 => Right(())
+    }
+    run(action)
+  }
+  def archive(processId: String, isArchived: Boolean): F[XError[Unit]] ={
+    val isArchivedQuery = for {c <- processesTable if c.id === processId} yield c.isArchived
+    val action  : DB[XError[Unit]] = isArchivedQuery.update(isArchived).map {
       case 0 => Left(ProcessNotFoundError(processId))
       case 1 => Right(())
     }

@@ -19,7 +19,7 @@ import * as VisualizationUrl from '../common/VisualizationUrl'
 const Visualization = withRouter(React.createClass({
 
   getInitialState: function() {
-    return { timeoutId: null, intervalId: null, status: {}};
+    return { timeoutId: null, intervalId: null, status: {}, isArchived: null};
   },
 
   componentDidMount() {
@@ -29,6 +29,7 @@ const Visualization = withRouter(React.createClass({
         _.get(details, "fetchedProcessDetails.json.properties.isSubprocess"),
         this.props.subprocessVersions
       ).then(() => {
+        this.setState({isArchived:_.get(details, "fetchedProcessDetails.isArchived")})
         this.showModalDetailsIfNeeded(details.fetchedProcessDetails.json)
       })
     })
@@ -128,15 +129,24 @@ const Visualization = withRouter(React.createClass({
     const exportGraphFun = graphFun(graph => graph.exportGraph())
     const zoomInFun = graphFun(graph => graph.zoomIn())
     const zoomOutFun = graphFun(graph => graph.zoomOut())
-
+    const capabilities = {
+      write:loggedUser.canWrite && !this.state.isArchived,
+      deploy:loggedUser.canDeploy && !this.state.isArchived,
+    };
     return (
       <div className="Page">
-          <UserLeftPanel isOpened={leftPanelIsOpened} onToggle={actions.toggleLeftPanel} loggedUser={loggedUser}/>
+          <UserLeftPanel
+            isOpened={leftPanelIsOpened}
+            onToggle={actions.toggleLeftPanel}
+            loggedUser={loggedUser}
+            capabilities={capabilities}
+          />
           <UserRightPanel
             graphLayoutFunction={graphLayoutFun}
             exportGraph={exportGraphFun}
             zoomIn={zoomInFun}
             zoomOut={zoomOutFun}
+            capabilities={capabilities}
           />
 
           {(_.isEmpty(this.props.fetchedProcessDetails) || this.props.graphLoading) ?
