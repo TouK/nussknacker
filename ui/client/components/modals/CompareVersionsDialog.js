@@ -115,11 +115,11 @@ class CompareVersionsDialog extends React.Component {
       <div className="compareContainer">
         <div>
           <div className="versionHeader">Current version</div>
-          {this.printNode(diff.currentNode, differentPaths)}
+          {this.printNode(diff.currentNode, differentPaths, "_current")}
         </div>
         <div>
           <div className="versionHeader">Version {this.versionDisplayString(this.state.otherVersion)}</div>
-          {this.printNode(diff.otherNode, [])}
+          {this.printNode(diff.otherNode, [], "_other")}
         </div>
       </div>
     )
@@ -131,12 +131,13 @@ class CompareVersionsDialog extends React.Component {
     return _.keys(flattenObj)
   }
 
-  printNode(node, pathsToMark) {
-    return node ? (<NodeDetailsContent isEditMode={false} node={node}
+  printNode(node, pathsToMark, keySuffix) {
+    return node ? (<NodeDetailsContent isEditMode={false}
+                                       key={node.id + keySuffix}
+                                       node={node}
                                        processDefinitionData={this.props.processDefinitionData}
                                        pathsToMark={pathsToMark}
-                                       onChange={() => {
-                                       }}/>) :
+                                       onChange={() => {}}/>) :
       (<div className="notPresent">Node not present</div>)
   }
 
