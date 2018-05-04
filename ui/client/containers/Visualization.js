@@ -14,6 +14,7 @@ import DialogMessages from '../common/DialogMessages';
 import LoaderSpinner from '../components/Spinner.js';
 import '../stylesheets/visualization.styl';
 import NodeUtils from '../components/graph/NodeUtils';
+import * as VisualizationUrl from '../common/VisualizationUrl'
 
 const Visualization = withRouter(React.createClass({
 
@@ -37,8 +38,7 @@ const Visualization = withRouter(React.createClass({
   },
 
   showModalDetailsIfNeeded(process) {
-    const urlNodeId = this.props.location.query.nodeId
-    const urlEdgeId = this.props.location.query.edgeId
+    const {urlNodeId, urlEdgeId} = VisualizationUrl.extractVisualizationParams(this.props.location.query)
     if (!_.isEmpty(urlNodeId)) {
       this.props.actions.displayModalNodeDetails(NodeUtils.getNodeById(urlNodeId, process))
     }
@@ -150,7 +150,7 @@ const Visualization = withRouter(React.createClass({
 }));
 
 Visualization.title = 'Visualization'
-Visualization.path = '/visualization/:processId'
+Visualization.path = VisualizationUrl.visualizationRouterPath
 Visualization.header = 'Wizualizacja'
 
 

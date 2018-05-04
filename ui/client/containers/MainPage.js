@@ -15,7 +15,7 @@ import DragArea from "../components/DragArea";
 import {connect} from "react-redux";
 import ActionsUtils from "../actions/ActionsUtils";
 import Dialogs from "../components/modals/Dialogs";
-
+import * as VisualizationUrl from '../common/VisualizationUrl'
 
 const App_ = React.createClass({
 
@@ -28,7 +28,7 @@ const App_ = React.createClass({
   },
 
   goToProcess: function () {
-    browserHistory.push('/visualization/' + this.props.params.processId)
+    browserHistory.push(VisualizationUrl.visualizationUrl(this.props.params.processId))
   },
 
   renderTopLeftButton: function () {

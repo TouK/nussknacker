@@ -18,6 +18,7 @@ import "../stylesheets/processes.styl";
 import filterIcon from '../assets/img/search.svg'
 import createProcessIcon from '../assets/img/create-process.svg'
 import editIcon from '../assets/img/edit-icon.png'
+import * as VisualizationUrl from '../common/VisualizationUrl'
 
 const SubProcesses = React.createClass({
 
@@ -56,7 +57,7 @@ const SubProcesses = React.createClass({
 
 
   showProcess(process) {
-    browserHistory.push('/visualization/' + process.id)
+    browserHistory.push(VisualizationUrl.visualizationUrl(process.id))
   },
 
   handleChange(event) {

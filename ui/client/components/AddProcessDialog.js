@@ -10,6 +10,7 @@ import "../stylesheets/visualization.styl";
 import SaveIcon from "../assets/img/save-icon.svg";
 import CloseIcon from "../assets/img/close-icon.svg";
 import HttpService from "../http/HttpService";
+import * as VisualizationUrl from '../common/VisualizationUrl'
 
 //TODO: Consider integrating with GenericModalDialog 
 class AddProcessDialog extends React.Component {
@@ -42,7 +43,7 @@ class AddProcessDialog extends React.Component {
     var processId = this.state.processId
     HttpService.createProcess(this.state.processId, this.state.processCategory, () => {
       this.closeDialog()
-      browserHistory.push('/visualization/' + processId)
+      browserHistory.push(VisualizationUrl.visualizationUrl(processId))
     }, this.props.isSubprocess)
   }
 

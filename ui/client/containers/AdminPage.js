@@ -8,6 +8,7 @@ import HttpService from "../http/HttpService";
 import ProcessUtils from "../common/ProcessUtils";
 import * as JsonUtils from '../common/JsonUtils';
 import JSONTree from 'react-json-tree'
+import * as VisualizationUrl from '../common/VisualizationUrl'
 
 import 'react-tabs/style/react-tabs.css';
 import filterIcon from '../assets/img/search.svg'
@@ -96,9 +97,9 @@ class ProcessSearch extends React.Component {
   render() {
     const found = _.map(ProcessUtils.search(this.props.processes, this.state.componentToFind), (result) => {
       return {
-        Process: result.process.id,
-        Node: result.node.id,
-        Category: result.process.processCategory
+        process: result.process.id,
+        node: result.node.id,
+        category: result.process.processCategory
       }
     })
     return (
@@ -117,13 +118,34 @@ class ProcessSearch extends React.Component {
           </span>
         </div>
         {this.componentToFindChosen() ?
-          <Table className="esp-table" data={found}
-                 sortable={['Process', 'Node', 'Category']}
-                 filterable={['Process', 'Node', 'Category']}
+          <Table className="esp-table"
+                 sortable={['process', 'node', 'category']}
+                 filterable={['process', 'node', 'category']}
                  noDataText="No matching records found."
                  hideFilterInput
                  filterBy={this.state.filterVal.toLowerCase()}
-          /> : null
+          >
+            <Thead>
+              <Th column="process">Process</Th>
+              <Th column="node">Node</Th>
+              <Th column="category">Category</Th>
+            </Thead>
+            {found.map(row => {
+              return (
+                <Tr>
+                  <Td column="process">{row.process}</Td>
+                  <Td column="node">
+                    {/* TODO this url won't work for nodes used in subprocesses */}
+                    <a target="_blank" href={VisualizationUrl.visualizationUrl(row.process, row.node)}>
+                      {row.node}
+                    </a>
+                    </Td>
+                  <Td column="category">{row.category}</Td>
+                </Tr>
+              )
+            })}
+
+            </Table> : null
         }
       </div>
     )

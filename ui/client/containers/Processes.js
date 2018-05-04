@@ -19,6 +19,7 @@ import filterIcon from '../assets/img/search.svg'
 import createProcessIcon from '../assets/img/create-process.svg'
 import editIcon from '../assets/img/edit-icon.png'
 import PeriodicallyReloadingComponent from './../components/PeriodicallyReloadingComponent'
+import * as VisualizationUrl from '../common/VisualizationUrl'
 
 class Processes extends PeriodicallyReloadingComponent {
 
@@ -70,7 +71,7 @@ class Processes extends PeriodicallyReloadingComponent {
 
   showProcess(process) {
     if(this.isGraph(process)) {
-      browserHistory.push('/visualization/' + process.id)
+      browserHistory.push(VisualizationUrl.visualizationUrl(process.id))
     }
   }
 

@@ -5,6 +5,7 @@ import NodeUtils from "../components/graph/NodeUtils";
 import * as SubprocessSchemaAligner from "../components/graph/SubprocessSchemaAligner";
 import _ from "lodash";
 import * as UndoRedoActions from "../undoredo/UndoRedoActions";
+import * as VisualizationUrl from '../common/VisualizationUrl'
 
 export function fetchProcessToDisplay(processId, versionId, businessView) {
   return (dispatch) => {
@@ -131,7 +132,7 @@ export function clearProcess() {
 }
 
 export function displayModalNodeDetails(node, readonly) {
-  browserHistory.replace({ pathname: window.location.pathname, search: `?nodeId=${node.id}`})
+  browserHistory.replace({ pathname: window.location.pathname, search: VisualizationUrl.nodeIdPart(node.id)})
   return {
     type: "DISPLAY_MODAL_NODE_DETAILS",
     nodeToDisplay: node,
@@ -140,7 +141,7 @@ export function displayModalNodeDetails(node, readonly) {
 }
 
 export function displayModalEdgeDetails(edge) {
-  browserHistory.replace({ pathname: window.location.pathname, search: `?edgeId=${NodeUtils.edgeId(edge)}`})
+  browserHistory.replace({ pathname: window.location.pathname, search: VisualizationUrl.edgeIdPart(NodeUtils.edgeId(edge))})
   return {
     type: "DISPLAY_MODAL_EDGE_DETAILS",
     edgeToDisplay: edge
