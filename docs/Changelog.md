@@ -7,7 +7,26 @@ under active development, so some parts of the API may change in the future.
 Nussknacker versions
 ====================
 
-0.7.0 
+0.0.8
+---------
+- [ITDEVESP-389] expressions code syntax highlighting
+- source/sink params as expressions
+- [ITDEVESP-389] multiline expression suggestions
+- [ITDEVESP-413] method signature and documentation in code suggestions
+- inject new node after dragging on edge
+- Query services tab in UI
+- subprocess disabling
+- [ITDEVESP-417] display http request-response for query service tab
+- flink kafka 0.11 connector
+- [ITDEVESP-452] - dynamic source return type
+- [ITDEVESP-458] SQL can be used as expression language
+- Processes page rendering optimized
+- [ITDEVESP-421] - suggestions for projections/selections in spel
+- upgrade to flink 1.4.2
+- upgrade to scala 2.11.12
+- [ITDEVESP-513] Make sinks disableable
+
+0.0.7 
 ---------
 - global imports in expressions
 - [ITDEVESP-298] - deployment standalone on multiple nodes
@@ -28,7 +47,7 @@ Nussknacker versions
 - nussknacker java api
 - spring version bump because of SPR-9194
 
-0.6.0
+0.0.6
 ---------
 First open source version :)
 
@@ -40,7 +59,8 @@ Table below contains versions of libraries/apps that can be used with Nussknacke
 
 |Nussknacker| Flink | Kafka | InfluxDB | Grafana |
 |-----------|-------|-------|----------|---------|
-| 0.7.0     |1.3.1  |0.9.0.1| 1.2.0    | 4.0.1   |
-| 0.6.0     |1.3.1  |0.9.0.1| 1.2.0    | 4.0.1   |
+| 0.0.8     |1.4.2  |0.11.0.2| 1.2.0    | 4.0.1   |
+| 0.0.7     |1.3.1  |0.9.0.1| 1.2.0    | 4.0.1   |
+| 0.0.6     |1.3.1  |0.9.0.1| 1.2.0    | 4.0.1   |
 
 
