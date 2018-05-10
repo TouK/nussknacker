@@ -15,7 +15,7 @@ import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
-import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DbConfig}
+import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DatabaseServer, DbConfig}
 import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment.ManagementActor
@@ -30,7 +30,7 @@ import pl.touk.nussknacker.ui.validation.ProcessValidation
 import pl.touk.process.report.influxdb.InfluxReporter
 import slick.jdbc.JdbcBackend
 
-import scala.util.Try
+
 
 object NussknackerApp extends App with Directives with LazyLogging {
 
@@ -49,7 +49,6 @@ object NussknackerApp extends App with Directives with LazyLogging {
     interface = "0.0.0.0",
     port = port
   )
-
   def initializeRoute()(implicit system: ActorSystem, materializer: ActorMaterializer) : Route = {
 
     import system.dispatcher
@@ -63,6 +62,10 @@ object NussknackerApp extends App with Directives with LazyLogging {
     logger.info(s"Ui config loaded: \nfeatureTogglesConfig: $featureTogglesConfig\nnodesConfig:$nodesConfig")
 
     val nodeCategoryMapping = config.getOrElse[Map[String, String]]("processConfig.nodeCategoryMapping", Map.empty)
+
+    val hsqlServer = config.getAs[DatabaseServer.Config]("jdbcServer")
+      .map(DatabaseServer(_))
+    hsqlServer.foreach(_.start())
 
     val db: DbConfig = {
       val db = JdbcBackend.Database.forConfig("db", config)

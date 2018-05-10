@@ -3,10 +3,24 @@ package pl.touk.nussknacker.ui.db
 import java.io.PrintWriter
 import java.sql.Connection
 import java.util.logging.Logger
-import javax.sql.DataSource
 
+import javax.sql.DataSource
 import org.flywaydb.core.Flyway
+import org.hsqldb.server.Server
 import slick.jdbc.JdbcBackend
+
+object DatabaseServer {
+  private[this] val i = 0
+
+  def apply(config: DatabaseServer.Config): Server = {
+    val server = new Server()
+    server.setDatabasePath(i, s"file:${config.dbFilePath};user=${config.user};password=${config.password}")
+    server.setDatabaseName(i, config.dbName)
+    config.port.foreach(server.setPort)
+    server
+  }
+  case class Config(dbFilePath:String, dbName:String, user:String, password:String, port:Option[Int])
+}
 
 class DatabaseInitializer(db: JdbcBackend.Database) {
   def initDatabase(): JdbcBackend.Database = {
