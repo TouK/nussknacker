@@ -1756,9 +1756,9 @@
                     "type": "fill"
                   }
                 ],
-                "measurement": "KafkaConsumer.records-lag-max",
+                "measurement": "records-lag-max",
                 "policy": "default",
-                "query": "SELECT max(\"value\") FROM \"KafkaConsumer.records-lag-max\" WHERE \"host\" =~ /$hosts$/ AND \"process\" =~ /$processName$/ AND $timeFilter GROUP BY time($interval), \"process\" fill(none)",
+                "query": "SELECT max(\"value\") FROM \"records-lag-max\" WHERE \"host\" =~ /$hosts$/ AND \"process\" =~ /$processName$/ AND $timeFilter GROUP BY time($interval), \"process\" fill(none)",
                 "refId": "A",
                 "resultFormat": "time_series",
                 "select": [
