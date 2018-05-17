@@ -76,7 +76,7 @@ class DeploymentServiceSpec extends FlatSpec with Matchers {
 
   }
 
-  it should "not allowe deployment on same path" in {
+  it should "not allow deployment on same path" in {
     val id = "process1"
     val id2 = "process2"
 

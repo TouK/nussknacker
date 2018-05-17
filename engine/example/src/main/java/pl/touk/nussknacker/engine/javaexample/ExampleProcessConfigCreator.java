@@ -132,7 +132,7 @@ public class ExampleProcessConfigCreator implements ProcessConfigCreator {
 
     @Override
     public ExceptionHandlerFactory exceptionHandlerFactory(Config config) {
-        return new LoggingExceptionHandlerFactory();
+        return new LoggingExceptionHandlerFactory(config);
     }
 
     @Override
