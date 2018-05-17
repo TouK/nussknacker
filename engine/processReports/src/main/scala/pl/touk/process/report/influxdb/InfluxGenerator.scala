@@ -4,7 +4,6 @@ import java.time.format.DateTimeFormatter
 import java.time.{LocalDateTime, ZoneId, ZonedDateTime}
 
 import argonaut.{DecodeJson, DecodeResult}
-import com.ning.http.client.AsyncHttpClient
 import com.typesafe.scalalogging.LazyLogging
 import dispatch._
 import pl.touk.nussknacker.engine.dispatch.LoggingDispatchClient
@@ -44,12 +43,6 @@ class InfluxGenerator(url: String, user: String, password: String, dbName: Strin
       query(queryString).map(
         _.map(r => (r.values.head.lift(1).getOrElse("UNKNOWN"), r.values.head.lift(2).getOrElse(0L)))
           .groupBy(_._1.asInstanceOf[String]).mapValues(_.map(_._2.asInstanceOf[Number].longValue()).sum))
-        .map(_.map {
-          case (k, v) =>
-            //how can this be handled in asynclient?
-            val conv = new String(k.getBytes("ISO-8859-1"), "UTF-8")
-            (conv, v)
-        })
     }
 
     for {
