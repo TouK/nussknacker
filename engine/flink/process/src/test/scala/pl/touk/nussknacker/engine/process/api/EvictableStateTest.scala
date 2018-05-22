@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.process.api
 
 import org.apache.flink.api.common.state.ValueStateDescriptor
 import org.apache.flink.streaming.api.TimeCharacteristic
-import org.apache.flink.streaming.api.functions.ProcessFunction
+import org.apache.flink.streaming.api.functions.{KeyedProcessFunction, ProcessFunction}
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.util.Collector
 import org.scalatest.concurrent.Eventually
@@ -80,7 +80,7 @@ class TestOperator extends EvictableStateFunction[String, String, List[String]] 
 
   override protected def stateDescriptor: ValueStateDescriptor[List[String]] = new ValueStateDescriptor("st1", classOf[List[String]])
 
-  override def processElement(value: String, ctx: ProcessFunction[String, String]#Context, out: Collector[String]): Unit = {
+  override def processElement(value: String, ctx: KeyedProcessFunction[String, String, String]#Context, out: Collector[String]): Unit = {
     moveEvictionTime(5000, ctx)
 
     val newState = Option(state.value()).getOrElse(List()) :+ value

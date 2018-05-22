@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.example.custom
 
 import org.apache.flink.api.common.state.ValueStateDescriptor
 import org.apache.flink.api.scala._
-import org.apache.flink.streaming.api.functions.ProcessFunction
+import org.apache.flink.streaming.api.functions.{KeyedProcessFunction, ProcessFunction}
 import org.apache.flink.streaming.api.scala.DataStream
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
@@ -32,7 +32,7 @@ class CounterFunction(lengthInMillis: Long) extends TimestampedEvictableStateFun
     new ValueStateDescriptor[MultiMap[Long, Int]]("state", classOf[MultiMap[Long, Int]])
 
 
-  override def processElement(ir: InterpretationResult, ctx: ProcessFunction[InterpretationResult, ValueWithContext[Any]]#Context,
+  override def processElement(ir: InterpretationResult, ctx: KeyedProcessFunction[String, InterpretationResult, ValueWithContext[Any]]#Context,
                               out: Collector[ValueWithContext[Any]]): Unit = {
 
     moveEvictionTime(lengthInMillis, ctx)

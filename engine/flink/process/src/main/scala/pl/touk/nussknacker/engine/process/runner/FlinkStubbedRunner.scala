@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.process.runner
 
 import org.apache.flink.api.common.JobExecutionResult
 import org.apache.flink.core.fs.FileSystem
-import org.apache.flink.configuration.{ConfigConstants, Configuration, CoreOptions}
+import org.apache.flink.configuration.{ConfigConstants, Configuration, CoreOptions, TaskManagerOptions}
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import org.apache.flink.runtime.minicluster.LocalFlinkMiniCluster
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
@@ -35,7 +35,7 @@ trait FlinkStubbedRunner {
 
     val configuration: Configuration = new Configuration
     configuration.addAll(jobGraph.getJobConfiguration)
-    configuration.setInteger(ConfigConstants.TASK_MANAGER_NUM_TASK_SLOTS, env.getParallelism)
+    configuration.setInteger(TaskManagerOptions.NUM_TASK_SLOTS, env.getParallelism)
     //FIXME: reversing flink default order
     configuration.setString(CoreOptions.CLASSLOADER_RESOLVE_ORDER, "parent-first")
 

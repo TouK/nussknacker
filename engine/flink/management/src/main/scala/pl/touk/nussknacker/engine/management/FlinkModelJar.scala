@@ -25,7 +25,7 @@ class FlinkModelJar {
 
   private def prepareModelFile(modelData: ModelData): File = {
     //currently we want to have one such file for one nussknacker execution
-    val tempFile = Files.createTempFile("tempModelJar", "").toFile
+    val tempFile = Files.createTempFile("tempModelJar", ".jar").toFile
     tempFile.deleteOnExit()
 
     val output = new FileOutputStream(tempFile)

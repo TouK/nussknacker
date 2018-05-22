@@ -5,7 +5,7 @@ import java.lang
 import org.apache.flink.api.common.state.{State, ValueState, ValueStateDescriptor}
 import org.apache.flink.api.common.typeutils.base.StringSerializer
 import org.apache.flink.configuration.Configuration
-import org.apache.flink.streaming.api.functions.ProcessFunction
+import org.apache.flink.streaming.api.functions.{KeyedProcessFunction, ProcessFunction}
 import org.apache.flink.streaming.api.operators._
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api.util.MultiMap
@@ -54,7 +54,7 @@ abstract class EvictableState[In, Out] extends AbstractStreamOperator[Out]
 
 }
 
-abstract class EvictableStateFunction[In, Out, StateType] extends ProcessFunction[In, Out] {
+abstract class EvictableStateFunction[In, Out, StateType] extends KeyedProcessFunction[String, In, Out] {
 
   protected var lastEventTimeForKey : ValueState[java.lang.Long] = _
 
@@ -68,7 +68,7 @@ abstract class EvictableStateFunction[In, Out, StateType] extends ProcessFunctio
     state = getRuntimeContext.getState(stateDescriptor)
   }
 
-  override def onTimer(timestamp: Long, ctx: ProcessFunction[In, Out]#OnTimerContext, out: Collector[Out]): Unit = {
+  override def onTimer(timestamp: Long, ctx: KeyedProcessFunction[String, In, Out]#OnTimerContext, out: Collector[Out]): Unit = {
     val noNewerEventsArrived = lastEventTimeForKey.value() == timestamp
     if (noNewerEventsArrived) {
       state.clear()
@@ -76,7 +76,7 @@ abstract class EvictableStateFunction[In, Out, StateType] extends ProcessFunctio
     }
   }
 
-  protected def moveEvictionTime(offset: Long, ctx: ProcessFunction[In, Out]#Context) : Unit= {
+  protected def moveEvictionTime(offset: Long, ctx: KeyedProcessFunction[String, In, Out]#Context) : Unit= {
     val time = ctx.timestamp() + offset
     //we don't delete former timer, because it's inefficient
     ctx.timerService().registerEventTimeTimer(time)
@@ -87,7 +87,7 @@ abstract class EvictableStateFunction[In, Out, StateType] extends ProcessFunctio
 
 abstract class TimestampedEvictableStateFunction[In, Out, StateType] extends EvictableStateFunction[In, Out, MultiMap[Long, StateType]] {
 
-  override protected def moveEvictionTime(offset: Long, ctx: ProcessFunction[In, Out]#Context): Unit = {
+  override protected def moveEvictionTime(offset: Long, ctx: KeyedProcessFunction[String, In, Out]#Context): Unit = {
     super.moveEvictionTime(offset, ctx)
     state.update( stateValue.from(ctx.timestamp() - offset))
   }

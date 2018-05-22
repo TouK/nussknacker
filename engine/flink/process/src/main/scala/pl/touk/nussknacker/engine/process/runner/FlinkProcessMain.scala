@@ -1,17 +1,19 @@
 package pl.touk.nussknacker.engine.process.runner
 
 import com.typesafe.config.Config
+import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
-import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
+import pl.touk.nussknacker.engine.flink.util.FlinkArgsDecodeHack
 import pl.touk.nussknacker.engine.process.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.process.compiler.StandardFlinkProcessCompiler
 import pl.touk.nussknacker.engine.util.loader.ProcessConfigCreatorLoader
 
-object FlinkProcessMain extends FlinkRunner {
+object FlinkProcessMain extends FlinkRunner with LazyLogging {
 
 
-  def main(args: Array[String]) : Unit = {
+  def main(argsWithHack: Array[String]) : Unit = {
+    val args =  FlinkArgsDecodeHack.prepareProgramArgs(argsWithHack)
 
     require(args.nonEmpty, "Process json should be passed as a first argument")
     //TODO: Too many arguments.

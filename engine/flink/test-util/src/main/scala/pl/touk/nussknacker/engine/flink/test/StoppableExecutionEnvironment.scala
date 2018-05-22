@@ -9,6 +9,7 @@ import org.apache.flink.runtime.minicluster.LocalFlinkMiniCluster
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.graph.StreamGraph
 import org.apache.flink.test.util.TestBaseUtils
+import org.apache.flink.util.OptionalFailure
 
 object StoppableExecutionEnvironment {
 
@@ -49,7 +50,7 @@ class StoppableExecutionEnvironment(userFlinkClusterConfig: Configuration,
     localFlinkMiniCluster = TestBaseUtils.startCluster(jobGraph.getJobConfiguration, singleActorSystem)
 
     val submissionRes: JobSubmissionResult = localFlinkMiniCluster.submitJobDetached(jobGraph)
-    new JobExecutionResult(submissionRes.getJobID, 0, new java.util.HashMap[String, AnyRef]())
+    new JobExecutionResult(submissionRes.getJobID, 0, new java.util.HashMap[String, OptionalFailure[AnyRef]]())
   }
 
   def stop(): Unit = {

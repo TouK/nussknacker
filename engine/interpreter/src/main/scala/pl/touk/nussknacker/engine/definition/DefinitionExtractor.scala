@@ -158,9 +158,9 @@ object DefinitionExtractor {
 
 object TypeInfos {
 
-  case class Parameter private(name: String, refClazz: ClazzRef)
+  case class Parameter(name: String, refClazz: ClazzRef)
 
-  case class MethodInfo private(parameters: List[Parameter], refClazz: ClazzRef, description: Option[String])
+  case class MethodInfo(parameters: List[Parameter], refClazz: ClazzRef, description: Option[String])
 
   case class ClazzDefinition(clazzName: ClazzRef, methods: Map[String, MethodInfo]) {
     def getMethodClazzRef(methodName: String): Option[ClazzRef] = {
@@ -168,7 +168,7 @@ object TypeInfos {
     }
 
     def getPropertyOrFieldClazzRef(methodName: String): Option[ClazzRef] = {
-      val filteredMethods = methods.filter(_._2.parameters.size == 0)
+      val filteredMethods = methods.filter(_._2.parameters.isEmpty)
       val methodInfoes = filteredMethods.get(methodName)
       methodInfoes.map(_.refClazz)
     }

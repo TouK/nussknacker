@@ -63,11 +63,9 @@ object TestFactory extends TestPermissions{
   //FIXME: update
   def withAllPermissions(route: RouteWithUser) = withPermissions(route, testPermissionAll)
 
-  class MockProcessManager extends FlinkProcessManager(FlinkModelData(ConfigFactory.load()), false, null){
+  class MockProcessManager extends FlinkProcessManager(FlinkModelData(ConfigFactory.load()), false){
 
-    override def findJobStatus(name: String): Future[Option[ProcessState]] = Future.successful(None)
-
-    override def cancel(name: String): Future[Unit] = Future.successful(Unit)
+    override def findJobStatus(name: String): Future[Option[ProcessState]] = Future.successful(Some(ProcessState("1", "RUNNING", 0)))
 
     import ExecutionContext.Implicits.global
 
@@ -100,6 +98,12 @@ object TestFactory extends TestPermissions{
         failDeployment.set(false)
       }
     }
+
+    override protected def cancel(job: ProcessState): Future[Unit] = Future.successful(Unit)
+
+    override protected def makeSavepoint(job: ProcessState, savepointDir: Option[String]): Future[String] = Future.successful("dummy")
+
+    override protected def runProgram(processId: String, mainClass: String, args: List[String], savepointPath: Option[String]): Future[Unit] = ???
   }
 
   object SampleSubprocessRepository extends SubprocessRepository {

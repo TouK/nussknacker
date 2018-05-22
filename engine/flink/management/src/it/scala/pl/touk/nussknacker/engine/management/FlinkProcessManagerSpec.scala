@@ -58,8 +58,12 @@ class FlinkProcessManagerSpec extends FunSuite with Matchers with ScalaFutures w
 
     val kafkaClient = new KafkaClient(config.getString("processConfig.kafka.kafkaAddress"),
       config.getString("processConfig.kafka.zkAddress"))
+    logger.info("Kafka client created")
+
     kafkaClient.createTopic(outTopic, 1)
     kafkaClient.createTopic(inTopic, 1)
+
+    logger.info("Kafka topics created, deploying process")
 
     deployProcessAndWaitIfRunning(kafkaProcess, empty(processId))
 
@@ -150,6 +154,7 @@ class FlinkProcessManagerSpec extends FunSuite with Matchers with ScalaFutures w
   }
 
   def empty(processId: String): ProcessVersion = ProcessVersion.empty.copy(processId=processId)
+
   test("deploy custom process") {
     val processId = "customProcess"
 
@@ -174,7 +179,6 @@ class FlinkProcessManagerSpec extends FunSuite with Matchers with ScalaFutures w
     val configWithSignals = config
       .withValue("processConfig.signals.topic", ConfigValueFactory.fromAnyRef(signalsTopic))
     val flinkModelData = FlinkModelData(configWithSignals)
-    val processManager = FlinkProcessManager(flinkModelData, configWithSignals)
 
     val kafkaClient = new KafkaClient(
       configWithSignals.getString("processConfig.kafka.kafkaAddress"),

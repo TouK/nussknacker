@@ -84,7 +84,7 @@ val commonSettings =
   )
 
 val akkaV = "2.4.20" //same version as in Flink
-val flinkV = "1.4.2"
+val flinkV = "1.6.0"
 val kafkaMajorV = "0.11"
 val kafkaV = s"$kafkaMajorV.0.2"
 val springV = "5.0.0.M5"
@@ -191,12 +191,12 @@ lazy val management = (project in engine("flink/management")).
     libraryDependencies ++= {
       Seq(
         "org.typelevel" %% "cats-core" % catsV,
-        "org.apache.flink" %% "flink-clients" % flinkV % "provided",
-        "org.apache.flink" % "flink-shaded-curator" % flinkV % "provided",
-        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
-
+        "org.apache.flink" %% "flink-streaming-scala" % flinkV % flinkScope
+        excludeAll(
+            ExclusionRule("log4j", "log4j"),
+            ExclusionRule("org.slf4j", "slf4j-log4j12")
+          ),
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
-
         "org.scalatest" %% "scalatest" % scalaTestV % "it,test",
         "com.whisk" %% "docker-testkit-scalatest" % "0.9.0" % "it,test",
         "com.whisk" %% "docker-testkit-impl-spotify" % "0.9.0" % "it,test",
@@ -205,7 +205,7 @@ lazy val management = (project in engine("flink/management")).
         "ch.qos.logback" % "logback-core" % logbackV % "it,test"
       )
     }
-  ).dependsOn(interpreter, queryableState, kafkaTestUtil % "it,test",securityApi)
+  ).dependsOn(interpreter, queryableState, httpUtils, kafkaTestUtil % "it,test", securityApi)
 
 lazy val standaloneSample = (project in engine("standalone/engine/sample")).
   settings(commonSettings).
@@ -608,20 +608,6 @@ lazy val ui = (project in file("ui/server"))
     ).value,
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" %% "flink-streaming-scala" % flinkV % flinkScope
-        excludeAll(
-            ExclusionRule("com.google.code.findbugs", "jsr305"),
-            ExclusionRule("log4j", "log4j"),
-            ExclusionRule("org.slf4j", "slf4j-log4j12")
-          ),
-        "org.apache.flink" %% "flink-clients" % flinkV % flinkScope
-        //tutaj mamy dwie wersje jsr305 we flinku i assembly sie pluje...
-        excludeAll(
-          ExclusionRule("com.google.code.findbugs", "jsr305"),
-          ExclusionRule("log4j", "log4j"),
-          ExclusionRule("org.slf4j", "slf4j-log4j12")
-
-        ),
         "com.typesafe.akka" %% "akka-http" % akkaHttpV force(),
         "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test" force(),
 

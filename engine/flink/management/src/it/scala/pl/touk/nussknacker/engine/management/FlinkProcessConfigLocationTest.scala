@@ -13,7 +13,8 @@ import scala.collection.JavaConversions._
 class FlinkProcessConfigLocationTest extends FunSuite with DockerTest with Matchers {
 
 
-  test("reads config from local dir") {
+  //FIXME: do we still need it??
+  ignore("reads config from local dir") {
     processManager.findJobStatus("aaa").futureValue shouldBe None
   }
 

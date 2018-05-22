@@ -6,10 +6,12 @@ import com.typesafe.config.ConfigFactory
 import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer011
+import pl.touk.nussknacker.engine.flink.util.FlinkArgsDecodeHack
 
 object CustomProcess {
 
-  def main(args: Array[String]) : Unit = {
+  def main(argsWithHack: Array[String]) : Unit = {
+    val args =  FlinkArgsDecodeHack.prepareProgramArgs(argsWithHack)
 
     val env = StreamExecutionEnvironment.getExecutionEnvironment
 

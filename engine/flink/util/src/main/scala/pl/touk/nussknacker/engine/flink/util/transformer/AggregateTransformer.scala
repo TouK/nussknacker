@@ -8,14 +8,14 @@ import org.apache.flink.api.common.state.ValueStateDescriptor
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.dropwizard.metrics.DropwizardHistogramWrapper
 import org.apache.flink.metrics.Histogram
-import org.apache.flink.streaming.api.functions.ProcessFunction
+import org.apache.flink.streaming.api.functions.{KeyedProcessFunction, ProcessFunction}
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation}
 import pl.touk.nussknacker.engine.flink.api.state.EvictableStateFunction
-import scala.collection.JavaConverters._
 
+import scala.collection.JavaConverters._
 import scala.collection.immutable.TreeMap
 import scala.concurrent.duration.Duration
 
@@ -58,7 +58,7 @@ class AggregatorFunction[T <: AnyRef](aggregateBy: LazyInterpreter[T], lengthInM
   = new ValueStateDescriptor[TreeMap[Long, AggregationType]]("state", classOf[TreeMap[Long, AggregationType]]).asInstanceOf[ValueStateDescriptor[TreeMap[Long, AnyRef]]]
 
   override def processElement(ir: InterpretationResult,
-                              ctx: ProcessFunction[InterpretationResult, ValueWithContext[Any]]#Context,
+                              ctx: KeyedProcessFunction[String, InterpretationResult, ValueWithContext[Any]]#Context,
                               out: Collector[ValueWithContext[Any]]): Unit = {
 
     moveEvictionTime(lengthInMillis, ctx)
@@ -79,7 +79,7 @@ class AggregatorFunction[T <: AnyRef](aggregateBy: LazyInterpreter[T], lengthInM
     aggregator.finalAggregation(foldedState)
   }
 
-  private def computeNewState(ir: InterpretationResult, ctx: ProcessFunction[InterpretationResult, ValueWithContext[Any]]#Context) = {
+  private def computeNewState(ir: InterpretationResult, ctx: KeyedProcessFunction[String, InterpretationResult, ValueWithContext[Any]]#Context) = {
     val newValue = aggregateBy.syncInterpretationFunction(ir)
 
     val current: TreeMap[Long, AggregationType] = currentState(ctx)
@@ -91,11 +91,11 @@ class AggregatorFunction[T <: AnyRef](aggregateBy: LazyInterpreter[T], lengthInM
     current.updated(timestamp, aggregator.add(valueForTimestamp, newValue))
   }
 
-  private def computeTimestampToStore(ctx: ProcessFunction[InterpretationResult, ValueWithContext[Any]]#Context) = {
+  private def computeTimestampToStore(ctx: KeyedProcessFunction[String, InterpretationResult, ValueWithContext[Any]]#Context) = {
     (ctx.timestamp() / minimalResolutionMs) * minimalResolutionMs
   }
 
-  private def currentState(ctx: ProcessFunction[InterpretationResult, ValueWithContext[Any]]#Context): TreeMap[Long, AggregationType] = {
+  private def currentState(ctx: KeyedProcessFunction[String, InterpretationResult, ValueWithContext[Any]]#Context): TreeMap[Long, AggregationType] = {
     val currentState = Option(state.value().asInstanceOf[TreeMap[Long, AggregationType]]).getOrElse(TreeMap[Long, AggregationType]()(Ordering.Long))
     currentState.from(ctx.timestamp() - lengthInMillis)
   }

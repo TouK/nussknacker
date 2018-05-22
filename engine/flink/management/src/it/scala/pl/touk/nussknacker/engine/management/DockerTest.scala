@@ -37,7 +37,7 @@ trait DockerTest extends DockerTestKit with ScalaFutures with LazyLogging {
     val dir = Files.createTempDirectory("forDockerfile")
     val dirFile = dir.toFile
 
-    List("Dockerfile", "entrypointWithIP.sh", "conf.yml").foreach { file =>
+    List("Dockerfile", "entrypointWithIP.sh", "conf.yml", "docker-entrypoint.sh").foreach { file =>
       FileUtils.copyInputStreamToFile(getClass.getResourceAsStream(s"/docker/$file"), new File(dirFile, file))
     }
 
@@ -48,12 +48,13 @@ trait DockerTest extends DockerTestKit with ScalaFutures with LazyLogging {
 
   val KafkaPort = 9092
   val ZookeeperDefaultPort = 2181
-  val FlinkJobManagerPort = 6123
+  val FlinkJobManagerRestPort = 8081
+
 
   lazy val zookeeperContainer =
     DockerContainer("wurstmeister/zookeeper:3.4.6", name = Some("zookeeper"))
 
-  lazy val kafkaContainer = DockerContainer("wurstmeister/kafka:0.10.2.1", name = Some("kafka"))
+  lazy val kafkaContainer = DockerContainer("wurstmeister/kafka:1.0.1", name = Some("kafka"))
     .withEnv(s"KAFKA_ADVERTISED_PORT=$KafkaPort",
               s"KAFKA_ZOOKEEPER_CONNECT=zookeeper:$ZookeeperDefaultPort",
               "KAFKA_BROKER_ID=0",
@@ -69,7 +70,7 @@ trait DockerTest extends DockerTestKit with ScalaFutures with LazyLogging {
     baseFlink("jobmanager")
       .withCommand("jobmanager")
       .withEnv("JOB_MANAGER_RPC_ADDRESS_COMMAND=grep $HOSTNAME /etc/hosts | awk '{print $1}'", s"SAVEPOINT_DIR_NAME=$savepointDirName")
-      .withReadyChecker(DockerReadyChecker.LogLineContains("Resource Manager associating").looped(5, 1 second))
+      .withReadyChecker(DockerReadyChecker.LogLineContains("Recovering all persisted jobs").looped(5, 1 second))
       .withLinks(ContainerLink(zookeeperContainer, "zookeeper"))
       .withVolumes(List(VolumeMapping(savepointDir, savepointDir, true)))
       .withLogLineReceiver(LogLineReceiver(withErr = true, s => {
@@ -79,7 +80,7 @@ trait DockerTest extends DockerTestKit with ScalaFutures with LazyLogging {
 
   lazy val taskManagerContainer = baseFlink("taskmanager")
     .withCommand("taskmanager")
-    .withReadyChecker(DockerReadyChecker.LogLineContains("Starting TaskManager actor").looped(5, 1 second))
+    .withReadyChecker(DockerReadyChecker.LogLineContains("Successful registration at resource manager").looped(5, 1 second))
     .withLinks(
       ContainerLink(kafkaContainer, "kafka"),
       ContainerLink(zookeeperContainer, "zookeeper"),
@@ -91,7 +92,7 @@ trait DockerTest extends DockerTestKit with ScalaFutures with LazyLogging {
   def config : Config = ConfigFactory.load()
     .withValue("processConfig.kafka.zkAddress", fromAnyRef(s"${ipOfContainer(zookeeperContainer)}:$ZookeeperDefaultPort"))
     .withValue("processConfig.kafka.kafkaAddress", fromAnyRef(s"${ipOfContainer(kafkaContainer)}:$KafkaPort"))
-    .withValue("flinkConfig.customConfig.high-availability.zookeeper.quorum", fromAnyRef(s"${ipOfContainer(zookeeperContainer)}:$ZookeeperDefaultPort"))
+    .withValue("flinkConfig.restUrl", fromAnyRef(s"http://${ipOfContainer(jobManagerContainer)}:$FlinkJobManagerRestPort"))
 
   private def ipOfContainer(container: DockerContainer) = container.getIpAddresses().futureValue.head
 
@@ -105,7 +106,7 @@ trait DockerTest extends DockerTestKit with ScalaFutures with LazyLogging {
     tempDir.toFile.getName
   }
 
-  protected lazy val processManager = FlinkProcessManager(config)
+  protected lazy val processManager = FlinkRestManager(config)
 
 
 }
