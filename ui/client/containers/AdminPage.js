@@ -195,7 +195,7 @@ export function mapProcessDefinitionToServices(services) {
     ), s => s.name
   );
 }
-//TODO: parameters should dave default values, like in modal.
+
 class TestServices extends React.Component {
   constructor(props) {
     super(props);
@@ -203,7 +203,7 @@ class TestServices extends React.Component {
       processingType: '',
       serviceName: '',
       nodeParameters: {},
-      parametersValues:{},
+      parametersValues: [],
       queryResult: {
         response: {},
         errorMessage: null
@@ -214,10 +214,10 @@ class TestServices extends React.Component {
   }
 
   componentDidMount(){
-    this.setService(this.services, this.services[0].name)
+    this.setService(this.services[0].name)
   }
 
-  setService(services, serviceName){
+  setService(serviceName){
     const initializeParametersValues = params =>
       _.map(params, p => (
         {
@@ -228,28 +228,32 @@ class TestServices extends React.Component {
           }
         }
       ));
-    const service = _.find(services, s=>s.name===serviceName)
+
+    const service = _.find(this.services, s=>s.name===serviceName)
+
     this.setState(
       {
         processingType: service.processingType,
-        serviceName: service.name,
+        serviceName: serviceName,
         nodeParameters: service.parameters,
-        parametersValues: initializeParametersValues(service.parameters||[]),
+        parametersValues: this.cachedServiceParams(serviceName, service.processingType) || initializeParametersValues(service.parameters||[]),
         queryResult: {
           response: {},
           errorMessage: null
         }
       })
-  };
+  }
+
   serviceList() {
     return (
-        <select className="node-input" onChange={e => this.setService(this.services, e.target.value)}>
+        <select className="node-input" onChange={e => this.setService(e.target.value)}>
           {this.services.map((service) =>
             <option key={service.name}>{service.name}</option>)}
         </select>
     )
   }
-//TODO: use NodeDetailsContent (after NDC refactor)
+
+  //TODO: use NodeDetailsContent (after NDC refactor)
   parametersList(params) {
     const setParam = paramName => value => {
       const params = this.state.parametersValues;
@@ -264,7 +268,11 @@ class TestServices extends React.Component {
           this.formRow(
             <span>{param.name}<div className="labelFooter">{ProcessUtils.humanReadableType(param.refClazzName)}</div></span>,
             <span>
-              <input className="node-input" onChange={e => setParam(param.name)(e.target.value)}/>
+              <input
+                className="node-input"
+                value={this.findParamExpression(param.name)}
+                onChange={e => setParam(param.name)(e.target.value)}
+              />
             </span>
           )
         )}
@@ -277,6 +285,7 @@ class TestServices extends React.Component {
       if (r.status === 500) {
         r.json().then(error => this.setState({queryResult: {response: {}, errorMessage: error.message}}))
       } else {
+        this.cacheServiceParams(this.state.serviceName, this.state.processingType, this.state.parametersValues)
         r.json().then(response => this.setState({queryResult: {response: response, errorMessage: null}}))
       }
     }
@@ -286,6 +295,26 @@ class TestServices extends React.Component {
       this.state.serviceName,
       this.state.parametersValues
     ).then(showResponse)
+  }
+
+  paramsCacheKey(serviceName, processingType) { return `${serviceName}:${processingType}:parameters` }
+
+  cachedServiceParams(serviceName, processingType) {
+    const key = this.paramsCacheKey(serviceName, processingType)
+    const cached = localStorage.getItem(key)
+
+    if (cached) return JSON.parse(cached)
+  }
+
+  cacheServiceParams(serviceName, processingType, params) {
+    const key = this.paramsCacheKey(serviceName, processingType)
+    const value = JSON.stringify(params)
+
+    localStorage.setItem(key, value)
+  }
+
+  findParamExpression(name) {
+    return _.find(this.state.parametersValues, p => p.name===name).expression.expression
   }
 
   formRow(label, input) {
