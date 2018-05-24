@@ -289,7 +289,7 @@ object FlinkProcessRegistrar {
       (try {
         Await.result(interpreter.interpret(compiledNode, metaData, input), processTimeout)
       } catch {
-        case NonFatal(error) => Right(EspExceptionInfo(Some(node.id), error, input))
+        case NonFatal(error) => Right(EspExceptionInfo(None, error, input))
       }).fold(collector.collect, exceptionHandler.handle)
     }
   }
@@ -328,12 +328,12 @@ object FlinkProcessRegistrar {
             case Success(Right(exInfo)) => handleException(collector, exInfo)
             case Failure(ex) =>
               logger.warn("Unexpected error", ex)
-              handleException(collector, EspExceptionInfo(Some(node.id), ex, input))
+              handleException(collector, EspExceptionInfo(None, ex, input))
           }
       } catch {
         case NonFatal(ex) =>
           logger.warn("Unexpected error", ex)
-          handleException(collector, EspExceptionInfo(Some(node.id), ex, input))
+          handleException(collector, EspExceptionInfo(None, ex, input))
       }
     }
 
