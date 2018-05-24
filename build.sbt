@@ -573,6 +573,7 @@ lazy val ui = (project in file("ui/server"))
         "ch.qos.logback" % "logback-core" % logbackV,
         "ch.qos.logback" % "logback-classic" % logbackV,
         "org.slf4j" % "log4j-over-slf4j" % "1.7.21",
+        "com.carrotsearch" % "java-sizeof" % "0.0.5",
 
         "com.typesafe.slick" %% "slick" % slickV,
         "com.typesafe.slick" %% "slick-hikaricp" % slickV,

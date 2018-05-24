@@ -54,6 +54,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
     import system.dispatcher
 
     val config = system.settings.config
+    val testResultsMaxSizeInBytes = config.getOrElse[Int]("testResultsMaxSizeInBytes",  500 * 1024 * 1000)
     val environment = config.getString("environment")
     val featureTogglesConfig = FeatureTogglesConfig.create(config)
     //TODO clean up config and make it more typed
@@ -108,7 +109,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
           processActivityRepository, processValidation, typesForCategories, newProcessPreparer),
           new ProcessesExportResources(processRepository, processActivityRepository),
           new ProcessActivityResource(processActivityRepository, attachmentService),
-          ManagementResources(counter, managementActor),
+          ManagementResources(counter, managementActor, testResultsMaxSizeInBytes),
           new ValidationResources(processValidation),
           new DefinitionResources(modelData, subprocessRepository, extractValueParameterByConfigThenType, nodesConfig, nodeCategoryMapping),
           new SignalsResources(modelData(ProcessingType.Streaming), processRepository),

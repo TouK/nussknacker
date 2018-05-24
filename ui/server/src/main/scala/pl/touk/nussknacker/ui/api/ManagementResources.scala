@@ -12,6 +12,7 @@ import akka.http.scaladsl.server.Directives._
 import argonaut.Argonaut._
 import argonaut.{Json, PrettyParams}
 import com.typesafe.scalalogging.LazyLogging
+import com.carrotsearch.sizeof.RamUsageEstimator
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.deployment.test.{TestData, TestResults}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -31,15 +32,16 @@ import scala.concurrent.duration._
 
 object ManagementResources {
 
-  def apply(processCounter: ProcessCounter, managementActor: ActorRef)
+  def apply(processCounter: ProcessCounter, managementActor: ActorRef, testResultsMaxSizeInBytes: Int)
            (implicit ec: ExecutionContext, mat: Materializer): ManagementResources = {
-    new ManagementResources(processCounter, managementActor)
+    new ManagementResources(processCounter, managementActor, testResultsMaxSizeInBytes)
   }
 
 }
 
 class ManagementResources(processCounter: ProcessCounter,
-                          val managementActor: ActorRef)(implicit ec: ExecutionContext, mat: Materializer) extends Directives with LazyLogging  with RouteWithUser {
+                          val managementActor: ActorRef,
+                          testResultsMaxSizeInBytes: Int)(implicit ec: ExecutionContext, mat: Materializer) extends Directives with LazyLogging  with RouteWithUser {
 
   import UiCodecs._
 
@@ -121,11 +123,23 @@ class ManagementResources(processCounter: ProcessCounter,
       case Right(process) =>
         val canonical = ProcessConverter.fromDisplayable(process)
         val canonicalJson = UiProcessMarshaller.toJson(canonical, PrettyParams.nospace)
-        (managementActor ? Test(processId, canonicalJson, TestData(testData), user, UiCodecs.testResultsVariableEncoder)).mapTo[TestResults[Json]].map { results =>
+        (managementActor ? Test(processId, canonicalJson, TestData(testData), user, UiCodecs.testResultsVariableEncoder)).mapTo[TestResults[Json]].flatMap { results =>
+          assertTestResultsAreNotTooBig(results)
+        }.map { results =>
           ResultsWithCounts(results.asJson, computeCounts(canonical, results))
         }
       case Left(error) =>
         Future.failed(UnmarshallError(error))
+    }
+  }
+
+  private def assertTestResultsAreNotTooBig(testResults: TestResults[Json]): Future[TestResults[Json]] = {
+    val testDataResultApproxByteSize = RamUsageEstimator.sizeOf(testResults)
+    if (testDataResultApproxByteSize > testResultsMaxSizeInBytes) {
+      logger.info(s"Test data limit exceeded. Approximate test data size: $testDataResultApproxByteSize, but limit is: $testResultsMaxSizeInBytes")
+      Future.failed(new RuntimeException("Too much test data. Please decrease test input data size."))
+    } else {
+      Future.successful(testResults)
     }
   }
 
