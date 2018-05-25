@@ -22,6 +22,14 @@ class HsqlSqlQueryableDataBaseTest extends FunSuite with Matchers {
 
   }
 
+  test("work with empty tables") {
+    val impl = new HsqlSqlQueryableDataBase(dogQuery, Map("dogos" -> dogoModel))
+
+    val result = impl.query(Map("dogos" -> Table(dogoModel, List())))
+
+    result shouldEqual List()
+  }
+
   test("reuse connection correctly in next query") {
 
     val impl = new HsqlSqlQueryableDataBase(dogQuery, Map("dogos" -> dogoModel))

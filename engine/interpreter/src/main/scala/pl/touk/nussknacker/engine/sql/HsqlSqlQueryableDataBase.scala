@@ -21,7 +21,7 @@ class HsqlSqlQueryableDataBase(query: String, tables: Map[String, ColumnModel]) 
   import HsqlSqlQueryableDataBase._
 
   private val connection: Connection =
-    DriverManager.getConnection(s"jdbc:hsqldb:mem:${UUID.randomUUID()};shutdown=true", "SA", "")
+    DriverManager.getConnection(s"jdbc:hsqldb:mem:${UUID.randomUUID()};shutdown=true;allow_empty_batch=true", "SA", "")
 
   init()
 
