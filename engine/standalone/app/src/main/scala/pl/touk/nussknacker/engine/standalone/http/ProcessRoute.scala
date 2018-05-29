@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.engine.standalone.http
 
+import akka.event.Logging
 import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
+import akka.http.scaladsl.server.directives.DebuggingDirectives
 import akka.http.scaladsl.server.{Directives, Route}
 import argonaut.Argonaut._
 import argonaut.ArgonautShapeless._
@@ -17,19 +19,20 @@ class ProcessRoute(deploymentService: DeploymentService) extends Directives with
 
   def route(implicit ec: ExecutionContext): Route =
     path(Segment) { processPath =>
-
-      deploymentService.getInterpreterByPath(processPath) match {
-        case None =>
-          complete {
-            HttpResponse(status = StatusCodes.NotFound)
-          }
-        case Some(processInterpreter) => new StandaloneRequestHandler(processInterpreter).invoke {
-          case Left(errors) => complete {
-            logErrors(processPath, errors)
-            (StatusCodes.InternalServerError, errors.toList.map(info => EspError(info.nodeId, Option(info.throwable.getMessage))).asJson)
-          }
-          case Right(results) => complete {
-            (StatusCodes.OK, results)
+      DebuggingDirectives.logRequest((s"standalone-$processPath", Logging.DebugLevel)) {
+        deploymentService.getInterpreterByPath(processPath) match {
+          case None =>
+            complete {
+              HttpResponse(status = StatusCodes.NotFound)
+            }
+          case Some(processInterpreter) => new StandaloneRequestHandler(processInterpreter).invoke {
+            case Left(errors) => complete {
+              logErrors(processPath, errors)
+              (StatusCodes.InternalServerError, errors.toList.map(info => EspError(info.nodeId, Option(info.throwable.getMessage))).asJson)
+            }
+            case Right(results) => complete {
+              (StatusCodes.OK, results)
+            }
           }
         }
       }

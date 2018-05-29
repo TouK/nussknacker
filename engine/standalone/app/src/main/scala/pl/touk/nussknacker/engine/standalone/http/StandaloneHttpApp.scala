@@ -18,15 +18,15 @@ import scala.util.Try
 
 object StandaloneHttpApp extends Directives with Argonaut62Support with LazyLogging with App {
 
-  implicit val system = ActorSystem("nussknacker-standalone-http")
+  private val config = ConfigFactory.load()
+
+  implicit val system = ActorSystem("nussknacker-standalone-http", config)
 
   import system.dispatcher
 
   implicit private val materializer = ActorMaterializer()
 
   private val metricRegistry = new MetricRegistry
-
-  private val config = ConfigFactory.load()
 
   GraphiteReporter.forRegistry(metricRegistry)
     .prefixedWith(s"${config.getString("standaloneProcessConfig.environment")}.${config.getString("hostName")}.standaloneEngine")
