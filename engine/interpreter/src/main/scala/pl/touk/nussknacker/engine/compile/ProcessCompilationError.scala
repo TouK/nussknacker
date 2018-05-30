@@ -138,10 +138,6 @@ object ProcessCompilationError {
 
   case class InvalidSubprocess(id: String, nodeId: String) extends ProcessCompilationError with InASingleNode
 
-  object UnknownSubprocess {
-    def apply(id: String)(implicit nodeId: NodeId): ProcessCompilationError = UnknownSubprocess(id, nodeId.id)
-  }
-
   case class FatalUnknownError(message: String) extends ProcessCompilationError {
     override def nodeIds: Set[String] = Set()
   }

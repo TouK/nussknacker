@@ -51,8 +51,10 @@ case class SubprocessResolver(subprocesses: Map[String, CanonicalProcess]) {
                 replaceCanonicalList(nodeResolved)(nextResolved)
               }.andThen(identity).map(replaced => FlatNode(NodeDataFun.nodeIdPrefix(idPrefix)(data)) :: replaced)
             }
-          case Some(_) => Invalid(NonEmptyList.of(InvalidSubprocess(data.id, data.ref.id)))
-          case _ => Invalid(NonEmptyList.of(UnknownSubprocess(data.id, data.ref.id)))
+          case Some(_) =>
+            Invalid(NonEmptyList.of(InvalidSubprocess(id = data.ref.id, nodeId = data.id)))
+          case _ =>
+            Invalid(NonEmptyList.of(UnknownSubprocess(id = data.ref.id, nodeId = data.id)))
         }
     }, NodeDataFun.nodeIdPrefix(idPrefix))
   }

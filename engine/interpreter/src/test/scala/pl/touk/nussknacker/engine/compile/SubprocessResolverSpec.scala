@@ -2,16 +2,14 @@ package pl.touk.nussknacker.engine.compile
 
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.data.Validated.{Invalid, Valid}
-import org.scalatest.{FlatSpec, Inside, Matchers}
-import pl.touk.nussknacker.engine.api.typed.ClazzRef
+import org.scalatest.{FunSuite, Inside, Matchers}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.GraphBuilder.Creator
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, Subprocess}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
-import pl.touk.nussknacker.engine.compile.ProcessCompilationError.{DisablingManyOutputsSubprocess, DisablingNoOutputsSubprocess, RedundantParameters, UnknownSubprocessOutput}
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor
+import pl.touk.nussknacker.engine.compile.ProcessCompilationError._
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
@@ -19,11 +17,11 @@ import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
 
-class SubprocessResolverSpec extends FlatSpec with Matchers with Inside{
+class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
 
   import pl.touk.nussknacker.engine.spel.Implicits._
 
-  it should "resolve simple process" in {
+  test("resolve simple process") {
 
     val process = ProcessCanonizer.canonize(EspProcessBuilder.id("test")
       .exceptionHandler()
@@ -51,7 +49,7 @@ class SubprocessResolverSpec extends FlatSpec with Matchers with Inside{
 
   }
 
-  it should "resolve nested subprocesses" in {
+  test("resolve nested subprocesses") {
 
     val process = ProcessCanonizer.canonize(EspProcessBuilder.id("test")
       .exceptionHandler()
@@ -89,7 +87,7 @@ class SubprocessResolverSpec extends FlatSpec with Matchers with Inside{
     resolved.nodes.find(_.id == "sub-sub2-f1") shouldBe 'defined
   }
 
-  it should "not resolve subprocess with missing parameters" in {
+  test("not resolve subprocess with missing parameters") {
 
     val process = ProcessCanonizer.canonize(EspProcessBuilder.id("test")
       .exceptionHandler()
@@ -109,7 +107,7 @@ class SubprocessResolverSpec extends FlatSpec with Matchers with Inside{
 
   }
 
-  it should "not resolve subprocess with bad outputs" in {
+  test("not resolve subprocess with bad outputs") {
 
     val process = ProcessCanonizer.canonize(EspProcessBuilder.id("test")
       .exceptionHandler()
@@ -130,7 +128,7 @@ class SubprocessResolverSpec extends FlatSpec with Matchers with Inside{
 
   }
 
-  it should "not disable subprocess with many outputs" in {
+  test("not disable subprocess with many outputs") {
 
     val process = ProcessCanonizer.canonize(EspProcessBuilder.id("test")
       .exceptionHandler()
@@ -160,7 +158,7 @@ class SubprocessResolverSpec extends FlatSpec with Matchers with Inside{
     resolvedValidated shouldBe Invalid(NonEmptyList.of(DisablingManyOutputsSubprocess("sub", Set("output1", "output2"))))
 
   }
-  it should "not disable subprocess with no outputs" in {
+  test("not disable subprocess with no outputs") {
 
     val process = ProcessCanonizer.canonize(EspProcessBuilder.id("test")
       .exceptionHandler()
@@ -183,7 +181,7 @@ class SubprocessResolverSpec extends FlatSpec with Matchers with Inside{
 
   }
 
-  it should "inline disabled subprocess without inner nodes" in {
+  test("inline disabled subprocess without inner nodes") {
     val processWithEmptySubprocess = ProcessCanonizer.canonize(EspProcessBuilder.id("test")
       .exceptionHandler()
       .source("source", "source1")
@@ -249,7 +247,7 @@ class SubprocessResolverSpec extends FlatSpec with Matchers with Inside{
     inside(resolver.resolve(processWithDisabledSubprocess))(pattern)
   }
 
-  it should "resolve subprocess at end of process" in {
+  test("resolve subprocess at end of process") {
     val process = ProcessCanonizer.canonize(EspProcessBuilder.id("test")
       .exceptionHandler()
       .source("source", "source1")
@@ -268,6 +266,20 @@ class SubprocessResolverSpec extends FlatSpec with Matchers with Inside{
     val resolved = resolvedValidated.toOption.get
 
     resolved.nodes.filter(_.isInstanceOf[Subprocess]) shouldBe 'empty
+  }
+
+  test("detect unknown subprocess") {
+    val process = ProcessCanonizer.canonize(EspProcessBuilder
+      .id("process1")
+      .exceptionHandler()
+      .source("id1", "source")
+      .subprocessOneOut("nodeSubprocessId", "subProcessId", "output")
+      .sink("id2", "''", "sink")
+    )
+
+    val resolvedValidated = SubprocessResolver(subprocesses = Set()).resolve(process)
+
+    resolvedValidated shouldBe Invalid(NonEmptyList.of(UnknownSubprocess(id = "subProcessId", nodeId = "nodeSubprocessId")))
   }
 
   //FIXME: not sure if it's good way.
