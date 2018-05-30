@@ -60,7 +60,7 @@ class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with ScalaFut
     whenReady(remoteEnvironment.migrate(ProcessTestData.validDisplayableProcess.toDisplayable)) { result =>
       result shouldBe 'left
       result.left.get shouldBe MigrationValidationError(ValidationErrors(Map("n1" -> List(NodeValidationError("bad","message","" ,None, NodeValidationErrorType.SaveAllowed))),List(),List()))
-      result.left.get.getMessage shouldBe "Cannot migrate, following errors occured: n1 - message"
+      result.left.get.getMessage shouldBe "Cannot migrate, following errors occurred: n1 - message"
     }
 
   }

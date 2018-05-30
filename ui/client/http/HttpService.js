@@ -359,7 +359,7 @@ export default {
       type: 'POST',
     })
       .then(() => this.addInfo(`Process ${processId} was migrated`))
-      .catch((error) => this.addError(`Failed to migrate`, error));
+      .catch((error) => this.addError(`Failed to migrate`, error, true));
   },
 
   fetchSignals() {

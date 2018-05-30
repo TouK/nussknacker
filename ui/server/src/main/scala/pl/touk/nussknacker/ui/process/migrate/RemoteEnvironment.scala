@@ -46,7 +46,7 @@ case class MigrationValidationError(errors: ValidationErrors) extends EspError {
   override def getMessage : String = {
     val messages = errors.globalErrors.map(_.message) ++
       errors.processPropertiesErrors.map(_.message) ++ errors.invalidNodes.map { case(node, nerror) => s"$node - ${nerror.map(_.message).mkString(", ")}"}
-    s"Cannot migrate, following errors occured: ${messages.mkString(", ")}"
+    s"Cannot migrate, following errors occurred: ${messages.mkString(", ")}"
   }
 }
 
