@@ -8,7 +8,7 @@ import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
 import pl.touk.nussknacker.ui.db.EspTables.{deployedProcessesTable, processVersionsTable, processesTable, tagsTable}
 import pl.touk.nussknacker.ui.db.entity.ProcessDeploymentInfoEntity.{DeployedProcessVersionEntityData, DeploymentAction}
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.{ProcessEntity, ProcessEntityData}
+import pl.touk.nussknacker.ui.db.entity.ProcessEntity.{ProcessEntity, ProcessEntityData, ProcessType}
 import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntity.ProcessVersionEntityData
 import pl.touk.nussknacker.ui.db.entity.TagsEntity.TagsEntityData
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
@@ -36,7 +36,11 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
   import api._
 
   def fetchProcesses()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BasicProcess]]= {
-    run(fetchProcessDetailsByQueryActionUnarchived(p => !p.isSubprocess).toBasicProcess)
+    run(fetchProcessDetailsByQueryActionUnarchived(p => !p.isSubprocess && p.processType === ProcessType.Graph).toBasicProcess)
+  }
+
+  def fetchCustomProcesses()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BasicProcess]]= {
+    run(fetchProcessDetailsByQueryActionUnarchived(p => !p.isSubprocess && p.processType === ProcessType.Custom).toBasicProcess)
   }
 
   def fetchSubProcesses()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BasicProcess]]= {

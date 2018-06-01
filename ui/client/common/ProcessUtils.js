@@ -38,6 +38,11 @@ class ProcessUtils {
     return _.isEmpty(warnings) || Object.keys(warnings.invalidNodes || {}).length == 0
   }
 
+  hasNoPropertiesErrors = process => {
+    const result = (process.validationResult || {}).errors || {}
+    return _.isEmpty(result.processPropertiesErrors)
+  }
+
   findAvailableVariables = (nodeId, process, processDefinition) => {
     const variablesFromValidation = _.get(process.validationResult, "variableTypes." + nodeId)
     return variablesFromValidation || this._findVariablesBasedOnGraph(nodeId, process, processDefinition)

@@ -28,6 +28,12 @@ export function reducer(state = emptyUiState, action) {
         rightPanelIsOpened: !state.rightPanelIsOpened,
       })
     }
+    case "SWITCH_TOOL_TIPS_HIGHLIGHT": {
+      return withAllModalsClosed({
+        ...state,
+        isToolTipsHighlighted: action.isHighlighted
+      })
+    }
     case "CLOSE_MODALS": {
       return withAllModalsClosed({
         ...state,

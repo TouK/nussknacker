@@ -299,6 +299,20 @@ export function toggleRightPanel() {
   }
 }
 
+export function enableToolTipsHighlight() {
+  return {
+    type: "SWITCH_TOOL_TIPS_HIGHLIGHT",
+    isHighlighted: true
+  }
+}
+
+export function disableToolTipsHighlight() {
+  return {
+    type: "SWITCH_TOOL_TIPS_HIGHLIGHT",
+    isHighlighted: false
+  }
+}
+
 export function toggleConfirmDialog(isOpen, text, action) {
   return {
     type: "TOGGLE_CONFIRM_DIALOG",

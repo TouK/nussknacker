@@ -13,10 +13,12 @@ export class Tips extends Component {
 
   static propTypes = {
     currentProcess: React.PropTypes.object,
-    testing: React.PropTypes.bool.isRequired,
-    grouping: React.PropTypes.bool.isRequired
-
+    grouping: React.PropTypes.bool.isRequired,
+    isHighlighted: React.PropTypes.bool,
+    testing: React.PropTypes.bool.isRequired
   }
+
+  constructor(props) { super(props) }
 
   tipText = () => {
     if (ProcessUtils.hasNoErrorsNorWarnings(this.props.currentProcess)) {
@@ -50,15 +52,13 @@ export class Tips extends Component {
     )
   }
 
-  constructor(props) {
-    super(props);
-  }
-
+  className = () =>
+    this.props.isHighlighted ? "tipsPanelHighlighted" : "tipsPanel"
 
   render() {
     var tipsIcon = ProcessUtils.hasNoErrorsNorWarnings(this.props.currentProcess) ? InlinedSvgs.tipsInfo : InlinedSvgs.tipsWarning
     return (
-        <div id="tipsPanel">
+        <div id="tipsPanel" className={this.className()}>
           <Scrollbars renderThumbVertical={props => <div {...props} className="thumbVertical"/>} hideTracksWhenNotNeeded={true}>
           <div className="icon" title="" dangerouslySetInnerHTML={{__html: tipsIcon}} />
           {this.tipText()}
@@ -71,8 +71,9 @@ export class Tips extends Component {
 function mapState(state) {
   return {
     currentProcess: state.graphReducer.processToDisplay || {},
-    testing: !!state.graphReducer.testResults,
-    grouping: state.graphReducer.groupingState != null
+    grouping: state.graphReducer.groupingState != null,
+    isHighlighted: state.ui.isToolTipsHighlighted,
+    testing: !!state.graphReducer.testResults
   };
 }
 

@@ -17,14 +17,21 @@
   .tag-warning
     margin: 0 5px 0
 
-#tipsPanel
+tipsPanel(bkrd-color, txt-color = undefined)
   height: 100px
-  background-color: #4D4D4D
+  background-color: bkrd-color
   padding: 10px
   font-weight: light
   font-size: 14px
+  color: txt-color
   .icon
     width: 20px
     height: 20px
     float left
     margin-right: 5px
+
+.tipsPanel
+  tipsPanel(#4D4D4D)
+
+.tipsPanelHighlighted
+  tipsPanel(hrColor, black)

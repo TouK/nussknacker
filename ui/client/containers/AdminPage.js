@@ -12,6 +12,7 @@ import * as VisualizationUrl from '../common/VisualizationUrl'
 
 import 'react-tabs/style/react-tabs.css';
 import filterIcon from '../assets/img/search.svg'
+import CustomProcesses from "./CustomProcesses";
 
 class AdminPage extends React.Component {
   constructor(props) {
@@ -57,6 +58,7 @@ class AdminPage extends React.Component {
       {tabName: "Search components", component: <ProcessSearch componentIds={this.state.componentIds} processes={this.state.processes}/>},
       {tabName: "Unused components", component: <UnusedComponents unusedComponents={this.state.unusedComponents}/>},
       {tabName: "Services", component: <TestServices componentIds={this.state.componentIds} services={this.state.services}/>},
+      {tabName: CustomProcesses.title, component: <CustomProcesses/>}
     ]
     return (
       <div className="Page">

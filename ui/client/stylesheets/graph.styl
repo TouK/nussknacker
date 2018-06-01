@@ -317,7 +317,6 @@ espButton()
   font-weight: 600
   font-size: 18px
 
-
 espButtonIcon()
   espButtonBase()
   width: buttonSize
@@ -335,7 +334,7 @@ espButtonIcon()
     padding-top 4px //why?
     display inline-block
 
-.espButton
+espPanelButton()
   espButton()
   width: 120px
   height: 25px
@@ -355,6 +354,20 @@ espButtonIcon()
       margin-top 10px
       width 27px
       height 27px
+
+.espButton
+  espPanelButton()
+
+.esp-button-warning
+  espPanelButton()
+  &.right-panel
+    border-color: warningColor
+  &.add-comment
+    border-color: warningColor
+  &.download-button
+    border-color: warningColor
+  &.attachment-button
+    border-color: warningColor
 
 .modalButton
   espButtonBase()

@@ -108,6 +108,10 @@ export default {
     return promiseWrap($.get(API_URL + '/processes'))
   },
 
+  fetchCustomProcesses() {
+    return promiseWrap($.get(API_URL + '/customProcesses'))
+  },
+
   fetchSubProcesses() {
     return promiseWrap($.get(API_URL + '/subProcesses'))
   },

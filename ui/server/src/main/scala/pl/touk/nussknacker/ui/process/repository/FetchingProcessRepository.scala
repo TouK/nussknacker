@@ -28,6 +28,8 @@ trait FetchingProcessRepository {
 
   def fetchProcesses()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[BasicProcess]]
 
+  def fetchCustomProcesses()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[BasicProcess]]
+
   def fetchSubProcesses()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[BasicProcess]]
 
   def fetchProcessesDetails()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[ProcessDetails]]

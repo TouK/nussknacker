@@ -71,6 +71,12 @@ class ProcessesResources(repository: FetchingProcessRepository,
               repository.fetchProcesses()
             }
           }
+        }  ~ path("customProcesses") {
+          get {
+            complete {
+              repository.fetchCustomProcesses()
+            }
+          }
         } ~ path("processesDetails") {
           get {
             complete {

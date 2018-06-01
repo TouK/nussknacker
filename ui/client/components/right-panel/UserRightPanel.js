@@ -69,16 +69,43 @@ class UserRightPanel extends Component {
     )
   }
 
-  getConfig = () => {
+  getConfigProperties = () => {
     const saveDisabled = this.props.nothingToSave && this.props.processIsLatestVersion;
-    const deployPossible = this.props.processIsLatestVersion && ProcessUtils.hasNoErrors(this.props.processToDisplay) && this.props.nothingToSave;
-    const migratePossible = this.props.processIsLatestVersion && ProcessUtils.hasNoErrors(this.props.processToDisplay) && this.props.nothingToSave;
+    const hasErrors = !ProcessUtils.hasNoErrors(this.props.processToDisplay)
+    const deployPossible = this.props.processIsLatestVersion && !hasErrors && this.props.nothingToSave;
+
+    let deployToolTip, deployMouseOut, deployMouseOver
+    if (hasErrors) {
+      deployToolTip = "Cannot deploy due to errors. Please look at the left panel for more details."
+      deployMouseOver = this.props.actions.enableToolTipsHighlight
+      deployMouseOut = this.props.actions.disableToolTipsHighlight
+    }  else if (!saveDisabled) {
+      deployToolTip = "You have unsaved changes."
+    }
+
+    let propertiesBtnClass
+    if (hasErrors && !ProcessUtils.hasNoPropertiesErrors(this.props.processToDisplay)) {
+      propertiesBtnClass =  "esp-button-warning right-panel"
+    }
+
+    return ({
+      deployMouseOut: deployMouseOut,
+      deployMouseOver: deployMouseOver,
+      deployPossible: deployPossible,
+      deployToolTip: deployToolTip,
+      propertiesBtnClass: propertiesBtnClass,
+      saveDisabled: saveDisabled
+    })
+  }
+
+  getConfig = () => {
+    const conf = this.getConfigProperties()
 
     return [
       (this.props.isSubprocess ? null : {
         panelName: "Deployment",
         buttons:[
-          {name: "deploy", visible: this.props.capabilities.deploy, disabled: !deployPossible, onClick: this.deploy, icon: InlinedSvgs.buttonDeploy},
+          {name: "deploy", visible: this.props.capabilities.deploy, disabled: !conf.deployPossible, icon: InlinedSvgs.buttonDeploy, btnTitle: conf.deployToolTip, onClick: this.deploy, onMouseOver: conf.deployMouseOver, onMouseOut: conf.deployMouseOut},
           {name: "stop", visible: this.props.capabilities.deploy, disabled: !this.isRunning(), onClick: this.stop, icon: InlinedSvgs.buttonStop},
           {name: "metrics", onClick: this.showMetrics, icon: InlinedSvgs.buttonMetrics}
         ]
@@ -86,8 +113,8 @@ class UserRightPanel extends Component {
       {
       panelName: "Process",
       buttons: [
-        {name: "save" + (!saveDisabled ? "*" : ""), visible: this.props.capabilities.write, disabled: saveDisabled, onClick: this.save, icon: InlinedSvgs.buttonSave},
-        {name: "migrate", visible: this.props.capabilities.deploy && !_.isEmpty(this.props.featuresSettings.remoteEnvironment), disabled: !migratePossible, onClick: this.migrate, icon: InlinedSvgs.buttonMigrate},
+        {name: "save" + (!conf.saveDisabled ? "*" : ""), visible: this.props.capabilities.write, disabled: conf.saveDisabled, onClick: this.save, icon: InlinedSvgs.buttonSave},
+        {name: "migrate", visible: this.props.capabilities.deploy && !_.isEmpty(this.props.featuresSettings.remoteEnvironment), disabled: !conf.deployPossible, onClick: this.migrate, icon: InlinedSvgs.buttonMigrate},
         {name: "compare", onClick: this.compareVersions, icon: 'compare.svg', disabled: this.hasOneVersion()},
         {name: "import", visible: this.props.capabilities.write, disabled: false, onClick: this.importProcess, icon: InlinedSvgs.buttonImport, dropzone: true},
         {name: "export", onClick: this.exportProcess, icon: InlinedSvgs.buttonExport},
@@ -104,7 +131,7 @@ class UserRightPanel extends Component {
           {name: "undo", visible: this.props.capabilities.write, onClick: this.undo, icon: InlinedSvgs.buttonUndo},
           {name: "redo", visible: this.props.capabilities.write, onClick: this.redo, icon: InlinedSvgs.buttonRedo},
           {name: "align", onClick: this.props.graphLayoutFunction, icon: InlinedSvgs.buttonAlign, visible: this.props.capabilities.write},
-          {name: "properties", onClick: this.showProperties, icon: InlinedSvgs.buttonSettings, visible: !this.props.isSubprocess},
+          {name: "properties", className: conf.propertiesBtnClass, onClick: this.showProperties, icon: InlinedSvgs.buttonSettings, visible: !this.props.isSubprocess},
           {name: "duplicate", onClick: this.duplicateNode, icon: 'duplicate.svg',
             //cloning groups can be tricky...
             disabled: this.noChosenNode(this.props.nodeToDisplay) || NodeUtils.nodeIsGroup(this.props.nodeToDisplay),
@@ -140,19 +167,20 @@ class UserRightPanel extends Component {
   }
 
   renderPanelButton = (panelButton, idx) => {
-    const buttonClass = "espButton right-panel"
+    const buttonClass = panelButton.className || "espButton right-panel"
     //TODO: move other buttons from inlined svgs to files
-    const svgDiv = panelButton.icon.endsWith('.svg') ?  (<SvgDiv svgFile={`buttons/${panelButton.icon}`}/>)
-      : ( <div dangerouslySetInnerHTML={{__html: panelButton.icon}} />)
+    const toolTip = panelButton.btnTitle || panelButton.name
+    const svgDiv = panelButton.icon.endsWith('.svg') ?  (<SvgDiv title={toolTip} svgFile={`buttons/${panelButton.icon}`}/>)
+      : ( <div  title={toolTip} dangerouslySetInnerHTML={{__html: panelButton.icon}} />)
 
     return panelButton.dropzone ?
-        <Dropzone key={idx} disableClick={panelButton.disabled === true} onDrop={panelButton.onClick}
-                  className={"dropZone " + buttonClass + (panelButton.disabled === true ? " disabled" : "")}>
+        <Dropzone key={idx} disableClick={panelButton.disabled === true} title={toolTip} className={"dropZone " + buttonClass + (panelButton.disabled === true ? " disabled" : "")}
+                  onDrop={panelButton.onClick} onMouseOver={panelButton.onMouseOver} onMouseOut={panelButton.onMouseOut}>
             {svgDiv}<div>{panelButton.name}</div>
           </Dropzone>
         :
-        <button key={idx} type="button" className={buttonClass} disabled={panelButton.disabled === true}
-                onClick={panelButton.onClick}>
+        <button key={idx} type="button" className={buttonClass} disabled={panelButton.disabled === true} title={toolTip}
+                onClick={panelButton.onClick} onMouseOver={panelButton.onMouseOver} onMouseOut={panelButton.onMouseOut}>
           {svgDiv}<div>{panelButton.name}</div>
         </button>
   }
