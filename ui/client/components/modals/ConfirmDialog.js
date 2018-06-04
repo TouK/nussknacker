@@ -7,6 +7,7 @@ import ActionsUtils from "../../actions/ActionsUtils";
 import ProcessUtils from '../../common/ProcessUtils';
 import "../../stylesheets/visualization.styl";
 import InlinedSvgs from '../../assets/icons/InlinedSvgs'
+import ProcessDialogWarnings from "./ProcessDialogWarnings";
 
 
 //TODO: consider extending GenericModalDialog
@@ -37,13 +38,7 @@ class ConfirmDialog extends React.Component {
              className="espModal confirmationModal" onRequestClose={this.closeDialog}>
         <div className="modalContentDark">
           <p>{this.props.confirmDialog.text}</p>
-          {this.props.processHasSomeWarnings ?
-            <div className="warning">
-              <div className="icon" title="Warning" dangerouslySetInnerHTML={{__html: InlinedSvgs.tipsWarning}} />
-              <p>Warnings found - please look at left panel to see details. Proceed with caution</p>
-            </div> :
-            null
-          }
+          <ProcessDialogWarnings processHasWarnings={this.props.processHasWarnings}/>
           <div className="confirmationButtons">
             <button type="button" title="Cancel" className='modalButton' onClick={this.closeDialog}>No</button>
             <button type="button" title="Yes" className='modalButton' onClick={this.confirm}>Yes</button>
@@ -59,7 +54,7 @@ function mapState(state) {
   return {
     confirmDialog: state.ui.confirmDialog,
     nothingToSave: ProcessUtils.nothingToSave(state),
-    processHasSomeWarnings: !processHasNoWarnings
+    processHasWarnings: !processHasNoWarnings
   }
 }
 

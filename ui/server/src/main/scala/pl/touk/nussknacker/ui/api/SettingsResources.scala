@@ -22,7 +22,9 @@ class SettingsResources(config: FeatureTogglesConfig, nodesConfig: Map[String, S
             search = config.search,
             metrics = config.metrics,
             remoteEnvironment = config.remoteEnvironment.map(c => RemoteEnvironmentConfig(c.environmentId)),
-            environmentAlert = config.environmentAlert
+            environmentAlert = config.environmentAlert,
+            commentSettings = config.commentSettings,
+            deploySettings = config.deploySettings
           )
           UISettings(toggleOptions, nodesConfig)
         }
@@ -34,12 +36,16 @@ case class GrafanaSettings(url: String, defaultDashboard: String, processingType
 case class KibanaSettings(url: String)
 case class RemoteEnvironmentConfig(targetEnvironmentId: String)
 case class EnvironmentAlert(content: String, cssClass: String)
+case class CommentSettings(matchExpression: String, link: String)
+case class DeploySettings(requireComment: Boolean)
 
 case class ToggleFeaturesOptions(counts: Boolean,
                                  search: Option[KibanaSettings],
                                  metrics: Option[GrafanaSettings],
                                  remoteEnvironment: Option[RemoteEnvironmentConfig],
-                                 environmentAlert: Option[EnvironmentAlert]
+                                 environmentAlert: Option[EnvironmentAlert],
+                                 commentSettings: Option[CommentSettings],
+                                 deploySettings: Option[DeploySettings]
                                 )
 
 case class UISettings(features: ToggleFeaturesOptions, nodes: Map[String, SingleNodeConfig])

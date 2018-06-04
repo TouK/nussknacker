@@ -8,6 +8,8 @@ import ActionsUtils from "../actions/ActionsUtils";
 import DateUtils from '../common/DateUtils'
 import ProcessUtils from '../common/ProcessUtils'
 import DialogMessages from '../common/DialogMessages'
+import CommentContent from "./CommentContent";
+import CommentInput from "./CommentInput";
 
 class ProcessComments extends React.Component {
 
@@ -36,6 +38,10 @@ class ProcessComments extends React.Component {
     })
   }
 
+  onInputChange = (e) => {
+    this.setState({comment: e.target.value})
+  }
+
   render() {
     return (
       <div className="process-comments">
@@ -51,13 +57,13 @@ class ProcessComments extends React.Component {
                     : null}
                   <p>{ProcessUtils.processDisplayName(comment.processId, comment.processVersionId)}</p>
                 </div>
-                <p>{comment.content}</p>
+                <CommentContent content={comment.content} commentSettings={this.props.commentSettings}/>
               </div>
             )
           })}
         </ul>
         <div className="add-comment">
-          <textarea placeholder="Write a comment..." value={this.state.comment} onChange={(e) => { this.setState({comment: e.target.value}) } } />
+          <CommentInput onChange={this.onInputChange.bind(this)}/>
           <button type="button" className="espButton add-comment" onClick={this.addComment}
                   disabled={this.state.pendingRequest || _.isEmpty(this.state.comment) }>
             Add
@@ -74,7 +80,8 @@ function mapState(state) {
     comments: _.get(state.processActivity, 'comments', []),
     processId: _.get(state.graphReducer, 'fetchedProcessDetails.id'),
     processVersionId: _.get(state.graphReducer, 'fetchedProcessDetails.processVersionId'),
-    loggedUser: state.settings.loggedUser || {}
+    loggedUser: state.settings.loggedUser || {},
+    commentSettings: _.get(state.settings, "featuresSettings.commentSettings") || {}
   }
 }
 

@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.config
 
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.readers.ValueReader
-import pl.touk.nussknacker.ui.api.{EnvironmentAlert, GrafanaSettings, KibanaSettings}
+import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.process.migrate.HttpRemoteEnvironmentConfig
 import pl.touk.process.report.influxdb.InfluxReporterConfig
 
@@ -12,7 +12,9 @@ case class FeatureTogglesConfig(development: Boolean,
                                 metrics: Option[GrafanaSettings],
                                 remoteEnvironment: Option[HttpRemoteEnvironmentConfig],
                                 counts: Option[InfluxReporterConfig],
-                                environmentAlert:Option[EnvironmentAlert]
+                                environmentAlert:Option[EnvironmentAlert],
+                                commentSettings: Option[CommentSettings],
+                                deploySettings: Option[DeploySettings]
                                )
 
 object FeatureTogglesConfig extends LazyLogging{
@@ -29,6 +31,8 @@ object FeatureTogglesConfig extends LazyLogging{
     val counts = parseOptionalConfig[InfluxReporterConfig](config, "grafanaSettings")
     val remoteEnvironment = parseOptionalConfig[HttpRemoteEnvironmentConfig](config, "secondaryEnvironment")
     val search = parseOptionalConfig[KibanaSettings](config, "kibanaSettings")
+    val commentSettings = parseOptionalConfig[CommentSettings](config, "commentSettings")
+    val deploySettings = parseOptionalConfig[DeploySettings](config, "deploySettings")
     FeatureTogglesConfig(
       development = isDevelopmentMode,
       standaloneMode = standaloneModeEnabled,
@@ -36,7 +40,9 @@ object FeatureTogglesConfig extends LazyLogging{
       metrics = metrics,
       remoteEnvironment = remoteEnvironment,
       counts = counts,
-      environmentAlert = environmentAlert
+      environmentAlert = environmentAlert,
+      commentSettings = commentSettings,
+      deploySettings = deploySettings
     )
   }
 

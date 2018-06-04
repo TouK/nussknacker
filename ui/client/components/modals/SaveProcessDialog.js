@@ -6,6 +6,7 @@ import ActionsUtils from "../../actions/ActionsUtils";
 import "../../stylesheets/visualization.styl";
 import GenericModalDialog from "./GenericModalDialog";
 import Dialogs from "./Dialogs"
+import CommentInput from "../CommentInput";
 
 class SaveProcessDialog extends React.Component {
 
@@ -21,12 +22,16 @@ class SaveProcessDialog extends React.Component {
     return this.props.actions.saveProcess(this.props.processId, this.props.processToDisplay, this.state.comment)
   }
 
+  onInputChange = (e) => {
+    this.setState({comment: e.target.value})
+  }
+
   render() {
     return (
       <GenericModalDialog init={() => this.setState(this.initState)}
         confirm={this.confirm} type={Dialogs.types.saveProcess}>
         <p>Save process {this.props.processId}</p>
-        <textarea className="add-comment-on-save" placeholder="Write a comment..." value={this.state.comment} onChange={(e) => { this.setState({comment: e.target.value}) } } />
+        <CommentInput onChange={this.onInputChange.bind(this)}/>
       </GenericModalDialog>
     );
   }

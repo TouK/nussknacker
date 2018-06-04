@@ -206,11 +206,7 @@ class UserRightPanel extends Component {
   }
 
   deploy = () => {
-    this.props.actions.toggleConfirmDialog(true, DialogMessages.deploy(this.processId()), () => {
-      return HttpService.deploy(this.processId()).then((resp) => {
-        this.fetchProcessDetails()
-      })
-    })
+    this.props.actions.toggleModalDialog(Dialogs.types.deployProcess)
   }
 
   stop = () => {

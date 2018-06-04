@@ -33,6 +33,18 @@ class GenericModalDialog extends React.Component {
       .then(this.closeDialog, this.removePending)
   }
 
+  renderOkBtn = () => {
+    return(
+      <LaddaButton key="1" title="OK" className="modalButton modalConfirmButton" buttonStyle="zoom-in"
+        loading={this.state.pendingRequest}
+        onClick={() => this.onOk()}
+        {...this.props.okBtnConfig}
+      >
+        OK
+      </LaddaButton>
+    )
+  }
+
   render() {
     const style = 'espModal ' + (this.props.style || 'confirmationModal')
     return (
@@ -46,17 +58,16 @@ class GenericModalDialog extends React.Component {
           {this.props.children}
           <div className="confirmationButtons">
             <button type="button" title="Cancel" className='modalButton' onClick={this.closeDialog}>Cancel</button>
-            {
-              this.props.confirm ?
-              ( <LaddaButton key="1" title="OK" className='modalButton modalConfirmButton'
-                                                    loading={this.state.pendingRequest}
-                                                    buttonStyle='zoom-in' onClick={() => this.onOk()}>OK</LaddaButton>) : null
-            }
+            { this.props.confirm ? this.renderOkBtn() : null }
           </div>
         </div>
       </Modal>
     );
   }
+}
+
+GenericModalDialog.propTypes = {
+  okBtnConfig: React.PropTypes.object
 }
 
 function mapState(state) {
