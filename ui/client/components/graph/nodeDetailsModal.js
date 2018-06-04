@@ -150,16 +150,22 @@ class NodeDetailsModal extends React.Component {
       </a> : null
   }
 
+  variableLanguage = (node) => {
+    return _.get(node, 'value.language')
+  }
+
   render() {
-    var isOpen = !_.isEmpty(this.props.nodeToDisplay) && this.props.showNodeDetailsModal
-    var headerStyles = EspModalStyles.headerStyles(this.nodeAttributes().styles.fill, this.nodeAttributes().styles.color)
-    var testResults = (id) => TestResultUtils.resultsForNode(this.props.testResults, id)
+    const isOpen = !_.isEmpty(this.props.nodeToDisplay) && this.props.showNodeDetailsModal
+    const headerStyles = EspModalStyles.headerStyles(this.nodeAttributes().styles.fill, this.nodeAttributes().styles.color)
+    const testResults = (id) => TestResultUtils.resultsForNode(this.props.testResults, id)
+    const variableLanguage = this.variableLanguage(this.props.nodeToDisplay)
+    const modelHeader = (_.isEmpty(variableLanguage) ? "" : `${variableLanguage} `) + this.nodeAttributes().name
 
     return (
       <div className="objectModal">
         <Modal shouldCloseOnOverlayClick={false} isOpen={isOpen} className="espModal" onRequestClose={this.closeModal}>
           <div className="modalHeader" style={headerStyles}>
-            <span>{this.nodeAttributes().name}</span>
+            <span>{modelHeader}</span>
             {this.renderDocumentationIcon()}
           </div>
           <div className="modalContentDark">
