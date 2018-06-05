@@ -424,6 +424,25 @@ lazy val api = (project in engine("api")).
     }
   )
 
+lazy val generic = (project in engine("flink/generic")).
+  settings(commonSettings).
+  settings(
+    name := "nussknacker-generic-model",
+    libraryDependencies ++= {
+      Seq(
+        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
+        "com.fasterxml.jackson.core" % "jackson-databind" % "2.9.2"
+      )
+    },
+    test in assembly := {},
+    assemblyJarName in assembly := "genericModel.jar",
+    artifact in (Compile, assembly) := {
+      val art = (artifact in (Compile, assembly)).value
+      art.copy(`classifier` = Some("assembly"))
+    })
+  .settings(addArtifact(artifact in (Compile, assembly), assembly))
+  .dependsOn(process, kafkaFlinkUtil)
+
 lazy val securityApi = (project in engine("security-api")).
   settings(commonSettings).
   settings(
