@@ -129,7 +129,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => (Cla
 
       val timestampAssigner = source.timestampAssigner
 
-      timestampAssigner.foreach(_ => env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime))
+      env.setStreamTimeCharacteristic(if (timestampAssigner.isDefined) TimeCharacteristic.EventTime else TimeCharacteristic.IngestionTime)
 
       val newStart = env
         .addSource[Any](source.toFlinkSource)(source.typeInformation)

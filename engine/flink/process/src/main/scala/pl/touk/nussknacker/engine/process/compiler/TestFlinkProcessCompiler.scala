@@ -30,13 +30,14 @@ class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
     implicit val typeInfo = originalSource.typeInformation
     originalSource.testDataParser.map { testDataParser =>
       val testObjects = testDataParser.parseTestData(testData.testData)
-      val testFactory = CollectionSource[Object](executionConfig, testObjects, originalSource.timestampAssigner)
-      overrideObjectWithMethod(sourceFactory, (_, _) => testFactory)
+      overrideObjectWithMethod(sourceFactory, (_, _, realReturnType) => {
+        CollectionSource[Object](executionConfig, testObjects, originalSource.timestampAssigner, realReturnType())
+      })
     }
   }
 
   override protected def prepareService(service: ObjectWithMethodDef): ObjectWithMethodDef = {
-    overrideObjectWithMethod(service, (parameterCreator: (String => Option[AnyRef]), additional: Seq[AnyRef]) => {
+    overrideObjectWithMethod(service, (parameterCreator: (String => Option[AnyRef]), additional: Seq[AnyRef], _) => {
       val newAdditional = additional.map {
         case c: ServiceInvocationCollector => c.enable(collectingListener.runId)
         case a => a
@@ -47,7 +48,7 @@ class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
 
   //exceptions are recorded any way, by listeners
   override protected def prepareExceptionHandler(exceptionHandler: ObjectWithMethodDef): ObjectWithMethodDef = {
-    overrideObjectWithMethod(exceptionHandler, (_, _) =>
+    overrideObjectWithMethod(exceptionHandler, (_, _, _) =>
       new FlinkEspExceptionHandler with ConsumingNonTransientExceptions {
         override def restartStrategy: RestartStrategies.RestartStrategyConfiguration = RestartStrategies.noRestart()
 

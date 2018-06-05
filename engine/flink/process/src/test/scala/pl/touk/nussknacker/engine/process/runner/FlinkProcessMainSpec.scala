@@ -8,6 +8,7 @@ import java.util.{Date, UUID}
 import argonaut.PrettyParams
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.flink.api.common.ExecutionConfig
+import org.apache.flink.streaming.api.functions.TimestampAssigner
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.windowing.time.Time
@@ -17,7 +18,9 @@ import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
-import pl.touk.nussknacker.engine.api.test.{EmptyLineSplittedTestDataParser, NewLineSplittedTestDataParser}
+import pl.touk.nussknacker.engine.api.test.{EmptyLineSplittedTestDataParser, NewLineSplittedTestDataParser, TestDataParser}
+import pl.touk.nussknacker.engine.api.typed.{ReturningType, TypedMap, typing}
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation, FlinkSourceFactory}
 import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
@@ -29,6 +32,7 @@ import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaEspUtils}
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.process.ProcessTestHelpers._
 import pl.touk.nussknacker.engine.spel
+import pl.touk.nussknacker.engine.util.typing.TypingUtils
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -150,7 +154,8 @@ class SimpleProcessConfigCreator extends ProcessConfigCreator {
 
   override def sourceFactories(config: Config) = Map(
     "input" -> WithCategories(TestSources.simpleRecordSource, "cat2"),
-    "jsonInput" -> WithCategories(TestSources.jsonSource, "cat2")
+    "jsonInput" -> WithCategories(TestSources.jsonSource, "cat2"),
+    "typedJsonInput" -> WithCategories(TestSources.typedJsonSource, "cat2")
   )
 
   override def signals(config: Config) = Map("sig1" ->
@@ -185,17 +190,37 @@ object TestSources {
 
   val simpleRecordSource = FlinkSourceFactory.noParam(
     new CollectionSource[SimpleRecord](new ExecutionConfig, List(),
-      Some(ascendingTimestampExtractor)
+      Some(ascendingTimestampExtractor), Typed[SimpleRecord]
   ), Some(newLineSplittedTestDataParser))
 
 
   val jsonSource = FlinkSourceFactory.noParam(
-    new CollectionSource[SimpleJsonRecord](new ExecutionConfig, List(), None), Some(new EmptyLineSplittedTestDataParser[SimpleJsonRecord] {
+    new CollectionSource[SimpleJsonRecord](new ExecutionConfig, List(), None, Typed[SimpleJsonRecord]), Some(new EmptyLineSplittedTestDataParser[SimpleJsonRecord] {
 
       override def parseElement(json: String): SimpleJsonRecord = {
         json.decodeOption[SimpleJsonRecord].get
       }
     })
   )
+
+  val typedJsonSource = new FlinkSourceFactory[TypedMap] with ReturningType {
+
+    @MethodToInvoke
+    def create(processMetaData: MetaData,  @ParamName("type") definition: java.util.Map[String, _]): Source[TypedMap] = {
+      new CollectionSource[TypedMap](new ExecutionConfig, List(), None, Typed[TypedMap]) with ReturningType {
+        override val returnType: typing.TypingResult = TypingUtils.typedMapDefinitionFromParameters(definition)
+      }
+    }
+
+    override def timestampAssigner: Option[TimestampAssigner[TypedMap]] = None
+
+    override def returnType: typing.TypingResult = Typed[TypedMap]
+
+    override def testDataParser: Option[TestDataParser[TypedMap]] = Some(new EmptyLineSplittedTestDataParser[TypedMap] {
+      override def parseElement(json: String): TypedMap = {
+        TypedMap(json.decodeOption[Map[String, String]].get)
+      }
+    })
+  }
 
 }

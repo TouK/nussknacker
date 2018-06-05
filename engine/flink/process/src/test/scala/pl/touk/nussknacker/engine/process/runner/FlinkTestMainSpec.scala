@@ -5,7 +5,7 @@ import java.util.Date
 import argonaut.PrettyParams
 import com.typesafe.config.ConfigFactory
 import org.apache.flink.runtime.client.JobExecutionException
-import org.scalatest.{BeforeAndAfterEach, FlatSpec, Inside, Matchers}
+import org.scalatest._
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.test._
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
@@ -19,7 +19,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 
-class FlinkTestMainSpec extends FlatSpec with Matchers with Inside with BeforeAndAfterEach {
+class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAndAfterEach {
 
   import spel.Implicits._
 
@@ -34,7 +34,7 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside with BeforeAn
 
   val modelData = ClassLoaderModelData(ConfigFactory.load(), ModelClassLoader.empty)
   
-  it should "be able to return test results" in {
+  test("be able to return test results") {
     val process =
       EspProcessBuilder
         .id("proc1")
@@ -71,7 +71,7 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside with BeforeAn
     LogService.invocationsCount.get() shouldBe 0
   }
 
-  it should "collect results for split" in {
+  test("collect results for split") {
     val process =
       EspProcessBuilder
         .id("proc1")
@@ -87,7 +87,7 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside with BeforeAn
     results.nodeResults("splitId1") shouldBe List(nodeResult(0), nodeResult(1))
   }
 
-  it should "return correct result for custom node" in {
+  test("return correct result for custom node") {
     val process =
       EspProcessBuilder
         .id("proc1")
@@ -138,7 +138,7 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside with BeforeAn
 
   }
 
-  it should "handle large parallelism" in {
+  test("handle large parallelism") {
     val process =
       EspProcessBuilder
         .id("proc1")
@@ -155,7 +155,7 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside with BeforeAn
 
   }
 
-  it should "detect errors" in {
+  test("detect errors") {
     val process =
       EspProcessBuilder
         .id("proc1")
@@ -185,7 +185,7 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside with BeforeAn
     exceptionFromService.throwable.getMessage shouldBe "Thrown as expected"
   }
 
-  it should "ignore real exception handler" in {
+  test("ignore real exception handler") {
     val process =
       EspProcessBuilder
         .id("proc1")
@@ -206,7 +206,7 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside with BeforeAn
     RecordingExceptionHandler.data shouldBe 'empty
   }
 
-  it should "handle transient errors" in {
+  test("handle transient errors") {
     val process =
       EspProcessBuilder
         .id("proc1")
@@ -224,7 +224,7 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside with BeforeAn
 
   }
 
-  it should "handle custom multiline source input" in {
+  test("handle custom multiline source input") {
     val process =
       EspProcessBuilder
         .id("proc1")
@@ -260,7 +260,7 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside with BeforeAn
       )
   }
 
-  it should "give meaningful error messages for sink errors" in {
+  test("give meaningful error messages for sink errors") {
     val process =
       EspProcessBuilder
         .id("proc1")
@@ -281,7 +281,7 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside with BeforeAn
     SinkForInts.data should have length 0
   }
 
-  it should "be able to test process with signals" in {
+  test("be able to test process with signals") {
     val process =
       EspProcessBuilder
         .id("proc1")
@@ -301,7 +301,7 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside with BeforeAn
 
   }
 
-  it should "be able to test process with time windows" in {
+  test("be able to test process with time windows") {
     val process =
       EspProcessBuilder
         .id("proc1")
@@ -324,6 +324,21 @@ class FlinkTestMainSpec extends FlatSpec with Matchers with Inside with BeforeAn
 
     nodeResults("out").map(_.context.variables) shouldBe List(Map("count" -> 4), Map("count" -> 1))
 
+  }
+
+  test("be able to test typed map") {
+    val process =
+      EspProcessBuilder
+        .id("proc1")
+        .exceptionHandler()
+        .source("id", "typedJsonInput", "type" -> """{"field1": "String", "field2": "java.lang.String"}""")
+        .sink("out", "#input.field1 + #input.field2", "monitor")
+
+    val results = FlinkTestMain.run(modelData,
+      ProcessMarshaller.toJson(process, PrettyParams.spaces2),
+      TestData("""{"field1": "abc", "field2": "def"}"""), FlinkTestConfiguration.configuration, identity)
+
+    results.invocationResults("out").map(_.value) shouldBe List("abcdef")
   }
 
   def nodeResult(count: Int, vars: (String, Any)*) 

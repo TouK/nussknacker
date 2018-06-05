@@ -15,6 +15,7 @@ import org.apache.flink.streaming.api.scala._
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionInfo, ExceptionHandlerFactory, NonTransientException}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{LazyInterpreter, _}
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionHandler}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation, FlinkSink, FlinkSourceFactory}
@@ -67,7 +68,7 @@ object ProcessTestHelpers {
           list = data,
           timestampAssigner = Some(new AscendingTimestampExtractor[SimpleRecord] {
             override def extractAscendingTimestamp(element: SimpleRecord) = element.date.getTime
-          })
+          }), Typed[SimpleRecord]
         ))
       ))
 
