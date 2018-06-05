@@ -8,9 +8,12 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.http.scaladsl.{Http, HttpsConnectionContext}
 import akka.stream.{ActorMaterializer, Materializer}
+import akka.stream.ActorMaterializer
+import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import pl.touk.nussknacker.engine.flink.queryablestate.EspQueryableClient
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
@@ -38,40 +41,46 @@ object NussknackerApp extends App with Directives with LazyLogging {
   prepareUncaughtExceptionHandler()
 
   //TODO: pass port as part of config
-  private val port = args(0).toInt
 
-  private val route = initializeRoute()
+  private val config = system.settings.config.withFallback(ConfigFactory.load("defaultConfig.conf"))
+
+  private val hsqlServer = config.getAs[DatabaseServer.Config]("jdbcServer")
+    .map(DatabaseServer(_))
+  hsqlServer.foreach(_.start())
+
+  private val route = initializeRoute(config)
 
   // TODO: switch to general configuration via application.conf when https://github.com/akka/akka-http/issues/55 will be ready
-  SslConfigParser.sslEnabled(system.settings.config) match {
+  val port = config.getInt("http.port")
+  val interface = config.getString("http.interface")
+  SslConfigParser.sslEnabled(config) match {
     case Some(keyStoreConfig) =>
       val httpsContext = HttpsConnectionContextFactory.createContext(keyStoreConfig)
-      bindHttps(port, httpsContext, route)
+      bindHttps(interface, port, httpsContext, route)
     case None =>
-      bindHttp(port, route)
+      bindHttp(interface, port, route)
   }
 
-  def bindHttp(port: Int, route: Route)(implicit system: ActorSystem, materializer: Materializer) = {
+  def bindHttp(interface: String, port: Int, route: Route)(implicit system: ActorSystem, materializer: Materializer) = {
     Http().bindAndHandle(
       handler = route,
-      interface = "0.0.0.0",
+      interface = interface,
       port = port
     )
   }
 
-  def bindHttps(port: Int, httpsContext: HttpsConnectionContext, route: Route)(implicit system: ActorSystem, materializer: Materializer) = {
+  def bindHttps(interface: String, port: Int, httpsContext: HttpsConnectionContext, route: Route)(implicit system: ActorSystem, materializer: Materializer) = {
     Http().bindAndHandle(
       handler = route,
-      interface = "0.0.0.0",
+      interface = interface,
       port = port,
       connectionContext = httpsContext
     )
   }
 
-  def initializeRoute()(implicit system: ActorSystem, materializer: Materializer) : Route = {
+  def initializeRoute(config: Config)(implicit system: ActorSystem, materializer: Materializer) : Route = {
     import system.dispatcher
 
-    val config = system.settings.config
     val testResultsMaxSizeInBytes = config.getOrElse[Int]("testResultsMaxSizeInBytes",  500 * 1024 * 1000)
     val environment = config.getString("environment")
     val featureTogglesConfig = FeatureTogglesConfig.create(config)
@@ -82,18 +91,13 @@ object NussknackerApp extends App with Directives with LazyLogging {
 
     val nodeCategoryMapping = config.getOrElse[Map[String, String]]("processConfig.nodeCategoryMapping", Map.empty)
 
-    val hsqlServer = config.getAs[DatabaseServer.Config]("jdbcServer")
-      .map(DatabaseServer(_))
-    hsqlServer.foreach(_.start())
-
     val db: DbConfig = {
       val db = JdbcBackend.Database.forConfig("db", config)
       new DatabaseInitializer(db).initDatabase()
       DbConfig(db, DefaultJdbcProfile.profile)
     }
 
-    val ProcessingTypeDeps(managers, espQueryableClient, modelData) =
-      ProcessingTypeDeps(config, featureTogglesConfig.standaloneMode)
+    val ProcessingTypeDeps(managers, modelData) = ProcessingTypeDeps(config, featureTogglesConfig.standaloneMode)
 
     val defaultParametersValues = ParamDefaultValueConfig(nodesConfig.map {case (k, v) => (k, v.defaultValues.getOrElse(Map.empty))})
     val extractValueParameterByConfigThenType = new TypeAfterConfig(defaultParametersValues)
@@ -108,7 +112,6 @@ object NussknackerApp extends App with Directives with LazyLogging {
 
     val deploymentProcessRepository = DeployedProcessRepository.create(db, modelData)
     val processActivityRepository = new ProcessActivityRepository(db)
-    val attachmentService = new ProcessAttachmentService(config.getString("attachmentsPath"), processActivityRepository)
     val authenticator =  AuthenticatorProvider(config, getClass.getClassLoader)
 
     val counter = new ProcessCounter(subprocessRepository)
@@ -126,12 +129,11 @@ object NussknackerApp extends App with Directives with LazyLogging {
           new ProcessesResources(processRepository, writeProcessRepository, jobStatusService,
           processActivityRepository, processValidation, typesForCategories, newProcessPreparer),
           new ProcessesExportResources(processRepository, processActivityRepository),
-          new ProcessActivityResource(processActivityRepository, attachmentService),
+          new ProcessActivityResource(processActivityRepository),
           ManagementResources(counter, managementActor, testResultsMaxSizeInBytes),
           new ValidationResources(processValidation),
           new DefinitionResources(modelData, subprocessRepository, extractValueParameterByConfigThenType, nodesConfig, nodeCategoryMapping),
           new SignalsResources(modelData(ProcessingType.Streaming), processRepository),
-          new QueryableStateResources(modelData, processRepository, espQueryableClient, jobStatusService),
           new UserResources(),
           new SettingsResources(featureTogglesConfig, nodesConfig),
           new AppResources(modelData, processRepository, processValidation, jobStatusService),
@@ -144,7 +146,12 @@ object NussknackerApp extends App with Directives with LazyLogging {
           .map(remoteEnvironment => new RemoteEnvironmentResources(remoteEnvironment, processRepository)),
         featureTogglesConfig.counts
           .map(countsConfig => new InfluxReporter(environment, countsConfig))
-          .map(reporter => new ProcessReportResources(reporter, counter, processRepository))
+          .map(reporter => new ProcessReportResources(reporter, counter, processRepository)),
+        featureTogglesConfig.attachments
+          .map(path => new ProcessAttachmentService(path, processActivityRepository))
+          .map(service => new AttachmentResources(service)),
+        featureTogglesConfig.queryableStateProxyUrl
+          .map(url => new QueryableStateResources(modelData, processRepository, EspQueryableClient(url), jobStatusService))
       ).flatten
       routes ++ optionalRoutes
     }
@@ -169,6 +176,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
     Thread.currentThread().setUncaughtExceptionHandler(new UncaughtExceptionHandler {
       override def uncaughtException(t: Thread, e: Throwable): Unit = {
         logger.error("Main thread stopped unexpectedly, terminating ActorSystem", e)
+        hsqlServer.foreach(_.shutdown())
         system.terminate()
       }
     })

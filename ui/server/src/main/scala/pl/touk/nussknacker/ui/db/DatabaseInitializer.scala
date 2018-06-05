@@ -14,6 +14,7 @@ object DatabaseServer {
 
   def apply(config: DatabaseServer.Config): Server = {
     val server = new Server()
+    server.setSilent(true)
     server.setDatabasePath(i, s"file:${config.dbFilePath};user=${config.user};password=${config.password}")
     server.setDatabaseName(i, config.dbName)
     server.setSilent(true)

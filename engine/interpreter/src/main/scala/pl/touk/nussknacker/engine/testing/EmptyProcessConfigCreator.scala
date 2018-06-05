@@ -24,6 +24,7 @@ class EmptyProcessConfigCreator
   override def listeners(config: Config): Seq[ProcessListener] =
     Nil
 
+  //TODO: this does not work for Flink procsses -> as it is doesn't define restart strategy...
   override def exceptionHandlerFactory(config: Config): ExceptionHandlerFactory =
     ExceptionHandlerFactory.noParams(_ => EspExceptionHandler.empty)
 

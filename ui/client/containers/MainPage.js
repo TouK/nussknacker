@@ -75,7 +75,8 @@ const App_ = React.createClass({
                   <li><Link to={Metrics.basePath}>{Metrics.header}</Link></li> : null}
                 {!_.isEmpty(this.props.featuresSettings.search) ?
                   <li><Link to={Search.path}>{Search.header}</Link></li> : null }
-                <li><Link to={Signals.path}>{Signals.header}</Link></li>
+                {!_.isEmpty(this.props.featuresSettings.signals) ?
+                  <li><Link to={Signals.path}>{Signals.header}</Link></li> : null }
                 <li><Link to={Archive.path}>{Archive.header}</Link></li>
                 {this.props.loggedUser.isAdmin ?
                   <li><Link to={AdminPage.path}>{AdminPage.header}</Link></li> : null}

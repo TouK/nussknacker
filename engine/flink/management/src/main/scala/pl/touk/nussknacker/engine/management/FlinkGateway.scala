@@ -15,17 +15,11 @@ import scala.reflect.ClassTag
 import scala.util.Try
 
 class DefaultFlinkGateway(config: Configuration,
-                          timeout: FiniteDuration,
-                          queryableStateProxyHost: String,
-                          queryableStateProxyPort: Int) extends FlinkGateway with LazyLogging {
+                          timeout: FiniteDuration) extends FlinkGateway with LazyLogging {
 
   private implicit val ec = ExecutionContext.Implicits.global
 
   private val client = createClient()
-
-  override val queryableClient: EspQueryableClient ={
-    new EspQueryableClient(new QueryableStateClient(queryableStateProxyHost, queryableStateProxyPort))
-  }
 
   override def invokeJobManager[Response: ClassTag](req: AnyRef): Future[Response] = {
     //TODO: this starts/stops leader retrieval service for each invocation. Can we put it into var? But then
@@ -104,9 +98,6 @@ class RestartableFlinkGateway(prepareGateway: () => FlinkGateway) extends FlinkG
     gateway = null
     logger.info("Gateway shut down")
   }
-
-  override def queryableClient: EspQueryableClient = gateway.queryableClient
-
 }
 
 trait FlinkGateway {
@@ -117,5 +108,4 @@ trait FlinkGateway {
 
   def shutDown(): Unit
 
-  def queryableClient: EspQueryableClient
 }

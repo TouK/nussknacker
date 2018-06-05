@@ -1,7 +1,5 @@
 package pl.touk.nussknacker.engine.management
 
-import java.util.concurrent.TimeUnit
-
 import argonaut.PrettyParams
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory, ConfigValueType}
 import com.typesafe.scalalogging.LazyLogging
@@ -17,8 +15,6 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.test.{TestData, TestResults}
-import pl.touk.nussknacker.engine.flink.queryablestate.{EspQueryableClient, QueryableClientProvider}
-import pl.touk.nussknacker.engine.util.UrlUtils
 
 import scala.collection.JavaConversions._
 import scala.concurrent.duration._
@@ -37,9 +33,8 @@ object FlinkProcessManager {
   }
 
   private def prepareGateway(config: FlinkConfig) : FlinkGateway = {
-    val (queryableStateProxyHost, queryableStateProxyPort) = UrlUtils.parseHostAndPort(config.queryableStateProxyUrl)
     val clientConfig: Configuration = prepareFlinkConfig(config)
-    new DefaultFlinkGateway(clientConfig, config.jobManagerTimeout,queryableStateProxyHost, queryableStateProxyPort)
+    new DefaultFlinkGateway(clientConfig, config.jobManagerTimeout)
   }
 
   private def prepareFlinkConfig(flinkConf: FlinkConfig) = {
@@ -69,11 +64,11 @@ object FlinkProcessManager {
 case class FlinkConfig(jobManagerTimeout: FiniteDuration,
                        configLocation: Option[String],
                        customConfig: Option[Config],
-                       queryableStateProxyUrl: String,
+                       queryableStateProxyUrl: Option[String],
                        shouldVerifyBeforeDeploy: Option[Boolean])
 
 class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeploy: Boolean,
-                          gateway: FlinkGateway) extends ProcessManager with QueryableClientProvider with LazyLogging {
+                          gateway: FlinkGateway) extends ProcessManager with LazyLogging {
 
   import argonaut.Argonaut._
 
@@ -118,8 +113,6 @@ class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeploy: Boolea
       case None => Future.failed(new Exception("Process not found"))
     }
   }
-
-  override def queryableClient : EspQueryableClient = gateway.queryableClient
 
   override def test[T](processId: String, processJson: String, testData: TestData, variableEncoder: Any => T): Future[TestResults[T]] = {
     testRunner.test(processId, processJson, testData, variableEncoder)

@@ -4,7 +4,9 @@ import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import pl.touk.nussknacker.engine.api.CustomStreamTransformer
+import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process.{ExpressionConfig, SinkFactory, SourceFactory, WithCategories}
+import pl.touk.nussknacker.engine.flink.util.exception.VerboselyLoggingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.transformer.{AggregateTransformer, PreviousValueTransformer}
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.testing.EmptyProcessConfigCreator
@@ -33,6 +35,9 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
       "kafka-sink" -> defaultCategory(new GenericKafkaJsonSink(kafkaConfig))
     )
   }
+
+  override def exceptionHandlerFactory(config: Config): ExceptionHandlerFactory
+    = ExceptionHandlerFactory.noParams(VerboselyLoggingExceptionHandler(_))
 
   import pl.touk.nussknacker.engine.util.functions._
   override def expressionConfig(config: Config): ExpressionConfig = ExpressionConfig(

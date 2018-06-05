@@ -24,7 +24,9 @@ class SettingsResources(config: FeatureTogglesConfig, nodesConfig: Map[String, S
             remoteEnvironment = config.remoteEnvironment.map(c => RemoteEnvironmentConfig(c.environmentId)),
             environmentAlert = config.environmentAlert,
             commentSettings = config.commentSettings,
-            deploySettings = config.deploySettings
+            deploySettings = config.deploySettings,
+            signals = config.queryableStateProxyUrl.isDefined,
+            attachments = config.attachments.isDefined
           )
           UISettings(toggleOptions, nodesConfig)
         }
@@ -45,7 +47,9 @@ case class ToggleFeaturesOptions(counts: Boolean,
                                  remoteEnvironment: Option[RemoteEnvironmentConfig],
                                  environmentAlert: Option[EnvironmentAlert],
                                  commentSettings: Option[CommentSettings],
-                                 deploySettings: Option[DeploySettings]
+                                 deploySettings: Option[DeploySettings],
+                                 attachments: Boolean,
+                                 signals: Boolean
                                 )
 
 case class UISettings(features: ToggleFeaturesOptions, nodes: Map[String, SingleNodeConfig])

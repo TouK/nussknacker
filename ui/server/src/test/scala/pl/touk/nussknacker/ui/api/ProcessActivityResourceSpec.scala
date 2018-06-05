@@ -22,6 +22,8 @@ class ProcessActivityResourceSpec extends FlatSpec with ScalatestRouteTest with 
 
   val processActivityRouteWithAllPermission = withAllPermissions(processActivityRoute)
 
+  val attachmentsRouteWithPermissions = withAllPermissions(attachmentsRoute)
+
   it should "add and remove comment in process activity" in {
     val processToSave = ProcessTestData.sampleDisplayableProcess
     val commentContent = "test message"
@@ -52,7 +54,7 @@ class ProcessActivityResourceSpec extends FlatSpec with ScalatestRouteTest with 
     val fileContent = "very important content"
     val mutipartFile = MultipartUtils.prepareMultiPart(fileContent, "attachment", fileName)
 
-    Post(s"/processes/${processToSave.id}/1/activity/attachments", mutipartFile) ~> processActivityRouteWithAllPermission ~> check {
+    Post(s"/processes/${processToSave.id}/1/activity/attachments", mutipartFile) ~> attachmentsRouteWithPermissions ~> check {
       status shouldEqual StatusCodes.OK
 
       Get(s"/processes/${processToSave.id}/activity") ~> processActivityRouteWithAllPermission ~> check {
@@ -75,9 +77,9 @@ class ProcessActivityResourceSpec extends FlatSpec with ScalatestRouteTest with 
     val mutipartFile1 = MultipartUtils.prepareMultiPart(fileContent1, "attachment", fileName)
     val mutipartFile2 = MultipartUtils.prepareMultiPart(fileContent2, "attachment", fileName)
 
-    Post(s"/processes/${processToSave.id}/1/activity/attachments", mutipartFile1) ~> processActivityRouteWithAllPermission ~> check {
+    Post(s"/processes/${processToSave.id}/1/activity/attachments", mutipartFile1) ~> attachmentsRouteWithPermissions ~> check {
       status shouldEqual StatusCodes.OK
-      Post(s"/processes/${processToSave.id}/1/activity/attachments", mutipartFile2) ~> processActivityRouteWithAllPermission ~> check {
+      Post(s"/processes/${processToSave.id}/1/activity/attachments", mutipartFile2) ~> attachmentsRouteWithPermissions ~> check {
         status shouldEqual StatusCodes.OK
         Get(s"/processes/${processToSave.id}/activity") ~> processActivityRouteWithAllPermission ~> check {
           val processActivity = responseAs[String].decodeOption[ProcessActivity].get
@@ -92,7 +94,7 @@ class ProcessActivityResourceSpec extends FlatSpec with ScalatestRouteTest with 
   }
 
   def getAttachment(processId: String, attachmentId: Long)(testCode: => Assertion) = {
-    Get(s"/processes/${processId}/1/activity/attachments/${attachmentId}") ~> processActivityRouteWithAllPermission ~> check {
+    Get(s"/processes/${processId}/1/activity/attachments/${attachmentId}") ~> attachmentsRouteWithPermissions ~> check {
       testCode
     }
   }

@@ -44,7 +44,8 @@ trait EspItTest extends LazyLogging with WithDbTesting { self: ScalatestRouteTes
 
   val deployRoute = new ManagementResources(new ProcessCounter(TestFactory.sampleSubprocessRepository), managementActor, 500 * 1024 * 1000)
   val attachmentService = new ProcessAttachmentService(attachmentsPath, processActivityRepository)
-  val processActivityRoute = new ProcessActivityResource(processActivityRepository, attachmentService)
+  val processActivityRoute = new ProcessActivityResource(processActivityRepository)
+  val attachmentsRoute = new AttachmentResources(attachmentService)
 
   def saveProcess(processId: String, process: EspProcess)(testCode: => Assertion): Assertion = {
     Post(s"/processes/$processId/$testCategory?isSubprocess=false") ~> processesRouteWithAllPermissions ~> check {

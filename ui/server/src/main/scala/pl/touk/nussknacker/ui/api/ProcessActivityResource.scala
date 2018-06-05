@@ -18,8 +18,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.ExecutionContext
 
-class ProcessActivityResource(processActivityRepository: ProcessActivityRepository,
-                              attachmentService: ProcessAttachmentService)
+class ProcessActivityResource(processActivityRepository: ProcessActivityRepository)
                              (implicit ec: ExecutionContext, mat: Materializer) extends Directives with Argonaut62Support with RouteWithUser {
 
   import argonaut.ArgonautShapeless._
@@ -47,7 +46,18 @@ class ProcessActivityResource(processActivityRepository: ProcessActivityReposito
           processActivityRepository.deleteComment(commentId)
         }
       }
-    } ~ path("processes" / Segment / LongNumber / "activity" / "attachments") { (processId, versionId) =>
+    }
+  }
+}
+
+class AttachmentResources(attachmentService: ProcessAttachmentService)
+                             (implicit ec: ExecutionContext, mat: Materializer) extends Directives with Argonaut62Support with RouteWithUser {
+
+  import argonaut.ArgonautShapeless._
+  import pl.touk.nussknacker.ui.codec.UiCodecs._
+
+  def route(implicit user: LoggedUser) : Route = {
+    path("processes" / Segment / LongNumber / "activity" / "attachments") { (processId, versionId) =>
       post {
         fileUpload("attachment") { case (metadata, byteSource) =>
           complete {

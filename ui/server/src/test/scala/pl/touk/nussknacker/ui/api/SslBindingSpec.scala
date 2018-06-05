@@ -8,6 +8,7 @@ import akka.http.scaladsl.model.headers.Authorization
 import akka.stream.{ActorMaterializer, Materializer}
 import org.scalatest._
 import pl.touk.nussknacker.ui.NussknackerApp
+import pl.touk.nussknacker.ui.NussknackerApp.system
 import pl.touk.nussknacker.ui.security.ssl.{HttpsConnectionContextFactory, KeyStoreConfig}
 
 import scala.concurrent.Await
@@ -20,11 +21,11 @@ class SslBindingSpec extends FlatSpec with Matchers {
     implicit val system: ActorSystem = ActorSystem("SslBindingSpec")
     implicit val materializer: Materializer = ActorMaterializer()
 
-    val route = NussknackerApp.initializeRoute()
+    val route = NussknackerApp.initializeRoute(system.settings.config)
     val keyStoreConfig = KeyStoreConfig(getClass.getResource("/localhost.p12").toURI, "foobar".toCharArray)
     val httpsContext = HttpsConnectionContextFactory.createContext(keyStoreConfig)
 
-    val binding = Await.result(NussknackerApp.bindHttps(0, httpsContext, route), 10.seconds) // port = 0 - random port
+    val binding = Await.result(NussknackerApp.bindHttps("localhost", 0, httpsContext, route), 10.seconds) // port = 0 - random port
     try {
       val credentials = HttpCredentials.createBasicHttpCredentials("admin", "admin")
       val request = HttpRequest(

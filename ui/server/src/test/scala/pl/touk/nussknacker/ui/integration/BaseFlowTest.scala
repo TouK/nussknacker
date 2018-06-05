@@ -29,7 +29,7 @@ import pl.touk.nussknacker.ui.validation.ValidationResults.{NodeValidationError,
 class BaseFlowTest extends FunSuite with ScalatestRouteTest
   with Matchers with ScalaFutures with BeforeAndAfterEach with BeforeAndAfterAll {
 
-  private val mainRoute = NussknackerApp.initializeRoute()
+  private val mainRoute = NussknackerApp.initializeRoute(system.settings.config)
 
   private val credentials = HttpCredentials.createBasicHttpCredentials("admin", "admin")
 
