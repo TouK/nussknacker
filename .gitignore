@@ -16,4 +16,4 @@ ui/develConf/*.jar
 _book/
 # Ignore Mac DS_Store files
 .DS_Store
-
+*.log.logstashjson

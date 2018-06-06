@@ -19,7 +19,7 @@ class ProcessRoute(deploymentService: DeploymentService) extends Directives with
 
   def route(implicit ec: ExecutionContext): Route =
     path(Segment) { processPath =>
-      DebuggingDirectives.logRequest((s"standalone-$processPath", Logging.DebugLevel)) {
+      DebuggingDirectives.logRequestResult((s"standalone-$processPath", Logging.DebugLevel)) {
         deploymentService.getInterpreterByPath(processPath) match {
           case None =>
             complete {
