@@ -1,3 +1,4 @@
+import com.typesafe.sbt.packager.SettingsHelper
 import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
 import net.virtualvoid.sbt.graph.Plugin._
 import sbt._
@@ -111,6 +112,23 @@ val akkaHttpV = "10.0.10"
 val slickV = "3.2.0-M1" // wsparcie dla select for update jest od 3.2.0
 val hsqldbV = "2.3.4"
 val flywayV = "4.0.3"
+
+lazy val dist = (project in file("nussknacker-dist"))
+  .settings(commonSettings)
+  .enablePlugins(JavaServerAppPackaging)
+  .settings(
+    Keys.compile in Compile <<= (Keys.compile in Compile).dependsOn(
+      (assembly in Compile) in generic
+    ),
+    packageName in Universal := ("nussknacker" + "-" + version.value),
+    mappings in Universal += {
+      val model = generic.base / "target" / "scala-2.11" / "genericModel.jar"
+      model -> "model/genericModel.jar"
+    },
+    publishArtifact := false,
+    SettingsHelper.makeDeploymentSettings(Universal, packageZipTarball in Universal, "tgz")
+  )
+  .dependsOn(ui)
 
 def engine(name: String) = file(s"engine/$name")
 
