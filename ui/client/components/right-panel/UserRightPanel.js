@@ -121,7 +121,7 @@ class UserRightPanel extends Component {
         {name: "exportPDF", disabled: !this.props.nothingToSave, onClick: this.exportProcessToPdf, icon: InlinedSvgs.buttonExport},
         {name: "zoomIn", onClick: this.props.zoomIn, icon: 'zoomin.svg'},
         {name: "zoomOut", onClick: this.props.zoomOut, icon: 'zoomout.svg'},
-        {name: "archive", onClick: this.archiveProcess, icon: 'trash.svg', visible: this.props.capabilities.write}
+        {name: "archive", onClick: this.archiveProcess, icon: 'archive.svg', visible: this.props.capabilities.write}
 
       ]
     },
