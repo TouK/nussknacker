@@ -5,20 +5,26 @@ import java.time.{LocalDate, LocalDateTime}
 import argonaut.PrettyParams
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
-import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
+import org.scalatest.{BeforeAndAfterEach, FlatSpec, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.ui.api.helpers.{TestFactory, WithDbTesting}
+import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestPermissions, WithDbTesting}
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.nussknacker.ui.process.marshall.UiProcessMarshaller
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
-class DBFetchingProcessRepositorySpec extends FlatSpec with Matchers with BeforeAndAfterEach with WithDbTesting with ScalaFutures {
+class DBFetchingProcessRepositorySpec
+  extends FunSuite
+    with Matchers
+    with BeforeAndAfterEach
+    with WithDbTesting
+    with ScalaFutures
+    with TestPermissions {
 
   implicit val defaultPatience = PatienceConfig(timeout = Span(1, Seconds), interval = Span(5, Millis))
 
@@ -30,9 +36,9 @@ class DBFetchingProcessRepositorySpec extends FlatSpec with Matchers with Before
 
   private val fetching = DBFetchingProcessRepository.create(db)
 
-  private implicit val user = TestFactory.user(Permission.Admin)
+  private implicit val user = TestFactory.user(testPermissionAdmin)
 
-  it should "ignore subprocessesModificationDate when no subprocesses" in {
+  test("ignore subprocessesModificationDate when no subprocesses") {
 
     saveProcess(EspProcessBuilder
       .id("noSubprocess")
@@ -44,10 +50,9 @@ class DBFetchingProcessRepositorySpec extends FlatSpec with Matchers with Before
     )
 
     fetchSubprocessesModificationDate("noSubprocess") shouldBe Some(Map())
-
   }
 
-  it should "ignore subprocessesModificationDate for subprocess with fixed version" in {
+  test("ignore subprocessesModificationDate for subprocess with fixed version") {
 
     saveSubProcess("sub1", minusDays(1))
     saveSubProcess("sub2", minusDays(2))
@@ -65,8 +70,27 @@ class DBFetchingProcessRepositorySpec extends FlatSpec with Matchers with Before
     fetchSubprocessesModificationDate("fixedSubprocess") shouldBe Some(Map("sub2" -> minusDays(2)))
 
   }
+  test("fetch processes for category") {
 
-  it should "get last subprocessesModificationDate for subprocess with floating version" in {
+    def saveProcessForCategory(cat :String) = {
+      saveProcess(EspProcessBuilder
+        .id(s"categorized-$cat")
+        .exceptionHandler()
+        .source("s", "")
+        .emptySink("sink", ""),
+        LocalDateTime.now(),
+        category = cat
+      )
+    }
+    val c1Reader = TestFactory.user("c1"->Permission.Read)
+
+    saveProcessForCategory("c1")
+    saveProcessForCategory("c2")
+    val processes= fetching.fetchProcesses()(c1Reader, implicitly[ExecutionContext]).futureValue
+
+    processes.map(_.id) shouldEqual "categorized-c1"::Nil
+  }
+  test("get last subprocessesModificationDate for subprocess with floating version") {
 
     saveSubProcess("sub1", minusDays(1))
     saveSubProcess("sub3", minusDays(3))
@@ -89,10 +113,10 @@ class DBFetchingProcessRepositorySpec extends FlatSpec with Matchers with Before
   private def fetchSubprocessesModificationDate(processId: String): Option[Map[String, LocalDateTime]] =
     fetching.fetchLatestProcessDetailsForProcessId(processId).futureValue.get.subprocessesModificationDate
 
-  private def saveProcess(espProcess: EspProcess, now: LocalDateTime) = {
+  private def saveProcess(espProcess: EspProcess, now: LocalDateTime, category: String = "") = {
     val json = UiProcessMarshaller.toJson(ProcessCanonizer.canonize(espProcess), PrettyParams.nospace)
     currentTime = now
-    writingRepo.saveNewProcess(espProcess.id, "", GraphProcess(json), ProcessingType.Streaming, false).futureValue shouldBe 'right
+    writingRepo.saveNewProcess(espProcess.id, category, GraphProcess(json), ProcessingType.Streaming, false).futureValue shouldBe 'right
   }
 
   private def saveSubProcess(id: String, now: LocalDateTime) = {

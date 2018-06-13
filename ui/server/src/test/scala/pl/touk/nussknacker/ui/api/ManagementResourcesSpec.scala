@@ -1,10 +1,11 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.actor.ActorSystem
+import akka.actor.{ActorSystem, Props}
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server
 import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
-import argonaut.Parse
+import akka.testkit.TestProbe
+import argonaut.{Json, Parse}
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
@@ -23,25 +24,27 @@ import pl.touk.nussknacker.ui.security.api.Permission
 import pl.touk.nussknacker.ui.util.MultipartUtils
 
 import scala.concurrent.duration._
-
-class ManagementResourcesSpec extends FlatSpec with ScalatestRouteTest
+import cats.syntax.semigroup._
+import cats.instances.all._
+import pl.touk.nussknacker.ui.process.deployment.ManagementActor
+class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest
   with Matchers with ScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
   import UiCodecs._
 
   implicit override val patienceConfig = PatienceConfig(timeout = scaled(Span(2, Seconds)), interval = scaled(Span(100, Millis)))
 
-  it should "process deployment should be visible in process history" in {
+  test("process deployment should be visible in process history") {
 
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-    deployProcess() ~> check {
+    deployProcess(SampleProcess.process.id) ~> check {
       status shouldBe StatusCodes.OK
       getSampleProcess ~> check {
         val oldDeployments = getHistoryDeployments
         decodeDetails.currentlyDeployedAt shouldBe Set("test")
         oldDeployments.size shouldBe 1
         updateProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-        deployProcess() ~> check {
+        deployProcess(SampleProcess.process.id) ~> check {
           getSampleProcess ~> check {
             decodeDetails.currentlyDeployedAt shouldBe Set("test")
 
@@ -57,10 +60,10 @@ class ManagementResourcesSpec extends FlatSpec with ScalatestRouteTest
     }
   }
 
-  it should "deploy technical process and mark it as deployed" in {
-    implicit val loggedUser = user().copy(categories = List(testCategory))
+  test("deploy technical process and mark it as deployed") {
+    implicit val loggedUser = user() copy(categoryPermissions = Map(testCategoryName->Set(Permission.Admin, Permission.Write, Permission.Deploy, Permission.Read)))
     val processId = "Process1"
-    whenReady(writeProcessRepository.saveNewProcess(processId, testCategory, CustomProcess(""), ProcessingType.Streaming, false)) { res =>
+    whenReady(writeProcessRepository.saveNewProcess(processId, testCategoryName, CustomProcess(""), ProcessingType.Streaming, false)) { res =>
       deployProcess(processId) ~> check { status shouldBe StatusCodes.OK }
       getProcess(processId) ~> check {
         val processDetails = responseAs[String].decodeOption[ProcessDetails].get
@@ -69,13 +72,13 @@ class ManagementResourcesSpec extends FlatSpec with ScalatestRouteTest
     }
   }
 
-  it should "recognize process cancel in deployment list" in {
+  test("recognize process cancel in deployment list") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-    deployProcess() ~> check {
+    deployProcess(SampleProcess.process.id) ~> check {
       status shouldBe StatusCodes.OK
       getSampleProcess ~> check {
         decodeDetails.currentlyDeployedAt shouldBe Set("test")
-        cancelProcess() ~> check {
+        cancelProcess(SampleProcess.process.id) ~> check {
           getSampleProcess ~> check {
             decodeDetails.currentlyDeployedAt shouldBe Set()
             val currentDeployments = getHistoryDeployments
@@ -87,13 +90,13 @@ class ManagementResourcesSpec extends FlatSpec with ScalatestRouteTest
   }
 
 
-  it should "recognize process deploy and cancel in global process list" in {
+  test("recognize process deploy and cancel in global process list") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-    deployProcess() ~> check {
+    deployProcess(SampleProcess.process.id) ~> check {
       status shouldBe StatusCodes.OK
       getProcesses ~> check {
         decodeDetailsFromAll.currentlyDeployedAt shouldBe Set("test")
-        cancelProcess() ~> check {
+        cancelProcess(SampleProcess.process.id) ~> check {
           getProcesses ~> check {
             decodeDetailsFromAll.currentlyDeployedAt shouldBe Set()
           }
@@ -102,81 +105,28 @@ class ManagementResourcesSpec extends FlatSpec with ScalatestRouteTest
     }
   }
 
-  it should "not authorize user with write permission to deploy" in {
-    Post(s"/processManagement/deploy/${SampleProcess.process.id}") ~> withPermissions(deployRoute, Permission.Write) ~> check {
+  test("not authorize user with write permission to deploy") {
+    Post(s"/processManagement/deploy/${SampleProcess.process.id}") ~> withPermissions(deployRoute, testPermissionWrite) ~> check {
       rejection shouldBe server.AuthorizationFailedRejection
     }
   }
 
-  it should "not allow concurrent deployment of same process" in {
-    saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-
-    processManager.withLongerSleepBeforeAnswer {
-      val firstRun = deployProcess() ~> runRoute
-      deployProcess() ~> check {
-        status shouldBe StatusCodes.Conflict
-      }
-      firstRun ~> check {
-        status shouldBe StatusCodes.OK
-      }
-      deployProcess() ~> check {
-        status shouldBe StatusCodes.OK
-      }
-    }
-
-  }
-
-  it should "not allow concurrent deployment and cancel of same process" in {
-    saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-
-    processManager.withLongerSleepBeforeAnswer {
-      val firstRun = deployProcess() ~> runRoute
-      cancelProcess() ~> check {
-        status shouldBe StatusCodes.Conflict
-      }
-      firstRun ~> check {
-        status shouldBe StatusCodes.OK
-      }
-      cancelProcess() ~> check {
-        status shouldBe StatusCodes.OK
-      }
-    }
-
-  }
-
-  it should "not allow concurrent deployment of different processes" in {
-    saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-
-    val secondId = SampleProcess.process.id + "-2"
-    saveProcessAndAssertSuccess(secondId, SampleProcess.process)
-
-    processManager.withLongerSleepBeforeAnswer {
-      val firstRun = deployProcess() ~> runRoute
-      deployProcess(secondId) ~> check {
-        status shouldBe StatusCodes.Conflict
-      }
-      runRoute ~> check {
-        status shouldBe StatusCodes.OK
-      }
-    }
-  }
-
-  it should "return error on deployment failure" in {
+  test("return error on deployment failure") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
 
     processManager.withFailingDeployment {
-      deployProcess() ~> check {
+      deployProcess(SampleProcess.process.id) ~> check {
         status shouldBe StatusCodes.InternalServerError
       }
     }
   }
 
-  it should "return test results" in {
+  test("return test results") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
     val displayableProcess = ProcessConverter.toDisplayable(ProcessCanonizer.canonize(SampleProcess.process)
       , ProcessingType.Streaming)
     val multiPart = MultipartUtils.prepareMultiParts("testData" -> "ala\nbela", "processJson" -> displayableProcess.asJson.nospaces)()
-    Post(s"/processManagement/test/${SampleProcess.process.id}", multiPart) ~> withPermissions(deployRoute, Permission.Deploy) ~> check {
+    Post(s"/processManagement/test/${SampleProcess.process.id}", multiPart) ~> withPermissions(deployRoute, testPermissionDeploy |+| testPermissionRead) ~> check {
       status shouldEqual StatusCodes.OK
       val results = Parse.parse(responseAs[String]).right.get
       for {
@@ -194,7 +144,7 @@ class ManagementResourcesSpec extends FlatSpec with ScalatestRouteTest
     }
   }
 
-  it should "return test results of errors, including null" in {
+  test("return test results of errors, including null") {
 
     import pl.touk.nussknacker.engine.spel.Implicits._
 
@@ -213,7 +163,7 @@ class ManagementResourcesSpec extends FlatSpec with ScalatestRouteTest
     val displayableProcess = ProcessConverter.toDisplayable(ProcessCanonizer.canonize(process), ProcessingType.Streaming)
 
     val multiPart = MultipartUtils.prepareMultiParts("testData" -> "ala\nbela", "processJson" -> displayableProcess.asJson.nospaces)()
-    Post(s"/processManagement/test/${process.id}", multiPart) ~> withPermissions(deployRoute, Permission.Deploy) ~> check {
+    Post(s"/processManagement/test/${process.id}", multiPart) ~> withPermissions(deployRoute, testPermissionDeploy |+| testPermissionRead) ~> check {
       status shouldEqual StatusCodes.OK
     }
   }

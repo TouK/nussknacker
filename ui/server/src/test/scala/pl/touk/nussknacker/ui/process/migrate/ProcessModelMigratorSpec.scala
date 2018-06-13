@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.graph.node.Processor
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.ui.api.ProcessTestData
+import pl.touk.nussknacker.ui.api.helpers.TestPermissions
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.nussknacker.ui.process.marshall.UiProcessMarshaller
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessDetails
@@ -15,7 +16,7 @@ import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import shapeless.Typeable._
 import shapeless.syntax.typeable.typeableOps
 
-class ProcessModelMigratorSpec extends FlatSpec with BeforeAndAfterEach with ScalaFutures with Matchers {
+class ProcessModelMigratorSpec extends FlatSpec with BeforeAndAfterEach with ScalaFutures with Matchers with TestPermissions{
 
   implicit override val patienceConfig = PatienceConfig(timeout = scaled(Span(1, Seconds)), interval = scaled(Span(100, Millis)))
 
@@ -25,7 +26,7 @@ class ProcessModelMigratorSpec extends FlatSpec with BeforeAndAfterEach with Sca
   val processId = "fooProcess"
 
 
-  private implicit val user = LoggedUser("test1", List(Permission.Admin), List())
+  private implicit val user = LoggedUser("test1", testPermissionAdmin)
 
   it should "migrate processes to new versions when not migrated" in {
 

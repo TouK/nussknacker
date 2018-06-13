@@ -36,15 +36,8 @@ class BasicHttpAuthenticator(path: String) extends SecurityDirectives.AsyncAuthe
   private case class LoggedUserWithPassword(
                                              id: String,
                                              password: String,
-                                             permissions: List[Permission],
-                                             categories: List[String]) {
-    def toLoggedUser: LoggedUser = LoggedUser(id, permissions, categories)
+                                             categoryPermissions: Map[String, Set[Permission]]) {
+    def toLoggedUser = LoggedUser(id, categoryPermissions)
   }
-
-
+  
 }
-
-
-
-
-

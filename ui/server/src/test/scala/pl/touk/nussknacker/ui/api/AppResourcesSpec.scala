@@ -31,7 +31,7 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest
     saveProcessWithDeployInfo("id2")
     saveProcessWithDeployInfo("id3")
 
-    val result = Get("/app/healthCheck") ~> withPermissions(resources, Permission.Read)
+    val result = Get("/app/healthCheck") ~> withPermissions(resources, testPermissionRead)
 
     val first = statusCheck.expectMsgClass(classOf[CheckStatus])
     statusCheck.reply(new Exception("Failed to check status"))
@@ -59,7 +59,7 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest
     saveProcessWithDeployInfo("id1")
     saveProcessWithDeployInfo("id2")
 
-    val result = Get("/app/healthCheck") ~> withPermissions(resources, Permission.Read)
+    val result = Get("/app/healthCheck") ~> withPermissions(resources, testPermissionRead)
 
     statusCheck.expectMsgClass(classOf[CheckStatus])
     statusCheck.reply(Some(ProcessStatus(None, "RUNNING", 0l, true, true)))
@@ -72,8 +72,8 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest
   }
 
   private def saveProcessWithDeployInfo(id: String) = {
-    implicit val logged = TestFactory.user(Permission.Admin)
-    writeProcessRepository.saveNewProcess(id, TestFactory.testCategory, CustomProcess(""), ProcessingType.Streaming, false)
+    implicit val logged = TestFactory.user(testPermissionAdmin)
+    writeProcessRepository.saveNewProcess(id, TestFactory.testCategoryName, CustomProcess(""), ProcessingType.Streaming, false)
       .futureValue shouldBe Right(())
     deploymentProcessRepository.markProcessAsDeployed(id, 1, ProcessingType.Streaming, "", "").futureValue shouldBe (())
   }

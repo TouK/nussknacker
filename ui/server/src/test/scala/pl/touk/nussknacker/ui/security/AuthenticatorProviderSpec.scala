@@ -44,7 +44,7 @@ class AuthenticatorProviderSpec extends FlatSpec with Matchers with TableDrivenP
   }
 
   object AuthenticatorProviderSpec {
-    val u = Tuple1(LoggedUser("u", Nil, Nil))
+    val u = Tuple1(LoggedUser("u"))
 
     class DummyAuthenticator extends LoggedUserAuth {
       override def tapply(f: (Tuple1[LoggedUser]) => Route): Route = f(u)

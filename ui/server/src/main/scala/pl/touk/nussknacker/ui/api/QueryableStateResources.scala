@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.server.{Directives, Route}
+import akka.http.scaladsl.server.{Directive0, Directives, Route}
 import argonaut.{Json, Parse}
 import cats.data.EitherT
 import pl.touk.http.argonaut.Argonaut62Support
@@ -19,22 +19,28 @@ import scala.concurrent.{ExecutionContext, Future}
 class QueryableStateResources(processDefinition: Map[ProcessingType, ModelData],
                               processRepository: FetchingProcessRepository,
                               queryableClient: EspQueryableClient,
-                              jobStatusService: JobStatusService)
-                             (implicit ec: ExecutionContext) extends Directives with Argonaut62Support  with RouteWithUser {
+                              jobStatusService: JobStatusService,
+                              val processAuthorizer:AuthorizeProcess)
+                             (implicit ec: ExecutionContext)
+  extends Directives
+    with Argonaut62Support
+    with RouteWithUser
+    with AuthorizeProcessDirectives {
 
   import pl.touk.nussknacker.ui.codec.UiCodecs._
   import pl.touk.nussknacker.ui.util.CollectionsEnrichments._
 
   def route(implicit user: LoggedUser): Route = {
-    authorize(user.hasPermission(Permission.Deploy)) {
-      path("queryableState" / "list") {
-        get {
-          complete {
-            prepareQueryableStates()
-          }
+
+    path("queryableState" / "list") {
+      get {
+        complete {
+          prepareQueryableStates()
         }
-      } ~ path("queryableState" / "fetch") {
-        parameters('processId, 'queryName, 'key?) { (processId, queryName, key) =>
+      }
+    } ~ path("queryableState" / "fetch") {
+      parameters('processId, 'queryName, 'key ?) { (processId, queryName, key) =>
+        canDeploy(processId) {
           get {
             complete {
               queryState(processId, queryName, key.flatMap(_.safeValue))

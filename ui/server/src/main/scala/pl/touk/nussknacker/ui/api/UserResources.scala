@@ -16,7 +16,8 @@ class UserResources(implicit ec: ExecutionContext)
     path("user") {
       get {
         complete {
-          DisplayableUser(user.id, user.permissions.map(_.toString), user.categories)
+          //FIXME: implement catergories permissions hierarchy in frontend
+          DisplayableUser(user.id, user.categoryPermissions.values.flatten.map(_.toString).toList, user.categoryPermissions.keys.toList)
         }
       }
     }

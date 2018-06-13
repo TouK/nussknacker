@@ -29,7 +29,7 @@ import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessRepository}
 import pl.touk.nussknacker.ui.process.uiconfig.SingleNodeConfig
 import pl.touk.nussknacker.ui.process.uiconfig.defaults.{ParameterDefaultValueExtractorStrategy, ParameterEvaluatorExtractor}
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, PermissionSyntax}
 import pl.touk.nussknacker.ui.util.EspPathMatchers
 
 import scala.concurrent.ExecutionContext
@@ -133,15 +133,16 @@ case class NodeGroup(name: String, possibleNodes: List[NodeToAdd])
 case class NodeDefinition(id: String, parameters: List[DefinitionExtractor.Parameter])
 
 //TODO: some refactoring?
+import PermissionSyntax._, pl.touk.nussknacker.ui.security.api.Permission._
 class DefinitionPreparer(val nodesConfig: Map[String, SingleNodeConfig], val nodeCategoryMapping: Map[String, String]) {
 
   def prepareNodesToAdd(user: LoggedUser, processDefinition: ProcessDefinition[ObjectDefinition],
-                        isSubprocess: Boolean,
-                        subprocessInputs: Map[String, ObjectDefinition],
-                        extractorFactory: ParameterDefaultValueExtractorStrategy): List[NodeGroup] = {
+  isSubprocess: Boolean,
+  subprocessInputs: Map[String, ObjectDefinition],
+  extractorFactory: ParameterDefaultValueExtractorStrategy): List[NodeGroup] = {
     val evaluator = new ParameterEvaluatorExtractor(extractorFactory)
-
-    def filterCategories(objectDefinition: ObjectDefinition) = user.categories.intersect(objectDefinition.categories)
+    val readCategories = user.can(Read).toList
+    def filterCategories(objectDefinition: ObjectDefinition) = readCategories.intersect(objectDefinition.categories)
 
     def objDefParams(id: String, objDefinition: ObjectDefinition): List[Parameter] = evaluator.evaluateParameters(NodeDefinition(id, objDefinition.parameters))
 
@@ -151,11 +152,11 @@ class DefinitionPreparer(val nodesConfig: Map[String, SingleNodeConfig], val nod
     => objectDefinition.returnType == Typed[BoxedUnit]).tupled
 
     val base = NodeGroup("base", List(
-      NodeToAdd("filter", "filter", Filter("", Expression("spel", "true")), user.categories),
-      NodeToAdd("split", "split", Split(""), user.categories),
-      NodeToAdd("switch", "switch", Switch("", Expression("spel", "true"), "output"), user.categories),
-      NodeToAdd("variable", "variable", Variable("", "varName", Expression("spel", "'value'")), user.categories),
-      NodeToAdd("sqlVariable", "sqlVariable", Variable("", "varName", Expression("sql", "SELECT * FROM input")), user.categories)
+      NodeToAdd("filter", "filter", Filter("", Expression("spel", "true")), readCategories),
+      NodeToAdd("split", "split", Split(""), readCategories),
+      NodeToAdd("switch", "switch", Switch("", Expression("spel", "true"), "output"), readCategories),
+      NodeToAdd("variable", "variable", Variable("", "varName", Expression("spel", "'value'")), readCategories),
+      NodeToAdd("sqlVariable", "sqlVariable", Variable("", "varName", Expression("sql", "SELECT * FROM input")), readCategories)
     ))
     val services = NodeGroup("services",
       processDefinition.services.filter(returnsUnit).map {
@@ -199,13 +200,13 @@ class DefinitionPreparer(val nodesConfig: Map[String, SingleNodeConfig], val nod
         subprocessInputs.map {
           case (id, definition) =>
             val nodes = evaluator.evaluateParameters(NodeDefinition(id, definition.parameters))
-            NodeToAdd("subprocess", id, SubprocessInput("", SubprocessRef(id, nodes)), user.categories.intersect(definition.categories))
+            NodeToAdd("subprocess", id, SubprocessInput("", SubprocessRef(id, nodes)), readCategories.intersect(definition.categories))
         }.toList))
     } else {
       List(
       NodeGroup("subprocessDefinition", List(
-        NodeToAdd("input", "input", SubprocessInputDefinition("", List()), user.categories),
-        NodeToAdd("output", "output", SubprocessOutputDefinition("", "output"), user.categories)
+        NodeToAdd("input", "input", SubprocessInputDefinition("", List()), readCategories),
+        NodeToAdd("output", "output", SubprocessOutputDefinition("", "output"), readCategories)
       )))
     }
 

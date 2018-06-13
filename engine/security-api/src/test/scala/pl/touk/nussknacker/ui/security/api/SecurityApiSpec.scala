@@ -80,7 +80,7 @@ private object Auth {
       }
     }
   }
-  val someAdmin = Some(LoggedUser("admin", Nil, Nil))
+  val someAdmin = Some(LoggedUser("admin"))
 
   def authenticator(cookie: HttpCookiePair)(implicit ec: ExecutionContext): Future[Option[LoggedUser]] = {
     Future {

@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.server.{Directives, Route}
+import akka.http.scaladsl.server.{Directive0, Directives, Route}
 import pl.touk.http.argonaut.Argonaut62Support
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.ui.process.ProcessObjectsFinder
@@ -13,14 +13,19 @@ import shapeless.syntax.typeable._
 import scala.concurrent.{ExecutionContext, Future}
 
 class SignalsResources(modelData: ModelData,
-                       processRepository: FetchingProcessRepository)
-                      (implicit ec: ExecutionContext) extends Directives with Argonaut62Support  with RouteWithUser {
+                       processRepository: FetchingProcessRepository,
+                       val processAuthorizer:AuthorizeProcess)
+                      (implicit ec: ExecutionContext)
+  extends Directives
+    with Argonaut62Support
+    with RouteWithUser
+    with AuthorizeProcessDirectives {
 
   import pl.touk.nussknacker.ui.codec.UiCodecs._
 
   def route(implicit user: LoggedUser): Route = {
-    authorize(user.hasPermission(Permission.Deploy)) {
-      pathPrefix("signal" / Segment / Segment) { (signalType, processId) =>
+    pathPrefix("signal" / Segment / Segment) { (signalType, processId) =>
+      canDeploy(processId) {
         post {
 
           //Map[String, String] should be enough for now
@@ -30,11 +35,11 @@ class SignalsResources(modelData: ModelData,
             }
           }
         }
-      } ~ path("signal") {
-        get {
-          complete {
-            prepareSignalDefinitions
-          }
+      }
+    } ~ path("signal") {
+      get {
+        complete {
+          prepareSignalDefinitions
         }
       }
     }

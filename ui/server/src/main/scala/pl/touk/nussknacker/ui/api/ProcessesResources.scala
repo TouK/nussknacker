@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model._
-import akka.http.scaladsl.server.{Directive, Directives, Route}
+import akka.http.scaladsl.server.{Directive, Directive0, Directives, Route}
 import akka.stream.Materializer
 import argonaut._
 import cats.data.Validated.{Invalid, Valid}
@@ -30,23 +30,29 @@ import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
 import pl.touk.nussknacker.ui.process.repository.WriteProcessRepository.UpdateProcessAction
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.control.NonFatal
+import pl.touk.nussknacker.ui.security.api.PermissionSyntax._
 
+import scala.concurrent.duration._
 class ProcessesResources(repository: FetchingProcessRepository,
                          writeRepository: WriteProcessRepository,
                          jobStatusService: JobStatusService,
                          processActivityRepository: ProcessActivityRepository,
                          processValidation: ProcessValidation,
                          typesForCategories: ProcessTypesForCategories,
-                         newProcessPreparer: NewProcessPreparer)
+                         newProcessPreparer: NewProcessPreparer,
+                         val processAuthorizer:AuthorizeProcess)
                         (implicit ec: ExecutionContext, mat: Materializer)
-  extends Directives with Argonaut62Support with EspPathMatchers with RouteWithUser with LazyLogging {
+  extends Directives
+    with Argonaut62Support
+    with EspPathMatchers
+    with RouteWithUser
+    with LazyLogging
+    with AuthorizeProcessDirectives {
 
   import UiCodecs._
   def route(implicit user: LoggedUser): Route = {
-
-    authorizeMethod(Permission.Write, user) {
       encodeResponse {
         path("archive") {
           get {
@@ -55,11 +61,11 @@ class ProcessesResources(repository: FetchingProcessRepository,
               }
           }
         } ~ path("unarchive" / Segment) { processId =>
-          post {
+          (canWrite(processId) & post) {
             complete(writeArchive(processId, isArchived = false))
           }
         } ~ path("archive" / Segment) { processId =>
-          post {
+          (canWrite(processId) & post)  {
             /*
             should not allow to archive still used subprocess IGNORED TEST
              */
@@ -107,7 +113,22 @@ class ProcessesResources(repository: FetchingProcessRepository,
           }
 
         } ~ path("processes" / Segment) { processId =>
-          parameter('businessView ? false) { (businessView) =>
+          (delete & canWrite(processId))  {
+            complete {
+              writeRepository.deleteProcess(processId).map(toResponse(StatusCodes.OK))
+            }
+          } ~ (put & canWrite(processId))  {
+            entity(as[ProcessToSave]) { processToSave =>
+              complete {
+                isArchived(processId).flatMap[ToResponseMarshallable]{
+                  case true =>
+                    rejectSavingArchivedProcess
+                  case false =>
+                    saveProcess(processToSave, processId).map(toResponse)
+                }
+              }
+            }
+          } ~ parameter('businessView ? false) { (businessView) =>
             get {
               complete {
                 repository.fetchLatestProcessDetailsForProcessId(processId, businessView).map[ToResponseMarshallable] {
@@ -115,10 +136,6 @@ class ProcessesResources(repository: FetchingProcessRepository,
                   case None => HttpResponse(status = StatusCodes.NotFound, entity = "Process not found")
                 }
               }
-            }
-          } ~ delete {
-            complete {
-              writeRepository.deleteProcess(processId).map(toResponse(StatusCodes.OK))
             }
           }
         } ~ path("processes" / Segment / LongNumber) { (processId, versionId) =>
@@ -132,23 +149,10 @@ class ProcessesResources(repository: FetchingProcessRepository,
               }
             }
           }
-        } ~ path("processes" / Segment) { processId =>
-          put {
-            entity(as[ProcessToSave]) { processToSave =>
-              complete {
-                isArchived(processId).flatMap[ToResponseMarshallable]{
-                  case true =>
-                    rejectSavingArchivedProcess
-                  case false =>
-                    saveProcess(processToSave, processId).map(toResponse)
-                }
-              }
-            }
-          }
         } ~ path("processes" / Segment / Segment) { (processId, category) =>
-          authorize(user.categories.contains(category)) {
+          authorize(user.can(category, Permission.Write)) {
             parameter('isSubprocess ? false) { (isSubprocess) =>
-              post {
+              post  {
                 complete {
                   typesForCategories.getTypeForCategory(category) match {
                     case Some(processingType) =>
@@ -182,7 +186,7 @@ class ProcessesResources(repository: FetchingProcessRepository,
             }
           }
         } ~ path("processes" / "category" / Segment / Segment) { (processId, category) =>
-          post {
+          (canWrite(processId) & post)  {
             complete {
               writeRepository.updateCategory(processId = processId, category = category).map(toResponse(StatusCodes.OK))
             }
@@ -201,7 +205,7 @@ class ProcessesResources(repository: FetchingProcessRepository,
             }
           }
         } ~ path("processes" / "import" / Segment) { processId =>
-          post {
+          (canWrite(processId) & post)  {
             fileUpload("process") { case (metadata, byteSource) =>
               complete {
                 MultipartUtils.readFile(byteSource).map[ToResponseMarshallable] { json =>
@@ -223,7 +227,6 @@ class ProcessesResources(repository: FetchingProcessRepository,
                 }
               }
             }
-          }
         }
       }
     }

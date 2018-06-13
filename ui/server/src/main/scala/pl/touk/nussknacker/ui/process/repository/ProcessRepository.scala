@@ -12,7 +12,7 @@ import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingT
 import pl.touk.nussknacker.ui.db.entity.{ProcessEntity, ProcessVersionEntity}
 import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntity.ProcessVersionEntityData
 import pl.touk.nussknacker.ui.process.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import pl.touk.nussknacker.ui.util.DateUtils
 import pl.touk.nussknacker.ui.{BadRequestError, NotFoundError}
 
@@ -21,9 +21,10 @@ import scala.language.higherKinds
 trait ProcessRepository[F[_]] extends Repository[F] {
 
   import api._
-
+  import pl.touk.nussknacker.ui.security.api.PermissionSyntax._
   protected def processTableFilteredByUser(implicit loggedUser: LoggedUser): Query[ProcessEntity.ProcessEntity, ProcessEntityData, Seq] = {
-    if (loggedUser.isAdmin) processesTable else processesTable.filter(_.processCategory inSet loggedUser.categories)
+    val readCategories = loggedUser.can(Permission.Read)
+    if (loggedUser.isAdmin) processesTable else processesTable.filter(_.processCategory inSet readCategories)
   }
 
   protected def latestProcessVersions(processId: String): Query[ProcessVersionEntity.ProcessVersionEntity, ProcessVersionEntityData, Seq] = {

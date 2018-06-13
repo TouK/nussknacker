@@ -12,6 +12,6 @@ case class BasicAuthenticatorFactory() extends AuthenticatorFactory with Directi
     SecurityDirectives.authenticateBasicAsync("nussknacker",
       new BasicHttpAuthenticator(config.getString("usersFile"))
     )
-  } else provide(LoggedUser("Anonymous", Permission.values.toList, List("Default")))
+  } else provide(LoggedUser("Anonymous", Map("Default"->Permission.values)))
 
 }

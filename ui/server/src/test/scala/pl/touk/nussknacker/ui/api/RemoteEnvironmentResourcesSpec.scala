@@ -5,7 +5,7 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Inside, Matchers}
-import pl.touk.nussknacker.ui.api.helpers.EspItTest
+import pl.touk.nussknacker.ui.api.helpers.{EspItTest, TestFactory}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.process.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.ui.process.migrate.{RemoteEnvironment, RemoteEnvironmentCommunicationError, TestMigrationResult}
@@ -13,6 +13,7 @@ import pl.touk.nussknacker.ui.sample.SampleProcess
 import pl.touk.nussknacker.ui.util.ProcessComparator.{Difference, NodeNotPresentInCurrent, NodeNotPresentInOther}
 import pl.touk.nussknacker.ui.util.ProcessComparator.{Difference, NodeNotPresentInCurrent}
 import pl.touk.nussknacker.ui.validation.ValidationResults.{NodeValidationErrorType, ValidationResult}
+import cats.syntax.semigroup._
 
 import scala.concurrent.{ExecutionContext, Future}
 import argonaut.ArgonautShapeless._
@@ -25,6 +26,9 @@ import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessHistor
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import pl.touk.nussknacker.ui.util.ProcessComparator
 import pl.touk.nussknacker.ui.validation.ValidationResults
+import cats.syntax.semigroup._
+import cats.instances.all._
+import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
 
 class RemoteEnvironmentResourcesSpec extends FlatSpec with ScalatestRouteTest with ScalaFutures with Matchers
   with BeforeAndAfterEach with Inside with EspItTest {
@@ -39,9 +43,10 @@ class RemoteEnvironmentResourcesSpec extends FlatSpec with ScalatestRouteTest wi
 
   private val processId: String = ProcessTestData.validProcess.id
 
+  val readWritePermissions: CategorizedPermission = testPermissionRead |+| testPermissionWrite
   it should "fail when process does not exist" in {
     val remoteEnvironment = new MockRemoteEnvironment
-    val route = withPermissions(new RemoteEnvironmentResources(remoteEnvironment, processRepository), Permission.Read, Permission.Write)
+    val route = withPermissions(new RemoteEnvironmentResources(remoteEnvironment, processRepository, processAuthorizer),readWritePermissions)
 
     Get(s"/remoteEnvironment/$processId/2/compare/1") ~> route ~> check {
       status shouldEqual StatusCodes.NotFound
@@ -62,7 +67,7 @@ class RemoteEnvironmentResourcesSpec extends FlatSpec with ScalatestRouteTest wi
     val difference = Map("node1" -> NodeNotPresentInCurrent("node1", Filter("node1", Expression("spel", "#input == 4"))))
     val remoteEnvironment = new MockRemoteEnvironment(mockDifferences = Map(processId -> difference))
 
-    val route = withPermissions(new RemoteEnvironmentResources(remoteEnvironment, processRepository), Permission.Read, Permission.Write)
+    val route = withPermissions(new RemoteEnvironmentResources(remoteEnvironment, processRepository, processAuthorizer), readWritePermissions)
     import pl.touk.http.argonaut.Argonaut62Support._
 
     saveProcess(processId, ProcessTestData.validProcess) {
@@ -93,7 +98,7 @@ class RemoteEnvironmentResourcesSpec extends FlatSpec with ScalatestRouteTest wi
       TestMigrationResult(process.copy(id = "failingProcess"), validationResult, true),
       TestMigrationResult(process.copy(id = "notFailing"), ValidationResult.success, false)
     )
-    val route = withPermissions(new RemoteEnvironmentResources(new MockRemoteEnvironment(results), processRepository), Permission.Read)
+    val route = withPermissions(new RemoteEnvironmentResources(new MockRemoteEnvironment(results), processRepository, processAuthorizer), testPermissionRead)
 
     Get(s"/remoteEnvironment/testAutomaticMigration") ~> route ~> check {
       status shouldEqual StatusCodes.InternalServerError
@@ -111,7 +116,7 @@ class RemoteEnvironmentResourcesSpec extends FlatSpec with ScalatestRouteTest wi
       TestMigrationResult(process.copy(id = "notFailing"), ValidationResult.success, false)
     )
 
-    val route = withPermissions(new RemoteEnvironmentResources(new MockRemoteEnvironment(results), processRepository), Permission.Read)
+    val route = withPermissions(new RemoteEnvironmentResources(new MockRemoteEnvironment(results), processRepository, processAuthorizer), testPermissionRead)
 
     Get(s"/remoteEnvironment/testAutomaticMigration") ~> route ~> check {
       status shouldEqual StatusCodes.OK
@@ -135,7 +140,7 @@ class RemoteEnvironmentResourcesSpec extends FlatSpec with ScalatestRouteTest wi
       processId2 -> Map()
 
     )),
-      processRepository), Permission.Read)
+      processRepository, processAuthorizer), testPermissionRead)
 
     saveProcess(processId1, ProcessTestData.validProcessWithId(processId1)) {
       saveProcess(processId2, ProcessTestData.validProcessWithId(processId2)) {
@@ -161,7 +166,7 @@ class RemoteEnvironmentResourcesSpec extends FlatSpec with ScalatestRouteTest wi
     val route = withPermissions(new RemoteEnvironmentResources(new MockRemoteEnvironment(mockDifferences = Map(
       processId1 -> Map("n1" -> difference)
     )),
-      processRepository), Permission.Read, Permission.Write)
+      processRepository, processAuthorizer), readWritePermissions)
 
     saveProcess(processId1, ProcessTestData.validProcessWithId(processId1)) {
       saveProcess(processId2, ProcessTestData.validProcessWithId(processId2)) {

@@ -20,7 +20,7 @@ class ProcessesNonTechnicalResourcesSpec extends FlatSpec with ScalatestRouteTes
   implicit override val patienceConfig = PatienceConfig(timeout = scaled(Span(1, Seconds)), interval = scaled(Span(100, Millis)))
 
   val routeWithAllPermissions = withAllPermissions(processesRoute)
-  implicit val loggedUser = LoggedUser("lu", List(), List(testCategory))
+  implicit val loggedUser = LoggedUser("lu", testPermissionEmpty)
 
   it should "return simplified version of process for non technical user" in {
     val processToSave = ProcessTestData.technicalValidProcess

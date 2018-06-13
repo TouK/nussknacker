@@ -3,11 +3,10 @@ package pl.touk.nussknacker.ui.api
 import akka.actor.ActorRef
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse, StatusCodes}
-import akka.http.scaladsl.server.Directives
+import akka.http.scaladsl.server._
 import akka.pattern.ask
 import akka.stream.Materializer
 import akka.util.Timeout
-import akka.http.scaladsl.server.{Directive, RequestContext, Route, RouteResult}
 import akka.http.scaladsl.server.Directives._
 import argonaut.Argonaut._
 import argonaut.{Json, PrettyParams}
@@ -32,42 +31,62 @@ import scala.concurrent.duration._
 
 object ManagementResources {
 
-  def apply(processCounter: ProcessCounter, managementActor: ActorRef, testResultsMaxSizeInBytes: Int)
-           (implicit ec: ExecutionContext, mat: Materializer): ManagementResources = {
-    new ManagementResources(processCounter, managementActor, testResultsMaxSizeInBytes)
+  def apply(processCounter: ProcessCounter,
+            managementActor: ActorRef,
+            testResultsMaxSizeInBytes: Int,
+            processAuthorizator:AuthorizeProcess)
+           (implicit ec: ExecutionContext,
+            mat: Materializer): ManagementResources = {
+    new ManagementResources(
+      processCounter = processCounter,
+      managementActor = managementActor,
+      testResultsMaxSizeInBytes = testResultsMaxSizeInBytes,
+      processAuthorizer = processAuthorizator
+    )
   }
 
 }
 
 class ManagementResources(processCounter: ProcessCounter,
                           val managementActor: ActorRef,
-                          testResultsMaxSizeInBytes: Int)(implicit ec: ExecutionContext, mat: Materializer) extends Directives with LazyLogging  with RouteWithUser {
+                          testResultsMaxSizeInBytes: Int,
+                          val processAuthorizer:AuthorizeProcess)
+                         (implicit ec: ExecutionContext, mat: Materializer)
+  extends Directives
+    with LazyLogging
+    with RouteWithUser
+    with AuthorizeProcessDirectives {
 
   import UiCodecs._
 
   implicit val timeout = Timeout(1 minute)
 
   def route(implicit user: LoggedUser): Route = {
-    authorize(user.hasPermission(Permission.Deploy)) {
-        path("adminProcessManagement" / "snapshot" / Segment / Segment) { (processId, savepointDir) =>
+    path("adminProcessManagement" / "snapshot" / Segment / Segment) { (processId, savepointDir) =>
+      canDeploy(processId) {
+        post {
+          complete {
+            (managementActor ? Snapshot(processId, user, savepointDir))
+              .mapTo[String].map(path => HttpResponse(entity = path, status = StatusCodes.OK))
+              .recover(EspErrorToHttp.errorToHttp)
+          }
+        }
+      }
+    } ~
+      path("adminProcessManagement" / "deploy" / Segment / Segment) { (processId, savepointPath) =>
+
+        canDeploy(processId) {
           post {
             complete {
-              (managementActor ? Snapshot(processId, user, savepointDir))
-                .mapTo[String].map(path => HttpResponse(entity = path, status = StatusCodes.OK))
+              (managementActor ? Deploy(processId, user, Some(savepointPath)))
+                .map { _ => HttpResponse(status = StatusCodes.OK) }
                 .recover(EspErrorToHttp.errorToHttp)
             }
           }
-        } ~
-        path("adminProcessManagement" / "deploy" / Segment / Segment) { (processId, savepointPath) =>
-         post {
-              complete {
-                (managementActor ? Deploy(processId, user, Some(savepointPath)))
-                  .map { _ => HttpResponse(status = StatusCodes.OK) }
-                  .recover(EspErrorToHttp.errorToHttp)
-              }
-          }
-        } ~
-        path("processManagement" / "deploy" / Segment) { processId =>
+        }
+      } ~
+      path("processManagement" / "deploy" / Segment) { processId =>
+        canDeploy(processId){
           post {
             complete {
               (managementActor ? Deploy(processId, user, None))
@@ -75,8 +94,10 @@ class ManagementResources(processCounter: ProcessCounter,
                 .recover(EspErrorToHttp.errorToHttp)
             }
           }
-        } ~
-        path("processManagement" / "cancel" / Segment) { processId =>
+        }
+      } ~
+      path("processManagement" / "cancel" / Segment) { processId =>
+        canDeploy(processId) {
           post {
             complete {
               (managementActor ? Cancel(processId, user))
@@ -84,9 +105,11 @@ class ManagementResources(processCounter: ProcessCounter,
                 .recover(EspErrorToHttp.errorToHttp)
             }
           }
-        } ~
-        //TODO: maybe Write permission is enough here?
-        path("processManagement" / "test" / Segment) { processId =>
+        }
+      } ~
+      //TODO: maybe Write permission is enough here?
+      path("processManagement" / "test" / Segment) { processId =>
+        canDeploy(processId) {
           post {
             //There is bug in akka-http in formFields, so we use custom toStrict method
             //issue: https://github.com/akka/akka/issues/19506
@@ -115,7 +138,7 @@ class ManagementResources(processCounter: ProcessCounter,
             }
           }
         }
-    }
+      }
   }
 
   private def performTest(processId: String, testData: Array[Byte], displayableProcessJson: String)(implicit user: LoggedUser): Future[ResultsWithCounts] = {

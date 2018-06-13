@@ -103,7 +103,7 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
                                            (implicit loggedUser: LoggedUser, ec: ExecutionContext): F[Option[ProcessDetails]] = {
     val action = (for {
       latestProcessVersion <- OptionT[DB, ProcessVersionEntityData](latestProcessVersions(id).result.headOption)
-      processDetails <- fetchProcessDetailsForVersion(latestProcessVersion, isLatestVersion = true, businessView = businessView)
+      processDetails <-  fetchProcessDetailsForVersion(latestProcessVersion, isLatestVersion = true, businessView = businessView)
     } yield processDetails).value
     run(action)
   }

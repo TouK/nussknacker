@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.ui.api.helpers.TestCodecs._
+import pl.touk.nussknacker.ui.api.helpers.TestFactory
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.Edge
@@ -21,7 +22,7 @@ import pl.touk.nussknacker.ui.validation.ValidationResults.ValidationResult
 
 class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with Matchers with Inside {
 
-  val route = withPermissions(new ValidationResources(processValidation), Permission.Read)
+  val route = withPermissions(new ValidationResources(processValidation), testPermissionRead)
 
   it should "find errors in a bad process" in {
     Post("/processValidation", posting.toEntity(ProcessTestData.invalidProcess)) ~> route ~> check {

@@ -18,13 +18,18 @@ import pl.touk.nussknacker.engine.util.Implicits._
 
 object TestInfoResources {
 
-  def apply(providers: Map[ProcessingType, ModelData])(implicit ec: ExecutionContext): TestInfoResources =
-    new TestInfoResources(providers.mapValuesNow(new ModelDataTestInfoProvider(_)))
+  def apply(providers: Map[ProcessingType, ModelData], processAuthorizer:AuthorizeProcess)(implicit ec: ExecutionContext): TestInfoResources =
+    new TestInfoResources(providers.mapValuesNow(new ModelDataTestInfoProvider(_)), processAuthorizer)
 
 }
 
-class TestInfoResources(providers: Map[ProcessingType, TestInfoProvider])
-                       (implicit ec: ExecutionContext) extends Directives with Argonaut62Support with RouteWithUser {
+class TestInfoResources(providers: Map[ProcessingType, TestInfoProvider], val processAuthorizer:AuthorizeProcess)
+                       (implicit ec: ExecutionContext)
+  extends Directives
+    with Argonaut62Support
+    with RouteWithUser
+    with AuthorizeProcessDirectives {
+
   import argonaut.ArgonautShapeless._
   import pl.touk.nussknacker.ui.codec.UiCodecs._
 
@@ -32,10 +37,11 @@ class TestInfoResources(providers: Map[ProcessingType, TestInfoProvider])
 
   def route(implicit user: LoggedUser): Route = {
     //TODO: is Write enough here?
-    authorize(user.hasPermission(Permission.Deploy)) {
-      pathPrefix("testInfo") {
-        post {
-          entity(as[DisplayableProcess]) { displayableProcess =>
+    pathPrefix("testInfo") {
+      post {
+        entity(as[DisplayableProcess]) { displayableProcess =>
+          canDeploy(displayableProcess.id) {
+
             val processDefinition = providers(displayableProcess.processingType)
 
             val source = displayableProcess.nodes.flatMap(_.cast[Source]).headOption
@@ -51,14 +57,14 @@ class TestInfoResources(providers: Map[ProcessingType, TestInfoProvider])
               path("generate" / IntNumber) { testSampleSize =>
                 complete {
                   val resp: Array[Byte] =
-                    source.flatMap(processDefinition.generateTestData(metadata, _ , testSampleSize)).getOrElse(new Array[Byte](0))
+                    source.flatMap(processDefinition.generateTestData(metadata, _, testSampleSize)).getOrElse(new Array[Byte](0))
                   resp
                 }
               }
           }
+
         }
       }
     }
   }
-
 }

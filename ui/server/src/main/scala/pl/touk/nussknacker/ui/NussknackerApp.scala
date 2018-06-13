@@ -124,26 +124,36 @@ object NussknackerApp extends App with Directives with LazyLogging {
     val typesForCategories = new ProcessTypesForCategories(config)
     val newProcessPreparer = new NewProcessPreparer(modelData.mapValues(_.processDefinition))
 
+    val processAuthorizer = new AuthorizeProcess(processRepository)
+
     val apiResources : List[RouteWithUser] = {
       val routes = List(
-          new ProcessesResources(processRepository, writeProcessRepository, jobStatusService,
-          processActivityRepository, processValidation, typesForCategories, newProcessPreparer),
+          new ProcessesResources(
+            repository = processRepository,
+            writeRepository = writeProcessRepository,
+            jobStatusService = jobStatusService,
+            processActivityRepository = processActivityRepository,
+            processValidation = processValidation,
+            typesForCategories = typesForCategories,
+            newProcessPreparer = newProcessPreparer,
+            processAuthorizer = processAuthorizer
+          ),
           new ProcessesExportResources(processRepository, processActivityRepository),
           new ProcessActivityResource(processActivityRepository),
-          ManagementResources(counter, managementActor, testResultsMaxSizeInBytes),
+          ManagementResources(counter, managementActor, testResultsMaxSizeInBytes, processAuthorizer),
           new ValidationResources(processValidation),
           new DefinitionResources(modelData, subprocessRepository, extractValueParameterByConfigThenType, nodesConfig, nodeCategoryMapping),
-          new SignalsResources(modelData(ProcessingType.Streaming), processRepository),
+          new SignalsResources(modelData(ProcessingType.Streaming), processRepository, processAuthorizer),
           new UserResources(),
           new SettingsResources(featureTogglesConfig, nodesConfig),
           new AppResources(modelData, processRepository, processValidation, jobStatusService),
-          TestInfoResources(modelData),
+          TestInfoResources(modelData,processAuthorizer),
         new ServiceRoutes(modelData)
       )
       val optionalRoutes = List(
         featureTogglesConfig.remoteEnvironment
           .map(migrationConfig => new HttpRemoteEnvironment(migrationConfig, TestModelMigrations(modelData), environment))
-          .map(remoteEnvironment => new RemoteEnvironmentResources(remoteEnvironment, processRepository)),
+          .map(remoteEnvironment => new RemoteEnvironmentResources(remoteEnvironment, processRepository, processAuthorizer)),
         featureTogglesConfig.counts
           .map(countsConfig => new InfluxReporter(environment, countsConfig))
           .map(reporter => new ProcessReportResources(reporter, counter, processRepository)),
@@ -151,7 +161,13 @@ object NussknackerApp extends App with Directives with LazyLogging {
           .map(path => new ProcessAttachmentService(path, processActivityRepository))
           .map(service => new AttachmentResources(service)),
         featureTogglesConfig.queryableStateProxyUrl
-          .map(url => new QueryableStateResources(modelData, processRepository, EspQueryableClient(url), jobStatusService))
+          .map(url => new QueryableStateResources(
+            processDefinition = modelData,
+            processRepository = processRepository,
+            queryableClient = EspQueryableClient(url),
+            jobStatusService = jobStatusService,
+            processAuthorizer = processAuthorizer
+          ))
       ).flatten
       routes ++ optionalRoutes
     }

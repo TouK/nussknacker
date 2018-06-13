@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{ProcessDeploymentData, ProcessState}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.management.{FlinkModelData, FlinkProcessManager}
+import pl.touk.nussknacker.ui.api.helpers.TestPermissions.{CategorizedPermission, testCategoryName}
 import pl.touk.nussknacker.ui.api.{ProcessPosting, ProcessTestData, RouteWithUser}
 import pl.touk.nussknacker.ui.db.DbConfig
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
@@ -22,9 +23,12 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
 //TODO: merge with ProcessTestData?
-object TestFactory {
+object TestFactory extends TestPermissions{
 
-  val testCategory = "TESTCAT"
+  val testCategoryName: String = TestPermissions.testCategoryName
+
+  //FIIXME: remove testCategory dommy implementation
+  val testCategory:CategorizedPermission= Map(testCategoryName -> Set.empty)
   val testEnvironment = "test"
 
   val sampleSubprocessRepository = SampleSubprocessRepository
@@ -33,7 +37,6 @@ object TestFactory {
   val processValidation = new ProcessValidation(Map(ProcessingType.Streaming -> ProcessTestData.validator), sampleResolver)
   val posting = new ProcessPosting
   val buildInfo = Map("engine-version" -> "0.1")
-  val allPermissions = List(Permission.Deploy, Permission.Read, Permission.Write)
 
   def newProcessRepository(dbs: DbConfig, modelVersions: Option[Int] = Some(1)) =
     new DBFetchingProcessRepository[Future](dbs) with FetchingProcessRepository with BasicRepository
@@ -51,11 +54,14 @@ object TestFactory {
 
   def newProcessActivityRepository(db: DbConfig) = new ProcessActivityRepository(db)
 
-  def withPermissions(route: RouteWithUser, permissions: Permission*) = route.route(user(permissions: _*))
+  def withPermissions(route: RouteWithUser, permissions: TestPermissions.CategorizedPermission) =
+    route.route(user(permissions))
 
-  def user(permissions: Permission*) = LoggedUser("userId", permissions.toList, List(testCategory))
+  //FIXME: update
+  def user(testPermissions: CategorizedPermission = testPermissionEmpty) = LoggedUser("userId", testPermissions)
 
-  def withAllPermissions(route: RouteWithUser) = route.route(user(allPermissions: _*))
+  //FIXME: update
+  def withAllPermissions(route: RouteWithUser) = withPermissions(route, testPermissionAll)
 
   class MockProcessManager extends FlinkProcessManager(FlinkModelData(ConfigFactory.load()), false, null){
 
@@ -100,7 +106,7 @@ object TestFactory {
     val subprocesses = Set(ProcessTestData.sampleSubprocess)
 
     override def loadSubprocesses(versions: Map[String, Long]): Set[SubprocessDetails] = {
-      subprocesses.map(c => SubprocessDetails(c, testCategory))
+      subprocesses.map(c => SubprocessDetails(c, testCategoryName))
     }
   }
 

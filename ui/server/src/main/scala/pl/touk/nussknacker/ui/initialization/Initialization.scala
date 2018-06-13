@@ -27,8 +27,9 @@ import scala.concurrent.{Await, ExecutionContext}
 
 
 object Initialization {
+  private val toukCategory = "Default"
 
-  implicit val toukUser = LoggedUser("Nussknacker", List(Permission.Write, Permission.Admin), List())
+  implicit val toukUser = LoggedUser("Nussknacker", Map(toukCategory->Set(Permission.Write, Permission.Admin)))
 
   def init(migrations: Map[ProcessingType, ProcessMigrations],
            db: DbConfig,

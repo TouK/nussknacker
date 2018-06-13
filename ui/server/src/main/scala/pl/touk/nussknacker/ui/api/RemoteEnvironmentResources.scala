@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.{HttpResponse, MessageEntity, StatusCodes}
-import akka.http.scaladsl.server.{Directives, Route}
+import akka.http.scaladsl.server.{Directive0, Directives, Route}
 import argonaut.ArgonautShapeless._
 import argonaut.EncodeJson
 import cats.instances.either._
@@ -10,7 +10,7 @@ import cats.instances.list._
 import cats.syntax.traverse._
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.process.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.ui.process.migrate.{RemoteEnvironmentCommunicationError, RemoteEnvironment, TestMigrationResult}
+import pl.touk.nussknacker.ui.process.migrate.{RemoteEnvironment, RemoteEnvironmentCommunicationError, TestMigrationResult}
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{ProcessDetails, ProcessNotFoundError}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessNotFoundError
@@ -21,8 +21,12 @@ import ProcessComparator._
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
 class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
-                                 processRepository: FetchingProcessRepository)(implicit ec: ExecutionContext)
-  extends Directives with Argonaut62Support with RouteWithUser {
+                                 processRepository: FetchingProcessRepository,
+                                 val processAuthorizer:AuthorizeProcess)(implicit ec: ExecutionContext)
+  extends Directives
+    with Argonaut62Support
+    with RouteWithUser
+    with AuthorizeProcessDirectives {
 
   import argonaut.Argonaut._
   import argonaut.ArgonautShapeless._
@@ -36,8 +40,6 @@ class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
   private implicit val encodeDifference2 = EncodeJson.derive[EnvironmentComparisonResult]
 
   def route(implicit user: LoggedUser) : Route = {
-    authorizeMethod(Permission.Write, user) {
-
       pathPrefix("remoteEnvironment") {
           path("compare") {
             get {
@@ -83,7 +85,6 @@ class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
             }
           }
       }
-    }
   }
 
 
