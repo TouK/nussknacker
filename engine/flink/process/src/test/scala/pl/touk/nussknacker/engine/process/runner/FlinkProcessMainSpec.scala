@@ -5,8 +5,7 @@ import java.nio.charset.StandardCharsets
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.{Date, UUID}
 
-import argonaut.PrettyParams
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.Config
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.streaming.api.functions.TimestampAssigner
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor
@@ -25,7 +24,7 @@ import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation, FlinkSourceFactory}
 import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
 import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
-import pl.touk.nussknacker.engine.flink.util.exception.VerboselyLoggingRestartingExceptionHandler
+import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.signal.KafkaSignalStreamConnector
 import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EspDeserializationSchema}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaEspUtils}
@@ -163,7 +162,7 @@ class SimpleProcessConfigCreator extends ProcessConfigCreator {
 
 
   override def exceptionHandlerFactory(config: Config) =
-    ExceptionHandlerFactory.noParams(VerboselyLoggingRestartingExceptionHandler(_))
+    ExceptionHandlerFactory.noParams(BrieflyLoggingExceptionHandler)
 
   override def expressionConfig(config: Config) = ExpressionConfig(Map.empty, List.empty)
 

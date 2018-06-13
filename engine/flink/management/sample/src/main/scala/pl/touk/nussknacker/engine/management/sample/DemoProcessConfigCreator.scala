@@ -5,26 +5,23 @@ import java.time.{LocalDateTime, ZoneOffset}
 
 import argonaut.{Argonaut, Json}
 import com.typesafe.config.Config
-import org.apache.flink.api.common.restartstrategy.RestartStrategies.RestartStrategyConfiguration
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.streaming.api.functions.TimestampAssigner
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext
 import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.windowing.time.Time
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.exception.{EspExceptionInfo, ExceptionHandlerFactory}
+import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.NewLineSplittedTestDataParser
-import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionHandler
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkSource, FlinkSourceFactory}
 import pl.touk.nussknacker.engine.flink.util.exception.VerboselyLoggingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Random, Try}
+import scala.util.Random
 
 class DemoProcessConfigCreator extends ProcessConfigCreator {
 

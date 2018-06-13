@@ -8,8 +8,6 @@ import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import org.apache.flink.api.common.restartstrategy.RestartStrategies.FailureRateRestartStrategyConfiguration
 import org.apache.flink.api.common.time.Time
-import org.apache.flink.runtime.executiongraph.restart.FailureRateRestartStrategy
-import org.apache.flink.runtime.executiongraph.restart.FailureRateRestartStrategy.FailureRateRestartStrategyFactory
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionInfo, NonTransientException}
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionHandler}
@@ -52,18 +50,18 @@ case class VerboselyLoggingExceptionHandler(processMetaData: MetaData, params: M
     with ConsumingNonTransientExceptions
     with NotRestartingProcesses {
   override protected val consumer = new RateMeterExceptionConsumer(VerboselyLoggingExceptionConsumer(processMetaData, params))
-
 }
 
-case class VerboselyLoggingRestartingExceptionHandler(processMetaData: MetaData, params: Map[String, String] = Map.empty)
+case class VerboselyLoggingRestartingExceptionHandler(processMetaData: MetaData, config: Config, params: Map[String, String] = Map.empty)
   extends FlinkEspExceptionHandler
+    with RestartingProcessAfterDelay
     with ConsumingNonTransientExceptions {
   override protected val consumer = VerboselyLoggingExceptionConsumer(processMetaData, params)
-
-  override def restartStrategy = new FailureRateRestartStrategyConfiguration(10, Time.seconds(1), Time.seconds(1))
 }
 
-case class VerboselyLoggingExceptionConsumer(processMetaData: MetaData, params: Map[String, String] = Map.empty) extends FlinkEspExceptionConsumer with LazyLogging {
+case class VerboselyLoggingExceptionConsumer(processMetaData: MetaData, params: Map[String, String] = Map.empty)
+  extends FlinkEspExceptionConsumer
+    with LazyLogging {
   override def consume(e: EspExceptionInfo[NonTransientException]) = {
     logger.error(s"${processMetaData.id}: Exception during processing job, params: $params, context: ${e.context}", e.throwable)
   }

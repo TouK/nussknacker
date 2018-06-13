@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process.{ExpressionConfig, ProcessConfigCreator, WithCategories}
 import pl.touk.nussknacker.engine.api.test.TestParsingUtils
 import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
-import pl.touk.nussknacker.engine.flink.util.exception.VerboselyLoggingExceptionHandler
+import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.source.CsvSchema
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSourceFactory}
@@ -51,7 +51,7 @@ object KeyValueTestHelper {
       override def listeners(config: Config) = Seq(LoggingListener)
 
       override def customStreamTransformers(config: Config) = Map()
-      override def exceptionHandlerFactory(config: Config) = ExceptionHandlerFactory.noParams(VerboselyLoggingExceptionHandler(_))
+      override def exceptionHandlerFactory(config: Config) = ExceptionHandlerFactory.noParams(BrieflyLoggingExceptionHandler)
 
       override def expressionConfig(config: Config) = ExpressionConfig(Map.empty, List.empty)
 
