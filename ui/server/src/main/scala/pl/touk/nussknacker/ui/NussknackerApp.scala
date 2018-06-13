@@ -5,10 +5,9 @@ import java.lang.Thread.UncaughtExceptionHandler
 import _root_.cors.CorsSupport
 import _root_.db.migration.DefaultJdbcProfile
 import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.{Directives, Route}
-import akka.stream.ActorMaterializer
-import com.typesafe.config.Config
+import akka.http.scaladsl.{Http, HttpsConnectionContext}
+import akka.stream.{ActorMaterializer, Materializer}
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
@@ -26,31 +25,50 @@ import pl.touk.nussknacker.ui.process.uiconfig.SingleNodeConfig
 import pl.touk.nussknacker.ui.process.uiconfig.defaults.{ParamDefaultValueConfig, TypeAfterConfig}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.AuthenticatorProvider
+import pl.touk.nussknacker.ui.security.ssl.{HttpsConnectionContextFactory, SslConfigParser}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 import pl.touk.process.report.influxdb.InfluxReporter
 import slick.jdbc.JdbcBackend
 
-
-
 object NussknackerApp extends App with Directives with LazyLogging {
 
-  implicit val system = ActorSystem("nussknacker-ui")
+  private implicit val system = ActorSystem("nussknacker-ui")
+  private implicit val materializer = ActorMaterializer()
 
   prepareUncaughtExceptionHandler()
 
-  implicit val materializer = ActorMaterializer()
-
   //TODO: pass port as part of config
-  val port = args(0).toInt
+  private val port = args(0).toInt
 
+  private val route = initializeRoute()
 
-  Http().bindAndHandle(
-    handler = initializeRoute(),
-    interface = "0.0.0.0",
-    port = port
-  )
-  def initializeRoute()(implicit system: ActorSystem, materializer: ActorMaterializer) : Route = {
+  // TODO: switch to general configuration via application.conf when https://github.com/akka/akka-http/issues/55 will be ready
+  SslConfigParser.sslEnabled(system.settings.config) match {
+    case Some(keyStoreConfig) =>
+      val httpsContext = HttpsConnectionContextFactory.createContext(keyStoreConfig)
+      bindHttps(port, httpsContext, route)
+    case None =>
+      bindHttp(port, route)
+  }
 
+  def bindHttp(port: Int, route: Route)(implicit system: ActorSystem, materializer: Materializer) = {
+    Http().bindAndHandle(
+      handler = route,
+      interface = "0.0.0.0",
+      port = port
+    )
+  }
+
+  def bindHttps(port: Int, httpsContext: HttpsConnectionContext, route: Route)(implicit system: ActorSystem, materializer: Materializer) = {
+    Http().bindAndHandle(
+      handler = route,
+      interface = "0.0.0.0",
+      port = port,
+      connectionContext = httpsContext
+    )
+  }
+
+  def initializeRoute()(implicit system: ActorSystem, materializer: Materializer) : Route = {
     import system.dispatcher
 
     val config = system.settings.config
