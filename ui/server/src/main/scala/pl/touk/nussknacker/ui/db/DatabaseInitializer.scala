@@ -16,6 +16,7 @@ object DatabaseServer {
     val server = new Server()
     server.setDatabasePath(i, s"file:${config.dbFilePath};user=${config.user};password=${config.password}")
     server.setDatabaseName(i, config.dbName)
+    server.setSilent(true)
     config.port.foreach(server.setPort)
     server
   }

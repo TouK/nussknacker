@@ -226,7 +226,7 @@ class UserRightPanel extends Component {
   }
 
   processId = () => {
-    return (this.props.processToDisplay || {}).id
+    return this.props.processToDisplay.id
   }
 
   versionId = () => this.props.fetchedProcessDetails.processVersionId
@@ -319,7 +319,7 @@ function mapState(state) {
   return {
     isOpened: state.ui.rightPanelIsOpened,
     fetchedProcessDetails: fetchedProcessDetails,
-    processToDisplay: state.graphReducer.processToDisplay,
+    processToDisplay: state.graphReducer.processToDisplay || {},
     //TODO: now only needed for duplicate, maybe we can do it somehow differently?
     layout: state.graphReducer.layout || [],
 
