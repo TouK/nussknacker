@@ -19,7 +19,7 @@ import * as VisualizationUrl from '../common/VisualizationUrl'
 const Visualization = withRouter(React.createClass({
 
   getInitialState: function() {
-    return { timeoutId: null, intervalId: null, status: {}, isArchived: null};
+    return { timeoutId: null, intervalId: null, status: {}, isArchived: null, dataResolved: false};
   },
 
   componentDidMount() {
@@ -29,7 +29,7 @@ const Visualization = withRouter(React.createClass({
         _.get(details, "fetchedProcessDetails.json.properties.isSubprocess"),
         this.props.subprocessVersions
       ).then(() => {
-        this.setState({isArchived:_.get(details, "fetchedProcessDetails.isArchived")})
+        this.setState({isArchived:_.get(details, "fetchedProcessDetails.isArchived"), dataResolved: true})
         this.showModalDetailsIfNeeded(details.fetchedProcessDetails.json)
       })
     })
@@ -133,7 +133,7 @@ const Visualization = withRouter(React.createClass({
       write:loggedUser.canWrite && !this.state.isArchived,
       deploy:loggedUser.canDeploy && !this.state.isArchived,
     };
-    return (
+    return this.state.dataResolved ? (
       <div className="Page">
           <UserLeftPanel
             isOpened={leftPanelIsOpened}
@@ -154,7 +154,7 @@ const Visualization = withRouter(React.createClass({
           }
 
       </div>
-    )
+    ) : null
   },
 
 }));

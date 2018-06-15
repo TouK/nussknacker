@@ -1,18 +1,13 @@
 import React from "react";
 import {render} from "react-dom";
-import {Link, browserHistory} from "react-router";
+import {browserHistory} from "react-router";
 import {Table, Thead, Th, Tr, Td} from "reactable";
-import _ from "lodash";
-import classNames from "classnames";
 import {connect} from "react-redux";
 
 import HttpService from "../http/HttpService";
 import ActionsUtils from "../actions/ActionsUtils";
-import DialogMessages from "../common/DialogMessages";
 import DateUtils from "../common/DateUtils";
 import LoaderSpinner from "../components/Spinner.js";
-import AddProcessDialog from "../components/AddProcessDialog.js";
-import HealthCheck from "../components/HealthCheck.js";
 
 import "../stylesheets/processes.styl";
 import filterIcon from '../assets/img/search.svg'
@@ -77,7 +72,6 @@ const Archive = React.createClass({
   render() {
     return (
       <div className="Page">
-        <HealthCheck/>
         <div id="process-top-bar">
           <div id="table-filter" className="input-group">
             <input type="text" className="form-control" aria-describedby="basic-addon1"
