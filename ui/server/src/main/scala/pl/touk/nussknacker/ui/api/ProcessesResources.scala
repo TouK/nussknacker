@@ -98,7 +98,11 @@ class ProcessesResources(repository: FetchingProcessRepository,
         } ~ path("processes" / "status") {
           get {
             complete {
-              repository.fetchProcesses().flatMap(fetchProcessStatesForProcesses)
+              for {
+                processes <- repository.fetchProcesses()
+                customProcesses <- repository.fetchCustomProcesses()
+                statuses <- fetchProcessStatesForProcesses(processes ++ customProcesses)
+              } yield statuses
             }
           }
 

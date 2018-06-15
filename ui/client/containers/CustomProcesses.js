@@ -5,11 +5,10 @@ import HttpService from "../http/HttpService";
 import DateUtils from "../common/DateUtils";
 import LoaderSpinner from "../components/Spinner.js";
 import HealthCheck from "../components/HealthCheck.js";
-import AddProcessDialog from "../components/AddProcessDialog.js";
+import DialogMessages from "../common/DialogMessages";
 
 import "../stylesheets/processes.styl";
 import filterIcon from '../assets/img/search.svg'
-import createProcessIcon from '../assets/img/create-process.svg'
 import PeriodicallyReloadingComponent from './../components/PeriodicallyReloadingComponent'
 import {connect} from "react-redux";
 import ActionsUtils from "../actions/ActionsUtils";
@@ -66,14 +65,14 @@ class CustomProcesses extends PeriodicallyReloadingComponent {
   }
 
   deploy(process) {
-    this.props.actions.toggleConfirmDialog(true, HttpService.deploy(process.id), () => {
-      return HttpService.deploy(process.id).then(this.reload)
+    this.props.actions.toggleConfirmDialog(true, DialogMessages.deploy(process.id), () => {
+      return HttpService.deploy(process.id).then(() => this.reload())
     })
   }
 
   stop(process) {
     this.props.actions.toggleConfirmDialog(true, DialogMessages.stop(process.id), () => {
-      return HttpService.stop(process.id).then(this.reload)
+      return HttpService.stop(process.id).then(() => this.reload())
     })
   }
 
@@ -89,14 +88,7 @@ class CustomProcesses extends PeriodicallyReloadingComponent {
               <img id="search-icon" src={filterIcon} />
             </span>
           </div>
-          {this.props.loggedUser.canWrite ? (
-            <div id="process-add-button" className="big-blue-button input-group " role="button"
-                 onClick={() => this.setState({showAddProcess : true})}>CREATE NEW PROCESS
-              <img id="add-icon" src={createProcessIcon} />
-            </div>) : null
-          }
         </div>
-        <AddProcessDialog onClose={() => this.setState({showAddProcess : false})} isOpen={this.state.showAddProcess} isSubprocess={false}/>
         <LoaderSpinner show={this.state.showLoader}/>
         <Table className="esp-table"
                onSort={sort => this.setState({sort: sort})}
@@ -122,7 +114,6 @@ class CustomProcesses extends PeriodicallyReloadingComponent {
           <Th column="category">Category</Th>
           <Th column="modifyDate" className="date-column">Last modification</Th>
           <Th column="status" className="status-column">Status</Th>
-          <Th column="metrics" className="metrics-column">Metrics</Th>
           {this.props.loggedUser.canDeploy ? (
             <Th column="deploy" className="deploy-column">Deploy</Th>
           ) : []}
@@ -140,9 +131,6 @@ class CustomProcesses extends PeriodicallyReloadingComponent {
                 <Td column="modifyDate" className="date-column">{DateUtils.format(process.modificationDate)}</Td>
                 <Td column="status" className="status-column">
                   <div className={this.processStatusClass(process, this.state.statusesLoaded, this.state.statuses)} title={this.processStatusTitle(this.processStatusClass(process))}/>
-                </Td>
-                <Td column="metrics" className="metrics-column">
-                  <span className="glyphicon glyphicon-stats" title="Show metrics" onClick={this.showMetrics.bind(this, process)}/>
                 </Td>
                 { this.props.loggedUser.canDeploy ? (
                   <Td column="deploy" className="deploy-column">
