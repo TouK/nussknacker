@@ -9,6 +9,7 @@ import ProcessUtils from "../common/ProcessUtils";
 import * as JsonUtils from '../common/JsonUtils';
 import JSONTree from 'react-json-tree'
 import * as VisualizationUrl from '../common/VisualizationUrl'
+import LoaderSpinner from "../components/Spinner.js";
 
 import 'react-tabs/style/react-tabs.css';
 import filterIcon from '../assets/img/search.svg'
@@ -19,6 +20,7 @@ class AdminPage extends React.Component {
     super(props);
     this.state = {
       processes: [],
+      processesLoaded: false,
       componentIds: [],
       unusedComponents: [],
       services:{}
@@ -29,7 +31,8 @@ class AdminPage extends React.Component {
     HttpService.fetchProcessesDetails().then ((processes) => {
       HttpService.fetchSubProcessesDetails().then((subProcesses) =>{
         this.setState({
-          processes: _.concat(processes, subProcesses)
+          processes: _.concat(processes, subProcesses),
+          processesLoaded: true,
         })
       })
     })
@@ -55,7 +58,7 @@ class AdminPage extends React.Component {
 
   render() {
     const tabs = [
-      {tabName: "Search components", component: <ProcessSearch componentIds={this.state.componentIds} processes={this.state.processes}/>},
+      {tabName: "Search components", component: <ProcessSearch componentIds={this.state.componentIds} processes={this.state.processes} processesLoaded={this.state.processesLoaded}/>},
       {tabName: "Unused components", component: <UnusedComponents unusedComponents={this.state.unusedComponents}/>},
       {tabName: "Services", component: <TestServices componentIds={this.state.componentIds} services={this.state.services}/>},
       {tabName: CustomProcesses.title, component: <CustomProcesses/>}
@@ -119,35 +122,37 @@ class ProcessSearch extends React.Component {
             <img id="search-icon" src={filterIcon}/>
           </span>
         </div>
-        {this.componentToFindChosen() ?
-          <Table className="esp-table"
-                 sortable={['process', 'node', 'category']}
-                 filterable={['process', 'node', 'category']}
-                 noDataText="No matching records found."
-                 hideFilterInput
-                 filterBy={this.state.filterVal.toLowerCase()}
-          >
-            <Thead>
+        {this.props.processesLoaded ?
+          this.componentToFindChosen() ?
+            <Table className="esp-table"
+                   sortable={['process', 'node', 'category']}
+                   filterable={['process', 'node', 'category']}
+                   noDataText="No matching records found."
+                   hideFilterInput
+                   filterBy={this.state.filterVal.toLowerCase()}
+            >
+              <Thead>
               <Th column="process">Process</Th>
               <Th column="node">Node</Th>
               <Th column="category">Category</Th>
-            </Thead>
-            {found.map(row => {
-              return (
-                <Tr>
-                  <Td column="process">{row.process}</Td>
-                  <Td column="node">
-                    {/* TODO this url won't work for nodes used in subprocesses */}
-                    <a target="_blank" href={VisualizationUrl.visualizationUrl(row.process, row.node)}>
-                      {row.node}
-                    </a>
+              </Thead>
+              {found.map(row => {
+                return (
+                  <Tr>
+                    <Td column="process">{row.process}</Td>
+                    <Td column="node">
+                      {/* TODO this url won't work for nodes used in subprocesses */}
+                      <a target="_blank" href={VisualizationUrl.visualizationUrl(row.process, row.node)}>
+                        {row.node}
+                      </a>
                     </Td>
-                  <Td column="category">{row.category}</Td>
-                </Tr>
-              )
-            })}
+                    <Td column="category">{row.category}</Td>
+                  </Tr>
+                )
+              })}
 
             </Table> : null
+         : <LoaderSpinner show={true}/>
         }
       </div>
     )
