@@ -13,28 +13,33 @@ import pl.touk.nussknacker.genericmodel.sources.{GenericJsonSourceFactory, Gener
 
 class GenericConfigCreator extends EmptyProcessConfigCreator {
 
+  protected def defaultCategory[T](obj: T) = WithCategories(obj, "Default")
+
   override def customStreamTransformers(config: Config): Map[String, WithCategories[CustomStreamTransformer]] = Map(
-    "previousValue" -> WithCategories(PreviousValueTransformer, "Default"),
-    "aggregate" -> WithCategories(AggregateTransformer, "Default")
+    "previousValue" -> defaultCategory(PreviousValueTransformer),
+    "aggregate" -> defaultCategory(AggregateTransformer)
   )
 
   override def sourceFactories(config: Config): Map[String, WithCategories[SourceFactory[_]]] = {
     val kafkaConfig = config.as[KafkaConfig]("kafka")
-    Map("kafka-json" -> WithCategories(new GenericJsonSourceFactory(kafkaConfig), "Default"),
-        "kafka-typed-json" -> WithCategories(new GenericTypedJsonSourceFactory(kafkaConfig), "Default")
+    Map("kafka-json" -> defaultCategory(new GenericJsonSourceFactory(kafkaConfig)),
+        "kafka-typed-json" -> defaultCategory(new GenericTypedJsonSourceFactory(kafkaConfig))
     )
   }
 
   override def sinkFactories(config: Config): Map[String, WithCategories[SinkFactory]] = {
     val kafkaConfig = config.as[KafkaConfig]("kafka")
     Map(
-      "kafka-sink" -> WithCategories(new GenericKafkaJsonSink(kafkaConfig), "Default")
+      "kafka-sink" -> defaultCategory(new GenericKafkaJsonSink(kafkaConfig))
     )
   }
 
+  import pl.touk.nussknacker.engine.util.functions._
   override def expressionConfig(config: Config): ExpressionConfig = ExpressionConfig(
     Map(
-
+      "GEO" -> defaultCategory(geo),
+      "NUMERIC" -> defaultCategory(numeric),
+      "DATE" -> defaultCategory(date)
     ),
     List()
   )
