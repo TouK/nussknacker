@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.api.test
 import java.util.UUID
 
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.deployment.test._
+import pl.touk.nussknacker.engine.api.deployment.TestProcess._
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.QueryServiceResult
 import scala.util.Try

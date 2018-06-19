@@ -5,7 +5,7 @@ import org.scalatest.{FunSuite, Matchers}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Seconds, Span}
 import pl.touk.nussknacker.engine.api.{MetaData, StandaloneMetaData}
-import pl.touk.nussknacker.engine.api.deployment.test.TestData
+import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef

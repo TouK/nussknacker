@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.codec
 import argonaut._
 import argonaut.derive.{DerivedInstances, JsonSumCodec, JsonSumCodecFor, SingletonInstances}
 import pl.touk.nussknacker.engine.api.{Displayable, TypeSpecificData, UserDefinedProcessAdditionalFields}
-import pl.touk.nussknacker.engine.api.deployment.test.{ExceptionResult, TestResults}
+import pl.touk.nussknacker.engine.api.deployment.TestProcess.{ExceptionResult, TestResults}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.definition.TestingCapabilities
 import pl.touk.nussknacker.engine.graph.node

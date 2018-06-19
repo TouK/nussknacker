@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process.deployment
 import akka.actor.{Actor, ActorRef, ActorRefFactory, Props, Status}
 import argonaut.{Json, PrettyParams}
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.deployment.test.{TestData, TestResults}
+import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
 import pl.touk.nussknacker.engine.api.deployment.{GraphProcess, ProcessDeploymentData, ProcessManager}
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.codec.UiCodecs

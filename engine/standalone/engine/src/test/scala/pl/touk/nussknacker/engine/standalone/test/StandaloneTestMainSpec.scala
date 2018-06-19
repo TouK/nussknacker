@@ -6,7 +6,7 @@ import argonaut.PrettyParams
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.Context
-import pl.touk.nussknacker.engine.api.deployment.test._
+import pl.touk.nussknacker.engine.api.deployment.TestProcess._
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.standalone.{Request1, Response, StandaloneProcessConfigCreator}

@@ -5,7 +5,7 @@ import java.nio.charset.StandardCharsets
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 
-object test {
+object TestProcess {
 
   case class TestData(testData: Array[Byte])
 

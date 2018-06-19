@@ -14,7 +14,7 @@ import argonaut.{Json, PrettyParams}
 import com.typesafe.scalalogging.LazyLogging
 import com.carrotsearch.sizeof.RamUsageEstimator
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.deployment.test.{TestData, TestResults}
+import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError

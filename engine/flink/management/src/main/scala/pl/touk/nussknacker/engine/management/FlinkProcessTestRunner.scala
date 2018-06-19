@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.management
 
 import org.apache.flink.configuration.Configuration
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.deployment.test.{TestData, TestResults}
+import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
 import pl.touk.nussknacker.engine.util.ReflectUtils.StaticMethodRunner
 
 import scala.concurrent.Future
