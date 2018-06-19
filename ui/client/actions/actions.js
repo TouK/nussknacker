@@ -163,10 +163,10 @@ export function closeModals() {
 }
 
 export function deleteNode(id) {
-  return {
+  return runSyncActionsThenValidate(state => [{
     type: "DELETE_NODE",
     id: id
-  }
+  }])
 }
 
 export function startGrouping() {
@@ -266,13 +266,56 @@ export function editGroup(process, oldGroupId, newGroup) {
 }
 
 export function nodesConnected(fromNode, toNode, processDefinitionData) {
-  return {type: "NODES_CONNECTED", fromNode: fromNode, toNode: toNode, processDefinitionData: processDefinitionData}
+  return runSyncActionsThenValidate(state => [
+    {
+        type: "NODES_CONNECTED",
+        fromNode: fromNode,
+        toNode: toNode,
+        processDefinitionData: state.settings.processDefinitionData
+    }
+  ]);
 }
-export function nodesDisconnected(from, to) {
-  return {type: "NODES_DISCONNECTED", from: from, to: to}
-}
-export function nodeAdded(node, position) {
 
+export function nodesDisconnected(from, to) {
+  return runSyncActionsThenValidate(state => [{
+      type: "NODES_DISCONNECTED",
+      from: from,
+      to: to
+    }]);
+}
+
+export function injectNode(from, middle, to) {
+  return runSyncActionsThenValidate(state => [
+    {
+        type: "NODES_DISCONNECTED",
+        from: from.id,
+        to: to.id
+    },
+    {
+        type: "NODES_CONNECTED",
+        fromNode: from,
+        toNode: middle,
+        processDefinitionData: state.settings.processDefinitionData
+    },
+    {
+        type: "NODES_CONNECTED",
+        fromNode: middle,
+        toNode: to,
+        processDefinitionData: state.settings.processDefinitionData
+    }
+  ])
+}
+
+//this WON'T work for async actions - have to handle promises separately
+function runSyncActionsThenValidate(syncActions) {
+  return (dispatch, getState) => {
+    syncActions(getState()).forEach(action => dispatch(action))
+    return HttpService.validateProcess(getState().graphReducer.processToDisplay).then(
+          (validationResult) => dispatch({type: "VALIDATION_RESULT", validationResult: validationResult}))
+  }
+}
+
+export function nodeAdded(node, position) {
   return {
     type: "NODE_ADDED",
     node: node,

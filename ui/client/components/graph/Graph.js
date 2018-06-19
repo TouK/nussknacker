@@ -156,8 +156,7 @@ class Graph extends React.Component {
           .on("link:connect", (c) => {
             this.props.actions.nodesConnected(
               c.sourceView.model.attributes.nodeData,
-              c.targetView.model.attributes.nodeData,
-              this.props.processDefinitionData
+              c.targetView.model.attributes.nodeData
             )
           })
     }
@@ -168,10 +167,11 @@ class Graph extends React.Component {
         const source = JointJsGraphUtils.findCell(this.graph, linkBelowCell.attributes.source.id)
         const target = JointJsGraphUtils.findCell(this.graph, linkBelowCell.attributes.target.id)
         const middleMan = cellView.model
+        //TODO: consider doing this check in actions.js?
         if (GraphUtils.canInjectNode(this.props.processToDisplay, source, middleMan, target, this.props.processDefinitionData)) {
-          this.props.actions.nodesDisconnected(source.id, target.id)
-          this.props.actions.nodesConnected(source.attributes.nodeData, middleMan.attributes.nodeData, this.props.processDefinitionData)
-          this.props.actions.nodesConnected(middleMan.attributes.nodeData, target.attributes.nodeData, this.props.processDefinitionData)
+          this.props.actions.injectNode(source.attributes.nodeData,
+            middleMan.attributes.nodeData,
+            target.attributes.nodeData)
         }
       }
     }

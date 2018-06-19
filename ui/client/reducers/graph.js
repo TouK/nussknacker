@@ -160,7 +160,7 @@ export function reducer(state, action) {
         ...state,
         processToDisplay: {
           ...state.processToDisplay,
-          edges: _.reject(state.processToDisplay.edges, (e) => e.from == action.from && e.to == action.to)
+          edges: _.reject(state.processToDisplay.edges, (e) => e.from === action.from && e.to === action.to)
         }
       }
     }
@@ -176,6 +176,15 @@ export function reducer(state, action) {
           })
         },
         layout: _.concat(state.layout, {id: newId, position: action.position})
+      }
+    }
+    case "VALIDATION_RESULT": {
+      return {
+        ...state,
+        processToDisplay: {
+          ...state.processToDisplay,
+          validationResult: action.validationResult
+        }
       }
     }
     //TODO: handle it differently?
