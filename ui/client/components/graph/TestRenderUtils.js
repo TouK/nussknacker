@@ -46,7 +46,7 @@ export function testResults(nodeId, testResultsToShow) {
                 <div className="node-label">{key}:</div>
                 <div className="node-value">
                   {(ctx[key] || {}).original ? <Textarea className="node-input" readOnly={true} value={ctx[key].original}/> : null}
-                  <Textarea className="node-input" readOnly={true} value={ctx[key] ? (ctx[key].pretty || ctx[key]) : "null"}/>
+                  <Textarea className="node-input" readOnly={true} value={ctx[key] !== null ? (ctx[key].pretty || ctx[key]) : "null"}/>
                 </div>
               </div>
             )

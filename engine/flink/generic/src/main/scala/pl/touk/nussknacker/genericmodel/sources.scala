@@ -31,6 +31,7 @@ object sources {
     }
   }
 
+  //FIXME: handle numeric conversion and validation here??
   private def deserializeToJMap(message: Array[Byte]): util.Map[String, _] = objectMapper.readValue(message, classOf[java.util.Map[String, _]])
 
   object JsonMapDeserialization extends EspDeserializationSchema[java.util.Map[_, _]](deserializeToJMap)
