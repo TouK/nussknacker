@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 cd ..
-./sbtwrapper managementSample/assembly
-./sbtwrapper standaloneSample/assembly
+./sbtwrapper assemblySamples
 ./sbtwrapper ui/assembly
 cd -

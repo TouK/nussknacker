@@ -638,3 +638,5 @@ releaseProcess := Seq[ReleaseStep](
   commitNextVersion,                      // : ReleaseStep
   pushChanges                             // : ReleaseStep, also checks that an upstream branch is properly configured
 )
+
+addCommandAlias("assemblySamples", ";managementSample/assembly;standaloneSample/assembly")
