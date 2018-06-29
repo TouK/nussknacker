@@ -1,20 +1,20 @@
 package pl.touk.nussknacker.engine.standalone.http
 
-import java.util.concurrent.TimeUnit
-
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Directives
 import akka.stream.ActorMaterializer
 import com.codahale.metrics.MetricRegistry
-import com.codahale.metrics.graphite.{Graphite, GraphiteReporter, GraphiteUDP}
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.http.argonaut.Argonaut62Support
 import pl.touk.nussknacker.engine.standalone.deployment.DeploymentService
 import pl.touk.nussknacker.engine.standalone.utils.StandaloneContextPreparer
+import pl.touk.nussknacker.engine.standalone.utils.metrics.StandaloneMetricsReporter
+import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 
 import scala.util.Try
+import scala.util.control.NonFatal
 
 object StandaloneHttpApp extends Directives with Argonaut62Support with LazyLogging with App {
 
@@ -27,11 +27,10 @@ object StandaloneHttpApp extends Directives with Argonaut62Support with LazyLogg
   implicit private val materializer = ActorMaterializer()
 
   private val metricRegistry = new MetricRegistry
-
-  GraphiteReporter.forRegistry(metricRegistry)
-    .prefixedWith(s"${config.getString("standaloneProcessConfig.environment")}.${config.getString("hostName")}.standaloneEngine")
-    .build(graphiteSender).start(10, TimeUnit.SECONDS)
-
+  private val metricReporters = loadMetricsReporters()
+  metricReporters.foreach { reporter =>
+    reporter.createAndRunReporter(metricRegistry, config)
+  }
 
   val standaloneApp = new StandaloneHttpApp(config, metricRegistry)
 
@@ -50,11 +49,15 @@ object StandaloneHttpApp extends Directives with Argonaut62Support with LazyLogg
     port = processesPort
   )
 
-  private def graphiteSender = {
-    if (config.hasPath("graphite.protocol") && "udp".equals(config.getString("graphite.protocol"))) {
-      new GraphiteUDP(config.getString("graphite.hostName"), config.getInt("graphite.port"))
-    } else {
-      new Graphite(config.getString("graphite.hostName"), config.getInt("graphite.port"))
+  private def loadMetricsReporters(): List[StandaloneMetricsReporter] = {
+    try {
+      val reporters = ScalaServiceLoader.load[StandaloneMetricsReporter](Thread.currentThread().getContextClassLoader)
+      logger.info(s"Loaded metrics reporters: ${reporters.map(_.getClass.getCanonicalName).mkString(", ")}")
+      reporters
+    } catch {
+      case NonFatal(ex) =>
+        logger.warn("Metrics reporter load failed. There will be no metrics reporter in standalone", ex)
+        List.empty
     }
   }
 
@@ -70,7 +73,5 @@ class StandaloneHttpApp(config: Config, metricRegistry: MetricRegistry)(implicit
   val managementRoute = new ManagementRoute(deploymentService)
 
   val processRoute = new ProcessRoute(deploymentService)
-
-
 
 }
