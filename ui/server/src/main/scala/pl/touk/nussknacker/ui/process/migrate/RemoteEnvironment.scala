@@ -1,10 +1,9 @@
 package pl.touk.nussknacker.ui.process.migrate
 
-import java.net.{URI, URL}
-
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshalling.Marshal
+import akka.http.scaladsl.model.Uri.Path
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.{Authorization, BasicHttpCredentials}
 import akka.http.scaladsl.unmarshalling.{Unmarshal, Unmarshaller}
@@ -12,17 +11,16 @@ import akka.stream.Materializer
 import argonaut.DecodeJson
 import cats.data.EitherT
 import cats.implicits._
+import pl.touk.http.argonaut.Argonaut62Support
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.codec.UiCodecs
 import pl.touk.nussknacker.ui.process.ProcessToSave
 import pl.touk.nussknacker.ui.process.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.ui.process.marshall.UiProcessMarshaller
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{InvalidProcessTypeError, ProcessDetails, ProcessHistoryEntry, ValidatedProcessDetails}
-import pl.touk.nussknacker.ui.util.ProcessComparator.Difference
-import pl.touk.nussknacker.ui.util.ProcessComparator
-import pl.touk.nussknacker.ui.validation.ValidationResults.{ValidationErrors, ValidationResult}
-import pl.touk.http.argonaut.Argonaut62Support
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.util.ProcessComparator
+import pl.touk.nussknacker.ui.util.ProcessComparator.Difference
+import pl.touk.nussknacker.ui.validation.ValidationResults.{ValidationErrors, ValidationResult}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -61,7 +59,7 @@ class HttpRemoteEnvironment(config: HttpRemoteEnvironmentConfig,
 
   val http = Http()
 
-  override def baseUrl: String = config.url
+  override def baseUrl: Uri = config.url
 
   override protected def request(uri: Uri, method: HttpMethod, request: MessageEntity): Future[HttpResponse] = {
     http.singleRequest(HttpRequest(uri = uri, method = method, entity = request,
@@ -76,13 +74,16 @@ trait StandardRemoteEnvironment extends Argonaut62Support with RemoteEnvironment
 
   def testModelMigrations: TestModelMigrations
 
-  def baseUrl: String
+  def baseUrl: Uri
 
   implicit def materializer: Materializer
 
-  private def invoke[T:DecodeJson](path: String, method: HttpMethod, requestEntity: RequestEntity = HttpEntity.Empty)(implicit ec: ExecutionContext)
+  private def invoke[T:DecodeJson](method: HttpMethod, pathParts: List[String], queryString: Option[String] = None, requestEntity: RequestEntity = HttpEntity.Empty)(implicit ec: ExecutionContext)
     : Future[Either[EspError, T]]= {
-    val uri: JsonField = encodeUrl(path)
+    val pathEncoded = pathParts.foldLeft[Path](baseUrl.path)(_ / _)
+    val uri = baseUrl
+      .withPath(pathEncoded)
+      .withRawQueryString(queryString.getOrElse(""))
     request(uri, method, requestEntity).flatMap { response =>
       if (response.status.isSuccess()) {
         Unmarshal(response.entity).to[T].map[Either[EspError, T]](Right(_))
@@ -93,13 +94,8 @@ trait StandardRemoteEnvironment extends Argonaut62Support with RemoteEnvironment
     }
   }
 
-  private def encodeUrl(path: String) = {
-    val url = new URL(s"$baseUrl/$path")
-    new URI(url.getProtocol, url.getUserInfo, url.getHost, url.getPort, url.getPath, url.getQuery, null).toString
-  }
-
   override def processVersions(processId: String)(implicit ec: ExecutionContext): Future[List[ProcessHistoryEntry]] =
-    invoke[ProcessDetails](s"processes/$processId?businessView=true", HttpMethods.GET).map { result =>
+    invoke[ProcessDetails](HttpMethods.GET, List("processes", processId), Some("businessView=true")).map { result =>
       result.fold(_ => List(), _.history)
     }
 
@@ -110,7 +106,7 @@ trait StandardRemoteEnvironment extends Argonaut62Support with RemoteEnvironment
 
     (for {
       //TODO: move urls to some constants...
-      process <- EitherT(invoke[ProcessDetails](s"processes/$id${remoteProcessVersion.map("/" + _).getOrElse("")}?businessView=$businessView", HttpMethods.GET))
+      process <- EitherT(invoke[ProcessDetails](HttpMethods.GET, List("processes", id) ++ remoteProcessVersion.map(_.toString).toList, Some(s"businessView=$businessView")))
       compared <- EitherT.fromEither[Future](compareProcess(id, localProcess)(process))
     } yield compared).value
 
@@ -121,10 +117,10 @@ trait StandardRemoteEnvironment extends Argonaut62Support with RemoteEnvironment
     val comment = s"Process migrated from $environmentId by ${loggedUser.id}"
     (for {
       processToValidate <- EitherT.right(Marshal(localProcess).to[MessageEntity])
-      validation <- EitherT(invoke[ValidationResult]("processValidation", HttpMethods.POST, processToValidate))
+      validation <- EitherT(invoke[ValidationResult](HttpMethods.POST, List("processValidation"), requestEntity = processToValidate))
       _ <- EitherT.fromEither[Future](if (validation.errors != ValidationErrors.success) Left[EspError, Unit](MigrationValidationError(validation.errors)) else Right(()))
       processToSave <- EitherT.right(Marshal(ProcessToSave(localProcess, comment)).to[MessageEntity])
-      result <- EitherT(invoke[ValidationResult](s"processes/${localProcess.id}", HttpMethods.PUT, processToSave))
+      result <- EitherT(invoke[ValidationResult](HttpMethods.PUT, List("processes", localProcess.id), requestEntity = processToSave))
     } yield ()).value
   }
 
@@ -135,8 +131,8 @@ trait StandardRemoteEnvironment extends Argonaut62Support with RemoteEnvironment
 
   override def testMigration(implicit ec: ExecutionContext): Future[Either[EspError, List[TestMigrationResult]]] = {
     (for {
-      processes <- EitherT(invoke[List[ValidatedProcessDetails]]("processesDetails", HttpMethods.GET))
-      subprocesses <- EitherT(invoke[List[ValidatedProcessDetails]]("subProcessesDetails", HttpMethods.GET))
+      processes <- EitherT(invoke[List[ValidatedProcessDetails]](HttpMethods.GET,List("processesDetails")))
+      subprocesses <- EitherT(invoke[List[ValidatedProcessDetails]](HttpMethods.GET,List("subProcessesDetails")))
     } yield testModelMigrations.testMigrations(processes, subprocesses)).value
   }
 }

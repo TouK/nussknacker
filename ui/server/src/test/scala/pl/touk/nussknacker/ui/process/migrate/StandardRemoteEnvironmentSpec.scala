@@ -30,7 +30,7 @@ class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with ScalaFut
 
     override def targetEnvironmentId = "targetTestEnv"
 
-    override def baseUrl: String = "http://localhost"
+    override def baseUrl: Uri = Uri("http://localhost:8087/api")
 
     override implicit val materializer = ActorMaterializer()
 
@@ -87,6 +87,28 @@ class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with ScalaFut
     }
 
   }
+
+  it should "handle non-ascii signs in process id" in {
+    val process = ProcessTestData.toValidatedDisplayable(ProcessTestData.validProcessWithId("łódź")).toDisplayable
+
+    val remoteEnvironment = new MockRemoteEnvironment {
+
+      override protected def request(path: Uri, method: HttpMethod, request: MessageEntity) : Future[HttpResponse] = {
+        if (path.toString().startsWith(s"$baseUrl/processes/%C5%82%C3%B3d%C5%BA") && method == HttpMethods.GET) {
+          Marshal(ProcessTestData.toDetails(process)).to[RequestEntity].map { entity =>
+            HttpResponse(StatusCodes.OK, entity = entity)
+          }
+        } else {
+          throw new AssertionError(s"Not expected $path")
+        }
+      }
+    }
+    whenReady(remoteEnvironment.compare(process, None)) { result =>
+      result shouldBe 'right
+    }
+
+  }
+
 
   it should "migrate valid process" in {
 
