@@ -144,8 +144,14 @@ export default {
 
   deploy(processId) {
     return promiseWrap($.post(API_URL + '/processManagement/deploy/' + processId))
-      .then(() => this.addInfo(`Process ${processId} was deployed`))
-      .catch((error) => this.addError(`Failed to deploy ${processId}`, error, true));
+      .then(() => {
+        this.addInfo(`Process ${processId} was deployed`)
+        return { isSuccess: true }
+      })
+      .catch((error) => {
+        this.addError(`Failed to deploy ${processId}`, error, true)
+        return { isSuccess: false }
+      });
   },
 //TODO: separate reusable invocation.
   invokeService(processingType, serviceName, parameters) {

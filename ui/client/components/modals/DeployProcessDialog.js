@@ -21,11 +21,18 @@ class DeployProcessDialog extends React.Component {
   }
 
   deploy = (closeDialog) => {
-    HttpService.deploy(this.props.processId)
-      .then(resp => {
-        this.props.actions.displayCurrentProcessVersion(this.props.processId)
-      })
+    const { actions, processId, processVersionId } = this.props
+    const comment = this.state.comment
+
     closeDialog()
+
+    return HttpService.deploy(processId)
+      .then(resp => {
+        if (resp.isSuccess) {
+          actions.addComment(processId, processVersionId, comment)
+        }
+        actions.displayCurrentProcessVersion(processId)
+      })
   }
 
   okBtnConfig = () => {
@@ -50,7 +57,7 @@ class DeployProcessDialog extends React.Component {
       >
         <p>Deploy process {this.props.processId}</p>
         <ProcessDialogWarnings processHasWarnings={this.props.processHasWarnings} />
-        <CommentInput onChange={this.onInputChange.bind(this)}/>
+        <CommentInput onChange={this.onInputChange}/>
       </GenericModalDialog>
     );
   }
@@ -62,6 +69,7 @@ function mapState(state) {
   return {
     deploySettings: _.get(state.settings, "featuresSettings.deploySettings") || {},
     processId: _.get(state.graphReducer, 'fetchedProcessDetails.id'),
+    processVersionId: _.get(state.graphReducer, "fetchedProcessDetails.processVersionId"),
     processHasWarnings: !processHasNoWarnings
   }
 }
