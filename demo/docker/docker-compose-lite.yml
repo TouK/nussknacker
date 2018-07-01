@@ -70,17 +70,24 @@ services:
       KAFKA_ADVERTISED_HOST_NAME: kafka
       KAFKA_ADVERTISED_PORT: 9092
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_HEAP_OPTS: -Xms128m -Xmx512m
     links:
       - "zookeeper:zookeeper"
 
   influxdb:
-    build: ./influxdb
+    image: influxdb:1.1
+    command: ["/runWithEspDb.sh"]
     volumes:
+      - ./influxdb/runWithEspDb.sh:/runWithEspDb.sh
       - ./influxdb/influxdb.conf:/etc/influxdb/influxdb.conf
     expose:
       - "2003/udp"
   grafana:
-    build: ./grafana
+    image: grafana/grafana:4.4.1
+    entrypoint: ["/runWithFlinkEspBoard.sh"]
+    volumes:
+      - ./grafana/runWithFlinkEspBoard.sh:/runWithFlinkEspBoard.sh
+      - ./grafana/Flink-ESP.json:/Flink-ESP.json
     links:
       - "influxdb:influxdb"
     environment:
@@ -88,21 +95,17 @@ services:
       - GF_SERVER_ROOT_URL=%(protocol)s://%(domain)s:/grafana
 
   nginx:
-    build: ./nginx
+    image: nginx
     ports:
       - "8081:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
     links:
       - grafana
       - app
       - jobmanager
-      - kibana
-
-  #this is just a placeholder - otherwise nginx won't work...
-  kibana:
-    image: ubuntu:latest
-    command: /bin/sh
-    stdin_open: true
-
+    extra_hosts:
+      - "kibana:127.0.0.1"
 
 volumes:
   sharedStorage: {}

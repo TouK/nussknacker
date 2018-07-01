@@ -70,11 +70,14 @@ services:
       KAFKA_ADVERTISED_HOST_NAME: kafka
       KAFKA_ADVERTISED_PORT: 9092
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_HEAP_OPTS: -Xms128m -Xmx512m
     links:
       - "zookeeper:zookeeper"
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:5.4.1
+    environment:
+      ES_JAVA_OPTS: -Xms128m -Xmx512m
     volumes:
       - ./elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
     expose:
@@ -87,7 +90,7 @@ services:
         hard: 70000
 
   logstash:
-    build: ./logstash
+    image: docker.elastic.co/logstash/logstash:5.4.1
     links:
       - elasticsearch
       - kafka
@@ -111,13 +114,19 @@ services:
       - ./kibana/config/:/usr/share/kibana/config
 
   influxdb:
-    build: ./influxdb
+    image: influxdb:1.1
+    command: ["/runWithEspDb.sh"]
     volumes:
+      - ./influxdb/runWithEspDb.sh:/runWithEspDb.sh
       - ./influxdb/influxdb.conf:/etc/influxdb/influxdb.conf
     expose:
       - "2003/udp"
   grafana:
-    build: ./grafana
+    image: grafana/grafana:4.4.1
+    entrypoint: ["/runWithFlinkEspBoard.sh"]
+    volumes:
+      - ./grafana/runWithFlinkEspBoard.sh:/runWithFlinkEspBoard.sh
+      - ./grafana/Flink-ESP.json:/Flink-ESP.json
     links:
       - "influxdb:influxdb"
     environment:
@@ -125,9 +134,11 @@ services:
       - GF_SERVER_ROOT_URL=%(protocol)s://%(domain)s:/grafana
 
   nginx:
-    build: ./nginx
+    image: nginx
     ports:
       - "8081:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
     links:
       - kibana
       - grafana
