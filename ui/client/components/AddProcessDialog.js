@@ -31,11 +31,8 @@ class AddProcessDialog extends React.Component {
     this.state = this.initialState(props)
   }
 
-  componentWillReceiveProps(props) {
-    this.setState(this.initialState(props))
-  }
-
   closeDialog = () => {
+    this.setState(this.initialState(this.props))
     this.props.onClose()
   }
 
