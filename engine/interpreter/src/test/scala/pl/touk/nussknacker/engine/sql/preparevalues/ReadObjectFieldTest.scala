@@ -1,8 +1,8 @@
-package pl.touk.nussknacker.engine.sql
+package pl.touk.nussknacker.engine.sql.preparevalues
 
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.sql.ReadObjectField.ClassValueNotFount
+import pl.touk.nussknacker.engine.sql.preparevalues.ReadObjectField.ClassValueNotFound
 
 class ReadObjectFieldTest extends FunSuite with Matchers {
 
@@ -19,7 +19,7 @@ class ReadObjectFieldTest extends FunSuite with Matchers {
     ReadObjectField.readField(Chair("red"), "cOlOr") shouldEqual "red"
   }
   test("throws exception if field value is not found") {
-    assertThrows[ClassValueNotFount] {
+    assertThrows[ClassValueNotFound] {
       ReadObjectField.readField(Chair("red"), "nonexcisting")
     }
   }
@@ -30,7 +30,7 @@ class ReadObjectFieldTest extends FunSuite with Matchers {
     ReadObjectField.readField(TypedMap(Map("age" -> 5)), "AgE") shouldEqual 5
   }
   test("reads unexciting value from typed map") {
-    assertThrows[ClassValueNotFount] {
+    assertThrows[ClassValueNotFound] {
       ReadObjectField.readField(TypedMap(Map("age" -> 5)), "name")
     }
   }

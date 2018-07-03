@@ -1,12 +1,13 @@
-package pl.touk.nussknacker.engine.sql
+package pl.touk.nussknacker.engine.sql.columnmodel
 
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedMapTypingResult, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.sql.CreateColumnModel.ClazzToSqlType
+import pl.touk.nussknacker.engine.sql.columnmodel.CreateColumnModel.ClazzToSqlType
+import pl.touk.nussknacker.engine.sql.{Column, ColumnModel}
 
 import scala.collection.immutable
 
-object TypedMapColumnModel {
+private[columnmodel] object TypedMapColumnModel {
   def create(typedMap: TypedMapTypingResult): ColumnModel = {
     ColumnModel(columns(typedMap).toList)
   }

@@ -1,9 +1,10 @@
-package pl.touk.nussknacker.engine.sql
+package pl.touk.nussknacker.engine.sql.columnmodel
 
-import cats.data.{NonEmptyList, Validated}
+import cats.data.Validated
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedMapTypingResult, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.sql.CreateColumnModel.NotAListMessage
+import pl.touk.nussknacker.engine.sql.TypedList
+import pl.touk.nussknacker.engine.sql.columnmodel.CreateColumnModel.NotAListMessage
 
 class CreateColumnModelTest extends FunSuite with Matchers {
 

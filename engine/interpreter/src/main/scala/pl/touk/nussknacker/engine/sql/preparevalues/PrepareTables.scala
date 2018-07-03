@@ -1,7 +1,8 @@
-package pl.touk.nussknacker.engine.sql
+package pl.touk.nussknacker.engine.sql.preparevalues
 
 import cats.data._
 import cats.implicits._
+import pl.touk.nussknacker.engine.sql.{ColumnModel, Table}
 
 import scala.collection.JavaConverters.collectionAsScalaIterableConverter
 
@@ -9,7 +10,7 @@ object PrepareTables {
   def apply(
              values: Map[String, Any],
              colModels: Map[String, ColumnModel],
-             readObjectField: ReadObjectField
+             readObjectField: ReadObjectField = ReadObjectField
            ): ValidatedNel[NotAListException, Map[String, Table]] = {
     val validatedList = values.filterKeys { key =>
       colModels.keys.toList.contains(key)
@@ -29,7 +30,7 @@ object PrepareTables {
       .map(_.toMap)
   }
 
-  private[sql] def marshall(name: String,
+  private[preparevalues] def marshall(name: String,
                             readObjectField: ReadObjectField,
                             columnModel: ColumnModel,
                             any: Any

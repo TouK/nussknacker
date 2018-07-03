@@ -1,8 +1,9 @@
-package pl.touk.nussknacker.engine.sql
+package pl.touk.nussknacker.engine.sql.columnmodel
 
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedMapTypingResult}
-import SqlType._
+import pl.touk.nussknacker.engine.sql.SqlType.{Numeric, Varchar}
+import pl.touk.nussknacker.engine.sql.{Column, ColumnModel}
 
 class TypedMapColumnModelTest extends FunSuite with Matchers {
   test("create column model") {

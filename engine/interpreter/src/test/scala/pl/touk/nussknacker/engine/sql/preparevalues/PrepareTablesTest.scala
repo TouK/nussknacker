@@ -1,10 +1,11 @@
-package pl.touk.nussknacker.engine.sql
+package pl.touk.nussknacker.engine.sql.preparevalues
 
 import java.util
-import SqlType._
-import cats.implicits._
 
+import cats.implicits._
 import org.scalatest.{FunSuite, Matchers}
+import pl.touk.nussknacker.engine.sql.SqlType.{Numeric, Varchar}
+import pl.touk.nussknacker.engine.sql.{Column, ColumnModel, Table}
 
 class PrepareTablesTest extends FunSuite with Matchers {
   test("fulfillment") {
@@ -18,7 +19,7 @@ class PrepareTablesTest extends FunSuite with Matchers {
       List(Chair("red"), Chair("blue"), Chair("green"))
     )
 
-    val result = PrepareTables(vars, createMap(dogosModel, chairsModel), ReadObjectField)
+    val result = PrepareTables(vars, createMap(dogosModel, chairsModel))
 
     val dogosTable = Table(dogosModel, List(List("azor", 2), List("reksio", 5)))
     val chairsTable = Table(chairsModel, List(List("red"), List("blue"), List("green")))
@@ -31,7 +32,7 @@ class PrepareTablesTest extends FunSuite with Matchers {
   }
 
   test("skip unused variables") {
-    PrepareTables(Map("unused" -> List(1, 2, 3)), Map(), ReadObjectField) shouldEqual Map().valid
+    PrepareTables(Map("unused" -> List(1, 2, 3)), Map()) shouldEqual Map().valid
   }
 
   val dogosModel = ColumnModel(List(Column("name", Varchar), Column("age", Numeric)))

@@ -1,13 +1,14 @@
-package pl.touk.nussknacker.engine.sql
+package pl.touk.nussknacker.engine.sql.columnmodel
 
 import java.lang.reflect.Member
 
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.sql.TypedClassColumnModel.CreateColumnClassExtractionPredicate
+import pl.touk.nussknacker.engine.sql.SqlType.{Bool, Numeric, Varchar}
+import pl.touk.nussknacker.engine.sql.columnmodel.TypedClassColumnModel.CreateColumnClassExtractionPredicate
+import pl.touk.nussknacker.engine.sql.{Column, ColumnModel}
 
 import scala.reflect.ClassTag
-import SqlType._
 
 class TypedClassColumnModelTest extends FunSuite with Matchers{
   def typeMe[T](implicit classTag: ClassTag[T]): ColumnModel = TypedClassColumnModel.create(Typed[T].asInstanceOf[Typed])

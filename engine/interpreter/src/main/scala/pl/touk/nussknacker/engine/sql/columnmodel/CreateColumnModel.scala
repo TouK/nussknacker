@@ -1,12 +1,13 @@
-package pl.touk.nussknacker.engine.sql
+package pl.touk.nussknacker.engine.sql.columnmodel
 
 import java.util.Date
 
-import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedMapTypingResult, TypingResult, Unknown}
 import cats.data._
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.api.typed.ClazzRef
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedMapTypingResult, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.sql.{ColumnModel, SqlType}
 
 object CreateColumnModel {
 
@@ -21,7 +22,7 @@ object CreateColumnModel {
     }
   }
 
-  private[sql] val getListInnerType: TypingResult => Validated[InvalidateMessage, TypingResult] = {
+  private[columnmodel] val getListInnerType: TypingResult => Validated[InvalidateMessage, TypingResult] = {
     case t@Typed(klasses) if klasses.size == 1 =>
       val headClass = klasses.head
       val isCollection =

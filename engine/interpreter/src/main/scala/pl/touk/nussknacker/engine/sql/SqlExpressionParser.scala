@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.engine.sql
 
 import java.sql.SQLSyntaxErrorException
-import java.util
 
+import cats.data.Validated._
+import cats.data._
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.lazyy.LazyValuesProvider
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
@@ -10,15 +11,12 @@ import pl.touk.nussknacker.engine.api.typed.{ClazzRef, TypedMap, typing}
 import pl.touk.nussknacker.engine.compile.ValidationContext
 import pl.touk.nussknacker.engine.compiledgraph.expression
 import pl.touk.nussknacker.engine.compiledgraph.expression.{Expression, ExpressionParser, ValueWithLazyContext}
-import pl.touk.nussknacker.engine.sql.CreateColumnModel.{InvalidateMessage, NotAListMessage, UnknownInner}
+import pl.touk.nussknacker.engine.sql.columnmodel.CreateColumnModel
+import pl.touk.nussknacker.engine.sql.columnmodel.CreateColumnModel.InvalidateMessage
+import pl.touk.nussknacker.engine.sql.preparevalues.{PrepareTables, ReadObjectField}
 
 import scala.collection.JavaConverters._
 import scala.concurrent.Future
-import cats.data._
-import cats.data.Validated._
-import cats.implicits._
-
-import scala.util.Try
 
 //TODO: reflection is quite naive. works for case classes and TypedMap
 object SqlExpressionParser extends ExpressionParser {
@@ -26,37 +24,23 @@ object SqlExpressionParser extends ExpressionParser {
   override val languageId: String = "sql"
 
   override def parse(original: String, ctx: ValidationContext, expectedType: ClazzRef)
-  : Validated[NonEmptyList[expression.ExpressionParseError], (typing.TypingResult, expression.Expression)] = {
-    val froms: SqlFromsQuery = SqlExpressionParser.parseSqlFromsQuery(original, ctx.variables.keys.toList)
-    val columnModel = SqlExpressionParser.createTablesDefinition(ctx, froms, CreateColumnModel(_))
-    val validatedColumnModel = validateColumnModel(columnModel)
-    validatedColumnModel.andThen { colModel =>
-      val returnType = getQueryReturnType(original, colModel)
-      returnType.map { typingResult =>
-        createExpression(original, colModel, typingResult)
-      }
+  : Validated[NonEmptyList[expression.ExpressionParseError], (typing.TypingResult, SqlExpression)] = {
+    val columnModel = ctx.variables.mapValues(CreateColumnModel(_))
+
+    val validVars = columnModel.collect {
+      case (key, Valid(model)) => key -> model
+    }
+
+    getQueryReturnType(original, validVars).map { typingResult =>
+      val minimalModel: Map[String, ColumnModel] = findUsedVariables(original, validVars)
+      createExpression(original, minimalModel, typingResult)
     }
   }
 
-  private[sql] def validateColumnModel(columnModels: Map[String, Validated[InvalidateMessage, ColumnModel]])
-  : ValidatedNel[expression.ExpressionParseError, Map[String, ColumnModel]] = {
-    columnModels.map {
-      case (name, invalid@Invalid(invalidateMesage)) =>
-        transform(name, invalidateMesage).invalidNel
-      case (name, Valid(colModel)) =>
-        (name -> colModel).validNel
-    }
-      .toList
-      .sequenceU
-      .map(_.toMap)
-  }
-
-  private[sql] def transform(columnModelName: String, invalidateMessage: InvalidateMessage): expression.ExpressionParseError = {
-    invalidateMessage match {
-      case NotAListMessage(typ) =>
-        expression.ExpressionParseError(s"cannot create table from '$columnModelName' $typ is not a list")
-      case UnknownInner =>
-        expression.ExpressionParseError(s"cannot create table '$columnModelName'. List of Unknown")
+  //we try to remove each table/variable and check if query still validates.
+  private def findUsedVariables(original: String, validVars: Map[String, ColumnModel]): Map[String, ColumnModel] = {
+    validVars.filterNot { case (nextVar, _) =>
+      getQueryReturnType(original, validVars - nextVar).isValid
     }
   }
 
@@ -64,14 +48,14 @@ object SqlExpressionParser extends ExpressionParser {
                                 original: String,
                                 colModel: Map[String, ColumnModel],
                                 typingResult: TypingResult
-                              ): (typing.TypingResult, expression.Expression) = {
+                              ): (typing.TypingResult, SqlExpression) = {
 
     val expression = new SqlExpression(original = original, columnModels = colModel)
     val listResult = TypedClass(classOf[List[_]], List(typingResult))
     (Typed(Set(listResult)), expression)
   }
 
-  private[sql] def getQueryReturnType(original: String, colModel: Map[String, ColumnModel]): Validated[NonEmptyList[expression.ExpressionParseError], TypingResult] = {
+  private def getQueryReturnType(original: String, colModel: Map[String, ColumnModel]): Validated[NonEmptyList[expression.ExpressionParseError], TypingResult] = {
     val db = new HsqlSqlQueryableDataBase(original, colModel)
     try {
       Validated.Valid(db.getTypingResult)
@@ -83,27 +67,6 @@ object SqlExpressionParser extends ExpressionParser {
     }
   }
 
-  def createTablesDefinition(
-                              validationContext: ValidationContext,
-                              sqlFromsQuery: SqlFromsQuery,
-                              createColumnModel: TypingResult => Validated[InvalidateMessage, ColumnModel]
-                            ): Map[String, Validated[InvalidateMessage, ColumnModel]] = {
-    validationContext.variables.filterKeys {
-      sqlFromsQuery.froms.contains
-    }.mapValues {
-      createColumnModel
-    }
-  }
-
-  def parseSqlFromsQuery(query: String, availableVariables: List[String]): SqlFromsQuery = {
-    /*
-    That could parse query to AST.
-    This approximation returns every variable name witch occurs in query by name
-     */
-    val froms = availableVariables.filter(v => query.contains(v))
-    SqlFromsQuery(froms)
-  }
-
   override def parseWithoutContextValidation(original: String, expectedType: ClazzRef): Validated[expression.ExpressionParseError, expression.Expression] =
     throw new IllegalStateException("shouldn't be used")
 
@@ -113,8 +76,8 @@ case class SqlExpressEvaluationException(notAListExceptions :NonEmptyList[Prepar
   extends IllegalArgumentException(notAListExceptions.toString())
 
 //FIXME: take care of cleaning up, current implementation may lead to resource leaks...
-class SqlExpression(columnModels: Map[String, ColumnModel],
-                    val original: String) extends Expression {
+class SqlExpression(private[sql] val columnModels: Map[String, ColumnModel],
+                     val original: String) extends Expression {
 
   private val databaseHolder = new ThreadLocal[SqlQueryableDataBase] {
     override def initialValue(): SqlQueryableDataBase = newDatabase()
@@ -133,15 +96,13 @@ class SqlExpression(columnModels: Map[String, ColumnModel],
 
   private def evaluate[T](ctx: Context): List[TypedMap] = {
     val db = databaseHolder.get()
-    PrepareTables(ctx.variables, columnModels, ReadObjectField)
+    PrepareTables(ctx.variables, columnModels)
       .map(db.query)
       .valueOr(error => throw SqlExpressEvaluationException(error))
   }
 
 }
 
-
-case class SqlFromsQuery(froms: List[String])
 
 case class Table(model: ColumnModel, rows: List[List[Any]])
 
