@@ -10,7 +10,7 @@ export default class CommentContent extends React.Component {
     if (_.isEmpty(this.props.commentSettings)) {
       return this.props.content
     } else {
-      const regex = new RegExp(this.props.commentSettings.matchExpression)
+      const regex = new RegExp(this.props.commentSettings.matchExpression, "g")
       const replacement = `<a href=${this.props.commentSettings.link} target="_blank">$1</a>`
       return this.props.content.replace(regex, replacement)
     }
