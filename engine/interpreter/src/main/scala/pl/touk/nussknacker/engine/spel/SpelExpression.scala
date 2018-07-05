@@ -102,9 +102,9 @@ class SpelExpressionParser(expressionFunctions: Map[String, Method], expressionI
   )
 
   private val scalaLazyPropertyAccessor = new ScalaLazyPropertyAccessor(lazyValuesTimeout)
-  private val scalaPropertyAccessor = new ScalaPropertyAccessor
-  private val scalaOptionOrNullPropertyAccessor = new ScalaOptionOrNullPropertyAccessor
-  private val staticPropertyAccessor = new StaticPropertyAccessor
+  private val scalaPropertyAccessor = ScalaPropertyAccessor
+  private val scalaOptionOrNullPropertyAccessor = ScalaOptionOrNullPropertyAccessor
+  private val staticPropertyAccessor = StaticPropertyAccessor
 
   private val propertyAccessors = Seq(
     scalaLazyPropertyAccessor, // must be before scalaPropertyAccessor
@@ -182,7 +182,7 @@ object SpelExpressionParser extends LazyLogging {
     imports, loader, 1 minute, enableSpelForceCompile)
 
 
-  class ScalaPropertyAccessor extends PropertyAccessor with ReadOnly with Caching {
+  object ScalaPropertyAccessor extends PropertyAccessor with ReadOnly with Caching {
 
     override protected def reallyFindMethod(name: String, target: Class[_]) : Option[Method] =
       target.getMethods.find(m => m.getParameterCount == 0 && m.getName == name)
@@ -195,7 +195,7 @@ object SpelExpressionParser extends LazyLogging {
     override def getSpecificTargetClasses = null
   }
 
-  class StaticPropertyAccessor extends PropertyAccessor with ReadOnly with StaticMethodCaching {
+  object StaticPropertyAccessor extends PropertyAccessor with ReadOnly with StaticMethodCaching {
 
     override protected def reallyFindMethod(name: String, target: Class[_]): Option[Method] = {
       target.asInstanceOf[Class[_]].getMethods.find(m =>
@@ -210,7 +210,7 @@ object SpelExpressionParser extends LazyLogging {
     override def getSpecificTargetClasses: Array[Class[_]] = null
   }
 
-  class ScalaOptionOrNullPropertyAccessor extends PropertyAccessor with ReadOnly with Caching {
+  object ScalaOptionOrNullPropertyAccessor extends PropertyAccessor with ReadOnly with Caching {
 
     override protected def reallyFindMethod(name: String, target: Class[_]) : Option[Method] = {
       target.getMethods.find(m => m.getParameterCount == 0 && m.getName == name && classOf[Option[_]].isAssignableFrom(m.getReturnType))

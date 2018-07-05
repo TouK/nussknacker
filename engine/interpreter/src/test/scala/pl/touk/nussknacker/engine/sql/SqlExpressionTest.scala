@@ -18,28 +18,46 @@ class SqlExpressionTest extends FunSuite with Matchers with ScalaFutures {
     "var" -> Typed[String],
     "var1" -> TypedList(Map(
         "field1" -> Typed[String],
-        "field2" -> Typed[java.lang.Long]
+        "field2" -> Typed[java.lang.Long],
+        "getField3" -> Typed[String]
       )),
     "var12" -> TypedList(Map(
         "field3" -> Typed[String],
-        "field4" -> Typed[java.lang.Long]
-    ))
+        "field4" -> Typed[java.lang.Long],
+        "isField5" -> Typed[Boolean],
+        "is_field6" -> Typed[Boolean]
+    )),
+    "var3" -> TypedList[TestBean]
   ))
 
   private val ctx = Context("").withVariables(Map(
     "var" -> "blah",
     "var1" -> util.Arrays.asList(TypedMap(Map(
       "field1" -> "abcd",
-      "field2" -> 11L
+      "field2" -> 11L,
+      "getField3" -> "tralaala"
     ))),
     "var12" -> util.Arrays.asList(TypedMap(Map(
       "field3" -> "eeeee",
-      "field4" -> 13L
-    )))
+      "field4" -> 13L,
+      "isField5" -> false,
+      "is_field6" -> true
+    ))),
+    "var3" -> util.Arrays.asList(TestBean("a", isField2 = true, 11L))
   ))
 
   test("evaluate case insensitive table names") {
-    evaluate("select field1 from VAR1") shouldBe List(TypedMap(Map("FIELD1" -> "abcd")))
+    evaluate("select field1 from VAR1") shouldBe
+      List(TypedMap(Map("FIELD1" -> "abcd")))
+  }
+
+  test("evaluate expression with getter-like column names") {
+    evaluate("select isField5, is_field6 from var12") shouldBe
+      List(TypedMap(Map("ISFIELD5" -> false, "IS_FIELD6" -> true)))
+
+    val z = evaluate("select field1, isfield2, getField3 from var3 where isField2 = true")
+    z shouldBe
+      List(TypedMap(Map("FIELD1" -> "a", "ISFIELD2" -> true, "GETFIELD3" -> java.math.BigDecimal.valueOf(11))))
   }
 
   test("evaluate with var names containing each other") {
@@ -60,5 +78,6 @@ class SqlExpressionTest extends FunSuite with Matchers with ScalaFutures {
           .parse(expression, validationContext, ClazzRef[java.util.List[_]])
           .leftMap(err => fail(s"Failed to parse: $err")).merge._2
 
+  case class TestBean(field1: String, isField2: Boolean, getField3: Long)
 
 }

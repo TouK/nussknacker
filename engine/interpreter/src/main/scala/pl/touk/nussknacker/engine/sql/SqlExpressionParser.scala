@@ -18,7 +18,6 @@ import pl.touk.nussknacker.engine.sql.preparevalues.{PrepareTables, ReadObjectFi
 import scala.collection.JavaConverters._
 import scala.concurrent.Future
 
-//TODO: reflection is quite naive. works for case classes and TypedMap
 object SqlExpressionParser extends ExpressionParser {
 
   override val languageId: String = "sql"

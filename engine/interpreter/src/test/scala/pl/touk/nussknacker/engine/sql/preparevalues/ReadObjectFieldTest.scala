@@ -15,9 +15,7 @@ class ReadObjectFieldTest extends FunSuite with Matchers {
     }
     ReadObjectField.readField(Cup(), "color") shouldEqual "red"
   }
-  test("get field by name is case insensitive") {
-    ReadObjectField.readField(Chair("red"), "cOlOr") shouldEqual "red"
-  }
+
   test("throws exception if field value is not found") {
     assertThrows[ClassValueNotFound] {
       ReadObjectField.readField(Chair("red"), "nonexcisting")
@@ -26,15 +24,18 @@ class ReadObjectFieldTest extends FunSuite with Matchers {
   test("reads value from typed map") {
     ReadObjectField.readField(TypedMap(Map("age" -> 5)), "age") shouldEqual 5
   }
-  test("reads value from typed map case insensitive") {
-    ReadObjectField.readField(TypedMap(Map("age" -> 5)), "AgE") shouldEqual 5
-  }
   test("reads unexciting value from typed map") {
     assertThrows[ClassValueNotFound] {
       ReadObjectField.readField(TypedMap(Map("age" -> 5)), "name")
     }
   }
 
-  case class Chair(color: String)
+  test("handles getter-style properties from beans") {
+    ReadObjectField.readField(Chair(), "isField1") shouldEqual "val1"
+    ReadObjectField.readField(Chair(), "getField3") shouldEqual true
+
+  }
+
+  case class Chair(color: String = "red", isField1: String = "val1", getField3: Boolean = true)
 
 }

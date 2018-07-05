@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.engine.sql.preparevalues
 
-import pl.touk.nussknacker.engine.api.typed.TypedMap
+import org.springframework.expression.PropertyAccessor
+import org.springframework.expression.spel.support.{ReflectivePropertyAccessor, StandardEvaluationContext}
+import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{MapPropertyAccessor, ScalaPropertyAccessor, StaticPropertyAccessor, TypedMapPropertyAccessor}
 
 private[preparevalues] trait ReadObjectField {
   def readField(obj:Any, name: String) : Any
@@ -8,20 +10,21 @@ private[preparevalues] trait ReadObjectField {
 
 private[preparevalues] object ReadObjectField extends ReadObjectField {
 
+  //we do it with spring accessors, because field name extraction is spel-compatible, so here we should also respect same rules
+  private val accessors = List[PropertyAccessor](TypedMapPropertyAccessor, MapPropertyAccessor, ScalaPropertyAccessor, StaticPropertyAccessor, new ReflectivePropertyAccessor)
+
+  private val ec = new StandardEvaluationContext()
+
   override def readField(obj:Any, name: String): Any = {
-    obj match {
-      case TypedMap(aMap) =>
-        aMap.collectFirst { case (key, value) if key.toLowerCase == name.toLowerCase => value }
-          .getOrElse(name, throw ClassValueNotFound(obj, name))
-      case obj: Any =>
-      //FIXME: doesn't work for fields,javabeans, etc.
-        val value = obj.getClass.getMethods
-        .find(_.getName.equalsIgnoreCase(name))
-        .getOrElse(throw ClassValueNotFound(obj, name))
-        .invoke(obj)
-        toJava(value)
-    }
+    val extracted = accessors
+      .filter(classes => Option(classes.getSpecificTargetClasses).forall(_.exists(_.isInstance(obj))))
+      .find(_.canRead(ec, obj, name))
+      .map(_.read(ec, obj, name))
+      .getOrElse(throw ClassValueNotFound(obj, name))
+      .getValue
+    toJava(extracted)
   }
+
 
   private def toJava(value: Any): Any = {
     value match {
