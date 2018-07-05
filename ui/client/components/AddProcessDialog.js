@@ -82,8 +82,9 @@ class AddProcessDialog extends React.Component {
 }
 
 function mapState(state) {
+  const user = state.settings.loggedUser;
   return {
-    categories: state.settings.loggedUser.categories || []
+    categories: (user.categories || []).filter(c => user.canWrite(c))
   }
 }
 

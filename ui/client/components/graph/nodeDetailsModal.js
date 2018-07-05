@@ -198,6 +198,7 @@ function mapState(state) {
   var errors = nodeId ? _.get(state.graphReducer.processToDisplay, `validationResult.errors.invalidNodes[${state.graphReducer.nodeToDisplay.id}]`, [])
     : _.get(state.graphReducer.processToDisplay, "validationResult.errors.processPropertiesErrors", [])
   const nodeToDisplay = state.graphReducer.nodeToDisplay
+  const processCategory = state.graphReducer.fetchedProcessDetails.processCategory
   return {
     nodeToDisplay: nodeToDisplay,
     nodeSetting: _.get(state.settings.nodesSettings, ProcessUtils.findNodeConfigName(nodeToDisplay)) || {},
@@ -205,7 +206,7 @@ function mapState(state) {
     subprocessVersions: state.graphReducer.processToDisplay.properties.subprocessVersions,
     nodeErrors: errors,
     processToDisplay: state.graphReducer.processToDisplay,
-    readOnly: !state.settings.loggedUser.canWrite || state.graphReducer.businessView || state.graphReducer.nodeToDisplayReadonly || false,
+    readOnly: !state.settings.loggedUser.canWrite(processCategory) || state.graphReducer.businessView || state.graphReducer.nodeToDisplayReadonly || false,
     showNodeDetailsModal: state.ui.showNodeDetailsModal,
     testResults: state.graphReducer.testResults,
     processDefinitionData: state.settings.processDefinitionData,

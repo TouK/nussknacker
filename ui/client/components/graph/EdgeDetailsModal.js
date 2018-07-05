@@ -166,11 +166,12 @@ class EdgeDetailsModal extends React.Component {
 function mapState(state) {
   var nodeId = state.graphReducer.edgeToDisplay.from
   var errors = _.get(state.graphReducer.processToDisplay, `validationResult.errors.invalidNodes[${nodeId}]`, [])
+  const processCategory = state.graphReducer.fetchedProcessDetails.processCategory
   return {
     edgeToDisplay: state.graphReducer.edgeToDisplay,
     processToDisplay: state.graphReducer.processToDisplay,
     edgeErrors: errors,
-    readOnly: !state.settings.loggedUser.canWrite,
+    readOnly: !state.settings.loggedUser.canWrite(processCategory),
     processDefinitionData: state.settings.processDefinitionData,
     showEdgeDetailsModal: state.ui.showEdgeDetailsModal
   };

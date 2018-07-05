@@ -60,11 +60,19 @@ class DefinitionResources(modelData: Map[ProcessingType, ModelData],
               val subprocessInputs = fetchSubprocessInputs(subprocessVersions, modelDataForType.modelClassLoader.classLoader)
               val subprocessesDetails = subprocessRepository.loadSubprocesses(subprocessVersions)
               val uiProcessDefinition = UIProcessDefinition(chosenProcessDefinition, subprocessInputs)
-              ProcessObjects(definitionPreparer.prepareNodesToAdd(user = user, processDefinition = chosenProcessDefinition,
-                isSubprocess = isSubprocess, subprocessInputs = subprocessInputs, extractorFactory = parameterDefaultValueExtractorStrategyFactory
-              ),
-                uiProcessDefinition,
-                definitionPreparer.prepareEdgeTypes(user, chosenProcessDefinition, isSubprocess, subprocessesDetails))
+              ProcessObjects(
+                nodesToAdd = definitionPreparer.prepareNodesToAdd(
+                  user = user,
+                  processDefinition = chosenProcessDefinition,
+                  isSubprocess = isSubprocess,
+                  subprocessInputs = subprocessInputs,
+                  extractorFactory = parameterDefaultValueExtractorStrategyFactory),
+                processDefinition = uiProcessDefinition,
+                edgesForNodes = definitionPreparer.prepareEdgeTypes(
+                  user = user,
+                  processDefinition = chosenProcessDefinition,
+                  isSubprocess = isSubprocess,
+                  subprocessesDetails = subprocessesDetails))
             }
           }
         }

@@ -11,17 +11,19 @@ class UserResources(implicit ec: ExecutionContext)
 
   import argonaut.ArgonautShapeless._
   import pl.touk.nussknacker.ui.codec.UiCodecs._
-
   def route(implicit user: LoggedUser): Route =
     path("user") {
       get {
         complete {
-          //FIXME: implement catergories permissions hierarchy in frontend
-          DisplayableUser(user.id, user.categoryPermissions.values.flatten.map(_.toString).toList, user.categoryPermissions.keys.toList)
+          DisplayableUser(
+            id = user.id,
+            permissions = user.categoryPermissions.values.flatten.map(_.toString).toList.distinct,
+            categories = user.categoryPermissions.keys.toList,
+            categoryPermissions = user.categoryPermissions.mapValues(_.map(_.toString)))
         }
       }
     }
 
 }
 
-case class DisplayableUser(id: String, permissions: List[String], categories: List[String])
+case class DisplayableUser(id: String, permissions: List[String], categories: List[String],categoryPermissions: Map[String, Set[String]])

@@ -114,12 +114,8 @@ class CustomProcesses extends PeriodicallyReloadingComponent {
           <Th column="category">Category</Th>
           <Th column="modifyDate" className="date-column">Last modification</Th>
           <Th column="status" className="status-column">Status</Th>
-          {this.props.loggedUser.canDeploy ? (
-            <Th column="deploy" className="deploy-column">Deploy</Th>
-          ) : []}
-          {this.props.loggedUser.canDeploy ? (
-            <Th column="stop" className="stop-column">Stop</Th>
-          ) : []}
+          <Th column="deploy" className="deploy-column">Deploy</Th>
+          <Th column="stop" className="stop-column">Stop</Th>
           </Thead>
 
           {this.state.processes.map((process, index) => {
@@ -132,12 +128,10 @@ class CustomProcesses extends PeriodicallyReloadingComponent {
                 <Td column="status" className="status-column">
                   <div className={this.processStatusClass(process, this.state.statusesLoaded, this.state.statuses)} title={this.processStatusTitle(this.processStatusClass(process))}/>
                 </Td>
-                { this.props.loggedUser.canDeploy ? (
-                  <Td column="deploy" className="deploy-column">
-                    <span className="glyphicon glyphicon-play" title="Deploy process" onClick={this.deploy.bind(this, process)}/>
-                  </Td>
-                ) : []}
-                { (this.processStatusClass(process, this.state.statusesLoaded, this.state.statuses) === "status-running" && this.props.loggedUser.canDeploy) ?
+                <Td column="deploy" className="deploy-column">
+                  <span className="glyphicon glyphicon-play" title="Deploy process" onClick={this.deploy.bind(this, process)}/>
+                </Td>
+                { (this.processStatusClass(process, this.state.statusesLoaded, this.state.statuses) === "status-running") ?
                   (
                     <Td column="stop" className="stop-column">
                       <span className="glyphicon glyphicon-stop" title="Stop process" onClick={this.stop.bind(this, process)}/>

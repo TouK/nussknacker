@@ -123,7 +123,7 @@ class Graph extends React.Component {
     }
 
     createPaper = () => {
-        const canWrite = (this.props.loggedUser.canWrite && !this.props.readonly)
+        const canWrite = this.props.loggedUser.canWrite(this.props.processCategory) && !this.props.readonly;
         return new joint.dia.Paper({
             el: this.refs.espGraph,
             gridSize: 1,
@@ -494,6 +494,7 @@ function mapSubprocessState(state, props) {
 
 function commonState(state) {
   return {
+    processCategory: state.graphReducer.fetchedProcessDetails.processCategory,
     loggedUser: state.settings.loggedUser,
     processDefinitionData: state.settings.processDefinitionData,
     nodesSettings: state.settings.nodesSettings

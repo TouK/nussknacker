@@ -114,11 +114,8 @@ const Visualization = withRouter(React.createClass({
   },
 
   deleteNode(id) {
-    if (this.props.canDelete) {
-      this.props.actions.deleteNode(id)
-    }
+    this.props.actions.deleteNode(id)
   },
-
   render: function() {
     const { leftPanelIsOpened, actions, loggedUser } = this.props;
     //it has to be that way, because graph is redux component
@@ -130,8 +127,8 @@ const Visualization = withRouter(React.createClass({
     const zoomInFun = graphFun(graph => graph.zoomIn())
     const zoomOutFun = graphFun(graph => graph.zoomOut())
     const capabilities = {
-      write:loggedUser.canWrite && !this.state.isArchived,
-      deploy:loggedUser.canDeploy && !this.state.isArchived,
+      write:loggedUser.canWrite(this.props.processCategory) && !this.state.isArchived,
+      deploy:loggedUser.canDeploy(this.props.processCategory) && !this.state.isArchived,
     };
     return this.state.dataResolved ? (
       <div className="Page">
@@ -161,11 +158,17 @@ const Visualization = withRouter(React.createClass({
 
 Visualization.title = 'Visualization'
 Visualization.path = VisualizationUrl.visualizationRouterPath
-Visualization.header = 'Wizualizacja'
+Visualization.header = 'Visualization'
 
 
 function mapState(state) {
+  const processCategory = _.get(state, 'graphReducer.fetchedProcessDetails.processCategory');
+  const canDelete =  state.ui.allModalsClosed
+    && !NodeUtils.nodeIsGroup(state.graphReducer.nodeToDisplay)
+    && state.settings.loggedUser.canWrite(processCategory);
   return {
+    processCategory: processCategory,
+    canDelete: canDelete,
     fetchedProcessDetails: state.graphReducer.fetchedProcessDetails,
     subprocessVersions: _.get(state.graphReducer.processToDisplay, "properties.subprocessVersions"),
     currentNodeId: (state.graphReducer.nodeToDisplay || {}).id,
@@ -173,9 +176,6 @@ function mapState(state) {
     leftPanelIsOpened: state.ui.leftPanelIsOpened,
     undoRedoAvailable: state.ui.allModalsClosed,
     nothingToSave: ProcessUtils.nothingToSave(state),
-    canDelete: state.ui.allModalsClosed 
-      && !NodeUtils.nodeIsGroup(state.graphReducer.nodeToDisplay) 
-      && state.settings.loggedUser.canWrite,
     loggedUser: state.settings.loggedUser
   };
 }

@@ -71,12 +71,21 @@ export default {
     return promiseWrap($.get(API_URL + '/user')).then((user) => ({
       id: user.id,
       categories: user.categories,
-      hasPermission(name) {
-        return user.permissions.includes(name)
+      hasPermission(permission, category){
+        return category && user.categoryPermissions[category].includes(permission);
       },
-      canRead: user.permissions.includes("Read"),
-      canDeploy: user.permissions.includes("Deploy"),
-      canWrite: user.permissions.includes("Write"),
+      canRead(category){
+        return this.hasPermission("Read", category)
+      },
+      canDeploy(category){
+        return this.hasPermission("Deploy", category)
+      },
+      canWrite(category){
+        return this.hasPermission("Write", category)
+      },
+      isReader: user.permissions.includes("Read"),
+      isDeployer: user.permissions.includes("Deploy"),
+      isWriter: user.permissions.includes("Write"),
       isAdmin: user.permissions.includes("Admin"),
     }))
   },
