@@ -89,7 +89,6 @@ export function testResultsSelect(testResults, testResultsIdToShow, selectTestRe
           <select className="node-input selectTestResults" onChange={(e) => selectTestResults(e.target.value, testResults)}
                   value={testResultsIdToShow}>
             { TestResultUtils.availableContexts(testResults).map((ctx, idx) =>
-              //toString is lame in some cases
               (<option key={idx} value={ctx.id}>{ctx.id} ({ctx.display})</option>)
             )}
           </select>

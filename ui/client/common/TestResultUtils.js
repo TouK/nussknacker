@@ -58,9 +58,9 @@ class TestResultUtils {
 
   _contextDisplay = (context) => {
     //TODO: what should be here? after aggregate input is not always present :|
-    //taking first 50 chars can be a bit lame sometimes...
+    //we assume it's better to display nothing than some crap...
     const varToInclude = context.variables["input"] || _.head(_.values(context.variables)) || {};
-    return (varToInclude.original || varToInclude || "").toString().substring(0, 50)
+    return (varToInclude.original || "").toString().substring(0, 50)
   }
 }
 //TODO this pattern is not necessary, just export every public function as in actions.js
