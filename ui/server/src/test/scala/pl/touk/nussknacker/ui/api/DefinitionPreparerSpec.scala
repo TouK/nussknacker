@@ -8,7 +8,7 @@ import pl.touk.nussknacker.ui.api.DefinitionPreparer.{NodeEdges, NodeTypeId}
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestPermissions}
 import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.EdgeType._
 import pl.touk.nussknacker.ui.process.uiconfig.SingleNodeConfig
-import pl.touk.nussknacker.ui.process.uiconfig.defaults.{ParamDefaultValueConfig, TypeAfterConfig}
+import pl.touk.nussknacker.ui.process.uiconfig.defaults.{ParamDefaultValueConfig, DefaultValueExtractorChain}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.ObjectProcessDefinition
 
@@ -104,7 +104,7 @@ class DefinitionPreparerSpec extends FlatSpec with Matchers with TestPermissions
       processDefinition = ProcessTestData.processDefinition,
       isSubprocess = false,
       subprocessInputs = subprocessInputs,
-      extractorFactory = new TypeAfterConfig(new ParamDefaultValueConfig(Map()))
+      extractorFactory = DefaultValueExtractorChain(ParamDefaultValueConfig(Map()))
     )
     groups
   }
@@ -117,7 +117,7 @@ class DefinitionPreparerSpec extends FlatSpec with Matchers with TestPermissions
       processDefinition = services.foldRight(ProcessDefinitionBuilder.empty)((s, p) => p.withService(s)),
       isSubprocess = false,
       subprocessInputs = Map(),
-      extractorFactory = new TypeAfterConfig(ParamDefaultValueConfig(Map()))
+      extractorFactory = DefaultValueExtractorChain(ParamDefaultValueConfig(Map()))
     )
     groups
   }

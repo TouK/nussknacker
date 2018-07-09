@@ -277,7 +277,7 @@ case object OneParamService extends Service {
 
 case object Enricher extends Service {
   @MethodToInvoke
-  def invoke(@ParamName("param") param: String) = Future.successful(RichObject(param, 123L, Some("rrrr")))
+  def invoke(@ParamName("param") param: String, @ParamName("tariffType") tariffType: TariffType) = Future.successful(RichObject(param, 123L, Some("rrrr")))
 }
 
 case class RichObject(field1: String, field2: Long, field3: Option[String])

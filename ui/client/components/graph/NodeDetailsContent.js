@@ -290,14 +290,14 @@ export default class NodeDetailsContent extends React.Component {
     const readOnly = !this.props.isEditMode || forceReadonly
     const restriction = (this.findParamByName(fieldName) || {}).restriction
 
-    if (restriction && restriction.type === 'StringValues') {
+    if (restriction && restriction.type === 'FixedExpressionValues') {
       const values = restriction.values
       return (
         <div className="node-row">
           {this.renderFieldLabel(fieldLabel)}
           <div className="node-value">
             <select className="node-input" value={fieldValue} onChange={(e) => handleChange(e.target.value)} readOnly={readOnly}>
-              {values.map((value, index) => (<option key={index} value={`'${value}'`}>{value}</option>))}
+              {values.map((value, index) => (<option key={index} value={value.expression}>{value.label}</option>))}
             </select>
           </div>
         </div>

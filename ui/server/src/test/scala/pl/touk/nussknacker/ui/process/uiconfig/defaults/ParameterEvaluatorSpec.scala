@@ -37,8 +37,8 @@ class ParameterEvaluatorSpec extends FlatSpec with Matchers {
   }
 
   private val pv = new ParameterEvaluatorExtractor(
-    new TypeAfterConfig(
-      new ParamDefaultValueConfig(
+    DefaultValueExtractorChain(
+      ParamDefaultValueConfig(
         Map(DEFINED_NODE_NAME -> Map(DEFAULT_PARAMETER_NAME -> DEFAULT_PARAMETER_VALUE))
       )
     )

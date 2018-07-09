@@ -175,7 +175,7 @@ class DemoProcessConfigCreator extends ProcessConfigCreator {
     override protected def serviceName: String = "tariffService"
 
     @MethodToInvoke
-    def invoke(@ParamName("tariffId") tariffId: Long)(implicit ec: ExecutionContext) = {
+      def invoke(@ParamName("tariffId") tariffId: Long, @ParamName("tariffType") tariffType: TariffType)(implicit ec: ExecutionContext) = {
       measuring {
         val tariffs = Map(
           1000L -> "family tariff",

@@ -43,6 +43,13 @@ class ServiceRoutesSpec extends FunSuite with Matchers with ScalatestRouteTest w
         |       "language":"spel",
         |       "expression":"'parameterValue'"
         |    }
+        | },
+        | {
+        |    "name": "tariffType",
+        |    "expression": {
+        |       "language": "spel",
+        |       "expression": "null"
+        |    }
         | }
         |]
       """.stripMargin)

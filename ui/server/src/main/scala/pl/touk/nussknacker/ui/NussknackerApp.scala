@@ -25,7 +25,7 @@ import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, TestModelM
 import pl.touk.nussknacker.ui.process.repository.{DBFetchingProcessRepository, DeployedProcessRepository, ProcessActivityRepository, WriteProcessRepository}
 import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, SubprocessResolver}
 import pl.touk.nussknacker.ui.process.uiconfig.SingleNodeConfig
-import pl.touk.nussknacker.ui.process.uiconfig.defaults.{ParamDefaultValueConfig, TypeAfterConfig}
+import pl.touk.nussknacker.ui.process.uiconfig.defaults._
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.AuthenticatorProvider
 import pl.touk.nussknacker.ui.security.ssl.{HttpsConnectionContextFactory, SslConfigParser}
@@ -100,7 +100,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
     val ProcessingTypeDeps(managers, modelData) = ProcessingTypeDeps(config, featureTogglesConfig.standaloneMode)
 
     val defaultParametersValues = ParamDefaultValueConfig(nodesConfig.map {case (k, v) => (k, v.defaultValues.getOrElse(Map.empty))})
-    val extractValueParameterByConfigThenType = new TypeAfterConfig(defaultParametersValues)
+    val extractValueParameterByConfigThenType = DefaultValueExtractorChain(defaultParametersValues)
 
     val subprocessRepository = new DbSubprocessRepository(db, system.dispatcher)
     val subprocessResolver = new SubprocessResolver(subprocessRepository)

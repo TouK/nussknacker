@@ -110,7 +110,9 @@ object DefinitionExtractor {
   //this can be used for different restrictions than list of values, e.g. encode '> 0' conditions and so on...
   sealed trait ParameterRestriction
 
-  case class StringValues(values: List[String]) extends ParameterRestriction
+  case class FixedExpressionValues(values: List[FixedExpressionValue]) extends ParameterRestriction
+
+  case class FixedExpressionValue(expression: String, label: String)
 
   object ObjectWithMethodDef {
     def apply[T](obj: WithCategories[_<:T], methodExtractor: MethodDefinitionExtractor[T]): ObjectWithMethodDef = {
