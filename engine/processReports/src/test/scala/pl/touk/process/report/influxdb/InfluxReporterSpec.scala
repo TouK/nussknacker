@@ -1,11 +1,11 @@
 package pl.touk.process.report.influxdb
 
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.{FunSuite, Matchers}
 
 
-class InfluxReporterSpec extends FlatSpec with Matchers {
+class InfluxReporterSpec extends FunSuite with Matchers {
 
-  it should "correctly handle whitespaces" in {
+  test("correctly handle whitespaces when whitespaces are mapped to dashes") {
 
     val counts = ProcessBaseCounts(100, nodes = Map(
       "a" -> 10,
@@ -14,11 +14,25 @@ class InfluxReporterSpec extends FlatSpec with Matchers {
       "a-b---c-d" -> 40
     ))
 
-    val nodes = List("a", "a b", "a-b-c", "a  b - c.d")
-
     counts.getCountForNodeId("a") shouldBe Some(10)
     counts.getCountForNodeId("a b") shouldBe Some(20)
     counts.getCountForNodeId("a-b-c") shouldBe Some(30)
+    counts.getCountForNodeId("a  b - c.d") shouldBe Some(40)
+
+  }
+
+  test("correctly handle whitespaces when whitespaces are just regular whitespaces") {
+
+    val counts = ProcessBaseCounts(100, nodes = Map(
+      "a" -> 10,
+      "a b" -> 20,
+      "a b c" -> 30,
+      "a  b - c-d" -> 40
+    ))
+
+    counts.getCountForNodeId("a") shouldBe Some(10)
+    counts.getCountForNodeId("a b") shouldBe Some(20)
+    counts.getCountForNodeId("a b c") shouldBe Some(30)
     counts.getCountForNodeId("a  b - c.d") shouldBe Some(40)
 
   }

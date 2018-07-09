@@ -34,10 +34,17 @@ case class ProcessBaseCounts(all: Long, nodes: Map[String, Long]) {
   //node ids in influx are different than original ones, i.e influx converts spaces and dots to dashes '-'
   //that's wy we need reverse transformation
   def getCountForNodeId(nodeId: String) : Option[Long] = {
-    nodes.get(mapSpecialCharactersInfluxStyle(nodeId))
+    nodes.get(mapSpecialCharactersInfluxStyleNewVersions(nodeId))
+      .orElse(nodes.get(mapSpecialCharactersInfluxStyleOldVersions(nodeId)))
   }
 
-  private def mapSpecialCharactersInfluxStyle(nodeId: String) = {
+  //works for influx in version 1.3.7
+  private def mapSpecialCharactersInfluxStyleNewVersions(nodeId: String) = {
+    nodeId.replaceAll("\\.+", "\\-")
+  }
+
+  //works for influx in version 0.10.0-1
+  private def mapSpecialCharactersInfluxStyleOldVersions(nodeId: String) = {
     nodeId.replaceAll("\\.+", "\\-")
       .replaceAll("\\ +", "\\-")
   }
