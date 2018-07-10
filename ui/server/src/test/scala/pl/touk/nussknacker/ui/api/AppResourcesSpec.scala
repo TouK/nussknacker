@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.api
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.testkit.TestProbe
+import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
@@ -24,7 +25,7 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest
 
     val statusCheck = TestProbe()
 
-    val resources = new AppResources(Map(), processRepository, TestFactory.processValidation,
+    val resources = new AppResources(ConfigFactory.empty(), Map(), processRepository, TestFactory.processValidation,
       new JobStatusService(statusCheck.ref))
 
     saveProcessWithDeployInfo("id1")
@@ -53,7 +54,7 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest
 
     val statusCheck = TestProbe()
 
-    val resources = new AppResources(Map(), processRepository, TestFactory.processValidation,
+    val resources = new AppResources(ConfigFactory.empty(), Map(), processRepository, TestFactory.processValidation,
       new JobStatusService(statusCheck.ref))
 
     saveProcessWithDeployInfo("id1")

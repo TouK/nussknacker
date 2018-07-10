@@ -2,6 +2,9 @@ package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.http.scaladsl.server._
+import akka.http.scaladsl.server.directives.SecurityDirectives
+import argonaut.{Json, JsonParser}
+import com.typesafe.config.{Config, ConfigRenderOptions}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
 import pl.touk.nussknacker.ui.process.{JobStatusService, ProcessObjectsFinder}
@@ -10,17 +13,18 @@ import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessDetails
 import pl.touk.http.argonaut.Argonaut62Support
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
-class AppResources(modelData: Map[ProcessingType, ModelData],
+class AppResources(config: Config,
+                   modelData: Map[ProcessingType, ModelData],
                    processRepository: FetchingProcessRepository,
                    processValidation: ProcessValidation,
                    jobStatusService: JobStatusService)(implicit ec: ExecutionContext)
-  extends Directives with Argonaut62Support with LazyLogging with RouteWithUser {
+  extends Directives with Argonaut62Support with LazyLogging with RouteWithUser with SecurityDirectives {
 
   import argonaut.ArgonautShapeless._
 
@@ -70,6 +74,15 @@ class AppResources(modelData: Map[ProcessingType, ModelData],
             val definition = modelData.values.map(_.processDefinition).toList
             processRepository.fetchAllProcessesDetails().map { processes =>
               ProcessObjectsFinder.findUnusedComponents(processes, definition)
+            }
+          }
+        }
+      } ~ path("config") {
+        //config can contain sensitive information, so only Admin can see it
+        authorize(user.hasPermission(Permission.Admin)) {
+          get {
+            complete {
+              JsonParser.parse(config.root().render(ConfigRenderOptions.concise()))
             }
           }
         }
