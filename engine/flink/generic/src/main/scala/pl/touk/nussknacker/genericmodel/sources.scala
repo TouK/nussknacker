@@ -25,7 +25,7 @@ object sources {
 
     @MethodToInvoke
     def create(processMetaData: MetaData,  @ParamName("topic") topic: String, @ParamName("type") definition: java.util.Map[String, _]): Source[TypedMap] with TestDataGenerator = {
-      new KafkaSource(consumerGroupId = processMetaData.id, topic) with ReturningType {
+      new KafkaSource(consumerGroupId = processMetaData.id, List(topic)) with ReturningType {
         override def returnType: typing.TypingResult = TypingUtils.typedMapDefinitionFromParameters(definition)
       }
     }

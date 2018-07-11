@@ -24,6 +24,15 @@ object KafkaEspUtils extends LazyLogging {
 
   val defaultTimeoutMillis = 10000
 
+
+  def setToLatestOffsetIfNeeded(config: KafkaConfig, topic: String, consumerGroupId: String): Unit = {
+    val setToLatestOffset =
+      config.kafkaEspProperties.flatMap(_.get("forceLatestRead")).exists(java.lang.Boolean.parseBoolean)
+    if (setToLatestOffset) {
+      KafkaEspUtils.setOffsetToLatest(topic, consumerGroupId, config)
+    }
+  }
+
   def setOffsetToLatest(topic: String, groupId: String, config: KafkaConfig): Unit = {
     val timeoutMillis = readTimeout(config)
     logger.info(s"Setting offset to latest for topic: $topic, groupId: $groupId")

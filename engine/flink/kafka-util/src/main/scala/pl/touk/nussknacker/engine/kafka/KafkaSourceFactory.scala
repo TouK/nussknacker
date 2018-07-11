@@ -3,14 +3,16 @@ package pl.touk.nussknacker.engine.kafka
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.TimestampAssigner
 import org.apache.flink.streaming.api.functions.source.SourceFunction
-import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer011, FlinkKafkaConsumer09}
+import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer011
 import org.apache.flink.api.common.serialization.DeserializationSchema
-import org.apache.flink.configuration.Configuration
 import pl.touk.nussknacker.engine.api.process.{Source, TestDataGenerator}
 import pl.touk.nussknacker.engine.api.test.{TestDataParser, TestDataSplit}
 import pl.touk.nussknacker.engine.api.{MetaData, MethodToInvoke, ParamName}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkSource, FlinkSourceFactory}
 import pl.touk.nussknacker.engine.kafka.KafkaSourceFactory._
+
+import scala.annotation.tailrec
+import scala.collection.JavaConverters._
 
 /** <pre>
   * Wrapper for [[org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer09]]
@@ -33,7 +35,7 @@ class KafkaSourceFactory[T: TypeInformation](config: KafkaConfig,
 
   @MethodToInvoke
   def create(processMetaData: MetaData, @ParamName(`TopicParamName`) topic: String): Source[T] with TestDataGenerator = {
-    createSource(processMetaData, topic)
+    createSource(processMetaData, List(topic))
   }
 
 }
@@ -53,7 +55,7 @@ class SingleTopicKafkaSourceFactory[T: TypeInformation](topic: String,
 
   @MethodToInvoke
   def create(processMetaData: MetaData): Source[T] with TestDataGenerator = {
-    createSource(processMetaData, topic)
+    createSource(processMetaData, List(topic))
   }
 
 }
@@ -68,31 +70,28 @@ abstract class BaseKafkaSourceFactory[T: TypeInformation](config: KafkaConfig,
     override def parseTestData(data: Array[Byte]): List[T] = testPrepareInfo.splitData(data).map(schema.deserialize)
   })
 
-  protected def createSource(processMetaData: MetaData, topic: String): KafkaSource = {
-    new KafkaSource(consumerGroupId = processMetaData.id, topic = topic)
+  protected def createSource(processMetaData: MetaData, topics: List[String]): KafkaSource = {
+    new KafkaSource(consumerGroupId = processMetaData.id, topics = topics)
   }
 
-  class KafkaSource(consumerGroupId: String, topic: String) extends FlinkSource[T] with Serializable with TestDataGenerator {
+  class KafkaSource(consumerGroupId: String, topics: List[String]) extends FlinkSource[T] with Serializable with TestDataGenerator {
 
-    override def typeInformation: TypeInformation[T] =
-      implicitly[TypeInformation[T]]
+    override def typeInformation: TypeInformation[T] = implicitly[TypeInformation[T]]
 
     override def toFlinkSource: SourceFunction[T] = {
-      //TODO: is this the best place to do it?
-      setToLatestOffsetIfNeeded(topic, consumerGroupId)
-      new FlinkKafkaConsumer011[T](topic, schema, KafkaEspUtils.toProperties(config, Some(consumerGroupId)))
+      topics.foreach(KafkaEspUtils.setToLatestOffsetIfNeeded(config, _, consumerGroupId))
+      createFlinkSource()
     }
 
-    private def setToLatestOffsetIfNeeded(topic: String, consumerGroupId: String): Unit = {
-      val setToLatestOffset =
-        config.kafkaEspProperties.flatMap(_.get("forceLatestRead")).exists(java.lang.Boolean.parseBoolean)
-      if (setToLatestOffset) {
-        KafkaEspUtils.setOffsetToLatest(topic, consumerGroupId, config)
-      }
+    protected def createFlinkSource(): FlinkKafkaConsumer011[T] = {
+      new FlinkKafkaConsumer011[T](topics.asJava, schema, KafkaEspUtils.toProperties(config, Some(consumerGroupId)))
     }
 
-    override def generateTestData(size: Int): Array[Byte] =
-      testPrepareInfo.joinData(KafkaEspUtils.readLastMessages(topic, size, config))
+    override def generateTestData(size: Int): Array[Byte] = {
+      val listsFromAllTopics = topics.map(KafkaEspUtils.readLastMessages(_, size, config))
+      val merged = ListUtil.mergeListsFromTopics(listsFromAllTopics, size)
+      testPrepareInfo.joinData(merged)
+    }
 
     override def timestampAssigner: Option[TimestampAssigner[T]] = BaseKafkaSourceFactory.this.timestampAssigner
   }
