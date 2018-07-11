@@ -321,7 +321,8 @@ class TestServices extends React.Component {
   }
 
   findParamExpression(name) {
-    return _.find(this.state.parametersValues, p => p.name===name).expression.expression
+    const param =  _.find(this.state.parametersValues, p => p.name===name)
+    return _.get(param, "expression.expression")
   }
 
   formRow(label, input) {
