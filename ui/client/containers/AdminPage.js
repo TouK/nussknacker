@@ -225,25 +225,26 @@ class TestServices extends React.Component {
   }
 
   setService(serviceName){
-    const initializeParametersValues = params =>
-      _.map(params, p => (
-        {
-          "name": p.name,
-          "expression": {
-            "language": "spel",
-            "expression": ""
-          }
-        }
-      ));
+    const service = _.find(this.services, s=>s.name===serviceName);
 
-    const service = _.find(this.services, s=>s.name===serviceName)
+    const cachedParams = this.cachedServiceParams(serviceName, service.processingType);
 
+    const initializeParameter = paramName => _.find(cachedParams, cp => cp.name === paramName) || {
+      "name": paramName,
+      "expression": {
+        //TODO: is it always fixed?
+        "language": "spel",
+        "expression": ""
+      }
+    };
+
+    const initializeParametersValues = params => _.map(params, p => initializeParameter(p.name));
     this.setState(
       {
         processingType: service.processingType,
         serviceName: serviceName,
         nodeParameters: service.parameters,
-        parametersValues: this.cachedServiceParams(serviceName, service.processingType) || initializeParametersValues(service.parameters||[]),
+        parametersValues: initializeParametersValues(service.parameters||[]),
         queryResult: {
           response: {},
           errorMessage: null
