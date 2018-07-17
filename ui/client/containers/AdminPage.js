@@ -104,7 +104,8 @@ class ProcessSearch extends React.Component {
       return {
         process: result.process.id,
         node: result.node.id,
-        category: result.process.processCategory
+        category: result.process.processCategory,
+        isDeployed: result.process.currentlyDeployedAt.length > 0
       }
     })
     return (
@@ -135,6 +136,7 @@ class ProcessSearch extends React.Component {
               <Th column="process">Process</Th>
               <Th column="node">Node</Th>
               <Th column="category">Category</Th>
+              <Th column="isDeployed">Is deployed</Th>
               </Thead>
               {found.map(row => {
                 return (
@@ -147,6 +149,9 @@ class ProcessSearch extends React.Component {
                       </a>
                     </Td>
                     <Td column="category">{row.category}</Td>
+                    <Td column="isDeployed">
+                      <div className={row.isDeployed ? "status-running" : null}/>
+                    </Td>
                   </Tr>
                 )
               })}
