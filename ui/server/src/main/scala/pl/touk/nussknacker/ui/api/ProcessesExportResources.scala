@@ -52,7 +52,7 @@ class ProcessesExportResources(repository: FetchingProcessRepository,
           }
         }
       }
-    } ~ path("processes" / "convert") {
+    } ~ path("processes" / "export") {
       post {
         entity(as[DisplayableProcess]) { process =>
           complete {

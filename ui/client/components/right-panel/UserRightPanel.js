@@ -236,7 +236,7 @@ class UserRightPanel extends Component {
   }
 
   exportProcess = () => {
-    HttpService.exportProcess(this.processId(), this.versionId())
+    HttpService.exportProcess(this.props.processToDisplay)
   }
 
   exportProcessToPdf = () => {

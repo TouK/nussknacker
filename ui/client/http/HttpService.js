@@ -221,8 +221,20 @@ export default {
     window.open(`${API_URL}/processes/${processId}/${processVersionId}/activity/attachments/${attachmentId}`)
   },
 
-  exportProcess(processId, versionId) {
-    window.open(`${API_URL}/processes/export/${processId}/${versionId}`);
+  exportProcess(process) {
+    const url = `${API_URL}/processes/export`
+    fetch(url,
+      {
+          method: 'POST',
+          body: JSON.stringify(process),
+          credentials: 'include',
+          headers: new Headers({
+              'Content-Type': 'application/json'
+          })
+      }
+    ).then((response) => response.blob()).then((blob) => {
+      FileSaver.saveAs(blob, `${process.id}.json`);
+    }).catch((error) => this.addError(`Failed to export`, error));
   },
 
   exportProcessToPdf(processId, versionId, data, businessView) {
