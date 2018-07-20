@@ -6,7 +6,7 @@ import com.typesafe.scalalogging.LazyLogging
 
 import scala.concurrent.Future
 
-class InfluxReporter(env: String, config: InfluxReporterConfig) extends LazyLogging {
+private[influxdb] class InfluxBaseCountsReporter(env: String, config: InfluxReporterConfig) extends LazyLogging {
   import scala.concurrent.ExecutionContext.Implicits.global
 
   //TODO this inlfuxUrl can be fetched using grafana API

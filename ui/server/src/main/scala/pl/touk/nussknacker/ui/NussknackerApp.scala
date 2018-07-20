@@ -30,7 +30,7 @@ import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.AuthenticatorProvider
 import pl.touk.nussknacker.ui.security.ssl.{HttpsConnectionContextFactory, SslConfigParser}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
-import pl.touk.process.report.influxdb.InfluxReporter
+import pl.touk.process.report.influxdb.{InfluxBaseCountsReporter, InfluxCountsReporter}
 import slick.jdbc.JdbcBackend
 
 object NussknackerApp extends App with Directives with LazyLogging {
@@ -155,7 +155,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
           .map(migrationConfig => new HttpRemoteEnvironment(migrationConfig, TestModelMigrations(modelData), environment))
           .map(remoteEnvironment => new RemoteEnvironmentResources(remoteEnvironment, processRepository, processAuthorizer)),
         featureTogglesConfig.counts
-          .map(countsConfig => new InfluxReporter(environment, countsConfig))
+          .map(countsConfig => new InfluxCountsReporter(environment, countsConfig))
           .map(reporter => new ProcessReportResources(reporter, counter, processRepository)),
         featureTogglesConfig.attachments
           .map(path => new ProcessAttachmentService(path, processActivityRepository))

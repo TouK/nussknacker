@@ -10,16 +10,14 @@ import pl.touk.nussknacker.ui.codec.UiCodecs
 import pl.touk.nussknacker.ui.process.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessDetails
 import pl.touk.nussknacker.ui.processreport.{ProcessCounter, RawCount}
-import pl.touk.nussknacker.ui.util.DateUtils
-import pl.touk.http.argonaut.Argonaut62Support
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.process.report.influxdb.InfluxReporter
+import pl.touk.nussknacker.ui.util.DateUtils
+import pl.touk.process.report.{CannotFetchCountsError, CountsReporter}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class ProcessReportResources(influxReporter: InfluxReporter, processCounter: ProcessCounter, processRepository: FetchingProcessRepository)
+class ProcessReportResources(countsReporter: CountsReporter, processCounter: ProcessCounter, processRepository: FetchingProcessRepository)
                             (implicit ec: ExecutionContext) extends Directives with Argonaut62Support with UiCodecs with RouteWithUser {
 
   def route(implicit loggedUser: LoggedUser): Route = {
@@ -33,14 +31,9 @@ class ProcessReportResources(influxReporter: InfluxReporter, processCounter: Pro
           complete {
             processRepository.fetchLatestProcessDetailsForProcessId(processId).flatMap[ToResponseMarshallable] {
               case Some(process) =>
-                restartsBetweenDates(process, dateFrom, dateToToUse).flatMap {
-                  case Nil => process.json match {
-                    case Some(displayable) => computeCounts(displayable, dateFrom, dateToToUse)
-                    case None => Future.successful(HttpResponse(status = StatusCodes.NotFound, entity = "Counts unavailable for this process"))
-                  }
-                  case dates => Future.successful(HttpResponse(status = StatusCodes.BadRequest,
-                    entity = s"Counts unavailable, as process was restarted/deployed on " +
-                      s" following dates: ${dates.map(_.format(DateUtils.dateTimeFormatter)).mkString(", ")}"))
+                process.json match {
+                  case Some(displayable) => computeCounts(displayable, dateFrom, dateToToUse)
+                  case None => Future.successful(HttpResponse(status = StatusCodes.NotFound, entity = "Counts unavailable for this process"))
                 }
               case None => Future.successful(HttpResponse(status = StatusCodes.NotFound, entity = "Process not found"))
             }
@@ -50,16 +43,20 @@ class ProcessReportResources(influxReporter: InfluxReporter, processCounter: Pro
     }
   }
 
-  private def computeCounts(displayable: DisplayableProcess, dateFrom: LocalDateTime, dateTo: LocalDateTime) : Future[ToResponseMarshallable] = {
-    influxReporter.fetchBaseProcessCounts(displayable.id, dateFrom, dateTo).map { nodeResultsCount =>
-      val computedCounts = processCounter.computeCounts(ProcessConverter.fromDisplayable(displayable),
-        (nodeId) => nodeResultsCount.getCountForNodeId(nodeId).map(count => RawCount(count, 0)))
-      computedCounts.asJson
-    }
+
+  private def computeCounts(process: DisplayableProcess, dateFrom: LocalDateTime, dateTo: LocalDateTime): Future[ToResponseMarshallable] = {
+    countsReporter.prepareRawCounts(process.id, dateFrom, dateTo)
+      .map(computeFinalCounts(process, _))
+      .recover {
+        case CannotFetchCountsError(msg) => HttpResponse(status = StatusCodes.BadRequest, entity = msg)
+      }
   }
 
-  private def restartsBetweenDates(process: ProcessDetails, fromDate: LocalDateTime, toDate: LocalDateTime) : Future[List[LocalDateTime]] = {
-    influxReporter.detectRestarts(process.id, fromDate, toDate)
+
+  private def computeFinalCounts(displayable: DisplayableProcess, nodeCountFunction: String => Option[Long]) : ToResponseMarshallable = {
+    val computedCounts = processCounter.computeCounts(ProcessConverter.fromDisplayable(displayable),
+      (nodeId) => nodeCountFunction(nodeId).map(count => RawCount(count, 0)))
+    computedCounts.asJson
   }
 
 }

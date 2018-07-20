@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.dispatch.utils._
 
 import scala.concurrent.Future
 
-class InfluxGenerator(url: String, user: String, password: String, dbName: String, env: String = "test") extends LazyLogging {
+private[influxdb] class InfluxGenerator(url: String, user: String, password: String, dbName: String, env: String = "test") extends LazyLogging {
 
   import argonaut.ArgonautShapeless._
 
