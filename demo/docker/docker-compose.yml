@@ -122,7 +122,7 @@ services:
     expose:
       - "2003/udp"
   grafana:
-    image: grafana/grafana:4.4.1
+    image: grafana/grafana:5.1.5
     entrypoint: ["/runWithFlinkEspBoard.sh"]
     volumes:
       - ./grafana/runWithFlinkEspBoard.sh:/runWithFlinkEspBoard.sh

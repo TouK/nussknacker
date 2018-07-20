@@ -9,7 +9,7 @@ import pl.touk.process.report.influxdb.InfluxReporterConfig
 case class FeatureTogglesConfig(development: Boolean,
                                 standaloneMode: Boolean,
                                 search: Option[KibanaSettings],
-                                metrics: Option[GrafanaSettings],
+                                metrics: Option[MetricsSettings],
                                 remoteEnvironment: Option[HttpRemoteEnvironmentConfig],
                                 counts: Option[InfluxReporterConfig],
                                 environmentAlert:Option[EnvironmentAlert],
@@ -29,8 +29,11 @@ object FeatureTogglesConfig extends LazyLogging{
     val environmentAlert = parseOptionalConfig[EnvironmentAlert](config, "environmentAlert")
     val isDevelopmentMode = config.hasPath("developmentMode") && config.getBoolean("developmentMode")
     val standaloneModeEnabled = config.hasPath("standaloneModeEnabled") && config.getBoolean("standaloneModeEnabled")
-    val metrics = parseOptionalConfig[GrafanaSettings](config, "grafanaSettings")
-    val counts = parseOptionalConfig[InfluxReporterConfig](config, "grafanaSettings")
+    val metrics = parseOptionalConfig[MetricsSettings](config, "metricsSettings")
+      .orElse(parseOptionalConfig[MetricsSettings](config, "grafanaSettings"))
+    val counts = parseOptionalConfig[InfluxReporterConfig](config, "countsSettings")
+      .orElse(parseOptionalConfig[InfluxReporterConfig](config, "grafanaSettings"))
+
     val remoteEnvironment = parseOptionalConfig[HttpRemoteEnvironmentConfig](config, "secondaryEnvironment")
     val search = parseOptionalConfig[KibanaSettings](config, "kibanaSettings")
     val commentSettings = parseOptionalConfig[CommentSettings](config, "commentSettings")

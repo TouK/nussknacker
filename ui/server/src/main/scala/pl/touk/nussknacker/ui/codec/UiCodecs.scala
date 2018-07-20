@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.definition.TestingCapabilities
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.ui.api.{DisplayableUser, GrafanaSettings, ProcessObjects}
+import pl.touk.nussknacker.ui.api.{DisplayableUser, MetricsSettings, ProcessObjects}
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.{ProcessType, ProcessingType}
 import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.{EdgeType, NodeAdditionalFields, ProcessAdditionalFields}
 import pl.touk.nussknacker.ui.process.displayedgraph._
@@ -106,7 +106,7 @@ trait UiCodecs extends Codecs with Argonauts with SingletonInstances with Derive
 
   implicit def processListEncode = EncodeJson.of[List[ProcessDetails]]
 
-  implicit def grafanaEncode = EncodeJson.of[GrafanaSettings]
+  implicit def grafanaEncode = EncodeJson.of[MetricsSettings]
 
   implicit def userEncodeEncode = EncodeJson.of[DisplayableUser]
 

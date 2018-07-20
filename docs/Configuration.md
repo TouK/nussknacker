@@ -43,14 +43,19 @@ flinkConfig {
   jarPath: "./code-assembly.jar"
 }
 
-grafanaSettings {
-  url: "/grafana/"
-  dashboard: "flink-esp"
-  env: "demo"
+metricsSettings {
+  url: "http://localhost:3000/dashboard/db/$dashboard?theme=dark&var-processName=$process&var-env=demo"
+  defaultDashboard: "flink-esp"
+  processingTypeToDashboard: {
+    "request-response": "standalone",
+    "streaming": "flink-esp"
+  }
 }
 
-kibanaSettings {
-  url: "/kibana/"
+countsSettings {
+  influxUrl: "http://localhost:3000/api/datasources/proxy/1/query"
+  user: "admin"
+  password: "admin"
 }
 
 processConfig {
@@ -87,10 +92,13 @@ categoriesConfig: {
 
 ###Monitoring config
 ```
-grafanaSettings {
-  url: "/grafana/"
-  dashboard: "flink-esp"
-  env: "demo"
+metricsSettings {
+  url: "http://localhost:3000/dashboard/db/$dashboard?theme=dark&var-processName=$process&var-env=demo"
+  defaultDashboard: "flink-esp"
+  processingTypeToDashboard: {
+    "request-response": "standalone",
+    "streaming": "flink-esp"
+  }
 }
 ```
 
@@ -126,11 +134,6 @@ flinkConfig {
       parallelism: 4
   }
   configLocation: "/opt/flink/conf"  
-  
-  
-  jobManagerTimeout: 1m
-  processConfig: "demo"
-  jarPath: "./code-assembly.jar"
   classpath: ["./code-assembly.jar", "http://url.additional.code/link.jar"]
 }
 ```
@@ -144,8 +147,6 @@ They can be defined in two ways:
 In addition you can specify following values:
 
 * jobManagerTimeout (e.g. 1m) - timeout used in communication with Flink cluster
-* processConfig - name of config part that describes configuration of model (see below)
-* jarPath - location of jar with model for processes *Deprecated - please use classpath*
 * classpath - list of files/URLs with jars with model for processes 
 
 ##Process  {#model}

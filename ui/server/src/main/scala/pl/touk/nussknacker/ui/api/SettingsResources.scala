@@ -34,7 +34,7 @@ class SettingsResources(config: FeatureTogglesConfig, nodesConfig: Map[String, S
     }
 }
 
-case class GrafanaSettings(url: String, defaultDashboard: String, processingTypeToDashboard: Option[Map[String,String]], env: String)
+case class MetricsSettings(url: String, defaultDashboard: String, processingTypeToDashboard: Option[Map[String,String]])
 case class KibanaSettings(url: String)
 case class RemoteEnvironmentConfig(targetEnvironmentId: String)
 case class EnvironmentAlert(content: String, cssClass: String)
@@ -43,7 +43,7 @@ case class DeploySettings(requireComment: Boolean)
 
 case class ToggleFeaturesOptions(counts: Boolean,
                                  search: Option[KibanaSettings],
-                                 metrics: Option[GrafanaSettings],
+                                 metrics: Option[MetricsSettings],
                                  remoteEnvironment: Option[RemoteEnvironmentConfig],
                                  environmentAlert: Option[EnvironmentAlert],
                                  commentSettings: Option[CommentSettings],
