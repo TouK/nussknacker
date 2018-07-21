@@ -1,6 +1,4 @@
 import com.typesafe.sbt.packager.SettingsHelper
-import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
-import net.virtualvoid.sbt.graph.Plugin._
 import sbt._
 import sbt.Keys._
 import sbtassembly.AssemblyPlugin.autoImport.assembly
@@ -58,7 +56,6 @@ def numberUtilsStrategy: String => MergeStrategy = {
 }
 val scalaTestReports = Tests.Argument(TestFrameworks.ScalaTest, "-u", "target/surefire-reports", "-oFGD")
 val commonSettings =
-  graphSettings ++
   publishSettings ++
   Seq(
     licenses += ("Apache-2.0", url("https://www.apache.org/licenses/LICENSE-2.0.html")),
@@ -117,9 +114,9 @@ lazy val dist = (project in file("nussknacker-dist"))
   .settings(commonSettings)
   .enablePlugins(JavaServerAppPackaging)
   .settings(
-    Keys.compile in Compile <<= (Keys.compile in Compile).dependsOn(
+    Keys.compile in Compile := (Keys.compile in Compile).dependsOn(
       (assembly in Compile) in generic
-    ),
+    ).value,
     packageName in Universal := ("nussknacker" + "-" + version.value),
     mappings in Universal += {
       val model = generic.base / "target" / "scala-2.11" / "genericModel.jar"
@@ -138,9 +135,9 @@ lazy val engineStandalone = (project in engine("standalone/engine")).
   settings(Defaults.itSettings).
   settings(
     name := "nussknacker-standalone-engine",
-    Keys.test in IntegrationTest <<= (Keys.test in IntegrationTest).dependsOn(
+    Keys.test in IntegrationTest := (Keys.test in IntegrationTest).dependsOn(
       (assembly in Compile) in standaloneSample
-    ),
+    ).value,
     libraryDependencies ++= {
       Seq(
         "org.typelevel" %% "cats-core" % catsV,
@@ -161,7 +158,7 @@ lazy val standaloneApp = (project in engine("standalone/app")).
     assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = true, level = Level.Debug),
     artifact in (Compile, assembly) := {
       val art = (artifact in (Compile, assembly)).value
-      art.copy(`classifier` = Some("assembly"))
+      art.withClassifier(Some("assembly"))
     },
     libraryDependencies ++= {
       Seq(
@@ -183,10 +180,10 @@ lazy val management = (project in engine("flink/management")).
   settings(Defaults.itSettings).
   settings(
     name := "nussknacker-management",
-    Keys.test in IntegrationTest <<= (Keys.test in IntegrationTest).dependsOn(
+    Keys.test in IntegrationTest := (Keys.test in IntegrationTest).dependsOn(
       (assembly in Compile) in managementSample,
       (assembly in Compile) in managementJavaSample
-    ),
+    ).value,
     //flink cannot run tests and deployment concurrently
     parallelExecution in IntegrationTest := false,
     libraryDependencies ++= {
@@ -268,7 +265,7 @@ lazy val example = (project in engine("example")).
     test in assembly := {},
     artifact in (Compile, assembly) := {
       val art = (artifact in (Compile, assembly)).value
-      art.copy(`classifier` = Some("assembly"))
+      art.withClassifier(Some("assembly"))
     }
   )
   .settings(addArtifact(artifact in (Compile, assembly), assembly))
@@ -455,7 +452,7 @@ lazy val generic = (project in engine("flink/generic")).
     assemblyJarName in assembly := "genericModel.jar",
     artifact in (Compile, assembly) := {
       val art = (artifact in (Compile, assembly)).value
-      art.copy(`classifier` = Some("assembly"))
+      art.withClassifier(Some("assembly"))
     })
   .settings(addArtifact(artifact in (Compile, assembly), assembly))
   .dependsOn(process, kafkaFlinkUtil)
@@ -551,12 +548,13 @@ lazy val queryableState = (project in engine("queryableState")).
 lazy val buildUi = taskKey[Unit]("builds ui")
 lazy val testUi = taskKey[Unit]("tests ui")
 
-def runNpm(command: String, errorMessage: String) = {
+def runNpm(command: String, errorMessage: String): Unit = {
+  import sys.process.Process
   val path = Path.apply("ui/client").asFile
   println("Using path: " + path.getAbsolutePath)
-  val installResult = Process("npm install", path) !;
+  val installResult = Process("npm install", path)!;
   if (installResult != 0) throw new RuntimeException("NPM install failed")
-  val result = Process(s"npm $command", path) !;
+  val result = Process(s"npm $command", path)!;
   if (result != 0) throw new RuntimeException(errorMessage)
 }
 
@@ -574,19 +572,19 @@ lazy val ui = (project in file("ui/server"))
     assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = includeFlinkAndScala, level = Level.Debug),
     artifact in (Compile, assembly) := {
       val art = (artifact in (Compile, assembly)).value
-      art.copy(`classifier` = Some("assembly"))
+      art.withClassifier(Some("assembly"))
     },
     test in assembly := {},
-    Keys.test in Test <<= (Keys.test in Test).dependsOn(
+    Keys.test in Test := (Keys.test in Test).dependsOn(
       //TODO: maybe here there should be engine/demo??
       (assembly in Compile) in managementSample
     ).dependsOn(
       testUi
-    ),
+    ).value,
     assemblyJarName in assembly := "nussknacker-ui-assembly.jar",
-    assembly in ThisScope <<= (assembly in ThisScope).dependsOn(
+    assembly in ThisScope := (assembly in ThisScope).dependsOn(
       buildUi
-    ),
+    ).value,
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % flinkScope
@@ -625,17 +623,6 @@ lazy val ui = (project in file("ui/server"))
   .settings(addArtifact(artifact in (Compile, assembly), assembly))
   .dependsOn(management, interpreter, engineStandalone, processReports, securityApi)
 
-releaseProcess := Seq[ReleaseStep](
-  checkSnapshotDependencies,              // : ReleaseStep
-  inquireVersions,                        // : ReleaseStep
-  runTest,                                // : ReleaseStep
-  setReleaseVersion,                      // : ReleaseStep
-  commitReleaseVersion,                   // : ReleaseStep, performs the initial git checks
-  tagRelease,                             // : ReleaseStep
-  ReleaseStep(action = Command.process("publishSigned", _)),
-  setNextVersion,                         // : ReleaseStep
-  commitNextVersion,                      // : ReleaseStep
-  pushChanges                             // : ReleaseStep, also checks that an upstream branch is properly configured
-)
+releasePublishArtifactsAction := PgpKeys.publishSigned.value
 
 addCommandAlias("assemblySamples", ";managementSample/assembly;standaloneSample/assembly")
