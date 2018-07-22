@@ -48,9 +48,10 @@ val publishSettings = Seq(
   )
 )
 
-def numberUtilsStrategy: String => MergeStrategy = {
+def nussknackerMergeStrategy: String => MergeStrategy = {
   case PathList(ps@_*) if ps.last == "NumberUtils.class" => MergeStrategy.first
   case PathList("org", "w3c", "dom", "events", xs @ _*) => MergeStrategy.first
+  case PathList("org", "apache", "commons", "logging", xs @ _*) => MergeStrategy.first
   case PathList("akka", xs @ _*) => MergeStrategy.last
   case x => MergeStrategy.defaultMergeStrategy(x)
 }
@@ -61,7 +62,6 @@ val commonSettings =
     licenses += ("Apache-2.0", url("https://www.apache.org/licenses/LICENSE-2.0.html")),
     scalaVersion  := scalaV,
     resolvers ++= Seq(
-      "spring milestone" at "https://repo.spring.io/milestone",
       "confluent" at "http://packages.confluent.io/maven"
     ),
     testOptions in Test += scalaTestReports,
@@ -74,28 +74,28 @@ val commonSettings =
       "-feature",
       "-language:postfixOps",
       "-language:existentials",
+      "-Ypartial-unification",
       "-target:jvm-1.8"
     ),
     javacOptions := Seq(
       "-Xlint:deprecation",
       "-Xlint:unchecked"
     ),
-    assemblyMergeStrategy in assembly := numberUtilsStrategy
+    assemblyMergeStrategy in assembly := nussknackerMergeStrategy
   )
 
 val akkaV = "2.4.20" //same version as in Flink
 val flinkV = "1.6.0"
 val kafkaMajorV = "0.11"
 val kafkaV = s"$kafkaMajorV.0.2"
-val springV = "5.0.0.M5"
+val springV = "5.0.7.RELEASE"
 val scalaTestV = "3.0.3"
 val logbackV = "1.1.3"
 val log4jV = "1.7.21"
-val argonautShapelessV = "1.2.0-M1"
+val argonautShapelessV = "1.2.0-M8"
 val argonautMajorV = "6.2"
-val argonautV = s"$argonautMajorV-M3"
-val catsV = "0.9.0"
-val monocleV = "1.2.2"
+val argonautV = s"$argonautMajorV.1"
+val catsV = "1.1.0"
 val scalaParsersV = "1.0.4"
 val dispatchV = "0.11.3"
 val slf4jV = "1.7.21"
@@ -107,7 +107,7 @@ val commonsLangV = "3.3.2"
 val dropWizardV = "3.1.5"
 
 val akkaHttpV = "10.0.10"
-val slickV = "3.2.0-M1" // wsparcie dla select for update jest od 3.2.0
+val slickV = "3.2.3"
 val hsqldbV = "2.3.4"
 val flywayV = "4.0.3"
 val confluentV = "4.1.2"
@@ -295,6 +295,8 @@ lazy val interpreter = (project in engine("interpreter")).
     libraryDependencies ++= {
       Seq(
         "org.springframework" % "spring-expression" % springV,
+        //needed by scala-compiler for spring-expression...
+        "com.google.code.findbugs" % "jsr305" % "3.0.2",
         "org.hsqldb" % "hsqldb" % hsqldbV,
         "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
         "com.github.alexarchambault" %% s"argonaut-shapeless_$argonautMajorV" % argonautShapelessV,
@@ -457,7 +459,7 @@ lazy val api = (project in engine("api")).
         "com.github.alexarchambault" %% s"argonaut-shapeless_$argonautMajorV" % argonautShapelessV,
         "org.apache.commons" % "commons-lang3" % commonsLangV,
         "org.typelevel" %% "cats-core" % catsV,
-        "org.typelevel" %% "cats-effect" % "0.3",
+        "org.typelevel" %% "cats-effect" % "0.10.1",
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
         "com.typesafe" % "config" % configV
 

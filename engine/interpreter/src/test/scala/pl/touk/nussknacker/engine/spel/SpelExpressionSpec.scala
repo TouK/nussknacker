@@ -215,7 +215,7 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
 
   it should "return sane error with empty expression " in {
     parse("", ctx) should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("Empty expression"), Nil)) =>
+      case Invalid(NonEmptyList(ExpressionParseError("No node"), Nil)) =>
     }
   }
 

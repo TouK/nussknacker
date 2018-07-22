@@ -19,7 +19,7 @@ object DefaultResponseEncoder extends ResponseEncoder[Any] {
   val bestEffortEncoder = BestEffortJsonEncoder(failOnUnkown = true)
 
   override def toJsonResponse(input: Any, result: List[Any]): GenericResultType[Json] =
-    result.map(toJsonOrError).sequenceU.right.map(_.asJson)
+    result.map(toJsonOrError).sequence.right.map(_.asJson)
 
   private def toJsonOrError(value: Any): GenericResultType[Json] =
     try {

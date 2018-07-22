@@ -5,6 +5,7 @@ import java.lang.reflect._
 
 import cats.Eval
 import cats.data.StateT
+import cats.effect.IO
 import org.apache.commons.lang3.{ClassUtils, StringUtils}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
@@ -136,8 +137,8 @@ object EspTypeUtils {
   private def inferGenericMonadType(genericMethodType: ParameterizedTypeImpl): Option[ClazzRef] = {
     val rawType = genericMethodType.getRawType
 
-    if (classOf[StateT[Eval, _, _]].isAssignableFrom(rawType)) {
-      val returnType = genericMethodType.getActualTypeArguments.apply(2) // bo StateT[Eval, S, A]
+    if (classOf[StateT[IO, _, _]].isAssignableFrom(rawType)) {
+      val returnType = genericMethodType.getActualTypeArguments.apply(3) // it's IndexedStateT[IO, ContextWithLazyValuesProvider, ContextWithLazyValuesProvider, A]
       extractClass(returnType)
     }
     else if (classOf[Future[_]].isAssignableFrom(rawType)) {

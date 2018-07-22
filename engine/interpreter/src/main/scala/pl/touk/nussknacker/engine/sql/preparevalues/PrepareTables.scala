@@ -26,7 +26,7 @@ object PrepareTables {
   private def transformValidated(validatedTables: List[Validated[NotAListException, (String, Table)]])
   : ValidatedNel[NotAListException, Map[String, Table]] = {
     validatedTables
-      .traverseU[ValidatedNel[NotAListException, (String, Table)]](_.toValidatedNel)
+      .traverse(_.toValidatedNel)
       .map(_.toMap)
   }
 

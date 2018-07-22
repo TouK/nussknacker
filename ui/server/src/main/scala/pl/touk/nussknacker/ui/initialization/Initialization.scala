@@ -54,7 +54,7 @@ object Initialization {
   private def runOperationsTransactionally(db: DbConfig, operations: List[InitialOperation]) = {
 
     import db.driver.api._
-    val result = operations.map(_.runOperation).sequenceU
+    val result = operations.map(_.runOperation).sequence
     val runFuture = db.run(result.transactionally)
 
     Await.result(runFuture, 10 seconds)
@@ -99,14 +99,14 @@ class TechnicalProcessUpdate(customProcesses: Map[String, String], repository: D
           processingType = ProcessingType.Streaming,
           isSubprocess = false
         )
-      }.toList.sequenceU
+      }.toList.sequence
     results.map(_ => ())
   }
 
   private def saveOrUpdate(processId: String, category: String, deploymentData: ProcessDeploymentData,
                            processingType: ProcessingType, isSubprocess: Boolean)(implicit ec: ExecutionContext, lu: LoggedUser): DB[Unit] = {
     (for {
-      latestVersion <- EitherT.right[DB, EspError, Option[ProcessVersionEntityData]](fetchingProcessRepository.fetchLatestProcessVersion(processId))
+      latestVersion <- EitherT.right[EspError](fetchingProcessRepository.fetchLatestProcessVersion(processId))
       _ <- EitherT {
         latestVersion match {
           case None => repository.saveNewProcess(
@@ -141,7 +141,7 @@ class AutomaticMigration(migrations: Map[ProcessingType, ProcessMigrations],
       processes <- fetchingProcessRepository.fetchProcessesDetails()
       subprocesses <- fetchingProcessRepository.fetchSubProcessesDetails()
       allToMigrate = processes ++ subprocesses
-      migrated <- allToMigrate.map(migrateOne).sequenceU
+      migrated <- allToMigrate.map(migrateOne).sequence
     } yield migrated
     results.map(_ => ())
   }

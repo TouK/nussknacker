@@ -44,7 +44,7 @@ object ExpressionEvaluator {
           IO.pure((context, value))
         case None =>
           //TODO: maybe it should be Later here???
-          IO.fromFuture(Now(evaluateValue[T](context.id, serviceId, paramsMap).map { value =>
+          IO.fromFuture(IO.pure(evaluateValue[T](context.id, serviceId, paramsMap).map { value =>
             //TODO: exception?
             (context.withEvaluatedValue(serviceId, paramsMap, Left(value)), value)
           }))

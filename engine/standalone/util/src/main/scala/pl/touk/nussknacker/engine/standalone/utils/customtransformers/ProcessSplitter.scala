@@ -35,7 +35,7 @@ class ProcessSplitter(partsInterpreter: (ExecutionContext, Context) => Future[Tr
           continuation(newCtx, ec)
         })
       }.map { (results: List[Either[NonEmptyList[EspExceptionInfo[_ <: Throwable]], List[InterpretationResult]]]) =>
-        results.sequenceU.right.map(_.flatten)
+        results.sequence.right.map(_.flatten)
       }
     }
 

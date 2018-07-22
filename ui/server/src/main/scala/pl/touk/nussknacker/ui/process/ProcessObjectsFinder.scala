@@ -2,8 +2,8 @@ package pl.touk.nussknacker.ui.process
 
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ProcessDefinition, QueryableStateName}
-import pl.touk.nussknacker.engine.graph.node
-import pl.touk.nussknacker.engine.graph.node.{CustomNode, NodeData, SubprocessInput}
+import pl.touk.nussknacker.engine.graph
+import pl.touk.nussknacker.engine.graph.node.{CustomNode, NodeData, Source, SubprocessInput}
 import pl.touk.nussknacker.ui.api.SignalDefinition
 import pl.touk.nussknacker.ui.process.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessDetails
@@ -35,7 +35,7 @@ object ProcessObjectsFinder {
     val subprocessIds = extracted.subprocessesOnly.map(_.id)
     val allNodes = extracted.allProcesses.flatMap(_.nodes)
     val allObjectIds = componentIds(processDefinitions, subprocessIds)
-    val usedObjectIds = allNodes.collect { case n: node.WithComponent => n.componentId }.distinct
+    val usedObjectIds = allNodes.collect { case n: graph.node.WithComponent => n.componentId }.distinct
     allObjectIds.diff(usedObjectIds).sortCaseInsensitive
   }
 
@@ -50,14 +50,14 @@ object ProcessObjectsFinder {
     val processesWithTransformers = extracted.processesOnly.filter(processContainsData(nodeIsSignalTransformer(transformers)))
     val subprocessesWithTransformers = extracted.subprocessesOnly.filter(processContainsData(nodeIsSignalTransformer(transformers))).map(_.id)
     val processesThatContainsSubprocessWithTransformer = extracted.allProcesses.filter { proc =>
-      processContainsData(node => node.cast[SubprocessInput].exists(sub => subprocessesWithTransformers.contains(sub.componentId)))(proc)
+      processContainsData(node => graph.node.asSubprocessInput(node).exists(sub => subprocessesWithTransformers.contains(sub.componentId)))(proc)
     }
     (processesWithTransformers ++ processesThatContainsSubprocessWithTransformer).map(_.id).distinct.sortCaseInsensitive
   }
 
   private def nodeIsSignalTransformer(transformers: Set[String])(node: NodeData): Boolean = {
     def isCustomNodeFromList = (c:CustomNode) => transformers.contains(c.nodeType)
-    node.cast[CustomNode].exists(isCustomNodeFromList)
+    graph.node.asCustomNode(node).exists(isCustomNodeFromList)
   }
 
   private def processContainsData(predicate: NodeData => Boolean)(process: DisplayableProcess) : Boolean = {

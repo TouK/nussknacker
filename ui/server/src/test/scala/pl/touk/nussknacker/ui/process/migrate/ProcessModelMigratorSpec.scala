@@ -5,13 +5,11 @@ import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
-import pl.touk.nussknacker.engine.graph.node.Processor
+import pl.touk.nussknacker.engine.graph.node.{Processor, asProcessor}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.ui.api.ProcessTestData
 import pl.touk.nussknacker.ui.api.helpers.TestPermissions
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
-import pl.touk.nussknacker.ui.process.marshall.UiProcessMarshaller
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessDetails
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import shapeless.Typeable._
 import shapeless.syntax.typeable.typeableOps
@@ -60,7 +58,7 @@ class ProcessModelMigratorSpec extends FlatSpec with BeforeAndAfterEach with Sca
     val service = for {
       node <- migrationResult.process.nodes.find(_.id == "processor")
       flatNode <- node.cast[FlatNode]
-      processor <- flatNode.data.cast[Processor]
+      processor <- asProcessor(flatNode.data)
     } yield processor.service
     service.get
   }

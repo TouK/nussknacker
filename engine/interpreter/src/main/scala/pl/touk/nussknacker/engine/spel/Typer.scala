@@ -82,7 +82,7 @@ private[spel] class Typer(implicit classLoader: ClassLoader) {
         if (literalKeys.size != keys.size) {
           invalid("Currently inline maps with not literal keys (e.g. expressions as keys) are not supported")
         } else {
-          values.map(typeExpression(validationContext, _, current)).sequenceU.map { typedValues =>
+          values.map(typeExpression(validationContext, _, current)).sequence.map { typedValues =>
             TypedMapTypingResult(literalKeys.zip(typedValues).toMap)
           }
         }
@@ -215,7 +215,7 @@ private[spel] class Typer(implicit classLoader: ClassLoader) {
   private def typeChildren(validationContext: ValidationContext, node: SpelNode, current: List[TypingResult])
                           (result: List[TypingResult] => Validated[NonEmptyList[ExpressionParseError], TypingResult])
   : Validated[NonEmptyList[ExpressionParseError], TypingResult] = {
-    val data = node.children.map(child => typeExpression(validationContext, child, current)).sequenceU
+    val data = node.children.map(child => typeExpression(validationContext, child, current)).sequence
     data.andThen(result)
   }
 

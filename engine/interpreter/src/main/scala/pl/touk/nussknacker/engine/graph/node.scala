@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.graph
 
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import sink.SinkRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -149,4 +148,17 @@ object node {
     import pl.touk.nussknacker.engine.util.copySyntax._
     nodeData.asInstanceOf[NodeData].copy(id = (prefix :+ nodeData.id).mkString("-")).asInstanceOf[T]
   }
+
+  //TODO: after migration to cats > 1.0.0 shapeless cast on node subclasses won't compile outside package :|
+  import shapeless.syntax.typeable._
+
+  def asSource(nodeData: NodeData): Option[Source] = nodeData.cast[Source]
+
+  def asCustomNode(nodeData: NodeData): Option[CustomNode] = nodeData.cast[CustomNode]
+
+  def asSubprocessInput(nodeData: NodeData): Option[SubprocessInput] = nodeData.cast[SubprocessInput]
+
+  def asProcessor(nodeData: NodeData): Option[Processor] = nodeData.cast[Processor]
+
+
 }

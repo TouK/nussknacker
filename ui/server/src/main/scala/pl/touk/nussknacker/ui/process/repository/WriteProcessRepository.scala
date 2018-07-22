@@ -99,15 +99,18 @@ abstract class DbWriteProcessRepository[F[_]](val dbConfig: DbConfig,
         user = loggedUser.id, modelVersion = modelVersion.get(processingType)))
     }
 
+    //TODO: why EitherT.right doesn't infere properly here?
+    def rightT[T](value: DB[T]): EitherT[DB, EspError, T] = EitherT[DB, EspError, T](value.map(Right(_)))
+
     val insertAction = for {
-      _ <- EitherT.right[DB, EspError, Unit](logInfo(s"Updating process $processId by user $loggedUser"))
-      maybeProcess <- EitherT.right[DB, EspError, Option[ProcessEntityData]](processTableFilteredByUser.filter(_.id === processId).result.headOption)
-      process <- EitherT.fromEither(Either.fromOption(maybeProcess, ProcessNotFoundError(processId)))
+      _ <- rightT(logInfo(s"Updating process $processId by user $loggedUser"))
+      maybeProcess <- rightT(processTableFilteredByUser.filter(_.id === processId).result.headOption)
+      process <- EitherT.fromEither[DB](Either.fromOption(maybeProcess, ProcessNotFoundError(processId)))
       _ <- EitherT.fromEither(Either.cond(process.processType == ProcessType.fromDeploymentData(processDeploymentData), (), InvalidProcessTypeError(processId)))
-      processesVersionCount <- EitherT.right[DB, EspError, Int](processVersionsTable.filter(p => p.processId === processId).length.result)
-      latestProcessVersion <- EitherT.right[DB, EspError, Option[ProcessVersionEntityData]](latestProcessVersions(processId).result.headOption)
+      processesVersionCount <- rightT(processVersionsTable.filter(p => p.processId === processId).length.result)
+      latestProcessVersion <- rightT(latestProcessVersions(processId).result.headOption)
       newProcessVersion <- EitherT.fromEither(Right(versionToInsert(latestProcessVersion, processesVersionCount, process.processingType)))
-      _ <- EitherT.right[DB, EspError, Int](newProcessVersion.map(processVersionsTable += _).getOrElse(dbMonad.pure(0)))
+      _ <- EitherT.right[EspError](newProcessVersion.map(processVersionsTable += _).getOrElse(dbMonad.pure(0)))
     } yield newProcessVersion
     insertAction.value
   }
