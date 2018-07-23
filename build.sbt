@@ -444,8 +444,7 @@ lazy val generic = (project in engine("flink/generic")).
     name := "nussknacker-generic-model",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
-        "com.fasterxml.jackson.core" % "jackson-databind" % "2.9.2"
+        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided"
       )
     },
     test in assembly := {},

@@ -10,8 +10,8 @@ import pl.touk.nussknacker.engine.flink.util.exception.VerboselyLoggingException
 import pl.touk.nussknacker.engine.flink.util.transformer.{AggregateTransformer, PreviousValueTransformer}
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.testing.EmptyProcessConfigCreator
-import pl.touk.nussknacker.genericmodel.sinks.GenericKafkaJsonSink
-import pl.touk.nussknacker.genericmodel.sources.{GenericJsonSourceFactory, GenericTypedJsonSourceFactory}
+import pl.touk.nussknacker.engine.kafka.generic.sinks.GenericKafkaJsonSink
+import pl.touk.nussknacker.engine.kafka.generic.sources.{GenericJsonSourceFactory, GenericTypedJsonSourceFactory}
 
 class GenericConfigCreator extends EmptyProcessConfigCreator {
 

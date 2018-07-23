@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.genericmodel
+package pl.touk.nussknacker.engine.kafka.generic
 
 import java.nio.charset.StandardCharsets
 import java.util.UUID
