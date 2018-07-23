@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.sql
 
+import java.sql.Timestamp
+import java.time.{LocalDateTime, ZoneId}
 import java.util
 
 import org.scalatest.concurrent.ScalaFutures
@@ -19,7 +21,8 @@ class SqlExpressionTest extends FunSuite with Matchers with ScalaFutures {
     "var1" -> TypedList(Map(
         "field1" -> Typed[String],
         "field2" -> Typed[java.lang.Long],
-        "getField3" -> Typed[String]
+        "getField3" -> Typed[String],
+        "localDateTimeField" -> Typed[LocalDateTime]
       )),
     "var12" -> TypedList(Map(
         "field3" -> Typed[String],
@@ -30,12 +33,15 @@ class SqlExpressionTest extends FunSuite with Matchers with ScalaFutures {
     "var3" -> TypedList[TestBean]
   ))
 
+  private val dateToTest = LocalDateTime.of(2018, 6, 6, 10, 11, 12)
+
   private val ctx = Context("").withVariables(Map(
     "var" -> "blah",
     "var1" -> util.Arrays.asList(TypedMap(Map(
       "field1" -> "abcd",
       "field2" -> 11L,
-      "getField3" -> "tralaala"
+      "getField3" -> "tralaala",
+      "localDateTimeField" -> dateToTest
     ))),
     "var12" -> util.Arrays.asList(TypedMap(Map(
       "field3" -> "eeeee",
@@ -64,6 +70,12 @@ class SqlExpressionTest extends FunSuite with Matchers with ScalaFutures {
     evaluate("select field3 from VAR12 left outer join VAR1 on VAR1.field1 = VAR12.field3") shouldBe
       List(TypedMap(Map("FIELD3" -> "eeeee")))
   }
+
+  test("use LocalDateTime field as timestamp") {
+    evaluate("select localDateTimeField from VAR1") shouldBe
+      List(TypedMap(Map("LOCALDATETIMEFIELD" -> Timestamp.from(dateToTest.atZone(ZoneId.systemDefault()).toInstant))))
+  }
+
 
   private val dumbLazyProvider = new LazyValuesProvider {
     override def apply[T](ctx: LazyContext, serviceId: String, params: Seq[(String, Any)]) = throw new IllegalStateException("Shouln't be invoked")

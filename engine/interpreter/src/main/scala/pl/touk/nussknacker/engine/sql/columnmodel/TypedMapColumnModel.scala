@@ -22,7 +22,7 @@ private[columnmodel] object TypedMapColumnModel {
     for {
       (name, typ) <- typedMap.fields
       classRef <- toClasRef(typ)
-      sqlType <- ClazzToSqlType.convert(name, classRef)
+      sqlType <- ClazzToSqlType.convert(name, classRef, "TypedMap")
     } yield Column(name, sqlType)
   }
 }

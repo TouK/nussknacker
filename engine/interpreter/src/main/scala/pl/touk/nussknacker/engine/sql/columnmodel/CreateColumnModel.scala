@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.sql.columnmodel
 
+import java.time.LocalDateTime
 import java.util.Date
 
 import cats.data._
@@ -61,8 +62,9 @@ object CreateColumnModel {
     val BOOLEAN: ClazzRef = ClazzRef[Boolean]
     val NUMBER: ClazzRef = ClazzRef[Number]
     val DATE: ClazzRef = ClazzRef[Date]
+    val LOCAL_DATE_TIME: ClazzRef = ClazzRef[LocalDateTime]
 
-    def convert(name: String, arg: ClazzRef): Option[SqlType] = {
+    def convert(name: String, arg: ClazzRef, className: String): Option[SqlType] = {
       import SqlType._
       arg match {
         case STRING =>
@@ -78,10 +80,11 @@ object CreateColumnModel {
         case BOOLEAN |
              J_BOOLEAN =>
           Some(Bool)
-        case DATE =>
+          //TODO: other date types?
+        case DATE | LOCAL_DATE_TIME =>
           Some(SqlType.Date)
         case a =>
-          logger.warn(s"no mapping for name: $name and type $a")
+          logger.warn(s"No mapping for name: $name in $className and type $a")
           None
       }
     }

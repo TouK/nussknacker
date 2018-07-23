@@ -152,8 +152,10 @@ private object HsqlSqlQueryableDataBase extends LazyLogging {
           ClazzRef[Char]
         case Types.BOOLEAN =>
           ClazzRef[Boolean]
+        case Types.DATE | Types.TIMESTAMP =>
+          ClazzRef[java.util.Date]
         case a =>
-          logger.warn(s"no type mapping for column type: $a")
+          logger.warn(s"no type mapping for column type: $a, column: ${meta.getColumnName(idx)}")
           ClazzRef[Any]
       }
       name -> typ

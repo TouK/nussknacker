@@ -21,7 +21,7 @@ private[columnmodel] object TypedClassColumnModel {
   private def getColumns(clazzDefinition: ClazzDefinition): ColumnModel = {
     val columns = for {
       (name, method) <- clazzDefinition.methods
-      typ <- ClazzToSqlType.convert(name, method.refClazz)
+      typ <- ClazzToSqlType.convert(name, method.refClazz, clazzDefinition.clazzName.refClazzName)
     } yield Column(name, typ)
     ColumnModel(columns.toList)
   }
