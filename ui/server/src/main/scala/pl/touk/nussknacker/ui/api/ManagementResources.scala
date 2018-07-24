@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.actor.ActorRef
+import akka.actor.{ActorRef, ActorSystem}
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse, StatusCodes}
 import akka.http.scaladsl.server._
@@ -36,7 +36,7 @@ object ManagementResources {
             testResultsMaxSizeInBytes: Int,
             processAuthorizator:AuthorizeProcess)
            (implicit ec: ExecutionContext,
-            mat: Materializer): ManagementResources = {
+            mat: Materializer, system: ActorSystem): ManagementResources = {
     new ManagementResources(
       processCounter = processCounter,
       managementActor = managementActor,
@@ -51,7 +51,7 @@ class ManagementResources(processCounter: ProcessCounter,
                           val managementActor: ActorRef,
                           testResultsMaxSizeInBytes: Int,
                           val processAuthorizer:AuthorizeProcess)
-                         (implicit ec: ExecutionContext, mat: Materializer)
+                         (implicit ec: ExecutionContext, mat: Materializer, system: ActorSystem)
   extends Directives
     with LazyLogging
     with RouteWithUser
@@ -59,7 +59,9 @@ class ManagementResources(processCounter: ProcessCounter,
 
   import UiCodecs._
 
-  implicit val timeout = Timeout(1 minute)
+  //TODO: in the future we could use https://github.com/akka/akka-http/pull/1828 when we can bump version to 10.1.x
+  private val durationFromConfig = system.settings.config.getDuration("akka.http.server.request-timeout")
+  private implicit val timeout: Timeout = Timeout(durationFromConfig.toMillis millis)
 
   def route(implicit user: LoggedUser): Route = {
     path("adminProcessManagement" / "snapshot" / Segment / Segment) { (processId, savepointDir) =>
