@@ -300,7 +300,7 @@ protected trait ProcessCompilerBase {
 object ProcessValidator {
 
   def default(definitions: ProcessDefinition[ObjectWithMethodDef], loader: ClassLoader = getClass.getClassLoader): ProcessValidator = {
-    val expressionCompiler = ExpressionCompiler.withOptimization(loader, definitions.expressionConfig)
+    val expressionCompiler = ExpressionCompiler.withoutOptimization(loader, definitions.expressionConfig)
 
     val sub = new PartSubGraphCompiler(expressionCompiler, definitions.expressionConfig, definitions.services)
     new ProcessCompiler(loader, sub, definitions)
