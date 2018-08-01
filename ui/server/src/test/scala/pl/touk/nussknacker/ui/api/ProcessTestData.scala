@@ -22,11 +22,17 @@ import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.{Edge, Node
 import pl.touk.nussknacker.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{BaseProcessDetails, ProcessDetails, ValidatedProcessDetails}
-import pl.touk.nussknacker.ui.process.subprocess.{SetSubprocessRepository, SubprocessResolver}
+import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessRepository, SubprocessResolver}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.ObjectProcessDefinition
 
 object ProcessTestData {
+
+  class SetSubprocessRepository(processes: Set[SubprocessDetails]) extends SubprocessRepository {
+    override def loadSubprocesses(versions: Map[String, Long]): Set[SubprocessDetails] = {
+      processes
+    }
+  }
 
   val existingSourceFactory = "barSource"
   val existingSinkFactory = "barSink"

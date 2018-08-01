@@ -23,12 +23,6 @@ trait SubprocessRepository {
 
 case class SubprocessDetails(canonical: CanonicalProcess, category: String)
 
-class SetSubprocessRepository(processes: Set[SubprocessDetails]) extends SubprocessRepository {
-  override def loadSubprocesses(versions: Map[String, Long]): Set[SubprocessDetails] = {
-    processes
-  }
-}
-
 class DbSubprocessRepository(db: DbConfig, ec: ExecutionContext) extends SubprocessRepository {
   //TODO: make it return Future?
   override def loadSubprocesses(versions: Map[String, Long]): Set[SubprocessDetails] = {
@@ -59,7 +53,7 @@ class DbSubprocessRepository(db: DbConfig, ec: ExecutionContext) extends Subproc
       latestProcesses <- processVersionsTable.groupBy(_.processId).map { case (n, group) => (n, group.map(_.createDate).max) }
         .join(processVersionsTable).on { case (((processId, latestVersionDate)), processVersion) =>
         processVersion.processId === processId && processVersion.createDate === latestVersionDate
-      }.join(processesTable.filter(_.isSubprocess))
+      }.join(subprocessesQuery)
         .on { case ((_, latestVersion), process) => latestVersion.processId === process.id }
         .result
     } yield latestProcesses.map { case ((_, processVersion), process) =>
@@ -71,7 +65,7 @@ class DbSubprocessRepository(db: DbConfig, ec: ExecutionContext) extends Subproc
   private def fetchSubprocess(subprocessId: String, version: Long) : Future[SubprocessDetails] = {
     val action = for {
       subprocessVersion <- processVersionsTable.filter(p => p.id === version && p.processId === subprocessId)
-        .join(processesTable.filter(_.isSubprocess))
+        .join(subprocessesQuery)
         .on { case (latestVersion, process) => latestVersion.processId === process.id }
         .result.headOption
     } yield subprocessVersion.flatMap { case (processVersion, process) =>
@@ -83,6 +77,11 @@ class DbSubprocessRepository(db: DbConfig, ec: ExecutionContext) extends Subproc
     }
   }
 
+  private def subprocessesQuery = {
+    processesTable
+      .filter(_.isSubprocess)
+      .filter(!_.isArchived)
+  }
 }
 
 
