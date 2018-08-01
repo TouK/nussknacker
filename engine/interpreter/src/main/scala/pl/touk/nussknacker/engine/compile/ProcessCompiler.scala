@@ -156,7 +156,7 @@ protected trait ProcessCompilerBase {
         }
 
         val compiledNode = customNodeDefinition.andThen(n => compileCustomNodeInvoker(node, n._1))
-        val nextPartsValidation = sub.validate(node, nextCtx.getOrElse(ctx))
+        val nextPartsValidation = sub.validate(node, ctx, Some(nextCtx.getOrElse(ctx)))
 
         CompilationResult.map4(CompilationResult(compiledNode), nextPartsValidation,
           compile(nextParts, nextPartsValidation.typing), CompilationResult(nextCtx)) { (nodeInvoker, _, nextPartsCompiled, validatedNextCtx) =>
@@ -302,7 +302,12 @@ object ProcessValidator {
   def default(definitions: ProcessDefinition[ObjectWithMethodDef], loader: ClassLoader = getClass.getClassLoader): ProcessValidator = {
     val expressionCompiler = ExpressionCompiler.withoutOptimization(loader, definitions.expressionConfig)
 
-    val sub = new PartSubGraphCompiler(expressionCompiler, definitions.expressionConfig, definitions.services)
+    val customNodesDefinitions = definitions.customStreamTransformers.map {
+      case (key, (objectWithMethodDef, _)) => (key, objectWithMethodDef)
+    }
+    val sub = new PartSubGraphCompiler(
+      expressionCompiler, definitions.expressionConfig, definitions.services, customNodesDefinitions)
+
     new ProcessCompiler(loader, sub, definitions)
   }
 

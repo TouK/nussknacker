@@ -47,6 +47,16 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
       parameters.map(p => compileParam(p, ctx, paramMap(p.name))).sequence
     }
   }
+  def compileObjectParameters(parameterDefinitions: List[Parameter], parameters: List[evaluatedparam.Parameter], paramsCtx: Map[String, ValidationContext])
+                             (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, List[compiledgraph.evaluatedparam.Parameter]] =
+    validateObjectParameters(parameterDefinitions, parameters.map(_.name))
+      .andThen { _ =>
+        val paramMap = parameterDefinitions.map(p => p.name -> p.typ).toMap
+
+        parameters.map(p => {
+          compileParam(p, paramsCtx.get(p.name), paramMap(p.name))
+        }).sequence
+      }
 
 
   private def validateObjectParameters(parameterDefinitions: List[Parameter], usedParamNames: List[String])

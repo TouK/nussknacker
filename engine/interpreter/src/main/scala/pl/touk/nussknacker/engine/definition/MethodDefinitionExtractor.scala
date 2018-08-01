@@ -1,10 +1,12 @@
 package pl.touk.nussknacker.engine.definition
 
 import java.lang.annotation.Annotation
+import java.lang.reflect
 import java.lang.reflect.Method
 
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.api.{AdditionalVariables, MethodToInvoke, ParamName}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.Parameter
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedParameters}
 import pl.touk.nussknacker.engine.types.EspTypeUtils
@@ -33,8 +35,8 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
     }
   }
 
-  private def extractParameters(obj: T, method: Method) = {
-    val params = method.getParameters.map { p =>
+  private def extractParameters(obj: T, method: Method): OrderedParameters = {
+    val params: List[Either[Parameter, Class[_]]] = method.getParameters.map { p =>
       if (additionalParameters.contains(p.getType) && p.getAnnotation(classOf[ParamName]) == null) {
         Right(p.getType)
       } else {
@@ -42,11 +44,20 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
           .map(_.value())
           .getOrElse(throw new IllegalArgumentException(s"Parameter $p of $obj and method : ${method.getName} has missing @ParamName annotation"))
         val paramType = extractParameterType(p)
-        Left(Parameter(name, ClazzRef(paramType), ClazzRef(p.getType), ParameterTypeMapper.prepareRestrictions(paramType, Some(p))))
+        Left(Parameter(
+          name, ClazzRef(paramType), ClazzRef(p.getType), ParameterTypeMapper.prepareRestrictions(paramType, Some(p)), additionalVariables(p)
+        ))
       }
     }.toList
+
     new OrderedParameters(params)
   }
+
+  private def additionalVariables(p: reflect.Parameter): Map[String, TypingResult] =
+    Option(p.getAnnotation(classOf[AdditionalVariables]))
+      .map(_.value().map(additionalVariable =>
+        additionalVariable.name() -> Typed(ClazzRef(additionalVariable.clazz()))).toMap
+      ).getOrElse(Map.empty)
 
   protected def extractReturnTypeFromMethod(obj: T, method: Method): ClazzRef = {
     val typeFromAnnotation = Option(method.getAnnotation(classOf[MethodToInvoke]))

@@ -21,9 +21,13 @@ object CompiledProcess {
               timeout: FiniteDuration): ValidatedNel[ProcessCompilationError, CompiledProcess] = {
     val servicesDefs = definitions.services
 
+    val customNodesDefinitions = definitions.customStreamTransformers.map {
+      case (key, (objectWithMethodDef, _)) => (key, objectWithMethodDef)
+    }
+
     val expressionCompiler = ExpressionCompiler.withOptimization(userCodeClassLoader, definitions.expressionConfig)
     //for testing environment it's important to take classloader from user jar
-    val subCompiler = new PartSubGraphCompiler(expressionCompiler, definitions.expressionConfig, servicesDefs)
+    val subCompiler = new PartSubGraphCompiler(expressionCompiler, definitions.expressionConfig, servicesDefs, customNodesDefinitions)
     val processCompiler = new ProcessCompiler(userCodeClassLoader, subCompiler, definitions)
 
     processCompiler.compile(process).result.map { compiledProcess =>

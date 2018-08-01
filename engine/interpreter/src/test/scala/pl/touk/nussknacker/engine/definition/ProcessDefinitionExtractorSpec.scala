@@ -3,21 +3,27 @@ package pl.touk.nussknacker.engine.definition
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, EspExceptionInfo, ExceptionHandlerFactory}
+import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.{ProcessSignalSender, SignalTransformer}
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
 
 class ProcessDefinitionExtractorSpec extends FlatSpec with Matchers {
 
+  val processDefinition =
+    ProcessDefinitionExtractor.extractObjectWithMethods(TestCreator, ConfigFactory.load())
+
   it should "extract definitions" in {
-
-    val extracted = ProcessDefinitionExtractor.extractObjectWithMethods(TestCreator, ConfigFactory.load())
-
-    val signal1 = extracted.signalsWithTransformers.get("signal1")
+    val signal1 = processDefinition.signalsWithTransformers.get("signal1")
     signal1 shouldBe 'defined
     signal1.get._2 shouldBe Set("transformer1")
     signal1.get._1.methodDef.name shouldBe "send1"
+  }
 
+  it should "extract additional variables info from annotation" in {
+    val methodDef = processDefinition.customStreamTransformers("transformer1")._1.methodDef
+    val additionalVars = methodDef.orderedParameters.definedParameters.head.additionalVariables
+    additionalVars("var1") shouldBe Typed[String]
   }
 
   object TestCreator extends ProcessConfigCreator {
@@ -48,13 +54,14 @@ class ProcessDefinitionExtractorSpec extends FlatSpec with Matchers {
 
     @MethodToInvoke
     @SignalTransformer(signalClass = classOf[Signal1])
-    def invoke(@ParamName("param1") param1: String) : Unit = {}
-
+    def invoke(
+      @ParamName("param1")
+      @AdditionalVariables(value = Array(new AdditionalVariable(name = "var1", clazz = classOf[String])))
+      param1: String) : Unit = {}
   }
 
   class Signal1 extends ProcessSignalSender {
     @MethodToInvoke
     def send1(@ParamName("param1") param1: String) : Unit = {}
   }
-
 }

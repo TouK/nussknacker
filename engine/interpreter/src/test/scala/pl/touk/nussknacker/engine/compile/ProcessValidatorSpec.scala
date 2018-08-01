@@ -315,8 +315,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     }
   }
 
-  //TODO: implement validation to make it test fail
-  test("allow unknown vars in custom node params") {
+  test("doesn't allow unknown vars in custom node params") {
     val process = EspProcessBuilder
       .id("process1")
       .exceptionHandler()
@@ -326,27 +325,9 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     val definitionWithCustomNode = definitionWithTypedSourceAndTransformNode
 
     validate(process, definitionWithCustomNode).result should matchPattern {
-      case Valid(_) =>
+      case Invalid(NonEmptyList(ExpressionParseError("Unresolved reference strangeVar", "cNode1", Some("par1"), "#strangeVar"), _)) =>
     }
-
   }
-
-  test("pass custom node output var") {
-    val process = EspProcessBuilder
-      .id("process1")
-      .exceptionHandler()
-      .source("id1", "source")
-      .customNode("cNode1", "out1", "custom", "par1" -> "#strangeVar")
-      .sink("id2", "#out1", "sink")
-    val definitionWithCustomNode = definitionWithTypedSourceAndTransformNode
-
-    val compilationResult = validate(process, definitionWithCustomNode)
-    compilationResult.result should matchPattern {
-      case Valid(_) =>
-    }
-    compilationResult.variablesInNodes("id2") shouldBe Map("input" -> Typed[SimpleRecord], "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass)), "out1" -> Typed[AnotherSimpleRecord])
-  }
-
 
   test("validate exception handler params") {
 
