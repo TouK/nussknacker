@@ -284,7 +284,7 @@ export function nodesDisconnected(from, to) {
     }]);
 }
 
-export function injectNode(from, middle, to) {
+export function injectNode(from, middle, to, edgeType) {
   return runSyncActionsThenValidate(state => [
     {
         type: "NODES_DISCONNECTED",
@@ -295,7 +295,8 @@ export function injectNode(from, middle, to) {
         type: "NODES_CONNECTED",
         fromNode: from,
         toNode: middle,
-        processDefinitionData: state.settings.processDefinitionData
+        processDefinitionData: state.settings.processDefinitionData,
+        edgeType: edgeType
     },
     {
         type: "NODES_CONNECTED",

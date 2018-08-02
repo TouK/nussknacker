@@ -169,9 +169,12 @@ class Graph extends React.Component {
         const middleMan = cellView.model
         //TODO: consider doing this check in actions.js?
         if (GraphUtils.canInjectNode(this.props.processToDisplay, source, middleMan, target, this.props.processDefinitionData)) {
-          this.props.actions.injectNode(source.attributes.nodeData,
+          this.props.actions.injectNode(
+            source.attributes.nodeData,
             middleMan.attributes.nodeData,
-            target.attributes.nodeData)
+            target.attributes.nodeData,
+            linkBelowCell.attributes.edgeData.edgeType
+          )
         }
       }
     }
