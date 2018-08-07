@@ -4,7 +4,7 @@ import com.codahale.metrics.MetricRegistry
 import com.typesafe.config.ConfigFactory
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.time.{Millis, Seconds, Span}
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.standalone.utils.StandaloneContextPreparer
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
-class StandaloneProcessInterpreterSpec extends FlatSpec with Matchers with Eventually with ScalaFutures {
+class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Eventually with ScalaFutures {
 
   override implicit val patienceConfig = PatienceConfig(
     timeout = Span(10, Seconds),
@@ -24,7 +24,7 @@ class StandaloneProcessInterpreterSpec extends FlatSpec with Matchers with Event
   import scala.concurrent.ExecutionContext.Implicits.global
 
 
-  it should "run process in request response mode" in {
+  test("run process in request response mode") {
 
     val process = EspProcessBuilder
       .id("proc1")
@@ -42,7 +42,7 @@ class StandaloneProcessInterpreterSpec extends FlatSpec with Matchers with Event
     creator.processorService.invocationsCount.get() shouldBe 1
   }
 
-  it should "collect results after split" in {
+  test("collect results after split") {
     val process = EspProcessBuilder
       .id("proc1")
       .exceptionHandler()
@@ -57,7 +57,7 @@ class StandaloneProcessInterpreterSpec extends FlatSpec with Matchers with Event
     result shouldBe Right(List("a", "b"))
   }
 
-  it should "collect metrics" in {
+  test("collect metrics") {
 
     val process = EspProcessBuilder
       .id("proc1")
@@ -86,12 +86,13 @@ class StandaloneProcessInterpreterSpec extends FlatSpec with Matchers with Event
     interpreter.close()
   }
 
-  it should "collect results after element split" in {
+  test("collect results after element split") {
     val process = EspProcessBuilder
       .id("proc1")
       .exceptionHandler()
       .source("start", "request1-post-source")
       .customNode("split", "outPart", "splitter", "parts" -> "#input.toList()")
+      .buildSimpleVariable("var1", "var1", "#outPart")
       .sink("sink1", "#outPart", "response-sink")
 
     val result = runProcess(process, Request1("a", "b"))
@@ -99,7 +100,7 @@ class StandaloneProcessInterpreterSpec extends FlatSpec with Matchers with Event
     result shouldBe Right(List("a", "b"))
   }
 
-  it should "init call open method for service" in {
+  test("init call open method for service") {
     val process = EspProcessBuilder
       .id("proc1")
       .exceptionHandler()
@@ -112,7 +113,7 @@ class StandaloneProcessInterpreterSpec extends FlatSpec with Matchers with Event
     result shouldBe Right(List("initialized!"))
   }
 
-  it should "collect metrics for individual services" in {
+  test("collect metrics for individual services") {
     val process = EspProcessBuilder
       .id("proc1")
       .exceptionHandler()

@@ -6,7 +6,7 @@ import cats.instances.list._
 import cats.instances.option._
 import cats.kernel.Semigroup
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.api.typed.typing.{TypedMapTypingResult, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedMapTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError._
 import pl.touk.nussknacker.engine.compile.dumb._
 import pl.touk.nussknacker.engine.compiledgraph.node.{Node, SubprocessEnd}
@@ -81,7 +81,7 @@ private[compile] trait PartSubGraphCompilerBase {
       case splittednode.SourceNode(SubprocessInputDefinition(id, _, _), next) =>
         //TODO: should we recognize we're compiling only subprocess?
         compile(next, ctx).map(nwc => compiledgraph.node.Source(id, nwc))
-      case splittednode.OneOutputSubsequentNode(data, next) => compileSubsequent(ctx, data, next, nextCtx.getOrElse(ctx))
+      case splittednode.OneOutputSubsequentNode(data, next) => compileSubsequent(ctx, data, next, nextCtx)
 
       case splittednode.SplitNode(bareNode, nexts) =>
         val compiledNexts = nexts.map(n => compile(n.next, ctx)).sequence
@@ -119,7 +119,7 @@ private[compile] trait PartSubGraphCompilerBase {
       Valid(compiledgraph.node.Sink(id, name, None, disabled.contains(true)))
   }
 
-  private def compileSubsequent(ctx: ValidationContext, data: OneOutputSubsequentNodeData, next: Next, nextCtx: ValidationContext)(implicit nodeId: NodeId): CompilationResult[Node] = data match {
+  private def compileSubsequent(ctx: ValidationContext, data: OneOutputSubsequentNodeData, next: Next, nextValidationContext: Option[ValidationContext])(implicit nodeId: NodeId): CompilationResult[Node] = data match {
     case graph.node.Variable(id, varName, expression, _) =>
       val (newCtx, compiledExpression) = withVariable(varName, ctx, compile(expression, None, ctx, ClazzRef[Any]))
 
@@ -161,7 +161,7 @@ private[compile] trait PartSubGraphCompilerBase {
 
       CompilationResult.map2(
         fa = CompilationResult(validatedParams),
-        fb = compile(next, nextCtx))(
+        fb = compile(next, nextValidationContext.getOrElse(ctx)))(
         f = (compiledParams, compiledNext) => compiledgraph.node.CustomNode(id, compiledParams, compiledNext))
     }
 

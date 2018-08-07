@@ -2,16 +2,16 @@ package pl.touk.nussknacker.engine.process.functional
 
 import java.util.Date
 
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.process.ProcessTestHelpers.{MockService, SimpleRecord, SimpleRecordWithPreviousValue, processInvoker}
 import pl.touk.nussknacker.engine.spel
 
-class CustomNodeProcessSpec extends FlatSpec with Matchers {
+class CustomNodeProcessSpec extends FunSuite with Matchers {
 
   import spel.Implicits._
 
-  it should "be able to use maps and lists after custom nodes" in {
+  test("be able to use maps and lists after custom nodes") {
     val process = EspProcessBuilder.id("proc1")
       .exceptionHandler()
       .source("id", "input")
@@ -29,7 +29,7 @@ class CustomNodeProcessSpec extends FlatSpec with Matchers {
 
   }
 
-  it should "fire alert when aggregate threshold exceeded" in {
+  test("fire alert when aggregate threshold exceeded") {
 
     val process = EspProcessBuilder.id("proc1")
       .exceptionHandler()
@@ -56,7 +56,55 @@ class CustomNodeProcessSpec extends FlatSpec with Matchers {
 
   }
 
-  it should "be able to split after custom node" in {
+  test("fire alert when aggregate threshold exceeded #2") {
+
+    val process = EspProcessBuilder.id("proc1")
+      .exceptionHandler()
+      .source("id", "input")
+      .customNode("custom", "outRec", "stateCustom", "keyBy" -> "#input.id", "stringVal" -> "'terefere'")
+      .split("split",
+        GraphBuilder
+          .filter("delta", "#outRec.record.value1 > #outRec.previous + 5")
+          .processor("proc2", "logService", "all" -> "#outRec")
+          .emptySink("out", "monitor"),
+        GraphBuilder
+          .emptySink("out2", "monitor")
+      )
+
+
+    val data = List(
+      SimpleRecord("1", 3, "a", new Date(0)),
+      SimpleRecord("1", 5, "b", new Date(1000)),
+      SimpleRecord("1", 12, "d", new Date(4000)),
+      SimpleRecord("1", 14, "d", new Date(10000)),
+      SimpleRecord("1", 20, "d", new Date(10000))
+
+    )
+
+    processInvoker.invoke(process, data)
+
+    val mockData = MockService.data.map(_.asInstanceOf[SimpleRecordWithPreviousValue])
+    mockData.map(_.record.value1) shouldBe List(12L, 20L)
+    mockData.map(_.added) shouldBe List("terefere", "terefere")
+
+  }
+
+  test("let use current context within custom node even when it clears its context afterwards") {
+    val process = EspProcessBuilder.id("proc1")
+      .exceptionHandler()
+      .source("id", "input")
+      .customNodeNoOutput("id1", "customContextClear", "value" -> "#input.id")
+      .processor("proc2", "logService", "all" -> "'42'")
+      .emptySink("out", "monitor")
+
+    val data = List(SimpleRecord("1", 3, "a", new Date(0)))
+
+    processInvoker.invoke(process, data)
+
+    MockService.data.size shouldBe 1
+  }
+
+  test("be able to split after custom node") {
     val additionalFilterBranch = GraphBuilder.filter("falseFilter", "#outRec.record.value1 > #outRec.previous + 1")
       .customNode("custom2", "outRec2", "stateCustom", "keyBy" -> "#input.id", "stringVal" -> "'terefere'")
       .emptySink("outFalse", "monitor")
@@ -89,7 +137,7 @@ class CustomNodeProcessSpec extends FlatSpec with Matchers {
 
   }
 
-  it should "be able to filter before split" in {
+  test("be able to filter before split") {
 
     val process = EspProcessBuilder.id("proc1")
       .exceptionHandler()
@@ -109,7 +157,7 @@ class CustomNodeProcessSpec extends FlatSpec with Matchers {
 
   }
 
-  it should "retain context after split" in {
+  test("retain context after split") {
     val process = EspProcessBuilder.id("proc1")
       .exceptionHandler()
       .source("id", "input")
@@ -131,7 +179,7 @@ class CustomNodeProcessSpec extends FlatSpec with Matchers {
 
   }
 
-  it should "be able to pass former context" in {
+  test("be able to pass former context") {
     val process = EspProcessBuilder.id("proc1")
       .exceptionHandler()
       .source("id", "input")
@@ -146,7 +194,7 @@ class CustomNodeProcessSpec extends FlatSpec with Matchers {
 
   }
 
-  it should "process custom node without return properly" in {
+  test("process custom node without return properly") {
     val process = EspProcessBuilder.id("proc1")
       .exceptionHandler()
       .source("id", "input")
@@ -162,7 +210,7 @@ class CustomNodeProcessSpec extends FlatSpec with Matchers {
 
   }
 
-  it should "not allow input after custom node clearing context" in {
+  test("not allow input after custom node clearing context") {
     val process = EspProcessBuilder.id("proc1")
       .exceptionHandler()
       .source("id", "input")
@@ -174,8 +222,20 @@ class CustomNodeProcessSpec extends FlatSpec with Matchers {
     val thrown = the [IllegalArgumentException] thrownBy processInvoker.invoke(process, data)
 
     thrown.getMessage shouldBe "Compilation errors: ExpressionParseError(Unresolved reference input,proc2,Some(all),#input.id)"
+  }
 
+  test("should validate types in custom node output variable") {
+    val process = EspProcessBuilder.id("proc1")
+      .exceptionHandler()
+      .source("id", "input")
+      .customNode("custom", "outRec", "stateCustom", "keyBy" -> "#input.id", "stringVal" -> "'terefere'")
+      .filter("delta", "#outRec.record.value999 > #outRec.previous + 5")
+      .processor("proc2", "logService", "all" -> "#outRec")
+      .emptySink("out", "monitor")
 
+    val thrown = the [IllegalArgumentException] thrownBy processInvoker.invoke(process, List.empty)
+
+    thrown.getMessage shouldBe "Compilation errors: ExpressionParseError(There is no property 'value999' in type 'pl.touk.nussknacker.engine.process.ProcessTestHelpers$SimpleRecord',delta,None,#outRec.record.value999 > #outRec.previous + 5)"
   }
 
 }

@@ -156,11 +156,15 @@ protected trait ProcessCompilerBase {
         }
 
         val compiledNode = customNodeDefinition.andThen(n => compileCustomNodeInvoker(node, n._1))
-        val nextPartsValidation = sub.validate(node, ctx, Some(nextCtx.getOrElse(ctx)))
+        val nextPartsValidation = sub.validate(node, ctx, nextCtx.toOption)
 
-        CompilationResult.map4(CompilationResult(compiledNode), nextPartsValidation,
-          compile(nextParts, nextPartsValidation.typing), CompilationResult(nextCtx)) { (nodeInvoker, _, nextPartsCompiled, validatedNextCtx) =>
-          compiledgraph.part.CustomNodePart(nodeInvoker, node, validatedNextCtx, nextPartsCompiled, ends)
+        CompilationResult.map4(
+          f0 = CompilationResult(compiledNode),
+          f1 = nextPartsValidation,
+          f2 = compile(nextParts, nextPartsValidation.typing),
+          f3 = CompilationResult(nextCtx)
+        ) { (nodeInvoker, _, nextPartsCompiled, validatedNextCtx) =>
+          compiledgraph.part.CustomNodePart(nodeInvoker, node, ctx, validatedNextCtx, nextPartsCompiled, ends)
         }.distinctErrors
 
       case SplitPart(node@splittednode.SplitNode(_, nexts)) =>

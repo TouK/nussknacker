@@ -38,8 +38,8 @@ class CompiledProcessWithDeps(compiledProcess: CompiledProcess,
     compiledProcess.close()
   }
 
-  def compileSubPart(node: SplittedNode[_], validationContext: ValidationContext): Node = {
-    validateOrFail(compiledProcess.subPartCompiler.compile(node, validationContext).result)
+  def compileSubPart(node: SplittedNode[_], validationContext: ValidationContext, nextValidationContext: Option[ValidationContext]): Node = {
+    validateOrFail(compiledProcess.subPartCompiler.compile(node, validationContext, nextValidationContext).result)
   }
 
   private def validateOrFail[T](validated: ValidatedNel[ProcessCompilationError, T]): T = validated match {
