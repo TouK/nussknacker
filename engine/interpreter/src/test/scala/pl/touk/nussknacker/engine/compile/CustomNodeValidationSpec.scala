@@ -6,7 +6,6 @@ import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory, SourceFactory, WithCategories}
-import pl.touk.nussknacker.engine.api.test.TestDataParser
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError.ExpressionParseError
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
@@ -27,7 +26,6 @@ class CustomNodeValidationSpec extends FunSuite with Matchers {
   }
 
   object SimpleStringSource extends SourceFactory[String] {
-    override def testDataParser: Option[TestDataParser[String]] = None
     override def clazz: Class[_] = classOf[String]
     @MethodToInvoke
     def create(): api.process.Source[String] = null

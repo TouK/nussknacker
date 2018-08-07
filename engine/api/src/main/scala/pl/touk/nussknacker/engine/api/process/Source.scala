@@ -11,6 +11,10 @@ trait Source[T] {
 
 }
 
+trait TestDataParserProvider[T] { self: Source[T] =>
+  def testDataParser: TestDataParser[T]
+}
+
 trait TestDataGenerator { self: Source[_] =>
   def generateTestData(size: Int) : Array[Byte]
 }
@@ -22,7 +26,4 @@ trait TestDataGenerator { self: Source[_] =>
 * */
 trait SourceFactory[T] extends Serializable {
   def clazz : Class[_]
-
-  def testDataParser: Option[TestDataParser[T]]
-
 }

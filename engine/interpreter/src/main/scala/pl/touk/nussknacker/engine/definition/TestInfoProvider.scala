@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.definition
 
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.process.{SourceFactory, TestDataGenerator, WithCategories}
+import pl.touk.nussknacker.engine.api.process.{SourceFactory, TestDataGenerator, TestDataParserProvider, WithCategories}
 import pl.touk.nussknacker.engine.api.test.TestDataParser
 import pl.touk.nussknacker.engine.api.{MetaData, process}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
@@ -29,32 +29,31 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider {
   private lazy val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData.modelClassLoader.classLoader,
     modelData.processDefinition.expressionConfig)
 
-  override def getTestingCapabilities(metaData: MetaData, source: Source) = {
-    val canTest = sourceFactory(source).flatMap[TestDataParser[_]](_.testDataParser).isDefined
-    val canGenerateData = prepareTestDataGenerator(metaData, source).isDefined
+  override def getTestingCapabilities(metaData: MetaData, source: Source): TestingCapabilities = {
+    val sourceObj = prepareSourceObj(source)(metaData)
+    val canTest = sourceObj.exists(_.isInstanceOf[TestDataParserProvider[_]])
+    val canGenerateData = sourceObj.exists(_.isInstanceOf[TestDataGenerator])
     TestingCapabilities(canBeTested = canTest, canGenerateTestData = canGenerateData)
   }
 
   private def sourceFactory(source: Source): Option[SourceFactory[_]] =
     modelData.configCreator.sourceFactories(modelData.processConfig).get(source.ref.typ).map(_.value)
 
-  override def generateTestData(metaData: MetaData, source: Source, size: Int) =
-    prepareTestDataGenerator(metaData, source).map(_.generateTestData(size))
+  override def generateTestData(metaData: MetaData, source: Source, size: Int): Option[Array[Byte]] =
+    prepareSourceObj(source)(metaData).flatMap(_.cast[TestDataGenerator]).map(_.generateTestData(size))
 
-  private def prepareTestDataGenerator(metaData: MetaData, source: Source) : Option[TestDataGenerator] = {
-    implicit val meta = metaData
-    implicit val nodeId = NodeId(source.id)
-
+  private def prepareSourceObj(source: Source)(implicit metaData: MetaData): Option[process.Source[Any]] = {
+    implicit val nodeId: NodeId = NodeId(source.id)
     for {
       factory <- sourceFactory(source)
       definition = ObjectWithMethodDef(WithCategories(factory), ProcessObjectDefinitionExtractor.source)
       sourceParams <- prepareSourceParams(definition, source)
       sourceObj = ProcessObjectFactory[process.Source[Any]](definition, evaluator).create(sourceParams)
-      asTest <- sourceObj.cast[TestDataGenerator]
-    } yield asTest
+    } yield sourceObj
   }
 
-  private def prepareSourceParams(definition: ObjectWithMethodDef, source: Source)(implicit processMetaData: MetaData, nodeId: NodeId) = {
+  private def prepareSourceParams(definition: ObjectWithMethodDef, source: Source)
+                                 (implicit processMetaData: MetaData, nodeId: NodeId) = {
     val parametersToCompile = source.ref.parameters
     expressionCompiler.compileObjectParameters(definition.parameters, parametersToCompile, None).toOption
   }

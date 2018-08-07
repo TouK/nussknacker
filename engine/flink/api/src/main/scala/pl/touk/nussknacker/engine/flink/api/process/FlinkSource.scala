@@ -35,12 +35,10 @@ abstract class FlinkSourceFactory[T: TypeInformation] extends SourceFactory[T] w
 
 object FlinkSourceFactory {
 
-  def noParam[T: TypeInformation](source: FlinkSource[T],
-                                  testDataParser: Option[TestDataParser[T]] = None): FlinkSourceFactory[T] =
-    new NoParamSourceFactory[T](source, testDataParser)
+  def noParam[T: TypeInformation](source: FlinkSource[T]): FlinkSourceFactory[T] =
+    new NoParamSourceFactory[T](source)
 
-  case class NoParamSourceFactory[T: TypeInformation](source: FlinkSource[T],
-                                                      testDataParser: Option[TestDataParser[T]]) extends FlinkSourceFactory[T] {
+  case class NoParamSourceFactory[T: TypeInformation](source: FlinkSource[T]) extends FlinkSourceFactory[T] {
     @MethodToInvoke
     def create(): Source[T] = source
 

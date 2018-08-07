@@ -119,7 +119,7 @@ class Request1SourceFactory extends StandaloneSourceFactory[Request1] {
 
   @MethodToInvoke
   def create(): Source[Request1] = {
-    new StandalonePostSource[Request1] with StandaloneGetSource[Request1] {
+    new StandalonePostSource[Request1] with StandaloneGetSource[Request1] with TestDataParserProvider[Request1] {
 
       override def parse(data: Array[Byte]): Request1 = {
         val str = new String(data, StandardCharsets.UTF_8)
@@ -134,6 +134,13 @@ class Request1SourceFactory extends StandaloneSourceFactory[Request1] {
         Request1(takeFirst("field1"), takeFirst("field2"))
       }
 
+      override def testDataParser: TestDataParser[Request1] = new NewLineSplittedTestDataParser[Request1] {
+
+        override def parseElement(testElement: String): Request1 = {
+          decoder.decodeJson(Parse.parse(testElement).right.get).result.right.get
+        }
+
+      }
     }
   }
 
@@ -141,15 +148,6 @@ class Request1SourceFactory extends StandaloneSourceFactory[Request1] {
 
   override def clazz: Class[_] = classOf[Request1]
 
-  override def testDataParser: Option[TestDataParser[Request1]] = Some(
-    new NewLineSplittedTestDataParser[Request1] {
-
-      override def parseElement(testElement: String): Request1 = {
-        decoder.decodeJson(Parse.parse(testElement).right.get).result.right.get
-      }
-
-    }
-  )
 }
 
 class ResponseSink extends SinkFactory {

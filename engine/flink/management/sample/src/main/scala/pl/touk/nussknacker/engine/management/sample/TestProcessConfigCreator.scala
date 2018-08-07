@@ -24,7 +24,7 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
 import pl.touk.nussknacker.engine.api.lazyy.UsingLazyValues
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestParsingUtils}
+import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser, TestParsingUtils}
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.util.exception.VerboselyLoggingExceptionHandler
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSinkFactory, KafkaSourceFactory}
@@ -66,9 +66,7 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
     Map(
       "real-kafka" -> WithCategories(new KafkaSourceFactory[String](kConfig,
         new SimpleStringSchema, None, TestParsingUtils.newLineSplit), "Category1", "Category2"),
-      "kafka-transaction" -> WithCategories(FlinkSourceFactory.noParam(prepareNotEndingSource, Some(new NewLineSplittedTestDataParser[String] {
-        override def parseElement(testElement: String): String = testElement
-      })), "Category1", "Category2"),
+      "kafka-transaction" -> WithCategories(FlinkSourceFactory.noParam(prepareNotEndingSource), "Category1", "Category2"),
       "oneSource" -> WithCategories(FlinkSourceFactory.noParam(new FlinkSource[String] {
 
         override def timestampAssigner = None
@@ -94,7 +92,9 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
 
         override def typeInformation = implicitly[TypeInformation[String]]
       }), "Category1", "Category2"),
-      "csv-source" -> WithCategories(FlinkSourceFactory.noParam(new FlinkSource[CsvRecord] with TestDataGenerator {
+      "csv-source" -> WithCategories(FlinkSourceFactory.noParam(new FlinkSource[CsvRecord]
+        with TestDataParserProvider[CsvRecord] with TestDataGenerator {
+
         override def typeInformation = implicitly[TypeInformation[CsvRecord]]
 
         override def toFlinkSource = new SourceFunction[CsvRecord] {
@@ -106,11 +106,13 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
 
         override def generateTestData(size: Int) = "record1|field2\nrecord2|field3".getBytes(StandardCharsets.UTF_8)
 
+        override def testDataParser: TestDataParser[CsvRecord] = new NewLineSplittedTestDataParser[CsvRecord] {
+          override def parseElement(testElement: String): CsvRecord = CsvRecord(testElement.split("\\|").toList)
+        }
+
         override def timestampAssigner = None
 
-      }, Some(new NewLineSplittedTestDataParser[CsvRecord] {
-        override def parseElement(testElement: String): CsvRecord = CsvRecord(testElement.split("\\|").toList)
-      })), "Category1", "Category2")
+      }), "Category1", "Category2")
     )
 
   }
@@ -118,12 +120,16 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
 
   //this not ending source is more reliable in tests than CollectionSource, which terminates quickly
   def prepareNotEndingSource: FlinkSource[String] = {
-    new FlinkSource[String] {
+    new FlinkSource[String] with TestDataParserProvider[String] {
       override def typeInformation = implicitly[TypeInformation[String]]
 
       override def timestampAssigner = Option(new BoundedOutOfOrdernessTimestampExtractor[String](Time.minutes(10)) {
         override def extractTimestamp(element: String): Long = System.currentTimeMillis()
       })
+
+      override def testDataParser: TestDataParser[String] = new NewLineSplittedTestDataParser[String] {
+        override def parseElement(testElement: String): String = testElement
+      }
 
       override def toFlinkSource = new SourceFunction[String] {
         var running = true

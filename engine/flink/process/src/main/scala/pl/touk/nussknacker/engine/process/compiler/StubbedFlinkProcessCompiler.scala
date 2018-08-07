@@ -30,8 +30,8 @@ abstract class StubbedFlinkProcessCompiler(process: EspProcess, creator: Process
     //FIXME: asInstanceOf, should be proper handling of SubprocessInputDefinition
     val sourceType = process.root.data.asInstanceOf[Source].ref.typ
     val testSource = createdDefinitions.sourceFactories.get(sourceType)
-      .flatMap(prepareSourceFactory)
-      .getOrElse(throw new IllegalArgumentException(s"Source $sourceType cannot be stubbed"))
+      .map(prepareSourceFactory)
+      .getOrElse(throw new IllegalArgumentException(s"Source $sourceType cannot be stubbed - missing definition"))
 
     val stubbedServices = createdDefinitions.services.mapValuesNow(prepareService)
 
@@ -46,7 +46,7 @@ abstract class StubbedFlinkProcessCompiler(process: EspProcess, creator: Process
 
   protected def prepareExceptionHandler(exceptionHandlerFactory: ObjectWithMethodDef): ObjectWithMethodDef
 
-  protected def prepareSourceFactory(sourceFactory: ObjectWithMethodDef) : Option[ObjectWithMethodDef]
+  protected def prepareSourceFactory(sourceFactory: ObjectWithMethodDef) : ObjectWithMethodDef
 
   protected def overrideObjectWithMethod(original: ObjectWithMethodDef, method: (String => Option[AnyRef], Seq[AnyRef], () => typing.TypingResult) => Any): ObjectWithMethodDef =
     new ObjectWithMethodDef(original.obj, original.methodDef, original.objectDefinition) {

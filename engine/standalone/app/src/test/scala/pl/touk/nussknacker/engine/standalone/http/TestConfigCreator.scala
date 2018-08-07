@@ -41,8 +41,6 @@ class TestConfigCreator extends EmptyProcessConfigCreator {
 
     override def clazz: Class[_] = classOf[Request]
 
-    override def testDataParser: Option[TestDataParser[Request]] = None
-
     @MethodToInvoke
     def create(): Source[Request] = {
       new StandaloneGetSource[Request] {

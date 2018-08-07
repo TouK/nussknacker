@@ -14,7 +14,7 @@ import org.apache.flink.streaming.api.windowing.time.Time
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.test.NewLineSplittedTestDataParser
+import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkSource, FlinkSourceFactory}
 import pl.touk.nussknacker.engine.flink.util.exception.VerboselyLoggingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
@@ -129,17 +129,13 @@ class DemoProcessConfigCreator extends ProcessConfigCreator {
 
   class RunningSourceFactory[T <: WithFields :TypeInformation](generate: Int => T, timestamp: T => Long, parser: List[String] => T) extends FlinkSourceFactory[T] {
 
-    override def testDataParser = Some(new NewLineSplittedTestDataParser[T] {
-      override def parseElement(testElement: String) = parser(testElement.split('|').toList)
-    })
-
     override val timestampAssigner = Some(new BoundedOutOfOrdernessTimestampExtractor[T](Time.minutes(10)) {
       override def extractTimestamp(element: T): Long = timestamp(element)
     })
 
     @MethodToInvoke
     def create(@ParamName("ratePerMinute") rate: Int) = {
-      new FlinkSource[T] with Serializable with TestDataGenerator {
+      new FlinkSource[T] with Serializable with TestDataParserProvider[T] with TestDataGenerator {
 
         override def typeInformation = implicitly[TypeInformation[T]]
 
@@ -164,6 +160,10 @@ class DemoProcessConfigCreator extends ProcessConfigCreator {
 
         override def generateTestData(size: Int): Array[Byte] = {
           (1 to size).map(generate).map(_.originalDisplay.getOrElse("")).mkString("\n").getBytes(StandardCharsets.UTF_8)
+        }
+
+        override def testDataParser: TestDataParser[T] = new NewLineSplittedTestDataParser[T] {
+          override def parseElement(testElement: String) = parser(testElement.split('|').toList)
         }
       }
     }

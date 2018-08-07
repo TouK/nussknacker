@@ -29,6 +29,6 @@ class VerificationFlinkProcessCompiler(process: EspProcess, executionConfig: Exe
     override def handle(exceptionInfo: EspExceptionInfo[_ <: Throwable]): Unit = {}
   })
 
-  override protected def prepareSourceFactory(sourceFactory: DefinitionExtractor.ObjectWithMethodDef): Option[DefinitionExtractor.ObjectWithMethodDef]
-    = Option(overrideObjectWithMethod(sourceFactory, (_, _, realReturnType) =>  new EmptySource[Object](realReturnType())))
+  override protected def prepareSourceFactory(sourceFactory: DefinitionExtractor.ObjectWithMethodDef): DefinitionExtractor.ObjectWithMethodDef
+    = overrideObjectWithMethod(sourceFactory, (_, _, realReturnType) =>  new EmptySource[Object](realReturnType()))
 }

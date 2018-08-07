@@ -188,38 +188,43 @@ object TestSources {
   }
 
   val simpleRecordSource = FlinkSourceFactory.noParam(
-    new CollectionSource[SimpleRecord](new ExecutionConfig, List(),
-      Some(ascendingTimestampExtractor), Typed[SimpleRecord]
-  ), Some(newLineSplittedTestDataParser))
+    new CollectionSource[SimpleRecord](new ExecutionConfig, List(), Some(ascendingTimestampExtractor), Typed[SimpleRecord]) with TestDataParserProvider[SimpleRecord] {
+      override def testDataParser: TestDataParser[SimpleRecord] = newLineSplittedTestDataParser
+    })
 
 
   val jsonSource = FlinkSourceFactory.noParam(
-    new CollectionSource[SimpleJsonRecord](new ExecutionConfig, List(), None, Typed[SimpleJsonRecord]), Some(new EmptyLineSplittedTestDataParser[SimpleJsonRecord] {
+    new CollectionSource[SimpleJsonRecord](new ExecutionConfig, List(), None, Typed[SimpleJsonRecord]) with TestDataParserProvider[SimpleJsonRecord] {
+      override def testDataParser: TestDataParser[SimpleJsonRecord] = new EmptyLineSplittedTestDataParser[SimpleJsonRecord] {
 
-      override def parseElement(json: String): SimpleJsonRecord = {
-        json.decodeOption[SimpleJsonRecord].get
+        override def parseElement(json: String): SimpleJsonRecord = {
+          json.decodeOption[SimpleJsonRecord].get
+        }
+
       }
-    })
+    }
   )
 
   val typedJsonSource = new FlinkSourceFactory[TypedMap] with ReturningType {
 
     @MethodToInvoke
     def create(processMetaData: MetaData,  @ParamName("type") definition: java.util.Map[String, _]): Source[TypedMap] = {
-      new CollectionSource[TypedMap](new ExecutionConfig, List(), None, Typed[TypedMap]) with ReturningType {
+      new CollectionSource[TypedMap](new ExecutionConfig, List(), None, Typed[TypedMap]) with TestDataParserProvider[TypedMap] with ReturningType {
+
+        override def testDataParser: TestDataParser[TypedMap] = new EmptyLineSplittedTestDataParser[TypedMap] {
+          override def parseElement(json: String): TypedMap = {
+            TypedMap(json.decodeOption[Map[String, String]].get)
+          }
+        }
+
         override val returnType: typing.TypingResult = TypingUtils.typedMapDefinitionFromParameters(definition)
+
       }
     }
 
     override def timestampAssigner: Option[TimestampAssigner[TypedMap]] = None
 
     override def returnType: typing.TypingResult = Typed[TypedMap]
-
-    override def testDataParser: Option[TestDataParser[TypedMap]] = Some(new EmptyLineSplittedTestDataParser[TypedMap] {
-      override def parseElement(json: String): TypedMap = {
-        TypedMap(json.decodeOption[Map[String, String]].get)
-      }
-    })
   }
 
 }

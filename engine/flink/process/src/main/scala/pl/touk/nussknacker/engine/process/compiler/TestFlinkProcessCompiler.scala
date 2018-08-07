@@ -3,10 +3,11 @@ package pl.touk.nussknacker.engine.process.compiler
 import com.typesafe.config.Config
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.api.ProcessListener
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionInfo, NonTransientException}
-import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
+import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, TestDataParserProvider}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.test.ResultsCollectingListener
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
@@ -25,15 +26,19 @@ class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
 
   override protected def listeners(): Seq[ProcessListener] = List(collectingListener) ++ super.listeners()
 
-  override protected def prepareSourceFactory(sourceFactory: ObjectWithMethodDef): Option[ObjectWithMethodDef] = {
-    val originalSource = sourceFactory.obj.asInstanceOf[FlinkSourceFactory[Object]]
-    implicit val typeInfo = originalSource.typeInformation
-    originalSource.testDataParser.map { testDataParser =>
-      val testObjects = testDataParser.parseTestData(testData.testData)
-      overrideObjectWithMethod(sourceFactory, (_, _, realReturnType) => {
-        CollectionSource[Object](executionConfig, testObjects, originalSource.timestampAssigner, realReturnType())
-      })
-    }
+  override protected def prepareSourceFactory(sourceFactory: ObjectWithMethodDef): ObjectWithMethodDef = {
+    val originalSourceFactory = sourceFactory.obj.asInstanceOf[FlinkSourceFactory[Object]]
+    implicit val typeInfo: TypeInformation[Object] = originalSourceFactory.typeInformation
+    overrideObjectWithMethod(sourceFactory, (paramFun, additional, realReturnType) => {
+      val originalSource = sourceFactory.invokeMethod(paramFun, additional)
+      originalSource match {
+        case testDataParserProvider: TestDataParserProvider[Object@unchecked] =>
+          val testObjects = testDataParserProvider.testDataParser.parseTestData(testData.testData)
+          CollectionSource[Object](executionConfig, testObjects, originalSourceFactory.timestampAssigner, realReturnType())
+        case _ =>
+          throw new IllegalArgumentException(s"Source ${originalSource.getClass} cannot be stubbed - it does'n provide test data parser")
+      }
+    })
   }
 
   override protected def prepareService(service: ObjectWithMethodDef): ObjectWithMethodDef = {

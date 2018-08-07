@@ -8,7 +8,6 @@ import pl.touk.nussknacker.engine.InterpreterSpec._
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.lazyy.UsingLazyValues
 import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, SinkFactory, SourceFactory, WithCategories}
-import pl.touk.nussknacker.engine.api.test.TestDataParser
 import pl.touk.nussknacker.engine.api.{Service, _}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
@@ -595,8 +594,6 @@ object InterpreterSpec {
   }
 
   object TransactionSource extends SourceFactory[Transaction] {
-
-    override def testDataParser: Option[TestDataParser[Transaction]] = None
 
     override def clazz: Class[_] = classOf[Transaction]
 

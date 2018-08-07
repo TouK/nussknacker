@@ -6,13 +6,13 @@ import cats.data.Validated.{Invalid, Valid}
 import com.codahale.metrics.MetricRegistry
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.{EndingReference, ProcessVersion}
-import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.{ModelData, _}
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
-import pl.touk.nussknacker.engine.api.process.SourceFactory
+import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.process.TestDataParserProvider
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{ServiceInvocationCollector, SinkInvocationCollector}
 import pl.touk.nussknacker.engine.api.test.{ResultsCollectingListener, ResultsCollectingListenerHolder, TestRunId}
+import pl.touk.nussknacker.engine.api.{EndingReference, ProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
@@ -21,14 +21,15 @@ import pl.touk.nussknacker.engine.definition._
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.Source
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.engine.standalone.api.DeploymentData
 import pl.touk.nussknacker.engine.standalone.StandaloneProcessInterpreter
-import pl.touk.nussknacker.engine.standalone.utils.StandaloneContextPreparer
+import pl.touk.nussknacker.engine.standalone.api.DeploymentData
 import pl.touk.nussknacker.engine.standalone.api.types._
+import pl.touk.nussknacker.engine.standalone.utils.StandaloneContextPreparer
+import shapeless.Typeable
+import shapeless.syntax.typeable._
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, ExecutionContext, Future}
-
 
 object StandaloneProcessManager {
   def apply(modelData: ModelData, config: Config) : StandaloneProcessManager = new StandaloneProcessManager(modelData, StandaloneProcessClient(config))
@@ -38,8 +39,6 @@ class StandaloneProcessManager(modelData: ModelData, client: StandaloneProcessCl
   extends ProcessManager with LazyLogging {
 
   private implicit val ec = ExecutionContext.Implicits.global
-
-  import argonaut.ArgonautShapeless._
 
   override def deploy(processVersion: ProcessVersion, processDeploymentData: ProcessDeploymentData,
                       savepointPath: Option[String]): Future[Unit] = {
@@ -101,7 +100,6 @@ class StandaloneTestMain(testData: TestData, process: EspProcess, modelData: Mod
     val config = modelData.processConfig
 
     val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(creator, config)
-    val parsedTestData = readTestData(definitions)
 
     val collectingListener = ResultsCollectingListenerHolder.registerRun(variableEncoder)
 
@@ -113,6 +111,8 @@ class StandaloneTestMain(testData: TestData, process: EspProcess, modelData: Mod
       definitionsPostProcessor = prepareMocksForTest(collectingListener),
       additionalListeners = List(collectingListener)
     ).toOption.get
+
+    val parsedTestData = readTestData(definitions, standaloneInterpreter.source)
 
     try {
       val results = Await.result(Future.sequence(parsedTestData.map(standaloneInterpreter.invokeToResult)), timeout)
@@ -139,14 +139,14 @@ class StandaloneTestMain(testData: TestData, process: EspProcess, modelData: Mod
   }
 
 
-  private def readTestData(definitions: ProcessDefinition[ObjectWithMethodDef]): List[Any] = {
+  private def readTestData(definitions: ProcessDefinition[ObjectWithMethodDef], sourceObj: api.process.Source[Any]): List[Any] = {
     //FIXME: asInstanceOf, should be proper handling of SubprocessInputDefinition
     val sourceType = process.root.data.asInstanceOf[Source].ref.typ
-    val objectWithMethodDef = definitions.sourceFactories(sourceType)
-    val originalSource = objectWithMethodDef.obj.asInstanceOf[SourceFactory[Any]]
-    val parsedTestData = originalSource.testDataParser.map { testDataParser =>
-      testDataParser.parseTestData(testData.testData)
-    }.getOrElse(throw new IllegalArgumentException(s"Source $sourceType cannot be tested"))
+    val testDataParser = sourceObj
+      .cast[TestDataParserProvider[_]](Typeable.simpleTypeable(classOf[TestDataParserProvider[_]]))
+      .map(_.testDataParser)
+      .getOrElse(throw new IllegalArgumentException(s"Source $sourceType cannot be tested"))
+    val parsedTestData = testDataParser.parseTestData(testData.testData)
     parsedTestData
   }
 
