@@ -60,16 +60,16 @@ abstract class DbWriteProcessRepository[F[_]](val dbConfig: DbConfig,
   def saveNewProcess(processId: String, category: String, processDeploymentData: ProcessDeploymentData,
                      processingType: ProcessingType, isSubprocess: Boolean)
                     (implicit loggedUser: LoggedUser): F[XError[Unit]] = {
-    logger.info(s"Saving process $processId by user $loggedUser")
-
     val processToSave = ProcessEntityData(id = processId, name = processId, processCategory = category,
       description = None, processType = ProcessType.fromDeploymentData(processDeploymentData),
       processingType = processingType, isSubprocess = isSubprocess, isArchived = false)
 
-    val insertAction = latestProcessVersions(processId).result.headOption.flatMap {
-      case Some(_) => DBIOAction.successful(Left(ProcessAlreadyExists(processId)))
-      case None => (processesTable += processToSave).andThen(updateProcessInternal(processId, processDeploymentData))
-    }.map(_.map(_ => ()))
+    val insertAction = logInfo(s"Saving process $processId by user $loggedUser").flatMap { _ =>
+      latestProcessVersions(processId).result.headOption.flatMap {
+        case Some(_) => DBIOAction.successful(Left(ProcessAlreadyExists(processId)))
+        case None => (processesTable += processToSave).andThen(updateProcessInternal(processId, processDeploymentData))
+      }.map(_.map(_ => ()))
+    }
 
     run(insertAction)
   }
@@ -86,7 +86,6 @@ abstract class DbWriteProcessRepository[F[_]](val dbConfig: DbConfig,
 
   private def updateProcessInternal(processId: String, processDeploymentData: ProcessDeploymentData)
                                    (implicit loggedUser: LoggedUser): DB[XError[Option[ProcessVersionEntityData]]] = {
-    logger.info(s"Updating process $processId by user $loggedUser")
     val (maybeJson, maybeMainClass) = processDeploymentData match {
       case GraphProcess(json) => (Some(json), None)
       case CustomProcess(mainClass) => (None, Some(mainClass))
@@ -101,6 +100,7 @@ abstract class DbWriteProcessRepository[F[_]](val dbConfig: DbConfig,
     }
 
     val insertAction = for {
+      _ <- EitherT.right[DB, EspError, Unit](logInfo(s"Updating process $processId by user $loggedUser"))
       maybeProcess <- EitherT.right[DB, EspError, Option[ProcessEntityData]](processTableFilteredByUser.filter(_.id === processId).result.headOption)
       process <- EitherT.fromEither(Either.fromOption(maybeProcess, ProcessNotFoundError(processId)))
       _ <- EitherT.fromEither(Either.cond(process.processType == ProcessType.fromDeploymentData(processDeploymentData), (), InvalidProcessTypeError(processId)))
@@ -110,6 +110,10 @@ abstract class DbWriteProcessRepository[F[_]](val dbConfig: DbConfig,
       _ <- EitherT.right[DB, EspError, Int](newProcessVersion.map(processVersionsTable += _).getOrElse(dbMonad.pure(0)))
     } yield newProcessVersion
     insertAction.value
+  }
+
+  private def logInfo(s: String) = {
+    dbMonad.pure(()).map(_ => logger.info(s))
   }
 
   def deleteProcess(processId: String): F[XError[Unit]] = {
