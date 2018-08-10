@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.kafka.generic
 
 import argonaut.{Json, JsonObject}
 import org.apache.flink.api.scala._
+import org.apache.flink.streaming.util.serialization.KeyedDeserializationSchemaWrapper
 import pl.touk.nussknacker.engine.api.process.{Source, TestDataGenerator}
 import pl.touk.nussknacker.engine.api.test.TestParsingUtils
 import pl.touk.nussknacker.engine.api.typed._
@@ -11,18 +12,21 @@ import pl.touk.nussknacker.engine.kafka.{BaseKafkaSourceFactory, KafkaConfig, Ka
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 
-import scala.collection.JavaConverters._
-import scala.collection.JavaConversions._
-
 object sources {
 
-  class GenericJsonSourceFactory(config: KafkaConfig) extends KafkaSourceFactory[java.util.Map[_, _]](config, JsonMapDeserialization, None, TestParsingUtils.newLineSplit)
+  import collection.convert.decorateAsJava._
 
-  class GenericTypedJsonSourceFactory(config: KafkaConfig) extends BaseKafkaSourceFactory[TypedMap](config, JsonTypedMapDeserializaion, None, TestParsingUtils.newLineSplit) {
+  class GenericJsonSourceFactory(config: KafkaConfig) extends KafkaSourceFactory[java.util.Map[_, _]](
+    config, JsonMapDeserialization, None, TestParsingUtils.newLineSplit)
+
+  class GenericTypedJsonSourceFactory(config: KafkaConfig) extends BaseKafkaSourceFactory[TypedMap](
+    config,  None, TestParsingUtils.newLineSplit) {
 
     @MethodToInvoke
-    def create(processMetaData: MetaData,  @ParamName("topic") topic: String, @ParamName("type") definition: java.util.Map[String, _]): Source[TypedMap] with TestDataGenerator = {
-      new KafkaSource(consumerGroupId = processMetaData.id, List(topic)) with ReturningType {
+    def create(processMetaData: MetaData,  @ParamName("topic") topic: String,
+               @ParamName("type") definition: java.util.Map[String, _]): Source[TypedMap] with TestDataGenerator = {
+      val schema = new KeyedDeserializationSchemaWrapper(JsonTypedMapDeserializaion)
+      new KafkaSource(consumerGroupId = processMetaData.id, List(topic), schema) with ReturningType {
         override def returnType: typing.TypingResult = TypingUtils.typedMapDefinitionFromParameters(definition)
       }
     }
@@ -53,7 +57,7 @@ object sources {
     }
   }
 
-  object JsonMapDeserialization extends EspDeserializationSchema[java.util.Map[_, _]](deserializeToMap)
+  object JsonMapDeserialization extends EspDeserializationSchema[java.util.Map[_, _]](m => deserializeToMap(m).asJava)
 
   object JsonTypedMapDeserializaion extends EspDeserializationSchema[TypedMap](m => TypedMap(deserializeToMap(m)))
 

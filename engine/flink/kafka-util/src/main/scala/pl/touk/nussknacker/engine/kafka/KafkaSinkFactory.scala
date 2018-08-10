@@ -8,19 +8,28 @@ import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory}
 import pl.touk.nussknacker.engine.api.{MetaData, MethodToInvoke, ParamName}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSink
 import pl.touk.nussknacker.engine.kafka.KafkaSinkFactory._
+import pl.touk.nussknacker.engine.kafka.serialization.{FixedSerializationSchemaFactory, SerializationSchemaFactory}
 
 class KafkaSinkFactory(config: KafkaConfig,
-                       serializationSchema: KeyedSerializationSchema[Any]) extends SinkFactory {
+                       schemaFactory: SerializationSchemaFactory[Any]) extends SinkFactory {
+
+  def this(config: KafkaConfig,
+           schema: KeyedSerializationSchema[Any]) =
+    this(config, FixedSerializationSchemaFactory(schema))
 
   @MethodToInvoke
   def create(processMetaData: MetaData, @ParamName(`TopicParamName`) topic: String): Sink = {
-    new FlinkSink with Serializable {
-      override def toFlinkFunction: SinkFunction[Any] = {
-        PartitionByKeyFlinkKafkaProducer011(config.kafkaAddress, topic, serializationSchema, config.kafkaProperties)
-      }
-      override def testDataOutput: Option[(Any) => String] = Option(value => new String(serializationSchema.serializeValue(value), StandardCharsets.UTF_8))
-    }
+    val serializationSchema = schemaFactory.create(topic, config)
+    new KafkaSink(topic, serializationSchema)
   }
+
+  class KafkaSink(topic: String, serializationSchema: KeyedSerializationSchema[Any]) extends FlinkSink with Serializable {
+    override def toFlinkFunction: SinkFunction[Any] = {
+      PartitionByKeyFlinkKafkaProducer011(config.kafkaAddress, topic, serializationSchema, config.kafkaProperties)
+    }
+    override def testDataOutput: Option[Any => String] = Option(value => new String(serializationSchema.serializeValue(value), StandardCharsets.UTF_8))
+  }
+
 }
 
 object KafkaSinkFactory {

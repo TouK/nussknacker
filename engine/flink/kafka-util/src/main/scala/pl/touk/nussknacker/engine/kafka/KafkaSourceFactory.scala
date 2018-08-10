@@ -5,11 +5,13 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.TimestampAssigner
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer011
+import org.apache.flink.streaming.util.serialization.{KeyedDeserializationSchema, KeyedDeserializationSchemaWrapper}
 import pl.touk.nussknacker.engine.api.process.{Source, TestDataGenerator, TestDataParserProvider}
 import pl.touk.nussknacker.engine.api.test.{TestDataParser, TestDataSplit}
 import pl.touk.nussknacker.engine.api.{MetaData, MethodToInvoke, ParamName}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkSource, FlinkSourceFactory}
 import pl.touk.nussknacker.engine.kafka.KafkaSourceFactory._
+import pl.touk.nussknacker.engine.kafka.serialization.{DeserializationSchemaFactory, FixedDeserializationSchemaFactory}
 
 import scala.collection.JavaConverters._
 
@@ -28,13 +30,20 @@ import scala.collection.JavaConverters._
   * </pre>
   * */
 class KafkaSourceFactory[T: TypeInformation](config: KafkaConfig,
-                                             schema: DeserializationSchema[T],
+                                             schemaFactory: DeserializationSchemaFactory[T],
                                              timestampAssigner: Option[TimestampAssigner[T]],
-                                             testPrepareInfo: TestDataSplit) extends BaseKafkaSourceFactory(config, schema, timestampAssigner, testPrepareInfo) {
+                                             testPrepareInfo: TestDataSplit)
+  extends BaseKafkaSourceFactory(config, timestampAssigner, testPrepareInfo) {
+
+  def this(config: KafkaConfig,
+           schema: DeserializationSchema[T],
+           timestampAssigner: Option[TimestampAssigner[T]],
+           testPrepareInfo: TestDataSplit) =
+    this(config, FixedDeserializationSchemaFactory(new KeyedDeserializationSchemaWrapper(schema)), timestampAssigner, testPrepareInfo)
 
   @MethodToInvoke
   def create(processMetaData: MetaData, @ParamName(`TopicParamName`) topic: String): Source[T] with TestDataGenerator = {
-    createSource(processMetaData, List(topic))
+    createSource(processMetaData, List(topic), schemaFactory.create(List(topic), config))
   }
 
 }
@@ -48,27 +57,35 @@ object KafkaSourceFactory {
 
 class SingleTopicKafkaSourceFactory[T: TypeInformation](topic: String,
                                                         config: KafkaConfig,
-                                                        schema: DeserializationSchema[T],
+                                                        schemaFactory: DeserializationSchemaFactory[T],
                                                         timestampAssigner: Option[TimestampAssigner[T]],
-                                                        testPrepareInfo: TestDataSplit) extends BaseKafkaSourceFactory(config, schema, timestampAssigner, testPrepareInfo) {
+                                                        testPrepareInfo: TestDataSplit)
+  extends BaseKafkaSourceFactory(config, timestampAssigner, testPrepareInfo) {
+
+  def this(topic: String,
+           config: KafkaConfig,
+           schema: DeserializationSchema[T],
+           timestampAssigner: Option[TimestampAssigner[T]],
+           testPrepareInfo: TestDataSplit) =
+    this(topic, config, FixedDeserializationSchemaFactory(new KeyedDeserializationSchemaWrapper(schema)), timestampAssigner, testPrepareInfo)
 
   @MethodToInvoke
   def create(processMetaData: MetaData): Source[T] with TestDataGenerator = {
-    createSource(processMetaData, List(topic))
+    createSource(processMetaData, List(topic), schemaFactory.create(List(topic), config))
   }
 
 }
 
 abstract class BaseKafkaSourceFactory[T: TypeInformation](config: KafkaConfig,
-                                                          schema: DeserializationSchema[T],
                                                           val timestampAssigner: Option[TimestampAssigner[T]],
-                                                          testPrepareInfo: TestDataSplit) extends FlinkSourceFactory[T] with Serializable {
+                                                          testPrepareInfo: TestDataSplit)
+  extends FlinkSourceFactory[T] with Serializable {
 
-  protected def createSource(processMetaData: MetaData, topics: List[String]): KafkaSource = {
-    new KafkaSource(consumerGroupId = processMetaData.id, topics = topics)
+  protected def createSource(processMetaData: MetaData, topics: List[String], schema: KeyedDeserializationSchema[T]): KafkaSource = {
+    new KafkaSource(consumerGroupId = processMetaData.id, topics = topics, schema)
   }
 
-  class KafkaSource(consumerGroupId: String, topics: List[String])
+  class KafkaSource(consumerGroupId: String, topics: List[String], schema: KeyedDeserializationSchema[T])
     extends FlinkSource[T] with Serializable with TestDataParserProvider[T] with TestDataGenerator {
 
     override def typeInformation: TypeInformation[T] = implicitly[TypeInformation[T]]
@@ -89,7 +106,8 @@ abstract class BaseKafkaSourceFactory[T: TypeInformation](config: KafkaConfig,
     }
 
     override def testDataParser: TestDataParser[T] = new TestDataParser[T] {
-      override def parseTestData(data: Array[Byte]): List[T] = testPrepareInfo.splitData(data).map(schema.deserialize)
+      override def parseTestData(data: Array[Byte]): List[T] =
+        testPrepareInfo.splitData(data).map(schema.deserialize(null, _, null, -1, -1))
     }
 
     override def timestampAssigner: Option[TimestampAssigner[T]] = BaseKafkaSourceFactory.this.timestampAssigner
