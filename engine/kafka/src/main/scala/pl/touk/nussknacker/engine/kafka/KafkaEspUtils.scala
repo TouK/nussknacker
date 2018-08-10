@@ -79,7 +79,7 @@ object KafkaEspUtils extends LazyLogging {
   }
 
 
-  def readLastMessages(topic: String, size: Int, config: KafkaConfig) : List[Array[Byte]] = {
+  def readLastMessages(topic: String, size: Int, config: KafkaConfig) : List[ConsumerRecord[Array[Byte], Array[Byte]]] = {
     doWithTempKafkaConsumer(config, None) { consumer =>
       try {
         consumer.partitionsFor(topic).map(no => new TopicPartition(topic, no.partition())).view.flatMap { tp =>
@@ -105,7 +105,7 @@ object KafkaEspUtils extends LazyLogging {
             currentOffset = consumer.position(tp)
           }
           consumer.unsubscribe()
-          result.map(_.value()).take(size)
+          result.take(size)
         }.take(size).toList
       } finally {
         consumer.unsubscribe()

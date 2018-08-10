@@ -61,7 +61,8 @@ val commonSettings =
     licenses += ("Apache-2.0", url("https://www.apache.org/licenses/LICENSE-2.0.html")),
     scalaVersion  := scalaV,
     resolvers ++= Seq(
-      "spring milestone" at "https://repo.spring.io/milestone"
+      "spring milestone" at "https://repo.spring.io/milestone",
+      "confluent" at "http://packages.confluent.io/maven"
     ),
     testOptions in Test += scalaTestReports,
     testOptions in IntegrationTest += scalaTestReports,
@@ -109,6 +110,7 @@ val akkaHttpV = "10.0.10"
 val slickV = "3.2.0-M1" // wsparcie dla select for update jest od 3.2.0
 val hsqldbV = "2.3.4"
 val flywayV = "4.0.3"
+val confluentV = "4.1.2"
 
 lazy val dist = (project in file("nussknacker-dist"))
   .settings(commonSettings)
@@ -325,6 +327,26 @@ lazy val kafka = (project in engine("kafka")).
   ).
   dependsOn(util)
 
+
+lazy val avroFlinkUtil = (project in engine("flink/avro-util")).
+  settings(commonSettings).
+  settings(
+    name := "nussknacker-avro-flink-util",
+    libraryDependencies ++= {
+      Seq(
+        "io.confluent" % "kafka-avro-serializer" % confluentV  excludeAll (
+          ExclusionRule("log4j", "log4j"),
+          ExclusionRule("org.slf4j", "slf4j-log4j12")
+        ),
+        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
+        "org.apache.flink" % "flink-avro" % flinkV,
+        "org.apache.flink" %% s"flink-connector-kafka-$kafkaMajorV" % flinkV % "test",
+        "org.scalatest" %% "scalatest" % scalaTestV % "test"
+      )
+    }
+  ).
+  dependsOn(kafkaFlinkUtil, kafkaTestUtil % "test", flinkTestUtil % "test")
+
 lazy val kafkaFlinkUtil = (project in engine("flink/kafka-util")).
   settings(commonSettings).
   settings(
@@ -454,7 +476,7 @@ lazy val generic = (project in engine("flink/generic")).
       art.withClassifier(Some("assembly"))
     })
   .settings(addArtifact(artifact in (Compile, assembly), assembly))
-  .dependsOn(process, kafkaFlinkUtil)
+  .dependsOn(process, kafkaFlinkUtil, avroFlinkUtil, flinkTestUtil % "test", kafkaTestUtil % "test")
 
 lazy val securityApi = (project in engine("security-api")).
   settings(commonSettings).

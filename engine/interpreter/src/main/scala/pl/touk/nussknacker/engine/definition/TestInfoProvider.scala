@@ -36,8 +36,13 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider {
     TestingCapabilities(canBeTested = canTest, canGenerateTestData = canGenerateData)
   }
 
-  private def sourceFactory(source: Source): Option[SourceFactory[_]] =
-    modelData.configCreator.sourceFactories(modelData.processConfig).get(source.ref.typ).map(_.value)
+  private def sourceFactory(source: Source): Option[SourceFactory[_]] = {
+    // this wrapping with model class loader is necessary because during sourceFactories creation, some classes
+    // can be not loaded yet - for example dynamically loaded AvroKryoSerializerUtils (from flink-avro library)
+    modelData.withThisAsContextClassLoader {
+      modelData.configCreator.sourceFactories(modelData.processConfig).get(source.ref.typ).map(_.value)
+    }
+  }
 
   override def generateTestData(metaData: MetaData, source: Source, size: Int): Option[Array[Byte]] =
     prepareSourceObj(source)(metaData).flatMap(_.cast[TestDataGenerator]).map(_.generateTestData(size))

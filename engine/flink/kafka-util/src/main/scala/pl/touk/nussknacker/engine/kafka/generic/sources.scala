@@ -26,7 +26,7 @@ object sources {
     def create(processMetaData: MetaData,  @ParamName("topic") topic: String,
                @ParamName("type") definition: java.util.Map[String, _]): Source[TypedMap] with TestDataGenerator = {
       val schema = new KeyedDeserializationSchemaWrapper(JsonTypedMapDeserializaion)
-      new KafkaSource(consumerGroupId = processMetaData.id, List(topic), schema) with ReturningType {
+      new KafkaSource(consumerGroupId = processMetaData.id, List(topic), schema, None) with ReturningType {
         override def returnType: typing.TypingResult = TypingUtils.typedMapDefinitionFromParameters(definition)
       }
     }

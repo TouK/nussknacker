@@ -6,14 +6,12 @@ import java.nio.file.Files
 import java.util.Properties
 
 import kafka.server.{KafkaConfig, KafkaServer}
-import org.apache.kafka.clients.consumer.{ConsumerRecord, KafkaConsumer}
+import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.common.TopicPartition
-import org.apache.kafka.common.serialization.{ByteArrayDeserializer, StringSerializer}
+import org.apache.kafka.common.serialization.{ByteArrayDeserializer, ByteArraySerializer, StringSerializer}
 import org.apache.kafka.common.utils.Time
 import org.apache.zookeeper.server.{NIOServerCnxnFactory, ZooKeeperServer}
-
-import scala.collection.mutable
 
 object KafkaZookeeperServer {
   val localhost = "127.0.0.1"
@@ -70,14 +68,27 @@ case class KafkaZookeeperServer(zooKeeperServer: NIOServerCnxnFactory, kafkaServ
 }
 
 object KafkaUtils {
-  def createKafkaProducer[T,K](kafkaAddress: String): KafkaProducer[T, K] = {
-    val props = new Properties()
-    props.put("bootstrap.servers", kafkaAddress)
+
+  def createRawKafkaProducer(kafkaAddress: String): KafkaProducer[Array[Byte], Array[Byte]] = {
+    val props: Properties = createCommonProducerProps(kafkaAddress)
+    props.put("key.serializer", classOf[ByteArraySerializer].getName)
+    props.put("value.serializer", classOf[ByteArraySerializer].getName)
+    new KafkaProducer(props)
+  }
+
+  def createKafkaProducer(kafkaAddress: String): KafkaProducer[String, String] = {
+    val props: Properties = createCommonProducerProps(kafkaAddress)
     props.put("key.serializer", classOf[StringSerializer].getName)
     props.put("value.serializer", classOf[StringSerializer].getName)
+    new KafkaProducer(props)
+  }
+
+  private def createCommonProducerProps[K, T](kafkaAddress: String) = {
+    val props = new Properties()
+    props.put("bootstrap.servers", kafkaAddress)
     props.put("batch.size", "100000")
     props.put("request.required.acks", "1")
-    new KafkaProducer[T, K](props)
+    props
   }
 
   def createConsumerConnectorProperties(kafkaAddress: String, consumerTimeout: Long = 10000): Properties = {

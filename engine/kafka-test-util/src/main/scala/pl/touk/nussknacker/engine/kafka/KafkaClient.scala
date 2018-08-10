@@ -11,16 +11,13 @@ import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success, Try}
 
 class KafkaClient(kafkaAddress: String, zkAddress: String) {
-  val producer = createKafkaProducer[String, String]
+  val rawProducer = KafkaUtils.createRawKafkaProducer(kafkaAddress)
+  val producer = KafkaUtils.createKafkaProducer(kafkaAddress)
 
   private val consumers = collection.mutable.HashSet[KafkaConsumer[Array[Byte], Array[Byte]]]()
 
   private val zkClient = ZkUtils.createZkClient(zkAddress, 10000, 10000)
   private val zkUtils = ZkUtils(zkClient, isZkSecurityEnabled = false)
-
-  private def createKafkaProducer[T, K]: KafkaProducer[T, K] = {
-    KafkaUtils.createKafkaProducer(kafkaAddress)
-  }
 
   def createTopic(name: String, partitions: Int = 5) = {
     AdminUtils.createTopic(zkUtils, name, partitions, 1, new Properties())
@@ -30,6 +27,14 @@ class KafkaClient(kafkaAddress: String, zkAddress: String) {
 
   def deleteTopic(name: String) = {
     AdminUtils.deleteTopic(zkUtils, name)
+  }
+
+  def sendRawMessage(topic: String, key: Array[Byte], content: Array[Byte], partition: Option[Int] = None): Future[RecordMetadata] = {
+    val promise = Promise[RecordMetadata]()
+    val record = partition.map(new ProducerRecord[Array[Byte], Array[Byte]](topic, _, key, content))
+      .getOrElse(new ProducerRecord[Array[Byte], Array[Byte]](topic, key, content))
+    rawProducer.send(record, producerCallback(promise))
+    promise.future
   }
 
   def sendMessage(topic: String, key: String, content: String, partition: Option[Int] = None): Future[RecordMetadata] = {

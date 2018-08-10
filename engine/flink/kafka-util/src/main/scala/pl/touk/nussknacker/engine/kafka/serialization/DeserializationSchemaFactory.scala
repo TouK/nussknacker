@@ -6,12 +6,12 @@ import org.apache.kafka.common.serialization.Deserializer
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 
 /**
-  * Factory class for Flink's KeyedDeserializationSchema. It is extracted for  purpose when serialization
-  * of KeyedDeserializationSchema is hard to achieve.
+  * Factory class for Flink's KeyedDeserializationSchema. It is extracted for  purpose when for creation
+  * of KeyedDeserializationSchema are needed additional information like list of topics and configuration.
   *
   * @tparam T type of deserialized object
   */
-trait DeserializationSchemaFactory[T] extends Serializable {
+trait DeserializationSchemaFactory[T] {
 
   def create(topics: List[String], kafkaConfig: KafkaConfig): KeyedDeserializationSchema[T]
 
@@ -37,14 +37,13 @@ case class FixedDeserializationSchemaFactory[T](deserializationSchema: KeyedDese
   * @tparam T type of deserialized object
   */
 abstract class KafkaDeserializationSchemaFactoryBase[T: TypeInformation]
-  extends DeserializationSchemaFactory[T] {
+  extends DeserializationSchemaFactory[T] with Serializable {
 
   protected def createValueDeserializer(topics: List[String], kafkaConfig: KafkaConfig): Deserializer[T]
 
   override def create(topics: List[String], kafkaConfig: KafkaConfig): KeyedDeserializationSchema[T] = {
-    val valueDeserializer = createValueDeserializer(topics, kafkaConfig)
-
     new KeyedDeserializationSchema[T] {
+      private lazy val valueDeserializer = createValueDeserializer(topics, kafkaConfig)
 
       override def deserialize(messageKey: Array[Byte], message: Array[Byte], topic: String, partition: Int, offset: Long): T = {
         val value = valueDeserializer.deserialize(topic, message)
@@ -68,7 +67,7 @@ abstract class KafkaDeserializationSchemaFactoryBase[T: TypeInformation]
   * @tparam T type of deserialized object
   */
 abstract class KafkaKeyValueDeserializationSchemaFactoryBase[T: TypeInformation]
-  extends DeserializationSchemaFactory[T] {
+  extends DeserializationSchemaFactory[T] with Serializable {
 
   protected type K
 
@@ -81,10 +80,9 @@ abstract class KafkaKeyValueDeserializationSchemaFactoryBase[T: TypeInformation]
   protected def createObject(key: K, value: V, topic: String): T
 
   override def create(topics: List[String], kafkaConfig: KafkaConfig): KeyedDeserializationSchema[T] = {
-    val keyDeserializer = createKeyDeserializer(topics, kafkaConfig)
-    val valueDeserializer = createValueDeserializer(topics, kafkaConfig)
-
     new KeyedDeserializationSchema[T] {
+      private lazy val keyDeserializer = createKeyDeserializer(topics, kafkaConfig)
+      private lazy val valueDeserializer = createValueDeserializer(topics, kafkaConfig)
 
       override def deserialize(messageKey: Array[Byte], message: Array[Byte], topic: String, partition: Int, offset: Long): T = {
         val key = keyDeserializer.deserialize(topic, messageKey)
