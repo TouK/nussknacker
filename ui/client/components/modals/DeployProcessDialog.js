@@ -25,13 +25,16 @@ class DeployProcessDialog extends React.Component {
     const comment = this.state.comment
 
     closeDialog()
-
+    const deploymentPath = window.location.pathname
     return HttpService.deploy(processId)
       .then(resp => {
         if (resp.isSuccess) {
           actions.addComment(processId, processVersionId, comment)
         }
-        actions.displayCurrentProcessVersion(processId)
+        const currentPath = window.location.pathname
+        if (currentPath.startsWith(deploymentPath)) {
+          actions.displayCurrentProcessVersion(processId)
+        }
       })
   }
 
