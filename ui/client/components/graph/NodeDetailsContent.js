@@ -1,5 +1,4 @@
-import React, {Component} from "react";
-import {render} from "react-dom";
+import React from "react";
 import classNames from "classnames";
 import _ from "lodash";
 import Textarea from "react-textarea-autosize";
@@ -10,6 +9,7 @@ import * as TestRenderUtils from "./TestRenderUtils";
 import ProcessUtils from '../../common/ProcessUtils';
 import * as JsonUtils from '../../common/JsonUtils';
 import Fields from "../Fields";
+import ParameterList from "./ParameterList";
 
 //move state to redux?
 // here `componentDidUpdate` is complicated to clear unsaved changes in modal
@@ -26,6 +26,7 @@ export default class NodeDetailsContent extends React.Component {
       ...this.state,
       ...TestRenderUtils.stateForSelectTestResults(null, this.props.testResults)
     }
+    this.processNode = _.cloneDeep(props.node); //FIXME: props are modified without cloning @{ParameterList} breakks
     this.nodeObjectDetails = ProcessUtils.findNodeObjectTypeDefinition(this.props.node, this.props.processDefinitionData.processDefinition)
   }
 
@@ -120,13 +121,19 @@ export default class NodeDetailsContent extends React.Component {
             {this.createField("input", "Id", "id")}
             {this.createReadonlyField("input", "Subprocess Id", "ref.id")}
             {this.createField("checkbox", "Disabled", "isDisabled")}
-            {this.state.editedNode.ref.parameters.map((params, index) => {
-              return (
-                <div className="node-block" key={this.props.node.id + params.name + index}>
-                  {this.createListField("textarea", params.name, params, 'expression.expression', `ref.parameters[${index}]`, params.name)}
-                </div>
-              )
-            })}
+            <ParameterList
+              processDefinitionData={this.props.processDefinitionData}
+              editedNode={this.state.editedNode}
+              savedNode={this.processNode}
+              setNodeState={newParams => this.setNodeDataAt('ref.parameters', newParams)}
+              createListField={(params, index) => this.createListField("textarea", params.name, params, 'expression.expression', `ref.parameters[${index}]`, params.name)}
+              createReadOnlyField={params => (<div className="node-row">
+                {this.renderFieldLabel(params.name)}
+                <div className="node-value"><input type="text" className="node-input"
+                                                   value={params.expression.expression}
+                                                   disabled={true}/></div>
+              </div>)}
+            />
             {this.descriptionField()}
           </div>
         )

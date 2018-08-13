@@ -202,6 +202,13 @@ modalContent(modalBkgColor,warningColor,modalLabelTextColor,testResultsColor,mod
         font-size: 15px
         &:hover
           cursor pointer
+    .node-block
+      &.removed
+        border 1px solid warningColor
+        padding 5px
+      &.added
+        border 1px solid okColor
+        padding 5px
     .node-value
       width: 100% - labelWidth
       display: inline-block
