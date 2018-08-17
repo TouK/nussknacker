@@ -127,7 +127,8 @@ class EdgeDetailsModal extends React.Component {
             <div className="node-value">
               <ExpressionSuggest inputProps={{
                 rows: 1, cols: 50, className: "node-input", value: edge.edgeType.condition.expression,
-                onValueChange: (newValue) => this.updateEdgeProp("edgeType.condition.expression", newValue)
+                onValueChange: (newValue) => this.updateEdgeProp("edgeType.condition.expression", newValue),
+                language: edge.edgeType.condition.language
               }}/>
             </div>
           </div>

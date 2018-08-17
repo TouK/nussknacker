@@ -1,12 +1,10 @@
 import React from "react";
 import ReactDOMServer from 'react-dom/server'
 import {connect} from 'react-redux';
-import Textarea from 'react-textarea-autosize';
 import _ from 'lodash';
 import ActionsUtils from '../../actions/ActionsUtils';
 import ProcessUtils from '../../common/ProcessUtils';
 import ExpressionSuggester from './ExpressionSuggester'
-import $ from "jquery";
 
 import AceEditor from 'react-ace';
 import 'brace/mode/jsx';
@@ -15,6 +13,7 @@ import 'brace/ext/language_tools'
 import 'brace/ext/searchbox';
 
 import '../../brace/mode/spel'
+import '../../brace/mode/sql'
 import '../../brace/theme/nussknacker'
 
 //to reconsider
@@ -90,17 +89,10 @@ class ExpressionSuggest extends React.Component {
 
   render() {
     if (this.props.dataResolved) {
-      const inputProps = {
-        ..._.omit(this.props.inputProps, "onValueChange"), //we leave this out, because warnings
-        value: this.state.value,
-        onChange: (event, {newValue}) => {
-          this.onChange(newValue)
-        }
-      }
       return (
         <div style={{paddingTop: 10, paddingBottom: 10, paddingLeft: 20 - 4, paddingRight: 20 - 4, backgroundColor: '#333'}}>
           <AceEditor
-            mode={'spel'}
+            mode={this.props.inputProps.language}
             width={"100%"}
             minLines={1}
             maxLines={50}

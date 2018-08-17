@@ -55,7 +55,7 @@ export default class NodeDetailsContent extends React.Component {
       case 'Sink':
         const toAppend =
           <div>
-            {this.createField("textarea", "Expression", "endResult.expression", "expression")}
+            {this.createExpressionField("expression", "Expression", "endResult")}
             {this.createField("checkbox", "Disabled", "isDisabled")}
           </div>
         return this.sourceSinkCommon(toAppend)
@@ -92,7 +92,7 @@ export default class NodeDetailsContent extends React.Component {
         return (
           <div className="node-table-body">
             {this.createField("input", "Id", "id")}
-            {this.createField("textarea", "Expression", "expression.expression", "expression")}
+            {this.createExpressionField("expression", "Expression", "expression")}
             {this.createField("checkbox", "Disabled", "isDisabled")}
             {this.descriptionField()}
           </div>
@@ -106,7 +106,7 @@ export default class NodeDetailsContent extends React.Component {
             {this.state.editedNode.service.parameters.map((param, index) => {
               return (
                 <div className="node-block" key={this.props.node.id + param.name + index}>
-                  {this.createListField("textarea", param.name, param, 'expression.expression', `service.parameters[${index}]`, param.name)}
+                  {this.createExpressionListField(param.name, "expression", param, `service.parameters[${index}]`)}
                 </div>
               )
             })}
@@ -126,7 +126,7 @@ export default class NodeDetailsContent extends React.Component {
               editedNode={this.state.editedNode}
               savedNode={this.processNode}
               setNodeState={newParams => this.setNodeDataAt('ref.parameters', newParams)}
-              createListField={(params, index) => this.createListField("textarea", params.name, params, 'expression.expression', `ref.parameters[${index}]`, params.name)}
+              createListField={(param, index) => this.createExpressionListField(param.name, "expression", param, `ref.parameters[${index}]`)}
               createReadOnlyField={params => (<div className="node-row">
                 {this.renderFieldLabel(params.name)}
                 <div className="node-value"><input type="text" className="node-input"
@@ -147,7 +147,7 @@ export default class NodeDetailsContent extends React.Component {
             {this.state.editedNode.parameters.map((param, index) => {
               return (
                 <div className="node-block" key={this.props.node.id + param.name + index}>
-                  {this.createListField("textarea", param.name, param, 'expression.expression', `parameters[${index}]`, param.name)}
+                  {this.createExpressionListField(param.name, "expression", param, `parameters[${index}]`)}
                 </div>
               )
             })}
@@ -162,11 +162,11 @@ export default class NodeDetailsContent extends React.Component {
             <div className="node-row">
               <div className="node-label">Fields:</div>
               <div className="node-group">
-                {this.state.editedNode.fields.map((params, index) => {
+                {this.state.editedNode.fields.map((param, index) => {
                   return (
-                    <div className="node-block" key={this.props.node.id + params.name + index}>
-                      {this.createListField("input", "Name", params, "name", `fields[${index}]`)}
-                      {this.createListField("textarea", "Expression", params, "expression.expression", `fields[${index}]`, "expression")}
+                    <div className="node-block" key={this.props.node.id + param.name + index}>
+                      {this.createListField("input", "Name", param, "name", `fields[${index}]`)}
+                      {this.createExpressionListField(param.name, "expression", param, `fields[${index}]`)}
                     </div>
                   )
                 })}
@@ -180,7 +180,7 @@ export default class NodeDetailsContent extends React.Component {
           <div className="node-table-body">
             {this.createField("input", "Id", "id")}
             {this.createField("input", "Variable Name", "varName")}
-            {this.createField("textarea", "Expression", "value.expression", "expression")}
+            {this.createExpressionField("expression", "Expression", "value")}
             {this.descriptionField()}
           </div>
         )
@@ -188,7 +188,7 @@ export default class NodeDetailsContent extends React.Component {
         return (
           <div className="node-table-body">
             {this.createField("input", "Id", "id")}
-            {this.createField("textarea", "Expression", "expression.expression", "expression")}
+            {this.createExpressionField("expression", "Expression", "expression")}
             {this.createField("input", "exprVal", "exprVal")}
             {this.descriptionField()}
           </div>
@@ -219,10 +219,10 @@ export default class NodeDetailsContent extends React.Component {
               (<div className="node-row">
                 <div className="node-label">Exception handler:</div>
                 <div className="node-group">
-                  {this.state.editedNode.exceptionHandler.parameters.map((params, index) => {
+                  {this.state.editedNode.exceptionHandler.parameters.map((param, index) => {
                     return (
-                      <div className="node-block" key={this.props.node.id + params.name + index}>
-                        {this.createListField("textarea", params.name, params, 'expression.expression', `exceptionHandler.parameters[${index}]`, params.name)}
+                      <div className="node-block" key={this.props.node.id + param.name + index}>
+                        {this.createExpressionListField(param.name, "expression", param, `exceptionHandler.parameters[${index}]`)}
                         <hr />
                       </div>
                     )
@@ -256,10 +256,10 @@ export default class NodeDetailsContent extends React.Component {
       <div className="node-table-body">
         {this.createField("input", "Id", "id")}
         {this.createReadonlyField("input", "Ref Type", "ref.typ")}
-        {this.state.editedNode.ref.parameters.map((params, index) => {
+        {this.state.editedNode.ref.parameters.map((param, index) => {
           return (
-            <div className="node-block" key={this.props.node.id + params.name + index}>
-              {this.createListField("textarea", params.name, params, 'expression.expression', `ref.parameters[${index}]`, params.name)}
+            <div className="node-block" key={this.props.node.id + param.name + index}>
+              {this.createExpressionListField(param.name, "expression", param, `ref.parameters[${index}]`)}
             </div>
           )
         })}
@@ -274,7 +274,8 @@ export default class NodeDetailsContent extends React.Component {
   }
 
   createField = (fieldType, fieldLabel, fieldProperty, fieldName, readonly) => {
-    return this.doCreateField(fieldType, fieldLabel, fieldName, _.get(this.state.editedNode, fieldProperty, ""), ((newValue) => this.setNodeDataAt(fieldProperty, newValue) ), readonly, this.isMarked(fieldProperty))
+    return this.doCreateField(fieldType, fieldLabel, fieldName, _.get(this.state.editedNode, fieldProperty, ""),
+      ((newValue) => this.setNodeDataAt(fieldProperty, newValue) ), readonly, this.isMarked(fieldProperty))
   }
 
   createListField = (fieldType, fieldLabel, obj, fieldProperty, listFieldProperty, fieldName) => {
@@ -282,6 +283,34 @@ export default class NodeDetailsContent extends React.Component {
     return this.doCreateField(fieldType, fieldLabel, fieldName, _.get(obj, fieldProperty),
       ((newValue) => this.setNodeDataAt(path, newValue) ), null, this.isMarked(path))
   }
+
+  createExpressionField = (fieldName, fieldLabel, expressionProperty) =>
+    this.doCreateExpressionField(fieldName, fieldLabel, expressionProperty, this.state.editedNode, `${expressionProperty}.expression`);
+
+  createExpressionListField = (fieldName, expressionProperty, listFieldObj, listFieldPath) =>
+    this.doCreateExpressionField(fieldName, fieldName, expressionProperty, listFieldObj, `${listFieldPath}.${expressionProperty}.expression`);
+
+  doCreateExpressionField = (fieldName, fieldLabel, expressionProperty, obj, exprTextPath) => {
+    const expressionObj = _.get(obj, expressionProperty);
+    const isMarked = this.isMarked(exprTextPath);
+    const nodeValueClass = this.nodeValueClass(isMarked);
+    const restriction = this.getRestriction(fieldName);
+
+    if (restriction.hasFixedValues)
+      return this.renderFixedValues(restriction.values, fieldLabel, expressionObj.expression,
+        (newValue) => this.setNodeDataAt(exprTextPath, newValue), false);
+
+    return TestRenderUtils.wrapWithTestResult(fieldName, this.state.testResultsToShow, this.state.testResultsToHide, this.toggleTestResult, (
+      <div className="node-row">
+        {this.renderFieldLabel(fieldLabel)}
+        <div className={nodeValueClass}>
+          <ExpressionSuggest inputProps={{
+            rows: 1, cols: 50, className: "node-input", value: expressionObj.expression, language: expressionObj.language,
+            onValueChange: ((newValue) => this.setNodeDataAt(exprTextPath, newValue)), readOnly: false}}/>
+        </div>
+      </div>)
+    )
+  };
 
   isMarked = (path) => {
     return _.includes(this.props.pathsToMark, path)
@@ -294,24 +323,13 @@ export default class NodeDetailsContent extends React.Component {
   }
 
   doCreateField = (fieldType, fieldLabel, fieldName, fieldValue, handleChange, forceReadonly, isMarked) => {
-    const readOnly = !this.props.isEditMode || forceReadonly
-    const restriction = (this.findParamByName(fieldName) || {}).restriction
+    const readOnly = !this.props.isEditMode || forceReadonly;
+    const restriction = this.getRestriction(fieldName);
 
-    if (restriction && restriction.type === 'FixedExpressionValues') {
-      const values = restriction.values
-      return (
-        <div className="node-row">
-          {this.renderFieldLabel(fieldLabel)}
-          <div className="node-value">
-            <select className="node-input" value={fieldValue} onChange={(e) => handleChange(e.target.value)} readOnly={readOnly}>
-              {values.map((value, index) => (<option key={index} value={value.expression}>{value.label}</option>))}
-            </select>
-          </div>
-        </div>
-      )
-    }
+    if (restriction.hasFixedValues)
+      return this.renderFixedValues(restriction.values, fieldLabel, fieldValue, handleChange, readOnly);
 
-    const nodeValueClass = "node-value" + (isMarked ? " marked" : "")
+    const nodeValueClass = this.nodeValueClass(isMarked);
     switch (fieldType) {
       case 'input':
         return (
@@ -342,17 +360,6 @@ export default class NodeDetailsContent extends React.Component {
             </div>
           </div>
         )
-      case 'textarea':
-        return TestRenderUtils.wrapWithTestResult(fieldName, this.state.testResultsToShow, this.state.testResultsToHide, this.toggleTestResult, (
-          <div className="node-row">
-            {this.renderFieldLabel(fieldLabel)}
-            <div className={nodeValueClass}>
-              <ExpressionSuggest inputProps={{
-                rows: 1, cols: 50, className: "node-input", value: fieldValue,
-                onValueChange: handleChange, readOnly: readOnly}}/>
-            </div>
-          </div>)
-        )
       default:
         return (
           <div>
@@ -362,6 +369,25 @@ export default class NodeDetailsContent extends React.Component {
     }
   }
 
+  getRestriction = (fieldName) => {
+    const restriction = (this.findParamByName(fieldName) || {}).restriction;
+    return {
+      hasFixedValues: restriction && restriction.type === "FixedExpressionValues",
+      values: restriction && restriction.values
+    }
+  };
+
+  renderFixedValues = (values, fieldLabel, fieldValue, handleChange, readOnly) =>
+    <div className="node-row">
+      {this.renderFieldLabel(fieldLabel)}
+      <div className="node-value">
+        <select className="node-input" value={fieldValue} onChange={(e) => handleChange(e.target.value)} readOnly={readOnly}>
+          {values.map((value, index) => (<option key={index} value={value.expression}>{value.label}</option>))}
+        </select>
+      </div>
+    </div>;
+
+  nodeValueClass = (isMarked) => "node-value" + (isMarked ? " marked" : "");
 
   setNodeDataAt = (propToMutate, newValue) => {
     var newtempNodeData = _.cloneDeep(this.state.editedNode)
