@@ -9,6 +9,7 @@ import CommentInput from "../CommentInput";
 import HttpService from "../../http/HttpService";
 import ProcessUtils from "../../common/ProcessUtils";
 import ProcessDialogWarnings from "./ProcessDialogWarnings";
+import ValidateDeployComment from "../ValidateDeployComment";
 
 class DeployProcessDialog extends React.Component {
 
@@ -29,7 +30,7 @@ class DeployProcessDialog extends React.Component {
     return HttpService.deploy(processId)
       .then(resp => {
         if (resp.isSuccess) {
-          actions.addComment(processId, processVersionId, comment)
+          actions.addComment(processId, processVersionId, this.deploymentComment(comment))
         }
         const currentPath = window.location.pathname
         if (currentPath.startsWith(deploymentPath)) {
@@ -38,12 +39,15 @@ class DeployProcessDialog extends React.Component {
       })
   }
 
-  okBtnConfig = () => {
-    const commentIsRequired = this.props.deploySettings.requireComment
-    const isDeployDisabled = commentIsRequired && _.isEmpty(this.state.comment)
-    const toolTip = "Comment is required."
+  deploymentComment = (comment) => {
+    return "Deployment" + (_.isEmpty(comment) ? "" : ": ") + comment
+  }
 
-    return isDeployDisabled ? {disabled: true, title: toolTip} : {}
+  okBtnConfig = () => {
+    const validated =
+      ValidateDeployComment(this.state.comment, this.props.settings)
+
+    return { disabled: !validated.isValid, title: validated.toolTip }
   }
 
   onInputChange = (e) => {
@@ -70,7 +74,10 @@ function mapState(state) {
   const processHasNoWarnings = ProcessUtils.hasNoWarnings(state.graphReducer.processToDisplay || {})
 
   return {
-    deploySettings: _.get(state.settings, "featuresSettings.deploySettings") || {},
+    settings: Object.assign(
+      {},
+      _.get(state.settings, "featuresSettings.commentSettings"),
+      _.get(state.settings, "featuresSettings.deploySettings")),
     processId: _.get(state.graphReducer, 'fetchedProcessDetails.id'),
     processVersionId: _.get(state.graphReducer, "fetchedProcessDetails.processVersionId"),
     processHasWarnings: !processHasNoWarnings
