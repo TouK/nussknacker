@@ -108,7 +108,7 @@ export class NodeDetailsContent extends React.Component {
             {this.state.editedNode.service.parameters.map((param, index) => {
               return (
                 <div className="node-block" key={this.props.node.id + param.name + index}>
-                  {this.createExpressionListField(param.name, "expression", param, `service.parameters[${index}]`)}
+                  {this.createExpressionListField(param.name, "expression", `service.parameters[${index}]`)}
                 </div>
               )
             })}
@@ -128,7 +128,7 @@ export class NodeDetailsContent extends React.Component {
               editedNode={this.state.editedNode}
               savedNode={this.processNode}
               setNodeState={newParams => this.setNodeDataAt('ref.parameters', newParams)}
-              createListField={(param, index) => this.createExpressionListField(param.name, "expression", param, `ref.parameters[${index}]`)}
+              createListField={(param, index) => this.createExpressionListField(param.name, "expression", `ref.parameters[${index}]`)}
               createReadOnlyField={params => (<div className="node-row">
                 {this.renderFieldLabel(params.name)}
                 <div className="node-value"><input type="text" className="node-input"
@@ -149,7 +149,7 @@ export class NodeDetailsContent extends React.Component {
             {this.state.editedNode.parameters.map((param, index) => {
               return (
                 <div className="node-block" key={this.props.node.id + param.name + index}>
-                  {this.createExpressionListField(param.name, "expression", param, `parameters[${index}]`)}
+                  {this.createExpressionListField(param.name, "expression", `parameters[${index}]`)}
                 </div>
               )
             })}
@@ -168,7 +168,7 @@ export class NodeDetailsContent extends React.Component {
                   return (
                     <div className="node-block" key={this.props.node.id + param.name + index}>
                       {this.createListField("input", "Name", param, "name", `fields[${index}]`)}
-                      {this.createExpressionListField(param.name, "expression", param, `fields[${index}]`)}
+                      {this.createExpressionListField(param.name, "expression", `fields[${index}]`)}
                     </div>
                   )
                 })}
@@ -226,7 +226,7 @@ export class NodeDetailsContent extends React.Component {
                   {this.state.editedNode.exceptionHandler.parameters.map((param, index) => {
                     return (
                       <div className="node-block" key={this.props.node.id + param.name + index}>
-                        {this.createExpressionListField(param.name, "expression", param, `exceptionHandler.parameters[${index}]`)}
+                        {this.createExpressionListField(param.name, "expression", `exceptionHandler.parameters[${index}]`)}
                         <hr />
                       </div>
                     )
@@ -263,7 +263,7 @@ export class NodeDetailsContent extends React.Component {
         {this.state.editedNode.ref.parameters.map((param, index) => {
           return (
             <div className="node-block" key={this.props.node.id + param.name + index}>
-              {this.createExpressionListField(param.name, "expression", param, `ref.parameters[${index}]`)}
+              {this.createExpressionListField(param.name, "expression", `ref.parameters[${index}]`)}
             </div>
           )
         })}
@@ -289,13 +289,14 @@ export class NodeDetailsContent extends React.Component {
   }
 
   createExpressionField = (fieldName, fieldLabel, expressionProperty) =>
-    this.doCreateExpressionField(fieldName, fieldLabel, expressionProperty, this.state.editedNode, `${expressionProperty}.expression`);
+    this.doCreateExpressionField(fieldName, fieldLabel, `${expressionProperty}`);
 
-  createExpressionListField = (fieldName, expressionProperty, listFieldObj, listFieldPath) =>
-    this.doCreateExpressionField(fieldName, fieldName, expressionProperty, listFieldObj, `${listFieldPath}.${expressionProperty}.expression`);
+  createExpressionListField = (fieldName, expressionProperty, listFieldPath) =>
+    this.doCreateExpressionField(fieldName, fieldName, `${listFieldPath}.${expressionProperty}`);
 
-  doCreateExpressionField = (fieldName, fieldLabel, expressionProperty, obj, exprTextPath) => {
-    const expressionObj = _.get(obj, expressionProperty);
+  doCreateExpressionField = (fieldName, fieldLabel, exprPath) => {
+    const exprTextPath = `${exprPath}.expression`;
+    const expressionObj = _.get(this.state.editedNode, exprPath);
     const isMarked = this.isMarked(exprTextPath);
     const nodeValueClass = this.nodeValueClass(isMarked);
     const restriction = this.getRestriction(fieldName);
