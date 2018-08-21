@@ -1,5 +1,6 @@
 import React from "react";
 import {connect} from "react-redux";
+import Creatable from "react-select/lib/Creatable";
 import classNames from "classnames";
 import _ from "lodash";
 import ActionsUtils from "../../actions/ActionsUtils";
@@ -302,8 +303,8 @@ export class NodeDetailsContent extends React.Component {
     const restriction = this.getRestriction(fieldName);
 
     if (restriction.hasFixedValues)
-      return this.renderFixedValues(restriction.values, fieldLabel, expressionObj.expression,
-        (newValue) => this.setNodeDataAt(exprTextPath, newValue), false);
+      return this.renderFixedValues(restriction.values, fieldLabel, {value: expressionObj.expression, label: expressionObj.label},
+        (newValue) => this.setNodeDataAt(exprPath, {expression: newValue.value, label: newValue.label, language: expressionObj.language}), false);
 
     return TestRenderUtils.wrapWithTestResult(fieldName, this.state.testResultsToShow, this.state.testResultsToHide, this.toggleTestResult, (
       <div className="node-row">
@@ -329,12 +330,8 @@ export class NodeDetailsContent extends React.Component {
 
   doCreateField = (fieldType, fieldLabel, fieldName, fieldValue, handleChange, forceReadonly, isMarked) => {
     const readOnly = !this.props.isEditMode || forceReadonly;
-    const restriction = this.getRestriction(fieldName);
-
-    if (restriction.hasFixedValues)
-      return this.renderFixedValues(restriction.values, fieldLabel, fieldValue, handleChange, readOnly);
-
     const nodeValueClass = this.nodeValueClass(isMarked);
+
     switch (fieldType) {
       case 'input':
         return (
@@ -382,15 +379,21 @@ export class NodeDetailsContent extends React.Component {
     }
   };
 
-  renderFixedValues = (values, fieldLabel, fieldValue, handleChange, readOnly) =>
-    <div className="node-row">
-      {this.renderFieldLabel(fieldLabel)}
-      <div className="node-value">
-        <select className="node-input" value={fieldValue} onChange={(e) => handleChange(e.target.value)} readOnly={readOnly}>
-          {values.map((value, index) => (<option key={index} value={value.expression}>{value.label}</option>))}
-        </select>
+  renderFixedValues = (values, fieldLabel, fieldValue, handleChange, readOnly) => {
+    return (
+      <div className="node-row">
+        {this.renderFieldLabel(fieldLabel)}
+        <Creatable
+          className="node-value"
+          value={fieldValue}
+          onChange={handleChange}
+          options={values.map((value) => ({value: value.expression, label: value.label}))}
+          isDisabled={readOnly}
+          formatCreateLabel={(x) => x}
+        />
       </div>
-    </div>;
+    );
+  };
 
   nodeValueClass = (isMarked) => "node-value" + (isMarked ? " marked" : "");
 
