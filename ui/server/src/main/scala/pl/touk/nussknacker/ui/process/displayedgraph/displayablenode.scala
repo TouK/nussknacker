@@ -19,7 +19,9 @@ object displayablenode {
 
   case class Edge(from: String, to: String, edgeType: Option[EdgeType])
   case class NodeAdditionalFields(description: Option[String]) extends node.UserDefinedAdditionalNodeFields
-  case class ProcessAdditionalFields(description: Option[String], groups: Set[Group] = Set()) extends UserDefinedProcessAdditionalFields
+  case class ProcessAdditionalFields(description: Option[String],
+                                     groups: Set[Group] = Set(),
+                                     properties: Map[String, String] = Map.empty) extends UserDefinedProcessAdditionalFields
 
   case class Group(id: String, nodes: Set[String])
 

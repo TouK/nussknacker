@@ -1,6 +1,8 @@
 import React from "react";
+import {connect} from "react-redux";
 import classNames from "classnames";
 import _ from "lodash";
+import ActionsUtils from "../../actions/ActionsUtils";
 import Textarea from "react-textarea-autosize";
 import NodeUtils from "./NodeUtils";
 import ExpressionSuggest from "./ExpressionSuggest";
@@ -13,7 +15,7 @@ import ParameterList from "./ParameterList";
 
 //move state to redux?
 // here `componentDidUpdate` is complicated to clear unsaved changes in modal
-export default class NodeDetailsContent extends React.Component {
+export class NodeDetailsContent extends React.Component {
 
   constructor(props) {
     super(props);
@@ -209,12 +211,14 @@ export default class NodeDetailsContent extends React.Component {
           this.createField("input", "Checkpoint interval in seconds", "typeSpecificProperties.checkpointIntervalInSeconds", "checkpointIntervalInSeconds"),
           this.createField("checkbox", "Should split state to disk", "typeSpecificProperties.splitStateToDisk", "splitStateToDisk"),
           this.createField("checkbox", "Should use async interpretation (lazy variables not allowed)", "typeSpecificProperties.useAsyncInterpretation", "useAsyncInterpretation")
-
         ] : [this.createField("input", "Query path",  "typeSpecificProperties.path", "path")]
+        const additionalFields = Object.entries(this.props.additionalPropertiesLabels).map(([fieldName, fieldLabel]) => {
+          return this.createField("input", fieldLabel, `additionalFields.properties.${fieldName}`, fieldName)
+        })
         const hasExceptionHandlerParams = this.state.editedNode.exceptionHandler.parameters.length > 0
         return (
           <div className="node-table-body">
-            {_.concat(fields, commonFields)}
+            {_.concat(fields, commonFields, additionalFields)}
             { hasExceptionHandlerParams ?
               (<div className="node-row">
                 <div className="node-label">Exception handler:</div>
@@ -428,6 +432,15 @@ export default class NodeDetailsContent extends React.Component {
     )
   }
 }
+
+function mapState(state) {
+  return {
+    additionalPropertiesLabels: _.get(state.settings, 'featuresSettings.additionalPropertiesLabels') || {}
+  }
+}
+
+export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(NodeDetailsContent)
+
 
 class NodeDetails extends React.Component {
   render() {

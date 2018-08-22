@@ -26,7 +26,8 @@ class SettingsResources(config: FeatureTogglesConfig, nodesConfig: Map[String, S
             commentSettings = config.commentSettings,
             deploySettings = config.deploySettings,
             signals = config.queryableStateProxyUrl.isDefined,
-            attachments = config.attachments.isDefined
+            attachments = config.attachments.isDefined,
+            additionalPropertiesLabels = config.additionalPropertiesLabels
           )
           UISettings(toggleOptions, nodesConfig)
         }
@@ -49,7 +50,8 @@ case class ToggleFeaturesOptions(counts: Boolean,
                                  commentSettings: Option[CommentSettings],
                                  deploySettings: Option[DeploySettings],
                                  attachments: Boolean,
-                                 signals: Boolean
+                                 signals: Boolean,
+                                 additionalPropertiesLabels: Map[String, String]
                                 )
 
 case class UISettings(features: ToggleFeaturesOptions, nodes: Map[String, SingleNodeConfig])
