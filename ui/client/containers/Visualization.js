@@ -15,6 +15,7 @@ import LoaderSpinner from '../components/Spinner.js';
 import '../stylesheets/visualization.styl';
 import NodeUtils from '../components/graph/NodeUtils';
 import * as VisualizationUrl from '../common/VisualizationUrl'
+import SpinnerWrapper from "../components/SpinnerWrapper";
 
 const Visualization = withRouter(React.createClass({
 
@@ -130,28 +131,32 @@ const Visualization = withRouter(React.createClass({
       write:loggedUser.canWrite(this.props.processCategory) && !this.state.isArchived,
       deploy:loggedUser.canDeploy(this.props.processCategory) && !this.state.isArchived,
     };
-    return this.state.dataResolved ? (
+    const graphNotReady = _.isEmpty(this.props.fetchedProcessDetails) || this.props.graphLoading;
+
+    return (
       <div className="Page">
-          <UserLeftPanel
-            isOpened={leftPanelIsOpened}
-            onToggle={actions.toggleLeftPanel}
-            loggedUser={loggedUser}
-            capabilities={capabilities}
-          />
-          <UserRightPanel
-            graphLayoutFunction={graphLayoutFun}
-            exportGraph={exportGraphFun}
-            zoomIn={zoomInFun}
-            zoomOut={zoomOutFun}
-            capabilities={capabilities}
-          />
+        <UserLeftPanel
+          isOpened={leftPanelIsOpened}
+          onToggle={actions.toggleLeftPanel}
+          loggedUser={loggedUser}
+          capabilities={capabilities}
+          isReady={this.state.dataResolved}
+        />
 
-          {(_.isEmpty(this.props.fetchedProcessDetails) || this.props.graphLoading) ?
-              <LoaderSpinner show={true}/> : <Graph ref="graph"/>
-          }
+        <UserRightPanel
+          graphLayoutFunction={graphLayoutFun}
+          exportGraph={exportGraphFun}
+          zoomIn={zoomInFun}
+          zoomOut={zoomOutFun}
+          capabilities={capabilities}
+          isReady={this.state.dataResolved}
+        />
 
+        <SpinnerWrapper isReady={!graphNotReady}>
+          <Graph ref="graph"/>
+        </SpinnerWrapper>
       </div>
-    ) : null
+    );
   },
 
 }));

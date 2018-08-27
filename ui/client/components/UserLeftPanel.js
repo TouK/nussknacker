@@ -12,6 +12,7 @@ import Tips from './Tips.js'
 import TogglePanel from './TogglePanel';
 
 import '../stylesheets/userPanel.styl';
+import SpinnerWrapper from "./SpinnerWrapper";
 
 export default class UserLeftPanel extends Component {
 
@@ -19,31 +20,34 @@ export default class UserLeftPanel extends Component {
     isOpened: React.PropTypes.bool.isRequired,
     onToggle: React.PropTypes.func.isRequired,
     loggedUser: React.PropTypes.object.isRequired,
+    isReady: React.PropTypes.bool.isRequired
   }
 
   render() {
-    const { isOpened, onToggle } = this.props;
+    const { isOpened, onToggle, isReady } = this.props;
 
     return (
       <div id="espLeftNav" className={cn("sidenav", { "is-opened": isOpened })}>
         <TogglePanel type="left" isOpened={isOpened} onToggle={onToggle}/>
-        <Scrollbars renderThumbVertical={props => <div {...props} className="thumbVertical"/>} hideTracksWhenNotNeeded={true}>
-          <Tips />
-          {this.props.capabilities.write ?
-            <Panel collapsible defaultExpanded header="Creator panel">
-              <ToolBox/>
-            </Panel> : null
-          }
-          <Panel collapsible defaultExpanded header="Versions">
-            <ProcessHistory/>
-          </Panel>
-          <Panel collapsible defaultExpanded header="Comments">
-            <ProcessComments/>
-          </Panel>
-          <Panel collapsible defaultExpanded header="Attachments">
-            <ProcessAttachments/>
-          </Panel>
-       </Scrollbars>
+        <SpinnerWrapper isReady={isReady}>
+          <Scrollbars renderThumbVertical={props => <div {...props} className="thumbVertical"/>} hideTracksWhenNotNeeded={true}>
+            <Tips />
+            {this.props.capabilities.write ?
+              <Panel collapsible defaultExpanded header="Creator panel">
+                <ToolBox/>
+              </Panel> : null
+            }
+            <Panel collapsible defaultExpanded header="Versions">
+              <ProcessHistory/>
+            </Panel>
+            <Panel collapsible defaultExpanded header="Comments">
+              <ProcessComments/>
+            </Panel>
+            <Panel collapsible defaultExpanded header="Attachments">
+              <ProcessAttachments/>
+            </Panel>
+          </Scrollbars>
+        </SpinnerWrapper>
       </div>
     );
   }

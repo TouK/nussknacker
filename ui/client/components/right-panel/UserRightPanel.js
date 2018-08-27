@@ -19,6 +19,7 @@ import SvgDiv from "../SvgDiv"
 
 import '../../stylesheets/userPanel.styl';
 import Archive from "../../containers/Archive";
+import SpinnerWrapper from "../SpinnerWrapper";
 
 class UserRightPanel extends Component {
 
@@ -30,41 +31,43 @@ class UserRightPanel extends Component {
     zoomIn: React.PropTypes.func.isRequired,
     zoomOut: React.PropTypes.func.isRequired,
     featuresSettings: React.PropTypes.object.isRequired,
-  }
+    isReady: React.PropTypes.bool.isRequired
+  };
 
   render() {
-    const { isOpened, actions } = this.props;
-
+    const { isOpened, actions, isReady } = this.props;
     const config = this.getConfig();
 
     return (
       <div id="espRightNav" className={cn('rightSidenav', { 'is-opened': isOpened })}>
         <TogglePanel type="right" isOpened={isOpened} onToggle={actions.toggleRightPanel}/>
-        <Scrollbars renderThumbVertical={props => <div {...props} className="thumbVertical"/>} hideTracksWhenNotNeeded={true}>
-          <div className="panel-properties">
-            <label>
-              <input type="checkbox" onChange={(e) => {
-                this.props.actions.businessViewChanged(e.target.checked)
-                this.props.actions.fetchProcessToDisplay(this.processId(), this.versionId(), e.target.checked)
-              }}/>
-              Business view
-            </label>
-          </div>
-          {config.filter(panel => panel).map ((panel, panelIdx) => {
-              const visibleButtons = panel.buttons.filter(button => button.visible !== false)
-              return _.isEmpty(visibleButtons) ? null : (
-                <Panel key={panelIdx} collapsible defaultExpanded header={panel.panelName}>
-                  {visibleButtons.map((panelButton, idx) => this.renderPanelButton(panelButton, idx))}
-                </Panel>
-              )
+        <SpinnerWrapper isReady={isReady}>
+          <Scrollbars renderThumbVertical={props => <div {...props} className="thumbVertical"/>} hideTracksWhenNotNeeded={true}>
+            <div className="panel-properties">
+              <label>
+                <input type="checkbox" onChange={(e) => {
+                  this.props.actions.businessViewChanged(e.target.checked)
+                  this.props.actions.fetchProcessToDisplay(this.processId(), this.versionId(), e.target.checked)
+                }}/>
+                Business view
+              </label>
+            </div>
+            {config.filter(panel => panel).map ((panel, panelIdx) => {
+                const visibleButtons = panel.buttons.filter(button => button.visible !== false)
+                return _.isEmpty(visibleButtons) ? null : (
+                  <Panel key={panelIdx} collapsible defaultExpanded header={panel.panelName}>
+                    {visibleButtons.map((panelButton, idx) => this.renderPanelButton(panelButton, idx))}
+                  </Panel>
+                )
+              }
+            )}
+            {this.props.capabilities.write ? //TODO remove SideNodeDetails? turn out to be not useful
+              (<Panel collapsible defaultExpanded header="Details">
+                <SideNodeDetails/>
+              </Panel>) : null
             }
-          )}
-          {this.props.capabilities.write ? //TODO remove SideNodeDetails? turn out to be not useful
-            (<Panel collapsible defaultExpanded header="Details">
-              <SideNodeDetails/>
-            </Panel>) : null
-          }
-        </Scrollbars>
+          </Scrollbars>
+        </SpinnerWrapper>
       </div>
     )
   }
