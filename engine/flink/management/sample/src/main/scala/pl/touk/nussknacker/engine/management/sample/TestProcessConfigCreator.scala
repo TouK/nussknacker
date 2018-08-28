@@ -35,6 +35,7 @@ import argonaut.Argonaut._
 import argonaut.ArgonautShapeless._
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{CollectableAction, ServiceInvocationCollector, TransmissionNames}
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
+import pl.touk.sample.JavaSampleEnum
 
 class TestProcessConfigCreator extends ProcessConfigCreator {
 
@@ -166,7 +167,8 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
       "multipleParamsService" -> WithCategories(MultipleParamsService, "Category1", "Category2"),
       "complexReturnObjectService" -> WithCategories(ComplexReturnObjectService, "Category1", "Category2"),
       "listReturnObjectService" -> WithCategories(ListReturnObjectService, "Category1", "Category2"),
-      "clientHttpService" -> WithCategories(new ClientFakeHttpService(), "Category1", "Category2")
+      "clientHttpService" -> WithCategories(new ClientFakeHttpService(), "Category1", "Category2"),
+      "echoEnumService" -> WithCategories(EchoEnumService, "Category1", "Category2")
     )
   }
 
@@ -387,6 +389,11 @@ object DateProcessHelper {
     ""
   }
 
+}
+
+object EchoEnumService extends Service {
+  @MethodToInvoke
+  def invoke(@ParamName("id") id: JavaSampleEnum) = Future.successful(id)
 }
 
 case class ConstantState(id: String, transactionId: Int, elements: List[String])

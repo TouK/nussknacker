@@ -1,6 +1,5 @@
 import React from "react";
 import {connect} from "react-redux";
-import Creatable from "react-select/lib/Creatable";
 import classNames from "classnames";
 import _ from "lodash";
 import ActionsUtils from "../../actions/ActionsUtils";
@@ -13,6 +12,7 @@ import ProcessUtils from '../../common/ProcessUtils';
 import * as JsonUtils from '../../common/JsonUtils';
 import Fields from "../Fields";
 import ParameterList from "./ParameterList";
+import ExpressionWithFixedValues from "./ExpressionWithFixedValues";
 
 //move state to redux?
 // here `componentDidUpdate` is complicated to clear unsaved changes in modal
@@ -303,8 +303,14 @@ export class NodeDetailsContent extends React.Component {
     const restriction = this.getRestriction(fieldName);
 
     if (restriction.hasFixedValues)
-      return this.renderFixedValues(restriction.values, fieldLabel, {value: expressionObj.expression, label: expressionObj.label},
-        (newValue) => this.setNodeDataAt(exprPath, {expression: newValue.value, label: newValue.label, language: expressionObj.language}), false);
+      return <ExpressionWithFixedValues
+        fieldLabel={fieldLabel}
+        onChange={(newValue) => this.setNodeDataAt(exprTextPath, newValue)}
+        obj={expressionObj}
+        renderFieldLabel={this.renderFieldLabel}
+        values={restriction.values}
+        readOnly={false}
+      />;
 
     return TestRenderUtils.wrapWithTestResult(fieldName, this.state.testResultsToShow, this.state.testResultsToHide, this.toggleTestResult, (
       <div className="node-row">
@@ -377,22 +383,6 @@ export class NodeDetailsContent extends React.Component {
       hasFixedValues: restriction && restriction.type === "FixedExpressionValues",
       values: restriction && restriction.values
     }
-  };
-
-  renderFixedValues = (values, fieldLabel, fieldValue, handleChange, readOnly) => {
-    return (
-      <div className="node-row">
-        {this.renderFieldLabel(fieldLabel)}
-        <Creatable
-          className="node-value"
-          value={fieldValue}
-          onChange={handleChange}
-          options={values.map((value) => ({value: value.expression, label: value.label}))}
-          isDisabled={readOnly}
-          formatCreateLabel={(x) => x}
-        />
-      </div>
-    );
   };
 
   nodeValueClass = (isMarked) => "node-value" + (isMarked ? " marked" : "");
