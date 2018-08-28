@@ -77,6 +77,8 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
         } yield testResult
         reply(testAction)
       }
+    case DeploymentStatus =>
+      reply(Future.successful(DeploymentStatusResponse(beingDeployed)))
   }
 
   private def withDeploymentInfo[T](id: String, userId: String, actionName: String, action: => Future[T]): Future[T] = {
@@ -169,6 +171,11 @@ case class Test[T](processId: String, processJson: String, test: TestData, user:
 case class DeploymentActionFinished(id: String)
 
 case class DeployInfo(userId: String, time: Long, action: String)
+
+case object DeploymentStatus
+
+case class DeploymentStatusResponse(deploymentInfo: Map[String, DeployInfo])
+
 
 class ProcessIsBeingDeployed(deployments: Map[String, DeployInfo]) extends
   Exception(s"Cannot deploy/test as following deployments are in progress: ${

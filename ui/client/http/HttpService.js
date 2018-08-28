@@ -17,8 +17,24 @@ export default {
 
   setNotificationSystem(ns) {
     notificationSystem = ns;
+    if (notificationReload) {
+      clearInterval(notificationReload)
+    }
+    //TODO: configuration?
+    notificationReload = setInterval(() => this._loadNotifications(), 10000);
+
   },
 
+  _loadNotifications() {
+    fetch( `${API_URL}/notifications`, {
+      method: 'GET',
+      credentials: 'include'
+    })
+    .then(response => response.json())
+    .then(notifications => notifications.forEach(notification => {
+      notification.type === "info" ? this.addInfo(notification.message) : this.addError(notification.message)
+    }))
+  },
 
   addInfo(message) {
     if (notificationSystem) {
@@ -428,6 +444,8 @@ var ajaxCall = (opts) => {
 var ajaxCallWithoutContentType = (opts) => promiseWrap($.ajax(opts))
 
 var notificationSystem = null;
+
+var notificationReload = null;
 
 var promiseWrap = (plainAjaxCall) => {
   return new Promise((resolve, reject) => {
