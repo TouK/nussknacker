@@ -3,9 +3,9 @@ espEngineToukVersion=$1
 nexusPassword=$2
 
 if [ -n "$3" ]; then
-    nexusHostProperty="-DnexusHost=$3"
+    nexusUrlProperty="-DnexusUrl=$3"
 else
-    nexusHostProperty=""
+    nexusUrlProperty=""
 fi
 
 if [ -n "$4" ]; then
@@ -16,5 +16,5 @@ fi
 
 ./sbtwrapper clean test management/it:test || { echo 'Failed to build and test nussknacker' ; exit 1; }
 if [ -n "$espEngineToukVersion" ]; then
-    ./sbtwrapper -DnexusPassword=$2 ${nexusHostProperty} ${nexusUserProperty} "set version in ThisBuild := \"$espEngineToukVersion\"" publish
+    ./sbtwrapper -DnexusPassword=$2 ${nexusUrlProperty} ${nexusUserProperty} "set version in ThisBuild := \"$espEngineToukVersion\"" publish
 fi

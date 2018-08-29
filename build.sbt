@@ -10,7 +10,9 @@ val scalaV = "2.11.12"
 val includeFlinkAndScala = Option(System.getProperty("includeFlinkAndScala", "true")).exists(_.toBoolean)
 
 val flinkScope = if (includeFlinkAndScala) "compile" else "provided"
-val nexusHost = System.getProperty("nexusHost", "oss.sonatype.org")
+val nexusUrl = Option(System.getProperty("nexusUrl"))
+//TODO: this is pretty clunky, but works so far for our case...
+val nexusHost = nexusUrl.map(_.replaceAll("http[s]?://", "").replaceAll("[:/].*", ""))
 
 // `publishArtifact := false` should be enough to keep sbt from publishing root module,
 // unfortunately it does not work, so we resort to hack by publishing root module to Resolver.defaultLocal
@@ -20,11 +22,8 @@ publishTo := Some(Resolver.defaultLocal)
 val publishSettings = Seq(
   publishMavenStyle := true,
   publishTo := {
-    val nexus = s"https://$nexusHost/"
-    if (isSnapshot.value)
-      Some("snapshots" at nexus + "content/repositories/snapshots")
-    else
-      Some("releases" at nexus + "service/local/staging/deploy/maven2")
+    nexusUrl.map(url =>
+      (if (isSnapshot.value) "snapshots" else "releases") at url)
   },
   publishArtifact in Test := false,
   pomExtra in Global := {
@@ -43,9 +42,9 @@ val publishSettings = Seq(
   },
   organization := "pl.touk.nussknacker",
   homepage := Some(url(s"https://github.com/touk/nussknacker")),
-  credentials := Seq(Credentials("Sonatype Nexus Repository Manager",
-    nexusHost, System.getProperty("nexusUser", "touk"), System.getProperty("nexusPassword"))
-  )
+  credentials := nexusHost.map(host => Credentials("Sonatype Nexus Repository Manager",
+    host, System.getProperty("nexusUser", "touk"), System.getProperty("nexusPassword"))
+  ).toSeq
 )
 
 def nussknackerMergeStrategy: String => MergeStrategy = {
