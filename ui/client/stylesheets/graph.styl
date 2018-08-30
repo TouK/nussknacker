@@ -166,6 +166,15 @@ espCheckbox(checkboxWidth)
       &:hover
         fill: modalLabelTextColor
 
+common-node-input(padding)
+  width: 100%
+  padding: 0 padding
+  border: none
+  background-color: modalInputBkgColor
+  color: modalInputTextColor
+  font-weight: 400
+  font-size: 14px
+
 modalContent(modalBkgColor,warningColor,modalLabelTextColor,testResultsColor,modalInputTextColor,processesHoverColor,hrColor,modalInputBkgColor)
   overflow auto
   max-height modalContentMaxHeight
@@ -224,6 +233,42 @@ modalContent(modalBkgColor,warningColor,modalLabelTextColor,testResultsColor,mod
           height 100px !important
       &.marked
         border 2px solid markColor
+      &.node-value-select
+        .node-value-select__control
+          background-color modalInputBkgColor
+          border: 0
+          border-radius: 0
+          border-bottom: 1px solid gray;
+          color modalInputTextColor
+          box-shadow: 0
+        .node-value-select__control--is-focused
+          boder-width: 0
+          box-shadow: 0 0 0 1px gray
+        .node-value-select__single-value
+          common-node-input(10px)
+        .node-value-select__input
+          //TODO: input hides partially due to padding...
+          common-node-input(10px)
+        .node-value-select__value-container--has-value
+          background-color modalInputBkgColor
+          color modalInputTextColor
+        .node-value-select__menu
+          border-radius: 0
+          border-bottom: 1px solid gray;
+        .node-value-select__menu-list
+          padding-top: 0
+          padding-bottom: 0
+        .node-value-select__option
+          common-node-input(20px)
+          height: 25px
+          border: 1
+          border-radius: 0
+          border-bottom: 1px solid gray;
+        .node-value-select__option--is-selected
+          background-color: modalInputBkgColor
+        .node-value-select__option--is-focused
+          //TODO: better color/variable?
+          background-color: commentBorderColor
     .node-error
       width: 100%
       color: warningColor
@@ -239,14 +284,8 @@ modalContent(modalBkgColor,warningColor,modalLabelTextColor,testResultsColor,mod
       border: 1px solid testResultsColor
       padding: 5px
     .node-input
-      width: 100%
       height: 40px
-      padding: 0 20px
-      border: none
-      background-color: modalInputBkgColor
-      color: modalInputTextColor
-      font-weight: 400
-      font-size: 14px
+      common-node-input(20px)
     .node-group
       padding-top 15px
       width: 100%

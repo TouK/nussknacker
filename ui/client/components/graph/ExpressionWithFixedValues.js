@@ -40,7 +40,8 @@ export default class ExpressionWithFixedValues extends React.Component {
       <div className="node-row">
         {this.props.renderFieldLabel(fieldLabel)}
         <Creatable
-          className="node-value"
+          className="node-value node-value-select"
+          classNamePrefix="node-value-select"
           value={option}
           onChange={this.handleChange}
           options={this.options}
