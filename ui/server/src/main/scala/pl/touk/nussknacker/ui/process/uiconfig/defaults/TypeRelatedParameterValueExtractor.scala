@@ -13,7 +13,7 @@ object TypeRelatedParameterValueExtractor extends ParameterDefaultValueExtractor
     refClassName match {
       case "long" | "short" | "int" | "java.lang.Number" => "0"
       case "float" | "double" | "java.math.BigDecimal" => "0.0"
-      case "boolean" => "true"
+      case "boolean" | "java.lang.Boolean" => "true"
       case "java.lang.String" => "''"
       case "java.util.List" => "{}"
       case "java.util.Map" => "{:}"
