@@ -47,7 +47,7 @@ Exactly one implementation have to be provided.
 Any other case will result throws exception.
 ##Categories
 
-Each process is assigned to exactly one category. Each node can be accessible in many categories? 
+Each process is assigned to exactly one category. Each node can be accessible in many categories. 
 Category defines if node is accessible in process. 
 
 TODO: some code example.
@@ -150,7 +150,7 @@ Collected value can be seen in UI in mocked service after tests, so for example 
 to collect HTTP request that you would normally send in production.
 
 ###Lazy values (use with caution)
-Instead of using `Enricher` node in graph to enrich data, one can use some syntactic sugar to enrich data in more object-oriented way -it is possible to inject enricher into model class. 
+Instead of using `Enricher` node in graph to enrich data, one can use some syntactic sugar to enrich data in more object-oriented way - it is possible to inject enricher into model class. 
 
 Here's an example.
 

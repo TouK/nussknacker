@@ -1,10 +1,10 @@
 # Quickstart
 
-## Prequisites
+## Prerequisites
 
 To run this quickstart you have to 
 * have Docker (more or less latest version) installed
-* have open certain ports (see docker-compose.yml)
+* open certain ports (see docker-compose.yml)
 
 ## Running
 
@@ -16,7 +16,7 @@ To run this quickstart you have to
 Now you are ready to check your newly created environment:
 
 * [Nussknacker](http://localhost:8081/) - user/password: admin/admin
-* [Apache Flink ui](http://localhost:8081/flink/)
+* [Apache Flink UI](http://localhost:8081/flink/)
 * [Grafana](http://localhost:8081/grafana/)
 * [Kibana](http://localhost:8081/kibana/)
 
@@ -37,7 +37,7 @@ Now you are ready to check your newly created environment:
 
 ## Test process with data
 * Click 'Deploy' on right panel
-* Verify on Flink GUI at http://localhost:8081/flink/ that your process is running
+* Verify on Flink UI at http://localhost:8081/flink/ that your process is running
 * Run ./testData/sendTestTransactions.sh script a few times to generate some data (first run may end with error from Kafka - don't worry about it). Script will send some json data to "transactions" Kafka topic. 
 * Go to Metrics tab on Nussknacker main panel - you should see changed metrics. Your process just processed data from Kafka and saved filtered results!
 

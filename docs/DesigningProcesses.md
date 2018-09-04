@@ -57,7 +57,7 @@ Outgoing data flow depends on expression result.
 
 
 Disabled has logical value. 
-If is checked, expression is't evaluated, and returns value `true`.         
+If is checked, expression isn't evaluated, and returns value `true`.         
 ### Flow
 Has input and one or two outputs. 
 
@@ -74,12 +74,12 @@ It doesn't have additional parameters.
 Each output receives all records and processes them independently. 
 ![split graph](img/split_graph.png)
 
-Every record from `surce` go to `sink 1` and `sink 2`.
+Every record from `source` go to `sink 1` and `sink 2`.
 ![filter window](img/split_window.png)
 
 ###Flow
 Have at least one output.
-Each output has same record as input, so all aotputs are identical.
+Each output has same record as input, so all outputs are identical.
 
 ##Switch
 Distributes incoming data between outputs. 
