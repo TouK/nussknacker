@@ -20,18 +20,25 @@ const typesInformation = [
   {
     "clazzName": {"refClazzName": "java.lang.String"},
     "methods": {"toUpperCase": {"refClazz": {"refClazzName": "java.lang.String"} }}
+  },
+  {
+    "clazzName": {"refClazzName": "java.util.LocalDateTime"},
+    "methods": {"isBefore": {"refClazz": {"refClazzName": "java.lang.Boolean"}, "params": {"name": "arg0", "refClazz": "java.util.LocalDateTime"}}}
+  },
+  {
+    "clazzName": {"refClazzName": "org.Util"},
+    "methods": {"now": {"refClazz": {"refClazzName": "java.util.LocalDateTime"}}}
   }
-
-]
+];
 
 const variables = {
   "input": {refClazzName: "org.A"},
   "other": {refClazzName: "org.C"},
   "ANOTHER": {refClazzName: "org.A"},
   "dynamicMap": {refClazzName: "java.util.Map", fields: {'intField': {refClazzName: 'java.lang.Integer'}, 'aField': {refClazzName: "org.A"}} },
-  "listVar": {refClazzName: "org.WithList" }
-
-}
+  "listVar": {refClazzName: "org.WithList" },
+  "util": {refClazzName: "org.Util"}
+};
 
 const expressionSuggester = new ExpressionSuggester(typesInformation, variables)
 
@@ -48,7 +55,8 @@ describe("expression suggester", () => {
       { methodName: "#other", refClazz: { refClazzName: 'org.C'} },
       { methodName: "#ANOTHER", refClazz: { refClazzName: 'org.A'} },
       { methodName: "#dynamicMap", refClazz: {refClazzName: "java.util.Map", fields: {'intField': {refClazzName: 'java.lang.Integer'}, 'aField': {refClazzName: "org.A"}}} },
-      { methodName: "#listVar", refClazz: { refClazzName: "org.WithList" } }
+      { methodName: "#listVar", refClazz: { refClazzName: "org.WithList" } },
+      { methodName: "#util", refClazz: { refClazzName: "org.Util" } }
     ])
   })
 
@@ -227,7 +235,10 @@ describe("expression suggester", () => {
     expect(suggestions).toEqual([{methodName: "fooString", refClazz: {refClazzName: "java.lang.String"} }])
   })
 
-
+  it("should support nested method invocations", () => {
+    const suggestions = expressionSuggester.suggestionsFor("#util.now(#other.quaxString.toUpperCase().)", {row: 0, column: "#util.now(#other.quaxString.toUpperCase().".length });
+    expect(suggestions).toEqual([{methodName: "toUpperCase", refClazz: {refClazzName: "java.lang.String"} }])
+  })
 })
 
 

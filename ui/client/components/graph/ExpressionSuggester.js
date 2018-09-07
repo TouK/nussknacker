@@ -100,9 +100,21 @@ export default class ExpressionSuggester {
   }
 
   _lastExpressionPartWithoutMethodParens = (value) => {
-    const valueCleaned = this._removeMethodParensFromProperty(value)
+    const withoutNestedParenthesis = value.substring(this._lastNonClosedParenthesisIndex(value) + 1, value.length);
+    const valueCleaned = withoutNestedParenthesis.replace(/\(.*\)/, "");
     return _.isEmpty(value) ? "" : "#" + _.last(_.split(valueCleaned, '#'))
-  }
+  };
+
+  _lastNonClosedParenthesisIndex = (value) => {
+    let nestingCounter = 0;
+    for (let i = value.length - 1; i >= 0; i--) {
+      if (value[i] === "(") nestingCounter -= 1;
+      else if (value[i] === ")") nestingCounter += 1;
+
+      if (nestingCounter < 0) return i;
+    }
+    return -1;
+  };
 
   _justTypedProperty = (value) => {
     return _.last(this._dotSeparatedToProperties(value))
@@ -114,10 +126,6 @@ export default class ExpressionSuggester {
 
   _dotSeparatedToProperties = (value) => {
     return _.split(value, ".")
-  }
-
-  _removeMethodParensFromProperty = (property) => {
-    return property.replace(/\(.*\)/, "")
   }
 
   _getAllVariables = (normalized) => {
