@@ -8,7 +8,7 @@ import cats.data.StateT
 import org.apache.commons.lang3.{ClassUtils, StringUtils}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
+import pl.touk.nussknacker.engine.api.{Documentation, ParamName, Hidden}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter}
 import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl
 
@@ -69,6 +69,7 @@ object EspTypeUtils {
                            (implicit settings: ClassExtractionSettings): Map[String, MethodInfo] = {
     val filteredMethods = clazz.getMethods
       .filterNot(m => Modifier.isStatic(m.getModifiers))
+      .filter(_.getAnnotation(classOf[Hidden]) == null)
       .filterNot(settings.isBlacklisted)
       .filter(m =>
         !blacklistedMethods.contains(m.getName) && !m.getName.contains("$")
@@ -99,6 +100,7 @@ object EspTypeUtils {
                           (implicit settings: ClassExtractionSettings): Map[String, MethodInfo] = {
     val interestingFields = clazz.getFields
       .filterNot(f => Modifier.isStatic(f.getModifiers))
+      .filter(_.getAnnotation(classOf[Hidden]) == null)
       .filterNot(settings.isBlacklisted)
       .filter(m =>
         !m.getName.contains("$")

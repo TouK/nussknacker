@@ -4,7 +4,7 @@ import java.util.regex.Pattern
 
 import org.scalatest.{FlatSpec, FunSuite, Matchers}
 import org.scalatest.prop.TableDrivenPropertyChecks._
-import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
+import pl.touk.nussknacker.engine.api.{Documentation, ParamName, Hidden}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, ClassMemberPatternPredicate}
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter}
@@ -117,6 +117,15 @@ class EspTypeUtilsSpec extends FunSuite with Matchers {
 
   }
 
+  test("should not discover hidden fields") {
+    val typeUtils = TypesInformationExtractor.clazzAndItsChildrenDefinition(List(ClazzRef[ClassWithHiddenFields]))(ClassExtractionSettings.Default)
+
+    typeUtils.find(_.clazzName == ClazzRef[ClassWithHiddenFields]) shouldBe Some(ClazzDefinition(ClazzRef[ClassWithHiddenFields], Map(
+      "normalField" -> MethodInfo(List(), ClazzRef[String], None),
+      "normalParam" -> MethodInfo(List(), ClazzRef[String], None)
+    )))
+  }
+
 
   case class ScalaSampleDocumentedClass() {
 
@@ -152,6 +161,17 @@ class EspTypeUtilsSpec extends FunSuite with Matchers {
 
     def data: Future[List[TestEmbedded]] = ???
 
+  }
+
+  case class ClassWithHiddenFields(@(Hidden @getter)imnothereCaseClassParam: String, normalParam: String) {
+
+    @Hidden
+    def imnothereMethod(par: String): String = par
+
+    @(Hidden @getter)
+    val imnothereField: String = ""
+
+    val normalField: String = ""
   }
 
   object ScalaSampleDocumentedClass {
