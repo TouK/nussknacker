@@ -34,7 +34,11 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData) extends FlinkP
 
   private val httpClient = LoggingDispatchClient(classOf[FlinkRestManager].getSimpleName,
     //we have to follow redirects to be able to use HA mode
-    Http.configure(_ setFollowRedirect true))
+    Http.configure(_
+      .setAllowPoolingConnections(true)
+      .setConnectionTTL(30000)
+      .setFollowRedirect(true))
+  )
 
   private val flinkUrl = dispatch.url(config.restUrl)
 
