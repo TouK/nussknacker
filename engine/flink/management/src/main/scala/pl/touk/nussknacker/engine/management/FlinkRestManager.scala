@@ -5,6 +5,7 @@ import java.io.File
 import argonaut._
 import Argonaut._
 import ArgonautShapeless._
+import com.ning.http.client.{AsyncCompletionHandler, Request, RequestBuilder}
 import com.ning.http.client.multipart.FilePart
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
@@ -18,7 +19,7 @@ import org.apache.flink.api.common.ExecutionConfig
 import pl.touk.nussknacker.engine.management.flinkRestModel.{DeployProcessRequest, GetSavepointStatusResponse, JobsResponse, SavepointTriggerResponse}
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 
 object FlinkRestManager {
@@ -32,21 +33,33 @@ object FlinkRestManager {
 
 class FlinkRestManager(config: FlinkConfig, modelData: ModelData) extends FlinkProcessManager(modelData, config.shouldVerifyBeforeDeploy.getOrElse(true)) with LazyLogging {
 
-  private val httpClient = LoggingDispatchClient(classOf[FlinkRestManager].getSimpleName,
-    //we have to follow redirects to be able to use HA mode
-    Http.configure(_
-      .setAllowPoolingConnections(true)
-      .setConnectionTTL(30000)
-      .setFollowRedirect(true))
-  )
+  private val httpClient = LoggingDispatchClient(classOf[FlinkRestManager].getSimpleName, Http)
 
   private val flinkUrl = dispatch.url(config.restUrl)
+
+  //We handle redirections manually, as dispatch/asynchttpclient has some problems (connection leaking with it in our use cases)
+  private def send[T](pair: (Request, FunctionHandler[T]))
+                (implicit executor: ExecutionContext): Future[T] = {
+    httpClient(pair._1, new AsyncCompletionHandler[Future[T]]() {
+
+      override def onCompleted(response: Res): Future[T] = {
+        if (response.getStatusCode / 100 == 3) {
+          val newLocation = response.getHeader("LOCATION")
+          val newRequest = new RequestBuilder(pair._1).setUrl(newLocation).build()
+          httpClient(newRequest, pair._2)
+        } else {
+          Future.successful(pair._2.onCompleted(response))
+        }
+      }
+    }).flatten
+
+  }
 
   private lazy val uploadedJarId : Future[String] = uploadCurrentJar()
 
   private def uploadCurrentJar(): Future[String] = {
     val filePart = new FilePart("jarfile", jarFile, "application/x-java-archive")
-    httpClient {
+    send {
       (flinkUrl / "jars" / "upload").POST.addBodyPart(filePart) OK utils.asJson[Json]
     } map { json =>
       new File(json.fieldOrEmptyString("filename").stringOrEmpty).getName
@@ -55,7 +68,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData) extends FlinkP
 
 
   override def findJobStatus(name: String): Future[Option[ProcessState]] = {
-    httpClient {
+    send {
       (flinkUrl / "jobs" / "overview").GET OK utils.asJson[JobsResponse]
     } map { jobs =>
       jobs
@@ -74,7 +87,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData) extends FlinkP
     if (timeoutLeft <= 0) {
       return Future.failed(new Exception(s"Failed to complete savepoint in time for $jobId and trigger $savepointId"))
     }
-    httpClient {
+    send {
       (flinkUrl / "jobs"/ jobId / "savepoints" / savepointId).GET OK utils.asJson[GetSavepointStatusResponse]
     }.flatMap { resp =>
       resp.operation.flatMap(_.location) match {
@@ -89,13 +102,13 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData) extends FlinkP
   }
 
   override protected def cancel(job: ProcessState): Future[Unit] = {
-    httpClient {
+    send {
       (flinkUrl / "jobs" / job.id).PATCH OK (_ => ())
     }
   }
 
   override protected def makeSavepoint(job: ProcessState, savepointDir: Option[String]): Future[String] = {
-    httpClient {
+    send {
       (flinkUrl / "jobs" / job.id / "savepoints").POST.setBody("""{"cancel-job": false}""") OK utils.asJson[SavepointTriggerResponse]
     }.flatMap { response =>
       waitForSavepoint(job.id, response.`request-id`)
@@ -108,7 +121,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData) extends FlinkP
       DeployProcessRequest(entryClass = mainClass, parallelism = ExecutionConfig.PARALLELISM_DEFAULT, savepointPath = savepointPath,
         programArgs = FlinkArgsEncodeHack.prepareProgramArgs(args).mkString(" "))
     uploadedJarId.flatMap { jarId =>
-     httpClient {
+      send {
         (flinkUrl / "jars" / jarId / "run").POST.setBody(program.asJson.spaces2) OK (_ => ())
      }
     }
