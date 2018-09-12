@@ -338,6 +338,11 @@ lazy val avroFlinkUtil = (project in engine("flink/avro-util")).
           ExclusionRule("log4j", "log4j"),
           ExclusionRule("org.slf4j", "slf4j-log4j12")
         ),
+        // it is workaround for missing VerifiableProperties class - see https://github.com/confluentinc/schema-registry/issues/553
+        "org.apache.kafka" %% "kafka" % kafkaV % "provided" excludeAll (
+          ExclusionRule("log4j", "log4j"),
+          ExclusionRule("org.slf4j", "slf4j-log4j12")
+        ),
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
         "org.apache.flink" % "flink-avro" % flinkV,
         "org.apache.flink" %% s"flink-connector-kafka-$kafkaMajorV" % flinkV % "test",
