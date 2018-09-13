@@ -118,7 +118,11 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData) extends FlinkP
 
   override protected def runProgram(processId: String, mainClass: String, args: List[String], savepointPath: Option[String]): Future[Unit] = {
     val program =
-      DeployProcessRequest(entryClass = mainClass, parallelism = ExecutionConfig.PARALLELISM_DEFAULT, savepointPath = savepointPath,
+      DeployProcessRequest(
+        entryClass = mainClass,
+        parallelism = ExecutionConfig.PARALLELISM_DEFAULT,
+        savepointPath = savepointPath,
+        allowNonRestoredState = true,
         programArgs = FlinkArgsEncodeHack.prepareProgramArgs(args).mkString(" "))
     uploadedJarId.flatMap { jarId =>
       send {
@@ -131,7 +135,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData) extends FlinkP
 
 object flinkRestModel {
 
-  case class DeployProcessRequest(entryClass: String, parallelism: Int, savepointPath: Option[String], programArgs: String)
+  case class DeployProcessRequest(entryClass: String, parallelism: Int, savepointPath: Option[String], programArgs: String, allowNonRestoredState: Boolean)
 
   case class SavepointTriggerResponse(`request-id`: String)
 
