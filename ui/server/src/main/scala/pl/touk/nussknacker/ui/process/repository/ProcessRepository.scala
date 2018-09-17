@@ -102,14 +102,14 @@ object ProcessRepository {
         createDate = DateUtils.toLocalDateTime(processVersion.createDate),
         user = processVersion.user,
         deployments = deployedVersionsPerEnv.collect { case (env, deployedVersion) if deployedVersion.processVersionId.contains(processVersion.id) =>
-          DeploymentEntry(env, deployedVersion.deployedAtTime,
+          DeploymentEntry(env, deployedVersion.deployedAtTime, deployedVersion.user,
             deployedVersion.buildInfo.flatMap(BuildInfo.parseJson).getOrElse(BuildInfo.empty))
         }.toList
       )
     }
   }
 
-  case class DeploymentEntry(environment: String, deployedAt: LocalDateTime, buildInfo: Map[String, String])
+  case class DeploymentEntry(environment: String, deployedAt: LocalDateTime, user: String, buildInfo: Map[String, String])
 
   case class ProcessNotFoundError(id: String) extends Exception(s"No process $id found") with NotFoundError
 
