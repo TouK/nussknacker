@@ -37,6 +37,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     Map("sampleEnricher" -> ObjectDefinition(List.empty, ClazzRef[SimpleRecord], List()), "withParamsService" -> ObjectDefinition(List(Parameter("par1",
       ClazzRef(classOf[String]))), ClazzRef[SimpleRecord], List())),
     Map("source" -> ObjectDefinition(List.empty, ClazzRef[SimpleRecord], List()),
+        "sourceWithParam" -> ObjectDefinition(List(Parameter("param", ClazzRef[Any])), ClazzRef[SimpleRecord], List()),
         "typedMapSource" -> ObjectDefinition(List(Parameter("type", ClazzRef[TypedMapDefinition])), ClazzRef[TypedMap], List())
     ),
     Map("sink" -> ObjectDefinition.noParam),
@@ -94,6 +95,20 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         ))
       )
     )
+  }
+
+  test("allow global variables in source definition") {
+    val correctProcess = EspProcessBuilder
+          .id("process1")
+          .exceptionHandler()
+          .source("id1", "sourceWithParam", "param" -> "#processHelper")
+          .sink("id2", "#input", "sink")
+
+    val compilationResult = validate(correctProcess, baseDefinition)
+
+    compilationResult.result should matchPattern {
+      case Valid(_) =>
+    }
   }
 
   test("find duplicated ids") {

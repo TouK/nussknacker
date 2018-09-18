@@ -9,6 +9,7 @@ import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.functions.RichMapFunction
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import org.apache.flink.configuration.{Configuration, QueryableStateOptions}
+import org.apache.flink.streaming.api.functions.TimestampAssigner
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor
 import org.apache.flink.streaming.api.scala._
@@ -69,8 +70,9 @@ object ProcessTestHelpers {
           timestampAssigner = Some(new AscendingTimestampExtractor[SimpleRecord] {
             override def extractAscendingTimestamp(element: SimpleRecord) = element.date.getTime
           }), Typed[SimpleRecord]
-        ))
-      ))
+        ))),
+        "intInputWithParam" -> WithCategories(new IntParamSourceFactory(exConfig))
+      )
 
       override def sinkFactories(config: Config) = Map(
         "monitor" -> WithCategories(SinkFactory.noParam(MonitorEmptySink)),
@@ -108,6 +110,18 @@ object ProcessTestHelpers {
       override def consume(exceptionInfo: EspExceptionInfo[NonTransientException]): Unit =
         RecordingExceptionHandler.add(exceptionInfo)
     })
+  }
+
+  class IntParamSourceFactory(exConfig: ExecutionConfig) extends FlinkSourceFactory[Int] {
+
+
+    @MethodToInvoke
+    def create(@ParamName("param") param: Int) = new CollectionSource[Int](config = exConfig,
+      list = List(param),
+      timestampAssigner = None, returnType = Typed[Int])
+
+    override def timestampAssigner: Option[TimestampAssigner[Int]] = None
+
   }
 
   object RecordingExceptionHandler extends WithDataList[EspExceptionInfo[_ <: Throwable]]

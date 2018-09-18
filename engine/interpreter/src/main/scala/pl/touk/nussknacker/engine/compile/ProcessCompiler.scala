@@ -98,6 +98,7 @@ protected trait ProcessCompilerBase {
 
   private val expressionCompiler = ExpressionCompiler.withoutOptimization(classLoader, expressionConfig)
 
+  //TODO: this should be refactored, now it's easy to forget about global vars in different places...
   private val globalVariableTypes = expressionConfig.globalVariables.mapValuesNow(_.returnType)
 
   protected def compile(process: EspProcess): CompilationResult[CompiledProcessParts] = {
@@ -244,9 +245,8 @@ protected trait ProcessCompilerBase {
                                      (implicit nodeId: NodeId,
                                       metaData: MetaData): ValidatedNel[ProcessCompilationError, T] = {
 
-
-
-    expressionCompiler.compileObjectParameters(parameterProviderT.parameters, parameters, Some(ValidationContext.empty)).andThen { compiledParams =>
+    val contextWithGlobalVars = ValidationContext(globalVariableTypes)
+    expressionCompiler.compileObjectParameters(parameterProviderT.parameters, parameters, Some(contextWithGlobalVars)).andThen { compiledParams =>
       validateParameters(parameterProviderT, parameters.map(_.name)).map { _ =>
         val factory = createFactory[T](parameterProviderT)
         factory.create(compiledParams)
