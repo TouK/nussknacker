@@ -112,7 +112,8 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => (Cla
     val streamMetaData = MetaDataExtractor.extractStreamMetaDataOrFail(metaData)
     env.setRestartStrategy(processWithDeps.exceptionHandler.restartStrategy)
     streamMetaData.parallelism.foreach(env.setParallelism)
-    env.enableCheckpointing(streamMetaData.checkpointIntervalDuration.getOrElse(checkpointInterval).toMillis)
+
+    configureCheckpoints(env, streamMetaData)
 
     val asyncExecutionContextPreparer = processWithDeps.asyncExecutionContextPreparer
 
@@ -246,6 +247,15 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => (Cla
         beforeAsync.flatMap(new SyncInterpretationFunction(compiledProcessWithDeps, node, validationContext, nextValidationContext))
       }.name(s"${metaData.id}-${node.id}-$name")
     }
+  }
+
+  private def configureCheckpoints(env: StreamExecutionEnvironment, streamMetaData: StreamMetaData): Unit = {
+    val checkpointIntervalToSetInMillis = streamMetaData.checkpointIntervalDuration.getOrElse(checkpointInterval).toMillis
+    env.enableCheckpointing(checkpointIntervalToSetInMillis)
+
+    //TODO: should this be configurable?
+    env.getCheckpointConfig.setMinPauseBetweenCheckpoints(checkpointIntervalToSetInMillis / 2)
+    env.getCheckpointConfig.setMaxConcurrentCheckpoints(1)
   }
 }
 

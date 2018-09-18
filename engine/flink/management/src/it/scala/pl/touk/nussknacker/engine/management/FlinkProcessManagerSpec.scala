@@ -40,8 +40,10 @@ class FlinkProcessManagerSpec extends FunSuite with Matchers with ScalaFutures w
     val process = SampleProcess.prepareProcess(processId)
 
     deployProcessAndWaitIfRunning(process, empty(process.id))
+    Thread.sleep(2000)
 
     deployProcessAndWaitIfRunning(process, empty(process.id))
+    Thread.sleep(2000)
 
     cancel(processId)
   }
@@ -56,8 +58,7 @@ class FlinkProcessManagerSpec extends FunSuite with Matchers with ScalaFutures w
     val kafkaProcess = SampleProcess.kafkaProcess(processId, inTopic)
 
 
-    val kafkaClient = new KafkaClient(config.getString("processConfig.kafka.kafkaAddress"),
-      config.getString("processConfig.kafka.zkAddress"))
+    val kafkaClient: KafkaClient = createKafkaClient
     logger.info("Kafka client created")
 
     kafkaClient.createTopic(outTopic, 1)
@@ -90,12 +91,11 @@ class FlinkProcessManagerSpec extends FunSuite with Matchers with ScalaFutures w
 
     val processEmittingOneElementAfterStart = StatefulSampleProcess.prepareProcess(processId)
 
-    val kafkaClient = new KafkaClient(config.getString("processConfig.kafka.kafkaAddress"),
-      config.getString("processConfig.kafka.zkAddress"))
+    val kafkaClient: KafkaClient = createKafkaClient
     kafkaClient.createTopic(outTopic, 1)
 
     deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId))
-    Thread.sleep(3000)
+    Thread.sleep(2000)
     deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId))
 
     val messages = kafkaClient.createConsumer().consume(outTopic).take(2).toList
@@ -113,8 +113,7 @@ class FlinkProcessManagerSpec extends FunSuite with Matchers with ScalaFutures w
 
     val processEmittingOneElementAfterStart = StatefulSampleProcess.prepareProcess(processId)
 
-    val kafkaClient = new KafkaClient(config.getString("processConfig.kafka.kafkaAddress"),
-      config.getString("processConfig.kafka.zkAddress"))
+    val kafkaClient: KafkaClient = createKafkaClient
 
     kafkaClient.createTopic(outTopic, 1)
 
@@ -138,12 +137,23 @@ class FlinkProcessManagerSpec extends FunSuite with Matchers with ScalaFutures w
 
   }
 
+  private def createKafkaClient = {
+    val kafkaClient = new KafkaClient(config.getString("processConfig.kafka.kafkaAddress"),
+      config.getString("processConfig.kafka.zkAddress"))
+    kafkaClient
+  }
+
   test("fail to redeploy if old is incompatible") {
     val processId = "redeployFail"
 
     val process = StatefulSampleProcess.prepareProcessStringWithStringState(processId)
 
+    val kafkaClient: KafkaClient = createKafkaClient
+    kafkaClient.createTopic(s"output-$processId", 1)
+
     deployProcessAndWaitIfRunning(process, empty(process.id))
+    Thread.sleep(2000)
+    logger.info("Starting to redeploy")
 
     val newMarshalled = ProcessMarshaller.toJson(StatefulSampleProcess.prepareProcessWithLongState(processId), PrettyParams.spaces2)
     val exception = processManager.deploy(empty(process.id), GraphProcess(newMarshalled), None).failed.futureValue
