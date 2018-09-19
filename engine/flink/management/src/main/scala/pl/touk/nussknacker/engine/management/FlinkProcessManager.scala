@@ -34,7 +34,7 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
     import cats.implicits._
 
     val stoppingResult = for {
-      maybeOldJob <- OptionT(findJobStatus(processId))
+      maybeOldJob <- OptionT(findJobStatus(processId).map(_.filter(_.isRunning)))
       maybeSavePoint <- {
         { logger.debug(s"Deploying $processId. Status: $maybeOldJob") }
         OptionT.liftF(stopSavingSavepoint(processVersion, maybeOldJob, processDeploymentData))
@@ -54,8 +54,12 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
 
   override def savepoint(processId: String, savepointDir: String): Future[String] = {
     findJobStatus(processId).flatMap {
-      case Some(processState) => makeSavepoint(processState, Some(savepointDir))
-      case None => Future.failed(new Exception("Process not found"))
+      case Some(state) if state.isRunning =>
+        makeSavepoint(state, Option(savepointDir))
+      case Some(state) =>
+        Future.failed(new IllegalStateException(s"Job $processId is not running, status: ${state.status}"))
+      case None =>
+        Future.failed(new IllegalStateException(s"Job $processId not found"))
     }
   }
 
@@ -65,8 +69,13 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
 
   override def cancel(name: String): Future[Unit] = {
     findJobStatus(name).flatMap {
-      case Some(state) => cancel(state)
-      case None => Future.failed(new IllegalStateException(s"Job $name not found"))
+      case Some(state) if state.isRunning =>
+        cancel(state)
+      case Some(state) =>
+        logger.warn(s"Trying to cancel $name which is not running but in status: ${state.status}")
+        Future.successful(())
+      case None =>
+        Future.failed(new IllegalStateException(s"Job $name not found"))
     }
   }
 
