@@ -213,12 +213,11 @@ lazy val standaloneSample = (project in engine("standalone/engine/sample")).
     assemblyJarName in assembly := "standaloneSample.jar"
   ).dependsOn(util, standaloneApi, standaloneUtil)
 
-val managementSampleName = "nussknacker-management-sample"
 
 lazy val managementSample = (project in engine("flink/management/sample")).
   settings(commonSettings).
   settings(
-    name := managementSampleName,
+    name := "nussknacker-management-sample"  ,
     assemblyJarName in assembly := "managementSample.jar",
     assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false, level = Level.Debug),
     test in assembly := {},
@@ -237,7 +236,7 @@ lazy val managementSample = (project in engine("flink/management/sample")).
 lazy val managementJavaSample = (project in engine("flink/management/java_sample")).
   settings(commonSettings).
   settings(
-    name := managementSampleName,
+    name := "nussknacker-management-java-sample"  ,
     assemblyJarName in assembly := "managementJavaSample.jar",
     assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false, level = Level.Debug),
     test in assembly := {},
