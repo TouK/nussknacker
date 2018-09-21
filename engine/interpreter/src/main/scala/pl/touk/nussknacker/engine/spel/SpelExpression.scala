@@ -112,7 +112,9 @@ class SpelExpressionParser(expressionFunctions: Map[String, Method], expressionI
     scalaPropertyAccessor,
     staticPropertyAccessor,
     MapPropertyAccessor,
-    TypedMapPropertyAccessor
+    TypedMapPropertyAccessor,
+    // it can add performance overhead so it will be better to keep it on the bottom
+    MapLikePropertyAccessor
   )
 
   private val validator = new SpelExpressionValidator()(classLoader)
@@ -272,6 +274,22 @@ object SpelExpressionParser extends LazyLogging {
     override def getSpecificTargetClasses = Array(classOf[TypedMap])
   }
 
+  // mainly for avro's GenericRecord purpose
+  object MapLikePropertyAccessor extends PropertyAccessor with ReadOnly {
+
+    override def canRead(context: EvaluationContext, target: scala.Any, name: String) =
+      getFieldByNameMethod(target).isDefined
+
+    override def read(context: EvaluationContext, target: scala.Any, name: String) =
+      new TypedValue(getFieldByNameMethod(target).get.invoke(target, name))
+
+    private def getFieldByNameMethod(target: Any) = {
+      target.getClass.getMethods.find(m => m.getName == "get" && (m.getParameterTypes sameElements Array(classOf[String])))
+    }
+
+    override def getSpecificTargetClasses = null
+  }
+
   trait Caching extends CachingBase { self: PropertyAccessor =>
 
     override def canRead(context: EvaluationContext, target: scala.Any, name: String) =
@@ -318,4 +336,3 @@ object SpelExpressionParser extends LazyLogging {
   }
 
 }
-

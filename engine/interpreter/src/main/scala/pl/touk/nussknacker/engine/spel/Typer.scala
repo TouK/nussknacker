@@ -142,7 +142,7 @@ private[spel] class Typer(implicit classLoader: ClassLoader) {
         current.headOption match {
         case None => invalid(s"Non reference '${e.toStringAST}' occurred. Maybe you missed '#' in front of it?")
         case Some(Unknown) => Valid(Unknown)
-        case Some(typed: Typed) if typed.canBeSubclassOf(ClazzRef[java.util.Map[_, _]]) => Valid(Unknown)
+        case Some(typed: Typed) if typed.canHaveAnyPropertyOrField => Valid(Unknown)
         case Some(typed: TypedMapTypingResult) =>
           typed.fields.get(e.getName) match {
             case None => invalid(s"There is no property '${e.getName}' in ${typed.display}")

@@ -8,7 +8,6 @@ It also provides extension for `KafkaSourceFactory` (`KafkaAvroSourceFactory`) w
 
 Some features that would be nice to have:
 * better SPEL support
-  * field accessor: `#obj.field` instead of `#obj.get('field')`
   * ability to create new record - for example from Map of fields
 * typed avro factory
   * similar to *kafka-typed-json* support of type definition (see *generic* module)

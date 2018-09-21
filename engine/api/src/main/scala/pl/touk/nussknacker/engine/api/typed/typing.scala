@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.api.typed
 
+import java.util
+
 import cats.kernel.CommutativeMonoid
 import org.apache.commons.lang3.ClassUtils
 
@@ -8,6 +10,8 @@ import scala.reflect.ClassTag
 object typing {
 
   sealed trait TypingResult {
+
+    def canHaveAnyPropertyOrField: Boolean
 
     def canBeSubclassOf(clazzRef: ClazzRef) : Boolean
 
@@ -26,11 +30,15 @@ object typing {
 
     override def canBeSubclassOf(clazzRef: ClazzRef): Boolean = Typed[java.util.Map[_, _]].canBeSubclassOf(clazzRef)
 
+    override def canHaveAnyPropertyOrField: Boolean = false
+
     override def display: String = s"map with fields:${fields.map { case (name, typ) => s"$name of type ${typ.display}"}.mkString(", ")}"
   }
 
   case object Unknown extends TypingResult {
     override def canBeSubclassOf(clazzRef: ClazzRef): Boolean = true
+
+    override def canHaveAnyPropertyOrField: Boolean = true
 
     override val display = "unknown"
   }
@@ -38,6 +46,16 @@ object typing {
   case class Typed(possibleTypes: Set[TypedClass]) extends TypingResult {
     override def canBeSubclassOf(clazzRef: ClazzRef): Boolean = {
       possibleTypes.exists(_.canBeSubclassOf(clazzRef))
+    }
+
+    override def canHaveAnyPropertyOrField: Boolean = {
+      canBeSubclassOf(ClazzRef[util.Map[_, _]]) ||
+        // mainly for avro's GenericRecord purpose
+        hasGetFieldByNameMethod(possibleTypes)
+    }
+
+    private def hasGetFieldByNameMethod(possibleTypes: Set[TypedClass]) = {
+      possibleTypes.exists(tc => tc.klass.getMethods.exists(m => m.getName == "get" && (m.getParameterTypes sameElements Array(classOf[String]))))
     }
 
     override val display : String = possibleTypes.toList match {
@@ -50,7 +68,6 @@ object typing {
     private def printClass(h: TypedClass) = h.klass.getName
 
   }
-
   //TODO: in near future should be replaced by ClazzRef!
   case class TypedClass(klass: Class[_], params: List[TypingResult]) {
     //TOOD: params?

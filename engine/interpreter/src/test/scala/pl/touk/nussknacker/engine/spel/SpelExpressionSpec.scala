@@ -231,6 +231,13 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
 
   }
 
+  it should "allow access to objects with get method in dot notation" in {
+    val withObjVar = ctx.withVariable("obj", new SampleObjectWithGetMethod(Map("key1" -> "value1", "key2" -> 20)))
+
+    parseOrFail[String]("#obj.key1", withObjVar).evaluateSync[String](withObjVar, dumbLazyProvider).value should equal("value1")
+    parseOrFail[Integer]("#obj.key2", withObjVar).evaluateSync[Integer](withObjVar, dumbLazyProvider).value should equal(20)
+  }
+
   it should "allow access to statics" in {
     val withMapVar = ctx.withVariable("longClass", classOf[java.lang.Long])
     parseOrFail[Any]("#longClass.valueOf('44')", withMapVar)
@@ -413,9 +420,14 @@ case class SampleValue(value: Int, anyObject: Any = "") extends UsingLazyValues 
 
 }
 
-
 object SampleGlobalObject {
   val constant = 4
   def add(a: Int, b: Int): Int = a + b
   def one() = 1
+}
+
+class SampleObjectWithGetMethod(map: Map[String, Any]) {
+
+  def get(field: String): Any = map.getOrElse(field, throw new IllegalArgumentException(s"No such field: $field"))
+
 }

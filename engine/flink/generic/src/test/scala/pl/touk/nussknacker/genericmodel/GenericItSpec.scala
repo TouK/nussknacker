@@ -31,20 +31,27 @@ class GenericItSpec extends FunSpec with BeforeAndAfterAll with Matchers with Ev
       .parallelism(1)
       .exceptionHandler()
       .source("start", "kafka-avro", "topic" -> s"'$InTopic'")
-      // TODO: add support for #input.first
-      .filter("name-filter", "#input.get('first') == 'Jan'")
+      .filter("name-filter", "#input.first == 'Jan'")
       // TODO: add support for building new records from scratch
       .sink("end", "#input","kafka-avro", "topic" -> s"'$OutTopic'")
 
 
   it("should read avro object from kafka, filter and save it to kafka") {
-    val givenObj = {
+    val givenMatchingObj = {
       val r = new GenericData.Record(RecordSchema)
       r.put("first", "Jan")
       r.put("last", "Kowalski")
       r
     }
-    send(givenObj, InTopic)
+    send(givenMatchingObj, InTopic)
+    val givenNotMatchingObj = {
+      val r = new GenericData.Record(RecordSchema)
+      r.put("first", "Zenon")
+      r.put("last", "Nowak")
+      r
+    }
+    send(givenNotMatchingObj, InTopic)
+
     register(process)
 
     env.execute(process.id)
@@ -53,7 +60,7 @@ class GenericItSpec extends FunSpec with BeforeAndAfterAll with Matchers with Ev
     val processed = consumer.consume(OutTopic).map { record =>
       valueDeserializer.deserialize(OutTopic, record.message())
     }.take(1).toList
-    processed shouldEqual List(givenObj)
+    processed shouldEqual List(givenMatchingObj)
   }
 
   private lazy val creator = new GenericConfigCreator {
