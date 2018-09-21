@@ -83,7 +83,7 @@ private[spel] class Typer(implicit classLoader: ClassLoader) {
           invalid("Currently inline maps with not literal keys (e.g. expressions as keys) are not supported")
         } else {
           values.map(typeExpression(validationContext, _, current)).sequence.map { typedValues =>
-            TypedMapTypingResult(literalKeys.zip(typedValues).toMap)
+            TypedObjectTypingResult(literalKeys.zip(typedValues).toMap)
           }
         }
       case e: IntLiteral => Valid(Typed[java.lang.Integer])
@@ -143,7 +143,7 @@ private[spel] class Typer(implicit classLoader: ClassLoader) {
         case None => invalid(s"Non reference '${e.toStringAST}' occurred. Maybe you missed '#' in front of it?")
         case Some(Unknown) => Valid(Unknown)
         case Some(typed: Typed) if typed.canHaveAnyPropertyOrField => Valid(Unknown)
-        case Some(typed: TypedMapTypingResult) =>
+        case Some(typed: TypedObjectTypingResult) =>
           typed.fields.get(e.getName) match {
             case None => invalid(s"There is no property '${e.getName}' in ${typed.display}")
             case Some(result) => Valid(result)

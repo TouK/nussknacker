@@ -6,7 +6,7 @@ import cats.instances.list._
 import cats.instances.option._
 import cats.kernel.Semigroup
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedMapTypingResult, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError._
 import pl.touk.nussknacker.engine.compile.dumb._
 import pl.touk.nussknacker.engine.compiledgraph.node.{Node, SubprocessEnd}
@@ -128,7 +128,7 @@ private[compile] trait PartSubGraphCompilerBase {
       }
     case graph.node.VariableBuilder(id, varName, fields, _) =>
       val fieldsCompiled = fields.map(f => compile(f, ctx)).unzip
-      val fieldsTyped = (TypedMapTypingResult(fieldsCompiled._1.toMap), fieldsCompiled._2.sequence)
+      val fieldsTyped = (TypedObjectTypingResult(fieldsCompiled._1.toMap), fieldsCompiled._2.sequence)
 
       val (newCtx, compiledVariable) = withVariable(varName, ctx, fieldsTyped)
 

@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.sql.columnmodel
 
 import cats.data.Validated
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedMapTypingResult, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.sql.TypedList
 import pl.touk.nussknacker.engine.sql.columnmodel.CreateColumnModel.NotAListMessage
 
@@ -12,7 +12,7 @@ class CreateColumnModelTest extends FunSuite with Matchers {
     CreateColumnModel(Unknown) shouldEqual invalid(Unknown)
   }
   test("throw NotAList for TypedMapTypingResult") {
-    val result = TypedMapTypingResult(Map.empty[String, TypingResult])
+    val result = TypedObjectTypingResult(Map.empty[String, TypingResult])
     CreateColumnModel(result) shouldEqual invalid(result)
   }
 

@@ -4,8 +4,8 @@ import java.sql._
 import java.util.UUID
 
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.typed.typing.TypedMapTypingResult
-import pl.touk.nussknacker.engine.api.typed.{ClazzRef, TypedMap, TypedMapDefinition, typing}
+import pl.touk.nussknacker.engine.api.typed.typing.TypedObjectTypingResult
+import pl.touk.nussknacker.engine.api.typed.{ClazzRef, TypedMap, TypedObjectDefinition, typing}
 
 import scala.collection.mutable
 
@@ -90,7 +90,7 @@ class HsqlSqlQueryableDataBase(query: String, tables: Map[String, ColumnModel]) 
 
   override def getTypingResult: typing.TypingResult = {
     val metaData = queryStatement.getMetaData
-    TypedMapTypingResult(toTypedMapDefinition(metaData))
+    TypedObjectTypingResult(toTypedMapDefinition(metaData))
   }
 
   override def close(): Unit = {
@@ -138,7 +138,7 @@ private object HsqlSqlQueryableDataBase extends LazyLogging {
     result.toList
   }
 
-  private def toTypedMapDefinition(meta: ResultSetMetaData): TypedMapDefinition = {
+  private def toTypedMapDefinition(meta: ResultSetMetaData): TypedObjectDefinition = {
     val cols = (1 to meta.getColumnCount).map { idx =>
       val name = meta.getColumnLabel(idx)
       //more mappings?
@@ -161,6 +161,6 @@ private object HsqlSqlQueryableDataBase extends LazyLogging {
       name -> typ
     }.toMap
 
-    TypedMapDefinition(cols)
+    TypedObjectDefinition(cols)
   }
 }

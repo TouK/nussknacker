@@ -7,7 +7,7 @@ import cats.data._
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedMapTypingResult, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.sql.{ColumnModel, SqlType}
 
 object CreateColumnModel {
@@ -16,7 +16,7 @@ object CreateColumnModel {
     getListInnerType(typingResult).andThen {
       case typed: Typed =>
         TypedClassColumnModel.create(typed).valid
-      case typedMap: TypedMapTypingResult =>
+      case typedMap: TypedObjectTypingResult =>
         TypedMapColumnModel.create(typedMap).valid
       case Unknown =>
         UnknownInner.invalid

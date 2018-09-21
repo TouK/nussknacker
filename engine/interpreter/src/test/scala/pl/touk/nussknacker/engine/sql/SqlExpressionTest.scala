@@ -8,7 +8,7 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.lazyy.{LazyContext, LazyValuesProvider}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedMapTypingResult, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.api.typed.{ClazzRef, TypedMap}
 import pl.touk.nussknacker.engine.compile.ValidationContext
 

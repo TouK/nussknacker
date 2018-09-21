@@ -217,7 +217,7 @@ object TestSources {
           }
         }
 
-        override val returnType: typing.TypingResult = TypingUtils.typedMapDefinitionFromParameters(definition)
+        override val returnType: typing.TypingResult = TypingUtils.typeMapDefinition(definition)
 
       }
     }

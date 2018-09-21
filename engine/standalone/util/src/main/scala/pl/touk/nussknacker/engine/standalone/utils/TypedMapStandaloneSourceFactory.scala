@@ -15,7 +15,7 @@ class TypedMapStandaloneSourceFactory extends StandaloneSourceFactory[TypedMap] 
     //TODO: type conversions??
     override def parse(parameters: Map[String, List[String]]): TypedMap = TypedMap(parameters.mapValues(_.head))
 
-    override def returnType: typing.TypingResult = TypingUtils.typedMapDefinitionFromParameters(definition)
+    override def returnType: typing.TypingResult = TypingUtils.typeMapDefinition(definition)
 
     override def testDataParser: TestDataParser[TypedMap] = new QueryStringTestDataParser
   }

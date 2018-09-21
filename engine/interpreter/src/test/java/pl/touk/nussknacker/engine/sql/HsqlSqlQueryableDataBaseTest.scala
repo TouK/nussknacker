@@ -3,7 +3,7 @@ import SqlType._
 
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedMapTypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 
 class HsqlSqlQueryableDataBaseTest extends FunSuite with Matchers {
 

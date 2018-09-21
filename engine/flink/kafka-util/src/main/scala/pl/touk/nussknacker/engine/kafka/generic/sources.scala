@@ -27,7 +27,7 @@ object sources {
                @ParamName("type") definition: java.util.Map[String, _]): Source[TypedMap] with TestDataGenerator = {
       val schema = new KeyedDeserializationSchemaWrapper(JsonTypedMapDeserializaion)
       new KafkaSource(consumerGroupId = processMetaData.id, List(topic), schema, None) with ReturningType {
-        override def returnType: typing.TypingResult = TypingUtils.typedMapDefinitionFromParameters(definition)
+        override def returnType: typing.TypingResult = TypingUtils.typeMapDefinition(definition)
       }
     }
   }

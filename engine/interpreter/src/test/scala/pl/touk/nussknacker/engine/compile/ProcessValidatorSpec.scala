@@ -7,11 +7,11 @@ import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.{MetaData, Service, StreamMetaData}
 import pl.touk.nussknacker.engine.api.lazyy.ContextWithLazyValuesProvider
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, WithCategories}
-import pl.touk.nussknacker.engine.api.typed.{ClazzRef, TypedMap, TypedMapDefinition}
+import pl.touk.nussknacker.engine.api.typed.{ClazzRef, TypedMap, TypedObjectDefinition}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError._
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedMapTypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectDefinition, ObjectWithMethodDef, Parameter}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ExpressionDefinition, ProcessDefinition}
@@ -38,7 +38,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       ClazzRef(classOf[String]))), ClazzRef[SimpleRecord], List())),
     Map("source" -> ObjectDefinition(List.empty, ClazzRef[SimpleRecord], List()),
         "sourceWithParam" -> ObjectDefinition(List(Parameter("param", ClazzRef[Any])), ClazzRef[SimpleRecord], List()),
-        "typedMapSource" -> ObjectDefinition(List(Parameter("type", ClazzRef[TypedMapDefinition])), ClazzRef[TypedMap], List())
+        "typedMapSource" -> ObjectDefinition(List(Parameter("type", ClazzRef[TypedObjectDefinition])), ClazzRef[TypedMap], List())
     ),
     Map("sink" -> ObjectDefinition.noParam),
 
@@ -87,9 +87,9 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       "sampleProcessor2" -> Map("input" -> Typed[SimpleRecord], "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass))),
       "bv1" -> Map("input" -> Typed[SimpleRecord], "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass)), "out" -> Typed[SimpleRecord]),
       "id2" -> Map("input" -> Typed[SimpleRecord], "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass)), "out" -> Typed[SimpleRecord],
-        "vars" -> TypedMapTypingResult(Map(
+        "vars" -> TypedObjectTypingResult(Map(
           "v1" -> Typed[Integer],
-          "mapVariable" -> TypedMapTypingResult(Map("Field1" -> Typed[String], "Field2" -> Typed[String], "Field3" -> Typed[BigDecimal])),
+          "mapVariable" -> TypedObjectTypingResult(Map("Field1" -> Typed[String], "Field2" -> Typed[String], "Field3" -> Typed[BigDecimal])),
           "spelVariable" ->  Typed(ClazzRef[Boolean])
 
         ))

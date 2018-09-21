@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.api.lazyy.{LazyContext, LazyValuesProvider, Us
 import pl.touk.nussknacker.engine.api.typed.{ClazzRef, TypedMap}
 import pl.touk.nussknacker.engine.compile.ValidationContext
 import pl.touk.nussknacker.engine.compiledgraph.expression.{Expression, ExpressionParseError, ValueWithLazyContext}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedMapTypingResult, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError.NodeId
 
 import scala.collection.JavaConverters._
@@ -385,7 +385,7 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
     implicit val nid = NodeId("")
     val ctxWithMap = ValidationContext
       .empty
-      .withVariable("input", TypedMapTypingResult(Map("str" -> Typed[String], "lon" -> Typed[Long]))).toOption.get
+      .withVariable("input", TypedObjectTypingResult(Map("str" -> Typed[String], "lon" -> Typed[Long]))).toOption.get
 
 
     parse[String]("#input.str", ctxWithMap) should be ('valid)
@@ -399,7 +399,7 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
     implicit val nid = NodeId("")
     val valCtxWithMap = ValidationContext
       .empty
-      .withVariable("input", TypedMapTypingResult(Map("str" -> Typed[String], "lon" -> Typed[Long]))).toOption.get
+      .withVariable("input", TypedObjectTypingResult(Map("str" -> Typed[String], "lon" -> Typed[Long]))).toOption.get
 
     val ctx = Context("").withVariable("input", TypedMap(Map("str" -> "aaa", "lon" -> 3444)))
 
@@ -424,6 +424,7 @@ object SampleGlobalObject {
   val constant = 4
   def add(a: Int, b: Int): Int = a + b
   def one() = 1
+  def identityMap(map: java.util.Map[String, Any]): java.util.Map[String, Any] = map
 }
 
 class SampleObjectWithGetMethod(map: Map[String, Any]) {

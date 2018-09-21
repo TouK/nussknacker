@@ -18,8 +18,8 @@ import org.springframework.expression.spel.{SpelCompilerMode, SpelParserConfigur
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.lazyy.{ContextWithLazyValuesProvider, LazyContext, LazyValuesProvider}
-import pl.touk.nussknacker.engine.api.typed.{ClazzRef, TypedMap, TypedMapDefinition}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.api.typed.{ClazzRef, TypedMap}
 import pl.touk.nussknacker.engine.compile.ValidationContext
 import pl.touk.nussknacker.engine.compiledgraph.expression.{ExpressionParseError, ExpressionParser, ValueWithLazyContext}
 import pl.touk.nussknacker.engine.functionUtils.CollectionUtils

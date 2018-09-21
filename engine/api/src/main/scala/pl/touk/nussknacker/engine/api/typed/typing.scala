@@ -19,20 +19,25 @@ object typing {
 
   }
 
-  object TypedMapTypingResult {
+  object TypedObjectTypingResult {
 
-    def apply(definition: TypedMapDefinition) : TypedMapTypingResult
+    def apply(definition: TypedObjectDefinition): TypedObjectTypingResult =
     //we don't use mapValues here to avoid lazy evaluation that crashes during serialization...
-      = TypedMapTypingResult(definition.fields.map { case (k, v) => (k, Typed(v))})
+      TypedObjectTypingResult(definition.fields.map { case (k, v) => (k, Typed(v))})
+
+    def apply(fields: Map[String, TypingResult]): TypedObjectTypingResult =
+      TypedObjectTypingResult(fields, TypedClass[java.util.Map[_, _]])
+
   }
 
-  case class TypedMapTypingResult(fields: Map[String, TypingResult]) extends TypingResult {
+  case class TypedObjectTypingResult(fields: Map[String, TypingResult], objType: TypedClass) extends TypingResult {
 
-    override def canBeSubclassOf(clazzRef: ClazzRef): Boolean = Typed[java.util.Map[_, _]].canBeSubclassOf(clazzRef)
+    override def canBeSubclassOf(clazzRef: ClazzRef): Boolean = objType.canBeSubclassOf(clazzRef)
 
     override def canHaveAnyPropertyOrField: Boolean = false
 
-    override def display: String = s"map with fields:${fields.map { case (name, typ) => s"$name of type ${typ.display}"}.mkString(", ")}"
+    override def display: String = s"object with fields:${fields.map { case (name, typ) => s"$name of type ${typ.display}"}.mkString(", ")}"
+
   }
 
   case object Unknown extends TypingResult {
