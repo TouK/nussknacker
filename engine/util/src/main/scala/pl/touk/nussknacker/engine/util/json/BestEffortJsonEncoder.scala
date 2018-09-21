@@ -8,6 +8,8 @@ import pl.touk.nussknacker.engine.api.Displayable
 
 case class BestEffortJsonEncoder(failOnUnkown: Boolean, highPriority: PartialFunction[Any, Json] = Map()) extends Codecs {
 
+  import collection.convert.decorateAsScala._
+
   private val safeString = safeJson[String](jString(_))
   private val safeLong = safeJson[Long](jNumber)
   private val safeInt = safeJson[Int](jNumber)
@@ -26,6 +28,10 @@ case class BestEffortJsonEncoder(failOnUnkown: Boolean, highPriority: PartialFun
       case a: Number => safeNumber(a.doubleValue())
       case a: LocalDateTime => a.asJson
       case a: Displayable => a.display
+      case a: scala.collection.Map[String@unchecked, _] => encodeMap(a)
+      case a: java.util.Map[String@unchecked, _] => encodeMap(a.asScala)
+      case a: Traversable[_] => jArray(a.map(encode).toList)
+      case a: java.util.Collection[_] => jArray(a.asScala.map(encode).toList)
       case _ if !failOnUnkown => safeString(any.toString)
       case a => throw new IllegalArgumentException(s"Invalid type: ${a.getClass}")
     })
@@ -33,6 +39,12 @@ case class BestEffortJsonEncoder(failOnUnkown: Boolean, highPriority: PartialFun
   private def safeJson[T](fun: T => Json) = (value: T) => Option(value) match {
     case Some(realValue) => fun(realValue)
     case None => jNull
+  }
+
+  private def encodeMap(map: scala.collection.Map[String, _]) = {
+    jObjectFields(map.toSeq.map {
+      case (k, v) => k -> encode(v)
+    }: _*)
   }
 
 }
