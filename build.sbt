@@ -638,3 +638,4 @@ lazy val ui = (project in file("ui/server"))
 releasePublishArtifactsAction := PgpKeys.publishSigned.value
 
 addCommandAlias("assemblySamples", ";managementSample/assembly;standaloneSample/assembly")
+
