@@ -6,9 +6,9 @@ import argonaut.{DecodeJson, DecodeResult, Json}
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{FlatSpec, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.DisplayableAsJson
-import pl.touk.nussknacker.engine.management.FlinkModelData
+import pl.touk.nussknacker.engine.management.FlinkProcessManagerProvider
 import pl.touk.nussknacker.ui.api.ServiceRoutes.JsonThrowable
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
+import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import argonaut._
 import Argonaut._
@@ -24,8 +24,8 @@ class ServiceRoutesSpec extends FunSuite with Matchers with ScalatestRouteTest w
   private implicit val ec = scala.concurrent.ExecutionContext.Implicits.global
   val category1Deploy = Map("Category1" -> Set(Permission.Deploy))
   private implicit val user = LoggedUser("admin", category1Deploy)
-  private val modelData = FlinkModelData(ConfigFactory.load())
-  private val serviceRoutes = new ServiceRoutes(Map(ProcessingType.Streaming -> modelData))
+  private val modelData = FlinkProcessManagerProvider.defaultModelData(ConfigFactory.load())
+  private val serviceRoutes = new ServiceRoutes(Map(TestProcessingTypes.Streaming -> modelData))
 
   implicit val queryResultDecoder = DecodeJson[QueryResult] { c =>
     for {

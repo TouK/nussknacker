@@ -3,9 +3,11 @@ package pl.touk.nussknacker.engine.management
 import java.io.File
 
 import argonaut.PrettyParams
+import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.ModelData.ClasspathConfig
+import pl.touk.nussknacker.engine.{ModelData, ProcessManagerProvider, ProcessingTypeConfig}
+import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData, TypeSpecificData}
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
 import pl.touk.nussknacker.engine.api.deployment._
 
@@ -122,5 +124,49 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
 
   protected def runProgram(processId: String, mainClass: String, args: List[String], savepointPath: Option[String]): Future[Unit]
 
+
+}
+
+class FlinkProcessManagerProvider extends ProcessManagerProvider {
+
+  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+  import net.ceedubs.ficus.Ficus._
+
+
+  override def createProcessManager(modelData: ModelData, config: Config): ProcessManager = {
+    //FIXME: how to do it easier??
+    val flinkConfig = ConfigFactory.empty().withValue("root", config.root()).as[FlinkConfig]("root")
+    new FlinkRestManager(flinkConfig, modelData)
+  }
+
+  override def name: String = "flinkStreaming"
+
+  override def emptyProcessMetadata(isSubprocess: Boolean): TypeSpecificData
+    = StreamMetaData(parallelism = if (isSubprocess) None else Some(1))
+
+  override def supportsSignals: Boolean = true
+
+  override def supportsQueryableState: Boolean = true
+}
+
+object FlinkProcessManagerProvider {
+
+  import net.ceedubs.ficus.Ficus._
+  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+  import pl.touk.nussknacker.engine.util.config.FicusReaders._
+
+  def defaultTypeConfig(config: Config): ProcessingTypeConfig = {
+    ProcessingTypeConfig("flinkStreaming",
+      config.as[ClasspathConfig]("flinkConfig").urls,
+      config.getConfig("flinkConfig"),
+      config.getConfig("processConfig"))
+  }
+
+  def defaultModelData(config: Config): ModelData = defaultTypeConfig(config).toModelData
+
+  def defaultProcessManager(config: Config): ProcessManager = {
+    val typeConfig = defaultTypeConfig(config)
+    new FlinkProcessManagerProvider().createProcessManager(typeConfig.toModelData, typeConfig.engineConfig)
+  }
 
 }

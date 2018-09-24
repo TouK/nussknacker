@@ -8,7 +8,7 @@ import pl.touk.nussknacker.ui.db.EspTables._
 import pl.touk.nussknacker.ui.db.entity.ProcessDeploymentInfoEntity.DeployedProcessVersionEntityData
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessEntityData
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessType.ProcessType
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
+import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.ui.db.entity.{ProcessEntity, ProcessVersionEntity}
 import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntity.ProcessVersionEntityData
 import pl.touk.nussknacker.ui.process.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}

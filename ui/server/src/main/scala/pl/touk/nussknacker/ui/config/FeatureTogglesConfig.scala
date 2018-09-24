@@ -16,8 +16,7 @@ case class FeatureTogglesConfig(development: Boolean,
                                 commentSettings: Option[CommentSettings],
                                 deploySettings: Option[DeploySettings],
                                 attachments: Option[String],
-                                queryableStateProxyUrl: Option[String],
-                                additionalPropertiesLabels: Map[String, String] = Map.empty
+                                queryableStateProxyUrl: Option[String]
 )
 
 object FeatureTogglesConfig extends LazyLogging{
@@ -40,8 +39,6 @@ object FeatureTogglesConfig extends LazyLogging{
     val commentSettings = parseOptionalConfig[CommentSettings](config, "commentSettings")
     val deploySettings = parseOptionalConfig[DeploySettings](config, "deploySettings")
     val attachments = parseOptionalConfig[String](config, "attachmentsPath")
-    val additionalPropertiesLabels = config.getAs[Map[String, String]]("processConfig.additionalFields.propertiesLabels").getOrElse(Map.empty)
-
     //TODO: unnecessary duplication?
     val queryableStateProxyUrl = parseOptionalConfig[String](config, "flinkConfig.queryableStateProxyUrl")
 
@@ -56,8 +53,7 @@ object FeatureTogglesConfig extends LazyLogging{
       deploySettings = deploySettings,
       environmentAlert = environmentAlert,
       attachments = attachments,
-      queryableStateProxyUrl = queryableStateProxyUrl,
-      additionalPropertiesLabels = additionalPropertiesLabels
+      queryableStateProxyUrl = queryableStateProxyUrl
     )
   }
 

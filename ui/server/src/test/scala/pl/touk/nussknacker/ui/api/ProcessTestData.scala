@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.{ProcessType, ProcessingType}
+import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessType
 import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.{Edge, NodeAdditionalFields, ProcessAdditionalFields}
 import pl.touk.nussknacker.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
@@ -25,6 +25,7 @@ import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{BaseProcessD
 import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessRepository, SubprocessResolver}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.ObjectProcessDefinition
+import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 
 object ProcessTestData {
 
@@ -70,8 +71,8 @@ object ProcessTestData {
 
   def toValidatedDisplayable(espProcess: EspProcess) : ValidatedDisplayableProcess =
     ProcessConverter
-     .toDisplayable(ProcessCanonizer.canonize(espProcess), ProcessingType.Streaming)
-     .validated(new ProcessValidation(Map(ProcessingType.Streaming -> validator),
+     .toDisplayable(ProcessCanonizer.canonize(espProcess), TestProcessingTypes.Streaming)
+     .validated(new ProcessValidation(Map(TestProcessingTypes.Streaming -> validator),
        new SubprocessResolver(new SetSubprocessRepository(Set()))))
 
   def toDetails(displayable: DisplayableProcess) : ProcessDetails =
@@ -83,7 +84,7 @@ object ProcessTestData {
       description = None,
       isArchived = false,
       processType = ProcessType.Graph,
-      processingType = ProcessingType.Streaming,
+      processingType = TestProcessingTypes.Streaming,
       processCategory = "",
       modificationDate = LocalDateTime.now(),
       subprocessesModificationDate = None,
@@ -103,7 +104,7 @@ object ProcessTestData {
       description = None,
       isArchived = false,
       processType = ProcessType.Graph,
-      processingType = ProcessingType.Streaming,
+      processingType = TestProcessingTypes.Streaming,
       processCategory = "",
       modificationDate = LocalDateTime.now(),
       subprocessesModificationDate = None,
@@ -167,7 +168,7 @@ object ProcessTestData {
         )
       ),
       edges = List(Edge(from = "sourceId", to = "sinkId", edgeType = None)),
-      processingType = ProcessingType.Streaming
+      processingType = TestProcessingTypes.Streaming
     )
   }
 

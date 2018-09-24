@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestPermissions, WithDbTesting}
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
+import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.ui.process.marshall.UiProcessMarshaller
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
@@ -28,7 +28,7 @@ class DBFetchingProcessRepositorySpec
 
   implicit val defaultPatience = PatienceConfig(timeout = Span(1, Seconds), interval = Span(5, Millis))
 
-  private val writingRepo = new DbWriteProcessRepository[Future](db, Map(ProcessingType.Streaming -> 0))
+  private val writingRepo = new DbWriteProcessRepository[Future](db, Map(TestProcessingTypes.Streaming -> 0))
     with WriteProcessRepository with BasicRepository {
     override protected def now: LocalDateTime = currentTime
   }
@@ -116,14 +116,14 @@ class DBFetchingProcessRepositorySpec
   private def saveProcess(espProcess: EspProcess, now: LocalDateTime, category: String = "") = {
     val json = UiProcessMarshaller.toJson(ProcessCanonizer.canonize(espProcess), PrettyParams.nospace)
     currentTime = now
-    writingRepo.saveNewProcess(espProcess.id, category, GraphProcess(json), ProcessingType.Streaming, false).futureValue shouldBe 'right
+    writingRepo.saveNewProcess(espProcess.id, category, GraphProcess(json), TestProcessingTypes.Streaming, false).futureValue shouldBe 'right
   }
 
   private def saveSubProcess(id: String, now: LocalDateTime) = {
     val process = EspProcessBuilder.id(id).exceptionHandler().source("so", "").emptySink("si", "")
     val json = UiProcessMarshaller.toJson(ProcessCanonizer.canonize(process), PrettyParams.nospace)
     currentTime = now
-    writingRepo.saveNewProcess(id, "", GraphProcess(json), ProcessingType.Streaming, true).futureValue shouldBe 'right
+    writingRepo.saveNewProcess(id, "", GraphProcess(json), TestProcessingTypes.Streaming, true).futureValue shouldBe 'right
   }
 
 

@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.process.marshall
 
 import argonaut.{Parse, PrettyParams}
 import org.scalatest.{FlatSpec, Matchers}
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
+import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.{NodeAdditionalFields, ProcessAdditionalFields}
 
 class UiProcessMarshallerSpec extends FlatSpec with Matchers {
@@ -42,7 +42,7 @@ class UiProcessMarshallerSpec extends FlatSpec with Matchers {
 
 
   it should "unmarshall to displayable process properly" in {
-    val displayableProcess = ProcessConverter.toDisplayableOrDie(processWithAdditionalFields, ProcessingType.Streaming)
+    val displayableProcess = ProcessConverter.toDisplayableOrDie(processWithAdditionalFields, TestProcessingTypes.Streaming)
 
     val processDescription = displayableProcess.properties.additionalFields.flatMap(_.asInstanceOf[ProcessAdditionalFields].description)
     val nodeDescription = displayableProcess.nodes.head.additionalFields.flatMap(_.asInstanceOf[NodeAdditionalFields].description)
@@ -52,7 +52,7 @@ class UiProcessMarshallerSpec extends FlatSpec with Matchers {
 
   it should "marshall and unmarshall process" in {
     val baseProcess = processWithAdditionalFields
-    val displayableProcess = ProcessConverter.toDisplayableOrDie(baseProcess, ProcessingType.Streaming)
+    val displayableProcess = ProcessConverter.toDisplayableOrDie(baseProcess, TestProcessingTypes.Streaming)
     val canonical = ProcessConverter.fromDisplayable(displayableProcess)
 
     val processAfterMarshallAndUnmarshall = UiProcessMarshaller.toJson(canonical, PrettyParams.nospace)
@@ -61,7 +61,7 @@ class UiProcessMarshallerSpec extends FlatSpec with Matchers {
   }
 
   it should "unmarshall json without additional fields" in {
-    val displayableProcess = ProcessConverter.toDisplayableOrDie(processWithoutAdditionalFields, ProcessingType.Streaming)
+    val displayableProcess = ProcessConverter.toDisplayableOrDie(processWithoutAdditionalFields, TestProcessingTypes.Streaming)
 
     displayableProcess.id shouldBe "custom"
     displayableProcess.nodes.head.additionalFields shouldBe None

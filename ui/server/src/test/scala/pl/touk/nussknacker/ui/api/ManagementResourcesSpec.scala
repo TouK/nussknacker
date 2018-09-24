@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, TestFactory}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.codec.UiCodecs
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
+import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{BasicProcess, ProcessDetails}
@@ -63,7 +63,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest
   test("deploy technical process and mark it as deployed") {
     implicit val loggedUser = user() copy(categoryPermissions = Map(testCategoryName->Set(Permission.Admin, Permission.Write, Permission.Deploy, Permission.Read)))
     val processId = "Process1"
-    whenReady(writeProcessRepository.saveNewProcess(processId, testCategoryName, CustomProcess(""), ProcessingType.Streaming, false)) { res =>
+    whenReady(writeProcessRepository.saveNewProcess(processId, testCategoryName, CustomProcess(""), TestProcessingTypes.Streaming, false)) { res =>
       deployProcess(processId) ~> check { status shouldBe StatusCodes.OK }
       getProcess(processId) ~> check {
         val processDetails = responseAs[String].decodeOption[ProcessDetails].get
@@ -124,7 +124,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest
   test("return test results") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
     val displayableProcess = ProcessConverter.toDisplayable(ProcessCanonizer.canonize(SampleProcess.process)
-      , ProcessingType.Streaming)
+      , TestProcessingTypes.Streaming)
     val multiPart = MultipartUtils.prepareMultiParts("testData" -> "ala\nbela", "processJson" -> displayableProcess.asJson.nospaces)()
     Post(s"/processManagement/test/${SampleProcess.process.id}", multiPart) ~> withPermissions(deployRoute, testPermissionDeploy |+| testPermissionRead) ~> check {
       status shouldEqual StatusCodes.OK
@@ -160,7 +160,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest
 
     saveProcessAndAssertSuccess(process.id, process)
 
-    val displayableProcess = ProcessConverter.toDisplayable(ProcessCanonizer.canonize(process), ProcessingType.Streaming)
+    val displayableProcess = ProcessConverter.toDisplayable(ProcessCanonizer.canonize(process), TestProcessingTypes.Streaming)
 
     val multiPart = MultipartUtils.prepareMultiParts("testData" -> "ala\nbela", "processJson" -> displayableProcess.asJson.nospaces)()
     Post(s"/processManagement/test/${process.id}", multiPart) ~> withPermissions(deployRoute, testPermissionDeploy |+| testPermissionRead) ~> check {

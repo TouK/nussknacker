@@ -32,7 +32,7 @@ class DefinitionPreparerSpec extends FlatSpec with Matchers with TestPermissions
 
   it should "return edge types for subprocess, filters and switches" in {
     val subprocessesDetails = TestFactory.sampleSubprocessRepository.loadSubprocesses(Map.empty)
-    val edgeTypes = new DefinitionPreparer(Map(), Map()).prepareEdgeTypes(
+    val edgeTypes = DefinitionPreparer.prepareEdgeTypes(
       user = LoggedUser("aa", testPermissionAdmin),
       processDefinition = ProcessTestData.processDefinition,
       isSubprocess = false,
@@ -99,12 +99,14 @@ class DefinitionPreparerSpec extends FlatSpec with Matchers with TestPermissions
     val subprocessesDetails = TestFactory.sampleSubprocessRepository.loadSubprocesses(Map.empty)
     val subprocessInputs = Map[String, ObjectDefinition]()
 
-    val groups = new DefinitionPreparer(nodesConfig.mapValues(v => SingleNodeConfig(None, None, None, Some(v))), nodeCategoryMapping).prepareNodesToAdd(
+    val groups = DefinitionPreparer.prepareNodesToAdd(
       user = LoggedUser("aa", testPermissionAdmin),
       processDefinition = ProcessTestData.processDefinition,
       isSubprocess = false,
       subprocessInputs = subprocessInputs,
-      extractorFactory = DefaultValueExtractorChain(ParamDefaultValueConfig(Map()))
+      extractorFactory = DefaultValueExtractorChain(ParamDefaultValueConfig(Map())),
+      nodesConfig = nodesConfig.mapValues(v => SingleNodeConfig(None, None, None, Some(v))),
+      nodeCategoryMapping = nodeCategoryMapping
     )
     groups
   }
@@ -112,12 +114,14 @@ class DefinitionPreparerSpec extends FlatSpec with Matchers with TestPermissions
 
   private def prepareGroupsOfNodes(services: List[String]): List[NodeGroup] = {
 
-    val groups = new DefinitionPreparer(Map(), Map()).prepareNodesToAdd(
+    val groups = DefinitionPreparer.prepareNodesToAdd(
       user = LoggedUser("aa", testPermissionAdmin),
       processDefinition = services.foldRight(ProcessDefinitionBuilder.empty)((s, p) => p.withService(s)),
       isSubprocess = false,
       subprocessInputs = Map(),
-      extractorFactory = DefaultValueExtractorChain(ParamDefaultValueConfig(Map()))
+      extractorFactory = DefaultValueExtractorChain(ParamDefaultValueConfig(Map())),
+      nodesConfig = Map(),
+      nodeCategoryMapping =  Map()
     )
     groups
   }

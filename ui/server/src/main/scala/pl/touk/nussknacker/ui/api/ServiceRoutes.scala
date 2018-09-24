@@ -10,8 +10,7 @@ import pl.touk.nussknacker.engine.api.{MetaData, Service}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.util.service.query.{ExpressionServiceQuery, ServiceQuery}
 import pl.touk.nussknacker.engine.util.service.query.ServiceQuery.{QueryResult, ServiceNotFoundException}
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
+import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -57,9 +56,8 @@ class ServiceRoutes(modelDataMap: Map[ProcessingType, ModelData])
   }
 
   private def invokeServicePath(implicit user: LoggedUser) =
-    path("service" / Segment / Segment) { (processingTypeName, serviceName) =>
+    path("service" / Segment / Segment) { (processingType, serviceName) =>
       post {
-        val processingType = ProcessingType.withName(processingTypeName)
         val modelData = modelDataMap(processingType)
         authorize(canUserInvokeService(user, serviceName, modelData)) {
           entity(as[List[Parameter]]) { params =>

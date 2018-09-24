@@ -4,7 +4,7 @@ import pl.touk.nussknacker.engine.api.{MetaData, TypeSpecificData, UserDefinedPr
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.ui.validation.ProcessValidation
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
+import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode._
 import pl.touk.nussknacker.ui.validation.ValidationResults.ValidationResult
 

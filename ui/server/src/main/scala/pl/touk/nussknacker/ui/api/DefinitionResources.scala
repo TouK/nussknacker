@@ -19,56 +19,68 @@ import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
-import pl.touk.nussknacker.ui.api.DefinitionPreparer.{NodeEdges, NodeTypeId}
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
+import pl.touk.nussknacker.ui.api.DefinitionPreparer.{NodeEdges}
+import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.ui.process.ProcessObjectsFinder
 import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.EdgeType
 import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.EdgeType.{FilterFalse, FilterTrue}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessRepository}
 import pl.touk.nussknacker.ui.process.uiconfig.SingleNodeConfig
-import pl.touk.nussknacker.ui.process.uiconfig.defaults.{ParameterDefaultValueExtractorStrategy, ParameterEvaluatorExtractor}
+import pl.touk.nussknacker.ui.process.uiconfig.defaults.{DefaultValueExtractorChain, ParamDefaultValueConfig, ParameterDefaultValueExtractorStrategy, ParameterEvaluatorExtractor}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, PermissionSyntax}
 import pl.touk.nussknacker.ui.util.EspPathMatchers
 
 import scala.concurrent.ExecutionContext
 import scala.runtime.BoxedUnit
+import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
 class DefinitionResources(modelData: Map[ProcessingType, ModelData],
-                          subprocessRepository: SubprocessRepository,
-                          parameterDefaultValueExtractorStrategyFactory: ParameterDefaultValueExtractorStrategy,
-                          nodesConfig: Map[String, SingleNodeConfig],
-                          nodeCategoryMapping: Map[String, String])
+                          subprocessRepository: SubprocessRepository)
                          (implicit ec: ExecutionContext)
   extends Directives with Argonaut62Support with EspPathMatchers with RouteWithUser {
 
   import argonaut.ArgonautShapeless._
   import pl.touk.nussknacker.ui.codec.UiCodecs._
 
-  private val definitionPreparer: DefinitionPreparer = new DefinitionPreparer(nodesConfig, nodeCategoryMapping)
-
   def route(implicit user: LoggedUser) : Route = encodeResponse {
     //TODO maybe always return data for all subprocesses versions instead of fetching just one-by-one?
-    path("processDefinitionData" / EnumSegment(ProcessingType)) { (processingType) =>
+    path("processDefinitionData" / Segment) { (processingType) =>
       parameter('isSubprocess.as[Boolean]) { (isSubprocess) =>
         post {
           entity(as[Map[String, Long]]) { subprocessVersions =>
             complete {
               val modelDataForType = modelData(processingType)
+              val processConfig = modelDataForType.processConfig
               val chosenProcessDefinition = modelDataForType.processDefinition
               val subprocessInputs = fetchSubprocessInputs(subprocessVersions, modelDataForType.modelClassLoader.classLoader)
               val subprocessesDetails = subprocessRepository.loadSubprocesses(subprocessVersions)
               val uiProcessDefinition = UIProcessDefinition(chosenProcessDefinition, subprocessInputs)
+
+
+              val nodesConfig = processConfig.getOrElse[Map[String, SingleNodeConfig]]("nodes", Map.empty)
+
+              val defaultParametersValues = ParamDefaultValueConfig(nodesConfig.map {case (k, v) => (k, v.defaultValues.getOrElse(Map.empty))})
+              val defaultParametersFactory = DefaultValueExtractorChain(defaultParametersValues)
+
+              val nodeCategoryMapping = processConfig.getOrElse[Map[String, String]]("nodeCategoryMapping", Map.empty)
+              val additionalPropertiesLabels = processConfig.getOrElse[Map[String, String]]("additionalFields.propertiesLabels", Map.empty)
+
               ProcessObjects(
-                nodesToAdd = definitionPreparer.prepareNodesToAdd(
+                nodesToAdd = DefinitionPreparer.prepareNodesToAdd(
                   user = user,
                   processDefinition = chosenProcessDefinition,
                   isSubprocess = isSubprocess,
                   subprocessInputs = subprocessInputs,
-                  extractorFactory = parameterDefaultValueExtractorStrategyFactory),
+                  extractorFactory = defaultParametersFactory,
+                  nodesConfig = nodesConfig,
+                  nodeCategoryMapping = nodeCategoryMapping
+                ),
                 processDefinition = uiProcessDefinition,
-                edgesForNodes = definitionPreparer.prepareEdgeTypes(
+                nodesConfig = nodesConfig,
+                additionalPropertiesLabels = additionalPropertiesLabels,
+                edgesForNodes = DefinitionPreparer.prepareEdgeTypes(
                   user = user,
                   processDefinition = chosenProcessDefinition,
                   isSubprocess = isSubprocess,
@@ -104,6 +116,8 @@ class DefinitionResources(modelData: Map[ProcessingType, ModelData],
 
 case class ProcessObjects(nodesToAdd: List[NodeGroup],
                           processDefinition: UIProcessDefinition,
+                          nodesConfig: Map[String, SingleNodeConfig],
+                          additionalPropertiesLabels: Map[String, String],
                           edgesForNodes: List[NodeEdges])
 
 case class UIProcessDefinition(services: Map[String, ObjectDefinition],
@@ -145,12 +159,21 @@ case class NodeDefinition(id: String, parameters: List[DefinitionExtractor.Param
 
 //TODO: some refactoring?
 import PermissionSyntax._, pl.touk.nussknacker.ui.security.api.Permission._
-class DefinitionPreparer(val nodesConfig: Map[String, SingleNodeConfig], val nodeCategoryMapping: Map[String, String]) {
 
-  def prepareNodesToAdd(user: LoggedUser, processDefinition: ProcessDefinition[ObjectDefinition],
-  isSubprocess: Boolean,
-  subprocessInputs: Map[String, ObjectDefinition],
-  extractorFactory: ParameterDefaultValueExtractorStrategy): List[NodeGroup] = {
+object DefinitionPreparer {
+
+  case class NodeTypeId(`type`: String, id: Option[String] = None)
+
+  case class NodeEdges(nodeId: NodeTypeId, edges: List[EdgeType], canChooseNodes: Boolean)
+
+  def prepareNodesToAdd(user: LoggedUser,
+                        processDefinition: ProcessDefinition[ObjectDefinition],
+                        isSubprocess: Boolean,
+                        subprocessInputs: Map[String, ObjectDefinition],
+                        extractorFactory: ParameterDefaultValueExtractorStrategy,
+                        nodesConfig: Map[String, SingleNodeConfig],
+                        nodeCategoryMapping: Map[String, String]
+                       ): List[NodeGroup] = {
     val evaluator = new ParameterEvaluatorExtractor(extractorFactory)
     val readCategories = user.can(Read).toList
     def filterCategories(objectDefinition: ObjectDefinition) = readCategories.intersect(objectDefinition.categories)
@@ -221,6 +244,10 @@ class DefinitionPreparer(val nodesConfig: Map[String, SingleNodeConfig], val nod
       )))
     }
 
+    def getNodeCategory(nodeName: String, category: String): String ={
+      nodesConfig.get(nodeName).flatMap(_.category).orElse(nodeCategoryMapping.get(category)).getOrElse(category)
+    }
+
     (List(base, services, enrichers, customTransformers) ++ subprocessDependent)
       .flatMap(e => e.possibleNodes.map(n => (e.name, n)))
       .groupBy(e => getNodeCategory(e._2.label, e._1))
@@ -229,10 +256,6 @@ class DefinitionPreparer(val nodesConfig: Map[String, SingleNodeConfig], val nod
       .toList
       .sortBy(_.name.toLowerCase)
 
-  }
-
-  private def getNodeCategory(nodeName: String, category: String): String ={
-    nodesConfig.get(nodeName).flatMap(_.category).orElse(nodeCategoryMapping.get(category)).getOrElse(category)
   }
 
   def prepareEdgeTypes(user: LoggedUser, processDefinition: ProcessDefinition[ObjectDefinition],
@@ -253,10 +276,4 @@ class DefinitionPreparer(val nodesConfig: Map[String, SingleNodeConfig], val nod
       NodeEdges(NodeTypeId("Filter"), List(FilterTrue, FilterFalse), canChooseNodes = false)
     ) ++ subprocessOutputs
   }
-}
-
-object DefinitionPreparer{
-  case class NodeTypeId(`type`: String, id: Option[String] = None)
-
-  case class NodeEdges(nodeId: NodeTypeId, edges: List[EdgeType], canChooseNodes: Boolean)
 }

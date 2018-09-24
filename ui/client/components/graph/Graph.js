@@ -198,7 +198,7 @@ class Graph extends React.Component {
       const edgesWithGroups = NodeUtils.edgesFromProcess(process, expandedGroups)
       t = this.time(t, 'start')
 
-      const nodes = _.map(nodesWithGroups, (n) => { return EspNode.makeElement(n, processCounts[n.id], forExport, this.props.nodesSettings) });
+      const nodes = _.map(nodesWithGroups, (n) => { return EspNode.makeElement(n, processCounts[n.id], forExport, this.props.processDefinitionData.nodesConfig || {}) });
       t = this.time(t, 'nodes')
 
       const edges = _.map(edgesWithGroups, (e) => { return EspNode.makeLink(e, forExport) });
@@ -499,8 +499,7 @@ function commonState(state) {
   return {
     processCategory: state.graphReducer.fetchedProcessDetails.processCategory,
     loggedUser: state.settings.loggedUser,
-    processDefinitionData: state.settings.processDefinitionData,
-    nodesSettings: state.settings.nodesSettings
+    processDefinitionData: state.settings.processDefinitionData || {}
   }
 }
 

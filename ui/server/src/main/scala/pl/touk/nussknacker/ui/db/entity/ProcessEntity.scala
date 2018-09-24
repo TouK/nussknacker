@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.db.entity
 import db.migration.DefaultJdbcProfile.profile.api._
 import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, GraphProcess, ProcessDeploymentData}
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessType.ProcessType
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
+import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import slick.sql.SqlProfile.ColumnOption.NotNull
 
 object ProcessEntity {
@@ -12,12 +12,6 @@ object ProcessEntity {
     _.toString,
     ProcessType.withName
   )
-
-  implicit def processingTypeMapper = MappedColumnType.base[ProcessingType, String](
-    _.toString,
-    ProcessingType.withName
-  )
-
 
   class ProcessEntity(tag: Tag) extends Table[ProcessEntityData](tag, "processes") {
 
@@ -61,12 +55,6 @@ object ProcessEntity {
       case _:CustomProcess => ProcessType.Custom
     }
 
-  }
-
-  object ProcessingType extends Enumeration {
-    type ProcessingType = Value
-    val Streaming = Value("streaming")
-    val RequestResponse = Value("request-response")
   }
 
 }

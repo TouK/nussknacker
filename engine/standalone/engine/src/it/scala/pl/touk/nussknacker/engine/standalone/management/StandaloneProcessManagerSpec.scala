@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.standalone.management
 
 import argonaut.PrettyParams
+import com.typesafe.config.ConfigFactory
 import org.scalatest.{FunSuite, Matchers}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Seconds, Span}
@@ -13,7 +14,6 @@ import pl.touk.nussknacker.engine.graph.node.{Sink, Source}
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.engine.standalone.StandaloneModelData
 
 class StandaloneProcessManagerSpec extends FunSuite with ScalaFutures with Matchers {
 
@@ -21,7 +21,7 @@ class StandaloneProcessManagerSpec extends FunSuite with ScalaFutures with Match
 
   test("it should parse test data and test standalone process") {
 
-    val modelData = StandaloneModelData()
+    val modelData = StandaloneProcessManagerProvider.defaultTypeConfig(ConfigFactory.load()).toModelData
 
     val manager = new StandaloneProcessManager(modelData, null)
 

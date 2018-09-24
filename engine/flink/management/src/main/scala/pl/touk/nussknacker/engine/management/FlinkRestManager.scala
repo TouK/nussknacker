@@ -21,16 +21,6 @@ import pl.touk.nussknacker.engine.management.flinkRestModel.{DeployProcessReques
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
-
-object FlinkRestManager {
-
-  def apply(config: Config): FlinkRestManager = {
-    val flinkConfig = config.as[FlinkConfig]("flinkConfig")
-    new FlinkRestManager(flinkConfig, FlinkModelData(config))
-  }
-
-}
-
 class FlinkRestManager(config: FlinkConfig, modelData: ModelData) extends FlinkProcessManager(modelData, config.shouldVerifyBeforeDeploy.getOrElse(true)) with LazyLogging {
 
   private val httpClient = LoggingDispatchClient(classOf[FlinkRestManager].getSimpleName, Http)

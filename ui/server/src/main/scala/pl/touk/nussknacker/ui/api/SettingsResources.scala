@@ -8,7 +8,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.ExecutionContext
 
-class SettingsResources(config: FeatureTogglesConfig, nodesConfig: Map[String, SingleNodeConfig])(implicit ec: ExecutionContext)
+class SettingsResources(config: FeatureTogglesConfig)(implicit ec: ExecutionContext)
   extends Directives with Argonaut62Support with RouteWithUser {
 
   import argonaut.ArgonautShapeless._
@@ -26,10 +26,9 @@ class SettingsResources(config: FeatureTogglesConfig, nodesConfig: Map[String, S
             commentSettings = config.commentSettings,
             deploySettings = config.deploySettings,
             signals = config.queryableStateProxyUrl.isDefined,
-            attachments = config.attachments.isDefined,
-            additionalPropertiesLabels = config.additionalPropertiesLabels
+            attachments = config.attachments.isDefined
           )
-          UISettings(toggleOptions, nodesConfig)
+          UISettings(toggleOptions)
         }
       }
     }
@@ -50,8 +49,7 @@ case class ToggleFeaturesOptions(counts: Boolean,
                                  commentSettings: Option[CommentSettings],
                                  deploySettings: Option[DeploySettings],
                                  attachments: Boolean,
-                                 signals: Boolean,
-                                 additionalPropertiesLabels: Map[String, String]
+                                 signals: Boolean
                                 )
 
-case class UISettings(features: ToggleFeaturesOptions, nodes: Map[String, SingleNodeConfig])
+case class UISettings(features: ToggleFeaturesOptions)

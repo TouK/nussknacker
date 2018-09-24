@@ -7,8 +7,8 @@ import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.ui.api.ProcessTestData
-import pl.touk.nussknacker.ui.api.helpers.{TestFactory, WithDbTesting}
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.{ProcessType, ProcessingType}
+import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessingTypes, WithDbTesting}
+import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessType
 import pl.touk.nussknacker.ui.process.marshall.UiProcessMarshaller
 import pl.touk.nussknacker.ui.process.migrate.TestMigrations
 
@@ -18,7 +18,7 @@ class InitializationItSpec extends FlatSpec with ScalatestRouteTest with Matcher
 
   private val processId = "proc1"
 
-  private val migrations = Map(ProcessingType.Streaming -> new TestMigrations(1, 2))
+  private val migrations = Map(TestProcessingTypes.Streaming -> new TestMigrations(1, 2))
 
   private lazy val repository = TestFactory.newProcessRepository(db, Some(1))
 
@@ -59,14 +59,14 @@ class InitializationItSpec extends FlatSpec with ScalatestRouteTest with Matcher
   }
 
   private def saveSampleProcess(processId: String = processId, subprocess: Boolean = false) : Unit = {
-    writeRepository.saveNewProcess(processId, "RTM", sampleDeploymentData(processId), ProcessingType.Streaming, subprocess).futureValue
+    writeRepository.saveNewProcess(processId, "RTM", sampleDeploymentData(processId), TestProcessingTypes.Streaming, subprocess).futureValue
   }
 
   it should "run initialization transactionally" in {
     saveSampleProcess()
 
     val exception = intercept[RuntimeException](
-      Initialization.init(Map(ProcessingType.Streaming -> new TestMigrations(1, 2, 5)), db, "env1", customProcesses))
+      Initialization.init(Map(TestProcessingTypes.Streaming -> new TestMigrations(1, 2, 5)), db, "env1", customProcesses))
 
     exception.getMessage shouldBe "made to fail.."
 

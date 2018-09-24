@@ -10,11 +10,10 @@ import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.nussknacker.engine.api.deployment.CustomProcess
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, TestFactory}
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
+import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.ui.process.JobStatusService
 import pl.touk.nussknacker.ui.process.deployment.CheckStatus
 import pl.touk.nussknacker.ui.process.displayedgraph.ProcessStatus
-import pl.touk.nussknacker.ui.security.api.Permission
 
 class AppResourcesSpec extends FunSuite with ScalatestRouteTest
   with Matchers with ScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
@@ -74,9 +73,9 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest
 
   private def saveProcessWithDeployInfo(id: String) = {
     implicit val logged = TestFactory.user(testPermissionAdmin)
-    writeProcessRepository.saveNewProcess(id, TestFactory.testCategoryName, CustomProcess(""), ProcessingType.Streaming, false)
+    writeProcessRepository.saveNewProcess(id, TestFactory.testCategoryName, CustomProcess(""), TestProcessingTypes.Streaming, false)
       .futureValue shouldBe Right(())
-    deploymentProcessRepository.markProcessAsDeployed(id, 1, ProcessingType.Streaming, "", "").futureValue shouldBe (())
+    deploymentProcessRepository.markProcessAsDeployed(id, 1, TestProcessingTypes.Streaming, "", "").futureValue shouldBe (())
   }
 
 

@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, TestFactory}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.codec.UiCodecs
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
+import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.ui.process.ProcessToSave
 import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.{Edge, ProcessAdditionalFields}
 import pl.touk.nussknacker.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties}
@@ -62,7 +62,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
   }
   ignore("not allow to archive still used subprocess") {
     val processWithSubreocess = ProcessTestData.validProcessWithSubprocess(processId)
-    val displayableSubprocess = ProcessConverter.toDisplayable(processWithSubreocess.subprocess, ProcessingType.Streaming)
+    val displayableSubprocess = ProcessConverter.toDisplayable(processWithSubreocess.subprocess, TestProcessingTypes.Streaming)
     saveSubProcess(displayableSubprocess)(succeed)
     saveProcess(processId, processWithSubreocess.process)(succeed)
     archiveProcess(displayableSubprocess.id)~> routWithAllPermissions ~> check {
@@ -72,7 +72,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
   }
   test("allow to archive subprocess used in archived process") {
     val processWithSubreocess = ProcessTestData.validProcessWithSubprocess(processId)
-    val displayableSubprocess = ProcessConverter.toDisplayable(processWithSubreocess.subprocess, ProcessingType.Streaming)
+    val displayableSubprocess = ProcessConverter.toDisplayable(processWithSubreocess.subprocess, TestProcessingTypes.Streaming)
     saveSubProcess(displayableSubprocess)(succeed)
     saveProcess(processId, processWithSubreocess.process)(succeed)
     archiveProcess(processId)~> routWithAllPermissions ~> check {
@@ -95,7 +95,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
     }
   }
   test("return list of subprocess without archived process") {
-    val sampleSubprocess = ProcessConverter.toDisplayable(ProcessTestData.sampleSubprocess, ProcessingType.Streaming)
+    val sampleSubprocess = ProcessConverter.toDisplayable(ProcessTestData.sampleSubprocess, TestProcessingTypes.Streaming)
     saveSubProcess(sampleSubprocess) {
       status shouldEqual StatusCodes.OK
     }
@@ -182,7 +182,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
   }
   //FIXME: test gets rejection. Permission verification doesn't work for custom processes
   ignore("return 400 when trying to update json of custom process") {
-    whenReady(writeProcessRepository.saveNewProcess("customProcess", testCategoryName, CustomProcess(""), ProcessingType.Streaming, false)) { res =>
+    whenReady(writeProcessRepository.saveNewProcess("customProcess", testCategoryName, CustomProcess(""), TestProcessingTypes.Streaming, false)) { res =>
       updateProcess("customProcess", SampleProcess.process) {
         status shouldEqual StatusCodes.BadRequest
       }
@@ -428,7 +428,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
   }
 
   test("not allow to save process with category not allowed for user") {
-    Post(s"/processes/p11/abcd/${ProcessingType.Streaming}") ~> routWithAdminPermission ~> check {
+    Post(s"/processes/p11/abcd/${TestProcessingTypes.Streaming}") ~> routWithAdminPermission ~> check {
       //this one below does not work, but I cannot compose path and authorize directives in a right way
       //rejection shouldBe server.AuthorizationFailedRejection
       handled shouldBe false

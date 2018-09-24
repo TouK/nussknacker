@@ -6,7 +6,7 @@ import akka.http.scaladsl.server.directives.SecurityDirectives
 import argonaut.{Json, JsonParser}
 import com.typesafe.config.{Config, ConfigRenderOptions}
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
+import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.ui.process.{JobStatusService, ProcessObjectsFinder}
 import pl.touk.nussknacker.ui.process.displayedgraph.ProcessStatus
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository

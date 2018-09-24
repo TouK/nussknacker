@@ -10,15 +10,14 @@ import org.scalatest._
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.nussknacker.ui.process.deployment.ManagementActor
 import pl.touk.nussknacker.ui.process.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.ui.process.{JobStatusService, NewProcessPreparer, ProcessToSave, ProcessTypesForCategories}
+import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.sample.SampleProcess
-import pl.touk.nussknacker.ui.security.api.Permission
 import cats.syntax.semigroup._
 import cats.instances.all._
+import pl.touk.nussknacker.engine.api.StreamMetaData
 
 trait EspItTest extends LazyLogging with WithDbTesting with TestPermissions { self: ScalatestRouteTest with Suite with BeforeAndAfterEach with Matchers =>
 
@@ -37,11 +36,12 @@ trait EspItTest extends LazyLogging with WithDbTesting with TestPermissions { se
 
   val processManager = new MockProcessManager
   def createManagementActorRef = ManagementActor(env,
-    Map(ProcessingType.Streaming -> processManager), processRepository, deploymentProcessRepository, TestFactory.sampleResolver)
+    Map(TestProcessingTypes.Streaming -> processManager), processRepository, deploymentProcessRepository, TestFactory.sampleResolver)
 
   val managementActor: ActorRef = createManagementActorRef
   val jobStatusService = new JobStatusService(managementActor)
-  val newProcessPreparer = new NewProcessPreparer(Map(ProcessingType.Streaming -> ProcessTestData.processDefinition))
+  val newProcessPreparer = new NewProcessPreparer(Map("streaming" ->  ProcessTestData.processDefinition),
+    Map("streaming" -> (_ => StreamMetaData(None))))
   val processesRoute = new ProcessesResources(
     repository = processRepository,
     writeRepository = writeProcessRepository,

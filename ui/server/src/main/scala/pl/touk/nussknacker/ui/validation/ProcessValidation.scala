@@ -5,7 +5,7 @@ import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.compile.{ProcessCompilationError, ProcessValidator}
 import pl.touk.nussknacker.engine.graph.node.{Disableable, NodeData, Source, SubprocessInputDefinition}
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
+import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.ui.process.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.ProcessAdditionalFields
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter

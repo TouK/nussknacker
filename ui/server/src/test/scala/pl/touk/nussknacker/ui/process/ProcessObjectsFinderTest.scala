@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{Subproce
 import pl.touk.nussknacker.engine.graph.node.{CustomNode, SubprocessInputDefinition, SubprocessOutputDefinition}
 import pl.touk.nussknacker.ui.api.ProcessTestData._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
+import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.ObjectProcessDefinition
 
@@ -24,7 +24,7 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
       canonicalnode.FlatNode(CustomNode("f1", None, otherExistingStreamTransformer2, List.empty)), FlatNode(SubprocessOutputDefinition("out1", "output")))
   )
 
-  val subprocessDetails = toDetails(ProcessConverter.toDisplayable(subprocess, ProcessingType.Streaming))
+  val subprocessDetails = toDetails(ProcessConverter.toDisplayable(subprocess, TestProcessingTypes.Streaming))
 
   private val process1 = toDetails(TestProcessUtil.toDisplayable(
     EspProcessBuilder.id("fooProcess1").exceptionHandler()
@@ -62,7 +62,7 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
       .emptySink("sink", existingSinkFactory)))
 
   test("should find processes for queries") {
-    val queriesForProcesses = ProcessObjectsFinder.findQueries(List(process1, process2, process3, process4, subprocessDetails), processDefinition)
+    val queriesForProcesses = ProcessObjectsFinder.findQueries(List(process1, process2, process3, process4, subprocessDetails), List(processDefinition))
 
     queriesForProcesses shouldBe Map(
       "query1" -> List(process1.id),
@@ -83,7 +83,7 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
     )
     forAll(table) { (transformers, expectedProcesses) =>
       val definition = processDefinition.withSignalsWithTransformers("signal1", classOf[String], transformers)
-      val signalDefinition = ProcessObjectsFinder.findSignals(List(process1, process2, process3, process4, subprocessDetails), definition)
+      val signalDefinition = ProcessObjectsFinder.findSignals(List(process1, process2, process3, process4, subprocessDetails), List(definition))
       signalDefinition should have size 1
       signalDefinition("signal1").availableProcesses shouldBe expectedProcesses
     }

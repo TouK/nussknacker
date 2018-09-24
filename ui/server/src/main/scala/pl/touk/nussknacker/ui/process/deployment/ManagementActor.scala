@@ -6,8 +6,7 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
 import pl.touk.nussknacker.engine.api.deployment.{GraphProcess, ProcessDeploymentData, ProcessManager}
 import pl.touk.nussknacker.ui.EspError
-import pl.touk.nussknacker.ui.codec.UiCodecs
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
+import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntity.ProcessVersionEntityData
 import pl.touk.nussknacker.ui.process.displayedgraph.ProcessStatus
 import pl.touk.nussknacker.ui.process.marshall.UiProcessMarshaller
@@ -18,7 +17,6 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.CatsSyntax
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 
 object ManagementActor {

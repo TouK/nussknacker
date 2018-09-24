@@ -16,7 +16,6 @@ import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import pl.touk.nussknacker.engine.flink.queryablestate.EspQueryableClient
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
 import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DatabaseServer, DbConfig}
 import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.process._
@@ -24,8 +23,6 @@ import pl.touk.nussknacker.ui.process.deployment.ManagementActor
 import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, TestModelMigrations}
 import pl.touk.nussknacker.ui.process.repository.{DBFetchingProcessRepository, DeployedProcessRepository, ProcessActivityRepository, WriteProcessRepository}
 import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, SubprocessResolver}
-import pl.touk.nussknacker.ui.process.uiconfig.SingleNodeConfig
-import pl.touk.nussknacker.ui.process.uiconfig.defaults._
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.AuthenticatorProvider
 import pl.touk.nussknacker.ui.security.ssl.{HttpsConnectionContextFactory, SslConfigParser}
@@ -84,12 +81,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
     val testResultsMaxSizeInBytes = config.getOrElse[Int]("testResultsMaxSizeInBytes",  500 * 1024 * 1000)
     val environment = config.getString("environment")
     val featureTogglesConfig = FeatureTogglesConfig.create(config)
-    //TODO clean up config and make it more typed
-    //TODO add nodesConfig support for standalone mode
-    val nodesConfig = config.getOrElse[Map[String, SingleNodeConfig]]("processConfig.nodes", Map.empty)
-    logger.info(s"Ui config loaded: \nfeatureTogglesConfig: $featureTogglesConfig\nnodesConfig:$nodesConfig")
-
-    val nodeCategoryMapping = config.getOrElse[Map[String, String]]("processConfig.nodeCategoryMapping", Map.empty)
+    logger.info(s"Ui config loaded: \nfeatureTogglesConfig: $featureTogglesConfig")
 
     val db: DbConfig = {
       val db = JdbcBackend.Database.forConfig("db", config)
@@ -97,10 +89,10 @@ object NussknackerApp extends App with Directives with LazyLogging {
       DbConfig(db, DefaultJdbcProfile.profile)
     }
 
-    val ProcessingTypeDeps(managers, modelData) = ProcessingTypeDeps(config, featureTogglesConfig.standaloneMode)
+    val typeToConfig = ProcessingTypeDeps(config, featureTogglesConfig.standaloneMode)
 
-    val defaultParametersValues = ParamDefaultValueConfig(nodesConfig.map {case (k, v) => (k, v.defaultValues.getOrElse(Map.empty))})
-    val extractValueParameterByConfigThenType = DefaultValueExtractorChain(defaultParametersValues)
+    val modelData = typeToConfig.mapValues(_.modelData)
+    val managers = typeToConfig.mapValues(_.processManager)
 
     val subprocessRepository = new DbSubprocessRepository(db, system.dispatcher)
     val subprocessResolver = new SubprocessResolver(subprocessRepository)
@@ -121,9 +113,6 @@ object NussknackerApp extends App with Directives with LazyLogging {
     val managementActor = ManagementActor(environment, managers, processRepository, deploymentProcessRepository, subprocessResolver)
     val jobStatusService = new JobStatusService(managementActor)
 
-    val typesForCategories = new ProcessTypesForCategories(config)
-    val newProcessPreparer = new NewProcessPreparer(modelData.mapValues(_.processDefinition))
-
     val processAuthorizer = new AuthorizeProcess(processRepository)
 
     val apiResources : List[RouteWithUser] = {
@@ -134,19 +123,19 @@ object NussknackerApp extends App with Directives with LazyLogging {
             jobStatusService = jobStatusService,
             processActivityRepository = processActivityRepository,
             processValidation = processValidation,
-            typesForCategories = typesForCategories,
-            newProcessPreparer = newProcessPreparer,
+            typesForCategories = new ProcessTypesForCategories(config),
+            newProcessPreparer = NewProcessPreparer(typeToConfig),
             processAuthorizer = processAuthorizer
           ),
           new ProcessesExportResources(processRepository, processActivityRepository),
           new ProcessActivityResource(processActivityRepository),
           ManagementResources(counter, managementActor, testResultsMaxSizeInBytes, processAuthorizer),
           new ValidationResources(processValidation),
-          new DefinitionResources(modelData, subprocessRepository, extractValueParameterByConfigThenType, nodesConfig, nodeCategoryMapping),
-          new SignalsResources(modelData(ProcessingType.Streaming), processRepository, processAuthorizer),
+          new DefinitionResources(modelData, subprocessRepository),
+          new SignalsResources(modelData, processRepository, processAuthorizer),
           new UserResources(),
           new NotificationResources(managementActor),
-          new SettingsResources(featureTogglesConfig, nodesConfig),
+          new SettingsResources(featureTogglesConfig),
           new AppResources(config, modelData, processRepository, processValidation, jobStatusService),
           TestInfoResources(modelData,processAuthorizer),
         new ServiceRoutes(modelData)

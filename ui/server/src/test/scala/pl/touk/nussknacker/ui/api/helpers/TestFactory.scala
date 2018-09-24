@@ -5,19 +5,14 @@ import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
 import com.typesafe.config.ConfigFactory
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{ProcessDeploymentData, ProcessState}
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.management.{FlinkModelData, FlinkProcessManager}
-import pl.touk.nussknacker.ui.api.helpers.TestPermissions.{CategorizedPermission, testCategoryName}
+import pl.touk.nussknacker.engine.management.{FlinkProcessManager, FlinkProcessManagerProvider}
+import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
 import pl.touk.nussknacker.ui.api.{ProcessPosting, ProcessTestData, RouteWithUser}
 import pl.touk.nussknacker.ui.db.DbConfig
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
 import pl.touk.nussknacker.ui.process.repository.{DBFetchingProcessRepository, FetchingProcessRepository, _}
 import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, SubprocessDetails, SubprocessRepository, SubprocessResolver}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
-import pl.touk.nussknacker.ui.security.api.Permission.Permission
-import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
-import slick.jdbc.JdbcBackend
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
@@ -34,7 +29,7 @@ object TestFactory extends TestPermissions{
   val sampleSubprocessRepository = SampleSubprocessRepository
   val sampleResolver = new SubprocessResolver(sampleSubprocessRepository)
 
-  val processValidation = new ProcessValidation(Map(ProcessingType.Streaming -> ProcessTestData.validator), sampleResolver)
+  val processValidation = new ProcessValidation(Map(TestProcessingTypes.Streaming -> ProcessTestData.validator), sampleResolver)
   val posting = new ProcessPosting
   val buildInfo = Map("engine-version" -> "0.1")
 
@@ -42,7 +37,7 @@ object TestFactory extends TestPermissions{
     new DBFetchingProcessRepository[Future](dbs) with FetchingProcessRepository with BasicRepository
 
   def newWriteProcessRepository(dbs: DbConfig, modelVersions: Option[Int] = Some(1)) =
-    new DbWriteProcessRepository[Future](dbs, modelVersions.map(ProcessingType.Streaming -> _).toMap)
+    new DbWriteProcessRepository[Future](dbs, modelVersions.map(TestProcessingTypes.Streaming -> _).toMap)
         with WriteProcessRepository with BasicRepository
 
   def newSubprocessRepository(db: DbConfig) = {
@@ -50,7 +45,7 @@ object TestFactory extends TestPermissions{
   }
 
   def newDeploymentProcessRepository(db: DbConfig) = new DeployedProcessRepository(db,
-    Map(ProcessingType.Streaming -> buildInfo))
+    Map(TestProcessingTypes.Streaming -> buildInfo))
 
   def newProcessActivityRepository(db: DbConfig) = new ProcessActivityRepository(db)
 
@@ -63,7 +58,7 @@ object TestFactory extends TestPermissions{
   //FIXME: update
   def withAllPermissions(route: RouteWithUser) = withPermissions(route, testPermissionAll)
 
-  class MockProcessManager extends FlinkProcessManager(FlinkModelData(ConfigFactory.load()), false){
+  class MockProcessManager extends FlinkProcessManager(FlinkProcessManagerProvider.defaultModelData(ConfigFactory.load()), false){
 
     override def findJobStatus(name: String): Future[Option[ProcessState]] = Future.successful(Some(ProcessState("1", "RUNNING", 0)))
 

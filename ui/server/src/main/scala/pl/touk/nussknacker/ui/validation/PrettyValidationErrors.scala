@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.ui.validation
 
+import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError._
 import pl.touk.nussknacker.engine.util.ReflectUtils
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
+import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.EdgeType
 import pl.touk.nussknacker.ui.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType}
 
@@ -51,7 +51,7 @@ object PrettyValidationErrors {
     }
   }
 
-  def noValidatorKnown(typ: ProcessingType.Value): NodeValidationError = {
+  def noValidatorKnown(typ: ProcessingTypeData.ProcessingType): NodeValidationError = {
     NodeValidationError(typ.toString, s"No validator available for $typ", "No validator for process type - please check configuration", fieldName = None,
       errorType = NodeValidationErrorType.RenderNotAllowed)
   }

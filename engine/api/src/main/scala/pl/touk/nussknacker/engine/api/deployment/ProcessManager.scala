@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.api.deployment
 
-import pl.touk.nussknacker.engine.api.ProcessVersion
+import com.typesafe.config.Config
+import pl.touk.nussknacker.engine.api.{ProcessVersion, TypeSpecificData}
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
 
 import scala.concurrent.Future

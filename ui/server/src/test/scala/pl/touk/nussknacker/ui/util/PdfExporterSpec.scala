@@ -10,13 +10,13 @@ import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.Filter
+import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.{ProcessType, ProcessingType}
 import pl.touk.nussknacker.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.NodeAdditionalFields
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.{Comment, ProcessActivity}
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{BaseProcessDetails, ProcessDetails, ProcessHistoryEntry}
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{BaseProcessDetails, ProcessHistoryEntry}
 import pl.touk.nussknacker.ui.sample.SampleProcess
 
 import scala.io.Source
@@ -25,14 +25,14 @@ class PdfExporterSpec extends FlatSpec {
 
   it should "export process to " in {
 
-    val process: DisplayableProcess = ProcessConverter.toDisplayable(ProcessCanonizer.canonize(SampleProcess.process), ProcessingType.Streaming)
+    val process: DisplayableProcess = ProcessConverter.toDisplayable(ProcessCanonizer.canonize(SampleProcess.process), TestProcessingTypes.Streaming)
     val displayable = process.copy(nodes = process.nodes.map {
         case a:Filter => a.copy(additionalFields = Some(NodeAdditionalFields(Some("mój wnikliwy komętaż"))))
         case a => a
     })
     val details = BaseProcessDetails("My process", "My process", 11, true,
       Some("My fancy description, which is quite, quite, quite looooooooong. \n And it contains maaaany, maaany strange features..."),false,
-      ProcessEntity.ProcessType.Graph, ProcessingType.Streaming, "Category 22", LocalDateTime.now(), None, List(), Set(), Some(displayable),
+      ProcessEntity.ProcessType.Graph, TestProcessingTypes.Streaming, "Category 22", LocalDateTime.now(), None, List(), Set(), Some(displayable),
       List(ProcessHistoryEntry("My process",  "My process", 11, LocalDateTime.now(), "Zenon Wojciech", List()) ), None
     )
     val activities = ProcessActivity(List(
@@ -61,11 +61,11 @@ class PdfExporterSpec extends FlatSpec {
   it should "export empty process to " in {
 
     val displayable: DisplayableProcess = DisplayableProcess(
-      "Proc11", ProcessProperties(StreamMetaData(), ExceptionHandlerRef(List()), subprocessVersions = Map.empty), List(), List(), ProcessingType.Streaming)
+      "Proc11", ProcessProperties(StreamMetaData(), ExceptionHandlerRef(List()), subprocessVersions = Map.empty), List(), List(), TestProcessingTypes.Streaming)
 
     val details = BaseProcessDetails("My process", "My process", 11, true,
       Some("My fancy description, which is quite, quite, quite looooooooong. \n And it contains maaaany, maaany strange features..."),false,
-      ProcessEntity.ProcessType.Graph, ProcessingType.Streaming, "Category 22", LocalDateTime.now(), None, List(), Set(), Some(displayable),
+      ProcessEntity.ProcessType.Graph, TestProcessingTypes.Streaming, "Category 22", LocalDateTime.now(), None, List(), Set(), Some(displayable),
       List(ProcessHistoryEntry("My process",  "My process", 11, LocalDateTime.now(), "Zenon Wojciech", List()) ), None
     )
     val activities = ProcessActivity(List(), List())

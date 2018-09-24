@@ -5,8 +5,9 @@ import java.util.UUID
 import argonaut.Argonaut._
 import argonaut.ArgonautShapeless._
 import akka.http.javadsl.model.headers.HttpCredentials
-import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import argonaut.{DecodeJson, Json}
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
 import pl.touk.nussknacker.engine.api.StreamMetaData
@@ -17,9 +18,9 @@ import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{Subproce
 import pl.touk.nussknacker.engine.graph.node.{SubprocessInputDefinition, SubprocessOutputDefinition}
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.ui.NussknackerApp
-import pl.touk.nussknacker.ui.api.UISettings
+import pl.touk.nussknacker.ui.api.{ProcessObjects, UISettings}
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessUtil}
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
+import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.ui.process.uiconfig.SingleNodeConfig
@@ -51,10 +52,12 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest
     }
   }
 
+
   test("ensure config is properly parsed") {
-    Get("/api/settings") ~> addCredentials(credentials) ~> mainRoute ~> check {
-      val settings = responseAs[String].decodeOption[UISettings].get
-      settings.nodes shouldBe
+    Post("/api/processDefinitionData/streaming?isSubprocess=false", HttpEntity(ContentTypes.`application/json`, "{}")) ~> addCredentials(credentials) ~> mainRoute ~> check {
+      val settingsJson = responseAs[String].decodeOption[Json].flatMap(_.field("nodesConfig"))
+      val settings = settingsJson.flatMap(json => implicitly[DecodeJson[Map[String, SingleNodeConfig]]].decodeJson(json).toOption).get
+      settings shouldBe
         Map(
           "test1" -> SingleNodeConfig(None, Some("Sink.svg"), None, None),
           "enricher" -> SingleNodeConfig(Some(Map("param" -> "'default value'")), Some("Filter.svg"), None, None)
@@ -72,7 +75,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest
       nodes = List(SubprocessInputDefinition("input1", List(SubprocessParameter("badParam", SubprocessClazzRef("i.do.not.exist")))),
         SubprocessOutputDefinition("output1", "out1")),
       edges = List(Edge("input1", "output1", None)),
-      processingType = ProcessingType.Streaming
+      processingType = TestProcessingTypes.Streaming
     )
 
     Post(s"$endpoint/Category1?isSubprocess=true") ~> addCredentials(credentials) ~> mainRoute ~> check {

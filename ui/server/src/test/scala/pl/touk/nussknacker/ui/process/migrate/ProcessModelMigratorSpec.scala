@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.graph.node.{Processor, asProcessor}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.ui.api.ProcessTestData
 import pl.touk.nussknacker.ui.api.helpers.TestPermissions
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
+import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import shapeless.Typeable._
 import shapeless.syntax.typeable.typeableOps
@@ -19,7 +19,7 @@ class ProcessModelMigratorSpec extends FlatSpec with BeforeAndAfterEach with Sca
   implicit override val patienceConfig = PatienceConfig(timeout = scaled(Span(1, Seconds)), interval = scaled(Span(100, Millis)))
 
   private def migrator(migrations: Int*) =
-    new ProcessModelMigrator(Map(ProcessingType.Streaming -> new TestMigrations(migrations: _*)))
+    new ProcessModelMigrator(Map(TestProcessingTypes.Streaming -> new TestMigrations(migrations: _*)))
 
   val processId = "fooProcess"
 

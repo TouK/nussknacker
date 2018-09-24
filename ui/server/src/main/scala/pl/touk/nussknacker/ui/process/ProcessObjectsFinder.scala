@@ -14,18 +14,21 @@ object ProcessObjectsFinder {
   import pl.touk.nussknacker.engine.util.Implicits._
 
   def findSignals(processes: List[ProcessDetails],
-                  definition: ProcessDefinition[ObjectDefinition]): Map[String, SignalDefinition] = {
+                  definitions: Iterable[ProcessDefinition[ObjectDefinition]]): Map[String, SignalDefinition] = definitions.flatMap { definition =>
     definition.signalsWithTransformers.map { case (name, (objDefinition, transformers)) =>
       val processesWithTransformers = findProcessesWithTransformers(processes, transformers)
       name -> SignalDefinition(name, objDefinition.parameters.map(_.name), processesWithTransformers)
     }
-  }
+  }.toMap
 
   def findQueries(processes: List[ProcessDetails],
-                  definition: ProcessDefinition[ObjectDefinition]): Map[QueryableStateName, List[String]] = {
-    definition.customStreamTransformers.mapValuesNow(_._2.queryableStateNames)
-      .sequenceMap
-      .mapValuesNow(transformers => findProcessesWithTransformers(processes, transformers.toSet))
+                  definitions: Iterable[ProcessDefinition[ObjectDefinition]]): Map[QueryableStateName, List[String]] = {
+
+    definitions.flatMap { definition =>
+      definition.customStreamTransformers.mapValuesNow(_._2.queryableStateNames)
+           .sequenceMap
+           .mapValuesNow(transformers => findProcessesWithTransformers(processes, transformers.toSet))
+    }.toMap
   }
 
   //TODO return Map[ProcessingType, List[String]]?

@@ -22,7 +22,7 @@ import EspErrorToHttp._
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.ui.codec.UiCodecs
 import pl.touk.nussknacker.ui.validation.{ProcessValidation, ValidationResults}
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
+import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.ui.process.{JobStatusService, NewProcessPreparer, ProcessToSave, ProcessTypesForCategories}
 import pl.touk.http.argonaut.Argonaut62Support
 import pl.touk.nussknacker.engine.graph.node.{NodeData, SubprocessInput}

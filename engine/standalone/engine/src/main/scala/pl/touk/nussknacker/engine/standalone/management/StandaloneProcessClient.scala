@@ -13,8 +13,7 @@ import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 object StandaloneProcessClient {
 
   def apply(config: Config) : StandaloneProcessClient = {
-    val standaloneConf = config.getConfig("standaloneConfig")
-    val managementUrls = standaloneConf.getString("managementUrl").split(",").map(_.trim).toList
+    val managementUrls = config.getString("managementUrl").split(",").map(_.trim).toList
     val clients = managementUrls.map(new DispatchStandalonProcessClient(_))
     new MultiInstanceStandaloneProcessClient(clients)
   }

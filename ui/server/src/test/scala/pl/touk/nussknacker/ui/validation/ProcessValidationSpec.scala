@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.validation
 
 import org.scalatest.{FlatSpec, Matchers}
+import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -8,8 +9,8 @@ import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
-import pl.touk.nussknacker.ui.api.helpers.TestFactory
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
+import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessingTypes}
+import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.EdgeType.{NextSwitch, SwitchDefault}
 import pl.touk.nussknacker.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.{Edge, EdgeType, Group, ProcessAdditionalFields}
@@ -156,18 +157,18 @@ class ProcessValidationSpec extends FlatSpec with Matchers {
         Source("in", SourceRef("barSource", List())),
         Sink("out", SinkRef("barSink", List()))
       ),
-      List(Edge("in", "out", None)), `type` = ProcessingType.RequestResponse
+      List(Edge("in", "out", None)), `type` = TestProcessingTypes.RequestResponse
     )
     validator.validate(process) should matchPattern {
       case ValidationResult(
         ValidationErrors(_, Nil, errors),
         ValidationWarnings.success,
         _
-      ) if errors == List(PrettyValidationErrors.noValidatorKnown(ProcessingType.RequestResponse)) =>
+      ) if errors == List(PrettyValidationErrors.noValidatorKnown(TestProcessingTypes.RequestResponse)) =>
     }
   }
 
-  private def createProcess(nodes: List[NodeData], edges: List[Edge], `type`: ProcessingType.Value = ProcessingType.Streaming, groups: Set[Group] = Set()) = {
+  private def createProcess(nodes: List[NodeData], edges: List[Edge], `type`: ProcessingTypeData.ProcessingType = TestProcessingTypes.Streaming, groups: Set[Group] = Set()) = {
     DisplayableProcess("test", ProcessProperties(StreamMetaData(),
       ExceptionHandlerRef(List()), subprocessVersions = Map.empty, additionalFields = Some(ProcessAdditionalFields(None, groups))), nodes, edges, `type`)
   }

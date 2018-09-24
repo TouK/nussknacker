@@ -24,7 +24,7 @@ class FlinkProcessTestRunnerSpec extends FlatSpec with Matchers with ScalaFuture
 
   it should "run process in test mode" in {
     val config = ConfigFactory.load()
-    val processManager = FlinkRestManager(config)
+    val processManager = FlinkProcessManagerProvider.defaultProcessManager(config)
 
     val processId = UUID.randomUUID().toString
 
@@ -50,7 +50,7 @@ class FlinkProcessTestRunnerSpec extends FlatSpec with Matchers with ScalaFuture
       .emptySink("endSend", "sendSms")
 
     val config = ConfigFactory.load()
-    val processManager = FlinkRestManager(config)
+    val processManager = FlinkProcessManagerProvider.defaultProcessManager(config)
 
     val processData = ProcessMarshaller.toJson(process, PrettyParams.spaces2)
 

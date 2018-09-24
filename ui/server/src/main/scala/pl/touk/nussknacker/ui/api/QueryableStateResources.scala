@@ -1,14 +1,12 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.server.{Directive0, Directives, Route}
+import akka.http.scaladsl.server.{Directives, Route}
 import argonaut.{Json, Parse}
 import cats.data.EitherT
-import pl.touk.http.argonaut.Argonaut62Support
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.QueryableStateName
 import pl.touk.nussknacker.engine.flink.queryablestate.EspQueryableClient
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
+import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.{JobStatusService, ProcessObjectsFinder}
 import pl.touk.http.argonaut.Argonaut62Support
@@ -53,7 +51,7 @@ class QueryableStateResources(processDefinition: Map[ProcessingType, ModelData],
 
   private def prepareQueryableStates()(implicit user: LoggedUser): Future[Map[String, List[QueryableStateName]]] = {
     processRepository.fetchAllProcessesDetails().map { processList =>
-      ProcessObjectsFinder.findQueries(processList, processDefinition(ProcessingType.Streaming).processDefinition)
+      ProcessObjectsFinder.findQueries(processList, processDefinition.values.map(_.processDefinition))
     }
   }
 

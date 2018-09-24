@@ -21,7 +21,7 @@ import scala.concurrent.duration._
 
 trait DockerTest extends DockerTestKit with ScalaFutures with LazyLogging {
   self: Suite =>
-  private val flinkEsp = "flinkesp:1.6.0"
+  private val flinkEsp = "flinkesp:1.6.1"
 
   private val client: DockerClient = DefaultDockerClient.fromEnv().build()
 
@@ -106,7 +106,7 @@ trait DockerTest extends DockerTestKit with ScalaFutures with LazyLogging {
     tempDir.toFile.getName
   }
 
-  protected lazy val processManager = FlinkRestManager(config)
+  protected lazy val processManager = FlinkProcessManagerProvider.defaultProcessManager(config)
 
 
 }

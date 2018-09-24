@@ -199,9 +199,10 @@ function mapState(state) {
     : _.get(state.graphReducer.processToDisplay, "validationResult.errors.processPropertiesErrors", [])
   const nodeToDisplay = state.graphReducer.nodeToDisplay
   const processCategory = state.graphReducer.fetchedProcessDetails.processCategory
+  const processDefinitionData = state.settings.processDefinitionData || {}
   return {
     nodeToDisplay: nodeToDisplay,
-    nodeSetting: _.get(state.settings.nodesSettings, ProcessUtils.findNodeConfigName(nodeToDisplay)) || {},
+    nodeSetting: _.get(processDefinitionData.nodesConfig, ProcessUtils.findNodeConfigName(nodeToDisplay)) || {},
     processId: state.graphReducer.processToDisplay.id,
     subprocessVersions: state.graphReducer.processToDisplay.properties.subprocessVersions,
     nodeErrors: errors,
@@ -209,7 +210,7 @@ function mapState(state) {
     readOnly: !state.settings.loggedUser.canWrite(processCategory) || state.graphReducer.businessView || state.graphReducer.nodeToDisplayReadonly || false,
     showNodeDetailsModal: state.ui.showNodeDetailsModal,
     testResults: state.graphReducer.testResults,
-    processDefinitionData: state.settings.processDefinitionData,
+    processDefinitionData: processDefinitionData,
     expandedGroups: state.ui.expandedGroups,
     processCounts: state.graphReducer.processCounts || {},
     businessView: state.graphReducer.businessView

@@ -6,13 +6,14 @@ import cats.data.Validated.{Invalid, Valid}
 import com.codahale.metrics.MetricRegistry
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.ModelData.ClasspathConfig
 import pl.touk.nussknacker.engine.{ModelData, _}
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.TestDataParserProvider
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{ServiceInvocationCollector, SinkInvocationCollector}
 import pl.touk.nussknacker.engine.api.test.{ResultsCollectingListener, ResultsCollectingListenerHolder, TestRunId}
-import pl.touk.nussknacker.engine.api.{EndingReference, ProcessVersion}
+import pl.touk.nussknacker.engine.api.{EndingReference, ProcessVersion, StandaloneMetaData, TypeSpecificData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
@@ -190,6 +191,35 @@ object TestUtils {
         service.invokeMethod(parameterCreator, newAdditional)
       }
     }
+  }
+
+}
+
+class StandaloneProcessManagerProvider extends ProcessManagerProvider {
+
+  override def createProcessManager(modelData: ModelData, config: Config): ProcessManager
+    = StandaloneProcessManager(modelData, config)
+
+  override def name: String = "requestResponseStandalone"
+
+  override def emptyProcessMetadata(isSubprocess: Boolean): TypeSpecificData = StandaloneMetaData(None)
+
+  override def supportsSignals: Boolean = false
+
+  override def supportsQueryableState: Boolean = false
+}
+
+object StandaloneProcessManagerProvider {
+
+  import net.ceedubs.ficus.Ficus._
+  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+  import pl.touk.nussknacker.engine.util.config.FicusReaders._
+
+  def defaultTypeConfig(config: Config): ProcessingTypeConfig = {
+    ProcessingTypeConfig("requestResponseStandalone",
+                    config.as[ClasspathConfig]("standaloneConfig").urls,
+                    config.getConfig("standaloneConfig"),
+                    config.getConfig("standaloneProcessConfig"))
   }
 
 }

@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.graph.node.{SubprocessInput, SubprocessInputDe
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.ui.api.ProcessTestData
 import pl.touk.nussknacker.ui.api.ProcessTestData.{existingServiceId, existingSinkFactory, existingSourceFactory}
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
+import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.ui.process.displayedgraph.ValidatedDisplayableProcess
 import pl.touk.nussknacker.ui.validation.ValidationResults.{ValidationErrors, ValidationResult, ValidationWarnings}
 
@@ -109,8 +109,8 @@ class TestModelMigrationsSpec extends FunSuite with Matchers {
 
   private def newTestModelMigrations(testMigrations: TestMigrations): TestModelMigrations = {
     new TestModelMigrations(
-      Map(ProcessingType.Streaming -> testMigrations),
-      Map(ProcessingType.Streaming -> ProcessTestData.validator))
+      Map(TestProcessingTypes.Streaming -> testMigrations),
+      Map(TestProcessingTypes.Streaming -> ProcessTestData.validator))
 
   }
 }

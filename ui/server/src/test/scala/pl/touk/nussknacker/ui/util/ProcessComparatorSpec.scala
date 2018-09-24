@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.Filter
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
+import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.ui.process.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.util.ProcessComparator.{NodeDifferent, NodeNotPresentInCurrent, NodeNotPresentInOther}
@@ -42,7 +42,7 @@ class ProcessComparatorSpec extends FlatSpec with Matchers {
     toDisplayableFromProcess(espProcess( EspProcessBuilder.id("test").parallelism(1).exceptionHandler().source("start", "testSource")))
 
   private def toDisplayableFromProcess(espProcess: EspProcess) : DisplayableProcess =
-    ProcessConverter.toDisplayable(ProcessCanonizer.canonize(espProcess), ProcessingType.Streaming)
+    ProcessConverter.toDisplayable(ProcessCanonizer.canonize(espProcess), TestProcessingTypes.Streaming)
 
 
 }

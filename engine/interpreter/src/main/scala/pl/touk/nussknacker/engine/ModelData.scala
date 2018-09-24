@@ -1,37 +1,23 @@
 package pl.touk.nussknacker.engine
 
-import java.io.File
 import java.net.URL
 
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
-import pl.touk.nussknacker.engine.definition.{ConfigCreatorSignalDispatcher, ProcessDefinitionExtractor}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
+import pl.touk.nussknacker.engine.definition.{ConfigCreatorSignalDispatcher, ProcessDefinitionExtractor}
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.engine.util.ThreadUtils
-import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
 import pl.touk.nussknacker.engine.util.loader.{ModelClassLoader, ProcessConfigCreatorLoader, ScalaServiceLoader}
-
-import scala.util.Try
+import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
 
 object ModelData {
 
-  import net.ceedubs.ficus.Ficus._
-  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-  import net.ceedubs.ficus.readers.ValueReader
-
-  def apply(config: Config, classPathConfigKey: String, processConfigKey: String) : ModelData = {
-
-    implicit val urlValueReader: ValueReader[URL] = ValueReader[String]
-      .map(value => Try(new URL(value)).getOrElse(new File(value).toURI.toURL))
-
-    val classpathConfig = config.as[ClasspathConfig](classPathConfigKey)
-    val processConfig = config.getConfig(processConfigKey)
-
+  def apply(processConfig: Config, classpath: List[URL]) : ModelData = {
     //TODO: ability to generate additional classpath?
-    val jarClassLoader = ModelClassLoader(classpathConfig.urls)
+    val jarClassLoader = ModelClassLoader(classpath)
     ClassLoaderModelData(processConfig, jarClassLoader)
   }
 

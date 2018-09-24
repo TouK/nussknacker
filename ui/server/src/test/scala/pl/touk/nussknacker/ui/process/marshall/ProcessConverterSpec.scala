@@ -14,8 +14,8 @@ import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.sampleResolver
+import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.ui.validation.ProcessValidation
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.{ProcessType, ProcessingType}
 import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.ui.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType, ValidationResult}
@@ -26,17 +26,17 @@ class ProcessConverterSpec extends FlatSpec with Matchers with TableDrivenProper
     val processDefinition = ProcessDefinition[ObjectDefinition](Map("ref" -> ObjectDefinition.noParam),
       Map("sourceRef" -> ObjectDefinition.noParam), Map(), Map(), Map(), ObjectDefinition.noParam, ExpressionDefinition(Map.empty, List.empty, optimizeCompilation = false), List())
     val validator =  ProcessValidator.default(ProcessDefinitionBuilder.withEmptyObjects(processDefinition))
-    new ProcessValidation(Map(ProcessingType.Streaming -> validator), sampleResolver)
+    new ProcessValidation(Map(TestProcessingTypes.Streaming -> validator), sampleResolver)
   }
 
   def canonicalDisplayable(canonicalProcess: CanonicalProcess) = {
-    val displayable = ProcessConverter.toDisplayable(canonicalProcess, ProcessingType.Streaming)
+    val displayable = ProcessConverter.toDisplayable(canonicalProcess, TestProcessingTypes.Streaming)
     ProcessConverter.fromDisplayable(displayable)
   }
 
   def displayableCanonical(process: DisplayableProcess) = {
    val canonical = ProcessConverter.fromDisplayable(process)
-    ProcessConverter.toDisplayable(canonical, ProcessingType.Streaming).validated(validation)
+    ProcessConverter.toDisplayable(canonical, TestProcessingTypes.Streaming).validated(validation)
   }
 
   it should "be able to convert empty process" in {
@@ -50,7 +50,7 @@ class ProcessConverterSpec extends FlatSpec with Matchers with TableDrivenProper
       List(
         Processor("e", ServiceRef("ref", List())),
         Source("s", SourceRef("sourceRef", List()))
-      ), List(Edge("s", "e", None)), ProcessingType.Streaming)
+      ), List(Edge("s", "e", None)), TestProcessingTypes.Streaming)
 
     displayableCanonical(process).nodes.toSet shouldBe process.nodes.toSet
     displayableCanonical(process).edges.toSet shouldBe process.edges.toSet
@@ -67,7 +67,7 @@ class ProcessConverterSpec extends FlatSpec with Matchers with TableDrivenProper
     )) { (unexpectedEnd) =>
       val process = ValidatedDisplayableProcess("t1", ProcessProperties(StreamMetaData(Some(2), Some(false)), ExceptionHandlerRef(List()), subprocessVersions = Map.empty),
         List(Source("s", SourceRef("sourceRef", List())), unexpectedEnd),
-        List(Edge("s", "e", None)), ProcessingType.Streaming, ValidationResult.errors(Map(unexpectedEnd.id -> List(NodeValidationError("InvalidTailOfBranch",
+        List(Edge("s", "e", None)), TestProcessingTypes.Streaming, ValidationResult.errors(Map(unexpectedEnd.id -> List(NodeValidationError("InvalidTailOfBranch",
           "Invalid end of process", "Process branch can only end with sink or processor", None, errorType = NodeValidationErrorType.SaveAllowed))), List(), List())
       )
       displayableCanonical(process.toDisplayable) shouldBe process

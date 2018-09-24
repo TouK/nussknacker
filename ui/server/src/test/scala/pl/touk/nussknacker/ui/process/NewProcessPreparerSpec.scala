@@ -1,11 +1,12 @@
 package pl.touk.nussknacker.ui.process
 
 import org.scalatest.{FlatSpec, Matchers}
+import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.ui.api.ProcessTestData
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
+import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.ObjectProcessDefinition
 
 class NewProcessPreparerSpec extends FlatSpec with Matchers {
@@ -17,9 +18,11 @@ class NewProcessPreparerSpec extends FlatSpec with Matchers {
     )
 
   it should "create new empty process" in {
-    val preparer = new NewProcessPreparer(Map(ProcessingType.Streaming -> processDeffinition))
+    val processingType = "testProcessingType"
 
-    val emptyProcess = preparer.prepareEmptyProcess("processId1", ProcessingType.Streaming, isSubprocess = false)
+    val preparer = new NewProcessPreparer(Map(processingType -> processDeffinition), Map(processingType -> (_ => StreamMetaData(None))))
+
+    val emptyProcess = preparer.prepareEmptyProcess("processId1", processingType, isSubprocess = false)
 
     emptyProcess.metaData.id shouldBe "processId1"
     emptyProcess.nodes shouldBe List.empty
@@ -27,9 +30,12 @@ class NewProcessPreparerSpec extends FlatSpec with Matchers {
   }
 
   it should "create new empty process with exception handler params present" in {
-    val preparer = new NewProcessPreparer(Map(ProcessingType.Streaming -> processDeffinitionWithExceptionHandler))
+    val processingType = "testProcessingType"
 
-    val emptyProcess = preparer.prepareEmptyProcess("processId1", ProcessingType.Streaming, isSubprocess = false)
+    val preparer = new NewProcessPreparer(Map(processingType -> processDeffinitionWithExceptionHandler),
+        Map(processingType -> (_ => StreamMetaData(None))))
+
+    val emptyProcess = preparer.prepareEmptyProcess("processId1", processingType, isSubprocess = false)
 
     emptyProcess.metaData.id shouldBe "processId1"
     emptyProcess.nodes shouldBe List.empty

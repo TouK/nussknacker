@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnod
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessType
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessType.ProcessType
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
+import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.EdgeType.SubprocessOutput
 import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.{Edge, EdgeType}
 import pl.touk.nussknacker.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties, displayablenode}

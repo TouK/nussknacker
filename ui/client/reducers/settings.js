@@ -14,8 +14,7 @@ export function reducer(state = initialState, action) {
     case "UI_SETTINGS": {
       return {
         ...state,
-        featuresSettings: action.settings.features,
-        nodesSettings: action.settings.nodes
+        featuresSettings: action.settings.features
       }
     }
     case "PROCESS_DEFINITION_DATA": {

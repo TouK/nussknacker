@@ -429,7 +429,7 @@ export class NodeDetailsContent extends React.Component {
 
 function mapState(state) {
   return {
-    additionalPropertiesLabels: _.get(state.settings, 'featuresSettings.additionalPropertiesLabels') || {}
+    additionalPropertiesLabels: _.get(state.settings, 'processDefinitionData.additionalPropertiesLabels') || {}
   }
 }
 

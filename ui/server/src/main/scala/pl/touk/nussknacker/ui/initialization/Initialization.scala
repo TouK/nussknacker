@@ -6,13 +6,11 @@ import cats.instances.list._
 import cats.syntax.traverse._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
+import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, ProcessDeploymentData}
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.db.entity.EnvironmentsEntity.EnvironmentsEntityData
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType.ProcessingType
-import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntity.ProcessVersionEntityData
 import pl.touk.nussknacker.ui.db.{DbConfig, EspTables}
 import pl.touk.nussknacker.ui.process.migrate.ProcessModelMigrator
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessDetails
@@ -54,6 +52,7 @@ object Initialization {
   private def runOperationsTransactionally(db: DbConfig, operations: List[InitialOperation]) = {
 
     import db.driver.api._
+
     val result = operations.map(_.runOperation).sequence
     val runFuture = db.run(result.transactionally)
 
@@ -84,6 +83,7 @@ class EnvironmentInsert(environmentName: String, dbConfig: DbConfig) extends Ini
   }
 }
 
+//FIXME: this is pretty clunky - e.g. cannot define category/processingtype for technical type - it's hardcoded as streaming...
 class TechnicalProcessUpdate(customProcesses: Map[String, String], repository: DbWriteProcessRepository[DB], fetchingProcessRepository: DBFetchingProcessRepository[DB])
   extends InitialOperation  {
 
@@ -96,7 +96,7 @@ class TechnicalProcessUpdate(customProcesses: Map[String, String], repository: D
           processId = processId,
           category = "Technical",
           deploymentData = deploymentData,
-          processingType = ProcessingType.Streaming,
+          processingType = "streaming",
           isSubprocess = false
         )
       }.toList.sequence

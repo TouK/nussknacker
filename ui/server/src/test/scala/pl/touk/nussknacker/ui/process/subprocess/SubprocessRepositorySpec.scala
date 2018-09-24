@@ -7,7 +7,7 @@ import org.scalatest.time.{Seconds, Span}
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
 import pl.touk.nussknacker.ui.api.ProcessTestData
 import pl.touk.nussknacker.ui.api.helpers.EspItTest
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessingType
+import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
 import scala.language.higherKinds
@@ -17,8 +17,8 @@ class SubprocessRepositorySpec extends FlatSpec with ScalatestRouteTest with Mat
 
   import pl.touk.nussknacker.ui.api.helpers.TestFactory.testCategoryName
   it should "fetches subprocess by its version" in {
-    val sampleSubprocess = ProcessConverter.toDisplayable(ProcessTestData.sampleSubprocess, ProcessingType.Streaming)
-    val sampleSubprocess2 = ProcessConverter.toDisplayable(ProcessTestData.sampleSubprocess2, ProcessingType.Streaming)
+    val sampleSubprocess = ProcessConverter.toDisplayable(ProcessTestData.sampleSubprocess, TestProcessingTypes.Streaming)
+    val sampleSubprocess2 = ProcessConverter.toDisplayable(ProcessTestData.sampleSubprocess2, TestProcessingTypes.Streaming)
     saveSubProcess(sampleSubprocess) { status shouldEqual StatusCodes.OK }
     updateProcess(sampleSubprocess2) { status shouldEqual StatusCodes.OK }
 
