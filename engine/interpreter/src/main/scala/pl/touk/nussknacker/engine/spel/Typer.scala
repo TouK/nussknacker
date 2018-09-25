@@ -61,8 +61,17 @@ private[spel] class Typer(implicit classLoader: ClassLoader) {
       //TODO: what should be here?
       case e: Identifier => Valid(Unknown)
       //TODO: what should be here?
-      case e: Indexer => Valid(Unknown)
-
+      case e: Indexer =>
+        val result = current match {
+          case Typed(types) :: Nil if types.size == 1 =>
+            types.head match {
+              case tc@TypedClass(clazz, param :: Nil) if clazz.isAssignableFrom(classOf[java.util.List[_]]) => param
+              case TypedClass(clazz, keyParam :: valueParam :: Nil) if clazz.isAssignableFrom(classOf[java.util.Map[_, _]]) => valueParam
+              case _ => Unknown
+            }
+          case _ => Unknown
+        }
+        Valid(result)
       case e: InlineList => withTypedChildren { children =>
         val childrenTypes = children.toSet
         val genericType = if (childrenTypes.contains(Unknown) || childrenTypes.size != 1) Unknown else childrenTypes.head

@@ -31,7 +31,31 @@ class GenericItSpec extends FunSpec with BeforeAndAfterAll with Matchers with Ev
   val JsonInTopic: String = "name.json.input"
   val JsonOutTopic: String = "name.json.output"
 
-  private val jsonProcess =
+  private val givenNotMatchingJsonObj =
+    """{
+      |  "first": "Zenon",
+      |  "last": "Nowak"
+      |}""".stripMargin
+  private val givenMatchingJsonObj =
+    """{
+      |  "first": "Jan",
+      |  "last": "Kowalski"
+      |}""".stripMargin
+
+  private val givenNotMatchingAvroObj = {
+    val r = new GenericData.Record(RecordSchema)
+    r.put("first", "Zenon")
+    r.put("last", "Nowak")
+    r
+  }
+  private val givenMatchingAvroObj = {
+    val r = new GenericData.Record(RecordSchema)
+    r.put("first", "Jan")
+    r.put("last", "Kowalski")
+    r
+  }
+
+  private def jsonProcess(fieldSelection: String) =
     EspProcessBuilder
       .id("json-test")
       .parallelism(1)
@@ -44,7 +68,7 @@ class GenericItSpec extends FunSpec with BeforeAndAfterAll with Matchers with Ev
             |  "last": "String"
             |}""".stripMargin
       )
-      .filter("name-filter", "#input.first == 'Jan'")
+      .filter("name-filter", s"#input.$fieldSelection == 'Jan'")
       .sink("end", "#input","kafka-json", "topic" -> s"'$JsonOutTopic'")
 
   private val avroProcess =
@@ -65,75 +89,81 @@ class GenericItSpec extends FunSpec with BeforeAndAfterAll with Matchers with Ev
       .sink("end", s"#AVRO.record({first: #input.first, last: #input.last}, #AVRO.latestValueSchema('$AvroFromScratchOutTopic'))",
         "kafka-avro", "topic" -> s"'$AvroFromScratchOutTopic'")
 
-  it("should read json object from kafka, filter and save it to kafka") {
-    val givenNotMatchingObj =
-      """{
-        |  "first": "Zenon",
-        |  "last": "Nowak"
-        |}""".stripMargin
-    kafkaClient.sendMessage(JsonInTopic, givenNotMatchingObj)
-    val givenMatchingObj =
-      """{
-        |  "first": "Jan",
-        |  "last": "Kowalski"
-        |}""".stripMargin
-    kafkaClient.sendMessage(JsonInTopic, givenMatchingObj)
+  private def avroTypedProcess(fieldSelection: String) =
+    EspProcessBuilder
+      .id("avro-typed-test")
+      .parallelism(1)
+      .exceptionHandler()
+      .source("start", "kafka-typed-avro",
+        "topic" -> s"'$AvroTypedInTopic'",
+        "schema" -> s"'$RecordSchemaString'"
+      )
+      .filter("name-filter", s"#input.$fieldSelection == 'Jan'")
+      .sink("end", "#input","kafka-avro", "topic" -> s"'$AvroTypedOutTopic'")
 
-    register(jsonProcess)
-    env.execute(jsonProcess.id)
+  it("should read json object from kafka, filter and save it to kafka") {
+    kafkaClient.sendMessage(JsonInTopic, givenNotMatchingJsonObj)
+    kafkaClient.sendMessage(JsonInTopic, givenMatchingJsonObj)
+
+    assertThrows[Exception] {
+      register(jsonProcess("asdf"))
+    }
+    val validJsonProcess = jsonProcess("first")
+    register(validJsonProcess)
+    env.execute(validJsonProcess.id)
 
     val consumer = kafkaClient.createConsumer()
     val processed = consumer.consume(JsonOutTopic).map(_.message()).map(new String(_, StandardCharsets.UTF_8)).take(1).toList
-    processed.map(parseJson) shouldEqual List(parseJson(givenMatchingObj))
+    processed.map(parseJson) shouldEqual List(parseJson(givenMatchingJsonObj))
   }
 
-  private def parseJson(str: String) =
-    Parse.parse(str).right.value
-
-
   it("should read avro object from kafka, filter and save it to kafka") {
-    val givenNotMatchingObj = {
-      val r = new GenericData.Record(RecordSchema)
-      r.put("first", "Zenon")
-      r.put("last", "Nowak")
-      r
-    }
-    send(givenNotMatchingObj, AvroInTopic)
-    val givenMatchingObj = {
-      val r = new GenericData.Record(RecordSchema)
-      r.put("first", "Jan")
-      r.put("last", "Kowalski")
-      r
-    }
-    send(givenMatchingObj, AvroInTopic)
+    send(givenNotMatchingAvroObj, AvroInTopic)
+    send(givenMatchingAvroObj, AvroInTopic)
 
     register(avroProcess)
     env.execute(avroProcess.id)
 
     val consumer = kafkaClient.createConsumer()
-    val processed = consumer.consume(AvroOutTopic).map { record =>
-      valueDeserializer.deserialize(AvroOutTopic, record.message())
-    }.take(1).toList
-    processed shouldEqual List(givenMatchingObj)
+    val processed = consumeOneAvroMessage(AvroOutTopic)
+    processed shouldEqual List(givenMatchingAvroObj)
   }
 
   it("should read avro object from kafka and save new one created from scratch") {
-    val givenObj = {
-      val r = new GenericData.Record(RecordSchema)
-      r.put("first", "Jan")
-      r.put("last", "Kowalski")
-      r
-    }
-    send(givenObj, AvroFromScratchInTopic)
+    send(givenMatchingAvroObj, AvroFromScratchInTopic)
 
     register(avroFromScratchProcess)
     env.execute(avroFromScratchProcess.id)
 
     val consumer = kafkaClient.createConsumer()
-    val processed = consumer.consume(AvroFromScratchOutTopic).map { record =>
-      valueDeserializer.deserialize(AvroFromScratchOutTopic, record.message())
+    val processed = consumeOneAvroMessage(AvroFromScratchOutTopic)
+    processed shouldEqual List(givenMatchingAvroObj)
+  }
+
+  it("should read avro typed object from kafka and save it to kafka") {
+    send(givenNotMatchingAvroObj, AvroTypedInTopic)
+    send(givenMatchingAvroObj, AvroTypedInTopic)
+
+    assertThrows[Exception] {
+      register(avroTypedProcess("asdf"))
+    }
+    val validAvroTypedProcess = avroTypedProcess("first")
+    register(validAvroTypedProcess)
+    env.execute(validAvroTypedProcess.id)
+
+    val consumer = kafkaClient.createConsumer()
+    val processed = consumeOneAvroMessage(AvroTypedOutTopic)
+    processed shouldEqual List(givenMatchingAvroObj)
+  }
+
+  private def parseJson(str: String) =
+    Parse.parse(str).right.value
+
+  private def consumeOneAvroMessage(topic: String) = {
+    val consumer = kafkaClient.createConsumer()
+    consumer.consume(topic).map { record =>
+      valueDeserializer.deserialize(topic, record.message())
     }.take(1).toList
-    processed shouldEqual List(givenObj)
   }
 
   private lazy val creator = new GenericConfigCreator {
@@ -184,6 +214,9 @@ object MockSchemaRegistry {
   val AvroFromScratchInTopic: String = "name.avro.from-scratch.input"
   val AvroFromScratchOutTopic: String = "name.avro.from-scratch.output"
 
+  val AvroTypedInTopic: String = "name.avro.typed.input"
+  val AvroTypedOutTopic: String = "name.avro.typed.output"
+
   private def parser = new Schema.Parser()
 
   val RecordSchemaString: String =
@@ -207,9 +240,13 @@ object MockSchemaRegistry {
       mockSchemaRegistry.register(subject, schema)
     }
     registerSchema(AvroInTopic, isKey = false, RecordSchema)
-    registerSchema(AvroFromScratchInTopic, isKey = false, RecordSchema)
     registerSchema(AvroOutTopic, isKey = false, RecordSchema)
+
+    registerSchema(AvroFromScratchInTopic, isKey = false, RecordSchema)
     registerSchema(AvroFromScratchOutTopic, isKey = false, RecordSchema)
+
+    registerSchema(AvroTypedInTopic, isKey = false, RecordSchema)
+    registerSchema(AvroTypedOutTopic, isKey = false, RecordSchema)
     mockSchemaRegistry
   }
 

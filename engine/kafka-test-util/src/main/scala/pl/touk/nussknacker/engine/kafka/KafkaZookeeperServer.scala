@@ -12,6 +12,8 @@ import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.serialization.{ByteArrayDeserializer, ByteArraySerializer, StringSerializer}
 import org.apache.kafka.common.utils.Time
 import org.apache.zookeeper.server.{NIOServerCnxnFactory, ZooKeeperServer}
+import org.scalatest.concurrent.Eventually._
+import org.scalatest.time.{Millis, Seconds, Span}
 
 object KafkaZookeeperServer {
   val localhost = "127.0.0.1"
@@ -111,7 +113,11 @@ object KafkaUtils {
     import scala.collection.JavaConversions._
 
     def consume(topic: String): Stream[KeyMessage[Array[Byte], Array[Byte]]] = {
-      val partitions = consumer.partitionsFor(topic).map(no => new TopicPartition(topic, no.partition()))
+      implicit val patienceConfig: PatienceConfig = PatienceConfig(Span(10, Seconds), Span(100, Millis))
+      val partitionsInfo = eventually {
+        consumer.listTopics.getOrElse(topic, throw new IllegalStateException(s"Topic: $topic not exists"))
+      }
+      val partitions = partitionsInfo.map(no => new TopicPartition(topic, no.partition()))
       consumer.assign(partitions)
 
       Stream.continually(())

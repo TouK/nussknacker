@@ -32,9 +32,12 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
     val schemaRegistryClientFactory = createSchemaRegistryClientFactory
     val avroSourceFactory = new KafkaAvroSourceFactory(kafkaConfig,
       createGenericAvroDeserializationSchemaFactory(schemaRegistryClientFactory), schemaRegistryClientFactory, None)
+    val avroTypedSourceFactory = new KafkaTypedAvroSourceFactory(kafkaConfig,
+      createGenericAvroDeserializationSchemaFactory(schemaRegistryClientFactory), schemaRegistryClientFactory, None)
     Map("kafka-json" -> defaultCategory(new GenericJsonSourceFactory(kafkaConfig)),
         "kafka-typed-json" -> defaultCategory(new GenericTypedJsonSourceFactory(kafkaConfig)),
-        "kafka-avro" -> defaultCategory(avroSourceFactory)
+        "kafka-avro" -> defaultCategory(avroSourceFactory),
+        "kafka-typed-avro" -> defaultCategory(avroTypedSourceFactory)
     )
   }
 

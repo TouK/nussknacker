@@ -8,8 +8,6 @@ It also provides extension for `KafkaSourceFactory` (`KafkaAvroSourceFactory`) w
 
 Some features that would be nice to have:
 * typed avro factory
-  * similar to *kafka-typed-json* support of type definition (see *generic* module)
-  * ability to use avro schema in type definition instead of custom one
   * ability to fetch avro schema from Schema Registry
 * resources consumption
   * closing of `SchemaRegistryClient`

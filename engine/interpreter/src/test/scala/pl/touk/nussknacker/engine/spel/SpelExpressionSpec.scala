@@ -40,7 +40,7 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
 
   val testValue = Test( "1", 2, List(Test("3", 4), Test("5", 6)).asJava, bigValue)
   val ctx = Context("abc").withVariables(
-    Map("obj" -> testValue,"strVal" -> "")
+    Map("obj" -> testValue,"strVal" -> "","mapValue" -> Map("foo" -> "bar").asJava)
   )
   val ctxWithGlobal : Context = ctx.withVariable("processHelper", SampleGlobalObject)
 
@@ -187,6 +187,11 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
     parseOrFail[Any]("#obj.bigValue").evaluateSync[BigDecimal](ctx, dumbLazyProvider).value should equal(bigValue)
     parseOrFail[Boolean]("#obj.bigValue < 50*1024*1024").evaluateSync[Boolean](ctx, dumbLazyProvider).value should equal(false)
     parseOrFail[Boolean]("#obj.bigValue < 50*1024*1024L").evaluateSync[Boolean](ctx, dumbLazyProvider).value should equal(false)
+  }
+
+  it should "access list elements by index" in {
+    parseOrFail[Any]("#obj.children[0].id").evaluateSync[String](ctx, dumbLazyProvider).value shouldEqual "3"
+    parseOrFail[Any]("#mapValue['foo']").evaluateSync[String](ctx, dumbLazyProvider).value shouldEqual "bar"
   }
 
   it should "filter by list predicates" in {
