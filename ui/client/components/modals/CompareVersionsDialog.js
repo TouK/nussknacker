@@ -34,7 +34,7 @@ class CompareVersionsDialog extends React.Component {
 
   componentWillReceiveProps(nextProps) {
     if (nextProps.processId && nextProps.otherEnvironment) {
-      HttpService.fetchRemoteVersions(nextProps.processId).then(list => this.setState({remoteVersions: list}))
+      HttpService.fetchRemoteVersions(nextProps.processId).then(list => this.setState({remoteVersions: list || []}))
     }
   }
 

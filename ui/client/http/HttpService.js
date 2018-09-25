@@ -397,7 +397,7 @@ export default {
     return ajaxCall({
       url: `${API_URL}/remoteEnvironment/${processId}/versions`,
       type: 'GET',
-    }).catch((error) => this.addError(`Failed to get versions`, error));
+    }).catch((error) => this.addError(`Failed to get versions from second environment`, error));
   },
 
   migrateProcess(processId, versionId) {
