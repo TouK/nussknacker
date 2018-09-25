@@ -219,7 +219,7 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
       FlinkTestMain.run(modelData, ProcessMarshaller.toJson(process, PrettyParams.spaces2), TestData(List("2|2|2|3|4|5|6").mkString("\n")), FlinkTestConfiguration.configuration, identity)
     }
 
-    intercept[JobExecutionException](Await.result(run, 5 seconds))
+    intercept[JobExecutionException](Await.result(run, 10 seconds))
 
 
   }
@@ -272,7 +272,7 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
       FlinkTestMain.run(modelData, ProcessMarshaller.toJson(process, PrettyParams.spaces2), TestData("2|2|2|3|4|5|6"), FlinkTestConfiguration.configuration, identity)
     }
 
-    val results = Await.result(run, 5 seconds)
+    val results = Await.result(run, 10 seconds)
 
     results.exceptions should have length 1
     results.exceptions.head.nodeId shouldBe Some("out")

@@ -302,8 +302,14 @@ object FlinkProcessRegistrar {
         Await.result(interpreter.interpret(compiledNode, metaData, input), processTimeout)
       } catch {
         case NonFatal(error) => Right(EspExceptionInfo(None, error, input))
-      }).fold(collector.collect, exceptionHandler.handle)
+      }) match {
+        case Left(ir) =>
+          exceptionHandler.handling(None, input)(collector.collect(ir))
+        case Right(info) =>
+          exceptionHandler.handle(info)
+      }
     }
+
   }
 
   class AsyncInterpretationFunction(val compiledProcessWithDepsProvider: (ClassLoader) => CompiledProcessWithDeps,

@@ -54,8 +54,16 @@ class GenericItSpec extends FunSpec with BeforeAndAfterAll with Matchers with Ev
       .exceptionHandler()
       .source("start", "kafka-avro", "topic" -> s"'$AvroInTopic'")
       .filter("name-filter", "#input.first == 'Jan'")
-      // TODO: add support for building new records from scratch
       .sink("end", "#input","kafka-avro", "topic" -> s"'$AvroOutTopic'")
+
+  private val avroFromScratchProcess =
+    EspProcessBuilder
+      .id("avro-from-scratch-test")
+      .parallelism(1)
+      .exceptionHandler()
+      .source("start", "kafka-avro", "topic" -> s"'$AvroFromScratchInTopic'")
+      .sink("end", s"#AVRO.record({first: #input.first, last: #input.last}, #AVRO.latestValueSchema('$AvroFromScratchOutTopic'))",
+        "kafka-avro", "topic" -> s"'$AvroFromScratchOutTopic'")
 
   it("should read json object from kafka, filter and save it to kafka") {
     val givenNotMatchingObj =
@@ -109,6 +117,25 @@ class GenericItSpec extends FunSpec with BeforeAndAfterAll with Matchers with Ev
     processed shouldEqual List(givenMatchingObj)
   }
 
+  it("should read avro object from kafka and save new one created from scratch") {
+    val givenObj = {
+      val r = new GenericData.Record(RecordSchema)
+      r.put("first", "Jan")
+      r.put("last", "Kowalski")
+      r
+    }
+    send(givenObj, AvroFromScratchInTopic)
+
+    register(avroFromScratchProcess)
+    env.execute(avroFromScratchProcess.id)
+
+    val consumer = kafkaClient.createConsumer()
+    val processed = consumer.consume(AvroFromScratchOutTopic).map { record =>
+      valueDeserializer.deserialize(AvroFromScratchOutTopic, record.message())
+    }.take(1).toList
+    processed shouldEqual List(givenObj)
+  }
+
   private lazy val creator = new GenericConfigCreator {
     override protected def createSchemaRegistryClientFactory: SchemaRegistryClientFactory = new SchemaRegistryClientFactory {
       override def createSchemaRegistryClient(kafkaConfig: KafkaConfig): SchemaRegistryClient =
@@ -154,9 +181,12 @@ object MockSchemaRegistry {
   val AvroInTopic: String = "name.avro.input"
   val AvroOutTopic: String = "name.avro.output"
 
+  val AvroFromScratchInTopic: String = "name.avro.from-scratch.input"
+  val AvroFromScratchOutTopic: String = "name.avro.from-scratch.output"
+
   private def parser = new Schema.Parser()
 
-  val RecordSchema: Schema = parser.parse(
+  val RecordSchemaString: String =
     """{
       |  "type": "record",
       |  "namespace": "pl.touk.nussknacker.engine.avro",
@@ -166,8 +196,9 @@ object MockSchemaRegistry {
       |    { "name": "last", "type": "string" }
       |  ]
       |}
-    """.stripMargin)
+    """.stripMargin
 
+  val RecordSchema: Schema = parser.parse(RecordSchemaString)
 
   val Registry: MockSchemaRegistryClient = {
     val mockSchemaRegistry = new MockSchemaRegistryClient
@@ -176,7 +207,9 @@ object MockSchemaRegistry {
       mockSchemaRegistry.register(subject, schema)
     }
     registerSchema(AvroInTopic, isKey = false, RecordSchema)
+    registerSchema(AvroFromScratchInTopic, isKey = false, RecordSchema)
     registerSchema(AvroOutTopic, isKey = false, RecordSchema)
+    registerSchema(AvroFromScratchOutTopic, isKey = false, RecordSchema)
     mockSchemaRegistry
   }
 

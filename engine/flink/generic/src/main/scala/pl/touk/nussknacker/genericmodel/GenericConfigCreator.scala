@@ -55,20 +55,26 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
   : SerializationSchemaFactory[Any] =
     new AvroSerializationSchemaFactory(schemaRegistryClientFactory)
 
-  protected def createSchemaRegistryClientFactory: SchemaRegistryClientFactory =
-    new SchemaRegistryClientFactory
-
   override def exceptionHandlerFactory(config: Config): ExceptionHandlerFactory
     = ExceptionHandlerFactory.noParams(VerboselyLoggingExceptionHandler(_))
 
   import pl.touk.nussknacker.engine.util.functions._
-  override def expressionConfig(config: Config): ExpressionConfig = ExpressionConfig(
-    Map(
-      "GEO" -> defaultCategory(geo),
-      "NUMERIC" -> defaultCategory(numeric),
-      "DATE" -> defaultCategory(date)
-    ),
-    List()
-  )
+
+  override def expressionConfig(config: Config): ExpressionConfig = {
+    val kafkaConfig = config.as[KafkaConfig]("kafka")
+    val schemaRegistryClientFactory = createSchemaRegistryClientFactory
+    ExpressionConfig(
+      Map(
+        "GEO" -> defaultCategory(geo),
+        "NUMERIC" -> defaultCategory(numeric),
+        "DATE" -> defaultCategory(date),
+        "AVRO" -> defaultCategory(new AvroUtils(schemaRegistryClientFactory, kafkaConfig))
+      ),
+      List()
+    )
+  }
+
+  protected def createSchemaRegistryClientFactory: SchemaRegistryClientFactory =
+    new SchemaRegistryClientFactory
 
 }

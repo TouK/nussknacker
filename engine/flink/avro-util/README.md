@@ -7,8 +7,6 @@ It also provides extension for `KafkaSourceFactory` (`KafkaAvroSourceFactory`) w
 # TODOs
 
 Some features that would be nice to have:
-* better SPEL support
-  * ability to create new record - for example from Map of fields
 * typed avro factory
   * similar to *kafka-typed-json* support of type definition (see *generic* module)
   * ability to use avro schema in type definition instead of custom one
