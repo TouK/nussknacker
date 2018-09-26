@@ -190,7 +190,7 @@ object SpelExpressionParser extends LazyLogging {
       target.getMethods.find(m => m.getParameterCount == 0 && m.getName == name)
 
 
-    override protected def invokeMethod(method: Method, target: Any, context: EvaluationContext) = {
+    override protected def invokeMethod(propertyName: String, method: Method, target: Any, context: EvaluationContext) = {
       method.invoke(target)
     }
 
@@ -205,7 +205,7 @@ object SpelExpressionParser extends LazyLogging {
       )
     }
 
-    override protected def invokeMethod(method: Method, target: Any, context: EvaluationContext): Any = {
+    override protected def invokeMethod(propertyName: String, method: Method, target: Any, context: EvaluationContext): Any = {
       method.invoke(target)
     }
 
@@ -218,7 +218,7 @@ object SpelExpressionParser extends LazyLogging {
       target.getMethods.find(m => m.getParameterCount == 0 && m.getName == name && classOf[Option[_]].isAssignableFrom(m.getReturnType))
     }
 
-    override protected def invokeMethod(method: Method, target: Any, context: EvaluationContext) = {
+    override protected def invokeMethod(propertyName: String, method: Method, target: Any, context: EvaluationContext) = {
       method.invoke(target).asInstanceOf[Option[Any]].orNull
     }
 
@@ -234,7 +234,7 @@ object SpelExpressionParser extends LazyLogging {
         m.getReturnType == classOf[State[_,_]] &&
         m.getName == name)
 
-    override protected def invokeMethod(method: Method, target: Any, context: EvaluationContext)  = {
+    override protected def invokeMethod(propertyName: String, method: Method, target: Any, context: EvaluationContext)  = {
       val f = method
         .invoke(target)
         .asInstanceOf[StateT[IO, ContextWithLazyValuesProvider, Any]]
@@ -275,16 +275,14 @@ object SpelExpressionParser extends LazyLogging {
   }
 
   // mainly for avro's GenericRecord purpose
-  object MapLikePropertyAccessor extends PropertyAccessor with ReadOnly {
+  object MapLikePropertyAccessor extends PropertyAccessor with Caching with ReadOnly {
 
-    override def canRead(context: EvaluationContext, target: scala.Any, name: String) =
-      getFieldByNameMethod(target).isDefined
+    override protected def invokeMethod(propertyName: String, method: Method, target: Any, context: EvaluationContext): Any = {
+      method.invoke(target, propertyName)
+    }
 
-    override def read(context: EvaluationContext, target: scala.Any, name: String) =
-      new TypedValue(getFieldByNameMethod(target).get.invoke(target, name))
-
-    private def getFieldByNameMethod(target: Any) = {
-      target.getClass.getMethods.find(m => m.getName == "get" && (m.getParameterTypes sameElements Array(classOf[String])))
+    override protected def reallyFindMethod(name: String, target: Class[_]): Option[Method] = {
+      target.getMethods.find(m => m.getName == "get" && (m.getParameterTypes sameElements Array(classOf[String])))
     }
 
     override def getSpecificTargetClasses = null
@@ -312,7 +310,7 @@ object SpelExpressionParser extends LazyLogging {
     override def read(context: EvaluationContext, target: scala.Any, name: String) =
       findMethod(name, target)
         .map { method =>
-          new TypedValue(invokeMethod(method, target, context))
+          new TypedValue(invokeMethod(name, method, target, context))
         }
         .getOrElse(throw new IllegalAccessException("Property is not readable"))
 
@@ -322,7 +320,7 @@ object SpelExpressionParser extends LazyLogging {
     }
 
     protected def extractClassFromTarget(target: Any): Class[_]
-    protected def invokeMethod(method: Method, target: Any, context: EvaluationContext): Any
+    protected def invokeMethod(propertyName: String, method: Method, target: Any, context: EvaluationContext): Any
     protected def reallyFindMethod(name: String, target: Class[_]) : Option[Method]
   }
 
