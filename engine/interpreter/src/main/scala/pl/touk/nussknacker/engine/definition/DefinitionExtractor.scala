@@ -68,7 +68,7 @@ object DefinitionExtractor {
       } catch {
         case ex: IllegalArgumentException =>
           //this indicates that parameters do not match or argument list is incorrect
-          logger.warn(s"Failed to invoke method: ${methodDef.name}, with params: $values", ex)
+          logger.debug(s"Failed to invoke method: ${methodDef.name}, with params: $values", ex)
           throw ex
         //this is somehow an edge case - normally service returns failed future for exceptions
         case ex: InvocationTargetException =>

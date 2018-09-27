@@ -247,9 +247,15 @@ protected trait ProcessCompilerBase {
 
     val contextWithGlobalVars = ValidationContext(globalVariableTypes)
     expressionCompiler.compileObjectParameters(parameterProviderT.parameters, parameters, Some(contextWithGlobalVars)).andThen { compiledParams =>
-      validateParameters(parameterProviderT, parameters.map(_.name)).map { _ =>
+      validateParameters(parameterProviderT, parameters.map(_.name)).andThen { _ =>
         val factory = createFactory[T](parameterProviderT)
-        factory.create(compiledParams)
+        try {
+          Valid(factory.create(compiledParams))
+        } catch {
+          case NonFatal(e) =>
+            //TODO: better message?
+            Invalid(NonEmptyList.of(CannotCreateObjectError(e.getMessage, nodeId.id)))
+        }
       }
     }
   }

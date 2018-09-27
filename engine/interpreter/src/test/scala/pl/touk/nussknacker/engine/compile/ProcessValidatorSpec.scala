@@ -601,12 +601,33 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     }
   }
 
+  test("should propagate error from source creation") {
 
-  private def validate(process: EspProcess, definitions: ProcessDefinition[ObjectDefinition]): CompilationResult[Unit] = {
-    validate(process, ProcessDefinitionBuilder.withEmptyObjects(definitions))
+    val base = ProcessDefinitionBuilder.withEmptyObjects(baseDefinition)
+    val failingDefinition = base
+      .copy(sourceFactories = base.sourceFactories
+        .mapValues(v => v.copy(methodDef = v.methodDef.copy(invocation = (_, _)
+        => throw new IllegalArgumentException("You passed incorrect parameter, cannot proceed")))))
+
+    val processWithInvalidExpresssion =
+      EspProcessBuilder
+        .id("process1")
+        .exceptionHandler()
+        .source("id1", "source")
+        .sink("id2", "''", "sink")
+
+    validateWithDef(processWithInvalidExpresssion, failingDefinition).result should matchPattern {
+      case Invalid(NonEmptyList(CannotCreateObjectError("You passed incorrect parameter, cannot proceed", "id1"), Nil)) =>
+    }
+
   }
 
-  private def validate(process: EspProcess, definitions: ProcessDefinition[ObjectWithMethodDef]): CompilationResult[Unit] = {
+
+  private def validate(process: EspProcess, definitions: ProcessDefinition[ObjectDefinition]): CompilationResult[Unit] = {
+    validateWithDef(process, ProcessDefinitionBuilder.withEmptyObjects(definitions))
+  }
+
+  private def validateWithDef(process: EspProcess, definitions: ProcessDefinition[ObjectWithMethodDef]): CompilationResult[Unit] = {
     ProcessValidator.default(definitions).validate(process)
   }
 
