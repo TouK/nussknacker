@@ -33,7 +33,7 @@ trait RemoteEnvironment {
 
   def processVersions(processId: String)(implicit ec: ExecutionContext) : Future[List[ProcessHistoryEntry]]
 
-  def migrate(localProcess: DisplayableProcess)(implicit ec: ExecutionContext, loggedUser: LoggedUser) : Future[Either[EspError, Unit]]
+  def migrate(localProcess: DisplayableProcess, category: String)(implicit ec: ExecutionContext, loggedUser: LoggedUser) : Future[Either[EspError, Unit]]
 
   def testMigration(implicit ec: ExecutionContext) : Future[Either[EspError, List[TestMigrationResult]]]
 }
@@ -78,24 +78,35 @@ trait StandardRemoteEnvironment extends Argonaut62Support with RemoteEnvironment
 
   implicit def materializer: Materializer
 
-  private def invoke[T:DecodeJson](method: HttpMethod, pathParts: List[String], queryString: Option[String] = None, requestEntity: RequestEntity = HttpEntity.Empty)(implicit ec: ExecutionContext)
-    : Future[Either[EspError, T]]= {
+  private def invoke[T](method: HttpMethod, pathParts: List[String], queryString: Option[String] = None, requestEntity: RequestEntity = HttpEntity.Empty)
+                       (f: HttpResponse => Future[T])(implicit ec: ExecutionContext): Future[T] = {
     val pathEncoded = pathParts.foldLeft[Path](baseUrl.path)(_ / _)
-    val uri = baseUrl
-      .withPath(pathEncoded)
-      .withRawQueryString(queryString.getOrElse(""))
-    request(uri, method, requestEntity).flatMap { response =>
+    val uri = baseUrl.withPath(pathEncoded).withRawQueryString(queryString.getOrElse(""))
+
+    request(uri, method, requestEntity) flatMap f
+  }
+
+  private def invokeStatus(method: HttpMethod, pathParts: List[String])(implicit ec: ExecutionContext): Future[StatusCode] =
+    invoke(method, pathParts) { response =>
+      response.discardEntityBytes()
+      Future.successful(response.status)
+    }
+
+  private def invokeJson[T: DecodeJson](method: HttpMethod, pathParts: List[String],
+                                        queryString: Option[String] = None, requestEntity: RequestEntity = HttpEntity.Empty)
+                                       (implicit ec: ExecutionContext): Future[Either[EspError, T]] = {
+    invoke(method, pathParts, queryString, requestEntity) { response =>
       if (response.status.isSuccess()) {
-        Unmarshal(response.entity).to[T].map[Either[EspError, T]](Right(_))
+        Unmarshal(response.entity).to[T].map(Either.right)
       } else {
-        Unmarshaller
-          .stringUnmarshaller(response.entity).map(error => Left[EspError, T](RemoteEnvironmentCommunicationError(response.status, error)))
+        Unmarshaller.stringUnmarshaller(response.entity)
+          .map(error => Either.left(RemoteEnvironmentCommunicationError(response.status, error)))
       }
     }
   }
 
   override def processVersions(processId: String)(implicit ec: ExecutionContext): Future[List[ProcessHistoryEntry]] =
-    invoke[ProcessDetails](HttpMethods.GET, List("processes", processId), Some("businessView=true")).map { result =>
+    invokeJson[ProcessDetails](HttpMethods.GET, List("processes", processId), Some("businessView=true")).map { result =>
       result.fold(_ => List(), _.history)
     }
 
@@ -106,22 +117,38 @@ trait StandardRemoteEnvironment extends Argonaut62Support with RemoteEnvironment
 
     (for {
       //TODO: move urls to some constants...
-      process <- EitherT(invoke[ProcessDetails](HttpMethods.GET, List("processes", id) ++ remoteProcessVersion.map(_.toString).toList, Some(s"businessView=$businessView")))
+      process <- EitherT(invokeJson[ProcessDetails](HttpMethods.GET, List("processes", id) ++ remoteProcessVersion.map(_.toString).toList, Some(s"businessView=$businessView")))
       compared <- EitherT.fromEither[Future](compareProcess(id, localProcess)(process))
     } yield compared).value
 
   }
 
-  override def migrate(localProcess: DisplayableProcess)(implicit ec: ExecutionContext, loggedUser: LoggedUser) : Future[Either[EspError, Unit]]= {
+  override def migrate(localProcess: DisplayableProcess, category: String)
+                      (implicit ec: ExecutionContext, loggedUser: LoggedUser) : Future[Either[EspError, Unit]]= {
 
     val comment = s"Process migrated from $environmentId by ${loggedUser.id}"
     (for {
       processToValidate <- EitherT.right(Marshal(localProcess).to[MessageEntity])
-      validation <- EitherT(invoke[ValidationResult](HttpMethods.POST, List("processValidation"), requestEntity = processToValidate))
+      validation <- EitherT(invokeJson[ValidationResult](HttpMethods.POST, List("processValidation"), requestEntity = processToValidate))
       _ <- EitherT.fromEither[Future](if (validation.errors != ValidationErrors.success) Left[EspError, Unit](MigrationValidationError(validation.errors)) else Right(()))
+
+      _ <- createRemoteProcessIfNotExist(localProcess, category)
+
       processToSave <- EitherT.right(Marshal(ProcessToSave(localProcess, comment)).to[MessageEntity])
-      result <- EitherT(invoke[ValidationResult](HttpMethods.PUT, List("processes", localProcess.id), requestEntity = processToSave))
+      _ <- EitherT(invokeJson[ValidationResult](HttpMethods.PUT, List("processes", localProcess.id), requestEntity = processToSave))
     } yield ()).value
+  }
+
+  private def createRemoteProcessIfNotExist(localProcess: DisplayableProcess, category: String)
+                                           (implicit ec: ExecutionContext): EitherT[Future, EspError, _] = {
+    EitherT {
+      invokeStatus(HttpMethods.GET, List("processes", localProcess.id)).flatMap { status =>
+        if (status == StatusCodes.NotFound)
+          invokeJson[ValidatedProcessDetails](HttpMethods.POST, List("processes", localProcess.id, category))
+        else
+          Future.successful(Either.right(()))
+      }
+    }
   }
 
   private def compareProcess(id: String, localProcess: DisplayableProcess)(remoteProcessDetails: ProcessDetails) : Either[EspError, Map[String, Difference]] = remoteProcessDetails.json match {
@@ -131,8 +158,8 @@ trait StandardRemoteEnvironment extends Argonaut62Support with RemoteEnvironment
 
   override def testMigration(implicit ec: ExecutionContext): Future[Either[EspError, List[TestMigrationResult]]] = {
     (for {
-      processes <- EitherT(invoke[List[ValidatedProcessDetails]](HttpMethods.GET,List("processesDetails")))
-      subprocesses <- EitherT(invoke[List[ValidatedProcessDetails]](HttpMethods.GET,List("subProcessesDetails")))
+      processes <- EitherT(invokeJson[List[ValidatedProcessDetails]](HttpMethods.GET,List("processesDetails")))
+      subprocesses <- EitherT(invokeJson[List[ValidatedProcessDetails]](HttpMethods.GET,List("subProcessesDetails")))
     } yield testModelMigrations.testMigrations(processes, subprocesses)).value
   }
 }

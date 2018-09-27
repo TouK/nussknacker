@@ -53,10 +53,10 @@ class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
             }
           } ~
           path(Segment / LongNumber / "compare" / LongNumber) { (processId, version, otherVersion) =>
-            parameter('businessView ? false) { (businessView) =>
+            parameter('businessView ? false) { businessView =>
               get {
                 complete {
-                  withProcess(processId, version, businessView, (process) => remoteEnvironment.compare(process, Some(otherVersion), businessView))
+                  withProcess(processId, version, businessView, (process, _) => remoteEnvironment.compare(process, Some(otherVersion), businessView))
                 }
               }
             }
@@ -64,7 +64,7 @@ class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
           path(Segment / LongNumber / "migrate") { (processId, version) =>
             post {
               complete {
-                withProcess(processId, version, false, (process) => remoteEnvironment.migrate(process))
+                withProcess(processId, version, false, remoteEnvironment.migrate)
               }
             }
           } ~
@@ -112,11 +112,13 @@ class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
   }
 
   private def withProcess[T:EncodeJson](processId: String, version: Long, businessView: Boolean,
-                                        fun: (DisplayableProcess) => Future[Either[EspError, T]])(implicit user: LoggedUser) = {
+                                        fun: (DisplayableProcess, String) => Future[Either[EspError, T]])(implicit user: LoggedUser) = {
     processRepository.fetchProcessDetailsForId(processId, version, businessView).map {
-      _.flatMap(_.json)
+      _.flatMap { details =>
+        details.json.map((_, details.processCategory))
+      }
     }.flatMap {
-      case Some(dispProcess) => fun(dispProcess)
+      case Some((process, category)) => fun(process, category)
       case None => Future.successful(Left(ProcessNotFoundError(processId)))
     }.map(EspErrorToHttp.toResponseEither[T])
   }

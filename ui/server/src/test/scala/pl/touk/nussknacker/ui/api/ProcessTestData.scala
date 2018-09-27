@@ -68,6 +68,7 @@ object ProcessTestData {
         .emptySink("sink", existingSinkFactory)
 
   val validDisplayableProcess : ValidatedDisplayableProcess = toValidatedDisplayable(validProcess)
+  val validProcessDetails: ValidatedProcessDetails = toDetails(validDisplayableProcess)
 
   def toValidatedDisplayable(espProcess: EspProcess) : ValidatedDisplayableProcess =
     ProcessConverter
@@ -85,7 +86,7 @@ object ProcessTestData {
       isArchived = false,
       processType = ProcessType.Graph,
       processingType = TestProcessingTypes.Streaming,
-      processCategory = "",
+      processCategory = "Category",
       modificationDate = LocalDateTime.now(),
       subprocessesModificationDate = None,
       tags = List(),
@@ -105,7 +106,7 @@ object ProcessTestData {
       isArchived = false,
       processType = ProcessType.Graph,
       processingType = TestProcessingTypes.Streaming,
-      processCategory = "",
+      processCategory = "Category",
       modificationDate = LocalDateTime.now(),
       subprocessesModificationDate = None,
       tags = List(),

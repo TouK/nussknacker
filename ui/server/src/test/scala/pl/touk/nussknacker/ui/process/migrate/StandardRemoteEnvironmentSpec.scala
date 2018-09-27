@@ -41,6 +41,77 @@ class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with ScalaFut
   import argonaut.ArgonautShapeless._
   import pl.touk.nussknacker.ui.codec.UiCodecs._
 
+  private trait TriedToAddProcess {
+    var triedToAddProcess: Boolean = false
+  }
+
+  private def statefulEnvironment(expectedProcessId: String,
+                                  expectedProcessCategory: String,
+                                  initialRemoteProcessList: List[String],
+                                  onMigrate: Future[ProcessToSave] => Unit) = new MockRemoteEnvironment with TriedToAddProcess {
+    private var remoteProcessList = initialRemoteProcessList
+
+    override protected def request(path: Uri, method: HttpMethod, request: MessageEntity) : Future[HttpResponse] = {
+      import HttpMethods._
+      import StatusCodes._
+
+      // helpers
+      def is(relative: String, m: HttpMethod): Boolean = {
+        path.toString.startsWith(s"$baseUrl$relative") && method == m
+      }
+
+      object Validation {
+        def unapply(arg: (String, HttpMethod)): Boolean = is("/processValidation", POST)
+      }
+
+      object UpdateProcess {
+        def unapply(arg: (String, HttpMethod)): Boolean = is(s"/processes/$expectedProcessId", PUT)
+      }
+
+      object CheckProcess {
+        def unapply(arg: (String, HttpMethod)): Boolean = is(s"/processes/$expectedProcessId", GET)
+      }
+
+      object AddProcess {
+        def unapply(arg: (String, HttpMethod)): Boolean = is(s"/processes/$expectedProcessId/$expectedProcessCategory", POST)
+      }
+      // end helpers
+
+      (path.toString(), method) match {
+        case Validation() =>
+          Marshal(ValidationResult.errors(Map(), List(), List())).to[RequestEntity].map { entity =>
+            HttpResponse(OK, entity = entity)
+          }
+
+        case CheckProcess() if remoteProcessList contains expectedProcessId =>
+          Future.successful(HttpResponse(OK))
+
+        case CheckProcess() =>
+          Future.successful(HttpResponse(NotFound))
+
+        case AddProcess() =>
+          remoteProcessList = expectedProcessId :: remoteProcessList
+          triedToAddProcess = true
+
+          Marshal(ProcessTestData.validProcessDetails).to[RequestEntity].map { entity =>
+            HttpResponse(OK, entity = entity)
+          }
+
+        case UpdateProcess() if remoteProcessList contains expectedProcessId =>
+          onMigrate(Unmarshal(request).to[ProcessToSave])
+
+          Marshal(ValidationResult.errors(Map(), List(), List())).to[RequestEntity].map { entity =>
+            HttpResponse(OK, entity = entity)
+          }
+
+        case UpdateProcess() =>
+          Future.failed(new Exception("Process does not exist"))
+
+        case _ =>
+          throw new AssertionError(s"Not expected $path")
+      }
+    }
+  }
 
   it should "not migrate not validating process" in {
 
@@ -57,7 +128,7 @@ class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with ScalaFut
 
     }
 
-    whenReady(remoteEnvironment.migrate(ProcessTestData.validDisplayableProcess.toDisplayable)) { result =>
+    whenReady(remoteEnvironment.migrate(ProcessTestData.validDisplayableProcess.toDisplayable, ProcessTestData.validProcessDetails.processCategory)) { result =>
       result shouldBe 'left
       result.left.get shouldBe MigrationValidationError(ValidationErrors(Map("n1" -> List(NodeValidationError("bad","message","" ,None, NodeValidationErrorType.SaveAllowed))),List(),List()))
       result.left.get.getMessage shouldBe "Cannot migrate, following errors occurred: n1 - message"
@@ -109,41 +180,47 @@ class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with ScalaFut
 
   }
 
-
-  it should "migrate valid process" in {
-
+  it should "migrate valid existing process" in {
     var migrated : Option[Future[ProcessToSave]] = None
+    val remoteEnvironment: MockRemoteEnvironment with TriedToAddProcess = statefulEnvironment(
+      ProcessTestData.validProcess.id,
+      ProcessTestData.validProcessDetails.processCategory,
+      ProcessTestData.validDisplayableProcess.id :: Nil,
+      migrationFuture => migrated = Some(migrationFuture)
+    )
 
-    val remoteEnvironment = new MockRemoteEnvironment {
-      override protected def request(path: Uri, method: HttpMethod, request: MessageEntity) : Future[HttpResponse] = {
-        if (path.toString().startsWith(s"$baseUrl/processValidation") && method == HttpMethods.POST) {
-          Marshal(ValidationResult.errors(Map(), List(), List())).to[RequestEntity].map { entity =>
-            HttpResponse(StatusCodes.OK, entity = entity)
-          }
-        } else if (path.toString().startsWith(s"$baseUrl/processes/${ProcessTestData.validDisplayableProcess.id}") && method == HttpMethods.PUT) {
-          migrated = Some(Unmarshal(request).to[ProcessToSave])
-          Marshal(ValidationResult.errors(Map(), List(), List())).to[RequestEntity].map { entity =>
-            HttpResponse(StatusCodes.OK, entity = entity)
-          }
-        } else {
-          throw new AssertionError(s"Not expected $path")
-        }
-      }
-
-    }
-
-    whenReady(remoteEnvironment.migrate(ProcessTestData.validDisplayableProcess.toDisplayable)) { result =>
+    whenReady(remoteEnvironment.migrate(ProcessTestData.validDisplayableProcess.toDisplayable, ProcessTestData.validProcessDetails.processCategory)) { result =>
       result shouldBe 'right
     }
 
     migrated shouldBe 'defined
+    remoteEnvironment.triedToAddProcess shouldBe false
 
     whenReady(migrated.get) { processToSave =>
       processToSave.comment shouldBe "Process migrated from testEnv by test"
       processToSave.process shouldBe ProcessTestData.validDisplayableProcess.toDisplayable
-
     }
-
   }
 
+  it should "migrate valid non-existing process" in {
+    var migrated : Option[Future[ProcessToSave]] = None
+    val remoteEnvironment: MockRemoteEnvironment with TriedToAddProcess = statefulEnvironment(
+      ProcessTestData.validProcess.id,
+      ProcessTestData.validProcessDetails.processCategory,
+      Nil,
+      migrationFuture => migrated = Some(migrationFuture)
+    )
+
+    whenReady(remoteEnvironment.migrate(ProcessTestData.validDisplayableProcess.toDisplayable, ProcessTestData.validProcessDetails.processCategory)) { result =>
+      result shouldBe 'right
+    }
+
+    migrated shouldBe 'defined
+    remoteEnvironment.triedToAddProcess shouldBe true
+
+    whenReady(migrated.get) { processToSave =>
+      processToSave.comment shouldBe "Process migrated from testEnv by test"
+      processToSave.process shouldBe ProcessTestData.validDisplayableProcess.toDisplayable
+    }
+  }
 }
