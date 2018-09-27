@@ -626,7 +626,6 @@ lazy val ui = (project in file("ui/server"))
         "org.hsqldb" % "hsqldb" % hsqldbV,
         "org.flywaydb" % "flyway-core" % flywayV,
         "org.apache.xmlgraphics" % "fop" % "2.1",
-        "org.mindrot" % "jbcrypt" % "0.4",
 
         "com.typesafe.slick" %% "slick-testkit" % slickV % "test",
         "org.scalatest" %% "scalatest" % scalaTestV % "test"

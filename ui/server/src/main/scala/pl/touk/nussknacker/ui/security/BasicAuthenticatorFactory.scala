@@ -10,7 +10,7 @@ import pl.touk.nussknacker.ui.security.api.{AuthenticatorFactory, LoggedUser, Pe
 case class BasicAuthenticatorFactory() extends AuthenticatorFactory with Directives {
   override def createAuthenticator(config: Config): LoggedUserAuth = if (config.hasPath("usersFile")) {
     SecurityDirectives.authenticateBasicAsync("nussknacker",
-      BasicHttpAuthenticator(config.getString("usersFile"))
+      new BasicHttpAuthenticator(config.getString("usersFile"))
     )
   } else provide(LoggedUser("Anonymous", Map("Default"->Permission.values)))
 
