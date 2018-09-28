@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
+import pl.touk.nussknacker.engine.canonize.{MaybeArtificial, ProcessCanonizer}
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError._
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.compiledgraph.part.NextWithParts
@@ -60,8 +60,7 @@ class ProcessCompiler( protected val classLoader: ClassLoader,
 trait ProcessValidator extends LazyLogging {
 
   def validate(canonical: CanonicalProcess): CompilationResult[Unit] = {
-    //TODO: typing not canonical processs... in most cases (wrong tail) it's easy
-    ProcessCanonizer.uncanonize(canonical).fold(k => CompilationResult(Invalid(k)), validate)
+    ProcessCanonizer.uncanonizeArtificial(canonical).map(validate).extract
   }
 
   def validate(process: EspProcess): CompilationResult[Unit] = {

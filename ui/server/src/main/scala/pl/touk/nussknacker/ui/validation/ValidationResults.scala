@@ -78,12 +78,14 @@ object ValidationResults {
 
     def errors(invalidNodes: Map[String, List[NodeValidationError]],
                processPropertiesErrors: List[NodeValidationError],
-               globalErrors: List[NodeValidationError]): ValidationResult = {
+               globalErrors: List[NodeValidationError],
+               variableTypes: Map[String, Map[String, TypingResult]] = Map.empty): ValidationResult = {
       ValidationResult(
         ValidationErrors(invalidNodes = invalidNodes, processPropertiesErrors = processPropertiesErrors,
           globalErrors = globalErrors
         ),
-        ValidationWarnings.success, Map()
+        ValidationWarnings.success,
+        variableTypes
       )
     }
 

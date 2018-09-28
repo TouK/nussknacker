@@ -1,17 +1,16 @@
 package pl.touk.nussknacker.engine.canonize
 
-import cats.data.Validated._
+import cats.Applicative
 import cats.data.ValidatedNel
 import cats.instances.list._
 import pl.touk.nussknacker.engine.canonicalgraph._
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError._
-import pl.touk.nussknacker.engine.compile.{ProcessUncanonizationError, ValidatedSyntax}
+import pl.touk.nussknacker.engine.compile.ProcessUncanonizationError
 import pl.touk.nussknacker.engine.graph._
 
 object ProcessCanonizer {
-
-  private val syntax = ValidatedSyntax[ProcessUncanonizationError]
-  import syntax._
+  import cats.syntax.apply._
+  import cats.Traverse.ops._
 
   def canonize(process: EspProcess): CanonicalProcess = {
     CanonicalProcess(
@@ -22,54 +21,71 @@ object ProcessCanonizer {
   }
 
   def uncanonize(canonicalProcess: CanonicalProcess): ValidatedNel[ProcessUncanonizationError, EspProcess] =
+    uncanonizeArtificial(canonicalProcess).toValidNel
+
+  def uncanonizeArtificial(canonicalProcess: CanonicalProcess): MaybeArtificial[EspProcess] =
     uncanonizeSource(canonicalProcess.nodes).map(
       EspProcess(canonicalProcess.metaData, canonicalProcess.exceptionHandlerRef, _))
 
-  private def uncanonizeSource(canonicalNode: List[canonicalnode.CanonicalNode]): ValidatedNel[ProcessUncanonizationError, node.SourceNode] =
+  private def uncanonizeSource(canonicalNode: List[canonicalnode.CanonicalNode]): MaybeArtificial[node.SourceNode] =
     canonicalNode match {
       case (a@canonicalnode.FlatNode(data: node.StartingNodeData)) :: tail =>
         uncanonize(a, tail).map(node.SourceNode(data, _))
-      case other :: tail =>
-        invalid(InvalidRootNode(other.id)).toValidatedNel
-      case invalidTail =>
-        invalid(EmptyProcess).toValidatedNel
+
+      case other :: _ =>
+        MaybeArtificial.artificialSource(InvalidRootNode(other.id))
+
+      case _ =>
+        MaybeArtificial.artificialSource(EmptyProcess)
     }
 
   private def uncanonize(previous: canonicalnode.CanonicalNode,
-                         canonicalNode: List[canonicalnode.CanonicalNode]): ValidatedNel[ProcessUncanonizationError, node.SubsequentNode] =
+                         canonicalNode: List[canonicalnode.CanonicalNode]): MaybeArtificial[node.SubsequentNode] =
     canonicalNode match {
       case canonicalnode.FlatNode(data: node.EndingNodeData) :: Nil =>
-        valid(node.EndingNode(data))
+        new MaybeArtificial(node.EndingNode(data), Nil)
+
       case (a@canonicalnode.FlatNode(data: node.OneOutputSubsequentNodeData)) :: tail =>
         uncanonize(a, tail).map(node.OneOutputSubsequentNode(data, _))
+
       case (a@canonicalnode.FilterNode(data, nextFalse)) :: tail if nextFalse.isEmpty =>
         uncanonize(a, tail).map(node.FilterNode(data, _, None))
+
       case (a@canonicalnode.FilterNode(data, nextFalse)) :: tail =>
-        A.map2(uncanonize(a, tail), uncanonize(a, nextFalse)) { (nextTrue, nextFalseV) =>
+        (uncanonize(a, tail), uncanonize(a, nextFalse)).mapN { (nextTrue, nextFalseV) =>
           node.FilterNode(data, nextTrue, Some(nextFalseV))
         }
+
       case (a@canonicalnode.SwitchNode(data, Nil, defaultNext)) :: Nil =>
-        invalid(InvalidTailOfBranch(data.id)).toValidatedNel
+        MaybeArtificial.artificialSink(InvalidTailOfBranch(data.id))
+
       case (a@canonicalnode.SwitchNode(data, nexts, defaultNext)) :: Nil if defaultNext.isEmpty =>
         nexts.map { casee =>
           uncanonize(a, casee.nodes).map(node.Case(casee.expression, _))
-        }.sequence.map(node.SwitchNode(data, _, None))
+        }.sequence[MaybeArtificial, node.Case].map(node.SwitchNode(data, _, None))
+
       case (a@canonicalnode.SwitchNode(data, nexts, defaultNext)) :: Nil =>
         val unFlattenNexts = nexts.map { casee =>
           uncanonize(a, casee.nodes).map(node.Case(casee.expression, _))
-        }.sequence
-        A.map2(unFlattenNexts, uncanonize(a, defaultNext)) { (nextsV, defaultNextV) =>
+        }.sequence[MaybeArtificial, node.Case]
+
+        (unFlattenNexts, uncanonize(a, defaultNext)).mapN { (nextsV, defaultNextV) =>
           node.SwitchNode(data, nextsV, Some(defaultNextV))
         }
-      case (a@canonicalnode.SplitNode(bare, Nil)) :: Nil=>
-        invalid(InvalidTailOfBranch(bare.id)).toValidatedNel
-      case (a@canonicalnode.SplitNode(bare, nexts)) :: Nil=>
-        nexts.map(uncanonize(a, _)).sequence.map { uncanonized =>
+
+      case (a@canonicalnode.SplitNode(bare, Nil)) :: Nil =>
+        MaybeArtificial.artificialSink(InvalidTailOfBranch(bare.id))
+
+      case (a@canonicalnode.SplitNode(bare, nexts)) :: Nil =>
+        nexts.map(uncanonize(a, _)).sequence[MaybeArtificial, node.SubsequentNode].map { uncanonized =>
           node.SplitNode(bare, uncanonized)
         }
+
       case invalidHead :: _ =>
-        invalid(InvalidTailOfBranch(invalidHead.id)).toValidatedNel
-      case Nil => invalid(InvalidTailOfBranch(previous.id)).toValidatedNel
+        MaybeArtificial.artificialSink(InvalidTailOfBranch(invalidHead.id))
+
+      case Nil =>
+        MaybeArtificial.artificialSink(InvalidTailOfBranch(previous.id))
     }
 
 }

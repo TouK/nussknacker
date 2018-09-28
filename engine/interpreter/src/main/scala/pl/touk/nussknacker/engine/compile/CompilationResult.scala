@@ -1,9 +1,10 @@
 package pl.touk.nussknacker.engine.compile
 
-import cats.{Applicative, Traverse}
-import cats.data.Validated.Valid
+import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, ValidatedNel}
+import cats.{Applicative, Traverse}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.canonize.{MaybeArtificial, MaybeArtificialExtractor}
 
 import scala.language.{higherKinds, reflectiveCalls}
 
@@ -35,4 +36,12 @@ object CompilationResult extends Applicative[CompilationResult] {
     }
   }
 
+  implicit def artificialExtractor[A]: MaybeArtificialExtractor[CompilationResult[A]] = new MaybeArtificialExtractor[CompilationResult[A]] {
+    override def get(errors: List[ProcessUncanonizationError], rawValue: CompilationResult[A]): CompilationResult[A] = {
+      errors match {
+        case Nil => rawValue
+        case e :: es => rawValue.copy(typing = rawValue.typing - MaybeArtificial.DummyObjectName, result = Invalid(NonEmptyList.of(e, es: _*)))
+      }
+    }
+  }
 }

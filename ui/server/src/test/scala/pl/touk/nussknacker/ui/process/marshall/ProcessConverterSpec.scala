@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.process.marshall
 
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{FlatSpec, Matchers}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ProcessValidator
@@ -18,7 +19,7 @@ import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
-import pl.touk.nussknacker.ui.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType, ValidationResult}
+import pl.touk.nussknacker.ui.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType, ValidationErrors, ValidationResult}
 
 class ProcessConverterSpec extends FlatSpec with Matchers with TableDrivenPropertyChecks {
 
@@ -65,14 +66,42 @@ class ProcessConverterSpec extends FlatSpec with Matchers with TableDrivenProper
       Enricher("e", ServiceRef("ref", List()), "out"),
       Split("e")
     )) { (unexpectedEnd) =>
-      val process = ValidatedDisplayableProcess("t1", ProcessProperties(StreamMetaData(Some(2), Some(false)), ExceptionHandlerRef(List()), subprocessVersions = Map.empty),
+      val process = ValidatedDisplayableProcess(
+        "t1",
+        ProcessProperties(StreamMetaData(Some(2), Some(false)), ExceptionHandlerRef(List()), subprocessVersions = Map.empty),
         List(Source("s", SourceRef("sourceRef", List())), unexpectedEnd),
-        List(Edge("s", "e", None)), TestProcessingTypes.Streaming, ValidationResult.errors(Map(unexpectedEnd.id -> List(NodeValidationError("InvalidTailOfBranch",
-          "Invalid end of process", "Process branch can only end with sink or processor", None, errorType = NodeValidationErrorType.SaveAllowed))), List(), List())
+        List(Edge("s", "e", None)),
+        TestProcessingTypes.Streaming,
+        ValidationResult.errors(
+          Map(unexpectedEnd.id -> List(
+            NodeValidationError("InvalidTailOfBranch", "Invalid end of process", "Process branch can only end with sink or processor", None, errorType = NodeValidationErrorType.SaveAllowed))),
+          List.empty,
+          List.empty
+        )
       )
-      displayableCanonical(process.toDisplayable) shouldBe process
+
+      val validated = displayableCanonical(process.toDisplayable)
+      val withoutTypes = validated.copy(validationResult = validated.validationResult.withTypes(Map.empty))
+      withoutTypes shouldBe process
     }
   }
 
 
+  it should "return variable type information for process that cannot be canonized" in {
+    val process = ValidatedDisplayableProcess(
+      "process",
+      ProcessProperties(StreamMetaData(Some(2), Some(false)), ExceptionHandlerRef(List()), subprocessVersions = Map.empty),
+      List(Source("s", SourceRef("sourceRef", List())), Variable("v", "test", Expression("spel", "''")), Filter("e", Expression("spel", "''"))),
+      List(Edge("s", "v", None), Edge("v", "e", None)),
+      TestProcessingTypes.Streaming,
+      ValidationResult.errors(
+        Map("e" -> List(NodeValidationError("InvalidTailOfBranch", "Invalid end of process", "Process branch can only end with sink or processor", None, errorType = NodeValidationErrorType.SaveAllowed))),
+        List.empty,
+        List.empty,
+        Map("s" -> Map("input" -> Typed[Null]), "v" -> Map("input" -> Typed[Null]), "e" -> Map("input" -> Typed[Null], "test" -> Typed[String]))
+      )
+    )
+
+    displayableCanonical(process.toDisplayable) shouldBe process
+  }
 }
