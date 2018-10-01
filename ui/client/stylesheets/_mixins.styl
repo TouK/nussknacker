@@ -6,3 +6,17 @@ tagsBlockMixin()
   background-color: #FEB58A
   font-size: 13px
   color: white
+
+
+espButtonBase()
+  border: 1px solid buttonBorderColor;
+  border-radius: 0
+  background-color: buttonBkgColor
+  color: buttonTextColor
+  transition: background-color 0.2s
+  &:disabled,&.disabled
+    opacity 0.3
+    cursor: not-allowed !important
+  &:not(:disabled):hover,&:not(.disabled):hover
+    background-color: buttonBkgHover
+

@@ -40,6 +40,7 @@
     "react-tabs": "2.0.0",
     "react-textarea-autosize": "4.0.5",
     "react-treeview": "0.4.6",
+    "react-datepicker": "1.6.0",
     "reactable": "0.14.1",
     "redux": "3.5.2",
     "redux-devtools-extension": "2.13.2",
