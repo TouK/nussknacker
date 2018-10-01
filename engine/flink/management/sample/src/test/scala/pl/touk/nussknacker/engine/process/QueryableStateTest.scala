@@ -60,7 +60,11 @@ class QueryableStateTest extends FlatSpec with BeforeAndAfterAll with Matchers w
 
     registrar.register(env, lockProcess, ProcessVersion.empty)
     val jobId = env.execute().getJobID.toString
-    val client = new EspQueryableClient(stoppableEnv.queryableClient(QueryStateProxyPortLow))
+    val client = new EspQueryableClient(List(
+      //this port should not exist...
+      stoppableEnv.queryableClient(12345),
+      stoppableEnv.queryableClient(QueryStateProxyPortLow)
+    ))
 
 
     def queryState(jobId: String): Future[Boolean] =
