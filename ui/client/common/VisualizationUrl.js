@@ -6,18 +6,18 @@ export function visualizationUrl(processId, nodeId, edgeId) {
   if (!_.isEmpty(nodeId) && !_.isEmpty(edgeId)) {
     throw new Error("cannot visualize both nodeId and edgeId")
   }
-  const baseUrl = `/visualization/${processId}`
+  const baseUrl = `/visualization/${encodeURIComponent(processId)}`
   const nodeIdPart = nodeId ? this.nodeIdPart(nodeId) : ""
   const edgeIdPart = edgeId ? this.edgeIdPart(edgeId) : ""
   return baseUrl + nodeIdPart + edgeIdPart
 }
 
 export function nodeIdPart(nodeId) {
-  return `?nodeId=${nodeId}`
+  return `?nodeId=${encodeURIComponent(nodeId)}`
 }
 
 export function edgeIdPart(edgeId) {
-  return `?edgeId=${edgeId}`
+  return `?edgeId=${encodeURIComponent(edgeId)}`
 }
 
 export function extractVisualizationParams(queryParams) {
