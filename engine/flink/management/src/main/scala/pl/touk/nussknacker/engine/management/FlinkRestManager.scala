@@ -48,10 +48,12 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData) extends FlinkP
   private lazy val uploadedJarId : Future[String] = uploadCurrentJar()
 
   private def uploadCurrentJar(): Future[String] = {
+    logger.debug("Uploading new jar")
     val filePart = new FilePart("jarfile", jarFile, "application/x-java-archive")
     send {
       (flinkUrl / "jars" / "upload").POST.addBodyPart(filePart) OK utils.asJson[Json]
     } map { json =>
+      logger.info(s"Uploaded jar to $json")
       new File(json.fieldOrEmptyString("filename").stringOrEmpty).getName
     }
   }
@@ -61,13 +63,15 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData) extends FlinkP
     send {
       (flinkUrl / "jobs" / "overview").GET OK utils.asJson[JobsResponse]
     } map { jobs =>
-      jobs
+      val statusToReturn = jobs
         .jobs
         .sortBy(j => - j.`last-modification`)
         .find(_.name == name)
         .map(j => ProcessState(j.jid, j.state, j.`start-time`))
         //TODO: needed?
         .filterNot(_.status == "CANCELED")
+      logger.trace(s"Status of $name is $statusToReturn")
+      statusToReturn
     }
   }
 
@@ -80,13 +84,17 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData) extends FlinkP
     send {
       (flinkUrl / "jobs"/ jobId / "savepoints" / savepointId).GET OK utils.asJson[GetSavepointStatusResponse]
     }.flatMap { resp =>
-      resp.operation.flatMap(_.location) match {
-        case Some(location) if resp.status.isCompleted =>
-          Future.successful(location)
-        case _ =>
-          Thread.sleep(1000)
-          waitForSavepoint(jobId, savepointId, timeoutLeft - (System.currentTimeMillis() - start))
-
+      logger.debug(s"Waiting for savepoint $savepointId of $jobId, got response: $resp")
+      if (resp.isCompletedSuccessfully) {
+        //getOrElse is not really needed since isCompletedSuccessfully returns true only if it's defined
+        val location = resp.operation.flatMap(_.location).getOrElse("")
+        logger.info(s"Savepoint $savepointId for $jobId finished in $location")
+        Future.successful(location)
+      } else if (resp.isFailed) {
+        Future.failed(new RuntimeException(s"Failed to complete savepoint: ${resp.operation}"))
+      } else {
+        Thread.sleep(1000)
+        waitForSavepoint(jobId, savepointId, timeoutLeft - (System.currentTimeMillis() - start))
       }
     }
   }
@@ -114,7 +122,9 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData) extends FlinkP
         savepointPath = savepointPath,
         allowNonRestoredState = true,
         programArgs = FlinkArgsEncodeHack.prepareProgramArgs(args).mkString(" "))
+    logger.debug(s"Starting to deploy process: $processId with savepoint $savepointPath")
     uploadedJarId.flatMap { jarId =>
+      logger.debug(s"Deploying $processId with $savepointPath and jarId: $jarId")
       send {
         (flinkUrl / "jars" / jarId / "run").POST.setBody(program.asJson.spaces2) OK (_ => ())
      }
@@ -129,12 +139,20 @@ object flinkRestModel {
 
   case class SavepointTriggerResponse(`request-id`: String)
 
-  case class GetSavepointStatusResponse(status: SavepointStatus, operation: Option[SavepointOperation])
+  case class GetSavepointStatusResponse(status: SavepointStatus, operation: Option[SavepointOperation]) {
 
-  case class SavepointOperation(location: Option[String])
+    def isCompletedSuccessfully: Boolean = status.isCompleted && operation.flatMap(_.location).isDefined
+
+    def isFailed: Boolean = status.isCompleted && !isCompletedSuccessfully
+
+  }
+
+  case class SavepointOperation(location: Option[String], `failure-cause`: Option[FailureCause])
+
+  case class FailureCause(`class`: Option[String], `stack-trace`: Option[String], `serialized-throwable`: Option[String])
 
   case class SavepointStatus(id: String) {
-    val isCompleted: Boolean = id == "COMPLETED"
+    def isCompleted: Boolean = id == "COMPLETED"
   }
 
   case class JobsResponse(jobs: List[JobOverview])

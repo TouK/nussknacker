@@ -73,11 +73,9 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
     findJobStatus(name).flatMap {
       case Some(state) if state.isRunning =>
         cancel(state)
-      case Some(state) =>
-        logger.warn(s"Trying to cancel $name which is not running but in status: ${state.status}")
+      case state =>
+        logger.warn(s"Trying to cancel $name which is not running but in status: $state")
         Future.successful(())
-      case None =>
-        Future.failed(new IllegalStateException(s"Job $name not found"))
     }
   }
 

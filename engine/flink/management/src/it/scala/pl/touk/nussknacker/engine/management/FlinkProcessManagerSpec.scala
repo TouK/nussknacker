@@ -48,6 +48,11 @@ class FlinkProcessManagerSpec extends FunSuite with Matchers with ScalaFutures w
     cancel(processId)
   }
 
+  //this is for the case where e.g. we manually cancel flink job, or it fail and didn't restart...
+  test("cancel of not existing job should not fail") {
+    processManager.cancel("not existing job").futureValue shouldBe (())
+  }
+
 
   test("be able verify&redeploy kafka process") {
 
