@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.api
 
+import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.{Directives, Route}
 import pl.touk.http.argonaut.Argonaut62Support
 import pl.touk.nussknacker.engine.ModelData
@@ -19,7 +20,7 @@ import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
-import pl.touk.nussknacker.ui.api.DefinitionPreparer.{NodeEdges}
+import pl.touk.nussknacker.ui.api.DefinitionPreparer.NodeEdges
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.ui.process.ProcessObjectsFinder
 import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.EdgeType
@@ -51,40 +52,45 @@ class DefinitionResources(modelData: Map[ProcessingType, ModelData],
         post {
           entity(as[Map[String, Long]]) { subprocessVersions =>
             complete {
-              val modelDataForType = modelData(processingType)
-              val processConfig = modelDataForType.processConfig
-              val chosenProcessDefinition = modelDataForType.processDefinition
-              val subprocessInputs = fetchSubprocessInputs(subprocessVersions, modelDataForType.modelClassLoader.classLoader)
-              val subprocessesDetails = subprocessRepository.loadSubprocesses(subprocessVersions)
-              val uiProcessDefinition = UIProcessDefinition(chosenProcessDefinition, subprocessInputs)
+              val response: HttpResponse = modelData.get(processingType).map { modelDataForType =>
+                val processConfig = modelDataForType.processConfig
+                val chosenProcessDefinition = modelDataForType.processDefinition
+                val subprocessInputs = fetchSubprocessInputs(subprocessVersions, modelDataForType.modelClassLoader.classLoader)
+                val subprocessesDetails = subprocessRepository.loadSubprocesses(subprocessVersions)
+                val uiProcessDefinition = UIProcessDefinition(chosenProcessDefinition, subprocessInputs)
 
 
-              val nodesConfig = processConfig.getOrElse[Map[String, SingleNodeConfig]]("nodes", Map.empty)
+                val nodesConfig = processConfig.getOrElse[Map[String, SingleNodeConfig]]("nodes", Map.empty)
 
-              val defaultParametersValues = ParamDefaultValueConfig(nodesConfig.map {case (k, v) => (k, v.defaultValues.getOrElse(Map.empty))})
-              val defaultParametersFactory = DefaultValueExtractorChain(defaultParametersValues)
+                val defaultParametersValues = ParamDefaultValueConfig(nodesConfig.map { case (k, v) => (k, v.defaultValues.getOrElse(Map.empty)) })
+                val defaultParametersFactory = DefaultValueExtractorChain(defaultParametersValues)
 
-              val nodeCategoryMapping = processConfig.getOrElse[Map[String, String]]("nodeCategoryMapping", Map.empty)
-              val additionalPropertiesLabels = processConfig.getOrElse[Map[String, String]]("additionalFields.propertiesLabels", Map.empty)
+                val nodeCategoryMapping = processConfig.getOrElse[Map[String, String]]("nodeCategoryMapping", Map.empty)
+                val additionalPropertiesLabels = processConfig.getOrElse[Map[String, String]]("additionalFields.propertiesLabels", Map.empty)
 
-              ProcessObjects(
-                nodesToAdd = DefinitionPreparer.prepareNodesToAdd(
-                  user = user,
-                  processDefinition = chosenProcessDefinition,
-                  isSubprocess = isSubprocess,
-                  subprocessInputs = subprocessInputs,
-                  extractorFactory = defaultParametersFactory,
+                val result = ProcessObjects(
+                  nodesToAdd = DefinitionPreparer.prepareNodesToAdd(
+                    user = user,
+                    processDefinition = chosenProcessDefinition,
+                    isSubprocess = isSubprocess,
+                    subprocessInputs = subprocessInputs,
+                    extractorFactory = defaultParametersFactory,
+                    nodesConfig = nodesConfig,
+                    nodeCategoryMapping = nodeCategoryMapping
+                  ),
+                  processDefinition = uiProcessDefinition,
                   nodesConfig = nodesConfig,
-                  nodeCategoryMapping = nodeCategoryMapping
-                ),
-                processDefinition = uiProcessDefinition,
-                nodesConfig = nodesConfig,
-                additionalPropertiesLabels = additionalPropertiesLabels,
-                edgesForNodes = DefinitionPreparer.prepareEdgeTypes(
-                  user = user,
-                  processDefinition = chosenProcessDefinition,
-                  isSubprocess = isSubprocess,
-                  subprocessesDetails = subprocessesDetails))
+                  additionalPropertiesLabels = additionalPropertiesLabels,
+                  edgesForNodes = DefinitionPreparer.prepareEdgeTypes(
+                    user = user,
+                    processDefinition = chosenProcessDefinition,
+                    isSubprocess = isSubprocess,
+                    subprocessesDetails = subprocessesDetails))
+                HttpResponse(entity = HttpEntity(ContentTypes.`application/json`, result.asJson.toString()))
+              }.getOrElse {
+                HttpResponse(status = StatusCodes.NotFound, entity = s"Processing type: $processingType not found")
+              }
+              response
             }
           }
         }
@@ -94,6 +100,13 @@ class DefinitionResources(modelData: Map[ProcessingType, ModelData],
         complete {
           val subprocessIds = subprocessRepository.loadSubprocesses().map(_.canonical.metaData.id).toList
           ProcessObjectsFinder.componentIds(modelData.values.map(_.processDefinition).toList, subprocessIds)
+        }
+      }
+    } ~ path("processDefinitionData" / "services") {
+      get {
+        complete {
+          val result = modelData.mapValues(_.processDefinition.services)
+          HttpResponse(entity = HttpEntity(ContentTypes.`application/json`, result.asJson.toString()))
         }
       }
     }

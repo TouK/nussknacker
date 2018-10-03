@@ -121,6 +121,10 @@ export default {
     return promiseWrap($.get(`${API_URL}/processDefinitionData/componentIds`))
   },
 
+  fetchServices() {
+      return promiseWrap($.get(`${API_URL}/processDefinitionData/services`))
+  },
+
   fetchUnusedComponents() {
     return promiseWrap($.get(`${API_URL}/app/unusedComponents`))
   },

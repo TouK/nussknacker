@@ -2,22 +2,24 @@ package pl.touk.nussknacker.ui.api.helpers
 
 
 import akka.actor.ActorRef
-import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import argonaut.{Json, PrettyParams}
+import cats.instances.all._
+import cats.syntax.semigroup._
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest._
+import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.management.FlinkProcessManagerProvider
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
+import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment.ManagementActor
 import pl.touk.nussknacker.ui.process.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.sample.SampleProcess
-import cats.syntax.semigroup._
-import cats.instances.all._
-import pl.touk.nussknacker.engine.api.StreamMetaData
 
 trait EspItTest extends LazyLogging with WithDbTesting with TestPermissions { self: ScalatestRouteTest with Suite with BeforeAndAfterEach with Matchers =>
 
@@ -33,6 +35,8 @@ trait EspItTest extends LazyLogging with WithDbTesting with TestPermissions { se
   val processActivityRepository = newProcessActivityRepository(db)
 
   val typesForCategories = new ProcessTypesForCategories(ConfigFactory.load())
+
+  val existingProcessingType = "streaming"
 
   val processManager = new MockProcessManager
   def createManagementActorRef = ManagementActor(env,
@@ -53,6 +57,8 @@ trait EspItTest extends LazyLogging with WithDbTesting with TestPermissions { se
     processAuthorizer = processAuthorizer
   )
   val processesExportResources = new ProcessesExportResources(processRepository, processActivityRepository)
+  val definitionResources = new DefinitionResources(
+    Map(existingProcessingType ->  FlinkProcessManagerProvider.defaultModelData(ConfigFactory.load())), subprocessRepository)
 
   val processesRouteWithAllPermissions = withAllPermissions(processesRoute)
 
@@ -140,6 +146,19 @@ trait EspItTest extends LazyLogging with WithDbTesting with TestPermissions { se
 
   def getProcesses = {
     Get(s"/processes") ~> withPermissions(processesRoute, testPermissionRead)
+  }
+
+  def getProcessDefinitionData(processingType: String, subprocessVersions: Json) = {
+    Post(s"/processDefinitionData/$processingType?isSubprocess=false", toEntity(subprocessVersions)) ~> withPermissions(definitionResources, testPermissionRead)
+  }
+
+  def getProcessDefinitionServices() = {
+    Get("/processDefinitionData/services") ~> withPermissions(definitionResources, testPermissionRead)
+  }
+
+  private def toEntity(json: Json) = {
+    val jsonString = json.pretty(PrettyParams.spaces2.copy(dropNullKeys = true, preserveOrder = true))
+    HttpEntity(ContentTypes.`application/json`, jsonString)
   }
 
 }

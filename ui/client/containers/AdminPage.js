@@ -42,18 +42,11 @@ class AdminPage extends React.Component {
     HttpService.fetchUnusedComponents().then((unusedComponents) => {
       this.setState({unusedComponents: unusedComponents})
     })
-    Promise.all([
-        HttpService.fetchProcessDefinitionData('streaming', false, {}),
-        HttpService.fetchProcessDefinitionData('request-response', false, {})
-    ]).catch(e=>{throw e})
-        .then((values) => {
-            this.setState({
-                services: {
-                    streaming: values[0].processDefinition.services,
-                    'request-response': values[1].processDefinition.services
-                }
-            })
-        })
+    HttpService.fetchServices().then((services) => {
+      this.setState({
+        services: services
+      })
+    })
   }
 
   render() {
@@ -138,9 +131,9 @@ class ProcessSearch extends React.Component {
               <Th column="category">Category</Th>
               <Th column="isDeployed">Is deployed</Th>
               </Thead>
-              {found.map(row => {
+              {found.map((row, idx) => {
                 return (
-                  <Tr>
+                  <Tr key={idx}>
                     <Td column="process">{row.process}</Td>
                     <Td column="node">
                       {/* TODO this url won't work for nodes used in subprocesses */}
@@ -173,7 +166,7 @@ class UnusedComponents extends React.Component {
 
   render() {
     const emptyComponentsToRender = _.map(this.props.unusedComponents, (componentId) => {
-      return {ComponentId: componentId}
+      return {'Component ID': componentId}
     })
     return (
       <div>
@@ -226,13 +219,15 @@ class TestServices extends React.Component {
   }
 
   componentDidMount(){
-    this.setService(this.services[0].name)
+    if (!_.isEmpty(this.services)) {
+      this.setService(0)
+    }
   }
 
-  setService(serviceName){
-    const service = _.find(this.services, s=>s.name===serviceName);
+  setService(idx){
+    const service = this.services[idx];
 
-    const cachedParams = this.cachedServiceParams(serviceName, service.processingType);
+    const cachedParams = this.cachedServiceParams(service.name, service.processingType);
 
     const initializeParameter = paramName => _.find(cachedParams, cp => cp.name === paramName) || {
       "name": paramName,
@@ -247,7 +242,7 @@ class TestServices extends React.Component {
     this.setState(
       {
         processingType: service.processingType,
-        serviceName: serviceName,
+        serviceName: service.name,
         nodeParameters: service.parameters,
         parametersValues: initializeParametersValues(service.parameters||[]),
         queryResult: {
@@ -260,8 +255,8 @@ class TestServices extends React.Component {
   serviceList() {
     return (
         <select className="node-input" onChange={e => this.setService(e.target.value)}>
-          {this.services.map((service) =>
-            <option key={service.name}>{service.name}</option>)}
+          {this.services.map((service, idx) =>
+            <option key={idx} value={idx}>{service.name}</option>)}
         </select>
     )
   }
@@ -279,6 +274,7 @@ class TestServices extends React.Component {
       <span>
         {_.map(params, (param) =>
           this.formRow(
+            "param_" + param.name,
             <span>{param.name}<div className="labelFooter">{ProcessUtils.humanReadableType(param.refClazzName)}</div></span>,
             <span>
               <input
@@ -331,8 +327,8 @@ class TestServices extends React.Component {
     return _.get(param, "expression.expression")
   }
 
-  formRow(label, input) {
-    return (<div className="node-row">
+  formRow(id, label, input) {
+    return (<div key={id} className="node-row">
       <div className="node-label">{label}</div>
       <div className="node-value">{input}
       </div>
@@ -345,8 +341,8 @@ class TestServices extends React.Component {
       <div>
           <div className="modalContentDye">
             <div className="node-table">
-                {this.formRow("service name", this.serviceList(this.services))}
-                {this.formRow("processing type", readonly(this.state.processingType))}
+                {this.formRow("serviceName", "Service name", this.serviceList(this.services))}
+                {this.formRow("processingType", "Process type", readonly(this.state.processingType))}
                 {this.parametersList(this.state.nodeParameters)}
                 <button type="button" className="big-blue-button input-group" onClick={e => this.invokeService()}>INVOKE SERVICE</button>
               </div>
@@ -354,9 +350,9 @@ class TestServices extends React.Component {
         <div className="queryServiceResults">
           {!_.isEmpty(this.state.queryResult.response) ?
             [
-              this.prettyPrint(this.state.queryResult.response.result, "Service result"),
-              <hr/>,
-              this.prettyPrint(JsonUtils.removeEmptyProperties(this.state.queryResult.response.collectedResults), "Collected results")
+              this.prettyPrint("serviceResult", this.state.queryResult.response.result, "Service result"),
+              <hr key="separator"/>,
+              this.prettyPrint("collectedResults", JsonUtils.removeEmptyProperties(this.state.queryResult.response.collectedResults), "Collected results")
             ]
             : null
           }
@@ -367,13 +363,13 @@ class TestServices extends React.Component {
   }
 
 
-  prettyPrint(json, title) {
+  prettyPrint(id, json, title) {
     if (!this.hasSomeValue(json)) {
       return null
     } else {
       const toPrint = _.isObject(json) ? json : {"result": json}
       return (
-        <div>
+        <div key={id}>
           <p>{title}</p>
           <JSONTree style={{fontSize: 25}} data={toPrint} hideRoot={true} shouldExpandNode={(key, data, level) => level < 3} theme={{
             label: {
