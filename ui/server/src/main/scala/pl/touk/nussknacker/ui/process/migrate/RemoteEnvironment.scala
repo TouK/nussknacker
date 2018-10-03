@@ -13,6 +13,7 @@ import cats.data.EitherT
 import cats.implicits._
 import pl.touk.http.argonaut.Argonaut62Support
 import pl.touk.nussknacker.ui.EspError
+import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.codec.UiCodecs
 import pl.touk.nussknacker.ui.process.ProcessToSave
 import pl.touk.nussknacker.ui.process.displayedgraph.DisplayableProcess
@@ -86,6 +87,17 @@ trait StandardRemoteEnvironment extends Argonaut62Support with RemoteEnvironment
     request(uri, method, requestEntity) flatMap f
   }
 
+  private def invokeForSuccess(method: HttpMethod, pathParts: List[String])(implicit ec: ExecutionContext): Future[XError[Unit]] =
+    invoke(method, pathParts) { response =>
+      if (response.status.isSuccess()) {
+        response.discardEntityBytes()
+        Future.successful(().asRight)
+      } else {
+        Unmarshaller.stringUnmarshaller(response.entity)
+          .map(error => RemoteEnvironmentCommunicationError(response.status, error).asLeft)
+      }
+    }
+
   private def invokeStatus(method: HttpMethod, pathParts: List[String])(implicit ec: ExecutionContext): Future[StatusCode] =
     invoke(method, pathParts) { response =>
       response.discardEntityBytes()
@@ -140,13 +152,13 @@ trait StandardRemoteEnvironment extends Argonaut62Support with RemoteEnvironment
   }
 
   private def createRemoteProcessIfNotExist(localProcess: DisplayableProcess, category: String)
-                                           (implicit ec: ExecutionContext): EitherT[Future, EspError, _] = {
+                                           (implicit ec: ExecutionContext): EitherT[Future, EspError, Unit] = {
     EitherT {
       invokeStatus(HttpMethods.GET, List("processes", localProcess.id)).flatMap { status =>
         if (status == StatusCodes.NotFound)
-          invokeJson[ValidatedProcessDetails](HttpMethods.POST, List("processes", localProcess.id, category))
+          invokeForSuccess(HttpMethods.POST, List("processes", localProcess.id, category))
         else
-          Future.successful(Either.right(()))
+          Future.successful(().asRight)
       }
     }
   }
