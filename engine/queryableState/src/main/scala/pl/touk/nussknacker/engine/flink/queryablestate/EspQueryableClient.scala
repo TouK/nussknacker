@@ -19,7 +19,7 @@ object EspQueryableClient {
     //TODO: this is workaround for https://issues.apache.org/jira/browse/FLINK-10225, we want to be able to configure all task managers
     val queryableStateProxyUrls = queryableStateProxyUrl.split(",").toList
     val clients = queryableStateProxyUrls.map { url =>
-      val (queryableStateProxyHost, queryableStateProxyPort) = parseHostAndPort(queryableStateProxyUrl)
+      val (queryableStateProxyHost, queryableStateProxyPort) = parseHostAndPort(url.trim)
       new QueryableStateClient(queryableStateProxyHost, queryableStateProxyPort)
     }
     new EspQueryableClient(clients)
