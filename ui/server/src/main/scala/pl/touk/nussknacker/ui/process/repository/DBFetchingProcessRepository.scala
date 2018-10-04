@@ -35,16 +35,12 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
 
   import api._
 
-  def fetchProcesses()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BasicProcess]]= {
-    run(fetchProcessDetailsByQueryActionUnarchived(p => !p.isSubprocess && p.processType === ProcessType.Graph).toBasicProcess)
+  def fetchProcesses()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[ProcessDetails]] = {
+    run(fetchProcessDetailsByQueryActionUnarchived(p => !p.isSubprocess && p.processType === ProcessType.Graph))
   }
 
-  def fetchCustomProcesses()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BasicProcess]]= {
-    run(fetchProcessDetailsByQueryActionUnarchived(p => !p.isSubprocess && p.processType === ProcessType.Custom).toBasicProcess)
-  }
-
-  def fetchSubProcesses()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BasicProcess]]= {
-    run(fetchProcessDetailsByQueryActionUnarchived(p => p.isSubprocess).toBasicProcess)
+  def fetchCustomProcesses()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[ProcessDetails]]= {
+    run(fetchProcessDetailsByQueryActionUnarchived(p => !p.isSubprocess && p.processType === ProcessType.Custom))
   }
 
   def fetchProcessesDetails()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[ProcessDetails]] = {
@@ -56,11 +52,11 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
   }
 
   def fetchAllProcessesDetails()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[ProcessDetails]] = {
-    run(fetchProcessDetailsByQueryActionUnarchived(_ =>true))
+    run(fetchProcessDetailsByQueryActionUnarchived(_ => true))
   }
 
-  def fetchArchivedProcesses()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BasicProcess]] = {
-    run(fetchProcessDetailsByQueryAction(_.isArchived).toBasicProcess)
+  def fetchArchivedProcesses()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[ProcessDetails]] = {
+    run(fetchProcessDetailsByQueryAction(_.isArchived))
   }
   private def fetchProcessDetailsByQueryActionUnarchived(query: ProcessEntity => Rep[Boolean])
                                                 (implicit loggedUser: LoggedUser, ec: ExecutionContext) =
@@ -91,7 +87,7 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
           processVersion,
           isLatestVersion = true,
           currentlyDeployedAt = deployedPerEnv.map(_._1).filter(_._1 == process.id).map(_._2).toSet,
-          tags = tagsForProcesses(process.name),
+          tags = tagsForProcesses(process.id),
           history = List.empty,
           businessView = false,
           subprocessesVersions = subprocessesVersions
@@ -122,6 +118,14 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
                                (implicit loggedUser: LoggedUser): F[Option[ProcessVersionEntityData]] = {
     val action = latestProcessVersions(processId).result.headOption
     run(action)
+  }
+
+  def fetchProcessId(processName: String): F[Option[String]] = {
+    run(processesTable.filter(_.name === processName).map(_.id).result.headOption)
+  }
+
+  def fetchProcessName(processId: String): F[Option[String]] = {
+    run(processesTable.filter(_.id === processId).map(_.name).result.headOption)
   }
 
   private def fetchProcessDetailsForVersion(processVersion: ProcessVersionEntityData, isLatestVersion: Boolean, businessView: Boolean = false)
@@ -216,14 +220,6 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
       .join(deployedProcessesTable).on { case ((processIdEnv, maxDeployedAtForEnv), deplProc) =>
       deplProc.processId === processIdEnv._1 && deplProc.environment === processIdEnv._2 && deplProc.deployedAt === maxDeployedAtForEnv
     }.map { case ((env, _), deployedVersion) => env -> deployedVersion }.filter(_._2.deploymentAction === DeploymentAction.Deploy)
-  }
-
-  private implicit class ToBasicConverter(action:  DBIOAction[List[ProcessDetails], NoStream, Effect.All]) {
-    def toBasicProcess(implicit executionContext: ExecutionContext) = action.map {
-      _.map {
-        _.toBasicProcess()
-      }
-    }
   }
 }
 

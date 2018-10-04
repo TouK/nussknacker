@@ -22,6 +22,7 @@ import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.ui.process.deployment.{Cancel, Deploy, Snapshot, Test}
 import pl.touk.nussknacker.ui.process.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.ui.process.marshall.{ProcessConverter, UiProcessMarshaller}
+import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
@@ -34,14 +35,16 @@ object ManagementResources {
   def apply(processCounter: ProcessCounter,
             managementActor: ActorRef,
             testResultsMaxSizeInBytes: Int,
-            processAuthorizator:AuthorizeProcess)
+            processAuthorizator: AuthorizeProcess,
+            processRepository: FetchingProcessRepository)
            (implicit ec: ExecutionContext,
             mat: Materializer, system: ActorSystem): ManagementResources = {
     new ManagementResources(
-      processCounter = processCounter,
-      managementActor = managementActor,
-      testResultsMaxSizeInBytes = testResultsMaxSizeInBytes,
-      processAuthorizer = processAuthorizator
+      processCounter,
+      managementActor,
+      testResultsMaxSizeInBytes,
+      processAuthorizator,
+      processRepository
     )
   }
 
@@ -50,12 +53,14 @@ object ManagementResources {
 class ManagementResources(processCounter: ProcessCounter,
                           val managementActor: ActorRef,
                           testResultsMaxSizeInBytes: Int,
-                          val processAuthorizer:AuthorizeProcess)
+                          val processAuthorizer: AuthorizeProcess,
+                          val processRepository: FetchingProcessRepository)
                          (implicit ec: ExecutionContext, mat: Materializer, system: ActorSystem)
   extends Directives
     with LazyLogging
     with RouteWithUser
-    with AuthorizeProcessDirectives {
+    with AuthorizeProcessDirectives
+    with ProcessDirectives {
 
   import UiCodecs._
 
@@ -64,9 +69,9 @@ class ManagementResources(processCounter: ProcessCounter,
   private implicit val timeout: Timeout = Timeout(durationFromConfig.toMillis millis)
 
   def route(implicit user: LoggedUser): Route = {
-    path("adminProcessManagement" / "snapshot" / Segment / Segment) { (processId, savepointDir) =>
-      canDeploy(processId) {
-        post {
+    path("adminProcessManagement" / "snapshot" / Segment / Segment) { (processName, savepointDir) =>
+      (post & processId(processName)) { processId =>
+        canDeploy(processId) {
           complete {
             (managementActor ? Snapshot(processId, user, savepointDir))
               .mapTo[String].map(path => HttpResponse(entity = path, status = StatusCodes.OK))
@@ -75,10 +80,9 @@ class ManagementResources(processCounter: ProcessCounter,
         }
       }
     } ~
-      path("adminProcessManagement" / "deploy" / Segment / Segment) { (processId, savepointPath) =>
-
-        canDeploy(processId) {
-          post {
+      path("adminProcessManagement" / "deploy" / Segment / Segment) { (processName, savepointPath) =>
+        (post & processId(processName)) { processId =>
+          canDeploy(processId) {
             complete {
               (managementActor ? Deploy(processId, user, Some(savepointPath)))
                 .map { _ => HttpResponse(status = StatusCodes.OK) }
@@ -87,9 +91,9 @@ class ManagementResources(processCounter: ProcessCounter,
           }
         }
       } ~
-      path("processManagement" / "deploy" / Segment) { processId =>
-        canDeploy(processId){
-          post {
+      path("processManagement" / "deploy" / Segment) { processName =>
+        (post & processId(processName)) { processId =>
+          canDeploy(processId){
             complete {
               (managementActor ? Deploy(processId, user, None))
                 .map { _ => HttpResponse(status = StatusCodes.OK) }
@@ -98,9 +102,9 @@ class ManagementResources(processCounter: ProcessCounter,
           }
         }
       } ~
-      path("processManagement" / "cancel" / Segment) { processId =>
-        canDeploy(processId) {
-          post {
+      path("processManagement" / "cancel" / Segment) { processName =>
+        (post & processId(processName)) { processId =>
+          canDeploy(processId) {
             complete {
               (managementActor ? Cancel(processId, user))
                 .map { _ => HttpResponse(status = StatusCodes.OK) }
@@ -110,9 +114,9 @@ class ManagementResources(processCounter: ProcessCounter,
         }
       } ~
       //TODO: maybe Write permission is enough here?
-      path("processManagement" / "test" / Segment) { processId =>
-        canDeploy(processId) {
-          post {
+      path("processManagement" / "test" / Segment) { processName =>
+        (post & processId(processName)) { processId =>
+          canDeploy(processId) {
             //There is bug in akka-http in formFields, so we use custom toStrict method
             //issue: https://github.com/akka/akka/issues/19506
             //workaround: https://gist.github.com/rklaehn/d4d3ee43443b0f4741fb#file-uploadhandlertostrict-scala

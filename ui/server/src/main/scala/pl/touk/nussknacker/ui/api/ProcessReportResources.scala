@@ -17,12 +17,12 @@ import pl.touk.process.report.{CannotFetchCountsError, CountsReporter}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class ProcessReportResources(countsReporter: CountsReporter, processCounter: ProcessCounter, processRepository: FetchingProcessRepository)
-                            (implicit ec: ExecutionContext) extends Directives with Argonaut62Support with UiCodecs with RouteWithUser {
+class ProcessReportResources(countsReporter: CountsReporter, processCounter: ProcessCounter, val processRepository: FetchingProcessRepository)
+                            (implicit ec: ExecutionContext) extends Directives with Argonaut62Support with UiCodecs with RouteWithUser with ProcessDirectives {
 
   def route(implicit loggedUser: LoggedUser): Route = {
-    path("processCounts" / Segment) { processId =>
-      get {
+    path("processCounts" / Segment) { processName =>
+      (get & processId(processName)) { processId =>
         parameters('dateFrom, 'dateTo) { (dateFromS, dateToS) =>
           val dateTo = DateUtils.parseDateTime(dateToS)
           val dateToToUse = if (dateTo.isAfter(LocalDateTime.now())) LocalDateTime.now() else dateTo

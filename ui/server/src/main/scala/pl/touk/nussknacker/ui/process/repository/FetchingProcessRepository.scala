@@ -10,7 +10,7 @@ import scala.concurrent.{ExecutionContext, Future}
 trait FetchingProcessRepository {
 
   def fetchLatestProcessDetailsForProcessId(id: String, businessView: Boolean = false)
-                                                  (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Option[ProcessDetails]]
+                                           (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Option[ProcessDetails]]
 
   def fetchLatestProcessDetailsForProcessIdEither(id: String, businessView: Boolean = false)
                                                  (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[XError[ProcessDetails]] = {
@@ -26,11 +26,9 @@ trait FetchingProcessRepository {
   def fetchLatestProcessVersion(processId: String)
                                (implicit loggedUser: LoggedUser): Future[Option[ProcessVersionEntityData]]
 
-  def fetchProcesses()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[BasicProcess]]
+  def fetchProcesses()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[ProcessDetails]]
 
-  def fetchCustomProcesses()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[BasicProcess]]
-
-  def fetchSubProcesses()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[BasicProcess]]
+  def fetchCustomProcesses()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[ProcessDetails]]
 
   def fetchProcessesDetails()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[ProcessDetails]]
 
@@ -38,6 +36,9 @@ trait FetchingProcessRepository {
 
   def fetchAllProcessesDetails()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[ProcessDetails]]
 
-  def fetchArchivedProcesses()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[BasicProcess]]
+  def fetchArchivedProcesses()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[ProcessDetails]]
 
+  def fetchProcessId(processName: String): Future[Option[String]]
+
+  def fetchProcessName(processId: String): Future[Option[String]]
 }

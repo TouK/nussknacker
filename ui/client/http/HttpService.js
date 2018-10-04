@@ -242,7 +242,7 @@ export default {
   },
 
   exportProcess(process) {
-    const url = `${API_URL}/processes/export`
+    const url = `${API_URL}/processesExport`
     fetch(url,
       {
           method: 'POST',
@@ -258,7 +258,7 @@ export default {
   },
 
   exportProcessToPdf(processId, versionId, data, businessView) {
-    const url = `${API_URL}/processes/exportToPdf/${processId}/${versionId}`
+    const url = `${API_URL}/processesExport/pdf/${processId}/${versionId}`
     const queryParams = this.businessViewQueryParams(businessView)
     fetch(queryParams ? `${url}?${queryParams}` : url,
       {

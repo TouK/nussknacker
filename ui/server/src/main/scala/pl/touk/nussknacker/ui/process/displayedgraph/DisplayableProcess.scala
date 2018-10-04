@@ -34,11 +34,11 @@ case class DisplayableProcess(id: String,
 }
 
 case class ValidatedDisplayableProcess(id: String,
-                              properties: ProcessProperties,
-                              nodes: List[NodeData],
-                              edges: List[Edge],
-                              processingType: ProcessingType,
-                              validationResult: ValidationResult) {
+                                       properties: ProcessProperties,
+                                       nodes: List[NodeData],
+                                       edges: List[Edge],
+                                       processingType: ProcessingType,
+                                       validationResult: ValidationResult) {
 
   def this(displayableProcess: DisplayableProcess, validationResult: ValidationResult) =
     this(

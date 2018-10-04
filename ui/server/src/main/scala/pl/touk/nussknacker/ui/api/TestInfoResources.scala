@@ -16,20 +16,24 @@ import shapeless.syntax.typeable._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 import pl.touk.nussknacker.engine.util.Implicits._
+import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 
 object TestInfoResources {
 
-  def apply(providers: Map[ProcessingType, ModelData], processAuthorizer:AuthorizeProcess)(implicit ec: ExecutionContext): TestInfoResources =
-    new TestInfoResources(providers.mapValuesNow(new ModelDataTestInfoProvider(_)), processAuthorizer)
+  def apply(providers: Map[ProcessingType, ModelData], processAuthorizer:AuthorizeProcess, processRepository: FetchingProcessRepository)(implicit ec: ExecutionContext): TestInfoResources =
+    new TestInfoResources(providers.mapValuesNow(new ModelDataTestInfoProvider(_)), processAuthorizer, processRepository)
 
 }
 
-class TestInfoResources(providers: Map[ProcessingType, TestInfoProvider], val processAuthorizer:AuthorizeProcess)
+class TestInfoResources(providers: Map[ProcessingType, TestInfoProvider],
+                        val processAuthorizer:AuthorizeProcess,
+                        val processRepository: FetchingProcessRepository)
                        (implicit ec: ExecutionContext)
   extends Directives
     with Argonaut62Support
     with RouteWithUser
-    with AuthorizeProcessDirectives {
+    with AuthorizeProcessDirectives
+    with ProcessDirectives {
 
   import argonaut.ArgonautShapeless._
   import pl.touk.nussknacker.ui.codec.UiCodecs._
@@ -42,7 +46,6 @@ class TestInfoResources(providers: Map[ProcessingType, TestInfoProvider], val pr
       post {
         entity(as[DisplayableProcess]) { displayableProcess =>
           canDeploy(displayableProcess.id) {
-
             val processDefinition = providers(displayableProcess.processingType)
 
             val source = displayableProcess.nodes.flatMap(asSource).headOption
@@ -55,15 +58,14 @@ class TestInfoResources(providers: Map[ProcessingType, TestInfoProvider], val pr
                 resp
               }
             } ~
-              path("generate" / IntNumber) { testSampleSize =>
-                complete {
-                  val resp: Array[Byte] =
-                    source.flatMap(processDefinition.generateTestData(metadata, _, testSampleSize)).getOrElse(new Array[Byte](0))
-                  resp
-                }
+            path("generate" / IntNumber) { testSampleSize =>
+              complete {
+                val resp: Array[Byte] =
+                  source.flatMap(processDefinition.generateTestData(metadata, _, testSampleSize)).getOrElse(new Array[Byte](0))
+                resp
               }
+            }
           }
-
         }
       }
     }

@@ -15,10 +15,11 @@ import pl.touk.nussknacker.engine.util.json.Codecs
 import pl.touk.nussknacker.ui.util.Argonaut62Support
 import argonaut.ArgonautShapeless._
 import argonaut.CodecJson
+import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 
-import scala.util.Random
-
-class NotificationResources(managementActor: ActorRef)(implicit ec: ExecutionContext, mat: Materializer, system: ActorSystem)
+class NotificationResources(managementActor: ActorRef,
+                            processRepository: FetchingProcessRepository)
+                           (implicit ec: ExecutionContext, mat: Materializer, system: ActorSystem)
   extends Directives
     with LazyLogging
     with RouteWithUser with Argonaut62Support {
@@ -42,9 +43,16 @@ class NotificationResources(managementActor: ActorRef)(implicit ec: ExecutionCon
   private def prepareDeploymentNotifications(): Future[List[Notification]] = {
     (managementActor ? DeploymentStatus)
       .mapTo[DeploymentStatusResponse]
-      .map {
-        case DeploymentStatusResponse(deploymentInfos) => deploymentInfos.map{ case (k, v) => toNotification(k, v) }.toList
+      .flatMap {
+        case DeploymentStatusResponse(deploymentInfos) =>
+          Future.sequence(
+            deploymentInfos.map{ case (k, v) => processIdToName(k).map(toNotification(_, v)) }.toList
+          )
       }
+  }
+
+  private def processIdToName(processId: String): Future[String] = {
+    processRepository.fetchProcessName(processId).map(_.getOrElse(throw new IllegalArgumentException(s"Process not found: ${processId}")))
   }
 
   //TODO: consider 'personalization' - different message for user who is deploying

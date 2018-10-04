@@ -106,6 +106,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest
   }
 
   test("not authorize user with write permission to deploy") {
+    saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
     Post(s"/processManagement/deploy/${SampleProcess.process.id}") ~> withPermissions(deployRoute, testPermissionWrite) ~> check {
       rejection shouldBe server.AuthorizationFailedRejection
     }

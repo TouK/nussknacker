@@ -34,7 +34,7 @@ class ProcessesExportImportResourcesSpec extends FlatSpec with ScalatestRouteTes
       status shouldEqual StatusCodes.OK
     }
 
-    Get(s"/processes/export/${processToSave.id}/2") ~> routWithAllPermissions ~> check {
+    Get(s"/processesExport/${processToSave.id}/2") ~> routWithAllPermissions ~> check {
       val processDetails = UiProcessMarshaller.fromJson(responseAs[String]).toOption.get
       val modified = processDetails.copy(metaData = processDetails.metaData.copy(typeSpecificData = StreamMetaData(Some(987))))
 
@@ -65,15 +65,15 @@ class ProcessesExportImportResourcesSpec extends FlatSpec with ScalatestRouteTes
       status shouldEqual StatusCodes.OK
     }
 
-    Get(s"/processes/export/${processToSave.id}/2") ~> routWithAllPermissions ~> check {
+    Get(s"/processesExport/${processToSave.id}/2") ~> routWithAllPermissions ~> check {
       responseAs[String] shouldNot include(description)
     }
 
-    Get(s"/processes/export/${processToSave.id}/3") ~> routWithAllPermissions ~> check {
+    Get(s"/processesExport/${processToSave.id}/3") ~> routWithAllPermissions ~> check {
       val latestProcessVersion = responseAs[String]
       latestProcessVersion should include(description)
 
-      Get(s"/processes/export/${processToSave.id}") ~> routWithAllPermissions ~> check {
+      Get(s"/processesExport/${processToSave.id}") ~> routWithAllPermissions ~> check {
         responseAs[String] shouldBe latestProcessVersion
       }
 
@@ -87,7 +87,7 @@ class ProcessesExportImportResourcesSpec extends FlatSpec with ScalatestRouteTes
       status shouldEqual StatusCodes.OK
     }
 
-    Get(s"/processes/export/${processToSave.id}/2") ~> routWithAllPermissions ~> check {
+    Get(s"/processesExport/${processToSave.id}/2") ~> routWithAllPermissions ~> check {
       val processDetails = UiProcessMarshaller.fromJson(responseAs[String]).toOption.get
       val modified = processDetails.copy(metaData = processDetails.metaData.copy(id = "SOMEVERYFAKEID"))
 

@@ -94,7 +94,7 @@ object PdfExporter extends LazyLogging {
 
         <flow flow-name="xsl-region-body">
           <block font-size="16pt" font-weight="bold" text-align="center">
-            {processDetails.id}
+            {processDetails.name}
             (
             {processDetails.processCategory}
             )

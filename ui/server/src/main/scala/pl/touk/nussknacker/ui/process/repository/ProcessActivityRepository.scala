@@ -37,12 +37,12 @@ case class ProcessActivityRepository(dbConfig: DbConfig) extends LazyLogging wit
     }
   }
 
-  def findActivity(processId: String)(implicit ec: ExecutionContext): Future[ProcessActivity] = {
+  def findActivity(processId: String, processName: String)(implicit ec: ExecutionContext): Future[ProcessActivity] = {
     val findProcessActivityAction = for {
       fetchedComments <- commentsTable.filter(_.processId === processId).sortBy(_.createDate.desc).result
       fetchedAttachments <- attachmentsTable.filter(_.processId === processId).sortBy(_.createDate.desc).result
-      comments = fetchedComments.map(c => Comment(c)).toList
-      attachments = fetchedAttachments.map(c => Attachment(c)).toList
+      comments = fetchedComments.map(c => Comment(c, processName)).toList
+      attachments = fetchedAttachments.map(c => Attachment(c, processName)).toList
     } yield ProcessActivity(comments, attachments)
 
     run(findProcessActivityAction)
@@ -76,10 +76,10 @@ object ProcessActivityRepository {
 
   case class Attachment(id: Long, processId: String, processVersionId: Long, fileName: String, user: String, createDate: LocalDateTime)
   object Attachment {
-    def apply(attachment: AttachmentEntityData): Attachment = {
+    def apply(attachment: AttachmentEntityData, processName: String): Attachment = {
       Attachment(
         id = attachment.id,
-        processId = attachment.processId,
+        processId = processName,
         processVersionId = attachment.processVersionId,
         fileName = attachment.fileName,
         user = attachment.user,
@@ -90,10 +90,10 @@ object ProcessActivityRepository {
 
   case class Comment(id: Long, processId: String, processVersionId: Long, content: String, user: String, createDate: LocalDateTime)
   object Comment {
-    def apply(comment: CommentEntityData): Comment = {
+    def apply(comment: CommentEntityData, processName: String): Comment = {
       Comment(
         id = comment.id,
-        processId = comment.processId,
+        processId = processName,
         processVersionId = comment.processVersionId,
         content = comment.content,
         user = comment.user,

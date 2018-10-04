@@ -17,6 +17,7 @@ import pl.touk.nussknacker.ui.db.entity.CommentEntity
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.{ProcessEntityData, ProcessType}
 import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntity.ProcessVersionEntityData
+import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository._
 import pl.touk.nussknacker.ui.process.repository.WriteProcessRepository.UpdateProcessAction
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -39,7 +40,7 @@ object WriteProcessRepository {
 trait WriteProcessRepository {
 
   def saveNewProcess(processId: String, category: String, processDeploymentData: ProcessDeploymentData,
-                       processingType: ProcessingType, isSubprocess: Boolean)(implicit loggedUser: LoggedUser): Future[XError[Unit]]
+                     processingType: ProcessingType, isSubprocess: Boolean)(implicit loggedUser: LoggedUser): Future[XError[Unit]]
 
   def updateProcess(action: UpdateProcessAction)
                    (implicit loggedUser: LoggedUser): Future[XError[Option[ProcessVersionEntityData]]]
@@ -50,6 +51,7 @@ trait WriteProcessRepository {
 
   def deleteProcess(processId: String): Future[XError[Unit]]
 
+  def renameProcess(processId: String, newName: String): Future[XError[Unit]]
 }
 
 abstract class DbWriteProcessRepository[F[_]](val dbConfig: DbConfig,
@@ -60,14 +62,20 @@ abstract class DbWriteProcessRepository[F[_]](val dbConfig: DbConfig,
   def saveNewProcess(processId: String, category: String, processDeploymentData: ProcessDeploymentData,
                      processingType: ProcessingType, isSubprocess: Boolean)
                     (implicit loggedUser: LoggedUser): F[XError[Unit]] = {
-    val processToSave = ProcessEntityData(id = processId, name = processId, processCategory = category,
+    // todo: initial process name == processId?
+    val processName = processId
+
+    val processToSave = ProcessEntityData(id = processId, name = processName, processCategory = category,
       description = None, processType = ProcessType.fromDeploymentData(processDeploymentData),
       processingType = processingType, isSubprocess = isSubprocess, isArchived = false)
 
     val insertAction = logInfo(s"Saving process $processId by user $loggedUser").flatMap { _ =>
       latestProcessVersions(processId).result.headOption.flatMap {
-        case Some(_) => DBIOAction.successful(Left(ProcessAlreadyExists(processId)))
-        case None => (processesTable += processToSave).andThen(updateProcessInternal(processId, processDeploymentData))
+        case Some(_) => DBIOAction.successful(ProcessAlreadyExists(processId).asLeft)
+        case None => processesTable.filter(_.name === processName).result.headOption.flatMap {
+          case Some(_) => DBIOAction.successful(ProcessAlreadyExists(processName).asLeft)
+          case None => (processesTable += processToSave).andThen(updateProcessInternal(processId, processDeploymentData))
+        }
       }.map(_.map(_ => ()))
     }
 
@@ -142,6 +150,41 @@ abstract class DbWriteProcessRepository[F[_]](val dbConfig: DbConfig,
       case 0 => Left(ProcessNotFoundError(processId))
       case 1 => Right(())
     }
+    run(action)
+  }
+
+  def renameProcess(processId: String, newName: String): F[XError[Unit]] = {
+    def updateNameInSingleProcessVersion(processVersion: ProcessVersionEntityData, process: ProcessEntityData) = {
+      processVersion.json match {
+        case Some(json) =>
+          val updatedJson = ProcessConverter.modify(json, process.processingType)(_.copy(id = newName))
+          val updatedProcessVersion = processVersion.copy(json = Some(updatedJson))
+          processVersionsTable.filter(version => version.id === processVersion.id && version.processId === process.id)
+            .update(updatedProcessVersion)
+        case None => DBIO.successful(())
+      }
+    }
+
+    val updateNameInProcessJson =
+      processVersionsTable.filter(_.processId === processId.value)
+        .join(processesTable)
+        .on { case (version, process) => version.processId === process.id }
+        .result.flatMap { processVersions =>
+          DBIO.seq(processVersions.map((updateNameInSingleProcessVersion _).tupled): _*)
+        }
+
+    val updateNameInProcess =
+      processesTable.filter(_.id === processId.value).map(_.name).update(newName)
+
+    val action = processesTable.filter(_.name === newName).result.headOption.flatMap {
+      case Some(_) => DBIO.successful(ProcessAlreadyExists(newName).asLeft)
+      case None =>
+        DBIO.seq[Effect.All](
+          updateNameInProcess,
+          updateNameInProcessJson
+        ).map(_ => ().asRight).transactionally
+    }
+
     run(action)
   }
 

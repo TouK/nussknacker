@@ -15,21 +15,21 @@ import shapeless.syntax.typeable._
 import scala.concurrent.{ExecutionContext, Future}
 
 class SignalsResources(modelData: Map[String, ModelData],
-                       processRepository: FetchingProcessRepository,
+                       val processRepository: FetchingProcessRepository,
                        val processAuthorizer:AuthorizeProcess)
                       (implicit ec: ExecutionContext)
   extends Directives
     with Argonaut62Support
     with RouteWithUser
-    with AuthorizeProcessDirectives {
+    with AuthorizeProcessDirectives
+    with ProcessDirectives {
 
   import pl.touk.nussknacker.ui.codec.UiCodecs._
 
   def route(implicit user: LoggedUser): Route = {
-    pathPrefix("signal" / Segment / Segment) { (signalType, processId) =>
-      canDeploy(processId) {
-
-        post {
+    pathPrefix("signal" / Segment / Segment) { (signalType, processName) =>
+      (post & processId(processName)) { processId =>
+        canDeploy(processId) {
           //Map[String, String] should be enough for now
           entity(as[Map[String, String]]) { params =>
             complete {

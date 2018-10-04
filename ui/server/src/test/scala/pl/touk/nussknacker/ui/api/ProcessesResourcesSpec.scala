@@ -160,9 +160,9 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
     }
   }
 
-  test("throw exception on update process category for non existing process") {
+  test("return 404 on update process category for non existing process") {
     Post("/processes/category/unexcistingProcess/newCategory") ~> routWithAllPermissions ~> check {
-      rejection shouldBe server.AuthorizationFailedRejection
+      status shouldBe StatusCodes.NotFound
     }
   }
 

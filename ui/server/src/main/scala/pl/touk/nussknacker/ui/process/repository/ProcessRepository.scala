@@ -36,39 +36,35 @@ trait ProcessRepository[F[_]] extends Repository[F] {
 
 object ProcessRepository {
 
-  case class BasicProcess(
-                           id: String,
-                           name: String,
-                           processCategory: String,
-                           processType: ProcessType,
-                           processingType: ProcessingType,
-                           isArchived:Boolean,
-                           modificationDate: LocalDateTime,
-                           currentlyDeployedAt: Set[String]
-                         )
+  case class BasicProcess(id: String,
+                          name: String,
+                          processCategory: String,
+                          processType: ProcessType,
+                          processingType: ProcessingType,
+                          isArchived:Boolean,
+                          modificationDate: LocalDateTime,
+                          currentlyDeployedAt: Set[String])
 
-  case class BaseProcessDetails[ProcessShape](
-                             id: String,
-                             name: String,
-                             processVersionId: Long,
-                             isLatestVersion: Boolean,
-                             description: Option[String],
-                             isArchived:Boolean,
-                             processType: ProcessType,
-                             processingType: ProcessingType,
-                             processCategory: String,
-                             modificationDate: LocalDateTime,
-                             subprocessesModificationDate: Option[Map[String, LocalDateTime]],
-                             tags: List[String],
-                             currentlyDeployedAt: Set[String],
-                             json: Option[ProcessShape],
-                             history: List[ProcessHistoryEntry],
-                             modelVersion: Option[Int]
-                           ) {
+  case class BaseProcessDetails[ProcessShape](id: String,
+                                              name: String,
+                                              processVersionId: Long,
+                                              isLatestVersion: Boolean,
+                                              description: Option[String],
+                                              isArchived:Boolean,
+                                              processType: ProcessType,
+                                              processingType: ProcessingType,
+                                              processCategory: String,
+                                              modificationDate: LocalDateTime,
+                                              subprocessesModificationDate: Option[Map[String, LocalDateTime]],
+                                              tags: List[String],
+                                              currentlyDeployedAt: Set[String],
+                                              json: Option[ProcessShape],
+                                              history: List[ProcessHistoryEntry],
+                                              modelVersion: Option[Int]) {
     def mapProcess[NewShape](action: ProcessShape => NewShape) : BaseProcessDetails[NewShape] = copy(json = json.map(action))
 
-    def toBasicProcess(): BasicProcess = BasicProcess(
-      id = id,
+    def toBasicProcess: BasicProcess = BasicProcess(
+      id = name,
       name = name,
       processCategory = processCategory,
       processType = processType,

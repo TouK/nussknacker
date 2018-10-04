@@ -91,7 +91,6 @@ class AppResources(config: Config,
 
 
   private def notRunningProcessesThatShouldRun(implicit ec: ExecutionContext, user: LoggedUser) : Future[Set[String]] = {
-
     for {
       processes <- processRepository.fetchProcessesDetails()
       statusMap <- Future.sequence(statusList(processes)).map(_.toMap)
@@ -112,13 +111,13 @@ class AppResources(config: Config,
   private def statusList(processes: Seq[ProcessDetails])(implicit user: LoggedUser) : Seq[Future[(String, Option[ProcessStatus])]] = {
     processes
       .filterNot(_.currentlyDeployedAt.isEmpty)
-      .map(process => findJobStatus(process.name, process.processingType).map((process.name, _)))
+      .map(process => findJobStatus(process.id, process.processingType).map((process.name, _)))
   }
 
-  private def findJobStatus(processName: String, processingType: ProcessingType)(implicit ec: ExecutionContext, user: LoggedUser): Future[Option[ProcessStatus]] = {
-    jobStatusService.retrieveJobStatus(processName).recover {
+  private def findJobStatus(processId: String, processingType: ProcessingType)(implicit ec: ExecutionContext, user: LoggedUser): Future[Option[ProcessStatus]] = {
+    jobStatusService.retrieveJobStatus(processId).recover {
       case NonFatal(e) =>
-        logger.warn(s"Failed to get status of $processName: ${e.getMessage}", e)
+        logger.warn(s"Failed to get status of $processId: ${e.getMessage}", e)
         Some(ProcessStatus.failedToGet)
     }
   }

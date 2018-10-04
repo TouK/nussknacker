@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.marshall
 
+import argonaut.PrettyParams
 import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode._
@@ -13,8 +14,6 @@ import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.{Edge, Edge
 import pl.touk.nussknacker.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties, displayablenode}
 
 object ProcessConverter {
-
-
   def toCanonicalOrDie(canonicalJson: String) : CanonicalProcess = {
     UiProcessMarshaller.fromJson(canonicalJson) match {
       case Valid(canonical) => canonical
@@ -24,6 +23,13 @@ object ProcessConverter {
 
   def toDisplayableOrDie(canonicalJson: String, processingType: ProcessingType, businessView: Boolean = false): DisplayableProcess = {
     toDisplayable(toCanonicalOrDie(canonicalJson), processingType, businessView = businessView)
+  }
+
+  def modify(canonicalJson: String, processingType: ProcessingType)(f: DisplayableProcess => DisplayableProcess): String = {
+    val displayable = ProcessConverter.toDisplayableOrDie(canonicalJson, processingType)
+    val modified = f(displayable)
+    val canonical = ProcessConverter.fromDisplayable(modified)
+    UiProcessMarshaller.toJson(canonical, PrettyParams.nospace)
   }
 
   //FIXME: without default param

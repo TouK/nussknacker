@@ -15,7 +15,7 @@ import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import scala.concurrent.{ExecutionContext, Future}
 
 class QueryableStateResources(processDefinition: Map[ProcessingType, ModelData],
-                              processRepository: FetchingProcessRepository,
+                              val processRepository: FetchingProcessRepository,
                               queryableClient: EspQueryableClient,
                               jobStatusService: JobStatusService,
                               val processAuthorizer:AuthorizeProcess)
@@ -23,7 +23,8 @@ class QueryableStateResources(processDefinition: Map[ProcessingType, ModelData],
   extends Directives
     with Argonaut62Support
     with RouteWithUser
-    with AuthorizeProcessDirectives {
+    with AuthorizeProcessDirectives
+    with ProcessDirectives {
 
   import pl.touk.nussknacker.ui.codec.UiCodecs._
   import pl.touk.nussknacker.ui.util.CollectionsEnrichments._
@@ -37,9 +38,9 @@ class QueryableStateResources(processDefinition: Map[ProcessingType, ModelData],
         }
       }
     } ~ path("queryableState" / "fetch") {
-      parameters('processId, 'queryName, 'key ?) { (processId, queryName, key) =>
-        canDeploy(processId) {
-          get {
+      parameters('processId, 'queryName, 'key ?) { (processName, queryName, key) =>
+        (get & processId(processName)) { processId =>
+          canDeploy(processId) {
             complete {
               queryState(processId, queryName, key.flatMap(_.safeValue))
             }

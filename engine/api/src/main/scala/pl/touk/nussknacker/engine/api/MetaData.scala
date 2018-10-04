@@ -6,12 +6,11 @@ import scala.concurrent.duration.Duration
 
 trait UserDefinedProcessAdditionalFields
 
-case class MetaData(id: String, 
+case class MetaData(id: String,
                     typeSpecificData: TypeSpecificData,
                     isSubprocess: Boolean = false,
                     additionalFields: Option[UserDefinedProcessAdditionalFields] = None,
-                    subprocessVersions: Map[String, Long] = Map.empty
-                   )
+                    subprocessVersions: Map[String, Long] = Map.empty)
 
 sealed trait TypeSpecificData {
   def allowLazyVars : Boolean

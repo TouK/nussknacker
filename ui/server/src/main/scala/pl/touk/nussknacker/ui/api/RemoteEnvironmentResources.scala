@@ -21,12 +21,13 @@ import ProcessComparator._
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
 class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
-                                 processRepository: FetchingProcessRepository,
+                                 val processRepository: FetchingProcessRepository,
                                  val processAuthorizer:AuthorizeProcess)(implicit ec: ExecutionContext)
   extends Directives
     with Argonaut62Support
     with RouteWithUser
-    with AuthorizeProcessDirectives {
+    with AuthorizeProcessDirectives
+    with ProcessDirectives {
 
   import argonaut.Argonaut._
   import argonaut.ArgonautShapeless._
@@ -52,24 +53,24 @@ class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
               }
             }
           } ~
-          path(Segment / LongNumber / "compare" / LongNumber) { (processId, version, otherVersion) =>
+          path(Segment / LongNumber / "compare" / LongNumber) { (processName, version, otherVersion) =>
             parameter('businessView ? false) { businessView =>
-              get {
+              (get & processId(processName)) { processId =>
                 complete {
                   withProcess(processId, version, businessView, (process, _) => remoteEnvironment.compare(process, Some(otherVersion), businessView))
                 }
               }
             }
           } ~
-          path(Segment / LongNumber / "migrate") { (processId, version) =>
-            post {
+          path(Segment / LongNumber / "migrate") { (processName, version) =>
+            (post & processId(processName)) { processId =>
               complete {
-                withProcess(processId, version, false, remoteEnvironment.migrate)
+                withProcess(processId, version, businessView = false, remoteEnvironment.migrate)
               }
             }
           } ~
-          path(Segment / "versions") { (processId) =>
-            get {
+          path(Segment / "versions") { processName =>
+            (get & processId(processName)) { processId =>
               complete {
                 remoteEnvironment.processVersions(processId)
               }

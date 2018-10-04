@@ -47,7 +47,7 @@ trait EspItTest extends LazyLogging with WithDbTesting with TestPermissions { se
   val newProcessPreparer = new NewProcessPreparer(Map("streaming" ->  ProcessTestData.processDefinition),
     Map("streaming" -> (_ => StreamMetaData(None))))
   val processesRoute = new ProcessesResources(
-    repository = processRepository,
+    processRepository = processRepository,
     writeRepository = writeProcessRepository,
     jobStatusService = jobStatusService,
     processActivityRepository = processActivityRepository,
@@ -66,11 +66,12 @@ trait EspItTest extends LazyLogging with WithDbTesting with TestPermissions { se
     processCounter = new ProcessCounter(TestFactory.sampleSubprocessRepository),
     managementActor = managementActor,
     testResultsMaxSizeInBytes = 500 * 1024 * 1000,
-    processAuthorizer = processAuthorizer
+    processAuthorizer = processAuthorizer,
+    processRepository = processRepository
   )
   val attachmentService = new ProcessAttachmentService(attachmentsPath, processActivityRepository)
-  val processActivityRoute = new ProcessActivityResource(processActivityRepository)
-  val attachmentsRoute = new AttachmentResources(attachmentService)
+  val processActivityRoute = new ProcessActivityResource(processActivityRepository, processRepository)
+  val attachmentsRoute = new AttachmentResources(attachmentService, processRepository)
 
   def saveProcess(processId: String, process: EspProcess)(testCode: => Assertion): Assertion = {
     Post(s"/processes/$processId/$testCategoryName?isSubprocess=false") ~> processesRouteWithAllPermissions ~> check {

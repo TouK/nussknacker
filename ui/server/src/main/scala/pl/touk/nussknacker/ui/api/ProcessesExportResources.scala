@@ -18,41 +18,41 @@ import pl.touk.nussknacker.ui.util._
 
 import scala.concurrent.ExecutionContext
 
-class ProcessesExportResources(repository: FetchingProcessRepository,
+class ProcessesExportResources(val processRepository: FetchingProcessRepository,
                                processActivityRepository: ProcessActivityRepository)
                               (implicit ec: ExecutionContext, mat: Materializer)
-  extends Directives with Argonaut62Support with RouteWithUser with UiCodecs {
+  extends Directives with Argonaut62Support with RouteWithUser with UiCodecs with ProcessDirectives {
 
   def route(implicit user: LoggedUser): Route = {
-    path("processes" / "export" / Segment) { processId =>
-      get {
+    path("processesExport" / Segment) { processName =>
+      (get & processId(processName)) { processId =>
         complete {
-          repository.fetchLatestProcessDetailsForProcessId(processId).map {
+          processRepository.fetchLatestProcessDetailsForProcessId(processId).map {
             exportProcess
           }
         }
       }
-    } ~ path("processes" / "export" / Segment / LongNumber) { (processId, versionId) =>
-      get {
+    } ~ path("processesExport" / Segment / LongNumber) { (processName, versionId) =>
+      (get & processId(processName)) { processId =>
         complete {
-          repository.fetchProcessDetailsForId(processId, versionId, businessView = false).map {
+          processRepository.fetchProcessDetailsForId(processId, versionId, businessView = false).map {
             exportProcess
           }
         }
       }
-    } ~ path("processes" / "exportToPdf" / Segment / LongNumber) { (processId, versionId) =>
-      parameter('businessView ? false) { (businessView) =>
-        post {
-          entity(as[Array[Byte]]) { (svg) =>
+    } ~ path("processesExport" / "pdf" / Segment / LongNumber) { (processName, versionId) =>
+      parameter('businessView ? false) { businessView =>
+        (post & processId(processName)) { processId =>
+          entity(as[Array[Byte]]) { svg =>
             complete {
-              repository.fetchProcessDetailsForId(processId, versionId, businessView).flatMap { process =>
-                processActivityRepository.findActivity(processId).map(exportProcessToPdf(new String(svg, StandardCharsets.UTF_8), process, _))
+              processRepository.fetchProcessDetailsForId(processId, versionId, businessView).flatMap { process =>
+                processActivityRepository.findActivity(processId, processName).map(exportProcessToPdf(new String(svg, StandardCharsets.UTF_8), process, _))
               }
             }
           }
         }
       }
-    } ~ path("processes" / "export") {
+    } ~ path("processesExport") {
       post {
         entity(as[DisplayableProcess]) { process =>
           complete {

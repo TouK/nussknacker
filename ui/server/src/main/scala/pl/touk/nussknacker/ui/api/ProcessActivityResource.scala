@@ -3,36 +3,34 @@ package pl.touk.nussknacker.ui.api
 
 import java.io.File
 
-import akka.http.scaladsl.model.HttpEntity.Default
-import akka.http.scaladsl.model.headers.ContentDispositionTypes
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server._
 import akka.http.scaladsl.server.directives.ContentTypeResolver
 import akka.http.scaladsl.settings.RoutingSettings
 import akka.stream.{ActorAttributes, Materializer}
 import akka.stream.scaladsl.FileIO
-import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository
+import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, ProcessActivityRepository}
 import pl.touk.nussknacker.ui.util.{AkkaHttpResponse, CatsSyntax}
 import pl.touk.http.argonaut.Argonaut62Support
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.ExecutionContext
 
-class ProcessActivityResource(processActivityRepository: ProcessActivityRepository)
-                             (implicit ec: ExecutionContext, mat: Materializer) extends Directives with Argonaut62Support with RouteWithUser {
+class ProcessActivityResource(processActivityRepository: ProcessActivityRepository, val processRepository: FetchingProcessRepository)
+                             (implicit ec: ExecutionContext, mat: Materializer) extends Directives with Argonaut62Support with RouteWithUser with ProcessDirectives {
 
   import argonaut.ArgonautShapeless._
   import pl.touk.nussknacker.ui.codec.UiCodecs._
 
   def route(implicit user: LoggedUser) : Route = {
-    path("processes" / Segment / "activity") { processId =>
-      get {
+    path("processes" / Segment / "activity") { processName =>
+      (get & processId(processName)) { processId =>
         complete {
-          processActivityRepository.findActivity(processId)
+          processActivityRepository.findActivity(processId, processName)
         }
       }
-    } ~ path("processes" / Segment / LongNumber / "activity" / "comments") { (processId, versionId) =>
-      post {
+    } ~ path("processes" / Segment / LongNumber / "activity" / "comments") { (processName, versionId) =>
+      (post & processId(processName)) { processId =>
         entity(as[Array[Byte]]) { commentBytes =>
           complete {
             val comment = new String(commentBytes, java.nio.charset.Charset.forName("UTF-8"))
@@ -40,8 +38,8 @@ class ProcessActivityResource(processActivityRepository: ProcessActivityReposito
           }
         }
       }
-    } ~ path("processes" / Segment / "activity" / "comments" / LongNumber) { (processId, commentId) =>
-      delete {
+    } ~ path("processes" / Segment / "activity" / "comments" / LongNumber) { (processName, commentId) =>
+      (delete & processId(processName)) { processId =>
         complete {
           processActivityRepository.deleteComment(commentId)
         }
@@ -50,23 +48,23 @@ class ProcessActivityResource(processActivityRepository: ProcessActivityReposito
   }
 }
 
-class AttachmentResources(attachmentService: ProcessAttachmentService)
-                             (implicit ec: ExecutionContext, mat: Materializer) extends Directives with Argonaut62Support with RouteWithUser {
+class AttachmentResources(attachmentService: ProcessAttachmentService, val processRepository: FetchingProcessRepository)
+                         (implicit ec: ExecutionContext, mat: Materializer) extends Directives with Argonaut62Support with RouteWithUser with ProcessDirectives {
 
   import argonaut.ArgonautShapeless._
   import pl.touk.nussknacker.ui.codec.UiCodecs._
 
   def route(implicit user: LoggedUser) : Route = {
-    path("processes" / Segment / LongNumber / "activity" / "attachments") { (processId, versionId) =>
-      post {
+    path("processes" / Segment / LongNumber / "activity" / "attachments") { (processName, versionId) =>
+      (post & processId(processName)) { processId =>
         fileUpload("attachment") { case (metadata, byteSource) =>
           complete {
             attachmentService.saveAttachment(processId, versionId, metadata.fileName, byteSource)
           }
         }
       }
-    } ~ path("processes" / Segment / LongNumber / "activity" / "attachments" / LongNumber) { (processId, versionId, attachmentId) =>
-      get {
+    } ~ path("processes" / Segment / LongNumber / "activity" / "attachments" / LongNumber) { (processName, versionId, attachmentId) =>
+      (get & processId(processName)) { processId =>
         extractSettings { settings =>
           complete {
             val attachmentFile = attachmentService.readAttachment(attachmentId)

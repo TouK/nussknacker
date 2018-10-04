@@ -118,7 +118,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
     val apiResources : List[RouteWithUser] = {
       val routes = List(
           new ProcessesResources(
-            repository = processRepository,
+            processRepository = processRepository,
             writeRepository = writeProcessRepository,
             jobStatusService = jobStatusService,
             processActivityRepository = processActivityRepository,
@@ -128,16 +128,16 @@ object NussknackerApp extends App with Directives with LazyLogging {
             processAuthorizer = processAuthorizer
           ),
           new ProcessesExportResources(processRepository, processActivityRepository),
-          new ProcessActivityResource(processActivityRepository),
-          ManagementResources(counter, managementActor, testResultsMaxSizeInBytes, processAuthorizer),
+          new ProcessActivityResource(processActivityRepository, processRepository),
+          ManagementResources(counter, managementActor, testResultsMaxSizeInBytes, processAuthorizer, processRepository),
           new ValidationResources(processValidation),
           new DefinitionResources(modelData, subprocessRepository),
           new SignalsResources(modelData, processRepository, processAuthorizer),
           new UserResources(),
-          new NotificationResources(managementActor),
+          new NotificationResources(managementActor, processRepository),
           new SettingsResources(featureTogglesConfig),
           new AppResources(config, modelData, processRepository, processValidation, jobStatusService),
-          TestInfoResources(modelData,processAuthorizer),
+          TestInfoResources(modelData,processAuthorizer, processRepository),
         new ServiceRoutes(modelData)
       )
       val optionalRoutes = List(
@@ -149,7 +149,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
           .map(reporter => new ProcessReportResources(reporter, counter, processRepository)),
         featureTogglesConfig.attachments
           .map(path => new ProcessAttachmentService(path, processActivityRepository))
-          .map(service => new AttachmentResources(service)),
+          .map(service => new AttachmentResources(service, processRepository)),
         featureTogglesConfig.queryableStateProxyUrl
           .map(url => new QueryableStateResources(
             processDefinition = modelData,

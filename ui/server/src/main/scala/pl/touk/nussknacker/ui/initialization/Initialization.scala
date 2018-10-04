@@ -35,10 +35,10 @@ object Initialization {
            customProcesses: Option[Map[String, String]]) : Unit = {
 
     val transactionalRepository = new DbWriteProcessRepository[DB](db, migrations.mapValues(_.version)) {
-      override def run[R]: (DB[R]) => DB[R] = identity
+      override def run[R]: DB[R] => DB[R] = identity
     }
     val transactionalFetchingRepository = new DBFetchingProcessRepository[DB](db) {
-      override def run[R]: (DB[R]) => DB[R] = identity
+      override def run[R]: DB[R] => DB[R] = identity
     }
 
     val operations : List[InitialOperation] = List(
@@ -53,7 +53,7 @@ object Initialization {
 
     import db.driver.api._
 
-    val result = operations.map(_.runOperation).sequence
+    val result = operations.map(_.runOperation).sequence[DB, Unit]
     val runFuture = db.run(result.transactionally)
 
     Await.result(runFuture, 10 seconds)
@@ -99,7 +99,7 @@ class TechnicalProcessUpdate(customProcesses: Map[String, String], repository: D
           processingType = "streaming",
           isSubprocess = false
         )
-      }.toList.sequence
+      }.toList.sequence[DB, Unit]
     results.map(_ => ())
   }
 
@@ -107,7 +107,7 @@ class TechnicalProcessUpdate(customProcesses: Map[String, String], repository: D
                            processingType: ProcessingType, isSubprocess: Boolean)(implicit ec: ExecutionContext, lu: LoggedUser): DB[Unit] = {
     (for {
       latestVersion <- EitherT.right[EspError](fetchingProcessRepository.fetchLatestProcessVersion(processId))
-      _ <- EitherT {
+      _ <- EitherT[DB, EspError, Unit] {
         latestVersion match {
           case None => repository.saveNewProcess(
             processId = processId,
@@ -141,7 +141,7 @@ class AutomaticMigration(migrations: Map[ProcessingType, ProcessMigrations],
       processes <- fetchingProcessRepository.fetchProcessesDetails()
       subprocesses <- fetchingProcessRepository.fetchSubProcessesDetails()
       allToMigrate = processes ++ subprocesses
-      migrated <- allToMigrate.map(migrateOne).sequence
+      migrated <- allToMigrate.map(migrateOne).sequence[DB, Unit]
     } yield migrated
     results.map(_ => ())
   }
@@ -149,7 +149,7 @@ class AutomaticMigration(migrations: Map[ProcessingType, ProcessMigrations],
   private def migrateOne(processDetails: ProcessDetails)(implicit ec: ExecutionContext, lu: LoggedUser) : DB[Unit] = {
     migrator.migrateProcess(processDetails).map(_.toUpdateAction) match {
       case Some(action) => repository.updateProcess(action).flatMap {
-        case Left(error) => DBIOAction.failed(new RuntimeException(s"Failed to migrate ${processDetails.id}: $error"))
+        case Left(error) => DBIOAction.failed(new RuntimeException(s"Failed to migrate ${processDetails.name}: $error"))
         case Right(_) => DBIOAction.successful(())
       }
       case None => DBIOAction.successful(())

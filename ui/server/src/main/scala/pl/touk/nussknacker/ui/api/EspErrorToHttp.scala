@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model.{HttpResponse, StatusCode, StatusCodes}
+import akka.http.scaladsl.server.ExceptionHandler
 import argonaut.EncodeJson
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.ui.process.deployment.ProcessIsBeingDeployed
@@ -37,6 +38,12 @@ object EspErrorToHttp extends LazyLogging with Argonaut62Support {
       HttpResponse(status = StatusCodes.InternalServerError, entity = ex.getMessage)
   }
 
+  def espErrorHandler: ExceptionHandler = {
+    import akka.http.scaladsl.server.Directives._
+    ExceptionHandler {
+      case e: EspError => complete(errorToHttp(e))
+    }
+  }
 
   def toResponse(either: Either[EspError, ValidationResult]): ToResponseMarshallable =
     either match {

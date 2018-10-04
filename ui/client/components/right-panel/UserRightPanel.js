@@ -229,7 +229,7 @@ class UserRightPanel extends Component {
   }
 
   processId = () => {
-    return this.props.processToDisplay.id
+    return this.props.fetchedProcessDetails.name
   }
 
   versionId = () => this.props.fetchedProcessDetails.processVersionId

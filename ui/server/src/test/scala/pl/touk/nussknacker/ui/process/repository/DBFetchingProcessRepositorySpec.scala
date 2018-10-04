@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestPermissions, WithDbTesting}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.ui.process.marshall.UiProcessMarshaller
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{ProcessAlreadyExists, ProcessNotFoundError}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -25,6 +26,7 @@ class DBFetchingProcessRepositorySpec
     with WithDbTesting
     with ScalaFutures
     with TestPermissions {
+  import cats.syntax.either._
 
   implicit val defaultPatience = PatienceConfig(timeout = Span(1, Seconds), interval = Span(5, Millis))
 
@@ -88,7 +90,7 @@ class DBFetchingProcessRepositorySpec
     saveProcessForCategory("c2")
     val processes= fetching.fetchProcesses()(c1Reader, implicitly[ExecutionContext]).futureValue
 
-    processes.map(_.id) shouldEqual "categorized-c1"::Nil
+    processes.map(_.name) shouldEqual "categorized-c1"::Nil
   }
   test("get last subprocessesModificationDate for subprocess with floating version") {
 
@@ -107,16 +109,96 @@ class DBFetchingProcessRepositorySpec
     fetchSubprocessesModificationDate("floatingVersions") shouldBe Some(Map("sub1" -> minusDays(1), "sub3" -> minusDays(3)))
 
   }
+
+  test("should rename process") {
+    val oldName = "oldName1"
+    val oldName2 = "oldName2"
+    val newName = "newName"
+
+    saveProcess(EspProcessBuilder
+      .id(oldName)
+      .subprocessVersions(Map("sub1" -> 3L))
+      .exceptionHandler()
+      .source("s", "")
+      .emptySink("s2", ""),
+      LocalDateTime.now()
+    )
+    saveProcess(EspProcessBuilder
+      .id(oldName2)
+      .subprocessVersions(Map("sub1" -> 3L))
+      .exceptionHandler()
+      .source("s", "")
+      .emptySink("s2", ""),
+      LocalDateTime.now()
+    )
+
+    processExists(oldName) shouldBe true
+    processExists(oldName2) shouldBe true
+    processExists(newName) shouldBe false
+
+    val before = fetchMetaDataIdsForAllVersions(oldName)
+    before.toSet shouldBe Set(oldName)
+
+    renameProcess(oldName, newName) shouldBe 'right
+
+    processExists(oldName) shouldBe false
+    processExists(oldName2) shouldBe true
+    processExists(newName) shouldBe true
+
+    val oldAfter = fetchMetaDataIdsForAllVersions(oldName)
+    val newAfter = fetchMetaDataIdsForAllVersions(newName)
+    oldAfter.length shouldBe 0
+    newAfter.length shouldBe before.length
+    newAfter.toSet shouldBe Set(newName)
+  }
+
+  test("should prevent rename to existing name") {
+    val oldName = "oldName"
+    val existingName = "existingName"
+
+    saveProcess(EspProcessBuilder
+      .id(oldName)
+      .subprocessVersions(Map("sub1" -> 3L))
+      .exceptionHandler()
+      .source("s", "")
+      .emptySink("s2", ""),
+      LocalDateTime.now()
+    )
+    saveProcess(EspProcessBuilder
+      .id(existingName)
+      .subprocessVersions(Map("sub1" -> 3L))
+      .exceptionHandler()
+      .source("s", "")
+      .emptySink("s2", ""),
+      LocalDateTime.now()
+    )
+
+    processExists(oldName) shouldBe true
+    processExists(existingName) shouldBe true
+
+    renameProcess(oldName, existingName) shouldBe ProcessAlreadyExists(existingName).asLeft
+  }
                   
   private def minusDays(days: Int) : LocalDateTime = LocalDate.now().minusDays(days).atStartOfDay()
 
   private def fetchSubprocessesModificationDate(processId: String): Option[Map[String, LocalDateTime]] =
     fetching.fetchLatestProcessDetailsForProcessId(processId).futureValue.get.subprocessesModificationDate
 
+  private def processExists(processName: String): Boolean = {
+    fetching.fetchProcessId(processName).futureValue.flatMap(
+      fetching.fetchLatestProcessVersion(_).futureValue
+    ).nonEmpty
+  }
+
   private def saveProcess(espProcess: EspProcess, now: LocalDateTime, category: String = "") = {
     val json = UiProcessMarshaller.toJson(ProcessCanonizer.canonize(espProcess), PrettyParams.nospace)
     currentTime = now
     writingRepo.saveNewProcess(espProcess.id, category, GraphProcess(json), TestProcessingTypes.Streaming, false).futureValue shouldBe 'right
+  }
+
+  private def renameProcess(processName: String, newName: String) = {
+    val processId = fetching.fetchProcessId(processName).futureValue.get
+    writingRepo.renameProcess(processId, newName).futureValue
   }
 
   private def saveSubProcess(id: String, now: LocalDateTime) = {
@@ -126,5 +208,12 @@ class DBFetchingProcessRepositorySpec
     writingRepo.saveNewProcess(id, "", GraphProcess(json), TestProcessingTypes.Streaming, true).futureValue shouldBe 'right
   }
 
-
+  private def fetchMetaDataIdsForAllVersions(name: String) = {
+    fetching.fetchProcessId(name).futureValue.toSeq.flatMap { processId =>
+      fetching.fetchAllProcessesDetails().futureValue
+        .filter(_.id == processId)
+        .flatMap(_.json.toSeq)
+        .map(_.metaData.id)
+    }
+  }
 }
