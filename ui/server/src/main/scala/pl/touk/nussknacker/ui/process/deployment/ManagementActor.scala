@@ -62,8 +62,11 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
         manager.findJobStatus(id).map(_.map(ProcessStatus.apply))
       }
       reply(processStatus)
-    case DeploymentActionFinished(id) =>
+    case DeploymentActionFinished(id, None) =>
       logger.info(s"Finishing ${beingDeployed.get(id)} of $id")
+      beingDeployed -= id
+    case DeploymentActionFinished(id, Some(failure)) =>
+      logger.error(s"Action: ${beingDeployed.get(id)} of $id finished with failure", failure)
       beingDeployed -= id
     case Test(processId, processJson, testData, user, encoder) =>
       ensureNoDeploymentRunning {
@@ -81,7 +84,10 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
 
   private def withDeploymentInfo[T](id: String, userId: String, actionName: String, action: => Future[T]): Future[T] = {
     beingDeployed += id -> DeployInfo(userId, System.currentTimeMillis(), actionName)
-    action.onComplete(_ => self ! DeploymentActionFinished(id))
+    action.onComplete {
+      case Success(_) => self ! DeploymentActionFinished(id, None)
+      case Failure(ex) => self ! DeploymentActionFinished(id, Some(ex))
+    }
     action
   }
 
@@ -166,7 +172,7 @@ case class CheckStatus(id: String, user: LoggedUser)
 
 case class Test[T](processId: String, processJson: String, test: TestData, user: LoggedUser, variableEncoder: Any => T)
 
-case class DeploymentActionFinished(id: String)
+case class DeploymentActionFinished(id: String, optionalFailure: Option[Throwable])
 
 case class DeployInfo(userId: String, time: Long, action: String)
 
