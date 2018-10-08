@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.db.entity.EnvironmentsEntity.EnvironmentsEntityData
 import pl.touk.nussknacker.ui.db.{DbConfig, EspTables}
+import pl.touk.nussknacker.ui.process.ProcessId
 import pl.touk.nussknacker.ui.process.migrate.ProcessModelMigrator
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessDetails
 import pl.touk.nussknacker.ui.process.repository.WriteProcessRepository.UpdateProcessAction
@@ -93,7 +94,7 @@ class TechnicalProcessUpdate(customProcesses: Map[String, String], repository: D
         val deploymentData = CustomProcess(processClass)
         logger.info(s"Saving custom process $processId")
         saveOrUpdate(
-          processId = processId,
+          processId = ProcessId(processId),
           category = "Technical",
           deploymentData = deploymentData,
           processingType = "streaming",
@@ -103,7 +104,7 @@ class TechnicalProcessUpdate(customProcesses: Map[String, String], repository: D
     results.map(_ => ())
   }
 
-  private def saveOrUpdate(processId: String, category: String, deploymentData: ProcessDeploymentData,
+  private def saveOrUpdate(processId: ProcessId, category: String, deploymentData: ProcessDeploymentData,
                            processingType: ProcessingType, isSubprocess: Boolean)(implicit ec: ExecutionContext, lu: LoggedUser): DB[Unit] = {
     (for {
       latestVersion <- EitherT.right[EspError](fetchingProcessRepository.fetchLatestProcessVersion(processId))

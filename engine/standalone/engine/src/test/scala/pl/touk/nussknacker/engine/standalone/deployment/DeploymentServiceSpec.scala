@@ -7,6 +7,7 @@ import com.codahale.metrics.MetricRegistry
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.StandaloneProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
@@ -30,7 +31,7 @@ class DeploymentServiceSpec extends FlatSpec with Matchers {
 
   it should "preserve processes between deployments" in {
 
-    val id = "process1"
+    val id = ProcessName("process1")
     val json = processWithIdAndPath(id, None)
 
     var service = createService()
@@ -54,32 +55,26 @@ class DeploymentServiceSpec extends FlatSpec with Matchers {
   }
 
   it should "deploy on given path" in {
-    val id = "process1"
+    val id1 = ProcessName("process1")
+    val id2 = ProcessName("process2")
+    val id3 = ProcessName("alamakota")
 
     val service = createService()
 
-    service.deploy(processWithIdAndPath(id, None))  shouldBe 'right
-
+    service.deploy(processWithIdAndPath(id1, None))  shouldBe 'right
     service.getInterpreterByPath("process1") shouldBe 'defined
+    service.checkStatus(id1) shouldBe 'defined
 
-    service.checkStatus("process1") shouldBe 'defined
-
-    service.deploy(processWithIdAndPath(id, Some("alamakota"))) shouldBe 'right
-
+    service.deploy(processWithIdAndPath(id1, Some("alamakota"))) shouldBe 'right
     service.getInterpreterByPath("process1") shouldBe 'empty
-
     service.getInterpreterByPath("alamakota") shouldBe 'defined
-
-    service.checkStatus("process1") shouldBe 'defined
-
-    service.checkStatus("alamakota") shouldBe 'empty
-
+    service.checkStatus(id1) shouldBe 'defined
+    service.checkStatus(id3) shouldBe 'empty
   }
 
   it should "not allow deployment on same path" in {
-    val id = "process1"
-    val id2 = "process2"
-
+    val id = ProcessName("process1")
+    val id2 = ProcessName("process2")
 
     val service = createService()
 
@@ -93,13 +88,13 @@ class DeploymentServiceSpec extends FlatSpec with Matchers {
 
   }
 
-  private def processWithIdAndPath(id: String, path: Option[String]) = {
+  private def processWithIdAndPath(processName: ProcessName, path: Option[String]) = {
     val canonical = ProcessCanonizer.canonize(StandaloneProcessBuilder
-        .id(id)
-          .path(path)
+        .id(processName)
+        .path(path)
         .exceptionHandler()
         .source("start", "request1-post-source")
         .sink("endNodeIID", "''", "response-sink"))
-    DeploymentData(new ProcessMarshaller().toJson(canonical, PrettyParams.spaces2), 0, ProcessVersion.empty.copy(processId = id))
+    DeploymentData(new ProcessMarshaller().toJson(canonical, PrettyParams.spaces2), 0, ProcessVersion.empty.copy(processName = processName))
   }
 }

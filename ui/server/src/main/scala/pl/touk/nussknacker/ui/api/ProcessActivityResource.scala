@@ -17,7 +17,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import scala.concurrent.ExecutionContext
 
 class ProcessActivityResource(processActivityRepository: ProcessActivityRepository, val processRepository: FetchingProcessRepository)
-                             (implicit ec: ExecutionContext, mat: Materializer) extends Directives with Argonaut62Support with RouteWithUser with ProcessDirectives {
+                             (implicit val ec: ExecutionContext, mat: Materializer) extends Directives with Argonaut62Support with RouteWithUser with ProcessDirectives {
 
   import argonaut.ArgonautShapeless._
   import pl.touk.nussknacker.ui.codec.UiCodecs._
@@ -26,7 +26,7 @@ class ProcessActivityResource(processActivityRepository: ProcessActivityReposito
     path("processes" / Segment / "activity") { processName =>
       (get & processId(processName)) { processId =>
         complete {
-          processActivityRepository.findActivity(processId, processName)
+          processActivityRepository.findActivity(processId.id, processName)
         }
       }
     } ~ path("processes" / Segment / LongNumber / "activity" / "comments") { (processName, versionId) =>
@@ -34,7 +34,7 @@ class ProcessActivityResource(processActivityRepository: ProcessActivityReposito
         entity(as[Array[Byte]]) { commentBytes =>
           complete {
             val comment = new String(commentBytes, java.nio.charset.Charset.forName("UTF-8"))
-            processActivityRepository.addComment(processId, versionId, comment)
+            processActivityRepository.addComment(processId.id, versionId, comment)
           }
         }
       }
@@ -49,7 +49,7 @@ class ProcessActivityResource(processActivityRepository: ProcessActivityReposito
 }
 
 class AttachmentResources(attachmentService: ProcessAttachmentService, val processRepository: FetchingProcessRepository)
-                         (implicit ec: ExecutionContext, mat: Materializer) extends Directives with Argonaut62Support with RouteWithUser with ProcessDirectives {
+                         (implicit val ec: ExecutionContext, mat: Materializer) extends Directives with Argonaut62Support with RouteWithUser with ProcessDirectives {
 
   import argonaut.ArgonautShapeless._
   import pl.touk.nussknacker.ui.codec.UiCodecs._
@@ -59,7 +59,7 @@ class AttachmentResources(attachmentService: ProcessAttachmentService, val proce
       (post & processId(processName)) { processId =>
         fileUpload("attachment") { case (metadata, byteSource) =>
           complete {
-            attachmentService.saveAttachment(processId, versionId, metadata.fileName, byteSource)
+            attachmentService.saveAttachment(processId.id, versionId, metadata.fileName, byteSource)
           }
         }
       }

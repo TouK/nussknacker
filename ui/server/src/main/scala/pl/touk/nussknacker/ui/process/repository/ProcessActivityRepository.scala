@@ -10,6 +10,7 @@ import pl.touk.nussknacker.ui.db.EspTables._
 import pl.touk.nussknacker.ui.db.entity.AttachmentEntity.AttachmentEntityData
 import pl.touk.nussknacker.ui.db.entity.CommentEntity
 import pl.touk.nussknacker.ui.db.entity.CommentEntity.CommentEntityData
+import pl.touk.nussknacker.ui.process.ProcessId
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.{Attachment, Comment, ProcessActivity}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -19,7 +20,7 @@ case class ProcessActivityRepository(dbConfig: DbConfig) extends LazyLogging wit
 
   import driver.api._
 
-  def addComment(processId: String, processVersionId: Long, comment: String)
+  def addComment(processId: ProcessId, processVersionId: Long, comment: String)
                 (implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Unit] = {
     run(CommentEntity.newCommentAction(processId, processVersionId, comment))
   }
@@ -37,10 +38,10 @@ case class ProcessActivityRepository(dbConfig: DbConfig) extends LazyLogging wit
     }
   }
 
-  def findActivity(processId: String, processName: String)(implicit ec: ExecutionContext): Future[ProcessActivity] = {
+  def findActivity(processId: ProcessId, processName: String)(implicit ec: ExecutionContext): Future[ProcessActivity] = {
     val findProcessActivityAction = for {
-      fetchedComments <- commentsTable.filter(_.processId === processId).sortBy(_.createDate.desc).result
-      fetchedAttachments <- attachmentsTable.filter(_.processId === processId).sortBy(_.createDate.desc).result
+      fetchedComments <- commentsTable.filter(_.processId === processId.value).sortBy(_.createDate.desc).result
+      fetchedAttachments <- attachmentsTable.filter(_.processId === processId.value).sortBy(_.createDate.desc).result
       comments = fetchedComments.map(c => Comment(c, processName)).toList
       attachments = fetchedAttachments.map(c => Attachment(c, processName)).toList
     } yield ProcessActivity(comments, attachments)

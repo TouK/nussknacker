@@ -28,7 +28,7 @@ object TestInfoResources {
 class TestInfoResources(providers: Map[ProcessingType, TestInfoProvider],
                         val processAuthorizer:AuthorizeProcess,
                         val processRepository: FetchingProcessRepository)
-                       (implicit ec: ExecutionContext)
+                       (implicit val ec: ExecutionContext)
   extends Directives
     with Argonaut62Support
     with RouteWithUser
@@ -45,24 +45,26 @@ class TestInfoResources(providers: Map[ProcessingType, TestInfoProvider],
     pathPrefix("testInfo") {
       post {
         entity(as[DisplayableProcess]) { displayableProcess =>
-          canDeploy(displayableProcess.id) {
-            val processDefinition = providers(displayableProcess.processingType)
+          processId(displayableProcess.id) { processId =>
+            canDeploy(processId) {
+              val processDefinition = providers(displayableProcess.processingType)
 
-            val source = displayableProcess.nodes.flatMap(asSource).headOption
-            val metadata = displayableProcess.metaData
+              val source = displayableProcess.nodes.flatMap(asSource).headOption
+              val metadata = displayableProcess.metaData
 
-            path("capabilities") {
-              complete {
-                val resp: TestingCapabilities = source.map(processDefinition.getTestingCapabilities(metadata, _))
-                  .getOrElse(TestingCapabilities(false, false))
-                resp
-              }
-            } ~
-            path("generate" / IntNumber) { testSampleSize =>
-              complete {
-                val resp: Array[Byte] =
-                  source.flatMap(processDefinition.generateTestData(metadata, _, testSampleSize)).getOrElse(new Array[Byte](0))
-                resp
+              path("capabilities") {
+                complete {
+                  val resp: TestingCapabilities = source.map(processDefinition.getTestingCapabilities(metadata, _))
+                    .getOrElse(TestingCapabilities(false, false))
+                  resp
+                }
+              } ~
+              path("generate" / IntNumber) { testSampleSize =>
+                complete {
+                  val resp: Array[Byte] =
+                    source.flatMap(processDefinition.generateTestData(metadata, _, testSampleSize)).getOrElse(new Array[Byte](0))
+                  resp
+                }
               }
             }
           }

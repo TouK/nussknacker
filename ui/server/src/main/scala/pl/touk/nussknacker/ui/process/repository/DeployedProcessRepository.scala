@@ -9,6 +9,7 @@ import pl.touk.nussknacker.ui.db.{DbConfig, EspTables}
 import pl.touk.nussknacker.ui.db.entity.ProcessDeploymentInfoEntity.{DeployedProcessVersionEntityData, DeploymentAction}
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntity.ProcessVersionEntityData
+import pl.touk.nussknacker.ui.process.ProcessId
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
@@ -23,11 +24,11 @@ case class DeployedProcessRepository(dbConfig: DbConfig,
                                 buildInfos: Map[ProcessingType, Map[String, String]]) extends BasicRepository {
   import driver.api._
 
-  def markProcessAsDeployed(processId: String, processVersion: Long, processingType: ProcessingType,
+  def markProcessAsDeployed(processId: ProcessId, processVersion: Long, processingType: ProcessingType,
                             userId: String, environment: String)
                            (implicit ec: ExecutionContext): Future[Unit] = {
     val insertAction = EspTables.deployedProcessesTable += DeployedProcessVersionEntityData(
-      processId = processId,
+      processId = processId.value,
       processVersionId = Some(processVersion),
       environment = environment,
       user = userId,
@@ -38,11 +39,11 @@ case class DeployedProcessRepository(dbConfig: DbConfig,
     run(insertAction).map(_ => ())
   }
 
-  def markProcessAsCancelled(processId: String, userId: String, environment: String)
+  def markProcessAsCancelled(processId: ProcessId, userId: String, environment: String)
                             (implicit ec: ExecutionContext): Future[Unit] = {
 
     val insertAction = EspTables.deployedProcessesTable += DeployedProcessVersionEntityData(
-      processId = processId,
+      processId = processId.value,
       processVersionId = None,
       environment = environment,
       user = userId,

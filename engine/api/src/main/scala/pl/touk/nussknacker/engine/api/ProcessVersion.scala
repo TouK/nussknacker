@@ -1,15 +1,15 @@
 package pl.touk.nussknacker.engine.api
 
+import pl.touk.nussknacker.engine.api.process.ProcessName
+
 case class ProcessVersion(versionId: Long,
-                          processId: String,
+                          processName: ProcessName,
                           user: String,
-                          modelVersion: Option[Int]
-                         )
+                          modelVersion: Option[Int])
 
 object ProcessVersion {
   val empty = ProcessVersion(versionId = 1,
-    processId = "",
+    processName = ProcessName(""),
     user = "",
     modelVersion = None)
-
 }

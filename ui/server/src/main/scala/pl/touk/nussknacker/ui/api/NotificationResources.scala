@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.util.json.Codecs
 import pl.touk.nussknacker.ui.util.Argonaut62Support
 import argonaut.ArgonautShapeless._
 import argonaut.CodecJson
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 
 class NotificationResources(managementActor: ActorRef,
@@ -43,25 +44,19 @@ class NotificationResources(managementActor: ActorRef,
   private def prepareDeploymentNotifications(): Future[List[Notification]] = {
     (managementActor ? DeploymentStatus)
       .mapTo[DeploymentStatusResponse]
-      .flatMap {
+      .map {
         case DeploymentStatusResponse(deploymentInfos) =>
-          Future.sequence(
-            deploymentInfos.map{ case (k, v) => processIdToName(k).map(toNotification(_, v)) }.toList
-          )
+          deploymentInfos.map{ case (k, v) => toNotification(k, v) }.toList
       }
   }
 
-  private def processIdToName(processId: String): Future[String] = {
-    processRepository.fetchProcessName(processId).map(_.getOrElse(throw new IllegalArgumentException(s"Process not found: ${processId}")))
-  }
-
   //TODO: consider 'personalization' - different message for user who is deploying
-  private def toNotification(processId: String, deploymentInfo: DeployInfo): Notification = {
+  private def toNotification(processName: ProcessName, deploymentInfo: DeployInfo): Notification = {
     val actionString = deploymentInfo.action match {
       case DeploymentActionType.Deployment => "deployed"
       case DeploymentActionType.Cancel => "cancelled"
     }
-    Notification(s"Process $processId is $actionString by ${deploymentInfo.userId}", NotificationType.info)
+    Notification(s"Process ${processName.value} is $actionString by ${deploymentInfo.userId}", NotificationType.info)
   }
 
 }

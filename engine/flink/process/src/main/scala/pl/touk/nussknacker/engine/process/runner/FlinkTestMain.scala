@@ -5,6 +5,7 @@ import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.ResultsCollectingListenerHolder
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.process.FlinkProcessRegistrar
@@ -14,7 +15,7 @@ object FlinkTestMain extends FlinkRunner {
 
   def run[T](modelData: ModelData, processJson: String, testData: TestData, configuration: Configuration, variableEncoder: Any => T): TestResults[T] = {
     val process = readProcessFromArg(processJson)
-    val processVersion = ProcessVersion.empty.copy(processId = "snapshot version") // testing process may be unreleased, so it has no version
+    val processVersion = ProcessVersion.empty.copy(processName = ProcessName("snapshot version")) // testing process may be unreleased, so it has no version
     new FlinkTestMain(modelData, process, testData, processVersion, configuration).runTest(variableEncoder)
   }
 }

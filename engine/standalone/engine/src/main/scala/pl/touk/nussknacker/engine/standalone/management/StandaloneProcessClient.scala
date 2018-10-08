@@ -4,7 +4,8 @@ import com.ning.http.client.Response
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import dispatch.{Http, StatusCode}
-import pl.touk.nussknacker.engine.api.deployment.ProcessState
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessState}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.dispatch.LoggingDispatchClient
 import pl.touk.nussknacker.engine.standalone.api.DeploymentData
 
@@ -24,9 +25,9 @@ trait StandaloneProcessClient {
 
   def deploy(deploymentData: DeploymentData): Future[Unit]
 
-  def cancel(name: String): Future[Unit]
+  def cancel(name: ProcessName): Future[Unit]
 
-  def findStatus(name: String): Future[Option[ProcessState]]
+  def findStatus(name: ProcessName): Future[Option[ProcessState]]
 
 }
 
@@ -41,11 +42,11 @@ class MultiInstanceStandaloneProcessClient(clients: List[StandaloneProcessClient
     Future.sequence(clients.map(_.deploy(deploymentData))).map(_ => ())
   }
 
-  override def cancel(name: String): Future[Unit] = {
+  override def cancel(name: ProcessName): Future[Unit] = {
     Future.sequence(clients.map(_.cancel(name))).map(_ => ())
   }
 
-  override def findStatus(name: String): Future[Option[ProcessState]] = {
+  override def findStatus(name: ProcessName): Future[Option[ProcessState]] = {
     Future.sequence(clients.map(_.findStatus(name))).map { statuses =>
       statuses.distinct match {
         case `None`::Nil => None
@@ -53,7 +54,7 @@ class MultiInstanceStandaloneProcessClient(clients: List[StandaloneProcessClient
         case a =>
           //TODO: more precise information
           logger.warn(s"Inconsistent states found: $a")
-          Some(ProcessState(name, "INCONSISTENT", 0L))
+          Some(ProcessState(DeploymentId(name.value), "INCONSISTENT", 0L))
       }
     }
   }
@@ -76,14 +77,14 @@ class DispatchStandalonProcessClient(managementUrl: String, http: Http = Http) e
     }
   }
 
-  def cancel(name: String): Future[Unit] = {
-    val cancelUrl = dispatch.url(managementUrl) / "cancel" / name
+  def cancel(processName: ProcessName): Future[Unit] = {
+    val cancelUrl = dispatch.url(managementUrl) / "cancel" / processName.value
     dispatchClient {
       cancelUrl.POST OK asUnit
     }
   }
 
-  def findStatus(name: String): Future[Option[ProcessState]] = {
+  def findStatus(name: ProcessName): Future[Option[ProcessState]] = {
     def notFoundHandler(r: Response): Option[ProcessState] = {
       if (r.getStatusCode == 404)
         None
@@ -93,7 +94,7 @@ class DispatchStandalonProcessClient(managementUrl: String, http: Http = Http) e
         throw StatusCode(r.getStatusCode)
     }
 
-    val jobStatusUrl = dispatch.url(managementUrl) / "checkStatus" / name
+    val jobStatusUrl = dispatch.url(managementUrl) / "checkStatus" / name.value
     dispatchClient {
       jobStatusUrl > notFoundHandler _
     }

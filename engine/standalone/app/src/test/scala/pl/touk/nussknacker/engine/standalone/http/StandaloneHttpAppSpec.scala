@@ -14,7 +14,8 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable}
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.ProcessState
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessState}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.StandaloneProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -28,17 +29,17 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
   import argonaut.ArgonautShapeless._
   import spel.Implicits._
 
-  var procId : String = _
+  var procId : ProcessName = _
 
   override protected def beforeEach() = {
-    procId = UUID.randomUUID().toString
+    procId = ProcessName(UUID.randomUUID().toString)
   }
 
   private val processMarshaller = new ProcessMarshaller
 
   private val testEpoch = (math.random * 10000).toLong
 
-  private def deploymentData(processJson: String) = DeploymentData(processJson, testEpoch, ProcessVersion.empty.copy(processId=procId))
+  private def deploymentData(processJson: String) = DeploymentData(processJson, testEpoch, ProcessVersion.empty.copy(processName=procId))
 
   def processJson = processToJson(StandaloneProcessBuilder
     .id(procId)
@@ -116,15 +117,15 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
     assertProcessNotRunning(procId)
     Post("/deploy", toEntity(deploymentData(processJson))) ~> managementRoute ~> check {
       status shouldBe StatusCodes.OK
-      Get(s"/checkStatus/$procId") ~> managementRoute ~> check {
+      Get(s"/checkStatus/${procId.value}") ~> managementRoute ~> check {
         status shouldBe StatusCodes.OK
         val processState = responseAs[String].decodeOption[ProcessState].get
-        processState.id shouldBe procId
+        processState.id shouldBe DeploymentId(procId.value)
         processState.startTime shouldBe testEpoch
 
         processState.status shouldBe "RUNNING"
       }
-      Post(s"/$procId", toEntity(Request("a", "b"))) ~> processesRoute ~> check {
+      Post(s"/${procId.value}", toEntity(Request("a", "b"))) ~> processesRoute ~> check {
         status shouldBe StatusCodes.OK
         responseAs[String] shouldBe "[\"b\"]"
         cancelProcess(procId)
@@ -150,7 +151,7 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
     assertProcessNotRunning(procId)
     Post("/deploy", toEntity(deploymentData(processJsonWithGet))) ~> managementRoute ~> check {
       status shouldBe StatusCodes.OK
-      Get(s"/$procId?field1=a&field2=b") ~> processesRoute ~> check {
+      Get(s"/${procId.value}?field1=a&field2=b") ~> processesRoute ~> check {
         status shouldBe StatusCodes.OK
         responseAs[String] shouldBe "{\"inputField1\":\"a\",\"list\":[\"b\"]}"
         cancelProcess(procId)
@@ -162,7 +163,7 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
     assertProcessNotRunning(procId)
     Post("/deploy", toEntity(deploymentData(processJson))) ~> managementRoute ~> check {
       status shouldBe StatusCodes.OK
-      Get(s"/$procId?field1=a&field2=b") ~> processesRoute ~> check {
+      Get(s"/${procId.value}?field1=a&field2=b") ~> processesRoute ~> check {
         rejection shouldBe MethodRejection(HttpMethods.POST)
         cancelProcess(procId)
       }
@@ -174,7 +175,7 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
     assertProcessNotRunning(procId)
     Post("/deploy", toEntity(deploymentData(processJsonWithGet))) ~> managementRoute ~> check {
       status shouldBe StatusCodes.OK
-      Post(s"/$procId", toEntity(Request("a", "b"))) ~> processesRoute ~> check {
+      Post(s"/${procId.value}", toEntity(Request("a", "b"))) ~> processesRoute ~> check {
         rejection shouldBe MethodRejection(HttpMethods.GET)
         cancelProcess(procId)
       }
@@ -203,7 +204,7 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
     assertProcessNotRunning(procId)
     Post("/deploy", toEntity(deploymentData(processJson))) ~> managementRoute ~> check {
       status shouldBe StatusCodes.OK
-      Post(s"/$procId", toEntity(Request("c", "d"))) ~> processesRoute ~> check {
+      Post(s"/${procId.value}", toEntity(Request("c", "d"))) ~> processesRoute ~> check {
         status shouldBe StatusCodes.OK
         responseAs[String] shouldBe "[]"
         cancelProcess(procId)
@@ -215,7 +216,7 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
     assertProcessNotRunning(procId)
     Post("/deploy", toEntity(deploymentData(failingProcessJson))) ~> managementRoute ~> check {
       status shouldBe StatusCodes.OK
-      Post(s"/$procId", toEntity(Request("", "d"))) ~> processesRoute ~> check {
+      Post(s"/${procId.value}", toEntity(Request("", "d"))) ~> processesRoute ~> check {
         status shouldBe StatusCodes.InternalServerError
         responseAs[String] shouldBe "[{\"message\":\"/ by zero\",\"nodeId\":\"filter1\"}]"
         cancelProcess(procId)
@@ -235,12 +236,12 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
     val req = Request("c", "b")
     Post("/deploy", toEntity(deploymentData(processJson))) ~> managementRoute ~> check {
       status shouldBe StatusCodes.OK
-      Post(s"/$procId", toEntity(req)) ~> processesRoute ~> check {
+      Post(s"/${procId.value}", toEntity(req)) ~> processesRoute ~> check {
         status shouldBe StatusCodes.OK
         responseAs[String] shouldBe "[]"
         Post("/deploy", toEntity(deploymentData(noFilterProcessJson))) ~> managementRoute ~> check {
           status shouldBe StatusCodes.OK
-          Post(s"/$procId", toEntity(req)) ~> processesRoute ~> check {
+          Post(s"/${procId.value}", toEntity(req)) ~> processesRoute ~> check {
             responseAs[String] shouldBe "[\"b\"]"
             cancelProcess(procId)
           }
@@ -260,7 +261,7 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
     assertProcessNotRunning(procId)
     Post("/deploy", toEntity(deploymentData(processWithGenericGet))) ~> managementRoute ~> check {
       status shouldBe StatusCodes.OK
-      Get(s"/$procId?field1=a&field2=b") ~> processesRoute ~> check {
+      Get(s"/${procId.value}?field1=a&field2=b") ~> processesRoute ~> check {
         status shouldBe StatusCodes.OK
         responseAs[String] shouldBe "[\"b-a\"]"
         cancelProcess(procId)
@@ -268,16 +269,19 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
     }
   }
 
-  def cancelProcess(id: String) = {
+  def cancelProcess(processName: ProcessName) = {
+    val id = processName.value
+
     Post(s"/cancel/$id") ~> managementRoute ~> check {
       status shouldBe StatusCodes.OK
-      assertProcessNotRunning(id)
+      assertProcessNotRunning(processName)
     }
   }
 
   implicit def processStateCode = DecodeJson.derive[ProcessState]
 
-  def assertProcessNotRunning(id: String) = {
+  def assertProcessNotRunning(processName: ProcessName) = {
+    val id = processName.value
     Get(s"/checkStatus/$id") ~> managementRoute ~> check {
       status shouldBe StatusCodes.NotFound
     }

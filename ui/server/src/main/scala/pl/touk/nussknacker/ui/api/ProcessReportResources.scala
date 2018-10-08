@@ -18,7 +18,7 @@ import pl.touk.process.report.{CannotFetchCountsError, CountsReporter}
 import scala.concurrent.{ExecutionContext, Future}
 
 class ProcessReportResources(countsReporter: CountsReporter, processCounter: ProcessCounter, val processRepository: FetchingProcessRepository)
-                            (implicit ec: ExecutionContext) extends Directives with Argonaut62Support with UiCodecs with RouteWithUser with ProcessDirectives {
+                            (implicit val ec: ExecutionContext) extends Directives with Argonaut62Support with UiCodecs with RouteWithUser with ProcessDirectives {
 
   def route(implicit loggedUser: LoggedUser): Route = {
     path("processCounts" / Segment) { processName =>
@@ -29,7 +29,7 @@ class ProcessReportResources(countsReporter: CountsReporter, processCounter: Pro
           val dateFrom = DateUtils.parseDateTime(dateFromS)
 
           complete {
-            processRepository.fetchLatestProcessDetailsForProcessId(processId).flatMap[ToResponseMarshallable] {
+            processRepository.fetchLatestProcessDetailsForProcessId(processId.id).flatMap[ToResponseMarshallable] {
               case Some(process) =>
                 process.json match {
                   case Some(displayable) => computeCounts(displayable, dateFrom, dateToToUse)

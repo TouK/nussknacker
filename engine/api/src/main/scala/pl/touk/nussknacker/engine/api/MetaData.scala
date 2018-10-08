@@ -6,6 +6,7 @@ import scala.concurrent.duration.Duration
 
 trait UserDefinedProcessAdditionalFields
 
+// todo: MetaData should hold ProcessName as id
 case class MetaData(id: String,
                     typeSpecificData: TypeSpecificData,
                     isSubprocess: Boolean = false,

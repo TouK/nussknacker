@@ -9,8 +9,10 @@ import pl.touk.nussknacker.ui.db.entity.ProcessDeploymentInfoEntity.DeployedProc
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessEntityData
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessType.ProcessType
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.ui.db.entity.{ProcessEntity, ProcessVersionEntity}
 import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntity.ProcessVersionEntityData
+import pl.touk.nussknacker.ui.process.{ProcessId, ProcessIdWithName}
 import pl.touk.nussknacker.ui.process.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import pl.touk.nussknacker.ui.util.DateUtils
@@ -27,8 +29,8 @@ trait ProcessRepository[F[_]] extends Repository[F] {
     if (loggedUser.isAdmin) processesTable else processesTable.filter(_.processCategory inSet readCategories)
   }
 
-  protected def latestProcessVersions(processId: String): Query[ProcessVersionEntity.ProcessVersionEntity, ProcessVersionEntityData, Seq] = {
-    processVersionsTable.filter(_.processId === processId).sortBy(_.createDate.desc)
+  protected def latestProcessVersions(processId: ProcessId): Query[ProcessVersionEntity.ProcessVersionEntity, ProcessVersionEntityData, Seq] = {
+    processVersionsTable.filter(_.processId === processId.value).sortBy(_.createDate.desc)
   }
 
 
@@ -36,6 +38,7 @@ trait ProcessRepository[F[_]] extends Repository[F] {
 
 object ProcessRepository {
 
+  // todo: id -> ProcessName, name -> ProcessName
   case class BasicProcess(id: String,
                           name: String,
                           processCategory: String,
@@ -45,6 +48,7 @@ object ProcessRepository {
                           modificationDate: LocalDateTime,
                           currentlyDeployedAt: Set[String])
 
+  // todo: id -> ProcessId, name -> ProcessName; create separate object for frontend purposes with id -> ProcessName
   case class BaseProcessDetails[ProcessShape](id: String,
                                               name: String,
                                               processVersionId: Long,
@@ -73,6 +77,8 @@ object ProcessRepository {
       modificationDate = modificationDate,
       currentlyDeployedAt = currentlyDeployedAt
     )
+
+    def idWithName: ProcessIdWithName = ProcessIdWithName(ProcessId(id), ProcessName(name))
   }
 
   type ProcessDetails = BaseProcessDetails[DisplayableProcess]
@@ -113,6 +119,9 @@ object ProcessRepository {
     def getMessage = s"Process $id already exists"
   }
 
+  case class ProcessAlreadyDeployed(id: String) extends BadRequestError {
+    def getMessage = s"Process $id is already deployed"
+  }
 
   case class InvalidProcessTypeError(id: String) extends BadRequestError {
     def getMessage = s"Process $id is not GraphProcess"

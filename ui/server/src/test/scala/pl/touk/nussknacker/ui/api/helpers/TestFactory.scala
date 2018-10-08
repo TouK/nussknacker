@@ -4,7 +4,8 @@ import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
 
 import com.typesafe.config.ConfigFactory
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.{ProcessDeploymentData, ProcessState}
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessDeploymentData, ProcessState}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.management.{FlinkProcessManager, FlinkProcessManagerProvider}
 import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
 import pl.touk.nussknacker.ui.api.{ProcessPosting, ProcessTestData, RouteWithUser}
@@ -60,7 +61,7 @@ object TestFactory extends TestPermissions{
 
   class MockProcessManager extends FlinkProcessManager(FlinkProcessManagerProvider.defaultModelData(ConfigFactory.load()), false){
 
-    override def findJobStatus(name: String): Future[Option[ProcessState]] = Future.successful(Some(ProcessState("1", "RUNNING", 0)))
+    override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = Future.successful(Some(ProcessState(DeploymentId("1"), "RUNNING", 0)))
 
     import ExecutionContext.Implicits.global
 
@@ -98,7 +99,7 @@ object TestFactory extends TestPermissions{
 
     override protected def makeSavepoint(job: ProcessState, savepointDir: Option[String]): Future[String] = Future.successful("dummy")
 
-    override protected def runProgram(processId: String, mainClass: String, args: List[String], savepointPath: Option[String]): Future[Unit] = ???
+    override protected def runProgram(processName: ProcessName, mainClass: String, args: List[String], savepointPath: Option[String]): Future[Unit] = ???
   }
 
   object SampleSubprocessRepository extends SubprocessRepository {

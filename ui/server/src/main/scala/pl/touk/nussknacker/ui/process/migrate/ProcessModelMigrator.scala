@@ -1,19 +1,20 @@
 package pl.touk.nussknacker.ui.process.migrate
 
 import argonaut.PrettyParams
+import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.migration.{ProcessMigration, ProcessMigrations}
-import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
+import pl.touk.nussknacker.ui.process.ProcessId
 import pl.touk.nussknacker.ui.process.marshall.{ProcessConverter, UiProcessMarshaller}
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{ProcessDetails, ValidatedProcessDetails}
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessDetails
 import pl.touk.nussknacker.ui.process.repository.WriteProcessRepository.UpdateProcessAction
 
 case class MigrationResult(process: CanonicalProcess, migrationsApplied: List[ProcessMigration]) {
 
   def id : String = process.metaData.id
 
-  def toUpdateAction : UpdateProcessAction = UpdateProcessAction(id,
+  def toUpdateAction : UpdateProcessAction = UpdateProcessAction(ProcessId(id),
     GraphProcess(UiProcessMarshaller.toJson(process, PrettyParams.nospace)),
     s"Migrations applied: ${migrationsApplied.map(_.description).mkString(", ")}"
   )

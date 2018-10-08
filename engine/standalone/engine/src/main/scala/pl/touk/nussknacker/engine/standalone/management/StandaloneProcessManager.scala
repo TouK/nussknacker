@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.ModelData.ClasspathConfig
 import pl.touk.nussknacker.engine.{ModelData, _}
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.process.TestDataParserProvider
+import pl.touk.nussknacker.engine.api.process.{ProcessName, TestDataParserProvider}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{ServiceInvocationCollector, SinkInvocationCollector}
 import pl.touk.nussknacker.engine.api.test.{ResultsCollectingListener, ResultsCollectingListenerHolder, TestRunId}
 import pl.touk.nussknacker.engine.api.{EndingReference, ProcessVersion, StandaloneMetaData, TypeSpecificData}
@@ -56,11 +56,11 @@ class StandaloneProcessManager(modelData: ModelData, client: StandaloneProcessCl
 
   }
 
-  override def savepoint(processId: String, savepointDir: String): Future[String] = {
+  override def savepoint(processName: ProcessName, savepointDir: String): Future[String] = {
     Future.failed(new UnsupportedOperationException("Cannot make savepoint on standalone process"))
   }
 
-  override def test[T](processId: String, processJson: String, testData: TestData, variableEncoder: Any => T): Future[TestResults[T]] = {
+  override def test[T](processName: ProcessName, processJson: String, testData: TestData, variableEncoder: Any => T): Future[TestResults[T]] = {
     Future{
       //TODO: shall we use StaticMethodRunner here?
       modelData.withThisAsContextClassLoader {
@@ -69,11 +69,11 @@ class StandaloneProcessManager(modelData: ModelData, client: StandaloneProcessCl
     }
   }
 
-  override def findJobStatus(name: String): Future[Option[ProcessState]] = {
-    client.findStatus(name)
+  override def findJobStatus(processName: ProcessName): Future[Option[ProcessState]] = {
+    client.findStatus(processName)
   }
 
-  override def cancel(name: String): Future[Unit] = {
+  override def cancel(name: ProcessName): Future[Unit] = {
     client.cancel(name)
   }
 

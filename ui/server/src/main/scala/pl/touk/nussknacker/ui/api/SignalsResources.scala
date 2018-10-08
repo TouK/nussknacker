@@ -17,7 +17,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class SignalsResources(modelData: Map[String, ModelData],
                        val processRepository: FetchingProcessRepository,
                        val processAuthorizer:AuthorizeProcess)
-                      (implicit ec: ExecutionContext)
+                      (implicit val ec: ExecutionContext)
   extends Directives
     with Argonaut62Support
     with RouteWithUser
@@ -33,9 +33,9 @@ class SignalsResources(modelData: Map[String, ModelData],
           //Map[String, String] should be enough for now
           entity(as[Map[String, String]]) { params =>
             complete {
-              processRepository.fetchLatestProcessDetailsForProcessId(processId).map[ToResponseMarshallable] {
+              processRepository.fetchLatestProcessDetailsForProcessId(processId.id).map[ToResponseMarshallable] {
                 case Some(process) =>
-                  modelData(process.processingType).dispatchSignal(signalType, processId, params.mapValues(_.asInstanceOf[AnyRef]))
+                  modelData(process.processingType).dispatchSignal(signalType, processId.name.value, params.mapValues(_.asInstanceOf[AnyRef]))
                 case None =>
                   HttpResponse(status = StatusCodes.NotFound, entity = "Process not found")
               }

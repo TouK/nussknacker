@@ -8,6 +8,7 @@ import org.scalatest.{FlatSpec, Matchers}
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{NodeResult, ResultContext, TestData}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 
@@ -31,7 +32,7 @@ class FlinkProcessTestRunnerSpec extends FlatSpec with Matchers with ScalaFuture
     val process = SampleProcess.prepareProcess(processId)
     val processData = ProcessMarshaller.toJson(process, PrettyParams.spaces2)
 
-    whenReady(processManager.test(processId, processData, TestData("terefere"), identity)) { r =>
+    whenReady(processManager.test(ProcessName(processId), processData, TestData("terefere"), identity)) { r =>
       r.nodeResults shouldBe Map(
         "startProcess" -> List(NodeResult(ResultContext(s"$processId-startProcess-0-0", Map("input" -> "terefere")))),
         "nightFilter" -> List(NodeResult(ResultContext(s"$processId-startProcess-0-0", Map("input" -> "terefere")))),
@@ -56,7 +57,7 @@ class FlinkProcessTestRunnerSpec extends FlatSpec with Matchers with ScalaFuture
 
 
     val caught = intercept[IllegalArgumentException] {
-      Await.result(processManager.test(processId, processData, TestData("terefere"), _ => null), patienceConfig.timeout)
+      Await.result(processManager.test(ProcessName(processId), processData, TestData("terefere"), _ => null), patienceConfig.timeout)
     }
     caught.getMessage shouldBe "Compilation errors: MissingParameters(Set(param1),$process)"
   }

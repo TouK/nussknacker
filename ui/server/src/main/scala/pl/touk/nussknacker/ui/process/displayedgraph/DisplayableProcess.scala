@@ -10,6 +10,7 @@ import pl.touk.nussknacker.ui.validation.ValidationResults.ValidationResult
 
 //it would be better to have two classes but it would either to derivce from each other, which is not easy for case classes
 //or we'd have to do composition which would break many things in client
+// todo: id type should be ProcessName
 case class DisplayableProcess(id: String,
                               properties: ProcessProperties,
                               nodes: List[NodeData],

@@ -6,6 +6,7 @@ import java.time.LocalDateTime
 import db.migration.DefaultJdbcProfile.profile.api._
 import db.util.DBIOActionInstances.DB
 import pl.touk.nussknacker.ui.db.EspTables.commentsTable
+import pl.touk.nussknacker.ui.process.ProcessId
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.DateUtils
 import slick.sql.SqlProfile.ColumnOption.NotNull
@@ -40,14 +41,14 @@ object CommentEntity {
     val createDateTime = DateUtils.toLocalDateTime(createDate)
   }
 
-  def newCommentAction(processId: String, processVersionId: Long, comment: String)
+  def newCommentAction(processId: ProcessId, processVersionId: Long, comment: String)
                   (implicit ec: ExecutionContext, loggedUser: LoggedUser): DB[Unit] = {
     if (comment.nonEmpty) {
       val addCommentAction = for {
         newId <- CommentEntity.nextIdAction
         _ <- commentsTable += CommentEntityData(
           id = newId,
-          processId = processId,
+          processId = processId.value,
           processVersionId = processVersionId,
           content = comment,
           user = loggedUser.id,

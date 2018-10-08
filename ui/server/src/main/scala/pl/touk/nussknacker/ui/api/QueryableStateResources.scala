@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.Queryabl
 import pl.touk.nussknacker.engine.flink.queryablestate.EspQueryableClient
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
-import pl.touk.nussknacker.ui.process.{JobStatusService, ProcessObjectsFinder}
+import pl.touk.nussknacker.ui.process.{JobStatusService, ProcessIdWithName, ProcessObjectsFinder}
 import pl.touk.http.argonaut.Argonaut62Support
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
@@ -19,7 +19,7 @@ class QueryableStateResources(processDefinition: Map[ProcessingType, ModelData],
                               queryableClient: EspQueryableClient,
                               jobStatusService: JobStatusService,
                               val processAuthorizer:AuthorizeProcess)
-                             (implicit ec: ExecutionContext)
+                             (implicit val ec: ExecutionContext)
   extends Directives
     with Argonaut62Support
     with RouteWithUser
@@ -58,12 +58,12 @@ class QueryableStateResources(processDefinition: Map[ProcessingType, ModelData],
 
   import cats.instances.future._
   import cats.syntax.either._
-  private def queryState(processId: String, queryName: String, key: Option[String])(implicit user: LoggedUser): Future[Json] = {
+  private def queryState(processId: ProcessIdWithName, queryName: String, key: Option[String])(implicit user: LoggedUser): Future[Json] = {
     import QueryStateErrors._
 
     val fetchedJsonState = for {
-      status <- EitherT(jobStatusService.retrieveJobStatus(processId).map(Either.fromOption(_, noJob(processId))))
-      jobId <- EitherT.fromEither(Either.fromOption(status.flinkJobId, if (status.isDeployInProgress) deployInProgress(processId) else noJobRunning(processId)))
+      status <- EitherT(jobStatusService.retrieveJobStatus(processId).map(Either.fromOption(_, noJob(processId.name.value))))
+      jobId <- EitherT.fromEither(Either.fromOption(status.flinkJobId, if (status.isDeployInProgress) deployInProgress(processId.name.value) else noJobRunning(processId.name.value)))
       jsonString <- EitherT.right(fetchState(jobId, queryName, key))
       json <- EitherT.fromEither(Parse.parse(jsonString).leftMap(msg => wrongJson(msg, jsonString)))
     } yield json

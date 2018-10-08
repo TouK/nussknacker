@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.codec.UiCodecs
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
+import pl.touk.nussknacker.ui.process.ProcessIdWithName
 import pl.touk.nussknacker.ui.process.deployment.{Cancel, Deploy, Snapshot, Test}
 import pl.touk.nussknacker.ui.process.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.ui.process.marshall.{ProcessConverter, UiProcessMarshaller}
@@ -55,7 +56,7 @@ class ManagementResources(processCounter: ProcessCounter,
                           testResultsMaxSizeInBytes: Int,
                           val processAuthorizer: AuthorizeProcess,
                           val processRepository: FetchingProcessRepository)
-                         (implicit ec: ExecutionContext, mat: Materializer, system: ActorSystem)
+                         (implicit val ec: ExecutionContext, mat: Materializer, system: ActorSystem)
   extends Directives
     with LazyLogging
     with RouteWithUser
@@ -147,12 +148,12 @@ class ManagementResources(processCounter: ProcessCounter,
       }
   }
 
-  private def performTest(processId: String, testData: Array[Byte], displayableProcessJson: String)(implicit user: LoggedUser): Future[ResultsWithCounts] = {
+  private def performTest(id: ProcessIdWithName, testData: Array[Byte], displayableProcessJson: String)(implicit user: LoggedUser): Future[ResultsWithCounts] = {
     displayableProcessJson.decodeEither[DisplayableProcess] match {
       case Right(process) =>
         val canonical = ProcessConverter.fromDisplayable(process)
         val canonicalJson = UiProcessMarshaller.toJson(canonical, PrettyParams.nospace)
-        (managementActor ? Test(processId, canonicalJson, TestData(testData), user, UiCodecs.testResultsVariableEncoder)).mapTo[TestResults[Json]].flatMap { results =>
+        (managementActor ? Test(id, canonicalJson, TestData(testData), user, UiCodecs.testResultsVariableEncoder)).mapTo[TestResults[Json]].flatMap { results =>
           assertTestResultsAreNotTooBig(results)
         }.map { results =>
           ResultsWithCounts(results.asJson, computeCounts(canonical, results))

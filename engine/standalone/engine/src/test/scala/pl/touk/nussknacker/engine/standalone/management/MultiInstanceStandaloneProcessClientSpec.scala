@@ -4,7 +4,8 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.ProcessState
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessState}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.standalone.api.DeploymentData
 
 import scala.concurrent.Future
@@ -15,17 +16,17 @@ class MultiInstanceStandaloneProcessClientSpec extends FunSuite with Matchers wi
 
   val failClient = new StandaloneProcessClient {
 
-    override def cancel(name: String): Future[Unit] = {
+    override def cancel(name: ProcessName): Future[Unit] = {
       name shouldBe id
       Future.failed(failure)
     }
 
     override def deploy(deploymentData: DeploymentData): Future[Unit] = {
-      deploymentData.processVersion.processId shouldBe id
+      deploymentData.processVersion.processName shouldBe id
       Future.failed(failure)
     }
 
-    override def findStatus(name: String): Future[Option[ProcessState]] = {
+    override def findStatus(name: ProcessName): Future[Option[ProcessState]] = {
       name shouldBe id
       Future.failed(failure)
     }
@@ -36,14 +37,14 @@ class MultiInstanceStandaloneProcessClientSpec extends FunSuite with Matchers wi
 
     val multiClient = new MultiInstanceStandaloneProcessClient(List(okClient(), okClient()))
 
-    multiClient.deploy(DeploymentData("json", 1000, ProcessVersion.empty.copy(processId=id))).futureValue shouldBe (())
+    multiClient.deploy(DeploymentData("json", 1000, ProcessVersion.empty.copy(processName=id))).futureValue shouldBe (())
 
   }
 
   test("Deployment should fail when one part fails") {
     val multiClient = new MultiInstanceStandaloneProcessClient(List(okClient(), failClient))
 
-    multiClient.deploy(DeploymentData("json", 1000, ProcessVersion.empty.copy(processId=id))).failed.futureValue shouldBe failure
+    multiClient.deploy(DeploymentData("json", 1000, ProcessVersion.empty.copy(processName=id))).failed.futureValue shouldBe failure
 
   }
 
@@ -58,7 +59,7 @@ class MultiInstanceStandaloneProcessClientSpec extends FunSuite with Matchers wi
 
   test("Status should be RUNNING if all clients running") {
 
-    val consistentState = ProcessState(id, "RUNNING", 10000L)
+    val consistentState = ProcessState(jobId, "RUNNING", 10000L)
     val multiClient = new MultiInstanceStandaloneProcessClient(List(
       okClient(Some(consistentState)),
       okClient(Some(consistentState))
@@ -70,20 +71,20 @@ class MultiInstanceStandaloneProcessClientSpec extends FunSuite with Matchers wi
   test("Status should be INCONSISTENT if one status unknown") {
     val multiClient = new MultiInstanceStandaloneProcessClient(List(
       okClient(),
-      okClient(Some(ProcessState(id, "RUNNING", 0L))
+      okClient(Some(ProcessState(jobId, "RUNNING", 0L))
       )))
 
-    multiClient.findStatus(id).futureValue shouldBe Some(ProcessState(id, "INCONSISTENT", 0L))
+    multiClient.findStatus(id).futureValue shouldBe Some(ProcessState(jobId, "INCONSISTENT", 0L))
   }
 
 
   test("Status should be INCONSISTENT if status differ") {
     val multiClient = new MultiInstanceStandaloneProcessClient(List(
-      okClient(Some(ProcessState(id, "RUNNING", 5000L))),
-      okClient(Some(ProcessState(id, "RUNNING", 0L)))
+      okClient(Some(ProcessState(jobId, "RUNNING", 5000L))),
+      okClient(Some(ProcessState(jobId, "RUNNING", 0L)))
     ))
 
-    multiClient.findStatus(id).futureValue shouldBe Some(ProcessState(id, "INCONSISTENT", 0L))
+    multiClient.findStatus(id).futureValue shouldBe Some(ProcessState(jobId, "INCONSISTENT", 0L))
   }
 
   test("Status should be FAIL if one status fails") {
@@ -91,22 +92,24 @@ class MultiInstanceStandaloneProcessClientSpec extends FunSuite with Matchers wi
 
     multiClient.findStatus(id).failed.futureValue shouldBe failure
   }
-  private val id = "id"
+
+  private val id = ProcessName("id")
+  private val jobId = DeploymentId("id")
 
   def okClient(status: Option[ProcessState] = None, expectedTime: Long = 1000) = new StandaloneProcessClient {
 
-    override def cancel(name: String): Future[Unit] = {
+    override def cancel(name: ProcessName): Future[Unit] = {
       name shouldBe id
       Future.successful(())
     }
 
     override def deploy(deploymentData: DeploymentData): Future[Unit] = {
-      deploymentData.processVersion.processId shouldBe id
+      deploymentData.processVersion.processName shouldBe id
       deploymentData.deploymentTime shouldBe expectedTime
       Future.successful(())
     }
 
-    override def findStatus(name: String): Future[Option[ProcessState]] = {
+    override def findStatus(name: ProcessName): Future[Option[ProcessState]] = {
       name shouldBe id
       Future.successful(status)
     }

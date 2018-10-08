@@ -7,7 +7,7 @@ import argonaut.{Json, JsonParser}
 import com.typesafe.config.{Config, ConfigRenderOptions}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
-import pl.touk.nussknacker.ui.process.{JobStatusService, ProcessObjectsFinder}
+import pl.touk.nussknacker.ui.process.{JobStatusService, ProcessIdWithName, ProcessObjectsFinder}
 import pl.touk.nussknacker.ui.process.displayedgraph.ProcessStatus
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessDetails
@@ -111,10 +111,10 @@ class AppResources(config: Config,
   private def statusList(processes: Seq[ProcessDetails])(implicit user: LoggedUser) : Seq[Future[(String, Option[ProcessStatus])]] = {
     processes
       .filterNot(_.currentlyDeployedAt.isEmpty)
-      .map(process => findJobStatus(process.id, process.processingType).map((process.name, _)))
+      .map(process => findJobStatus(process.idWithName, process.processingType).map((process.name, _)))
   }
 
-  private def findJobStatus(processId: String, processingType: ProcessingType)(implicit ec: ExecutionContext, user: LoggedUser): Future[Option[ProcessStatus]] = {
+  private def findJobStatus(processId: ProcessIdWithName, processingType: ProcessingType)(implicit ec: ExecutionContext, user: LoggedUser): Future[Option[ProcessStatus]] = {
     jobStatusService.retrieveJobStatus(processId).recover {
       case NonFatal(e) =>
         logger.warn(s"Failed to get status of $processId: ${e.getMessage}", e)

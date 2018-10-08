@@ -16,9 +16,11 @@ import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{BaseProcessD
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.DateUtils
 import db.util.DBIOActionInstances._
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.graph.node.{SubprocessInput, SubprocessNode}
 import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
 import pl.touk.nussknacker.ui.db.DbConfig
+import pl.touk.nussknacker.ui.process.ProcessId
 import pl.touk.nussknacker.ui.process.displayedgraph.DisplayableProcess
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -95,7 +97,7 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
       }).map(_.toList)
   }
 
-  def fetchLatestProcessDetailsForProcessId(id: String, businessView: Boolean = false)
+  def fetchLatestProcessDetailsForProcessId(id: ProcessId, businessView: Boolean = false)
                                            (implicit loggedUser: LoggedUser, ec: ExecutionContext): F[Option[ProcessDetails]] = {
     val action = (for {
       latestProcessVersion <- OptionT[DB, ProcessVersionEntityData](latestProcessVersions(id).result.headOption)
@@ -104,7 +106,7 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
     run(action)
   }
 
-  def fetchProcessDetailsForId(processId: String, versionId: Long, businessView: Boolean)
+  def fetchProcessDetailsForId(processId: ProcessId, versionId: Long, businessView: Boolean)
                               (implicit loggedUser: LoggedUser, ec: ExecutionContext): F[Option[ProcessDetails]] = {
     val action = for {
       latestProcessVersion <- OptionT[DB, ProcessVersionEntityData](latestProcessVersions(processId).result.headOption)
@@ -114,18 +116,18 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
     run(action.value)
   }
 
-  def fetchLatestProcessVersion(processId: String)
+  def fetchLatestProcessVersion(processId: ProcessId)
                                (implicit loggedUser: LoggedUser): F[Option[ProcessVersionEntityData]] = {
     val action = latestProcessVersions(processId).result.headOption
     run(action)
   }
 
-  def fetchProcessId(processName: String): F[Option[String]] = {
-    run(processesTable.filter(_.name === processName).map(_.id).result.headOption)
+  def fetchProcessId(processName: ProcessName)(implicit ec: ExecutionContext): F[Option[ProcessId]] = {
+    run(processesTable.filter(_.name === processName.value).map(_.id).result.headOption.map(_.map(ProcessId)))
   }
 
-  def fetchProcessName(processId: String): F[Option[String]] = {
-    run(processesTable.filter(_.id === processId).map(_.name).result.headOption)
+  def fetchProcessName(processId: ProcessId)(implicit ec: ExecutionContext): F[Option[ProcessName]] = {
+    run(processesTable.filter(_.id === processId.value).map(_.name).result.headOption.map(_.map(ProcessName)))
   }
 
   private def fetchProcessDetailsForVersion(processVersion: ProcessVersionEntityData, isLatestVersion: Boolean, businessView: Boolean = false)
@@ -134,7 +136,7 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
     for {
       subprocessesVersions <- OptionT.liftF[DB, Map[String, LocalDateTime]](subprocessLastModificationDates)
       process <- OptionT[DB, ProcessEntityData](processTableFilteredByUser.filter(_.id === id).result.headOption)
-      processVersions <- OptionT.liftF[DB, Seq[ProcessVersionEntityData]](latestProcessVersions(id).result)
+      processVersions <- OptionT.liftF[DB, Seq[ProcessVersionEntityData]](latestProcessVersions(ProcessId(id)).result)
       latestDeployedVersionsPerEnv <- OptionT.liftF[DB, Map[String, DeployedProcessVersionEntityData]](latestDeployedProcessVersionsPerEnvironment(id).result.map(_.toMap))
       tags <- OptionT.liftF[DB, Seq[TagsEntityData]](tagsTable.filter(_.processId === process.name).result)
     } yield createFullDetails(

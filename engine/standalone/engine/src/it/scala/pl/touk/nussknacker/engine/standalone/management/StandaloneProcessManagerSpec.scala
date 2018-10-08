@@ -7,6 +7,7 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Seconds, Span}
 import pl.touk.nussknacker.engine.api.{MetaData, StandaloneMetaData}
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
@@ -31,9 +32,9 @@ class StandaloneProcessManagerSpec extends FunSuite with ScalaFutures with Match
         FlatNode(Sink("sink", SinkRef("response-sink", List())))
       )), PrettyParams.spaces2)
 
-    val results = manager.test("test1", process, TestData("{\"field1\": \"a\", \"field2\": \"b\"}"), _ => null).futureValue
+    val results = manager.test(ProcessName("test1"), process, TestData("{\"field1\": \"a\", \"field2\": \"b\"}"), _ => null).futureValue
 
-    results.nodeResults("sink") should have length (1)
+    results.nodeResults("sink") should have length 1
 
   }
 

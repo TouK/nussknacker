@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.dispatch.{LoggingDispatchClient, utils}
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import org.apache.flink.api.common.ExecutionConfig
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.management.flinkRestModel.{DeployProcessRequest, GetSavepointStatusResponse, JobsResponse, SavepointTriggerResponse}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -59,30 +60,30 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData) extends FlinkP
   }
 
 
-  override def findJobStatus(name: String): Future[Option[ProcessState]] = {
+  override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = {
     send {
       (flinkUrl / "jobs" / "overview").GET OK utils.asJson[JobsResponse]
     } map { jobs =>
       val statusToReturn = jobs
         .jobs
         .sortBy(j => - j.`last-modification`)
-        .find(_.name == name)
-        .map(j => ProcessState(j.jid, j.state, j.`start-time`))
+        .find(_.name == name.value)
+        .map(j => ProcessState(DeploymentId(j.jid), j.state, j.`start-time`))
         //TODO: needed?
         .filterNot(_.status == "CANCELED")
-      logger.trace(s"Status of $name is $statusToReturn")
+      logger.trace(s"Status of ${name.value} is $statusToReturn")
       statusToReturn
     }
   }
 
   //FIXME: get rid of sleep, refactor?
-  private def waitForSavepoint(jobId: String, savepointId: String, timeoutLeft: Long = config.jobManagerTimeout.toMillis): Future[String] = {
+  private def waitForSavepoint(jobId: DeploymentId, savepointId: String, timeoutLeft: Long = config.jobManagerTimeout.toMillis): Future[String] = {
     val start = System.currentTimeMillis()
     if (timeoutLeft <= 0) {
       return Future.failed(new Exception(s"Failed to complete savepoint in time for $jobId and trigger $savepointId"))
     }
     send {
-      (flinkUrl / "jobs"/ jobId / "savepoints" / savepointId).GET OK utils.asJson[GetSavepointStatusResponse]
+      (flinkUrl / "jobs"/ jobId.value / "savepoints" / savepointId).GET OK utils.asJson[GetSavepointStatusResponse]
     }.flatMap { resp =>
       logger.debug(s"Waiting for savepoint $savepointId of $jobId, got response: $resp")
       if (resp.isCompletedSuccessfully) {
@@ -101,20 +102,20 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData) extends FlinkP
 
   override protected def cancel(job: ProcessState): Future[Unit] = {
     send {
-      (flinkUrl / "jobs" / job.id).PATCH OK (_ => ())
+      (flinkUrl / "jobs" / job.id.value).PATCH OK (_ => ())
     }
   }
 
   override protected def makeSavepoint(job: ProcessState, savepointDir: Option[String]): Future[String] = {
     send {
-      (flinkUrl / "jobs" / job.id / "savepoints").POST.setBody("""{"cancel-job": false}""") OK utils.asJson[SavepointTriggerResponse]
+      (flinkUrl / "jobs" / job.id.value / "savepoints").POST.setBody("""{"cancel-job": false}""") OK utils.asJson[SavepointTriggerResponse]
     }.flatMap { response =>
       waitForSavepoint(job.id, response.`request-id`)
     }
   }
 
 
-  override protected def runProgram(processId: String, mainClass: String, args: List[String], savepointPath: Option[String]): Future[Unit] = {
+  override protected def runProgram(processName: ProcessName, mainClass: String, args: List[String], savepointPath: Option[String]): Future[Unit] = {
     val program =
       DeployProcessRequest(
         entryClass = mainClass,
@@ -122,9 +123,9 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData) extends FlinkP
         savepointPath = savepointPath,
         allowNonRestoredState = true,
         programArgs = FlinkArgsEncodeHack.prepareProgramArgs(args).mkString(" "))
-    logger.debug(s"Starting to deploy process: $processId with savepoint $savepointPath")
+    logger.debug(s"Starting to deploy process: $processName with savepoint $savepointPath")
     uploadedJarId.flatMap { jarId =>
-      logger.debug(s"Deploying $processId with $savepointPath and jarId: $jarId")
+      logger.debug(s"Deploying $processName with $savepointPath and jarId: $jarId")
       send {
         (flinkUrl / "jars" / jarId / "run").POST.setBody(program.asJson.spaces2) OK (_ => ())
      }

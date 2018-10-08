@@ -14,7 +14,7 @@ class FlinkProcessVerifier(modelData: ModelData) extends StaticMethodRunner(mode
   "pl.touk.nussknacker.engine.process.runner.FlinkVerificationMain", "run") with LazyLogging {
 
   def verify(processVersion: ProcessVersion, processJson: String, savepointPath: String): Future[Unit] = {
-    val processId = processVersion.processId
+    val processId = processVersion.processName
     try {
       logger.info(s"Starting to verify $processId")
       tryToInvoke(modelData, processJson, processVersion, savepointPath, new Configuration())

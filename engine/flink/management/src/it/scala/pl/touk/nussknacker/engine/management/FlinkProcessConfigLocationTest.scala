@@ -7,6 +7,7 @@ import java.util.Collections
 import com.typesafe.config.{Config, ConfigValueFactory}
 import org.apache.commons.io.FileUtils
 import org.scalatest.{FunSuite, Matchers}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 
 import scala.collection.JavaConversions._
 
@@ -15,7 +16,7 @@ class FlinkProcessConfigLocationTest extends FunSuite with DockerTest with Match
 
   //FIXME: do we still need it??
   ignore("reads config from local dir") {
-    processManager.findJobStatus("aaa").futureValue shouldBe None
+    processManager.findJobStatus(ProcessName("aaa")).futureValue shouldBe None
   }
 
   override lazy val config: Config = {

@@ -20,14 +20,14 @@ import scala.concurrent.ExecutionContext
 
 class ProcessesExportResources(val processRepository: FetchingProcessRepository,
                                processActivityRepository: ProcessActivityRepository)
-                              (implicit ec: ExecutionContext, mat: Materializer)
+                              (implicit val ec: ExecutionContext, mat: Materializer)
   extends Directives with Argonaut62Support with RouteWithUser with UiCodecs with ProcessDirectives {
 
   def route(implicit user: LoggedUser): Route = {
     path("processesExport" / Segment) { processName =>
       (get & processId(processName)) { processId =>
         complete {
-          processRepository.fetchLatestProcessDetailsForProcessId(processId).map {
+          processRepository.fetchLatestProcessDetailsForProcessId(processId.id).map {
             exportProcess
           }
         }
@@ -35,7 +35,7 @@ class ProcessesExportResources(val processRepository: FetchingProcessRepository,
     } ~ path("processesExport" / Segment / LongNumber) { (processName, versionId) =>
       (get & processId(processName)) { processId =>
         complete {
-          processRepository.fetchProcessDetailsForId(processId, versionId, businessView = false).map {
+          processRepository.fetchProcessDetailsForId(processId.id, versionId, businessView = false).map {
             exportProcess
           }
         }
@@ -45,8 +45,8 @@ class ProcessesExportResources(val processRepository: FetchingProcessRepository,
         (post & processId(processName)) { processId =>
           entity(as[Array[Byte]]) { svg =>
             complete {
-              processRepository.fetchProcessDetailsForId(processId, versionId, businessView).flatMap { process =>
-                processActivityRepository.findActivity(processId, processName).map(exportProcessToPdf(new String(svg, StandardCharsets.UTF_8), process, _))
+              processRepository.fetchProcessDetailsForId(processId.id, versionId, businessView).flatMap { process =>
+                processActivityRepository.findActivity(processId.id, processName).map(exportProcessToPdf(new String(svg, StandardCharsets.UTF_8), process, _))
               }
             }
           }

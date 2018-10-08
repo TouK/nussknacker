@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.api.deployment
 
-import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.api.{ProcessVersion, TypeSpecificData}
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 
 import scala.concurrent.Future
 
@@ -11,13 +11,13 @@ trait ProcessManager {
   //TODO: savepointPath is very flink specific, how can we handle that differently?
   def deploy(processId: ProcessVersion, processDeploymentData: ProcessDeploymentData, savepointPath: Option[String]) : Future[Unit]
 
-  def test[T](processId: String, json: String, testData: TestData, variableEncoder: Any => T): Future[TestResults[T]]
+  def test[T](name: ProcessName, json: String, testData: TestData, variableEncoder: Any => T): Future[TestResults[T]]
 
-  def findJobStatus(name: String) : Future[Option[ProcessState]]
+  def findJobStatus(name: ProcessName) : Future[Option[ProcessState]]
 
   //TODO: this is very flink specific, how can we handle that differently?
-  def savepoint(processId: String, savepointDir: String): Future[String]
+  def savepoint(name: ProcessName, savepointDir: String): Future[String]
 
-  def cancel(name: String) : Future[Unit]
+  def cancel(name: ProcessName) : Future[Unit]
 
 }

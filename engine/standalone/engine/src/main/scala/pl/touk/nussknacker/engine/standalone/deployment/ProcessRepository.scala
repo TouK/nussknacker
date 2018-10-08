@@ -5,25 +5,26 @@ import java.nio.charset.StandardCharsets
 
 import argonaut.{DecodeJson, EncodeJson}
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.standalone.api.DeploymentData
 
 import scala.io.Source
 
 trait ProcessRepository {
 
-  def add(id: String, deploymentData: DeploymentData) : Unit
+  def add(id: ProcessName, deploymentData: DeploymentData) : Unit
 
-  def remove(id: String) : Unit
+  def remove(id: ProcessName) : Unit
 
-  def loadAll: Map[String, DeploymentData]
+  def loadAll: Map[ProcessName, DeploymentData]
 
 }
 
 class EmptyProcessRepository extends ProcessRepository {
 
-  override def add(id: String, deploymentData: DeploymentData) = {}
+  override def add(id: ProcessName, deploymentData: DeploymentData) = {}
 
-  override def remove(id: String) = {}
+  override def remove(id: ProcessName) = {}
 
   override def loadAll = Map()
 
@@ -47,8 +48,8 @@ class FileProcessRepository(path: File) extends ProcessRepository {
   import Argonaut._
   import ArgonautShapeless._
 
-  override def add(id: String, deploymentData: DeploymentData) = {
-    val outFile = new File(path, id)
+  override def add(id: ProcessName, deploymentData: DeploymentData) = {
+    val outFile = new File(path, id.value)
     val writer = new PrintWriter(outFile, StandardCharsets.UTF_8.name())
     try {
       writer.write(deploymentData.asJson.spaces2)
@@ -57,8 +58,8 @@ class FileProcessRepository(path: File) extends ProcessRepository {
     }
   }
 
-  override def remove(id: String) = {
-    new File(path, id).delete()
+  override def remove(id: ProcessName) = {
+    new File(path, id.value).delete()
   }
   private def fileToString(file: File)={
     val s = Source.fromFile(file, UTF8)
@@ -66,7 +67,7 @@ class FileProcessRepository(path: File) extends ProcessRepository {
   }
 
   override def loadAll = path.listFiles().filter(_.isFile).map { file =>
-    file.getName -> fileToString(file).decodeOption[DeploymentData].get
+    ProcessName(file.getName) -> fileToString(file).decodeOption[DeploymentData].get
   }.toMap
 
 }

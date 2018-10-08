@@ -11,6 +11,7 @@ import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.{FlatSpec, FunSpec, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, GraphProcess}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaClient
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
@@ -50,7 +51,7 @@ class FlinkProcessManagerSpec extends FunSuite with Matchers with ScalaFutures w
 
   //this is for the case where e.g. we manually cancel flink job, or it fail and didn't restart...
   test("cancel of not existing job should not fail") {
-    processManager.cancel("not existing job").futureValue shouldBe (())
+    processManager.cancel(ProcessName("not existing job")).futureValue shouldBe (())
   }
 
 
@@ -86,7 +87,7 @@ class FlinkProcessManagerSpec extends FunSuite with Matchers with ScalaFutures w
     val messages2 = kafkaClient.createConsumer().consume(outTopic)
     new String(messages2.take(2).toIterable.last.message(), StandardCharsets.UTF_8) shouldBe "2"
 
-    assert(processManager.cancel(kafkaProcess.id).isReadyWithin(10 seconds))
+    assert(processManager.cancel(ProcessName(kafkaProcess.id)).isReadyWithin(10 seconds))
   }
 
   test("save state when redeploying") {
@@ -126,7 +127,7 @@ class FlinkProcessManagerSpec extends FunSuite with Matchers with ScalaFutures w
     Thread.sleep(3000)
 
     val dir = new File("/tmp").toURI.toString
-    val savepointPath = processManager.savepoint(processEmittingOneElementAfterStart.id, dir)
+    val savepointPath = processManager.savepoint(ProcessName(processEmittingOneElementAfterStart.id), dir)
     assert(savepointPath.isReadyWithin(10 seconds))
 
     cancel(processId)
@@ -168,14 +169,14 @@ class FlinkProcessManagerSpec extends FunSuite with Matchers with ScalaFutures w
     cancel(processId)
   }
 
-  def empty(processId: String): ProcessVersion = ProcessVersion.empty.copy(processId=processId)
+  def empty(processId: String): ProcessVersion = ProcessVersion.empty.copy(processName=ProcessName(processId))
 
   test("deploy custom process") {
     val processId = "customProcess"
 
     assert(processManager.deploy(empty(processId), CustomProcess("pl.touk.nussknacker.engine.management.sample.CustomProcess"), None).isReadyWithin(100 seconds))
 
-    val jobStatus = processManager.findJobStatus(processId).futureValue
+    val jobStatus = processManager.findJobStatus(ProcessName(processId)).futureValue
     jobStatus.map(_.status) shouldBe Some("RUNNING")
 
     cancel(processId)
@@ -213,14 +214,14 @@ class FlinkProcessManagerSpec extends FunSuite with Matchers with ScalaFutures w
     val marshaled = ProcessMarshaller.toJson(process, PrettyParams.spaces2)
     assert(processManager.deploy(processVersion, GraphProcess(marshaled), savepointPath).isReadyWithin(100 seconds))
     Thread.sleep(1000)
-    val jobStatus = processManager.findJobStatus(process.id).futureValue
+    val jobStatus = processManager.findJobStatus(ProcessName(process.id)).futureValue
     jobStatus.map(_.status) shouldBe Some("RUNNING")
   }
 
   private def cancel(processId: String) = {
-    assert(processManager.cancel(processId).isReadyWithin(10 seconds))
+    assert(processManager.cancel(ProcessName(processId)).isReadyWithin(10 seconds))
     eventually {
-      val jobStatusCanceled = processManager.findJobStatus(processId).futureValue
+      val jobStatusCanceled = processManager.findJobStatus(ProcessName(processId)).futureValue
       if (jobStatusCanceled.nonEmpty)
         throw new IllegalStateException("Job still exists")
     }

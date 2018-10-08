@@ -23,8 +23,9 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.ui.codec.UiCodecs
 import pl.touk.nussknacker.ui.validation.{ProcessValidation, ValidationResults}
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
-import pl.touk.nussknacker.ui.process.{JobStatusService, NewProcessPreparer, ProcessToSave, ProcessTypesForCategories}
+import pl.touk.nussknacker.ui.process._
 import pl.touk.http.argonaut.Argonaut62Support
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.ui.process.repository.WriteProcessRepository.UpdateProcessAction
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
@@ -40,7 +41,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
                          typesForCategories: ProcessTypesForCategories,
                          newProcessPreparer: NewProcessPreparer,
                          val processAuthorizer:AuthorizeProcess)
-                        (implicit ec: ExecutionContext, mat: Materializer)
+                        (implicit val ec: ExecutionContext, mat: Materializer)
   extends Directives
     with Argonaut62Support
     with EspPathMatchers
@@ -61,7 +62,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
         } ~ path("unarchive" / Segment) { processName =>
           (post & processId(processName)) { processId =>
             canWrite(processId) {
-              complete(writeArchive(processId, isArchived = false))
+              complete(writeArchive(processId.id, isArchived = false))
             }
           }
         } ~ path("archive" / Segment) { processName =>
@@ -70,7 +71,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
               /*
               should not allow to archive still used subprocess IGNORED TEST
               */
-              complete(writeArchive(processId, isArchived = true))
+              complete(writeArchive(processId.id, isArchived = true))
             }
           }
         }  ~ path("processes") {
@@ -110,30 +111,30 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
                 processes <- processRepository.fetchProcesses()
                 customProcesses <- processRepository.fetchCustomProcesses()
                 statuses <- fetchProcessStatesForProcesses(processes ++ customProcesses)
-              } yield statuses
+              } yield statuses.map { case (k, v) => k.value -> v }
             }
           }
         } ~ path("processes" / Segment) { processName =>
           processId(processName) { processId =>
             (delete & canWrite(processId)) {
               complete {
-                writeRepository.deleteProcess(processId).map(toResponse(StatusCodes.OK))
+                writeRepository.deleteProcess(processId.id).map(toResponse(StatusCodes.OK))
               }
             } ~ (put & canWrite(processId)) {
               entity(as[ProcessToSave]) { processToSave =>
                 complete {
-                  isArchived(processId).flatMap[ToResponseMarshallable] {
+                  isArchived(processId.id).flatMap[ToResponseMarshallable] {
                     case true =>
                       rejectSavingArchivedProcess
                     case false =>
-                      saveProcess(processToSave, processId).map(toResponse)
+                      saveProcess(processToSave, processId.id).map(toResponse)
                   }
                 }
               }
             } ~ parameter('businessView ? false) { (businessView) =>
               get {
                 complete {
-                  processRepository.fetchLatestProcessDetailsForProcessId(processId, businessView).map[ToResponseMarshallable] {
+                  processRepository.fetchLatestProcessDetailsForProcessId(processId.id, businessView).map[ToResponseMarshallable] {
                     case Some(process) =>
                       // todo: we should really clearly separate backend objects from ones returned to the front
                       validate(process, businessView)
@@ -151,7 +152,11 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
           (put & processId(processName)) { processId =>
             canWrite(processId) {
               complete {
-                writeRepository.renameProcess(processId, newName).map(toResponse(StatusCodes.OK))
+                processRepository.fetchLatestProcessDetailsForProcessId(processId.id).flatMap {
+                  case Some(details) if details.currentlyDeployedAt.isEmpty =>
+                    writeRepository.renameProcess(processId.id, newName).map(toResponse(StatusCodes.OK))
+                  case _ => Future.successful(espErrorToHttp(ProcessAlreadyDeployed(processName)))
+                }
               }
             }
           }
@@ -159,7 +164,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
           (get & processId(processName)) { processId =>
             parameter('businessView ? false) { businessView =>
               complete {
-                processRepository.fetchProcessDetailsForId(processId, versionId, businessView).map[ToResponseMarshallable] {
+                processRepository.fetchProcessDetailsForId(processId.id, versionId, businessView).map[ToResponseMarshallable] {
                   case Some(process) =>
                     // todo: we should really clearly separate backend objects from ones returned to the front
                     validate(process, businessView)
@@ -184,7 +189,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
                     case Some(processingType) =>
                       val emptyProcess = makeEmptyProcess(processId, processingType, isSubprocess)
                       writeRepository.saveNewProcess(
-                        processId = processId,
+                        processId = ProcessId(processId),
                         category = category,
                         processDeploymentData = emptyProcess,
                         processingType = processingType,
@@ -200,9 +205,9 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
         } ~ path("processes" / Segment / "status") { processName =>
           (get & processId(processName)) { processId =>
             complete {
-              processRepository.fetchLatestProcessDetailsForProcessId(processId).flatMap[ToResponseMarshallable] {
+              processRepository.fetchLatestProcessDetailsForProcessId(processId.id).flatMap[ToResponseMarshallable] {
                 case Some(process) =>
-                  findJobStatus(process.id, process.processingType).map {
+                  findJobStatus(processId, process.processingType).map {
                     case Some(status) => status
                     case None => HttpResponse(status = StatusCodes.OK, entity = "Process is not running")
                   }
@@ -215,7 +220,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
           (post & processId(processName)) { processId =>
             canWrite(processId) {
               complete {
-                writeRepository.updateCategory(processId = processId, category = category).map(toResponse(StatusCodes.OK))
+                writeRepository.updateCategory(processId = processId.id, category = category).map(toResponse(StatusCodes.OK))
               }
             }
           }
@@ -223,8 +228,8 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
           (get & processId(processName)) { processId =>
             parameter('businessView ? false) { businessView =>
               complete {
-                withJson(processId, thisVersion, businessView) { thisDisplayable =>
-                  withJson(processId, otherVersion, businessView) { otherDisplayable =>
+                withJson(processId.id, thisVersion, businessView) { thisDisplayable =>
+                  withJson(processId.id, otherVersion, businessView) { otherDisplayable =>
                     implicit val codec = ProcessComparator.codec
                     ProcessComparator.compare(thisDisplayable, otherDisplayable)
                   }
@@ -239,12 +244,12 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
                 complete {
                   MultipartUtils.readFile(byteSource).map[ToResponseMarshallable] { json =>
                     (UiProcessMarshaller.fromJson(json) match {
-                      case Valid(process) if process.metaData.id != processId => Invalid(WrongProcessId(processId, process.metaData.id))
+                      case Valid(process) if process.metaData.id != processId.name.value => Invalid(WrongProcessId(processId.name.value, process.metaData.id.value))
                       case Valid(process) => Valid(process)
                       case Invalid(unmarshallError) => Invalid(UnmarshallError(unmarshallError.msg))
                     }) match {
                       case Valid(process) =>
-                        processRepository.fetchLatestProcessDetailsForProcessIdEither(processId).map { detailsXor =>
+                        processRepository.fetchLatestProcessDetailsForProcessIdEither(processId.id).map { detailsXor =>
                           val validatedProcess = detailsXor.map(details =>
                             ProcessConverter.toDisplayable(process, details.processingType).validated(processValidation)
                           )
@@ -261,17 +266,17 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
         }
       }
   }
-  private def writeArchive(processId:String,isArchived:Boolean) = {
+  private def writeArchive(processId: ProcessId, isArchived: Boolean) = {
     writeRepository.archive(processId = processId, isArchived = isArchived)
       .map(toResponse(StatusCodes.OK))
   }
-  private def  isArchived(processId: String)(implicit loggedUser: LoggedUser): Future[Boolean] =
+  private def isArchived(processId: ProcessId)(implicit loggedUser: LoggedUser): Future[Boolean] =
     processRepository.fetchLatestProcessDetailsForProcessId(processId)
       .map {
         case Some(details) => details.isArchived
         case _ => false
       }
-  private def saveProcess(processToSave: ProcessToSave, processId: String)
+  private def saveProcess(processToSave: ProcessToSave, processId: ProcessId)
                          (implicit loggedUser: LoggedUser):Future[Either[EspError, ValidationResults.ValidationResult]] = {
     val displayableProcess = processToSave.process
     val canonical = ProcessConverter.fromDisplayable(displayableProcess)
@@ -290,11 +295,11 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
     import cats.instances.future._
     import cats.instances.list._
     import cats.syntax.traverse._
-    processes.map(process => findJobStatus(process.id, process.processingType).map(status => process.name -> status))
+    processes.map(process => findJobStatus(process.idWithName, process.processingType).map(status => process.name -> status))
       .sequence[Future, (String, Option[ProcessStatus])].map(_.toMap)
   }
 
-  private def findJobStatus(processId: String, processingType: ProcessingType)(implicit ec: ExecutionContext, user: LoggedUser): Future[Option[ProcessStatus]] = {
+  private def findJobStatus(processId: ProcessIdWithName, processingType: ProcessingType)(implicit ec: ExecutionContext, user: LoggedUser): Future[Option[ProcessStatus]] = {
     jobStatusService.retrieveJobStatus(processId).recover {
       case NonFatal(e) =>
         logger.warn(s"Failed to get status of $processId: ${e.getMessage}", e)
@@ -307,7 +312,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
     GraphProcess(UiProcessMarshaller.toJson(emptyCanonical, PrettyParams.nospace))
   }
 
-  private def withJson(processId: String, version: Long, businessView: Boolean)
+  private def withJson(processId: ProcessId, version: Long, businessView: Boolean)
                       (process: DisplayableProcess => ToResponseMarshallable)(implicit user: LoggedUser): ToResponseMarshallable
   = processRepository.fetchProcessDetailsForId(processId, version, businessView).map { maybeProcess =>
       maybeProcess.flatMap(_.json) match {

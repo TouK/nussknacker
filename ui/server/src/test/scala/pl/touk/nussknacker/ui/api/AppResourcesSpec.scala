@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.deployment.CustomProcess
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, TestFactory}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
-import pl.touk.nussknacker.ui.process.JobStatusService
+import pl.touk.nussknacker.ui.process.{JobStatusService, ProcessId}
 import pl.touk.nussknacker.ui.process.deployment.CheckStatus
 import pl.touk.nussknacker.ui.process.displayedgraph.ProcessStatus
 
@@ -45,7 +45,7 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest
 
     result ~> check {
       status shouldBe StatusCodes.InternalServerError
-      entityAs[String] shouldBe s"Deployed processes not running (probably failed): \n${first.id}, ${third.id}"
+      entityAs[String] shouldBe s"Deployed processes not running (probably failed): \n${first.id.name.value}, ${third.id.name.value}"
     }
   }
 
@@ -73,9 +73,9 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest
 
   private def saveProcessWithDeployInfo(id: String) = {
     implicit val logged = TestFactory.user(testPermissionAdmin)
-    writeProcessRepository.saveNewProcess(id, TestFactory.testCategoryName, CustomProcess(""), TestProcessingTypes.Streaming, false)
+    writeProcessRepository.saveNewProcess(ProcessId(id), TestFactory.testCategoryName, CustomProcess(""), TestProcessingTypes.Streaming, false)
       .futureValue shouldBe Right(())
-    deploymentProcessRepository.markProcessAsDeployed(id, 1, TestProcessingTypes.Streaming, "", "").futureValue shouldBe (())
+    deploymentProcessRepository.markProcessAsDeployed(ProcessId(id), 1, TestProcessingTypes.Streaming, "", "").futureValue shouldBe (())
   }
 
 

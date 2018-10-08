@@ -18,11 +18,14 @@ import pl.touk.nussknacker.ui.util.{Argonaut62Support, ProcessComparator}
 
 import scala.concurrent.{ExecutionContext, Future}
 import ProcessComparator._
+import pl.touk.nussknacker.ui.EspError.XError
+import pl.touk.nussknacker.ui.process.ProcessId
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
 class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
                                  val processRepository: FetchingProcessRepository,
-                                 val processAuthorizer:AuthorizeProcess)(implicit ec: ExecutionContext)
+                                 val processAuthorizer:AuthorizeProcess)
+                                (implicit val ec: ExecutionContext)
   extends Directives
     with Argonaut62Support
     with RouteWithUser
@@ -57,7 +60,7 @@ class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
             parameter('businessView ? false) { businessView =>
               (get & processId(processName)) { processId =>
                 complete {
-                  withProcess(processId, version, businessView, (process, _) => remoteEnvironment.compare(process, Some(otherVersion), businessView))
+                  withProcess(processId.id, version, businessView, (process, _) => remoteEnvironment.compare(process, Some(otherVersion), businessView))
                 }
               }
             }
@@ -65,14 +68,14 @@ class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
           path(Segment / LongNumber / "migrate") { (processName, version) =>
             (post & processId(processName)) { processId =>
               complete {
-                withProcess(processId, version, businessView = false, remoteEnvironment.migrate)
+                withProcess(processId.id, version, businessView = false, remoteEnvironment.migrate)
               }
             }
           } ~
           path(Segment / "versions") { processName =>
             (get & processId(processName)) { processId =>
               complete {
-                remoteEnvironment.processVersions(processId)
+                remoteEnvironment.processVersions(processId.id.value)
               }
             }
           } ~
@@ -93,7 +96,7 @@ class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
     : Future[Either[EspError, EnvironmentComparisonResult]] = {
     val results = Future.sequence(processes.flatMap(_.json).map(compareOneProcess))
     results.map { comparisonResult =>
-      comparisonResult.sequence.right
+      comparisonResult.sequence[XError, ProcessDifference].right
         .map(_.filterNot(_.areSame))
         .right
         .map(EnvironmentComparisonResult)
@@ -112,7 +115,7 @@ class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
     Marshal(summary).to[MessageEntity].map(e => HttpResponse(status = status, entity = e))
   }
 
-  private def withProcess[T:EncodeJson](processId: String, version: Long, businessView: Boolean,
+  private def withProcess[T:EncodeJson](processId: ProcessId, version: Long, businessView: Boolean,
                                         fun: (DisplayableProcess, String) => Future[Either[EspError, T]])(implicit user: LoggedUser) = {
     processRepository.fetchProcessDetailsForId(processId, version, businessView).map {
       _.flatMap { details =>
@@ -120,7 +123,7 @@ class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
       }
     }.flatMap {
       case Some((process, category)) => fun(process, category)
-      case None => Future.successful(Left(ProcessNotFoundError(processId)))
+      case None => Future.successful(Left(ProcessNotFoundError(processId.value)))
     }.map(EspErrorToHttp.toResponseEither[T])
   }
 

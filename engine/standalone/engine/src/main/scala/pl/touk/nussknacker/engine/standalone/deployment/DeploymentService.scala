@@ -5,7 +5,8 @@ import cats.data.{NonEmptyList, ValidatedNel}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.deployment.ProcessState
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessState}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{JobData, StandaloneMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
@@ -32,7 +33,7 @@ object DeploymentService {
 class DeploymentService(context: StandaloneContextPreparer, modelData: ModelData,
                         processRepository: ProcessRepository) extends LazyLogging {
 
-  val processInterpreters: collection.concurrent.TrieMap[String, (StandaloneProcessInterpreter, Long)] = collection.concurrent.TrieMap()
+  val processInterpreters: collection.concurrent.TrieMap[ProcessName, (StandaloneProcessInterpreter, Long)] = collection.concurrent.TrieMap()
 
   val pathToInterpreterMap: collection.concurrent.TrieMap[String, StandaloneProcessInterpreter] = collection.concurrent.TrieMap()
 
@@ -50,25 +51,25 @@ class DeploymentService(context: StandaloneContextPreparer, modelData: ModelData
   }
 
   def deploy(deploymentData: DeploymentData)(implicit ec: ExecutionContext): Either[NonEmptyList[DeploymentError], Unit] = {
-    val processId = deploymentData.processVersion.processId
+    val processName = deploymentData.processVersion.processName
 
     toEspProcess(deploymentData.processJson).andThen { process =>
       process.metaData.typeSpecificData match {
         case StandaloneMetaData(path) =>
-          val pathToDeploy = path.getOrElse(processId)
+          val pathToDeploy = path.getOrElse(processName.value)
           val currentAtPath = pathToInterpreterMap.get(pathToDeploy).map(_.id)
           currentAtPath match {
-            case Some(oldId) if oldId != processId =>
+            case Some(oldId) if oldId != processName.value =>
               Invalid(NonEmptyList.of(DeploymentError(Set(), s"Process $oldId is already deployed at path $pathToDeploy")))
             case _ =>
               val interpreter = newInterpreter(process)
               interpreter.foreach { processInterpreter =>
-                cancel(processId)
-                processRepository.add(processId, deploymentData)
-                processInterpreters.put(processId, (processInterpreter, deploymentData.deploymentTime))
-                pathToInterpreterMap.put(path.getOrElse(processId), processInterpreter)
+                cancel(processName)
+                processRepository.add(processName, deploymentData)
+                processInterpreters.put(processName, (processInterpreter, deploymentData.deploymentTime))
+                pathToInterpreterMap.put(pathToDeploy, processInterpreter)
                 processInterpreter.open(JobData(process.metaData, deploymentData.processVersion))
-                logger.info(s"Successfully deployed process $processId")
+                logger.info(s"Successfully deployed process ${processName.value}")
               }
               interpreter.map(_ => ())
           }
@@ -80,15 +81,15 @@ class DeploymentService(context: StandaloneContextPreparer, modelData: ModelData
 
 
 
-  def checkStatus(processId: String): Option[ProcessState] = {
-    processInterpreters.get(processId).map { case (_, startTime) =>
-      ProcessState(processId, "RUNNING", startTime)
+  def checkStatus(processName: ProcessName): Option[ProcessState] = {
+    processInterpreters.get(processName).map { case (_, startTime) =>
+      ProcessState(DeploymentId(processName.value), "RUNNING", startTime)
     }
   }
 
-  def cancel(processId: String): Option[Unit] = {
-    processRepository.remove(processId)
-    val removed = processInterpreters.remove(processId)
+  def cancel(processName: ProcessName): Option[Unit] = {
+    processRepository.remove(processName)
+    val removed = processInterpreters.remove(processName)
     removed.foreach { case (interpreter, _) =>
       pathToInterpreterMap.filter(_._2 == interpreter).foreach { case (k, _) => pathToInterpreterMap.remove(k) }
     }

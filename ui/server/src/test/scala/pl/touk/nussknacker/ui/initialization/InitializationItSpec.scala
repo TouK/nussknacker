@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.ui.api.ProcessTestData
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessingTypes, WithDbTesting}
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessType
+import pl.touk.nussknacker.ui.process.ProcessId
 import pl.touk.nussknacker.ui.process.marshall.UiProcessMarshaller
 import pl.touk.nussknacker.ui.process.migrate.TestMigrations
 
@@ -59,7 +60,7 @@ class InitializationItSpec extends FlatSpec with ScalatestRouteTest with Matcher
   }
 
   private def saveSampleProcess(processId: String = processId, subprocess: Boolean = false) : Unit = {
-    writeRepository.saveNewProcess(processId, "RTM", sampleDeploymentData(processId), TestProcessingTypes.Streaming, subprocess).futureValue
+    writeRepository.saveNewProcess(ProcessId(processId), "RTM", sampleDeploymentData(processId), TestProcessingTypes.Streaming, subprocess).futureValue
   }
 
   it should "run initialization transactionally" in {

@@ -8,6 +8,7 @@ import akka.util.ByteString
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.ui.api.ProcessAttachmentService.AttachmentToAdd
 import pl.touk.nussknacker.ui.db.entity.AttachmentEntity.AttachmentEntityData
+import pl.touk.nussknacker.ui.process.ProcessId
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.CatsSyntax
@@ -17,14 +18,14 @@ import scala.util.control.NonFatal
 
 class ProcessAttachmentService(attachmentsBasePath: String, processActivityRepository: ProcessActivityRepository) extends LazyLogging {
 
-  def saveAttachment(processId: String, processVersionId: Long, originalFileName: String, byteSource: Source[ByteString, Any])
+  def saveAttachment(processId: ProcessId, processVersionId: Long, originalFileName: String, byteSource: Source[ByteString, Any])
                     (implicit ec: ExecutionContext, loggedUser: LoggedUser, mat: Materializer): Future[Unit] = {
-    val relativeFilePath = s"$processId/${s"${System.currentTimeMillis()}-$originalFileName"}"
+    val relativeFilePath = s"${processId.value}/${s"${System.currentTimeMillis()}-$originalFileName"}"
     val attachmentFile = getAttachmentFile(relativeFilePath)
     attachmentFile.getParentFile.mkdirs()
     val fileSink = FileIO.toPath(attachmentFile.toPath)
     byteSource.runWith(fileSink).flatMap { _ =>
-      val attachmentToAdd = AttachmentToAdd(processId, processVersionId, originalFileName, relativeFilePath)
+      val attachmentToAdd = AttachmentToAdd(processId.value, processVersionId, originalFileName, relativeFilePath)
       processActivityRepository.addAttachment(attachmentToAdd).recoverWith { case NonFatal(ex) =>
         logger.warn(s"Failure during writing attachment to db. Removing file ${attachmentFile}", ex)
         attachmentFile.delete()

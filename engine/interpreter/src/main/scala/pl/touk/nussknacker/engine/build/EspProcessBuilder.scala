@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.build
 
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{MetaData, StandaloneMetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.GraphBuilder.Creator
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
@@ -48,7 +49,7 @@ object EspProcessBuilder {
 
 object StandaloneProcessBuilder {
 
-  def id(id: String) =
-    new ProcessMetaDataBuilder(MetaData(id, StandaloneMetaData(None)))
+  def id(id: ProcessName) =
+    new ProcessMetaDataBuilder(MetaData(id.value, StandaloneMetaData(None)))
 
 }

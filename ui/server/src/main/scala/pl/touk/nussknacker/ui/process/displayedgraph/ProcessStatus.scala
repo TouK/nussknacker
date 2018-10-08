@@ -7,7 +7,7 @@ case class ProcessStatus(flinkJobId: Option[String], status: String, startTime: 
 object ProcessStatus {
   def apply(processState: ProcessState): ProcessStatus = {
     ProcessStatus(
-      flinkJobId = Some(processState.id),
+      flinkJobId = Some(processState.id.value),
       status = processState.status,
       startTime = processState.startTime,
       isRunning = processState.status == "RUNNING",
