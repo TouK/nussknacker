@@ -28,6 +28,7 @@ import pl.touk.nussknacker.ui.util.ProcessComparator
 import pl.touk.nussknacker.ui.validation.ValidationResults
 import cats.syntax.semigroup._
 import cats.instances.all._
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
 
 class RemoteEnvironmentResourcesSpec extends FlatSpec with ScalatestRouteTest with ScalaFutures with Matchers
@@ -42,6 +43,7 @@ class RemoteEnvironmentResourcesSpec extends FlatSpec with ScalatestRouteTest wi
   implicit override val patienceConfig = PatienceConfig(timeout = scaled(Span(1, Seconds)), interval = scaled(Span(100, Millis)))
 
   private val processId: String = ProcessTestData.validProcess.id
+  private val processName: ProcessName = ProcessName(processId)
 
   val readWritePermissions: CategorizedPermission = testPermissionRead |+| testPermissionWrite
   it should "fail when process does not exist" in {
@@ -70,7 +72,7 @@ class RemoteEnvironmentResourcesSpec extends FlatSpec with ScalatestRouteTest wi
     val route = withPermissions(new RemoteEnvironmentResources(remoteEnvironment, processRepository, processAuthorizer), readWritePermissions)
     import pl.touk.http.argonaut.Argonaut62Support._
 
-    saveProcess(processId, ProcessTestData.validProcess) {
+    saveProcess(processName, ProcessTestData.validProcess) {
       Get(s"/remoteEnvironment/$processId/2/compare/1") ~> route ~> check {
         status shouldEqual StatusCodes.OK
 
@@ -129,25 +131,25 @@ class RemoteEnvironmentResourcesSpec extends FlatSpec with ScalatestRouteTest wi
 
     import pl.touk.http.argonaut.Argonaut62Support._
     import pl.touk.nussknacker.engine.spel.Implicits._
-    val processId1 = "proc1"
-    val processId2 = "proc2"
+    val processId1 = ProcessName("proc1")
+    val processId2 = ProcessName("proc2")
 
     val difference = NodeNotPresentInOther("a", Filter("a", ""))
 
 
     val route = withPermissions(new RemoteEnvironmentResources(new MockRemoteEnvironment(mockDifferences = Map(
-      processId1 -> Map("n1" -> difference),
-      processId2 -> Map()
+      processId1.value -> Map("n1" -> difference),
+      processId2.value -> Map()
 
     )),
       processRepository, processAuthorizer), testPermissionRead)
 
-    saveProcess(processId1, ProcessTestData.validProcessWithId(processId1)) {
-      saveProcess(processId2, ProcessTestData.validProcessWithId(processId2)) {
+    saveProcess(processId1, ProcessTestData.validProcessWithId(processId1.value)) {
+      saveProcess(processId2, ProcessTestData.validProcessWithId(processId2.value)) {
         Get(s"/remoteEnvironment/compare") ~> route ~> check {
           status shouldEqual StatusCodes.OK
           responseAs[EnvironmentComparisonResult] shouldBe EnvironmentComparisonResult(
-            List(ProcessDifference(processId1,true,Map("n1" -> difference))))
+            List(ProcessDifference(processId1.value, true, Map("n1" -> difference))))
         }
       }
     }
@@ -157,23 +159,23 @@ class RemoteEnvironmentResourcesSpec extends FlatSpec with ScalatestRouteTest wi
   it should "not fail in comparing environments if process does not exist in the other one" in {
     import pl.touk.http.argonaut.Argonaut62Support._
     import pl.touk.nussknacker.engine.spel.Implicits._
-    val processId1 = "proc1"
-    val processId2 = "proc2"
+    val processId1 = ProcessName("proc1")
+    val processId2 = ProcessName("proc2")
 
     val difference = NodeNotPresentInOther("a", Filter("a", ""))
 
 
     val route = withPermissions(new RemoteEnvironmentResources(new MockRemoteEnvironment(mockDifferences = Map(
-      processId1 -> Map("n1" -> difference)
+      processId1.value -> Map("n1" -> difference)
     )),
       processRepository, processAuthorizer), readWritePermissions)
 
-    saveProcess(processId1, ProcessTestData.validProcessWithId(processId1)) {
-      saveProcess(processId2, ProcessTestData.validProcessWithId(processId2)) {
+    saveProcess(processId1, ProcessTestData.validProcessWithId(processId1.value)) {
+      saveProcess(processId2, ProcessTestData.validProcessWithId(processId2.value)) {
         Get(s"/remoteEnvironment/compare") ~> route ~> check {
           status shouldEqual StatusCodes.OK
           responseAs[EnvironmentComparisonResult] shouldBe EnvironmentComparisonResult(
-            List(ProcessDifference(processId1,true,Map("n1" -> difference)), ProcessDifference(processId2, false, Map())))
+            List(ProcessDifference(processId1.value, true, Map("n1" -> difference)), ProcessDifference(processId2.value, false, Map())))
         }
       }
     }
@@ -204,7 +206,7 @@ class RemoteEnvironmentResourcesSpec extends FlatSpec with ScalatestRouteTest wi
         (diffs => Right(diffs)))
     }
 
-    override def processVersions(processId: String)(implicit ec: ExecutionContext): Future[List[ProcessHistoryEntry]] = Future.successful(List())
+    override def processVersions(processName: ProcessName)(implicit ec: ExecutionContext): Future[List[ProcessHistoryEntry]] = Future.successful(List())
 
     override def testMigration(implicit ec: ExecutionContext): Future[Either[EspError, List[TestMigrationResult]]] = {
       Future.successful(Right(testMigrationResults))

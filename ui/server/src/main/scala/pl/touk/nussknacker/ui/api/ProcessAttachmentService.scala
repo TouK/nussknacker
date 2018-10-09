@@ -50,7 +50,7 @@ class ProcessAttachmentService(attachmentsBasePath: String, processActivityRepos
 
 object ProcessAttachmentService {
 
-  case class AttachmentToAdd(processId: String,
+  case class AttachmentToAdd(processId: Long,
                              processVersionId: Long,
                              fileName: String,
                              relativeFilePath: String

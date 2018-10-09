@@ -9,6 +9,7 @@ import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node
@@ -16,6 +17,7 @@ import pl.touk.nussknacker.engine.graph.node.Source
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, TestFactory}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
+import pl.touk.nussknacker.ui.api.helpers.{EspItTest, TestProcessingTypes}
 import pl.touk.nussknacker.ui.codec.UiCodecs
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.ui.process.{ProcessId, ProcessToSave}
@@ -47,8 +49,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
   val processActivityRouteWithAllPermission = withAllPermissions(processActivityRoute)
   implicit val loggedUser = LoggedUser("lu",  testCategory)
 
-  private val processName: String = SampleProcess.process.id
-  private val processId: ProcessId = ProcessId(SampleProcess.process.id)
+  private val processName = ProcessName(SampleProcess.process.id)
 
   test("return list of process") {
     saveProcess(processName, ProcessTestData.validProcess) {
@@ -66,7 +67,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
     val displayableSubprocess = ProcessConverter.toDisplayable(processWithSubreocess.subprocess, TestProcessingTypes.Streaming)
     saveSubProcess(displayableSubprocess)(succeed)
     saveProcess(processName, processWithSubreocess.process)(succeed)
-    archiveProcess(displayableSubprocess.id.value)~> routWithAllPermissions ~> check {
+    archiveProcess(ProcessName(displayableSubprocess.id))~> routWithAllPermissions ~> check {
       status shouldEqual StatusCodes.Conflict
       responseAs[String].decodeOption[List[String]].get shouldEqual List(processName) // returns list of porcesses using subprocess
     }
@@ -79,7 +80,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
     archiveProcess(processName)~> routWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
     }
-    archiveProcess(displayableSubprocess.id.value)~> routWithAllPermissions ~> check {
+    archiveProcess(ProcessName(displayableSubprocess.id))~> routWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
     }
   }
@@ -90,9 +91,9 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
     archiveProcess(processName)~> routWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
     }
-    Post(s"/processes/$processName/$testCategoryName?isSubprocess=false") ~> processesRouteWithAllPermissions ~> check {
+    Post(s"/processes/${processName.value}/$testCategoryName?isSubprocess=false") ~> processesRouteWithAllPermissions ~> check {
       status shouldBe StatusCodes.BadRequest
-      responseAs[String] shouldEqual s"Process $processName already exists"
+      responseAs[String] shouldEqual s"Process ${processName.value} already exists"
     }
   }
   test("return list of subprocess without archived process") {
@@ -101,7 +102,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
       status shouldEqual StatusCodes.OK
     }
 
-    archiveProcess(sampleSubprocess.id.value)~> routWithAllPermissions ~> check {
+    archiveProcess(ProcessName(sampleSubprocess.id))~> routWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
     }
     Get("/subProcesses") ~> routWithAllPermissions ~> check {
@@ -131,7 +132,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
     }
     Get("/processes") ~> routWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
-      responseAs[String] should not include processName
+      responseAs[String] should not include processName.value
     }
   }
   test("return list of archived processes") {
@@ -144,15 +145,15 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
     }
     Get("/archive") ~> routWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
-      responseAs[String] should include(processName)
+      responseAs[String] should include(processName.value)
     }
   }
   test("update process category for existing process") {
     saveProcess(processName, ProcessTestData.validProcess) {
       val newCategory = "expectedCategory"
-      Post(s"/processes/category/$processName/$newCategory") ~> routWithAllPermissions ~> check {
+      Post(s"/processes/category/${processName.value}/$newCategory") ~> routWithAllPermissions ~> check {
         status shouldEqual StatusCodes.OK
-        Get(s"/processes/$processName") ~> routWithAdminPermission ~> check {
+        Get(s"/processes/${processName.value}") ~> routWithAdminPermission ~> check {
           status shouldEqual StatusCodes.OK
           val loadedProcess = responseAs[String].decodeOption[ProcessDetails].get
           loadedProcess.processCategory shouldBe newCategory
@@ -175,7 +176,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
 
   test("return sample process details") {
     saveProcess(processName, ProcessTestData.validProcess) {
-      Get(s"/processes/$processName") ~> routWithAllPermissions ~> check {
+      Get(s"/processes/${processName.value}") ~> routWithAllPermissions ~> check {
         status shouldEqual StatusCodes.OK
         responseAs[String] should include(processName.value)
       }
@@ -183,14 +184,14 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
   }
   //FIXME: test gets rejection. Permission verification doesn't work for custom processes
   ignore("return 400 when trying to update json of custom process") {
-    whenReady(writeProcessRepository.saveNewProcess(processId, testCategoryName, CustomProcess(""), TestProcessingTypes.Streaming, false)) { res =>
+    whenReady(writeProcessRepository.saveNewProcess(processName, testCategoryName, CustomProcess(""), TestProcessingTypes.Streaming, false)) { res =>
       updateProcess(processName, SampleProcess.process) {
         status shouldEqual StatusCodes.BadRequest
       }
     }
   }
   test("save correct process json with ok status") {
-    saveProcess(SampleProcess.process.id, ProcessTestData.validProcess) {
+    saveProcess(processName, ProcessTestData.validProcess) {
       status shouldEqual StatusCodes.OK
       checkSampleProcessRootIdEquals(ProcessTestData.validProcess.root.id)
       val json = entityAs[String].parseOption.value
@@ -199,7 +200,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
   }
 
   test("save invalid process json with ok status but with non empty invalid nodes") {
-    saveProcess(SampleProcess.process.id, ProcessTestData.invalidProcess) {
+    saveProcess(processName, ProcessTestData.invalidProcess) {
       status shouldEqual StatusCodes.OK
       checkSampleProcessRootIdEquals(ProcessTestData.invalidProcess.root.id)
       val json = entityAs[String].parseOption.value
@@ -208,10 +209,10 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
   }
 
   test("return one latest version for process") {
-    saveProcess(SampleProcess.process.id, ProcessTestData.validProcess) {
+    saveProcess(processName, ProcessTestData.validProcess) {
       status shouldEqual StatusCodes.OK
     }
-    updateProcess(SampleProcess.process.id, ProcessTestData.invalidProcess) {
+    updateProcess(processName, ProcessTestData.invalidProcess) {
       status shouldEqual StatusCodes.OK
     }
 
@@ -225,10 +226,10 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
   }
 
   test("return process if user has category") {
-    saveProcess(SampleProcess.process.id, ProcessTestData.validProcess) {
+    saveProcess(processName, ProcessTestData.validProcess) {
       status shouldEqual StatusCodes.OK
     }
-    writeProcessRepository.updateCategory(processId, testCategoryName)
+    writeProcessRepository.updateCategory(getProcessId(processName), testCategoryName)
 
     Get(s"/processes/${SampleProcess.process.id}") ~> routWithAllPermissions ~> check {
       val processDetails = responseAs[String].decodeOption[ProcessDetails].get
@@ -243,10 +244,10 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
   }
 
   test("not return processes not in user categories") {
-    saveProcess(SampleProcess.process.id, ProcessTestData.validProcess) {
+    saveProcess(processName, ProcessTestData.validProcess) {
       status shouldEqual StatusCodes.OK
     }
-    writeProcessRepository.updateCategory(processId, "newCategory")
+    writeProcessRepository.updateCategory(getProcessId(processName), "newCategory")
     Get(s"/processes/${SampleProcess.process.id}") ~> routeWithRead ~> check {
       status shouldEqual StatusCodes.NotFound
     }
@@ -258,10 +259,10 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
   }
 
   test("return all processes for admin user") {
-    saveProcess(SampleProcess.process.id, ProcessTestData.validProcess) {
+    saveProcess(processName, ProcessTestData.validProcess) {
       status shouldEqual StatusCodes.OK
     }
-    writeProcessRepository.updateCategory(processId, "newCategory")
+    writeProcessRepository.updateCategory(getProcessId(processName), "newCategory")
 
     Get(s"/processes/${SampleProcess.process.id}") ~> routWithAdminPermission ~> check {
       val processDetails = responseAs[String].decodeOption[ProcessDetails].get
@@ -275,11 +276,11 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
   }
 
   test("save process history") {
-    saveProcess(SampleProcess.process.id, ProcessTestData.validProcess) {
+    saveProcess(processName, ProcessTestData.validProcess) {
       status shouldEqual StatusCodes.OK
     }
 
-    updateProcess(SampleProcess.process.id, ProcessTestData.validProcess.copy(root = ProcessTestData.validProcess
+    updateProcess(processName, ProcessTestData.validProcess.copy(root = ProcessTestData.validProcess
       .root.copy(data = ProcessTestData.validProcess.root.data.asInstanceOf[Source].copy(id = "AARGH")))) {
       status shouldEqual StatusCodes.OK
     }
@@ -292,10 +293,10 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
   }
 
   test("access process version and mark latest version") {
-    saveProcess(SampleProcess.process.id, ProcessTestData.validProcess) {
+    saveProcess(processName, ProcessTestData.validProcess) {
       status shouldEqual StatusCodes.OK
     }
-    updateProcess(SampleProcess.process.id, ProcessTestData.invalidProcess) {
+    updateProcess(processName, ProcessTestData.invalidProcess) {
       status shouldEqual StatusCodes.OK
     }
 
@@ -331,14 +332,14 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
   }
 
   test("not authorize user with read permissions to modify node") {
-    Put(s"/processes/$testCategoryName/$processName", posting.toEntityAsProcessToSave(ProcessTestData.validProcess)) ~> routeWithRead ~> check {
+    Put(s"/processes/$testCategoryName/${processName.value}", posting.toEntityAsProcessToSave(ProcessTestData.validProcess)) ~> routeWithRead ~> check {
       rejection shouldBe server.AuthorizationFailedRejection
     }
 
     val modifiedParallelism = 123
     val props = ProcessProperties(StreamMetaData(Some(modifiedParallelism)),
       ExceptionHandlerRef(List()), false, None, subprocessVersions = Map.empty)
-    Put(s"/processes/$testCategoryName/$processName", posting.toEntity(props)) ~> routeWithRead ~> check {
+    Put(s"/processes/$testCategoryName/${processName.value}", posting.toEntity(props)) ~> routeWithRead ~> check {
       rejection shouldBe server.AuthorizationFailedRejection
     }
 
@@ -351,7 +352,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
     saveProcess(processToSave) {
       status shouldEqual StatusCodes.OK
     }
-    archiveProcess(id.value) ~> routWithAllPermissions ~> check {
+    archiveProcess(ProcessName(id)) ~> routWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
     }
     Get(s"/processes/$id") ~> routWithAllPermissions ~> check {
@@ -368,7 +369,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
     saveProcess(processToSave) {
       status shouldEqual StatusCodes.OK
     }
-    archiveProcess(id.value) ~> routWithAllPermissions ~> check {
+    archiveProcess(ProcessName(id)) ~> routWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
     }
     Post(s"/unarchive/$id") ~> routWithAllPermissions ~> check {
@@ -381,8 +382,8 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
     }
   }
 
-  private def archiveProcess(id: String) = {
-    Post(s"/archive/$id")
+  private def archiveProcess(processName: ProcessName) = {
+    Post(s"/archive/${processName.value}")
   }
 
   test("delete process") {
@@ -444,11 +445,14 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
 
   private def fetchSampleProcess(): Future[CanonicalProcess] = {
     processRepository
-      .fetchLatestProcessVersion(processId)
+      .fetchLatestProcessVersion(getProcessId(processName))
       .map(_.getOrElse(sys.error("Sample process missing")))
       .map { version =>
         val parsed = UiProcessMarshaller.fromJson(version.json.get)
         parsed.valueOr(_ => sys.error("Invalid process json"))
       }
   }
+
+  private def getProcessId(processName: ProcessName): ProcessId =
+    processRepository.fetchProcessId(processName).futureValue.get
 }

@@ -17,7 +17,7 @@ trait FetchingProcessRepository {
   def fetchLatestProcessDetailsForProcessIdEither(id: ProcessId, businessView: Boolean = false)
                                                  (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[XError[ProcessDetails]] = {
     fetchLatestProcessDetailsForProcessId(id).map[XError[ProcessDetails]] {
-      case None => Left(ProcessNotFoundError(id.value))
+      case None => Left(ProcessNotFoundError(id.value.toString))
       case Some(p) => Right(p)
     }
   }

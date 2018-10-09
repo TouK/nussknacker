@@ -75,7 +75,7 @@ class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
           path(Segment / "versions") { processName =>
             (get & processId(processName)) { processId =>
               complete {
-                remoteEnvironment.processVersions(processId.id.value)
+                remoteEnvironment.processVersions(processId.name)
               }
             }
           } ~
@@ -123,7 +123,7 @@ class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
       }
     }.flatMap {
       case Some((process, category)) => fun(process, category)
-      case None => Future.successful(Left(ProcessNotFoundError(processId.value)))
+      case None => Future.successful(Left(ProcessNotFoundError(processId.value.toString)))
     }.map(EspErrorToHttp.toResponseEither[T])
   }
 

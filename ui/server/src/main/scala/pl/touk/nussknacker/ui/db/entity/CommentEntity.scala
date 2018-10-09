@@ -23,7 +23,7 @@ object CommentEntity {
 
     def id = column[Long]("id", O.PrimaryKey)
 
-    def processId = column[String]("process_id", NotNull)
+    def processId = column[Long]("process_id", NotNull)
 
     def processVersionId = column[Long]("process_version_id", NotNull)
 
@@ -37,7 +37,7 @@ object CommentEntity {
 
   }
 
-  case class CommentEntityData(id: Long, processId: String, processVersionId: Long, content: String, user: String, createDate: Timestamp) {
+  case class CommentEntityData(id: Long, processId: Long, processVersionId: Long, content: String, user: String, createDate: Timestamp) {
     val createDateTime = DateUtils.toLocalDateTime(createDate)
   }
 

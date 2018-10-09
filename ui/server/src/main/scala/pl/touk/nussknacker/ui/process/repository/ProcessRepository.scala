@@ -2,7 +2,6 @@ package pl.touk.nussknacker.ui.process.repository
 
 import java.time.LocalDateTime
 
-import argonaut.CodecJson
 import pl.touk.nussknacker.ui.app.BuildInfo
 import pl.touk.nussknacker.ui.db.EspTables._
 import pl.touk.nussknacker.ui.db.entity.ProcessDeploymentInfoEntity.DeployedProcessVersionEntityData
@@ -33,7 +32,13 @@ trait ProcessRepository[F[_]] extends Repository[F] {
     processVersionsTable.filter(_.processId === processId.value).sortBy(_.createDate.desc)
   }
 
-
+  protected def latestProcessVersions(processName: ProcessName): Query[ProcessVersionEntity.ProcessVersionEntity, ProcessVersionEntityData, Seq] = {
+    processesTable.filter(_.name === processName.value).
+      join(processVersionsTable)
+      .on { case (process, version) => process.id === version.id }
+      .map(_._2)
+      .sortBy(_.createDate.desc)
+  }
 }
 
 object ProcessRepository {
@@ -78,7 +83,8 @@ object ProcessRepository {
       currentlyDeployedAt = currentlyDeployedAt
     )
 
-    def idWithName: ProcessIdWithName = ProcessIdWithName(ProcessId(id), ProcessName(name))
+    // todo: unsafe toLong; we need it for now - we use this class for both backend (id == real id) and frontend (id == name) purposes
+    def idWithName: ProcessIdWithName = ProcessIdWithName(ProcessId(id.toLong), ProcessName(name))
   }
 
   type ProcessDetails = BaseProcessDetails[DisplayableProcess]
@@ -98,7 +104,7 @@ object ProcessRepository {
               processVersion: ProcessVersionEntityData,
               deployedVersionsPerEnv: Map[String, DeployedProcessVersionEntityData]): ProcessHistoryEntry = {
       new ProcessHistoryEntry(
-        processId = process.id,
+        processId = process.id.toString,
         processVersionId = processVersion.id,
         processName = process.name,
         createDate = DateUtils.toLocalDateTime(processVersion.createDate),

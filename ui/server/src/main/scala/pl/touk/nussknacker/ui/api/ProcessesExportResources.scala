@@ -46,7 +46,7 @@ class ProcessesExportResources(val processRepository: FetchingProcessRepository,
           entity(as[Array[Byte]]) { svg =>
             complete {
               processRepository.fetchProcessDetailsForId(processId.id, versionId, businessView).flatMap { process =>
-                processActivityRepository.findActivity(processId.id, processName).map(exportProcessToPdf(new String(svg, StandardCharsets.UTF_8), process, _))
+                processActivityRepository.findActivity(processId).map(exportProcessToPdf(new String(svg, StandardCharsets.UTF_8), process, _))
               }
             }
           }

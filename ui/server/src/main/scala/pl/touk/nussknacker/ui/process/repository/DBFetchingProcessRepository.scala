@@ -134,11 +134,11 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
                                            (implicit loggedUser: LoggedUser, ec: ExecutionContext) = {
     val id = processVersion.processId
     for {
-      subprocessesVersions <- OptionT.liftF[DB, Map[String, LocalDateTime]](subprocessLastModificationDates)
+      subprocessesVersions <- OptionT.liftF[DB, Map[ProcessName, LocalDateTime]](subprocessLastModificationDates)
       process <- OptionT[DB, ProcessEntityData](processTableFilteredByUser.filter(_.id === id).result.headOption)
       processVersions <- OptionT.liftF[DB, Seq[ProcessVersionEntityData]](latestProcessVersions(ProcessId(id)).result)
       latestDeployedVersionsPerEnv <- OptionT.liftF[DB, Map[String, DeployedProcessVersionEntityData]](latestDeployedProcessVersionsPerEnvironment(id).result.map(_.toMap))
-      tags <- OptionT.liftF[DB, Seq[TagsEntityData]](tagsTable.filter(_.processId === process.name).result)
+      tags <- OptionT.liftF[DB, Seq[TagsEntityData]](tagsTable.filter(_.processId === process.id).result)
     } yield createFullDetails(
       process = process,
       processVersion = processVersion,
@@ -158,14 +158,14 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
                                 tags: Seq[TagsEntityData],
                                 history: Seq[ProcessHistoryEntry],
                                 businessView: Boolean,
-                                subprocessesVersions: Map[String, LocalDateTime])
+                                subprocessesVersions: Map[ProcessName, LocalDateTime])
                                (implicit loggedUser: LoggedUser): ProcessDetails = {
     val displayable = processVersion.json.map(jsonString => displayableFromJson(jsonString, process, businessView))
 
     val subprocessModificationDate = displayable.map(findSubprocessesModificationDate(subprocessesVersions))
 
     BaseProcessDetails[DisplayableProcess](
-      id = process.id,
+      id = process.id.toString,
       name = process.name,
       processVersionId = processVersion.id,
       isLatestVersion = isLatestVersion,
@@ -185,27 +185,28 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
   }
 
   //TODO: is this the best way to find subprocesses modificationdate?
-  private def subprocessLastModificationDates(implicit loggedUser: LoggedUser, ec: ExecutionContext) : DB[Map[String, LocalDateTime]] = {
+  private def subprocessLastModificationDates(implicit loggedUser: LoggedUser, ec: ExecutionContext) : DB[Map[ProcessName, LocalDateTime]] = {
     processesTable
       .filter(_.isSubprocess)
       .join(processVersionsTable)
-      .on(_.id === _.processId).map { case (_, version) =>
-      (version.processId, version.createDate)
-    }.groupBy(_._1)
-     .map{ case (id, dates) => (id, dates.map(_._2).max) }
-     .result.map { results =>
-      results.flatMap { case (k, v) => v.map(k -> _)}.toMap.mapValues(DateUtils.toLocalDateTime)
-    }
+      .on(_.id === _.processId).map { case (process, version) =>
+        (process.name, version.createDate)
+      }
+      .groupBy(_._1)
+      .map{ case (name, dates) => (name, dates.map(_._2).max) }
+      .result.map { results =>
+        results.flatMap { case (k, v) => v.map(ProcessName(k) -> _)}.toMap.mapValues(DateUtils.toLocalDateTime)
+      }
   }
 
-  private def findSubprocessesModificationDate(subprocessesVersions: Map[String, LocalDateTime])(process: DisplayableProcess)
+  private def findSubprocessesModificationDate(subprocessesVersions: Map[ProcessName, LocalDateTime])(process: DisplayableProcess)
     : Map[String, LocalDateTime] = {
 
     val allSubprocesses = process.nodes.collect {
       case SubprocessInput(_, SubprocessRef(subprocessId, _), _,_) => subprocessId
     }.toSet
     val floatingVersionSubprocesses = allSubprocesses -- process.metaData.subprocessVersions.keySet
-    floatingVersionSubprocesses.flatMap(id => subprocessesVersions.get(id).map((id, _))).toMap
+    floatingVersionSubprocesses.flatMap(id => subprocessesVersions.get(ProcessName(id)).map((id, _))).toMap
   }
 
 
@@ -213,7 +214,7 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
     ProcessConverter.toDisplayableOrDie(json, process.processingType, businessView = businessView)
   }
 
-  private def latestDeployedProcessVersionsPerEnvironment(processId: String) = {
+  private def latestDeployedProcessVersionsPerEnvironment(processId: Long) = {
     latestDeployedProcessesVersionsPerEnvironment.filter(_._1._1 === processId).map { case ((_, env), deployedVersion) => (env, deployedVersion) }
   }
 

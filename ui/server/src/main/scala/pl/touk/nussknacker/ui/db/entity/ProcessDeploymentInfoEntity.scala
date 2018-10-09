@@ -18,7 +18,7 @@ object ProcessDeploymentInfoEntity {
 
   class ProcessDeploymentInfoEntity(tag: Tag) extends Table[DeployedProcessVersionEntityData](tag, "process_deployment_info") {
 
-    def processId = column[String]("process_id", NotNull)
+    def processId = column[Long]("process_id", NotNull)
 
     def processVersionId = column[Option[Long]]("process_version_id", Nullable)
 
@@ -50,7 +50,7 @@ object ProcessDeploymentInfoEntity {
 
   }
 
-  case class DeployedProcessVersionEntityData(processId: String,
+  case class DeployedProcessVersionEntityData(processId: Long,
                                               processVersionId: Option[Long],
                                               environment: String,
                                               user: String,

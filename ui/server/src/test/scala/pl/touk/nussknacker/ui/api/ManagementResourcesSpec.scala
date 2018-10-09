@@ -26,6 +26,7 @@ import pl.touk.nussknacker.ui.util.MultipartUtils
 import scala.concurrent.duration._
 import cats.syntax.semigroup._
 import cats.instances.all._
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.ui.process.ProcessId
 import pl.touk.nussknacker.ui.process.deployment.ManagementActor
 class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest
@@ -64,7 +65,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest
   test("deploy technical process and mark it as deployed") {
     implicit val loggedUser = user() copy(categoryPermissions = Map(testCategoryName->Set(Permission.Admin, Permission.Write, Permission.Deploy, Permission.Read)))
     val processId = "Process1"
-    whenReady(writeProcessRepository.saveNewProcess(ProcessId(processId), testCategoryName, CustomProcess(""), TestProcessingTypes.Streaming, false)) { res =>
+    whenReady(writeProcessRepository.saveNewProcess(ProcessName(processId), testCategoryName, CustomProcess(""), TestProcessingTypes.Streaming, false)) { res =>
       deployProcess(processId) ~> check { status shouldBe StatusCodes.OK }
       getProcess(processId) ~> check {
         val processDetails = responseAs[String].decodeOption[ProcessDetails].get

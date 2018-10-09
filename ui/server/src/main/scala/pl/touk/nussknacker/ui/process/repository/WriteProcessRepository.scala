@@ -15,6 +15,7 @@ import pl.touk.nussknacker.ui.db.DbConfig
 import pl.touk.nussknacker.ui.db.EspTables._
 import pl.touk.nussknacker.ui.db.entity.CommentEntity
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.{ProcessEntityData, ProcessType}
 import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntity.ProcessVersionEntityData
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
@@ -23,7 +24,6 @@ import pl.touk.nussknacker.ui.process.repository.ProcessRepository._
 import pl.touk.nussknacker.ui.process.repository.WriteProcessRepository.UpdateProcessAction
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.DateUtils
-import pl.touk.nussknacker.ui.validation.ProcessValidation
 import slick.dbio.DBIOAction
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -40,7 +40,7 @@ object WriteProcessRepository {
 }
 trait WriteProcessRepository {
 
-  def saveNewProcess(processId: ProcessId, category: String, processDeploymentData: ProcessDeploymentData,
+  def saveNewProcess(processName: ProcessName, category: String, processDeploymentData: ProcessDeploymentData,
                      processingType: ProcessingType, isSubprocess: Boolean)(implicit loggedUser: LoggedUser): Future[XError[Unit]]
 
   def updateProcess(action: UpdateProcessAction)
@@ -60,22 +60,21 @@ abstract class DbWriteProcessRepository[F[_]](val dbConfig: DbConfig,
   
   import driver.api._
 
-  def saveNewProcess(processId: ProcessId, category: String, processDeploymentData: ProcessDeploymentData,
+  def saveNewProcess(processName: ProcessName, category: String, processDeploymentData: ProcessDeploymentData,
                      processingType: ProcessingType, isSubprocess: Boolean)
                     (implicit loggedUser: LoggedUser): F[XError[Unit]] = {
-    // todo: initial process name == processId?
-    val processName = processId.value
-
-    val processToSave = ProcessEntityData(id = processId.value, name = processName, processCategory = category,
+    val processToSave = ProcessEntityData(id = -1L, name = processName.value, processCategory = category,
       description = None, processType = ProcessType.fromDeploymentData(processDeploymentData),
       processingType = processingType, isSubprocess = isSubprocess, isArchived = false)
 
-    val insertAction = logInfo(s"Saving process $processId by user $loggedUser").flatMap { _ =>
-      latestProcessVersions(processId).result.headOption.flatMap {
-        case Some(_) => DBIOAction.successful(ProcessAlreadyExists(processId.value).asLeft)
-        case None => processesTable.filter(_.name === processName).result.headOption.flatMap {
-          case Some(_) => DBIOAction.successful(ProcessAlreadyExists(processName).asLeft)
-          case None => (processesTable += processToSave).andThen(updateProcessInternal(processId, processDeploymentData))
+    val insertNew = processesTable.returning(processesTable.map(_.id)).into { case (entity, newId) => entity.copy(id = newId) }
+
+    val insertAction = logInfo(s"Saving process ${processName.value} by user $loggedUser").flatMap { _ =>
+      latestProcessVersions(processName).result.headOption.flatMap {
+        case Some(_) => DBIOAction.successful(ProcessAlreadyExists(processName.value).asLeft)
+        case None => processesTable.filter(_.name === processName.value).result.headOption.flatMap {
+          case Some(_) => DBIOAction.successful(ProcessAlreadyExists(processName.value).asLeft)
+          case None => (insertNew += processToSave).flatMap(entity => updateProcessInternal(ProcessId(entity.id), processDeploymentData))
         }
       }.map(_.map(_ => ()))
     }
@@ -114,8 +113,8 @@ abstract class DbWriteProcessRepository[F[_]](val dbConfig: DbConfig,
     val insertAction = for {
       _ <- rightT(logInfo(s"Updating process $processId by user $loggedUser"))
       maybeProcess <- rightT(processTableFilteredByUser.filter(_.id === processId.value).result.headOption)
-      process <- EitherT.fromEither[DB](Either.fromOption(maybeProcess, ProcessNotFoundError(processId.value)))
-      _ <- EitherT.fromEither(Either.cond(process.processType == ProcessType.fromDeploymentData(processDeploymentData), (), InvalidProcessTypeError(processId.value)))
+      process <- EitherT.fromEither[DB](Either.fromOption(maybeProcess, ProcessNotFoundError(processId.value.toString)))
+      _ <- EitherT.fromEither(Either.cond(process.processType == ProcessType.fromDeploymentData(processDeploymentData), (), InvalidProcessTypeError(processId.value.toString)))
       processesVersionCount <- rightT(processVersionsTable.filter(p => p.processId === processId.value).length.result)
       latestProcessVersion <- rightT(latestProcessVersions(processId).result.headOption)
       newProcessVersion <- EitherT.fromEither(Right(versionToInsert(latestProcessVersion, processesVersionCount, process.processingType)))
@@ -130,7 +129,7 @@ abstract class DbWriteProcessRepository[F[_]](val dbConfig: DbConfig,
 
   def deleteProcess(processId: ProcessId): F[XError[Unit]] = {
     val action : DB[XError[Unit]] = processesTable.filter(_.id === processId.value).delete.map {
-      case 0 => Left(ProcessNotFoundError(processId.value))
+      case 0 => Left(ProcessNotFoundError(processId.value.toString))
       case 1 => Right(())
     }
     run(action)
@@ -138,7 +137,7 @@ abstract class DbWriteProcessRepository[F[_]](val dbConfig: DbConfig,
   def archive(processId: ProcessId, isArchived: Boolean): F[XError[Unit]] ={
     val isArchivedQuery = for {c <- processesTable if c.id === processId.value} yield c.isArchived
     val action  : DB[XError[Unit]] = isArchivedQuery.update(isArchived).map {
-      case 0 => Left(ProcessNotFoundError(processId.value))
+      case 0 => Left(ProcessNotFoundError(processId.value.toString))
       case 1 => Right(())
     }
     run(action)
@@ -148,7 +147,7 @@ abstract class DbWriteProcessRepository[F[_]](val dbConfig: DbConfig,
   def updateCategory(processId: ProcessId, category: String)(implicit loggedUser: LoggedUser): F[XError[Unit]] = {
     val processCat = for {c <- processesTable if c.id === processId.value} yield c.processCategory
     val action  : DB[XError[Unit]] = processCat.update(category).map {
-      case 0 => Left(ProcessNotFoundError(processId.value))
+      case 0 => Left(ProcessNotFoundError(processId.value.toString))
       case 1 => Right(())
     }
     run(action)

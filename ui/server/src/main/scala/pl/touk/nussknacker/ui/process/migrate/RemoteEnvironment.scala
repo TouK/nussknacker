@@ -12,6 +12,7 @@ import argonaut.DecodeJson
 import cats.data.EitherT
 import cats.implicits._
 import pl.touk.http.argonaut.Argonaut62Support
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.codec.UiCodecs
@@ -32,7 +33,7 @@ trait RemoteEnvironment {
   def compare(localProcess: DisplayableProcess, remoteProcessVersion: Option[Long],
               businessView: Boolean = false)(implicit ec: ExecutionContext) : Future[Either[EspError, Map[String, Difference]]]
 
-  def processVersions(processId: String)(implicit ec: ExecutionContext) : Future[List[ProcessHistoryEntry]]
+  def processVersions(processName: ProcessName)(implicit ec: ExecutionContext) : Future[List[ProcessHistoryEntry]]
 
   def migrate(localProcess: DisplayableProcess, category: String)(implicit ec: ExecutionContext, loggedUser: LoggedUser) : Future[Either[EspError, Unit]]
 
@@ -117,8 +118,8 @@ trait StandardRemoteEnvironment extends Argonaut62Support with RemoteEnvironment
     }
   }
 
-  override def processVersions(processId: String)(implicit ec: ExecutionContext): Future[List[ProcessHistoryEntry]] =
-    invokeJson[ProcessDetails](HttpMethods.GET, List("processes", processId), Some("businessView=true")).map { result =>
+  override def processVersions(processName: ProcessName)(implicit ec: ExecutionContext): Future[List[ProcessHistoryEntry]] =
+    invokeJson[ProcessDetails](HttpMethods.GET, List("processes", processName.value), Some("businessView=true")).map { result =>
       result.fold(_ => List(), _.history)
     }
 

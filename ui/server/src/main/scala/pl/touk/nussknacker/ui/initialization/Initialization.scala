@@ -8,6 +8,7 @@ import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, ProcessDeploymentData}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.db.entity.EnvironmentsEntity.EnvironmentsEntityData
@@ -90,11 +91,11 @@ class TechnicalProcessUpdate(customProcesses: Map[String, String], repository: D
 
   def runOperation(implicit ec: ExecutionContext, lu: LoggedUser): DB[Unit] = {
     val results: DB[List[Unit]] = customProcesses
-      .map { case (processId, processClass) =>
+      .map { case (processName, processClass) =>
         val deploymentData = CustomProcess(processClass)
-        logger.info(s"Saving custom process $processId")
+        logger.info(s"Saving custom process $processName")
         saveOrUpdate(
-          processId = ProcessId(processId),
+          processName = ProcessName(processName),
           category = "Technical",
           deploymentData = deploymentData,
           processingType = "streaming",
@@ -104,29 +105,34 @@ class TechnicalProcessUpdate(customProcesses: Map[String, String], repository: D
     results.map(_ => ())
   }
 
-  private def saveOrUpdate(processId: ProcessId, category: String, deploymentData: ProcessDeploymentData,
+  private def saveOrUpdate(processName: ProcessName, category: String, deploymentData: ProcessDeploymentData,
                            processingType: ProcessingType, isSubprocess: Boolean)(implicit ec: ExecutionContext, lu: LoggedUser): DB[Unit] = {
     (for {
-      latestVersion <- EitherT.right[EspError](fetchingProcessRepository.fetchLatestProcessVersion(processId))
+      processIdOpt <- EitherT.right[EspError](fetchingProcessRepository.fetchProcessId(processName))
       _ <- EitherT[DB, EspError, Unit] {
-        latestVersion match {
-          case None => repository.saveNewProcess(
-            processId = processId,
-            category = category,
-            processDeploymentData = deploymentData,
-            processingType = processingType,
-            isSubprocess = isSubprocess
-          )
-          case Some(version) if version.user == Initialization.toukUser.id =>
-            repository.updateProcess(UpdateProcessAction(processId, deploymentData, "External update")).map(_.right.map(_ => ()))
-          case _ => logger.info(s"Process $processId not updated. DB version is: \n${latestVersion.flatMap(_.json).getOrElse("")}\n " +
-            s" and version from file is: \n$deploymentData")
-            DBIOAction.successful(Right(()))
+        processIdOpt match {
+          case None =>
+            repository.saveNewProcess(
+              processName = processName,
+              category = category,
+              processDeploymentData = deploymentData,
+              processingType = processingType,
+              isSubprocess = isSubprocess
+            )
+          case Some(processId) =>
+            fetchingProcessRepository.fetchLatestProcessVersion(processId).flatMap {
+              case Some(version) if version.user == Initialization.toukUser.id =>
+                repository.updateProcess(UpdateProcessAction(processId, deploymentData, "External update")).map(_.right.map(_ => ()))
+              case latestVersion => logger.info(s"Process $processId not updated. DB version is: \n${latestVersion.flatMap(_.json).getOrElse("")}\n " +
+                s" and version from file is: \n$deploymentData")
+                DBIOAction.successful(Right(()))
+            }.andThen {
+              repository.updateCategory(processId, category)
+            }
         }
       }
-      _ <- EitherT(repository.updateCategory(processId, category))
     } yield ()).value.flatMap {
-      case Left(error) => DBIOAction.failed(new RuntimeException(s"Failed to migrate $processId: $error"))
+      case Left(error) => DBIOAction.failed(new RuntimeException(s"Failed to migrate ${processName.value}: $error"))
       case Right(()) => DBIOAction.successful(())
     }
   }
@@ -148,7 +154,8 @@ class AutomaticMigration(migrations: Map[ProcessingType, ProcessMigrations],
   }
 
   private def migrateOne(processDetails: ProcessDetails)(implicit ec: ExecutionContext, lu: LoggedUser) : DB[Unit] = {
-    migrator.migrateProcess(processDetails).map(_.toUpdateAction) match {
+    // todo: unsafe processId?
+    migrator.migrateProcess(processDetails).map(_.toUpdateAction(ProcessId(processDetails.id.toLong))) match {
       case Some(action) => repository.updateProcess(action).flatMap {
         case Left(error) => DBIOAction.failed(new RuntimeException(s"Failed to migrate ${processDetails.name}: $error"))
         case Right(_) => DBIOAction.successful(())

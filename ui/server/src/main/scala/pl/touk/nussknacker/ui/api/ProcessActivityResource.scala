@@ -26,7 +26,7 @@ class ProcessActivityResource(processActivityRepository: ProcessActivityReposito
     path("processes" / Segment / "activity") { processName =>
       (get & processId(processName)) { processId =>
         complete {
-          processActivityRepository.findActivity(processId.id, processName)
+          processActivityRepository.findActivity(processId)
         }
       }
     } ~ path("processes" / Segment / LongNumber / "activity" / "comments") { (processName, versionId) =>

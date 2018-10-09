@@ -182,14 +182,11 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
             parameter('isSubprocess ? false) { isSubprocess =>
               post {
                 complete {
-                  // todo: hmm... we shouldn't probably treat name as initial id but we need some id at this point
-                  val processId = processName
-
                   typesForCategories.getTypeForCategory(category) match {
                     case Some(processingType) =>
-                      val emptyProcess = makeEmptyProcess(processId, processingType, isSubprocess)
+                      val emptyProcess = makeEmptyProcess(processName, processingType, isSubprocess)
                       writeRepository.saveNewProcess(
-                        processId = ProcessId(processId),
+                        processName = ProcessName(processName),
                         category = category,
                         processDeploymentData = emptyProcess,
                         processingType = processingType,

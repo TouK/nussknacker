@@ -22,7 +22,7 @@ object ProcessVersionEntity {
 
     def user = column[String]("user", NotNull)
 
-    def processId = column[String]("process_id", NotNull)
+    def processId = column[Long]("process_id", NotNull)
 
     def modelVersion = column[Option[Int]]("model_version", NotNull)
 
@@ -39,7 +39,7 @@ object ProcessVersionEntity {
   }
 
   case class ProcessVersionEntityData(id: Long,
-                                      processId: String,
+                                      processId: Long,
                                       json: Option[String],
                                       mainClass: Option[String],
                                       createDate: Timestamp,

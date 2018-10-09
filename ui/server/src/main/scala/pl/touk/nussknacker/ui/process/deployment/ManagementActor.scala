@@ -109,7 +109,7 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
       latestProcessEntity <- processRepository.fetchLatestProcessVersion(processId)
       result <- latestProcessEntity match {
         case Some(latestVersion) => deployAndSaveProcess(processingType, latestVersion, savepointPath)
-        case None => Future.failed(ProcessNotFoundError(processId.value))
+        case None => Future.failed(ProcessNotFoundError(processId.value.toString))
       }
     } yield result
   }
@@ -148,7 +148,7 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
   private def getProcessingType(id: ProcessId)(implicit ec: ExecutionContext, user: LoggedUser) = {
     processRepository.fetchLatestProcessDetailsForProcessId(id)
       .map(_.map(_.processingType))
-      .map(_.getOrElse(throw new RuntimeException(ProcessNotFoundError(id.value).getMessage)))
+      .map(_.getOrElse(throw new RuntimeException(ProcessNotFoundError(id.value.toString).getMessage)))
   }
 
   //during deployment using Client.run Flink holds some data in statics and there is an exception when

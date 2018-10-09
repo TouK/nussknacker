@@ -62,10 +62,10 @@ class DbSubprocessRepository(db: DbConfig, ec: ExecutionContext) extends Subproc
     db.run(action).map(_.flatten.toSet)
   }
 
-  private def fetchSubprocess(subprocessId: String, version: Long) : Future[SubprocessDetails] = {
+  private def fetchSubprocess(subprocessName: String, version: Long) : Future[SubprocessDetails] = {
     val action = for {
-      subprocessVersion <- processVersionsTable.filter(p => p.id === version && p.processId === subprocessId)
-        .join(subprocessesQuery)
+      subprocessVersion <- processVersionsTable.filter(p => p.id === version)
+        .join(subprocessesQueryByName(subprocessName))
         .on { case (latestVersion, process) => latestVersion.processId === process.id }
         .result.headOption
     } yield subprocessVersion.flatMap { case (processVersion, process) =>
@@ -73,7 +73,7 @@ class DbSubprocessRepository(db: DbConfig, ec: ExecutionContext) extends Subproc
     }
     db.run(action).flatMap {
       case Some(subproc) => Future.successful(subproc)
-      case None => Future.failed(new Exception(s"Subprocess ${subprocessId}, version: ${version} not found"))
+      case None => Future.failed(new Exception(s"Subprocess ${subprocessName}, version: ${version} not found"))
     }
   }
 
@@ -81,6 +81,10 @@ class DbSubprocessRepository(db: DbConfig, ec: ExecutionContext) extends Subproc
     processesTable
       .filter(_.isSubprocess)
       .filter(!_.isArchived)
+  }
+
+  private def subprocessesQueryByName(subprocessName: String) = {
+    subprocessesQuery.filter(_.name === subprocessName)
   }
 }
 

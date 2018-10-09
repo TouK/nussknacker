@@ -11,6 +11,7 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.StreamMetaData
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.management.FlinkProcessManagerProvider
 import pl.touk.nussknacker.ui.api._
@@ -73,10 +74,10 @@ trait EspItTest extends LazyLogging with WithDbTesting with TestPermissions { se
   val processActivityRoute = new ProcessActivityResource(processActivityRepository, processRepository)
   val attachmentsRoute = new AttachmentResources(attachmentService, processRepository)
 
-  def saveProcess(processId: String, process: EspProcess)(testCode: => Assertion): Assertion = {
-    Post(s"/processes/$processId/$testCategoryName?isSubprocess=false") ~> processesRouteWithAllPermissions ~> check {
+  def saveProcess(processName: ProcessName, process: EspProcess)(testCode: => Assertion): Assertion = {
+    Post(s"/processes/${processName.value}/$testCategoryName?isSubprocess=false") ~> processesRouteWithAllPermissions ~> check {
       status shouldBe StatusCodes.Created
-      updateProcess(processId, process)(testCode)
+      updateProcess(processName, process)(testCode)
     }
   }
 
@@ -110,20 +111,20 @@ trait EspItTest extends LazyLogging with WithDbTesting with TestPermissions { se
     }
   }
 
-  def updateProcess(processId: String, process: EspProcess)(testCode: => Assertion): Assertion = {
-    Put(s"/processes/$processId", TestFactory.posting.toEntityAsProcessToSave(process)) ~> processesRouteWithAllPermissions ~> check {
+  def updateProcess(processName: ProcessName, process: EspProcess)(testCode: => Assertion): Assertion = {
+    Put(s"/processes/${processName.value}", TestFactory.posting.toEntityAsProcessToSave(process)) ~> processesRouteWithAllPermissions ~> check {
       testCode
     }
   }
 
   def saveProcessAndAssertSuccess(processId: String, process: EspProcess): Assertion = {
-    saveProcess(processId, process) {
+    saveProcess(ProcessName(processId), process) {
       status shouldEqual StatusCodes.OK
     }
   }
 
   def updateProcessAndAssertSuccess(processId: String, process: EspProcess): Assertion = {
-    updateProcess(processId, process) {
+    updateProcess(ProcessName(processId), process) {
       status shouldEqual StatusCodes.OK
     }
   }

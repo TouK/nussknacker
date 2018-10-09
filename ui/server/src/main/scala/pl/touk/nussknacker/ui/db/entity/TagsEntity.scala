@@ -10,7 +10,7 @@ object TagsEntity {
 
     def name = column[String]("name")
 
-    def processId = column[String]("process_id", NotNull)
+    def processId = column[Long]("process_id", NotNull)
 
     def * = (name, processId) <> (TagsEntityData.apply _ tupled, TagsEntityData.unapply)
 
@@ -23,7 +23,7 @@ object TagsEntity {
     )
   }
 
-  case class TagsEntityData(name: String, processId: String)
+  case class TagsEntityData(name: String, processId: Long)
 
 }
 

@@ -5,11 +5,11 @@ import argonaut.PrettyParams
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.deployment.GraphProcess
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.ui.api.ProcessTestData
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessingTypes, WithDbTesting}
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessType
-import pl.touk.nussknacker.ui.process.ProcessId
 import pl.touk.nussknacker.ui.process.marshall.UiProcessMarshaller
 import pl.touk.nussknacker.ui.process.migrate.TestMigrations
 
@@ -32,7 +32,7 @@ class InitializationItSpec extends FlatSpec with ScalatestRouteTest with Matcher
 
     Initialization.init(migrations, db, "env1", customProcesses)
 
-    repository.fetchProcessesDetails().futureValue.map(d => (d.id, d.processType)) shouldBe List(("process1", ProcessType.Custom))
+    repository.fetchProcessesDetails().futureValue.map(d => (d.name, d.processType)) shouldBe List(("process1", ProcessType.Custom))
   }
 
   it should "migrate processes" in {
@@ -41,7 +41,7 @@ class InitializationItSpec extends FlatSpec with ScalatestRouteTest with Matcher
 
     Initialization.init(migrations, db, "env1", None)
 
-    repository.fetchProcessesDetails().futureValue.map(d => (d.id, d.modelVersion)) shouldBe List(("proc1", Some(2)))
+    repository.fetchProcessesDetails().futureValue.map(d => (d.name, d.modelVersion)) shouldBe List(("proc1", Some(2)))
   }
 
   it should "migrate processes when subprocesses present" in {
@@ -55,12 +55,12 @@ class InitializationItSpec extends FlatSpec with ScalatestRouteTest with Matcher
 
     Initialization.init(migrations, db, "env1", None)
 
-    repository.fetchProcessesDetails().futureValue.map(d => (d.id, d.modelVersion)).toSet shouldBe (1 to 20).map(id => (s"id$id", Some(2))).toSet
+    repository.fetchProcessesDetails().futureValue.map(d => (d.name, d.modelVersion)).toSet shouldBe (1 to 20).map(id => (s"id$id", Some(2))).toSet
 
   }
 
-  private def saveSampleProcess(processId: String = processId, subprocess: Boolean = false) : Unit = {
-    writeRepository.saveNewProcess(ProcessId(processId), "RTM", sampleDeploymentData(processId), TestProcessingTypes.Streaming, subprocess).futureValue
+  private def saveSampleProcess(processName: String = processId, subprocess: Boolean = false) : Unit = {
+    writeRepository.saveNewProcess(ProcessName(processName), "RTM", sampleDeploymentData(processId), TestProcessingTypes.Streaming, subprocess).futureValue
   }
 
   it should "run initialization transactionally" in {
@@ -71,7 +71,7 @@ class InitializationItSpec extends FlatSpec with ScalatestRouteTest with Matcher
 
     exception.getMessage shouldBe "made to fail.."
 
-    repository.fetchProcessesDetails().futureValue.map(d => (d.id, d.modelVersion)) shouldBe List(("proc1", Some(1)))
+    repository.fetchProcessesDetails().futureValue.map(d => (d.name, d.modelVersion)) shouldBe List(("proc1", Some(1)))
   }
 
   private val customProcesses =

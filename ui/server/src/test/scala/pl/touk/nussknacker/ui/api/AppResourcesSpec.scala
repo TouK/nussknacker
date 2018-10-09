@@ -3,15 +3,16 @@ package pl.touk.nussknacker.ui.api
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.testkit.TestProbe
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.ConfigFactory
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.nussknacker.engine.api.deployment.CustomProcess
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, TestFactory}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
-import pl.touk.nussknacker.ui.process.{JobStatusService, ProcessId}
+import pl.touk.nussknacker.ui.process.JobStatusService
 import pl.touk.nussknacker.ui.process.deployment.CheckStatus
 import pl.touk.nussknacker.ui.process.displayedgraph.ProcessStatus
 
@@ -73,9 +74,10 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest
 
   private def saveProcessWithDeployInfo(id: String) = {
     implicit val logged = TestFactory.user(testPermissionAdmin)
-    writeProcessRepository.saveNewProcess(ProcessId(id), TestFactory.testCategoryName, CustomProcess(""), TestProcessingTypes.Streaming, false)
+    writeProcessRepository.saveNewProcess(ProcessName(id), TestFactory.testCategoryName, CustomProcess(""), TestProcessingTypes.Streaming, false)
       .futureValue shouldBe Right(())
-    deploymentProcessRepository.markProcessAsDeployed(ProcessId(id), 1, TestProcessingTypes.Streaming, "", "").futureValue shouldBe (())
+    val processId = processRepository.fetchProcessId(ProcessName(id)).futureValue.get
+    deploymentProcessRepository.markProcessAsDeployed(processId, 1, TestProcessingTypes.Streaming, "", "").futureValue shouldBe (())
   }
 
 

@@ -41,7 +41,7 @@ trait ProcessJsonMigration extends SlickMigration {
     seqed <- DBIOAction.sequence(processes.map((updateOne _).tupled))
   } yield seqed
 
-  private def updateOne(id: Long, processId: String, json: Option[String]) = EspTables.processVersionsTable
+  private def updateOne(id: Long, processId: Long, json: Option[String]) = EspTables.processVersionsTable
           .filter(v => v.id === id && v.processId === processId)
           .map(_.json).update(json.map(prepareAndUpdateJson))
 

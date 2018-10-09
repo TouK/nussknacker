@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.ui.api.ProcessTestData
 import pl.touk.nussknacker.ui.api.helpers.TestPermissions
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
+import pl.touk.nussknacker.ui.process.ProcessId
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import shapeless.Typeable._
 import shapeless.syntax.typeable.typeableOps
@@ -32,7 +33,7 @@ class ProcessModelMigratorSpec extends FlatSpec with BeforeAndAfterEach with Sca
 
     extractParallelism(migrationResult) shouldBe 11
 
-    migrationResult.toUpdateAction.comment shouldBe "Migrations applied: testMigration1, testMigration2"
+    migrationResult.toUpdateAction(ProcessId(1L)).comment shouldBe "Migrations applied: testMigration1, testMigration2"
 
     val processor = extractProcessor(migrationResult)
     processor shouldBe ServiceRef(ProcessTestData.otherExistingServiceId, List())
@@ -45,7 +46,7 @@ class ProcessModelMigratorSpec extends FlatSpec with BeforeAndAfterEach with Sca
     extractParallelism(migrationResult) shouldBe 11
 
     val processor = extractProcessor(migrationResult)
-    migrationResult.toUpdateAction.comment shouldBe "Migrations applied: testMigration2"
+    migrationResult.toUpdateAction(ProcessId(1L)).comment shouldBe "Migrations applied: testMigration2"
     processor shouldBe ServiceRef(ProcessTestData.existingServiceId, List())
   }
 

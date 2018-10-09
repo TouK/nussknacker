@@ -5,6 +5,7 @@ import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
 import org.scalatest._
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.time.{Millis, Seconds, Span}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.ui.api.helpers.EspItTest
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.codec.UiCodecs._
@@ -60,7 +61,7 @@ class ProcessesNonTechnicalResourcesSpec extends FlatSpec with ScalatestRouteTes
       ("filter3", "sink2")
     )
 
-    saveProcess(processToSave.id, processToSave) {
+    saveProcess(ProcessName(processToSave.id), processToSave) {
       status shouldEqual StatusCodes.OK
       Get(s"/processes/${processToSave.id}/2?businessView=false") ~> routeWithAllPermissions ~> check {
         val processDetails = responseAs[String].decodeOption[ValidatedProcessDetails].get

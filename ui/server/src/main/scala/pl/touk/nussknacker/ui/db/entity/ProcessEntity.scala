@@ -15,7 +15,7 @@ object ProcessEntity {
 
   class ProcessEntity(tag: Tag) extends Table[ProcessEntityData](tag, "processes") {
 
-    def id = column[String]("id", O.PrimaryKey)
+    def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
 
     def name = column[String]("name", NotNull)
 
@@ -35,7 +35,7 @@ object ProcessEntity {
 
   }
 
-  case class ProcessEntityData(id: String,
+  case class ProcessEntityData(id: Long,
                                name: String,
                                description: Option[String],
                                processType: ProcessType,

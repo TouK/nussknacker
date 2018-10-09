@@ -13,7 +13,7 @@ object AttachmentEntity {
 
     def id = column[Long]("id", PrimaryKey)
 
-    def processId = column[String]("process_id", NotNull)
+    def processId = column[Long]("process_id", NotNull)
 
     def processVersionId = column[Long]("process_version_id", NotNull)
 
@@ -29,7 +29,7 @@ object AttachmentEntity {
 
   }
 
-  case class AttachmentEntityData(id: Long, processId: String, processVersionId: Long, fileName: String, filePath: String, user: String, createDate: Timestamp) {
+  case class AttachmentEntityData(id: Long, processId: Long, processVersionId: Long, fileName: String, filePath: String, user: String, createDate: Timestamp) {
     val createDateTime = DateUtils.toLocalDateTime(createDate)
   }
 

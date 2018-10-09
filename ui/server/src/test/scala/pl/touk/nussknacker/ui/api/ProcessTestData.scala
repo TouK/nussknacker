@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.api
 
 import java.time.LocalDateTime
 
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
@@ -205,10 +206,10 @@ object ProcessTestData {
     ))
   }
 
-  def validProcessWithSubprocess(id: String, subprocess: CanonicalProcess=sampleSubprocessOneOut): ProcessUsingSubprocess = {
+  def validProcessWithSubprocess(processName: ProcessName, subprocess: CanonicalProcess=sampleSubprocessOneOut): ProcessUsingSubprocess = {
     ProcessUsingSubprocess(
       process = EspProcessBuilder
-        .id(id)
+        .id(processName.value)
         .exceptionHandler()
         .source("source", existingSourceFactory)
         .subprocess(subprocess.metaData.id, subprocess.metaData.id,Nil,Map(
