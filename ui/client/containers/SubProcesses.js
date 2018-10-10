@@ -108,7 +108,6 @@ const SubProcesses = React.createClass({
         >
 
           <Thead>
-            <Th column="id">ID</Th>
             <Th column="name">Process name</Th>
             <Th column="category">Category</Th>
             <Th column="modifyDate" className="date-column">Last modification</Th>
@@ -118,7 +117,6 @@ const SubProcesses = React.createClass({
           {this.state.processes.map((process, index) => {
             return (
               <Tr className="row-hover" key={index}>
-                <Td column="id" className="blue-bar">{process.id}</Td>
                 <Td column="name">{process.name}</Td>
                 <Td column="category">{process.processCategory}</Td>
 

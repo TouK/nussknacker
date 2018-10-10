@@ -47,9 +47,8 @@ export default {
     }
   },
 
-  addError(message, error, showErrorText) {
-    console.log(error)
-    var details = showErrorText && error.responseText ? (<div key="details" className="details">{error.responseText}</div>) : null;
+  addErrorMessage(message, error, showErrorText) {
+    const details = showErrorText && error ? (<div key="details" className="details">{error}</div>) : null;
     if (notificationSystem) {
       notificationSystem.addNotification({
         message: message,
@@ -58,6 +57,11 @@ export default {
         children: [(<div className="icon" key="icon" title="" dangerouslySetInnerHTML={{__html: InlinedSvgs.tipsWarning}}/>), details]
       })
     }
+  },
+
+  addError(message, error, showErrorText) {
+    console.log(error);
+    this.addErrorMessage(message, error.responseText, showErrorText);
   },
 
   availableQueryableStates() {
@@ -239,6 +243,21 @@ export default {
 
   downloadAttachment(processId, processVersionId, attachmentId) {
     window.open(`${API_URL}/processes/${processId}/${processVersionId}/activity/attachments/${attachmentId}`)
+  },
+
+  changeProcessName(processId, newProcessName) {
+    if (!_.isEmpty(newProcessName)) {
+      return ajaxCall({
+        url: `${API_URL}/processes/${processId}/rename/${newProcessName}`,
+        type: 'PUT'
+      }).then(
+        () => { this.addInfo("Process name changed"); return true },
+        (error) => { this.addError("Failed to change process name:", error, true); return false; }
+      );
+    } else {
+      this.addErrorMessage("Failed to change process name:", "Name cannot be empty", true);
+      return Promise.resolve(false);
+    }
   },
 
   exportProcess(process) {

@@ -4,7 +4,7 @@ import _ from "lodash";
 
 const ProcessesMixin = {
   processStatusClass: (process, statusesLoaded, statuses) => {
-    const processId = process.name;
+    const processId = process.id;
     const shouldRun = process.currentlyDeployedAt.length > 0;
     const statusesKnown = statusesLoaded;
     const isRunning = statusesKnown && _.get(statuses[processId], 'isRunning');

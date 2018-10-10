@@ -67,6 +67,29 @@ class Processes extends PeriodicallyReloadingComponent {
     return this.state.filterVal.toLowerCase();
   }
 
+  processNameChanged(id, e) {
+    const newName = e.target.value;
+    this.updateProcess(id, process => process.name = newName);
+  }
+
+  changeProcessName(process, e) {
+    if (e.key === "Enter" && process.id !== process.name) {
+      HttpService.changeProcessName(process.id, process.name).then((isSuccess) => {
+        if (isSuccess) this.updateProcess(process.id, (process) => process.id = process.name)
+      });
+    }
+  }
+
+  updateProcess(id, mutator) {
+    const newProcesses = this.state.processes.slice();
+    newProcesses.filter((process) => process.id === id).forEach(mutator);
+    this.setState({processes: newProcesses});
+  }
+
+  handleBlur(process, e) {
+    this.updateProcess(process.id, (process) => process.name = process.id);
+  }
+
   render() {
     return (
       <div className="Page">
@@ -74,7 +97,7 @@ class Processes extends PeriodicallyReloadingComponent {
         <div id="process-top-bar">
           <div id="table-filter" className="input-group">
             <input type="text" className="form-control" aria-describedby="basic-addon1"
-                    value={this.state.filterVal} onChange={e => this.handleChange(e)}/>
+                   value={this.state.filterVal} onChange={e => this.handleChange(e)}/>
             <span className="input-group-addon" id="basic-addon1">
               <img id="search-icon" src={filterIcon} />
             </span>
@@ -107,7 +130,6 @@ class Processes extends PeriodicallyReloadingComponent {
         >
 
           <Thead>
-            <Th column="id">ID</Th>
             <Th column="name">Process name</Th>
             <Th column="category">Category</Th>
             <Th column="modifyDate" className="date-column">Last modification</Th>
@@ -119,8 +141,13 @@ class Processes extends PeriodicallyReloadingComponent {
           {this.state.processes.map((process, index) => {
             return (
               <Tr className="row-hover" key={index}>
-                <Td column="id" className="blue-bar">{process.id}</Td>
-                <Td column="name">{process.name}</Td>
+                <Td column="name">
+                  <input value={process.name}
+                         className="transparent"
+                         onKeyPress={(event) => this.changeProcessName(process, event)}
+                         onChange={(event) => this.processNameChanged(process.id, event)}
+                         onBlur={(event) => this.handleBlur(process, event)}/>
+                </Td>
                 <Td column="category">{process.processCategory}</Td>
                 <Td column="modifyDate" className="date-column">{DateUtils.format(process.modificationDate)}</Td>
                 <Td column="status" className="status-column">
