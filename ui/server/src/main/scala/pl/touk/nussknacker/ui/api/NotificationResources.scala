@@ -5,7 +5,7 @@ import akka.http.scaladsl.server.{Directives, Route}
 import akka.stream.Materializer
 import akka.util.Timeout
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.ui.process.deployment.{DeployInfo, DeploymentStatus, DeploymentStatusResponse}
+import pl.touk.nussknacker.ui.process.deployment._
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -49,7 +49,11 @@ class NotificationResources(managementActor: ActorRef)(implicit ec: ExecutionCon
 
   //TODO: consider 'personalization' - different message for user who is deploying
   private def toNotification(processId: String, deploymentInfo: DeployInfo): Notification = {
-    Notification(s"Process $processId is ${deploymentInfo.action.toLowerCase} by ${deploymentInfo.userId}", NotificationType.info)
+    val actionString = deploymentInfo.action match {
+      case DeploymentActionType.Deployment => "deployed"
+      case DeploymentActionType.Cancel => "cancelled"
+    }
+    Notification(s"Process $processId is $actionString by ${deploymentInfo.userId}", NotificationType.info)
   }
 
 }

@@ -41,7 +41,7 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
     case Deploy(id, user, savepointPath) =>
       ensureNoDeploymentRunning {
         val deployRes: Future[Unit] = deployProcess(id, savepointPath)(user)
-        reply(withDeploymentInfo(id, user.id, "Deployment", deployRes))
+        reply(withDeploymentInfo(id, user.id, DeploymentActionType.Deployment, deployRes))
       }
     case Snapshot(id, user, savepointDir) =>
       reply(processManager(id)(ec, user).flatMap(_.savepoint(id, savepointDir)))
@@ -51,7 +51,7 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
         val cancelRes = processManager(id).map { manager =>
           manager.cancel(id).flatMap(_ => deployedProcessRepository.markProcessAsCancelled(id, user.id, environment))
         }
-        reply(withDeploymentInfo(id, user.id, "Cancel", cancelRes))
+        reply(withDeploymentInfo(id, user.id, DeploymentActionType.Cancel, cancelRes))
       }
     case CheckStatus(id, user) if isBeingDeployed(id) =>
       val info = beingDeployed(id)
@@ -82,13 +82,13 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
       reply(Future.successful(DeploymentStatusResponse(beingDeployed)))
   }
 
-  private def withDeploymentInfo[T](id: String, userId: String, actionName: String, action: => Future[T]): Future[T] = {
-    beingDeployed += id -> DeployInfo(userId, System.currentTimeMillis(), actionName)
-    action.onComplete {
+  private def withDeploymentInfo[T](id: String, userId: String, action: DeploymentActionType, actionFuture: => Future[T]): Future[T] = {
+    beingDeployed += id -> DeployInfo(userId, System.currentTimeMillis(), action)
+    actionFuture.onComplete {
       case Success(_) => self ! DeploymentActionFinished(id, None)
       case Failure(ex) => self ! DeploymentActionFinished(id, Some(ex))
     }
-    action
+    actionFuture
   }
 
   private def reply(action: => Future[_]): Unit = {
@@ -174,7 +174,14 @@ case class Test[T](processId: String, processJson: String, test: TestData, user:
 
 case class DeploymentActionFinished(id: String, optionalFailure: Option[Throwable])
 
-case class DeployInfo(userId: String, time: Long, action: String)
+case class DeployInfo(userId: String, time: Long, action: DeploymentActionType)
+
+sealed trait DeploymentActionType
+
+object DeploymentActionType {
+  case object Deployment extends DeploymentActionType
+  case object Cancel extends DeploymentActionType
+}
 
 case object DeploymentStatus
 
