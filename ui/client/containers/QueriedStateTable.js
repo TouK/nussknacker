@@ -23,6 +23,12 @@ class QueriedStateTable extends React.Component {
 
   render() {
     const queryFormRender = () => {
+      let queryButtonTooltip
+      if (_.isEmpty(this.selectedQueryName())) {
+        queryButtonTooltip = "Query name is not selected"
+      } else if (_.isEmpty(this.selectedProcessId())) {
+        queryButtonTooltip = "Process id is not selected"
+      }
       return (
         <div>
           <div className="esp-form-row">
@@ -41,7 +47,7 @@ class QueriedStateTable extends React.Component {
           <div className="esp-form-row">
             <p>Key (optional)</p>
             <input value={this.state.key} onChange={(e) => this.setState({key: e.target.value})}/>
-            <button type="button" className="modalButton"
+            <button type="button" className="modalButton" disabled={_.isEmpty(this.selectedQueryName()) || _.isEmpty(this.selectedProcessId())} title={queryButtonTooltip}
                     onClick={this.queryState.bind(this, this.selectedProcessId(), this.selectedQueryName(), this.state.key)}>Query</button>
           </div>
         </div>

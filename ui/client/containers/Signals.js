@@ -29,6 +29,12 @@ class Signals extends React.Component {
 
   render() {
     const currentSignal = this.findSignal(this.state.signalType)
+    let sendSignalButtonTooltip
+    if (_.isEmpty(this.state.signalType)) {
+      sendSignalButtonTooltip = "Signal type is not selected"
+    } else if (_.isEmpty(this.state.processId)) {
+      sendSignalButtonTooltip = "Process id is not selected"
+    }
     //fixme simplify this view as in QueriedStateTable
     return (
       <div className="full-dark">
@@ -66,10 +72,8 @@ class Signals extends React.Component {
               )
             }) }
           </div>
-          {!_.isEmpty(this.state.signalType) ?
-            <button type="button" className="modalButton"
-                    onClick={this.sendSignal.bind(this, this.state.signalType, this.state.processId, this.state.signalParams)}>Send signal</button>
-            : null}
+          <button type="button" className="modalButton" disabled={_.isEmpty(this.state.signalType) || _.isEmpty(this.state.processId)} title={sendSignalButtonTooltip}
+                  onClick={this.sendSignal.bind(this, this.state.signalType, this.state.processId, this.state.signalParams)}>Send signal</button>
         </div>
     </div>
         <hr/>
