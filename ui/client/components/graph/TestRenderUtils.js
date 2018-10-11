@@ -31,27 +31,29 @@ export function wrapWithTestResult(fieldName, testResultsToShow, testResultsToHi
   }
 }
 
+function prettyPrint(obj) {
+  return JSON.stringify(obj, null, 2);
+}
+
 export function testResults(nodeId, testResultsToShow) {
   if (testResultsToShow && !_.isEmpty(testResultsToShow.context.variables)) {
-    var ctx = testResultsToShow.context.variables
+    const ctx = testResultsToShow.context.variables;
     return (
 
       <div className="node-table-body node-test-results">
         <div className="node-row">
           <div className="node-label">{ModalRenderUtils.renderInfo('Variables in test case')}</div>
         </div>
-        {
-          Object.keys(ctx).map((key, ikey) => {
-            return (<div className="node-row" key={ikey}>
-                <div className="node-label">{key}:</div>
-                <div className="node-value">
-                  {(ctx[key] || {}).original ? <Textarea className="node-input" readOnly={true} value={ctx[key].original}/> : null}
-                  <Textarea className="node-input" readOnly={true} value={ctx[key] !== null ? (ctx[key].pretty || ctx[key]) : "null"}/>
-                </div>
-              </div>
-            )
-          })
-        }
+        {Object.keys(ctx).map((key, ikey) =>
+          <div className="node-row" key={ikey}>
+            <div className="node-label">{key}:</div>
+            <div className="node-value">
+              {(ctx[key] || {}).original ? <Textarea className="node-input" readOnly={true} value={ctx[key].original}/> : null}
+              <Textarea className="node-input" readOnly={true}
+                        value={ctx[key] !== null ? (ctx[key].pretty || prettyPrint(ctx[key])) : "null"}/>
+            </div>
+          </div>
+        )}
         {testResultsToShow && !_.isEmpty(testResultsToShow.mockedResultsForCurrentContext) ?
           (testResultsToShow.mockedResultsForCurrentContext).map((mockedValue, index) =>
             <span className="testResultDownload">
