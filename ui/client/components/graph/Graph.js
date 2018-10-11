@@ -371,6 +371,9 @@ class Graph extends React.Component {
           }
         })
       }
+      this.processGraphPaper.on('blank:pointerdown', () => {
+        this.props.actions.displayNodeDetails(this.props.fetchedProcessDetails.json.properties)
+      })
     }
 
     hooverHandling () {
@@ -473,6 +476,7 @@ function mapState(state, props) {
         singleClickNodeDetailsEnabled: true,
         nodeIdPrefixForSubprocessTests: "",
         processToDisplay: state.graphReducer.processToDisplay,
+        fetchedProcessDetails: state.graphReducer.fetchedProcessDetails,
         processCounts: state.graphReducer.processCounts || {},
         nodeToDisplay: state.graphReducer.nodeToDisplay,
         edgeToDisplay: state.graphReducer.edgeToDisplay,
