@@ -1,8 +1,10 @@
 package pl.touk.nussknacker.ui.codec
 
 import java.time.LocalDateTime
+import java.util
 
-import argonaut.{Json, Parse}
+import argonaut._
+import Json._
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api.Displayable
@@ -40,8 +42,24 @@ class UiCodecsSpec extends FlatSpec with Matchers {
 
     variables.size shouldBe 2
     //how to make it prettier?
-    variables(0) shouldBe Parse.parse("{\"pretty\":\"{\\n  \\\"date\\\" : \\\"2010-01-01T01:01\\\",\\n  \\\"some\\\" : \\\"b\\\",\\n  \\\"number\\\" : 1,\\n  \\\"id\\\" : \\\"a\\\"\\n}\"}").right.get
-    variables(1) shouldBe Parse.parse("{\"original\":\"aa|bb\",\"pretty\":\"{\\n  \\\"fieldA\\\" : \\\"aa\\\",\\n  \\\"fieldB\\\" : \\\"bb\\\"\\n}\"}").right.get
+    variables(0) shouldBe Parse.parse("{\"pretty\":{\"id\":\"a\",\"number\":1,\"some\":\"b\",\"date\":\"2010-01-01T01:01\"}}").right.get
+    variables(1) shouldBe Parse.parse("{\"original\":\"aa|bb\",\"pretty\":{\"fieldA\":\"aa\",\"fieldB\":\"bb\"}}").right.get
+  }
+
+  it should "encode Displayable with original but only on first level" in {
+    UiCodecs.testResultsVariableEncoder("abcd") shouldBe  jObjectFields("pretty" -> jString("abcd"))
+
+    val csvRecord1 = CsvRecord(List("a", "b"))
+
+    UiCodecs.testResultsVariableEncoder(csvRecord1) shouldBe  jObjectFields(
+      "pretty" -> csvRecord1.display,
+      "original" -> jString(csvRecord1.originalDisplay.get))
+
+    val csvRecord2 = CsvRecord(List("c", "d"))
+
+    UiCodecs.testResultsVariableEncoder(util.Arrays.asList(csvRecord1, csvRecord2)) shouldBe jObjectFields(
+      "pretty" -> jArray(List(csvRecord1.display, csvRecord2.display)))
+
   }
 
   import UiCodecs._

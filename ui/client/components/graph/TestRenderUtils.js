@@ -50,7 +50,7 @@ export function testResults(nodeId, testResultsToShow) {
             <div className="node-value">
               {(ctx[key] || {}).original ? <Textarea className="node-input" readOnly={true} value={ctx[key].original}/> : null}
               <Textarea className="node-input" readOnly={true}
-                        value={ctx[key] !== null ? (ctx[key].pretty || prettyPrint(ctx[key])) : "null"}/>
+                        value={ctx[key] !== null ? prettyPrint(ctx[key].pretty) : "null"}/>
             </div>
           </div>
         )}

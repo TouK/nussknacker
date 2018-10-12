@@ -143,16 +143,13 @@ trait UiCodecs extends Codecs with Argonauts with SingletonInstances with Derive
   }
 
   val testResultsVariableEncoder : Any => Json = {
-    BestEffortJsonEncoder(failOnUnkown = false, {
-      case displayable: Displayable =>
-        val prettyDisplay = displayable.display.spaces2
-        def safeString(a: String) = Option(a).map(jString).getOrElse(jNull)
-
-        displayable.originalDisplay match {
-          case None => jObjectFields("pretty" -> safeString(prettyDisplay))
-          case Some(original) => jObjectFields("original" -> safeString(original), "pretty" -> safeString(prettyDisplay))
-        }
-    }).encode _
+    case displayable: Displayable =>
+      def safeString(a: String) = Option(a).map(jString).getOrElse(jNull)
+      displayable.originalDisplay match {
+        case None => jObjectFields("pretty" -> displayable.display)
+        case Some(original) => jObjectFields("original" -> safeString(original), "pretty" -> displayable.display)
+      }
+    case a => jObjectFields("pretty" -> BestEffortJsonEncoder(failOnUnkown = false).encode(a))
   }
 
   implicit def queryServiceResult = {
