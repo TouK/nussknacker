@@ -79,14 +79,14 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     }
 
     compilationResult.variablesInNodes shouldBe Map(
-      "id1" -> Map("input" -> Typed[SimpleRecord], "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass))),
-      "filter1" -> Map("input" -> Typed[SimpleRecord], "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass))),
-      "filter2" -> Map("input" -> Typed[SimpleRecord], "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass))),
-      "filter3" -> Map("input" -> Typed[SimpleRecord], "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass))),
-      "sampleProcessor1" -> Map("input" -> Typed[SimpleRecord], "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass))),
-      "sampleProcessor2" -> Map("input" -> Typed[SimpleRecord], "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass))),
-      "bv1" -> Map("input" -> Typed[SimpleRecord], "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass)), "out" -> Typed[SimpleRecord]),
-      "id2" -> Map("input" -> Typed[SimpleRecord], "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass)), "out" -> Typed[SimpleRecord],
+      "id1" -> Map("input" -> Typed[SimpleRecord], "meta" -> Typed[MetaVariables], "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass))),
+      "filter1" -> Map("input" -> Typed[SimpleRecord], "meta" -> Typed[MetaVariables], "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass))),
+      "filter2" -> Map("input" -> Typed[SimpleRecord], "meta" -> Typed[MetaVariables], "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass))),
+      "filter3" -> Map("input" -> Typed[SimpleRecord], "meta" -> Typed[MetaVariables], "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass))),
+      "sampleProcessor1" -> Map("input" -> Typed[SimpleRecord], "meta" -> Typed[MetaVariables], "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass))),
+      "sampleProcessor2" -> Map("input" -> Typed[SimpleRecord], "meta" -> Typed[MetaVariables], "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass))),
+      "bv1" -> Map("input" -> Typed[SimpleRecord], "meta" -> Typed[MetaVariables], "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass)), "out" -> Typed[SimpleRecord]),
+      "id2" -> Map("input" -> Typed[SimpleRecord], "meta" -> Typed[MetaVariables], "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass)), "out" -> Typed[SimpleRecord],
         "vars" -> TypedObjectTypingResult(Map(
           "v1" -> Typed[Integer],
           "mapVariable" -> TypedObjectTypingResult(Map("Field1" -> Typed[String], "Field2" -> Typed[String], "Field3" -> Typed[BigDecimal])),
@@ -163,9 +163,12 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     compilationResult.result should matchPattern {
       case Invalid(NonEmptyList(MissingService(_, _), _)) =>
     }
-    compilationResult.variablesInNodes("sink") shouldBe Map("input" -> Typed[SimpleRecord],
+    compilationResult.variablesInNodes("sink") shouldBe Map(
+      "input" -> Typed[SimpleRecord],
+      "meta" -> Typed[MetaVariables],
       "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass)),
-      "event" -> Typed[SimpleRecord])
+      "event" -> Typed[SimpleRecord]
+    )
 
     val validDefinition = baseDefinition.withService(missingServiceId, Parameter(name = "foo", typ = ClazzRef(classOf[String])))
     validate(processWithRefToMissingService, validDefinition).result should matchPattern {
@@ -207,7 +210,11 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     compilationResult.result should matchPattern {
       case Invalid(NonEmptyList(MissingSourceFactory("source", "id1"), Nil)) =>
     }
-    compilationResult.variablesInNodes("id2") shouldBe Map("input" -> Unknown, "simpleVar" -> Typed[String])
+    compilationResult.variablesInNodes("id2") shouldBe Map(
+      "input" -> Unknown,
+      "meta" -> Typed[MetaVariables],
+      "simpleVar" -> Typed[String]
+    )
 
   }
 
@@ -307,9 +314,8 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     compilationResult.result should matchPattern {
       case Invalid(NonEmptyList(ExpressionParseError("There is no property 'value3' in type 'pl.touk.nussknacker.engine.compile.ProcessValidatorSpec$AnotherSimpleRecord'", "sampleFilter2", None, _), _)) =>
     }
-    compilationResult.variablesInNodes("id2") shouldBe Map("input" -> Typed[SimpleRecord], "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass)))
-    compilationResult.variablesInNodes("id3") shouldBe Map("input" -> Typed[SimpleRecord], "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass)))
-
+    compilationResult.variablesInNodes("id2") shouldBe Map("input" -> Typed[SimpleRecord], "meta" -> Typed[MetaVariables], "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass)))
+    compilationResult.variablesInNodes("id3") shouldBe Map("input" -> Typed[SimpleRecord], "meta" -> Typed[MetaVariables], "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass)))
   }
 
   test("validate custom node return type") {
@@ -434,7 +440,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     compilationResult.result should matchPattern {
       case Invalid(NonEmptyList(OverwrittenVariable("var1", "var1overwrite"), _)) =>
     }
-    compilationResult.variablesInNodes("id2") shouldBe Map("input" -> Typed[SimpleRecord], "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass)), "var1" -> Typed[String])
+    compilationResult.variablesInNodes("id2") shouldBe Map("input" -> Typed[SimpleRecord], "meta" -> Typed[MetaVariables], "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass)), "var1" -> Typed[String])
   }
 
   test("not allow to overwrite variable by switch node") {
@@ -519,16 +525,19 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     compilationResult.result should matchPattern {
       case Valid(_) =>
     }
-    compilationResult.variablesInNodes("id2") shouldBe Map("input" -> Typed[SimpleRecord],
+    compilationResult.variablesInNodes("id2") shouldBe Map(
+      "input" -> Typed[SimpleRecord],
+      "meta" -> Typed[MetaVariables],
       "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass)),
       "var2" -> Typed[String],
       "var3" -> Typed[String])
-    compilationResult.variablesInNodes("id3") shouldBe Map("input" -> Typed[SimpleRecord],
+    compilationResult.variablesInNodes("id3") shouldBe Map(
+      "input" -> Typed[SimpleRecord],
+      "meta" -> Typed[MetaVariables],
       "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass)),
       "var2" -> Typed[String],
       "var3" -> Typed(ClazzRef[Int])
     )
-
   }
 
   test("not allow to use vars from different branches") {

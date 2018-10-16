@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.process.marshall
 
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{FlatSpec, Matchers}
+import pl.touk.nussknacker.engine.MetaVariables
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -98,7 +99,7 @@ class ProcessConverterSpec extends FlatSpec with Matchers with TableDrivenProper
         Map("e" -> List(NodeValidationError("InvalidTailOfBranch", "Invalid end of process", "Process branch can only end with sink or processor", None, errorType = NodeValidationErrorType.SaveAllowed))),
         List.empty,
         List.empty,
-        Map("s" -> Map("input" -> Typed[Null]), "v" -> Map("input" -> Typed[Null]), "e" -> Map("input" -> Typed[Null], "test" -> Typed[String]))
+        Map("s" -> Map("input" -> Typed[Null], "meta" -> Typed[MetaVariables]), "v" -> Map("input" -> Typed[Null], "meta" -> Typed[MetaVariables]), "e" -> Map("input" -> Typed[Null], "meta" -> Typed[MetaVariables], "test" -> Typed[String]))
       )
     )
 

@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.types
 
 import org.apache.commons.lang3.ClassUtils
+import pl.touk.nussknacker.engine.MetaVariables
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo}
@@ -28,7 +29,8 @@ object TypesInformationExtractor {
     classOf[java.util.Map[_, _]],
     classOf[java.math.BigDecimal],
     classOf[Number],
-    classOf[String]
+    classOf[String],
+    classOf[MetaVariables]
   ) ++ primitiveTypes ++ primitiveTypes.map(ClassUtils.primitiveToWrapper)).map(ClazzRef(_))
 
   private val primitiveTypesSimpleNames = primitiveTypes.map(_.getName).toSet

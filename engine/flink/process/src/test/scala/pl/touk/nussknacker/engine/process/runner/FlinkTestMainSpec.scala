@@ -33,7 +33,7 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
   val ProcessMarshaller = new ProcessMarshaller
 
   val modelData = ClassLoaderModelData(ConfigFactory.load(), ModelClassLoader.empty)
-  
+
   test("be able to return test results") {
     val process =
       EspProcessBuilder
@@ -313,12 +313,12 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
     def recordWithSeconds(duration: FiniteDuration) = s"0|0|0|${duration.toMillis}|0|0|0"
 
     val results = FlinkTestMain.run(modelData, ProcessMarshaller.toJson(process, PrettyParams.spaces2), TestData(List(
-            recordWithSeconds(1 second),
-            recordWithSeconds(2 second),
-            recordWithSeconds(5 second),
-            recordWithSeconds(9 second),
-            recordWithSeconds(20 second)
-          ).mkString("\n")), FlinkTestConfiguration.configuration, identity)
+      recordWithSeconds(1 second),
+      recordWithSeconds(2 second),
+      recordWithSeconds(5 second),
+      recordWithSeconds(9 second),
+      recordWithSeconds(20 second)
+    ).mkString("\n")), FlinkTestConfiguration.configuration, identity)
 
     val nodeResults = results.nodeResults
 
@@ -341,8 +341,8 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
     results.invocationResults("out").map(_.value) shouldBe List("abcdef")
   }
 
-  def nodeResult(count: Int, vars: (String, Any)*) 
-    = NodeResult(ResultContext[Any](s"proc1-id-0-$count", Map(vars: _*)))
+  def nodeResult(count: Int, vars: (String, Any)*)
+  = NodeResult(ResultContext[Any](s"proc1-id-0-$count", Map(vars: _*)))
 
 }
 

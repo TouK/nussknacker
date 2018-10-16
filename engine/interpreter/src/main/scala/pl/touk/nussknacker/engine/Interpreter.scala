@@ -195,6 +195,7 @@ class Interpreter private(listeners: Seq[ProcessListener], expressionEvaluator: 
 object Interpreter {
 
   final val InputParamName = "input"
+  final val MetaParamName = "meta"
   final val OutputParamName = "output"
 
 

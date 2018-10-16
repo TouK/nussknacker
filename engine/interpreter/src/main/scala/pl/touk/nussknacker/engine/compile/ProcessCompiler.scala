@@ -200,7 +200,10 @@ protected trait ProcessCompilerBase {
       val resultType = compiled.toOption.flatMap[Source[_]](Option(_))
         .flatMap(_.cast[ReturningType]).map(_.returnType)
         .orElse(sourceFactories.get(ref.typ).map(_.returnType)).getOrElse(Unknown)
-      Map(Interpreter.InputParamName -> resultType) ++ globalVariableTypes
+      Map(
+        Interpreter.InputParamName -> resultType,
+        Interpreter.MetaParamName -> Typed[MetaVariables]
+      ) ++ globalVariableTypes
       //TODO: here is nasty edge case - what if subprocess parameter is named like global variable?
     case SubprocessInputDefinition(_, params, _) => params.map(p => p.name -> loadFromParameter(p)).toMap ++ globalVariableTypes
   })
