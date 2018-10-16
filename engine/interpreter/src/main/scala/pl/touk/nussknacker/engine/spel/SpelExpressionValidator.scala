@@ -17,7 +17,7 @@ class SpelExpressionValidator(implicit classLoader: ClassLoader) {
     Validated.fromOption(Option(expr.asInstanceOf[standard.SpelExpression].getAST), NonEmptyList.of(ExpressionParseError("Empty expression")))
       .andThen { ast =>
        typer.typeExpression(ctx, ast).andThen {
-        case a: TypingResult if a.canBeSubclassOf(expectedType) => Valid(a)
+        case a: TypingResult if a.canBeSubclassOf(expectedType) || expectedType.clazz == classOf[SpelExpressionRepr] => Valid(a)
         case a: TypingResult => Invalid(NonEmptyList.of(ExpressionParseError(s"Bad expression type, expected: ${expectedType.refClazzName}, found: ${a.display}")))
       }
     }

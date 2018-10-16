@@ -18,7 +18,7 @@ import org.springframework.expression.spel.{SpelCompilerMode, SpelEvaluationExce
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.lazyy.{ContextWithLazyValuesProvider, LazyContext, LazyValuesProvider}
-import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.typed.{ClazzRef, TypedMap}
 import pl.touk.nussknacker.engine.compile.ValidationContext
 import pl.touk.nussknacker.engine.compiledgraph.expression.{ExpressionParseError, ExpressionParser, ValueWithLazyContext}
@@ -78,6 +78,10 @@ class SpelExpression(parsed: ParsedSpelExpression,
 
   override def evaluate[T](ctx: Context,
                            lazyValuesProvider: LazyValuesProvider): Future[ValueWithLazyContext[T]] = logOnException(ctx) {
+    if (expectedReturnType == ClazzRef[SpelExpressionRepr]) {
+      return Future.successful(ValueWithLazyContext(SpelExpressionRepr(parsed.parsed, ctx, original).asInstanceOf[T], ctx.lazyContext))
+    }
+
     val simpleContext = new StandardEvaluationContext()
     val locator = new StandardTypeLocator(classLoader)
     expressionImports.foreach(locator.registerImport)
@@ -157,7 +161,6 @@ class SpelExpressionParser(expressionFunctions: Map[String, Method], expressionI
   override def parseWithoutContextValidation(original: String, expectedType: ClazzRef): Validated[ExpressionParseError, compiledgraph.expression.Expression] = {
     Validated.catchNonFatal(parser.parseExpression(original)).leftMap(ex => ExpressionParseError(ex.getMessage)).map { parsed =>
       expression(ParsedSpelExpression(original, () => parser.parseExpression(original), parsed), expectedType)
-
     }
   }
 

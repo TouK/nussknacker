@@ -3,7 +3,8 @@ package pl.touk.nussknacker.engine
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.ValidatedNel
 import com.typesafe.config.{Config, ConfigFactory}
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.{FlatSpec, FunSuite, Matchers}
+import org.springframework.expression.spel.standard.SpelExpression
 import pl.touk.nussknacker.engine.InterpreterSpec._
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.lazyy.UsingLazyValues
@@ -26,6 +27,7 @@ import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
+import pl.touk.nussknacker.engine.spel.SpelExpressionRepr
 import pl.touk.nussknacker.engine.testing.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.util.{LoggingListener, SynchronousExecutionContext}
 
@@ -33,14 +35,15 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Success, Try}
 
-class InterpreterSpec extends FlatSpec with Matchers {
+class InterpreterSpec extends FunSuite with Matchers {
 
   import pl.touk.nussknacker.engine.util.Implicits._
   import spel.Implicits._
 
   val servicesDef = Map(
     "accountService" -> AccountService,
-    "dictService" -> NameDictService
+    "dictService" -> NameDictService,
+    "spelNodeService" -> SpelNodeService
   )
 
   def listenersDef(listener: Option[ProcessListener] = None): Seq[ProcessListener] =
@@ -106,14 +109,14 @@ class InterpreterSpec extends FlatSpec with Matchers {
     case Invalid(err) => throw new IllegalArgumentException(err.toList.mkString("Compilation errors: ", ", ", ""))
   }
 
-  it should "finish with returned value" in {
+  test("finish with returned value") {
     val process = GraphBuilder.source("start", "transaction-source")
       .sink("end", "#input.msisdn", "dummySink")
 
     interpretTransaction(process, Transaction(msisdn = "125")) should equal("125")
   }
 
-  it should "filter out based on expression" in {
+  test("filter out based on expression") {
 
     val falseEnd = GraphBuilder
       .sink("falseEnd", "'d2'", "dummySink")
@@ -127,8 +130,19 @@ class InterpreterSpec extends FlatSpec with Matchers {
     interpretTransaction(process, Transaction(accountId = "122")) should equal("d2")
 
   }
+  
+  test("be able to use SpelExpressionRepr") {
+    
+    val process = GraphBuilder
+      .source("start", "transaction-source")
+      .enricher("customNode", "rawExpression", "spelNodeService", "expression" -> "#input.accountId == '11' ? 22 : 33")
+      .sink("end", "#rawExpression", "dummySink")
 
-  it should "ignore disabled filters" in {
+    interpretTransaction(process, Transaction(accountId = "123")) should equal("#input.accountId == '11' ? 22 : 33 - Ternary")
+    
+  }
+
+  test("ignore disabled filters") {
 
     val process = GraphBuilder
       .source("start", "transaction-source")
@@ -138,7 +152,7 @@ class InterpreterSpec extends FlatSpec with Matchers {
     interpretTransaction(process, Transaction(accountId = "123")) should equal("d1")
   }
 
-  it should "ignore disabled sinks" in {
+  test("ignore disabled sinks") {
     val process = SourceNode(
           Source("start", SourceRef("transaction-source", List.empty)),
           EndingNode(Sink("end", SinkRef("dummySink", List.empty), isDisabled = Some(true)))
@@ -147,7 +161,7 @@ class InterpreterSpec extends FlatSpec with Matchers {
     assert(interpretTransaction(process, Transaction(accountId = "123")) == null)
   }
 
-  it should "ignore disabled processors" in {
+  test("ignore disabled processors") {
 
     var nodes = List[Any]()
 
@@ -169,7 +183,7 @@ class InterpreterSpec extends FlatSpec with Matchers {
     nodes shouldBe List("enabled")
   }
 
-  it should "invoke processors" in {
+  test("invoke processors") {
 
     val accountId = "333"
     var result: Any = ""
@@ -193,7 +207,7 @@ class InterpreterSpec extends FlatSpec with Matchers {
 
   }
 
-  it should "build node graph ended-up with processor" in {
+  test("build node graph ended-up with processor") {
 
     val accountId = "333"
     var result: Any = ""
@@ -217,7 +231,7 @@ class InterpreterSpec extends FlatSpec with Matchers {
 
   }
 
-  it should "enrich context" in {
+  test("enrich context") {
     val process = GraphBuilder
       .source("start", "transaction-source")
       .enricher("filter", "account", "accountService", "id" -> "#input.accountId")
@@ -226,7 +240,7 @@ class InterpreterSpec extends FlatSpec with Matchers {
     interpretTransaction(process, Transaction(accountId = "123")) should equal("zielonka")
   }
 
-  it should "build variable" in {
+  test("build variable") {
     val process = GraphBuilder
       .source("startVB", "transaction-source")
       .buildVariable("buildVar", "fooVar", "accountId" -> "#input.accountId")
@@ -235,7 +249,7 @@ class InterpreterSpec extends FlatSpec with Matchers {
     interpretTransaction(process, Transaction(accountId = "123")) should equal("123")
   }
 
-  it should "choose based on expression" in {
+  test("choose based on expression") {
     val process = GraphBuilder
       .source("start", "transaction-source")
       .switch("switch", "#input.msisdn", "msisdn",
@@ -249,7 +263,7 @@ class InterpreterSpec extends FlatSpec with Matchers {
 
   }
 
-  it should "lazy enrich context" in {
+  test("lazy enrich context") {
 
     val process = GraphBuilder
       .source("start", "transaction-source")
@@ -261,7 +275,7 @@ class InterpreterSpec extends FlatSpec with Matchers {
     AccountService.invocations shouldEqual 1
   }
 
-  it should "lazy enrich nested value" in {
+  test("lazy enrich nested value") {
 
     val process = GraphBuilder
       .source("start", "transaction-source")
@@ -274,7 +288,7 @@ class InterpreterSpec extends FlatSpec with Matchers {
     NameDictService.invocations shouldEqual 1
   }
 
-  it should "lazy enrich multiple values with the same service" in {
+  test("lazy enrich multiple values with the same service") {
 
     val process = GraphBuilder
       .source("start", "transaction-source")
@@ -287,7 +301,7 @@ class InterpreterSpec extends FlatSpec with Matchers {
     NameDictService.invocations shouldEqual 2
   }
 
-  it should "lazy enrich context with dependent fields" in {
+  test("lazy enrich context with dependent fields") {
 
     val process = GraphBuilder
       .source("start", "transaction-source")
@@ -300,7 +314,7 @@ class InterpreterSpec extends FlatSpec with Matchers {
   }
 
 
-  it should "invoke listeners" in {
+  test("invoke listeners") {
 
     var nodeResults = List[String]()
 
@@ -353,7 +367,7 @@ class InterpreterSpec extends FlatSpec with Matchers {
 
   }
 
-  it should "handle subprocess" in {
+  test("handle subprocess") {
     val process = ProcessCanonizer.canonize(EspProcessBuilder.id("test")
       .exceptionHandler()
       .source("source", "transaction-source")
@@ -379,7 +393,7 @@ class InterpreterSpec extends FlatSpec with Matchers {
     interpretTransaction(resolvedValidated, Transaction(accountId = "a"), List()) shouldBe "result"
   }
 
-  it should "handle subprocess with two occurrences" in {
+  test("handle subprocess with two occurrences") {
     val process = ProcessCanonizer.canonize(EspProcessBuilder.id("test")
       .exceptionHandler()
       .source("source", "transaction-source")
@@ -410,7 +424,7 @@ class InterpreterSpec extends FlatSpec with Matchers {
   }
 
 
-  it should "handle nested subprocess" in {
+  test("handle nested subprocess") {
     val process = ProcessCanonizer.canonize(EspProcessBuilder.id("test")
       .exceptionHandler()
       .source("source", "transaction-source")
@@ -442,7 +456,7 @@ class InterpreterSpec extends FlatSpec with Matchers {
     interpretTransaction(resolvedValidated, Transaction(accountId = "a"), List()) shouldBe "result"
   }
 
-  it should "handle subprocess with more than one output" in {
+  test("handle subprocess with more than one output") {
     val process = ProcessCanonizer.canonize(EspProcessBuilder.id("test")
       .exceptionHandler()
       .source("source", "transaction-source")
@@ -471,7 +485,7 @@ class InterpreterSpec extends FlatSpec with Matchers {
     interpretTransaction(resolvedValidated, Transaction(accountId = "b"), List()) shouldBe "result2"
   }
 
-  it should "handle subprocess at end" in {
+  test("handle subprocess at end") {
     val process = ProcessCanonizer.canonize(EspProcessBuilder.id("test")
       .exceptionHandler()
       .source("source", "transaction-source")
@@ -493,7 +507,7 @@ class InterpreterSpec extends FlatSpec with Matchers {
 
   }
 
-  it should "recognize exception thrown from service as direct exception" in {
+  test("recognize exception thrown from service as direct exception") {
 
     val process = GraphBuilder
       .source("start", "transaction-source")
@@ -505,7 +519,7 @@ class InterpreterSpec extends FlatSpec with Matchers {
     }.getMessage shouldBe "Fail?"
   }
 
-  it should "recognize exception thrown from service as failed future" in {
+  test("recognize exception thrown from service as failed future") {
 
     val process = GraphBuilder
       .source("start", "transaction-source")
@@ -517,7 +531,7 @@ class InterpreterSpec extends FlatSpec with Matchers {
     }.getMessage shouldBe "Fail?"
   }
 
-  it should "not evaluate disabled filters" in {
+  test("not evaluate disabled filters") {
 
     val process = GraphBuilder.source("start", "transaction-source")
       .filter("errorFilter", "1/0 == 0", Option(true))
@@ -591,6 +605,16 @@ object InterpreterSpec {
     def clear(): Unit = {
       invocations = 0
     }
+  }
+  
+  object SpelNodeService extends Service {
+    
+   
+    @MethodToInvoke
+    def invoke(@ParamName("expression") expr: SpelExpressionRepr) = {
+      Future.successful(expr.original + " - " + expr.parsed.asInstanceOf[SpelExpression].getAST.getClass.getSimpleName)
+    }
+    
   }
 
   object TransactionSource extends SourceFactory[Transaction] {
