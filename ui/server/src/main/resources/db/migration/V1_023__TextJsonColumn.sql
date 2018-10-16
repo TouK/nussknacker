@@ -1,0 +1,1 @@
+ALTER TABLE "process_versions" ALTER COLUMN "json" VARCHAR2(500000);
