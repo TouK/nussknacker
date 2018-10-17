@@ -8,7 +8,6 @@ import TestResultUtils from "../../common/TestResultUtils";
 export function wrapWithTestResult(fieldName, testResultsToShow, testResultsToHide, toggleTestResult, field) {
   const testValue = fieldName ? (testResultsToShow && testResultsToShow.expressionResults[fieldName]) : null
   const shouldHideTestResults = testResultsToHide.has(fieldName)
-  const hiddenClassPart = (shouldHideTestResults ? " partly-hidden" : "")
   const showIconClass = shouldHideTestResults ? "glyphicon glyphicon-eye-close" : "glyphicon glyphicon-eye-open"
   if (testValue) {
     return (
@@ -18,11 +17,7 @@ export function wrapWithTestResult(fieldName, testResultsToShow, testResultsToHi
           <div className="node-label">{ModalRenderUtils.renderInfo('Value evaluated in test case')}
             {testValue.pretty ? <span className={showIconClass} onClick={e => toggleTestResult(fieldName)}/> : null}
           </div>
-          <div className={"node-value" + hiddenClassPart}>
-            {testValue.original ? <Textarea className="node-input" readOnly={true} value={testValue.original}/> : null}
-            <Textarea rows={1} cols={50} className="node-input" value={testValue.pretty || testValue} readOnly={true}/>
-            {shouldHideTestResults ? <div className="fadeout"></div> : null}
-          </div>
+          {showTestValue(testValue, shouldHideTestResults)}
         </div>
       </div>
     )
@@ -33,6 +28,16 @@ export function wrapWithTestResult(fieldName, testResultsToShow, testResultsToHi
 
 function prettyPrint(obj) {
   return JSON.stringify(obj, null, 2);
+}
+
+function showTestValue(testValue, shouldHideTestResults) {
+  const hiddenClassPart = (shouldHideTestResults ? " partly-hidden" : "");
+  return (<div className={"node-value" + hiddenClassPart}>
+    {(testValue || {}).original ? <Textarea className="node-input" readOnly={true} value={testValue.original}/> : null}
+    <Textarea className="node-input" readOnly={true}
+              value={testValue !== null ? prettyPrint(testValue.pretty) : "null"}/>
+    {shouldHideTestResults ? <div className="fadeout"></div> : null}
+  </div>);
 }
 
 export function testResults(nodeId, testResultsToShow) {
@@ -47,11 +52,7 @@ export function testResults(nodeId, testResultsToShow) {
         {Object.keys(ctx).map((key, ikey) =>
           <div className="node-row" key={ikey}>
             <div className="node-label">{key}:</div>
-            <div className="node-value">
-              {(ctx[key] || {}).original ? <Textarea className="node-input" readOnly={true} value={ctx[key].original}/> : null}
-              <Textarea className="node-input" readOnly={true}
-                        value={ctx[key] !== null ? prettyPrint(ctx[key].pretty) : "null"}/>
-            </div>
+            {showTestValue(ctx[key], false)}
           </div>
         )}
         {testResultsToShow && !_.isEmpty(testResultsToShow.mockedResultsForCurrentContext) ?
