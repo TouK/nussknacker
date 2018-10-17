@@ -69,6 +69,13 @@ class CalculateCountsDialog extends React.Component {
       .then((processCounts) => this.props.actions.displayProcessCounts(processCounts))
   }
 
+  setRawDate = (date, stateChange) => {
+    stateChange(Moment(date, this.dateFormat))
+  }
+
+  setDateFrom = (date) => this.setState({processCountsDateFrom: date})
+  setDateTo = (date) => this.setState({processCountsDateTo: date})
+
   render() {
     return (
       <GenericModalDialog init={() => this.setState(this.initState)}
@@ -81,7 +88,8 @@ class CalculateCountsDialog extends React.Component {
             timeFormat="HH:mm"
             timeIntervals={15}
             dateFormat={this.dateFormat}
-            onChange={(e) => this.setState({processCountsDateFrom: e})}
+            onChange={(e) => this.setDateFrom(e)}
+            onChangeRaw={(event) => this.setRawDate(event.target.value, this.setDateFrom)}
           />
         </div>
         <p>Process counts to</p>
@@ -92,7 +100,8 @@ class CalculateCountsDialog extends React.Component {
             timeFormat="HH:mm"
             timeIntervals={15}
             dateFormat={this.dateFormat}
-            onChange={(e) => this.setState({processCountsDateTo: e})}
+            onChange={(e) => this.setDateTo(e)}
+            onChangeRaw={(event) => this.setRawDate(event.target.value, this.setDateTo)}
           />
         </div>
         <p>Quick ranges</p>
