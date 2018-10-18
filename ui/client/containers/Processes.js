@@ -73,9 +73,13 @@ class Processes extends PeriodicallyReloadingComponent {
   }
 
   changeProcessName(process, e) {
+    e.persist();
     if (e.key === "Enter" && process.id !== process.name) {
       HttpService.changeProcessName(process.id, process.name).then((isSuccess) => {
-        if (isSuccess) this.updateProcess(process.id, (process) => process.id = process.name)
+        if (isSuccess) {
+          this.updateProcess(process.id, (process) => process.id = process.name);
+          e.target.blur();
+        }
       });
     }
   }
@@ -122,8 +126,8 @@ class Processes extends PeriodicallyReloadingComponent {
            pageButtonLimit={5}
            previousPageLabel="<"
            nextPageLabel=">"
-           sortable={['id', 'name', 'category', 'modifyDate']}
-           filterable={['id', 'name', 'category']}
+           sortable={['name', 'category', 'modifyDate']}
+           filterable={['name', 'category']}
            hideFilterInput
            filterBy={this.getFilterValue()}
 
@@ -141,7 +145,7 @@ class Processes extends PeriodicallyReloadingComponent {
           {this.state.processes.map((process, index) => {
             return (
               <Tr className="row-hover" key={index}>
-                <Td column="name">
+                <Td column="name" value={process.id}>
                   <input value={process.name}
                          className="transparent"
                          onKeyPress={(event) => this.changeProcessName(process, event)}
