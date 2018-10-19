@@ -2,11 +2,11 @@ import _ from "lodash";
 
 export const visualizationRouterPath = '/visualization/:processId'
 
-export function visualizationUrl(processId, nodeId, edgeId) {
+export function visualizationUrl(processName, nodeId, edgeId) {
   if (!_.isEmpty(nodeId) && !_.isEmpty(edgeId)) {
     throw new Error("cannot visualize both nodeId and edgeId")
   }
-  const baseUrl = `/visualization/${encodeURIComponent(processId)}`
+  const baseUrl = `/visualization/${encodeURIComponent(processName)}`
   const nodeIdPart = nodeId ? this.nodeIdPart(nodeId) : ""
   const edgeIdPart = edgeId ? this.edgeIdPart(edgeId) : ""
   return baseUrl + nodeIdPart + edgeIdPart

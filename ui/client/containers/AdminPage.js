@@ -95,7 +95,7 @@ class ProcessSearch extends React.Component {
   render() {
     const found = _.map(ProcessUtils.search(this.props.processes, this.state.componentToFind), (result) => {
       return {
-        process: result.process.id,
+        process: result.process.name,
         node: result.node.id,
         category: result.process.processCategory,
         isDeployed: result.process.currentlyDeployedAt.length > 0

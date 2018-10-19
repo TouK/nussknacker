@@ -220,7 +220,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
       status shouldEqual StatusCodes.OK
       val resp = responseAs[String].decodeOption[List[BasicProcess]].get
       withClue(resp) {
-        resp.count(_.id == SampleProcess.process.id) shouldBe 1
+        resp.count(_.name == SampleProcess.process.id) shouldBe 1
       }
     }
   }

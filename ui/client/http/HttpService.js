@@ -245,10 +245,10 @@ export default {
     window.open(`${API_URL}/processes/${processId}/${processVersionId}/activity/attachments/${attachmentId}`)
   },
 
-  changeProcessName(processId, newProcessName) {
+  changeProcessName(processName, newProcessName) {
     if (!_.isEmpty(newProcessName)) {
       return ajaxCall({
-        url: `${API_URL}/processes/${processId}/rename/${newProcessName}`,
+        url: `${API_URL}/processes/${processName}/rename/${newProcessName}`,
         type: 'PUT'
       }).then(
         () => { this.addInfo("Process name changed"); return true },

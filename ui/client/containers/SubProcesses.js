@@ -29,7 +29,7 @@ const SubProcesses = React.createClass({
       showLoader: true,
       showAddProcess: false,
       currentPage: 0,
-      sort: { column: "id", direction: 1}
+      sort: { column: "name", direction: 1}
     }
   },
 
@@ -57,7 +57,7 @@ const SubProcesses = React.createClass({
 
 
   showProcess(process) {
-    browserHistory.push(VisualizationUrl.visualizationUrl(process.id))
+    browserHistory.push(VisualizationUrl.visualizationUrl(process.name))
   },
 
   handleChange(event) {

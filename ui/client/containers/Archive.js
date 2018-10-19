@@ -23,7 +23,7 @@ const Archive = React.createClass({
       showLoader: true,
       showAddProcess: false,
       currentPage: 0,
-      sort: { column: "id", direction: 1}
+      sort: { column: "name", direction: 1}
     }
   },
 
@@ -58,7 +58,7 @@ const Archive = React.createClass({
 
 
   showProcess(process) {
-    browserHistory.push('/visualization/' + process.id)
+    browserHistory.push('/visualization/' + process.name)
   },
 
   handleChange(event) {

@@ -179,6 +179,6 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest
 
 
   def decodeDetailsFromAll: ProcessRepository.BasicProcess = {
-    responseAs[String].decodeOption[List[BasicProcess]].flatMap(_.find(_.id == SampleProcess.process.id)).get
+    responseAs[String].decodeOption[List[BasicProcess]].flatMap(_.find(_.name == SampleProcess.process.id)).get
   }
 }

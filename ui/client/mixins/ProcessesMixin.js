@@ -4,10 +4,10 @@ import _ from "lodash";
 
 const ProcessesMixin = {
   processStatusClass: (process, statusesLoaded, statuses) => {
-    const processId = process.id;
+    const processName = process.name;
     const shouldRun = process.currentlyDeployedAt.length > 0;
     const statusesKnown = statusesLoaded;
-    const isRunning = statusesKnown && _.get(statuses[processId], 'isRunning');
+    const isRunning = statusesKnown && _.get(statuses[processName], 'isRunning');
     if (isRunning) {
       return "status-running";
     } else if (shouldRun) {
@@ -28,12 +28,12 @@ const ProcessesMixin = {
   },
 
   showMetrics: process => {
-    browserHistory.push('/metrics/' + process.id)
+    browserHistory.push('/metrics/' + process.name);
   },
 
   showProcess: process => {
-    browserHistory.push(VisualizationUrl.visualizationUrl(process.id))
+    browserHistory.push(VisualizationUrl.visualizationUrl(process.name));
   }
-}
+};
 
 export default ProcessesMixin

@@ -44,8 +44,7 @@ trait ProcessRepository[F[_]] extends Repository[F] {
 object ProcessRepository {
 
   // todo: id -> ProcessName, name -> ProcessName
-  case class BasicProcess(id: String,
-                          name: String,
+  case class BasicProcess(name: String,
                           processCategory: String,
                           processType: ProcessType,
                           processingType: ProcessingType,
@@ -53,7 +52,7 @@ object ProcessRepository {
                           modificationDate: LocalDateTime,
                           currentlyDeployedAt: Set[String])
 
-  // todo: id -> ProcessId, name -> ProcessName; create separate object for frontend purposes with id -> ProcessName
+  // todo: name -> ProcessName
   case class BaseProcessDetails[ProcessShape](id: String,
                                               name: String,
                                               processVersionId: Long,
@@ -73,7 +72,6 @@ object ProcessRepository {
     def mapProcess[NewShape](action: ProcessShape => NewShape) : BaseProcessDetails[NewShape] = copy(json = json.map(action))
 
     def toBasicProcess: BasicProcess = BasicProcess(
-      id = name,
       name = name,
       processCategory = processCategory,
       processType = processType,

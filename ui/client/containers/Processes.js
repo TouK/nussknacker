@@ -29,7 +29,7 @@ class Processes extends PeriodicallyReloadingComponent {
       showLoader: true,
       showAddProcess: false,
       currentPage: 0,
-      sort: { column: "id", direction: 1}
+      sort: { column: "name", direction: 1}
     }
 
     Object.assign(this, ProcessesMixin)
@@ -46,6 +46,8 @@ class Processes extends PeriodicallyReloadingComponent {
   reloadProcesses() {
     HttpService.fetchProcesses().then (fetchedProcesses => {
       if (!this.state.showAddProcess) {
+        fetchedProcesses = _.clone(fetchedProcesses);
+        fetchedProcesses.forEach((process) => process.editedName = process.name);
         this.setState({processes: fetchedProcesses, showLoader: false})
       }
     }).catch(this.setState({ showLoader: false }))
@@ -67,31 +69,31 @@ class Processes extends PeriodicallyReloadingComponent {
     return this.state.filterVal.toLowerCase();
   }
 
-  processNameChanged(id, e) {
+  processNameChanged(name, e) {
     const newName = e.target.value;
-    this.updateProcess(id, process => process.name = newName);
+    this.updateProcess(name, process => process.editedName = newName);
   }
 
   changeProcessName(process, e) {
     e.persist();
-    if (e.key === "Enter" && process.id !== process.name) {
-      HttpService.changeProcessName(process.id, process.name).then((isSuccess) => {
+    if (e.key === "Enter" && process.editedName !== process.name) {
+      HttpService.changeProcessName(process.name, process.editedName).then((isSuccess) => {
         if (isSuccess) {
-          this.updateProcess(process.id, (process) => process.id = process.name);
+          this.updateProcess(process.name, (process) => process.name = process.editedName);
           e.target.blur();
         }
       });
     }
   }
 
-  updateProcess(id, mutator) {
+  updateProcess(name, mutator) {
     const newProcesses = this.state.processes.slice();
-    newProcesses.filter((process) => process.id === id).forEach(mutator);
+    newProcesses.filter((process) => process.name === name).forEach(mutator);
     this.setState({processes: newProcesses});
   }
 
   handleBlur(process, e) {
-    this.updateProcess(process.id, (process) => process.name = process.id);
+    this.updateProcess(process.name, (process) => process.editedName = process.name);
   }
 
   render() {
@@ -145,11 +147,11 @@ class Processes extends PeriodicallyReloadingComponent {
           {this.state.processes.map((process, index) => {
             return (
               <Tr className="row-hover" key={index}>
-                <Td column="name" value={process.id}>
-                  <input value={process.name}
+                <Td column="name" value={process.name}>
+                  <input value={process.editedName}
                          className="transparent"
                          onKeyPress={(event) => this.changeProcessName(process, event)}
-                         onChange={(event) => this.processNameChanged(process.id, event)}
+                         onChange={(event) => this.processNameChanged(process.name, event)}
                          onBlur={(event) => this.handleBlur(process, event)}/>
                 </Td>
                 <Td column="category">{process.processCategory}</Td>
