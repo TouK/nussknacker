@@ -3,9 +3,10 @@ package pl.touk.nussknacker.ui.process.uiconfig.defaults
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.Parameter
+import pl.touk.nussknacker.engine.definition.defaults.NodeDefinition
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.ui.api.NodeDefinition
+import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 
 class ParameterEvaluatorSpec extends FlatSpec with Matchers {
   private val DEFAULT_PARAMETER_NAME = "parameter"
@@ -40,7 +41,8 @@ class ParameterEvaluatorSpec extends FlatSpec with Matchers {
     DefaultValueExtractorChain(
       ParamDefaultValueConfig(
         Map(DEFINED_NODE_NAME -> Map(DEFAULT_PARAMETER_NAME -> DEFAULT_PARAMETER_VALUE))
-      )
+      ),
+      ModelClassLoader.empty
     )
   )
   behavior of "ParameterEvaluator"

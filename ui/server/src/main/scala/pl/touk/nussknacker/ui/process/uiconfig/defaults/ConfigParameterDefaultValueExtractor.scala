@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.process.uiconfig.defaults
 
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor
-import pl.touk.nussknacker.ui.api.NodeDefinition
+import pl.touk.nussknacker.engine.definition.defaults.{NodeDefinition, ParameterDefaultValueExtractorStrategy}
 
 class ConfigParameterDefaultValueExtractor(config: ParamDefaultValueConfig) extends ParameterDefaultValueExtractorStrategy {
   override def evaluateParameterDefaultValue(nodeDefinition: NodeDefinition,

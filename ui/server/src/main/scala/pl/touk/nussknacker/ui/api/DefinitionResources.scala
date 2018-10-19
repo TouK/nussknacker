@@ -28,7 +28,7 @@ import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.EdgeType.{F
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessRepository}
 import pl.touk.nussknacker.ui.process.uiconfig.SingleNodeConfig
-import pl.touk.nussknacker.ui.process.uiconfig.defaults.{DefaultValueExtractorChain, ParamDefaultValueConfig, ParameterDefaultValueExtractorStrategy, ParameterEvaluatorExtractor}
+import pl.touk.nussknacker.ui.process.uiconfig.defaults.{DefaultValueExtractorChain, ParamDefaultValueConfig, ParameterEvaluatorExtractor}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, PermissionSyntax}
 import pl.touk.nussknacker.ui.util.EspPathMatchers
 
@@ -36,6 +36,7 @@ import scala.concurrent.ExecutionContext
 import scala.runtime.BoxedUnit
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import pl.touk.nussknacker.engine.definition.defaults.{NodeDefinition, ParameterDefaultValueExtractorStrategy}
 
 class DefinitionResources(modelData: Map[ProcessingType, ModelData],
                           subprocessRepository: SubprocessRepository)
@@ -63,7 +64,7 @@ class DefinitionResources(modelData: Map[ProcessingType, ModelData],
                 val nodesConfig = processConfig.getOrElse[Map[String, SingleNodeConfig]]("nodes", Map.empty)
 
                 val defaultParametersValues = ParamDefaultValueConfig(nodesConfig.map { case (k, v) => (k, v.defaultValues.getOrElse(Map.empty)) })
-                val defaultParametersFactory = DefaultValueExtractorChain(defaultParametersValues)
+                val defaultParametersFactory = DefaultValueExtractorChain(defaultParametersValues, modelDataForType.modelClassLoader)
 
                 val nodeCategoryMapping = processConfig.getOrElse[Map[String, String]]("nodeCategoryMapping", Map.empty)
                 val additionalPropertiesLabels = processConfig.getOrElse[Map[String, String]]("additionalFields.propertiesLabels", Map.empty)
@@ -168,7 +169,6 @@ object SortedNodeGroup {
 }
 
 case class NodeGroup(name: String, possibleNodes: List[NodeToAdd])
-case class NodeDefinition(id: String, parameters: List[DefinitionExtractor.Parameter])
 
 //TODO: some refactoring?
 import PermissionSyntax._, pl.touk.nussknacker.ui.security.api.Permission._

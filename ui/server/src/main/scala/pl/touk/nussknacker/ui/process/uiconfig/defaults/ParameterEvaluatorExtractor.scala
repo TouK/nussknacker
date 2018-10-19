@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.ui.process.uiconfig.defaults
 
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor
+import pl.touk.nussknacker.engine.definition.defaults.{NodeDefinition, ParameterDefaultValueExtractorStrategy}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.ui.api.NodeDefinition
 
 class ParameterEvaluatorExtractor(defaultValueEvaluator: ParameterDefaultValueExtractorStrategy) {
   def evaluateParameters(nodeDefinition: NodeDefinition): List[Parameter] = {

@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process.uiconfig.defaults
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor
-import pl.touk.nussknacker.ui.api.NodeDefinition
+import pl.touk.nussknacker.engine.definition.defaults.NodeDefinition
 
 class ConfigParameterDefaultValueExtractorTest extends FlatSpec with Matchers {
   private val config = new ParamDefaultValueConfig(Map("definedNode" -> Map("definedParam" -> "Idea")))
