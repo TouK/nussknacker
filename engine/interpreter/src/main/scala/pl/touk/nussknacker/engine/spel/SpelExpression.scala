@@ -14,7 +14,7 @@ import org.springframework.expression._
 import org.springframework.expression.common.CompositeStringExpression
 import org.springframework.expression.spel.ast.SpelNodeImpl
 import org.springframework.expression.spel.support.{ReflectiveMethodExecutor, ReflectiveMethodResolver, StandardEvaluationContext, StandardTypeLocator}
-import org.springframework.expression.spel.{SpelCompilerMode, SpelParserConfiguration, standard}
+import org.springframework.expression.spel.{SpelCompilerMode, SpelEvaluationException, SpelParserConfiguration, standard}
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.lazyy.{ContextWithLazyValuesProvider, LazyContext, LazyValuesProvider}
@@ -29,8 +29,35 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
-class SpelExpression(parsed: org.springframework.expression.Expression,
-                     val original: String,
+/**
+  * Workaround for Spel compilation problem when expression's underlying class changes.
+  * Spel tries to explicitly cast result of compiled expression to a class that has been cached during the compilation.
+  *
+  * Problematic scenario:
+  * In case compilation occurs with type ArrayList and during evaulation a List is provided ClassCastException is thrown.
+  * Workaround:
+  * In such case we try to parse and compile expression again.
+  */
+final case class ParsedSpelExpression(original: String, parser: () => Expression, var parsed: Expression) extends LazyLogging {
+  def getValue[T](context: EvaluationContext, desiredResultType: Class[_]): T = {
+    def value(): T = parsed.getValue(context, desiredResultType).asInstanceOf[T]
+
+    try {
+      value()
+    } catch {
+      case e: SpelEvaluationException if Option(e.getCause).exists(_.isInstanceOf[ClassCastException]) =>
+        logger.warn("Error during expression evaluation '{}': {}. Trying to compile", original, e.getMessage)
+        forceParse()
+        value()
+    }
+  }
+
+  def forceParse(): Unit = {
+    parsed = parser()
+  }
+}
+
+class SpelExpression(parsed: ParsedSpelExpression,
                      expectedReturnType: ClazzRef,
                      expressionFunctions: Map[String, Method],
                      expressionImports: List[String],
@@ -38,6 +65,8 @@ class SpelExpression(parsed: org.springframework.expression.Expression,
                      classLoader: ClassLoader) extends compiledgraph.expression.Expression with LazyLogging {
 
   import pl.touk.nussknacker.engine.spel.SpelExpressionParser._
+
+  override val original: String = parsed.original
 
   private val expectedClass = expectedReturnType.clazz
 
@@ -60,7 +89,7 @@ class SpelExpression(parsed: org.springframework.expression.Expression,
       case (k, v) => simpleContext.registerFunction(k, v)
     }
     //TODO: async evaluation of lazy vals...
-    val value = parsed.getValue(simpleContext, expectedClass).asInstanceOf[T]
+    val value = parsed.getValue[T](simpleContext, expectedClass)
     val modifiedLazyContext = simpleContext.lookupVariable(LazyContextVariableName).asInstanceOf[LazyContext]
     Future.successful(ValueWithLazyContext(value, modifiedLazyContext))
   }
@@ -121,24 +150,24 @@ class SpelExpressionParser(expressionFunctions: Map[String, Method], expressionI
 
   override def parseWithoutContextValidation(original: String, expectedType: ClazzRef): Validated[ExpressionParseError, compiledgraph.expression.Expression] = {
     Validated.catchNonFatal(parser.parseExpression(original)).leftMap(ex => ExpressionParseError(ex.getMessage)).map { parsed =>
-      expression(parsed, original, expectedType)
+      expression(ParsedSpelExpression(original, () => parser.parseExpression(original), parsed), expectedType)
 
     }
-  } 
+  }
 
   override def parse(original: String, ctx: ValidationContext, expectedType: ClazzRef): Validated[NonEmptyList[ExpressionParseError], (TypingResult, compiledgraph.expression.Expression)] = {
     Validated.catchNonFatal(parser.parseExpression(original)).leftMap(ex => NonEmptyList.of(ExpressionParseError(ex.getMessage))).andThen { parsed =>
       validator.validate(parsed, ctx, expectedType).map((_, parsed))
     }.map { case (typingResult, parsed) =>
-      (typingResult, expression(parsed, original, expectedType))
+      (typingResult, expression(ParsedSpelExpression(original, () => parser.parseExpression(original), parsed), expectedType))
     }
   }
 
-  private def expression(expression: Expression, original: String, expectedType: ClazzRef) = {
+  private def expression(expression: ParsedSpelExpression, expectedType: ClazzRef) = {
     if (enableSpelForceCompile) {
-      forceCompile(expression)
+      forceCompile(expression.parsed)
     }
-    new SpelExpression(expression, original, expectedType, expressionFunctions, expressionImports, propertyAccessors, classLoader)
+    new SpelExpression(expression, expectedType, expressionFunctions, expressionImports, propertyAccessors, classLoader)
   }
 
 }

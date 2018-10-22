@@ -107,14 +107,7 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
     parse[Boolean]("null") shouldBe 'valid
   }
 
-  /**
-    * TODO: this is test to document unexpected behaviour of SpEL.
-    * Variable reference is compiled only after evaluation (forceCompile won't help)
-    * and then return type of last evaluation is taken as return type of expression. In our case this leads to class cast exception,
-    * as during compilation variable value is of ArrayList type, and afterwards we want to pass different List subclass.
-    * Unfortunately, we cannot find easy fix/workaround so far.
-    */
-  ignore  should "invoke list variable reference with different concrete type after compilation" in {
+  it should "invoke list variable reference with different concrete type after compilation" in {
     def contextWithList(value: Any) = ctx.withVariable("list", value)
     val expr = parseOrFail[Any]("#list", contextWithList(Collections.emptyList()))
 
