@@ -37,8 +37,14 @@ import scala.util.control.NonFatal
   * In case compilation occurs with type ArrayList and during evaulation a List is provided ClassCastException is thrown.
   * Workaround:
   * In such case we try to parse and compile expression again.
+  *
+  * Possible problems:
+  * - unless Expression is marked @volatile multiple threads might parse it on their own,
+  * - performance problem might occur if the ClassCastException is thrown often (e. g. for consecutive calls to getValue)
   */
-final case class ParsedSpelExpression(original: String, parser: () => Expression, var parsed: Expression) extends LazyLogging {
+final case class ParsedSpelExpression(original: String, parser: () => Expression, initial: Expression) extends LazyLogging {
+  @volatile var parsed: Expression = initial
+
   def getValue[T](context: EvaluationContext, desiredResultType: Class[_]): T = {
     def value(): T = parsed.getValue(context, desiredResultType).asInstanceOf[T]
 
