@@ -6,12 +6,10 @@ import UserRightPanel from '../components/right-panel/UserRightPanel';
 import UserLeftPanel from '../components/UserLeftPanel';
 import HttpService from '../http/HttpService'
 import _ from 'lodash';
-import { DropdownButton, MenuItem } from 'react-bootstrap';
 import { connect } from 'react-redux';
 import ActionsUtils from '../actions/ActionsUtils';
 import ProcessUtils from '../common/ProcessUtils';
 import DialogMessages from '../common/DialogMessages';
-import LoaderSpinner from '../components/Spinner.js';
 import '../stylesheets/visualization.styl';
 import NodeUtils from '../components/graph/NodeUtils';
 import * as VisualizationUrl from '../common/VisualizationUrl'
@@ -31,7 +29,8 @@ const Visualization = withRouter(React.createClass({
         this.props.subprocessVersions
       ).then(() => {
         this.setState({isArchived:_.get(details, "fetchedProcessDetails.isArchived"), dataResolved: true})
-        this.showModalDetailsIfNeeded(details.fetchedProcessDetails.json)
+        this.showModalDetailsIfNeeded(details.fetchedProcessDetails.json);
+        this.showCountsIfNeeded(details.fetchedProcessDetails.json);
       })
     })
     this.fetchProcessStatus()
@@ -46,6 +45,14 @@ const Visualization = withRouter(React.createClass({
     }
     if (!_.isEmpty(urlEdgeId)) {
       this.props.actions.displayModalEdgeDetails(NodeUtils.getEdgeById(urlEdgeId, process))
+    }
+  },
+
+  showCountsIfNeeded(process) {
+    const countParams = VisualizationUrl.extractCountParams(this.props.location.query);
+    if (countParams) {
+      const {from, to} = countParams;
+      this.props.actions.fetchAndDisplayProcessCounts(process.id, from, to);
     }
   },
 

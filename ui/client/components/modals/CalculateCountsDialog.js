@@ -5,17 +5,14 @@ import ActionsUtils from "../../actions/ActionsUtils";
 import "../../stylesheets/visualization.styl";
 import GenericModalDialog from "./GenericModalDialog";
 import Dialogs from "./Dialogs"
-import HttpService from "../../http/HttpService";
 import Moment from "moment"
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import '../../stylesheets/datePicker.styl'
+import {dateFormat} from "../../config";
 
 
 class CalculateCountsDialog extends React.Component {
-
-  dateFormat = "YYYY-MM-DD HH:mm:ss";
-
   predefinedRanges = [
     {
       name: "Last hour",
@@ -62,16 +59,16 @@ class CalculateCountsDialog extends React.Component {
     this.state = this.initState
   }
 
-  confirm = () => {
-    return HttpService.fetchProcessCounts(this.props.processId,
-      this.state.processCountsDateFrom.format(this.dateFormat),
-      this.state.processCountsDateTo.format(this.dateFormat))
-      .then((processCounts) => this.props.actions.displayProcessCounts(processCounts))
-  }
+  confirm = () =>
+    this.props.actions.fetchAndDisplayProcessCounts(
+      this.props.processId,
+      this.state.processCountsDateFrom,
+      this.state.processCountsDateTo
+    );
 
   setRawDate = (date, stateChange) => {
-    stateChange(Moment(date, this.dateFormat))
-  }
+    stateChange(Moment(date, dateFormat));
+  };
 
   setDateFrom = (date) => this.setState({processCountsDateFrom: date})
   setDateTo = (date) => this.setState({processCountsDateTo: date})
@@ -87,7 +84,7 @@ class CalculateCountsDialog extends React.Component {
             showTimeSelect
             timeFormat="HH:mm"
             timeIntervals={15}
-            dateFormat={this.dateFormat}
+            dateFormat={dateFormat}
             onChange={(e) => this.setDateFrom(e)}
             onChangeRaw={(event) => this.setRawDate(event.target.value, this.setDateFrom)}
           />
@@ -99,7 +96,7 @@ class CalculateCountsDialog extends React.Component {
             showTimeSelect
             timeFormat="HH:mm"
             timeIntervals={15}
-            dateFormat={this.dateFormat}
+            dateFormat={dateFormat}
             onChange={(e) => this.setDateTo(e)}
             onChangeRaw={(event) => this.setRawDate(event.target.value, this.setDateTo)}
           />

@@ -5,7 +5,8 @@ import NodeUtils from "../components/graph/NodeUtils";
 import * as SubprocessSchemaAligner from "../components/graph/SubprocessSchemaAligner";
 import _ from "lodash";
 import * as UndoRedoActions from "../undoredo/UndoRedoActions";
-import * as VisualizationUrl from '../common/VisualizationUrl'
+import * as VisualizationUrl from '../common/VisualizationUrl';
+import {dateFormat} from "../config";
 
 export function fetchProcessToDisplay(processId, versionId, businessView) {
   return (dispatch) => {
@@ -413,6 +414,15 @@ export function displayProcessCounts(processCounts) {
     type: "DISPLAY_PROCESS_COUNTS",
     processCounts: processCounts
   }
+}
+
+export function fetchAndDisplayProcessCounts(processName, from, to) {
+  return (dispatch) =>
+    HttpService.fetchProcessCounts(
+      processName,
+      from.format(dateFormat),
+      to.format(dateFormat)
+    ).then((processCounts) => dispatch(displayProcessCounts(processCounts)))
 }
 
 export function hideRunProcessDetails() {

@@ -30,7 +30,6 @@ export default {
           <GenerateTestDataDialog/>
           <CalculateCountsDialog/>
           <CompareVersionsDialog/>
-
         </div>
       );
 

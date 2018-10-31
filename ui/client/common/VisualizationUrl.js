@@ -1,4 +1,5 @@
 import _ from "lodash";
+import Moment from "moment";
 
 export const visualizationRouterPath = '/visualization/:processId'
 
@@ -21,7 +22,24 @@ export function edgeIdPart(edgeId) {
 }
 
 export function extractVisualizationParams(queryParams) {
-  const urlNodeId = queryParams.nodeId
-  const urlEdgeId = queryParams.edgeId
+  const urlNodeId = queryParams.nodeId;
+  const urlEdgeId = queryParams.edgeId;
   return {urlNodeId, urlEdgeId}
+}
+
+export function extractCountParams(queryParams) {
+  if (!_.isEmpty(queryParams.from) || !_.isEmpty(queryParams.to)) {
+    const from = queryParams.from ? fromTimestampOrDate(queryParams.from) : Moment(0);
+    const to = queryParams.to ? fromTimestampOrDate(queryParams.to) : Moment();
+    return {from, to};
+  } else {
+    return null
+  }
+}
+
+function fromTimestampOrDate(tsOrDate) {
+  if (Number.isInteger(tsOrDate))
+    return Moment(parseInt(tsOrDate));
+  else
+    return Moment(tsOrDate);
 }
