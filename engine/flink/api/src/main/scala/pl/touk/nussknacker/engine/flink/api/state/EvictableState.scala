@@ -98,7 +98,7 @@ abstract class TimestampedEvictableStateFunction[In, Out, StateType] extends Evi
 
 }
 
-abstract class LatelyEvictableStateFunction[In, Out, StateType] extends ProcessFunction[In, Out] {
+abstract class LatelyEvictableStateFunction[In, Out, StateType] extends KeyedProcessFunction[String, In, Out] {
 
   protected var latestEvictionTimeForKey : ValueState[java.lang.Long] = _
 
@@ -112,7 +112,7 @@ abstract class LatelyEvictableStateFunction[In, Out, StateType] extends ProcessF
     state = getRuntimeContext.getState(stateDescriptor)
   }
 
-  override def onTimer(timestamp: Long, ctx: ProcessFunction[In, Out]#OnTimerContext, out: Collector[Out]): Unit = {
+  override def onTimer(timestamp: Long, ctx: KeyedProcessFunction[String, In, Out]#OnTimerContext, out: Collector[Out]): Unit = {
     val latestEvictionTimeValue = latestEvictionTimeForKey.value()
     val noLaterEventsArrived = latestEvictionTimeValue == timestamp
     if (noLaterEventsArrived) {
@@ -123,7 +123,7 @@ abstract class LatelyEvictableStateFunction[In, Out, StateType] extends ProcessF
     }
   }
 
-  protected def moveEvictionTime(offset: Long, ctx: ProcessFunction[In, Out]#Context) : Unit= {
+  protected def moveEvictionTime(offset: Long, ctx: KeyedProcessFunction[String, In, Out]#Context) : Unit= {
     val time = ctx.timestamp() + offset
     val latestEvictionTimeValue = latestEvictionTimeForKey.value()
     val maxEvictionTime = if (latestEvictionTimeValue == null || time > latestEvictionTimeValue) {
