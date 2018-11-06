@@ -19,7 +19,7 @@ private[influxdb] class InfluxGenerator(url: String, user: String, password: Str
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
-  val httpClient = LoggingDispatchClient(classOf[InfluxGenerator].getSimpleName, Http)
+  val httpClient = LoggingDispatchClient(classOf[InfluxGenerator].getSimpleName, Http.default)
 
   //TODO: query below should work better even in case of restarts, however for large processes/time ranges it can be *really* slow (at least on influx we use...)
   //select sum(diff) from (select non_negative_difference(value) as diff from "$metricName.count" where process = '$processName' and env = '$env' and time > $from and time < $to group by slot) group by action
@@ -123,8 +123,8 @@ object InfluxGenerator {
           (firstResult.getOrElse("action", "UNKNOWN").asInstanceOf[String], firstResult.getOrElse("value", 0L).asInstanceOf[Number].longValue())
         }.groupBy(_._1).mapValues(_.map(_._2).sum)
       }
-      groupedResults.onSuccess {
-        case evaluated => logger.debug(s"Query: $queryString retrieved grouped results: $evaluated")
+      groupedResults.foreach {
+        evaluated => logger.debug(s"Query: $queryString retrieved grouped results: $evaluated")
       }
       groupedResults
     }

@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObje
 import pl.touk.nussknacker.engine.api.typed.{ClazzRef, TypedMap}
 import pl.touk.nussknacker.engine.compile.ValidationContext
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 
 class SqlExpressionTest extends FunSuite with Matchers with ScalaFutures {
 
@@ -83,7 +83,7 @@ class SqlExpressionTest extends FunSuite with Matchers with ScalaFutures {
 
   private def evaluate(expression: String, ctx: Context = ctx, validationContext: ValidationContext = validationContext): List[TypedMap] =
     parseOrFail(expression, validationContext).evaluate[java.util.List[TypedMap]](ctx, dumbLazyProvider)
-      .futureValue.value.toList
+      .futureValue.value.asScala.toList
 
   private def parseOrFail(expression: String, validationContext: ValidationContext = validationContext): SqlExpression =
     SqlExpressionParser

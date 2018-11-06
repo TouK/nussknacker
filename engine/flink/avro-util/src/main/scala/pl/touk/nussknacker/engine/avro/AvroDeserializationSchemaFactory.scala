@@ -10,7 +10,7 @@ class AvroDeserializationSchemaFactory[T: TypeInformation](schemaRegistryClientF
                                                            useSpecificAvroReader: Boolean)
   extends KafkaDeserializationSchemaFactoryBase[T]  {
 
-  import collection.convert.decorateAsJava._
+  import collection.JavaConverters._
 
   override protected def createValueDeserializer(topics: List[String], kafkaConfig: KafkaConfig): Deserializer[T] = {
     // TODO: this client is never destroyed and it is potential leak of resources
@@ -28,7 +28,7 @@ abstract class AvroKeyValueDeserializationSchemaFactory[T: TypeInformation](sche
                                                                             useSpecificAvroReader: Boolean)
   extends KafkaKeyValueDeserializationSchemaFactoryBase[T]  {
 
-  import collection.convert.decorateAsJava._
+  import collection.JavaConverters._
 
   override protected def createKeyDeserializer(topics: List[String], kafkaConfig: KafkaConfig): Deserializer[K] = {
     createDeserializer(kafkaConfig, isKey = true).asInstanceOf[Deserializer[K]]

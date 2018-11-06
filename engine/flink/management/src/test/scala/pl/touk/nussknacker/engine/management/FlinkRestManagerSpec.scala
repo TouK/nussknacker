@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.engine.management
 
 import argonaut.Json
-import com.ning.http.client.Request
 import com.typesafe.config.ConfigFactory
 import dispatch.FunctionHandler
 import org.apache.flink.runtime.jobgraph.JobStatus
+import org.asynchttpclient.Request
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion

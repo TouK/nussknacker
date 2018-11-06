@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.flink.api.state.TimestampedEvictableStateFunct
 import pl.touk.nussknacker.engine.flink.javaapi.process.JavaFlinkCustomStreamTransformation;
 import scala.concurrent.duration.Duration;
 
-import static scala.collection.JavaConversions.asJavaCollection;
+import static scala.collection.JavaConverters.asJavaCollectionConverter;
 
 public class EventsCounter extends CustomStreamTransformer {
 
@@ -69,8 +69,8 @@ public class EventsCounter extends CustomStreamTransformer {
             MultiMap<Object, Integer> eventCount = stateValue().add(timestamp, 1);
             state().update(eventCount);
             //TODO java version of MultiMap?
-            int eventsCount = asJavaCollection(eventCount.map().values()).stream()
-                    .map(l -> asJavaCollection(l).stream().mapToInt(Integer::intValue).sum())
+            int eventsCount = asJavaCollectionConverter(eventCount.map().values()).asJavaCollection().stream()
+                    .map(l -> asJavaCollectionConverter(l).asJavaCollection().stream().mapToInt(Integer::intValue).sum())
                     .mapToInt(Integer::intValue).sum();
             out.collect(
                 new ValueWithContext<>(new EventCount(eventsCount), ir.context())

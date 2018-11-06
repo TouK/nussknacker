@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.util.typing.TypingUtils
 
 object sources {
 
-  import collection.convert.decorateAsJava._
+  import collection.JavaConverters._
 
   class GenericJsonSourceFactory(config: KafkaConfig) extends KafkaSourceFactory[java.util.Map[_, _]](
     config, JsonMapDeserialization, None, TestParsingUtils.newLineSplit)

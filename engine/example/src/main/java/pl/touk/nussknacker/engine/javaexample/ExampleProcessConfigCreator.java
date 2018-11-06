@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.kafka.KafkaConfig;
 import pl.touk.nussknacker.engine.kafka.KafkaSinkFactory;
 import pl.touk.nussknacker.engine.kafka.KafkaSourceFactory;
 import scala.Option;
-import scala.collection.JavaConversions;
+import scala.collection.JavaConverters;
 
 import java.io.IOException;
 import java.util.*;
@@ -34,7 +34,7 @@ public class ExampleProcessConfigCreator implements ProcessConfigCreator {
         objects.add("FraudDetection");
         return new WithCategories<>(
                 value,
-                JavaConversions.collectionAsScalaIterable(objects).toList(),
+                JavaConverters.collectionAsScalaIterableConverter(objects).asScala().toList(),
                 SingleNodeConfig$.MODULE$.zero());
     }
 

@@ -19,7 +19,6 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResu
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError.NodeId
 
 import scala.collection.JavaConverters._
-import scala.collection.JavaConversions._
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.language.implicitConversions
@@ -315,7 +314,7 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
 
   it should "allow #this reference inside functions" in {
     parseOrFail[java.util.List[String]]("{1, 2, 3}.!['ala'.substring(#this - 1)]", ctx)
-      .evaluateSync[java.util.List[String]](ctx, dumbLazyProvider).value.toList shouldBe List("ala", "la", "a")
+      .evaluateSync[java.util.List[String]](ctx, dumbLazyProvider).value.asScala.toList shouldBe List("ala", "la", "a")
   }
 
   it should "allow property access in unknown classes" in {

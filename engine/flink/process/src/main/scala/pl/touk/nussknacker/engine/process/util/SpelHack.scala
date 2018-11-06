@@ -4,7 +4,7 @@ import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.io.{Input, Output}
 import pl.touk.nussknacker.engine.process.util.Serializers.SerializerWithSpecifiedClass
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 
 //By default SpEL list (i.e "{'a', 'b'}") is represented as java.util.Collections.UnmodifiableCollection, which
 //Kryo won't serialize properly since Kry uses java.util.Collection.add() method which in case of UnmodifiableCollection
@@ -40,7 +40,7 @@ object SpelHack extends SerializerWithSpecifiedClass[java.util.List[_]](false, t
       builder += item
       idx += 1
     }
-    seqAsJavaList(builder.result())
+    builder.result().asJava
   }
 
 }
@@ -78,7 +78,7 @@ object SpelMapHack extends SerializerWithSpecifiedClass[java.util.Map[_, _]](fal
       builder += (key -> value)
       idx += 1
     }
-    mapAsJavaMap(builder.result())
+    builder.result().asJava
   }
 
 }

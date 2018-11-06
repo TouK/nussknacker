@@ -22,7 +22,6 @@ import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import slick.dbio.DBIOAction
 import slick.jdbc.JdbcProfile
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext}
 
@@ -33,7 +32,7 @@ object Initialization {
   def init(migrations: Map[ProcessingType, ProcessMigrations],
            db: DbConfig,
            environment: String,
-           customProcesses: Option[Map[String, String]]) : Unit = {
+           customProcesses: Option[Map[String, String]])(implicit ec: ExecutionContext) : Unit = {
 
     val transactionalRepository = new DbWriteProcessRepository[DB](db, migrations.mapValues(_.version)) {
       override def run[R]: DB[R] => DB[R] = identity
@@ -50,7 +49,7 @@ object Initialization {
     runOperationsTransactionally(db, operations)
   }
 
-  private def runOperationsTransactionally(db: DbConfig, operations: List[InitialOperation]) = {
+  private def runOperationsTransactionally(db: DbConfig, operations: List[InitialOperation])(implicit ec: ExecutionContext): List[Unit] = {
 
     import db.driver.api._
 

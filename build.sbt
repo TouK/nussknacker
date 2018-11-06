@@ -50,6 +50,7 @@ val publishSettings = Seq(
 
 def nussknackerMergeStrategy: String => MergeStrategy = {
   case PathList(ps@_*) if ps.last == "NumberUtils.class" => MergeStrategy.first
+  case PathList(ps@_*) if ps.last == "io.netty.versions.properties" => MergeStrategy.first
   case PathList("org", "w3c", "dom", "events", xs @ _*) => MergeStrategy.first
   case PathList("org", "apache", "commons", "logging", xs @ _*) => MergeStrategy.first
   case PathList("akka", xs @ _*) => MergeStrategy.last
@@ -110,9 +111,9 @@ val argonautMajorV = "6.2"
 val argonautV = s"$argonautMajorV.1"
 val catsV = "1.1.0"
 val scalaParsersV = "1.0.4"
-val dispatchV = "0.11.3"
+val dispatchV = "1.0.1"
 val slf4jV = "1.7.21"
-val scalaLoggingV = "3.4.0"
+val scalaLoggingV = "3.9.0"
 val scalaCompatV = "0.8.0"
 val ficusV = "1.4.1"
 val configV = "1.3.0"
@@ -545,7 +546,8 @@ lazy val httpUtils = (project in engine("httpUtils")).
     name := "nussknacker-http-utils",
     libraryDependencies ++= {
       Seq(
-        "net.databinder.dispatch" %% "dispatch-core" % dispatchV,// % "optional",
+        "org.dispatchhttp" %% "dispatch-core" % dispatchV,
+        "org.asynchttpclient" % "async-http-client" % "2.8.1",
         "org.scala-lang.modules" %% "scala-parser-combinators" % scalaParsersV, // scalaxb deps
         "io.argonaut" %% "argonaut" % argonautV,
         "com.github.alexarchambault" %% s"argonaut-shapeless_$argonautMajorV" % argonautShapelessV,

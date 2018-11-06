@@ -27,7 +27,7 @@ case class ClassMemberPatternPredicate(classPattern: Pattern, classMemberPattern
     superClasses(member.getDeclaringClass).exists(cl => classPattern.matcher(cl.getName).matches())
 
   private def superClasses(clazz: Class[_]): Seq[Class[_]] = {
-    import collection.convert.decorateAsScala._
+    import scala.collection.JavaConverters._
     Seq(clazz) ++
       ClassUtils.getAllSuperclasses(clazz).asScala ++
       ClassUtils.getAllInterfaces(clazz).asScala

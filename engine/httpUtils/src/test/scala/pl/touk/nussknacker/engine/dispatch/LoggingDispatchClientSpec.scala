@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.dispatch
 
-import com.ning.http.client.AsyncHttpClient
+import org.asynchttpclient.{AsyncHttpClient, DefaultAsyncHttpClient}
 import dispatch.Http
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.dispatch.LoggingDispatchClientSpec.Mocks
@@ -12,7 +12,7 @@ class LoggingDispatchClientSpec extends FlatSpec with Matchers {
     val client = Mocks.asyncHandler {
       isClosed = true
     }
-    LoggingDispatchClient(this.getClass.getSimpleName, Http(client)).shutdown()
+    LoggingDispatchClient(this.getClass.getSimpleName, client, "", None).shutdown()
     isClosed shouldBe true
   }
 }
@@ -21,7 +21,7 @@ object LoggingDispatchClientSpec {
 
   object Mocks {
     def asyncHandler(callback: => Unit): AsyncHttpClient = {
-      new AsyncHttpClient() {
+      new DefaultAsyncHttpClient() {
         override def close(): Unit = {
           super.close()
           callback

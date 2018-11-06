@@ -18,8 +18,8 @@ private[influxdb] class InfluxBaseCountsReporter(env: String, config: InfluxRepo
       allCount <- influxGenerator.query(processId, "source", dateFrom, dateTo).map(_.getOrElse("count", 0L))
       nodes <- influxGenerator.query(processId, "nodeCount", dateFrom, dateTo)
     } yield ProcessBaseCounts(all = allCount, nodes = nodes)
-    reportData.onFailure {
-      case ex => logger.error("Failed to generate", ex)
+    reportData.failed.foreach {
+      ex => logger.error("Failed to generate", ex)
     }
     reportData
   }

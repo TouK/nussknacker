@@ -24,7 +24,7 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
     modelData.configCreator.buildInfo().asJson.pretty(PrettyParams.spaces2.copy(preserveOrder = true))
   }
 
-  private implicit val ec: ExecutionContextExecutor = ExecutionContext.Implicits.global
+  private implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
 
   private lazy val testRunner = new FlinkProcessTestRunner(modelData)
 

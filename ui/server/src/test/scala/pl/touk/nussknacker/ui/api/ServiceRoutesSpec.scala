@@ -21,7 +21,6 @@ import pl.touk.nussknacker.ui.util.Argonaut62Support
 
 class ServiceRoutesSpec extends FunSuite with Matchers with ScalatestRouteTest with Argonaut62Support with TestPermissions{
 
-  private implicit val ec = scala.concurrent.ExecutionContext.Implicits.global
   val category1Deploy = Map("Category1" -> Set(Permission.Deploy))
   private implicit val user = LoggedUser("admin", category1Deploy)
   private val modelData = FlinkProcessManagerProvider.defaultModelData(ConfigFactory.load())

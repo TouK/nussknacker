@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.compile
 
+import java.util.Collections
+
 import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import cats.instances.string._
@@ -707,10 +709,8 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   case class AnotherSimpleRecord(value2: Long)
 
-  import scala.collection.JavaConversions._
-
   class SampleEnricher extends Service {
-    def invoke()(implicit ec: ExecutionContext) = Future(SimpleRecord(AnotherSimpleRecord(1), 2, Option(2), 1, List.empty[SimpleRecord]))
+    def invoke()(implicit ec: ExecutionContext) = Future.successful(SimpleRecord(AnotherSimpleRecord(1), 2, Option(2), 1, Collections.emptyList[SimpleRecord]))
   }
 
   object ProcessHelper {

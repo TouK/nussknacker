@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.management
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.attribute.{PosixFilePermission, PosixFilePermissions}
-import java.util.Collections
 
 import com.spotify.docker.client.{DefaultDockerClient, DockerClient}
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
@@ -100,9 +99,9 @@ trait DockerTest extends DockerTestKit with ScalaFutures with LazyLogging {
     List(zookeeperContainer, kafkaContainer, jobManagerContainer, taskManagerContainer) ++ super.dockerContainers
 
   private def prepareSavepointDirName() : String = {
-    import scala.collection.JavaConversions._
+    import scala.collection.JavaConverters._
     val tempDir = Files.createTempDirectory("dockerTest",
-      PosixFilePermissions.asFileAttribute(PosixFilePermission.values().toSet[PosixFilePermission]))
+      PosixFilePermissions.asFileAttribute(PosixFilePermission.values().toSet[PosixFilePermission].asJava))
     tempDir.toFile.getName
   }
 

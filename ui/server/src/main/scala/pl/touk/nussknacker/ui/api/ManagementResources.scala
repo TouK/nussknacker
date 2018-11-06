@@ -198,7 +198,7 @@ class ManagementResources(processCounter: ProcessCounter,
           // modify the context with the strictified entity
           val c1 = c.withRequest(c.request.withEntity(strict))
           // call the inner route with the modified context
-          inner()(c1)
+          inner(())(c1)
         }
       }
       result

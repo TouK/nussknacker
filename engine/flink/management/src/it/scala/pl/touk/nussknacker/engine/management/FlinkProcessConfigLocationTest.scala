@@ -9,7 +9,7 @@ import org.apache.commons.io.FileUtils
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 
 class FlinkProcessConfigLocationTest extends FunSuite with DockerTest with Matchers {
 
@@ -33,7 +33,7 @@ class FlinkProcessConfigLocationTest extends FunSuite with DockerTest with Match
 
   private def writeConfigAsFlinkConfYaml(normalConf: Config, tempDir :File) : Unit = {
 
-    val confYml = normalConf.getConfig("flinkConfig.customConfig").entrySet().toList.map { entry =>
+    val confYml = normalConf.getConfig("flinkConfig.customConfig").entrySet().asScala.toList.map { entry =>
       s"${entry.getKey}: ${entry.getValue.render().replace("\"", "")}"
     }.mkString("\n")
 
