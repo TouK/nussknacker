@@ -176,7 +176,7 @@ object ProcessTestHelpers {
         start
           .map(context.lazyParameterHelper.lazyMapFunction(value))
           .keyBy(_.value)
-          .map(_ => ValueWithContext(null, Context("new")))
+          .map(_ => ValueWithContext[Any](null, Context("new")))
     })
 
   }

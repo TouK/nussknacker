@@ -6,7 +6,7 @@ import org.apache.flink.metrics.{Metric, MetricConfig, MetricGroup}
 import org.apache.flink.streaming.api.environment.{StreamExecutionEnvironment => JavaEnv}
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
 object TestReporterUtil {
@@ -31,13 +31,13 @@ object TestReporter {
 
 class TestReporter extends AbstractReporter {
 
-  def testHistograms = histograms.toMap
+  def testHistograms = histograms.asScala.toMap
 
   def testHistogram(containing: String) = testHistograms.filter(_._2.contains(containing)).keys.head
 
-  def testGauges(containing: String) = gauges.toMap.filter(_._2.contains(containing)).keys
+  def testGauges(containing: String) = gauges.asScala.filter(_._2.contains(containing)).keys
 
-  def testCounters(containing: String) = counters.toMap.filter(_._2.contains(containing)).keys
+  def testCounters(containing: String) = counters.asScala.filter(_._2.contains(containing)).keys
 
   override def notifyOfRemovedMetric(metric: Metric, metricName: String, group: MetricGroup) = {}
 

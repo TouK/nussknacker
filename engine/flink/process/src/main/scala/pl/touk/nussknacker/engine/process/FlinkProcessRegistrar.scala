@@ -52,7 +52,6 @@ import pl.touk.nussknacker.engine.splittedgraph.splittednode.{NextNode, PartRef,
 import pl.touk.nussknacker.engine.util.{SynchronousExecutionContext, ThreadUtils}
 import pl.touk.nussknacker.engine.util.metrics.RateMeter
 
-import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
 import scala.concurrent.{Await, ExecutionContext}
 import scala.concurrent.duration._
@@ -96,7 +95,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => (Cla
   //TODO: is it the only place where we should do it??
   private def initializeStateDescriptors(env: StreamExecutionEnvironment): Unit = {
     val config = env.getConfig
-    env.getStreamGraph.getOperators.toSet[tuple.Tuple2[Integer, StreamOperator[_]]].map(_.f1).collect {
+    env.getStreamGraph.getOperators.asScala.toSet[tuple.Tuple2[Integer, StreamOperator[_]]].map(_.f1).collect {
       case window:WindowOperator[_, _, _, _, _] => window.getStateDescriptor.initializeSerializerUnlessSet(config)
     }
   }

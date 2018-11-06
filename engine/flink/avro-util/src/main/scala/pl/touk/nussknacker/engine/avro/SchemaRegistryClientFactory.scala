@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.kafka.KafkaConfig
 
 class SchemaRegistryClientFactory extends Serializable {
 
-  import collection.convert.decorateAsJava._
+  import collection.JavaConverters._
 
   // copied from AbstractKafkaAvroSerDe.configureClientProperties
   def createSchemaRegistryClient(kafkaConfig: KafkaConfig): SchemaRegistryClient = {

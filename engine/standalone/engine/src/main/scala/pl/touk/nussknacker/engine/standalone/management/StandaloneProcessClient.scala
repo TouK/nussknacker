@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.standalone.management
 
 import argonaut.CodecJson
-import com.ning.http.client.Response
+import org.asynchttpclient.Response
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import dispatch.{Http, StatusCode}
@@ -37,7 +37,7 @@ trait StandaloneProcessClient {
 //but we're making user aware of problem and let him/her fix it
 class MultiInstanceStandaloneProcessClient(clients: List[StandaloneProcessClient]) extends StandaloneProcessClient with LazyLogging {
 
-  private implicit val ec: ExecutionContextExecutor = ExecutionContext.Implicits.global
+  private implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
 
 
   override def deploy(deploymentData: DeploymentData): Future[Unit] = {
@@ -68,10 +68,10 @@ class MultiInstanceStandaloneProcessClient(clients: List[StandaloneProcessClient
 
 }
 
-class DispatchStandalonProcessClient(managementUrl: String, http: Http = Http) extends StandaloneProcessClient {
+class DispatchStandalonProcessClient(managementUrl: String, http: Http = Http.default) extends StandaloneProcessClient {
 
 
-  private implicit val ec: ExecutionContextExecutor = ExecutionContext.Implicits.global
+  private implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
   import pl.touk.nussknacker.engine.dispatch.utils._
   private val dispatchClient = LoggingDispatchClient(this.getClass.getSimpleName, http)
 

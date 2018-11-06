@@ -110,7 +110,7 @@ object TransformerWithTime extends CustomStreamTransformer {
       start
         .map(_ => 1)
         .timeWindowAll(Time.seconds(seconds)).reduce(_ + _)
-        .map(ValueWithContext(_, Context(UUID.randomUUID().toString)))
+        .map(ValueWithContext[Any](_, Context(UUID.randomUUID().toString)))
   })
 }
 

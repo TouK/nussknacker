@@ -19,7 +19,7 @@ import scala.util.{Failure, Success}
 
 object KafkaEspUtils extends LazyLogging {
 
-  import scala.collection.JavaConversions._
+  import scala.collection.JavaConverters._
   import scala.concurrent.ExecutionContext.Implicits.global
 
   val defaultTimeoutMillis = 10000
@@ -82,7 +82,7 @@ object KafkaEspUtils extends LazyLogging {
   def readLastMessages(topic: String, size: Int, config: KafkaConfig) : List[ConsumerRecord[Array[Byte], Array[Byte]]] = {
     doWithTempKafkaConsumer(config, None) { consumer =>
       try {
-        consumer.partitionsFor(topic).map(no => new TopicPartition(topic, no.partition())).view.flatMap { tp =>
+        consumer.partitionsFor(topic).asScala.map(no => new TopicPartition(topic, no.partition())).view.flatMap { tp =>
           val partitions = Collections.singletonList(tp)
           consumer.assign(partitions)
           consumer.seekToEnd(partitions)
@@ -90,7 +90,7 @@ object KafkaEspUtils extends LazyLogging {
           val offsetToSearch = Math.max(0, lastOffset - size)
           consumer.seek(tp, offsetToSearch)
           val result = new ArrayBuffer[ConsumerRecord[Array[Byte], Array[Byte]]](size)
-          result.addAll(consumer.poll(100).records(tp))
+          result.appendAll(consumer.poll(100).records(tp).asScala)
           // result might be empty if we shift offset to far and there will be
           // no messages on the topic due to retention
           if(result.isEmpty){
@@ -100,8 +100,8 @@ object KafkaEspUtils extends LazyLogging {
           // Trying to poll records until desired size OR till the end of the topic.
           // So when trying to read 70 msgs from topic with only 50, we will return 50 immediately
           // instead of waiting for another 20 to be written to the topic.
-          while(result.size() < size && currentOffset < lastOffset) {
-            result.appendAll(consumer.poll(100).records(tp))
+          while(result.size < size && currentOffset < lastOffset) {
+            result.appendAll(consumer.poll(100).records(tp).asScala)
             currentOffset = consumer.position(tp)
           }
           consumer.unsubscribe()
@@ -130,9 +130,9 @@ object KafkaEspUtils extends LazyLogging {
     config.kafkaProperties.flatMap(props => props.get("session.timeout.ms").map(_.toLong)).getOrElse(defaultTimeoutMillis)
 
   private def setOffsetToLatest(topic: String, consumer: KafkaConsumer[_, _]): Unit = {
-    val partitions = consumer.partitionsFor(topic).map { partition => new TopicPartition(partition.topic(), partition.partition()) }
-    consumer.assign(partitions)
-    consumer.seekToEnd(partitions)
+    val partitions = consumer.partitionsFor(topic).asScala.map { partition => new TopicPartition(partition.topic(), partition.partition()) }
+    consumer.assign(partitions.asJava)
+    consumer.seekToEnd(partitions.asJava)
     partitions.foreach(p => consumer.position(p)) //`seekToEnd` is lazy, we have to invoke `position` to change offset
     consumer.commitSync()
   }

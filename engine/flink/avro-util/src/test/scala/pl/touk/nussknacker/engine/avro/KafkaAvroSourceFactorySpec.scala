@@ -18,7 +18,7 @@ import org.apache.flink.api.scala._
 class KafkaAvroSourceFactorySpec extends FunSpec with BeforeAndAfterAll with KafkaSpec with Matchers with LazyLogging {
 
   import MockSchemaRegistry._
-  import collection.convert.decorateAsJava._
+  import collection.JavaConverters._
 
   // schema.registry.url have to be defined even for MockSchemaRegistryClient
   private lazy val kafkaConfig = KafkaConfig(kafkaZookeeperServer.zkAddress, kafkaZookeeperServer.kafkaAddress,

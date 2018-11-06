@@ -180,7 +180,9 @@ class InterpreterSpec extends FunSuite with Matchers {
     val services = Map("service" ->
       new Service {
         @MethodToInvoke
-        def invoke(@ParamName("id") id: Any)(implicit ec: ExecutionContext) = Future.successful(nodes = id :: nodes)
+        def invoke(@ParamName("id") id: Any)(implicit ec: ExecutionContext) = Future {
+          nodes = id :: nodes
+        }
       }
     )
 
@@ -208,8 +210,9 @@ class InterpreterSpec extends FunSuite with Matchers {
     val services = Map("transactionService" ->
       new Service {
         @MethodToInvoke
-        def invoke(@ParamName("id") id: Any)
-                  (implicit ec: ExecutionContext) = Future(result = id)
+        def invoke(@ParamName("id") id: Any)(implicit ec: ExecutionContext) = Future {
+          result = id
+        }
       }
     )
 
@@ -232,8 +235,9 @@ class InterpreterSpec extends FunSuite with Matchers {
     val services = Map("transactionService" ->
       new Service {
         @MethodToInvoke
-        def invoke(@ParamName("id") id: Any)
-                  (implicit ec: ExecutionContext) = Future(result = id)
+        def invoke(@ParamName("id") id: Any)(implicit ec: ExecutionContext) = Future {
+          result = id
+        }
       }
     )
 

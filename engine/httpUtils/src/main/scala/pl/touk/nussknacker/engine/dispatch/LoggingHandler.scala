@@ -2,23 +2,24 @@ package pl.touk.nussknacker.engine.dispatch
 
 import java.nio.charset.StandardCharsets
 
-import com.ning.http.client._
+import org.asynchttpclient._
 import com.typesafe.scalalogging.Logger
+import io.netty.handler.codec.http.HttpHeaders
 
 private class LoggingHandler[T] (handler: AsyncHandler[T], logger: Logger, id: String)
   extends AsyncHandler[T] {
   import LoggingHandler._
-  override def onBodyPartReceived(bodyPart: HttpResponseBodyPart): AsyncHandler.STATE = {
+  override def onBodyPartReceived(bodyPart: HttpResponseBodyPart): AsyncHandler.State = {
     logger.debug(s"[$id] body: ${new String(bodyPart.getBodyPartBytes, charset)}")
     handler.onBodyPartReceived(bodyPart)
   }
 
-  override def onHeadersReceived(headers: HttpResponseHeaders): AsyncHandler.STATE = {
-    logger.debug(s"[$id] headers: ${mapHeaders(headers.getHeaders)}")
+  override def onHeadersReceived(headers: HttpHeaders): AsyncHandler.State = {
+    logger.debug(s"[$id] headers: ${mapHeaders(headers)}")
     handler.onHeadersReceived(headers)
   }
 
-  override def onStatusReceived(responseStatus: HttpResponseStatus): AsyncHandler.STATE = {
+  override def onStatusReceived(responseStatus: HttpResponseStatus): AsyncHandler.State = {
     val message = s"[$id]" +
       s" status code: ${responseStatus.getStatusCode}" +
       s" status rext: ${responseStatus.getStatusText}"
@@ -45,12 +46,13 @@ object LoggingHandler {
   val charset: String = StandardCharsets.UTF_8.name()
   import scala.collection.JavaConverters._
 
-  def mapHeaders(headers: FluentCaseInsensitiveStringsMap): Map[String, List[String]] = {
-    headers.entrySet()
+  def mapHeaders(headers: HttpHeaders): Map[String, List[String]] = {
+    headers.entries()
       .asScala
+      .groupBy(_.getKey)
       .map { e =>
-        (e.getKey, e.getValue.asScala.toList)
-      } toMap
+        (e._1, e._2.map(_.getValue).toList)
+      }
   }
 
   case class LogRequest(

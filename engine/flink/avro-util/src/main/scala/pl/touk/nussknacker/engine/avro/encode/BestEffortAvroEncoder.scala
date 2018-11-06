@@ -13,7 +13,7 @@ import scala.util.control.Exception.catching
 
 object BestEffortAvroEncoder {
 
-  import scala.collection.convert.decorateAll._
+  import scala.collection.JavaConverters._
 
   // It is quite similar logic to GenericDatumReader.readWithConversion but instead of reading from decoder, it read directly from value
   def encode(value: Any, schema: Schema): Any = {

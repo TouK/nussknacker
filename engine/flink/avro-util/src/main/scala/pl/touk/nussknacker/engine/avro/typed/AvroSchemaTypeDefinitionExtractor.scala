@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObje
 
 object AvroSchemaTypeDefinitionExtractor {
 
-  import collection.convert.decorateAsScala._
+  import collection.JavaConverters._
 
   def typeDefinition(schemaString: String): TypingResult =
     typeDefinition(new Schema.Parser().parse(schemaString))

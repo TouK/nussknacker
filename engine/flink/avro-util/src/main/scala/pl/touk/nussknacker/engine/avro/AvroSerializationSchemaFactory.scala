@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.kafka.serialization.{KafkaKeyValueSerializatio
 
 class AvroSerializationSchemaFactory(schemaRegistryClientFactory: SchemaRegistryClientFactory) extends KafkaSerializationSchemaFactoryBase[Any]  {
 
-  import collection.convert.decorateAsJava._
+  import collection.JavaConverters._
 
   override protected def createValueSerializer(topic: String, kafkaConfig: KafkaConfig): Serializer[Any] = {
     // TODO: this client is never destroyed and it is potential leak of resources
@@ -23,7 +23,7 @@ class AvroSerializationSchemaFactory(schemaRegistryClientFactory: SchemaRegistry
 abstract class AvroKeyValueSerializationSchemaFactory(schemaRegistryClientFactory: SchemaRegistryClientFactory)
   extends KafkaKeyValueSerializationSchemaFactoryBase[Any] {
 
-  import collection.convert.decorateAsJava._
+  import collection.JavaConverters._
 
   override protected def createKeySerializer(topic: String, kafkaConfig: KafkaConfig): Serializer[K] = {
     createSerializer(kafkaConfig, isKey = true).asInstanceOf[Serializer[K]]

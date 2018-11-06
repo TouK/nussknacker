@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.Displayable
 
 case class BestEffortJsonEncoder(failOnUnkown: Boolean, highPriority: PartialFunction[Any, Json] = Map()) extends Codecs {
 
-  import collection.convert.decorateAsScala._
+  import scala.collection.JavaConverters._
 
   private val safeString = safeJson[String](jString(_))
   private val safeLong = safeJson[Long](jNumber)

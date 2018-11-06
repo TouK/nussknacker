@@ -8,11 +8,11 @@ object UtilProcessHelper {
 
   import argonaut.Argonaut._
 
-  import scala.collection.JavaConversions._
+  import scala.collection.JavaConverters._
 
   @Documentation(description = "Convert map to JSON")
   def mapToJson(map: java.util.Map[String, String]) = {
-    map.toMap.asJson.nospaces
+    map.asScala.toMap.asJson.nospaces
   }
 
   @Documentation(description = "Get random number")

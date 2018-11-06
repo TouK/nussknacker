@@ -11,7 +11,7 @@ import scala.collection.immutable.ListSet
 
 class BestEffortAvroEncoderSpec extends FunSpec with Matchers {
 
-  import collection.convert.decorateAsJava._
+  import collection.JavaConverters._
 
   it("should create simple record") {
     val schema = wrapWithRecordSchema(

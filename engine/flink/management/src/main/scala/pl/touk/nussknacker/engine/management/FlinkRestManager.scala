@@ -5,15 +5,19 @@ import java.io.File
 import argonaut.Argonaut._
 import argonaut._
 import ArgonautShapeless._
-
-import com.ning.http.client.multipart.FilePart
-import com.ning.http.client.{AsyncCompletionHandler, Request, RequestBuilder}
+import org.asynchttpclient.{AsyncCompletionHandler, Request, RequestBuilder}
+import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import dispatch._
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.runtime.jobgraph.JobStatus
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.dispatch.{LoggingDispatchClient, utils}
+import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import org.apache.flink.api.common.ExecutionConfig
+import org.asynchttpclient.request.body.multipart.FilePart
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.dispatch.{LoggingDispatchClient, utils}
 import pl.touk.nussknacker.engine.management.flinkRestModel.{DeployProcessRequest, GetSavepointStatusResponse, JobsResponse, SavepointTriggerResponse, jobStatusDecoder}
@@ -29,7 +33,7 @@ private[management] trait HttpSender {
 
 private[management] object DefaultHttpSender extends HttpSender {
 
-  private val httpClient = LoggingDispatchClient(classOf[FlinkRestManager].getSimpleName, Http)
+  private val httpClient = LoggingDispatchClient(classOf[FlinkRestManager].getSimpleName, Http.default)
 
   //We handle redirections manually, as dispatch/asynchttpclient has some problems (connection leaking with it in our use cases)
   override def send[T](pair: (Request, FunctionHandler[T]))

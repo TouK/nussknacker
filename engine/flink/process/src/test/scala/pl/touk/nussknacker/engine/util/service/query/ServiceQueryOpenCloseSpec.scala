@@ -20,7 +20,7 @@ class ServiceQueryOpenCloseSpec
 
   import ServiceQueryOpenCloseSpec._
 
-  private implicit val executionContext: ExecutionContextExecutor = ExecutionContext.Implicits.global
+  private implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
 
   test("open and close service") {
     val service = createService

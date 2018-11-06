@@ -110,18 +110,18 @@ object KafkaUtils {
   }
 
   implicit class RichConsumerConnector(consumer: KafkaConsumer[Array[Byte], Array[Byte]]) {
-    import scala.collection.JavaConversions._
+    import scala.collection.JavaConverters._
 
     def consume(topic: String): Stream[KeyMessage[Array[Byte], Array[Byte]]] = {
       implicit val patienceConfig: PatienceConfig = PatienceConfig(Span(10, Seconds), Span(100, Millis))
       val partitionsInfo = eventually {
-        consumer.listTopics.getOrElse(topic, throw new IllegalStateException(s"Topic: $topic not exists"))
+        consumer.listTopics.asScala.getOrElse(topic, throw new IllegalStateException(s"Topic: $topic not exists"))
       }
-      val partitions = partitionsInfo.map(no => new TopicPartition(topic, no.partition()))
-      consumer.assign(partitions)
+      val partitions = partitionsInfo.asScala.map(no => new TopicPartition(topic, no.partition()))
+      consumer.assign(partitions.asJava)
 
       Stream.continually(())
-        .flatMap(_ => consumer.poll(1000).toList.toStream)
+        .flatMap(_ => consumer.poll(1000).asScala.toStream)
         .map(record => KeyMessage(record.key(), record.value()))
     }
   }
