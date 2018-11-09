@@ -38,8 +38,9 @@ export function extractCountParams(queryParams) {
 }
 
 function fromTimestampOrDate(tsOrDate) {
-  if (Number.isInteger(tsOrDate))
-    return Moment(parseInt(tsOrDate));
+  const asInt = parseInt(tsOrDate);
+  if (Number.isInteger(asInt) && !isNaN(tsOrDate))
+    return Moment(asInt);
   else
     return Moment(tsOrDate);
 }
