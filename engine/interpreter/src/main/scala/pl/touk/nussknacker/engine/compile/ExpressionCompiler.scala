@@ -1,12 +1,13 @@
 package pl.touk.nussknacker.engine.compile
 
-import cats.data.Validated.{invalid, valid}
+import cats.data.Validated.{Valid, invalid, valid}
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.instances.list._
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError._
 import pl.touk.nussknacker.engine.compiledgraph.expression.ExpressionParser
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectMetadata, Parameter}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
 import pl.touk.nussknacker.engine.graph.evaluatedparam
@@ -40,23 +41,15 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
   : ValidatedNel[PartSubGraphCompilationError, List[compiledgraph.evaluatedparam.Parameter]] =
     compileObjectParameters(parameters.map(p => Parameter(p.name, ClazzRef[Any], ClazzRef[Any])), parameters, ctx)
 
-  def compileObjectParameters(parameterDefinitions: List[Parameter], parameters: List[evaluatedparam.Parameter], ctx: Option[ValidationContext])(implicit nodeId: NodeId)
+  def compileObjectParameters(parameterDefinitions: List[Parameter], parameters: List[evaluatedparam.Parameter], maybeCtx: Option[ValidationContext])(implicit nodeId: NodeId)
   : ValidatedNel[PartSubGraphCompilationError, List[compiledgraph.evaluatedparam.Parameter]] = {
     validateObjectParameters(parameterDefinitions, parameters.map(_.name)).andThen { _ =>
-      val paramMap = parameterDefinitions.map(p => p.name -> p.typ).toMap
-      parameters.map(p => compileParam(p, ctx, paramMap(p.name))).sequence
+      val paramMap = parameterDefinitions.map(p => p.name -> p).toMap
+      parameters.map { p =>
+        compileParam(p, maybeCtx, paramMap(p.name))
+      }.sequence
     }
   }
-  def compileObjectParameters(parameterDefinitions: List[Parameter], parameters: List[evaluatedparam.Parameter], paramsCtx: Map[String, ValidationContext])
-                             (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, List[compiledgraph.evaluatedparam.Parameter]] =
-    validateObjectParameters(parameterDefinitions, parameters.map(_.name))
-      .andThen { _ =>
-        val paramMap = parameterDefinitions.map(p => p.name -> p.typ).toMap
-
-        parameters.map(p => {
-          compileParam(p, paramsCtx.get(p.name), paramMap(p.name))
-        }).sequence
-      }
 
 
   private def validateObjectParameters(parameterDefinitions: List[Parameter], usedParamNames: List[String])
@@ -65,12 +58,21 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
   }
 
   private def compileParam(n: graph.evaluatedparam.Parameter,
-                           ctx: Option[ValidationContext],
-                           expectedType: ClazzRef,
+                           maybeCtx: Option[ValidationContext],
+                           definition: DefinitionExtractor.Parameter,
                            skipContextValidation: Boolean = false)
-                          (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, compiledgraph.evaluatedparam.Parameter] =
-    compile(n.expression, Some(n.name), ctx, expectedType)
-      .map(typed => compiledgraph.evaluatedparam.Parameter(n.name, typed._2))
+                          (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, compiledgraph.evaluatedparam.Parameter] = {
+    (maybeCtx match {
+      case Some(ctx) =>
+        definition.additionalVariables.foldLeft[ValidatedNel[PartSubGraphCompilationError, ValidationContext]](Valid(ctx)) {
+          case (acc, (name, typingResult)) => acc.andThen(_.withVariable(name, typingResult))
+        }.map(Option(_))
+      case None => Valid(None)
+    }).andThen { finalCtx =>
+      compile(n.expression, Some(n.name), finalCtx, definition.typ)
+        .map(typed => compiledgraph.evaluatedparam.Parameter(n.name, typed._2))
+    }
+  }
 
 
   def compile(n: graph.expression.Expression,

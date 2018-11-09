@@ -152,11 +152,7 @@ private[compile] trait PartSubGraphCompilerBase {
           .getOrElse(invalid(MissingCustomNodeExecutor(typ))).toValidatedNel
 
       val validatedParams = validatedParamsProvider andThen { provider =>
-        val params = provider.parameters
-        val paramsCtx = params.map(param => {
-          param.name -> ValidationContext(ctx.variables ++ param.additionalVariables)
-        }).toMap
-       expressionCompiler.compileObjectParameters(params, evaluatedParams, paramsCtx)
+       expressionCompiler.compileObjectParameters(provider.parameters, evaluatedParams, Some(ctx))
       }
 
       CompilationResult.map2(
