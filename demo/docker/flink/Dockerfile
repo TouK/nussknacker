@@ -1,4 +1,4 @@
-FROM flink:1.4.2
+FROM flink:1.6.2
 ADD ./additional/* /opt/flink/lib/
 ADD ./run.sh /run.sh
 #files have user root...
