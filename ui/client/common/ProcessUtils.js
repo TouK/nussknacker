@@ -1,4 +1,5 @@
 import _ from 'lodash'
+import NodeUtils from "../components/graph/NodeUtils";
 
 class ProcessUtils {
 
@@ -43,9 +44,21 @@ class ProcessUtils {
     return _.isEmpty(result.processPropertiesErrors)
   }
 
-  findAvailableVariables = (nodeId, process, processDefinition) => {
+  findAvailableVariables = (nodeId, process, processDefinition, fieldName) => {
     const variablesFromValidation = _.get(process.validationResult, "variableTypes." + nodeId)
-    return variablesFromValidation || this._findVariablesBasedOnGraph(nodeId, process, processDefinition)
+    const variablesForNode = variablesFromValidation || this._findVariablesBasedOnGraph(nodeId, process, processDefinition)
+    const additionalVariablesForParam = this._additionalVariablesForParameter(nodeId, process, processDefinition, fieldName)
+    return {
+      ...variablesForNode,
+      ...additionalVariablesForParam
+    };
+  }
+
+  _additionalVariablesForParameter = (nodeId, process, processDefinition, fieldName) => {
+    const node = NodeUtils.getNodeById(nodeId, process)
+    const nodeDefinition = this.findNodeObjectTypeDefinition(node, processDefinition) || {}
+    const parameter = (nodeDefinition.parameters || []).find(p => p.name === fieldName) || {}
+    return parameter.additionalVariables || {}
   }
 
   //FIXME: handle source/sink/exceptionHandler properly here - we don't want to use #input etc here!

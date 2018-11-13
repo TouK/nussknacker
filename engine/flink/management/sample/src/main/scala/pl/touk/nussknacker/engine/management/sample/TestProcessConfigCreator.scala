@@ -180,7 +180,7 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
       "customFilter" -> WithCategories(CustomFilter, "Category1", "Category2"),
       "constantStateTransformer" -> WithCategories(ConstantStateTransformer[String](ConstantState("stateId", 1234, List("elem1", "elem2", "elem3")).asJson.nospaces), "Category1", "Category2"),
       "constantStateTransformerLongValue" -> WithCategories(ConstantStateTransformer[Long](12333), "Category1", "Category2"),
-
+      "additionalVariable" -> WithCategories(AdditionalVariableTransformer, "Category1", "Category2"),
       "lockStreamTransformer" -> WithCategories(new SampleSignalHandlingTransformer.LockStreamTransformer(), "Category1", "Category2")
     )
   }
@@ -263,6 +263,16 @@ case object CustomFilter extends CustomStreamTransformer {
   def execute(@ParamName("expression") expression: LazyInterpreter[Boolean])
    = FlinkCustomStreamTransformation((start: DataStream[InterpretationResult]) =>
       start.filter(expression.syncInterpretationFunction).map(ValueWithContext(_)))
+
+}
+
+
+object AdditionalVariableTransformer extends CustomStreamTransformer {
+
+  @MethodToInvoke(returnType = classOf[Void])
+  def execute(@AdditionalVariables(Array(new AdditionalVariable(name = "additional", clazz = classOf[String]))) @ParamName("expression") expression: LazyInterpreter[Boolean])
+   = FlinkCustomStreamTransformation((start: DataStream[InterpretationResult]) =>
+      start.map(ValueWithContext(_)))
 
 }
 

@@ -316,7 +316,7 @@ export class NodeDetailsContent extends React.Component {
       <div className="node-row">
         {this.renderFieldLabel(fieldLabel)}
         <div className={nodeValueClass}>
-          <ExpressionSuggest inputProps={{
+          <ExpressionSuggest fieldName={fieldName} inputProps={{
             rows: 1, cols: 50, className: "node-input", value: expressionObj.expression, language: expressionObj.language,
             onValueChange: ((newValue) => this.setNodeDataAt(exprTextPath, newValue)), readOnly: false}}/>
         </div>

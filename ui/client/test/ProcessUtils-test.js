@@ -35,7 +35,7 @@ describe("process available variables finder", () => {
   it("should return only global variables for dangling node", () => {
     const danglingNodeId = "someFilterNode"
     const newEdges = _.reject(process.edges, (edge) => {return edge.from == danglingNodeId || edge.to == danglingNodeId})
-    const processWithDanglingNode = {process, ...{edges: newEdges}}
+    const processWithDanglingNode = {...process, ...{edges: newEdges}}
 
     const availableVariables = ProcessUtils.findAvailableVariables(danglingNodeId, processWithDanglingNode, processDefinition)
 
@@ -63,13 +63,29 @@ describe("process available variables finder", () => {
     })
   })
 
+
+  it("add additional variables to node if defined", () => {
+    const availableVariables = ProcessUtils.findAvailableVariables("aggregateId", processWithVariableTypes, processDefinition, "withAdditional")
+
+    expect(availableVariables).toEqual({
+      "additional1": {refClazzName: "java.lang.String"},
+      "input": {refClazzName:"org.nussknacker.model.Transaction"},
+      "date": {refClazzName:"java.time.LocalDate"},
+      "parsedTransaction": {refClazzName:"org.nussknacker.model.Transaction"},
+      "processVariables": {refClazzName:"java.lang.Object"}, 
+      "someVariableName": {refClazzName:"java.lang.Object"}
+    })
+  })
+
 })
 
 const processDefinition = {
   "services" : { "transactionParser": { "parameters": [], "returnType": { "refClazzName": "org.nussknacker.model.Transaction"}, "categories": ["Category11"]},},
   "sourceFactories" : { "kafka-transaction": { "parameters": [ { "name": "topic", "typ": { "refClazzName": "java.lang.String"} }], "returnType": { "refClazzName": "org.nussknacker.model.Transaction"}, "categories": [ "Category11" ]} },
   "sinkFactories" : { "endTransaction" : { "parameters": [ { "name": "topic", "typ": { "refClazzName": "java.lang.String"}}], "returnType" : { "refClazzName": "pl.touk.esp.engine.kafka.KafkaSinkFactory"}, "categories" : [ "Category12", "Category11", "Category1"]}},
-  "customStreamTransformers" : { "transactionAggregator" : { "parameters": [], "returnType": { "refClazzName": "java.lang.String"}, "categories": [ "Category12"]}},
+  "customStreamTransformers" : { "transactionAggregator" : { "parameters": [
+        {name: "withAdditional", additionalVariables: {"additional1": { "refClazzName": "java.lang.String"}}}
+      ], "returnType": { "refClazzName": "java.lang.String"}, "categories": [ "Category12"]}},
   "exceptionHandlerFactory" : { "parameters" : [ { "name": "errorsTopic", "typ": { "refClazzName": "java.lang.String"}}], "returnType" : { "refClazzName": "org.nussknacker.process.espExceptionHandlerFactory"}, "categories" : []},
   "globalVariables" : { "date": { "returnType": { "refClazzName": "java.time.LocalDate"}, "categories" : [ "Category12", "Category11"]}},
   "typesInformation" : [
@@ -90,7 +106,7 @@ const process = {
     { "type": "Filter", "id": "anonymousUserFilter", "expression": { "language": "spel", "expression": "#input.PATH != 'Anonymous'"}},
     { "type": "Enricher", "id": "decodeHtml", "service": { "id": "transactionParser", "parameters": [{ "name": "transaction", "expression": { "language": "spel", "expression": "#input"}}]}, "output": "parsedTransaction"},
     { "type": "Filter", "id": "someFilterNode", "expression": { "language": "spel", "expression": "true"}},
-    { "type": "CustomNode", "id": "aggregateId", "outputVar": "aggregateResult", "nodeType": "transactionAggregator", "parameters": []},
+    { "type": "CustomNode", "id": "aggregateId", "outputVar": "aggregateResult", "nodeType": "transactionAggregator", "parameters": [{"name": "withAdditional", "value": "''"}]},
     { "type": "Sink", "id": "endEnriched", "ref": { "typ": "transactionSink", "parameters": [{ "name": "topic", "value": "transaction.errors"}]}, "endResult": { "language": "spel", "expression": "#finalTransaction.toJson()"}}
   ],
   "edges": [
