@@ -21,6 +21,7 @@ publishTo := Some(Resolver.defaultLocal)
 
 val publishSettings = Seq(
   publishMavenStyle := true,
+  releasePublishArtifactsAction := PgpKeys.publishSigned.value,
   publishTo := {
     nexusUrl.map(url =>
       (if (isSnapshot.value) "snapshots" else "releases") at url)
@@ -221,7 +222,6 @@ lazy val managementSample = (project in engine("flink/management/sample")).
     assemblyJarName in assembly := "managementSample.jar",
     assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false, level = Level.Debug),
     test in assembly := {},
-    publishArtifact in (Compile, packageDoc) := false, //scaladoc fails so we disable it, we don't need it here anyway
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
@@ -635,8 +635,6 @@ lazy val ui = (project in file("ui/server"))
   )
   .settings(addArtifact(artifact in (Compile, assembly), assembly))
   .dependsOn(management, interpreter, engineStandalone, processReports, securityApi)
-
-releasePublishArtifactsAction := PgpKeys.publishSigned.value
 
 addCommandAlias("assemblySamples", ";managementSample/assembly;standaloneSample/assembly")
 

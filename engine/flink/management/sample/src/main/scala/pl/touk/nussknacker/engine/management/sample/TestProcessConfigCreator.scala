@@ -377,11 +377,7 @@ case object MultipleParamsService extends Service {
 
 object DateProcessHelper {
   @Documentation(
-    description = "Returns current time in milliseconds." +
-      "\nNote that while the unit of time of the return value is a millisecond," +
-      "\nthe granularity of the value depends on the underlying" +
-      "\noperating system and may be larger. For example, many" +
-      "\noperating systems measure time in units of tens of milliseconds."
+    description = "Returns current time in milliseconds"
   )
   def nowTimestamp(): Long = System.currentTimeMillis()
 
