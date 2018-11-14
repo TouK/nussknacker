@@ -30,17 +30,10 @@ environment: "demo"
 attachmentsPath: "/tmp/touk/esp-frontend/attachments"
 
 flinkConfig {
-  customConfig {
-      high-availability: "zookeeper"
-      recovery.mode: "zookeeper"
-      high-availability.zookeeper.quorum: "zookeeper:2181"
-      high-availability.zookeeper.path.root: "/flinkPath"
-      high-availability.zookeeper.path.namespace: "/flinkDemo"
-  }  
-
+  restUrl: "http://localhost:8081"
+  classpath: ["code-assembly.jar"]
   parallelism: 4
   jobManagerTimeout: 1m
-  jarPath: "./code-assembly.jar"
 }
 
 metricsSettings {
@@ -125,27 +118,14 @@ Configuration of communication with Flink cluster and definition of model
 
 ```
 flinkConfig {
-  customConfig {
-      high-availability: "zookeeper"
-      recovery.mode: "zookeeper"
-      high-availability.zookeeper.quorum: "zookeeper:2181"
-      high-availability.zookeeper.path.root: "/flinkPath"
-      high-availability.zookeeper.path.namespace: "/flinkDemo"
-      parallelism: 4
-  }
-  configLocation: "/opt/flink/conf"  
-  classpath: ["./code-assembly.jar", "http://url.additional.code/link.jar"]
+  restUrl: "http://localhost:8081"
+  classpath: ["code-assembly.jar"]
+  parallelism: 4
+  jobManagerTimeout: 1m
 }
 ```
-In this section you can put all configuration values for Flink client, 
-as described [here](https://ci.apache.org/projects/flink/flink-docs-release-{{book.flinkMajorVersion}}/setup/config.html).
-They can be defined in two ways:
-* you can specify folder where flink-conf.yaml is located (especially useful when Nussknacker is on the same VM as Flink)
-  with *configLocation* property
-* you can define all settings (or override some of Flink settings from flink-conf.yaml) by putting them into *customConfig* section  
-
-In addition you can specify following values:
-
+In this section you can put all configuration values for Flink client. We are using Flink REST API so the only
+required parameter is restUrl - which defines location of Flink JobManager
 * jobManagerTimeout (e.g. 1m) - timeout used in communication with Flink cluster
 * classpath - list of files/URLs with jars with model for processes 
 
@@ -169,13 +149,17 @@ In model configuration you can also define some attributes of services. These in
         parameterName = "parameterValue"
       }
     },
+    serviceWithDocumentation {
+      docsUrl: "https://en.wikipedia.org/wiki/Customer_service"
+    }
     hasSpecialIcon {
       icon: "icon_file.svg"
     }
   }
 
 ```
-* containsDefaultValue, hasSpecialIcon - nodes names
+* containsDefaultValue, hasSpecialIcon, serviceWithDocumentation - nodes names
 * parameterName - node parameter name you'd like to assign default value
 * parameterValue - value of default parameter
+* docsUrl - link to documentation (e.g. confluence page)
 * icon- path to icon file 

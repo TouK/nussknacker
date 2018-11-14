@@ -8,6 +8,7 @@
 * [Flink integration](FlinkIntegration.md)
 * [Monitoring](Metrics.md)
 * [Configuration](Configuration.md)
+* [Security](Security.md)
 * [Roadmap](Roadmap.md)
 * [Changelog/Versions](Changelog.md)
 * [Powered by Nussknacker](PoweredBy.md)
