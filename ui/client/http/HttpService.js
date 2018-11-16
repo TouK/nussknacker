@@ -260,7 +260,7 @@ export default {
     }
   },
 
-  exportProcess(process) {
+  exportProcess(process, versionId) {
     const url = `${API_URL}/processesExport`
     fetch(url,
       {
@@ -272,7 +272,7 @@ export default {
           })
       }
     ).then((response) => response.blob()).then((blob) => {
-      FileSaver.saveAs(blob, `${process.id}.json`);
+      FileSaver.saveAs(blob, `${process.id}-${versionId}.json`);
     }).catch((error) => this.addError(`Failed to export`, error));
   },
 
