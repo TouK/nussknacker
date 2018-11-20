@@ -420,8 +420,8 @@ export function fetchAndDisplayProcessCounts(processName, from, to) {
   return (dispatch) =>
     HttpService.fetchProcessCounts(
       processName,
-      from.format(dateFormat),
-      to.format(dateFormat)
+      from ? from.format(dateFormat): null,
+      to ? to.format(dateFormat) : null
     ).then((processCounts) => dispatch(displayProcessCounts(processCounts)))
 }
 

@@ -4,7 +4,7 @@ import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.readers.ValueReader
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.process.migrate.HttpRemoteEnvironmentConfig
-import pl.touk.process.report.influxdb.InfluxReporterConfig
+import pl.touk.nussknacker.processCounts.influxdb.InfluxReporterConfig
 
 case class FeatureTogglesConfig(development: Boolean,
                                 standaloneMode: Boolean,

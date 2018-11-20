@@ -1,9 +1,9 @@
-package pl.touk.process.report.influxdb
+package pl.touk.nussknacker.processCounts.influxdb
 
 import java.time.LocalDateTime
 
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.process.report.influxdb.InfluxGenerator.{InfluxSerie, PointInTimeQuery}
+import pl.touk.nussknacker.processCounts.influxdb.InfluxGenerator.{InfluxSerie, PointInTimeQuery}
 import argonaut._
 import argonaut.Argonaut._
 import argonaut.ArgonautShapeless._

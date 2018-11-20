@@ -13,7 +13,7 @@ import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.processreport.{ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.DateUtils
-import pl.touk.process.report.{CannotFetchCountsError, CountsReporter}
+import pl.touk.nussknacker.processCounts._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -23,16 +23,13 @@ class ProcessReportResources(countsReporter: CountsReporter, processCounter: Pro
   def route(implicit loggedUser: LoggedUser): Route = {
     path("processCounts" / Segment) { processName =>
       (get & processId(processName)) { processId =>
-        parameters('dateFrom, 'dateTo) { (dateFromS, dateToS) =>
-          val dateTo = DateUtils.parseDateTime(dateToS)
-          val dateToToUse = if (dateTo.isAfter(LocalDateTime.now())) LocalDateTime.now() else dateTo
-          val dateFrom = DateUtils.parseDateTime(dateFromS)
-
+        parameterMap { parameters =>
+          val request = prepareRequest(parameters)
           complete {
             processRepository.fetchLatestProcessDetailsForProcessId(processId.id).flatMap[ToResponseMarshallable] {
               case Some(process) =>
                 process.json match {
-                  case Some(displayable) => computeCounts(displayable, dateFrom, dateToToUse)
+                  case Some(displayable) => computeCounts(displayable, request)
                   case None => Future.successful(HttpResponse(status = StatusCodes.NotFound, entity = "Counts unavailable for this process"))
                 }
               case None => Future.successful(HttpResponse(status = StatusCodes.NotFound, entity = "Process not found"))
@@ -43,9 +40,21 @@ class ProcessReportResources(countsReporter: CountsReporter, processCounter: Pro
     }
   }
 
+  private def prepareRequest(parameters: Map[String, String]): CountsRequest = {
+    def getAsDate(paramName: String) = parameters.get(paramName).filterNot(_.isEmpty).map(DateUtils.parseDateTime)
+    val dateTo = getAsDate("dateTo")
+      .filterNot(_.isAfter(LocalDateTime.now()))
+      .getOrElse(LocalDateTime.now())
+    getAsDate("dateFrom") match {
+      case Some(dateFrom) =>
+        RangeCount(dateFrom, dateTo)
+      case None =>
+        ExecutionCount(dateTo)
+    }
+  }
 
-  private def computeCounts(process: DisplayableProcess, dateFrom: LocalDateTime, dateTo: LocalDateTime): Future[ToResponseMarshallable] = {
-    countsReporter.prepareRawCounts(process.id, dateFrom, dateTo)
+  private def computeCounts(process: DisplayableProcess, countsRequest: CountsRequest): Future[ToResponseMarshallable] = {
+    countsReporter.prepareRawCounts(process.id, countsRequest)
       .map(computeFinalCounts(process, _))
       .recover {
         case CannotFetchCountsError(msg) => HttpResponse(status = StatusCodes.BadRequest, entity = msg)
@@ -55,7 +64,7 @@ class ProcessReportResources(countsReporter: CountsReporter, processCounter: Pro
 
   private def computeFinalCounts(displayable: DisplayableProcess, nodeCountFunction: String => Option[Long]) : ToResponseMarshallable = {
     val computedCounts = processCounter.computeCounts(ProcessConverter.fromDisplayable(displayable),
-      (nodeId) => nodeCountFunction(nodeId).map(count => RawCount(count, 0)))
+      nodeId => nodeCountFunction(nodeId).map(count => RawCount(count, 0)))
     computedCounts.asJson
   }
 

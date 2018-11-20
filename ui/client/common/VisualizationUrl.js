@@ -29,7 +29,7 @@ export function extractVisualizationParams(queryParams) {
 
 export function extractCountParams(queryParams) {
   if (!_.isEmpty(queryParams.from) || !_.isEmpty(queryParams.to)) {
-    const from = queryParams.from ? fromTimestampOrDate(queryParams.from) : Moment(0);
+    const from = queryParams.from ? fromTimestampOrDate(queryParams.from) : null;
     const to = queryParams.to ? fromTimestampOrDate(queryParams.to) : Moment();
     return {from, to};
   } else {

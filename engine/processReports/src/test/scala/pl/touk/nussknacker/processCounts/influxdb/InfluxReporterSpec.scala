@@ -1,4 +1,4 @@
-package pl.touk.process.report.influxdb
+package pl.touk.nussknacker.processCounts.influxdb
 
 import org.scalatest.{FunSuite, Matchers}
 

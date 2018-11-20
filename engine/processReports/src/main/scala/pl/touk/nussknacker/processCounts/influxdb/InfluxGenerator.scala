@@ -1,4 +1,4 @@
-package pl.touk.process.report.influxdb
+package pl.touk.nussknacker.processCounts.influxdb
 
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDateTime, ZoneId, ZonedDateTime}
@@ -8,7 +8,7 @@ import com.typesafe.scalalogging.LazyLogging
 import dispatch._
 import pl.touk.nussknacker.engine.dispatch.LoggingDispatchClient
 import pl.touk.nussknacker.engine.dispatch.utils._
-import pl.touk.process.report.influxdb.InfluxGenerator.{InfluxResponse, InfluxSerie, PointInTimeQuery}
+import pl.touk.nussknacker.processCounts.influxdb.InfluxGenerator.{InfluxResponse, InfluxSerie, PointInTimeQuery}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -23,12 +23,13 @@ private[influxdb] class InfluxGenerator(url: String, user: String, password: Str
 
   //TODO: query below should work better even in case of restarts, however for large processes/time ranges it can be *really* slow (at least on influx we use...)
   //select sum(diff) from (select non_negative_difference(value) as diff from "$metricName.count" where process = '$processName' and env = '$env' and time > $from and time < $to group by slot) group by action
-  def query(processName: String, metricName: String, dateFrom: LocalDateTime, dateTo: LocalDateTime): Future[Map[String, Long]] = {
+  def query(processName: String, metricName: String, dateFrom: Option[LocalDateTime], dateTo: LocalDateTime): Future[Map[String, Long]] = {
     val pointInTimeQuery = new PointInTimeQuery(rawQuery, processName, metricName, env)
 
     for {
       valuesAtEnd <- pointInTimeQuery.query(dateTo)
-      valuesAtStart <- pointInTimeQuery.query(dateFrom)
+      valuesAtStart <- dateFrom.map(pointInTimeQuery.query)
+        .getOrElse(Future.successful(Map[String, Long]()))
     } yield valuesAtEnd.map {
       case (key, value) => key -> (value - valuesAtStart.getOrElse(key, 0L))
     }

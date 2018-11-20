@@ -1,4 +1,4 @@
-package pl.touk.process.report.influxdb
+package pl.touk.nussknacker.processCounts.influxdb
 
 import java.time.LocalDateTime
 
@@ -12,7 +12,7 @@ private[influxdb] class InfluxBaseCountsReporter(env: String, config: InfluxRepo
   //TODO this inlfuxUrl can be fetched using grafana API
   val influxGenerator = new InfluxGenerator(config.influxUrl, config.user, config.password, config.database, env)
 
-  def fetchBaseProcessCounts(processId: String, dateFrom: LocalDateTime, dateTo: LocalDateTime): Future[ProcessBaseCounts] = {
+  def fetchBaseProcessCounts(processId: String, dateFrom: Option[LocalDateTime], dateTo: LocalDateTime): Future[ProcessBaseCounts] = {
 
     val reportData = for {
       allCount <- influxGenerator.query(processId, "source", dateFrom, dateTo).map(_.getOrElse("count", 0L))
