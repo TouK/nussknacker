@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedParameters}
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import shapeless.syntax.typeable._
-
+                 
 object ProcessDefinitionExtractor {
 
   import pl.touk.nussknacker.engine.util.Implicits._

@@ -131,12 +131,23 @@ object DefinitionExtractor {
                 globalProcessVariables: Iterable[ClazzRef])
                (implicit settings: ClassExtractionSettings): List[ClazzDefinition] = {
 
-      //TODO: do we need services here?
-      val classesToExtractDefinitions =
-      globalProcessVariables ++
-        (services ++ customNodeTransformers ++ sourceFactories ++ signalsFactories).map(sv => sv.methodDef.returnType)
-
+      val objectToExtractClassesFrom = services ++ customNodeTransformers ++ sourceFactories ++ signalsFactories
+      val classesToExtractDefinitions = globalProcessVariables ++ objectToExtractClassesFrom.flatMap(extractTypesFromObjectDefinition)
       TypesInformationExtractor.clazzAndItsChildrenDefinition(classesToExtractDefinitions)
+    }
+
+    private def extractTypesFromObjectDefinition(obj: ObjectWithMethodDef): List[ClazzRef] = {
+      def clazzRefFromTyped(typed: TypingResult): Iterable[ClazzRef] = typed match {
+        case Typed(possibleTypes) => possibleTypes.map(t => ClazzRef(t.klass))
+        case _ => Set()
+      }
+
+      def clazzRefsFromParameter(parameter: Parameter): Iterable[ClazzRef] = {
+        val fromAdditionalVars = parameter.additionalVariables.values.flatMap(clazzRefFromTyped)
+        fromAdditionalVars.toList :+ parameter.typ
+      }
+
+      obj.methodDef.returnType :: obj.parameters.flatMap(clazzRefsFromParameter)
     }
   }
 

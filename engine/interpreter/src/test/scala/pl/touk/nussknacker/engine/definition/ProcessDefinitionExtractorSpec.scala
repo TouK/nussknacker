@@ -23,7 +23,12 @@ class ProcessDefinitionExtractorSpec extends FlatSpec with Matchers {
   it should "extract additional variables info from annotation" in {
     val methodDef = processDefinition.customStreamTransformers("transformer1")._1.methodDef
     val additionalVars = methodDef.orderedParameters.definedParameters.head.additionalVariables
-    additionalVars("var1") shouldBe Typed[String]
+    additionalVars("var1") shouldBe Typed[OnlyUsedInAdditionalVariable]
+  }
+
+  it should "extract type info from classes from additional variables" in {
+    val classDefinition = processDefinition.typesInformation.find(_.clazzName.clazz == classOf[OnlyUsedInAdditionalVariable])
+      classDefinition.map(_.methods.keys) shouldBe Some(Set("someField"))
   }
 
   object TestCreator extends ProcessConfigCreator {
@@ -56,7 +61,7 @@ class ProcessDefinitionExtractorSpec extends FlatSpec with Matchers {
     @SignalTransformer(signalClass = classOf[Signal1])
     def invoke(
       @ParamName("param1")
-      @AdditionalVariables(value = Array(new AdditionalVariable(name = "var1", clazz = classOf[String])))
+      @AdditionalVariables(value = Array(new AdditionalVariable(name = "var1", clazz = classOf[OnlyUsedInAdditionalVariable])))
       param1: String) : Unit = {}
   }
 
@@ -64,4 +69,6 @@ class ProcessDefinitionExtractorSpec extends FlatSpec with Matchers {
     @MethodToInvoke
     def send1(@ParamName("param1") param1: String) : Unit = {}
   }
+
+  case class OnlyUsedInAdditionalVariable(someField: String)
 }
