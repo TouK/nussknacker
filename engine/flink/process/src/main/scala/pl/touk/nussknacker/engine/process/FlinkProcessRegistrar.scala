@@ -324,7 +324,8 @@ object FlinkProcessRegistrar {
 
     override def open(parameters: Configuration): Unit = {
       super.open(parameters)
-      executionContext = asyncExecutionContextPreparer.prepareExecutionContext(compiledProcessWithDeps.metaData.id)
+      executionContext = asyncExecutionContextPreparer.prepareExecutionContext(compiledProcessWithDeps.metaData.id,
+        getRuntimeContext.getExecutionConfig.getParallelism)
     }
 
 

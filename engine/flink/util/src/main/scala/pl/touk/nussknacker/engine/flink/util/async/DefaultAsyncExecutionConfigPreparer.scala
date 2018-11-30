@@ -28,7 +28,7 @@ object DefaultAsyncExecutionConfigPreparer extends LazyLogging {
 
   private[DefaultAsyncExecutionConfigPreparer] def getExecutionContext(workers: Int, process: String) = synchronized {
     counter.incrementAndGet()
-    logger.info(s"Creating asyncExecutor for $process, with $workers, counter is ${counter.get()}")
+    logger.info(s"Creating asyncExecutor for $process, with $workers workers, counter is ${counter.get()}")
     asyncExecutionContext match {
       case Some((_, ec)) => ec
       case None =>
@@ -51,8 +51,7 @@ object DefaultAsyncExecutionConfigPreparer extends LazyLogging {
 
 case class DefaultAsyncExecutionConfigPreparer(bufferSize: Int, parallelismMultiplier: Int) extends AsyncExecutionContextPreparer with LazyLogging {
 
-  def prepareExecutionContext(processId: String) : ExecutionContext = {
-    val parallelism = StreamExecutionEnvironment.getExecutionEnvironment.getParallelism
+  def prepareExecutionContext(processId: String, parallelism: Int) : ExecutionContext = {
     logger.info(s"Creating asyncExecutor for $processId, parallelism: $parallelism, multiplier: $parallelismMultiplier")
     DefaultAsyncExecutionConfigPreparer.getExecutionContext(parallelism * parallelismMultiplier, processId)
   }

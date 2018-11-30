@@ -6,7 +6,7 @@ trait AsyncExecutionContextPreparer {
 
   def bufferSize: Int
 
-  def prepareExecutionContext(processId: String): ExecutionContext
+  def prepareExecutionContext(processId: String, parallelism: Int): ExecutionContext
 
   def close(): Unit
 
