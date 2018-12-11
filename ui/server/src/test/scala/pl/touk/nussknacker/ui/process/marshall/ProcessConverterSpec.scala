@@ -28,7 +28,7 @@ class ProcessConverterSpec extends FlatSpec with Matchers with TableDrivenProper
     val processDefinition = ProcessDefinition[ObjectDefinition](Map("ref" -> ObjectDefinition.noParam),
       Map("sourceRef" -> ObjectDefinition.noParam), Map(), Map(), Map(), ObjectDefinition.noParam, ExpressionDefinition(Map.empty, List.empty, optimizeCompilation = false), List())
     val validator =  ProcessValidator.default(ProcessDefinitionBuilder.withEmptyObjects(processDefinition))
-    new ProcessValidation(Map(TestProcessingTypes.Streaming -> validator), sampleResolver)
+    new ProcessValidation(Map(TestProcessingTypes.Streaming -> validator), Map(TestProcessingTypes.Streaming -> Map()), sampleResolver)
   }
 
   def canonicalDisplayable(canonicalProcess: CanonicalProcess) = {

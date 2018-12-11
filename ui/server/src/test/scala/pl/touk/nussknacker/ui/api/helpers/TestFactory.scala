@@ -30,7 +30,8 @@ object TestFactory extends TestPermissions{
   val sampleSubprocessRepository = SampleSubprocessRepository
   val sampleResolver = new SubprocessResolver(sampleSubprocessRepository)
 
-  val processValidation = new ProcessValidation(Map(TestProcessingTypes.Streaming -> ProcessTestData.validator), sampleResolver)
+  val processValidation = new ProcessValidation(Map(TestProcessingTypes.Streaming -> ProcessTestData.validator),
+    Map(TestProcessingTypes.Streaming -> Map()), sampleResolver)
   val posting = new ProcessPosting
   val buildInfo = Map("engine-version" -> "0.1")
 

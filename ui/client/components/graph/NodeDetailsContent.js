@@ -213,8 +213,8 @@ export class NodeDetailsContent extends React.Component {
           this.createField("checkbox", "Should split state to disk", "typeSpecificProperties.splitStateToDisk", "splitStateToDisk"),
           this.createField("checkbox", "Should use async interpretation (lazy variables not allowed)", "typeSpecificProperties.useAsyncInterpretation", "useAsyncInterpretation")
         ] : [this.createField("input", "Query path",  "typeSpecificProperties.path", "path")]
-        const additionalFields = Object.entries(this.props.additionalPropertiesLabels).map(([fieldName, fieldLabel]) => {
-          return this.createField("input", fieldLabel, `additionalFields.properties.${fieldName}`, fieldName)
+        const additionalFields = Object.entries(this.props.additionalPropertiesConfig).map(([fieldName, fieldConfig]) => {
+          return this.createField("input", fieldConfig.label, `additionalFields.properties.${fieldName}`, fieldName)
         })
         const hasExceptionHandlerParams = this.state.editedNode.exceptionHandler.parameters.length > 0
         return (
@@ -429,7 +429,7 @@ export class NodeDetailsContent extends React.Component {
 
 function mapState(state) {
   return {
-    additionalPropertiesLabels: _.get(state.settings, 'processDefinitionData.additionalPropertiesLabels') || {}
+    additionalPropertiesConfig: _.get(state.settings, 'processDefinitionData.additionalPropertiesConfig') || {}
   }
 }
 

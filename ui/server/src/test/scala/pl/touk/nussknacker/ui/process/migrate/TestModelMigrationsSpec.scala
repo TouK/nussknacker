@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.migrate
 
+import com.typesafe.config.ConfigFactory
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
@@ -10,7 +11,7 @@ import pl.touk.nussknacker.engine.graph.node.{SubprocessInput, SubprocessInputDe
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.ui.api.ProcessTestData
 import pl.touk.nussknacker.ui.api.ProcessTestData.{existingServiceId, existingSinkFactory, existingSourceFactory}
-import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
+import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.displayedgraph.ValidatedDisplayableProcess
 import pl.touk.nussknacker.ui.validation.ValidationResults.{ValidationErrors, ValidationResult, ValidationWarnings}
 
@@ -108,9 +109,7 @@ class TestModelMigrationsSpec extends FunSuite with Matchers {
     = validationResult.errors.invalidNodes.mapValues(_.map(_.typ))
 
   private def newTestModelMigrations(testMigrations: TestMigrations): TestModelMigrations = {
-    new TestModelMigrations(
-      Map(TestProcessingTypes.Streaming -> testMigrations),
-      Map(TestProcessingTypes.Streaming -> ProcessTestData.validator))
+    new TestModelMigrations(Map(TestProcessingTypes.Streaming -> testMigrations), TestFactory.processValidation)
 
   }
 }

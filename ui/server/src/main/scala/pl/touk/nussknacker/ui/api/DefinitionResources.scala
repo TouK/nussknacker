@@ -67,7 +67,7 @@ class DefinitionResources(modelData: Map[ProcessingType, ModelData],
                 val defaultParametersFactory = DefaultValueExtractorChain(defaultParametersValues, modelDataForType.modelClassLoader)
 
                 val nodeCategoryMapping = processConfig.getOrElse[Map[String, String]]("nodeCategoryMapping", Map.empty)
-                val additionalPropertiesLabels = processConfig.getOrElse[Map[String, String]]("additionalFields.propertiesLabels", Map.empty)
+                val additionalPropertiesConfig = processConfig.getOrElse[Map[String, AdditionalProcessProperty]]("additionalFieldsConfig", Map.empty)
 
                 val result = ProcessObjects(
                   nodesToAdd = DefinitionPreparer.prepareNodesToAdd(
@@ -81,7 +81,7 @@ class DefinitionResources(modelData: Map[ProcessingType, ModelData],
                   ),
                   processDefinition = uiProcessDefinition,
                   nodesConfig = nodesConfig,
-                  additionalPropertiesLabels = additionalPropertiesLabels,
+                  additionalPropertiesConfig = additionalPropertiesConfig,
                   edgesForNodes = DefinitionPreparer.prepareEdgeTypes(
                     user = user,
                     processDefinition = chosenProcessDefinition,
@@ -131,7 +131,7 @@ class DefinitionResources(modelData: Map[ProcessingType, ModelData],
 case class ProcessObjects(nodesToAdd: List[NodeGroup],
                           processDefinition: UIProcessDefinition,
                           nodesConfig: Map[String, SingleNodeConfig],
-                          additionalPropertiesLabels: Map[String, String],
+                          additionalPropertiesConfig: Map[String, AdditionalProcessProperty],
                           edgesForNodes: List[NodeEdges])
 
 case class UIProcessDefinition(services: Map[String, ObjectDefinition],
@@ -144,6 +144,8 @@ case class UIProcessDefinition(services: Map[String, ObjectDefinition],
                                typesInformation: List[ClazzDefinition],
                                subprocessInputs: Map[String, ObjectDefinition]) {
 }
+
+case class AdditionalProcessProperty(label: String, isRequired: Boolean)
 
 object UIProcessDefinition {
   def apply(processDefinition: ProcessDefinition[ObjectDefinition], subprocessInputs: Map[String, ObjectDefinition]): UIProcessDefinition = {

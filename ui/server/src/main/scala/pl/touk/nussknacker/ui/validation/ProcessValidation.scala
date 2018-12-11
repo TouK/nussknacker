@@ -1,11 +1,12 @@
 package pl.touk.nussknacker.ui.validation
 
-import cats.data.{NonEmptyList}
+import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.compile.{ProcessCompilationError, ProcessValidator}
 import pl.touk.nussknacker.engine.graph.node.{Disableable, NodeData, Source, SubprocessInputDefinition}
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
+import pl.touk.nussknacker.ui.api.AdditionalProcessProperty
 import pl.touk.nussknacker.ui.process.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.ProcessAdditionalFields
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
@@ -15,17 +16,24 @@ import shapeless.syntax.typeable._
 
 object ProcessValidation{
 
+  import net.ceedubs.ficus.Ficus._
+  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+
   def apply(data: Map[ProcessingType, ModelData], subprocessResolver: SubprocessResolver) : ProcessValidation = {
-    new ProcessValidation(data.mapValues(_.validator), subprocessResolver)
+    val additionalFields = data.mapValues(_.processConfig.getOrElse[Map[String, AdditionalProcessProperty]]("additionalFieldsConfig", Map.empty))
+    new ProcessValidation(data.mapValues(_.validator), additionalFields, subprocessResolver)
   }
 }
 
-class ProcessValidation(validators: Map[ProcessingType, ProcessValidator], subprocessResolver: SubprocessResolver) {
+class ProcessValidation(validators: Map[ProcessingType, ProcessValidator],
+                        additionalFieldsConfig: Map[ProcessingType, Map[String, AdditionalProcessProperty]],
+                        subprocessResolver: SubprocessResolver) {
 
   val uiValidationError = "UiValidation"
 
   import pl.touk.nussknacker.ui.util.CollectionsEnrichments._
 
+  def withSubprocessResolver(subprocessResolver: SubprocessResolver) = new ProcessValidation(validators, additionalFieldsConfig, subprocessResolver)
 
   def validate(displayable: DisplayableProcess): ValidationResult = {
     val uiValidationResult = uiValidation(displayable)
@@ -73,6 +81,7 @@ class ProcessValidation(validators: Map[ProcessingType, ProcessValidator], subpr
       .add(validateLooseNodes(displayable))
       .add(validateDuplicateSource(displayable))
       .add(validateEdgeUniqueness(displayable))
+      .add(validateAdditionalProcessProperties(displayable))
   }
 
   private def validateIds(displayable: DisplayableProcess): ValidationResult = {
@@ -86,6 +95,22 @@ class ProcessValidation(validators: Map[ProcessingType, ProcessValidator], subpr
     )
   }
 
+  private def validateAdditionalProcessProperties(displayable: DisplayableProcess): ValidationResult = {
+    additionalFieldsConfig.get(displayable.processingType) match {
+      case None =>
+        ValidationResult.errors(Map(), List(), List(PrettyValidationErrors.noValidatorKnown(displayable.processingType)))
+      case Some(propertiesConfig) =>
+        val nonEmptyFields = displayable.metaData
+          .additionalFields.flatMap(_.cast[ProcessAdditionalFields]).toList.flatMap(_.properties.filterNot(_._2.isEmpty).keys)
+        val errors = propertiesConfig
+          .filter(_._2.isRequired)
+          .filterNot(field => nonEmptyFields.contains(field._1))
+          .map(field => PrettyValidationErrors.emptyRequiredField(uiValidationError, field._1, field._2.label))
+          .toList
+        ValidationResult.errors(Map(), errors, List())
+
+    }
+  }
 
   private def validateEdgeUniqueness(displayableProcess: DisplayableProcess): ValidationResult = {
     val edgeUniquenessErrors = displayableProcess.edges

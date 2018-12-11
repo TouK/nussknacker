@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.validation
 
+import com.typesafe.config.ConfigFactory
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.StreamMetaData
@@ -9,14 +10,14 @@ import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
+import pl.touk.nussknacker.ui.api.{AdditionalProcessProperty, ProcessTestData}
+import pl.touk.nussknacker.ui.api.helpers.TestFactory.sampleResolver
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessingTypes}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.EdgeType.{NextSwitch, SwitchDefault}
 import pl.touk.nussknacker.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.{Edge, EdgeType, Group, ProcessAdditionalFields}
 import pl.touk.nussknacker.ui.validation.ValidationResults.{NodeValidationError, ValidationErrors, ValidationResult, ValidationWarnings}
-
-import scala.collection.Map
 
 class ProcessValidationSpec extends FlatSpec with Matchers {
 
@@ -168,9 +169,41 @@ class ProcessValidationSpec extends FlatSpec with Matchers {
     }
   }
 
-  private def createProcess(nodes: List[NodeData], edges: List[Edge], `type`: ProcessingTypeData.ProcessingType = TestProcessingTypes.Streaming, groups: Set[Group] = Set()) = {
+  it should "not allow required process fields" in {
+    val processValidation = new ProcessValidation(Map(TestProcessingTypes.Streaming -> ProcessTestData.validator),
+      Map(TestProcessingTypes.Streaming -> Map(
+        "field1" -> AdditionalProcessProperty("label1", true),
+        "field2" -> AdditionalProcessProperty("label2", false)
+      )), sampleResolver)
+
+    def process(fields: Map[String, String]) = createProcess(
+      List(
+        Source("in", SourceRef("barSource", List())),
+        Sink("out", SinkRef("barSink", List()))
+      ),
+      List(Edge("in", "out", None)), additionalFields = fields
+    )
+
+    processValidation.validate(process(Map("field1" -> "a", "field2" -> "b"))) shouldBe 'ok
+
+    processValidation.validate(process(Map("field1" -> "a"))) shouldBe 'ok
+
+    processValidation.validate(process(Map("field1" -> "", "field2" -> "b")))
+      .errors.processPropertiesErrors shouldBe List(NodeValidationError("UiValidation", "Field field1 (label1) cannot be empty",
+      "label1 cannot be empty", Some("field1"), ValidationResults.NodeValidationErrorType.SaveAllowed))
+    
+    processValidation.validate(process(Map("field2" -> "b")))
+      .errors.processPropertiesErrors shouldBe List(NodeValidationError("UiValidation", "Field field1 (label1) cannot be empty",
+      "label1 cannot be empty", Some("field1"), ValidationResults.NodeValidationErrorType.SaveAllowed))
+
+  }
+
+  private def createProcess(nodes: List[NodeData],
+                            edges: List[Edge],
+                            `type`: ProcessingTypeData.ProcessingType = TestProcessingTypes.Streaming,
+                            groups: Set[Group] = Set(), additionalFields: Map[String, String] = Map()) = {
     DisplayableProcess("test", ProcessProperties(StreamMetaData(),
-      ExceptionHandlerRef(List()), subprocessVersions = Map.empty, additionalFields = Some(ProcessAdditionalFields(None, groups))), nodes, edges, `type`)
+      ExceptionHandlerRef(List()), subprocessVersions = Map.empty, additionalFields = Some(ProcessAdditionalFields(None, groups, additionalFields))), nodes, edges, `type`)
   }
 
 

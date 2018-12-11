@@ -58,6 +58,10 @@ object ProcessTestData {
 
   val validator = ProcessValidator.default(ProcessDefinitionBuilder.withEmptyObjects(processDefinition))
 
+  val validation = new ProcessValidation(Map(TestProcessingTypes.Streaming -> validator),
+         Map(TestProcessingTypes.Streaming -> Map()),
+         new SubprocessResolver(new SetSubprocessRepository(Set())))
+
   val validProcess : EspProcess = validProcessWithId("fooProcess")
 
   def validProcessWithId(id: String) : EspProcess = EspProcessBuilder
@@ -74,8 +78,7 @@ object ProcessTestData {
   def toValidatedDisplayable(espProcess: EspProcess) : ValidatedDisplayableProcess =
     ProcessConverter
      .toDisplayable(ProcessCanonizer.canonize(espProcess), TestProcessingTypes.Streaming)
-     .validated(new ProcessValidation(Map(TestProcessingTypes.Streaming -> validator),
-       new SubprocessResolver(new SetSubprocessRepository(Set()))))
+     .validated(validation)
 
   def toDetails(displayable: DisplayableProcess) : ProcessDetails =
     BaseProcessDetails[DisplayableProcess](

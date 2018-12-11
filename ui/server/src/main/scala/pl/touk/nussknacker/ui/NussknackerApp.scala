@@ -142,7 +142,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
       )
       val optionalRoutes = List(
         featureTogglesConfig.remoteEnvironment
-          .map(migrationConfig => new HttpRemoteEnvironment(migrationConfig, TestModelMigrations(modelData), environment))
+          .map(migrationConfig => new HttpRemoteEnvironment(migrationConfig, new TestModelMigrations(modelData.mapValues(_.migrations), processValidation), environment))
           .map(remoteEnvironment => new RemoteEnvironmentResources(remoteEnvironment, processRepository, processAuthorizer)),
         featureTogglesConfig.counts
           .map(countsConfig => new InfluxCountsReporter(environment, countsConfig))

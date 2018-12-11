@@ -1,31 +1,20 @@
 package pl.touk.nussknacker.ui.process.migrate
 
-import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.compile.ProcessValidator
-import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
+import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.ui.process.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{ProcessDetails, ValidatedProcessDetails}
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ValidatedProcessDetails
 import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessRepository, SubprocessResolver}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 import pl.touk.nussknacker.ui.validation.ValidationResults.{NodeValidationError, ValidationErrors, ValidationResult, ValidationWarnings}
 
-object TestModelMigrations {
-
-  def apply(modelData: Map[ProcessingType, ModelData]) : TestModelMigrations = {
-    new TestModelMigrations(modelData.mapValues(_.migrations), modelData.mapValues(_.validator))
-  }
-
-}
-
-class TestModelMigrations(migrations: Map[ProcessingType, ProcessMigrations], validators: Map[ProcessingType, ProcessValidator]) {
+class TestModelMigrations(migrations: Map[ProcessingType, ProcessMigrations], processValidation: ProcessValidation) {
 
   def testMigrations(processes: List[ValidatedProcessDetails], subprocesses: List[ValidatedProcessDetails]) : List[TestMigrationResult] = {
     val migratedSubprocesses = subprocesses.flatMap(migrateProcess)
     val migratedProcesses = processes.flatMap(migrateProcess)
-    val validation = new ProcessValidation(validators, new SubprocessResolver(prepareSubprocessRepository(migratedSubprocesses.map(s => (s.newProcess, s.processCategory)))))
+    val validation = processValidation.withSubprocessResolver(new SubprocessResolver(prepareSubprocessRepository(migratedSubprocesses.map(s => (s.newProcess, s.processCategory)))))
     (migratedSubprocesses ++ migratedProcesses).map { migrationDetails =>
       val validated = migrationDetails.newProcess.validated(validation)
       val newErrors = extractNewErrors(migrationDetails.oldProcessErrors, validated.validationResult)
