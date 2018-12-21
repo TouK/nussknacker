@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.definition
 import java.lang.reflect.Parameter
 
 import pl.touk.nussknacker.engine.api.PossibleValues
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{FixedExpressionValue, FixedExpressionValues, ParameterRestriction}
+import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedExpressionValues, ParameterRestriction}
 
 object ParameterTypeMapper {
   

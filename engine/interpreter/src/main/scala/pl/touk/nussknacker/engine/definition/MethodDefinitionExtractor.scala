@@ -4,10 +4,10 @@ import java.lang.annotation.Annotation
 import java.lang.reflect
 import java.lang.reflect.Method
 
+import pl.touk.nussknacker.engine.api.definition.{Parameter, WithExplicitMethodToInvoke}
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{AdditionalVariables, MethodToInvoke, ParamName}
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.Parameter
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedParameters}
 import pl.touk.nussknacker.engine.types.EspTypeUtils
 
@@ -17,13 +17,23 @@ private[definition] trait MethodDefinitionExtractor[T] {
 
 }
 
+private[definition] object WithExplicitMethodToInvokeMethodDefinitionExtractor extends MethodDefinitionExtractor[WithExplicitMethodToInvoke] {
+  override def extractMethodDefinition(obj: WithExplicitMethodToInvoke, methodToInvoke: Method): Either[String, MethodDefinition] = {
+
+    Right(MethodDefinition(methodToInvoke.getName,
+      (oo, args) => methodToInvoke.invoke(oo, args.toList),
+        new OrderedParameters(obj.parameterDefinition.map(Left(_)) ++ obj.additionalParameters.map(Right(_))),
+      obj.returnType, obj.returnType, List()))
+  }
+}
+
 private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDefinitionExtractor[T] {
 
   def extractMethodDefinition(obj: T, methodToInvoke: Method): Either[String, MethodDefinition] = {
     findMatchingMethod(obj, methodToInvoke).right.map { method =>
       MethodDefinition(methodToInvoke.getName,
         (obj, args) => method.invoke(obj, args:_*), extractParameters(obj, method),
-        extractReturnTypeFromMethod(obj, method), ClazzRef(method.getReturnType), method.getAnnotations.toList)
+        Typed(extractReturnTypeFromMethod(obj, method)), Typed(method.getReturnType), method.getAnnotations.toList)
     }
   }
 
@@ -82,8 +92,8 @@ object MethodDefinitionExtractor {
   case class MethodDefinition(name: String,
                               invocation: (Any, Seq[AnyRef]) => Any,
                               orderedParameters: OrderedParameters,
-                              returnType: ClazzRef,
-                              realReturnType: ClazzRef, annotations: List[Annotation])
+                              returnType: TypingResult,
+                              realReturnType: TypingResult, annotations: List[Annotation])
 
   class OrderedParameters(baseOrAdditional: List[Either[Parameter, Class[_]]]) {
 

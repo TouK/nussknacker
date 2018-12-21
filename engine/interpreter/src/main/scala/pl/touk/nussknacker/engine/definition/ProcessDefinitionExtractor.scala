@@ -4,6 +4,7 @@ import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, WithCategories}
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, QueryableStateNames}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedParameters}
@@ -51,7 +52,7 @@ object ProcessDefinitionExtractor {
 
     //TODO: this is not so nice...
     val globalVariablesDefs = expressionConfig.globalProcessVariables.map { case (varName, globalVar) =>
-      val klass = ClazzRef(globalVar.value.getClass)
+      val klass = Typed(globalVar.value.getClass)
       (varName, ObjectWithMethodDef(globalVar.value, MethodDefinition(varName, (_, _) => globalVar, new OrderedParameters(List()), klass,  klass, List()),
         ObjectDefinition(List(), klass, globalVar.categories)))
     }

@@ -4,6 +4,7 @@ import java.util.concurrent.{CompletionStage, Executor}
 
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{NodeContext, ServiceInvocationCollector, TestServiceInvocationCollector}
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{MetaData, Service}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.UnionDefinitionExtractor
@@ -60,14 +61,18 @@ object ServiceInvoker {
   )
 
   def apply(objectWithMethodDef: ObjectWithMethodDef, collector: Option[ServiceInvocationCollector] = None): ServiceInvoker = {
-    val returnType = objectWithMethodDef.methodDef.realReturnType.clazz
-    if (classOf[Future[_]].isAssignableFrom(returnType))
+    val detectedReturnType = (objectWithMethodDef.methodDef.realReturnType match {
+      case Typed(set) =>
+        set.headOption.map(_.klass)
+      case _ => None
+    }).getOrElse(classOf[Any])
+    if (classOf[Future[_]].isAssignableFrom(detectedReturnType))
       new ServiceInvokerImpl(objectWithMethodDef, collector)
-    else if (classOf[java.util.concurrent.CompletionStage[_]].isAssignableFrom(returnType))
+    else if (classOf[java.util.concurrent.CompletionStage[_]].isAssignableFrom(detectedReturnType))
       new JavaServiceInvokerImpl(objectWithMethodDef, collector)
     else
       throw new IllegalArgumentException("Illegal return type of extracted method: " +
-        returnType + ". Should be Future or CompletionStage")
+        detectedReturnType + ". Should be Future or CompletionStage")
   }
 
 

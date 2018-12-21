@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.ui.process.uiconfig.defaults
 
 import org.scalatest.{FlatSpec, Matchers}
+import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor
 import pl.touk.nussknacker.engine.definition.defaults.NodeDefinition
 
 class ConfigParameterDefaultValueExtractorTest extends FlatSpec with Matchers {
@@ -12,7 +12,7 @@ class ConfigParameterDefaultValueExtractorTest extends FlatSpec with Matchers {
   behavior of "ConfigParameterDefaultValueExtractor"
 
   private def verifyExtractor(paramName: String, ofType: ClazzRef, evaluatesTo: Option[String]) = {
-    val param = DefinitionExtractor.Parameter(paramName, ofType)
+    val param = Parameter(paramName, ofType)
     it should s"evaluate $param to $evaluatesTo" in {
       extractor.evaluateParameterDefaultValue(node, param) shouldBe evaluatesTo
     }

@@ -5,11 +5,12 @@ import akka.http.scaladsl.server.{Directives, Route}
 import pl.touk.http.argonaut.Argonaut62Support
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.MetaData
+import pl.touk.nussknacker.engine.api.definition
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
-import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ParameterTypeMapper}
+import pl.touk.nussknacker.engine.definition.ParameterTypeMapper
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ProcessDefinition, TransformerId}
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
@@ -119,7 +120,7 @@ class DefinitionResources(modelData: Map[ProcessingType, ModelData],
         val clazzRefParams = parameters.map { p =>
           //TODO: currently if we cannot parse parameter class we assume it's unknown
           val classRef = p.typ.toClazzRef(classLoader).getOrElse(ClazzRef.unknown)
-          DefinitionExtractor.Parameter(p.name, classRef, classRef, ParameterTypeMapper.prepareRestrictions(classRef.clazz, None))
+          definition.Parameter(p.name, classRef, classRef, ParameterTypeMapper.prepareRestrictions(classRef.clazz, None))
         }
         (id, ObjectDefinition(clazzRefParams, ClazzRef[java.util.Map[String, Any]], List(category)))
     }.toMap

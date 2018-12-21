@@ -4,6 +4,7 @@ import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.MetaVariables
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo}
 import pl.touk.nussknacker.engine.types.EspTypeUtils.clazzDefinition
 
@@ -44,10 +45,22 @@ object TypesInformationExtractor {
     "org.apache.flink.api.common.typeinfo.TypeInformation"
   )
 
-  def clazzAndItsChildrenDefinition(clazzes: Iterable[ClazzRef])
+  def clazzAndItsChildrenDefinition(clazzes: Iterable[TypingResult])
                                    (implicit settings: ClassExtractionSettings): List[ClazzDefinition] = {
-    (clazzes ++ mandatoryClasses).flatMap(clazzAndItsChildrenDefinition(_, Set())).toList
+    (clazzes.flatMap(clazzRefsFromTypingResult) ++ mandatoryClasses).flatMap(clazzAndItsChildrenDefinition(_, Set())).toList
   }
+
+  private def clazzRefsFromTypingResult(typingResult: TypingResult): Iterable[ClazzRef] = typingResult match {
+    case Typed(set) =>
+      set.flatMap(clazzRefsFromTypedClass)
+    case TypedObjectTypingResult(fields, clazz) =>
+      clazzRefsFromTypedClass(clazz) ++ fields.values.flatMap(clazzRefsFromTypingResult)
+    case Unknown =>
+      List()
+  }
+
+  private def clazzRefsFromTypedClass(typedClass: TypedClass): Iterable[ClazzRef]
+    = ClazzRef(typedClass.klass) :: typedClass.params.flatMap(clazzRefsFromTypingResult)
 
   private def clazzAndItsChildrenDefinition(clazzRef: ClazzRef, currentSet: Set[ClazzRef])
                                    (implicit settings: ClassExtractionSettings): Set[ClazzDefinition] = {

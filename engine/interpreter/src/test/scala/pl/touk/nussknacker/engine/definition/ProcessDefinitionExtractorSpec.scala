@@ -1,41 +1,56 @@
 package pl.touk.nussknacker.engine.definition
 
 import com.typesafe.config.{Config, ConfigFactory}
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.{FlatSpec, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.definition.{Parameter, WithExplicitMethodToInvoke}
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.{ProcessSignalSender, SignalTransformer}
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api.test.InvocationCollectors
+import pl.touk.nussknacker.engine.api.typed.ClazzRef
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import sun.reflect.generics.tree.ReturnType
 
-class ProcessDefinitionExtractorSpec extends FlatSpec with Matchers {
+import scala.concurrent.{ExecutionContext, Future}
+
+class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
 
   val processDefinition =
     ProcessDefinitionExtractor.extractObjectWithMethods(TestCreator, ConfigFactory.load())
 
-  it should "extract definitions" in {
+  test("extract definitions") {
     val signal1 = processDefinition.signalsWithTransformers.get("signal1")
     signal1 shouldBe 'defined
     signal1.get._2 shouldBe Set("transformer1")
     signal1.get._1.methodDef.name shouldBe "send1"
   }
 
-  it should "extract additional variables info from annotation" in {
+  test("extract additional variables info from annotation") {
     val methodDef = processDefinition.customStreamTransformers("transformer1")._1.methodDef
     val additionalVars = methodDef.orderedParameters.definedParameters.head.additionalVariables
     additionalVars("var1") shouldBe Typed[OnlyUsedInAdditionalVariable]
   }
 
-  it should "extract type info from classes from additional variables" in {
+  test("extract type info from classes from additional variables") {
     val classDefinition = processDefinition.typesInformation.find(_.clazzName.clazz == classOf[OnlyUsedInAdditionalVariable])
       classDefinition.map(_.methods.keys) shouldBe Some(Set("someField"))
+  }
+
+  test("extract definition from WithExplicitMethodToInvoke") {
+    val definition = processDefinition.services("configurable1")
+
+    definition.returnType shouldBe Typed[String]
+    definition.parameters shouldBe List(Parameter("param1", ClazzRef[Int]))
   }
 
   object TestCreator extends ProcessConfigCreator {
     override def customStreamTransformers(config: Config): Map[String, WithCategories[CustomStreamTransformer]] =
       Map("transformer1" -> WithCategories(Transformer1, "cat"))
 
-    override def services(config: Config): Map[String, WithCategories[Service]] = Map()
+    override def services(config: Config): Map[String, WithCategories[Service]] = Map(
+      "configurable1" -> WithCategories(EmptyExplicitMethodToInvoke(List(Parameter("param1", ClazzRef[Int])), Typed[String]), "cat")
+    )
 
     override def sourceFactories(config: Config): Map[String, WithCategories[SourceFactory[_]]] = Map()
 
@@ -71,4 +86,11 @@ class ProcessDefinitionExtractorSpec extends FlatSpec with Matchers {
   }
 
   case class OnlyUsedInAdditionalVariable(someField: String)
+
+  case class EmptyExplicitMethodToInvoke(parameterDefinition: List[Parameter], returnType: TypingResult) extends Service with WithExplicitMethodToInvoke {
+
+    override def additionalParameters: List[Class[_]] = List()
+
+    override def invoke(params: List[AnyRef]): Future[AnyRef] = ???
+  }
 }

@@ -1,7 +1,9 @@
 package pl.touk.nussknacker.engine.testing
 
+import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectDefinition, ObjectWithMethodDef, Parameter}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectDefinition, ObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedParameters}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ExpressionDefinition, ProcessDefinition}
 import pl.touk.nussknacker.engine.util.Implicits._
@@ -16,9 +18,9 @@ object ProcessDefinitionBuilder {
 
   def withEmptyObjects(definition: ProcessDefinition[ObjectDefinition]): ProcessDefinition[ObjectWithMethodDef] = {
 
-    def makeDummyDefinition(objectDefinition: ObjectDefinition, realType: ClazzRef = ClazzRef[Any]) = new ObjectWithMethodDef(null,
+    def makeDummyDefinition(objectDefinition: ObjectDefinition, realType: TypingResult = Typed[Any]) = new ObjectWithMethodDef(null,
       MethodDefinition("", (_, _) => null, new OrderedParameters(objectDefinition.parameters.map(Left(_))),
-        ClazzRef[Any],
+        Typed[Any],
         realType, List()), objectDefinition)
 
     val expressionDefinition = ExpressionDefinition(
@@ -28,7 +30,7 @@ object ProcessDefinitionBuilder {
     )
 
     ProcessDefinition(
-      definition.services.mapValuesNow(makeDummyDefinition(_, ClazzRef[Future[_]])),
+      definition.services.mapValuesNow(makeDummyDefinition(_, Typed[Future[_]])),
       definition.sourceFactories.mapValuesNow(makeDummyDefinition(_)),
       definition.sinkFactories.mapValuesNow(makeDummyDefinition(_)),
       definition.customStreamTransformers.mapValuesNow { case (transformer, queryNames) => (makeDummyDefinition(transformer), queryNames) },

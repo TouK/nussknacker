@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.definition
 
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.{LazyInterpreter, PossibleValues}
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{FixedExpressionValue, FixedExpressionValues}
+import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedExpressionValues}
 import pl.touk.nussknacker.engine.types.JavaSampleEnum
 
 class ParameterTypeMapperTest extends FlatSpec with Matchers {

@@ -91,6 +91,8 @@ object typing {
 
     def apply[T:ClassTag] : TypingResult = apply(ClazzRef[T])
 
+    def apply(klass: Class[_]): TypingResult = apply(ClazzRef(klass))
+
     def apply(klass: ClazzRef) : TypingResult = {
       if (klass == ClazzRef.unknown) {
         Unknown

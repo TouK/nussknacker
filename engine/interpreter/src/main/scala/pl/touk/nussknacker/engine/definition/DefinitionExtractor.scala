@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.MethodToInvoke
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.api.definition.{Parameter, WithExplicitMethodToInvoke}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.MethodDefinition
 import pl.touk.nussknacker.engine.types.TypesInformationExtractor
@@ -15,20 +16,23 @@ import scala.runtime.BoxedUnit
 
 class DefinitionExtractor[T](methodDefinitionExtractor: MethodDefinitionExtractor[T]) {
 
-  def extract(obj: T, methodDef: MethodDefinition, categories: List[String]): ObjectDefinition = {
-    ObjectDefinition(
+  def extract(objWithCategories: WithCategories[T]): ObjectWithMethodDef = {
+    val obj = objWithCategories.value
+    val methodDef = (obj match {
+      case e:WithExplicitMethodToInvoke =>
+        WithExplicitMethodToInvokeMethodDefinitionExtractor.extractMethodDefinition(e,
+          classOf[WithExplicitMethodToInvoke].getMethods.find(_.getName == "invoke").get)
+      case _ =>
+        methodDefinitionExtractor.extractMethodDefinition(obj, findMethodToInvoke(obj))
+    }).fold(msg => throw new IllegalArgumentException(msg), identity)
+    ObjectWithMethodDef(obj, methodDef, ObjectDefinition(
       methodDef.orderedParameters.definedParameters,
-      Typed(methodDef.returnType),
-      categories
-    )
+      methodDef.returnType,
+      objWithCategories.categories
+    ))
   }
 
-  def extractMethodDefinition(obj: T): MethodDefinition = {
-    methodDefinitionExtractor.extractMethodDefinition(obj, findMethodToInvoke(obj))
-      .fold(msg => throw new IllegalArgumentException(msg), identity)
-  }
-
-  private def findMethodToInvoke(obj: T): Method = {
+  private def findMethodToInvoke(obj: Any): Method = {
     val methodsToInvoke = obj.getClass.getMethods.toList.filter { m =>
       m.getAnnotation(classOf[MethodToInvoke]) != null
     }
@@ -45,7 +49,7 @@ class DefinitionExtractor[T](methodDefinitionExtractor: MethodDefinitionExtracto
 }
 
 object DefinitionExtractor {
-  import TypeInfos._
+  //import TypeInfos._
 
   trait ObjectMetadata {
     def parameters: List[Parameter]
@@ -95,31 +99,10 @@ object DefinitionExtractor {
   case class ObjectDefinition(parameters: List[Parameter],
                               returnType: TypingResult, categories: List[String]) extends ObjectMetadata
 
-  object Parameter {
-    def unknownType(name: String) = Parameter(name, ClazzRef[Any], ClazzRef[Any])
-
-    def apply(name: String, typ: ClazzRef): Parameter = Parameter(name, typ, typ)
-  }
-  case class Parameter(
-    name: String,
-    typ: ClazzRef,
-    originalType: ClazzRef,
-    restriction: Option[ParameterRestriction] = None,
-    additionalVariables: Map[String, TypingResult] = Map.empty)
-
-  //TODO: add validation of restrictions during compilation...
-  //this can be used for different restrictions than list of values, e.g. encode '> 0' conditions and so on...
-  sealed trait ParameterRestriction
-
-  case class FixedExpressionValues(values: List[FixedExpressionValue]) extends ParameterRestriction
-
-  case class FixedExpressionValue(expression: String, label: String)
 
   object ObjectWithMethodDef {
     def apply[T](obj: WithCategories[_<:T], methodExtractor: MethodDefinitionExtractor[T]): ObjectWithMethodDef = {
-      val objectExtractor = new DefinitionExtractor(methodExtractor)
-      val methodDefinition = objectExtractor.extractMethodDefinition(obj.value)
-      ObjectWithMethodDef(obj.value, methodDefinition, objectExtractor.extract(obj.value, methodDefinition, obj.categories))
+      new DefinitionExtractor(methodExtractor).extract(obj)
     }
   }
 
@@ -128,15 +111,15 @@ object DefinitionExtractor {
                 sourceFactories: Iterable[ObjectWithMethodDef],
                 customNodeTransformers: Iterable[ObjectWithMethodDef],
                 signalsFactories: Iterable[ObjectWithMethodDef],
-                globalProcessVariables: Iterable[ClazzRef])
-               (implicit settings: ClassExtractionSettings): List[ClazzDefinition] = {
+                globalProcessVariables: Iterable[TypingResult])
+               (implicit settings: ClassExtractionSettings): List[TypeInfos.ClazzDefinition] = {
 
       val objectToExtractClassesFrom = services ++ customNodeTransformers ++ sourceFactories ++ signalsFactories
       val classesToExtractDefinitions = globalProcessVariables ++ objectToExtractClassesFrom.flatMap(extractTypesFromObjectDefinition)
       TypesInformationExtractor.clazzAndItsChildrenDefinition(classesToExtractDefinitions)
     }
 
-    private def extractTypesFromObjectDefinition(obj: ObjectWithMethodDef): List[ClazzRef] = {
+    private def extractTypesFromObjectDefinition(obj: ObjectWithMethodDef): List[TypingResult] = {
       def clazzRefFromTyped(typed: TypingResult): Iterable[ClazzRef] = typed match {
         case Typed(possibleTypes) => possibleTypes.map(t => ClazzRef(t.klass))
         case _ => Set()
@@ -147,7 +130,7 @@ object DefinitionExtractor {
         fromAdditionalVars.toList :+ parameter.typ
       }
 
-      obj.methodDef.returnType :: obj.parameters.flatMap(clazzRefsFromParameter)
+      obj.methodDef.returnType :: obj.parameters.flatMap(clazzRefsFromParameter).map(Typed(_))
     }
   }
 

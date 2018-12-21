@@ -4,9 +4,10 @@ import java.util.regex.Pattern
 
 import org.scalatest.{FlatSpec, FunSuite, Matchers}
 import org.scalatest.prop.TableDrivenPropertyChecks._
-import pl.touk.nussknacker.engine.api.{Documentation, ParamName, Hidden}
+import pl.touk.nussknacker.engine.api.{Documentation, Hidden, ParamName}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, ClassMemberPatternPredicate}
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter}
 
 import scala.annotation.meta.{field, getter}
@@ -55,7 +56,7 @@ class EspTypeUtilsSpec extends FunSuite with Matchers {
 
   test("should extract public fields from scala case class") {
 
-    val infos = TypesInformationExtractor.clazzAndItsChildrenDefinition(List(ClazzRef[SampleClass]))(ClassExtractionSettings.Default)
+    val infos = TypesInformationExtractor.clazzAndItsChildrenDefinition(List(Typed[SampleClass]))(ClassExtractionSettings.Default)
     val sampleClassInfo = infos.find(_.clazzName.refClazzName.contains("SampleClass")).get
 
     sampleClassInfo.methods shouldBe Map(
@@ -79,8 +80,8 @@ class EspTypeUtilsSpec extends FunSuite with Matchers {
 
   test("should skip blacklisted properties") {
     val testCasses = Table(("class", "className"),
-      (ClazzRef[SampleClass], "SampleClass"),
-      (ClazzRef[JavaSampleClass], "JavaSampleClass")
+      (Typed[SampleClass], "SampleClass"),
+      (Typed[JavaSampleClass], "JavaSampleClass")
     )
 
     val testClassPatterns = Table("classPattern",
@@ -107,7 +108,7 @@ class EspTypeUtilsSpec extends FunSuite with Matchers {
 
   test("should extract parameters from embedded lists") {
 
-    val typeUtils = TypesInformationExtractor.clazzAndItsChildrenDefinition(List(ClazzRef[Embeddable]))(ClassExtractionSettings.Default)
+    val typeUtils = TypesInformationExtractor.clazzAndItsChildrenDefinition(List(Typed[Embeddable]))(ClassExtractionSettings.Default)
 
     typeUtils.find(_.clazzName == ClazzRef[TestEmbedded]) shouldBe Some(ClazzDefinition(ClazzRef[TestEmbedded], Map(
       "string" -> MethodInfo(List(), ClazzRef[String], None),
@@ -118,7 +119,7 @@ class EspTypeUtilsSpec extends FunSuite with Matchers {
   }
 
   test("should not discover hidden fields") {
-    val typeUtils = TypesInformationExtractor.clazzAndItsChildrenDefinition(List(ClazzRef[ClassWithHiddenFields]))(ClassExtractionSettings.Default)
+    val typeUtils = TypesInformationExtractor.clazzAndItsChildrenDefinition(List(Typed[ClassWithHiddenFields]))(ClassExtractionSettings.Default)
 
     typeUtils.find(_.clazzName == ClazzRef[ClassWithHiddenFields]) shouldBe Some(ClazzDefinition(ClazzRef[ClassWithHiddenFields], Map(
       "normalField" -> MethodInfo(List(), ClazzRef[String], None),
@@ -181,10 +182,10 @@ class EspTypeUtilsSpec extends FunSuite with Matchers {
   }
 
   test("should extract description and params from method") {
-    val scalaExtractedInfo = TypesInformationExtractor.clazzAndItsChildrenDefinition(List(ClazzRef[ScalaSampleDocumentedClass]))(ClassExtractionSettings.Default)
+    val scalaExtractedInfo = TypesInformationExtractor.clazzAndItsChildrenDefinition(List(Typed[ScalaSampleDocumentedClass]))(ClassExtractionSettings.Default)
     val scalaClazzInfo = scalaExtractedInfo.find(_.clazzName == ClazzRef(classOf[ScalaSampleDocumentedClass])).get
 
-    val javaExtractedInfo = TypesInformationExtractor.clazzAndItsChildrenDefinition(List(ClazzRef[JavaSampleDocumentedClass]))(ClassExtractionSettings.Default)
+    val javaExtractedInfo = TypesInformationExtractor.clazzAndItsChildrenDefinition(List(Typed[JavaSampleDocumentedClass]))(ClassExtractionSettings.Default)
     val javaClazzInfo = javaExtractedInfo.find(_.clazzName == ClazzRef(classOf[JavaSampleDocumentedClass])).get
 
     val table = Table(

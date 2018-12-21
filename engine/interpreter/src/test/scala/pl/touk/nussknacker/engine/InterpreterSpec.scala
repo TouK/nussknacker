@@ -3,12 +3,16 @@ package pl.touk.nussknacker.engine
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.ValidatedNel
 import com.typesafe.config.{Config, ConfigFactory}
-import org.scalatest.{FlatSpec, FunSuite, Matchers}
+import org.scalatest.{FunSuite, Matchers}
 import org.springframework.expression.spel.standard.SpelExpression
 import pl.touk.nussknacker.engine.InterpreterSpec._
+import pl.touk.nussknacker.engine.api.definition.{ServiceWithExplicitMethod, WithExplicitMethodToInvoke}
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.lazyy.UsingLazyValues
 import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, SinkFactory, SourceFactory, WithCategories}
+import pl.touk.nussknacker.engine.api.test.InvocationCollectors
+import pl.touk.nussknacker.engine.api.typed.{ClazzRef, typing}
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{Service, _}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
@@ -43,7 +47,8 @@ class InterpreterSpec extends FunSuite with Matchers {
   val servicesDef = Map(
     "accountService" -> AccountService,
     "dictService" -> NameDictService,
-    "spelNodeService" -> SpelNodeService
+    "spelNodeService" -> SpelNodeService,
+    "withExplicitMethod" -> WithExplicitDefinitionService
   )
 
   def listenersDef(listener: Option[ProcessListener] = None): Seq[ProcessListener] =
@@ -541,6 +546,15 @@ class InterpreterSpec extends FunSuite with Matchers {
 
   }
 
+  test("invokes services with explicit method") {
+
+    val process = GraphBuilder.source("start", "transaction-source")
+      .enricher("ex", "out", "withExplicitMethod", "param1" -> "12333")
+      .sink("end", "#out", "dummySink")
+
+    interpretTransaction(process, Transaction()) should equal("12333")
+  }
+
 }
 
 class ThrowingService extends Service {
@@ -626,5 +640,19 @@ object InterpreterSpec {
 
   }
 
+  object WithExplicitDefinitionService extends Service with ServiceWithExplicitMethod {
+
+    override def parameterDefinition: List[api.definition.Parameter]
+      = List(api.definition.Parameter("param1", ClazzRef[Long], ClazzRef[Long]))
+
+
+    override def serviceReturnType: typing.TypingResult = Typed[String]
+
+    override def invokeService(params: List[AnyRef])(implicit ec: ExecutionContext, collector: InvocationCollectors.ServiceInvocationCollector, metaData: MetaData): Future[AnyRef] = {
+      println(params)
+      Future.successful(params.head.asInstanceOf[Long].toString)
+    }
+
+  }
 
 }

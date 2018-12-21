@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.ui.process.uiconfig.defaults
 
 import org.scalatest.{FlatSpec, Matchers}
+import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.Parameter
 import pl.touk.nussknacker.engine.definition.defaults.NodeDefinition
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.expression.Expression

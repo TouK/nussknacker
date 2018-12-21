@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.process.uiconfig.defaults
 
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{FixedExpressionValue, FixedExpressionValues, Parameter, ParameterRestriction}
+import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedExpressionValues, Parameter, ParameterRestriction}
 import pl.touk.nussknacker.engine.definition.defaults.NodeDefinition
 
 class RestrictionBasedDefaultValueExtractorTest extends FunSuite with Matchers {

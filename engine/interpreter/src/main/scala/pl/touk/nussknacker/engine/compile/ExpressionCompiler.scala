@@ -3,12 +3,12 @@ package pl.touk.nussknacker.engine.compile
 import cats.data.Validated.{Valid, invalid, valid}
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.instances.list._
+import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError._
 import pl.touk.nussknacker.engine.compiledgraph.expression.ExpressionParser
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectMetadata, Parameter}
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectMetadata
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
@@ -59,7 +59,7 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
 
   private def compileParam(n: graph.evaluatedparam.Parameter,
                            maybeCtx: Option[ValidationContext],
-                           definition: DefinitionExtractor.Parameter,
+                           definition: Parameter,
                            skipContextValidation: Boolean = false)
                           (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, compiledgraph.evaluatedparam.Parameter] = {
     (maybeCtx match {
