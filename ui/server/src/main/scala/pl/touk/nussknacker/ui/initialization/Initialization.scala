@@ -58,7 +58,8 @@ object Initialization {
     val result = operations.map(_.runOperation).sequence[DB, Unit]
     val runFuture = db.run(result.transactionally)
 
-    Await.result(runFuture, 10 seconds)
+    //TODO: make it more configurable...
+    Await.result(runFuture, 10 minute)
   }
 }
 
