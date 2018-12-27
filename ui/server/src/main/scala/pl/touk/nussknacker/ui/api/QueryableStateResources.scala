@@ -63,7 +63,7 @@ class QueryableStateResources(processDefinition: Map[ProcessingType, ModelData],
 
     val fetchedJsonState = for {
       status <- EitherT(jobStatusService.retrieveJobStatus(processId).map(Either.fromOption(_, noJob(processId.name.value))))
-      jobId <- EitherT.fromEither(Either.fromOption(status.flinkJobId, if (status.isDeployInProgress) deployInProgress(processId.name.value) else noJobRunning(processId.name.value)))
+      jobId <- EitherT.fromEither(Either.fromOption(status.deploymentId, if (status.isDeployInProgress) deployInProgress(processId.name.value) else noJobRunning(processId.name.value)))
       jsonString <- EitherT.right(fetchState(jobId, queryName, key))
       json <- EitherT.fromEither(Parse.parse(jsonString).leftMap(msg => wrongJson(msg, jsonString)))
     } yield json

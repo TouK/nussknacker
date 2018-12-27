@@ -7,7 +7,6 @@ import Argonaut._
 import ArgonautShapeless._
 import com.ning.http.client.{AsyncCompletionHandler, Request, RequestBuilder}
 import com.ning.http.client.multipart.FilePart
-import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import dispatch._
 import pl.touk.nussknacker.engine.ModelData
@@ -16,20 +15,25 @@ import pl.touk.nussknacker.engine.dispatch.{LoggingDispatchClient, utils}
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import org.apache.flink.api.common.ExecutionConfig
+import org.apache.flink.runtime.jobgraph.JobStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.management.flinkRestModel.{DeployProcessRequest, GetSavepointStatusResponse, JobsResponse, SavepointTriggerResponse}
+import pl.touk.nussknacker.engine.management.flinkRestModel.{DeployProcessRequest, GetSavepointStatusResponse, JobsResponse, SavepointTriggerResponse, jobStatusDecoder}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
-class FlinkRestManager(config: FlinkConfig, modelData: ModelData) extends FlinkProcessManager(modelData, config.shouldVerifyBeforeDeploy.getOrElse(true)) with LazyLogging {
+
+private[management] trait HttpSender {
+  def send[T](pair: (Request, FunctionHandler[T]))
+                  (implicit executor: ExecutionContext): Future[T]
+}
+
+private[management] object DefaultHttpSender extends HttpSender {
 
   private val httpClient = LoggingDispatchClient(classOf[FlinkRestManager].getSimpleName, Http)
 
-  private val flinkUrl = dispatch.url(config.restUrl)
-
   //We handle redirections manually, as dispatch/asynchttpclient has some problems (connection leaking with it in our use cases)
-  private def send[T](pair: (Request, FunctionHandler[T]))
+  override def send[T](pair: (Request, FunctionHandler[T]))
                 (implicit executor: ExecutionContext): Future[T] = {
     httpClient(pair._1, new AsyncCompletionHandler[Future[T]]() {
 
@@ -43,15 +47,20 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData) extends FlinkP
         }
       }
     }).flatten
-
   }
+
+}
+
+class FlinkRestManager(config: FlinkConfig, modelData: ModelData, sender: HttpSender = DefaultHttpSender) extends FlinkProcessManager(modelData, config.shouldVerifyBeforeDeploy.getOrElse(true)) with LazyLogging {
+
+  private val flinkUrl = dispatch.url(config.restUrl)
 
   private lazy val uploadedJarId : Future[String] = uploadCurrentJar()
 
   private def uploadCurrentJar(): Future[String] = {
     logger.debug("Uploading new jar")
     val filePart = new FilePart("jarfile", jarFile, "application/x-java-archive")
-    send {
+    sender.send {
       (flinkUrl / "jars" / "upload").POST.addBodyPart(filePart) OK utils.asJson[Json]
     } map { json =>
       logger.info(s"Uploaded jar to $json")
@@ -61,18 +70,22 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData) extends FlinkP
 
 
   override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = {
-    send {
+    sender.send {
       (flinkUrl / "jobs" / "overview").GET OK utils.asJson[JobsResponse]
     } map { jobs =>
-      val statusToReturn = jobs
+      val runningJobs = jobs
         .jobs
-        .sortBy(j => - j.`last-modification`)
-        .find(_.name == name.value)
-        .map(j => ProcessState(DeploymentId(j.jid), j.state, j.`start-time`))
-        //TODO: needed?
-        .filterNot(_.status == "CANCELED")
-      logger.trace(s"Status of ${name.value} is $statusToReturn")
-      statusToReturn
+        .filter(_.name == name.value)
+        .filterNot(_.state.isGloballyTerminalState)
+
+      runningJobs match {
+        case Nil => None
+        case one::Nil =>
+          Some(ProcessState(DeploymentId(one.jid), one.state == JobStatus.RUNNING, one.state.toString, one.`start-time`))
+        case one::rest =>
+          Some(ProcessState(DeploymentId(one.jid), false, "INCONSISTENT", one.`start-time`,
+            Some(s"Expected one job, instead: ${runningJobs.map(_.jid).mkString(", ")}")))
+      }
     }
   }
 
@@ -82,7 +95,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData) extends FlinkP
     if (timeoutLeft <= 0) {
       return Future.failed(new Exception(s"Failed to complete savepoint in time for $jobId and trigger $savepointId"))
     }
-    send {
+    sender.send {
       (flinkUrl / "jobs"/ jobId.value / "savepoints" / savepointId).GET OK utils.asJson[GetSavepointStatusResponse]
     }.flatMap { resp =>
       logger.debug(s"Waiting for savepoint $savepointId of $jobId, got response: $resp")
@@ -101,13 +114,13 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData) extends FlinkP
   }
 
   override protected def cancel(job: ProcessState): Future[Unit] = {
-    send {
+    sender.send {
       (flinkUrl / "jobs" / job.id.value).PATCH OK (_ => ())
     }
   }
 
   override protected def makeSavepoint(job: ProcessState, savepointDir: Option[String]): Future[String] = {
-    send {
+    sender.send {
       (flinkUrl / "jobs" / job.id.value / "savepoints").POST.setBody("""{"cancel-job": false}""") OK utils.asJson[SavepointTriggerResponse]
     }.flatMap { response =>
       waitForSavepoint(job.id, response.`request-id`)
@@ -126,7 +139,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData) extends FlinkP
     logger.debug(s"Starting to deploy process: $processName with savepoint $savepointPath")
     uploadedJarId.flatMap { jarId =>
       logger.debug(s"Deploying $processName with $savepointPath and jarId: $jarId")
-      send {
+      sender.send {
         (flinkUrl / "jars" / jarId / "run").POST.setBody(program.asJson.spaces2) OK (_ => ())
      }
     }
@@ -135,6 +148,8 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData) extends FlinkP
 }
 
 object flinkRestModel {
+
+  implicit val jobStatusDecoder: DecodeJson[JobStatus] = DecodeJson.of[String].map(JobStatus.valueOf)
 
   case class DeployProcessRequest(entryClass: String, parallelism: Int, savepointPath: Option[String], programArgs: String, allowNonRestoredState: Boolean)
 
@@ -158,6 +173,6 @@ object flinkRestModel {
 
   case class JobsResponse(jobs: List[JobOverview])
 
-  case class JobOverview(jid: String, name: String, `last-modification`: Long, `start-time`: Long, state: String)
+  case class JobOverview(jid: String, name: String, `last-modification`: Long, `start-time`: Long, state: JobStatus)
 
 }

@@ -62,7 +62,8 @@ object TestFactory extends TestPermissions{
 
   class MockProcessManager extends FlinkProcessManager(FlinkProcessManagerProvider.defaultModelData(ConfigFactory.load()), false){
 
-    override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = Future.successful(Some(ProcessState(DeploymentId("1"), "RUNNING", 0)))
+    override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = Future.successful(
+      Some(ProcessState(DeploymentId("1"), isOK = true, "RUNNING", 0)))
 
     import ExecutionContext.Implicits.global
 

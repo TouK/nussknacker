@@ -54,7 +54,12 @@ class MultiInstanceStandaloneProcessClient(clients: List[StandaloneProcessClient
         case a =>
           //TODO: more precise information
           logger.warn(s"Inconsistent states found: $a")
-          Some(ProcessState(DeploymentId(name.value), "INCONSISTENT", 0L))
+          val warningMessage = a.map {
+            case None => "empty"
+            case Some(state) => s"state: ${state.status}, startTime: ${state.startTime}"
+          }.mkString("; ")
+          Some(ProcessState(DeploymentId(name.value), isOK = false, "INCONSISTENT", 0L,
+            message = Some(s"Inconsistent states between servers: $warningMessage")))
       }
     }
   }

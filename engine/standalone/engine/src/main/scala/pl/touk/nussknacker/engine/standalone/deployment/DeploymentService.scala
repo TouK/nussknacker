@@ -83,7 +83,7 @@ class DeploymentService(context: StandaloneContextPreparer, modelData: ModelData
 
   def checkStatus(processName: ProcessName): Option[ProcessState] = {
     processInterpreters.get(processName).map { case (_, startTime) =>
-      ProcessState(DeploymentId(processName.value), "RUNNING", startTime)
+      ProcessState(DeploymentId(processName.value), isOK = true, "RUNNING", startTime)
     }
   }
 

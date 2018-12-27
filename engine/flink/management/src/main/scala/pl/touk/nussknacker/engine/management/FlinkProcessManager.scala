@@ -37,10 +37,12 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
     import cats.implicits._
 
     val stoppingResult = for {
-      maybeOldJob <- OptionT(findJobStatus(processName).map(_.filter(_.isRunning)))
+      oldJob <- OptionT(findJobStatus(processName))
+      _ <- OptionT[Future, Unit](if (!oldJob.isOK)
+        Future.failed(new IllegalStateException(s"Job ${processName.value} is not running, status: ${oldJob.status}")) else Future.successful(Some(())))
       maybeSavePoint <- {
-        { logger.debug(s"Deploying $processName. Status: $maybeOldJob") }
-        OptionT.liftF(stopSavingSavepoint(processVersion, maybeOldJob, processDeploymentData))
+        { logger.debug(s"Deploying $processName. Status: $oldJob") }
+        OptionT.liftF(stopSavingSavepoint(processVersion, oldJob, processDeploymentData))
       }
     } yield {
       logger.info(s"Deploying $processName. Saving savepoint finished")
@@ -56,13 +58,14 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
   }
 
   override def savepoint(processName: ProcessName, savepointDir: String): Future[String] = {
+    val name = processName.value
     findJobStatus(processName).flatMap {
-      case Some(state) if state.isRunning =>
+      case Some(state) if state.isOK =>
         makeSavepoint(state, Option(savepointDir))
       case Some(state) =>
-        Future.failed(new IllegalStateException(s"Job $processName is not running, status: ${state.status}"))
+        Future.failed(new IllegalStateException(s"Job $name is not running, status: ${state.status}"))
       case None =>
-        Future.failed(new IllegalStateException(s"Job $processName not found"))
+        Future.failed(new IllegalStateException(s"Job $name not found"))
     }
   }
 
@@ -72,7 +75,7 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
 
   override def cancel(processName: ProcessName): Future[Unit] = {
     findJobStatus(processName).flatMap {
-      case Some(state) if state.isRunning =>
+      case Some(state) if state.isOK =>
         cancel(state)
       case state =>
         logger.warn(s"Trying to cancel ${processName.value} which is not running but in status: $state")
