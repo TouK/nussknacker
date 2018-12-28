@@ -41,7 +41,7 @@ class ServiceQueryOpenCloseSpec
   private def invokeService(arg: Int, service: Service) = {
     new ServiceQuery(LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator {
       override def services(config: Config): Map[String, WithCategories[Service]] =
-        super.services(config) ++ Map("cast" -> WithCategories(service, Nil))
+        super.services(config) ++ Map("cast" -> WithCategories(service))
     }))
       .invoke("cast", "integer" -> arg)
   }

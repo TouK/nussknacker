@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.definition
 
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, WithCategories}
+import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, SingleNodeConfig, WithCategories}
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
@@ -48,13 +48,13 @@ object ProcessDefinitionExtractor {
       ObjectWithMethodDef(factory, ProcessObjectDefinitionExtractor.sink)
     }
     val exceptionHandlerFactoryDefs = ObjectWithMethodDef(
-      WithCategories(exceptionHandlerFactory, List()), ProcessObjectDefinitionExtractor.exceptionHandler)
+      WithCategories(exceptionHandlerFactory), ProcessObjectDefinitionExtractor.exceptionHandler)
 
     //TODO: this is not so nice...
     val globalVariablesDefs = expressionConfig.globalProcessVariables.map { case (varName, globalVar) =>
       val klass = Typed(globalVar.value.getClass)
       (varName, ObjectWithMethodDef(globalVar.value, MethodDefinition(varName, (_, _) => globalVar, new OrderedParameters(List()), klass,  klass, List()),
-        ObjectDefinition(List(), klass, globalVar.categories)))
+        ObjectDefinition(List(), klass, globalVar.categories, SingleNodeConfig.zero)))
     }
 
     val globalImportsDefs = expressionConfig.globalImports.map(_.value)

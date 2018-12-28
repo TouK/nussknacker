@@ -158,7 +158,7 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
 
   override def services(config: Config) = {
     Map(
-      "accountService" -> WithCategories(EmptyService, "Category1"),
+      "accountService" -> WithCategories(EmptyService, "Category1").withNodeConfig(SingleNodeConfig.zero.copy(docsUrl = Some("accountServiceDocs"))),
       "componentService" -> WithCategories(EmptyService, "Category1", "Category2"),
       "transactionService" -> WithCategories(EmptyService, "Category1"),
       "serviceModelService" -> WithCategories(EmptyService, "Category1", "Category2"),

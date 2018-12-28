@@ -29,9 +29,9 @@ import pl.touk.nussknacker.engine.util.LoggingListener
 
 class ExampleProcessConfigCreator extends ProcessConfigCreator {
 
-  def marketing[T](value: T) = WithCategories(value, List("Recommendations"))
-  def fraud[T](value: T) = WithCategories(value, List("FraudDetection"))
-  def all[T](value: T) = WithCategories(value, List("Recommendations", "FraudDetection"))
+  def marketing[T](value: T) = WithCategories(value, "Recommendations")
+  def fraud[T](value: T) = WithCategories(value, "FraudDetection")
+  def all[T](value: T) = WithCategories(value, "Recommendations", "FraudDetection")
 
   override def customStreamTransformers(config: Config): Map[String, WithCategories[CustomStreamTransformer]] = {
     Map(

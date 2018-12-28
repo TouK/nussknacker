@@ -137,10 +137,7 @@ class SimpleProcessConfigCreator extends ProcessConfigCreator {
   )
 
   override def sinkFactories(config: Config) = Map(
-    "monitor" -> WithCategories(new SinkFactory {
-      @MethodToInvoke
-      def create(): Sink = MonitorEmptySink
-    }, "c2"),
+    "monitor" -> WithCategories(SinkFactory.noParam(MonitorEmptySink), "c2"),
     "sinkForInts" -> WithCategories(SinkFactory.noParam(SinkForInts))
   )
 

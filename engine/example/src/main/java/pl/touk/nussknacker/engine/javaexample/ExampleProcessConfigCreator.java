@@ -11,9 +11,7 @@ import pl.touk.nussknacker.engine.api.CustomStreamTransformer;
 import pl.touk.nussknacker.engine.api.ProcessListener;
 import pl.touk.nussknacker.engine.api.Service;
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory;
-import pl.touk.nussknacker.engine.api.process.SinkFactory;
-import pl.touk.nussknacker.engine.api.process.SourceFactory;
-import pl.touk.nussknacker.engine.api.process.WithCategories;
+import pl.touk.nussknacker.engine.api.process.*;
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender;
 import pl.touk.nussknacker.engine.api.test.TestParsingUtils;
 import pl.touk.nussknacker.engine.example.LoggingExceptionHandlerFactory;
@@ -34,7 +32,10 @@ public class ExampleProcessConfigCreator implements ProcessConfigCreator {
         final ArrayList<String> objects = new ArrayList<>();
         objects.add("Recommendations");
         objects.add("FraudDetection");
-        return new WithCategories<>(value, JavaConversions.collectionAsScalaIterable(objects).toList());
+        return new WithCategories<>(
+                value,
+                JavaConversions.collectionAsScalaIterable(objects).toList(),
+                SingleNodeConfig$.MODULE$.zero());
     }
 
     @Override

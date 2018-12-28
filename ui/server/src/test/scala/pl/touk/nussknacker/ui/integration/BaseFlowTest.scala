@@ -11,6 +11,7 @@ import argonaut.{DecodeJson, Json}
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
 import pl.touk.nussknacker.engine.api.StreamMetaData
+import pl.touk.nussknacker.engine.api.process.SingleNodeConfig
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
@@ -23,7 +24,6 @@ import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessUtil}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
-import pl.touk.nussknacker.ui.process.uiconfig.SingleNodeConfig
 import pl.touk.nussknacker.ui.util.MultipartUtils
 import pl.touk.nussknacker.ui.validation.ValidationResults.{NodeValidationError, ValidationResult}
 
@@ -57,11 +57,15 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest
     Post("/api/processDefinitionData/streaming?isSubprocess=false", HttpEntity(ContentTypes.`application/json`, "{}")) ~> addCredentials(credentials) ~> mainRoute ~> check {
       val settingsJson = responseAs[String].decodeOption[Json].flatMap(_.field("nodesConfig"))
       val settings = settingsJson.flatMap(json => implicitly[DecodeJson[Map[String, SingleNodeConfig]]].decodeJson(json).toOption).get
-      settings shouldBe
-        Map(
-          "test1" -> SingleNodeConfig(None, Some("Sink.svg"), None, None),
-          "enricher" -> SingleNodeConfig(Some(Map("param" -> "'default value'")), Some("Filter.svg"), None, None)
-        )
+      val underTest = Map(
+        "test1" -> SingleNodeConfig(None, Some("Sink.svg"), None, None),
+        "enricher" -> SingleNodeConfig(Some(Map("param" -> "'default value'")), Some("Filter.svg"), None, None),
+        "accountService" -> SingleNodeConfig(None, None, Some("accountServiceDocs"), None)
+      )
+
+      val (relevant, other) = settings.partition { case (k, _) => underTest.keySet contains k }
+      relevant shouldBe underTest
+      other.values.forall(_ == SingleNodeConfig.zero) shouldBe true
     }
   }
 

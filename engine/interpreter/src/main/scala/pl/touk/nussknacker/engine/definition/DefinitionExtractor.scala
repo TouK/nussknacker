@@ -4,7 +4,7 @@ import java.lang.reflect.{InvocationTargetException, Method}
 
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.MethodToInvoke
-import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, WithCategories}
+import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, SingleNodeConfig, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.definition.{Parameter, WithExplicitMethodToInvoke}
@@ -28,7 +28,8 @@ class DefinitionExtractor[T](methodDefinitionExtractor: MethodDefinitionExtracto
     ObjectWithMethodDef(obj, methodDef, ObjectDefinition(
       methodDef.orderedParameters.definedParameters,
       methodDef.returnType,
-      objWithCategories.categories
+      objWithCategories.categories,
+      objWithCategories.nodeConfig
     ))
   }
 
@@ -97,7 +98,9 @@ object DefinitionExtractor {
   }
 
   case class ObjectDefinition(parameters: List[Parameter],
-                              returnType: TypingResult, categories: List[String]) extends ObjectMetadata
+                              returnType: TypingResult,
+                              categories: List[String],
+                              nodeConfig: SingleNodeConfig) extends ObjectMetadata
 
 
   object ObjectWithMethodDef {
@@ -136,15 +139,15 @@ object DefinitionExtractor {
 
   object ObjectDefinition {
 
-    def noParam: ObjectDefinition = ObjectDefinition(List.empty, Typed[Null], List())
+    def noParam: ObjectDefinition = ObjectDefinition(List.empty, Typed[Null], List(), SingleNodeConfig.zero)
 
-    def withParams(params: List[Parameter]): ObjectDefinition = ObjectDefinition(params, Typed[Null], List())
+    def withParams(params: List[Parameter]): ObjectDefinition = ObjectDefinition(params, Typed[Null], List(), SingleNodeConfig.zero)
 
     def withParamsAndCategories(params: List[Parameter], categories: List[String]): ObjectDefinition =
-      ObjectDefinition(params, Typed[Null], categories)
+      ObjectDefinition(params, Typed[Null], categories, SingleNodeConfig.zero)
 
     def apply(parameters: List[Parameter], returnType: ClazzRef, categories: List[String]): ObjectDefinition = {
-      ObjectDefinition(parameters, Typed(returnType), categories)
+      ObjectDefinition(parameters, Typed(returnType), categories, SingleNodeConfig.zero)
     }
   }
 

@@ -28,7 +28,6 @@ import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.EdgeType
 import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.EdgeType.{FilterFalse, FilterTrue}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessRepository}
-import pl.touk.nussknacker.ui.process.uiconfig.SingleNodeConfig
 import pl.touk.nussknacker.ui.process.uiconfig.defaults.{DefaultValueExtractorChain, ParamDefaultValueConfig, ParameterEvaluatorExtractor}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, PermissionSyntax}
 import pl.touk.nussknacker.ui.util.EspPathMatchers
@@ -37,6 +36,7 @@ import scala.concurrent.ExecutionContext
 import scala.runtime.BoxedUnit
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import pl.touk.nussknacker.engine.api.process.SingleNodeConfig
 import pl.touk.nussknacker.engine.definition.defaults.{NodeDefinition, ParameterDefaultValueExtractorStrategy}
 
 class DefinitionResources(modelData: Map[ProcessingType, ModelData],
@@ -61,8 +61,9 @@ class DefinitionResources(modelData: Map[ProcessingType, ModelData],
                 val subprocessesDetails = subprocessRepository.loadSubprocesses(subprocessVersions)
                 val uiProcessDefinition = UIProcessDefinition(chosenProcessDefinition, subprocessInputs)
 
-
-                val nodesConfig = processConfig.getOrElse[Map[String, SingleNodeConfig]]("nodes", Map.empty)
+                val fixedNodesConfig = processConfig.getOrElse[Map[String, SingleNodeConfig]]("nodes", Map.empty)
+                val dynamicNodesConfig = uiProcessDefinition.allDefinitions.mapValues(_.nodeConfig)
+                val nodesConfig = NodesConfigCombiner.combine(fixedNodesConfig, dynamicNodesConfig)
 
                 val defaultParametersValues = ParamDefaultValueConfig(nodesConfig.map { case (k, v) => (k, v.defaultValues.getOrElse(Map.empty)) })
                 val defaultParametersFactory = DefaultValueExtractorChain(defaultParametersValues, modelDataForType.modelClassLoader)
@@ -144,6 +145,9 @@ case class UIProcessDefinition(services: Map[String, ObjectDefinition],
                                globalVariables: Map[String, ObjectDefinition],
                                typesInformation: List[ClazzDefinition],
                                subprocessInputs: Map[String, ObjectDefinition]) {
+  // skipping exceptionHandlerFactory
+  val allDefinitions: Map[String, ObjectDefinition] = services ++ sourceFactories ++ sinkFactories ++
+    customStreamTransformers ++ signalsWithTransformers ++ globalVariables ++ subprocessInputs
 }
 
 case class AdditionalProcessProperty(label: String, isRequired: Boolean)

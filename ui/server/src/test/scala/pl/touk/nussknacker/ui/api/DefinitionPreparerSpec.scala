@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.ui.api.DefinitionPreparer.{NodeEdges, NodeTypeId}
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestPermissions}
 import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.EdgeType._
-import pl.touk.nussknacker.ui.process.uiconfig.SingleNodeConfig
+import pl.touk.nussknacker.engine.api.process.SingleNodeConfig
 import pl.touk.nussknacker.ui.process.uiconfig.defaults.{DefaultValueExtractorChain, ParamDefaultValueConfig}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.ObjectProcessDefinition

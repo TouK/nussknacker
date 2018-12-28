@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.{MetaData, Service, StreamMetaData}
 import pl.touk.nussknacker.engine.api.lazyy.ContextWithLazyValuesProvider
-import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, WithCategories}
+import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, SingleNodeConfig, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.{ClazzRef, TypedMap, TypedObjectDefinition}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
@@ -51,7 +51,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     Map.empty,
     ObjectDefinition.noParam,
     ExpressionDefinition(
-      Map("processHelper" -> ObjectDefinition(List(), Typed(ClazzRef(ProcessHelper.getClass)), List("cat1"))),
+      Map("processHelper" -> ObjectDefinition(List(), Typed(ClazzRef(ProcessHelper.getClass)), List("cat1"), SingleNodeConfig.zero)),
       List.empty, optimizeCompilation = false
     ),
     TypesInformationExtractor.clazzAndItsChildrenDefinition(List(Typed[SampleEnricher], Typed[SimpleRecord], Typed(ProcessHelper.getClass)))(ClassExtractionSettings.Default)
