@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.actor.{ActorSystem, Props}
+import java.time.LocalDateTime
+
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server
-import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
-import akka.testkit.TestProbe
-import argonaut.{Json, Parse}
+import akka.http.scaladsl.testkit.ScalatestRouteTest
+import argonaut.Parse
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
@@ -18,23 +18,28 @@ import pl.touk.nussknacker.ui.codec.UiCodecs
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{BasicProcess, ProcessDetails}
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{BasicProcess, DeploymentEntry, ProcessDetails}
 import pl.touk.nussknacker.ui.sample.SampleProcess
 import pl.touk.nussknacker.ui.security.api.Permission
 import pl.touk.nussknacker.ui.util.MultipartUtils
 
-import scala.concurrent.duration._
 import cats.syntax.semigroup._
 import cats.instances.all._
+import org.scalatest.matchers.{BeMatcher, MatchResult}
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.ui.process.ProcessId
-import pl.touk.nussknacker.ui.process.deployment.ManagementActor
 class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest
   with Matchers with ScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
   import UiCodecs._
 
   implicit override val patienceConfig = PatienceConfig(timeout = scaled(Span(2, Seconds)), interval = scaled(Span(100, Millis)))
+
+  private val fixedTime = LocalDateTime.now()
+
+  private def deployedWithVersions(versionIds: Long*) =
+    BeMatcher(
+      equal(versionIds.map(l => DeploymentEntry(l, TestFactory.testEnvironment, fixedTime, user().id, buildInfo))).matcher[List[DeploymentEntry]]
+    ).compose[List[DeploymentEntry]](_.map(_.copy(deployedAt = fixedTime)))
 
   test("process deployment should be visible in process history") {
 
@@ -43,12 +48,12 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest
       status shouldBe StatusCodes.OK
       getSampleProcess ~> check {
         val oldDeployments = getHistoryDeployments
-        decodeDetails.currentlyDeployedAt shouldBe Set("test")
+        decodeDetails.currentlyDeployedAt shouldBe deployedWithVersions(2)
         oldDeployments.size shouldBe 1
         updateProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
         deployProcess(SampleProcess.process.id) ~> check {
           getSampleProcess ~> check {
-            decodeDetails.currentlyDeployedAt shouldBe Set("test")
+            decodeDetails.currentlyDeployedAt shouldBe deployedWithVersions(2)
 
             val currentDeployments = getHistoryDeployments
             currentDeployments.size shouldBe 1
@@ -69,7 +74,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest
       deployProcess(processId) ~> check { status shouldBe StatusCodes.OK }
       getProcess(processId) ~> check {
         val processDetails = responseAs[String].decodeOption[ProcessDetails].get
-        processDetails.currentlyDeployedAt shouldBe Set(TestFactory.testEnvironment)
+        processDetails.currentlyDeployedAt shouldBe deployedWithVersions(1)
       }
     }
   }
@@ -79,10 +84,10 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest
     deployProcess(SampleProcess.process.id) ~> check {
       status shouldBe StatusCodes.OK
       getSampleProcess ~> check {
-        decodeDetails.currentlyDeployedAt shouldBe Set("test")
+        decodeDetails.currentlyDeployedAt shouldBe deployedWithVersions(2)
         cancelProcess(SampleProcess.process.id) ~> check {
           getSampleProcess ~> check {
-            decodeDetails.currentlyDeployedAt shouldBe Set()
+            decodeDetails.currentlyDeployedAt shouldBe deployedWithVersions()
             val currentDeployments = getHistoryDeployments
             currentDeployments shouldBe empty
           }
@@ -97,10 +102,10 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest
     deployProcess(SampleProcess.process.id) ~> check {
       status shouldBe StatusCodes.OK
       getProcesses ~> check {
-        decodeDetailsFromAll.currentlyDeployedAt shouldBe Set("test")
+        decodeDetailsFromAll.currentlyDeployedAt shouldBe deployedWithVersions(2)
         cancelProcess(SampleProcess.process.id) ~> check {
           getProcesses ~> check {
-            decodeDetailsFromAll.currentlyDeployedAt shouldBe Set()
+            decodeDetailsFromAll.currentlyDeployedAt shouldBe deployedWithVersions()
           }
         }
       }

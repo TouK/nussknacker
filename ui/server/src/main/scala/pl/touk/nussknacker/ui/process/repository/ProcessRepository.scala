@@ -50,7 +50,7 @@ object ProcessRepository {
                           processingType: ProcessingType,
                           isArchived:Boolean,
                           modificationDate: LocalDateTime,
-                          currentlyDeployedAt: Set[String])
+                          currentlyDeployedAt: List[DeploymentEntry])
 
   // todo: name -> ProcessName
   case class BaseProcessDetails[ProcessShape](id: String,
@@ -65,7 +65,7 @@ object ProcessRepository {
                                               modificationDate: LocalDateTime,
                                               subprocessesModificationDate: Option[Map[String, LocalDateTime]],
                                               tags: List[String],
-                                              currentlyDeployedAt: Set[String],
+                                              currentlyDeployedAt: List[DeploymentEntry],
                                               json: Option[ProcessShape],
                                               history: List[ProcessHistoryEntry],
                                               modelVersion: Option[Int]) {
@@ -100,22 +100,26 @@ object ProcessRepository {
   object ProcessHistoryEntry {
     def apply(process: ProcessEntityData,
               processVersion: ProcessVersionEntityData,
-              deployedVersionsPerEnv: Map[String, DeployedProcessVersionEntityData]): ProcessHistoryEntry = {
+              deployedVersionsPerEnv: List[DeployedProcessVersionEntityData]): ProcessHistoryEntry = {
       new ProcessHistoryEntry(
         processId = process.id.toString,
         processVersionId = processVersion.id,
         processName = process.name,
         createDate = DateUtils.toLocalDateTime(processVersion.createDate),
         user = processVersion.user,
-        deployments = deployedVersionsPerEnv.collect { case (env, deployedVersion) if deployedVersion.processVersionId.contains(processVersion.id) =>
-          DeploymentEntry(env, deployedVersion.deployedAtTime, deployedVersion.user,
-            deployedVersion.buildInfo.flatMap(BuildInfo.parseJson).getOrElse(BuildInfo.empty))
-        }.toList
+        deployments = deployedVersionsPerEnv
+          .collect { case deployedVersion if deployedVersion.processVersionId.contains(processVersion.id) =>
+          toDeploymentEntry(deployedVersion)
+        }
       )
     }
   }
 
-  case class DeploymentEntry(environment: String, deployedAt: LocalDateTime, user: String, buildInfo: Map[String, String])
+  def toDeploymentEntry(deployedVersion: DeployedProcessVersionEntityData): DeploymentEntry
+    =  DeploymentEntry(deployedVersion.processVersionId.getOrElse(0), deployedVersion.environment, deployedVersion.deployedAtTime, deployedVersion.user,
+                deployedVersion.buildInfo.flatMap(BuildInfo.parseJson).getOrElse(BuildInfo.empty))
+
+  case class DeploymentEntry(processVersionId: Long, environment: String, deployedAt: LocalDateTime, user: String, buildInfo: Map[String, String])
 
   case class ProcessNotFoundError(id: String) extends Exception(s"No process $id found") with NotFoundError
 

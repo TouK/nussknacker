@@ -94,7 +94,7 @@ object ProcessTestData {
       modificationDate = LocalDateTime.now(),
       subprocessesModificationDate = None,
       tags = List(),
-      currentlyDeployedAt = Set(),
+      currentlyDeployedAt = List(),
       json = Some(displayable),
       history = List(),
       modelVersion = None
@@ -114,7 +114,7 @@ object ProcessTestData {
       modificationDate = LocalDateTime.now(),
       subprocessesModificationDate = None,
       tags = List(),
-      currentlyDeployedAt = Set(),
+      currentlyDeployedAt = List(),
       json = Some(displayable),
       history = List(),
       modelVersion = None

@@ -12,7 +12,7 @@ import pl.touk.nussknacker.ui.db.entity.ProcessEntity.{ProcessEntity, ProcessEnt
 import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntity.ProcessVersionEntityData
 import pl.touk.nussknacker.ui.db.entity.TagsEntity.TagsEntityData
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{BaseProcessDetails, BasicProcess, ProcessDetails, ProcessHistoryEntry}
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository._
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.DateUtils
 import db.util.DBIOActionInstances._
@@ -88,7 +88,7 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
           process,
           processVersion,
           isLatestVersion = true,
-          currentlyDeployedAt = deployedPerEnv.map(_._1).filter(_._1 == process.id).map(_._2).toSet,
+          currentlyDeployedAt = deployedPerEnv.filter(_._1 == process.id).map(_._2),
           tags = tagsForProcesses(process.id),
           history = List.empty,
           businessView = false,
@@ -137,15 +137,15 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
       subprocessesVersions <- OptionT.liftF[DB, Map[ProcessName, LocalDateTime]](subprocessLastModificationDates)
       process <- OptionT[DB, ProcessEntityData](processTableFilteredByUser.filter(_.id === id).result.headOption)
       processVersions <- OptionT.liftF[DB, Seq[ProcessVersionEntityData]](latestProcessVersions(ProcessId(id)).result)
-      latestDeployedVersionsPerEnv <- OptionT.liftF[DB, Map[String, DeployedProcessVersionEntityData]](latestDeployedProcessVersionsPerEnvironment(id).result.map(_.toMap))
+      latestDeployedVersionsPerEnv <- OptionT.liftF[DB, Seq[DeployedProcessVersionEntityData]](latestDeployedProcessVersionsPerEnvironment(id).result)
       tags <- OptionT.liftF[DB, Seq[TagsEntityData]](tagsTable.filter(_.processId === process.id).result)
     } yield createFullDetails(
       process = process,
       processVersion = processVersion,
       isLatestVersion = isLatestVersion,
-      currentlyDeployedAt = latestDeployedVersionsPerEnv.keySet,
+      currentlyDeployedAt = latestDeployedVersionsPerEnv,
       tags = tags,
-      history = processVersions.map(pvs => ProcessHistoryEntry(process, pvs, latestDeployedVersionsPerEnv)),
+      history = processVersions.map(pvs => ProcessHistoryEntry(process, pvs, latestDeployedVersionsPerEnv.toList)),
       businessView = businessView,
       subprocessesVersions = subprocessesVersions
     )
@@ -154,7 +154,7 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
   private def createFullDetails(process: ProcessEntityData,
                                 processVersion: ProcessVersionEntityData,
                                 isLatestVersion: Boolean,
-                                currentlyDeployedAt: Set[String],
+                                currentlyDeployedAt: Seq[DeployedProcessVersionEntityData],
                                 tags: Seq[TagsEntityData],
                                 history: Seq[ProcessHistoryEntry],
                                 businessView: Boolean,
@@ -174,7 +174,7 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
       processType = process.processType,
       processingType = process.processingType,
       processCategory = process.processCategory,
-      currentlyDeployedAt = currentlyDeployedAt,
+      currentlyDeployedAt = currentlyDeployedAt.map(ProcessRepository.toDeploymentEntry).toList,
       tags = tags.map(_.name).toList,
       modificationDate = DateUtils.toLocalDateTime(processVersion.createDate),
       subprocessesModificationDate = subprocessModificationDate,
@@ -215,14 +215,14 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
   }
 
   private def latestDeployedProcessVersionsPerEnvironment(processId: Long) = {
-    latestDeployedProcessesVersionsPerEnvironment.filter(_._1._1 === processId).map { case ((_, env), deployedVersion) => (env, deployedVersion) }
+    latestDeployedProcessesVersionsPerEnvironment.filter(_._1 === processId).map(_._2)
   }
 
   private def latestDeployedProcessesVersionsPerEnvironment = {
     deployedProcessesTable.groupBy(e => (e.processId, e.environment)).map { case (processIdEnv, group) => (processIdEnv, group.map(_.deployedAt).max) }
       .join(deployedProcessesTable).on { case ((processIdEnv, maxDeployedAtForEnv), deplProc) =>
       deplProc.processId === processIdEnv._1 && deplProc.environment === processIdEnv._2 && deplProc.deployedAt === maxDeployedAtForEnv
-    }.map { case ((env, _), deployedVersion) => env -> deployedVersion }.filter(_._2.deploymentAction === DeploymentAction.Deploy)
+    }.map { case ((env, _), deployedVersion) => env._1 -> deployedVersion }.filter(_._2.deploymentAction === DeploymentAction.Deploy)
   }
 }
 
