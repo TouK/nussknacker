@@ -63,6 +63,8 @@ object ServiceInvoker {
   def apply(objectWithMethodDef: ObjectWithMethodDef, collector: Option[ServiceInvocationCollector] = None): ServiceInvoker = {
     val detectedReturnType = (objectWithMethodDef.methodDef.realReturnType match {
       case Typed(set) =>
+        //FIXME: this headOption assumes that there will be only one class here
+        //in the future we should get rid of Set in Typed...
         set.headOption.map(_.klass)
       case _ => None
     }).getOrElse(classOf[Any])

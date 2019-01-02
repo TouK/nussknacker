@@ -23,7 +23,7 @@ private[definition] object WithExplicitMethodToInvokeMethodDefinitionExtractor e
     Right(MethodDefinition(methodToInvoke.getName,
       (oo, args) => methodToInvoke.invoke(oo, args.toList),
         new OrderedParameters(obj.parameterDefinition.map(Left(_)) ++ obj.additionalParameters.map(Right(_))),
-      obj.returnType, obj.returnType, List()))
+      obj.returnType, obj.realReturnType, List()))
   }
 }
 

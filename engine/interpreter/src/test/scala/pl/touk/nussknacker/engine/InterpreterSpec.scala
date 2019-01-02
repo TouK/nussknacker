@@ -646,7 +646,7 @@ object InterpreterSpec {
       = List(api.definition.Parameter("param1", ClazzRef[Long], ClazzRef[Long]))
 
 
-    override def serviceReturnType: typing.TypingResult = Typed[String]
+    override def returnType: typing.TypingResult = Typed[String]
 
     override def invokeService(params: List[AnyRef])(implicit ec: ExecutionContext, collector: InvocationCollectors.ServiceInvocationCollector, metaData: MetaData): Future[AnyRef] = {
       println(params)

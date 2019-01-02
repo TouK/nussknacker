@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.{ProcessSignalSender, SignalTransformer}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
 import sun.reflect.generics.tree.ReturnType
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -41,6 +41,8 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
     val definition = processDefinition.services("configurable1")
 
     definition.returnType shouldBe Typed[String]
+    definition.methodDef.realReturnType shouldBe Typed(ClazzRef(classOf[Future[_]], List(ClazzRef[String])))
+
     definition.parameters shouldBe List(Parameter("param1", ClazzRef[Int]))
   }
 
@@ -88,6 +90,8 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
   case class OnlyUsedInAdditionalVariable(someField: String)
 
   case class EmptyExplicitMethodToInvoke(parameterDefinition: List[Parameter], returnType: TypingResult) extends Service with WithExplicitMethodToInvoke {
+
+    override def realReturnType: TypingResult = Typed(Set(TypedClass(classOf[Future[_]], List(returnType))))
 
     override def additionalParameters: List[Class[_]] = List()
 
