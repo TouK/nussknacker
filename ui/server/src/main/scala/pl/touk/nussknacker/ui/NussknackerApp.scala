@@ -11,8 +11,6 @@ import akka.stream.{ActorMaterializer, Materializer}
 import akka.stream.ActorMaterializer
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import pl.touk.nussknacker.engine.flink.queryablestate.EspQueryableClient
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
@@ -31,6 +29,10 @@ import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporter
 import slick.jdbc.JdbcBackend
 
 object NussknackerApp extends App with Directives with LazyLogging {
+
+  import net.ceedubs.ficus.Ficus._
+  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+  import net.ceedubs.ficus.readers.EnumerationReader._
 
   private implicit val system = ActorSystem("nussknacker-ui")
   private implicit val materializer = ActorMaterializer()
@@ -97,7 +99,8 @@ object NussknackerApp extends App with Directives with LazyLogging {
     val subprocessRepository = new DbSubprocessRepository(db, system.dispatcher)
     val subprocessResolver = new SubprocessResolver(subprocessRepository)
 
-    val processValidation = ProcessValidation(modelData, subprocessResolver)
+    val additionalFields = modelData.mapValues(_.processConfig.getOrElse[Map[String, AdditionalProcessProperty]]("additionalFieldsConfig", Map.empty))
+    val processValidation = ProcessValidation(modelData, additionalFields, subprocessResolver)
 
     val processRepository = DBFetchingProcessRepository.create(db)
     val writeProcessRepository = WriteProcessRepository.create(db, modelData)
@@ -124,7 +127,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
             processActivityRepository = processActivityRepository,
             processValidation = processValidation,
             typesForCategories = new ProcessTypesForCategories(config),
-            newProcessPreparer = NewProcessPreparer(typeToConfig),
+            newProcessPreparer = NewProcessPreparer(typeToConfig, additionalFields),
             processAuthorizer = processAuthorizer
           ),
           new ProcessesExportResources(processRepository, processActivityRepository),

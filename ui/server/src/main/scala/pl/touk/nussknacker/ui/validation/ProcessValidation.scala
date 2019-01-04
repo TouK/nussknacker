@@ -15,12 +15,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResu
 import shapeless.syntax.typeable._
 
 object ProcessValidation{
-
-  import net.ceedubs.ficus.Ficus._
-  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-
-  def apply(data: Map[ProcessingType, ModelData], subprocessResolver: SubprocessResolver) : ProcessValidation = {
-    val additionalFields = data.mapValues(_.processConfig.getOrElse[Map[String, AdditionalProcessProperty]]("additionalFieldsConfig", Map.empty))
+  def apply(data: Map[ProcessingType, ModelData], additionalFields: Map[ProcessingType, Map[String, AdditionalProcessProperty]], subprocessResolver: SubprocessResolver) : ProcessValidation = {
     new ProcessValidation(data.mapValues(_.validator), additionalFields, subprocessResolver)
   }
 }
@@ -32,6 +27,8 @@ class ProcessValidation(validators: Map[ProcessingType, ProcessValidator],
   val uiValidationError = "UiValidation"
 
   import pl.touk.nussknacker.ui.util.CollectionsEnrichments._
+
+  private val additionalPropertiesValidator = new AdditionalPropertiesValidator(additionalFieldsConfig, uiValidationError)
 
   def withSubprocessResolver(subprocessResolver: SubprocessResolver) = new ProcessValidation(validators, additionalFieldsConfig, subprocessResolver)
 
@@ -100,20 +97,7 @@ class ProcessValidation(validators: Map[ProcessingType, ProcessValidator],
   }
 
   private def validateAdditionalProcessProperties(displayable: DisplayableProcess): ValidationResult = {
-    additionalFieldsConfig.get(displayable.processingType) match {
-      case None =>
-        ValidationResult.errors(Map(), List(), List(PrettyValidationErrors.noValidatorKnown(displayable.processingType)))
-      case Some(propertiesConfig) =>
-        val nonEmptyFields = displayable.metaData
-          .additionalFields.flatMap(_.cast[ProcessAdditionalFields]).toList.flatMap(_.properties.filterNot(_._2.isEmpty).keys)
-        val errors = propertiesConfig
-          .filter(_._2.isRequired)
-          .filterNot(field => nonEmptyFields.contains(field._1))
-          .map(field => PrettyValidationErrors.emptyRequiredField(uiValidationError, field._1, field._2.label))
-          .toList
-        ValidationResult.errors(Map(), errors, List())
-
-    }
+    additionalPropertiesValidator.validate(displayable)
   }
 
   private def validateEdgeUniqueness(displayableProcess: DisplayableProcess): ValidationResult = {

@@ -45,8 +45,11 @@ trait EspItTest extends LazyLogging with WithDbTesting with TestPermissions { se
 
   val managementActor: ActorRef = createManagementActorRef
   val jobStatusService = new JobStatusService(managementActor)
-  val newProcessPreparer = new NewProcessPreparer(Map("streaming" ->  ProcessTestData.processDefinition),
-    Map("streaming" -> (_ => StreamMetaData(None))))
+  val newProcessPreparer = new NewProcessPreparer(
+    Map("streaming" ->  ProcessTestData.processDefinition),
+    Map("streaming" -> (_ => StreamMetaData(None))),
+    Map("streaming" -> Map.empty)
+  )
   val processesRoute = new ProcessesResources(
     processRepository = processRepository,
     writeRepository = writeProcessRepository,

@@ -4,9 +4,9 @@ import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError._
 import pl.touk.nussknacker.engine.util.ReflectUtils
-import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType}
+import pl.touk.nussknacker.ui.api.{AdditionalProcessProperty, PropertyType}
 
 object PrettyValidationErrors {
   def formatErrorMessage(error: ProcessCompilationError): NodeValidationError = {
@@ -87,4 +87,20 @@ object PrettyValidationErrors {
 
   def emptyRequiredField(typ: String, fieldName: String, label: String): NodeValidationError =
     NodeValidationError(typ, s"Field $fieldName ($label) cannot be empty", s"$label cannot be empty", fieldName = Some(fieldName), errorType = NodeValidationErrorType.SaveAllowed)
+
+  def invalidFieldValueType(typ: String, fieldName: String, property: AdditionalProcessProperty, `type`: PropertyType.Value, value: String): NodeValidationError =
+    if (`type` == PropertyType.select)
+      NodeValidationError(
+        typ,
+        s"Field $fieldName (${property.label}) has invalid value",
+        s"Expected one of ${property.values.getOrElse(Nil).mkString(", ")}, got: '$value'.",
+        fieldName = Some(fieldName),
+        errorType = NodeValidationErrorType.SaveNotAllowed)
+    else
+      NodeValidationError(
+        typ,
+        s"Field $fieldName (${property.label}) has value of invalid type",
+        s"Expected ${`type`}, got: '$value'.",
+        fieldName = Some(fieldName),
+        errorType = NodeValidationErrorType.SaveNotAllowed)
 }

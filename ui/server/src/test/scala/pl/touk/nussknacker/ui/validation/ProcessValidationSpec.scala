@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui.validation
 
-import com.typesafe.config.ConfigFactory
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.StreamMetaData
@@ -21,6 +20,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, ValidationErrors, ValidationResult, ValidationWarnings}
 
 class ProcessValidationSpec extends FlatSpec with Matchers {
+  import pl.touk.nussknacker.ui.api.PropertyType._
 
   private val validator = TestFactory.processValidation
 
@@ -173,30 +173,38 @@ class ProcessValidationSpec extends FlatSpec with Matchers {
   it should "not allow required process fields" in {
     val processValidation = new ProcessValidation(Map(TestProcessingTypes.Streaming -> ProcessTestData.validator),
       Map(TestProcessingTypes.Streaming -> Map(
-        "field1" -> AdditionalProcessProperty("label1", true),
-        "field2" -> AdditionalProcessProperty("label2", false)
+        "field1" -> AdditionalProcessProperty("label1", string, None, true, None),
+        "field2" -> AdditionalProcessProperty("label2", string, None, false, None)
       )), sampleResolver)
 
-    def process(fields: Map[String, String]) = createProcess(
-      List(
-        Source("in", SourceRef("barSource", List())),
-        Sink("out", SinkRef("barSink", List()))
-      ),
-      List(Edge("in", "out", None)), additionalFields = fields
-    )
+    processValidation.validate(validProcessWithFields(Map("field1" -> "a", "field2" -> "b"))) shouldBe 'ok
 
-    processValidation.validate(process(Map("field1" -> "a", "field2" -> "b"))) shouldBe 'ok
+    processValidation.validate(validProcessWithFields(Map("field1" -> "a"))) shouldBe 'ok
 
-    processValidation.validate(process(Map("field1" -> "a"))) shouldBe 'ok
-
-    processValidation.validate(process(Map("field1" -> "", "field2" -> "b")))
+    processValidation.validate(validProcessWithFields(Map("field1" -> "", "field2" -> "b")))
       .errors.processPropertiesErrors shouldBe List(NodeValidationError("UiValidation", "Field field1 (label1) cannot be empty",
       "label1 cannot be empty", Some("field1"), ValidationResults.NodeValidationErrorType.SaveAllowed))
     
-    processValidation.validate(process(Map("field2" -> "b")))
+    processValidation.validate(validProcessWithFields(Map("field2" -> "b")))
       .errors.processPropertiesErrors shouldBe List(NodeValidationError("UiValidation", "Field field1 (label1) cannot be empty",
       "label1 cannot be empty", Some("field1"), ValidationResults.NodeValidationErrorType.SaveAllowed))
 
+  }
+
+  it should "validate type in process field" in {
+    val processValidation = new ProcessValidation(Map(TestProcessingTypes.Streaming -> ProcessTestData.validator),
+      Map(TestProcessingTypes.Streaming -> Map(
+        "field1" -> AdditionalProcessProperty("label", select, None, isRequired = false, values = Some("true" :: "false" :: Nil)),
+        "field2" -> AdditionalProcessProperty("label", integer, None, isRequired = false, None)
+      )), sampleResolver)
+
+    processValidation.validate(validProcessWithFields(Map("field1" -> "true"))) shouldBe 'ok
+    processValidation.validate(validProcessWithFields(Map("field1" -> "false"))) shouldBe 'ok
+    processValidation.validate(validProcessWithFields(Map("field1" -> "1"))) should not be 'ok
+
+    processValidation.validate(validProcessWithFields(Map("field2" -> "1"))) shouldBe 'ok
+    processValidation.validate(validProcessWithFields(Map("field2" -> "1.1"))) should not be 'ok
+    processValidation.validate(validProcessWithFields(Map("field2" -> "true"))) should not be 'ok
   }
 
   private def createProcess(nodes: List[NodeData],
@@ -207,5 +215,13 @@ class ProcessValidationSpec extends FlatSpec with Matchers {
       ExceptionHandlerRef(List()), subprocessVersions = Map.empty, additionalFields = Some(ProcessAdditionalFields(None, groups, additionalFields))), nodes, edges, `type`)
   }
 
-
+  private def validProcessWithFields(fields: Map[String, String]) = {
+    createProcess(
+      List(
+        Source("in", SourceRef("barSource", List())),
+        Sink("out", SinkRef("barSink", List()))
+      ),
+      List(Edge("in", "out", None)), additionalFields = fields
+    )
+  }
 }

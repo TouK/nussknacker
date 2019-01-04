@@ -213,9 +213,9 @@ export class NodeDetailsContent extends React.Component {
           this.createField("checkbox", "Should split state to disk", "typeSpecificProperties.splitStateToDisk", "splitStateToDisk"),
           this.createField("checkbox", "Should use async interpretation (lazy variables not allowed)", "typeSpecificProperties.useAsyncInterpretation", "useAsyncInterpretation")
         ] : [this.createField("input", "Query path",  "typeSpecificProperties.path", "path")]
-        const additionalFields = Object.entries(this.props.additionalPropertiesConfig).map(([fieldName, fieldConfig]) => {
-          return this.createField("input", fieldConfig.label, `additionalFields.properties.${fieldName}`, fieldName)
-        })
+        const additionalFields = Object.entries(this.props.additionalPropertiesConfig).map(
+          ([fieldName, fieldConfig]) => this.createAdditionalField(fieldName, fieldConfig)
+        );
         const hasExceptionHandlerParams = this.state.editedNode.exceptionHandler.parameters.length > 0
         return (
           <div className="node-table-body">
@@ -245,6 +245,30 @@ export class NodeDetailsContent extends React.Component {
             <NodeDetails node={this.props.node}/>
           </div>
         )
+    }
+  };
+
+  createAdditionalField(fieldName, fieldConfig) {
+    if (fieldConfig.type === "select") {
+      const values = _.map(fieldConfig.values, v => ({expression: v, label: v}));
+      const current = _.get(this.state.editedNode, `additionalFields.properties.${fieldName}`);
+      const obj = {expression: current, value: current};
+
+      return <ExpressionWithFixedValues
+        fieldLabel={fieldConfig.label}
+        onChange={(newValue) => this.setNodeDataAt(`additionalFields.properties.${fieldName}`, newValue)}
+        obj={obj}
+        renderFieldLabel={this.renderFieldLabel}
+        values={values}
+        readOnly={false}
+      />;
+    } else {
+      const fieldType = () => {
+        if (fieldConfig.type == "text") return "plain-textarea";
+        else return "input";
+      };
+
+      return this.createField(fieldType(), fieldConfig.label, `additionalFields.properties.${fieldName}`, fieldName)
     }
   }
 

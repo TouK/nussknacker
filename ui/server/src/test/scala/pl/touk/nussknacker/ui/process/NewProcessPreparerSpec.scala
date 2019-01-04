@@ -19,7 +19,7 @@ class NewProcessPreparerSpec extends FlatSpec with Matchers {
   it should "create new empty process" in {
     val processingType = "testProcessingType"
 
-    val preparer = new NewProcessPreparer(Map(processingType -> processDeffinition), Map(processingType -> (_ => StreamMetaData(None))))
+    val preparer = new NewProcessPreparer(Map(processingType -> processDeffinition), Map(processingType -> (_ => StreamMetaData(None))), Map(processingType -> Map.empty))
 
     val emptyProcess = preparer.prepareEmptyProcess("processId1", processingType, isSubprocess = false)
 
@@ -32,7 +32,8 @@ class NewProcessPreparerSpec extends FlatSpec with Matchers {
     val processingType = "testProcessingType"
 
     val preparer = new NewProcessPreparer(Map(processingType -> processDeffinitionWithExceptionHandler),
-        Map(processingType -> (_ => StreamMetaData(None))))
+      Map(processingType -> (_ => StreamMetaData(None))),
+      Map(processingType -> Map.empty))
 
     val emptyProcess = preparer.prepareEmptyProcess("processId1", processingType, isSubprocess = false)
 
