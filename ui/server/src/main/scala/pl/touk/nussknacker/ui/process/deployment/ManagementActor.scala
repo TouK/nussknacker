@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.ui.process.deployment
 
 import akka.actor.{Actor, ActorRef, ActorRefFactory, Props, Status}
-import argonaut.{Json, PrettyParams}
+import argonaut.PrettyParams
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
+import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.api.deployment.{GraphProcess, ProcessDeploymentData, ProcessManager}
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
@@ -18,7 +18,7 @@ import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.CatsSyntax
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 import scala.util.{Failure, Success}
 
 object ManagementActor {
@@ -37,29 +37,27 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
 
   private var beingDeployed = Map[ProcessName, DeployInfo]()
 
-  private implicit val ec = context.dispatcher
+  private implicit val ec: ExecutionContext = context.dispatcher
 
-  override def receive = {
-    case Deploy(process, user, savepointPath) =>
+  override def receive: PartialFunction[Any, Unit] = {
+    case Deploy(process, user, savepointPath, comment) =>
       ensureNoDeploymentRunning {
-        val deployRes: Future[Unit] = deployProcess(process.id, savepointPath)(user)
+        val deployRes: Future[Unit] = deployProcess(process.id, savepointPath, comment)(user)
         reply(withDeploymentInfo(process, user.id, DeploymentActionType.Deployment, deployRes))
       }
     case Snapshot(id, user, savepointDir) =>
       reply(processManager(id.id)(ec, user).flatMap(_.savepoint(id.name, savepointDir)))
-    case Cancel(id, user) =>
+    case Cancel(id, user, comment) =>
       ensureNoDeploymentRunning {
-        implicit val loggedUser = user
-        val cancelRes = processManager(id.id).map { manager =>
-          manager.cancel(id.name).flatMap(_ => deployedProcessRepository.markProcessAsCancelled(id.id, user.id, environment))
-        }
+        implicit val loggedUser: LoggedUser = user
+        val cancelRes = cancelProcess(id, comment)
         reply(withDeploymentInfo(id, user.id, DeploymentActionType.Cancel, cancelRes))
       }
     case CheckStatus(id, user) if isBeingDeployed(id.name) =>
       val info = beingDeployed(id.name)
       sender() ! Some(ProcessStatus(None, s"${info.action} IN PROGRESS", info.time, false, true))
     case CheckStatus(id, user) =>
-      implicit val loggedUser = user
+      implicit val loggedUser: LoggedUser = user
       val processStatus = processManager(id.id).flatMap { manager =>
         manager.findJobStatus(id.name).map(_.map(ProcessStatus.apply))
       }
@@ -72,7 +70,7 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
       beingDeployed -= id.name
     case Test(id, processJson, testData, user, encoder) =>
       ensureNoDeploymentRunning {
-        implicit val loggedUser = user
+        implicit val loggedUser: LoggedUser = user
         val testAction = for {
           manager <- processManager(id.id)
           resolvedProcess <- resolveGraph(processJson)
@@ -103,18 +101,35 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
 
   private def isBeingDeployed(id: ProcessName) = beingDeployed.contains(id)
 
-  private def deployProcess(processId: ProcessId, savepointPath: Option[String])(implicit user: LoggedUser): Future[Unit] = {
+  private def cancelProcess(processId: ProcessIdWithName, comment: Option[String])(implicit user: LoggedUser): Future[Unit] = {
+    for {
+      process <- processRepository.fetchLatestProcessDetailsForProcessId(processId.id)
+      deployedAt = process
+        .flatMap(_.currentlyDeployedAt.find(_.environment == environment))
+      manager <- processManager(processId.id)
+      version <-deployedAt.map(_.processVersionId) match {
+        case Some(processVersionId) => Future.successful(processVersionId)
+        case None => Future.failed(ProcessNotFoundError(processId.name.value.toString))
+      }
+      _ <- manager.cancel(processId.name)
+      _ <- deployedProcessRepository.markProcessAsCancelled(processId.id, version, environment, comment)
+    } yield ()
+  }
+
+
+  private def deployProcess(processId: ProcessId, savepointPath: Option[String], comment: Option[String])(implicit user: LoggedUser): Future[Unit] = {
     for {
       processingType <- getProcessingType(processId)
       latestProcessEntity <- processRepository.fetchLatestProcessVersion(processId)
       result <- latestProcessEntity match {
-        case Some(latestVersion) => deployAndSaveProcess(processingType, latestVersion, savepointPath)
+        case Some(latestVersion) => deployAndSaveProcess(processingType, latestVersion, savepointPath, comment)
         case None => Future.failed(ProcessNotFoundError(processId.value.toString))
       }
     } yield result
   }
 
-  private def deployAndSaveProcess(processingType: ProcessingType, latestVersion: ProcessVersionEntityData, savepointPath: Option[String])(implicit user: LoggedUser): Future[Unit] = {
+  private def deployAndSaveProcess(processingType: ProcessingType, latestVersion: ProcessVersionEntityData,
+                                   savepointPath: Option[String], comment: Option[String])(implicit user: LoggedUser): Future[Unit] = {
     val resolvedDeploymentData = resolveDeploymentData(latestVersion.deploymentData)
     val processManagerValue = managers(processingType)
 
@@ -123,7 +138,8 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
       maybeProcessName <- processRepository.fetchProcessName(ProcessId(latestVersion.processId))
       processName = maybeProcessName.getOrElse(throw new IllegalArgumentException(s"Unknown process Id ${latestVersion.processId}"))
       _ <- processManagerValue.deploy(latestVersion.toProcessVersion(processName), deploymentResolved, savepointPath)
-      _ <- deployedProcessRepository.markProcessAsDeployed(ProcessId(latestVersion.processId), latestVersion.id, processingType, user.id, environment)
+      _ <- deployedProcessRepository.markProcessAsDeployed(ProcessId(latestVersion.processId), latestVersion.id,
+        processingType, environment, comment)
     } yield ()
   }
 
@@ -153,7 +169,7 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
 
   //during deployment using Client.run Flink holds some data in statics and there is an exception when
   //test or verification run in parallel
-  private def ensureNoDeploymentRunning(action: => Unit) = {
+  private def ensureNoDeploymentRunning(action: => Unit): Unit = {
     if (beingDeployed.nonEmpty) {
       sender() ! Status.Failure(new ProcessIsBeingDeployed(beingDeployed))
     } else {
@@ -168,9 +184,9 @@ trait DeploymentAction {
   def id: ProcessIdWithName
 }
 
-case class Deploy(id: ProcessIdWithName, user: LoggedUser, savepointPath: Option[String]) extends DeploymentAction
+case class Deploy(id: ProcessIdWithName, user: LoggedUser, savepointPath: Option[String], comment: Option[String]) extends DeploymentAction
 
-case class Cancel(id: ProcessIdWithName, user: LoggedUser) extends DeploymentAction
+case class Cancel(id: ProcessIdWithName, user: LoggedUser, comment: Option[String]) extends DeploymentAction
 
 case class Snapshot(id: ProcessIdWithName, user: LoggedUser, savepointPath: String)
 

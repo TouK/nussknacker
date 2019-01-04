@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.util.json.Codecs
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.{Edge, EdgeType, NodeAdditionalFields, ProcessAdditionalFields}
-import pl.touk.nussknacker.restmodel.processdetails.{ProcessDetails, ProcessHistoryEntry}
+import pl.touk.nussknacker.restmodel.processdetails.{DeploymentAction, DeploymentHistoryEntry, ProcessDetails, ProcessHistoryEntry}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationErrorType, ValidationResult}
 
@@ -69,6 +69,8 @@ trait RestModelCodecs extends Codecs with Argonauts with SingletonInstances with
   }
 
   implicit val processTypeCodec: CodecJson[ProcessType.Value] = Codecs.enumCodec(ProcessType)
+
+  implicit val deploymentActionCodec: CodecJson[DeploymentAction.Value] = Codecs.enumCodec(DeploymentAction)
 
   implicit def displayableProcessCodec: CodecJson[DisplayableProcess] = CodecJson.derive[DisplayableProcess]
 

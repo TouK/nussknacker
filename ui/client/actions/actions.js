@@ -367,6 +367,16 @@ export function toggleConfirmDialog(isOpen, text, action) {
   }
 }
 
+export function toggleProcessActionDialog(message, action, displayWarnings) {
+  return {
+    type: "TOGGLE_PROCESS_ACTION_MODAL",
+    message: message,
+    action: action,
+    displayWarnings: displayWarnings
+  }
+}
+
+
 export function toggleModalDialog(openDialog) {
   return {
     type: "TOGGLE_MODAL_DIALOG",

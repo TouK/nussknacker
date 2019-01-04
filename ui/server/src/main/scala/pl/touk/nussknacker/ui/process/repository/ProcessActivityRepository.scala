@@ -22,7 +22,7 @@ case class ProcessActivityRepository(dbConfig: DbConfig) extends LazyLogging wit
 
   def addComment(processId: ProcessId, processVersionId: Long, comment: String)
                 (implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Unit] = {
-    run(CommentEntity.newCommentAction(processId, processVersionId, comment))
+    run(CommentEntity.newCommentAction(processId, processVersionId, comment)).map(_ => ())
   }
 
   def deleteComment(commentId: Long)(implicit ec: ExecutionContext): Future[Unit] = {

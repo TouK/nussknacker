@@ -94,6 +94,7 @@ object ProcessTestData {
       subprocessesModificationDate = None,
       tags = List(),
       currentlyDeployedAt = List(),
+      currentDeployment = None,
       json = Some(displayable),
       history = List(),
       modelVersion = None
@@ -114,6 +115,7 @@ object ProcessTestData {
       subprocessesModificationDate = None,
       tags = List(),
       currentlyDeployedAt = List(),
+      currentDeployment = None,
       json = Some(displayable),
       history = List(),
       modelVersion = None

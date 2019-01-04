@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.api
 
 import akka.actor.{ActorRef, ActorSystem}
-import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse, StatusCodes}
 import akka.http.scaladsl.server._
 import akka.pattern.ask
@@ -12,20 +11,18 @@ import argonaut.Argonaut._
 import argonaut.{Json, PrettyParams}
 import com.typesafe.scalalogging.LazyLogging
 import com.carrotsearch.sizeof.RamUsageEstimator
-import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.codec.UiCodecs
-import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.ui.process.deployment.{Cancel, Deploy, Snapshot, Test}
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
 import pl.touk.nussknacker.ui.process.marshall.{ProcessConverter, UiProcessMarshaller}
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
-import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
@@ -37,7 +34,7 @@ object ManagementResources {
             managementActor: ActorRef,
             testResultsMaxSizeInBytes: Int,
             processAuthorizator: AuthorizeProcess,
-            processRepository: FetchingProcessRepository)
+            processRepository: FetchingProcessRepository, featuresOptions: FeatureTogglesConfig)
            (implicit ec: ExecutionContext,
             mat: Materializer, system: ActorSystem): ManagementResources = {
     new ManagementResources(
@@ -45,7 +42,8 @@ object ManagementResources {
       managementActor,
       testResultsMaxSizeInBytes,
       processAuthorizator,
-      processRepository
+      processRepository,
+      featuresOptions.deploySettings
     )
   }
 
@@ -55,7 +53,7 @@ class ManagementResources(processCounter: ProcessCounter,
                           val managementActor: ActorRef,
                           testResultsMaxSizeInBytes: Int,
                           val processAuthorizer: AuthorizeProcess,
-                          val processRepository: FetchingProcessRepository)
+                          val processRepository: FetchingProcessRepository, deploySettings: Option[DeploySettings])
                          (implicit val ec: ExecutionContext, mat: Materializer, system: ActorSystem)
   extends Directives
     with LazyLogging
@@ -68,6 +66,12 @@ class ManagementResources(processCounter: ProcessCounter,
   //TODO: in the future we could use https://github.com/akka/akka-http/pull/1828 when we can bump version to 10.1.x
   private val durationFromConfig = system.settings.config.getDuration("akka.http.server.request-timeout")
   private implicit val timeout: Timeout = Timeout(durationFromConfig.toMillis millis)
+
+  private def withComment: Directive1[Option[String]] =
+    entity(as[Option[String]]).map(_.filterNot(_.isEmpty)).flatMap {
+      case None if deploySettings.exists(_.requireComment) => reject(ValidationRejection("Comment is required", None))
+      case comment => provide(comment)
+    }
 
   def route(implicit user: LoggedUser): Route = {
     path("adminProcessManagement" / "snapshot" / Segment / Segment) { (processName, savepointDir) =>
@@ -84,10 +88,12 @@ class ManagementResources(processCounter: ProcessCounter,
       path("adminProcessManagement" / "deploy" / Segment / Segment) { (processName, savepointPath) =>
         (post & processId(processName)) { processId =>
           canDeploy(processId) {
-            complete {
-              (managementActor ? Deploy(processId, user, Some(savepointPath)))
-                .map { _ => HttpResponse(status = StatusCodes.OK) }
-                .recover(EspErrorToHttp.errorToHttp)
+            withComment { comment =>
+              complete {
+                (managementActor ? Deploy(processId, user, Some(savepointPath), comment))
+                  .map { _ => HttpResponse(status = StatusCodes.OK) }
+                  .recover(EspErrorToHttp.errorToHttp)
+              }
             }
           }
         }
@@ -95,10 +101,12 @@ class ManagementResources(processCounter: ProcessCounter,
       path("processManagement" / "deploy" / Segment) { processName =>
         (post & processId(processName)) { processId =>
           canDeploy(processId){
-            complete {
-              (managementActor ? Deploy(processId, user, None))
-                .map { _ => HttpResponse(status = StatusCodes.OK) }
-                .recover(EspErrorToHttp.errorToHttp)
+            withComment { comment =>
+              complete {
+                (managementActor ? Deploy(processId, user, None, comment))
+                  .map { _ => HttpResponse(status = StatusCodes.OK) }
+                  .recover(EspErrorToHttp.errorToHttp)
+              }
             }
           }
         }
@@ -106,10 +114,12 @@ class ManagementResources(processCounter: ProcessCounter,
       path("processManagement" / "cancel" / Segment) { processName =>
         (post & processId(processName)) { processId =>
           canDeploy(processId) {
-            complete {
-              (managementActor ? Cancel(processId, user))
-                .map { _ => HttpResponse(status = StatusCodes.OK) }
-                .recover(EspErrorToHttp.errorToHttp)
+            withComment { comment =>
+              complete {
+                (managementActor ? Cancel(processId, user, comment))
+                  .map { _ => HttpResponse(status = StatusCodes.OK) }
+                  .recover(EspErrorToHttp.errorToHttp)
+              }
             }
           }
         }

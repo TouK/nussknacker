@@ -59,8 +59,11 @@ object ProcessRepository {
   }
 
   def toDeploymentEntry(deployedVersion: DeployedProcessVersionEntityData): DeploymentEntry
-    =  DeploymentEntry(deployedVersion.processVersionId.getOrElse(0), deployedVersion.environment, deployedVersion.deployedAtTime, deployedVersion.user,
-                deployedVersion.buildInfo.flatMap(BuildInfo.parseJson).getOrElse(BuildInfo.empty))
+    =  DeploymentEntry(deployedVersion.processVersionId.getOrElse(0),
+                       deployedVersion.environment,
+                       deployedVersion.deployedAtTime,
+                       deployedVersion.user,
+                       deployedVersion.buildInfo.flatMap(BuildInfo.parseJson).getOrElse(BuildInfo.empty))
 
   case class ProcessNotFoundError(id: String) extends Exception(s"No process $id found") with NotFoundError
 

@@ -1,4 +1,5 @@
 import _ from 'lodash'
+import Dialogs from "../components/modals/Dialogs";
 
 const emptyUiState = {
   leftPanelIsOpened: true,
@@ -77,6 +78,17 @@ export function reducer(state = emptyUiState, action) {
           modalDialog: {
             openDialog: action.openDialog,
             text: action.text
+        }
+      })
+    }
+    case "TOGGLE_PROCESS_ACTION_MODAL": {
+      return withAllModalsClosed({
+        ...state,
+          modalDialog: {
+            openDialog: Dialogs.types.processAction,
+            message: action.message,
+            action: action.action,
+            displayWarnings: action.displayWarnings
         }
       })
     }

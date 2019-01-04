@@ -63,12 +63,13 @@ trait EspItTest extends LazyLogging with WithDbTesting with TestPermissions { se
 
   val processesRouteWithAllPermissions = withAllPermissions(processesRoute)
 
-  val deployRoute = new ManagementResources(
+  def deployRoute(requireComment: Boolean = false) = new ManagementResources(
     processCounter = new ProcessCounter(TestFactory.sampleSubprocessRepository),
     managementActor = managementActor,
     testResultsMaxSizeInBytes = 500 * 1024 * 1000,
     processAuthorizer = processAuthorizer,
-    processRepository = processRepository
+    processRepository = processRepository,
+    deploySettings = Some(DeploySettings(requireComment = requireComment))
   )
   val attachmentService = new ProcessAttachmentService(attachmentsPath, processActivityRepository)
   val processActivityRoute = new ProcessActivityResource(processActivityRepository, processRepository)
@@ -130,12 +131,16 @@ trait EspItTest extends LazyLogging with WithDbTesting with TestPermissions { se
   }
 
 
-  def deployProcess(id: String): RouteTestResult = {
-    Post(s"/processManagement/deploy/$id") ~> withPermissions(deployRoute, testPermissionDeploy |+| testPermissionRead)
+  def deployProcess(id: String, requireComment: Boolean = false, comment: Option[String] = None): RouteTestResult = {
+    Post(s"/processManagement/deploy/$id",
+      HttpEntity(ContentTypes.`text/plain(UTF-8)`, comment.getOrElse(""))
+    ) ~> withPermissions(deployRoute(requireComment), testPermissionDeploy |+| testPermissionRead)
   }
 
-  def cancelProcess(id: String ) = {
-    Post(s"/processManagement/cancel/$id") ~> withPermissions(deployRoute, testPermissionDeploy |+| testPermissionRead)
+  def cancelProcess(id: String, requireComment: Boolean = false, comment: Option[String] = None) = {
+    Post(s"/processManagement/cancel/$id",
+      HttpEntity(ContentTypes.`text/plain(UTF-8)`, comment.getOrElse(""))
+    ) ~> withPermissions(deployRoute(requireComment), testPermissionDeploy |+| testPermissionRead)
   }
 
   def getSampleProcess = {

@@ -17,15 +17,16 @@ import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.codec.UiCodecs
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
-import pl.touk.nussknacker.restmodel.processdetails.{BasicProcess, DeploymentEntry, ProcessDetails}
+import pl.touk.nussknacker.restmodel.processdetails._
 import pl.touk.nussknacker.ui.sample.SampleProcess
 import pl.touk.nussknacker.ui.security.api.Permission
 import pl.touk.nussknacker.ui.util.MultipartUtils
-
 import cats.syntax.semigroup._
 import cats.instances.all._
 import org.scalatest.matchers.{BeMatcher, MatchResult}
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.ProcessActivity
+
 class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest
   with Matchers with ScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
@@ -39,6 +40,8 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest
     BeMatcher(
       equal(versionIds.map(l => DeploymentEntry(l, TestFactory.testEnvironment, fixedTime, user().id, buildInfo))).matcher[List[DeploymentEntry]]
     ).compose[List[DeploymentEntry]](_.map(_.copy(deployedAt = fixedTime)))
+
+
 
   test("process deployment should be visible in process history") {
 
@@ -63,6 +66,38 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest
           }
         }
       }
+    }
+  }
+
+  test("deploys and cancels with comment") {
+    saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
+    val currentMaxComments =
+    deployProcess(SampleProcess.process.id, true, Some("deployComment")) ~> check {
+      cancelProcess(SampleProcess.process.id, true, Some("cancelComment")) ~> check {
+        status shouldBe StatusCodes.OK
+        Get(s"/processes/${SampleProcess.process.id}/activity") ~> withAllPermissions(processActivityRoute) ~> check {
+          val comments = responseAs[String].decodeOption[ProcessActivity].get.comments.sortBy(_.id)
+          comments.map(_.content) shouldBe List("Deployment: deployComment", "Stop: cancelComment")
+
+          val firstCommentId::secondCommentId::Nil = comments.map(_.id)
+
+          Get(s"/processes/${SampleProcess.process.id}/deployments") ~> withAllPermissions(processesRoute) ~> check {
+            val deploymentHistory = responseAs[String].decodeOption[List[DeploymentHistoryEntry]].get
+            val curTime = LocalDateTime.now()
+            deploymentHistory.map(_.copy(time = curTime)) shouldBe List(
+              DeploymentHistoryEntry(2, curTime, user().id, DeploymentAction.Cancel, Some(secondCommentId), Map()),
+              DeploymentHistoryEntry(2, curTime, user().id, DeploymentAction.Deploy, Some(firstCommentId), TestFactory.buildInfo)
+            )
+          }
+        }
+      }
+    }
+  }
+
+  test("rejects deploy without comment if comment needed") {
+    saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
+    deployProcess(SampleProcess.process.id, true) ~> check {
+      rejection shouldBe server.ValidationRejection("Comment is required", None)
     }
   }
 
@@ -113,7 +148,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest
 
   test("not authorize user with write permission to deploy") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-    Post(s"/processManagement/deploy/${SampleProcess.process.id}") ~> withPermissions(deployRoute, testPermissionWrite) ~> check {
+    Post(s"/processManagement/deploy/${SampleProcess.process.id}") ~> withPermissions(deployRoute(), testPermissionWrite) ~> check {
       rejection shouldBe server.AuthorizationFailedRejection
     }
   }
@@ -133,7 +168,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest
     val displayableProcess = ProcessConverter.toDisplayable(ProcessCanonizer.canonize(SampleProcess.process)
       , TestProcessingTypes.Streaming)
     val multiPart = MultipartUtils.prepareMultiParts("testData" -> "ala\nbela", "processJson" -> displayableProcess.asJson.nospaces)()
-    Post(s"/processManagement/test/${SampleProcess.process.id}", multiPart) ~> withPermissions(deployRoute, testPermissionDeploy |+| testPermissionRead) ~> check {
+    Post(s"/processManagement/test/${SampleProcess.process.id}", multiPart) ~> withPermissions(deployRoute(), testPermissionDeploy |+| testPermissionRead) ~> check {
       status shouldEqual StatusCodes.OK
       val results = Parse.parse(responseAs[String]).right.get
       for {
@@ -170,7 +205,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest
     val displayableProcess = ProcessConverter.toDisplayable(ProcessCanonizer.canonize(process), TestProcessingTypes.Streaming)
 
     val multiPart = MultipartUtils.prepareMultiParts("testData" -> "ala\nbela", "processJson" -> displayableProcess.asJson.nospaces)()
-    Post(s"/processManagement/test/${process.id}", multiPart) ~> withPermissions(deployRoute, testPermissionDeploy |+| testPermissionRead) ~> check {
+    Post(s"/processManagement/test/${process.id}", multiPart) ~> withPermissions(deployRoute(), testPermissionDeploy |+| testPermissionRead) ~> check {
       status shouldEqual StatusCodes.OK
     }
   }

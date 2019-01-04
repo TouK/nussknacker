@@ -209,15 +209,11 @@ class UserRightPanel extends Component {
   }
 
   deploy = () => {
-    this.props.actions.toggleModalDialog(Dialogs.types.deployProcess)
+    this.props.actions.toggleProcessActionDialog("Deploy process", (p, c) => HttpService.deploy(p, c), true)
   }
 
   stop = () => {
-    this.props.actions.toggleConfirmDialog(true, DialogMessages.stop(this.processId()), () => {
-      return HttpService.stop(this.processId()).then((resp) => {
-        this.fetchProcessDetails()
-      })
-    })
+    this.props.actions.toggleProcessActionDialog("Stop process", (p, c) => HttpService.stop(p, c), false)
   }
 
   clearHistory = () => {

@@ -42,9 +42,9 @@ object CommentEntity {
   }
 
   def newCommentAction(processId: ProcessId, processVersionId: Long, comment: String)
-                  (implicit ec: ExecutionContext, loggedUser: LoggedUser): DB[Unit] = {
+                  (implicit ec: ExecutionContext, loggedUser: LoggedUser): DB[Option[Long]] = {
     if (comment.nonEmpty) {
-      val addCommentAction = for {
+      for {
         newId <- CommentEntity.nextIdAction
         _ <- commentsTable += CommentEntityData(
           id = newId,
@@ -54,10 +54,9 @@ object CommentEntity {
           user = loggedUser.id,
           createDate = Timestamp.valueOf(LocalDateTime.now())
         )
-      } yield ()
-      addCommentAction.map(_ => ())
+      } yield Some(newId)
     } else {
-      DBIO.successful(())
+      DBIO.successful(None)
     }
   }
 

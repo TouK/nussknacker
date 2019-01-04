@@ -1,5 +1,4 @@
 import React from "react";
-import {render} from "react-dom";
 import {connect} from "react-redux";
 import _ from "lodash";
 import ActionsUtils from "../../actions/ActionsUtils";

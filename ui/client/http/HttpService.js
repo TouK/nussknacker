@@ -175,9 +175,14 @@ export default {
 
   },
 
-  deploy(processId) {
-    return promiseWrap($.post(API_URL + '/processManagement/deploy/' + processId))
-      .then(() => {
+  deploy(processId, comment) {
+    return fetch(API_URL + '/processManagement/deploy/' + processId,
+        {
+              method: 'POST',
+              body: comment,
+              credentials: 'include'
+        }
+      ).then(() => {
         this.addInfo(`Process ${processId} was deployed`)
         return { isSuccess: true }
       })
@@ -200,8 +205,14 @@ export default {
     )
   },
 
-  stop(processId) {
-    return promiseWrap($.post(API_URL + '/processManagement/cancel/' + processId))
+  stop(processId, comment) {
+    return fetch(API_URL + '/processManagement/cancel/' + processId,
+        {
+              method: 'POST',
+              body: comment,
+              credentials: 'include'
+        }
+      )
       .then(() => this.addInfo(`Process ${processId} was stopped`))
       .catch((error) => this.addError(`Failed to stop ${processId}`, error, true));
   },

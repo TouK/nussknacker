@@ -11,7 +11,16 @@ import ProcessUtils from "../../common/ProcessUtils";
 import ProcessDialogWarnings from "./ProcessDialogWarnings";
 import ValidateDeployComment from "../ValidateDeployComment";
 
-class DeployProcessDialog extends React.Component {
+class ProcessActionDialog extends React.Component {
+
+  static propTypes = {
+    settings: React.PropTypes.object.isRequired,
+    processId: React.PropTypes.string,
+    processHasWarnings: React.PropTypes.bool,
+    message: React.PropTypes.string,
+    displayWarnings: React.PropTypes.bool,
+    action: React.PropTypes.func
+  }
 
   constructor(props) {
     super(props);
@@ -22,25 +31,19 @@ class DeployProcessDialog extends React.Component {
   }
 
   deploy = (closeDialog) => {
-    const { actions, processId, processVersionId } = this.props
+    const { actions, processId } = this.props
     const comment = this.state.comment
 
     closeDialog()
     const deploymentPath = window.location.pathname
-    return HttpService.deploy(processId)
+    return this.props.action(processId, comment)
       .then(resp => {
-        if (resp.isSuccess) {
-          actions.addComment(processId, processVersionId, this.deploymentComment(comment))
-        }
         const currentPath = window.location.pathname
         if (currentPath.startsWith(deploymentPath)) {
           actions.displayCurrentProcessVersion(processId)
+          actions.displayProcessActivity(processId)
         }
       })
-  }
-
-  deploymentComment = (comment) => {
-    return "Deployment" + (_.isEmpty(comment) ? "" : ": ") + comment
   }
 
   okBtnConfig = () => {
@@ -58,11 +61,11 @@ class DeployProcessDialog extends React.Component {
     return (
       <GenericModalDialog
         init={() => this.setState(this.initState)}
-        type={Dialogs.types.deployProcess}
+        type={Dialogs.types.processAction}
         confirm={this.deploy}
         okBtnConfig={this.okBtnConfig()}
       >
-        <p>Deploy process {this.props.processId}</p>
+        <p>{this.props.message} {this.props.processId}</p>
         <ProcessDialogWarnings processHasWarnings={this.props.processHasWarnings} />
         <CommentInput onChange={this.onInputChange}/>
       </GenericModalDialog>
@@ -71,19 +74,21 @@ class DeployProcessDialog extends React.Component {
 }
 
 function mapState(state) {
-  const processHasNoWarnings = ProcessUtils.hasNoWarnings(state.graphReducer.processToDisplay || {})
 
+  const config = state.ui.modalDialog
+  const processHasNoWarnings = !config.displayWarnings || ProcessUtils.hasNoWarnings(state.graphReducer.processToDisplay || {})
   return {
     settings: Object.assign(
       {},
       _.get(state.settings, "featuresSettings.commentSettings"),
       _.get(state.settings, "featuresSettings.deploySettings")),
     processId: _.get(state.graphReducer, 'fetchedProcessDetails.id'),
-    processVersionId: _.get(state.graphReducer, "fetchedProcessDetails.processVersionId"),
-    processHasWarnings: !processHasNoWarnings
+    processHasWarnings: !processHasNoWarnings,
+    action: config.action,
+    message: config.message
   }
 }
 
-export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(DeployProcessDialog)
+export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(ProcessActionDialog)
 
 

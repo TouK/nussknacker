@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.ProcessType.ProcessType
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName}
+import pl.touk.nussknacker.restmodel.processdetails.DeploymentAction.DeploymentAction
 
 object processdetails {
 
@@ -18,6 +19,8 @@ object processdetails {
                           processingType: ProcessingType,
                           isArchived:Boolean,
                           modificationDate: LocalDateTime,
+                          currentDeployment: Option[DeploymentEntry],
+                         //TODO: remove
                           currentlyDeployedAt: List[DeploymentEntry])
 
   // todo: name -> ProcessName
@@ -33,6 +36,8 @@ object processdetails {
                                               modificationDate: LocalDateTime,
                                               subprocessesModificationDate: Option[Map[String, LocalDateTime]],
                                               tags: List[String],
+                                              currentDeployment: Option[DeploymentEntry],
+                                             //TODO: remove
                                               currentlyDeployedAt: List[DeploymentEntry],
                                               json: Option[ProcessShape],
                                               history: List[ProcessHistoryEntry],
@@ -46,6 +51,7 @@ object processdetails {
       processingType = processingType,
       isArchived = isArchived,
       modificationDate = modificationDate,
+      currentDeployment = currentlyDeployedAt.headOption,
       currentlyDeployedAt = currentlyDeployedAt
     )
 
@@ -63,11 +69,32 @@ object processdetails {
                                  processVersionId: Long,
                                  createDate: LocalDateTime,
                                  user: String,
+                                //TODO: remove, replace with 'currentDeployments'
                                  deployments: List[DeploymentEntry]
                                 )
 
 
-  case class DeploymentEntry(processVersionId: Long, environment: String, deployedAt: LocalDateTime, user: String, buildInfo: Map[String, String])
+  case class DeploymentEntry(processVersionId: Long,
+                            //TODO: remove, in current usage it's not really needed
+                             environment: String,
+                             deployedAt: LocalDateTime,
+                             user: String,
+                             buildInfo: Map[String, String])
+
+  case class DeploymentHistoryEntry(processVersionId: Long,
+                             time: LocalDateTime,
+                             user: String,
+                             deploymentAction: DeploymentAction,
+                             commentId: Option[Long],
+                             buildInfo: Map[String, String])
+
+
+  object DeploymentAction extends Enumeration {
+    type DeploymentAction = Value
+    val Deploy: Value = Value("DEPLOY")
+    val Cancel: Value = Value("CANCEL")
+  }
+
 
 
 }

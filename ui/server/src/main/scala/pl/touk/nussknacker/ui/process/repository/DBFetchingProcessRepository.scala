@@ -7,11 +7,12 @@ import cats.data.OptionT
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
 import pl.touk.nussknacker.ui.db.EspTables.{deployedProcessesTable, processVersionsTable, processesTable, tagsTable}
-import pl.touk.nussknacker.ui.db.entity.ProcessDeploymentInfoEntity.{DeployedProcessVersionEntityData, DeploymentAction}
+import pl.touk.nussknacker.ui.db.entity.ProcessDeploymentInfoEntity.{DeployedProcessVersionEntityData, deploymentMapper}
 import pl.touk.nussknacker.ui.db.entity.ProcessEntity.{ProcessEntity, ProcessEntityData}
 import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntity.ProcessVersionEntityData
 import pl.touk.nussknacker.ui.db.entity.TagsEntity.TagsEntityData
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity._
+import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessEntityData
+import pl.touk.nussknacker.ui.db.entity.ProcessEntity.processTypeMapper
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.DateUtils
@@ -23,7 +24,8 @@ import pl.touk.nussknacker.restmodel.ProcessType
 import pl.touk.nussknacker.ui.db.DbConfig
 import pl.touk.nussknacker.restmodel.process.ProcessId
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessDetails, ProcessHistoryEntry}
+import pl.touk.nussknacker.restmodel.processdetails._
+import pl.touk.nussknacker.ui.app.BuildInfo
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
@@ -132,6 +134,20 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
     run(processesTable.filter(_.id === processId.value).map(_.name).result.headOption.map(_.map(ProcessName)))
   }
 
+  def fetchDeploymentHistory(processId: ProcessId)(implicit ec: ExecutionContext): F[List[DeploymentHistoryEntry]] =
+    run(deployedProcessesTable.filter(_.processId === processId.value)
+      .sortBy(_.deployedAt.desc)
+      .result.map(_.map(de =>
+      DeploymentHistoryEntry(
+        processVersionId = de.processVersionId.getOrElse(0),
+        time = de.deployedAtTime,
+        user = de.user,
+        deploymentAction = de.deploymentAction,
+        commentId = de.commentId,
+        buildInfo = de.buildInfo.flatMap(BuildInfo.parseJson).getOrElse(BuildInfo.empty)
+      )
+    ).toList))
+
   private def fetchProcessDetailsForVersion(processVersion: ProcessVersionEntityData, isLatestVersion: Boolean, businessView: Boolean = false)
                                            (implicit loggedUser: LoggedUser, ec: ExecutionContext) = {
     val id = processVersion.processId
@@ -177,6 +193,7 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
       processingType = process.processingType,
       processCategory = process.processCategory,
       currentlyDeployedAt = currentlyDeployedAt.map(ProcessRepository.toDeploymentEntry).toList,
+      currentDeployment = currentlyDeployedAt.headOption.map(ProcessRepository.toDeploymentEntry),
       tags = tags.map(_.name).toList,
       modificationDate = DateUtils.toLocalDateTime(processVersion.createDate),
       subprocessesModificationDate = subprocessModificationDate,

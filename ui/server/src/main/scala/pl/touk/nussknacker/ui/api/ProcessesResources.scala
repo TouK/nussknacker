@@ -117,6 +117,12 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
               } yield statuses.map { case (k, v) => k.value -> v }
             }
           }
+        } ~ path("processes" / Segment / "deployments") { processName =>
+          processId(processName) { processId =>
+            complete {
+              processRepository.fetchDeploymentHistory(processId.id)
+            }
+          }
         } ~ path("processes" / Segment) { processName =>
           processId(processName) { processId =>
             (delete & canWrite(processId)) {

@@ -4,11 +4,13 @@ import db.migration.DefaultJdbcProfile.profile.api._
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.restmodel.ProcessType
 import pl.touk.nussknacker.restmodel.ProcessType.ProcessType
+import slick.ast.BaseTypedType
+import slick.jdbc.JdbcType
 import slick.sql.SqlProfile.ColumnOption.NotNull
 
 object ProcessEntity {
 
-  implicit def processTypeMapper = MappedColumnType.base[ProcessType, String](
+  implicit def processTypeMapper: JdbcType[ProcessType] with BaseTypedType[ProcessType] = MappedColumnType.base[ProcessType, String](
     _.toString,
     ProcessType.withName
   )

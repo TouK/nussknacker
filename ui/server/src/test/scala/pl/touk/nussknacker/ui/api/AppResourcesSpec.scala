@@ -77,7 +77,8 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest
     writeProcessRepository.saveNewProcess(ProcessName(id), TestFactory.testCategoryName, CustomProcess(""), TestProcessingTypes.Streaming, false)
       .futureValue shouldBe Right(())
     val processId = processRepository.fetchProcessId(ProcessName(id)).futureValue.get
-    deploymentProcessRepository.markProcessAsDeployed(processId, 1, TestProcessingTypes.Streaming, "", "").futureValue shouldBe (())
+    deploymentProcessRepository.markProcessAsDeployed(processId, 1, TestProcessingTypes.Streaming,
+      "", Some("")).futureValue shouldBe (())
   }
 
 
