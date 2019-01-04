@@ -14,10 +14,11 @@ import pl.touk.nussknacker.ui.api.{AdditionalProcessProperty, ProcessTestData}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.sampleResolver
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessingTypes}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
-import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.EdgeType.{NextSwitch, SwitchDefault}
-import pl.touk.nussknacker.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties}
-import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.{Edge, EdgeType, Group, ProcessAdditionalFields}
-import pl.touk.nussknacker.ui.validation.ValidationResults.{NodeValidationError, ValidationErrors, ValidationResult, ValidationWarnings}
+import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType.{NextSwitch, SwitchDefault}
+import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
+import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.{Edge, EdgeType, Group, ProcessAdditionalFields}
+import pl.touk.nussknacker.restmodel.validation.ValidationResults
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, ValidationErrors, ValidationResult, ValidationWarnings}
 
 class ProcessValidationSpec extends FlatSpec with Matchers {
 

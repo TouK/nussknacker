@@ -1,12 +1,11 @@
-package pl.touk.nussknacker.ui.process.displayedgraph
+package pl.touk.nussknacker.restmodel.displayedgraph
 
 import pl.touk.nussknacker.engine.api.{MetaData, TypeSpecificData, UserDefinedProcessAdditionalFields}
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.NodeData
-import pl.touk.nussknacker.ui.validation.ProcessValidation
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
-import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode._
-import pl.touk.nussknacker.ui.validation.ValidationResults.ValidationResult
+import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode._
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 
 //it would be better to have two classes but it would either to derivce from each other, which is not easy for case classes
 //or we'd have to do composition which would break many things in client
@@ -17,9 +16,6 @@ case class DisplayableProcess(id: String,
                               edges: List[Edge],
                               processingType: ProcessingType) {
 
-  def validated(validation: ProcessValidation) =
-    new ValidatedDisplayableProcess(this, validation.validate(this))
-  
   def withSuccessValidation(): ValidatedDisplayableProcess = {
     new ValidatedDisplayableProcess(this, ValidationResult.success)
   }

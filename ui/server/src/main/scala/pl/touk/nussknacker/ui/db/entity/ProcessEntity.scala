@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.ui.db.entity
 
 import db.migration.DefaultJdbcProfile.profile.api._
-import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, GraphProcess, ProcessDeploymentData}
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessType.ProcessType
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
+import pl.touk.nussknacker.restmodel.ProcessType
+import pl.touk.nussknacker.restmodel.ProcessType.ProcessType
 import slick.sql.SqlProfile.ColumnOption.NotNull
 
 object ProcessEntity {
@@ -44,18 +44,6 @@ object ProcessEntity {
                                isSubprocess: Boolean,
                                isArchived:Boolean
                               )
-
-  object ProcessType extends Enumeration {
-    type ProcessType = Value
-    val Graph = Value("graph")
-    val Custom = Value("custom")
-
-    def fromDeploymentData(processDeploymentData: ProcessDeploymentData) : ProcessType = processDeploymentData match {
-      case _:GraphProcess => ProcessType.Graph
-      case _:CustomProcess => ProcessType.Custom
-    }
-
-  }
 
 }
 

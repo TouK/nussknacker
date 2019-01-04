@@ -14,7 +14,7 @@ import pl.touk.nussknacker.ui.api.helpers.{EspItTest, TestFactory}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.ui.process.JobStatusService
 import pl.touk.nussknacker.ui.process.deployment.CheckStatus
-import pl.touk.nussknacker.ui.process.displayedgraph.ProcessStatus
+import pl.touk.nussknacker.restmodel.displayedgraph.ProcessStatus
 
 class AppResourcesSpec extends FunSuite with ScalatestRouteTest
   with Matchers with ScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {

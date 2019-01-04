@@ -5,10 +5,10 @@ import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+
 import javax.xml.transform.TransformerFactory
 import javax.xml.transform.sax.SAXResult
 import javax.xml.transform.stream.StreamSource
-
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.io.IOUtils
 import org.apache.fop.apps.FopConfParser
@@ -19,10 +19,10 @@ import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
-import pl.touk.nussknacker.ui.process.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.NodeAdditionalFields
+import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.NodeAdditionalFields
+import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.ProcessActivity
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessDetails
 
 import scala.xml.{Elem, NodeSeq, XML}
 

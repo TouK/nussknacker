@@ -7,11 +7,11 @@ import pl.touk.nussknacker.engine.compile.{ProcessCompilationError, ProcessValid
 import pl.touk.nussknacker.engine.graph.node.{Disableable, NodeData, Source, SubprocessInputDefinition}
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.ui.api.AdditionalProcessProperty
-import pl.touk.nussknacker.ui.process.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.ProcessAdditionalFields
+import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
+import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.ProcessAdditionalFields
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
-import pl.touk.nussknacker.ui.validation.ValidationResults.ValidationResult
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import shapeless.syntax.typeable._
 
 object ProcessValidation{
@@ -34,6 +34,10 @@ class ProcessValidation(validators: Map[ProcessingType, ProcessValidator],
   import pl.touk.nussknacker.ui.util.CollectionsEnrichments._
 
   def withSubprocessResolver(subprocessResolver: SubprocessResolver) = new ProcessValidation(validators, additionalFieldsConfig, subprocessResolver)
+
+  def toValidated(displayableProcess: DisplayableProcess): ValidatedDisplayableProcess = {
+    new ValidatedDisplayableProcess(displayableProcess, validate(displayableProcess))
+  }
 
   def validate(displayable: DisplayableProcess): ValidationResult = {
     val uiValidationResult = uiValidation(displayable)

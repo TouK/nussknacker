@@ -12,8 +12,8 @@ import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.ui.api.ProcessTestData
 import pl.touk.nussknacker.ui.api.ProcessTestData.{existingServiceId, existingSinkFactory, existingSourceFactory}
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessingTypes}
-import pl.touk.nussknacker.ui.process.displayedgraph.ValidatedDisplayableProcess
-import pl.touk.nussknacker.ui.validation.ValidationResults.{ValidationErrors, ValidationResult, ValidationWarnings}
+import pl.touk.nussknacker.restmodel.displayedgraph.ValidatedDisplayableProcess
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{ValidationErrors, ValidationResult, ValidationWarnings}
 
 import scala.reflect.ClassTag
 

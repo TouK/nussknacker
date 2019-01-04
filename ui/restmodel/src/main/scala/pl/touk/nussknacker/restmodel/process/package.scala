@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui
+package pl.touk.nussknacker.restmodel
 
 import pl.touk.nussknacker.engine.api.process.ProcessName
 

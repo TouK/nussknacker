@@ -8,10 +8,10 @@ import akka.stream.Materializer
 import argonaut._
 import pl.touk.http.argonaut.Argonaut62Support
 import pl.touk.nussknacker.ui.codec.UiCodecs
-import pl.touk.nussknacker.ui.process.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
 import pl.touk.nussknacker.ui.process.marshall.{ProcessConverter, UiProcessMarshaller}
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.ProcessActivity
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository._
 import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, ProcessActivityRepository, ProcessRepository}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util._

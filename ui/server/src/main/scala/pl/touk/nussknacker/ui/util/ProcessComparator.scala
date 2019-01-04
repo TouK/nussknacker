@@ -3,8 +3,8 @@ package pl.touk.nussknacker.ui.util
 import argonaut.{CodecJson, EncodeJson}
 import argonaut.derive.{JsonSumCodec, JsonSumCodecFor}
 import pl.touk.nussknacker.engine.graph.node.NodeData
-import pl.touk.nussknacker.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties}
-import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.EdgeType
+import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
+import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType
 import pl.touk.nussknacker.ui.codec.UiCodecs._
 
 object ProcessComparator {

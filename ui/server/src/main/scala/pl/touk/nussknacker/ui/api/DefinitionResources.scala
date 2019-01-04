@@ -24,8 +24,8 @@ import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
 import pl.touk.nussknacker.ui.api.DefinitionPreparer.NodeEdges
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.ui.process.ProcessObjectsFinder
-import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.EdgeType
-import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.EdgeType.{FilterFalse, FilterTrue}
+import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType
+import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType.{FilterFalse, FilterTrue}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessRepository}
 import pl.touk.nussknacker.ui.process.uiconfig.defaults.{DefaultValueExtractorChain, ParamDefaultValueConfig, ParameterEvaluatorExtractor}

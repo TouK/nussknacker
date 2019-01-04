@@ -7,15 +7,15 @@ import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.ui.process.ProcessToSave
-import pl.touk.nussknacker.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties}
+import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
 class ProcessPosting {
   import pl.touk.nussknacker.ui.codec.UiCodecs._
 
-  implicit val processToSaveCodec = CodecJson.derive[ProcessToSave]
+  implicit def processToSaveCodec: CodecJson[ProcessToSave] = CodecJson.derive[ProcessToSave]
 
-  val prettyParams = PrettyParams.spaces2.copy(dropNullKeys = true, preserveOrder = true)
+  private val prettyParams = PrettyParams.spaces2.copy(dropNullKeys = true, preserveOrder = true)
 
   def toEntity(process: EspProcess): RequestEntity = {
     val displayable = ProcessConverter.toDisplayable(ProcessCanonizer.canonize(process), TestProcessingTypes.Streaming)

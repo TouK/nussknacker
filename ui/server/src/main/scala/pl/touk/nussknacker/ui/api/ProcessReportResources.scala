@@ -7,7 +7,7 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.{Directives, _}
 import pl.touk.http.argonaut.Argonaut62Support
 import pl.touk.nussknacker.ui.codec.UiCodecs
-import pl.touk.nussknacker.ui.process.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.processreport.{ProcessCounter, RawCount}

@@ -2,14 +2,12 @@ package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
-import akka.http.scaladsl.server.{Directive0, Directives, Route}
-import pl.touk.http.argonaut.Argonaut62Support
+import akka.http.scaladsl.server.{Directives, Route}
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.ui.process.ProcessObjectsFinder
-import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, ProcessRepository}
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessDetails
+import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.http.argonaut.Argonaut62Support
-import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 import shapeless.syntax.typeable._
 
 import scala.concurrent.{ExecutionContext, Future}

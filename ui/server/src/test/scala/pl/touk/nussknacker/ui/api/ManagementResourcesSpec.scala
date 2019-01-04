@@ -17,8 +17,7 @@ import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.codec.UiCodecs
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{BasicProcess, DeploymentEntry, ProcessDetails}
+import pl.touk.nussknacker.restmodel.processdetails.{BasicProcess, DeploymentEntry, ProcessDetails}
 import pl.touk.nussknacker.ui.sample.SampleProcess
 import pl.touk.nussknacker.ui.security.api.Permission
 import pl.touk.nussknacker.ui.util.MultipartUtils
@@ -178,12 +177,12 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest
 
   private def getHistoryDeployments = decodeDetails.history.flatMap(_.deployments)
 
-  def decodeDetails: ProcessRepository.ProcessDetails = {
+  def decodeDetails: ProcessDetails = {
     responseAs[String].decodeOption[ProcessDetails].get
   }
 
 
-  def decodeDetailsFromAll: ProcessRepository.BasicProcess = {
+  def decodeDetailsFromAll: BasicProcess = {
     responseAs[String].decodeOption[List[BasicProcess]].flatMap(_.find(_.name == SampleProcess.process.id)).get
   }
 }

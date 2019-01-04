@@ -6,9 +6,10 @@ import akka.http.scaladsl.server.ExceptionHandler
 import argonaut.EncodeJson
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.ui.process.deployment.ProcessIsBeingDeployed
-import pl.touk.nussknacker.ui.validation.ValidationResults.{FatalValidationError, ValidationResult}
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.ui.{BadRequestError, EspError, FatalError, NotFoundError}
 import pl.touk.http.argonaut.Argonaut62Support
+import pl.touk.nussknacker.ui.validation.FatalValidationError
 
 import scala.language.implicitConversions
 

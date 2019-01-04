@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.node.{Filter, SubprocessInputDefinition, SubprocessOutputDefinition}
 import pl.touk.nussknacker.engine.spel
-import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.{Group, ProcessAdditionalFields}
+import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.{Group, ProcessAdditionalFields}
 import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessRepository}
 
 //numbers & processes in this test can be totaly uncorrect and unrealistic, as processCounter does not care

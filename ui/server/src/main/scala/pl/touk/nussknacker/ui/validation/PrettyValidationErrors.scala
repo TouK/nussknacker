@@ -5,8 +5,8 @@ import pl.touk.nussknacker.engine.compile.ProcessCompilationError
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError._
 import pl.touk.nussknacker.engine.util.ReflectUtils
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
-import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.EdgeType
-import pl.touk.nussknacker.ui.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType}
+import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType}
 
 object PrettyValidationErrors {
   def formatErrorMessage(error: ProcessCompilationError): NodeValidationError = {

@@ -10,13 +10,13 @@ import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.Filter
+import pl.touk.nussknacker.restmodel.ProcessType
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity
-import pl.touk.nussknacker.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties}
-import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.NodeAdditionalFields
+import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
+import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.NodeAdditionalFields
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.{Comment, ProcessActivity}
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{BaseProcessDetails, ProcessHistoryEntry}
+import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessHistoryEntry}
 import pl.touk.nussknacker.ui.sample.SampleProcess
 
 import scala.io.Source
@@ -32,7 +32,7 @@ class PdfExporterSpec extends FlatSpec {
     })
     val details = BaseProcessDetails("My process", "My process", 11, true,
       Some("My fancy description, which is quite, quite, quite looooooooong. \n And it contains maaaany, maaany strange features..."),false,
-      ProcessEntity.ProcessType.Graph, TestProcessingTypes.Streaming, "Category 22", LocalDateTime.now(), None, List(), List(), Some(displayable),
+      ProcessType.Graph, TestProcessingTypes.Streaming, "Category 22", LocalDateTime.now(), None, List(), List(), Some(displayable),
       List(ProcessHistoryEntry("My process",  "My process", 11, LocalDateTime.now(), "Zenon Wojciech", List()) ), None
     )
     val activities = ProcessActivity(List(
@@ -65,7 +65,7 @@ class PdfExporterSpec extends FlatSpec {
 
     val details = BaseProcessDetails("My process", "My process", 11, true,
       Some("My fancy description, which is quite, quite, quite looooooooong. \n And it contains maaaany, maaany strange features..."),false,
-      ProcessEntity.ProcessType.Graph, TestProcessingTypes.Streaming, "Category 22", LocalDateTime.now(), None, List(), List(), Some(displayable),
+      ProcessType.Graph, TestProcessingTypes.Streaming, "Category 22", LocalDateTime.now(), None, List(), List(), Some(displayable),
       List(ProcessHistoryEntry("My process",  "My process", 11, LocalDateTime.now(), "Zenon Wojciech", List()) ), None
     )
     val activities = ProcessActivity(List(), List())

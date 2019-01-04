@@ -6,7 +6,7 @@ import java.time.LocalDateTime
 import db.migration.DefaultJdbcProfile.profile.api._
 import db.util.DBIOActionInstances.DB
 import pl.touk.nussknacker.ui.db.EspTables.commentsTable
-import pl.touk.nussknacker.ui.process.ProcessId
+import pl.touk.nussknacker.restmodel.process.ProcessId
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.DateUtils
 import slick.sql.SqlProfile.ColumnOption.NotNull

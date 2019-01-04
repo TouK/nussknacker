@@ -7,12 +7,13 @@ import argonaut.{Json, JsonParser}
 import com.typesafe.config.{Config, ConfigRenderOptions}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
-import pl.touk.nussknacker.ui.process.{JobStatusService, ProcessIdWithName, ProcessObjectsFinder}
-import pl.touk.nussknacker.ui.process.displayedgraph.ProcessStatus
+import pl.touk.nussknacker.ui.process.{JobStatusService, ProcessObjectsFinder}
+import pl.touk.nussknacker.restmodel.displayedgraph.ProcessStatus
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessDetails
 import pl.touk.http.argonaut.Argonaut62Support
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
+import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 
@@ -102,7 +103,7 @@ class AppResources(config: Config,
   private def processesWithValidationErrors(implicit ec: ExecutionContext, user: LoggedUser): Future[List[String]] = {
     processRepository.fetchProcessesDetails().map { processes =>
       val processesWithErrors = processes.flatMap(_.json)
-        .map(_.validated(processValidation))
+        .map(processValidation.toValidated)
         .filter(process => !process.validationResult.errors.isEmpty)
       processesWithErrors.map(_.id)
     }

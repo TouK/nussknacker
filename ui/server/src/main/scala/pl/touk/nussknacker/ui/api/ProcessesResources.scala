@@ -12,7 +12,7 @@ import cats.data.EitherT
 import cats.syntax.either._
 import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.ui.api.ProcessesResources.{UnmarshallError, WrongProcessId}
-import pl.touk.nussknacker.ui.process.displayedgraph.{DisplayableProcess, ProcessStatus}
+import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus}
 import pl.touk.nussknacker.ui.process.marshall.{ProcessConverter, UiProcessMarshaller}
 import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, ProcessActivityRepository, WriteProcessRepository}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository._
@@ -21,11 +21,14 @@ import pl.touk.nussknacker.ui._
 import EspErrorToHttp._
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.ui.codec.UiCodecs
-import pl.touk.nussknacker.ui.validation.{ProcessValidation, ValidationResults}
+import pl.touk.nussknacker.ui.validation.{FatalValidationError, ProcessValidation}
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.ui.process._
 import pl.touk.http.argonaut.Argonaut62Support
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName}
+import pl.touk.nussknacker.restmodel.processdetails.{BasicProcess, ProcessDetails, ValidatedProcessDetails}
+import pl.touk.nussknacker.restmodel.validation.ValidationResults
 import pl.touk.nussknacker.ui.process.repository.WriteProcessRepository.UpdateProcessAction
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
@@ -247,9 +250,9 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
                     }) match {
                       case Valid(process) =>
                         processRepository.fetchLatestProcessDetailsForProcessIdEither(processId.id).map { detailsXor =>
-                          val validatedProcess = detailsXor.map(details =>
-                            ProcessConverter.toDisplayable(process, details.processingType).validated(processValidation)
-                          )
+                          val validatedProcess = detailsXor
+                            .map(details => ProcessConverter.toDisplayable(process, details.processingType))
+                            .map(processValidation.toValidated)
                           toResponseXor(validatedProcess)
                         }
 
@@ -281,7 +284,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
     val deploymentData = GraphProcess(json)
 
     (for {
-      validation <- EitherT.fromEither[Future](processValidation.validate(displayableProcess).saveNotAllowedAsError)
+      validation <- EitherT.fromEither[Future](FatalValidationError.saveNotAllowedAsError(processValidation.validate(displayableProcess)))
       result <- EitherT(writeRepository.updateProcess(UpdateProcessAction(processId, deploymentData, processToSave.comment)))
     } yield validation).value
   }
@@ -323,7 +326,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
   }
 
   private def validate(processDetails: ProcessDetails) : Future[ValidatedProcessDetails] = {
-    Future.successful(processDetails.mapProcess(_.validated(processValidation)))
+    Future.successful(processDetails.mapProcess(processValidation.toValidated))
   }
 
   private def validateAll(processDetails: Future[List[ProcessDetails]]) : Future[List[ValidatedProcessDetails]] = {

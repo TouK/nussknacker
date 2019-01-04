@@ -8,20 +8,22 @@ import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
 import pl.touk.nussknacker.ui.db.EspTables.{deployedProcessesTable, processVersionsTable, processesTable, tagsTable}
 import pl.touk.nussknacker.ui.db.entity.ProcessDeploymentInfoEntity.{DeployedProcessVersionEntityData, DeploymentAction}
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.{ProcessEntity, ProcessEntityData, ProcessType}
+import pl.touk.nussknacker.ui.db.entity.ProcessEntity.{ProcessEntity, ProcessEntityData}
 import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntity.ProcessVersionEntityData
 import pl.touk.nussknacker.ui.db.entity.TagsEntity.TagsEntityData
+import pl.touk.nussknacker.ui.db.entity.ProcessEntity._
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository._
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.DateUtils
 import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.graph.node.{SubprocessInput, SubprocessNode}
+import pl.touk.nussknacker.engine.graph.node.SubprocessInput
 import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
+import pl.touk.nussknacker.restmodel.ProcessType
 import pl.touk.nussknacker.ui.db.DbConfig
-import pl.touk.nussknacker.ui.process.ProcessId
-import pl.touk.nussknacker.ui.process.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.restmodel.process.ProcessId
+import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessDetails, ProcessHistoryEntry}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
@@ -145,7 +147,7 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
       isLatestVersion = isLatestVersion,
       currentlyDeployedAt = latestDeployedVersionsPerEnv,
       tags = tags,
-      history = processVersions.map(pvs => ProcessHistoryEntry(process, pvs, latestDeployedVersionsPerEnv.toList)),
+      history = processVersions.map(pvs => ProcessRepository.toProcessHistoryEntry(process, pvs, latestDeployedVersionsPerEnv.toList)),
       businessView = businessView,
       subprocessesVersions = subprocessesVersions
     )

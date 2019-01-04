@@ -2,16 +2,13 @@ package pl.touk.nussknacker.ui.process.marshall
 
 import argonaut.PrettyParams
 import cats.data.Validated.{Invalid, Valid}
-import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode._
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.graph.node._
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessType
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessType.ProcessType
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
-import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.EdgeType.SubprocessOutput
-import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.{Edge, EdgeType}
-import pl.touk.nussknacker.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties, displayablenode}
+import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType.SubprocessOutput
+import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.{Edge, EdgeType}
+import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties, displayablenode}
 
 object ProcessConverter {
   def toCanonicalOrDie(canonicalJson: String) : CanonicalProcess = {

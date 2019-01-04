@@ -584,6 +584,16 @@ def runNpm(command: String, errorMessage: String): Unit = {
   if (result != 0) throw new RuntimeException(errorMessage)
 }
 
+lazy val restmodel = (project in file("ui/restmodel"))
+  .settings(commonSettings)
+  .settings(
+    name := "nussknacker-restmodel",
+    libraryDependencies ++= Seq(
+      "org.scalatest" %% "scalatest" % scalaTestV % "test"
+    )
+  )
+  .dependsOn(interpreter)
+
 lazy val ui = (project in file("ui/server"))
   .settings(commonSettings)
   .settings(
@@ -634,7 +644,7 @@ lazy val ui = (project in file("ui/server"))
     }
   )
   .settings(addArtifact(artifact in (Compile, assembly), assembly))
-  .dependsOn(management, interpreter, engineStandalone, processReports, securityApi)
+  .dependsOn(management, interpreter, engineStandalone, processReports, securityApi, restmodel)
 
 addCommandAlias("assemblySamples", ";managementSample/assembly;standaloneSample/assembly")
 

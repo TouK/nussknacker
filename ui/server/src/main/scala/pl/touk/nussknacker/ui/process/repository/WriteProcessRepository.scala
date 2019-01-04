@@ -16,10 +16,11 @@ import pl.touk.nussknacker.ui.db.EspTables._
 import pl.touk.nussknacker.ui.db.entity.CommentEntity
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.{ProcessEntityData, ProcessType}
+import pl.touk.nussknacker.restmodel.ProcessType
+import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessEntityData
 import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntity.ProcessVersionEntityData
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
-import pl.touk.nussknacker.ui.process.ProcessId
+import pl.touk.nussknacker.restmodel.process.ProcessId
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository._
 import pl.touk.nussknacker.ui.process.repository.WriteProcessRepository.UpdateProcessAction
 import pl.touk.nussknacker.ui.security.api.LoggedUser

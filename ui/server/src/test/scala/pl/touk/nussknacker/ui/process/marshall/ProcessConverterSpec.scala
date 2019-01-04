@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process.marshall
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.MetaVariables
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ProcessValidator
@@ -18,9 +18,9 @@ import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.sampleResolver
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.ui.validation.ProcessValidation
-import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.Edge
-import pl.touk.nussknacker.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
-import pl.touk.nussknacker.ui.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType, ValidationErrors, ValidationResult}
+import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
+import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType, ValidationResult}
 
 class ProcessConverterSpec extends FlatSpec with Matchers with TableDrivenPropertyChecks {
 
@@ -38,7 +38,7 @@ class ProcessConverterSpec extends FlatSpec with Matchers with TableDrivenProper
 
   def displayableCanonical(process: DisplayableProcess) = {
    val canonical = ProcessConverter.fromDisplayable(process)
-    ProcessConverter.toDisplayable(canonical, TestProcessingTypes.Streaming).validated(validation)
+   validation.toValidated(ProcessConverter.toDisplayable(canonical, TestProcessingTypes.Streaming))
   }
 
   it should "be able to convert empty process" in {

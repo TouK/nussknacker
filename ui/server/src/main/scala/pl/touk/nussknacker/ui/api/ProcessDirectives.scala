@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.server.Directive1
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.ui.process.ProcessIdWithName
+import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessNotFoundError
 

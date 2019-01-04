@@ -1,15 +1,13 @@
-package pl.touk.nussknacker.ui.validation
+package pl.touk.nussknacker.restmodel.validation
 
-import cats.implicits._
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.compile.ValidationContext
-import pl.touk.nussknacker.ui.EspError
+import cats.implicits._
 
 object ValidationResults {
 
   case class ValidationResult(errors: ValidationErrors, warnings: ValidationWarnings, variableTypes: Map[String, Map[String, TypingResult]]) {
-    val isOk = errors == ValidationErrors.success && warnings == ValidationWarnings.success
-    val saveAllowed = allErrors.forall(_.errorType == NodeValidationErrorType.SaveAllowed)
+    val isOk: Boolean = errors == ValidationErrors.success && warnings == ValidationWarnings.success
+    val saveAllowed: Boolean = allErrors.forall(_.errorType == NodeValidationErrorType.SaveAllowed)
 
     def add(other: ValidationResult) = ValidationResult(
       ValidationErrors(
@@ -22,30 +20,14 @@ object ValidationResults {
       variableTypes ++ other.variableTypes
     )
 
-    def renderNotAllowedAsError: Either[EspError, ValidationResult] = {
-      if (renderNotAllowedErrors.isEmpty) {
-        Right(this)
-      } else {
-        Left[EspError, ValidationResult](FatalValidationError(renderNotAllowedErrors.map(formatError).mkString(",")))
-      }
-    }
-
-    def saveNotAllowedAsError: Either[EspError, ValidationResult] = {
-      if (saveNotAllowedErrors.isEmpty) {
-        Right(this)
-      } else {
-        Left[EspError, ValidationResult](FatalValidationError(saveNotAllowedErrors.map(formatError).mkString(",")))
-      }
-    }
-
     def withTypes(variableTypes: Map[String, Map[String, TypingResult]]): ValidationResult
       = copy(variableTypes = variableTypes)
 
-    private def renderNotAllowedErrors: List[NodeValidationError] = {
+    def renderNotAllowedErrors: List[NodeValidationError] = {
       allErrors.filter(_.errorType == NodeValidationErrorType.RenderNotAllowed)
     }
 
-    private def saveNotAllowedErrors: List[NodeValidationError] = {
+    def saveNotAllowedErrors: List[NodeValidationError] = {
       allErrors.filter(_.errorType == NodeValidationErrorType.SaveNotAllowed)
     }
 
@@ -53,16 +35,12 @@ object ValidationResults {
       (errors.invalidNodes.values.flatten ++ errors.processPropertiesErrors ++ errors.globalErrors).toList
     }
 
-    private def formatError(e: NodeValidationError): String = {
-      s"${e.message}:${e.description}"
-    }
-
   }
 
   case class ValidationErrors(invalidNodes: Map[String, List[NodeValidationError]],
                               processPropertiesErrors: List[NodeValidationError],
                               globalErrors: List[NodeValidationError]) {
-    def isEmpty = invalidNodes.isEmpty && processPropertiesErrors.isEmpty && globalErrors.isEmpty
+    def isEmpty: Boolean = invalidNodes.isEmpty && processPropertiesErrors.isEmpty && globalErrors.isEmpty
   }
   object ValidationErrors {
     val success = ValidationErrors(Map.empty, List(), List())
@@ -109,7 +87,4 @@ object ValidationResults {
     val RenderNotAllowed, SaveNotAllowed, SaveAllowed = Value
   }
 
-  case class FatalValidationError(message: String) extends EspError {
-    override def getMessage = message
-  }
 }

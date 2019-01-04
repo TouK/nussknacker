@@ -20,12 +20,12 @@ import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, TestProcessingTypes}
 import pl.touk.nussknacker.ui.codec.UiCodecs
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
-import pl.touk.nussknacker.ui.process.{ProcessId, ProcessToSave}
-import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.{Edge, ProcessAdditionalFields}
-import pl.touk.nussknacker.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties}
+import pl.touk.nussknacker.ui.process.ProcessToSave
+import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.{Edge, ProcessAdditionalFields}
+import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.ui.process.marshall.{ProcessConverter, UiProcessMarshaller}
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.ProcessActivity
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{BaseProcessDetails, BasicProcess, ProcessDetails}
+import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, BasicProcess, ProcessDetails}
 import pl.touk.nussknacker.ui.sample.SampleProcess
 import pl.touk.nussknacker.ui.util.{FileUploadUtils, MultipartUtils}
 
@@ -36,6 +36,7 @@ import UiCodecs._
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import cats.instances.all._
 import cats.syntax.semigroup._
+import pl.touk.nussknacker.restmodel.process.ProcessId
 
 class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers with Inside
   with ScalaFutures with OptionValues with Eventually with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {

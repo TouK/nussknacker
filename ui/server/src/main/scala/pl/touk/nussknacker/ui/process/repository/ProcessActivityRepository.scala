@@ -10,7 +10,7 @@ import pl.touk.nussknacker.ui.db.EspTables._
 import pl.touk.nussknacker.ui.db.entity.AttachmentEntity.AttachmentEntityData
 import pl.touk.nussknacker.ui.db.entity.CommentEntity
 import pl.touk.nussknacker.ui.db.entity.CommentEntity.CommentEntityData
-import pl.touk.nussknacker.ui.process.{ProcessId, ProcessIdWithName}
+import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName}
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.{Attachment, Comment, ProcessActivity}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 

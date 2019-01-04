@@ -4,22 +4,22 @@ import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.{HttpResponse, MessageEntity, StatusCodes}
 import akka.http.scaladsl.server.{Directive0, Directives, Route}
 import argonaut.ArgonautShapeless._
-import argonaut.EncodeJson
+import argonaut.{CodecJson, EncodeJson}
 import cats.instances.either._
 import cats.instances.list._
 import cats.syntax.traverse._
 import pl.touk.nussknacker.ui.EspError
-import pl.touk.nussknacker.ui.process.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.ui.process.migrate.{RemoteEnvironment, RemoteEnvironmentCommunicationError, TestMigrationResult}
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{ProcessDetails, ProcessNotFoundError}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.util.{Argonaut62Support, ProcessComparator}
 
 import scala.concurrent.{ExecutionContext, Future}
 import ProcessComparator._
 import pl.touk.nussknacker.ui.EspError.XError
-import pl.touk.nussknacker.ui.process.ProcessId
+import pl.touk.nussknacker.restmodel.process.ProcessId
+import pl.touk.nussknacker.restmodel.processdetails.{ProcessDetails, ProcessHistoryEntry}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
 class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
@@ -36,12 +36,12 @@ class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
   import argonaut.ArgonautShapeless._
   import pl.touk.nussknacker.ui.codec.UiCodecs._
 
-  private implicit val differenceCodec = ProcessComparator.codec
+  private implicit val differenceCodec: CodecJson[Difference] = ProcessComparator.codec
 
-  private implicit val map = EncodeJson.derive[TestMigrationResult]
-  private implicit val encodeResults = EncodeJson.derive[TestMigrationSummary]
-  private implicit val encodeDifference = EncodeJson.derive[ProcessDifference]
-  private implicit val encodeDifference2 = EncodeJson.derive[EnvironmentComparisonResult]
+  private implicit val map: EncodeJson[TestMigrationResult] = EncodeJson.derive[TestMigrationResult]
+  private implicit val encodeResults: EncodeJson[TestMigrationSummary] = EncodeJson.derive[TestMigrationSummary]
+  private implicit val encodeDifference: EncodeJson[ProcessDifference] = EncodeJson.derive[ProcessDifference]
+  private implicit val encodeDifference2: EncodeJson[EnvironmentComparisonResult] = EncodeJson.derive[EnvironmentComparisonResult]
 
   def route(implicit user: LoggedUser) : Route = {
       pathPrefix("remoteEnvironment") {

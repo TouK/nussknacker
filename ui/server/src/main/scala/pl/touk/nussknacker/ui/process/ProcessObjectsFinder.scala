@@ -5,8 +5,8 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{Process
 import pl.touk.nussknacker.engine.graph
 import pl.touk.nussknacker.engine.graph.node.{CustomNode, NodeData, Source, SubprocessInput}
 import pl.touk.nussknacker.ui.api.SignalDefinition
-import pl.touk.nussknacker.ui.process.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessDetails
+import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
 import shapeless.syntax.typeable._
 
 object ProcessObjectsFinder {

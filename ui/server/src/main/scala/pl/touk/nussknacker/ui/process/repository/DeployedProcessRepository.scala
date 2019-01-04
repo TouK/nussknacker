@@ -9,7 +9,7 @@ import pl.touk.nussknacker.ui.db.{DbConfig, EspTables}
 import pl.touk.nussknacker.ui.db.entity.ProcessDeploymentInfoEntity.{DeployedProcessVersionEntityData, DeploymentAction}
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntity.ProcessVersionEntityData
-import pl.touk.nussknacker.ui.process.ProcessId
+import pl.touk.nussknacker.restmodel.process.ProcessId
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds

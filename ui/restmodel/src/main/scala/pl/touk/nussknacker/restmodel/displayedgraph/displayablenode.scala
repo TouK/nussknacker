@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.process.displayedgraph
+package pl.touk.nussknacker.restmodel.displayedgraph
 
 import pl.touk.nussknacker.engine.api.UserDefinedProcessAdditionalFields
 import pl.touk.nussknacker.engine.graph.expression.Expression

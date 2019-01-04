@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.ui.api.ProcessTestData
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessingTypes, WithDbTesting}
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessType
+import pl.touk.nussknacker.restmodel.ProcessType
 import pl.touk.nussknacker.ui.process.marshall.UiProcessMarshaller
 import pl.touk.nussknacker.ui.process.migrate.TestMigrations
 

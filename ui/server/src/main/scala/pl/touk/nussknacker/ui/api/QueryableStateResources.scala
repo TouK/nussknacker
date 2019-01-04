@@ -8,8 +8,9 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.Queryabl
 import pl.touk.nussknacker.engine.flink.queryablestate.EspQueryableClient
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
-import pl.touk.nussknacker.ui.process.{JobStatusService, ProcessIdWithName, ProcessObjectsFinder}
+import pl.touk.nussknacker.ui.process.{JobStatusService, ProcessObjectsFinder}
 import pl.touk.http.argonaut.Argonaut62Support
+import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
 import scala.concurrent.{ExecutionContext, Future}

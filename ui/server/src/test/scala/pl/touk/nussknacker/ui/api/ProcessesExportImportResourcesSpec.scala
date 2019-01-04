@@ -10,8 +10,8 @@ import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.ui.api.helpers.EspItTest
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.codec.UiCodecs._
-import pl.touk.nussknacker.ui.process.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.ProcessAdditionalFields
+import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.ProcessAdditionalFields
 import pl.touk.nussknacker.ui.process.marshall.UiProcessMarshaller
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.{FileUploadUtils, MultipartUtils}

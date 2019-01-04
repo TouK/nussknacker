@@ -6,7 +6,7 @@ import akka.util.Timeout
 import pl.touk.nussknacker.engine.definition.{ModelDataTestInfoProvider, TestInfoProvider, TestingCapabilities}
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
-import pl.touk.nussknacker.ui.process.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.http.argonaut.Argonaut62Support
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.graph.source.SourceRef

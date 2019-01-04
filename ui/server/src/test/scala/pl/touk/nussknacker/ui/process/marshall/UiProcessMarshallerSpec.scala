@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process.marshall
 import argonaut.{Parse, PrettyParams}
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
-import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.{NodeAdditionalFields, ProcessAdditionalFields}
+import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.{NodeAdditionalFields, ProcessAdditionalFields}
 
 class UiProcessMarshallerSpec extends FlatSpec with Matchers {
 

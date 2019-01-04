@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.processreport
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode._
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition
-import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.ProcessAdditionalFields
+import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.ProcessAdditionalFields
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessRepository
 import shapeless.syntax.typeable._
 

@@ -15,10 +15,10 @@ import pl.touk.nussknacker.ui.api.helpers.TestCodecs._
 import pl.touk.nussknacker.ui.api.helpers.TestFactory
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
-import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.Edge
-import pl.touk.nussknacker.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties}
+import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
+import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.ui.security.api.Permission
-import pl.touk.nussknacker.ui.validation.ValidationResults.ValidationResult
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 
 class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with Matchers with Inside {
 

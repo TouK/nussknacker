@@ -18,11 +18,11 @@ import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessType
-import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.{Edge, NodeAdditionalFields, ProcessAdditionalFields}
-import pl.touk.nussknacker.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
+import pl.touk.nussknacker.restmodel.ProcessType
+import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.{Edge, NodeAdditionalFields, ProcessAdditionalFields}
+import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{BaseProcessDetails, ProcessDetails, ValidatedProcessDetails}
+import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessDetails, ValidatedProcessDetails}
 import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessRepository, SubprocessResolver}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.ObjectProcessDefinition
@@ -76,9 +76,8 @@ object ProcessTestData {
   val validProcessDetails: ValidatedProcessDetails = toDetails(validDisplayableProcess)
 
   def toValidatedDisplayable(espProcess: EspProcess) : ValidatedDisplayableProcess =
-    ProcessConverter
-     .toDisplayable(ProcessCanonizer.canonize(espProcess), TestProcessingTypes.Streaming)
-     .validated(validation)
+    validation.toValidated(ProcessConverter
+     .toDisplayable(ProcessCanonizer.canonize(espProcess), TestProcessingTypes.Streaming))
 
   def toDetails(displayable: DisplayableProcess) : ProcessDetails =
     BaseProcessDetails[DisplayableProcess](

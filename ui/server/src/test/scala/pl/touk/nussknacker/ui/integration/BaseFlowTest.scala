@@ -22,10 +22,10 @@ import pl.touk.nussknacker.ui.NussknackerApp
 import pl.touk.nussknacker.ui.api.{ProcessObjects, UISettings}
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessUtil}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
-import pl.touk.nussknacker.ui.process.displayedgraph.displayablenode.Edge
-import pl.touk.nussknacker.ui.process.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
+import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
+import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.ui.util.MultipartUtils
-import pl.touk.nussknacker.ui.validation.ValidationResults.{NodeValidationError, ValidationResult}
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, ValidationResult}
 
 class BaseFlowTest extends FunSuite with ScalatestRouteTest
   with Matchers with ScalaFutures with BeforeAndAfterEach with BeforeAndAfterAll {
