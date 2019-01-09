@@ -17,6 +17,8 @@ import pl.touk.nussknacker.restmodel.processdetails.{DeploymentAction, Deploymen
 import pl.touk.nussknacker.restmodel.validation.ValidationResults
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationErrorType, ValidationResult}
 
+object RestModelCodecs extends RestModelCodecs
+
 trait RestModelCodecs extends Codecs with Argonauts with SingletonInstances with DerivedInstances {
 
   import pl.touk.nussknacker.engine.api.typed.TypeEncoders._
@@ -25,8 +27,11 @@ trait RestModelCodecs extends Codecs with Argonauts with SingletonInstances with
     JsonSumCodecFor(JsonSumCodec.typeField)
 
   //not sure why it works, another argonaut issue...
-  implicit def typeCodec: CodecJson[TypeSpecificData] = new ProcessMarshaller().typeSpecificEncoder
-  
+  implicit def typeCodec : CodecJson[TypeSpecificData] = new ProcessMarshaller().typeSpecificEncoder
+
+  //FIXME: if I add type annotation here, everything breaks...
+  implicit val nodeDataCodec = CodecJson.derived[NodeData]
+
   //argonaut does not like covariation so wee need to cast
   implicit def nodeAdditionalFieldsOptCodec: CodecJson[Option[node.UserDefinedAdditionalNodeFields]] = {
     CodecJson.derived[Option[NodeAdditionalFields]]
@@ -82,8 +87,5 @@ trait RestModelCodecs extends Codecs with Argonauts with SingletonInstances with
   implicit val nodeErrorsCodec: CodecJson[ValidationResults.NodeValidationErrorType.Value] = Codecs.enumCodec(NodeValidationErrorType)
 
   implicit def processHistoryEncode: EncodeJson[ProcessHistoryEntry] = EncodeJson.derive[ProcessHistoryEntry]
-
-  //TODO: this is here to make UiCodecsSpec work. EncodeJson.derive doesn't work, and we need implicit, otherwise lists are encoded as case classes
-  val codecNodeData: CodecJson[NodeData] = CodecJson.derived[NodeData]
 
 }

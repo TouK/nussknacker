@@ -12,6 +12,7 @@ import argonaut.derive.{JsonSumCodec, JsonSumCodecFor}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.QueryServiceResult
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.graph.node
+import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.engine.util.service.query.ServiceQuery.QueryResult
 
@@ -32,8 +33,6 @@ trait UiCodecs extends RestModelCodecs {
   implicit val grafanaEncode: EncodeJson[MetricsSettings] = EncodeJson.derive[MetricsSettings]
 
   implicit val userEncodeEncode: EncodeJson[DisplayableUser] = EncodeJson.derive[DisplayableUser]
-
-  implicit val codecNodeDataImpl: CodecJson[node.NodeData] = codecNodeData
 
   //unfortunately, this has do be done manually, as argonaut has problems with recursive types...
   implicit val encodeNodeCount : EncodeJson[NodeCount] = EncodeJson[NodeCount] {

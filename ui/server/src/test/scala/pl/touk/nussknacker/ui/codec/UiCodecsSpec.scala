@@ -7,16 +7,21 @@ import argonaut._
 import Json._
 import org.scalatest.{FlatSpec, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api
-import pl.touk.nussknacker.engine.api.Displayable
+import pl.touk.nussknacker.engine.api.{Displayable, StreamMetaData}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectDefinition, TypesInformation}
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{NodeResult, ResultContext, TestResults}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
+import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.node.{CustomNode, NodeData, Processor}
+import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
+import pl.touk.nussknacker.engine.graph.node.{CustomNode, NodeData, Processor, SubprocessInputDefinition}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
+import pl.touk.nussknacker.restmodel.RestModelCodecs
+import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
+import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.{NodeAdditionalFields, ProcessAdditionalFields}
 import pl.touk.nussknacker.ui.api.{NodeGroup, NodeToAdd, ProcessObjects, UIProcessDefinition}
 
 class UiCodecsSpec extends FunSuite with Matchers {
@@ -134,6 +139,26 @@ class UiCodecsSpec extends FunSuite with Matchers {
       """.stripMargin
 
     node.decodeOption[NodeData] shouldBe Some(Processor("t1", ServiceRef("service1", List(Parameter("p1", Expression("spel", "12"))))))
+  }
+
+  test("displayable process encode and decode") {
+    import UiCodecs._
+
+    val process = DisplayableProcess("", ProcessProperties(
+      StreamMetaData(), ExceptionHandlerRef(List()),
+      false,
+      Some(ProcessAdditionalFields(Some("a"), Set(), Map("field1" -> "value1"))), Map()
+    ), List(
+      SubprocessInputDefinition("proc1", List(SubprocessParameter("param1", SubprocessClazzRef[String]))),
+      CustomNode("id", Some("out1"), "typ1", List(Parameter("name1", Expression("spel", "11"))),
+        Some(NodeAdditionalFields(Some("desc"))))
+    ), List(
+
+    ), "")
+
+    val encoded = process.asJson
+
+    encoded.spaces2.decodeOption[DisplayableProcess] shouldBe Some(process)
   }
 
 
