@@ -15,7 +15,8 @@ import pl.touk.nussknacker.engine.api.deployment.TestProcess.{NodeResult, Result
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.node.CustomNode
+import pl.touk.nussknacker.engine.graph.node.{CustomNode, NodeData, Processor}
+import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.ui.api.{NodeGroup, NodeToAdd, ProcessObjects, UIProcessDefinition}
 
 class UiCodecsSpec extends FunSuite with Matchers {
@@ -110,6 +111,30 @@ class UiCodecsSpec extends FunSuite with Matchers {
     )
   }
 
+  test("decode process objects with correct node data") {
+    import UiCodecs._
+
+    val node = """
+        |{
+        |  "service": {
+        |    "parameters": [
+        |      {
+        |        "expression": {
+        |          "expression": "12",
+        |          "language": "spel"
+        |        },
+        |        "name": "p1"
+        |      }
+        |    ],
+        |    "id": "service1"
+        |  },
+        |  "id": "t1",
+        |  "type": "Processor"
+        |}
+      """.stripMargin
+
+    node.decodeOption[NodeData] shouldBe Some(Processor("t1", ServiceRef("service1", List(Parameter("p1", Expression("spel", "12"))))))
+  }
 
 
   import UiCodecs._

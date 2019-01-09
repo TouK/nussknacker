@@ -33,7 +33,7 @@ trait UiCodecs extends RestModelCodecs {
 
   implicit val userEncodeEncode: EncodeJson[DisplayableUser] = EncodeJson.derive[DisplayableUser]
 
-  implicit val encodeNodeDataImpl: EncodeJson[node.NodeData] = encodeNodeData
+  implicit val codecNodeDataImpl: CodecJson[node.NodeData] = codecNodeData
 
   //unfortunately, this has do be done manually, as argonaut has problems with recursive types...
   implicit val encodeNodeCount : EncodeJson[NodeCount] = EncodeJson[NodeCount] {

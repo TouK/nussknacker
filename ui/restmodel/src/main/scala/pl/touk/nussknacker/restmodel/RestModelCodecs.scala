@@ -84,6 +84,6 @@ trait RestModelCodecs extends Codecs with Argonauts with SingletonInstances with
   implicit def processHistoryEncode: EncodeJson[ProcessHistoryEntry] = EncodeJson.derive[ProcessHistoryEntry]
 
   //TODO: this is here to make UiCodecsSpec work. EncodeJson.derive doesn't work, and we need implicit, otherwise lists are encoded as case classes
-  val encodeNodeData: EncodeJson[NodeData] = EncodeJson.of[NodeData]
+  val codecNodeData: CodecJson[NodeData] = CodecJson.derived[NodeData]
 
 }
