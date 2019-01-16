@@ -53,7 +53,13 @@ class AdditionalPropertiesValidator(additionalFieldsConfig: Map[ProcessingType, 
 
   private def validateTypes(propertiesConfig: PropertiesConfig, fields: ProcessAdditionalFields): Validation[Unit] = {
     fields.properties.map { case (name, value) =>
-      validateValue(name, propertiesConfig(name), value, propertiesConfig(name).`type`)
+      propertiesConfig.get(name) match {
+        case Some(config) =>
+          validateValue(name, config, value, config.`type`)
+        case None =>
+          Validated.invalidNel(PrettyValidationErrors.unknownProperty(errorType, name))
+      }
+
     } .toList
       .sequence
       .map(_ => Unit)

@@ -207,6 +207,16 @@ class ProcessValidationSpec extends FlatSpec with Matchers {
     processValidation.validate(validProcessWithFields(Map("field2" -> "true"))) should not be 'ok
   }
 
+  it should "handle unknown properties validation" in {
+    val processValidation = new ProcessValidation(Map(TestProcessingTypes.Streaming -> ProcessTestData.validator),
+      Map(TestProcessingTypes.Streaming -> Map(
+        "field2" -> AdditionalProcessProperty("label", integer, None, isRequired = false, None)
+      )), sampleResolver)
+
+    processValidation.validate(validProcessWithFields(Map("field1" -> "true"))) should not be 'ok
+
+  }
+
   private def createProcess(nodes: List[NodeData],
                             edges: List[Edge],
                             `type`: ProcessingTypeData.ProcessingType = TestProcessingTypes.Streaming,

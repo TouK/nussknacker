@@ -85,6 +85,9 @@ object PrettyValidationErrors {
     NodeValidationError(typ, s"Node is disabled", "Deploying process with disabled node can have unexpected consequences", fieldName = None, errorType = NodeValidationErrorType.SaveAllowed)
   }
 
+  def unknownProperty(typ: String, fieldName: String): NodeValidationError =
+      NodeValidationError(typ, s"Unknown field $fieldName", s"Field $fieldName is not known", fieldName = Some(fieldName), errorType = NodeValidationErrorType.SaveAllowed)
+
   def emptyRequiredField(typ: String, fieldName: String, label: String): NodeValidationError =
     NodeValidationError(typ, s"Field $fieldName ($label) cannot be empty", s"$label cannot be empty", fieldName = Some(fieldName), errorType = NodeValidationErrorType.SaveAllowed)
 
