@@ -2,6 +2,9 @@ var path = require('path');
 var WebpackConfig = require('./webpack.config')
 var _ = require('lodash')
 
+const puppeteer = require('puppeteer');
+process.env.CHROME_BIN = puppeteer.executablePath();
+
 WebpackConfig.externals = {
   'react/addons': true,
   'react/lib/ExecutionEnvironment': true,
@@ -33,7 +36,16 @@ module.exports = function(config) {
     colors: true,
     logLevel: config.LOG_INFO,
     autoWatch: true,
-    browsers: ['PhantomJS'],
-    singleRun: false,
+    browsers: ['ChromeHeadlessCI'],
+    customLaunchers: {
+      ChromiumHeadless1: {
+        base: 'ChromeHeadless',
+        flags: [
+          //this is needed for our CI server
+          '--no-sandbox'
+       ]
+      }
+    },
+    singleRun: false
   })
 };

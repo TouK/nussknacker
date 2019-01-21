@@ -10,3 +10,6 @@ sudo: required
 
 services:
   - docker
+
+addons:
+  chrome: stable
