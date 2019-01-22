@@ -158,8 +158,8 @@ class SpelExpressionParser(expressionFunctions: Map[String, Method], expressionI
 
   private val validator = new SpelExpressionValidator()(classLoader)
 
-  override def parseWithoutContextValidation(original: String, expectedType: ClazzRef): Validated[ExpressionParseError, compiledgraph.expression.Expression] = {
-    Validated.catchNonFatal(parser.parseExpression(original)).leftMap(ex => ExpressionParseError(ex.getMessage)).map { parsed =>
+  override def parseWithoutContextValidation(original: String, expectedType: ClazzRef): Validated[NonEmptyList[ExpressionParseError], compiledgraph.expression.Expression] = {
+    Validated.catchNonFatal(parser.parseExpression(original)).leftMap(ex => NonEmptyList.of(ExpressionParseError(ex.getMessage))).map { parsed =>
       expression(ParsedSpelExpression(original, () => parser.parseExpression(original), parsed), expectedType)
     }
   }

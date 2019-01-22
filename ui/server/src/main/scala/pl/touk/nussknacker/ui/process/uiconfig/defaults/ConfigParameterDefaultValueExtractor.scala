@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.process.uiconfig.defaults
 
 import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.process.ParameterConfig
 import pl.touk.nussknacker.engine.definition.defaults.{NodeDefinition, ParameterDefaultValueExtractorStrategy}
 
 class ConfigParameterDefaultValueExtractor(config: ParamDefaultValueConfig) extends ParameterDefaultValueExtractorStrategy {
@@ -11,8 +12,8 @@ class ConfigParameterDefaultValueExtractor(config: ParamDefaultValueConfig) exte
 
 }
 
-case class ParamDefaultValueConfig(values: Map[String, Map[String, String]]) {
+case class ParamDefaultValueConfig(values: Map[String, Map[String, ParameterConfig]]) {
   def getNodeValue(node: String, value: String): Option[String] =
-    values.get(node).flatMap(_.get(value))
+    values.get(node).flatMap(_.get(value).flatMap(_.defaultValue))
 }
 

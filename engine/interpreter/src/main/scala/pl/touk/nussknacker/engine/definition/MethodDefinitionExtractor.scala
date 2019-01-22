@@ -5,6 +5,7 @@ import java.lang.reflect
 import java.lang.reflect.Method
 
 import pl.touk.nussknacker.engine.api.definition.{Parameter, WithExplicitMethodToInvoke}
+import pl.touk.nussknacker.engine.api.process.SingleNodeConfig
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{AdditionalVariables, MethodToInvoke, ParamName}
@@ -13,12 +14,12 @@ import pl.touk.nussknacker.engine.types.EspTypeUtils
 
 private[definition] trait MethodDefinitionExtractor[T] {
 
-  def extractMethodDefinition(obj: T, methodToInvoke: Method): Either[String, MethodDefinition]
+  def extractMethodDefinition(obj: T, methodToInvoke: Method, nodeConfig: SingleNodeConfig): Either[String, MethodDefinition]
 
 }
 
 private[definition] object WithExplicitMethodToInvokeMethodDefinitionExtractor extends MethodDefinitionExtractor[WithExplicitMethodToInvoke] {
-  override def extractMethodDefinition(obj: WithExplicitMethodToInvoke, methodToInvoke: Method): Either[String, MethodDefinition] = {
+  override def extractMethodDefinition(obj: WithExplicitMethodToInvoke, methodToInvoke: Method, nodeConfig: SingleNodeConfig): Either[String, MethodDefinition] = {
 
     Right(MethodDefinition(methodToInvoke.getName,
       (oo, args) => methodToInvoke.invoke(oo, args.toList),
@@ -29,10 +30,10 @@ private[definition] object WithExplicitMethodToInvokeMethodDefinitionExtractor e
 
 private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDefinitionExtractor[T] {
 
-  def extractMethodDefinition(obj: T, methodToInvoke: Method): Either[String, MethodDefinition] = {
+  def extractMethodDefinition(obj: T, methodToInvoke: Method, nodeConfig: SingleNodeConfig): Either[String, MethodDefinition] = {
     findMatchingMethod(obj, methodToInvoke).right.map { method =>
       MethodDefinition(methodToInvoke.getName,
-        (obj, args) => method.invoke(obj, args:_*), extractParameters(obj, method),
+        (obj, args) => method.invoke(obj, args:_*), extractParameters(obj, method, nodeConfig),
         Typed(extractReturnTypeFromMethod(obj, method)), Typed(method.getReturnType), method.getAnnotations.toList)
     }
   }
@@ -45,7 +46,7 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
     }
   }
 
-  private def extractParameters(obj: T, method: Method): OrderedParameters = {
+  private def extractParameters(obj: T, method: Method, nodeConfig: SingleNodeConfig): OrderedParameters = {
     val params: List[Either[Parameter, Class[_]]] = method.getParameters.map { p =>
       if (additionalParameters.contains(p.getType) && p.getAnnotation(classOf[ParamName]) == null) {
         Right(p.getType)
@@ -55,7 +56,7 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
           .getOrElse(throw new IllegalArgumentException(s"Parameter $p of $obj and method : ${method.getName} has missing @ParamName annotation"))
         val paramType = extractParameterType(p)
         Left(Parameter(
-          name, ClazzRef(paramType), ClazzRef(p.getType), ParameterTypeMapper.prepareRestrictions(paramType, Some(p)), additionalVariables(p)
+          name, ClazzRef(paramType), ClazzRef(p.getType), ParameterTypeMapper.prepareRestrictions(paramType, Some(p), nodeConfig.paramConfig(p.getName)), additionalVariables(p)
         ))
       }
     }.toList
@@ -130,10 +131,10 @@ object MethodDefinitionExtractor {
   private[definition] class UnionDefinitionExtractor[T](seq: List[MethodDefinitionExtractor[T]])
     extends MethodDefinitionExtractor[T] {
 
-    override def extractMethodDefinition(obj: T, methodToInvoke: Method): Either[String, MethodDefinition] = {
+    override def extractMethodDefinition(obj: T, methodToInvoke: Method, nodeConfig: SingleNodeConfig): Either[String, MethodDefinition] = {
       val extractorsWithDefinitions = for {
         extractor <- seq
-        definition <- extractor.extractMethodDefinition(obj, methodToInvoke).right.toOption
+        definition <- extractor.extractMethodDefinition(obj, methodToInvoke, nodeConfig).right.toOption
       } yield (extractor, definition)
       extractorsWithDefinitions match {
         case Nil =>

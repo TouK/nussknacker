@@ -26,7 +26,7 @@ object expression {
     def parse(original: String, ctx: ValidationContext, expectedType: ClazzRef):
       Validated[NonEmptyList[ExpressionParseError], (TypingResult, compiledgraph.expression.Expression)]
 
-    def parseWithoutContextValidation(original: String, expectedType: ClazzRef): Validated[ExpressionParseError, compiledgraph.expression.Expression]
+    def parseWithoutContextValidation(original: String, expectedType: ClazzRef): Validated[NonEmptyList[ExpressionParseError], compiledgraph.expression.Expression]
 
   }
 

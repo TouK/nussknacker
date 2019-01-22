@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.process.uiconfig.defaults
 
 import org.scalatest.{FlatSpec, Matchers}
+import pl.touk.nussknacker.engine.api.process.ParameterConfig
 
 class ParamDefaultValueConfigTest extends FlatSpec with Matchers {
   private val definedValue = "defined"
@@ -10,7 +11,7 @@ class ParamDefaultValueConfigTest extends FlatSpec with Matchers {
     Map((definedValue, Map(
       (definedValue, definedValue),
       (other, other)
-    )))
+    ).mapValues(dv => ParameterConfig(Some(dv), None))))
   )
 
   def verify(node: String, parameter: String, value: Option[String]): Unit =

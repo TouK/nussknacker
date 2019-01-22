@@ -16,14 +16,14 @@ import scala.runtime.BoxedUnit
 
 class DefinitionExtractor[T](methodDefinitionExtractor: MethodDefinitionExtractor[T]) {
 
-  def extract(objWithCategories: WithCategories[T]): ObjectWithMethodDef = {
+  def extract(objWithCategories: WithCategories[T], nodeConfig: SingleNodeConfig): ObjectWithMethodDef = {
     val obj = objWithCategories.value
     val methodDef = (obj match {
       case e:WithExplicitMethodToInvoke =>
         WithExplicitMethodToInvokeMethodDefinitionExtractor.extractMethodDefinition(e,
-          classOf[WithExplicitMethodToInvoke].getMethods.find(_.getName == "invoke").get)
+          classOf[WithExplicitMethodToInvoke].getMethods.find(_.getName == "invoke").get, nodeConfig)
       case _ =>
-        methodDefinitionExtractor.extractMethodDefinition(obj, findMethodToInvoke(obj))
+        methodDefinitionExtractor.extractMethodDefinition(obj, findMethodToInvoke(obj), nodeConfig)
     }).fold(msg => throw new IllegalArgumentException(msg), identity)
     ObjectWithMethodDef(obj, methodDef, ObjectDefinition(
       methodDef.orderedParameters.definedParameters,
@@ -105,7 +105,7 @@ object DefinitionExtractor {
 
   object ObjectWithMethodDef {
     def apply[T](obj: WithCategories[_<:T], methodExtractor: MethodDefinitionExtractor[T]): ObjectWithMethodDef = {
-      new DefinitionExtractor(methodExtractor).extract(obj)
+      new DefinitionExtractor(methodExtractor).extract(obj, obj.nodeConfig)
     }
   }
 

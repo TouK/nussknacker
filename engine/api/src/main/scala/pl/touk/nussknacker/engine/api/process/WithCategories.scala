@@ -1,6 +1,9 @@
 package pl.touk.nussknacker.engine.api.process
 
+import argonaut.CodecJson
+import argonaut.derive.{JsonSumCodec, JsonSumCodecFor}
 import cats.kernel.Semigroup
+import pl.touk.nussknacker.engine.api.definition.ParameterRestriction
 
 // todo: rename it? its no longer just a value with categories
 case class WithCategories[+T](value: T, categories: List[String], nodeConfig: SingleNodeConfig) {
@@ -19,7 +22,23 @@ object WithCategories {
   }
 }
 
-case class SingleNodeConfig(defaultValues: Option[Map[String, String]], icon: Option[String], docsUrl: Option[String], category: Option[String])
+/**
+  * This contains not only urls or icons but also parameter restrictions, used in e.g. validation
+  * TODO: maybe icon/docs/category should be somehow separated as they are UI related?
+  */
+case class SingleNodeConfig(params: Option[Map[String, ParameterConfig]], icon: Option[String], docsUrl: Option[String], category: Option[String]) {
+  def paramConfig(name: String): ParameterConfig = params.flatMap(_.get(name)).getOrElse(ParameterConfig.empty)
+}
+
+object ParameterConfig {
+  val empty: ParameterConfig = ParameterConfig(None, None)
+
+  import argonaut.Argonaut._
+  private implicit val restrictionCodec: CodecJson[ParameterRestriction] = ParameterRestriction.codec
+  implicit val codec: CodecJson[ParameterConfig] = CodecJson.derive[ParameterConfig]
+}
+
+case class ParameterConfig(defaultValue: Option[String], restriction: Option[ParameterRestriction])
 
 object SingleNodeConfig {
   import cats.syntax.semigroup._
@@ -49,7 +68,7 @@ object SingleNodeConfig {
 
     Semigroup.instance[SingleNodeConfig] { (x, y) =>
       SingleNodeConfig(
-        x.defaultValues |+| y.defaultValues,
+        x.params |+| y.params,
         x.icon |+| y.icon,
         x.docsUrl |+| y.docsUrl,
         x.category |+| y.category

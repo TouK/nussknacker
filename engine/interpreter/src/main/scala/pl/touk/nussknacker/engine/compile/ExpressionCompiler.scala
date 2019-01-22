@@ -87,14 +87,13 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
 
     //TODO: make it nicer..
     validParser andThen { parser =>
-      maybeValidationCtx match {
+      (maybeValidationCtx match {
         case None =>
           parser.parseWithoutContextValidation(n.expression, expectedType).map((Unknown, _))
-            .leftMap(err => NonEmptyList.of[PartSubGraphCompilationError](ExpressionParseError(err.message, fieldName, n.expression)))
         case Some(ctx) =>
             parser.parse(n.expression, ctx, expectedType)
-              .leftMap(errs => errs.map[PartSubGraphCompilationError](err => ExpressionParseError(err.message, fieldName, n.expression)))
-      }
+      }).leftMap(errs => errs.map[PartSubGraphCompilationError](err => ExpressionParseError(err.message, fieldName, n.expression)))
+
     }
   }
 }

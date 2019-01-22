@@ -4,17 +4,20 @@ import java.lang.reflect.Parameter
 
 import pl.touk.nussknacker.engine.api.PossibleValues
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedExpressionValues, ParameterRestriction}
+import pl.touk.nussknacker.engine.api.process.ParameterConfig
 
 object ParameterTypeMapper {
-  
+
   //TODO: other restrictions??
-  def prepareRestrictions(klazz: Class[_], p: Option[Parameter]) : Option[ParameterRestriction] = {
-    handlePossibleValuesAnnotation
-      .orElse(handleJavaEnumPossibleValues)
-      .applyOrElse((klazz, p), (_:(Class[_], Option[Parameter])) => None)
+  def prepareRestrictions(klazz: Class[_], p: Option[Parameter], paramConfig: ParameterConfig): Option[ParameterRestriction] = {
+    paramConfig.restriction.orElse(
+      handlePossibleValuesAnnotation
+        .orElse(handleJavaEnumPossibleValues)
+        .applyOrElse((klazz, p), (_: (Class[_], Option[Parameter])) => None)
+    )
   }
 
-  private def handleJavaEnumPossibleValues : PartialFunction[(Class[_], Option[Parameter]), Option[ParameterRestriction]] = {
+  private def handleJavaEnumPossibleValues: PartialFunction[(Class[_], Option[Parameter]), Option[ParameterRestriction]] = {
     case (klazz: Class[_], _) if klazz.isEnum => Some(FixedExpressionValues(klazz.getEnumConstants.toList.map(extractEnumValue(klazz))))
   }
 
@@ -23,9 +26,9 @@ object ParameterTypeMapper {
     FixedExpressionValue(s"T(${enumClass.getName}).$enumConstName", enumConst.toString)
   }
 
-  private def handlePossibleValuesAnnotation : PartialFunction[(Class[_], Option[Parameter]), Option[ParameterRestriction]] = {
-    case (klazz: Class[_], Some(p:Parameter)) if p.getAnnotation(classOf[PossibleValues]) != null =>
-      val values  = p.getAnnotation(classOf[PossibleValues]).value().toList
+  private def handlePossibleValuesAnnotation: PartialFunction[(Class[_], Option[Parameter]), Option[ParameterRestriction]] = {
+    case (klazz: Class[_], Some(p: Parameter)) if p.getAnnotation(classOf[PossibleValues]) != null =>
+      val values = p.getAnnotation(classOf[PossibleValues]).value().toList
       Some(FixedExpressionValues(values.map(value => FixedExpressionValue(s"'$value'", value))))
   }
 

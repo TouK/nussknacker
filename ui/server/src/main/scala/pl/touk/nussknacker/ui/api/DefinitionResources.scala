@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.api
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.{Directives, Route}
 import argonaut.CodecJson
+import com.typesafe.config.ConfigRenderOptions
 import pl.touk.http.argonaut.Argonaut62Support
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.MetaData
@@ -39,8 +40,10 @@ import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.ceedubs.ficus.readers.EnumerationReader._
 import net.ceedubs.ficus.readers.ValueReader
-import pl.touk.nussknacker.engine.api.process.SingleNodeConfig
+import pl.touk.nussknacker.engine.api.definition.ParameterRestriction
+import pl.touk.nussknacker.engine.api.process.{ParameterConfig, SingleNodeConfig}
 import pl.touk.nussknacker.engine.definition.defaults.{NodeDefinition, ParameterDefaultValueExtractorStrategy}
+import pl.touk.nussknacker.engine.util.json.Codecs
 
 class DefinitionResources(modelData: Map[ProcessingType, ModelData],
                           subprocessRepository: SubprocessRepository)
@@ -50,6 +53,7 @@ class DefinitionResources(modelData: Map[ProcessingType, ModelData],
   import argonaut.ArgonautShapeless._
   import pl.touk.nussknacker.ui.codec.UiCodecs._
 
+
   def route(implicit user: LoggedUser) : Route = encodeResponse {
     //TODO maybe always return data for all subprocesses versions instead of fetching just one-by-one?
     path("processDefinitionData" / Segment) { (processingType) =>
@@ -58,40 +62,8 @@ class DefinitionResources(modelData: Map[ProcessingType, ModelData],
           entity(as[Map[String, Long]]) { subprocessVersions =>
             complete {
               val response: HttpResponse = modelData.get(processingType).map { modelDataForType =>
-                val processConfig = modelDataForType.processConfig
-                val chosenProcessDefinition = modelDataForType.processDefinition
-                val subprocessInputs = fetchSubprocessInputs(subprocessVersions, modelDataForType.modelClassLoader.classLoader)
-                val subprocessesDetails = subprocessRepository.loadSubprocesses(subprocessVersions)
-                val uiProcessDefinition = UIProcessDefinition(chosenProcessDefinition, subprocessInputs)
-
-                val fixedNodesConfig = processConfig.getOrElse[Map[String, SingleNodeConfig]]("nodes", Map.empty)
-                val dynamicNodesConfig = uiProcessDefinition.allDefinitions.mapValues(_.nodeConfig)
-                val nodesConfig = NodesConfigCombiner.combine(fixedNodesConfig, dynamicNodesConfig)
-
-                val defaultParametersValues = ParamDefaultValueConfig(nodesConfig.map { case (k, v) => (k, v.defaultValues.getOrElse(Map.empty)) })
-                val defaultParametersFactory = DefaultValueExtractorChain(defaultParametersValues, modelDataForType.modelClassLoader)
-
-                val nodeCategoryMapping = processConfig.getOrElse[Map[String, String]]("nodeCategoryMapping", Map.empty)
-                val additionalPropertiesConfig = processConfig.getOrElse[Map[String, AdditionalProcessProperty]]("additionalFieldsConfig", Map.empty)
-
-                val result = ProcessObjects(
-                  nodesToAdd = DefinitionPreparer.prepareNodesToAdd(
-                    user = user,
-                    processDefinition = chosenProcessDefinition,
-                    isSubprocess = isSubprocess,
-                    subprocessInputs = subprocessInputs,
-                    extractorFactory = defaultParametersFactory,
-                    nodesConfig = nodesConfig,
-                    nodeCategoryMapping = nodeCategoryMapping
-                  ),
-                  processDefinition = uiProcessDefinition,
-                  nodesConfig = nodesConfig,
-                  additionalPropertiesConfig = additionalPropertiesConfig,
-                  edgesForNodes = DefinitionPreparer.prepareEdgeTypes(
-                    user = user,
-                    processDefinition = chosenProcessDefinition,
-                    isSubprocess = isSubprocess,
-                    subprocessesDetails = subprocessesDetails))
+                val subprocessDetails = subprocessRepository.loadSubprocesses(subprocessVersions)
+                val result = ProcessObjects.prepareUIProcessObjects(modelDataForType, user, subprocessDetails, isSubprocess)
                 HttpResponse(entity = HttpEntity(ContentTypes.`application/json`, result.asJson.toString()))
               }.getOrElse {
                 HttpResponse(status = StatusCodes.NotFound, entity = s"Processing type: $processingType not found")
@@ -118,13 +90,68 @@ class DefinitionResources(modelData: Map[ProcessingType, ModelData],
     }
   }
 
-  private def fetchSubprocessInputs(subprocessVersions: Map[String, Long], classLoader: ClassLoader): Map[String, ObjectDefinition] = {
-    val subprocessInputs = subprocessRepository.loadSubprocesses(subprocessVersions).collect {
+
+
+}
+
+object ProcessObjects {
+  import pl.touk.nussknacker.ui.codec.UiCodecs._
+
+  implicit val nodeConfig: ValueReader[ParameterRestriction] = ValueReader.relative(config => {
+    val json = config.root().render(ConfigRenderOptions.concise().setJson(true))
+    implicit val cd = ParameterRestriction.codec
+    json.decodeEither[ParameterRestriction].right.getOrElse(throw new IllegalArgumentException("Failed to parse config"))
+  })
+
+  def prepareUIProcessObjects(modelDataForType: ModelData, user: LoggedUser, subprocessesDetails: Set[SubprocessDetails], isSubprocess: Boolean): ProcessObjects = {
+    val processConfig = modelDataForType.processConfig
+
+    val chosenProcessDefinition = modelDataForType.processDefinition
+    val fixedNodesConfig = processConfig.getOrElse[Map[String, SingleNodeConfig]]("nodes", Map.empty)
+
+    //FIXME: how to handle dynamic configuration of subprocesses??
+    val subprocessInputs = fetchSubprocessInputs(subprocessesDetails, modelDataForType.modelClassLoader.classLoader, fixedNodesConfig)
+    val uiProcessDefinition = UIProcessDefinition(chosenProcessDefinition, subprocessInputs)
+
+    val dynamicNodesConfig = uiProcessDefinition.allDefinitions.mapValues(_.nodeConfig)
+
+    val nodesConfig = NodesConfigCombiner.combine(fixedNodesConfig, dynamicNodesConfig)
+
+    val defaultParametersValues = ParamDefaultValueConfig(nodesConfig.map { case (k, v) => (k, v.params.getOrElse(Map.empty)) })
+    val defaultParametersFactory = DefaultValueExtractorChain(defaultParametersValues, modelDataForType.modelClassLoader)
+
+    val nodeCategoryMapping = processConfig.getOrElse[Map[String, String]]("nodeCategoryMapping", Map.empty)
+    val additionalPropertiesConfig = processConfig.getOrElse[Map[String, AdditionalProcessProperty]]("additionalFieldsConfig", Map.empty)
+
+
+    ProcessObjects(
+      nodesToAdd = DefinitionPreparer.prepareNodesToAdd(
+        user = user,
+        processDefinition = chosenProcessDefinition,
+        isSubprocess = isSubprocess,
+        subprocessInputs = subprocessInputs,
+        extractorFactory = defaultParametersFactory,
+        nodesConfig = nodesConfig,
+        nodeCategoryMapping = nodeCategoryMapping
+      ),
+      processDefinition = uiProcessDefinition,
+      nodesConfig = nodesConfig,
+      additionalPropertiesConfig = additionalPropertiesConfig,
+      edgesForNodes = DefinitionPreparer.prepareEdgeTypes(
+        user = user,
+        processDefinition = chosenProcessDefinition,
+        isSubprocess = isSubprocess,
+        subprocessesDetails = subprocessesDetails))
+  }
+
+  private def fetchSubprocessInputs(subprocessesDetails: Set[SubprocessDetails], classLoader: ClassLoader, config: Map[String, SingleNodeConfig]): Map[String, ObjectDefinition] = {
+    val subprocessInputs = subprocessesDetails.collect {
       case SubprocessDetails(CanonicalProcess(MetaData(id, _, _, _, _), _, FlatNode(SubprocessInputDefinition(_, parameters, _)) :: _), category) =>
         val clazzRefParams = parameters.map { p =>
           //TODO: currently if we cannot parse parameter class we assume it's unknown
           val classRef = p.typ.toClazzRef(classLoader).getOrElse(ClazzRef.unknown)
-          definition.Parameter(p.name, classRef, classRef, ParameterTypeMapper.prepareRestrictions(classRef.clazz, None))
+          val parameterConfig = config.get(id).map(_.paramConfig(p.name)).getOrElse(ParameterConfig.empty)
+          definition.Parameter(p.name, classRef, classRef, ParameterTypeMapper.prepareRestrictions(classRef.clazz, None, parameterConfig))
         }
         (id, ObjectDefinition(clazzRefParams, ClazzRef[java.util.Map[String, Any]], List(category)))
     }.toMap

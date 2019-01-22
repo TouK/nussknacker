@@ -11,7 +11,8 @@ import argonaut.{DecodeJson, Json}
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
 import pl.touk.nussknacker.engine.api.StreamMetaData
-import pl.touk.nussknacker.engine.api.process.SingleNodeConfig
+import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedExpressionValues}
+import pl.touk.nussknacker.engine.api.process.{ParameterConfig, SingleNodeConfig}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
@@ -59,7 +60,12 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest
       val settings = settingsJson.flatMap(json => implicitly[DecodeJson[Map[String, SingleNodeConfig]]].decodeJson(json).toOption).get
       val underTest = Map(
         "test1" -> SingleNodeConfig(None, Some("Sink.svg"), None, None),
-        "enricher" -> SingleNodeConfig(Some(Map("param" -> "'default value'")), Some("Filter.svg"), None, None),
+        "enricher" -> SingleNodeConfig(Some(Map("param" -> ParameterConfig(Some("'default value'"), Some(
+          FixedExpressionValues(List(
+            FixedExpressionValue("'default value'", "first"),
+            FixedExpressionValue("'other value'", "second")
+          )))
+        ))), Some("Filter.svg"), None, None),
         "accountService" -> SingleNodeConfig(None, None, Some("accountServiceDocs"), None)
       )
 
