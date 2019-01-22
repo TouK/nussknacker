@@ -38,7 +38,7 @@ module.exports = function(config) {
     autoWatch: true,
     browsers: ['ChromeHeadlessCI'],
     customLaunchers: {
-      ChromiumHeadless1: {
+      ChromeHeadlessCI: {
         base: 'ChromeHeadless',
         flags: [
           //this is needed for our CI server
