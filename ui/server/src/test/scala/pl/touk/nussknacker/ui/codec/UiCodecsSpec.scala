@@ -3,26 +3,23 @@ package pl.touk.nussknacker.ui.codec
 import java.time.LocalDateTime
 import java.util
 
+import argonaut.Json._
 import argonaut._
-import Json._
-import org.scalatest.{FlatSpec, FunSuite, Matchers}
+import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api
-import pl.touk.nussknacker.engine.api.{Displayable, StreamMetaData}
-import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
+import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestResults
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectDefinition, TypesInformation}
-import pl.touk.nussknacker.engine.api.deployment.TestProcess.{NodeResult, ResultContext, TestResults}
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api.{Displayable, StreamMetaData}
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node.{CustomNode, NodeData, Processor, SubprocessInputDefinition}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
-import pl.touk.nussknacker.restmodel.RestModelCodecs
-import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.{NodeAdditionalFields, ProcessAdditionalFields}
-import pl.touk.nussknacker.ui.api.{NodeGroup, NodeToAdd, ProcessObjects, UIProcessDefinition}
+import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
+import pl.touk.nussknacker.ui.definition.{NodeGroup, NodeToAdd, UIProcessDefinition, UIProcessObjects}
 
 class UiCodecsSpec extends FunSuite with Matchers {
 
@@ -74,7 +71,7 @@ class UiCodecsSpec extends FunSuite with Matchers {
 
   test("encode process objects with correct node data") {
 
-    val encoded = UiCodecs.processObjectsEncode.encode(ProcessObjects(
+    val encoded = UiCodecs.processObjectsEncode.encode(UIProcessObjects(
       List(NodeGroup(
         "base", List(NodeToAdd(
           "typ1", "label1", CustomNode("id", Some("output"), "typ1", List(Parameter("par1", Expression("spel", "aaa")))), List("trala")

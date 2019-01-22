@@ -5,8 +5,7 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
-import pl.touk.nussknacker.ui.api.helpers.EspItTest
-import pl.touk.nussknacker.ui.sample.SampleProcess
+import pl.touk.nussknacker.ui.api.helpers.{EspItTest, SampleProcess}
 
 class ManagementResourcesConcurentSpec extends FunSuite with ScalatestRouteTest
   with Matchers with ScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {

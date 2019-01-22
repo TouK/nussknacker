@@ -8,11 +8,12 @@ import akka.stream.ActorMaterializer
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.{FlatSpec, Matchers}
-import pl.touk.nussknacker.ui.api.ProcessTestData
 import pl.touk.nussknacker.ui.process.ProcessToSave
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType, ValidationErrors, ValidationResult}
 import pl.touk.http.argonaut.Argonaut62Support
+import pl.touk.nussknacker.ui.api.helpers.ProcessTestData
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 

@@ -1,28 +1,27 @@
-package pl.touk.nussknacker.ui.api
+package pl.touk.nussknacker.ui.definition
 
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.{FunSuite, Matchers}
+import pl.touk.nussknacker.engine.api.process.SingleNodeConfig
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
-import pl.touk.nussknacker.ui.api.DefinitionPreparer.{NodeEdges, NodeTypeId}
-import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestPermissions}
-import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType._
-import pl.touk.nussknacker.engine.api.process.SingleNodeConfig
-import pl.touk.nussknacker.ui.process.uiconfig.defaults.{DefaultValueExtractorChain, ParamDefaultValueConfig}
-import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.ObjectProcessDefinition
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
+import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType._
+import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestPermissions}
+import pl.touk.nussknacker.ui.process.uiconfig.defaults.{DefaultValueExtractorChain, ParamDefaultValueConfig}
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 
-class DefinitionPreparerSpec extends FlatSpec with Matchers with TestPermissions{
+class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions{
 
-  it should "return groups sorted by name" in {
+  test("return groups sorted by name") {
 
     val groups = prepareGroups(Map(), Map("custom" -> "CUSTOM", "sinks"->"BAR"))
 
     groups.map(_.name) shouldBe List("BAR","base", "CUSTOM", "enrichers", "sources")
   }
 
-  it should "return objects sorted by label case insensitive" in {
+  test("return objects sorted by label case insensitive") {
 
     val groups = prepareGroupsOfNodes(List("foo","alaMaKota","BarFilter"))
     groups.map(_.possibleNodes.map(n=>n.label)) shouldBe List(
@@ -31,7 +30,7 @@ class DefinitionPreparerSpec extends FlatSpec with Matchers with TestPermissions
     )
   }
 
-  it should "return edge types for subprocess, filters and switches" in {
+  test("return edge types for subprocess, filters and switches") {
     val subprocessesDetails = TestFactory.sampleSubprocessRepository.loadSubprocesses(Map.empty)
     val edgeTypes = DefinitionPreparer.prepareEdgeTypes(
       user = LoggedUser("aa", testPermissionAdmin),
@@ -48,7 +47,7 @@ class DefinitionPreparerSpec extends FlatSpec with Matchers with TestPermissions
 
   }
 
-  it should "return objects sorted by label with mapped categories" in {
+  test("return objects sorted by label with mapped categories") {
     val groups = prepareGroups(Map(), Map("custom" -> "base"))
 
     validateGroups(groups, 4)
@@ -66,7 +65,7 @@ class DefinitionPreparerSpec extends FlatSpec with Matchers with TestPermissions
 
   }
 
-  it should "return objects sorted by label with mapped categories and mapped nodes" in {
+  test("return objects sorted by label with mapped categories and mapped nodes") {
 
     val groups = prepareGroups(
       Map("barService" -> "foo", "barSource" -> "fooBar"),
@@ -97,7 +96,6 @@ class DefinitionPreparerSpec extends FlatSpec with Matchers with TestPermissions
   }
 
   private def prepareGroups(nodesConfig: Map[String, String], nodeCategoryMapping: Map[String, String]): List[NodeGroup] = {
-    val subprocessesDetails = TestFactory.sampleSubprocessRepository.loadSubprocesses(Map.empty)
     val subprocessInputs = Map[String, ObjectDefinition]()
 
     val groups = DefinitionPreparer.prepareNodesToAdd(

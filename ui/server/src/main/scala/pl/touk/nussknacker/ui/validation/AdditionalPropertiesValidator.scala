@@ -4,7 +4,7 @@ import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.ProcessAdditionalFields
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, ValidationResult}
-import pl.touk.nussknacker.ui.api.{AdditionalProcessProperty, PropertyType}
+import pl.touk.nussknacker.ui.definition.{AdditionalProcessProperty, PropertyType}
 
 import scala.util.Try
 

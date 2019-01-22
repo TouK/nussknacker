@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.{Processor, SubprocessInput, SubprocessInputDefinition}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.migration.{FlatNodeMigration, ProcessMigration, ProcessMigrations}
-import pl.touk.nussknacker.ui.api.ProcessTestData
+import pl.touk.nussknacker.ui.api.helpers.ProcessTestData
 
 class TestMigrations(migrationsToAdd:Int*) extends ProcessMigrations {
 

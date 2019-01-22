@@ -7,9 +7,7 @@ import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.graph.node.{Processor, asProcessor}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
-import pl.touk.nussknacker.ui.api.ProcessTestData
-import pl.touk.nussknacker.ui.api.helpers.TestPermissions
-import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
+import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestPermissions, TestProcessingTypes}
 import pl.touk.nussknacker.restmodel.process.ProcessId
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import shapeless.Typeable._

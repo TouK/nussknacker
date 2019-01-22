@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.sample
+package pl.touk.nussknacker.ui.api.helpers
 
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.graph.EspProcess

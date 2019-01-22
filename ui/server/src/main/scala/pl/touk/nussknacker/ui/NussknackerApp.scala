@@ -26,6 +26,7 @@ import pl.touk.nussknacker.ui.security.AuthenticatorProvider
 import pl.touk.nussknacker.ui.security.ssl.{HttpsConnectionContextFactory, SslConfigParser}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporter
+import pl.touk.nussknacker.ui.definition.AdditionalProcessProperty
 import slick.jdbc.JdbcBackend
 
 object NussknackerApp extends App with Directives with LazyLogging {

@@ -1,13 +1,11 @@
-package pl.touk.nussknacker.ui.api
+package pl.touk.nussknacker.ui.api.helpers
 
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, RequestEntity}
-import argonaut.Argonaut._
 import argonaut.{CodecJson, PrettyParams}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
-import pl.touk.nussknacker.ui.process.ProcessToSave
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
+import pl.touk.nussknacker.ui.process.ProcessToSave
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
 class ProcessPosting {

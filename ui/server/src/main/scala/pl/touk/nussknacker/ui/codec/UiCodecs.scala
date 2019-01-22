@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.codec
 import argonaut._
 import pl.touk.nussknacker.engine.api.Displayable
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{ExceptionResult, TestResults}
-import pl.touk.nussknacker.ui.api.{DisplayableUser, MetricsSettings, ProcessObjects}
+import pl.touk.nussknacker.ui.api.{DisplayableUser, MetricsSettings}
 import pl.touk.nussknacker.restmodel.RestModelCodecs
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.{Comment, ProcessActivity}
 import pl.touk.nussknacker.ui.processreport.NodeCount
@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.engine.util.service.query.ServiceQuery.QueryResult
+import pl.touk.nussknacker.ui.definition.UIProcessObjects
 
 object UiCodecs extends UiCodecs
 
@@ -28,7 +29,7 @@ trait UiCodecs extends RestModelCodecs {
 
   implicit val objectDefinitionEncode: EncodeJson[ObjectDefinition] = EncodeJson.derive[ObjectDefinition]
 
-  implicit def processObjectsEncode: EncodeJson[ProcessObjects] = EncodeJson.derive[ProcessObjects]
+  implicit def processObjectsEncode: EncodeJson[UIProcessObjects] = EncodeJson.derive[UIProcessObjects]
   
   implicit val grafanaEncode: EncodeJson[MetricsSettings] = EncodeJson.derive[MetricsSettings]
 

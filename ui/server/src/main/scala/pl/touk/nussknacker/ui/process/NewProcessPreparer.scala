@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.ProcessAdditionalFields
-import pl.touk.nussknacker.ui.api.AdditionalProcessProperty
+import pl.touk.nussknacker.ui.definition.AdditionalProcessProperty
 
 object NewProcessPreparer {
 

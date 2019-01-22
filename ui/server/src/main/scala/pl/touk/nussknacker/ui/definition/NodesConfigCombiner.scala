@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.api
+package pl.touk.nussknacker.ui.definition
 
 import pl.touk.nussknacker.engine.api.process.SingleNodeConfig
 

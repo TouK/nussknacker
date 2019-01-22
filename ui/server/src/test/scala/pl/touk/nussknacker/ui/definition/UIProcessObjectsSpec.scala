@@ -13,17 +13,18 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node.{Enricher, SubprocessInput, SubprocessInputDefinition}
 import pl.touk.nussknacker.engine.testing.{EmptyProcessConfigCreator, LocalModelData}
-import pl.touk.nussknacker.ui.api.ProcessObjects
 import pl.touk.nussknacker.ui.api.helpers.TestFactory
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
 
 import scala.concurrent.Future
 
-class ProcessObjectsSpec extends FunSuite with Matchers {
+class UIProcessObjectsSpec extends FunSuite with Matchers {
 
   object TestService extends Service {
+
     @MethodToInvoke
     def method(@ParamName("param") input: String): Future[String] = ???
+
   }
 
 
@@ -35,7 +36,7 @@ class ProcessObjectsSpec extends FunSuite with Matchers {
     })
 
     val processObjects =
-      ProcessObjects.prepareUIProcessObjects(model, TestFactory.user(), Set(), false)
+      UIProcessObjects.prepareUIProcessObjects(model, TestFactory.user(), Set(), false)
 
     processObjects.nodesConfig("enricher").params shouldBe Some(Map("param" -> ParameterConfig(Some("'default value'"),
       Some(FixedExpressionValues(List(
@@ -55,7 +56,7 @@ class ProcessObjectsSpec extends FunSuite with Matchers {
     val model : ModelData = LocalModelData(ConfigFactory.load().getConfig("processConfig"), new EmptyProcessConfigCreator())
 
     val processObjects =
-      ProcessObjects.prepareUIProcessObjects(model, TestFactory.user(), Set(
+      UIProcessObjects.prepareUIProcessObjects(model, TestFactory.user(), Set(
         SubprocessDetails(CanonicalProcess(MetaData("enricher", null, isSubprocess = true), null, List(FlatNode(SubprocessInputDefinition("", List(
           SubprocessParameter("param", SubprocessClazzRef[String])
         ))))), "")
