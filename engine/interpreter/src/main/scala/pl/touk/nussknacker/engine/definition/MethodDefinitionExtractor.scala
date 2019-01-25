@@ -56,7 +56,7 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
           .getOrElse(throw new IllegalArgumentException(s"Parameter $p of $obj and method : ${method.getName} has missing @ParamName annotation"))
         val paramType = extractParameterType(p)
         Left(Parameter(
-          name, ClazzRef(paramType), ClazzRef(p.getType), ParameterTypeMapper.prepareRestrictions(paramType, Some(p), nodeConfig.paramConfig(p.getName)), additionalVariables(p)
+          name, ClazzRef(paramType), ClazzRef(p.getType), ParameterTypeMapper.prepareRestrictions(paramType, Some(p), nodeConfig.paramConfig(name)), additionalVariables(p)
         ))
       }
     }.toList

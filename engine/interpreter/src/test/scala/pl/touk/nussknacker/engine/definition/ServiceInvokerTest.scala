@@ -20,7 +20,7 @@ class ServiceInvokerTest extends FlatSpec with ScalaFutures with OptionValues wi
 
   it should "invoke service method with declared parameters as scala params" in {
     val mock = new MockService(jobData)
-    val definition = ObjectWithMethodDef[Service](WithCategories(mock), ServiceInvoker.Extractor)
+    val definition = ObjectWithMethodDef.withEmptyConfig(mock, ServiceInvoker.Extractor)
     val invoker = ServiceInvoker(definition)
 
     whenReady(invoker.invoke(Map("foo" -> "aa", "bar" -> 1), NodeContext("", "", ""))) { _ =>
@@ -30,7 +30,7 @@ class ServiceInvokerTest extends FlatSpec with ScalaFutures with OptionValues wi
 
   it should "throw excpetion with nice message when parameters do not match" in {
     val mock = new MockService(jobData)
-    val definition = ObjectWithMethodDef[Service](WithCategories(mock), ServiceInvoker.Extractor)
+    val definition = ObjectWithMethodDef.withEmptyConfig(mock, ServiceInvoker.Extractor)
     val invoker = ServiceInvoker(definition)
 
     intercept[IllegalArgumentException](
@@ -39,7 +39,7 @@ class ServiceInvokerTest extends FlatSpec with ScalaFutures with OptionValues wi
 
   it should "invoke service method with CompletionStage return type" in {
     val mock = new MockCompletionStageService(jobData)
-    val definition = ObjectWithMethodDef[Service](WithCategories(mock), ServiceInvoker.Extractor)
+    val definition = ObjectWithMethodDef.withEmptyConfig(mock, ServiceInvoker.Extractor)
     val invoker = ServiceInvoker(definition)
 
     whenReady(invoker.invoke(Map("foo" -> "aa", "bar" -> 1), NodeContext("", "", ""))) { _ =>

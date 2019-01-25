@@ -1,9 +1,10 @@
 package pl.touk.nussknacker.engine.definition
 
-import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, SingleNodeConfig, WithCategories}
+import argonaut.CodecJson
+import com.typesafe.config.{Config, ConfigRenderOptions}
+import pl.touk.nussknacker.engine.api.definition.ParameterRestriction
+import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, SingleNodeConfig}
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
-import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, QueryableStateNames}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
@@ -25,30 +26,25 @@ object ProcessDefinitionExtractor {
     val customStreamTransformers = creator.customStreamTransformers(config)
     val expressionConfig = creator.expressionConfig(config)
 
-    val servicesDefs = services.mapValuesNow { factory =>
-      ObjectWithMethodDef(factory, ProcessObjectDefinitionExtractor.service)
-    }
+    val nodesConfig = extractNodesConfig(config)
 
-    val customStreamTransformersDefs = customStreamTransformers.mapValuesNow { executor =>
-      ObjectWithMethodDef(executor, ProcessObjectDefinitionExtractor.customNodeExecutor)
-    }
+    val servicesDefs = ObjectWithMethodDef.forMap(services, ProcessObjectDefinitionExtractor.service, nodesConfig)
 
-    val signalsDefs = signals.map { case (signalName, signal) =>
-      val signalSender = ObjectWithMethodDef(signal, ProcessObjectDefinitionExtractor.signals)
-      val transformers = customStreamTransformersDefs.filter { case (_, (transformerDef)) =>
-          transformerDef.methodDef.annotations.flatMap(_.cast[SignalTransformer]).exists(_.signalClass() == signal.value.getClass)
+    val customStreamTransformersDefs = ObjectWithMethodDef.forMap(customStreamTransformers, ProcessObjectDefinitionExtractor.customNodeExecutor, nodesConfig)
+
+    val signalsDefs = ObjectWithMethodDef.forMap(signals, ProcessObjectDefinitionExtractor.signals, nodesConfig).map { case (signalName, signalSender) =>
+      val transformers = customStreamTransformersDefs.filter { case (_, transformerDef) =>
+          transformerDef.methodDef.annotations.flatMap(_.cast[SignalTransformer]).exists(_.signalClass() == signalSender.obj.getClass)
       }.keySet
       (signalName, (signalSender, transformers))
     }
 
-    val sourceFactoriesDefs = sourceFactories.mapValuesNow { factory =>
-      ObjectWithMethodDef(factory, ProcessObjectDefinitionExtractor.source)
-    }
-    val sinkFactoriesDefs = sinkFactories.mapValuesNow { factory =>
-      ObjectWithMethodDef(factory, ProcessObjectDefinitionExtractor.sink)
-    }
-    val exceptionHandlerFactoryDefs = ObjectWithMethodDef(
-      WithCategories(exceptionHandlerFactory), ProcessObjectDefinitionExtractor.exceptionHandler)
+    val sourceFactoriesDefs = ObjectWithMethodDef.forMap(sourceFactories, ProcessObjectDefinitionExtractor.source, nodesConfig)
+
+
+    val sinkFactoriesDefs = ObjectWithMethodDef.forMap(sinkFactories, ProcessObjectDefinitionExtractor.sink, nodesConfig)
+
+    val exceptionHandlerFactoryDefs = ObjectWithMethodDef.withEmptyConfig(exceptionHandlerFactory, ProcessObjectDefinitionExtractor.exceptionHandler)
 
     //TODO: this is not so nice...
     val globalVariablesDefs = expressionConfig.globalProcessVariables.map { case (varName, globalVar) =>
@@ -71,7 +67,22 @@ object ProcessDefinitionExtractor {
       customStreamTransformersDefs.mapValuesNow(k => (k, extractCustomTransformerData(k))),
       signalsDefs, exceptionHandlerFactoryDefs, ExpressionDefinition(globalVariablesDefs, globalImportsDefs, expressionConfig.optimizeCompilation), typesInformation)
   }
-  
+
+  def extractNodesConfig(processConfig: Config) : Map[String, SingleNodeConfig] = {
+
+    import argonaut.Argonaut._
+    import net.ceedubs.ficus.Ficus._
+    import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+    import net.ceedubs.ficus.readers.ValueReader
+
+    implicit val nodeConfig: ValueReader[ParameterRestriction] = ValueReader.relative(config => {
+      val json = config.root().render(ConfigRenderOptions.concise().setJson(true))
+      implicit val cd: CodecJson[ParameterRestriction] = ParameterRestriction.codec
+      json.decodeEither[ParameterRestriction].right.getOrElse(throw new IllegalArgumentException("Failed to parse config"))
+    })
+    processConfig.getOrElse[Map[String, SingleNodeConfig]]("nodes", Map.empty)
+  }
+
   private def extractCustomTransformerData(objectWithMethodDef: ObjectWithMethodDef) = {
     val transformer = objectWithMethodDef.obj.asInstanceOf[CustomStreamTransformer]
     val queryNamesAnnotation = objectWithMethodDef.methodDef.annotations.flatMap(_.cast[QueryableStateNames])

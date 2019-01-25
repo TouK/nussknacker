@@ -4,7 +4,7 @@ import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedExpressionValues}
-import pl.touk.nussknacker.engine.api.{MetaData, MethodToInvoke, ParamName, Service}
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process.{ParameterConfig, WithCategories}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
@@ -23,8 +23,7 @@ class UIProcessObjectsSpec extends FunSuite with Matchers {
   object TestService extends Service {
 
     @MethodToInvoke
-    def method(@ParamName("param") input: String): Future[String] = ???
-
+    def method(@ParamName("param") input: String, @PossibleValues(value = Array("a", "b", "c")) @ParamName("param2") param2: String): Future[String] = ???
   }
 
 
@@ -44,9 +43,24 @@ class UIProcessObjectsSpec extends FunSuite with Matchers {
         FixedExpressionValue("'other value'", "second")
       )))
     )))
+
+    processObjects.processDefinition.services("enricher").parameters.map(p => (p.name, p.restriction)).toMap shouldBe Map(
+      "param" -> Some(FixedExpressionValues(List(
+        FixedExpressionValue("'default value'", "first"),
+        FixedExpressionValue("'other value'", "second")
+      ))),
+      "param2" -> Some(FixedExpressionValues(List(
+        FixedExpressionValue("'a'", "a"),
+        FixedExpressionValue("'b'", "b"),
+        FixedExpressionValue("'c'", "c")
+      )))
+    )
+
+
     processObjects.nodesToAdd.find(_.name == "enrichers")
       .flatMap(_.possibleNodes.find(_.label == "enricher"))
-      .map(_.node.asInstanceOf[Enricher].service.parameters) shouldBe Some(List(Parameter("param", Expression("spel", "'default value'"))))
+      .map(_.node.asInstanceOf[Enricher].service.parameters) shouldBe Some(List(Parameter("param", Expression("spel", "'default value'")),
+      Parameter("param2", Expression("spel", "'a'"))))
 
   }
 

@@ -2,12 +2,15 @@ package pl.touk.nussknacker.engine.definition
 
 import java.lang.reflect.{InvocationTargetException, Method}
 
+import argonaut.CodecJson
+import com.typesafe.config.{Config, ConfigRenderOptions}
 import com.typesafe.scalalogging.LazyLogging
+import net.ceedubs.ficus.readers.ValueReader
 import pl.touk.nussknacker.engine.api.MethodToInvoke
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, SingleNodeConfig, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
-import pl.touk.nussknacker.engine.api.definition.{Parameter, WithExplicitMethodToInvoke}
+import pl.touk.nussknacker.engine.api.definition.{Parameter, ParameterRestriction, WithExplicitMethodToInvoke}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.MethodDefinition
 import pl.touk.nussknacker.engine.types.TypesInformationExtractor
@@ -29,7 +32,7 @@ class DefinitionExtractor[T](methodDefinitionExtractor: MethodDefinitionExtracto
       methodDef.orderedParameters.definedParameters,
       methodDef.returnType,
       objWithCategories.categories,
-      objWithCategories.nodeConfig
+      nodeConfig
     ))
   }
 
@@ -104,8 +107,21 @@ object DefinitionExtractor {
 
 
   object ObjectWithMethodDef {
-    def apply[T](obj: WithCategories[_<:T], methodExtractor: MethodDefinitionExtractor[T]): ObjectWithMethodDef = {
-      new DefinitionExtractor(methodExtractor).extract(obj, obj.nodeConfig)
+
+    import cats.syntax.semigroup._
+
+    def forMap[T](objs: Map[String, WithCategories[_<:T]], methodExtractor: MethodDefinitionExtractor[T], externalConfig: Map[String, SingleNodeConfig]): Map[String, ObjectWithMethodDef] = {
+      objs.map {
+        case (id, obj) =>
+          val config = externalConfig.getOrElse(id, SingleNodeConfig.zero) |+| obj.nodeConfig
+          println(config)
+          id -> new DefinitionExtractor(methodExtractor).extract(obj, config)
+      }
+
+    }
+
+    def withEmptyConfig[T](obj: T, methodExtractor: MethodDefinitionExtractor[T]): ObjectWithMethodDef = {
+      new DefinitionExtractor(methodExtractor).extract(WithCategories(obj), SingleNodeConfig.zero)
     }
   }
 

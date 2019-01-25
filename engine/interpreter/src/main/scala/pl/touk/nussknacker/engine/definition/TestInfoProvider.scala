@@ -51,7 +51,7 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider {
     implicit val nodeId: NodeId = NodeId(source.id)
     for {
       factory <- sourceFactory(source)
-      definition = ObjectWithMethodDef(WithCategories(factory), ProcessObjectDefinitionExtractor.source)
+      definition = ObjectWithMethodDef.withEmptyConfig(factory, ProcessObjectDefinitionExtractor.source)
       sourceParams <- prepareSourceParams(definition, source)
       sourceObj = ProcessObjectFactory[process.Source[Any]](definition, evaluator).create(sourceParams)
     } yield sourceObj
