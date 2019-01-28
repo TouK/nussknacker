@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.engine.standalone.http
 
-import akka.event.Logging
 import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.directives.DebuggingDirectives
 import akka.http.scaladsl.server.{Directives, Route}
+import akka.stream.ActorMaterializer
 import argonaut.Argonaut._
 import argonaut.ArgonautShapeless._
 import cats.data.NonEmptyList
@@ -12,14 +12,16 @@ import pl.touk.http.argonaut.Argonaut62Support
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.standalone.StandaloneRequestHandler
 import pl.touk.nussknacker.engine.standalone.deployment.DeploymentService
+import pl.touk.nussknacker.engine.standalone.utils.logging.StandaloneRequestResponseLogger
 
 import scala.concurrent.ExecutionContext
 
 class ProcessRoute(deploymentService: DeploymentService) extends Directives with LazyLogging with Argonaut62Support {
 
-  def route(implicit ec: ExecutionContext): Route =
+  def route(log: StandaloneRequestResponseLogger)
+           (implicit ec: ExecutionContext, mat: ActorMaterializer): Route =
     path(Segment) { processPath =>
-      DebuggingDirectives.logRequestResult((s"standalone-$processPath", Logging.DebugLevel)) {
+      log.loggingDirective(processPath)(mat) {
         deploymentService.getInterpreterByPath(processPath) match {
           case None =>
             complete {

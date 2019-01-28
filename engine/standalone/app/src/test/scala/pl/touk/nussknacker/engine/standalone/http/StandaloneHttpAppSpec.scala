@@ -22,6 +22,7 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.standalone.api.DeploymentData
+import pl.touk.nussknacker.engine.standalone.utils.logging.StandaloneRequestResponseLogger
 import pl.touk.nussknacker.engine.testing.ModelJarBuilder
 
 class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTest with BeforeAndAfterEach {
@@ -110,7 +111,7 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
   val exampleApp = new StandaloneHttpApp(config, new MetricRegistry)
 
   val managementRoute = exampleApp.managementRoute.route
-  val processesRoute = exampleApp.processRoute.route
+  val processesRoute = exampleApp.processRoute.route(StandaloneRequestResponseLogger.default)
 
   
   it should "deploy process and then run it" in {

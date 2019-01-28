@@ -10,6 +10,7 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.http.argonaut.Argonaut62Support
 import pl.touk.nussknacker.engine.standalone.deployment.DeploymentService
 import pl.touk.nussknacker.engine.standalone.utils.StandaloneContextPreparer
+import pl.touk.nussknacker.engine.standalone.utils.logging.StandaloneRequestResponseLogger
 import pl.touk.nussknacker.engine.standalone.utils.metrics.StandaloneMetricsReporter
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 
@@ -44,7 +45,7 @@ object StandaloneHttpApp extends Directives with Argonaut62Support with LazyLogg
   )
 
   Http().bindAndHandle(
-    standaloneApp.processRoute.route,
+    standaloneApp.processRoute.route(StandaloneRequestResponseLogger.get(Thread.currentThread.getContextClassLoader)),
     interface = "0.0.0.0",
     port = processesPort
   )

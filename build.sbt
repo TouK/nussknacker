@@ -433,7 +433,8 @@ lazy val standaloneUtil = (project in engine("standalone/util")).
     libraryDependencies ++= {
       Seq(
         "io.dropwizard.metrics" % "metrics-core" % dropWizardV,
-        "org.scalatest" %% "scalatest" % scalaTestV % "test"
+        "org.scalatest" %% "scalatest" % scalaTestV % "test",
+        "com.typesafe.akka" %% "akka-http" % akkaHttpV force()
       )
     }
   ).dependsOn(util, standaloneApi)
