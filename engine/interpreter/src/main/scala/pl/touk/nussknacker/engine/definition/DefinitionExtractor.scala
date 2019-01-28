@@ -114,7 +114,6 @@ object DefinitionExtractor {
       objs.map {
         case (id, obj) =>
           val config = externalConfig.getOrElse(id, SingleNodeConfig.zero) |+| obj.nodeConfig
-          println(config)
           id -> new DefinitionExtractor(methodExtractor).extract(obj, config)
       }
 
