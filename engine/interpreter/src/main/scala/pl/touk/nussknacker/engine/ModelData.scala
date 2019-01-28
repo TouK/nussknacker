@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
-import pl.touk.nussknacker.engine.definition.{ConfigCreatorSignalDispatcher, DefinitionExtractor, ProcessDefinitionExtractor}
+import pl.touk.nussknacker.engine.definition.{ConfigCreatorSignalDispatcher, ProcessDefinitionExtractor}
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.loader.{ModelClassLoader, ProcessConfigCreatorLoader, ScalaServiceLoader}
@@ -61,9 +61,6 @@ trait ModelData extends ConfigCreatorSignalDispatcher {
   lazy val processDefinition: ProcessDefinition[ObjectDefinition] = ProcessDefinitionExtractor.toObjectDefinition(processWithObjectsDefinition)
 
   lazy val validator: ProcessValidator = ProcessValidator.default(processWithObjectsDefinition, modelClassLoader.classLoader)
-
-  //TODO: should this be here?
-  lazy val services: Map[String, DefinitionExtractor.ObjectWithMethodDef] = processWithObjectsDefinition.services
 
   def withThisAsContextClassLoader[T](block: => T) : T = {
     ThreadUtils.withThisAsContextClassLoader(modelClassLoader.classLoader) {

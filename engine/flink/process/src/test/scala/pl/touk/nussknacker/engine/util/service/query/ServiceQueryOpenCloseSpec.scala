@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.util.service.query
 
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.{FlatSpec, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process.WithCategories
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.util.service.GenericTimeMeasuringService
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
 class ServiceQueryOpenCloseSpec
-  extends FlatSpec
+  extends FunSuite
     with Matchers
     with ScalaFutures
     with Eventually {
@@ -22,7 +22,7 @@ class ServiceQueryOpenCloseSpec
 
   private implicit val executionContext: ExecutionContextExecutor = ExecutionContext.Implicits.global
 
-  it should "open and close service" in {
+  test("open and close service") {
     val service = createService
     service.wasOpen shouldBe false
     whenReady(invokeService(4, service)) { r =>
@@ -31,6 +31,20 @@ class ServiceQueryOpenCloseSpec
     service.wasOpen shouldBe true
     eventually {
       service.wasClose shouldBe true
+    }
+  }
+
+  test("should be able to invoke multiple times using same config") {
+    val modelData = LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator {
+      override def services(config: Config): Map[String, WithCategories[Service]] =
+        super.services(config) ++ Map("cast" -> WithCategories(createService))
+    })
+
+    whenReady(new ServiceQuery(modelData).invoke("cast", "integer" -> 4)) {
+      _.result shouldBe 4
+    }
+    whenReady(new ServiceQuery(modelData).invoke("cast", "integer" -> 5)) {
+      _.result shouldBe 5
     }
   }
 
@@ -68,6 +82,9 @@ object ServiceQueryOpenCloseSpec {
     def cast(@ParamName("integer") n: Int)
             (implicit executionContext: ExecutionContext,
              serviceInvocationCollector: ServiceInvocationCollector): Future[Long] = {
+      if (wasClose) {
+        throw new IllegalStateException("Closed...")
+      }
       serviceInvocationCollector.collect(s"invocation $n", Option(99L)) {
         measuring {
           n match {
