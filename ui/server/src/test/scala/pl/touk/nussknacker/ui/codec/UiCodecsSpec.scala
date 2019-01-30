@@ -17,9 +17,10 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node.{CustomNode, NodeData, Processor, SubprocessInputDefinition}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
-import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.{NodeAdditionalFields, ProcessAdditionalFields}
+import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType.SubprocessOutput
+import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.{Edge, EdgeType, NodeAdditionalFields, ProcessAdditionalFields}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
-import pl.touk.nussknacker.ui.definition.{NodeGroup, NodeToAdd, UIProcessDefinition, UIProcessObjects}
+import pl.touk.nussknacker.ui.definition._
 
 class UiCodecsSpec extends FunSuite with Matchers {
 
@@ -90,7 +91,7 @@ class UiCodecsSpec extends FunSuite with Matchers {
       ),
       Map(),
       Map(),
-      List()
+      List(NodeEdges(NodeTypeId("abc"), List(EdgeType.SwitchDefault, SubprocessOutput("out1")), false))
     ))
 
     val customNode = (for {
@@ -111,6 +112,11 @@ class UiCodecsSpec extends FunSuite with Matchers {
             "expression" -> jObjectFields("language" -> jString("spel"), "expression" -> jString("aaa"))
           )))
     )
+
+    val edges = encoded.objectOrEmpty("edgesForNodes").get.arrayOrEmpty.head.objectOrEmpty("edges").get
+    edges.arrayOrEmpty should have length 2
+    edges.arrayOrEmpty.head shouldBe jObjectFields("type" -> jString("SwitchDefault"))
+
   }
 
   test("decode process objects with correct node data") {
@@ -150,10 +156,17 @@ class UiCodecsSpec extends FunSuite with Matchers {
       CustomNode("id", Some("out1"), "typ1", List(Parameter("name1", Expression("spel", "11"))),
         Some(NodeAdditionalFields(Some("desc"))))
     ), List(
-
+      Edge("from1", "to1", None)
     ), "")
 
     val encoded = process.asJson
+
+    encoded.objectOrEmpty.apply("edges").get.arrayOrEmpty shouldBe List(jObjectFields(
+      "from" -> jString("from1"),
+      "to" -> jString("to1"),
+      "edgeType" -> jNull
+    ))
+
 
     encoded.spaces2.decodeOption[DisplayableProcess] shouldBe Some(process)
   }

@@ -76,12 +76,21 @@ class UIProcessObjectsSpec extends FunSuite with Matchers {
         ))))), "")
       ), false)
 
+    processObjects.processDefinition.subprocessInputs("enricher").parameters.map(p => (p.name, p.restriction)).toMap shouldBe Map(
+      "param" -> Some(FixedExpressionValues(List(
+        FixedExpressionValue("'default value'", "first"),
+        FixedExpressionValue("'other value'", "second")
+      )))
+    )
+
+
     processObjects.nodesConfig("enricher").params shouldBe Some(Map("param" -> ParameterConfig(Some("'default value'"),
       Some(FixedExpressionValues(List(
         FixedExpressionValue("'default value'", "first"),
         FixedExpressionValue("'other value'", "second")
       )))
     )))
+
     processObjects.nodesToAdd.find(_.name == "subprocesses")
       .flatMap(_.possibleNodes.find(_.label == "enricher"))
       .map(_.node.asInstanceOf[SubprocessInput].ref.parameters) shouldBe Some(List(Parameter("param", Expression("spel", "'default value'"))))
