@@ -14,7 +14,7 @@ import pl.touk.nussknacker.ui.process.migrate.TestMigrations
 
 class InitializationItSpec extends FlatSpec with ScalatestRouteTest with Matchers with ScalaFutures with BeforeAndAfterEach with WithDbTesting with Eventually {
 
-  import Initialization.toukUser
+  import Initialization.nussknackerUser
 
   private val processId = "proc1"
 

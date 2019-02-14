@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.api.helpers
 
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
 
 import com.typesafe.config.ConfigFactory
 import pl.touk.nussknacker.engine.api.ProcessVersion
@@ -63,7 +63,7 @@ object TestFactory extends TestPermissions{
   class MockProcessManager extends FlinkProcessManager(FlinkProcessManagerProvider.defaultModelData(ConfigFactory.load()), false){
 
     override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = Future.successful(
-      Some(ProcessState(DeploymentId("1"), runningState = RunningState.Running, "RUNNING", 0)))
+      Some(ProcessState(DeploymentId("1"), runningState = managerProcessState.get(), "RUNNING", 0)))
 
     import ExecutionContext.Implicits.global
 
@@ -78,6 +78,7 @@ object TestFactory extends TestPermissions{
 
     private val sleepBeforeAnswer = new AtomicLong(0)
     private val failDeployment = new AtomicBoolean(false)
+    private val managerProcessState = new AtomicReference[RunningState.Value](RunningState.Running)
 
     def withLongerSleepBeforeAnswer[T](action: => T): T = {
       try {
@@ -94,6 +95,15 @@ object TestFactory extends TestPermissions{
         action
       } finally {
         failDeployment.set(false)
+      }
+    }
+
+    def withProcessFinished[T](action: => T): T = {
+      try {
+        managerProcessState.set(RunningState.Finished)
+        action
+      } finally {
+        managerProcessState.set(RunningState.Running)
       }
     }
 

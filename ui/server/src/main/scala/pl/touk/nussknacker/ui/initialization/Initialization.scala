@@ -18,6 +18,7 @@ import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
 import pl.touk.nussknacker.ui.process.migrate.ProcessModelMigrator
 import pl.touk.nussknacker.ui.process.repository.WriteProcessRepository.UpdateProcessAction
 import pl.touk.nussknacker.ui.process.repository._
+import pl.touk.nussknacker.ui.security.NussknackerInternalUser
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import slick.dbio.DBIOAction
 
@@ -27,10 +28,8 @@ import scala.concurrent.{Await, ExecutionContext}
 
 
 object Initialization {
-  private val toukCategory = "Default"
 
-  implicit val toukUser = LoggedUser("Nussknacker", Map(toukCategory->Set(Permission.Write, Permission.Admin)))
-
+  implicit val nussknackerUser: LoggedUser = NussknackerInternalUser
   def init(migrations: Map[ProcessingType, ProcessMigrations],
            db: DbConfig,
            environment: String,
@@ -122,7 +121,7 @@ class TechnicalProcessUpdate(customProcesses: Map[String, String], repository: D
             )
           case Some(processId) =>
             fetchingProcessRepository.fetchLatestProcessVersion(processId).flatMap {
-              case Some(version) if version.user == Initialization.toukUser.id =>
+              case Some(version) if version.user == Initialization.nussknackerUser.id =>
                 repository.updateProcess(UpdateProcessAction(processId, deploymentData, "External update")).map(_.right.map(_ => ()))
               case latestVersion => logger.info(s"Process $processId not updated. DB version is: \n${latestVersion.flatMap(_.json).getOrElse("")}\n " +
                 s" and version from file is: \n$deploymentData")
