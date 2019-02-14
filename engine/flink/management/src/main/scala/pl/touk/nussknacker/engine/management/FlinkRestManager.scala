@@ -81,9 +81,14 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, sender: HttpSe
       runningJobs match {
         case Nil => None
         case one::Nil =>
-          Some(ProcessState(DeploymentId(one.jid), one.state == JobStatus.RUNNING, one.state.toString, one.`start-time`))
+          val runningState = one.state match {
+            case JobStatus.RUNNING => RunningState.Running
+            case JobStatus.FINISHED => RunningState.Finished
+            case _ => RunningState.Error
+          }
+          Some(ProcessState(DeploymentId(one.jid), runningState, one.state.toString, one.`start-time`))
         case one::rest =>
-          Some(ProcessState(DeploymentId(one.jid), false, "INCONSISTENT", one.`start-time`,
+          Some(ProcessState(DeploymentId(one.jid), RunningState.Error, "INCONSISTENT", one.`start-time`,
             Some(s"Expected one job, instead: ${runningJobs.map(_.jid).mkString(", ")}")))
       }
     }

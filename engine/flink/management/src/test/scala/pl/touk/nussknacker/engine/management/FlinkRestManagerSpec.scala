@@ -8,7 +8,7 @@ import org.apache.flink.runtime.jobgraph.JobStatus
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, DeploymentId, ProcessState}
+import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, DeploymentId, ProcessState, RunningState}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.management.flinkRestModel.{JobOverview, JobsResponse}
 import pl.touk.nussknacker.engine.testing.{EmptyProcessConfigCreator, LocalModelData}
@@ -48,7 +48,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with ScalaFutures {
 
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.RUNNING), JobOverview("1111", "p1", 30L, 30L, JobStatus.RUNNING))
 
-    manager.findJobStatus(ProcessName("p1")).futureValue shouldBe Some(ProcessState(DeploymentId("2343"), false,
+    manager.findJobStatus(ProcessName("p1")).futureValue shouldBe Some(ProcessState(DeploymentId("2343"), RunningState.Error,
       "INCONSISTENT", 10L, Some("Expected one job, instead: 2343, 1111")))
   }
 

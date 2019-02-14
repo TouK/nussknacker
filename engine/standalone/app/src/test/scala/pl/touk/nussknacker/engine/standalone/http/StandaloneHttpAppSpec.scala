@@ -8,13 +8,13 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.MethodRejection
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import argonaut.Argonaut._
-import argonaut.{DecodeJson, EncodeJson, PrettyParams}
+import argonaut.{CodecJson, DecodeJson, EncodeJson, PrettyParams}
 import com.codahale.metrics.MetricRegistry
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable}
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessState}
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessState, RunningState}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.StandaloneProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
@@ -24,6 +24,7 @@ import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.standalone.api.DeploymentData
 import pl.touk.nussknacker.engine.standalone.utils.logging.StandaloneRequestResponseLogger
 import pl.touk.nussknacker.engine.testing.ModelJarBuilder
+import pl.touk.nussknacker.engine.util.json.Codecs
 
 class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTest with BeforeAndAfterEach {
 
@@ -280,6 +281,7 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
   }
 
   implicit def processStateCode = DecodeJson.derive[ProcessState]
+  private implicit val stateCodec: CodecJson[RunningState.Value] = Codecs.enumCodec(RunningState)
 
   def assertProcessNotRunning(processName: ProcessName) = {
     val id = processName.value

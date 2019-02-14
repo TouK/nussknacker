@@ -1,13 +1,15 @@
 package pl.touk.nussknacker.engine.standalone.management
 
+import argonaut.CodecJson
 import com.ning.http.client.Response
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import dispatch.{Http, StatusCode}
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessState}
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessState, RunningState}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.dispatch.LoggingDispatchClient
 import pl.touk.nussknacker.engine.standalone.api.DeploymentData
+import pl.touk.nussknacker.engine.util.json.Codecs
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
@@ -58,7 +60,7 @@ class MultiInstanceStandaloneProcessClient(clients: List[StandaloneProcessClient
             case None => "empty"
             case Some(state) => s"state: ${state.status}, startTime: ${state.startTime}"
           }.mkString("; ")
-          Some(ProcessState(DeploymentId(name.value), isOK = false, "INCONSISTENT", 0L,
+          Some(ProcessState(DeploymentId(name.value), runningState = RunningState.Error, "INCONSISTENT", 0L,
             message = Some(s"Inconsistent states between servers: $warningMessage")))
       }
     }
@@ -74,6 +76,7 @@ class DispatchStandalonProcessClient(managementUrl: String, http: Http = Http) e
   private val dispatchClient = LoggingDispatchClient(this.getClass.getSimpleName, http)
 
   import argonaut.ArgonautShapeless._
+  private implicit val stateCodec: CodecJson[RunningState.Value] = Codecs.enumCodec(RunningState)
 
   def deploy(deploymentData: DeploymentData): Future[Unit] = {
     val deployUrl = dispatch.url(managementUrl) / "deploy"

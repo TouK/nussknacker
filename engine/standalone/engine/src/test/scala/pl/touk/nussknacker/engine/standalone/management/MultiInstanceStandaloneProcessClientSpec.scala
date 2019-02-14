@@ -4,7 +4,7 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessState}
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessState, RunningState}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.standalone.api.DeploymentData
 
@@ -59,7 +59,7 @@ class MultiInstanceStandaloneProcessClientSpec extends FunSuite with Matchers wi
 
   test("Status should be RUNNING if all clients running") {
 
-    val consistentState = ProcessState(jobId, true, "RUNNING", 10000L)
+    val consistentState = ProcessState(jobId, RunningState.Running, "RUNNING", 10000L)
     val multiClient = new MultiInstanceStandaloneProcessClient(List(
       okClient(Some(consistentState)),
       okClient(Some(consistentState))
@@ -71,21 +71,21 @@ class MultiInstanceStandaloneProcessClientSpec extends FunSuite with Matchers wi
   test("Status should be INCONSISTENT if one status unknown") {
     val multiClient = new MultiInstanceStandaloneProcessClient(List(
       okClient(),
-      okClient(Some(ProcessState(jobId, true, "RUNNING", 0L))
+      okClient(Some(ProcessState(jobId, RunningState.Running, "RUNNING", 0L))
       )))
 
-    multiClient.findStatus(id).futureValue shouldBe Some(ProcessState(jobId, false, "INCONSISTENT", 0L,
+    multiClient.findStatus(id).futureValue shouldBe Some(ProcessState(jobId, RunningState.Error, "INCONSISTENT", 0L,
       Some("Inconsistent states between servers: empty; state: RUNNING, startTime: 0")))
   }
 
 
   test("Status should be INCONSISTENT if status differ") {
     val multiClient = new MultiInstanceStandaloneProcessClient(List(
-      okClient(Some(ProcessState(jobId, true, "RUNNING", 5000L))),
-      okClient(Some(ProcessState(jobId, true, "RUNNING", 0L)))
+      okClient(Some(ProcessState(jobId, RunningState.Running, "RUNNING", 5000L))),
+      okClient(Some(ProcessState(jobId, RunningState.Running, "RUNNING", 0L)))
     ))
 
-    multiClient.findStatus(id).futureValue shouldBe Some(ProcessState(jobId, false, "INCONSISTENT", 0L,
+    multiClient.findStatus(id).futureValue shouldBe Some(ProcessState(jobId, RunningState.Error, "INCONSISTENT", 0L,
       Some("Inconsistent states between servers: state: RUNNING, startTime: 5000; state: RUNNING, startTime: 0")))
   }
 

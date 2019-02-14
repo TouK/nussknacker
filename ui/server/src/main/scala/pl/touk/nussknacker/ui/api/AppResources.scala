@@ -96,7 +96,7 @@ class AppResources(config: Config,
       processes <- processRepository.fetchProcessesDetails()
       statusMap <- Future.sequence(statusList(processes)).map(_.toMap)
     } yield {
-      statusMap.filter { case (_, status) => !status.exists(_.isRunning) }.keySet
+      statusMap.filter { case (_, status) => !status.exists(_.isOkForDeployed) }.keySet
     }
   }
 

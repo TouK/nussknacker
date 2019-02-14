@@ -5,7 +5,7 @@ import cats.data.{NonEmptyList, ValidatedNel}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessState}
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessState, RunningState}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{JobData, StandaloneMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -83,7 +83,7 @@ class DeploymentService(context: StandaloneContextPreparer, modelData: ModelData
 
   def checkStatus(processName: ProcessName): Option[ProcessState] = {
     processInterpreters.get(processName).map { case (_, startTime) =>
-      ProcessState(DeploymentId(processName.value), isOK = true, "RUNNING", startTime)
+      ProcessState(DeploymentId(processName.value), runningState = RunningState.Running, "RUNNING", startTime)
     }
   }
 

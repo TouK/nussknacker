@@ -4,7 +4,7 @@ import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
 
 import com.typesafe.config.ConfigFactory
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessDeploymentData, ProcessState}
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessDeploymentData, ProcessState, RunningState}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.management.{FlinkProcessManager, FlinkProcessManagerProvider}
 import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
@@ -63,7 +63,7 @@ object TestFactory extends TestPermissions{
   class MockProcessManager extends FlinkProcessManager(FlinkProcessManagerProvider.defaultModelData(ConfigFactory.load()), false){
 
     override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = Future.successful(
-      Some(ProcessState(DeploymentId("1"), isOK = true, "RUNNING", 0)))
+      Some(ProcessState(DeploymentId("1"), runningState = RunningState.Running, "RUNNING", 0)))
 
     import ExecutionContext.Implicits.global
 

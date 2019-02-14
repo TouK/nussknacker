@@ -38,7 +38,7 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest
     statusCheck.reply(new Exception("Failed to check status"))
 
     val second = statusCheck.expectMsgClass(classOf[CheckStatus])
-    statusCheck.reply(Some(ProcessStatus(None, "RUNNING", 0l, true, true)))
+    statusCheck.reply(Some(ProcessStatus(None, "RUNNING", 0l, isRunning = true, isDeployInProgress = false)))
 
     val third = statusCheck.expectMsgClass(classOf[CheckStatus])
     statusCheck.reply(None)
@@ -63,9 +63,27 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest
     val result = Get("/app/healthCheck") ~> withPermissions(resources, testPermissionRead)
 
     statusCheck.expectMsgClass(classOf[CheckStatus])
-    statusCheck.reply(Some(ProcessStatus(None, "RUNNING", 0l, true, true)))
+    statusCheck.reply(Some(ProcessStatus(None, "RUNNING", 0l, isRunning = true, isDeployInProgress = false)))
     statusCheck.expectMsgClass(classOf[CheckStatus])
-    statusCheck.reply(Some(ProcessStatus(None, "RUNNING", 0l, true, true)))
+    statusCheck.reply(Some(ProcessStatus(None, "RUNNING", 0l, isRunning = true, isDeployInProgress = false)))
+
+    result ~> check {
+      status shouldBe StatusCodes.OK
+    }
+  }
+
+  test("it should not report deployment in progress as fail") {
+    val statusCheck = TestProbe()
+
+    val resources = new AppResources(ConfigFactory.empty(), Map(), processRepository, TestFactory.processValidation,
+      new JobStatusService(statusCheck.ref))
+
+    saveProcessWithDeployInfo("id1")
+
+    val result = Get("/app/healthCheck") ~> withPermissions(resources, testPermissionRead)
+
+    statusCheck.expectMsgClass(classOf[CheckStatus])
+    statusCheck.reply(Some(ProcessStatus(None, "INPROGRESS", 0l, isRunning = false, isDeployInProgress = true)))
 
     result ~> check {
       status shouldBe StatusCodes.OK
