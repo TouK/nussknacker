@@ -128,10 +128,9 @@ class NodeUtils {
     const nodeInputs = this._nodeInputs(toId, process);
     const nodeOutputs = this._nodeOutputs(fromId, process);
 
-    const targetHasNoInput = nodeInputs.length === 0
     const to = this.getNodeById(toId, process)
     const from = this.getNodeById(fromId, process)
-    return (fromId !== toId) && (to.type != "Source") && targetHasNoInput && this._canHaveMoreOutputs(from, nodeOutputs, processDefinitionData)
+    return (fromId !== toId) && this._canHaveMoreInputs(to, nodeInputs, processDefinitionData) && this._canHaveMoreOutputs(from, nodeOutputs, processDefinitionData)
   }
 
 
@@ -149,10 +148,16 @@ class NodeUtils {
     );
   }
 
+  _canHaveMoreInputs = (nodeTo, nodeInputs, processDefinitionData) => {
+    const edgesForNode = this.edgesForNode(nodeTo, processDefinitionData)
+    const maxEdgesForNode = edgesForNode.edges.length
+    return nodeTo.type !== "Source" && (edgesForNode.canChooseNodes || nodeInputs.length < maxEdgesForNode)
+  }
+
   _canHaveMoreOutputs = (node, nodeOutputs, processDefinitionData) => {
     const edgesForNode = this.edgesForNode(node, processDefinitionData)
     const maxEdgesForNode = edgesForNode.edges.length
-    return node.type != "Sink" && (edgesForNode.canChooseNodes || nodeOutputs.length < maxEdgesForNode)
+    return node.type !== "Sink" && (edgesForNode.canChooseNodes || nodeOutputs.length < maxEdgesForNode)
   }
 
   _nodeInputs = (nodeId, process) => {

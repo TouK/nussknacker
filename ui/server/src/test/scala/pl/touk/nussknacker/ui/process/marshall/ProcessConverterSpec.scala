@@ -1,11 +1,12 @@
 package pl.touk.nussknacker.ui.process.marshall
 
 import org.scalatest.prop.TableDrivenPropertyChecks
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.MetaVariables
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ExpressionDefinition, ProcessDefinition}
@@ -13,7 +14,7 @@ import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
-import pl.touk.nussknacker.engine.graph.source.SourceRef
+import pl.touk.nussknacker.engine.graph.source.{JoinRef, SourceRef}
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.sampleResolver
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
@@ -22,32 +23,32 @@ import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType, ValidationResult}
 
-class ProcessConverterSpec extends FlatSpec with Matchers with TableDrivenPropertyChecks {
+class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenPropertyChecks {
 
-  val validation = {
+  val validation: ProcessValidation = {
     val processDefinition = ProcessDefinition[ObjectDefinition](Map("ref" -> ObjectDefinition.noParam),
       Map("sourceRef" -> ObjectDefinition.noParam), Map(), Map(), Map(), ObjectDefinition.noParam, ExpressionDefinition(Map.empty, List.empty, optimizeCompilation = false), List())
     val validator =  ProcessValidator.default(ProcessDefinitionBuilder.withEmptyObjects(processDefinition))
     new ProcessValidation(Map(TestProcessingTypes.Streaming -> validator), Map(TestProcessingTypes.Streaming -> Map()), sampleResolver)
   }
 
-  def canonicalDisplayable(canonicalProcess: CanonicalProcess) = {
+  def canonicalDisplayable(canonicalProcess: CanonicalProcess): CanonicalProcess = {
     val displayable = ProcessConverter.toDisplayable(canonicalProcess, TestProcessingTypes.Streaming)
     ProcessConverter.fromDisplayable(displayable)
   }
 
-  def displayableCanonical(process: DisplayableProcess) = {
+  def displayableCanonical(process: DisplayableProcess): ValidatedDisplayableProcess = {
    val canonical = ProcessConverter.fromDisplayable(process)
    validation.toValidated(ProcessConverter.toDisplayable(canonical, TestProcessingTypes.Streaming))
   }
 
-  it should "be able to convert empty process" in {
-    val emptyProcess = CanonicalProcess(MetaData(id = "t1", StreamMetaData()), ExceptionHandlerRef(List()), List())
+  test("be able to convert empty process") {
+    val emptyProcess = CanonicalProcess(MetaData(id = "t1", StreamMetaData()), ExceptionHandlerRef(List()), List(), None)
 
     canonicalDisplayable(emptyProcess) shouldBe emptyProcess
   }
 
-  it should "be able to handle different node order" in {
+  test("be able to handle different node order") {
     val process = DisplayableProcess("t1", ProcessProperties(StreamMetaData(Some(2), Some(false)), ExceptionHandlerRef(List()), subprocessVersions = Map.empty),
       List(
         Processor("e", ServiceRef("ref", List())),
@@ -59,14 +60,14 @@ class ProcessConverterSpec extends FlatSpec with Matchers with TableDrivenProper
 
   }
 
-  it should "be able to convert process ending not properly" in {
+  test("be able to convert process ending not properly") {
     forAll(Table(
       "unexpectedEnd",
       Filter("e", Expression("spel", "0")),
       Switch("e", Expression("spel", "0"), "a"),
       Enricher("e", ServiceRef("ref", List()), "out"),
       Split("e")
-    )) { (unexpectedEnd) =>
+    )) { unexpectedEnd =>
       val process = ValidatedDisplayableProcess(
         "t1",
         ProcessProperties(StreamMetaData(Some(2), Some(false)), ExceptionHandlerRef(List()), subprocessVersions = Map.empty),
@@ -88,7 +89,7 @@ class ProcessConverterSpec extends FlatSpec with Matchers with TableDrivenProper
   }
 
 
-  it should "return variable type information for process that cannot be canonized" in {
+  test("return variable type information for process that cannot be canonized") {
     val process = ValidatedDisplayableProcess(
       "process",
       ProcessProperties(StreamMetaData(Some(2), Some(false)), ExceptionHandlerRef(List()), subprocessVersions = Map.empty),
@@ -104,5 +105,32 @@ class ProcessConverterSpec extends FlatSpec with Matchers with TableDrivenProper
     )
 
     displayableCanonical(process.toDisplayable) shouldBe process
+  }
+
+  test("convert process with branches") {
+
+    val process = DisplayableProcess("t1", ProcessProperties(StreamMetaData(Some(2), Some(false)), ExceptionHandlerRef(List()), subprocessVersions = Map.empty),
+      List(
+        Processor("e", ServiceRef("ref", List())),
+        Join("j1", JoinRef("joinRef", List()), None),
+        Source("s2", SourceRef("sourceRef", List())),
+        Source("s1", SourceRef("sourceRef", List()))
+      ),
+      List(
+        Edge("s1", "j1", None),
+        Edge("s2", "j1", None),
+        Edge("j1", "e", None)
+      ), TestProcessingTypes.Streaming)
+
+    
+
+    displayableCanonical(process).nodes.sortBy(_.id) shouldBe process.nodes.sortBy(_.id)
+    displayableCanonical(process).edges.toSet shouldBe process.edges.toSet
+
+    val canonical = ProcessConverter.fromDisplayable(process)
+
+    val normal = ProcessCanonizer.uncanonize(canonical).toOption.get
+    ProcessCanonizer.canonize(normal) shouldBe canonical
+
   }
 }

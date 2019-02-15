@@ -29,11 +29,12 @@ import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.util.exception.VerboselyLoggingExceptionHandler
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSinkFactory, KafkaSourceFactory}
 import pl.touk.nussknacker.engine.management.sample.signal.{RemoveLockProcessSignalFactory, SampleSignalHandlingTransformer}
-import scala.collection.JavaConverters._
 
+import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
 import argonaut.Argonaut._
 import argonaut.ArgonautShapeless._
+import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.streaming.api.functions.TimestampAssigner
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{CollectableAction, ServiceInvocationCollector, TransmissionNames}
 import pl.touk.nussknacker.engine.api.typed.TypedMap
@@ -41,6 +42,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.management.sample.StatefulTransformer.StringFromIr
+import pl.touk.nussknacker.engine.util.LoggingListener
 import pl.touk.sample.JavaSampleEnum
 
 class TestProcessConfigCreator extends ProcessConfigCreator {
@@ -65,7 +67,7 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
     )
   }
 
-  override def listeners(config: Config) = List()
+  override def listeners(config: Config) = List(LoggingListener)
 
   override def sourceFactories(config: Config) = {
     val kConfig = KafkaConfig(config.getString("kafka.zkAddress"), config.getString("kafka.kafkaAddress"), None, None)
@@ -188,7 +190,8 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
       "constantStateTransformer" -> WithCategories(ConstantStateTransformer[String](ConstantState("stateId", 1234, List("elem1", "elem2", "elem3")).asJson.nospaces), "Category1", "Category2"),
       "constantStateTransformerLongValue" -> WithCategories(ConstantStateTransformer[Long](12333), "Category1", "Category2"),
       "additionalVariable" -> WithCategories(AdditionalVariableTransformer, "Category1", "Category2"),
-      "lockStreamTransformer" -> WithCategories(new SampleSignalHandlingTransformer.LockStreamTransformer(), "Category1", "Category2")
+      "lockStreamTransformer" -> WithCategories(new SampleSignalHandlingTransformer.LockStreamTransformer(), "Category1", "Category2"),
+      "union" -> WithCategories(UnionTransformer, "Category1", "Category2")
     )
   }
 
@@ -224,6 +227,22 @@ object BoundedSource extends FlinkSourceFactory[Any] {
     new CollectionSource[Any](StreamExecutionEnvironment.getExecutionEnvironment.getConfig, elements.asScala.toList, None, Unknown)
 
   override def timestampAssigner: Option[TimestampAssigner[Any]] = None
+}
+
+case object UnionTransformer extends CustomStreamTransformer with LazyLogging {
+
+  override def canHaveManyInputs: Boolean = true
+
+  @MethodToInvoke
+  def execute(): FlinkCustomJoinTransformation = new FlinkCustomJoinTransformation {
+    override def transform(inputs: Map[String, DataStream[InterpretationResult]], context: FlinkCustomNodeContext): DataStream[ValueWithContext[Any]] = {
+      //we pass #input as outputVariable and connect 
+      val inputFromIr = (ir:InterpretationResult) => ValueWithContext(ir.finalContext.variables("input"), ir.finalContext)
+      val valuesWithContexts = inputs.values.map(_.map(inputFromIr))
+      valuesWithContexts.reduce(_.connect(_).map(identity, identity))
+    }
+  }
+
 }
 
 case object StatefulTransformer extends CustomStreamTransformer {

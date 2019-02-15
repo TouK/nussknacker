@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.process
 
 import java.util.Date
 
+import cats.data.NonEmptyList
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api._
@@ -18,7 +19,7 @@ class FlinkProcessRegistrarSpec extends FlatSpec with Matchers with Eventually {
   it should "perform simple valid process" in {
     val process = EspProcess(MetaData("proc1", StreamMetaData()),
       ExceptionHandlerRef(List.empty),
-      GraphBuilder.source("id", "input")
+      NonEmptyList.of(GraphBuilder.source("id", "input")
         .filter("filter1", "#processHelper.add(12, #processHelper.constant()) > 1")
         .filter("filter2", "#input.intAsAny + 1 > 1")
         .filter("filter3", "#input.value3Opt + 1 > 1")
@@ -26,7 +27,7 @@ class FlinkProcessRegistrarSpec extends FlatSpec with Matchers with Eventually {
         .filter("filter5", "#input.value3Opt.abs() + 1 > 1")
         .filter("filter6", "#input.value3.abs + 1 > 1")
         .processor("proc2", "logService", "all" -> "#input.value2")
-        .emptySink("out", "monitor"))
+        .emptySink("out", "monitor")))
     val data = List(
       SimpleRecord("1", 12, "a", new Date(0), Option(1)),
       SimpleRecord("1", 15, "b", new Date(1000), None),
@@ -45,10 +46,10 @@ class FlinkProcessRegistrarSpec extends FlatSpec with Matchers with Eventually {
   it should "use rocksDB backend" in {
     val process = EspProcess(MetaData("proc1", StreamMetaData(splitStateToDisk = Some(true))),
       ExceptionHandlerRef(List.empty),
-      GraphBuilder.source("id", "input")
+      NonEmptyList.of(GraphBuilder.source("id", "input")
         .customNode("custom2", "outRec", "stateCustom", "keyBy" -> "#input.id", "stringVal" -> "'terefere'")
         .processor("proc2", "logService", "all" -> "#input.value2")
-        .emptySink("out", "monitor"))
+        .emptySink("out", "monitor")))
     val data = List(
       SimpleRecord("1", 12, "a", new Date(0), Option(1)),
       SimpleRecord("1", 15, "b", new Date(1000), None),

@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.ui.process.marshall
 
+import java.util.UUID
+
 import argonaut.PrettyParams
 import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode._
@@ -34,7 +36,10 @@ object ProcessConverter {
     val (nodes, edges) = if (businessView) {
       toGraphInner(process.nodes.flatMap(toBusinessNode))
     } else {
-      toGraphInner(process.nodes)
+      (process.nodes :: process.additionalBranches.getOrElse(Nil)).map(toGraphInner)
+          .reduceLeft[(List[NodeData], List[Edge])] {
+            case ((n1, e1), (n2, e2)) => (n1 ++ n2, e1 ++ e2)
+          }
     }
     val props = ProcessProperties(
       typeSpecificProperties = process.metaData.typeSpecificData,
@@ -74,6 +79,7 @@ object ProcessConverter {
 
   private def toGraphInner(nodes: List[canonicalnode.CanonicalNode]): (List[NodeData], List[displayablenode.Edge]) =
     nodes match {
+      case canonicalnode.FlatNode(BranchEndData(_, _)) :: _ => (List(), List())
       case canonicalnode.FlatNode(data) :: tail =>
         val (tailNodes, tailEdges) = toGraphInner(tail)
         (data :: tailNodes, createNextEdge(data.id, tail) ::: tailEdges)
@@ -118,7 +124,10 @@ object ProcessConverter {
     }
 
   private def createNextEdge(id: String, tail: List[CanonicalNode], edgeType: Option[EdgeType] = None): List[displayablenode.Edge] = {
-    tail.headOption.map(n => displayablenode.Edge(id, n.id, edgeType)).toList
+    tail.headOption.map {
+      case FlatNode(BranchEndData(_, BranchEndDefinition(_, joinId))) => displayablenode.Edge(id, joinId, None)
+      case n => displayablenode.Edge(id, n.id, edgeType)
+    }.toList
   }
 
   private def unzipListTuple[A, B](a: List[(List[A], List[B])]): (List[A], List[B]) = {
@@ -129,17 +138,18 @@ object ProcessConverter {
   def fromDisplayable(process: DisplayableProcess): CanonicalProcess = {
     val nodesMap = process.nodes.groupBy(_.id).mapValues(_.head)
     val edgesFromMapStart = process.edges.groupBy(_.from)
-    val nodes = findRootNodes(process).headOption.map(headNode => unFlattenNode(nodesMap)(headNode, edgesFromMapStart)).getOrElse(List())
-    CanonicalProcess(process.metaData, process.properties.exceptionHandler, nodes)
+    val rootsUnflattened = findRootNodes(process).map(headNode => unFlattenNode(nodesMap, false)(headNode, edgesFromMapStart))
+    val nodes = rootsUnflattened.headOption.getOrElse(List())
+    CanonicalProcess(process.metaData, process.properties.exceptionHandler, nodes, if (rootsUnflattened.isEmpty) None else Some(rootsUnflattened.tail))
   }
 
   private def findRootNodes(process: DisplayableProcess): List[NodeData] =
-    process.nodes.filterNot(n => process.edges.exists(_.to == n.id))
+    process.nodes.filter(n => n.isInstanceOf[StartingNodeData])
 
-  private def unFlattenNode(nodesMap: Map[String, NodeData])
+  private def unFlattenNode(nodesMap: Map[String, NodeData], stopAtJoin: Boolean)
                            (n: NodeData, edgesFromMap: Map[String, List[displayablenode.Edge]]): List[canonicalnode.CanonicalNode] = {
     def unflattenEdgeEnd(id: String, e: displayablenode.Edge): List[canonicalnode.CanonicalNode] = {
-      unFlattenNode(nodesMap)(nodesMap(e.to), edgesFromMap.updated(id, edgesFromMap(id).filterNot(_ == e)))
+      unFlattenNode(nodesMap, true)(nodesMap(e.to), edgesFromMap.updated(id, edgesFromMap(id).filterNot(_ == e)))
     }
 
     def getEdges(id: String): List[Edge] = edgesFromMap.getOrElse(id, List())
@@ -165,6 +175,10 @@ object ProcessConverter {
         //TODO error handling?
         val nexts = getEdges(data.id).map(e => e.edgeType.get.asInstanceOf[SubprocessOutput].name -> unflattenEdgeEnd(data.id, e)).toMap
         canonicalnode.Subprocess(data, nexts) :: Nil
+      case data: Join if stopAtJoin =>
+        //TODO JOIN: handling different edge types
+        val dummyId = "dummy-"+UUID.randomUUID().toString
+        canonicalnode.FlatNode(BranchEndData(dummyId, BranchEndDefinition(dummyId, data.id))) :: Nil
 
     }
     (handleNestedNodes orElse (handleDirectNodes andThen { n =>

@@ -141,13 +141,14 @@ export class NodeDetailsContent extends React.Component {
           </div>
         )
 
+      case 'Join':
       case 'CustomNode':
         return (
           <div className="node-table-body">
             {this.createField("input", "Id", "id")}
             {_.has(this.state.editedNode, 'outputVar') ? this.createField("input", "Output", "outputVar") : null}
             {this.createReadonlyField("input", "Node type", "nodeType")}
-            {this.state.editedNode.parameters.map((param, index) => {
+            {(this.state.editedNode.parameters || this.state.editedNode.ref.parameters).map((param, index) => {
               return (
                 <div className="node-block" key={this.props.node.id + param.name + index}>
                   {this.createExpressionListField(param.name, "expression", `parameters[${index}]`)}

@@ -39,16 +39,17 @@ import pl.touk.nussknacker.engine.compile.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.compile.ValidationContext
 import pl.touk.nussknacker.engine.compiledgraph.part._
 import pl.touk.nussknacker.engine.definition.CustomNodeInvoker
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation, FlinkSink, FlinkSource}
+import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.util.ContextInitializingFunction
 import pl.touk.nussknacker.engine.flink.util.metrics.InstantRateMeterWithCount
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.graph.node.{BranchEndData, BranchEndDefinition, Join}
 import pl.touk.nussknacker.engine.process.FlinkProcessRegistrar._
 import pl.touk.nussknacker.engine.process.compiler.{CompiledProcessWithDeps, FlinkProcessCompiler}
 import pl.touk.nussknacker.engine.process.util.StateConfiguration.RocksDBStateBackendConfig
 import pl.touk.nussknacker.engine.process.util.{MetaDataExtractor, Serializers, StateConfiguration, UserClassLoader}
-import pl.touk.nussknacker.engine.splittedgraph.end.{DeadEnd, End, NormalEnd}
+import pl.touk.nussknacker.engine.splittedgraph.end.{BranchEnd, DeadEnd, End, NormalEnd}
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.{NextNode, PartRef, SplittedNode}
 import pl.touk.nussknacker.engine.util.{SynchronousExecutionContext, ThreadUtils}
 import pl.touk.nussknacker.engine.util.metrics.RateMeter
@@ -59,7 +60,7 @@ import scala.concurrent.duration._
 import scala.language.implicitConversions
 import scala.util.{Failure, Success}
 import scala.util.control.NonFatal
-
+import shapeless.syntax.typeable._
 
 class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => (ClassLoader) => CompiledProcessWithDeps,
                             eventTimeMetricDuration: FiniteDuration,
@@ -124,9 +125,41 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => (Cla
       case _ => logger.info("Using default state backend")
     }
 
-    registerSourcePart(processWithDeps.source)
+    {
+      val branchEnds = processWithDeps.sources.toList
+        .collect { case e: SourcePart => e }
+        .map(registerSourcePart).foldLeft(Map[BranchEndDefinition, DataStream[InterpretationResult]]()){ _ ++ _}
 
-    def registerSourcePart(part: SourcePart): Unit = {
+      //TODO JOIN - here we need recursion for nested joins
+      branchEnds.groupBy(_._1.joinId).foreach {
+        case (joinId, inputs) =>
+          val joinPart = processWithDeps.sources.toList
+            .collect { case e: JoinPart if e.id == joinId => e } match {
+            case head::Nil => head
+            case Nil => throw new IllegalArgumentException(s"Invalid process structure, no $joinId defined")
+            case moreThanOne => throw new IllegalArgumentException(s"Invalid process structure, more than one $joinId defined: $moreThanOne")
+          }
+
+          val executor = joinPart.customNodeInvoker.asInstanceOf[CustomNodeInvoker[FlinkCustomJoinTransformation@unchecked]]
+          val customNodeContext = FlinkCustomNodeContext(metaData,
+            joinId, processWithDeps.processTimeout, classLoader => compiledProcessWithDeps(classLoader).exceptionHandler, processWithDeps.signalSenders)
+
+
+          val outputVar = joinPart.node.data.asInstanceOf[Join].outputVar.get
+          val newContextFun = (ir: ValueWithContext[_]) => ir.context.withVariable(outputVar, ir.value)
+
+          val newStart = executor.run(() => compiledProcessWithDeps(UserClassLoader.get(joinId)).customNodeInvokerDeps)
+            .transform(inputs
+              .map(kv => (kv._1.id, kv._2)), customNodeContext).map(newContextFun)
+
+          val afterSplit = wrapAsync(newStart, joinPart.node, joinPart.validationContext, "branchInterpretation", None)
+              .split(SplitFunction)
+
+          registerParts(afterSplit, joinPart.nextParts, joinPart.ends)
+      }
+    }
+
+    def registerSourcePart(part: SourcePart): Map[BranchEndDefinition, DataStream[InterpretationResult]] = {
       //TODO: get rid of cast (but how??)
       val source = part.obj.asInstanceOf[FlinkSource[Any]]
 
@@ -149,21 +182,25 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => (Cla
 
       val asyncAssigned = wrapAsync(withAssigned, part.node, part.validationContext, "interpretation").split(SplitFunction)
 
-      registerParts(asyncAssigned, part.nextParts, part.ends)
+      val branchEnds = part.ends.flatMap(_.cast[BranchEnd]).map(be =>  BranchEndDefinition(be.nodeId, be.joinId) ->
+        asyncAssigned.select(be.nodeId)).toMap
+
+      registerParts(asyncAssigned, part.nextParts, part.ends) ++ branchEnds
     }
 
     def registerParts(start: SplitStream[InterpretationResult],
                       nextParts: Seq[SubsequentPart],
-                      ends: Seq[End]) : Unit = {
-      nextParts.foreach { part =>
-        registerSubsequentPart(start.select(part.id), part)
-      }
+                      ends: Seq[End]) : Map[BranchEndDefinition, DataStream[InterpretationResult]] = {
+
       start.select(EndId)
         .addSink(new EndRateMeterFunction(ends))
+      nextParts.map { part =>
+        registerSubsequentPart(start.select(part.id), part)
+      }.foldLeft(Map[BranchEndDefinition, DataStream[InterpretationResult]]()){_ ++ _}
     }
 
     def registerSubsequentPart[T](start: DataStream[InterpretationResult],
-                                  processPart: SubsequentPart): Unit =
+                                  processPart: SubsequentPart): Map[BranchEndDefinition, DataStream[InterpretationResult]] =
       processPart match {
 
         case part@SinkPart(sink: FlinkSink, sinkDef, validationContext) => {
@@ -189,7 +226,9 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => (Cla
             }
           }
           withSinkAdded.name(s"${metaData.id}-${part.id}-sink")
+          Map()
         }
+
         case part:SinkPart =>
           throw new IllegalArgumentException(s"Process can only use flink sinks, instead given: ${part.obj}")
         case SplitPart(splitNode, validationContext, nexts) =>
@@ -206,7 +245,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => (Cla
                 value
               })
           }).split(_ => nextIds)
-          nexts.foreach {
+          nexts.map {
             //TODO: is this part really ok && needed?
             case NextWithParts(NextNode(nextNode), parts, ends) =>
               val beforeAsync = newStart.select(nextNode.id).map(_.finalContext)
@@ -216,7 +255,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => (Cla
             case NextWithParts(PartRef(id), parts, ends) =>
               val splitted = newStart.select(id).split(SplitFunction)
               registerParts(splitted, parts, ends)
-          }
+          }.foldLeft(Map[BranchEndDefinition, DataStream[InterpretationResult]]()){_ ++ _}
         case part@CustomNodePart(executor:
           CustomNodeInvoker[FlinkCustomStreamTransformation@unchecked],
               node, validationContext, nextValidationContext, nextParts, ends) =>
@@ -471,6 +510,7 @@ object FlinkProcessRegistrar {
         val baseGroup = end match {
           case normal: NormalEnd => parentGroupForNormalEnds
           case dead: DeadEnd => parentGroupForDeadEnds
+          case e: BranchEnd => parentGroupForDeadEnds
         }
         InstantRateMeterWithCount.register(baseGroup.addGroup(end.nodeId))
       }
@@ -479,6 +519,7 @@ object FlinkProcessRegistrar {
         val reference = end match {
           case NormalEnd(nodeId) =>  EndReference(nodeId)
           case DeadEnd(nodeId) =>  DeadEndReference(nodeId)
+          case BranchEnd(nodeId, joinId) => JoinReference(nodeId, joinId)
         }
         reference -> registerRateMeter(end)
       }.toMap[PartReference, RateMeter]
@@ -499,6 +540,8 @@ object FlinkProcessRegistrar {
     override def select(interpretationResult: InterpretationResult): Iterable[String] = {
       Collections.singletonList(interpretationResult.reference match {
         case NextPartReference(id) => id
+        //TODO JOIN - this is a bit weird, probably refactoring of splitted process structures will help...
+        case JoinReference(id, _) => id
         case _: EndingReference => EndId
       })
     }

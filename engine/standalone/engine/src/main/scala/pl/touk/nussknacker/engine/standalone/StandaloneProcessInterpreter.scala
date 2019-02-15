@@ -55,7 +55,7 @@ object StandaloneProcessInterpreter {
       //FIXME: timeout
       modelData.modelClassLoader.classLoader, 10 seconds
     ).andThen { compiledProcess =>
-      val source = compiledProcess.parts.source.obj.asInstanceOf[StandaloneSource[Any]]
+      val source = compiledProcess.parts.sources.head.asInstanceOf[SourcePart].obj.asInstanceOf[StandaloneSource[Any]]
       StandaloneInvokerCompiler(compiledProcess).compile.map { invoker =>
         StandaloneProcessInterpreter(contextPreparer.prepare(process.id), source, invoker, compiledProcess.lifecycle, modelData)
       }
@@ -100,7 +100,7 @@ object StandaloneProcessInterpreter {
         val transformer = executor.run(() => compiledProcess.customNodeInvokerDeps)
         result.map(transformer.createTransformation(node.data.outputVar.get))
       case a: CustomNodePart => Invalid(NonEmptyList.of(UnsupportedPart(a.id)))
-
+      case a:JoinPart => Invalid(NonEmptyList.of(UnsupportedPart(a.id)))
     }
 
     private def compilePartInvokers(parts: List[SubsequentPart]) : CompilationResult[Map[String, InterpreterType]] =
@@ -120,6 +120,8 @@ object StandaloneProcessInterpreter {
                   Future.successful(Right(List(ir)))
                 case _: DeadEndReference =>
                   Future.successful(Right(Nil))
+                case _: JoinReference =>
+                  Future.successful(Right(Nil))
                 case NextPartReference(id) =>
                   partsInvokers.getOrElse(id, throw new Exception("Unknown reference"))(ir.finalContext, ec)
               }
@@ -129,7 +131,7 @@ object StandaloneProcessInterpreter {
       }
     }
 
-    def compile: ValidatedNel[ProcessCompilationError, InterpreterType] = compiledPartInvoker(compiledProcess.parts.source)
+    def compile: ValidatedNel[ProcessCompilationError, InterpreterType] = compiledPartInvoker(compiledProcess.parts.sources.head)
 
   }
 

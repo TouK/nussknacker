@@ -21,7 +21,7 @@ class UiProcessMarshallerSpec extends FlatSpec with Matchers {
        |            "ref" : { "typ": "kafka-transaction", "parameters": [ { "name": "topic", "expression": { "language": "spel", "expression": "in.topic" }}]},
        |            "additionalFields": { "description": "$someNodeDescription"}
        |        }
-       |    ]
+       |    ],"additionalBranches":[]
        |}
       """.stripMargin
 

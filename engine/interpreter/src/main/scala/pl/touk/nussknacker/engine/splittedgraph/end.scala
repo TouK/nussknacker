@@ -10,4 +10,7 @@ object end {
 
   case class DeadEnd(nodeId: String) extends End
 
+  case class BranchEnd(nodeId: String, joinId: String) extends End
+
+
 }

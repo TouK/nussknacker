@@ -1,31 +1,40 @@
 package pl.touk.nussknacker.engine.canonize
 
 import cats.Applicative
-import cats.data.ValidatedNel
+import cats.data.{NonEmptyList, ValidatedNel}
 import cats.instances.list._
 import pl.touk.nussknacker.engine.canonicalgraph._
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError._
 import pl.touk.nussknacker.engine.compile.ProcessUncanonizationError
 import pl.touk.nussknacker.engine.graph._
+import pl.touk.nussknacker.engine.graph.node.{BranchEnd, BranchEndData, BranchEndDefinition}
 
 object ProcessCanonizer {
   import cats.syntax.apply._
   import cats.Traverse.ops._
+  import MaybeArtificial.applicative
 
   def canonize(process: EspProcess): CanonicalProcess = {
     CanonicalProcess(
       process.metaData,
       process.exceptionHandlerRef,
-      NodeCanonizer.canonize(process.root)
+      NodeCanonizer.canonize(process.roots.head),
+      Some(process.roots.tail.map(NodeCanonizer.canonize))
     )
   }
 
   def uncanonize(canonicalProcess: CanonicalProcess): ValidatedNel[ProcessUncanonizationError, EspProcess] =
     uncanonizeArtificial(canonicalProcess).toValidNel
 
-  def uncanonizeArtificial(canonicalProcess: CanonicalProcess): MaybeArtificial[EspProcess] =
-    uncanonizeSource(canonicalProcess.nodes).map(
-      EspProcess(canonicalProcess.metaData, canonicalProcess.exceptionHandlerRef, _))
+  def uncanonizeArtificial(canonicalProcess: CanonicalProcess): MaybeArtificial[EspProcess] = {
+
+    val allBranches = NonEmptyList.of(canonicalProcess.nodes, canonicalProcess.additionalBranches.getOrElse(List()).toArray: _*)
+
+    val branches: MaybeArtificial[NonEmptyList[pl.touk.nussknacker.engine.graph.node.SourceNode]]
+      = allBranches.map(uncanonizeSource).sequence
+
+    branches.map(bList => EspProcess(canonicalProcess.metaData, canonicalProcess.exceptionHandlerRef, bList))
+  }
 
   private def uncanonizeSource(canonicalNode: List[canonicalnode.CanonicalNode]): MaybeArtificial[node.SourceNode] =
     canonicalNode match {
@@ -42,6 +51,9 @@ object ProcessCanonizer {
   private def uncanonize(previous: canonicalnode.CanonicalNode,
                          canonicalNode: List[canonicalnode.CanonicalNode]): MaybeArtificial[node.SubsequentNode] =
     canonicalNode match {
+      case canonicalnode.FlatNode(data: node.BranchEndData) :: Nil =>
+        new MaybeArtificial(node.BranchEnd(data), Nil)
+        
       case canonicalnode.FlatNode(data: node.EndingNodeData) :: Nil =>
         new MaybeArtificial(node.EndingNode(data), Nil)
 
@@ -112,6 +124,8 @@ object NodeCanonizer {
         canonicalnode.SplitNode(bare, nexts.map(canonize)) :: Nil
       case node.SubprocessNode(input, nexts) =>
         canonicalnode.Subprocess(input, nexts.mapValues(canonize)) :: Nil
+      case BranchEnd(e@BranchEndData(_, BranchEndDefinition(id, joinId))) =>
+        canonicalnode.FlatNode(e) :: Nil
     }
 
 }

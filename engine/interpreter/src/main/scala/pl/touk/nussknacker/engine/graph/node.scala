@@ -7,7 +7,7 @@ import sink.SinkRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
-import pl.touk.nussknacker.engine.graph.source.SourceRef
+import pl.touk.nussknacker.engine.graph.source.{JoinRef, SourceRef}
 import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 
@@ -16,12 +16,16 @@ import scala.util.Try
 
 object node {
 
-  sealed trait Node {
+  //TODO JOIN: this is a bit artificial, as we need it to handle BranchEnd - which is not 'normal' node.
+  //Tree structures probably should be phased out...
+  sealed trait Node
+
+  sealed trait NodeWithData extends Node {
     def data: NodeData
     def id: String = data.id
   }
 
-  sealed trait OneOutputNode extends Node {
+  sealed trait OneOutputNode extends NodeWithData {
     def next: SubsequentNode
   }
 
@@ -44,7 +48,10 @@ object node {
 
   case class EndingNode(data: EndingNodeData) extends SubsequentNode
 
+  case class BranchEnd(data: BranchEndData) extends SubsequentNode
+
   trait UserDefinedAdditionalNodeFields
+
   sealed trait NodeData {
     def id: String
     def additionalFields: Option[UserDefinedAdditionalNodeFields]
@@ -65,8 +72,19 @@ object node {
 
   sealed trait StartingNodeData extends NodeData
 
-  case class Source(id: String, ref: SourceRef, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends StartingNodeData with WithComponent {
+  sealed trait SourceNodeData extends StartingNodeData
+
+  sealed trait WithParameters extends NodeData {
+    def parameters: List[Parameter]
+  }
+
+  case class Source(id: String, ref: SourceRef, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends SourceNodeData with WithComponent {
     override val componentId = ref.typ
+  }
+
+  case class Join(id: String, ref: JoinRef, outputVar: Option[String], additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends StartingNodeData with WithComponent with WithParameters {
+    override val componentId = ref.typ
+    override def parameters: List[Parameter] = ref.parameters
   }
 
   case class Filter(id: String, expression: Expression, isDisabled: Option[Boolean] = None,
@@ -82,7 +100,8 @@ object node {
     override val componentId = service.id
   }
 
-  case class CustomNode(id: String, outputVar: Option[String], nodeType: String, parameters: List[Parameter], additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends OneOutputSubsequentNodeData with WithComponent {
+  case class CustomNode(id: String, outputVar: Option[String], nodeType: String, parameters: List[Parameter], additionalFields: Option[UserDefinedAdditionalNodeFields] = None)
+    extends OneOutputSubsequentNodeData with WithComponent with WithParameters {
     override val componentId = nodeType
   }
 
@@ -91,6 +110,12 @@ object node {
   case class Processor(id: String, service: ServiceRef, isDisabled: Option[Boolean] = None, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends OneOutputSubsequentNodeData with EndingNodeData with Disableable with WithComponent {
     override val componentId = service.id
   }
+
+  case class BranchEndData(id: String, definition: BranchEndDefinition) extends EndingNodeData {
+    override val additionalFields: Option[UserDefinedAdditionalNodeFields] = None
+  }
+
+  case class BranchEndDefinition(id: String, joinId: String)
 
   case class Sink(
                    id: String,
@@ -116,7 +141,7 @@ object node {
   case class SubprocessInputDefinition(id: String,
                                        parameters: List[SubprocessParameter],
                                        additionalFields: Option[UserDefinedAdditionalNodeFields] = None)
-    extends StartingNodeData
+    extends SourceNodeData
 
   //this is used only in subprocess definition
   case class SubprocessOutputDefinition(id: String, outputName: String, additionalFields: Option[UserDefinedAdditionalNodeFields] = None)

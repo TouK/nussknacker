@@ -21,7 +21,7 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
   val subprocess = CanonicalProcess(MetaData("subProcess1", StreamMetaData(), isSubprocess = true), null,
     List(
       canonicalnode.FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("ala", SubprocessClazzRef[String])))),
-      canonicalnode.FlatNode(CustomNode("f1", None, otherExistingStreamTransformer2, List.empty)), FlatNode(SubprocessOutputDefinition("out1", "output")))
+      canonicalnode.FlatNode(CustomNode("f1", None, otherExistingStreamTransformer2, List.empty)), FlatNode(SubprocessOutputDefinition("out1", "output"))), None
   )
 
   val subprocessDetails = toDetails(ProcessConverter.toDisplayable(subprocess, TestProcessingTypes.Streaming))

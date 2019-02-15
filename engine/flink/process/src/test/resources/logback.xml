@@ -6,7 +6,7 @@
         </encoder>
     </appender>
 
-    <logger name="pl.touk.nussknacker.engine.sql" level="INFO"/>
+    <logger name="pl.touk.nussknacker.engine.sql" level="WARN"/>
     <root level="WARN">
         <appender-ref ref="STDOUT" />
     </root>

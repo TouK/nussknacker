@@ -6,16 +6,16 @@ import pl.touk.nussknacker.engine.split.ProcessSplitter.NextWithParts
 
 object splittednode {
 
-  sealed trait SplittedNode[T <: NodeData] {
+  sealed trait SplittedNode[+T <: NodeData] {
     def data: T
     def id: String = data.id
   }
 
-  sealed trait OneOutputNode[T <: NodeData] extends SplittedNode[T] {
+  sealed trait OneOutputNode[+T <: NodeData] extends SplittedNode[T] {
     def next: Next
   }
 
-  case class SourceNode(data: StartingNodeData, next: Next) extends OneOutputNode[StartingNodeData]
+  case class SourceNode[+T<: StartingNodeData](data: T, next: Next) extends OneOutputNode[T]
 
   sealed trait SubsequentNode[T <: NodeData] extends SplittedNode[T]
 

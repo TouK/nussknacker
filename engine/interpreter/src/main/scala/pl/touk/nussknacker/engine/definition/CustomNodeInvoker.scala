@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
-import pl.touk.nussknacker.engine.graph.node.CustomNode
+import pl.touk.nussknacker.engine.graph.node.{CustomNode, WithParameters}
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 import pl.touk.nussknacker.engine.types.EspTypeUtils
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
@@ -18,7 +18,7 @@ trait CustomNodeInvoker[T] {
   def run(lazyDeps: () => CustomNodeInvokerDeps): T
 }
 
-private[definition] class CustomNodeInvokerImpl[T](executor: ObjectWithMethodDef, metaData: MetaData, node: SplittedNode[CustomNode])
+private[definition] class CustomNodeInvokerImpl[T](executor: ObjectWithMethodDef, metaData: MetaData, node: WithParameters)
     extends CustomNodeInvoker[T] {
 
   override def run(lazyDeps: () => CustomNodeInvokerDeps) : T = {
@@ -44,13 +44,13 @@ private[definition] class CustomNodeInvokerImpl[T](executor: ObjectWithMethodDef
 
 private[definition] case class CompilerLazyInterpreter[T](lazyDeps: () => CustomNodeInvokerDeps,
                                    metaData: MetaData,
-                                   node: SplittedNode[CustomNode], paramName: String) extends LazyInterpreter[T] {
+                                   node: WithParameters, paramName: String) extends LazyInterpreter[T] {
 
   override def createInterpreter = (ec: ExecutionContext, context: Context) =>
     createInterpreter(ec, lazyDeps())(context)
 
   private[definition] def createInterpreter(ec: ExecutionContext, deps: CustomNodeInvokerDeps): (Context) => Future[T] = {
-    val parameter = node.data.parameters.find(_.name == paramName)
+    val parameter = node.parameters.find(_.name == paramName)
       .getOrElse(throw new IllegalArgumentException(s"Cannot find param $paramName")).expression
 
     val compiledExpression = deps.expressionCompiler
@@ -82,7 +82,7 @@ private[definition] case class CompilerLazyInterpreter[T](lazyDeps: () => Custom
 
 object CustomNodeInvoker {
 
-  def apply[T](executor: ObjectWithMethodDef, metaData: MetaData, node: SplittedNode[CustomNode]) =
+  def apply[T](executor: ObjectWithMethodDef, metaData: MetaData, node: WithParameters) =
     new CustomNodeInvokerImpl[T](executor, metaData, node)
 
 }

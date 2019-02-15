@@ -79,7 +79,7 @@ class SubprocessSpec extends FlatSpec with Matchers {
         canonicalnode.FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
         canonicalnode.FilterNode(Filter("f1", "#param == 'a'"),
         List(canonicalnode.FlatNode(Sink("end1", SinkRef("monitor", List()), Some("'deadEnd'"))))
-      ), canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "output"))))
+      ), canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "output"))), None)
 
     val subprocessWithSplit = CanonicalProcess(MetaData("splitSubprocess", StreamMetaData()), null,
       List(
@@ -88,14 +88,14 @@ class SubprocessSpec extends FlatSpec with Matchers {
           List(canonicalnode.FlatNode(Sink("end1", SinkRef("monitor", List())))),
           List(canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "output")))
         ))
-      ))
+      ), None)
 
     val subprocessWithGlobalVar = CanonicalProcess(MetaData("subProcessGlobal", StreamMetaData()), null,
           List(
             canonicalnode.FlatNode(SubprocessInputDefinition("start", List())),
             canonicalnode.FilterNode(Filter("f1", "#processHelper.constant == 4"),
             List()
-          ), canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "output"))))
+          ), canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "output"))), None)
 
     val resolved = SubprocessResolver(Set(subprocessWithSplit, subprocess, subprocessWithGlobalVar)).resolve(ProcessCanonizer.canonize(espProcess))
       .andThen(ProcessCanonizer.uncanonize)

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.build
 
+import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{MetaData, StandaloneMetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.GraphBuilder.Creator
@@ -28,7 +29,7 @@ class ProcessMetaDataBuilder private[build](metaData: MetaData) {
 
     def source(id: String, typ: String, params: (String, Expression)*): ProcessGraphBuilder =
       new ProcessGraphBuilder(GraphBuilder.source(id, typ, params: _*).creator
-          .andThen(EspProcess(metaData, exceptionHandlerRef, _)))
+          .andThen(r => EspProcess(metaData, exceptionHandlerRef, NonEmptyList.of(r))))
 
     class ProcessGraphBuilder private[ProcessExceptionHandlerBuilder](val creator: Creator[EspProcess])
       extends GraphBuilder[EspProcess] {

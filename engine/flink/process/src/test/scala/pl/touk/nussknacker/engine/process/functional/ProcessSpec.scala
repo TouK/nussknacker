@@ -2,9 +2,11 @@ package pl.touk.nussknacker.engine.process.functional
 
 import java.util.Date
 
+import cats.data.NonEmptyList
 import org.scalatest.{FlatSpec, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.{EndingNode, Sink, Source, SourceNode}
@@ -47,7 +49,7 @@ class ProcessSpec extends FunSuite with Matchers {
       Source("id", SourceRef("input", List.empty)),
       EndingNode(Sink("out", SinkRef("monitor", List.empty), isDisabled = Some(true)))
     )
-    val process = EspProcess(MetaData("", StreamMetaData()), ExceptionHandlerRef(List.empty), processRoot)
+    val process = EspProcess(MetaData("", StreamMetaData()), ExceptionHandlerRef(List.empty), NonEmptyList.of(processRoot))
 
     val data = List(
       SimpleRecord("1", 3, "a", new Date(0))
@@ -72,6 +74,25 @@ class ProcessSpec extends FunSuite with Matchers {
 
     MockService.data shouldBe List(5)
 
+
+  }
+
+  test("should do simple join") {
+
+    val process = EspProcess(MetaData("proc1", StreamMetaData()), ExceptionHandlerRef(List()), NonEmptyList.of(
+      GraphBuilder.source("id", "intInputWithParam", "param" -> "#processHelper.add(2, 3)")
+        .branchEnd("end1", "join1"),
+      GraphBuilder.source("id2", "input")
+        .branchEnd("end2", "join1"),
+      GraphBuilder.branch("join1", "sampleJoin", Some("input33")).processorEnd("proc2", "logService", "all" -> "#input33")
+    ))
+
+    val rec = SimpleRecord("1", 3, "a", new Date(0))
+    val data = List(rec)
+
+    processInvoker.invoke(process, data)
+
+    MockService.data shouldBe List(5, rec)
 
   }
 }

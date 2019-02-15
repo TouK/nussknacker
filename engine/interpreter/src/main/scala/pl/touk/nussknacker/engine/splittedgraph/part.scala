@@ -12,7 +12,7 @@ object part {
     def id: String = node.id
   }
 
-  case class SourcePart(node: SourceNode, nextParts: List[SubsequentPart], ends: List[End]) extends ProcessPart {
+  case class SourcePart(node: SourceNode[StartingNodeData], nextParts: List[SubsequentPart], ends: List[End]) extends ProcessPart {
     override type T = StartingNodeData
   }
 
@@ -28,7 +28,6 @@ object part {
 
   case class SinkPart(node: EndingNode[Sink]) extends SubsequentPart {
     override type T = Sink
-
   }
 
 }

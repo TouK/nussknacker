@@ -51,9 +51,12 @@ object ProcessTestData {
         .withSinkFactory(existingSinkFactory)
         .withService(existingServiceId)
         .withService(otherExistingServiceId)
-        .withCustomStreamTransformer(existingStreamTransformer, classOf[String],  CustomTransformerAdditionalData(Set("query1", "query2"), clearsContext = false))
-        .withCustomStreamTransformer(otherExistingStreamTransformer, classOf[String], CustomTransformerAdditionalData(Set("query3"), clearsContext = false))
-        .withCustomStreamTransformer(otherExistingStreamTransformer2, classOf[String], CustomTransformerAdditionalData(Set("query4"), clearsContext = false))
+        .withCustomStreamTransformer(existingStreamTransformer, classOf[String],  CustomTransformerAdditionalData(Set("query1", "query2"),
+          clearsContext = false, manyInputs = false))
+        .withCustomStreamTransformer(otherExistingStreamTransformer, classOf[String], CustomTransformerAdditionalData(Set("query3"),
+          clearsContext = false, manyInputs = false))
+        .withCustomStreamTransformer(otherExistingStreamTransformer2, classOf[String], CustomTransformerAdditionalData(Set("query4"),
+          clearsContext = false, manyInputs = false))
 
   val validator = ProcessValidator.default(ProcessDefinitionBuilder.withEmptyObjects(processDefinition))
 
@@ -178,14 +181,14 @@ object ProcessTestData {
   }
 
   val emptySubprocess = {
-    CanonicalProcess(MetaData("sub1", StreamMetaData(None, None, None), isSubprocess = true, None, Map()), ExceptionHandlerRef(List()), List())
+    CanonicalProcess(MetaData("sub1", StreamMetaData(None, None, None), isSubprocess = true, None, Map()), ExceptionHandlerRef(List()), List(), None)
   }
 
   val sampleSubprocessOneOut = {
     CanonicalProcess(MetaData("sub1", StreamMetaData(), isSubprocess = true), ExceptionHandlerRef(List()), List(
       FlatNode(SubprocessInputDefinition("in", List(SubprocessParameter("param1", SubprocessClazzRef[String])))),
       canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "output"))
-    ))
+    ), None)
   }
 
   val sampleSubprocess = {
@@ -195,7 +198,7 @@ object ProcessTestData {
         List(FlatNode(SubprocessOutputDefinition("out", "out1"))),
         List(FlatNode(SubprocessOutputDefinition("out2", "out2")))
       ))
-    ))
+    ), Some(List()))
   }
 
   val sampleSubprocess2 = {
@@ -206,7 +209,7 @@ object ProcessTestData {
         List(FlatNode(SubprocessOutputDefinition("out2", "out2"))),
         List(FlatNode(SubprocessOutputDefinition("out3", "out2")))
       ))
-    ))
+    ), Some(List()))
   }
 
   def validProcessWithSubprocess(processName: ProcessName, subprocess: CanonicalProcess=sampleSubprocessOneOut): ProcessUsingSubprocess = {

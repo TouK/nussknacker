@@ -6,4 +6,6 @@ object source {
 
   case class SourceRef(typ: String, parameters: List[Parameter])
 
+  case class JoinRef(typ: String, parameters: List[Parameter])
+
 }

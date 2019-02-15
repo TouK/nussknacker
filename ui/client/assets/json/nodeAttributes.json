@@ -104,6 +104,13 @@
       "color": "white"
     }
   },
+  "Join": {
+    "name": "Join",
+    "styles": {
+      "fill": "#1aada6",
+      "color": "white"
+    }
+  },
   "_group": {
     "name": "Group",
     "notEditable": true,

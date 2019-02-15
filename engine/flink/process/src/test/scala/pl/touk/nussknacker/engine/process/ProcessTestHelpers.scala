@@ -19,7 +19,7 @@ import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{LazyInterpreter, _}
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionHandler}
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation, FlinkSink, FlinkSourceFactory}
+import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.state.WithExceptionHandler
 import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
 import pl.touk.nussknacker.engine.flink.util.exception._
@@ -83,7 +83,8 @@ object ProcessTestHelpers {
       override def customStreamTransformers(config: Config) = Map(
         "stateCustom" -> WithCategories(StateCustomNode),
         "customFilter" -> WithCategories(CustomFilter),
-        "customContextClear" -> WithCategories(CustomContextClear)
+        "customContextClear" -> WithCategories(CustomContextClear),
+        "sampleJoin" -> WithCategories(CustomJoin)
       )
 
       override def listeners(config: Config) = List()
@@ -176,10 +177,28 @@ object ProcessTestHelpers {
 
   }
 
-  case class CustomMap(lazyHandler: (ClassLoader)=>FlinkEspExceptionHandler)
+  object CustomJoin extends CustomStreamTransformer {
+
+    override val clearsContext = true
+
+    @MethodToInvoke(returnType = classOf[Void])
+    def execute(): FlinkCustomJoinTransformation =
+      new FlinkCustomJoinTransformation {
+        override def transform(inputs: Map[String, DataStream[InterpretationResult]], context: FlinkCustomNodeContext): DataStream[ValueWithContext[Any]] = {
+          val inputFromIr = (ir:InterpretationResult) => ValueWithContext(ir.finalContext.variables("input"), ir.finalContext)
+          inputs("end1")
+            .connect(inputs("end2"))
+            .map(inputFromIr, inputFromIr)
+        }
+      }
+
+  }
+
+
+  case class CustomMap(lazyHandler: ClassLoader => FlinkEspExceptionHandler)
     extends RichMapFunction[ValueWithContext[Any], ValueWithContext[Any]] with WithExceptionHandler {
 
-    override def map(value: ValueWithContext[Any]) = {
+    override def map(value: ValueWithContext[Any]): ValueWithContext[Any] = {
       //just using Exceptionhandler here to see that its injected properly
       try {
         value

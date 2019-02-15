@@ -80,7 +80,6 @@ class ProcessValidation(validators: Map[ProcessingType, ProcessValidator],
     validateIds(displayable)
       .add(validateDuplicates(displayable))
       .add(validateLooseNodes(displayable))
-      .add(validateDuplicateSource(displayable))
       .add(validateEdgeUniqueness(displayable))
       .add(validateAdditionalProcessProperties(displayable))
   }
@@ -120,18 +119,6 @@ class ProcessValidation(validators: Map[ProcessingType, ProcessValidator],
       .map(n => n.id -> List(PrettyValidationErrors.looseNode(uiValidationError)))
       .toMap
     ValidationResult.errors(looseNodes, List(), List())
-  }
-
-  private def validateDuplicateSource(displayableProcess: DisplayableProcess):ValidationResult = {
-    val inputs = displayableProcess.nodes
-      .filter(n => n.isInstanceOf[SubprocessInputDefinition] || n.isInstanceOf[Source])
-      .map(_.id)
-    if (inputs.size > 1) {
-      ValidationResult.errors(Map(), List(), List(PrettyValidationErrors.tooManySources(uiValidationError, inputs)))
-    } else {
-      ValidationResult.success
-    }
-
   }
 
   private def validateDuplicates(displayable: DisplayableProcess): ValidationResult = {

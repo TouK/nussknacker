@@ -15,12 +15,14 @@ abstract class CustomStreamTransformer {
   //maybe should be detected somehow by types??
   def clearsContext : Boolean = false
 
+  def canHaveManyInputs: Boolean = false
+
 }
 
 //TODO: refactor to pass user classloader explicitly
 trait LazyInterpreter[T] {
 
-  def createInterpreter: ((ExecutionContext, Context) => Future[T])
+  def createInterpreter: (ExecutionContext, Context) => Future[T]
 
   def syncInterpretationFunction : InterpretationResult => T
 

@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.definition._
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
-import pl.touk.nussknacker.engine.graph.node.{CustomNode, StartingNodeData, SubprocessInputDefinition}
+import pl.touk.nussknacker.engine.graph.node.{Sink => _, Source => _, _}
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.{EspProcess, evaluatedparam}
 import pl.touk.nussknacker.engine.split._
@@ -49,7 +49,7 @@ class ProcessCompiler( protected val classLoader: ClassLoader,
     super.compile(process)
   }
 
-  override protected def createCustomNodeInvoker(obj: ObjectWithMethodDef, metaData: MetaData, node: SplittedNode[graph.node.CustomNode]) =
+  override protected def createCustomNodeInvoker(obj: ObjectWithMethodDef, metaData: MetaData, node: graph.node.WithParameters) =
     CustomNodeInvoker[Any](obj, metaData, node)
 
   override protected def createFactory[T](obj: ObjectWithMethodDef) =
@@ -107,16 +107,16 @@ protected trait ProcessCompilerBase {
   private def compile(splittedProcess: SplittedProcess): CompilationResult[CompiledProcessParts] = {
     implicit val metaData = splittedProcess.metaData
     CompilationResult.map3(
-      CompilationResult(findDuplicates(splittedProcess.source).toValidatedNel),
+      CompilationResult(findDuplicates(splittedProcess.sources).toValidatedNel),
       CompilationResult(compile(splittedProcess.exceptionHandlerRef)),
-      compile(splittedProcess.source)
-    ) { (_, exceptionHandler, source) =>
-      CompiledProcessParts(splittedProcess.metaData, exceptionHandler, source)
+      splittedProcess.sources.map(compile).sequence
+    ) { (_, exceptionHandler, sources) =>
+      CompiledProcessParts(splittedProcess.metaData, exceptionHandler, sources)
     }
   }
 
-  private def findDuplicates(part: SourcePart): Validated[ProcessCompilationError, Unit] = {
-    val allNodes = NodesCollector.collectNodesInAllParts(part)
+  private def findDuplicates(parts: NonEmptyList[SourcePart]): Validated[ProcessCompilationError, Unit] = {
+    val allNodes = NodesCollector.collectNodesInAllParts(parts)
     val duplicatedIds =
       allNodes.map(_.id).groupBy(identity).collect {
         case (id, grouped) if grouped.size > 1 =>
@@ -155,7 +155,7 @@ protected trait ProcessCompilerBase {
           contextAfterCustomNode(node.data, nodeDefinition, ctx, additionalData.clearsContext)
         }
 
-        val compiledNode = customNodeDefinition.andThen(n => compileCustomNodeInvoker(node, n._1))
+        val compiledNode = customNodeDefinition.andThen(n => compileCustomNodeInvoker(node.data, n._1))
         val nextPartsValidation = sub.validate(node, ctx, nextCtx.toOption)
 
         CompilationResult.map4(
@@ -181,21 +181,42 @@ protected trait ProcessCompilerBase {
   }
 
   private def compile(source: SourcePart)
-                     (implicit metaData: MetaData): CompilationResult[compiledgraph.part.SourcePart] = {
+                     (implicit metaData: MetaData): CompilationResult[compiledgraph.part.StartPart] = {
     implicit val nodeId = NodeId(source.id)
 
-    val compiledSource = compile(source.node.data)
+    source.node.data match {
+      case sourceData:SourceNodeData =>
+        val compiledSource = compile(sourceData)
+        val initialCtx = computeInitialVariables(sourceData, compiledSource)
+        val validatedSource = sub.validate(source.node, initialCtx)
+        val typesForParts = validatedSource.typing
 
-    val initialCtx = computeInitialVariables(source.node.data, compiledSource)
-    val validatedSource = sub.validate(source.node, initialCtx)
-    val typesForParts = validatedSource.typing
+        CompilationResult.map3(validatedSource, compile(source.nextParts, typesForParts), CompilationResult(compiledSource)) { (_, nextParts, obj) =>
+          compiledgraph.part.SourcePart(obj,
+            splittednode.SourceNode(sourceData, source.node.next), initialCtx, nextParts, source.ends)
+        }
 
-    CompilationResult.map3(validatedSource, compile(source.nextParts, typesForParts), CompilationResult(compiledSource)) { (_, nextParts, obj) =>
-      compiledgraph.part.SourcePart(obj, source.node, initialCtx, nextParts, source.ends)
+
+      case join:Join =>
+
+        val ref = join.ref.typ
+        val customData = fromOption[ProcessCompilationError, (ParameterProviderT, CustomTransformerAdditionalData)](customStreamTransformers.get(ref), MissingCustomNodeExecutor(ref))
+                .toValidatedNel
+
+        val compiledJoin: ValidatedNel[ProcessCompilationError, CustomNodeInvoker[_]] = customData.andThen(d => compileCustomNodeInvoker(join, d._1))
+        //TODO JOIN: here we need to add handling ValidationContext, and input variables
+        val initialContext = ValidationContext(Map(join.outputVar.get -> Unknown) ++ globalVariableTypes)
+        val validatedSource = sub.validate(source.node, initialContext)
+        val typesForParts = validatedSource.typing
+
+        CompilationResult.map3(validatedSource, compile(source.nextParts, typesForParts), CompilationResult(compiledJoin)) { (_, nextParts, obj) =>
+          compiledgraph.part.JoinPart(obj, splittednode.SourceNode(join, source.node.next), initialContext, initialContext, nextParts, source.ends)
+        }
     }
+
   }
 
-  private def computeInitialVariables(nodeData: StartingNodeData, compiled: ValidatedNel[ProcessCompilationError, Source[_]])(implicit metaData: MetaData, nodeId: NodeId) : ValidationContext = ValidationContext(nodeData match {
+  private def computeInitialVariables(nodeData: SourceNodeData, compiled: ValidatedNel[ProcessCompilationError, Source[_]])(implicit metaData: MetaData, nodeId: NodeId) : ValidationContext = ValidationContext(nodeData match {
     case pl.touk.nussknacker.engine.graph.node.Source(_, ref, _) =>
       val resultType = compiled.toOption.flatMap[Source[_]](Option(_))
         .flatMap(_.cast[ReturningType]).map(_.returnType)
@@ -226,7 +247,7 @@ protected trait ProcessCompilerBase {
     }
   }
 
-  private def compile(nodeData: StartingNodeData)
+  private def compile(nodeData: SourceNodeData)
                      (implicit nodeId: NodeId,
                       metaData: MetaData): ValidatedNel[ProcessCompilationError, api.process.Source[Any]] = nodeData match {
     case pl.touk.nussknacker.engine.graph.node.Source(_, ref, _) =>
@@ -268,13 +289,14 @@ protected trait ProcessCompilerBase {
           .toValidatedNel
   }
 
-  private def compileCustomNodeInvoker(node: SplittedNode[CustomNode], nodeDefinition: ParameterProviderT)
+  private def compileCustomNodeInvoker(node: WithParameters, nodeDefinition: ParameterProviderT)
                                       (implicit nodeId: NodeId, metaData: MetaData): ValidatedNel[ProcessCompilationError, CustomNodeInvoker[Any]] = {
-    validateParameters(nodeDefinition, node.data.parameters.map(_.name))
+    validateParameters(nodeDefinition, node.parameters.map(_.name))
       .map(createCustomNodeInvoker(_, metaData, node))
   }
 
-  protected def createCustomNodeInvoker(obj: ParameterProviderT, metaData: MetaData, node: SplittedNode[graph.node.CustomNode]) : CustomNodeInvoker[Any]
+
+  protected def createCustomNodeInvoker(obj: ParameterProviderT, metaData: MetaData, node: graph.node.WithParameters) : CustomNodeInvoker[Any]
 
   protected def createFactory[T](obj: ParameterProviderT): ProcessObjectFactory[T]
 

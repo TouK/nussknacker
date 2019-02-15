@@ -76,11 +76,6 @@ object PrettyValidationErrors {
       s"Node is not connected to source, it cannot be saved properly", fieldName = None, errorType = NodeValidationErrorType.SaveNotAllowed)
   }
 
-  def tooManySources(typ: String, ids: List[String]): NodeValidationError = {
-    NodeValidationError(typ, "Too many inputs",
-      s"Process have multiple inputs: $ids, it cannot be saved properly", fieldName = None, errorType = NodeValidationErrorType.SaveNotAllowed)
-  }
-
   def disabledNode(typ: String): NodeValidationError = {
     NodeValidationError(typ, s"Node is disabled", "Deploying process with disabled node can have unexpected consequences", fieldName = None, errorType = NodeValidationErrorType.SaveAllowed)
   }

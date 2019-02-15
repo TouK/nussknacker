@@ -95,26 +95,6 @@ class ProcessValidationSpec extends FlatSpec with Matchers {
 
   }
 
-  it should "check for mulitple inputs" in {
-    val process = createProcess(
-      List(
-        Source("in", SourceRef("barSource", List())),
-        Sink("out", SinkRef("barSink", List())),
-        Sink("out2", SinkRef("barSink", List())),
-        Source("tooMany", SourceRef("barSource", List()))
-      ),
-      List(Edge("in", "out", None), Edge("tooMany", "out2", None))
-    )
-    validator.validate(process) should matchPattern {
-      case ValidationResult(
-        ValidationErrors(nodes, Nil, global::Nil),
-        ValidationWarnings.success,
-        //TODO: add typing results in this case
-        _
-      ) if nodes.isEmpty && global == PrettyValidationErrors.tooManySources(validator.uiValidationError, List("in", "tooMany")) =>
-    }
-  }
-
   it should "check for duplicated ids" in {
     val process = createProcess(
       List(

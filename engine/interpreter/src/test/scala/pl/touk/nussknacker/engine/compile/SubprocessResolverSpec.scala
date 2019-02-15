@@ -33,7 +33,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
     val subprocess =  CanonicalProcess(MetaData("subProcess1", StreamMetaData()), null,
       List(
         canonicalnode.FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("ala", SubprocessClazzRef[String])))),
-        canonicalnode.FilterNode(Filter("f1", "false"), List()), FlatNode(SubprocessOutputDefinition("out1", "output")))
+        canonicalnode.FilterNode(Filter("f1", "false"), List()), FlatNode(SubprocessOutputDefinition("out1", "output"))) , None
     )
 
     val resolvedValidated = SubprocessResolver(Set(subprocess)).resolve(process)
@@ -62,13 +62,13 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
         canonicalnode.FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
         canonicalnode.FilterNode(Filter("f1", "#param == 'a'"),
         List(canonicalnode.FlatNode(Sink("deadEnd", SinkRef("sink1", List()), Some("'deadEnd'"))))
-      ), canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "output"))))
+      ), canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "output"))), None)
 
     val nested =  CanonicalProcess(MetaData("subProcess1", StreamMetaData()), null,
       List(
         canonicalnode.FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
         canonicalnode.Subprocess(SubprocessInput("sub2",
-        SubprocessRef("subProcess2", List(Parameter("param", "#param")))), Map("output" -> List(FlatNode(SubprocessOutputDefinition("sub2Out", "output"))))))
+        SubprocessRef("subProcess2", List(Parameter("param", "#param")))), Map("output" -> List(FlatNode(SubprocessOutputDefinition("sub2Out", "output")))))), None
     )
 
     val resolvedValidated = SubprocessResolver(Set(subprocess, nested)).resolve(process)
@@ -98,7 +98,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
     val subprocess = CanonicalProcess(MetaData("subProcess1", StreamMetaData()), null,
       List(
         canonicalnode.FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
-        canonicalnode.FilterNode(Filter("f1", "false"), List()), FlatNode(SubprocessOutputDefinition("out1", "output")))
+        canonicalnode.FilterNode(Filter("f1", "false"), List()), FlatNode(SubprocessOutputDefinition("out1", "output"))), None
     )
 
     val resolvedValidated = SubprocessResolver(Set(subprocess)).resolve(process)
@@ -119,7 +119,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
       null,
       List(
         canonicalnode.FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("ala", SubprocessClazzRef[String])))),
-        canonicalnode.FilterNode(Filter("f1", "false"), List()), FlatNode(SubprocessOutputDefinition("out1", "badoutput")))
+        canonicalnode.FilterNode(Filter("f1", "false"), List()), FlatNode(SubprocessOutputDefinition("out1", "badoutput"))), None
     )
 
     val resolvedValidated = SubprocessResolver(Set(subprocess)).resolve(process)
@@ -150,7 +150,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
             List(FlatNode(SubprocessOutputDefinition("out2", "output")))
           )
         )
-      )
+      ), None
     )
 
     val resolvedValidated = SubprocessResolver(Set(subprocess)).resolve(process)
@@ -172,7 +172,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
           SubprocessInputDefinition("start", List(SubprocessParameter("ala", SubprocessClazzRef[String])))),
         canonicalnode.FilterNode(Filter("f1", "false"), List()),
         canonicalnode.FlatNode(Sink("disabledSubprocessMockedSink", SinkRef("disabledSubprocessMockedSink", List()), Some("'result'")))
-      )
+      ), None
     )
 
     val resolvedValidated = SubprocessResolver(Set(subprocess)).resolve(process)
@@ -202,7 +202,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
         canonicalnode.FlatNode(
           SubprocessInputDefinition("start", List(SubprocessParameter("ala", SubprocessClazzRef[String])))),
         FlatNode(SubprocessOutputDefinition("out1", "output"))
-      )
+      ), None
     )
     val subprocess = CanonicalProcess(MetaData("subProcess1", StreamMetaData(), isSubprocess = true),
       null,
@@ -211,11 +211,11 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
           SubprocessInputDefinition("start", List(SubprocessParameter("ala", SubprocessClazzRef[String])))),
         canonicalnode.FilterNode(Filter("f1", "false"), List()),
         FlatNode(SubprocessOutputDefinition("out1", "output"))
-      )
+      ), None
     )
     val resolver = SubprocessResolver(Set(subprocess, emptySubprocess))
     val pattern: PartialFunction[ValidatedNel[ProcessCompilationError, CanonicalProcess], _] = {
-      case Valid(CanonicalProcess(_, _, flatNodes)) =>
+      case Valid(CanonicalProcess(_, _, flatNodes, additional)) =>
         flatNodes(0) match {
           case FlatNode(Source(id, _, _)) =>
             id shouldBe "source"
@@ -256,7 +256,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
     val subprocess = CanonicalProcess(MetaData("subProcess1", StreamMetaData()), null,
       List(
         canonicalnode.FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("ala", SubprocessClazzRef[String])))),
-        canonicalnode.FilterNode(Filter("f1", "false"), List()), FlatNode(Sink("end", SinkRef("sink1", List()))))
+        canonicalnode.FilterNode(Filter("f1", "false"), List()), FlatNode(Sink("end", SinkRef("sink1", List())))) , None
     )
 
     val resolvedValidated = SubprocessResolver(Set(subprocess)).resolve(process)

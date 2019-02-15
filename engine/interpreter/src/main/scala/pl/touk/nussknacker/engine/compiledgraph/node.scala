@@ -15,6 +15,8 @@ object node {
 
   case class Sink(id: String, ref: String, endResult: Option[Expression], isDisabled: Boolean) extends Node
 
+  case class BranchEnd(id: String, joinId: String) extends Node
+
   case class VariableBuilder(id: String, varName: String, value: Either[Expression, List[Field]], next: Next) extends Node
 
   case class Processor(id: String, service: ServiceRef, next: Next, isDisabled: Boolean) extends Node

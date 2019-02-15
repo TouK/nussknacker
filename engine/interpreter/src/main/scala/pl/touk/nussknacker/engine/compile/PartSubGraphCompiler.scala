@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError._
 import pl.touk.nussknacker.engine.compile.dumb._
+import pl.touk.nussknacker.engine.compiledgraph.node
 import pl.touk.nussknacker.engine.compiledgraph.node.{Node, SubprocessEnd}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
@@ -77,11 +78,7 @@ private[compile] trait PartSubGraphCompilerBase {
     implicit val nodeId: NodeId = NodeId(n.id)
 
     val nodeResult : CompilationResult[compiledgraph.node.Node] = n match {
-      case splittednode.SourceNode(graph.node.Source(id, _, _), next) =>
-        compile(next, ctx).map(nwc => compiledgraph.node.Source(id, nwc))
-      case splittednode.SourceNode(SubprocessInputDefinition(id, _, _), next) =>
-        //TODO: should we recognize we're compiling only subprocess?
-        compile(next, ctx).map(nwc => compiledgraph.node.Source(id, nwc))
+      case splittednode.SourceNode(nodeData, next) => handleSourceNode(nodeData, ctx, next)
       case splittednode.OneOutputSubsequentNode(data, next) => compileSubsequent(ctx, data, next, nextCtx)
 
       case splittednode.SplitNode(bareNode, nexts) =>
@@ -104,8 +101,21 @@ private[compile] trait PartSubGraphCompilerBase {
             compiledgraph.node.Switch(id, realCompiledExpression, exprVal, cases, next)
           })
       case splittednode.EndingNode(data) => CompilationResult(compileEndingNode(ctx, data))
+
     }
     nodeResult.copy(typing = nodeResult.typing + (n.id -> ctx))
+  }
+
+  private def handleSourceNode(nodeData: StartingNodeData, ctx: ValidationContext, next: splittednode.Next): CompilationResult[node.Source] = {
+    nodeData match {
+      case graph.node.Source(id, _, _) =>
+        compile(next, ctx).map(nwc => compiledgraph.node.Source(id, nwc))
+      case graph.node.Join(id, _, _, _) =>
+        compile(next, ctx).map(nwc => compiledgraph.node.Source(id, nwc))
+      case SubprocessInputDefinition(id, _, _) =>
+        //TODO: should we recognize we're compiling only subprocess?
+        compile(next, ctx).map(nwc => compiledgraph.node.Source(id, nwc))
+    }
   }
 
   private def compileEndingNode(ctx: ValidationContext, data: EndingNodeData)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Node] = data match {
@@ -118,6 +128,10 @@ private[compile] trait PartSubGraphCompilerBase {
     case SubprocessOutputDefinition(id, name, disabled) =>
       //TODO: should we validate it's process?
       Valid(compiledgraph.node.Sink(id, name, None, disabled.contains(true)))
+
+    //TODO JOIN: a lot of additional validations needed here - e.g. that join with that name exists, that it
+    //accepts this join, maybe we should also validate the graph is connected?
+    case BranchEndData(id, joinId) => Valid(compiledgraph.node.BranchEnd(id, joinId.joinId))
   }
 
   private def compileSubsequent(ctx: ValidationContext, data: OneOutputSubsequentNodeData, next: Next, nextValidationContext: Option[ValidationContext])(implicit nodeId: NodeId): CompilationResult[Node] = data match {

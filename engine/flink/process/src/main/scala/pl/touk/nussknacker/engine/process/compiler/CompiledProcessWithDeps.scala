@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.process.AsyncExecutionContextPreparer
 import pl.touk.nussknacker.engine.compile.{CompiledProcess, PartSubGraphCompilationError, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.compiledgraph.node.Node
-import pl.touk.nussknacker.engine.compiledgraph.part.SourcePart
+import pl.touk.nussknacker.engine.compiledgraph.part.{SourcePart, StartPart}
 import pl.touk.nussknacker.engine.definition.CustomNodeInvokerDeps
 import pl.touk.nussknacker.engine.flink.api.RuntimeContextLifecycle
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionHandler
@@ -53,6 +53,6 @@ class CompiledProcessWithDeps(compiledProcess: CompiledProcess,
 
   val customNodeInvokerDeps: CustomNodeInvokerDeps = compiledProcess.customNodeInvokerDeps
 
-  val source: SourcePart = compiledProcess.parts.source
+  val sources: NonEmptyList[StartPart] = compiledProcess.parts.sources
 }
 

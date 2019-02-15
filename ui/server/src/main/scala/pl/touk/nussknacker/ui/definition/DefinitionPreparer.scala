@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
-import pl.touk.nussknacker.engine.graph.source.SourceRef
+import pl.touk.nussknacker.engine.graph.source.{JoinRef, SourceRef}
 import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType.{FilterFalse, FilterTrue}
@@ -20,6 +20,7 @@ import pl.touk.nussknacker.ui.process.uiconfig.defaults.ParameterEvaluatorExtrac
 import pl.touk.nussknacker.ui.security.api.Permission._
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, PermissionSyntax}
 import PermissionSyntax._
+import pl.touk.nussknacker.engine.graph.node
 
 import scala.runtime.BoxedUnit
 
@@ -69,7 +70,9 @@ object DefinitionPreparer {
 
     val customTransformers = NodeGroup("custom",
       processDefinition.customStreamTransformers.map {
-        case (id, (objDefinition, _)) => NodeToAdd("customNode", id,
+        case (id, (objDefinition, additionalData)) if additionalData.manyInputs => NodeToAdd("customNode", id,
+          node.Join("", JoinRef(id, objDefParams(id, objDefinition)), if (objDefinition.hasNoReturn) None else Some("outputVar")), filterCategories(objDefinition))
+        case (id, (objDefinition, additionalData)) => NodeToAdd("customNode", id,
           CustomNode("", if (objDefinition.hasNoReturn) None else Some("outputVar"), id, objDefParams(id, objDefinition)), filterCategories(objDefinition))
       }.toList
     )
@@ -127,14 +130,20 @@ object DefinitionPreparer {
         case SubprocessOutputDefinition(_, name, _) => name
       }
       //TODO: enable choice of output type
-      NodeEdges(NodeTypeId("SubprocessInput", Some(process.metaData.id)), outputs.map(EdgeType.SubprocessOutput), canChooseNodes = false)
+      NodeEdges(NodeTypeId("SubprocessInput", Some(process.metaData.id)), outputs.map(EdgeType.SubprocessOutput),
+        canChooseNodes = false, inputDefinition = false)
+    }
+
+    val joinInputs = processDefinition.customStreamTransformers.collect {
+      case (name, value) if value._2.manyInputs =>
+        NodeEdges(NodeTypeId("Join", Some(name)), List(), canChooseNodes = true, inputDefinition = true)
     }
 
     List(
-      NodeEdges(NodeTypeId("Split"), List(), canChooseNodes = true),
+      NodeEdges(NodeTypeId("Split"), List(), canChooseNodes = true, inputDefinition = false),
       NodeEdges(NodeTypeId("Switch"), List(
-        EdgeType.NextSwitch(Expression("spel", "true")), EdgeType.SwitchDefault), canChooseNodes = true),
-      NodeEdges(NodeTypeId("Filter"), List(FilterTrue, FilterFalse), canChooseNodes = false)
-    ) ++ subprocessOutputs
+        EdgeType.NextSwitch(Expression("spel", "true")), EdgeType.SwitchDefault), canChooseNodes = true, inputDefinition = false),
+      NodeEdges(NodeTypeId("Filter"), List(FilterTrue, FilterFalse), canChooseNodes = false, inputDefinition = false)
+    ) ++ subprocessOutputs ++ joinInputs
   }
 }

@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.splittedgraph.splittednode.{NextNode, PartRef}
 object ProcessSplitter {
 
   def split(process: EspProcess): SplittedProcess = {
-    SplittedProcess(process.metaData, process.exceptionHandlerRef, split(process.root))
+    SplittedProcess(process.metaData, process.exceptionHandlerRef, process.roots.map(split))
   }
 
   private def split(node: SourceNode): SourcePart = {
@@ -87,9 +87,11 @@ object ProcessSplitter {
         NextWithParts(PartRef(sink.id), List(part), List.empty)
       case EndingNode(other) =>
         NextWithParts(NextNode(splittednode.EndingNode(other)), List.empty, List(NormalEnd(other.id)))
-      //TODO: what should be here?
+      case BranchEnd(branchEndData) =>
+        NextWithParts(NextNode(splittednode.EndingNode(branchEndData)), List.empty, List(end.BranchEnd(branchEndData.id, branchEndData.definition.joinId)))
       case SubprocessNode(id, _) =>
         throw new RuntimeException("Should not happen")
+
     }
 
   case class NextWithParts(next: splittednode.Next, nextParts: List[SubsequentPart], ends: List[End]) {

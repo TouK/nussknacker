@@ -73,7 +73,7 @@ class UIProcessObjectsSpec extends FunSuite with Matchers {
       UIProcessObjects.prepareUIProcessObjects(model, TestFactory.user(), Set(
         SubprocessDetails(CanonicalProcess(MetaData("enricher", null, isSubprocess = true), null, List(FlatNode(SubprocessInputDefinition("", List(
           SubprocessParameter("param", SubprocessClazzRef[String])
-        ))))), "")
+        )))), None), "")
       ), false)
 
     processObjects.processDefinition.subprocessInputs("enricher").parameters.map(p => (p.name, p.restriction)).toMap shouldBe Map(

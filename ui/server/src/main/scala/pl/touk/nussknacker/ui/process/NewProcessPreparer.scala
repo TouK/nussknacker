@@ -34,7 +34,8 @@ class NewProcessPreparer(definitions: Map[ProcessingType, ProcessDefinition[Obje
       ),
       //TODO: consider better empty params - like in DefinitionResources
       exceptionHandlerRef = ExceptionHandlerRef(exceptionHandlerFactory.parameters.map(p => Parameter(p.name, Expression("spel", "")))),
-      nodes = List()
+      nodes = List(),
+      additionalBranches = None
     )
     emptyCanonical
   }

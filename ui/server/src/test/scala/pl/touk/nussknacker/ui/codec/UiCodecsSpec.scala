@@ -91,7 +91,7 @@ class UiCodecsSpec extends FunSuite with Matchers {
       ),
       Map(),
       Map(),
-      List(NodeEdges(NodeTypeId("abc"), List(EdgeType.SwitchDefault, SubprocessOutput("out1")), false))
+      List(NodeEdges(NodeTypeId("abc"), List(EdgeType.SwitchDefault, SubprocessOutput("out1")), false, false))
     ))
 
     val customNode = (for {

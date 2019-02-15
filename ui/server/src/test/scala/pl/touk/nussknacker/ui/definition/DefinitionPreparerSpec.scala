@@ -39,10 +39,10 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
       subprocessesDetails = subprocessesDetails)
 
     edgeTypes.toSet shouldBe Set(
-      NodeEdges(NodeTypeId("Split"), List(), true),
-      NodeEdges(NodeTypeId("Switch"), List(NextSwitch(Expression("spel", "true")), SwitchDefault), true),
-      NodeEdges(NodeTypeId("Filter"), List(FilterTrue, FilterFalse), false),
-      NodeEdges(NodeTypeId("SubprocessInput", Some("sub1")), List(SubprocessOutput("out1"), SubprocessOutput("out2")), false)
+      NodeEdges(NodeTypeId("Split"), List(), true, false),
+      NodeEdges(NodeTypeId("Switch"), List(NextSwitch(Expression("spel", "true")), SwitchDefault), true, false),
+      NodeEdges(NodeTypeId("Filter"), List(FilterTrue, FilterFalse), false, false),
+      NodeEdges(NodeTypeId("SubprocessInput", Some("sub1")), List(SubprocessOutput("out1"), SubprocessOutput("out2")), false, false)
     )
 
   }

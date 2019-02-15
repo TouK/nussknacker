@@ -7,12 +7,11 @@
         </encoder>
     </appender>
 
-    <root level="INFO">
+    <root level="WARN">
         <appender-ref ref="STDOUT"/>
     </root>
 
     <logger name="ch.qos.logback" level="warn"/>
-    <logger name="akka.actor.ActorSystemImpl" level="DEBUG"/>
 
 </configuration>
 

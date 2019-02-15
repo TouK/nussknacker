@@ -142,7 +142,7 @@ class StandaloneTestMain(testData: TestData, process: EspProcess, modelData: Mod
 
   private def readTestData(definitions: ProcessDefinition[ObjectWithMethodDef], sourceObj: api.process.Source[Any]): List[Any] = {
     //FIXME: asInstanceOf, should be proper handling of SubprocessInputDefinition
-    val sourceType = process.root.data.asInstanceOf[Source].ref.typ
+    val sourceType = process.roots.head.data.asInstanceOf[Source].ref.typ
     val testDataParser = sourceObj
       .cast[TestDataParserProvider[_]](Typeable.simpleTypeable(classOf[TestDataParserProvider[_]]))
       .map(_.testDataParser)

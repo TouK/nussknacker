@@ -78,7 +78,7 @@ object UIProcessObjects {
 
   private def fetchSubprocessInputs(subprocessesDetails: Set[SubprocessDetails], classLoader: ClassLoader, config: Map[String, SingleNodeConfig]): Map[String, ObjectDefinition] = {
     val subprocessInputs = subprocessesDetails.collect {
-      case SubprocessDetails(CanonicalProcess(MetaData(id, _, _, _, _), _, FlatNode(SubprocessInputDefinition(_, parameters, _)) :: _), category) =>
+      case SubprocessDetails(CanonicalProcess(MetaData(id, _, _, _, _), _, FlatNode(SubprocessInputDefinition(_, parameters, _)) :: _, additionalBranches), category) =>
         val clazzRefParams = parameters.map { p =>
           //TODO: currently if we cannot parse parameter class we assume it's unknown
           val classRef = p.typ.toClazzRef(classLoader).getOrElse(ClazzRef.unknown)
@@ -131,7 +131,7 @@ object UIProcessDefinition {
 
 case class NodeTypeId(`type`: String, id: Option[String] = None)
 
-case class NodeEdges(nodeId: NodeTypeId, edges: List[EdgeType], canChooseNodes: Boolean)
+case class NodeEdges(nodeId: NodeTypeId, edges: List[EdgeType], canChooseNodes: Boolean, inputDefinition: Boolean)
 
 case class NodeToAdd(`type`: String, label: String, node: NodeData, categories: List[String])
 

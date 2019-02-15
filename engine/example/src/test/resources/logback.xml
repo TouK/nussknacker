@@ -7,16 +7,13 @@
         </encoder>
     </appender>
 
-    <logger name="pl.touk" level="INFO"/>
     <logger name="org.apache.zookeeper.server.PrepRequestProcessor" level="WARN"/>
     <logger name="org.apache.zookeeper.ClientCnxn" level="WARN"/>
     <logger name="org.apache.kafka" level="WARN"/>
     <logger name="kafka" level="WARN"/>
     <logger name="org.apache.flink.runtime.leaderretrieval.ZooKeeperLeaderRetrievalService" level="WARN"/>
 
-    <logger name="pl.touk.nussknacker.engine.util.LoggingListener" level="DEBUG"/>
-
-    <root level="INFO">
+    <root level="WARN">
         <appender-ref ref="A1"/>
     </root>
 </configuration>

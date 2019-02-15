@@ -191,7 +191,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
   test("save correct process json with ok status") {
     saveProcess(processName, ProcessTestData.validProcess) {
       status shouldEqual StatusCodes.OK
-      checkSampleProcessRootIdEquals(ProcessTestData.validProcess.root.id)
+      checkSampleProcessRootIdEquals(ProcessTestData.validProcess.roots.head.id)
       val json = entityAs[String].parseOption.value
       json.field("errors").flatMap(_.field("invalidNodes")).flatMap(_.obj).value.isEmpty shouldBe true
     }
@@ -200,7 +200,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
   test("save invalid process json with ok status but with non empty invalid nodes") {
     saveProcess(processName, ProcessTestData.invalidProcess) {
       status shouldEqual StatusCodes.OK
-      checkSampleProcessRootIdEquals(ProcessTestData.invalidProcess.root.id)
+      checkSampleProcessRootIdEquals(ProcessTestData.invalidProcess.roots.head.id)
       val json = entityAs[String].parseOption.value
       json.field("errors").flatMap(_.field("invalidNodes")).flatMap(_.obj).value.isEmpty shouldBe false
     }
@@ -278,8 +278,8 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
       status shouldEqual StatusCodes.OK
     }
 
-    updateProcess(processName, ProcessTestData.validProcess.copy(root = ProcessTestData.validProcess
-      .root.copy(data = ProcessTestData.validProcess.root.data.asInstanceOf[Source].copy(id = "AARGH")))) {
+    updateProcess(processName, ProcessTestData.validProcess.copy(roots = ProcessTestData.validProcess
+      .roots.map(r => r.copy(data = r.data.asInstanceOf[Source].copy(id = "AARGH"))))) {
       status shouldEqual StatusCodes.OK
     }
     Get(s"/processes/${SampleProcess.process.id}") ~> routWithAllPermissions ~> check {

@@ -17,9 +17,20 @@ object part {
     def id: String = node.id
   }
 
-  case class SourcePart(obj: api.process.Source[Any], node: splittednode.SourceNode, validationContext: ValidationContext,
-                        nextParts: List[SubsequentPart], ends: List[End]) extends ProcessPart {
-    override type T = StartingNodeData
+  sealed trait StartPart extends ProcessPart {
+    def nextParts: List[SubsequentPart]
+  }
+
+  case class JoinPart(customNodeInvoker: CustomNodeInvoker[_],
+                              node: splittednode.SourceNode[Join], validationContext: ValidationContext, nextValidationContext: ValidationContext,
+                              nextParts: List[SubsequentPart], ends: List[End]) extends StartPart {
+    override type T = Join
+
+  }
+
+  case class SourcePart(obj: api.process.Source[Any], node: splittednode.SourceNode[SourceNodeData], validationContext: ValidationContext,
+                        nextParts: List[SubsequentPart], ends: List[End]) extends StartPart {
+    override type T = SourceNodeData
   }
 
   sealed trait SubsequentPart extends ProcessPart

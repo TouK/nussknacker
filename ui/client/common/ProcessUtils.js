@@ -97,7 +97,8 @@ class ProcessUtils {
       case "Enricher": {
         return [{[node.output]: clazzName}]
       }
-      case "CustomNode": {
+      case "CustomNode":
+      case "Join": {
         const outputVariableName = node.outputVar
         const outputClazz = clazzName
         return _.isEmpty(outputClazz) ? [] : [ {[outputVariableName]: outputClazz} ]
@@ -131,6 +132,7 @@ class ProcessUtils {
       case "Processor": {
         return _.get(processDefinition, `services[${nodeDefinitionId}]`)
       }
+      case "Join":
       case "CustomNode": {
         return _.get(processDefinition, `customStreamTransformers[${nodeDefinitionId}]`)
       }
@@ -159,6 +161,9 @@ class ProcessUtils {
       }
       case "CustomNode": {
         return node.nodeType
+      }
+      case "Join": {
+        return node.ref.typ
       }
       default: {
         return null;

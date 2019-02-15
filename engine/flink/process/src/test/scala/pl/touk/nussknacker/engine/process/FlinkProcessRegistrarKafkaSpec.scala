@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.process
 
 import java.util.UUID
 
+import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.time.{Millis, Seconds, Span}
@@ -48,8 +49,8 @@ class FlinkProcessRegistrarKafkaSpec
     val process = EspProcess(
       MetaData("proc1", StreamMetaData()),
       ExceptionHandlerRef(List.empty),
-      GraphBuilder.source("source", "kafka-keyvalue", "topic" -> inTopic)
-        .processorEnd("service", "mock", "input" -> "#input")
+      NonEmptyList.of(GraphBuilder.source("source", "kafka-keyvalue", "topic" -> inTopic)
+        .processorEnd("service", "mock", "input" -> "#input"))
     )
 
     Future {
