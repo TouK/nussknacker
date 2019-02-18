@@ -37,7 +37,7 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
     import cats.implicits._
 
     val stoppingResult = for {
-      oldJob <- OptionT(findJobStatus(processName))
+      oldJob <- OptionT(findStatusIgnoringTerminal(processName))
       _ <- OptionT[Future, Unit](if (!(oldJob.runningState == RunningState.Running))
         Future.failed(new IllegalStateException(s"Job ${processName.value} is not running, status: ${oldJob.status}")) else Future.successful(Some(())))
       maybeSavePoint <- {
@@ -59,7 +59,7 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
 
   override def savepoint(processName: ProcessName, savepointDir: String): Future[String] = {
     val name = processName.value
-    findJobStatus(processName).flatMap {
+    findStatusIgnoringTerminal(processName).flatMap {
       case Some(state) if state.runningState == RunningState.Running =>
         makeSavepoint(state, Option(savepointDir))
       case Some(state) =>
@@ -74,7 +74,7 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
   }
 
   override def cancel(processName: ProcessName): Future[Unit] = {
-    findJobStatus(processName).flatMap {
+    findStatusIgnoringTerminal(processName).flatMap {
       case Some(state) if state.runningState == RunningState.Running =>
         cancel(state)
       case state =>
@@ -82,6 +82,9 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
         Future.successful(())
     }
   }
+
+  private def findStatusIgnoringTerminal(processName: ProcessName): Future[Option[ProcessState]]
+  = findJobStatus(processName).map(_.filterNot(status => status.runningState == RunningState.Finished))
 
   private def checkIfJobIsCompatible(savepointPath: String, processDeploymentData: ProcessDeploymentData, processVersion: ProcessVersion): Future[Unit] =
     processDeploymentData match {

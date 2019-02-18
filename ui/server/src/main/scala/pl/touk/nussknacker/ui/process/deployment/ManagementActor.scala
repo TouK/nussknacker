@@ -87,10 +87,17 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
       reply(Future.successful(DeploymentStatusResponse(beingDeployed)))
   }
 
+  //TODO: there is small problem here: if no one invokes process status for long time, Flink can remove process from history
+  //- then it's gone, not finished.
   private def handleFinishedProcess(idWithName: ProcessIdWithName, processState: Option[ProcessState]): Future[Unit] = {
+    implicit val user: NussknackerInternalUser.type = NussknackerInternalUser
     processState match {
       case Some(state) if state.runningState == RunningState.Finished =>
-        markProcessCancelled(idWithName, Some("Process finished"))(NussknackerInternalUser)
+        findDeployedVersion(idWithName).flatMap {
+          case Some(version) =>
+            deployedProcessRepository.markProcessAsCancelled(idWithName.id, version, environment, Some("Process finished"))
+          case _ => Future.successful(())
+        }
       case _ => Future.successful(())
     }
   }
@@ -118,24 +125,20 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
     for {
       manager <- processManager(processId.id)
       _ <- manager.cancel(processId.name)
-      _ <- markProcessCancelled(processId, comment)
-    } yield ()
-  }
-
-  //TODO: there is small problem here: if no one invokes process status for long time, Flink can remove process from history
-  //- then it's gone, not finished.
-  private def markProcessCancelled(processId: ProcessIdWithName, comment: Option[String])(implicit user: LoggedUser): Future[Unit] = {
-    for {
-      process <- processRepository.fetchLatestProcessDetailsForProcessId(processId.id)
-      deployedAt = process
-        .flatMap(_.currentlyDeployedAt.find(_.environment == environment))
-      version <- deployedAt.map(_.processVersionId) match {
+      maybeVersion <- findDeployedVersion(processId)
+      version <- maybeVersion match {
         case Some(processVersionId) => Future.successful(processVersionId)
         case None => Future.failed(ProcessNotFoundError(processId.name.value.toString))
       }
       _ <- deployedProcessRepository.markProcessAsCancelled(processId.id, version, environment, comment)
     } yield ()
   }
+
+  private def findDeployedVersion(processId: ProcessIdWithName)(implicit user: LoggedUser) : Future[Option[Long]] = for {
+    process <- processRepository.fetchLatestProcessDetailsForProcessId(processId.id)
+    deployedAt = process
+      .flatMap(_.currentlyDeployedAt.find(_.environment == environment))
+  } yield (deployedAt.map(_.processVersionId))
 
 
   private def deployProcess(processId: ProcessId, savepointPath: Option[String], comment: Option[String])(implicit user: LoggedUser): Future[Unit] = {

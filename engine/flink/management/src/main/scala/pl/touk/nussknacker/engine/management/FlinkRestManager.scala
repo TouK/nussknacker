@@ -2,21 +2,20 @@ package pl.touk.nussknacker.engine.management
 
 import java.io.File
 
+import argonaut.Argonaut._
 import argonaut._
-import Argonaut._
 import ArgonautShapeless._
-import com.ning.http.client.{AsyncCompletionHandler, Request, RequestBuilder}
+
 import com.ning.http.client.multipart.FilePart
+import com.ning.http.client.{AsyncCompletionHandler, Request, RequestBuilder}
 import com.typesafe.scalalogging.LazyLogging
 import dispatch._
-import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.dispatch.{LoggingDispatchClient, utils}
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.runtime.jobgraph.JobStatus
+import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.dispatch.{LoggingDispatchClient, utils}
 import pl.touk.nussknacker.engine.management.flinkRestModel.{DeployProcessRequest, GetSavepointStatusResponse, JobsResponse, SavepointTriggerResponse, jobStatusDecoder}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -73,23 +72,25 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, sender: HttpSe
     sender.send {
       (flinkUrl / "jobs" / "overview").GET OK utils.asJson[JobsResponse]
     } map { jobs =>
-      val runningJobs = jobs
-        .jobs
+      val jobsForName = jobs.jobs
         .filter(_.name == name.value)
-        .filterNot(_.state.isGloballyTerminalState)
+        .sortBy(_.`last-modification`).reverse
 
-      runningJobs match {
+      val runningOrFinished = jobsForName
+        .filter(status => !status.state.isGloballyTerminalState || status.state == JobStatus.FINISHED)
+
+      runningOrFinished match {
         case Nil => None
-        case one::Nil =>
+        case duplicates if duplicates.count(_.state == JobStatus.RUNNING) > 1 =>
+          Some(ProcessState(DeploymentId(duplicates.head.jid), RunningState.Error, "INCONSISTENT", duplicates.head.`start-time`,
+            Some(s"Expected one job, instead: ${runningOrFinished.map(job => s"${job.jid} - ${job.state.name()}").mkString(", ")}")))
+        case one::_ =>
           val runningState = one.state match {
             case JobStatus.RUNNING => RunningState.Running
             case JobStatus.FINISHED => RunningState.Finished
             case _ => RunningState.Error
           }
           Some(ProcessState(DeploymentId(one.jid), runningState, one.state.toString, one.`start-time`))
-        case one::rest =>
-          Some(ProcessState(DeploymentId(one.jid), RunningState.Error, "INCONSISTENT", one.`start-time`,
-            Some(s"Expected one job, instead: ${runningJobs.map(_.jid).mkString(", ")}")))
       }
     }
   }

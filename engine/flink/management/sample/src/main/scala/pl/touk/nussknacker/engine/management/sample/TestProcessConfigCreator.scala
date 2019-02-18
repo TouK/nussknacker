@@ -23,18 +23,24 @@ import org.apache.flink.api.common.serialization.SimpleStringSchema
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
 import pl.touk.nussknacker.engine.api.lazyy.UsingLazyValues
-import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.api.process.{TestDataGenerator, _}
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser, TestParsingUtils}
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.util.exception.VerboselyLoggingExceptionHandler
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSinkFactory, KafkaSourceFactory}
 import pl.touk.nussknacker.engine.management.sample.signal.{RemoveLockProcessSignalFactory, SampleSignalHandlingTransformer}
+import scala.collection.JavaConverters._
 
 import scala.concurrent.{ExecutionContext, Future}
 import argonaut.Argonaut._
 import argonaut.ArgonautShapeless._
+import org.apache.flink.streaming.api.functions.TimestampAssigner
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{CollectableAction, ServiceInvocationCollector, TransmissionNames}
+import pl.touk.nussknacker.engine.api.typed.TypedMap
+import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
+import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
+import pl.touk.nussknacker.engine.management.sample.StatefulTransformer.StringFromIr
 import pl.touk.sample.JavaSampleEnum
 
 class TestProcessConfigCreator extends ProcessConfigCreator {
@@ -68,6 +74,7 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
       "real-kafka" -> WithCategories(new KafkaSourceFactory[String](kConfig,
         new SimpleStringSchema, None, TestParsingUtils.newLineSplit), "Category1", "Category2"),
       "kafka-transaction" -> WithCategories(FlinkSourceFactory.noParam(prepareNotEndingSource), "Category1", "Category2"),
+      "boundedSource" -> WithCategories(BoundedSource, "Category1", "Category2"),
       "oneSource" -> WithCategories(FlinkSourceFactory.noParam(new FlinkSource[String] {
 
         override def timestampAssigner = None
@@ -208,6 +215,15 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
       "engine-version" -> "0.1"
     )
   }
+}
+
+object BoundedSource extends FlinkSourceFactory[Any] {
+
+  @MethodToInvoke
+  def source(@ParamName("elements") elements: java.util.List[Any]) =
+    new CollectionSource[Any](StreamExecutionEnvironment.getExecutionEnvironment.getConfig, elements.asScala.toList, None, Unknown)
+
+  override def timestampAssigner: Option[TimestampAssigner[Any]] = None
 }
 
 case object StatefulTransformer extends CustomStreamTransformer {
