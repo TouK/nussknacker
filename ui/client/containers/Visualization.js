@@ -22,7 +22,9 @@ const Visualization = withRouter(React.createClass({
   },
 
   componentDidMount() {
-    this.fetchProcessDetails().then((details) => {
+    const businessView = VisualizationUrl.extractBusinessViewParams(this.props.location.query)
+    this.setBusinessView(businessView)
+    this.fetchProcessDetails(businessView).then((details) => {
       this.props.actions.fetchProcessDefinition(
         details.fetchedProcessDetails.processingType,
         _.get(details, "fetchedProcessDetails.json.properties.isSubprocess"),
@@ -45,6 +47,12 @@ const Visualization = withRouter(React.createClass({
     }
     if (!_.isEmpty(urlEdgeId)) {
       this.props.actions.displayModalEdgeDetails(NodeUtils.getEdgeById(urlEdgeId, process))
+    }
+  },
+
+  setBusinessView(businessView){
+    if (businessView){
+      this.props.actions.businessViewChanged(businessView)
     }
   },
 
@@ -92,8 +100,8 @@ const Visualization = withRouter(React.createClass({
     this.setState({timeoutId: timeoutId})
   },
 
-  fetchProcessDetails() {
-    const details = this.props.actions.displayCurrentProcessVersion(this.props.params.processId)
+  fetchProcessDetails(businessView) {
+    const details = this.props.actions.fetchProcessToDisplay (this.props.params.processId, undefined, businessView)
     this.props.actions.displayProcessActivity(this.props.params.processId)
     return details
   },

@@ -45,7 +45,7 @@ class UserRightPanel extends Component {
           <Scrollbars renderThumbVertical={props => <div {...props} className="thumbVertical"/>} hideTracksWhenNotNeeded={true}>
             <div className="panel-properties">
               <label>
-                <input type="checkbox" onChange={(e) => {
+                <input type="checkbox" defaultChecked={this.props.businessView} onChange={(e) => {
                   this.props.actions.businessViewChanged(e.target.checked)
                   this.props.actions.fetchProcessToDisplay(this.processId(), this.versionId(), e.target.checked)
                 }}/>

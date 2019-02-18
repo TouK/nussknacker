@@ -27,6 +27,12 @@ export function extractVisualizationParams(queryParams) {
   return {urlNodeId, urlEdgeId}
 }
 
+export function extractBusinessViewParams(queryParams) {
+  if (!_.isEmpty(queryParams.businessView)) {
+    return (queryParams.businessView.toLowerCase() === "true")
+  }
+}
+
 export function extractCountParams(queryParams) {
   if (!_.isEmpty(queryParams.from) || !_.isEmpty(queryParams.to)) {
     const from = queryParams.from ? fromTimestampOrDate(queryParams.from) : null;
