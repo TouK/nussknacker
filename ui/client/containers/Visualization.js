@@ -1,6 +1,6 @@
 import React from 'react';
 import { render } from 'react-dom';
-import { Link, withRouter } from 'react-router';
+import { withRouter } from 'react-router';
 import Graph from '../components/graph/Graph';
 import UserRightPanel from '../components/right-panel/UserRightPanel';
 import UserLeftPanel from '../components/UserLeftPanel';
@@ -51,7 +51,7 @@ const Visualization = withRouter(React.createClass({
   },
 
   setBusinessView(businessView){
-    if (businessView){
+    if (businessView != null){
       this.props.actions.businessViewChanged(businessView)
     }
   },

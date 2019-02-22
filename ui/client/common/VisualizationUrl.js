@@ -50,3 +50,35 @@ function fromTimestampOrDate(tsOrDate) {
   else
     return Moment(tsOrDate);
 }
+
+export function getCurrentLocationParams() {
+  var result = {}, tmp = []
+  location.search
+      .substr(1)
+      .split("&")
+      .forEach(function(item) {
+        tmp = item.split("=");
+        if (tmp[0] != null && tmp[0] !== "") {
+          result[tmp[0]] = decodeURIComponent(tmp[1])
+        }
+      });
+  return result
+}
+
+export function setAndPreserveLocationParams(params){
+  var result = "", tmp = getCurrentLocationParams();
+  Object.keys(params).forEach(function(paramName){
+    if (params[paramName] == null ||  params[paramName] === "") {
+      delete tmp[paramName]
+    } else {
+      tmp[paramName] = params[paramName]
+    }
+  })
+  if (Object.keys(tmp).length > 0) {
+    Object.keys(tmp).forEach(function(parameterName){
+      result = result + "&" + parameterName + "=" + encodeURIComponent(tmp[parameterName])
+    })
+    result = "?" + result.substr(1)
+  }
+  return result
+}

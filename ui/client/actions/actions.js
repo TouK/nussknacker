@@ -133,7 +133,13 @@ export function clearProcess() {
 }
 
 export function displayModalNodeDetails(node, readonly) {
-  browserHistory.replace({ pathname: window.location.pathname, search: VisualizationUrl.nodeIdPart(node.id)})
+  browserHistory.replace({
+    pathname: window.location.pathname,
+    search: VisualizationUrl.setAndPreserveLocationParams({
+      nodeId: node.id,
+      edgeID: null
+    })
+  })
   return {
     type: "DISPLAY_MODAL_NODE_DETAILS",
     nodeToDisplay: node,
@@ -142,7 +148,13 @@ export function displayModalNodeDetails(node, readonly) {
 }
 
 export function displayModalEdgeDetails(edge) {
-  browserHistory.replace({ pathname: window.location.pathname, search: VisualizationUrl.edgeIdPart(NodeUtils.edgeId(edge))})
+  browserHistory.replace({
+    pathname: window.location.pathname,
+    search: VisualizationUrl.setAndPreserveLocationParams({
+      nodeId: null,
+      edgeId: NodeUtils.edgeId(edge)
+    })
+  })
   return {
     type: "DISPLAY_MODAL_EDGE_DETAILS",
     edgeToDisplay: edge
@@ -157,7 +169,13 @@ export function displayNodeDetails(node) {
 }
 
 export function closeModals() {
-  browserHistory.replace({ pathname: window.location.pathname, search: ''})
+  browserHistory.replace({
+    pathname: window.location.pathname,
+    search: VisualizationUrl.setAndPreserveLocationParams({
+      edgeID: null,
+      nodeId: null
+    })
+  })
   return {
     type: "CLOSE_MODALS"
   };
@@ -448,6 +466,12 @@ export function collapseGroup(id) {
 }
 
 export function businessViewChanged(value) {
+  browserHistory.replace({
+    pathname: window.location.pathname,
+    search: VisualizationUrl.setAndPreserveLocationParams({
+      businessView: value?"true":null
+    })
+  })
   return {
     type: "BUSINESS_VIEW_CHANGED",
     businessView: value
