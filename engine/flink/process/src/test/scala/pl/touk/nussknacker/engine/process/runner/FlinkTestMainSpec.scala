@@ -84,7 +84,10 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
 
     val results = FlinkTestMain.run(modelData, ProcessMarshaller.toJson(process, PrettyParams.spaces2), TestData(List("0|1|2|3|4|5|6", "0|11|2|3|4|5|6").mkString("\n")), FlinkTestConfiguration.configuration, identity)
 
-    results.nodeResults("splitId1") shouldBe List(nodeResult(0), nodeResult(1))
+    results.nodeResults("splitId1") shouldBe List(nodeResult(0, "input" ->
+        SimpleRecord("0", 1, "2", new Date(3), Some(4), 5, "6")),
+      nodeResult(1, "input" ->
+        SimpleRecord("0", 11, "2", new Date(3), Some(4), 5, "6")))
   }
 
   test("return correct result for custom node") {

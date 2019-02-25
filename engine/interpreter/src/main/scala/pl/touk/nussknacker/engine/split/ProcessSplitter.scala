@@ -24,12 +24,6 @@ object ProcessSplitter {
     CustomNodePart(node, nextWithParts.nextParts, nextWithParts.ends)
   }
 
-  private def split(custom: SplitNode) : SplitPart = {
-    val nextWithParts = custom.nextParts.map(traverse)
-    val node = splittednode.SplitNode(custom.data, nextWithParts)
-    SplitPart(node)
-  }
-
   private def split(sink: Sink): SinkPart = {
     val node = splittednode.EndingNode(sink)
     SinkPart(node)
@@ -75,9 +69,10 @@ object ProcessSplitter {
       case OneOutputSubsequentNode(custom: CustomNode, next) =>
         val part = split(custom, next)
         NextWithParts(PartRef(part.id), List(part), List.empty)
-      case a:SplitNode =>
-        val part = split(a)
-        NextWithParts(PartRef(part.id), List(part), List.empty)
+      case split:SplitNode =>
+        val nextWithParts = split.nextParts.map(traverse)
+        val node = splittednode.SplitNode(split.data, nextWithParts.map(_.next))
+        NextWithParts(NextNode(node), nextWithParts.flatMap(_.nextParts), nextWithParts.flatMap(_.ends))
       case OneOutputSubsequentNode(other, next) =>
         traverse(next).map { nextT =>
           NextNode(splittednode.OneOutputSubsequentNode(other, nextT))

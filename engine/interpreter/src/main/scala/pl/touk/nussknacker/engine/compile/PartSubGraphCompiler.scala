@@ -82,8 +82,8 @@ private[compile] trait PartSubGraphCompilerBase {
       case splittednode.OneOutputSubsequentNode(data, next) => compileSubsequent(ctx, data, next, nextCtx)
 
       case splittednode.SplitNode(bareNode, nexts) =>
-        val compiledNexts = nexts.map(n => compile(n.next, ctx)).sequence
-        compiledNexts.map(_ => compiledgraph.node.SplitNode(bareNode.id))
+        val compiledNexts = nexts.map(n => compile(n, ctx)).sequence
+        compiledNexts.map(nx => compiledgraph.node.SplitNode(bareNode.id, nx))
 
       case splittednode.FilterNode(f@graph.node.Filter(id, expression, _, _), nextTrue, nextFalse) =>
         CompilationResult.map3(CompilationResult(compile(expression, None, ctx, ClazzRef[Boolean])._2), compile(nextTrue, ctx), nextFalse.map(next => compile(next, ctx)).sequence)(

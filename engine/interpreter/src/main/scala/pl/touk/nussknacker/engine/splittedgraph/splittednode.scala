@@ -21,7 +21,7 @@ object splittednode {
 
   case class OneOutputSubsequentNode[T <: OneOutputSubsequentNodeData](data: T, next: Next) extends OneOutputNode[T] with SubsequentNode[T]
 
-  case class SplitNode(data: Split, nexts: List[NextWithParts]) extends SubsequentNode[Split]
+  case class SplitNode(data: Split, nexts: List[Next]) extends SubsequentNode[Split]
 
   case class FilterNode(data: Filter, nextTrue: Next, nextFalse: Option[Next] = None) extends SubsequentNode[Filter]
 

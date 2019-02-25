@@ -122,12 +122,4 @@ object InvocationCollectors {
     }
   }
 
-  case class SplitInvocationCollector(runId: TestRunId, nodeId: String) {
-
-    def collect(result: InterpretationResult): Unit = {
-      //TODO: should we pass variables here?
-      ResultsCollectingListenerHolder.updateResults(runId, _.updateNodeResult(nodeId, Context(result.finalContext.id)))
-    }
-  }
-
 }

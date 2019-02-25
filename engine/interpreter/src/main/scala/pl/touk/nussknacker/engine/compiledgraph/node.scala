@@ -39,7 +39,7 @@ object node {
 
   case class SubprocessEnd(id: String, next: Next) extends Node
 
-  case class SplitNode(id: String) extends Node
+  case class SplitNode(id: String, nexts: List[Next]) extends Node
 
   sealed trait Next {
     def id: String

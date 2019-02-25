@@ -32,7 +32,7 @@ import pl.touk.nussknacker.engine.Interpreter
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.process.AsyncExecutionContextPreparer
-import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{SinkInvocationCollector, SplitInvocationCollector}
+import pl.touk.nussknacker.engine.api.test.InvocationCollectors.SinkInvocationCollector
 import pl.touk.nussknacker.engine.api.test.TestRunId
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError.NodeId
@@ -55,6 +55,7 @@ import pl.touk.nussknacker.engine.util.{SynchronousExecutionContext, ThreadUtils
 import pl.touk.nussknacker.engine.util.metrics.RateMeter
 
 import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import scala.concurrent.{Await, ExecutionContext}
 import scala.concurrent.duration._
 import scala.language.implicitConversions
@@ -231,31 +232,6 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => (Cla
 
         case part:SinkPart =>
           throw new IllegalArgumentException(s"Process can only use flink sinks, instead given: ${part.obj}")
-        case SplitPart(splitNode, validationContext, nexts) =>
-          val nextIds = nexts.map(_.next.id)
-          //TODO: there is bug in flink - if there are 2 splits in a row, without map
-          //TODO: this is only place where we count outside interpreter - is it really needed?
-          val newStart = (testRunId match {
-            case None =>
-              start.map(NodeCountMetricFunction[InterpretationResult](splitNode.id))
-            case Some(runId) =>
-              val splitCollector = SplitInvocationCollector(runId, splitNode.id)
-              start.map(value => {
-                splitCollector.collect(value)
-                value
-              })
-          }).split(_ => nextIds)
-          nexts.map {
-            //TODO: is this part really ok && needed?
-            case NextWithParts(NextNode(nextNode), parts, ends) =>
-              val beforeAsync = newStart.select(nextNode.id).map(_.finalContext)
-              val interpreted = wrapAsync(beforeAsync, nextNode, validationContext, "interpretation")
-                  .split(SplitFunction)
-              registerParts(interpreted, parts, ends)
-            case NextWithParts(PartRef(id), parts, ends) =>
-              val splitted = newStart.select(id).split(SplitFunction)
-              registerParts(splitted, parts, ends)
-          }.foldLeft(Map[BranchEndDefinition, DataStream[InterpretationResult]]()){_ ++ _}
         case part@CustomNodePart(executor:
           CustomNodeInvoker[FlinkCustomStreamTransformation@unchecked],
               node, validationContext, nextValidationContext, nextParts, ends) =>
@@ -343,7 +319,7 @@ object FlinkProcessRegistrar {
         case NonFatal(error) => Right(EspExceptionInfo(None, error, input))
       }) match {
         case Left(ir) =>
-          exceptionHandler.handling(None, input)(collector.collect(ir))
+          exceptionHandler.handling(None, input)(ir.foreach(collector.collect))
         case Right(info) =>
           exceptionHandler.handle(info)
       }
@@ -382,7 +358,7 @@ object FlinkProcessRegistrar {
       try {
         interpreter.interpret(compiledNode, metaData, input)
           .onComplete {
-            case Success(Left(result)) => collector.complete(Collections.singletonList[InterpretationResult](result))
+            case Success(Left(result)) => collector.complete(result.asJava)
             case Success(Right(exInfo)) => handleException(collector, exInfo)
             case Failure(ex) =>
               logger.warn("Unexpected error", ex)
@@ -436,21 +412,6 @@ object FlinkProcessRegistrar {
 
     override def map(input: Any) = newContext.withVariable(Interpreter.InputParamName, input)
 
-  }
-
-  case class NodeCountMetricFunction[T](nodeId: String) extends RichMapFunction[T, T] {
-
-    private var counter : Counter = _
-
-    override def open(parameters: Configuration): Unit = {
-      super.open(parameters)
-      counter = getRuntimeContext.getMetricGroup.addGroup("nodeCount").counter(nodeId)
-    }
-
-    override def map(value: T): T = {
-      counter.inc()
-      value
-    }
   }
 
   class EventTimeDelayMeterFunction[T](groupId: String, slidingWindow: FiniteDuration)

@@ -166,17 +166,6 @@ protected trait ProcessCompilerBase {
         ) { (nodeInvoker, _, nextPartsCompiled, validatedNextCtx) =>
           compiledgraph.part.CustomNodePart(nodeInvoker, node, ctx, validatedNextCtx, nextPartsCompiled, ends)
         }.distinctErrors
-
-      case SplitPart(node@splittednode.SplitNode(_, nexts)) =>
-        import CompilationResult._
-
-        nexts.map { next =>
-          val result = validate(next.next, ctx)
-          CompilationResult.map2(result, compile(next.nextParts, result.typing))((_, cp) => NextWithParts(next.next, cp, next.ends))
-        }.sequence.map { nextsWithParts =>
-          compiledgraph.part.SplitPart(node, ctx, nextsWithParts)
-        }
-
     }
   }
 

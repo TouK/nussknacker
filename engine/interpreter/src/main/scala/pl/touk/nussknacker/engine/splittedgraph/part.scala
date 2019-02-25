@@ -22,10 +22,6 @@ object part {
     override type T = CustomNode
   }
 
-  case class SplitPart(node: splittednode.SplitNode) extends SubsequentPart {
-    override type T = Split
-  }
-
   case class SinkPart(node: EndingNode[Sink]) extends SubsequentPart {
     override type T = Sink
   }

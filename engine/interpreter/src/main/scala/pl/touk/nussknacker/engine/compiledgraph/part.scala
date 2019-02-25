@@ -42,10 +42,6 @@ object part {
 
   }
 
-  case class SplitPart(node: splittednode.SplitNode, validationContext: ValidationContext, nexts: List[NextWithParts]) extends SubsequentPart {
-    override type T = Split
-  }
-
   case class SinkPart(obj: api.process.Sink, node: splittednode.EndingNode[Sink], validationContext: ValidationContext) extends SubsequentPart {
     override type T = Sink
 

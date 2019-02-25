@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.compile
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data._
+import cats.instances.string._
 import org.scalatest.{FunSuite, Inside, Matchers}
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.definition.Parameter
@@ -419,11 +420,12 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
           .emptySink("id3", "sink")
       )
 
-    validate(process, definitionWithTypedSource).result should matchPattern {
+    //sortBy is for having defined order
+    validate(process, definitionWithTypedSource).result.leftMap(_.sortBy(_.toString)) should matchPattern {
       case Invalid(NonEmptyList(
-      ExpressionParseError("Unresolved reference terefere", "p1", Some("par1"), _),
-      List(
       ExpressionParseError("Expression [{] @0: EL1044E: Unexpectedly ran out of input", "c1", Some("par1"), _),
+      List(
+      ExpressionParseError("Unresolved reference terefere", "p1", Some("par1"), _),
       ExpressionParseError("Unresolved reference terefere22", "v1", Some("par1"), _))
       )) =>
     }

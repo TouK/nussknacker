@@ -39,8 +39,8 @@ object StandaloneProcessInterpreter {
 
   def apply(process: EspProcess, contextPreparer: StandaloneContextPreparer, modelData: ModelData,
             additionalListeners: List[ProcessListener] = List(),
-            definitionsPostProcessor: (ProcessDefinitionExtractor.ProcessDefinition[ObjectWithMethodDef]
-              => ProcessDefinitionExtractor.ProcessDefinition[ObjectWithMethodDef]) = identity)
+            definitionsPostProcessor: ProcessDefinitionExtractor.ProcessDefinition[ObjectWithMethodDef]
+              => ProcessDefinitionExtractor.ProcessDefinition[ObjectWithMethodDef] = identity)
   : ValidatedNel[ProcessCompilationError, StandaloneProcessInterpreter] = modelData.withThisAsContextClassLoader {
 
     val creator = modelData.configCreator
@@ -76,23 +76,6 @@ object StandaloneProcessInterpreter {
         compileWithCompilationErrors(node, validationContext).andThen(partInvoker(_, nextParts))
       case part@SinkPart(_, endNode, validationContext) =>
         compileWithCompilationErrors(endNode, validationContext).andThen(partInvoker(_, List()))
-      //TODO: does it have to be so complicated? here and in FlinkProcessRegistrar
-      case SplitPart(_, validationContext, nexts) =>
-        val splitParts = nexts.map {
-          case NextWithParts(NextNode(node), parts, _) => compileWithCompilationErrors(node, validationContext).andThen(partInvoker(_, parts))
-          case NextWithParts(PartRef(id), parts, _) => parts.find(_.id == id) match {
-            case Some(part) => compiledPartInvoker(part)
-            case None => Invalid(NonEmptyList.of[ProcessCompilationError](MissingPart(id)))
-          }
-        }.sequence[CompilationResult, InterpreterType]
-        splitParts.map { compiledSplitParts =>
-          (ctx: Context, ec: ExecutionContext) => {
-            implicit val iec = ec
-            compiledSplitParts.map(_ (ctx, ec))
-              .sequence[Future, InterpretationResultType].map(StandaloneProcessInterpreter.foldResults)
-          }
-        }
-
       case CustomNodePart(executor:
                 CustomNodeInvoker[StandaloneCustomTransformer@unchecked], node, validationContext, nextValidationContext, parts, _) =>
         val result = compileWithCompilationErrors(node, validationContext, Some(nextValidationContext)).andThen(partInvoker(_, parts))
@@ -112,23 +95,28 @@ object StandaloneProcessInterpreter {
       compilePartInvokers(parts).map(_.toMap).map { partsInvokers =>
 
         (ctx: Context, ec: ExecutionContext) => {
-          implicit val iec = ec
+          implicit val iec: ExecutionContext = ec
           compiledProcess.interpreter.interpret(node, compiledProcess.parts.metaData, ctx).flatMap { maybeResult =>
-            maybeResult.fold[InterpreterOutputType](ir => {
-              ir.reference match {
-                case _: EndReference =>
-                  Future.successful(Right(List(ir)))
-                case _: DeadEndReference =>
-                  Future.successful(Right(Nil))
-                case _: JoinReference =>
-                  Future.successful(Right(Nil))
-                case NextPartReference(id) =>
-                  partsInvokers.getOrElse(id, throw new Exception("Unknown reference"))(ir.finalContext, ec)
-              }
-            }, a => Future.successful(Left(NonEmptyList.of(a))))
+            maybeResult.fold[InterpreterOutputType](
+            ir => Future.sequence(ir.map(interpretationInvoke(partsInvokers))).map(foldResults),
+            a => Future.successful(Left(NonEmptyList.of(a))))
           }
         }
       }
+    }
+
+    private def interpretationInvoke(partInvokers: Map[String, InterpreterType])(ir: InterpretationResult)(implicit ec: ExecutionContext) = {
+      val results = ir.reference match {
+        case _: EndReference =>
+          Future.successful(Right(List(ir)))
+        case _: DeadEndReference =>
+          Future.successful(Right(Nil))
+        case _: JoinReference =>
+          Future.successful(Right(Nil))
+        case NextPartReference(id) =>
+          partInvokers.getOrElse(id, throw new Exception("Unknown reference"))(ir.finalContext, ec)
+      }
+      results
     }
 
     def compile: ValidatedNel[ProcessCompilationError, InterpreterType] = compiledPartInvoker(compiledProcess.parts.sources.head)
