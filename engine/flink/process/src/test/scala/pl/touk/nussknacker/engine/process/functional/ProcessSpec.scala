@@ -92,7 +92,7 @@ class ProcessSpec extends FunSuite with Matchers {
 
     processInvoker.invoke(process, data)
 
-    MockService.data shouldBe List(5, rec)
+    MockService.data.toSet shouldBe Set(5, rec)
 
   }
 }
