@@ -4,7 +4,7 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import org.apache.flink.api.common.functions.RuntimeContext
 import pl.touk.nussknacker.engine.Interpreter
-import pl.touk.nussknacker.engine.api.{JobData, MetaData}
+import pl.touk.nussknacker.engine.api.{Context, JobData, MetaData}
 import pl.touk.nussknacker.engine.api.process.AsyncExecutionContextPreparer
 import pl.touk.nussknacker.engine.compile.{CompiledProcess, PartSubGraphCompilationError, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionHandler
 import pl.touk.nussknacker.engine.flink.api.process.FlinkProcessSignalSenderProvider
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
 
 class CompiledProcessWithDeps(compiledProcess: CompiledProcess,
@@ -38,8 +39,8 @@ class CompiledProcessWithDeps(compiledProcess: CompiledProcess,
     compiledProcess.close()
   }
 
-  def compileSubPart(node: SplittedNode[_], validationContext: ValidationContext, nextValidationContext: Option[ValidationContext]): Node = {
-    validateOrFail(compiledProcess.subPartCompiler.compile(node, validationContext, nextValidationContext).result)
+  def compileSubPart(node: SplittedNode[_], validationContext: ValidationContext): Node = {
+    validateOrFail(compiledProcess.subPartCompiler.compile(node, validationContext).result)
   }
 
   private def validateOrFail[T](validated: ValidatedNel[ProcessCompilationError, T]): T = validated match {

@@ -22,25 +22,12 @@ import pl.touk.nussknacker.engine.{compiledgraph, _}
 
 class PartSubGraphCompiler(protected val expressionCompiler: ExpressionCompiler,
                            protected val expressionConfig: ExpressionDefinition[ObjectWithMethodDef],
-                           protected val services: Map[String, ObjectWithMethodDef],
-                           protected val customStreamTransformers: Map[String, ObjectWithMethodDef]) extends PartSubGraphCompilerBase {
+                           protected val services: Map[String, ObjectWithMethodDef]) extends PartSubGraphCompilerBase {
 
   override type ParametersProviderT = ObjectWithMethodDef
 
   override protected def createServiceInvoker(obj: ObjectWithMethodDef) =
     ServiceInvoker(obj)
-
-}
-
-class PartSubGraphValidator(protected val expressionCompiler: ExpressionCompiler,
-                            protected val expressionConfig: ExpressionDefinition[ObjectWithMethodDef],
-                            protected val services: Map[String, ObjectDefinition],
-                            protected val customStreamTransformers: Map[String, ObjectDefinition]) extends PartSubGraphCompilerBase {
-
-  override type ParametersProviderT = ObjectDefinition
-
-  override protected def createServiceInvoker(obj: ObjectDefinition) =
-    DumbServiceInvoker
 
 }
 
@@ -50,13 +37,8 @@ private[compile] trait PartSubGraphCompilerBase {
 
   private val syntax = ValidatedSyntax[ProcessCompilationError]
 
-  /**
-    * 'nextCtx' is context after CustomNode and it's used to compile the node following CustomNode,
-    * while `ctx` is used to validate params in CustomNode
-    */
-  // TODO: CustomNode validation refactor
-  def validate(n: splittednode.SplittedNode[_], ctx: ValidationContext, nextCtx: Option[ValidationContext] = None): CompilationResult[Unit] = {
-    compile(n, ctx, nextCtx).map(_ => ())
+  def validate(n: splittednode.SplittedNode[_], ctx: ValidationContext): CompilationResult[Unit] = {
+    compile(n, ctx).map(_ => ())
   }
 
   import CompilationResult._
@@ -68,18 +50,16 @@ private[compile] trait PartSubGraphCompilerBase {
 
   protected def services: Map[String, ParametersProviderT]
 
-  protected def customStreamTransformers: Map[String, ParametersProviderT]
-
   protected def createServiceInvoker(obj: ParametersProviderT): ServiceInvoker
 
   private val globalVariableTypes = expressionConfig.globalVariables.mapValues(_.returnType)
 
-  def compile(n: SplittedNode[_], ctx: ValidationContext, nextCtx: Option[ValidationContext] = None) : CompilationResult[compiledgraph.node.Node] = {
+  def compile(n: SplittedNode[_], ctx: ValidationContext) : CompilationResult[compiledgraph.node.Node] = {
     implicit val nodeId: NodeId = NodeId(n.id)
 
     val nodeResult : CompilationResult[compiledgraph.node.Node] = n match {
       case splittednode.SourceNode(nodeData, next) => handleSourceNode(nodeData, ctx, next)
-      case splittednode.OneOutputSubsequentNode(data, next) => compileSubsequent(ctx, data, next, nextCtx)
+      case splittednode.OneOutputSubsequentNode(data, next) => compileSubsequent(ctx, data, next)
 
       case splittednode.SplitNode(bareNode, nexts) =>
         val compiledNexts = nexts.map(n => compile(n, ctx)).sequence
@@ -134,7 +114,7 @@ private[compile] trait PartSubGraphCompilerBase {
     case BranchEndData(id, joinId) => Valid(compiledgraph.node.BranchEnd(id, joinId.joinId))
   }
 
-  private def compileSubsequent(ctx: ValidationContext, data: OneOutputSubsequentNodeData, next: Next, nextValidationContext: Option[ValidationContext])(implicit nodeId: NodeId): CompilationResult[Node] = data match {
+  private def compileSubsequent(ctx: ValidationContext, data: OneOutputSubsequentNodeData, next: Next)(implicit nodeId: NodeId): CompilationResult[Node] = data match {
     case graph.node.Variable(id, varName, expression, _) =>
       val (newCtx, compiledExpression) = withVariable(varName, ctx, compile(expression, None, ctx, ClazzRef[Any]))
 
@@ -160,21 +140,11 @@ private[compile] trait PartSubGraphCompilerBase {
       CompilationResult.map3(CompilationResult(newCtx), CompilationResult(compile(ref, ctx)), compile(next, newCtx.getOrElse(ctx)))((_, ref, next) =>
                          compiledgraph.node.Enricher(id, ref, outName, next))
 
-    // we don't put variable in context here, as it's handled in flink currently (maybe try to change it?)
-    // TODO: handle cases when context variables are not being used
-    case graph.node.CustomNode(id, _, typ, evaluatedParams, _) => {
-      val validatedParamsProvider = customStreamTransformers.get(typ).map(Valid(_))
-          .getOrElse(invalid(MissingCustomNodeExecutor(typ))).toValidatedNel
-
-      val validatedParams = validatedParamsProvider andThen { provider =>
-       expressionCompiler.compileObjectParameters(provider.parameters, evaluatedParams, Some(ctx))
-      }
-
-      CompilationResult.map2(
-        fa = CompilationResult(validatedParams),
-        fb = compile(next, nextValidationContext.getOrElse(ctx)))(
-        f = (compiledParams, compiledNext) => compiledgraph.node.CustomNode(id, compiledParams, compiledNext))
-    }
+    //here we don't do anything, in subgraphcompiler it's just pass through
+    case graph.node.CustomNode(id, _, _, _, _) =>
+      CompilationResult.map(
+        fa = compile(next, ctx))(
+        f = compiledNext => compiledgraph.node.CustomNode(id, compiledNext))
 
     case SubprocessInput(id, ref, _, _) =>
       val childCtx = ctx.pushNewContext(globalVariableTypes)

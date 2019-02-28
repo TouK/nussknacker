@@ -36,7 +36,7 @@ object part {
   sealed trait SubsequentPart extends ProcessPart
 
   case class CustomNodePart(customNodeInvoker: CustomNodeInvoker[_],
-                            node: splittednode.OneOutputSubsequentNode[CustomNode], validationContext: ValidationContext, nextValidationContext: ValidationContext,
+                            node: splittednode.OneOutputSubsequentNode[CustomNode], validationContext: ValidationContext,
                             nextParts: List[SubsequentPart], ends: List[End]) extends SubsequentPart {
     override type T = CustomNode
 

@@ -155,8 +155,8 @@ protected trait ProcessCompilerBase {
           contextAfterCustomNode(node.data, nodeDefinition, ctx, additionalData.clearsContext)
         }
 
-        val compiledNode = customNodeDefinition.andThen(n => compileCustomNodeInvoker(node.data, n._1))
-        val nextPartsValidation = sub.validate(node, ctx, nextCtx.toOption)
+        val compiledNode = customNodeDefinition.andThen(n => compileCustomNodeInvoker(node.data, n._1, ctx))
+        val nextPartsValidation = sub.validate(node, nextCtx.fold(_ => ctx, identity))
 
         CompilationResult.map4(
           f0 = CompilationResult(compiledNode),
@@ -164,7 +164,7 @@ protected trait ProcessCompilerBase {
           f2 = compile(nextParts, nextPartsValidation.typing),
           f3 = CompilationResult(nextCtx)
         ) { (nodeInvoker, _, nextPartsCompiled, validatedNextCtx) =>
-          compiledgraph.part.CustomNodePart(nodeInvoker, node, ctx, validatedNextCtx, nextPartsCompiled, ends)
+          compiledgraph.part.CustomNodePart(nodeInvoker, node, validatedNextCtx, nextPartsCompiled, ends)
         }.distinctErrors
     }
   }
@@ -192,9 +192,10 @@ protected trait ProcessCompilerBase {
         val customData = fromOption[ProcessCompilationError, (ParameterProviderT, CustomTransformerAdditionalData)](customStreamTransformers.get(ref), MissingCustomNodeExecutor(ref))
                 .toValidatedNel
 
-        val compiledJoin: ValidatedNel[ProcessCompilationError, CustomNodeInvoker[_]] = customData.andThen(d => compileCustomNodeInvoker(join, d._1))
-        //TODO JOIN: here we need to add handling ValidationContext, and input variables
         val initialContext = ValidationContext(Map(join.outputVar.get -> Unknown) ++ globalVariableTypes)
+
+        val compiledJoin: ValidatedNel[ProcessCompilationError, CustomNodeInvoker[_]] = customData.andThen(d => compileCustomNodeInvoker(join, d._1, initialContext))
+        //TODO JOIN: here we need to add handling ValidationContext, and input variables
         val validatedSource = sub.validate(source.node, initialContext)
         val typesForParts = validatedSource.typing
 
@@ -253,21 +254,18 @@ protected trait ProcessCompilerBase {
   }
 
   private def compileProcessObject[T](parameterProviderT: ParameterProviderT,
-                                      parameters: List[evaluatedparam.Parameter])
+                                      parameters: List[evaluatedparam.Parameter], ctx: ValidationContext = ValidationContext(globalVariableTypes))
                                      (implicit nodeId: NodeId,
                                       metaData: MetaData): ValidatedNel[ProcessCompilationError, T] = {
 
-    val contextWithGlobalVars = ValidationContext(globalVariableTypes)
-    expressionCompiler.compileObjectParameters(parameterProviderT.parameters, parameters, Some(contextWithGlobalVars)).andThen { compiledParams =>
-      validateParameters(parameterProviderT, parameters.map(_.name)).andThen { _ =>
-        val factory = createFactory[T](parameterProviderT)
-        try {
-          Valid(factory.create(compiledParams))
-        } catch {
-          case NonFatal(e) =>
-            //TODO: better message?
-            Invalid(NonEmptyList.of(CannotCreateObjectError(e.getMessage, nodeId.id)))
-        }
+    validateParameters(parameterProviderT, parameters, ctx).andThen { compiledParameters =>
+      val factory = createFactory[T](parameterProviderT)
+      try {
+        Valid(factory.create(compiledParameters))
+      } catch {
+        case NonFatal(e) =>
+          //TODO: better message?
+          Invalid(NonEmptyList.of(CannotCreateObjectError(e.getMessage, nodeId.id)))
       }
     }
   }
@@ -278,10 +276,10 @@ protected trait ProcessCompilerBase {
           .toValidatedNel
   }
 
-  private def compileCustomNodeInvoker(node: WithParameters, nodeDefinition: ParameterProviderT)
+  private def compileCustomNodeInvoker(node: WithParameters, nodeDefinition: ParameterProviderT, ctx: ValidationContext)
                                       (implicit nodeId: NodeId, metaData: MetaData): ValidatedNel[ProcessCompilationError, CustomNodeInvoker[Any]] = {
-    validateParameters(nodeDefinition, node.parameters.map(_.name))
-      .map(createCustomNodeInvoker(_, metaData, node))
+    validateParameters(nodeDefinition, node.parameters, ctx)
+      .map(_ => createCustomNodeInvoker(nodeDefinition, metaData, node))
   }
 
 
@@ -297,18 +295,22 @@ protected trait ProcessCompilerBase {
     ).sequence
   }
 
-  private def validateParameters(parameterProvider: ParameterProviderT, usedParamsNames: List[String])
-                                (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, ParameterProviderT] = {
-    val definedParamNames = parameterProvider.parameters.map(_.name).toSet
-    val usedParamNamesSet = usedParamsNames.toSet
-    val missingParams = definedParamNames.diff(usedParamNamesSet)
-    val redundantParams = usedParamNamesSet.diff(definedParamNames)
-    val notMissing = if (missingParams.nonEmpty) invalid(MissingParameters(missingParams)) else valid(Unit)
-    val notRedundant = if (redundantParams.nonEmpty) invalid(RedundantParameters(redundantParams)) else valid(Unit)
-    A.map2(
-      notMissing.toValidatedNel,
-      notRedundant.toValidatedNel
-    ) { (_, _) => parameterProvider }.leftMap(_.map(identity[ProcessCompilationError]))
+  private def validateParameters(parameterProvider: ParameterProviderT, parameters: List[evaluatedparam.Parameter], ctx: ValidationContext)
+                                (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, List[compiledgraph.evaluatedparam.Parameter]] = {
+
+    expressionCompiler.compileObjectParameters(parameterProvider.parameters, parameters, Some(ctx)).andThen { compiledParams =>
+
+      val definedParamNames = parameterProvider.parameters.map(_.name).toSet
+      val usedParamNamesSet = parameters.map(_.name).toSet
+      val missingParams = definedParamNames.diff(usedParamNamesSet)
+      val redundantParams = usedParamNamesSet.diff(definedParamNames)
+      val notMissing = if (missingParams.nonEmpty) invalid(MissingParameters(missingParams)) else valid(Unit)
+      val notRedundant = if (redundantParams.nonEmpty) invalid(RedundantParameters(redundantParams)) else valid(Unit)
+      A.map2(
+        notMissing.toValidatedNel,
+        notRedundant.toValidatedNel
+      ) { (_, _) => compiledParams }.leftMap(_.map(identity[ProcessCompilationError]))
+    }
   }
 
   private def validate(n: Next, ctx: ValidationContext): CompilationResult[Unit] = n match {
@@ -325,11 +327,8 @@ object ProcessValidator {
   def default(definitions: ProcessDefinition[ObjectWithMethodDef], loader: ClassLoader = getClass.getClassLoader): ProcessValidator = {
     val expressionCompiler = ExpressionCompiler.withoutOptimization(loader, definitions.expressionConfig)
 
-    val customNodesDefinitions = definitions.customStreamTransformers.map {
-      case (key, (objectWithMethodDef, _)) => (key, objectWithMethodDef)
-    }
     val sub = new PartSubGraphCompiler(
-      expressionCompiler, definitions.expressionConfig, definitions.services, customNodesDefinitions)
+      expressionCompiler, definitions.expressionConfig, definitions.services)
 
     new ProcessCompiler(loader, sub, definitions)
   }

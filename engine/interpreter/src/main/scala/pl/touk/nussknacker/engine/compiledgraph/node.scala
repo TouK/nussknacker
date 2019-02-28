@@ -33,7 +33,7 @@ object node {
 
   case class Case(expression: Expression, node: Next)
 
-  case class CustomNode(id:String, params:List[Parameter],  next: Next) extends Node
+  case class CustomNode(id:String, next: Next) extends Node
 
   case class SubprocessStart(id: String, params: List[Parameter], next: Next) extends Node
 

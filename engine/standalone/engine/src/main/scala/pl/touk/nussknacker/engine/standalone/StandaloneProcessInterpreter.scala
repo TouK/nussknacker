@@ -68,8 +68,8 @@ object StandaloneProcessInterpreter {
     type CompilationValidation[K] = ValidatedNel[ProcessCompilationError, K]
     type CompilationResult[K] = ValidatedNel[ProcessCompilationError, K]
 
-    private def compileWithCompilationErrors(node: SplittedNode[_], validationContext: ValidationContext, nextValidationContext: Option[ValidationContext] = None) =
-      compiledProcess.subPartCompiler.compile(node, validationContext, nextValidationContext).result
+    private def compileWithCompilationErrors(node: SplittedNode[_], validationContext: ValidationContext) =
+      compiledProcess.subPartCompiler.compile(node, validationContext).result
 
     private def compiledPartInvoker(processPart: ProcessPart): data.ValidatedNel[ProcessCompilationError, InterpreterType] = processPart match {
       case SourcePart(_, node, validationContext, nextParts, _) =>
@@ -77,8 +77,8 @@ object StandaloneProcessInterpreter {
       case part@SinkPart(_, endNode, validationContext) =>
         compileWithCompilationErrors(endNode, validationContext).andThen(partInvoker(_, List()))
       case CustomNodePart(executor:
-                CustomNodeInvoker[StandaloneCustomTransformer@unchecked], node, validationContext, nextValidationContext, parts, _) =>
-        val result = compileWithCompilationErrors(node, validationContext, Some(nextValidationContext)).andThen(partInvoker(_, parts))
+                CustomNodeInvoker[StandaloneCustomTransformer@unchecked], node, validationContext, parts, _) =>
+        val result = compileWithCompilationErrors(node, validationContext).andThen(partInvoker(_, parts))
 
         val transformer = executor.run(() => compiledProcess.customNodeInvokerDeps)
         result.map(transformer.createTransformation(node.data.outputVar.get))
