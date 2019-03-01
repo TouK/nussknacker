@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.compiledgraph
 
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.compile.ValidationContext
-import pl.touk.nussknacker.engine.definition.CustomNodeInvoker
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.splittedgraph.end.{End, NormalEnd}
 import pl.touk.nussknacker.engine.splittedgraph.splittednode
@@ -21,7 +20,7 @@ object part {
     def nextParts: List[SubsequentPart]
   }
 
-  case class JoinPart(customNodeInvoker: CustomNodeInvoker[_],
+  case class JoinPart(transformer: AnyRef,
                               node: splittednode.SourceNode[Join], validationContext: ValidationContext, nextValidationContext: ValidationContext,
                               nextParts: List[SubsequentPart], ends: List[End]) extends StartPart {
     override type T = Join
@@ -35,7 +34,7 @@ object part {
 
   sealed trait SubsequentPart extends ProcessPart
 
-  case class CustomNodePart(customNodeInvoker: CustomNodeInvoker[_],
+  case class CustomNodePart(transformer: AnyRef,
                             node: splittednode.OneOutputSubsequentNode[CustomNode], validationContext: ValidationContext,
                             nextParts: List[SubsequentPart], ends: List[End]) extends SubsequentPart {
     override type T = CustomNode

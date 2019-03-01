@@ -4,8 +4,7 @@ import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.api.java.functions.KeySelector;
 import org.apache.flink.util.Collector;
 import pl.touk.nussknacker.engine.api.CustomStreamTransformer;
-import pl.touk.nussknacker.engine.api.InterpretationResult;
-import pl.touk.nussknacker.engine.api.LazyInterpreter;
+import pl.touk.nussknacker.engine.api.LazyParameter;
 import pl.touk.nussknacker.engine.api.MethodToInvoke;
 import pl.touk.nussknacker.engine.api.ParamName;
 import pl.touk.nussknacker.engine.api.ValueWithContext;
@@ -20,18 +19,19 @@ import static scala.collection.JavaConversions.asJavaCollection;
 public class EventsCounter extends CustomStreamTransformer {
 
     @MethodToInvoke(returnType = EventCount.class)
-    public FlinkCustomStreamTransformation execute(@ParamName("key") LazyInterpreter<String> key, @ParamName("length") String length) {
-        return JavaFlinkCustomStreamTransformation.apply(start -> {
+    public FlinkCustomStreamTransformation execute(@ParamName("key") LazyParameter<String> key, @ParamName("length") String length) {
+        return JavaFlinkCustomStreamTransformation.apply((start, ctx) -> {
             long lengthInMillis = Duration.apply(length).toMillis();
-            return start
-                    //it seems that explicit anonymous class is mandatory here, otherwise there is some weird LazyInterpreter generic type exception
-                    .keyBy(new KeySelector<InterpretationResult, String>() {
-                        @Override
-                        public String getKey(InterpretationResult ir) throws Exception {
-                            return key.syncInterpretationFunction().apply(ir);
-                        }
-                    })
-                    .process(new CounterFunction(lengthInMillis));
+                    return start
+                        .map(ctx.nodeServices().lazyMapFunction(key))
+                        //it seems that explicit anonymous class is mandatory here, otherwise there is some weird LazyInterpreter generic type exception
+                        .keyBy(new KeySelector<ValueWithContext<String>, String>() {
+                            @Override
+                            public String getKey(ValueWithContext<String> ir) throws Exception {
+                                return ir.value();
+                            }
+                        })
+                        .process(new CounterFunction(lengthInMillis));
         });
     }
 
@@ -47,7 +47,7 @@ public class EventsCounter extends CustomStreamTransformer {
         }
     }
 
-    public static class CounterFunction extends TimestampedEvictableStateFunction<InterpretationResult, ValueWithContext<Object>, Integer> {
+    public static class CounterFunction extends TimestampedEvictableStateFunction<ValueWithContext<String>, ValueWithContext<Object>, Integer> {
         long lengthInMillis;
 
         public CounterFunction(long lengthInMillis) {
@@ -61,7 +61,7 @@ public class EventsCounter extends CustomStreamTransformer {
         }
 
         @Override
-        public void processElement(InterpretationResult ir, Context ctx, Collector<ValueWithContext<Object>> out) throws Exception {
+        public void processElement(ValueWithContext<String> ir, Context ctx, Collector<ValueWithContext<Object>> out) throws Exception {
             long timestamp = ctx.timestamp();
 
             moveEvictionTime(lengthInMillis, ctx);
@@ -73,7 +73,7 @@ public class EventsCounter extends CustomStreamTransformer {
                     .map(l -> asJavaCollection(l).stream().mapToInt(Integer::intValue).sum())
                     .mapToInt(Integer::intValue).sum();
             out.collect(
-                new ValueWithContext<>(new EventCount(eventsCount), ir.finalContext())
+                new ValueWithContext<>(new EventCount(eventsCount), ir.context())
             );
         }
 

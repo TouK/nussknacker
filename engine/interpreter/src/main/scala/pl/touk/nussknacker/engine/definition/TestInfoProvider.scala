@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.definition
 
+import java.util.concurrent.TimeUnit
+
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.process.{SourceFactory, TestDataGenerator, TestDataParserProvider, WithCategories}
 import pl.touk.nussknacker.engine.api.test.TestDataParser
@@ -10,6 +12,8 @@ import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMetho
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.node.Source
 import shapeless.syntax.typeable._
+
+import scala.concurrent.duration.FiniteDuration
 
 trait TestInfoProvider {
 
@@ -29,6 +33,8 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider {
   private lazy val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData.modelClassLoader.classLoader,
     modelData.processDefinition.expressionConfig)
 
+  private lazy val factory = new ProcessObjectFactory(evaluator)
+
   override def getTestingCapabilities(metaData: MetaData, source: Source): TestingCapabilities = {
     val sourceObj = prepareSourceObj(source)(metaData)
     val canTest = sourceObj.exists(_.isInstanceOf[TestDataParserProvider[_]])
@@ -36,7 +42,7 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider {
     TestingCapabilities(canBeTested = canTest, canGenerateTestData = canGenerateData)
   }
 
-  private def sourceFactory(source: Source): Option[SourceFactory[_]] = {
+  private def extractSourceFactory(source: Source): Option[SourceFactory[_]] = {
     // this wrapping with model class loader is necessary because during sourceFactories creation, some classes
     // can be not loaded yet - for example dynamically loaded AvroKryoSerializerUtils (from flink-avro library)
     modelData.withThisAsContextClassLoader {
@@ -50,10 +56,10 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider {
   private def prepareSourceObj(source: Source)(implicit metaData: MetaData): Option[process.Source[Any]] = {
     implicit val nodeId: NodeId = NodeId(source.id)
     for {
-      factory <- sourceFactory(source)
-      definition = ObjectWithMethodDef.withEmptyConfig(factory, ProcessObjectDefinitionExtractor.source)
+      sourceFactory <- extractSourceFactory(source)
+      definition = ObjectWithMethodDef.withEmptyConfig(sourceFactory, ProcessObjectDefinitionExtractor.source)
       sourceParams <- prepareSourceParams(definition, source)
-      sourceObj = ProcessObjectFactory[process.Source[Any]](definition, evaluator).create(sourceParams)
+      sourceObj = factory.create[process.Source[Any]](definition, sourceParams)
     } yield sourceObj
   }
 

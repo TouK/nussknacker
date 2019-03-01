@@ -90,10 +90,10 @@ object CustomSignalReader extends CustomStreamTransformer {
   @SignalTransformer(signalClass = classOf[TestProcessSignalFactory])
   @MethodToInvoke(returnType = classOf[Void])
   def execute() =
-    FlinkCustomStreamTransformation((start: DataStream[InterpretationResult], context: FlinkCustomNodeContext) => {
+    FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
       context.signalSenderProvider.get[TestProcessSignalFactory]
         .connectWithSignals(start, context.metaData.id, context.nodeId, new EspDeserializationSchema(identity))
-        .map((a:InterpretationResult) => ValueWithContext(a),
+        .map((a:Context) => ValueWithContext("", a),
               (_:Array[Byte]) => ValueWithContext[Any]("", Context("id")))
   })
 }
@@ -105,7 +105,7 @@ object TransformerWithTime extends CustomStreamTransformer {
   @SignalTransformer(signalClass = classOf[TestProcessSignalFactory])
   @MethodToInvoke(returnType = classOf[Int])
   def execute(@ParamName("seconds") seconds: Int) =
-    FlinkCustomStreamTransformation((start: DataStream[InterpretationResult], context: FlinkCustomNodeContext) => {
+    FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
       start
         .map(_ => 1)
         .timeWindowAll(Time.seconds(seconds)).reduce(_ + _)

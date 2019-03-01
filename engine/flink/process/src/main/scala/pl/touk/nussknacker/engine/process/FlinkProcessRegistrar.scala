@@ -34,11 +34,9 @@ import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.process.AsyncExecutionContextPreparer
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.SinkInvocationCollector
 import pl.touk.nussknacker.engine.api.test.TestRunId
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.compile.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.compile.ValidationContext
 import pl.touk.nussknacker.engine.compiledgraph.part._
-import pl.touk.nussknacker.engine.definition.CustomNodeInvoker
+import pl.touk.nussknacker.engine.definition.{CompilerLazyParameterInterpreter, LazyInterpreterDependencies}
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.util.ContextInitializingFunction
 import pl.touk.nussknacker.engine.flink.util.metrics.InstantRateMeterWithCount
@@ -103,7 +101,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => (Cla
     }
   }
 
-  private def register(env: StreamExecutionEnvironment, compiledProcessWithDeps: (ClassLoader) => CompiledProcessWithDeps,
+  private def register(env: StreamExecutionEnvironment, compiledProcessWithDeps: ClassLoader => CompiledProcessWithDeps,
                        testRunId: Option[TestRunId]): Unit = {
 
 
@@ -141,17 +139,18 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => (Cla
             case moreThanOne => throw new IllegalArgumentException(s"Invalid process structure, more than one $joinId defined: $moreThanOne")
           }
 
-          val executor = joinPart.customNodeInvoker.asInstanceOf[CustomNodeInvoker[FlinkCustomJoinTransformation@unchecked]]
+          val executor = joinPart.transformer.asInstanceOf[FlinkCustomJoinTransformation]
           val customNodeContext = FlinkCustomNodeContext(metaData,
-            joinId, processWithDeps.processTimeout, classLoader => compiledProcessWithDeps(classLoader).exceptionHandler, processWithDeps.signalSenders)
+            joinId, processWithDeps.processTimeout,
+            FlinkLazyParamProvider(runtimeContext => new FlinkCompilerLazyInterpreterCreator(runtimeContext, compiledProcessWithDeps(UserClassLoader.get("")))),
+            processWithDeps.signalSenders)
 
 
-          val outputVar = joinPart.node.data.asInstanceOf[Join].outputVar.get
+          val outputVar = joinPart.node.data.outputVar.get
           val newContextFun = (ir: ValueWithContext[_]) => ir.context.withVariable(outputVar, ir.value)
 
-          val newStart = executor.run(() => compiledProcessWithDeps(UserClassLoader.get(joinId)).customNodeInvokerDeps)
-            .transform(inputs
-              .map(kv => (kv._1.id, kv._2)), customNodeContext).map(newContextFun)
+          val newStart = executor.transform(inputs
+              .map(kv => (kv._1.id, kv._2.map(_.finalContext))), customNodeContext).map(newContextFun)
 
           val afterSplit = wrapAsync(newStart, joinPart.node, joinPart.validationContext, "branchInterpretation")
               .split(SplitFunction)
@@ -232,8 +231,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => (Cla
 
         case part:SinkPart =>
           throw new IllegalArgumentException(s"Process can only use flink sinks, instead given: ${part.obj}")
-        case part@CustomNodePart(executor:
-          CustomNodeInvoker[FlinkCustomStreamTransformation@unchecked],
+        case part@CustomNodePart(transformer:FlinkCustomStreamTransformation,
               node, validationContext, nextParts, ends) =>
 
           val newContextFun = (ir: ValueWithContext[_]) => node.data.outputVar match {
@@ -242,15 +240,17 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => (Cla
           }
 
           val customNodeContext = FlinkCustomNodeContext(metaData,
-            node.id, processWithDeps.processTimeout, (classLoader) => compiledProcessWithDeps(classLoader).exceptionHandler, processWithDeps.signalSenders)
-          val newStart = executor.run(() => compiledProcessWithDeps(UserClassLoader.get(node.id)).customNodeInvokerDeps).transform(start, customNodeContext)
+            node.id, processWithDeps.processTimeout,
+            FlinkLazyParamProvider(runtimeContext => new FlinkCompilerLazyInterpreterCreator(runtimeContext, compiledProcessWithDeps(UserClassLoader.get("")))),
+              processWithDeps.signalSenders)
+          val newStart = transformer.transform(start.map(_.finalContext), customNodeContext)
               .map(newContextFun)
           val afterSplit = wrapAsync(newStart, node, validationContext, "customNodeInterpretation")
               .split(SplitFunction)
 
           registerParts(afterSplit, nextParts, ends)
         case e:CustomNodePart =>
-          throw new IllegalArgumentException(s"Unknown CustomNodeExecutor: ${e.customNodeInvoker}")
+          throw new IllegalArgumentException(s"Unknown CustomNodeExecutor: ${e.transformer}")
       }
 
     def wrapAsync(beforeAsync: DataStream[Context], node: SplittedNode[_], validationContext: ValidationContext, name: String) : DataStream[InterpretationResult] = {
@@ -508,4 +508,19 @@ object FlinkProcessRegistrar {
     }
   }
 
+}
+
+class FlinkCompilerLazyInterpreterCreator(runtimeContext: RuntimeContext, withDeps: CompiledProcessWithDeps)
+  extends CompilerLazyParameterInterpreter {
+
+  //TODO: is this good place?
+  withDeps.open(runtimeContext)
+
+  val deps: LazyInterpreterDependencies = withDeps.lazyInterpreterDeps
+
+  val metaData: MetaData = withDeps.metaData
+
+  override def close(): Unit = {
+    withDeps.close()
+  }
 }

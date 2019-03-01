@@ -1,5 +1,8 @@
 package pl.touk.nussknacker.engine.api
 
+import pl.touk.nussknacker.engine.api.exception.EspExceptionHandler
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+
 import scala.concurrent.{ExecutionContext, Future}
 
 /**
@@ -19,11 +22,29 @@ abstract class CustomStreamTransformer {
 
 }
 
-//TODO: refactor to pass user classloader explicitly
-trait LazyInterpreter[T] {
+/**
+  * Lazy parameter is representation of parameter of custom node which should be evaluated for each record:
+  * ```def execute(@ParamName("keyBy") keyBy: LazyParameter[String], @ParamName ("length") length: String)```
+  * In this case, length is computed as constant during process compilation, while keyBy is evaluated for each event
+  * Cannot be evaluated directly (no method like 'evaluate',
+  * as evaluation may need e.g. lazy variables and we have to take care of lifecycle, to use it see LazyParameterInterpreter
+  *
+  */
+trait LazyParameter[T] {
 
-  def createInterpreter: (ExecutionContext, Context) => Future[T]
-
-  def syncInterpretationFunction : InterpretationResult => T
+  //type of parameter, derived from expression. Can be used for dependent types, see PreviousValueTransformer
+  def returnType: TypingResult
 
 }
+
+
+trait LazyParameterInterpreter {
+
+  def createInterpreter[T](lazyInterpreter: LazyParameter[T]): (ExecutionContext, Context) => Future[T]
+
+  def syncInterpretationFunction[T](lazyInterpreter: LazyParameter[T]) : Context => T
+
+  def close(): Unit
+
+}
+

@@ -113,7 +113,7 @@ class InterpreterSpec extends FunSuite with Matchers {
 
     val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(configCreator, ConfigFactory.empty())
 
-    failOnErrors(CompiledProcess.compile(process, definitions, listeners, getClass.getClassLoader, 10 seconds))
+    failOnErrors(CompiledProcess.compile(process, definitions, listeners, getClass.getClassLoader))
   }
 
   private def failOnErrors[T](obj: ValidatedNel[ProcessCompilationError, T]): T = obj match {

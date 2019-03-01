@@ -13,21 +13,24 @@ import pl.touk.nussknacker.engine.flink.javaapi.process.JavaFlinkCustomStreamTra
 public class TransactionAmountAggregator extends CustomStreamTransformer {
 
     @MethodToInvoke
-    public FlinkCustomStreamTransformation execute(@ParamName("clientId") LazyInterpreter<String> clientId) {
-        return JavaFlinkCustomStreamTransformation.apply(start -> {
+    public FlinkCustomStreamTransformation execute(@ParamName("clientId") LazyParameter<String> clientId) {
+        return JavaFlinkCustomStreamTransformation.apply((start, ctx) -> {
             return
                     //it seems that explicit anonymous class is mandatory here, otherwise there is some weird LazyInterpreter generic type exception
-                    start.keyBy(new KeySelector<InterpretationResult, String>() {
-                        @Override
-                        public String getKey(InterpretationResult ir) throws Exception {
-                            return clientId.syncInterpretationFunction().apply(ir);
-                        }
-                    }).map(amountAggregateFunction());
+                    start
+                        .map(ctx.nodeServices().lazyMapFunction(clientId))
+                        .keyBy(new KeySelector<ValueWithContext<String>, String>() {
+                            @Override
+                            public String getKey(ValueWithContext<String> ir) throws Exception {
+                                return ir.value();
+                            }
+                        })
+                        .map(amountAggregateFunction());
         });
     }
 
-    private RichMapFunction<InterpretationResult, ValueWithContext<Object>> amountAggregateFunction() {
-        return new RichMapFunction<InterpretationResult, ValueWithContext<Object>>() {
+    private RichMapFunction<ValueWithContext<String>, ValueWithContext<Object>> amountAggregateFunction() {
+        return new RichMapFunction<ValueWithContext<String>, ValueWithContext<Object>>() {
             ValueState<AggregatedAmount> state = null;
 
             @Override
@@ -40,11 +43,11 @@ public class TransactionAmountAggregator extends CustomStreamTransformer {
             }
 
             @Override
-            public ValueWithContext<Object> map(InterpretationResult ir) throws Exception {
-                Transaction transaction = ir.finalContext().apply("input");
+            public ValueWithContext<Object> map(ValueWithContext<String> ir) throws Exception {
+                Transaction transaction = ir.context().apply("input");
                 int aggregatedAmount = transaction.amount + ((state.value() == null) ? 0 : state.value().amount);
                 state.update(new AggregatedAmount(transaction.clientId, aggregatedAmount));
-                return (new ValueWithContext<>(state.value(), ir.finalContext()));
+                return (new ValueWithContext<>(state.value(), ir.context()));
             }
         };
     }

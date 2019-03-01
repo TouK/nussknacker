@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.compile.ProcessCompilationError.{MissingPart, 
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.compiledgraph.part._
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
-import pl.touk.nussknacker.engine.definition.{CustomNodeInvoker, ProcessDefinitionExtractor}
+import pl.touk.nussknacker.engine.definition.{CompilerLazyParameterInterpreter, LazyInterpreterDependencies, ProcessDefinitionExtractor}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.Source
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.{NextNode, PartRef, SplittedNode}
@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.standalone.api.{StandaloneCustomTransformer, S
 import pl.touk.nussknacker.engine.standalone.metrics.InvocationMetrics
 import pl.touk.nussknacker.engine.standalone.utils.{StandaloneContext, StandaloneContextLifecycle, StandaloneContextPreparer}
 import pl.touk.nussknacker.engine.{Interpreter, ModelData, compiledgraph}
+import shapeless.Lazy
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -53,7 +54,7 @@ object StandaloneProcessInterpreter {
       definitions,
       listeners,
       //FIXME: timeout
-      modelData.modelClassLoader.classLoader, 10 seconds
+      modelData.modelClassLoader.classLoader
     ).andThen { compiledProcess =>
       val source = compiledProcess.parts.sources.head.asInstanceOf[SourcePart].obj.asInstanceOf[StandaloneSource[Any]]
       StandaloneInvokerCompiler(compiledProcess).compile.map { invoker =>
@@ -76,12 +77,18 @@ object StandaloneProcessInterpreter {
         compileWithCompilationErrors(node, validationContext).andThen(partInvoker(_, nextParts))
       case part@SinkPart(_, endNode, validationContext) =>
         compileWithCompilationErrors(endNode, validationContext).andThen(partInvoker(_, List()))
-      case CustomNodePart(executor:
-                CustomNodeInvoker[StandaloneCustomTransformer@unchecked], node, validationContext, parts, _) =>
+      case CustomNodePart(transformer:StandaloneCustomTransformer, node, validationContext, parts, _) =>
         val result = compileWithCompilationErrors(node, validationContext).andThen(partInvoker(_, parts))
 
-        val transformer = executor.run(() => compiledProcess.customNodeInvokerDeps)
-        result.map(transformer.createTransformation(node.data.outputVar.get))
+        //TODO: make it nice??
+        val creator = new CompilerLazyParameterInterpreter {
+          override def deps: LazyInterpreterDependencies = compiledProcess.lazyInterpreterDeps
+
+          override def metaData: MetaData = compiledProcess.parts.metaData
+
+          override def close(): Unit = {}
+        } 
+        result.map(transformer.createTransformation(node.data.outputVar.get)(_, creator))
       case a: CustomNodePart => Invalid(NonEmptyList.of(UnsupportedPart(a.id)))
       case a:JoinPart => Invalid(NonEmptyList.of(UnsupportedPart(a.id)))
     }

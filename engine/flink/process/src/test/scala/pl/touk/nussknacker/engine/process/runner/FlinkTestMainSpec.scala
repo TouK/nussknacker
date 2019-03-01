@@ -123,7 +123,7 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
 
     invocationResults("cid") shouldBe
       List(
-        ExpressionInvocationResult(ResultContext("", Map()), "stringVal", "s"),
+        //we record only LazyParameter execution results
         ExpressionInvocationResult(ResultContext("proc1-id-0-0", Map("input" -> input)), "keyBy", "0"),
         ExpressionInvocationResult(ResultContext("proc1-id-0-1", Map("input" -> input2)), "keyBy", "0")
       )

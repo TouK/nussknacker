@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.flink.api.process
 
 import pl.touk.nussknacker.engine.api.MetaData
-import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionHandler
 import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
 
 import scala.concurrent.duration.FiniteDuration
@@ -10,8 +9,7 @@ import scala.reflect.ClassTag
 case class FlinkCustomNodeContext(metaData: MetaData,
                                   nodeId: String,
                                   timeout: FiniteDuration,
-                                  //This *has* to be opened/closed by user code - TODO: enforce/document it somehow??
-                                  exceptionHandler: (ClassLoader)=>FlinkEspExceptionHandler,
+                                  nodeServices: FlinkLazyParamProvider,
                                   signalSenderProvider: FlinkProcessSignalSenderProvider)
 
 case class SignalSenderKey(id: String, klass: Class[_])

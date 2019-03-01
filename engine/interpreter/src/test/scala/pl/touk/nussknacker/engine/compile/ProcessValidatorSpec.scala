@@ -6,7 +6,7 @@ import cats.instances.string._
 import org.scalatest.{FunSuite, Inside, Matchers}
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.{MetaData, Service, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, Service, StreamMetaData}
 import pl.touk.nussknacker.engine.api.lazyy.ContextWithLazyValuesProvider
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, SingleNodeConfig, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.{ClazzRef, TypedMap, TypedObjectDefinition}
@@ -47,6 +47,9 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     Map("customTransformer" -> (ObjectDefinition(List.empty, ClazzRef[SimpleRecord], List()), emptyQueryNamesData()),
       "withParamsTransformer" -> (ObjectDefinition(List(Parameter("par1", ClazzRef(classOf[String]))), ClazzRef[SimpleRecord], List()), emptyQueryNamesData()),
       "clearingContextTransformer" -> (ObjectDefinition(List.empty, ClazzRef[SimpleRecord], List()), emptyQueryNamesData(true)),
+      "withManyParameters" -> (ObjectDefinition(List(
+        Parameter("lazyString", ClazzRef[String], ClazzRef[LazyParameter[_]]), Parameter("lazyInt", ClazzRef(classOf[Integer]), ClazzRef[LazyParameter[_]]), Parameter("long", ClazzRef[Long]))
+      , ClazzRef[SimpleRecord], List()), emptyQueryNamesData(true)),
       "withoutReturnType" -> (ObjectDefinition(List(Parameter("par1", ClazzRef(classOf[String]))), ClazzRef[Void], List()), emptyQueryNamesData())
     ),
     Map.empty,
@@ -605,11 +608,26 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         .id("process1")
         .exceptionHandler()
         .source("id1", "source")
-        .customNodeNoOutput("custom", "customTransformer", "par1" -> "'1'")
+        .customNodeNoOutput("custom", "customTransformer")
         .sink("id2", "''", "sink")
 
     validate(processWithInvalidExpresssion, baseDefinition).result should matchPattern {
-      case Invalid(NonEmptyList(RedundantParameters(vars1, "custom"), MissingParameters(vars2, "custom") :: Nil)) if vars1 == Set("par1")  && vars2 == Set("OutputVariable") =>
+      case Invalid(NonEmptyList(MissingParameters(vars, "custom"), Nil)) if vars == Set("OutputVariable") =>
+    }
+  }
+
+  test("should validate process with parameters in different order than in definition") {
+    val process =
+      EspProcessBuilder
+        .id("process1")
+        .exceptionHandler()
+        .source("id1", "source")
+        .customNode("custom", "outVar", "withManyParameters",
+          "long" -> "123L", "lazyString" -> "'44'", "lazyInt" -> "43" )
+        .sink("id2", "''", "sink")
+
+    validate(process, baseDefinition).result should matchPattern {
+      case Valid(_) =>
     }
   }
 

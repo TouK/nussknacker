@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.typed.{ClazzRef, TypedMap, typing}
 import pl.touk.nussknacker.engine.compile.ValidationContext
 import pl.touk.nussknacker.engine.compiledgraph.expression
 import pl.touk.nussknacker.engine.compiledgraph.expression.{Expression, ExpressionParser, ValueWithLazyContext}
+import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.sql.columnmodel.CreateColumnModel
 import pl.touk.nussknacker.engine.sql.columnmodel.CreateColumnModel.InvalidateMessage
 import pl.touk.nussknacker.engine.sql.preparevalues.{PrepareTables, ReadObjectField}
@@ -78,6 +79,8 @@ case class SqlExpressEvaluationException(notAListExceptions :NonEmptyList[Prepar
 class SqlExpression(private[sql] val columnModels: Map[String, ColumnModel],
                      val original: String) extends Expression {
 
+  override val language: String = SqlExpressionParser.languageId
+  
   private val databaseHolder = new ThreadLocal[SqlQueryableDataBase] {
     override def initialValue(): SqlQueryableDataBase = newDatabase()
   }

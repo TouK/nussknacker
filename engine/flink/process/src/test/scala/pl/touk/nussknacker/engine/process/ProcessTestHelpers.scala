@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.flink.api.common.ExecutionConfig
-import org.apache.flink.api.common.functions.RichMapFunction
+import org.apache.flink.api.common.functions.{FilterFunction, RichMapFunction}
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import org.apache.flink.configuration.{Configuration, QueryableStateOptions}
 import org.apache.flink.streaming.api.functions.TimestampAssigner
@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.api.exception.{EspExceptionInfo, ExceptionHand
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.{LazyInterpreter, _}
+import pl.touk.nussknacker.engine.api.{LazyParameter, _}
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionHandler}
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.state.WithExceptionHandler
@@ -130,23 +130,24 @@ object ProcessTestHelpers {
   object StateCustomNode extends CustomStreamTransformer {
 
     @MethodToInvoke(returnType = classOf[SimpleRecordWithPreviousValue])
-    def execute(@ParamName("keyBy") keyBy: LazyInterpreter[String],
-               @ParamName("stringVal") stringVal: String) = FlinkCustomStreamTransformation((start: DataStream[InterpretationResult], ctx: FlinkCustomNodeContext) => {
-      start.keyBy(keyBy.syncInterpretationFunction)
+    def execute(@ParamName("keyBy") keyBy: LazyParameter[String],
+                @ParamName("stringVal") stringVal: String) = FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
+      start
+        .map(context.nodeServices.lazyMapFunction(keyBy))
+        .keyBy(_.value)
         .mapWithState[ValueWithContext[Any], Long] {
-        case (SimpleFromIr(ir, sr), Some(oldState)) =>
+        case (SimpleFromValueWithContext(ctx, sr), Some(oldState)) =>
           (ValueWithContext(
-          SimpleRecordWithPreviousValue(sr, oldState, stringVal), ir.finalContext), Some(sr.value1))
-        case (SimpleFromIr(ir, sr), None) =>
+          SimpleRecordWithPreviousValue(sr, oldState, stringVal), ctx), Some(sr.value1))
+        case (SimpleFromValueWithContext(ctx, sr), None) =>
           (ValueWithContext(
-           SimpleRecordWithPreviousValue(sr, 0, stringVal), ir.finalContext), Some(sr.value1))
-      }.map(CustomMap(ctx.exceptionHandler))
-
+           SimpleRecordWithPreviousValue(sr, 0, stringVal), ctx), Some(sr.value1))
+      }
 
     })
 
-    object SimpleFromIr {
-      def unapply(ir:InterpretationResult) = Some((ir, ir.finalContext.apply[SimpleRecord]("input")))
+    object SimpleFromValueWithContext {
+      def unapply(vwc:ValueWithContext[_]) = Some((vwc.context, vwc.context.apply[SimpleRecord]("input")))
     }
 
   }
@@ -154,12 +155,14 @@ object ProcessTestHelpers {
   object CustomFilter extends CustomStreamTransformer {
 
     @MethodToInvoke(returnType = classOf[Void])
-    def execute(@ParamName("input") keyBy: LazyInterpreter[String],
-               @ParamName("stringVal") stringVal: String) = FlinkCustomStreamTransformation((start: DataStream[InterpretationResult], context: FlinkCustomNodeContext) => {
+    def execute(@ParamName("input") keyBy: LazyParameter[String],
+                @ParamName("stringVal") stringVal: String) = FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
 
-      start.filter { ir =>
-        keyBy.syncInterpretationFunction(ir) == stringVal
-      }.map(ValueWithContext(_))
+      start
+        .filter(new AbstractOneParamLazyParameterFunction(keyBy, context.nodeServices) with FilterFunction[Context] {
+          override def filter(value: Context): Boolean = evaluateParameter(value) == stringVal
+        })
+        .map(ValueWithContext(null, _))
     })
   }
 
@@ -168,11 +171,12 @@ object ProcessTestHelpers {
     override val clearsContext = true
 
     @MethodToInvoke(returnType = classOf[Void])
-    def execute(@ParamName("value") value: LazyInterpreter[String]) =
-      FlinkCustomStreamTransformation((start: DataStream[InterpretationResult], context: FlinkCustomNodeContext) => {
+    def execute(@ParamName("value") value: LazyParameter[String]) =
+      FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
         start
-          .map(ir => value.syncInterpretationFunction(ir))
-          .map(ValueWithContext(_, Context("new")))
+          .map(context.nodeServices.lazyMapFunction(value))
+          .keyBy(_.value)
+          .map(_ => ValueWithContext(null, Context("new")))
     })
 
   }
@@ -184,29 +188,14 @@ object ProcessTestHelpers {
     @MethodToInvoke(returnType = classOf[Void])
     def execute(): FlinkCustomJoinTransformation =
       new FlinkCustomJoinTransformation {
-        override def transform(inputs: Map[String, DataStream[InterpretationResult]], context: FlinkCustomNodeContext): DataStream[ValueWithContext[Any]] = {
-          val inputFromIr = (ir:InterpretationResult) => ValueWithContext(ir.finalContext.variables("input"), ir.finalContext)
+        override def transform(inputs: Map[String, DataStream[Context]], context: FlinkCustomNodeContext): DataStream[ValueWithContext[Any]] = {
+          val inputFromIr = (ir:Context) => ValueWithContext(ir.variables("input"), ir)
           inputs("end1")
             .connect(inputs("end2"))
             .map(inputFromIr, inputFromIr)
         }
       }
 
-  }
-
-
-  case class CustomMap(lazyHandler: ClassLoader => FlinkEspExceptionHandler)
-    extends RichMapFunction[ValueWithContext[Any], ValueWithContext[Any]] with WithExceptionHandler {
-
-    override def map(value: ValueWithContext[Any]): ValueWithContext[Any] = {
-      //just using Exceptionhandler here to see that its injected properly
-      try {
-        value
-      } catch {
-        case e:Exception => exceptionHandler.handle(EspExceptionInfo(None, e, value.context))
-          value
-      }
-    }
   }
 
   object MockService extends WithDataList[Any]

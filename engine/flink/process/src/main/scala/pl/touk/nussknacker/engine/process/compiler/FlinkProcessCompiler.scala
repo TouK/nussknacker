@@ -40,7 +40,7 @@ abstract class FlinkProcessCompiler(creator: ProcessConfigCreator, config: Confi
     val listenersToUse = listeners()
 
     val compiledProcess = validateOrFailProcessCompilation(
-      CompiledProcess.compile(process, definitions(), listenersToUse, userCodeClassLoader, timeout))
+      CompiledProcess.compile(process, definitions(), listenersToUse, userCodeClassLoader))
 
     val listeningExceptionHandler = new ListeningExceptionHandler(listenersToUse,
       //FIXME: remove casting...

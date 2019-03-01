@@ -74,6 +74,8 @@ class SpelExpression(parsed: ParsedSpelExpression,
 
   override val original: String = parsed.original
 
+  override val language: String = SpelExpressionParser.languageId
+
   private val expectedClass = expectedReturnType.clazz
 
   override def evaluate[T](ctx: Context,

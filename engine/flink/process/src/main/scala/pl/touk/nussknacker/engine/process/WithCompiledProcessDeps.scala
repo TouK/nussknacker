@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.process.compiler.CompiledProcessWithDeps
 
 trait WithCompiledProcessDeps extends RichFunction {
 
-  def compiledProcessWithDepsProvider: (ClassLoader) => CompiledProcessWithDeps
+  def compiledProcessWithDepsProvider: ClassLoader => CompiledProcessWithDeps
 
   protected lazy val compiledProcessWithDeps : CompiledProcessWithDeps = compiledProcessWithDepsProvider(getRuntimeContext.getUserCodeClassLoader)
 

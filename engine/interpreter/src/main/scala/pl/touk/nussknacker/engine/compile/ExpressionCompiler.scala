@@ -59,8 +59,7 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
 
   private def compileParam(n: graph.evaluatedparam.Parameter,
                            maybeCtx: Option[ValidationContext],
-                           definition: Parameter,
-                           skipContextValidation: Boolean = false)
+                           definition: Parameter)
                           (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, compiledgraph.evaluatedparam.Parameter] = {
     (maybeCtx match {
       case Some(ctx) =>
@@ -70,7 +69,7 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
       case None => Valid(None)
     }).andThen { finalCtx =>
       compile(n.expression, Some(n.name), finalCtx, definition.typ)
-        .map(typed => compiledgraph.evaluatedparam.Parameter(n.name, typed._2))
+        .map(typed => compiledgraph.evaluatedparam.Parameter(n.name, typed._2, typed._1))
     }
   }
 

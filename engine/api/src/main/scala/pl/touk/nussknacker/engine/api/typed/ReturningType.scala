@@ -7,3 +7,4 @@ trait ReturningType {
   def returnType: TypingResult
 
 }
+

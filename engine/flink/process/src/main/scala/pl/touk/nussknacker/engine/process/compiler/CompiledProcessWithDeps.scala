@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.compile.{CompiledProcess, PartSubGraphCompilat
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.compiledgraph.node.Node
 import pl.touk.nussknacker.engine.compiledgraph.part.{SourcePart, StartPart}
-import pl.touk.nussknacker.engine.definition.CustomNodeInvokerDeps
+import pl.touk.nussknacker.engine.definition.LazyInterpreterDependencies
 import pl.touk.nussknacker.engine.flink.api.RuntimeContextLifecycle
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionHandler
 import pl.touk.nussknacker.engine.flink.api.process.FlinkProcessSignalSenderProvider
@@ -52,7 +52,7 @@ class CompiledProcessWithDeps(compiledProcess: CompiledProcess,
 
   val interpreter : Interpreter = compiledProcess.interpreter
 
-  val customNodeInvokerDeps: CustomNodeInvokerDeps = compiledProcess.customNodeInvokerDeps
+  val lazyInterpreterDeps: LazyInterpreterDependencies = compiledProcess.lazyInterpreterDeps
 
   val sources: NonEmptyList[StartPart] = compiledProcess.parts.sources
 }

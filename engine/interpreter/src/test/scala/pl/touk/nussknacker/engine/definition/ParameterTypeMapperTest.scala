@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.definition
 
 import org.scalatest.{FlatSpec, FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.{LazyInterpreter, PossibleValues}
+import pl.touk.nussknacker.engine.api.{LazyParameter, PossibleValues}
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedExpressionValues}
 import pl.touk.nussknacker.engine.api.process.ParameterConfig
 import pl.touk.nussknacker.engine.types.JavaSampleEnum
@@ -10,14 +10,14 @@ class ParameterTypeMapperTest extends FunSuite with Matchers {
 
   private def run(id: String) {}
   private def runAnnotated(@PossibleValues(Array("a", "b", "c", "d")) id: String) {}
-  private def runAnnotatedLazy(@PossibleValues(Array("a", "b", "c")) id: LazyInterpreter[String]) {}
+  private def runAnnotatedLazy(@PossibleValues(Array("a", "b", "c")) id: LazyParameter[String]) {}
   private def runEnum(id: JavaSampleEnum) {}
 
   private val param = getFirstParam("run", classOf[String])
 
   private val paramAnnotated = getFirstParam("runAnnotated", classOf[String])
   
-  private val paramLazyAnnotated = getFirstParam("runAnnotatedLazy", classOf[LazyInterpreter[String]])
+  private val paramLazyAnnotated = getFirstParam("runAnnotatedLazy", classOf[LazyParameter[String]])
 
 
   test("detect @PossibleValues annotation") {

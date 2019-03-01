@@ -14,6 +14,9 @@ import scala.language.implicitConversions
 object expression {
 
   trait Expression {
+
+    def language: String
+    
     def original: String
 
     def evaluate[T](ctx: Context, lazyValuesProvider: LazyValuesProvider): Future[ValueWithLazyContext[T]]

@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, EspExceptionInfo}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.ReturningType
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.{MaybeArtificial, ProcessCanonizer}
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError._
@@ -18,6 +18,7 @@ import pl.touk.nussknacker.engine.compiledgraph.part.NextWithParts
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ProcessDefinition}
 import pl.touk.nussknacker.engine.definition._
+import pl.touk.nussknacker.engine.definition.defaults.NodeDefinition
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
@@ -31,11 +32,13 @@ import pl.touk.nussknacker.engine.splittedgraph.splittednode.{Next, NextNode, Pa
 import pl.touk.nussknacker.engine.util.Implicits._
 import shapeless.syntax.typeable._
 
+import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.util.control.NonFatal
 
-class ProcessCompiler( protected val classLoader: ClassLoader,
-                       protected val sub: PartSubGraphCompilerBase,
-                      protected val definitions: ProcessDefinition[ObjectWithMethodDef]) extends ProcessCompilerBase with ProcessValidator {
+class ProcessCompiler(protected val classLoader: ClassLoader,
+                      protected val sub: PartSubGraphCompilerBase,
+                      protected val definitions: ProcessDefinition[ObjectWithMethodDef]
+                     ) extends ProcessCompilerBase with ProcessValidator {
 
   //FIXME: should it be here?
   private val expressionEvaluator = {
@@ -49,11 +52,7 @@ class ProcessCompiler( protected val classLoader: ClassLoader,
     super.compile(process)
   }
 
-  override protected def createCustomNodeInvoker(obj: ObjectWithMethodDef, metaData: MetaData, node: graph.node.WithParameters) =
-    CustomNodeInvoker[Any](obj, metaData, node)
-
-  override protected def createFactory[T](obj: ObjectWithMethodDef) =
-    ProcessObjectFactory[T](obj, expressionEvaluator)
+  override protected def factory: ProcessObjectFactory = new ProcessObjectFactory(expressionEvaluator)
 
 }
 
@@ -79,7 +78,7 @@ trait ProcessValidator extends LazyLogging {
 
 protected trait ProcessCompilerBase {
 
-  type ParameterProviderT <: ObjectMetadata
+  type ParameterProviderT = ObjectWithMethodDef
 
   protected def definitions: ProcessDefinition[ParameterProviderT]
   protected def sourceFactories = definitions.sourceFactories
@@ -128,16 +127,28 @@ protected trait ProcessCompilerBase {
       invalid(DuplicatedNodeIds(duplicatedIds.toSet))
   }
 
-  private def contextAfterCustomNode(node: CustomNode, nodeDefinition: ParameterProviderT, validationContext: ValidationContext, clearsContext: Boolean)
+  private def returnType(nodeDefinition: ParameterProviderT, obj: AnyRef): Option[TypingResult] = {
+    if (obj.isInstanceOf[ReturningType]) {
+      Some(obj.asInstanceOf[ReturningType].returnType)
+    } else if (nodeDefinition.hasNoReturn) {
+      None
+    } else {
+      Some(nodeDefinition.returnType)
+    }
+  }
+
+  private def contextAfterCustomNode(node: CustomNode, returnType: Option[TypingResult],
+                                     validationContext: ValidationContext, clearsContext: Boolean)
                                     (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, ValidationContext] = {
     val maybeClearedContext = if (clearsContext) validationContext.copy(variables = globalVariableTypes) else validationContext
-    (node.outputVar, nodeDefinition.hasNoReturn) match {
-      case (Some(varName), false) => maybeClearedContext.withVariable(varName, nodeDefinition.returnType)
+
+    (node.outputVar, returnType) match {
+      case (Some(varName), Some(typ)) => maybeClearedContext.withVariable(varName, typ)
         //ble... NonEmptyList is invariant...
         .asInstanceOf[ValidatedNel[ProcessCompilationError,ValidationContext]]
-      case (None, true) => Valid(maybeClearedContext)
-      case (Some(_), true) => Invalid(NonEmptyList.of(RedundantParameters(Set("OutputVariable"))))
-      case (None, false) => Invalid(NonEmptyList.of(MissingParameters(Set("OutputVariable"))))
+      case (None, None) => Valid(maybeClearedContext)
+      case (Some(_), None) => Invalid(NonEmptyList.of(RedundantParameters(Set("OutputVariable"))))
+      case (None, Some(_)) => Invalid(NonEmptyList.of(MissingParameters(Set("OutputVariable"))))
     }
   }
 
@@ -151,11 +162,11 @@ protected trait ProcessCompilerBase {
         )
       case CustomNodePart(node, nextParts, ends) =>
         val customNodeDefinition = getCustomNodeDefinition(node)
-        val nextCtx = customNodeDefinition.andThen { case (nodeDefinition, additionalData) =>
-          contextAfterCustomNode(node.data, nodeDefinition, ctx, additionalData.clearsContext)
-        }
-
         val compiledNode = customNodeDefinition.andThen(n => compileCustomNodeInvoker(node.data, n._1, ctx))
+
+        val nextCtx = A.map2(customNodeDefinition, compiledNode)((a, b) => (a,b)) andThen { case ((nodeDefinition, additionalData), cNode) =>
+          contextAfterCustomNode(node.data, returnType(nodeDefinition, cNode), ctx, additionalData.clearsContext)
+        }
         val nextPartsValidation = sub.validate(node, nextCtx.fold(_ => ctx, identity))
 
         CompilationResult.map4(
@@ -194,7 +205,7 @@ protected trait ProcessCompilerBase {
 
         val initialContext = ValidationContext(Map(join.outputVar.get -> Unknown) ++ globalVariableTypes)
 
-        val compiledJoin: ValidatedNel[ProcessCompilationError, CustomNodeInvoker[_]] = customData.andThen(d => compileCustomNodeInvoker(join, d._1, initialContext))
+        val compiledJoin: ValidatedNel[ProcessCompilationError, AnyRef] = customData.andThen(d => compileCustomNodeInvoker(join, d._1, initialContext))
         //TODO JOIN: here we need to add handling ValidationContext, and input variables
         val validatedSource = sub.validate(source.node, initialContext)
         val typesForParts = validatedSource.typing
@@ -259,9 +270,8 @@ protected trait ProcessCompilerBase {
                                       metaData: MetaData): ValidatedNel[ProcessCompilationError, T] = {
 
     validateParameters(parameterProviderT, parameters, ctx).andThen { compiledParameters =>
-      val factory = createFactory[T](parameterProviderT)
       try {
-        Valid(factory.create(compiledParameters))
+        Valid(factory.create[T](parameterProviderT, compiledParameters))
       } catch {
         case NonFatal(e) =>
           //TODO: better message?
@@ -277,15 +287,11 @@ protected trait ProcessCompilerBase {
   }
 
   private def compileCustomNodeInvoker(node: WithParameters, nodeDefinition: ParameterProviderT, ctx: ValidationContext)
-                                      (implicit nodeId: NodeId, metaData: MetaData): ValidatedNel[ProcessCompilationError, CustomNodeInvoker[Any]] = {
-    validateParameters(nodeDefinition, node.parameters, ctx)
-      .map(_ => createCustomNodeInvoker(nodeDefinition, metaData, node))
+                                      (implicit nodeId: NodeId, metaData: MetaData): ValidatedNel[ProcessCompilationError, AnyRef] = {
+    compileProcessObject[AnyRef](nodeDefinition, node.parameters, ctx)
   }
 
-
-  protected def createCustomNodeInvoker(obj: ParameterProviderT, metaData: MetaData, node: graph.node.WithParameters) : CustomNodeInvoker[Any]
-
-  protected def createFactory[T](obj: ParameterProviderT): ProcessObjectFactory[T]
+  protected def factory: ProcessObjectFactory
 
   private def compile(parts: List[SubsequentPart], ctx: Map[String, ValidationContext])
                      (implicit metaData: MetaData): CompilationResult[List[compiledgraph.part.SubsequentPart]] = {

@@ -235,9 +235,9 @@ case object UnionTransformer extends CustomStreamTransformer with LazyLogging {
 
   @MethodToInvoke
   def execute(): FlinkCustomJoinTransformation = new FlinkCustomJoinTransformation {
-    override def transform(inputs: Map[String, DataStream[InterpretationResult]], context: FlinkCustomNodeContext): DataStream[ValueWithContext[Any]] = {
+    override def transform(inputs: Map[String, DataStream[Context]], context: FlinkCustomNodeContext): DataStream[ValueWithContext[Any]] = {
       //we pass #input as outputVariable and connect 
-      val inputFromIr = (ir:InterpretationResult) => ValueWithContext(ir.finalContext.variables("input"), ir.finalContext)
+      val inputFromIr = (ir:Context) => ValueWithContext(ir.variables("input"), ir)
       val valuesWithContexts = inputs.values.map(_.map(inputFromIr))
       valuesWithContexts.reduce(_.connect(_).map(identity, identity))
     }
@@ -248,17 +248,19 @@ case object UnionTransformer extends CustomStreamTransformer with LazyLogging {
 case object StatefulTransformer extends CustomStreamTransformer {
 
   @MethodToInvoke
-  def execute(@ParamName("keyBy") keyBy: LazyInterpreter[String])
-  = FlinkCustomStreamTransformation((start: DataStream[InterpretationResult]) => {
-    start.keyBy(keyBy.syncInterpretationFunction)
+  def execute(@ParamName("keyBy") keyBy: LazyParameter[String])
+  = FlinkCustomStreamTransformation((start: DataStream[Context], ctx: FlinkCustomNodeContext) => {
+    start
+      .map(ctx.nodeServices.lazyMapFunction(keyBy))
+      .keyBy(_.value)
       .mapWithState[ValueWithContext[Any], List[String]] { case (StringFromIr(ir, sr), oldState) =>
       val nList = sr :: oldState.getOrElse(Nil)
-      (ValueWithContext(nList, ir.finalContext), Some(nList))
+      (ValueWithContext(nList, ir.context), Some(nList))
     }
   })
 
   object StringFromIr {
-    def unapply(ir: InterpretationResult) = Some(ir, ir.finalContext.apply[String]("input"))
+    def unapply(ir: ValueWithContext[_]) = Some(ir, ir.context.apply[String]("input"))
   }
 
 }
@@ -270,10 +272,10 @@ case class ConstantStateTransformer[T:TypeInformation](defaultValue: T) extends 
 
   @MethodToInvoke
   @QueryableStateNames(values = Array(stateName))
-  def execute() = FlinkCustomStreamTransformation((start: DataStream[InterpretationResult]) => {
+  def execute() = FlinkCustomStreamTransformation((start: DataStream[Context]) => {
     start
       .keyBy(_ => "1")
-      .map(new RichMapFunction[InterpretationResult, ValueWithContext[Any]] {
+      .map(new RichMapFunction[Context, ValueWithContext[Any]] {
 
         var constantState: ValueState[T] = _
 
@@ -284,9 +286,9 @@ case class ConstantStateTransformer[T:TypeInformation](defaultValue: T) extends 
           constantState = getRuntimeContext.getState(descriptor)
         }
 
-        override def map(value: InterpretationResult): ValueWithContext[Any] = {
+        override def map(value: Context): ValueWithContext[Any] = {
           constantState.update(defaultValue)
-          ValueWithContext[Any](value, value.finalContext)
+          ValueWithContext[Any]("", value)
         }
       }).uid("customStateId")
   })
@@ -295,9 +297,11 @@ case class ConstantStateTransformer[T:TypeInformation](defaultValue: T) extends 
 case object CustomFilter extends CustomStreamTransformer {
 
   @MethodToInvoke(returnType = classOf[Void])
-  def execute(@ParamName("expression") expression: LazyInterpreter[Boolean])
-   = FlinkCustomStreamTransformation((start: DataStream[InterpretationResult]) =>
-      start.filter(expression.syncInterpretationFunction).map(ValueWithContext(_)))
+  def execute(@ParamName("expression") expression: LazyParameter[Boolean])
+   = FlinkCustomStreamTransformation((start: DataStream[Context], ctx: FlinkCustomNodeContext) =>
+      start
+        .filter(ctx.nodeServices.lazyFilterFunction(expression))
+        .map(ValueWithContext(null, _)))
 
 }
 
@@ -305,9 +309,9 @@ case object CustomFilter extends CustomStreamTransformer {
 object AdditionalVariableTransformer extends CustomStreamTransformer {
 
   @MethodToInvoke(returnType = classOf[Void])
-  def execute(@AdditionalVariables(Array(new AdditionalVariable(name = "additional", clazz = classOf[String]))) @ParamName("expression") expression: LazyInterpreter[Boolean])
-   = FlinkCustomStreamTransformation((start: DataStream[InterpretationResult]) =>
-      start.map(ValueWithContext(_)))
+  def execute(@AdditionalVariables(Array(new AdditionalVariable(name = "additional", clazz = classOf[String]))) @ParamName("expression") expression: LazyParameter[Boolean])
+   = FlinkCustomStreamTransformation((start: DataStream[Context]) =>
+      start.map(ValueWithContext("", _)))
 
 }
 

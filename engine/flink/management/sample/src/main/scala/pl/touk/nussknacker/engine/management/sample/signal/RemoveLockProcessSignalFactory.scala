@@ -56,10 +56,11 @@ object SampleSignalHandlingTransformer {
     @SignalTransformer(signalClass = classOf[RemoveLockProcessSignalFactory])
     @QueryableStateNames(values = Array(lockQueryName))
     @MethodToInvoke(returnType = classOf[LockOutput])
-    def execute(@ParamName("input") input: LazyInterpreter[String]) =
-      FlinkCustomStreamTransformation((start: DataStream[InterpretationResult], context: FlinkCustomNodeContext) => {
-        val ds = context.signalSenderProvider.get[RemoveLockProcessSignalFactory].connectWithSignals(start, context.metaData.id, context.nodeId, SignalSchema.deserializationSchema)
-          .keyBy(input.syncInterpretationFunction, _.action.key)
+    def execute(@ParamName("input") input: LazyParameter[String]) =
+      FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
+        val ds = context.signalSenderProvider.get[RemoveLockProcessSignalFactory].connectWithSignals(start.map(context.nodeServices.lazyMapFunction(input)),
+          context.metaData.id, context.nodeId, SignalSchema.deserializationSchema)
+          .keyBy(_.value, _.action.key)
           .transform("lockStreamTransform", new LockStreamFunction(context.metaData))
         ds
           .keyBy(_ => QueryableState.defaultKey)
@@ -71,7 +72,7 @@ object SampleSignalHandlingTransformer {
 
 
   class LockStreamFunction(val metaData: MetaData)
-    extends AbstractStreamOperator[Either[LockOutputStateChanged, ValueWithContext[LockOutput]]] with TwoInputStreamOperator[InterpretationResult, SampleProcessSignal, Either[LockOutputStateChanged, ValueWithContext[LockOutput]]]
+    extends AbstractStreamOperator[Either[LockOutputStateChanged, ValueWithContext[LockOutput]]] with TwoInputStreamOperator[ValueWithContext[String], SampleProcessSignal, Either[LockOutputStateChanged, ValueWithContext[LockOutput]]]
       with LazyLogging with SignalHandler {
 
     var lockEnabledState: ValueState[java.lang.Boolean] = _
@@ -83,10 +84,10 @@ object SampleSignalHandlingTransformer {
       lockEnabledState = getRuntimeContext.getState(descriptor)
     }
 
-    override def processElement1(element: StreamRecord[InterpretationResult]): Unit = {
+    override def processElement1(element: StreamRecord[ValueWithContext[String]]): Unit = {
       setInitialStateIfStateNotDefined()
       output.collect(new StreamRecord[Either[LockOutputStateChanged, ValueWithContext[LockOutput]]](
-        Right(ValueWithContext(LockOutput(lockEnabled = lockEnabledState.value()), element.getValue.finalContext)), element.getTimestamp)
+        Right(ValueWithContext(LockOutput(lockEnabled = lockEnabledState.value()), element.getValue.context)), element.getTimestamp)
       )
     }
 
