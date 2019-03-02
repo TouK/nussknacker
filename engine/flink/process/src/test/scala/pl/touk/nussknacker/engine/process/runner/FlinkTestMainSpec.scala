@@ -344,6 +344,25 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
     results.invocationResults("out").map(_.value) shouldBe List("abcdef")
   }
 
+  test("using dependent services") {
+    val countToPass = "15"
+    val valueToReturn = "18"
+
+    val process = EspProcessBuilder
+      .id("proc1")
+      .exceptionHandler()
+      .source("id", "input")
+      .enricher("dependent", "parsed", "returningDependentTypeService",
+        "definition" -> "{'field1', 'field2'}", "toFill" -> "#input.value1.toString()", "count" -> countToPass)
+      .sink("out", "#parsed.size + ' ' + #parsed[0].field2", "monitor")
+
+    val results = FlinkTestMain.run(modelData, ProcessMarshaller.toJson(process, PrettyParams.spaces2), TestData(s"0|$valueToReturn|2|3|4|5|6"),
+        FlinkTestConfiguration.configuration, identity)
+
+    //here
+    results.invocationResults("out").map(_.value) shouldBe List(s"$countToPass $valueToReturn")
+  }
+
   def nodeResult(count: Int, vars: (String, Any)*)
   = NodeResult(ResultContext[Any](s"proc1-id-0-$count", Map(vars: _*)))
 

@@ -6,26 +6,29 @@ import cats.instances.string._
 import org.scalatest.{FunSuite, Inside, Matchers}
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, Service, StreamMetaData}
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.lazyy.ContextWithLazyValuesProvider
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, SingleNodeConfig, WithCategories}
-import pl.touk.nussknacker.engine.api.typed.{ClazzRef, TypedMap, TypedObjectDefinition}
+import pl.touk.nussknacker.engine.api.typed._
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError._
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectDefinition, ObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ExpressionDefinition, ProcessDefinition}
+import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessObjectDefinitionExtractor}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node._
+import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.engine.types.TypesInformationExtractor
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder._
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.ObjectProcessDefinition
+import pl.touk.nussknacker.engine.util.typing.TypingUtils
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -652,6 +655,28 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   }
 
+  test("should be able to derive type from ServiceReturningType") {
+    val base = ProcessDefinitionBuilder.withEmptyObjects(baseDefinition)
+    val withServiceRef = base.copy(services = base.services + ("returningTypeService" ->
+      new DefinitionExtractor(ProcessObjectDefinitionExtractor.service).extract(WithCategories(ServiceReturningTypeSample), SingleNodeConfig.zero)))
+
+    val process =
+      EspProcessBuilder
+        .id("process1")
+        .exceptionHandler()
+        .source("id1", "source")
+        .enricher("serviceDef", "defined", "returningTypeService", "definition" -> "{param1: 'String', param2: 'Integer'}", "inRealTime" -> "#input.toString()")
+        .sink("id2", "''", "sink")
+
+    val result = validateWithDef(process, withServiceRef)
+    result.result should matchPattern {
+      case Valid(_) =>
+    }
+    result.variablesInNodes("id2")("defined") shouldBe Typed(Set(TypedClass(classOf[java.util.List[_]],
+      List(TypedObjectTypingResult(Map("param1" -> Typed[String], "param2" -> Typed[Integer]))))))
+
+
+  }
 
   private def validate(process: EspProcess, definitions: ProcessDefinition[ObjectDefinition]): CompilationResult[Unit] = {
     validateWithDef(process, ProcessDefinitionBuilder.withEmptyObjects(definitions))
@@ -689,6 +714,22 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   object ProcessHelper {
     def add(a: Int, b: Int) = a + b
+  }
+
+  object ServiceReturningTypeSample extends Service with ServiceReturningType {
+
+    @MethodToInvoke
+    def invoke(@ParamName("definition") definition: java.util.Map[String, _], @ParamName("inRealTime") inRealTime: String): Future[AnyRef] = Future.successful(null)
+
+    //returns list of type defined by definition parameter
+    override def returnType(parameters: Map[String, (TypingResult, Option[Any])]): typing.TypingResult = {
+      parameters
+        .get("definition")
+        .flatMap(_._2)
+        .map(definition => TypingUtils.typeMapDefinition(definition.asInstanceOf[java.util.Map[String, _]]))
+        .map(param => Typed(Set(TypedClass(classOf[java.util.List[_]], List(param)))))
+        .getOrElse(Unknown)
+    }
   }
 
 }

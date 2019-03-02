@@ -36,7 +36,7 @@ import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.util.control.NonFatal
 
 class ProcessCompiler(protected val classLoader: ClassLoader,
-                      protected val sub: PartSubGraphCompilerBase,
+                      protected val sub: PartSubGraphCompiler,
                       protected val definitions: ProcessDefinition[ObjectWithMethodDef]
                      ) extends ProcessCompilerBase with ProcessValidator {
 
@@ -45,8 +45,6 @@ class ProcessCompiler(protected val classLoader: ClassLoader,
     val globalVars = expressionConfig.globalVariables.mapValuesNow(_.obj)
     ExpressionEvaluator.withoutLazyVals(globalVars, List())
   }
-
-  override type ParameterProviderT = ObjectWithMethodDef
 
   override def compile(process: EspProcess): CompilationResult[CompiledProcessParts] = {
     super.compile(process)
@@ -87,7 +85,7 @@ protected trait ProcessCompilerBase {
   protected val customStreamTransformers = definitions.customStreamTransformers
   protected val expressionConfig = definitions.expressionConfig
 
-  protected def sub: PartSubGraphCompilerBase
+  protected def sub: PartSubGraphCompiler
 
   private val syntax = ValidatedSyntax[ProcessCompilationError]
   import syntax._

@@ -18,8 +18,8 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.test.{EmptyLineSplittedTestDataParser, NewLineSplittedTestDataParser, TestDataParser}
-import pl.touk.nussknacker.engine.api.typed.{ReturningType, TypedMap, typing}
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api.typed.{ReturningType, ServiceReturningType, TypedMap, typing}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation, FlinkSourceFactory}
 import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
@@ -34,6 +34,7 @@ import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.collection.JavaConverters._
 
 class FlinkProcessMainSpec extends FlatSpec with Matchers with Inside {
 
@@ -132,7 +133,8 @@ class SimpleProcessConfigCreator extends ProcessConfigCreator {
   override def services(config: Config) = Map(
     "logService" -> WithCategories(LogService, "c1"),
     "throwingService" -> WithCategories(new ThrowingService(new RuntimeException("Thrown as expected")), "c1"),
-    "throwingTransientService" -> WithCategories(new ThrowingService(new ConnectException()), "c1")
+    "throwingTransientService" -> WithCategories(new ThrowingService(new ConnectException()), "c1"),
+    "returningDependentTypeService" -> WithCategories(ReturningDependentTypeService, "c1")
 
   )
 
@@ -224,4 +226,27 @@ object TestSources {
     override def returnType: typing.TypingResult = Typed[TypedMap]
   }
 
+}
+
+object ReturningDependentTypeService extends Service with ServiceReturningType {
+
+  @MethodToInvoke
+  def invoke(@ParamName("definition") definition: java.util.List[String],
+             @ParamName("toFill") toFill: String, @ParamName("count") count: Int): Future[java.util.List[_]] = {
+    val result = (1 to count)
+      .map(line => definition.asScala.map(_ -> toFill).toMap)
+      .map(TypedMap(_))
+      .toList.asJava
+    Future.successful(result)
+  }
+
+  //returns list of type defined by definition parameter
+  override def returnType(parameters: Map[String, (TypingResult, Option[Any])]): typing.TypingResult = {
+    parameters
+      .get("definition")
+      .flatMap(_._2)
+      .map(definition => TypedObjectTypingResult(definition.asInstanceOf[java.util.List[String]].asScala.map(_ -> Typed[String]).toMap))
+      .map(param => Typed(Set(TypedClass(classOf[java.util.List[_]], List(param)))))
+      .getOrElse(Unknown)
+  }
 }
