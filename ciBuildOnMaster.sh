@@ -18,7 +18,7 @@ if [ -z "$nexusUrl" ]; then
 fi
 
 echo publishing nussknacker version: $version
-./sbtwrapper clean test management/it:test
+./sbtwrapper clean test management/it:test engineStandalone/it:test
 ./sbtwrapper -DnexusPassword=${nexusPassword} -DnexusUrl=${nexusUrl} ";set version in ThisBuild := \"$version\";set isSnapshot in ThisBuild := false" publish
 
 if [[ ! -z $githubToken ]]; then
