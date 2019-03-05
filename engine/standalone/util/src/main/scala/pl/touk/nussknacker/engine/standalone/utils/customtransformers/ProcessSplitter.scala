@@ -11,26 +11,26 @@ import pl.touk.nussknacker.engine.api.typed.{ClazzRef, ReturningType, typing}
 import pl.touk.nussknacker.engine.standalone.api.StandaloneCustomTransformer
 import pl.touk.nussknacker.engine.standalone.api.types.InterpreterType
 
+import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
 
 object ProcessSplitter extends CustomStreamTransformer {
 
   @MethodToInvoke(returnType = classOf[Object])
-  //TODO: handling java collections?
-  def invoke(@ParamName("parts") parts: LazyParameter[TraversableOnce[Any]]): StandaloneCustomTransformer = {
+  def invoke(@ParamName("parts") parts: LazyParameter[java.util.Collection[Any]]): StandaloneCustomTransformer = {
     new ProcessSplitter(parts)
   }
 
 }
 
-class ProcessSplitter(parts: LazyParameter[TraversableOnce[Any]])
+class ProcessSplitter(parts: LazyParameter[java.util.Collection[Any]])
   extends StandaloneCustomTransformer with ReturningType {
 
   override def createTransformation(outputVariable: String): StandaloneCustomTransformation =
     (continuation: InterpreterType, lpi: LazyParameterInterpreter) => (ctx, ec) => {
       implicit val ecc: ExecutionContext = ec
       lpi.createInterpreter(parts)(ec, ctx).flatMap { partsToInterpret =>
-        Future.sequence(partsToInterpret.toList.map { partToInterpret =>
+        Future.sequence(partsToInterpret.asScala.toList.map { partToInterpret =>
           val newCtx = ctx.withVariable(outputVariable, partToInterpret)
           continuation(newCtx, ec)
         })
@@ -41,7 +41,8 @@ class ProcessSplitter(parts: LazyParameter[TraversableOnce[Any]])
 
   override def returnType: typing.TypingResult = {
     parts.returnType match {
-      case Typed(classes) if classes.size == 1 && classes.head.canBeSubclassOf(ClazzRef[TraversableOnce[_]]) =>
+      case Typed(classes) if classes.size == 1
+        && classes.head.canBeSubclassOf(ClazzRef[java.util.Collection[_]]) && classes.head.params.nonEmpty =>
         classes.head.params.head
       case _ => Unknown
     }

@@ -71,7 +71,9 @@ class StandaloneProcessConfigCreator extends ProcessConfigCreator with LazyLoggi
 }
 
 case class Request1(field1: String, field2: String) {
-  def toList: List[String] = List(field1, field2)
+  import scala.collection.JavaConverters._
+  
+  def toList: java.util.List[String] = List(field1, field2).asJava
 }
 case class Request2(field12: String, field22: String)
 case class Request3(field13: String, field23: String)

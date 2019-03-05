@@ -22,7 +22,7 @@ object TypingUtils {
     //TODO: how to handle list definitions better?
     case list: java.util.ArrayList[_] if !list.isEmpty =>
       val mapTypingResult = typedMapDefinitionFromParameters(list.head)
-      new Typed(Set(TypedClass(classOf[List[_]], List(mapTypingResult))))
+      new Typed(Set(TypedClass(classOf[java.util.List[_]], List(mapTypingResult))))
     case a =>
       throw new IllegalArgumentException(s"Type definition currently supports only class names, nested maps or lists, got $a instead")
   }
