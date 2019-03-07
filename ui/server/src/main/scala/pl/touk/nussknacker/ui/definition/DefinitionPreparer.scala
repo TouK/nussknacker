@@ -77,15 +77,16 @@ object DefinitionPreparer {
       }.toList
     )
 
+    val sinks = NodeGroup("sinks",
+      processDefinition.sinkFactories.map {
+        case (id, objDefinition) => NodeToAdd("sink", id,
+          Sink("", SinkRef(id, objDefParams(id, objDefinition)),
+            Some(Expression("spel", "#input"))), filterCategories(objDefinition)
+        )
+      }.toList)
+
     val subprocessDependent = if (!isSubprocess) {
       List(
-      NodeGroup("sinks",
-        processDefinition.sinkFactories.map {
-          case (id, objDefinition) => NodeToAdd("sink", id,
-            Sink("", SinkRef(id, objDefParams(id, objDefinition)),
-              Some(Expression("spel", "#input"))), filterCategories(objDefinition)
-          )
-        }.toList),
       NodeGroup("sources",
         processDefinition.sourceFactories.map {
           case (id, objDefinition) => NodeToAdd("source", id,
@@ -112,7 +113,7 @@ object DefinitionPreparer {
       nodesConfig.get(nodeName).flatMap(_.category).orElse(nodeCategoryMapping.get(category)).getOrElse(category)
     }
 
-    (List(base, services, enrichers, customTransformers) ++ subprocessDependent)
+    (List(base, services, enrichers, customTransformers, sinks) ++ subprocessDependent)
       .flatMap(e => e.possibleNodes.map(n => (e.name, n)))
       .groupBy(e => getNodeCategory(e._2.label, e._1))
       .mapValues(v => v.map(e => e._2))
