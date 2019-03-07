@@ -225,5 +225,16 @@ object ProcessTestData {
     )
   }
 
+  def displayableWithAdditionalFields(additionalFields: Option[ProcessAdditionalFields]): DisplayableProcess = {
+    val process = validDisplayableProcess.toDisplayable
+    val properties = process.properties
+
+    process.copy(
+      properties = properties.copy(
+        additionalFields = additionalFields
+      )
+    )
+  }
+
   case class ProcessUsingSubprocess(process: EspProcess, subprocess: CanonicalProcess)
 }

@@ -28,8 +28,8 @@ class AdditionalPropertiesValidator(additionalFieldsConfig: Map[ProcessingType, 
           .flatMap(_.cast[ProcessAdditionalFields])
 
         val errors = (
-          additionalFields.map(validateNonEmptiness(propertiesConfig, _)).getOrElse(().validNel),
-          additionalFields.map(validateTypes(propertiesConfig, _)).getOrElse(().validNel)
+          validateNonEmptiness(propertiesConfig, additionalFields),
+          validateTypes(propertiesConfig, additionalFields)
         ) .mapN((_, _) => Unit)
           .fold(_.toList, _ => Nil)
         ValidationResult.errors(Map(), errors, List())
@@ -37,9 +37,9 @@ class AdditionalPropertiesValidator(additionalFieldsConfig: Map[ProcessingType, 
     }
   }
 
-  private def validateNonEmptiness(propertiesConfig: PropertiesConfig, fields: ProcessAdditionalFields): Validation[Unit] = {
+  private def validateNonEmptiness(propertiesConfig: PropertiesConfig, fields: Option[ProcessAdditionalFields]): Validation[Unit] = {
     val nonEmptyFields = fields
-      .properties
+      .map(_.properties).getOrElse(Map.empty)
       .filterNot { case (_, value) => value.isEmpty }
       .keys.toList
     val errors = propertiesConfig
@@ -51,14 +51,16 @@ class AdditionalPropertiesValidator(additionalFieldsConfig: Map[ProcessingType, 
       .fold(().validNel[NodeValidationError])(_.invalid)
   }
 
-  private def validateTypes(propertiesConfig: PropertiesConfig, fields: ProcessAdditionalFields): Validation[Unit] = {
-    fields.properties.map { case (name, value) =>
-      propertiesConfig.get(name) match {
-        case Some(config) =>
-          validateValue(name, config, value, config.`type`)
-        case None =>
-          Validated.invalidNel(PrettyValidationErrors.unknownProperty(errorType, name))
-      }
+  private def validateTypes(propertiesConfig: PropertiesConfig, fields: Option[ProcessAdditionalFields]): Validation[Unit] = {
+    fields
+      .map(_.properties).getOrElse(Map.empty)
+      .map { case (name, value) =>
+        propertiesConfig.get(name) match {
+          case Some(config) =>
+            validateValue(name, config, value, config.`type`)
+          case None =>
+            Validated.invalidNel(PrettyValidationErrors.unknownProperty(errorType, name))
+        }
 
     } .toList
       .sequence
