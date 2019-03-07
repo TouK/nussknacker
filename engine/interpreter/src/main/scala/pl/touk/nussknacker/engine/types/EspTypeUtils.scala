@@ -19,7 +19,10 @@ object EspTypeUtils {
 
   private val blacklistedMethods: Set[String] = {
     (methodNames(classOf[ScalaCaseClassStub.DumpCaseClass]) ++
-      methodNames(ScalaCaseClassStub.DumpCaseClass.getClass)).toSet
+      methodNames(ScalaCaseClassStub.DumpCaseClass.getClass)).toSet.filterNot(
+      //sometimes toString can be pretty useful...
+      List("toString").contains
+    )
   }
 
   def clazzDefinition(clazz: Class[_])

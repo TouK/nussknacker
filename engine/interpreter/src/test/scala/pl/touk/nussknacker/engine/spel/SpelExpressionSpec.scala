@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.api.lazyy.{LazyContext, LazyValuesProvider, Us
 import pl.touk.nussknacker.engine.api.typed.{ClazzRef, TypedMap}
 import pl.touk.nussknacker.engine.compile.ValidationContext
 import pl.touk.nussknacker.engine.compiledgraph.expression.{Expression, ExpressionParseError, ValueWithLazyContext}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError.NodeId
 
 import scala.collection.JavaConverters._
@@ -404,6 +404,15 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
     parseOrFail[String]("#input.str", valCtxWithMap).evaluateSync(ctx, dumbLazyProvider).value shouldBe "aaa"
     parseOrFail[Long]("#input.lon", valCtxWithMap).evaluateSync(ctx, dumbLazyProvider).value shouldBe 3444
 
+  }
+
+  it should "be able to type toString()" in {
+    parse[Any]("12.toString()", ctx).toOption.get._1 shouldBe Typed[String]
+  }
+  
+  it should "be able to type string concatenation" in {
+    parse[Any]("12 + ''", ctx).toOption.get._1 shouldBe Typed[String]
+    parse[Any]("'' + 12", ctx).toOption.get._1 shouldBe Typed[String]
   }
 
 }

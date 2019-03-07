@@ -61,7 +61,8 @@ class EspTypeUtilsSpec extends FunSuite with Matchers {
 
     sampleClassInfo.methods shouldBe Map(
       "foo" -> MethodInfo(List.empty, ClazzRef(Integer.TYPE), None),
-      "bar" -> MethodInfo(List.empty, ClazzRef[String], None)
+      "bar" -> MethodInfo(List.empty, ClazzRef[String], None),
+      "toString" -> MethodInfo(List(), ClazzRef[String], None)
     )
   }
 
@@ -73,7 +74,8 @@ class EspTypeUtilsSpec extends FunSuite with Matchers {
       "beanProperty" -> MethodInfo(List(), ClazzRef[String], None),
       "isBooleanProperty" -> MethodInfo(List(), ClazzRef[Boolean], None),
       "booleanProperty" -> MethodInfo(List(), ClazzRef[Boolean], None),
-      "foo" -> MethodInfo(List(), ClazzRef(Integer.TYPE), None)
+      "foo" -> MethodInfo(List(), ClazzRef(Integer.TYPE), None),
+      "toString" -> MethodInfo(List(), ClazzRef[String], None)
     )
 
   }
@@ -100,6 +102,7 @@ class EspTypeUtilsSpec extends FunSuite with Matchers {
         val sampleClassInfo = infos.find(_.clazzName.refClazzName.contains(clazzName)).get
 
         sampleClassInfo.methods shouldBe Map(
+          "toString" -> MethodInfo(List(), ClazzRef[String], None),
           "foo" -> MethodInfo(List.empty, ClazzRef(Integer.TYPE), None)
         )
       }
@@ -113,7 +116,8 @@ class EspTypeUtilsSpec extends FunSuite with Matchers {
     typeUtils.find(_.clazzName == ClazzRef[TestEmbedded]) shouldBe Some(ClazzDefinition(ClazzRef[TestEmbedded], Map(
       "string" -> MethodInfo(List(), ClazzRef[String], None),
       "javaList" -> MethodInfo(List(), ClazzRef(classOf[java.util.List[_]], List(ClazzRef[String])), None),
-      "scalaList" -> MethodInfo(List(), ClazzRef(classOf[List[_]], List(ClazzRef[String])), None)
+      "scalaList" -> MethodInfo(List(), ClazzRef(classOf[List[_]], List(ClazzRef[String])), None),
+      "toString" -> MethodInfo(List(), ClazzRef[String], None)
     )))
 
   }
@@ -123,7 +127,8 @@ class EspTypeUtilsSpec extends FunSuite with Matchers {
 
     typeUtils.find(_.clazzName == ClazzRef[ClassWithHiddenFields]) shouldBe Some(ClazzDefinition(ClazzRef[ClassWithHiddenFields], Map(
       "normalField" -> MethodInfo(List(), ClazzRef[String], None),
-      "normalParam" -> MethodInfo(List(), ClazzRef[String], None)
+      "normalParam" -> MethodInfo(List(), ClazzRef[String], None),
+      "toString" -> MethodInfo(List(), ClazzRef[String], None)
     )))
   }
 
