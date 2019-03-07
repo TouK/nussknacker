@@ -101,11 +101,14 @@ class NodeUtils {
     return this._changeGroupNodes(process, (nodes) => nodes.filter((n) => n !== idToDelete));
   }
 
-  edgesForNode = (node, processDefinitionData) => {
+  edgesForNode = (node, processDefinitionData, forInput) => {
     const nodeObjectTypeDefinition = ProcessUtils.findNodeDefinitionId(node)
-    return processDefinitionData.edgesForNodes
+    //TODO: when we add more configuration for joins, probably more complex logic will be needed
+    const data =  (processDefinitionData.edgesForNodes
+      .filter(e => !forInput || e.isForInputDefinition === forInput)
       //here we use == in second comparison, as we sometimes compare null to undefined :|
-      .find(e => e.nodeId.type === node.type && e.nodeId.id == nodeObjectTypeDefinition) || { edges: [null], canChooseNodes: false}
+      .find(e => e.nodeId.type === node.type && e.nodeId.id == nodeObjectTypeDefinition)) || { edges: [null], canChooseNodes: false}
+    return data
   }
 
   edgeLabel = (edge) => {
@@ -149,13 +152,13 @@ class NodeUtils {
   }
 
   _canHaveMoreInputs = (nodeTo, nodeInputs, processDefinitionData) => {
-    const edgesForNode = this.edgesForNode(nodeTo, processDefinitionData)
+    const edgesForNode = this.edgesForNode(nodeTo, processDefinitionData, true)
     const maxEdgesForNode = edgesForNode.edges.length
     return nodeTo.type !== "Source" && (edgesForNode.canChooseNodes || nodeInputs.length < maxEdgesForNode)
   }
 
   _canHaveMoreOutputs = (node, nodeOutputs, processDefinitionData) => {
-    const edgesForNode = this.edgesForNode(node, processDefinitionData)
+    const edgesForNode = this.edgesForNode(node, processDefinitionData, false)
     const maxEdgesForNode = edgesForNode.edges.length
     return node.type !== "Sink" && (edgesForNode.canChooseNodes || nodeOutputs.length < maxEdgesForNode)
   }

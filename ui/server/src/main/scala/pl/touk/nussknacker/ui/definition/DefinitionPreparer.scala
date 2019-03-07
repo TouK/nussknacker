@@ -132,19 +132,19 @@ object DefinitionPreparer {
       }
       //TODO: enable choice of output type
       NodeEdges(NodeTypeId("SubprocessInput", Some(process.metaData.id)), outputs.map(EdgeType.SubprocessOutput),
-        canChooseNodes = false, inputDefinition = false)
+        canChooseNodes = false, isForInputDefinition = false)
     }
 
     val joinInputs = processDefinition.customStreamTransformers.collect {
       case (name, value) if value._2.manyInputs =>
-        NodeEdges(NodeTypeId("Join", Some(name)), List(), canChooseNodes = true, inputDefinition = true)
+        NodeEdges(NodeTypeId("Join", Some(name)), List(), canChooseNodes = true, isForInputDefinition = true)
     }
 
     List(
-      NodeEdges(NodeTypeId("Split"), List(), canChooseNodes = true, inputDefinition = false),
+      NodeEdges(NodeTypeId("Split"), List(), canChooseNodes = true, isForInputDefinition = false),
       NodeEdges(NodeTypeId("Switch"), List(
-        EdgeType.NextSwitch(Expression("spel", "true")), EdgeType.SwitchDefault), canChooseNodes = true, inputDefinition = false),
-      NodeEdges(NodeTypeId("Filter"), List(FilterTrue, FilterFalse), canChooseNodes = false, inputDefinition = false)
+        EdgeType.NextSwitch(Expression("spel", "true")), EdgeType.SwitchDefault), canChooseNodes = true, isForInputDefinition = false),
+      NodeEdges(NodeTypeId("Filter"), List(FilterTrue, FilterFalse), canChooseNodes = false, isForInputDefinition = false)
     ) ++ subprocessOutputs ++ joinInputs
   }
 }

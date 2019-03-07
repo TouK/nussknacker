@@ -131,7 +131,7 @@ object UIProcessDefinition {
 
 case class NodeTypeId(`type`: String, id: Option[String] = None)
 
-case class NodeEdges(nodeId: NodeTypeId, edges: List[EdgeType], canChooseNodes: Boolean, inputDefinition: Boolean)
+case class NodeEdges(nodeId: NodeTypeId, edges: List[EdgeType], canChooseNodes: Boolean, isForInputDefinition: Boolean)
 
 case class NodeToAdd(`type`: String, label: String, node: NodeData, categories: List[String])
 
