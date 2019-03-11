@@ -136,7 +136,12 @@ Each field value is evaluated by using `Expression`.
 Doesn't change records flow. MapVariable once defined cannot be overwritten.  
 
 ###Subprocesses
-TBD
+Subprocesses let you abstract common used parts of process.
+See [subprocesses](Subprocesses.md) for more detailed description of how they work.
 
 ###Using custom transformers
-TBD
+
+Sometimes basic building blocks are not enough - you may want to code custom aggregations or other
+statuful processing in Flink. 
+See below for more detailed guide:
+- [Flink transformers](customTransformers/FlinkCustomTransformers.md)
