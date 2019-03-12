@@ -16,13 +16,13 @@ class ProcessCounter(subprocessRepository: SubprocessRepository) {
 
       val computeCountsSamePrefixes = computeCounts(prefixes) _
 
-      def nodeCount(id: String, subProcessCounts: Map[String, NodeCount] = Map()) : NodeCount =
-        nodeCountOption(Some(id), subProcessCounts)
+      def nodeCount(id: String, subprocessCounts: Map[String, NodeCount] = Map()) : NodeCount =
+        nodeCountOption(Some(id), subprocessCounts)
 
-      def nodeCountOption(id: Option[String], subProcessCounts: Map[String, NodeCount] = Map()) : NodeCount = {
+      def nodeCountOption(id: Option[String], subprocessCounts: Map[String, NodeCount] = Map()) : NodeCount = {
         val countId = (prefixes ++ id).mkString("-")
         val count = counts(countId).getOrElse(RawCount(0L, 0L))
-        NodeCount(count.all, count.errors, subProcessCounts)
+        NodeCount(count.all, count.errors, subprocessCounts)
       }
 
       nodes.flatMap {
@@ -70,4 +70,4 @@ class ProcessCounter(subprocessRepository: SubprocessRepository) {
 
 case class RawCount(all: Long, errors: Long)
 
-case class NodeCount(all: Long, errors: Long, subProcessCounts: Map[String, NodeCount] = Map())
+case class NodeCount(all: Long, errors: Long, subprocessCounts: Map[String, NodeCount] = Map())

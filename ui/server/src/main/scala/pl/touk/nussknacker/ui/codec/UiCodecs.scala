@@ -40,10 +40,10 @@ trait UiCodecs extends RestModelCodecs {
 
   //unfortunately, this has do be done manually, as argonaut has problems with recursive types...
   implicit val encodeNodeCount : EncodeJson[NodeCount] = EncodeJson[NodeCount] {
-    case NodeCount(all, errors, subProcessCounts) => jObjectFields(
+    case NodeCount(all, errors, subprocessCounts) => jObjectFields(
       "all" -> jNumber(all),
       "errors" -> jNumber(errors),
-      "subprocessCounts" -> jObjectFields(subProcessCounts.mapValues(encodeNodeCount(_)).toList: _*)
+      "subprocessCounts" -> jObjectFields(subprocessCounts.mapValues(encodeNodeCount(_)).toList: _*)
     )
   }
 
