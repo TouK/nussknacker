@@ -10,6 +10,7 @@ We leverage power, performance and reliability of [Apache Flink](https://flink.a
 
 Visit our [pages](https://touk.github.io/nussknacker) to see documentation.
 Visit our [quickstart](https://touk.github.io/nussknacker/Quickstart.html) to have a look around.
+Talk to us on our [mailing list](https://groups.google.com/forum/#!forum/nussknacker)
 
 ## License
 
