@@ -59,7 +59,7 @@ object PrettyValidationErrors {
 
   def invalidCharacters(typ: String): NodeValidationError = {
     NodeValidationError(typ, "Node id contains invalid characters",
-      "\" and ' are not allowed in node id", fieldName = None, errorType = NodeValidationErrorType.RenderNotAllowed)
+      "\", . and ' are not allowed in node id", fieldName = None, errorType = NodeValidationErrorType.RenderNotAllowed)
   }
   def duplicatedNodeIds(typ: String, duplicates: List[String]): NodeValidationError = {
     NodeValidationError(typ, "Two nodes cannot have same id", s"Duplicate node ids: ${duplicates.mkString(", ")}", fieldName = None,

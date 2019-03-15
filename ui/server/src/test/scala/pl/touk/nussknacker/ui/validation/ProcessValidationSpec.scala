@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.validation
 
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.{FlatSpec, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
@@ -18,12 +18,12 @@ import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.{Edge, EdgeT
 import pl.touk.nussknacker.restmodel.validation.ValidationResults
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, ValidationErrors, ValidationResult, ValidationWarnings}
 
-class ProcessValidationSpec extends FlatSpec with Matchers {
+class ProcessValidationSpec extends FunSuite with Matchers {
   import pl.touk.nussknacker.ui.definition.PropertyType._
 
   private val validator = TestFactory.processValidation
 
-  it should "check for notunique edges" in {
+  test("check for notunique edges") {
     val process = createProcess(
       List(
         Source("in", SourceRef("barSource", List())),
@@ -51,7 +51,7 @@ class ProcessValidationSpec extends FlatSpec with Matchers {
     }
   }
 
-  it should "check for duplicates in groups" in {
+  test("check for duplicates) groups") {
     val process = createProcess(
       List(
         Source("in", SourceRef("barSource", List())),
@@ -74,7 +74,7 @@ class ProcessValidationSpec extends FlatSpec with Matchers {
     }
   }
 
-  it should "check for loose nodes" in {
+  test("check for loose nodes") {
     val process = createProcess(
       List(
         Source("in", SourceRef("barSource", List())),
@@ -95,7 +95,7 @@ class ProcessValidationSpec extends FlatSpec with Matchers {
 
   }
 
-  it should "check for duplicated ids" in {
+  test("check for duplicated ids") {
     val process = createProcess(
       List(
         Source("inID", SourceRef("barSource", List())),
@@ -111,7 +111,7 @@ class ProcessValidationSpec extends FlatSpec with Matchers {
     result.warnings shouldBe ValidationWarnings.success
   }
 
-  it should "check for duplicated ids when duplicated id is switch id" in {
+  test("check for duplicated ids when duplicated id is switch id") {
     val process = createProcess(
       List(
         Source("in", SourceRef("barSource", List())),
@@ -132,7 +132,7 @@ class ProcessValidationSpec extends FlatSpec with Matchers {
     result.warnings shouldBe ValidationWarnings.success
   }
 
-  it should "not fail with exception when no processtype validator present" in {
+  test("not fail with exception when no processtype validator present") {
     val process = createProcess(
       List(
         Source("in", SourceRef("barSource", List())),
@@ -149,7 +149,7 @@ class ProcessValidationSpec extends FlatSpec with Matchers {
     }
   }
 
-  it should "not allow required process fields" in {
+  test("not allow required process fields") {
     val processValidation = new ProcessValidation(Map(TestProcessingTypes.Streaming -> ProcessTestData.validator),
       Map(TestProcessingTypes.Streaming -> Map(
         "field1" -> AdditionalProcessProperty("label1", string, None, true, None),
@@ -170,7 +170,7 @@ class ProcessValidationSpec extends FlatSpec with Matchers {
 
   }
 
-  it should "validate type in process field" in {
+  test("validate type) process field") {
     val processValidation = new ProcessValidation(Map(TestProcessingTypes.Streaming -> ProcessTestData.validator),
       Map(TestProcessingTypes.Streaming -> Map(
         "field1" -> AdditionalProcessProperty("label", select, None, isRequired = false, values = Some("true" :: "false" :: Nil)),
@@ -186,13 +186,26 @@ class ProcessValidationSpec extends FlatSpec with Matchers {
     processValidation.validate(validProcessWithFields(Map("field2" -> "true"))) should not be 'ok
   }
 
-  it should "handle unknown properties validation" in {
+  test("handle unknown properties validation") {
     val processValidation = new ProcessValidation(Map(TestProcessingTypes.Streaming -> ProcessTestData.validator),
       Map(TestProcessingTypes.Streaming -> Map(
         "field2" -> AdditionalProcessProperty("label", integer, None, isRequired = false, None)
       )), sampleResolver)
 
     processValidation.validate(validProcessWithFields(Map("field1" -> "true"))) should not be 'ok
+
+  }
+
+  test("not allows save with incorrect characters in ids") {
+    def process(nodeId: String) = createProcess(
+      List(Source(nodeId, SourceRef("barSource", List()))),
+      List()
+    )
+
+    validator.validate(process("a\"s")).saveAllowed shouldBe false
+    validator.validate(process("a's")).saveAllowed shouldBe false
+    validator.validate(process("a.s")).saveAllowed shouldBe false
+    validator.validate(process("as")).saveAllowed shouldBe true
 
   }
 

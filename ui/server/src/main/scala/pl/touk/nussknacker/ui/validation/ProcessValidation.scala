@@ -85,7 +85,7 @@ class ProcessValidation(validators: Map[ProcessingType, ProcessValidator],
   }
 
   private def validateIds(displayable: DisplayableProcess): ValidationResult = {
-    val invalidCharsRegexp = "[\"']".r
+    val invalidCharsRegexp = "[\"'\\.]".r
 
     ValidationResult.errors(
       displayable.nodes.map(_.id).filter(n => invalidCharsRegexp.findFirstIn(n).isDefined)
