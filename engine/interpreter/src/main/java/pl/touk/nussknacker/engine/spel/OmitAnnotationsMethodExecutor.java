@@ -39,10 +39,6 @@ public class OmitAnnotationsMethodExecutor extends ReflectiveMethodExecutor {
         }
     }
 
-    public Method getMethod() {
-        return this.method;
-    }
-
     /**
      * Find the first public class in the methods declaring class hierarchy that declares this method.
      * Sometimes the reflective method discovery logic finds a suitable method that can easily be
