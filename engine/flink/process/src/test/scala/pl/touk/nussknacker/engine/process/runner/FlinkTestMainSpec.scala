@@ -2,14 +2,16 @@ package pl.touk.nussknacker.engine.process.runner
 
 import java.util.Date
 
-import argonaut.PrettyParams
+import argonaut.{Parse, PrettyParams}
 import com.typesafe.config.ConfigFactory
 import org.apache.flink.runtime.client.JobExecutionException
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.TestProcess._
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
+import pl.touk.nussknacker.engine.graph.node.Case
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.process.ProcessTestHelpers._
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
@@ -361,6 +363,34 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
 
     //here
     results.invocationResults("out").map(_.value) shouldBe List(s"$countToPass $valueToReturn")
+  }
+
+  test("switch value should be equal to variable value") {
+    import spel.Implicits._
+
+    val process = EspProcessBuilder
+      .id("sampleProcess")
+      .parallelism(1)
+      .exceptionHandler()
+      .source("id", "input")
+      .switch("switch", "#input.id == 'ala'", "output",
+        Case(
+          "#output == false",
+          GraphBuilder.sink("out", "''", "monitor")
+        )
+      )
+
+    val recordTrue = "ala|1|2|3|4|5|6"
+    val recordFalse = "bela|1|2|3|4|5|6"
+
+    val results = FlinkTestMain.run(modelData, ProcessMarshaller.toJson(process, PrettyParams.spaces2), TestData(List(recordTrue, recordFalse).mkString("\n")), FlinkTestConfiguration.configuration, identity)
+
+    val invocationResults = results.invocationResults
+
+    invocationResults("switch").filter(_.name == "expression").head.value shouldBe true
+    invocationResults("switch").filter(_.name == "expression").last.value shouldBe false
+    // first record was filtered out
+    invocationResults("out").head.context.variables("output") shouldBe false
   }
 
   def nodeResult(count: Int, vars: (String, Any)*)

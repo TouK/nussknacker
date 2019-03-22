@@ -17,6 +17,8 @@ import scala.util.control.NonFatal
 
 class Interpreter private(listeners: Seq[ProcessListener], expressionEvaluator: ExpressionEvaluator) {
 
+  private val expressionName = "expression"
+
   def interpret(node: Node,
                 metaData: MetaData,
                 ctx: Context)
@@ -86,7 +88,7 @@ class Interpreter private(listeners: Seq[ProcessListener], expressionEvaluator: 
             interpretNext(next, newCtx.withVariable(outName, out))
         }
       case Filter(_, expression, nextTrue, nextFalse, disabled) =>
-        val expressionResult = if (disabled) Future.successful(ValueWithContext(true, ctx)) else evaluateExpression[Boolean](expression, ctx)
+        val expressionResult = if (disabled) Future.successful(ValueWithContext(true, ctx)) else evaluateExpression[Boolean](expression, ctx, expressionName)
         expressionResult.flatMap { valueWithModifiedContext =>
           if (disabled || valueWithModifiedContext.value)
             interpretNext(nextTrue, valueWithModifiedContext.context)
@@ -94,12 +96,12 @@ class Interpreter private(listeners: Seq[ProcessListener], expressionEvaluator: 
             interpretOptionalNext(node, nextFalse, valueWithModifiedContext.context)
         }
       case Switch(_, expression, exprVal, nexts, defaultNext) =>
-        val valueWithModifiedContext = evaluateExpression[Any](expression, ctx)
+        val valueWithModifiedContext = evaluateExpression[Any](expression, ctx, expressionName)
         val newCtx = valueWithModifiedContext.map( vmc =>
           (vmc.context.withVariable(exprVal, vmc.value), Option.empty[Next]))
-        nexts.foldLeft(newCtx) { case (acc, casee) =>
+        nexts.zipWithIndex.foldLeft(newCtx) { case (acc, (casee, i)) =>
           acc.flatMap {
-            case (accCtx, None) => evaluateExpression[Boolean](casee.expression, accCtx).map { valueWithModifiedContext =>
+            case (accCtx, None) => evaluateExpression[Boolean](casee.expression, accCtx, s"$expressionName-$i").map { valueWithModifiedContext =>
               if (valueWithModifiedContext.value) {
                 (valueWithModifiedContext.context, Some(casee.node))
               } else {
@@ -119,7 +121,7 @@ class Interpreter private(listeners: Seq[ProcessListener], expressionEvaluator: 
       case Sink(id, ref, optionalExpression, false) =>
         (optionalExpression match {
           case Some(expression) =>
-            evaluateExpression[Any](expression, ctx)
+            evaluateExpression[Any](expression, ctx, expressionName)
           case None =>
             Future.successful(ValueWithContext(outputValue(ctx), ctx))
         }).map { valueWithModifiedContext =>
@@ -187,9 +189,10 @@ class Interpreter private(listeners: Seq[ProcessListener], expressionEvaluator: 
     }
   }
 
-  private def evaluateExpression[R](expr: Expression, ctx: Context)
-                                   (implicit ec: ExecutionContext, metaData: MetaData, node: Node):  Future[ValueWithContext[R]]
-  = expressionEvaluator.evaluate(expr, "expression", node.id, ctx)
+  private def evaluateExpression[R](expr: Expression, ctx: Context, name: String)
+                                   (implicit ec: ExecutionContext, metaData: MetaData, node: Node):  Future[ValueWithContext[R]] = {
+    expressionEvaluator.evaluate(expr, name, node.id, ctx)
+  }
 
   private case class NodeIdExceptionWrapper(nodeId: String, exception: Throwable) extends Exception
 
