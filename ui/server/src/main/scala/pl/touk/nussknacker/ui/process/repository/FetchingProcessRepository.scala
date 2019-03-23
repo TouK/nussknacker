@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.ui.process.repository
 
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.ui.EspError.XError
-import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntity.ProcessVersionEntityData
 import pl.touk.nussknacker.restmodel.process.ProcessId
-import pl.touk.nussknacker.restmodel.processdetails.{DeploymentEntry, DeploymentHistoryEntry, ProcessDetails}
+import pl.touk.nussknacker.restmodel.processdetails.{DeploymentHistoryEntry, ProcessDetails}
+import pl.touk.nussknacker.ui.EspError.XError
+import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntityData
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 

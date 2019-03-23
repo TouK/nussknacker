@@ -14,7 +14,7 @@ else
     nexusUserProperty=""
 fi
 
-./sbtwrapper clean test management/it:test engineStandalone/it:test || { echo 'Failed to build and test nussknacker' ; exit 1; }
+./sbtwrapper clean test management/it:test engineStandalone/it:test ui/slow:test || { echo 'Failed to build and test nussknacker' ; exit 1; }
 if [ -n "$espEngineToukVersion" ]; then
     ./sbtwrapper -DnexusPassword=$2 ${nexusUrlProperty} ${nexusUserProperty} "set version in ThisBuild := \"$espEngineToukVersion\"" publish
 fi

@@ -15,7 +15,7 @@ import pl.touk.nussknacker.ui.process.marshall.UiProcessMarshaller
 
 class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends FlatSpec with Matchers {
 
-  val migration = new V1_019__SourceSinkExceptionHandlerExpressionsChange
+  private val migrationFunc = V1_019__SourceSinkExceptionHandlerExpressionsChange.processJson _
 
   private val meta = """"metaData":{"id":"DEFGH","typeSpecificData": {"type": "StreamMetaData", "parallelism" : 4}, "additionalFields":{"groups":[]}}"""
 
@@ -78,7 +78,7 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends FlatSpec w
           |}
           |""".stripMargin).right.get
 
-    val migrated = migration.updateProcessJson(oldJson).get
+    val migrated = migrationFunc(oldJson).get
 
     val converted = migrateAndConvert(oldJson)
     val source = converted.nodes.head.asInstanceOf[FlatNode].data.asInstanceOf[Source]
@@ -237,7 +237,7 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends FlatSpec w
   }
 
   private def migrateAndConvert(oldJson: Json) : CanonicalProcess = {
-    val migrated = migration.updateProcessJson(oldJson).get
+    val migrated = migrationFunc(oldJson).get
     
     marshaller.fromJson(migrated.nospaces) match {
       case Invalid(errors) => throw new AssertionError(errors)

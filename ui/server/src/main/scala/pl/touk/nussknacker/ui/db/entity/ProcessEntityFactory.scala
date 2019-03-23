@@ -1,22 +1,19 @@
 package pl.touk.nussknacker.ui.db.entity
 
-import db.migration.DefaultJdbcProfile.profile.api._
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.restmodel.ProcessType
 import pl.touk.nussknacker.restmodel.ProcessType.ProcessType
 import slick.ast.BaseTypedType
-import slick.jdbc.JdbcType
+import slick.jdbc.{JdbcProfile, JdbcType}
+import slick.lifted.{TableQuery => LTableQuery} 
 import slick.sql.SqlProfile.ColumnOption.NotNull
 
-object ProcessEntity {
-
-  implicit def processTypeMapper: JdbcType[ProcessType] with BaseTypedType[ProcessType] = MappedColumnType.base[ProcessType, String](
-    _.toString,
-    ProcessType.withName
-  )
-
+trait ProcessEntityFactory {
+  protected val profile: JdbcProfile
+  import profile.api._
+  
   class ProcessEntity(tag: Tag) extends Table[ProcessEntityData](tag, "processes") {
-
+    
     def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
 
     def name = column[String]("name", NotNull)
@@ -36,16 +33,23 @@ object ProcessEntity {
     def * = (id, name, description, processType, processCategory, processingType, isSubprocess, isArchived) <> (ProcessEntityData.apply _ tupled, ProcessEntityData.unapply)
 
   }
+  
+  val processesTable: LTableQuery[ProcessEntityFactory#ProcessEntity] = LTableQuery(new ProcessEntity(_))
 
-  case class ProcessEntityData(id: Long,
-                               name: String,
-                               description: Option[String],
-                               processType: ProcessType,
-                               processCategory: String,
-                               processingType: ProcessingType,
-                               isSubprocess: Boolean,
-                               isArchived:Boolean
-                              )
+  implicit def processTypeMapper: JdbcType[ProcessType] with BaseTypedType[ProcessType] = MappedColumnType.base[ProcessType, String](
+    _.toString,
+    ProcessType.withName
+  )
 
 }
+
+case class ProcessEntityData(id: Long,
+                             name: String,
+                             description: Option[String],
+                             processType: ProcessType,
+                             processCategory: String,
+                             processingType: ProcessingType,
+                             isSubprocess: Boolean,
+                             isArchived: Boolean)
+
 

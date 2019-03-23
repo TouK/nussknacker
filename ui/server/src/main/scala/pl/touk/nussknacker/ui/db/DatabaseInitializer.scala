@@ -7,7 +7,7 @@ import java.util.logging.Logger
 import javax.sql.DataSource
 import org.flywaydb.core.Flyway
 import org.hsqldb.server.Server
-import slick.jdbc.JdbcBackend
+import slick.jdbc.{HsqldbProfile, JdbcBackend, PostgresProfile}
 
 object DatabaseServer {
   private[this] val i = 0
@@ -24,16 +24,19 @@ object DatabaseServer {
   case class Config(dbFilePath:String, dbName:String, user:String, password:String, port:Option[Int])
 }
 
-class DatabaseInitializer(db: JdbcBackend.Database) {
-  def initDatabase(): JdbcBackend.Database = {
-    migrateIfNeeded(db)
-    db
+class DatabaseInitializer(dbConfig: DbConfig) {
+  def initDatabase(): Unit = {
+    migrateIfNeeded(dbConfig)
   }
 
-  private def migrateIfNeeded(db: JdbcBackend.Database) = {
+  private def migrateIfNeeded(dbConfig: DbConfig) = {
     val flyway = new Flyway()
-    flyway.setDataSource(new DatabaseDataSource(db))
+    flyway.setDataSource(new DatabaseDataSource(dbConfig.db))
     flyway.setBaselineOnMigrate(true)
+    dbConfig.driver match {
+      case HsqldbProfile => flyway.setLocations("db/migration/hsql", "db/migration/common")
+      case PostgresProfile => flyway.setLocations("db/migration/postgres", "db/migration/common")
+    }
     flyway.migrate()
   }
 }

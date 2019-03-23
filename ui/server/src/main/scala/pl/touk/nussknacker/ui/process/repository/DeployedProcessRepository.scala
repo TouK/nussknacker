@@ -9,8 +9,7 @@ import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.restmodel.process.ProcessId
 import pl.touk.nussknacker.restmodel.processdetails.DeploymentAction
 import pl.touk.nussknacker.ui.app.BuildInfo
-import pl.touk.nussknacker.ui.db.entity.CommentEntity
-import pl.touk.nussknacker.ui.db.entity.ProcessDeploymentInfoEntity.DeployedProcessVersionEntityData
+import pl.touk.nussknacker.ui.db.entity.{CommentActions, DeployedProcessVersionEntityData}
 import pl.touk.nussknacker.ui.db.{DbConfig, EspTables}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import slick.dbio.DBIOAction
@@ -24,10 +23,11 @@ object DeployedProcessRepository {
   }
 }
 
-case class DeployedProcessRepository(dbConfig: DbConfig,
-                                     buildInfos: Map[ProcessingType, Map[String, String]]) extends BasicRepository {
+class DeployedProcessRepository(val dbConfig: DbConfig,
+                                buildInfos: Map[ProcessingType, Map[String, String]])
+  extends BasicRepository with EspTables with CommentActions {
 
-  import driver.api._
+  import profile.api._
 
   def markProcessAsDeployed(processId: ProcessId, processVersion: Long, processingType: ProcessingType,
                             environment: String, comment: Option[String])
@@ -45,7 +45,7 @@ case class DeployedProcessRepository(dbConfig: DbConfig,
                     (implicit ec: ExecutionContext, user: LoggedUser): Future[Unit] = {
     val actionToRun = for {
       commentId <- withComment(processId, processVersion, comment)
-      _ <- EspTables.deployedProcessesTable += DeployedProcessVersionEntityData(
+      _ <- deployedProcessesTable += DeployedProcessVersionEntityData(
         processId = processId.value,
         processVersionId = Some(processVersion),
         environment = environment,
@@ -62,7 +62,7 @@ case class DeployedProcessRepository(dbConfig: DbConfig,
   private def withComment(processId: ProcessId, processVersion: Long, comment: Option[String])
                          (implicit ec: ExecutionContext, user: LoggedUser): DB[Option[Long]] = comment match {
     case None => DBIOAction.successful(None)
-    case Some(comm) => CommentEntity.newCommentAction(processId, processVersion, comm)
+    case Some(comm) => newCommentAction(processId, processVersion, comm)
   }
 
 }

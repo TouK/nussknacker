@@ -3,11 +3,10 @@ package pl.touk.nussknacker.ui
 import java.lang.Thread.UncaughtExceptionHandler
 
 import _root_.cors.CorsSupport
-import _root_.db.migration.DefaultJdbcProfile
 import akka.actor.ActorSystem
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.http.scaladsl.{Http, HttpsConnectionContext}
-import akka.stream.{ActorMaterializer, Materializer}
+import akka.stream.Materializer
 import akka.stream.ActorMaterializer
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
@@ -27,7 +26,7 @@ import pl.touk.nussknacker.ui.security.ssl.{HttpsConnectionContextFactory, SslCo
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporter
 import pl.touk.nussknacker.ui.definition.AdditionalProcessProperty
-import slick.jdbc.JdbcBackend
+import slick.jdbc.{HsqldbProfile, JdbcBackend, PostgresProfile}
 
 object NussknackerApp extends App with Directives with LazyLogging {
 
@@ -78,19 +77,15 @@ object NussknackerApp extends App with Directives with LazyLogging {
     )
   }
 
-  def initializeRoute(config: Config)(implicit system: ActorSystem, materializer: Materializer) : Route = {
+  def initializeRoute(config: Config)(implicit system: ActorSystem, materializer: Materializer): Route = {
     import system.dispatcher
 
-    val testResultsMaxSizeInBytes = config.getOrElse[Int]("testResultsMaxSizeInBytes",  500 * 1024 * 1000)
+    val testResultsMaxSizeInBytes = config.getOrElse[Int]("testResultsMaxSizeInBytes", 500 * 1024 * 1000)
     val environment = config.getString("environment")
     val featureTogglesConfig = FeatureTogglesConfig.create(config)
     logger.info(s"Ui config loaded: \nfeatureTogglesConfig: $featureTogglesConfig")
 
-    val db: DbConfig = {
-      val db = JdbcBackend.Database.forConfig("db", config)
-      new DatabaseInitializer(db).initDatabase()
-      DbConfig(db, DefaultJdbcProfile.profile)
-    }
+    val db = initDb(config)
 
     val typeToConfig = ProcessingTypeDeps(config, featureTogglesConfig.standaloneMode)
 
@@ -108,7 +103,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
 
     val deploymentProcessRepository = DeployedProcessRepository.create(db, modelData)
     val processActivityRepository = new ProcessActivityRepository(db)
-    val authenticator =  AuthenticatorProvider(config, getClass.getClassLoader)
+    val authenticator = AuthenticatorProvider(config, getClass.getClassLoader)
 
     val counter = new ProcessCounter(subprocessRepository)
 
@@ -119,30 +114,30 @@ object NussknackerApp extends App with Directives with LazyLogging {
 
     val processAuthorizer = new AuthorizeProcess(processRepository)
 
-    val apiResources : List[RouteWithUser] = {
+    val apiResources: List[RouteWithUser] = {
       val routes = List(
-          new ProcessesResources(
-            processRepository = processRepository,
-            writeRepository = writeProcessRepository,
-            jobStatusService = jobStatusService,
-            processActivityRepository = processActivityRepository,
-            processValidation = processValidation,
-            typesForCategories = new ProcessTypesForCategories(config),
-            newProcessPreparer = NewProcessPreparer(typeToConfig, additionalFields),
-            processAuthorizer = processAuthorizer
-          ),
-          new ProcessesExportResources(processRepository, processActivityRepository),
-          new ProcessActivityResource(processActivityRepository, processRepository),
-          ManagementResources(counter, managementActor, testResultsMaxSizeInBytes,
-            processAuthorizer, processRepository, featureTogglesConfig),
-          new ValidationResources(processValidation),
-          new DefinitionResources(modelData, subprocessRepository),
-          new SignalsResources(modelData, processRepository, processAuthorizer),
-          new UserResources(),
-          new NotificationResources(managementActor, processRepository),
-          new SettingsResources(featureTogglesConfig),
-          new AppResources(config, modelData, processRepository, processValidation, jobStatusService),
-          TestInfoResources(modelData,processAuthorizer, processRepository),
+        new ProcessesResources(
+          processRepository = processRepository,
+          writeRepository = writeProcessRepository,
+          jobStatusService = jobStatusService,
+          processActivityRepository = processActivityRepository,
+          processValidation = processValidation,
+          typesForCategories = new ProcessTypesForCategories(config),
+          newProcessPreparer = NewProcessPreparer(typeToConfig, additionalFields),
+          processAuthorizer = processAuthorizer
+        ),
+        new ProcessesExportResources(processRepository, processActivityRepository),
+        new ProcessActivityResource(processActivityRepository, processRepository),
+        ManagementResources(counter, managementActor, testResultsMaxSizeInBytes,
+          processAuthorizer, processRepository, featureTogglesConfig),
+        new ValidationResources(processValidation),
+        new DefinitionResources(modelData, subprocessRepository),
+        new SignalsResources(modelData, processRepository, processAuthorizer),
+        new UserResources(),
+        new NotificationResources(managementActor, processRepository),
+        new SettingsResources(featureTogglesConfig),
+        new AppResources(config, modelData, processRepository, processValidation, jobStatusService),
+        TestInfoResources(modelData, processAuthorizer, processRepository),
         new ServiceRoutes(modelData)
       )
       val optionalRoutes = List(
@@ -176,9 +171,24 @@ object NussknackerApp extends App with Directives with LazyLogging {
           pathPrefixTest(!"api") {
             WebResources.route
           }
-        }
       }
+    }
 
+  }
+
+  private def initDb(config: Config) = {
+    val db = JdbcBackend.Database.forConfig("db", config)
+    val profile = chooseDbProfile(config)
+    val dbConfig = DbConfig(db, profile)
+    new DatabaseInitializer(dbConfig).initDatabase()
+    dbConfig
+  }
+
+  private def chooseDbProfile(config: Config) = {
+    config.getOrElse[String]("db.type", "hsql") match {
+      case "hsql" => HsqldbProfile
+      case "postgres" => PostgresProfile
+    }
   }
 
   //we do it, because akka creates non-daemon threads, so we have to stop ActorSystem explicitly, if initialization fails

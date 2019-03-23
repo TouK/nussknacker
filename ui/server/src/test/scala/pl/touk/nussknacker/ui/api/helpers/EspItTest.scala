@@ -20,7 +20,7 @@ import pl.touk.nussknacker.ui.process.deployment.ManagementActor
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 
-trait EspItTest extends LazyLogging with WithDbTesting with TestPermissions { self: ScalatestRouteTest with Suite with BeforeAndAfterEach with Matchers =>
+trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions { self: ScalatestRouteTest with Suite with BeforeAndAfterEach with Matchers =>
 
   val env = "test"
   val attachmentsPath = "/tmp/attachments" + System.currentTimeMillis()

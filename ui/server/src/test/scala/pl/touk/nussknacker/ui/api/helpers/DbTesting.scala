@@ -1,23 +1,31 @@
 package pl.touk.nussknacker.ui.api.helpers
 
-import akka.http.scaladsl.testkit.ScalatestRouteTest
+import com.spotify.docker.client.{DefaultDockerClient, DockerClient}
 import com.typesafe.scalalogging.LazyLogging
-import db.migration.DefaultJdbcProfile
-import org.scalatest.{BeforeAndAfterEach, Suite}
+import com.whisk.docker.DockerFactory
+import com.whisk.docker.impl.spotify.SpotifyDockerFactory
+import com.whisk.docker.scalatest.DockerTestKit
+import org.scalatest.concurrent.{Futures, ScalaFutures}
+import org.scalatest.time.{Second, Seconds, Span}
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Suite}
 import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DbConfig}
-import slick.jdbc.JdbcBackend
+import slick.jdbc.{HsqldbProfile, JdbcBackend, PostgresProfile}
 
 import scala.util.Try
 
-object DbTesting extends LazyLogging {
-  val db: DbConfig = DbConfig(JdbcBackend.Database.forURL(
-    url = s"jdbc:hsqldb:mem:esp;sql.syntax_ora=true",
-    driver = "org.hsqldb.jdbc.JDBCDriver",
-    user = "SA",
-    password = ""
-  ), DefaultJdbcProfile.profile)
+trait DbTesting
+  extends BeforeAndAfterEach
+    with BeforeAndAfterAll
+    with LazyLogging {
+  self: Suite =>
 
-  new DatabaseInitializer(db.db).initDatabase()
+  val db: DbConfig
+  
+  override protected def afterEach(): Unit = {
+    cleanDB().failed.foreach { e =>
+      throw new InternalError("Error during cleaning test resources", e) //InternalError as scalatest swallows other exceptions in afterEach
+    }
+  }
 
   def cleanDB(): Try[Unit] = {
     Try {
@@ -33,14 +41,45 @@ object DbTesting extends LazyLogging {
   }
 }
 
-trait WithDbTesting { self: Suite with BeforeAndAfterEach =>
+trait WithHsqlDbTesting
+  extends DbTesting {
+  self: Suite =>
 
-  val db: DbConfig = DbTesting.db
-
-  override protected def afterEach(): Unit = {
-    DbTesting.cleanDB().failed.foreach { e =>
-      throw new InternalError("Error during cleaning test resources", e) //InternalError as scalatest swallows other exceptions in afterEach
-    }
+  override def beforeAll(): Unit = {
+    super.beforeAll()
+    new DatabaseInitializer(db).initDatabase()
   }
 
+  val db: DbConfig = DbConfig(JdbcBackend.Database.forURL(
+    url = s"jdbc:hsqldb:mem:esp;sql.syntax_ora=true",
+    driver = "org.hsqldb.jdbc.JDBCDriver",
+    user = "SA",
+    password = ""
+  ), HsqldbProfile)
+}
+
+trait WithPostgresDbTesting
+  extends PostgresContainer
+    with ScalaFutures
+    with DockerTestKit
+    with DbTesting {
+  self: Suite =>
+
+  override def beforeAll(): Unit = {
+    super.beforeAll()
+    new DatabaseInitializer(db).initDatabase()
+  }
+
+  implicit val pc: PatienceConfig = PatienceConfig(Span(20, Seconds), Span(1, Second))
+
+  private val client: DockerClient = DefaultDockerClient.fromEnv().build()
+
+  override implicit val dockerFactory: DockerFactory = new SpotifyDockerFactory(client)
+
+  lazy val db: DbConfig = DbConfig(JdbcBackend.Database.forURL(
+    url = s"jdbc:postgresql://${dockerExecutor.host}:15432/",
+    driver = "org.postgresql.Driver",
+    user = "postgres",
+    password = "postgres"
+  ), PostgresProfile)
 }

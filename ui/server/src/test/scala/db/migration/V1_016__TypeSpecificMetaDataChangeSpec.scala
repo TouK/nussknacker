@@ -18,7 +18,7 @@ class V1_016__TypeSpecificMetaDataChangeSpec extends FlatSpec with Matchers {
     val converted = V1_016__TypeSpecificMetaDataChange.updateMetaData(oldJson).flatMap(js => marshaller.fromJson(js.nospaces).toOption)
 
     val metaData = converted.map(_.metaData)
-
+    
 
     metaData shouldBe Some(MetaData("DEFGH", StreamMetaData(parallelism = Some(3)), false, Some(ProcessAdditionalFields(None, Set()))))
   }

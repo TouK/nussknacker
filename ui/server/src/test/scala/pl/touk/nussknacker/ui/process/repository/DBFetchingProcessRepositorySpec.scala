@@ -5,13 +5,13 @@ import java.time.{LocalDate, LocalDateTime}
 import argonaut.PrettyParams
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
-import org.scalatest.{BeforeAndAfterEach, FunSuite, Matchers}
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestPermissions, TestProcessingTypes, WithDbTesting}
+import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestPermissions, TestProcessingTypes, WithHsqlDbTesting}
 import pl.touk.nussknacker.ui.process.marshall.UiProcessMarshaller
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessAlreadyExists
 import pl.touk.nussknacker.ui.security.api.Permission
@@ -23,7 +23,8 @@ class DBFetchingProcessRepositorySpec
   extends FunSuite
     with Matchers
     with BeforeAndAfterEach
-    with WithDbTesting
+    with BeforeAndAfterAll
+    with WithHsqlDbTesting
     with ScalaFutures
     with TestPermissions {
   import cats.syntax.either._

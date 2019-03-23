@@ -4,25 +4,23 @@ import java.sql.Timestamp
 import java.time.LocalDateTime
 
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.ui.api.ProcessAttachmentService.AttachmentToAdd
-import pl.touk.nussknacker.ui.db.DbConfig
-import pl.touk.nussknacker.ui.db.EspTables._
-import pl.touk.nussknacker.ui.db.entity.AttachmentEntity.AttachmentEntityData
-import pl.touk.nussknacker.ui.db.entity.CommentEntity
-import pl.touk.nussknacker.ui.db.entity.CommentEntity.CommentEntityData
 import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName}
+import pl.touk.nussknacker.ui.api.ProcessAttachmentService.AttachmentToAdd
+import pl.touk.nussknacker.ui.db.entity.{AttachmentEntityData, CommentActions, CommentEntityData}
+import pl.touk.nussknacker.ui.db.{DbConfig, EspTables}
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.{Attachment, Comment, ProcessActivity}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class ProcessActivityRepository(dbConfig: DbConfig) extends LazyLogging with BasicRepository {
+case class ProcessActivityRepository(dbConfig: DbConfig) 
+  extends LazyLogging with BasicRepository with EspTables with CommentActions {
 
-  import driver.api._
-
+  import profile.api._
+  
   def addComment(processId: ProcessId, processVersionId: Long, comment: String)
                 (implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Unit] = {
-    run(CommentEntity.newCommentAction(processId, processVersionId, comment)).map(_ => ())
+    run(newCommentAction(processId, processVersionId, comment)).map(_ => ())
   }
 
   def deleteComment(commentId: Long)(implicit ec: ExecutionContext): Future[Unit] = {

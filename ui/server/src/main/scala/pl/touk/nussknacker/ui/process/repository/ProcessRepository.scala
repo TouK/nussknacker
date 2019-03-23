@@ -1,36 +1,31 @@
 package pl.touk.nussknacker.ui.process.repository
 
-import java.time.LocalDateTime
-
-import pl.touk.nussknacker.ui.app.BuildInfo
-import pl.touk.nussknacker.ui.db.EspTables._
-import pl.touk.nussknacker.ui.db.entity.ProcessDeploymentInfoEntity.DeployedProcessVersionEntityData
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessEntityData
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.ui.db.entity.{ProcessEntity, ProcessVersionEntity}
-import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntity.ProcessVersionEntityData
 import pl.touk.nussknacker.restmodel.process.ProcessId
 import pl.touk.nussknacker.restmodel.processdetails.{DeploymentEntry, ProcessHistoryEntry}
+import pl.touk.nussknacker.ui.app.BuildInfo
+import pl.touk.nussknacker.ui.db.EspTables
+import pl.touk.nussknacker.ui.db.entity._
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import pl.touk.nussknacker.ui.util.DateUtils
 import pl.touk.nussknacker.ui.{BadRequestError, NotFoundError}
 
 import scala.language.higherKinds
 
-trait ProcessRepository[F[_]] extends Repository[F] {
+trait ProcessRepository[F[_]] extends Repository[F] with EspTables {
 
   import api._
   import pl.touk.nussknacker.ui.security.api.PermissionSyntax._
-  protected def processTableFilteredByUser(implicit loggedUser: LoggedUser): Query[ProcessEntity.ProcessEntity, ProcessEntityData, Seq] = {
+  protected def processTableFilteredByUser(implicit loggedUser: LoggedUser): Query[ProcessEntityFactory#ProcessEntity, ProcessEntityData, Seq] = {
     val readCategories = loggedUser.can(Permission.Read)
     if (loggedUser.isAdmin) processesTable else processesTable.filter(_.processCategory inSet readCategories)
   }
 
-  protected def latestProcessVersions(processId: ProcessId): Query[ProcessVersionEntity.ProcessVersionEntity, ProcessVersionEntityData, Seq] = {
+  protected def latestProcessVersions(processId: ProcessId): Query[ProcessVersionEntityFactory#ProcessVersionEntity, ProcessVersionEntityData, Seq] = {
     processVersionsTable.filter(_.processId === processId.value).sortBy(_.createDate.desc)
   }
 
-  protected def latestProcessVersions(processName: ProcessName): Query[ProcessVersionEntity.ProcessVersionEntity, ProcessVersionEntityData, Seq] = {
+  protected def latestProcessVersions(processName: ProcessName): Query[ProcessVersionEntityFactory#ProcessVersionEntity, ProcessVersionEntityData, Seq] = {
     processesTable.filter(_.name === processName.value).
       join(processVersionsTable)
       .on { case (process, version) => process.id === version.id }

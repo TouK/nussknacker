@@ -1,16 +1,22 @@
 package pl.touk.nussknacker.ui.db.entity
 
 import java.sql.Timestamp
+import java.time.LocalDateTime
 
-import db.migration.DefaultJdbcProfile.profile.api._
 import pl.touk.nussknacker.ui.util.DateUtils
 import slick.ast.ColumnOption.PrimaryKey
+import slick.jdbc.JdbcProfile
+import slick.lifted.{TableQuery => LTableQuery}
 import slick.sql.SqlProfile.ColumnOption.NotNull
 
-object AttachmentEntity {
+trait AttachmentEntityFactory {
 
+  protected val profile: JdbcProfile
+  import profile.api._
+  val processesTable: LTableQuery[ProcessEntityFactory#ProcessEntity]
+  
   class AttachmentEntity(tag: Tag) extends Table[AttachmentEntityData](tag, "process_attachments") {
-
+    
     def id = column[Long]("id", PrimaryKey)
 
     def processId = column[Long]("process_id", NotNull)
@@ -29,8 +35,10 @@ object AttachmentEntity {
 
   }
 
-  case class AttachmentEntityData(id: Long, processId: Long, processVersionId: Long, fileName: String, filePath: String, user: String, createDate: Timestamp) {
-    val createDateTime = DateUtils.toLocalDateTime(createDate)
-  }
+  val attachmentsTable: LTableQuery[AttachmentEntityFactory#AttachmentEntity] = LTableQuery(new AttachmentEntity(_)) 
+  
+}
 
+case class AttachmentEntityData(id: Long, processId: Long, processVersionId: Long, fileName: String, filePath: String, user: String, createDate: Timestamp) {
+  val createDateTime: LocalDateTime = DateUtils.toLocalDateTime(createDate)
 }

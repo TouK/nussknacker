@@ -3,12 +3,8 @@ package db.migration
 import argonaut.Argonaut._
 import argonaut._
 import pl.touk.nussknacker.ui.db.migration.ProcessJsonMigration
-import slick.jdbc.JdbcProfile
 
-class V1_016__TypeSpecificMetaDataChange extends ProcessJsonMigration {
-
-  override protected val profile: JdbcProfile = DefaultJdbcProfile.profile
-
+trait V1_016__TypeSpecificMetaDataChange extends ProcessJsonMigration {
   override def updateProcessJson(jsonProcess: Json): Option[Json] = V1_016__TypeSpecificMetaDataChange.updateMetaData(jsonProcess)
 }
 
@@ -23,14 +19,10 @@ object V1_016__TypeSpecificMetaDataChange {
     withData = deletedSplitToDisk.withFocus(_.withObject(_ :+ ("typeSpecificData", streamMetaData(parallelism.map(_.focus), splitToDisk.map(_.focus)))))
   } yield withData.undo
 
-  private def streamMetaData(parallelism: Option[Json], splitToDisk: Option[Json]) : Json = {
+  private def streamMetaData(parallelism: Option[Json], splitToDisk: Option[Json]): Json = {
     //so far we don't have production Request/Response processes ;)
     val list = List("type" -> jString("StreamMetaData")) ++ parallelism.map("parallelism" -> _).toList ++ splitToDisk.map("splitStateToDisk" -> _).toList
     jObjectFields(list: _*)
   }
 
-
-
 }
-
-

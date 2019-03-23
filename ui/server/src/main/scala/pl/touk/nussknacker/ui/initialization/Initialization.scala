@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui.initialization
 
-import _root_.db.migration.DefaultJdbcProfile
 import cats.data.EitherT
 import cats.instances.list._
 import cats.syntax.traverse._
@@ -11,16 +10,17 @@ import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, ProcessDeployme
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.ui.EspError
-import pl.touk.nussknacker.ui.db.entity.EnvironmentsEntity.EnvironmentsEntityData
 import pl.touk.nussknacker.ui.db.{DbConfig, EspTables}
 import pl.touk.nussknacker.restmodel.process.ProcessId
 import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
+import pl.touk.nussknacker.ui.db.entity.EnvironmentsEntityData
 import pl.touk.nussknacker.ui.process.migrate.ProcessModelMigrator
 import pl.touk.nussknacker.ui.process.repository.WriteProcessRepository.UpdateProcessAction
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.NussknackerInternalUser
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import slick.dbio.DBIOAction
+import slick.jdbc.JdbcProfile
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
@@ -72,13 +72,16 @@ trait InitialOperation extends LazyLogging {
 class EnvironmentInsert(environmentName: String, dbConfig: DbConfig) extends InitialOperation {
   override def runOperation(implicit ec: ExecutionContext, lu: LoggedUser): DB[Unit] = {
     //`insertOrUpdate` in Slick v.3.2.0-M1 seems not to work
-    import DefaultJdbcProfile.profile.api._
+    import dbConfig.driver.api._
+    val espTables = new EspTables {
+      override implicit val profile: JdbcProfile = dbConfig.driver
+    }
     val uppsertEnvironmentAction = for {
-      alreadyExists <- EspTables.environmentsTable.filter(_.name === environmentName).exists.result
+      alreadyExists <- espTables.environmentsTable.filter(_.name === environmentName).exists.result
       _ <- if (alreadyExists) {
         DBIO.successful(())
       } else {
-        EspTables.environmentsTable += EnvironmentsEntityData(environmentName)
+        espTables.environmentsTable += EnvironmentsEntityData(environmentName)
       }
     } yield ()
     uppsertEnvironmentAction

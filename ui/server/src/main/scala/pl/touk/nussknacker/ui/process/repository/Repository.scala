@@ -14,9 +14,9 @@ trait Repository [F[_]] {
   val dbConfig: DbConfig
 
   //this has to be val, not def to have *stable* scala identifiers - we want to be able to do import api._ 
-  protected lazy val driver: JdbcProfile = dbConfig.driver
+  protected lazy val profile: JdbcProfile = dbConfig.driver
 
-  protected lazy val api : driver.API = driver.api
+  protected lazy val api : profile.API = profile.api
 
 }
 

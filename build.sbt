@@ -55,7 +55,20 @@ def nussknackerMergeStrategy: String => MergeStrategy = {
   case PathList("akka", xs @ _*) => MergeStrategy.last
   case x => MergeStrategy.defaultMergeStrategy(x)
 }
+
+lazy val SlowTests = config("slow") extend Test
+
+val slowTestsSettings =
+  inConfig(SlowTests)(Defaults.testTasks) ++ Seq(
+    testOptions in SlowTests := Seq(
+      Tests.Argument(TestFrameworks.ScalaTest, "-n", "org.scalatest.tags.Slow"),
+      scalaTestReports
+    )
+  )
+
 val scalaTestReports = Tests.Argument(TestFrameworks.ScalaTest, "-u", "target/surefire-reports", "-oFGD")
+val ignoreSlowTests = Tests.Argument(TestFrameworks.ScalaTest, "-l", "org.scalatest.tags.Slow")
+
 val commonSettings =
   publishSettings ++
   Seq(
@@ -64,7 +77,7 @@ val commonSettings =
     resolvers ++= Seq(
       "confluent" at "http://packages.confluent.io/maven"
     ),
-    testOptions in Test += scalaTestReports,
+    testOptions in Test ++= Seq(scalaTestReports, ignoreSlowTests),
     testOptions in IntegrationTest += scalaTestReports,
     scalacOptions := Seq(
       "-unchecked",
@@ -109,6 +122,7 @@ val dropWizardV = "3.1.5"
 val akkaHttpV = "10.0.10"
 val slickV = "3.2.3"
 val hsqldbV = "2.3.4"
+val postgresV = "42.2.5"
 val flywayV = "4.0.3"
 val confluentV = "4.1.2"
 
@@ -306,7 +320,7 @@ lazy val interpreter = (project in engine("interpreter")).
   enablePlugins(BuildInfoPlugin).
   settings(
     buildInfoKeys := Seq[BuildInfoKey](name, version),
-    buildInfoKeys ++= Seq[BuildInfoKey] (
+    buildInfoKeys ++= Seq[BuildInfoKey](
       "buildTime" -> java.time.LocalDateTime.now().toString,
       "gitCommit" -> git.gitHeadCommit.value.getOrElse("")
     ),
@@ -596,6 +610,8 @@ lazy val restmodel = (project in file("ui/restmodel"))
   .dependsOn(interpreter)
 
 lazy val ui = (project in file("ui/server"))
+  .configs(SlowTests)
+  .settings(slowTestsSettings)
   .settings(commonSettings)
   .settings(
     name := "nussknacker-ui",
@@ -625,7 +641,6 @@ lazy val ui = (project in file("ui/server"))
     libraryDependencies ++= {
       Seq(
         "com.typesafe.akka" %% "akka-http" % akkaHttpV force(),
-        "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test" force(),
 
         "ch.qos.logback" % "logback-core" % logbackV,
         "ch.qos.logback" % "logback-classic" % logbackV,
@@ -635,12 +650,16 @@ lazy val ui = (project in file("ui/server"))
         "com.typesafe.slick" %% "slick" % slickV,
         "com.typesafe.slick" %% "slick-hikaricp" % slickV,
         "org.hsqldb" % "hsqldb" % hsqldbV,
+        "org.postgresql" % "postgresql" % postgresV,
         "org.flywaydb" % "flyway-core" % flywayV,
         "org.apache.xmlgraphics" % "fop" % "2.1",
         "org.mindrot" % "jbcrypt" % "0.4",
 
+        "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test" force(),
         "com.typesafe.slick" %% "slick-testkit" % slickV % "test",
-        "org.scalatest" %% "scalatest" % scalaTestV % "test"
+        "org.scalatest" %% "scalatest" % scalaTestV % "test",
+        "com.whisk" %% "docker-testkit-scalatest" % "0.9.8" % "test",
+        "com.whisk" %% "docker-testkit-impl-spotify" % "0.9.8" % "test"
       )
     }
   )

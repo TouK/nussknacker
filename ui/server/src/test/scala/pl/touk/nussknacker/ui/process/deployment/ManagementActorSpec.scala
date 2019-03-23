@@ -9,13 +9,13 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.process
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.{MockProcessManager, newDeploymentProcessRepository, newProcessRepository, newWriteProcessRepository, testCategoryName}
-import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessingTypes, WithDbTesting}
+import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessingTypes, WithHsqlDbTesting}
 import pl.touk.nussknacker.ui.process.JobStatusService
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
 import scala.concurrent.ExecutionContextExecutor
 
-class ManagementActorSpec extends FunSuite  with Matchers with ScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with WithDbTesting {
+class ManagementActorSpec extends FunSuite  with Matchers with ScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with WithHsqlDbTesting {
 
   implicit override val patienceConfig: PatienceConfig = PatienceConfig(timeout = scaled(Span(1, Seconds)), interval = scaled(Span(100, Millis)))
   private implicit val system: ActorSystem = ActorSystem()

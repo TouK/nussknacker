@@ -7,8 +7,8 @@ import akka.stream.scaladsl.{FileIO, Source}
 import akka.util.ByteString
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.ui.api.ProcessAttachmentService.AttachmentToAdd
-import pl.touk.nussknacker.ui.db.entity.AttachmentEntity.AttachmentEntityData
 import pl.touk.nussknacker.restmodel.process.ProcessId
+import pl.touk.nussknacker.ui.db.entity.AttachmentEntityData
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.CatsSyntax

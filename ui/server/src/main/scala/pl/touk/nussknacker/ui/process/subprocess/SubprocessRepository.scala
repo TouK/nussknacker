@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.ui.process.subprocess
 
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.ui.db.DbConfig
-import pl.touk.nussknacker.ui.db.EspTables.{processVersionsTable, processesTable}
+import pl.touk.nussknacker.ui.db.{DbConfig, EspTables}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import slick.jdbc.JdbcProfile
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -30,7 +30,11 @@ class DbSubprocessRepository(db: DbConfig, ec: ExecutionContext) extends Subproc
   }
 
   import db.driver.api._
+  val espTables = new EspTables {
+    override implicit val profile: JdbcProfile = db.driver
+  }
 
+  import espTables._
   implicit val iec = ec
 
   //Fetches subprocess in given version if specified, fetches latest version otherwise

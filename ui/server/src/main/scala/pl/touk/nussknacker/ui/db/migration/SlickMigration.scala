@@ -9,7 +9,6 @@ import javax.sql.DataSource
 import argonaut.{Json, Parse}
 import org.flywaydb.core.api.migration.jdbc.JdbcMigration
 import pl.touk.nussknacker.ui.db.EspTables
-import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntity.ProcessVersionEntityData
 import slick.jdbc.JdbcProfile
 
 import scala.concurrent.Await
@@ -30,28 +29,28 @@ trait SlickMigration extends JdbcMigration {
 
 }
 
-trait ProcessJsonMigration extends SlickMigration {
+trait ProcessJsonMigration extends SlickMigration with EspTables {
 
   import scala.concurrent.ExecutionContext.Implicits.global
   import slick.dbio.DBIOAction
   import profile.api._
 
   override def migrateActions = for {
-    processes <- EspTables.processVersionsTable.map(pe => (pe.id, pe.processId, pe.json)).filter(_._3.isDefined).result
+    processes <- processVersionsTable.map(pe => (pe.id, pe.processId, pe.json)).filter(_._3.isDefined).result
     seqed <- DBIOAction.sequence(processes.map((updateOne _).tupled))
   } yield seqed
 
-  private def updateOne(id: Long, processId: Long, json: Option[String]) = EspTables.processVersionsTable
-          .filter(v => v.id === id && v.processId === processId)
-          .map(_.json).update(json.map(prepareAndUpdateJson))
+  private def updateOne(id: Long, processId: Long, json: Option[String]) = processVersionsTable
+    .filter(v => v.id === id && v.processId === processId)
+    .map(_.json).update(json.map(prepareAndUpdateJson))
 
-  private def prepareAndUpdateJson(json: String) : String = {
+  private def prepareAndUpdateJson(json: String): String = {
     val jsonProcess = Parse.parse(json).right.get
     val updated = updateProcessJson(jsonProcess)
     updated.getOrElse(jsonProcess).nospaces
   }
 
-  def updateProcessJson(json: Json) : Option[Json]
+  def updateProcessJson(json: Json): Option[Json]
 }
 
 class AlwaysUsingSameConnectionDataSource(conn: Connection) extends DataSource {
@@ -64,7 +63,7 @@ class AlwaysUsingSameConnectionDataSource(conn: Connection) extends DataSource {
   object SuppressCloseHandler extends InvocationHandler {
     override def invoke(proxy: AnyRef, method: Method, args: Array[AnyRef]): AnyRef = {
       if (method.getName != "close") {
-        method.invoke(conn, args : _*)
+        method.invoke(conn, args: _*)
       } else {
         null
       }

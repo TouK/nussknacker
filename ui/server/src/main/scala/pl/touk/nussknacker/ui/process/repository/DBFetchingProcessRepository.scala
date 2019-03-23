@@ -6,13 +6,6 @@ import java.time.LocalDateTime
 import cats.data.OptionT
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
-import pl.touk.nussknacker.ui.db.EspTables.{deployedProcessesTable, processVersionsTable, processesTable, tagsTable}
-import pl.touk.nussknacker.ui.db.entity.ProcessDeploymentInfoEntity.{DeployedProcessVersionEntityData, deploymentMapper}
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.{ProcessEntity, ProcessEntityData}
-import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntity.ProcessVersionEntityData
-import pl.touk.nussknacker.ui.db.entity.TagsEntity.TagsEntityData
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.ProcessEntityData
-import pl.touk.nussknacker.ui.db.entity.ProcessEntity.processTypeMapper
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.DateUtils
@@ -26,6 +19,7 @@ import pl.touk.nussknacker.restmodel.process.ProcessId
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.processdetails._
 import pl.touk.nussknacker.ui.app.BuildInfo
+import pl.touk.nussknacker.ui.db.entity._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
@@ -64,11 +58,11 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
   def fetchArchivedProcesses()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[ProcessDetails]] = {
     run(fetchProcessDetailsByQueryAction(_.isArchived))
   }
-  private def fetchProcessDetailsByQueryActionUnarchived(query: ProcessEntity => Rep[Boolean])
+  private def fetchProcessDetailsByQueryActionUnarchived(query: ProcessEntityFactory#ProcessEntity => Rep[Boolean])
                                                 (implicit loggedUser: LoggedUser, ec: ExecutionContext) =
     fetchProcessDetailsByQueryAction(e => query(e) && !e.isArchived)
   
-  private def fetchProcessDetailsByQueryAction(query: ProcessEntity => Rep[Boolean])
+  private def fetchProcessDetailsByQueryAction(query: ProcessEntityFactory#ProcessEntity => Rep[Boolean])
                                               (implicit loggedUser: LoggedUser, ec: ExecutionContext) = {
     (for {
       subprocessesVersions <- subprocessLastModificationDates

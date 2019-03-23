@@ -3,18 +3,17 @@ package db.migration
 import argonaut.Argonaut._
 import argonaut._
 import pl.touk.nussknacker.ui.db.migration.ProcessJsonMigration
-import slick.jdbc.JdbcProfile
 
-class V1_019__SourceSinkExceptionHandlerExpressionsChange extends ProcessJsonMigration {
-
-  override protected val profile: JdbcProfile = DefaultJdbcProfile.profile
+trait V1_019__SourceSinkExceptionHandlerExpressionsChange extends ProcessJsonMigration {
 
   override def updateProcessJson(jsonProcess: Json): Option[Json] =
-    Option(updateSourceSinks(updateExceptionHandlers(jsonProcess)))
+    V1_019__SourceSinkExceptionHandlerExpressionsChange.processJson(jsonProcess)
 
-  private def updateExceptionHandlers(jsonProcess: Json) = {
-    updateField(jsonProcess, "exceptionHandlerRef", updateField(_, "parameters", updateParameterList))
-  }
+}
+
+object V1_019__SourceSinkExceptionHandlerExpressionsChange {
+  def processJson(jsonProcess: Json): Option[Json] =
+    Option(updateSourceSinks(updateExceptionHandlers(jsonProcess)))
 
   private def updateSourceSinks(jsonProcess: Json) = {
     updateField(jsonProcess, "nodes", updateCanonicalNodes)
@@ -24,14 +23,18 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChange extends ProcessJsonMig
     updateNodes(array, updateCanonicalNode)
   }
 
+  private def updateExceptionHandlers(jsonProcess: Json) = {
+    updateField(jsonProcess, "exceptionHandlerRef", updateField(_, "parameters", updateParameterList))
+  }
+
   private def updateNodes(array: Json, fun: Json => Json) = jArray(array.arrayOrEmpty.map(fun))
 
   private def updateField(obj: Json, field: String, update: Json => Json): Json
-    = (obj.cursor --\ field).map(_.withFocus(update).undo).getOrElse(obj)
+  = (obj.cursor --\ field).map(_.withFocus(update).undo).getOrElse(obj)
 
-  private def updateCanonicalNode(node: Json) : Json = {
+  private def updateCanonicalNode(node: Json): Json = {
     node.field("type").flatMap(_.string).getOrElse("") match {
-      case "Source"|"Sink" => updateObject(node)
+      case "Source" | "Sink" => updateObject(node)
       case "Switch" =>
         val updatedDefault = updateField(node, "defaultNext", updateCanonicalNodes)
         updateField(updatedDefault, "nexts", updateNodes(_, updateField(_, "nodes", updateCanonicalNodes)))
@@ -48,7 +51,7 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChange extends ProcessJsonMig
 
   }
 
-  private def updateObject(sourceOrSink: Json) : Json = {
+  private def updateObject(sourceOrSink: Json): Json = {
     (for {
       ref <- sourceOrSink.cursor --\ "ref"
       parameters <- ref --\ "parameters"
@@ -56,10 +59,10 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChange extends ProcessJsonMig
     } yield updatedParams.undo).getOrElse(sourceOrSink)
   }
 
-  private def updateParameterList(old: Json) : Json =
+  private def updateParameterList(old: Json): Json =
     jArray(old.arrayOrEmpty.map(updateParameter))
 
-  private def updateParameter(old: Json) : Json =
+  private def updateParameter(old: Json): Json =
     jObjectFields("name" -> old.fieldOrEmptyString("name"),
       "expression" -> jObjectFields("language" -> jString("spel"), "expression" ->
         jString("'" + old.fieldOrEmptyString("value").stringOrEmpty + "'")))

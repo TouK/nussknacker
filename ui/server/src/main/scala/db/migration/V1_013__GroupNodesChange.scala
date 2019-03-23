@@ -3,12 +3,9 @@ package db.migration
 import argonaut.Argonaut._
 import argonaut._
 import pl.touk.nussknacker.ui.db.migration.ProcessJsonMigration
-import slick.jdbc.JdbcProfile
 
-class V1_013__GroupNodesChange extends ProcessJsonMigration {
-
-  override protected val profile: JdbcProfile = DefaultJdbcProfile.profile
-
+trait V1_013__GroupNodesChange extends ProcessJsonMigration {
+  
   override def updateProcessJson(jsonProcess: Json): Option[Json] = for {
     meta <- jsonProcess.cursor --\ "metaData"
     fields <- meta --\ "additionalFields"
