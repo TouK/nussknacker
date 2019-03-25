@@ -91,7 +91,7 @@ class ExpressionSuggest extends React.Component {
   render() {
     if (this.props.dataResolved) {
       return (
-        <div style={{paddingTop: 10, paddingBottom: 10, paddingLeft: 20 - 4, paddingRight: 20 - 4, backgroundColor: '#333'}}>
+        <div style={{paddingTop: 10, paddingBottom: 10, paddingLeft: 20 - 4, paddingRight: 20 - 4, backgroundColor: '#333', borderBottom: '1px solid #808080'}}>
           <AceEditor
             mode={this.props.inputProps.language}
             width={"100%"}
@@ -106,6 +106,9 @@ class ExpressionSuggest extends React.Component {
             highlightActiveLine={false}
             highlightGutterLine={false}
             wrapEnabled={true}
+            editorProps={{
+              $blockScrolling: "Infinity"
+            }}
             setOptions={{
               indentedSoftWrap: false, //removes weird spaces for multiline strings when wrapEnabled=true
               enableBasicAutocompletion: [this.customAceEditorCompleter],

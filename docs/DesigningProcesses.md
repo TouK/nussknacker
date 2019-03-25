@@ -126,7 +126,16 @@ Variable once defined cannot be overwritten.
 
 ![split graph](img/variable_window.png)
   
-  
+## Map Variable 
+
+Evaluates `Expression` and assigns to `MapVariable.FieldName`. Allows
+to assign many of `Expression`.
+
+![split graph](img/variable_object_window.png)
+
+Doesn't change records flow. 
+Have to have exactly one output.
+MapVariable once defined cannot be overwritten.  
 
 ###Subprocesses
 TBD
