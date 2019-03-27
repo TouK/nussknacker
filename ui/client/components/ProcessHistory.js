@@ -1,7 +1,8 @@
-import React, { PropTypes, Component } from 'react';
-import { render } from 'react-dom';
-import { Scrollbars } from 'react-custom-scrollbars';
-import { connect } from 'react-redux';
+import React, {Component} from 'react';
+import PropTypes from 'prop-types';
+import {render} from 'react-dom';
+import {Scrollbars} from 'react-custom-scrollbars';
+import {connect} from 'react-redux';
 import _ from 'lodash'
 import ActionsUtils from '../actions/ActionsUtils';
 import DialogMessages from '../common/DialogMessages';
@@ -12,7 +13,7 @@ import ProcessUtils from '../common/ProcessUtils'
 export class ProcessHistory_ extends Component {
 
   static propTypes = {
-    processHistory: React.PropTypes.array.isRequired
+    processHistory: PropTypes.array.isRequired
   }
 
   constructor(props) {

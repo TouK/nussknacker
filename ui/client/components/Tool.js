@@ -1,16 +1,16 @@
 import React from 'react'
 import {render} from "react-dom";
-import { DragSource } from 'react-dnd';
+import PropTypes from 'prop-types';
+import {DragSource} from 'react-dnd';
 import * as LoaderUtils from '../common/LoaderUtils'
 import "../stylesheets/toolBox.styl";
-import ProcessUtils from "../common/ProcessUtils";
 
 class Tool extends React.Component {
 
   static propTypes = {
-    nodeModel: React.PropTypes.object.isRequired,
-    label: React.PropTypes.string.isRequired,
-    connectDragSource: React.PropTypes.func.isRequired
+    nodeModel: PropTypes.object.isRequired,
+    label: PropTypes.string.isRequired,
+    connectDragSource: PropTypes.func.isRequired
   };
 
   render() {

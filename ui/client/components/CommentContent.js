@@ -1,9 +1,10 @@
 import React from "react";
+import PropTypes from 'prop-types';
 
 export default class CommentContent extends React.Component {
   static propTypes = {
-    content: React.PropTypes.string.isRequired,
-    commentSettings: React.PropTypes.object.isRequired
+    content: PropTypes.string.isRequired,
+    commentSettings: PropTypes.object.isRequired
   }
 
   newContent = () => {

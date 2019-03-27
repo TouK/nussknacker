@@ -1,8 +1,7 @@
 import React from 'react'
 import {render} from "react-dom";
-import {Scrollbars} from "react-custom-scrollbars";
 import {connect} from "react-redux";
-import {bindActionCreators} from "redux";
+import PropTypes from 'prop-types';
 import _ from 'lodash'
 import ActionsUtils from "../actions/ActionsUtils";
 import DateUtils from '../common/DateUtils'
@@ -14,7 +13,7 @@ import InlinedSvgs from '../assets/icons/InlinedSvgs'
 export class ProcessAttachments_ extends React.Component {
 
   static propTypes = {
-    attachments: React.PropTypes.array.isRequired
+    attachments: PropTypes.array.isRequired
   }
 
   constructor(props) {
@@ -58,11 +57,7 @@ export class ProcessAttachments_ extends React.Component {
           })}
         </ul>
         <div className="add-attachments">
-          <Dropzone onDrop={this.addAttachment} disableClick={this.state.pendingRequest}
-                    className={"dropZone espButton" + (this.state.pendingRequest ? "disabled" : "")}  >
-            <div className="dropZone espButton attachment-button" dangerouslySetInnerHTML={{__html: InlinedSvgs.buttonUpload_1}} />
-            <div className="attachment-button-text">drop or choose a file</div>
-          </Dropzone>
+
         </div>
       </div>
     )

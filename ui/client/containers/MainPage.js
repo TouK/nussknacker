@@ -1,6 +1,6 @@
 import React from "react";
 import {render} from "react-dom";
-import {browserHistory, Router, Route, Link} from "react-router";
+import {browserHistory, Link} from "react-router";
 import _ from "lodash";
 import Processes from "./Processes";
 import SubProcesses from "./SubProcesses";
@@ -18,21 +18,21 @@ import Dialogs from "../components/modals/Dialogs";
 import * as VisualizationUrl from '../common/VisualizationUrl'
 import Archive from "./Archive";
 
-const App_ = React.createClass({
+class App_ extends React.Component {
 
-  toggleUserPanel: function () {
+  toggleUserPanel() {
     this.props.actions.toggleLeftPanel(!this.props.leftPanelIsOpened)
-  },
+  }
 
-  canGoToProcess: function () {
+  canGoToProcess() {
     return !_.isEmpty(this.props.params.processId)
-  },
+  }
 
-  goToProcess: function () {
+  goToProcess() {
     browserHistory.push(VisualizationUrl.visualizationUrl(this.props.params.processId))
-  },
+  }
 
-  renderTopLeftButton: function () {
+  renderTopLeftButton() {
     if (this.props.location.pathname.startsWith("/metrics") && this.canGoToProcess()) {
       return (
         <div className="top-left-button" onClick={this.goToProcess}>
@@ -42,16 +42,17 @@ const App_ = React.createClass({
     } else {
       return null
     }
-  },
-  environmentAlert: function (params) {
+  }
+
+  environmentAlert(params) {
     if (params && params.content)
       return (<span className="navbar-brand vert-middle ">
         <span className={"indicator "+ params.cssClass}>{params.content}</span>
       </span>
     );
-  },
+  }
 
-  render: function () {
+  render() {
     const AllDialogs = Dialogs.AllDialogs
     return this.props.resolved ? (
       <div id="app-container">
@@ -95,7 +96,7 @@ const App_ = React.createClass({
       </div>
     ) : null
   }
-});
+}
 
 function mapState(state) {
   const loggedUser = state.settings.loggedUser

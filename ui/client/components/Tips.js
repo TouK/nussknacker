@@ -1,8 +1,8 @@
-import React, { PropTypes, Component } from 'react';
-import { render } from 'react-dom';
-import { Scrollbars } from 'react-custom-scrollbars';
-import { connect } from 'react-redux';
-import _ from 'lodash'
+import React, {Component} from 'react';
+import PropTypes from 'prop-types';
+import {render} from 'react-dom';
+import {Scrollbars} from 'react-custom-scrollbars';
+import {connect} from 'react-redux';
 import ActionsUtils from '../actions/ActionsUtils';
 import ProcessUtils from '../common/ProcessUtils';
 
@@ -12,10 +12,10 @@ import InlinedSvgs from '../assets/icons/InlinedSvgs'
 export class Tips extends Component {
 
   static propTypes = {
-    currentProcess: React.PropTypes.object,
-    grouping: React.PropTypes.bool.isRequired,
-    isHighlighted: React.PropTypes.bool,
-    testing: React.PropTypes.bool.isRequired
+    currentProcess: PropTypes.object,
+    grouping: PropTypes.bool.isRequired,
+    isHighlighted: PropTypes.bool,
+    testing: PropTypes.bool.isRequired
   }
 
   constructor(props) { super(props) }

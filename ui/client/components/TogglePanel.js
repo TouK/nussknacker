@@ -1,6 +1,6 @@
-import React, { Component, PropTypes } from 'react'
+import React from 'react'
+import PropTypes from 'prop-types';
 import cn from 'classnames';
-import * as LoaderUtils from '../common/LoaderUtils'
 
 import SvgDiv from './SvgDiv'
 import '../stylesheets/togglePanel.styl'

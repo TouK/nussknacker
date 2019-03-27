@@ -20,18 +20,19 @@ import SvgDiv from "../SvgDiv"
 import '../../stylesheets/userPanel.styl';
 import Archive from "../../containers/Archive";
 import SpinnerWrapper from "../SpinnerWrapper";
+import PropTypes from 'prop-types';
 
 class UserRightPanel extends Component {
 
   static propTypes = {
-    isOpened: React.PropTypes.bool.isRequired,
-    graphLayoutFunction: React.PropTypes.func.isRequired,
-    layout: React.PropTypes.array.isRequired,
-    exportGraph: React.PropTypes.func.isRequired,
-    zoomIn: React.PropTypes.func.isRequired,
-    zoomOut: React.PropTypes.func.isRequired,
-    featuresSettings: React.PropTypes.object.isRequired,
-    isReady: React.PropTypes.bool.isRequired
+    isOpened: PropTypes.bool.isRequired,
+    graphLayoutFunction: PropTypes.func.isRequired,
+    layout: PropTypes.array.isRequired,
+    exportGraph: PropTypes.func.isRequired,
+    zoomIn: PropTypes.func.isRequired,
+    zoomOut: PropTypes.func.isRequired,
+    featuresSettings: PropTypes.object.isRequired,
+    isReady: PropTypes.bool.isRequired
   };
 
   render() {
@@ -55,14 +56,14 @@ class UserRightPanel extends Component {
             {config.filter(panel => panel).map ((panel, panelIdx) => {
                 const visibleButtons = panel.buttons.filter(button => button.visible !== false)
                 return _.isEmpty(visibleButtons) ? null : (
-                  <Panel key={panelIdx} collapsible defaultExpanded header={panel.panelName}>
+                  <Panel key={panelIdx} defaultExpanded header={panel.panelName}>
                     {visibleButtons.map((panelButton, idx) => this.renderPanelButton(panelButton, idx))}
                   </Panel>
                 )
               }
             )}
             {this.props.capabilities.write ? //TODO remove SideNodeDetails? turn out to be not useful
-              (<Panel collapsible defaultExpanded header="Details">
+              (<Panel defaultExpanded header="Details">
                 <SideNodeDetails/>
               </Panel>) : null
             }
@@ -174,18 +175,14 @@ class UserRightPanel extends Component {
     //TODO: move other buttons from inlined svgs to files
     const toolTip = panelButton.btnTitle || panelButton.name
     const svgDiv = panelButton.icon.endsWith('.svg') ?  (<SvgDiv title={toolTip} svgFile={`buttons/${panelButton.icon}`}/>)
-      : ( <div  title={toolTip} dangerouslySetInnerHTML={{__html: panelButton.icon}} />)
+      : ( <div title={toolTip} dangerouslySetInnerHTML={{__html: panelButton.icon}} />)
 
-    return panelButton.dropzone ?
-        <Dropzone key={idx} disableClick={panelButton.disabled === true} title={toolTip} className={"dropZone " + buttonClass + (panelButton.disabled === true ? " disabled" : "")}
-                  onDrop={panelButton.onClick} onMouseOver={panelButton.onMouseOver} onMouseOut={panelButton.onMouseOut}>
-            {svgDiv}<div>{panelButton.name}</div>
-          </Dropzone>
-        :
+    return (
         <button key={idx} type="button" className={buttonClass} disabled={panelButton.disabled === true} title={toolTip}
                 onClick={panelButton.onClick} onMouseOver={panelButton.onMouseOver} onMouseOut={panelButton.onMouseOut}>
           {svgDiv}<div>{panelButton.name}</div>
         </button>
+    )
   }
 
   noChosenNode = (node) => {

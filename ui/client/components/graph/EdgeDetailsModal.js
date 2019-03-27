@@ -1,25 +1,21 @@
-import React, {Component} from 'react';
+import React from 'react';
 import {render} from 'react-dom';
-import { connect } from 'react-redux';
-import { bindActionCreators } from 'redux';
+import PropTypes from 'prop-types';
+import {connect} from 'react-redux';
 import Modal from 'react-modal';
 import _ from 'lodash';
 import LaddaButton from 'react-ladda';
-import laddaCss from 'ladda/dist/ladda.min.css'
 import ActionsUtils from '../../actions/ActionsUtils';
 import NodeUtils from './NodeUtils';
-import { ListGroupItem } from 'react-bootstrap';
 import ExpressionSuggest from './ExpressionSuggest'
 import ModalRenderUtils from "./ModalRenderUtils"
-
 import EspModalStyles from '../../common/EspModalStyles'
-import {Scrollbars} from "react-custom-scrollbars";
 
 //TODO: this is still pretty switch-specific. 
 class EdgeDetailsModal extends React.Component {
 
   static propTypes = {
-    edgeToDisplay: React.PropTypes.object.isRequired
+    edgeToDisplay: PropTypes.object.isRequired
   }
 
   constructor(props) {

@@ -1,4 +1,5 @@
 import React from "react";
+import PropTypes from 'prop-types';
 import _ from "lodash";
 import { DragSource, DropTarget } from "react-dnd";
 import dragHandleIcon from "../assets/img/drag-handle.png";
@@ -94,13 +95,13 @@ export default class Fields extends React.Component {
 
   static propTypes = {
     //value, e.g. { name: "name", value1: "inputValue" }
-    fields: React.PropTypes.array.isRequired,
+    fields: PropTypes.array.isRequired,
     //function (field, onChangeCallback)
-    fieldCreator: React.PropTypes.func.isRequired,
+    fieldCreator: PropTypes.func.isRequired,
     //function (fields)
-    onChange: React.PropTypes.func.isRequired,
+    onChange: PropTypes.func.isRequired,
     //e.g. { name: "", value1: "" }
-    newValue: React.PropTypes.object.isRequired
+    newValue: PropTypes.object.isRequired
   }
 
   constructor(props) {

@@ -20,18 +20,19 @@ import createProcessIcon from '../assets/img/create-process.svg'
 import editIcon from '../assets/img/edit-icon.png'
 import * as VisualizationUrl from '../common/VisualizationUrl'
 
-const SubProcesses = React.createClass({
+class SubProcesses extends React.Component {
 
-  getInitialState() {
-    return {
+  constructor(props) {
+    super(props);
+    this.state = {
       processes: [],
       filterVal: '',
       showLoader: true,
       showAddProcess: false,
       currentPage: 0,
       sort: { column: "name", direction: 1}
-    }
-  },
+    };
+  }
 
   componentDidMount() {
     const intervalIds = {
@@ -39,13 +40,13 @@ const SubProcesses = React.createClass({
     }
     this.setState(intervalIds)
     this.reloadProcesses();
-  },
+  }
 
   componentWillUnmount() {
     if (this.state.reloadProcessesIntervalId) {
       clearInterval(this.state.reloadProcessesIntervalId)
     }
-  },
+  }
 
   reloadProcesses() {
     HttpService.fetchSubProcesses().then ((fetchedProcesses) => {
@@ -53,20 +54,19 @@ const SubProcesses = React.createClass({
         this.setState({processes: fetchedProcesses, showLoader: false})
       }
     }).catch( e => this.setState({ showLoader: false }))
-  },
-
+  }
 
   showProcess(process) {
     browserHistory.push(VisualizationUrl.visualizationUrl(process.name))
-  },
+  }
 
   handleChange(event) {
     this.setState({filterVal: event.target.value});
-  },
+  }
 
   getFilterValue() {
     return this.state.filterVal.toLowerCase();
-  },
+  }
 
   render() {
     return (
@@ -132,7 +132,7 @@ const SubProcesses = React.createClass({
       </div>
     )
   }
-});
+}
 
 SubProcesses.title = 'SubProcesses'
 SubProcesses.path = '/subProcesses'
