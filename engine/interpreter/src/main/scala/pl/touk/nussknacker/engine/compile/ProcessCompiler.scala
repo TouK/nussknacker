@@ -95,7 +95,7 @@ protected trait ProcessCompilerBase {
   private val expressionCompiler = ExpressionCompiler.withoutOptimization(classLoader, expressionConfig)
 
   //TODO: this should be refactored, now it's easy to forget about global vars in different places...
-  private val globalVariableTypes = expressionConfig.globalVariables.mapValuesNow(_.returnType)
+  private val globalVariableTypes = expressionConfig.globalVariables.mapValuesNow(_.returnType) + (Interpreter.MetaParamName -> Typed[MetaVariables])
 
   protected def compile(process: EspProcess): CompilationResult[CompiledProcessParts] = {
     compile(ProcessSplitter.split(process))
@@ -221,8 +221,7 @@ protected trait ProcessCompilerBase {
         .flatMap(_.cast[ReturningType]).map(_.returnType)
         .orElse(sourceFactories.get(ref.typ).map(_.returnType)).getOrElse(Unknown)
       Map(
-        Interpreter.InputParamName -> resultType,
-        Interpreter.MetaParamName -> Typed[MetaVariables]
+        Interpreter.InputParamName -> resultType
       ) ++ globalVariableTypes
       //TODO: here is nasty edge case - what if subprocess parameter is named like global variable?
     case SubprocessInputDefinition(_, params, _) => params.map(p => p.name -> loadFromParameter(p)).toMap ++ globalVariableTypes

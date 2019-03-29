@@ -598,7 +598,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         .exceptionHandler()
         .source("id1", "source")
         .customNode("custom", "varName", "clearingContextTransformer")
-        .sink("id2", "#processHelper.toString()", "sink")
+        .sink("id2", "#processHelper.toString() + #meta.processName", "sink")
 
     validate(processWithInvalidExpresssion, baseDefinition).result should matchPattern {
       case Valid(_) =>
