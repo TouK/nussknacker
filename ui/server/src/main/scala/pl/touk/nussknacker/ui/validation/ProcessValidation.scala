@@ -96,7 +96,11 @@ class ProcessValidation(validators: Map[ProcessingType, ProcessValidator],
   }
 
   private def validateAdditionalProcessProperties(displayable: DisplayableProcess): ValidationResult = {
-    additionalPropertiesValidator.validate(displayable)
+    if (displayable.metaData.isSubprocess) {
+      ValidationResult.success
+    } else {
+      additionalPropertiesValidator.validate(displayable)
+    }
   }
 
   private def validateEdgeUniqueness(displayableProcess: DisplayableProcess): ValidationResult = {

@@ -170,6 +170,21 @@ class ProcessValidationSpec extends FunSuite with Matchers {
 
   }
 
+  test("don't validate properties on subprocess") {
+
+    val processValidation = new ProcessValidation(Map(TestProcessingTypes.Streaming -> ProcessTestData.validator),
+      Map(TestProcessingTypes.Streaming -> Map(
+        "field1" -> AdditionalProcessProperty("label1", string, None, true, None),
+        "field2" -> AdditionalProcessProperty("label2", string, None, true, None)
+      )), sampleResolver)
+
+    val process = validProcessWithFields(Map())
+    val subprocess = process.copy(properties = process.properties.copy(isSubprocess = true))
+
+    processValidation.validate(subprocess) shouldBe 'ok
+
+  }
+
   test("validate type) process field") {
     val processValidation = new ProcessValidation(Map(TestProcessingTypes.Streaming -> ProcessTestData.validator),
       Map(TestProcessingTypes.Streaming -> Map(
