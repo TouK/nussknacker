@@ -2,6 +2,9 @@
 
 To see biggest differences check changes in demo.
 
+## In version 0.0.11
+* Changes in CustomStreamTransformer implementation, LazyInterpreter became LazyParameter, please look at samples to see changes in API
+
 ## In version 0.0.8
 
 * Upgrade to Flink 1.4
