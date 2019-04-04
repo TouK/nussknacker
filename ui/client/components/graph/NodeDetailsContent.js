@@ -24,18 +24,23 @@ export class NodeDetailsContent extends React.Component {
       editedNode: props.node,
       codeCompletionEnabled: true,
       testResultsToHide: new Set()
-    }
+    };
+
     this.state = {
       ...this.state,
       ...TestRenderUtils.stateForSelectTestResults(null, this.props.testResults)
-    }
+    };
+
     this.processNode = _.cloneDeep(props.node); //FIXME: props are modified without cloning @{ParameterList} breakks
-    this.nodeObjectDetails = ProcessUtils.findNodeObjectTypeDefinition(this.props.node, this.props.processDefinitionData.processDefinition)
+    this.nodeObjectDetails = ProcessUtils.findNodeObjectTypeDefinition(this.props.node, this.props.processDefinitionData.processDefinition);
+
+    let hasNoReturn = _.isNull(this.nodeObjectDetails.returnType)
+    this.showOutputVar = hasNoReturn  === false || (hasNoReturn === true && this.state.editedNode.outputVar)
   }
 
   componentWillReceiveProps(nextProps) {
     if (!_.isEqual(this.props.node, nextProps.node)) {
-      this.nodeObjectDetails = ProcessUtils.findNodeObjectTypeDefinition(nextProps.node, nextProps.processDefinitionData.processDefinition)
+      this.nodeObjectDetails = ProcessUtils.findNodeObjectTypeDefinition(nextProps.node, nextProps.processDefinitionData.processDefinition);
       this.setState({editedNode: nextProps.node})
     }
   }
@@ -146,7 +151,10 @@ export class NodeDetailsContent extends React.Component {
         return (
           <div className="node-table-body">
             {this.createField("input", "Id", "id")}
-            {_.has(this.state.editedNode, 'outputVar') ? this.createField("input", "Output", "outputVar") : null}
+
+            {
+              this.showOutputVar && this.createField("input", "Output", "outputVar", "outputVar", false, null)
+            }
             {this.createReadonlyField("input", "Node type", "nodeType")}
             {(this.state.editedNode.parameters || this.state.editedNode.ref.parameters).map((param, index) => {
               return (
@@ -303,9 +311,9 @@ export class NodeDetailsContent extends React.Component {
     return this.createField(fieldType, fieldLabel, fieldProperty, null, true)
   }
 
-  createField = (fieldType, fieldLabel, fieldProperty, fieldName, readonly) => {
+  createField = (fieldType, fieldLabel, fieldProperty, fieldName, readonly, defaultValue) => {
     return this.doCreateField(fieldType, fieldLabel, fieldName, _.get(this.state.editedNode, fieldProperty, ""),
-      ((newValue) => this.setNodeDataAt(fieldProperty, newValue) ), readonly, this.isMarked(fieldProperty))
+      ((newValue) => this.setNodeDataAt(fieldProperty, newValue, defaultValue)), readonly, this.isMarked(fieldProperty))
   }
 
   createListField = (fieldType, fieldLabel, obj, fieldProperty, listFieldProperty, fieldName) => {
@@ -368,18 +376,29 @@ export class NodeDetailsContent extends React.Component {
         return (
           <div className="node-row">
             {this.renderFieldLabel(fieldLabel)}
-            <div className={nodeValueClass}><input type="text" className="node-input" value={fieldValue}
-                                               onChange={(e) => handleChange(e.target.value)}
-                                               readOnly={readOnly}/></div>
+            <div className={nodeValueClass}>
+              <input
+                  type="text"
+                  className="node-input"
+                  value={fieldValue || ""}
+                  onChange={(e) => handleChange(e.target.value)}
+                  readOnly={readOnly}
+              />
+            </div>
           </div>
         )
       case 'checkbox': {
         return (
           <div className="node-row">
             {this.renderFieldLabel(fieldLabel)}
-            <div className={nodeValueClass}><input type="checkbox" checked={fieldValue}
-                                               onChange={(e) => handleChange(fieldValue ? false : true)}
-                                               disabled={readOnly ? 'disabled' : ''}/></div>
+            <div className={nodeValueClass}>
+              <input
+                  type="checkbox"
+                  checked={fieldValue}
+                  onChange={(e) => handleChange(fieldValue ? false : true)}
+                  disabled={readOnly ? 'disabled' : ''}
+              />
+            </div>
           </div>
         )
       }
@@ -388,8 +407,14 @@ export class NodeDetailsContent extends React.Component {
           <div className="node-row">
             {this.renderFieldLabel(fieldLabel)}
             <div className={nodeValueClass}>
-              <Textarea rows={1} cols={50} className="node-input" value={fieldValue}
-                        onChange={(e) => handleChange(e.target.value)} readOnly={readOnly}/>
+              <Textarea
+                  rows={1}
+                  cols={50}
+                  className="node-input"
+                  value={fieldValue || ""}
+                  onChange={(e) => handleChange(e.target.value)}
+                  readOnly={readOnly}
+              />
             </div>
           </div>
         )
@@ -412,7 +437,11 @@ export class NodeDetailsContent extends React.Component {
 
   nodeValueClass = (isMarked) => "node-value" + (isMarked ? " marked" : "");
 
-  setNodeDataAt = (propToMutate, newValue) => {
+  setNodeDataAt = (propToMutate, newValue, defaultValue) => {
+    if (_.isEmpty(newValue) && !_.isUndefined(defaultValue)) {
+      newValue = defaultValue;
+    }
+
     var newtempNodeData = _.cloneDeep(this.state.editedNode)
     _.set(newtempNodeData, propToMutate, newValue)
     this.setState({editedNode: newtempNodeData})

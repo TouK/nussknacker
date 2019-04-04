@@ -10,6 +10,7 @@ describe("process available variables finder", () => {
     })
   })
 
+  
   it("should find available variables with its types in process in the end of the process", () => {
     const availableVariables = ProcessUtils.findAvailableVariables("endEnriched", process, processDefinition)
     expect(availableVariables).toEqual({
@@ -87,7 +88,10 @@ const processDefinition = {
         {name: "withAdditional", additionalVariables: {"additional1": { "refClazzName": "java.lang.String"}}}
       ], "returnType": { "refClazzName": "java.lang.String"}, "categories": [ "Category12"]}},
   "exceptionHandlerFactory" : { "parameters" : [ { "name": "errorsTopic", "typ": { "refClazzName": "java.lang.String"}}], "returnType" : { "refClazzName": "org.nussknacker.process.espExceptionHandlerFactory"}, "categories" : []},
-  "globalVariables" : { "date": { "returnType": { "refClazzName": "java.time.LocalDate"}, "categories" : [ "Category12", "Category11"]}},
+  "globalVariables" : {
+    "date": { "returnType": { "refClazzName": "java.time.LocalDate"}, "categories" : [ "Category12", "Category11"]},
+    "wrong1": { "returnType": null, "categories" : [ "Category12", "Category11"]}
+  },
   "typesInformation" : [
     { "clazzName": { "refClazzName": "org.nussknacker.model.Transaction"}, "methods": { "CUSTOMER_ID": { "refClazz" : {"refClazzName": "java.lang.String"}}}},
     { "clazzName": { "refClazzName": "pl.touk.nussknacker.model.Account"}, "methods": { "ACCOUNT_NO": { "refClazz" : { "refClazzName": "java.lang.String"}}}},
