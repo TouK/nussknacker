@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.build
 
 import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.api.{MetaData, StandaloneMetaData, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{MetaData, StandaloneMetaData, StreamMetaData, UserDefinedProcessAdditionalFields}
 import pl.touk.nussknacker.engine.build.GraphBuilder.Creator
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -12,15 +12,17 @@ class ProcessMetaDataBuilder private[build](metaData: MetaData) {
 
   //TODO: exception when non-streaming process?
   def parallelism(p: Int) =
-   new ProcessMetaDataBuilder(metaData.copy(typeSpecificData = StreamMetaData(Some(p))))
+    new ProcessMetaDataBuilder(metaData.copy(typeSpecificData = StreamMetaData(Some(p))))
 
   //TODO: exception when non-standalone process?
   def path(p: Option[String]) =
-   new ProcessMetaDataBuilder(metaData.copy(typeSpecificData = StandaloneMetaData(p)))
+    new ProcessMetaDataBuilder(metaData.copy(typeSpecificData = StandaloneMetaData(p)))
 
   def subprocessVersions(subprocessVersions: Map[String, Long]) =
-   new ProcessMetaDataBuilder(metaData.copy(subprocessVersions = subprocessVersions))
+    new ProcessMetaDataBuilder(metaData.copy(subprocessVersions = subprocessVersions))
 
+  def additionalFields(userDefinedProcessAdditionalFields: UserDefinedProcessAdditionalFields) =
+    new ProcessMetaDataBuilder(metaData.copy(additionalFields = Some(userDefinedProcessAdditionalFields)))
 
   def exceptionHandler(params: (String, Expression)*) =
     new ProcessExceptionHandlerBuilder(ExceptionHandlerRef(params.map(evaluatedparam.Parameter.tupled).toList))

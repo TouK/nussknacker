@@ -30,14 +30,15 @@ class DatabaseInitializer(dbConfig: DbConfig) {
   }
 
   private def migrateIfNeeded(dbConfig: DbConfig) = {
-    val flyway = new Flyway()
-    flyway.setDataSource(new DatabaseDataSource(dbConfig.db))
-    flyway.setBaselineOnMigrate(true)
-    dbConfig.driver match {
-      case HsqldbProfile => flyway.setLocations("db/migration/hsql", "db/migration/common")
-      case PostgresProfile => flyway.setLocations("db/migration/postgres", "db/migration/common")
+    val flyway = Flyway.configure()
+      .dataSource(new DatabaseDataSource(dbConfig.db))
+      .baselineOnMigrate(true)
+
+    val flywayWithDbProfile = dbConfig.driver match {
+      case HsqldbProfile => flyway.locations("db/migration/hsql", "db/migration/common")
+      case PostgresProfile => flyway.locations("db/migration/postgres", "db/migration/common")
     }
-    flyway.migrate()
+    flywayWithDbProfile.load().migrate()
   }
 }
 

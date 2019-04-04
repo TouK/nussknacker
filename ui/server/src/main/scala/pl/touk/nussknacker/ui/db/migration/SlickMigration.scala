@@ -4,17 +4,17 @@ import java.io.PrintWriter
 import java.lang.reflect.{InvocationHandler, Method, Proxy}
 import java.sql.Connection
 import java.util.logging.Logger
-import javax.sql.DataSource
 
+import javax.sql.DataSource
 import argonaut.{Json, Parse}
-import org.flywaydb.core.api.migration.jdbc.JdbcMigration
+import org.flywaydb.core.api.migration.{BaseJavaMigration, Context}
 import pl.touk.nussknacker.ui.db.EspTables
 import slick.jdbc.JdbcProfile
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-trait SlickMigration extends JdbcMigration {
+trait SlickMigration extends BaseJavaMigration {
 
   protected val profile: JdbcProfile
 
@@ -22,11 +22,11 @@ trait SlickMigration extends JdbcMigration {
 
   def migrateActions: DBIOAction[Any, NoStream, _ <: Effect]
 
-  override final def migrate(conn: Connection) = {
+  override def migrate(context: Context): Unit = {
+    val conn = context.getConnection
     val database = Database.forDataSource(new AlwaysUsingSameConnectionDataSource(conn), None)
     Await.result(database.run(migrateActions), 10 minute)
   }
-
 }
 
 trait ProcessJsonMigration extends SlickMigration with EspTables {
