@@ -1,5 +1,8 @@
 package pl.touk.nussknacker.engine.flink.test
 
+import java.io.File
+import java.nio.file.{Files, Path}
+
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.{JobExecutionResult, JobID, JobSubmissionResult}
 import org.apache.flink.configuration._
@@ -10,6 +13,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.graph.StreamGraph
 import org.apache.flink.test.util.TestBaseUtils
 import org.apache.flink.util.OptionalFailure
+import org.junit.Assert
 
 object StoppableExecutionEnvironment {
 
@@ -46,8 +50,13 @@ class StoppableExecutionEnvironment(userFlinkClusterConfig: Configuration,
     streamGraph.setJobName(jobName)
     val jobGraph: JobGraph = streamGraph.getJobGraph
     logger.info("Running job on local embedded Flink mini cluster")
+
+    userFlinkClusterConfig.setBoolean(ConfigConstants.LOCAL_START_WEBSERVER, false)
+    userFlinkClusterConfig.setBoolean(CoreOptions.FILESYTEM_DEFAULT_OVERRIDE, true)
     jobGraph.getJobConfiguration.addAll(userFlinkClusterConfig)
-    localFlinkMiniCluster = TestBaseUtils.startCluster(jobGraph.getJobConfiguration, singleActorSystem)
+
+    localFlinkMiniCluster = new LocalFlinkMiniCluster(jobGraph.getJobConfiguration, singleActorSystem)
+    localFlinkMiniCluster.start()
 
     val submissionRes: JobSubmissionResult = localFlinkMiniCluster.submitJobDetached(jobGraph)
     new JobExecutionResult(submissionRes.getJobID, 0, new java.util.HashMap[String, OptionalFailure[AnyRef]]())

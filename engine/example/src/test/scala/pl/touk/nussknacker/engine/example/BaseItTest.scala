@@ -36,8 +36,8 @@ trait BaseITest extends KafkaSpec {
   }
 
   override protected def afterAll(): Unit = {
-    super.afterAll()
     stoppableEnv.stop()
+    super.afterAll()
   }
 }
 

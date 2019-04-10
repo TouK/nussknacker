@@ -98,7 +98,7 @@ val commonSettings =
   )
 
 val akkaV = "2.4.20" //same version as in Flink
-val flinkV = "1.6.1"
+val flinkV = "1.7.2"
 val kafkaMajorV = "0.11"
 val kafkaV = s"$kafkaMajorV.0.2"
 val springV = "5.1.4.RELEASE"
