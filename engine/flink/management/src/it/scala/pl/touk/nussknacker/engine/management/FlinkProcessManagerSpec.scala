@@ -8,7 +8,7 @@ import argonaut.PrettyParams
 import com.typesafe.config.ConfigValueFactory
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
-import org.scalatest.{FlatSpec, FunSpec, FunSuite, Matchers}
+import org.scalatest._
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, GraphProcess, RunningState}
 import pl.touk.nussknacker.engine.api.process.ProcessName

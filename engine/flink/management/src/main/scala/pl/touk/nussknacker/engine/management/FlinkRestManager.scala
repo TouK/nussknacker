@@ -6,10 +6,8 @@ import argonaut.Argonaut._
 import argonaut._
 import ArgonautShapeless._
 import org.asynchttpclient.{AsyncCompletionHandler, Request, RequestBuilder}
-import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import dispatch._
-import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.runtime.jobgraph.JobStatus
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.deployment._
@@ -22,7 +20,6 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.dispatch.{LoggingDispatchClient, utils}
 import pl.touk.nussknacker.engine.management.flinkRestModel.{DeployProcessRequest, GetSavepointStatusResponse, JobsResponse, SavepointTriggerResponse, jobStatusDecoder}
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
 
@@ -53,6 +50,8 @@ private[management] object DefaultHttpSender extends HttpSender {
   }
 
 }
+
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class FlinkRestManager(config: FlinkConfig, modelData: ModelData, sender: HttpSender = DefaultHttpSender) extends FlinkProcessManager(modelData, config.shouldVerifyBeforeDeploy.getOrElse(true)) with LazyLogging {
 

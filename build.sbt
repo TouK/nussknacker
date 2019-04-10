@@ -4,7 +4,7 @@ import sbt.Keys._
 import sbtassembly.AssemblyPlugin.autoImport.assembly
 import sbtassembly.MergeStrategy
 
-val scalaV = "2.11.12"
+val scalaV = "2.12.8"
 
 //by default we include flink and scala, we want to be able to disable this behaviour for performance reasons
 val includeFlinkAndScala = Option(System.getProperty("includeFlinkAndScala", "true")).exists(_.toBoolean)
@@ -93,9 +93,13 @@ val commonSettings =
     ),
     javacOptions := Seq(
       "-Xlint:deprecation",
-      "-Xlint:unchecked"
+      "-Xlint:unchecked",
+      //we use it e.g. to provide consistent behaviour wrt extracting parameter names from scala and java
+      "-parameters"
     ),
-    assemblyMergeStrategy in assembly := nussknackerMergeStrategy
+    assemblyMergeStrategy in assembly := nussknackerMergeStrategy,
+    //problem with scaladoc of api: https://github.com/scala/bug/issues/10134
+    scalacOptions in (Compile, doc) -= "-Xfatal-warnings"
   )
 
 val akkaV = "2.4.20" //same version as in Flink
@@ -136,7 +140,7 @@ lazy val dist = (project in file("nussknacker-dist"))
     ).value,
     packageName in Universal := ("nussknacker" + "-" + version.value),
     mappings in Universal += {
-      val model = generic.base / "target" / "scala-2.11" / "genericModel.jar"
+      val model = (crossTarget in generic).value / "genericModel.jar"
       model -> "model/genericModel.jar"
     },
     publishArtifact := false,
