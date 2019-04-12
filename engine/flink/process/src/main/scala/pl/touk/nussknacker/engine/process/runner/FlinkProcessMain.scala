@@ -21,7 +21,7 @@ object FlinkProcessMain extends FlinkRunner with LazyLogging {
     val processVersion = parseProcessVersion(args(1))
     val config: Config = readConfigFromArgs(args)
     val buildInfo = if (args.length > 3) args(3) else ""
-    val loadCreator =      ProcessConfigCreatorLoader.loadProcessConfigCreator(Thread.currentThread().getContextClassLoader)
+    val loadCreator = ProcessConfigCreatorLoader.justOne(Thread.currentThread().getContextClassLoader)
     val registrar: FlinkProcessRegistrar = prepareRegistrar(loadCreator, config)
     val env = StreamExecutionEnvironment.getExecutionEnvironment
     setBuildInfo(buildInfo, env)

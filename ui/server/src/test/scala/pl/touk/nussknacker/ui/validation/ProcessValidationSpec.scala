@@ -154,7 +154,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
       Map(TestProcessingTypes.Streaming -> Map(
         "field1" -> AdditionalProcessProperty("label1", string, None, true, None),
         "field2" -> AdditionalProcessProperty("label2", string, None, false, None)
-      )), sampleResolver)
+      )), sampleResolver, Map.empty)
 
     processValidation.validate(validProcessWithFields(Map("field1" -> "a", "field2" -> "b"))) shouldBe 'ok
 
@@ -176,7 +176,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
       Map(TestProcessingTypes.Streaming -> Map(
         "field1" -> AdditionalProcessProperty("label1", string, None, true, None),
         "field2" -> AdditionalProcessProperty("label2", string, None, true, None)
-      )), sampleResolver)
+      )), sampleResolver, Map.empty)
 
     val process = validProcessWithFields(Map())
     val subprocess = process.copy(properties = process.properties.copy(isSubprocess = true))
@@ -190,7 +190,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
       Map(TestProcessingTypes.Streaming -> Map(
         "field1" -> AdditionalProcessProperty("label", select, None, isRequired = false, values = Some("true" :: "false" :: Nil)),
         "field2" -> AdditionalProcessProperty("label", integer, None, isRequired = false, None)
-      )), sampleResolver)
+      )), sampleResolver, Map.empty)
 
     processValidation.validate(validProcessWithFields(Map("field1" -> "true"))) shouldBe 'ok
     processValidation.validate(validProcessWithFields(Map("field1" -> "false"))) shouldBe 'ok
@@ -205,7 +205,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
     val processValidation = new ProcessValidation(Map(TestProcessingTypes.Streaming -> ProcessTestData.validator),
       Map(TestProcessingTypes.Streaming -> Map(
         "field2" -> AdditionalProcessProperty("label", integer, None, isRequired = false, None)
-      )), sampleResolver)
+      )), sampleResolver, Map.empty)
 
     processValidation.validate(validProcessWithFields(Map("field1" -> "true"))) should not be 'ok
 

@@ -33,7 +33,7 @@ case class ClassLoaderModelData(processConfig: Config, modelClassLoader: ModelCl
   extends ModelData {
 
   //this is not lazy, to be able to detect if creator can be created...
-  val configCreator : ProcessConfigCreator = ProcessConfigCreatorLoader.loadProcessConfigCreator(modelClassLoader.classLoader)
+  val configCreator : ProcessConfigCreator = ProcessConfigCreatorLoader.justOne(modelClassLoader.classLoader)
 
   lazy val migrations: ProcessMigrations = {
     Multiplicity(ScalaServiceLoader.load[ProcessMigrations](modelClassLoader.classLoader)) match {

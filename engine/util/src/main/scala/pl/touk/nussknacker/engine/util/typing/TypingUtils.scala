@@ -28,7 +28,7 @@ object TypingUtils {
   }
 
   //TODO: how to handle classloaders??
-  private def loadClassFromName(name: String): TypingResult = {
+  def loadClassFromName(name: String): TypingResult = {
     val langAppended = if (!name.contains(".")) "java.lang." + name else name
     Typed(ClazzRef(ClassUtils.getClass(langAppended)))
   }
