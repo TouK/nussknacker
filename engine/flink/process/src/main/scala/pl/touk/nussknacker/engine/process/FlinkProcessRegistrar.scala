@@ -142,7 +142,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => (Cla
           val executor = joinPart.transformer.asInstanceOf[FlinkCustomJoinTransformation]
           val customNodeContext = FlinkCustomNodeContext(metaData,
             joinId, processWithDeps.processTimeout,
-            FlinkLazyParamProvider(runtimeContext => new FlinkCompilerLazyInterpreterCreator(runtimeContext, compiledProcessWithDeps(UserClassLoader.get("")))),
+            new FlinkLazyParameterFunctionHelper(runtimeContext => new FlinkCompilerLazyInterpreterCreator(runtimeContext, compiledProcessWithDeps(UserClassLoader.get("")))),
             processWithDeps.signalSenders)
 
 
@@ -241,7 +241,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => (Cla
 
           val customNodeContext = FlinkCustomNodeContext(metaData,
             node.id, processWithDeps.processTimeout,
-            FlinkLazyParamProvider(runtimeContext => new FlinkCompilerLazyInterpreterCreator(runtimeContext, compiledProcessWithDeps(UserClassLoader.get("")))),
+            new FlinkLazyParameterFunctionHelper(runtimeContext => new FlinkCompilerLazyInterpreterCreator(runtimeContext, compiledProcessWithDeps(UserClassLoader.get("")))),
               processWithDeps.signalSenders)
           val newStart = transformer.transform(start.map(_.finalContext), customNodeContext)
               .map(newContextFun)

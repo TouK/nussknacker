@@ -40,9 +40,9 @@ trait LazyParameter[T] {
 
 trait LazyParameterInterpreter {
 
-  def createInterpreter[T](lazyInterpreter: LazyParameter[T]): (ExecutionContext, Context) => Future[T]
+  def createInterpreter[T](parameter: LazyParameter[T]): (ExecutionContext, Context) => Future[T]
 
-  def syncInterpretationFunction[T](lazyInterpreter: LazyParameter[T]) : Context => T
+  def syncInterpretationFunction[T](parameter: LazyParameter[T]) : Context => T
 
   def close(): Unit
 

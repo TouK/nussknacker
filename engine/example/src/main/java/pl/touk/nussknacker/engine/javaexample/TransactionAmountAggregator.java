@@ -18,7 +18,7 @@ public class TransactionAmountAggregator extends CustomStreamTransformer {
             return
                     //it seems that explicit anonymous class is mandatory here, otherwise there is some weird LazyInterpreter generic type exception
                     start
-                        .map(ctx.nodeServices().lazyMapFunction(clientId))
+                        .map(ctx.lazyParameterHelper().lazyMapFunction(clientId))
                         .keyBy(new KeySelector<ValueWithContext<String>, String>() {
                             @Override
                             public String getKey(ValueWithContext<String> ir) throws Exception {

@@ -13,9 +13,8 @@ import org.apache.flink.streaming.api.scala._
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api.{Context => NkContext}
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, Unknown}
-import pl.touk.nussknacker.engine.api.typed.{ClazzRef, ReturningType, typing}
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkLazyParamProvider, FlinkCustomStreamTransformation, LazyParameterInterpreterFunction}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass}
+import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.state.EvictableStateFunction
 
 import scala.collection.JavaConverters._
@@ -32,16 +31,16 @@ object AggregateTransformer extends CustomStreamTransformer {
     val lengthInMillis = Duration(length).toMillis
 
     start
-      .map(ctx.nodeServices.lazyMapFunction(keyBy))
+      .map(ctx.lazyParameterHelper.lazyMapFunction(keyBy))
       .keyBy(_.value)
-      .process(new AggregatorFunction[AnyRef](ctx.nodeServices, aggregateBy, lengthInMillis, ctx.nodeId))
+      .process(new AggregatorFunction[AnyRef](ctx.lazyParameterHelper, aggregateBy, lengthInMillis, ctx.nodeId))
   }, Typed(Set(TypedClass(classOf[java.util.List[_]], List(aggregateBy.returnType)))))
 
 }
 
 
 //TODO: other aggregations, make consistent with TImestampedEvictableState
-class AggregatorFunction[T <: AnyRef](val customNodeFunctions: FlinkLazyParamProvider, aggregateBy: LazyParameter[T], lengthInMillis: Long, nodeId: String)
+class AggregatorFunction[T <: AnyRef](val lazyParameterHelper: FlinkLazyParameterFunctionHelper, aggregateBy: LazyParameter[T], lengthInMillis: Long, nodeId: String)
   extends EvictableStateFunction[ValueWithContext[String], ValueWithContext[Any], TreeMap[Long, AnyRef]] with LazyParameterInterpreterFunction {
 
   type AggregationType = List[AnyRef]

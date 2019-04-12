@@ -9,7 +9,7 @@ import scala.reflect.ClassTag
 case class FlinkCustomNodeContext(metaData: MetaData,
                                   nodeId: String,
                                   timeout: FiniteDuration,
-                                  nodeServices: FlinkLazyParamProvider,
+                                  lazyParameterHelper: FlinkLazyParameterFunctionHelper,
                                   signalSenderProvider: FlinkProcessSignalSenderProvider)
 
 case class SignalSenderKey(id: String, klass: Class[_])
