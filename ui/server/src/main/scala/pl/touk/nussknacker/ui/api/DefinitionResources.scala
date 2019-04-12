@@ -25,7 +25,7 @@ class DefinitionResources(modelData: Map[ProcessingType, ModelData],
     //TODO maybe always return data for all subprocesses versions instead of fetching just one-by-one?
     path("processDefinitionData" / Segment) { (processingType) =>
       parameter('isSubprocess.as[Boolean]) { (isSubprocess) =>
-        post {
+        post { // POST - because there is sending complex subprocessVersions parameter
           entity(as[Map[String, Long]]) { subprocessVersions =>
             complete {
               val response: HttpResponse = modelData.get(processingType).map { modelDataForType =>

@@ -22,10 +22,20 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest
     }
   }
 
-  it("should return definition data for existsing processing type") {
+  it("should return definition data for existing processing type") {
     getProcessDefinitionData(existingProcessingType, Map.empty[String, Long].asJson) ~> check {
       status shouldBe StatusCodes.OK
-      Parse.parse(responseAs[String]).right.value
+
+      val data = Parse.parse(responseAs[String]).right.value
+      val noneReturnType = for {
+        processDefinitionField <- data.cursor.downField("processDefinition")
+        customStreamTransformersField <- processDefinitionField.downField("customStreamTransformers")
+        noneReturnTypeTransformerField <- customStreamTransformersField.downField("noneReturnTypeTransformer")
+        returnTypeField <- noneReturnTypeTransformerField.downField("returnType")
+      } yield returnTypeField.right
+
+      noneReturnType.get shouldBe None
+      data
     }
   }
 
