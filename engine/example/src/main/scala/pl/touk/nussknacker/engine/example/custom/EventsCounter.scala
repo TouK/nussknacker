@@ -22,7 +22,7 @@ class EventsCounter() extends CustomStreamTransformer {
     FlinkCustomStreamTransformation((start: DataStream[NKContext], ctx: FlinkCustomNodeContext) => {
       val lengthInMillis = Duration(length).toMillis
       start
-        .map(ctx.nodeServices.lazyMapFunction(key))
+        .map(ctx.lazyParameterHelper.lazyMapFunction(key))
         .keyBy(_.value)
         .process(new CounterFunction(lengthInMillis))
     })

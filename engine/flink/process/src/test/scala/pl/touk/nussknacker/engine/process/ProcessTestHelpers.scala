@@ -133,7 +133,7 @@ object ProcessTestHelpers {
     def execute(@ParamName("keyBy") keyBy: LazyParameter[String],
                 @ParamName("stringVal") stringVal: String) = FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
       start
-        .map(context.nodeServices.lazyMapFunction(keyBy))
+        .map(context.lazyParameterHelper.lazyMapFunction(keyBy))
         .keyBy(_.value)
         .mapWithState[ValueWithContext[Any], Long] {
         case (SimpleFromValueWithContext(ctx, sr), Some(oldState)) =>
@@ -159,7 +159,7 @@ object ProcessTestHelpers {
                 @ParamName("stringVal") stringVal: String) = FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
 
       start
-        .filter(new AbstractOneParamLazyParameterFunction(keyBy, context.nodeServices) with FilterFunction[Context] {
+        .filter(new AbstractOneParamLazyParameterFunction(keyBy, context.lazyParameterHelper) with FilterFunction[Context] {
           override def filter(value: Context): Boolean = evaluateParameter(value) == stringVal
         })
         .map(ValueWithContext(null, _))
@@ -174,7 +174,7 @@ object ProcessTestHelpers {
     def execute(@ParamName("value") value: LazyParameter[String]) =
       FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
         start
-          .map(context.nodeServices.lazyMapFunction(value))
+          .map(context.lazyParameterHelper.lazyMapFunction(value))
           .keyBy(_.value)
           .map(_ => ValueWithContext(null, Context("new")))
     })

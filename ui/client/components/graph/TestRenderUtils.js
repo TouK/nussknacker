@@ -58,7 +58,7 @@ export function testResults(nodeId, testResultsToShow) {
         {testResultsToShow && !_.isEmpty(testResultsToShow.mockedResultsForCurrentContext) ?
           (testResultsToShow.mockedResultsForCurrentContext).map((mockedValue, index) =>
             <span className="testResultDownload">
-            <a download={nodeId + "-single-input"} key={index} href={downloadableHref(mockedValue.value)}>
+            <a download={nodeId + "-single-input"} key={index} href={downloadableHref(mockedValue.value.pretty)}>
               <span className="glyphicon glyphicon-download"/> Results for this input</a></span>
           ) : null
         }
@@ -76,7 +76,7 @@ export function testResults(nodeId, testResultsToShow) {
 }
 
 function mergedMockedResults(mockedResults) {
-  return _.join(mockedResults.map((mockedValue) => mockedValue.value), "\n\n")
+  return _.join(mockedResults.map((mockedValue) => mockedValue.value.pretty), "\n\n")
 }
 
 function downloadableHref(content) {

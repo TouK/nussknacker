@@ -42,7 +42,7 @@
     }
   },
   "VariableBuilder": {
-    "name": "Variable Builder",
+    "name": "Map Variable",
     "styles": {
       "fill": "#FEB58A",
       "color": "white"

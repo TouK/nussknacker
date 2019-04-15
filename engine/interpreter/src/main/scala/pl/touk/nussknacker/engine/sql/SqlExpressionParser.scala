@@ -75,14 +75,30 @@ object SqlExpressionParser extends ExpressionParser {
 case class SqlExpressEvaluationException(notAListExceptions :NonEmptyList[PrepareTables.NotAListException])
   extends IllegalArgumentException(notAListExceptions.toString())
 
-//FIXME: take care of cleaning up, current implementation may lead to resource leaks...
 class SqlExpression(private[sql] val columnModels: Map[String, ColumnModel],
                      val original: String) extends Expression {
 
   override val language: String = SqlExpressionParser.languageId
   
-  private val databaseHolder = new ThreadLocal[SqlQueryableDataBase] {
-    override def initialValue(): SqlQueryableDataBase = newDatabase()
+  private val databaseHolder: ThreadLocal[SqlQueryableDataBase] = new ThreadLocal[SqlQueryableDataBase] {
+    private var threadToDatabase = Map[Thread, SqlQueryableDataBase]()
+
+    // to avoid memory leaks we have to keep track of already opened database connections
+    // we don't explicitly know when thread is dying thus we check their status every time new connection is requested
+    override def initialValue(): SqlQueryableDataBase = synchronized {
+      val currentThread = Thread.currentThread()
+      val currentDatabase = newDatabase()
+
+      threadToDatabase = threadToDatabase.filter {
+        case (thread, _) if thread.isAlive => true
+        case (_, db) =>
+          db.close()
+          false
+      }
+      threadToDatabase = threadToDatabase + (currentThread -> currentDatabase)
+
+      currentDatabase
+    }
   }
 
   private def newDatabase(): SqlQueryableDataBase = synchronized {

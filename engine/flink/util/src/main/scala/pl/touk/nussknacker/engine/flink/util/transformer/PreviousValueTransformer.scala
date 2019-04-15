@@ -16,12 +16,12 @@ object PreviousValueTransformer extends CustomStreamTransformer {
               @ParamName("value") value: LazyParameter[Value])
   = FlinkCustomStreamTransformation((start: DataStream[Context], ctx: FlinkCustomNodeContext) =>
     start
-      .map(ctx.nodeServices.lazyMapFunction(keyBy))
+      .map(ctx.lazyParameterHelper.lazyMapFunction(keyBy))
       .keyBy(_.value)
-      .map(new PreviousValueFunction(value, ctx.nodeServices)), value.returnType)
+      .map(new PreviousValueFunction(value, ctx.lazyParameterHelper)), value.returnType)
 
   class PreviousValueFunction(val parameter: LazyParameter[Value],
-                              val customNodeFunctions: FlinkLazyParamProvider) extends RichMapFunction[ValueWithContext[String], ValueWithContext[Any]]
+                              val lazyParameterHelper: FlinkLazyParameterFunctionHelper) extends RichMapFunction[ValueWithContext[String], ValueWithContext[Any]]
     with OneParamLazyParameterFunction[Any] {
 
     private[this] var state: ValueState[Value] = _

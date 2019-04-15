@@ -123,7 +123,7 @@ val akkaHttpV = "10.0.10"
 val slickV = "3.2.3"
 val hsqldbV = "2.3.4"
 val postgresV = "42.2.5"
-val flywayV = "4.0.3"
+val flywayV = "5.2.4"
 val confluentV = "4.1.2"
 
 lazy val dist = (project in file("nussknacker-dist"))

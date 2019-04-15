@@ -252,7 +252,7 @@ case object StatefulTransformer extends CustomStreamTransformer {
   def execute(@ParamName("keyBy") keyBy: LazyParameter[String])
   = FlinkCustomStreamTransformation((start: DataStream[Context], ctx: FlinkCustomNodeContext) => {
     start
-      .map(ctx.nodeServices.lazyMapFunction(keyBy))
+      .map(ctx.lazyParameterHelper.lazyMapFunction(keyBy))
       .keyBy(_.value)
       .mapWithState[ValueWithContext[Any], List[String]] { case (StringFromIr(ir, sr), oldState) =>
       val nList = sr :: oldState.getOrElse(Nil)
@@ -301,7 +301,7 @@ case object CustomFilter extends CustomStreamTransformer {
   def execute(@ParamName("expression") expression: LazyParameter[Boolean])
    = FlinkCustomStreamTransformation((start: DataStream[Context], ctx: FlinkCustomNodeContext) =>
       start
-        .filter(ctx.nodeServices.lazyFilterFunction(expression))
+        .filter(ctx.lazyParameterHelper.lazyFilterFunction(expression))
         .map(ValueWithContext(null, _)))
 
 }

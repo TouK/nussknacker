@@ -126,7 +126,14 @@ Variable once defined cannot be overwritten.
 
 ![split graph](img/variable_window.png)
   
-  
+## Map Variable 
+
+Defines new variable with one or more fields. 
+Each field value is evaluated by using `Expression`.  
+
+![split graph](img/variable_object_window.png)
+
+Doesn't change records flow. MapVariable once defined cannot be overwritten.  
 
 ###Subprocesses
 TBD

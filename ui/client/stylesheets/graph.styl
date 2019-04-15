@@ -235,7 +235,6 @@ modalContent(modalBkgColor,warningColor,modalLabelTextColor,testResultsColor,mod
       &.marked
         border 2px solid markColor
       &.node-value-select
-        z-index: 2
         .node-value-select__control
           background-color modalInputBkgColor
           border: 0
@@ -255,6 +254,7 @@ modalContent(modalBkgColor,warningColor,modalLabelTextColor,testResultsColor,mod
           background-color modalInputBkgColor
           color modalInputTextColor
         .node-value-select__menu
+          z-index: 2
           border-radius: 0
           border-bottom: 1px solid gray;
         .node-value-select__menu-list

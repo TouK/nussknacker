@@ -23,7 +23,7 @@ public class EventsCounter extends CustomStreamTransformer {
         return JavaFlinkCustomStreamTransformation.apply((start, ctx) -> {
             long lengthInMillis = Duration.apply(length).toMillis();
                     return start
-                        .map(ctx.nodeServices().lazyMapFunction(key))
+                        .map(ctx.lazyParameterHelper().lazyMapFunction(key))
                         //it seems that explicit anonymous class is mandatory here, otherwise there is some weird LazyInterpreter generic type exception
                         .keyBy(new KeySelector<ValueWithContext<String>, String>() {
                             @Override

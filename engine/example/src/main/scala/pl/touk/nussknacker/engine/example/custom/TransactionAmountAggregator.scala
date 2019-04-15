@@ -14,7 +14,7 @@ class TransactionAmountAggregator extends CustomStreamTransformer {
   def execute(@ParamName("clientId") clientId: LazyParameter[String]): FlinkCustomStreamTransformation = {
     FlinkCustomStreamTransformation((start: DataStream[Context], ctx: FlinkCustomNodeContext) => {
       start
-        .map(ctx.nodeServices.lazyMapFunction(clientId))
+        .map(ctx.lazyParameterHelper.lazyMapFunction(clientId))
         .keyBy(_.value)
         .mapWithState[ValueWithContext[Any], AggregatedAmount] {
         case (ValueWithContext(_, context), Some(aggregationSoFar)) =>

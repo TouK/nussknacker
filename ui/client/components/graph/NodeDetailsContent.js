@@ -13,6 +13,9 @@ import * as JsonUtils from '../../common/JsonUtils';
 import Fields from "../Fields";
 import ParameterList from "./ParameterList";
 import ExpressionWithFixedValues from "./ExpressionWithFixedValues";
+import {v4 as uuid4} from "uuid";
+import MapVariable from "./node-modal/MapVariable";
+import Variable from "./node-modal/Variable";
 
 //move state to redux?
 // here `componentDidUpdate` is complicated to clear unsaved changes in modal
@@ -20,27 +23,34 @@ export class NodeDetailsContent extends React.Component {
 
   constructor(props) {
     super(props);
+
     this.state = {
-      editedNode: props.node,
+      ...TestRenderUtils.stateForSelectTestResults(null, this.props.testResults),
+      editedNode: _.cloneDeep(props.node),
       codeCompletionEnabled: true,
-      testResultsToHide: new Set()
+      testResultsToHide: new Set(),
     };
 
-    this.state = {
-      ...this.state,
-      ...TestRenderUtils.stateForSelectTestResults(null, this.props.testResults)
-    };
-
-    this.processNode = _.cloneDeep(props.node); //FIXME: props are modified without cloning @{ParameterList} breakks
     this.nodeObjectDetails = ProcessUtils.findNodeObjectTypeDefinition(this.props.node, this.props.processDefinitionData.processDefinition);
 
     let hasNoReturn = _.isNull(this.nodeObjectDetails.returnType)
     this.showOutputVar = hasNoReturn  === false || (hasNoReturn === true && this.state.editedNode.outputVar)
+
+    this.generateUUID("fields");
+  }
+
+  generateUUID(...properties) {
+    properties.forEach((property) => {
+      if (_.has(this.state.editedNode, property)) {
+        let elements = _.get(this.state.editedNode, property);
+        elements.map((el) => el.uuid = el.uuid || uuid4());
+      }
+    });
   }
 
   componentWillReceiveProps(nextProps) {
     if (!_.isEqual(this.props.node, nextProps.node)) {
-      this.nodeObjectDetails = ProcessUtils.findNodeObjectTypeDefinition(nextProps.node, nextProps.processDefinitionData.processDefinition);
+      this.nodeObjectDetails = ProcessUtils.findNodeObjectTypeDefinition(nextProps.node, nextProps.processDefinitionData.processDefinition)
       this.setState({editedNode: nextProps.node})
     }
   }
@@ -52,11 +62,38 @@ export class NodeDetailsContent extends React.Component {
   }
 
   findParamByName(paramName) {
-    return (_.get(this.nodeObjectDetails, 'parameters', [])).find((param) => param.name === paramName)
+    return (_.get(this.nodeObjectDetails, "parameters", [])).find((param) => param.name === paramName)
   }
 
-  customNode = () => {
+  removeElement = (property, index)  => {
+    if (_.has(this.state.editedNode, property)) {
+      _.get(this.state.editedNode, property).splice(index, 1);
 
+      this.setState((state, props) => {editedNode: state.editedNode}, () => {
+        this.props.onChange(this.state.editedNode);
+      });
+    }
+  };
+
+  addElement = (property, element) => {
+    if (_.has(this.state.editedNode, property)) {
+      _.get(this.state.editedNode, property).push(element);
+
+      this.setState((state, props) => {editedNode: state.editedNode}, () => {
+        this.props.onChange(this.state.editedNode);
+      });
+    }
+  };
+
+  setNodeDataAt = (property, value) => {
+    _.set(this.state.editedNode, property, value);
+
+    this.setState((state, props) => {editedNode: state.editedNode}, () => {
+      this.props.onChange(this.state.editedNode);
+    });
+  };
+
+  customNode = () => {
     switch (NodeUtils.nodeType(this.props.node)) {
       case 'Source':
         return this.sourceSinkCommon()
@@ -132,7 +169,7 @@ export class NodeDetailsContent extends React.Component {
             <ParameterList
               processDefinitionData={this.props.processDefinitionData}
               editedNode={this.state.editedNode}
-              savedNode={this.processNode}
+              savedNode={this.state.editedNode}
               setNodeState={newParams => this.setNodeDataAt('ref.parameters', newParams)}
               createListField={(param, index) => this.createExpressionListField(param.name, "expression", `ref.parameters[${index}]`)}
               createReadOnlyField={params => (<div className="node-row">
@@ -167,35 +204,19 @@ export class NodeDetailsContent extends React.Component {
           </div>
         )
       case 'VariableBuilder':
-        return (
-          <div className="node-table-body">
-            {this.createField("input", "Id", "id")}
-            {this.createField("input", "Variable Name", "varName")}
-            <div className="node-row">
-              <div className="node-label">Fields:</div>
-              <div className="node-group">
-                {this.state.editedNode.fields.map((param, index) => {
-                  return (
-                    <div className="node-block" key={this.props.node.id + param.name + index}>
-                      {this.createListField("input", "Name", param, "name", `fields[${index}]`)}
-                      {this.createExpressionListField(param.name, "expression", `fields[${index}]`)}
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-            {this.descriptionField()}
-          </div>
-        )
+        return <MapVariable
+            removeElement={this.removeElement}
+            onChange={this.setNodeDataAt}
+            node={this.state.editedNode}
+            addElement={this.addElement}
+            isMarked={this.isMarked}
+        />;
       case 'Variable':
-        return (
-          <div className="node-table-body">
-            {this.createField("input", "Id", "id")}
-            {this.createField("input", "Variable Name", "varName")}
-            {this.createExpressionField("expression", "Expression", "value")}
-            {this.descriptionField()}
-          </div>
-        )
+        return <Variable
+            onChange={this.setNodeDataAt}
+            node={this.state.editedNode}
+            isMarked={this.isMarked}
+        />;
       case 'Switch':
         return (
           <div className="node-table-body">
@@ -318,6 +339,7 @@ export class NodeDetailsContent extends React.Component {
 
   createListField = (fieldType, fieldLabel, obj, fieldProperty, listFieldProperty, fieldName) => {
     const path = `${listFieldProperty}.${fieldProperty}`
+
     return this.doCreateField(fieldType, fieldLabel, fieldName, _.get(obj, fieldProperty),
       ((newValue) => this.setNodeDataAt(path, newValue) ), null, this.isMarked(path))
   }
