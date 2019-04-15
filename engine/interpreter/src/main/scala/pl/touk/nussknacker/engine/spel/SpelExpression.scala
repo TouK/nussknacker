@@ -64,7 +64,7 @@ final case class ParsedSpelExpression(original: String, parser: () => Expression
 }
 
 class SpelExpression(parsed: ParsedSpelExpression,
-                     expectedReturnType: ClazzRef,
+                     expectedReturnType: TypingResult,
                      expressionFunctions: Map[String, Method],
                      expressionImports: List[String],
                      propertyAccessors: Seq[PropertyAccessor],
@@ -76,11 +76,11 @@ class SpelExpression(parsed: ParsedSpelExpression,
 
   override val language: String = SpelExpressionParser.languageId
 
-  private val expectedClass = expectedReturnType.clazz
+  private val expectedClass = expectedReturnType.objType.klass
 
   override def evaluate[T](ctx: Context,
                            lazyValuesProvider: LazyValuesProvider): Future[ValueWithLazyContext[T]] = logOnException(ctx) {
-    if (expectedReturnType == ClazzRef[SpelExpressionRepr]) {
+    if (expectedReturnType == Typed[SpelExpressionRepr]) {
       return Future.successful(ValueWithLazyContext(SpelExpressionRepr(parsed.parsed, ctx, original).asInstanceOf[T], ctx.lazyContext))
     }
 
@@ -160,13 +160,13 @@ class SpelExpressionParser(expressionFunctions: Map[String, Method], expressionI
 
   private val validator = new SpelExpressionValidator()(classLoader)
 
-  override def parseWithoutContextValidation(original: String, expectedType: ClazzRef): Validated[NonEmptyList[ExpressionParseError], compiledgraph.expression.Expression] = {
+  override def parseWithoutContextValidation(original: String, expectedType: TypingResult): Validated[NonEmptyList[ExpressionParseError], compiledgraph.expression.Expression] = {
     Validated.catchNonFatal(parser.parseExpression(original)).leftMap(ex => NonEmptyList.of(ExpressionParseError(ex.getMessage))).map { parsed =>
       expression(ParsedSpelExpression(original, () => parser.parseExpression(original), parsed), expectedType)
     }
   }
 
-  override def parse(original: String, ctx: ValidationContext, expectedType: ClazzRef): Validated[NonEmptyList[ExpressionParseError], (TypingResult, compiledgraph.expression.Expression)] = {
+  override def parse(original: String, ctx: ValidationContext, expectedType: TypingResult): Validated[NonEmptyList[ExpressionParseError], (TypingResult, compiledgraph.expression.Expression)] = {
     Validated.catchNonFatal(parser.parseExpression(original)).leftMap(ex => NonEmptyList.of(ExpressionParseError(ex.getMessage))).andThen { parsed =>
       validator.validate(parsed, ctx, expectedType).map((_, parsed))
     }.map { case (typingResult, parsed) =>
@@ -174,7 +174,7 @@ class SpelExpressionParser(expressionFunctions: Map[String, Method], expressionI
     }
   }
 
-  private def expression(expression: ParsedSpelExpression, expectedType: ClazzRef) = {
+  private def expression(expression: ParsedSpelExpression, expectedType: TypingResult) = {
     if (enableSpelForceCompile) {
       forceCompile(expression.parsed)
     }

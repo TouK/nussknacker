@@ -143,12 +143,12 @@ object DefinitionExtractor {
         case _ => Set()
       }
 
-      def clazzRefsFromParameter(parameter: Parameter): Iterable[ClazzRef] = {
-        val fromAdditionalVars = parameter.additionalVariables.values.flatMap(clazzRefFromTyped)
+      def clazzRefsFromParameter(parameter: Parameter): Iterable[TypingResult] = {
+        val fromAdditionalVars = parameter.additionalVariables.values//.flatMap(clazzRefFromTyped)
         fromAdditionalVars.toList :+ parameter.typ
       }
 
-      obj.methodDef.returnType :: obj.parameters.flatMap(clazzRefsFromParameter).map(Typed(_))
+      obj.methodDef.returnType :: obj.parameters.flatMap(clazzRefsFromParameter)
     }
   }
 

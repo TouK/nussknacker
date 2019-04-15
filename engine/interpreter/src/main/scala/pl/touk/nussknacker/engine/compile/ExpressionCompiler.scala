@@ -39,7 +39,7 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
 
   def compileValidatedObjectParameters(parameters: List[evaluatedparam.Parameter], ctx: Option[ValidationContext])(implicit nodeId: NodeId)
   : ValidatedNel[PartSubGraphCompilationError, List[compiledgraph.evaluatedparam.Parameter]] =
-    compileObjectParameters(parameters.map(p => Parameter(p.name, ClazzRef[Any], ClazzRef[Any])), parameters, ctx)
+    compileObjectParameters(parameters.map(p => Parameter(p.name, Unknown, Unknown)), parameters, ctx)
 
   def compileObjectParameters(parameterDefinitions: List[Parameter], parameters: List[evaluatedparam.Parameter], maybeCtx: Option[ValidationContext])(implicit nodeId: NodeId)
   : ValidatedNel[PartSubGraphCompilationError, List[compiledgraph.evaluatedparam.Parameter]] = {
@@ -77,7 +77,7 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
   def compile(n: graph.expression.Expression,
               fieldName: Option[String],
               maybeValidationCtx: Option[ValidationContext],
-              expectedType: ClazzRef)
+              expectedType: TypingResult)
              (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, (TypingResult, compiledgraph.expression.Expression)] = {
     val validParser = expressionParsers
       .get(n.language)

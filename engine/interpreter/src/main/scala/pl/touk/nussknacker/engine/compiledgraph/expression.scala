@@ -26,10 +26,10 @@ object expression {
 
     def languageId: String
 
-    def parse(original: String, ctx: ValidationContext, expectedType: ClazzRef):
+    def parse(original: String, ctx: ValidationContext, expectedType: TypingResult):
       Validated[NonEmptyList[ExpressionParseError], (TypingResult, compiledgraph.expression.Expression)]
 
-    def parseWithoutContextValidation(original: String, expectedType: ClazzRef): Validated[NonEmptyList[ExpressionParseError], compiledgraph.expression.Expression]
+    def parseWithoutContextValidation(original: String, expectedType: TypingResult): Validated[NonEmptyList[ExpressionParseError], compiledgraph.expression.Expression]
 
   }
 

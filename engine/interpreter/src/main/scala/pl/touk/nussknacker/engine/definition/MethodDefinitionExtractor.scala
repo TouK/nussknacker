@@ -56,7 +56,7 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
           .getOrElse(throw new IllegalArgumentException(s"Parameter $p of $obj and method : ${method.getName} has missing @ParamName annotation"))
         val paramType = extractParameterType(p)
         Left(Parameter(
-          name, ClazzRef(paramType), ClazzRef(p.getType), ParameterTypeMapper.prepareRestrictions(paramType, Some(p), nodeConfig.paramConfig(name)), additionalVariables(p)
+          name, Typed(paramType), Typed(p.getType), ParameterTypeMapper.prepareRestrictions(paramType, Some(p), nodeConfig.paramConfig(name)), additionalVariables(p)
         ))
       }
     }.toList
@@ -111,7 +111,8 @@ object MethodDefinitionExtractor {
       baseOrAdditional.map {
         case Left(param) =>
           val foundParam = prepareValue(param.name).getOrElse(throw new IllegalArgumentException(s"Missing parameter: ${param.name}"))
-          validateType(param.name, foundParam, param.originalType.clazz)
+          //FIIIXME??
+          validateType(param.name, foundParam, param.originalType.objType.klass)
           foundParam
         case Right(classOfAdditional) =>
           val foundParam = additionalParameters.find(classOfAdditional.isInstance).getOrElse(

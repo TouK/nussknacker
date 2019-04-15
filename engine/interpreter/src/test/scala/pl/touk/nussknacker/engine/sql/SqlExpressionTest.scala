@@ -87,7 +87,7 @@ class SqlExpressionTest extends FunSuite with Matchers with ScalaFutures {
 
   private def parseOrFail(expression: String, validationContext: ValidationContext = validationContext): SqlExpression =
     SqlExpressionParser
-          .parse(expression, validationContext, ClazzRef[java.util.List[_]])
+          .parse(expression, validationContext, Typed[java.util.List[_]])
           .leftMap(err => fail(s"Failed to parse: $err")).merge._2
 
   case class TestBean(field1: String, isField2: Boolean, getField3: Long)

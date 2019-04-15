@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.definition.defaults.{NodeDefinition, Parameter
 object TypeRelatedParameterValueExtractor extends ParameterDefaultValueExtractorStrategy {
   override def evaluateParameterDefaultValue(nodeDefinition: NodeDefinition,
                                              parameter: Parameter): Option[String] = {
-    Some(evaluateTypeRelatedParamValue(parameter.name, parameter.typ.refClazzName))
+    Some(evaluateTypeRelatedParamValue(parameter.name, parameter.typ.objType.klass.getName))
   }
 
   private[defaults] def evaluateTypeRelatedParamValue(name: String, refClassName: String): String = {

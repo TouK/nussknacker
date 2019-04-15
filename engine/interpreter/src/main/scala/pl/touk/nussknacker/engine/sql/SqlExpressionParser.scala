@@ -23,7 +23,7 @@ object SqlExpressionParser extends ExpressionParser {
 
   override val languageId: String = "sql"
 
-  override def parse(original: String, ctx: ValidationContext, expectedType: ClazzRef)
+  override def parse(original: String, ctx: ValidationContext, expectedType: TypingResult)
   : Validated[NonEmptyList[expression.ExpressionParseError], (typing.TypingResult, SqlExpression)] = {
     val columnModel = ctx.variables.mapValues(CreateColumnModel(_))
 
@@ -67,7 +67,7 @@ object SqlExpressionParser extends ExpressionParser {
     }
   }
 
-  override def parseWithoutContextValidation(original: String, expectedType: ClazzRef): Validated[NonEmptyList[expression.ExpressionParseError], expression.Expression] =
+  override def parseWithoutContextValidation(original: String, expectedType: TypingResult): Validated[NonEmptyList[expression.ExpressionParseError], expression.Expression] =
     throw new IllegalStateException("shouldn't be used")
 
 }

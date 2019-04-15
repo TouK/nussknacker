@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, ExceptionH
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
@@ -26,9 +26,9 @@ class ProcessObjectFactory(expressionEvaluator: ExpressionEvaluator) extends Laz
                 params: List[evaluatedparam.Parameter])(implicit processMetaData: MetaData, nodeId: NodeId): T = {
 
     val withDefs = params.sortBy(_.name).zip(objectWithMethodDef.parameters.sortBy(_.name))
-    val evaluatedParameters = withDefs.filter(_._2.originalType != ClazzRef[LazyParameter[_]]).map(_._1)
+    val evaluatedParameters = withDefs.filter(_._2.originalType != Typed[LazyParameter[_]]).map(_._1)
 
-    val lazyInterpreterParameters = withDefs.filter(_._2.originalType == ClazzRef[LazyParameter[_]])
+    val lazyInterpreterParameters = withDefs.filter(_._2.originalType == Typed[LazyParameter[_]])
 
     //this has to be synchronous, source/sink/exceptionHandler creation is done only once per process so it doesn't matter
     import pl.touk.nussknacker.engine.util.SynchronousExecutionContext._

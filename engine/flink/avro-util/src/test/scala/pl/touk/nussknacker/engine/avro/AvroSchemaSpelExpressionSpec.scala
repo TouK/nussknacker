@@ -4,7 +4,7 @@ import cats.data.ValidatedNel
 import org.apache.avro.Schema
 import org.scalatest.{FunSpec, Matchers}
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.compile.ValidationContext
@@ -124,7 +124,7 @@ class AvroSchemaSpelExpressionSpec extends FunSpec with Matchers {
 
   private def parse[T:ClassTag](expr: String, validationCtx: ValidationContext) : ValidatedNel[ExpressionParseError, (TypingResult, Expression)] = {
     new SpelExpressionParser(Map.empty, List.empty, getClass.getClassLoader, 1 minute, enableSpelForceCompile = true)
-      .parse(expr, validationCtx, ClazzRef[T])
+      .parse(expr, validationCtx, Typed[T])
   }
 
   private def wrapWithRecordSchema(fieldsDefinition: String) =
