@@ -25,7 +25,7 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
 
     val groups = prepareGroupsOfNodes(List("foo","alaMaKota","BarFilter"))
     groups.map(_.possibleNodes.map(n=>n.label)) shouldBe List(
-      List("filter","split","sqlVariable","switch","variable"),
+      List("filter", "mapVariable","split","sqlVariable","switch","variable"),
       List("alaMaKota","BarFilter","foo")
     )
   }
@@ -58,8 +58,8 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
     baseNodeGroups should have size 1
 
     val baseNodes = baseNodeGroups.flatMap(_.possibleNodes)
-    // 5 nodes from base + 3 custom nodes
-    baseNodes should have size (5 + 3)
+    // 6 nodes from base + 3 custom nodes
+    baseNodes should have size (6 + 3)
     baseNodes.filter(n => n.`type` == "filter") should have size 1
     baseNodes.filter(n => n.`type` == "customNode") should have size 3
 
@@ -79,8 +79,8 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
     baseNodeGroups should have size 1
 
     val baseNodes = baseNodeGroups.flatMap(_.possibleNodes)
-    // 5 nodes from base + 3 custom nodes
-    baseNodes should have size (5 + 3)
+    // 6 nodes from base + 3 custom nodes
+    baseNodes should have size (6 + 3)
     baseNodes.filter(n => n.`type` == "filter") should have size 1
     baseNodes.filter(n => n.`type` == "customNode") should have size 3
 
