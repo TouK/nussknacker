@@ -84,7 +84,7 @@ class UiCodecsSpec extends FunSuite with Matchers {
         Map(),
         Map(),
         Map(),
-        ObjectDefinition(List(), ClazzRef[String], List()),
+        UIObjectDefinition(ObjectDefinition(List(), ClazzRef[String], List())),
         Map(),
         List(),
         Map()

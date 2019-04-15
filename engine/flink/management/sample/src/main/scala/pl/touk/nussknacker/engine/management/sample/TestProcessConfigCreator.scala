@@ -185,6 +185,7 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
     val kConfig = KafkaConfig(config.getString("kafka.zkAddress"), config.getString("kafka.kafkaAddress"), None, None)
     val signalsTopic = config.getString("signals.topic")
     Map(
+      "noneReturnTypeTransformer" -> WithCategories(NoneReturnTypeTransformer, "TESTCAT"),
       "stateful" -> WithCategories(StatefulTransformer, "Category1", "Category2"),
       "customFilter" -> WithCategories(CustomFilter, "Category1", "Category2"),
       "constantStateTransformer" -> WithCategories(ConstantStateTransformer[String](ConstantState("stateId", 1234, List("elem1", "elem2", "elem3")).asJson.nospaces), "Category1", "Category2"),
@@ -303,6 +304,12 @@ case object CustomFilter extends CustomStreamTransformer {
         .filter(ctx.lazyParameterHelper.lazyFilterFunction(expression))
         .map(ValueWithContext(null, _)))
 
+}
+
+
+case object NoneReturnTypeTransformer extends CustomStreamTransformer {
+  @MethodToInvoke(returnType = classOf[Void])
+  def execute(@ParamName("expression") expression: LazyParameter[Boolean]) = {}
 }
 
 

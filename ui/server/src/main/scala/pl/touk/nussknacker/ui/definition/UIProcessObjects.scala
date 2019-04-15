@@ -4,6 +4,7 @@ import argonaut.CodecJson
 import argonaut.Argonaut._
 import com.typesafe.config.ConfigRenderOptions
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.definition.{Parameter}
 import pl.touk.nussknacker.engine.api.process.{ParameterConfig, SingleNodeConfig}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
@@ -23,6 +24,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.definition.ParameterTypeMapper
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 
 object UIProcessObjects {
 
@@ -54,7 +56,6 @@ object UIProcessObjects {
 
     val nodeCategoryMapping = processConfig.getOrElse[Map[String, String]]("nodeCategoryMapping", Map.empty)
     val additionalPropertiesConfig = processConfig.getOrElse[Map[String, AdditionalProcessProperty]]("additionalFieldsConfig", Map.empty)
-
 
     UIProcessObjects(
       nodesToAdd = DefinitionPreparer.prepareNodesToAdd(
@@ -97,37 +98,56 @@ case class UIProcessObjects(nodesToAdd: List[NodeGroup],
                             additionalPropertiesConfig: Map[String, AdditionalProcessProperty],
                             edgesForNodes: List[NodeEdges])
 
-case class UIProcessDefinition(services: Map[String, ObjectDefinition],
-                               sourceFactories: Map[String, ObjectDefinition],
-                               sinkFactories: Map[String, ObjectDefinition],
-                               customStreamTransformers: Map[String, ObjectDefinition],
-                               signalsWithTransformers: Map[String, ObjectDefinition],
-                               exceptionHandlerFactory: ObjectDefinition,
-                               globalVariables: Map[String, ObjectDefinition],
+case class UIProcessDefinition(services: Map[String, UIObjectDefinition],
+                               sourceFactories: Map[String, UIObjectDefinition],
+                               sinkFactories: Map[String, UIObjectDefinition],
+                               customStreamTransformers: Map[String, UIObjectDefinition],
+                               signalsWithTransformers: Map[String, UIObjectDefinition],
+                               exceptionHandlerFactory: UIObjectDefinition,
+                               globalVariables: Map[String, UIObjectDefinition],
                                typesInformation: List[ClazzDefinition],
-                               subprocessInputs: Map[String, ObjectDefinition]) {
+                               subprocessInputs: Map[String, UIObjectDefinition]) {
   // skipping exceptionHandlerFactory
-  val allDefinitions: Map[String, ObjectDefinition] = services ++ sourceFactories ++ sinkFactories ++
-    customStreamTransformers ++ signalsWithTransformers ++ globalVariables ++ subprocessInputs
+  val allDefinitions: Map[String, UIObjectDefinition] = services ++ sourceFactories ++ sinkFactories ++
+    signalsWithTransformers ++ globalVariables ++ subprocessInputs
+}
+
+
+case class UIObjectDefinition(parameters: List[Parameter],
+                              returnType: Option[TypingResult],
+                              categories: List[String],
+                              nodeConfig: SingleNodeConfig)
+
+
+object UIObjectDefinition {
+  def apply(objectDefinition: ObjectDefinition): UIObjectDefinition = {
+    UIObjectDefinition(
+      parameters = objectDefinition.parameters,
+      returnType = if (objectDefinition.hasNoReturn) None else Some(objectDefinition.returnType),
+      categories = objectDefinition.categories,
+      nodeConfig = objectDefinition.nodeConfig
+    )
+  }
 }
 
 
 object UIProcessDefinition {
   def apply(processDefinition: ProcessDefinition[ObjectDefinition], subprocessInputs: Map[String, ObjectDefinition]): UIProcessDefinition = {
     val uiProcessDefinition = UIProcessDefinition(
-      services = processDefinition.services,
-      sourceFactories = processDefinition.sourceFactories,
-      sinkFactories = processDefinition.sinkFactories,
-      subprocessInputs = subprocessInputs,
-      customStreamTransformers = processDefinition.customStreamTransformers.mapValues(_._1),
-      signalsWithTransformers = processDefinition.signalsWithTransformers.mapValues(_._1),
-      exceptionHandlerFactory = processDefinition.exceptionHandlerFactory,
-      globalVariables = processDefinition.expressionConfig.globalVariables,
+      services = processDefinition.services.mapValues(UIObjectDefinition(_)),
+      sourceFactories = processDefinition.sourceFactories.mapValues(UIObjectDefinition(_)),
+      sinkFactories = processDefinition.sinkFactories.mapValues(UIObjectDefinition(_)),
+      subprocessInputs = subprocessInputs.mapValues(UIObjectDefinition(_)),
+      customStreamTransformers = processDefinition.customStreamTransformers.mapValues(e => UIObjectDefinition(e._1)),
+      signalsWithTransformers = processDefinition.signalsWithTransformers.mapValues(e => UIObjectDefinition(e._1)),
+      exceptionHandlerFactory = UIObjectDefinition(processDefinition.exceptionHandlerFactory),
+      globalVariables = processDefinition.expressionConfig.globalVariables.mapValues(UIObjectDefinition(_)),
       typesInformation = processDefinition.typesInformation
     )
     uiProcessDefinition
   }
 }
+
 
 case class NodeTypeId(`type`: String, id: Option[String] = None)
 

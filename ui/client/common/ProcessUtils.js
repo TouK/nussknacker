@@ -63,7 +63,11 @@ class ProcessUtils {
 
   //FIXME: handle source/sink/exceptionHandler properly here - we don't want to use #input etc here!
   _findVariablesBasedOnGraph = (nodeId, process, processDefinition) => {
-    const globalVariables = _.mapValues(processDefinition.globalVariables, (v) => {return v.returnType})
+    const filteredGlobalVariables = _.pickBy(processDefinition.globalVariables, function(variable) {
+      return variable.returnType !== null
+    })
+
+    const globalVariables = _.mapValues(filteredGlobalVariables, (v) => {return v.returnType})
     const variablesDefinedBeforeNode = this._findVariablesDeclaredBeforeNode(nodeId, process, processDefinition);
     return {
       ...globalVariables,
