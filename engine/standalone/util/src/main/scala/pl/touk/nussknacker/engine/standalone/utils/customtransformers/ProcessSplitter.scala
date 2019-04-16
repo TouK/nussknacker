@@ -42,7 +42,7 @@ class ProcessSplitter(parts: LazyParameter[java.util.Collection[Any]])
   override def returnType: typing.TypingResult = {
     parts.returnType match {
       case Typed(classes) if classes.size == 1
-        && classes.head.canBeSubclassOf(ClazzRef[java.util.Collection[_]]) && classes.head.params.nonEmpty =>
+        && classes.head.canBeSubclassOf(Typed[java.util.Collection[_]]) && classes.head.params.nonEmpty =>
         classes.head.params.head
       case _ => Unknown
     }

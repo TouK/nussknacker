@@ -81,7 +81,7 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
     val expressionFunctions = Map("today" -> classOf[LocalDate].getDeclaredMethod("now"))
     val imports = List(SampleValue.getClass.getPackage.getName)
     new SpelExpressionParser(expressionFunctions, imports, getClass.getClassLoader, 1 minute, enableSpelForceCompile = true)
-      .parse(expr, validationCtx, ClazzRef[T])
+      .parse(expr, validationCtx, Typed[T])
   }
 
   it should "invoke simple expression" in {
@@ -365,11 +365,11 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
       case Invalid(NonEmptyList(ExpressionParseError(msg), _)) if msg == message =>
     }
 
-    shouldHaveBadType( parse[Int]("'abcd'", ctx), "Bad expression type, expected: int, found: type 'java.lang.String'" )
-    shouldHaveBadType( parse[String]("111", ctx), "Bad expression type, expected: java.lang.String, found: type 'java.lang.Integer'" )
-    shouldHaveBadType( parse[String]("{1, 2, 3}", ctx), "Bad expression type, expected: java.lang.String, found: type 'java.util.List'" )
-    shouldHaveBadType( parse[java.util.Map[_, _]]("'alaMa'", ctx), "Bad expression type, expected: java.util.Map, found: type 'java.lang.String'" )
-    shouldHaveBadType( parse[Int]("#strVal", ctx), "Bad expression type, expected: int, found: type 'java.lang.String'" )
+    shouldHaveBadType( parse[Int]("'abcd'", ctx), "Bad expression type, expected: type 'int', found: type 'java.lang.String'" )
+    shouldHaveBadType( parse[String]("111", ctx), "Bad expression type, expected: type 'java.lang.String', found: type 'java.lang.Integer'" )
+    shouldHaveBadType( parse[String]("{1, 2, 3}", ctx), "Bad expression type, expected: type 'java.lang.String', found: type 'java.util.List'" )
+    shouldHaveBadType( parse[java.util.Map[_, _]]("'alaMa'", ctx), "Bad expression type, expected: type 'java.util.Map', found: type 'java.lang.String'" )
+    shouldHaveBadType( parse[Int]("#strVal", ctx), "Bad expression type, expected: type 'int', found: type 'java.lang.String'" )
 
   }
 

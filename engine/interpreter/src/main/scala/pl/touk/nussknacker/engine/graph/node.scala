@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.graph
 
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import sink.SinkRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -162,7 +163,7 @@ object node {
 
     case class SubprocessClazzRef(refClazzName: String) {
 
-      def toClazzRef(classLoader: ClassLoader) = Try(ClazzRef(ClassUtils.getClass(classLoader, refClazzName)))
+      def toTyped(classLoader: ClassLoader) = Try(Typed(ClassUtils.getClass(classLoader, refClazzName)))
 
     }
 

@@ -13,9 +13,11 @@ object typing {
 
     def canHaveAnyPropertyOrField: Boolean
 
-    def canBeSubclassOf(clazzRef: ClazzRef) : Boolean
+    def canBeSubclassOf(typingResult: TypingResult) : Boolean
 
     def display: String
+
+    def objType: TypedClass
 
   }
 
@@ -32,7 +34,14 @@ object typing {
 
   case class TypedObjectTypingResult(fields: Map[String, TypingResult], objType: TypedClass) extends TypingResult {
 
-    override def canBeSubclassOf(clazzRef: ClazzRef): Boolean = objType.canBeSubclassOf(clazzRef)
+    override def canBeSubclassOf(typingResult: TypingResult): Boolean = typingResult match {
+      case TypedObjectTypingResult(otherFields, _) =>
+        objType.canBeSubclassOf(typingResult) && otherFields.forall {
+          case (name, typ) => fields.get(name).exists(_.canBeSubclassOf(typ))
+        }
+      case _ =>
+        objType.canBeSubclassOf(typingResult)
+    }
 
     override def canHaveAnyPropertyOrField: Boolean = false
 
@@ -41,20 +50,22 @@ object typing {
   }
 
   case object Unknown extends TypingResult {
-    override def canBeSubclassOf(clazzRef: ClazzRef): Boolean = true
+    override def canBeSubclassOf(typingResult: TypingResult): Boolean = true
 
     override def canHaveAnyPropertyOrField: Boolean = true
 
     override val display = "unknown"
+
+    override def objType: TypedClass = TypedClass[Any]
   }
 
   case class Typed(possibleTypes: Set[TypedClass]) extends TypingResult {
-    override def canBeSubclassOf(clazzRef: ClazzRef): Boolean = {
-      possibleTypes.exists(_.canBeSubclassOf(clazzRef))
+    override def canBeSubclassOf(typingResult: TypingResult): Boolean = {
+      possibleTypes.exists(_.canBeSubclassOf(typingResult))
     }
 
     override def canHaveAnyPropertyOrField: Boolean = {
-      canBeSubclassOf(ClazzRef[util.Map[_, _]]) ||
+      canBeSubclassOf(Typed[util.Map[_, _]]) ||
         // mainly for avro's GenericRecord purpose
         hasGetFieldByNameMethod(possibleTypes)
     }
@@ -72,11 +83,18 @@ object typing {
     //TODO: should we use simple name here?
     private def printClass(h: TypedClass) = h.klass.getName
 
+    override def objType: TypedClass = if (possibleTypes.size == 1) possibleTypes.head else TypedClass[Any]
   }
-  //TODO: in near future should be replaced by ClazzRef!
+
+  //TODO: make sure parameter list has right size - can be filled with Unknown if needed
   case class TypedClass(klass: Class[_], params: List[TypingResult]) {
-    //TOOD: params?
-    def canBeSubclassOf(clazzRef: ClazzRef): Boolean = ClassUtils.isAssignable(klass, clazzRef.clazz)
+    def canBeSubclassOf(typingResult: TypingResult): Boolean = {
+      val otherTyped = typingResult.objType
+      this == otherTyped || ClassUtils.isAssignable(klass, otherTyped.klass) && (typingResult.canHaveAnyPropertyOrField ||
+        //we are lax here - the generic type may be co- or contra-variant - and we don't want to
+        //throw validation errors in this case. It's better to accept to much than too little
+        otherTyped.params.zip(params).forall(t => t._1.canBeSubclassOf(t._2) || t._2.canBeSubclassOf(t._1)))
+    }
   }
 
   object TypedClass {

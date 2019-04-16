@@ -1,21 +1,20 @@
 package pl.touk.nussknacker.engine.api.definition
 
-import argonaut.{CodecJson, DecodeJson}
 import argonaut.derive.{JsonSumCodec, JsonSumCodecFor}
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 
 
 object Parameter {
-  def unknownType(name: String) = Parameter(name, ClazzRef[Any], ClazzRef[Any])
+  def unknownType(name: String) = Parameter(name, Unknown, Unknown)
 
-  def apply(name: String, typ: ClazzRef): Parameter = Parameter(name, typ, typ)
+  def apply(name: String, typ: ClazzRef): Parameter = Parameter(name, Typed(typ), Typed(typ))
 }
 
 case class Parameter(
                       name: String,
-                      typ: ClazzRef,
-                      originalType: ClazzRef,
+                      typ: TypingResult,
+                      originalType: TypingResult,
                       restriction: Option[ParameterRestriction] = None,
                       additionalVariables: Map[String, TypingResult] = Map.empty)
 

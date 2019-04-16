@@ -51,7 +51,8 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       "withParamsTransformer" -> (ObjectDefinition(List(Parameter("par1", ClazzRef(classOf[String]))), ClazzRef[SimpleRecord], List()), emptyQueryNamesData()),
       "clearingContextTransformer" -> (ObjectDefinition(List.empty, ClazzRef[SimpleRecord], List()), emptyQueryNamesData(true)),
       "withManyParameters" -> (ObjectDefinition(List(
-        Parameter("lazyString", ClazzRef[String], ClazzRef[LazyParameter[_]]), Parameter("lazyInt", ClazzRef(classOf[Integer]), ClazzRef[LazyParameter[_]]), Parameter("long", ClazzRef[Long]))
+        Parameter("lazyString", Typed[String], Typed[LazyParameter[_]]), Parameter("lazyInt", Typed[Integer], Typed[LazyParameter[_]]),
+        Parameter("long", ClazzRef[Long]))
       , ClazzRef[SimpleRecord], List()), emptyQueryNamesData(true)),
       "withoutReturnType" -> (ObjectDefinition(List(Parameter("par1", ClazzRef(classOf[String]))), ClazzRef[Void], List()), emptyQueryNamesData())
     ),

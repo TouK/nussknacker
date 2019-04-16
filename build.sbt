@@ -474,8 +474,8 @@ lazy val api = (project in engine("api")).
         "org.typelevel" %% "cats-core" % catsV,
         "org.typelevel" %% "cats-effect" % "0.10.1",
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
-        "com.typesafe" % "config" % configV
-
+        "com.typesafe" % "config" % configV,
+        "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )
     }
   )

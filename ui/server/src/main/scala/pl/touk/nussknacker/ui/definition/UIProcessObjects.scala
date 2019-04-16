@@ -20,6 +20,7 @@ import net.ceedubs.ficus.readers.ValueReader
 import pl.touk.nussknacker.engine.api.definition.ParameterRestriction
 import pl.touk.nussknacker.engine.api.{MetaData, definition}
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
+import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.definition.ParameterTypeMapper
@@ -82,9 +83,9 @@ object UIProcessObjects {
       case SubprocessDetails(CanonicalProcess(MetaData(id, _, _, _, _), _, FlatNode(SubprocessInputDefinition(_, parameters, _)) :: _, additionalBranches), category) =>
         val clazzRefParams = parameters.map { p =>
           //TODO: currently if we cannot parse parameter class we assume it's unknown
-          val classRef = p.typ.toClazzRef(classLoader).getOrElse(ClazzRef.unknown)
+          val classRef = p.typ.toTyped(classLoader).getOrElse(Unknown)
           val parameterConfig = config.get(id).map(_.paramConfig(p.name)).getOrElse(ParameterConfig.empty)
-          definition.Parameter(p.name, classRef, classRef, ParameterTypeMapper.prepareRestrictions(classRef.clazz, None, parameterConfig))
+          definition.Parameter(p.name, classRef, classRef, ParameterTypeMapper.prepareRestrictions(classRef.objType.klass, None, parameterConfig))
         }
         (id, ObjectDefinition(clazzRefParams, ClazzRef[java.util.Map[String, Any]], List(category)))
     }.toMap

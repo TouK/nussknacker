@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.sql
 import cats.data.Validated.{Invalid, Valid}
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.typed.{ClazzRef, typing}
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.compile.ValidationContext
 
 class SqlExpressionParserTest extends FunSuite with Matchers {
@@ -16,13 +16,13 @@ class SqlExpressionParserTest extends FunSuite with Matchers {
   ))
 
   test("valid query") {
-    SqlExpressionParser.parse("select * from table1", validationCtx, ClazzRef.unknown) shouldBe a[Valid[_]]
+    SqlExpressionParser.parse("select * from table1", validationCtx, Unknown) shouldBe a[Valid[_]]
   }
   test("query with unexisting table variable should invalidates") {
-    SqlExpressionParser.parse("select * from unicorn", validationCtx, ClazzRef.unknown) shouldBe a[Invalid[_]]
+    SqlExpressionParser.parse("select * from unicorn", validationCtx, Unknown) shouldBe a[Invalid[_]]
   }
   test("query with unexisting select column should invalidates") {
-    SqlExpressionParser.parse("select unicorn from table1", validationCtx, ClazzRef.unknown) shouldBe a[Invalid[_]]
+    SqlExpressionParser.parse("select unicorn from table1", validationCtx, Unknown) shouldBe a[Invalid[_]]
   }
 
 
@@ -32,6 +32,6 @@ class SqlExpressionParserTest extends FunSuite with Matchers {
   }
 
   private def parseOrFail(expression: String, ctx: ValidationContext = validationCtx): (typing.TypingResult, SqlExpression)
-    = SqlExpressionParser.parse(expression, ctx, ClazzRef.unknown).leftMap(err => fail(s"Failed to parse: $err")).merge
+    = SqlExpressionParser.parse(expression, ctx, Unknown).leftMap(err => fail(s"Failed to parse: $err")).merge
 
 }

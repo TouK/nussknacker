@@ -62,7 +62,7 @@ class PartSubGraphCompiler(protected val expressionCompiler: ExpressionCompiler,
         compiledNexts.map(nx => compiledgraph.node.SplitNode(bareNode.id, nx))
 
       case splittednode.FilterNode(f@graph.node.Filter(id, expression, _, _), nextTrue, nextFalse) =>
-        CompilationResult.map3(CompilationResult(compile(expression, None, ctx, ClazzRef[Boolean])._2), compile(nextTrue, ctx), nextFalse.map(next => compile(next, ctx)).sequence)(
+        CompilationResult.map3(CompilationResult(compile(expression, None, ctx, Typed[Boolean])._2), compile(nextTrue, ctx), nextFalse.map(next => compile(next, ctx)).sequence)(
           (expr, next, nextFalse) =>
             compiledgraph.node.Filter(id = id,
             expression = expr,
@@ -71,7 +71,7 @@ class PartSubGraphCompiler(protected val expressionCompiler: ExpressionCompiler,
             isDisabled = f.isDisabled.contains(true)))
 
       case splittednode.SwitchNode(graph.node.Switch(id, expression, exprVal, _), nexts, defaultNext) =>
-        val (newCtx, compiledExpression) = withVariable(exprVal, ctx, compile(expression, None, ctx, ClazzRef[Any]))
+        val (newCtx, compiledExpression) = withVariable(exprVal, ctx, compile(expression, None, ctx, Unknown))
         CompilationResult.map3(CompilationResult(compiledExpression), nexts.map(n => compile(n, newCtx)).sequence, defaultNext.map(dn => compile(dn, newCtx)).sequence)(
           (realCompiledExpression, cases, next) => {
             compiledgraph.node.Switch(id, realCompiledExpression, exprVal, cases, next)
@@ -98,7 +98,7 @@ class PartSubGraphCompiler(protected val expressionCompiler: ExpressionCompiler,
     case graph.node.Processor(id, ref, disabled, _) =>
       compile(ref, ctx).map(cn => compiledgraph.node.EndingProcessor(id, cn._1, disabled.contains(true)))
     case graph.node.Sink(id, ref, optionalExpression, disabled, _) =>
-      optionalExpression.map(oe => compile(oe, None, ctx, ClazzRef[Any])._2).sequence.map(typed => compiledgraph.node.Sink(id, ref.typ, typed, disabled.contains(true)))
+      optionalExpression.map(oe => compile(oe, None, ctx, Unknown)._2).sequence.map(typed => compiledgraph.node.Sink(id, ref.typ, typed, disabled.contains(true)))
     //probably this shouldn't occur - otherwise we'd have empty subprocess?
     case SubprocessInput(id, _, _, _) => Invalid(NonEmptyList.of(UnresolvedSubprocess(id)))   
     case SubprocessOutputDefinition(id, name, disabled) =>
@@ -112,7 +112,7 @@ class PartSubGraphCompiler(protected val expressionCompiler: ExpressionCompiler,
 
   private def compileSubsequent(ctx: ValidationContext, data: OneOutputSubsequentNodeData, next: Next)(implicit nodeId: NodeId): CompilationResult[Node] = data match {
     case graph.node.Variable(id, varName, expression, _) =>
-      val (newCtx, compiledExpression) = withVariable(varName, ctx, compile(expression, None, ctx, ClazzRef[Any]))
+      val (newCtx, compiledExpression) = withVariable(varName, ctx, compile(expression, None, ctx, Unknown))
 
       CompilationResult.map2(CompilationResult(compiledExpression), compile(next, newCtx)) { (compiled, compiledNext) =>
         compiledgraph.node.VariableBuilder(id, varName, Left(compiled), compiledNext)
@@ -195,18 +195,18 @@ class PartSubGraphCompiler(protected val expressionCompiler: ExpressionCompiler,
 
   private def compile(n: splittednode.Case, ctx: ValidationContext)
                      (implicit nodeId: NodeId): CompilationResult[compiledgraph.node.Case] =
-    CompilationResult.map2(CompilationResult(compile(n.expression, None, ctx, ClazzRef[Boolean])._2), compile(n.node, ctx))((expr, next) => compiledgraph.node.Case(expr, next))
+    CompilationResult.map2(CompilationResult(compile(n.expression, None, ctx, Typed[Boolean])._2), compile(n.node, ctx))((expr, next) => compiledgraph.node.Case(expr, next))
 
   private def compile(n: graph.variable.Field, ctx: ValidationContext)
                      (implicit nodeId: NodeId): ((String, TypingResult), ValidatedNel[ProcessCompilationError, compiledgraph.variable.Field]) = {
-    val compiled = compile(n.expression, Some(n.name), ctx, ClazzRef[Any])
+    val compiled = compile(n.expression, Some(n.name), ctx, Unknown)
     ((n.name, compiled._1), compiled._2.map(compiledgraph.variable.Field(n.name, _)))
   }
 
   private def compile(n: graph.expression.Expression,
                       fieldName: Option[String],
                       ctx: ValidationContext,
-                      expectedType: ClazzRef)
+                      expectedType: TypingResult)
                      (implicit nodeId: NodeId): (TypingResult, ValidatedNel[ProcessCompilationError, compiledgraph.expression.Expression]) = {
     expressionCompiler.compile(n, fieldName, toOption(ctx), expectedType)
       .fold(err => (Unknown, Invalid(err)), res => (res._1, Valid(res._2)))

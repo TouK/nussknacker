@@ -11,7 +11,6 @@ import cats.syntax.traverse._
 import org.springframework.expression.spel.SpelNode
 import org.springframework.expression.spel.ast._
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
-import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.compile.ValidationContext
 import pl.touk.nussknacker.engine.compiledgraph.expression.ExpressionParseError
@@ -32,7 +31,7 @@ private[spel] class Typer(implicit classLoader: ClassLoader) {
     val fixed = fixedWithNewCurrent(current)
 
     def withChildrenOfType[Parts: ClassTag](result: TypingResult) = withTypedChildren {
-      case list if list.forall(_.canBeSubclassOf(ClazzRef[Parts])) => Valid(result)
+      case list if list.forall(_.canBeSubclassOf(Typed[Parts])) => Valid(result)
       case _ => invalid("Wrong part types")
     }
 
@@ -125,8 +124,8 @@ private[spel] class Typer(implicit classLoader: ClassLoader) {
 
       case e: OpPlus => withTypedChildren {
         case left :: right :: Nil if left == Unknown || right == Unknown => Valid(Unknown)
-        case left :: right :: Nil if left.canBeSubclassOf(ClazzRef[String]) || right.canBeSubclassOf(ClazzRef[String]) => Valid(Typed[String])
-        case left :: right :: Nil if left.canBeSubclassOf(ClazzRef[Number]) || right.canBeSubclassOf(ClazzRef[Number]) => Valid(commonNumberReference)
+        case left :: right :: Nil if left.canBeSubclassOf(Typed[String]) || right.canBeSubclassOf(Typed[String]) => Valid(Typed[String])
+        case left :: right :: Nil if left.canBeSubclassOf(Typed[Number]) || right.canBeSubclassOf(Typed[Number]) => Valid(commonNumberReference)
         case left :: Nil => Valid(left)
         case Nil => invalid("Empty plus")
       }
@@ -185,7 +184,7 @@ private[spel] class Typer(implicit classLoader: ClassLoader) {
         case None => invalid("Cannot do selection here")
         case Some(iterateType) =>
           typeChildren(validationContext, node, extractListType(iterateType) :: current) {
-            case result :: Nil if result.canBeSubclassOf(ClazzRef[Boolean]) => Valid(iterateType)
+            case result :: Nil if result.canBeSubclassOf(Typed[Boolean]) => Valid(iterateType)
             case other => invalid(s"Wrong selection type: ${other.map(_.display)}")
           }
       }
@@ -193,7 +192,7 @@ private[spel] class Typer(implicit classLoader: ClassLoader) {
       case e: StringLiteral => Valid(Typed[String])
 
       case e: Ternary => withTypedChildren {
-        case condition :: onTrue :: onFalse :: Nil if condition.canBeSubclassOf(ClazzRef[Boolean]) => Valid(onTrue |+| onFalse)
+        case condition :: onTrue :: onFalse :: Nil if condition.canBeSubclassOf(Typed[Boolean]) => Valid(onTrue |+| onFalse)
         case _ => invalid("Invalid ternary operator")
       }
       //TODO: what should be here?
@@ -210,7 +209,7 @@ private[spel] class Typer(implicit classLoader: ClassLoader) {
   }
 
   private def extractListType(parent: TypingResult): TypingResult = parent match {
-    case Typed(klases) if parent.canBeSubclassOf(ClazzRef[java.util.List[_]]) =>
+    case Typed(klases) if parent.canBeSubclassOf(Typed[java.util.List[_]]) =>
       //FIXME: what if more results are present?
       klases.headOption.flatMap(_.params.headOption).getOrElse(Unknown)
     case _ => Unknown

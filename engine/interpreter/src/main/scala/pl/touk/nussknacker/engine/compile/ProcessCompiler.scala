@@ -229,8 +229,8 @@ protected trait ProcessCompilerBase {
 
   //TODO: better classloader error handling
   private def loadFromParameter(subprocessParameter: SubprocessParameter)(implicit nodeId: NodeId) =
-    Typed(subprocessParameter.typ.toClazzRef(classLoader).getOrElse(throw new IllegalArgumentException(
-      s"Failed to load subprocess parameter: ${subprocessParameter.typ.refClazzName} for ${nodeId.id}")))
+    subprocessParameter.typ.toTyped(classLoader).getOrElse(throw new IllegalArgumentException(
+      s"Failed to load subprocess parameter: ${subprocessParameter.typ.refClazzName} for ${nodeId.id}"))
 
   private def compile(ref: ExceptionHandlerRef)
                       (implicit metaData: MetaData): ValidatedNel[ProcessCompilationError, EspExceptionHandler] = {

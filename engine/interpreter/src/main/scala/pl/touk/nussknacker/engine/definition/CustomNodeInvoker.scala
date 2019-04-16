@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.definition
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.EspExceptionHandler
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.compile.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, ValidationContext}
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
@@ -35,7 +35,7 @@ trait CompilerLazyParameterInterpreter extends LazyParameterInterpreter {
     val castedDefinition = definition.asInstanceOf[CompilerLazyParameter[T]]
 
     val compiledExpression = deps.expressionCompiler
-      .compile(castedDefinition.parameter.expression, Some(castedDefinition.parameter.name), None, ClazzRef.unknown)(castedDefinition.nodeId)
+      .compile(castedDefinition.parameter.expression, Some(castedDefinition.parameter.name), None, Unknown)(castedDefinition.nodeId)
       .getOrElse(throw new IllegalArgumentException(s"Cannot compile ${castedDefinition.parameter.name}"))._2
 
     val evaluator = deps.expressionEvaluator

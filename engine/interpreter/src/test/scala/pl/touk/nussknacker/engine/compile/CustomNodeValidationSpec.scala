@@ -66,7 +66,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers {
       .sink("out", "''", "dummySink")
 
     validator.validate(invalidProcess).result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("Bad expression type, expected: java.lang.String, found: type 'java.lang.Integer'", "custom1",Some("stringVal"), "42"), _))  =>
+      case Invalid(NonEmptyList(ExpressionParseError("Bad expression type, expected: type 'java.lang.String', found: type 'java.lang.Integer'", "custom1",Some("stringVal"), "42"), _))  =>
     }
   }
 }

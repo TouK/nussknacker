@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.process.uiconfig.defaults
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedExpressionValues, Parameter, ParameterRestriction}
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.definition.defaults.NodeDefinition
 
 class RestrictionBasedDefaultValueExtractorTest extends FunSuite with Matchers {
@@ -11,7 +12,7 @@ class RestrictionBasedDefaultValueExtractorTest extends FunSuite with Matchers {
 
   private def evaluate(restriction: Option[ParameterRestriction]) = {
     RestrictionBasedDefaultValueExtractor.evaluateParameterDefaultValue(definition,
-          Parameter("id", ClazzRef[String], ClazzRef[String], restriction))
+          Parameter("id", Typed[String], Typed[String], restriction))
   }
 
   test("extracts first value for restriction") {
