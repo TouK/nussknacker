@@ -1,4 +1,4 @@
-FROM flink:1.6.2
+FROM flink:1.7.2-scala_2.11
 ADD ./additional/* /opt/flink/lib/
 ADD ./run.sh /run.sh
 #files have user root...
