@@ -98,3 +98,15 @@ akka.framesize: 209715200b
 jobmanager.web.history: 50
 classloader.resolve-order: parent-first
 
+blob.server.port: 6124
+query.server.port: 6125
+blob.server.port: 6124
+query.server.port: 6125
+blob.server.port: 6124
+query.server.port: 6125
+blob.server.port: 6124
+query.server.port: 6125
+blob.server.port: 6124
+query.server.port: 6125
+blob.server.port: 6124
+query.server.port: 6125
