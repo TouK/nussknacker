@@ -4,10 +4,10 @@ import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
-import sink.SinkRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
+import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.{JoinRef, SourceRef}
 import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
 import pl.touk.nussknacker.engine.graph.variable.Field
@@ -51,7 +51,10 @@ object node {
 
   case class BranchEnd(data: BranchEndData) extends SubsequentNode
 
+  // TODO: remove this trait and duplicated NodeAdditionalFields in restmodel module.
   trait UserDefinedAdditionalNodeFields
+
+  case class NodeAdditionalFields(description: Option[String]) extends UserDefinedAdditionalNodeFields
 
   sealed trait NodeData {
     def id: String
