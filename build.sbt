@@ -126,9 +126,26 @@ val postgresV = "42.2.5"
 val flywayV = "5.2.4"
 val confluentV = "4.1.2"
 
+
+lazy val dockerSettings = {
+  val workingDir = "/opt/nussknacker"
+
+  Seq(
+    dockerEntrypoint := Seq("./bin/docker-run.sh"),
+    dockerExposedPorts := Seq(sys.env.getOrElse("NUSSKNACKER_APPLICATION_PORT", 8080).asInstanceOf[Int]),
+    dockerExposedVolumes := Seq(s"$workingDir/logs", s"$workingDir/db"),
+    defaultLinuxInstallLocation in Docker := workingDir,
+    dockerBaseImage := "openjdk:8-jdk",
+    dockerUsername := Some("touk"),
+    packageName := "nussknacker",
+    version in Docker := sys.env.getOrElse("BUILD_VERSION", version.value),
+    dockerUpdateLatest := true
+  )
+}
+
 lazy val dist = (project in file("nussknacker-dist"))
   .settings(commonSettings)
-  .enablePlugins(JavaServerAppPackaging)
+  .enablePlugins(SbtNativePackager, JavaServerAppPackaging)
   .settings(
     Keys.compile in Compile := (Keys.compile in Compile).dependsOn(
       (assembly in Compile) in generic
@@ -141,7 +158,9 @@ lazy val dist = (project in file("nussknacker-dist"))
     publishArtifact := false,
     SettingsHelper.makeDeploymentSettings(Universal, packageZipTarball in Universal, "tgz")
   )
+  .settings(dockerSettings)
   .dependsOn(ui)
+
 
 def engine(name: String) = file(s"engine/$name")
 
