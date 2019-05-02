@@ -21,20 +21,20 @@ class AvroUtils(schemaRegistryClientFactory: SchemaRegistryClientFactory, kafkaC
 
   def record(fields: collection.Map[String, _], schemaString: String): GenericData.Record = {
     val schema = parsedSchemaCache.getOrElseUpdate(schemaString, parser.parse(schemaString))
-    BestEffortAvroEncoder.encodeRecord(fields, schema)
+    BestEffortAvroEncoder.encodeRecordOrError(fields, schema)
   }
 
   def record(fields: collection.Map[String, _], schema: Schema): GenericData.Record = {
-    BestEffortAvroEncoder.encodeRecord(fields, schema)
+    BestEffortAvroEncoder.encodeRecordOrError(fields, schema)
   }
 
   def record(fields: java.util.Map[String, _], schemaString: String): GenericData.Record = {
     val schema = parsedSchemaCache.getOrElseUpdate(schemaString, parser.parse(schemaString))
-    BestEffortAvroEncoder.encodeRecord(fields, schema)
+    BestEffortAvroEncoder.encodeRecordOrError(fields, schema)
   }
 
   def record(fields: java.util.Map[String, _], schema: Schema): GenericData.Record = {
-    BestEffortAvroEncoder.encodeRecord(fields, schema)
+    BestEffortAvroEncoder.encodeRecordOrError(fields, schema)
   }
 
   def keySchema(topic: String, version: Int): Schema = {

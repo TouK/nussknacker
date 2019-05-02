@@ -38,7 +38,7 @@ abstract class AvroKeyValueSerializationSchemaFactory(schemaRegistryClientFactor
     val schemaRegistryClient = schemaRegistryClientFactory.createSchemaRegistryClient(kafkaConfig)
     val serializer = new KafkaAvroSerializer(schemaRegistryClient)
     val props = kafkaConfig.kafkaProperties.getOrElse(Map.empty)
-    serializer.configure(props.asJava, false)
+    serializer.configure(props.asJava, isKey)
     serializer
   }
 
