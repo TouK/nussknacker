@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.kafka.serialization
 
 import java.nio.charset.StandardCharsets
+import java.util
 import java.util.UUID
 
 import org.apache.flink.streaming.util.serialization.KeyedSerializationSchema
@@ -43,12 +44,17 @@ abstract class KafkaSerializationSchemaFactoryBase[T] extends SerializationSchem
 
   protected def createValueSerializer(topic: String, kafkaConfig: KafkaConfig): Serializer[T]
 
+  protected def createKeySerializer(topic: String, kafkaConfig: KafkaConfig): Serializer[T] = new UUIDSerializer[T]
+
   override def create(topic: String, kafkaConfig: KafkaConfig): KeyedSerializationSchema[T] = {
     new KeyedSerializationSchema[T] {
+
       private lazy val valueSerializer = createValueSerializer(topic, kafkaConfig)
 
+      private lazy val keySerializer = createKeySerializer(topic, kafkaConfig)
+
       override def serializeKey(element: T): Array[Byte] = {
-        UUID.randomUUID().toString.getBytes(StandardCharsets.UTF_8)
+        keySerializer.serialize(topic, element)
       }
 
       override def serializeValue(element: T): Array[Byte] = {
@@ -59,6 +65,15 @@ abstract class KafkaSerializationSchemaFactoryBase[T] extends SerializationSchem
     }
   }
 
+}
+
+//This should not be used for high throughput topics - UUID.randomUUID() is not performant...
+private class UUIDSerializer[T] extends Serializer[T] {
+  override def configure(configs: util.Map[String, _], isKey: Boolean): Unit = {}
+
+  override def serialize(topic: String, data: T): Array[Byte] = UUID.randomUUID().toString.getBytes(StandardCharsets.UTF_8)
+
+  override def close(): Unit = {}
 }
 
 /**

@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.avro.encode
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 
+import cats.data.ValidatedNel
 import org.apache.avro.generic.{GenericData, GenericDatumReader, GenericDatumWriter, GenericRecord}
 import org.apache.avro.io.{DecoderFactory, EncoderFactory}
 import org.apache.avro.{AvroRuntimeException, Schema}
@@ -39,11 +40,11 @@ class BestEffortAvroEncoderSpec extends FunSpec with Matchers {
         |]""".stripMargin)
 
     assertThrows[AvroRuntimeException] {
-      BestEffortAvroEncoder.encodeRecord(Map("nested" -> Map("foo1" -> "bar").asJava).asJava, schema)
+      BestEffortAvroEncoder.encodeRecordOrError(Map("nested" -> Map("foo1" -> "bar").asJava).asJava, schema)
     }
 
     assertThrows[AvroRuntimeException] {
-      BestEffortAvroEncoder.encodeRecord(Map("nested" -> Map("foo" -> "bar", "foo1" -> "bar1").asJava).asJava, schema)
+      BestEffortAvroEncoder.encodeRecordOrError(Map("nested" -> Map("foo" -> "bar", "foo1" -> "bar1").asJava).asJava, schema)
     }
 
     roundTripVerifyWriteRead(BestEffortAvroEncoder.encodeRecord(Map("nested" -> Map("foo" -> "bar").asJava).asJava, schema))
@@ -63,7 +64,7 @@ class BestEffortAvroEncoderSpec extends FunSpec with Matchers {
         |]""".stripMargin)
 
     assertThrows[AvroRuntimeException] {
-      BestEffortAvroEncoder.encodeRecord(Map("enum" -> "X").asJava, schema)
+      BestEffortAvroEncoder.encodeRecordOrError(Map("enum" -> "X").asJava, schema)
     }
 
     roundTripVerifyWriteRead(BestEffortAvroEncoder.encodeRecord(Map("enum" -> "B").asJava, schema))
@@ -82,7 +83,7 @@ class BestEffortAvroEncoderSpec extends FunSpec with Matchers {
         |]""".stripMargin)
 
     assertThrows[AvroRuntimeException] {
-      BestEffortAvroEncoder.encodeRecord(Map("array" -> List(1, 2, "foo").asJava).asJava, schema)
+      BestEffortAvroEncoder.encodeRecordOrError(Map("array" -> List(1, 2, "foo").asJava).asJava, schema)
     }
 
     roundTripVerifyWriteRead(BestEffortAvroEncoder.encodeRecord(Map("array" -> List("foo", "bar").asJava).asJava, schema))
@@ -103,7 +104,7 @@ class BestEffortAvroEncoderSpec extends FunSpec with Matchers {
         |]""".stripMargin)
 
     assertThrows[AvroRuntimeException] {
-      BestEffortAvroEncoder.encodeRecord(Map("map" -> Map("foo" -> "bar").asJava).asJava, schema)
+      BestEffortAvroEncoder.encodeRecordOrError(Map("map" -> Map("foo" -> "bar").asJava).asJava, schema)
     }
 
     roundTripVerifyWriteRead(BestEffortAvroEncoder.encodeRecord(Map("map" -> Map("foo" -> 1).asJava).asJava, schema))
@@ -124,7 +125,7 @@ class BestEffortAvroEncoderSpec extends FunSpec with Matchers {
         |]""".stripMargin)
 
     assertThrows[AvroRuntimeException] {
-      BestEffortAvroEncoder.encodeRecord(Map("fixed" -> "ala123").asJava, schema)
+      BestEffortAvroEncoder.encodeRecordOrError(Map("fixed" -> "ala123").asJava, schema)
     }
 
     roundTripVerifyWriteRead(BestEffortAvroEncoder.encodeRecord(Map("fixed" -> "ala").asJava, schema))
@@ -140,7 +141,7 @@ class BestEffortAvroEncoderSpec extends FunSpec with Matchers {
         |]""".stripMargin)
 
     assertThrows[AvroRuntimeException] {
-      BestEffortAvroEncoder.encodeRecord(Map("foo" -> "ala").asJava, schema)
+      BestEffortAvroEncoder.encodeRecordOrError(Map("foo" -> "ala").asJava, schema)
     }
 
     val recordWithNull = roundTripVerifyWriteRead(BestEffortAvroEncoder.encodeRecord(Map("foo" -> null).asJava, schema))
@@ -160,7 +161,8 @@ class BestEffortAvroEncoderSpec extends FunSpec with Matchers {
        |  "fields": $fieldsDefinition
        |}""".stripMargin)
 
-  private def roundTripVerifyWriteRead(givenRecord: GenericData.Record) = {
+  private def roundTripVerifyWriteRead(givenRecordVal: ValidatedNel[String, GenericData.Record]) = {
+    val givenRecord = givenRecordVal.toOption.get
     val bos = new ByteArrayOutputStream()
     val encoder = EncoderFactory.get().binaryEncoder(bos, null)
     val schema = givenRecord.getSchema
