@@ -1,17 +1,19 @@
 package pl.touk.nussknacker.engine.marshall
 
+import argonaut.Argonaut._
+import argonaut.ArgonautShapeless._
 import argonaut._
-import Argonaut._
-import ArgonautShapeless._
 import argonaut.derive._
 import cats.data.Validated
-import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, TypeSpecificData, UserDefinedProcessAdditionalFields}
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode._
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
-import pl.touk.nussknacker.engine.graph.{EspProcess, node}
 import pl.touk.nussknacker.engine.graph.node.{Case => _, FilterNode => _, SplitNode => _, SwitchNode => _, _}
+import pl.touk.nussknacker.engine.graph.{EspProcess, node}
 import pl.touk.nussknacker.engine.marshall.ProcessUnmarshallError._
+
+import scala.reflect.ClassTag
 
 class ProcessMarshaller(implicit
                         additionalNodeDataFieldsCodec: CodecJson[Option[node.UserDefinedAdditionalNodeFields]] = ProcessMarshaller.additionalNodeDataFieldsCodec,
@@ -121,9 +123,30 @@ class ProcessMarshaller(implicit
 }
 
 object ProcessMarshaller {
-  def emptyOptionCodec[T]: CodecJson[Option[T]] = CodecJson.apply[Option[T]](_ => jEmptyObject, c => DecodeResult.ok(Option.empty[T]))
 
-  val additionalNodeDataFieldsCodec: CodecJson[Option[node.UserDefinedAdditionalNodeFields]] = emptyOptionCodec
+  val additionalNodeDataFieldsCodec: CodecJson[Option[UserDefinedAdditionalNodeFields]] =
+    derivedTypeOrNoneCodec[UserDefinedAdditionalNodeFields, NodeAdditionalFields]
 
-  val additionalProcessFieldsCodec: CodecJson[Option[UserDefinedProcessAdditionalFields]] = emptyOptionCodec
+  val additionalProcessFieldsCodec: CodecJson[Option[UserDefinedProcessAdditionalFields]] = {
+    val derivedCodec = derivedTypeOrNoneCodec[UserDefinedProcessAdditionalFields, ProcessAdditionalFields]
+    val processAdditionalFieldsDecode = jdecode3L((description: Option[String], groups: Option[Set[Group]], properties: Option[Map[String, String]]) =>
+      ProcessAdditionalFields(description, groups.getOrElse(Set.empty), properties.getOrElse(Map.empty)))("description", "groups", "properties")
+      .map(identity[UserDefinedProcessAdditionalFields])
+    CodecJson.derived(
+      derivedCodec.Encoder,
+      OptionDecodeJson(processAdditionalFieldsDecode)
+    )
+  }
+
+  private def derivedTypeOrNoneCodec[Base, Derived <: Base : ClassTag](implicit
+                                                                       encodeJson: EncodeJson[Derived],
+                                                                       decodeJson: DecodeJson[Derived]): CodecJson[Option[Base]] = {
+    CodecJson.derived(
+      EncodeJson.of[Option[Derived]].contramap[Option[Base]] {
+        case Some(fields: Derived) => Some(fields)
+        case _ => None
+      },
+      DecodeJson.of[Option[Derived]].map(identity[Option[Base]]) ||| DecodeJson(_ => DecodeResult.ok(None))
+    )
+  }
 }

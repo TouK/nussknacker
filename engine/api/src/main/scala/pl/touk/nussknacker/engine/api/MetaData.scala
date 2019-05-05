@@ -4,7 +4,13 @@ import java.util.concurrent.TimeUnit
 
 import scala.concurrent.duration.Duration
 
+// TODO: remove this trait and duplicated ProcessAdditionalFields and Group in restmodel module.
 trait UserDefinedProcessAdditionalFields
+
+case class ProcessAdditionalFields(description: Option[String],
+                                   groups: Set[Group],
+                                   properties: Map[String, String]) extends UserDefinedProcessAdditionalFields
+case class Group(id: String, nodes: Set[String])
 
 // todo: MetaData should hold ProcessName as id
 case class MetaData(id: String,

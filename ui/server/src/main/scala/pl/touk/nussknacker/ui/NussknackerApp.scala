@@ -25,6 +25,7 @@ import pl.touk.nussknacker.ui.security.AuthenticatorProvider
 import pl.touk.nussknacker.ui.security.ssl.{HttpsConnectionContextFactory, SslConfigParser}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporter
+import pl.touk.nussknacker.restmodel.validation.CustomProcessValidator
 import pl.touk.nussknacker.ui.definition.AdditionalProcessProperty
 import slick.jdbc.{HsqldbProfile, JdbcBackend, PostgresProfile}
 
@@ -96,7 +97,8 @@ object NussknackerApp extends App with Directives with LazyLogging {
     val subprocessResolver = new SubprocessResolver(subprocessRepository)
 
     val additionalFields = modelData.mapValues(_.processConfig.getOrElse[Map[String, AdditionalProcessProperty]]("additionalFieldsConfig", Map.empty))
-    val processValidation = ProcessValidation(modelData, additionalFields, subprocessResolver)
+    val customProcessNodesValidators = modelData.mapValues(CustomProcessValidator(_, config))
+    val processValidation = ProcessValidation(modelData, additionalFields, subprocessResolver, customProcessNodesValidators)
 
     val processRepository = DBFetchingProcessRepository.create(db)
     val writeProcessRepository = WriteProcessRepository.create(db, modelData)

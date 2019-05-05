@@ -8,6 +8,7 @@ import com.codahale.metrics.{Histogram, SlidingTimeWindowReservoir}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions._
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.java.tuple
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.dropwizard.metrics.DropwizardHistogramWrapper
@@ -497,6 +498,9 @@ object FlinkProcessRegistrar {
 
   object SplitFunction extends ProcessFunction[InterpretationResult, Unit] {
 
+    //we eagerly create TypeInformation here, creating it during OutputTag construction would be too expensive
+    private lazy val typeInfo: TypeInformation[InterpretationResult] = implicitly[TypeInformation[InterpretationResult]]
+
     override def processElement(interpretationResult: InterpretationResult, ctx: ProcessFunction[InterpretationResult, Unit]#Context,
                                 out: Collector[Unit]): Unit = {
       val tagName = interpretationResult.reference match {
@@ -505,7 +509,7 @@ object FlinkProcessRegistrar {
         case JoinReference(id, _) => id
         case _: EndingReference => EndId
       }
-      ctx.output(OutputTag[InterpretationResult](tagName), interpretationResult)
+      ctx.output(OutputTag[InterpretationResult](tagName)(typeInfo), interpretationResult)
     }
   }
 

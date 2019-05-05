@@ -2,27 +2,33 @@ package pl.touk.nussknacker.ui.validation
 
 import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
+import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.compile.{ProcessCompilationError, ProcessValidator}
 import pl.touk.nussknacker.engine.graph.node.{Disableable, NodeData, Source, SubprocessInputDefinition}
-import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
-import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.ProcessAdditionalFields
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
-import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
+import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
+import pl.touk.nussknacker.restmodel.validation.CustomProcessValidator
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.ui.definition.AdditionalProcessProperty
+import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
 import shapeless.syntax.typeable._
 
 object ProcessValidation{
-  def apply(data: Map[ProcessingType, ModelData], additionalFields: Map[ProcessingType, Map[String, AdditionalProcessProperty]], subprocessResolver: SubprocessResolver) : ProcessValidation = {
-    new ProcessValidation(data.mapValues(_.validator), additionalFields, subprocessResolver)
+  def apply(data: Map[ProcessingType, ModelData],
+            additionalFields: Map[ProcessingType, Map[String, AdditionalProcessProperty]],
+            subprocessResolver: SubprocessResolver,
+            customProcessNodesValidators: Map[ProcessingType, CustomProcessValidator]) : ProcessValidation = {
+    new ProcessValidation(data.mapValues(_.validator), additionalFields, subprocessResolver, customProcessNodesValidators)
   }
 }
 
 class ProcessValidation(validators: Map[ProcessingType, ProcessValidator],
                         additionalFieldsConfig: Map[ProcessingType, Map[String, AdditionalProcessProperty]],
-                        subprocessResolver: SubprocessResolver) {
+                        subprocessResolver: SubprocessResolver,
+                        customProcessNodesValidators: Map[ProcessingType, CustomProcessValidator]) {
 
   val uiValidationError = "UiValidation"
 
@@ -30,7 +36,7 @@ class ProcessValidation(validators: Map[ProcessingType, ProcessValidator],
 
   private val additionalPropertiesValidator = new AdditionalPropertiesValidator(additionalFieldsConfig, uiValidationError)
 
-  def withSubprocessResolver(subprocessResolver: SubprocessResolver) = new ProcessValidation(validators, additionalFieldsConfig, subprocessResolver)
+  def withSubprocessResolver(subprocessResolver: SubprocessResolver) = new ProcessValidation(validators, additionalFieldsConfig, subprocessResolver, customProcessNodesValidators)
 
   def toValidated(displayableProcess: DisplayableProcess): ValidatedDisplayableProcess = {
     new ValidatedDisplayableProcess(displayableProcess, validate(displayableProcess))
@@ -82,6 +88,7 @@ class ProcessValidation(validators: Map[ProcessingType, ProcessValidator],
       .add(validateLooseNodes(displayable))
       .add(validateEdgeUniqueness(displayable))
       .add(validateAdditionalProcessProperties(displayable))
+      .add(validateWithCustomProcessValidator(displayable))
   }
 
   private def validateIds(displayable: DisplayableProcess): ValidationResult = {
@@ -133,7 +140,7 @@ class ProcessValidation(validators: Map[ProcessingType, ProcessValidator],
       .map(_.id)
     val nodeIds = displayable.nodes.map(_.id)
 
-    //in theory it would be possible to have group named like one of nodes inside, but it's not worth complicating logic...  
+    //in theory it would be possible to have group named like one of nodes inside, but it's not worth complicating logic...
     val duplicates = (groupIds ++ nodeIds).groupBy(identity).filter(_._2.size > 1).keys.toList
 
     if (duplicates.isEmpty) {
@@ -158,4 +165,10 @@ class ProcessValidation(validators: Map[ProcessingType, ProcessValidator],
     )
   }
 
+  private def validateWithCustomProcessValidator(process: DisplayableProcess): ValidationResult = {
+    customProcessNodesValidators
+      .get(process.processingType)
+      .map(_.validate(process))
+      .getOrElse(ValidationResult.success)
+  }
 }

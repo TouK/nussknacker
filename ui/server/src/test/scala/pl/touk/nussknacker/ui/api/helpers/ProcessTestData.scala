@@ -60,9 +60,12 @@ object ProcessTestData {
 
   val validator = ProcessValidator.default(ProcessDefinitionBuilder.withEmptyObjects(processDefinition))
 
-  val validation = new ProcessValidation(Map(TestProcessingTypes.Streaming -> validator),
-         Map(TestProcessingTypes.Streaming -> Map()),
-         new SubprocessResolver(new SetSubprocessRepository(Set())))
+  val validation = new ProcessValidation(
+    Map(TestProcessingTypes.Streaming -> validator),
+    Map(TestProcessingTypes.Streaming -> Map()),
+    new SubprocessResolver(new SetSubprocessRepository(Set())),
+    Map.empty
+  )
 
   val validProcess : EspProcess = validProcessWithId("fooProcess")
 

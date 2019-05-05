@@ -6,6 +6,8 @@ import argonaut.Argonaut._
 import argonaut._
 import ArgonautShapeless._
 import org.asynchttpclient.{AsyncCompletionHandler, Request, RequestBuilder}
+import org.asynchttpclient.{AsyncCompletionHandler, Request, RequestBuilder}
+import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import dispatch._
 import org.apache.flink.runtime.jobgraph.JobStatus

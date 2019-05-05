@@ -7,13 +7,13 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessDeploymentData, ProcessState, RunningState}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.management.{FlinkProcessManager, FlinkProcessManagerProvider}
-import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
 import pl.touk.nussknacker.ui.api.RouteWithUser
+import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
 import pl.touk.nussknacker.ui.db.DbConfig
 import pl.touk.nussknacker.ui.process.repository.{DBFetchingProcessRepository, FetchingProcessRepository, _}
 import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, SubprocessDetails, SubprocessRepository, SubprocessResolver}
-import pl.touk.nussknacker.ui.validation.ProcessValidation
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.validation.ProcessValidation
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
@@ -30,8 +30,12 @@ object TestFactory extends TestPermissions{
   val sampleSubprocessRepository = SampleSubprocessRepository
   val sampleResolver = new SubprocessResolver(sampleSubprocessRepository)
 
-  val processValidation = new ProcessValidation(Map(TestProcessingTypes.Streaming -> ProcessTestData.validator),
-    Map(TestProcessingTypes.Streaming -> Map()), sampleResolver)
+  val processValidation = new ProcessValidation(
+    Map(TestProcessingTypes.Streaming -> ProcessTestData.validator),
+    Map(TestProcessingTypes.Streaming -> Map()),
+    sampleResolver,
+    Map.empty
+  )
   val posting = new ProcessPosting
   val buildInfo = Map("engine-version" -> "0.1")
 
@@ -121,5 +125,4 @@ object TestFactory extends TestPermissions{
       subprocesses.map(c => SubprocessDetails(c, testCategoryName))
     }
   }
-
 }
