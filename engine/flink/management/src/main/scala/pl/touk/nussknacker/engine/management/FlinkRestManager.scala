@@ -28,7 +28,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 private[management] trait HttpSender {
   def send[T](pair: (Request, FunctionHandler[T]))
-                  (implicit executor: ExecutionContext): Future[T]
+             (implicit executor: ExecutionContext): Future[T]
 }
 
 private[management] object DefaultHttpSender extends HttpSender {
@@ -37,7 +37,7 @@ private[management] object DefaultHttpSender extends HttpSender {
 
   //We handle redirections manually, as dispatch/asynchttpclient has some problems (connection leaking with it in our use cases)
   override def send[T](pair: (Request, FunctionHandler[T]))
-                (implicit executor: ExecutionContext): Future[T] = {
+                      (implicit executor: ExecutionContext): Future[T] = {
     httpClient(pair._1, new AsyncCompletionHandler[Future[T]]() {
 
       override def onCompleted(response: Res): Future[T] = {
@@ -45,6 +45,8 @@ private[management] object DefaultHttpSender extends HttpSender {
           val newLocation = response.getHeader("LOCATION")
           val newRequest = new RequestBuilder(pair._1).setUrl(newLocation).build()
           httpClient(newRequest, pair._2)
+        } else if (response.getStatusCode / 100 != 2) {
+          Future.failed(new Exception(s"HTTP request failed with status code ${response.getStatusCode} and message: ${response.getStatusText}"))
         } else {
           Future.successful(pair._2.onCompleted(response))
         }
@@ -58,17 +60,50 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, sender: HttpSe
 
   private val flinkUrl = dispatch.url(config.restUrl)
 
-  private lazy val uploadedJarId : Future[String] = uploadCurrentJar()
+  // after job manager restart old resources are not available anymore and we have to upload jar once again
+  private var jarUploadedBeforeLastRestart: Option[Future[String]] = None
+
+  // this code is executed synchronously by ManagementActor thus we don't care that much about possible races
+  // and extraneous jar uploads introduced by asynchronous invocation of recoverWith
+  private def uploadedJarId(): Future[String] = jarUploadedBeforeLastRestart match {
+    case None =>
+      uploadCurrentJar()
+    case Some(uploadedJar) =>
+      uploadedJar
+        .flatMap(checkIfJarExists)
+        .recoverWith { case ex =>
+          logger.info(s"Getting already uploaded jar failed with $ex, trying to upload again")
+          uploadCurrentJar()
+        }
+  }
+
+  private def checkIfJarExists(jarId: String): Future[String] = {
+    sender.send {
+      (flinkUrl / "jars").GET OK utils.asJson[Json]
+    }.flatMap { json =>
+      val isJarUploaded = json
+        .fieldOrEmptyArray("files").arrayOrEmpty
+        .exists(_.fieldOrEmptyString("id").stringOrEmpty == jarId)
+
+      if (isJarUploaded) {
+        Future.successful(jarId)
+      } else {
+        Future.failed(new Exception(s"Jar with id '$jarId' does not exist"))
+      }
+    }
+  }
 
   private def uploadCurrentJar(): Future[String] = {
     logger.debug("Uploading new jar")
     val filePart = new FilePart("jarfile", jarFile, "application/x-java-archive")
-    sender.send {
+    val uploadedJar = sender.send {
       (flinkUrl / "jars" / "upload").POST.addBodyPart(filePart) OK utils.asJson[Json]
     } map { json =>
       logger.info(s"Uploaded jar to $json")
       new File(json.fieldOrEmptyString("filename").stringOrEmpty).getName
     }
+    jarUploadedBeforeLastRestart = Some(uploadedJar)
+    uploadedJar
   }
 
 
@@ -147,7 +182,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, sender: HttpSe
         allowNonRestoredState = true,
         programArgs = FlinkArgsEncodeHack.prepareProgramArgs(args).mkString(" "))
     logger.debug(s"Starting to deploy process: $processName with savepoint $savepointPath")
-    uploadedJarId.flatMap { jarId =>
+    uploadedJarId().flatMap { jarId =>
       logger.debug(s"Deploying $processName with $savepointPath and jarId: $jarId")
       sender.send {
         (flinkUrl / "jars" / jarId / "run").POST.setBody(program.asJson.spaces2) OK (_ => ())
