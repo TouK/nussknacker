@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.compile
 
 import cats.data.Validated._
-import cats.data.{NonEmptyList, ValidatedNel}
+import cats.data.{NonEmptyList,  ValidatedNel}
 import cats.instances.list._
 import cats.instances.option._
 import cats.kernel.Semigroup
@@ -22,10 +22,11 @@ import pl.touk.nussknacker.engine.splittedgraph.splittednode.{Next, SplittedNode
 import pl.touk.nussknacker.engine.{compiledgraph, _}
 import pl.touk.nussknacker.engine.util.Implicits._
 
-import scala.util.{Success, Try}
+import scala.util.{Failure, Success, Try}
 
 
-class PartSubGraphCompiler(protected val expressionCompiler: ExpressionCompiler,
+class PartSubGraphCompiler(protected val classLoader: ClassLoader,
+                           protected val expressionCompiler: ExpressionCompiler,
                            protected val expressionConfig: ExpressionDefinition[ObjectWithMethodDef],
                            protected val services: Map[String, ObjectWithMethodDef]) {
 
@@ -100,7 +101,7 @@ class PartSubGraphCompiler(protected val expressionCompiler: ExpressionCompiler,
     case graph.node.Sink(id, ref, optionalExpression, disabled, _) =>
       optionalExpression.map(oe => compile(oe, None, ctx, Unknown)._2).sequence.map(typed => compiledgraph.node.Sink(id, ref.typ, typed, disabled.contains(true)))
     //probably this shouldn't occur - otherwise we'd have empty subprocess?
-    case SubprocessInput(id, _, _, _) => Invalid(NonEmptyList.of(UnresolvedSubprocess(id)))   
+    case SubprocessInput(id, _, _, _, _) => Invalid(NonEmptyList.of(UnresolvedSubprocess(id)))
     case SubprocessOutputDefinition(id, name, disabled) =>
       //TODO: should we validate it's process?
       Valid(compiledgraph.node.Sink(id, name, None, disabled.contains(true)))
@@ -147,16 +148,24 @@ class PartSubGraphCompiler(protected val expressionCompiler: ExpressionCompiler,
         fa = compile(next, ctx))(
         f = compiledNext => compiledgraph.node.CustomNode(id, compiledNext))
 
-    case SubprocessInput(id, ref, _, _) =>
-      val childCtx = ctx.pushNewContext(globalVariableTypes)
+    case subprocessInput@SubprocessInput(id, ref, _, _, subParams) =>
+      import cats.implicits.toTraverseOps
 
+      val childCtx = ctx.pushNewContext(globalVariableTypes)
       val newCtx = ref.parameters.foldLeft[ValidatedNel[ProcessCompilationError, ValidationContext]](Valid(childCtx))
                     { case (accCtx, param) => accCtx.andThen(_.withVariable(param.name, Unknown))}
-      val validParams =
-        expressionCompiler.compileObjectParameters(ref.parameters.map(p => Parameter.unknownType(p.name)), ref.parameters, toOption(ctx))
 
-      CompilationResult.map3(CompilationResult(validParams), compile(next, newCtx.getOrElse(childCtx)), CompilationResult(newCtx))((params, next, _) =>
-        compiledgraph.node.SubprocessStart(id, params, next))
+      val validParamDefs =
+        ref.parameters.map(p => getSubprocessParamDefinition(subprocessInput, p.name)).sequence
+
+      val validParams = validParamDefs.andThen { paramDefs =>
+        expressionCompiler.compileObjectParameters(paramDefs, ref.parameters, toOption(ctx))
+      }
+
+      CompilationResult.map3(
+        f0 = CompilationResult(validParams),
+        f1 = compile(next, newCtx.getOrElse(childCtx)),
+        f2 = CompilationResult(newCtx))((params, next, _) => compiledgraph.node.SubprocessStart(id, params, next))
 
     case SubprocessOutput(id, _, _) =>
       //this popContext *really* has to work to be able to extract variable types :|
@@ -239,4 +248,15 @@ class PartSubGraphCompiler(protected val expressionCompiler: ExpressionCompiler,
     }.toOption.flatten
   }
 
+  private def getSubprocessParamDefinition(subprocessInput: SubprocessInput, paramName: String): ValidatedNel[PartSubGraphCompilationError, Parameter] = {
+    val subParam = subprocessInput.subprocessParams.get.find(_.name == paramName).get
+    subParam.typ.toTyped(classLoader) match {
+      case Success(typingResult) =>
+        valid(Parameter(paramName, typingResult, typingResult))
+      case Failure(_) =>
+        invalid(
+          SubprocessParamClassLoadError(paramName, subParam.typ, subprocessInput.id)
+        ).toValidatedNel
+    }
+  }
 }

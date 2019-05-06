@@ -25,7 +25,7 @@ object CompiledProcess {
 
     val expressionCompiler = ExpressionCompiler.withOptimization(userCodeClassLoader, definitions.expressionConfig)
     //for testing environment it's important to take classloader from user jar
-    val subCompiler = new PartSubGraphCompiler(expressionCompiler, definitions.expressionConfig, servicesDefs)
+    val subCompiler = new PartSubGraphCompiler(userCodeClassLoader, expressionCompiler, definitions.expressionConfig, servicesDefs)
     val processCompiler = new ProcessCompiler(userCodeClassLoader, subCompiler, definitions)
 
     processCompiler.compile(process).result.map { compiledProcess =>

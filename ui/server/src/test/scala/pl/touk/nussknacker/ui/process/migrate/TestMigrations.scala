@@ -104,7 +104,7 @@ class TestMigrations(migrationsToAdd:Int*) extends ProcessMigrations {
       case sub@SubprocessInputDefinition(_, subParams, _) if !subParams.exists(_.name == "param42") && subParams.exists(_.name == "param1") =>
         sub.copy(parameters = sub.parameters.map(p => if (p.name == "param1") p.copy(name = "param42") else p))
 
-      case sub@SubprocessInput(_, ref, _,_) if !ref.parameters.exists(_.name == "param42") && ref.parameters.exists(_.name == "param1") =>
+      case sub@SubprocessInput(_, ref, _,_, _) if !ref.parameters.exists(_.name == "param42") && ref.parameters.exists(_.name == "param1") =>
         sub.copy(ref = sub.ref.copy(parameters = sub.ref.parameters.map(p => if (p.name == "param1") p.copy(name = "param42") else p)))
     }
   }
