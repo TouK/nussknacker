@@ -16,9 +16,11 @@ val nexusUrl = Option(System.getProperty("nexusUrl"))
 val nexusHost = nexusUrl.map(_.replaceAll("http[s]?://", "").replaceAll("[:/].*", ""))
 
 //Docker release configuration
+val dockerTagName = Option(System.getProperty("dockerTagName"))
 val dockerPort = System.getProperty("dockerPort", "8080").toInt
 val dockerUserName = Some(System.getProperty("dockerUserName", "touk"))
 val dockerPackageName = System.getProperty("dockerPackageName", "nussknacker")
+val dockerUpLatest = System.getProperty("dockerUpLatest", "true").toBoolean
 
 // `publishArtifact := false` should be enough to keep sbt from publishing root module,
 // unfortunately it does not work, so we resort to hack by publishing root module to Resolver.defaultLocal
@@ -144,7 +146,12 @@ lazy val dockerSettings = {
     dockerBaseImage := "openjdk:8-jdk",
     dockerUsername := dockerUserName,
     packageName := dockerPackageName,
-    dockerUpdateLatest := true
+    dockerUpdateLatest := dockerUpLatest,
+    dockerLabels := Map(
+      "tag" -> dockerTagName.getOrElse(version.value),
+      "version" -> version.value
+    ),
+    version in Docker := dockerTagName.getOrElse(version.value)
   )
 }
 

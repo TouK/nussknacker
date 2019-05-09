@@ -35,10 +35,28 @@ cache:
     - $HOME/.ivy2/cache
     - $HOME/.sbt/boot/
 
-script:
-  - echo "TEST SIMULATION"
-  #- sbt ++$TRAVIS_SCALA_VERSION clean test management/it:test
+stages:
+  - tests
+  - name: releases
+    if: fork = false AND type != cron
+  - name: deploys
+    if: branch IN (demo) AND fork = false AND type != cron
 
-after_success:
-  - if [[ "$TRAVIS_PULL_REQUEST" == "false" ]]; then ./ciBuild.sh "${BUILD_VERSION}-SNAPSHOT" ${NEXUS_PASSWORD} ${NEXUS_URL} ${NEXUS_USER} true; fi
-  - if [[ "$TRAVIS_PULL_REQUEST" == "false" ]]; then ./ciBuildDocker.sh ${BUILD_VERSION}; fi
+jobs:
+  include:
+    - name: "Unit tests"
+      script: sbt ++$TRAVIS_SCALA_VERSION clean test
+    - name: "Management tests"
+      script: sbt ++$TRAVIS_SCALA_VERSION clean management/it:test
+    - name: "EngineStandalone tests"
+      script: sbt ++$TRAVIS_SCALA_VERSION clean engineStandalone/it:test
+    - name: "UI slow tests"
+      script: sbt ++$TRAVIS_SCALA_VERSION clean assemblySamples ui/slow:test
+    - stage: releases
+      name: "Release sonatype packages"
+      script: ./ciBuild.sh "${BUILD_VERSION}-SNAPSHOT" ${NEXUS_PASSWORD} ${NEXUS_URL} ${NEXUS_USER} true
+    - name: "Push Docker Image"
+      script: ./ciBuildDocker.sh --version=${BUILD_VERSION}
+    - stage: deploys
+      name: "Push demo-latest Docker Image"
+      script: ./ciBuildDocker.sh --version=${BUILD_VERSION} --docker-tag=demo-latest
