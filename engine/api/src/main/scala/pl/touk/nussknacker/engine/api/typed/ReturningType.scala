@@ -5,8 +5,10 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 /**
   * Trait to be mixed in CustomStreamTransformer or SourceFactory which can return various types
   * depending on input (as in dependent types in CS).
+  * Deprecated: use ContextTransformation
   * @see GenericTypedJsonSourceFactory or PreviousValueTransformer
   */
+// TODO: remove after full switch to ContextTransformation API
 trait ReturningType {
 
   def returnType: TypingResult
@@ -19,9 +21,8 @@ trait ReturningType {
   * @see ReturningDependentTypeService in tests
   *
   * This trait is more complex, as Service is not factory but is invoked directly
-  *
-  * TODO: rethink design - can it be easier to use and more typesafe?
   */
+// TODO: Replace with EagerService with LazyParameter's and ContextTransformation API
 trait ServiceReturningType {
 
   /**

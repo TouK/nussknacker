@@ -11,12 +11,13 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.effect.IO
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.lazyy.{LazyContext, LazyValuesProvider, UsingLazyValues}
 import pl.touk.nussknacker.engine.api.typed.{ClazzRef, TypedMap}
-import pl.touk.nussknacker.engine.compile.ValidationContext
 import pl.touk.nussknacker.engine.compiledgraph.expression.{Expression, ExpressionParseError, ValueWithLazyContext}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.compile.ProcessCompilationError.NodeId
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
+import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedExpression
 
 import scala.collection.JavaConverters._
 import scala.concurrent.Await
@@ -55,14 +56,14 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
 
   private def parseOrFail[T:ClassTag](expr: String, context: Context = ctx) : Expression = {
     parse(expr, context) match {
-      case Valid(e) => e._2
+      case Valid(e) => e.expression
       case Invalid(err) => throw new ParseException(err.map(_.message).toList.mkString, -1)
     }
   }
 
   private def parseOrFail[T:ClassTag](expr: String, context: ValidationContext) : Expression = {
     parse(expr, context) match {
-      case Valid(e) => e._2
+      case Valid(e) => e.expression
       case Invalid(err) => throw new ParseException(err.map(_.message).toList.mkString, -1)
     }
   }
@@ -70,13 +71,13 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
 
   import pl.touk.nussknacker.engine.util.Implicits._
 
-  private def parse[T:ClassTag](expr: String, context: Context = ctx) : ValidatedNel[ExpressionParseError, (TypingResult, Expression)] = {
+  private def parse[T:ClassTag](expr: String, context: Context = ctx) : ValidatedNel[ExpressionParseError, TypedExpression] = {
     val validationCtx = ValidationContext(
       context.variables.mapValuesNow(_.getClass).mapValuesNow(ClazzRef(_)).mapValuesNow(Typed.apply))
     parse(expr, validationCtx)
   }
 
-  private def parse[T:ClassTag](expr: String, validationCtx: ValidationContext) : ValidatedNel[ExpressionParseError, (TypingResult, Expression)] = {
+  private def parse[T:ClassTag](expr: String, validationCtx: ValidationContext) : ValidatedNel[ExpressionParseError, TypedExpression] = {
     val expressionFunctions = Map("today" -> classOf[LocalDate].getDeclaredMethod("now"))
     val imports = List(SampleValue.getClass.getPackage.getName)
     new SpelExpressionParser(expressionFunctions, imports, getClass.getClassLoader, 1 minute, enableSpelForceCompile = true)
@@ -406,12 +407,12 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
   }
 
   it should "be able to type toString()" in {
-    parse[Any]("12.toString()", ctx).toOption.get._1 shouldBe Typed[String]
+    parse[Any]("12.toString()", ctx).toOption.get.returnType shouldBe Typed[String]
   }
   
   it should "be able to type string concatenation" in {
-    parse[Any]("12 + ''", ctx).toOption.get._1 shouldBe Typed[String]
-    parse[Any]("'' + 12", ctx).toOption.get._1 shouldBe Typed[String]
+    parse[Any]("12 + ''", ctx).toOption.get.returnType shouldBe Typed[String]
+    parse[Any]("'' + 12", ctx).toOption.get.returnType shouldBe Typed[String]
   }
 
 }

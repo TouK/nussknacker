@@ -4,6 +4,7 @@ import java.util.concurrent.TimeUnit
 
 import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.Interpreter
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.{Lifecycle, ProcessListener}
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.definition.LazyInterpreterDependencies

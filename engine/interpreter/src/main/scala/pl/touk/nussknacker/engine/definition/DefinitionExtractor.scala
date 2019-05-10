@@ -2,15 +2,12 @@ package pl.touk.nussknacker.engine.definition
 
 import java.lang.reflect.{InvocationTargetException, Method}
 
-import argonaut.CodecJson
-import com.typesafe.config.{Config, ConfigRenderOptions}
 import com.typesafe.scalalogging.LazyLogging
-import net.ceedubs.ficus.readers.ValueReader
 import pl.touk.nussknacker.engine.api.MethodToInvoke
+import pl.touk.nussknacker.engine.api.definition.{Parameter, WithExplicitMethodToInvoke}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, SingleNodeConfig, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
-import pl.touk.nussknacker.engine.api.definition.{Parameter, ParameterRestriction, WithExplicitMethodToInvoke}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.MethodDefinition
 import pl.touk.nussknacker.engine.types.TypesInformationExtractor
@@ -29,7 +26,7 @@ class DefinitionExtractor[T](methodDefinitionExtractor: MethodDefinitionExtracto
         methodDefinitionExtractor.extractMethodDefinition(obj, findMethodToInvoke(obj), nodeConfig)
     }).fold(msg => throw new IllegalArgumentException(msg), identity)
     ObjectWithMethodDef(obj, methodDef, ObjectDefinition(
-      methodDef.orderedParameters.definedParameters,
+      methodDef.orderedDependencies.definedParameters,
       methodDef.returnType,
       objWithCategories.categories,
       nodeConfig
@@ -62,6 +59,7 @@ object DefinitionExtractor {
 
     def categories: List[String]
 
+    // TODO: Use ContextTransformation API to check if custom node is adding some output variable
     def hasNoReturn : Boolean = Set(Typed[Void], Typed[Unit], Typed[BoxedUnit]).contains(returnType)
 
   }
@@ -69,8 +67,10 @@ object DefinitionExtractor {
   case class ObjectWithMethodDef(obj: Any,
                                  methodDef: MethodDefinition,
                                  objectDefinition: ObjectDefinition) extends ObjectMetadata with LazyLogging {
-    def invokeMethod(paramFun: String => Option[AnyRef], additional: Seq[AnyRef]) : Any = {
-      val values = methodDef.orderedParameters.prepareValues(paramFun, additional)
+    def invokeMethod(paramFun: String => Option[AnyRef],
+                     outputVariableNameOpt: Option[String],
+                     additional: Seq[AnyRef]) : Any = {
+      val values = methodDef.orderedDependencies.prepareValues(paramFun, outputVariableNameOpt, additional)
       try {
         methodDef.invocation(obj, values)
       } catch {

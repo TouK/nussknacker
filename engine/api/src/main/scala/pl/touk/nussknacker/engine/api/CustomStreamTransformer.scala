@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.api
 
-import pl.touk.nussknacker.engine.api.exception.EspExceptionHandler
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -14,10 +13,16 @@ import scala.concurrent.{ExecutionContext, Future}
 //from java to scala one and is seems difficult to convert java CustomStreamTransformer, Service etc. into scala ones
 abstract class CustomStreamTransformer {
 
-  //TODO: it is still pretty easy to forget about it. maybe shouldn't be default??
-  //maybe should be detected somehow by types??
-  def clearsContext : Boolean = false
+  /**
+    * deprecated - use ContextTransformation.definedBy(Valid(_.clearVariables)) instead
+    */
+  // TODO: remove after full switch to ContextTransformation API
+  def clearsContext = false
 
+  /**
+    * deprecated - use ContextTransformation.join instead
+    */
+  // TODO: remove after full switch to ContextTransformation API
   def canHaveManyInputs: Boolean = false
 
 }

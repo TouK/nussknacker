@@ -1,18 +1,16 @@
 package pl.touk.nussknacker.engine.definition
 
 import com.typesafe.config.{Config, ConfigFactory}
-import org.scalatest.{FlatSpec, FunSuite, Matchers}
+import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.definition.{Parameter, WithExplicitMethodToInvoke}
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.{ProcessSignalSender, SignalTransformer}
-import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
-import sun.reflect.generics.tree.ReturnType
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
 class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
 
@@ -28,7 +26,7 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
 
   test("extract additional variables info from annotation") {
     val methodDef = processDefinition.customStreamTransformers("transformer1")._1.methodDef
-    val additionalVars = methodDef.orderedParameters.definedParameters.head.additionalVariables
+    val additionalVars = methodDef.orderedDependencies.definedParameters.head.additionalVariables
     additionalVars("var1") shouldBe Typed[OnlyUsedInAdditionalVariable]
   }
 
@@ -48,7 +46,9 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
 
   object TestCreator extends ProcessConfigCreator {
     override def customStreamTransformers(config: Config): Map[String, WithCategories[CustomStreamTransformer]] =
-      Map("transformer1" -> WithCategories(Transformer1, "cat"))
+      Map(
+        "transformer1" -> WithCategories(Transformer1, "cat")
+      )
 
     override def services(config: Config): Map[String, WithCategories[Service]] = Map(
       "configurable1" -> WithCategories(EmptyExplicitMethodToInvoke(List(Parameter("param1", ClazzRef[Int])), Typed[String]), "cat")
@@ -93,7 +93,7 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
 
     override def realReturnType: TypingResult = Typed(Set(TypedClass(classOf[Future[_]], List(returnType))))
 
-    override def additionalParameters: List[Class[_]] = List()
+    override def additionalDependencies: List[Class[_]] = List()
 
     override def invoke(params: List[AnyRef]): Future[AnyRef] = ???
   }

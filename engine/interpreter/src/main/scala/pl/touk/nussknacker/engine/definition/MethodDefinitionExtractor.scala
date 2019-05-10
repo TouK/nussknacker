@@ -4,14 +4,17 @@ import java.lang.annotation.Annotation
 import java.lang.reflect
 import java.lang.reflect.Method
 
-import pl.touk.nussknacker.engine.api.definition.{Parameter, WithExplicitMethodToInvoke}
+import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, Parameter, TypedNodeDependency, WithExplicitMethodToInvoke}
 import pl.touk.nussknacker.engine.api.process.SingleNodeConfig
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
-import pl.touk.nussknacker.engine.api.{AdditionalVariables, MethodToInvoke, ParamName}
-import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedParameters}
+import pl.touk.nussknacker.engine.api.{AdditionalVariables, BranchParamName, MethodToInvoke, OutputVariableName, ParamName}
+import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedDependencies}
 import pl.touk.nussknacker.engine.types.EspTypeUtils
 
+// We should think about things that happens here as a Dependency Injection where @ParamName and so on are kind of
+// BindingAnnotation in guice meaning. Maybe we should switch to some lightweight DI framework (like guice) instead
+// of writing its on ours own?
 private[definition] trait MethodDefinitionExtractor[T] {
 
   def extractMethodDefinition(obj: T, methodToInvoke: Method, nodeConfig: SingleNodeConfig): Either[String, MethodDefinition]
@@ -23,7 +26,7 @@ private[definition] object WithExplicitMethodToInvokeMethodDefinitionExtractor e
 
     Right(MethodDefinition(methodToInvoke.getName,
       (oo, args) => methodToInvoke.invoke(oo, args.toList),
-        new OrderedParameters(obj.parameterDefinition.map(Left(_)) ++ obj.additionalParameters.map(Right(_))),
+        new OrderedDependencies(obj.parameterDefinition ++ obj.additionalDependencies.map(TypedNodeDependency)),
       obj.returnType, obj.realReturnType, List()))
   }
 }
@@ -46,22 +49,33 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
     }
   }
 
-  private def extractParameters(obj: T, method: Method, nodeConfig: SingleNodeConfig): OrderedParameters = {
-    val params: List[Either[Parameter, Class[_]]] = method.getParameters.map { p =>
-      if (additionalParameters.contains(p.getType) && p.getAnnotation(classOf[ParamName]) == null) {
-        Right(p.getType)
+  private def extractParameters(obj: T, method: Method, nodeConfig: SingleNodeConfig): OrderedDependencies = {
+    val dependencies = method.getParameters.map { p =>
+      if (additionalDependencies.contains(p.getType) && p.getAnnotation(classOf[ParamName]) == null &&
+        p.getAnnotation(classOf[BranchParamName]) == null && p.getAnnotation(classOf[OutputVariableName]) == null) {
+        TypedNodeDependency(p.getType)
+      } else if (p.getAnnotation(classOf[OutputVariableName]) != null) {
+        if (p.getType != classOf[String]) {
+          throw new IllegalArgumentException(s"Parameter annotated with @OutputVariableName ($p of $obj and method : ${method.getName}) should be of String type")
+        } else {
+          OutputVariableNameDependency
+        }
       } else {
-        val name = Option(p.getAnnotation(classOf[ParamName]))
+        val nodeParamNames = Option(p.getAnnotation(classOf[ParamName]))
           .map(_.value())
-          .getOrElse(throw new IllegalArgumentException(s"Parameter $p of $obj and method : ${method.getName} has missing @ParamName annotation"))
+        val branchParamName = Option(p.getAnnotation(classOf[BranchParamName]))
+          .map(_.value())
+        val name = (nodeParamNames orElse branchParamName)
+          .getOrElse(throw new IllegalArgumentException(s"Parameter $p of $obj and method : ${method.getName} has missing @ParamName or @BranchParamName annotation"))
+        // TODO JOIN: for branchParams we should rather look at Map's value type
         val paramType = extractParameterType(p)
-        Left(Parameter(
-          name, Typed(paramType), Typed(p.getType), ParameterTypeMapper.prepareRestrictions(paramType, Some(p), nodeConfig.paramConfig(name)), additionalVariables(p)
-        ))
+        Parameter(
+          name, Typed(paramType), Typed(p.getType), ParameterTypeMapper.prepareRestrictions(paramType, Some(p), nodeConfig.paramConfig(name)), additionalVariables(p), branchParamName.isDefined
+        )
       }
     }.toList
 
-    new OrderedParameters(params)
+    new OrderedDependencies(dependencies)
   }
 
   private def additionalVariables(p: reflect.Parameter): Map[String, TypingResult] =
@@ -71,9 +85,10 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
       ).getOrElse(Map.empty)
 
   protected def extractReturnTypeFromMethod(obj: T, method: Method): ClazzRef = {
-    val typeFromAnnotation = Option(method.getAnnotation(classOf[MethodToInvoke]))
-      .filterNot(_.returnType() == classOf[Object])
-      .flatMap[ClazzRef](ann => Option(ClazzRef(ann.returnType())))
+    val typeFromAnnotation =
+      Option(method.getAnnotation(classOf[MethodToInvoke])).map(_.returnType())
+      .filterNot(_ == classOf[Object])
+      .map[ClazzRef](ClazzRef(_))
     val typeFromSignature = EspTypeUtils.getGenericType(method.getGenericReturnType)
 
     typeFromAnnotation.orElse(typeFromSignature).getOrElse(ClazzRef[Any])
@@ -81,7 +96,7 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
 
   protected def expectedReturnType: Option[Class[_]]
 
-  protected def additionalParameters: Set[Class[_]]
+  protected def additionalDependencies: Set[Class[_]]
 
   protected def extractParameterType(p: java.lang.reflect.Parameter): Class[_] = p.getType
 
@@ -92,32 +107,34 @@ object MethodDefinitionExtractor {
 
   case class MethodDefinition(name: String,
                               invocation: (Any, Seq[AnyRef]) => Any,
-                              orderedParameters: OrderedParameters,
+                              orderedDependencies: OrderedDependencies,
+                              // TODO: remove after full switch to ContextTransformation API
                               returnType: TypingResult,
-                              realReturnType: TypingResult, annotations: List[Annotation])
+                              realReturnType: TypingResult,
+                              annotations: List[Annotation])
 
-  class OrderedParameters(baseOrAdditional: List[Either[Parameter, Class[_]]]) {
+  class OrderedDependencies(dependencies: List[NodeDependency]) {
 
-    lazy val definedParameters: List[Parameter] = baseOrAdditional.collect {
-      case Left(param) => param
-    }
-
-    def additionalParameters: List[Class[_]] = baseOrAdditional.collect {
-      case Right(clazz) => clazz
+    lazy val definedParameters: List[Parameter] = dependencies.collect {
+      case param: Parameter => param
     }
 
     def prepareValues(prepareValue: String => Option[AnyRef],
-                      additionalParameters: Seq[AnyRef]): List[AnyRef] = {
-      baseOrAdditional.map {
-        case Left(param) =>
+                      outputVariableNameOpt: Option[String],
+                      additionalDependencies: Seq[AnyRef]): List[AnyRef] = {
+      dependencies.map {
+        case param: Parameter =>
           val foundParam = prepareValue(param.name).getOrElse(throw new IllegalArgumentException(s"Missing parameter: ${param.name}"))
           //FIIIXME??
           validateType(param.name, foundParam, param.originalType.objType.klass)
           foundParam
-        case Right(classOfAdditional) =>
-          val foundParam = additionalParameters.find(classOfAdditional.isInstance).getOrElse(
-                      throw new IllegalArgumentException(s"Missing additional parameter of class: ${classOfAdditional.getName}"))
-          validateType(classOfAdditional.getName, foundParam, classOfAdditional)
+        case OutputVariableNameDependency =>
+          outputVariableNameOpt.getOrElse(
+            throw new MissingOutputVariableException)
+        case TypedNodeDependency(clazz) =>
+          val foundParam = additionalDependencies.find(clazz.isInstance).getOrElse(
+                      throw new IllegalArgumentException(s"Missing additional parameter of class: ${clazz.getName}"))
+          validateType(clazz.getName, foundParam, clazz)
           foundParam
       }
     }
@@ -149,5 +166,7 @@ object MethodDefinitionExtractor {
     }
 
   }
+
+  class MissingOutputVariableException extends Exception("Missing output variable name")
 
 }

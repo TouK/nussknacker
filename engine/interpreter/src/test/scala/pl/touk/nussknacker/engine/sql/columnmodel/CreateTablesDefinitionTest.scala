@@ -2,8 +2,8 @@ package pl.touk.nussknacker.engine.sql.columnmodel
 
 import cats.data.Validated
 import org.scalatest.{FunSuite, Matchers}
+import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.compile.ValidationContext
 import pl.touk.nussknacker.engine.sql.SqlType.Varchar
 import pl.touk.nussknacker.engine.sql._
 

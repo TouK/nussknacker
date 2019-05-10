@@ -138,6 +138,18 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Event
     interpreter.close()
   }
 
+  test("run process using custom node with ContextTransformation API") {
+    val process = EspProcessBuilder
+      .id("proc1")
+      .exceptionHandler()
+      .source("start", "request1-post-source")
+      .customNode("extract", "extracted", "extractor", "expression" -> "#input.field2")
+      .sink("sink1", "#extracted", "response-sink")
+
+    val result = runProcess(process, Request1("a", "b"))
+
+    result shouldBe Right(List("b"))
+  }
 
   def runProcess(process: EspProcess,
                  input: Any,

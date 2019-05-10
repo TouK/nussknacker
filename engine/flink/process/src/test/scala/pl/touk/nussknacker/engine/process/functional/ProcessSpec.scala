@@ -84,7 +84,7 @@ class ProcessSpec extends FunSuite with Matchers {
         .branchEnd("end1", "join1"),
       GraphBuilder.source("id2", "input")
         .branchEnd("end2", "join1"),
-      GraphBuilder.branch("join1", "sampleJoin", Some("input33")).processorEnd("proc2", "logService", "all" -> "#input33")
+      GraphBuilder.branch("join1", "sampleJoin", Some("input33"), List.empty).processorEnd("proc2", "logService", "all" -> "#input33")
     ))
 
     val rec = SimpleRecord("1", 3, "a", new Date(0))
@@ -95,4 +95,27 @@ class ProcessSpec extends FunSuite with Matchers {
     MockService.data.toSet shouldBe Set(5, rec)
 
   }
+
+  test("should do join with branch expressions") {
+    val process = EspProcess(MetaData("proc1", StreamMetaData()), ExceptionHandlerRef(List()), NonEmptyList.of(
+      GraphBuilder.source("id", "intInputWithParam", "param" -> "#processHelper.add(2, 3)")
+        .branchEnd("end1", "join1"),
+      GraphBuilder.source("id2", "input")
+        .branchEnd("end2", "join1"),
+      GraphBuilder.branch("join1", "joinBranchExpression", Some("input33"),
+        List(
+          "end1" -> List("value" -> "#input"),
+          "end2" -> List("value" -> "#input")
+        ))
+        .processorEnd("proc2", "logService", "all" -> "#input33")
+    ))
+
+    val rec = SimpleRecord("1", 3, "a", new Date(0))
+    val data = List(rec)
+
+    processInvoker.invoke(process, data)
+
+    MockService.data.toSet shouldBe Set(5, rec)
+  }
+
 }

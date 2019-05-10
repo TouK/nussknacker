@@ -2,9 +2,10 @@ package pl.touk.nussknacker.engine.sql
 
 import cats.data.Validated.{Invalid, Valid}
 import org.scalatest.{FunSuite, Matchers}
+import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.{ClazzRef, typing}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
-import pl.touk.nussknacker.engine.compile.ValidationContext
+import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedExpression
 
 class SqlExpressionParserTest extends FunSuite with Matchers {
 
@@ -27,11 +28,11 @@ class SqlExpressionParserTest extends FunSuite with Matchers {
 
 
   test("find smallest tables set") {
-    parseOrFail("select stringField from table2")._2.columnModels.keySet shouldEqual Set("table2")
-    parseOrFail("select col1, stringField from table1 t1, table2 t2")._2.columnModels.keySet shouldEqual Set("table1", "table2")
+    parseOrFail("select stringField from table2").expression.asInstanceOf[SqlExpression].columnModels.keySet shouldEqual Set("table2")
+    parseOrFail("select col1, stringField from table1 t1, table2 t2").expression.asInstanceOf[SqlExpression].columnModels.keySet shouldEqual Set("table1", "table2")
   }
 
-  private def parseOrFail(expression: String, ctx: ValidationContext = validationCtx): (typing.TypingResult, SqlExpression)
+  private def parseOrFail(expression: String, ctx: ValidationContext = validationCtx): TypedExpression
     = SqlExpressionParser.parse(expression, ctx, Unknown).leftMap(err => fail(s"Failed to parse: $err")).merge
 
 }

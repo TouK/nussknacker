@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.Interpreter._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.NodeContext
-import pl.touk.nussknacker.engine.compile.ProcessCompilationError.NodeId
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.compiledgraph.expression._
 import pl.touk.nussknacker.engine.compiledgraph.node.{Sink, Source, _}
 import pl.touk.nussknacker.engine.compiledgraph.service._
@@ -70,12 +70,12 @@ class Interpreter private(listeners: Seq[ProcessListener], expressionEvaluator: 
       case SubprocessEnd(id, next) =>
         interpretNext(next, ctx.popContext)
       case Processor(_, ref, next, false) =>
-        invoke(ref, ctx).flatMap {
+        invoke(ref, None, ctx).flatMap {
           case ValueWithContext(_, newCtx) => interpretNext(next, newCtx)
         }
       case Processor(_, ref, next, true) => interpretNext(next, ctx)
       case EndingProcessor(id, ref, false) =>
-        invoke(ref, ctx).map {
+        invoke(ref, None, ctx).map {
           case ValueWithContext(output, newCtx) =>
             List(InterpretationResult(EndReference(id), output, newCtx))
         }
@@ -83,7 +83,7 @@ class Interpreter private(listeners: Seq[ProcessListener], expressionEvaluator: 
         //FIXME: null??
         Future.successful(List(InterpretationResult(EndReference(id), null, ctx)))
       case Enricher(_, ref, outName, next) =>
-        invoke(ref, ctx).flatMap {
+        invoke(ref, Some(outName), ctx).flatMap {
           case ValueWithContext(out, newCtx) =>
             interpretNext(next, newCtx.withVariable(outName, out))
         }
@@ -177,10 +177,10 @@ class Interpreter private(listeners: Seq[ProcessListener], expressionEvaluator: 
     }
   }
 
-  private def invoke(ref: ServiceRef, ctx: Context)
+  private def invoke(ref: ServiceRef, outputVariableNameOpt: Option[String], ctx: Context)
                     (implicit executionContext: ExecutionContext, metaData: MetaData, node: Node): Future[ValueWithContext[Any]] = {
     expressionEvaluator.evaluateParameters(ref.parameters, ctx).flatMap { case (newCtx, preparedParams) =>
-      val resultFuture = ref.invoker.invoke(preparedParams, NodeContext(ctx.id, node.id, ref.id))
+      val resultFuture = ref.invoker.invoke(preparedParams, NodeContext(ctx.id, node.id, ref.id, outputVariableNameOpt))
       resultFuture.onComplete { result =>
         //TODO: what about implicit??
         listeners.foreach(_.serviceInvoked(node.id, ref.id, ctx, metaData, preparedParams, result))

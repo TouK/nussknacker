@@ -183,12 +183,12 @@ object TestUtils {
 
   def prepareServiceWithEnabledInvocationCollector(runId: TestRunId, service: ObjectWithMethodDef): ObjectWithMethodDef = {
     new ObjectWithMethodDef(service.obj, service.methodDef, service.objectDefinition) {
-      override def invokeMethod(parameterCreator: String => Option[AnyRef], additional: Seq[AnyRef]): Any = {
+      override def invokeMethod(parameterCreator: String => Option[AnyRef], outputVariableNameOpt: Option[String], additional: Seq[AnyRef]): Any = {
         val newAdditional = additional.map {
           case c: ServiceInvocationCollector => c.enable(runId)
           case a => a
         }
-        service.invokeMethod(parameterCreator, newAdditional)
+        service.invokeMethod(parameterCreator, outputVariableNameOpt, newAdditional)
       }
     }
   }

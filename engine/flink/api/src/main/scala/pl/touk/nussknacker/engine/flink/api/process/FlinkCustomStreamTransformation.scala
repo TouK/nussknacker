@@ -27,6 +27,7 @@ object FlinkCustomStreamTransformation {
 
 trait FlinkCustomStreamTransformation {
 
+  // TODO: To be consistent with ContextTransformation should return Context
   def transform(start: DataStream[Context], context: FlinkCustomNodeContext): DataStream[ValueWithContext[Any]]
 
 }
@@ -34,10 +35,7 @@ trait FlinkCustomStreamTransformation {
 
 /**
   * Join functionality is not complete, many things are not implemented yet
-  * - no way of declaring edge id
-  * - there should be some possibility of adding expressions/configurations on edges to join
-  * - output of join is Unknown - probably it will depend on inputs...
-  * - no way of declaring what variables will be passed from join (e.g. union has different semantic than join?)
+  * - validation context passed to both BranchExpression and JoinContextTransformationDef should be taken from incoming branches
   * - cannot test&generate test data from other branches
   *
   * Additionally, a lot of refactoring should be done
@@ -48,7 +46,7 @@ trait FlinkCustomStreamTransformation {
   */
 trait FlinkCustomJoinTransformation {
 
-
+  // TODO: To be consistent with ContextTransformation should return Context
   def transform(inputs: Map[String, DataStream[Context]], context: FlinkCustomNodeContext): DataStream[ValueWithContext[Any]]
 
 }

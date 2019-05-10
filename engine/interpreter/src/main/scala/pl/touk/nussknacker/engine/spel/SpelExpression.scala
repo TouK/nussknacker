@@ -17,10 +17,11 @@ import org.springframework.expression.spel.support.{ReflectiveMethodExecutor, Re
 import org.springframework.expression.spel.{SpelCompilerMode, SpelEvaluationException, SpelParserConfiguration, standard}
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.lazyy.{ContextWithLazyValuesProvider, LazyContext, LazyValuesProvider}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.typed.{ClazzRef, TypedMap}
-import pl.touk.nussknacker.engine.compile.ValidationContext
+import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedExpression
 import pl.touk.nussknacker.engine.compiledgraph.expression.{ExpressionParseError, ExpressionParser, ValueWithLazyContext}
 import pl.touk.nussknacker.engine.functionUtils.CollectionUtils
 
@@ -166,11 +167,11 @@ class SpelExpressionParser(expressionFunctions: Map[String, Method], expressionI
     }
   }
 
-  override def parse(original: String, ctx: ValidationContext, expectedType: TypingResult): Validated[NonEmptyList[ExpressionParseError], (TypingResult, compiledgraph.expression.Expression)] = {
+  override def parse(original: String, ctx: ValidationContext, expectedType: TypingResult): Validated[NonEmptyList[ExpressionParseError], TypedExpression] = {
     Validated.catchNonFatal(parser.parseExpression(original)).leftMap(ex => NonEmptyList.of(ExpressionParseError(ex.getMessage))).andThen { parsed =>
       validator.validate(parsed, ctx, expectedType).map((_, parsed))
     }.map { case (typingResult, parsed) =>
-      (typingResult, expression(ParsedSpelExpression(original, () => parser.parseExpression(original), parsed), expectedType))
+      TypedExpression(expression(ParsedSpelExpression(original, () => parser.parseExpression(original), parsed), expectedType), typingResult)
     }
   }
 

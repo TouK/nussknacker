@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
-import pl.touk.nussknacker.engine.graph.source.{JoinRef, SourceRef}
+import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.sampleResolver
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
@@ -111,10 +111,10 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
 
     val process = DisplayableProcess("t1", ProcessProperties(StreamMetaData(Some(2), Some(false)), ExceptionHandlerRef(List()), subprocessVersions = Map.empty),
       List(
-        Processor("e", ServiceRef("ref", List())),
-        Join("j1", JoinRef("joinRef", List()), None),
-        Source("s2", SourceRef("sourceRef", List())),
-        Source("s1", SourceRef("sourceRef", List()))
+        Processor("e", ServiceRef("ref", List.empty)),
+        Join("j1", None, "joinRef", List.empty, List.empty),
+        Source("s2", SourceRef("sourceRef", List.empty)),
+        Source("s1", SourceRef("sourceRef", List.empty))
       ),
       List(
         Edge("s1", "j1", None),

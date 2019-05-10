@@ -210,6 +210,21 @@ class CustomNodeProcessSpec extends FunSuite with Matchers {
 
   }
 
+  test("should be able to use ContextTransformation API") {
+    val process = EspProcessBuilder.id("proc1")
+      .exceptionHandler()
+      .source("id", "input")
+      .buildSimpleVariable("testVar", "beforeNode", "'testBeforeNode'")
+      .customNodeNoOutput("custom", "customFilterContextTransformation", "input" -> "#input.id", "stringVal" -> "'terefere'")
+      .processorEnd("proc2", "logService", "all" -> "#input.id")
+
+    val data = List(SimpleRecord("terefere", 3, "a", new Date(0)), SimpleRecord("kuku", 3, "b", new Date(0)))
+
+    processInvoker.invoke(process, data)
+
+    MockService.data shouldBe List("terefere")
+  }
+
   test("not allow input after custom node clearing context") {
     val process = EspProcessBuilder.id("proc1")
       .exceptionHandler()

@@ -3,12 +3,12 @@ package pl.touk.nussknacker.engine.graph
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
+import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
-import pl.touk.nussknacker.engine.graph.source.{JoinRef, SourceRef}
+import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 
@@ -66,6 +66,12 @@ object node {
     def isDisabled: Option[Boolean]
   }
 
+  sealed trait CustomNodeData extends NodeData with WithComponent {
+    def nodeType: String
+    def parameters: List[Parameter]
+    def outputVar: Option[String]
+  }
+
   trait WithComponent {
     def componentId: String
   }
@@ -78,17 +84,15 @@ object node {
 
   sealed trait SourceNodeData extends StartingNodeData
 
-  sealed trait WithParameters extends NodeData {
-    def parameters: List[Parameter]
-  }
-
   case class Source(id: String, ref: SourceRef, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends SourceNodeData with WithComponent {
     override val componentId = ref.typ
   }
 
-  case class Join(id: String, ref: JoinRef, outputVar: Option[String], additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends StartingNodeData with WithComponent with WithParameters {
-    override val componentId = ref.typ
-    override def parameters: List[Parameter] = ref.parameters
+  // TODO JOIN: move branchParameters to BranchEnd
+  case class Join(id: String, outputVar: Option[String], nodeType: String,
+                  parameters: List[Parameter], branchParameters: List[BranchParameters],
+                  additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends StartingNodeData with CustomNodeData {
+    override val componentId = nodeType
   }
 
   case class Filter(id: String, expression: Expression, isDisabled: Option[Boolean] = None,
@@ -104,8 +108,9 @@ object node {
     override val componentId = service.id
   }
 
-  case class CustomNode(id: String, outputVar: Option[String], nodeType: String, parameters: List[Parameter], additionalFields: Option[UserDefinedAdditionalNodeFields] = None)
-    extends OneOutputSubsequentNodeData with WithComponent with WithParameters {
+  case class CustomNode(id: String, outputVar: Option[String], nodeType: String, parameters: List[Parameter],
+                        additionalFields: Option[UserDefinedAdditionalNodeFields] = None)
+    extends OneOutputSubsequentNodeData with CustomNodeData {
     override val componentId = nodeType
   }
 
