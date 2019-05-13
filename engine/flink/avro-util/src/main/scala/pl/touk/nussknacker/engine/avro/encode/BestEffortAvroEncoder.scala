@@ -21,10 +21,6 @@ object BestEffortAvroEncoder {
 
   type WithError[T] = ValidatedNel[String, T]
 
-  private val syntax = ValidatedSyntax[String]
-
-  import syntax.A
-
   // It is quite similar logic to GenericDatumReader.readWithConversion but instead of reading from decoder, it read directly from value
   def encode(value: Any, schema: Schema): WithError[Any] = {
     (schema.getType, value) match {

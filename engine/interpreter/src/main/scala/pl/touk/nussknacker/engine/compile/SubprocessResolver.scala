@@ -19,42 +19,39 @@ case class SubprocessResolver(subprocesses: Map[String, CanonicalProcess]) {
 
   type CompilationValid[A] = ValidatedNel[ProcessCompilationError, A]
 
-  private val syntax = ValidatedSyntax[ProcessCompilationError]
-
-  import syntax.A
-
   def resolve(canonicalProcess: CanonicalProcess): ValidatedNel[ProcessCompilationError, CanonicalProcess] =
     resolveCanonical(List())(canonicalProcess.nodes).map(res => canonicalProcess.copy(nodes = res))
 
   private def resolveCanonical(idPrefix: List[String]) :List[CanonicalNode] => ValidatedNel[ProcessCompilationError, List[CanonicalNode]] = {
     iterateOverCanonicals({
-      case canonicalnode.Subprocess(SubprocessInput(dataId, _, _, Some(true)), nextNodes) if nextNodes.values.size > 1=>
+      case canonicalnode.Subprocess(SubprocessInput(dataId, _, _, Some(true), _), nextNodes) if nextNodes.values.size > 1=>
         Invalid(NonEmptyList.of(DisablingManyOutputsSubprocess(dataId, nextNodes.keySet)))
-      case canonicalnode.Subprocess(SubprocessInput(dataId, _, _, Some(true)), nextNodes) if nextNodes.values.isEmpty =>
+      case canonicalnode.Subprocess(SubprocessInput(dataId, _, _, Some(true), _), nextNodes) if nextNodes.values.isEmpty =>
         Invalid(NonEmptyList.of(DisablingNoOutputsSubprocess(dataId)))
-      case canonicalnode.Subprocess(data@SubprocessInput(dataId, _, _, Some(true)), nextNodesMap) =>
+      case canonicalnode.Subprocess(data@SubprocessInput(dataId, _, _, Some(true), _), nextNodesMap) =>
         //TODO: disabling nodes should be in one place
         val output = nextNodesMap.keys.head
         resolveCanonical(idPrefix)(nextNodesMap.values.head).map { resolvedNexts =>
           val outputId = s"${NodeDataFun.nodeIdPrefix(idPrefix)(data).id}-$output"
           FlatNode(NodeDataFun.nodeIdPrefix(idPrefix)(data))::FlatNode(SubprocessOutput(outputId, output, None))::resolvedNexts
         }
-      case canonicalnode.Subprocess(data@SubprocessInput(dataId, _, _, isDisabled), nextNodes) =>
-        subprocesses.get(data.ref.id) match {
+      case canonicalnode.Subprocess(subprocessInput@SubprocessInput(dataId, _, _, isDisabled, _), nextNodes) =>
+        subprocesses.get(subprocessInput.ref.id) match {
           case Some(CanonicalProcess(MetaData(id, _, _, _, _), _, FlatNode(SubprocessInputDefinition(_, parameters, _))::nodes, additionalBranches)) =>
-            checkProcessParameters(data.ref, parameters.map(_.name), data.id).andThen { _ =>
+            checkProcessParameters(subprocessInput.ref, parameters.map(_.name), subprocessInput.id).andThen { _ =>
               val nextResolvedV = nextNodes.map { case (k, v) =>
                 resolveCanonical(idPrefix)(v).map((k, _))
               }.toList.sequence[CompilationValid, (String, List[CanonicalNode])].map(_.toMap)
-              val subResolvedV = resolveCanonical(idPrefix :+ data.id)(nodes)
-              A.map2(nextResolvedV, subResolvedV) { (nodeResolved, nextResolved) =>
+              val subResolvedV = resolveCanonical(idPrefix :+ subprocessInput.id)(nodes)
+
+              (nextResolvedV, subResolvedV).mapN { (nodeResolved, nextResolved) =>
                 replaceCanonicalList(nodeResolved)(nextResolved)
-              }.andThen(identity).map(replaced => FlatNode(NodeDataFun.nodeIdPrefix(idPrefix)(data)) :: replaced)
+              }.andThen(identity).map(replaced => FlatNode(NodeDataFun.nodeIdPrefix(idPrefix)(subprocessInput.copy(subprocessParams = Some(parameters)))) :: replaced)
             }
           case Some(_) =>
-            Invalid(NonEmptyList.of(InvalidSubprocess(id = data.ref.id, nodeId = data.id)))
+            Invalid(NonEmptyList.of(InvalidSubprocess(id = subprocessInput.ref.id, nodeId = subprocessInput.id)))
           case _ =>
-            Invalid(NonEmptyList.of(UnknownSubprocess(id = data.ref.id, nodeId = data.id)))
+            Invalid(NonEmptyList.of(UnknownSubprocess(id = subprocessInput.ref.id, nodeId = subprocessInput.id)))
         }
     }, NodeDataFun.nodeIdPrefix(idPrefix))
   }
@@ -88,8 +85,10 @@ case class SubprocessResolver(subprocesses: Map[String, CanonicalProcess]) {
           nexts.map(listFun).sequence[CompilationValid, List[CanonicalNode]]
             .map(canonicalnode.SplitNode(dataAction(data), _)).map(List(_))
         case canonicalnode.SwitchNode(data, nexts, defaultNext) =>
-          A.map2(nexts.map(cas => listFun(cas.nodes).map(replaced => canonicalnode.Case(cas.expression, replaced))).sequence[CompilationValid, canonicalnode.Case],
-            listFun(defaultNext)) { (resolvedCases, resolvedDefault) =>
+          (
+            nexts.map(cas => listFun(cas.nodes).map(replaced => canonicalnode.Case(cas.expression, replaced))).sequence[CompilationValid, canonicalnode.Case],
+            listFun(defaultNext)
+          ).mapN { (resolvedCases, resolvedDefault) =>
             List(canonicalnode.SwitchNode(dataAction(data), resolvedCases, resolvedDefault))
           }
         case canonicalnode.Subprocess(data, nodes) =>
