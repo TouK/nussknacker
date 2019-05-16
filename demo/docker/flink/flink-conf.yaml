@@ -25,31 +25,27 @@
 # The JobManager process will use this hostname to bind the listening servers to.
 # The TaskManagers will try to connect to the JobManager on that host.
 
-jobmanager.rpc.address: jobmanager
+env.java.opts: "-Dflink.local.hostname=taskmanager"
 
 taskmanager.hostname: taskmanager
 
-env.java.opts: "-Dflink.local.hostname=taskmanager"
-
-# The port where the JobManager's main actor system listens for messages.
-
-jobmanager.rpc.port: 6123
-
-
-# The heap size for the JobManager JVM
-
-jobmanager.heap.mb: 256
-
-
 # The heap size for the TaskManager JVM
 
-taskmanager.heap.mb: 512
-
+taskmanager.heap.size: 512
 
 # The number of task slots that each TaskManager offers. Each slot runs one parallel pipeline.
 
 taskmanager.numberOfTaskSlots: 40
 
+jobmanager.rpc.address: jobmanager
+
+# The port where the JobManager's main actor system listens for messages.
+
+jobmanager.rpc.port: 6123
+
+# The heap size for the JobManager JVM
+
+jobmanager.heap.size: 256
 
 # The parallelism used for programs that did not specify and other parallelism.
 
@@ -65,21 +61,22 @@ parallelism.default: 8
 
 jobmanager.web.port: 8081
 
-
 # The port under which the standalone web client
 # (for job upload and submit) listens.
 
 webclient.port: 6080
 
+rest.address: jobmanager
+
 high-availability: zookeeper
 high-availability.zookeeper.quorum: zookeeper:2181
 high-availability.zookeeper.path.root: /flinkPath
-high-availability.zookeeper.path.namespace: /flinkDemo
+high-availability.cluster-id: flinkDemo
 high-availability.storageDir: file:///opt/flinkData/storage
 
 state.backend: filesystem
-state.backend.fs.checkpointdir: file:///opt/flinkData/checkpoints
-state.savepoints.dir:  file:///opt/flinkData/savepoints
+state.checkpoints.dir: file:///opt/flinkData/checkpoints
+state.savepoints.dir: file:///opt/flinkData/savepoints
 
 metrics.reporters: graphite_reporter
 metrics.reporter.graphite_reporter.class: org.apache.flink.metrics.graphite.GraphiteReporter
@@ -94,9 +91,10 @@ metrics.scope.tm.job: demo.<host>.taskmanagerJob.<tm_id>.<job_name>
 metrics.scope.task: demo.<host>.taskmanagerTask.<tm_id>.<job_name>.<task_name>.<subtask_index>
 metrics.scope.operator: demo.<host>.taskmanagerTask.<tm_id>.<job_name>.<operator_name>.<subtask_index>
 
+classloader.resolve-order: parent-first
 akka.framesize: 209715200b
 jobmanager.web.history: 50
-classloader.resolve-order: parent-first
 
-blob.server.port: 6124
+taskmanager.data.port: 6126
 query.server.port: 6125
+blob.server.port: 6124

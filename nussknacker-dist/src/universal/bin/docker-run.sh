@@ -20,4 +20,3 @@ exec java -Dlogback.configurationFile="$LOG_FILE" \
           -Dconfig.file="$CONFIG_FILE" \
           -cp "$LIB_DIR/*" \
           "$APPLICATION_APP" "$APPLICATION_PORT"
-`

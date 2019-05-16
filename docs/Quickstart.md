@@ -9,7 +9,6 @@ To run this quickstart you have to
 ## Running
 
 * Checkout Nussknacker [project](https://github.com/touk/nussknacker) and enter demo/docker folder
-* Run ./downloadSampleAssembly.sh script
 * Run `docker-compose up` and wait a while until all components start
     * In case of containers restart please use `docker-compose stop` instead of `docker-compose kill` in order to avoid Kafka startup issues.
 
@@ -96,11 +95,11 @@ The quickstart starts several Docker containers. Let's look at them in detail:
 ## Switch application version
 To switch Nussknacker version 
 * set variable `NUSSKNACKER_VERSION` in `./env`
-* download `assemblu-code.jar` using `./downloadSampleAssembly.sh`
+* if you want change model download `assemblu-code.jar` using `./downloadSampleAssembly.sh`
 * rebuild docker image by `docker-compose build --no-cache app`
 
-##  Using own version
-If you have modified Nussknacker sources you have to rebuild docker image 
-by `./buildDockerImageFromSources.sh`. 
-If you have modified example module you have to regenerate `code-assembly.jar` 
-using `./buildSampleAssembly.sh`.
+<!--##  Using own version-->
+<!--If you have modified Nussknacker sources you have to rebuild docker image -->
+<!--by `./buildDockerImageFromSources.sh`. -->
+<!--If you have modified example module you have to regenerate `code-assembly.jar` -->
+<!--using `./buildSampleAssembly.sh`. -->

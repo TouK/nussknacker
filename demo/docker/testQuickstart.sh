@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
-echo "Downloading sample"
-./downloadSampleAssembly.sh
-
 echo "Starting containers"
+
 #just in case
 docker-compose kill
 docker-compose rm -f -v

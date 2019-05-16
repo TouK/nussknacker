@@ -44,7 +44,8 @@ stages:
 
 jobs:
   include:
-    - name: "Unit tests"
+    - stage: tests
+      name: "Unit tests"
       script: sbt ++$TRAVIS_SCALA_VERSION clean test
     - name: "Management tests"
       script: sbt ++$TRAVIS_SCALA_VERSION clean management/it:test
@@ -52,6 +53,8 @@ jobs:
       script: sbt ++$TRAVIS_SCALA_VERSION clean engineStandalone/it:test
     - name: "UI slow tests"
       script: sbt ++$TRAVIS_SCALA_VERSION clean assemblySamples ui/slow:test
+    - name: "Tests docker demo"
+      script: cd ./demo/docker && ./testQuickstart.sh
     - stage: releases
       name: "Release sonatype packages"
       script: ./ciBuild.sh "${BUILD_VERSION}-SNAPSHOT" ${NEXUS_PASSWORD} ${NEXUS_URL} ${NEXUS_USER} true

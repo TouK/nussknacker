@@ -6,6 +6,7 @@ dockerPackageName=${DOCKER_PACKAGENAME-"nussknacker"}
 dockerUpdateLatest=${DOCKER_UPDATE_LATEST-"true"}
 dockerUsername=${DOCKER_PACKAGE_USERNAME-"touk"}
 dockerPort=${DOCKER_PORT-"8080"}
+dockerPublishType=${DOCKER_PUBLISH_TYPE-"publish"}
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -24,13 +25,14 @@ while [[ $# -gt 0 ]]; do
   --docker-package-name=*)
       dockerPackageName="${1#*=}"
       ;;
+  --docker-publish-type=*)
+      dockerPublishType="${1#*=}"
+      ;;
   --docker-update-latest=*)
       dockerUpdateLatest="${1#*=}"
       ;;
     *)
-      printf "***************************\n"
-      printf "* Error: Invalid argument.*\n"
-      printf "***************************\n"
+      printf " Error: Invalid argument: $1."
       exit 1
   esac
   shift
@@ -41,7 +43,9 @@ if [[ -z "$dockerTagName" ]]; then
 fi
 
 if [[ -n "$version" ]]; then
-    echo "Prepare docker build for version: $version, tag: $dockerTagName, port: $dockerPort, user: $dockerUsername, package: $dockerPackageName, update: $dockerUpdateLatest."
+    echo "Prepare docker build for version: $version, tag: $dockerTagName, port: $dockerPort," \
+         "user: $dockerUsername, package: $dockerPackageName, update: $dockerUpdateLatest," \
+         "publishType: $dockerPublishType."
 
     ./sbtwrapper -DdockerUserName=${dockerUsername} \
                  -DdockerPackageName${dockerPackageName} \
@@ -49,7 +53,7 @@ if [[ -n "$version" ]]; then
                  -DdockerUpLatest=${dockerUpdateLatest} \
                  -DdockerTagName=${dockerTagName} \
                  "set version in ThisBuild := \"$version\"" \
-                 dist/docker:publish
+                 clean dist/docker:"$dockerPublishType"
 else
     echo "Missing version param!"
 fi

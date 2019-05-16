@@ -1,15 +1,10 @@
-version: '2.1'
+version: '3.7'
 
 services:
-
   app:
-    build:
-      context: ./app
-      args:
-        #TODO: consider sth like:
-        #curl -s https://api.github.com/repos/touk/nussknacker/releases/latest | grep tag_name | awk '{ print $2 }' | sed -e 's/"//g' -e 's/,//g'
-        #to retrieve latest version
-        version: ${NUSSKNACKER_VERSION}
+    image: touk/nussknacker:${NUSSKNACKER_VERSION}
+    entrypoint: ["/opt/nussknacker/bin/wait-for-it.sh"]
+    command: ["-h", "taskmanager", "-p", "6126", "-t", "60", "--", "/opt/nussknacker/bin/docker-run.sh"]
     links:
       - "jobmanager:jobmanager"
       - "kafka:kafka"
@@ -17,12 +12,13 @@ services:
       - "zookeeper:zookeeper"
     expose:
       - "8080"
+    environment:
+      - NUSSKNACKER_CONFIG_FILE=/opt/nussknacker/conf/docker-compose-application.conf
     volumes:
-      - ./app/conf:/conf
-      - ${CODE_LOCATION}:/code-assembly.jar
       - sharedStorage:/opt/flinkData
+
   jobmanager:
-    build: ./flink
+    image: touk/flink:2.11-1.7.2
     expose:
       - "6123"
       - "8081"
@@ -39,7 +35,7 @@ services:
       - sharedStorage:/opt/flinkData
 
   taskmanager:
-    build: ./flink
+    image: touk/flink:2.11-1.7.2
     depends_on:
       - jobmanager
     command: taskmanager
@@ -59,11 +55,12 @@ services:
         hard: 70000
 
   zookeeper:
-    image: wurstmeister/zookeeper:3.4.6
+    image: touk/zookeeper:3.4.14
     expose:
       - "2181"
+S
   kafka:
-    image: wurstmeister/kafka:0.10.2.1
+    image: wurstmeister/kafka:2.12-2.2.0
     expose:
       - "9092"
     environment:

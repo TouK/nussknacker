@@ -1,7 +1,8 @@
 import com.typesafe.sbt.packager.SettingsHelper
+import com.typesafe.sbt.packager.docker.Cmd
 import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport.dockerUsername
-import sbt._
 import sbt.Keys._
+import sbt._
 import sbtassembly.AssemblyPlugin.autoImport.assembly
 import sbtassembly.MergeStrategy
 
@@ -139,9 +140,13 @@ lazy val dockerSettings = {
   val workingDir = "/opt/nussknacker"
 
   Seq(
-    dockerEntrypoint := Seq(s"$workingDir/bin/docker-run.sh", s"$dockerPort"),
+    dockerEntrypoint := Seq(s"$workingDir/bin/docker-run.sh", dockerPort.toString),
     dockerExposedPorts := Seq(dockerPort),
-    dockerExposedVolumes := Seq(s"$workingDir/logs", s"$workingDir/db"),
+    dockerExposedVolumes := Seq(
+      "/opt/flinkData/savepoints",
+      s"$workingDir/logs",
+      s"$workingDir/db"
+    ),
     defaultLinuxInstallLocation in Docker := workingDir,
     dockerBaseImage := "openjdk:8-jdk",
     dockerUsername := dockerUserName,
