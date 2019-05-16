@@ -2,7 +2,7 @@ This is part of Nussknacker's [quickstart](https://touk.github.io/nussknacker/Qu
 
 Images
 =====
-Docker images is build on each commit. Available nusskancker images you can find at: https://hub.docker.com/r/touk/nussknacker/tags. 
+Docker images are published on each commit. Available nusskancker images you can find at: https://hub.docker.com/r/touk/nussknacker/tags. 
 Default image tag is: demo-latest.  
 
 Demo version

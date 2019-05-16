@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-#   Use this script to test if a given TCP host/port are available
+
+# Wait for it: https://github.com/vishnubob/wait-for-it. Simple bash script for waiting as service will up.
+# Use this script to test if a given TCP host/port are available.
 
 WAITFORIT_cmdname=${0##*/}
 

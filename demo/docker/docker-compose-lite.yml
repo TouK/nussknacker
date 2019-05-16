@@ -2,7 +2,7 @@ version: '3.7'
 
 services:
   app:
-    image: touk/nussknacker:${NUSSKNACKER_VERSION}
+    image: ${NUSSKNACKER_IMAGE}:${NUSSKNACKER_VERSION}
     entrypoint: ["/opt/nussknacker/bin/wait-for-it.sh"]
     command: ["-h", "taskmanager", "-p", "6126", "-t", "60", "--", "/opt/nussknacker/bin/docker-run.sh"]
     links:

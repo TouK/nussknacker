@@ -95,11 +95,20 @@ The quickstart starts several Docker containers. Let's look at them in detail:
 ## Switch application version
 To switch Nussknacker version 
 * set variable `NUSSKNACKER_VERSION` in `./env`
-* if you want change model download `assemblu-code.jar` using `./downloadSampleAssembly.sh`
 * rebuild docker image by `docker-compose build --no-cache app`
 
-<!--##  Using own version-->
-<!--If you have modified Nussknacker sources you have to rebuild docker image -->
-<!--by `./buildDockerImageFromSources.sh`. -->
-<!--If you have modified example module you have to regenerate `code-assembly.jar` -->
-<!--using `./buildSampleAssembly.sh`. -->
+##  Using own version
+If you have modified Nussknacker sources you have to rebuild docker image by:
+
+```
+./ciBuildDocker.sh --version=(app_version) \
+                   --docker-tag=(tagName) \
+                   --docker-user-name=(docker repository user name - default: touk) \
+                   --docker-package-name=(docker repository name - default: nussknacker) \ 
+                   --docker-publish-type=(stage, publishLocal, publish - default: publish) \
+                   --docker-update-latest=(update latest docker tag - default: true
+```
+
+When you have build new image, then you should change .env variables: NUSSKNACKER_IMAGE, NUSSKNACKER_VERSION.
+
+If you want to publish image, please sign in to docker registry before run this scrip.
