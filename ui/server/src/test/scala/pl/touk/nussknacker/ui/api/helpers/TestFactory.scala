@@ -6,6 +6,7 @@ import com.typesafe.config.ConfigFactory
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessDeploymentData, ProcessState, RunningState}
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.management.{FlinkProcessManager, FlinkProcessManagerProvider}
 import pl.touk.nussknacker.ui.api.RouteWithUser
 import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
@@ -27,7 +28,7 @@ object TestFactory extends TestPermissions{
   val testCategory:CategorizedPermission= Map(testCategoryName -> Set.empty)
   val testEnvironment = "test"
 
-  val sampleSubprocessRepository = SampleSubprocessRepository
+  val sampleSubprocessRepository = new SampleSubprocessRepository(Set(ProcessTestData.sampleSubprocess))
   val sampleResolver = new SubprocessResolver(sampleSubprocessRepository)
 
   val processValidation = new ProcessValidation(
@@ -118,11 +119,8 @@ object TestFactory extends TestPermissions{
     override protected def runProgram(processName: ProcessName, mainClass: String, args: List[String], savepointPath: Option[String]): Future[Unit] = ???
   }
 
-  object SampleSubprocessRepository extends SubprocessRepository {
-    val subprocesses = Set(ProcessTestData.sampleSubprocess)
-
-    override def loadSubprocesses(versions: Map[String, Long]): Set[SubprocessDetails] = {
+  class SampleSubprocessRepository(subprocesses: Set[CanonicalProcess]) extends SubprocessRepository {
+    override def loadSubprocesses(versions: Map[String, Long]): Set[SubprocessDetails] =
       subprocesses.map(c => SubprocessDetails(c, testCategoryName))
-    }
   }
 }

@@ -14,7 +14,7 @@ class RawField extends React.Component {
     const opacity = this.props.isDragging ? 0 : 1;
 
     return this.props.connectDropTarget(this.props.connectDragSource(
-      <div className="node-row" key={field.name} style={{opacity}}>
+      <div className="node-row" style={{opacity}}>
         <img src={dragHandleIcon} />
         <div className={"node-value fieldName" + markedClass}>
           <input className="node-input" type="text" value={field.name} placeholder="Field name"
@@ -106,8 +106,13 @@ export default class Fields extends React.Component {
   constructor(props) {
     super(props)
 
+    const fieldsWithId = _.map(_.cloneDeep(this.props.fields), (elem, idx) => {
+      elem.id = idx;
+      return elem;
+    });
+
     this.state = {
-      fields: this.props.fields
+      fields: fieldsWithId
     }
   }
 
@@ -123,7 +128,7 @@ export default class Fields extends React.Component {
     return (<div className="fieldsControl">
       {
         this.state.fields.map((field, index) =>
-          <Field key={field.name}
+          <Field key={field.id}
                  field={field}
                  index={index}
                  changeName={this.changeName.bind(this)}
@@ -149,8 +154,10 @@ export default class Fields extends React.Component {
 
   changeValue(index, name, value) {
     this.edit(previous => {
-      previous[index] = value
-      previous[index].name = name
+      previous[index] = {
+        ...previous[index],
+        ...value
+      };
       return previous
     })
 
@@ -158,7 +165,12 @@ export default class Fields extends React.Component {
 
   addField() {
     this.edit(previous => {
-      previous.push(this.props.newValue)
+      const newValue = _.cloneDeep(this.props.newValue);
+      const fieldWithMaxId = _.maxBy(this.state.fields, field => field.id);
+
+      newValue.id = fieldWithMaxId ? fieldWithMaxId.id + 1 : 0;
+      previous.push(newValue);
+
       return previous
     })
   }

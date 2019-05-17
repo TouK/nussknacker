@@ -176,20 +176,23 @@ export default {
   },
 
   deploy(processId, comment) {
-    return fetch(API_URL + '/processManagement/deploy/' + processId,
-        {
-              method: 'POST',
-              body: comment,
-              credentials: 'include'
-        }
-      ).then(() => {
-        this.addInfo(`Process ${processId} was deployed`)
-        return { isSuccess: true }
-      })
-      .catch((error) => {
-        this.addError(`Failed to deploy ${processId}`, error, true)
-        return { isSuccess: false }
-      });
+    return fetch(API_URL + '/processManagement/deploy/' + processId, {
+      method: 'POST',
+      body: comment,
+      credentials: 'include'
+    }).then(response => {
+      if (!response.ok) {
+        throw Error(response.statusText)
+      } else {
+        return response
+      }
+    }).then(() => {
+      this.addInfo(`Process ${processId} was deployed`)
+      return { isSuccess: true }
+    }).catch((error) => {
+      this.addError(`Failed to deploy ${processId}`, error, true)
+      return { isSuccess: false }
+    });
   },
 //TODO: separate reusable invocation.
   invokeService(processingType, serviceName, parameters) {

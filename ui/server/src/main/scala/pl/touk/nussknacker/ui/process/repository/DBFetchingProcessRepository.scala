@@ -216,7 +216,7 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
     : Map[String, LocalDateTime] = {
 
     val allSubprocesses = process.nodes.collect {
-      case SubprocessInput(_, SubprocessRef(subprocessId, _), _,_) => subprocessId
+      case SubprocessInput(_, SubprocessRef(subprocessId, _), _,_, _) => subprocessId
     }.toSet
     val floatingVersionSubprocesses = allSubprocesses -- process.metaData.subprocessVersions.keySet
     floatingVersionSubprocesses.flatMap(id => subprocessesVersions.get(ProcessName(id)).map((id, _))).toMap

@@ -331,7 +331,7 @@ object ProcessValidator {
     val expressionCompiler = ExpressionCompiler.withoutOptimization(loader, definitions.expressionConfig)
 
     val sub = new PartSubGraphCompiler(
-      expressionCompiler, definitions.expressionConfig, definitions.services)
+      loader, expressionCompiler, definitions.expressionConfig, definitions.services)
 
     new ProcessCompiler(loader, sub, definitions)
   }
