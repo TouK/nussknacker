@@ -102,37 +102,47 @@ class Processes extends PeriodicallyReloadingComponent {
         <HealthCheck/>
         <div id="process-top-bar">
           <div id="table-filter" className="input-group">
-            <input type="text" className="form-control" aria-describedby="basic-addon1"
-                   value={this.state.filterVal} onChange={e => this.handleChange(e)}/>
+            <input type="text"
+                   className="form-control"
+                   aria-describedby="basic-addon1"
+                   value={this.state.filterVal}
+                   onChange={e => this.handleChange(e)}
+            />
             <span className="input-group-addon" id="basic-addon1">
               <img id="search-icon" src={filterIcon} />
             </span>
           </div>
-          {this.props.loggedUser.isWriter ? (
-          <div id="process-add-button" className="big-blue-button input-group " role="button"
-               onClick={() => this.setState({showAddProcess : true})}>CREATE NEW PROCESS
-                             <img id="add-icon" src={createProcessIcon} />
-                           </div>) : null
+          {
+            this.props.loggedUser.isWriter ? (
+              <div id="process-add-button"
+                   className="big-blue-button input-group "
+                   role="button"
+                   onClick={() => this.setState({showAddProcess : true})}
+              >
+                CREATE NEW PROCESS
+                <img id="add-icon" src={createProcessIcon} />
+              </div>
+            ) : null
           }
         </div>
+
         <AddProcessDialog onClose={() => this.setState({showAddProcess : false})} isOpen={this.state.showAddProcess} isSubprocess={false}/>
         <LoaderSpinner show={this.state.showLoader}/>
         <Table className="esp-table"
                onSort={sort => this.setState({sort: sort})}
                onPageChange={currentPage => this.setState({currentPage: currentPage})}
-           noDataText="No matching records found."
-           hidden={this.state.showLoader}
-           currentPage={this.state.currentPage}
-           defaultSort={this.state.sort}
-           itemsPerPage={10}
-           pageButtonLimit={5}
-           previousPageLabel="<"
-           nextPageLabel=">"
-           sortable={['name', 'category', 'modifyDate']}
-           filterable={['name', 'category']}
-           hideFilterInput
-           filterBy={this.getFilterValue()}
-
+               noDataText="No matching records found."
+               hidden={this.state.showLoader}
+               currentPage={this.state.currentPage}
+               defaultSort={this.state.sort}
+               itemsPerPage={10}
+               pageButtonLimit={5}
+               previousPageLabel="<"
+               nextPageLabel=">"
+               sortable={['name', 'category', 'modifyDate']}
+               filterable={['name', 'category']}
+               hideFilterInput
+               filterBy={this.getFilterValue()}
         >
 
           <Thead>

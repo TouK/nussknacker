@@ -81,10 +81,14 @@ class SubProcesses extends React.Component {
             </span>
           </div>
           {this.props.loggedUser.isWriter ? (
-          <div id="process-add-button" className="big-blue-button input-group" role="button"
-               onClick={() => this.setState({showAddProcess : true})}>CREATE NEW SUBPROCESS
-                             <img id="add-icon" src={createProcessIcon} />
-                           </div>) : null
+            <div id="process-add-button"
+                 className="big-blue-button input-group"
+                 role="button"
+                 onClick={() => this.setState({showAddProcess : true})}
+            >
+              CREATE NEW SUBPROCESS
+              <img id="add-icon" src={createProcessIcon} />
+            </div>) : null
           }
         </div>
         <AddProcessDialog onClose={() => this.setState({showAddProcess : false})} isSubprocess={true} isOpen={this.state.showAddProcess} />
