@@ -53,7 +53,7 @@ if [[ -n "$version" ]]; then
                  -DdockerUpLatest=${dockerUpdateLatest} \
                  -DdockerTagName=${dockerTagName} \
                  "set version in ThisBuild := \"$version\"" \
-                 clean dist/docker:"$dockerPublishType"
+                 dist/docker:"$dockerPublishType"
 else
     echo "Missing version param!"
 fi

@@ -35,6 +35,7 @@ cache:
     - $HOME/.ivy2/cache
     - $HOME/.sbt/boot/
 
+# We don't allow releases from fork and corn type because of security: https://docs.travis-ci.com/user/pull-requests/#pull-requests-and-security-restrictions
 stages:
   - tests
   - name: releases

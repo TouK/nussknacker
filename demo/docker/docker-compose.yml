@@ -1,66 +1,26 @@
-version: '2.1'
+version: '3.7'
 
 services:
-  app:
-    image: ${NUSSKNACKER_IMAGE}:${NUSSKNACKER_VERSION}
-    entrypoint: ["/opt/nussknacker/bin/wait-for-it.sh"]
-    command: ["-h", "taskmanager", "-p", "6126", "-t", "60", "--", "/opt/nussknacker/bin/docker-run.sh"]
-    links:
-      - "jobmanager:jobmanager"
-      - "kafka:kafka"
-      - "grafana:grafana"
-      - "zookeeper:zookeeper"
+  influxdb:
+    container_name: nussknacker_influxdb
+    image: influxdb:${INFLUXDB_VERSION}
+    command: ["/runWithEspDb.sh"]
+    volumes:
+      - ./influxdb/influxdb.conf:/etc/influxdb/influxdb.conf
+      - nussknacker_storage_influxdb:/var/lib/influxdb/data
+      - ./influxdb/runWithEspDb.sh:/runWithEspDb.sh
     expose:
-      - "8080"
-    environment:
-      - NUSSKNACKER_CONFIG_FILE=/opt/nussknacker/conf/docker-compose-application.conf
-    volumes:
-      - sharedStorage:/opt/flinkData
-
-  jobmanager:
-    image: touk/flink:2.11-1.7.2
-    expose:
-      - "6123"
-      - "8081"
-    command: jobmanager
-    depends_on:
-      - zookeeper
-    environment:
-      - JOB_MANAGER_RPC_ADDRESS=jobmanager
-    links:
-      - "influxdb:influxdb"
-      - "zookeeper:zookeeper"
-    volumes:
-      - ./flink/flink-conf.yaml:/opt/flink/conf/flink-conf.yaml
-      - sharedStorage:/opt/flinkData/savepoints
-
-  taskmanager:
-    image: touk/flink:2.11-1.7.2
-    depends_on:
-      - jobmanager
-    command: taskmanager
-    links:
-      - "influxdb:influxdb"
-      - "jobmanager:jobmanager"
-      - "kafka:kafka"
-      - "zookeeper:zookeeper"
-    environment:
-      - JOB_MANAGER_RPC_ADDRESS=jobmanager
-    volumes:
-      - ./flink/flink-conf.yaml:/opt/flink/conf/flink-conf.yaml
-    ulimits:
-      nproc: 70000
-      nofile:
-        soft: 70000
-        hard: 70000
+      - "2003/udp"
 
   zookeeper:
-    image: touk/zookeeper:3.4.14
+    container_name: nussknacker_zookeeper
+    image: zookeeper:${ZOOKEEPER_VERSION}
     expose:
       - "2181"
 
   kafka:
-    image: wurstmeister/kafka:2.12-2.2.0
+    container_name: nussknacker_kafka
+    image: ${KAFKA_REPOSITORY}:${KAFKA_VERSION}
     expose:
       - "9092"
     environment:
@@ -69,10 +29,64 @@ services:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_HEAP_OPTS: -Xms128m -Xmx512m
     links:
-      - "zookeeper:zookeeper"
+      - zookeeper
+    depends_on:
+      - zookeeper
+
+  jobmanager:
+    container_name: nussknacker_jobmanager
+    image: flink:${FLINK_VERSION}
+    expose:
+      - "6123"
+      - "8081"
+    entrypoint: /flink-entrypoint.sh
+    command: jobmanager
+    depends_on:
+      - zookeeper
+      - kafka
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=jobmanager
+    links:
+      - influxdb
+      - zookeeper
+    volumes:
+      - ./flink/lib/flink-queryable-state-runtime_2.12-1.7.2.jar:/opt/flink/lib/flink-queryable-state-runtime_2.12-1.7.2.jar
+      - ./flink/lib/flink-metrics-graphite-1.7.2.jar:/opt/flink/lib/flink-metrics-graphite-1.7.2.jar
+      - ./flink/flink-conf.yaml:/opt/flink/conf/flink-conf.yaml
+      - ./flink/flink-entrypoint.sh:/flink-entrypoint.sh
+      - nussknacker_storage_jobmanager:/opt/flinkData/
+
+  taskmanager:
+    container_name: nussknacker_taskmanager
+    image: flink:${FLINK_VERSION}
+    entrypoint: /flink-entrypoint.sh
+    command: taskmanager
+    links:
+      - influxdb
+      - jobmanager
+      - kafka
+      - zookeeper
+    depends_on:
+      - zookeeper
+      - kafka
+      - jobmanager
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=jobmanager
+    volumes:
+      - ./flink/lib/flink-queryable-state-runtime_2.12-1.7.2.jar:/opt/flink/lib/flink-queryable-state-runtime_2.12-1.7.2.jar
+      - ./flink/lib/flink-metrics-graphite-1.7.2.jar:/opt/flink/lib/flink-metrics-graphite-1.7.2.jar
+      - ./flink/flink-conf.yaml:/opt/flink/conf/flink-conf.yaml
+      - ./flink/flink-entrypoint.sh:/flink-entrypoint.sh
+      - nussknacker_storage_taskmanager:/opt/flinkData/
+    ulimits:
+      nproc: 70000
+      nofile:
+        soft: 70000
+        hard: 70000
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:5.4.1
+    container_name: nussknacker_elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:${ELASTICSEARCH_VERSION}
     environment:
       ES_JAVA_OPTS: -Xms128m -Xmx512m
     volumes:
@@ -87,7 +101,8 @@ services:
         hard: 70000
 
   logstash:
-    image: docker.elastic.co/logstash/logstash:5.4.1
+    container_name: nussknacker_logstash
+    image: docker.elastic.co/logstash/logstash:${LOGSTASH_VERSION}
     links:
       - elasticsearch
       - kafka
@@ -101,7 +116,8 @@ services:
       - ./logstash/pipeline:/usr/share/logstash/pipeline
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:5.4.1
+    container_name: nussknacker_kibana
+    image: docker.elastic.co/kibana/kibana:${KIBANA_VERSION}
     expose:
       - "5601"
     links:
@@ -111,16 +127,8 @@ services:
     volumes:
       - ./kibana/config/:/usr/share/kibana/config
 
-  influxdb:
-    image: influxdb:1.1
-    command: ["/runWithEspDb.sh"]
-    volumes:
-      - ./influxdb/runWithEspDb.sh:/runWithEspDb.sh
-      - ./influxdb/influxdb.conf:/etc/influxdb/influxdb.conf
-    expose:
-      - "2003/udp"
-
   grafana:
+    container_name: nussknacker_grafana
     image: grafana/grafana:5.1.5
     entrypoint: ["/runWithFlinkEspBoard.sh"]
     volumes:
@@ -131,18 +139,56 @@ services:
     environment:
       - GF_AUTH_ANONYMOUS_ENABLED=true
       - GF_SERVER_ROOT_URL=%(protocol)s://%(domain)s:/grafana
+    depends_on:
+      - influxdb
+
+  app:
+    container_name: nussknacker_app
+    image: ${NUSSKNACKER_IMAGE}:${NUSSKNACKER_VERSION}
+    entrypoint: ["/opt/nussknacker/bin/wait-for-it.sh"]
+    command: ["-h", "taskmanager", "-p", "6126", "-t", "60", "--", "/opt/nussknacker/bin/docker-run.sh"]
+    links:
+      - taskmanager
+      - jobmanager
+      - kafka
+      - grafana
+      - zookeeper
+    depends_on:
+      - zookeeper
+      - jobmanager
+      - taskmanager
+    expose:
+      - "8080"
+    environment:
+      - NUSSKNACKER_CONFIG_FILE=/opt/nussknacker/conf/docker-compose-application.conf
+    volumes:
+      - nussknacker_storage_app:/opt/nussknacker/storage
 
   nginx:
+    container_name: nussknacker_nginx
     image: nginx
     ports:
       - "8081:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
-    links:
+    depends_on:
+      - zookeeper
+      - influxdb
+      - kafka
+      - jobmanager
+      - taskmanager
+      - elasticsearch
+      - logstash
       - kibana
       - grafana
       - app
-      - jobmanager
 
 volumes:
-  sharedStorage: {}
+
+  nussknacker_storage_taskmanager:
+
+  nussknacker_storage_jobmanager:
+
+  nussknacker_storage_influxdb:
+
+  nussknacker_storage_app:
