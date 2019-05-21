@@ -1,9 +1,8 @@
 import React, {Component} from "react";
 import {connect} from "react-redux";
-import {Panel, Tab, Tabs} from "react-bootstrap";
+import {Panel} from "react-bootstrap";
 import {Scrollbars} from 'react-custom-scrollbars';
 import {browserHistory} from "react-router";
-import Dropzone from "react-dropzone";
 import cn from "classnames";
 
 import ActionsUtils from "../../actions/ActionsUtils";
@@ -21,6 +20,7 @@ import '../../stylesheets/userPanel.styl';
 import Archive from "../../containers/Archive";
 import SpinnerWrapper from "../SpinnerWrapper";
 import PropTypes from 'prop-types';
+import Dropzone from 'react-dropzone'
 
 class UserRightPanel extends Component {
 
@@ -56,15 +56,23 @@ class UserRightPanel extends Component {
             {config.filter(panel => panel).map ((panel, panelIdx) => {
                 const visibleButtons = panel.buttons.filter(button => button.visible !== false)
                 return _.isEmpty(visibleButtons) ? null : (
-                  <Panel key={panelIdx} defaultExpanded header={panel.panelName}>
-                    {visibleButtons.map((panelButton, idx) => this.renderPanelButton(panelButton, idx))}
+                  <Panel key={panelIdx} defaultExpanded>
+                    <Panel.Heading><Panel.Title toggle>{panel.panelName}</Panel.Title></Panel.Heading>
+                    <Panel.Collapse>
+                      <Panel.Body>
+                        {visibleButtons.map((panelButton, idx) => this.renderPanelButton(panelButton, idx))}
+                      </Panel.Body>
+                    </Panel.Collapse>
                   </Panel>
                 )
               }
             )}
             {this.props.capabilities.write ? //TODO remove SideNodeDetails? turn out to be not useful
-              (<Panel defaultExpanded header="Details">
-                <SideNodeDetails/>
+              (<Panel defaultExpanded>
+                <Panel.Heading><Panel.Title toggle>Details</Panel.Title></Panel.Heading>
+                <Panel.Collapse>
+                  <Panel.Body><SideNodeDetails/></Panel.Body>
+                </Panel.Collapse>
               </Panel>) : null
             }
           </Scrollbars>
@@ -174,13 +182,41 @@ class UserRightPanel extends Component {
     const buttonClass = panelButton.className || "espButton right-panel"
     //TODO: move other buttons from inlined svgs to files
     const toolTip = panelButton.btnTitle || panelButton.name
-    const svgDiv = panelButton.icon.endsWith('.svg') ?  (<SvgDiv title={toolTip} svgFile={`buttons/${panelButton.icon}`}/>)
-      : ( <div title={toolTip} dangerouslySetInnerHTML={{__html: panelButton.icon}} />)
+    const svgDiv = panelButton.icon.endsWith('.svg')
+                 ? (<SvgDiv title={toolTip} svgFile={`buttons/${panelButton.icon}`}/>)
+                 : ( <div title={toolTip} dangerouslySetInnerHTML={{__html: panelButton.icon}} />)
 
     return (
-        <button key={idx} type="button" className={buttonClass} disabled={panelButton.disabled === true} title={toolTip}
-                onClick={panelButton.onClick} onMouseOver={panelButton.onMouseOver} onMouseOut={panelButton.onMouseOut}>
-          {svgDiv}<div>{panelButton.name}</div>
+        panelButton.dropzone ?
+        <Dropzone
+            key={idx}
+            title={toolTip}
+            disableClick={panelButton.disabled === true}
+            onDrop={panelButton.onClick}
+            onMouseOver={panelButton.onMouseOver}
+            onMouseOut={panelButton.onMouseOut}
+        >
+          {({getRootProps, getInputProps}) => (
+              <div {...getRootProps({className: "dropZone " + buttonClass + (panelButton.disabled === true ? " disabled" : "")})} >
+                {svgDiv}
+                <input {...getInputProps()} />
+                <div>{panelButton.name}</div>
+              </div>
+          )}
+        </Dropzone>
+        :
+        <button
+            key={idx}
+            type="button"
+            className={buttonClass}
+            disabled={panelButton.disabled === true}
+            title={toolTip}
+            onClick={panelButton.onClick}
+            onMouseOver={panelButton.onMouseOver}
+            onMouseOut={panelButton.onMouseOut}
+        >
+          {svgDiv}
+          <div>{panelButton.name}</div>
         </button>
     )
   }

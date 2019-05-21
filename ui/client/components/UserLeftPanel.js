@@ -1,5 +1,4 @@
 import React, {Component} from 'react';
-import {render} from 'react-dom';
 import PropTypes from 'prop-types';
 import {Panel} from 'react-bootstrap';
 import {Scrollbars} from 'react-custom-scrollbars';
@@ -28,29 +27,40 @@ export default class UserLeftPanel extends Component {
     const { isOpened, onToggle, isReady } = this.props;
 
     return (
-      <div id="espLeftNav" className={cn("sidenav", { "is-opened": isOpened })}>
-        <TogglePanel type="left" isOpened={isOpened} onToggle={onToggle}/>
-        <SpinnerWrapper isReady={isReady}>
-          <Scrollbars renderThumbVertical={props => <div {...props} className="thumbVertical"/>} hideTracksWhenNotNeeded={true}>
-            <Tips />
-            {this.props.capabilities.write ?
-              <Panel defaultExpanded header="Creator panel">
-                <ToolBox/>
-              </Panel> : null
-            }
-            <Panel defaultExpanded header="Versions">
-              <ProcessHistory/>
-            </Panel>
-            <Panel defaultExpanded header="Comments">
-              <ProcessComments/>
-            </Panel>
-            <Panel defaultExpanded header="Attachments">
-              <ProcessAttachments/>
-            </Panel>
-          </Scrollbars>
-        </SpinnerWrapper>
-      </div>
+        <div id="espLeftNav" className={cn("sidenav", { "is-opened": isOpened })}>
+            <TogglePanel type="left" isOpened={isOpened} onToggle={onToggle}/>
+            <SpinnerWrapper isReady={isReady}>
+                <Scrollbars renderThumbVertical={props => <div {...props} className="thumbVertical"/>} hideTracksWhenNotNeeded={true}>
+                    <Tips />
+                    {this.props.capabilities.write ?
+                        <Panel defaultExpanded>
+                            <Panel.Heading><Panel.Title toggle>Creator panel</Panel.Title></Panel.Heading>
+                            <Panel.Collapse>
+                                <Panel.Body><ToolBox/></Panel.Body>
+                            </Panel.Collapse>
+                        </Panel> : null
+                    }
+                    <Panel defaultExpanded>
+                        <Panel.Heading><Panel.Title toggle>Versions</Panel.Title></Panel.Heading>
+                        <Panel.Collapse>
+                            <Panel.Body><ProcessHistory/></Panel.Body>
+                        </Panel.Collapse>
+                    </Panel>
+                    <Panel defaultExpanded>
+                        <Panel.Heading><Panel.Title toggle>Versions</Panel.Title></Panel.Heading>
+                        <Panel.Collapse>
+                            <Panel.Body><ProcessComments/></Panel.Body>
+                        </Panel.Collapse>
+                    </Panel>
+                    <Panel collapse="true" defaultExpanded header="Attachments" id="panel-attachments">
+                        <Panel.Heading><Panel.Title toggle>Attachments</Panel.Title></Panel.Heading>
+                        <Panel.Collapse>
+                            <Panel.Body><ProcessAttachments/></Panel.Body>
+                        </Panel.Collapse>
+                    </Panel>
+                </Scrollbars>
+            </SpinnerWrapper>
+        </div>
     );
   }
-
 }
