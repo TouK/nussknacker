@@ -61,7 +61,7 @@ object node {
     def additionalFields: Option[UserDefinedAdditionalNodeFields]
   }
 
-  trait Disableable {
+  sealed trait Disableable { self: NodeData =>
 
     def isDisabled: Option[Boolean]
   }

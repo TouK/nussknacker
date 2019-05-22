@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.compile.{ProcessCompilationError, ProcessValidator}
 import pl.touk.nussknacker.engine.graph.node.{Disableable, NodeData, Source, SubprocessInputDefinition}
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.ProcessAdditionalFields
-import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
+import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess, ProcessRewriter}
 import pl.touk.nussknacker.restmodel.validation.CustomProcessValidator
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.ui.definition.AdditionalProcessProperty
@@ -43,13 +43,15 @@ class ProcessValidation(validators: Map[ProcessingType, ProcessValidator],
   }
 
   def validate(displayable: DisplayableProcess): ValidationResult = {
-    val uiValidationResult = uiValidation(displayable)
+    val displayableWithoutDisabledNodes = ProcessRewriter.removeDisabledNodes(displayable)
+
+    val uiValidationResult = uiValidation(displayableWithoutDisabledNodes)
       .add(warningValidation(displayable))
 
     //there is no point in further validations if ui process structure is invalid
     //displayable to canonical conversion for invalid ui process structure can have unexpected results
     if (uiValidationResult.saveAllowed) {
-      uiValidationResult.add(processingTypeValidation(displayable))
+      uiValidationResult.add(processingTypeValidation(displayableWithoutDisabledNodes))
     } else {
       uiValidationResult
     }

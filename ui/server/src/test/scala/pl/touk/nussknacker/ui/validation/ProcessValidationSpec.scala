@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.validation
 
-import org.scalatest.{FlatSpec, FunSuite, Matchers}
+import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.{ProcessingTypeData, spel}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
@@ -27,6 +27,7 @@ import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
 
 class ProcessValidationSpec extends FunSuite with Matchers {
   import pl.touk.nussknacker.ui.definition.PropertyType._
+  import spel.Implicits._
 
   private val validator = TestFactory.processValidation
 
@@ -170,7 +171,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
     processValidation.validate(validProcessWithFields(Map("field1" -> "", "field2" -> "b")))
       .errors.processPropertiesErrors shouldBe List(NodeValidationError("UiValidation", "Field field1 (label1) cannot be empty",
       "label1 cannot be empty", Some("field1"), ValidationResults.NodeValidationErrorType.SaveAllowed))
-    
+
     processValidation.validate(validProcessWithFields(Map("field2" -> "b")))
       .errors.processPropertiesErrors shouldBe List(NodeValidationError("UiValidation", "Field field1 (label1) cannot be empty",
       "label1 cannot be empty", Some("field1"), ValidationResults.NodeValidationErrorType.SaveAllowed))
@@ -246,6 +247,28 @@ class ProcessValidationSpec extends FunSuite with Matchers {
     val validationResult = processValidation.validate(process)
     validationResult.errors.globalErrors shouldBe 'empty
     validationResult.saveAllowed shouldBe true
+  }
+
+  test("invalid disabled nodes don't invalidate process") {
+    val process = createProcess(
+      nodes = List(
+        Source("in", SourceRef("barSource", List())),
+        Filter("filter", "invalidExpression", isDisabled = Some(true)),
+        Sink("out1", SinkRef("barSink", List())),
+        Sink("out2", SinkRef("barSink", List()))
+      ),
+      edges = List(
+        Edge("in", "filter", None),
+        Edge("filter", "out1", Some(EdgeType.FilterFalse)),
+        Edge("filter", "out2", Some(EdgeType.FilterTrue))
+      )
+    )
+
+    val res = validator.validate(process)
+    res.errors.invalidNodes.size shouldBe 0
+    res.errors.processPropertiesErrors.size shouldBe 0
+    res.errors.globalErrors.size shouldBe 0
+    res.saveAllowed shouldBe true
   }
 
   private def createProcess(nodes: List[NodeData],
