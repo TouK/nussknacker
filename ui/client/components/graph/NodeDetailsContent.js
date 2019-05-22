@@ -69,7 +69,7 @@ export class NodeDetailsContent extends React.Component {
     if (_.has(this.state.editedNode, property)) {
       _.get(this.state.editedNode, property).splice(index, 1);
 
-      this.setState((state, props) => {editedNode: state.editedNode}, () => {
+      this.setState((state, props) => ({editedNode: state.editedNode}), () => {
         this.props.onChange(this.state.editedNode);
       });
     }
@@ -79,7 +79,7 @@ export class NodeDetailsContent extends React.Component {
     if (_.has(this.state.editedNode, property)) {
       _.get(this.state.editedNode, property).push(element);
 
-      this.setState((state, props) => {editedNode: state.editedNode}, () => {
+      this.setState((state, props) => ({editedNode: state.editedNode}), () => {
         this.props.onChange(this.state.editedNode);
       });
     }
@@ -88,7 +88,7 @@ export class NodeDetailsContent extends React.Component {
   setNodeDataAt = (property, value) => {
     _.set(this.state.editedNode, property, value);
 
-    this.setState((state, props) => {editedNode: state.editedNode}, () => {
+    this.setState((state, props) => ({editedNode: state.editedNode}), () => {
       this.props.onChange(this.state.editedNode);
     });
   };
