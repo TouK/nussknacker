@@ -4,7 +4,7 @@ import org.scalatest.{FlatSpec, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.{ProcessingTypeData, spel}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
-import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
+import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, FlatNode}
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -232,48 +232,20 @@ class ProcessValidationSpec extends FunSuite with Matchers {
   }
 
   test("validates subprocess input definition") {
-    import spel.Implicits._
-    import ProcessDefinitionBuilder._
-
-    val invalidSubprocess =
-      CanonicalProcess(
-        MetaData("sub1", StreamMetaData(), isSubprocess = true),
-        ExceptionHandlerRef(List()),
-        nodes = List(
-          FlatNode(
-            SubprocessInputDefinition(
-              "in", List(SubprocessParameter("param1", SubprocessClazzRef[Long])))),
-          FlatNode(Variable(id = "subVar", varName = "subVar", value = "#nonExistingVar")),
-          canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "output"))
-        ),
-        additionalBranches = None)
-
-    val process: DisplayableProcess = createProcess(
-      nodes = List(
-        Source("in", SourceRef("processSource", List())),
-        SubprocessInput(
-          "subIn",
-          SubprocessRef("sub1", List(evaluatedparam.Parameter("param1", "'someString'")))),
-        Sink("out", SinkRef("processSink", List()))),
-      edges = List(
-        Edge("in", "subIn", None),
-        Edge("subIn", "out", Some(EdgeType.SubprocessOutput("output"))))
-    )
-
-    val processDefinition = ProcessDefinitionBuilder.empty.withSourceFactory("processSource").withSinkFactory("processSink")
-
-    val validator = ProcessValidator.default(ProcessDefinitionBuilder.withEmptyObjects(processDefinition))
-
-    val processValidation: ProcessValidation = new ProcessValidation(
-      validators = Map(TestProcessingTypes.Streaming -> validator),
-      Map(TestProcessingTypes.Streaming -> Map()),
-      subprocessResolver = new SubprocessResolver(new SampleSubprocessRepository(Set(invalidSubprocess))),
-      Map.empty)
+    val (processValidation, process) = mockProcessValidationAndProcess(subprocessDisabled = false)
 
     processValidation.validate(process) should matchPattern {
       case ValidationResult(ValidationErrors(invalidNodes, Nil, Nil), ValidationWarnings.success, _
       ) if invalidNodes("subIn").size == 1 && invalidNodes("subIn-subVar").size == 1 =>
     }
+  }
+
+  test("validates disabled subprocess with parameters") {
+    val (processValidation, process) = mockProcessValidationAndProcess(subprocessDisabled = true)
+
+    val validationResult = processValidation.validate(process)
+    validationResult.errors.globalErrors shouldBe 'empty
+    validationResult.saveAllowed shouldBe true
   }
 
   private def createProcess(nodes: List[NodeData],
@@ -292,5 +264,45 @@ class ProcessValidationSpec extends FunSuite with Matchers {
       ),
       List(Edge("in", "out", None)), additionalFields = fields
     )
+  }
+
+  private def mockProcessValidationAndProcess(subprocessDisabled: Boolean): (ProcessValidation, DisplayableProcess) = {
+    import ProcessDefinitionBuilder._
+    import spel.Implicits._
+
+    val process = createProcess(
+      nodes = List(
+        Source("in", SourceRef("processSource", List())),
+        SubprocessInput(
+          "subIn",
+          SubprocessRef("sub1", List(evaluatedparam.Parameter("param1", "'someString'"))), isDisabled = Some(subprocessDisabled)),
+        Sink("out", SinkRef("processSink", List()))),
+      edges = List(
+        Edge("in", "subIn", None),
+        Edge("subIn", "out", Some(EdgeType.SubprocessOutput("output"))))
+    )
+
+    val invalidSubprocess =
+      CanonicalProcess(
+        MetaData("sub1", StreamMetaData(), isSubprocess = true),
+        ExceptionHandlerRef(List()),
+        nodes = List(
+          FlatNode(
+            SubprocessInputDefinition(
+              "in", List(SubprocessParameter("param1", SubprocessClazzRef[Long])))),
+          FlatNode(Variable(id = "subVar", varName = "subVar", value = "#nonExistingVar")),
+          canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "output"))
+        ),
+        additionalBranches = None)
+
+    val processDefinition = ProcessDefinitionBuilder.empty.withSourceFactory("processSource").withSinkFactory("processSink")
+    val validator = ProcessValidator.default(ProcessDefinitionBuilder.withEmptyObjects(processDefinition))
+    val processValidation: ProcessValidation = new ProcessValidation(
+      validators = Map(TestProcessingTypes.Streaming -> validator),
+      Map(TestProcessingTypes.Streaming -> Map()),
+      subprocessResolver = new SubprocessResolver(new SampleSubprocessRepository(Set(invalidSubprocess))),
+      Map.empty)
+
+    (processValidation, process)
   }
 }
