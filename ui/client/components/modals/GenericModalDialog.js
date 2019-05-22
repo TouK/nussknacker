@@ -1,5 +1,4 @@
 import React from "react";
-import {render} from "react-dom";
 import Modal from "react-modal";
 import {connect} from "react-redux";
 import ActionsUtils from "../../actions/ActionsUtils";
@@ -35,7 +34,11 @@ class GenericModalDialog extends React.Component {
 
   renderOkBtn = () => {
     return(
-      <LaddaButton key="1" title="OK" className="modalButton modalConfirmButton" buttonStyle="zoom-in"
+      <LaddaButton
+        key="1"
+        title="OK"
+        className="modalButton modalConfirmButton"
+        data-style="zoom-in"
         loading={this.state.pendingRequest}
         onClick={() => this.onOk()}
         {...this.props.okBtnConfig}

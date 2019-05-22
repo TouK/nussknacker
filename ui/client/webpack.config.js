@@ -10,6 +10,11 @@ const isProd = NODE_ENV === 'production';
 
 
 module.exports = {
+  resolve: {
+    alias: {
+      'react-dom': '@hot-loader/react-dom'
+    }
+  },
   entry: isProd ? [
     './index',
   ] : [

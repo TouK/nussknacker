@@ -1,5 +1,4 @@
 import React from 'react';
-import {render} from 'react-dom';
 import {connect} from 'react-redux';
 import Modal from 'react-modal';
 import _ from 'lodash';
@@ -88,9 +87,19 @@ class NodeDetailsModal extends React.Component {
   renderModalButtons() {
     return ([
       this.isGroup() ? this.renderGroupUngroup() : null,
-      !this.props.readOnly ? <LaddaButton key="1" title="Save node details" className='modalButton pull-right modalConfirmButton'
-                    loading={this.state.pendingRequest}
-                    data-style='zoom-in' onClick={this.performNodeEdit}>Save</LaddaButton>: null,
+      !this.props.readOnly ?
+          <LaddaButton
+              key="1"
+              title="Save node details"
+              className='modalButton pull-right modalConfirmButton'
+              loading={this.state.pendingRequest}
+              data-style='zoom-in'
+              onClick={this.performNodeEdit}
+          >
+            Save
+          </LaddaButton>
+          :
+          null,
       <button key="2" type="button" title="Close node details" className='modalButton' onClick={this.closeModal}>
         Close
       </button>
