@@ -1,10 +1,10 @@
 language: scala
 
 scala:
-   - 2.11.12
+  - 2.11.12
 
 jdk:
- - oraclejdk8
+  - oraclejdk8
 
 sudo: required
 
@@ -17,14 +17,12 @@ addons:
 env:
   global:
     - APPLICATION_NAME=nussknacker
+    - AWS_DEFAULT_REGION=eu-west-1
     - SANITIZED_BRANCH=`echo ${TRAVIS_BRANCH} | sed 's/[^a-zA-Z0-9]/\_/g' | awk '{print tolower($0)}'`
     - BUILD_VERSION=$(if [[ -n $TRAVIS_TAG ]]; then echo "${SANITIZED_BRANCH}"; else echo "${SANITIZED_BRANCH}-$TRAVIS_COMMIT"; fi)
 
-before_install:
-  - if [[ "$TRAVIS_PULL_REQUEST" == "false" ]]; then echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin; fi
-
+# Cleanup the cached directories to avoid unnecessary cache updates
 before_cache:
-  # Cleanup the cached directories to avoid unnecessary cache updates
   - rm -fv $HOME/.ivy2/.sbt.ivy.lock
   - find $HOME/.ivy2/cache -name "ivydata-*.properties" -print -delete
   - find $HOME/.sbt        -name "*.lock"               -print -delete
@@ -35,7 +33,10 @@ cache:
     - $HOME/.ivy2/cache
     - $HOME/.sbt/boot/
 
-# We don't allow releases from fork and corn type because of security: https://docs.travis-ci.com/user/pull-requests/#pull-requests-and-security-restrictions
+before_install:
+  - if [[ "$TRAVIS_PULL_REQUEST" == "false" ]]; then echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin; fi
+
+# We don't allow do releases from fork and corn type because of security: https://docs.travis-ci.com/user/pull-requests/#pull-requests-and-security-restrictions
 stages:
   - tests
   - name: releases
@@ -48,19 +49,20 @@ jobs:
     - stage: tests
       name: "Unit tests"
       script: sbt ++$TRAVIS_SCALA_VERSION clean test
-    - name: "Management tests"
-      script: sbt ++$TRAVIS_SCALA_VERSION clean management/it:test
     - name: "EngineStandalone tests"
       script: sbt ++$TRAVIS_SCALA_VERSION clean engineStandalone/it:test
     - name: "UI slow tests"
       script: sbt ++$TRAVIS_SCALA_VERSION clean assemblySamples ui/slow:test
-    - name: "Tests docker demo"
-      script: cd ./demo/docker && ./testQuickstart.sh
+    - name: "Management tests"
+      script: sbt ++$TRAVIS_SCALA_VERSION clean management/it:test
+#    - name: "Tests docker demo"
+#      script: cd ./demo/docker && ./testQuickstart.sh
     - stage: releases
-      name: "Release sonatype packages"
-      script: ./ciBuild.sh "${BUILD_VERSION}-SNAPSHOT" ${NEXUS_PASSWORD} ${NEXUS_URL} ${NEXUS_USER} true
-    - name: "Push Docker Image"
+      name: "Push Docker Image"
       script: ./ciBuildDocker.sh --version=${BUILD_VERSION}
+    - name: "Release sonatype packages"
+      script: ./ciBuild.sh "${BUILD_VERSION}-SNAPSHOT" ${NEXUS_PASSWORD} ${NEXUS_URL} ${NEXUS_USER} true
     - stage: deploys
       name: "Push demo-latest Docker Image"
       script: ./ciBuildDocker.sh --version=${BUILD_VERSION} --docker-tag=demo-latest
+
