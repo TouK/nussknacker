@@ -51,8 +51,8 @@ jobs:
       script: sbt ++$TRAVIS_SCALA_VERSION clean test
     - name: "EngineStandalone tests"
       script: sbt ++$TRAVIS_SCALA_VERSION clean engineStandalone/it:test
-    - name: "UI slow tests"
-      script: sbt ++$TRAVIS_SCALA_VERSION clean assemblySamples ui/slow:test
+    - name: "UI tests"
+      script: sbt ++$TRAVIS_SCALA_VERSION clean ui/test ui/slow:test
     - name: "Management tests"
       script: sbt ++$TRAVIS_SCALA_VERSION clean management/it:test
 #    - name: "Tests docker demo"

@@ -82,6 +82,7 @@ val ignoreSlowTests = Tests.Argument(TestFrameworks.ScalaTest, "-l", "org.scalat
 val commonSettings =
   publishSettings ++
     Seq(
+      test in assembly := {},
       licenses += ("Apache-2.0", url("https://www.apache.org/licenses/LICENSE-2.0.html")),
       scalaVersion  := scalaV,
       resolvers ++= Seq(
@@ -284,8 +285,7 @@ lazy val managementSample = (project in engine("flink/management/sample")).
       )
     }
   ).
-  dependsOn(flinkUtil, kafka, kafkaFlinkUtil, process % "runtime,test", flinkTestUtil % "test", kafkaTestUtil % "test",
-    securityApi)
+  dependsOn(flinkUtil, kafka, kafkaFlinkUtil, process % "runtime,test", flinkTestUtil % "test", kafkaTestUtil % "test", securityApi)
 
 lazy val managementJavaSample = (project in engine("flink/management/java_sample")).
   settings(commonSettings).
@@ -670,6 +670,12 @@ lazy val ui = (project in file("ui/server"))
       art.withClassifier(Some("assembly"))
     },
     test in assembly := {},
+    Keys.test in SlowTests := (Keys.test in SlowTests).dependsOn(
+      //TODO: maybe here there should be engine/demo??
+      (assembly in Compile) in managementSample
+    ).dependsOn(
+      testUi
+    ).value,
     Keys.test in Test := (Keys.test in Test).dependsOn(
       //TODO: maybe here there should be engine/demo??
       (assembly in Compile) in managementSample
