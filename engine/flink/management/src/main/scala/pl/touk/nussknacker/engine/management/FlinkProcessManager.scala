@@ -11,6 +11,8 @@ import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData, TypeSpeci
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.flink.queryablestate.FlinkQueryableClient
+import pl.touk.nussknacker.engine.queryablestate.QueryableClient
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
@@ -140,8 +142,13 @@ class FlinkProcessManagerProvider extends ProcessManagerProvider {
 
   override def createProcessManager(modelData: ModelData, config: Config): ProcessManager = {
     //FIXME: how to do it easier??
-    val flinkConfig = ConfigFactory.empty().withValue("root", config.root()).as[FlinkConfig]("root")
+    val flinkConfig = asFlinkConfig(config)
     new FlinkRestManager(flinkConfig, modelData)
+  }
+
+  override def createQueryableClient(config: Config): Option[QueryableClient] = {
+    val flinkConfig = asFlinkConfig(config)
+    flinkConfig.queryableStateProxyUrl.map(FlinkQueryableClient(_))
   }
 
   override def name: String = "flinkStreaming"
@@ -151,7 +158,10 @@ class FlinkProcessManagerProvider extends ProcessManagerProvider {
 
   override def supportsSignals: Boolean = true
 
-  override def supportsQueryableState: Boolean = true
+  private def asFlinkConfig(config: Config): FlinkConfig = {
+    //FIXME: how to do it easier??
+    ConfigFactory.empty().withValue("root", config.root()).as[FlinkConfig]("root")
+  }
 }
 
 object FlinkProcessManagerProvider {

@@ -3,9 +3,8 @@ package pl.touk.nussknacker.ui.api
 import akka.http.scaladsl.server.{Directives, Route}
 import argonaut.{Json, Parse}
 import cats.data.EitherT
-import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.QueryableStateName
-import pl.touk.nussknacker.engine.flink.queryablestate.EspQueryableClient
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.{JobStatusService, ProcessObjectsFinder}
@@ -15,9 +14,8 @@ import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class QueryableStateResources(processDefinition: Map[ProcessingType, ModelData],
+class QueryableStateResources(typeToConfig: Map[ProcessingType, ProcessingTypeData],
                               val processRepository: FetchingProcessRepository,
-                              queryableClient: EspQueryableClient,
                               jobStatusService: JobStatusService,
                               val processAuthorizer:AuthorizeProcess)
                              (implicit val ec: ExecutionContext)
@@ -53,7 +51,7 @@ class QueryableStateResources(processDefinition: Map[ProcessingType, ModelData],
 
   private def prepareQueryableStates()(implicit user: LoggedUser): Future[Map[String, List[QueryableStateName]]] = {
     processRepository.fetchAllProcessesDetails().map { processList =>
-      ProcessObjectsFinder.findQueries(processList, processDefinition.values.map(_.processDefinition))
+      ProcessObjectsFinder.findQueries(processList, typeToConfig.values.map(_.modelData.processDefinition))
     }
   }
 
@@ -65,7 +63,8 @@ class QueryableStateResources(processDefinition: Map[ProcessingType, ModelData],
     val fetchedJsonState = for {
       status <- EitherT(jobStatusService.retrieveJobStatus(processId).map(Either.fromOption(_, noJob(processId.name.value))))
       jobId <- EitherT.fromEither(Either.fromOption(status.deploymentId, if (status.isDeployInProgress) deployInProgress(processId.name.value) else noJobRunning(processId.name.value)))
-      jsonString <- EitherT.right(fetchState(jobId, queryName, key))
+      processingType <- EitherT.liftF(processRepository.fetchProcessingType(processId.id))
+      jsonString <- EitherT.right(fetchState(processingType, jobId, queryName, key))
       json <- EitherT.fromEither(Parse.parse(jsonString).leftMap(msg => wrongJson(msg, jsonString)))
     } yield json
     fetchedJsonState.value.map {
@@ -74,10 +73,14 @@ class QueryableStateResources(processDefinition: Map[ProcessingType, ModelData],
     }
   }
 
-  private def fetchState(jobId: String, queryName: String, key: Option[String]): Future[String] = {
-    key match {
-      case Some(k) => queryableClient.fetchJsonState(jobId, queryName, k)
-      case None => queryableClient.fetchJsonState(jobId, queryName)
+  private def fetchState(processingType: String, jobId: String, queryName: String, key: Option[String]): Future[String] = {
+    typeToConfig(processingType).queryableClient match {
+      case None => Future.failed(new Exception(s"Queryable client not found for processing type $processingType"))
+      case Some(queryableClient) =>
+        key match {
+          case Some(k) => queryableClient.fetchJsonState(jobId, queryName, k)
+          case None => queryableClient.fetchJsonState(jobId, queryName)
+        }
     }
   }
 

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.repository
 
+import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.process.ProcessId
 import pl.touk.nussknacker.restmodel.processdetails.{DeploymentHistoryEntry, ProcessDetails}
@@ -46,4 +47,6 @@ trait FetchingProcessRepository {
   def fetchProcessName(processId: ProcessId)(implicit ec: ExecutionContext): Future[Option[ProcessName]]
 
   def fetchDeploymentHistory(processId: ProcessId)(implicit ec: ExecutionContext): Future[List[DeploymentHistoryEntry]]
+
+  def fetchProcessingType(processId: ProcessId)(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[ProcessingType]
 }

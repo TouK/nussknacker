@@ -10,7 +10,6 @@ import akka.stream.Materializer
 import akka.stream.ActorMaterializer
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.flink.queryablestate.EspQueryableClient
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
 import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DatabaseServer, DbConfig}
@@ -137,7 +136,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
         new SignalsResources(modelData, processRepository, processAuthorizer),
         new UserResources(),
         new NotificationResources(managementActor, processRepository),
-        new SettingsResources(featureTogglesConfig),
+        new SettingsResources(featureTogglesConfig, typeToConfig),
         new AppResources(config, modelData, processRepository, processValidation, jobStatusService),
         TestInfoResources(modelData, processAuthorizer, processRepository),
         new ServiceRoutes(modelData)
@@ -152,14 +151,12 @@ object NussknackerApp extends App with Directives with LazyLogging {
         featureTogglesConfig.attachments
           .map(path => new ProcessAttachmentService(path, processActivityRepository))
           .map(service => new AttachmentResources(service, processRepository)),
-        featureTogglesConfig.queryableStateProxyUrl
-          .map(url => new QueryableStateResources(
-            processDefinition = modelData,
-            processRepository = processRepository,
-            queryableClient = EspQueryableClient(url),
-            jobStatusService = jobStatusService,
-            processAuthorizer = processAuthorizer
-          ))
+        Some(new QueryableStateResources(
+          typeToConfig = typeToConfig,
+          processRepository = processRepository,
+          jobStatusService = jobStatusService,
+          processAuthorizer = processAuthorizer
+        ))
       ).flatten
       routes ++ optionalRoutes
     }
