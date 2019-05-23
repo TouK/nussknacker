@@ -7,14 +7,14 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.queryablestate.client.QueryableStateClient
 import org.apache.flink.streaming.api.scala._
 import pl.touk.nussknacker.engine.api.QueryableState
+import pl.touk.nussknacker.engine.queryablestate.QueryableClient
 
 import scala.compat.java8.FutureConverters
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
-object EspQueryableClient {
-
-  def apply(queryableStateProxyUrl: String): EspQueryableClient = {
+object FlinkQueryableClient {
+  def apply(queryableStateProxyUrl: String): FlinkQueryableClient = {
 
     //TODO: this is workaround for https://issues.apache.org/jira/browse/FLINK-10225, we want to be able to configure all task managers
     val queryableStateProxyUrls = queryableStateProxyUrl.split(",").toList
@@ -22,7 +22,7 @@ object EspQueryableClient {
       val (queryableStateProxyHost, queryableStateProxyPort) = parseHostAndPort(url.trim)
       new QueryableStateClient(queryableStateProxyHost, queryableStateProxyPort)
     }
-    new EspQueryableClient(clients)
+    new FlinkQueryableClient(clients)
   }
 
   private def parseHostAndPort(url: String): (String, Int) = {
@@ -31,10 +31,9 @@ object EspQueryableClient {
       throw new IllegalArgumentException("Should by in host:port format")
     (parts(0), parts(1).toInt)
   }
-
 }
 
-class EspQueryableClient(clients: List[QueryableStateClient]) extends LazyLogging {
+class FlinkQueryableClient(clients: List[QueryableStateClient]) extends QueryableClient with LazyLogging {
 
   def fetchState[V: TypeInformation](jobId: String, queryName: String, key: String)
                                     (implicit ec: ExecutionContext): Future[V] = {

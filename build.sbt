@@ -584,7 +584,7 @@ lazy val queryableState = (project in engine("queryableState")).
         "com.typesafe" % "config" % configV
       )
     }
-  ).dependsOn(api)
+  ).dependsOn(api, interpreter)
 
 
 

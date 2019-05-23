@@ -10,6 +10,7 @@ import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.DateUtils
 import db.util.DBIOActionInstances._
+import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.graph.node.SubprocessInput
 import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
@@ -20,6 +21,7 @@ import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.processdetails._
 import pl.touk.nussknacker.ui.app.BuildInfo
 import pl.touk.nussknacker.ui.db.entity._
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessNotFoundError
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
@@ -97,11 +99,7 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
 
   def fetchLatestProcessDetailsForProcessId(id: ProcessId, businessView: Boolean = false)
                                            (implicit loggedUser: LoggedUser, ec: ExecutionContext): F[Option[ProcessDetails]] = {
-    val action = (for {
-      latestProcessVersion <- OptionT[DB, ProcessVersionEntityData](latestProcessVersions(id).result.headOption)
-      processDetails <-  fetchProcessDetailsForVersion(latestProcessVersion, isLatestVersion = true, businessView = businessView)
-    } yield processDetails).value
-    run(action)
+    run(fetchLatestProcessDetailsForProcessIdQuery(id))
   }
 
   def fetchProcessDetailsForId(processId: ProcessId, versionId: Long, businessView: Boolean)
@@ -141,6 +139,23 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
         buildInfo = de.buildInfo.flatMap(BuildInfo.parseJson).getOrElse(BuildInfo.empty)
       )
     ).toList))
+
+  def fetchProcessingType(processId: ProcessId)(implicit user: LoggedUser, ec: ExecutionContext): F[ProcessingType] = {
+    run {
+      fetchLatestProcessDetailsForProcessIdQuery(processId).flatMap {
+        case None => DBIO.failed(ProcessNotFoundError(processId.value.toString))
+        case Some(process) => DBIO.successful(process.processingType)
+      }
+    }
+  }
+
+  private def fetchLatestProcessDetailsForProcessIdQuery(id: ProcessId, businessView: Boolean = false)
+                                                        (implicit loggedUser: LoggedUser, ec: ExecutionContext): DB[Option[ProcessDetails]] = {
+    (for {
+      latestProcessVersion <- OptionT[DB, ProcessVersionEntityData](latestProcessVersions(id).result.headOption)
+      processDetails <-  fetchProcessDetailsForVersion(latestProcessVersion, isLatestVersion = true, businessView = businessView)
+    } yield processDetails).value
+  }
 
   private def fetchProcessDetailsForVersion(processVersion: ProcessVersionEntityData, isLatestVersion: Boolean, businessView: Boolean = false)
                                            (implicit loggedUser: LoggedUser, ec: ExecutionContext) = {
