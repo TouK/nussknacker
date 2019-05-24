@@ -48,11 +48,12 @@ jobs:
   include:
     - stage: tests
       name: "Unit tests"
-      script: sbt ++$TRAVIS_SCALA_VERSION clean test
+      script: sbt ++$TRAVIS_SCALA_VERSION clean coverage test coverageReport && sbt ++$TRAVIS_SCALA_VERSION coverageAggregate
+      after_success: sbt ++$TRAVIS_SCALA_VERSION coveralls
     - name: "EngineStandalone tests"
       script: sbt ++$TRAVIS_SCALA_VERSION clean engineStandalone/it:test
     - name: "UI tests"
-      script: sbt ++$TRAVIS_SCALA_VERSION clean ui/test ui/slow:test
+      script: sbt ++$TRAVIS_SCALA_VERSION clean ui/test ui/slow:test 
     - name: "Management tests"
       script: sbt ++$TRAVIS_SCALA_VERSION clean management/it:test
 #    - name: "Tests docker demo"
