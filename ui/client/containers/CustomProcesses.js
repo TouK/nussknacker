@@ -26,7 +26,7 @@ class CustomProcesses extends PeriodicallyReloadingComponent {
       filterVal: '',
       showLoader: true,
       currentPage: 0,
-      sort: { column: "name", direction: 1}
+      sort: { column: "Process name", direction: 1}
     }
 
     Object.assign(this, ProcessesMixin)
@@ -101,8 +101,8 @@ class CustomProcesses extends PeriodicallyReloadingComponent {
                pageButtonLimit={5}
                previousPageLabel="<"
                nextPageLabel=">"
-               sortable={['name', 'category', 'modifyDate']}
-               filterable={['name', 'category']}
+               sortable={['Process name', 'Category', 'Last modification']}
+               filterable={['Process name', 'Category']}
                hideFilterInput
                filterBy={this.getFilterValue()}
 
@@ -120,18 +120,18 @@ class CustomProcesses extends PeriodicallyReloadingComponent {
           {this.state.processes.map((process, index) => {
             return (
               <Tr className="row-hover" key={index}>
-                <Td column="name">{process.name}</Td>
-                <Td column="category">{process.processCategory}</Td>
-                <Td column="modifyDate" className="date-column">{DateUtils.format(process.modificationDate)}</Td>
-                <Td column="status" className="status-column">
+                <Td column="Process name">{process.name}</Td>
+                <Td column="Category">{process.processCategory}</Td>
+                <Td column="Last modification" className="date-column">{DateUtils.format(process.modificationDate)}</Td>
+                <Td column="Status" className="status-column">
                   <div className={this.processStatusClass(process, this.state.statusesLoaded, this.state.statuses)} title={this.processStatusTitle(this.processStatusClass(process))}/>
                 </Td>
-                <Td column="deploy" className="deploy-column">
+                <Td column="Deploy" className="deploy-column">
                   <span className="glyphicon glyphicon-play" title="Deploy process" onClick={this.deploy.bind(this, process)}/>
                 </Td>
                 { (this.processStatusClass(process, this.state.statusesLoaded, this.state.statuses) === "status-running") ?
                   (
-                    <Td column="stop" className="stop-column">
+                    <Td column="Stop" className="stop-column">
                       <span className="glyphicon glyphicon-stop" title="Stop process" onClick={this.stop.bind(this, process)}/>
                     </Td>
                   ) : []

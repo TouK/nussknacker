@@ -3,7 +3,8 @@ import Modal from "react-modal";
 import {connect} from "react-redux";
 import ActionsUtils from "../../actions/ActionsUtils";
 import "../../stylesheets/visualization.styl";
-import LaddaButton from 'react-ladda';
+import LaddaButton from "react-ladda"
+import "../../stylesheets/ladda.styl";
 import PropTypes from 'prop-types';
 
 

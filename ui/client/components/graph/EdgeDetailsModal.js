@@ -1,10 +1,10 @@
 import React from 'react';
-import {render} from 'react-dom';
 import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
 import Modal from 'react-modal';
 import _ from 'lodash';
-import LaddaButton from 'react-ladda';
+import LaddaButton from "react-ladda"
+import "../../stylesheets/ladda.styl";
 import ActionsUtils from '../../actions/ActionsUtils';
 import NodeUtils from './NodeUtils';
 import ExpressionSuggest from './ExpressionSuggest'

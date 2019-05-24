@@ -23,7 +23,7 @@ class Archive extends React.Component {
       showLoader: true,
       showAddProcess: false,
       currentPage: 0,
-      sort: { column: "name", direction: 1}
+      sort: { column: "Process name", direction: 1}
     };
   }
 
@@ -94,28 +94,21 @@ class Archive extends React.Component {
            pageButtonLimit={5}
            previousPageLabel="<"
            nextPageLabel=">"
-           sortable={['name', 'category', 'modifyDate']}
-           filterable={['name', 'category']}
+           sortable={['Process name', 'Category', 'Last modification']}
+           filterable={['Process name', 'Category']}
            hideFilterInput
            filterBy={this.getFilterValue()}
 
         >
 
-          <Thead>
-            <Th column="name">Process name</Th>
-            <Th column="category">Category</Th>
-            <Th column="modifyDate" className="date-column">Last modification</Th>
-            <Th column="view" className="edit-column">View</Th>
-          </Thead>
-
           {this.state.processes.map((process, index) => {
             return (
               <Tr className="row-hover" key={index}>
-                <Td column="name">{process.name}</Td>
-                <Td column="category">{process.processCategory}</Td>
+                <Td column="Process name">{process.name}</Td>
+                <Td column="Category">{process.processCategory}</Td>
 
-                <Td column="modifyDate" className="date-column">{DateUtils.format(process.modificationDate)}</Td>
-                <Td column="view" className="edit-column">
+                <Td column="Last modification" className="date-column">{DateUtils.format(process.modificationDate)}</Td>
+                <Td column="View" className="edit-column">
                   <img src={editIcon} className="edit-icon" title="View" onClick={e => this.showProcess(process)} />
                 </Td>
               </Tr>

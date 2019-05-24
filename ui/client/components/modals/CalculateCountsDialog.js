@@ -13,6 +13,9 @@ import {dateFormat} from "../../config";
 
 
 class CalculateCountsDialog extends React.Component {
+  //React Datepicker supports different time format
+  dateFormat="YYYY-MM-dd HH:mm:ss"
+
   predefinedRanges = [
     {
       name: "Last hour",
@@ -42,10 +45,10 @@ class CalculateCountsDialog extends React.Component {
   ]
 
   setTime(range) {
-    this.setState((state, props) => ({
+    this.setState({
       processCountsDateFrom: range.from(),
       processCountsDateTo: range.to(),
-    }))
+    })
   }
 
   constructor(props) {
@@ -87,7 +90,7 @@ class CalculateCountsDialog extends React.Component {
             showTimeSelect
             timeFormat="HH:mm"
             timeIntervals={15}
-            dateFormat={dateFormat}
+            dateFormat={this.dateFormat}
             onChange={(e) => this.setDateFrom(e)}
             onChangeRaw={(event) => this.setRawDate(event.target.value, this.setDateFrom)}
           />
@@ -99,7 +102,7 @@ class CalculateCountsDialog extends React.Component {
             showTimeSelect
             timeFormat="HH:mm"
             timeIntervals={15}
-            dateFormat={dateFormat}
+            dateFormat={this.dateFormat}
             onChange={(e) => this.setDateTo(e)}
             onChangeRaw={(event) => this.setRawDate(event.target.value, this.setDateTo)}
           />

@@ -1,5 +1,5 @@
 import React from "react";
-import {Table, Thead, Th, Tr, Td} from "reactable";
+import {Table, Td, Tr} from "reactable";
 import {connect} from "react-redux";
 
 import HttpService from "../http/HttpService";
@@ -29,7 +29,7 @@ class Processes extends PeriodicallyReloadingComponent {
       showLoader: true,
       showAddProcess: false,
       currentPage: 0,
-      sort: { column: "name", direction: 1}
+      sort: { column: "Process name", direction: 1}
     }
 
     Object.assign(this, ProcessesMixin)
@@ -139,40 +139,31 @@ class Processes extends PeriodicallyReloadingComponent {
                pageButtonLimit={5}
                previousPageLabel="<"
                nextPageLabel=">"
-               sortable={['name', 'category', 'modifyDate']}
-               filterable={['name', 'category']}
+               sortable={['Process name', 'Category', 'Last modification']}
+               filterable={['Process name', 'Category']}
                hideFilterInput
                filterBy={this.getFilterValue()}
         >
 
-          <Thead>
-            <Th column="name">Process name</Th>
-            <Th column="category">Category</Th>
-            <Th column="modifyDate" className="date-column">Last modification</Th>
-            <Th column="status" className="status-column">Status</Th>
-            <Th column="edit" className="edit-column">Edit</Th>
-            <Th column="metrics" className="metrics-column">Metrics</Th>
-          </Thead>
-
           {this.state.processes.map((process, index) => {
             return (
               <Tr className="row-hover" key={index}>
-                <Td column="name" value={process.name}>
+                <Td column="Process name" value={process.name}>
                   <input value={process.editedName}
                          className="transparent"
                          onKeyPress={(event) => this.changeProcessName(process, event)}
                          onChange={(event) => this.processNameChanged(process.name, event)}
                          onBlur={(event) => this.handleBlur(process, event)}/>
                 </Td>
-                <Td column="category">{process.processCategory}</Td>
-                <Td column="modifyDate" className="date-column">{DateUtils.format(process.modificationDate)}</Td>
-                <Td column="status" className="status-column">
+                <Td column="Category">{process.processCategory}</Td>
+                <Td column="Last modification" className="date-column">{DateUtils.format(process.modificationDate)}</Td>
+                <Td column="Status" className="status-column">
                   <div className={this.processStatusClass(process, this.state.statusesLoaded, this.state.statuses)} title={this.processStatusTitle(this.processStatusClass(process))}/>
                 </Td>
-                <Td column="edit" className="edit-column">
+                <Td column="Edit" className="edit-column">
                   <img src={editIcon} title="Edit" onClick={this.showProcess.bind(this, process)} />
                 </Td>
-                <Td column="metrics" className="metrics-column">
+                <Td column="Metrics" className="metrics-column">
                   <span className="glyphicon glyphicon-stats" title="Show metrics" onClick={this.showMetrics.bind(this, process)}/>
                 </Td>
               </Tr>
