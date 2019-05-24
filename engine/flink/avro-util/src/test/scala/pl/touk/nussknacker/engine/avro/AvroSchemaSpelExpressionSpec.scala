@@ -3,12 +3,12 @@ package pl.touk.nussknacker.engine.avro
 import cats.data.ValidatedNel
 import org.apache.avro.Schema
 import org.scalatest.{FunSpec, Matchers}
-import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
+import pl.touk.nussknacker.engine.api.context.ValidationContext
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
-import pl.touk.nussknacker.engine.compile.ProcessCompilationError.NodeId
-import pl.touk.nussknacker.engine.compile.ValidationContext
-import pl.touk.nussknacker.engine.compiledgraph.expression.{Expression, ExpressionParseError}
+import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedExpression
+import pl.touk.nussknacker.engine.compiledgraph.expression.ExpressionParseError
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 
 import scala.concurrent.duration._
@@ -122,7 +122,7 @@ class AvroSchemaSpelExpressionSpec extends FunSpec with Matchers {
     parse[CharSequence]("#input.union", ctx) should be ('invalid)
   }
 
-  private def parse[T:ClassTag](expr: String, validationCtx: ValidationContext) : ValidatedNel[ExpressionParseError, (TypingResult, Expression)] = {
+  private def parse[T:ClassTag](expr: String, validationCtx: ValidationContext) : ValidatedNel[ExpressionParseError, TypedExpression] = {
     new SpelExpressionParser(Map.empty, List.empty, getClass.getClassLoader, 1 minute, enableSpelForceCompile = true)
       .parse(expr, validationCtx, Typed[T])
   }

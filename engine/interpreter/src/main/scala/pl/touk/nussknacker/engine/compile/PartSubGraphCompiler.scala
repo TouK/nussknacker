@@ -1,15 +1,16 @@
 package pl.touk.nussknacker.engine.compile
 
 import cats.data.Validated._
-import cats.data.{NonEmptyList,  ValidatedNel}
+import cats.data.{NonEmptyList, ValidatedNel}
 import cats.instances.list._
 import cats.instances.option._
 import cats.kernel.Semigroup
-import pl.touk.nussknacker.engine.api.{Context, MetaData}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
+import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.typed.{ClazzRef, ServiceReturningType}
+import pl.touk.nussknacker.engine.api.typed.ServiceReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.compile.ProcessCompilationError._
+import pl.touk.nussknacker.engine.api.{Context, MetaData}
 import pl.touk.nussknacker.engine.compiledgraph.node
 import pl.touk.nussknacker.engine.compiledgraph.node.{Node, SubprocessEnd}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
@@ -19,8 +20,9 @@ import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.splittedgraph._
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.{Next, SplittedNode}
-import pl.touk.nussknacker.engine.{compiledgraph, _}
 import pl.touk.nussknacker.engine.util.Implicits._
+import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax
+import pl.touk.nussknacker.engine.{compiledgraph, _}
 
 import scala.util.{Failure, Success, Try}
 
@@ -87,7 +89,7 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
     nodeData match {
       case graph.node.Source(id, _, _) =>
         compile(next, ctx).map(nwc => compiledgraph.node.Source(id, nwc))
-      case graph.node.Join(id, _, _, _) =>
+      case graph.node.Join(id, _, _, _, _, _) =>
         compile(next, ctx).map(nwc => compiledgraph.node.Source(id, nwc))
       case SubprocessInputDefinition(id, _, _) =>
         //TODO: should we recognize we're compiling only subprocess?
@@ -232,7 +234,7 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
                       expectedType: TypingResult)
                      (implicit nodeId: NodeId): (TypingResult, ValidatedNel[ProcessCompilationError, compiledgraph.expression.Expression]) = {
     expressionCompiler.compile(n, fieldName, toOption(ctx), expectedType)
-      .fold(err => (Unknown, Invalid(err)), res => (res._1, Valid(res._2)))
+      .fold(err => (Unknown, Invalid(err)), res => (res.returnType, Valid(res.expression)))
   }
 
   private def toOption(ctx: ValidationContext) = Some(ctx)
@@ -269,7 +271,7 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
         valid(Parameter(paramName, typingResult, typingResult))
       case Failure(_) =>
         invalid(
-          SubprocessParamClassLoadError(paramName, subParam.typ, subprocessInput.id)
+          SubprocessParamClassLoadError(paramName, subParam.typ.refClazzName, subprocessInput.id)
         ).toValidatedNel
     }
   }

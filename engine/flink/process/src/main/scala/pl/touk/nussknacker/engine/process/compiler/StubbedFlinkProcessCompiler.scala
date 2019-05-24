@@ -49,12 +49,13 @@ abstract class StubbedFlinkProcessCompiler(process: EspProcess, creator: Process
 
   protected def prepareSourceFactory(sourceFactory: ObjectWithMethodDef) : ObjectWithMethodDef
 
-  protected def overrideObjectWithMethod(original: ObjectWithMethodDef, method: (String => Option[AnyRef], Seq[AnyRef], () => typing.TypingResult) => Any): ObjectWithMethodDef =
+  protected def overrideObjectWithMethod(original: ObjectWithMethodDef, method: (String => Option[AnyRef], Option[String], Seq[AnyRef], () => typing.TypingResult) => Any): ObjectWithMethodDef =
     new ObjectWithMethodDef(original.obj, original.methodDef, original.objectDefinition) {
-      override def invokeMethod(paramFun: (String) => Option[AnyRef], additional: Seq[AnyRef]): Any = method(paramFun, additional, () => {
-        //this is neeeded to be able to handle dynamic types in tests
-        super.invokeMethod(paramFun, additional).cast[ReturningType].map(_.returnType).getOrElse(original.returnType)
-      })
+      override def invokeMethod(paramFun: (String) => Option[AnyRef], outputVariableNameOpt: Option[String], additional: Seq[AnyRef]): Any =
+        method(paramFun, outputVariableNameOpt, additional, () => {
+          //this is neeeded to be able to handle dynamic types in tests
+          super.invokeMethod(paramFun, outputVariableNameOpt, additional).cast[ReturningType].map(_.returnType).getOrElse(original.returnType)
+        })
     }
 
 }

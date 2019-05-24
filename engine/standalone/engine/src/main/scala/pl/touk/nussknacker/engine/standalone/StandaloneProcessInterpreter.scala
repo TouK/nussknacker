@@ -3,25 +3,23 @@ package pl.touk.nussknacker.engine.standalone
 import java.util.concurrent.atomic.AtomicLong
 
 import cats.data
-import cats.data.Validated.Invalid
+import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, ValidatedNel}
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.compile.ProcessCompilationError.{MissingPart, UnsupportedPart}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.UnsupportedPart
+import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.compiledgraph.part._
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.{CompilerLazyParameterInterpreter, LazyInterpreterDependencies, ProcessDefinitionExtractor}
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.graph.node.Source
-import pl.touk.nussknacker.engine.splittedgraph.splittednode.{NextNode, PartRef, SplittedNode}
+import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 import pl.touk.nussknacker.engine.standalone.api.types._
-import pl.touk.nussknacker.engine.standalone.api.{StandaloneCustomTransformer, StandaloneSource, StandaloneSourceFactory, types}
+import pl.touk.nussknacker.engine.standalone.api.{StandaloneCustomTransformer, StandaloneSource, types}
 import pl.touk.nussknacker.engine.standalone.metrics.InvocationMetrics
 import pl.touk.nussknacker.engine.standalone.utils.{StandaloneContext, StandaloneContextLifecycle, StandaloneContextPreparer}
 import pl.touk.nussknacker.engine.{Interpreter, ModelData, compiledgraph}
-import shapeless.Lazy
 
-import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 object StandaloneProcessInterpreter {
@@ -77,20 +75,25 @@ object StandaloneProcessInterpreter {
         compileWithCompilationErrors(node, validationContext).andThen(partInvoker(_, nextParts))
       case part@SinkPart(_, endNode, validationContext) =>
         compileWithCompilationErrors(endNode, validationContext).andThen(partInvoker(_, List()))
-      case CustomNodePart(transformer:StandaloneCustomTransformer, node, validationContext, parts, _) =>
-        val result = compileWithCompilationErrors(node, validationContext).andThen(partInvoker(_, parts))
+      case CustomNodePart(transformerObj, node, validationContext, parts, _) =>
+        val validatedTransformer = transformerObj match {
+          case t: StandaloneCustomTransformer => Valid(t)
+          case ContextTransformation(_, t: StandaloneCustomTransformer) => Valid(t)
+          case _ => Invalid(NonEmptyList.of(UnsupportedPart(node.id)))
+        }
+        validatedTransformer.andThen { transformer =>
+          val result = compileWithCompilationErrors(node, validationContext).andThen(partInvoker(_, parts))
 
-        //TODO: make it nice??
-        val creator = new CompilerLazyParameterInterpreter {
+            //TODO: make it nice??
+          val creator = new CompilerLazyParameterInterpreter {
           override def deps: LazyInterpreterDependencies = compiledProcess.lazyInterpreterDeps
 
           override def metaData: MetaData = compiledProcess.parts.metaData
 
           override def close(): Unit = {}
-        } 
-        result.map(transformer.createTransformation(node.data.outputVar.get)(_, creator))
-      case a: CustomNodePart => Invalid(NonEmptyList.of(UnsupportedPart(a.id)))
-      case a:JoinPart => Invalid(NonEmptyList.of(UnsupportedPart(a.id)))
+          }
+          result.map(transformer.createTransformation(node.data.outputVar.get)(_, creator))
+        }
     }
 
     private def compilePartInvokers(parts: List[SubsequentPart]) : CompilationResult[Map[String, InterpreterType]] =

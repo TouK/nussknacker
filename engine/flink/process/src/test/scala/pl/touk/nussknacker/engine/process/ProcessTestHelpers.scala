@@ -4,23 +4,25 @@ import java.util.Date
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
 
+import cats.data.Validated.Valid
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.flink.api.common.ExecutionConfig
-import org.apache.flink.api.common.functions.{FilterFunction, RichMapFunction}
+import org.apache.flink.api.common.functions.{FilterFunction, RuntimeContext}
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
-import org.apache.flink.configuration.{Configuration, QueryableStateOptions}
+import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.functions.TimestampAssigner
+import org.apache.flink.streaming.api.functions.co.RichCoMapFunction
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor
 import org.apache.flink.streaming.api.scala._
+import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionInfo, ExceptionHandlerFactory, NonTransientException}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.api.{LazyParameter, _}
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionHandler}
 import pl.touk.nussknacker.engine.flink.api.process._
-import pl.touk.nussknacker.engine.flink.api.state.WithExceptionHandler
 import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
 import pl.touk.nussknacker.engine.flink.util.exception._
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
@@ -83,8 +85,10 @@ object ProcessTestHelpers {
       override def customStreamTransformers(config: Config) = Map(
         "stateCustom" -> WithCategories(StateCustomNode),
         "customFilter" -> WithCategories(CustomFilter),
+        "customFilterContextTransformation" -> WithCategories(CustomFilterContextTransformation),
         "customContextClear" -> WithCategories(CustomContextClear),
-        "sampleJoin" -> WithCategories(CustomJoin)
+        "sampleJoin" -> WithCategories(CustomJoin),
+        "joinBranchExpression" -> WithCategories(CustomJoinUsingBranchExpressions)
       )
 
       override def listeners(config: Config) = List()
@@ -166,6 +170,25 @@ object ProcessTestHelpers {
     })
   }
 
+
+  object CustomFilterContextTransformation extends CustomStreamTransformer {
+
+    @MethodToInvoke(returnType = classOf[Void])
+    def execute(@ParamName("input") keyBy: LazyParameter[String],
+                @ParamName("stringVal") stringVal: String) =
+      ContextTransformation
+        .definedBy(Valid(_))
+        .implementedBy(
+          FlinkCustomStreamTransformation{ (start: DataStream[Context], context: FlinkCustomNodeContext) =>
+            start
+              .filter(new AbstractOneParamLazyParameterFunction(keyBy, context.lazyParameterHelper) with FilterFunction[Context] {
+                override def filter(value: Context): Boolean = evaluateParameter(value) == stringVal
+              })
+              .map(ValueWithContext(null, _))
+          })
+  }
+
+
   object CustomContextClear extends CustomStreamTransformer {
 
     override val clearsContext = true
@@ -185,7 +208,7 @@ object ProcessTestHelpers {
 
     override val clearsContext = true
 
-    @MethodToInvoke(returnType = classOf[Void])
+    @MethodToInvoke
     def execute(): FlinkCustomJoinTransformation =
       new FlinkCustomJoinTransformation {
         override def transform(inputs: Map[String, DataStream[Context]], context: FlinkCustomNodeContext): DataStream[ValueWithContext[Any]] = {
@@ -195,6 +218,50 @@ object ProcessTestHelpers {
             .map(inputFromIr, inputFromIr)
         }
       }
+
+  }
+
+  object CustomJoinUsingBranchExpressions extends CustomStreamTransformer {
+
+    @MethodToInvoke
+    def execute(@BranchParamName("value") valueByBranchId: Map[String, LazyParameter[_]],
+                @OutputVariableName variableName: String): JoinContextTransformation =
+      ContextTransformation
+        .join.definedBy { contexts =>
+        val newType = TypedObjectTypingResult(contexts.toSeq.map {
+          case (branchId, _) =>
+            branchId -> valueByBranchId(branchId).returnType
+        }.toMap)
+        Valid(ValidationContext(Map(variableName -> newType)))
+      }.implementedBy(
+        new FlinkCustomJoinTransformation {
+          override def transform(inputs: Map[String, DataStream[Context]],
+                                 flinkContext: FlinkCustomNodeContext): DataStream[ValueWithContext[Any]] = {
+            inputs("end1")
+              .connect(inputs("end2"))
+              .map(new JoinExprBranchFunction(valueByBranchId, flinkContext.lazyParameterHelper))
+          }
+        })
+
+  }
+
+  class JoinExprBranchFunction(valueByBranchId: Map[String, LazyParameter[_]],
+                               val lazyParameterHelper: FlinkLazyParameterFunctionHelper)
+    extends RichCoMapFunction[Context, Context, ValueWithContext[Any]] with LazyParameterInterpreterFunction {
+
+    @transient lazy val end1Interpreter: Context => Any =
+      lazyParameterInterpreter.syncInterpretationFunction(valueByBranchId("end1"))
+
+    @transient lazy val end2Interpreter: Context => Any =
+      lazyParameterInterpreter.syncInterpretationFunction(valueByBranchId("end2"))
+
+    override def map1(ctx: Context): ValueWithContext[Any] = {
+      ValueWithContext(end1Interpreter(ctx), ctx)
+    }
+
+    override def map2(ctx: Context): ValueWithContext[Any] = {
+      ValueWithContext(end2Interpreter(ctx), ctx)
+    }
 
   }
 

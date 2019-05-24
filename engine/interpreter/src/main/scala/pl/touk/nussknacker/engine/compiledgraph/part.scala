@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.compiledgraph
 
 import pl.touk.nussknacker.engine._
-import pl.touk.nussknacker.engine.compile.ValidationContext
+import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.splittedgraph.end.{End, NormalEnd}
 import pl.touk.nussknacker.engine.splittedgraph.splittednode
@@ -16,28 +16,21 @@ object part {
     def id: String = node.id
   }
 
-  sealed trait StartPart extends ProcessPart {
+  sealed trait PotentiallyStartPart extends ProcessPart {
     def nextParts: List[SubsequentPart]
   }
 
-  case class JoinPart(transformer: AnyRef,
-                              node: splittednode.SourceNode[Join], validationContext: ValidationContext, nextValidationContext: ValidationContext,
-                              nextParts: List[SubsequentPart], ends: List[End]) extends StartPart {
-    override type T = Join
-
-  }
-
   case class SourcePart(obj: api.process.Source[Any], node: splittednode.SourceNode[SourceNodeData], validationContext: ValidationContext,
-                        nextParts: List[SubsequentPart], ends: List[End]) extends StartPart {
+                        nextParts: List[SubsequentPart], ends: List[End]) extends PotentiallyStartPart {
     override type T = SourceNodeData
   }
 
   sealed trait SubsequentPart extends ProcessPart
 
   case class CustomNodePart(transformer: AnyRef,
-                            node: splittednode.OneOutputSubsequentNode[CustomNode], validationContext: ValidationContext,
-                            nextParts: List[SubsequentPart], ends: List[End]) extends SubsequentPart {
-    override type T = CustomNode
+                            node: splittednode.OneOutputNode[CustomNodeData], validationContext: ValidationContext,
+                            nextParts: List[SubsequentPart], ends: List[End]) extends PotentiallyStartPart with SubsequentPart {
+    override type T = CustomNodeData
 
   }
 

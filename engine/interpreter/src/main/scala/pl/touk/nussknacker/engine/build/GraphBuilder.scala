@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.engine.build
 
-import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
+import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter}
 import pl.touk.nussknacker.engine.graph.expression._
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.{evaluatedparam, node}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
-import pl.touk.nussknacker.engine.graph.source.{JoinRef, SourceRef}
+import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
 import pl.touk.nussknacker.engine.graph.variable._
 
@@ -94,7 +94,13 @@ object GraphBuilder extends GraphBuilder[SubsequentNode] {
     new SimpleGraphBuilder(SourceNode(Source(id, SourceRef(typ, params.map(evaluatedparam.Parameter.tupled).toList)), _))
 
 
-  def branch(id: String, typ: String, output: Option[String], params: (String, Expression)*): GraphBuilder[SourceNode] =
-    new SimpleGraphBuilder(SourceNode(node.Join(id, JoinRef(typ, params.map(evaluatedparam.Parameter.tupled).toList), output), _))
+  def branch(id: String, typ: String, output: Option[String], branchParams: List[(String, List[(String, Expression)])], params: (String, Expression)*): GraphBuilder[SourceNode] = {
+    val parameters = params.map(evaluatedparam.Parameter.tupled)
+    val branchParameters = branchParams.map {
+      case (branchId, bParams) =>
+        BranchParameters(branchId, bParams.map(evaluatedparam.Parameter.tupled))
+    }
+    new SimpleGraphBuilder(SourceNode(node.Join(id, output, typ, parameters.toList, branchParameters), _))
+  }
 
 }

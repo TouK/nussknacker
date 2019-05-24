@@ -1,6 +1,4 @@
-package pl.touk.nussknacker.engine.compile
-
-import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessClazzRef
+package pl.touk.nussknacker.engine.api.context
 
 sealed trait ProcessCompilationError {
   def nodeIds: Set[String]
@@ -58,7 +56,7 @@ object ProcessCompilationError {
       ExpressionParseError(message, nodeId.id, fieldName, originalExpr)
   }
 
-  case class SubprocessParamClassLoadError(fieldName: String, typ: SubprocessClazzRef, nodeId: String)
+  case class SubprocessParamClassLoadError(fieldName: String, refClazzName: String, nodeId: String)
     extends PartSubGraphCompilationError with InASingleNode
 
   case class MissingService(serviceId: String, nodeId: String)

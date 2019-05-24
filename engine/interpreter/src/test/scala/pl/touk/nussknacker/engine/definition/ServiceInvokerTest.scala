@@ -23,7 +23,7 @@ class ServiceInvokerTest extends FlatSpec with ScalaFutures with OptionValues wi
     val definition = ObjectWithMethodDef.withEmptyConfig(mock, ServiceInvoker.Extractor)
     val invoker = ServiceInvoker(definition)
 
-    whenReady(invoker.invoke(Map("foo" -> "aa", "bar" -> 1), NodeContext("", "", ""))) { _ =>
+    whenReady(invoker.invoke(Map("foo" -> "aa", "bar" -> 1), NodeContext("", "", "", None))) { _ =>
       mock.invoked.value.shouldEqual(("aa", 1, metadata))
     }
   }
@@ -34,7 +34,7 @@ class ServiceInvokerTest extends FlatSpec with ScalaFutures with OptionValues wi
     val invoker = ServiceInvoker(definition)
 
     intercept[IllegalArgumentException](
-      invoker.invoke(Map("foo" -> "aa", "bar" -> "terefere"), NodeContext("", "", ""))).getMessage shouldBe "Parameter bar has invalid class: java.lang.String, should be: int"
+      invoker.invoke(Map("foo" -> "aa", "bar" -> "terefere"), NodeContext("", "", "", None))).getMessage shouldBe "Parameter bar has invalid class: java.lang.String, should be: int"
   }
 
   it should "invoke service method with CompletionStage return type" in {
@@ -42,7 +42,7 @@ class ServiceInvokerTest extends FlatSpec with ScalaFutures with OptionValues wi
     val definition = ObjectWithMethodDef.withEmptyConfig(mock, ServiceInvoker.Extractor)
     val invoker = ServiceInvoker(definition)
 
-    whenReady(invoker.invoke(Map("foo" -> "aa", "bar" -> 1), NodeContext("", "", ""))) { _ =>
+    whenReady(invoker.invoke(Map("foo" -> "aa", "bar" -> 1), NodeContext("", "", "", None))) { _ =>
       mock.invoked.value.shouldEqual(("aa", 1, metadata))
     }
   }

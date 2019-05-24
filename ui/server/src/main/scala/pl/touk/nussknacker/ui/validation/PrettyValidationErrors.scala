@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.ui.validation
 
 import pl.touk.nussknacker.engine.ProcessingTypeData
-import pl.touk.nussknacker.engine.compile.ProcessCompilationError
-import pl.touk.nussknacker.engine.compile.ProcessCompilationError._
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.util.ReflectUtils
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType}
@@ -17,8 +17,8 @@ object PrettyValidationErrors {
     error match {
       case ExpressionParseError(message, _, fieldName, _) => node(s"Failed to parse expression: $message",
         s"There is problem with expression in field $fieldName - it could not be parsed.", fieldName = fieldName)
-      case SubprocessParamClassLoadError(fieldName, typ, nodeId) =>
-        node("Ivalid parameter type.", s"Failed to load ${typ.refClazzName}", fieldName = Some(fieldName))
+      case SubprocessParamClassLoadError(fieldName, refClazzName, nodeId) =>
+        node("Ivalid parameter type.", s"Failed to load $refClazzName", fieldName = Some(fieldName))
       case DuplicatedNodeIds(ids) => node(s"Duplicate node ids: ${ids.mkString(", ")}", "Two nodes cannot have same id", errorType = NodeValidationErrorType.RenderNotAllowed)
       case EmptyProcess => node("Empty process", "Process is empty, please add some nodes")
       case InvalidRootNode(_) => node("Invalid root node", "Process can start only from source node")

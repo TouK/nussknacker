@@ -9,7 +9,7 @@ object InvocationCollectors {
 
   type ToCollect = Any
 
-  case class NodeContext(contextId: String, nodeId: String, ref: String)
+  case class NodeContext(contextId: String, nodeId: String, ref: String, outputVariableNameOpt: Option[String])
 
   case class QueryServiceResult(name: String, result: Any)
 

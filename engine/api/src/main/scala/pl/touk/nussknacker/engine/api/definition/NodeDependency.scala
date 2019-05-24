@@ -4,6 +4,11 @@ import argonaut.derive.{JsonSumCodec, JsonSumCodecFor}
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 
+sealed trait NodeDependency
+
+case class TypedNodeDependency(clazz: Class[_]) extends NodeDependency
+
+case object OutputVariableNameDependency extends NodeDependency
 
 object Parameter {
   def unknownType(name: String) = Parameter(name, Unknown, Unknown)
@@ -16,7 +21,8 @@ case class Parameter(
                       typ: TypingResult,
                       originalType: TypingResult,
                       restriction: Option[ParameterRestriction] = None,
-                      additionalVariables: Map[String, TypingResult] = Map.empty)
+                      additionalVariables: Map[String, TypingResult] = Map.empty,
+                      branchParam: Boolean = false) extends NodeDependency
 
 object ParameterRestriction {
 

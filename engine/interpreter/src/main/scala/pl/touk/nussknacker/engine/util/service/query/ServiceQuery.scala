@@ -63,7 +63,8 @@ object ServiceQuery {
   private val dummyNodeContext = NodeContext(
     contextId = "dummyContextId",
     nodeId = "dummyNodeId",
-    ref = "dummyRef"
+    ref = "dummyRef",
+    outputVariableNameOpt = None
   )
   implicit val metaData: MetaData = MetaData(
     id = "testProcess",

@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
-import pl.touk.nussknacker.engine.graph.source.{JoinRef, SourceRef}
+import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType.{FilterFalse, FilterTrue}
@@ -73,7 +73,8 @@ object DefinitionPreparer {
     val customTransformers = NodeGroup("custom",
       processDefinition.customStreamTransformers.map {
         case (id, (objDefinition, additionalData)) if additionalData.manyInputs => NodeToAdd("customNode", id,
-          node.Join("", JoinRef(id, objDefParams(id, objDefinition)), if (objDefinition.hasNoReturn) None else Some("outputVar")), filterCategories(objDefinition))
+          // TODO JOIN: add branch params
+          node.Join("", if (objDefinition.hasNoReturn) None else Some("outputVar"), id, objDefParams(id, objDefinition), List.empty), filterCategories(objDefinition))
         case (id, (objDefinition, additionalData)) => NodeToAdd("customNode", id,
           CustomNode("", if (objDefinition.hasNoReturn) None else Some("outputVar"), id, objDefParams(id, objDefinition)), filterCategories(objDefinition))
       }.toList

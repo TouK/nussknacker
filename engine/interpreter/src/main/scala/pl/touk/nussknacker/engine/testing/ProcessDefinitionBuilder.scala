@@ -4,7 +4,7 @@ import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectDefinition, ObjectWithMethodDef}
-import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedParameters}
+import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedDependencies}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ExpressionDefinition, ProcessDefinition}
 import pl.touk.nussknacker.engine.util.Implicits._
 
@@ -19,7 +19,7 @@ object ProcessDefinitionBuilder {
   def withEmptyObjects(definition: ProcessDefinition[ObjectDefinition]): ProcessDefinition[ObjectWithMethodDef] = {
 
     def makeDummyDefinition(objectDefinition: ObjectDefinition, realType: TypingResult = Typed[Any]) = new ObjectWithMethodDef(null,
-      MethodDefinition("", (_, _) => null, new OrderedParameters(objectDefinition.parameters.map(Left(_))),
+      MethodDefinition("", (_, _) => null, new OrderedDependencies(objectDefinition.parameters),
         Typed[Any],
         realType, List()), objectDefinition)
 

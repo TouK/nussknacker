@@ -7,10 +7,10 @@ import java.util
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.lazyy.{LazyContext, LazyValuesProvider}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.api.typed.{ClazzRef, TypedMap}
-import pl.touk.nussknacker.engine.compile.ValidationContext
 
 import scala.collection.JavaConverters._
 
@@ -88,7 +88,7 @@ class SqlExpressionTest extends FunSuite with Matchers with ScalaFutures {
   private def parseOrFail(expression: String, validationContext: ValidationContext = validationContext): SqlExpression =
     SqlExpressionParser
           .parse(expression, validationContext, Typed[java.util.List[_]])
-          .leftMap(err => fail(s"Failed to parse: $err")).merge._2
+          .leftMap(err => fail(s"Failed to parse: $err")).merge.expression.asInstanceOf[SqlExpression]
 
   case class TestBean(field1: String, isField2: Boolean, getField3: Long)
 

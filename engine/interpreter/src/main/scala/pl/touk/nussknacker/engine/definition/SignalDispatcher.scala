@@ -18,7 +18,7 @@ trait ConfigCreatorSignalDispatcher extends SignalDispatcher {
     ThreadUtils.withThisAsContextClassLoader(configCreator.getClass.getClassLoader) {
       configCreator.signals(processConfig).get(signalType).map { signalFactory =>
         val objectWithMethodDef = ObjectWithMethodDef.withEmptyConfig(signalFactory.value, ProcessObjectDefinitionExtractor.signals)
-        objectWithMethodDef.invokeMethod(parameters.get, List(processId))
+        objectWithMethodDef.invokeMethod(parameters.get, None, List(processId))
         ()
       }
     }

@@ -6,6 +6,7 @@ import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.{FunSuite, Matchers}
 import org.springframework.expression.spel.standard.SpelExpression
 import pl.touk.nussknacker.engine.InterpreterSpec._
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.definition.{ServiceWithExplicitMethod, WithExplicitMethodToInvoke}
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.lazyy.UsingLazyValues
@@ -594,7 +595,7 @@ object InterpreterSpec {
 
     var invocations = 0
 
-    @MethodToInvoke
+    @MethodToInvoke(returnType = classOf[Account])
     def invoke(@ParamName("id") id: String)
               (implicit ec: ExecutionContext) = {
       invocations += 1
@@ -611,7 +612,7 @@ object InterpreterSpec {
 
     var invocations = 0
 
-    @MethodToInvoke
+    @MethodToInvoke(returnType = classOf[String])
     def invoke(@ParamName("name") name: String) = {
       invocations += 1
       Future.successful("translated" + name)
@@ -625,7 +626,7 @@ object InterpreterSpec {
   object SpelNodeService extends Service {
     
    
-    @MethodToInvoke
+    @MethodToInvoke(returnType = classOf[String])
     def invoke(@ParamName("expression") expr: SpelExpressionRepr) = {
       Future.successful(expr.original + " - " + expr.parsed.asInstanceOf[SpelExpression].getAST.getClass.getSimpleName)
     }

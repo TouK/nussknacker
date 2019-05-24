@@ -3,9 +3,10 @@ package pl.touk.nussknacker.engine.util.service.query
 import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.{Context, MetaData}
-import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, PartSubGraphCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.compile.ProcessCompilationError.NodeId
+import pl.touk.nussknacker.engine.compile.ExpressionCompiler
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.expression.Expression
