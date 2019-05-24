@@ -12,6 +12,7 @@ import pl.touk.http.argonaut.Argonaut62Support
 import pl.touk.nussknacker.ui.validation.FatalValidationError
 
 import scala.language.implicitConversions
+import scala.util.control.NonFatal
 
 object EspErrorToHttp extends LazyLogging with Argonaut62Support {
 
@@ -42,7 +43,7 @@ object EspErrorToHttp extends LazyLogging with Argonaut62Support {
   def espErrorHandler: ExceptionHandler = {
     import akka.http.scaladsl.server.Directives._
     ExceptionHandler {
-      case e: EspError => complete(errorToHttp(e))
+      case NonFatal(e) => complete(errorToHttp(e))
     }
   }
 
