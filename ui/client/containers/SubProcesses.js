@@ -30,7 +30,7 @@ class SubProcesses extends React.Component {
       showLoader: true,
       showAddProcess: false,
       currentPage: 0,
-      sort: { column: "Process name", direction: 1}
+      sort: { column: "name", direction: 1}
     };
   }
 
@@ -104,21 +104,34 @@ class SubProcesses extends React.Component {
            pageButtonLimit={5}
            previousPageLabel="<"
            nextPageLabel=">"
-           sortable={['Process name', 'Category', 'Last modification']}
-           filterable={['Process name', 'Category']}
+           sortable={['id', 'name', 'category', 'modifyDate']}
+           filterable={['id', 'name', 'category']}
            hideFilterInput
            filterBy={this.getFilterValue()}
-
+           columns = {[
+             {key: 'name', label: 'Process name'},
+             {key: 'category', label: 'Category'},
+             {key: 'modifyDate', label: 'Last modification'},
+             {key: 'edit', label: 'Edit'}
+           ]}
         >
+
+          <Thead>
+            <th>Process name</th>
+            <th>Category</th>
+            <th className="date-column">Last modification</th>
+            <th className="status-column">Status</th>
+            <th className="edit-column">Edit</th>
+          </Thead>
 
           {this.state.processes.map((process, index) => {
             return (
               <Tr className="row-hover" key={index}>
-                <Td column="Process name">{process.name}</Td>
-                <Td column="Category">{process.processCategory}</Td>
+                <Td column="name">{process.name}</Td>
+                <Td column="category">{process.processCategory}</Td>
 
-                <Td column="Last modification" className="date-column">{DateUtils.format(process.modificationDate)}</Td>
-                <Td column="Edit" className="edit-column">
+                <Td column="modifyDate" className="date-column">{DateUtils.format(process.modificationDate)}</Td>
+                <Td column="edit" className="edit-column">
                   <img src={editIcon} className="edit-icon" title="Edit" onClick={this.showProcess.bind(this, process)} />
                 </Td>
               </Tr>

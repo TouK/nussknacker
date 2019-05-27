@@ -23,7 +23,7 @@ class Archive extends React.Component {
       showLoader: true,
       showAddProcess: false,
       currentPage: 0,
-      sort: { column: "Process name", direction: 1}
+      sort: { column: "name", direction: 1}
     };
   }
 
@@ -94,21 +94,33 @@ class Archive extends React.Component {
            pageButtonLimit={5}
            previousPageLabel="<"
            nextPageLabel=">"
-           sortable={['Process name', 'Category', 'Last modification']}
-           filterable={['Process name', 'Category']}
+           sortable={['name', 'category', 'modifyDate']}
+           filterable={['name', 'category']}
            hideFilterInput
            filterBy={this.getFilterValue()}
-
+           columns = {[
+             {key: 'name', label: 'Process name'},
+             {key: 'category', label: 'Category'},
+             {key: 'modifyDate', label: 'Last modification'},
+             {key: 'view', label: 'View'},
+           ]}
         >
+
+          <Thead>
+            <Th column="name">Process name</Th>
+            <Th column="category">Category</Th>
+            <Th column="modifyDate" className="date-column">Last modification</Th>
+            <Th column="view" className="edit-column">View</Th>
+          </Thead>
 
           {this.state.processes.map((process, index) => {
             return (
               <Tr className="row-hover" key={index}>
-                <Td column="Process name">{process.name}</Td>
-                <Td column="Category">{process.processCategory}</Td>
+                <Td column="name">{process.name}</Td>
+                <Td column="category">{process.processCategory}</Td>
 
-                <Td column="Last modification" className="date-column">{DateUtils.format(process.modificationDate)}</Td>
-                <Td column="View" className="edit-column">
+                <Td column="modifyDate" className="date-column">{DateUtils.format(process.modificationDate)}</Td>
+                <Td column="view" className="edit-column">
                   <img src={editIcon} className="edit-icon" title="View" onClick={e => this.showProcess(process)} />
                 </Td>
               </Tr>
