@@ -1,9 +1,7 @@
 import React from 'react';
-import { render } from 'react-dom';
-import { Provider } from 'react-redux';
-import { browserHistory, Router, Route, IndexRoute, Link } from 'react-router'
+import {browserHistory, IndexRoute, Route, Router} from 'react-router'
 
-import { App } from './MainPage';
+import {App} from './MainPage';
 import Processes from './Processes';
 import Archive from './Archive';
 import SubProcesses from './SubProcesses';
@@ -12,12 +10,13 @@ import Metrics from './Metrics';
 import Search from './Search';
 import Signals from './Signals';
 import AdminPage from './AdminPage';
+import { hot } from 'react-hot-loader/root';
 
 import 'bootstrap/dist/css/bootstrap.css';
 import '../assets/fonts/fonts.less'
 import '../app.styl'
 
-export default class EspAppRouter extends React.Component {
+class EspAppRouter extends React.Component {
 
   render() {
     browserHistory.listen(location => {
@@ -42,3 +41,5 @@ export default class EspAppRouter extends React.Component {
     );
   }
 }
+
+export default hot(EspAppRouter)

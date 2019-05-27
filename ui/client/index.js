@@ -40,7 +40,3 @@ const render = (Component, root) => {
 
 const root = createRootApp();
 render(EspAppRouter, root);
-
-if (module.hot) {
-  module.hot.accept('./containers/EspAppRouter', () => { render(EspAppRouter) });
-}

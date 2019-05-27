@@ -10,22 +10,25 @@ const isProd = NODE_ENV === 'production';
 
 
 module.exports = {
+  performance: {
+    maxEntrypointSize: 3000000,
+    maxAssetSize: 3000000
+  },
   resolve: {
     alias: {
       'react-dom': '@hot-loader/react-dom'
     }
   },
-  entry: isProd ? [
-    './index',
-  ] : [
-    'webpack-dev-server/client?http://localhost:3000',
-    'webpack/hot/only-dev-server',
-    'react-hot-loader/patch',
-    './index',
-  ],
+  entry: isProd ? './index' : {
+    vendors: [
+      "webpack-dev-server/client?http://localhost:3000",
+      "react-hot-loader/patch"
+    ],
+    main: './index'
+  },
   output: {
     path: path.join(__dirname, '..', 'server', 'target', 'scala-2.11', 'classes', 'web', 'static'),
-    filename: 'bundle.js',
+    filename: '[name].js',
     publicPath: '/static/'
   },
   devtool: isProd ? 'hidden-source-map' : 'eval-source-map',
@@ -49,22 +52,23 @@ module.exports = {
       },
       'GIT': {
         'HASH': JSON.stringify(GIT_HASH),
+        'HASH': JSON.stringify(GIT_HASH),
         'DATE': JSON.stringify(GIT_DATE)
       }
-    })
+    }),
   ].filter(p => p !== null),
   module: {
-    loaders: [{
+    rules: [{
       test: /\.html$/,
       loader: "html-loader?minimize=false"
     }, {
       test: /\.js$/,
-      loaders: ['babel'],
+      loader: 'babel-loader',
       exclude: /node_modules/,
       include: __dirname
     }, {
       test: /\.css?$/,
-      loaders: ['style', 'raw'],
+      loaders: ['style-loader', 'raw-loader'],
       include: __dirname
     }, {
       test: /\.styl$/,
@@ -72,15 +76,12 @@ module.exports = {
       include: __dirname
     }, {
       test: /\.less$/,
-      loaders: ['style', 'css', 'less'],
+      loaders: ['style-loader', 'css-loader', 'less-loader'],
       include: __dirname
     }, {
       test: /\.(eot|svg|png|ttf|woff|woff2)$/,
-      loader: 'file?name=assets/fonts/[name].[ext]',
+      loader: 'file-loader?name=assets/fonts/[name].[ext]',
       include: __dirname
-    }, {
-      test: /\.json$/,
-      loaders: ['json-loader'],
     }]
-  },
+  }
 };
