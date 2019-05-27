@@ -1,14 +1,14 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { Provider } from 'react-redux';
-import { AppContainer } from 'react-hot-loader'
+import {Provider} from 'react-redux';
+import {AppContainer} from 'react-hot-loader'
 import NotificationSystem from 'react-notification-system';
-import $ from 'jquery';
 
 import configureStore from './store/configureStore';
 import HttpService from './http/HttpService'
 import Settings from './http/Settings'
 import EspAppRouter from './containers/EspAppRouter';
+import Modal from "react-modal";
 
 import "./stylesheets/notifications.styl";
 
@@ -23,6 +23,7 @@ const store = configureStore();
 Settings.updateSettings(store);
 
 const render = (Component, root) => {
+  Modal.setAppElement("#rootApp");
   ReactDOM.render(
     <AppContainer>
       <Provider store={store}>
@@ -39,8 +40,3 @@ const render = (Component, root) => {
 
 const root = createRootApp();
 render(EspAppRouter, root);
-
-if (module.hot) {
-  module.hot.accept('./containers/EspAppRouter', () => { render(EspAppRouter) });
-}
-

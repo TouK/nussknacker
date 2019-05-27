@@ -1,12 +1,12 @@
 import React from 'react';
-import { render } from 'react-dom';
-import { withRouter } from 'react-router';
+import {render} from 'react-dom';
+import {withRouter} from 'react-router';
 import Graph from '../components/graph/Graph';
 import UserRightPanel from '../components/right-panel/UserRightPanel';
 import UserLeftPanel from '../components/UserLeftPanel';
 import HttpService from '../http/HttpService'
 import _ from 'lodash';
-import { connect } from 'react-redux';
+import {connect} from 'react-redux';
 import ActionsUtils from '../actions/ActionsUtils';
 import ProcessUtils from '../common/ProcessUtils';
 import DialogMessages from '../common/DialogMessages';
@@ -15,11 +15,13 @@ import NodeUtils from '../components/graph/NodeUtils';
 import * as VisualizationUrl from '../common/VisualizationUrl'
 import SpinnerWrapper from "../components/SpinnerWrapper";
 
-const Visualization = withRouter(React.createClass({
 
-  getInitialState: function() {
-    return { timeoutId: null, intervalId: null, status: {}, isArchived: null, dataResolved: false};
-  },
+class Visualization extends React.Component {
+
+  constructor(props) {
+    super(props);
+    this.state = { timeoutId: null, intervalId: null, status: {}, isArchived: null, dataResolved: false};
+  }
 
   componentDidMount() {
     const businessView = VisualizationUrl.extractBusinessViewParams(this.props.location.query)
@@ -38,7 +40,7 @@ const Visualization = withRouter(React.createClass({
     this.fetchProcessStatus()
     this.bindKeyboardActions()
     this.bindUnsavedProcessChangesDialog()
-  },
+  }
 
   showModalDetailsIfNeeded(process) {
     const {urlNodeId, urlEdgeId} = VisualizationUrl.extractVisualizationParams(this.props.location.query)
@@ -48,13 +50,13 @@ const Visualization = withRouter(React.createClass({
     if (!_.isEmpty(urlEdgeId)) {
       this.props.actions.displayModalEdgeDetails(NodeUtils.getEdgeById(urlEdgeId, process))
     }
-  },
+  }
 
   setBusinessView(businessView){
     if (businessView != null){
       this.props.actions.businessViewChanged(businessView)
     }
-  },
+  }
 
   showCountsIfNeeded(process) {
     const countParams = VisualizationUrl.extractCountParams(this.props.location.query);
@@ -62,7 +64,7 @@ const Visualization = withRouter(React.createClass({
       const {from, to} = countParams;
       this.props.actions.fetchAndDisplayProcessCounts(process.id, from, to);
     }
-  },
+  }
 
   bindUnsavedProcessChangesDialog() {
     this.props.router.setRouteLeaveHook(this.props.route, (route) => {
@@ -70,7 +72,7 @@ const Visualization = withRouter(React.createClass({
         return DialogMessages.unsavedProcessChanges()
       }
     })
-  },
+  }
 
   bindKeyboardActions() {
     window.onkeydown = (event) => {
@@ -85,54 +87,55 @@ const Visualization = withRouter(React.createClass({
         this.deleteNode(this.props.currentNodeId)
       }
     }
-  },
+  }
 
   componentWillUnmount() {
     clearTimeout(this.state.timeoutId)
     clearInterval(this.state.intervalId)
     this.props.actions.clearProcess()
-  },
+  }
 
   startPollingForUpdates() {
     var timeoutId = setTimeout(() =>
       this.setState({ intervalId: setInterval(this.fetchProcessDetails, 10000) }),
     2000)
     this.setState({timeoutId: timeoutId})
-  },
+  }
 
   fetchProcessDetails(businessView) {
     const details = this.props.actions.fetchProcessToDisplay (this.props.params.processId, undefined, businessView)
     this.props.actions.displayProcessActivity(this.props.params.processId)
     return details
-  },
+  }
 
   fetchProcessStatus() {
     HttpService.fetchSingleProcessStatus(this.props.params.processId).then ((status) => {
       this.setState({status: status})
     })
-  },
+  }
 
   isRunning() {
     return _.get(this.state.status, 'isRunning', false)
-  },
+  }
 
   undo() {
     //this `if` should be closer to reducer?
     if (this.props.undoRedoAvailable) {
       this.props.undoRedoActions.undo()
     }
-  },
+  }
 
   redo() {
     if (this.props.undoRedoAvailable) {
       this.props.undoRedoActions.redo()
     }
-  },
+  }
 
   deleteNode(id) {
     this.props.actions.deleteNode(id)
-  },
-  render: function() {
+  }
+
+  render() {
     const { leftPanelIsOpened, actions, loggedUser } = this.props;
     //it has to be that way, because graph is redux component
     var getGraph = () => this.refs.graph.getWrappedInstance().getDecoratedComponentInstance();
@@ -172,14 +175,12 @@ const Visualization = withRouter(React.createClass({
         </SpinnerWrapper>
       </div>
     );
-  },
-
-}));
+  }
+}
 
 Visualization.title = 'Visualization'
 Visualization.path = VisualizationUrl.visualizationRouterPath
 Visualization.header = 'Visualization'
-
 
 function mapState(state) {
   const processCategory = _.get(state, 'graphReducer.fetchedProcessDetails.processCategory');
@@ -199,4 +200,4 @@ function mapState(state) {
     loggedUser: state.settings.loggedUser
   };
 }
-export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(Visualization);
+export default withRouter(connect(mapState, ActionsUtils.mapDispatchWithEspActions)(Visualization));

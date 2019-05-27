@@ -1,25 +1,21 @@
-import React, {Component} from 'react';
-import {render} from 'react-dom';
-import { connect } from 'react-redux';
-import { bindActionCreators } from 'redux';
+import React from 'react';
+import PropTypes from 'prop-types';
+import {connect} from 'react-redux';
 import Modal from 'react-modal';
 import _ from 'lodash';
-import LaddaButton from 'react-ladda';
-import laddaCss from 'ladda/dist/ladda.min.css'
+import LaddaButton from "react-ladda"
+import "../../stylesheets/ladda.styl";
 import ActionsUtils from '../../actions/ActionsUtils';
 import NodeUtils from './NodeUtils';
-import { ListGroupItem } from 'react-bootstrap';
 import ExpressionSuggest from './ExpressionSuggest'
 import ModalRenderUtils from "./ModalRenderUtils"
-
 import EspModalStyles from '../../common/EspModalStyles'
-import {Scrollbars} from "react-custom-scrollbars";
 
 //TODO: this is still pretty switch-specific. 
 class EdgeDetailsModal extends React.Component {
 
   static propTypes = {
-    edgeToDisplay: React.PropTypes.object.isRequired
+    edgeToDisplay: PropTypes.object.isRequired
   }
 
   constructor(props) {
@@ -57,9 +53,16 @@ class EdgeDetailsModal extends React.Component {
   renderModalButtons() {
     if (!this.props.readOnly) {
       return ([
-        <LaddaButton key="1" title="Save edge details" className='modalButton pull-right modalConfirmButton'
-                      loading={this.state.pendingRequest}
-                      buttonStyle='zoom-in' onClick={this.performEdgeEdit}>Save</LaddaButton>,
+        <LaddaButton
+            key="1"
+            title="Save edge details"
+            className='modalButton pull-right modalConfirmButton'
+            loading={this.state.pendingRequest}
+            data-style='zoom-in'
+            onClick={this.performEdgeEdit}
+        >
+          Save
+        </LaddaButton>,
         <button key="3" type="button" title="Close edge details" className='modalButton' onClick={this.closeModal}>
           Close
         </button>

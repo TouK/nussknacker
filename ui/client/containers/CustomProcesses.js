@@ -105,7 +105,14 @@ class CustomProcesses extends PeriodicallyReloadingComponent {
                filterable={['name', 'category']}
                hideFilterInput
                filterBy={this.getFilterValue()}
-
+               columns = {[
+                 {key: 'name', label: 'Process name'},
+                 {key: 'category', label: 'Category'},
+                 {key: 'modifyDate', label: 'Last modification'},
+                 {key: 'status', label: 'Status'},
+                 {key: 'deploy', label: 'Deploy'},
+                 {key: 'stop', label: 'Stop'}
+               ]}
         >
 
           <Thead>

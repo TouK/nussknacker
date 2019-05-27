@@ -1,4 +1,5 @@
-import React from "react"
+import React from "react";
+import PropTypes from 'prop-types';
 
 const CommentInput = (props) => {
   return (
@@ -11,7 +12,7 @@ const CommentInput = (props) => {
 }
 
 CommentInput.propTypes = {
-  onChange: React.PropTypes.func
+  onChange: PropTypes.func
 }
 
 export default CommentInput

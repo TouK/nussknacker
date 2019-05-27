@@ -103,8 +103,8 @@ class ProcessSearch extends React.Component {
     })
     return (
       <div>
-        <select className="table-select" onChange={(e) => this.setState({componentToFind: e.target.value})}>
-          <option disabled selected value> -- select an option --</option>
+        <select className="table-select" onChange={(e) => this.setState({componentToFind: e.target.value})} value={0}>
+          <option disabled key={0} value={0}> -- select an option --</option>
           {this.props.componentIds.map((componentId, index) => {
             return (<option key={index} value={componentId}>{componentId}</option>)
           })}

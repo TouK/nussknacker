@@ -1,14 +1,10 @@
-import React, {Component} from 'react';
-import {render} from 'react-dom';
-import { connect } from 'react-redux';
-import { bindActionCreators } from 'redux';
-import classNames from 'classnames';
+import React from 'react';
+import {connect} from 'react-redux';
 import Modal from 'react-modal';
 import _ from 'lodash';
-import LaddaButton from 'react-ladda';
-import laddaCss from 'ladda/dist/ladda.min.css'
+import LaddaButton from "react-ladda"
+import "../../stylesheets/ladda.styl";
 import ActionsUtils from '../../actions/ActionsUtils';
-import { ListGroupItem } from 'react-bootstrap';
 import NodeUtils from './NodeUtils';
 import NodeDetailsContent from './NodeDetailsContent';
 import EspModalStyles from '../../common/EspModalStyles'
@@ -19,15 +15,16 @@ import {BareGraph} from "./Graph";
 import HttpService from "../../http/HttpService";
 import SvgDiv from "../SvgDiv"
 import ProcessUtils from "../../common/ProcessUtils";
+import PropTypes from 'prop-types';
 
 class NodeDetailsModal extends React.Component {
 
   static propTypes = {
-    nodeToDisplay: React.PropTypes.object.isRequired,
-    testResults: React.PropTypes.object,
-    processId: React.PropTypes.string.isRequired,
-    nodeErrors: React.PropTypes.array.isRequired,
-    readOnly: React.PropTypes.bool.isRequired
+    nodeToDisplay: PropTypes.object.isRequired,
+    testResults: PropTypes.object,
+    processId: PropTypes.string.isRequired,
+    nodeErrors: PropTypes.array.isRequired,
+    readOnly: PropTypes.bool.isRequired
   }
 
   constructor(props) {
@@ -91,9 +88,19 @@ class NodeDetailsModal extends React.Component {
   renderModalButtons() {
     return ([
       this.isGroup() ? this.renderGroupUngroup() : null,
-      !this.props.readOnly ? <LaddaButton key="1" title="Save node details" className='modalButton pull-right modalConfirmButton'
-                    loading={this.state.pendingRequest}
-                    buttonStyle='zoom-in' onClick={this.performNodeEdit}>Save</LaddaButton>: null,
+      !this.props.readOnly ?
+          <LaddaButton
+              key="1"
+              title="Save node details"
+              className='modalButton pull-right modalConfirmButton'
+              loading={this.state.pendingRequest}
+              data-style='zoom-in'
+              onClick={this.performNodeEdit}
+          >
+            Save
+          </LaddaButton>
+          :
+          null,
       <button key="2" type="button" title="Close node details" className='modalButton' onClick={this.closeModal}>
         Close
       </button>

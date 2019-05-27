@@ -1,8 +1,7 @@
 import React from 'react'
-import { render } from 'react-dom'
 
 import HTML5Backend from 'react-dnd-html5-backend';
-import { DragDropContext } from 'react-dnd';
+import {DragDropContext} from 'react-dnd';
 
 class DragArea extends React.Component {
   render() {

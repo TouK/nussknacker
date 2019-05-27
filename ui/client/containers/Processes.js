@@ -1,5 +1,5 @@
 import React from "react";
-import {Table, Thead, Th, Tr, Td} from "reactable";
+import {Table, Thead, Th, Td, Tr} from "reactable";
 import {connect} from "react-redux";
 
 import HttpService from "../http/HttpService";
@@ -102,43 +102,63 @@ class Processes extends PeriodicallyReloadingComponent {
         <HealthCheck/>
         <div id="process-top-bar">
           <div id="table-filter" className="input-group">
-            <input type="text" className="form-control" aria-describedby="basic-addon1"
-                   value={this.state.filterVal} onChange={e => this.handleChange(e)}/>
+            <input type="text"
+                   className="form-control"
+                   aria-describedby="basic-addon1"
+                   value={this.state.filterVal}
+                   onChange={e => this.handleChange(e)}
+            />
             <span className="input-group-addon" id="basic-addon1">
               <img id="search-icon" src={filterIcon} />
             </span>
           </div>
-          {this.props.loggedUser.isWriter ? (
-          <div id="process-add-button" className="big-blue-button input-group " role="button"
-               onClick={() => this.setState({showAddProcess : true})}>CREATE NEW PROCESS
-                             <img id="add-icon" src={createProcessIcon} />
-                           </div>) : null
+          {
+            this.props.loggedUser.isWriter ? (
+              <div id="process-add-button"
+                   className="big-blue-button input-group "
+                   role="button"
+                   onClick={() => this.setState({showAddProcess : true})}
+              >
+                CREATE NEW PROCESS
+                <img id="add-icon" src={createProcessIcon} />
+              </div>
+            ) : null
           }
         </div>
+
         <AddProcessDialog onClose={() => this.setState({showAddProcess : false})} isOpen={this.state.showAddProcess} isSubprocess={false}/>
         <LoaderSpinner show={this.state.showLoader}/>
         <Table className="esp-table"
                onSort={sort => this.setState({sort: sort})}
                onPageChange={currentPage => this.setState({currentPage: currentPage})}
-           noDataText="No matching records found."
-           hidden={this.state.showLoader}
-           currentPage={this.state.currentPage}
-           defaultSort={this.state.sort}
-           itemsPerPage={10}
-           pageButtonLimit={5}
-           previousPageLabel="<"
-           nextPageLabel=">"
-           sortable={['name', 'category', 'modifyDate']}
-           filterable={['name', 'category']}
-           hideFilterInput
-           filterBy={this.getFilterValue()}
-
+               noDataText="No matching records found."
+               hidden={this.state.showLoader}
+               currentPage={this.state.currentPage}
+               defaultSort={this.state.sort}
+               itemsPerPage={10}
+               pageButtonLimit={5}
+               previousPageLabel="<"
+               nextPageLabel=">"
+               sortable={['name', 'category', 'modifyDate']}
+               filterable={['name', 'category']}
+               hideFilterInput
+               filterBy={this.getFilterValue()}
+               columns = {[
+                 {key: 'name', label: 'Process name'},
+                 {key: 'category', label: 'Category'},
+                 {key: 'modifyDate', label: 'Last modification'},
+                 {key: 'status', label: 'Status'},
+                 {key: 'edit', label: 'Edit'},
+                 {key: 'Metrics', label: 'Metrics'}
+               ]}
         >
 
           <Thead>
             <Th column="name">Process name</Th>
             <Th column="category">Category</Th>
-            <Th column="modifyDate" className="date-column">Last modification</Th>
+            <Th>
+              <strong className="name-header date-column">Last modification</strong>
+            </Th>
             <Th column="status" className="status-column">Status</Th>
             <Th column="edit" className="edit-column">Edit</Th>
             <Th column="metrics" className="metrics-column">Metrics</Th>

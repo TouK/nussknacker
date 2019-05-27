@@ -1,12 +1,12 @@
 import React from 'react'
-import { connect } from 'react-redux';
-import { bindActionCreators } from 'redux';
+import PropTypes from 'prop-types';
+import {connect} from 'react-redux';
 import HttpService from "../http/HttpService";
 
 class Metrics extends React.Component {
 
   static propTypes = {
-      settings: React.PropTypes.object.isRequired,
+      settings: PropTypes.object.isRequired,
   }
 
   componentDidMount() {

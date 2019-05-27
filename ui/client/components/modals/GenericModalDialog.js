@@ -1,11 +1,11 @@
 import React from "react";
-import {render} from "react-dom";
 import Modal from "react-modal";
 import {connect} from "react-redux";
-import _ from "lodash";
 import ActionsUtils from "../../actions/ActionsUtils";
 import "../../stylesheets/visualization.styl";
-import LaddaButton from 'react-ladda';
+import LaddaButton from "react-ladda"
+import "../../stylesheets/ladda.styl";
+import PropTypes from 'prop-types';
 
 
 class GenericModalDialog extends React.Component {
@@ -35,7 +35,11 @@ class GenericModalDialog extends React.Component {
 
   renderOkBtn = () => {
     return(
-      <LaddaButton key="1" title="OK" className="modalButton modalConfirmButton" buttonStyle="zoom-in"
+      <LaddaButton
+        key="1"
+        title="OK"
+        className="modalButton modalConfirmButton"
+        data-style="zoom-in"
         loading={this.state.pendingRequest}
         onClick={() => this.onOk()}
         {...this.props.okBtnConfig}
@@ -67,7 +71,7 @@ class GenericModalDialog extends React.Component {
 }
 
 GenericModalDialog.propTypes = {
-  okBtnConfig: React.PropTypes.object
+  okBtnConfig: PropTypes.object
 }
 
 function mapState(state) {

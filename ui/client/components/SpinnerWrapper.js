@@ -1,11 +1,12 @@
 import React from 'react'
+import PropTypes from 'prop-types';
 import LoaderSpinner from './Spinner'
 import '../stylesheets/spinner.styl'
 
 export default class SpinnerWrapper extends React.Component {
   static propTypes = {
-    isReady: React.PropTypes.bool.isRequired,
-    children: React.PropTypes.element.isRequired
+    isReady: PropTypes.bool.isRequired,
+    children: PropTypes.element.isRequired
   };
 
   render() {

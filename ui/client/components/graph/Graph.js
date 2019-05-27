@@ -1,33 +1,33 @@
 import React from 'react'
-import { render, findDOMNode } from 'react-dom'
+import {findDOMNode, render} from 'react-dom'
 import joint from 'jointjs'
 import EspNode from './EspNode'
 import 'jointjs/dist/joint.css'
 import _ from 'lodash'
 import $ from 'jquery'
 import svgPanZoom from 'svg-pan-zoom'
-import { connect } from 'react-redux';
-import { bindActionCreators } from 'redux';
+import {connect} from 'react-redux';
 import ActionsUtils from '../../actions/ActionsUtils';
 import NodeDetailsModal from './nodeDetailsModal';
 import EdgeDetailsModal from './EdgeDetailsModal';
-import { DropTarget } from 'react-dnd';
+import {DropTarget} from 'react-dnd';
 import '../../stylesheets/graph.styl'
 import SVGUtils from '../../common/SVGUtils';
 import NodeUtils from './NodeUtils.js'
 import cssVariables from "../../stylesheets/_variables.styl"
 import * as GraphUtils from "./GraphUtils";
 import * as JointJsGraphUtils from "./JointJsGraphUtils";
+import PropTypes from 'prop-types';
 
 class Graph extends React.Component {
 
     redrawing = false
 
     static propTypes = {
-        processToDisplay: React.PropTypes.object.isRequired,
-        groupingState: React.PropTypes.array,
-        loggedUser: React.PropTypes.object.isRequired,
-        connectDropTarget: React.PropTypes.func
+        processToDisplay: PropTypes.object.isRequired,
+        groupingState: PropTypes.array,
+        loggedUser: PropTypes.object.isRequired,
+        connectDropTarget: PropTypes.func
     }
 
     constructor(props) {

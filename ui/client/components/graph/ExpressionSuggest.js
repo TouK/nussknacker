@@ -1,4 +1,5 @@
 import React from "react";
+import PropTypes from 'prop-types';
 import ReactDOMServer from 'react-dom/server'
 import {connect} from 'react-redux';
 import _ from 'lodash';
@@ -24,8 +25,8 @@ var inputExprIdCounter = 0
 class ExpressionSuggest extends React.Component {
 
   static propTypes = {
-    inputProps: React.PropTypes.object.isRequired,
-    fieldName: React.PropTypes.string
+    inputProps: PropTypes.object.isRequired,
+    fieldName: PropTypes.string
   }
 
   customAceEditorCompleter = {

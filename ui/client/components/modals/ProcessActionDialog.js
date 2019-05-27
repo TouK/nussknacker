@@ -1,4 +1,5 @@
 import React from "react";
+import PropTypes from 'prop-types';
 import {connect} from "react-redux";
 import _ from "lodash";
 import ActionsUtils from "../../actions/ActionsUtils";
@@ -6,7 +7,6 @@ import "../../stylesheets/visualization.styl";
 import GenericModalDialog from "./GenericModalDialog";
 import Dialogs from "./Dialogs"
 import CommentInput from "../CommentInput";
-import HttpService from "../../http/HttpService";
 import ProcessUtils from "../../common/ProcessUtils";
 import ProcessDialogWarnings from "./ProcessDialogWarnings";
 import ValidateDeployComment from "../ValidateDeployComment";
@@ -14,12 +14,12 @@ import ValidateDeployComment from "../ValidateDeployComment";
 class ProcessActionDialog extends React.Component {
 
   static propTypes = {
-    settings: React.PropTypes.object.isRequired,
-    processId: React.PropTypes.string,
-    processHasWarnings: React.PropTypes.bool,
-    message: React.PropTypes.string,
-    displayWarnings: React.PropTypes.bool,
-    action: React.PropTypes.func
+    settings: PropTypes.object.isRequired,
+    processId: PropTypes.string,
+    processHasWarnings: PropTypes.bool,
+    message: PropTypes.string,
+    displayWarnings: PropTypes.bool,
+    action: PropTypes.func
   }
 
   constructor(props) {

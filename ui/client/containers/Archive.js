@@ -1,7 +1,7 @@
 import React from "react";
 import {render} from "react-dom";
 import {browserHistory} from "react-router";
-import {Table, Thead, Th, Tr, Td} from "reactable";
+import {Table, Td, Th, Thead, Tr} from "reactable";
 import {connect} from "react-redux";
 
 import HttpService from "../http/HttpService";
@@ -11,21 +11,21 @@ import LoaderSpinner from "../components/Spinner.js";
 
 import "../stylesheets/processes.styl";
 import filterIcon from '../assets/img/search.svg'
-import createProcessIcon from '../assets/img/create-process.svg'
 import editIcon from '../assets/img/edit-icon.png'
 
-const Archive = React.createClass({
+class Archive extends React.Component {
 
-  getInitialState() {
-    return {
+  constructor(props) {
+    super(props);
+    this.state = {
       processes: [],
       filterVal: '',
       showLoader: true,
       showAddProcess: false,
       currentPage: 0,
       sort: { column: "name", direction: 1}
-    }
-  },
+    };
+  }
 
   componentDidMount() {
     const intervalIds = {
@@ -33,20 +33,21 @@ const Archive = React.createClass({
     }
     this.setState(intervalIds)
     this.reloadProcesses();
-  },
+  }
 
   componentWillUnmount() {
     if (this.state.reloadProcessesIntervalId) {
       clearInterval(this.state.reloadProcessesIntervalId)
     }
-  },
+  }
+
   unarchiveProcess(processId) {
     HttpService.fetchArchivedProcesses().then ((fetchedProcesses) => {
       if (!this.state.showAddProcess) {
         this.setState({processes: fetchedProcesses, showLoader: false})
       }
     }).catch( e => this.setState({ showLoader: false }))
-  },
+  }
 
   reloadProcesses() {
     HttpService.fetchArchivedProcesses().then ((fetchedProcesses) => {
@@ -54,20 +55,19 @@ const Archive = React.createClass({
         this.setState({processes: fetchedProcesses, showLoader: false})
       }
     }).catch( e => this.setState({ showLoader: false }))
-  },
-
+  }
 
   showProcess(process) {
     browserHistory.push('/visualization/' + process.name)
-  },
+  }
 
   handleChange(event) {
     this.setState({filterVal: event.target.value});
-  },
+  }
 
   getFilterValue() {
     return this.state.filterVal.toLowerCase();
-  },
+  }
 
   render() {
     return (
@@ -98,7 +98,12 @@ const Archive = React.createClass({
            filterable={['name', 'category']}
            hideFilterInput
            filterBy={this.getFilterValue()}
-
+           columns = {[
+             {key: 'name', label: 'Process name'},
+             {key: 'category', label: 'Category'},
+             {key: 'modifyDate', label: 'Last modification'},
+             {key: 'view', label: 'View'},
+           ]}
         >
 
           <Thead>
@@ -126,12 +131,11 @@ const Archive = React.createClass({
       </div>
     )
   }
-});
+}
 
 Archive.title = 'Archive Processes'
 Archive.path = '/archivedProcesses'
 Archive.header = 'Archive'
-
 
 function mapState(state) {
   return {

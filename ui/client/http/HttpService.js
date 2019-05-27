@@ -92,7 +92,8 @@ export default {
       id: user.id,
       categories: user.categories,
       hasPermission(permission, category){
-        return category && user.categoryPermissions[category].includes(permission);
+        let permissions = user.categoryPermissions[category] || []
+        return category && permissions.includes(permission)
       },
       canRead(category){
         return this.hasPermission("Read", category)

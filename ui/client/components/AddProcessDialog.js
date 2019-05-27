@@ -1,5 +1,6 @@
 import React from "react";
-import {render} from "react-dom";
+import PropTypes from 'prop-types';
+
 import {browserHistory} from "react-router";
 import Modal from "react-modal";
 import {connect} from "react-redux";
@@ -7,8 +8,6 @@ import _ from 'lodash';
 import ActionsUtils from "../actions/ActionsUtils";
 import EspModalStyles from "../common/EspModalStyles";
 import "../stylesheets/visualization.styl";
-import SaveIcon from "../assets/img/save-icon.svg";
-import CloseIcon from "../assets/img/close-icon.svg";
 import HttpService from "../http/HttpService";
 import * as VisualizationUrl from '../common/VisualizationUrl'
 
@@ -16,10 +15,10 @@ import * as VisualizationUrl from '../common/VisualizationUrl'
 class AddProcessDialog extends React.Component {
 
   static propTypes = {
-    categories: React.PropTypes.array.isRequired,
-    isOpen: React.PropTypes.bool.isRequired,
-    onClose: React.PropTypes.func.isRequired,
-    isSubprocess: React.PropTypes.bool
+    categories: PropTypes.array.isRequired,
+    isOpen: PropTypes.bool.isRequired,
+    onClose: PropTypes.func.isRequired,
+    isSubprocess: PropTypes.bool
   }
 
   initialState(props) {

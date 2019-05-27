@@ -1,20 +1,18 @@
 import React from 'react'
-import {render} from "react-dom";
-import {Scrollbars} from "react-custom-scrollbars";
 import {connect} from "react-redux";
-import {bindActionCreators} from "redux";
+import PropTypes from 'prop-types';
 import _ from 'lodash'
 import ActionsUtils from "../actions/ActionsUtils";
 import DateUtils from '../common/DateUtils'
 import ProcessUtils from '../common/ProcessUtils'
 import HttpService from "../http/HttpService";
-import Dropzone from "react-dropzone";
+import Dropzone from 'react-dropzone'
 import InlinedSvgs from '../assets/icons/InlinedSvgs'
 
 export class ProcessAttachments_ extends React.Component {
 
   static propTypes = {
-    attachments: React.PropTypes.array.isRequired
+    attachments: PropTypes.array.isRequired
   }
 
   constructor(props) {
@@ -44,8 +42,11 @@ export class ProcessAttachments_ extends React.Component {
             return (
               <div key={idx}>
                 <div className="download-attachment">
-                  <div className="espButton download-button" dangerouslySetInnerHTML={{__html: InlinedSvgs.buttonDownload}}
-                       onClick={this.downloadAttachment.bind(this, attachment.processId, attachment.processVersionId, attachment.id)}/>
+                  <div
+                      className="espButton download-button"
+                      dangerouslySetInnerHTML={{__html: InlinedSvgs.buttonDownload}}
+                      onClick={this.downloadAttachment.bind(this, attachment.processId, attachment.processVersionId, attachment.id)}
+                  />
                 </div>
                 <div className="header">
                   <span className="label label-info">{attachment.user}</span>
@@ -58,10 +59,14 @@ export class ProcessAttachments_ extends React.Component {
           })}
         </ul>
         <div className="add-attachments">
-          <Dropzone onDrop={this.addAttachment} disableClick={this.state.pendingRequest}
-                    className={"dropZone espButton" + (this.state.pendingRequest ? "disabled" : "")}  >
-            <div className="dropZone espButton attachment-button" dangerouslySetInnerHTML={{__html: InlinedSvgs.buttonUpload_1}} />
-            <div className="attachment-button-text">drop or choose a file</div>
+          <Dropzone onDrop={this.addAttachment}>
+            {({getRootProps, getInputProps}) => (
+              <div {...getRootProps({className: "dropZone espButton"})} >
+                <div className={"dropZone espButton attachment-button"} dangerouslySetInnerHTML={{__html: InlinedSvgs.buttonUpload_1}} />
+                <div className="attachment-button-text">drop or choose a file</div>
+                <input {...getInputProps()} />
+              </div>
+            )}
           </Dropzone>
         </div>
       </div>

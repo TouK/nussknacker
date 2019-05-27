@@ -69,7 +69,7 @@ export class NodeDetailsContent extends React.Component {
     if (_.has(this.state.editedNode, property)) {
       _.get(this.state.editedNode, property).splice(index, 1);
 
-      this.setState((state, props) => {editedNode: state.editedNode}, () => {
+      this.setState((state, props) => ({editedNode: state.editedNode}), () => {
         this.props.onChange(this.state.editedNode);
       });
     }
@@ -79,7 +79,7 @@ export class NodeDetailsContent extends React.Component {
     if (_.has(this.state.editedNode, property)) {
       _.get(this.state.editedNode, property).push(element);
 
-      this.setState((state, props) => {editedNode: state.editedNode}, () => {
+      this.setState((state, props) => ({editedNode: state.editedNode}), () => {
         this.props.onChange(this.state.editedNode);
       });
     }
@@ -88,7 +88,7 @@ export class NodeDetailsContent extends React.Component {
   setNodeDataAt = (property, value) => {
     _.set(this.state.editedNode, property, value);
 
-    this.setState((state, props) => {editedNode: state.editedNode}, () => {
+    this.setState((state, props) => ({editedNode: state.editedNode}), () => {
       this.props.onChange(this.state.editedNode);
     });
   };
@@ -238,18 +238,18 @@ export class NodeDetailsContent extends React.Component {
         const commonFields = this.subprocessVersionFields()
         //fixme move this configuration to some better place?
         const fields = type == "StreamMetaData" ? [
-          this.createField("input", "Parallelism", "typeSpecificProperties.parallelism", "parallelism"),
-          this.createField("input", "Checkpoint interval in seconds", "typeSpecificProperties.checkpointIntervalInSeconds", "checkpointIntervalInSeconds"),
-          this.createField("checkbox", "Should split state to disk", "typeSpecificProperties.splitStateToDisk", "splitStateToDisk"),
-          this.createField("checkbox", "Should use async interpretation (lazy variables not allowed)", "typeSpecificProperties.useAsyncInterpretation", "useAsyncInterpretation")
-        ] : [this.createField("input", "Query path",  "typeSpecificProperties.path", "path")]
+          this.createField("input", "Parallelism", "typeSpecificProperties.parallelism", "parallelism", null, null, uuid4()),
+          this.createField("input", "Checkpoint interval in seconds", "typeSpecificProperties.checkpointIntervalInSeconds", "checkpointIntervalInSeconds", null, null, uuid4()),
+          this.createField("checkbox", "Should split state to disk", "typeSpecificProperties.splitStateToDisk", "splitStateToDisk", null, null, uuid4()),
+          this.createField("checkbox", "Should use async interpretation (lazy variables not allowed)", "typeSpecificProperties.useAsyncInterpretation", "useAsyncInterpretation", null, null, uuid4())
+        ] : [this.createField("input", "Query path",  "typeSpecificProperties.path", "path", null, null, uuid4())]
         const additionalFields = Object.entries(this.props.additionalPropertiesConfig).map(
           ([fieldName, fieldConfig]) => this.createAdditionalField(fieldName, fieldConfig)
         );
         const hasExceptionHandlerParams = this.state.editedNode.exceptionHandler.parameters.length > 0
         return (
           <div className="node-table-body">
-            {_.concat(fields, commonFields, additionalFields)}
+            { _.concat(fields, commonFields, additionalFields) }
             { hasExceptionHandlerParams ?
               (<div className="node-row">
                 <div className="node-label">Exception handler:</div>
@@ -278,7 +278,7 @@ export class NodeDetailsContent extends React.Component {
     }
   };
 
-  createAdditionalField(fieldName, fieldConfig) {
+  createAdditionalField(fieldName, fieldConfig, key) {
     if (fieldConfig.type === "select") {
       const values = _.map(fieldConfig.values, v => ({expression: v, label: v}));
       const current = _.get(this.state.editedNode, `additionalFields.properties.${fieldName}`);
@@ -291,6 +291,7 @@ export class NodeDetailsContent extends React.Component {
         renderFieldLabel={this.renderFieldLabel}
         values={values}
         readOnly={false}
+        key={key}
       />;
     } else {
       const fieldType = () => {
@@ -298,16 +299,23 @@ export class NodeDetailsContent extends React.Component {
         else return "input";
       };
 
-      return this.createField(fieldType(), fieldConfig.label, `additionalFields.properties.${fieldName}`, fieldName)
+      return this.createField(fieldType(), fieldConfig.label, `additionalFields.properties.${fieldName}`, fieldName, null, null, key)
     }
   }
 
   subprocessVersionFields() {
     return [
       //TODO this should be nice looking selectbox
-      this.doCreateField("plain-textarea", "Subprocess Versions", "subprocessVersions",
-        JsonUtils.tryStringify(this.state.editedNode.subprocessVersions || {}), (newValue) => this.setNodeDataAt("subprocessVersions", JsonUtils.tryParse(newValue)))
-    ]
+      this.doCreateField(
+          "plain-textarea",
+          "Subprocess Versions",
+          "subprocessVersions",
+          JsonUtils.tryStringify(this.state.editedNode.subprocessVersions || {}),
+          (newValue) => this.setNodeDataAt("subprocessVersions", JsonUtils.tryParse(newValue)),
+          null,
+          false,
+          uuid4()
+      )]
   }
 
   sourceSinkCommon(toAppend) {
@@ -332,16 +340,31 @@ export class NodeDetailsContent extends React.Component {
     return this.createField(fieldType, fieldLabel, fieldProperty, null, true)
   }
 
-  createField = (fieldType, fieldLabel, fieldProperty, fieldName, readonly, defaultValue) => {
-    return this.doCreateField(fieldType, fieldLabel, fieldName, _.get(this.state.editedNode, fieldProperty, ""),
-      ((newValue) => this.setNodeDataAt(fieldProperty, newValue, defaultValue)), readonly, this.isMarked(fieldProperty))
+  createField = (fieldType, fieldLabel, fieldProperty, fieldName, readonly, defaultValue, key) => {
+    return this.doCreateField(
+        fieldType,
+        fieldLabel,
+        fieldName,
+        _.get(this.state.editedNode, fieldProperty, ""),
+        ((newValue) => this.setNodeDataAt(fieldProperty, newValue, defaultValue)),
+        readonly,
+        this.isMarked(fieldProperty),
+        key
+    )
   }
 
   createListField = (fieldType, fieldLabel, obj, fieldProperty, listFieldProperty, fieldName) => {
     const path = `${listFieldProperty}.${fieldProperty}`
 
-    return this.doCreateField(fieldType, fieldLabel, fieldName, _.get(obj, fieldProperty),
-      ((newValue) => this.setNodeDataAt(path, newValue) ), null, this.isMarked(path))
+    return this.doCreateField(
+        fieldType,
+        fieldLabel,
+        fieldName,
+        _.get(obj, fieldProperty),
+        ((newValue) => this.setNodeDataAt(path, newValue) ),
+        null,
+        this.isMarked(path)
+    )
   }
 
   createExpressionField = (fieldName, fieldLabel, expressionProperty) =>
@@ -389,14 +412,14 @@ export class NodeDetailsContent extends React.Component {
     this.setState({testResultsToHide: newTestResultsToHide})
   }
 
-  doCreateField = (fieldType, fieldLabel, fieldName, fieldValue, handleChange, forceReadonly, isMarked) => {
+  doCreateField = (fieldType, fieldLabel, fieldName, fieldValue, handleChange, forceReadonly, isMarked, key) => {
     const readOnly = !this.props.isEditMode || forceReadonly;
     const nodeValueClass = this.nodeValueClass(isMarked);
 
     switch (fieldType) {
       case 'input':
         return (
-          <div className="node-row">
+          <div className="node-row" key={key}>
             {this.renderFieldLabel(fieldLabel)}
             <div className={nodeValueClass}>
               <input
@@ -411,7 +434,7 @@ export class NodeDetailsContent extends React.Component {
         )
       case 'checkbox': {
         return (
-          <div className="node-row">
+          <div className="node-row" key={key}>
             {this.renderFieldLabel(fieldLabel)}
             <div className={nodeValueClass}>
               <input
@@ -426,7 +449,7 @@ export class NodeDetailsContent extends React.Component {
       }
       case 'plain-textarea':
         return (
-          <div className="node-row">
+          <div className="node-row" key={key}>
             {this.renderFieldLabel(fieldLabel)}
             <div className={nodeValueClass}>
               <Textarea
@@ -442,7 +465,7 @@ export class NodeDetailsContent extends React.Component {
         )
       default:
         return (
-          <div>
+          <div key={keyg}>
             Field type not known...
           </div>
         )
