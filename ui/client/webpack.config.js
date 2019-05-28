@@ -21,9 +21,18 @@ if (!isProd) {
   ]
 }
 
-module.exports = [{
+module.exports = {
   mode: NODE_ENV,
   optimization: {
+    splitChunks: {
+      cacheGroups: {
+        commons: {
+          test: /[\\/]node_modules[\\/]/,
+          name: 'vendors',
+          chunks: 'all'
+        }
+      }
+    },
     minimizer: [new TerserPlugin({
       parallel: true,
       sourceMap: true,
@@ -115,5 +124,4 @@ module.exports = [{
       }
     ]
   }
-},
-];
+}
