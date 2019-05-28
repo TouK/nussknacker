@@ -152,18 +152,6 @@ class Processes extends PeriodicallyReloadingComponent {
                  {key: 'Metrics', label: 'Metrics'}
                ]}
         >
-
-          <Thead>
-            <Th column="name">Process name</Th>
-            <Th column="category">Category</Th>
-            <Th>
-              <strong className="name-header date-column">Last modification</strong>
-            </Th>
-            <Th column="status" className="status-column">Status</Th>
-            <Th column="edit" className="edit-column">Edit</Th>
-            <Th column="metrics" className="metrics-column">Metrics</Th>
-          </Thead>
-
           {this.state.processes.map((process, index) => {
             return (
               <Tr className="row-hover" key={index}>

@@ -163,11 +163,9 @@ class ProcessUtils {
       case "Processor": {
         return node.service.id
       }
+      case "Join":
       case "CustomNode": {
         return node.nodeType
-      }
-      case "Join": {
-        return node.ref.typ
       }
       default: {
         return null;

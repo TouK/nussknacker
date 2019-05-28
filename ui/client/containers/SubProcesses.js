@@ -115,15 +115,6 @@ class SubProcesses extends React.Component {
              {key: 'edit', label: 'Edit'}
            ]}
         >
-
-          <Thead>
-            <th>Process name</th>
-            <th>Category</th>
-            <th className="date-column">Last modification</th>
-            <th className="status-column">Status</th>
-            <th className="edit-column">Edit</th>
-          </Thead>
-
           {this.state.processes.map((process, index) => {
             return (
               <Tr className="row-hover" key={index}>
