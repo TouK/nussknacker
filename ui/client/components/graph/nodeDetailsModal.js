@@ -3,7 +3,7 @@ import {connect} from 'react-redux';
 import Modal from 'react-modal';
 import _ from 'lodash';
 import LaddaButton from "react-ladda"
-import "../../stylesheets/ladda.styl";
+import "ladda/dist/ladda.min.css"
 import ActionsUtils from '../../actions/ActionsUtils';
 import NodeUtils from './NodeUtils';
 import NodeDetailsContent from './NodeDetailsContent';

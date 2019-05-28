@@ -114,16 +114,6 @@ class CustomProcesses extends PeriodicallyReloadingComponent {
                  {key: 'stop', label: 'Stop'}
                ]}
         >
-
-          <Thead>
-          <Th column="name">Process name</Th>
-          <Th column="category">Category</Th>
-          <Th column="modifyDate" className="date-column">Last modification</Th>
-          <Th column="status" className="status-column">Status</Th>
-          <Th column="deploy" className="deploy-column">Deploy</Th>
-          <Th column="stop" className="stop-column">Stop</Th>
-          </Thead>
-
           {this.state.processes.map((process, index) => {
             return (
               <Tr className="row-hover" key={index}>
