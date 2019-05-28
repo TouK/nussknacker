@@ -105,14 +105,6 @@ class Archive extends React.Component {
              {key: 'view', label: 'View'},
            ]}
         >
-
-          <Thead>
-            <Th column="name">Process name</Th>
-            <Th column="category">Category</Th>
-            <Th column="modifyDate" className="date-column">Last modification</Th>
-            <Th column="view" className="edit-column">View</Th>
-          </Thead>
-
           {this.state.processes.map((process, index) => {
             return (
               <Tr className="row-hover" key={index}>

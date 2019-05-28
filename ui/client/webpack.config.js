@@ -8,8 +8,8 @@ const GIT_HASH = childProcess.execSync('git log -1 --format=%H').toString();
 const GIT_DATE = childProcess.execSync('git log -1 --format=%cd').toString();
 const isProd = NODE_ENV === 'production';
 
-
 module.exports = {
+  mode: NODE_ENV,
   performance: {
     maxEntrypointSize: 3000000,
     maxAssetSize: 3000000
@@ -42,7 +42,12 @@ module.exports = {
     port: 3000,
   },
   plugins: [
-    new HtmlWebpackPlugin({title: "Nussknacker", hash: true, filename: 'main.html', template: "index_template_no_doctype.ejs"}),
+    new HtmlWebpackPlugin({
+      title: "Nussknacker",
+      hash: true,
+      filename: 'main.html',
+      template: "index_template_no_doctype.ejs"
+    }),
     isProd ? null : new webpack.NamedModulesPlugin(),
     isProd ? null : new webpack.HotModuleReplacementPlugin(),
     new webpack.DefinePlugin({
@@ -64,7 +69,6 @@ module.exports = {
     }, {
       test: /\.js$/,
       loader: 'babel-loader',
-      exclude: /node_modules/,
       include: __dirname
     }, {
       test: /\.css?$/,
