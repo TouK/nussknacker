@@ -11,7 +11,7 @@ trap 'docker-compose kill && docker-compose rm -f -v' EXIT
 
 #TODO: Consider rewriting below, e.g. in Python
 waitTime=0
-sleep=5
+sleep=10
 
 checkCode() {
   CODE=$(curl -s -o /dev/null -w "%{http_code}" "http://admin:admin@localhost:8081/$1")
@@ -28,7 +28,7 @@ waitForOK() {
   URL_PATH=$1
   checkCode $URL_PATH
   local OK=$?
-  while [[ $waitTime < 60 && $OK == 1 ]]
+  while [[ $waitTime < 80 && $OK == 1 ]]
   do
     echo "Still not started..."
     sleep $sleep
@@ -49,8 +49,11 @@ waitForOK "api/processes" "Frontend not started"
 
 echo "Creating process"
 CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST "http://admin:admin@localhost:8081/api/processes/DetectLargeTransactions/FraudDetection?isSubprocess=false")
-if [[ $CODE != 201 ]]
-then
+if [[ $CODE == 201 ]]; then
+  echo "Process creation success"
+elif [[ $CODE == 400 ]]; then
+  echo "Process has already exists in db."
+else
   echo "Process creation failed with $CODE"
   exit 1
 fi
