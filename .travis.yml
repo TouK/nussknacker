@@ -53,8 +53,10 @@ jobs:
       script: sbt ++$TRAVIS_SCALA_VERSION clean ui/test ui/slow:test 
     - name: "Management tests"
       script: sbt ++$TRAVIS_SCALA_VERSION clean management/it:test
-    - name: "Tests docker "
-      script: cd ./demo/docker && ./testQuickstart.sh
+    - name: "Docker Compose tests "
+      script:
+        - ./ciBuildDocker.sh --version=${BUILD_VERSION} --docker-tag=demo-latest --docker-publish-type=publishLocal
+        - cd ./demo/docker && ./testQuickstart.sh
     - stage: releases
       name: "Push Docker Image"
       script:
