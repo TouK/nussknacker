@@ -38,8 +38,6 @@ stages:
   - tests
   - name: releases
     if: fork = false AND type != cron
-  - name: deploys
-    if: branch IN (demo) AND fork = false AND type != cron
 
 jobs:
   include:
@@ -47,25 +45,24 @@ jobs:
       name: "Unit tests"
       script: sbt ++$TRAVIS_SCALA_VERSION clean coverage test coverageReport && sbt ++$TRAVIS_SCALA_VERSION coverageAggregate
       after_success: sbt ++$TRAVIS_SCALA_VERSION coveralls
-    - name: "EngineStandalone tests"
-      script: sbt ++$TRAVIS_SCALA_VERSION clean engineStandalone/it:test
     - name: "UI tests"
-      script: sbt ++$TRAVIS_SCALA_VERSION clean ui/test ui/slow:test 
-    - name: "Management tests"
-      script: sbt ++$TRAVIS_SCALA_VERSION clean management/it:test
+      script: sbt ++$TRAVIS_SCALA_VERSION clean ui/test ui/slow:test
     - name: "Docker Compose tests "
       script:
         - ./ciBuildDocker.sh --version=${BUILD_VERSION} --docker-tag=demo-latest --docker-publish-type=publishLocal
         - cd ./demo/docker && ./testQuickstart.sh
+    - name: "Management tests"
+      script: sbt ++$TRAVIS_SCALA_VERSION clean management/it:test
+    - name: "EngineStandalone tests"
+      script: sbt ++$TRAVIS_SCALA_VERSION clean engineStandalone/it:test
     - stage: releases
-      name: "Push Docker Image"
+      name: "Release sonatype packages"
+      script: ./ciBuild.sh "${BUILD_VERSION}-SNAPSHOT" ${NEXUS_PASSWORD} ${NEXUS_URL} ${NEXUS_USER} true
+    - name: "Push Docker Image"
       script:
         - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin;
         - ./ciBuildDocker.sh --version=${BUILD_VERSION}
-    - name: "Release sonatype packages"
-      script: ./ciBuild.sh "${BUILD_VERSION}-SNAPSHOT" ${NEXUS_PASSWORD} ${NEXUS_URL} ${NEXUS_USER} true
-    - stage: deploys
-      name: "Push demo-latest Docker Image"
+    - name: "Push Docker Image: demo-latest"
       script:
-        - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin;
-        - ./ciBuildDocker.sh --version=${BUILD_VERSION} --docker-tag=demo-latest
+        - if [[ "TRAVIS_BRANCH" == "demo" ]]; then echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin; fi
+        - if [[ "TRAVIS_BRANCH" == "demo" ]]; then ./ciBuildDocker.sh --version=${BUILD_VERSION} --docker-tag=demo-latest; fi

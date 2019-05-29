@@ -151,7 +151,8 @@ lazy val dockerSettings = {
     dockerLabels := Map(
       "tag" -> dockerTagName.getOrElse(version.value),
       "version" -> version.value,
-      "scala" -> scalaV
+      "scala" -> scalaV,
+      "flink" -> flinkV
     ),
     version in Docker := dockerTagName.getOrElse(version.value)
   )
