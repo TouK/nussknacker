@@ -25,9 +25,9 @@
 # The JobManager process will use this hostname to bind the listening servers to.
 # The TaskManagers will try to connect to the JobManager on that host.
 
-env.java.opts: "-Dflink.local.hostname=taskmanager"
-
 taskmanager.hostname: taskmanager
+
+taskmanager.data.port: 6126
 
 # The heap size for the TaskManager JVM
 
@@ -51,7 +51,6 @@ jobmanager.heap.size: 256
 
 parallelism.default: 8
 
-
 #==============================================================================
 # Web Frontend
 #==============================================================================
@@ -59,30 +58,26 @@ parallelism.default: 8
 # The port under which the web-based runtime monitor listens.
 # A value of -1 deactivates the web server.
 
-jobmanager.web.port: 8081
-
-# The port under which the standalone web client
-# (for job upload and submit) listens.
-
-webclient.port: 6080
-
-rest.address: jobmanager
+web.port: 8081
+web.history: 50
+web.log.path: /opt/flink/data/logs
 
 high-availability: zookeeper
 high-availability.zookeeper.quorum: zookeeper:2181
-high-availability.zookeeper.path.root: /flinkPath
-high-availability.cluster-id: flinkDemo
-high-availability.storageDir: file:///opt/flinkData/storage
+high-availability.zookeeper.path.root: /demo
+high-availability.cluster-id: nussknacker
+high-availability.storageDir: file:///opt/flink/data/storage
 
 state.backend: filesystem
-state.checkpoints.dir: file:///opt/flinkData/checkpoints
-state.savepoints.dir: file:///opt/flinkData/savepoints
+state.checkpoints.dir: file:///opt/flink/data/checkpoints
+state.savepoints.dir: file:///opt/flink/data/savepoints
 
 metrics.reporters: graphite_reporter
 metrics.reporter.graphite_reporter.class: org.apache.flink.metrics.graphite.GraphiteReporter
 metrics.reporter.graphite_reporter.host: influxdb
 metrics.reporter.graphite_reporter.port: 2003
 metrics.reporter.graphite_reporter.protocol: UDP
+metrics.reporter.graphite_reporter.interval: 1 SECONDS
 
 metrics.scope.jm: demo.<host>.jobmanagerGlobal
 metrics.scope.jm.job: demo.<host>.jobmanagerJob.<job_name>
@@ -93,8 +88,6 @@ metrics.scope.operator: demo.<host>.taskmanagerTask.<tm_id>.<job_name>.<operator
 
 classloader.resolve-order: parent-first
 akka.framesize: 209715200b
-jobmanager.web.history: 50
 
-taskmanager.data.port: 6126
 query.server.port: 6125
 blob.server.port: 6124

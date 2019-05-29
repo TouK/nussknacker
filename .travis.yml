@@ -33,9 +33,6 @@ cache:
     - $HOME/.ivy2/cache
     - $HOME/.sbt/boot/
 
-before_install:
-  - if [[ "$TRAVIS_PULL_REQUEST" == "false" ]]; then echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin; fi
-
 # We don't allow do releases from fork and corn type because of security: https://docs.travis-ci.com/user/pull-requests/#pull-requests-and-security-restrictions
 stages:
   - tests
@@ -56,14 +53,17 @@ jobs:
       script: sbt ++$TRAVIS_SCALA_VERSION clean ui/test ui/slow:test 
     - name: "Management tests"
       script: sbt ++$TRAVIS_SCALA_VERSION clean management/it:test
-#    - name: "Tests docker demo"
-#      script: cd ./demo/docker && ./testQuickstart.sh
+    - name: "Tests docker "
+      script: cd ./demo/docker && ./testQuickstart.sh
     - stage: releases
       name: "Push Docker Image"
-      script: ./ciBuildDocker.sh --version=${BUILD_VERSION}
+      script:
+        - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin;
+        - ./ciBuildDocker.sh --version=${BUILD_VERSION}
     - name: "Release sonatype packages"
       script: ./ciBuild.sh "${BUILD_VERSION}-SNAPSHOT" ${NEXUS_PASSWORD} ${NEXUS_URL} ${NEXUS_USER} true
     - stage: deploys
       name: "Push demo-latest Docker Image"
-      script: ./ciBuildDocker.sh --version=${BUILD_VERSION} --docker-tag=demo-latest
-
+      script:
+        - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin;
+        - ./ciBuildDocker.sh --version=${BUILD_VERSION} --docker-tag=demo-latest
