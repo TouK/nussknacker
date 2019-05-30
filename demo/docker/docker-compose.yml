@@ -15,6 +15,9 @@ services:
   zookeeper:
     container_name: nussknacker_zookeeper
     image: zookeeper:${ZOOKEEPER_VERSION-3.4.14}
+    volumes:
+      - nussknacker_storage_zookeeper_datalog:/datalog
+      - nussknacker_storage_zookeeper_data:/data
     expose:
       - "2181"
 
@@ -24,10 +27,17 @@ services:
     expose:
       - "9092"
     environment:
-      KAFKA_ADVERTISED_HOST_NAME: kafka
-      KAFKA_ADVERTISED_PORT: 9092
+      HOSTNAME_COMMAND: "docker info | grep ^Name: | cut -d' ' -f 2"
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_CREATE_TOPICS: "processedEvents:1:1"
+      KAFKA_BROKER_ID: 1
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_HEAP_OPTS: -Xms128m -Xmx512m
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - nussknacker_storage_kafka_data:/kafka
     links:
       - zookeeper
     depends_on:
@@ -48,7 +58,7 @@ services:
       - influxdb
       - zookeeper
     environment:
-      - SCALA_VERSION=2.11
+      SCALA_VERSION: 2.11
     volumes:
       - ./flink/flink-conf.yaml:/opt/flink/conf/flink-conf.yaml
       - ./flink/flink-entrypoint.sh:/flink-entrypoint.sh
@@ -69,7 +79,7 @@ services:
       - kafka
       - jobmanager
     environment:
-      - SCALA_VERSION=2.11
+      SCALA_VERSION: 2.11
     volumes:
       - ./flink/flink-conf.yaml:/opt/flink/conf/flink-conf.yaml
       - ./flink/flink-entrypoint.sh:/flink-entrypoint.sh
@@ -82,11 +92,12 @@ services:
 
   elasticsearch:
     container_name: nussknacker_elasticsearch
-    image: docker.elastic.co/elasticsearch/elasticsearch:${ELASTICSEARCH_VERSION-7.0.1}
+    image: docker.elastic.co/elasticsearch/elasticsearch:${ELASTICSEARCH_VERSION-7.1.1}
     environment:
       ES_JAVA_OPTS: -Xms128m -Xmx512m
     volumes:
       - ./elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+      - nussknacker_storage_elasticsearch_data:/usr/share/elasticsearch/data
     expose:
       - "9200"
       - "9300"
@@ -98,7 +109,7 @@ services:
 
   logstash:
     container_name: nussknacker_logstash
-    image: docker.elastic.co/logstash/logstash:${LOGSTASH_VERSION-7.0.1}
+    image: docker.elastic.co/logstash/logstash:${LOGSTASH_VERSION-7.1.1}
     links:
       - elasticsearch
       - kafka
@@ -110,12 +121,16 @@ services:
     volumes:
       - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml
       - ./logstash/pipeline:/usr/share/logstash/pipeline
+      - nussknacker_storage_logstash_data:/usr/share/logstash/data
 
   kibana:
     container_name: nussknacker_kibana
-    image: docker.elastic.co/kibana/kibana:${KIBANA_VERSION-7.0.1}
+    image: docker.elastic.co/kibana/kibana:${KIBANA_VERSION-7.1.1}
     expose:
       - "5601"
+    environment:
+      SERVER_NAME: kibana:5601
+      ELASTICSEARCH_HOSTS: httelasticsearch:9200
     links:
       - elasticsearch
     depends_on:
@@ -180,11 +195,12 @@ services:
       - app
 
 volumes:
-
+  nussknacker_storage_zookeeper_datalog:
+  nussknacker_storage_zookeeper_data:
+  nussknacker_storage_elasticsearch_data:
+  nussknacker_storage_logstash_data:
+  nussknacker_storage_kafka_data:
   nussknacker_storage_taskmanager:
-
   nussknacker_storage_jobmanager:
-
   nussknacker_storage_influxdb:
-
   nussknacker_storage_app:

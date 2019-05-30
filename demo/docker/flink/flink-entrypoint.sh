@@ -7,11 +7,7 @@ USER=${DAEMON_USER-"flink"}
 cp ${FLINK_HOME}/opt/flink-metrics-graphite-${FLINK_VERSION}.jar ${FLINK_HOME}/lib/flink-metrics-graphite-${FLINK_VERSION}.jar
 cp ${FLINK_HOME}/opt/flink-queryable-state-runtime_${SCALA_VERSION}-${FLINK_VERSION}.jar ${FLINK_HOME}/lib/flink-queryable-state-runtime_${SCALA_VERSION}-${FLINK_VERSION}.jar
 
-mkdir -p ${DATA_DIR}/checkpoints
-mkdir -p ${DATA_DIR}/savepoints
-mkdir -p ${DATA_DIR}/storage
-mkdir -p ${DATA_DIR}/logs
-
+mkdir -p "$DATA_DIR/checkpoints" "$DATA_DIR/savepoints" "$DATA_DIR/storage" "$DATA_DIR/logs"
 chown -R ${USER}:${GROUP} ${DATA_DIR}
 chmod -R 777 ${DATA_DIR}
 
