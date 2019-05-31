@@ -9,6 +9,14 @@ class ParameterEvaluatorExtractor(defaultValueEvaluator: ParameterDefaultValueEx
   def evaluateParameters(nodeDefinition: NodeDefinition): List[Parameter] = {
     val strategy: definition.Parameter => Option[String] = p => defaultValueEvaluator.evaluateParameterDefaultValue(nodeDefinition, p)
     nodeDefinition.parameters
+      .filterNot(_.branchParam)
+      .map(mapDefinitionParamToEvaluatedParam(strategy))
+  }
+
+  def evaluateBranchParameters(nodeDefinition: NodeDefinition): List[Parameter] = {
+    val strategy: definition.Parameter => Option[String] = p => defaultValueEvaluator.evaluateParameterDefaultValue(nodeDefinition, p)
+    nodeDefinition.parameters
+      .filter(_.branchParam)
       .map(mapDefinitionParamToEvaluatedParam(strategy))
   }
 

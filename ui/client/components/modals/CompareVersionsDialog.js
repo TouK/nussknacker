@@ -133,7 +133,6 @@ class CompareVersionsDialog extends React.Component {
     return node ? (<NodeDetailsContent isEditMode={false}
                                        key={node.id + keySuffix}
                                        node={node}
-                                       processDefinitionData={this.props.processDefinitionData}
                                        pathsToMark={pathsToMark}
                                        onChange={() => {}}/>) :
       (<div className="notPresent">Node not present</div>)

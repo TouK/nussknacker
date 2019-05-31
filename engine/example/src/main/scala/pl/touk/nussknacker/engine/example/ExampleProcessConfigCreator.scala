@@ -24,6 +24,7 @@ import pl.touk.nussknacker.engine.example.custom.{EventsCounter, TransactionAmou
 import pl.touk.nussknacker.engine.example.service.{AlertService, ClientService}
 import pl.touk.nussknacker.engine.flink.util.exception.VerboselyLoggingRestartingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.source.EspDeserializationSchema
+import pl.touk.nussknacker.engine.flink.util.transformer.{TransformStateTransformer, UnionTransformer}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSinkFactory, KafkaSourceFactory}
 import pl.touk.nussknacker.engine.util.LoggingListener
 
@@ -36,7 +37,9 @@ class ExampleProcessConfigCreator extends ProcessConfigCreator {
   override def customStreamTransformers(config: Config): Map[String, WithCategories[CustomStreamTransformer]] = {
     Map(
       "transactionAmountAggregator" -> all(new TransactionAmountAggregator),
-      "eventsCounter" -> all(new EventsCounter)
+      "eventsCounter" -> all(new EventsCounter),
+      "union" -> all(UnionTransformer),
+      "state" -> all(TransformStateTransformer)
     )
   }
 
@@ -50,7 +53,11 @@ class ExampleProcessConfigCreator extends ProcessConfigCreator {
   override def sourceFactories(config: Config): Map[String, WithCategories[SourceFactory[_]]] = {
     val kafkaConfig = config.as[KafkaConfig]("kafka")
     val transactionSource = createTransactionSource(kafkaConfig)
-    Map("kafka-transaction" -> all(transactionSource))
+    val clientSource = createClientSource(kafkaConfig)
+    Map(
+      "kafka-transaction" -> all(transactionSource),
+      "kafka-client" -> all(clientSource)
+    )
   }
 
   private def createTransactionSource(kafkaConfig: KafkaConfig) = {
@@ -61,6 +68,13 @@ class ExampleProcessConfigCreator extends ProcessConfigCreator {
       val decoder = implicitly[DecodeJson[Transaction]]
       new String(jsonBytes, StandardCharsets.UTF_8).decodeOption(decoder).get
     }, Some(transactionTimestampExtractor), TestParsingUtils.newLineSplit)
+  }
+
+  private def createClientSource(kafkaConfig: KafkaConfig) = {
+    kafkaSource[Client](kafkaConfig, jsonBytes => {
+      val decoder = implicitly[DecodeJson[Client]]
+      new String(jsonBytes, StandardCharsets.UTF_8).decodeOption(decoder).get
+    }, None, TestParsingUtils.newLineSplit)
   }
 
   private def kafkaSource[T: TypeInformation](config: KafkaConfig,
@@ -102,7 +116,8 @@ class ExampleProcessConfigCreator extends ProcessConfigCreator {
 
   override def expressionConfig(config: Config) = {
     val globalProcessVariables = Map(
-      "UTIL" -> all(UtilProcessHelper)
+      "UTIL" -> all(UtilProcessHelper),
+      "TYPES" -> all(DataTypes)
     )
     ExpressionConfig(globalProcessVariables, List.empty)
   }

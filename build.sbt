@@ -104,7 +104,9 @@ val commonSettings =
         "-Xlint:deprecation",
         "-Xlint:unchecked"
       ),
-      assemblyMergeStrategy in assembly := nussknackerMergeStrategy
+      assemblyMergeStrategy in assembly := nussknackerMergeStrategy,
+      coverageMinimum := 60,
+      coverageFailOnMinimum := false
     )
 
 val akkaV = "2.4.20" //same version as in Flink

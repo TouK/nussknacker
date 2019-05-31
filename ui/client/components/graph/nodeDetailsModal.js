@@ -137,18 +137,9 @@ class NodeDetailsModal extends React.Component {
                        onChange={(e) => { const newId = e.target.value; this.setState((prevState) => ({ editedNode: { ...prevState.editedNode, id: newId}}))}} />
               </div>
             </div>
-            {this.state.editedNode.nodes.map((node, idx) => (
-              <div key={idx}>
-                <NodeDetailsContent
-                  isEditMode={!this.props.readOnly}
-                  node={node}
-                  processDefinitionData={this.props.processDefinitionData}
-                  nodeErrors={this.props.nodeErrors}
-                  onChange={() => {}} testResults={testResults(node.id)}
-                />
-                <hr/>
-              </div>
-            ))}
+            {this.state.editedNode.nodes.map((node, idx) => (<div key={idx}>
+                                    <NodeDetailsContent isEditMode={false} node={node} nodeErrors={this.props.nodeErrors}
+                                                        onChange={() => {}} testResults={testResults(node.id)}/><hr/></div>))}
           </div>
         </div>
       </div>
@@ -194,16 +185,9 @@ class NodeDetailsModal extends React.Component {
           <div className="modalContentDark">
             <Scrollbars hideTracksWhenNotNeeded={true} autoHeight autoHeightMax={cssVariables.modalContentMaxHeight} renderThumbVertical={props => <div {...props} className="thumbVertical"/>}>
               {
-                this.isGroup() ? this.renderGroup(testResults) : (
-                  <NodeDetailsContent
-                    isEditMode={!this.props.readOnly}
-                    node={this.state.editedNode}
-                    processDefinitionData={this.props.processDefinitionData}
-                    nodeErrors={this.props.nodeErrors}
-                    onChange={this.updateNodeState}
-                    testResults={testResults(this.state.currentNodeId)}
-                  />
-                )
+                this.isGroup() ? this.renderGroup(testResults)
+                  : (<NodeDetailsContent isEditMode={!this.props.readOnly} node={this.state.editedNode} nodeErrors={this.props.nodeErrors}
+                                         onChange={this.updateNodeState} testResults={testResults(this.state.currentNodeId)}/>)
               }
               {
                 //FIXME: adjust height of modal with subprocess in some reasonable way :|

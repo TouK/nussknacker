@@ -31,6 +31,7 @@ import pl.touk.nussknacker.engine.split._
 import pl.touk.nussknacker.engine.splittedgraph._
 import pl.touk.nussknacker.engine.splittedgraph.part._
 import pl.touk.nussknacker.engine.util.Implicits._
+import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax
 import shapeless.Typeable
 import shapeless.syntax.typeable._
@@ -99,7 +100,9 @@ protected trait ProcessCompilerBase {
     expressionConfig.globalVariables.mapValuesNow(_.returnType) + (Interpreter.MetaParamName -> Typed[MetaVariables]))
 
   protected def compile(process: EspProcess): CompilationResult[CompiledProcessParts] = {
-    compile(ProcessSplitter.split(process))
+    ThreadUtils.withThisAsContextClassLoader(classLoader) {
+      compile(ProcessSplitter.split(process))
+    }
   }
 
   private def compile(splittedProcess: SplittedProcess): CompilationResult[CompiledProcessParts] = {

@@ -41,7 +41,11 @@ object DefinitionPreparer {
 
     def filterCategories(objectDefinition: ObjectDefinition): List[String] = readCategories.intersect(objectDefinition.categories)
 
-    def objDefParams(id: String, objDefinition: ObjectDefinition): List[Parameter] = evaluator.evaluateParameters(NodeDefinition(id, objDefinition.parameters))
+    def objDefParams(id: String, objDefinition: ObjectDefinition): List[Parameter] =
+      evaluator.evaluateParameters(NodeDefinition(id, objDefinition.parameters))
+
+    def objDefBranchParams(id: String, objDefinition: ObjectDefinition): List[Parameter] =
+      evaluator.evaluateBranchParameters(NodeDefinition(id, objDefinition.parameters))
 
     def serviceRef(id: String, objDefinition: ObjectDefinition) = ServiceRef(id, objDefParams(id, objDefinition))
 
@@ -72,9 +76,14 @@ object DefinitionPreparer {
 
     val customTransformers = NodeGroup("custom",
       processDefinition.customStreamTransformers.map {
+        // branchParameters = List.empty can be tricky here. We moved template for branch parameters to NodeToAdd because
+        // branch parameters inside node.Join are branchId -> List[Parameter] and on node template level we don't know what
+        // branches will be. After moving this parameters to BranchEnd it will disappear from here.
+        // Also it is not the best design pattern to reply with backend's NodeData as a template in API.
+        // TODO: keep only custom node ids in nodesToAdd element and move templates to parameters definition API
         case (id, (objDefinition, additionalData)) if additionalData.manyInputs => NodeToAdd("customNode", id,
-          // TODO JOIN: add branch params
-          node.Join("", if (objDefinition.hasNoReturn) None else Some("outputVar"), id, objDefParams(id, objDefinition), List.empty), filterCategories(objDefinition))
+          node.Join("", if (objDefinition.hasNoReturn) None else Some("outputVar"), id, objDefParams(id, objDefinition), List.empty),
+          filterCategories(objDefinition), objDefBranchParams(id, objDefinition))
         case (id, (objDefinition, additionalData)) => NodeToAdd("customNode", id,
           CustomNode("", if (objDefinition.hasNoReturn) None else Some("outputVar"), id, objDefParams(id, objDefinition)), filterCategories(objDefinition))
       }.toList

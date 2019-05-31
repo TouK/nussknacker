@@ -64,5 +64,5 @@ jobs:
         - ./ciBuildDocker.sh --version=${BUILD_VERSION}
     - name: "Push Docker Image: demo-latest"
       script:
-        - if [[ "TRAVIS_BRANCH" == "demo" ]]; then echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin; fi
-        - if [[ "TRAVIS_BRANCH" == "demo" ]]; then ./ciBuildDocker.sh --version=${BUILD_VERSION} --docker-tag=demo-latest; fi
+        - if [[ "$TRAVIS_BRANCH" == "demo" ]]; then echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin; fi
+        - if [[ "$TRAVIS_BRANCH" == "demo" ]]; then ./ciBuildDocker.sh --version=${BUILD_VERSION} --docker-tag=demo-latest; fi

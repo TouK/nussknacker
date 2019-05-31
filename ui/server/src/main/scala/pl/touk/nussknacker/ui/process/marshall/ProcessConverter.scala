@@ -138,7 +138,7 @@ object ProcessConverter {
   def fromDisplayable(process: DisplayableProcess): CanonicalProcess = {
     val nodesMap = process.nodes.groupBy(_.id).mapValues(_.head)
     val edgesFromMapStart = process.edges.groupBy(_.from)
-    val rootsUnflattened = findRootNodes(process).map(headNode => unFlattenNode(nodesMap, false)(headNode, edgesFromMapStart))
+    val rootsUnflattened = findRootNodes(process).map(headNode => unFlattenNode(nodesMap, None)(headNode, edgesFromMapStart))
     val nodes = rootsUnflattened.headOption.getOrElse(List())
     CanonicalProcess(process.metaData, process.properties.exceptionHandler, nodes, if (rootsUnflattened.isEmpty) None else Some(rootsUnflattened.tail))
   }
@@ -146,21 +146,21 @@ object ProcessConverter {
   private def findRootNodes(process: DisplayableProcess): List[NodeData] =
     process.nodes.filter(n => n.isInstanceOf[StartingNodeData])
 
-  private def unFlattenNode(nodesMap: Map[String, NodeData], stopAtJoin: Boolean)
+  private def unFlattenNode(nodesMap: Map[String, NodeData], stopAtJoin: Option[Edge])
                            (n: NodeData, edgesFromMap: Map[String, List[displayablenode.Edge]]): List[canonicalnode.CanonicalNode] = {
     def unflattenEdgeEnd(id: String, e: displayablenode.Edge): List[canonicalnode.CanonicalNode] = {
-      unFlattenNode(nodesMap, true)(nodesMap(e.to), edgesFromMap.updated(id, edgesFromMap(id).filterNot(_ == e)))
+      unFlattenNode(nodesMap, Some(e))(nodesMap(e.to), edgesFromMap.updated(id, edgesFromMap(id).filterNot(_ == e)))
     }
 
     def getEdges(id: String): List[Edge] = edgesFromMap.getOrElse(id, List())
 
-    val handleNestedNodes: PartialFunction[NodeData, List[canonicalnode.CanonicalNode]] = {
-      case data: Filter =>
+    val handleNestedNodes: PartialFunction[(NodeData, Option[Edge]), List[canonicalnode.CanonicalNode]] = {
+      case (data: Filter, _) =>
         val filterEdges = getEdges(data.id)
         val next = filterEdges.find(_.edgeType.contains(EdgeType.FilterTrue)).map(truePath => unflattenEdgeEnd(data.id, truePath)).getOrElse(List())
         val nextFalse = filterEdges.find(_.edgeType.contains(EdgeType.FilterFalse)).map(nf => unflattenEdgeEnd(data.id, nf)).toList.flatten
         canonicalnode.FilterNode(data, nextFalse) :: next
-      case data: Switch =>
+      case (data: Switch, _) =>
         val nexts = getEdges(data.id).collect { case e@displayablenode.Edge(_, _, Some(EdgeType.NextSwitch(edgeExpr))) =>
           canonicalnode.Case(edgeExpr, unflattenEdgeEnd(data.id, e))
         }
@@ -168,26 +168,27 @@ object ProcessConverter {
           unflattenEdgeEnd(data.id, e)
         }.toList.flatten
         canonicalnode.SwitchNode(data, nexts, default) :: Nil
-      case data: Split =>
+      case (data: Split, _) =>
         val nexts = getEdges(data.id).map(unflattenEdgeEnd(data.id, _))
         canonicalnode.SplitNode(data, nexts) :: Nil
-      case data: SubprocessInput =>
+      case (data: SubprocessInput, _) =>
         //TODO error handling?
         val nexts = getEdges(data.id).map(e => e.edgeType.get.asInstanceOf[SubprocessOutput].name -> unflattenEdgeEnd(data.id, e)).toMap
         canonicalnode.Subprocess(data, nexts) :: Nil
-      case data: Join if stopAtJoin =>
-        //TODO JOIN: handling different edge types
-        val dummyId = "dummy-"+UUID.randomUUID().toString
-        canonicalnode.FlatNode(BranchEndData(dummyId, BranchEndDefinition(dummyId, data.id))) :: Nil
+      case (data: Join, Some(edgeConnectedToJoin)) =>
+        // We are using "from" node's id as a branchId because for now branchExpressions are inside Join nodes and it is convenient
+        // way to connect both two things.
+        val joinId = edgeConnectedToJoin.from
+        canonicalnode.FlatNode(BranchEndData(s"$$edge-${edgeConnectedToJoin.from}-${edgeConnectedToJoin.to}", BranchEndDefinition(joinId, data.id))) :: Nil
 
     }
     (handleNestedNodes orElse (handleDirectNodes andThen { n =>
       n :: getEdges(n.id).flatMap(unflattenEdgeEnd(n.id, _))
-    }))(n)
+    }))((n, stopAtJoin))
   }
 
-  private val handleDirectNodes: PartialFunction[NodeData, canonicalnode.CanonicalNode] = {
-    case data => FlatNode(data)
+  private val handleDirectNodes: PartialFunction[(NodeData, Option[Edge]), canonicalnode.CanonicalNode] = {
+    case (data, _) => FlatNode(data)
   }
 
 }

@@ -56,6 +56,8 @@ class NodeUtils {
 
   getEdgeById = (edgeId, process) => this.edgesFromProcess(process).find(e => this.edgeId(e) === edgeId)
 
+  getIncomingEdges = (nodeId, process) => this.edgesFromProcess(process).filter(e => e.to === nodeId)
+
   getAllGroups = (process) => _.get(process, 'properties.additionalFields.groups', [])
 
   getCollapsedGroups = (process, expandedGroups) => this.getAllGroups(process)
