@@ -1,4 +1,4 @@
-cluster.name: "docker-cluster"
+cluster.name: "elk-nussknacker"
 network.host: 0.0.0.0
 
 # minimum_master_nodes need to be explicitly set when bound on a public IP
