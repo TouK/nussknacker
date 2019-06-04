@@ -42,19 +42,6 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Event
     creator.processorService.invocationsCount.get() shouldBe 1
   }
 
-  test("collects answers from parameters") {
-    val process = EspProcessBuilder
-      .id("proc1")
-      .exceptionHandler()
-      .source("start", "request1-post-source")
-      .emptySink("endNodeIID", "parameterResponse-sink", "computed" -> "#input.field1 + 'd'")
-
-    val creator = new StandaloneProcessConfigCreator
-    val result = runProcess(process, Request1("abc", "b"), creator)
-
-    result shouldBe Right(List("abcd withRandomString"))
-  }
-
   test("collect results after split") {
     val process = EspProcessBuilder
       .id("proc1")

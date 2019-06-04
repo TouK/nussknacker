@@ -164,23 +164,6 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => (Cla
       //TODO: get rid of cast (but how??)
       val source = part.obj.asInstanceOf[FlinkSource[Any]]
 
-
-      val withAssigned = createSourceStream(part.node.id, source)
-        .transform("even-time-meter", new EventTimeDelayMeterFunction("eventtimedelay", eventTimeMetricDuration))
-        .map(new RateMeterFunction[Context]("source"))
-
-
-      val asyncAssigned = wrapAsync(withAssigned, part.node, part.validationContext, "interpretation")
-
-      val branchEnds = part.ends.flatMap(_.cast[BranchEnd]).map(be =>  BranchEndDefinition(be.nodeId, be.joinId) ->
-        asyncAssigned.getSideOutput(OutputTag[InterpretationResult](be.nodeId))).toMap
-
-      registerParts(asyncAssigned, part.nextParts, part.ends) ++ branchEnds
-    }
-
-    //TODO: this should be configurable by Source. We could leave code below as 'default' source implementation,
-    //but we should also be able to change this on level of *source*
-    def createSourceStream(nodeId: String, source: FlinkSource[Any]): DataStream[Context] = {
       val timestampAssigner = source.timestampAssigner
 
       env.setStreamTimeCharacteristic(if (timestampAssigner.isDefined) TimeCharacteristic.EventTime else TimeCharacteristic.IngestionTime)
@@ -188,13 +171,22 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => (Cla
       val newStart = env
         .addSource[Any](source.toFlinkSource)(source.typeInformation)
         .name(s"${metaData.id}-source")
-      timestampAssigner.map {
+      val withAssigned = timestampAssigner.map {
         case periodic: AssignerWithPeriodicWatermarks[Any@unchecked] =>
           newStart.assignTimestampsAndWatermarks(periodic)
         case punctuated: AssignerWithPunctuatedWatermarks[Any@unchecked] =>
           newStart.assignTimestampsAndWatermarks(punctuated)
-      }.getOrElse(newStart)
-        .map(InitContextFunction(metaData.id, nodeId))
+      }.map(_.transform("even-time-meter", new EventTimeDelayMeterFunction("eventtimedelay", eventTimeMetricDuration)))
+        .getOrElse(newStart)
+        .map(new RateMeterFunction[Any]("source"))
+          .map(InitContextFunction(metaData.id, part.node.id))
+
+      val asyncAssigned = wrapAsync(withAssigned, part.node, part.validationContext, "interpretation")
+
+      val branchEnds = part.ends.flatMap(_.cast[BranchEnd]).map(be =>  BranchEndDefinition(be.nodeId, be.joinId) ->
+        asyncAssigned.getSideOutput(OutputTag[InterpretationResult](be.nodeId))).toMap
+
+      registerParts(asyncAssigned, part.nextParts, part.ends) ++ branchEnds
     }
 
     def registerParts(start: DataStream[Unit],
