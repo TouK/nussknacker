@@ -60,14 +60,13 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider {
       sourceFactory <- extractSourceFactory(source)
       definition = ObjectWithMethodDef.withEmptyConfig(sourceFactory, ProcessObjectDefinitionExtractor.source)
       sourceParams <- prepareSourceParams(definition, source)
-      // TODO: Let Source explicitly declare input parameter which will be passed here
-      sourceObj = factory.create[process.Source[Any]](definition, sourceParams, Some(Interpreter.InputParamName))
+      sourceObj = factory.create[process.Source[Any]](definition, sourceParams, None)
     } yield sourceObj
   }
 
   private def prepareSourceParams(definition: ObjectWithMethodDef, source: Source)
                                  (implicit processMetaData: MetaData, nodeId: NodeId) = {
     val parametersToCompile = source.ref.parameters
-    expressionCompiler.compileObjectParameters(definition.parameters, parametersToCompile, List.empty, None).toOption
+    expressionCompiler.compileObjectParameters(definition.parameters, parametersToCompile, List.empty, None, None).toOption
   }
 }

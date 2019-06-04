@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.definition
 import pl.touk.nussknacker.engine.api.process.SingleNodeConfig
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ProcessDefinition, SinkAdditionalData}
 import pl.touk.nussknacker.engine.definition.defaults.{NodeDefinition, ParameterDefaultValueExtractorStrategy}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -82,9 +82,9 @@ object DefinitionPreparer {
 
     val sinks = NodeGroup("sinks",
       processDefinition.sinkFactories.map {
-        case (id, objDefinition) => NodeToAdd("sink", id,
+        case (id, (objDefinition, SinkAdditionalData(requiresOutput))) => NodeToAdd("sink", id,
           Sink("", SinkRef(id, objDefParams(id, objDefinition)),
-            Some(Expression("spel", "#input"))), filterCategories(objDefinition)
+            if (requiresOutput) Some(Expression("spel", "#input")) else None), filterCategories(objDefinition)
         )
       }.toList)
 

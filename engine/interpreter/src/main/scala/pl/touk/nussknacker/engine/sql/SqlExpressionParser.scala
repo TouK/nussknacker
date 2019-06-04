@@ -26,7 +26,7 @@ object SqlExpressionParser extends ExpressionParser {
 
   override def parse(original: String, ctx: ValidationContext, expectedType: TypingResult)
   : Validated[NonEmptyList[expression.ExpressionParseError], TypedExpression] = {
-    val columnModel = ctx.variables.mapValues(CreateColumnModel(_))
+    val columnModel = ctx.localVariables.mapValues(CreateColumnModel(_))
 
     val validVars = columnModel.collect {
       case (key, Valid(model)) => key -> model

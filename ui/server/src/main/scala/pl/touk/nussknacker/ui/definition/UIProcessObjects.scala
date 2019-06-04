@@ -137,7 +137,7 @@ object UIProcessDefinition {
     val uiProcessDefinition = UIProcessDefinition(
       services = processDefinition.services.mapValues(UIObjectDefinition(_)),
       sourceFactories = processDefinition.sourceFactories.mapValues(UIObjectDefinition(_)),
-      sinkFactories = processDefinition.sinkFactories.mapValues(UIObjectDefinition(_)),
+      sinkFactories = processDefinition.sinkFactories.mapValues(e => UIObjectDefinition(e._1)),
       subprocessInputs = subprocessInputs.mapValues(UIObjectDefinition(_)),
       customStreamTransformers = processDefinition.customStreamTransformers.mapValues(e => UIObjectDefinition(e._1)),
       signalsWithTransformers = processDefinition.signalsWithTransformers.mapValues(e => UIObjectDefinition(e._1)),

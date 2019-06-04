@@ -18,13 +18,12 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectDefinition, ObjectWithMethodDef}
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ExpressionDefinition, ProcessDefinition}
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ExpressionDefinition, ProcessDefinition, SinkAdditionalData}
 import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessObjectDefinitionExtractor}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node._
-import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.engine.types.TypesInformationExtractor
@@ -47,7 +46,8 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         "sourceWithParam" -> ObjectDefinition(List(Parameter("param", ClazzRef[Any])), ClazzRef[SimpleRecord], List()),
         "typedMapSource" -> ObjectDefinition(List(Parameter("type", ClazzRef[TypedObjectDefinition])), ClazzRef[TypedMap], List())
     ),
-    Map("sink" -> ObjectDefinition.noParam),
+    Map("sink" -> (ObjectDefinition.noParam, SinkAdditionalData(true)),
+      "sinkWithLazyParam" -> (ObjectDefinition.withParams(List(Parameter("lazyString", Typed[String], Typed[LazyParameter[_]]))), SinkAdditionalData(true))),
 
     Map("customTransformer" -> (ObjectDefinition(List.empty, ClazzRef[SimpleRecord], List()), emptyQueryNamesData()),
       "withParamsTransformer" -> (ObjectDefinition(List(Parameter("par1", ClazzRef(classOf[String]))), ClazzRef[SimpleRecord], List()), emptyQueryNamesData()),
@@ -228,7 +228,6 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     )
 
   }
-
 
   test("find missing custom node") {
     val processWithRefToMissingService =
@@ -679,6 +678,34 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       List(TypedObjectTypingResult(Map("param1" -> Typed[String], "param2" -> Typed[Integer]))))))
 
 
+  }
+
+  test("not allows local variables in eager custom node parameter") {
+    val processWithLocalVarInEagerParam =
+      EspProcessBuilder
+        .id("process1")
+        .exceptionHandler()
+        .source("id1", "source")
+        .customNode("custom", "outVar", "withParamsTransformer",
+          "par1" -> "#input.toString()" )
+        .emptySink("id2", "sink")
+
+    validate(processWithLocalVarInEagerParam, baseDefinition).result should matchPattern {
+      case Invalid(NonEmptyList(ExpressionParseError("Unresolved reference input", "custom", Some("par1"), "#input.toString()"), Nil)) =>
+    }
+  }
+
+  test("allows using local variables for sink with lazy parameters") {
+    val process =
+      EspProcessBuilder
+        .id("process1")
+        .exceptionHandler()
+        .source("id1", "source")
+        .emptySink("sinkWithLazyParam","sinkWithLazyParam", "lazyString" -> "#input.toString()")
+
+    validate(process, baseDefinition).result should matchPattern {
+      case Valid(_) =>
+    }
   }
 
   private def validate(process: EspProcess, definitions: ProcessDefinition[ObjectDefinition]): CompilationResult[Unit] = {

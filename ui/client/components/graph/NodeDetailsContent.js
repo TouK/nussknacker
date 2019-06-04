@@ -100,7 +100,10 @@ export class NodeDetailsContent extends React.Component {
       case 'Sink':
         const toAppend =
           <div>
-            {this.createExpressionField("expression", "Expression", "endResult")}
+            {
+              //TODO: this is a bit clumsy. we should use some metadata, instead of relying on what comes in diagram
+              this.props.node.endResult ? this.createExpressionField("expression", "Expression", "endResult") : null
+            }
             {this.createField("checkbox", "Disabled", "isDisabled")}
           </div>
         return this.sourceSinkCommon(toAppend)

@@ -11,10 +11,12 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
-import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, MethodToInvoke, ProcessListener, Service}
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.standalone.api.{DecodingError, StandaloneGetSource, StandalonePostSource, StandaloneSourceFactory}
+import pl.touk.nussknacker.engine.standalone.utils.StandaloneSinkWithParameters
 import pl.touk.nussknacker.engine.standalone.utils.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.util.LoggingListener
+import pl.touk.nussknacker.engine.api.{Context => NKContext}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
@@ -37,7 +39,9 @@ class StandaloneProcessConfigCreator extends ProcessConfigCreator with LazyLoggi
   )
 
   override def sinkFactories(config: Config): Map[String, WithCategories[SinkFactory]] = Map(
-    "response-sink" -> WithCategories(new ResponseSink, standaloneCategory)
+    "response-sink" -> WithCategories(ResponseSink, standaloneCategory),
+    "responseWithParameter-sink" -> WithCategories(ParameterResponseSinkFactory, standaloneCategory)
+
   )
 
   override def listeners(config: Config): Seq[ProcessListener] = List(LoggingListener)
@@ -55,7 +59,9 @@ class StandaloneProcessConfigCreator extends ProcessConfigCreator with LazyLoggi
 
 //field3 is for checking some quircks of classloading...
 case class Request1(field1: String, field2: String, field3: Option[Request2] = None)
+
 case class Request2(field12: String, field22: String)
+
 case class Request3(field13: String, field23: String)
 
 
@@ -67,30 +73,30 @@ class EnricherService extends Service {
 }
 
 class TimeMeasuringEnricherService extends Service with TimeMeasuringService {
-  override protected def serviceName: String = "enricher"
-
   @MethodToInvoke
   def invoke()(implicit ex: ExecutionContext, collector: ServiceInvocationCollector): Future[String] = {
-    measuring{
+    measuring {
       Future.successful("alamakota")
     }
   }
+
+  override protected def serviceName: String = "enricher"
 }
 
 class SlowEnricherService extends Service with TimeMeasuringService {
-  override protected def serviceName: String = "slowEnricher"
-
   @MethodToInvoke
   def invoke()(implicit ex: ExecutionContext, collector: ServiceInvocationCollector): Future[String] = {
-    measuring{
+    measuring {
       Thread.sleep(Random.nextInt(500))
-      if(Random.nextBoolean()){
+      if (Random.nextBoolean()) {
         Future.successful("alamakota")
-      }else{
+      } else {
         Future.failed(new RuntimeException)
       }
     }
   }
+
+  override protected def serviceName: String = "slowEnricher"
 }
 
 object ProcessorService {
@@ -130,6 +136,7 @@ class Request1SourceFactory extends StandaloneSourceFactory[Request1] {
 
       override def parse(parameters: Map[String, List[String]]): Request1 = {
         def takeFirst(id: String) = parameters.getOrElse(id, List()).headOption.getOrElse("")
+
         Request1(takeFirst("field1"), takeFirst("field2"))
       }
 
@@ -144,14 +151,33 @@ class Request1SourceFactory extends StandaloneSourceFactory[Request1] {
   }
 
 
-
   override def clazz: Class[_] = classOf[Request1]
 
 }
 
-class ResponseSink extends SinkFactory {
+object ResponseSink extends SinkFactory {
   @MethodToInvoke
   def invoke(): Sink = new Sink {
     override def testDataOutput: Option[(Any) => String] = Some(_.toString)
   }
+}
+
+object ParameterResponseSinkFactory extends SinkFactory {
+
+  @MethodToInvoke
+  def invoke(@ParamName("computed") computed: LazyParameter[String]): Sink = new ParameterResponseSink(computed)
+
+  override def requiresOutput: Boolean = false
+
+  class ParameterResponseSink(computed: LazyParameter[String]) extends StandaloneSinkWithParameters {
+    override def prepareResponse(evaluateLazyParameter: LazyParameterInterpreter): (NKContext, ExecutionContext) => Future[Any] = {
+      val function = evaluateLazyParameter.createInterpreter(computed)
+      (ctx: NKContext, ec: ExecutionContext) => {
+        function(ec, ctx).map(s => s + " withRandomString")(ec)
+      }
+    }
+
+    override def testDataOutput: Option[Any => String] = Some(_.toString)
+  }
+
 }

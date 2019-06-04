@@ -49,7 +49,7 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
                               maybeCtx: Option[ValidationContext])
                              (implicit nodeId: NodeId)
   : ValidatedNel[PartSubGraphCompilationError, List[compiledgraph.evaluatedparam.Parameter]] = {
-    compileObjectParameters(parameterDefinitions, parameters, List.empty, maybeCtx).map(_.map {
+    compileObjectParameters(parameterDefinitions, parameters, List.empty, maybeCtx, maybeCtx).map(_.map {
       case TypedParameter(name, expr: TypedExpression) => compiledgraph.evaluatedparam.Parameter(name, expr.expression, expr.returnType)
     })
   }
@@ -57,7 +57,7 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
   def compileObjectParameters(parameterDefinitions: List[Parameter],
                               parameters: List[evaluatedparam.Parameter],
                               branchParameters: List[evaluatedparam.BranchParameters],
-                              maybeCtx: Option[ValidationContext])
+                              maybeCtx: Option[ValidationContext], maybeCtxForLazyParameters: Option[ValidationContext])
                              (implicit nodeId: NodeId)
   : ValidatedNel[PartSubGraphCompilationError, List[compiledgraph.evaluatedparam.TypedParameter]] = {
     val syntax = ValidatedSyntax[PartSubGraphCompilationError]
@@ -66,17 +66,23 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
     val definedParamNames = parameterDefinitions.map(_.name).toSet
     // TODO JOIN: verify parameter for each branch
     val usedParamNames =  parameters.map(_.name).toSet ++ branchParameters.flatMap(_.parameters).map(_.name)
+
+
     Validations.validateParameters(definedParamNames, usedParamNames).andThen { _ =>
       val paramDefMap = parameterDefinitions.map(p => p.name -> p).toMap
+
+      def ctxToUse(pName:String) = if (paramDefMap(pName).isLazyParameter) maybeCtxForLazyParameters else maybeCtx
+      
       val compiledParams = parameters.map { p =>
-        compileParam(p, maybeCtx, paramDefMap(p.name))
+        compileParam(p, ctxToUse(p.name), paramDefMap(p.name))
       }
       val compiledBranchParams = (for {
         branchParams <- branchParameters
         p <- branchParams.parameters
       } yield p.name -> (branchParams.branchId, p.expression)).toGroupedMap.toList.map {
         case (paramName, branchIdAndExpressions) =>
-          compileParam(branchIdAndExpressions, maybeCtx, paramDefMap(paramName))
+          //TODO: handle context for branch parameters correctly...
+          compileParam(branchIdAndExpressions, maybeCtxForLazyParameters, paramDefMap(paramName))
       }
       (compiledParams ++ compiledBranchParams).sequence
     }

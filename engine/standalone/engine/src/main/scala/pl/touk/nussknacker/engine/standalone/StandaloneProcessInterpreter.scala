@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 import pl.touk.nussknacker.engine.standalone.api.types._
 import pl.touk.nussknacker.engine.standalone.api.{StandaloneCustomTransformer, StandaloneSource, types}
 import pl.touk.nussknacker.engine.standalone.metrics.InvocationMetrics
-import pl.touk.nussknacker.engine.standalone.utils.{StandaloneContext, StandaloneContextLifecycle, StandaloneContextPreparer}
+import pl.touk.nussknacker.engine.standalone.utils.{StandaloneContext, StandaloneContextLifecycle, StandaloneContextPreparer, StandaloneSinkWithParameters}
 import pl.touk.nussknacker.engine.{Interpreter, ModelData, compiledgraph}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -70,11 +70,26 @@ object StandaloneProcessInterpreter {
     private def compileWithCompilationErrors(node: SplittedNode[_], validationContext: ValidationContext) =
       compiledProcess.subPartCompiler.compile(node, validationContext).result
 
+    private def lazyParameterInterpreter: CompilerLazyParameterInterpreter = new CompilerLazyParameterInterpreter {
+      override def deps: LazyInterpreterDependencies = compiledProcess.lazyInterpreterDeps
+
+      override def metaData: MetaData = compiledProcess.parts.metaData
+
+      override def close(): Unit = {}
+    }
+
     private def compiledPartInvoker(processPart: ProcessPart): data.ValidatedNel[ProcessCompilationError, InterpreterType] = processPart match {
       case SourcePart(_, node, validationContext, nextParts, _) =>
         compileWithCompilationErrors(node, validationContext).andThen(partInvoker(_, nextParts))
+      case part@SinkPart(sinkWithParams:StandaloneSinkWithParameters, endNode, validationContext) =>
+        val response = sinkWithParams.prepareResponse(lazyParameterInterpreter)
+        Valid((ctx: Context, ec:ExecutionContext) => {
+          response(ctx, ec).map(res => Right(List(InterpretationResult(EndReference(endNode.id), res, ctx))))(ec)
+        })
+
       case part@SinkPart(_, endNode, validationContext) =>
-        compileWithCompilationErrors(endNode, validationContext).andThen(partInvoker(_, List()))
+        compileWithCompilationErrors(endNode, validationContext)
+          .andThen(partInvoker(_, List()))
       case CustomNodePart(transformerObj, node, validationContext, parts, _) =>
         val validatedTransformer = transformerObj match {
           case t: StandaloneCustomTransformer => Valid(t)
@@ -83,16 +98,7 @@ object StandaloneProcessInterpreter {
         }
         validatedTransformer.andThen { transformer =>
           val result = compileWithCompilationErrors(node, validationContext).andThen(partInvoker(_, parts))
-
-            //TODO: make it nice??
-          val creator = new CompilerLazyParameterInterpreter {
-          override def deps: LazyInterpreterDependencies = compiledProcess.lazyInterpreterDeps
-
-          override def metaData: MetaData = compiledProcess.parts.metaData
-
-          override def close(): Unit = {}
-          }
-          result.map(transformer.createTransformation(node.data.outputVar.get)(_, creator))
+          result.map(transformer.createTransformation(node.data.outputVar.get)(_, lazyParameterInterpreter))
         }
     }
 
