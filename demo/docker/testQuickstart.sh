@@ -60,6 +60,12 @@ fi
 
 waitForOK "api/processes/status" "Cannot connect with Flink"
 
+waitForOK "flink/" "Check for Flink response"
+
+waitForOK "metrics" "Check for Kibana response"
+
+waitForOK "search" "Check for Grafana response"
+
 #TODO:
 #check import process
 #check test with test data

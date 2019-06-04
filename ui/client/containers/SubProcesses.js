@@ -1,14 +1,10 @@
 import React from "react";
-import {render} from "react-dom";
-import {Link, browserHistory} from "react-router";
-import {Table, Thead, Th, Tr, Td} from "reactable";
-import _ from "lodash";
-import classNames from "classnames";
+import {browserHistory} from "react-router";
+import {Table, Td, Tr} from "reactable";
 import {connect} from "react-redux";
 
 import HttpService from "../http/HttpService";
 import ActionsUtils from "../actions/ActionsUtils";
-import DialogMessages from "../common/DialogMessages";
 import DateUtils from "../common/DateUtils";
 import LoaderSpinner from "../components/Spinner.js";
 import AddProcessDialog from "../components/AddProcessDialog.js";
@@ -60,7 +56,7 @@ class SubProcesses extends React.Component {
     browserHistory.push(VisualizationUrl.visualizationUrl(process.name))
   }
 
-  handleChange(event) {
+  handleChange = (event) => {
     this.setState({filterVal: event.target.value});
   }
 
@@ -74,8 +70,13 @@ class SubProcesses extends React.Component {
         <HealthCheck/>
         <div id="process-top-bar">
           <div id="table-filter" className="input-group">
-            <input type="text" className="form-control" aria-describedby="basic-addon1"
-                    value={this.state.filterVal} onChange={this.handleChange}/>
+            <input
+                type="text"
+                className="form-control"
+                aria-describedby="basic-addon1"
+                value={this.state.filterVal}
+                onChange={this.handleChange}
+            />
             <span className="input-group-addon" id="basic-addon1">
               <img id="search-icon" src={filterIcon} />
             </span>

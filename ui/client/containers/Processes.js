@@ -149,7 +149,7 @@ class Processes extends PeriodicallyReloadingComponent {
                  {key: 'modifyDate', label: 'Last modification'},
                  {key: 'status', label: 'Status'},
                  {key: 'edit', label: 'Edit'},
-                 {key: 'Metrics', label: 'Metrics'}
+                 {key: 'metrics', label: 'Metrics'}
                ]}
         >
           {this.state.processes.map((process, index) => {
