@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariable
 import pl.touk.nussknacker.engine.api.process.SingleNodeConfig
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
-import pl.touk.nussknacker.engine.api.{AdditionalVariables, BranchParamName, MethodToInvoke, OutputVariableName, ParamName}
+import pl.touk.nussknacker.engine.api.{AdditionalVariables, BranchParamName, LazyParameter, MethodToInvoke, OutputVariableName, ParamName}
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedDependencies}
 import pl.touk.nussknacker.engine.types.EspTypeUtils
 
@@ -98,7 +98,7 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
 
   protected def additionalDependencies: Set[Class[_]]
 
-  protected def extractParameterType(p: java.lang.reflect.Parameter): Class[_] = p.getType
+  protected def extractParameterType(p: java.lang.reflect.Parameter): Class[_] = EspTypeUtils.extractParameterType(p, classOf[LazyParameter[_]])
 
 }
 

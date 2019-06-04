@@ -10,8 +10,11 @@ object ValidationContext {
   def empty = ValidationContext()
 }
 
-case class ValidationContext(variables: Map[String, TypingResult] = Map.empty,
+case class ValidationContext(localVariables: Map[String, TypingResult] = Map.empty,
+                             globalVariables: Map[String, TypingResult] = Map.empty,
                              parent: Option[ValidationContext] = None) {
+
+  val variables: Map[String, TypingResult] = localVariables ++ globalVariables
 
   def apply(name: String): TypingResult =
     get(name).getOrElse(throw new RuntimeException(s"Unknown variable: $name"))
@@ -26,12 +29,14 @@ case class ValidationContext(variables: Map[String, TypingResult] = Map.empty,
     if (variables.contains(name))
       Invalid(OverwrittenVariable(name)).toValidatedNel
     else
-      Valid(copy(variables = variables + (name -> value)))
+      Valid(copy(localVariables = localVariables + (name -> value)))
 
-  def clearVariables: ValidationContext = copy(variables = Map.empty)
+  //TODO: what about parent context? This is tricky - e.g. some aggregations in subprocess can clear also
+  //variables in main process??
+  def clearVariables: ValidationContext = copy(localVariables = Map.empty)
 
-  def pushNewContext(initialVariables: Map[String, TypingResult]): ValidationContext
-    = ValidationContext(initialVariables, Some(this))
+  def pushNewContext(): ValidationContext
+    = ValidationContext(Map.empty, globalVariables, Some(this))
 
   def popContext(implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, ValidationContext] =
     parent match {

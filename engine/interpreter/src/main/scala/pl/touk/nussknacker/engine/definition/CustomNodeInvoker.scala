@@ -62,10 +62,6 @@ object CustomStreamTransformerExtractor extends AbstractMethodDefinitionExtracto
 
   override protected val additionalDependencies: Set[Class[_]] = Set[Class[_]](classOf[NodeId])
 
-  override protected def extractParameterType(p: java.lang.reflect.Parameter): Class[_] =
-    EspTypeUtils.extractParameterType(p, classOf[LazyParameter[_]])
-
-
 }
 
 

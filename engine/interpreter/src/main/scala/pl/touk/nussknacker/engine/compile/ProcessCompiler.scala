@@ -95,8 +95,8 @@ protected trait ProcessCompilerBase {
 
   private val expressionCompiler = ExpressionCompiler.withoutOptimization(classLoader, expressionConfig)
 
-  //TODO: this should be refactored, now it's easy to forget about global vars in different places...
-  private val globalVariableTypes = expressionConfig.globalVariables.mapValuesNow(_.returnType) + (Interpreter.MetaParamName -> Typed[MetaVariables])
+  private def contextWithOnlyGlobalVariables = ValidationContext(Map.empty,
+    expressionConfig.globalVariables.mapValuesNow(_.returnType) + (Interpreter.MetaParamName -> Typed[MetaVariables]))
 
   protected def compile(process: EspProcess): CompilationResult[CompiledProcessParts] = {
     compile(ProcessSplitter.split(process))
@@ -135,7 +135,7 @@ protected trait ProcessCompilerBase {
         override def handle(exceptionInfo: EspExceptionInfo[_ <: Throwable]): Unit = {}
       })
     } else {
-      compileProcessObject[EspExceptionHandler](exceptionHandlerFactory, ref.parameters, List.empty, outputVariableNameOpt = None)
+      compileProcessObject[EspExceptionHandler](exceptionHandlerFactory, ref.parameters, List.empty, outputVariableNameOpt = None, contextWithOnlyGlobalVariables)
     }
   }
 
@@ -149,7 +149,7 @@ protected trait ProcessCompilerBase {
       case SourcePart(srcNode@splittednode.SourceNode(data: Join, _), _, _) =>
         val node = srcNode.asInstanceOf[splittednode.SourceNode[Join]]
         //TODO JOIN: here we need to add handling ValidationContext from branches
-        val ctx = ValidationContext(globalVariableTypes)
+        val ctx = contextWithOnlyGlobalVariables
           // This input variable is because usually join will be just after source, and there is a chance, that
           // it will be in context. Thanks to this user can use this variable in branch parameters.
           .withVariable(Interpreter.InputParamName, Unknown).toOption.get
@@ -166,6 +166,7 @@ protected trait ProcessCompilerBase {
                          (implicit nodeId: NodeId, metaData: MetaData): CompilationResult[compiledgraph.part.SourcePart] = {
       val compiledSource = compile(sourceData)
       val initialCtx = computeInitialVariables(sourceData, compiledSource)
+
       val validatedSource = sub.validate(node, initialCtx)
       val typesForParts = validatedSource.typing
 
@@ -184,21 +185,24 @@ protected trait ProcessCompilerBase {
       case pl.touk.nussknacker.engine.graph.node.Source(_, ref, _) =>
         val validSourceFactory = sourceFactories.get(ref.typ).map(valid).getOrElse(invalid(MissingSourceFactory(ref.typ))).toValidatedNel
         validSourceFactory.andThen(sourceFactory => compileProcessObject[Source[Any]](sourceFactory, ref.parameters, List.empty,
-          outputVariableNameOpt = Some(Interpreter.InputParamName)))
+          outputVariableNameOpt = None, contextWithOnlyGlobalVariables))
       case SubprocessInputDefinition(_, _, _) => Valid(new Source[Any] {}) //FIXME: How should this be handled?
     }
 
-    private def computeInitialVariables(nodeData: SourceNodeData, compiled: ValidatedNel[ProcessCompilationError, Source[_]])(implicit metaData: MetaData, nodeId: NodeId): ValidationContext = ValidationContext(nodeData match {
-      case pl.touk.nussknacker.engine.graph.node.Source(_, ref, _) =>
-        val resultType = compiled.toOption.flatMap[Source[_]](Option(_))
-          .flatMap(_.cast[ReturningType]).map(_.returnType)
-          .orElse(sourceFactories.get(ref.typ).map(_.returnType)).getOrElse(Unknown)
-        Map(
-          Interpreter.InputParamName -> resultType
-        ) ++ globalVariableTypes
-      //TODO: here is nasty edge case - what if subprocess parameter is named like global variable?
-      case SubprocessInputDefinition(_, params, _) => params.map(p => p.name -> loadFromParameter(p)).toMap ++ globalVariableTypes
-    })
+    private def computeInitialVariables(nodeData: SourceNodeData, compiled: ValidatedNel[ProcessCompilationError, Source[_]])(implicit metaData: MetaData, nodeId: NodeId): ValidationContext = {
+      val variables = nodeData match {
+        case pl.touk.nussknacker.engine.graph.node.Source(_, ref, _) =>
+          val resultType = compiled.toOption.flatMap[Source[_]](Option(_))
+            .flatMap(_.cast[ReturningType]).map(_.returnType)
+            .orElse(sourceFactories.get(ref.typ).map(_.returnType)).getOrElse(Unknown)
+          Map(
+            Interpreter.InputParamName -> resultType
+          )
+        //TODO: here is nasty edge case - what if subprocess parameter is named like global variable?
+        case SubprocessInputDefinition(_, params, _) => params.map(p => p.name -> loadFromParameter(p)).toMap
+      }
+      contextWithOnlyGlobalVariables.copy(localVariables = variables)
+    }
 
     //TODO: better classloader error handling
     private def loadFromParameter(subprocessParameter: SubprocessParameter)(implicit nodeId: NodeId) =
@@ -220,7 +224,7 @@ protected trait ProcessCompilerBase {
     implicit val nodeId = NodeId(part.id)
     part match {
       case SinkPart(node) =>
-        CompilationResult.map2(sub.validate(node, ctx), CompilationResult(compile(node.data.ref)))((_, obj) =>
+        CompilationResult.map2(sub.validate(node, ctx), CompilationResult(compile(node.data.ref, ctx)))((_, obj) =>
           compiledgraph.part.SinkPart(obj, node, ctx)
         )
       case CustomNodePart(node@splittednode.OneOutputSubsequentNode(data, _), _, _) =>
@@ -228,11 +232,11 @@ protected trait ProcessCompilerBase {
     }
   }
 
-  private def compile(ref: SinkRef)
+  private def compile(ref: SinkRef, ctx: ValidationContext)
                      (implicit nodeId: NodeId,
                       metaData: MetaData): ValidatedNel[ProcessCompilationError, api.process.Sink] = {
     val validSinkFactory = sinkFactories.get(ref.typ).map(valid).getOrElse(invalid(MissingSinkFactory(ref.typ))).toValidatedNel
-    validSinkFactory.andThen(sinkFactory => compileProcessObject[Sink](sinkFactory, ref.parameters, List.empty, outputVariableNameOpt = None))
+    validSinkFactory.andThen(sinkFactory => compileProcessObject[Sink](sinkFactory._1, ref.parameters, List.empty, outputVariableNameOpt = None, ctx = ctx))
   }
 
   object CustomNodeCompiler {
@@ -286,7 +290,7 @@ protected trait ProcessCompilerBase {
           val contexts = joinNode.branchParameters.groupBy(_.branchId).mapValuesNow(_ => validationContext)
           transformation.transform(contexts)
         case None =>
-          val maybeClearedContext = if (clearsContext) validationContext.copy(variables = globalVariableTypes) else validationContext
+          val maybeClearedContext = if (clearsContext) validationContext.clearVariables else validationContext
 
           (node.outputVar, returnType(nodeDefinition, cNode)) match {
             case (Some(varName), Some(typ)) => maybeClearedContext.withVariable(varName, typ)
@@ -315,10 +319,12 @@ protected trait ProcessCompilerBase {
                                       parameters: List[evaluatedparam.Parameter],
                                       branchParameters: List[evaluatedparam.BranchParameters],
                                       outputVariableNameOpt: Option[String],
-                                      ctx: ValidationContext = ValidationContext(globalVariableTypes))
+                                      ctx: ValidationContext)
                                      (implicit nodeId: NodeId,
                                       metaData: MetaData): ValidatedNel[ProcessCompilationError, T] = {
-    expressionCompiler.compileObjectParameters(nodeDefinition.parameters, parameters, branchParameters, Some(ctx)).andThen { compiledParameters =>
+    expressionCompiler.compileObjectParameters(nodeDefinition.parameters,
+      parameters,
+      branchParameters, Some(ctx.clearVariables), Some(ctx)).andThen { compiledParameters =>
       try {
         Valid(factory.create[T](nodeDefinition, compiledParameters, outputVariableNameOpt))
       } catch {

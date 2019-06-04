@@ -4,6 +4,9 @@ target/
 .*orig
 node_modules/
 dist/
+.bloop
+.vscode
+.metals
 **/db.log
 **/db.properties
 **/db.script

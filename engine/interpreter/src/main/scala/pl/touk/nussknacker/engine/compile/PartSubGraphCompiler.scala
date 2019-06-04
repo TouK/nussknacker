@@ -152,7 +152,7 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
 
     // fixme: subprocessParams is None for disabled node, refactor is needed so that following code is no longer needed
     case SubprocessInput(id, ref, _, Some(true), _) =>
-      val childCtx = ctx.pushNewContext(globalVariableTypes)
+      val childCtx = ctx.pushNewContext()
       val newCtx = ref.parameters.foldLeft[ValidatedNel[ProcessCompilationError, ValidationContext]](Valid(childCtx))
         { case (accCtx, param) => accCtx.andThen(_.withVariable(param.name, Unknown))}
 
@@ -167,7 +167,7 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
     case subprocessInput@SubprocessInput(id, ref, _, _, _) =>
       import cats.implicits.toTraverseOps
 
-      val childCtx = ctx.pushNewContext(globalVariableTypes)
+      val childCtx = ctx.pushNewContext()
       val newCtx = ref.parameters.foldLeft[ValidatedNel[ProcessCompilationError, ValidationContext]](Valid(childCtx))
                     { case (accCtx, param) => accCtx.andThen(_.withVariable(param.name, Unknown))}
 

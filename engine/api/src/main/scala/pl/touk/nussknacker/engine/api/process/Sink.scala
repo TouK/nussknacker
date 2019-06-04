@@ -16,6 +16,8 @@ trait Sink {
 * */
 trait SinkFactory extends Serializable {
 
+  def requiresOutput: Boolean = true
+
 }
 
 object SinkFactory {

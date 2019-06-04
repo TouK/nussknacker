@@ -30,14 +30,14 @@ class ProcessObjectFactory(expressionEvaluator: ExpressionEvaluator) extends Laz
                 outputVariableNameOpt: Option[String])(implicit processMetaData: MetaData, nodeId: NodeId): T = {
 
     val withDefs = params.sortBy(_.name).zip(objectWithMethodDef.parameters.sortBy(_.name))
-    // TODO JOIN: Handle not lazy evaluated branch params
-    val evaluatedParameters = withDefs.filter(p => p._2.originalType != Typed[LazyParameter[_]] && !p._2.branchParam)
-      .map {
-        case (TypedParameter(name, TypedExpression(expr, returnType)), paramDef) =>
-          evaluatedparam.Parameter(name, expr, returnType)
-      }
 
-    val lazyInterpreterParameters = withDefs.filter(p => p._2.originalType == Typed[LazyParameter[_]] || p._2.branchParam)
+    // TODO JOIN: Handle not lazy evaluated branch params
+    val (lazyInterpreterParameters, paramsToEvaluate) = withDefs.span(p => p._2.isLazyParameter || p._2.branchParam)
+
+    val evaluatedParameters = paramsToEvaluate.map {
+      case (TypedParameter(name, TypedExpression(expr, returnType)), paramDef) =>
+        evaluatedparam.Parameter(name, expr, returnType)
+    }
 
     //this has to be synchronous, source/sink/exceptionHandler creation is done only once per process so it doesn't matter
     import pl.touk.nussknacker.engine.util.SynchronousExecutionContext._

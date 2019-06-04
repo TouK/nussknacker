@@ -17,7 +17,7 @@ class CreateTablesDefinitionTest extends FunSuite with Matchers {
   }
   test("create ColumnsModel for ValidationContext") {
     val vc = ValidationContext(Map("dogs" -> dogos))
-    val tables = vc.variables.mapValues(mockColumModelCreation)
+    val tables = vc.localVariables.mapValues(mockColumModelCreation)
     tables shouldEqual Map("dogs" -> Validated.Valid(ColumnModel(List(Column("name", Varchar)))))
   }
 
