@@ -14,7 +14,7 @@ services:
 
   zookeeper:
     container_name: nussknacker_zookeeper
-    image: zookeeper:${ZOOKEEPER_VERSION-3.4.14}
+    image: zookeeper:${ZOOKEEPER_VERSION-3.5.5}
     volumes:
       - nussknacker_storage_zookeeper_datalog:/datalog
       - nussknacker_storage_zookeeper_data:/data
@@ -128,9 +128,6 @@ services:
     image: docker.elastic.co/kibana/kibana:${KIBANA_VERSION-7.1.1}
     expose:
       - "5601"
-    environment:
-      SERVER_NAME: kibana:5601
-      ELASTICSEARCH_HOSTS: httelasticsearch:9200
     links:
       - elasticsearch
     depends_on:
