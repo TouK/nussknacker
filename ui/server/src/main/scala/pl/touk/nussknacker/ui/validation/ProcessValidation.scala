@@ -67,7 +67,7 @@ class ProcessValidation(validators: Map[ProcessingType, ProcessValidator],
   }
 
   private def validateUsingTypeValidator(displayable: DisplayableProcess, processValidator: ProcessValidator): ValidationResult = {
-    val canonical = ProcessConverter.fromDisplayable(displayable)
+    val canonical = ProcessConverter.fromDisplayable(displayable).withoutDisabledNodes
     //TODO: handle types when subprocess resolution fails...
     subprocessResolver.resolveSubprocesses(canonical) match {
       case Valid(process) =>

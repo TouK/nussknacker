@@ -5,8 +5,6 @@ import java.nio.charset.StandardCharsets
 import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.config.{Config, ConfigFactory}
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.conversion.ProcessConfigCreatorMapping
-import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -35,7 +33,7 @@ trait FlinkRunner {
       arg
     }
     ProcessMarshaller.fromJson(canonicalJson).toValidatedNel[Any, CanonicalProcess] andThen { canonical =>
-      ProcessCanonizer.uncanonize(canonical)
+      ProcessCanonizer.uncanonize(canonical.withoutDisabledNodes)
     } match {
       case Valid(p) => p
       case Invalid(err) => throw new IllegalArgumentException(err.toList.mkString("Unmarshalling errors: ", ", ", ""))
