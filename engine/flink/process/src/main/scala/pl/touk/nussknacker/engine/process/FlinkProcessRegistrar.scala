@@ -209,11 +209,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => (Cla
             .getSideOutput(OutputTag[InterpretationResult](EndId))
             .map(new EndRateMeterFunction(part.ends))
 
-          val disabled = sinkDef.data.isDisabled.contains(true)
-
-          val withSinkAdded = if (disabled) {
-            startAfterSinkEvaluated.map(_.output).addSink(EmptySink.toFlinkFunction)
-          } else {
+          val withSinkAdded =
             //TODO: maybe this logic should be moved to compiler instead?
             testRunId match {
               case None =>
@@ -226,7 +222,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => (Cla
                 val collectingSink = SinkInvocationCollector(runId, part.id, typ, prepareFunction)
                 startAfterSinkEvaluated.addSink(new CollectingSinkFunction(compiledProcessWithDeps, collectingSink, part))
             }
-          }
+
           withSinkAdded.name(s"${metaData.id}-${part.id}-sink")
           Map()
         }

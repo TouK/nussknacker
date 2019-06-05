@@ -8,6 +8,45 @@ import pl.touk.nussknacker.engine.graph.node._
 
 sealed trait CanonicalTreeNode
 
+object CanonicalProcess {
+
+  def withoutDisabledNodes(process: CanonicalProcess): CanonicalProcess = {
+    def withoutDisabled(nodes: List[CanonicalNode]): List[CanonicalNode] = {
+      nodes.filter {
+        _.data match {
+          case nodeData: Disableable if nodeData.isDisabled.contains(true) => false
+          case _ => true
+        }
+      }.map {
+        case flatNode: canonicalnode.FlatNode =>
+          flatNode
+
+        case filter: canonicalnode.FilterNode =>
+          filter.copy(nextFalse = withoutDisabled(filter.nextFalse))
+
+        case switch: canonicalnode.SwitchNode =>
+          switch.copy(
+            nexts = switch.nexts.map { caseNode =>
+              caseNode.copy(nodes = withoutDisabled(caseNode.nodes))
+            }.filterNot(_.nodes.isEmpty),
+            defaultNext = withoutDisabled(switch.defaultNext))
+
+        case split: canonicalnode.SplitNode =>
+          split.copy(nexts = split.nexts.map(withoutDisabled).filterNot(_.isEmpty))
+
+        case subprocess: canonicalnode.Subprocess =>
+          subprocess.copy(
+            outputs = subprocess.outputs.map { case (id, canonicalNodes) =>
+              (id, withoutDisabled(canonicalNodes))
+            }.filterNot { case (_, canonicalNodes) => canonicalNodes.isEmpty }
+          )
+      }
+    }
+
+    process.copy(nodes = withoutDisabled(process.nodes))
+  }
+}
+
 //in fact with branches/join this form is not canonical anymore - graph can be represented in more than way
 case class CanonicalProcess(metaData: MetaData,
                            //TODO: this makes sense only for StreamProcess, it should be moved to StreamMetadata
@@ -17,7 +56,10 @@ case class CanonicalProcess(metaData: MetaData,
                            //Separation from nodes and Option is for json backwards compatibility
                            //in the future this form will probably be removed
                             additionalBranches: Option[List[List[CanonicalNode]]]
-                           ) extends CanonicalTreeNode
+                           ) extends CanonicalTreeNode {
+
+  lazy val withoutDisabledNodes: CanonicalProcess = CanonicalProcess.withoutDisabledNodes(this)
+}
 
 object canonicalnode {
 
