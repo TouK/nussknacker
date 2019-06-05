@@ -35,13 +35,17 @@ class NodeDetailsModal extends React.Component {
   }
 
   componentWillReceiveProps(props) {
+    const isChrome = !!window.chrome && (!!window.chrome.webstore || !!window.chrome.runtime);
+
     const newState = {
       editedNode: props.nodeToDisplay,
       currentNodeId: props.nodeToDisplay.id,
       subprocessContent: null
     }
+
     //TODO more smooth subprocess loading in UI
-    if (props.nodeToDisplay && props.showNodeDetailsModal && (NodeUtils.nodeType(props.nodeToDisplay) === "SubprocessInput")) {
+    //Subprocess work only on chrome, there is problem with jonint and SVG
+    if (isChrome && props.nodeToDisplay && props.showNodeDetailsModal && (NodeUtils.nodeType(props.nodeToDisplay) === "SubprocessInput")) {
       const subprocessVersion = props.subprocessVersions[props.nodeToDisplay.ref.id]
       HttpService.fetchProcessDetails(props.nodeToDisplay.ref.id, subprocessVersion, this.props.businessView)
         .then((processDetails) =>
@@ -130,9 +134,18 @@ class NodeDetailsModal extends React.Component {
                        onChange={(e) => { const newId = e.target.value; this.setState((prevState) => ({ editedNode: { ...prevState.editedNode, id: newId}}))}} />
               </div>
             </div>
-            {this.state.editedNode.nodes.map((node, idx) => (<div key={idx}>
-                                    <NodeDetailsContent isEditMode={false} node={node} processDefinitionData={this.props.processDefinitionData}
-                                         nodeErrors={this.props.nodeErrors} onChange={() => {}} testResults={testResults(node.id)}/><hr/></div>))}
+            {this.state.editedNode.nodes.map((node, idx) => (
+              <div key={idx}>
+                <NodeDetailsContent
+                  isEditMode={!this.props.readOnly}
+                  node={node}
+                  processDefinitionData={this.props.processDefinitionData}
+                  nodeErrors={this.props.nodeErrors}
+                  onChange={() => {}} testResults={testResults(node.id)}
+                />
+                <hr/>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -178,9 +191,16 @@ class NodeDetailsModal extends React.Component {
           <div className="modalContentDark">
             <Scrollbars hideTracksWhenNotNeeded={true} autoHeight autoHeightMax={cssVariables.modalContentMaxHeight} renderThumbVertical={props => <div {...props} className="thumbVertical"/>}>
               {
-                this.isGroup() ? this.renderGroup(testResults)
-                  : (<NodeDetailsContent isEditMode={true} node={this.state.editedNode} processDefinitionData={this.props.processDefinitionData}
-                         nodeErrors={this.props.nodeErrors} onChange={this.updateNodeState} testResults={testResults(this.state.currentNodeId)}/>)
+                this.isGroup() ? this.renderGroup(testResults) : (
+                  <NodeDetailsContent
+                    isEditMode={!this.props.readOnly}
+                    node={this.state.editedNode}
+                    processDefinitionData={this.props.processDefinitionData}
+                    nodeErrors={this.props.nodeErrors}
+                    onChange={this.updateNodeState}
+                    testResults={testResults(this.state.currentNodeId)}
+                  />
+                )
               }
               {
                 //FIXME: adjust height of modal with subprocess in some reasonable way :|
@@ -199,14 +219,14 @@ class NodeDetailsModal extends React.Component {
   }
 }
 
-
 function mapState(state) {
-  var nodeId = state.graphReducer.nodeToDisplay.id
-  var errors = nodeId ? _.get(state.graphReducer.processToDisplay, `validationResult.errors.invalidNodes[${state.graphReducer.nodeToDisplay.id}]`, [])
+  const nodeId = state.graphReducer.nodeToDisplay.id
+  const errors = nodeId ? _.get(state.graphReducer.processToDisplay, `validationResult.errors.invalidNodes[${state.graphReducer.nodeToDisplay.id}]`, [])
     : _.get(state.graphReducer.processToDisplay, "validationResult.errors.processPropertiesErrors", [])
   const nodeToDisplay = state.graphReducer.nodeToDisplay
   const processCategory = state.graphReducer.fetchedProcessDetails.processCategory
   const processDefinitionData = state.settings.processDefinitionData || {}
+
   return {
     nodeToDisplay: nodeToDisplay,
     nodeSetting: _.get(processDefinitionData.nodesConfig, ProcessUtils.findNodeConfigName(nodeToDisplay)) || {},

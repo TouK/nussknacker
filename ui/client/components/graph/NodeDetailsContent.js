@@ -146,7 +146,7 @@ export class NodeDetailsContent extends React.Component {
       case 'Processor':
         return (
           <div className="node-table-body">
-            {this.createField("input", "Id", "id")}
+            {this.createField("input", "Id", "id", )}
             {this.createReadonlyField("input", "Service Id", "service.id")}
             {this.state.editedNode.service.parameters.map((param, index) => {
               return (
@@ -210,12 +210,14 @@ export class NodeDetailsContent extends React.Component {
             node={this.state.editedNode}
             addElement={this.addElement}
             isMarked={this.isMarked}
+            readOnly={!this.props.isEditMode}
         />;
       case 'Variable':
         return <Variable
             onChange={this.setNodeDataAt}
             node={this.state.editedNode}
             isMarked={this.isMarked}
+            readOnly={!this.props.isEditMode}
         />;
       case 'Switch':
         return (
@@ -513,7 +515,7 @@ export class NodeDetailsContent extends React.Component {
   }
 
   render() {
-    var nodeClass = classNames('node-table', {'node-editable': this.props.isEditMode})
+    const nodeClass = classNames('node-table', {'node-editable': this.props.isEditMode})
     return (
       <div className={nodeClass}>
         {ModalRenderUtils.renderErrors(this.props.nodeErrors, 'Node has errors')}

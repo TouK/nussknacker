@@ -124,6 +124,10 @@ class ProcessUtils {
 
   //TODO: this should be done without these switches..
   findNodeObjectTypeDefinition = (node, processDefinition) => {
+    if (node === undefined) {
+      return {}
+    }
+
     const nodeDefinitionId = this.findNodeDefinitionId(node)
     switch (node.type) {
       case "Source": {
@@ -216,7 +220,6 @@ class ProcessUtils {
       })
     }
   }
-
 }
 
 export default new ProcessUtils()

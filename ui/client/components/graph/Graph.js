@@ -350,12 +350,15 @@ class Graph extends React.Component {
           const prefixedNodeId = this.props.nodeIdPrefixForSubprocessTests + nodeData.id
           this.props.actions.displayModalNodeDetails({...nodeData, id: prefixedNodeId}, this.props.readonly)
         }
+
         if (cellView.model.attributes.edgeData) {
           this.props.actions.displayModalEdgeDetails(cellView.model.attributes.edgeData)
         }
       })
+
       if (this.props.singleClickNodeDetailsEnabled) {
         this.processGraphPaper.on('cell:pointerclick', (cellView, evt, x, y) => {
+
           const nodeData = cellView.model.attributes.nodeData
           if (nodeData) {
             this.props.actions.displayNodeDetails(cellView.model.attributes.nodeData)
@@ -366,13 +369,17 @@ class Graph extends React.Component {
           if (targetClass.includes('collapseIcon') && nodeData) {
             this.props.actions.collapseGroup(nodeData.id)
           }
+
           if (targetClass.includes('expandIcon') && nodeData) {
             this.props.actions.expandGroup(nodeData.id)
           }
         })
       }
+
       this.processGraphPaper.on('blank:pointerdown', () => {
-        this.props.actions.displayNodeDetails(this.props.fetchedProcessDetails.json.properties)
+        if (this.props.fetchedProcessDetails !== undefined) {
+          this.props.actions.displayNodeDetails(this.props.fetchedProcessDetails.json.properties)
+        }
       })
     }
 

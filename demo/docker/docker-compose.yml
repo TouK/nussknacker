@@ -43,6 +43,19 @@ services:
     depends_on:
       - zookeeper
 
+  kafka-manager:
+    container_name: nussknacker_kafkamanager
+    image: hlebalbau/kafka-manager:${KAFKA_MANAGER_VERSION-stable}
+    command: ["-Dplay.http.context=/kafka-manager/"]
+    environment:
+      ZK_HOSTS: "zookeeper:2181"
+      KAFKA_MANAGER_AUTH_ENABLED: "true"
+      KAFKA_MANAGER_USERNAME: "nussknacker"
+      KAFKA_MANAGER_PASSWORD: "nussknacker"
+    depends_on:
+      - zookeeper
+      - kafka
+
   jobmanager:
     container_name: nussknacker_jobmanager
     image: flink:${FLINK_VERSION-1.7.2-scala_2.11}
@@ -152,7 +165,7 @@ services:
 
   app:
     container_name: nussknacker_app
-    image: ${NUSSKNACKER_IMAGE-touk/nussknacker}:${NUSSKNACKER_VERSION-demo-latest}
+    image: ${NUSSKNACKER_IMAGE-touk/nussknacker}:${NUSSKNACKER_VERSION-latest}
     entrypoint: ["/opt/nussknacker/bin/wait-for-it.sh"]
     command: ["-h", "taskmanager", "-p", "6126", "-t", "60", "--", "/opt/nussknacker/bin/nussknacker-entrypoint.sh"]
     links:
@@ -168,7 +181,7 @@ services:
     expose:
       - "8080"
     volumes:
-      - ./app/docker-application.conf:/opt/nussknacker/conf/docker-application.conf
+      - ${NUSSKNACKER_CONFIG_PATH-./app/docker-application.conf}:/opt/nussknacker/conf/docker-application.conf
       - ./bash/wait-for-it.sh:/opt/nussknacker/bin/wait-for-it.sh
       - nussknacker_storage_app:/opt/nussknacker/storage
 
