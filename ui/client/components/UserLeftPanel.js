@@ -10,6 +10,7 @@ import ProcessComments from './ProcessComments'
 import ProcessAttachments from './ProcessAttachments'
 import Tips from './Tips.js'
 import TogglePanel from './TogglePanel';
+import "react-treeview/react-treeview.css"
 
 import '../stylesheets/userPanel.styl';
 import SpinnerWrapper from "./SpinnerWrapper";
