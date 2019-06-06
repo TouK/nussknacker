@@ -131,12 +131,12 @@ class ExpressionSuggest extends React.Component {
 }
 
 function mapState(state, props) {
-  const processDefinitionData = !_.isEmpty(state.settings.processDefinitionData) ? state.settings.processDefinitionData
-    : {processDefinition: { typesInformation: []}}
+  const processDefinitionData = !_.isEmpty(state.settings.processDefinitionData) ? state.settings.processDefinitionData : {processDefinition: { typesInformation: []}}
   const dataResolved = !_.isEmpty(state.settings.processDefinitionData)
   const typesInformation = processDefinitionData.processDefinition.typesInformation
   const variablesForNode = state.graphReducer.nodeToDisplay.id || _.get(state.graphReducer, ".edgeToDisplay.to") || null
   const variables = ProcessUtils.findAvailableVariables(variablesForNode, state.graphReducer.processToDisplay, processDefinitionData.processDefinition, props.fieldName)
+
   return {
     typesInformation: typesInformation,
     dataResolved: dataResolved,

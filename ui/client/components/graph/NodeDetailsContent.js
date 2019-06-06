@@ -213,12 +213,14 @@ export class NodeDetailsContent extends React.Component {
             node={this.state.editedNode}
             addElement={this.addElement}
             isMarked={this.isMarked}
+            readOnly={!this.props.isEditMode}
         />;
       case 'Variable':
         return <Variable
             onChange={this.setNodeDataAt}
             node={this.state.editedNode}
             isMarked={this.isMarked}
+            readOnly={!this.props.isEditMode}
         />;
       case 'Switch':
         return (
@@ -516,7 +518,7 @@ export class NodeDetailsContent extends React.Component {
   }
 
   render() {
-    var nodeClass = classNames('node-table', {'node-editable': this.props.isEditMode})
+    const nodeClass = classNames('node-table', {'node-editable': this.props.isEditMode})
     return (
       <div className={nodeClass}>
         {ModalRenderUtils.renderErrors(this.props.nodeErrors, 'Node has errors')}

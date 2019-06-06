@@ -7,10 +7,9 @@ import GenericModalDialog from "./GenericModalDialog";
 import Dialogs from "./Dialogs";
 import HttpService from "../../http/HttpService";
 import * as JsonUtils from "../../common/JsonUtils";
-import {Table, Td, Tr} from "reactable";
 import NodeDetailsContent from "../graph/NodeDetailsContent";
 import Moment from "moment";
-
+import {dateFormat} from "../../config";
 import Scrollbars from "react-custom-scrollbars";
 
 //TODO: handle displaying groups
@@ -63,7 +62,7 @@ class CompareVersionsDialog extends React.Component {
     const versionId = (versionPrefix || '') + version.processVersionId
     return (
       <option key={versionId} value={versionId}>
-        {this.versionDisplayString(versionId)} - created by {version.user} &nbsp;on {Moment(version.createDate).format("YYYY-MM-DD HH:mm:ss")}</option>)
+        {this.versionDisplayString(versionId)} - created by {version.user} &nbsp;on {Moment(version.createDate).format(dateFormat)}</option>)
   }
 
   render() {

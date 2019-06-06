@@ -14,7 +14,7 @@ import {dateFormat} from "../../config";
 
 class CalculateCountsDialog extends React.Component {
   //React Datepicker supports different time format
-  dateFormat="YYYY-MM-dd HH:mm:ss"
+  dateFormat="yyyy-MM-dd HH:mm:ss"
 
   predefinedRanges = [
     {

@@ -45,10 +45,17 @@ class Visualization extends React.Component {
   showModalDetailsIfNeeded(process) {
     const {urlNodeId, urlEdgeId} = VisualizationUrl.extractVisualizationParams(this.props.location.query)
     if (!_.isEmpty(urlNodeId)) {
-      this.props.actions.displayModalNodeDetails(NodeUtils.getNodeById(urlNodeId, process))
+      const node = NodeUtils.getNodeById(urlNodeId, process)
+      if (node != null) {
+        this.props.actions.displayModalNodeDetails(node)
+      }
     }
+
     if (!_.isEmpty(urlEdgeId)) {
-      this.props.actions.displayModalEdgeDetails(NodeUtils.getEdgeById(urlEdgeId, process))
+      const edge = NodeUtils.getEdgeById(urlEdgeId, process)
+      if (edge != null) {
+        this.props.actions.displayModalEdgeDetails(edge)
+      }
     }
   }
 
@@ -83,7 +90,7 @@ class Visualization extends React.Component {
         this.redo()
       }
       const deleteKeyCode = 46
-      if (event.keyCode == deleteKeyCode && this.props.currentNodeId && this.props.canDelete) {
+      if (event.key == deleteKeyCode && this.props.currentNodeId && this.props.canDelete) {
         this.deleteNode(this.props.currentNodeId)
       }
     }
@@ -93,13 +100,6 @@ class Visualization extends React.Component {
     clearTimeout(this.state.timeoutId)
     clearInterval(this.state.intervalId)
     this.props.actions.clearProcess()
-  }
-
-  startPollingForUpdates() {
-    var timeoutId = setTimeout(() =>
-      this.setState({ intervalId: setInterval(this.fetchProcessDetails, 10000) }),
-    2000)
-    this.setState({timeoutId: timeoutId})
   }
 
   fetchProcessDetails(businessView) {

@@ -6,6 +6,7 @@ import _ from "lodash";
 import Moment from "moment"
 import {Table} from "reactable";
 import JSONTree from 'react-json-tree'
+import {dateFormat} from "../config";
 
 class QueriedStateTable extends React.Component {
 
@@ -92,7 +93,7 @@ class QueriedStateTable extends React.Component {
       return fetchedState.map((entry, idx) => {
         return _.mapValues(entry, (value, key) => {
           if (key.toLowerCase().includes("timestamp")) {
-            return Moment(value).format("YYYY-MM-DD HH:mm:ss")
+            return Moment(value).format(dateFormat)
           } else if (_.isObject(value)) {
             return this.renderJsonTree(value)
           } else {

@@ -18,7 +18,7 @@ class NodeUtils {
   }
 
   nodesFromProcess = (process, expandedGroups) => {
-    var nodes = process.nodes
+    let nodes = process.nodes
     const groups = this.getCollapsedGroups(process, expandedGroups)
     groups.forEach(group => {
       nodes = nodes.filter(node => !_.includes(group.nodes, node.id))
@@ -39,7 +39,7 @@ class NodeUtils {
   }
 
   edgesFromProcess = (process, expandedGroups) => {
-    var edges = process.edges
+    let edges = process.edges
     const groups = this.getCollapsedGroups(process, expandedGroups)
     groups.forEach(group => {
       const id = group.id
@@ -63,7 +63,6 @@ class NodeUtils {
 
   getExpandedGroups = (process, expandedGroups) => this.getAllGroups(process)
     .filter(g => _.includes(expandedGroups, g.id))
-
 
   edgeType = (allEdges, node, processDefinitionData) => {
     const edgesForNode = this.edgesForNode(node, processDefinitionData)

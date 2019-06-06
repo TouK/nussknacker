@@ -13,10 +13,6 @@ class ProcessUtils {
     return `${processId}:v${versionId}`
   }
 
-  isInGroupingMode = (state) => {
-    return state.graphReducer.groupingState != null
-  }
-
   //fixme maybe return hasErrors flag from backend?
   hasNoErrorsNorWarnings = (process) => {
     return this.hasNoErrors(process) && this.hasNoWarnings(process)
@@ -124,6 +120,10 @@ class ProcessUtils {
 
   //TODO: this should be done without these switches..
   findNodeObjectTypeDefinition = (node, processDefinition) => {
+    if (node == null) {
+      return {}
+    }
+
     const nodeDefinitionId = this.findNodeDefinitionId(node)
     switch (node.type) {
       case "Source": {
@@ -216,7 +216,6 @@ class ProcessUtils {
       })
     }
   }
-
 }
 
 export default new ProcessUtils()

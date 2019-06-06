@@ -1,5 +1,5 @@
 import React from "react";
-import Creatable from "react-select/lib/Creatable";
+import Creatable from "react-select/creatable"
 import PropTypes from 'prop-types';
 
 const getOptions = (values) => {

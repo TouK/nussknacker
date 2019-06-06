@@ -1,8 +1,8 @@
 import React from 'react'
-import { connect } from 'react-redux';
+import {connect} from 'react-redux';
 import _ from "lodash";
-import {Table, Thead, Th, Tr, Td} from "reactable";
-import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
+import {Table, Td, Tr} from "reactable";
+import {Tab, TabList, TabPanel, Tabs} from 'react-tabs';
 import ActionsUtils from "../actions/ActionsUtils";
 import HttpService from "../http/HttpService";
 import ProcessUtils from "../common/ProcessUtils";
@@ -23,7 +23,8 @@ class AdminPage extends React.Component {
       processesLoaded: false,
       componentIds: [],
       unusedComponents: [],
-      services:{}
+      services:{},
+      componentToFind: 0
     }
   }
 
@@ -103,11 +104,13 @@ class ProcessSearch extends React.Component {
     })
     return (
       <div>
-        <select className="table-select" onChange={(e) => this.setState({componentToFind: e.target.value})} value={0}>
-          <option disabled key={0} value={0}> -- select an option --</option>
-          {this.props.componentIds.map((componentId, index) => {
-            return (<option key={index} value={componentId}>{componentId}</option>)
-          })}
+        <select className="table-select" onChange={(e) => this.setState({componentToFind: e.target.value})} value={this.state.componentToFind || 0}>
+          <option disabled key={0} value={0}>-- select an option --</option>
+          {
+            this.props.componentIds.map((componentId, index) => {
+              return (<option key={index} value={componentId}>{componentId}</option>)
+            }
+          )}
         </select>
         <div id="table-filter" className="input-group">
           <input type="text" className="form-control" aria-describedby="basic-addon1"
@@ -124,13 +127,15 @@ class ProcessSearch extends React.Component {
                    noDataText="No matching records found."
                    hideFilterInput
                    filterBy={this.state.filterVal.toLowerCase()}
+                   columns={[
+                     {key: "process", label: "Process"},
+                     {key: "node", label: "Node"},
+                     {key: "category", label: "Category"},
+                     {key: "isDeployed", label: "Is deployed"},
+                   ]}
+
+
             >
-              <Thead>
-              <Th column="process">Process</Th>
-              <Th column="node">Node</Th>
-              <Th column="category">Category</Th>
-              <Th column="isDeployed">Is deployed</Th>
-              </Thead>
               {found.map((row, idx) => {
                 return (
                   <Tr key={idx}>

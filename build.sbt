@@ -142,7 +142,7 @@ lazy val dockerSettings = {
   Seq(
     dockerEntrypoint := Seq(s"$workingDir/bin/nussknacker-entrypoint.sh", dockerPort.toString),
     dockerExposedPorts := Seq(dockerPort),
-    dockerExposedVolumes := Seq(s"$workingDir/storage"),
+    dockerExposedVolumes := Seq(s"$workingDir/storage", s"$workingDir/data"),
     defaultLinuxInstallLocation in Docker := workingDir,
     dockerBaseImage := "openjdk:8-jdk",
     dockerUsername := dockerUserName,

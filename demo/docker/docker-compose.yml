@@ -43,6 +43,20 @@ services:
     depends_on:
       - zookeeper
 
+# If you want use kafka-manager uncomment this and section /kafka-manager at ./nginx/nginx.conf
+#  kafka-manager:
+#    container_name: nussknacker_kafkamanager
+#    image: hlebalbau/kafka-manager:${KAFKA_MANAGER_VERSION-stable}
+#    command: ["-Dplay.http.context=/kafka-manager/"]
+#    environment:
+#      ZK_HOSTS: "zookeeper:2181"
+#      KAFKA_MANAGER_AUTH_ENABLED: "true"
+#      KAFKA_MANAGER_USERNAME: "nussknacker"
+#      KAFKA_MANAGER_PASSWORD: "nussknacker"
+#    depends_on:
+#      - zookeeper
+#      - kafka
+
   jobmanager:
     container_name: nussknacker_jobmanager
     image: flink:${FLINK_VERSION-1.7.2-scala_2.11}
@@ -168,7 +182,8 @@ services:
     expose:
       - "8080"
     volumes:
-      - ./app/docker-application.conf:/opt/nussknacker/conf/docker-application.conf
+      - ${NUSSKNACKER_APPLICATION_CONFIG-./app/application.conf}:/opt/nussknacker/conf/docker-application.conf
+      - ${NUSSKNACKER_APPLICATION_DATA-./app/data}:/opt/nussknacker/data
       - ./bash/wait-for-it.sh:/opt/nussknacker/bin/wait-for-it.sh
       - nussknacker_storage_app:/opt/nussknacker/storage
 
