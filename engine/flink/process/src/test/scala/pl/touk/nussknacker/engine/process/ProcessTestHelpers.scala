@@ -134,8 +134,8 @@ object ProcessTestHelpers {
   object StateCustomNode extends CustomStreamTransformer {
 
     @MethodToInvoke(returnType = classOf[SimpleRecordWithPreviousValue])
-    def execute(@ParamName("keyBy") keyBy: LazyParameter[String],
-                @ParamName("stringVal") stringVal: String) = FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
+    def execute(@ParamName("stringVal") stringVal: String,
+                @ParamName("keyBy") keyBy: LazyParameter[String]) = FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
       start
         .map(context.lazyParameterHelper.lazyMapFunction(keyBy))
         .keyBy(_.value)

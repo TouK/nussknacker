@@ -32,7 +32,7 @@ class ProcessObjectFactory(expressionEvaluator: ExpressionEvaluator) extends Laz
     val withDefs = params.sortBy(_.name).zip(objectWithMethodDef.parameters.sortBy(_.name))
 
     // TODO JOIN: Handle not lazy evaluated branch params
-    val (lazyInterpreterParameters, paramsToEvaluate) = withDefs.span(p => p._2.isLazyParameter || p._2.branchParam)
+    val (lazyInterpreterParameters, paramsToEvaluate) = withDefs.partition(p => p._2.isLazyParameter || p._2.branchParam)
 
     val evaluatedParameters = paramsToEvaluate.map {
       case (TypedParameter(name, TypedExpression(expr, returnType)), paramDef) =>
