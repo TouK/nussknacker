@@ -46,14 +46,14 @@ class Visualization extends React.Component {
     const {urlNodeId, urlEdgeId} = VisualizationUrl.extractVisualizationParams(this.props.location.query)
     if (!_.isEmpty(urlNodeId)) {
       const node = NodeUtils.getNodeById(urlNodeId, process)
-      if (node !== undefined) {
+      if (node != null) {
         this.props.actions.displayModalNodeDetails(node)
       }
     }
 
     if (!_.isEmpty(urlEdgeId)) {
       const edge = NodeUtils.getEdgeById(urlEdgeId, process)
-      if (edge !== undefined) {
+      if (edge != null) {
         this.props.actions.displayModalEdgeDetails(edge)
       }
     }

@@ -377,7 +377,7 @@ class Graph extends React.Component {
       }
 
       this.processGraphPaper.on('blank:pointerdown', () => {
-        if (this.props.fetchedProcessDetails !== undefined) {
+        if (this.props.fetchedProcessDetails != null) {
           this.props.actions.displayNodeDetails(this.props.fetchedProcessDetails.json.properties)
         }
       })

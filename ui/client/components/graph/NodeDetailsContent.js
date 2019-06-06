@@ -146,7 +146,7 @@ export class NodeDetailsContent extends React.Component {
       case 'Processor':
         return (
           <div className="node-table-body">
-            {this.createField("input", "Id", "id", )}
+            {this.createField("input", "Id", "id")}
             {this.createReadonlyField("input", "Service Id", "service.id")}
             {this.state.editedNode.service.parameters.map((param, index) => {
               return (
