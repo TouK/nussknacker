@@ -43,6 +43,7 @@ services:
     depends_on:
       - zookeeper
 
+# If you want use kafka-manager uncomment this and section /kafka-manager at ./nginx/nginx.conf
 #  kafka-manager:
 #    container_name: nussknacker_kafkamanager
 #    image: hlebalbau/kafka-manager:${KAFKA_MANAGER_VERSION-stable}
