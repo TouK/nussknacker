@@ -43,18 +43,18 @@ services:
     depends_on:
       - zookeeper
 
-  kafka-manager:
-    container_name: nussknacker_kafkamanager
-    image: hlebalbau/kafka-manager:${KAFKA_MANAGER_VERSION-stable}
-    command: ["-Dplay.http.context=/kafka-manager/"]
-    environment:
-      ZK_HOSTS: "zookeeper:2181"
-      KAFKA_MANAGER_AUTH_ENABLED: "true"
-      KAFKA_MANAGER_USERNAME: "nussknacker"
-      KAFKA_MANAGER_PASSWORD: "nussknacker"
-    depends_on:
-      - zookeeper
-      - kafka
+#  kafka-manager:
+#    container_name: nussknacker_kafkamanager
+#    image: hlebalbau/kafka-manager:${KAFKA_MANAGER_VERSION-stable}
+#    command: ["-Dplay.http.context=/kafka-manager/"]
+#    environment:
+#      ZK_HOSTS: "zookeeper:2181"
+#      KAFKA_MANAGER_AUTH_ENABLED: "true"
+#      KAFKA_MANAGER_USERNAME: "nussknacker"
+#      KAFKA_MANAGER_PASSWORD: "nussknacker"
+#    depends_on:
+#      - zookeeper
+#      - kafka
 
   jobmanager:
     container_name: nussknacker_jobmanager
