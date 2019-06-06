@@ -51,6 +51,11 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
     Map("customTransformer" -> (ObjectDefinition(List.empty, ClazzRef[SimpleRecord], List()), emptyQueryNamesData()),
       "withParamsTransformer" -> (ObjectDefinition(List(Parameter("par1", ClazzRef(classOf[String]))), ClazzRef[SimpleRecord], List()), emptyQueryNamesData()),
+      "manyParams" -> (ObjectDefinition(List(
+                Parameter("par1", Typed[String], Typed[LazyParameter[_]]),
+                Parameter("par2", ClazzRef[String]),
+                Parameter("par3", Typed[String], Typed[LazyParameter[_]]),
+                Parameter("par4", ClazzRef[String])), ClazzRef[SimpleRecord], List()), emptyQueryNamesData()),
       "clearingContextTransformer" -> (ObjectDefinition(List.empty, ClazzRef[SimpleRecord], List()), emptyQueryNamesData(true)),
       "withManyParameters" -> (ObjectDefinition(List(
         Parameter("lazyString", Typed[String], Typed[LazyParameter[_]]), Parameter("lazyInt", Typed[Integer], Typed[LazyParameter[_]]),
@@ -692,6 +697,25 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
     validate(processWithLocalVarInEagerParam, baseDefinition).result should matchPattern {
       case Invalid(NonEmptyList(ExpressionParseError("Unresolved reference input", "custom", Some("par1"), "#input.toString()"), Nil)) =>
+    }
+  }
+
+  test("correctly detects lazy params") {
+    val processWithLocalVarInEagerParam =
+      EspProcessBuilder
+        .id("process1")
+        .exceptionHandler()
+        .source("id1", "source")
+        .customNode("custom", "outVar", "manyParams",
+          "par1" -> "#input.toString()",
+          "par2" -> "''",
+          "par3" -> "#input.toString()",
+          "par4" -> "''"
+        )
+        .emptySink("id2", "sink")
+
+    validate(processWithLocalVarInEagerParam, baseDefinition).result should matchPattern {
+      case Valid(_) =>
     }
   }
 
