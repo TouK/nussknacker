@@ -15,7 +15,9 @@ import ParameterList from "./ParameterList";
 import ExpressionWithFixedValues from "./ExpressionWithFixedValues";
 import {v4 as uuid4} from "uuid";
 import MapVariable from "./node-modal/MapVariable";
+import BranchParameters from "./node-modal/BranchParameters";
 import Variable from "./node-modal/Variable";
+import JoinDef from "./node-modal/JoinDef"
 
 //move state to redux?
 // here `componentDidUpdate` is complicated to clear unsaved changes in modal
@@ -24,19 +26,59 @@ export class NodeDetailsContent extends React.Component {
   constructor(props) {
     super(props);
 
+    this.nodeObjectDetails = ProcessUtils.findNodeObjectTypeDefinition(this.props.node, this.props.processDefinitionData.processDefinition);
+
+    this.nodeDef = this.prepareNodeDef(props.node, this.nodeObjectDetails, props.processToDisplay)
+
     this.state = {
       ...TestRenderUtils.stateForSelectTestResults(null, this.props.testResults),
-      editedNode: _.cloneDeep(props.node),
+      editedNode: this.enrichNodeWithProcessDependentData(_.cloneDeep(props.node)),
       codeCompletionEnabled: true,
       testResultsToHide: new Set(),
     };
-
-    this.nodeObjectDetails = ProcessUtils.findNodeObjectTypeDefinition(this.props.node, this.props.processDefinitionData.processDefinition);
 
     let hasNoReturn = _.isNull(this.nodeObjectDetails.returnType)
     this.showOutputVar = hasNoReturn  === false || (hasNoReturn === true && this.state.editedNode.outputVar)
 
     this.generateUUID("fields");
+  }
+
+  prepareNodeDef(node, nodeObjectDetails, processToDisplay) {
+    if (NodeUtils.nodeType(node) === "Join") {
+      return new JoinDef(node, nodeObjectDetails, processToDisplay)
+    } else {
+      return null
+    }
+  }
+
+  // should it be here or somewhere else (in the reducer?)
+  enrichNodeWithProcessDependentData(node) {
+    if (NodeUtils.nodeType(node) === "Join") {
+      node.branchParameters = this.nodeDef.incomingEdges.map((edge) => {
+        let branchId = edge.from
+        let existingBranchParams = node.branchParameters.find(p => p.branchId === branchId)
+        let newBranchParams = this.nodeDef.branchParameters.map((branchParamDef) => {
+          let existingParamValue = ((existingBranchParams || {}).parameters || []).find(p => p.name === branchParamDef.name)
+          let templateParamValue = (node.branchParametersTemplate || []).find(p => p.name === branchParamDef.name);
+          return existingParamValue || _.cloneDeep(templateParamValue) ||
+              // We need to have this fallback to some template for situation when it is existing node and it has't got
+              // defined parameters filled. see note in DefinitionPreparer on backend side TODO: remove it after API refactor
+              _.cloneDeep({
+                name: branchParamDef.name,
+                expression: {
+                  expression: `#${branchParamDef.name}`,
+                  language: "spel",
+                }
+              })
+        })
+        return {
+          branchId: branchId,
+          parameters: newBranchParams
+        }
+      })
+      delete node["branchParametersTemplate"]
+    }
+    return node
   }
 
   generateUUID(...properties) {
@@ -196,7 +238,15 @@ export class NodeDetailsContent extends React.Component {
               this.showOutputVar && this.createField("input", "Output", "outputVar", "outputVar", false, null)
             }
             {this.createReadonlyField("input", "Node type", "nodeType")}
-            {(this.state.editedNode.parameters || this.state.editedNode.ref.parameters).map((param, index) => {
+            {NodeUtils.nodeType(this.props.node) === 'Join' &&
+              <BranchParameters
+                  onChange={this.setNodeDataAt}
+                  node={this.state.editedNode}
+                  joinDef={this.nodeDef}
+                  isMarked={this.isMarked}
+              />
+            }
+            {(this.state.editedNode.parameters).map((param, index) => {
               return (
                 <div className="node-block" key={this.props.node.id + param.name + index}>
                   {this.createExpressionListField(param.name, "expression", `parameters[${index}]`)}
@@ -533,7 +583,9 @@ export class NodeDetailsContent extends React.Component {
 
 function mapState(state) {
   return {
-    additionalPropertiesConfig: _.get(state.settings, 'processDefinitionData.additionalPropertiesConfig') || {}
+    additionalPropertiesConfig: _.get(state.settings, 'processDefinitionData.additionalPropertiesConfig') || {},
+    processDefinitionData: state.settings.processDefinitionData || {},
+    processToDisplay: state.graphReducer.processToDisplay
   }
 }
 

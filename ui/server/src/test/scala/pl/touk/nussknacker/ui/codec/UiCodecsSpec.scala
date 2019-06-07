@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
-import pl.touk.nussknacker.engine.graph.node.{CustomNode, NodeData, Processor, SubprocessInputDefinition}
+import pl.touk.nussknacker.engine.graph.node.{CustomNode, Join, NodeData, Processor, SubprocessInputDefinition}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType.SubprocessOutput
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.{Edge, EdgeType, NodeAdditionalFields, ProcessAdditionalFields}
@@ -74,10 +74,9 @@ class UiCodecsSpec extends FunSuite with Matchers {
 
     val encoded = UiCodecs.processObjectsEncode.encode(UIProcessObjects(
       List(NodeGroup(
-        "base", List(NodeToAdd(
-          "typ1", "label1", CustomNode("id", Some("output"), "typ1", List(Parameter("par1", Expression("spel", "aaa")))), List("trala")
-        ))
-      )),
+        "base", List(
+          NodeToAdd( "typ1", "label1", CustomNode("id", Some("output"), "typ1", List(Parameter("par1", Expression("spel", "aaa")))), List("trala")),
+          NodeToAdd( "join1", "label1", Join("id", Some("output"), "typ1", List.empty, List.empty), List("trala"), List(Parameter("par1", Expression("spel", "bbb"))))))),
       UIProcessDefinition(
         Map(),
         Map(),
@@ -94,24 +93,45 @@ class UiCodecsSpec extends FunSuite with Matchers {
       List(NodeEdges(NodeTypeId("abc"), List(EdgeType.SwitchDefault, SubprocessOutput("out1")), false, false))
     ))
 
-    val customNode = (for {
+    val customNodes = (for {
       nodesToAdd <- encoded.cursor --\ "nodesToAdd"
       nodeArray <- nodesToAdd.\\
-      group <- nodeArray --\ "possibleNodes"
-      node <- group.\\
-      nodeData <- node --\ "node"
+      node <- nodeArray --\ "possibleNodes"
+    } yield node).get
+
+    val typ1NodeData = (for {
+      nodeToAdd <- customNodes -\ (_.field("type").contains(jString("typ1")))
+      nodeData <- nodeToAdd --\ "node"
     } yield nodeData).get.focus
 
-    customNode shouldBe jObjectFields(
-          "type" -> jString("CustomNode"),
-          "id" -> jString("id"),
-          "outputVar" -> jString("output"),
-          "nodeType" -> jString("typ1"),
-          "parameters" -> jArray(List(jObjectFields(
-            "name" -> jString("par1"),
-            "expression" -> jObjectFields("language" -> jString("spel"), "expression" -> jString("aaa"))
-          )))
+    typ1NodeData shouldEqual jObjectFields(
+      "type" -> jString("CustomNode"),
+      "id" -> jString("id"),
+      "outputVar" -> jString("output"),
+      "nodeType" -> jString("typ1"),
+      "parameters" -> jArray(List(jObjectFields(
+        "name" -> jString("par1"),
+        "expression" -> jObjectFields("language" -> jString("spel"), "expression" -> jString("aaa"))
+      )))
     )
+    val join1NodeToAdd = (customNodes -\ (_.field("type").contains(jString("join1")))).get
+    val join1NodeData = (join1NodeToAdd --\ "node").get.focus
+
+    join1NodeData shouldEqual jObjectFields(
+      "type" -> jString("Join"),
+      "id" -> jString("id"),
+      "outputVar" -> jString("output"),
+      "nodeType" -> jString("typ1"),
+      "parameters" -> jArray(List.empty),
+      "branchParameters" -> jArray(List.empty)
+    )
+
+    val join1BranchParams = (join1NodeToAdd --\ "branchParametersTemplate").get.focus
+
+    join1BranchParams shouldEqual jArray(List(jObjectFields(
+      "name" -> jString("par1"),
+      "expression" -> jObjectFields("language" -> jString("spel"), "expression" -> jString("bbb"))
+    )))
 
     val edges = encoded.objectOrEmpty("edgesForNodes").get.arrayOrEmpty.head.objectOrEmpty("edges").get
     edges.arrayOrEmpty should have length 2

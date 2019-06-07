@@ -119,7 +119,16 @@ export default {
     }).catch((error) => {
       this.addError(`Cannot find chosen versions`, error, true)
       return Promise.reject(error)
-    });
+    }).then((values => {
+      // This is a walk-around for having part of node template (branch parameters) outside of itself.
+      // See note in DefinitionPreparer on backend side. // TODO remove it after API refactor
+      values.nodesToAdd.forEach(nodeAggregates => {
+        nodeAggregates.possibleNodes.forEach(nodeToAdd => {
+          nodeToAdd.node.branchParametersTemplate = nodeToAdd.branchParametersTemplate
+        })
+      })
+      return values;
+    }));
   },
 
   fetchComponentIds() {
