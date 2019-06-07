@@ -634,8 +634,6 @@ def runNpm(command: String, errorMessage: String): Unit = {
   import sys.process.Process
   val path = Path.apply("ui/client").asFile
   println("Using path: " + path.getAbsolutePath)
-  val installResult = Process("npm install", path)!;
-  if (installResult != 0) throw new RuntimeException("NPM install failed")
   val result = Process(s"npm $command", path)!;
   if (result != 0) throw new RuntimeException(errorMessage)
 }
@@ -672,9 +670,7 @@ lazy val ui = (project in file("ui/server"))
     Keys.test in SlowTests := (Keys.test in SlowTests).dependsOn(
       //TODO: maybe here there should be engine/demo??
       (assembly in Compile) in managementSample
-    ).dependsOn(
-      testUi
-    ).value,
+    ),
     Keys.test in Test := (Keys.test in Test).dependsOn(
       //TODO: maybe here there should be engine/demo??
       (assembly in Compile) in managementSample

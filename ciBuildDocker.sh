@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e
+
 version=`echo ${APPLICATION_VERSION} | sed 's/[^a-zA-Z0-9-]/\_/g' | awk '{print tolower($0)}'`
 dockerTagName=`echo ${DOCKER_TAG_NAME} | sed 's/[^a-zA-Z0-9-]/\_/g' | awk '{print tolower($0)}'`
 dockerPackageName=${DOCKER_PACKAGENAME-"nussknacker"}
@@ -43,6 +45,8 @@ if [[ -z "$dockerTagName" ]]; then
 fi
 
 if [[ -n "$version" ]]; then
+    cd ui/client && npm ci && cd -
+
     echo "Prepare docker build for version: $version, tag: $dockerTagName, port: $dockerPort," \
          "user: $dockerUsername, package: $dockerPackageName, update: $dockerUpdateLatest," \
          "publishType: $dockerPublishType."
