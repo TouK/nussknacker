@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e
+
 espEngineToukVersion=$1
 nexusPassword=$2
 
@@ -15,6 +17,7 @@ else
     nexusUserProperty=""
 fi
 
+cd ui/client && npm ci && cd -
 if [[ -z "$5" || "$5" == false ]]; then
     ./sbtwrapper clean test management/it:test engineStandalone/it:test ui/slow:test || { echo 'Failed to build and test nussknacker' ; exit 1; }
 fi

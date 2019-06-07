@@ -21,6 +21,8 @@ env:
     - SANITIZED_BRANCH=`echo ${TRAVIS_BRANCH} | sed 's/[^a-zA-Z0-9]/\_/g' | awk '{print tolower($0)}'`
     - BUILD_VERSION=$(if [[ -n $TRAVIS_TAG ]]; then echo "${SANITIZED_BRANCH}"; else echo "${SANITIZED_BRANCH}-$TRAVIS_COMMIT"; fi)
 
+before_install: if [[ `npm -v | sed 's/\..*//'` < 6 ]]; then npm i -g npm; fi
+
 # Cleanup the cached directories to avoid unnecessary cache updates
 before_cache:
   - rm -fv $HOME/.ivy2/.sbt.ivy.lock
@@ -43,10 +45,10 @@ jobs:
   include:
     - stage: tests
       name: "Unit tests"
-      script: sbt ++$TRAVIS_SCALA_VERSION clean coverage test coverageReport && sbt ++$TRAVIS_SCALA_VERSION coverageAggregate
+      script: ./ciTest.sh $TRAVIS_SCALA_VERSION
       after_success: sbt ++$TRAVIS_SCALA_VERSION coveralls
-    - name: "UI tests"
-      script: sbt ++$TRAVIS_SCALA_VERSION clean ui/test ui/slow:test
+    - name: "UI slow tests"
+      script: sbt ++$TRAVIS_SCALA_VERSION clean ui/slow:test
     - name: "Docker Compose tests "
       script:
         - ./ciBuildDocker.sh --version=${BUILD_VERSION} --docker-tag=demo-latest --docker-publish-type=publishLocal

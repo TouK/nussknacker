@@ -17,6 +17,7 @@ if [ -z "$nexusUrl" ]; then
     echo "nexusUrl missing"; exit -1
 fi
 
+cd ui/client && npm ci && cd -
 echo publishing nussknacker version: $version
 ./sbtwrapper clean test management/it:test engineStandalone/it:test ui/slow:test
 ./sbtwrapper -DnexusPassword=${nexusPassword} -DnexusUrl=${nexusUrl} ";set version in ThisBuild := \"$version\";set isSnapshot in ThisBuild := false" publish
