@@ -1,5 +1,5 @@
 import React from "react";
-import {Table, Thead, Th, Td, Tr} from "reactable";
+import {Table, Td, Tr} from "reactable";
 import {connect} from "react-redux";
 
 import HttpService from "../http/HttpService";

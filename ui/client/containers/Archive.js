@@ -1,5 +1,4 @@
 import React from "react";
-import history from "./../history"
 import {Table, Td, Tr} from "reactable";
 import {connect} from "react-redux";
 
@@ -11,6 +10,7 @@ import LoaderSpinner from "../components/Spinner.js";
 import "../stylesheets/processes.styl";
 import filterIcon from '../assets/img/search.svg'
 import editIcon from '../assets/img/edit-icon.png'
+import {withRouter} from 'react-router-dom'
 
 class Archive extends React.Component {
 
@@ -49,7 +49,7 @@ class Archive extends React.Component {
   }
 
   showProcess(process) {
-    history.push(Archive.path + "/" + process.name)
+    this.props.history.push(Archive.path + "/" + process.name)
   }
 
   handleChange(event) {
@@ -126,4 +126,4 @@ function mapState(state) {
   };
 }
 
-export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(Archive);
+export default withRouter(connect(mapState, ActionsUtils.mapDispatchWithEspActions)(Archive));

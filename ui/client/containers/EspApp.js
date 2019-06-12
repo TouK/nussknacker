@@ -1,11 +1,12 @@
 import React from "react";
-import {NavLink, Route, Switch, withRouter} from 'react-router-dom'
+import {NavLink, Route, Switch, withRouter, matchPath} from 'react-router-dom'
 import {hot} from 'react-hot-loader'
 import _ from "lodash";
 import Processes from "./Processes";
 import SubProcesses from "./SubProcesses";
+import NotFound from "./NotFound";
 
-import { TransitionGroup, CSSTransition } from "react-transition-group";
+import {CSSTransition, TransitionGroup} from "react-transition-group";
 import Metrics from "./Metrics";
 import Search from "./Search";
 import Signals from "./Signals";
@@ -17,7 +18,6 @@ import Dialogs from "../components/modals/Dialogs";
 import * as VisualizationUrl from '../common/VisualizationUrl'
 import Archive from "./Archive";
 import Visualization from "./Visualization";
-import history from './../history'
 
 import 'bootstrap/dist/css/bootstrap.css'
 import '../stylesheets/mainMenu.styl'
@@ -29,7 +29,7 @@ import '../app.styl'
 class EspApp extends React.Component {
 
   componentDidMount() {
-    this.mountedHistory = history.listen((location, action) => {
+    this.mountedHistory = this.props.history.listen((location, action) => {
       if (action === "PUSH") {
         this.props.actions.urlChange(location)
       }
@@ -42,17 +42,22 @@ class EspApp extends React.Component {
     }
   }
 
+  getMetricsMatch() {
+    return matchPath(this.props.location.pathname, {path: Metrics.path, exact: true, strict: false})
+  }
+
   canGoToProcess() {
-    return !_.isEmpty(this.props.match.params.processId)
+    const match = this.getMetricsMatch()
+    return _.get(match, 'params.processId') != null
   }
 
   goToProcess = () => {
-    history.push(VisualizationUrl.visualizationUrl(Processes.path, this.props.match.params.processId))
+    const match = this.getMetricsMatch()
+    this.props.history.push(VisualizationUrl.visualizationUrl(Processes.path, match.params.processId))
   }
 
   renderTopLeftButton() {
-		console.log(this.props.match)
-    if (this.props.location.pathname.startsWith("/metrics") && this.canGoToProcess()) {
+    if (this.canGoToProcess()) {
       return (
         <div className="top-left-button" onClick={this.goToProcess}>
           <span className="glyphicon glyphicon-menu-left"/>
@@ -134,7 +139,8 @@ class EspApp extends React.Component {
                        <Route path={Search.path} component={Search} />
                        <Route path={Signals.path} component={Signals} />
                        <Route path={AdminPage.path} component={AdminPage} />
-                       <Route exact component={Processes} />
+                       <Route path={EspApp.path} component={Processes} exact />
+                       <Route component={NotFound} />
                      </Switch>
                    </CSSTransition>
                  </TransitionGroup>
