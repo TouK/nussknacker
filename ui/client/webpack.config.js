@@ -85,7 +85,6 @@ module.exports = {
       },
       'GIT': {
         'HASH': JSON.stringify(GIT_HASH),
-        'HASH': JSON.stringify(GIT_HASH),
         'DATE': JSON.stringify(GIT_DATE)
       }
     }),

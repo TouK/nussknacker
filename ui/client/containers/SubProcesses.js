@@ -1,5 +1,4 @@
 import React from "react";
-import {browserHistory} from "react-router";
 import {Table, Td, Tr} from "reactable";
 import {connect} from "react-redux";
 
@@ -15,6 +14,7 @@ import filterIcon from '../assets/img/search.svg'
 import createProcessIcon from '../assets/img/create-process.svg'
 import editIcon from '../assets/img/edit-icon.png'
 import * as VisualizationUrl from '../common/VisualizationUrl'
+import history from "./../history"
 
 class SubProcesses extends React.Component {
 
@@ -53,7 +53,7 @@ class SubProcesses extends React.Component {
   }
 
   showProcess(process) {
-    browserHistory.push(VisualizationUrl.visualizationUrl(process.name))
+    history.push(VisualizationUrl.visualizationUrl(SubProcesses.path, process.name))
   }
 
   handleChange = (event) => {
@@ -92,7 +92,12 @@ class SubProcesses extends React.Component {
             </div>) : null
           }
         </div>
-        <AddProcessDialog onClose={() => this.setState({showAddProcess : false})} isSubprocess={true} isOpen={this.state.showAddProcess} />
+        <AddProcessDialog
+          onClose={() => this.setState({showAddProcess : false})}
+          isSubprocess={true}
+          isOpen={this.state.showAddProcess}
+          visualizationPath={SubProcesses.path}
+        />
         <LoaderSpinner show={this.state.showLoader}/>
         <Table className="esp-table"
                onSort={sort => this.setState({sort: sort})}

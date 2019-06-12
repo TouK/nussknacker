@@ -1,16 +1,17 @@
 import _ from "lodash";
 import Moment from "moment";
+import queryString from 'query-string'
 
 export const visualizationRouterPath = '/visualization/:processId'
 
-export function visualizationUrl(processName, nodeId, edgeId) {
+export function visualizationUrl(path, processName, nodeId, edgeId) {
   if (!_.isEmpty(nodeId) && !_.isEmpty(edgeId)) {
     throw new Error("cannot visualize both nodeId and edgeId")
   }
-  const baseUrl = `/visualization/${encodeURIComponent(processName)}`
-  const nodePart = nodeId ? nodeIdPart(nodeId) : ""
-  const edgePart = edgeId ? edgeIdPart(edgeId) : ""
-  return baseUrl + nodePart + edgePart
+  const baseUrl = `${path}/${encodeURIComponent(processName)}`
+  const nodeIdPart = nodeId ? this.nodeIdPart(nodeId) : ""
+  const edgeIdPart = edgeId ? this.edgeIdPart(edgeId) : ""
+  return baseUrl + nodeIdPart + edgeIdPart
 }
 
 export function nodeIdPart(nodeId) {
@@ -22,25 +23,29 @@ export function edgeIdPart(edgeId) {
 }
 
 export function extractVisualizationParams(queryParams) {
-  const urlNodeId = queryParams.nodeId;
-  const urlEdgeId = queryParams.edgeId;
-  return {urlNodeId, urlEdgeId}
+  const query = queryString.parse(queryParams)
+  const {nodeId, edgeId} = query
+  return {nodeId, edgeId}
 }
 
 export function extractBusinessViewParams(queryParams) {
-  if (!_.isEmpty(queryParams.businessView)) {
-    return (queryParams.businessView.toLowerCase() === "true")
+  const query = queryString.parse(queryParams);
+  if (query.businessView) {
+    return query.businessView.toLowerCase() === "true"
   }
+
+  return false
 }
 
 export function extractCountParams(queryParams) {
-  if (!_.isEmpty(queryParams.from) || !_.isEmpty(queryParams.to)) {
-    const from = queryParams.from ? fromTimestampOrDate(queryParams.from) : null;
-    const to = queryParams.to ? fromTimestampOrDate(queryParams.to) : Moment();
+  const query = queryString.parse(queryParams)
+  if (query.from || query.to) {
+    const from = query.from ? fromTimestampOrDate(query.from) : null;
+    const to = query.to ? fromTimestampOrDate(query.to) : Moment();
     return {from, to};
-  } else {
-    return null
   }
+
+  return null
 }
 
 function fromTimestampOrDate(tsOrDate) {
@@ -51,34 +56,11 @@ function fromTimestampOrDate(tsOrDate) {
     return Moment(tsOrDate);
 }
 
-export function getCurrentLocationParams() {
-  var result = {}, tmp = []
-  location.search
-      .substr(1)
-      .split("&")
-      .forEach(function(item) {
-        tmp = item.split("=");
-        if (tmp[0] != null && tmp[0] !== "") {
-          result[tmp[0]] = decodeURIComponent(tmp[1])
-        }
-      });
-  return result
-}
-
 export function setAndPreserveLocationParams(params){
-  var result = "", tmp = getCurrentLocationParams();
-  Object.keys(params).forEach(function(paramName){
-    if (params[paramName] == null ||  params[paramName] === "") {
-      delete tmp[paramName]
-    } else {
-      tmp[paramName] = params[paramName]
-    }
+  let queryParams = queryString.parse(location.search)
+  let resultParams = _.omitBy(Object.assign({}, queryParams, params), (e) => {
+    return e === false || e == null || e === ""
   })
-  if (Object.keys(tmp).length > 0) {
-    Object.keys(tmp).forEach(function(parameterName){
-      result = result + "&" + parameterName + "=" + encodeURIComponent(tmp[parameterName])
-    })
-    result = "?" + result.substr(1)
-  }
-  return result
+
+  return queryString.stringify(resultParams)
 }

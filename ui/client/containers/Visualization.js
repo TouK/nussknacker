@@ -1,6 +1,5 @@
 import React from 'react';
-import {render} from 'react-dom';
-import {withRouter} from 'react-router';
+import {Prompt} from 'react-router-dom';
 import Graph from '../components/graph/Graph';
 import UserRightPanel from '../components/right-panel/UserRightPanel';
 import UserLeftPanel from '../components/UserLeftPanel';
@@ -15,7 +14,6 @@ import NodeUtils from '../components/graph/NodeUtils';
 import * as VisualizationUrl from '../common/VisualizationUrl'
 import SpinnerWrapper from "../components/SpinnerWrapper";
 
-
 class Visualization extends React.Component {
 
   constructor(props) {
@@ -24,7 +22,7 @@ class Visualization extends React.Component {
   }
 
   componentDidMount() {
-    const businessView = VisualizationUrl.extractBusinessViewParams(this.props.location.query)
+    const businessView = VisualizationUrl.extractBusinessViewParams(this.props.location.search)
     this.setBusinessView(businessView)
     this.fetchProcessDetails(businessView).then((details) => {
       this.props.actions.fetchProcessDefinition(
@@ -39,21 +37,20 @@ class Visualization extends React.Component {
     })
     this.fetchProcessStatus()
     this.bindKeyboardActions()
-    this.bindUnsavedProcessChangesDialog()
   }
 
   showModalDetailsIfNeeded(process) {
-    const {urlNodeId, urlEdgeId} = VisualizationUrl.extractVisualizationParams(this.props.location.query)
-    if (!_.isEmpty(urlNodeId)) {
-      const node = NodeUtils.getNodeById(urlNodeId, process)
-      if (node != null) {
+    const {nodeId, edgeId} = VisualizationUrl.extractVisualizationParams(this.props.location.search)
+    if(nodeId) {
+      const node = NodeUtils.getNodeById(nodeId, process)
+      if (node) {
         this.props.actions.displayModalNodeDetails(node)
       }
     }
 
-    if (!_.isEmpty(urlEdgeId)) {
-      const edge = NodeUtils.getEdgeById(urlEdgeId, process)
-      if (edge != null) {
+    if(edgeId) {
+      const edge = NodeUtils.getEdgeById(edgeId, process)
+      if (edge) {
         this.props.actions.displayModalEdgeDetails(edge)
       }
     }
@@ -66,19 +63,11 @@ class Visualization extends React.Component {
   }
 
   showCountsIfNeeded(process) {
-    const countParams = VisualizationUrl.extractCountParams(this.props.location.query);
+    const countParams = VisualizationUrl.extractCountParams(this.props.location.search);
     if (countParams) {
       const {from, to} = countParams;
       this.props.actions.fetchAndDisplayProcessCounts(process.id, from, to);
     }
-  }
-
-  bindUnsavedProcessChangesDialog() {
-    this.props.router.setRouteLeaveHook(this.props.route, (route) => {
-      if (!this.props.nothingToSave) { //it should be modal instead of alert here, but how to do this in react-router?
-        return DialogMessages.unsavedProcessChanges()
-      }
-    })
   }
 
   bindKeyboardActions() {
@@ -89,8 +78,8 @@ class Visualization extends React.Component {
       if (event.ctrlKey && event.shiftKey && event.key.toLowerCase() == "z") {
         this.redo()
       }
-      const deleteKeyCode = 46
-      if (event.key == deleteKeyCode && this.props.currentNodeId && this.props.canDelete) {
+
+      if (event.key === 'Delete' && this.props.currentNodeId && this.props.canDelete) {
         this.deleteNode(this.props.currentNodeId)
       }
     }
@@ -103,13 +92,13 @@ class Visualization extends React.Component {
   }
 
   fetchProcessDetails(businessView) {
-    const details = this.props.actions.fetchProcessToDisplay (this.props.params.processId, undefined, businessView)
-    this.props.actions.displayProcessActivity(this.props.params.processId)
+    const details = this.props.actions.fetchProcessToDisplay (this.props.match.params.processId, undefined, businessView)
+    this.props.actions.displayProcessActivity(this.props.match.params.processId)
     return details
   }
 
   fetchProcessStatus() {
-    HttpService.fetchSingleProcessStatus(this.props.params.processId).then ((status) => {
+    HttpService.fetchSingleProcessStatus(this.props.match.params.processId).then ((status) => {
       this.setState({status: status})
     })
   }
@@ -138,7 +127,7 @@ class Visualization extends React.Component {
   render() {
     const { leftPanelIsOpened, actions, loggedUser } = this.props;
     //it has to be that way, because graph is redux component
-    var getGraph = () => this.refs.graph.getWrappedInstance().getDecoratedComponentInstance();
+    const getGraph = () => this.refs.graph.getWrappedInstance().getDecoratedComponentInstance();
     const graphFun = (fun) => (() => !_.isEmpty(this.refs.graph) ? fun(getGraph()) : () => null)
 
     const graphLayoutFun = graphFun(graph => graph.directedLayout())
@@ -153,6 +142,11 @@ class Visualization extends React.Component {
 
     return (
       <div className="Page">
+        <Prompt
+          when={!this.props.nothingToSave}
+          message={(location, action) => action === 'PUSH' ? DialogMessages.unsavedProcessChanges() : true}
+        />
+
         <UserLeftPanel
           isOpened={leftPanelIsOpened}
           onToggle={actions.toggleLeftPanel}
@@ -171,7 +165,7 @@ class Visualization extends React.Component {
         />
 
         <SpinnerWrapper isReady={!graphNotReady}>
-          <Graph ref="graph"/>
+          <Graph ref="graph" />
         </SpinnerWrapper>
       </div>
     );
@@ -200,4 +194,4 @@ function mapState(state) {
     loggedUser: state.settings.loggedUser
   };
 }
-export default withRouter(connect(mapState, ActionsUtils.mapDispatchWithEspActions)(Visualization));
+export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(Visualization);
