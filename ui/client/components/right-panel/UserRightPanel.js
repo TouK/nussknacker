@@ -2,7 +2,7 @@ import React, {Component} from "react";
 import {connect} from "react-redux";
 import {Panel} from "react-bootstrap";
 import {Scrollbars} from 'react-custom-scrollbars';
-import {browserHistory} from "react-router";
+import history from "../../history"
 import cn from "classnames";
 
 import ActionsUtils from "../../actions/ActionsUtils";
@@ -264,7 +264,7 @@ class UserRightPanel extends Component {
   versionId = () => this.props.fetchedProcessDetails.processVersionId
 
   showMetrics = () => {
-    browserHistory.push('/metrics/' + this.processId())
+    history.push('/metrics/' + this.processId())
   }
 
   exportProcess = () => {
@@ -282,7 +282,7 @@ class UserRightPanel extends Component {
     }else{
       this.props.actions.toggleConfirmDialog(true, DialogMessages.archiveProcess(this.processId()), () => {
           return HttpService.archiveProcess(this.processId()).then((resp) =>
-              browserHistory.push(Archive.path))
+							history.push(Archive.path))
       })
     }
   }

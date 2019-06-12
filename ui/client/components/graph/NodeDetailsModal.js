@@ -16,6 +16,7 @@ import HttpService from "../../http/HttpService";
 import SvgDiv from "../SvgDiv"
 import ProcessUtils from "../../common/ProcessUtils";
 import PropTypes from 'prop-types';
+import nodeAttributes from "../../assets/json/nodeAttributes"
 
 class NodeDetailsModal extends React.Component {
 
@@ -84,7 +85,6 @@ class NodeDetailsModal extends React.Component {
   }
 
   nodeAttributes = () => {
-    var nodeAttributes = require('../../assets/json/nodeAttributes.json');
     return nodeAttributes[NodeUtils.nodeType(this.props.nodeToDisplay)];
   }
 

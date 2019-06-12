@@ -1,6 +1,7 @@
 import * as VisualizationUrl from "../common/VisualizationUrl";
-import {browserHistory} from "react-router";
 import _ from "lodash";
+import history from "./../history"
+import Processes from "../containers/Processes";
 
 const ProcessesMixin = {
   processStatusClass: (process, statusesLoaded, statuses) => {
@@ -27,12 +28,12 @@ const ProcessesMixin = {
     }
   },
 
-  showMetrics: process => {
-    browserHistory.push('/metrics/' + process.name);
+  showMetrics: (process) => {
+    history.push('/metrics/' + process.name);
   },
 
-  showProcess: process => {
-    browserHistory.push(VisualizationUrl.visualizationUrl(process.name));
+  showProcess: (process) => {
+    history.push(VisualizationUrl.visualizationUrl(Processes.path, process.name));
   }
 };
 

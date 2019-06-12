@@ -1,7 +1,6 @@
 import React from "react";
-import {render} from "react-dom";
-import {browserHistory} from "react-router";
-import {Table, Td, Th, Thead, Tr} from "reactable";
+import history from "./../history"
+import {Table, Td, Tr} from "reactable";
 import {connect} from "react-redux";
 
 import HttpService from "../http/HttpService";
@@ -41,14 +40,6 @@ class Archive extends React.Component {
     }
   }
 
-  unarchiveProcess(processId) {
-    HttpService.fetchArchivedProcesses().then ((fetchedProcesses) => {
-      if (!this.state.showAddProcess) {
-        this.setState({processes: fetchedProcesses, showLoader: false})
-      }
-    }).catch( e => this.setState({ showLoader: false }))
-  }
-
   reloadProcesses() {
     HttpService.fetchArchivedProcesses().then ((fetchedProcesses) => {
       if (!this.state.showAddProcess) {
@@ -58,7 +49,7 @@ class Archive extends React.Component {
   }
 
   showProcess(process) {
-    browserHistory.push('/visualization/' + process.name)
+    history.push(Archive.path + "/" + process.name)
   }
 
   handleChange(event) {
@@ -80,7 +71,6 @@ class Archive extends React.Component {
               <img id="search-icon" src={filterIcon} />
             </span>
           </div>
-          }
         </div>
         <LoaderSpinner show={this.state.showLoader}/>
         <Table className="esp-table"

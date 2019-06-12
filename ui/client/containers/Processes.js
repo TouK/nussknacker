@@ -50,7 +50,7 @@ class Processes extends PeriodicallyReloadingComponent {
         fetchedProcesses.forEach((process) => process.editedName = process.name);
         this.setState({processes: fetchedProcesses, showLoader: false})
       }
-    }).catch(this.setState({ showLoader: false }))
+    }).catch(() => this.setState({ showLoader: false }))
   }
 
   reloadStatuses() {
@@ -58,7 +58,7 @@ class Processes extends PeriodicallyReloadingComponent {
       if (!this.state.showAddProcess) {
         this.setState({ statuses: statuses, showLoader: false, statusesLoaded: true })
       }
-    }).catch(this.setState({ showLoader: false }))
+    }).catch(() => this.setState({ showLoader: false }))
   }
 
   handleChange(event) {
@@ -126,7 +126,12 @@ class Processes extends PeriodicallyReloadingComponent {
           }
         </div>
 
-        <AddProcessDialog onClose={() => this.setState({showAddProcess : false})} isOpen={this.state.showAddProcess} isSubprocess={false}/>
+        <AddProcessDialog
+          onClose={() => this.setState({showAddProcess : false})}
+          isOpen={this.state.showAddProcess}
+          isSubprocess={false}
+          visualizationPath={Processes.path}
+        />
         <LoaderSpinner show={this.state.showLoader}/>
         <Table className="esp-table"
                onSort={sort => this.setState({sort: sort})}

@@ -8,7 +8,7 @@ import $ from 'jquery'
 import svgPanZoom from 'svg-pan-zoom'
 import {connect} from 'react-redux';
 import ActionsUtils from '../../actions/ActionsUtils';
-import NodeDetailsModal from './nodeDetailsModal';
+import NodeDetailsModal from './NodeDetailsModal';
 import EdgeDetailsModal from './EdgeDetailsModal';
 import {DropTarget} from 'react-dnd';
 import '../../stylesheets/graph.styl'

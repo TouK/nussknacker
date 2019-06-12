@@ -1,5 +1,5 @@
 import React from "react";
-import {Table, Thead, Th, Tr, Td} from "reactable";
+import {Table, Td, Tr} from "reactable";
 
 import HttpService from "../http/HttpService";
 import DateUtils from "../common/DateUtils";
@@ -45,7 +45,7 @@ class CustomProcesses extends PeriodicallyReloadingComponent {
       if (!this.state.showAddProcess) {
         this.setState({processes: fetchedProcesses, showLoader: false})
       }
-    }).catch(this.setState({ showLoader: false }))
+    }).catch(() => this.setState({ showLoader: false }))
   }
 
   reloadStatuses() {
@@ -53,7 +53,7 @@ class CustomProcesses extends PeriodicallyReloadingComponent {
       if (!this.state.showAddProcess) {
         this.setState({ statuses: statuses, showLoader: false, statusesLoaded: true })
       }
-    }).catch(this.setState({ showLoader: false }))
+    }).catch(() => this.setState({ showLoader: false }))
   }
 
   handleChange(event) {

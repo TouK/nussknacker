@@ -37,7 +37,7 @@ export class NodeDetailsContent extends React.Component {
       testResultsToHide: new Set(),
     };
 
-    let hasNoReturn = _.isNull(this.nodeObjectDetails.returnType)
+    let hasNoReturn = this.nodeObjectDetails == null || this.nodeObjectDetails.returnType == null
     this.showOutputVar = hasNoReturn  === false || (hasNoReturn === true && this.state.editedNode.outputVar)
 
     this.generateUUID("fields");
