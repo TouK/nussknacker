@@ -518,6 +518,6 @@ export let BareGraph = connect(mapSubprocessState, ActionsUtils.mapDispatchWithE
 
 //withRef is here so that parent can access methods in graph
 export default connect(mapState, ActionsUtils.mapDispatchWithEspActions,
-  null, {withRef: true})(DropTarget("element", spec, (connect, monitor) => ({
+  null, {forwardRef: true})(DropTarget("element", spec, (connect, monitor) => ({
   connectDropTarget: connect.dropTarget()
 }))(Graph));

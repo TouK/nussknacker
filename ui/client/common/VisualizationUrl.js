@@ -23,25 +23,23 @@ export function edgeIdPart(edgeId) {
 }
 
 export function extractVisualizationParams(queryParams) {
-  const query = queryString.parse(queryParams)
-  const {nodeId, edgeId} = query
-  return {nodeId, edgeId}
+  const urlNodeId = queryParams.nodeId;
+  const urlEdgeId = queryParams.edgeId;
+  return {urlNodeId, urlEdgeId}
 }
 
 export function extractBusinessViewParams(queryParams) {
-  const query = queryString.parse(queryParams);
-  if (query.businessView) {
-    return query.businessView.toLowerCase() === "true"
+  if (queryParams.businessView) {
+    return queryParams.businessView.toLowerCase() === "true"
   }
 
   return false
 }
 
 export function extractCountParams(queryParams) {
-  const query = queryString.parse(queryParams)
-  if (query.from || query.to) {
-    const from = query.from ? fromTimestampOrDate(query.from) : null;
-    const to = query.to ? fromTimestampOrDate(query.to) : Moment();
+  if (queryParams.from || queryParams.to) {
+    const from = queryParams.from ? fromTimestampOrDate(queryParams.from) : null;
+    const to = queryParams.to ? fromTimestampOrDate(queryParams.to) : Moment();
     return {from, to};
   }
 

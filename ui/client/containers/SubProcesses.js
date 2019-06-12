@@ -14,7 +14,7 @@ import filterIcon from '../assets/img/search.svg'
 import createProcessIcon from '../assets/img/create-process.svg'
 import editIcon from '../assets/img/edit-icon.png'
 import * as VisualizationUrl from '../common/VisualizationUrl'
-import history from "./../history"
+import {withRouter} from 'react-router-dom'
 
 class SubProcesses extends React.Component {
 
@@ -53,7 +53,7 @@ class SubProcesses extends React.Component {
   }
 
   showProcess(process) {
-    history.push(VisualizationUrl.visualizationUrl(SubProcesses.path, process.name))
+    this.props.history.push(VisualizationUrl.visualizationUrl(SubProcesses.path, process.name))
   }
 
   handleChange = (event) => {
@@ -152,4 +152,4 @@ function mapState(state) {
   };
 }
 
-export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(SubProcesses);
+export default withRouter(connect(mapState, ActionsUtils.mapDispatchWithEspActions)(SubProcesses));
