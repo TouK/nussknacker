@@ -19,7 +19,7 @@
     "flattenizer": "~1.0.5",
     "history": "~4.9.0",
     "immutability-helper": "~3.0.1",
-    "jointjs": "~0.9.10",
+    "jointjs": "~2.2.1",
     "ladda": "~2.0.1",
     "lodash": "~4.17.11",
     "moment": "~2.24.0",

@@ -10,6 +10,8 @@ import boundingMarkup from './markups/bounding.html';
 import expandIcon from '../../assets/img/expand.svg'
 import collapseIcon from '../../assets/img/collapse.svg'
 
+import customAttrs from '../../assets/json/nodeAttributes.json'
+
 const rectWidth = 300
 const rectHeight = 60
 const nodeLabelFontSize = 15
@@ -26,15 +28,19 @@ const summaryCountConfig = {
 
 const attrsConfig = () => {
   return {
-    '.': {magnet: false},
+    '.': {
+      magnet: false
+		},
     '.body': {
       fill: "none",
-      width: rectWidth, height: rectHeight,
+      width: rectWidth,
+      height: rectHeight,
       stroke: '#B5B5B5',
       'stroke-width': 1,
     },
     '.background': {
-      width: rectWidth, height: rectHeight,
+      width: rectWidth,
+      height: rectHeight,
     },
     text: {
       fill: '#1E1E1E',
@@ -42,107 +48,103 @@ const attrsConfig = () => {
       'font-weight': 400
     },
     '.nodeIconPlaceholder': {
-      x: 0, y: 0,
+      x: 0,
+      y: 0,
       height: rectHeight,
       width: rectHeight
     },
     '.nodeIconItself': {
-      width: rectHeight/2, height: rectHeight/2,
+      width: rectHeight/2,
+      height: rectHeight/2,
       'ref': '.nodeIconPlaceholder',
-      'ref-x': rectHeight/4, 'ref-y': rectHeight/4
+      'ref-x': rectHeight/4,
+      'ref-y': rectHeight/4
     },
     '.contentText': {
       'font-size': nodeLabelFontSize,
       'ref': '.nodeIconPlaceholder',
-      'ref-x': rectHeight + 10, 'ref-y': rectHeight/2 - nodeLabelFontSize/2
+      'ref-x': rectHeight + 10,
+      'ref-y': rectHeight/2 - nodeLabelFontSize/2
     },
     '.testResultsPlaceholder': {
       'ref': '.nodeIconPlaceholder',
-      'ref-x': rectWidth, y: 0,
+      'ref-x': rectWidth,
+      y: 0,
       height: rectHeight,
       width: rectHeight
-
     },
     '.testResultsSummary': {
       'text-anchor': 'middle',
-      'alignment-baseline': "middle",
-    },
-    // markups styling
-    '.inPorts': {
-      'ref-x': 0, 'ref-y': 0,
-      'ref': '.body'
-    },
-    '.outPorts': {
-      'ref-x': 0, 'ref-y': 0,
-      'ref': '.body'
+      'alignment-baseline': "middle"
+    }
+  }
+}
+
+const portsAttrs = () => {
+  return {
+    '.port': {
+      'ref-x': 0,
+      'ref-y': 0,
     },
     '.port-body': {
       r: 5,
       magnet: true,
       'font-size': 10
-    },
-    '.inPorts circle': {
+    }
+  }
+}
+
+const portInAttrs = () => {
+  return Object.assign({},  portsAttrs(), {
+    '.port circle': {
       fill: '#FFFFFF',
       magnet: 'passive',
       stroke: edgeStroke,
       'stroke-width': '1',
       type: 'input'
-    },
-    '.outPorts circle': {
+    }})
+}
+
+const portOutAttrs = () => {
+  return Object.assign({},  portsAttrs(), {
+    '.port circle': {
       fill: '#FFFFFF',
       stroke: edgeStroke,
       'stroke-width': '1',
       type: 'output'
-    }
-  }
+  }})
 }
 
-joint.shapes.devs.EspNode = joint.shapes.basic.Generic.extend(_.extend({}, joint.shapes.basic.PortsModelInterface, {
+joint.shapes.devs.EspNode =  joint.shapes.devs.Model.extend({
+	markup: nodeMarkup,
+	portMarkup: '<g class="port"><circle class="port-body"/></g>',
+	portLabelMarkup: null,
 
-    markup: nodeMarkup,
-    portMarkup: '<g class="port port<%= id %>"><circle class="port-body"/></g>',
-
-    defaults: joint.util.deepSupplement({
-
-        type: 'devs.Model',
-        size: {width: 1, height: 1},
-
-        inPorts: [],
-        outPorts: [],
-
-        attrs: attrsConfig()
-    }, joint.shapes.basic.Generic.prototype.defaults),
-
-    getPortAttrs: function (portName, index, total, selector, type) {
-
-        var attrs = {};
-
-        var portClass = 'port' + index;
-        var portSelector = selector + '>.' + portClass;
-        var portBodySelector = portSelector + '>.port-body';
-
-        attrs[portBodySelector] = {port: {id: portName || _.uniqueId(type), type: type}};
-
-        // CHANGED: swap x and y ports coordinates ('ref-y' => 'ref-x')
-        attrs[portSelector] = {ref: '.body', 'ref-x': (index + 0.5) * (1 / total)};
-        // ('ref-dx' => 'ref-dy')
-        if (selector === '.outPorts') {
-            attrs[portSelector]['ref-dy'] = 0;
+	defaults: joint.util.deepSupplement({
+		type: 'devs.GenericModel',
+		attrs: attrsConfig(),
+		size: {width: 1, height: 1},
+		inPorts: [],
+		outPorts: [],
+		ports: {
+			groups: {
+        'in': {
+          position: 'top',
+          attrs: portInAttrs()
+        },
+        'out': {
+          position: 'bottom',
+          attrs: portOutAttrs()
         }
-        //
-
-        return attrs;
-    }
-}));
+			}
+		}
+	}, joint.shapes.devs.Model.prototype.defaults)
+});
 
 export function makeElement(node, processCounts, forExport, nodesSettings){
-    var descr = (node.additionalFields || {}).description
-    var customAttrs = require('../../assets/json/nodeAttributes.json');
-
+    const descr = (node.additionalFields || {}).description
     const { text: bodyContent, multiline } = getBodyContent(node);
-
     const hasCounts = !_.isEmpty(processCounts);
-
     const width = rectWidth;
     const widthWithTestResults = hasCounts ? width + rectHeight : width;
     const height = rectHeight;
@@ -167,10 +169,7 @@ export function makeElement(node, processCounts, forExport, nodesSettings){
         'xlink:href': 'data:image/svg+xml;utf8,' + encodeURIComponent(icon) //we encode icon data to have standalone svg that can be used to generate pdf
       },
       '.contentText': {
-        text: bodyContent,
-
-        // magic/hack: central vertical position when text is in 2 lines
-        y: multiline ? 5 : undefined,
+        text: bodyContent
       },
       '.testResultsPlaceHolder': {
         display: hasCounts && !forExport ? 'block' : 'none',
@@ -189,8 +188,8 @@ export function makeElement(node, processCounts, forExport, nodesSettings){
       }
     };
 
-    var inPorts = [];
-    var outPorts = [];
+    let inPorts = [];
+    let outPorts = [];
     if (node.type == 'Sink') {
         inPorts = ['In']
     } else if (node.type == 'Source') {
@@ -230,10 +229,7 @@ function getTestResultsSummaryAttr(processCounts, width) {
     text: countsContent,
     style: { 'font-size': summaryCountFontSize },
     fill: hasErrors ? 'red' : 'white',
-    'ref-x': width + rectHeight/2,
-
-    // magic/hack: central vertical position when font-size changes
-    'y': 37 - extraDigitsCount * 1.5,
+    'ref-x': width + rectHeight/2
   }
 }
 

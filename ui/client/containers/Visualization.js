@@ -127,7 +127,7 @@ class Visualization extends React.Component {
   render() {
     const { leftPanelIsOpened, actions, loggedUser } = this.props;
     //it has to be that way, because graph is redux component
-    const getGraph = () => this.refs.graph.getWrappedInstance().getDecoratedComponentInstance();
+    const getGraph = () => this.refs.graph.decoratedRef.current;
     const graphFun = (fun) => (() => !_.isEmpty(this.refs.graph) ? fun(getGraph()) : () => null)
 
     const graphLayoutFun = graphFun(graph => graph.directedLayout())

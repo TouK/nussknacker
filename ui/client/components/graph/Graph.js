@@ -1,5 +1,4 @@
 import React from 'react'
-import {findDOMNode, render} from 'react-dom'
 import joint from 'jointjs'
 import EspNode from './EspNode'
 import 'jointjs/dist/joint.css'
@@ -304,7 +303,7 @@ class Graph extends React.Component {
       }
     }
 
-  changeLayoutIfNeeded = () => {
+    changeLayoutIfNeeded = () => {
       var newLayout = this.graph.getElements().filter(el => !el.get('backgroundObject'))
         .map(el => {
           var pos = el.get('position');
@@ -316,23 +315,27 @@ class Graph extends React.Component {
     }
 
     enablePanZoom() {
-      var panAndZoom = svgPanZoom(this.refs.espGraph.childNodes[0],
-        {
-          viewportSelector: this.refs.espGraph.childNodes[0].childNodes[0],
-          fit: this.props.processToDisplay.nodes.length > 1,
-          zoomScaleSensitivity: 0.4,
-          controlIconsEnabled: false,
-          panEnabled: false,
-          dblClickZoomEnabled: false,
-          minZoom: 0.2,
-          maxZoom: 10
-        });
+      const svgElement = this.refs.espGraph.getElementsByTagName("svg").item(0);
+
+      const panAndZoom = svgPanZoom(svgElement, {
+        viewportSelector: '.svg-pan-zoom_viewport',
+        fit: this.props.processToDisplay.nodes.length > 1,
+        zoomScaleSensitivity: 0.4,
+        controlIconsEnabled: false,
+        panEnabled: false,
+        dblClickZoomEnabled: false,
+        minZoom: 0.2,
+        maxZoom: 10
+      });
+
       this.processGraphPaper.on('blank:pointerdown', (evt, x, y) => {
         panAndZoom.enablePan();
       });
+
       this.processGraphPaper.on('cell:pointerup blank:pointerup', (cellView, event) => {
         panAndZoom.disablePan();
       });
+
       this.fitSmallAndLargeGraphs(panAndZoom)
       return panAndZoom
     }
@@ -517,7 +520,6 @@ function commonState(state) {
 export let BareGraph = connect(mapSubprocessState, ActionsUtils.mapDispatchWithEspActions)(Graph)
 
 //withRef is here so that parent can access methods in graph
-export default connect(mapState, ActionsUtils.mapDispatchWithEspActions,
-  null, {forwardRef: true})(DropTarget("element", spec, (connect, monitor) => ({
+export default connect(mapState, ActionsUtils.mapDispatchWithEspActions, null, {forwardRef: true})(DropTarget("element", spec, (connect, monitor) => ({
   connectDropTarget: connect.dropTarget()
 }))(Graph));

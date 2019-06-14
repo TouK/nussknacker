@@ -113,39 +113,38 @@ class EspApp extends React.Component {
             <AllDialogs/>
             <div id="working-area" className={this.props.leftPanelIsOpened ? 'is-opened' : null}>
               <Route path={EspApp.path} render={({ location }) => (
-                 <TransitionGroup>
-                   <CSSTransition key={location.pathname} classNames="fade" timeout={{ enter: 300, exit: 300 }} >
-                     <Switch location={location}>
-                       <Route path={SubProcesses.path} render={() => (
-												 <Switch>
-													 <Route path={SubProcesses.path + '/:processId'} component={Visualization} />
-													 <Route exact component={SubProcesses} />
-												 </Switch>
-											 )} /> />
-                       <Route path={Archive.path} render={() => (
-												 <Switch>
-													 <Route path={Archive.path + '/:processId'} component={Visualization} />
-													 <Route exact component={Archive} />
-												 </Switch>
-											 )} />
-                       <Route path={Processes.path} render={() => (
-                       		<Switch>
-														<Route path={Processes.path + '/:processId'} component={Visualization} />
-														<Route exact component={Processes} />
-													</Switch>
-											 )} />
-                       <Route path={Visualization.path} component={Visualization} />
-                       <Route path={Metrics.path} component={Metrics} />
-                       <Route path={Search.path} component={Search} />
-                       <Route path={Signals.path} component={Signals} />
-                       <Route path={AdminPage.path} component={AdminPage} />
-                       <Route path={EspApp.path} component={Processes} exact />
-                       <Route component={NotFound} />
-                     </Switch>
-                   </CSSTransition>
-                 </TransitionGroup>
-               )}
-              />
+                <TransitionGroup>
+                  <CSSTransition key={location.pathname} classNames="fade" timeout={{ enter: 300, exit: 300 }} >
+                    <Switch location={location}>
+                      <Route path={SubProcesses.path} render={() => (
+                        <Switch>
+                          <Route path={SubProcesses.path + '/:processId'} component={Visualization} />
+                          <Route exact component={SubProcesses} />
+                        </Switch>
+                      )} />
+                      <Route path={Archive.path} render={() => (
+                        <Switch>
+                          <Route path={Archive.path + '/:processId'} component={Visualization} />
+                          <Route exact component={Archive} />
+                        </Switch>
+                      )} />
+                      <Route path={Processes.path} render={() => (
+                        <Switch>
+                          <Route path={Processes.path + '/:processId'} component={Visualization} />
+                          <Route exact component={Processes} />
+                        </Switch>
+                      )} />
+                      <Route path={Visualization.path} component={Visualization} />
+                      <Route path={Metrics.path} component={Metrics} />
+                      <Route path={Search.path} component={Search} />
+                      <Route path={Signals.path} component={Signals} />
+                      <Route path={AdminPage.path} component={AdminPage} />
+                      <Route path={EspApp.path} component={Processes} exact />
+                      <Route component={NotFound} />
+                      </Switch>
+                    </CSSTransition>
+                  </TransitionGroup>
+              )}/>
             </div>
           </DragArea>
         </main>
