@@ -8,9 +8,9 @@ export function visualizationUrl(processName, nodeId, edgeId) {
     throw new Error("cannot visualize both nodeId and edgeId")
   }
   const baseUrl = `/visualization/${encodeURIComponent(processName)}`
-  const nodeIdPart = nodeId ? this.nodeIdPart(nodeId) : ""
-  const edgeIdPart = edgeId ? this.edgeIdPart(edgeId) : ""
-  return baseUrl + nodeIdPart + edgeIdPart
+  const nodePart = nodeId ? nodeIdPart(nodeId) : ""
+  const edgePart = edgeId ? edgeIdPart(edgeId) : ""
+  return baseUrl + nodePart + edgePart
 }
 
 export function nodeIdPart(nodeId) {
