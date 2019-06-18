@@ -17,7 +17,7 @@ import scala.reflect.ClassTag
 
 class ProcessMarshaller(implicit
                         additionalNodeDataFieldsCodec: CodecJson[Option[node.UserDefinedAdditionalNodeFields]] = ProcessMarshaller.additionalNodeDataFieldsCodec,
-                        additionalProcessFieldsCodec: CodecJson[Option[UserDefinedProcessAdditionalFields]] = ProcessMarshaller.additionalProcessFieldsCodec ) {
+                        additionalProcessFieldsCodec: CodecJson[Option[ProcessAdditionalFields]] = ProcessMarshaller.additionalProcessFieldsCodec ) {
 
   //TODO: UI needs it - unfortunately there were some argonaut/compile issues...
   val typeSpecificEncoder =  CodecJson.derived[TypeSpecificData]
@@ -127,15 +127,8 @@ object ProcessMarshaller {
   val additionalNodeDataFieldsCodec: CodecJson[Option[UserDefinedAdditionalNodeFields]] =
     derivedTypeOrNoneCodec[UserDefinedAdditionalNodeFields, NodeAdditionalFields]
 
-  val additionalProcessFieldsCodec: CodecJson[Option[UserDefinedProcessAdditionalFields]] = {
-    val derivedCodec = derivedTypeOrNoneCodec[UserDefinedProcessAdditionalFields, ProcessAdditionalFields]
-    val processAdditionalFieldsDecode = jdecode3L((description: Option[String], groups: Option[Set[Group]], properties: Option[Map[String, String]]) =>
-      ProcessAdditionalFields(description, groups.getOrElse(Set.empty), properties.getOrElse(Map.empty)))("description", "groups", "properties")
-      .map(identity[UserDefinedProcessAdditionalFields])
-    CodecJson.derived(
-      derivedCodec.Encoder,
-      OptionDecodeJson(processAdditionalFieldsDecode)
-    )
+  val additionalProcessFieldsCodec: CodecJson[Option[ProcessAdditionalFields]] = {
+    CodecJson.derived[Option[ProcessAdditionalFields]]
   }
 
   private def derivedTypeOrNoneCodec[Base, Derived <: Base : ClassTag](implicit

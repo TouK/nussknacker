@@ -11,8 +11,8 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{AbstractContextTransformation, AbstractContextTransformationDef, ContextTransformation, ContextTransformationDef, JoinContextTransformationDef, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, EspExceptionInfo}
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.typed.ReturningType
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.{ClazzRef, ReturningType, TypedObjectDefinition}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
@@ -33,6 +33,7 @@ import pl.touk.nussknacker.engine.splittedgraph.part._
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax
+import pl.touk.nussknacker.engine.variables.MetaVariables
 import shapeless.Typeable
 import shapeless.syntax.typeable._
 
@@ -96,8 +97,12 @@ protected trait ProcessCompilerBase {
 
   private val expressionCompiler = ExpressionCompiler.withoutOptimization(classLoader, expressionConfig)
 
-  private def contextWithOnlyGlobalVariables = ValidationContext(Map.empty,
-    expressionConfig.globalVariables.mapValuesNow(_.returnType) + (Interpreter.MetaParamName -> Typed[MetaVariables]))
+  private def contextWithOnlyGlobalVariables(implicit metaData: MetaData): ValidationContext = {
+    val globalTypes = expressionConfig.globalVariables.mapValuesNow(_.returnType)
+    val typesWithMeta = MetaVariables.withType(globalTypes)
+
+    ValidationContext(Map.empty, typesWithMeta)
+  }
 
   protected def compile(process: EspProcess): CompilationResult[CompiledProcessParts] = {
     ThreadUtils.withThisAsContextClassLoader(classLoader) {

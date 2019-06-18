@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.restmodel.displayedgraph
 
-import pl.touk.nussknacker.engine.api.{MetaData, TypeSpecificData, UserDefinedProcessAdditionalFields}
+import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, TypeSpecificData}
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
@@ -57,6 +57,6 @@ case class ValidatedDisplayableProcess(id: String,
 case class ProcessProperties(typeSpecificProperties: TypeSpecificData,
                              exceptionHandler: ExceptionHandlerRef,
                              isSubprocess: Boolean = false,
-                             additionalFields: Option[UserDefinedProcessAdditionalFields] = None,
+                             additionalFields: Option[ProcessAdditionalFields] = None,
                              subprocessVersions: Map[String, Long]
                             )
