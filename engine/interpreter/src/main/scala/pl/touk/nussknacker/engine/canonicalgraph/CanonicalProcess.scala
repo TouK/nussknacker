@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.canonicalgraph
 
 import pl.touk.nussknacker.engine.api.MetaData
-import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.CanonicalNode
+import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, FlatNode}
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node._
@@ -10,41 +10,53 @@ sealed trait CanonicalTreeNode
 
 object CanonicalProcess {
 
-  def withoutDisabledNodes(process: CanonicalProcess): CanonicalProcess = {
-    def withoutDisabled(nodes: List[CanonicalNode]): List[CanonicalNode] = {
-      nodes.filter {
-        _.data match {
-          case nodeData: Disableable if nodeData.isDisabled.contains(true) => false
-          case _ => true
-        }
-      }.map {
-        case flatNode: canonicalnode.FlatNode =>
-          flatNode
-
-        case filter: canonicalnode.FilterNode =>
-          filter.copy(nextFalse = withoutDisabled(filter.nextFalse))
-
-        case switch: canonicalnode.SwitchNode =>
-          switch.copy(
-            nexts = switch.nexts.map { caseNode =>
-              caseNode.copy(nodes = withoutDisabled(caseNode.nodes))
-            }.filterNot(_.nodes.isEmpty),
-            defaultNext = withoutDisabled(switch.defaultNext))
-
-        case split: canonicalnode.SplitNode =>
-          split.copy(nexts = split.nexts.map(withoutDisabled).filterNot(_.isEmpty))
-
-        case subprocess: canonicalnode.Subprocess =>
-          subprocess.copy(
-            outputs = subprocess.outputs.map { case (id, canonicalNodes) =>
-              (id, withoutDisabled(canonicalNodes))
-            }.filterNot { case (_, canonicalNodes) => canonicalNodes.isEmpty }
+  private def withoutDisabled(nodes: List[CanonicalNode]): List[CanonicalNode] =
+    nodes.foldLeft(List.empty[CanonicalNode]) { (agg, node) =>
+      node match {
+        case flatNode: canonicalnode.FlatNode if isNodeDisabled(flatNode) =>
+          agg
+        case filterNode: canonicalnode.FilterNode if isNodeDisabled(filterNode) =>
+          agg
+        case subprocessNode: canonicalnode.Subprocess if isNodeDisabled(subprocessNode) =>
+          subprocessNode.outputs.headOption match {
+            case Some((_, subOutNodes)) => agg ++ subOutNodes
+            case None => agg
+          }
+        case filterNode: canonicalnode.FilterNode =>
+          agg ++ List(
+            filterNode.copy(nextFalse = withoutDisabled(filterNode.nextFalse))
           )
+        case switchNode: canonicalnode.SwitchNode =>
+          agg ++ List(
+            switchNode.copy(
+              defaultNext = withoutDisabled(switchNode.defaultNext),
+              nexts = switchNode.nexts.map { caseNode =>
+                caseNode.copy(nodes = withoutDisabled(caseNode.nodes))
+              }.filterNot(_.nodes.isEmpty)
+            )
+          )
+        case splitNode: canonicalnode.SplitNode =>
+          agg ++ List(
+            splitNode.copy(nexts = splitNode.nexts.map(withoutDisabled).filterNot(_.isEmpty))
+          )
+        case subprocessNode: canonicalnode.Subprocess =>
+          agg ++ List(
+            subprocessNode.copy(
+              outputs = subprocessNode.outputs.map { case (id, canonicalNodes) =>
+                (id, withoutDisabled(canonicalNodes))
+              }.filterNot { case (_, canonicalNodes) => canonicalNodes.isEmpty }
+            )
+          )
+        case _ =>
+          agg ++ List(node)
       }
     }
 
-    process.copy(nodes = withoutDisabled(process.nodes))
-  }
+  private def isNodeDisabled(node: CanonicalNode): Boolean =
+    node.data match {
+      case nodeData: Disableable if nodeData.isDisabled.contains(true) => true
+      case _ => false
+    }
 }
 
 //in fact with branches/join this form is not canonical anymore - graph can be represented in more than way
@@ -58,7 +70,8 @@ case class CanonicalProcess(metaData: MetaData,
                             additionalBranches: Option[List[List[CanonicalNode]]]
                            ) extends CanonicalTreeNode {
 
-  lazy val withoutDisabledNodes: CanonicalProcess = CanonicalProcess.withoutDisabledNodes(this)
+  lazy val withoutDisabledNodes = copy(
+    nodes = CanonicalProcess.withoutDisabled(nodes))
 }
 
 object canonicalnode {

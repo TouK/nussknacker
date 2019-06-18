@@ -170,7 +170,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
     processValidation.validate(validProcessWithFields(Map("field1" -> "", "field2" -> "b")))
       .errors.processPropertiesErrors shouldBe List(NodeValidationError("UiValidation", "Field field1 (label1) cannot be empty",
       "label1 cannot be empty", Some("field1"), ValidationResults.NodeValidationErrorType.SaveAllowed))
-    
+
     processValidation.validate(validProcessWithFields(Map("field2" -> "b")))
       .errors.processPropertiesErrors shouldBe List(NodeValidationError("UiValidation", "Field field1 (label1) cannot be empty",
       "label1 cannot be empty", Some("field1"), ValidationResults.NodeValidationErrorType.SaveAllowed))
@@ -244,6 +244,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
     val (processValidation, process) = mockProcessValidationAndProcess(subprocessDisabled = true)
 
     val validationResult = processValidation.validate(process)
+    validationResult.errors.invalidNodes shouldBe 'empty
     validationResult.errors.globalErrors shouldBe 'empty
     validationResult.saveAllowed shouldBe true
   }
