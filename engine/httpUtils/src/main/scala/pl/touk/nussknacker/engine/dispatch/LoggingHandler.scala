@@ -22,19 +22,19 @@ private class LoggingHandler[T] (handler: AsyncHandler[T], logger: Logger, id: S
   override def onStatusReceived(responseStatus: HttpResponseStatus): AsyncHandler.State = {
     val message = s"[$id]" +
       s" status code: ${responseStatus.getStatusCode}" +
-      s" status rext: ${responseStatus.getStatusText}"
+      s" status text: ${responseStatus.getStatusText}"
     logger.debug(message)
     handler.onStatusReceived(responseStatus)
   }
 
   override def onCompleted(): T = {
     val result = handler.onCompleted()
-    logger.debug(s"[$id] recived object: $result")
+    logger.debug(s"[$id] received object: $result")
     result
   }
 
   override def onThrowable(t: Throwable): Unit = {
-    logger.error(s"[$id] request casued error", t)
+    logger.error(s"[$id] request caused error", t)
     handler.onThrowable(t)
   }
 }

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.validation
 
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.ProcessAdditionalFields
+import pl.touk.nussknacker.engine.api.ProcessAdditionalFields
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData
 import pl.touk.nussknacker.ui.definition.{AdditionalProcessProperty, PropertyType}
@@ -22,7 +22,7 @@ class AdditionalPropertiesValidatorTest extends FunSuite with Matchers {
 
   test("validate non empty config with required property") {
     val process = ProcessTestData.displayableWithAdditionalFields(Some(
-      ProcessAdditionalFields(None, properties = Map(
+      ProcessAdditionalFields(None, Set.empty, properties = Map(
         "propReq" -> "5"
       ))
     ))
@@ -34,7 +34,7 @@ class AdditionalPropertiesValidatorTest extends FunSuite with Matchers {
 
   test("validate non empty config without required property") {
     val process = ProcessTestData.displayableWithAdditionalFields(Some(
-      ProcessAdditionalFields(None, properties = Map(
+      ProcessAdditionalFields(None, Set.empty, properties = Map(
         "propOpt" -> "a"
       ))
     ))
@@ -45,7 +45,7 @@ class AdditionalPropertiesValidatorTest extends FunSuite with Matchers {
 
   test("validate non empty config with empty required property") {
     val process = ProcessTestData.displayableWithAdditionalFields(Some(
-      ProcessAdditionalFields(None, properties = Map(
+      ProcessAdditionalFields(None, Set.empty, properties = Map(
         "propReq" -> ""
       ))
     ))
@@ -56,7 +56,7 @@ class AdditionalPropertiesValidatorTest extends FunSuite with Matchers {
 
   test("validate non empty config with required property of invalid type") {
     val process = ProcessTestData.displayableWithAdditionalFields(Some(
-      ProcessAdditionalFields(None, properties = Map(
+      ProcessAdditionalFields(None, Set.empty, properties = Map(
         "propOpt" -> "a"
       ))
     ))

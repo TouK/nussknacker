@@ -1,14 +1,13 @@
 package pl.touk.nussknacker.ui.processreport
 
 import org.scalatest.{FlatSpec, Matchers}
-import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{Group, MetaData, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.node.{Filter, SubprocessInputDefinition, SubprocessOutputDefinition}
 import pl.touk.nussknacker.engine.spel
-import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.{Group, ProcessAdditionalFields}
 import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessRepository}
 
 //numbers & processes in this test can be totaly uncorrect and unrealistic, as processCounter does not care
@@ -41,7 +40,7 @@ class ProcessCounterTest extends FlatSpec with Matchers {
       .source("source1", "")
       .filter("filter1", "")
       .emptySink("sink11", "")).copy(metaData = MetaData("test", StreamMetaData(), false,
-        Some(ProcessAdditionalFields(Some(""), Set(Group("gr1", Set("filter1", "sink11")))))))
+        Some(ProcessAdditionalFields(Some(""), Set(Group("gr1", Set("filter1", "sink11"))), Map.empty))))
     val processCounter = new ProcessCounter(subprocessRepository(Set()))
 
     val computed = processCounter.computeCounts(process, Map("source1" -> RawCount(50, 0L),

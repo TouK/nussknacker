@@ -19,7 +19,7 @@ import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.codec.UiCodecs
 import pl.touk.nussknacker.ui.process.ProcessToSave
-import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.{Edge, ProcessAdditionalFields}
+import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.ui.process.marshall.{ProcessConverter, UiProcessMarshaller}
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.ProcessActivity

@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.engine.types
 
 import org.apache.commons.lang3.ClassUtils
-import pl.touk.nussknacker.engine.MetaVariables
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo}
 import pl.touk.nussknacker.engine.types.EspTypeUtils.clazzDefinition
+import pl.touk.nussknacker.engine.variables.MetaVariables
 
 object TypesInformationExtractor {
 
