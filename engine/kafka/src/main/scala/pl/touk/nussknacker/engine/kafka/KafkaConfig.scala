@@ -1,4 +1,5 @@
 package pl.touk.nussknacker.engine.kafka
 
-case class KafkaConfig(zkAddress: String, kafkaAddress: String,
-                       kafkaProperties: Option[Map[String, String]], kafkaEspProperties: Option[Map[String, String]])
+case class KafkaConfig(kafkaAddress: String,
+                       kafkaProperties: Option[Map[String, String]],
+                       kafkaEspProperties: Option[Map[String, String]])

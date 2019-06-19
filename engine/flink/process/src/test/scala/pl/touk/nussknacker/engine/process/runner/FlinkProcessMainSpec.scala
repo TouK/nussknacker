@@ -157,7 +157,7 @@ class SimpleProcessConfigCreator extends ProcessConfigCreator {
   )
 
   override def signals(config: Config) = Map("sig1" ->
-          WithCategories(new TestProcessSignalFactory(KafkaConfig("", "", None, None), "")))
+          WithCategories(new TestProcessSignalFactory(KafkaConfig("", None, None), "")))
 
 
   override def exceptionHandlerFactory(config: Config) =

@@ -151,7 +151,6 @@ public class ExampleProcessConfigCreator implements ProcessConfigCreator {
 
     private KafkaConfig getKafkaConfig(Config config) {
         return new KafkaConfig(
-                config.getString("kafka.zkAddress"),
                 config.getString("kafka.kafkaAddress"),
                 Option.empty(),
                 Option.empty()

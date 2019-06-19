@@ -56,7 +56,6 @@ processConfig {
   checkpointInterval: 10m
   restartInterval: "10s"
   kafka = {
-    zkAddress = "zookeeper:2181"
     kafkaAddress = "kafka:9092"
   }
   defaultValues {

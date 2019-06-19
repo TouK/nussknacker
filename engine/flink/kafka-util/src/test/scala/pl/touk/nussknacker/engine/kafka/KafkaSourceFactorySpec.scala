@@ -12,7 +12,7 @@ class KafkaSourceFactorySpec extends FlatSpec with BeforeAndAfterAll with KafkaS
 
   implicit val stringTypeInfo = new GenericTypeInfo(classOf[String])
 
-  lazy val kafkaConfig = KafkaConfig(kafkaZookeeperServer.zkAddress, kafkaZookeeperServer.kafkaAddress, None, None)
+  lazy val kafkaConfig = KafkaConfig(kafkaZookeeperServer.kafkaAddress, None, None)
 
   it should "read last messages to generate data" in {
     val topic = "testTopic1"
