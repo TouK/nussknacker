@@ -45,7 +45,7 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
 
 
   override def sinkFactories(config: Config) = {
-    val kConfig = KafkaConfig(config.getString("kafka.zkAddress"), config.getString("kafka.kafkaAddress"), None, None)
+    val kConfig = KafkaConfig(config.getString("kafka.kafkaAddress"), None, None)
 
     val sendSmsSink = EmptySink
     val monitorSink = EmptySink
@@ -66,7 +66,7 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
   override def listeners(config: Config) = List(LoggingListener)
 
   override def sourceFactories(config: Config) = {
-    val kConfig = KafkaConfig(config.getString("kafka.zkAddress"), config.getString("kafka.kafkaAddress"), None, None)
+    val kConfig = KafkaConfig(config.getString("kafka.kafkaAddress"), None, None)
 
     Map(
       "real-kafka" -> WithCategories(new KafkaSourceFactory[String](kConfig,
@@ -178,7 +178,7 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
   }
 
   override def customStreamTransformers(config: Config) = {
-    val kConfig = KafkaConfig(config.getString("kafka.zkAddress"), config.getString("kafka.kafkaAddress"), None, None)
+    val kConfig = KafkaConfig(config.getString("kafka.kafkaAddress"), None, None)
     val signalsTopic = config.getString("signals.topic")
     Map(
       "noneReturnTypeTransformer" -> WithCategories(NoneReturnTypeTransformer, "TESTCAT"),
@@ -194,7 +194,7 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
   }
 
   override def signals(config: Config) = {
-    val kConfig = KafkaConfig(config.getString("kafka.zkAddress"), config.getString("kafka.kafkaAddress"), None, None)
+    val kConfig = KafkaConfig(config.getString("kafka.kafkaAddress"), None, None)
     val signalsTopic = config.getString("signals.topic")
     Map(
       "removeLockSignal" -> WithCategories(new RemoveLockProcessSignalFactory(kConfig, signalsTopic), "Category1", "Category2")
