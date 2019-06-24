@@ -1,10 +1,13 @@
 package pl.touk.nussknacker.engine.process
 
+import java.nio.charset.StandardCharsets
 import java.util.Date
 import java.util.concurrent.CopyOnWriteArrayList
 
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.flink.api.common.ExecutionConfig
+import org.apache.flink.api.common.serialization.DeserializationSchema
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.windowing.time.Time
@@ -14,7 +17,6 @@ import pl.touk.nussknacker.engine.api.process.{ExpressionConfig, ProcessConfigCr
 import pl.touk.nussknacker.engine.api.test.TestParsingUtils
 import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
 import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
-import pl.touk.nussknacker.engine.flink.util.source.CsvSchema
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSourceFactory}
 import pl.touk.nussknacker.engine.process.compiler.StandardFlinkProcessCompiler
@@ -80,4 +82,13 @@ object KeyValueTestHelper {
       Future.successful(data.add(input))
   }
 
+  class CsvSchema[T: TypeInformation](constructor: List[String] => T, separator: Char) extends DeserializationSchema[T] {
+    override def isEndOfStream(t: T): Boolean = false
+
+    override def deserialize(bytes: Array[Byte]): T = constructor(toFields(bytes))
+
+    def toFields(bytes: Array[Byte]) = new String(bytes, StandardCharsets.UTF_8).split(separator).toList
+
+    override def getProducedType: TypeInformation[T] = implicitly[TypeInformation[T]]
+  }
 }
