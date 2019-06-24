@@ -82,6 +82,8 @@ object KeyValueTestHelper {
       Future.successful(data.add(input))
   }
 
+  // This class is not for production use as it uses String.split for csv parsing.
+  // In production use more robust library - with separator escaping support etc
   class CsvSchema[T: TypeInformation](constructor: List[String] => T, separator: Char) extends DeserializationSchema[T] {
     override def isEndOfStream(t: T): Boolean = false
 
