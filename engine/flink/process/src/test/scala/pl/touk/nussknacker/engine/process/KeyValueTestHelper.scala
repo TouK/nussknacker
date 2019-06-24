@@ -40,7 +40,7 @@ object KeyValueTestHelper {
         Map(
           "kafka-keyvalue" -> WithCategories(new KafkaSourceFactory[KeyValue](
             kafkaConfig,
-            new CsvSchema(KeyValue.apply),
+            new CsvSchema(KeyValue.apply, '|'),
             Some(new BoundedOutOfOrdernessTimestampExtractor[KeyValue](Time.minutes(10)) {
               override def extractTimestamp(element: KeyValue) = element.date.getTime
             }),
