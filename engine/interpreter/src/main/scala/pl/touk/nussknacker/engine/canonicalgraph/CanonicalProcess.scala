@@ -10,40 +10,50 @@ sealed trait CanonicalTreeNode
 
 object CanonicalProcess {
 
-  def withoutDisabledNodes(process: CanonicalProcess): CanonicalProcess = {
-    def withoutDisabled(nodes: List[CanonicalNode]): List[CanonicalNode] = {
-      nodes.filter {
-        _.data match {
-          case nodeData: Disableable if nodeData.isDisabled.contains(true) => false
-          case _ => true
-        }
-      }.map {
-        case flatNode: canonicalnode.FlatNode =>
-          flatNode
-
-        case filter: canonicalnode.FilterNode =>
-          filter.copy(nextFalse = withoutDisabled(filter.nextFalse))
-
-        case switch: canonicalnode.SwitchNode =>
-          switch.copy(
-            nexts = switch.nexts.map { caseNode =>
-              caseNode.copy(nodes = withoutDisabled(caseNode.nodes))
-            }.filterNot(_.nodes.isEmpty),
-            defaultNext = withoutDisabled(switch.defaultNext))
-
-        case split: canonicalnode.SplitNode =>
-          split.copy(nexts = split.nexts.map(withoutDisabled).filterNot(_.isEmpty))
-
-        case subprocess: canonicalnode.Subprocess =>
-          subprocess.copy(
-            outputs = subprocess.outputs.map { case (id, canonicalNodes) =>
-              (id, withoutDisabled(canonicalNodes))
-            }.filterNot { case (_, canonicalNodes) => canonicalNodes.isEmpty }
-          )
-      }
+  private def isNodeDisabled(node: CanonicalNode): Boolean =
+    node.data match {
+      case nodeData: Disableable if nodeData.isDisabled.contains(true) => true
+      case _ => false
     }
 
-    process.copy(nodes = withoutDisabled(process.nodes))
+  private def withoutDisabled(nodes: List[CanonicalNode]): List[CanonicalNode] = nodes.flatMap {
+    case flatNode: canonicalnode.FlatNode if isNodeDisabled(flatNode) =>
+      Nil
+    case filterNode: canonicalnode.FilterNode if isNodeDisabled(filterNode) =>
+      Nil
+    case subprocessNode: canonicalnode.Subprocess if isNodeDisabled(subprocessNode) =>
+      if (subprocessNode.outputs.size == 1) {
+        subprocessNode.outputs.values.head
+      } else {
+        throw new Exception("Fatal error. Disabled subprocess should be validated to have exactly one output")
+      }
+    case filterNode: canonicalnode.FilterNode =>
+      List(
+        filterNode.copy(nextFalse = withoutDisabled(filterNode.nextFalse))
+      )
+    case switchNode: canonicalnode.SwitchNode =>
+      List(
+        switchNode.copy(
+          defaultNext = withoutDisabled(switchNode.defaultNext),
+          nexts = switchNode.nexts.map { caseNode =>
+            caseNode.copy(nodes = withoutDisabled(caseNode.nodes))
+          }.filterNot(_.nodes.isEmpty)
+        )
+      )
+    case splitNode: canonicalnode.SplitNode =>
+      List(
+        splitNode.copy(nexts = splitNode.nexts.map(withoutDisabled).filterNot(_.isEmpty))
+      )
+    case subprocessNode: canonicalnode.Subprocess =>
+      List(
+        subprocessNode.copy(
+          outputs = subprocessNode.outputs.map { case (id, canonicalNodes) =>
+            (id, withoutDisabled(canonicalNodes))
+          }.filterNot { case (_, canonicalNodes) => canonicalNodes.isEmpty }
+        )
+      )
+    case node =>
+      List(node)
   }
 }
 
@@ -57,8 +67,10 @@ case class CanonicalProcess(metaData: MetaData,
                            //in the future this form will probably be removed
                             additionalBranches: Option[List[List[CanonicalNode]]]
                            ) extends CanonicalTreeNode {
+  import CanonicalProcess._
 
-  lazy val withoutDisabledNodes: CanonicalProcess = CanonicalProcess.withoutDisabledNodes(this)
+  lazy val withoutDisabledNodes = copy(
+    nodes = withoutDisabled(nodes))
 }
 
 object canonicalnode {
