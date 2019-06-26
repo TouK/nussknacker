@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
+import java.util.Collections
+
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.testkit.TestProbe
@@ -7,6 +9,7 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
+import pl.touk.http.argonaut.Argonaut62Support
 import pl.touk.nussknacker.engine.api.deployment.CustomProcess
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
@@ -16,8 +19,10 @@ import pl.touk.nussknacker.ui.process.JobStatusService
 import pl.touk.nussknacker.ui.process.deployment.CheckStatus
 import pl.touk.nussknacker.restmodel.displayedgraph.ProcessStatus
 
+import scala.collection.JavaConverters._
+
 class AppResourcesSpec extends FunSuite with ScalatestRouteTest
-  with Matchers with ScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
+  with Matchers with ScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest with Argonaut62Support {
 
   implicit override val patienceConfig = PatienceConfig(timeout = scaled(Span(2, Seconds)), interval = scaled(Span(20, Millis)))
 
@@ -87,6 +92,18 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest
 
     result ~> check {
       status shouldBe StatusCodes.OK
+    }
+  }
+
+  test("it should return global config") {
+    val globalConfig = Map("testConfig" -> "testValue", "otherConfig" -> "otherValue")
+    val resources = new AppResources(ConfigFactory.parseMap(Collections.singletonMap("globalBuildInfo", globalConfig.asJava)),
+      Map(), processRepository, TestFactory.processValidation, new JobStatusService(TestProbe().ref))
+    
+    val result = Get("/app/buildInfo") ~> withPermissions(resources, testPermissionRead)
+    result ~> check {
+      status shouldBe StatusCodes.OK
+      entityAs[Map[String, String]] shouldBe globalConfig
     }
   }
 

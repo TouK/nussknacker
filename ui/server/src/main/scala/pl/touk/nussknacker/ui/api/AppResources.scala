@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.api
 import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.http.scaladsl.server._
 import akka.http.scaladsl.server.directives.SecurityDirectives
-import argonaut.{Json, JsonParser}
+import argonaut.JsonParser
 import com.typesafe.config.{Config, ConfigRenderOptions}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
@@ -16,6 +16,8 @@ import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessDetails}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
+import net.ceedubs.ficus.Ficus._
+import argonaut.Argonaut._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
@@ -34,9 +36,13 @@ class AppResources(config: Config,
       path("buildInfo") {
         get {
           complete {
-            modelData.map {
+            val globalBuildInfo = config.getAs[Map[String, String]]("globalBuildInfo")
+              .getOrElse(Map()).asJson
+            val modelDataInfo = modelData.map {
               case (k,v) => (k.toString, v.configCreator.buildInfo())
-            }
+            }.asJson
+
+            globalBuildInfo.deepmerge(modelDataInfo)
           }
         }
       } ~ path("healthCheck") {
