@@ -1,4 +1,4 @@
-import joint from 'jointjs/index'
+import * as joint from 'jointjs/index'
 import _ from 'lodash'
 import NodeUtils from './NodeUtils'
 import * as GraphUtils from './GraphUtils'
