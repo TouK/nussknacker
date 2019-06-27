@@ -1,5 +1,5 @@
 import React from 'react'
-import joint from 'jointjs'
+import * as joint from 'jointjs'
 import EspNode from './EspNode'
 import 'jointjs/dist/joint.css'
 import _ from 'lodash'
