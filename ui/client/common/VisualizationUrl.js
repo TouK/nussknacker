@@ -22,10 +22,11 @@ export function edgeIdPart(edgeId) {
   return `?edgeId=${encodeURIComponent(edgeId)}`
 }
 
-export function extractVisualizationParams(queryParams) {
-  const urlNodeId = queryParams.nodeId;
-  const urlEdgeId = queryParams.edgeId;
-  return {urlNodeId, urlEdgeId}
+export function extractVisualizationParams(search) {
+  let queryParams = queryString.parse(search)
+  const modeId = queryParams.nodeId;
+  const edgeId = queryParams.edgeId;
+  return {modeId, edgeId}
 }
 
 export function extractBusinessViewParams(queryParams) {

@@ -1,4 +1,4 @@
-import joint from 'jointjs'
+import joint from 'jointjs/index'
 import _ from 'lodash'
 import NodeUtils from './NodeUtils'
 import * as GraphUtils from './GraphUtils'
@@ -11,6 +11,8 @@ import expandIcon from '../../assets/img/expand.svg'
 import collapseIcon from '../../assets/img/collapse.svg'
 
 import customAttrs from '../../assets/json/nodeAttributes.json'
+
+import {v4 as uuid4} from "uuid";
 
 const rectWidth = 300
 const rectHeight = 60
@@ -142,7 +144,7 @@ joint.shapes.devs.EspNode =  joint.shapes.devs.Model.extend({
 });
 
 export function makeElement(node, processCounts, forExport, nodesSettings){
-    const descr = (node.additionalFields || {}).description
+    const description = _.get(node.additionalFields, 'description', null)
     const { text: bodyContent, multiline } = getBodyContent(node);
     const hasCounts = !_.isEmpty(processCounts);
     const width = rectWidth;
@@ -156,7 +158,7 @@ export function makeElement(node, processCounts, forExport, nodesSettings){
         width: widthWithTestResults
       },
       '.background title': {
-        text: descr
+        text: description
       },
       '.body': {
         width: widthWithTestResults,
@@ -317,43 +319,44 @@ export function boundingRect(nodes, expandedGroup, layout, group) {
 
 export function makeLink(edge, forExport) {
   const label = NodeUtils.edgeLabel(edge)
-  return new joint.dia.Link({
-    //TODO: some different way to create id? Must be deterministic and unique
-    id: `${edge.from}-${edge.to}-${label}`,
-    markup: [
-        '<path class="connection"/>',
-        '<path class="marker-source"/>',
-        '<path class="marker-target"/>',
-        '<path class="connection-wrap"/>',
-        '<g class="labels" />',
-        '<g class="marker-vertices"/>',
-        '<g class="link-tools" />'
-    ].join(''),
-    labelMarkup: [
-      '<g class="esp-label">',
-      '<rect class="label-border"/>',
-      '<text />',
-      '</g>'
-    ].join(''),
-    source: {id: edge.from, port: 'Out'},
-    target: {id: edge.to, port: 'In'},
-    labels: [{
+
+  let labels = []
+  if (label.length !== 0) {
+    labels.push({
       position: 0.5,
       attrs: {
-        'rect': {
-        fill: '#F5F5F5',
+        rect: {
+          ref: 'text',
+          refX: -5,
+          refY: -5,
+          refWidth: '100%',
+          refHeight: '100%',
+          refWidth2: 10,
+          refHeight2: 10,
+          stroke: '#686868',
+          fill: '#F5F5F5',
+          strokeWidth: 1,
+          rx: 5,
+          ry: 5,
+          cursor: 'pointer'
         },
-        'text': {
+        text: {
           text: joint.util.breakText(label, { width: rectWidth }),
-          'font-weight': '300',
-          'font-size': 10,
+          fontWeight: 300,
+          fontSize: 10,
           fill: '#686868',
-          'ref': 'rect',
-          'ref-x': 0,
-          'ref-y': 0
-        }
+          textAnchor: 'middle',
+          textVerticalAnchor: 'middle',
+        },
       }
-    }],
+    })
+  }
+
+  return new joint.dia.Link({
+    id: uuid4(),
+    source: {id: edge.from, port: 'Out'},
+    target: {id: edge.to, port: 'In'},
+    labels: labels,
     attrs: {
       '.link-tools': forExport ? { display: 'none'} : {},
       '.connection': forExport ? { stroke: edgeStroke, 'stroke-width': 2, fill: edgeStroke } : { stroke: 'white', 'stroke-width': 2, fill: 'none' },

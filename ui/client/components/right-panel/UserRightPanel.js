@@ -273,6 +273,7 @@ class UserRightPanel extends Component {
 
   exportProcessToPdf = () => {
     const data = this.props.exportGraph()
+    console.log("DATA", data)
     HttpService.exportProcessToPdf(this.processId(), this.versionId(), data, this.props.businessView)
   }
 

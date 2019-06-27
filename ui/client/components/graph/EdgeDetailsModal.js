@@ -119,7 +119,7 @@ class EdgeDetailsModal extends React.Component {
       )
     }
 
-    switch (edge.edgeType.type) {
+    switch (_.get(edge.edgeType, 'type')) {
       case "SwitchDefault": {
         return baseModalContent()
       }
@@ -137,17 +137,19 @@ class EdgeDetailsModal extends React.Component {
           </div>
         )
       }
+      default:
+        return ''
     }
   }
 
   edgeIsEditable = () => {
     const editableEdges = ["NextSwitch", "SwitchDefault"]
-    return _.includes(editableEdges, this.props.edgeToDisplay.edgeType.type)
+    return this.props.edgeToDisplay.edgeType != null && _.includes(editableEdges, this.props.edgeToDisplay.edgeType.type)
   }
 
   render() {
-    var isOpen = !_.isEmpty(this.props.edgeToDisplay) && this.props.showEdgeDetailsModal && this.edgeIsEditable()
-    var headerStyles = EspModalStyles.headerStyles("#2d8e54", "white")
+    const isOpen = !_.isEmpty(this.props.edgeToDisplay) && this.props.showEdgeDetailsModal && this.edgeIsEditable()
+    const headerStyles = EspModalStyles.headerStyles("#2d8e54", "white")
     return (
       <div className="objectModal">
         <Modal isOpen={isOpen} className="espModal" shouldCloseOnOverlayClick={false} onRequestClose={this.closeModal}>
@@ -166,10 +168,9 @@ class EdgeDetailsModal extends React.Component {
   }
 }
 
-
 function mapState(state) {
-  var nodeId = state.graphReducer.edgeToDisplay.from
-  var errors = _.get(state.graphReducer.processToDisplay, `validationResult.errors.invalidNodes[${nodeId}]`, [])
+  const nodeId = state.graphReducer.edgeToDisplay.from
+  const errors = _.get(state.graphReducer.processToDisplay, `validationResult.errors.invalidNodes[${nodeId}]`, [])
   const processCategory = state.graphReducer.fetchedProcessDetails.processCategory
   return {
     edgeToDisplay: state.graphReducer.edgeToDisplay,

@@ -15,6 +15,7 @@ import {dateFormat} from "../../config";
 class CalculateCountsDialog extends React.Component {
   //React Datepicker supports different time format
   dateFormat="yyyy-MM-dd HH:mm:ss"
+  timeFormat="HH:mm:ss"
 
   predefinedRanges = [
     {
@@ -88,7 +89,7 @@ class CalculateCountsDialog extends React.Component {
           <DatePicker
             selected={this.state.processCountsDateFrom}
             showTimeSelect
-            timeFormat="HH:mm"
+            timeFormat={this.timeFormat}
             timeIntervals={15}
             dateFormat={this.dateFormat}
             onChange={(e) => this.setDateFrom(e)}
@@ -100,7 +101,7 @@ class CalculateCountsDialog extends React.Component {
           <DatePicker
             selected={this.state.processCountsDateTo}
             showTimeSelect
-            timeFormat="HH:mm"
+            timeFormat={this.timeFormat}
             timeIntervals={15}
             dateFormat={this.dateFormat}
             onChange={(e) => this.setDateTo(e)}
