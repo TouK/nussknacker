@@ -116,8 +116,8 @@ class Graph extends React.Component {
     }
 
     validateConnection = (cellViewS, magnetS, cellViewT, magnetT) => {
-      var from = cellViewS.model.id
-      var to = cellViewT.model.id
+      const from = cellViewS.model.id
+      const to = cellViewT.model.id
       return magnetT && NodeUtils.canMakeLink(from, to, this.props.processToDisplay, this.props.processDefinitionData);
     }
 
@@ -135,8 +135,8 @@ class Graph extends React.Component {
                 if (!canWrite) {
                   return false;
                 } else if (model instanceof joint.dia.Link) {
-                    // Disable the default vertex add functionality on pointerdown.
-                    return { vertexAdd: false };
+                    // Disable the default vertex add and label move functionality on pointerdown.
+                    return { vertexAdd: false, labelMove: false};
                 } else if (model.get && model.get('backgroundObject')) {
                   //Disable moving group rect
                   return false
@@ -269,7 +269,7 @@ class Graph extends React.Component {
       const oldWidth = this.refs.espGraph.offsetWidth
       //we fit to content to be able to export svg nicely...
       this.processGraphPaper.fitToContent()
-      this.setState({exported: SVGUtils.toXml(this.refs.espGraph.childNodes[0])})
+      this.setState({exported: SVGUtils.toXml(this.refs.espGraph.getElementsByTagName("svg").item(0))})
       //we have to set former width/height
       this.processGraphPaper.setDimensions(oldWidth, oldHeight)
     }
@@ -325,7 +325,7 @@ class Graph extends React.Component {
         panEnabled: false,
         dblClickZoomEnabled: false,
         minZoom: 0.2,
-        maxZoom: 10
+        maxZoom: 1.6
       });
 
       this.processGraphPaper.on('blank:pointerdown', (evt, x, y) => {
