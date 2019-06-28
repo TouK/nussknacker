@@ -1,5 +1,6 @@
 import React from 'react'
 import * as joint from 'jointjs'
+import * as dagre from 'dagre'
 import EspNode from './EspNode'
 import 'jointjs/dist/joint.css'
 import _ from 'lodash'
@@ -94,6 +95,8 @@ class Graph extends React.Component {
       //when joint.layout.DirectedGraph.layout(this.graph.getCells().filter(cell => !cell.get('backgroundObject')) is used here
       // then `toFront()` method does not work at all, but group fold/unfold works just fine
       joint.layout.DirectedGraph.layout(this.graph.getCells().filter(cell => !cell.get('backgroundObject')), {
+          graphlib: dagre.graphlib,
+          dagre: dagre,
           nodeSep: 0,
           edgeSep: 0,
           rankSep: 75,

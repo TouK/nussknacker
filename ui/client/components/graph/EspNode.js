@@ -13,6 +13,7 @@ import collapseIcon from '../../assets/img/collapse.svg'
 import customAttrs from '../../assets/json/nodeAttributes.json'
 
 import {v4 as uuid4} from "uuid";
+import SVGUtils from "../../common/SVGUtils";
 
 const rectWidth = 300
 const rectHeight = 60
@@ -168,7 +169,7 @@ export function makeElement(node, processCounts, forExport, nodesSettings){
         opacity: node.isDisabled ? 0.5 : 1
       },
       '.nodeIconItself': {
-        'xlink:href': 'data:image/svg+xml;utf8,' + encodeURIComponent(icon) //we encode icon data to have standalone svg that can be used to generate pdf
+        'xlink:href': SVGUtils.svgToDataURL(icon), //we encode icon data to have standalone svg that can be used to generate pdf
       },
       '.contentText': {
         text: bodyContent

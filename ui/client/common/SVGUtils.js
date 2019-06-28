@@ -48,6 +48,17 @@ class SVGUtils {
     }
 
   }
+
+  svgToDataURL = svgStr => {
+    const encoded = encodeURIComponent(svgStr)
+      .replace(/'/g, '%27')
+      .replace(/"/g, '%22')
+
+    const header = 'data:image/svg+xml;charset=UTF-8,'
+    const dataUrl = header + encoded
+
+    return dataUrl
+  }
 }
 //TODO this pattern is not necessary, just export every public function as in actions.js
 export default new SVGUtils()
