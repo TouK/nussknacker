@@ -695,7 +695,7 @@ lazy val ui = (project in file("ui/server"))
         "org.hsqldb" % "hsqldb" % hsqldbV,
         "org.postgresql" % "postgresql" % postgresV,
         "org.flywaydb" % "flyway-core" % flywayV,
-        "org.apache.xmlgraphics" % "fop" % "2.1",
+        "org.apache.xmlgraphics" % "fop" % "2.3",
         "org.mindrot" % "jbcrypt" % "0.4",
 
         "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test" force(),
