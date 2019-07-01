@@ -293,13 +293,13 @@ export class NodeDetailsContent extends React.Component {
         const commonFields = this.subprocessVersionFields()
         //fixme move this configuration to some better place?
         const fields = type == "StreamMetaData" ? [
-          this.createField("input", "Parallelism", "typeSpecificProperties.parallelism", "parallelism", null, null, uuid4()),
-          this.createField("input", "Checkpoint interval in seconds", "typeSpecificProperties.checkpointIntervalInSeconds", "checkpointIntervalInSeconds", null, null, uuid4()),
-          this.createField("checkbox", "Should split state to disk", "typeSpecificProperties.splitStateToDisk", "splitStateToDisk", null, null, uuid4()),
-          this.createField("checkbox", "Should use async interpretation (lazy variables not allowed)", "typeSpecificProperties.useAsyncInterpretation", "useAsyncInterpretation", null, null, uuid4())
-        ] : [this.createField("input", "Query path",  "typeSpecificProperties.path", "path", null, null, uuid4())]
+          this.createField("input", "Parallelism", "typeSpecificProperties.parallelism", "parallelism", null, null, 'parallelism'),
+          this.createField("input", "Checkpoint interval in seconds", "typeSpecificProperties.checkpointIntervalInSeconds", "checkpointIntervalInSeconds", null, null, 'interval-seconds'),
+          this.createField("checkbox", "Should split state to disk", "typeSpecificProperties.splitStateToDisk", "splitStateToDisk", false, false, 'split-state-disk'),
+          this.createField("checkbox", "Should use async interpretation (lazy variables not allowed)", "typeSpecificProperties.useAsyncInterpretation", "useAsyncInterpretation", false, false, 'use-async')
+        ] : [this.createField("input", "Query path",  "typeSpecificProperties.path", "path", null, null, 'query-path')]
         const additionalFields = Object.entries(this.props.additionalPropertiesConfig).map(
-          ([fieldName, fieldConfig]) => this.createAdditionalField(fieldName, fieldConfig)
+          ([fieldName, fieldConfig]) => this.createAdditionalField(fieldName, fieldConfig, fieldName)
         );
         const hasExceptionHandlerParams = this.state.editedNode.exceptionHandler.parameters.length > 0
         return (
@@ -369,7 +369,7 @@ export class NodeDetailsContent extends React.Component {
           (newValue) => this.setNodeDataAt("subprocessVersions", JsonUtils.tryParse(newValue)),
           null,
           false,
-          uuid4()
+          'subprocess-versions'
       )]
   }
 
@@ -494,8 +494,8 @@ export class NodeDetailsContent extends React.Component {
             <div className={nodeValueClass}>
               <input
                   type="checkbox"
-                  checked={fieldValue}
-                  onChange={(e) => handleChange(fieldValue ? false : true)}
+                  checked={fieldValue || false}
+                  onChange={(e) => handleChange(e.target.checked)}
                   disabled={readOnly ? 'disabled' : ''}
               />
             </div>
@@ -520,7 +520,7 @@ export class NodeDetailsContent extends React.Component {
         )
       default:
         return (
-          <div key={keyg}>
+          <div key={key}>
             Field type not known...
           </div>
         )
@@ -538,14 +538,13 @@ export class NodeDetailsContent extends React.Component {
   nodeValueClass = (isMarked) => "node-value" + (isMarked ? " marked" : "");
 
   setNodeDataAt = (propToMutate, newValue, defaultValue) => {
-    if (_.isEmpty(newValue) && !_.isUndefined(defaultValue)) {
-      newValue = defaultValue;
-    }
+    const value = newValue == null ? defaultValue : newValue
+    const node = _.cloneDeep(this.state.editedNode)
 
-    var newtempNodeData = _.cloneDeep(this.state.editedNode)
-    _.set(newtempNodeData, propToMutate, newValue)
-    this.setState({editedNode: newtempNodeData})
-    this.props.onChange(newtempNodeData)
+    _.set(node, propToMutate, value)
+
+    this.setState({editedNode: node})
+    this.props.onChange(node)
   }
 
   descriptionField = () => {

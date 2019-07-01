@@ -56,6 +56,18 @@ class Graph extends React.Component {
         this.cursorBehaviour();
         this.highlightNodes(this.props.processToDisplay, this.props.nodeToDisplay);
 
+        window.addEventListener("resize", this.updateDimensions.bind(this));
+    }
+
+    updateDimensions() {
+      let area = document.getElementById('working-area')
+      this.processGraphPaper.fitToContent()
+      this.svgDimensions(area.offsetWidth, area.offsetHeight)
+      this.processGraphPaper.setDimensions(area.offsetWidth, area.offsetHeight)
+    }
+
+    componentWillUnmount() {
+      window.removeEventListener("resize", this.updateDimensions.bind(this));
     }
 
     componentWillUpdate(nextProps, nextState) {
@@ -72,8 +84,6 @@ class Graph extends React.Component {
       if (!processNotChanged || !_.isEqual(this.props.nodeToDisplay, nextProps.nodeToDisplay)){
         this.highlightNodes(nextProps.processToDisplay, nextProps.nodeToDisplay, nextProps.groupingState);
       }
-
-
     }
 
     componentDidUpdate(previousProps) {
@@ -272,9 +282,19 @@ class Graph extends React.Component {
       const oldWidth = this.refs.espGraph.offsetWidth
       //we fit to content to be able to export svg nicely...
       this.processGraphPaper.fitToContent()
-      this.setState({exported: SVGUtils.toXml(this.refs.espGraph.getElementsByTagName("svg").item(0))})
+
+      this.svgDimensions(oldWidth, oldHeight)
+
       //we have to set former width/height
       this.processGraphPaper.setDimensions(oldWidth, oldHeight)
+    }
+
+    //Hack for FOP to properly export image from svg xml
+    svgDimensions = (width, height) => {
+      let svg = this.refs.espGraph.getElementsByTagName("svg")[0]
+      svg.setAttribute('width', width)
+      svg.setAttribute('height', height)
+      this.setState({exported: SVGUtils.toXml(svg)})
     }
 
     highlightNodes = (data, nodeToDisplay, groupingState) => {
@@ -328,7 +348,7 @@ class Graph extends React.Component {
         panEnabled: false,
         dblClickZoomEnabled: false,
         minZoom: 0.2,
-        maxZoom: 1.6
+        maxZoom: 2
       });
 
       this.processGraphPaper.on('blank:pointerdown', (evt, x, y) => {
@@ -464,7 +484,7 @@ class Graph extends React.Component {
 
     render() {
       const toRender = (
-        <div>
+        <div id="graphContainer">
           {!_.isEmpty(this.props.nodeToDisplay) ? <NodeDetailsModal/> : null}
           {!_.isEmpty(this.props.edgeToDisplay) ? <EdgeDetailsModal/> : null}
           <div ref="espGraph" id={this.props.divId}></div>

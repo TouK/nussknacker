@@ -359,6 +359,9 @@ export function makeLink(edge, forExport) {
     target: {id: edge.to, port: 'In'},
     labels: labels,
     attrs: {
+      line: {
+        connection: true,
+      },
       '.link-tools': forExport ? { display: 'none'} : {},
       '.connection': forExport ? { stroke: edgeStroke, 'stroke-width': 2, fill: edgeStroke } : { stroke: 'white', 'stroke-width': 2, fill: 'none' },
       '.marker-target': { 'stroke-width': forExport ? 1 : 0, stroke: forExport ? edgeStroke : 'white', fill: 'white', d: 'M 10 0 L 0 5 L 10 10 L 8 5 z' },
