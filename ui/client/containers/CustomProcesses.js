@@ -56,7 +56,7 @@ class CustomProcesses extends PeriodicallyReloadingComponent {
     }).catch(() => this.setState({ showLoader: false }))
   }
 
-  handleChange(event) {
+  handleChange = (event) => {
     this.setState({filterVal: event.target.value});
   }
 
@@ -82,8 +82,7 @@ class CustomProcesses extends PeriodicallyReloadingComponent {
         <HealthCheck/>
         <div id="process-top-bar">
           <div id="table-filter" className="input-group">
-            <input type="text" className="form-control" aria-describedby="basic-addon1"
-                   value={this.state.filterVal} onChange={e => this.handleChange(e)}/>
+            <input type="text" className="form-control" aria-describedby="basic-addon1" value={this.state.filterVal} onChange={this.handleChange} />
             <span className="input-group-addon" id="basic-addon1">
               <img id="search-icon" src={filterIcon} />
             </span>

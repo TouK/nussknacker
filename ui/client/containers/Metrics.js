@@ -13,7 +13,7 @@ class Metrics extends React.Component {
   componentDidMount() {
     if (this.props.match.params.processId) {
       HttpService.fetchProcessDetails(this.props.match.params.processId).then(details => {
-          this.setState({processingType: details.processingType})
+        this.setState({processingType: details.processingType})
       })
     } else {
       this.setState({processingType: ""})

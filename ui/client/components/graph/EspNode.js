@@ -39,7 +39,7 @@ const attrsConfig = () => {
       width: rectWidth,
       height: rectHeight,
       stroke: '#B5B5B5',
-      'stroke-width': 1,
+      strokeWidth: 1,
     },
     '.background': {
       width: rectWidth,
@@ -47,8 +47,8 @@ const attrsConfig = () => {
     },
     text: {
       fill: '#1E1E1E',
-      'pointer-events': 'none',
-      'font-weight': 400
+      pointerEvents: 'none',
+      fontWeight: 400
     },
     '.nodeIconPlaceholder': {
       x: 0,
@@ -59,26 +59,26 @@ const attrsConfig = () => {
     '.nodeIconItself': {
       width: rectHeight/2,
       height: rectHeight/2,
-      'ref': '.nodeIconPlaceholder',
-      'ref-x': rectHeight/4,
-      'ref-y': rectHeight/4
+      ref: '.nodeIconPlaceholder',
+      refX: rectHeight/4,
+      refY: rectHeight/4
     },
     '.contentText': {
-      'font-size': nodeLabelFontSize,
-      'ref': '.nodeIconPlaceholder',
-      'ref-x': rectHeight + 10,
-      'ref-y': rectHeight/2 - nodeLabelFontSize/2
+      fontSize: nodeLabelFontSize,
+      ref: '.nodeIconPlaceholder',
+      refX: rectHeight + 10,
+      refY: rectHeight/2 - nodeLabelFontSize/2
     },
     '.testResultsPlaceholder': {
-      'ref': '.nodeIconPlaceholder',
-      'ref-x': rectWidth,
+      ref: '.nodeIconPlaceholder',
+      refX: rectWidth,
       y: 0,
       height: rectHeight,
       width: rectHeight
     },
     '.testResultsSummary': {
-      'text-anchor': 'middle',
-      'alignment-baseline': "middle"
+      textAnchor: 'middle',
+      alignmentBaseline: "middle"
     }
   }
 }
@@ -86,26 +86,26 @@ const attrsConfig = () => {
 const portsAttrs = () => {
   return {
     '.port': {
-      'ref-x': 0,
-      'ref-y': 0,
+      refX: 0,
+      refY: 0,
     },
     '.port-body': {
       r: 5,
       magnet: true,
-      'font-size': 10
+      fontSize: 10
     }
   }
 }
 
 const portInAttrs = () => {
   return Object.assign({},  portsAttrs(), {
-    '.port circle': {
-      fill: '#FFFFFF',
-      magnet: 'passive',
-      stroke: edgeStroke,
-      'stroke-width': '1',
-      type: 'input'
-    }})
+  '.port circle': {
+    fill: '#FFFFFF',
+    magnet: 'passive',
+    stroke: edgeStroke,
+    strokeWidth: '1',
+    type: 'input'
+  }})
 }
 
 const portOutAttrs = () => {
@@ -113,7 +113,7 @@ const portOutAttrs = () => {
     '.port circle': {
       fill: '#FFFFFF',
       stroke: edgeStroke,
-      'stroke-width': '1',
+      strokeWidth: '1',
       type: 'output'
   }})
 }
@@ -145,77 +145,77 @@ joint.shapes.devs.EspNode =  joint.shapes.devs.Model.extend({
 });
 
 export function makeElement(node, processCounts, forExport, nodesSettings){
-    const description = _.get(node.additionalFields, 'description', null)
-    const { text: bodyContent, multiline } = getBodyContent(node);
-    const hasCounts = !_.isEmpty(processCounts);
-    const width = rectWidth;
-    const widthWithTestResults = hasCounts ? width + rectHeight : width;
-    const height = rectHeight;
-    const iconFromConfig = (nodesSettings[ProcessUtils.findNodeConfigName(node)] || {}).icon
-    const icon = iconFromConfig ? LoaderUtils.loadNodeSvgContent(iconFromConfig) : LoaderUtils.loadNodeSvgContent(`${node.type}.svg`)
+  const description = _.get(node.additionalFields, 'description', null)
+  const { text: bodyContent, multiline } = getBodyContent(node);
+  const hasCounts = !_.isEmpty(processCounts);
+  const width = rectWidth;
+  const widthWithTestResults = hasCounts ? width + rectHeight : width;
+  const height = rectHeight;
+  const iconFromConfig = (nodesSettings[ProcessUtils.findNodeConfigName(node)] || {}).icon
+  const icon = iconFromConfig ? LoaderUtils.loadNodeSvgContent(iconFromConfig) : LoaderUtils.loadNodeSvgContent(`${node.type}.svg`)
 
-    let attrs = {
-      '.background': {
-        width: widthWithTestResults
-      },
-      '.background title': {
-        text: description
-      },
-      '.body': {
-        width: widthWithTestResults,
-      },
-      'rect.nodeIconPlaceholder': {
-        fill: customAttrs[node.type].styles.fill,
-        opacity: node.isDisabled ? 0.5 : 1
-      },
-      '.nodeIconItself': {
-        'xlink:href': SVGUtils.svgToDataURL(icon), //we encode icon data to have standalone svg that can be used to generate pdf
-      },
-      '.contentText': {
-        text: bodyContent
-      },
-      '.testResultsPlaceHolder': {
-        display: hasCounts && !forExport ? 'block' : 'none',
-        'ref-x': width
-      },
-      '.testResultsSummary': getTestResultsSummaryAttr(processCounts, width),
-      '.groupElements': {
-        'display': NodeUtils.nodeIsGroup(node) ? 'block' : 'none'
-      },
-      '.expandIcon': {
-        'xlink:href': expandIcon,
-        width: 26,
-        height: 26,
-        'ref-x': width - 13,
-        'ref-y': - 13
-      }
-    };
-
-    let inPorts = [];
-    let outPorts = [];
-    if (node.type == 'Sink') {
-        inPorts = ['In']
-    } else if (node.type == 'Source') {
-        outPorts = ['Out']
-    } else {
-        inPorts = ['In'];
-        outPorts = ['Out']
+  let attrs = {
+    '.background': {
+      width: widthWithTestResults
+    },
+    '.background title': {
+      text: description
+    },
+    '.body': {
+      width: widthWithTestResults,
+    },
+    'rect.nodeIconPlaceholder': {
+      fill: customAttrs[node.type].styles.fill,
+      opacity: node.isDisabled ? 0.5 : 1
+    },
+    '.nodeIconItself': {
+      'xlink:href': SVGUtils.svgToDataURL(icon), //we encode icon data to have standalone svg that can be used to generate pdf
+    },
+    '.contentText': {
+      text: bodyContent
+    },
+    '.testResultsPlaceHolder': {
+      display: hasCounts && !forExport ? 'block' : 'none',
+      refX: width
+    },
+    '.testResultsSummary': getTestResultsSummaryAttr(processCounts, width),
+    '.groupElements': {
+      display: NodeUtils.nodeIsGroup(node) ? 'block' : 'none'
+    },
+    '.expandIcon': {
+      'xlink:href': expandIcon,
+      width: 26,
+      height: 26,
+      refX: width - 13,
+      refY: - 13
     }
+  };
 
-    return new joint.shapes.devs.EspNode({
-        id: node.id,
-        size: {width: width, height: height},
-        inPorts: inPorts,
-        outPorts: outPorts,
-        attrs: attrs,
-        rankDir: 'R',
-        nodeData: node,
-        definitionToCompare: {
-          node: node,
-          processCounts: processCounts,
-          forExport: forExport
-        }
-    });
+  let inPorts = [];
+  let outPorts = [];
+  if (node.type == 'Sink') {
+      inPorts = ['In']
+  } else if (node.type == 'Source') {
+      outPorts = ['Out']
+  } else {
+      inPorts = ['In'];
+      outPorts = ['Out']
+  }
+
+  return new joint.shapes.devs.EspNode({
+    id: node.id,
+    size: {width: width, height: height},
+    inPorts: inPorts,
+    outPorts: outPorts,
+    attrs: attrs,
+    rankDir: 'R',
+    nodeData: node,
+    definitionToCompare: {
+      node: node,
+      processCounts: processCounts,
+      forExport: forExport
+    }
+  });
 }
 
 function getTestResultsSummaryAttr(processCounts, width) {
@@ -232,7 +232,7 @@ function getTestResultsSummaryAttr(processCounts, width) {
     text: countsContent,
     style: { 'font-size': summaryCountFontSize },
     fill: hasErrors ? 'red' : 'white',
-    'ref-x': width + rectHeight/2
+    refX: width + rectHeight/2
   }
 }
 
@@ -257,7 +257,7 @@ function getBodyContent(node) {
 
   let tmpLines = [ splitContent[0] ];
 
-  for ( let str of splitContent.slice(1)) {
+  for (let str of splitContent.slice(1)) {
     let idx = tmpLines.length - 1;
 
     if (tmpLines[idx].length + str.length <= maxLineLength) {
@@ -280,7 +280,7 @@ function getBodyContent(node) {
 
   let idx = tmpLines.length - 1;
   if (tmpLines[idx].length > maxLineLength) {
-      tmpLines[idx] = tmpLines[idx].slice(0, maxLineLength) + '...';
+    tmpLines[idx] = tmpLines[idx].slice(0, maxLineLength) + '...';
   }
 
   return {
@@ -293,28 +293,28 @@ export function boundingRect(nodes, expandedGroup, layout, group) {
   const boundingRect = GraphUtils.computeBoundingRect(expandedGroup, layout, nodes, rectHeight, 15)
 
   return new joint.shapes.basic.Rect({
-      id: group.id,
-      markup: boundingMarkup,
-      position: { x: boundingRect.x, y: boundingRect.y },
-      backgroundObject: true,
-      nodeData: group,
-      size: { width: boundingRect.width, height: boundingRect.height },
-      attrs: {
-        rect: {
-          fill: 'green', opacity: 0.1
-        },
-        '.collapseIcon': {
-          'xlink:href': collapseIcon,
-          'ref-x': boundingRect.width - 13,
-          'ref-y': - 13,
-          width: 26,
-          height: 26,
-        },
+    id: group.id,
+    markup: boundingMarkup,
+    position: { x: boundingRect.x, y: boundingRect.y },
+    backgroundObject: true,
+    nodeData: group,
+    size: { width: boundingRect.width, height: boundingRect.height },
+    attrs: {
+      rect: {
+        fill: 'green', opacity: 0.1
       },
-      definitionToCompare: {
-        boundingRect: boundingRect,
-        group
-      }
+      '.collapseIcon': {
+        'xlink:href': collapseIcon,
+        'ref-x': boundingRect.width - 13,
+        'ref-y': - 13,
+        width: 26,
+        height: 26,
+      },
+    },
+    definitionToCompare: {
+      boundingRect: boundingRect,
+      group
+    }
   })
 }
 

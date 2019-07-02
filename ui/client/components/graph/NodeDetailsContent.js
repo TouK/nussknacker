@@ -538,7 +538,7 @@ export class NodeDetailsContent extends React.Component {
   nodeValueClass = (isMarked) => "node-value" + (isMarked ? " marked" : "");
 
   setNodeDataAt = (propToMutate, newValue, defaultValue) => {
-    const value = newValue == null ? defaultValue : newValue
+    const value = newValue == null && defaultValue != undefined ? defaultValue : newValue
     const node = _.cloneDeep(this.state.editedNode)
 
     _.set(node, propToMutate, value)
