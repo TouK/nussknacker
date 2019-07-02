@@ -3,7 +3,11 @@ package pl.touk.nussknacker.ui.process
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ProcessDefinition, QueryableStateName}
 import pl.touk.nussknacker.engine.graph
-import pl.touk.nussknacker.engine.graph.node.{CustomNode, NodeData, Source, SubprocessInput}
+import pl.touk.nussknacker.engine.graph.node._
+import pl.touk.nussknacker.engine.graph.service.ServiceRef
+import pl.touk.nussknacker.engine.graph.sink.SinkRef
+import pl.touk.nussknacker.engine.graph.source.SourceRef
+import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
 import pl.touk.nussknacker.ui.api.SignalDefinition
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
@@ -42,6 +46,25 @@ object ProcessObjectsFinder {
     allObjectIds.diff(usedObjectIds).sortCaseInsensitive
   }
 
+  def findComponents(processes: List[ProcessDetails], componentId: String): List[ProcessComponent] = {
+    processes.flatMap(processDetails => processDetails.json match {
+      case Some(process) => process.nodes.map(nodeData =>
+        ProcessComponent(
+          processName = processDetails.name,
+          nodeId = nodeData.id,
+          nodeType = ProcessComponent.nodeType(nodeData),
+          processCategory = processDetails.processCategory,
+          isDeployed = processDetails.currentlyDeployedAt match {
+            case Nil => false
+            case _ => true
+          }
+        )
+      ).filter(processComponent => processComponent.nodeType == componentId)
+      case None => Nil
+    }
+    )
+  }
+
   def componentIds(processDefinitions: List[ProcessDefinition[ObjectDefinition]], subprocessIds: List[String]): List[String] = {
     val ids = processDefinitions.flatMap(_.componentIds)
     (ids ++ subprocessIds).distinct.sortCaseInsensitive
@@ -74,5 +97,22 @@ object ProcessObjectsFinder {
   private case class ExtractedProcesses(allProcesses: List[DisplayableProcess]) {
     val processesOnly =  allProcesses.filter(!_.properties.isSubprocess)
     val subprocessesOnly = allProcesses.filter(_.properties.isSubprocess)
+  }
+}
+
+case class ProcessComponent (processName: String, nodeId: String, nodeType: String, processCategory: String, isDeployed: Boolean)
+
+object ProcessComponent {
+  def nodeType (n: NodeData): String = {
+    n match {
+      case Source(_, SourceRef(typ, _), _) => typ
+      case Sink(_, SinkRef(typ, _), _, _, _) => typ
+      case SubprocessInput(_, SubprocessRef(typ, _), _, _, _) => typ
+      case Enricher(_, ServiceRef(typ, _), _, _) => typ
+      case Processor(_, ServiceRef(typ, _), _, _) => typ
+      case Join(_, _, typ, _, _, _) => typ
+      case CustomNode(_, _, typ, _, _) => typ
+      case _ => ""
+    }
   }
 }
