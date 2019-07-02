@@ -18,6 +18,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with ScalaFutures with Argonaut62Support {
+  import scala.concurrent.duration._
 
   implicit val system = ActorSystem("nussknacker-ui")
 
@@ -26,12 +27,15 @@ class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with ScalaFut
   implicit override val patienceConfig = PatienceConfig(timeout = scaled(Span(1, Seconds)), interval = scaled(Span(100, Millis)))
 
   trait MockRemoteEnvironment extends StandardRemoteEnvironment {
-
     override def environmentId = "testEnv"
 
-    override def targetEnvironmentId = "targetTestEnv"
+    def config: StandardRemoteEnvironmentConfig = StandardRemoteEnvironmentConfig(
+      "http://localhost:8087/api",
+      10.seconds,
+      10
+    )
 
-    override def baseUrl: Uri = Uri("http://localhost:8087/api")
+    override def targetEnvironmentId = "targetTestEnv"
 
     override implicit val materializer = ActorMaterializer()
 
@@ -58,7 +62,7 @@ class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with ScalaFut
 
       // helpers
       def is(relative: String, m: HttpMethod): Boolean = {
-        path.toString.startsWith(s"$baseUrl$relative") && method == m
+        path.toString.startsWith(s"$baseUri$relative") && method == m
       }
 
       object Validation {
@@ -143,7 +147,7 @@ class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with ScalaFut
     val remoteEnvironment = new MockRemoteEnvironment {
 
       override protected def request(path: Uri, method: HttpMethod, request: MessageEntity) : Future[HttpResponse] = {
-        if (path.toString().startsWith(s"$baseUrl/processes/a") && method == HttpMethods.GET) {
+        if (path.toString().startsWith(s"$baseUri/processes/a") && method == HttpMethods.GET) {
           Marshal(ProcessTestData.toDetails(process)).to[RequestEntity].map { entity =>
             HttpResponse(StatusCodes.OK, entity = entity)
           }
@@ -166,7 +170,7 @@ class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with ScalaFut
     val remoteEnvironment = new MockRemoteEnvironment {
 
       override protected def request(path: Uri, method: HttpMethod, request: MessageEntity) : Future[HttpResponse] = {
-        if (path.toString().startsWith(s"$baseUrl/processes/%C5%82%C3%B3d%C5%BA") && method == HttpMethods.GET) {
+        if (path.toString().startsWith(s"$baseUri/processes/%C5%82%C3%B3d%C5%BA") && method == HttpMethods.GET) {
           Marshal(ProcessTestData.toDetails(process)).to[RequestEntity].map { entity =>
             HttpResponse(StatusCodes.OK, entity = entity)
           }
