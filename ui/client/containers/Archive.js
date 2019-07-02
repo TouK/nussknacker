@@ -30,6 +30,7 @@ class Archive extends React.Component {
     const intervalIds = {
       reloadProcessesIntervalId: setInterval(() => this.reloadProcesses(), 10000)
     }
+
     this.setState(intervalIds)
     this.reloadProcesses();
   }
@@ -52,7 +53,7 @@ class Archive extends React.Component {
     this.props.history.push(Archive.path + "/" + process.name)
   }
 
-  handleChange(event) {
+  handleChange = (event) => {
     this.setState({filterVal: event.target.value});
   }
 
@@ -65,17 +66,17 @@ class Archive extends React.Component {
       <div className="Page">
         <div id="process-top-bar">
           <div id="table-filter" className="input-group">
-            <input type="text" className="form-control" aria-describedby="basic-addon1"
-                    value={this.state.filterVal} onChange={this.handleChange}/>
+            <input type="text" className="form-control" aria-describedby="basic-addon1" value={this.state.filterVal} onChange={this.handleChange}/>
             <span className="input-group-addon" id="basic-addon1">
               <img id="search-icon" src={filterIcon} />
             </span>
           </div>
         </div>
-        <LoaderSpinner show={this.state.showLoader}/>
-        <Table className="esp-table"
-               onSort={sort => this.setState({sort: sort})}
-               onPageChange={currentPage => this.setState({currentPage: currentPage})}
+        <LoaderSpinner show={this.state.showLoader} />
+        <Table
+          className="esp-table"
+           onSort={sort => this.setState({sort: sort})}
+           onPageChange={currentPage => this.setState({currentPage: currentPage})}
            noDataText="No matching records found."
            hidden={this.state.showLoader}
            currentPage={this.state.currentPage}

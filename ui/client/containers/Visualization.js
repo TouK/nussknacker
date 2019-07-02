@@ -19,6 +19,7 @@ class Visualization extends React.Component {
   constructor(props) {
     super(props);
     this.state = { timeoutId: null, intervalId: null, status: {}, isArchived: null, dataResolved: false};
+    this.graphRef = React.createRef()
   }
 
   componentDidMount() {
@@ -126,18 +127,19 @@ class Visualization extends React.Component {
 
   render() {
     const { leftPanelIsOpened, actions, loggedUser } = this.props;
-    //it has to be that way, because graph is redux component
-    const getGraph = () => this.refs.graph.decoratedRef.current;
-    const graphFun = (fun) => (() => !_.isEmpty(this.refs.graph) ? fun(getGraph()) : () => null)
 
-    const graphLayoutFun = graphFun(graph => graph.directedLayout())
-    const exportGraphFun = graphFun(graph => graph.exportGraph())
-    const zoomInFun = graphFun(graph => graph.zoomIn())
-    const zoomOutFun = graphFun(graph => graph.zoomOut())
+    //it has to be that way, because graph is redux component
+    const getGraph = () => this.graphRef.current.getDecoratedComponentInstance()
+    const graphLayoutFun = () => getGraph().directedLayout()
+    const exportGraphFun = () => getGraph().exportGraph()
+    const zoomOutFun = () => getGraph().zoomOut()
+    const zoomInFun = () => getGraph().zoomIn()
+
     const capabilities = {
       write:loggedUser.canWrite(this.props.processCategory) && !this.state.isArchived,
       deploy:loggedUser.canDeploy(this.props.processCategory) && !this.state.isArchived,
     };
+
     const graphNotReady = _.isEmpty(this.props.fetchedProcessDetails) || this.props.graphLoading;
 
     return (
@@ -165,16 +167,16 @@ class Visualization extends React.Component {
         />
 
         <SpinnerWrapper isReady={!graphNotReady}>
-          <Graph ref="graph" />
+          <Graph ref={this.graphRef} />
         </SpinnerWrapper>
       </div>
     );
   }
 }
 
-Visualization.title = 'Visualization'
 Visualization.path = VisualizationUrl.visualizationRouterPath
 Visualization.header = 'Visualization'
+Visualization.title = 'Visualization'
 
 function mapState(state) {
   const processCategory = _.get(state, 'graphReducer.fetchedProcessDetails.processCategory');
