@@ -19,24 +19,13 @@ class AdminPage extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      processes: [],
-      processesLoaded: false,
       componentIds: [],
       unusedComponents: [],
-      services:{},
-      componentToFind: 0
+      services:{}
     }
   }
 
   componentDidMount() {
-    HttpService.fetchProcessesDetails().then ((processes) => {
-      HttpService.fetchSubProcessesDetails().then((subProcesses) =>{
-        this.setState({
-          processes: _.concat(processes, subProcesses),
-          processesLoaded: true,
-        })
-      })
-    })
     HttpService.fetchComponentIds().then((componentIds) => {
       this.setState({componentIds: componentIds})
     })
@@ -52,7 +41,7 @@ class AdminPage extends React.Component {
 
   render() {
     const tabs = [
-      {tabName: "Search components", component: <ProcessSearch componentIds={this.state.componentIds} processes={this.state.processes} processesLoaded={this.state.processesLoaded}/>},
+      {tabName: "Search components", component: <ProcessSearch componentIds={this.state.componentIds} />},
       {tabName: "Unused components", component: <UnusedComponents unusedComponents={this.state.unusedComponents}/>},
       {tabName: "Services", component: <TestServices componentIds={this.state.componentIds} services={this.state.services}/>},
       {tabName: CustomProcesses.title, component: <CustomProcesses/>}
@@ -88,23 +77,36 @@ class ProcessSearch extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
+      processes: [],
+      processesLoaded: false,
       componentToFind: null,
-      filterVal: ''
+      filterVal: '',
+      currentPage: 1
     }
   }
 
-  render() {
-    const found = _.map(ProcessUtils.search(this.props.processes, this.state.componentToFind), (result) => {
-      return {
-        process: result.process.name,
-        node: result.node.id,
-        category: result.process.processCategory,
-        isDeployed: result.process.currentlyDeployedAt.length > 0
-      }
+  onComponentChange(componentToFind) {
+    this.setState({processesLoaded: false, componentToFind: componentToFind})
+    HttpService.fetchProcessesComponents(componentToFind).then((processesComponents) => {
+      console.log(processesComponents)
+      this.setState({
+          processes: _.map(processesComponents, (result) => {
+            return {
+              processName: result.processName,
+              nodeId: result.nodeId,
+              processCategory: result.processCategory,
+              isDeployed: result.isDeployed
+            }
+          }),
+          processesLoaded: true
+        })
     })
+  }
+
+  render() {
     return (
       <div>
-        <select className="table-select" onChange={(e) => this.setState({componentToFind: e.target.value})} value={this.state.componentToFind || 0}>
+        <select className="table-select" onChange={(e) => this.onComponentChange(e.target.value)} value={this.state.componentToFind || 0}>
           <option disabled key={0} value={0}>-- select an option --</option>
           {
             this.props.componentIds.map((componentId, index) => {
@@ -119,34 +121,37 @@ class ProcessSearch extends React.Component {
             <img id="search-icon" src={filterIcon}/>
           </span>
         </div>
-        {this.props.processesLoaded ?
-          this.componentToFindChosen() ?
+        {this.componentToFindChosen() ?
+          this.state.processesLoaded ?
             <Table className="esp-table"
-                   sortable={['process', 'node', 'category']}
-                   filterable={['process', 'node', 'category']}
+                   sortable={['processName', 'nodeId', 'processCategory']}
+                   filterable={['processName', 'nodeId', 'processCategory']}
                    noDataText="No matching records found."
                    hideFilterInput
+                   onPageChange={currentPage => this.setState({currentPage: currentPage})}
+                   currentPage={this.state.currentPage}
+                   itemsPerPage={10}
+                   pageButtonLimit={5}
+                   previousPageLabel="<"
+                   nextPageLabel=">"
                    filterBy={this.state.filterVal.toLowerCase()}
                    columns={[
-                     {key: "process", label: "Process"},
-                     {key: "node", label: "Node"},
-                     {key: "category", label: "Category"},
+                     {key: "processName", label: "Process"},
+                     {key: "nodeId", label: "Node"},
+                     {key: "processCategory", label: "Category"},
                      {key: "isDeployed", label: "Is deployed"},
                    ]}
-
-
             >
-              {found.map((row, idx) => {
+              {this.state.processes.map((row, idx) => {
                 return (
                   <Tr key={idx}>
-                    <Td column="process">{row.process}</Td>
-                    <Td column="node">
-                      {/* TODO this url won't work for nodes used in subprocesses */}
-                      <a target="_blank" href={VisualizationUrl.visualizationUrl(row.process, row.node)}>
-                        {row.node}
+                    <Td column="processName">{row.processName}</Td>
+                    <Td column="nodeId">
+                      <a target="_blank" href={VisualizationUrl.visualizationUrl(row.processName, row.nodeId)}>
+                        {row.nodeId}
                       </a>
                     </Td>
-                    <Td column="category">{row.category}</Td>
+                    <Td column="processCategory">{row.processCategory}</Td>
                     <Td column="isDeployed">
                       <div className={row.isDeployed ? "status-running" : null}/>
                     </Td>
@@ -154,8 +159,8 @@ class ProcessSearch extends React.Component {
                 )
               })}
 
-            </Table> : null
-         : <LoaderSpinner show={true}/>
+            </Table> : <LoaderSpinner show={true}/>
+         : null
         }
       </div>
     )

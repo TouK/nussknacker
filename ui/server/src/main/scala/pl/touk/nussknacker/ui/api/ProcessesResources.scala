@@ -95,6 +95,14 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
               validateAll(processRepository.fetchProcessesDetails())
             }
           }
+        } ~ path("processesComponents" / Segment) { componentId =>
+          get {
+            complete {
+              processRepository.fetchAllProcessesDetails().map { processList =>
+                ProcessObjectsFinder.findComponents(processList, componentId)
+              }
+            }
+          }
         } ~ path("subProcesses") {
           get {
             complete {
