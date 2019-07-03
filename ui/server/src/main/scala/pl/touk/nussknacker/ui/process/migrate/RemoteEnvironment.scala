@@ -53,7 +53,7 @@ case class MigrationValidationError(errors: ValidationErrors) extends EspError {
   }
 }
 
-case class HttpRemoteEnvironmentConfig(user: String, password: String, targetEnvironemntId: String, remoteConfig: StandardRemoteEnvironmentConfig)
+case class HttpRemoteEnvironmentConfig(user: String, password: String, targetEnvironmentId: String, remoteConfig: StandardRemoteEnvironmentConfig)
 
 class HttpRemoteEnvironment(httpConfig: HttpRemoteEnvironmentConfig,
                             val testModelMigrations: TestModelMigrations,
@@ -61,7 +61,7 @@ class HttpRemoteEnvironment(httpConfig: HttpRemoteEnvironmentConfig,
                            )(implicit as: ActorSystem, val materializer: Materializer) extends StandardRemoteEnvironment {
   override val config: StandardRemoteEnvironmentConfig = httpConfig.remoteConfig
 
-  override def targetEnvironmentId: String = httpConfig.targetEnvironemntId
+  override def targetEnvironmentId: String = httpConfig.targetEnvironmentId
 
   override protected def request(uri: Uri, method: HttpMethod, request: MessageEntity): Future[HttpResponse] = {
     // fixme: this shouldn't be done this way but I cannot get Akka client to send that many requests in a row otherwise
