@@ -1,13 +1,11 @@
 package pl.touk.nussknacker.engine.standalone.management
 
-import java.nio.file.{Files, Paths}
-
 import argonaut.PrettyParams
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{FunSuite, Matchers}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Seconds, Span}
-import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StandaloneMetaData}
+import pl.touk.nussknacker.engine.api.{MetaData, StandaloneMetaData}
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -17,7 +15,6 @@ import pl.touk.nussknacker.engine.graph.node.{Sink, Source}
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.engine.standalone.api.DeploymentData
 
 class StandaloneProcessManagerSpec extends FunSuite with ScalaFutures with Matchers {
 

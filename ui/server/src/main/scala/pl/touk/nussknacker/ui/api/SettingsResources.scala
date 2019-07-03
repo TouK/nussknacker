@@ -22,7 +22,7 @@ class SettingsResources(config: FeatureTogglesConfig, typeToConfig: Map[Processi
             counts = config.counts.isDefined,
             search = config.search,
             metrics = config.metrics,
-            remoteEnvironment = config.remoteEnvironment.map(c => RemoteEnvironmentConfig(c.targetEnvironemntId)),
+            remoteEnvironment = config.remoteEnvironment.map(c => RemoteEnvironmentConfig(c.targetEnvironmentId)),
             environmentAlert = config.environmentAlert,
             commentSettings = config.commentSettings,
             deploySettings = config.deploySettings,
