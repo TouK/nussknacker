@@ -1,17 +1,17 @@
 package pl.touk.nussknacker.ui.config
 
+import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.readers.ValueReader
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.process.migrate.HttpRemoteEnvironmentConfig
-import pl.touk.nussknacker.processCounts.influxdb.InfluxReporterConfig
 
 case class FeatureTogglesConfig(development: Boolean,
                                 standaloneMode: Boolean,
                                 search: Option[KibanaSettings],
                                 metrics: Option[MetricsSettings],
                                 remoteEnvironment: Option[HttpRemoteEnvironmentConfig],
-                                counts: Option[InfluxReporterConfig],
+                                counts: Option[Config],
                                 environmentAlert:Option[EnvironmentAlert],
                                 commentSettings: Option[CommentSettings],
                                 deploySettings: Option[DeploySettings],
@@ -29,8 +29,7 @@ object FeatureTogglesConfig extends LazyLogging{
     val standaloneModeEnabled = config.hasPath("standaloneModeEnabled") && config.getBoolean("standaloneModeEnabled")
     val metrics = parseOptionalConfig[MetricsSettings](config, "metricsSettings")
       .orElse(parseOptionalConfig[MetricsSettings](config, "grafanaSettings"))
-    val counts = parseOptionalConfig[InfluxReporterConfig](config, "countsSettings")
-      .orElse(parseOptionalConfig[InfluxReporterConfig](config, "grafanaSettings"))
+    val counts = parseOptionalConfig[Config](config, "countsSettings")
 
     val remoteEnvironment = parseOptionalConfig[HttpRemoteEnvironmentConfig](config, "secondaryEnvironment")
     val search = parseOptionalConfig[KibanaSettings](config, "kibanaSettings")

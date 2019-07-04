@@ -3,6 +3,7 @@ package pl.touk.nussknacker.processCounts.influxdb
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
+import com.typesafe.config.Config
 import pl.touk.nussknacker.processCounts._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -32,4 +33,14 @@ class InfluxCountsReporter(env: String, config: InfluxReporterConfig) extends Co
   private def queryInflux(processId: String, fromDate: Option[LocalDateTime], toDate: LocalDateTime)(implicit ec: ExecutionContext): Future[String => Option[Long]] = {
     influxBaseReporter.fetchBaseProcessCounts(processId, fromDate, toDate).map(pbc => nodeId => pbc.getCountForNodeId(nodeId))
   }
+}
+
+class InfluxCountsReporterCreator extends CountsReporterCreator {
+
+  import net.ceedubs.ficus.Ficus._
+  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+
+  override def createReporter(env: String, config: Config): CountsReporter = new InfluxCountsReporter(env,
+    config.as[InfluxReporterConfig](CountsReporterCreator.reporterCreatorConfigPath))
+
 }

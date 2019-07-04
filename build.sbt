@@ -574,6 +574,7 @@ lazy val processReports = (project in engine("processReports")).
       Seq(
         "com.typesafe" % "config" % "1.3.0",
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
+        "com.iheart" %% "ficus" % ficusV,
         "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )
     }
@@ -670,7 +671,7 @@ lazy val ui = (project in file("ui/server"))
     Keys.test in SlowTests := (Keys.test in SlowTests).dependsOn(
       //TODO: maybe here there should be engine/demo??
       (assembly in Compile) in managementSample
-    ),
+    ).value,
     Keys.test in Test := (Keys.test in Test).dependsOn(
       //TODO: maybe here there should be engine/demo??
       (assembly in Compile) in managementSample
