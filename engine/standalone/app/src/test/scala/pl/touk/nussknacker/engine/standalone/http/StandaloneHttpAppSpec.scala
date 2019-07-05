@@ -271,6 +271,12 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
     }
   }
 
+  it should "return health" in {
+    Get("/healthCheck") ~> managementRoute ~> check {
+      status shouldBe StatusCodes.OK
+    }
+  }
+
   def cancelProcess(processName: ProcessName) = {
     val id = processName.value
 
