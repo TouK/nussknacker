@@ -49,6 +49,12 @@ class ManagementRoute(deploymentService: DeploymentService) extends Directives w
           }
         }
       }
+    } ~ path("healthCheck") {
+      get {
+        complete {
+          HttpResponse(status = StatusCodes.OK)
+        }
+      }
     }
 
 
