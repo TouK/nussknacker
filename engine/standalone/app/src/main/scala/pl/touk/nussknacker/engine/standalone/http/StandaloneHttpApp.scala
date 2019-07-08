@@ -21,17 +21,13 @@ object StandaloneHttpApp extends Directives with Argonaut62Support with LazyLogg
 
   private val config = ConfigFactory.load()
 
-  implicit val system = ActorSystem("nussknacker-standalone-http", config)
+  implicit val system: ActorSystem = ActorSystem("nussknacker-standalone-http", config)
 
   import system.dispatcher
 
-  implicit private val materializer = ActorMaterializer()
+  implicit private val materializer: ActorMaterializer = ActorMaterializer()
 
-  private val metricRegistry = new MetricRegistry
-  private val metricReporters = loadMetricsReporters()
-  metricReporters.foreach { reporter =>
-    reporter.createAndRunReporter(metricRegistry, config)
-  }
+  val metricRegistry = StandaloneMetrics.prepareRegistry(config)
 
   val standaloneApp = new StandaloneHttpApp(config, metricRegistry)
 
@@ -50,6 +46,21 @@ object StandaloneHttpApp extends Directives with Argonaut62Support with LazyLogg
     port = processesPort
   )
 
+
+
+}
+
+object StandaloneMetrics extends LazyLogging {
+
+  def prepareRegistry(config: Config): MetricRegistry = {
+    val metricRegistry = new MetricRegistry
+    val metricReporters = loadMetricsReporters()
+    metricReporters.foreach { reporter =>
+      reporter.createAndRunReporter(metricRegistry, config)
+    }
+    metricRegistry
+  }
+
   private def loadMetricsReporters(): List[StandaloneMetricsReporter] = {
     try {
       val reporters = ScalaServiceLoader.load[StandaloneMetricsReporter](Thread.currentThread().getContextClassLoader)
@@ -61,8 +72,8 @@ object StandaloneHttpApp extends Directives with Argonaut62Support with LazyLogg
         List.empty
     }
   }
-
 }
+
 
 class StandaloneHttpApp(config: Config, metricRegistry: MetricRegistry)(implicit as: ActorSystem)
   extends Directives with Argonaut62Support with LazyLogging {
