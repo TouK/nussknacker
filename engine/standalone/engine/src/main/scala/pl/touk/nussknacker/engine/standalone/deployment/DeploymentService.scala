@@ -31,13 +31,13 @@ object DeploymentService {
 }
 
 class DeploymentService(context: StandaloneContextPreparer, modelData: ModelData,
-                        processRepository: ProcessRepository) extends LazyLogging {
+                        processRepository: ProcessRepository) extends LazyLogging with ProcessInterpreters {
 
-  val processInterpreters: collection.concurrent.TrieMap[ProcessName, (StandaloneProcessInterpreter, Long)] = collection.concurrent.TrieMap()
+  private val processInterpreters: collection.concurrent.TrieMap[ProcessName, (StandaloneProcessInterpreter, Long)] = collection.concurrent.TrieMap()
 
-  val pathToInterpreterMap: collection.concurrent.TrieMap[String, StandaloneProcessInterpreter] = collection.concurrent.TrieMap()
+  private val pathToInterpreterMap: collection.concurrent.TrieMap[String, StandaloneProcessInterpreter] = collection.concurrent.TrieMap()
 
-  val processMarshaller = new ProcessMarshaller()
+  private val processMarshaller = new ProcessMarshaller()
 
   initProcesses()
 
