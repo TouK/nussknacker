@@ -88,7 +88,6 @@ class ProcessSearch extends React.Component {
   onComponentChange(componentToFind) {
     this.setState({processesLoaded: false, componentToFind: componentToFind})
     HttpService.fetchProcessesComponents(componentToFind).then((processesComponents) => {
-      console.log(processesComponents)
       this.setState({
           processes: _.map(processesComponents, (result) => {
             return {

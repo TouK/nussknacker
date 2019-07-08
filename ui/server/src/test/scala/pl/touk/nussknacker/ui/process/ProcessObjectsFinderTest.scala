@@ -102,4 +102,16 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
     }
   }
 
+  test("should find components by componentId") {
+    val processesList = List(process1, process2, process3, process4, subprocessDetails)
+    val componentsWithinProcesses = ProcessObjectsFinder.findComponents(processesList, "otherTransformer")
+    componentsWithinProcesses should have size 2
+
+    val componentsWithinSubprocesses = ProcessObjectsFinder.findComponents(processesList, "otherTransformer2")
+    componentsWithinSubprocesses should have size 1
+
+    val componentsNotExist = ProcessObjectsFinder.findComponents(processesList, "notExistingTransformer")
+    componentsNotExist should have size 0
+  }
+
 }
