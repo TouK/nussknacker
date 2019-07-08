@@ -147,8 +147,8 @@ export default {
     return promiseWrap($.get(API_URL + '/processesDetails'))
   },
 
-  fetchProcessesComponents(componentName) {
-    return promiseWrap($.get(API_URL + '/processesComponents/' + componentName))
+  fetchProcessesComponents(componentId) {
+    return promiseWrap($.get(API_URL + '/processesComponents/' + encodeURIComponent(componentId)))
   },
 
   fetchProcesses() {
