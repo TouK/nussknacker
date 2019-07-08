@@ -23,7 +23,7 @@ object CanonicalProcess {
       Nil
     case subprocessNode: canonicalnode.Subprocess if isNodeDisabled(subprocessNode) =>
       if (subprocessNode.outputs.size == 1) {
-        subprocessNode.outputs.values.head
+        withoutDisabled(subprocessNode.outputs.values.head)
       } else {
         throw new Exception("Fatal error. Disabled subprocess should be validated to have exactly one output")
       }

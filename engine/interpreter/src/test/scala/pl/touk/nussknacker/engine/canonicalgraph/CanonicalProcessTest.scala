@@ -76,6 +76,27 @@ class CanonicalProcessTest extends FunSuite with Matchers {
     )
   }
 
+  test("#withoutDisabledNodes with disabled subprocess with disabled subprocess") {
+    val withDisabledSubprocessWithDisabledSubprocess = process(
+      List(
+        source1,
+        subprocess(
+          output = List(
+            subprocess(
+              output = List(sink1),
+              isDisabled = true
+            )
+          ),
+          isDisabled = true
+        )
+      )
+    )
+
+    withDisabledSubprocessWithDisabledSubprocess.withoutDisabledNodes shouldBe process(
+      List(source1, sink1)
+    )
+  }
+
   test("#withoutDisabledNodes with disabled filter") {
     process(
       List(
