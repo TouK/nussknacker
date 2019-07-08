@@ -373,7 +373,7 @@ class Graph extends React.Component {
 			panEnabled: false,
 			dblClickZoomEnabled: false,
 			minZoom: 0.2,
-			maxZoom: 2
+			maxZoom: 10
 		});
 
 		this.processGraphPaper.on('blank:pointerdown', (evt, x, y) => {
