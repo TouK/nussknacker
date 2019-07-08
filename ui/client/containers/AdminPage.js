@@ -77,11 +77,11 @@ class ProcessSearch extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      processes: [],
+      processesComponents: [],
       processesLoaded: false,
       componentToFind: null,
       filterVal: '',
-      currentPage: 1
+      currentPage: 0
     }
   }
 
@@ -89,14 +89,7 @@ class ProcessSearch extends React.Component {
     this.setState({processesLoaded: false, componentToFind: componentToFind})
     HttpService.fetchProcessesComponents(componentToFind).then((processesComponents) => {
       this.setState({
-          processes: _.map(processesComponents, (result) => {
-            return {
-              processName: result.processName,
-              nodeId: result.nodeId,
-              processCategory: result.processCategory,
-              isDeployed: result.isDeployed
-            }
-          }),
+          processesComponents: processesComponents,
           processesLoaded: true
         })
     })
@@ -141,7 +134,7 @@ class ProcessSearch extends React.Component {
                      {key: "isDeployed", label: "Is deployed"},
                    ]}
             >
-              {this.state.processes.map((row, idx) => {
+              {this.state.processesComponents.map((row, idx) => {
                 return (
                   <Tr key={idx}>
                     <Td column="processName">{row.processName}</Td>
