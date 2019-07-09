@@ -90,6 +90,13 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
             }
           }
         } ~ path("processesDetails") {
+          post {
+            entity(as[List[String]]) { namesToFetch =>
+              complete {
+                validateAll(processRepository.fetchProcessesDetails(namesToFetch.map(ProcessName(_))))
+              }
+            }
+          } ~
           get {
             complete {
               validateAll(processRepository.fetchProcessesDetails())

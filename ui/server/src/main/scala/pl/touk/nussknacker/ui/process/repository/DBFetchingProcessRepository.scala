@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui.process.repository
 
-import java.sql.{Date, Timestamp}
 import java.time.LocalDateTime
 
 import cats.data.OptionT
@@ -47,6 +46,11 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
 
   def fetchProcessesDetails()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[ProcessDetails]] = {
     run(fetchProcessDetailsByQueryActionUnarchived(p => !p.isSubprocess))
+  }
+
+  def fetchProcessesDetails(processNames: List[ProcessName])(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[ProcessDetails]] = {
+    val processNamesSet = processNames.map(_.value).toSet
+    run(fetchProcessDetailsByQueryActionUnarchived(p => !p.isSubprocess && p.name.inSet(processNamesSet)))
   }
 
   def fetchSubProcessesDetails()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[ProcessDetails]] = {
