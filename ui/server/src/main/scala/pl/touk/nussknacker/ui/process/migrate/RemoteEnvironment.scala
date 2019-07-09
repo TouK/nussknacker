@@ -4,11 +4,10 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.Uri.Path
-import akka.http.scaladsl.model._
+import akka.http.scaladsl.model.{RequestEntity, _}
 import akka.http.scaladsl.model.headers.{Authorization, BasicHttpCredentials}
 import akka.http.scaladsl.unmarshalling.{Unmarshal, Unmarshaller}
 import akka.stream.Materializer
-import akka.stream.scaladsl.{Sink, Source}
 import argonaut.DecodeJson
 import cats.data.EitherT
 import cats.implicits._
@@ -26,7 +25,7 @@ import pl.touk.nussknacker.ui.util.ProcessComparator
 import pl.touk.nussknacker.ui.util.ProcessComparator.Difference
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{ValidationErrors, ValidationResult}
 
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, ExecutionContext, Future}
 
 trait RemoteEnvironment {
@@ -53,29 +52,26 @@ case class MigrationValidationError(errors: ValidationErrors) extends EspError {
   }
 }
 
-case class HttpRemoteEnvironmentConfig(user: String, password: String, targetEnvironmentId: String, remoteConfig: StandardRemoteEnvironmentConfig)
+case class HttpRemoteEnvironmentConfig(user: String, password: String, targetEnvironmentId: String,
+                                       remoteConfig: StandardRemoteEnvironmentConfig)
 
 class HttpRemoteEnvironment(httpConfig: HttpRemoteEnvironmentConfig,
                             val testModelMigrations: TestModelMigrations,
-                            val environmentId: String
-                           )(implicit as: ActorSystem, val materializer: Materializer) extends StandardRemoteEnvironment {
+                            val environmentId: String)
+                           (implicit as: ActorSystem, val materializer: Materializer, ec: ExecutionContext) extends StandardRemoteEnvironment {
   override val config: StandardRemoteEnvironmentConfig = httpConfig.remoteConfig
 
   override def targetEnvironmentId: String = httpConfig.targetEnvironmentId
 
+  val http = Http()
+
   override protected def request(uri: Uri, method: HttpMethod, request: MessageEntity): Future[HttpResponse] = {
-    // fixme: this shouldn't be done this way but I cannot get Akka client to send that many requests in a row otherwise
-    Source.single(
-      HttpRequest(uri = uri.toRelative, method = method, entity = request,
-        headers = List(Authorization(BasicHttpCredentials(httpConfig.user, httpConfig.password))))
-    ).via(Http().outgoingConnection(uri.authority.host.address(), uri.authority.port))
-      .runWith(Sink.head)
+    http.singleRequest(HttpRequest(uri = uri, method = method, entity = request,
+      headers = List(Authorization(BasicHttpCredentials(httpConfig.user, httpConfig.password)))))
   }
 }
 
-case class StandardRemoteEnvironmentConfig(uri: String,
-                                           migrationTimeout: Duration,
-                                           migrationBatchSize: Int)
+case class StandardRemoteEnvironmentConfig(uri: String, batchSize: Int, batchTimeout: FiniteDuration)
 
 //TODO: extract interface to remote environment?
 trait StandardRemoteEnvironment extends Argonaut62Support with RemoteEnvironment with UiCodecs {
@@ -182,21 +178,27 @@ trait StandardRemoteEnvironment extends Argonaut62Support with RemoteEnvironment
   override def testMigration(implicit ec: ExecutionContext): Future[Either[EspError, List[TestMigrationResult]]] = {
     (for {
       basicProcesses <- EitherT(invokeJson[List[BasicProcess]](HttpMethods.GET, List("processes")))
-      processes      <- fetchGroupByGroup(basicProcesses, basicProcess => EitherT(invokeJson[ValidatedProcessDetails](HttpMethods.GET, List("processes", basicProcess.name))))
+      processes      <- fetchGroupByGroup(basicProcesses)
       subprocesses   <- EitherT(invokeJson[List[ValidatedProcessDetails]](HttpMethods.GET, List("subProcessesDetails")))
     } yield testModelMigrations.testMigrations(processes, subprocesses)).value
   }
 
-  private def fetchGroupByGroup[T](basicProcesses: List[BasicProcess],
-                                   getOne: BasicProcess => EitherT[Future, EspError, ValidatedProcessDetails])
+  private def fetchGroupByGroup[T](basicProcesses: List[BasicProcess])
                                   (implicit ec: ExecutionContext): EitherT[Future, EspError, List[ValidatedProcessDetails]] = {
-    EitherT(Future.successful(Await.result(
-      Future.sequence(
-        basicProcesses.grouped(config.migrationBatchSize)
-          .flatMap(_.map(getOne(_).value))
-          .toList
-      ).map(_.sequence),
-      config.migrationTimeout
-    )))
+    def getMany(processes: List[BasicProcess]) = {
+      invokeJson[List[ValidatedProcessDetails]](
+        HttpMethods.POST,
+        "processesDetails" :: Nil,
+        requestEntity = HttpEntity(ContentTypes.`application/json`, processes.map(_.name).asJson.nospaces))
+    }
+
+    EitherT(Future.successful(
+      basicProcesses.grouped(config.batchSize)
+        .foldLeft(List.empty[ValidatedProcessDetails].asRight[EspError]) { case (acc, batch) => for {
+            current <- acc
+            fetched <- Await.result(getMany(batch), config.batchTimeout)
+          } yield current ::: fetched
+        }
+    ))
   }
 }

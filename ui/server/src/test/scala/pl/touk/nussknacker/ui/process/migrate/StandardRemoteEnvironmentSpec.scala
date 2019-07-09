@@ -31,8 +31,8 @@ class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with ScalaFut
 
     def config: StandardRemoteEnvironmentConfig = StandardRemoteEnvironmentConfig(
       uri = "http://localhost:8087/api",
-      migrationTimeout = 10.seconds,
-      migrationBatchSize = 10
+      batchSize = 100,
+      batchTimeout = 60.seconds
     )
 
     override def targetEnvironmentId = "targetTestEnv"
