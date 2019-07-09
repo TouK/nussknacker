@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.ui.process
 
+import java.time.LocalDateTime
+
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
@@ -13,6 +15,7 @@ import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.ObjectProcessDefinition
+import pl.touk.nussknacker.restmodel.processdetails.{DeploymentEntry}
 
 class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPropertyChecks {
 
@@ -32,6 +35,8 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
       .customNode("custom", "out1", existingStreamTransformer)
       .customNode("custom2", "out2", otherExistingStreamTransformer)
       .emptySink("sink", existingSinkFactory)))
+
+  private val process1deployed = process1.copy(currentlyDeployedAt = List(DeploymentEntry(1, "test", LocalDateTime.now(), "user", Map[String,String]())))
 
   private val process2 = toDetails(TestProcessUtil.toDisplayable(
     EspProcessBuilder.id("fooProcess2").exceptionHandler()
@@ -103,15 +108,22 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
   }
 
   test("should find components by componentId") {
-    val processesList = List(process1, process2, process3, process4, subprocessDetails)
+    val processesList = List(process1deployed, process2, process3, process4, subprocessDetails)
+
     val componentsWithinProcesses = ProcessObjectsFinder.findComponents(processesList, "otherTransformer")
-    componentsWithinProcesses should have size 2
+    componentsWithinProcesses shouldBe List(
+      ProcessComponent("fooProcess1", "custom2", "Category", true),
+      ProcessComponent("fooProcess2", "custom", "Category", false)
+    )
 
     val componentsWithinSubprocesses = ProcessObjectsFinder.findComponents(processesList, "otherTransformer2")
-    componentsWithinSubprocesses should have size 1
+    componentsWithinSubprocesses shouldBe List(
+      ProcessComponent("subProcess1", "f1", "Category", false)
+    )
+    componentsWithinSubprocesses.map(c => c.isDeployed) shouldBe List(false)
 
     val componentsNotExist = ProcessObjectsFinder.findComponents(processesList, "notExistingTransformer")
-    componentsNotExist should have size 0
+    componentsNotExist shouldBe Nil
   }
 
 }

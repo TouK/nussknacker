@@ -44,20 +44,14 @@ object ProcessObjectsFinder {
 
   def findComponents(processes: List[ProcessDetails], componentId: String): List[ProcessComponent] = {
     processes.flatMap(processDetails => processDetails.json match {
-      case Some(process) => process.nodes.flatMap(nodeData => {
-        nodeData match {
-          case node:WithComponent if node.componentId == componentId => Some(ProcessComponent(
-            processName = processDetails.name,
-            nodeId = nodeData.id,
-            processCategory = processDetails.processCategory,
-            isDeployed = processDetails.currentlyDeployedAt match {
-              case Nil => false
-              case _ => true
-            }
-          ))
-          case _ => None
-        }
-      })
+      case Some(process) => process.nodes.collect {
+        case node:WithComponent if node.componentId == componentId => ProcessComponent(
+          processName = processDetails.name,
+          nodeId = node.id,
+          processCategory = processDetails.processCategory,
+          isDeployed = processDetails.currentlyDeployedAt.nonEmpty //TODO use the same logic that is used to display Status column on Procesess screen??
+        )
+      }
       case None => Nil
     })
   }
