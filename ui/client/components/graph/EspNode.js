@@ -232,7 +232,9 @@ function getTestResultsSummaryAttr(processCounts, width) {
     text: countsContent,
     style: { 'font-size': summaryCountFontSize },
     fill: hasErrors ? 'red' : 'white',
-    refX: width + rectHeight/2
+    refX: width + rectHeight/2,
+    // magic/hack: central vertical position when font-size changes
+    y: 37 - extraDigitsCount * 1.5,
   }
 }
 
