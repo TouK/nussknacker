@@ -17,13 +17,6 @@ class SimpleInfluxClient(config: InfluxConfig) {
 
   private val httpClient = LoggingDispatchClient(classOf[InfluxGenerator].getSimpleName, Http.default)
 
-  private implicit val numberOrStringDecoder: DecodeJson[Any] = DecodeJson.apply[Any] { cursor =>
-    val focused = cursor.focus
-    val bigDecimalDecoder = implicitly[DecodeJson[BigDecimal]].asInstanceOf[DecodeJson[Any]]
-    val stringDecoder = implicitly[DecodeJson[String]].asInstanceOf[DecodeJson[Any]]
-    DecodeResult.ok(focused.as(bigDecimalDecoder).toOption.getOrElse(focused.as(stringDecoder).toOption.getOrElse("")))
-  }
-
   def query(query: String)(implicit ec: ExecutionContext): Future[List[InfluxSerie]] = {
     httpClient {
       dispatch
@@ -43,6 +36,19 @@ class SimpleInfluxClient(config: InfluxConfig) {
 case class InfluxResponse(results: List[InfluxResult] = List())
 
 case class InfluxResult(series: List[InfluxSerie] = List())
+
+object InfluxSerie {
+
+  private implicit val numberOrStringDecoder: DecodeJson[Any] = DecodeJson.apply[Any] { cursor =>
+    val focused = cursor.focus
+    val bigDecimalDecoder = implicitly[DecodeJson[BigDecimal]].asInstanceOf[DecodeJson[Any]]
+    val stringDecoder = implicitly[DecodeJson[String]].asInstanceOf[DecodeJson[Any]]
+    DecodeResult.ok(focused.as(bigDecimalDecoder).toOption.getOrElse(focused.as(stringDecoder).toOption.getOrElse("")))
+  }
+
+  implicit val codec: DecodeJson[InfluxSerie] = DecodeJson.derive[InfluxSerie]
+
+}
 
 case class InfluxSerie(name: String, tags: Map[String, String], columns: List[String], values: List[List[Any]] = List()) {
   val toMap: List[Map[String, Any]] = values.map(value => columns.zip(value).toMap)
