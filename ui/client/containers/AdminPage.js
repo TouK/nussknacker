@@ -139,7 +139,7 @@ class ProcessSearch extends React.Component {
                   <Tr key={idx}>
                     <Td column="processName">{row.processName}</Td>
                     <Td column="nodeId">
-                      <a target="_blank" href={VisualizationUrl.visualizationUrl(row.processName, row.nodeId)}>
+                      <a target="_blank" href={VisualizationUrl.visualizationUrl(VisualizationUrl.visualizationRouterBasePath, row.processName, row.nodeId)}>
                         {row.nodeId}
                       </a>
                     </Td>

@@ -2,7 +2,8 @@ import _ from "lodash";
 import Moment from "moment";
 import queryString from 'query-string'
 
-export const visualizationRouterPath = '/visualization/:processId'
+export const visualizationRouterBasePath = "/visualization"
+export const visualizationRouterPath = visualizationRouterBasePath + '/:processId'
 
 export function visualizationUrl(path, processName, nodeId, edgeId) {
   if (!_.isEmpty(nodeId) && !_.isEmpty(edgeId)) {
@@ -24,9 +25,9 @@ export function edgeIdPart(edgeId) {
 
 export function extractVisualizationParams(search) {
   let queryParams = queryString.parse(search)
-  const modeId = queryParams.nodeId;
+  const nodeId = queryParams.nodeId;
   const edgeId = queryParams.edgeId;
-  return {modeId, edgeId}
+  return {nodeId, edgeId}
 }
 
 export function extractBusinessViewParams(queryParams) {
