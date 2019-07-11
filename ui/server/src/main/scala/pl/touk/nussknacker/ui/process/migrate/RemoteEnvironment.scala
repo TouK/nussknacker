@@ -71,7 +71,7 @@ class HttpRemoteEnvironment(httpConfig: HttpRemoteEnvironmentConfig,
   }
 }
 
-case class StandardRemoteEnvironmentConfig(uri: String, batchSize: Int, batchTimeout: FiniteDuration)
+case class StandardRemoteEnvironmentConfig(uri: String, batchSize: Int)
 
 //TODO: extract interface to remote environment?
 trait StandardRemoteEnvironment extends Argonaut62Support with RemoteEnvironment with UiCodecs {
@@ -185,20 +185,18 @@ trait StandardRemoteEnvironment extends Argonaut62Support with RemoteEnvironment
 
   private def fetchGroupByGroup[T](basicProcesses: List[BasicProcess])
                                   (implicit ec: ExecutionContext): EitherT[Future, EspError, List[ValidatedProcessDetails]] = {
-    def getMany(processes: List[BasicProcess]) = {
+    def getMany(processes: List[BasicProcess]) = EitherT {
       invokeJson[List[ValidatedProcessDetails]](
         HttpMethods.POST,
         "processesDetails" :: Nil,
         requestEntity = HttpEntity(ContentTypes.`application/json`, processes.map(_.name).asJson.nospaces))
     }
 
-    EitherT(Future.successful(
-      basicProcesses.grouped(config.batchSize)
-        .foldLeft(List.empty[ValidatedProcessDetails].asRight[EspError]) { case (acc, batch) => for {
-            current <- acc
-            fetched <- Await.result(getMany(batch), config.batchTimeout)
-          } yield current ::: fetched
-        }
-    ))
+    basicProcesses.grouped(config.batchSize)
+      .foldLeft(EitherT.rightT[Future, EspError](List.empty[ValidatedProcessDetails])) { case (acc, batch) => for {
+          current <- acc
+          fetched <- getMany(batch)
+        } yield current ::: fetched
+      }
   }
 }
