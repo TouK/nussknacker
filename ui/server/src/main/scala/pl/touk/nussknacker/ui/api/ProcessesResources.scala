@@ -83,13 +83,15 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
             parameters(
               'isSubprocess.as[Boolean].?,
               'isArchived.as[Boolean].?,
+              'isDeployed.as[Boolean].?,
               'categories.as(CsvSeq[String]).?,
               'processingTypes.as(CsvSeq[String]).?
-            ) { (isSubprocess, isArchived, categories, processingTypes) =>
+            ) { (isSubprocess, isArchived, isDeployed, categories, processingTypes) =>
               complete {
                 processRepository.fetchProcesses(
                   isSubprocess,
-                  isArchived.orElse(Option(false)), //back compatibility
+                  isArchived.orElse(Option(false)),
+                  isDeployed,
                   categories,
                   processingTypes
                 ).toBasicProcess

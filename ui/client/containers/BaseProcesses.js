@@ -7,6 +7,8 @@ import history from "../history"
 import HttpService from "../http/HttpService"
 
 class BaseProcesses extends PeriodicallyReloadingComponent {
+  searchItems = ['categories']
+  queries = {}
 
   customSelectStyles = {
     control: styles => ({
@@ -46,8 +48,8 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
   reloadProcesses(showLoader, search) {
     this.setState({showLoader: showLoader == null ? true : showLoader})
 
-    const query = _.pick(queryString.parse(window.location.search), 'categories', 'isSubprocess')
-    const data = Object.assign(query, search || {} , this.queries || {})
+    const query = _.pick(queryString.parse(window.location.search), this.searchItems || [])
+    const data = Object.assign(query, search, this.queries || {})
 
     HttpService.fetchProcesses(data).then (fetchedProcesses => {
       if (!this.state.showAddProcess) {
@@ -70,35 +72,41 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
     })
   }
 
-  onSearchChange = (event) => {
-    const params = {search: event.target.value}
+  afterElementChange(params, reload, showLoader, search) {
     this.props.history.replace({search: VisualizationUrl.setAndPreserveLocationParams(params)})
     this.setState(params)
+
+    if (reload) {
+      this.reloadProcesses(showLoader, search)
+    }
+  }
+
+  onSearchChange = (event) => {
+    this.afterElementChange({search: event.target.value})
   }
 
   onSort = (sort) => {
-    this.props.history.replace({search: VisualizationUrl.setAndPreserveLocationParams(sort)})
-    this.setState({sort: sort})
-  }
-
-  onCategoryChange = (elements) => {
-    const params = {categories: _.map(elements, 'value'), page: 0}
-    this.props.history.replace({search: VisualizationUrl.setAndPreserveLocationParams(params)})
-    this.setState({selectedCategories: elements, page: 0})
-    this.reloadProcesses()
-  }
-
-  onIsSubprocessChange = (element) => {
-    const params = {isSubprocess: element.value, page: 0}
-    this.props.history.replace({search: VisualizationUrl.setAndPreserveLocationParams(params)})
-    this.setState(params)
-    this.reloadProcesses()
+    this.afterElementChange(sort)
   }
 
   onPageChange = (page) => {
-    const params = {page: page}
-    this.props.history.replace({search: VisualizationUrl.setAndPreserveLocationParams(params)})
-    this.setState(params)
+    this.afterElementChange({page: page})
+  }
+
+  onCategoryChange = (elements) => {
+    this.afterElementChange({categories: _.map(elements, 'value'), page: 0}, true)
+  }
+
+  onIsSubprocessChange = (element) => {
+    this.afterElementChange({isSubprocess: element.value, page: 0}, true)
+  }
+
+  showMetrics = (process) => {
+    history.push('/metrics/' + process.name)
+  }
+
+  showProcess = (path, process) => {
+    history.push(VisualizationUrl.visualizationUrl(path, process.name))
   }
 
   processStatusClass = (process, statusesLoaded, statuses) => {
@@ -126,14 +134,6 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
     }
 
     return null
-  }
-
-  showMetrics = (process) => {
-    history.push('/metrics/' + process.name)
-  }
-
-  showProcess = (path, process) => {
-    history.push(VisualizationUrl.visualizationUrl(path, process.name))
   }
 }
 

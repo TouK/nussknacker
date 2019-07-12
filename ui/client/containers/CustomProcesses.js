@@ -30,7 +30,7 @@ class CustomProcesses extends BaseProcesses {
   }
 
   reload() {
-    this.reloadProcesses()
+    this.reloadProcesses(false)
     this.reloadStatuses()
   }
 

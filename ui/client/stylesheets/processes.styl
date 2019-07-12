@@ -1,13 +1,13 @@
 @import "./_variables.styl"
 @import "./_mixins.styl"
 
-#categories-filter, #processing-types-filter, #subprocess-types-filter
+#categories-filter, #processing-types-filter, #subprocess-types-filter, #deployed-filter
   margin: 45px containerPadding
-  width: 450px
+  max-width: 450px
+  flex: 1 1 auto;
 
 #table-filter
   margin: 45px containerPadding
-  width: 470px
   input
     background-color: processesSearchInput
     box-shadow: none
@@ -24,7 +24,7 @@
 
 .table-select
   margin: 10px 0px -20px containerPadding
-  width: 470px
+
   height 45px
   background-color: processesSearchInput
   box-shadow: none
