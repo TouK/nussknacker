@@ -19,6 +19,7 @@ import pl.touk.nussknacker.ui.process.repository.ProcessRepository._
 import pl.touk.nussknacker.ui.util._
 import pl.touk.nussknacker.ui._
 import EspErrorToHttp._
+import akka.http.scaladsl.unmarshalling.PredefinedFromStringUnmarshallers.CsvSeq
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.ui.codec.UiCodecs
 import pl.touk.nussknacker.ui.validation.{FatalValidationError, ProcessValidation}
@@ -79,11 +80,23 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
           }
         }  ~ path("processes") {
           get {
-            complete {
-              processRepository.fetchProcesses().toBasicProcess
+            parameters(
+              'isSubprocess.as[Boolean].?,
+              'isArchived.as[Boolean].?,
+              'categories.as(CsvSeq[String]).?,
+              'processingTypes.as(CsvSeq[String]).?
+            ) { (isSubprocess, isArchived, categories, processingTypes) =>
+              complete {
+                processRepository.fetchProcesses(
+                  isSubprocess,
+                  isArchived.orElse(Option(false)), //back compatibility
+                  categories,
+                  processingTypes
+                ).toBasicProcess
+              }
             }
           }
-        }  ~ path("customProcesses") {
+        } ~ path("customProcesses") {
           get {
             complete {
               processRepository.fetchCustomProcesses().toBasicProcess

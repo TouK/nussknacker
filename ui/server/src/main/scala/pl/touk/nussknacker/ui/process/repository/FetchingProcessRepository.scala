@@ -32,6 +32,9 @@ trait FetchingProcessRepository {
 
   def fetchProcesses()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[ProcessDetails]]
 
+  def fetchProcesses(isSubprocess: Option[Boolean], isArchived: Option[Boolean], categories: Option[Seq[String]], processingTypes: Option[Seq[String]])
+                    (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[ProcessDetails]]
+
   def fetchCustomProcesses()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[ProcessDetails]]
 
   def fetchProcessesDetails()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[ProcessDetails]]

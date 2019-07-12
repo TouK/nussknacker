@@ -40,6 +40,22 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
     run(fetchProcessDetailsByQueryActionUnarchived(p => !p.isSubprocess && p.processType === ProcessType.Graph))
   }
 
+  def fetchProcesses(isSubprocess: Option[Boolean], isArchived: Option[Boolean], categories: Option[Seq[String]], processingTypes: Option[Seq[String]])
+                    (implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[ProcessDetails]] = {
+
+    val expr: List[Option[ProcessEntityFactory#ProcessEntity => Rep[Boolean]]] = List(
+      Option(process => process.processType === ProcessType.Graph),
+      isSubprocess.map(arg => process => process.isSubprocess === arg),
+      isArchived.map(arg => process => process.isArchived === arg),
+      categories.map(arg => process => process.processCategory.inSet(arg)),
+      processingTypes.map(arg => process => process.processingType.inSet(arg))
+    )
+
+    run(fetchProcessDetailsByQueryAction { process =>
+      expr.flatten.foldLeft(true: Rep[Boolean])((x, y) => x && y(process))
+    })
+  }
+
   def fetchCustomProcesses()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[ProcessDetails]]= {
     run(fetchProcessDetailsByQueryActionUnarchived(p => !p.isSubprocess && p.processType === ProcessType.Custom))
   }
@@ -201,6 +217,7 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
       processVersionId = processVersion.id,
       isLatestVersion = isLatestVersion,
       isArchived = process.isArchived,
+      isSubprocess = process.isSubprocess,
       description = process.description,
       processType = process.processType,
       processingType = process.processingType,

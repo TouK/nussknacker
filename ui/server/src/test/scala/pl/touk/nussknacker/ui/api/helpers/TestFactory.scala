@@ -24,8 +24,10 @@ object TestFactory extends TestPermissions{
 
   val testCategoryName: String = TestPermissions.testCategoryName
 
+  val secondTestCategoryName: String = TestPermissions.secondTestCategoryName
+
   //FIIXME: remove testCategory dommy implementation
-  val testCategory:CategorizedPermission= Map(testCategoryName -> Set.empty)
+  val testCategory:CategorizedPermission= Map(testCategoryName -> Set.empty, secondTestCategoryName -> Set.empty)
   val testEnvironment = "test"
 
   val sampleSubprocessRepository = new SampleSubprocessRepository(Set(ProcessTestData.sampleSubprocess))

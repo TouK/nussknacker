@@ -30,7 +30,7 @@ class PdfExporterSpec extends FlatSpec {
         case a => a
     })
     val details = BaseProcessDetails("My process", "My process", 11, true,
-      Some("My fancy description, which is quite, quite, quite looooooooong. \n And it contains maaaany, maaany strange features..."),false,
+      Some("My fancy description, which is quite, quite, quite looooooooong. \n And it contains maaaany, maaany strange features..."),false, false,
       ProcessType.Graph, TestProcessingTypes.Streaming, "Category 22", LocalDateTime.now(), None, List(), None, List(), Some(displayable),
       List(ProcessHistoryEntry("My process",  "My process", 11, LocalDateTime.now(), "Zenon Wojciech", List()) ), None
     )
@@ -63,7 +63,7 @@ class PdfExporterSpec extends FlatSpec {
       "Proc11", ProcessProperties(StreamMetaData(), ExceptionHandlerRef(List()), subprocessVersions = Map.empty), List(), List(), TestProcessingTypes.Streaming)
 
     val details = BaseProcessDetails("My process", "My process", 11, true,
-      Some("My fancy description, which is quite, quite, quite looooooooong. \n And it contains maaaany, maaany strange features..."),false,
+      Some("My fancy description, which is quite, quite, quite looooooooong. \n And it contains maaaany, maaany strange features..."),false, false,
       ProcessType.Graph, TestProcessingTypes.Streaming, "Category 22", LocalDateTime.now(), None, List(), None, List(), Some(displayable),
       List(ProcessHistoryEntry("My process",  "My process", 11, LocalDateTime.now(), "Zenon Wojciech", List()) ), None
     )
