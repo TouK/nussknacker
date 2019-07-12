@@ -151,20 +151,12 @@ export default {
     return promiseWrap($.get(API_URL + '/processesComponents/' + encodeURIComponent(componentId)))
   },
 
-  fetchProcesses() {
-    return promiseWrap($.get(API_URL + '/processes'))
+  fetchProcesses(data) {
+    return promiseWrap($.get(API_URL + '/processes', data))
   },
 
   fetchCustomProcesses() {
     return promiseWrap($.get(API_URL + '/customProcesses'))
-  },
-
-  fetchSubProcesses() {
-    return promiseWrap($.get(API_URL + '/subProcesses'))
-  },
-
-  fetchArchivedProcesses() {
-    return promiseWrap($.get(`${API_URL}/archive`))
   },
 
   fetchSubProcessesDetails() {

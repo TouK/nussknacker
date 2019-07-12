@@ -1,6 +1,6 @@
 import _ from "lodash";
 import Moment from "moment";
-import queryString from 'query-string'
+import * as  queryString from 'query-string'
 
 export const visualizationRouterBasePath = "/visualization"
 export const visualizationRouterPath = visualizationRouterBasePath + '/:processId'
@@ -57,10 +57,10 @@ function fromTimestampOrDate(tsOrDate) {
 }
 
 export function setAndPreserveLocationParams(params){
-  let queryParams = queryString.parse(location.search)
+  let queryParams = queryString.parse(window.location.search, {arrayFormat: 'comma'})
   let resultParams = _.omitBy(Object.assign({}, queryParams, params), (e) => {
-    return e === false || e == null || e === ""
+    return e == null || e === "" || e === 0
   })
 
-  return queryString.stringify(resultParams)
+  return queryString.stringify(resultParams, {arrayFormat: 'comma'})
 }

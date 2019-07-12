@@ -76,6 +76,12 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   val processActivityRoute = new ProcessActivityResource(processActivityRepository, processRepository)
   val attachmentsRoute = new AttachmentResources(attachmentService, processRepository)
 
+  def createProcessAndAssertSuccess(processName: ProcessName, processCategory: String, isSubprocess: Boolean): Assertion = {
+    Post(s"/processes/${processName.value}/$processCategory?isSubprocess=$isSubprocess") ~> processesRouteWithAllPermissions ~> check {
+      status shouldBe StatusCodes.Created
+    }
+  }
+
   def saveProcess(processName: ProcessName, process: EspProcess)(testCode: => Assertion): Assertion = {
     Post(s"/processes/${processName.value}/$testCategoryName?isSubprocess=false") ~> processesRouteWithAllPermissions ~> check {
       status shouldBe StatusCodes.Created

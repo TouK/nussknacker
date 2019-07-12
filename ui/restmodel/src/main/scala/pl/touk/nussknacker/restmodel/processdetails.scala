@@ -21,7 +21,8 @@ object processdetails {
                           modificationDate: LocalDateTime,
                           currentDeployment: Option[DeploymentEntry],
                          //TODO: remove
-                          currentlyDeployedAt: List[DeploymentEntry])
+                          currentlyDeployedAt: List[DeploymentEntry],
+                          isSubprocess: Boolean)
 
   // todo: name -> ProcessName
   case class BaseProcessDetails[ProcessShape](id: String,
@@ -30,6 +31,7 @@ object processdetails {
                                               isLatestVersion: Boolean,
                                               description: Option[String],
                                               isArchived:Boolean,
+                                              isSubprocess: Boolean,
                                               processType: ProcessType,
                                               processingType: ProcessingType,
                                               processCategory: String,
@@ -52,7 +54,8 @@ object processdetails {
       isArchived = isArchived,
       modificationDate = modificationDate,
       currentDeployment = currentlyDeployedAt.headOption,
-      currentlyDeployedAt = currentlyDeployedAt
+      currentlyDeployedAt = currentlyDeployedAt,
+      isSubprocess = isSubprocess
     )
 
     // todo: unsafe toLong; we need it for now - we use this class for both backend (id == real id) and frontend (id == name) purposes

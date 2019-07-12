@@ -13,10 +13,10 @@ trait TestPermissions {
   }
 
   val testPermissionEmpty: CategorizedPermission = Map.empty
-  val testPermissionDeploy: CategorizedPermission = testCategoryName -> Permission.Deploy
-  val testPermissionRead: CategorizedPermission = testCategoryName -> Permission.Read
-  val testPermissionWrite: CategorizedPermission = testCategoryName -> Permission.Write
-  val testPermissionAdmin: CategorizedPermission = testCategoryName -> Permission.Admin
+  val testPermissionDeploy: CategorizedPermission = Map(testCategoryName -> Set(Permission.Deploy), secondTestCategoryName -> Set(Permission.Deploy))
+  val testPermissionRead: CategorizedPermission = Map(testCategoryName -> Set(Permission.Read), secondTestCategoryName -> Set(Permission.Read))
+  val testPermissionWrite: CategorizedPermission = Map(testCategoryName -> Set(Permission.Write), secondTestCategoryName -> Set(Permission.Write))
+  val testPermissionAdmin: CategorizedPermission = Map(testCategoryName -> Set(Permission.Admin), secondTestCategoryName -> Set(Permission.Admin))
   val testPermissionAll: CategorizedPermission = testPermissionDeploy |+| testPermissionRead |+| testPermissionWrite |+| testPermissionAdmin
 
 }
@@ -25,5 +25,7 @@ object TestPermissions {
   type CategorizedPermission = Map[String, Set[Permission.Permission]]
 
   val testCategoryName = "TESTCAT"
+
+  val secondTestCategoryName = "TESTCAT2"
 
 }

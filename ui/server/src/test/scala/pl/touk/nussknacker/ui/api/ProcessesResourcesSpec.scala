@@ -26,13 +26,14 @@ import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.Proce
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, BasicProcess, ProcessDetails}
 import pl.touk.nussknacker.ui.util.{FileUploadUtils, MultipartUtils}
 
-import scala.concurrent.Future
+import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
 import scala.language.higherKinds
 import UiCodecs._
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import cats.instances.all._
 import cats.syntax.semigroup._
+import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.restmodel.process.ProcessId
 
 class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers with Inside
@@ -103,7 +104,13 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
     archiveProcess(ProcessName(sampleSubprocess.id))~> routWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
     }
+
     Get("/subProcesses") ~> routWithAllPermissions ~> check {
+      status shouldEqual StatusCodes.OK
+      responseAs[String] should not include sampleSubprocess.id.value
+    }
+
+    Get("/processes?isSubprocess=true&isArchived=false") ~> routWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
       responseAs[String] should not include sampleSubprocess.id.value
     }
@@ -138,10 +145,17 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
     saveProcess(processName, process) {
       status shouldEqual StatusCodes.OK
     }
+
     archiveProcess(processName) ~> routWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
     }
+
     Get("/archive") ~> routWithAllPermissions ~> check {
+      status shouldEqual StatusCodes.OK
+      responseAs[String] should include(processName.value)
+    }
+
+    Get("/processes?isArchived=true") ~> routWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
       responseAs[String] should include(processName.value)
     }
@@ -157,6 +171,38 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
           loadedProcess.processCategory shouldBe newCategory
         }
       }
+    }
+  }
+
+  test("search processes by categories") {
+    val firstProcessor = ProcessName("Processor1")
+    val secondProcessor = ProcessName("Processor2")
+
+    createProcessAndAssertSuccess(firstProcessor, testCategoryName, false)
+    createProcessAndAssertSuccess(secondProcessor, secondTestCategoryName, false)
+
+    Get(s"/processes") ~> routWithAllPermissions ~> check {
+      status shouldEqual StatusCodes.OK
+      val data = responseAs[String].decodeOption[List[BasicProcess]].get
+      data.size shouldBe 2
+    }
+
+    Get(s"/processes?categories=$testCategoryName") ~> routWithAllPermissions ~> check {
+      status shouldEqual StatusCodes.OK
+      val data = responseAs[String].decodeOption[List[BasicProcess]].get
+      data.size shouldBe 1
+    }
+
+    Get(s"/processes?categories=$secondTestCategoryName") ~> routWithAllPermissions ~> check {
+      status shouldEqual StatusCodes.OK
+      val data = responseAs[String].decodeOption[List[BasicProcess]].get
+      data.size shouldBe 1
+    }
+
+    Get(s"/processes?categories=$secondTestCategoryName,$testCategoryName") ~> routWithAllPermissions ~> check {
+      status shouldEqual StatusCodes.OK
+      val data = responseAs[String].decodeOption[List[BasicProcess]].get
+      data.size shouldBe 2
     }
   }
 
@@ -449,6 +495,11 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
         val parsed = UiProcessMarshaller.fromJson(version.json.get)
         parsed.valueOr(_ => sys.error("Invalid process json"))
       }
+  }
+
+  private def makeEmptyProcess(processId: String, processingType: ProcessingType, isSubprocess: Boolean) = {
+    val emptyCanonical = newProcessPreparer.prepareEmptyProcess(processId, processingType, isSubprocess)
+    GraphProcess(UiProcessMarshaller.toJson(emptyCanonical, PrettyParams.nospace))
   }
 
   private def getProcessId(processName: ProcessName): ProcessId =
