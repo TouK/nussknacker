@@ -79,10 +79,9 @@ class Graph extends React.Component {
 	}
 
 	copyNode(event) {
-		if (NodeUtils.noChosenNode(this.props.nodeToDisplay) || !this.props.allModalsClosed) {
-			return
+		if (!NodeUtils.noChosenNode(this.props.nodeToDisplay) && this.props.allModalsClosed) {
+			navigator.clipboard.writeText(JSON.stringify(this.props.nodeToDisplay))
 		}
-		navigator.clipboard.writeText(JSON.stringify(this.props.nodeToDisplay))
 	}
 
 	pasteNode(event) {

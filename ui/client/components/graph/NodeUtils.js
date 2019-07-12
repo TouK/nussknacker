@@ -5,7 +5,7 @@ import ProcessUtils from '../../common/ProcessUtils.js'
 class NodeUtils {
 
   isNode = (obj) => {
-    return !_.isEmpty(obj) && 'id' in obj && 'type' in obj
+    return !_.isEmpty(obj) && _.has(obj, 'id') && _.has(obj, 'type')
   }
 
   nodeType = (node) => {
