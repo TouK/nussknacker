@@ -54,7 +54,9 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
     with AuthorizeProcessDirectives
     with ProcessDirectives {
 
+  import akka.http.scaladsl.unmarshalling.Unmarshaller._
   import UiCodecs._
+
   def route(implicit user: LoggedUser): Route = {
       encodeResponse {
         path("archive") {
@@ -105,14 +107,12 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
             }
           }
         } ~ path("processesDetails") {
-          post {
-            entity(as[List[String]]) { namesToFetch =>
-              complete {
-                validateAll(processRepository.fetchProcessesDetails(namesToFetch.map(ProcessName(_))))
-              }
-            }
-          } ~
           get {
+            parameter('processNames.as(CsvSeq[String])) { namesToFetch =>
+              complete {
+                validateAll(processRepository.fetchProcessesDetails(namesToFetch.map(ProcessName).toList))
+              }
+            } ~
             complete {
               validateAll(processRepository.fetchProcessesDetails())
             }

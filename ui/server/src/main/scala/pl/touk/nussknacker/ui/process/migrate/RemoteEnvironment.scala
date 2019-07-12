@@ -187,10 +187,10 @@ trait StandardRemoteEnvironment extends Argonaut62Support with RemoteEnvironment
                                   (implicit ec: ExecutionContext): EitherT[Future, EspError, List[ValidatedProcessDetails]] = {
     def getMany(processes: List[BasicProcess]) = EitherT {
       invokeJson[List[ValidatedProcessDetails]](
-        HttpMethods.POST,
+        HttpMethods.GET,
         "processesDetails" :: Nil,
-        //TODO: customJson marshaller
-        requestEntity = HttpEntity(ContentTypes.`application/json`, processes.map(_.name).asJson.nospaces))
+        queryString = Some(processes.map(_.name).mkString(","))
+      )
     }
 
     basicProcesses.grouped(config.batchSize)
