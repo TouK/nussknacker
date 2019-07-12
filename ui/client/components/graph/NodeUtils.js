@@ -4,6 +4,10 @@ import ProcessUtils from '../../common/ProcessUtils.js'
 
 class NodeUtils {
 
+  isNode = (obj) => {
+    return !_.isEmpty(obj) && 'id' in obj && 'type' in obj
+  }
+
   nodeType = (node) => {
     return node.type ? node.type : "Properties";
   }
@@ -11,6 +15,10 @@ class NodeUtils {
   nodeIsProperties = (node) => {
     const type = node && this.nodeType(node)
     return type === "Properties";
+  }
+
+  noChosenNode = (node) => {
+    return this.nodeIsProperties(node) || _.isEmpty(node)
   }
 
   nodeIsGroup = (node) => {

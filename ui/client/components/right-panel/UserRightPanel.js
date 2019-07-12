@@ -146,9 +146,9 @@ class UserRightPanel extends Component {
           {name: "properties", className: conf.propertiesBtnClass, onClick: this.showProperties, icon: InlinedSvgs.buttonSettings, visible: !this.props.isSubprocess},
           {name: "duplicate", onClick: this.duplicateNode, icon: 'duplicate.svg',
             //cloning groups can be tricky...
-            disabled: this.noChosenNode(this.props.nodeToDisplay) || NodeUtils.nodeIsGroup(this.props.nodeToDisplay),
+            disabled: NodeUtils.noChosenNode(this.props.nodeToDisplay) || NodeUtils.nodeIsGroup(this.props.nodeToDisplay),
             visible: this.props.capabilities.write},
-          {name: "delete", onClick: this.deleteNode, icon: 'delete.svg', visible: this.props.capabilities.write, disabled: this.noChosenNode(this.props.nodeToDisplay) }
+          {name: "delete", onClick: this.deleteNode, icon: 'delete.svg', visible: this.props.capabilities.write, disabled: NodeUtils.noChosenNode(this.props.nodeToDisplay) }
 
         ]
       },
@@ -219,10 +219,6 @@ class UserRightPanel extends Component {
           <div>{panelButton.name}</div>
         </button>
     )
-  }
-
-  noChosenNode = (node) => {
-    return NodeUtils.nodeIsProperties(node) || _.isEmpty(node)
   }
 
   isRunning = () => this.props.fetchedProcessDetails && (this.props.fetchedProcessDetails.currentlyDeployedAt || []).length > 0

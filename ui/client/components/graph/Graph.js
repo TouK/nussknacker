@@ -18,6 +18,7 @@ import cssVariables from "../../stylesheets/_variables.styl"
 import * as GraphUtils from "./GraphUtils";
 import * as JointJsGraphUtils from "./JointJsGraphUtils";
 import PropTypes from 'prop-types';
+import * as JsonUtils from "../../common/JsonUtils";
 
 class Graph extends React.Component {
 
@@ -62,7 +63,12 @@ class Graph extends React.Component {
 		this.cursorBehaviour();
 		this.highlightNodes(this.props.processToDisplay, this.props.nodeToDisplay);
 
-		window.addEventListener("resize", this.updateDimensions.bind(this));
+		this.updateDimensionsListener = this.updateDimensions.bind(this);
+		this.copyNodeListener = this.copyNode.bind(this);
+		this.pasteNodeListener = this.pasteNode.bind(this);
+		window.addEventListener("resize", this.updateDimensionsListener);
+		window.addEventListener("copy", this.copyNodeListener)
+		window.addEventListener("paste", this.pasteNodeListener)
 	}
 
 	updateDimensions() {
@@ -72,8 +78,30 @@ class Graph extends React.Component {
 		this.processGraphPaper.setDimensions(area.offsetWidth, area.offsetHeight)
 	}
 
+	copyNode(event) {
+		if (NodeUtils.noChosenNode(this.props.nodeToDisplay) || !this.props.allModalsClosed) {
+			return
+		}
+		navigator.clipboard.writeText(JSON.stringify(this.props.nodeToDisplay))
+	}
+
+	pasteNode(event) {
+		if (!this.props.allModalsClosed) {
+			return
+		}
+		const clipboardText = (event.clipboardData || window.clipboardData).getData('text');
+		const node = JsonUtils.tryParseOrNull(clipboardText)
+		if (!this.props.capabilities.write || !NodeUtils.isNode(node) || NodeUtils.nodeIsGroup(node)) {
+			return
+		}
+		const position = {x: 0, y: 0}
+		this.addNode(node, position)
+	}
+
 	componentWillUnmount() {
-		window.removeEventListener("resize", this.updateDimensions.bind(this));
+		window.removeEventListener("resize", this.updateDimensionsListener);
+		window.removeEventListener("copy", this.copyNodeListener)
+		window.removeEventListener("paste", this.pasteNodeListener)
 	}
 
 	componentWillUpdate(nextProps, nextState) {
@@ -565,7 +593,8 @@ function commonState(state) {
 	return {
 		processCategory: state.graphReducer.fetchedProcessDetails.processCategory,
 		loggedUser: state.settings.loggedUser,
-		processDefinitionData: state.settings.processDefinitionData || {}
+		processDefinitionData: state.settings.processDefinitionData || {},
+		allModalsClosed: state.ui.allModalsClosed
 	}
 }
 
