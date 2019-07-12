@@ -167,8 +167,7 @@ class Visualization extends React.Component {
         />
 
         <SpinnerWrapper isReady={!graphNotReady}>
-          <Graph ref={this.graphRef}
-                 capabilities={capabilities}/>
+          <Graph ref={this.graphRef} capabilities={capabilities}/>
         </SpinnerWrapper>
       </div>
     );
