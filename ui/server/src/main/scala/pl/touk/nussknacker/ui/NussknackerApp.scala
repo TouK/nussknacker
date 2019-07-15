@@ -26,7 +26,7 @@ import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.AuthenticatorProvider
 import pl.touk.nussknacker.ui.security.ssl.{HttpsConnectionContextFactory, SslConfigParser}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
-import pl.touk.nussknacker.processCounts.influxdb.{InfluxCountsReporter, InfluxCountsReporterCreator, InfluxReporterConfig}
+import pl.touk.nussknacker.processCounts.influxdb.{InfluxCountsReporter, InfluxCountsReporterCreator, InfluxConfig}
 import pl.touk.nussknacker.restmodel.validation.CustomProcessValidator
 import pl.touk.nussknacker.ui.definition.AdditionalProcessProperty
 import slick.jdbc.{HsqldbProfile, JdbcBackend, PostgresProfile}

@@ -6,11 +6,10 @@ import com.typesafe.scalalogging.LazyLogging
 
 import scala.concurrent.Future
 
-private[influxdb] class InfluxBaseCountsReporter(env: String, config: InfluxReporterConfig) extends LazyLogging {
+private[influxdb] class InfluxBaseCountsReporter(env: String, config: InfluxConfig) extends LazyLogging {
   import scala.concurrent.ExecutionContext.Implicits.global
 
-  //TODO this inlfuxUrl can be fetched using grafana API
-  val influxGenerator = new InfluxGenerator(config.influxUrl, config.user, config.password, config.database, env)
+  val influxGenerator = new InfluxGenerator(config, env)
 
   def fetchBaseProcessCounts(processId: String, dateFrom: Option[LocalDateTime], dateTo: LocalDateTime): Future[ProcessBaseCounts] = {
 
@@ -50,4 +49,3 @@ case class ProcessBaseCounts(all: Long, nodes: Map[String, Long]) {
   }
 }
 
-case class InfluxReporterConfig(influxUrl: String, user: String, password: String, database: String = "esp")
