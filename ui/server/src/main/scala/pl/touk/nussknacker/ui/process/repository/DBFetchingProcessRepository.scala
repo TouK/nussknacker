@@ -100,7 +100,13 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
 
       deployedPerEnv <- latestDeployedProcessesVersionsPerEnvironment.result
 
-      latestProcesses <- processVersionsTable.filter{raw => if (isDeployed.isDefined) deployedPerEnv.map(_._1).contains(raw.id).equals(isDeployed.get):Rep[Boolean] else true:Rep[Boolean]} //TODO: move it to SLICK DSL
+      //TODO: move it to SLICK DSL
+      latestProcesses <- processVersionsTable.filter{
+        raw => (isDeployed match {
+          case None => true
+          case Some(dep) => deployedPerEnv.map(_._1).contains(raw.id).equals(dep)
+        }):Rep[Boolean]
+      }
         .groupBy(_.processId)
         .map { case (n, group) => (n, group.map(_.createDate).max) }
         .join(processVersionsTable)

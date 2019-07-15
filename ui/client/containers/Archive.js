@@ -1,17 +1,17 @@
-import React from "react";
-import {Table, Td, Tr} from "reactable";
-import {connect} from "react-redux";
-import ActionsUtils from "../actions/ActionsUtils";
-import DateUtils from "../common/DateUtils";
-import LoaderSpinner from "../components/Spinner.js";
-
-import "../stylesheets/processes.styl";
+import React from "react"
+import {Table, Td, Tr} from "reactable"
+import {connect} from "react-redux"
+import ActionsUtils from "../actions/ActionsUtils"
+import DateUtils from "../common/DateUtils"
+import LoaderSpinner from "../components/Spinner.js"
+import * as  queryString from 'query-string'
+import "../stylesheets/processes.styl"
 import filterIcon from '../assets/img/search.svg'
 import {withRouter} from 'react-router-dom'
-import {Glyphicon} from 'react-bootstrap';
-import BaseProcesses from "./BaseProcesses";
+import {Glyphicon} from 'react-bootstrap'
+import BaseProcesses from "./BaseProcesses"
 import Select from 'react-select'
-import ProcessUtils from "../common/ProcessUtils";
+import ProcessUtils from "../common/ProcessUtils"
 
 class Archive extends BaseProcesses {
   queries = {
@@ -21,20 +21,12 @@ class Archive extends BaseProcesses {
   constructor(props) {
     super(props)
 
-    const isSubprocess = this.query.isSubprocess != null ? (this.query.isSubprocess === "true") : null
+    const query = queryString.parse(this.props.history.location.search, {parseBooleans: true})
 
-    this.state = {
-      processes: [],
-      showLoader: true,
-      showAddProcess: false,
-      selectedCategories: this.retrieveSelectedCategories(this.query.categories),
-      selectedIsSubrocess: _.find(this.filterIsSubprocessOptions, {value: isSubprocess}),
-      search: this.query.search || "",
-      page: _.parseInt(this.query.page) || 0,
-      sort: {column: this.query.column || "name", direction: _.parseInt(this.query.direction) || 1}
-    };
+    this.state = Object.assign({
+      selectedIsSubrocess: _.find(this.filterIsSubprocessOptions, {value: query.isSubprocess})
+    }, this.prepareState())
   }
-
   reload() {
     this.reloadProcesses(false)
   }

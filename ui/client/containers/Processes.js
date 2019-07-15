@@ -15,7 +15,7 @@ import {withRouter} from 'react-router-dom'
 import ProcessUtils from "../common/ProcessUtils"
 import BaseProcesses from "./BaseProcesses"
 import {Glyphicon} from 'react-bootstrap'
-import * as VisualizationUrl from "../common/VisualizationUrl";
+import * as  queryString from 'query-string'
 
 class Processes extends BaseProcesses {
   queries = {
@@ -26,7 +26,7 @@ class Processes extends BaseProcesses {
   searchItems = ['categories', 'isDeployed']
 
   deployedOptions = [
-    {label: 'Show all processes', value: null},
+    {label: 'Show all processes', value: undefined},
     {label: 'Show only deployed processes', value: true},
     {label: 'Show only not deployed processes', value: false},
   ]
@@ -34,21 +34,13 @@ class Processes extends BaseProcesses {
   constructor(props) {
     super(props)
 
-    const isDeployed = this.query.isDeployed != null ? (this.query.isDeployed === "true") : null
+    const query = queryString.parse(this.props.history.location.search, {parseBooleans: true})
 
-    this.state = {
-      processes: [],
-      statuses: {},
-      selectedCategories: this.retrieveSelectedCategories(this.query.categories),
-      filterCategories: [],
+    this.state = Object.assign({
+      selectedDeployedOption: _.find(this.deployedOptions, {value: query.isDeployed}),
       statusesLoaded: false,
-      search: this.query.search || "",
-      showLoader: true,
-      showAddProcess: false,
-      selectedDeployedOption: _.find(this.deployedOptions, {value: isDeployed}),
-      page: _.parseInt(this.query.page) || 0,
-      sort: {column: this.query.column || "name", direction: _.parseInt(this.query.direction) || 1}
-    }
+      statuses: {},
+    }, this.prepareState())
   }
 
   reload() {

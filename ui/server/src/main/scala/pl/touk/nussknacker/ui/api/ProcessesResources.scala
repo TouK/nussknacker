@@ -90,7 +90,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
               complete {
                 processRepository.fetchProcesses(
                   isSubprocess,
-                  isArchived.orElse(Option(false)),
+                  isArchived.orElse(Option(false)), //Back compability
                   isDeployed,
                   categories,
                   processingTypes
