@@ -65,12 +65,13 @@ class Graph extends React.Component {
 		this.cursorBehaviour();
 		this.highlightNodes(this.props.processToDisplay, this.props.nodeToDisplay);
 
-		this.updateDimensionsListener = this.updateDimensions.bind(this);
-		this.copyNodeListener = this.copyNode.bind(this);
-		this.pasteNodeListener = this.pasteNode.bind(this);
-		window.addEventListener("resize", this.updateDimensionsListener);
-		window.addEventListener("copy", this.copyNodeListener)
-		window.addEventListener("paste", this.pasteNodeListener)
+		this.windowListeners = {
+      resize: this.updateDimensions.bind(this),
+      copy: this.copyNode.bind(this),
+      paste: this.pasteNode.bind(this),
+      cut: this.cutNode.bind(this)
+    }
+    _.forOwn(this.windowListeners, (listener, type) => window.addEventListener(type, listener))
 	}
 
 	updateDimensions() {
@@ -80,7 +81,7 @@ class Graph extends React.Component {
 		this.processGraphPaper.setDimensions(area.offsetWidth, area.offsetHeight)
 	}
 
-	copyNode(event) {
+	copyNode() {
 		if (!NodeUtils.isNotPlainNode(this.props.nodeToDisplay) && this.props.allModalsClosed) {
 			navigator.clipboard.writeText(JSON.stringify(this.props.nodeToDisplay))
 		}
@@ -96,10 +97,15 @@ class Graph extends React.Component {
 		this.addNode(node, position)
 	}
 
+	cutNode() {
+		if (!NodeUtils.isNotPlainNode(this.props.nodeToDisplay)) {
+			this.copyNode()
+			this.props.actions.deleteNode(this.props.nodeToDisplay.id)
+		}
+	}
+
 	componentWillUnmount() {
-		window.removeEventListener("resize", this.updateDimensionsListener);
-		window.removeEventListener("copy", this.copyNodeListener)
-		window.removeEventListener("paste", this.pasteNodeListener)
+		_.forOwn(this.windowListeners, (listener, type) => window.removeEventListener(type, listener))
 	}
 
 	componentWillUpdate(nextProps, nextState) {
