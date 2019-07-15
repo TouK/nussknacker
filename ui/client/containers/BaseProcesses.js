@@ -25,15 +25,10 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
   }
 
   filterIsSubprocessOptions = [
-    {label: 'Show all types processes', value: null},
+    {label: 'Show all types processes', value: undefined},
     {label: 'Show only processes', value: false},
     {label: 'Show only subprocesses', value: true},
   ]
-
-  constructor(props) {
-    super(props)
-    this.query = queryString.parse(this.props.history.location.search, {arrayFormat: 'comma'})
-  }
 
   customSelectTheme(theme) {
     return {
@@ -43,6 +38,31 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
         primary: '#0e9ae0',
       }
     }
+  }
+
+  prepareState(withoutCategories) {
+    const query = queryString.parse(this.props.history.location.search, {
+      arrayFormat: 'comma',
+      parseNumbers: true,
+      parseBooleans: true
+    })
+
+    let state = {
+      processes: [],
+      showLoader: true,
+      showAddProcess: false,
+      search: query.search || "",
+      page: query.page || 0,
+      sort: {column: query.column || "name", direction: query.direction || 1}
+    }
+
+    if (withoutCategories == null) {
+      Object.assign(state, {
+        selectedCategories: this.retrieveSelectedCategories(query.categories)
+      })
+    }
+
+    return state
   }
 
   reloadProcesses(showLoader, search) {

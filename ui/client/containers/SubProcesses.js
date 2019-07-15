@@ -23,17 +23,7 @@ class SubProcesses extends BaseProcesses {
 
   constructor(props) {
     super(props)
-
-    this.state = {
-      processes: [],
-      showLoader: true,
-      showAddProcess: false,
-      selectedCategories: this.retrieveSelectedCategories(this.query.categories),
-      filterCategories: [],
-      search: this.query.search || "",
-      page: _.parseInt(this.query.page) || 0,
-      sort: {column: this.query.column || "name", direction: _.parseInt(this.query.direction) || 1}
-    }
+    this.state = this.prepareState()
   }
 
   reload() {

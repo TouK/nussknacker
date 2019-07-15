@@ -198,25 +198,6 @@ class ProcessUtils {
     }
   }
 
-  search = (processes, objectToFind) => {
-    if (_.isEmpty(objectToFind)) {
-      return []
-    } else {
-      return _.flatMap(processes, (p) => {
-        const nodesWithSearchedObjects = _.filter(_.get(p, 'json.nodes', []), (n) => {
-          const nodeDef = this.findNodeDefinitionId(n)
-          return _.isEqual(nodeDef, objectToFind)
-        })
-        return _.map(nodesWithSearchedObjects, (n) => {
-          return {
-            process: p,
-            node: n
-          }
-        })
-      })
-    }
-  }
-
   prepareFilterCategories = (categories, loggedUser) => _.map((categories || []).filter(c => loggedUser.canRead(c)), (e) => {
     return {
       value: e,

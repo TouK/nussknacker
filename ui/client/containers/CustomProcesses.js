@@ -1,32 +1,27 @@
-import React from "react";
-import {Table, Td, Tr} from "reactable";
+import React from "react"
+import {Table, Td, Tr} from "reactable"
 import {withRouter} from 'react-router-dom'
-import HttpService from "../http/HttpService";
-import DateUtils from "../common/DateUtils";
-import LoaderSpinner from "../components/Spinner.js";
-import HealthCheck from "../components/HealthCheck.js";
-import DialogMessages from "../common/DialogMessages";
-import {Glyphicon} from 'react-bootstrap';
-import "../stylesheets/processes.styl";
+import HttpService from "../http/HttpService"
+import DateUtils from "../common/DateUtils"
+import LoaderSpinner from "../components/Spinner.js"
+import HealthCheck from "../components/HealthCheck.js"
+import DialogMessages from "../common/DialogMessages"
+import {Glyphicon} from 'react-bootstrap'
+import "../stylesheets/processes.styl"
 import filterIcon from '../assets/img/search.svg'
-import {connect} from "react-redux";
-import ActionsUtils from "../actions/ActionsUtils";
-import BaseProcesses from "./BaseProcesses";
+import {connect} from "react-redux"
+import ActionsUtils from "../actions/ActionsUtils"
+import BaseProcesses from "./BaseProcesses"
 
 class CustomProcesses extends BaseProcesses {
 
   constructor(props) {
-    super(props);
+    super(props)
 
-    this.state = {
-      processes: [],
-      statuses: {},
+    this.state = Object.assign({
       statusesLoaded: false,
-      showLoader: true,
-      search: this.query.search || "",
-      page: _.parseInt(this.query.page) || 0,
-      sort: {column: this.query.column || "name", direction: _.parseInt(this.query.direction) || 1}
-    }
+      statuses: {},
+    }, this.prepareState())
   }
 
   reload() {

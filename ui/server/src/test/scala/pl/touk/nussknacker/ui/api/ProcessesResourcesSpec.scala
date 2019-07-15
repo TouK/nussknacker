@@ -135,7 +135,8 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
     archiveProcess(processName) ~> routWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
     }
-    Get("/processes") ~> routWithAllPermissions ~> check {
+
+    Get("/processes?isSubprocess=false") ~> routWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
       responseAs[String] should not include processName.value
     }
