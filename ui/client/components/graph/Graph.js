@@ -18,6 +18,7 @@ import cssVariables from "../../stylesheets/_variables.styl"
 import * as GraphUtils from "./GraphUtils";
 import * as JointJsGraphUtils from "./JointJsGraphUtils";
 import PropTypes from 'prop-types';
+import * as JsonUtils from "../../common/JsonUtils";
 
 class Graph extends React.Component {
 
@@ -48,7 +49,9 @@ class Graph extends React.Component {
 	}
 
 	addNode(node, position) {
-		this.props.actions.nodeAdded(node, position);
+		if (this.props.capabilities.write && NodeUtils.isNode(node) && !NodeUtils.nodeIsGroup(node)) {
+			this.props.actions.nodeAdded(node, position);
+		}
 	}
 
 	componentDidMount() {
@@ -62,7 +65,13 @@ class Graph extends React.Component {
 		this.cursorBehaviour();
 		this.highlightNodes(this.props.processToDisplay, this.props.nodeToDisplay);
 
-		window.addEventListener("resize", this.updateDimensions.bind(this));
+		this.windowListeners = {
+      resize: this.updateDimensions.bind(this),
+      copy: this.copyNode.bind(this),
+      paste: this.pasteNode.bind(this),
+      cut: this.cutNode.bind(this)
+    }
+    _.forOwn(this.windowListeners, (listener, type) => window.addEventListener(type, listener))
 	}
 
 	updateDimensions() {
@@ -72,8 +81,39 @@ class Graph extends React.Component {
 		this.processGraphPaper.setDimensions(area.offsetWidth, area.offsetHeight)
 	}
 
+	canCopyNode() {
+		return !NodeUtils.isNotPlainNode(this.props.nodeToDisplay) && this.props.allModalsClosed
+	}
+
+	canCutNode() {
+		return this.canCopyNode() && this.props.capabilities.write
+	}
+
+	copyNode() {
+		if (this.canCopyNode()) {
+			navigator.clipboard.writeText(JSON.stringify(this.props.nodeToDisplay))
+		}
+	}
+
+	pasteNode(event) {
+		if (!this.props.allModalsClosed) {
+			return
+		}
+		const clipboardText = (event.clipboardData || window.clipboardData).getData('text');
+		const node = JsonUtils.tryParseOrNull(clipboardText)
+		const position = {x: 0, y: 0}
+		this.addNode(node, position)
+	}
+
+	cutNode() {
+		if (this.canCutNode() ) {
+			this.copyNode()
+			this.props.actions.deleteNode(this.props.nodeToDisplay.id)
+		}
+	}
+
 	componentWillUnmount() {
-		window.removeEventListener("resize", this.updateDimensions.bind(this));
+		_.forOwn(this.windowListeners, (listener, type) => window.removeEventListener(type, listener))
 	}
 
 	componentWillUpdate(nextProps, nextState) {
@@ -565,7 +605,8 @@ function commonState(state) {
 	return {
 		processCategory: state.graphReducer.fetchedProcessDetails.processCategory,
 		loggedUser: state.settings.loggedUser,
-		processDefinitionData: state.settings.processDefinitionData || {}
+		processDefinitionData: state.settings.processDefinitionData || {},
+		allModalsClosed: state.ui.allModalsClosed
 	}
 }
 

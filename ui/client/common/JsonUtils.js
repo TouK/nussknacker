@@ -16,6 +16,14 @@ export function tryParse(input){
   }
 }
 
+export function tryParseOrNull(input) {
+  try {
+    return JSON.parse(input)
+  } catch (e) {
+    return null
+  }
+}
+
 //Flattenizer is nice, but unfortunately its array notation is different than Lodash's,
 // so we use regex to make it consistent with Lodash'a array notation here
 export function flattenObj(obj) {

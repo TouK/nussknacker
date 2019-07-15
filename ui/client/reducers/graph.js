@@ -165,7 +165,7 @@ export function reducer(state, action) {
       }
     }
     case "NODE_ADDED": {
-      const newId = createUniqueNodeId(state.processToDisplay.nodes, state.processToDisplay.nodes.length)
+      const newId = createUniqueNodeId(action.node.id, state.processToDisplay.nodes, state.processToDisplay.nodes.length)
       return {
         ...state,
         processToDisplay: {
@@ -308,9 +308,15 @@ function updateAfterNodeDelete(state, idToDelete) {
 }
 
 
-function createUniqueNodeId(nodes, nodeCounter) {
+function createUniqueNodeId(initialId, nodes, nodeCounter) {
+  return initialId && _.every(nodes, n => n.id !== initialId)
+    ? initialId
+    : generateUniqueNodeId(nodes, nodeCounter)
+}
+
+function generateUniqueNodeId(nodes, nodeCounter) {
   var newId = `node${nodeCounter}`
-  return _.some(nodes, (n) => {return n.id == newId}) ? createUniqueNodeId(nodes, nodeCounter + 1) : newId
+  return _.some(nodes, (n) => {return n.id == newId}) ? generateUniqueNodeId(nodes, nodeCounter + 1) : newId
 }
 
 function removeSubprocessVersionForLastSubprocess(processToDisplay, idToDelete) {
