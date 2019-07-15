@@ -81,8 +81,16 @@ class Graph extends React.Component {
 		this.processGraphPaper.setDimensions(area.offsetWidth, area.offsetHeight)
 	}
 
+	canCopyNode() {
+		return !NodeUtils.isNotPlainNode(this.props.nodeToDisplay) && this.props.allModalsClosed
+	}
+
+	canCutNode() {
+		return this.canCopyNode() && this.props.capabilities.write
+	}
+
 	copyNode() {
-		if (!NodeUtils.isNotPlainNode(this.props.nodeToDisplay) && this.props.allModalsClosed) {
+		if (this.canCopyNode()) {
 			navigator.clipboard.writeText(JSON.stringify(this.props.nodeToDisplay))
 		}
 	}
@@ -98,7 +106,7 @@ class Graph extends React.Component {
 	}
 
 	cutNode() {
-		if (!NodeUtils.isNotPlainNode(this.props.nodeToDisplay)) {
+		if (this.canCutNode() ) {
 			this.copyNode()
 			this.props.actions.deleteNode(this.props.nodeToDisplay.id)
 		}
