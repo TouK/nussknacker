@@ -59,13 +59,16 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest
       val settingsJson = responseAs[String].decodeOption[Json].flatMap(_.field("nodesConfig"))
       val settings = settingsJson.flatMap(json => implicitly[DecodeJson[Map[String, SingleNodeConfig]]].decodeJson(json).toOption).get
       val underTest = Map(
+        //docs url comes from reference.conf in managementSample
+        "filter" -> SingleNodeConfig(None, None, Some("https://touk.github.io/nussknacker/"), None),
         "test1" -> SingleNodeConfig(None, Some("Sink.svg"), None, None),
         "enricher" -> SingleNodeConfig(Some(Map("param" -> ParameterConfig(Some("'default value'"), Some(
           FixedExpressionValues(List(
             FixedExpressionValue("'default value'", "first"),
             FixedExpressionValue("'other value'", "second")
           )))
-        ))), Some("Filter.svg"), None, None),
+          //docs url comes from reference.conf in managementSample
+        ))), Some("Filter.svg"), Some("https://touk.github.io/nussknacker/"), None),
         "accountService" -> SingleNodeConfig(None, None, Some("accountServiceDocs"), None)
       )
 
