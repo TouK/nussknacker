@@ -49,7 +49,9 @@ class Graph extends React.Component {
 	}
 
 	addNode(node, position) {
-		this.props.actions.nodeAdded(node, position);
+		if (this.props.capabilities.write && NodeUtils.isNode(node) && !NodeUtils.nodeIsGroup(node)) {
+			this.props.actions.nodeAdded(node, position);
+		}
 	}
 
 	componentDidMount() {
@@ -79,7 +81,7 @@ class Graph extends React.Component {
 	}
 
 	copyNode(event) {
-		if (!NodeUtils.noChosenNode(this.props.nodeToDisplay) && this.props.allModalsClosed) {
+		if (!NodeUtils.isNotPlainNode(this.props.nodeToDisplay) && this.props.allModalsClosed) {
 			navigator.clipboard.writeText(JSON.stringify(this.props.nodeToDisplay))
 		}
 	}
@@ -90,9 +92,6 @@ class Graph extends React.Component {
 		}
 		const clipboardText = (event.clipboardData || window.clipboardData).getData('text');
 		const node = JsonUtils.tryParseOrNull(clipboardText)
-		if (!this.props.capabilities.write || !NodeUtils.isNode(node) || NodeUtils.nodeIsGroup(node)) {
-			return
-		}
 		const position = {x: 0, y: 0}
 		this.addNode(node, position)
 	}

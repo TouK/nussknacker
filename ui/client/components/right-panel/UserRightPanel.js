@@ -146,9 +146,9 @@ class UserRightPanel extends Component {
           {name: "properties", className: conf.propertiesBtnClass, onClick: this.showProperties, icon: InlinedSvgs.buttonSettings, visible: !this.props.isSubprocess},
           {name: "duplicate", onClick: this.duplicateNode, icon: 'duplicate.svg',
             //cloning groups can be tricky...
-            disabled: NodeUtils.noChosenNode(this.props.nodeToDisplay) || NodeUtils.nodeIsGroup(this.props.nodeToDisplay),
+            disabled: NodeUtils.isNotPlainNode(this.props.nodeToDisplay) || NodeUtils.nodeIsGroup(this.props.nodeToDisplay),
             visible: this.props.capabilities.write},
-          {name: "delete", onClick: this.deleteNode, icon: 'delete.svg', visible: this.props.capabilities.write, disabled: NodeUtils.noChosenNode(this.props.nodeToDisplay) }
+          {name: "delete", onClick: this.deleteNode, icon: 'delete.svg', visible: this.props.capabilities.write, disabled: NodeUtils.isNotPlainNode(this.props.nodeToDisplay) }
 
         ]
       },

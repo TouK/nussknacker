@@ -17,7 +17,7 @@ class NodeUtils {
     return type === "Properties";
   }
 
-  noChosenNode = (node) => {
+  isNotPlainNode = (node) => {
     return this.nodeIsProperties(node) || _.isEmpty(node)
   }
 
