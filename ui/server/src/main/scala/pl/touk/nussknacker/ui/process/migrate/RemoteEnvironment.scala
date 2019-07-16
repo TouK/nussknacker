@@ -189,7 +189,7 @@ trait StandardRemoteEnvironment extends Argonaut62Support with RemoteEnvironment
       invokeJson[List[ValidatedProcessDetails]](
         HttpMethods.GET,
         "processesDetails" :: Nil,
-        queryString = Some(processes.map(_.name).mkString(","))
+        queryString = Some("names=" + processes.map(_.name).mkString(","))
       )
     }
 
