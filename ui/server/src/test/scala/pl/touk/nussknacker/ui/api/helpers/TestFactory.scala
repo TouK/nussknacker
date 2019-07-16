@@ -13,7 +13,7 @@ import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
 import pl.touk.nussknacker.ui.db.DbConfig
 import pl.touk.nussknacker.ui.process.repository.{DBFetchingProcessRepository, FetchingProcessRepository, _}
 import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, SubprocessDetails, SubprocessRepository, SubprocessResolver}
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -23,11 +23,14 @@ import scala.concurrent.{ExecutionContext, Future}
 object TestFactory extends TestPermissions{
 
   val testCategoryName: String = TestPermissions.testCategoryName
-
   val secondTestCategoryName: String = TestPermissions.secondTestCategoryName
 
   //FIIXME: remove testCategory dommy implementation
-  val testCategory:CategorizedPermission= Map(testCategoryName -> Set.empty, secondTestCategoryName -> Set.empty)
+  val testCategory:CategorizedPermission= Map(
+    testCategoryName -> Permission.ALL_PERMISSIONS,
+    secondTestCategoryName -> Permission.ALL_PERMISSIONS
+  )
+
   val testEnvironment = "test"
 
   val sampleSubprocessRepository = new SampleSubprocessRepository(Set(ProcessTestData.sampleSubprocess))

@@ -34,6 +34,8 @@ import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import cats.instances.all._
 import cats.syntax.semigroup._
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
+import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.restmodel.process.ProcessId
 
 class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers with Inside
@@ -179,8 +181,8 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
     val firstProcessor = ProcessName("Processor1")
     val secondProcessor = ProcessName("Processor2")
 
-    createProcessAndAssertSuccess(firstProcessor, testCategoryName, false)
-    createProcessAndAssertSuccess(secondProcessor, secondTestCategoryName, false)
+    createProcess(firstProcessor, testCategoryName, false)
+    createProcess(secondProcessor, secondTestCategoryName, false)
 
     Get(s"/processes") ~> routWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
@@ -201,6 +203,34 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
     }
 
     Get(s"/processes?categories=$secondTestCategoryName,$testCategoryName") ~> routWithAllPermissions ~> check {
+      status shouldEqual StatusCodes.OK
+      val data = responseAs[String].decodeOption[List[BasicProcess]].get
+      data.size shouldBe 2
+    }
+  }
+
+  test("search processes by isDeployed") {
+    val firstProcessor = ProcessName("Processor1")
+    val secondProcessor = ProcessName("Processor2")
+    val thirdProcessor = ProcessName("Processor3")
+
+    createProcess(firstProcessor, testCategoryName, false)
+    createProcess(secondProcessor, testCategoryName, false)
+    createDeployedProcess(thirdProcessor, testCategoryName, false)
+
+    Get(s"/processes") ~> routWithAllPermissions ~> check {
+      status shouldEqual StatusCodes.OK
+      val data = responseAs[String].decodeOption[List[BasicProcess]].get
+      data.size shouldBe 3
+    }
+
+    Get(s"/processes?isDeployed=true") ~> routWithAllPermissions ~> check {
+      status shouldEqual StatusCodes.OK
+      val data = responseAs[String].decodeOption[List[BasicProcess]].get
+      data.size shouldBe 1
+    }
+
+    Get(s"/processes?isDeployed=false") ~> routWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
       val data = responseAs[String].decodeOption[List[BasicProcess]].get
       data.size shouldBe 2
