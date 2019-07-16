@@ -12,6 +12,7 @@ const emptyGraphState = {
   layout: [],
   testCapabilities: {},
   groupingState: null,
+  selectionState: [],
   processCounts: {},
   testResults: null,
   businessView: false
@@ -120,21 +121,25 @@ export function reducer(state, action) {
         nodeToDisplay: action.after,
       }
     }
-    case "DELETE_NODE": {
-      var idToDelete = action.id
-      const stateAfterNodeDelete = updateAfterNodeDelete(state, idToDelete)
-      const newSubprocessVersions = removeSubprocessVersionForLastSubprocess(stateAfterNodeDelete.processToDisplay, idToDelete)
-      const processToDisplay = GraphUtils.deleteNode(stateAfterNodeDelete.processToDisplay, idToDelete);
-      return {
-        ...stateAfterNodeDelete,
-        processToDisplay: {
-          ...processToDisplay,
-          properties: {
-            ...processToDisplay.properties,
-            subprocessVersions: newSubprocessVersions
+    case "DELETE_NODES": {
+      const stateAfterDelete =_.reduce(action.ids, (state, idToDelete) => {
+        const stateAfterNodeDelete = updateAfterNodeDelete(state, idToDelete)
+        const newSubprocessVersions = removeSubprocessVersionForLastSubprocess(stateAfterNodeDelete.processToDisplay, idToDelete)
+        const processToDisplay = GraphUtils.deleteNode(stateAfterNodeDelete.processToDisplay, idToDelete)
+        return {
+          ...stateAfterNodeDelete,
+          processToDisplay: {
+            ...processToDisplay,
+            properties: {
+              ...processToDisplay.properties,
+              subprocessVersions: newSubprocessVersions
+            }
           }
-        },
-        nodeToDisplay: processToDisplay.properties,
+        }
+      }, state)
+      return {
+        ...stateAfterDelete,
+        nodeToDisplay: stateAfterDelete.processToDisplay.properties
       }
     }
     case "URL_CHANGED": {
@@ -165,18 +170,13 @@ export function reducer(state, action) {
       }
     }
     case "NODE_ADDED": {
-      const newId = createUniqueNodeId(action.node.id, state.processToDisplay.nodes, state.processToDisplay.nodes.length)
-      return {
-        ...state,
-        processToDisplay: {
-          ...state.processToDisplay,
-          nodes: _.concat(state.processToDisplay.nodes, {
-            ... action.node,
-            id: newId
-          })
-        },
-        layout: _.concat(state.layout, {id: newId, position: action.position})
-      }
+      return addNodes(state, [{
+        node: action.node,
+        position: action.position
+      }])
+    }
+    case "NODES_ADDED": {
+      return addNodes(state, action.nodesWithPositions)
     }
     case "VALIDATION_RESULT": {
       return {
@@ -259,6 +259,19 @@ export function reducer(state, action) {
         layout: updateLayoutAfterNodeIdChange(state.layout, action.oldGroupId, action.newGroup.id)
       }
     }
+    case "EXPAND_SELECTION": {
+      return {
+        ...state,
+        selectionState: _.concat(state.selectionState, action.nodeId)
+      }
+    }
+    case "RESET_SELECTION": {
+      const selectionState = action.nodeId ? [action.nodeId] : []
+      return {
+        ...state,
+        selectionState
+      }
+    }
     case "BUSINESS_VIEW_CHANGED": {
       return {
         ...state,
@@ -307,16 +320,15 @@ function updateAfterNodeDelete(state, idToDelete) {
   }
 }
 
-
-function createUniqueNodeId(initialId, nodes, nodeCounter) {
-  return initialId && _.every(nodes, n => n.id !== initialId)
+function createUniqueNodeId(initialId, usedIds, nodeCounter) {
+  return initialId && !_.includes(usedIds, initialId)
     ? initialId
-    : generateUniqueNodeId(nodes, nodeCounter)
+    : generateUniqueNodeId(usedIds, nodeCounter)
 }
 
-function generateUniqueNodeId(nodes, nodeCounter) {
-  var newId = `node${nodeCounter}`
-  return _.some(nodes, (n) => {return n.id == newId}) ? generateUniqueNodeId(nodes, nodeCounter + 1) : newId
+function generateUniqueNodeId(usedIds, nodeCounter) {
+  const newId = `node${nodeCounter}`;
+  return _.includes(usedIds, newId) ? generateUniqueNodeId(usedIds, nodeCounter + 1) : newId
 }
 
 function removeSubprocessVersionForLastSubprocess(processToDisplay, idToDelete) {
@@ -329,5 +341,31 @@ function removeSubprocessVersionForLastSubprocess(processToDisplay, idToDelete) 
     return isLastOne ? _.omit(subprocessVersions, subprocessId) : subprocessVersions
   } else {
     return subprocessVersions
+  }
+}
+
+function addNodes(state, nodesWithPositions) {
+  const alreadyUsedIds = state.processToDisplay.nodes.map(node => node.id)
+  const initialIds = nodesWithPositions.map(nodeWithPosition => nodeWithPosition.node.id)
+  const uniqueIds = _.reduce(initialIds, (uniqueIds, initialId) => {
+    const reservedIds = alreadyUsedIds.concat(uniqueIds)
+    const uniqueId = createUniqueNodeId(initialId, reservedIds, reservedIds.length)
+    return uniqueIds.concat(uniqueId)
+  }, [])
+
+  const updatedNodes = _.zipWith(nodesWithPositions, uniqueIds, (nodeWithPosition, uniqueId) => {
+    return {...nodeWithPosition.node, id: uniqueId}
+  })
+  const updatedLayout = _.zipWith(nodesWithPositions, uniqueIds, (nodeWithPosition, uniqueId) => {
+    return {id: uniqueId, position: nodeWithPosition.position}
+  })
+
+  return {
+    ...state,
+    processToDisplay: {
+      ...state.processToDisplay,
+      nodes: state.processToDisplay.nodes.concat(updatedNodes)
+    },
+    layout: state.layout.concat(updatedLayout)
   }
 }

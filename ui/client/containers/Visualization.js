@@ -80,8 +80,8 @@ class Visualization extends React.Component {
         this.redo()
       }
 
-      if (event.key === 'Delete' && this.props.currentNodeId && this.props.canDelete) {
-        this.deleteNode(this.props.currentNodeId)
+      if (event.key === 'Delete' && !_.isEmpty(this.props.selectionState) && this.props.canDelete) {
+        this.deleteSelection()
       }
     }
   }
@@ -121,8 +121,8 @@ class Visualization extends React.Component {
     }
   }
 
-  deleteNode(id) {
-    this.props.actions.deleteNode(id)
+  deleteSelection() {
+    this.props.actions.deleteNodes(this.props.selectionState)
   }
 
   render() {

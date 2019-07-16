@@ -63,6 +63,80 @@ describe("Reducer suite", () => {
 
 })
 
+describe("Nodes added", () => {
+
+  let uniqueId
+  let node
+  let position
+
+  beforeEach(() => {
+    uniqueId = "unique id"
+    node = {
+      "type": "Enricher",
+      "id": uniqueId,
+      "service": {
+        "id": "paramService",
+        "parameters": [
+          {
+            "name": "param",
+            "expression": {
+              "language": "spel",
+              "expression": "'3434'"
+            }
+          }
+        ]
+      },
+      "output": "output"
+    }
+    position = {x: 10, y: 20}
+  })
+
+  it("should add single node with unique id", () => {
+    const result = reduceAll([
+      {
+        type: "NODE_ADDED",
+        node,
+        position
+      }
+    ])
+
+    expect(NodeUtils.getNodeById(uniqueId, result.graphReducer.processToDisplay)).toEqual(node)
+    expect(_.find(result.graphReducer.layout, n => n.id === uniqueId).position).toEqual(position)
+  })
+
+  it("should add single node with duplicated id", () => {
+    const result = reduceAll([
+      {
+        type: "NODE_ADDED",
+        node: {...node, id: "node0"},
+        position
+      }
+    ])
+
+    expect(NodeUtils.getNodeById("node4", result.graphReducer.processToDisplay)).toEqual({...node, id: "node4"})
+    expect(_.find(result.graphReducer.layout, n => n.id).position).toEqual(position)
+  })
+
+  it("should add multiple nodes with duplicated ids", () => {
+    const result = reduceAll([{
+      type: "NODES_ADDED",
+      nodesWithPositions: [
+        {
+          node: {...node, id: "node0"},
+          position
+        },
+        {
+          node: {...node, id: "node0"},
+          position
+        }
+      ]
+    }])
+
+    expect(NodeUtils.getNodeById("node4", result.graphReducer.processToDisplay)).toEqual({...node, id: "node4"})
+    expect(NodeUtils.getNodeById("node5", result.graphReducer.processToDisplay)).toEqual({...node, id: "node5"})
+  })
+})
+
 const reduceAll = (actions) => _.reduce(actions, (state, action) => defaultReducer(state, action), baseReducerWithProcess())
 
 
