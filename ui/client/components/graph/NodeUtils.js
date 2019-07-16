@@ -17,8 +17,8 @@ class NodeUtils {
     return type === "Properties";
   }
 
-  isNotPlainNode = (node) => {
-    return this.nodeIsProperties(node) || _.isEmpty(node)
+  isPlainNode = (node) => {
+    return !_.isEmpty(node) && !this.nodeIsProperties(node)
   }
 
   nodeIsGroup = (node) => {
@@ -63,6 +63,15 @@ class NodeUtils {
   getNodeById = (nodeId, process) => this.nodesFromProcess(process).find(n => n.id === nodeId)
 
   getEdgeById = (edgeId, process) => this.edgesFromProcess(process).find(e => this.edgeId(e) === edgeId)
+
+  getAllNodesById = (nodeIds, process) => this.nodesFromProcess(process).filter(node => _.includes(nodeIds, node.id))
+
+  containsOnlyPlainNodesWithoutGroups = (nodeIds, process) => {
+    return _.every(nodeIds, nodeId => {
+      const node = this.getNodeById(nodeId, process)
+      return this.isPlainNode(node) && !this.nodeIsGroup(node)
+    })
+  }
 
   getIncomingEdges = (nodeId, process) => this.edgesFromProcess(process).filter(e => e.to === nodeId)
 

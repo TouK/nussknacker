@@ -185,10 +185,10 @@ export function closeModals() {
   };
 }
 
-export function deleteNode(id) {
+export function deleteNodes(ids) {
   return runSyncActionsThenValidate(state => [{
-    type: "DELETE_NODE",
-    id: id
+    type: "DELETE_NODES",
+    ids: ids
   }])
 }
 
@@ -210,6 +210,14 @@ export function addToGroup(nodeId) {
 
 export function ungroup(node) {
   return { type: "UNGROUP", groupToRemove: node.id}
+}
+
+export function expandSelection(nodeId) {
+  return { type: "EXPAND_SELECTION", nodeId }
+}
+
+export function resetSelection(nodeId) {
+  return { type: "RESET_SELECTION", nodeId }
 }
 
 //TODO: is it ok how we process validations here? first we *simulate* reducer on
@@ -288,13 +296,12 @@ export function editGroup(process, oldGroupId, newGroup) {
 
 }
 
-export function nodesConnected(fromNode, toNode, processDefinitionData) {
+export function nodesConnected(fromNode, toNode) {
   return runSyncActionsThenValidate(state => [
     {
         type: "NODES_CONNECTED",
         fromNode: fromNode,
-        toNode: toNode,
-        processDefinitionData: state.settings.processDefinitionData
+        toNode: toNode
     }
   ]);
 }
@@ -344,6 +351,13 @@ export function nodeAdded(node, position) {
     type: "NODE_ADDED",
     node: node,
     position: position
+  }
+}
+
+export function nodesAdded(nodesWithPositions) {
+  return {
+    type: "NODES_ADDED",
+    nodesWithPositions
   }
 }
 

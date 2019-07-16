@@ -144,11 +144,13 @@ class UserRightPanel extends Component {
           {name: "redo", visible: this.props.capabilities.write, onClick: this.redo, icon: InlinedSvgs.buttonRedo},
           {name: "align", onClick: this.props.graphLayoutFunction, icon: InlinedSvgs.buttonAlign, visible: this.props.capabilities.write},
           {name: "properties", className: conf.propertiesBtnClass, onClick: this.showProperties, icon: InlinedSvgs.buttonSettings, visible: !this.props.isSubprocess},
-          {name: "duplicate", onClick: this.duplicateNode, icon: 'duplicate.svg',
+          {name: "duplicate", onClick: this.duplicateSelection, icon: 'duplicate.svg',
             //cloning groups can be tricky...
-            disabled: NodeUtils.isNotPlainNode(this.props.nodeToDisplay) || NodeUtils.nodeIsGroup(this.props.nodeToDisplay),
+            disabled: !NodeUtils.isPlainNode(this.props.nodeToDisplay) || NodeUtils.nodeIsGroup(this.props.nodeToDisplay),
             visible: this.props.capabilities.write},
-          {name: "delete", onClick: this.deleteNode, icon: 'delete.svg', visible: this.props.capabilities.write, disabled: NodeUtils.isNotPlainNode(this.props.nodeToDisplay) }
+          {name: "delete", onClick: this.deleteSelection, icon: 'delete.svg',
+            visible: this.props.capabilities.write,
+            disabled: !NodeUtils.isPlainNode(this.props.nodeToDisplay) || _.isEmpty(this.props.selectionState)}
 
         ]
       },
@@ -324,14 +326,19 @@ class UserRightPanel extends Component {
     }
   }
 
-  duplicateNode = () => {
-    const duplicatedNodePosition = this.props.layout.find(node => node.id === this.props.nodeToDisplay.id) || {position: {x: 0, y: 0}}
-    const visiblePosition = {x: duplicatedNodePosition.position.x -200, y: duplicatedNodePosition.position.y}
-    this.props.actions.nodeAdded(this.props.nodeToDisplay, visiblePosition)
+  duplicateSelection = () => {
+    const duplicateNode = nodeId => {
+      const duplicatedNodePosition = this.props.layout.find(node => node.id === nodeId) || {position: {x: 0, y: 0}}
+      const position = {x: duplicatedNodePosition.position.x -200, y: duplicatedNodePosition.position.y}
+      const node = NodeUtils.getNodeById(nodeId, this.props.processToDisplay)
+      return {node, position}
+    }
+    const duplicatedNodesWithPositions = this.props.selectionState.map(duplicateNode)
+    this.props.actions.nodesAdded(duplicatedNodesWithPositions)
   }
 
-  deleteNode = () => {
-    this.props.actions.deleteNode(this.props.nodeToDisplay.id)
+  deleteSelection = () => {
+    this.props.actions.deleteNodes(this.props.selectionState)
   }
 
   ungroup = () => {
@@ -360,6 +367,7 @@ function mapState(state) {
     processIsLatestVersion: _.get(fetchedProcessDetails, 'isLatestVersion', false),
     nodeToDisplay: state.graphReducer.nodeToDisplay,
     groupingState: state.graphReducer.groupingState,
+    selectionState: state.graphReducer.selectionState,
     featuresSettings: state.settings.featuresSettings,
     isSubprocess: _.get(state.graphReducer.processToDisplay, "properties.isSubprocess", false),
     businessView: state.graphReducer.businessView

@@ -43,16 +43,17 @@ class Graph extends React.Component {
 		})
 
 		this.espGraphRef = React.createRef()
+
+		this.windowListeners = {
+			resize: this.updateDimensions.bind(this),
+			copy: this.copySelection.bind(this),
+			paste: this.pasteSelection.bind(this),
+			cut: this.cutSelection.bind(this)
+		}
 	}
 
 	getEspGraphRef = () => {
 		return this.espGraphRef.current
-	}
-
-	addNode(node, position) {
-		if (this.props.capabilities.write && NodeUtils.isNode(node) && !NodeUtils.nodeIsGroup(node)) {
-			this.props.actions.nodeAdded(node, position);
-		}
 	}
 
 	componentDidMount() {
@@ -65,13 +66,6 @@ class Graph extends React.Component {
 		this.hooverHandling();
 		this.cursorBehaviour();
 		this.highlightNodes(this.props.processToDisplay, this.props.nodeToDisplay);
-
-		this.windowListeners = {
-      resize: this.updateDimensions.bind(this),
-      copy: this.copyNode.bind(this),
-      paste: this.pasteNode.bind(this),
-      cut: this.cutNode.bind(this)
-    }
     _.forOwn(this.windowListeners, (listener, type) => window.addEventListener(type, listener))
 	}
 
@@ -82,36 +76,59 @@ class Graph extends React.Component {
 		this.processGraphPaper.setDimensions(area.offsetWidth, area.offsetHeight)
 	}
 
-	canCopyNode() {
-		return !NodeUtils.isNotPlainNode(this.props.nodeToDisplay) && this.props.allModalsClosed
+	canAddNode(node) {
+		return this.props.capabilities.write && NodeUtils.isNode(node) && !NodeUtils.nodeIsGroup(node)
 	}
 
-	canCutNode() {
-		return this.canCopyNode() && this.props.capabilities.write
-	}
-
-	copyNode(event) {
-		const copyNodeElementId = 'copy-node'
-		if (event.target && event.target.id !== copyNodeElementId && this.canCopyNode()) {
-			const nodeString = JSON.stringify(this.props.nodeToDisplay);
-			ClipboardUtils.writeText(nodeString, copyNodeElementId)
+	addNode(node, position) {
+		if (this.canAddNode(node)) {
+			this.props.actions.nodeAdded(node, position);
 		}
 	}
 
-	pasteNode(event) {
+	canCopySelection() {
+		return this.props.allModalsClosed &&
+			!_.isEmpty(this.props.selectionState) &&
+			NodeUtils.containsOnlyPlainNodesWithoutGroups(this.props.selectionState, this.props.processToDisplay)
+	}
+
+	canCutSelection() {
+		return this.canCopySelection() && this.props.capabilities.write
+	}
+
+	copySelection(event) {
+		const copyNodeElementId = 'copy-node'
+		if (event.target && event.target.id !== copyNodeElementId && this.canCopySelection()) {
+			const selectedNodes = NodeUtils.getAllNodesById(this.props.selectionState, this.props.processToDisplay)
+			ClipboardUtils.writeText(JSON.stringify(selectedNodes), copyNodeElementId)
+		}
+	}
+
+	pasteSelection(event) {
 		if (!this.props.allModalsClosed) {
 			return
 		}
 		const clipboardText = ClipboardUtils.readText(event);
-		const node = JsonUtils.tryParseOrNull(clipboardText)
-		const position = {x: 0, y: 0}
-		this.addNode(node, position)
+		const nodes = JsonUtils.tryParseOrNull(clipboardText)
+		if (!_.isArray(nodes)) {
+			return
+		}
+
+		const validNodes = nodes.filter(node => this.canAddNode(node))
+		const positions = validNodes.map((node, ix) => {
+			return {x: 300, y: ix * 100}
+		})
+		const nodesWithPositions = _.zipWith(validNodes, positions, (node, position) => {
+			return {node, position}
+		})
+		this.props.actions.nodesAdded(nodesWithPositions)
 	}
 
-	cutNode(event) {
-		if (this.canCutNode() ) {
-			this.copyNode(event)
-			this.props.actions.deleteNode(this.props.nodeToDisplay.id)
+	cutSelection(event) {
+		if (this.canCutSelection() ) {
+			this.copySelection(event)
+			const nodeIds = NodeUtils.getAllNodesById(this.props.selectionState, this.props.processToDisplay).map(node => node.id)
+			this.props.actions.deleteNodes(nodeIds)
 		}
 	}
 
@@ -124,7 +141,8 @@ class Graph extends React.Component {
 			_.isEqual(this.props.layout, nextProps.layout) &&
 			_.isEqual(this.props.processCounts, nextProps.processCounts) &&
 			_.isEqual(this.props.groupingState, nextProps.groupingState) &&
-			_.isEqual(this.props.expandedGroups, nextProps.expandedGroups)
+			_.isEqual(this.props.expandedGroups, nextProps.expandedGroups) &&
+			_.isEqual(this.props.selectionState, nextProps.selectionState)
 
 		if (!processNotChanged) {
 			this.drawGraph(nextProps.processToDisplay, nextProps.layout, nextProps.processCounts, false, nextProps.expandedGroups)
@@ -132,7 +150,7 @@ class Graph extends React.Component {
 		
 		//when e.g. layout changed we have to remember to highlight nodes
 		if (!processNotChanged || !_.isEqual(this.props.nodeToDisplay, nextProps.nodeToDisplay)) {
-			this.highlightNodes(nextProps.processToDisplay, nextProps.nodeToDisplay, nextProps.groupingState);
+			this.highlightNodes(nextProps.processToDisplay, nextProps.nodeToDisplay, nextProps.groupingState, nextProps.selectionState);
 		}
 	}
 
@@ -350,7 +368,7 @@ class Graph extends React.Component {
 		this.setState({exported: SVGUtils.toXml(svg)})
 	}
 
-	highlightNodes = (data, nodeToDisplay, groupingState) => {
+	highlightNodes = (data, nodeToDisplay, groupingState, selectionState) => {
 		this.graph.getCells().forEach(cell => {
 			this.unhighlightCell(cell, 'node-validation-error')
 			this.unhighlightCell(cell, 'node-focused')
@@ -366,7 +384,8 @@ class Graph extends React.Component {
 			this.highlightNode(nodeToDisplay.id, 'node-focused')
 		}
 
-		(groupingState || []).forEach(id => this.highlightNode(id, 'node-grouping'))
+		(groupingState || []).forEach(id => this.highlightNode(id, 'node-grouping'));
+		(selectionState || []).forEach(id => this.highlightNode(id, 'node-focused'));
 	}
 
 	highlightCell(cell, className) {
@@ -454,8 +473,16 @@ class Graph extends React.Component {
 			this.processGraphPaper.on('cell:pointerclick', (cellView, evt, x, y) => {
 
 				const nodeData = cellView.model.attributes.nodeData
-				if (nodeData) {
-					this.props.actions.displayNodeDetails(cellView.model.attributes.nodeData)
+				if (!nodeData) {
+					return
+				}
+
+				this.props.actions.displayNodeDetails(cellView.model.attributes.nodeData)
+
+				if (evt.ctrlKey) {
+					this.props.actions.expandSelection(nodeData.id)
+				} else {
+					this.props.actions.resetSelection(nodeData.id)
 				}
 
 				//TODO: is this the best place for this? if no, where should it be?
@@ -473,6 +500,7 @@ class Graph extends React.Component {
 		this.processGraphPaper.on('blank:pointerdown', () => {
 			if (this.props.fetchedProcessDetails != null) {
 				this.props.actions.displayNodeDetails(this.props.fetchedProcessDetails.json.properties)
+				this.props.actions.resetSelection()
 			}
 		})
 	}
@@ -609,6 +637,7 @@ function commonState(state) {
 		processCategory: state.graphReducer.fetchedProcessDetails.processCategory,
 		loggedUser: state.settings.loggedUser,
 		processDefinitionData: state.settings.processDefinitionData || {},
+		selectionState: state.graphReducer.selectionState,
 		allModalsClosed: state.ui.allModalsClosed
 	}
 }
