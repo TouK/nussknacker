@@ -19,6 +19,7 @@ import * as GraphUtils from "./GraphUtils";
 import * as JointJsGraphUtils from "./JointJsGraphUtils";
 import PropTypes from 'prop-types';
 import * as JsonUtils from "../../common/JsonUtils";
+import ClipboardUtils from "../../common/ClipboardUtils";
 
 class Graph extends React.Component {
 
@@ -89,9 +90,11 @@ class Graph extends React.Component {
 		return this.canCopyNode() && this.props.capabilities.write
 	}
 
-	copyNode() {
-		if (this.canCopyNode()) {
-			navigator.clipboard.writeText(JSON.stringify(this.props.nodeToDisplay))
+	copyNode(event) {
+		const copyNodeElementId = 'copy-node'
+		if (event.target && event.target.id !== copyNodeElementId && this.canCopyNode()) {
+			const nodeString = JSON.stringify(this.props.nodeToDisplay);
+			ClipboardUtils.writeText(nodeString, copyNodeElementId)
 		}
 	}
 
@@ -99,15 +102,15 @@ class Graph extends React.Component {
 		if (!this.props.allModalsClosed) {
 			return
 		}
-		const clipboardText = (event.clipboardData || window.clipboardData).getData('text');
+		const clipboardText = ClipboardUtils.readText(event);
 		const node = JsonUtils.tryParseOrNull(clipboardText)
 		const position = {x: 0, y: 0}
 		this.addNode(node, position)
 	}
 
-	cutNode() {
+	cutNode(event) {
 		if (this.canCutNode() ) {
-			this.copyNode()
+			this.copyNode(event)
 			this.props.actions.deleteNode(this.props.nodeToDisplay.id)
 		}
 	}
