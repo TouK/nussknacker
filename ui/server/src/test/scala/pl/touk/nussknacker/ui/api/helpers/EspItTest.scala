@@ -28,10 +28,7 @@ import pl.touk.nussknacker.ui.process.marshall.UiProcessMarshaller
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
-
-trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions { self: ScalatestRouteTest with Suite with BeforeAndAfterEach with BeforeAndAfterAll with WithHsqlDbTesting with Matchers with ScalaFutures =>
+trait EspItTest extends LazyLogging with ScalaFutures with WithHsqlDbTesting with TestPermissions { self: ScalatestRouteTest with Suite with BeforeAndAfterEach with Matchers =>
 
   val env = "test"
   val attachmentsPath = "/tmp/attachments" + System.currentTimeMillis()
