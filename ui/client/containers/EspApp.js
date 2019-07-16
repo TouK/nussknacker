@@ -26,14 +26,25 @@ import '../stylesheets/main.styl'
 import '../app.styl'
 
 
+var ReactDOM = (typeof window !== "undefined" ? window['ReactDOM'] : typeof global !== "undefined" ? global['ReactDOM'] : null);
+
 class EspApp extends React.Component {
 
   componentDidMount() {
+    //TODO: how to make it??
+    window.React = React;
     this.mountedHistory = this.props.history.listen((location, action) => {
       if (action === "PUSH") {
         this.props.actions.urlChange(location)
       }
     })
+
+
+    //TODO: list of plugin files
+    const script = document.createElement("script");
+    script.src = "/static/customField.js";
+    script.async = true;
+    document.body.appendChild(script);
   }
 
   componentWillUnmount() {

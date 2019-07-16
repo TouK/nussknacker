@@ -632,9 +632,9 @@ lazy val queryableState = (project in engine("queryableState")).
 lazy val buildUi = taskKey[Unit]("builds ui")
 lazy val testUi = taskKey[Unit]("tests ui")
 
-def runNpm(command: String, errorMessage: String): Unit = {
+def runNpm(command: String, errorMessage: String, pathString: String = "ui/client"): Unit = {
   import sys.process.Process
-  val path = Path.apply("ui/client").asFile
+  val path = Path.apply(pathString).asFile
   println("Using path: " + path.getAbsolutePath)
   val result = Process(s"npm $command", path)!;
   if (result != 0) throw new RuntimeException(errorMessage)
@@ -649,6 +649,19 @@ lazy val restmodel = (project in file("ui/restmodel"))
     )
   )
   .dependsOn(interpreter)
+
+lazy val pluginSample = (project in file("ui/pluginSample"))
+  .settings(commonSettings)
+  .settings(
+    name := "nussknacker-ui-plugin-sample",
+    buildUi := {
+      runNpm("run-script build", "Client build failed", "ui/pluginSample")
+    },
+    compile in Compile := (compile in Compile).dependsOn(
+      buildUi
+    ).value,
+  )
+
 
 lazy val ui = (project in file("ui/server"))
   .configs(SlowTests)
@@ -709,7 +722,7 @@ lazy val ui = (project in file("ui/server"))
     }
   )
   .settings(addArtifact(artifact in (Compile, assembly), assembly))
-  .dependsOn(management, interpreter, engineStandalone, processReports, securityApi, restmodel)
+  .dependsOn(management, interpreter, engineStandalone, processReports, securityApi, restmodel, pluginSample)
 
 addCommandAlias("assemblySamples", ";managementSample/assembly;standaloneSample/assembly")
 

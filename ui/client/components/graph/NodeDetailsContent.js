@@ -449,13 +449,24 @@ export class NodeDetailsContent extends React.Component {
       <div className="node-row">
         {this.renderFieldLabel(fieldLabel)}
         <div className={nodeValueClass}>
-          <ExpressionSuggest fieldName={fieldName} inputProps={{
-            rows: 1, cols: 50, className: "node-input", value: expressionObj.expression, language: expressionObj.language,
-            onValueChange: ((newValue) => this.setNodeDataAt(exprTextPath, newValue)), readOnly: false}}/>
+          {this.createExpressionComponent((newValue) => this.setNodeDataAt(exprTextPath, newValue), fieldName, expressionObj)}
         </div>
       </div>)
     )
   };
+
+  createExpressionComponent = (onValueChange, fieldName, expressionObj) => {
+
+    //here there will just get appropriate object by field/nodetype
+    if (fieldName.startsWith("id") && window['customField123']) {
+      return window['customField123'](onValueChange, fieldName, expressionObj)
+    } else {
+      return (<ExpressionSuggest fieldName={fieldName} inputProps={{
+        rows: 1, cols: 50, className: "node-input", value: expressionObj.expression, language: expressionObj.language,
+        onValueChange: onValueChange, readOnly: false}}/>);
+    }
+  }
+
 
   isMarked = (path) => {
     return _.includes(this.props.pathsToMark, path)
