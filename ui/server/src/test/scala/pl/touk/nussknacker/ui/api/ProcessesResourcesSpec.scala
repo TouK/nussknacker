@@ -227,12 +227,14 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
     Get(s"/processes?isDeployed=true") ~> routWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
       val data = responseAs[String].decodeOption[List[BasicProcess]].get
+      data.map{proc => proc.name}.contains(thirdProcessor.value) shouldBe true
       data.size shouldBe 1
     }
 
     Get(s"/processes?isDeployed=false") ~> routWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
       val data = responseAs[String].decodeOption[List[BasicProcess]].get
+      data.map{proc => proc.name}.contains(thirdProcessor.value) shouldBe false
       data.size shouldBe 2
     }
   }
