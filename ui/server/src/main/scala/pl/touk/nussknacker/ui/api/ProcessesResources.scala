@@ -108,7 +108,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
           }
         } ~ path("processesDetails") {
           get {
-            parameter('processNames.as(CsvSeq[String])) { namesToFetch =>
+            parameter('names.as(CsvSeq[String])) { namesToFetch =>
               complete {
                 validateAll(processRepository.fetchProcessesDetails(namesToFetch.map(ProcessName).toList))
               }
