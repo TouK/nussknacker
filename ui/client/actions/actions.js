@@ -301,7 +301,8 @@ export function nodesConnected(fromNode, toNode) {
     {
         type: "NODES_CONNECTED",
         fromNode: fromNode,
-        toNode: toNode
+        toNode: toNode,
+        processDefinitionData: state.settings.processDefinitionData
     }
   ]);
 }

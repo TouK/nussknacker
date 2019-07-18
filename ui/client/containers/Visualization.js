@@ -185,6 +185,7 @@ function mapState(state) {
     && state.settings.loggedUser.canWrite(processCategory);
   return {
     processCategory: processCategory,
+    selectionState: state.graphReducer.selectionState,
     canDelete: canDelete,
     fetchedProcessDetails: state.graphReducer.fetchedProcessDetails,
     subprocessVersions: _.get(state.graphReducer.processToDisplay, "properties.subprocessVersions"),
