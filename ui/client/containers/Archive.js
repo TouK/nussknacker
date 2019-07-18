@@ -27,9 +27,6 @@ class Archive extends BaseProcesses {
       selectedIsSubrocess: _.find(this.filterIsSubprocessOptions, {value: query.isSubprocess})
     }, this.prepareState())
   }
-  reload() {
-    this.reloadProcesses(false)
-  }
 
   render() {
     return (

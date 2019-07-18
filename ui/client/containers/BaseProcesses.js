@@ -8,6 +8,8 @@ import HttpService from "../http/HttpService"
 
 class BaseProcesses extends PeriodicallyReloadingComponent {
   searchItems = ['categories']
+  hasReloadStatuses = false
+  intervalTime = 15000
   queries = {}
 
   customSelectStyles = {
@@ -65,6 +67,22 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
     return state
   }
 
+  onMount() {
+    this.reloadProcesses()
+
+    if (this.hasReloadStatuses) {
+      this.reloadStatuses()
+    }
+  }
+
+  reload() {
+    this.reloadProcesses(false)
+
+    if (this.hasReloadStatuses) {
+      this.reloadStatuses()
+    }
+  }
+
   reloadProcesses(showLoader, search) {
     this.setState({showLoader: showLoader == null ? true : showLoader})
 
@@ -119,6 +137,10 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
 
   onIsSubprocessChange = (element) => {
     this.afterElementChange({isSubprocess: element.value, page: 0}, true)
+  }
+
+  onDeployedChange = (element) => {
+    this.afterElementChange({isDeployed: element.value, page: 0}, true)
   }
 
   showMetrics = (process) => {

@@ -26,10 +26,6 @@ class SubProcesses extends BaseProcesses {
     this.state = this.prepareState()
   }
 
-  reload() {
-    this.reloadProcesses(false)
-  }
-
   render() {
     return (
       <div className="Page">
