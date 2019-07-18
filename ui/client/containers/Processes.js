@@ -201,8 +201,6 @@ class Processes extends BaseProcesses {
   }
 }
 
-
-
 Processes.title = 'Processes'
 Processes.path = '/processes'
 Processes.header = 'Processes'
