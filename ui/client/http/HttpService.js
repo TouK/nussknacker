@@ -3,6 +3,7 @@ import { API_URL } from "../config";
 import React from "react";
 import FileSaver from "file-saver";
 import InlinedSvgs from "../assets/icons/InlinedSvgs";
+import api from "../api"
 
 if (process.env.NODE_ENV !== 'production') {
   var user = "admin";
@@ -73,10 +74,6 @@ export default {
       .catch((error) => this.addError(`Cannot fetch state`, error));
   },
 
-  fetchBuildInfo() {
-    return promiseWrap($.get(API_URL + '/app/buildInfo'))
-  },
-
   fetchHealthCheck() {
     return promiseWrap($.get(API_URL + '/app/healthCheck'))
       .then(() => ({state: "ok"}))
@@ -132,27 +129,27 @@ export default {
   },
 
   fetchComponentIds() {
-    return promiseWrap($.get(`${API_URL}/processDefinitionData/componentIds`))
+    return api.get("/processDefinitionData/componentIds")
   },
 
   fetchServices() {
-      return promiseWrap($.get(`${API_URL}/processDefinitionData/services`))
+    return api.get("/processDefinitionData/services")
   },
 
   fetchUnusedComponents() {
-    return promiseWrap($.get(`${API_URL}/app/unusedComponents`))
+    return api.get("/app/unusedComponents")
   },
 
   fetchProcessesComponents(componentId) {
-    return promiseWrap($.get(API_URL + '/processesComponents/' + encodeURIComponent(componentId)))
+    return api.get("/processesComponents/" + encodeURIComponent(componentId))
   },
 
   fetchProcesses(data) {
-    return promiseWrap($.get(API_URL + '/processes', data))
+    return api.get("/processes", data)
   },
 
   fetchCustomProcesses() {
-    return promiseWrap($.get(API_URL + '/customProcesses'))
+    return api.get("/customProcesses")
   },
 
   fetchProcessDetails(processId, versionId, businessView) {
@@ -163,14 +160,12 @@ export default {
   },
 
   fetchProcessesStatus() {
-    return promiseWrap($.get(API_URL + '/processes/status'))
-      .catch((error) => this.addError(`Cannot fetch statuses`, error));
+    return api.get("/processes/status").catch(error => this.addError(`Cannot fetch statuses`, error))
   },
 
   fetchSingleProcessStatus(processId) {
     return promiseWrap($.get(API_URL + `/processes/${processId}/status`))
       .catch((error) => this.addError(`Cannot fetch status`, error));
-
   },
 
   deploy(processId, comment) {
@@ -466,8 +461,8 @@ export default {
 }
 
 
-var ajaxCall = (opts) => {
-  var requestOpts = {
+const ajaxCall = (opts) => {
+  const requestOpts = {
     headers: {
       'Content-Type': 'application/json'
     },

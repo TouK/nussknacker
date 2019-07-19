@@ -89,22 +89,26 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
     const query = _.pick(queryString.parse(window.location.search), this.searchItems || [])
     const data = Object.assign(query, search, this.queries || {})
 
-    HttpService.fetchProcesses(data).then (fetchedProcesses => {
+    HttpService.fetchProcesses(data).then (response => {
       if (!this.state.showAddProcess) {
-        this.setState({processes: fetchedProcesses, showLoader: false})
+        this.setState({processes: response.data, showLoader: false})
       }
     }).catch(() => this.setState({ showLoader: false }))
   }
 
   reloadStatuses() {
-    HttpService.fetchProcessesStatus().then (statuses => {
+    HttpService.fetchProcessesStatus().then (response => {
       if (!this.state.showAddProcess) {
-        this.setState({ statuses: statuses, showLoader: false, statusesLoaded: true })
+        this.setState({ statuses: response.data, showLoader: false, statusesLoaded: true })
       }
     }).catch(() => this.setState({ showLoader: false }))
   }
 
   retrieveSelectedCategories(categories) {
+    if (!_.isArray(categories)) {
+      categories = [categories]
+    }
+
     return _.filter(this.props.filterCategories, (category) => {
       return _.find(categories || [], categoryName => categoryName === category.value)
     })

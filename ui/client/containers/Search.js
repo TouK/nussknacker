@@ -12,15 +12,13 @@ class Search extends React.Component {
     if (!this.props.settings.url) {
       return (<div/>)
     } else {
-      var url = this.props.settings.url
       return (
         <div className="Page">
-          <iframe ref="metricsFrame" src={url} width="100%" height={window.innerHeight} frameBorder="0"></iframe>
+          <iframe ref="metricsFrame" src={this.props.settings.url} width="100%" height={window.innerHeight} frameBorder="0"></iframe>
         </div>
       )
     }
   }
-
 }
 
 Search.path = "/search"

@@ -1,17 +1,15 @@
 import React from "react"
 import {Table, Td, Tr} from "reactable"
 import {withRouter} from 'react-router-dom'
-import HttpService from "../http/HttpService"
-import DateUtils from "../common/DateUtils"
-import LoaderSpinner from "../components/Spinner.js"
-import HealthCheck from "../components/HealthCheck.js"
-import DialogMessages from "../common/DialogMessages"
+import HttpService from "../../http/HttpService"
+import DateUtils from "../../common/DateUtils"
+import LoaderSpinner from "../../components/Spinner.js"
+import HealthCheck from "../../components/HealthCheck.js"
+import DialogMessages from "../../common/DialogMessages"
 import {Glyphicon} from 'react-bootstrap'
-import "../stylesheets/processes.styl"
-import filterIcon from '../assets/img/search.svg'
-import {connect} from "react-redux"
-import ActionsUtils from "../actions/ActionsUtils"
-import BaseProcesses from "./BaseProcesses"
+import "../../stylesheets/processes.styl"
+import filterIcon from '../../assets/img/search.svg'
+import BaseProcesses from "./../BaseProcesses"
 
 class CustomProcesses extends BaseProcesses {
 
@@ -27,9 +25,9 @@ class CustomProcesses extends BaseProcesses {
   reloadProcesses(showLoader) {
     this.setState({showLoader: showLoader == null ? true : showLoader})
 
-    HttpService.fetchCustomProcesses().then (fetchedProcesses => {
+    HttpService.fetchCustomProcesses().then (response => {
       if (!this.state.showAddProcess) {
-        this.setState({processes: fetchedProcesses, showLoader: false})
+        this.setState({processes: response.data, showLoader: false})
       }
     }).catch(() => this.setState({ showLoader: false }))
   }
@@ -63,8 +61,8 @@ class CustomProcesses extends BaseProcesses {
 
         <Table
           className="esp-table"
-          onSort={sort => this.setState({sort: sort})}
-          onPageChange={page => this.setState({page: page})}
+          onSort={this.onSort}
+          onPageChange={this.onPageChange}
           noDataText="No matching records found."
           hidden={this.state.showLoader}
           currentPage={this.state.page}
@@ -120,6 +118,7 @@ class CustomProcesses extends BaseProcesses {
 }
 
 CustomProcesses.title = "Custom Processes"
+CustomProcesses.key = "custom-processes"
 
 const mapState = state => ({
   loggedUser: state.settings.loggedUser,
