@@ -20,7 +20,7 @@ describe("getNodesToAddInCategory", () => {
   })
 
   it("should leave empty group if no nodes are available", () => {
-    const nodesToAdd = ProcessDefinitionUtils.getNodesToAddInCategory(processDefinition, "Category1")
+    const nodesToAdd = ProcessDefinitionUtils.getNodesToAddInCategory(processDefinition, "Technical")
 
     expect(nodesToAdd.length).toEqual(2)
     expect(nodesToAdd[0].name).toEqual("base")

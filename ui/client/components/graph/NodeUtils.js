@@ -76,8 +76,8 @@ class NodeUtils {
 
   isAvailable = (node, processDefinitionData, category) => {
     const availableIdsInCategory = ProcessDefinitionUtils.getFlatNodesToAddInCategory(processDefinitionData, category)
-      .map(nodeToAdd => ProcessUtils.findNodeDefinitionId(nodeToAdd.node))
-    const nodeDefinitionId = ProcessUtils.findNodeDefinitionId(node)
+      .map(nodeToAdd => ProcessUtils.findNodeDefinitionIdOrType(nodeToAdd.node))
+    const nodeDefinitionId = ProcessUtils.findNodeDefinitionIdOrType(node)
     return availableIdsInCategory.includes(nodeDefinitionId)
 }
 

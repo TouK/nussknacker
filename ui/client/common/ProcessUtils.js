@@ -168,11 +168,13 @@ class ProcessUtils {
         return node.nodeType
       }
       default: {
-        // Try to return type for nodes from base group
-        return node.type || null;
+        return null;
       }
     }
   }
+
+  findNodeDefinitionIdOrType = (node) =>
+    this.findNodeDefinitionId(node) || node.type || null
 
   findNodeConfigName = (node) => {
       return this.findNodeDefinitionId(node) || (node.type && node.type.charAt(0).toLowerCase() + node.type.slice(1));
