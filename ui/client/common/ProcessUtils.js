@@ -168,7 +168,8 @@ class ProcessUtils {
         return node.nodeType
       }
       default: {
-        return null;
+        // Try to return type for nodes from base group
+        return node.type || null;
       }
     }
   }

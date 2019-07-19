@@ -1,6 +1,7 @@
 import _ from 'lodash'
 import fp from 'lodash/fp'
 import ProcessUtils from '../../common/ProcessUtils.js'
+import * as ProcessDefinitionUtils from "../../common/ProcessDefinitionUtils";
 
 class NodeUtils {
 
@@ -72,6 +73,13 @@ class NodeUtils {
       return this.isPlainNode(node) && !this.nodeIsGroup(node)
     })
   }
+
+  isAvailable = (node, processDefinitionData, category) => {
+    const availableIdsInCategory = ProcessDefinitionUtils.getFlatNodesToAddInCategory(processDefinitionData, category)
+      .map(nodeToAdd => ProcessUtils.findNodeDefinitionId(nodeToAdd.node))
+    const nodeDefinitionId = ProcessUtils.findNodeDefinitionId(node)
+    return availableIdsInCategory.includes(nodeDefinitionId)
+}
 
   getIncomingEdges = (nodeId, process) => this.edgesFromProcess(process).filter(e => e.to === nodeId)
 
