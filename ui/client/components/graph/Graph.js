@@ -100,7 +100,12 @@ class Graph extends React.Component {
     const copyNodeElementId = 'copy-node'
     if (event.target && event.target.id !== copyNodeElementId && this.canCopySelection()) {
       const selectedNodes = NodeUtils.getAllNodesById(this.props.selectionState, this.props.processToDisplay)
-      ClipboardUtils.writeText(JSON.stringify(selectedNodes), copyNodeElementId)
+      const edgesForNodes = NodeUtils.getEdgesForConnectedNodes(this.props.selectionState, this.props.processToDisplay)
+      const selection = {
+        nodes: selectedNodes,
+        edges: edgesForNodes
+      }
+      ClipboardUtils.writeText(JSON.stringify(selection), copyNodeElementId)
     }
   }
 
@@ -109,19 +114,19 @@ class Graph extends React.Component {
       return
     }
     const clipboardText = ClipboardUtils.readText(event);
-    const nodes = JsonUtils.tryParseOrNull(clipboardText)
-    if (!_.isArray(nodes)) {
+    const selection = JsonUtils.tryParseOrNull(clipboardText)
+    if (!_.has(selection, 'nodes') || !_.has(selection, 'edges')) {
       return
     }
 
-    const validNodes = nodes.filter(node => this.canAddNode(node))
+    const validNodes = selection.nodes.filter(node => this.canAddNode(node))
     const positions = validNodes.map((node, ix) => {
       return {x: 300, y: ix * 100}
     })
     const nodesWithPositions = _.zipWith(validNodes, positions, (node, position) => {
       return {node, position}
     })
-    this.props.actions.nodesAdded(nodesWithPositions)
+    this.props.actions.nodesWithEdgesAdded(nodesWithPositions, selection.edges)
   }
 
   cutSelection(event) {
