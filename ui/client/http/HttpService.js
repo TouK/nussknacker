@@ -87,6 +87,14 @@ export default {
     return promiseWrap($.get(API_URL + '/settings'))
   },
 
+  fetchPlugins() {
+    return fetch( `${API_URL}/plugins`, {
+      method: 'GET',
+      credentials: 'include'
+    })
+    .then(response => response.json())
+  },
+
   fetchLoggedUser() {
     return promiseWrap($.get(API_URL + '/user')).then((user) => ({
       id: user.id,

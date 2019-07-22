@@ -145,7 +145,8 @@ object NussknackerApp extends App with Directives with LazyLogging {
         new SettingsResources(featureTogglesConfig, typeToConfig),
         new AppResources(config, modelData, processRepository, processValidation, jobStatusService),
         TestInfoResources(modelData, processAuthorizer, processRepository),
-        new ServiceRoutes(modelData)
+        new ServiceRoutes(modelData),
+        new PluginResources(modelData)
       )
       val optionalRoutes = List(
         featureTogglesConfig.remoteEnvironment

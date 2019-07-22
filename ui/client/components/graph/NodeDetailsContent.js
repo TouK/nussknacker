@@ -18,6 +18,7 @@ import MapVariable from "./node-modal/MapVariable";
 import BranchParameters from "./node-modal/BranchParameters";
 import Variable from "./node-modal/Variable";
 import JoinDef from "./node-modal/JoinDef"
+import PluginManager from "../../common/PluginManager"
 
 //move state to redux?
 // here `componentDidUpdate` is complicated to clear unsaved changes in modal
@@ -457,15 +458,16 @@ export class NodeDetailsContent extends React.Component {
 
   createExpressionComponent = (onValueChange, fieldName, expressionObj) => {
 
-    //here there will just get appropriate object by field/nodetype
-    if (fieldName.startsWith("id") && window['customField123']) {
-      return window['customField123'](onValueChange, fieldName, expressionObj)
-    } else {
-      return (<ExpressionSuggest fieldName={fieldName} inputProps={{
-        rows: 1, cols: 50, className: "node-input", value: expressionObj.expression, language: expressionObj.language,
-        onValueChange: onValueChange, readOnly: false}}/>);
-    }
-  }
+    const pluginToCreate = PluginManager.plugins
+          .find(plugin => plugin.matches(fieldName, expressionObj.language));
+
+    //TODO: variables + type information? Or whole reducers?
+    return pluginToCreate ? pluginToCreate.create(onValueChange, fieldName, expressionObj, pluginToCreate.config) : (
+      <ExpressionSuggest fieldName={fieldName} inputProps={{
+              rows: 1, cols: 50, className: "node-input", value: expressionObj.expression, language: expressionObj.language,
+              onValueChange: onValueChange, readOnly: false}}/>
+    )
+  };
 
 
   isMarked = (path) => {

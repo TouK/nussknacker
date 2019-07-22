@@ -655,12 +655,17 @@ lazy val pluginSample = (project in file("ui/pluginSample"))
   .settings(
     name := "nussknacker-ui-plugin-sample",
     buildUi := {
-      runNpm("run-script build", "Client build failed", "ui/pluginSample")
+      runNpm("run-script build", "Client build failed", "ui/pluginSample/js")
     },
     compile in Compile := (compile in Compile).dependsOn(
       buildUi
     ).value,
-  )
+    test in assembly := {},
+    artifact in (Compile, assembly) := {
+      val art = (artifact in (Compile, assembly)).value
+      art.withClassifier(Some("assembly"))
+    }
+  ).dependsOn(example)
 
 
 lazy val ui = (project in file("ui/server"))
@@ -722,7 +727,7 @@ lazy val ui = (project in file("ui/server"))
     }
   )
   .settings(addArtifact(artifact in (Compile, assembly), assembly))
-  .dependsOn(management, interpreter, engineStandalone, processReports, securityApi, restmodel, pluginSample)
+  .dependsOn(management, interpreter, engineStandalone, processReports, securityApi, restmodel)
 
 addCommandAlias("assemblySamples", ";managementSample/assembly;standaloneSample/assembly")
 

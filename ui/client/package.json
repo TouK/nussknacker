@@ -7,7 +7,7 @@
   "private": true,
   "scripts": {
     "start": "webpack-dev-server",
-    "build": "NODE_ENV=production webpack -p --progress && cp -R assets/icons/license dist",
+    "build": "NODE_ENV=production webpack --progress && cp -R assets/icons/license dist",
     "test": "NODE_ENV=production ./node_modules/karma/bin/karma start --single-run"
   },
   "dependencies": {

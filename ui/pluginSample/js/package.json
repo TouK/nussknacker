@@ -2,9 +2,9 @@
   "name": "plugin-sample",
   "version": "1.0.0",
   "description": "test",
-  "main": "target/scala-2.11/classes/web/static/customField.js",
-  "module": "target/scala-2.11/classes/web/static/customField.es.js",
-  "jsnext:main": "target/scala-2.11/classes/web/static/customField.es.js",
+  "main": "../target/scala-2.11/classes/customField.js",
+  "module": "../target/scala-2.11/classes/customField.es.js",
+  "jsnext:main": "../target/scala-2.11/classes/customField.es.js",
   "engines": {
     "node": ">=8",
     "npm": ">=5"
@@ -21,6 +21,10 @@
   "peerDependencies": {
     "react": "^15.0.0 || ^16.0.0",
     "react-dom": "^15.0.0 || ^16.0.0"
+  },
+  "dependencies": {
+    "react-querybuilder": "1.4.3",
+    "indexof": "0.0.1"
   },
   "devDependencies": {
     "@svgr/rollup": "^2.4.1",
@@ -49,7 +53,12 @@
     "rollup-plugin-node-resolve": "^3.3.0",
     "rollup-plugin-peer-deps-external": "^2.2.0",
     "rollup-plugin-postcss": "^1.6.2",
-    "rollup-plugin-url": "^1.4.0"
+    "rollup-plugin-url": "^1.4.0",
+    "rollup-plugin-less-modules": "0.1.11",
+    "rollup-plugin-replace": "2.2.0",
+    "rollup-plugin-node-globals": "1.4.0",
+
+    "node-sass": "^4.11.0"
   },
   "files": [
     "dist"

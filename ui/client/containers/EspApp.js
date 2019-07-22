@@ -1,4 +1,5 @@
 import React from "react";
+
 import {NavLink, Route, Switch, withRouter, matchPath} from 'react-router-dom'
 import {hot} from 'react-hot-loader'
 import _ from "lodash";
@@ -18,33 +19,27 @@ import Dialogs from "../components/modals/Dialogs";
 import * as VisualizationUrl from '../common/VisualizationUrl'
 import Archive from "./Archive";
 import Visualization from "./Visualization";
+import PluginManager from "../common/PluginManager"
 
 import 'bootstrap/dist/css/bootstrap.css'
 import '../stylesheets/mainMenu.styl'
 import '../assets/fonts/fonts.less'
 import '../stylesheets/main.styl'
 import '../app.styl'
-
-
-var ReactDOM = (typeof window !== "undefined" ? window['ReactDOM'] : typeof global !== "undefined" ? global['ReactDOM'] : null);
+import HttpService from "../http/HttpService";
 
 class EspApp extends React.Component {
 
   componentDidMount() {
-    //TODO: how to make it??
-    window.React = React;
+    HttpService.fetchPlugins().then(plugins => {
+      PluginManager.init(plugins);
+    });
+
     this.mountedHistory = this.props.history.listen((location, action) => {
       if (action === "PUSH") {
         this.props.actions.urlChange(location)
       }
     })
-
-
-    //TODO: list of plugin files
-    const script = document.createElement("script");
-    script.src = "/static/customField.js";
-    script.async = true;
-    document.body.appendChild(script);
   }
 
   componentWillUnmount() {

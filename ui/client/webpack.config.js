@@ -22,7 +22,7 @@ if (!isProd) {
 }
 
 module.exports = {
-  mode: NODE_ENV,
+  mode: 'development',
   optimization: {
     splitChunks: {
       cacheGroups: {
@@ -33,6 +33,8 @@ module.exports = {
         }
       }
     },
+    minimize: false,
+    /*
     minimizer: [new TerserPlugin({
       parallel: true,
       sourceMap: true,
@@ -42,7 +44,7 @@ module.exports = {
           reserved: ['Td', 'Tr', 'Th', 'Thead', 'Table'],
         }
       }
-    })]
+    })]  */
   },
   performance: {
     maxEntrypointSize: 3000000,
