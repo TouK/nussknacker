@@ -24,7 +24,7 @@ class Processes extends BaseProcesses {
   }
 
   searchItems = ['categories', 'isDeployed']
-  hasReloadStatuses = true
+  shouldReloadStatuses = true
 
   deployedOptions = [
     {label: 'Show all processes', value: undefined},

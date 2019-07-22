@@ -16,9 +16,7 @@ class HealthCheck extends PeriodicallyReloadingComponent {
   }
 
   getIntervalTime() {
-    let baseIntervalTime = _.get(this.props, "featuresSettings.intervalSettings.base", this.baseIntervalTime)
-    let processesIntervalTime = _.get(this.props, "featuresSettings.intervalSettings.healthCheck", this.intervalTime)
-    return processesIntervalTime || baseIntervalTime
+    return _.get(this.props, "featuresSettings.intervalSettings.healthCheck", this.intervalTime)
   }
 
   reload() {

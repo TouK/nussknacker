@@ -8,7 +8,7 @@ import HttpService from "../http/HttpService"
 
 class BaseProcesses extends PeriodicallyReloadingComponent {
   searchItems = ['categories']
-  hasReloadStatuses = false
+  shouldReloadStatuses = false
   intervalTime = 15000
   queries = {}
 
@@ -70,7 +70,7 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
   onMount() {
     this.reloadProcesses()
 
-    if (this.hasReloadStatuses) {
+    if (this.shouldReloadStatuses) {
       this.reloadStatuses()
     }
   }
@@ -78,7 +78,7 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
   reload() {
     this.reloadProcesses(false)
 
-    if (this.hasReloadStatuses) {
+    if (this.shouldReloadStatuses) {
       this.reloadStatuses()
     }
   }
@@ -167,9 +167,7 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
   }
 
   getIntervalTime() {
-    let baseIntervalTime = _.get(this.props, "featuresSettings.intervalSettings.base", this.baseIntervalTime)
-    let processesIntervalTime = _.get(this.props, "featuresSettings.intervalSettings.processes", this.intervalTime)
-    return processesIntervalTime || baseIntervalTime
+    return _.get(this.props, "featuresSettings.intervalTimeSettings.processes", this.intervalTime)
   }
 
   processStatusTitle = processStatusClass => {

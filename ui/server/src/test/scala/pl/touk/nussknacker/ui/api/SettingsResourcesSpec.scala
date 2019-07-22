@@ -19,13 +19,12 @@ class SettingsResourcesSpec extends FunSpec with ScalatestRouteTest
   it("should return base intervalSettings") {
     getSettings ~> check {
       status shouldBe StatusCodes.OK
-      val baseIntervalSettings = IntervalSettings.baseIntervalSettings
+      val baseIntervalSettings = IntervalTimeSettings.baseIntervalSettings
       val responseSettings = responseAs[String].decodeOption[UISettings].get
       val data = responseSettings.features
 
-      data.intervalSettings.base shouldBe baseIntervalSettings.base
-      data.intervalSettings.processes shouldBe baseIntervalSettings.processes
-      data.intervalSettings.healthCheck shouldBe baseIntervalSettings.healthCheck
+      data.intervalTimeSettings.processes shouldBe baseIntervalSettings.processes
+      data.intervalTimeSettings.healthCheck shouldBe baseIntervalSettings.healthCheck
     }
   }
 }

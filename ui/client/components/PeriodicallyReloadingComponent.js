@@ -1,7 +1,7 @@
 import React from "react"
 
 class PeriodicallyReloadingComponent extends React.Component {
-  baseIntervalTime = 10000
+  baseIntervalTime = 40000
   intervalTime = null
   intervalId = null
 
@@ -11,18 +11,13 @@ class PeriodicallyReloadingComponent extends React.Component {
     }
   }
 
-  //Default or you can override this..
-  getIntervalTime() {
-    return this.intervalTime || this.baseIntervalTime
-  }
-
   onMount() {
     //to be overridden
   }
 
   componentDidMount() {
     this.onMount()
-    this.intervalId = setInterval(() => this.reload(), this.getIntervalTime())
+    this.intervalId = setInterval(() => this.reload(), this.getIntervalTime() || this.baseIntervalTime)
   }
 
   componentWillUnmount() {
