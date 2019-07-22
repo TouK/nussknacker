@@ -18,6 +18,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.ProcessType
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.restmodel.process.ProcessId
+import pl.touk.nussknacker.restmodel.processdetails.ProcessShapeFetchStrategy
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository._
 import pl.touk.nussknacker.ui.process.repository.WriteProcessRepository.UpdateProcessAction
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -72,7 +73,7 @@ abstract class DbWriteProcessRepository[F[_]](val dbConfig: DbConfig,
     val insertNew = processesTable.returning(processesTable.map(_.id)).into { case (entity, newId) => entity.copy(id = newId) }
 
     val insertAction = logInfo(s"Saving process ${processName.value} by user $loggedUser").flatMap { _ =>
-      latestProcessVersions(processName).result.headOption.flatMap {
+      latestProcessVersionsNoJson(processName).result.headOption.flatMap {
         case Some(_) => DBIOAction.successful(ProcessAlreadyExists(processName.value).asLeft)
         case None => processesTable.filter(_.name === processName.value).result.headOption.flatMap {
           case Some(_) => DBIOAction.successful(ProcessAlreadyExists(processName.value).asLeft)
@@ -117,8 +118,8 @@ abstract class DbWriteProcessRepository[F[_]](val dbConfig: DbConfig,
       maybeProcess <- rightT(processTableFilteredByUser.filter(_.id === processId.value).result.headOption)
       process <- EitherT.fromEither[DB](Either.fromOption(maybeProcess, ProcessNotFoundError(processId.value.toString)))
       _ <- EitherT.fromEither(Either.cond(process.processType == ProcessType.fromDeploymentData(processDeploymentData), (), InvalidProcessTypeError(processId.value.toString)))
-      processesVersionCount <- rightT(processVersionsTable.filter(p => p.processId === processId.value).length.result)
-      latestProcessVersion <- rightT(latestProcessVersions(processId).result.headOption)
+      processesVersionCount <- rightT(processVersionsTableNoJson.filter(p => p.processId === processId.value).length.result)
+      latestProcessVersion <- rightT(latestProcessVersions(processId)(ProcessShapeFetchStrategy.Fetch).result.headOption)
       newProcessVersion <- EitherT.fromEither(Right(versionToInsert(latestProcessVersion, processesVersionCount, process.processingType)))
       _ <- EitherT.right[EspError](newProcessVersion.map(processVersionsTable += _).getOrElse(dbMonad.pure(0)))
     } yield newProcessVersion

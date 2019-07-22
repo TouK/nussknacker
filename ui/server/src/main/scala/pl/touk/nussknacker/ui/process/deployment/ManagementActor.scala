@@ -9,7 +9,7 @@ import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName}
-import pl.touk.nussknacker.restmodel.displayedgraph.ProcessStatus
+import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus}
 import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntityData
 import pl.touk.nussknacker.ui.process.marshall.UiProcessMarshaller
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessNotFoundError
@@ -135,7 +135,7 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
   }
 
   private def findDeployedVersion(processId: ProcessIdWithName)(implicit user: LoggedUser) : Future[Option[Long]] = for {
-    process <- processRepository.fetchLatestProcessDetailsForProcessId(processId.id)
+    process <- processRepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id)
     deployedAt = process
       .flatMap(_.currentlyDeployedAt.find(_.environment == environment))
   } yield (deployedAt.map(_.processVersionId))
@@ -144,7 +144,7 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
   private def deployProcess(processId: ProcessId, savepointPath: Option[String], comment: Option[String])(implicit user: LoggedUser): Future[Unit] = {
     for {
       processingType <- processRepository.fetchProcessingType(processId)
-      latestProcessEntity <- processRepository.fetchLatestProcessVersion(processId)
+      latestProcessEntity <- processRepository.fetchLatestProcessVersion[DisplayableProcess](processId)
       result <- latestProcessEntity match {
         case Some(latestVersion) => deployAndSaveProcess(processingType, latestVersion, savepointPath, comment)
         case None => Future.failed(ProcessNotFoundError(processId.value.toString))

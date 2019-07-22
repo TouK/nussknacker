@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.{JobStatusService, ProcessObjectsFinder}
 import pl.touk.http.argonaut.{Argonaut62Support, JsonMarshaller}
+import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
@@ -50,7 +51,7 @@ class QueryableStateResources(typeToConfig: Map[ProcessingType, ProcessingTypeDa
   }
 
   private def prepareQueryableStates()(implicit user: LoggedUser): Future[Map[String, List[QueryableStateName]]] = {
-    processRepository.fetchAllProcessesDetails().map { processList =>
+    processRepository.fetchAllProcessesDetails[DisplayableProcess]().map { processList =>
       ProcessObjectsFinder.findQueries(processList, typeToConfig.values.map(_.modelData.processDefinition))
     }
   }

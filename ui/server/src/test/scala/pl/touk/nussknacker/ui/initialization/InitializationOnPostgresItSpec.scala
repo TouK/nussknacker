@@ -44,7 +44,7 @@ class InitializationOnPostgresItSpec
   it should "add technical processes" in {
     Initialization.init(migrations, db, "env1", customProcesses)
 
-    repository.fetchProcessesDetails().futureValue.map(d => (d.name, d.processType)) shouldBe List(("process1", ProcessType.Custom))
+    repository.fetchProcessesDetails[Unit]().futureValue.map(d => (d.name, d.processType)) shouldBe List(("process1", ProcessType.Custom))
   }
 
   it should "migrate processes" in {
@@ -52,7 +52,7 @@ class InitializationOnPostgresItSpec
 
     Initialization.init(migrations, db, "env1", None)
 
-    repository.fetchProcessesDetails().futureValue.map(d => (d.name, d.modelVersion)) shouldBe List(("proc1", Some(2)))
+    repository.fetchProcessesDetails[Unit]().futureValue.map(d => (d.name, d.modelVersion)) shouldBe List(("proc1", Some(2)))
   }
 
   it should "migrate processes when subprocesses present" in {
@@ -61,7 +61,7 @@ class InitializationOnPostgresItSpec
 
     Initialization.init(migrations, db, "env1", None)
 
-    repository.fetchProcessesDetails().futureValue.map(d => (d.name, d.modelVersion)) shouldBe List(("id1", Some(2)))
+    repository.fetchProcessesDetails[Unit]().futureValue.map(d => (d.name, d.modelVersion)) shouldBe List(("id1", Some(2)))
   }
 
   private def saveSampleProcess(processName: String = processId, subprocess: Boolean = false): Unit = {
@@ -76,7 +76,7 @@ class InitializationOnPostgresItSpec
 
     exception.getMessage shouldBe "made to fail.."
 
-    repository.fetchProcessesDetails().futureValue.map(d => (d.name, d.modelVersion)) shouldBe List(("proc1", Some(1)))
+    repository.fetchProcessesDetails[Unit]().futureValue.map(d => (d.name, d.modelVersion)) shouldBe List(("proc1", Some(1)))
   }
 
   private val customProcesses =
