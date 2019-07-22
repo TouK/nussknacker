@@ -10,10 +10,10 @@ import {withRouter} from 'react-router-dom'
 
 class AdminPage extends React.Component {
   tabs = [
-    {key: SearchComponents.key, title: SearchComponents.title, component: <SearchComponents />},
-    {key: UnusedComponents.key, title: UnusedComponents.title, component: <UnusedComponents />},
-    {key: Services.key, title: Services.title, component: <Services />},
-    {key: CustomProcesses.key, title: CustomProcesses.title, component: <CustomProcesses />}
+    {key: SearchComponents.key, title: SearchComponents.title, component: <SearchComponents/>},
+    {key: UnusedComponents.key, title: UnusedComponents.title, component: <UnusedComponents/>},
+    {key: Services.key, title: Services.title, component: <Services/>},
+    {key: CustomProcesses.key, title: CustomProcesses.title, component: <CustomProcesses/>}
   ]
 
   constructor(props) {

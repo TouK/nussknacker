@@ -10,6 +10,8 @@ import {Glyphicon} from 'react-bootstrap'
 import "../../stylesheets/processes.styl"
 import filterIcon from '../../assets/img/search.svg'
 import BaseProcesses from "./../BaseProcesses"
+import {connect} from "react-redux"
+import ActionsUtils from "../../actions/ActionsUtils";
 
 class CustomProcesses extends BaseProcesses {
 

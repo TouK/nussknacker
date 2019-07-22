@@ -1,27 +1,19 @@
 import React from 'react'
-import {NavLink, withRouter} from 'react-router-dom'
-import EspApp from "./EspApp";
+import {withRouter} from 'react-router-dom'
 
 
 class NotFound extends React.Component {
-
-  constructor(props) {
-    super(props);
-  }
-
   render() {
     return (
       <div className="error-template center-block">
         <h1>Oops!</h1>
-        <h2>404 Not Found</h2>
+        <h2>That page can’t be found.</h2>
         <div className="error-details">
-          Requested page: <strong>{this.props.history.location.pathname}</strong> not found!
-        </div>
-
-        <div className="error-actions">
-          <NavLink to={EspApp.path} className="btn btn-primary btn-lg">
-            <span className="glyphicon glyphicon-home"></span> Take Me Home
-          </NavLink>
+          <br />
+          <p>
+            It looks like nothing was found at this location.
+            Maybe try one of the links in the menu or press back to go to the previous page.
+          </p>
         </div>
       </div>
     )

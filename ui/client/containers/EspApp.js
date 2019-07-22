@@ -95,15 +95,19 @@ class EspApp extends React.Component {
               <ul id="menu-items" className="nav navbar-nav navbar-right nav-pills nav-stacked">
                 <li><NavLink to={Processes.path}>{Processes.header}</NavLink></li>
                 <li><NavLink to={SubProcesses.path}>{SubProcesses.header}</NavLink></li>
-                {!_.isEmpty(this.props.featuresSettings.metrics) ?
-                  <li><NavLink to={Metrics.basePath}>{Metrics.header}</NavLink></li> : null}
-                {!_.isEmpty(this.props.featuresSettings.search) ?
-                  <li><NavLink to={Search.path}>{Search.header}</NavLink></li> : null }
-                {this.props.featuresSettings.signals ?
-                  <li><NavLink to={Signals.path}>{Signals.header}</NavLink></li> : null }
+                {
+                  !_.isEmpty(this.props.featuresSettings.metrics) ? <li><NavLink to={Metrics.basePath}>{Metrics.header}</NavLink></li> : null
+                }
+                {
+                  !_.isEmpty(this.props.featuresSettings.search) ? <li><NavLink to={Search.path}>{Search.header}</NavLink></li> : null
+                }
+                {
+                  this.props.featuresSettings.signals ? <li><NavLink to={Signals.path}>{Signals.header}</NavLink></li> : null
+                }
                 <li><NavLink to={Archive.path}>{Archive.header}</NavLink></li>
-                {this.props.loggedUser.isAdmin ?
-                  <li><NavLink to={AdminPage.path}>{AdminPage.header}</NavLink></li> : null}
+                {
+                  this.props.loggedUser.isAdmin ? <li><NavLink to={AdminPage.path}>{AdminPage.header}</NavLink></li> : null
+                }
               </ul>
             </div>
           </div>
@@ -116,29 +120,14 @@ class EspApp extends React.Component {
                 <TransitionGroup>
                   <CSSTransition key={location.pathname} classNames="fade" timeout={{ enter: 300, exit: 300 }} >
                     <Switch location={location}>
-                      <Route path={SubProcesses.path} render={() => (
-                        <Switch>
-                          <Route path={SubProcesses.path + '/:processId'} component={Visualization} />
-                          <Route exact component={SubProcesses} />
-                        </Switch>
-                      )} />
-                      <Route path={Archive.path} render={() => (
-                        <Switch>
-                          <Route path={Archive.path + '/:processId'} component={Visualization} />
-                          <Route exact component={Archive} />
-                        </Switch>
-                      )} />
-                      <Route path={Processes.path} render={() => (
-                        <Switch>
-                          <Route path={Processes.path + '/:processId'} component={Visualization} />
-                          <Route exact component={Processes} />
-                        </Switch>
-                      )} />
-                      <Route path={Visualization.path} component={Visualization} />
-                      <Route path={Metrics.path} component={Metrics} />
-                      <Route path={Search.path} component={Search} />
-                      <Route path={Signals.path} component={Signals} />
-                      <Route path={AdminPage.path} component={AdminPage} />
+                      <Route path={SubProcesses.path} component={SubProcesses} exact />
+                      <Route path={Archive.path} component={Archive} exact />
+                      <Route path={Processes.path}  component={Processes} exact />
+                      <Route path={Visualization.path} component={Visualization} exact />
+                      <Route path={Metrics.path} component={Metrics} exact />
+                      <Route path={Search.path} component={Search} exact />
+                      <Route path={Signals.path} component={Signals} exact />
+                      <Route path={AdminPage.path} component={AdminPage} exact />
                       <Route path={EspApp.path} component={Processes} exact />
                       <Route component={NotFound} />
                       </Switch>

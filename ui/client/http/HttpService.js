@@ -1,28 +1,28 @@
-import $ from "jquery";
-import { API_URL } from "../config";
-import React from "react";
-import FileSaver from "file-saver";
-import InlinedSvgs from "../assets/icons/InlinedSvgs";
+import $ from "jquery"
+import { API_URL } from "../config"
+import React from "react"
+import FileSaver from "file-saver"
+import InlinedSvgs from "../assets/icons/InlinedSvgs"
 import api from "../api"
 
 if (process.env.NODE_ENV !== 'production') {
-  var user = "admin";
+  const user = "admin"
   $.ajaxSetup({
     headers: {
       'Authorization': "Basic " + btoa(`${user}:${user}`)
     }
-  });
+  })
 }
 
 export default {
 
   setNotificationSystem(ns) {
-    notificationSystem = ns;
+    notificationSystem = ns
     if (notificationReload) {
       clearInterval(notificationReload)
     }
     //TODO: configuration?
-    notificationReload = setInterval(() => this._loadNotifications(), 10000);
+    notificationReload = setInterval(() => this._loadNotifications(), 10000)
 
   },
 
@@ -49,7 +49,7 @@ export default {
   },
 
   addErrorMessage(message, error, showErrorText) {
-    const details = showErrorText && error ? (<div key="details" className="details">{error}</div>) : null;
+    const details = showErrorText && error ? (<div key="details" className="details">{error}</div>) : null
     if (notificationSystem) {
       notificationSystem.addNotification({
         message: message,
@@ -61,8 +61,8 @@ export default {
   },
 
   addError(message, error, showErrorText) {
-    console.log(error);
-    this.addErrorMessage(message, error.responseText, showErrorText);
+    console.log(error)
+    this.addErrorMessage(message, error.responseText, showErrorText)
   },
 
   availableQueryableStates() {
@@ -71,7 +71,7 @@ export default {
 
   queryState(processId, queryName, key) {
     return promiseWrap($.get(`${API_URL}/queryableState/fetch`, {processId, queryName, key}))
-      .catch((error) => this.addError(`Cannot fetch state`, error));
+      .catch((error) => this.addError(`Cannot fetch state`, error))
   },
 
   fetchHealthCheck() {
@@ -124,8 +124,8 @@ export default {
           nodeToAdd.node.branchParametersTemplate = nodeToAdd.branchParametersTemplate
         })
       })
-      return values;
-    }));
+      return values
+    }))
   },
 
   fetchComponentIds() {
@@ -165,7 +165,7 @@ export default {
 
   fetchSingleProcessStatus(processId) {
     return promiseWrap($.get(API_URL + `/processes/${processId}/status`))
-      .catch((error) => this.addError(`Cannot fetch status`, error));
+      .catch((error) => this.addError(`Cannot fetch status`, error))
   },
 
   deploy(processId, comment) {
@@ -185,20 +185,11 @@ export default {
     }).catch((error) => {
       this.addError(`Failed to deploy ${processId}`, error, true)
       return { isSuccess: false }
-    });
+    })
   },
-//TODO: separate reusable invocation.
+
   invokeService(processingType, serviceName, parameters) {
-    return fetch(`${API_URL}/service/${processingType}/${serviceName}`,
-      {
-        method: 'POST',
-        body: JSON.stringify(parameters),
-        credentials: 'include',
-        headers: new Headers({
-          'Content-Type': 'application/json'
-        })
-      }
-    )
+    return api.post(`/service/${processingType}/${serviceName}`, parameters)
   },
 
   stop(processId, comment) {
@@ -210,7 +201,7 @@ export default {
         }
       )
       .then(() => this.addInfo(`Process ${processId} was stopped`))
-      .catch((error) => this.addError(`Failed to stop ${processId}`, error, true));
+      .catch((error) => this.addError(`Failed to stop ${processId}`, error, true))
   },
 
   fetchProcessActivity(processId) {
@@ -223,7 +214,7 @@ export default {
       type: 'POST',
       data: comment
     }).then(() => this.addInfo(`Comment added`))
-      .catch((error) => this.addError(`Failed to add comment`, error));
+      .catch((error) => this.addError(`Failed to add comment`, error))
   },
 
   deleteComment(processId, commentId) {
@@ -231,11 +222,11 @@ export default {
       url: `${API_URL}/processes/${processId}/activity/comments/${commentId}`,
       type: 'DELETE'
     }).then(() => this.addInfo(`Comment deleted`))
-      .catch((error) => this.addError(`Failed to delete comment`, error));
+      .catch((error) => this.addError(`Failed to delete comment`, error))
   },
 
   addAttachment(processId, versionId, file) {
-    var formData = new FormData();
+    let formData = new FormData()
     formData.append("attachment", file)
 
     return ajaxCallWithoutContentType({
@@ -245,7 +236,7 @@ export default {
       contentType: false,
       data: formData
     }).then(() => this.addInfo(`Attachment added`))
-      .catch((error) => this.addError(`Failed to add attachment`, error));
+      .catch((error) => this.addError(`Failed to add attachment`, error))
   },
 
   downloadAttachment(processId, processVersionId, attachmentId) {
@@ -258,12 +249,18 @@ export default {
         url: `${API_URL}/processes/${processName}/rename/${newProcessName}`,
         type: 'PUT'
       }).then(
-        () => { this.addInfo("Process name changed"); return true },
-        (error) => { this.addError("Failed to change process name:", error, true); return false; }
-      );
+        () => {
+          this.addInfo("Process name changed")
+          return true
+        },
+        (error) => {
+          this.addError("Failed to change process name:", error, true)
+          return false
+        }
+      )
     } else {
-      this.addErrorMessage("Failed to change process name:", "Name cannot be empty", true);
-      return Promise.resolve(false);
+      this.addErrorMessage("Failed to change process name:", "Name cannot be empty", true)
+      return Promise.resolve(false)
     }
   },
 
@@ -279,8 +276,8 @@ export default {
           })
       }
     ).then((response) => response.blob()).then((blob) => {
-      FileSaver.saveAs(blob, `${process.id}-${versionId}.json`);
-    }).catch((error) => this.addError(`Failed to export`, error));
+      FileSaver.saveAs(blob, `${process.id}-${versionId}.json`)
+    }).catch((error) => this.addError(`Failed to export`, error))
   },
 
   exportProcessToPdf(processId, versionId, data, businessView) {
@@ -293,8 +290,8 @@ export default {
           credentials: 'include'
       }
     ).then((response) => response.blob()).then((blob) => {
-      FileSaver.saveAs(blob, `${processId}-${versionId}.pdf`);
-    }).catch((error) => this.addError(`Failed to export`, error));
+      FileSaver.saveAs(blob, `${processId}-${versionId}.pdf`)
+    }).catch((error) => this.addError(`Failed to export`, error))
   },
 
   validateProcess(process) {
@@ -313,7 +310,7 @@ export default {
       url: API_URL + '/testInfo/capabilities',
       type: 'POST',
       data: JSON.stringify(process)
-    });
+    })
   },
 
   generateTestData(processId, testSampleSize, processJson) {
@@ -327,8 +324,8 @@ export default {
           })
       }
     ).then((response) => response.blob()).then((blob) => {
-      FileSaver.saveAs(blob, `${processId}-testData`);
-    }).catch((error) => this.addError(`Failed to generate test data`, error));
+      FileSaver.saveAs(blob, `${processId}-testData`)
+    }).catch((error) => this.addError(`Failed to generate test data`, error))
   },
 
   fetchProcessCounts(processId, dateFrom, dateTo) {
@@ -337,7 +334,7 @@ export default {
       type: 'GET',
       data: { dateFrom: dateFrom, dateTo: dateTo }
     }).catch(error => {
-      this.addError(`Cannot fetch process counts`, error, true);
+      this.addError(`Cannot fetch process counts`, error, true)
       return Promise.reject(error)
     })
   },
@@ -351,9 +348,9 @@ export default {
     })
       .then(() => this.addInfo(`Process ${processId} was saved`))
       .catch((error) => {
-        this.addError(`Failed to save`, error, true);
+        this.addError(`Failed to save`, error, true)
         return Promise.reject(error)
-      });
+      })
   },
 
   archiveProcess(processId) {
@@ -368,12 +365,12 @@ export default {
       url: `${API_URL}/processes/${processId}/${processCategory}?isSubprocess=${isSubprocess}`,
       type: 'POST'
     }).then(callback, (error) => {
-      this.addError(`Failed to create process:`, error, true);
+      this.addError(`Failed to create process:`, error, true)
     })
   },
 
   importProcess(processId, file, callback, errorCallback) {
-    var formData = new FormData();
+    let formData = new FormData()
     formData.append("process", file)
 
     return ajaxCallWithoutContentType({
@@ -383,15 +380,15 @@ export default {
       contentType: false,
       data: formData
     }).then(callback, (error) => {
-      this.addError(`Failed to import`, error, true);
+      this.addError(`Failed to import`, error, true)
       if (errorCallback) {
         errorCallback(error)
       }
-    });
+    })
   },
 
   testProcess(processId, file, processJson, callback, errorCallback) {
-    var formData = new FormData();
+    let formData = new FormData()
     formData.append("testData", file)
     formData.append("processJson", new Blob([JSON.stringify(processJson)], {type : 'application/json'}))
 
@@ -402,11 +399,11 @@ export default {
       contentType: false,
       data: formData
     }).then(callback, (error) => {
-      this.addError(`Failed to test`, error, true);
+      this.addError(`Failed to test`, error, true)
       if (errorCallback) {
         errorCallback(error)
       }
-    });
+    })
   },
 
   compareProcesses(processId, thisVersion, otherVersion, businessView, remoteEnv) {
@@ -418,7 +415,7 @@ export default {
       type: 'GET',
       data: queryParams
     }).catch(error => {
-      this.addError(`Cannot compare processes`, error, true);
+      this.addError(`Cannot compare processes`, error, true)
       return Promise.reject(error)
     })
   },
@@ -427,7 +424,7 @@ export default {
     return ajaxCall({
       url: `${API_URL}/remoteEnvironment/${processId}/versions`,
       type: 'GET',
-    }).catch((error) => this.addError(`Failed to get versions from second environment`, error));
+    }).catch((error) => this.addError(`Failed to get versions from second environment`, error))
   },
 
   migrateProcess(processId, versionId) {
@@ -436,14 +433,14 @@ export default {
       type: 'POST',
     })
       .then(() => this.addInfo(`Process ${processId} was migrated`))
-      .catch((error) => this.addError(`Failed to migrate`, error, true));
+      .catch((error) => this.addError(`Failed to migrate`, error, true))
   },
 
   fetchSignals() {
     return ajaxCall({
       url: `${API_URL}/signal`,
       type: 'GET',
-    }).catch((error) => this.addError(`Failed to fetch signals`, error));
+    }).catch((error) => this.addError(`Failed to fetch signals`, error))
   },
 
   sendSignal(signalType, processId, params) {
@@ -452,14 +449,13 @@ export default {
       type: 'POST',
       data: JSON.stringify(params)
     }).then(() => this.addInfo(`Signal send`))
-      .catch((error) => this.addError(`Failed to send signal`, error));
+      .catch((error) => this.addError(`Failed to send signal`, error))
   },
 
   businessViewQueryParams(businessView) {
     return businessView ? $.param({businessView}) : {}
   }
 }
-
 
 const ajaxCall = (opts) => {
   const requestOpts = {
@@ -471,13 +467,13 @@ const ajaxCall = (opts) => {
   return ajaxCallWithoutContentType(requestOpts)
 }
 
-var ajaxCallWithoutContentType = (opts) => promiseWrap($.ajax(opts))
+const ajaxCallWithoutContentType = (opts) => promiseWrap($.ajax(opts))
 
-var notificationSystem = null;
+let notificationSystem = null
 
-var notificationReload = null;
+let notificationReload = null
 
-var promiseWrap = (plainAjaxCall) => {
+const promiseWrap = (plainAjaxCall) => {
   return new Promise((resolve, reject) => {
     plainAjaxCall.done(resolve).fail(reject)
   })
