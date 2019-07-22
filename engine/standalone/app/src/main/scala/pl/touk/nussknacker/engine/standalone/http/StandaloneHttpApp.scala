@@ -7,7 +7,7 @@ import akka.stream.ActorMaterializer
 import com.codahale.metrics.MetricRegistry
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.http.argonaut.{Argonaut62Support, JacksonJsonMarshaller, JsonMarshaller}
+import pl.touk.http.argonaut.{Argonaut62Support, JsonMarshaller}
 import pl.touk.nussknacker.engine.standalone.deployment.DeploymentService
 import pl.touk.nussknacker.engine.standalone.utils.StandaloneContextPreparer
 import pl.touk.nussknacker.engine.standalone.utils.logging.StandaloneRequestResponseLogger
