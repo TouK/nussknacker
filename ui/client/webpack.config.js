@@ -88,6 +88,10 @@ module.exports = {
         'DATE': JSON.stringify(GIT_DATE)
       }
     }),
+    // each log entry in separate line - fix for travis no output problem
+    new webpack.ProgressPlugin((percentage, message) => {
+      console.log(message);
+    }),
   ].filter(p => p !== null),
   module: {
     rules: [
