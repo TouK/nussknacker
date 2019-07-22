@@ -201,12 +201,15 @@ class Processes extends BaseProcesses {
   }
 }
 
+
+
 Processes.title = 'Processes'
 Processes.path = '/processes'
 Processes.header = 'Processes'
 
 const mapState = state => ({
   loggedUser: state.settings.loggedUser,
+  featuresSettings: state.settings.featuresSettings,
   filterCategories: ProcessUtils.prepareFilterCategories(state.settings.loggedUser.categories, state.settings.loggedUser)
 })
 

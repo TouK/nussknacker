@@ -166,6 +166,12 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
     return null
   }
 
+  getIntervalTime() {
+    let baseIntervalTime = _.get(this.props, "featuresSettings.intervalSettings.base", this.baseIntervalTime)
+    let processesIntervalTime = _.get(this.props, "featuresSettings.intervalSettings.processes", this.intervalTime)
+    return processesIntervalTime || baseIntervalTime
+  }
+
   processStatusTitle = processStatusClass => {
     if (processStatusClass === "status-running") {
       return "Running"

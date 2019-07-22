@@ -25,6 +25,8 @@ import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment.ManagementActor
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process
+import pl.touk.nussknacker.ui.NussknackerApp.system
+import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
 import pl.touk.nussknacker.ui.process.marshall.UiProcessMarshaller
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
@@ -75,11 +77,19 @@ trait EspItTest extends LazyLogging with ScalaFutures with WithHsqlDbTesting wit
     newProcessPreparer = newProcessPreparer,
     processAuthorizer = processAuthorizer
   )
+
+  private val config = system.settings.config.withFallback(ConfigFactory.load())
+  val featureTogglesConfig = FeatureTogglesConfig.create(config)
+  val typeToConfig = ProcessingTypeDeps(config, featureTogglesConfig.standaloneMode)
+  val settingsRoute = new SettingsResources(featureTogglesConfig, typeToConfig)
+
   val processesExportResources = new ProcessesExportResources(processRepository, processActivityRepository)
   val definitionResources = new DefinitionResources(
     Map(existingProcessingType ->  FlinkProcessManagerProvider.defaultModelData(ConfigFactory.load())), subprocessRepository)
 
   val processesRouteWithAllPermissions = withAllPermissions(processesRoute)
+
+  val settingsRouteWithAllPermissions = withAllPermissions(settingsRoute)
 
   def deployRoute(requireComment: Boolean = false) = new ManagementResources(
     processCounter = new ProcessCounter(TestFactory.sampleSubprocessRepository),
@@ -177,6 +187,10 @@ trait EspItTest extends LazyLogging with ScalaFutures with WithHsqlDbTesting wit
 
   def getProcesses = {
     Get(s"/processes") ~> withPermissions(processesRoute, testPermissionRead)
+  }
+
+  def getSettings = {
+    Get(s"/settings") ~> settingsRouteWithAllPermissions
   }
 
   def getProcessDefinitionData(processingType: String, subprocessVersions: Json) = {

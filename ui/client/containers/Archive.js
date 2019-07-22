@@ -132,6 +132,7 @@ Archive.header = 'Archive'
 
 const mapState = (state) =>  ({
   loggedUser: state.settings.loggedUser,
+  featuresSettings: state.settings.featuresSettings,
   filterCategories: ProcessUtils.prepareFilterCategories(state.settings.loggedUser.categories, state.settings.loggedUser)
 })
 

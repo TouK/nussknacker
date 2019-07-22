@@ -1,30 +1,34 @@
-import React from "react";
-import {render} from "react-dom";
-import {connect} from "react-redux";
-import HttpService from "../http/HttpService";
+import React from "react"
+import {connect} from "react-redux"
+import HttpService from "../http/HttpService"
 import InlinedSvgs from '../assets/icons/InlinedSvgs'
 import PeriodicallyReloadingComponent from './PeriodicallyReloadingComponent'
+import ActionsUtils from "../actions/ActionsUtils";
 
 class HealthCheck extends PeriodicallyReloadingComponent {
 
   constructor(props) {
-    super(props);
+    super(props)
 
     this.state = {
       healthCheck: undefined,
-    };
+    }
+  }
+
+  getIntervalTime() {
+    let baseIntervalTime = _.get(this.props, "featuresSettings.intervalSettings.base", this.baseIntervalTime)
+    let processesIntervalTime = _.get(this.props, "featuresSettings.intervalSettings.healthCheck", this.intervalTime)
+    return processesIntervalTime || baseIntervalTime
   }
 
   reload() {
-    HttpService.fetchHealthCheck().then(
-      (check) => this.setState({ healthCheck: check })
-    );
+    HttpService.fetchHealthCheck().then((check) => this.setState({ healthCheck: check }))
   }
 
   render() {
-    const { healthCheck } = this.state;
+    const { healthCheck } = this.state
     if (!healthCheck || healthCheck.state === 'ok') {
-      return null;
+      return null
     }
 
     return (
@@ -32,9 +36,13 @@ class HealthCheck extends PeriodicallyReloadingComponent {
         <div className="icon" title="Warning" dangerouslySetInnerHTML={{__html: InlinedSvgs.tipsWarning}} />
         <span className="errorText">{healthCheck.error || 'State unknown'}</span>
       </div>
-    );
-
+    )
   }
 }
 
-export default HealthCheck;
+
+const mapState = state => ({
+  featuresSettings: state.settings.featuresSettings,
+})
+
+export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(HealthCheck)

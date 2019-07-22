@@ -11,13 +11,18 @@ class PeriodicallyReloadingComponent extends React.Component {
     }
   }
 
+  //Default or you can override this..
+  getIntervalTime() {
+    return this.intervalTime || this.baseIntervalTime
+  }
+
   onMount() {
     //to be overridden
   }
 
   componentDidMount() {
     this.onMount()
-    this.intervalId = setInterval(() => this.reload(), this.intervalTime || this.baseIntervalTime)
+    this.intervalId = setInterval(() => this.reload(), this.getIntervalTime())
   }
 
   componentWillUnmount() {

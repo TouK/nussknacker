@@ -121,5 +121,8 @@ class CustomProcesses extends BaseProcesses {
 
 CustomProcesses.title = "Custom Processes"
 
-const mapState = state => ({loggedUser: state.settings.loggedUser})
+const mapState = state => ({
+  loggedUser: state.settings.loggedUser,
+  featuresSettings: state.settings.featuresSettings
+})
 export default withRouter(connect(mapState, ActionsUtils.mapDispatchWithEspActions)(CustomProcesses))
