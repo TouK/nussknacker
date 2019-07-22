@@ -28,7 +28,7 @@ object ProcessConverter {
     val displayable = ProcessConverter.toDisplayableOrDie(canonicalJson, processingType)
     val modified = f(displayable)
     val canonical = ProcessConverter.fromDisplayable(modified)
-    UiProcessMarshaller.toJson(canonical, PrettyParams.nospace)
+    UiProcessMarshaller.toJson(canonical).spaces2
   }
 
   //FIXME: without default param

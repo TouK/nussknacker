@@ -5,7 +5,7 @@ import java.time.LocalDateTime
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.{Directives, _}
-import pl.touk.http.argonaut.Argonaut62Support
+import pl.touk.http.argonaut.{Argonaut62Support, JsonMarshaller}
 import pl.touk.nussknacker.ui.codec.UiCodecs
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
@@ -18,7 +18,7 @@ import pl.touk.nussknacker.processCounts._
 import scala.concurrent.{ExecutionContext, Future}
 
 class ProcessReportResources(countsReporter: CountsReporter, processCounter: ProcessCounter, val processRepository: FetchingProcessRepository)
-                            (implicit val ec: ExecutionContext) extends Directives with Argonaut62Support with UiCodecs with RouteWithUser with ProcessDirectives {
+                            (implicit val ec: ExecutionContext, jsonMarshaller: JsonMarshaller) extends Directives with Argonaut62Support with UiCodecs with RouteWithUser with ProcessDirectives {
 
   def route(implicit loggedUser: LoggedUser): Route = {
     path("processCounts" / Segment) { processName =>

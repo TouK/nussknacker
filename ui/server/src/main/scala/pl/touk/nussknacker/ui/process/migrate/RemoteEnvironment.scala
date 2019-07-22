@@ -11,7 +11,7 @@ import akka.stream.Materializer
 import argonaut.DecodeJson
 import cats.data.EitherT
 import cats.implicits._
-import pl.touk.http.argonaut.Argonaut62Support
+import pl.touk.http.argonaut.{Argonaut62Support, JsonMarshaller}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.EspError.XError
@@ -37,7 +37,7 @@ trait RemoteEnvironment {
 
   def processVersions(processName: ProcessName)(implicit ec: ExecutionContext) : Future[List[ProcessHistoryEntry]]
 
-  def migrate(localProcess: DisplayableProcess, category: String)(implicit ec: ExecutionContext, loggedUser: LoggedUser) : Future[Either[EspError, Unit]]
+  def migrate(localProcess: DisplayableProcess, category: String)(implicit ec: ExecutionContext, loggedUser: LoggedUser, jsonMarshaller: JsonMarshaller) : Future[Either[EspError, Unit]]
 
   def testMigration(implicit ec: ExecutionContext) : Future[Either[EspError, List[TestMigrationResult]]]
 }
@@ -143,7 +143,7 @@ trait StandardRemoteEnvironment extends Argonaut62Support with RemoteEnvironment
   }
 
   override def migrate(localProcess: DisplayableProcess, category: String)
-                      (implicit ec: ExecutionContext, loggedUser: LoggedUser) : Future[Either[EspError, Unit]]= {
+                      (implicit ec: ExecutionContext, loggedUser: LoggedUser, jsonMarshaller: JsonMarshaller) : Future[Either[EspError, Unit]]= {
 
     val comment = s"Process migrated from $environmentId by ${loggedUser.id}"
     (for {
@@ -189,6 +189,7 @@ trait StandardRemoteEnvironment extends Argonaut62Support with RemoteEnvironment
       invokeJson[List[ValidatedProcessDetails]](
         HttpMethods.POST,
         "processesDetails" :: Nil,
+        //TODO: customJson marshaller
         requestEntity = HttpEntity(ContentTypes.`application/json`, processes.map(_.name).asJson.nospaces))
     }
 

@@ -11,13 +11,13 @@ import akka.stream.{ActorAttributes, Materializer}
 import akka.stream.scaladsl.FileIO
 import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, ProcessActivityRepository}
 import pl.touk.nussknacker.ui.util.{AkkaHttpResponse, CatsSyntax}
-import pl.touk.http.argonaut.Argonaut62Support
+import pl.touk.http.argonaut.{Argonaut62Support, JsonMarshaller}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.ExecutionContext
 
 class ProcessActivityResource(processActivityRepository: ProcessActivityRepository, val processRepository: FetchingProcessRepository)
-                             (implicit val ec: ExecutionContext, mat: Materializer) extends Directives with Argonaut62Support with RouteWithUser with ProcessDirectives {
+                             (implicit val ec: ExecutionContext, mat: Materializer, jsonMarshaller: JsonMarshaller) extends Directives with Argonaut62Support with RouteWithUser with ProcessDirectives {
 
   import argonaut.ArgonautShapeless._
   import pl.touk.nussknacker.ui.codec.UiCodecs._
@@ -49,7 +49,7 @@ class ProcessActivityResource(processActivityRepository: ProcessActivityReposito
 }
 
 class AttachmentResources(attachmentService: ProcessAttachmentService, val processRepository: FetchingProcessRepository)
-                         (implicit val ec: ExecutionContext, mat: Materializer) extends Directives with Argonaut62Support with RouteWithUser with ProcessDirectives {
+                         (implicit val ec: ExecutionContext, mat: Materializer, jsonMarshaller: JsonMarshaller) extends Directives with Argonaut62Support with RouteWithUser with ProcessDirectives {
 
   import argonaut.ArgonautShapeless._
   import pl.touk.nussknacker.ui.codec.UiCodecs._

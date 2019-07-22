@@ -15,7 +15,8 @@ case class MigrationResult(process: CanonicalProcess, migrationsApplied: List[Pr
   def id : String = process.metaData.id
 
   def toUpdateAction(processId: ProcessId): UpdateProcessAction = UpdateProcessAction(processId,
-    GraphProcess(UiProcessMarshaller.toJson(process, PrettyParams.nospace)),
+    //TODO: custom JsonMarshaller
+    GraphProcess(UiProcessMarshaller.toJson(process).nospaces),
     s"Migrations applied: ${migrationsApplied.map(_.description).mkString(", ")}"
   )
 

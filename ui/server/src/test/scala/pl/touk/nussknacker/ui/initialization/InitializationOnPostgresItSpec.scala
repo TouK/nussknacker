@@ -36,7 +36,7 @@ class InitializationOnPostgresItSpec
   private lazy val writeRepository = TestFactory.newWriteProcessRepository(db)
 
   private def sampleDeploymentData(processId: String) = GraphProcess(UiProcessMarshaller.toJson(ProcessCanonizer.canonize(
-    ProcessTestData.validProcessWithId(processId)), PrettyParams.nospace))
+    ProcessTestData.validProcessWithId(processId))).nospaces)
 
   it should "add technical processes" in {
     Initialization.init(migrations, db, "env1", customProcesses)

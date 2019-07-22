@@ -11,6 +11,7 @@ import argonaut.Argonaut._
 import argonaut.{Json, PrettyParams}
 import com.typesafe.scalalogging.LazyLogging
 import com.carrotsearch.sizeof.RamUsageEstimator
+import pl.touk.http.argonaut.JsonMarshaller
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
@@ -36,7 +37,7 @@ object ManagementResources {
             processAuthorizator: AuthorizeProcess,
             processRepository: FetchingProcessRepository, featuresOptions: FeatureTogglesConfig)
            (implicit ec: ExecutionContext,
-            mat: Materializer, system: ActorSystem): ManagementResources = {
+            mat: Materializer, system: ActorSystem, jsonMarshaller: JsonMarshaller): ManagementResources = {
     new ManagementResources(
       processCounter,
       managementActor,
@@ -54,7 +55,7 @@ class ManagementResources(processCounter: ProcessCounter,
                           testResultsMaxSizeInBytes: Int,
                           val processAuthorizer: AuthorizeProcess,
                           val processRepository: FetchingProcessRepository, deploySettings: Option[DeploySettings])
-                         (implicit val ec: ExecutionContext, mat: Materializer, system: ActorSystem)
+                         (implicit val ec: ExecutionContext, mat: Materializer, system: ActorSystem, jsonMarshaller: JsonMarshaller)
   extends Directives
     with LazyLogging
     with RouteWithUser
@@ -137,7 +138,7 @@ class ManagementResources(processCounter: ProcessCounter,
                   performTest(processId, testData, displayableProcessJson).flatMap { results =>
                     try {
                       Future.successful {
-                        HttpResponse(status = StatusCodes.OK, entity = HttpEntity(ContentTypes.`application/json`, results.asJson.pretty(PrettyParams.spaces2)))
+                        HttpResponse(status = StatusCodes.OK, entity = HttpEntity(ContentTypes.`application/json`, jsonMarshaller.marshall(results.asJson)))
                       }
                     }
                     catch {
@@ -162,7 +163,7 @@ class ManagementResources(processCounter: ProcessCounter,
     displayableProcessJson.decodeEither[DisplayableProcess] match {
       case Right(process) =>
         val canonical = ProcessConverter.fromDisplayable(process)
-        val canonicalJson = UiProcessMarshaller.toJson(canonical, PrettyParams.nospace)
+        val canonicalJson = new String(jsonMarshaller.marshall(UiProcessMarshaller.toJson(canonical)))
         (managementActor ? Test(id, canonicalJson, TestData(testData), user, UiCodecs.testResultsVariableEncoder)).mapTo[TestResults[Json]].flatMap { results =>
           assertTestResultsAreNotTooBig(results)
         }.map { results =>

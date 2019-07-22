@@ -67,6 +67,7 @@ trait Argonaut62Support {
     * @tparam A type to encode
     * @return marshaller for any `A` value
     */
-  implicit def argonautToEntityMarshaller[A](implicit encoder: EncodeJson[A], printer: Json => String = PrettyParams.nospace.pretty): ToEntityMarshaller[A] =
-  Marshaller.StringMarshaller.wrap(`application/json`)(printer).compose(encoder.apply)
+  implicit def argonautToEntityMarshaller[A](implicit encoder: EncodeJson[A], printer: JsonMarshaller): ToEntityMarshaller[A] =
+  Marshaller.ByteArrayMarshaller.wrap(`application/json`)(printer.marshall).compose(encoder.apply)
 }
+

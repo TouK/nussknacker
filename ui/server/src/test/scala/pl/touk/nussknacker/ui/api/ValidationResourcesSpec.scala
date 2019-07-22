@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.api
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import org.scalatest._
+import pl.touk.http.argonaut.{JacksonJsonMarshaller, JsonMarshaller}
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -20,6 +21,8 @@ import pl.touk.nussknacker.ui.security.api.Permission
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 
 class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with Matchers with Inside {
+
+  implicit val jsonMarshaller: JsonMarshaller = JacksonJsonMarshaller
 
   val route = withPermissions(new ValidationResources(processValidation), testPermissionRead)
 

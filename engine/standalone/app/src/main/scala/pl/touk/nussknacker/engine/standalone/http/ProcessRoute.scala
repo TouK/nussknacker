@@ -8,7 +8,7 @@ import argonaut.Argonaut._
 import argonaut.ArgonautShapeless._
 import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.http.argonaut.Argonaut62Support
+import pl.touk.http.argonaut.{Argonaut62Support, JsonMarshaller}
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.standalone.deployment.ProcessInterpreters
 import pl.touk.nussknacker.engine.standalone.{StandaloneProcessInterpreter, StandaloneRequestHandler}
@@ -19,7 +19,7 @@ import scala.concurrent.ExecutionContext
 class ProcessRoute(processInterpreters: ProcessInterpreters) extends Directives with LazyLogging with Argonaut62Support {
 
   def route(log: StandaloneRequestResponseLogger)
-           (implicit ec: ExecutionContext, mat: ActorMaterializer): Route =
+           (implicit ec: ExecutionContext, mat: ActorMaterializer, jsonMarshaller: JsonMarshaller): Route =
     path(Segment) { processPath =>
       log.loggingDirective(processPath)(mat) {
         processInterpreters.getInterpreterByPath(processPath) match {

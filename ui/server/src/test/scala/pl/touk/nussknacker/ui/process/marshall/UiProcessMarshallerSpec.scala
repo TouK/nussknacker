@@ -71,7 +71,7 @@ class UiProcessMarshallerSpec extends FlatSpec with Matchers {
     val displayableProcess = ProcessConverter.toDisplayableOrDie(baseProcess, TestProcessingTypes.Streaming)
     val canonical = ProcessConverter.fromDisplayable(displayableProcess)
 
-    val processAfterMarshallAndUnmarshall = UiProcessMarshaller.toJson(canonical, PrettyParams.nospace)
+    val processAfterMarshallAndUnmarshall = UiProcessMarshaller.toJson(canonical).nospaces
 
     Parse.parse(processAfterMarshallAndUnmarshall) shouldBe Parse.parse(baseProcess)
   }

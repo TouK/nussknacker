@@ -13,6 +13,7 @@ import com.codahale.metrics.MetricRegistry
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable}
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
+import pl.touk.http.argonaut.JacksonJsonMarshaller
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessState, RunningState}
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -30,6 +31,8 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
 
   import argonaut.ArgonautShapeless._
   import spel.Implicits._
+
+  private implicit val jsonMarshaller: JacksonJsonMarshaller.type = JacksonJsonMarshaller
 
   var procId : ProcessName = _
 
@@ -97,7 +100,7 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
 
   def processToJson(espProcess: EspProcess): String = {
     val canonical = ProcessCanonizer.canonize(espProcess)
-    processMarshaller.toJson(canonical, PrettyParams.spaces2)
+    processMarshaller.toJson(canonical).spaces2
   }
 
 

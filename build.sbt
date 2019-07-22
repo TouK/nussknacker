@@ -606,7 +606,8 @@ lazy val argonautUtils = (project in engine("argonautUtils")).
       Seq(
         "io.argonaut" %% "argonaut" % argonautV,
         "com.github.alexarchambault" %% s"argonaut-shapeless_$argonautMajorV" % argonautShapelessV,
-        "com.typesafe.akka" %% "akka-http" % akkaHttpV force()
+        "com.typesafe.akka" %% "akka-http" % akkaHttpV force(),
+        "com.fasterxml.jackson.core" % "jackson-databind" % "2.9.2"
       )
     }
   )
@@ -671,12 +672,12 @@ lazy val ui = (project in file("ui/server"))
     Keys.test in SlowTests := (Keys.test in SlowTests).dependsOn(
       //TODO: maybe here there should be engine/demo??
       (assembly in Compile) in managementSample
+    ).dependsOn(
+        testUi
     ).value,
     Keys.test in Test := (Keys.test in Test).dependsOn(
       //TODO: maybe here there should be engine/demo??
       (assembly in Compile) in managementSample
-    ).dependsOn(
-      testUi
     ).value,
     assemblyJarName in assembly := "nussknacker-ui-assembly.jar",
     assembly in ThisScope := (assembly in ThisScope).dependsOn(
