@@ -25,7 +25,7 @@ import pl.touk.nussknacker.ui.codec.UiCodecs
 import pl.touk.nussknacker.ui.validation.{FatalValidationError, ProcessValidation}
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.ui.process._
-import pl.touk.http.argonaut.Argonaut62Support
+import pl.touk.http.argonaut.{Argonaut62Support, JsonMarshaller}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName}
 import pl.touk.nussknacker.restmodel.processdetails.{BasicProcess, ProcessDetails, ValidatedProcessDetails}
@@ -45,7 +45,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
                          typesForCategories: ProcessTypesForCategories,
                          newProcessPreparer: NewProcessPreparer,
                          val processAuthorizer:AuthorizeProcess)
-                        (implicit val ec: ExecutionContext, mat: Materializer)
+                        (implicit val ec: ExecutionContext, mat: Materializer, jsonMarshaller: JsonMarshaller)
   extends Directives
     with Argonaut62Support
     with EspPathMatchers
@@ -316,7 +316,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
                          (implicit loggedUser: LoggedUser):Future[Either[EspError, ValidationResults.ValidationResult]] = {
     val displayableProcess = processToSave.process
     val canonical = ProcessConverter.fromDisplayable(displayableProcess)
-    val json = UiProcessMarshaller.toJson(canonical, PrettyParams.nospace)
+    val json = jsonMarshaller.marshallToString(UiProcessMarshaller.toJson(canonical))
     val deploymentData = GraphProcess(json)
 
     (for {
@@ -345,7 +345,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
 
   private def makeEmptyProcess(processId: String, processingType: ProcessingType, isSubprocess: Boolean) = {
     val emptyCanonical = newProcessPreparer.prepareEmptyProcess(processId, processingType, isSubprocess)
-    GraphProcess(UiProcessMarshaller.toJson(emptyCanonical, PrettyParams.nospace))
+    GraphProcess(jsonMarshaller.marshallToString(UiProcessMarshaller.toJson(emptyCanonical)))
   }
 
   private def withJson(processId: ProcessId, version: Long, businessView: Boolean)

@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.Queryabl
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.{JobStatusService, ProcessObjectsFinder}
-import pl.touk.http.argonaut.Argonaut62Support
+import pl.touk.http.argonaut.{Argonaut62Support, JsonMarshaller}
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
@@ -18,7 +18,7 @@ class QueryableStateResources(typeToConfig: Map[ProcessingType, ProcessingTypeDa
                               val processRepository: FetchingProcessRepository,
                               jobStatusService: JobStatusService,
                               val processAuthorizer:AuthorizeProcess)
-                             (implicit val ec: ExecutionContext)
+                             (implicit val ec: ExecutionContext, jsonMarshaller: JsonMarshaller)
   extends Directives
     with Argonaut62Support
     with RouteWithUser

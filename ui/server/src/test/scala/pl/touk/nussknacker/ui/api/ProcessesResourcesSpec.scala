@@ -532,7 +532,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
 
   private def makeEmptyProcess(processId: String, processingType: ProcessingType, isSubprocess: Boolean) = {
     val emptyCanonical = newProcessPreparer.prepareEmptyProcess(processId, processingType, isSubprocess)
-    GraphProcess(UiProcessMarshaller.toJson(emptyCanonical, PrettyParams.nospace))
+    GraphProcess(jsonMarshaller.marshallToString(UiProcessMarshaller.toJson(emptyCanonical)))
   }
 
   private def getProcessId(processName: ProcessName): ProcessId =

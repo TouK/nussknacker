@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.definition.{ModelDataTestInfoProvider, TestInf
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
-import pl.touk.http.argonaut.Argonaut62Support
+import pl.touk.http.argonaut.{Argonaut62Support, JsonMarshaller}
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
@@ -20,7 +20,8 @@ import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 
 object TestInfoResources {
 
-  def apply(providers: Map[ProcessingType, ModelData], processAuthorizer:AuthorizeProcess, processRepository: FetchingProcessRepository)(implicit ec: ExecutionContext): TestInfoResources =
+  def apply(providers: Map[ProcessingType, ModelData], processAuthorizer:AuthorizeProcess, processRepository: FetchingProcessRepository)
+           (implicit ec: ExecutionContext, jsonMarshaller: JsonMarshaller): TestInfoResources =
     new TestInfoResources(providers.mapValuesNow(new ModelDataTestInfoProvider(_)), processAuthorizer, processRepository)
 
 }
@@ -28,7 +29,7 @@ object TestInfoResources {
 class TestInfoResources(providers: Map[ProcessingType, TestInfoProvider],
                         val processAuthorizer:AuthorizeProcess,
                         val processRepository: FetchingProcessRepository)
-                       (implicit val ec: ExecutionContext)
+                       (implicit val ec: ExecutionContext, jsonMarshaller: JsonMarshaller)
   extends Directives
     with Argonaut62Support
     with RouteWithUser

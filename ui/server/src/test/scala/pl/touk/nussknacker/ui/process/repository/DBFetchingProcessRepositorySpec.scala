@@ -194,7 +194,7 @@ class DBFetchingProcessRepositorySpec
   }
 
   private def saveProcess(espProcess: EspProcess, now: LocalDateTime, category: String = "") = {
-    val json = UiProcessMarshaller.toJson(ProcessCanonizer.canonize(espProcess), PrettyParams.nospace)
+    val json = UiProcessMarshaller.toJson(ProcessCanonizer.canonize(espProcess)).nospaces
     currentTime = now
     writingRepo.saveNewProcess(ProcessName(espProcess.id), category, GraphProcess(json), TestProcessingTypes.Streaming, false).futureValue shouldBe 'right
   }
@@ -206,7 +206,7 @@ class DBFetchingProcessRepositorySpec
 
   private def saveSubProcess(id: String, now: LocalDateTime) = {
     val process = EspProcessBuilder.id(id).exceptionHandler().source("so", "").emptySink("si", "")
-    val json = UiProcessMarshaller.toJson(ProcessCanonizer.canonize(process), PrettyParams.nospace)
+    val json = UiProcessMarshaller.toJson(ProcessCanonizer.canonize(process)).nospaces
     currentTime = now
     writingRepo.saveNewProcess(ProcessName(id), "", GraphProcess(json), TestProcessingTypes.Streaming, true).futureValue shouldBe 'right
   }

@@ -10,7 +10,7 @@ import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.ui.process.ProcessToSave
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType, ValidationErrors, ValidationResult}
-import pl.touk.http.argonaut.Argonaut62Support
+import pl.touk.http.argonaut.{Argonaut62Support, JacksonJsonMarshaller, JsonMarshaller}
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -25,6 +25,8 @@ class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with ScalaFut
   implicit val user = LoggedUser("test")
 
   implicit override val patienceConfig = PatienceConfig(timeout = scaled(Span(1, Seconds)), interval = scaled(Span(100, Millis)))
+
+  implicit val jsonMarshaller: JsonMarshaller = JacksonJsonMarshaller
 
   trait MockRemoteEnvironment extends StandardRemoteEnvironment {
     override def environmentId = "testEnv"

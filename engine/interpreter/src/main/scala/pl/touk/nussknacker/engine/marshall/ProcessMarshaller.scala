@@ -103,17 +103,18 @@ class ProcessMarshaller(implicit
   private implicit lazy val listOfCanonicalNodeEncoder: EncodeJson[List[CanonicalNode]] = ListEncodeJson[CanonicalNode]
   private implicit lazy val listOfCanonicalNodeDecoder: DecodeJson[List[CanonicalNode]] = CanBuildFromDecodeJson[CanonicalNode, List]
 
+  //TODO: used only in tests, so for now we hardcode JsonMarshaller
   def toJson(node: EspProcess, prettyParams: PrettyParams) : String = {
     val canonical = ProcessCanonizer.canonize(node)
-    toJson(canonical, prettyParams)
+    toJson(canonical).pretty(prettyParams.copy(dropNullKeys = true, preserveOrder = true))
   }
 
   def parseProcessVersion(json:String): Validated[String, ProcessVersion] = {
     Validated.fromEither(json.decodeEither[ProcessVersion])
   }
 
-  def toJson(canonical: CanonicalProcess, prettyParams: PrettyParams): String = {
-    canonical.asJson.pretty(prettyParams.copy(dropNullKeys = true, preserveOrder = true))
+  def toJson(canonical: CanonicalProcess): Json = {
+    canonical.asJson
   }
 
   def fromJson(json: String): Validated[ProcessJsonDecodeError, CanonicalProcess] = {

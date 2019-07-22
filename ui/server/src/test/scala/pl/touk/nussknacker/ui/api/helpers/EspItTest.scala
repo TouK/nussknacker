@@ -10,6 +10,7 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
+import pl.touk.http.argonaut.{JacksonJsonMarshaller, JsonMarshaller}
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, GraphProcess}
@@ -29,6 +30,8 @@ import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
 trait EspItTest extends LazyLogging with ScalaFutures with WithHsqlDbTesting with TestPermissions { self: ScalatestRouteTest with Suite with BeforeAndAfterEach with Matchers =>
+
+  implicit val jsonMarshaller: JsonMarshaller = JacksonJsonMarshaller
 
   val env = "test"
   val attachmentsPath = "/tmp/attachments" + System.currentTimeMillis()
@@ -191,7 +194,7 @@ trait EspItTest extends LazyLogging with ScalaFutures with WithHsqlDbTesting wit
 
   private def makeEmptyProcess(processId: String, processingType: ProcessingType, isSubprocess: Boolean) = {
     val emptyCanonical = newProcessPreparer.prepareEmptyProcess(processId, processingType, isSubprocess)
-    GraphProcess(UiProcessMarshaller.toJson(emptyCanonical, PrettyParams.nospace))
+    GraphProcess(jsonMarshaller.marshallToString(UiProcessMarshaller.toJson(emptyCanonical)))
   }
 
   private def prepareProcess(processName: ProcessName, category: String, isSubprocess: Boolean) = {

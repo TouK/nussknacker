@@ -177,7 +177,8 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
   private def resolveGraph(canonicalJson: String): Future[String] = {
     val validatedGraph = UiProcessMarshaller.fromJson(canonicalJson).toValidatedNel
       .andThen(subprocessResolver.resolveSubprocesses)
-      .map(UiProcessMarshaller.toJson(_, PrettyParams.spaces2))
+      //TODO: custom JsonMarshaller
+      .map(proc => UiProcessMarshaller.toJson(proc).nospaces)
     CatsSyntax.toFuture(validatedGraph)(e => new RuntimeException(e.head.toString))
   }
 

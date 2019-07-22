@@ -13,10 +13,11 @@ import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.ui.process.migrate.{RemoteEnvironment, RemoteEnvironmentCommunicationError, TestMigrationResult}
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessNotFoundError
-import pl.touk.nussknacker.ui.util.{Argonaut62Support, ProcessComparator}
+import pl.touk.nussknacker.ui.util.ProcessComparator
 
 import scala.concurrent.{ExecutionContext, Future}
 import ProcessComparator._
+import pl.touk.http.argonaut.{Argonaut62Support, JsonMarshaller}
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.restmodel.process.ProcessId
 import pl.touk.nussknacker.restmodel.processdetails.{ProcessDetails, ProcessHistoryEntry}
@@ -25,7 +26,7 @@ import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
                                  val processRepository: FetchingProcessRepository,
                                  val processAuthorizer:AuthorizeProcess)
-                                (implicit val ec: ExecutionContext)
+                                (implicit val ec: ExecutionContext, jsonMarshaller: JsonMarshaller)
   extends Directives
     with Argonaut62Support
     with RouteWithUser

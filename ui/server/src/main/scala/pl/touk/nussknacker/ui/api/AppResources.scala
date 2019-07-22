@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.ui.process.{JobStatusService, ProcessObjectsFinder}
 import pl.touk.nussknacker.restmodel.displayedgraph.ProcessStatus
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
-import pl.touk.http.argonaut.Argonaut62Support
+import pl.touk.http.argonaut.{Argonaut62Support, JsonMarshaller}
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
@@ -24,7 +24,7 @@ class AppResources(config: Config,
                    modelData: Map[ProcessingType, ModelData],
                    processRepository: FetchingProcessRepository,
                    processValidation: ProcessValidation,
-                   jobStatusService: JobStatusService)(implicit ec: ExecutionContext)
+                   jobStatusService: JobStatusService)(implicit ec: ExecutionContext, jsonMarshaller: JsonMarshaller)
   extends Directives with Argonaut62Support with LazyLogging with RouteWithUser with SecurityDirectives {
 
   import argonaut.ArgonautShapeless._

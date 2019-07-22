@@ -38,7 +38,7 @@ class ProcessesExportImportResourcesSpec extends FlatSpec with ScalatestRouteTes
       val modified = processDetails.copy(metaData = processDetails.metaData.copy(typeSpecificData = StreamMetaData(Some(987))))
 
       val multipartForm =
-        MultipartUtils.prepareMultiPart(UiProcessMarshaller.toJson(modified, PrettyParams.spaces2), "process")
+        MultipartUtils.prepareMultiPart(jsonMarshaller.marshallToString(UiProcessMarshaller.toJson(modified)), "process")
 
       Post(s"/processes/import/${processToSave.id}", multipartForm) ~> routWithAllPermissions ~> check {
         status shouldEqual StatusCodes.OK
@@ -91,7 +91,7 @@ class ProcessesExportImportResourcesSpec extends FlatSpec with ScalatestRouteTes
       val modified = processDetails.copy(metaData = processDetails.metaData.copy(id = "SOMEVERYFAKEID"))
 
       val multipartForm =
-        FileUploadUtils.prepareMultiPart(UiProcessMarshaller.toJson(modified, PrettyParams.spaces2), "process")
+        FileUploadUtils.prepareMultiPart(jsonMarshaller.marshallToString(UiProcessMarshaller.toJson(modified)), "process")
 
       Post(s"/processes/import/${processToSave.id}", multipartForm) ~> routWithAllPermissions ~> check {
         status shouldEqual StatusCodes.BadRequest
