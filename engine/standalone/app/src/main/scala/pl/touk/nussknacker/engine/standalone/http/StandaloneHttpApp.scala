@@ -27,7 +27,7 @@ object StandaloneHttpApp extends Directives with Argonaut62Support with LazyLogg
 
   implicit private val materializer: ActorMaterializer = ActorMaterializer()
 
-  implicit private val jsonMarshaller: JsonMarshaller = JacksonJsonMarshaller
+  implicit private val jsonMarshaller: JsonMarshaller = JsonMarshaller.prepareDefault(config)
 
   val metricRegistry = StandaloneMetrics.prepareRegistry(config)
 
