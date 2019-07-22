@@ -112,14 +112,14 @@ object NussknackerApp extends App with Directives with LazyLogging {
 
     val counter = new ProcessCounter(subprocessRepository)
 
+    implicit val jsonMarshaller: JsonMarshaller = JsonMarshaller.prepareDefault(config)
+
     Initialization.init(modelData.mapValues(_.migrations), db, environment, config.getAs[Map[String, String]]("customProcesses"))
 
     val managementActor = ManagementActor(environment, managers, processRepository, deploymentProcessRepository, subprocessResolver)
     val jobStatusService = new JobStatusService(managementActor)
 
     val processAuthorizer = new AuthorizeProcess(processRepository)
-
-    implicit val jsonMarshaller: JsonMarshaller = JsonMarshaller.prepareDefault(config)
 
     val apiResources: List[RouteWithUser] = {
       val routes = List(

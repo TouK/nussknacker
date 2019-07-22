@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.process.migrate
 
 import argonaut.PrettyParams
+import pl.touk.http.argonaut.JsonMarshaller
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -14,9 +15,8 @@ case class MigrationResult(process: CanonicalProcess, migrationsApplied: List[Pr
 
   def id : String = process.metaData.id
 
-  def toUpdateAction(processId: ProcessId): UpdateProcessAction = UpdateProcessAction(processId,
-    //TODO: custom JsonMarshaller
-    GraphProcess(UiProcessMarshaller.toJson(process).nospaces),
+  def toUpdateAction(processId: ProcessId)(implicit jsonMarshaller: JsonMarshaller): UpdateProcessAction = UpdateProcessAction(processId,
+    GraphProcess(jsonMarshaller.marshallToString(UiProcessMarshaller.toJson(process))),
     s"Migrations applied: ${migrationsApplied.map(_.description).mkString(", ")}"
   )
 

@@ -4,7 +4,6 @@ import argonaut.{Json, JsonBigDecimal, JsonDecimal, JsonLong}
 import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
 import com.fasterxml.jackson.databind.node.{ArrayNode, BooleanNode, DecimalNode, JsonNodeFactory, LongNode, NullNode, ObjectNode, TextNode}
 import com.typesafe.config.Config
-import pl.touk.http.argonaut.JacksonJsonMarshaller.{convertToJackson, marshall, om}
 
 import scala.collection.JavaConverters._
 
@@ -33,6 +32,8 @@ object ArgonautJsonMarshaller extends JsonMarshaller {
 
 }
 
+//This is temporary performance fix, argonaut handles large Json Strings v. ineffectively, in the future we'll move to circe
+//and get rid of it
 object JacksonJsonMarshaller extends JsonMarshaller {
 
   //TODO: configuration?
