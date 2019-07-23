@@ -3,15 +3,18 @@ package pl.touk.nussknacker.engine.kafka
 import java.net.ServerSocket
 
 object AvailablePortFinder {
+  def findAvailablePorts(n: Int): List[Int] = {
+    val sockets = (0 until n).map { _ =>
+      val socket = new ServerSocket(0)
 
-  def findAvailablePort(): Int = {
-    val socket = new ServerSocket(0)
-    try {
       socket.setReuseAddress(true)
-      socket.getLocalPort
+      (socket.getLocalPort, socket)
+    }
+
+    try {
+      sockets.map(_._1).toList
     } finally {
-      socket.close()
+      sockets.foreach(_._2.close())
     }
   }
-
 }
