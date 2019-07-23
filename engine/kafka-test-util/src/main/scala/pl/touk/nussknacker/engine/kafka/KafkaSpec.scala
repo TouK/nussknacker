@@ -9,9 +9,10 @@ trait KafkaSpec extends { self: Suite with BeforeAndAfterAll =>
   val kafkaBrokerConfig = Map.empty[String, String]
 
   override protected def beforeAll(): Unit = {
+    val List(kafkaPort, zkPort) = AvailablePortFinder.findAvailablePorts(2)
     kafkaZookeeperServer = KafkaZookeeperServer.run(
-      kafkaPort = AvailablePortFinder.findAvailablePort(),
-      zkPort = AvailablePortFinder.findAvailablePort(),
+      kafkaPort = kafkaPort,
+      zkPort = zkPort,
       kafkaBrokerConfig = kafkaBrokerConfig
     )
     kafkaClient = new KafkaClient(kafkaAddress = kafkaZookeeperServer.kafkaAddress, zkAddress = kafkaZookeeperServer.zkAddress)
