@@ -14,6 +14,8 @@ const entry = {
   main: path.resolve(__dirname,'./index.js'),
 }
 
+let previouslyPrintedPercentage = 0;
+
 if (!isProd) {
   entry['developer-tools'] = [
     "webpack-dev-server/client?http://localhost:3000",
@@ -88,9 +90,13 @@ module.exports = {
         'DATE': JSON.stringify(GIT_DATE)
       }
     }),
-    // each log entry in separate line - fix for travis no output problem
-    new webpack.ProgressPlugin((percentage, message) => {
-      console.log(message);
+    // each 10% log entry in separate line - fix for travis no output problem
+    new webpack.ProgressPlugin((percentage, message, ...args) => {
+      const decimalPercentage = Math.ceil(percentage * 100);
+      if (this.previouslyPrintedPercentage == null || decimalPercentage >= this.previouslyPrintedPercentage + 10 || decimalPercentage === 100) {
+        console.log(` ${decimalPercentage}%`, message, ...args);
+        this.previouslyPrintedPercentage = decimalPercentage;
+      }
     }),
   ].filter(p => p !== null),
   module: {
