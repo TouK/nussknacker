@@ -20,6 +20,8 @@ env:
     - AWS_DEFAULT_REGION=eu-west-1
     - SANITIZED_BRANCH=`echo ${TRAVIS_BRANCH} | sed 's/[^a-zA-Z0-9]/\_/g' | awk '{print tolower($0)}'`
     - BUILD_VERSION=$(if [[ -n $TRAVIS_TAG ]]; then echo "${SANITIZED_BRANCH}"; else echo "${SANITIZED_BRANCH}-$TRAVIS_COMMIT"; fi)
+    - DOCKER_SOURCE_TAG=`echo ${DOCKER_PACKAGE_USERNAME}/${DOCKER_PACKAGENAME}:${BUILD_VERSION}`
+    - DOCKER_REPOSITORY=`echo ${DOCKER_PACKAGE_USERNAME}/${DOCKER_PACKAGENAME}`
 
 before_install: if [[ `npm -v | sed 's/\..*//'` < 6 ]]; then npm i -g npm; fi
 
@@ -49,10 +51,6 @@ jobs:
       after_success: sbt ++$TRAVIS_SCALA_VERSION coveralls
     - name: "UI slow tests"
       script: sbt ++$TRAVIS_SCALA_VERSION clean ui/slow:test
-    - name: "Docker Compose tests "
-      script:
-        - ./ciBuildDocker.sh --version=${BUILD_VERSION} --docker-tag=demo-latest --docker-publish-type=publishLocal
-        - cd ./demo/docker && ./testQuickstart.sh
     - name: "Management tests"
       script: sbt ++$TRAVIS_SCALA_VERSION clean management/it:test
     - name: "EngineStandalone tests"
@@ -63,8 +61,10 @@ jobs:
     - name: "Push Docker Image"
       script:
         - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin;
-        - ./ciBuildDocker.sh --version=${BUILD_VERSION}
-    - name: "Push Docker Image: demo-latest"
-      script:
-        - if [[ "$TRAVIS_BRANCH" == "demo" ]]; then echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin; fi
-        - if [[ "$TRAVIS_BRANCH" == "demo" ]]; then ./ciBuildDocker.sh --version=${BUILD_VERSION} --docker-tag=demo-latest; fi
+        - ./ciBuildDocker.sh --version=${BUILD_VERSION} --docker-publish-type=publishLocal
+        - cd ./demo/docker && echo "NUSSKNACKER_VERSION=$BUILD_VERSION" > .env && ./testQuickstart.sh
+        - docker push ${DOCKER_SOURCE_TAG}
+        - docker tag ${DOCKER_SOURCE_TAG} ${DOCKER_REPOSITORY}:latest
+        - docker push ${DOCKER_REPOSITORY}:latest
+        - if [[ "$TRAVIS_BRANCH" == "demo" ]]; then docker tag ${DOCKER_SOURCE_TAG} ${DOCKER_REPOSITORY}:demo-latest; fi
+        - if [[ "$TRAVIS_BRANCH" == "demo" ]]; then docker push ${DOCKER_REPOSITORY}:demo-latest; fi
