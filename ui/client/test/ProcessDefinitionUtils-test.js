@@ -1,6 +1,23 @@
 import * as ProcessDefinitionUtils from "../common/ProcessDefinitionUtils";
 
 describe("getNodesToAddInCategory", () => {
+
+  let baseNodes
+  let enricherNodes
+  let filterNode
+  let splitNode
+  let accountServiceNode
+  let clientHttpServiceNode
+
+  beforeAll(() => {
+    baseNodes = processDefinition.nodesToAdd.find(nodes => nodes.name === "base")
+    enricherNodes = processDefinition.nodesToAdd.find(nodes => nodes.name === "enrichers")
+    filterNode = baseNodes.possibleNodes.find(n => n.type === "filter")
+    splitNode = baseNodes.possibleNodes.find(n => n.type === "split")
+    accountServiceNode = enricherNodes.possibleNodes.find(n => n.node.service.id === "accountService")
+    clientHttpServiceNode = enricherNodes.possibleNodes.find(n => n.node.service.id === "clientHttpService")
+  })
+
   it("should return all nodes available in category", () => {
     const nodesToAdd = ProcessDefinitionUtils.getNodesToAddInCategory(processDefinition, "Category1")
 
@@ -11,22 +28,18 @@ describe("getNodesToAddInCategory", () => {
     const nodesToAdd = ProcessDefinitionUtils.getNodesToAddInCategory(processDefinition, "Category2")
 
     expect(nodesToAdd).toEqual([
-      processDefinition.nodesToAdd[0],
-      {
-        "name": "enrichers",
-        "possibleNodes": [processDefinition.nodesToAdd[1].possibleNodes[1]]
-      }
+      {name: "base", possibleNodes: [filterNode, splitNode]},
+      {name: "enrichers", possibleNodes: [clientHttpServiceNode]},
     ])
   })
 
   it("should leave empty group if no nodes are available", () => {
     const nodesToAdd = ProcessDefinitionUtils.getNodesToAddInCategory(processDefinition, "Technical")
 
-    expect(nodesToAdd.length).toEqual(2)
-    expect(nodesToAdd[0].name).toEqual("base")
-    expect(nodesToAdd[0].possibleNodes.length).toEqual(2)
-    expect(nodesToAdd[1].name).toEqual("enrichers")
-    expect(nodesToAdd[1].possibleNodes.length).toEqual(0)
+    expect(nodesToAdd).toEqual([
+      {name: "base", possibleNodes: [filterNode, splitNode]},
+      {name: "enrichers", possibleNodes: []},
+    ])
   })
 })
 
@@ -46,7 +59,7 @@ describe("getFlatNodesToAddInCategory", () => {
   it("should filter out unavailable nodes in category", () => {
     const flatNodes = ProcessDefinitionUtils.getFlatNodesToAddInCategory(processDefinition, "Category2")
 
-    expect(flatNodes).toEqual([allFlatNodes[0], allFlatNodes[1], allFlatNodes[3]])
+    expect(flatNodes).toEqual(_.without(allFlatNodes, allFlatNodes[2]))
   })
 })
 

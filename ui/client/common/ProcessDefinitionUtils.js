@@ -14,7 +14,7 @@ const getNodesToAddInCategory = (processDefinitionData, category) => {
 
 const getFlatNodesToAddInCategory = (processDefinitionData, category) => {
   const nodesToAdd = getNodesToAddInCategory(processDefinitionData, category)
-  return _.flatMap(nodesToAdd, group => getPossibleNodesInCategory(group.possibleNodes, category))
+  return _.flatMap(nodesToAdd, group => group.possibleNodes)
 }
 
 export {
