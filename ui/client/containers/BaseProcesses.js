@@ -152,7 +152,7 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
   }
 
   showProcess = (path, process) => {
-    history.push(VisualizationUrl.visualizationUrl(path, process.name))
+    history.push(VisualizationUrl.visualizationUrl(process.name))
   }
 
   processStatusClass = (process, statusesLoaded, statuses) => {

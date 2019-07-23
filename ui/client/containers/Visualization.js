@@ -174,9 +174,8 @@ class Visualization extends React.Component {
   }
 }
 
-Visualization.path = VisualizationUrl.visualizationRouterPath
+Visualization.path = VisualizationUrl.visualizationPath
 Visualization.header = 'Visualization'
-Visualization.title = 'Visualization'
 
 function mapState(state) {
   const processCategory = _.get(state, 'graphReducer.fetchedProcessDetails.processCategory');

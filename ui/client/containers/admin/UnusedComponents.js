@@ -74,7 +74,7 @@ class UnusedComponents extends BaseAdminTab  {
   }
 }
 
-UnusedComponents.title = "Unused Components"
+UnusedComponents.header = "Unused Components"
 UnusedComponents.key = "unused-components"
 
 export default withRouter(UnusedComponents)

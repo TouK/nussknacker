@@ -199,7 +199,7 @@ class Services extends BaseAdminTab  {
   }
 }
 
-Services.title = "Services"
+Services.header = "Services"
 Services.key = "services"
 
 export function mapProcessDefinitionToServices(services) {

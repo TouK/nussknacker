@@ -126,7 +126,6 @@ class Archive extends BaseProcesses {
   }
 }
 
-Archive.title = 'Archive Processes'
 Archive.path = '/archivedProcesses'
 Archive.header = 'Archive'
 

@@ -53,7 +53,7 @@ class EspApp extends React.Component {
 
   goToProcess = () => {
     const match = this.getMetricsMatch()
-    this.props.history.push(VisualizationUrl.visualizationUrl(Processes.path, match.params.processId))
+    this.props.history.push(VisualizationUrl.visualizationUrl(match.params.processId))
   }
 
   renderTopLeftButton() {

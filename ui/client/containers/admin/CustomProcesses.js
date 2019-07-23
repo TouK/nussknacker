@@ -119,7 +119,7 @@ class CustomProcesses extends BaseProcesses {
   }
 }
 
-CustomProcesses.title = "Custom Processes"
+CustomProcesses.header = "Custom Processes"
 CustomProcesses.key = "custom-processes"
 
 const mapState = state => ({

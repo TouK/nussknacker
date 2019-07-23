@@ -126,9 +126,9 @@ class SubProcesses extends BaseProcesses {
   }
 }
 
-SubProcesses.title = 'SubProcesses'
+
+SubProcesses.header = 'SubProcesses'
 SubProcesses.path = '/subProcesses'
-SubProcesses.header = 'Subprocesses'
 
 const mapState = (state) => ({
   loggedUser: state.settings.loggedUser,

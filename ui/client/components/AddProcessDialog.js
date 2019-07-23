@@ -41,7 +41,7 @@ class AddProcessDialog extends React.Component {
     const processId = this.state.processId
     HttpService.createProcess(this.state.processId, this.state.processCategory, () => {
       this.closeDialog()
-      history.push(VisualizationUrl.visualizationUrl(this.props.visualizationPath, processId))
+      history.push(VisualizationUrl.visualizationUrl(processId))
     }, this.props.isSubprocess)
   }
 

@@ -105,7 +105,7 @@ class SearchComponents extends BaseAdminTab  {
                 <Tr key={idx}>
                   <Td column="processName">{row.processName}</Td>
                   <Td column="nodeId">
-                    <a target="_blank" href={VisualizationUrl.visualizationUrl(VisualizationUrl.visualizationRouterBasePath, row.processName, row.nodeId)}>
+                    <a target="_blank" href={VisualizationUrl.visualizationUrl(row.processName, row.nodeId)}>
                       {row.nodeId}
                     </a>
                   </Td>
@@ -123,7 +123,7 @@ class SearchComponents extends BaseAdminTab  {
   }
 }
 
-SearchComponents.title = "Search components"
+SearchComponents.header = "Search components"
 SearchComponents.key = "search-component"
 
 export default withRouter(SearchComponents)
