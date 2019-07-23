@@ -27,9 +27,6 @@ class Archive extends BaseProcesses {
       selectedIsSubrocess: _.find(this.filterIsSubprocessOptions, {value: query.isSubprocess})
     }, this.prepareState())
   }
-  reload() {
-    this.reloadProcesses(false)
-  }
 
   render() {
     return (
@@ -135,6 +132,7 @@ Archive.header = 'Archive'
 
 const mapState = (state) =>  ({
   loggedUser: state.settings.loggedUser,
+  featuresSettings: state.settings.featuresSettings,
   filterCategories: ProcessUtils.prepareFilterCategories(state.settings.loggedUser.categories, state.settings.loggedUser)
 })
 

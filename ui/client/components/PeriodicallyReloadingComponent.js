@@ -1,14 +1,14 @@
-import React from "react";
-
+import React from "react"
 
 class PeriodicallyReloadingComponent extends React.Component {
-
-  interval() {
-    return 10000;
-  }
+  baseIntervalTime = 40000
+  intervalTime = null
+  intervalId = null
 
   reload() {
-    //to be overridden
+    if (this.method === undefined) {
+      throw new TypeError("Must override method")
+    }
   }
 
   onMount() {
@@ -17,17 +17,15 @@ class PeriodicallyReloadingComponent extends React.Component {
 
   componentDidMount() {
     this.onMount()
-    const intervalId = setInterval(() => this.reload(), this.interval());
-    this.setState({intervalId});
-    this.reload();
+    this.intervalId = setInterval(() => this.reload(), this.getIntervalTime() || this.baseIntervalTime)
   }
 
   componentWillUnmount() {
-    if (this.state.intervalId) {
-      clearInterval(this.state.intervalId)
+    if (this.intervalId) {
+      clearInterval(this.intervalId)
+      this.intervalId = null
     }
   }
-
 }
 
-export default PeriodicallyReloadingComponent;
+export default PeriodicallyReloadingComponent

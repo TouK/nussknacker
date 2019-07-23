@@ -26,10 +26,6 @@ class SubProcesses extends BaseProcesses {
     this.state = this.prepareState()
   }
 
-  reload() {
-    this.reloadProcesses(false)
-  }
-
   render() {
     return (
       <div className="Page">
@@ -136,6 +132,7 @@ SubProcesses.header = 'Subprocesses'
 
 const mapState = (state) => ({
   loggedUser: state.settings.loggedUser,
+  featuresSettings: state.settings.featuresSettings,
   filterCategories: ProcessUtils.prepareFilterCategories(state.settings.loggedUser.categories, state.settings.loggedUser)
 })
 
