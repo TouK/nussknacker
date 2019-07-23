@@ -143,10 +143,6 @@ export default {
     return promiseWrap($.get(`${API_URL}/app/unusedComponents`))
   },
 
-  fetchProcessesDetails() {
-    return promiseWrap($.get(API_URL + '/processesDetails'))
-  },
-
   fetchProcessesComponents(componentId) {
     return promiseWrap($.get(API_URL + '/processesComponents/' + encodeURIComponent(componentId)))
   },
@@ -157,10 +153,6 @@ export default {
 
   fetchCustomProcesses() {
     return promiseWrap($.get(API_URL + '/customProcesses'))
-  },
-
-  fetchSubProcessesDetails() {
-    return promiseWrap($.get(API_URL + '/subProcessesDetails'))
   },
 
   fetchProcessDetails(processId, versionId, businessView) {

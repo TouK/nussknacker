@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, ProcessDeploymentData}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
+import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.db.{DbConfig, EspTables}
 import pl.touk.nussknacker.restmodel.process.ProcessId
@@ -123,7 +124,7 @@ class TechnicalProcessUpdate(customProcesses: Map[String, String], repository: D
               isSubprocess = isSubprocess
             )
           case Some(processId) =>
-            fetchingProcessRepository.fetchLatestProcessVersion(processId).flatMap {
+            fetchingProcessRepository.fetchLatestProcessVersion[Unit](processId).flatMap {
               case Some(version) if version.user == Initialization.nussknackerUser.id =>
                 repository.updateProcess(UpdateProcessAction(processId, deploymentData, "External update")).map(_.right.map(_ => ()))
               case latestVersion => logger.info(s"Process $processId not updated. DB version is: \n${latestVersion.flatMap(_.json).getOrElse("")}\n " +
@@ -148,8 +149,8 @@ class AutomaticMigration(migrations: Map[ProcessingType, ProcessMigrations],
 
   def runOperation(implicit ec: ExecutionContext, lu: LoggedUser, jsonMarshaller: JsonMarshaller): DB[Unit] = {
     val results : DB[List[Unit]] = for {
-      processes <- fetchingProcessRepository.fetchProcessesDetails()
-      subprocesses <- fetchingProcessRepository.fetchSubProcessesDetails()
+      processes <- fetchingProcessRepository.fetchProcessesDetails[DisplayableProcess]()
+      subprocesses <- fetchingProcessRepository.fetchSubProcessesDetails[DisplayableProcess]()
       allToMigrate = processes ++ subprocesses
       migrated <- allToMigrate.map(migrateOne).sequence[DB, Unit]
     } yield migrated

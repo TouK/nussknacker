@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.process.repository
 
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.process.ProcessId
-import pl.touk.nussknacker.restmodel.processdetails.{DeploymentEntry, ProcessHistoryEntry}
+import pl.touk.nussknacker.restmodel.processdetails.{DeploymentEntry, ProcessHistoryEntry, ProcessShapeFetchStrategy}
 import pl.touk.nussknacker.ui.app.BuildInfo
 import pl.touk.nussknacker.ui.db.EspTables
 import pl.touk.nussknacker.ui.db.entity._
@@ -21,13 +21,21 @@ trait ProcessRepository[F[_]] extends Repository[F] with EspTables {
     if (loggedUser.isAdmin) processesTable else processesTable.filter(_.processCategory inSet readCategories)
   }
 
-  protected def latestProcessVersions(processId: ProcessId): Query[ProcessVersionEntityFactory#ProcessVersionEntity, ProcessVersionEntityData, Seq] = {
-    processVersionsTable.filter(_.processId === processId.value).sortBy(_.createDate.desc)
+  protected def latestProcessVersions(processId: ProcessId)
+                                     (implicit fetchShape: ProcessShapeFetchStrategy[_]): Query[ProcessVersionEntityFactory#BaseProcessVersionEntity, ProcessVersionEntityData, Seq] = {
+    processVersionsTableQuery.filter(_.processId === processId.value).sortBy(_.createDate.desc)
   }
 
-  protected def latestProcessVersions(processName: ProcessName): Query[ProcessVersionEntityFactory#ProcessVersionEntity, ProcessVersionEntityData, Seq] = {
+  protected def processVersionsTableQuery(implicit fetchShape: ProcessShapeFetchStrategy[_]): TableQuery[ProcessVersionEntityFactory#BaseProcessVersionEntity] = {
+    fetchShape match {
+      case ProcessShapeFetchStrategy.Fetch => processVersionsTable.asInstanceOf[TableQuery[ProcessVersionEntityFactory#BaseProcessVersionEntity]]
+      case ProcessShapeFetchStrategy.NotFetch => processVersionsTableNoJson.asInstanceOf[TableQuery[ProcessVersionEntityFactory#BaseProcessVersionEntity]]
+    }
+  }
+
+  protected def latestProcessVersionsNoJson(processName: ProcessName): Query[ProcessVersionEntityFactory#BaseProcessVersionEntity, ProcessVersionEntityData, Seq] = {
     processesTable.filter(_.name === processName.value).
-      join(processVersionsTable)
+      join(processVersionsTableNoJson)
       .on { case (process, version) => process.id === version.id }
       .map(_._2)
       .sortBy(_.createDate.desc)

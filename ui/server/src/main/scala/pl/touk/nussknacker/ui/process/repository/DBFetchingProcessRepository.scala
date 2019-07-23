@@ -11,16 +11,12 @@ import pl.touk.nussknacker.ui.util.DateUtils
 import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.graph.node.SubprocessInput
-import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
 import pl.touk.nussknacker.restmodel.ProcessType
 import pl.touk.nussknacker.ui.db.DbConfig
 import pl.touk.nussknacker.restmodel.process.ProcessId
-import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.restmodel.processdetails._
+import pl.touk.nussknacker.restmodel.processdetails.{ProcessShapeFetchStrategy, _}
 import pl.touk.nussknacker.ui.app.BuildInfo
 import pl.touk.nussknacker.ui.db.entity._
-import pl.touk.nussknacker.ui.process.deployment.ProcessIsBeingDeployed
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessNotFoundError
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -37,12 +33,13 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
 
   import api._
 
-  def fetchProcesses()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[ProcessDetails]] = {
+  def fetchProcesses[PS: ProcessShapeFetchStrategy]()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BaseProcessDetails[PS]]] = {
     run(fetchProcessDetailsByQueryActionUnarchived(p => !p.isSubprocess && p.processType === ProcessType.Graph))
   }
 
-  def fetchProcesses(isSubprocess: Option[Boolean], isArchived: Option[Boolean], isDeployed: Option[Boolean], categories: Option[Seq[String]], processingTypes: Option[Seq[String]])
-                    (implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[ProcessDetails]] = {
+  def fetchProcesses[PS: ProcessShapeFetchStrategy](isSubprocess: Option[Boolean], isArchived: Option[Boolean],
+                                                    isDeployed: Option[Boolean], categories: Option[Seq[String]], processingTypes: Option[Seq[String]])
+                                                   (implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BaseProcessDetails[PS]]] = {
 
     val expr: List[Option[ProcessEntityFactory#ProcessEntity => Rep[Boolean]]] = List(
       Option(process => process.processType === ProcessType.Graph),
@@ -57,41 +54,43 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
     }, isDeployed))
   }
 
-  def fetchCustomProcesses()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[ProcessDetails]]= {
+  def fetchCustomProcesses[PS: ProcessShapeFetchStrategy]()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BaseProcessDetails[PS]]]= {
     run(fetchProcessDetailsByQueryActionUnarchived(p => !p.isSubprocess && p.processType === ProcessType.Custom))
   }
 
-  def fetchProcessesDetails()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[ProcessDetails]] = {
+  def fetchProcessesDetails[PS: ProcessShapeFetchStrategy]()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BaseProcessDetails[PS]]] = {
     run(fetchProcessDetailsByQueryActionUnarchived(p => !p.isSubprocess))
   }
 
-  def fetchProcessesDetails(processNames: List[ProcessName])(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[ProcessDetails]] = {
+  def fetchProcessesDetails[PS: ProcessShapeFetchStrategy](processNames: List[ProcessName])
+                                                          (implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BaseProcessDetails[PS]]] = {
     val processNamesSet = processNames.map(_.value).toSet
     run(fetchProcessDetailsByQueryActionUnarchived(p => !p.isSubprocess && p.name.inSet(processNamesSet)))
   }
 
-  def fetchSubProcessesDetails()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[ProcessDetails]] = {
+  def fetchSubProcessesDetails[PS: ProcessShapeFetchStrategy]()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BaseProcessDetails[PS]]] = {
     run(fetchProcessDetailsByQueryActionUnarchived(p => p.isSubprocess))
   }
 
-  def fetchAllProcessesDetails()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[ProcessDetails]] = {
+  def fetchAllProcessesDetails[PS: ProcessShapeFetchStrategy]()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BaseProcessDetails[PS]]] = {
     run(fetchProcessDetailsByQueryActionUnarchived(_ => true))
   }
 
-  def fetchArchivedProcesses()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[ProcessDetails]] = {
+  def fetchArchivedProcesses[PS: ProcessShapeFetchStrategy]()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BaseProcessDetails[PS]]] = {
     run(fetchProcessDetailsByQueryAction(_.isArchived))
   }
-  private def fetchProcessDetailsByQueryActionUnarchived(query: ProcessEntityFactory#ProcessEntity => Rep[Boolean])
-                                                (implicit loggedUser: LoggedUser, ec: ExecutionContext) =
+
+  private def fetchProcessDetailsByQueryActionUnarchived[PS: ProcessShapeFetchStrategy](query: ProcessEntityFactory#ProcessEntity => Rep[Boolean])
+                                                                                       (implicit loggedUser: LoggedUser, ec: ExecutionContext) =
     fetchProcessDetailsByQueryAction(e => query(e) && !e.isArchived)
 
-  private def fetchProcessDetailsByQueryAction(query: ProcessEntityFactory#ProcessEntity => Rep[Boolean])
-                                              (implicit loggedUser: LoggedUser, ec: ExecutionContext): api.DBIOAction[List[ProcessDetails], api.NoStream, Effect.All with Effect.Read] = {
+  private def fetchProcessDetailsByQueryAction[PS: ProcessShapeFetchStrategy](query: ProcessEntityFactory#ProcessEntity => Rep[Boolean])
+                                                                             (implicit loggedUser: LoggedUser, ec: ExecutionContext): api.DBIOAction[List[BaseProcessDetails[PS]], api.NoStream, Effect.All with Effect.Read] = {
     this.fetchProcessDetailsByQueryAction(query, None) //Back compatibility
   }
 
-  private def fetchProcessDetailsByQueryAction(query: ProcessEntityFactory#ProcessEntity => Rep[Boolean], isDeployed: Option[Boolean])
-                                              (implicit loggedUser: LoggedUser, ec: ExecutionContext): DBIOAction[List[ProcessDetails], NoStream, Effect.All with Effect.Read] = {
+  private def fetchProcessDetailsByQueryAction[PS: ProcessShapeFetchStrategy](query: ProcessEntityFactory#ProcessEntity => Rep[Boolean], isDeployed: Option[Boolean])
+                                                                             (implicit loggedUser: LoggedUser, ec: ExecutionContext): DBIOAction[List[BaseProcessDetails[PS]], NoStream, Effect.All with Effect.Read] = {
 
     (for {
       subprocessesVersions <- subprocessLastModificationDates
@@ -101,7 +100,7 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
       deployedPerEnv <- latestDeployedProcessesVersionsPerEnvironment.result
 
       //TODO: move it to SLICK DSL
-      latestProcesses <- processVersionsTable.filter{
+      latestProcesses <- processVersionsTableNoJson.filter{
         raw => (isDeployed match {
           case None => true:Rep[Boolean]
           case Some(dep) => raw.processId.inSet(deployedPerEnv.map(_._1)) === dep
@@ -109,7 +108,7 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
       }
         .groupBy(_.processId)
         .map { case (n, group) => (n, group.map(_.createDate).max) }
-        .join(processVersionsTable)
+        .join(processVersionsTableQuery)
         .on { case (((processId, latestVersionDate)), processVersion) => processVersion.processId === processId && processVersion.createDate === latestVersionDate }
         .join(processTableFilteredByUser.filter(query))
         .on { case ((_, latestVersion), process) => latestVersion.processId === process.id }
@@ -117,7 +116,7 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
 
     } yield
       latestProcesses.map { case ((_, processVersion), process) =>
-        createFullDetails(
+        val processDetails = createFullDetails(
           process,
           processVersion,
           isLatestVersion = true,
@@ -127,26 +126,27 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
           businessView = false,
           subprocessesVersions = subprocessesVersions
         )
+        processDetails
       }).map(_.toList)
   }
 
-  def fetchLatestProcessDetailsForProcessId(id: ProcessId, businessView: Boolean = false)
-                                           (implicit loggedUser: LoggedUser, ec: ExecutionContext): F[Option[ProcessDetails]] = {
+  def fetchLatestProcessDetailsForProcessId[PS: ProcessShapeFetchStrategy](id: ProcessId, businessView: Boolean = false)
+                                                                          (implicit loggedUser: LoggedUser, ec: ExecutionContext): F[Option[BaseProcessDetails[PS]]] = {
     run(fetchLatestProcessDetailsForProcessIdQuery(id))
   }
 
-  def fetchProcessDetailsForId(processId: ProcessId, versionId: Long, businessView: Boolean)
-                              (implicit loggedUser: LoggedUser, ec: ExecutionContext): F[Option[ProcessDetails]] = {
+  def fetchProcessDetailsForId[PS: ProcessShapeFetchStrategy](processId: ProcessId, versionId: Long, businessView: Boolean)
+                                                             (implicit loggedUser: LoggedUser, ec: ExecutionContext): F[Option[BaseProcessDetails[PS]]] = {
     val action = for {
-      latestProcessVersion <- OptionT[DB, ProcessVersionEntityData](latestProcessVersions(processId).result.headOption)
+      latestProcessVersion <- OptionT[DB, ProcessVersionEntityData](latestProcessVersions(processId)(ProcessShapeFetchStrategy.NotFetch).result.headOption)
       processVersion <- OptionT[DB, ProcessVersionEntityData](latestProcessVersions(processId).filter(pv => pv.id === versionId).result.headOption)
       processDetails <- fetchProcessDetailsForVersion(processVersion, isLatestVersion = latestProcessVersion.id == processVersion.id, businessView = businessView)
     } yield processDetails
     run(action.value)
   }
 
-  def fetchLatestProcessVersion(processId: ProcessId)
-                               (implicit loggedUser: LoggedUser): F[Option[ProcessVersionEntityData]] = {
+  def fetchLatestProcessVersion[PS: ProcessShapeFetchStrategy](processId: ProcessId)
+                                                              (implicit loggedUser: LoggedUser): F[Option[ProcessVersionEntityData]] = {
     val action = latestProcessVersions(processId).result.headOption
     run(action)
   }
@@ -175,6 +175,7 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
 
   def fetchProcessingType(processId: ProcessId)(implicit user: LoggedUser, ec: ExecutionContext): F[ProcessingType] = {
     run {
+      implicit val fetchStrategy: ProcessShapeFetchStrategy[_] = ProcessShapeFetchStrategy.NotFetch
       fetchLatestProcessDetailsForProcessIdQuery(processId).flatMap {
         case None => DBIO.failed(ProcessNotFoundError(processId.value.toString))
         case Some(process) => DBIO.successful(process.processingType)
@@ -182,21 +183,22 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
     }
   }
 
-  private def fetchLatestProcessDetailsForProcessIdQuery(id: ProcessId, businessView: Boolean = false)
-                                                        (implicit loggedUser: LoggedUser, ec: ExecutionContext): DB[Option[ProcessDetails]] = {
+  private def fetchLatestProcessDetailsForProcessIdQuery[PS: ProcessShapeFetchStrategy](id: ProcessId, businessView: Boolean = false)
+                                                                                       (implicit loggedUser: LoggedUser, ec: ExecutionContext): DB[Option[BaseProcessDetails[PS]]] = {
     (for {
       latestProcessVersion <- OptionT[DB, ProcessVersionEntityData](latestProcessVersions(id).result.headOption)
-      processDetails <-  fetchProcessDetailsForVersion(latestProcessVersion, isLatestVersion = true, businessView = businessView)
+      processDetails <- fetchProcessDetailsForVersion(latestProcessVersion, isLatestVersion = true, businessView = businessView)
     } yield processDetails).value
   }
 
-  private def fetchProcessDetailsForVersion(processVersion: ProcessVersionEntityData, isLatestVersion: Boolean, businessView: Boolean = false)
-                                           (implicit loggedUser: LoggedUser, ec: ExecutionContext) = {
+  private def fetchProcessDetailsForVersion[PS: ProcessShapeFetchStrategy](processVersion: ProcessVersionEntityData, isLatestVersion: Boolean,
+                                                                           businessView: Boolean = false)
+                                                                          (implicit loggedUser: LoggedUser, ec: ExecutionContext) = {
     val id = processVersion.processId
     for {
       subprocessesVersions <- OptionT.liftF[DB, Map[ProcessName, LocalDateTime]](subprocessLastModificationDates)
       process <- OptionT[DB, ProcessEntityData](processTableFilteredByUser.filter(_.id === id).result.headOption)
-      processVersions <- OptionT.liftF[DB, Seq[ProcessVersionEntityData]](latestProcessVersions(ProcessId(id)).result)
+      processVersions <- OptionT.liftF[DB, Seq[ProcessVersionEntityData]](latestProcessVersions(ProcessId(id))(ProcessShapeFetchStrategy.NotFetch).result)
       latestDeployedVersionsPerEnv <- OptionT.liftF[DB, Seq[DeployedProcessVersionEntityData]](latestDeployedProcessVersionsPerEnvironment(id).result)
       tags <- OptionT.liftF[DB, Seq[TagsEntityData]](tagsTable.filter(_.processId === process.id).result)
     } yield createFullDetails(
@@ -211,20 +213,16 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
     )
   }
 
-  private def createFullDetails(process: ProcessEntityData,
-                                processVersion: ProcessVersionEntityData,
-                                isLatestVersion: Boolean,
-                                currentlyDeployedAt: Seq[DeployedProcessVersionEntityData],
-                                tags: Seq[TagsEntityData],
-                                history: Seq[ProcessHistoryEntry],
-                                businessView: Boolean,
-                                subprocessesVersions: Map[ProcessName, LocalDateTime])
-                               (implicit loggedUser: LoggedUser): ProcessDetails = {
-    val displayable = processVersion.json.map(jsonString => displayableFromJson(jsonString, process, businessView))
-
-    val subprocessModificationDate = displayable.map(findSubprocessesModificationDate(subprocessesVersions))
-
-    BaseProcessDetails[DisplayableProcess](
+  private def createFullDetails[PS: ProcessShapeFetchStrategy](process: ProcessEntityData,
+                                                               processVersion: ProcessVersionEntityData,
+                                                               isLatestVersion: Boolean,
+                                                               currentlyDeployedAt: Seq[DeployedProcessVersionEntityData],
+                                                               tags: Seq[TagsEntityData],
+                                                               history: Seq[ProcessHistoryEntry],
+                                                               businessView: Boolean,
+                                                               subprocessesVersions: Map[ProcessName, LocalDateTime])
+                                                              (implicit loggedUser: LoggedUser): BaseProcessDetails[PS] = {
+    BaseProcessDetails[PS](
       id = process.id.toString,
       name = process.name,
       processVersionId = processVersion.id,
@@ -239,8 +237,8 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
       currentDeployment = currentlyDeployedAt.headOption.map(ProcessRepository.toDeploymentEntry),
       tags = tags.map(_.name).toList,
       modificationDate = DateUtils.toLocalDateTime(processVersion.createDate),
-      subprocessesModificationDate = subprocessModificationDate,
-      json = displayable,
+      // asInstanceOf[PS] is ok here because there is only two options process is fetched (Option[ProcessDetails]) or not (None)
+      json = processVersion.json.map(jsonString => displayableFromJson(jsonString, process, businessView).asInstanceOf[PS]),
       history = history.toList,
       modelVersion = processVersion.modelVersion
     )
@@ -250,7 +248,7 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
   private def subprocessLastModificationDates(implicit loggedUser: LoggedUser, ec: ExecutionContext) : DB[Map[ProcessName, LocalDateTime]] = {
     processesTable
       .filter(_.isSubprocess)
-      .join(processVersionsTable)
+      .join(processVersionsTableNoJson)
       .on(_.id === _.processId).map { case (process, version) =>
         (process.name, version.createDate)
       }
@@ -260,17 +258,6 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
         results.flatMap { case (k, v) => v.map(ProcessName(k) -> _)}.toMap.mapValues(DateUtils.toLocalDateTime)
       }
   }
-
-  private def findSubprocessesModificationDate(subprocessesVersions: Map[ProcessName, LocalDateTime])(process: DisplayableProcess)
-    : Map[String, LocalDateTime] = {
-
-    val allSubprocesses = process.nodes.collect {
-      case SubprocessInput(_, SubprocessRef(subprocessId, _), _,_, _) => subprocessId
-    }.toSet
-    val floatingVersionSubprocesses = allSubprocesses -- process.metaData.subprocessVersions.keySet
-    floatingVersionSubprocesses.flatMap(id => subprocessesVersions.get(ProcessName(id)).map((id, _))).toMap
-  }
-
 
   private def displayableFromJson(json: String, process: ProcessEntityData, businessView: Boolean) = {
     ProcessConverter.toDisplayableOrDie(json, process.processingType, businessView = businessView)

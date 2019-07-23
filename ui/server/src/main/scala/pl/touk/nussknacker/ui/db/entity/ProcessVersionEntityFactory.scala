@@ -16,11 +16,27 @@ trait ProcessVersionEntityFactory {
 
   import profile.api._
 
-  class ProcessVersionEntity(tag: Tag) extends Table[ProcessVersionEntityData](tag, "process_versions") {
-
-    def id = column[Long]("id", NotNull)
+  class ProcessVersionEntity(tag: Tag) extends BaseProcessVersionEntity(tag) {
 
     def json = column[Option[String]]("json", O.Length(100 * 1000))
+
+    def * = (id, processId, json, mainClass, createDate, user, modelVersion) <> (
+      ProcessVersionEntityData.apply _ tupled,
+      ProcessVersionEntityData.unapply)
+
+  }
+
+  class ProcessVersionEntityNoJson(tag: Tag) extends BaseProcessVersionEntity(tag) {
+
+    override def * =  (id, processId, mainClass, createDate, user, modelVersion) <> (
+      (ProcessVersionEntityData.apply(_: Long, _: Long, None, _: Option[String], _: Timestamp, _: String, _: Option[Int])).tupled,
+      (d: ProcessVersionEntityData) => ProcessVersionEntityData.unapply(d).map { t => (t._1, t._2, t._4, t._5, t._6, t._7) })
+
+  }
+
+  abstract class BaseProcessVersionEntity(tag: Tag) extends Table[ProcessVersionEntityData](tag, "process_versions") {
+
+    def id = column[Long]("id", NotNull)
 
     def mainClass = column[Option[String]]("main_class", O.Length(5000))
 
@@ -32,9 +48,6 @@ trait ProcessVersionEntityFactory {
 
     def modelVersion = column[Option[Int]]("model_version", NotNull)
 
-
-    def * = (id, processId, json, mainClass, createDate, user, modelVersion) <> (ProcessVersionEntityData.apply _ tupled, ProcessVersionEntityData.unapply)
-
     def pk = primaryKey("pk_process_version", (processId, id))
 
     private def process = foreignKey("process-version-process-fk", processId, processesTable)(
@@ -44,8 +57,11 @@ trait ProcessVersionEntityFactory {
     )
   }
 
-  val processVersionsTable: LTableQuery[ProcessVersionEntityFactory#ProcessVersionEntity] =
+  val processVersionsTable: TableQuery[ProcessVersionEntityFactory#ProcessVersionEntity] =
     LTableQuery(new ProcessVersionEntity(_))
+
+  val processVersionsTableNoJson: TableQuery[ProcessVersionEntityFactory#ProcessVersionEntityNoJson] =
+    LTableQuery(new ProcessVersionEntityNoJson(_))
 
 }
 

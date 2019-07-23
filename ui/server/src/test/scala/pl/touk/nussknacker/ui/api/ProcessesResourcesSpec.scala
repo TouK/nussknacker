@@ -583,7 +583,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
 
   private def fetchSampleProcess(): Future[CanonicalProcess] = {
     processRepository
-      .fetchLatestProcessVersion(getProcessId(processName))
+      .fetchLatestProcessVersion[DisplayableProcess](getProcessId(processName))
       .map(_.getOrElse(sys.error("Sample process missing")))
       .map { version =>
         val parsed = UiProcessMarshaller.fromJson(version.json.get)
