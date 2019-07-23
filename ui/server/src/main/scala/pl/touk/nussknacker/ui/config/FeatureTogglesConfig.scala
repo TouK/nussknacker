@@ -15,7 +15,7 @@ case class FeatureTogglesConfig(development: Boolean,
                                 environmentAlert:Option[EnvironmentAlert],
                                 commentSettings: Option[CommentSettings],
                                 deploySettings: Option[DeploySettings],
-                                intervalSettings: Option[IntervalTimeSettings],
+                                intervalTimeSettings: IntervalTimeSettings,
                                 attachments: Option[String])
 
 object FeatureTogglesConfig extends LazyLogging{
@@ -37,7 +37,7 @@ object FeatureTogglesConfig extends LazyLogging{
     val commentSettings = parseOptionalConfig[CommentSettings](config, "commentSettings")
     val deploySettings = parseOptionalConfig[DeploySettings](config, "deploySettings")
     val attachments = parseOptionalConfig[String](config, "attachmentsPath")
-    val intervalSettings = parseOptionalConfig[IntervalTimeSettings](config, "intervalSettings")
+    val intervalTimeSettings = config.as[IntervalTimeSettings]("intervalTimeSettings")
 
     FeatureTogglesConfig(
       development = isDevelopmentMode,
@@ -48,7 +48,7 @@ object FeatureTogglesConfig extends LazyLogging{
       counts = counts,
       commentSettings = commentSettings,
       deploySettings = deploySettings,
-      intervalSettings = intervalSettings,
+      intervalTimeSettings = intervalTimeSettings,
       environmentAlert = environmentAlert,
       attachments = attachments
     )

@@ -12,19 +12,20 @@ class SettingsResourcesSpec extends FunSpec with ScalatestRouteTest
 
   import argonaut.ArgonautShapeless._
   import argonaut.Argonaut._
+  implicit override val patienceConfig: PatienceConfig = PatienceConfig(timeout = scaled(Span(2, Seconds)), interval = scaled(Span(100, Millis)))
 
-  implicit override val patienceConfig: PatienceConfig =
-    PatienceConfig(timeout = scaled(Span(2, Seconds)), interval = scaled(Span(100, Millis)))
+  //Values are exists at test/resources/application.conf
+  val intervalTimeProcesses = 20000
+  val intervalTimeHealthCheck = 30000
 
   it("should return base intervalSettings") {
     getSettings ~> check {
       status shouldBe StatusCodes.OK
-      val baseIntervalSettings = IntervalTimeSettings.baseIntervalSettings
       val responseSettings = responseAs[String].decodeOption[UISettings].get
       val data = responseSettings.features
 
-      data.intervalTimeSettings.processes shouldBe baseIntervalSettings.processes
-      data.intervalTimeSettings.healthCheck shouldBe baseIntervalSettings.healthCheck
+      data.intervalTimeSettings.processes shouldBe intervalTimeProcesses
+      data.intervalTimeSettings.healthCheck shouldBe intervalTimeHealthCheck
     }
   }
 }

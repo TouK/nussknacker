@@ -26,7 +26,7 @@ class SettingsResources(config: FeatureTogglesConfig, typeToConfig: Map[Processi
             environmentAlert = config.environmentAlert,
             commentSettings = config.commentSettings,
             deploySettings = config.deploySettings,
-            intervalTimeSettings = config.intervalSettings.getOrElse(IntervalTimeSettings.baseIntervalSettings),
+            intervalTimeSettings = config.intervalTimeSettings,
             signals = signalsSupported,
             attachments = config.attachments.isDefined
           )
@@ -49,13 +49,6 @@ case class EnvironmentAlert(content: String, cssClass: String)
 case class CommentSettings(matchExpression: String, link: String)
 case class DeploySettings(requireComment: Boolean)
 case class IntervalTimeSettings(processes: Int, healthCheck: Int)
-
-object IntervalTimeSettings {
-  val intervalProcesses = 20000
-  val intervalHealthCheck = 30000
-
-  def baseIntervalSettings: IntervalTimeSettings = IntervalTimeSettings(intervalProcesses, intervalHealthCheck)
-}
 
 case class ToggleFeaturesOptions(counts: Boolean,
                                  search: Option[KibanaSettings],
