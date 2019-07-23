@@ -119,7 +119,7 @@ describe("Nodes added", () => {
 
   it("should add multiple nodes with duplicated ids", () => {
     const result = reduceAll([{
-      type: "NODES_ADDED",
+      type: "NODES_WITH_EDGES_ADDED",
       nodesWithPositions: [
         {
           node: {...node, id: "node0"},
@@ -129,11 +129,38 @@ describe("Nodes added", () => {
           node: {...node, id: "node0"},
           position
         }
-      ]
+      ],
+      edges: []
     }])
 
     expect(NodeUtils.getNodeById("node4", result.graphReducer.processToDisplay)).toEqual({...node, id: "node4"})
     expect(NodeUtils.getNodeById("node5", result.graphReducer.processToDisplay)).toEqual({...node, id: "node5"})
+  })
+
+  it("should add nodes with edges", () => {
+    const result = reduceAll([{
+      type: "NODES_WITH_EDGES_ADDED",
+      nodesWithPositions: [
+        {
+          node: {...node, id: "node4"},
+          position
+        },
+        {
+          node: {...node, id: "node0"},
+          position
+        }
+      ],
+      edges: [
+        {from: "node4", to: "node0"}
+      ],
+      processDefinitionData: {
+        edgesForNodes: []
+      }
+    }])
+
+    expect(NodeUtils.getNodeById("node4", result.graphReducer.processToDisplay)).toEqual({...node, id: "node4"})
+    expect(NodeUtils.getNodeById("node5", result.graphReducer.processToDisplay)).toEqual({...node, id: "node5"})
+    expect(NodeUtils.getEdgeById("node4-node5", result.graphReducer.processToDisplay)).toEqual({from: "node4", to: "node5"})
   })
 })
 
