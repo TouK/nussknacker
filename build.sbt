@@ -630,7 +630,6 @@ lazy val queryableState = (project in engine("queryableState")).
 
 
 lazy val buildUi = taskKey[Unit]("builds ui")
-lazy val testUi = taskKey[Unit]("tests ui")
 
 def runNpm(command: String, errorMessage: String): Unit = {
   import sys.process.Process
@@ -659,9 +658,6 @@ lazy val ui = (project in file("ui/server"))
     buildUi := {
       runNpm("run build", "Client build failed")
     },
-    testUi := {
-      runNpm("test", "Client tests failed")
-    },
     parallelExecution in ThisBuild := false,
     assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = includeFlinkAndScala, level = Level.Debug),
     artifact in (Compile, assembly) := {
@@ -676,8 +672,6 @@ lazy val ui = (project in file("ui/server"))
     Keys.test in Test := (Keys.test in Test).dependsOn(
       //TODO: maybe here there should be engine/demo??
       (assembly in Compile) in managementSample
-    ).dependsOn(
-      testUi
     ).value,
     assemblyJarName in assembly := "nussknacker-ui-assembly.jar",
     assembly in ThisScope := (assembly in ThisScope).dependsOn(
