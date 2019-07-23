@@ -1,142 +1,141 @@
-import React from "react";
-import {render} from "react-dom";
-import {browserHistory} from "react-router";
-import {Table, Thead, Th, Tr, Td} from "reactable";
-import {connect} from "react-redux";
-
-import HttpService from "../http/HttpService";
-import ActionsUtils from "../actions/ActionsUtils";
-import DateUtils from "../common/DateUtils";
-import LoaderSpinner from "../components/Spinner.js";
-
-import "../stylesheets/processes.styl";
+import React from "react"
+import {Table, Td, Tr} from "reactable"
+import {connect} from "react-redux"
+import ActionsUtils from "../actions/ActionsUtils"
+import DateUtils from "../common/DateUtils"
+import LoaderSpinner from "../components/Spinner.js"
+import * as  queryString from 'query-string'
+import "../stylesheets/processes.styl"
 import filterIcon from '../assets/img/search.svg'
-import createProcessIcon from '../assets/img/create-process.svg'
-import editIcon from '../assets/img/edit-icon.png'
+import {withRouter} from 'react-router-dom'
+import {Glyphicon} from 'react-bootstrap'
+import BaseProcesses from "./BaseProcesses"
+import Select from 'react-select'
+import ProcessUtils from "../common/ProcessUtils"
 
-const Archive = React.createClass({
+class Archive extends BaseProcesses {
+  queries = {
+    isArchived: false
+  }
 
-  getInitialState() {
-    return {
-      processes: [],
-      filterVal: '',
-      showLoader: true,
-      showAddProcess: false,
-      currentPage: 0,
-      sort: { column: "name", direction: 1}
-    }
-  },
+  constructor(props) {
+    super(props)
 
-  componentDidMount() {
-    const intervalIds = {
-      reloadProcessesIntervalId: setInterval(() => this.reloadProcesses(), 10000)
-    }
-    this.setState(intervalIds)
-    this.reloadProcesses();
-  },
+    const query = queryString.parse(this.props.history.location.search, {parseBooleans: true})
 
-  componentWillUnmount() {
-    if (this.state.reloadProcessesIntervalId) {
-      clearInterval(this.state.reloadProcessesIntervalId)
-    }
-  },
-  unarchiveProcess(processId) {
-    HttpService.fetchArchivedProcesses().then ((fetchedProcesses) => {
-      if (!this.state.showAddProcess) {
-        this.setState({processes: fetchedProcesses, showLoader: false})
-      }
-    }).catch( e => this.setState({ showLoader: false }))
-  },
-
-  reloadProcesses() {
-    HttpService.fetchArchivedProcesses().then ((fetchedProcesses) => {
-      if (!this.state.showAddProcess) {
-        this.setState({processes: fetchedProcesses, showLoader: false})
-      }
-    }).catch( e => this.setState({ showLoader: false }))
-  },
-
-
-  showProcess(process) {
-    browserHistory.push('/visualization/' + process.name)
-  },
-
-  handleChange(event) {
-    this.setState({filterVal: event.target.value});
-  },
-
-  getFilterValue() {
-    return this.state.filterVal.toLowerCase();
-  },
+    this.state = Object.assign({
+      selectedIsSubrocess: _.find(this.filterIsSubprocessOptions, {value: query.isSubprocess})
+    }, this.prepareState())
+  }
+  reload() {
+    this.reloadProcesses(false)
+  }
 
   render() {
     return (
       <div className="Page">
         <div id="process-top-bar">
           <div id="table-filter" className="input-group">
-            <input type="text" className="form-control" aria-describedby="basic-addon1"
-                    value={this.state.filterVal} onChange={this.handleChange}/>
+            <input
+              type="text"
+              className="form-control"
+              aria-describedby="basic-addon1"
+              value={this.state.search}
+              onChange={this.onSearchChange}
+            />
             <span className="input-group-addon" id="basic-addon1">
               <img id="search-icon" src={filterIcon} />
             </span>
           </div>
-          }
+
+          <div id="categories-filter" className="input-group">
+            <Select
+              isMulti
+              isSearchable
+              defaultValue={this.state.selectedCategories}
+              closeMenuOnSelect={false}
+              id="categories"
+              className="form-select"
+              options={this.props.filterCategories}
+              placeholder="Select categories.."
+              onChange={this.onCategoryChange}
+              styles={this.customSelectStyles}
+              theme={this.customSelectTheme}
+            />
+          </div>
+
+          <div id="subprocess-types-filter" className="input-group">
+            <Select
+              className="form-select"
+              defaultValue={this.state.selectedIsSubrocess}
+              options={this.filterIsSubprocessOptions}
+              placeholder="Select process type.."
+              onChange={this.onIsSubprocessChange}
+              styles={this.customSelectStyles}
+              theme={this.customSelectTheme}
+            />
+          </div>
         </div>
-        <LoaderSpinner show={this.state.showLoader}/>
-        <Table className="esp-table"
-               onSort={sort => this.setState({sort: sort})}
-               onPageChange={currentPage => this.setState({currentPage: currentPage})}
-           noDataText="No matching records found."
-           hidden={this.state.showLoader}
-           currentPage={this.state.currentPage}
-           defaultSort={this.state.sort}
-           itemsPerPage={10}
-           pageButtonLimit={5}
-           previousPageLabel="<"
-           nextPageLabel=">"
-           sortable={['name', 'category', 'modifyDate']}
-           filterable={['name', 'category']}
-           hideFilterInput
-           filterBy={this.getFilterValue()}
 
+        <LoaderSpinner show={this.state.showLoader} />
+
+        <Table
+          className="esp-table"
+          onSort={sort => this.setState({sort: sort})}
+          onPageChange={page => this.setState({page: page})}
+          noDataText="No matching records found."
+          hidden={this.state.showLoader}
+          currentPage={this.state.page}
+          defaultSort={this.state.sort}
+          itemsPerPage={10}
+          pageButtonLimit={5}
+          previousPageLabel="<"
+          nextPageLabel=">"
+          sortable={['name', 'category', 'modifyDate']}
+          filterable={['name', 'category']}
+          hideFilterInput
+          filterBy={this.state.search.toLowerCase()}
+          columns = {[
+            {key: 'name', label: 'Process name'},
+            {key: 'category', label: 'Category'},
+            {key: 'subprocess', label: 'Subprocess'},
+            {key: 'modifyDate', label: 'Last modification'},
+            {key: 'view', label: 'View'},
+          ]}
         >
-
-          <Thead>
-            <Th column="name">Process name</Th>
-            <Th column="category">Category</Th>
-            <Th column="modifyDate" className="date-column">Last modification</Th>
-            <Th column="view" className="edit-column">View</Th>
-          </Thead>
-
-          {this.state.processes.map((process, index) => {
+          {
+            this.state.processes.map((process, index) => {
             return (
               <Tr className="row-hover" key={index}>
                 <Td column="name">{process.name}</Td>
                 <Td column="category">{process.processCategory}</Td>
-
-                <Td column="modifyDate" className="date-column">{DateUtils.format(process.modificationDate)}</Td>
+                <Td column="subprocess" className="centered-column">
+                  <Glyphicon glyph={process.isSubprocess ? 'ok' : 'remove'} />
+                </Td>
+                <Td column="modifyDate" className="centered-column">{DateUtils.format(process.modificationDate)}</Td>
                 <Td column="view" className="edit-column">
-                  <img src={editIcon} className="edit-icon" title="View" onClick={e => this.showProcess(process)} />
+                  <Glyphicon
+                    glyph="eye-open"
+                    title={"Show " + (process.isSubprocess ? "subprocess": "process")}
+                    onClick={this.showProcess.bind(this, Archive.path, process)}
+                  />
                 </Td>
               </Tr>
             )
           })}
-
         </Table>
       </div>
     )
   }
-});
+}
 
 Archive.title = 'Archive Processes'
 Archive.path = '/archivedProcesses'
 Archive.header = 'Archive'
 
+const mapState = (state) =>  ({
+  loggedUser: state.settings.loggedUser,
+  filterCategories: ProcessUtils.prepareFilterCategories(state.settings.loggedUser.categories, state.settings.loggedUser)
+})
 
-function mapState(state) {
-  return {
-    loggedUser: state.settings.loggedUser
-  };
-}
-
-export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(Archive);
+export default withRouter(connect(mapState, ActionsUtils.mapDispatchWithEspActions)(Archive))

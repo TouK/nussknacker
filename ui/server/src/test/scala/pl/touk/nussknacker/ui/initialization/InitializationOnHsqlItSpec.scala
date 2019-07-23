@@ -4,6 +4,7 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import argonaut.PrettyParams
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
+import pl.touk.http.argonaut.{JacksonJsonMarshaller, JsonMarshaller}
 import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
@@ -16,6 +17,8 @@ class InitializationOnHsqlItSpec extends FlatSpec with ScalatestRouteTest with M
 
   import Initialization.nussknackerUser
 
+  private implicit val marshaller: JsonMarshaller = JacksonJsonMarshaller
+
   private val processId = "proc1"
 
   private val migrations = Map(TestProcessingTypes.Streaming -> new TestMigrations(1, 2))
@@ -25,7 +28,7 @@ class InitializationOnHsqlItSpec extends FlatSpec with ScalatestRouteTest with M
   private lazy val writeRepository = TestFactory.newWriteProcessRepository(db)
 
   private def sampleDeploymentData(processId: String) = GraphProcess(UiProcessMarshaller.toJson(ProcessCanonizer.canonize(
-    ProcessTestData.validProcessWithId(processId)), PrettyParams.nospace))
+    ProcessTestData.validProcessWithId(processId))).nospaces)
 
   it should "add technical processes" in {
 

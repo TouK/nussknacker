@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.ui.process.subprocess
 
 import cats.data.ValidatedNel
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.compile.ProcessCompilationError
 
 class SubprocessResolver(subprocessRepository: SubprocessRepository) {
 

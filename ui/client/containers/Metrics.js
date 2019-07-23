@@ -1,18 +1,19 @@
 import React from 'react'
-import { connect } from 'react-redux';
-import { bindActionCreators } from 'redux';
+import PropTypes from 'prop-types';
+import {connect} from 'react-redux';
 import HttpService from "../http/HttpService";
+import {withRouter} from "react-router";
 
 class Metrics extends React.Component {
 
   static propTypes = {
-      settings: React.PropTypes.object.isRequired,
+      settings: PropTypes.object.isRequired,
   }
 
   componentDidMount() {
-    if (this.props.params.processId) {
-      HttpService.fetchProcessDetails(this.props.params.processId).then(details => {
-          this.setState({processingType: details.processingType})
+    if (this.props.match.params.processId) {
+      HttpService.fetchProcessDetails(this.props.match.params.processId).then(details => {
+        this.setState({processingType: details.processingType})
       })
     } else {
       this.setState({processingType: ""})
@@ -27,7 +28,7 @@ class Metrics extends React.Component {
     const url = this.props.settings.url;
     //TODO: this is still a bit grafana specific...
     const dashboard = this.getDashboardName();
-    const processName = this.props.params.processId || "All";
+    const processName = this.props.match.params.processId || "All";
 
     const finalIframeUrl = url
       .replace("$dashboard", dashboard)
@@ -48,7 +49,7 @@ class Metrics extends React.Component {
 }
 
 Metrics.basePath = "/metrics"
-Metrics.path = Metrics.basePath + "(/:processId)"
+Metrics.path = Metrics.basePath + "/:processId?"
 Metrics.header = "Metrics"
 
 function mapState(state) {
@@ -63,4 +64,4 @@ function mapDispatch() {
   };
 }
 
-export default connect(mapState, mapDispatch)(Metrics);
+export default withRouter(connect(mapState, mapDispatch)(Metrics));

@@ -1,5 +1,6 @@
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/pl.touk.nussknacker/nussknacker-ui_2.11/badge.svg)](https://maven-badges.herokuapp.com/maven-central/pl.touk.nussknacker/nussknacker-ui_2.11)
 [![Build Status](https://travis-ci.org/TouK/nussknacker.svg?branch=master)](https://travis-ci.org/TouK/nussknacker)
+[![Coverage Status](https://coveralls.io/repos/github/TouK/nussknacker/badge.svg?branch=master)](https://coveralls.io/github/TouK/nussknacker?branch=master)
 [![Join the chat at https://gitter.im/TouK/nussknacker](https://badges.gitter.im/TouK/nussknacker.svg)](https://gitter.im/TouK/nussknacker?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 # Nussknacker [![pronunciation](https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Speaker_Icon.svg/15px-Speaker_Icon.svg.png)](https://more-de.howtopronounce.com/nussknacker-in-more-voice-1227977z1227977-n01.mp3)

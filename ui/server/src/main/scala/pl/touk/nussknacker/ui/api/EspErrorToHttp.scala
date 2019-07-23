@@ -8,10 +8,11 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.ui.process.deployment.ProcessIsBeingDeployed
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.ui.{BadRequestError, EspError, FatalError, NotFoundError}
-import pl.touk.http.argonaut.Argonaut62Support
+import pl.touk.http.argonaut.{Argonaut62Support, JsonMarshaller}
 import pl.touk.nussknacker.ui.validation.FatalValidationError
 
 import scala.language.implicitConversions
+import scala.util.control.NonFatal
 
 object EspErrorToHttp extends LazyLogging with Argonaut62Support {
 
@@ -42,11 +43,11 @@ object EspErrorToHttp extends LazyLogging with Argonaut62Support {
   def espErrorHandler: ExceptionHandler = {
     import akka.http.scaladsl.server.Directives._
     ExceptionHandler {
-      case e: EspError => complete(errorToHttp(e))
+      case NonFatal(e) => complete(errorToHttp(e))
     }
   }
 
-  def toResponse(either: Either[EspError, ValidationResult]): ToResponseMarshallable =
+  def toResponse(either: Either[EspError, ValidationResult])(implicit jsonMarshaller: JsonMarshaller): ToResponseMarshallable =
     either match {
       case Right(validationResult) =>
         validationResult
@@ -54,7 +55,7 @@ object EspErrorToHttp extends LazyLogging with Argonaut62Support {
         espErrorToHttp(err)
     }
 
-  def toResponseXor[T: EncodeJson](xor: Either[EspError, T]): ToResponseMarshallable =
+  def toResponseXor[T: EncodeJson](xor: Either[EspError, T])(implicit jsonMarshaller: JsonMarshaller): ToResponseMarshallable =
     xor match {
       case Right(t) =>
         t
@@ -62,7 +63,7 @@ object EspErrorToHttp extends LazyLogging with Argonaut62Support {
         espErrorToHttp(err)
     }
 
-  def toResponseEither[T: EncodeJson](either: Either[EspError, T]): ToResponseMarshallable = either match {
+  def toResponseEither[T: EncodeJson](either: Either[EspError, T])(implicit jsonMarshaller: JsonMarshaller): ToResponseMarshallable = either match {
       case Right(t) => t
       case Left(err) => espErrorToHttp(err)
   }

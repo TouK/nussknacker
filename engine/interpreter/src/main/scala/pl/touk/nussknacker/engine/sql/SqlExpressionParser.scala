@@ -5,10 +5,11 @@ import java.sql.SQLSyntaxErrorException
 import cats.data.Validated._
 import cats.data._
 import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.lazyy.LazyValuesProvider
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
 import pl.touk.nussknacker.engine.api.typed.{ClazzRef, TypedMap, typing}
-import pl.touk.nussknacker.engine.compile.ValidationContext
+import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedExpression
 import pl.touk.nussknacker.engine.compiledgraph.expression
 import pl.touk.nussknacker.engine.compiledgraph.expression.{Expression, ExpressionParser, ValueWithLazyContext}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
@@ -24,8 +25,8 @@ object SqlExpressionParser extends ExpressionParser {
   override val languageId: String = "sql"
 
   override def parse(original: String, ctx: ValidationContext, expectedType: TypingResult)
-  : Validated[NonEmptyList[expression.ExpressionParseError], (typing.TypingResult, SqlExpression)] = {
-    val columnModel = ctx.variables.mapValues(CreateColumnModel(_))
+  : Validated[NonEmptyList[expression.ExpressionParseError], TypedExpression] = {
+    val columnModel = ctx.localVariables.mapValues(CreateColumnModel(_))
 
     val validVars = columnModel.collect {
       case (key, Valid(model)) => key -> model
@@ -44,15 +45,13 @@ object SqlExpressionParser extends ExpressionParser {
     }
   }
 
-  private def createExpression(
-                                original: String,
-                                colModel: Map[String, ColumnModel],
-                                typingResult: TypingResult
-                              ): (typing.TypingResult, SqlExpression) = {
+  private def createExpression(original: String,
+                               colModel: Map[String, ColumnModel],
+                               typingResult: TypingResult): TypedExpression = {
 
     val expression = new SqlExpression(original = original, columnModels = colModel)
     val listResult = TypedClass(classOf[List[_]], List(typingResult))
-    (Typed(Set(listResult)), expression)
+    TypedExpression(expression, Typed(Set(listResult)))
   }
 
   private def getQueryReturnType(original: String, colModel: Map[String, ColumnModel]): Validated[NonEmptyList[expression.ExpressionParseError], TypingResult] = {

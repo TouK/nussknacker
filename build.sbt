@@ -1,6 +1,7 @@
 import com.typesafe.sbt.packager.SettingsHelper
-import sbt._
+import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport.dockerUsername
 import sbt.Keys._
+import sbt._
 import sbtassembly.AssemblyPlugin.autoImport.assembly
 import sbtassembly.MergeStrategy
 
@@ -13,6 +14,13 @@ val flinkScope = if (includeFlinkAndScala) "compile" else "provided"
 val nexusUrl = Option(System.getProperty("nexusUrl"))
 //TODO: this is pretty clunky, but works so far for our case...
 val nexusHost = nexusUrl.map(_.replaceAll("http[s]?://", "").replaceAll("[:/].*", ""))
+
+//Docker release configuration
+val dockerTagName = Option(System.getProperty("dockerTagName"))
+val dockerPort = System.getProperty("dockerPort", "8080").toInt
+val dockerUserName = Some(System.getProperty("dockerUserName", "touk"))
+val dockerPackageName = System.getProperty("dockerPackageName", "nussknacker")
+val dockerUpLatest = System.getProperty("dockerUpLatest", "true").toBoolean
 
 // `publishArtifact := false` should be enough to keep sbt from publishing root module,
 // unfortunately it does not work, so we resort to hack by publishing root module to Resolver.defaultLocal
@@ -72,35 +80,38 @@ val ignoreSlowTests = Tests.Argument(TestFrameworks.ScalaTest, "-l", "org.scalat
 
 val commonSettings =
   publishSettings ++
-  Seq(
-    licenses += ("Apache-2.0", url("https://www.apache.org/licenses/LICENSE-2.0.html")),
-    scalaVersion  := scalaV,
-    resolvers ++= Seq(
-      "confluent" at "http://packages.confluent.io/maven"
-    ),
-    testOptions in Test ++= Seq(scalaTestReports, ignoreSlowTests),
-    testOptions in IntegrationTest += scalaTestReports,
-    scalacOptions := Seq(
-      "-unchecked",
-      "-deprecation",
-      "-encoding", "utf8",
-      "-Xfatal-warnings",
-      "-feature",
-      "-language:postfixOps",
-      "-language:existentials",
-      "-Ypartial-unification",
-      "-target:jvm-1.8"
-    ),
-    javacOptions := Seq(
-      "-Xlint:deprecation",
-      "-Xlint:unchecked",
-      //we use it e.g. to provide consistent behaviour wrt extracting parameter names from scala and java
-      "-parameters"
-    ),
-    assemblyMergeStrategy in assembly := nussknackerMergeStrategy,
-    //problem with scaladoc of api: https://github.com/scala/bug/issues/10134
-    scalacOptions in (Compile, doc) -= "-Xfatal-warnings"
-  )
+    Seq(
+      test in assembly := {},
+      licenses += ("Apache-2.0", url("https://www.apache.org/licenses/LICENSE-2.0.html")),
+      scalaVersion  := scalaV,
+      resolvers ++= Seq(
+        "confluent" at "http://packages.confluent.io/maven"
+      ),
+      testOptions in Test ++= Seq(scalaTestReports, ignoreSlowTests),
+      testOptions in IntegrationTest += scalaTestReports,
+      scalacOptions := Seq(
+        "-unchecked",
+        "-deprecation",
+        "-encoding", "utf8",
+        "-Xfatal-warnings",
+        "-feature",
+        "-language:postfixOps",
+        "-language:existentials",
+        "-Ypartial-unification",
+        "-target:jvm-1.8"
+      ),
+      javacOptions := Seq(
+        "-Xlint:deprecation",
+        "-Xlint:unchecked",
+        //we use it e.g. to provide consistent behaviour wrt extracting parameter names from scala and java
+        "-parameters"
+      ),
+      assemblyMergeStrategy in assembly := nussknackerMergeStrategy,
+      coverageMinimum := 60,
+      coverageFailOnMinimum := false,
+      //problem with scaladoc of api: https://github.com/scala/bug/issues/10134
+      scalacOptions in (Compile, doc) -= "-Xfatal-warnings"
+    )
 
 val akkaV = "2.4.20" //same version as in Flink
 val flinkV = "1.7.2"
@@ -131,21 +142,50 @@ val postgresV = "42.2.5"
 val flywayV = "5.2.4"
 val confluentV = "4.1.2"
 
+lazy val dockerSettings = {
+  val workingDir = "/opt/nussknacker"
+
+  Seq(
+    dockerEntrypoint := Seq(s"$workingDir/bin/nussknacker-entrypoint.sh", dockerPort.toString),
+    dockerExposedPorts := Seq(dockerPort),
+    dockerExposedVolumes := Seq(s"$workingDir/storage", s"$workingDir/data"),
+    defaultLinuxInstallLocation in Docker := workingDir,
+    dockerBaseImage := "openjdk:8-jdk",
+    dockerUsername := dockerUserName,
+    packageName := dockerPackageName,
+    dockerUpdateLatest := dockerUpLatest,
+    dockerLabels := Map(
+      "tag" -> dockerTagName.getOrElse(version.value),
+      "version" -> version.value,
+      "scala" -> scalaV,
+      "flink" -> flinkV
+    ),
+    version in Docker := dockerTagName.getOrElse(version.value)
+  )
+}
+
 lazy val dist = (project in file("nussknacker-dist"))
   .settings(commonSettings)
-  .enablePlugins(JavaServerAppPackaging)
+  .enablePlugins(SbtNativePackager, JavaServerAppPackaging)
   .settings(
-    Keys.compile in Compile := (Keys.compile in Compile).dependsOn(
-      (assembly in Compile) in generic
-    ).value,
     packageName in Universal := ("nussknacker" + "-" + version.value),
+    Keys.compile in Compile := (Keys.compile in Compile).dependsOn(
+      (assembly in Compile) in generic,
+      (assembly in Compile) in example
+    ).value,
+    
     mappings in Universal += {
-      val model = (crossTarget in generic).value / "genericModel.jar"
-      model -> "model/genericModel.jar"
+      val genericModel = (crossTarget in generic).value / "genericModel.jar"
+      genericModel -> "model/genericModel.jar"
+    },
+    mappings in Universal += {
+      val exampleModel = (crossTarget in example).value / s"nussknacker-example-assembly-${version.value}.jar"
+      exampleModel -> "model/exampleModel.jar"
     },
     publishArtifact := false,
     SettingsHelper.makeDeploymentSettings(Universal, packageZipTarball in Universal, "tgz")
   )
+  .settings(dockerSettings)
   .dependsOn(ui)
 
 def engine(name: String) = file(s"engine/$name")
@@ -211,10 +251,10 @@ lazy val management = (project in engine("flink/management")).
       Seq(
         "org.typelevel" %% "cats-core" % catsV,
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % flinkScope
-        excludeAll(
-            ExclusionRule("log4j", "log4j"),
-            ExclusionRule("org.slf4j", "slf4j-log4j12")
-          ),
+          excludeAll(
+          ExclusionRule("log4j", "log4j"),
+          ExclusionRule("org.slf4j", "slf4j-log4j12")
+        ),
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
         "org.scalatest" %% "scalatest" % scalaTestV % "it,test",
         "com.whisk" %% "docker-testkit-scalatest" % "0.9.0" % "it,test",
@@ -249,8 +289,7 @@ lazy val managementSample = (project in engine("flink/management/sample")).
       )
     }
   ).
-  dependsOn(flinkUtil, kafka, kafkaFlinkUtil, process % "runtime,test", flinkTestUtil % "test", kafkaTestUtil % "test",
-    securityApi)
+  dependsOn(flinkUtil, kafka, kafkaFlinkUtil, process % "runtime,test", flinkTestUtil % "test", kafkaTestUtil % "test", securityApi)
 
 lazy val managementJavaSample = (project in engine("flink/management/java_sample")).
   settings(commonSettings).
@@ -289,6 +328,25 @@ lazy val example = (project in engine("example")).
   )
   .settings(addArtifact(artifact in (Compile, assembly), assembly))
   .dependsOn(process, kafkaFlinkUtil, kafkaTestUtil % "test", flinkTestUtil % "test")
+
+
+lazy val generic = (project in engine("flink/generic")).
+  settings(commonSettings).
+  settings(
+    name := "nussknacker-generic-model",
+    libraryDependencies ++= {
+      Seq(
+        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided"
+      )
+    },
+    test in assembly := {},
+    assemblyJarName in assembly := "genericModel.jar",
+    artifact in (Compile, assembly) := {
+      val art = (artifact in (Compile, assembly)).value
+      art.withClassifier(Some("assembly"))
+    })
+  .settings(addArtifact(artifact in (Compile, assembly), assembly))
+  .dependsOn(process, kafkaFlinkUtil, avroFlinkUtil, flinkTestUtil % "test", kafkaTestUtil % "test")
 
 lazy val process = (project in engine("flink/process")).
   settings(commonSettings).
@@ -485,24 +543,6 @@ lazy val api = (project in engine("api")).
     }
   )
 
-lazy val generic = (project in engine("flink/generic")).
-  settings(commonSettings).
-  settings(
-    name := "nussknacker-generic-model",
-    libraryDependencies ++= {
-      Seq(
-        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided"
-      )
-    },
-    test in assembly := {},
-    assemblyJarName in assembly := "genericModel.jar",
-    artifact in (Compile, assembly) := {
-      val art = (artifact in (Compile, assembly)).value
-      art.withClassifier(Some("assembly"))
-    })
-  .settings(addArtifact(artifact in (Compile, assembly), assembly))
-  .dependsOn(process, kafkaFlinkUtil, avroFlinkUtil, flinkTestUtil % "test", kafkaTestUtil % "test")
-
 lazy val securityApi = (project in engine("security-api")).
   settings(commonSettings).
   settings(
@@ -539,6 +579,7 @@ lazy val processReports = (project in engine("processReports")).
       Seq(
         "com.typesafe" % "config" % "1.3.0",
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
+        "com.iheart" %% "ficus" % ficusV,
         "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )
     }
@@ -570,7 +611,8 @@ lazy val argonautUtils = (project in engine("argonautUtils")).
       Seq(
         "io.argonaut" %% "argonaut" % argonautV,
         "com.github.alexarchambault" %% s"argonaut-shapeless_$argonautMajorV" % argonautShapelessV,
-        "com.typesafe.akka" %% "akka-http" % akkaHttpV force()
+        "com.typesafe.akka" %% "akka-http" % akkaHttpV force(),
+        "com.fasterxml.jackson.core" % "jackson-databind" % "2.9.2"
       )
     }
   )
@@ -588,7 +630,7 @@ lazy val queryableState = (project in engine("queryableState")).
         "com.typesafe" % "config" % configV
       )
     }
-  ).dependsOn(api)
+  ).dependsOn(api, interpreter)
 
 
 
@@ -599,8 +641,6 @@ def runNpm(command: String, errorMessage: String): Unit = {
   import sys.process.Process
   val path = Path.apply("ui/client").asFile
   println("Using path: " + path.getAbsolutePath)
-  val installResult = Process("npm install", path)!;
-  if (installResult != 0) throw new RuntimeException("NPM install failed")
   val result = Process(s"npm $command", path)!;
   if (result != 0) throw new RuntimeException(errorMessage)
 }
@@ -634,6 +674,10 @@ lazy val ui = (project in file("ui/server"))
       art.withClassifier(Some("assembly"))
     },
     test in assembly := {},
+    Keys.test in SlowTests := (Keys.test in SlowTests).dependsOn(
+      //TODO: maybe here there should be engine/demo??
+      (assembly in Compile) in managementSample
+    ).value,
     Keys.test in Test := (Keys.test in Test).dependsOn(
       //TODO: maybe here there should be engine/demo??
       (assembly in Compile) in managementSample
@@ -658,7 +702,7 @@ lazy val ui = (project in file("ui/server"))
         "org.hsqldb" % "hsqldb" % hsqldbV,
         "org.postgresql" % "postgresql" % postgresV,
         "org.flywaydb" % "flyway-core" % flywayV,
-        "org.apache.xmlgraphics" % "fop" % "2.1",
+        "org.apache.xmlgraphics" % "fop" % "2.3",
         "org.mindrot" % "jbcrypt" % "0.4",
 
         "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test" force(),

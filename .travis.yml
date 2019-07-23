@@ -1,23 +1,10 @@
 language: scala
+
 scala:
-   - 2.11.12
+  - 2.11.12
+
 jdk:
- - oraclejdk8
-
-# These directories are cached to S3 at the end of the build
-cache:
-  directories:
-    - $HOME/.ivy2/cache
-    - $HOME/.sbt/boot/
-
-before_cache:
-  # Cleanup the cached directories to avoid unnecessary cache updates
-  - rm -fv $HOME/.ivy2/.sbt.ivy.lock
-  - find $HOME/.ivy2/cache -name "ivydata-*.properties" -print -delete
-  - find $HOME/.sbt        -name "*.lock"               -print -delete
-
-script:
- - sbt ++$TRAVIS_SCALA_VERSION clean test management/it:test
+  - oraclejdk8
 
 sudo: required
 
@@ -26,3 +13,58 @@ services:
 
 addons:
   chrome: stable
+
+env:
+  global:
+    - APPLICATION_NAME=nussknacker
+    - AWS_DEFAULT_REGION=eu-west-1
+    - SANITIZED_BRANCH=`echo ${TRAVIS_BRANCH} | sed 's/[^a-zA-Z0-9]/\_/g' | awk '{print tolower($0)}'`
+    - BUILD_VERSION=$(if [[ -n $TRAVIS_TAG ]]; then echo "${SANITIZED_BRANCH}"; else echo "${SANITIZED_BRANCH}-$TRAVIS_COMMIT"; fi)
+
+before_install: if [[ `npm -v | sed 's/\..*//'` < 6 ]]; then npm i -g npm; fi
+
+# Cleanup the cached directories to avoid unnecessary cache updates
+before_cache:
+  - rm -fv $HOME/.ivy2/.sbt.ivy.lock
+  - find $HOME/.ivy2/cache -name "ivydata-*.properties" -print -delete
+  - find $HOME/.sbt        -name "*.lock"               -print -delete
+
+# These directories are cached to S3 at the end of the build
+cache:
+  directories:
+    - $HOME/.ivy2/cache
+    - $HOME/.sbt/boot/
+
+# We don't allow do releases from fork and corn type because of security: https://docs.travis-ci.com/user/pull-requests/#pull-requests-and-security-restrictions
+stages:
+  - tests
+  - name: releases
+    if: fork = false AND type != cron
+
+jobs:
+  include:
+    - stage: tests
+      name: "Unit tests"
+      script: ./ciTest.sh $TRAVIS_SCALA_VERSION
+      after_success: sbt ++$TRAVIS_SCALA_VERSION coveralls
+    - name: "UI slow tests"
+      script: sbt ++$TRAVIS_SCALA_VERSION clean ui/slow:test
+    - name: "Docker Compose tests "
+      script:
+        - ./ciBuildDocker.sh --version=${BUILD_VERSION} --docker-tag=demo-latest --docker-publish-type=publishLocal
+        - cd ./demo/docker && ./testQuickstart.sh
+    - name: "Management tests"
+      script: sbt ++$TRAVIS_SCALA_VERSION clean management/it:test
+    - name: "EngineStandalone tests"
+      script: sbt ++$TRAVIS_SCALA_VERSION clean engineStandalone/it:test
+    - stage: releases
+      name: "Release sonatype packages"
+      script: ./ciBuild.sh "${BUILD_VERSION}-SNAPSHOT" ${NEXUS_PASSWORD} ${NEXUS_URL} ${NEXUS_USER} true
+    - name: "Push Docker Image"
+      script:
+        - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin;
+        - ./ciBuildDocker.sh --version=${BUILD_VERSION}
+    - name: "Push Docker Image: demo-latest"
+      script:
+        - if [[ "$TRAVIS_BRANCH" == "demo" ]]; then echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin; fi
+        - if [[ "$TRAVIS_BRANCH" == "demo" ]]; then ./ciBuildDocker.sh --version=${BUILD_VERSION} --docker-tag=demo-latest; fi

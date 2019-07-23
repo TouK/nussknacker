@@ -1,5 +1,6 @@
 import InlinedSvgs from "../../assets/icons/InlinedSvgs"
 import React from "react"
+import PropTypes from 'prop-types';
 
 const ProcessDialogWarnings = (props) => {
   return(
@@ -12,7 +13,7 @@ const ProcessDialogWarnings = (props) => {
 }
 
 ProcessDialogWarnings.propTypes = {
-  processHasWarnings: React.PropTypes.bool.isRequired
+  processHasWarnings: PropTypes.bool.isRequired
 }
 
 export default ProcessDialogWarnings

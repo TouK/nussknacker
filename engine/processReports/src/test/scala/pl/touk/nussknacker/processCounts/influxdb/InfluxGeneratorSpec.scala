@@ -2,18 +2,15 @@ package pl.touk.nussknacker.processCounts.influxdb
 
 import java.time.LocalDateTime
 
-import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.processCounts.influxdb.InfluxGenerator.{InfluxSerie, PointInTimeQuery}
-import argonaut._
 import argonaut.Argonaut._
 import argonaut.ArgonautShapeless._
 import org.scalatest.concurrent.ScalaFutures
-
+import org.scalatest.{FunSuite, Matchers}
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class InfluxGeneratorSpec extends FunSuite with Matchers with ScalaFutures {
 
-  import scala.concurrent.ExecutionContext.Implicits.global
   import InfluxGenerator._
 
   //TODO: test generated query, not just shape of output

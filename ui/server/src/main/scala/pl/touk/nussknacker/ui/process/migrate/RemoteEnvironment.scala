@@ -4,14 +4,14 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.Uri.Path
-import akka.http.scaladsl.model._
+import akka.http.scaladsl.model.{RequestEntity, _}
 import akka.http.scaladsl.model.headers.{Authorization, BasicHttpCredentials}
 import akka.http.scaladsl.unmarshalling.{Unmarshal, Unmarshaller}
 import akka.stream.Materializer
 import argonaut.DecodeJson
 import cats.data.EitherT
 import cats.implicits._
-import pl.touk.http.argonaut.Argonaut62Support
+import pl.touk.http.argonaut.{Argonaut62Support, JsonMarshaller}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.EspError.XError
@@ -19,13 +19,14 @@ import pl.touk.nussknacker.ui.codec.UiCodecs
 import pl.touk.nussknacker.ui.process.ProcessToSave
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.InvalidProcessTypeError
-import pl.touk.nussknacker.restmodel.processdetails.{ProcessDetails, ProcessHistoryEntry, ValidatedProcessDetails}
+import pl.touk.nussknacker.restmodel.processdetails.{BasicProcess, ProcessDetails, ProcessHistoryEntry, ValidatedProcessDetails}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ProcessComparator
 import pl.touk.nussknacker.ui.util.ProcessComparator.Difference
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{ValidationErrors, ValidationResult}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 trait RemoteEnvironment {
 
@@ -36,7 +37,7 @@ trait RemoteEnvironment {
 
   def processVersions(processName: ProcessName)(implicit ec: ExecutionContext) : Future[List[ProcessHistoryEntry]]
 
-  def migrate(localProcess: DisplayableProcess, category: String)(implicit ec: ExecutionContext, loggedUser: LoggedUser) : Future[Either[EspError, Unit]]
+  def migrate(localProcess: DisplayableProcess, category: String)(implicit ec: ExecutionContext, loggedUser: LoggedUser, jsonMarshaller: JsonMarshaller) : Future[Either[EspError, Unit]]
 
   def testMigration(implicit ec: ExecutionContext) : Future[Either[EspError, List[TestMigrationResult]]]
 }
@@ -51,40 +52,44 @@ case class MigrationValidationError(errors: ValidationErrors) extends EspError {
   }
 }
 
-case class HttpRemoteEnvironmentConfig(url: String, user: String, password: String, environmentId: String)
+case class HttpRemoteEnvironmentConfig(user: String, password: String, targetEnvironmentId: String,
+                                       remoteConfig: StandardRemoteEnvironmentConfig)
 
-
-class HttpRemoteEnvironment(config: HttpRemoteEnvironmentConfig,
+class HttpRemoteEnvironment(httpConfig: HttpRemoteEnvironmentConfig,
                             val testModelMigrations: TestModelMigrations,
-                            val environmentId: String)(implicit as: ActorSystem, val materializer: Materializer) extends StandardRemoteEnvironment {
+                            val environmentId: String)
+                           (implicit as: ActorSystem, val materializer: Materializer, ec: ExecutionContext) extends StandardRemoteEnvironment {
+  override val config: StandardRemoteEnvironmentConfig = httpConfig.remoteConfig
 
-  override def targetEnvironmentId : String = config.environmentId
+  override def targetEnvironmentId: String = httpConfig.targetEnvironmentId
 
   val http = Http()
 
-  override def baseUrl: Uri = config.url
-
   override protected def request(uri: Uri, method: HttpMethod, request: MessageEntity): Future[HttpResponse] = {
     http.singleRequest(HttpRequest(uri = uri, method = method, entity = request,
-      headers = List(Authorization(BasicHttpCredentials(config.user, config.password)))))
+      headers = List(Authorization(BasicHttpCredentials(httpConfig.user, httpConfig.password)))))
   }
 }
+
+case class StandardRemoteEnvironmentConfig(uri: String, batchSize: Int)
 
 //TODO: extract interface to remote environment?
 trait StandardRemoteEnvironment extends Argonaut62Support with RemoteEnvironment with UiCodecs {
 
   def environmentId: String
 
+  def config: StandardRemoteEnvironmentConfig
+
   def testModelMigrations: TestModelMigrations
 
-  def baseUrl: Uri
+  def baseUri = Uri(config.uri)
 
   implicit def materializer: Materializer
 
   private def invoke[T](method: HttpMethod, pathParts: List[String], queryString: Option[String] = None, requestEntity: RequestEntity = HttpEntity.Empty)
                        (f: HttpResponse => Future[T])(implicit ec: ExecutionContext): Future[T] = {
-    val pathEncoded = pathParts.foldLeft[Path](baseUrl.path)(_ / _)
-    val uri = baseUrl.withPath(pathEncoded).withRawQueryString(queryString.getOrElse(""))
+    val pathEncoded = pathParts.foldLeft[Path](baseUri.path)(_ / _)
+    val uri = baseUri.withPath(pathEncoded).withRawQueryString(queryString.getOrElse(""))
 
     request(uri, method, requestEntity) flatMap f
   }
@@ -138,7 +143,7 @@ trait StandardRemoteEnvironment extends Argonaut62Support with RemoteEnvironment
   }
 
   override def migrate(localProcess: DisplayableProcess, category: String)
-                      (implicit ec: ExecutionContext, loggedUser: LoggedUser) : Future[Either[EspError, Unit]]= {
+                      (implicit ec: ExecutionContext, loggedUser: LoggedUser, jsonMarshaller: JsonMarshaller) : Future[Either[EspError, Unit]]= {
 
     val comment = s"Process migrated from $environmentId by ${loggedUser.id}"
     (for {
@@ -172,8 +177,27 @@ trait StandardRemoteEnvironment extends Argonaut62Support with RemoteEnvironment
 
   override def testMigration(implicit ec: ExecutionContext): Future[Either[EspError, List[TestMigrationResult]]] = {
     (for {
-      processes <- EitherT(invokeJson[List[ValidatedProcessDetails]](HttpMethods.GET,List("processesDetails")))
-      subprocesses <- EitherT(invokeJson[List[ValidatedProcessDetails]](HttpMethods.GET,List("subProcessesDetails")))
+      basicProcesses <- EitherT(invokeJson[List[BasicProcess]](HttpMethods.GET, List("processes")))
+      processes      <- fetchGroupByGroup(basicProcesses)
+      subprocesses   <- EitherT(invokeJson[List[ValidatedProcessDetails]](HttpMethods.GET, List("subProcessesDetails")))
     } yield testModelMigrations.testMigrations(processes, subprocesses)).value
+  }
+
+  private def fetchGroupByGroup[T](basicProcesses: List[BasicProcess])
+                                  (implicit ec: ExecutionContext): EitherT[Future, EspError, List[ValidatedProcessDetails]] = {
+    def getMany(processes: List[BasicProcess]) = EitherT {
+      invokeJson[List[ValidatedProcessDetails]](
+        HttpMethods.GET,
+        "processesDetails" :: Nil,
+        queryString = Some("names=" + processes.map(_.name).mkString(","))
+      )
+    }
+
+    basicProcesses.grouped(config.batchSize)
+      .foldLeft(EitherT.rightT[Future, EspError](List.empty[ValidatedProcessDetails])) { case (acc, batch) => for {
+          current <- acc
+          fetched <- getMany(batch)
+        } yield current ::: fetched
+      }
   }
 }

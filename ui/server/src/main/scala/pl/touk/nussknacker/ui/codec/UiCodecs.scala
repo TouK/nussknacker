@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.engine.util.service.query.ServiceQuery.QueryResult
-import pl.touk.nussknacker.ui.definition.{NodeEdges, UIProcessObjects}
+import pl.touk.nussknacker.ui.definition.{NodeEdges, NodeToAdd, UIProcessObjects}
 
 object UiCodecs extends UiCodecs
 
@@ -32,8 +32,11 @@ trait UiCodecs extends RestModelCodecs {
   //this has to be derived here, to properly encode list...
   implicit val nodeEdgesEncode: EncodeJson[NodeEdges] = EncodeJson.derive[NodeEdges]
 
+  //this also has to be derived here, to properly encode list...
+  implicit def nodesToAddEncode: EncodeJson[NodeToAdd] = EncodeJson.derive[NodeToAdd]
+
   implicit def processObjectsEncode: EncodeJson[UIProcessObjects] = EncodeJson.derive[UIProcessObjects]
-  
+
   implicit val grafanaEncode: EncodeJson[MetricsSettings] = EncodeJson.derive[MetricsSettings]
 
   implicit val userEncodeEncode: EncodeJson[DisplayableUser] = EncodeJson.derive[DisplayableUser]

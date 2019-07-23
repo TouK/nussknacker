@@ -9,6 +9,22 @@ body
   font-family: _fontFamily !important
   color: defaultTextColor
   font-size: defaultFontSize
+  overflow: hidden
+
+.fade-enter
+  opacity: 0.01
+
+.fade-enter.fade-enter-active
+  opacity: 1
+  transition: opacity 300ms ease-in
+
+.fade-exit
+  opacity: 1
+
+.fade-exit.fade-exit-active
+  opacity: 0.01
+  transition: opacity 300ms ease-in
+
 
 #app-container
   position: absolute
@@ -188,3 +204,27 @@ processActivityList()
   p
     font-size 25px
     color black
+
+.error-template
+  text-align: center
+  position: absolute;
+  top: 50%;
+  left:50%;
+  transform: translate(-50%,-50%);
+
+  h1
+    font-size: 96px
+
+  h2
+    font-size: 64px
+
+  .error-actions
+    margin-top:15px
+    margin-bottom:15px
+
+  .error-actions .btn
+    margin-right:10px
+
+  .error-details
+    font-size: 24px
+

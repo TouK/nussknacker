@@ -10,9 +10,9 @@ import cats.syntax.monoid._
 import cats.syntax.traverse._
 import org.springframework.expression.spel.SpelNode
 import org.springframework.expression.spel.ast._
+import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing._
-import pl.touk.nussknacker.engine.compile.ValidationContext
 import pl.touk.nussknacker.engine.compiledgraph.expression.ExpressionParseError
 import pl.touk.nussknacker.engine.spel.typer.TypeMethodReference
 import pl.touk.nussknacker.engine.types.EspTypeUtils

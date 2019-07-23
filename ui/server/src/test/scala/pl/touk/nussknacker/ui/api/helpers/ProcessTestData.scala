@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.api.helpers
 import java.time.LocalDateTime
 
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, SplitNode}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder._
 import pl.touk.nussknacker.restmodel.ProcessType
-import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.{Edge, NodeAdditionalFields, ProcessAdditionalFields}
+import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.{Edge, NodeAdditionalFields}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessDetails, ValidatedProcessDetails}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
@@ -92,6 +92,7 @@ object ProcessTestData {
       isLatestVersion = true,
       description = None,
       isArchived = false,
+      isSubprocess = false,
       processType = ProcessType.Graph,
       processingType = TestProcessingTypes.Streaming,
       processCategory = "Category",
@@ -113,6 +114,7 @@ object ProcessTestData {
       isLatestVersion = true,
       description = None,
       isArchived = false,
+      isSubprocess = false,
       processType = ProcessType.Graph,
       processingType = TestProcessingTypes.Streaming,
       processCategory = "Category",
@@ -164,7 +166,7 @@ object ProcessTestData {
   val sampleDisplayableProcess = {
     DisplayableProcess(
       id = "fooProcess",
-      properties = ProcessProperties(StreamMetaData(Some(2)), ExceptionHandlerRef(List.empty), false, Some(ProcessAdditionalFields(Some("process description"))), subprocessVersions = Map.empty),
+      properties = ProcessProperties(StreamMetaData(Some(2)), ExceptionHandlerRef(List.empty), false, Some(ProcessAdditionalFields(Some("process description"), Set.empty, Map.empty)), subprocessVersions = Map.empty),
       nodes = List(
         node.Source(
           id = "sourceId",

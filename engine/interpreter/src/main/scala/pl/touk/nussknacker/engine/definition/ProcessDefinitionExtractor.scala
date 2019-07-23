@@ -3,12 +3,12 @@ package pl.touk.nussknacker.engine.definition
 import argonaut.CodecJson
 import com.typesafe.config.{Config, ConfigRenderOptions}
 import pl.touk.nussknacker.engine.api.definition.ParameterRestriction
-import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, SingleNodeConfig}
+import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, SingleNodeConfig, SinkFactory}
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, QueryableStateNames}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
-import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedParameters}
+import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedDependencies}
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import shapeless.syntax.typeable._
                  
@@ -49,7 +49,7 @@ object ProcessDefinitionExtractor {
     //TODO: this is not so nice...
     val globalVariablesDefs = expressionConfig.globalProcessVariables.map { case (varName, globalVar) =>
       val klass = Typed(globalVar.value.getClass)
-      (varName, ObjectWithMethodDef(globalVar.value, MethodDefinition(varName, (_, _) => globalVar, new OrderedParameters(List()), klass,  klass, List()),
+      (varName, ObjectWithMethodDef(globalVar.value, MethodDefinition(varName, (_, _) => globalVar, new OrderedDependencies(List()), klass,  klass, List()),
         ObjectDefinition(List(), klass, globalVar.categories, SingleNodeConfig.zero)))
     }
 
@@ -63,7 +63,8 @@ object ProcessDefinitionExtractor {
     )(creator.classExtractionSettings(config))
 
     ProcessDefinition[ObjectWithMethodDef](
-      servicesDefs, sourceFactoriesDefs, sinkFactoriesDefs,
+      servicesDefs, sourceFactoriesDefs,
+      sinkFactoriesDefs.mapValuesNow(k => (k, extractSinkAdditionalData(k))),
       customStreamTransformersDefs.mapValuesNow(k => (k, extractCustomTransformerData(k))),
       signalsDefs, exceptionHandlerFactoryDefs, ExpressionDefinition(globalVariablesDefs, globalImportsDefs, expressionConfig.optimizeCompilation), typesInformation)
   }
@@ -83,6 +84,11 @@ object ProcessDefinitionExtractor {
     processConfig.getOrElse[Map[String, SingleNodeConfig]]("nodes", Map.empty)
   }
 
+  private def extractSinkAdditionalData(objectWithMethodDef: ObjectWithMethodDef)  = {
+    val sink = objectWithMethodDef.obj.asInstanceOf[SinkFactory]
+    SinkAdditionalData(sink.requiresOutput)
+  }
+
   private def extractCustomTransformerData(objectWithMethodDef: ObjectWithMethodDef) = {
     val transformer = objectWithMethodDef.obj.asInstanceOf[CustomStreamTransformer]
     val queryNamesAnnotation = objectWithMethodDef.methodDef.annotations.flatMap(_.cast[QueryableStateNames])
@@ -95,9 +101,12 @@ object ProcessDefinitionExtractor {
 
   case class CustomTransformerAdditionalData(queryableStateNames: Set[QueryableStateName], clearsContext: Boolean, manyInputs: Boolean)
 
+  case class SinkAdditionalData(requiresOutput: Boolean)
+
   case class ProcessDefinition[T <: ObjectMetadata](services: Map[String, T],
                                                     sourceFactories: Map[String, T],
-                                                    sinkFactories: Map[String, T],
+                                                   //TODO: find easier way to handle *AdditionalData?
+                                                    sinkFactories: Map[String, (T, SinkAdditionalData)],
                                                     customStreamTransformers: Map[String, (T, CustomTransformerAdditionalData)],
                                                     signalsWithTransformers: Map[String, (T, Set[TransformerId])],
                                                     exceptionHandlerFactory: T,
@@ -123,8 +132,8 @@ object ProcessDefinitionExtractor {
     ProcessDefinition(
       definition.services.mapValuesNow(_.objectDefinition),
       definition.sourceFactories.mapValuesNow(_.objectDefinition),
-      definition.sinkFactories.mapValuesNow(_.objectDefinition),
-      definition.customStreamTransformers.mapValuesNow { case (transformer, queryNames) => (transformer.objectDefinition, queryNames) },
+      definition.sinkFactories.mapValuesNow { case (sink, additionalData) => (sink.objectDefinition, additionalData) },
+      definition.customStreamTransformers.mapValuesNow { case (transformer, additionalData) => (transformer.objectDefinition, additionalData) },
       definition.signalsWithTransformers.mapValuesNow(sign => (sign._1.objectDefinition, sign._2)),
       definition.exceptionHandlerFactory.objectDefinition,
       expressionDefinition,

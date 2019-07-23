@@ -1,5 +1,6 @@
 import React from "react";
-import Creatable from "react-select/lib/Creatable";
+import Creatable from "react-select/creatable"
+import PropTypes from 'prop-types';
 
 const getOptions = (values) => {
   return values.map((value) => ({
@@ -10,12 +11,12 @@ const getOptions = (values) => {
 
 export default class ExpressionWithFixedValues extends React.Component {
   static propTypes = {
-    values: React.PropTypes.array.isRequired,
-    renderFieldLabel: React.PropTypes.func.isRequired,
-    obj: React.PropTypes.object.isRequired,
-    fieldLabel: React.PropTypes.string.isRequired,
-    onChange: React.PropTypes.func.isRequired,
-    readOnly: React.PropTypes.bool.isRequired
+    values: PropTypes.array.isRequired,
+    renderFieldLabel: PropTypes.func.isRequired,
+    obj: PropTypes.object.isRequired,
+    fieldLabel: PropTypes.string.isRequired,
+    onChange: PropTypes.func.isRequired,
+    readOnly: PropTypes.bool.isRequired
   };
 
   constructor(props) {

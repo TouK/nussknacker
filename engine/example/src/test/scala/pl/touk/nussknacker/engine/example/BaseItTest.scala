@@ -45,8 +45,7 @@ object TestConfig {
   def apply(kafkaZookeeperServer: KafkaZookeeperServer) = {
     ConfigFactory.load()
       .withValue("kafka.kafkaAddress", fromAnyRef(kafkaZookeeperServer.kafkaAddress))
-      .withValue("kafka.zkAddress", fromAnyRef(kafkaZookeeperServer.zkAddress))
-      
+
   }
 }
 

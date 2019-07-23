@@ -1,4 +1,3 @@
-import ExpressionSuggest from "../ExpressionSuggest";
 import PropTypes from "prop-types";
 import Input from "./Input";
 import Textarea from "./Textarea";

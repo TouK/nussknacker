@@ -46,7 +46,6 @@ object KafkaEspUtils extends LazyLogging {
 
   def toProperties(config: KafkaConfig, groupId: Option[String]) = {
     val props = new Properties()
-    props.setProperty("zookeeper.connect", config.zkAddress)
     props.setProperty("bootstrap.servers", config.kafkaAddress)
     props.setProperty("auto.offset.reset", "earliest")
     groupId.foreach(props.setProperty("group.id", _))

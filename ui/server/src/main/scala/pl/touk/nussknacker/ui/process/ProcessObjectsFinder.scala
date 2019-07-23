@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ProcessDefinition, QueryableStateName}
 import pl.touk.nussknacker.engine.graph
-import pl.touk.nussknacker.engine.graph.node.{CustomNode, NodeData, Source, SubprocessInput}
+import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.ui.api.SignalDefinition
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
@@ -42,6 +42,20 @@ object ProcessObjectsFinder {
     allObjectIds.diff(usedObjectIds).sortCaseInsensitive
   }
 
+  def findComponents(processes: List[ProcessDetails], componentId: String): List[ProcessComponent] = {
+    processes.flatMap(processDetails => processDetails.json match {
+      case Some(process) => process.nodes.collect {
+        case node:WithComponent if node.componentId == componentId => ProcessComponent(
+          processName = processDetails.name,
+          nodeId = node.id,
+          processCategory = processDetails.processCategory,
+          isDeployed = processDetails.currentlyDeployedAt.nonEmpty //TODO use the same logic that is used to display Status column on Procesess screen??
+        )
+      }
+      case None => Nil
+    })
+  }
+
   def componentIds(processDefinitions: List[ProcessDefinition[ObjectDefinition]], subprocessIds: List[String]): List[String] = {
     val ids = processDefinitions.flatMap(_.componentIds)
     (ids ++ subprocessIds).distinct.sortCaseInsensitive
@@ -76,3 +90,5 @@ object ProcessObjectsFinder {
     val subprocessesOnly = allProcesses.filter(_.properties.isSubprocess)
   }
 }
+
+case class ProcessComponent (processName: String, nodeId: String, processCategory: String, isDeployed: Boolean)

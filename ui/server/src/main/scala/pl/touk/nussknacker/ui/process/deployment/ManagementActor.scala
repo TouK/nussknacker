@@ -143,7 +143,7 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
 
   private def deployProcess(processId: ProcessId, savepointPath: Option[String], comment: Option[String])(implicit user: LoggedUser): Future[Unit] = {
     for {
-      processingType <- getProcessingType(processId)
+      processingType <- processRepository.fetchProcessingType(processId)
       latestProcessEntity <- processRepository.fetchLatestProcessVersion(processId)
       result <- latestProcessEntity match {
         case Some(latestVersion) => deployAndSaveProcess(processingType, latestVersion, savepointPath, comment)
@@ -177,18 +177,13 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
   private def resolveGraph(canonicalJson: String): Future[String] = {
     val validatedGraph = UiProcessMarshaller.fromJson(canonicalJson).toValidatedNel
       .andThen(subprocessResolver.resolveSubprocesses)
-      .map(UiProcessMarshaller.toJson(_, PrettyParams.spaces2))
+      //TODO: custom JsonMarshaller
+      .map(proc => UiProcessMarshaller.toJson(proc).nospaces)
     CatsSyntax.toFuture(validatedGraph)(e => new RuntimeException(e.head.toString))
   }
 
   private def processManager(processId: ProcessId)(implicit ec: ExecutionContext, user: LoggedUser) = {
-    getProcessingType(processId).map(managers)
-  }
-
-  private def getProcessingType(id: ProcessId)(implicit ec: ExecutionContext, user: LoggedUser) = {
-    processRepository.fetchLatestProcessDetailsForProcessId(id)
-      .map(_.map(_.processingType))
-      .map(_.getOrElse(throw new RuntimeException(ProcessNotFoundError(id.value.toString).getMessage)))
+    processRepository.fetchProcessingType(processId).map(managers)
   }
 
   //during deployment using Client.run Flink holds some data in statics and there is an exception when

@@ -1,85 +1,117 @@
-version: '2.1'
+version: '3.3'
 
 services:
-
-  app:
-    build:
-      context: ./app
-      args:
-        #TODO: consider sth like:
-        #curl -s https://api.github.com/repos/touk/nussknacker/releases/latest | grep tag_name | awk '{ print $2 }' | sed -e 's/"//g' -e 's/,//g'
-        #to retrieve latest version
-        version: ${NUSSKNACKER_VERSION}
-    links:
-      - "jobmanager:jobmanager"
-      - "kafka:kafka"
-      - "grafana:grafana"
-      - "zookeeper:zookeeper"
-    expose:
-      - "8080"
+  influxdb:
+    container_name: nussknacker_influxdb
+    image: influxdb:${INFLUXDB_VERSION-1.1.5}
+    command: ["/runWithEspDb.sh"]
     volumes:
-      - ./app/conf:/conf
-      - ${CODE_LOCATION}:/code-assembly.jar
-      - sharedStorage:/opt/flinkData/savepoints
+      - ./influxdb/influxdb.conf:/etc/influxdb/influxdb.conf
+      - nussknacker_storage_influxdb:/var/lib/influxdb/data
+      - ./influxdb/runWithEspDb.sh:/runWithEspDb.sh
+    expose:
+      - "2003/udp"
+
+  zookeeper:
+    container_name: nussknacker_zookeeper
+    image: zookeeper:${ZOOKEEPER_VERSION-3.5.5}
+    volumes:
+      - nussknacker_storage_zookeeper_datalog:/datalog
+      - nussknacker_storage_zookeeper_data:/data
+    expose:
+      - "2181"
+
+  kafka:
+    container_name: nussknacker_kafka
+    image: ${KAFKA_REPOSITORY-wurstmeister/kafka}:${KAFKA_VERSION-2.12-2.2.0}
+    expose:
+      - "9092"
+    environment:
+      HOSTNAME_COMMAND: "docker info | grep ^Name: | cut -d' ' -f 2"
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_CREATE_TOPICS: "processedEvents:1:1"
+      KAFKA_BROKER_ID: 1
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_HEAP_OPTS: -Xms128m -Xmx512m
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - nussknacker_storage_kafka_data:/kafka
+    links:
+      - zookeeper
+    depends_on:
+      - zookeeper
+
+# If you want use kafka-manager uncomment this and section /kafka-manager at ./nginx/nginx.conf
+#  kafka-manager:
+#    container_name: nussknacker_kafkamanager
+#    image: hlebalbau/kafka-manager:${KAFKA_MANAGER_VERSION-stable}
+#    command: ["-Dplay.http.context=/kafka-manager/"]
+#    environment:
+#      ZK_HOSTS: "zookeeper:2181"
+#      KAFKA_MANAGER_AUTH_ENABLED: "true"
+#      KAFKA_MANAGER_USERNAME: "nussknacker"
+#      KAFKA_MANAGER_PASSWORD: "nussknacker"
+#    depends_on:
+#      - zookeeper
+#      - kafka
+
   jobmanager:
-    build: ./flink
+    container_name: nussknacker_jobmanager
+    image: flink:${FLINK_VERSION-1.7.2-scala_2.11}
     expose:
       - "6123"
       - "8081"
+    entrypoint: /flink-entrypoint.sh
     command: jobmanager
     depends_on:
       - zookeeper
-    environment:
-      - JOB_MANAGER_RPC_ADDRESS=jobmanager
+      - kafka
     links:
-      - "influxdb:influxdb"
-      - "zookeeper:zookeeper"
+      - influxdb
+      - zookeeper
+    environment:
+      SCALA_VERSION: 2.11
     volumes:
       - ./flink/flink-conf.yaml:/opt/flink/conf/flink-conf.yaml
-      - sharedStorage:/opt/flinkData/savepoints
+      - ./flink/flink-entrypoint.sh:/flink-entrypoint.sh
+      - nussknacker_storage_jobmanager:/opt/flink/data
 
   taskmanager:
-    build: ./flink
-    depends_on:
-      - jobmanager
+    container_name: nussknacker_taskmanager
+    image: flink:${FLINK_VERSION-1.7.2-scala_2.11}
+    entrypoint: /flink-entrypoint.sh
     command: taskmanager
     links:
-      - "influxdb:influxdb"
-      - "jobmanager:jobmanager"
-      - "kafka:kafka"
-      - "zookeeper:zookeeper"
+      - influxdb
+      - jobmanager
+      - kafka
+      - zookeeper
+    depends_on:
+      - zookeeper
+      - kafka
+      - jobmanager
     environment:
-      - JOB_MANAGER_RPC_ADDRESS=jobmanager
+      SCALA_VERSION: 2.11
     volumes:
       - ./flink/flink-conf.yaml:/opt/flink/conf/flink-conf.yaml
+      - ./flink/flink-entrypoint.sh:/flink-entrypoint.sh
+      - nussknacker_storage_taskmanager:/opt/flink/data
     ulimits:
       nproc: 70000
       nofile:
         soft: 70000
         hard: 70000
 
-  zookeeper:
-    image: wurstmeister/zookeeper:3.4.6
-    expose:
-      - "2181"
-  kafka:
-    image: wurstmeister/kafka:0.10.2.1
-    expose:
-      - "9092"
-    environment:
-      KAFKA_ADVERTISED_HOST_NAME: kafka
-      KAFKA_ADVERTISED_PORT: 9092
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_HEAP_OPTS: -Xms128m -Xmx512m
-    links:
-      - "zookeeper:zookeeper"
-
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:5.4.1
+    container_name: nussknacker_elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:${ELASTICSEARCH_VERSION-7.1.1}
     environment:
       ES_JAVA_OPTS: -Xms128m -Xmx512m
     volumes:
       - ./elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+      - nussknacker_storage_elasticsearch_data:/usr/share/elasticsearch/data
     expose:
       - "9200"
       - "9300"
@@ -90,7 +122,8 @@ services:
         hard: 70000
 
   logstash:
-    image: docker.elastic.co/logstash/logstash:5.4.1
+    container_name: nussknacker_logstash
+    image: docker.elastic.co/logstash/logstash:${LOGSTASH_VERSION-7.1.1}
     links:
       - elasticsearch
       - kafka
@@ -102,8 +135,11 @@ services:
     volumes:
       - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml
       - ./logstash/pipeline:/usr/share/logstash/pipeline
+      - nussknacker_storage_logstash_data:/usr/share/logstash/data
+
   kibana:
-    image: docker.elastic.co/kibana/kibana:5.4.1
+    container_name: nussknacker_kibana
+    image: docker.elastic.co/kibana/kibana:${KIBANA_VERSION-7.1.1}
     expose:
       - "5601"
     links:
@@ -113,16 +149,9 @@ services:
     volumes:
       - ./kibana/config/:/usr/share/kibana/config
 
-  influxdb:
-    image: influxdb:1.1
-    command: ["/runWithEspDb.sh"]
-    volumes:
-      - ./influxdb/runWithEspDb.sh:/runWithEspDb.sh
-      - ./influxdb/influxdb.conf:/etc/influxdb/influxdb.conf
-    expose:
-      - "2003/udp"
   grafana:
-    image: grafana/grafana:5.1.5
+    container_name: nussknacker_grafana
+    image: grafana/grafana:${GRAFANA_VERSION-5.4.4}
     entrypoint: ["/runWithFlinkEspBoard.sh"]
     volumes:
       - ./grafana/runWithFlinkEspBoard.sh:/runWithFlinkEspBoard.sh
@@ -132,19 +161,58 @@ services:
     environment:
       - GF_AUTH_ANONYMOUS_ENABLED=true
       - GF_SERVER_ROOT_URL=%(protocol)s://%(domain)s:/grafana
+    depends_on:
+      - influxdb
+
+  app:
+    container_name: nussknacker_app
+    image: ${NUSSKNACKER_IMAGE-touk/nussknacker}:${NUSSKNACKER_VERSION-demo-latest}
+    entrypoint: ["/opt/nussknacker/bin/wait-for-it.sh"]
+    command: ["-h", "taskmanager", "-p", "6126", "-t", "60", "--", "/opt/nussknacker/bin/nussknacker-entrypoint.sh"]
+    links:
+      - taskmanager
+      - jobmanager
+      - kafka
+      - grafana
+      - zookeeper
+    depends_on:
+      - zookeeper
+      - jobmanager
+      - taskmanager
+    expose:
+      - "8080"
+    volumes:
+      - ${NUSSKNACKER_APPLICATION_CONFIG-./app/application.conf}:/opt/nussknacker/conf/docker-application.conf
+      - ${NUSSKNACKER_APPLICATION_DATA-./app/data}:/opt/nussknacker/data
+      - ./bash/wait-for-it.sh:/opt/nussknacker/bin/wait-for-it.sh
+      - nussknacker_storage_app:/opt/nussknacker/storage
 
   nginx:
-    image: nginx
+    container_name: nussknacker_nginx
+    image: nginx:${NGINX_VERSION-1.16.0}
     ports:
       - "8081:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
-    links:
+    depends_on:
+      - zookeeper
+      - influxdb
+      - kafka
+      - jobmanager
+      - taskmanager
+      - elasticsearch
+      - logstash
       - kibana
       - grafana
       - app
-      - jobmanager
-
 
 volumes:
-  sharedStorage: {}
+  nussknacker_storage_zookeeper_datalog:
+  nussknacker_storage_zookeeper_data:
+  nussknacker_storage_elasticsearch_data:
+  nussknacker_storage_logstash_data:
+  nussknacker_storage_kafka_data:
+  nussknacker_storage_taskmanager:
+  nussknacker_storage_jobmanager:
+  nussknacker_storage_influxdb:
+  nussknacker_storage_app:

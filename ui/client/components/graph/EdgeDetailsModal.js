@@ -1,25 +1,21 @@
-import React, {Component} from 'react';
-import {render} from 'react-dom';
-import { connect } from 'react-redux';
-import { bindActionCreators } from 'redux';
+import React from 'react';
+import PropTypes from 'prop-types';
+import {connect} from 'react-redux';
 import Modal from 'react-modal';
 import _ from 'lodash';
-import LaddaButton from 'react-ladda';
-import laddaCss from 'ladda/dist/ladda.min.css'
+import LaddaButton from "react-ladda"
+import "ladda/dist/ladda.min.css"
 import ActionsUtils from '../../actions/ActionsUtils';
 import NodeUtils from './NodeUtils';
-import { ListGroupItem } from 'react-bootstrap';
 import ExpressionSuggest from './ExpressionSuggest'
 import ModalRenderUtils from "./ModalRenderUtils"
-
 import EspModalStyles from '../../common/EspModalStyles'
-import {Scrollbars} from "react-custom-scrollbars";
 
 //TODO: this is still pretty switch-specific. 
 class EdgeDetailsModal extends React.Component {
 
   static propTypes = {
-    edgeToDisplay: React.PropTypes.object.isRequired
+    edgeToDisplay: PropTypes.object.isRequired
   }
 
   constructor(props) {
@@ -57,9 +53,16 @@ class EdgeDetailsModal extends React.Component {
   renderModalButtons() {
     if (!this.props.readOnly) {
       return ([
-        <LaddaButton key="1" title="Save edge details" className='modalButton pull-right modalConfirmButton'
-                      loading={this.state.pendingRequest}
-                      buttonStyle='zoom-in' onClick={this.performEdgeEdit}>Save</LaddaButton>,
+        <LaddaButton
+            key="1"
+            title="Save edge details"
+            className='modalButton pull-right modalConfirmButton'
+            loading={this.state.pendingRequest}
+            data-style='zoom-in'
+            onClick={this.performEdgeEdit}
+        >
+          Save
+        </LaddaButton>,
         <button key="3" type="button" title="Close edge details" className='modalButton' onClick={this.closeModal}>
           Close
         </button>
@@ -116,7 +119,7 @@ class EdgeDetailsModal extends React.Component {
       )
     }
 
-    switch (edge.edgeType.type) {
+    switch (_.get(edge.edgeType, 'type')) {
       case "SwitchDefault": {
         return baseModalContent()
       }
@@ -134,17 +137,19 @@ class EdgeDetailsModal extends React.Component {
           </div>
         )
       }
+      default:
+        return ''
     }
   }
 
   edgeIsEditable = () => {
     const editableEdges = ["NextSwitch", "SwitchDefault"]
-    return _.includes(editableEdges, this.props.edgeToDisplay.edgeType.type)
+    return this.props.edgeToDisplay.edgeType != null && _.includes(editableEdges, this.props.edgeToDisplay.edgeType.type)
   }
 
   render() {
-    var isOpen = !_.isEmpty(this.props.edgeToDisplay) && this.props.showEdgeDetailsModal && this.edgeIsEditable()
-    var headerStyles = EspModalStyles.headerStyles("#2d8e54", "white")
+    const isOpen = !_.isEmpty(this.props.edgeToDisplay) && this.props.showEdgeDetailsModal && this.edgeIsEditable()
+    const headerStyles = EspModalStyles.headerStyles("#2d8e54", "white")
     return (
       <div className="objectModal">
         <Modal isOpen={isOpen} className="espModal" shouldCloseOnOverlayClick={false} onRequestClose={this.closeModal}>
@@ -163,10 +168,9 @@ class EdgeDetailsModal extends React.Component {
   }
 }
 
-
 function mapState(state) {
-  var nodeId = state.graphReducer.edgeToDisplay.from
-  var errors = _.get(state.graphReducer.processToDisplay, `validationResult.errors.invalidNodes[${nodeId}]`, [])
+  const nodeId = state.graphReducer.edgeToDisplay.from
+  const errors = _.get(state.graphReducer.processToDisplay, `validationResult.errors.invalidNodes[${nodeId}]`, [])
   const processCategory = state.graphReducer.fetchedProcessDetails.processCategory
   return {
     edgeToDisplay: state.graphReducer.edgeToDisplay,

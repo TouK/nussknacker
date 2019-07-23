@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, FlatNode}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
-import pl.touk.nussknacker.engine.compile.ProcessCompilationError.InvalidTailOfBranch
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.InvalidTailOfBranch
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -71,7 +71,7 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
     forAll(processAdditionalFields) { additionalFields =>
       val process = EspProcessBuilder
         .id("process1")
-        .additionalFields(additionalFields)
+        .additionalFields(additionalFields.description, additionalFields.groups, additionalFields.properties)
         .exceptionHandler()
         .source("a", "")
         .processorEnd("d", "dService", "p1" -> "expr3")
@@ -131,26 +131,6 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
     }
   }
 
-  it should "not marshall custom process additional fields" in {
-    val process = EspProcessBuilder
-      .id("process1")
-      .additionalFields(TestProcessAdditionalFields(field1 = "abc", field2 = 3))
-      .exceptionHandler()
-      .source("a", "")
-      .processorEnd("d", "dService", "p1" -> "expr3")
-
-    val result = ProcessMarshaller.toJson(process, PrettyParams.spaces2)
-
-    result should include (
-      """
-        |  "metaData" : {
-        |    "id" : "process1",
-        |    "typeSpecificData" : {
-        |      "type" : "StreamMetaData"
-        |    }
-        |  },""".stripMargin)
-  }
-
   // TODO: There is no way to create a node with additional fields.
 
   it should "unmarshall and omit custom additional fields" in {
@@ -205,6 +185,4 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
       |    ]
       |}
     """.stripMargin
-
-  case class TestProcessAdditionalFields(field1: String, field2: Int) extends UserDefinedProcessAdditionalFields
 }

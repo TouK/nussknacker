@@ -10,7 +10,10 @@ import akka.stream.Materializer
 import akka.stream.ActorMaterializer
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.flink.queryablestate.EspQueryableClient
+import pl.touk.http.argonaut.JsonMarshaller
+import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
+import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
+import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
 import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DatabaseServer, DbConfig}
@@ -24,7 +27,7 @@ import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.AuthenticatorProvider
 import pl.touk.nussknacker.ui.security.ssl.{HttpsConnectionContextFactory, SslConfigParser}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
-import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporter
+import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.restmodel.validation.CustomProcessValidator
 import pl.touk.nussknacker.ui.definition.AdditionalProcessProperty
 import slick.jdbc.{HsqldbProfile, JdbcBackend, PostgresProfile}
@@ -109,6 +112,8 @@ object NussknackerApp extends App with Directives with LazyLogging {
 
     val counter = new ProcessCounter(subprocessRepository)
 
+    implicit val jsonMarshaller: JsonMarshaller = JsonMarshaller.prepareDefault(config)
+
     Initialization.init(modelData.mapValues(_.migrations), db, environment, config.getAs[Map[String, String]]("customProcesses"))
 
     val managementActor = ManagementActor(environment, managers, processRepository, deploymentProcessRepository, subprocessResolver)
@@ -137,7 +142,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
         new SignalsResources(modelData, processRepository, processAuthorizer),
         new UserResources(),
         new NotificationResources(managementActor, processRepository),
-        new SettingsResources(featureTogglesConfig),
+        new SettingsResources(featureTogglesConfig, typeToConfig),
         new AppResources(config, modelData, processRepository, processValidation, jobStatusService),
         TestInfoResources(modelData, processAuthorizer, processRepository),
         new ServiceRoutes(modelData)
@@ -147,19 +152,17 @@ object NussknackerApp extends App with Directives with LazyLogging {
           .map(migrationConfig => new HttpRemoteEnvironment(migrationConfig, new TestModelMigrations(modelData.mapValues(_.migrations), processValidation), environment))
           .map(remoteEnvironment => new RemoteEnvironmentResources(remoteEnvironment, processRepository, processAuthorizer)),
         featureTogglesConfig.counts
-          .map(countsConfig => new InfluxCountsReporter(environment, countsConfig))
+          .map(prepareCountsReporter(environment, _))
           .map(reporter => new ProcessReportResources(reporter, counter, processRepository)),
         featureTogglesConfig.attachments
           .map(path => new ProcessAttachmentService(path, processActivityRepository))
           .map(service => new AttachmentResources(service, processRepository)),
-        featureTogglesConfig.queryableStateProxyUrl
-          .map(url => new QueryableStateResources(
-            processDefinition = modelData,
-            processRepository = processRepository,
-            queryableClient = EspQueryableClient(url),
-            jobStatusService = jobStatusService,
-            processAuthorizer = processAuthorizer
-          ))
+        Some(new QueryableStateResources(
+          typeToConfig = typeToConfig,
+          processRepository = processRepository,
+          jobStatusService = jobStatusService,
+          processAuthorizer = processAuthorizer
+        ))
       ).flatten
       routes ++ optionalRoutes
     }
@@ -177,6 +180,20 @@ object NussknackerApp extends App with Directives with LazyLogging {
     }
 
   }
+
+  //by default, we use InfluxCountsReporterCreator
+  private def prepareCountsReporter(env: String, config: Config): CountsReporter = {
+    val configAtKey = config.atKey(CountsReporterCreator.reporterCreatorConfigPath)
+    val creator = Multiplicity(ScalaServiceLoader.load[CountsReporterCreator](getClass.getClassLoader)) match {
+      case One(cr) =>
+        cr
+      case Empty() =>
+        new InfluxCountsReporterCreator
+      case Many(many) =>
+        throw new IllegalArgumentException(s"Many CountsReporters found: ${many.mkString(", ")}")
+    }
+    creator.createReporter(env, configAtKey)
+  } 
 
   private def initDb(config: Config) = {
     val db = JdbcBackend.Database.forConfig("db", config)

@@ -1,11 +1,9 @@
 package pl.touk.nussknacker.engine.definition
 
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.exception.EspExceptionHandler
-import pl.touk.nussknacker.engine.api.typed.ClazzRef
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
-import pl.touk.nussknacker.engine.compile.ProcessCompilationError.NodeId
-import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, ValidationContext}
+import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.types.EspTypeUtils
@@ -36,7 +34,7 @@ trait CompilerLazyParameterInterpreter extends LazyParameterInterpreter {
 
     val compiledExpression = deps.expressionCompiler
       .compile(castedDefinition.parameter.expression, Some(castedDefinition.parameter.name), None, Unknown)(castedDefinition.nodeId)
-      .getOrElse(throw new IllegalArgumentException(s"Cannot compile ${castedDefinition.parameter.name}"))._2
+      .getOrElse(throw new IllegalArgumentException(s"Cannot compile ${castedDefinition.parameter.name}")).expression
 
     val evaluator = deps.expressionEvaluator
 
@@ -62,11 +60,7 @@ object CustomStreamTransformerExtractor extends AbstractMethodDefinitionExtracto
 
   override protected val expectedReturnType: Option[Class[_]] = None
 
-  override protected val additionalParameters: Set[Class[_]] = Set[Class[_]]()
-
-  override protected def extractParameterType(p: java.lang.reflect.Parameter): Class[_] =
-    EspTypeUtils.extractParameterType(p, classOf[LazyParameter[_]])
-
+  override protected val additionalDependencies: Set[Class[_]] = Set[Class[_]](classOf[NodeId])
 
 }
 

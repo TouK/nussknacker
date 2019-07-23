@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.{Directives, Route}
-import pl.touk.http.argonaut.Argonaut62Support
+import pl.touk.http.argonaut.{Argonaut62Support, JsonMarshaller}
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.ui.definition.UIProcessObjects
@@ -15,7 +15,7 @@ import scala.concurrent.ExecutionContext
 
 class DefinitionResources(modelData: Map[ProcessingType, ModelData],
                           subprocessRepository: SubprocessRepository)
-                         (implicit ec: ExecutionContext)
+                         (implicit ec: ExecutionContext, jsonMarshaller: JsonMarshaller)
   extends Directives with Argonaut62Support with EspPathMatchers with RouteWithUser {
 
   import argonaut.ArgonautShapeless._

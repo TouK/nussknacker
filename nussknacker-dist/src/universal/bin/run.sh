@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 #TODO we assume running from nussknacker dir for now - this assumption is held in classpath conf - classpath: ["model/genericModel.jar"]
 #TODO handle JAVA_OPTS etc. - maybe use sbt-native-packager scripts generator?
+
 NUSSKNACKER_DIR=`dirname "$0" | xargs -I{} readlink -f {}/..`
 LIB_DIR="$NUSSKNACKER_DIR/lib"
 CONF_DIR="$NUSSKNACKER_DIR/conf"

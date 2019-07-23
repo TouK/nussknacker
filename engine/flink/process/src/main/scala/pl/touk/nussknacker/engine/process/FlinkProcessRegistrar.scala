@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.process
 
-import java.lang.Iterable
 import java.util.Collections
 import java.util.concurrent.TimeUnit
 
@@ -12,11 +11,10 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.java.tuple
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.dropwizard.metrics.DropwizardHistogramWrapper
-import org.apache.flink.metrics.{Counter, Gauge}
+import org.apache.flink.metrics.Gauge
+import org.apache.flink.runtime.execution.librarycache.FlinkUserCodeClassLoaders
 import org.apache.flink.runtime.state.AbstractStateBackend
-import org.apache.flink.streaming.api.datastream
-import org.apache.flink.streaming.api.TimeCharacteristic
-import org.apache.flink.streaming.api.collector.selector.OutputSelector
+import org.apache.flink.streaming.api.{TimeCharacteristic, datastream}
 import org.apache.flink.streaming.api.environment.RemoteStreamEnvironment
 import org.apache.flink.streaming.api.functions.async.{ResultFuture, RichAsyncFunction}
 import org.apache.flink.streaming.api.functions.sink.{RichSinkFunction, SinkFunction}
@@ -27,39 +25,38 @@ import org.apache.flink.streaming.api.watermark.Watermark
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.runtime.operators.windowing.WindowOperator
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
-import org.apache.flink.runtime.execution.librarycache.FlinkUserCodeClassLoaders
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.Interpreter
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.process.AsyncExecutionContextPreparer
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.SinkInvocationCollector
 import pl.touk.nussknacker.engine.api.test.TestRunId
-import pl.touk.nussknacker.engine.compile.ValidationContext
 import pl.touk.nussknacker.engine.compiledgraph.part._
 import pl.touk.nussknacker.engine.definition.{CompilerLazyParameterInterpreter, LazyInterpreterDependencies}
-import pl.touk.nussknacker.engine.flink.api.process._
+import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomJoinTransformation, _}
 import pl.touk.nussknacker.engine.flink.util.ContextInitializingFunction
 import pl.touk.nussknacker.engine.flink.util.metrics.InstantRateMeterWithCount
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.graph.node.{BranchEndData, BranchEndDefinition, Join}
+import pl.touk.nussknacker.engine.graph.node.BranchEndDefinition
 import pl.touk.nussknacker.engine.process.FlinkProcessRegistrar._
 import pl.touk.nussknacker.engine.process.compiler.{CompiledProcessWithDeps, FlinkProcessCompiler}
 import pl.touk.nussknacker.engine.process.util.StateConfiguration.RocksDBStateBackendConfig
 import pl.touk.nussknacker.engine.process.util.{MetaDataExtractor, Serializers, StateConfiguration, UserClassLoader}
 import pl.touk.nussknacker.engine.splittedgraph.end.{BranchEnd, DeadEnd, End, NormalEnd}
-import pl.touk.nussknacker.engine.splittedgraph.splittednode.{NextNode, PartRef, SplittedNode}
-import pl.touk.nussknacker.engine.util.{SynchronousExecutionContext, ThreadUtils}
+import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 import pl.touk.nussknacker.engine.util.metrics.RateMeter
+import pl.touk.nussknacker.engine.util.{SynchronousExecutionContext, ThreadUtils}
+import shapeless.syntax.typeable._
 
 import scala.collection.JavaConverters._
-import scala.concurrent.{Await, ExecutionContext}
 import scala.concurrent.duration._
+import scala.concurrent.{Await, ExecutionContext}
 import scala.language.implicitConversions
-import scala.util.{Failure, Success}
 import scala.util.control.NonFatal
-import shapeless.syntax.typeable._
+import scala.util.{Failure, Success}
 
 class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => (ClassLoader) => CompiledProcessWithDeps,
                             eventTimeMetricDuration: FiniteDuration,
@@ -133,23 +130,28 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => (Cla
       branchEnds.groupBy(_._1.joinId).foreach {
         case (joinId, inputs) =>
           val joinPart = processWithDeps.sources.toList
-            .collect { case e: JoinPart if e.id == joinId => e } match {
+            .collect { case e: CustomNodePart if e.id == joinId => e } match {
             case head::Nil => head
             case Nil => throw new IllegalArgumentException(s"Invalid process structure, no $joinId defined")
             case moreThanOne => throw new IllegalArgumentException(s"Invalid process structure, more than one $joinId defined: $moreThanOne")
           }
 
-          val executor = joinPart.transformer.asInstanceOf[FlinkCustomJoinTransformation]
+          val transformer = joinPart.transformer match {
+            case joinTransformer: FlinkCustomJoinTransformation => joinTransformer
+            case JoinContextTransformation(_, impl: FlinkCustomJoinTransformation) => impl
+            case other =>
+              throw new IllegalArgumentException(s"Unknown join node transformer: $other")
+          }
           val customNodeContext = FlinkCustomNodeContext(metaData,
             joinId, processWithDeps.processTimeout,
-            new FlinkLazyParameterFunctionHelper(runtimeContext => new FlinkCompilerLazyInterpreterCreator(runtimeContext, compiledProcessWithDeps(UserClassLoader.get("")))),
+            new FlinkLazyParameterFunctionHelper(createInterpreter(compiledProcessWithDeps)),
             processWithDeps.signalSenders)
 
 
           val outputVar = joinPart.node.data.outputVar.get
           val newContextFun = (ir: ValueWithContext[_]) => ir.context.withVariable(outputVar, ir.value)
 
-          val newStart = executor.transform(inputs
+          val newStart = transformer.transform(inputs
               .map(kv => (kv._1.id, kv._2.map(_.finalContext))), customNodeContext).map(newContextFun)
 
           val afterSplit = wrapAsync(newStart, joinPart.node, joinPart.validationContext, "branchInterpretation")
@@ -207,11 +209,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => (Cla
             .getSideOutput(OutputTag[InterpretationResult](EndId))
             .map(new EndRateMeterFunction(part.ends))
 
-          val disabled = sinkDef.data.isDisabled.contains(true)
-
-          val withSinkAdded = if (disabled) {
-            startAfterSinkEvaluated.map(_.output).addSink(EmptySink.toFlinkFunction)
-          } else {
+          val withSinkAdded =
             //TODO: maybe this logic should be moved to compiler instead?
             testRunId match {
               case None =>
@@ -224,15 +222,21 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => (Cla
                 val collectingSink = SinkInvocationCollector(runId, part.id, typ, prepareFunction)
                 startAfterSinkEvaluated.addSink(new CollectingSinkFunction(compiledProcessWithDeps, collectingSink, part))
             }
-          }
+
           withSinkAdded.name(s"${metaData.id}-${part.id}-sink")
           Map()
         }
 
         case part:SinkPart =>
           throw new IllegalArgumentException(s"Process can only use flink sinks, instead given: ${part.obj}")
-        case part@CustomNodePart(transformer:FlinkCustomStreamTransformation,
-              node, validationContext, nextParts, ends) =>
+        case CustomNodePart(transformerObj, node, validationContext, nextParts, ends) =>
+
+          val transformer = transformerObj match {
+            case t: FlinkCustomStreamTransformation => t
+            case ContextTransformation(_, impl: FlinkCustomStreamTransformation) => impl
+            case other =>
+              throw new IllegalArgumentException(s"Unknown custom node transformer: $other")
+          }
 
           val newContextFun = (ir: ValueWithContext[_]) => node.data.outputVar match {
             case Some(name) => ir.context.withVariable(name, ir.value)
@@ -241,15 +245,13 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => (Cla
 
           val customNodeContext = FlinkCustomNodeContext(metaData,
             node.id, processWithDeps.processTimeout,
-            new FlinkLazyParameterFunctionHelper(runtimeContext => new FlinkCompilerLazyInterpreterCreator(runtimeContext, compiledProcessWithDeps(UserClassLoader.get("")))),
-              processWithDeps.signalSenders)
+            new FlinkLazyParameterFunctionHelper(createInterpreter(compiledProcessWithDeps)),
+            processWithDeps.signalSenders)
           val newStart = transformer.transform(start.map(_.finalContext), customNodeContext)
               .map(newContextFun)
           val afterSplit = wrapAsync(newStart, node, validationContext, "customNodeInterpretation")
 
           registerParts(afterSplit, nextParts, ends)
-        case e:CustomNodePart =>
-          throw new IllegalArgumentException(s"Unknown CustomNodeExecutor: ${e.transformer}")
       }
 
     def wrapAsync(beforeAsync: DataStream[Context], node: SplittedNode[_], validationContext: ValidationContext, name: String) : DataStream[Unit] = {
@@ -278,7 +280,6 @@ object FlinkProcessRegistrar {
 
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-  import net.ceedubs.ficus.readers.ValueReader
 
   private final val EndId = "$end"
 
@@ -301,7 +302,9 @@ object FlinkProcessRegistrar {
     )
   }
 
-
+  private def createInterpreter(compiledProcessWithDepsProvider: ClassLoader => CompiledProcessWithDeps) =
+                               (runtimeContext: RuntimeContext) =>
+    new FlinkCompilerLazyInterpreterCreator(runtimeContext, compiledProcessWithDepsProvider(runtimeContext.getUserCodeClassLoader))
 
   class SyncInterpretationFunction(val compiledProcessWithDepsProvider: (ClassLoader) => CompiledProcessWithDeps,
                                    node: SplittedNode[_], validationContext: ValidationContext)

@@ -10,7 +10,7 @@ import org.scalatest.time.{Seconds, Span}
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
-import pl.touk.nussknacker.engine.flink.queryablestate.EspQueryableClient
+import pl.touk.nussknacker.engine.flink.queryablestate.FlinkQueryableClient
 import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableExecutionEnvironment}
 import pl.touk.nussknacker.engine.kafka.{KafkaSpec, KafkaZookeeperServer}
 import pl.touk.nussknacker.engine.management.sample.TestProcessConfigCreator
@@ -62,7 +62,7 @@ class QueryableStateTest extends FlatSpec with BeforeAndAfterAll with Matchers w
     val jobId = env.execute().getJobID.toString
     //this port should not exist...
     val strangePort = 12345
-    val client = EspQueryableClient(s"localhost:$strangePort, localhost:$QueryStateProxyPortLow")
+    val client = FlinkQueryableClient(s"localhost:$strangePort, localhost:$QueryStateProxyPortLow")
 
 
     def queryState(jobId: String): Future[Boolean] =

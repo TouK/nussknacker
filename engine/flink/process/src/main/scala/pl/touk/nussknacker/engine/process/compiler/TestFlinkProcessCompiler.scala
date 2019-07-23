@@ -29,8 +29,8 @@ class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
   override protected def prepareSourceFactory(sourceFactory: ObjectWithMethodDef): ObjectWithMethodDef = {
     val originalSourceFactory = sourceFactory.obj.asInstanceOf[FlinkSourceFactory[Object]]
     implicit val typeInfo: TypeInformation[Object] = originalSourceFactory.typeInformation
-    overrideObjectWithMethod(sourceFactory, (paramFun, additional, realReturnType) => {
-      val originalSource = sourceFactory.invokeMethod(paramFun, additional)
+    overrideObjectWithMethod(sourceFactory, (paramFun, outputVariableNameOpt, additional, realReturnType) => {
+      val originalSource = sourceFactory.invokeMethod(paramFun, outputVariableNameOpt, additional)
       originalSource match {
         case testDataParserProvider: TestDataParserProvider[Object@unchecked] =>
           val testObjects = testDataParserProvider.testDataParser.parseTestData(testData.testData)
@@ -42,18 +42,18 @@ class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
   }
 
   override protected def prepareService(service: ObjectWithMethodDef): ObjectWithMethodDef = {
-    overrideObjectWithMethod(service, (parameterCreator: (String => Option[AnyRef]), additional: Seq[AnyRef], _) => {
+    overrideObjectWithMethod(service, (parameterCreator: String => Option[AnyRef], outputVariableNameOpt, additional: Seq[AnyRef], _) => {
       val newAdditional = additional.map {
         case c: ServiceInvocationCollector => c.enable(collectingListener.runId)
         case a => a
       }
-      service.invokeMethod(parameterCreator, newAdditional)
+      service.invokeMethod(parameterCreator, outputVariableNameOpt, newAdditional)
     })
   }
 
   //exceptions are recorded any way, by listeners
   override protected def prepareExceptionHandler(exceptionHandler: ObjectWithMethodDef): ObjectWithMethodDef = {
-    overrideObjectWithMethod(exceptionHandler, (_, _, _) =>
+    overrideObjectWithMethod(exceptionHandler, (_, _, _, _) =>
       new FlinkEspExceptionHandler with ConsumingNonTransientExceptions {
         override def restartStrategy: RestartStrategies.RestartStrategyConfiguration = RestartStrategies.noRestart()
 

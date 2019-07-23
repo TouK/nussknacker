@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.repository
 
+import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.process.ProcessId
 import pl.touk.nussknacker.restmodel.processdetails.{DeploymentHistoryEntry, ProcessDetails}
@@ -31,9 +32,14 @@ trait FetchingProcessRepository {
 
   def fetchProcesses()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[ProcessDetails]]
 
+  def fetchProcesses(isSubprocess: Option[Boolean], isArchived: Option[Boolean], isDeployed: Option[Boolean], categories: Option[Seq[String]], processingTypes: Option[Seq[String]])
+                    (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[ProcessDetails]]
+
   def fetchCustomProcesses()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[ProcessDetails]]
 
   def fetchProcessesDetails()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[ProcessDetails]]
+
+  def fetchProcessesDetails(processNames: List[ProcessName])(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[ProcessDetails]]
 
   def fetchSubProcessesDetails()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[ProcessDetails]]
 
@@ -46,4 +52,6 @@ trait FetchingProcessRepository {
   def fetchProcessName(processId: ProcessId)(implicit ec: ExecutionContext): Future[Option[ProcessName]]
 
   def fetchDeploymentHistory(processId: ProcessId)(implicit ec: ExecutionContext): Future[List[DeploymentHistoryEntry]]
+
+  def fetchProcessingType(processId: ProcessId)(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[ProcessingType]
 }

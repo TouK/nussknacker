@@ -4,7 +4,7 @@
 #To be able to move to foreground
 set -m
 
-./run.sh "${@}" &
+/run.sh "${@}" &
 
 #Waiting for start of grafana
 RET=1

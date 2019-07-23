@@ -13,31 +13,35 @@ import {dateFormat} from "../../config";
 
 
 class CalculateCountsDialog extends React.Component {
+  //React Datepicker supports different time format
+  dateFormat="yyyy-MM-dd HH:mm:ss"
+  timeFormat="HH:mm:ss"
+
   predefinedRanges = [
     {
       name: "Last hour",
-      from: () => Moment().subtract(1, 'hours'),
-      to: () => Moment()
+      from: () => Moment().subtract(1, 'hours').toDate(),
+      to: () => Moment().toDate()
     },
     {
       name: "Today",
-      from: () => Moment().startOf('day'),
-      to: () => Moment()
+      from: () => Moment().startOf('day').toDate(),
+      to: () => Moment().toDate()
     },
     {
       name: "Yesterday",
-      from: () => Moment().subtract(1, 'days').startOf('day'),
-      to: () => Moment().startOf('day')
+      from: () => Moment().subtract(1, 'days').startOf('day').toDate(),
+      to: () => Moment().startOf('day').toDate()
     },
     {
       name: "Day before yesterday",
-      from: () => Moment().subtract(2, 'days').startOf('day'),
-      to: () => Moment().subtract(1, 'days').startOf('day')
+      from: () => Moment().subtract(2, 'days').startOf('day').toDate(),
+      to: () => Moment().subtract(1, 'days').startOf('day').toDate()
     },
     {
       name: "This day last week",
-      from: () => Moment().subtract(8, 'days').startOf('day'),
-      to: () => Moment().subtract(7, 'days').startOf('day')
+      from: () => Moment().subtract(8, 'days').startOf('day').toDate(),
+      to: () => Moment().subtract(7, 'days').startOf('day').toDate()
     }
   ]
 
@@ -53,8 +57,8 @@ class CalculateCountsDialog extends React.Component {
     const nowMidnight = Moment().startOf('day')
     const yesterdayMidnight = Moment().subtract(1, 'days').startOf('day')
     this.initState = {
-      processCountsDateFrom: yesterdayMidnight,
-      processCountsDateTo: nowMidnight
+      processCountsDateFrom: yesterdayMidnight.toDate(),
+      processCountsDateTo: nowMidnight.toDate()
     };
     this.state = this.initState
   }
@@ -62,29 +66,32 @@ class CalculateCountsDialog extends React.Component {
   confirm = () =>
     this.props.actions.fetchAndDisplayProcessCounts(
       this.props.processId,
-      this.state.processCountsDateFrom,
-      this.state.processCountsDateTo
+      Moment(this.state.processCountsDateFrom),
+      Moment(this.state.processCountsDateTo)
     );
 
   setRawDate = (date, stateChange) => {
     stateChange(Moment(date, dateFormat));
   };
 
-  setDateFrom = (date) => this.setState({processCountsDateFrom: date})
-  setDateTo = (date) => this.setState({processCountsDateTo: date})
+  setDateFrom = (date) => this.setState((state, props) => ({processCountsDateFrom: date}))
+  setDateTo = (date) => this.setState((state, props) => ({processCountsDateTo: date}))
 
   render() {
     return (
-      <GenericModalDialog init={() => this.setState(this.initState)}
-                          confirm={this.confirm} type={Dialogs.types.calculateCounts}>
+      <GenericModalDialog
+          init={() => this.setState(this.initState)}
+          confirm={this.confirm}
+          type={Dialogs.types.calculateCounts}
+      >
         <p>Process counts from</p>
         <div className="datePickerContainer">
           <DatePicker
             selected={this.state.processCountsDateFrom}
             showTimeSelect
-            timeFormat="HH:mm"
+            timeFormat={this.timeFormat}
             timeIntervals={15}
-            dateFormat={dateFormat}
+            dateFormat={this.dateFormat}
             onChange={(e) => this.setDateFrom(e)}
             onChangeRaw={(event) => this.setRawDate(event.target.value, this.setDateFrom)}
           />
@@ -94,9 +101,9 @@ class CalculateCountsDialog extends React.Component {
           <DatePicker
             selected={this.state.processCountsDateTo}
             showTimeSelect
-            timeFormat="HH:mm"
+            timeFormat={this.timeFormat}
             timeIntervals={15}
-            dateFormat={dateFormat}
+            dateFormat={this.dateFormat}
             onChange={(e) => this.setDateTo(e)}
             onChangeRaw={(event) => this.setRawDate(event.target.value, this.setDateTo)}
           />

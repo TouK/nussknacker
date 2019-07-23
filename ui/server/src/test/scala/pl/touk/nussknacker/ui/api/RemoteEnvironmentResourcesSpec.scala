@@ -26,6 +26,7 @@ import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import pl.touk.nussknacker.ui.util.ProcessComparator
 import cats.syntax.semigroup._
 import cats.instances.all._
+import pl.touk.http.argonaut.JsonMarshaller
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.validation.ValidationResults
 import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
@@ -193,7 +194,7 @@ class RemoteEnvironmentResourcesSpec extends FlatSpec with ScalatestRouteTest wi
     var migrateInvocations = List[DisplayableProcess]()
     var compareInvocations = List[DisplayableProcess]()
 
-    override def migrate(localProcess: DisplayableProcess, category: String)(implicit ec: ExecutionContext, user: LoggedUser) = {
+    override def migrate(localProcess: DisplayableProcess, category: String)(implicit ec: ExecutionContext, user: LoggedUser, jsonMarshaller: JsonMarshaller) = {
       migrateInvocations = localProcess :: migrateInvocations
       Future.successful(Right(()))
     }

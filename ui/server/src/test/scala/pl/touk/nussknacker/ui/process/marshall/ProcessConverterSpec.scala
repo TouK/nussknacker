@@ -2,9 +2,8 @@ package pl.touk.nussknacker.ui.process.marshall
 
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.MetaVariables
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compile.ProcessValidator
@@ -14,8 +13,9 @@ import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
-import pl.touk.nussknacker.engine.graph.source.{JoinRef, SourceRef}
+import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
+import pl.touk.nussknacker.engine.variables.MetaVariables
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.sampleResolver
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.ui.validation.ProcessValidation
@@ -90,9 +90,10 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
 
 
   test("return variable type information for process that cannot be canonized") {
+    val meta = MetaData("process", StreamMetaData(Some(2), Some(false)), additionalFields = Some(ProcessAdditionalFields(None, Set.empty, Map.empty)))
     val process = ValidatedDisplayableProcess(
-      "process",
-      ProcessProperties(StreamMetaData(Some(2), Some(false)), ExceptionHandlerRef(List()), subprocessVersions = Map.empty),
+      meta.id,
+      ProcessProperties(meta.typeSpecificData, ExceptionHandlerRef(List()), subprocessVersions = Map.empty),
       List(Source("s", SourceRef("sourceRef", List())), Variable("v", "test", Expression("spel", "''")), Filter("e", Expression("spel", "''"))),
       List(Edge("s", "v", None), Edge("v", "e", None)),
       TestProcessingTypes.Streaming,
@@ -100,7 +101,10 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
         Map("e" -> List(NodeValidationError("InvalidTailOfBranch", "Invalid end of process", "Process branch can only end with sink or processor", None, errorType = NodeValidationErrorType.SaveAllowed))),
         List.empty,
         List.empty,
-        Map("s" -> Map("input" -> Typed[Null], "meta" -> Typed[MetaVariables]), "v" -> Map("input" -> Typed[Null], "meta" -> Typed[MetaVariables]), "e" -> Map("input" -> Typed[Null], "meta" -> Typed[MetaVariables], "test" -> Typed[String]))
+        Map(
+          "s" -> Map("input" -> Typed[Null], "meta" -> MetaVariables.typingResult(meta)),
+          "v" -> Map("input" -> Typed[Null], "meta" -> MetaVariables.typingResult(meta)),
+          "e" -> Map("input" -> Typed[Null], "meta" -> MetaVariables.typingResult(meta), "test" -> Typed[String]))
       )
     )
 
@@ -111,10 +115,10 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
 
     val process = DisplayableProcess("t1", ProcessProperties(StreamMetaData(Some(2), Some(false)), ExceptionHandlerRef(List()), subprocessVersions = Map.empty),
       List(
-        Processor("e", ServiceRef("ref", List())),
-        Join("j1", JoinRef("joinRef", List()), None),
-        Source("s2", SourceRef("sourceRef", List())),
-        Source("s1", SourceRef("sourceRef", List()))
+        Processor("e", ServiceRef("ref", List.empty)),
+        Join("j1", None, "joinRef", List.empty, List.empty),
+        Source("s2", SourceRef("sourceRef", List.empty)),
+        Source("s1", SourceRef("sourceRef", List.empty))
       ),
       List(
         Edge("s1", "j1", None),

@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.canonize
 
 import cats.Applicative
 import cats.data.{NonEmptyList, ValidatedNel}
-import pl.touk.nussknacker.engine.compile.ProcessUncanonizationError
+import pl.touk.nussknacker.engine.api.context.ProcessUncanonizationError
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef

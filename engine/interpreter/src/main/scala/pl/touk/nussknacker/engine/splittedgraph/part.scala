@@ -10,6 +10,8 @@ object part {
     type T <: NodeData
     def node: SplittedNode[T]
     def id: String = node.id
+    def nextParts: List[SubsequentPart]
+    def ends: List[End]
   }
 
   case class SourcePart(node: SourceNode[StartingNodeData], nextParts: List[SubsequentPart], ends: List[End]) extends ProcessPart {
@@ -24,6 +26,9 @@ object part {
 
   case class SinkPart(node: EndingNode[Sink]) extends SubsequentPart {
     override type T = Sink
+
+    override def nextParts: List[SubsequentPart] = List.empty
+    override def ends: List[End] = List.empty
   }
 
 }

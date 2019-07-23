@@ -92,7 +92,8 @@ export default {
       id: user.id,
       categories: user.categories,
       hasPermission(permission, category){
-        return category && user.categoryPermissions[category].includes(permission);
+        let permissions = user.categoryPermissions[category] || []
+        return category && permissions.includes(permission)
       },
       canRead(category){
         return this.hasPermission("Read", category)
@@ -118,7 +119,16 @@ export default {
     }).catch((error) => {
       this.addError(`Cannot find chosen versions`, error, true)
       return Promise.reject(error)
-    });
+    }).then((values => {
+      // This is a walk-around for having part of node template (branch parameters) outside of itself.
+      // See note in DefinitionPreparer on backend side. // TODO remove it after API refactor
+      values.nodesToAdd.forEach(nodeAggregates => {
+        nodeAggregates.possibleNodes.forEach(nodeToAdd => {
+          nodeToAdd.node.branchParametersTemplate = nodeToAdd.branchParametersTemplate
+        })
+      })
+      return values;
+    }));
   },
 
   fetchComponentIds() {
@@ -137,20 +147,16 @@ export default {
     return promiseWrap($.get(API_URL + '/processesDetails'))
   },
 
-  fetchProcesses() {
-    return promiseWrap($.get(API_URL + '/processes'))
+  fetchProcessesComponents(componentId) {
+    return promiseWrap($.get(API_URL + '/processesComponents/' + encodeURIComponent(componentId)))
+  },
+
+  fetchProcesses(data) {
+    return promiseWrap($.get(API_URL + '/processes', data))
   },
 
   fetchCustomProcesses() {
     return promiseWrap($.get(API_URL + '/customProcesses'))
-  },
-
-  fetchSubProcesses() {
-    return promiseWrap($.get(API_URL + '/subProcesses'))
-  },
-
-  fetchArchivedProcesses() {
-    return promiseWrap($.get(`${API_URL}/archive`))
   },
 
   fetchSubProcessesDetails() {

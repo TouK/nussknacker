@@ -5,22 +5,22 @@ import java.util.concurrent.atomic.AtomicInteger
 import argonaut._
 import Argonaut._
 import ArgonautShapeless._
-
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.context.ContextTransformation
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, EspExceptionInfo, ExceptionHandlerFactory}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
-import pl.touk.nussknacker.engine.api.test.TestDataParser
-import pl.touk.nussknacker.engine.standalone.api.types.GenericResultType
-import pl.touk.nussknacker.engine.standalone.api.{ResponseEncoder, StandaloneGetSource}
+import pl.touk.nussknacker.engine.standalone.api.StandaloneCustomTransformer
+import pl.touk.nussknacker.engine.standalone.api.types.InterpreterType
 import pl.touk.nussknacker.engine.standalone.utils.customtransformers.ProcessSplitter
 import pl.touk.nussknacker.engine.standalone.utils.service.TimeMeasuringService
-import pl.touk.nussknacker.engine.standalone.utils.{JsonStandaloneSourceFactory, StandaloneContext, StandaloneContextLifecycle, StandaloneSinkFactory}
+import pl.touk.nussknacker.engine.standalone.utils.{JsonStandaloneSourceFactory, StandaloneSinkFactory}
 import pl.touk.nussknacker.engine.util.LoggingListener
-import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
+import pl.touk.nussknacker._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -38,7 +38,8 @@ class StandaloneProcessConfigCreator extends ProcessConfigCreator with LazyLoggi
   }
 
   override def customStreamTransformers(config: Config): Map[String, WithCategories[CustomStreamTransformer]] = Map(
-    "splitter" -> WithCategories(ProcessSplitter)
+    "splitter" -> WithCategories(ProcessSplitter),
+    "extractor" -> WithCategories(StandaloneCustomExtractor)
   )
 
   override def services(config: Config): Map[String, WithCategories[Service]] = Map(
@@ -121,4 +122,32 @@ class ProcessorService extends Service {
 
 }
 
+object StandaloneCustomExtractor extends CustomStreamTransformer {
 
+  @MethodToInvoke
+  def invoke(@ParamName("expression") expression: LazyParameter[Any],
+             @OutputVariableName outputVariableName: String)
+            (implicit nodeId: NodeId): ContextTransformation = {
+    ContextTransformation
+      .definedBy(ctx => ctx.withVariable(outputVariableName, expression.returnType))
+      .implementedBy(
+        new StandaloneCustomExtractor(outputVariableName, expression))
+  }
+
+}
+
+class StandaloneCustomExtractor(outputVariableName: String, expression: LazyParameter[Any]) extends StandaloneCustomTransformer {
+
+  override def createTransformation(outputVariable: String): StandaloneCustomTransformation =
+    (continuation: InterpreterType, lpi: LazyParameterInterpreter) => {
+      val exprInterpreter: (ExecutionContext, engine.api.Context) => Future[Any] = lpi.createInterpreter(expression)
+      (ctx: engine.api.Context, ec: ExecutionContext) => {
+        implicit val ecc: ExecutionContext = ec
+        for {
+          exprResult <- exprInterpreter(ec, ctx)
+          continuationResult <- continuation(ctx.withVariable(outputVariableName, exprResult), ec)
+        } yield continuationResult
+      }
+    }
+
+}

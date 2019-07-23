@@ -1,7 +1,7 @@
-import React, { PropTypes, Component } from 'react';
-import { render } from 'react-dom';
-import { Accordion, Panel } from 'react-bootstrap';
-import { Scrollbars } from 'react-custom-scrollbars';
+import React, {Component} from 'react';
+import PropTypes from 'prop-types';
+import {Panel} from 'react-bootstrap';
+import {Scrollbars} from 'react-custom-scrollbars';
 import cn from "classnames";
 
 import ProcessHistory from './ProcessHistory'
@@ -10,6 +10,7 @@ import ProcessComments from './ProcessComments'
 import ProcessAttachments from './ProcessAttachments'
 import Tips from './Tips.js'
 import TogglePanel from './TogglePanel';
+import "react-treeview/react-treeview.css"
 
 import '../stylesheets/userPanel.styl';
 import SpinnerWrapper from "./SpinnerWrapper";
@@ -17,39 +18,50 @@ import SpinnerWrapper from "./SpinnerWrapper";
 export default class UserLeftPanel extends Component {
 
   static propTypes = {
-    isOpened: React.PropTypes.bool.isRequired,
-    onToggle: React.PropTypes.func.isRequired,
-    loggedUser: React.PropTypes.object.isRequired,
-    isReady: React.PropTypes.bool.isRequired
+    isOpened: PropTypes.bool.isRequired,
+    onToggle: PropTypes.func.isRequired,
+    loggedUser: PropTypes.object.isRequired,
+    isReady: PropTypes.bool.isRequired
   }
 
   render() {
     const { isOpened, onToggle, isReady } = this.props;
 
     return (
-      <div id="espLeftNav" className={cn("sidenav", { "is-opened": isOpened })}>
-        <TogglePanel type="left" isOpened={isOpened} onToggle={onToggle}/>
-        <SpinnerWrapper isReady={isReady}>
-          <Scrollbars renderThumbVertical={props => <div {...props} className="thumbVertical"/>} hideTracksWhenNotNeeded={true}>
-            <Tips />
-            {this.props.capabilities.write ?
-              <Panel collapsible defaultExpanded header="Creator panel">
-                <ToolBox/>
-              </Panel> : null
-            }
-            <Panel collapsible defaultExpanded header="Versions">
-              <ProcessHistory/>
-            </Panel>
-            <Panel collapsible defaultExpanded header="Comments">
-              <ProcessComments/>
-            </Panel>
-            <Panel collapsible defaultExpanded header="Attachments">
-              <ProcessAttachments/>
-            </Panel>
-          </Scrollbars>
-        </SpinnerWrapper>
-      </div>
+        <div id="espLeftNav" className={cn("sidenav", { "is-opened": isOpened })}>
+            <TogglePanel type="left" isOpened={isOpened} onToggle={onToggle}/>
+            <SpinnerWrapper isReady={isReady}>
+                <Scrollbars renderThumbVertical={props => <div {...props} className="thumbVertical"/>} hideTracksWhenNotNeeded={true}>
+                    <Tips />
+                    {this.props.capabilities.write ?
+                        <Panel defaultExpanded>
+                            <Panel.Heading><Panel.Title toggle>Creator panel</Panel.Title></Panel.Heading>
+                            <Panel.Collapse>
+                                <Panel.Body><ToolBox/></Panel.Body>
+                            </Panel.Collapse>
+                        </Panel> : null
+                    }
+                    <Panel defaultExpanded>
+                        <Panel.Heading><Panel.Title toggle>Versions</Panel.Title></Panel.Heading>
+                        <Panel.Collapse>
+                            <Panel.Body><ProcessHistory/></Panel.Body>
+                        </Panel.Collapse>
+                    </Panel>
+                    <Panel defaultExpanded>
+                        <Panel.Heading><Panel.Title toggle>Versions</Panel.Title></Panel.Heading>
+                        <Panel.Collapse>
+                            <Panel.Body><ProcessComments/></Panel.Body>
+                        </Panel.Collapse>
+                    </Panel>
+                    <Panel collapse="true" defaultExpanded header="Attachments" id="panel-attachments">
+                        <Panel.Heading><Panel.Title toggle>Attachments</Panel.Title></Panel.Heading>
+                        <Panel.Collapse>
+                            <Panel.Body><ProcessAttachments/></Panel.Body>
+                        </Panel.Collapse>
+                    </Panel>
+                </Scrollbars>
+            </SpinnerWrapper>
+        </div>
     );
   }
-
 }

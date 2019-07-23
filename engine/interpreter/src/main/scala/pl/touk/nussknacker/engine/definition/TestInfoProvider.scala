@@ -2,12 +2,13 @@ package pl.touk.nussknacker.engine.definition
 
 import java.util.concurrent.TimeUnit
 
-import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.{Interpreter, ModelData}
 import pl.touk.nussknacker.engine.api.process.{SourceFactory, TestDataGenerator, TestDataParserProvider, WithCategories}
 import pl.touk.nussknacker.engine.api.test.TestDataParser
 import pl.touk.nussknacker.engine.api.{MetaData, process}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
-import pl.touk.nussknacker.engine.compile.ProcessCompilationError.NodeId
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
+import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.{TypedExpression, TypedParameter}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.node.Source
@@ -59,13 +60,13 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider {
       sourceFactory <- extractSourceFactory(source)
       definition = ObjectWithMethodDef.withEmptyConfig(sourceFactory, ProcessObjectDefinitionExtractor.source)
       sourceParams <- prepareSourceParams(definition, source)
-      sourceObj = factory.create[process.Source[Any]](definition, sourceParams)
+      sourceObj = factory.create[process.Source[Any]](definition, sourceParams, None)
     } yield sourceObj
   }
 
   private def prepareSourceParams(definition: ObjectWithMethodDef, source: Source)
                                  (implicit processMetaData: MetaData, nodeId: NodeId) = {
     val parametersToCompile = source.ref.parameters
-    expressionCompiler.compileObjectParameters(definition.parameters, parametersToCompile, None).toOption
+    expressionCompiler.compileObjectParameters(definition.parameters, parametersToCompile, List.empty, None, None).toOption
   }
 }

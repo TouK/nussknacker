@@ -2,7 +2,7 @@ package pl.touk.nussknacker.restmodel
 
 import argonaut.{EncodeJson, _}
 import argonaut.derive.{DerivedInstances, JsonSumCodec, JsonSumCodecFor, SingletonInstances}
-import pl.touk.nussknacker.engine.api.{TypeSpecificData, UserDefinedProcessAdditionalFields}
+import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, TypeSpecificData}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.definition.TestingCapabilities
@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.util.json.Codecs
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
-import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.{Edge, EdgeType, NodeAdditionalFields, ProcessAdditionalFields}
+import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.{Edge, EdgeType, NodeAdditionalFields}
 import pl.touk.nussknacker.restmodel.processdetails.{DeploymentAction, DeploymentHistoryEntry, ProcessDetails, ProcessHistoryEntry}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationErrorType, ValidationResult}
@@ -38,9 +38,8 @@ trait RestModelCodecs extends Codecs with Argonauts with SingletonInstances with
       .asInstanceOf[CodecJson[Option[node.UserDefinedAdditionalNodeFields]]]
   }
 
-  implicit def processAdditionalFieldsOptCodec: CodecJson[Option[UserDefinedProcessAdditionalFields]] = {
-    CodecJson.derived[Option[ProcessAdditionalFields]]
-      .asInstanceOf[CodecJson[Option[UserDefinedProcessAdditionalFields]]]
+  implicit val processAdditionalFieldsOptCodec = {
+    ProcessMarshaller.additionalProcessFieldsCodec
   }
 
   implicit def testingCapabilitiesCodec: CodecJson[TestingCapabilities] = CodecJson.derive[TestingCapabilities]

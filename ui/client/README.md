@@ -5,7 +5,7 @@ After that you may need to cleanup npm global modules (result of `sudo npm -g li
 
 # Run
 ```
-npm install
+npm ci
 npm start
 open http://localhost:3000
 ```

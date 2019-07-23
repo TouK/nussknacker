@@ -2,25 +2,61 @@ const path = require('path');
 const webpack = require('webpack');
 const childProcess = require('child_process');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const TerserPlugin = require('terser-webpack-plugin');
+
 
 const NODE_ENV = process.env.NODE_ENV || 'development';
 const GIT_HASH = childProcess.execSync('git log -1 --format=%H').toString();
 const GIT_DATE = childProcess.execSync('git log -1 --format=%cd').toString();
 const isProd = NODE_ENV === 'production';
 
+const entry = {
+  main: path.resolve(__dirname,'./index.js'),
+}
+
+if (!isProd) {
+  entry['developer-tools'] = [
+    "webpack-dev-server/client?http://localhost:3000",
+    "react-hot-loader/patch",
+  ]
+}
 
 module.exports = {
-  entry: isProd ? [
-    './index',
-  ] : [
-    'webpack-dev-server/client?http://localhost:3000',
-    'webpack/hot/only-dev-server',
-    'react-hot-loader/patch',
-    './index',
-  ],
+  mode: NODE_ENV,
+  optimization: {
+    splitChunks: {
+      cacheGroups: {
+        commons: {
+          test: /[\\/]node_modules[\\/]/,
+          name: 'vendors',
+          chunks: 'all'
+        }
+      }
+    },
+    minimizer: [new TerserPlugin({
+      parallel: true,
+      sourceMap: true,
+      //Reactable bug: https://github.com/abdulrahman-khankan/reactable/issues/3
+      terserOptions: {
+        mangle: {
+          reserved: ['Td', 'Tr', 'Th', 'Thead', 'Table'],
+        }
+      }
+    })]
+  },
+  performance: {
+    maxEntrypointSize: 3000000,
+    maxAssetSize: 3000000
+  },
+  resolve: {
+    alias: {
+      'react-dom': '@hot-loader/react-dom'
+    }
+  },
+  entry: entry,
   output: {
     path: path.join(__dirname, '..', 'server', 'target', 'scala-2.11', 'classes', 'web', 'static'),
-    filename: 'bundle.js',
+    filename: '[name].js',
     publicPath: '/static/'
   },
   devtool: isProd ? 'hidden-source-map' : 'eval-source-map',
@@ -34,7 +70,12 @@ module.exports = {
     port: 3000,
   },
   plugins: [
-    new HtmlWebpackPlugin({title: "Nussknacker", hash: true, filename: 'main.html', template: "index_template_no_doctype.ejs"}),
+    new HtmlWebpackPlugin({
+      title: "Nussknacker",
+      hash: true,
+      filename: 'main.html',
+      template: "index_template_no_doctype.ejs"
+    }),
     isProd ? null : new webpack.NamedModulesPlugin(),
     isProd ? null : new webpack.HotModuleReplacementPlugin(),
     new webpack.DefinePlugin({
@@ -46,36 +87,40 @@ module.exports = {
         'HASH': JSON.stringify(GIT_HASH),
         'DATE': JSON.stringify(GIT_DATE)
       }
-    })
+    }),
   ].filter(p => p !== null),
   module: {
-    loaders: [{
-      test: /\.html$/,
-      loader: "html-loader?minimize=false"
-    }, {
-      test: /\.js$/,
-      loaders: ['babel'],
-      exclude: /node_modules/,
-      include: __dirname
-    }, {
-      test: /\.css?$/,
-      loaders: ['style', 'raw'],
-      include: __dirname
-    }, {
-      test: /\.styl$/,
-      loaders: ['style-loader', 'css-loader', 'stylus-loader'],
-      include: __dirname
-    }, {
-      test: /\.less$/,
-      loaders: ['style', 'css', 'less'],
-      include: __dirname
-    }, {
-      test: /\.(eot|svg|png|ttf|woff|woff2)$/,
-      loader: 'file?name=assets/fonts/[name].[ext]',
-      include: __dirname
-    }, {
-      test: /\.json$/,
-      loaders: ['json-loader'],
-    }]
-  },
-};
+    rules: [
+      {
+        test: /\.html$/,
+        loader: "html-loader?minimize=false"
+      },
+      {
+        test: /\.js$/,
+        use: ["babel-loader"],
+        exclude: /node_modules/,
+        include: __dirname
+      },
+      {
+        test: /\.css?$/,
+        loaders: ['style-loader', 'raw-loader'],
+        include: __dirname
+      },
+      {
+        test: /\.styl$/,
+        loaders: ['style-loader', 'css-loader', 'stylus-loader'],
+        include: __dirname
+      },
+      {
+        test: /\.less$/,
+        loaders: ['style-loader', 'css-loader', 'less-loader'],
+        include: __dirname
+      },
+      {
+        test: /\.(eot|svg|png|ttf|woff|woff2)$/,
+        loader: 'file-loader?name=assets/fonts/[name].[ext]',
+        include: __dirname
+      }
+    ]
+  }
+}

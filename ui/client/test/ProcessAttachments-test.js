@@ -1,9 +1,12 @@
 import React from 'react';
-import { shallow, mount, render } from 'enzyme';
-import { ProcessAttachments_ } from '../components/ProcessAttachments'; //import redux-independent component
+import Enzyme, {mount} from 'enzyme';
+import {ProcessAttachments_} from '../components/ProcessAttachments'; //import redux-independent component
+import Adapter from 'enzyme-adapter-react-16';
 
 describe("ProcessAttachments suite", () => {
   it("should render with no problems", () => {
+    Enzyme.configure({ adapter: new Adapter() });
+
     //given
     const attachments = [processAttachment(3), processAttachment(2), processAttachment(1)]
     const processId = "proc1"

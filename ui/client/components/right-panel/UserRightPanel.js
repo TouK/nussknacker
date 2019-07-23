@@ -1,9 +1,8 @@
 import React, {Component} from "react";
 import {connect} from "react-redux";
-import {Panel, Tab, Tabs} from "react-bootstrap";
+import {Panel} from "react-bootstrap";
 import {Scrollbars} from 'react-custom-scrollbars';
-import {browserHistory} from "react-router";
-import Dropzone from "react-dropzone";
+import history from "../../history"
 import cn from "classnames";
 
 import ActionsUtils from "../../actions/ActionsUtils";
@@ -20,18 +19,20 @@ import SvgDiv from "../SvgDiv"
 import '../../stylesheets/userPanel.styl';
 import Archive from "../../containers/Archive";
 import SpinnerWrapper from "../SpinnerWrapper";
+import PropTypes from 'prop-types';
+import Dropzone from 'react-dropzone'
 
 class UserRightPanel extends Component {
 
   static propTypes = {
-    isOpened: React.PropTypes.bool.isRequired,
-    graphLayoutFunction: React.PropTypes.func.isRequired,
-    layout: React.PropTypes.array.isRequired,
-    exportGraph: React.PropTypes.func.isRequired,
-    zoomIn: React.PropTypes.func.isRequired,
-    zoomOut: React.PropTypes.func.isRequired,
-    featuresSettings: React.PropTypes.object.isRequired,
-    isReady: React.PropTypes.bool.isRequired
+    isOpened: PropTypes.bool.isRequired,
+    graphLayoutFunction: PropTypes.func.isRequired,
+    layout: PropTypes.array.isRequired,
+    exportGraph: PropTypes.func.isRequired,
+    zoomIn: PropTypes.func.isRequired,
+    zoomOut: PropTypes.func.isRequired,
+    featuresSettings: PropTypes.object.isRequired,
+    isReady: PropTypes.bool.isRequired
   };
 
   render() {
@@ -55,15 +56,23 @@ class UserRightPanel extends Component {
             {config.filter(panel => panel).map ((panel, panelIdx) => {
                 const visibleButtons = panel.buttons.filter(button => button.visible !== false)
                 return _.isEmpty(visibleButtons) ? null : (
-                  <Panel key={panelIdx} collapsible defaultExpanded header={panel.panelName}>
-                    {visibleButtons.map((panelButton, idx) => this.renderPanelButton(panelButton, idx))}
+                  <Panel key={panelIdx} defaultExpanded>
+                    <Panel.Heading><Panel.Title toggle>{panel.panelName}</Panel.Title></Panel.Heading>
+                    <Panel.Collapse>
+                      <Panel.Body>
+                        {visibleButtons.map((panelButton, idx) => this.renderPanelButton(panelButton, idx))}
+                      </Panel.Body>
+                    </Panel.Collapse>
                   </Panel>
                 )
               }
             )}
             {this.props.capabilities.write ? //TODO remove SideNodeDetails? turn out to be not useful
-              (<Panel collapsible defaultExpanded header="Details">
-                <SideNodeDetails/>
+              (<Panel defaultExpanded>
+                <Panel.Heading><Panel.Title toggle>Details</Panel.Title></Panel.Heading>
+                <Panel.Collapse>
+                  <Panel.Body><SideNodeDetails/></Panel.Body>
+                </Panel.Collapse>
               </Panel>) : null
             }
           </Scrollbars>
@@ -135,11 +144,13 @@ class UserRightPanel extends Component {
           {name: "redo", visible: this.props.capabilities.write, onClick: this.redo, icon: InlinedSvgs.buttonRedo},
           {name: "align", onClick: this.props.graphLayoutFunction, icon: InlinedSvgs.buttonAlign, visible: this.props.capabilities.write},
           {name: "properties", className: conf.propertiesBtnClass, onClick: this.showProperties, icon: InlinedSvgs.buttonSettings, visible: !this.props.isSubprocess},
-          {name: "duplicate", onClick: this.duplicateNode, icon: 'duplicate.svg',
+          {name: "duplicate", onClick: this.duplicateSelection, icon: 'duplicate.svg',
             //cloning groups can be tricky...
-            disabled: this.noChosenNode(this.props.nodeToDisplay) || NodeUtils.nodeIsGroup(this.props.nodeToDisplay),
+            disabled: !NodeUtils.isPlainNode(this.props.nodeToDisplay) || NodeUtils.nodeIsGroup(this.props.nodeToDisplay),
             visible: this.props.capabilities.write},
-          {name: "delete", onClick: this.deleteNode, icon: 'delete.svg', visible: this.props.capabilities.write, disabled: this.noChosenNode(this.props.nodeToDisplay) }
+          {name: "delete", onClick: this.deleteSelection, icon: 'delete.svg',
+            visible: this.props.capabilities.write,
+            disabled: !NodeUtils.isPlainNode(this.props.nodeToDisplay) || _.isEmpty(this.props.selectionState)}
 
         ]
       },
@@ -173,23 +184,43 @@ class UserRightPanel extends Component {
     const buttonClass = panelButton.className || "espButton right-panel"
     //TODO: move other buttons from inlined svgs to files
     const toolTip = panelButton.btnTitle || panelButton.name
-    const svgDiv = panelButton.icon.endsWith('.svg') ?  (<SvgDiv title={toolTip} svgFile={`buttons/${panelButton.icon}`}/>)
-      : ( <div  title={toolTip} dangerouslySetInnerHTML={{__html: panelButton.icon}} />)
+    const svgDiv = panelButton.icon.endsWith('.svg')
+                 ? (<SvgDiv title={toolTip} svgFile={`buttons/${panelButton.icon}`}/>)
+                 : ( <div title={toolTip} dangerouslySetInnerHTML={{__html: panelButton.icon}} />)
 
-    return panelButton.dropzone ?
-        <Dropzone key={idx} disableClick={panelButton.disabled === true} title={toolTip} className={"dropZone " + buttonClass + (panelButton.disabled === true ? " disabled" : "")}
-                  onDrop={panelButton.onClick} onMouseOver={panelButton.onMouseOver} onMouseOut={panelButton.onMouseOut}>
-            {svgDiv}<div>{panelButton.name}</div>
-          </Dropzone>
+    return (
+        panelButton.dropzone ?
+        <Dropzone
+            key={idx}
+            title={toolTip}
+            disableClick={panelButton.disabled === true}
+            onDrop={panelButton.onClick}
+            onMouseOver={panelButton.onMouseOver}
+            onMouseOut={panelButton.onMouseOut}
+        >
+          {({getRootProps, getInputProps}) => (
+              <div {...getRootProps({className: "dropZone " + buttonClass + (panelButton.disabled === true ? " disabled" : "")})} >
+                {svgDiv}
+                <input {...getInputProps()} />
+                <div>{panelButton.name}</div>
+              </div>
+          )}
+        </Dropzone>
         :
-        <button key={idx} type="button" className={buttonClass} disabled={panelButton.disabled === true} title={toolTip}
-                onClick={panelButton.onClick} onMouseOver={panelButton.onMouseOver} onMouseOut={panelButton.onMouseOut}>
-          {svgDiv}<div>{panelButton.name}</div>
+        <button
+            key={idx}
+            type="button"
+            className={buttonClass}
+            disabled={panelButton.disabled === true}
+            title={toolTip}
+            onClick={panelButton.onClick}
+            onMouseOver={panelButton.onMouseOver}
+            onMouseOut={panelButton.onMouseOut}
+        >
+          {svgDiv}
+          <div>{panelButton.name}</div>
         </button>
-  }
-
-  noChosenNode = (node) => {
-    return NodeUtils.nodeIsProperties(node) || _.isEmpty(node)
+    )
   }
 
   isRunning = () => this.props.fetchedProcessDetails && (this.props.fetchedProcessDetails.currentlyDeployedAt || []).length > 0
@@ -231,7 +262,7 @@ class UserRightPanel extends Component {
   versionId = () => this.props.fetchedProcessDetails.processVersionId
 
   showMetrics = () => {
-    browserHistory.push('/metrics/' + this.processId())
+    history.push('/metrics/' + this.processId())
   }
 
   exportProcess = () => {
@@ -249,7 +280,7 @@ class UserRightPanel extends Component {
     }else{
       this.props.actions.toggleConfirmDialog(true, DialogMessages.archiveProcess(this.processId()), () => {
           return HttpService.archiveProcess(this.processId()).then((resp) =>
-              browserHistory.push(Archive.path))
+							history.push(Archive.path))
       })
     }
   }
@@ -295,14 +326,19 @@ class UserRightPanel extends Component {
     }
   }
 
-  duplicateNode = () => {
-    const duplicatedNodePosition = this.props.layout.find(node => node.id === this.props.nodeToDisplay.id) || {position: {x: 0, y: 0}}
-    const visiblePosition = {x: duplicatedNodePosition.position.x -200, y: duplicatedNodePosition.position.y}
-    this.props.actions.nodeAdded(this.props.nodeToDisplay, visiblePosition)
+  duplicateSelection = () => {
+    const duplicateNode = nodeId => {
+      const duplicatedNodePosition = this.props.layout.find(node => node.id === nodeId) || {position: {x: 0, y: 0}}
+      const position = {x: duplicatedNodePosition.position.x -200, y: duplicatedNodePosition.position.y}
+      const node = NodeUtils.getNodeById(nodeId, this.props.processToDisplay)
+      return {node, position}
+    }
+    const duplicatedNodesWithPositions = this.props.selectionState.map(duplicateNode)
+    this.props.actions.nodesAdded(duplicatedNodesWithPositions)
   }
 
-  deleteNode = () => {
-    this.props.actions.deleteNode(this.props.nodeToDisplay.id)
+  deleteSelection = () => {
+    this.props.actions.deleteNodes(this.props.selectionState)
   }
 
   ungroup = () => {
@@ -331,6 +367,7 @@ function mapState(state) {
     processIsLatestVersion: _.get(fetchedProcessDetails, 'isLatestVersion', false),
     nodeToDisplay: state.graphReducer.nodeToDisplay,
     groupingState: state.graphReducer.groupingState,
+    selectionState: state.graphReducer.selectionState,
     featuresSettings: state.settings.featuresSettings,
     isSubprocess: _.get(state.graphReducer.processToDisplay, "properties.isSubprocess", false),
     businessView: state.graphReducer.businessView

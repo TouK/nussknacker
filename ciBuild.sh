@@ -1,20 +1,27 @@
 #!/usr/bin/env bash
+
+set -e
+
 espEngineToukVersion=$1
 nexusPassword=$2
 
-if [ -n "$3" ]; then
+if [[ -n "$3" ]]; then
     nexusUrlProperty="-DnexusUrl=$3"
 else
     nexusUrlProperty=""
 fi
 
-if [ -n "$4" ]; then
+if [[ -n "$4" ]]; then
     nexusUserProperty="-DnexusUser=$4"
 else
     nexusUserProperty=""
 fi
 
-./sbtwrapper clean test management/it:test engineStandalone/it:test ui/slow:test || { echo 'Failed to build and test nussknacker' ; exit 1; }
-if [ -n "$espEngineToukVersion" ]; then
+cd ui/client && npm ci && cd -
+if [[ -z "$5" || "$5" == false ]]; then
+    ./sbtwrapper clean test management/it:test engineStandalone/it:test ui/slow:test || { echo 'Failed to build and test nussknacker' ; exit 1; }
+fi
+
+if [[ -n "$espEngineToukVersion" ]]; then
     ./sbtwrapper -DnexusPassword=$2 ${nexusUrlProperty} ${nexusUserProperty} "set version in ThisBuild := \"$espEngineToukVersion\"" publish
 fi

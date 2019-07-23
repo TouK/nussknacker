@@ -1,21 +1,18 @@
 import React from 'react'
 import {render} from "react-dom";
-import {Scrollbars} from "react-custom-scrollbars";
+import PropTypes from 'prop-types';
 import {connect} from "react-redux";
-import {bindActionCreators} from "redux";
 import _ from 'lodash'
 import "../stylesheets/toolBox.styl";
-import {Accordion, Panel} from "react-bootstrap";
 import Tool from "./Tool"
 
 import TreeView from 'react-treeview'
-import reactTreeviewCss from 'react-treeview/react-treeview.css'
 
 class ToolBox extends React.Component {
 
   static propTypes = {
-    processDefinitionData: React.PropTypes.object.isRequired,
-    processCategory: React.PropTypes.string.isRequired
+    processDefinitionData: PropTypes.object.isRequired,
+    processCategory: PropTypes.string.isRequired
   }
 
   constructor(props) {

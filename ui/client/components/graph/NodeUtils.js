@@ -4,6 +4,10 @@ import ProcessUtils from '../../common/ProcessUtils.js'
 
 class NodeUtils {
 
+  isNode = (obj) => {
+    return !_.isEmpty(obj) && _.has(obj, 'id') && _.has(obj, 'type')
+  }
+
   nodeType = (node) => {
     return node.type ? node.type : "Properties";
   }
@@ -13,12 +17,16 @@ class NodeUtils {
     return type === "Properties";
   }
 
+  isPlainNode = (node) => {
+    return !_.isEmpty(node) && !this.nodeIsProperties(node)
+  }
+
   nodeIsGroup = (node) => {
     return node && this.nodeType(node) === "_group"
   }
 
   nodesFromProcess = (process, expandedGroups) => {
-    var nodes = process.nodes
+    let nodes = process.nodes
     const groups = this.getCollapsedGroups(process, expandedGroups)
     groups.forEach(group => {
       nodes = nodes.filter(node => !_.includes(group.nodes, node.id))
@@ -39,7 +47,7 @@ class NodeUtils {
   }
 
   edgesFromProcess = (process, expandedGroups) => {
-    var edges = process.edges
+    let edges = process.edges
     const groups = this.getCollapsedGroups(process, expandedGroups)
     groups.forEach(group => {
       const id = group.id
@@ -56,6 +64,17 @@ class NodeUtils {
 
   getEdgeById = (edgeId, process) => this.edgesFromProcess(process).find(e => this.edgeId(e) === edgeId)
 
+  getAllNodesById = (nodeIds, process) => this.nodesFromProcess(process).filter(node => _.includes(nodeIds, node.id))
+
+  containsOnlyPlainNodesWithoutGroups = (nodeIds, process) => {
+    return _.every(nodeIds, nodeId => {
+      const node = this.getNodeById(nodeId, process)
+      return this.isPlainNode(node) && !this.nodeIsGroup(node)
+    })
+  }
+
+  getIncomingEdges = (nodeId, process) => this.edgesFromProcess(process).filter(e => e.to === nodeId)
+
   getAllGroups = (process) => _.get(process, 'properties.additionalFields.groups', [])
 
   getCollapsedGroups = (process, expandedGroups) => this.getAllGroups(process)
@@ -63,7 +82,6 @@ class NodeUtils {
 
   getExpandedGroups = (process, expandedGroups) => this.getAllGroups(process)
     .filter(g => _.includes(expandedGroups, g.id))
-
 
   edgeType = (allEdges, node, processDefinitionData) => {
     const edgesForNode = this.edgesForNode(node, processDefinitionData)

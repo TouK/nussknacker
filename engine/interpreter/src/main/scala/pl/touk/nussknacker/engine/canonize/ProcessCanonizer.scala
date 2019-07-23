@@ -3,9 +3,9 @@ package pl.touk.nussknacker.engine.canonize
 import cats.Applicative
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.instances.list._
+import pl.touk.nussknacker.engine.api.context.ProcessUncanonizationError
 import pl.touk.nussknacker.engine.canonicalgraph._
-import pl.touk.nussknacker.engine.compile.ProcessCompilationError._
-import pl.touk.nussknacker.engine.compile.ProcessUncanonizationError
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.graph._
 import pl.touk.nussknacker.engine.graph.node.{BranchEnd, BranchEndData, BranchEndDefinition}
 

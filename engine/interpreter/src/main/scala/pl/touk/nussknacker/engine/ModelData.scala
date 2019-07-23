@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine
 
 import java.net.URL
 
-import com.typesafe.config.Config
+import com.typesafe.config.{Config, ConfigFactory}
 import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
@@ -29,7 +29,7 @@ object ModelData {
 }
 
 
-case class ClassLoaderModelData(processConfig: Config, modelClassLoader: ModelClassLoader)
+case class ClassLoaderModelData(processConfigFromConfiguration: Config, modelClassLoader: ModelClassLoader)
   extends ModelData {
 
   //this is not lazy, to be able to detect if creator can be created...
@@ -51,7 +51,7 @@ trait ModelData extends ConfigCreatorSignalDispatcher {
 
   def migrations: ProcessMigrations
 
-  def configCreator : ProcessConfigCreator
+  def configCreator: ProcessConfigCreator
 
   private lazy val processWithObjectsDefinition =
     withThisAsContextClassLoader {
@@ -69,4 +69,12 @@ trait ModelData extends ConfigCreatorSignalDispatcher {
   }
 
   def modelClassLoader : ModelClassLoader
+
+  def processConfigFromConfiguration: Config
+
+  override def processConfig: Config = {
+    //This allows to add reference.conf to model jar and use properties from there
+    //NOTE: substitutions work only one way, i.e. config from NK configuration can use properties from reference.conf, but not vice-versa
+    ConfigFactory.load(modelClassLoader.classLoader, processConfigFromConfiguration)
+  }
 }

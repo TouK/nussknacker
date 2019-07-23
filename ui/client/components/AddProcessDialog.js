@@ -1,25 +1,26 @@
 import React from "react";
-import {render} from "react-dom";
-import {browserHistory} from "react-router";
+import PropTypes from 'prop-types';
+
+import history from "../history"
 import Modal from "react-modal";
 import {connect} from "react-redux";
 import _ from 'lodash';
 import ActionsUtils from "../actions/ActionsUtils";
 import EspModalStyles from "../common/EspModalStyles";
 import "../stylesheets/visualization.styl";
-import SaveIcon from "../assets/img/save-icon.svg";
-import CloseIcon from "../assets/img/close-icon.svg";
 import HttpService from "../http/HttpService";
 import * as VisualizationUrl from '../common/VisualizationUrl'
+import Processes from "../containers/Processes";
 
 //TODO: Consider integrating with GenericModalDialog 
 class AddProcessDialog extends React.Component {
 
   static propTypes = {
-    categories: React.PropTypes.array.isRequired,
-    isOpen: React.PropTypes.bool.isRequired,
-    onClose: React.PropTypes.func.isRequired,
-    isSubprocess: React.PropTypes.bool
+    categories: PropTypes.array.isRequired,
+    isOpen: PropTypes.bool.isRequired,
+    onClose: PropTypes.func.isRequired,
+    isSubprocess: PropTypes.bool,
+    visualizationPath: PropTypes.string.isRequired
   }
 
   initialState(props) {
@@ -37,10 +38,10 @@ class AddProcessDialog extends React.Component {
   }
 
   confirm = () => {
-    var processId = this.state.processId
+    const processId = this.state.processId
     HttpService.createProcess(this.state.processId, this.state.processCategory, () => {
       this.closeDialog()
-      browserHistory.push(VisualizationUrl.visualizationUrl(processId))
+      history.push(VisualizationUrl.visualizationUrl(this.props.visualizationPath, processId))
     }, this.props.isSubprocess)
   }
 

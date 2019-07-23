@@ -5,9 +5,10 @@ import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
-import pl.touk.nussknacker.engine.compile.{ProcessCompilationError, ProcessValidator}
+import pl.touk.nussknacker.engine.api.ProcessAdditionalFields
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
+import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.graph.node.{Disableable, NodeData, Source, SubprocessInputDefinition}
-import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.ProcessAdditionalFields
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.validation.CustomProcessValidator
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
@@ -67,12 +68,17 @@ class ProcessValidation(validators: Map[ProcessingType, ProcessValidator],
 
   private def validateUsingTypeValidator(displayable: DisplayableProcess, processValidator: ProcessValidator): ValidationResult = {
     val canonical = ProcessConverter.fromDisplayable(displayable)
-    //TODO: handle types when subprocess resolution fails...
     subprocessResolver.resolveSubprocesses(canonical) match {
-      case Valid(process) =>
-        val validated = processValidator.validate(process)
-        validated.result.fold(formatErrors, _ => ValidationResult.success).withTypes(validated.variablesInNodes)
-      case Invalid(pce) => formatErrors(pce)
+      case Invalid(e) => formatErrors(e)
+      case _ =>
+        /* 1. We remove disabled nodes from canonical to not validate disabled nodes
+           2. TODO: handle types when subprocess resolution fails... */
+        subprocessResolver.resolveSubprocesses(canonical.withoutDisabledNodes) match {
+            case Valid(process) =>
+              val validated = processValidator.validate(process)
+              validated.result.fold(formatErrors, _ => ValidationResult.success).withTypes(validated.variablesInNodes)
+            case Invalid(e) => formatErrors(e)
+          }
     }
   }
 

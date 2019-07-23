@@ -5,9 +5,7 @@ import Flattenizer from "flattenizer";
 // They should be removed as soon as friendly UI components for complex input objects are ready
 
 export function tryStringify(input) {
-  return _.isString(input) ? input :
-    _.isObject(input) ? JSON.stringify(input) :
-      input;
+  return _.isString(input) ? input : _.isObject(input) ? JSON.stringify(input) : input;
 }
 
 export function tryParse(input){
@@ -15,6 +13,14 @@ export function tryParse(input){
     return JSON.parse(input)
   } catch(e) {
     return input
+  }
+}
+
+export function tryParseOrNull(input) {
+  try {
+    return JSON.parse(input)
+  } catch (e) {
+    return null
   }
 }
 
@@ -52,7 +58,7 @@ export function removeEmptyProperties(obj) {
     const objCopy = _.cloneDeep(obj)
     Object.keys(objCopy).forEach(key => {
       if (!_.isEmpty(objCopy[key]) && _.isObject(objCopy[key])) {
-        objCopy[key] = this.removeEmptyProperties(objCopy[key])
+        objCopy[key] = removeEmptyProperties(objCopy[key])
       } else if (_.isEmpty(objCopy[key])) {
         delete objCopy[key]
       }

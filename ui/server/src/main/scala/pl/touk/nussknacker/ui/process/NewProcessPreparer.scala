@@ -2,14 +2,13 @@ package pl.touk.nussknacker.ui.process
 
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
-import pl.touk.nussknacker.engine.api.{MetaData, TypeSpecificData, UserDefinedProcessAdditionalFields}
+import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, TypeSpecificData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.ProcessAdditionalFields
 import pl.touk.nussknacker.ui.definition.AdditionalProcessProperty
 
 object NewProcessPreparer {
@@ -40,10 +39,10 @@ class NewProcessPreparer(definitions: Map[ProcessingType, ProcessDefinition[Obje
     emptyCanonical
   }
 
-  private def defaultAdditionalFields(processingType: ProcessingType): Option[UserDefinedProcessAdditionalFields] = {
+  private def defaultAdditionalFields(processingType: ProcessingType): Option[ProcessAdditionalFields] = {
     Option(defaultProperties(processingType))
       .filter(_.nonEmpty)
-      .map(properties => ProcessAdditionalFields(None, properties = properties))
+      .map(properties => ProcessAdditionalFields(None, Set.empty, properties = properties))
   }
 
   private def defaultProperties(processingType: ProcessingType): Map[String, String] = additionalFields(processingType)

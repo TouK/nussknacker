@@ -13,6 +13,7 @@ import com.codahale.metrics.MetricRegistry
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable}
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
+import pl.touk.http.argonaut.{JacksonJsonMarshaller, JsonMarshaller}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessState, RunningState}
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -30,6 +31,8 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
 
   import argonaut.ArgonautShapeless._
   import spel.Implicits._
+
+  private implicit val jsonMarshaller: JsonMarshaller = JacksonJsonMarshaller
 
   var procId : ProcessName = _
 
@@ -97,7 +100,7 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
 
   def processToJson(espProcess: EspProcess): String = {
     val canonical = ProcessCanonizer.canonize(espProcess)
-    processMarshaller.toJson(canonical, PrettyParams.spaces2)
+    processMarshaller.toJson(canonical).spaces2
   }
 
 
@@ -268,6 +271,12 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
         responseAs[String] shouldBe "[\"b-a\"]"
         cancelProcess(procId)
       }
+    }
+  }
+
+  it should "return health" in {
+    Get("/healthCheck") ~> managementRoute ~> check {
+      status shouldBe StatusCodes.OK
     }
   }
 

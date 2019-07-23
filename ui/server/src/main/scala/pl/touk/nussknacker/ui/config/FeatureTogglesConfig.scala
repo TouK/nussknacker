@@ -1,23 +1,21 @@
 package pl.touk.nussknacker.ui.config
 
+import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.readers.ValueReader
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.process.migrate.HttpRemoteEnvironmentConfig
-import pl.touk.nussknacker.processCounts.influxdb.InfluxReporterConfig
 
 case class FeatureTogglesConfig(development: Boolean,
                                 standaloneMode: Boolean,
                                 search: Option[KibanaSettings],
                                 metrics: Option[MetricsSettings],
                                 remoteEnvironment: Option[HttpRemoteEnvironmentConfig],
-                                counts: Option[InfluxReporterConfig],
+                                counts: Option[Config],
                                 environmentAlert:Option[EnvironmentAlert],
                                 commentSettings: Option[CommentSettings],
                                 deploySettings: Option[DeploySettings],
-                                attachments: Option[String],
-                                queryableStateProxyUrl: Option[String]
-)
+                                attachments: Option[String])
 
 object FeatureTogglesConfig extends LazyLogging{
   import argonaut.ArgonautShapeless._
@@ -31,16 +29,13 @@ object FeatureTogglesConfig extends LazyLogging{
     val standaloneModeEnabled = config.hasPath("standaloneModeEnabled") && config.getBoolean("standaloneModeEnabled")
     val metrics = parseOptionalConfig[MetricsSettings](config, "metricsSettings")
       .orElse(parseOptionalConfig[MetricsSettings](config, "grafanaSettings"))
-    val counts = parseOptionalConfig[InfluxReporterConfig](config, "countsSettings")
-      .orElse(parseOptionalConfig[InfluxReporterConfig](config, "grafanaSettings"))
+    val counts = parseOptionalConfig[Config](config, "countsSettings")
 
     val remoteEnvironment = parseOptionalConfig[HttpRemoteEnvironmentConfig](config, "secondaryEnvironment")
     val search = parseOptionalConfig[KibanaSettings](config, "kibanaSettings")
     val commentSettings = parseOptionalConfig[CommentSettings](config, "commentSettings")
     val deploySettings = parseOptionalConfig[DeploySettings](config, "deploySettings")
     val attachments = parseOptionalConfig[String](config, "attachmentsPath")
-    //TODO: unnecessary duplication?
-    val queryableStateProxyUrl = parseOptionalConfig[String](config, "flinkConfig.queryableStateProxyUrl")
 
     FeatureTogglesConfig(
       development = isDevelopmentMode,
@@ -52,8 +47,7 @@ object FeatureTogglesConfig extends LazyLogging{
       commentSettings = commentSettings,
       deploySettings = deploySettings,
       environmentAlert = environmentAlert,
-      attachments = attachments,
-      queryableStateProxyUrl = queryableStateProxyUrl
+      attachments = attachments
     )
   }
 

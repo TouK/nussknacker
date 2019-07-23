@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.process.util
 
 import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
-import pl.touk.nussknacker.engine.compile.ProcessCompilationError.WrongProcessType
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.WrongProcessType
 
 object MetaDataExtractor {
 

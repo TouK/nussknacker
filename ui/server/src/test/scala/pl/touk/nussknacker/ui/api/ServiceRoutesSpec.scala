@@ -13,18 +13,20 @@ import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import argonaut._
 import Argonaut._
 import ArgonautShapeless._
+import pl.touk.http.argonaut.{Argonaut62Support, JacksonJsonMarshaller, JsonMarshaller}
 import pl.touk.nussknacker.engine.util.service.query.ExpressionServiceQuery.ParametersCompilationException
 import pl.touk.nussknacker.engine.util.service.query.ServiceQuery.{QueryResult, ServiceNotFoundException}
 import pl.touk.nussknacker.ui.api.helpers.TestPermissions
-import pl.touk.nussknacker.ui.util.Argonaut62Support
-
 
 class ServiceRoutesSpec extends FunSuite with Matchers with ScalatestRouteTest with Argonaut62Support with TestPermissions{
 
   val category1Deploy = Map("Category1" -> Set(Permission.Deploy))
+  implicit val jsonMarshaller: JsonMarshaller = JacksonJsonMarshaller
+
   private implicit val user = LoggedUser("admin", category1Deploy)
   private val modelData = FlinkProcessManagerProvider.defaultModelData(ConfigFactory.load())
   private val serviceRoutes = new ServiceRoutes(Map(TestProcessingTypes.Streaming -> modelData))
+
 
   implicit val queryResultDecoder = DecodeJson[QueryResult] { c =>
     for {

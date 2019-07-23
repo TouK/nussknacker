@@ -12,7 +12,11 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface MethodToInvoke {
 
-    //TODO: hmmm... a jak tu w sumie dac null???
+    /**
+     * Partially deprecated - for precise type computation use
+     * ContextTransformation.definedBy(_.withVariable(variableName, Typed[...])
+     * You still need to declare that you don't return anything. See ObjectMetadata.hasNoReturn for details.
+     */
     Class<?> returnType() default Object.class;
 
 }

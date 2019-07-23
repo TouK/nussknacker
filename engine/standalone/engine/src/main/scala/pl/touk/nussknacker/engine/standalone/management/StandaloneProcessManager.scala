@@ -22,6 +22,7 @@ import pl.touk.nussknacker.engine.definition._
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.Source
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
+import pl.touk.nussknacker.engine.queryablestate.QueryableClient
 import pl.touk.nussknacker.engine.standalone.StandaloneProcessInterpreter
 import pl.touk.nussknacker.engine.standalone.api.DeploymentData
 import pl.touk.nussknacker.engine.standalone.api.types._
@@ -183,12 +184,12 @@ object TestUtils {
 
   def prepareServiceWithEnabledInvocationCollector(runId: TestRunId, service: ObjectWithMethodDef): ObjectWithMethodDef = {
     new ObjectWithMethodDef(service.obj, service.methodDef, service.objectDefinition) {
-      override def invokeMethod(parameterCreator: String => Option[AnyRef], additional: Seq[AnyRef]): Any = {
+      override def invokeMethod(parameterCreator: String => Option[AnyRef], outputVariableNameOpt: Option[String], additional: Seq[AnyRef]): Any = {
         val newAdditional = additional.map {
           case c: ServiceInvocationCollector => c.enable(runId)
           case a => a
         }
-        service.invokeMethod(parameterCreator, newAdditional)
+        service.invokeMethod(parameterCreator, outputVariableNameOpt, newAdditional)
       }
     }
   }
@@ -200,13 +201,13 @@ class StandaloneProcessManagerProvider extends ProcessManagerProvider {
   override def createProcessManager(modelData: ModelData, config: Config): ProcessManager
     = StandaloneProcessManager(modelData, config)
 
+  override def createQueryableClient(config: Config): Option[QueryableClient] = None
+
   override def name: String = "requestResponseStandalone"
 
   override def emptyProcessMetadata(isSubprocess: Boolean): TypeSpecificData = StandaloneMetaData(None)
 
   override def supportsSignals: Boolean = false
-
-  override def supportsQueryableState: Boolean = false
 }
 
 object StandaloneProcessManagerProvider {

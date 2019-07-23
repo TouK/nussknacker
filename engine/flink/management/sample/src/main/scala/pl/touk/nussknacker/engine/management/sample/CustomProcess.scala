@@ -23,7 +23,6 @@ object CustomProcess {
     val config = ConfigFactory.parseString(args(1))
 
     val props = new Properties()
-    props.setProperty("zookeeper.connect", config.getString("kafka.zkAddress"))
     props.setProperty("bootstrap.servers", config.getString("kafka.kafkaAddress"))
 
     env.addSource(new FlinkKafkaConsumer011[String]("testTopic", new SimpleStringSchema, props))

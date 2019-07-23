@@ -2,12 +2,14 @@ package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.server.{Directives, Route}
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
-import pl.touk.http.argonaut.Argonaut62Support
+import pl.touk.http.argonaut.{Argonaut62Support, JsonMarshaller}
+import pl.touk.nussknacker.engine.ProcessingTypeData
+import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.ExecutionContext
 
-class SettingsResources(config: FeatureTogglesConfig)(implicit ec: ExecutionContext)
+class SettingsResources(config: FeatureTogglesConfig, typeToConfig: Map[ProcessingType, ProcessingTypeData])(implicit ec: ExecutionContext, jsonMarshaller: JsonMarshaller)
   extends Directives with Argonaut62Support with RouteWithUser {
 
   import argonaut.ArgonautShapeless._
@@ -20,17 +22,23 @@ class SettingsResources(config: FeatureTogglesConfig)(implicit ec: ExecutionCont
             counts = config.counts.isDefined,
             search = config.search,
             metrics = config.metrics,
-            remoteEnvironment = config.remoteEnvironment.map(c => RemoteEnvironmentConfig(c.environmentId)),
+            remoteEnvironment = config.remoteEnvironment.map(c => RemoteEnvironmentConfig(c.targetEnvironmentId)),
             environmentAlert = config.environmentAlert,
             commentSettings = config.commentSettings,
             deploySettings = config.deploySettings,
-            signals = config.queryableStateProxyUrl.isDefined,
+            signals = signalsSupported,
             attachments = config.attachments.isDefined
           )
           UISettings(toggleOptions)
         }
       }
     }
+
+  private val signalsSupported: Boolean = {
+    typeToConfig.exists { case (_, processingTypeData) =>
+      processingTypeData.supportsSignals
+    }
+  }
 }
 
 case class MetricsSettings(url: String, defaultDashboard: String, processingTypeToDashboard: Option[Map[String,String]])

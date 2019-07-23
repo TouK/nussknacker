@@ -1,9 +1,14 @@
 @import "./_variables.styl"
 @import "./_mixins.styl"
 
+#categories-filter, #processing-types-filter, #subprocess-types-filter, #deployed-filter
+  margin: 45px containerPadding
+  max-width: 450px
+  flex: 1 1 auto;
+
 #table-filter
   margin: 45px containerPadding
-  width: 470px
+  max-width: 470px
   input
     background-color: processesSearchInput
     box-shadow: none
@@ -20,7 +25,7 @@
 
 .table-select
   margin: 10px 0px -20px containerPadding
-  width: 470px
+
   height 45px
   background-color: processesSearchInput
   box-shadow: none
@@ -55,8 +60,6 @@
       &:hover
         background: processesHoverColor
 
-
-
 .esp-table
   margin-bottom 20px
   iconColumnWidth=50px
@@ -88,8 +91,12 @@
     background-color: processesTableHeaderColor
     font-size: 16px
     font-weight: 600
-    &.reactable-th-id, &.reactable-th-name, &.reactable-th-category &.reactable-th-modifyDate
-      width: 16%
+    &.reactable-th-category
+      width: 30%
+    &.reactable-th-modifydate
+      width: 10%
+    &.reactable-th-status, &.reactable-th-edit, &.reactable-th-metrics, &.reactable-th-subprocess
+      width: 5%
   tr:nth-child(even)
     background-color: processesTableEvenColor
   tr:nth-child(odd)
@@ -117,10 +124,10 @@
     padding-bottom: 5px
   }
 
-  .date-column
+  .centered-column, .reactable-th-modifydate, .reactable-th-subprocess
     text-align: center
 
-  .edit-column
+  .edit-column, .reactable-th-metrics, .reactable-th-view
     text-align: center
     width: iconColumnWidth
     img
@@ -130,20 +137,20 @@
       opacity: 0.4 !important
       padding: 0
 
-  .metrics-column
+  .metrics-column, .reactable-th-metrics
     clickableIconColumn()
 
-  .edit-column
+  .edit-column, .reactable-th-edit, .reactable-th-view
     clickableIconColumn()
 
 
-  .deploy-column
+  .deploy-column, .reactable-th-deploy
     clickableIconColumn()
 
-  .stop-column
+  .stop-column, .reactable-th-stop
     clickableIconColumn()
 
-  .status-column
+  .status-column, .reactable-th-status
     text-align: center
     vertical-align: middle
     width: iconColumnWidth

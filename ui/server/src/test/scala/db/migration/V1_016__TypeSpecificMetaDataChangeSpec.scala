@@ -2,8 +2,7 @@ package db.migration
 
 import argonaut.Parse
 import org.scalatest.{FlatSpec, Matchers}
-import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
-import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.ProcessAdditionalFields
+import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.ui.process.marshall.UiProcessMarshaller
 
 class V1_016__TypeSpecificMetaDataChangeSpec extends FlatSpec with Matchers {
@@ -20,6 +19,6 @@ class V1_016__TypeSpecificMetaDataChangeSpec extends FlatSpec with Matchers {
     val metaData = converted.map(_.metaData)
     
 
-    metaData shouldBe Some(MetaData("DEFGH", StreamMetaData(parallelism = Some(3)), false, Some(ProcessAdditionalFields(None, Set()))))
+    metaData shouldBe Some(MetaData("DEFGH", StreamMetaData(parallelism = Some(3)), false, Some(ProcessAdditionalFields(None, Set(), Map.empty))))
   }
 }

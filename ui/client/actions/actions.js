@@ -1,4 +1,4 @@
-import {browserHistory} from "react-router";
+
 import HttpService from "../http/HttpService";
 import * as GraphUtils from "../components/graph/GraphUtils";
 import NodeUtils from "../components/graph/NodeUtils";
@@ -7,6 +7,7 @@ import _ from "lodash";
 import * as UndoRedoActions from "../undoredo/UndoRedoActions";
 import * as VisualizationUrl from '../common/VisualizationUrl';
 import {dateFormat} from "../config";
+import history from '../history'
 
 export function fetchProcessToDisplay(processId, versionId, businessView) {
   return (dispatch) => {
@@ -133,13 +134,14 @@ export function clearProcess() {
 }
 
 export function displayModalNodeDetails(node, readonly) {
-  browserHistory.replace({
+  history.replace({
     pathname: window.location.pathname,
     search: VisualizationUrl.setAndPreserveLocationParams({
       nodeId: node.id,
-      edgeID: null
+      edgeId: null
     })
   })
+
   return {
     type: "DISPLAY_MODAL_NODE_DETAILS",
     nodeToDisplay: node,
@@ -148,13 +150,14 @@ export function displayModalNodeDetails(node, readonly) {
 }
 
 export function displayModalEdgeDetails(edge) {
-  browserHistory.replace({
+  history.replace({
     pathname: window.location.pathname,
     search: VisualizationUrl.setAndPreserveLocationParams({
       nodeId: null,
       edgeId: NodeUtils.edgeId(edge)
     })
   })
+
   return {
     type: "DISPLAY_MODAL_EDGE_DETAILS",
     edgeToDisplay: edge
@@ -169,22 +172,23 @@ export function displayNodeDetails(node) {
 }
 
 export function closeModals() {
-  browserHistory.replace({
+  history.replace({
     pathname: window.location.pathname,
     search: VisualizationUrl.setAndPreserveLocationParams({
-      edgeID: null,
+      edgeId: null,
       nodeId: null
     })
   })
+
   return {
     type: "CLOSE_MODALS"
   };
 }
 
-export function deleteNode(id) {
+export function deleteNodes(ids) {
   return runSyncActionsThenValidate(state => [{
-    type: "DELETE_NODE",
-    id: id
+    type: "DELETE_NODES",
+    ids: ids
   }])
 }
 
@@ -206,6 +210,14 @@ export function addToGroup(nodeId) {
 
 export function ungroup(node) {
   return { type: "UNGROUP", groupToRemove: node.id}
+}
+
+export function expandSelection(nodeId) {
+  return { type: "EXPAND_SELECTION", nodeId }
+}
+
+export function resetSelection(nodeId) {
+  return { type: "RESET_SELECTION", nodeId }
 }
 
 //TODO: is it ok how we process validations here? first we *simulate* reducer on
@@ -284,7 +296,7 @@ export function editGroup(process, oldGroupId, newGroup) {
 
 }
 
-export function nodesConnected(fromNode, toNode, processDefinitionData) {
+export function nodesConnected(fromNode, toNode) {
   return runSyncActionsThenValidate(state => [
     {
         type: "NODES_CONNECTED",
@@ -340,6 +352,13 @@ export function nodeAdded(node, position) {
     type: "NODE_ADDED",
     node: node,
     position: position
+  }
+}
+
+export function nodesAdded(nodesWithPositions) {
+  return {
+    type: "NODES_ADDED",
+    nodesWithPositions
   }
 }
 
@@ -444,6 +463,13 @@ export function displayProcessCounts(processCounts) {
   }
 }
 
+export function urlChange(location) {
+  return {
+    type: 'URL_CHANGED',
+    location: location
+  }
+}
+
 export function fetchAndDisplayProcessCounts(processName, from, to) {
   return (dispatch) =>
     HttpService.fetchProcessCounts(
@@ -466,12 +492,13 @@ export function collapseGroup(id) {
 }
 
 export function businessViewChanged(value) {
-  browserHistory.replace({
+  history.replace({
     pathname: window.location.pathname,
     search: VisualizationUrl.setAndPreserveLocationParams({
-      businessView: value?"true":null
+      businessView: value
     })
   })
+
   return {
     type: "BUSINESS_VIEW_CHANGED",
     businessView: value

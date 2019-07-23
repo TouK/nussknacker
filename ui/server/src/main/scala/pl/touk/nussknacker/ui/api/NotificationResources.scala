@@ -12,15 +12,15 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 import akka.pattern.ask
 import pl.touk.nussknacker.engine.util.json.Codecs
-import pl.touk.nussknacker.ui.util.Argonaut62Support
 import argonaut.ArgonautShapeless._
 import argonaut.CodecJson
+import pl.touk.http.argonaut.{Argonaut62Support, JsonMarshaller}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 
 class NotificationResources(managementActor: ActorRef,
                             processRepository: FetchingProcessRepository)
-                           (implicit ec: ExecutionContext, mat: Materializer, system: ActorSystem)
+                           (implicit ec: ExecutionContext, mat: Materializer, system: ActorSystem, jsonMarshaller: JsonMarshaller)
   extends Directives
     with LazyLogging
     with RouteWithUser with Argonaut62Support {

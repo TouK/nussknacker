@@ -6,4 +6,6 @@ object evaluatedparam {
 
   case class Parameter(name: String, expression: Expression)
 
+  case class BranchParameters(branchId: String, parameters: List[Parameter])
+
 }

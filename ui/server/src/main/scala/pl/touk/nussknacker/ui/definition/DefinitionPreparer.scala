@@ -3,14 +3,14 @@ package pl.touk.nussknacker.ui.definition
 import pl.touk.nussknacker.engine.api.process.SingleNodeConfig
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ProcessDefinition, SinkAdditionalData}
 import pl.touk.nussknacker.engine.definition.defaults.{NodeDefinition, ParameterDefaultValueExtractorStrategy}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
-import pl.touk.nussknacker.engine.graph.source.{JoinRef, SourceRef}
+import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType.{FilterFalse, FilterTrue}
@@ -41,7 +41,11 @@ object DefinitionPreparer {
 
     def filterCategories(objectDefinition: ObjectDefinition): List[String] = readCategories.intersect(objectDefinition.categories)
 
-    def objDefParams(id: String, objDefinition: ObjectDefinition): List[Parameter] = evaluator.evaluateParameters(NodeDefinition(id, objDefinition.parameters))
+    def objDefParams(id: String, objDefinition: ObjectDefinition): List[Parameter] =
+      evaluator.evaluateParameters(NodeDefinition(id, objDefinition.parameters))
+
+    def objDefBranchParams(id: String, objDefinition: ObjectDefinition): List[Parameter] =
+      evaluator.evaluateBranchParameters(NodeDefinition(id, objDefinition.parameters))
 
     def serviceRef(id: String, objDefinition: ObjectDefinition) = ServiceRef(id, objDefParams(id, objDefinition))
 
@@ -72,8 +76,14 @@ object DefinitionPreparer {
 
     val customTransformers = NodeGroup("custom",
       processDefinition.customStreamTransformers.map {
+        // branchParameters = List.empty can be tricky here. We moved template for branch parameters to NodeToAdd because
+        // branch parameters inside node.Join are branchId -> List[Parameter] and on node template level we don't know what
+        // branches will be. After moving this parameters to BranchEnd it will disappear from here.
+        // Also it is not the best design pattern to reply with backend's NodeData as a template in API.
+        // TODO: keep only custom node ids in nodesToAdd element and move templates to parameters definition API
         case (id, (objDefinition, additionalData)) if additionalData.manyInputs => NodeToAdd("customNode", id,
-          node.Join("", JoinRef(id, objDefParams(id, objDefinition)), if (objDefinition.hasNoReturn) None else Some("outputVar")), filterCategories(objDefinition))
+          node.Join("", if (objDefinition.hasNoReturn) None else Some("outputVar"), id, objDefParams(id, objDefinition), List.empty),
+          filterCategories(objDefinition), objDefBranchParams(id, objDefinition))
         case (id, (objDefinition, additionalData)) => NodeToAdd("customNode", id,
           CustomNode("", if (objDefinition.hasNoReturn) None else Some("outputVar"), id, objDefParams(id, objDefinition)), filterCategories(objDefinition))
       }.toList
@@ -81,9 +91,9 @@ object DefinitionPreparer {
 
     val sinks = NodeGroup("sinks",
       processDefinition.sinkFactories.map {
-        case (id, objDefinition) => NodeToAdd("sink", id,
+        case (id, (objDefinition, SinkAdditionalData(requiresOutput))) => NodeToAdd("sink", id,
           Sink("", SinkRef(id, objDefParams(id, objDefinition)),
-            Some(Expression("spel", "#input"))), filterCategories(objDefinition)
+            if (requiresOutput) Some(Expression("spel", "#input")) else None), filterCategories(objDefinition)
         )
       }.toList)
 

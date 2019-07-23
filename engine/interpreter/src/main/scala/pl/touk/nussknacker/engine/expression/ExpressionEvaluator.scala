@@ -1,15 +1,14 @@
 package pl.touk.nussknacker.engine.expression
 
-import cats.Now
 import cats.effect.IO
-import pl.touk.nussknacker.engine.{Interpreter, MetaVariables}
 import pl.touk.nussknacker.engine.api.lazyy.{LazyContext, LazyValuesProvider}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.NodeContext
 import pl.touk.nussknacker.engine.api.{Context, MetaData, ProcessListener, ValueWithContext}
-import pl.touk.nussknacker.engine.compile.ProcessCompilationError.NodeId
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.compiledgraph.expression.Expression
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.ServiceInvoker
+import pl.touk.nussknacker.engine.variables.MetaVariables
 
 import scala.concurrent.{Await, ExecutionContext, Future}
 
@@ -55,7 +54,7 @@ object ExpressionEvaluator {
     private def evaluateValue[T](ctxId: String, serviceId: String, paramsMap: Map[String, Any]): Future[T] = {
       services.get(serviceId) match {
         case None => Future.failed(new IllegalArgumentException(s"Service with id: $serviceId doesn't exist"))
-        case Some(service) => ServiceInvoker(service).invoke(paramsMap, NodeContext(ctxId, nodeId, serviceId))(ec, metaData).map(_.asInstanceOf[T])
+        case Some(service) => ServiceInvoker(service).invoke(paramsMap, NodeContext(ctxId, nodeId, serviceId, None))(ec, metaData).map(_.asInstanceOf[T])
       }
     }
   }
@@ -81,8 +80,10 @@ class ExpressionEvaluator(globalVariables: Map[String, Any],
   def evaluate[R](expr: Expression, expressionId: String, nodeId: String, ctx: Context)
                          (implicit ec: ExecutionContext, metaData: MetaData): Future[ValueWithContext[R]] = {
     val lazyValuesProvider = lazyValuesProviderCreator(ec, metaData, nodeId)
-    val ctxWithGlobals = ctx.withVariables(globalVariables).withVariable(Interpreter.MetaParamName, MetaVariables(metaData.id))
-    expr.evaluate[R](ctxWithGlobals, lazyValuesProvider).map { valueWithLazyContext =>
+    val ctxWithGlobals = ctx.withVariables(globalVariables)
+    val ctxWithMeta = MetaVariables.withVariable(ctxWithGlobals)
+
+    expr.evaluate[R](ctxWithMeta, lazyValuesProvider).map { valueWithLazyContext =>
       listeners.foreach(_.expressionEvaluated(nodeId, expressionId, expr.original, ctx, metaData, valueWithLazyContext.value))
       ValueWithContext(valueWithLazyContext.value, ctx.withLazyContext(valueWithLazyContext.lazyContext))
     }

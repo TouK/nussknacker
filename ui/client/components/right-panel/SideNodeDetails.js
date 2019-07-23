@@ -1,8 +1,7 @@
-import React, {PropTypes, Component} from "react";
+import React, {Component} from "react";
 import {render} from "react-dom";
 import {connect} from "react-redux";
 import _ from "lodash";
-import {bindActionCreators} from "redux";
 import ActionsUtils from "../../actions/ActionsUtils";
 
 class SideNodeDetails extends Component {

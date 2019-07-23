@@ -4,7 +4,7 @@ import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.{Directives, ExceptionHandler, Route}
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.http.argonaut.Argonaut62Support
+import pl.touk.http.argonaut.{Argonaut62Support, JsonMarshaller}
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.{MetaData, Service}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
@@ -20,7 +20,7 @@ import argonaut._
 import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, WithCategories}
 import pl.touk.nussknacker.ui.security.api.Permission.Permission
 class ServiceRoutes(modelDataMap: Map[ProcessingType, ModelData])
-                   (implicit ec: ExecutionContext)
+                   (implicit ec: ExecutionContext, jsonMarshaller: JsonMarshaller)
   extends Directives
     with RouteWithUser
     with Argonaut62Support

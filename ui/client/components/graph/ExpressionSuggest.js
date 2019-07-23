@@ -1,4 +1,5 @@
 import React from "react";
+import PropTypes from 'prop-types';
 import ReactDOMServer from 'react-dom/server'
 import {connect} from 'react-redux';
 import _ from 'lodash';
@@ -24,8 +25,8 @@ var inputExprIdCounter = 0
 class ExpressionSuggest extends React.Component {
 
   static propTypes = {
-    inputProps: React.PropTypes.object.isRequired,
-    fieldName: React.PropTypes.string
+    inputProps: PropTypes.object.isRequired,
+    fieldName: PropTypes.string
   }
 
   customAceEditorCompleter = {
@@ -130,12 +131,12 @@ class ExpressionSuggest extends React.Component {
 }
 
 function mapState(state, props) {
-  const processDefinitionData = !_.isEmpty(state.settings.processDefinitionData) ? state.settings.processDefinitionData
-    : {processDefinition: { typesInformation: []}}
+  const processDefinitionData = !_.isEmpty(state.settings.processDefinitionData) ? state.settings.processDefinitionData : {processDefinition: { typesInformation: []}}
   const dataResolved = !_.isEmpty(state.settings.processDefinitionData)
   const typesInformation = processDefinitionData.processDefinition.typesInformation
   const variablesForNode = state.graphReducer.nodeToDisplay.id || _.get(state.graphReducer, ".edgeToDisplay.to") || null
   const variables = ProcessUtils.findAvailableVariables(variablesForNode, state.graphReducer.processToDisplay, processDefinitionData.processDefinition, props.fieldName)
+
   return {
     typesInformation: typesInformation,
     dataResolved: dataResolved,

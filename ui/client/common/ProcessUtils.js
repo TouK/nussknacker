@@ -13,10 +13,6 @@ class ProcessUtils {
     return `${processId}:v${versionId}`
   }
 
-  isInGroupingMode = (state) => {
-    return state.graphReducer.groupingState != null
-  }
-
   //fixme maybe return hasErrors flag from backend?
   hasNoErrorsNorWarnings = (process) => {
     return this.hasNoErrors(process) && this.hasNoWarnings(process)
@@ -124,6 +120,10 @@ class ProcessUtils {
 
   //TODO: this should be done without these switches..
   findNodeObjectTypeDefinition = (node, processDefinition) => {
+    if (node == null) {
+      return {}
+    }
+
     const nodeDefinitionId = this.findNodeDefinitionId(node)
     switch (node.type) {
       case "Source": {
@@ -163,11 +163,9 @@ class ProcessUtils {
       case "Processor": {
         return node.service.id
       }
+      case "Join":
       case "CustomNode": {
         return node.nodeType
-      }
-      case "Join": {
-        return node.ref.typ
       }
       default: {
         return null;
@@ -200,25 +198,12 @@ class ProcessUtils {
     }
   }
 
-  search = (processes, objectToFind) => {
-    if (_.isEmpty(objectToFind)) {
-      return []
-    } else {
-      return _.flatMap(processes, (p) => {
-        const nodesWithSearchedObjects = _.filter(_.get(p, 'json.nodes', []), (n) => {
-          const nodeDef = this.findNodeDefinitionId(n)
-          return _.isEqual(nodeDef, objectToFind)
-        })
-        return _.map(nodesWithSearchedObjects, (n) => {
-          return {
-            process: p,
-            node: n
-          }
-        })
-      })
+  prepareFilterCategories = (categories, loggedUser) => _.map((categories || []).filter(c => loggedUser.canRead(c)), (e) => {
+    return {
+      value: e,
+      label: e
     }
-  }
-
+  })
 }
 
 export default new ProcessUtils()
