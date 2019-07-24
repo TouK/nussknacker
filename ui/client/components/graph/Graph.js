@@ -137,12 +137,11 @@ class Graph extends React.Component {
   }
 
   componentWillUpdate(nextProps, nextState) {
-    const processNotChanged = _.isEqual(this.props.processToDisplay, nextProps.processToDisplay) &&
-      _.isEqual(this.props.layout, nextProps.layout) &&
-      _.isEqual(this.props.processCounts, nextProps.processCounts) &&
-      _.isEqual(this.props.groupingState, nextProps.groupingState) &&
-      _.isEqual(this.props.expandedGroups, nextProps.expandedGroups)
-    const processChanged = !processNotChanged
+    const processChanged = !_.isEqual(this.props.processToDisplay, nextProps.processToDisplay) ||
+      !_.isEqual(this.props.layout, nextProps.layout) ||
+      !_.isEqual(this.props.processCounts, nextProps.processCounts) ||
+      !_.isEqual(this.props.groupingState, nextProps.groupingState) ||
+      !_.isEqual(this.props.expandedGroups, nextProps.expandedGroups)
     if (processChanged) {
       this.drawGraph(nextProps.processToDisplay, nextProps.layout, nextProps.processCounts, false, nextProps.expandedGroups)
     }
