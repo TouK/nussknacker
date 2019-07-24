@@ -15,7 +15,7 @@ import ProcessUtils from "../common/ProcessUtils"
 
 class Archive extends BaseProcesses {
   queries = {
-    isArchived: false
+    isArchived: true
   }
 
   constructor(props) {
