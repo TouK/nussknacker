@@ -355,11 +355,13 @@ export function nodeAdded(node, position) {
   }
 }
 
-export function nodesAdded(nodesWithPositions) {
-  return {
-    type: "NODES_ADDED",
-    nodesWithPositions
-  }
+export function nodesWithEdgesAdded(nodesWithPositions, edges) {
+  return (dispatch, getState) => dispatch({
+    type: "NODES_WITH_EDGES_ADDED",
+    nodesWithPositions,
+    edges,
+    processDefinitionData: getState().settings.processDefinitionData
+  })
 }
 
 export function layoutChanged(layout) {

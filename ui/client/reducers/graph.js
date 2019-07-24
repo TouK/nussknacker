@@ -149,9 +149,7 @@ export function reducer(state, action) {
       }
     }
     case "NODES_CONNECTED": {
-      const baseEdge = {from: action.fromNode.id, to: action.toNode.id}
-      const edgeType = action.edgeType || NodeUtils.edgeType(state.processToDisplay.edges, action.fromNode, action.processDefinitionData)
-      const edge = edgeType ? {...baseEdge, edgeType: edgeType} : baseEdge
+      const edge = createEdge(action.fromNode, action.toNode, action.edgeType, state.processToDisplay.edges, action.processDefinitionData)
       return {
         ...state,
         processToDisplay: {
@@ -170,13 +168,34 @@ export function reducer(state, action) {
       }
     }
     case "NODE_ADDED": {
-      return addNodes(state, [{
-        node: action.node,
-        position: action.position
-      }])
+      return addNodes(
+        state,
+        prepareNewNodesWithLayout(state,[{
+          node: action.node,
+          position: action.position
+        }])
+      )
     }
-    case "NODES_ADDED": {
-      return addNodes(state, action.nodesWithPositions)
+    case "NODES_WITH_EDGES_ADDED": {
+      const {nodes, layout, uniqueIds} = prepareNewNodesWithLayout(state, action.nodesWithPositions)
+
+      const idToUniqueId = _.zipObject(action.nodesWithPositions.map(n => n.node.id), uniqueIds)
+      const edgesWithValidIds = action.edges.map(edge => ({...edge, from: idToUniqueId[edge.from], to: idToUniqueId[edge.to]}))
+      const updatedEdges = _.reduce(edgesWithValidIds, (edges, edge) => {
+        const fromNode = nodes.find(n => n.id === edge.from)
+        const toNode = nodes.find(n => n.id === edge.to)
+        const newEdge = createEdge(fromNode, toNode, edge.edgeType, edges, action.processDefinitionData)
+        return edges.concat(newEdge)
+      }, state.processToDisplay.edges)
+
+      const stateWithNodesAdded = addNodes(state, {nodes, layout})
+      return {
+        ...stateWithNodesAdded,
+        processToDisplay: {
+          ...stateWithNodesAdded.processToDisplay,
+          edges: updatedEdges
+        }
+      }
     }
     case "VALIDATION_RESULT": {
       return {
@@ -344,7 +363,7 @@ function removeSubprocessVersionForLastSubprocess(processToDisplay, idToDelete) 
   }
 }
 
-function addNodes(state, nodesWithPositions) {
+function prepareNewNodesWithLayout(state, nodesWithPositions) {
   const alreadyUsedIds = state.processToDisplay.nodes.map(node => node.id)
   const initialIds = nodesWithPositions.map(nodeWithPosition => nodeWithPosition.node.id)
   const uniqueIds = _.reduce(initialIds, (uniqueIds, initialId) => {
@@ -361,11 +380,25 @@ function addNodes(state, nodesWithPositions) {
   })
 
   return {
+    nodes: state.processToDisplay.nodes.concat(updatedNodes),
+    layout: state.layout.concat(updatedLayout),
+    uniqueIds
+  }
+}
+
+function addNodes(state, {nodes, layout}) {
+  return {
     ...state,
     processToDisplay: {
       ...state.processToDisplay,
-      nodes: state.processToDisplay.nodes.concat(updatedNodes)
+      nodes: nodes
     },
-    layout: state.layout.concat(updatedLayout)
+    layout: layout
   }
+}
+
+function createEdge(fromNode, toNode, edgeType, allEdges, processDefinitionData) {
+  const baseEdge = {from: fromNode.id, to: toNode.id}
+  const adjustedEdgeType = edgeType || NodeUtils.edgeType(allEdges, fromNode, processDefinitionData)
+  return edgeType ? {...baseEdge, edgeType: adjustedEdgeType} : baseEdge
 }
