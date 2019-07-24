@@ -42,6 +42,7 @@ class Graph extends React.Component {
         this.props.actions.nodesDisconnected(e.attributes.source.id, e.attributes.target.id)
       }
     })
+    this.nodesMoving();
 
     this.espGraphRef = React.createRef()
 
@@ -583,6 +584,26 @@ class Graph extends React.Component {
       x: (pointerOffset.x - pan.x - graphPosition.left - paddingLeft) / zoom,
       y: (pointerOffset.y - pan.y - graphPosition.top - paddingTop) / zoom
     }
+  }
+
+  moveSelectedNodesRelatively(element, position) {
+    const movedNodeId = element.id
+    const nodeIdsToBeMoved = _.without(this.props.selectionState, movedNodeId)
+    const cellsToBeMoved = nodeIdsToBeMoved.map(nodeId => this.graph.getCell(nodeId))
+    const originalPosition = _.find(this.props.layout, n => n.id === movedNodeId).position
+    const offset = {x: position.x - originalPosition.x, y: position.y - originalPosition.y}
+    cellsToBeMoved.forEach(cell => {
+      const originalPosition = _.find(this.props.layout, n => n.id === cell.id).position
+      cell.position(originalPosition.x + offset.x, originalPosition.y + offset.y)
+    })
+  }
+
+  nodesMoving() {
+    this.graph.on("change:position", (element, position) => {
+      if (!this.redrawing && (this.props.selectionState || []).includes(element.id)) {
+        this.moveSelectedNodesRelatively(element, position)
+      }
+    })
   }
 
   render() {

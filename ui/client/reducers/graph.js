@@ -262,7 +262,7 @@ export function reducer(state, action) {
     case "EXPAND_SELECTION": {
       return {
         ...state,
-        selectionState: _.concat(state.selectionState, action.nodeId)
+        selectionState: _.uniq(_.concat(state.selectionState, action.nodeId))
       }
     }
     case "RESET_SELECTION": {
