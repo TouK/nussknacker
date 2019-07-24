@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.process.deployment
 
 import akka.actor.{Actor, ActorRef, ActorRefFactory, Props, Status}
 import argonaut.PrettyParams
+import cats.data.Validated.Valid
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.api.deployment._
@@ -175,7 +176,9 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
   }
 
   private def resolveGraph(canonicalJson: String): Future[String] = {
-    val validatedGraph = UiProcessMarshaller.fromJson(canonicalJson).toValidatedNel
+    val validatedGraph = UiProcessMarshaller.fromJson(canonicalJson)
+      .map(_.withoutDisabledNodes)
+      .toValidatedNel
       .andThen(subprocessResolver.resolveSubprocesses)
       //TODO: custom JsonMarshaller
       .map(proc => UiProcessMarshaller.toJson(proc).nospaces)
