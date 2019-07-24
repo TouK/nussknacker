@@ -19,7 +19,8 @@ env:
     - APPLICATION_NAME=nussknacker
     - AWS_DEFAULT_REGION=eu-west-1
     - SANITIZED_BRANCH=`echo ${TRAVIS_BRANCH} | sed 's/[^a-zA-Z0-9]/\_/g' | awk '{print tolower($0)}'`
-    - BUILD_VERSION=$(if [[ -n $TRAVIS_TAG ]]; then echo "${SANITIZED_BRANCH}"; else echo "${SANITIZED_BRANCH}-$TRAVIS_COMMIT"; fi)
+    - FORMATTED_DATE=`date '+%Y_%m_%d_%H_%M'`
+    - BUILD_VERSION=$(if [[ -n $TRAVIS_TAG ]]; then echo "${SANITIZED_BRANCH}"; else echo "${FORMATTED_DATE}-${SANITIZED_BRANCH}-$TRAVIS_COMMIT"; fi)
     - DOCKER_SOURCE_TAG=`echo ${DOCKER_PACKAGE_USERNAME}/${DOCKER_PACKAGENAME}:${BUILD_VERSION}`
     - DOCKER_REPOSITORY=`echo ${DOCKER_PACKAGE_USERNAME}/${DOCKER_PACKAGENAME}`
     - COVERAGE=`[ "${TRAVIS_BRANCH}" == "master" ] && echo "true"`
