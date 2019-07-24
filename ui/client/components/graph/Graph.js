@@ -137,19 +137,19 @@ class Graph extends React.Component {
   }
 
   componentWillUpdate(nextProps, nextState) {
-    const processNotChanged = _.isEqual(this.props.processToDisplay, nextProps.processToDisplay) &&
-      _.isEqual(this.props.layout, nextProps.layout) &&
-      _.isEqual(this.props.processCounts, nextProps.processCounts) &&
-      _.isEqual(this.props.groupingState, nextProps.groupingState) &&
-      _.isEqual(this.props.expandedGroups, nextProps.expandedGroups) &&
-      _.isEqual(this.props.selectionState, nextProps.selectionState)
-
-    if (!processNotChanged) {
+    const processChanged = !_.isEqual(this.props.processToDisplay, nextProps.processToDisplay) ||
+      !_.isEqual(this.props.layout, nextProps.layout) ||
+      !_.isEqual(this.props.processCounts, nextProps.processCounts) ||
+      !_.isEqual(this.props.groupingState, nextProps.groupingState) ||
+      !_.isEqual(this.props.expandedGroups, nextProps.expandedGroups)
+    if (processChanged) {
       this.drawGraph(nextProps.processToDisplay, nextProps.layout, nextProps.processCounts, false, nextProps.expandedGroups)
     }
 
     //when e.g. layout changed we have to remember to highlight nodes
-    if (!processNotChanged || !_.isEqual(this.props.nodeToDisplay, nextProps.nodeToDisplay)) {
+    const nodeToDisplayChanged = !_.isEqual(this.props.nodeToDisplay, nextProps.nodeToDisplay)
+    const selectedNodesChanged = !_.isEqual(this.props.selectionState, nextProps.selectionState)
+    if (processChanged || nodeToDisplayChanged || selectedNodesChanged) {
       this.highlightNodes(nextProps.processToDisplay, nextProps.nodeToDisplay, nextProps.groupingState, nextProps.selectionState);
     }
   }
