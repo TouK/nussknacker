@@ -194,8 +194,115 @@ describe("can make link", () => {
     expect(NodeUtils.canMakeLink("variable", "source2", createSimpleProcess([{ "from": "source1", "to": "variable"}]), simpleProcessDefinition()))
       .toEqual(false)
   })
+})
 
+describe("isAvailable", () => {
+  let processDefinitionData
+  let nodeToAdd
 
+  beforeAll(() => {
+    processDefinitionData = {
+      nodesToAdd: [
+        {
+          "name": "base",
+          "possibleNodes": [
+            {
+              "type": "filter",
+              "label": "filter",
+              "node": {
+                "type": "Filter",
+                "id": "",
+                "expression": {
+                  "language": "spel",
+                  "expression": "true"
+                }
+              },
+              "categories": [
+                "Category2",
+                "Default",
+                "StandaloneCategory1",
+                "Technical",
+                "Category1"
+              ],
+              "branchParametersTemplate": []
+            }
+          ]
+        },
+        {
+          "name": "enrichers",
+          "possibleNodes": [
+            {
+              "type": "enricher",
+              "label": "clientHttpService",
+              "node": {
+                "type": "Enricher",
+                "id": "",
+                "service": {
+                  "id": "clientHttpService",
+                  "parameters": [
+                    {
+                      "name": "id",
+                      "expression": {
+                        "language": "spel",
+                        "expression": "''"
+                      }
+                    }
+                  ]
+                },
+                "output": "output"
+              },
+              "categories": [
+                "Category2",
+                "Category1"
+              ],
+              "branchParametersTemplate": []
+            }
+          ]
+        }
+      ]
+    }
+
+    nodeToAdd = {
+      "service": {
+        "parameters": [
+          {
+            "expression": {
+              "expression": "'parameter'",
+              "language": "spel"
+            },
+            "name": "id"
+          }
+        ],
+        "id": "clientHttpService"
+      },
+      "id": "clientWithParameters",
+      "additionalFields": {
+        "description": "some description"
+      },
+      "output": "output-changed",
+      "type": "Enricher"
+    }
+  })
+
+  it("should be available", () => {
+    const available = NodeUtils.isAvailable(nodeToAdd, processDefinitionData, "Category1")
+
+    expect(available).toBe(true)
+  })
+
+  it("should not be available for node in other category", () => {
+    const available = NodeUtils.isAvailable(nodeToAdd, processDefinitionData, "Technical")
+
+    expect(available).toBe(false)
+  })
+
+  it("should not be available for unknown node", () => {
+    const unknownNodeToAdd = {...nodeToAdd, service: {...nodeToAdd.service, id: "unknown"}}
+
+    const available = NodeUtils.isAvailable(unknownNodeToAdd, processDefinitionData, "Category1")
+
+    expect(available).toBe(false)
+  })
 })
 
 const processDefinitionData = {

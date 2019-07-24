@@ -20,6 +20,7 @@ import * as JointJsGraphUtils from "./JointJsGraphUtils";
 import PropTypes from 'prop-types';
 import * as JsonUtils from "../../common/JsonUtils";
 import ClipboardUtils from "../../common/ClipboardUtils";
+import * as ProcessDefinitionUtils from "../../common/ProcessDefinitionUtils";
 
 class Graph extends React.Component {
 
@@ -77,7 +78,10 @@ class Graph extends React.Component {
   }
 
   canAddNode(node) {
-    return this.props.capabilities.write && NodeUtils.isNode(node) && !NodeUtils.nodeIsGroup(node)
+    return this.props.capabilities.write &&
+      NodeUtils.isNode(node) &&
+      !NodeUtils.nodeIsGroup(node) &&
+      NodeUtils.isAvailable(node, this.props.processDefinitionData, this.props.processCategory)
   }
 
   addNode(node, position) {
