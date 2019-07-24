@@ -44,8 +44,11 @@ class Visualization extends React.Component {
     const {nodeId, edgeId} = VisualizationUrl.extractVisualizationParams(this.props.location.search)
     if(nodeId) {
       const node = NodeUtils.getNodeById(nodeId, process)
-      if (node) {
+
+      if(node) {
         this.props.actions.displayModalNodeDetails(node)
+      } else {
+        this.props.history.replace({search: VisualizationUrl.setAndPreserveLocationParams({nodeId: null})})
       }
     }
 
@@ -53,9 +56,12 @@ class Visualization extends React.Component {
       const edge = NodeUtils.getEdgeById(edgeId, process)
       if (edge) {
         this.props.actions.displayModalEdgeDetails(edge)
+      } else {
+        this.props.history.replace({search: VisualizationUrl.setAndPreserveLocationParams({edgeId: null})})
       }
     }
   }
+
 
   setBusinessView(businessView){
     if (businessView != null){

@@ -1,6 +1,6 @@
 import React from 'react'
-import PropTypes from 'prop-types';
-import {connect} from 'react-redux';
+import PropTypes from 'prop-types'
+import {connect} from 'react-redux'
 
 class Search extends React.Component {
 
@@ -14,7 +14,12 @@ class Search extends React.Component {
     } else {
       return (
         <div className="Page">
-          <iframe ref="metricsFrame" src={this.props.settings.url} width="100%" height={window.innerHeight} frameBorder="0"></iframe>
+          <iframe
+            ref="metricsFrame"
+            src={this.props.settings.url}
+            width="100%" height={window.innerHeight}
+            frameBorder="0"
+          />
         </div>
       )
     }
@@ -27,7 +32,7 @@ Search.header = "Search"
 function mapState(state) {
   return {
     settings: state.settings.featuresSettings.search || {}
-  };
+  }
 }
 
-export default connect(mapState)(Search);
+export default connect(mapState)(Search)

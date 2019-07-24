@@ -68,11 +68,11 @@ export function addAttachment(processId, processVersionId, comment) {
 
 export function displayProcessActivity(processId) {
   return (dispatch) => {
-    return HttpService.fetchProcessActivity(processId).then((activity) => {
+    return HttpService.fetchProcessActivity(processId).then((response) => {
       return dispatch({
         type: "DISPLAY_PROCESS_ACTIVITY",
-        comments: activity.comments,
-        attachments: activity.attachments
+        comments: response.data.comments,
+        attachments: response.data.attachments
       })
     })
   }

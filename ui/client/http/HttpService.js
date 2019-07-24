@@ -153,10 +153,9 @@ export default {
   },
 
   fetchProcessDetails(processId, versionId, businessView) {
+    let url =  versionId ? `/processes/${processId}/${versionId}` : `/processes/${processId}`
     const queryParams = this.businessViewQueryParams(businessView)
-    return versionId ?
-      promiseWrap($.get(API_URL + '/processes/' + processId + '/' + versionId, queryParams)) :
-      promiseWrap($.get(API_URL + '/processes/' + processId, queryParams))
+    return api.get(url, queryParams)
   },
 
   fetchProcessesStatus() {
@@ -205,7 +204,7 @@ export default {
   },
 
   fetchProcessActivity(processId) {
-    return promiseWrap($.get(`${API_URL}/processes/${processId}/activity`))
+    return api.get(`/processes/${processId}/activity`)
   },
 
   addComment(processId, versionId, comment) {

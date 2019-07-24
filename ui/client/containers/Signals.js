@@ -1,9 +1,8 @@
 import React from 'react'
-import { connect } from 'react-redux';
-import { bindActionCreators } from 'redux';
+import {connect} from 'react-redux';
 import ActionsUtils from "../actions/ActionsUtils";
 import HttpService from "../http/HttpService";
-import QueriedStateTable from "./QueriedStateTable";
+import QueriedStateTable from "../components/QueriedStateTable";
 import _ from "lodash";
 
 //this needs some love
