@@ -7,8 +7,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
-import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedExpression
-import pl.touk.nussknacker.engine.compiledgraph.expression.ExpressionParseError
+import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, TypedExpression}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 
 import scala.concurrent.duration._

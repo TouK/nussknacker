@@ -22,7 +22,7 @@ import pl.touk.nussknacker.engine.splittedgraph._
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.{Next, SplittedNode}
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax
-import pl.touk.nussknacker.engine.{compiledgraph, _}
+import pl.touk.nussknacker.engine.{api, compiledgraph, _}
 
 import scala.util.{Failure, Success, Try}
 
@@ -218,7 +218,7 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
                       fieldName: Option[String],
                       ctx: ValidationContext,
                       expectedType: TypingResult)
-                     (implicit nodeId: NodeId): (TypingResult, ValidatedNel[ProcessCompilationError, compiledgraph.expression.Expression]) = {
+                     (implicit nodeId: NodeId): (TypingResult, ValidatedNel[ProcessCompilationError, api.expression.Expression]) = {
     expressionCompiler.compile(n, fieldName, toOption(ctx), expectedType)
       .fold(err => (Unknown, Invalid(err)), res => (res.returnType, Valid(res.expression)))
   }
