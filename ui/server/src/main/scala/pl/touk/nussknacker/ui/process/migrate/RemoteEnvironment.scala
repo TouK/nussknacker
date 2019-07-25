@@ -1,5 +1,8 @@
 package pl.touk.nussknacker.ui.process.migrate
 
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
+
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshalling.Marshal
@@ -189,7 +192,7 @@ trait StandardRemoteEnvironment extends Argonaut62Support with RemoteEnvironment
       invokeJson[List[ValidatedProcessDetails]](
         HttpMethods.GET,
         "processesDetails" :: Nil,
-        queryString = Some("names=" + processes.map(_.name).mkString(","))
+        queryString = Some("names=" + processes.map(process => URLEncoder.encode(process.name, StandardCharsets.UTF_8.displayName())).mkString(","))
       )
     }
 
