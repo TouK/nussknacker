@@ -7,7 +7,7 @@ class NotFound extends React.Component {
     return (
       <div className="error-template center-block">
         <h1>Oops!</h1>
-        <h2>That page can’t be found...</h2>
+        <h2>{this.props.message || "That page can’t be found..."}</h2>
         <div className="error-details">
           <br />
           <p>
@@ -20,6 +20,4 @@ class NotFound extends React.Component {
   }
 }
 
-NotFound.header = 'Page Not Found'
-
-export default withRouter(NotFound);
+export default withRouter(NotFound)

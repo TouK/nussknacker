@@ -1,5 +1,4 @@
-import React from "react";
-
+import React from "react"
 
 class PeriodicallyReloadingComponent extends React.Component {
   baseIntervalTime = 40000

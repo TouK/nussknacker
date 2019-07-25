@@ -26,6 +26,7 @@ class Visualization extends React.Component {
     const businessView = VisualizationUrl.extractBusinessViewParams(this.props.location.search)
     this.setBusinessView(businessView)
     this.fetchProcessDetails(businessView).then((details) => {
+      this.props.actions.displayProcessActivity(this.props.match.params.processId)
       this.props.actions.fetchProcessDefinition(
         details.fetchedProcessDetails.processingType,
         _.get(details, "fetchedProcessDetails.json.properties.isSubprocess"),
@@ -35,8 +36,12 @@ class Visualization extends React.Component {
         this.showModalDetailsIfNeeded(details.fetchedProcessDetails.json);
         this.showCountsIfNeeded(details.fetchedProcessDetails.json);
       })
+
+      this.fetchProcessStatus()
+    }).catch((error) => {
+      this.props.actions.handleHTTPError(error)
     })
-    this.fetchProcessStatus()
+
     this.bindKeyboardActions()
   }
 
@@ -61,7 +66,6 @@ class Visualization extends React.Component {
       }
     }
   }
-
 
   setBusinessView(businessView){
     if (businessView != null){
@@ -100,13 +104,12 @@ class Visualization extends React.Component {
 
   fetchProcessDetails(businessView) {
     const details = this.props.actions.fetchProcessToDisplay (this.props.match.params.processId, undefined, businessView)
-    this.props.actions.displayProcessActivity(this.props.match.params.processId)
     return details
   }
 
   fetchProcessStatus() {
-    HttpService.fetchSingleProcessStatus(this.props.match.params.processId).then ((status) => {
-      this.setState({status: status})
+    HttpService.fetchSingleProcessStatus(this.props.match.params.processId).then ((response) => {
+      this.setState({status: response})
     })
   }
 

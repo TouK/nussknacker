@@ -82,8 +82,8 @@ class QueriedStateTable extends React.Component {
 
   queryState = (processId, queryName, key) => {
     this.setState({fetchedState: []})
-    return HttpService.queryState(processId, queryName, key).then(fetchedState => {
-      this.setState({fetchedState: fetchedState})
+    return HttpService.queryState(processId, queryName, key).then(response => {
+      this.setState({fetchedState: response.data})
     })
   }
 

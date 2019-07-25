@@ -4,7 +4,7 @@ import * as GraphUtils from "../components/graph/GraphUtils";
 import NodeUtils from "../components/graph/NodeUtils";
 import * as SubprocessSchemaAligner from "../components/graph/SubprocessSchemaAligner";
 import _ from "lodash";
-import * as UndoRedoActions from "../undoredo/UndoRedoActions";
+import * as UndoRedoActions from "./undoRedoActions";
 import * as VisualizationUrl from '../common/VisualizationUrl';
 import {dateFormat} from "../config";
 import history from '../history'
@@ -14,10 +14,9 @@ export function fetchProcessToDisplay(processId, versionId, businessView) {
     dispatch({
       type: "PROCESS_LOADING"
     })
-    return HttpService.fetchProcessDetails(processId, versionId, businessView)
-      .then((processDetails) => {
-        displayTestCapabilites(processDetails.json, processDetails.processingType)(dispatch)
-        return dispatch(displayProcess(processDetails))
+    return HttpService.fetchProcessDetails(processId, versionId, businessView).then((response) => {
+        displayTestCapabilites(response.data.json, response.data.processingType)(dispatch)
+        return dispatch(displayProcess(response.data))
       })
   }
 }
@@ -32,8 +31,8 @@ export function fetchProcessDefinition(processingType, isSubprocess, subprocessV
 
 export function fetchAvailableQueryStates() {
   return (dispatch) => {
-    return HttpService.availableQueryableStates().then((data) =>
-      dispatch({type: "AVAILABLE_QUERY_STATES", availableQueryableStates: data})
+    return HttpService.availableQueryableStates().then((response) =>
+      dispatch({type: "AVAILABLE_QUERY_STATES", availableQueryableStates: response.data})
     )
   }
 }
@@ -80,13 +79,11 @@ export function displayProcessActivity(processId) {
 
 function displayTestCapabilites(processDetails) {
   return (dispatch) => {
-    HttpService.getTestCapabilities(processDetails).then((capabilites) => dispatch({
+    HttpService.getTestCapabilities(processDetails).then((response) => dispatch({
       type: "UPDATE_TEST_CAPABILITIES",
-      capabilities: capabilites
+      capabilities: response.data
     }))
-
   }
-
 }
 
 function displayProcess(processDetails) {
@@ -466,9 +463,14 @@ export function displayProcessCounts(processCounts) {
 }
 
 export function urlChange(location) {
-  return {
-    type: 'URL_CHANGED',
-    location: location
+
+  return (dispatch) => {
+    dispatch(handleHTTPError(null))
+
+    dispatch({
+      type: 'URL_CHANGED',
+      location: location
+    })
   }
 }
 
@@ -504,5 +506,12 @@ export function businessViewChanged(value) {
   return {
     type: "BUSINESS_VIEW_CHANGED",
     businessView: value
+  }
+}
+
+export function handleHTTPError(error) {
+  return {
+    type: "HANDLE_HTTP_ERROR",
+    error: error
   }
 }

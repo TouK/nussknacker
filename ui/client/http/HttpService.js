@@ -61,16 +61,15 @@ export default {
   },
 
   addError(message, error, showErrorText) {
-    console.log(error)
     this.addErrorMessage(message, error.responseText, showErrorText)
   },
 
   availableQueryableStates() {
-    return promiseWrap($.get(`${API_URL}/queryableState/list`))
+    return api.get("/queryableState/list")
   },
 
   queryState(processId, queryName, key) {
-    return promiseWrap($.get(`${API_URL}/queryableState/fetch`, {processId, queryName, key}))
+    return api.get("/queryableState/fetch", {processId, queryName, key})
       .catch((error) => this.addError(`Cannot fetch state`, error))
   },
 
@@ -81,7 +80,7 @@ export default {
   },
 
   fetchSettings() {
-    return promiseWrap($.get(API_URL + '/settings'))
+    return api.get("/settings")
   },
 
   fetchLoggedUser() {
@@ -163,8 +162,7 @@ export default {
   },
 
   fetchSingleProcessStatus(processId) {
-    return promiseWrap($.get(API_URL + `/processes/${processId}/status`))
-      .catch((error) => this.addError(`Cannot fetch status`, error))
+    return api.get(`/processes/${processId}/status`).catch(error => this.addError(`Cannot fetch status`, error))
   },
 
   deploy(processId, comment) {
@@ -305,11 +303,7 @@ export default {
   },
 
   getTestCapabilities(process) {
-    return ajaxCall({
-      url: API_URL + '/testInfo/capabilities',
-      type: 'POST',
-      data: JSON.stringify(process)
-    })
+    return api.post("/testInfo/capabilities", process)
   },
 
   generateTestData(processId, testSampleSize, processJson) {
