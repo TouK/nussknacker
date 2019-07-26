@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.definition
 import argonaut.CodecJson
 import com.typesafe.config.{Config, ConfigRenderOptions}
 import pl.touk.nussknacker.engine.api.definition.ParameterRestriction
-import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, SingleNodeConfig, SinkFactory}
+import pl.touk.nussknacker.engine.api.process.{LanguageConfiguration, ProcessConfigCreator, SingleNodeConfig, SinkFactory}
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, QueryableStateNames}
@@ -66,7 +66,10 @@ object ProcessDefinitionExtractor {
       servicesDefs, sourceFactoriesDefs,
       sinkFactoriesDefs.mapValuesNow(k => (k, extractSinkAdditionalData(k))),
       customStreamTransformersDefs.mapValuesNow(k => (k, extractCustomTransformerData(k))),
-      signalsDefs, exceptionHandlerFactoryDefs, ExpressionDefinition(globalVariablesDefs, globalImportsDefs, expressionConfig.optimizeCompilation), typesInformation)
+      signalsDefs, exceptionHandlerFactoryDefs, ExpressionDefinition(globalVariablesDefs,
+        globalImportsDefs,
+        expressionConfig.languages,
+        expressionConfig.optimizeCompilation), typesInformation)
   }
 
   def extractNodesConfig(processConfig: Config) : Map[String, SingleNodeConfig] = {
@@ -127,6 +130,7 @@ object ProcessDefinitionExtractor {
     val expressionDefinition = ExpressionDefinition(
       definition.expressionConfig.globalVariables.mapValuesNow(_.objectDefinition),
       definition.expressionConfig.globalImports,
+      definition.expressionConfig.languages,
       definition.expressionConfig.optimizeCompilation
     )
     ProcessDefinition(
@@ -141,6 +145,7 @@ object ProcessDefinitionExtractor {
     )
   }
 
-  case class ExpressionDefinition[+T <: ObjectMetadata](globalVariables: Map[String, T], globalImports: List[String], optimizeCompilation: Boolean)
+  case class ExpressionDefinition[+T <: ObjectMetadata](globalVariables: Map[String, T], globalImports: List[String], languages: LanguageConfiguration,
+                                                        optimizeCompilation: Boolean)
 
 }

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.compiledgraph
 
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.Parameter
-import pl.touk.nussknacker.engine.compiledgraph.expression.Expression
+import pl.touk.nussknacker.engine.api.expression.Expression
 import pl.touk.nussknacker.engine.compiledgraph.service.ServiceRef
 import pl.touk.nussknacker.engine.compiledgraph.variable.Field
 

@@ -207,7 +207,7 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
     val globalProcessVariables = Map(
       "DATE" -> WithCategories(DateProcessHelper, "Category1", "Category2")
     )
-    ExpressionConfig(globalProcessVariables, List.empty)
+    ExpressionConfig(globalProcessVariables, List.empty, LanguageConfiguration(List()))
   }
 
   override def buildInfo(): Map[String, String] = {

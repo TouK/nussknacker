@@ -28,7 +28,7 @@ class EmptyProcessConfigCreator
   override def exceptionHandlerFactory(config: Config): ExceptionHandlerFactory =
     ExceptionHandlerFactory.noParams(_ => EspExceptionHandler.empty)
 
-  override def expressionConfig(config: Config) = ExpressionConfig(Map.empty, List.empty)
+  override def expressionConfig(config: Config) = ExpressionConfig(Map.empty, List.empty, LanguageConfiguration.default)
 
   override def buildInfo(): Map[String, String] =
     Map.empty

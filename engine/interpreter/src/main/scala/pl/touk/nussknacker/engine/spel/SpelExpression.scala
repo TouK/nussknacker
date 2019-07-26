@@ -15,14 +15,13 @@ import org.springframework.expression.common.CompositeStringExpression
 import org.springframework.expression.spel.ast.SpelNodeImpl
 import org.springframework.expression.spel.support.{ReflectiveMethodExecutor, ReflectiveMethodResolver, StandardEvaluationContext, StandardTypeLocator}
 import org.springframework.expression.spel.{SpelCompilerMode, SpelEvaluationException, SpelParserConfiguration, standard}
-import pl.touk.nussknacker.engine._
+import pl.touk.nussknacker.engine.{api, _}
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.lazyy.{ContextWithLazyValuesProvider, LazyContext, LazyValuesProvider}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.typed.{ClazzRef, TypedMap}
-import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedExpression
-import pl.touk.nussknacker.engine.compiledgraph.expression.{ExpressionParseError, ExpressionParser, ValueWithLazyContext}
+import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, ExpressionParser, TypedExpression, ValueWithLazyContext}
 import pl.touk.nussknacker.engine.functionUtils.CollectionUtils
 
 import scala.collection.concurrent.TrieMap
@@ -69,7 +68,7 @@ class SpelExpression(parsed: ParsedSpelExpression,
                      expressionFunctions: Map[String, Method],
                      expressionImports: List[String],
                      propertyAccessors: Seq[PropertyAccessor],
-                     classLoader: ClassLoader) extends compiledgraph.expression.Expression with LazyLogging {
+                     classLoader: ClassLoader) extends api.expression.Expression with LazyLogging {
 
   import pl.touk.nussknacker.engine.spel.SpelExpressionParser._
 
@@ -161,7 +160,7 @@ class SpelExpressionParser(expressionFunctions: Map[String, Method], expressionI
 
   private val validator = new SpelExpressionValidator()(classLoader)
 
-  override def parseWithoutContextValidation(original: String, expectedType: TypingResult): Validated[NonEmptyList[ExpressionParseError], compiledgraph.expression.Expression] = {
+  override def parseWithoutContextValidation(original: String, expectedType: TypingResult): Validated[NonEmptyList[ExpressionParseError], api.expression.Expression] = {
     Validated.catchNonFatal(parser.parseExpression(original)).leftMap(ex => NonEmptyList.of(ExpressionParseError(ex.getMessage))).map { parsed =>
       expression(ParsedSpelExpression(original, () => parser.parseExpression(original), parsed), expectedType)
     }
