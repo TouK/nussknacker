@@ -11,7 +11,7 @@ class QueryBuilderConfigurationProvider extends FrontendPluginConfigurationProvi
 
   override def createConfigurations(config: Config): List[FrontendPluginConfiguration] = {
     List(FrontendPluginConfiguration(
-      "queryBuilder", List("customField.js"), Map("fields" -> List(Field("firstName", "First name"), Field("lastName", "Last name"))).asJson
+      "queryBuilder", List("queryBuilder.js"), Map("fields" -> List(Field("firstName", "First name"), Field("lastName", "Last name"))).asJson
     ))
   }
 

@@ -10,13 +10,7 @@
     "npm": ">=5"
   },
   "scripts": {
-    "test": "cross-env CI=1 react-scripts test --env=jsdom",
-    "test:watch": "react-scripts test --env=jsdom",
-    "build": "rollup -c",
-    "start": "rollup -c -w",
-    "prepare": "yarn run build",
-    "predeploy": "cd example && yarn install && yarn run build",
-    "deploy": "gh-pages -d example/build"
+    "build": "NODE_ENV=production webpack --progress src"
   },
   "peerDependencies": {
     "react": "^15.0.0 || ^16.0.0",
@@ -27,7 +21,6 @@
     "indexof": "0.0.1"
   },
   "devDependencies": {
-    "@svgr/rollup": "^2.4.1",
     "babel-core": "^6.26.3",
     "babel-eslint": "^8.2.5",
     "babel-plugin-external-helpers": "^6.22.0",
@@ -43,24 +36,16 @@
     "eslint-plugin-promise": "^4.0.0",
     "eslint-plugin-react": "^7.10.0",
     "eslint-plugin-standard": "^3.1.0",
-    "gh-pages": "^1.2.0",
     "react": "^16.4.1",
     "react-dom": "^16.4.1",
     "react-scripts": "^1.1.4",
-    "rollup": "^0.64.1",
-    "rollup-plugin-babel": "^3.0.7",
-    "rollup-plugin-commonjs": "^9.1.3",
-    "rollup-plugin-node-resolve": "^3.3.0",
-    "rollup-plugin-peer-deps-external": "^2.2.0",
-    "rollup-plugin-postcss": "^1.6.2",
-    "rollup-plugin-url": "^1.4.0",
-    "rollup-plugin-less-modules": "0.1.11",
-    "rollup-plugin-replace": "2.2.0",
-    "rollup-plugin-node-globals": "1.4.0",
-
-    "node-sass": "^4.11.0"
-  },
-  "files": [
-    "dist"
-  ]
+    "webpack": "^4.32.2",
+    "webpack-cli": "^3.3.2",
+    "webpack-dev-server": "^3.4.1",
+    "node-sass": "^4.11.0",
+    "css-loader": "^2.1.1",
+    "raw-loader": "^0.5.1",
+    "style-loader": "^0.23.1",
+    "sass-loader": "^7.1.0"
+  }
 }
