@@ -15,7 +15,7 @@ import ProcessUtils from "../common/ProcessUtils"
 
 class Archive extends BaseProcesses {
   queries = {
-    isArchived: false
+    isArchived: true
   }
 
   constructor(props) {
@@ -26,9 +26,6 @@ class Archive extends BaseProcesses {
     this.state = Object.assign({
       selectedIsSubrocess: _.find(this.filterIsSubprocessOptions, {value: query.isSubprocess})
     }, this.prepareState())
-  }
-  reload() {
-    this.reloadProcesses(false)
   }
 
   render() {
@@ -135,6 +132,7 @@ Archive.header = 'Archive'
 
 const mapState = (state) =>  ({
   loggedUser: state.settings.loggedUser,
+  featuresSettings: state.settings.featuresSettings,
   filterCategories: ProcessUtils.prepareFilterCategories(state.settings.loggedUser.categories, state.settings.loggedUser)
 })
 

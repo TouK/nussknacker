@@ -36,7 +36,6 @@ object processdetails {
                                               processingType: ProcessingType,
                                               processCategory: String,
                                               modificationDate: LocalDateTime,
-                                              subprocessesModificationDate: Option[Map[String, LocalDateTime]],
                                               tags: List[String],
                                               currentDeployment: Option[DeploymentEntry],
                                              //TODO: remove
@@ -60,6 +59,15 @@ object processdetails {
 
     // todo: unsafe toLong; we need it for now - we use this class for both backend (id == real id) and frontend (id == name) purposes
     def idWithName: ProcessIdWithName = ProcessIdWithName(ProcessId(id.toLong), ProcessName(name))
+  }
+
+  // TODO we should split ProcessDetails and ProcessShape (json), than it won't be needed. Also BasicProcess won't be necessary than.
+  sealed trait ProcessShapeFetchStrategy[ProcessShape]
+
+  object ProcessShapeFetchStrategy {
+    implicit case object Fetch extends ProcessShapeFetchStrategy[DisplayableProcess]
+    // In fact Unit won't be returned inside shape and Nothing would be more verbose but it won't help in compilation because Nothing <: DisplayableProcess
+    implicit case object NotFetch extends ProcessShapeFetchStrategy[Unit]
   }
 
   type ProcessDetails = BaseProcessDetails[DisplayableProcess]

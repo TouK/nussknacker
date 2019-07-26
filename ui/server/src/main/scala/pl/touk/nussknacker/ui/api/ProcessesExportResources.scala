@@ -27,7 +27,7 @@ class ProcessesExportResources(val processRepository: FetchingProcessRepository,
     path("processesExport" / Segment) { processName =>
       (get & processId(processName)) { processId =>
         complete {
-          processRepository.fetchLatestProcessDetailsForProcessId(processId.id).map {
+          processRepository.fetchLatestProcessDetailsForProcessId[DisplayableProcess](processId.id).map {
             exportProcess
           }
         }
@@ -35,7 +35,7 @@ class ProcessesExportResources(val processRepository: FetchingProcessRepository,
     } ~ path("processesExport" / Segment / LongNumber) { (processName, versionId) =>
       (get & processId(processName)) { processId =>
         complete {
-          processRepository.fetchProcessDetailsForId(processId.id, versionId, businessView = false).map {
+          processRepository.fetchProcessDetailsForId[DisplayableProcess](processId.id, versionId, businessView = false).map {
             exportProcess
           }
         }
@@ -45,7 +45,7 @@ class ProcessesExportResources(val processRepository: FetchingProcessRepository,
         (post & processId(processName)) { processId =>
           entity(as[Array[Byte]]) { svg =>
             complete {
-              processRepository.fetchProcessDetailsForId(processId.id, versionId, businessView).flatMap { process =>
+              processRepository.fetchProcessDetailsForId[DisplayableProcess](processId.id, versionId, businessView).flatMap { process =>
                 processActivityRepository.findActivity(processId).map(exportProcessToPdf(new String(svg, StandardCharsets.UTF_8), process, _))
               }
             }

@@ -3,9 +3,9 @@ package pl.touk.nussknacker.engine.sql
 import cats.data.Validated.{Invalid, Valid}
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
+import pl.touk.nussknacker.engine.api.expression.TypedExpression
 import pl.touk.nussknacker.engine.api.typed.{ClazzRef, typing}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
-import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedExpression
 
 class SqlExpressionParserTest extends FunSuite with Matchers {
 

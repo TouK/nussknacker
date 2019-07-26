@@ -50,8 +50,8 @@ class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
             get {
               complete {
                 for {
-                  processes <- processRepository.fetchProcessesDetails()
-                  subprocesses <- processRepository.fetchSubProcessesDetails()
+                  processes <- processRepository.fetchProcessesDetails[DisplayableProcess]()
+                  subprocesses <- processRepository.fetchSubProcessesDetails[DisplayableProcess]()
                   comparison <- compareProcesses(processes ++ subprocesses)
                 } yield EspErrorToHttp.toResponseEither(comparison)
               }
@@ -118,7 +118,7 @@ class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
 
   private def withProcess[T:EncodeJson](processId: ProcessId, version: Long, businessView: Boolean,
                                         fun: (DisplayableProcess, String) => Future[Either[EspError, T]])(implicit user: LoggedUser) = {
-    processRepository.fetchProcessDetailsForId(processId, version, businessView).map {
+    processRepository.fetchProcessDetailsForId[DisplayableProcess](processId, version, businessView).map {
       _.flatMap { details =>
         details.json.map((_, details.processCategory))
       }

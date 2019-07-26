@@ -16,7 +16,8 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResu
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
-import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.{TypedExpression, TypedExpressionMap, TypedParameter}
+import pl.touk.nussknacker.engine.api.expression.{TypedExpression, TypedExpressionMap}
+import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedParameter
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.MissingOutputVariableException
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition

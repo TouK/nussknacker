@@ -20,6 +20,7 @@ import * as JointJsGraphUtils from "./JointJsGraphUtils";
 import PropTypes from 'prop-types';
 import * as JsonUtils from "../../common/JsonUtils";
 import ClipboardUtils from "../../common/ClipboardUtils";
+import * as ProcessDefinitionUtils from "../../common/ProcessDefinitionUtils";
 
 class Graph extends React.Component {
 
@@ -41,6 +42,7 @@ class Graph extends React.Component {
         this.props.actions.nodesDisconnected(e.attributes.source.id, e.attributes.target.id)
       }
     })
+    this.nodesMoving();
 
     this.espGraphRef = React.createRef()
 
@@ -77,7 +79,10 @@ class Graph extends React.Component {
   }
 
   canAddNode(node) {
-    return this.props.capabilities.write && NodeUtils.isNode(node) && !NodeUtils.nodeIsGroup(node)
+    return this.props.capabilities.write &&
+      NodeUtils.isNode(node) &&
+      !NodeUtils.nodeIsGroup(node) &&
+      NodeUtils.isAvailable(node, this.props.processDefinitionData, this.props.processCategory)
   }
 
   addNode(node, position) {
@@ -100,7 +105,12 @@ class Graph extends React.Component {
     const copyNodeElementId = 'copy-node'
     if (event.target && event.target.id !== copyNodeElementId && this.canCopySelection()) {
       const selectedNodes = NodeUtils.getAllNodesById(this.props.selectionState, this.props.processToDisplay)
-      ClipboardUtils.writeText(JSON.stringify(selectedNodes), copyNodeElementId)
+      const edgesForNodes = NodeUtils.getEdgesForConnectedNodes(this.props.selectionState, this.props.processToDisplay)
+      const selection = {
+        nodes: selectedNodes,
+        edges: edgesForNodes
+      }
+      ClipboardUtils.writeText(JSON.stringify(selection), copyNodeElementId)
     }
   }
 
@@ -109,19 +119,19 @@ class Graph extends React.Component {
       return
     }
     const clipboardText = ClipboardUtils.readText(event);
-    const nodes = JsonUtils.tryParseOrNull(clipboardText)
-    if (!_.isArray(nodes)) {
+    const selection = JsonUtils.tryParseOrNull(clipboardText)
+    if (!_.has(selection, 'nodes') || !_.has(selection, 'edges')) {
       return
     }
 
-    const validNodes = nodes.filter(node => this.canAddNode(node))
+    const validNodes = selection.nodes.filter(node => this.canAddNode(node))
     const positions = validNodes.map((node, ix) => {
       return {x: 300, y: ix * 100}
     })
     const nodesWithPositions = _.zipWith(validNodes, positions, (node, position) => {
       return {node, position}
     })
-    this.props.actions.nodesAdded(nodesWithPositions)
+    this.props.actions.nodesWithEdgesAdded(nodesWithPositions, selection.edges)
   }
 
   cutSelection(event) {
@@ -137,19 +147,19 @@ class Graph extends React.Component {
   }
 
   componentWillUpdate(nextProps, nextState) {
-    const processNotChanged = _.isEqual(this.props.processToDisplay, nextProps.processToDisplay) &&
-      _.isEqual(this.props.layout, nextProps.layout) &&
-      _.isEqual(this.props.processCounts, nextProps.processCounts) &&
-      _.isEqual(this.props.groupingState, nextProps.groupingState) &&
-      _.isEqual(this.props.expandedGroups, nextProps.expandedGroups) &&
-      _.isEqual(this.props.selectionState, nextProps.selectionState)
-
-    if (!processNotChanged) {
+    const processChanged = !_.isEqual(this.props.processToDisplay, nextProps.processToDisplay) ||
+      !_.isEqual(this.props.layout, nextProps.layout) ||
+      !_.isEqual(this.props.processCounts, nextProps.processCounts) ||
+      !_.isEqual(this.props.groupingState, nextProps.groupingState) ||
+      !_.isEqual(this.props.expandedGroups, nextProps.expandedGroups)
+    if (processChanged) {
       this.drawGraph(nextProps.processToDisplay, nextProps.layout, nextProps.processCounts, false, nextProps.expandedGroups)
     }
 
     //when e.g. layout changed we have to remember to highlight nodes
-    if (!processNotChanged || !_.isEqual(this.props.nodeToDisplay, nextProps.nodeToDisplay)) {
+    const nodeToDisplayChanged = !_.isEqual(this.props.nodeToDisplay, nextProps.nodeToDisplay)
+    const selectedNodesChanged = !_.isEqual(this.props.selectionState, nextProps.selectionState)
+    if (processChanged || nodeToDisplayChanged || selectedNodesChanged) {
       this.highlightNodes(nextProps.processToDisplay, nextProps.nodeToDisplay, nextProps.groupingState, nextProps.selectionState);
     }
   }
@@ -579,6 +589,26 @@ class Graph extends React.Component {
       x: (pointerOffset.x - pan.x - graphPosition.left - paddingLeft) / zoom,
       y: (pointerOffset.y - pan.y - graphPosition.top - paddingTop) / zoom
     }
+  }
+
+  moveSelectedNodesRelatively(element, position) {
+    const movedNodeId = element.id
+    const nodeIdsToBeMoved = _.without(this.props.selectionState, movedNodeId)
+    const cellsToBeMoved = nodeIdsToBeMoved.map(nodeId => this.graph.getCell(nodeId))
+    const originalPosition = _.find(this.props.layout, n => n.id === movedNodeId).position
+    const offset = {x: position.x - originalPosition.x, y: position.y - originalPosition.y}
+    cellsToBeMoved.forEach(cell => {
+      const originalPosition = _.find(this.props.layout, n => n.id === cell.id).position
+      cell.position(originalPosition.x + offset.x, originalPosition.y + offset.y)
+    })
+  }
+
+  nodesMoving() {
+    this.graph.on("change:position", (element, position) => {
+      if (!this.redrawing && (this.props.selectionState || []).includes(element.id)) {
+        this.moveSelectedNodesRelatively(element, position)
+      }
+    })
   }
 
   render() {

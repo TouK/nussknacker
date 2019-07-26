@@ -1,18 +1,19 @@
 package pl.touk.nussknacker.engine
 
 import cats.data.Validated.{Invalid, Valid}
-import cats.data.{NonEmptyList, ValidatedNel}
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.{FunSuite, Matchers}
 import org.springframework.expression.spel.standard.SpelExpression
 import pl.touk.nussknacker.engine.InterpreterSpec._
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
+import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{ServiceWithExplicitMethod, WithExplicitMethodToInvoke}
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
-import pl.touk.nussknacker.engine.api.lazyy.UsingLazyValues
-import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, SinkFactory, SourceFactory, WithCategories}
+import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, ExpressionParser, TypedExpression, ValueWithLazyContext}
+import pl.touk.nussknacker.engine.api.lazyy.{LazyValuesProvider, UsingLazyValues}
+import pl.touk.nussknacker.engine.api.process.{ExpressionConfig, LanguageConfiguration, ProcessConfigCreator, SinkFactory, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
-import pl.touk.nussknacker.engine.api.typed.{ClazzRef, typing}
+import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{Service, _}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
@@ -60,7 +61,9 @@ class InterpreterSpec extends FunSuite with Matchers {
     interpretSource(process.toOption.get.roots.head, transaction, listeners, services)
   }
 
-  private def interpretSource(node: SourceNode, transaction: Transaction, listeners: Seq[ProcessListener] = listenersDef(), services: Map[String, Service] = servicesDef): Any = {
+  private def interpretSource(node: SourceNode, transaction: Transaction,
+                              listeners: Seq[ProcessListener] = listenersDef(),
+                              services: Map[String, Service] = servicesDef): Any = {
     import SynchronousExecutionContext.ctx
     AccountService.clear()
     NameDictService.clear()
@@ -110,6 +113,9 @@ class InterpreterSpec extends FunSuite with Matchers {
         = Map("dummySink" -> WithCategories(SinkFactory.noParam(new pl.touk.nussknacker.engine.api.process.Sink {
         override def testDataOutput: Option[(Any) => String] = None
       })))
+
+      override def expressionConfig(config: Config): ExpressionConfig = super.expressionConfig(config)
+        .copy(languages = LanguageConfiguration(List(LiteralExpressionParser)))
     }
 
     val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(configCreator, ConfigFactory.empty())
@@ -557,6 +563,15 @@ class InterpreterSpec extends FunSuite with Matchers {
     interpretSource(process, Transaction()) should equal("12333")
   }
 
+  test("uses configured expression languages") {
+    val testExpression = "literal expression, no need for quotes"
+
+    val process = GraphBuilder.source("start", "transaction-source")
+      .sink("end", Expression("literal", testExpression), "dummySink")
+
+    interpretSource(process, Transaction()) should equal(testExpression)
+    
+  }
 }
 
 class ThrowingService extends Service {
@@ -654,6 +669,25 @@ object InterpreterSpec {
       Future.successful(params.head.asInstanceOf[Long].toString)
     }
 
+  }
+
+  object LiteralExpressionParser extends ExpressionParser {
+
+    case class LiteralExpression(original: String) extends pl.touk.nussknacker.engine.api.expression.Expression {
+      override def language: String = languageId
+
+      override def evaluate[T](ctx: Context, lazyValuesProvider: LazyValuesProvider): Future[ValueWithLazyContext[T]]
+      = Future.successful(ValueWithLazyContext(original.asInstanceOf[T], ctx.lazyContext))
+    }
+
+    override def languageId: String = "literal"
+
+    override def parse(original: String, ctx: ValidationContext, expectedType: typing.TypingResult): Validated[NonEmptyList[ExpressionParseError], TypedExpression] =
+      parseWithoutContextValidation(original, expectedType).map(TypedExpression(_, Typed[String]))
+
+    override def parseWithoutContextValidation(original: String, expectedType: typing.TypingResult): Validated[NonEmptyList[ExpressionParseError],
+      pl.touk.nussknacker.engine.api.expression.Expression]
+      = Valid(LiteralExpression(original))
   }
 
 }

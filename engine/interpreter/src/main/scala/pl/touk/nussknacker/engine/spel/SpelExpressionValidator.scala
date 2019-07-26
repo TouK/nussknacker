@@ -6,7 +6,7 @@ import org.springframework.expression.Expression
 import org.springframework.expression.spel.standard
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.compiledgraph.expression.ExpressionParseError
+import pl.touk.nussknacker.engine.api.expression.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 
 class SpelExpressionValidator(implicit classLoader: ClassLoader) {

@@ -24,6 +24,7 @@ class Processes extends BaseProcesses {
   }
 
   searchItems = ['categories', 'isDeployed']
+  shouldReloadStatuses = true
 
   deployedOptions = [
     {label: 'Show all processes', value: undefined},
@@ -41,11 +42,6 @@ class Processes extends BaseProcesses {
       statusesLoaded: false,
       statuses: {},
     }, this.prepareState())
-  }
-
-  reload() {
-    this.reloadProcesses(false)
-    this.reloadStatuses()
   }
 
   updateProcess(name, mutator) {
@@ -73,10 +69,6 @@ class Processes extends BaseProcesses {
 
   handleBlur = (process, e) => {
     this.updateProcess(process.name, (process) => process.editedName = process.name)
-  }
-
-  onDeployedChange = (element) => {
-    this.afterElementChange({isDeployed: element.value, page: 0}, true)
   }
 
   render() {
@@ -209,12 +201,15 @@ class Processes extends BaseProcesses {
   }
 }
 
+
+
 Processes.title = 'Processes'
 Processes.path = '/processes'
 Processes.header = 'Processes'
 
 const mapState = state => ({
   loggedUser: state.settings.loggedUser,
+  featuresSettings: state.settings.featuresSettings,
   filterCategories: ProcessUtils.prepareFilterCategories(state.settings.loggedUser.categories, state.settings.loggedUser)
 })
 

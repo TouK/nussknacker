@@ -24,12 +24,9 @@ class CustomProcesses extends BaseProcesses {
     }, this.prepareState())
   }
 
-  reload() {
-    this.reloadProcesses(false)
-    this.reloadStatuses()
-  }
+  reloadProcesses(showLoader) {
+    this.setState({showLoader: showLoader == null ? true : showLoader})
 
-  reloadProcesses() {
     HttpService.fetchCustomProcesses().then (fetchedProcesses => {
       if (!this.state.showAddProcess) {
         this.setState({processes: fetchedProcesses, showLoader: false})
@@ -124,5 +121,8 @@ class CustomProcesses extends BaseProcesses {
 
 CustomProcesses.title = "Custom Processes"
 
-const mapState = state => ({loggedUser: state.settings.loggedUser})
+const mapState = state => ({
+  loggedUser: state.settings.loggedUser,
+  featuresSettings: state.settings.featuresSettings
+})
 export default withRouter(connect(mapState, ActionsUtils.mapDispatchWithEspActions)(CustomProcesses))

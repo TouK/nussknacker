@@ -173,6 +173,9 @@ class ProcessUtils {
     }
   }
 
+  findNodeDefinitionIdOrType = (node) =>
+    this.findNodeDefinitionId(node) || node.type || null
+
   findNodeConfigName = (node) => {
       return this.findNodeDefinitionId(node) || (node.type && node.type.charAt(0).toLowerCase() + node.type.slice(1));
   }

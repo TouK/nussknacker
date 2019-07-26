@@ -8,6 +8,8 @@ import HttpService from "../http/HttpService"
 
 class BaseProcesses extends PeriodicallyReloadingComponent {
   searchItems = ['categories']
+  shouldReloadStatuses = false
+  intervalTime = 15000
   queries = {}
 
   customSelectStyles = {
@@ -63,6 +65,22 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
     }
 
     return state
+  }
+
+  onMount() {
+    this.reloadProcesses()
+
+    if (this.shouldReloadStatuses) {
+      this.reloadStatuses()
+    }
+  }
+
+  reload() {
+    this.reloadProcesses(false)
+
+    if (this.shouldReloadStatuses) {
+      this.reloadStatuses()
+    }
   }
 
   reloadProcesses(showLoader, search) {
@@ -121,6 +139,10 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
     this.afterElementChange({isSubprocess: element.value, page: 0}, true)
   }
 
+  onDeployedChange = (element) => {
+    this.afterElementChange({isDeployed: element.value, page: 0}, true)
+  }
+
   showMetrics = (process) => {
     history.push('/metrics/' + process.name)
   }
@@ -142,6 +164,10 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
     }
 
     return null
+  }
+
+  getIntervalTime() {
+    return _.get(this.props, "featuresSettings.intervalTimeSettings.processes", this.intervalTime)
   }
 
   processStatusTitle = processStatusClass => {

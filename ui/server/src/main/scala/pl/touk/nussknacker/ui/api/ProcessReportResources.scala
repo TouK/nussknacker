@@ -26,7 +26,7 @@ class ProcessReportResources(countsReporter: CountsReporter, processCounter: Pro
         parameterMap { parameters =>
           val request = prepareRequest(parameters)
           complete {
-            processRepository.fetchLatestProcessDetailsForProcessId(processId.id).flatMap[ToResponseMarshallable] {
+            processRepository.fetchLatestProcessDetailsForProcessId[DisplayableProcess](processId.id).flatMap[ToResponseMarshallable] {
               case Some(process) =>
                 process.json match {
                   case Some(displayable) => computeCounts(displayable, request)

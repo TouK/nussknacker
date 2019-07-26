@@ -22,7 +22,7 @@
     "immutability-helper": "~3.0.1",
     "jointjs": "^3.0.2",
     "ladda": "~2.0.1",
-    "lodash": "~4.17.11",
+    "lodash": "~4.17.15",
     "moment": "~2.24.0",
     "npm-font-open-sans": "~1.1.0",
     "prop-types": "~15.7.2",

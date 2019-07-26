@@ -54,7 +54,7 @@ class DbSubprocessRepository(db: DbConfig, ec: ExecutionContext) extends Subproc
 
   private def listLatestSubprocesses() : Future[Set[SubprocessDetails]] = {
     val action = for {
-      latestProcesses <- processVersionsTable.groupBy(_.processId).map { case (n, group) => (n, group.map(_.createDate).max) }
+      latestProcesses <- processVersionsTableNoJson.groupBy(_.processId).map { case (n, group) => (n, group.map(_.createDate).max) }
         .join(processVersionsTable).on { case (((processId, latestVersionDate)), processVersion) =>
         processVersion.processId === processId && processVersion.createDate === latestVersionDate
       }.join(subprocessesQuery)
