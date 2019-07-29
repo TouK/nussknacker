@@ -66,9 +66,8 @@ export default {
 
   queryState(processId, queryName, key) {
     const data = {processId, queryName, key}
-    return api.get("/queryableState/fetch", data).catch(
-      error => this.addError(`Cannot fetch state`, error)
-    )
+    return api.get("/queryableState/fetch", {params: data})
+      .catch(error => this.addError(`Cannot fetch state`, error))
   },
 
   fetchHealthCheck() {
@@ -118,7 +117,7 @@ export default {
   },
 
   fetchProcesses(data) {
-    return api.get("/processes", data)
+    return api.get("/processes", {params: data})
   },
 
   fetchCustomProcesses() {
@@ -128,15 +127,17 @@ export default {
   fetchProcessDetails(processId, versionId, businessView) {
     let url =  versionId ? `/processes/${processId}/${versionId}` : `/processes/${processId}`
     const queryParams = this.businessViewQueryParams(businessView)
-    return api.get(url, queryParams)
+    return api.get(url, {params: queryParams})
   },
 
   fetchProcessesStatus() {
-    return api.get("/processes/status").catch(error => this.addError(`Cannot fetch statuses`, error))
+    return api.get("/processes/status")
+      .catch(error => this.addError(`Cannot fetch statuses`, error))
   },
 
   fetchSingleProcessStatus(processId) {
-    return api.get(`/processes/${processId}/status`).catch(error => this.addError(`Cannot fetch status`, error))
+    return api.get(`/processes/${processId}/status`)
+      .catch(error => this.addError(`Cannot fetch status`, error))
   },
 
   deploy(processId, comment) {
@@ -252,7 +253,7 @@ export default {
   },
 
   getTestCapabilities(process) {
-    return api.post("/testInfo/capabilities", process)
+    return api.post("/testInfo/capabilities", {params: process})
       .catch(error => this.addError(`Failed to get capabilities`, error, true))
   },
 
@@ -276,7 +277,7 @@ export default {
   fetchProcessCounts(processId, dateFrom, dateTo) {
     const data = { dateFrom: dateFrom, dateTo: dateTo }
 
-    return api.get(`/processCounts/${processId}`, data)
+    return api.get(`/processCounts/${processId}`, {params: data})
       .catch(error => this.addError(`Cannot fetch process counts`, error, true))
   },
 
@@ -318,7 +319,7 @@ export default {
     const queryParams = this.businessViewQueryParams(businessView)
     const path = remoteEnv ? 'remoteEnvironment' : 'processes'
 
-    return api.get(`/${path}/${processId}/${thisVersion}/compare/${otherVersion}`, queryParams)
+    return api.get(`/${path}/${processId}/${thisVersion}/compare/${otherVersion}`, {params: queryParams})
       .catch(error => this.addError(`Cannot compare processes`, error, true))
   },
 

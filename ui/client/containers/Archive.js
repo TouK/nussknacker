@@ -18,6 +18,8 @@ class Archive extends BaseProcesses {
     isArchived: true
   }
 
+  searchItems = ['categories', 'isSubprocess']
+
   constructor(props) {
     super(props)
 

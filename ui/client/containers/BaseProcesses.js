@@ -89,6 +89,8 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
     const query = _.pick(queryString.parse(window.location.search), this.searchItems || [])
     const data = Object.assign(query, search, this.queries || {})
 
+    console.log("DATA", data)
+
     HttpService.fetchProcesses(data).then (response => {
       if (!this.state.showAddProcess) {
         this.setState({processes: response.data, showLoader: false})
