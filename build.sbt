@@ -35,12 +35,9 @@ val publishSettings = Seq(
       (if (isSnapshot.value) "snapshots" else "releases") at url)
   },
   publishArtifact in Test := false,
+  //We don't put scm information here, it will be added by release plugin and if scm provided here is different than the one from scm
+  //we'll end up with two scm sections and invalid pom...
   pomExtra in Global := {
-    <scm>
-      <connection>scm:git:github.com/touk/nussknacker.git</connection>
-      <developerConnection>scm:git:git@github.com:touk/nussknacker.git</developerConnection>
-      <url>github.com/touk/nussknacker</url>
-    </scm>
       <developers>
         <developer>
           <id>TouK</id>
