@@ -33,6 +33,7 @@ import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
+import pl.touk.nussknacker.engine.literal.LiteralExpressionParser
 import pl.touk.nussknacker.engine.spel.SpelExpressionRepr
 import pl.touk.nussknacker.engine.testing.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.util.{LoggingListener, SynchronousExecutionContext}
@@ -660,7 +661,7 @@ object InterpreterSpec {
   object WithExplicitDefinitionService extends Service with ServiceWithExplicitMethod {
 
     override def parameterDefinition: List[api.definition.Parameter]
-      = List(api.definition.Parameter("param1", Typed[Long], Typed[Long]))
+    = List(api.definition.Parameter("param1", Typed[Long], Typed[Long]))
 
 
     override def returnType: typing.TypingResult = Typed[String]
@@ -669,25 +670,6 @@ object InterpreterSpec {
       Future.successful(params.head.asInstanceOf[Long].toString)
     }
 
-  }
-
-  object LiteralExpressionParser extends ExpressionParser {
-
-    case class LiteralExpression(original: String) extends pl.touk.nussknacker.engine.api.expression.Expression {
-      override def language: String = languageId
-
-      override def evaluate[T](ctx: Context, lazyValuesProvider: LazyValuesProvider): Future[ValueWithLazyContext[T]]
-      = Future.successful(ValueWithLazyContext(original.asInstanceOf[T], ctx.lazyContext))
-    }
-
-    override def languageId: String = "literal"
-
-    override def parse(original: String, ctx: ValidationContext, expectedType: typing.TypingResult): Validated[NonEmptyList[ExpressionParseError], TypedExpression] =
-      parseWithoutContextValidation(original, expectedType).map(TypedExpression(_, Typed[String]))
-
-    override def parseWithoutContextValidation(original: String, expectedType: typing.TypingResult): Validated[NonEmptyList[ExpressionParseError],
-      pl.touk.nussknacker.engine.api.expression.Expression]
-      = Valid(LiteralExpression(original))
   }
 
 }

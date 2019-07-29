@@ -664,7 +664,7 @@ lazy val pluginSample = (project in file("ui/pluginSample"))
       val art = (artifact in (Compile, assembly)).value
       art.withClassifier(Some("assembly"))
     }
-  ).dependsOn(example)
+  ).dependsOn(ui % "provided")
 
 
 lazy val ui = (project in file("ui/server"))

@@ -4,7 +4,6 @@
   "description": "test",
   "main": "../target/scala-2.11/classes/customField.js",
   "module": "../target/scala-2.11/classes/customField.es.js",
-  "jsnext:main": "../target/scala-2.11/classes/customField.es.js",
   "engines": {
     "node": ">=8",
     "npm": ">=5"
@@ -17,35 +16,22 @@
     "react-dom": "^15.0.0 || ^16.0.0"
   },
   "dependencies": {
-    "react-querybuilder": "1.4.3",
-    "indexof": "0.0.1"
+
   },
   "devDependencies": {
     "babel-core": "^6.26.3",
-    "babel-eslint": "^8.2.5",
     "babel-plugin-external-helpers": "^6.22.0",
     "babel-preset-env": "^1.7.0",
     "babel-preset-react": "^6.24.1",
     "babel-preset-stage-0": "^6.24.1",
-    "cross-env": "^5.1.4",
-    "eslint": "^5.0.1",
-    "eslint-config-standard": "^11.0.0",
-    "eslint-config-standard-react": "^6.0.0",
-    "eslint-plugin-import": "^2.13.0",
-    "eslint-plugin-node": "^7.0.1",
-    "eslint-plugin-promise": "^4.0.0",
-    "eslint-plugin-react": "^7.10.0",
-    "eslint-plugin-standard": "^3.1.0",
     "react": "^16.4.1",
     "react-dom": "^16.4.1",
     "react-scripts": "^1.1.4",
     "webpack": "^4.32.2",
     "webpack-cli": "^3.3.2",
     "webpack-dev-server": "^3.4.1",
-    "node-sass": "^4.11.0",
     "css-loader": "^2.1.1",
     "raw-loader": "^0.5.1",
-    "style-loader": "^0.23.1",
-    "sass-loader": "^7.1.0"
+    "style-loader": "^0.23.1"
   }
 }

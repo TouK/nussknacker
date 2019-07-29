@@ -70,11 +70,12 @@ trait ModelData extends ConfigCreatorSignalDispatcher {
 
   def modelClassLoader : ModelClassLoader
 
-  def processConfigFromConfiguration: Config
+  protected def processConfigFromConfiguration: Config
 
   override def processConfig: Config = {
     //This allows to add reference.conf to model jar and use properties from there
     //NOTE: substitutions work only one way, i.e. config from NK configuration can use properties from reference.conf, but not vice-versa
     ConfigFactory.load(modelClassLoader.classLoader, processConfigFromConfiguration)
   }
+
 }

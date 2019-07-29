@@ -457,12 +457,8 @@ export class NodeDetailsContent extends React.Component {
   };
 
   createExpressionComponent = (onValueChange, fieldName, expressionObj) => {
-
-    const pluginToCreate = PluginManager.plugins
-          .find(plugin => plugin.matches(fieldName, expressionObj.language));
-
-    //TODO: variables + type information? Or whole reducers?
-    return pluginToCreate ? pluginToCreate.create(onValueChange, fieldName, expressionObj, pluginToCreate.config) : (
+    const expressionFromPlugins = PluginManager.createExpression(onValueChange, fieldName, expressionObj)
+    return expressionFromPlugins ? expressionFromPlugins : (
       <ExpressionSuggest fieldName={fieldName} inputProps={{
               rows: 1, cols: 50, className: "node-input", value: expressionObj.expression, language: expressionObj.language,
               onValueChange: onValueChange, readOnly: false}}/>
