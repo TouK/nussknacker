@@ -34,6 +34,7 @@ class Metrics extends React.Component {
     }
 
     const url = this.props.settings.url
+    //TODO: this is still a bit grafana specific...
     const dashboard = this.getDashboardName()
     const processName = this.props.match.params.processId || "All"
     const finalIframeUrl = url.replace("$dashboard", dashboard).replace("$process", processName)

@@ -23,8 +23,9 @@ export function fetchProcessToDisplay(processId, versionId, businessView) {
 
 export function fetchProcessDefinition(processingType, isSubprocess, subprocessVersions) {
   return (dispatch) => {
-    return HttpService.fetchProcessDefinitionData(processingType, isSubprocess, subprocessVersions).then((data) =>
-      dispatch({type: "PROCESS_DEFINITION_DATA", processDefinitionData: data})
+    return HttpService.fetchProcessDefinitionData(processingType, isSubprocess, subprocessVersions).then((response) => {
+        dispatch({type: "PROCESS_DEFINITION_DATA", processDefinitionData: response.data})
+      }
     )
   }
 }
@@ -96,9 +97,9 @@ function displayProcess(processDetails) {
 export function saveProcess(processId, processJson, comment) {
   return (dispatch) => {
     return HttpService.saveProcess(processId, processJson, comment)
-      .then((res) => dispatch(displayCurrentProcessVersion(processId)))
-      .then((res) => dispatch(displayProcessActivity(processId)))
-      .then((res) => dispatch(UndoRedoActions.clear()))
+      .then((response) => dispatch(displayCurrentProcessVersion(processId)))
+      .then((response) => dispatch(displayProcessActivity(processId)))
+      .then((response) => dispatch(UndoRedoActions.clear()))
   }
 }
 
@@ -107,10 +108,10 @@ export function importProcess(processId, file) {
     dispatch({
       type: "PROCESS_LOADING"
     })
-    return HttpService.importProcess(processId, file, process => dispatch(updateImportedProcess(process)),
-      error => dispatch({
-        type: "LOADING_FAILED"
-      }))
+
+    return HttpService.importProcess(processId, file)
+      .then((process) => dispatch(updateImportedProcess(process)))
+      .catch((error) => dispatch({type: "LOADING_FAILED"}))
   }
 }
 
@@ -224,12 +225,12 @@ export function resetSelection(nodeId) {
 export function editEdge(process, before, after) {
   return (dispatch) => {
     const changedProcess = GraphUtils.mapProcessWithNewEdge(process, before, after)
-    return HttpService.validateProcess(changedProcess).then((validationResult) => {
+    return HttpService.validateProcess(changedProcess).then((response) => {
       dispatch({
         type: "EDIT_EDGE",
         before: before,
         after: after,
-        validationResult: validationResult
+        validationResult: response.data
       })
     })
   }
@@ -240,12 +241,12 @@ export function editNode(process, before, after) {
   return (dispatch) => {
     const processAfterChange = calculateProcessAfterChange(process, before, after, dispatch)
     return processAfterChange.then((process) => {
-      return HttpService.validateProcess(process).then((validationResult) => {
+      return HttpService.validateProcess(process).then((response) => {
         dispatch({
           type: "EDIT_NODE",
           before: before,
           after: after,
-          validationResult: validationResult,
+          validationResult: response.data,
           processAfterChange: process
         })
       })
@@ -281,12 +282,12 @@ function alignSubprocessesWithSchema(process, processDefinitionData) {
 export function editGroup(process, oldGroupId, newGroup) {
   return (dispatch) => {
     const newProcess = NodeUtils.editGroup(process, oldGroupId, newGroup)
-    return HttpService.validateProcess(newProcess).then((validationResult) => {
+    return HttpService.validateProcess(newProcess).then((response) => {
       dispatch({
         type: "EDIT_GROUP",
         oldGroupId: oldGroupId,
         newGroup: newGroup,
-        validationResult: validationResult
+        validationResult: response.data
       })
     })
   }
@@ -340,7 +341,8 @@ function runSyncActionsThenValidate(syncActions) {
   return (dispatch, getState) => {
     syncActions(getState()).forEach(action => dispatch(action))
     return HttpService.validateProcess(getState().graphReducer.processToDisplay).then(
-          (validationResult) => dispatch({type: "VALIDATION_RESULT", validationResult: validationResult}))
+      (response) => dispatch({type: "VALIDATION_RESULT", validationResult: response.data})
+    )
   }
 }
 
@@ -433,11 +435,10 @@ export function testProcessFromFile(id, testDataFile, process) {
     dispatch({
       type: "PROCESS_LOADING"
     })
-    HttpService.testProcess(id, testDataFile, process, testResults => dispatch(displayTestResults(testResults)),
-      error => dispatch({
-        type: "LOADING_FAILED"
-      }));
 
+    HttpService.testProcess(id, testDataFile, process)
+      .then(response => dispatch(displayTestResults(response.data)))
+      .catch(error => dispatch({type: "LOADING_FAILED"}))
   }
 }
 
@@ -480,7 +481,7 @@ export function fetchAndDisplayProcessCounts(processName, from, to) {
       processName,
       from ? from.format(dateFormat): null,
       to ? to.format(dateFormat) : null
-    ).then((processCounts) => dispatch(displayProcessCounts(processCounts)))
+    ).then((response) => dispatch(displayProcessCounts(response.data)))
 }
 
 export function hideRunProcessDetails() {
@@ -509,6 +510,9 @@ export function businessViewChanged(value) {
   }
 }
 
+//Developers can handle error on two ways:
+//1. Catching it at HttpService and show error information modal - application still works normally
+//2. Catching it at Containers / etc.. and show ErrorPage by run action handleHTTPError - application stop works
 export function handleHTTPError(error) {
   return {
     type: "HANDLE_HTTP_ERROR",

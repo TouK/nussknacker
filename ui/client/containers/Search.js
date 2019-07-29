@@ -3,27 +3,27 @@ import PropTypes from 'prop-types'
 import {connect} from 'react-redux'
 
 class Search extends React.Component {
-
-  static propTypes = {
-      settings: PropTypes.object.isRequired,
-  }
-
   render() {
-    if (!this.props.settings.url) {
-      return (<div/>)
-    } else {
+    if (this.props.settings.url) {
       return (
         <div className="Page">
           <iframe
             ref="metricsFrame"
             src={this.props.settings.url}
-            width="100%" height={window.innerHeight}
+            width="100%"
+            height={window.innerHeight}
             frameBorder="0"
           />
         </div>
       )
     }
+
+    return (<div/>)
   }
+}
+
+Search.propTypes = {
+  settings: PropTypes.object.isRequired
 }
 
 Search.path = "/search"

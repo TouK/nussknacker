@@ -279,8 +279,7 @@ class UserRightPanel extends Component {
       this.props.actions.toggleInfoModal(Dialogs.types.infoModal,DialogMessages.cantArchiveRunningProcess())
     }else{
       this.props.actions.toggleConfirmDialog(true, DialogMessages.archiveProcess(this.processId()), () => {
-          return HttpService.archiveProcess(this.processId()).then((resp) =>
-							history.push(Archive.path))
+          return HttpService.archiveProcess(this.processId()).then((response) => history.push(Archive.path))
       })
     }
   }

@@ -171,7 +171,7 @@ class Processes extends BaseProcesses {
               <Tr className="row-hover" key={index}>
                 <Td column="name" value={process.name}>
                   <input
-                    value={process.editedName || process.name}
+                    value={process.editedName != null ? process.editedName : process.name}
                     className="transparent"
                     onKeyPress={(event) => this.changeProcessName(process, event)}
                     onChange={(event) => this.processNameChanged(process.name, event)}

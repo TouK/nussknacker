@@ -6,11 +6,11 @@ import ServerError from "./errors/ServerError"
 
 class ErrorHandler extends React.Component {
   render() {
-    if (this.props.httpErrorHandler == null) {
+    if (this.props.error == null) {
       return this.props.children
     }
 
-    const {config, isAxiosError, request, response, toJSON} = this.props.httpErrorHandler
+    const {config, isAxiosError, request, response, toJSON} = this.props.error
 
     if (response.status === 404) {
       return <NotFound message={response.data} />
@@ -22,7 +22,7 @@ class ErrorHandler extends React.Component {
 
 const mapState = function(state) {
   return {
-    httpErrorHandler: state.httpErrorHandler.error
+    error: state.httpErrorHandler.error
   }
 }
 

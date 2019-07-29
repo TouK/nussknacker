@@ -16,7 +16,7 @@ function edgeIdPart(edgeId) {
 export function visualizationUrl(processName, nodeId, edgeId) {
   const baseUrl = `${visualizationBasePath}/${encodeURIComponent(processName)}`
   const nodeIdUrlPart = nodeId && edgeId == null ? nodeIdPart(nodeId) : ""
-  const edgeIdUrlPart = edgeId && edgeId == null ? edgeIdPart(edgeId) : ""
+  const edgeIdUrlPart = edgeId && nodeId == null ? edgeIdPart(edgeId) : ""
   return baseUrl + nodeIdUrlPart + edgeIdUrlPart
 }
 

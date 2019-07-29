@@ -104,11 +104,8 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
     }).catch(() => this.setState({ showLoader: false }))
   }
 
-  retrieveSelectedCategories(categories) {
-    if (!_.isArray(categories)) {
-      categories = [categories]
-    }
-
+  retrieveSelectedCategories(data) {
+    const categories = _.isArray(data) ? data : [data]
     return _.filter(this.props.filterCategories, (category) => {
       return _.find(categories || [], categoryName => categoryName === category.value)
     })

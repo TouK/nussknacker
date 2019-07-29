@@ -32,14 +32,15 @@ class CompareVersionsDialog extends React.Component {
 
   componentWillReceiveProps(nextProps) {
     if (nextProps.processId && nextProps.otherEnvironment) {
-      HttpService.fetchRemoteVersions(nextProps.processId).then(list => this.setState({remoteVersions: list || []}))
+      HttpService.fetchRemoteVersions(nextProps.processId).then(response => this.setState({remoteVersions: response.data || []}))
     }
   }
 
   loadVersion(versionId) {
     if (versionId) {
-      HttpService.compareProcesses(this.props.processId, this.props.version, this.versionToPass(versionId), this.props.businessView, this.isRemote(versionId))
-        .then((difference) => this.setState({difference: difference, otherVersion: versionId, currentDiffId: null}))
+      HttpService.compareProcesses(this.props.processId, this.props.version, this.versionToPass(versionId), this.props.businessView, this.isRemote(versionId)).then(
+        (response) => this.setState({difference: response.data, otherVersion: versionId, currentDiffId: null})
+      )
     } else {
       this.setState(this.initState)
     }

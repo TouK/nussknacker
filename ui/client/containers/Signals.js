@@ -14,11 +14,14 @@ class Signals extends React.Component {
   }
 
   componentDidMount() {
-    HttpService.fetchSignals().then(signals => {
+    HttpService.fetchSignals().then(response => {
+      const signals = response.data
       const firstSignal = _.head(_.keys(signals))
-      this.setState(
-        {signals: signals, signalType: firstSignal, processId : signals[firstSignal].availableProcesses[0]}
-      )
+      this.setState({
+        signals: signals,
+        signalType: firstSignal,
+        processId : signals[firstSignal].availableProcesses[0]
+      })
     })
   }
 
