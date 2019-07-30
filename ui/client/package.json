@@ -43,6 +43,7 @@
     "react-ladda": "~6.0.0",
     "react-modal": "~3.8.1",
     "react-notification-system": "~0.2.17",
+    "react-notification-system-redux": "2.0.0",
     "react-redux": "~7.1.0",
     "react-resizable-box": "~2.1.0",
     "react-router": "~5.0.1",

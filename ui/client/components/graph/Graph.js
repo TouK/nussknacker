@@ -19,7 +19,6 @@ import * as JointJsGraphUtils from "./JointJsGraphUtils";
 import PropTypes from 'prop-types';
 import * as JsonUtils from "../../common/JsonUtils";
 import ClipboardUtils from "../../common/ClipboardUtils";
-import * as ProcessDefinitionUtils from "../../common/ProcessDefinitionUtils";
 
 class Graph extends React.Component {
 
@@ -110,6 +109,7 @@ class Graph extends React.Component {
         edges: edgesForNodes
       }
       ClipboardUtils.writeText(JSON.stringify(selection), copyNodeElementId)
+      this.props.notificationActions.info(`Copied ${selectedNodes.length} elements`)
     }
   }
 
@@ -119,15 +119,17 @@ class Graph extends React.Component {
     }
     const clipboardText = ClipboardUtils.readText(event);
     const selection = JsonUtils.tryParseOrNull(clipboardText)
-    if (!_.has(selection, 'nodes') || !_.has(selection, 'edges')) {
+    if (!_.has(selection, 'nodes') ||
+      !_.has(selection, 'edges') ||
+      selection.nodes.some(node => !this.canAddNode(node))) {
+      this.props.notificationActions.error("Cannot paste invalid nodes")
       return
     }
 
-    const validNodes = selection.nodes.filter(node => this.canAddNode(node))
-    const positions = validNodes.map((node, ix) => {
+    const positions = selection.nodes.map((node, ix) => {
       return {x: 300, y: ix * 100}
     })
-    const nodesWithPositions = _.zipWith(validNodes, positions, (node, position) => {
+    const nodesWithPositions = _.zipWith(selection.nodes, positions, (node, position) => {
       return {node, position}
     })
     this.props.actions.nodesWithEdgesAdded(nodesWithPositions, selection.edges)

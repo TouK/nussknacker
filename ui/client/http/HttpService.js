@@ -1,17 +1,16 @@
 import {API_URL} from "../config"
 import React from "react"
 import FileSaver from "file-saver"
-import InlinedSvgs from "../assets/icons/InlinedSvgs"
 import api from "../api"
 import * as _ from "lodash"
 
-let notificationSystem = null
+let notificationActions = null
 let notificationReload = null
 
 //TODO: Move show information about error to another place. HttpService should avoid only action (get / post / etc..) - handling errors should be in another place.
 export default {
-  setNotificationSystem(ns) {
-    notificationSystem = ns
+  setNotificationActions(na) {
+    notificationActions = na
     if (notificationReload) {
       clearInterval(notificationReload)
     }
@@ -31,26 +30,14 @@ export default {
   },
 
   addInfo(message) {
-    if (notificationSystem) {
-      notificationSystem.addNotification({
-        message: message,
-        level: 'success',
-        children: (<div className="icon" title="" dangerouslySetInnerHTML={{__html: InlinedSvgs.tipsInfo}}/>),
-        autoDismiss: 5
-      })
+    if (notificationActions) {
+      notificationActions.info(message)
     }
   },
 
   addErrorMessage(message, error, showErrorText) {
-    const details = showErrorText && error ? (<div key="details" className="details">{error}</div>) : null
-    if (notificationSystem) {
-      notificationSystem.addNotification({
-        message: message,
-        level: 'error',
-        autoDismiss: 10,
-        children: [(<div className="icon" key="icon" title=""
-                         dangerouslySetInnerHTML={{__html: InlinedSvgs.tipsWarning}}/>), details]
-      })
+    if (notificationActions) {
+      notificationActions.error(message, error, showErrorText)
     }
   },
 
