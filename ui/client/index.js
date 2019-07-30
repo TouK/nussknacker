@@ -1,18 +1,18 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
-import {Provider} from 'react-redux';
+import React from 'react'
+import ReactDOM from 'react-dom'
+import {Provider} from 'react-redux'
 import {AppContainer} from 'react-hot-loader'
 import {Router} from 'react-router-dom'
-import configureStore from './store/configureStore';
+import configureStore from './store/configureStore'
 import Settings from './http/Settings'
-import EspApp from './containers/EspApp';
-import Modal from "react-modal";
+import EspApp from './containers/EspApp'
+import Modal from "react-modal"
 import history from "./history"
 
-import "./stylesheets/notifications.styl";
+import "./stylesheets/notifications.styl"
 
-import registerServiceWorker from './registerServiceWorker';
-import Notifications from "./containers/Notifications";
+import registerServiceWorker from './registerServiceWorker'
+import Notifications from "./containers/Notifications"
 
 const store = configureStore()
 Settings.updateSettings(store)
