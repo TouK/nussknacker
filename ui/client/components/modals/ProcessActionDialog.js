@@ -67,7 +67,7 @@ class ProcessActionDialog extends React.Component {
       >
         <p>{this.props.message} {this.props.processId}</p>
         <ProcessDialogWarnings processHasWarnings={this.props.processHasWarnings} />
-        <CommentInput onChange={this.onInputChange}/>
+        <CommentInput onChange={this.onInputChange} value={this.state.comment} />
       </GenericModalDialog>
     );
   }

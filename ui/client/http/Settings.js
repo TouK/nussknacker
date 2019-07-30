@@ -1,9 +1,12 @@
-import HttpService from './HttpService'
+import HttpService from "./HttpService"
+import User from "../common/models/User"
+import axios from "axios"
 
 export default {
-  //@TODO: Replace jquery ajax by axios and send two requests asynchronously
   updateSettings(store) {
-    HttpService.fetchSettings().then((settings) => store.dispatch({type: "UI_SETTINGS", settings: settings}))
-    HttpService.fetchLoggedUser().then((user) => store.dispatch({type: "LOGGED_USER", user: user }))
+    axios.all([HttpService.fetchSettings(), HttpService.fetchLoggedUser()]).then(axios.spread((settingsResponse, userResponse) => {
+      store.dispatch({type: "UI_SETTINGS", settings: settingsResponse.data})
+      store.dispatch({type: "LOGGED_USER", user: new User(userResponse.data)})
+    }))
   }
 }

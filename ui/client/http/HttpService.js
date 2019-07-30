@@ -1,39 +1,33 @@
-import $ from "jquery";
-import { API_URL } from "../config";
-import React from "react";
-import FileSaver from "file-saver";
-import InlinedSvgs from "../assets/icons/InlinedSvgs";
+import {API_URL} from "../config"
+import React from "react"
+import FileSaver from "file-saver"
+import InlinedSvgs from "../assets/icons/InlinedSvgs"
+import api from "../api"
+import * as _ from "lodash"
 
-if (process.env.NODE_ENV !== 'production') {
-  var user = "admin";
-  $.ajaxSetup({
-    headers: {
-      'Authorization': "Basic " + btoa(`${user}:${user}`)
-    }
-  });
-}
+let notificationSystem = null
+let notificationReload = null
 
+//TODO: Move show information about error to another place. HttpService should avoid only action (get / post / etc..) - handling errors should be in another place.
 export default {
-
   setNotificationSystem(ns) {
-    notificationSystem = ns;
+    notificationSystem = ns
     if (notificationReload) {
       clearInterval(notificationReload)
     }
     //TODO: configuration?
-    notificationReload = setInterval(() => this._loadNotifications(), 10000);
-
+    notificationReload = setInterval(() => this._loadNotifications(), 10000)
   },
 
   _loadNotifications() {
-    fetch( `${API_URL}/notifications`, {
+    fetch(`${API_URL}/notifications`, {
       method: 'GET',
       credentials: 'include'
     })
-    .then(response => response.json())
-    .then(notifications => notifications.forEach(notification => {
-      notification.type === "info" ? this.addInfo(notification.message) : this.addError(notification.message)
-    }))
+      .then(response => response.json())
+      .then(notifications => notifications.forEach(notification => {
+        notification.type === "info" ? this.addInfo(notification.message) : this.addError(notification.message)
+      }))
   },
 
   addInfo(message) {
@@ -41,50 +35,50 @@ export default {
       notificationSystem.addNotification({
         message: message,
         level: 'success',
-        children: (<div className="icon" title="" dangerouslySetInnerHTML={{__html: InlinedSvgs.tipsInfo}} />),
+        children: (<div className="icon" title="" dangerouslySetInnerHTML={{__html: InlinedSvgs.tipsInfo}}/>),
         autoDismiss: 5
       })
     }
   },
 
   addErrorMessage(message, error, showErrorText) {
-    const details = showErrorText && error ? (<div key="details" className="details">{error}</div>) : null;
+    const details = showErrorText && error ? (<div key="details" className="details">{error}</div>) : null
     if (notificationSystem) {
       notificationSystem.addNotification({
         message: message,
         level: 'error',
         autoDismiss: 10,
-        children: [(<div className="icon" key="icon" title="" dangerouslySetInnerHTML={{__html: InlinedSvgs.tipsWarning}}/>), details]
+        children: [(<div className="icon" key="icon" title=""
+                         dangerouslySetInnerHTML={{__html: InlinedSvgs.tipsWarning}}/>), details]
       })
     }
   },
 
   addError(message, error, showErrorText) {
-    console.log(error);
-    this.addErrorMessage(message, error.responseText, showErrorText);
+    console.warn(error)
+    const errorMessage = _.get(error, 'response.data') || error.message
+    this.addErrorMessage(message, errorMessage, showErrorText)
+    return Promise.resolve(error)
   },
 
   availableQueryableStates() {
-    return promiseWrap($.get(`${API_URL}/queryableState/list`))
+    return api.get("/queryableState/list")
   },
 
   queryState(processId, queryName, key) {
-    return promiseWrap($.get(`${API_URL}/queryableState/fetch`, {processId, queryName, key}))
-      .catch((error) => this.addError(`Cannot fetch state`, error));
-  },
-
-  fetchBuildInfo() {
-    return promiseWrap($.get(API_URL + '/app/buildInfo'))
+    const data = {processId, queryName, key}
+    return api.get("/queryableState/fetch", {params: data})
+      .catch(error => this.addError(`Cannot fetch state`, error))
   },
 
   fetchHealthCheck() {
-    return promiseWrap($.get(API_URL + '/app/healthCheck'))
+    return api.get("/app/healthCheck")
       .then(() => ({state: "ok"}))
-      .catch((error) => ({state: "error", error: error.responseText}))
+      .catch((error) => ({state: "error", error: error.response.data}))
   },
 
   fetchSettings() {
-    return promiseWrap($.get(API_URL + '/settings'))
+    return api.get("/settings")
   },
 
   fetchPlugins() {
@@ -96,97 +90,69 @@ export default {
   },
 
   fetchLoggedUser() {
-    return promiseWrap($.get(API_URL + '/user')).then((user) => ({
-      id: user.id,
-      categories: user.categories,
-      hasPermission(permission, category){
-        let permissions = user.categoryPermissions[category] || []
-        return category && permissions.includes(permission)
-      },
-      canRead(category){
-        return this.hasPermission("Read", category)
-      },
-      canDeploy(category){
-        return this.hasPermission("Deploy", category)
-      },
-      canWrite(category){
-        return this.hasPermission("Write", category)
-      },
-      isReader: user.permissions.includes("Read"),
-      isDeployer: user.permissions.includes("Deploy"),
-      isWriter: user.permissions.includes("Write"),
-      isAdmin: user.permissions.includes("Admin"),
-    }))
+    return api.get("/user")
   },
 
-  fetchProcessDefinitionData(processingType, isSubprocess, subprocessVersions) {
-    return ajaxCall({
-      url: `${API_URL}/processDefinitionData/${processingType}?isSubprocess=${isSubprocess}`,
-      type: 'POST',
-      data: JSON.stringify(subprocessVersions)
-    }).catch((error) => {
-      this.addError(`Cannot find chosen versions`, error, true)
-      return Promise.reject(error)
-    }).then((values => {
-      // This is a walk-around for having part of node template (branch parameters) outside of itself.
-      // See note in DefinitionPreparer on backend side. // TODO remove it after API refactor
-      values.nodesToAdd.forEach(nodeAggregates => {
-        nodeAggregates.possibleNodes.forEach(nodeToAdd => {
-          nodeToAdd.node.branchParametersTemplate = nodeToAdd.branchParametersTemplate
+  fetchProcessDefinitionData(processingType, isSubprocess, data) {
+    return api.post(`/processDefinitionData/${processingType}?isSubprocess=${isSubprocess}`, data)
+      .then((response => {
+        // This is a walk-around for having part of node template (branch parameters) outside of itself.
+        // See note in DefinitionPreparer on backend side. // TODO remove it after API refactor
+        response.data.nodesToAdd.forEach(nodeAggregates => {
+          nodeAggregates.possibleNodes.forEach(nodeToAdd => {
+            nodeToAdd.node.branchParametersTemplate = nodeToAdd.branchParametersTemplate
+          })
         })
-      })
-      return values;
-    }));
+
+        return response
+      }))
+      .catch((error) => this.addError(`Cannot find chosen versions`, error, true))
   },
 
   fetchComponentIds() {
-    return promiseWrap($.get(`${API_URL}/processDefinitionData/componentIds`))
+    return api.get("/processDefinitionData/componentIds")
   },
 
   fetchServices() {
-      return promiseWrap($.get(`${API_URL}/processDefinitionData/services`))
+    return api.get("/processDefinitionData/services")
   },
 
   fetchUnusedComponents() {
-    return promiseWrap($.get(`${API_URL}/app/unusedComponents`))
+    return api.get("/app/unusedComponents")
   },
 
   fetchProcessesComponents(componentId) {
-    return promiseWrap($.get(API_URL + '/processesComponents/' + encodeURIComponent(componentId)))
+    return api.get("/processesComponents/" + encodeURIComponent(componentId))
   },
 
   fetchProcesses(data) {
-    return promiseWrap($.get(API_URL + '/processes', data))
+    return api.get("/processes", {params: data})
   },
 
   fetchCustomProcesses() {
-    return promiseWrap($.get(API_URL + '/customProcesses'))
+    return api.get("/customProcesses")
   },
 
   fetchProcessDetails(processId, versionId, businessView) {
+    let url = versionId ? `/processes/${processId}/${versionId}` : `/processes/${processId}`
     const queryParams = this.businessViewQueryParams(businessView)
-    return versionId ?
-      promiseWrap($.get(API_URL + '/processes/' + processId + '/' + versionId, queryParams)) :
-      promiseWrap($.get(API_URL + '/processes/' + processId, queryParams))
+    return api.get(url, {params: queryParams})
   },
 
   fetchProcessesStatus() {
-    return promiseWrap($.get(API_URL + '/processes/status'))
-      .catch((error) => this.addError(`Cannot fetch statuses`, error));
+    return api.get("/processes/status")
+      .catch(error => this.addError(`Cannot fetch statuses`, error))
   },
 
   fetchSingleProcessStatus(processId) {
-    return promiseWrap($.get(API_URL + `/processes/${processId}/status`))
-      .catch((error) => this.addError(`Cannot fetch status`, error));
-
+    return api.get(`/processes/${processId}/status`)
+      .catch(error => this.addError(`Cannot fetch status`, error))
   },
 
   deploy(processId, comment) {
-    return fetch(API_URL + '/processManagement/deploy/' + processId, {
-      method: 'POST',
-      body: comment,
-      credentials: 'include'
-    }).then(response => {
+    const init = {method: 'POST', body: comment, credentials: 'include'}
+
+    return fetch(API_URL + '/processManagement/deploy/' + processId, init).then(response => {
       if (!response.ok) {
         throw Error(response.statusText)
       } else {
@@ -194,71 +160,48 @@ export default {
       }
     }).then(() => {
       this.addInfo(`Process ${processId} was deployed`)
-      return { isSuccess: true }
+      return {isSuccess: true}
     }).catch((error) => {
       this.addError(`Failed to deploy ${processId}`, error, true)
-      return { isSuccess: false }
-    });
+      return {isSuccess: false}
+    })
   },
-//TODO: separate reusable invocation.
+
   invokeService(processingType, serviceName, parameters) {
-    return fetch(`${API_URL}/service/${processingType}/${serviceName}`,
-      {
-        method: 'POST',
-        body: JSON.stringify(parameters),
-        credentials: 'include',
-        headers: new Headers({
-          'Content-Type': 'application/json'
-        })
-      }
-    )
+    return api.post(`/service/${processingType}/${serviceName}`, parameters)
   },
 
   stop(processId, comment) {
-    return fetch(API_URL + '/processManagement/cancel/' + processId,
-        {
-              method: 'POST',
-              body: comment,
-              credentials: 'include'
-        }
-      )
+    const init = {method: 'POST', body: comment, credentials: 'include'}
+
+    return fetch(API_URL + '/processManagement/cancel/' + processId, init)
       .then(() => this.addInfo(`Process ${processId} was stopped`))
-      .catch((error) => this.addError(`Failed to stop ${processId}`, error, true));
+      .catch(error => this.addError(`Failed to stop ${processId}`, error, true))
   },
 
   fetchProcessActivity(processId) {
-    return promiseWrap($.get(`${API_URL}/processes/${processId}/activity`))
+    return api.get(`/processes/${processId}/activity`)
   },
 
-  addComment(processId, versionId, comment) {
-    return ajaxCall({
-      url: `${API_URL}/processes/${processId}/${versionId}/activity/comments`,
-      type: 'POST',
-      data: comment
-    }).then(() => this.addInfo(`Comment added`))
-      .catch((error) => this.addError(`Failed to add comment`, error));
+  addComment(processId, versionId, data) {
+    return api.post(`/processes/${processId}/${versionId}/activity/comments`, data)
+      .then(() => this.addInfo(`Comment added`))
+      .catch(error => this.addError(`Failed to add comment`, error))
   },
 
   deleteComment(processId, commentId) {
-    return ajaxCall({
-      url: `${API_URL}/processes/${processId}/activity/comments/${commentId}`,
-      type: 'DELETE'
-    }).then(() => this.addInfo(`Comment deleted`))
-      .catch((error) => this.addError(`Failed to delete comment`, error));
+    return api.delete(`/processes/${processId}/activity/comments/${commentId}`)
+      .then(() => this.addInfo(`Comment deleted`))
+      .catch(error => this.addError(`Failed to delete comment`, error))
   },
 
   addAttachment(processId, versionId, file) {
-    var formData = new FormData();
-    formData.append("attachment", file)
+    let data = new FormData()
+    data.append("attachment", file)
 
-    return ajaxCallWithoutContentType({
-      url: `${API_URL}/processes/${processId}/${versionId}/activity/attachments`,
-      type: 'POST',
-      processData: false,
-      contentType: false,
-      data: formData
-    }).then(() => this.addInfo(`Attachment added`))
-      .catch((error) => this.addError(`Failed to add attachment`, error));
+    return api.post(`/processes/${processId}/${versionId}/activity/attachments`, data)
+      .then(() => this.addInfo(`Attachment added`))
+      .catch(error => this.addError(`Failed to add attachment`, error))
   },
 
   downloadAttachment(processId, processVersionId, attachmentId) {
@@ -266,232 +209,152 @@ export default {
   },
 
   changeProcessName(processName, newProcessName) {
-    if (!_.isEmpty(newProcessName)) {
-      return ajaxCall({
-        url: `${API_URL}/processes/${processName}/rename/${newProcessName}`,
-        type: 'PUT'
-      }).then(
-        () => { this.addInfo("Process name changed"); return true },
-        (error) => { this.addError("Failed to change process name:", error, true); return false; }
-      );
-    } else {
-      this.addErrorMessage("Failed to change process name:", "Name cannot be empty", true);
-      return Promise.resolve(false);
+    if (newProcessName == null || newProcessName === "") {
+      this.addErrorMessage("Failed to change process name:", "Name cannot be empty", true)
+      return Promise.resolve(false)
     }
+
+    return api.put(`/processes/${processName}/rename/${newProcessName}`)
+      .then(() => {
+        this.addInfo("Process name changed")
+        return true
+      })
+      .catch((error) => {
+        this.addError("Failed to change process name:", error, true)
+        return false
+      })
   },
 
   exportProcess(process, versionId) {
-    const url = `${API_URL}/processesExport`
-    fetch(url,
-      {
-          method: 'POST',
-          body: JSON.stringify(process),
-          credentials: 'include',
-          headers: new Headers({
-              'Content-Type': 'application/json'
-          })
-      }
-    ).then((response) => response.blob()).then((blob) => {
-      FileSaver.saveAs(blob, `${process.id}-${versionId}.json`);
-    }).catch((error) => this.addError(`Failed to export`, error));
+    const init = {
+      method: 'POST',
+      body: JSON.stringify(process),
+      credentials: 'include',
+      headers: new Headers({
+        'Content-Type': 'application/json'
+      })
+    }
+
+    return fetch(`${API_URL}/processesExport`, init)
+      .then((response) => response.blob())
+      .then((blob) => {
+        FileSaver.saveAs(blob, `${process.id}-${versionId}.json`)
+      })
+      .catch(error => this.addError(`Failed to export`, error))
   },
 
   exportProcessToPdf(processId, versionId, data, businessView) {
+    const init = {method: 'POST', body: data, credentials: 'include'}
     const url = `${API_URL}/processesExport/pdf/${processId}/${versionId}`
     const queryParams = this.businessViewQueryParams(businessView)
-    fetch(queryParams ? `${url}?${queryParams}` : url,
-      {
-          method: 'POST',
-          body: data,
-          credentials: 'include'
-      }
-    ).then((response) => response.blob()).then((blob) => {
-      FileSaver.saveAs(blob, `${processId}-${versionId}.pdf`);
-    }).catch((error) => this.addError(`Failed to export`, error));
+
+    return fetch(queryParams ? `${url}?${queryParams}` : url, init)
+      .then((response) => response.blob())
+      .then((blob) => {
+        FileSaver.saveAs(blob, `${processId}-${versionId}.pdf`)
+      })
+      .catch(error => this.addError(`Failed to export`, error))
   },
 
   validateProcess(process) {
-    return ajaxCall({
-      url: API_URL + '/processValidation',
-      type: 'POST',
-      data: JSON.stringify(process)
-    }).catch(error => {
-      this.addError(`Fatal validation error, cannot save`, error, true)
-      return Promise.reject(error)
-    })
+    return api.post("/processValidation", process)
+      .catch(error => this.addError(`Fatal validation error, cannot save`, error, true))
   },
 
   getTestCapabilities(process) {
-    return ajaxCall({
-      url: API_URL + '/testInfo/capabilities',
-      type: 'POST',
-      data: JSON.stringify(process)
-    });
+    return api.post("/testInfo/capabilities", {params: process})
+      .catch(error => this.addError(`Failed to get capabilities`, error, true))
   },
 
   generateTestData(processId, testSampleSize, processJson) {
-    return fetch(`${API_URL}/testInfo/generate/${testSampleSize}`,
-      {
-          method: 'POST',
-          body: JSON.stringify(processJson),
-          credentials: 'include',
-          headers: new Headers({
-        		'Content-Type': 'application/json'
-          })
-      }
-    ).then((response) => response.blob()).then((blob) => {
-      FileSaver.saveAs(blob, `${processId}-testData`);
-    }).catch((error) => this.addError(`Failed to generate test data`, error));
+    const init = {
+      method: 'POST',
+      body: JSON.stringify(processJson),
+      credentials: 'include',
+      headers: new Headers({
+        'Content-Type': 'application/json'
+      })
+    }
+
+    return fetch(`${API_URL}/testInfo/generate/${testSampleSize}`, init)
+      .then((response) => response.blob()).then((blob) => {
+        FileSaver.saveAs(blob, `${processId}-testData`)
+      })
+      .catch(error => this.addError(`Failed to generate test data`, error))
   },
 
   fetchProcessCounts(processId, dateFrom, dateTo) {
-    return ajaxCall({
-      url: API_URL + '/processCounts/' + processId,
-      type: 'GET',
-      data: { dateFrom: dateFrom, dateTo: dateTo }
-    }).catch(error => {
-      this.addError(`Cannot fetch process counts`, error, true);
-      return Promise.reject(error)
-    })
+    const data = {dateFrom: dateFrom, dateTo: dateTo}
+
+    return api.get(`/processCounts/${processId}`, {params: data})
+      .catch(error => this.addError(`Cannot fetch process counts`, error, true))
   },
 
   saveProcess(processId, processJson, comment) {
-    const processToSave = {process: processJson, comment: comment}
-    return ajaxCall({
-      url: `${API_URL}/processes/${processId}`,
-      type: 'PUT',
-      data: JSON.stringify(processToSave)
-    })
+    const data = {process: processJson, comment: comment}
+    return api.put(`/processes/${processId}`, data)
       .then(() => this.addInfo(`Process ${processId} was saved`))
-      .catch((error) => {
-        this.addError(`Failed to save`, error, true);
-        return Promise.reject(error)
-      });
+      .catch(error => this.addError(`Failed to save`, error, true))
   },
 
   archiveProcess(processId) {
-    return ajaxCall({
-      url: `${API_URL}/archive/${processId}`,
-      type: 'POST',
-      data: JSON.stringify({isArchived:true})
-    })
-  },
-  createProcess(processId, processCategory, callback, isSubprocess) {
-    return ajaxCall({
-      url: `${API_URL}/processes/${processId}/${processCategory}?isSubprocess=${isSubprocess}`,
-      type: 'POST'
-    }).then(callback, (error) => {
-      this.addError(`Failed to create process:`, error, true);
-    })
+    return api.post(`/archive/${processId}`, {isArchived: true})
+      .catch(error => this.addError(`Failed to archive process`, error, true))
   },
 
-  importProcess(processId, file, callback, errorCallback) {
-    var formData = new FormData();
-    formData.append("process", file)
+  createProcess(processId, processCategory, isSubprocess) {
+    return api.post(`/processes/${processId}/${processCategory}?isSubprocess=${isSubprocess}`)
+      .catch(error => this.addError(`Failed to create process:`, error, true))
+  },
 
-    return ajaxCallWithoutContentType({
-      url: API_URL + '/processes/import/' + processId,
-      type: 'POST',
-      processData: false,
-      contentType: false,
-      data: formData
-    }).then(callback, (error) => {
-      this.addError(`Failed to import`, error, true);
-      if (errorCallback) {
-        errorCallback(error)
-      }
-    });
+  importProcess(processId, file) {
+    const data = new FormData()
+    data.append("process", file)
+
+    return api.post(`/processes/import/${processId}`, data)
+      .catch(error => this.addError(`Failed to import`, error, true))
   },
 
   testProcess(processId, file, processJson, callback, errorCallback) {
-    var formData = new FormData();
-    formData.append("testData", file)
-    formData.append("processJson", new Blob([JSON.stringify(processJson)], {type : 'application/json'}))
+    let data = new FormData()
+    data.append("testData", file)
+    data.append("processJson", new Blob([JSON.stringify(processJson)], {type: 'application/json'}))
 
-    return ajaxCallWithoutContentType({
-      url: API_URL + '/processManagement/test/' + processId,
-      type: 'POST',
-      processData: false,
-      contentType: false,
-      data: formData
-    }).then(callback, (error) => {
-      this.addError(`Failed to test`, error, true);
-      if (errorCallback) {
-        errorCallback(error)
-      }
-    });
+    return api.post(`/processManagement/test/${processId}`, data)
+      .catch(error => this.addError(`Failed to test`, error, true))
   },
 
   compareProcesses(processId, thisVersion, otherVersion, businessView, remoteEnv) {
     const queryParams = this.businessViewQueryParams(businessView)
-
     const path = remoteEnv ? 'remoteEnvironment' : 'processes'
-    return ajaxCall({
-      url: `${API_URL}/${path}/${processId}/${thisVersion}/compare/${otherVersion}`,
-      type: 'GET',
-      data: queryParams
-    }).catch(error => {
-      this.addError(`Cannot compare processes`, error, true);
-      return Promise.reject(error)
-    })
+
+    return api.get(`/${path}/${processId}/${thisVersion}/compare/${otherVersion}`, {params: queryParams})
+      .catch(error => this.addError(`Cannot compare processes`, error, true))
   },
 
   fetchRemoteVersions(processId) {
-    return ajaxCall({
-      url: `${API_URL}/remoteEnvironment/${processId}/versions`,
-      type: 'GET',
-    }).catch((error) => this.addError(`Failed to get versions from second environment`, error));
+    return api.get(`/remoteEnvironment/${processId}/versions`)
+      .catch(error => this.addError(`Failed to get versions from second environment`, error))
   },
 
   migrateProcess(processId, versionId) {
-    return ajaxCall({
-      url: `${API_URL}/remoteEnvironment/${processId}/${versionId}/migrate`,
-      type: 'POST',
-    })
+    return api.post(`/remoteEnvironment/${processId}/${versionId}/migrate`)
       .then(() => this.addInfo(`Process ${processId} was migrated`))
-      .catch((error) => this.addError(`Failed to migrate`, error, true));
+      .catch(error => this.addError(`Failed to migrate`, error, true))
   },
 
   fetchSignals() {
-    return ajaxCall({
-      url: `${API_URL}/signal`,
-      type: 'GET',
-    }).catch((error) => this.addError(`Failed to fetch signals`, error));
+    return api.get("/signal")
+      .catch(error => this.addError(`Failed to fetch signals`, error))
   },
 
   sendSignal(signalType, processId, params) {
-    return ajaxCall({
-      url: `${API_URL}/signal/${signalType}/${processId}`,
-      type: 'POST',
-      data: JSON.stringify(params)
-    }).then(() => this.addInfo(`Signal send`))
-      .catch((error) => this.addError(`Failed to send signal`, error));
+    return api.post(`/signal/${signalType}/${processId}`, params)
+      .then(() => this.addInfo(`Signal send`))
+      .catch(error => this.addError(`Failed to send signal`, error))
   },
 
   businessViewQueryParams(businessView) {
-    return businessView ? $.param({businessView}) : {}
+    return businessView ? {businessView} : {}
   }
-}
-
-
-var ajaxCall = (opts) => {
-  var requestOpts = {
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    ...opts
-  }
-  return ajaxCallWithoutContentType(requestOpts)
-}
-
-var ajaxCallWithoutContentType = (opts) => promiseWrap($.ajax(opts))
-
-var notificationSystem = null;
-
-var notificationReload = null;
-
-var promiseWrap = (plainAjaxCall) => {
-  return new Promise((resolve, reject) => {
-    plainAjaxCall.done(resolve).fail(reject)
-  })
 }

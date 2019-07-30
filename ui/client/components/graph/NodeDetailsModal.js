@@ -48,10 +48,9 @@ class NodeDetailsModal extends React.Component {
     if (props.nodeToDisplay && props.showNodeDetailsModal && (NodeUtils.nodeType(props.nodeToDisplay) === "SubprocessInput")) {
       if (isChrome) { //Subprocesses work only on chrome, there is problem with jonint and SVG
         const subprocessVersion = props.subprocessVersions[props.nodeToDisplay.ref.id]
-        HttpService.fetchProcessDetails(props.nodeToDisplay.ref.id, subprocessVersion, this.props.businessView)
-          .then((processDetails) =>
-            this.setState({...newState, subprocessContent: processDetails.json})
-          )
+        HttpService.fetchProcessDetails(props.nodeToDisplay.ref.id, subprocessVersion, this.props.businessView).then((response) =>
+          this.setState({...newState, subprocessContent: response.data.json})
+        )
       } else {
         console.warn("Displaying subprocesses is available only at Chrome.")
       }

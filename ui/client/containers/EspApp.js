@@ -1,25 +1,24 @@
-import React from "react";
-
+import React from "react"
 import {NavLink, Route, Switch, withRouter, matchPath} from 'react-router-dom'
 import {hot} from 'react-hot-loader'
-import _ from "lodash";
-import Processes from "./Processes";
-import SubProcesses from "./SubProcesses";
-import NotFound from "./NotFound";
+import _ from "lodash"
+import Processes from "./Processes"
+import SubProcesses from "./SubProcesses"
+import NotFound from "./errors/NotFound"
 
-import {CSSTransition, TransitionGroup} from "react-transition-group";
-import Metrics from "./Metrics";
-import Search from "./Search";
-import Signals from "./Signals";
-import AdminPage from "./AdminPage";
-import DragArea from "../components/DragArea";
-import {connect} from "react-redux";
-import ActionsUtils from "../actions/ActionsUtils";
-import Dialogs from "../components/modals/Dialogs";
+import {CSSTransition, TransitionGroup} from "react-transition-group"
+import Metrics from "./Metrics"
+import Search from "./Search"
+import Signals from "./Signals"
+import AdminPage from "./AdminPage"
+import DragArea from "../components/DragArea"
+import {connect} from "react-redux"
+import ActionsUtils from "../actions/ActionsUtils"
+import Dialogs from "../components/modals/Dialogs"
 import * as VisualizationUrl from '../common/VisualizationUrl'
-import Archive from "./Archive";
-import Visualization from "./Visualization";
 import PluginManager from "../common/PluginManager"
+import Archive from "./Archive"
+import Visualization from "./Visualization"
 
 import 'bootstrap/dist/css/bootstrap.css'
 import '../stylesheets/mainMenu.styl'
@@ -27,6 +26,8 @@ import '../assets/fonts/fonts.less'
 import '../stylesheets/main.styl'
 import '../app.styl'
 import HttpService from "../http/HttpService";
+import ErrorHandler from "./ErrorHandler"
+
 
 class EspApp extends React.Component {
 
@@ -59,7 +60,7 @@ class EspApp extends React.Component {
 
   goToProcess = () => {
     const match = this.getMetricsMatch()
-    this.props.history.push(VisualizationUrl.visualizationUrl(Processes.path, match.params.processId))
+    this.props.history.push(VisualizationUrl.visualizationUrl(match.params.processId))
   }
 
   renderTopLeftButton() {
@@ -76,10 +77,11 @@ class EspApp extends React.Component {
 
   environmentAlert(params) {
     if (params && params.content)
-      return (<span className="navbar-brand vert-middle ">
-        <span className={"indicator "+ params.cssClass}>{params.content}</span>
-      </span>
-    );
+      return (
+        <span className="navbar-brand vert-middle ">
+          <span className={"indicator " + params.cssClass}>{params.content}</span>
+        </span>
+      )
   }
 
   render() {
@@ -101,15 +103,23 @@ class EspApp extends React.Component {
               <ul id="menu-items" className="nav navbar-nav navbar-right nav-pills nav-stacked">
                 <li><NavLink to={Processes.path}>{Processes.header}</NavLink></li>
                 <li><NavLink to={SubProcesses.path}>{SubProcesses.header}</NavLink></li>
-                {!_.isEmpty(this.props.featuresSettings.metrics) ?
-                  <li><NavLink to={Metrics.basePath}>{Metrics.header}</NavLink></li> : null}
-                {!_.isEmpty(this.props.featuresSettings.search) ?
-                  <li><NavLink to={Search.path}>{Search.header}</NavLink></li> : null }
-                {this.props.featuresSettings.signals ?
-                  <li><NavLink to={Signals.path}>{Signals.header}</NavLink></li> : null }
+                {
+                  !_.isEmpty(this.props.featuresSettings.metrics) ?
+                    <li><NavLink to={Metrics.basePath}>{Metrics.header}</NavLink></li> : null
+                }
+                {
+                  !_.isEmpty(this.props.featuresSettings.search) ?
+                    <li><NavLink to={Search.path}>{Search.header}</NavLink></li> : null
+                }
+                {
+                  this.props.featuresSettings.signals ?
+                    <li><NavLink to={Signals.path}>{Signals.header}</NavLink></li> : null
+                }
                 <li><NavLink to={Archive.path}>{Archive.header}</NavLink></li>
-                {this.props.loggedUser.isAdmin ?
-                  <li><NavLink to={AdminPage.path}>{AdminPage.header}</NavLink></li> : null}
+                {
+                  this.props.loggedUser.isAdmin ?
+                    <li><NavLink to={AdminPage.path}>{AdminPage.header}</NavLink></li> : null
+                }
               </ul>
             </div>
           </div>
@@ -118,39 +128,26 @@ class EspApp extends React.Component {
           <DragArea>
             <AllDialogs/>
             <div id="working-area" className={this.props.leftPanelIsOpened ? 'is-opened' : null}>
-              <Route path={EspApp.path} render={({ location }) => (
-                <TransitionGroup>
-                  <CSSTransition key={location.pathname} classNames="fade" timeout={{ enter: 300, exit: 300 }} >
-                    <Switch location={location}>
-                      <Route path={SubProcesses.path} render={() => (
-                        <Switch>
-                          <Route path={SubProcesses.path + '/:processId'} component={Visualization} />
-                          <Route exact component={SubProcesses} />
-                        </Switch>
-                      )} />
-                      <Route path={Archive.path} render={() => (
-                        <Switch>
-                          <Route path={Archive.path + '/:processId'} component={Visualization} />
-                          <Route exact component={Archive} />
-                        </Switch>
-                      )} />
-                      <Route path={Processes.path} render={() => (
-                        <Switch>
-                          <Route path={Processes.path + '/:processId'} component={Visualization} />
-                          <Route exact component={Processes} />
-                        </Switch>
-                      )} />
-                      <Route path={Visualization.path} component={Visualization} />
-                      <Route path={Metrics.path} component={Metrics} />
-                      <Route path={Search.path} component={Search} />
-                      <Route path={Signals.path} component={Signals} />
-                      <Route path={AdminPage.path} component={AdminPage} />
-                      <Route path={EspApp.path} component={Processes} exact />
-                      <Route component={NotFound} />
+              <ErrorHandler>
+                <Route path={EspApp.path} render={({location}) => (
+                  <TransitionGroup>
+                    <CSSTransition key={location.pathname} classNames="fade" timeout={{enter: 300, exit: 300}}>
+                      <Switch location={location}>
+                        <Route path={SubProcesses.path} component={SubProcesses} exact/>
+                        <Route path={Archive.path} component={Archive} exact/>
+                        <Route path={Processes.path} component={Processes} exact/>
+                        <Route path={Visualization.path} component={Visualization} exact/>
+                        <Route path={Metrics.path} component={Metrics} exact/>
+                        <Route path={Search.path} component={Search} exact/>
+                        <Route path={Signals.path} component={Signals} exact/>
+                        <Route path={AdminPage.path} component={AdminPage} exact/>
+                        <Route path={EspApp.path} component={Processes} exact/>
+                        <Route component={NotFound}/>
                       </Switch>
                     </CSSTransition>
                   </TransitionGroup>
-              )}/>
+                )}/>
+              </ErrorHandler>
             </div>
           </DragArea>
         </main>
@@ -166,10 +163,10 @@ function mapState(state) {
     featuresSettings: state.settings.featuresSettings,
     loggedUser: loggedUser,
     resolved: !_.isEmpty(loggedUser)
-  };
+  }
 }
 
 EspApp.path = '/'
 EspApp.header = 'ESP'
 
-export default hot(module)(withRouter(connect(mapState, ActionsUtils.mapDispatchWithEspActions)(EspApp)));
+export default hot(module)(withRouter(connect(mapState, ActionsUtils.mapDispatchWithEspActions)(EspApp)))

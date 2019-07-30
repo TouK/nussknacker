@@ -31,6 +31,6 @@ ReactDOM.render(
     </Provider>
   </AppContainer>,
   document.getElementById('root')
-);
+)
 
 registerServiceWorker()

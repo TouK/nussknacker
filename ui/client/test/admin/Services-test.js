@@ -1,17 +1,20 @@
-import {mapProcessDefinitionToServices} from "../containers/AdminPage";
+import {mapProcessDefinitionToServices} from "../../containers/admin/Services"
 
 
 describe("translating process structure to services", () => {
-  it("should work for real data", () => {                                    
+
+  it("should work for real data", () => {
     expect(mapProcessDefinitionToServices(bigInput)).toEqual(bigResult)
-  });
+  })
+
   it("translate serviceless processing types to empty array", () => {
     let input = {
       processingType1: {},
       processingType2: {}
-    };
+    }
     expect(mapProcessDefinitionToServices(input)).toEqual([])
-  });
+  })
+
   it("translate simplest possible service definitoin", () => {
     let input = {
       "streaming": {
@@ -23,7 +26,8 @@ describe("translating process structure to services", () => {
           "categories": []
         },
       }
-    };
+    }
+
     expect(mapProcessDefinitionToServices(input)).toEqual([
       {
         "name": "service1",
@@ -33,7 +37,8 @@ describe("translating process structure to services", () => {
         "processingType": "streaming"
       }
     ])
-  });
+  })
+
   it("map categories", () => {
     let input = {
       "streaming": {
@@ -45,7 +50,7 @@ describe("translating process structure to services", () => {
           "categories": ["category1"]
         },
       }
-    };
+    }
     expect(mapProcessDefinitionToServices(input)).toEqual([
       {
         "name": "service1",
@@ -55,7 +60,8 @@ describe("translating process structure to services", () => {
         "processingType": "streaming"
       }
     ])
-  });
+  })
+
   it("map parameters", () => {
     let input = {
       "streaming": {
@@ -74,7 +80,7 @@ describe("translating process structure to services", () => {
           "categories": []
         },
       }
-    };
+    }
     expect(mapProcessDefinitionToServices(input)).toEqual([
       {
         "name": "service1",
@@ -89,7 +95,8 @@ describe("translating process structure to services", () => {
         "processingType": "streaming"
       }
     ])
-  });
+  })
+
   let bigInput = {
     "streaming": {
       "accountService": {
@@ -246,6 +253,7 @@ describe("translating process structure to services", () => {
       }
     }
   }
+
   let bigResult = [
     {
       "name": "accountService",
