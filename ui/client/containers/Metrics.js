@@ -7,7 +7,7 @@ import {withRouter} from "react-router"
 class Metrics extends React.Component {
 
   static propTypes = {
-      settings: PropTypes.object.isRequired,
+    settings: PropTypes.object.isRequired,
   }
 
   constructor(props, context) {

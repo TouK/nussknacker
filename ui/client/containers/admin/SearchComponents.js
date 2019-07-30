@@ -10,7 +10,7 @@ import LoaderSpinner from "../../components/Spinner"
 import BaseAdminTab from "./BaseAdminTab"
 import axios from "axios"
 
-class SearchComponents extends BaseAdminTab  {
+class SearchComponents extends BaseAdminTab {
   constructor(props) {
     super(props)
 
@@ -19,7 +19,7 @@ class SearchComponents extends BaseAdminTab  {
     this.state = Object.assign({
       componentToFind: query.componentToFind,
       processesComponents: [],
-      componentIds:[]
+      componentIds: []
     }, this.prepareState(), {showLoader: false})
   }
 
@@ -75,7 +75,7 @@ class SearchComponents extends BaseAdminTab  {
           </span>
         </div>
 
-        <LoaderSpinner show={this.state.showLoader} />
+        <LoaderSpinner show={this.state.showLoader}/>
 
         <Table
           className="esp-table"
@@ -111,7 +111,7 @@ class SearchComponents extends BaseAdminTab  {
                   </Td>
                   <Td column="processCategory">{row.processCategory}</Td>
                   <Td column="isDeployed" className="centered-column">
-                    <div className={row.isDeployed ? "status-running" : null} />
+                    <div className={row.isDeployed ? "status-running" : null}/>
                   </Td>
                 </Tr>
               )

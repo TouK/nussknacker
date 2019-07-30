@@ -9,7 +9,7 @@ import HttpService from "../../http/HttpService"
 import * as JsonUtils from "../../common/JsonUtils"
 import BaseAdminTab from "./BaseAdminTab"
 
-class Services extends BaseAdminTab  {
+class Services extends BaseAdminTab {
 
   jsonTreeTheme = {
     label: {
@@ -35,13 +35,13 @@ class Services extends BaseAdminTab  {
     }
   }
 
-  componentDidMount(){
+  componentDidMount() {
     HttpService.fetchServices().then(response => {
       this.setState({services: mapProcessDefinitionToServices(response.data)})
     })
   }
 
-  setService(idx){
+  setService(idx) {
     const service = this.state.services[idx]
     const cachedParams = this.cachedServiceParams(service.name, service.processingType)
 
@@ -60,7 +60,7 @@ class Services extends BaseAdminTab  {
         processingType: service.processingType,
         serviceName: service.name,
         nodeParameters: service.parameters,
-        parametersValues: initializeParametersValues(service.parameters||[]),
+        parametersValues: initializeParametersValues(service.parameters || []),
         queryResult: {
           response: {},
           errorMessage: null
@@ -71,7 +71,7 @@ class Services extends BaseAdminTab  {
   serviceList() {
     return (
       <select className="node-input" onChange={e => this.setService(e.target.value)}>
-        { this.state.services.map((service, idx) => <option key={idx} value={idx}>{service.name}</option>) }
+        {this.state.services.map((service, idx) => <option key={idx} value={idx}>{service.name}</option>)}
       </select>
     )
   }
@@ -89,7 +89,8 @@ class Services extends BaseAdminTab  {
         {_.map(params, (param) =>
           this.formRow(
             "param_" + param.name,
-            <span>{param.name}<div className="labelFooter">{ProcessUtils.humanReadableType(param.refClazzName)}</div></span>,
+            <span>{param.name}
+              <div className="labelFooter">{ProcessUtils.humanReadableType(param.refClazzName)}</div></span>,
             <span>
               <input
                 className="node-input"
@@ -133,7 +134,7 @@ class Services extends BaseAdminTab  {
   }
 
   findParamExpression(name) {
-    const param =  _.find(this.state.parametersValues, p => p.name===name)
+    const param = _.find(this.state.parametersValues, p => p.name === name)
     return _.get(param, "expression.expression")
   }
 
@@ -155,18 +156,21 @@ class Services extends BaseAdminTab  {
             {this.formRow("serviceName", "Service name", this.serviceList(this.state.services))}
             {this.formRow("processingType", "Process type", readonly(this.state.processingType))}
             {this.parametersList(this.state.nodeParameters)}
-            <button type="button" className="big-blue-button input-group" onClick={e => this.invokeService()}>INVOKE SERVICE</button>
+            <button type="button" className="big-blue-button input-group" onClick={e => this.invokeService()}>INVOKE
+              SERVICE
+            </button>
           </div>
         </div>
         <div className="queryServiceResults">
-        {
-          !_.isEmpty(this.state.queryResult.response) ? [
-            this.prettyPrint("serviceResult", this.state.queryResult.response.result, "Service result"),
-            <hr key="separator"/>,
-            this.prettyPrint("collectedResults", JsonUtils.removeEmptyProperties(this.state.queryResult.response.collectedResults), "Collected results")
-          ] : null
-        }
-        { this.state.queryResult.errorMessage ? <p className={"alert alert-danger"}>{this.state.queryResult.errorMessage}</p> : null }
+          {
+            !_.isEmpty(this.state.queryResult.response) ? [
+              this.prettyPrint("serviceResult", this.state.queryResult.response.result, "Service result"),
+              <hr key="separator"/>,
+              this.prettyPrint("collectedResults", JsonUtils.removeEmptyProperties(this.state.queryResult.response.collectedResults), "Collected results")
+            ] : null
+          }
+          {this.state.queryResult.errorMessage ?
+            <p className={"alert alert-danger"}>{this.state.queryResult.errorMessage}</p> : null}
         </div>
       </div>
     )

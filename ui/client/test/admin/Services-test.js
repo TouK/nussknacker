@@ -2,8 +2,8 @@ import {mapProcessDefinitionToServices} from "../../containers/admin/Services"
 
 
 describe("translating process structure to services", () => {
-  
-  it("should work for real data", () => {                                    
+
+  it("should work for real data", () => {
     expect(mapProcessDefinitionToServices(bigInput)).toEqual(bigResult)
   })
 
@@ -27,7 +27,7 @@ describe("translating process structure to services", () => {
         },
       }
     }
-    
+
     expect(mapProcessDefinitionToServices(input)).toEqual([
       {
         "name": "service1",
@@ -253,7 +253,7 @@ describe("translating process structure to services", () => {
       }
     }
   }
-  
+
   let bigResult = [
     {
       "name": "accountService",

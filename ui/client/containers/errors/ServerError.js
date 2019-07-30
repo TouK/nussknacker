@@ -9,11 +9,11 @@ class ServerError extends React.Component {
         <h1>Oops!</h1>
         <h2>{this.props.message || "Internal Server Error"}</h2>
         <div className="error-details">
-          <br />
+          <br/>
           <p>
-          {
-            this.props.description || "An unexpected error seems to have occurred. Why not try refreshing your page? Or you can contact with administrators."
-          }
+            {
+              this.props.description || "An unexpected error seems to have occurred. Why not try refreshing your page? Or you can contact with administrators."
+            }
           </p>
         </div>
       </div>

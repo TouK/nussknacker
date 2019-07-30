@@ -89,21 +89,19 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
     const query = _.pick(queryString.parse(window.location.search), this.searchItems || [])
     const data = Object.assign(query, search, this.queries || {})
 
-    console.log("DATA", data)
-
-    HttpService.fetchProcesses(data).then (response => {
+    HttpService.fetchProcesses(data).then(response => {
       if (!this.state.showAddProcess) {
         this.setState({processes: response.data, showLoader: false})
       }
-    }).catch(() => this.setState({ showLoader: false }))
+    }).catch(() => this.setState({showLoader: false}))
   }
 
   reloadStatuses() {
-    HttpService.fetchProcessesStatus().then (response => {
+    HttpService.fetchProcessesStatus().then(response => {
       if (!this.state.showAddProcess) {
-        this.setState({ statuses: response.data, showLoader: false, statusesLoaded: true })
+        this.setState({statuses: response.data, showLoader: false, statusesLoaded: true})
       }
-    }).catch(() => this.setState({ showLoader: false }))
+    }).catch(() => this.setState({showLoader: false}))
   }
 
   retrieveSelectedCategories(data) {
@@ -150,7 +148,7 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
     history.push('/metrics/' + process.name)
   }
 
-  showProcess = (path, process) => {
+  showProcess = (process) => {
     history.push(VisualizationUrl.visualizationUrl(process.name))
   }
 

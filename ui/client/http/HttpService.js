@@ -20,14 +20,14 @@ export default {
   },
 
   _loadNotifications() {
-    fetch( `${API_URL}/notifications`, {
+    fetch(`${API_URL}/notifications`, {
       method: 'GET',
       credentials: 'include'
     })
-    .then(response => response.json())
-    .then(notifications => notifications.forEach(notification => {
-      notification.type === "info" ? this.addInfo(notification.message) : this.addError(notification.message)
-    }))
+      .then(response => response.json())
+      .then(notifications => notifications.forEach(notification => {
+        notification.type === "info" ? this.addInfo(notification.message) : this.addError(notification.message)
+      }))
   },
 
   addInfo(message) {
@@ -35,7 +35,7 @@ export default {
       notificationSystem.addNotification({
         message: message,
         level: 'success',
-        children: (<div className="icon" title="" dangerouslySetInnerHTML={{__html: InlinedSvgs.tipsInfo}} />),
+        children: (<div className="icon" title="" dangerouslySetInnerHTML={{__html: InlinedSvgs.tipsInfo}}/>),
         autoDismiss: 5
       })
     }
@@ -48,7 +48,8 @@ export default {
         message: message,
         level: 'error',
         autoDismiss: 10,
-        children: [(<div className="icon" key="icon" title="" dangerouslySetInnerHTML={{__html: InlinedSvgs.tipsWarning}}/>), details]
+        children: [(<div className="icon" key="icon" title=""
+                         dangerouslySetInnerHTML={{__html: InlinedSvgs.tipsWarning}}/>), details]
       })
     }
   },
@@ -125,7 +126,7 @@ export default {
   },
 
   fetchProcessDetails(processId, versionId, businessView) {
-    let url =  versionId ? `/processes/${processId}/${versionId}` : `/processes/${processId}`
+    let url = versionId ? `/processes/${processId}/${versionId}` : `/processes/${processId}`
     const queryParams = this.businessViewQueryParams(businessView)
     return api.get(url, {params: queryParams})
   },
@@ -151,10 +152,10 @@ export default {
       }
     }).then(() => {
       this.addInfo(`Process ${processId} was deployed`)
-      return { isSuccess: true }
+      return {isSuccess: true}
     }).catch((error) => {
       this.addError(`Failed to deploy ${processId}`, error, true)
-      return { isSuccess: false }
+      return {isSuccess: false}
     })
   },
 
@@ -275,7 +276,7 @@ export default {
   },
 
   fetchProcessCounts(processId, dateFrom, dateTo) {
-    const data = { dateFrom: dateFrom, dateTo: dateTo }
+    const data = {dateFrom: dateFrom, dateTo: dateTo}
 
     return api.get(`/processCounts/${processId}`, {params: data})
       .catch(error => this.addError(`Cannot fetch process counts`, error, true))
@@ -289,7 +290,7 @@ export default {
   },
 
   archiveProcess(processId) {
-    return api.post(`/archive/${processId}`, {isArchived:true})
+    return api.post(`/archive/${processId}`, {isArchived: true})
       .catch(error => this.addError(`Failed to archive process`, error, true))
   },
 
@@ -309,7 +310,7 @@ export default {
   testProcess(processId, file, processJson, callback, errorCallback) {
     let data = new FormData()
     data.append("testData", file)
-    data.append("processJson", new Blob([JSON.stringify(processJson)], {type : 'application/json'}))
+    data.append("processJson", new Blob([JSON.stringify(processJson)], {type: 'application/json'}))
 
     return api.post(`/processManagement/test/${processId}`, data)
       .catch(error => this.addError(`Failed to test`, error, true))

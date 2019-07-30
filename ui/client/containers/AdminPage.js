@@ -35,18 +35,18 @@ class AdminPage extends React.Component {
   render() {
     return (
       <div className="Page">
-        <Tabs defaultIndex={this.state.selectedTab} onSelect={this.onTabChange} >
+        <Tabs defaultIndex={this.state.selectedTab} onSelect={this.onTabChange}>
           <TabList>
-          {
-            this.tabs.map(tab => {
-              return (
-                <Tab key={tab.key}>{tab.title}</Tab>
-              )
-            })
-          }
+            {
+              this.tabs.map(tab => {
+                return (
+                  <Tab key={tab.key}>{tab.title}</Tab>
+                )
+              })
+            }
           </TabList>
           {
-            this.tabs.map( tab => {
+            this.tabs.map(tab => {
               return (
                 <TabPanel key={tab.key}>{tab.component}</TabPanel>
               )

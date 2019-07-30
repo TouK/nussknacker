@@ -27,11 +27,11 @@ class CustomProcesses extends BaseProcesses {
   reloadProcesses(showLoader) {
     this.setState({showLoader: showLoader == null ? true : showLoader})
 
-    HttpService.fetchCustomProcesses().then (response => {
+    HttpService.fetchCustomProcesses().then(response => {
       if (!this.state.showAddProcess) {
         this.setState({processes: response.data, showLoader: false})
       }
-    }).catch(() => this.setState({ showLoader: false }))
+    }).catch(() => this.setState({showLoader: false}))
   }
 
   deploy = (process) => {
@@ -49,17 +49,18 @@ class CustomProcesses extends BaseProcesses {
   render() {
     return (
       <div className="Page">
-        <HealthCheck />
+        <HealthCheck/>
         <div id="process-top-bar">
           <div id="table-filter" className="input-group">
-            <input type="text" className="form-control" aria-describedby="basic-addon1" value={this.state.search} onChange={this.onSearchChange} />
+            <input type="text" className="form-control" aria-describedby="basic-addon1" value={this.state.search}
+                   onChange={this.onSearchChange}/>
             <span className="input-group-addon" id="basic-addon1">
-              <img id="search-icon" src={filterIcon} />
+              <img id="search-icon" src={filterIcon}/>
             </span>
           </div>
         </div>
 
-        <LoaderSpinner show={this.state.showLoader} />
+        <LoaderSpinner show={this.state.showLoader}/>
 
         <Table
           className="esp-table"
@@ -77,7 +78,7 @@ class CustomProcesses extends BaseProcesses {
           filterable={['name', 'category']}
           hideFilterInput
           filterBy={this.state.search.toLowerCase()}
-          columns = {[
+          columns={[
             {key: 'name', label: 'Process name'},
             {key: 'category', label: 'Category'},
             {key: 'modifyDate', label: 'Last modification'},
@@ -88,31 +89,31 @@ class CustomProcesses extends BaseProcesses {
         >
           {
             this.state.processes.map((process, index) => {
-            return (
-              <Tr className="row-hover" key={index}>
-                <Td column="name">{process.name}</Td>
-                <Td column="category">{process.processCategory}</Td>
-                <Td column="modifyDate" className="centered-column">{DateUtils.format(process.modificationDate)}</Td>
-                <Td column="status" className="status-column">
-                  <div
-                    className={this.processStatusClass(process, this.state.statusesLoaded, this.state.statuses)}
-                    title={this.processStatusTitle(this.processStatusClass(process))}
-                  />
-                </Td>
-                <Td column="deploy" className="deploy-column">
-                  <Glyphicon glyph="play" title="Deploy process" onClick={this.deploy.bind(this, process)} />
-                </Td>
-                {
-                  (this.processStatusClass(process, this.state.statusesLoaded, this.state.statuses) === "status-running") ?
-                  (
-                    <Td column="stop" className="stop-column">
-                      <Glyphicon glyph="stop" title="Stop process" onClick={this.stop.bind(this, process)} />
-                    </Td>
-                  ) : []
-                }
-              </Tr>
-            )
-          })}
+              return (
+                <Tr className="row-hover" key={index}>
+                  <Td column="name">{process.name}</Td>
+                  <Td column="category">{process.processCategory}</Td>
+                  <Td column="modifyDate" className="centered-column">{DateUtils.format(process.modificationDate)}</Td>
+                  <Td column="status" className="status-column">
+                    <div
+                      className={this.processStatusClass(process, this.state.statusesLoaded, this.state.statuses)}
+                      title={this.processStatusTitle(this.processStatusClass(process))}
+                    />
+                  </Td>
+                  <Td column="deploy" className="deploy-column">
+                    <Glyphicon glyph="play" title="Deploy process" onClick={this.deploy.bind(this, process)}/>
+                  </Td>
+                  {
+                    (this.processStatusClass(process, this.state.statusesLoaded, this.state.statuses) === "status-running") ?
+                      (
+                        <Td column="stop" className="stop-column">
+                          <Glyphicon glyph="stop" title="Stop process" onClick={this.stop.bind(this, process)}/>
+                        </Td>
+                      ) : []
+                  }
+                </Tr>
+              )
+            })}
         </Table>
       </div>
     )

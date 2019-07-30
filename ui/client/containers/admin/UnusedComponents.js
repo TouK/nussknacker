@@ -7,7 +7,7 @@ import {Table, Td, Tr} from "reactable"
 import filterIcon from "../../assets/img/search.svg"
 import LoaderSpinner from "../../components/Spinner"
 
-class UnusedComponents extends BaseAdminTab  {
+class UnusedComponents extends BaseAdminTab {
   constructor(props) {
     super(props)
 
@@ -18,7 +18,11 @@ class UnusedComponents extends BaseAdminTab  {
 
   componentDidMount() {
     HttpService.fetchUnusedComponents().then((response) => {
-      this.setState({unusedComponents: _.map(response.data, (e) => {return {name: e}}), showLoader: false})
+      this.setState({
+        unusedComponents: _.map(response.data, (e) => {
+          return {name: e}
+        }), showLoader: false
+      })
     })
   }
 
@@ -38,7 +42,7 @@ class UnusedComponents extends BaseAdminTab  {
           </span>
         </div>
 
-        <LoaderSpinner show={this.state.showLoader} />
+        <LoaderSpinner show={this.state.showLoader}/>
 
         <Table
           className="esp-table"
