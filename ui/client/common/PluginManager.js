@@ -15,6 +15,12 @@ import HttpService from '../http/HttpService'
   We assume that one of scripts in resources will invoke PluginManager.invoke(name, plugin)
   TODO: how to make it more automatic?
 
+  Currently we pass following dependencies (can be used as peerDependencies/externals in webpack etc. - see pluginSample)
+  - React
+  - ReactDOM
+  - PluginManager
+  TODO: more dependencies? redux? we can also try to pack PluginManager as external library
+
  */
 
 window.PluginManager = {
