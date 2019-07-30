@@ -38,6 +38,7 @@ class PluginResources(modelData: Map[ProcessingType, ModelData])(implicit ec: Ex
           }
         }
       } ~
+      //TODO: in the future we may need more elastic configuration, e.g. plugins which define their own routes
         pathPrefix(Segment / "resources") { pluginName =>
           fromOption(plugins.get(pluginName), "Plugin not found") { plugin =>
             path(Segment) { resourceName =>
