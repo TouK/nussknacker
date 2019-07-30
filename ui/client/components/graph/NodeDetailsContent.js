@@ -457,7 +457,7 @@ export class NodeDetailsContent extends React.Component {
   };
 
   createExpressionComponent = (onValueChange, fieldName, expressionObj) => {
-    const expressionFromPlugins = PluginManager.createExpression(onValueChange, fieldName, expressionObj)
+    const expressionFromPlugins = PluginManager.createExpression(onValueChange, fieldName, expressionObj, this.props.processingType)
     return expressionFromPlugins ? expressionFromPlugins : (
       <ExpressionSuggest fieldName={fieldName} inputProps={{
               rows: 1, cols: 50, className: "node-input", value: expressionObj.expression, language: expressionObj.language,
@@ -593,7 +593,9 @@ function mapState(state) {
   return {
     additionalPropertiesConfig: _.get(state.settings, 'processDefinitionData.additionalPropertiesConfig') || {},
     processDefinitionData: state.settings.processDefinitionData || {},
-    processToDisplay: state.graphReducer.processToDisplay
+    processToDisplay: state.graphReducer.processToDisplay,
+    processingType: state.graphReducer.fetchedProcessDetails.processingType,
+
   }
 }
 

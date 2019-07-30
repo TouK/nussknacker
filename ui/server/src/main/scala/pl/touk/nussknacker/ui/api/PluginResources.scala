@@ -1,13 +1,15 @@
 package pl.touk.nussknacker.ui.api
 
+import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.{Directives, Route}
-import org.apache.commons.io.IOUtils
+import argonaut.Json
 import pl.touk.http.argonaut.{Argonaut62Support, JsonMarshaller}
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
-import pl.touk.nussknacker.engine.plugin.{FrontendPluginConfiguration, FrontendPluginConfigurationProvider}
-import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
+import pl.touk.nussknacker.engine.plugin.FrontendPlugin
+import pl.touk.nussknacker.engine.util.plugins.Plugin
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+import argonaut.ArgonautShapeless._
 
 import scala.concurrent.ExecutionContext
 
@@ -16,20 +18,15 @@ class PluginResources(modelData: Map[ProcessingType, ModelData])(implicit ec: Ex
 
   import argonaut.ArgonautShapeless._
 
-  //TODO: non-unique names?
-  private val plugins = modelData.mapValues { md =>
-    val plugins = ScalaServiceLoader.load[FrontendPluginConfigurationProvider](md.modelClassLoader.classLoader)
-    plugins.flatMap(_.createConfigurations(md.processConfig))
-  }
+  private val plugins: Map[String, FrontendPlugin] = Plugin.load[FrontendPlugin](getClass.getClassLoader).map(fp => (fp.name, fp)).toMap
 
-  private val pluginResources = plugins.flatMap {
-    case (processingType, pluginList) => pluginList.flatMap {
-      case FrontendPluginConfiguration(pluginName, resources, _) =>
-        val loader = (name: String) => IOUtils.toByteArray(modelData(processingType).modelClassLoader.classLoader.getResourceAsStream(name))
-        resources.map { name =>
-          ((pluginName, name), loader(name))
-        }
-    }
+  private val pluginConfigs: Map[String, UiPluginConfig] = plugins.mapValues { fp =>
+    val typeSpecificConfigs = modelData
+      .mapValues(md => fp.createTypeSpecific(md.modelClassLoader.classLoader, md.processConfig))
+      .collect {
+        case (name, Some(config)) => (name, config)
+      }
+    UiPluginConfig(fp.externalResources, fp.internalResources.keysIterator.toList, typeSpecificConfigs)
   }
 
   def route(implicit user: LoggedUser): Route =
@@ -37,16 +34,33 @@ class PluginResources(modelData: Map[ProcessingType, ModelData])(implicit ec: Ex
       pathEnd {
         get {
           complete {
-            plugins.values.flatten.toList.distinct
+            pluginConfigs
           }
         }
-      } ~ path(Segment / "resources" / Segment) { (pluginName, resourceName) =>
-        get {
-          complete {
-            pluginResources((pluginName, resourceName))
+      } ~
+        pathPrefix(Segment / "resources") { pluginName =>
+          fromOption(plugins.get(pluginName), "Plugin not found") { plugin =>
+            path(Segment) { resourceName =>
+              fromOption(plugin.internalResources.get(resourceName), "Resource not found") { bytes =>
+                complete(bytes)
+              }
+            }
           }
         }
-      }
     }
+
+  private def fromOption[T](maybeObj: Option[T], notFound: String)(run: T => Route): Route = {
+    maybeObj match {
+      case Some(obj) =>
+        run(obj)
+      case None =>
+        complete(HttpResponse(status = StatusCodes.NotFound, entity = "Processing type not found"))
+    }
+  }
+
+
+  case class UiPluginConfig(externalResources: List[String],
+                            internalResources: List[String],
+                            configs: Map[String, Json])
 
 }
