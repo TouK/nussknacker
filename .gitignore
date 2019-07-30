@@ -12,6 +12,7 @@ dist/
 **/db.script
 **/db.lck
 **/db.tmp
+dbFiles/*
 *.jar
 ui/server/src/main/resources/web
 **/npm-debug.log

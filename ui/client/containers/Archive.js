@@ -18,6 +18,8 @@ class Archive extends BaseProcesses {
     isArchived: true
   }
 
+  searchItems = ['categories', 'isSubprocess']
+
   constructor(props) {
     super(props)
 
@@ -41,7 +43,7 @@ class Archive extends BaseProcesses {
               onChange={this.onSearchChange}
             />
             <span className="input-group-addon" id="basic-addon1">
-              <img id="search-icon" src={filterIcon} />
+              <img id="search-icon" src={filterIcon}/>
             </span>
           </div>
 
@@ -74,7 +76,7 @@ class Archive extends BaseProcesses {
           </div>
         </div>
 
-        <LoaderSpinner show={this.state.showLoader} />
+        <LoaderSpinner show={this.state.showLoader}/>
 
         <Table
           className="esp-table"
@@ -92,7 +94,7 @@ class Archive extends BaseProcesses {
           filterable={['name', 'category']}
           hideFilterInput
           filterBy={this.state.search.toLowerCase()}
-          columns = {[
+          columns={[
             {key: 'name', label: 'Process name'},
             {key: 'category', label: 'Category'},
             {key: 'subprocess', label: 'Subprocess'},
@@ -102,35 +104,34 @@ class Archive extends BaseProcesses {
         >
           {
             this.state.processes.map((process, index) => {
-            return (
-              <Tr className="row-hover" key={index}>
-                <Td column="name">{process.name}</Td>
-                <Td column="category">{process.processCategory}</Td>
-                <Td column="subprocess" className="centered-column">
-                  <Glyphicon glyph={process.isSubprocess ? 'ok' : 'remove'} />
-                </Td>
-                <Td column="modifyDate" className="centered-column">{DateUtils.format(process.modificationDate)}</Td>
-                <Td column="view" className="edit-column">
-                  <Glyphicon
-                    glyph="eye-open"
-                    title={"Show " + (process.isSubprocess ? "subprocess": "process")}
-                    onClick={this.showProcess.bind(this, Archive.path, process)}
-                  />
-                </Td>
-              </Tr>
-            )
-          })}
+              return (
+                <Tr className="row-hover" key={index}>
+                  <Td column="name">{process.name}</Td>
+                  <Td column="category">{process.processCategory}</Td>
+                  <Td column="subprocess" className="centered-column">
+                    <Glyphicon glyph={process.isSubprocess ? 'ok' : 'remove'}/>
+                  </Td>
+                  <Td column="modifyDate" className="centered-column">{DateUtils.format(process.modificationDate)}</Td>
+                  <Td column="view" className="edit-column">
+                    <Glyphicon
+                      glyph="eye-open"
+                      title={"Show " + (process.isSubprocess ? "subprocess" : "process")}
+                      onClick={this.showProcess.bind(this, process)}
+                    />
+                  </Td>
+                </Tr>
+              )
+            })}
         </Table>
       </div>
     )
   }
 }
 
-Archive.title = 'Archive Processes'
 Archive.path = '/archivedProcesses'
 Archive.header = 'Archive'
 
-const mapState = (state) =>  ({
+const mapState = (state) => ({
   loggedUser: state.settings.loggedUser,
   featuresSettings: state.settings.featuresSettings,
   filterCategories: ProcessUtils.prepareFilterCategories(state.settings.loggedUser.categories, state.settings.loggedUser)

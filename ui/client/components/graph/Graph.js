@@ -4,7 +4,6 @@ import * as dagre from 'dagre'
 import EspNode from './EspNode'
 import 'jointjs/dist/joint.css'
 import _ from 'lodash'
-import $ from 'jquery'
 import svgPanZoom from 'svg-pan-zoom'
 import {connect} from 'react-redux';
 import ActionsUtils from '../../actions/ActionsUtils';
@@ -584,7 +583,10 @@ class Graph extends React.Component {
     const paddingLeft = cssVariables.svgGraphPaddingLeft
     const paddingTop = cssVariables.svgGraphPaddingTop
 
-    const graphPosition = $(`#${this.props.divId} svg`).position()
+    const element = document.getElementById(this.props.divId)
+    const svg = element.getElementsByTagName("svg").item(0)
+    const graphPosition = svg.getBoundingClientRect()
+
     return {
       x: (pointerOffset.x - pan.x - graphPosition.left - paddingLeft) / zoom,
       y: (pointerOffset.y - pan.y - graphPosition.top - paddingTop) / zoom

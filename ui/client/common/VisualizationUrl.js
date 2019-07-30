@@ -2,25 +2,22 @@ import _ from "lodash";
 import Moment from "moment";
 import * as  queryString from 'query-string'
 
-export const visualizationRouterBasePath = "/visualization"
-export const visualizationRouterPath = visualizationRouterBasePath + '/:processId'
+export const visualizationBasePath = "/visualization"
+export const visualizationPath = visualizationBasePath + '/:processId'
 
-export function visualizationUrl(path, processName, nodeId, edgeId) {
-  if (!_.isEmpty(nodeId) && !_.isEmpty(edgeId)) {
-    throw new Error("cannot visualize both nodeId and edgeId")
-  }
-  const baseUrl = `${path}/${encodeURIComponent(processName)}`
-  const nodeIdUrlPart = nodeId ? nodeIdPart(nodeId) : ""
-  const edgeIdUrlPart = edgeId ? edgeIdPart(edgeId) : ""
-  return baseUrl + nodeIdUrlPart + edgeIdUrlPart
-}
-
-export function nodeIdPart(nodeId) {
+function nodeIdPart(nodeId) {
   return `?nodeId=${encodeURIComponent(nodeId)}`
 }
 
-export function edgeIdPart(edgeId) {
+function edgeIdPart(edgeId) {
   return `?edgeId=${encodeURIComponent(edgeId)}`
+}
+
+export function visualizationUrl(processName, nodeId, edgeId) {
+  const baseUrl = `${visualizationBasePath}/${encodeURIComponent(processName)}`
+  const nodeIdUrlPart = nodeId && edgeId == null ? nodeIdPart(nodeId) : ""
+  const edgeIdUrlPart = edgeId && nodeId == null ? edgeIdPart(edgeId) : ""
+  return baseUrl + nodeIdUrlPart + edgeIdUrlPart
 }
 
 export function extractVisualizationParams(search) {
