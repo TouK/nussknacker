@@ -33,7 +33,7 @@ class EspApp extends React.Component {
 
   componentDidMount() {
     HttpService.fetchPlugins().then(plugins => {
-      PluginManager.init(plugins);
+      PluginManager.init(plugins.data);
     });
 
     this.mountedHistory = this.props.history.listen((location, action) => {

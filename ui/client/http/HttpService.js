@@ -82,11 +82,7 @@ export default {
   },
 
   fetchPlugins() {
-    return fetch( `${API_URL}/plugins`, {
-      method: 'GET',
-      credentials: 'include'
-    })
-    .then(response => response.json())
+    return api.get("/plugins")
   },
 
   fetchLoggedUser() {
