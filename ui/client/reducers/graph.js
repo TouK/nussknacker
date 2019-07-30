@@ -400,5 +400,5 @@ function addNodes(state, {nodes, layout}) {
 function createEdge(fromNode, toNode, edgeType, allEdges, processDefinitionData) {
   const baseEdge = {from: fromNode.id, to: toNode.id}
   const adjustedEdgeType = edgeType || NodeUtils.edgeType(allEdges, fromNode, processDefinitionData)
-  return edgeType ? {...baseEdge, edgeType: adjustedEdgeType} : baseEdge
+  return adjustedEdgeType ? {...baseEdge, edgeType: adjustedEdgeType} : baseEdge
 }

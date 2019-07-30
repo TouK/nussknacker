@@ -12,7 +12,6 @@ import collapseIcon from '../../assets/img/collapse.svg'
 
 import customAttrs from '../../assets/json/nodeAttributes.json'
 
-import {v4 as uuid4} from "uuid";
 import SVGUtils from "../../common/SVGUtils";
 
 const rectWidth = 300
@@ -356,7 +355,8 @@ export function makeLink(edge, forExport) {
   }
 
   return new joint.dia.Link({
-    id: uuid4(),
+    //TODO: some different way to create id? Must be deterministic and unique
+    id: `${edge.from}-${edge.to}-${label}`,
     source: {id: edge.from, port: 'Out'},
     target: {id: edge.to, port: 'In'},
     labels: labels,

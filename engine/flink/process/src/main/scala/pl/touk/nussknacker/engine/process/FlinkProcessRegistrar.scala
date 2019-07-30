@@ -261,7 +261,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => (Cla
           processWithDeps.processTimeout.toMillis, TimeUnit.MILLISECONDS, asyncExecutionContextPreparer.bufferSize))
       } else {
         beforeAsync.flatMap(new SyncInterpretationFunction(compiledProcessWithDeps, node, validationContext))
-      }).name(s"${metaData.id}-${node.id}-$name").process(SplitFunction)
+      }).name(s"${metaData.id}-${node.id}-$name").process(new SplitFunction)
     }
   }
 
@@ -499,7 +499,7 @@ object FlinkProcessRegistrar {
     }
   }
 
-  object SplitFunction extends ProcessFunction[InterpretationResult, Unit] {
+  class SplitFunction extends ProcessFunction[InterpretationResult, Unit] {
 
     //we eagerly create TypeInformation here, creating it during OutputTag construction would be too expensive
     private lazy val typeInfo: TypeInformation[InterpretationResult] = implicitly[TypeInformation[InterpretationResult]]
