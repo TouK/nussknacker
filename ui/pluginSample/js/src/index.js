@@ -6,6 +6,7 @@ const queryPlugin = {
     return language === 'literal'
   },
 
+  //we use default value from configuration
   createExpression(onValueChange, fieldName, expressionObj, config) {
     return (<input type="text" className="node-input" value={expressionObj.expression ? expressionObj.expression : config.defaultValue }
                    onChange={e => onValueChange(e.target.value)}/> )

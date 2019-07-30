@@ -1,6 +1,5 @@
 const path = require('path');
 const webpack = require('webpack');
-const childProcess = require('child_process');
 
 
 const NODE_ENV = process.env.NODE_ENV || 'development';
@@ -13,7 +12,6 @@ const entry = {
 module.exports = {
   mode: 'production',
   externals: {
-    'styled-components': 'styled',
     react: 'React',
     'react-dom': 'ReactDOM',
     'PluginManager': 'PluginManager'
@@ -46,26 +44,6 @@ module.exports = {
         test: /\.js$/,
         use: ["babel-loader"],
         exclude: /node_modules/,
-        include: __dirname
-      },
-      {
-        test: /\.css?$/,
-        loaders: ['style-loader', 'raw-loader'],
-        include: __dirname
-      },
-      {
-        test: /\.styl$/,
-        loaders: ['style-loader', 'css-loader', 'stylus-loader'],
-        include: __dirname
-      },
-      {
-        test: /\.scss$/,
-        loaders: ["style-loader", "css-loader", "sass-loader"],
-        include: __dirname
-      },
-      {
-        test: /\.(eot|svg|png|ttf|woff|woff2)$/,
-        loader: 'file-loader?name=assets/fonts/[name].[ext]',
         include: __dirname
       }
     ]
