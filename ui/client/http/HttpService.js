@@ -254,7 +254,7 @@ export default {
   },
 
   getTestCapabilities(process) {
-    return api.post("/testInfo/capabilities", {params: process})
+    return api.post("/testInfo/capabilities", process)
       .catch(error => this.addError(`Failed to get capabilities`, error, true))
   },
 
