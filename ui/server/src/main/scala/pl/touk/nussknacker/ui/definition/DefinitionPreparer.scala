@@ -42,10 +42,10 @@ object DefinitionPreparer {
     def filterCategories(objectDefinition: ObjectDefinition): List[String] = readCategories.intersect(objectDefinition.categories)
 
     def objDefParams(id: String, objDefinition: ObjectDefinition): List[Parameter] =
-      evaluator.evaluateParameters(NodeDefinition(id, objDefinition.parameters))
+      evaluator.evaluateParameters(NodeDefinition(id, objDefinition.parameters), nodesConfig.getOrElse(id, SingleNodeConfig.zero))
 
     def objDefBranchParams(id: String, objDefinition: ObjectDefinition): List[Parameter] =
-      evaluator.evaluateBranchParameters(NodeDefinition(id, objDefinition.parameters))
+      evaluator.evaluateBranchParameters(NodeDefinition(id, objDefinition.parameters), nodesConfig.getOrElse(id, SingleNodeConfig.zero))
 
     def serviceRef(id: String, objDefinition: ObjectDefinition) = ServiceRef(id, objDefParams(id, objDefinition))
 
@@ -111,7 +111,7 @@ object DefinitionPreparer {
       NodeGroup("subprocesses",
         subprocessInputs.map {
           case (id, definition) =>
-            val nodes = evaluator.evaluateParameters(NodeDefinition(id, definition.parameters))
+            val nodes = evaluator.evaluateParameters(NodeDefinition(id, definition.parameters), nodesConfig.getOrElse(id, SingleNodeConfig.zero))
             NodeToAdd("subprocess", id, SubprocessInput("", SubprocessRef(id, nodes)), readCategories.intersect(definition.categories))
         }.toList))
     } else {

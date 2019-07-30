@@ -41,7 +41,7 @@ class UIProcessObjectsSpec extends FunSuite with Matchers {
       Some(FixedExpressionValues(List(
         FixedExpressionValue("'default value'", "first"),
         FixedExpressionValue("'other value'", "second")
-      )))
+      ))), None
     )))
 
     processObjects.processDefinition.services("enricher").parameters.map(p => (p.name, p.restriction)).toMap shouldBe Map(
@@ -88,7 +88,7 @@ class UIProcessObjectsSpec extends FunSuite with Matchers {
       Some(FixedExpressionValues(List(
         FixedExpressionValue("'default value'", "first"),
         FixedExpressionValue("'other value'", "second")
-      )))
+      ))), None
     )))
 
     processObjects.nodesToAdd.find(_.name == "subprocesses")

@@ -42,7 +42,7 @@ class ParameterTypeMapperTest extends FunSuite with Matchers {
   }
 
   test("ignore annotations if explicit restriction given") {
-    val config = ParameterConfig(None, Some(FixedExpressionValues(List(FixedExpressionValue("lab1", "'v1'")))))
+    val config = ParameterConfig(None, Some(FixedExpressionValues(List(FixedExpressionValue("lab1", "'v1'")))), None)
 
     ParameterTypeMapper.prepareRestrictions(classOf[String], param, config) shouldBe config.restriction
 

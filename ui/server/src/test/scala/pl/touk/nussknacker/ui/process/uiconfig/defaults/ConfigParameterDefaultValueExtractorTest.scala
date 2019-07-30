@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.definition.defaults.NodeDefinition
 
 class ConfigParameterDefaultValueExtractorTest extends FlatSpec with Matchers {
-  private val config = new ParamDefaultValueConfig(Map("definedNode" -> Map("definedParam" -> ParameterConfig(Some("Idea"), None))))
+  private val config = new ParamDefaultValueConfig(Map("definedNode" -> Map("definedParam" -> ParameterConfig(Some("Idea"), None, None))))
   private val extractor = new ConfigParameterDefaultValueExtractor(config)
   private val node = NodeDefinition("definedNode", Nil)
   behavior of "ConfigParameterDefaultValueExtractor"

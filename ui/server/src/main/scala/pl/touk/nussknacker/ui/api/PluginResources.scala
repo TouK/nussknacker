@@ -22,7 +22,7 @@ class PluginResources(modelData: Map[ProcessingType, ModelData])(implicit ec: Ex
 
   private val pluginConfigs: Map[String, UiPluginConfig] = plugins.mapValues { fp =>
     val typeSpecificConfigs = modelData
-      .mapValues(md => fp.createTypeSpecific(md.modelClassLoader.classLoader, md.processConfig))
+      .mapValues(md => Plugin.loadForProcessingType(fp, md.modelClassLoader.classLoader, md.processConfig))
       .collect {
         case (name, Some(config)) => (name, config)
       }

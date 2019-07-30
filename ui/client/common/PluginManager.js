@@ -31,12 +31,12 @@ window.PluginManager = {
     window.React = React;
     window.ReactDOM = ReactDOM;
 
-    plugins.forEach(plugin => {
+    _.forOwn(plugins, (plugin, name)  => {
       plugin.externalResources.forEach(url => {
-        _initResource(url)
+        this._initResource(url)
       });
       plugin.internalResources.forEach(pluginFile => {
-        _initResource(`${API_URL}/plugins/${plugin.name}/resources/${pluginFile}`)
+        this._initResource(`${API_URL}/plugins/${name}/resources/${pluginFile}`)
       });
     });
   },
@@ -65,7 +65,7 @@ window.PluginManager = {
     const pluginToCreate = this.plugins
           .find(plugin => plugin.pluginObject.canCreateExpression(fieldName, expressionObj.language));
 
-    const config = pluginToCreate ? _.get(this.configs, pluginToCreate.name + "." + processingType)
+    const config = pluginToCreate ? _.get(this.configs, pluginToCreate.name + "." + processingType) : null;
     //TODO: variables + type information? Or whole reducers?
     return pluginToCreate && config ? pluginToCreate.pluginObject.createExpression(onValueChange, fieldName, expressionObj, config) : null;
   }

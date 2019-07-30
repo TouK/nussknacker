@@ -2,22 +2,21 @@ package pl.touk.nussknacker.engine.sample.plugin
 
 import argonaut._
 import Argonaut._
-import ArgonautShapeless._
 import com.typesafe.config.Config
 import org.apache.commons.io.IOUtils
 import pl.touk.nussknacker.engine.plugin.FrontendPlugin
+import net.ceedubs.ficus.Ficus._
 
-class QueryBuilderPlugin extends FrontendPlugin {
+class LiteralExpressionPlugin extends FrontendPlugin {
 
   override def externalResources: List[String] = List()
 
-  override def internalResources: Map[String, Array[Byte]] = Map("queryBuilder.js" -> IOUtils.toByteArray(getClass.getResourceAsStream("/queryBuilder.js")))
+  override def internalResources: Map[String, Array[Byte]] = Map("literalExpressions.js" -> IOUtils.toByteArray(getClass.getResourceAsStream("/literalExpressions.js")))
 
-  override def name: String = "queryBuilder"
+  override def name: String = "literalExpressions"
 
-  //TODO: sample depending of configuration
   override def createTypeSpecific(classLoader: ClassLoader, config: Config): Option[Json] = Some(
-    Map("fields" -> List(Field("firstName", "First name"), Field("lastName", "Last name"))).asJson
+    Map("defaultValue" -> config.getAs[String]("defaultValue").getOrElse("")).asJson
   )
 
 }

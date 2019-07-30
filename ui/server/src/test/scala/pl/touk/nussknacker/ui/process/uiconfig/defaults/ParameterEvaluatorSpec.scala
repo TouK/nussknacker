@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.process.uiconfig.defaults
 
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.process.ParameterConfig
+import pl.touk.nussknacker.engine.api.process.{ParameterConfig, SingleNodeConfig}
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.definition.defaults.NodeDefinition
 import pl.touk.nussknacker.engine.graph.evaluatedparam
@@ -34,14 +34,15 @@ class ParameterEvaluatorSpec extends FlatSpec with Matchers {
         nodeName = nodeName)
       val paramOut = dummyExpectedParam(paramName = paramName,
         value = value)
-      pv.evaluateParameters(paramIn).head shouldBe paramOut
+      pv.evaluateParameters(paramIn, SingleNodeConfig.zero).head shouldBe paramOut
     }
   }
 
   private val pv = new ParameterEvaluatorExtractor(
     DefaultValueExtractorChain(
       ParamDefaultValueConfig(
-        Map(DEFINED_NODE_NAME -> Map(DEFAULT_PARAMETER_NAME -> ParameterConfig(defaultValue = Some(DEFAULT_PARAMETER_VALUE), restriction = None)))
+        Map(DEFINED_NODE_NAME -> Map(DEFAULT_PARAMETER_NAME -> ParameterConfig(defaultValue = Some(DEFAULT_PARAMETER_VALUE),
+          restriction = None, language = None)))
       ),
       ModelClassLoader.empty
     )

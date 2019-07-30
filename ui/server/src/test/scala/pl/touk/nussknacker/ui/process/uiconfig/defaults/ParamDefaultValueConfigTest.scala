@@ -11,7 +11,7 @@ class ParamDefaultValueConfigTest extends FlatSpec with Matchers {
     Map((definedValue, Map(
       (definedValue, definedValue),
       (other, other)
-    ).mapValues(dv => ParameterConfig(Some(dv), None))))
+    ).mapValues(dv => ParameterConfig(Some(dv), None, None))))
   )
 
   def verify(node: String, parameter: String, value: Option[String]): Unit =

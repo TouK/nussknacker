@@ -66,7 +66,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest
           FixedExpressionValues(List(
             FixedExpressionValue("'default value'", "first"),
             FixedExpressionValue("'other value'", "second")
-          )))
+          ))), None
           //docs url comes from reference.conf in managementSample
         ))), Some("Filter.svg"), Some("https://touk.github.io/nussknacker/"), None),
         "accountService" -> SingleNodeConfig(None, None, Some("accountServiceDocs"), None)

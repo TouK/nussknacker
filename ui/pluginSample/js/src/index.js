@@ -7,10 +7,10 @@ const queryPlugin = {
   },
 
   createExpression(onValueChange, fieldName, expressionObj, config) {
-    return (<input type="text" value={expressionObj.expression ? config.defaultExpression : expressionObj.expression}
+    return (<input type="text" className="node-input" value={expressionObj.expression ? expressionObj.expression : config.defaultValue }
                    onChange={e => onValueChange(e.target.value)}/> )
   }
 }
 
-PluginManager.register('queryBuilder', queryPlugin);
+PluginManager.register('literalExpressions', queryPlugin);
 

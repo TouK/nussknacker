@@ -31,14 +31,16 @@ case class SingleNodeConfig(params: Option[Map[String, ParameterConfig]], icon: 
 }
 
 object ParameterConfig {
-  val empty: ParameterConfig = ParameterConfig(None, None)
+  val empty: ParameterConfig = ParameterConfig(None, None, None)
 
   import argonaut.Argonaut._
   private implicit val restrictionCodec: CodecJson[ParameterRestriction] = ParameterRestriction.codec
   implicit val codec: CodecJson[ParameterConfig] = CodecJson.derive[ParameterConfig]
 }
 
-case class ParameterConfig(defaultValue: Option[String], restriction: Option[ParameterRestriction])
+case class ParameterConfig(defaultValue: Option[String],
+                           restriction: Option[ParameterRestriction],
+                           language: Option[String])
 
 object SingleNodeConfig {
   import cats.syntax.semigroup._

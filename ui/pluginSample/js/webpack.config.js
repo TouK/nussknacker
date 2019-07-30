@@ -29,8 +29,8 @@ module.exports = {
   entry: entry,
   output: {
     path: path.join(__dirname, '..', 'target', 'scala-2.11', 'classes'),
-    filename: 'queryBuilder.js',
-    library: 'queryBuilder'
+    filename: 'literalExpressions.js',
+    library: 'literalExpressions'
   },
   devtool: isProd ? 'hidden-source-map' : 'eval-source-map',
   plugins: [
