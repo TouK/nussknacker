@@ -1,19 +1,18 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
-import {Provider} from 'react-redux';
+import React from 'react'
+import ReactDOM from 'react-dom'
+import {Provider} from 'react-redux'
 import {AppContainer} from 'react-hot-loader'
-import NotificationSystem from 'react-notification-system';
 import {Router} from 'react-router-dom'
-import configureStore from './store/configureStore';
-import HttpService from './http/HttpService'
+import configureStore from './store/configureStore'
 import Settings from './http/Settings'
-import EspApp from './containers/EspApp';
-import Modal from "react-modal";
+import EspApp from './containers/EspApp'
+import Modal from "react-modal"
 import history from "./history"
 
-import "./stylesheets/notifications.styl";
+import "./stylesheets/notifications.styl"
 
-import registerServiceWorker from './registerServiceWorker';
+import registerServiceWorker from './registerServiceWorker'
+import Notifications from "./containers/Notifications"
 
 const store = configureStore()
 Settings.updateSettings(store)
@@ -23,7 +22,7 @@ ReactDOM.render(
   <AppContainer>
     <Provider store={store}>
       <div>
-        <NotificationSystem ref={(c) => HttpService.setNotificationSystem(c)} style={false} />
+        <Notifications/>
         <Router history={history}>
           <EspApp />
         </Router>

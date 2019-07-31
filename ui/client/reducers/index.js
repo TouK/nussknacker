@@ -1,4 +1,5 @@
 import {combineReducers} from 'redux'
+import {reducer as notifications} from 'react-notification-system-redux';
 
 import {undoRedoReducer as undoRedo} from './undoRedo'
 import {reducer as settings} from './settings'
@@ -12,7 +13,8 @@ export const reducer = combineReducers({
   graphReducer: undoRedo(graph),
   settings,
   ui,
-  processActivity
+  processActivity,
+  notifications
 })
 
 export default reducer
