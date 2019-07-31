@@ -2,10 +2,10 @@ import React from "react"
 import Notifications from 'react-notification-system-redux'
 import InlinedSvgs from "../assets/icons/InlinedSvgs"
 
-export function info(message) {
+export function success(message) {
   return Notifications.show({
     message: message,
-    level: 'info',
+    level: 'success',
     children: (<div className="icon" dangerouslySetInnerHTML={{__html: InlinedSvgs.tipsInfo}}/>),
     autoDismiss: 5
   })

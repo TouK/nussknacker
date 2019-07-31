@@ -109,7 +109,7 @@ class Graph extends React.Component {
         edges: edgesForNodes
       }
       ClipboardUtils.writeText(JSON.stringify(selection), copyNodeElementId)
-      this.props.notificationActions.info(`Copied ${selectedNodes.length} elements`)
+      this.props.notificationActions.success(`Copied ${selectedNodes.length} elements`)
     }
   }
 
@@ -119,10 +119,7 @@ class Graph extends React.Component {
     }
     const clipboardText = ClipboardUtils.readText(event);
     const selection = JsonUtils.tryParseOrNull(clipboardText)
-    const canPasteSelection =
-      _.has(selection, 'nodes') &&
-      _.has(selection, 'edges') &&
-      selection.nodes.every(node => this.canAddNode(node))
+    const canPasteSelection = _.has(selection, 'nodes') && _.has(selection, 'edges') && selection.nodes.every(node => this.canAddNode(node))
     if (!canPasteSelection) {
       this.props.notificationActions.error("Cannot paste invalid nodes")
       return

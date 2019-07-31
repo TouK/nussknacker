@@ -31,7 +31,7 @@ export default {
 
   addInfo(message) {
     if (notificationActions) {
-      notificationActions.info(message)
+      notificationActions.success(message)
     }
   },
 
