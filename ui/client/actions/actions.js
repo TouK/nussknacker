@@ -23,9 +23,9 @@ export function fetchProcessToDisplay(processId, versionId, businessView) {
 
 export function fetchProcessDefinition(processingType, isSubprocess, subprocessVersions) {
   return (dispatch) => {
-    return HttpService.fetchProcessDefinitionData(processingType, isSubprocess, subprocessVersions).then((response) => {
+    return HttpService.fetchProcessDefinitionData(processingType, isSubprocess, subprocessVersions).then((response) => (
         dispatch({type: "PROCESS_DEFINITION_DATA", processDefinitionData: response.data})
-      }
+      )
     )
   }
 }
