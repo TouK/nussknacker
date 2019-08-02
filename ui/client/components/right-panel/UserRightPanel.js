@@ -333,7 +333,8 @@ class UserRightPanel extends Component {
       return {node, position}
     }
     const duplicatedNodesWithPositions = this.props.selectionState.map(duplicateNode)
-    this.props.actions.nodesAdded(duplicatedNodesWithPositions)
+    const edgesForNodes = NodeUtils.getEdgesForConnectedNodes(this.props.selectionState, this.props.processToDisplay)
+    this.props.actions.nodesWithEdgesAdded(duplicatedNodesWithPositions, edgesForNodes)
   }
 
   deleteSelection = () => {
