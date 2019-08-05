@@ -1,7 +1,8 @@
 package pl.touk.http.argonaut
 
-import argonaut.{Json, JsonBigDecimal, JsonDecimal, JsonLong}
-import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
+import argonaut.{Json, JsonBigDecimal, JsonDecimal, JsonLong, PrettyParams}
+import com.fasterxml.jackson.core.util.{DefaultIndenter, DefaultPrettyPrinter}
+import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper, SerializationFeature}
 import com.fasterxml.jackson.databind.node.{ArrayNode, BooleanNode, DecimalNode, JsonNodeFactory, LongNode, NullNode, ObjectNode, TextNode}
 import com.typesafe.config.Config
 
@@ -18,17 +19,22 @@ object JsonMarshaller {
 
 trait JsonMarshaller {
 
-  def marshall(json: Json): Array[Byte]
+  def marshall(json: Json, options: MarshallOptions = MarshallOptions()): Array[Byte]
 
-  def marshallToString(json:Json): String
+  def marshallToString(json: Json, options: MarshallOptions = MarshallOptions()): String
 
 }
 
+case class MarshallOptions(pretty: Boolean = false)
+
 object ArgonautJsonMarshaller extends JsonMarshaller {
 
-  override def marshall(json: Json): Array[Byte] = marshallToString(json).getBytes
+  override def marshall(json: Json, options: MarshallOptions): Array[Byte] = marshallToString(json, options).getBytes
 
-  override def marshallToString(json: Json): String = json.nospaces
+  override def marshallToString(json: Json, options: MarshallOptions): String = {
+    val prettyParams = if (options.pretty) PrettyParams.spaces2 else PrettyParams.nospace
+    json.pretty(prettyParams)
+  }
 
 }
 
@@ -36,12 +42,18 @@ object ArgonautJsonMarshaller extends JsonMarshaller {
 //and get rid of it
 object JacksonJsonMarshaller extends JsonMarshaller {
 
-  //TODO: configuration?
-  private val om = new ObjectMapper()
+  private val defaultObjectMapper = new ObjectMapper()
+  private val prettyPrintObjectMapper = {
+    val prettyPrinter = new DefaultPrettyPrinter()
+    prettyPrinter.indentArraysWith(DefaultIndenter.SYSTEM_LINEFEED_INSTANCE)
+    new ObjectMapper()
+      .enable(SerializationFeature.INDENT_OUTPUT)
+      .setDefaultPrettyPrinter(prettyPrinter)
+  }
 
-  override def marshallToString(json: Json): String = new String(marshall(json))
+  override def marshallToString(json: Json, options: MarshallOptions): String = new String(marshall(json, options))
 
-  override def marshall(json: Json): Array[Byte] = om.writeValueAsBytes(convertToJackson(json))
+  override def marshall(json: Json, options: MarshallOptions): Array[Byte] = objectMapperFor(options).writeValueAsBytes(convertToJackson(json))
 
   def convertToJackson(json: Json): JsonNode = {
     json.fold(
@@ -63,4 +75,7 @@ object JacksonJsonMarshaller extends JsonMarshaller {
     )
   }
 
+  private def objectMapperFor(options: MarshallOptions): ObjectMapper = {
+    if (options.pretty) prettyPrintObjectMapper else defaultObjectMapper
+  }
 }

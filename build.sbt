@@ -117,6 +117,7 @@ val log4jV = "1.7.21"
 val argonautShapelessV = "1.2.0-M8"
 val argonautMajorV = "6.2"
 val argonautV = s"$argonautMajorV.1"
+val jacksonV = "2.9.2"
 val catsV = "1.1.0"
 val scalaParsersV = "1.0.4"
 val dispatchV = "1.0.1"
@@ -306,7 +307,7 @@ lazy val example = (project in engine("example")).
     fork := true, // without this there are some classloading issues
     libraryDependencies ++= {
       Seq(
-        "com.fasterxml.jackson.core" % "jackson-databind" % "2.9.2",
+        "com.fasterxml.jackson.core" % "jackson-databind" % jacksonV,
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
         "org.scalatest" %% "scalatest" % scalaTestV % "test",
         "ch.qos.logback" % "logback-classic" % logbackV % "test"
@@ -604,7 +605,8 @@ lazy val argonautUtils = (project in engine("argonautUtils")).
         "io.argonaut" %% "argonaut" % argonautV,
         "com.github.alexarchambault" %% s"argonaut-shapeless_$argonautMajorV" % argonautShapelessV,
         "com.typesafe.akka" %% "akka-http" % akkaHttpV force(),
-        "com.fasterxml.jackson.core" % "jackson-databind" % "2.9.2"
+        "com.fasterxml.jackson.core" % "jackson-databind" % jacksonV,
+        "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )
     }
   )

@@ -1,21 +1,22 @@
 package pl.touk.nussknacker.ui.api
 
+import java.util.regex.Pattern
+
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
-import argonaut.PrettyParams
 import org.scalatest._
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.codec.UiCodecs._
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.ui.process.marshall.UiProcessMarshaller
+import pl.touk.nussknacker.ui.process.marshall.{ProcessConverter, UiProcessMarshaller}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.{FileUploadUtils, MultipartUtils}
 
-import scala.concurrent.duration._
 import scala.language.higherKinds
 
 class ProcessesExportImportResourcesSpec extends FlatSpec with ScalatestRouteTest with Matchers with Inside
@@ -24,7 +25,7 @@ class ProcessesExportImportResourcesSpec extends FlatSpec with ScalatestRouteTes
   implicit override val patienceConfig = PatienceConfig(timeout = scaled(Span(1, Seconds)), interval = scaled(Span(100, Millis)))
 
   import akka.http.scaladsl.server.RouteConcatenation._
-  val routWithAllPermissions = withAllPermissions(processesExportResources) ~ withAllPermissions(processesRoute)
+  val routeWithAllPermissions = withAllPermissions(processesExportResources) ~ withAllPermissions(processesRoute)
   implicit val loggedUser = LoggedUser("lu", testPermissionEmpty)
 
   it should "export process and import it" in {
@@ -33,14 +34,15 @@ class ProcessesExportImportResourcesSpec extends FlatSpec with ScalatestRouteTes
       status shouldEqual StatusCodes.OK
     }
 
-    Get(s"/processesExport/${processToSave.id}/2") ~> routWithAllPermissions ~> check {
-      val processDetails = UiProcessMarshaller.fromJson(responseAs[String]).toOption.get
-      val modified = processDetails.copy(metaData = processDetails.metaData.copy(typeSpecificData = StreamMetaData(Some(987))))
+    Get(s"/processesExport/${processToSave.id}/2") ~> routeWithAllPermissions ~> check {
+      val response = responseAs[String]
+      val processDetails = UiProcessMarshaller.fromJson(response).toOption.get
+      assertProcessPrettyPrinted(response, processDetails)
 
+      val modified = processDetails.copy(metaData = processDetails.metaData.copy(typeSpecificData = StreamMetaData(Some(987))))
       val multipartForm =
         MultipartUtils.prepareMultiPart(jsonMarshaller.marshallToString(UiProcessMarshaller.toJson(modified)), "process")
-
-      Post(s"/processes/import/${processToSave.id}", multipartForm) ~> routWithAllPermissions ~> check {
+      Post(s"/processes/import/${processToSave.id}", multipartForm) ~> routeWithAllPermissions ~> check {
         status shouldEqual StatusCodes.OK
         val imported = responseAs[String].decodeOption[DisplayableProcess].get
         imported.properties.typeSpecificProperties.asInstanceOf[StreamMetaData].parallelism shouldBe Some(987)
@@ -64,15 +66,17 @@ class ProcessesExportImportResourcesSpec extends FlatSpec with ScalatestRouteTes
       status shouldEqual StatusCodes.OK
     }
 
-    Get(s"/processesExport/${processToSave.id}/2") ~> routWithAllPermissions ~> check {
-      responseAs[String] shouldNot include(description)
+    Get(s"/processesExport/${processToSave.id}/2") ~> routeWithAllPermissions ~> check {
+      val response = responseAs[String]
+      response shouldNot include(description)
+      assertProcessPrettyPrinted(response, processToSave)
     }
 
-    Get(s"/processesExport/${processToSave.id}/3") ~> routWithAllPermissions ~> check {
+    Get(s"/processesExport/${processToSave.id}/3") ~> routeWithAllPermissions ~> check {
       val latestProcessVersion = responseAs[String]
       latestProcessVersion should include(description)
 
-      Get(s"/processesExport/${processToSave.id}") ~> routWithAllPermissions ~> check {
+      Get(s"/processesExport/${processToSave.id}") ~> routeWithAllPermissions ~> check {
         responseAs[String] shouldBe latestProcessVersion
       }
 
@@ -86,17 +90,29 @@ class ProcessesExportImportResourcesSpec extends FlatSpec with ScalatestRouteTes
       status shouldEqual StatusCodes.OK
     }
 
-    Get(s"/processesExport/${processToSave.id}/2") ~> routWithAllPermissions ~> check {
+    Get(s"/processesExport/${processToSave.id}/2") ~> routeWithAllPermissions ~> check {
       val processDetails = UiProcessMarshaller.fromJson(responseAs[String]).toOption.get
       val modified = processDetails.copy(metaData = processDetails.metaData.copy(id = "SOMEVERYFAKEID"))
 
       val multipartForm =
         FileUploadUtils.prepareMultiPart(jsonMarshaller.marshallToString(UiProcessMarshaller.toJson(modified)), "process")
 
-      Post(s"/processes/import/${processToSave.id}", multipartForm) ~> routWithAllPermissions ~> check {
+      Post(s"/processes/import/${processToSave.id}", multipartForm) ~> routeWithAllPermissions ~> check {
         status shouldEqual StatusCodes.BadRequest
       }
     }
+  }
+
+  private def assertProcessPrettyPrinted(response: String, process: CanonicalProcess): Unit = {
+    println(response)
+    println(UiProcessMarshaller.toJson(process).spaces2)
+    response shouldBe UiProcessMarshaller.toJson(process).spaces2
+      .replaceAll(Pattern.quote("[]"), "[ ]")
+      .replaceAll("\\{[ \n]+\\}", "{ }")
+  }
+
+  private def assertProcessPrettyPrinted(response: String, process: DisplayableProcess): Unit = {
+    assertProcessPrettyPrinted(response, ProcessConverter.fromDisplayable(process))
   }
 
 }
