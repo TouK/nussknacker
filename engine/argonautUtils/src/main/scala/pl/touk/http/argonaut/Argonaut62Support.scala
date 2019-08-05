@@ -68,6 +68,6 @@ trait Argonaut62Support {
     * @return marshaller for any `A` value
     */
   implicit def argonautToEntityMarshaller[A](implicit encoder: EncodeJson[A], printer: JsonMarshaller): ToEntityMarshaller[A] =
-  Marshaller.ByteArrayMarshaller.wrap(`application/json`)(printer.marshall).compose(encoder.apply)
+  Marshaller.ByteArrayMarshaller.wrap(`application/json`)((json: Json) => printer.marshall(json)).compose(encoder.apply)
 }
 

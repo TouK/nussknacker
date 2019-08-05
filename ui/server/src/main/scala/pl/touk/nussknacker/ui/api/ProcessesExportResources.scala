@@ -5,8 +5,7 @@ import java.nio.charset.StandardCharsets
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.stream.Materializer
-import argonaut._
-import pl.touk.http.argonaut.{Argonaut62Support, JsonMarshaller}
+import pl.touk.http.argonaut.{Argonaut62Support, JsonMarshaller, MarshallOptions}
 import pl.touk.nussknacker.ui.codec.UiCodecs
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
@@ -57,7 +56,7 @@ class ProcessesExportResources(val processRepository: FetchingProcessRepository,
         entity(as[DisplayableProcess]) { process =>
           complete {
             val json = UiProcessMarshaller.toJson(ProcessConverter.fromDisplayable(process))
-            HttpResponse(entity = HttpEntity(ContentType(MediaTypes.`application/json`), jsonMarshaller.marshall(json)))
+            HttpResponse(entity = HttpEntity(ContentType(MediaTypes.`application/json`), jsonMarshaller.marshall(json, MarshallOptions(pretty = true))))
           }
         }
       }
@@ -67,7 +66,7 @@ class ProcessesExportResources(val processRepository: FetchingProcessRepository,
   private def exportProcess(processDetails: Option[ProcessDetails]): HttpResponse = processDetails match {
     case Some(process) =>
       process.json.map { json =>
-        jsonMarshaller.marshall(UiProcessMarshaller.toJson(ProcessConverter.fromDisplayable(json)))
+        jsonMarshaller.marshall(UiProcessMarshaller.toJson(ProcessConverter.fromDisplayable(json)), MarshallOptions(pretty = true))
       }.map { canonicalJson =>
         AkkaHttpResponse.asFile(canonicalJson, s"${process.id}.json")
       }.getOrElse(HttpResponse(status = StatusCodes.NotFound, entity = "Process not found"))
