@@ -104,8 +104,6 @@ class ProcessesExportImportResourcesSpec extends FlatSpec with ScalatestRouteTes
   }
 
   private def assertProcessPrettyPrinted(response: String, process: CanonicalProcess): Unit = {
-    println(response)
-    println(UiProcessMarshaller.toJson(process).spaces2)
     response shouldBe UiProcessMarshaller.toJson(process).spaces2
       .replaceAll(Pattern.quote("[]"), "[ ]")
       .replaceAll("\\{[ \n]+\\}", "{ }")
