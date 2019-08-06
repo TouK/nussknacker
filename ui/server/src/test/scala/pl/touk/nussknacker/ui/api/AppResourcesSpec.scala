@@ -13,6 +13,7 @@ import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.http.argonaut.Argonaut62Support
 import pl.touk.nussknacker.engine.api.deployment.CustomProcess
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.testing.{EmptyProcessConfigCreator, LocalModelData}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, TestFactory}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
@@ -98,16 +99,21 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest
 
   test("it should return global config") {
     import Argonaut62Support._
-    
+    import argonaut.Argonaut._
+
+    val creatorWithBuildInfo = new EmptyProcessConfigCreator {
+      override def buildInfo(): Map[String, String] = Map("fromModel" -> "value1")
+    }
+    val modelData = LocalModelData(ConfigFactory.empty(), creatorWithBuildInfo)
+
     val globalConfig = Map("testConfig" -> "testValue", "otherConfig" -> "otherValue")
     val resources = new AppResources(ConfigFactory.parseMap(Collections.singletonMap("globalBuildInfo", globalConfig.asJava)),
-      Map(), processRepository, TestFactory.processValidation, new JobStatusService(TestProbe().ref))
+      Map("test1" -> modelData), processRepository, TestFactory.processValidation, new JobStatusService(TestProbe().ref))
     
     val result = Get("/app/buildInfo") ~> withPermissions(resources, testPermissionRead)
     result ~> check {
       status shouldBe StatusCodes.OK
-      val result = entityAs[Map[String, Json]]
-      result.filterKeys(_ != "processingType").mapValues(_.stringOrEmpty) shouldBe globalConfig
+      entityAs[Map[String, Json]] shouldBe globalConfig.mapValues(_.asJson) + ("processingType" -> Map("test1" -> creatorWithBuildInfo.buildInfo()).asJson)
     }
   }
 
