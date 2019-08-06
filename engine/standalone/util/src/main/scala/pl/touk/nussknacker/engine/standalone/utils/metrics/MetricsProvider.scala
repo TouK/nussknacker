@@ -11,7 +11,7 @@ trait MetricsProvider {
 
 }
 
-//mainly for tests
+//mainly for tests, both unit and tests from Nussknacker UI
 object NoOpMetricsProvider extends MetricsProvider {
 
   override def espTimer(processId: String, instantTimerWindowInSeconds: Long, name: String*): EspTimer =
