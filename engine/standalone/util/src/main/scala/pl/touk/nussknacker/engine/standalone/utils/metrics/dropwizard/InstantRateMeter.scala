@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.standalone.utils.metrics
+package pl.touk.nussknacker.engine.standalone.utils.metrics.dropwizard
 
 import com.codahale.metrics.Gauge
 import pl.touk.nussknacker.engine.util.metrics.GenericInstantRateMeter

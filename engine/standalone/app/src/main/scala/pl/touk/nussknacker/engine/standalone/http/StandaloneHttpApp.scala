@@ -11,7 +11,7 @@ import pl.touk.http.argonaut.{Argonaut62Support, JsonMarshaller}
 import pl.touk.nussknacker.engine.standalone.deployment.DeploymentService
 import pl.touk.nussknacker.engine.standalone.utils.StandaloneContextPreparer
 import pl.touk.nussknacker.engine.standalone.utils.logging.StandaloneRequestResponseLogger
-import pl.touk.nussknacker.engine.standalone.utils.metrics.StandaloneMetricsReporter
+import pl.touk.nussknacker.engine.standalone.utils.metrics.dropwizard.{DropwizardMetricsProvider, StandaloneMetricsReporter}
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 
 import scala.util.Try
@@ -80,7 +80,7 @@ object StandaloneMetrics extends LazyLogging {
 class StandaloneHttpApp(config: Config, metricRegistry: MetricRegistry)(implicit as: ActorSystem)
   extends Directives with Argonaut62Support with LazyLogging {
 
-  private val contextPreparer = new StandaloneContextPreparer(metricRegistry)
+  private val contextPreparer = new StandaloneContextPreparer(new DropwizardMetricsProvider(metricRegistry))
 
   private val deploymentService = DeploymentService(contextPreparer, config)
 

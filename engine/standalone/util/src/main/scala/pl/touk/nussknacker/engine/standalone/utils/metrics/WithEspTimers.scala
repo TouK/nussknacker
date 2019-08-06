@@ -1,8 +1,5 @@
 package pl.touk.nussknacker.engine.standalone.utils.metrics
 
-import java.util.concurrent.TimeUnit
-
-import com.codahale.metrics.{Histogram, MetricRegistry, SlidingTimeWindowReservoir}
 import pl.touk.nussknacker.engine.standalone.utils.StandaloneContext
 import pl.touk.nussknacker.engine.util.service.EspTimer
 
@@ -12,16 +9,7 @@ trait WithEspTimers {
 
   protected def instantTimerWindowInSeconds: Long
 
-  def metricName(timerName: String): List[String] = {
-    List(timerName)
-  }
-
-  def espTimer(name: String) = {
-    val histogram = new Histogram(new SlidingTimeWindowReservoir(instantTimerWindowInSeconds, TimeUnit.SECONDS))
-    val registered = context.register(MetricRegistry.name("serviceTimes", metricName(name): _*), histogram)
-    val meter = context.register(MetricRegistry.name("serviceInstant", metricName(name): _*), new InstantRateMeter)
-    EspTimer(meter, registered.update)
-  }
+  def espTimer(name: String*): EspTimer = context.espTimer(instantTimerWindowInSeconds, name:_*)
 
 }
 

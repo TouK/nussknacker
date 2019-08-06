@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.standalone.management
 import java.util.concurrent.TimeUnit
 
 import cats.data.Validated.{Invalid, Valid}
-import com.codahale.metrics.MetricRegistry
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData.ClasspathConfig
@@ -27,6 +26,7 @@ import pl.touk.nussknacker.engine.standalone.StandaloneProcessInterpreter
 import pl.touk.nussknacker.engine.standalone.api.DeploymentData
 import pl.touk.nussknacker.engine.standalone.api.types._
 import pl.touk.nussknacker.engine.standalone.utils.StandaloneContextPreparer
+import pl.touk.nussknacker.engine.standalone.utils.metrics.NoOpMetricsProvider
 import shapeless.Typeable
 import shapeless.syntax.typeable._
 
@@ -106,7 +106,7 @@ class StandaloneTestMain(testData: TestData, process: EspProcess, modelData: Mod
     val collectingListener = ResultsCollectingListenerHolder.registerRun(variableEncoder)
 
     //in tests we don't send metrics anywhere
-    val testContext = new StandaloneContextPreparer(new MetricRegistry)
+    val testContext = new StandaloneContextPreparer(NoOpMetricsProvider)
 
     //FIXME: validation??
     val standaloneInterpreter = StandaloneProcessInterpreter(process, testContext, modelData,
