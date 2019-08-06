@@ -22,7 +22,7 @@ class DropwizardMetricsProvider(metricRegistry: MetricRegistry) extends MetricsP
     })
   }
 
-  //we want to be safe in concurrent conditions
+  //we want to be safe in concurrent conditions...
   def register[T <: Metric](processId: String, name: String, metric: T): T = {
     val metricName = MetricRegistry.name(processId, name)
     try {
