@@ -5,6 +5,7 @@ import java.util.Collections
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.testkit.TestProbe
+import argonaut.Json
 import com.typesafe.config.ConfigFactory
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
@@ -22,7 +23,7 @@ import pl.touk.nussknacker.restmodel.displayedgraph.ProcessStatus
 import scala.collection.JavaConverters._
 
 class AppResourcesSpec extends FunSuite with ScalatestRouteTest
-  with Matchers with ScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest with Argonaut62Support {
+  with Matchers with ScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
   implicit override val patienceConfig = PatienceConfig(timeout = scaled(Span(2, Seconds)), interval = scaled(Span(20, Millis)))
 
@@ -96,6 +97,8 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest
   }
 
   test("it should return global config") {
+    import Argonaut62Support._
+    
     val globalConfig = Map("testConfig" -> "testValue", "otherConfig" -> "otherValue")
     val resources = new AppResources(ConfigFactory.parseMap(Collections.singletonMap("globalBuildInfo", globalConfig.asJava)),
       Map(), processRepository, TestFactory.processValidation, new JobStatusService(TestProbe().ref))
@@ -103,7 +106,8 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest
     val result = Get("/app/buildInfo") ~> withPermissions(resources, testPermissionRead)
     result ~> check {
       status shouldBe StatusCodes.OK
-      entityAs[Map[String, String]] shouldBe globalConfig
+      val result = entityAs[Map[String, Json]]
+      result.filterKeys(_ != "processingType").mapValues(_.stringOrEmpty) shouldBe globalConfig
     }
   }
 

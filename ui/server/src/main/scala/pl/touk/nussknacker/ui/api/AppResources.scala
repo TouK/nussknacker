@@ -37,12 +37,11 @@ class AppResources(config: Config,
         get {
           complete {
             val globalBuildInfo = config.getAs[Map[String, String]]("globalBuildInfo")
-              .getOrElse(Map()).asJson
+              .getOrElse(Map()).mapValues(_.asJson)
             val modelDataInfo = modelData.map {
               case (k,v) => (k.toString, v.configCreator.buildInfo())
             }.asJson
-
-            globalBuildInfo.deepmerge(modelDataInfo)
+            (globalBuildInfo + ("processingType" -> modelDataInfo)).asJson
           }
         }
       } ~ path("healthCheck") {
