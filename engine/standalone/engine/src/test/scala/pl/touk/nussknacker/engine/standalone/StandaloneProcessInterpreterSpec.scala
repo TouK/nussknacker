@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.standalone.utils.StandaloneContextPreparer
+import pl.touk.nussknacker.engine.standalone.utils.metrics.dropwizard.DropwizardMetricsProvider
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
 class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Eventually with ScalaFutures {
@@ -170,7 +171,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Event
                          creator: StandaloneProcessConfigCreator = new StandaloneProcessConfigCreator,
                          metricRegistry: MetricRegistry = new MetricRegistry) = {
     val simpleModelData = LocalModelData(ConfigFactory.load(), creator)
-    val ctx = new StandaloneContextPreparer(metricRegistry)
+    val ctx = new StandaloneContextPreparer(new DropwizardMetricsProvider(metricRegistry))
 
     val maybeinterpreter = StandaloneProcessInterpreter(process, ctx, simpleModelData)
 

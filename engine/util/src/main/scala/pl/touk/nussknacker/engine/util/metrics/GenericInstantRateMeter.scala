@@ -21,7 +21,7 @@ trait GenericInstantRateMeter extends RateMeter {
     counter.add(1)
   }
 
-  def getValue = synchronized {
+  def getValue: Double = synchronized {
     val previousTick = lastTick
     val currentTime = System.nanoTime()
     val timeFromLast = currentTime - previousTick

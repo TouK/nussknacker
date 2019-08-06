@@ -38,7 +38,7 @@ trait GenericTimeMeasuringService {
 
 case class EspTimer(rateMeter: GenericInstantRateMeter, histogram: Long => Unit) {
 
-  def update(nanoTimeStart: Long) = {
+  def update(nanoTimeStart: Long): Unit = {
     val delta = System.nanoTime() - nanoTimeStart
     rateMeter.mark()
     histogram.apply(delta)
