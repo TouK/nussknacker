@@ -17,12 +17,14 @@ object FlinkQueryableClient {
   def apply(queryableStateProxyUrl: String): FlinkQueryableClient = {
 
     //TODO: this is workaround for https://issues.apache.org/jira/browse/FLINK-10225, we want to be able to configure all task managers
-    val queryableStateProxyUrls = queryableStateProxyUrl.split(",").toList
-    val clients = queryableStateProxyUrls.map { url =>
-      val (queryableStateProxyHost, queryableStateProxyPort) = parseHostAndPort(url.trim)
-      new QueryableStateClient(queryableStateProxyHost, queryableStateProxyPort)
+    val queryableStateProxyUrlsParts = queryableStateProxyUrl.split(",").toList.map { url =>
+      parseHostAndPort(url.trim)
     }
-    new FlinkQueryableClient(clients)
+    def createClients = queryableStateProxyUrlsParts.map {
+      case (queryableStateProxyHost, queryableStateProxyPort) =>
+        new QueryableStateClient(queryableStateProxyHost, queryableStateProxyPort)
+    }
+    new FlinkQueryableClient(createClients)
   }
 
   private def parseHostAndPort(url: String): (String, Int) = {
@@ -33,7 +35,9 @@ object FlinkQueryableClient {
   }
 }
 
-class FlinkQueryableClient(clients: List[QueryableStateClient]) extends QueryableClient with LazyLogging {
+class FlinkQueryableClient(createClients: => List[QueryableStateClient]) extends QueryableClient with LazyLogging {
+
+  private lazy val clients = createClients
 
   def fetchState[V: TypeInformation](jobId: String, queryName: String, key: String)
                                     (implicit ec: ExecutionContext): Future[V] = {
