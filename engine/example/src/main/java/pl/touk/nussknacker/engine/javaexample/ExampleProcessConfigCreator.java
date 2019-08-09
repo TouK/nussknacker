@@ -2,16 +2,27 @@ package pl.touk.nussknacker.engine.javaexample;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.typesafe.config.Config;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor;
 import org.apache.flink.streaming.api.windowing.time.Time;
-import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.streaming.util.serialization.KeyedSerializationSchema;
 import pl.touk.nussknacker.engine.api.CustomStreamTransformer;
 import pl.touk.nussknacker.engine.api.ProcessListener;
 import pl.touk.nussknacker.engine.api.Service;
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory;
-import pl.touk.nussknacker.engine.api.process.*;
+import pl.touk.nussknacker.engine.api.process.SingleNodeConfig$;
+import pl.touk.nussknacker.engine.api.process.SinkFactory;
+import pl.touk.nussknacker.engine.api.process.SourceFactory;
+import pl.touk.nussknacker.engine.api.process.WithCategories;
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender;
 import pl.touk.nussknacker.engine.api.test.TestParsingUtils;
 import pl.touk.nussknacker.engine.example.LoggingExceptionHandlerFactory;
@@ -22,9 +33,6 @@ import pl.touk.nussknacker.engine.kafka.KafkaSinkFactory;
 import pl.touk.nussknacker.engine.kafka.KafkaSourceFactory;
 import scala.Option;
 import scala.collection.JavaConverters;
-
-import java.io.IOException;
-import java.util.*;
 
 public class ExampleProcessConfigCreator implements ProcessConfigCreator {
 
@@ -92,12 +100,12 @@ public class ExampleProcessConfigCreator implements ProcessConfigCreator {
         KeyedSerializationSchema<Object> schema = new KeyedSerializationSchema<Object>() {
             @Override
             public byte[] serializeKey(Object element) {
-                return UUID.randomUUID().toString().getBytes();
+                return UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8);
             }
             @Override
             public byte[] serializeValue(Object element) {
                 if (element instanceof String) {
-                    return ((String) element).getBytes();
+                    return ((String) element).getBytes(StandardCharsets.UTF_8);
                 } else {
                     throw new RuntimeException("Sorry, only strings");
                 }

@@ -1,5 +1,7 @@
 package pl.touk.http.argonaut
 
+import java.nio.charset.StandardCharsets
+
 import argonaut.{Json, JsonBigDecimal, JsonDecimal, JsonLong, PrettyParams}
 import com.fasterxml.jackson.core.util.{DefaultIndenter, DefaultPrettyPrinter}
 import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper, SerializationFeature}
@@ -29,7 +31,7 @@ case class MarshallOptions(pretty: Boolean = false)
 
 object ArgonautJsonMarshaller extends JsonMarshaller {
 
-  override def marshall(json: Json, options: MarshallOptions): Array[Byte] = marshallToString(json, options).getBytes
+  override def marshall(json: Json, options: MarshallOptions): Array[Byte] = marshallToString(json, options).getBytes(StandardCharsets.UTF_8)
 
   override def marshallToString(json: Json, options: MarshallOptions): String = {
     val prettyParams = if (options.pretty) PrettyParams.spaces2 else PrettyParams.nospace
@@ -51,8 +53,9 @@ object JacksonJsonMarshaller extends JsonMarshaller {
       .setDefaultPrettyPrinter(prettyPrinter)
   }
 
-  override def marshallToString(json: Json, options: MarshallOptions): String = new String(marshall(json, options))
+  override def marshallToString(json: Json, options: MarshallOptions): String = new String(marshall(json, options), StandardCharsets.UTF_8)
 
+  //writeValueAsBytes uses UTF-8
   override def marshall(json: Json, options: MarshallOptions): Array[Byte] = objectMapperFor(options).writeValueAsBytes(convertToJackson(json))
 
   def convertToJackson(json: Json): JsonNode = {

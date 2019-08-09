@@ -163,7 +163,7 @@ class ManagementResources(processCounter: ProcessCounter,
     displayableProcessJson.decodeEither[DisplayableProcess] match {
       case Right(process) =>
         val canonical = ProcessConverter.fromDisplayable(process)
-        val canonicalJson = new String(jsonMarshaller.marshall(UiProcessMarshaller.toJson(canonical)))
+        val canonicalJson = jsonMarshaller.marshallToString(UiProcessMarshaller.toJson(canonical))
         (managementActor ? Test(id, canonicalJson, TestData(testData), user, UiCodecs.testResultsVariableEncoder)).mapTo[TestResults[Json]].flatMap { results =>
           assertTestResultsAreNotTooBig(results)
         }.map { results =>

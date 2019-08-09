@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.kafka.generic
 
+import java.nio.charset.StandardCharsets
+
 import argonaut.{Json, JsonObject}
 import org.apache.flink.api.scala._
 import org.apache.flink.streaming.util.serialization.KeyedDeserializationSchemaWrapper
@@ -33,7 +35,7 @@ object sources {
   }
 
   //FIXME: handle numeric conversion and validation here??
-  private def deserializeToMap(message: Array[Byte]): Map[String, _] = jsonToMap(toJson(new String(message)).objectOrEmpty)
+  private def deserializeToMap(message: Array[Byte]): Map[String, _] = jsonToMap(toJson(new String(message, StandardCharsets.UTF_8)).objectOrEmpty)
 
   private def toJson(jsonString: String): Json = {
     argonaut.Parse.parse(jsonString) match {
