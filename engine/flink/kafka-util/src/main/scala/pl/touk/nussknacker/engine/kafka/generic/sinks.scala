@@ -22,7 +22,7 @@ object sinks {
         case TypedMap(fields) => fields
         case other => other
       }
-      encoder.encode(objToEncode).spaces2.getBytes()
+      encoder.encode(objToEncode).spaces2.getBytes(StandardCharsets.UTF_8)
     }
     override def getTargetTopic(element: Any): String = null
   }
