@@ -386,7 +386,7 @@ class Graph extends React.Component {
 
     })
 
-    _.keys((data.validationResult.errors || {}).invalidNodes).forEach(name => {
+    _.keys((data.validationResult && data.validationResult.errors || {}).invalidNodes).forEach(name => {
       this.highlightNode(name, 'node-validation-error')
     });
 
