@@ -52,6 +52,7 @@ class AvroSchemaSpelExpressionSpec extends FunSpec with Matchers {
         |]""".stripMargin)
     val ctx = ValidationContext.empty.withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(schema)).toOption.get
 
+    println(ctx)
     parse[CharSequence]("#input.array[0].foo", ctx) should be ('valid)
     parse[CharSequence]("#input.array[0].bar", ctx) should be ('invalid)
   }

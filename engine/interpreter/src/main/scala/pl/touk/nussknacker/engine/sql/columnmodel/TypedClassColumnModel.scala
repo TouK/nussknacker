@@ -3,15 +3,15 @@ package pl.touk.nussknacker.engine.sql.columnmodel
 import java.lang.reflect.Member
 
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, ClassMemberPredicate}
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass}
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import pl.touk.nussknacker.engine.sql.columnmodel.CreateColumnModel.ClazzToSqlType
 import pl.touk.nussknacker.engine.sql.{Column, ColumnModel}
 import pl.touk.nussknacker.engine.types.EspTypeUtils
 
 private[columnmodel] object TypedClassColumnModel {
-  def create(typed: Typed): ColumnModel = {
-    val claz = typed.possibleTypes.head.klass
+  def create(typed: TypedClass): ColumnModel = {
+    val claz = typed.klass
     val definition = EspTypeUtils.clazzDefinition(claz)(classExtractionSettings(claz))
     getColumns(definition)
   }

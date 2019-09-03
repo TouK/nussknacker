@@ -138,10 +138,11 @@ object DefinitionExtractor {
     }
 
     private def extractTypesFromObjectDefinition(obj: ObjectWithMethodDef): List[TypingResult] = {
-      def clazzRefFromTyped(typed: TypingResult): Iterable[ClazzRef] = typed match {
-        case Typed(possibleTypes) => possibleTypes.map(t => ClazzRef(t.klass))
-        case _ => Set()
-      }
+      //TODO: uncomment + fix when .flatMap(clazzRefFromTyped) will be uncommented
+//      def clazzRefFromTyped(typed: TypingResult): Iterable[ClazzRef] = typed match {
+//        case Typed(possibleTypes) => possibleTypes.map(t => ClazzRef(t.klass))
+//        case _ => Set()
+//      }
 
       def clazzRefsFromParameter(parameter: Parameter): Iterable[TypingResult] = {
         val fromAdditionalVars = parameter.additionalVariables.values//.flatMap(clazzRefFromTyped)

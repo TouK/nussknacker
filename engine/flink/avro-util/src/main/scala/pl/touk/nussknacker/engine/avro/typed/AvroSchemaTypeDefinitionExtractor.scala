@@ -26,18 +26,16 @@ object AvroSchemaTypeDefinitionExtractor {
       case Schema.Type.ENUM =>
         Typed[EnumSymbol]
       case Schema.Type.ARRAY =>
-        new Typed(Set(TypedClass(classOf[java.util.List[_]], List(typeDefinition(schema.getElementType)))))
+        TypedClass(classOf[java.util.List[_]], List(typeDefinition(schema.getElementType)))
       case Schema.Type.MAP =>
-        new Typed(Set(TypedClass(classOf[java.util.Map[_, _]], List(Typed[CharSequence], typeDefinition(schema.getValueType)))))
+        TypedClass(classOf[java.util.Map[_, _]], List(Typed[CharSequence], typeDefinition(schema.getValueType)))
       case Schema.Type.UNION =>
         val childTypeDefinitons = schema.getTypes.asScala.map(typeDefinition).toList
         val withoutNull = childTypeDefinitons.filterNot(_ == Typed[Null])
         withoutNull match {
           case Nil => Typed[Null]
-          case head :: Nil => head
-          case moreThanOne if moreThanOne.forall(_.isInstanceOf[Typed]) =>
-            new Typed(moreThanOne.flatMap(_.asInstanceOf[Typed].possibleTypes).toSet)
-          case _ => Unknown
+          case nonEmpty =>
+            Typed(nonEmpty.toSet)
         }
       case Schema.Type.FIXED =>
         Typed[GenericData.Fixed]

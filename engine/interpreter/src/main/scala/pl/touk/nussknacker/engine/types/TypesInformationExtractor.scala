@@ -51,8 +51,10 @@ object TypesInformationExtractor {
   }
 
   private def clazzRefsFromTypingResult(typingResult: TypingResult): Set[ClazzRef] = typingResult match {
+    case tc: TypedClass =>
+      clazzRefsFromTypedClass(tc)
     case Typed(set) =>
-      set.flatMap(clazzRefsFromTypedClass)
+      set.flatMap(clazzRefsFromTypingResult)
     case TypedObjectTypingResult(fields, clazz) =>
       clazzRefsFromTypedClass(clazz) ++ fields.values.flatMap(clazzRefsFromTypingResult)
     case Unknown =>

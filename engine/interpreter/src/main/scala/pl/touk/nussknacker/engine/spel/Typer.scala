@@ -4,7 +4,7 @@ import java.math.BigInteger
 
 import cats.data.NonEmptyList._
 import cats.data.Validated._
-import cats.data.{NonEmptyList, Validated}
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.instances.list._
 import cats.syntax.monoid._
 import cats.syntax.traverse._
@@ -62,19 +62,15 @@ private[spel] class Typer(implicit classLoader: ClassLoader) {
       //TODO: what should be here?
       case e: Indexer =>
         val result = current match {
-          case Typed(types) :: Nil if types.size == 1 =>
-            types.head match {
-              case tc@TypedClass(clazz, param :: Nil) if clazz.isAssignableFrom(classOf[java.util.List[_]]) => param
-              case TypedClass(clazz, keyParam :: valueParam :: Nil) if clazz.isAssignableFrom(classOf[java.util.Map[_, _]]) => valueParam
-              case _ => Unknown
-            }
+          case TypedClass(clazz, param :: Nil) :: Nil if clazz.isAssignableFrom(classOf[java.util.List[_]]) => param
+          case TypedClass(clazz, keyParam :: valueParam :: Nil):: Nil if clazz.isAssignableFrom(classOf[java.util.Map[_, _]]) => valueParam
           case _ => Unknown
         }
         Valid(result)
       case e: InlineList => withTypedChildren { children =>
         val childrenTypes = children.toSet
         val genericType = if (childrenTypes.contains(Unknown) || childrenTypes.size != 1) Unknown else childrenTypes.head
-        fixed(Typed(Set(TypedClass(classOf[java.util.List[_]], List(genericType)))))
+        fixed(TypedClass(classOf[java.util.List[_]], List(genericType)))
       }
 
       case e: InlineMap =>
@@ -141,41 +137,15 @@ private[spel] class Typer(implicit classLoader: ClassLoader) {
         case Some(iterateType) =>
           val listType = extractListType(iterateType)
           typeChildren(validationContext, node, listType :: current) {
-            case result :: Nil => Valid(Typed(Set(TypedClass(classOf[java.util.List[_]], List(result)))))
+            case result :: Nil => Valid(TypedClass(classOf[java.util.List[_]], List(result)))
             case other => invalid(s"Wrong selection type: ${other.map(_.display)}")
           }
       }
 
       case e: PropertyOrFieldReference =>
-        current.headOption match {
-        case None => invalid(s"Non reference '${e.toStringAST}' occurred. Maybe you missed '#' in front of it?")
-        case Some(Unknown) => Valid(Unknown)
-        case Some(typed: Typed) if typed.canHaveAnyPropertyOrField => Valid(Unknown)
-        case Some(typed: TypedObjectTypingResult) =>
-          typed.fields.get(e.getName) match {
-            case None => invalid(s"There is no property '${e.getName}' in ${typed.display}")
-            case Some(result) => Valid(result)
-          }
-        case Some(typed@Typed(possible)) =>
-          val clazzDefinitions = possible.map(typedClass =>
-            EspTypeUtils.clazzDefinition(typedClass.klass)(ClassExtractionSettings.Default)
-          ).toList
-
-          clazzDefinitions match {
-            //in normal circumstances this should not happen, however we'd rather omit some errors than not allow correct expression
-            case Nil =>
-              Valid(Unknown)
-            case _ =>
-              clazzDefinitions.flatMap(_.getPropertyOrFieldClazzRef(e.getName).map(Typed(_))) match {
-                case Nil =>
-                  invalid(s"There is no property '${e.getName}' in ${typed.display}")
-                case nonEmpty =>
-                  val reduced = nonEmpty.reduce[TypingResult](_ |+| _)
-                  Valid(reduced)
-            }
-          }
-
-      }
+        current.headOption.map(extractProperty(e)).getOrElse {
+          invalid(s"Non reference '${e.toStringAST}' occurred. Maybe you missed '#' in front of it?")
+        }
       //TODO: what should be here?
       case e: QualifiedIdentifier => fixed(Unknown)
 
@@ -208,10 +178,38 @@ private[spel] class Typer(implicit classLoader: ClassLoader) {
     }
   }
 
+  private def extractProperty(e: PropertyOrFieldReference)
+                             (t: TypingResult): ValidatedNel[ExpressionParseError, TypingResult] = t match {
+    case typed: TypingResult if typed.canHaveAnyPropertyOrField => Valid(Unknown)
+    case Unknown => Valid(Unknown)
+    case typedClass: TypedClass =>
+      val clazzDefinition = EspTypeUtils.clazzDefinition(typedClass.klass)(ClassExtractionSettings.Default)
+
+      clazzDefinition.getPropertyOrFieldClazzRef(e.getName).map(Typed(_)) match {
+        case None =>
+          invalid(s"There is no property '${e.getName}' in ${typedClass.display}")
+        case Some(typ) =>
+          Valid(typ)
+      }
+    case typed: TypedObjectTypingResult =>
+      typed.fields.get(e.getName) match {
+        case None => invalid(s"There is no property '${e.getName}' in ${typed.display}")
+        case Some(result) => Valid(result)
+      }
+    case Typed(possible) =>
+      possible.toList match {
+        //in normal circumstances this should not happen, however we'd rather omit some errors than not allow correct expression
+        case Nil =>
+          Valid(Unknown)
+        case l =>
+          l.map(t => extractProperty(e)(t)).sequence.map(_.reduce[TypingResult](_ |+| _))
+      }
+  }
+
   private def extractListType(parent: TypingResult): TypingResult = parent match {
-    case Typed(klases) if parent.canBeSubclassOf(Typed[java.util.List[_]]) =>
-      //FIXME: what if more results are present?
-      klases.headOption.flatMap(_.params.headOption).getOrElse(Unknown)
+    case tc: TypedClass if tc.canBeSubclassOf(Typed[java.util.List[_]]) =>
+      tc.params.headOption.getOrElse(Unknown)
+    //FIXME: what if more results are present?
     case _ => Unknown
   }
 

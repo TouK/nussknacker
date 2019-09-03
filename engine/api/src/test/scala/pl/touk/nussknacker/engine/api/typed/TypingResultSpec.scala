@@ -7,7 +7,7 @@ class TypingResultSpec extends FunSuite with Matchers {
 
   private def typeMap(args: (String, TypingResult)*) = TypedObjectTypingResult(args.toMap)
 
-  private def list(arg: TypingResult) =Typed(Set(TypedClass(classOf[java.util.List[_]], List(arg))))
+  private def list(arg: TypingResult) =TypedClass(classOf[java.util.List[_]], List(arg))
 
   test("determine if can be subclass for typed object") {
 

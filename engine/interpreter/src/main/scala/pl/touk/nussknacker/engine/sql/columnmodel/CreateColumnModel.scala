@@ -7,35 +7,34 @@ import cats.data._
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.sql.{ColumnModel, SqlType}
 
 object CreateColumnModel {
 
   def apply(typingResult: TypingResult): Validated[InvalidateMessage, ColumnModel] = {
     getListInnerType(typingResult).andThen {
-      case typed: Typed =>
+      case typed: TypedClass =>
         TypedClassColumnModel.create(typed).valid
       case typedMap: TypedObjectTypingResult =>
         TypedMapColumnModel.create(typedMap).valid
-      case Unknown =>
+      case _: Typed | Unknown =>
         UnknownInner.invalid
     }
   }
 
   private[columnmodel] val getListInnerType: TypingResult => Validated[InvalidateMessage, TypingResult] = {
-    case t@Typed(klasses) if klasses.size == 1 =>
-      val headClass = klasses.head
+    case typedClass: TypedClass =>
       val isCollection =
-        classOf[Traversable[_]].isAssignableFrom(headClass.klass) ||
-        classOf[java.util.Collection[_]].isAssignableFrom(headClass.klass)
+        classOf[Traversable[_]].isAssignableFrom(typedClass.klass) ||
+        classOf[java.util.Collection[_]].isAssignableFrom(typedClass.klass)
       if (isCollection)
-        headClass.params.headOption match {
+        typedClass.params.headOption match {
           case Some(typ) => typ.valid
           case None => UnknownInner.invalid
         }
       else {
-        notAList(t)
+        notAList(typedClass)
       }
     case t => notAList(t)
   }

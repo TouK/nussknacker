@@ -59,35 +59,29 @@ object typing {
     override def objType: TypedClass = TypedClass[Any]
   }
 
-  case class Typed(possibleTypes: Set[TypedClass]) extends TypingResult {
+  // TODO: rename to TypedUnion, ensure that always possibleTypes.size > 1, and cleanup places where was used head/headOption
+  case class Typed(possibleTypes: Set[TypingResult]) extends TypingResult {
+
     override def canBeSubclassOf(typingResult: TypingResult): Boolean = {
       possibleTypes.exists(_.canBeSubclassOf(typingResult))
     }
 
     override def canHaveAnyPropertyOrField: Boolean = {
-      canBeSubclassOf(Typed[util.Map[_, _]]) ||
-        // mainly for avro's GenericRecord purpose
-        hasGetFieldByNameMethod(possibleTypes)
-    }
-
-    private def hasGetFieldByNameMethod(possibleTypes: Set[TypedClass]) = {
-      possibleTypes.exists(tc => tc.klass.getMethods.exists(m => m.getName == "get" && (m.getParameterTypes sameElements Array(classOf[String]))))
+      possibleTypes.exists(_.canHaveAnyPropertyOrField)
     }
 
     override val display : String = possibleTypes.toList match {
       case Nil => "empty"
-      case h::Nil => s"type '${printClass(h)}'"
-      case many => many.map(printClass).mkString("one of (", ", ", ")")
+      case many => many.map(_.display).mkString("one of (", ", ", ")")
     }
 
-    //TODO: should we use simple name here?
-    private def printClass(h: TypedClass) = h.klass.getName
+    override def objType: TypedClass = if (possibleTypes.size == 1) possibleTypes.head.objType else TypedClass[Any]
 
-    override def objType: TypedClass = if (possibleTypes.size == 1) possibleTypes.head else TypedClass[Any]
   }
 
   //TODO: make sure parameter list has right size - can be filled with Unknown if needed
-  case class TypedClass(klass: Class[_], params: List[TypingResult]) {
+  case class TypedClass(klass: Class[_], params: List[TypingResult]) extends TypingResult {
+
     def canBeSubclassOf(typingResult: TypingResult): Boolean = {
       val otherTyped = typingResult.objType
       this == otherTyped || ClassUtils.isAssignable(klass, otherTyped.klass) && (typingResult.canHaveAnyPropertyOrField ||
@@ -95,6 +89,18 @@ object typing {
         //throw validation errors in this case. It's better to accept to much than too little
         otherTyped.params.zip(params).forall(t => t._1.canBeSubclassOf(t._2) || t._2.canBeSubclassOf(t._1)))
     }
+
+    override def canHaveAnyPropertyOrField: Boolean =
+      canBeSubclassOf(Typed[util.Map[_, _]]) || hasGetFieldByNameMethod
+
+    private def hasGetFieldByNameMethod =
+      klass.getMethods.exists(m => m.getName == "get" && (m.getParameterTypes sameElements Array(classOf[String])))
+
+    //TODO: should we use simple name here?
+    override def display: String = s"type '${klass.getName}'"
+
+    override def objType: TypedClass = this
+
   }
 
   object TypedClass {
@@ -115,8 +121,12 @@ object typing {
       if (klass == ClazzRef.unknown) {
         Unknown
       } else {
-        Typed(Set(TypedClass(klass)))
+        TypedClass(klass)
       }
+    }
+
+    def apply[T <: TypingResult](possibleTypes: Set[T]): TypingResult = {
+      Typed(possibleTypes.toSet[TypingResult])
     }
 
   }
@@ -131,6 +141,9 @@ object typing {
       case (Unknown, typed) => typed
       case (typed, Unknown) => typed
       case (Typed(set1), Typed(set2)) => Typed(set1 ++ set2)
+      case (tc1: TypedClass, Typed(set2)) => Typed(set2 + tc1)
+      case (Typed(set1), tc2: TypedClass) => Typed(set1 + tc2)
+      case (tc1: TypedClass, tc2: TypedClass) => Typed(Set(tc1, tc2))
       case _ => throw new IllegalArgumentException("NOT IMPLEMENTED YET :)")
     }
 

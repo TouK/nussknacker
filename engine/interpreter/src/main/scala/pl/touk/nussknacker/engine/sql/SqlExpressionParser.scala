@@ -47,7 +47,7 @@ object SqlExpressionParser extends ExpressionParser {
 
     val expression = new SqlExpression(original = original, columnModels = colModel)
     val listResult = TypedClass(classOf[List[_]], List(typingResult))
-    TypedExpression(expression, Typed(Set(listResult)))
+    TypedExpression(expression, listResult)
   }
 
   private def getQueryReturnType(original: String, colModel: Map[String, ColumnModel]): Validated[NonEmptyList[ExpressionParseError], TypingResult] = {

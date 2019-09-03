@@ -46,7 +46,7 @@ object TypingUtils {
   private def typeListDefinition(list: Seq[_]): TypingResult = {
     //TODO: how to handle list definitions better?
     val mapTypingResult = typedMapDefinitionFromParameters(list.head)
-    new Typed(Set(TypedClass(classOf[util.List[_]], List(mapTypingResult))))
+    TypedClass(classOf[util.List[_]], List(mapTypingResult))
   }
 
   //TODO: how to handle classloaders??

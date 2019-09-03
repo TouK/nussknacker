@@ -20,8 +20,18 @@ object TypeMethodReference {
 class TypeMethodReference(methodReference: MethodReference, currentResults: List[TypingResult]) {
   def call: Either[String, TypingResult] =
     currentResults.headOption match {
-      case Some(Typed(typedClasses)) =>
-        typeFromClazzDefinitions(extractClazzDefinitions(typedClasses))
+      // TODO: make more understandable
+      case Some(tc: TypedClass) =>
+        typeFromClazzDefinitions(extractClazzDefinitions(Set(tc)))
+      case Some(Typed(nestedTypes)) =>
+        val typeClasses = nestedTypes.collect {
+          case tc: TypedClass =>
+            tc
+        }
+        if (typeClasses.size == nestedTypes.size)
+          typeFromClazzDefinitions(extractClazzDefinitions(typeClasses))
+        else
+          Right(Unknown)
       case _ =>
         Right(Unknown)
     }

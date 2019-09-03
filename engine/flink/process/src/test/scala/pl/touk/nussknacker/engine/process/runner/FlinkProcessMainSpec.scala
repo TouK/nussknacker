@@ -246,7 +246,7 @@ object ReturningDependentTypeService extends Service with ServiceReturningType {
       .get("definition")
       .flatMap(_._2)
       .map(definition => TypedObjectTypingResult(definition.asInstanceOf[java.util.List[String]].asScala.map(_ -> Typed[String]).toMap))
-      .map(param => Typed(Set(TypedClass(classOf[java.util.List[_]], List(param)))))
+      .map(param => TypedClass(classOf[java.util.List[_]], List(param)))
       .getOrElse(Unknown)
   }
 }

@@ -680,8 +680,8 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     result.result should matchPattern {
       case Valid(_) =>
     }
-    result.variablesInNodes("id2")("defined") shouldBe Typed(Set(TypedClass(classOf[java.util.List[_]],
-      List(TypedObjectTypingResult(Map("param1" -> Typed[String], "param2" -> Typed[Integer]))))))
+    result.variablesInNodes("id2")("defined") shouldBe TypedClass(classOf[java.util.List[_]],
+      List(TypedObjectTypingResult(Map("param1" -> Typed[String], "param2" -> Typed[Integer]))))
 
 
   }
@@ -795,7 +795,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         .get("definition")
         .flatMap(_._2)
         .map(definition => TypingUtils.typeMapDefinition(definition.asInstanceOf[java.util.Map[String, _]]))
-        .map(param => Typed(Set(TypedClass(classOf[java.util.List[_]], List(param)))))
+        .map(param => TypedClass(classOf[java.util.List[_]], List(param)))
         .getOrElse(Unknown)
     }
   }
