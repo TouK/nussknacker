@@ -43,11 +43,6 @@ class ProcessSplitter(parts: LazyParameter[java.util.Collection[Any]])
     parts.returnType match {
       case tc: TypedClass if tc.canBeSubclassOf(Typed[java.util.Collection[_]]) && tc.params.nonEmpty =>
         tc.params.head
-      case Typed(classes) if classes.size == 1 &&
-        classes.head.canBeSubclassOf(Typed[java.util.Collection[_]]) &&
-        classes.head.objType.params.nonEmpty =>
-
-        classes.head.objType.params.head
       case _ => Unknown
     }
   }

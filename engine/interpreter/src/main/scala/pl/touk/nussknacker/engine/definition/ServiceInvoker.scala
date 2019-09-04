@@ -5,7 +5,7 @@ import java.util.concurrent.{CompletionStage, Executor}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{NodeContext, ServiceInvocationCollector, TestServiceInvocationCollector}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass}
+import pl.touk.nussknacker.engine.api.typed.typing.TypedClass
 import pl.touk.nussknacker.engine.api.{MetaData, Service}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.UnionDefinitionExtractor
@@ -66,12 +66,6 @@ object ServiceInvoker {
 
   def apply(objectWithMethodDef: ObjectWithMethodDef, collector: Option[ServiceInvocationCollector] = None): ServiceInvoker = {
     val detectedReturnType = (objectWithMethodDef.methodDef.realReturnType match {
-      case Typed(set) =>
-        //FIXME: this headOption assumes that there will be only one class here
-        //it is left only for backward compatiblity - should be used TypedClass
-        set.collectFirst {
-          case tc: TypedClass => tc
-        }.map(_.klass)
       case tc: TypedClass =>
         Some(tc.klass)
       case _ => None

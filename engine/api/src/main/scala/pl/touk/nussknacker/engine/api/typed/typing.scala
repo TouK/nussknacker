@@ -11,7 +11,7 @@ object typing {
 
   sealed trait TypingResult {
 
-    def canHaveAnyPropertyOrField: Boolean
+    def canHasAnyPropertyOrField: Boolean
 
     def canBeSubclassOf(typingResult: TypingResult) : Boolean
 
@@ -43,7 +43,7 @@ object typing {
         objType.canBeSubclassOf(typingResult)
     }
 
-    override def canHaveAnyPropertyOrField: Boolean = false
+    override def canHasAnyPropertyOrField: Boolean = false
 
     override def display: String = s"object with fields:${fields.map { case (name, typ) => s"$name of type ${typ.display}"}.mkString(", ")}"
 
@@ -52,22 +52,24 @@ object typing {
   case object Unknown extends TypingResult {
     override def canBeSubclassOf(typingResult: TypingResult): Boolean = true
 
-    override def canHaveAnyPropertyOrField: Boolean = true
+    override def canHasAnyPropertyOrField: Boolean = true
 
     override val display = "unknown"
 
     override def objType: TypedClass = TypedClass[Any]
   }
 
-  // TODO: rename to TypedUnion, ensure that always possibleTypes.size > 1, and cleanup places where was used head/headOption
-  case class Typed(possibleTypes: Set[TypingResult]) extends TypingResult {
+  // constructor is package protected because you should use Typed.apply to be sure that possibleTypes.size > 1
+  case class TypedUnion private[typing](private val possibleTypes: Set[TypingResult]) extends TypingResult {
+
+    assert(possibleTypes.size > 1, "TypedUnion should has more than one possibleType - in other case should be used TypedObjectTypingResult or TypedClass")
 
     override def canBeSubclassOf(typingResult: TypingResult): Boolean = {
       possibleTypes.exists(_.canBeSubclassOf(typingResult))
     }
 
-    override def canHaveAnyPropertyOrField: Boolean = {
-      possibleTypes.exists(_.canHaveAnyPropertyOrField)
+    override def canHasAnyPropertyOrField: Boolean = {
+      possibleTypes.exists(_.canHasAnyPropertyOrField)
     }
 
     override val display : String = possibleTypes.toList match {
@@ -75,22 +77,24 @@ object typing {
       case many => many.map(_.display).mkString("one of (", ", ", ")")
     }
 
-    override def objType: TypedClass = if (possibleTypes.size == 1) possibleTypes.head.objType else TypedClass[Any]
+    // TODO: we should probably look for lowest common ancestor
+    override def objType: TypedClass = TypedClass[Any]
 
   }
 
   //TODO: make sure parameter list has right size - can be filled with Unknown if needed
   case class TypedClass(klass: Class[_], params: List[TypingResult]) extends TypingResult {
 
-    def canBeSubclassOf(typingResult: TypingResult): Boolean = {
-      val otherTyped = typingResult.objType
-      this == otherTyped || ClassUtils.isAssignable(klass, otherTyped.klass) && (typingResult.canHaveAnyPropertyOrField ||
+    def canBeSubclassOf(other: TypingResult): Boolean = {
+      def hasSameTypeParams =
         //we are lax here - the generic type may be co- or contra-variant - and we don't want to
         //throw validation errors in this case. It's better to accept to much than too little
-        otherTyped.params.zip(params).forall(t => t._1.canBeSubclassOf(t._2) || t._2.canBeSubclassOf(t._1)))
+        other.objType.params.zip(params).forall(t => t._1.canBeSubclassOf(t._2) || t._2.canBeSubclassOf(t._1))
+
+      this == other || ClassUtils.isAssignable(klass, other.objType.klass) && (hasSameTypeParams || other.canHasAnyPropertyOrField)
     }
 
-    override def canHaveAnyPropertyOrField: Boolean =
+    override def canHasAnyPropertyOrField: Boolean =
       canBeSubclassOf(Typed[util.Map[_, _]]) || hasGetFieldByNameMethod
 
     private def hasGetFieldByNameMethod =
@@ -104,10 +108,12 @@ object typing {
   }
 
   object TypedClass {
-    def apply(klass: ClazzRef) : TypedClass =
-      TypedClass(klass.clazz, klass.params.map(Typed.apply))
 
-    def apply[T:ClassTag] : TypedClass = TypedClass(ClazzRef[T].clazz, List())
+    private[typed] def apply[T:ClassTag] : TypedClass =
+      TypedClass(ClazzRef[T])
+
+    private[typed] def apply(klass: ClazzRef) : TypedClass =
+      TypedClass(klass.clazz, klass.params.map(Typed.apply))
 
   }
 
@@ -126,26 +132,38 @@ object typing {
     }
 
     def apply[T <: TypingResult](possibleTypes: Set[T]): TypingResult = {
-      Typed(possibleTypes.toSet[TypingResult])
+      reduceUnknowns(flatten(possibleTypes.toSet[TypingResult])).toList match {
+        case Nil =>
+          throw new IllegalArgumentException("Can't create Typed with empty possible types")
+        case single :: Nil =>
+          single
+        case moreThanOne =>
+          TypedUnion(moreThanOne.toSet[TypingResult])
+      }
     }
 
-  }
+    private def flatten(possibleTypes: Set[TypingResult]) = possibleTypes.flatMap {
+      case TypedUnion(possibleTypes) => possibleTypes
+      case other => Set(other)
+    }
 
+    private def reduceUnknowns(possibleTypes: Set[TypingResult]) =
+      if (possibleTypes.contains(Unknown) && possibleTypes.size > 1) {
+        possibleTypes - Unknown
+      } else {
+        possibleTypes
+      }
+
+  }
 
   implicit val commutativeMonoid: CommutativeMonoid[TypingResult] = new CommutativeMonoid[TypingResult] {
 
     //ha... is it really this way? :)
     override def empty: TypingResult = Typed[Any]
 
-    override def combine(x: TypingResult, y: TypingResult): TypingResult = (x, y) match {
-      case (Unknown, typed) => typed
-      case (typed, Unknown) => typed
-      case (Typed(set1), Typed(set2)) => Typed(set1 ++ set2)
-      case (tc1: TypedClass, Typed(set2)) => Typed(set2 + tc1)
-      case (Typed(set1), tc2: TypedClass) => Typed(set1 + tc2)
-      case (tc1: TypedClass, tc2: TypedClass) => Typed(Set(tc1, tc2))
-      case _ => throw new IllegalArgumentException("NOT IMPLEMENTED YET :)")
-    }
+    override def combine(x: TypingResult, y: TypingResult): TypingResult =
+      Typed(Set(x, y))
 
   }
+
 }

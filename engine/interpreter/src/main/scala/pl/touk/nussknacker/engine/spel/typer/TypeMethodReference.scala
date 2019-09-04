@@ -4,7 +4,7 @@ import cats.data.NonEmptyList
 import org.springframework.expression.spel.ast.MethodReference
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedUnion, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo}
 import pl.touk.nussknacker.engine.types.EspTypeUtils
 
@@ -23,7 +23,7 @@ class TypeMethodReference(methodReference: MethodReference, currentResults: List
       // TODO: make more understandable
       case Some(tc: TypedClass) =>
         typeFromClazzDefinitions(extractClazzDefinitions(Set(tc)))
-      case Some(Typed(nestedTypes)) =>
+      case Some(TypedUnion(nestedTypes)) =>
         val typeClasses = nestedTypes.collect {
           case tc: TypedClass =>
             tc

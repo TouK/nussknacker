@@ -180,7 +180,7 @@ private[spel] class Typer(implicit classLoader: ClassLoader) {
 
   private def extractProperty(e: PropertyOrFieldReference)
                              (t: TypingResult): ValidatedNel[ExpressionParseError, TypingResult] = t match {
-    case typed: TypingResult if typed.canHaveAnyPropertyOrField => Valid(Unknown)
+    case typed: TypingResult if typed.canHasAnyPropertyOrField => Valid(Unknown)
     case Unknown => Valid(Unknown)
     case typedClass: TypedClass =>
       val clazzDefinition = EspTypeUtils.clazzDefinition(typedClass.klass)(ClassExtractionSettings.Default)
@@ -196,14 +196,8 @@ private[spel] class Typer(implicit classLoader: ClassLoader) {
         case None => invalid(s"There is no property '${e.getName}' in ${typed.display}")
         case Some(result) => Valid(result)
       }
-    case Typed(possible) =>
-      possible.toList match {
-        //in normal circumstances this should not happen, however we'd rather omit some errors than not allow correct expression
-        case Nil =>
-          Valid(Unknown)
-        case l =>
-          l.map(t => extractProperty(e)(t)).sequence.map(_.reduce[TypingResult](_ |+| _))
-      }
+    case TypedUnion(possible) =>
+      possible.toList.map(t => extractProperty(e)(t)).sequence.map(_.reduce[TypingResult](_ |+| _))
   }
 
   private def extractListType(parent: TypingResult): TypingResult = parent match {
