@@ -40,12 +40,26 @@ trait LazyParameter[T] {
   //type of parameter, derived from expression. Can be used for dependent types, see PreviousValueTransformer
   def returnType: TypingResult
 
+  //we provide only applicative operation, monad is tricky to implement (see CompilerLazyParameterInterpreter.createInterpreter)
+  def ap[Y](fun: LazyParameter[T => Y])(implicit lazyParameterInterpreter: LazyParameterInterpreter): LazyParameter[Y] =
+    lazyParameterInterpreter.ap(this, fun)
+
+  def map[Y](fun: T => Y)(implicit lazyParameterInterpreter: LazyParameterInterpreter): LazyParameter[Y] = {
+    lazyParameterInterpreter.ap(this, lazyParameterInterpreter.unit(fun))
+  }
+
+
 }
+
 
 
 trait LazyParameterInterpreter {
 
   def createInterpreter[T](parameter: LazyParameter[T]): (ExecutionContext, Context) => Future[T]
+
+  def ap[T, Y](lazyParameter: LazyParameter[T], fun: LazyParameter[T => Y]): LazyParameter[Y]
+
+  def unit[T](value: T): LazyParameter[T]
 
   def syncInterpretationFunction[T](parameter: LazyParameter[T]) : Context => T
 

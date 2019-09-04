@@ -82,9 +82,10 @@ object StandaloneProcessInterpreter {
       case SourcePart(_, node, validationContext, nextParts, _) =>
         compileWithCompilationErrors(node, validationContext).andThen(partInvoker(_, nextParts))
       case part@SinkPart(sinkWithParams:StandaloneSinkWithParameters, endNode, validationContext) =>
-        val response = sinkWithParams.prepareResponse(lazyParameterInterpreter)
+        implicit val lazyInterpreter: CompilerLazyParameterInterpreter = lazyParameterInterpreter
+        val response = lazyParameterInterpreter.createInterpreter(sinkWithParams.prepareResponse)
         Valid((ctx: Context, ec:ExecutionContext) => {
-          response(ctx, ec).map(res => Right(List(InterpretationResult(EndReference(endNode.id), res, ctx))))(ec)
+          response(ec, ctx).map(res => Right(List(InterpretationResult(EndReference(endNode.id), res, ctx))))(ec)
         })
 
       case part@SinkPart(_, endNode, validationContext) =>

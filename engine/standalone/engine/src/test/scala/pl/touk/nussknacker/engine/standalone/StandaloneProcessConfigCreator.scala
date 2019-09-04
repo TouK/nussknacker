@@ -161,11 +161,9 @@ object ParameterResponseSinkFactory extends SinkFactory {
   override def requiresOutput: Boolean = false
 
   class ParameterResponseSink(computed: LazyParameter[String]) extends StandaloneSinkWithParameters {
-    override def prepareResponse(evaluateLazyParameter: LazyParameterInterpreter): (NKContext, ExecutionContext) => Future[Any] = {
-      val function = evaluateLazyParameter.createInterpreter(computed)
-      (ctx: NKContext, ec: ExecutionContext) => {
-        function(ec, ctx).map(s => s + " withRandomString")(ec)
-      }
+    
+    override def prepareResponse(implicit evaluateLazyParameter: LazyParameterInterpreter): LazyParameter[Any] = {
+      computed.map(s => s + " withRandomString")
     }
 
     override def testDataOutput: Option[Any => String] = Some(_.toString)
