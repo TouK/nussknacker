@@ -48,13 +48,13 @@ class ProcessObjectFactory(expressionEvaluator: ExpressionEvaluator) extends Laz
         val value = if (definition.branchParam) {
           param.typedValue.asInstanceOf[TypedExpressionMap].valueByKey.mapValuesNow {
             case TypedExpression(expr, returnType) =>
-              CompilerLazyParameter(nodeId, Parameter(
+              ExpressionLazyParameter(nodeId, Parameter(
                 param.name,
                 graph.expression.Expression(expr.language, expr.original)), returnType)
           }
         } else {
           val exprValue = param.typedValue.asInstanceOf[TypedExpression]
-          CompilerLazyParameter(nodeId, Parameter(param.name,
+          ExpressionLazyParameter(nodeId, Parameter(param.name,
             graph.expression.Expression(exprValue.expression.language, exprValue.expression.original)), exprValue.returnType)
         }
         param.name -> value
