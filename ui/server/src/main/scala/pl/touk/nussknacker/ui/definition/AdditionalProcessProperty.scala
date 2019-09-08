@@ -1,8 +1,11 @@
 package pl.touk.nussknacker.ui.definition
 
 import argonaut.CodecJson
+import io.circe.{Decoder, Encoder}
+import io.circe.generic.JsonCodec
+import pl.touk.nussknacker.restmodel.ProcessType
 
-case class AdditionalProcessProperty(label: String, `type`: PropertyType.Value, default: Option[String], isRequired: Boolean, values: Option[List[String]])
+@JsonCodec case class AdditionalProcessProperty(label: String, `type`: PropertyType.Value, default: Option[String], isRequired: Boolean, values: Option[List[String]])
 
 object AdditionalProcessProperty {
   import argonaut.Argonaut._
@@ -12,6 +15,10 @@ object AdditionalProcessProperty {
 }
 
 object PropertyType extends Enumeration {
+
+  implicit val encoder: Encoder[PropertyType.Value] = Encoder.enumEncoder(PropertyType)
+  implicit val decoder: Decoder[PropertyType.Value] = Decoder.enumDecoder(PropertyType)
+
   type PropertyType = Value
   val select, text, string, integer = Value
 }

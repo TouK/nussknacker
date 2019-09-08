@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.ui.api.helpers
 
-import argonaut.Json
+import io.circe.Json
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
+import pl.touk.nussknacker.restmodel.CirceRestCodecs
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
-import pl.touk.nussknacker.ui.codec.UiCodecs
 
 object TestProcessUtil {
 
@@ -15,7 +15,7 @@ object TestProcessUtil {
   }
 
   def toJson(espProcess: EspProcess, processingType: ProcessingType = TestProcessingTypes.Streaming): Json = {
-    UiCodecs.displayableProcessCodec.encode(toDisplayable(espProcess, processingType))
+    CirceRestCodecs.displayableEncoder(toDisplayable(espProcess, processingType))
   }
 
 }

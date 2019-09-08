@@ -7,7 +7,7 @@ import akka.stream.ActorMaterializer
 import com.codahale.metrics.MetricRegistry
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.http.argonaut.{Argonaut62Support, JsonMarshaller}
+import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.engine.standalone.deployment.DeploymentService
 import pl.touk.nussknacker.engine.standalone.utils.StandaloneContextPreparer
 import pl.touk.nussknacker.engine.standalone.utils.logging.StandaloneRequestResponseLogger
@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import scala.util.Try
 import scala.util.control.NonFatal
 
-object StandaloneHttpApp extends Directives with Argonaut62Support with LazyLogging with App {
+object StandaloneHttpApp extends Directives with FailFastCirceSupport with LazyLogging with App {
 
   private val config = ConfigFactory.load()
 
@@ -26,8 +26,6 @@ object StandaloneHttpApp extends Directives with Argonaut62Support with LazyLogg
   import system.dispatcher
 
   implicit private val materializer: ActorMaterializer = ActorMaterializer()
-
-  implicit private val jsonMarshaller: JsonMarshaller = JsonMarshaller.prepareDefault(config)
 
   val metricRegistry = StandaloneMetrics.prepareRegistry(config)
 
@@ -78,7 +76,7 @@ object StandaloneMetrics extends LazyLogging {
 
 
 class StandaloneHttpApp(config: Config, metricRegistry: MetricRegistry)(implicit as: ActorSystem)
-  extends Directives with Argonaut62Support with LazyLogging {
+  extends Directives with LazyLogging {
 
   private val contextPreparer = new StandaloneContextPreparer(new DropwizardMetricsProvider(metricRegistry))
 

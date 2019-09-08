@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.definition
 import argonaut.CodecJson
 import argonaut.Argonaut._
 import com.typesafe.config.ConfigRenderOptions
+import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.{ParameterConfig, SingleNodeConfig}
@@ -104,13 +105,13 @@ object UIProcessObjects {
 
 }
 
-case class UIProcessObjects(nodesToAdd: List[NodeGroup],
+@JsonCodec(encodeOnly = true) case class UIProcessObjects(nodesToAdd: List[NodeGroup],
                             processDefinition: UIProcessDefinition,
                             nodesConfig: Map[String, SingleNodeConfig],
                             additionalPropertiesConfig: Map[String, AdditionalProcessProperty],
                             edgesForNodes: List[NodeEdges])
 
-case class UIProcessDefinition(services: Map[String, UIObjectDefinition],
+@JsonCodec(encodeOnly = true) case class UIProcessDefinition(services: Map[String, UIObjectDefinition],
                                sourceFactories: Map[String, UIObjectDefinition],
                                sinkFactories: Map[String, UIObjectDefinition],
                                customStreamTransformers: Map[String, UIObjectDefinition],
@@ -125,10 +126,10 @@ case class UIProcessDefinition(services: Map[String, UIObjectDefinition],
 }
 
 
-case class UIObjectDefinition(parameters: List[Parameter],
-                              returnType: Option[TypingResult],
-                              categories: List[String],
-                              nodeConfig: SingleNodeConfig)
+@JsonCodec(encodeOnly = true) case class UIObjectDefinition(parameters: List[Parameter],
+                                         returnType: Option[TypingResult],
+                                         categories: List[String],
+                                         nodeConfig: SingleNodeConfig)
 
 
 object UIObjectDefinition {
@@ -161,14 +162,15 @@ object UIProcessDefinition {
 }
 
 
-case class NodeTypeId(`type`: String, id: Option[String] = None)
+@JsonCodec case class NodeTypeId(`type`: String, id: Option[String] = None)
 
-case class NodeEdges(nodeId: NodeTypeId, edges: List[EdgeType], canChooseNodes: Boolean, isForInputDefinition: Boolean)
+@JsonCodec case class NodeEdges(nodeId: NodeTypeId, edges: List[EdgeType], canChooseNodes: Boolean, isForInputDefinition: Boolean)
 
-case class NodeToAdd(`type`: String, label: String, node: NodeData, categories: List[String], branchParametersTemplate: List[evaluatedparam.Parameter] = List.empty)
+import pl.touk.nussknacker.restmodel.CirceRestCodecs.nodeDataEncoder
+@JsonCodec(encodeOnly = true) case class NodeToAdd(`type`: String, label: String, node: NodeData, categories: List[String], branchParametersTemplate: List[evaluatedparam.Parameter] = List.empty)
 
 object SortedNodeGroup {
   def apply(name: String, possibleNodes: List[NodeToAdd]): NodeGroup = NodeGroup(name, possibleNodes.sortBy(_.label.toLowerCase))
 }
 
-case class NodeGroup(name: String, possibleNodes: List[NodeToAdd])
+@JsonCodec(encodeOnly = true) case class NodeGroup(name: String, possibleNodes: List[NodeToAdd])

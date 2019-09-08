@@ -8,6 +8,7 @@ import akka.http.javadsl.model.headers.HttpCredentials
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import argonaut.{DecodeJson, Json}
+import io.circe
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
 import pl.touk.nussknacker.engine.api.StreamMetaData
@@ -20,13 +21,12 @@ import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{Subproce
 import pl.touk.nussknacker.engine.graph.node.{SubprocessInputDefinition, SubprocessOutputDefinition}
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.ui.NussknackerApp
-import pl.touk.nussknacker.ui.api.UISettings
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessUtil}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
-import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
+import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.ui.util.MultipartUtils
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, ValidationResult}
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 
 class BaseFlowTest extends FunSuite with ScalatestRouteTest
   with Matchers with ScalaFutures with BeforeAndAfterEach with BeforeAndAfterAll {
@@ -57,6 +57,8 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest
   test("ensure config is properly parsed") {
     Post("/api/processDefinitionData/streaming?isSubprocess=false", HttpEntity(ContentTypes.`application/json`, "{}")) ~> addCredentials(credentials) ~> mainRoute ~> check {
       val settingsJson = responseAs[String].decodeOption[Json].flatMap(_.field("nodesConfig"))
+      println(settingsJson.get.spaces2)
+      println(settingsJson.map(json => implicitly[DecodeJson[Map[String, SingleNodeConfig]]].decodeJson(json)))
       val settings = settingsJson.flatMap(json => implicitly[DecodeJson[Map[String, SingleNodeConfig]]].decodeJson(json).toOption).get
       val underTest = Map(
         //docs url comes from reference.conf in managementSample
@@ -96,7 +98,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest
       Put(endpoint, TestFactory.posting.toEntityAsProcessToSave(process)) ~> addCredentials(credentials) ~> mainRoute ~> check {
         status shouldEqual StatusCodes.OK
 
-        import pl.touk.nussknacker.ui.codec.UiCodecs.validationResultEncode
+        import pl.touk.nussknacker.restmodel.RestModelCodecs.validationResultEncode
         val res = responseAs[String].decodeOption[ValidationResult].get
         //TODO: in the future should be more local error
         res.errors.globalErrors.map(_.description) shouldBe List(
@@ -124,7 +126,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest
 
     saveProcess(endpoint, process)
 
-    val multiPart = MultipartUtils.prepareMultiParts("testData" -> "record1|field2", "processJson" -> TestProcessUtil.toJson(process).nospaces)()
+    val multiPart = MultipartUtils.prepareMultiParts("testData" -> "record1|field2", "processJson" -> TestProcessUtil.toJson(process).noSpaces)()
     Post(s"/api/processManagement/test/${process.id}", multiPart) ~> addCredentials(credentials) ~> mainRoute ~> check {
       status shouldEqual StatusCodes.OK
     }

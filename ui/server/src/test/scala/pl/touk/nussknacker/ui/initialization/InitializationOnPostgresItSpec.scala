@@ -1,12 +1,9 @@
 package pl.touk.nussknacker.ui.initialization
 
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import argonaut.PrettyParams
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
-import org.scalatest.tagobjects.Slow
 import org.scalatest.tags.Slow
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FlatSpec, Matchers}
-import pl.touk.http.argonaut.{JacksonJsonMarshaller, JsonMarshaller}
 import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
@@ -27,8 +24,6 @@ class InitializationOnPostgresItSpec
     with Eventually {
 
   import Initialization.nussknackerUser
-
-  private implicit val marshaller: JsonMarshaller = JacksonJsonMarshaller
 
   private val processId = "proc1"
 

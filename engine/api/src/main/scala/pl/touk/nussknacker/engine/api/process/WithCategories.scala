@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.api.process
 import argonaut.CodecJson
 import argonaut.derive.{JsonSumCodec, JsonSumCodecFor}
 import cats.kernel.Semigroup
+import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.definition.ParameterRestriction
 
 // todo: rename it? its no longer just a value with categories
@@ -26,7 +27,7 @@ object WithCategories {
   * This contains not only urls or icons but also parameter restrictions, used in e.g. validation
   * TODO: maybe icon/docs/category should be somehow separated as they are UI related?
   */
-case class SingleNodeConfig(params: Option[Map[String, ParameterConfig]], icon: Option[String], docsUrl: Option[String], category: Option[String]) {
+@JsonCodec case class SingleNodeConfig(params: Option[Map[String, ParameterConfig]], icon: Option[String], docsUrl: Option[String], category: Option[String]) {
   def paramConfig(name: String): ParameterConfig = params.flatMap(_.get(name)).getOrElse(ParameterConfig.empty)
 }
 
@@ -38,7 +39,7 @@ object ParameterConfig {
   implicit val codec: CodecJson[ParameterConfig] = CodecJson.derive[ParameterConfig]
 }
 
-case class ParameterConfig(defaultValue: Option[String], restriction: Option[ParameterRestriction])
+@JsonCodec case class ParameterConfig(defaultValue: Option[String], restriction: Option[ParameterRestriction])
 
 object SingleNodeConfig {
   import cats.syntax.semigroup._

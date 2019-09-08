@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.ui.api
 
+import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.{Directives, Route}
-import pl.touk.http.argonaut.{Argonaut62Support, JsonMarshaller}
+import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.ui.definition.UIProcessObjects
@@ -15,11 +16,8 @@ import scala.concurrent.ExecutionContext
 
 class DefinitionResources(modelData: Map[ProcessingType, ModelData],
                           subprocessRepository: SubprocessRepository)
-                         (implicit ec: ExecutionContext, jsonMarshaller: JsonMarshaller)
-  extends Directives with Argonaut62Support with EspPathMatchers with RouteWithUser {
-
-  import argonaut.ArgonautShapeless._
-  import pl.touk.nussknacker.ui.codec.UiCodecs._
+                         (implicit ec: ExecutionContext)
+  extends Directives with FailFastCirceSupport with EspPathMatchers with RouteWithUser {
 
   def route(implicit user: LoggedUser) : Route = encodeResponse {
     //TODO maybe always return data for all subprocesses versions instead of fetching just one-by-one?
@@ -27,16 +25,16 @@ class DefinitionResources(modelData: Map[ProcessingType, ModelData],
       parameter('isSubprocess.as[Boolean]) { (isSubprocess) =>
         post { // POST - because there is sending complex subprocessVersions parameter
           entity(as[Map[String, Long]]) { subprocessVersions =>
-            complete {
-              val response: HttpResponse = modelData.get(processingType).map { modelDataForType =>
+              modelData.get(processingType).map { modelDataForType =>
                 val subprocesses = subprocessRepository.loadSubprocesses(subprocessVersions)
-                val result = UIProcessObjects.prepareUIProcessObjects(modelDataForType, user, subprocesses, isSubprocess)
-                HttpResponse(entity = HttpEntity(ContentTypes.`application/json`, result.asJson.toString()))
+                complete {
+                  UIProcessObjects.prepareUIProcessObjects(modelDataForType, user, subprocesses, isSubprocess)
+                }
               }.getOrElse {
-                HttpResponse(status = StatusCodes.NotFound, entity = s"Processing type: $processingType not found")
+                complete {
+                  HttpResponse(status = StatusCodes.NotFound, entity = s"Processing type: $processingType not found")
+                }
               }
-              response
-            }
           }
         }
       }
@@ -50,8 +48,7 @@ class DefinitionResources(modelData: Map[ProcessingType, ModelData],
     } ~ path("processDefinitionData" / "services") {
       get {
         complete {
-          val result = modelData.mapValues(_.processDefinition.services)
-          HttpResponse(entity = HttpEntity(ContentTypes.`application/json`, result.asJson.toString()))
+          modelData.mapValues(_.processDefinition.services)
         }
       }
     }

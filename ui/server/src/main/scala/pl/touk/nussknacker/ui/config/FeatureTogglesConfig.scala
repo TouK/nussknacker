@@ -19,7 +19,6 @@ case class FeatureTogglesConfig(development: Boolean,
                                 attachments: Option[String])
 
 object FeatureTogglesConfig extends LazyLogging{
-  import argonaut.ArgonautShapeless._
   import com.typesafe.config.Config
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._

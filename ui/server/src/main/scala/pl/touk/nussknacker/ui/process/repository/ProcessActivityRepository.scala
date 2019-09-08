@@ -4,6 +4,8 @@ import java.sql.Timestamp
 import java.time.LocalDateTime
 
 import com.typesafe.scalalogging.LazyLogging
+import io.circe.generic.JsonCodec
+import io.circe.java8.time.{JavaTimeDecoders, JavaTimeEncoders}
 import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName}
 import pl.touk.nussknacker.ui.api.ProcessAttachmentService.AttachmentToAdd
 import pl.touk.nussknacker.ui.db.entity.{AttachmentEntityData, CommentActions, CommentEntityData}
@@ -70,10 +72,12 @@ case class ProcessActivityRepository(dbConfig: DbConfig)
   }
 }
 
-object ProcessActivityRepository {
-  case class ProcessActivity(comments: List[Comment], attachments: List[Attachment])
+object ProcessActivityRepository extends JavaTimeDecoders with JavaTimeEncoders {
 
-  case class Attachment(id: Long, processId: String, processVersionId: Long, fileName: String, user: String, createDate: LocalDateTime)
+  @JsonCodec case class ProcessActivity(comments: List[Comment], attachments: List[Attachment])
+
+  @JsonCodec  case class Attachment(id: Long, processId: String, processVersionId: Long, fileName: String, user: String, createDate: LocalDateTime)
+
   object Attachment {
     def apply(attachment: AttachmentEntityData, processName: String): Attachment = {
       Attachment(
@@ -87,7 +91,7 @@ object ProcessActivityRepository {
     }
   }
 
-  case class Comment(id: Long, processId: String, processVersionId: Long, content: String, user: String, createDate: LocalDateTime)
+  @JsonCodec case class Comment(id: Long, processId: String, processVersionId: Long, content: String, user: String, createDate: LocalDateTime)
   object Comment {
     def apply(comment: CommentEntityData, processName: String): Comment = {
       Comment(

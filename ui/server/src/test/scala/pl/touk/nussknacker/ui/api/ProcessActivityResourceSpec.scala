@@ -17,7 +17,7 @@ import scala.language.higherKinds
 
 class ProcessActivityResourceSpec extends FlatSpec with ScalatestRouteTest with Matchers with ScalaFutures with BeforeAndAfterEach with EspItTest  {
 
-  import pl.touk.nussknacker.ui.codec.UiCodecs._
+  import pl.touk.nussknacker.restmodel.RestModelCodecs._
   implicit override val patienceConfig = PatienceConfig(timeout = scaled(Span(1, Seconds)), interval = scaled(Span(100, Millis)))
 
   val processActivityRouteWithAllPermission = withAllPermissions(processActivityRoute)

@@ -2,10 +2,11 @@ package pl.touk.nussknacker.ui.api
 
 import java.time.LocalDateTime
 
-import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.model.{ContentTypeRange, StatusCodes}
 import akka.http.scaladsl.server
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import argonaut.Parse
+import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
+import argonaut.Argonaut
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
@@ -14,23 +15,25 @@ import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, SampleProcess, TestFactory, TestProcessingTypes}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
-import pl.touk.nussknacker.ui.codec.UiCodecs
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.restmodel.processdetails._
 import pl.touk.nussknacker.ui.security.api.Permission
 import pl.touk.nussknacker.ui.util.MultipartUtils
 import cats.syntax.semigroup._
 import cats.instances.all._
-import org.scalatest.matchers.{BeMatcher, MatchResult}
+import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import org.scalatest.matchers.BeMatcher
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.ProcessActivity
+import io.circe.syntax._
+import pl.touk.nussknacker.restmodel.CirceRestCodecs.displayableDecoder
+import pl.touk.nussknacker.restmodel.CirceRestCodecs.displayableEncoder
 
-class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest
+class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with ScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
-  import UiCodecs._
-
   implicit override val patienceConfig = PatienceConfig(timeout = scaled(Span(2, Seconds)), interval = scaled(Span(100, Millis)))
+  private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
   private val fixedTime = LocalDateTime.now()
 
@@ -74,13 +77,13 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest
       cancelProcess(SampleProcess.process.id, true, Some("cancelComment")) ~> check {
         status shouldBe StatusCodes.OK
         Get(s"/processes/${SampleProcess.process.id}/activity") ~> withAllPermissions(processActivityRoute) ~> check {
-          val comments = responseAs[String].decodeOption[ProcessActivity].get.comments.sortBy(_.id)
+          val comments = responseAs[ProcessActivity].comments.sortBy(_.id)
           comments.map(_.content) shouldBe List("Deployment: deployComment", "Stop: cancelComment")
 
           val firstCommentId::secondCommentId::Nil = comments.map(_.id)
 
           Get(s"/processes/${SampleProcess.process.id}/deployments") ~> withAllPermissions(processesRoute) ~> check {
-            val deploymentHistory = responseAs[String].decodeOption[List[DeploymentHistoryEntry]].get
+            val deploymentHistory = responseAs[List[DeploymentHistoryEntry]]
             val curTime = LocalDateTime.now()
             deploymentHistory.map(_.copy(time = curTime)) shouldBe List(
               DeploymentHistoryEntry(2, curTime, user().id, DeploymentAction.Cancel, Some(secondCommentId), Map()),
@@ -105,7 +108,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest
     whenReady(writeProcessRepository.saveNewProcess(ProcessName(processId), testCategoryName, CustomProcess(""), TestProcessingTypes.Streaming, false)) { res =>
       deployProcess(processId) ~> check { status shouldBe StatusCodes.OK }
       getProcess(processId) ~> check {
-        val processDetails = responseAs[String].decodeOption[ProcessDetails].get
+        val processDetails = responseAs[ProcessDetails]
         processDetails.currentlyDeployedAt shouldBe deployedWithVersions(1)
       }
     }
@@ -165,10 +168,10 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
     val displayableProcess = ProcessConverter.toDisplayable(ProcessCanonizer.canonize(SampleProcess.process)
       , TestProcessingTypes.Streaming)
-    val multiPart = MultipartUtils.prepareMultiParts("testData" -> "ala\nbela", "processJson" -> displayableProcess.asJson.nospaces)()
+    val multiPart = MultipartUtils.prepareMultiParts("testData" -> "ala\nbela", "processJson" -> displayableProcess.asJson.noSpaces)()
     Post(s"/processManagement/test/${SampleProcess.process.id}", multiPart) ~> withPermissions(deployRoute(), testPermissionDeploy |+| testPermissionRead) ~> check {
       status shouldEqual StatusCodes.OK
-      val results = Parse.parse(responseAs[String]).right.get
+      val results = argonaut.JsonParser.parse(responseAs[String]).right.get
       for {
         invocation <- results.cursor --\ "invocationResults"
         endsuffix <- invocation --\ "endsuffix"
@@ -178,8 +181,8 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest
         output <- params --\ "ouput"
         input <- context --\ "input"
       } yield {
-        output.focus shouldBe jString("{message=message}")
-        input.focus shouldBe jString("ala")
+        output.focus shouldBe Argonaut.jString("{message=message}")
+        input.focus shouldBe Argonaut.jString("ala")
       }
     }
   }
@@ -202,7 +205,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest
 
     val displayableProcess = ProcessConverter.toDisplayable(ProcessCanonizer.canonize(process), TestProcessingTypes.Streaming)
 
-    val multiPart = MultipartUtils.prepareMultiParts("testData" -> "ala\nbela", "processJson" -> displayableProcess.asJson.nospaces)()
+    val multiPart = MultipartUtils.prepareMultiParts("testData" -> "ala\nbela", "processJson" -> displayableProcess.asJson.noSpaces)()
     Post(s"/processManagement/test/${process.id}", multiPart) ~> withPermissions(deployRoute(), testPermissionDeploy |+| testPermissionRead) ~> check {
       status shouldEqual StatusCodes.OK
     }
@@ -211,11 +214,11 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest
   private def getHistoryDeployments = decodeDetails.history.flatMap(_.deployments)
 
   def decodeDetails: ProcessDetails = {
-    responseAs[String].decodeOption[ProcessDetails].get
+    responseAs[ProcessDetails]
   }
 
 
   def decodeDetailsFromAll: BasicProcess = {
-    responseAs[String].decodeOption[List[BasicProcess]].flatMap(_.find(_.name == SampleProcess.process.id)).get
+    responseAs[List[BasicProcess]].find(_.name == SampleProcess.process.id).get
   }
 }

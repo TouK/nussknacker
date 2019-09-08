@@ -10,7 +10,6 @@ import akka.stream.Materializer
 import akka.stream.ActorMaterializer
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.http.argonaut.JsonMarshaller
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
 import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
@@ -111,8 +110,6 @@ object NussknackerApp extends App with Directives with LazyLogging {
     val authenticator = AuthenticatorProvider(config, getClass.getClassLoader)
 
     val counter = new ProcessCounter(subprocessRepository)
-
-    implicit val jsonMarshaller: JsonMarshaller = JsonMarshaller.prepareDefault(config)
 
     Initialization.init(modelData.mapValues(_.migrations), db, environment, config.getAs[Map[String, String]]("customProcesses"))
 

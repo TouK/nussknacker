@@ -1,17 +1,18 @@
 package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.server.{Directives, Route}
-import argonaut.{Json, Parse}
 import cats.data.EitherT
+import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import io.circe.Json
+import io.circe.parser.parse
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.QueryableStateName
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.{JobStatusService, ProcessObjectsFinder}
-import pl.touk.http.argonaut.{Argonaut62Support, JsonMarshaller}
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
-import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -19,14 +20,13 @@ class QueryableStateResources(typeToConfig: Map[ProcessingType, ProcessingTypeDa
                               val processRepository: FetchingProcessRepository,
                               jobStatusService: JobStatusService,
                               val processAuthorizer:AuthorizeProcess)
-                             (implicit val ec: ExecutionContext, jsonMarshaller: JsonMarshaller)
+                             (implicit val ec: ExecutionContext)
   extends Directives
-    with Argonaut62Support
+    with FailFastCirceSupport
     with RouteWithUser
     with AuthorizeProcessDirectives
     with ProcessDirectives {
 
-  import pl.touk.nussknacker.ui.codec.UiCodecs._
   import pl.touk.nussknacker.ui.util.CollectionsEnrichments._
 
   def route(implicit user: LoggedUser): Route = {
@@ -66,7 +66,7 @@ class QueryableStateResources(typeToConfig: Map[ProcessingType, ProcessingTypeDa
       jobId <- EitherT.fromEither(Either.fromOption(status.deploymentId, if (status.isDeployInProgress) deployInProgress(processId.name.value) else noJobRunning(processId.name.value)))
       processingType <- EitherT.liftF(processRepository.fetchProcessingType(processId.id))
       jsonString <- EitherT.right(fetchState(processingType, jobId, queryName, key))
-      json <- EitherT.fromEither(Parse.parse(jsonString).leftMap(msg => wrongJson(msg, jsonString)))
+      json <- EitherT.fromEither(parse(jsonString).leftMap(msg => wrongJson(msg.message, jsonString)))
     } yield json
     fetchedJsonState.value.map {
       case Left(msg) => throw new RuntimeException(msg)

@@ -9,7 +9,7 @@ import pl.touk.nussknacker.ui.process.ProcessToSave
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
 class ProcessPosting {
-  import pl.touk.nussknacker.ui.codec.UiCodecs._
+  import pl.touk.nussknacker.restmodel.RestModelCodecs._
 
   implicit def processToSaveCodec: CodecJson[ProcessToSave] = CodecJson.derive[ProcessToSave]
 

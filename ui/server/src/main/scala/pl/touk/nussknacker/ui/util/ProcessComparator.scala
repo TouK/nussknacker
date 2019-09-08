@@ -1,11 +1,9 @@
 package pl.touk.nussknacker.ui.util
 
-import argonaut.{CodecJson, EncodeJson}
-import argonaut.derive.{JsonSumCodec, JsonSumCodecFor}
+import io.circe.generic.JsonCodec
+import io.circe.generic.extras.ConfiguredJsonCodec
 import pl.touk.nussknacker.engine.graph.node.NodeData
-import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
-import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType
-import pl.touk.nussknacker.ui.codec.UiCodecs._
+import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 
 object ProcessComparator {
 
@@ -21,7 +19,11 @@ object ProcessComparator {
 
   }
 
-  sealed trait Difference {
+  import pl.touk.nussknacker.restmodel.CirceRestCodecs.nodeDataEncoder
+  import pl.touk.nussknacker.restmodel.CirceRestCodecs.nodeDataDecoder
+  import pl.touk.nussknacker.engine.api.CirceUtil._
+
+  @ConfiguredJsonCodec sealed trait Difference {
     def id: String
   }
 
@@ -45,11 +47,6 @@ object ProcessComparator {
   case class EdgeNotPresentInCurrent(fromId: String, toId: String) extends Difference
 
   case class DifferentEdgeTypes(fromId: String, toId: String, currentEdgeType: EdgeType, otherEdgeType: EdgeType) extends Difference
-                                                                 */
-
-  //apparently this has to be here so that codecs are resolved properly :|
-  private implicit def typeFieldJsonSumCodecFor[S]: JsonSumCodecFor[S] = JsonSumCodecFor(JsonSumCodec.typeField)
-  lazy val codec : CodecJson[Difference] = CodecJson.derived[Difference]
-
+                         */
 
 }

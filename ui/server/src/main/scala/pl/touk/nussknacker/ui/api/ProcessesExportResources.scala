@@ -5,8 +5,8 @@ import java.nio.charset.StandardCharsets
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.stream.Materializer
-import pl.touk.http.argonaut.{Argonaut62Support, JsonMarshaller, MarshallOptions}
-import pl.touk.nussknacker.ui.codec.UiCodecs
+import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import pl.touk.nussknacker.engine.api.ArgonautCirce
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
 import pl.touk.nussknacker.ui.process.marshall.{ProcessConverter, UiProcessMarshaller}
@@ -19,8 +19,10 @@ import scala.concurrent.ExecutionContext
 
 class ProcessesExportResources(val processRepository: FetchingProcessRepository,
                                processActivityRepository: ProcessActivityRepository)
-                              (implicit val ec: ExecutionContext, mat: Materializer, jsonMarshaller: JsonMarshaller)
-  extends Directives with Argonaut62Support with RouteWithUser with UiCodecs with ProcessDirectives {
+                              (implicit val ec: ExecutionContext, mat: Materializer)
+  extends Directives with FailFastCirceSupport with RouteWithUser with ProcessDirectives {
+
+  import pl.touk.nussknacker.restmodel.CirceRestCodecs.displayableDecoder
 
   def route(implicit user: LoggedUser): Route = {
     path("processesExport" / Segment) { processName =>
@@ -56,7 +58,7 @@ class ProcessesExportResources(val processRepository: FetchingProcessRepository,
         entity(as[DisplayableProcess]) { process =>
           complete {
             val json = UiProcessMarshaller.toJson(ProcessConverter.fromDisplayable(process))
-            HttpResponse(entity = HttpEntity(ContentType(MediaTypes.`application/json`), jsonMarshaller.marshall(json, MarshallOptions(pretty = true))))
+            ArgonautCirce.toCirce(json).spaces2
           }
         }
       }
@@ -66,7 +68,7 @@ class ProcessesExportResources(val processRepository: FetchingProcessRepository,
   private def exportProcess(processDetails: Option[ProcessDetails]): HttpResponse = processDetails match {
     case Some(process) =>
       process.json.map { json =>
-        jsonMarshaller.marshall(UiProcessMarshaller.toJson(ProcessConverter.fromDisplayable(json)), MarshallOptions(pretty = true))
+        ArgonautCirce.toCirce(UiProcessMarshaller.toJson(ProcessConverter.fromDisplayable(json))).spaces2
       }.map { canonicalJson =>
         AkkaHttpResponse.asFile(canonicalJson, s"${process.id}.json")
       }.getOrElse(HttpResponse(status = StatusCodes.NotFound, entity = "Process not found"))

@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.model.{ContentTypeRange, StatusCodes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Inside, Matchers}
@@ -26,21 +27,16 @@ import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import pl.touk.nussknacker.ui.util.ProcessComparator
 import cats.syntax.semigroup._
 import cats.instances.all._
-import pl.touk.http.argonaut.JsonMarshaller
+import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.validation.ValidationResults
 import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
 
-class RemoteEnvironmentResourcesSpec extends FlatSpec with ScalatestRouteTest with ScalaFutures with Matchers
+class RemoteEnvironmentResourcesSpec extends FlatSpec with ScalatestRouteTest with ScalaFutures with Matchers with FailFastCirceSupport
   with BeforeAndAfterEach with Inside with EspItTest {
 
-  import pl.touk.nussknacker.ui.codec.UiCodecs._
-
-  private implicit val codec = ProcessComparator.codec
-  private implicit val map = DecodeJson.derive[TestMigrationResult]
-  private implicit val decoder = DecodeJson.derive[TestMigrationSummary]
-
   implicit override val patienceConfig = PatienceConfig(timeout = scaled(Span(1, Seconds)), interval = scaled(Span(100, Millis)))
+  private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
   private val processId: String = ProcessTestData.validProcess.id
   private val processName: ProcessName = ProcessName(processId)
@@ -70,7 +66,6 @@ class RemoteEnvironmentResourcesSpec extends FlatSpec with ScalatestRouteTest wi
     val remoteEnvironment = new MockRemoteEnvironment(mockDifferences = Map(processId -> difference))
 
     val route = withPermissions(new RemoteEnvironmentResources(remoteEnvironment, processRepository, processAuthorizer), readWritePermissions)
-    import pl.touk.http.argonaut.Argonaut62Support._
 
     saveProcess(processName, ProcessTestData.validProcess) {
       Get(s"/remoteEnvironment/$processId/2/compare/1") ~> route ~> check {
@@ -90,8 +85,6 @@ class RemoteEnvironmentResourcesSpec extends FlatSpec with ScalatestRouteTest wi
   }
 
   it should "return 500 on failed test migration" in {
-    import pl.touk.http.argonaut.Argonaut62Support._
-
     val error = ValidationResults.NodeValidationError("foo", "bar", "baz", None, NodeValidationErrorType.SaveAllowed)
     val validationResult = ValidationResult.success.copy(errors = ValidationResult.success.errors.copy(invalidNodes = Map("a" -> List(error))))
 
@@ -110,7 +103,6 @@ class RemoteEnvironmentResourcesSpec extends FlatSpec with ScalatestRouteTest wi
   }
 
   it should "return result on test migration" in {
-    import pl.touk.http.argonaut.Argonaut62Support._
 
     val process = withDecodedTypes(ProcessTestData.validDisplayableProcess)
     val results = List(
@@ -129,7 +121,6 @@ class RemoteEnvironmentResourcesSpec extends FlatSpec with ScalatestRouteTest wi
 
   it should "compare environments" in {
 
-    import pl.touk.http.argonaut.Argonaut62Support._
     import pl.touk.nussknacker.engine.spel.Implicits._
     val processId1 = ProcessName("proc1")
     val processId2 = ProcessName("proc2")
@@ -157,7 +148,6 @@ class RemoteEnvironmentResourcesSpec extends FlatSpec with ScalatestRouteTest wi
   }
 
   it should "not fail in comparing environments if process does not exist in the other one" in {
-    import pl.touk.http.argonaut.Argonaut62Support._
     import pl.touk.nussknacker.engine.spel.Implicits._
     val processId1 = ProcessName("proc1")
     val processId2 = ProcessName("proc2")
@@ -194,7 +184,7 @@ class RemoteEnvironmentResourcesSpec extends FlatSpec with ScalatestRouteTest wi
     var migrateInvocations = List[DisplayableProcess]()
     var compareInvocations = List[DisplayableProcess]()
 
-    override def migrate(localProcess: DisplayableProcess, category: String)(implicit ec: ExecutionContext, user: LoggedUser, jsonMarshaller: JsonMarshaller) = {
+    override def migrate(localProcess: DisplayableProcess, category: String)(implicit ec: ExecutionContext, user: LoggedUser) = {
       migrateInvocations = localProcess :: migrateInvocations
       Future.successful(Right(()))
     }

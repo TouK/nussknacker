@@ -5,6 +5,7 @@ import java.nio.charset.StandardCharsets
 import argonaut.Argonaut.{jArrayElements, jObjectFields, jString}
 import argonaut.{DecodeJson, Json}
 import com.typesafe.config.Config
+import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.{JobData, MethodToInvoke, Service}
 import pl.touk.nussknacker.engine.api.process.{SinkFactory, Source, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.api.test.TestDataParser
@@ -63,7 +64,7 @@ class TestConfigCreator extends EmptyProcessConfigCreator {
 
 }
 
-case class Request(field1: String, field2: String)
+@JsonCodec case class Request(field1: String, field2: String)
 
 object LifecycleService extends Service with StandaloneContextLifecycle {
 

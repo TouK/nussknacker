@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.graph
 
+import io.circe.generic.JsonCodec
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.typed.{ClazzRef, typing}
 import pl.touk.nussknacker.engine.api.typed.typing.{EitherSingleClassOrUnknown, Typed, TypingResult}

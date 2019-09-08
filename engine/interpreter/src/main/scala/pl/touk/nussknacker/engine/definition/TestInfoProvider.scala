@@ -2,6 +2,8 @@ package pl.touk.nussknacker.engine.definition
 
 import java.util.concurrent.TimeUnit
 
+import io.circe.{Decoder, Encoder}
+import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import pl.touk.nussknacker.engine.{Interpreter, ModelData}
 import pl.touk.nussknacker.engine.api.process.{SourceFactory, TestDataGenerator, TestDataParserProvider, WithCategories}
 import pl.touk.nussknacker.engine.api.test.TestDataParser
@@ -21,6 +23,11 @@ trait TestInfoProvider {
 
   def generateTestData(metaData: MetaData, source: Source, size: Int) : Option[Array[Byte]]
 
+}
+
+object TestingCapabilities {
+  implicit val decoder: Decoder[TestingCapabilities] = deriveDecoder
+  implicit val encoder: Encoder[TestingCapabilities] = deriveEncoder
 }
 
 case class TestingCapabilities(canBeTested: Boolean, canGenerateTestData: Boolean)

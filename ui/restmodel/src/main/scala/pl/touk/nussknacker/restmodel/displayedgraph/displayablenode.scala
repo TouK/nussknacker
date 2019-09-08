@@ -1,11 +1,12 @@
 package pl.touk.nussknacker.restmodel.displayedgraph
 
+import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node
 
 object displayablenode {
 
-  sealed abstract class EdgeType
+  @JsonCodec sealed abstract class EdgeType
   object EdgeType {
     sealed trait FilterEdge extends EdgeType
     sealed trait SwitchEdge extends EdgeType

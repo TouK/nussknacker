@@ -1,17 +1,14 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.server._
 import akka.util.Timeout
+import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.engine.definition.{ModelDataTestInfoProvider, TestInfoProvider, TestingCapabilities}
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
-import pl.touk.http.argonaut.{Argonaut62Support, JsonMarshaller}
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.graph.source.SourceRef
-import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
-import shapeless.syntax.typeable._
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
@@ -21,7 +18,7 @@ import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 object TestInfoResources {
 
   def apply(providers: Map[ProcessingType, ModelData], processAuthorizer:AuthorizeProcess, processRepository: FetchingProcessRepository)
-           (implicit ec: ExecutionContext, jsonMarshaller: JsonMarshaller): TestInfoResources =
+           (implicit ec: ExecutionContext): TestInfoResources =
     new TestInfoResources(providers.mapValuesNow(new ModelDataTestInfoProvider(_)), processAuthorizer, processRepository)
 
 }
@@ -29,17 +26,15 @@ object TestInfoResources {
 class TestInfoResources(providers: Map[ProcessingType, TestInfoProvider],
                         val processAuthorizer:AuthorizeProcess,
                         val processRepository: FetchingProcessRepository)
-                       (implicit val ec: ExecutionContext, jsonMarshaller: JsonMarshaller)
+                       (implicit val ec: ExecutionContext)
   extends Directives
-    with Argonaut62Support
+    with FailFastCirceSupport
     with RouteWithUser
     with AuthorizeProcessDirectives
     with ProcessDirectives {
 
-  import argonaut.ArgonautShapeless._
-  import pl.touk.nussknacker.ui.codec.UiCodecs._
-
   implicit val timeout = Timeout(1 minute)
+  import pl.touk.nussknacker.restmodel.CirceRestCodecs.displayableDecoder
 
   def route(implicit user: LoggedUser): Route = {
     //TODO: is Write enough here?

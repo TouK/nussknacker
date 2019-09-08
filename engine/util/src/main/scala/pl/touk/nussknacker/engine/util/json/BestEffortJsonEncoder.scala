@@ -4,7 +4,8 @@ import java.time.LocalDateTime
 
 import argonaut.Argonaut._
 import argonaut._
-import pl.touk.nussknacker.engine.api.Displayable
+import io.circe.Encoder
+import pl.touk.nussknacker.engine.api.{ArgonautCirce, Displayable}
 
 case class BestEffortJsonEncoder(failOnUnkown: Boolean, highPriority: PartialFunction[Any, Json] = Map()) extends Codecs {
 
@@ -15,6 +16,8 @@ case class BestEffortJsonEncoder(failOnUnkown: Boolean, highPriority: PartialFun
   private val safeInt = safeJson[Int](jNumber)
   private val safeDouble = safeJson[Double](jNumber(_))
   private val safeNumber = safeJson[Number](a => jNumber(a.doubleValue()))
+
+  val circeEncoder: Encoder[Any] = Encoder.encodeJson.contramap(ArgonautCirce.toCirce).contramap(encode)
 
   def encode(obj: Any): Json = highPriority.applyOrElse(obj, (any: Any) =>
     any match {

@@ -8,7 +8,7 @@ import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
-import pl.touk.nussknacker.ui.codec.UiCodecs._
+import pl.touk.nussknacker.restmodel.RestModelCodecs._
 import pl.touk.nussknacker.restmodel.processdetails.{ProcessDetails, ValidatedProcessDetails}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 

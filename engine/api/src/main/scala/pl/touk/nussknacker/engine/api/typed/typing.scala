@@ -2,11 +2,17 @@ package pl.touk.nussknacker.engine.api.typed
 
 import java.util
 
+import io.circe.Encoder
 import org.apache.commons.lang3.ClassUtils
+import pl.touk.nussknacker.engine.api.ArgonautCirce
 
 import scala.reflect.ClassTag
 
 object typing {
+
+  object TypingResult {
+    implicit val encoder: Encoder[TypingResult] = ArgonautCirce.toEncoder(TypeEncoders.typingResultEncoder)
+  }
 
   sealed trait TypingResult {
 
@@ -25,6 +31,11 @@ object typing {
 
     def objType: TypedClass
 
+  }
+
+  object EitherSingleClassOrUnknown {
+    //TODO: can we do it nicer?
+    implicit val encoderWithTyping: Encoder[EitherSingleClassOrUnknown with TypingResult] = TypingResult.encoder.contramap(_.asInstanceOf[TypingResult])
   }
 
   sealed trait EitherSingleClassOrUnknown { self: TypingResult =>

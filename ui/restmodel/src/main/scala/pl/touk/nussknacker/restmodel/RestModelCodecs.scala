@@ -2,8 +2,9 @@ package pl.touk.nussknacker.restmodel
 
 import argonaut.{EncodeJson, _}
 import argonaut.derive.{DerivedInstances, JsonSumCodec, JsonSumCodecFor, SingletonInstances}
+import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, TypeSpecificData}
-import pl.touk.nussknacker.engine.api.typed.typing
+import pl.touk.nussknacker.engine.api.typed.{TypeEncoders, typing}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.definition.TestingCapabilities
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -86,5 +87,28 @@ trait RestModelCodecs extends Codecs with Argonauts with SingletonInstances with
   implicit val nodeErrorsCodec: CodecJson[ValidationResults.NodeValidationErrorType.Value] = Codecs.enumCodec(NodeValidationErrorType)
 
   implicit def processHistoryEncode: EncodeJson[ProcessHistoryEntry] = EncodeJson.derive[ProcessHistoryEntry]
+
+}
+
+//TODO: hopefuly temporary
+object CirceRestCodecs {
+
+  import RestModelCodecs._
+
+  import pl.touk.nussknacker.engine.api.ArgonautCirce._
+
+  implicit val nodeDataEncoder: Encoder[NodeData] = toEncoder(nodeDataCodec)
+
+  implicit val nodeDataDecoder: Decoder[NodeData] = toDecoder(nodeDataCodec)
+
+  implicit val validatedEncoder: Encoder[ValidatedDisplayableProcess] = toEncoder(validatedDisplayableProcessCodec)
+
+  implicit val validatedDecoder: Decoder[ValidatedDisplayableProcess] = toDecoder(validatedDisplayableProcessCodec)
+
+  implicit val typingResultDecoder: Decoder[TypingResult] = toDecoder(typingResultDummyDecode)
+
+  implicit val displayableEncoder: Encoder[DisplayableProcess] = toEncoder(displayableProcessCodec)
+
+  implicit val displayableDecoder: Decoder[DisplayableProcess] = toDecoder(displayableProcessCodec)
 
 }

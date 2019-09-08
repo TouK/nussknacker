@@ -1,8 +1,13 @@
 package pl.touk.nussknacker.engine.api.typed
 
+import io.circe.Encoder
+import pl.touk.nussknacker.engine.api.ArgonautCirce
+
 import scala.reflect.ClassTag
 
 object ClazzRef {
+
+  implicit val encoder: Encoder[ClazzRef] = ArgonautCirce.toEncoder(TypeEncoders.clazzRefEncoder)
 
   def unknown: ClazzRef = ClazzRef[Any]
 
