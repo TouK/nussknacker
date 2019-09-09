@@ -6,8 +6,8 @@ import cats.instances.list._
 import cats.syntax.traverse._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, Unknown}
-import pl.touk.nussknacker.engine.api.typed.{ClazzRef, ReturningType, typing}
+import pl.touk.nussknacker.engine.api.typed.typing.{ScalarTypingResult, Typed, Unknown}
+import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.standalone.api.StandaloneCustomTransformer
 import pl.touk.nussknacker.engine.standalone.api.types.InterpreterType
 
@@ -41,8 +41,8 @@ class ProcessSplitter(parts: LazyParameter[java.util.Collection[Any]])
 
   override def returnType: typing.TypingResult = {
     parts.returnType match {
-      case tc: TypedClass if tc.canBeSubclassOf(Typed[java.util.Collection[_]]) && tc.params.nonEmpty =>
-        tc.params.head
+      case tc: ScalarTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Collection[_]]) && tc.objType.params.nonEmpty =>
+        tc.objType.params.head
       case _ => Unknown
     }
   }

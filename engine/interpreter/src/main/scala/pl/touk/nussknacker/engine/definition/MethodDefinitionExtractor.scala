@@ -7,7 +7,7 @@ import java.lang.reflect.Method
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, Parameter, TypedNodeDependency, WithExplicitMethodToInvoke}
 import pl.touk.nussknacker.engine.api.process.SingleNodeConfig
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{ScalarTypingResult, Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{AdditionalVariables, BranchParamName, LazyParameter, MethodToInvoke, OutputVariableName, ParamName}
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedDependencies}
 import pl.touk.nussknacker.engine.types.EspTypeUtils
@@ -126,7 +126,14 @@ object MethodDefinitionExtractor {
         case param: Parameter =>
           val foundParam = prepareValue(param.name).getOrElse(throw new IllegalArgumentException(s"Missing parameter: ${param.name}"))
           //FIIIXME??
-          validateType(param.name, foundParam, param.originalType.objType.klass)
+          val klass = param.originalType match {
+            case s: ScalarTypingResult =>
+              s.objType.klass
+            case _ =>
+              // TOOD: what should happen here?
+              classOf[Any]
+          }
+          validateType(param.name, foundParam, klass)
           foundParam
         case OutputVariableNameDependency =>
           outputVariableNameOpt.getOrElse(

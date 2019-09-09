@@ -7,7 +7,7 @@ import cats.data._
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypedUnion, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.sql.{ColumnModel, SqlType}
 
 object CreateColumnModel {
@@ -24,12 +24,12 @@ object CreateColumnModel {
   }
 
   private[columnmodel] val getListInnerType: TypingResult => Validated[InvalidateMessage, TypingResult] = {
-    case typedClass: TypedClass =>
+    case typedClass: ScalarTypingResult =>
       val isCollection =
-        classOf[Traversable[_]].isAssignableFrom(typedClass.klass) ||
-        classOf[java.util.Collection[_]].isAssignableFrom(typedClass.klass)
+        classOf[Traversable[_]].isAssignableFrom(typedClass.objType.klass) ||
+        classOf[java.util.Collection[_]].isAssignableFrom(typedClass.objType.klass)
       if (isCollection)
-        typedClass.params.headOption match {
+        typedClass.objType.params.headOption match {
           case Some(typ) => typ.valid
           case None => UnknownInner.invalid
         }

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.sql.columnmodel
 
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypedUnion, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.sql.columnmodel.CreateColumnModel.ClazzToSqlType
 import pl.touk.nussknacker.engine.sql.{Column, ColumnModel}
 

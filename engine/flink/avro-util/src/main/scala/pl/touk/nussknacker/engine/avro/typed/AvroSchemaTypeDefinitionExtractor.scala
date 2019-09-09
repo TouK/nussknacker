@@ -3,9 +3,9 @@ package pl.touk.nussknacker.engine.avro.typed
 import java.nio.ByteBuffer
 
 import org.apache.avro.Schema
-import org.apache.avro.generic.GenericData
 import org.apache.avro.generic.GenericData.EnumSymbol
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult, Unknown}
+import org.apache.avro.generic.{GenericData, GenericRecord}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult}
 
 object AvroSchemaTypeDefinitionExtractor {
 
@@ -21,7 +21,8 @@ object AvroSchemaTypeDefinitionExtractor {
         TypedObjectTypingResult(
           schema.getFields.asScala.map { field =>
             field.name() -> typeDefinition(field.schema())
-          }.toMap
+          }.toMap,
+          TypedClass[GenericRecord]
         )
       case Schema.Type.ENUM =>
         Typed[EnumSymbol]

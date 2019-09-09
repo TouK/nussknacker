@@ -4,7 +4,7 @@ import cats.data.NonEmptyList
 import org.springframework.expression.spel.ast.MethodReference
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedUnion, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo}
 import pl.touk.nussknacker.engine.types.EspTypeUtils
 
@@ -20,27 +20,19 @@ object TypeMethodReference {
 class TypeMethodReference(methodReference: MethodReference, currentResults: List[TypingResult]) {
   def call: Either[String, TypingResult] =
     currentResults.headOption match {
-      // TODO: make more understandable
-      case Some(tc: TypedClass) =>
+      case Some(tc: ScalarTypingResult) =>
         typeFromClazzDefinitions(extractClazzDefinitions(Set(tc)))
       case Some(TypedUnion(nestedTypes)) =>
-        val typeClasses = nestedTypes.collect {
-          case tc: TypedClass =>
-            tc
-        }
-        if (typeClasses.size == nestedTypes.size)
-          typeFromClazzDefinitions(extractClazzDefinitions(typeClasses))
-        else
-          Right(Unknown)
+        typeFromClazzDefinitions(extractClazzDefinitions(nestedTypes))
       case _ =>
         Right(Unknown)
     }
 
   private lazy val paramsCount = methodReference.getChildCount
 
-  private def extractClazzDefinitions(typedClasses: Set[TypedClass]): List[ClazzDefinition] =
+  private def extractClazzDefinitions(typedClasses: Set[ScalarTypingResult]): List[ClazzDefinition] =
     typedClasses.map(typedClass =>
-      EspTypeUtils.clazzDefinition(typedClass.klass)(ClassExtractionSettings.Default)
+      EspTypeUtils.clazzDefinition(typedClass.objType.klass)(ClassExtractionSettings.Default)
     ).toList
 
   private def typeFromClazzDefinitions(clazzDefinitions: List[ClazzDefinition]): Either[String, TypingResult] =
@@ -65,7 +57,6 @@ class TypeMethodReference(methodReference: MethodReference, currentResults: List
     }
 
   private def typeFromClazzRefs(clazzRefs: NonEmptyList[ClazzRef]): TypingResult =
-    clazzRefs.map(Typed(_))
-             .reduce[TypingResult]
+    Typed(clazzRefs.map(Typed(_)).toList.toSet)
 
 }

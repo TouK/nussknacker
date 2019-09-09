@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.avro
 
 import cats.data.ValidatedNel
 import org.apache.avro.Schema
+import org.apache.avro.generic.GenericRecord
 import org.scalatest.{FunSpec, Matchers}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
@@ -31,6 +32,7 @@ class AvroSchemaSpelExpressionSpec extends FunSpec with Matchers {
     parse[CharSequence]("#input.stringField", ctx) should be ('valid)
     parse[Boolean]("#input.booleanField", ctx) should be ('valid)
     parse[Integer]("#input.nonExisting", ctx) should be ('invalid)
+    parse[GenericRecord]("#input", ctx) should be ('valid)
   }
 
   it("should recognize record with list field") {

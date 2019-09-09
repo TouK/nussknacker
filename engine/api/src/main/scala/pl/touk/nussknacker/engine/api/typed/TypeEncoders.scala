@@ -12,7 +12,7 @@ object TypeEncoders {
   )
 
   private def encodeTypingResult(result: TypingResult): Json = result match {
-    case typing.Unknown => encodeTypingResult(Typed(classOf[Any]))
+    case typing.Unknown => encodeTypedClass(TypedClass[Any])
     // FIXME: handle union
     case TypedUnion(classes) => val headClass = classes.head
       encodeTypingResult(headClass)

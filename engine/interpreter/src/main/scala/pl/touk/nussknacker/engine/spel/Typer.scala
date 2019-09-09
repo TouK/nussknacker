@@ -6,14 +6,13 @@ import cats.data.NonEmptyList._
 import cats.data.Validated._
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.instances.list._
-import cats.syntax.monoid._
 import cats.syntax.traverse._
 import org.springframework.expression.spel.SpelNode
 import org.springframework.expression.spel.ast._
 import pl.touk.nussknacker.engine.api.context.ValidationContext
+import pl.touk.nussknacker.engine.api.expression.ExpressionParseError
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing._
-import pl.touk.nussknacker.engine.api.expression.ExpressionParseError
 import pl.touk.nussknacker.engine.spel.typer.TypeMethodReference
 import pl.touk.nussknacker.engine.types.EspTypeUtils
 
@@ -52,7 +51,7 @@ private[spel] class Typer(implicit classLoader: ClassLoader) {
       //TODO: what should be here?
       case e: ConstructorReference => fixed(Unknown)
 
-      case e: Elvis => withTypedChildren(l => Valid(l.reduce(_ |+| _)))
+      case e: Elvis => withTypedChildren(l => Valid(Typed(l.toSet)))
       case e: FloatLiteral => Valid(Typed[java.lang.Float])
       //TODO: what should be here?
       case e: FunctionReference => Valid(Unknown)
@@ -162,7 +161,7 @@ private[spel] class Typer(implicit classLoader: ClassLoader) {
       case e: StringLiteral => Valid(Typed[String])
 
       case e: Ternary => withTypedChildren {
-        case condition :: onTrue :: onFalse :: Nil if condition.canBeSubclassOf(Typed[Boolean]) => Valid(onTrue |+| onFalse)
+        case condition :: onTrue :: onFalse :: Nil if condition.canBeSubclassOf(Typed[Boolean]) => Valid(Typed(Set(onTrue, onFalse)))
         case _ => invalid("Invalid ternary operator")
       }
       //TODO: what should be here?
@@ -197,7 +196,7 @@ private[spel] class Typer(implicit classLoader: ClassLoader) {
         case Some(result) => Valid(result)
       }
     case TypedUnion(possible) =>
-      possible.toList.map(t => extractProperty(e)(t)).sequence.map(_.reduce[TypingResult](_ |+| _))
+      possible.toList.map(t => extractProperty(e)(t)).sequence.map(l => Typed(l.toSet))
   }
 
   private def extractListType(parent: TypingResult): TypingResult = parent match {
@@ -223,7 +222,8 @@ private[spel] class Typer(implicit classLoader: ClassLoader) {
     Invalid(NonEmptyList.of(ExpressionParseError(message)))
 
   private def commonNumberReference: TypingResult =
-    Typed[Double] |+| Typed[Int] |+| Typed[Long] |+| Typed[Float] |+| Typed[Byte] |+| Typed[Short] |+| Typed[BigDecimal] |+| Typed[BigInteger]
+    Typed(Set(
+      Typed[Double], Typed[Int], Typed[Long], Typed[Float], Typed[Byte], Typed[Short], Typed[BigDecimal], Typed[BigInteger]))
 
   implicit class RichSpelNode(n: SpelNode) {
     def children: List[SpelNode] = {
