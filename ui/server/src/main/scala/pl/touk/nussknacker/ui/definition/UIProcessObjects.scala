@@ -1,8 +1,7 @@
 package pl.touk.nussknacker.ui.definition
 
-import argonaut.CodecJson
-import argonaut.Argonaut._
 import com.typesafe.config.ConfigRenderOptions
+import io.circe.Decoder
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.definition.Parameter
@@ -33,8 +32,9 @@ object UIProcessObjects {
 
   private implicit val nodeConfig: ValueReader[ParameterRestriction] = ValueReader.relative(config => {
     val json = config.root().render(ConfigRenderOptions.concise().setJson(true))
-    implicit val cd: CodecJson[ParameterRestriction] = ParameterRestriction.codec
-    json.decodeEither[ParameterRestriction].right.getOrElse(throw new IllegalArgumentException("Failed to parse config"))
+    io.circe.parser.parse(json).right
+      .flatMap(Decoder[ParameterRestriction].decodeJson).right
+      .getOrElse(throw new IllegalArgumentException("Failed to parse config"))
   })
 
   def prepareUIProcessObjects(modelDataForType: ModelData,

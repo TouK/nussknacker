@@ -1,9 +1,7 @@
 package pl.touk.nussknacker.restmodel
 
-import java.time.LocalDateTime
-
+import io.circe.Json
 import org.scalatest.{FunSuite, Matchers}
-import argonaut.Argonaut._
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
@@ -12,7 +10,6 @@ import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{Subproce
 import pl.touk.nussknacker.engine.graph.node.{CustomNode, SubprocessInputDefinition}
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.{Edge, NodeAdditionalFields}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
-import pl.touk.nussknacker.restmodel.processdetails.{DeploymentEntry, ProcessHistoryEntry}
 
 class RestModelCodecsSpec extends FunSuite with Matchers {
 
@@ -30,22 +27,15 @@ class RestModelCodecsSpec extends FunSuite with Matchers {
       Edge("from1", "to1", None)
     ), "")
 
-    val encoded = RestModelCodecs.displayableProcessCodec.encode(process)
+    val encoded = CirceRestCodecs.displayableEncoder(process)
 
-    encoded.objectOrEmpty.apply("edges").get.arrayOrEmpty shouldBe List(jObjectFields(
-      "from" -> jString("from1"),
-      "to" -> jString("to1"),
-      "edgeType" -> jNull
-    ))
-
-    RestModelCodecs.displayableProcessCodec.decodeJson(encoded).toOption shouldBe Some(process)
-  }
-
-  test("process history encode") {
-
-    RestModelCodecs.processHistoryEncode.encode(ProcessHistoryEntry("id", "name", 10, LocalDateTime.now(), "", List(
-      DeploymentEntry(12, "env", LocalDateTime.now(), "user", Map("key" -> "value"))
+    encoded.hcursor.downField("edges").focus.flatMap(_.asArray) shouldBe Some(List(Json.obj(
+      "from" -> Json.fromString("from1"),
+      "to" -> Json.fromString("to1"),
+      "edgeType" -> Json.Null
     )))
+
+    CirceRestCodecs.displayableDecoder.decodeJson(encoded).right.toOption shouldBe Some(process)
   }
 
 }

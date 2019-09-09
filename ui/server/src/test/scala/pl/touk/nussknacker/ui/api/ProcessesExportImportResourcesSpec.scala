@@ -15,11 +15,11 @@ import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
-import pl.touk.nussknacker.restmodel.RestModelCodecs._
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.ui.process.marshall.{ProcessConverter, UiProcessMarshaller}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.{FileUploadUtils, MultipartUtils}
+import pl.touk.nussknacker.restmodel.CirceRestCodecs.displayableDecoder
 
 import scala.language.higherKinds
 
@@ -50,7 +50,7 @@ class ProcessesExportImportResourcesSpec extends FlatSpec with ScalatestRouteTes
         MultipartUtils.prepareMultiPart(UiProcessMarshaller.toJson(modified).spaces2, "process")
       Post(s"/processes/import/${processToSave.id}", multipartForm) ~> routeWithAllPermissions ~> check {
         status shouldEqual StatusCodes.OK
-        val imported = responseAs[String].decodeOption[DisplayableProcess].get
+        val imported = responseAs[DisplayableProcess]
         imported.properties.typeSpecificProperties.asInstanceOf[StreamMetaData].parallelism shouldBe Some(987)
         imported.id shouldBe processToSave.id
         imported.nodes shouldBe processToSave.nodes

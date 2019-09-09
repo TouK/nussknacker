@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.restmodel.displayedgraph
 
+import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, TypeSpecificData}
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.NodeData
@@ -54,9 +55,9 @@ case class ValidatedDisplayableProcess(id: String,
 
 
 
-case class ProcessProperties(typeSpecificProperties: TypeSpecificData,
-                             exceptionHandler: ExceptionHandlerRef,
-                             isSubprocess: Boolean = false,
-                             additionalFields: Option[ProcessAdditionalFields] = None,
-                             subprocessVersions: Map[String, Long]
+@JsonCodec case class ProcessProperties(typeSpecificProperties: TypeSpecificData,
+                                        exceptionHandler: ExceptionHandlerRef,
+                                        isSubprocess: Boolean = false,
+                                        additionalFields: Option[ProcessAdditionalFields] = None,
+                                        subprocessVersions: Map[String, Long]
                             )

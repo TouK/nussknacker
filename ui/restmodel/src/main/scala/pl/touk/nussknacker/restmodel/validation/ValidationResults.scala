@@ -7,7 +7,7 @@ import io.circe.generic.JsonCodec
 
 object ValidationResults {
 
-  import pl.touk.nussknacker.restmodel.CirceRestCodecs._
+  import pl.touk.nussknacker.restmodel.DummyTypingResultDecoder.typingResultDecoder
 
   @JsonCodec case class ValidationResult(errors: ValidationErrors, warnings: ValidationWarnings, variableTypes: Map[String, Map[String, TypingResult]]) {
     val isOk: Boolean = errors == ValidationErrors.success && warnings == ValidationWarnings.success

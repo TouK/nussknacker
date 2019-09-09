@@ -4,7 +4,6 @@ import akka.http.scaladsl.model.{ContentTypeRange, StatusCodes}
 import akka.http.scaladsl.server
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
-import argonaut.JsonParser
 import org.scalatest._
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.time.{Millis, Seconds, Span}
@@ -26,9 +25,9 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import cats.instances.all._
 import cats.syntax.semigroup._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import io.circe.Json
 import pl.touk.nussknacker.restmodel.process.ProcessId
 import pl.touk.nussknacker.restmodel.CirceRestCodecs.displayableDecoder
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 
 class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers with Inside with FailFastCirceSupport
   with ScalaFutures with OptionValues with Eventually with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
@@ -266,8 +265,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
     saveProcess(processName, ProcessTestData.validProcess) {
       status shouldEqual StatusCodes.OK
       checkSampleProcessRootIdEquals(ProcessTestData.validProcess.roots.head.id)
-      val json = JsonParser.parse(entityAs[String]).right.get
-      json.field("errors").flatMap(_.field("invalidNodes")).flatMap(_.obj).value.isEmpty shouldBe true
+      entityAs[ValidationResult].errors.invalidNodes.isEmpty shouldBe true
 
     }
   }
@@ -276,8 +274,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
     saveProcess(processName, ProcessTestData.invalidProcess) {
       status shouldEqual StatusCodes.OK
       checkSampleProcessRootIdEquals(ProcessTestData.invalidProcess.roots.head.id)
-      val json = JsonParser.parse(entityAs[String]).right.get
-      json.field("errors").flatMap(_.field("invalidNodes")).flatMap(_.obj).value.isEmpty shouldBe false
+      entityAs[ValidationResult].errors.invalidNodes.isEmpty shouldBe false
     }
   }
 

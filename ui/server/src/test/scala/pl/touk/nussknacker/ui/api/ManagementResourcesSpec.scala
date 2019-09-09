@@ -6,7 +6,6 @@ import akka.http.scaladsl.model.{ContentTypeRange, StatusCodes}
 import akka.http.scaladsl.server
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
-import argonaut.Argonaut
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
@@ -22,6 +21,7 @@ import pl.touk.nussknacker.ui.util.MultipartUtils
 import cats.syntax.semigroup._
 import cats.instances.all._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import io.circe.Json
 import org.scalatest.matchers.BeMatcher
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.ProcessActivity
@@ -171,19 +171,27 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
     val multiPart = MultipartUtils.prepareMultiParts("testData" -> "ala\nbela", "processJson" -> displayableProcess.asJson.noSpaces)()
     Post(s"/processManagement/test/${SampleProcess.process.id}", multiPart) ~> withPermissions(deployRoute(), testPermissionDeploy |+| testPermissionRead) ~> check {
       status shouldEqual StatusCodes.OK
-      val results = argonaut.JsonParser.parse(responseAs[String]).right.get
-      for {
-        invocation <- results.cursor --\ "invocationResults"
-        endsuffix <- invocation --\ "endsuffix"
-        firstRes <- endsuffix.first
-        params <- firstRes --\ "params"
-        context <- firstRes --\ "context"
-        output <- params --\ "ouput"
-        input <- context --\ "input"
-      } yield {
-        output.focus shouldBe Argonaut.jString("{message=message}")
-        input.focus shouldBe Argonaut.jString("ala")
-      }
+
+      val ctx = responseAs[Json] .hcursor
+              .downField("results")
+              .downField("nodeResults")
+              .downField("endsuffix")
+              .downArray
+              .first
+              .downField("context")
+              .downField("variables")
+
+      ctx
+        .downField("output")
+        .downField("pretty")
+        .downField("message")
+        .focus shouldBe Some(Json.fromString("message"))
+
+      ctx
+        .downField("input")
+        .downField("pretty")
+        .downField("firstField")
+        .focus shouldBe Some(Json.fromString("ala"))
     }
   }
 

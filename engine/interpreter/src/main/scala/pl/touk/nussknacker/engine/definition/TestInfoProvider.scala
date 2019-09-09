@@ -1,12 +1,8 @@
 package pl.touk.nussknacker.engine.definition
 
-import java.util.concurrent.TimeUnit
-
-import io.circe.{Decoder, Encoder}
-import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
-import pl.touk.nussknacker.engine.{Interpreter, ModelData}
-import pl.touk.nussknacker.engine.api.process.{SourceFactory, TestDataGenerator, TestDataParserProvider, WithCategories}
-import pl.touk.nussknacker.engine.api.test.TestDataParser
+import io.circe.generic.JsonCodec
+import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.process.{SourceFactory, TestDataGenerator, TestDataParserProvider}
 import pl.touk.nussknacker.engine.api.{MetaData, process}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
@@ -14,8 +10,6 @@ import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMetho
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.node.Source
 import shapeless.syntax.typeable._
-
-import scala.concurrent.duration.FiniteDuration
 
 trait TestInfoProvider {
 
@@ -25,12 +19,7 @@ trait TestInfoProvider {
 
 }
 
-object TestingCapabilities {
-  implicit val decoder: Decoder[TestingCapabilities] = deriveDecoder
-  implicit val encoder: Encoder[TestingCapabilities] = deriveEncoder
-}
-
-case class TestingCapabilities(canBeTested: Boolean, canGenerateTestData: Boolean)
+@JsonCodec case class TestingCapabilities(canBeTested: Boolean, canGenerateTestData: Boolean)
 
 class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider {
 

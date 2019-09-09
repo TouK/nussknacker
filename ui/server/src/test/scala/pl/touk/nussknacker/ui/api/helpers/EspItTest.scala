@@ -3,11 +3,11 @@ package pl.touk.nussknacker.ui.api.helpers
 import akka.actor.ActorRef
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import argonaut.{Json, PrettyParams}
 import cats.instances.all._
 import cats.syntax.semigroup._
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
+import io.circe.{Json, Printer}
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
@@ -196,7 +196,7 @@ trait EspItTest extends LazyLogging with ScalaFutures with WithHsqlDbTesting wit
   }
 
   private def toEntity(json: Json) = {
-    val jsonString = json.pretty(PrettyParams.spaces2.copy(dropNullKeys = true, preserveOrder = true))
+    val jsonString = json.pretty(Printer.spaces2.copy(dropNullValues = true, preserveOrder = true))
     HttpEntity(ContentTypes.`application/json`, jsonString)
   }
 
@@ -208,10 +208,10 @@ trait EspItTest extends LazyLogging with ScalaFutures with WithHsqlDbTesting wit
   private def prepareProcess(processName: ProcessName, category: String, isSubprocess: Boolean) = {
     val emptyProcess = makeEmptyProcess(processName.value, TestProcessingTypes.Streaming, isSubprocess)
 
-    (for {
+    for {
       _ <- writeProcessRepository.saveNewProcess(processName, category, emptyProcess, TestProcessingTypes.Streaming, isSubprocess)
       id <- processRepository.fetchProcessId(processName).map(_.get)
-    } yield id)
+    } yield id
   }
 
   def createProcess(processName: ProcessName, category: String, isSubprocess: Boolean): process.ProcessId = {

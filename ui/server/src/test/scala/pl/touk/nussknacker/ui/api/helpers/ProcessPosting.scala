@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.ui.api.helpers
 
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, RequestEntity}
-import argonaut.{CodecJson, PrettyParams}
+import io.circe.Encoder
+import io.circe.syntax._
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
@@ -9,42 +10,36 @@ import pl.touk.nussknacker.ui.process.ProcessToSave
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
 class ProcessPosting {
-  import pl.touk.nussknacker.restmodel.RestModelCodecs._
 
-  implicit def processToSaveCodec: CodecJson[ProcessToSave] = CodecJson.derive[ProcessToSave]
+  import pl.touk.nussknacker.restmodel.CirceRestCodecs._
 
-  private val prettyParams = PrettyParams.spaces2.copy(dropNullKeys = true, preserveOrder = true)
+  private implicit val ptsEncoder: Encoder[ProcessToSave] = io.circe.generic.semiauto.deriveEncoder
+
+  private def toRequest[T:Encoder](value: T): RequestEntity = HttpEntity(ContentTypes.`application/json`, value.asJson.spaces2)
 
   def toEntity(process: EspProcess): RequestEntity = {
-    val displayable = ProcessConverter.toDisplayable(ProcessCanonizer.canonize(process), TestProcessingTypes.Streaming)
-    val json = displayable.asJson.pretty(prettyParams)
-    HttpEntity(ContentTypes.`application/json`, json)
+    toRequest(ProcessConverter.toDisplayable(ProcessCanonizer.canonize(process), TestProcessingTypes.Streaming))
   }
 
   def toEntityAsProcessToSave(process: EspProcess): RequestEntity = {
     val displayable = ProcessConverter.toDisplayable(ProcessCanonizer.canonize(process), TestProcessingTypes.Streaming)
-    val json = ProcessToSave(displayable, comment = "").asJson.pretty(prettyParams)
-    HttpEntity(ContentTypes.`application/json`, json)
+    toRequest(ProcessToSave(displayable, comment = ""))
   }
 
   def toEntity(properties: ProcessProperties): RequestEntity = {
-    val json = properties.asJson.pretty(prettyParams)
-    HttpEntity(ContentTypes.`application/json`, json)
+    toRequest(properties)
   }
 
   def toEntity(process: DisplayableProcess): RequestEntity = {
-    val json = process.asJson.pretty(prettyParams)
-    HttpEntity(ContentTypes.`application/json`, json)
+    toRequest(process)
   }
 
   def toEntity(process: ProcessToSave): RequestEntity = {
-    val json = process.asJson.pretty(prettyParams)
-    HttpEntity(ContentTypes.`application/json`, json)
+    toRequest(process)
   }
 
   def toEntityAsProcessToSave(process: DisplayableProcess): RequestEntity = {
-    val json = ProcessToSave(process, comment = "").asJson.pretty(prettyParams)
-    HttpEntity(ContentTypes.`application/json`, json)
+    toRequest(ProcessToSave(process, comment = ""))
   }
 
 }

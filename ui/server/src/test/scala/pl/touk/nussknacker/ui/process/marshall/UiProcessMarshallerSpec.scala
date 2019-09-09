@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.process.marshall
 
-import argonaut.{Parse, PrettyParams}
+import io.circe.parser.parse
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.NodeAdditionalFields
@@ -73,7 +73,7 @@ class UiProcessMarshallerSpec extends FlatSpec with Matchers {
 
     val processAfterMarshallAndUnmarshall = UiProcessMarshaller.toJson(canonical).nospaces
 
-    Parse.parse(processAfterMarshallAndUnmarshall) shouldBe Parse.parse(baseProcess)
+    parse(processAfterMarshallAndUnmarshall) shouldBe parse(baseProcess)
   }
 
   it should "unmarshall json without additional fields" in {
