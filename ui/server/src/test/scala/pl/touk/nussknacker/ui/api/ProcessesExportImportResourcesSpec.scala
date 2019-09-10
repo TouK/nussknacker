@@ -1,18 +1,16 @@
 package pl.touk.nussknacker.ui.api
 
-import java.util.regex.Pattern
 
-import akka.http.scaladsl.model.MediaTypes.`application/json`
-import akka.http.scaladsl.model.{ContentTypeRange, StatusCodes}
-import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
+import akka.http.scaladsl.model.{ContentTypeRange, HttpEntity, StatusCodes}
+import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import io.circe.Json
 import org.scalatest._
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.restmodel.CirceRestCodecs
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
@@ -23,7 +21,7 @@ import pl.touk.nussknacker.restmodel.CirceRestCodecs.displayableDecoder
 
 import scala.language.higherKinds
 
-class ProcessesExportImportResourcesSpec extends FlatSpec with ScalatestRouteTest with Matchers with Inside with FailFastCirceSupport
+class ProcessesExportImportResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers with Inside with FailFastCirceSupport
   with ScalaFutures with OptionValues with Eventually with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
   implicit override val patienceConfig = PatienceConfig(timeout = scaled(Span(1, Seconds)), interval = scaled(Span(100, Millis)))
@@ -34,7 +32,20 @@ class ProcessesExportImportResourcesSpec extends FlatSpec with ScalatestRouteTes
   val routeWithAllPermissions = withAllPermissions(processesExportResources) ~ withAllPermissions(processesRoute)
   implicit val loggedUser = LoggedUser("lu", testPermissionEmpty)
 
-  it should "export process and import it" in {
+  test("export process from displayable") {
+    val processToExport = ProcessTestData.sampleDisplayableProcess
+
+    Post(s"/processesExport", CirceRestCodecs.displayableEncoder(processToExport)) ~> routeWithAllPermissions ~> check {
+      status shouldEqual StatusCodes.OK
+      val exported = responseAs[String]
+      val processDetails = UiProcessMarshaller.fromJson(exported).toOption.get
+      
+      processDetails shouldBe ProcessConverter.fromDisplayable(processToExport)
+    }
+
+  }
+
+  test("export process and import it") {
     val processToSave = ProcessTestData.sampleDisplayableProcess
     saveProcess(processToSave) {
       status shouldEqual StatusCodes.OK
@@ -60,7 +71,7 @@ class ProcessesExportImportResourcesSpec extends FlatSpec with ScalatestRouteTes
     }
   }
 
-  it should "export process in new version" in {
+  test("export process in new version") {
     val description = "alamakota"
     val processToSave = ProcessTestData.sampleDisplayableProcess
     val processWithDescription = processToSave.copy(properties = processToSave.properties.copy(additionalFields = Some(ProcessAdditionalFields(Some(description), Set.empty, Map.empty))))
@@ -90,7 +101,7 @@ class ProcessesExportImportResourcesSpec extends FlatSpec with ScalatestRouteTes
 
   }
 
-  it should "fail to import process with different id" in {
+  test("fail to import process with different id") {
     val processToSave = ProcessTestData.sampleDisplayableProcess
     saveProcess(processToSave) {
       status shouldEqual StatusCodes.OK
@@ -107,6 +118,23 @@ class ProcessesExportImportResourcesSpec extends FlatSpec with ScalatestRouteTes
         status shouldEqual StatusCodes.BadRequest
       }
     }
+  }
+
+  test("export pdf") {
+    val processToSave = ProcessTestData.sampleDisplayableProcess
+    saveProcess(processToSave) {
+      status shouldEqual StatusCodes.OK
+
+      val testSvg = "<svg viewBox=\"0 0 120 70\" xmlns=\"http://www.w3.org/2000/svg\">\n  " +
+        "<path d=\"M20,20h20m5,0h20m5,0h20\" stroke=\"#c00000\" stroke-width=\"10\"/>\n  " +
+        "<path d=\"M20,40h20m5,0h20m5,0h20M30,30v20m25,0v-20m25,0v20\" stroke=\"#008000\" stroke-width=\"6\"/>\n</svg>"
+
+      Post(s"/processesExport/pdf/${processToSave.id}/2", HttpEntity(testSvg)) ~> routeWithAllPermissions ~> check {
+        //TODO: check it's pdf?
+        status shouldEqual StatusCodes.OK
+      }
+    }
+
   }
 
   private def assertProcessPrettyPrinted(response: String, process: CanonicalProcess): Unit = {

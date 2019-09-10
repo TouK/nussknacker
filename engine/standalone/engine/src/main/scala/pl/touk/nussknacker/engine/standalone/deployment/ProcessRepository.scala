@@ -3,8 +3,6 @@ package pl.touk.nussknacker.engine.standalone.deployment
 import java.io.{File, PrintWriter}
 import java.nio.charset.StandardCharsets
 
-import argonaut.{DecodeJson, EncodeJson}
-import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.standalone.api.DeploymentData
 

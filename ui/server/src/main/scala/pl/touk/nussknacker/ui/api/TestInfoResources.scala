@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.ui.api
 
+import akka.http.scaladsl.model.{ContentTypeRange, ContentTypes, HttpEntity, HttpResponse}
 import akka.http.scaladsl.server._
+import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import akka.util.Timeout
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.engine.definition.{ModelDataTestInfoProvider, TestInfoProvider, TestingCapabilities}
@@ -35,6 +37,9 @@ class TestInfoResources(providers: Map[ProcessingType, TestInfoProvider],
 
   implicit val timeout = Timeout(1 minute)
   import pl.touk.nussknacker.restmodel.CirceRestCodecs.displayableDecoder
+  
+  private implicit final val bytes: FromEntityUnmarshaller[Array[Byte]] =
+    Unmarshaller.byteArrayUnmarshaller.forContentTypes(ContentTypeRange(ContentTypes.`application/octet-stream`))
 
   def route(implicit user: LoggedUser): Route = {
     //TODO: is Write enough here?
@@ -59,7 +64,7 @@ class TestInfoResources(providers: Map[ProcessingType, TestInfoProvider],
                 complete {
                   val resp: Array[Byte] =
                     source.flatMap(processDefinition.generateTestData(metadata, _, testSampleSize)).getOrElse(new Array[Byte](0))
-                  resp
+                  HttpEntity(resp)
                 }
               }
             }
