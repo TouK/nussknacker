@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.lazyy.{LazyContext, LazyValuesProvider, UsingLazyValues}
 import pl.touk.nussknacker.engine.api.typed.{ClazzRef, TypedMap}
 import pl.touk.nussknacker.engine.api.expression.{Expression, ExpressionParseError, TypedExpression, ValueWithLazyContext}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypedUnion, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 
 import scala.collection.JavaConverters._
@@ -412,6 +412,38 @@ class SpelExpressionSpec extends FlatSpec with Matchers {
   it should "be able to type string concatenation" in {
     parse[Any]("12 + ''", ctx).toOption.get.returnType shouldBe Typed[String]
     parse[Any]("'' + 12", ctx).toOption.get.returnType shouldBe Typed[String]
+  }
+
+  it should "expand all fields of TypedObjects in union" in {
+    implicit val nid = NodeId("")
+    val ctxWithMap = ValidationContext
+      .empty
+      .withVariable("input", Typed(
+        TypedObjectTypingResult(Map("str" -> Typed[String])),
+        TypedObjectTypingResult(Map("lon" -> Typed[Long])))).toOption.get
+
+
+    parse[String]("#input.str", ctxWithMap) should be ('valid)
+    parse[Long]("#input.lon", ctxWithMap) should be ('valid)
+
+    parse[Long]("#input.str", ctxWithMap) shouldNot be ('valid)
+    parse[String]("#input.ala", ctxWithMap) shouldNot be ('valid)
+  }
+
+  it should "expand all fields of TypedClass in union" in {
+    implicit val nid = NodeId("")
+    val ctxWithMap = ValidationContext
+      .empty
+      .withVariable("input", Typed(
+        Typed[SampleObject],
+        Typed[SampleValue])).toOption.get
+
+
+    parse[List[_]]("#input.list", ctxWithMap) should be ('valid)
+    parse[Int]("#input.value", ctxWithMap) should be ('valid)
+
+    parse[Set[_]]("#input.list", ctxWithMap) shouldNot be ('valid)
+    parse[String]("#input.value", ctxWithMap) shouldNot be ('valid)
   }
 
 }

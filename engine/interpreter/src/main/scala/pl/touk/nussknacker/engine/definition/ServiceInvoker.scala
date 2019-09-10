@@ -5,7 +5,7 @@ import java.util.concurrent.{CompletionStage, Executor}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{NodeContext, ServiceInvocationCollector, TestServiceInvocationCollector}
-import pl.touk.nussknacker.engine.api.typed.typing.ScalarTypingResult
+import pl.touk.nussknacker.engine.api.typed.typing.SingleTypingResult
 import pl.touk.nussknacker.engine.api.{MetaData, Service}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.UnionDefinitionExtractor
@@ -66,7 +66,7 @@ object ServiceInvoker {
 
   def apply(objectWithMethodDef: ObjectWithMethodDef, collector: Option[ServiceInvocationCollector] = None): ServiceInvoker = {
     val detectedReturnType = (objectWithMethodDef.methodDef.realReturnType match {
-      case tc: ScalarTypingResult =>
+      case tc: SingleTypingResult =>
         Some(tc.objType.klass)
       case _ => None
     }).getOrElse(classOf[Any])

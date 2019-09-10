@@ -41,19 +41,19 @@ class TypingResultSpec extends FunSuite with Matchers {
   }
 
   test("determine if can be subclass for typed unions") {
-    Typed(Set(Typed[String], Typed[Int])).canBeSubclassOf(Typed[Int]) shouldBe true
-    Typed[Int].canBeSubclassOf(Typed(Set(Typed[String], Typed[Int]))) shouldBe true
+    Typed(Typed[String], Typed[Int]).canBeSubclassOf(Typed[Int]) shouldBe true
+    Typed[Int].canBeSubclassOf(Typed(Typed[String], Typed[Int])) shouldBe true
 
-    Typed(Set(Typed[String], Typed[Int])).canBeSubclassOf(
-      Typed(Set(Typed[Long], Typed[Int]))) shouldBe true
+    Typed(Typed[String], Typed[Int]).canBeSubclassOf(
+      Typed(Typed[Long], Typed[Int])) shouldBe true
   }
 
   test("determine if can be subclass for unknown") {
     Unknown.canBeSubclassOf(Typed[Int]) shouldBe true
     Typed[Int].canBeSubclassOf(Unknown) shouldBe true
 
-    Unknown.canBeSubclassOf(Typed(Set(Typed[String], Typed[Int]))) shouldBe true
-    Typed(Set(Typed[String], Typed[Int])).canBeSubclassOf(Unknown) shouldBe true
+    Unknown.canBeSubclassOf(Typed(Typed[String], Typed[Int])) shouldBe true
+    Typed(Typed[String], Typed[Int]).canBeSubclassOf(Unknown) shouldBe true
 
     Unknown.canBeSubclassOf(typeMap("field1" -> Typed[String])) shouldBe true
     typeMap("field1" -> Typed[String]).canBeSubclassOf(Unknown) shouldBe true

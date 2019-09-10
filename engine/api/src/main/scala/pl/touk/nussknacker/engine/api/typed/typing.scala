@@ -21,10 +21,13 @@ object typing {
 
   sealed trait KnownTypingResult extends TypingResult
 
-  sealed trait ScalarTypingResult extends KnownTypingResult {
+  sealed trait SingleTypingResult extends KnownTypingResult {
 
     def objType: TypedClass
 
+  }
+
+  sealed trait EitherSingleClassOrUnknown { self: TypingResult =>
   }
 
   object TypedObjectTypingResult {
@@ -38,7 +41,7 @@ object typing {
 
   }
 
-  case class TypedObjectTypingResult(fields: Map[String, TypingResult], objType: TypedClass) extends ScalarTypingResult {
+  case class TypedObjectTypingResult(fields: Map[String, TypingResult], objType: TypedClass) extends SingleTypingResult {
 
     override def canHasAnyPropertyOrField: Boolean = false
 
@@ -47,7 +50,7 @@ object typing {
   }
 
   // Unknown is representation of TypedUnion of all possible types
-  case object Unknown extends TypingResult {
+  case object Unknown extends TypingResult with EitherSingleClassOrUnknown {
 
     override def canHasAnyPropertyOrField: Boolean = true
 
@@ -56,7 +59,7 @@ object typing {
   }
 
   // constructor is package protected because you should use Typed.apply to be sure that possibleTypes.size > 1
-  case class TypedUnion private[typing](private[typing] val possibleTypes: Set[ScalarTypingResult]) extends KnownTypingResult {
+  case class TypedUnion private[typing](private[typing] val possibleTypes: Set[SingleTypingResult]) extends KnownTypingResult {
 
     assert(possibleTypes.size != 1, "TypedUnion should has zero or more than one possibleType - in other case should be used TypedObjectTypingResult or TypedClass")
 
@@ -72,7 +75,7 @@ object typing {
   }
 
   //TODO: make sure parameter list has right size - can be filled with Unknown if needed
-  case class TypedClass(klass: Class[_], params: List[TypingResult]) extends ScalarTypingResult {
+  case class TypedClass(klass: Class[_], params: List[TypingResult]) extends SingleTypingResult with EitherSingleClassOrUnknown {
 
     override def canHasAnyPropertyOrField: Boolean =
       typing.canBeSubclassOf(this, Typed[util.Map[_, _]]) || hasGetFieldByNameMethod
@@ -101,17 +104,17 @@ object typing {
     (first, sec) match {
       case (_, Unknown) => true
       case (Unknown, _) => true
-      case (f: ScalarTypingResult, s: TypedUnion) => canBeSubclassOf(Set(f), s.possibleTypes)
-      case (f: TypedUnion, s: ScalarTypingResult) => canBeSubclassOf(f.possibleTypes, Set(s))
-      case (f: ScalarTypingResult, s: ScalarTypingResult) => scalarCanBeSubclassOf(f, s)
+      case (f: SingleTypingResult, s: TypedUnion) => canBeSubclassOf(Set(f), s.possibleTypes)
+      case (f: TypedUnion, s: SingleTypingResult) => canBeSubclassOf(f.possibleTypes, Set(s))
+      case (f: SingleTypingResult, s: SingleTypingResult) => singleCanBeSubclassOf(f, s)
       case (f: TypedUnion, s: TypedUnion) => canBeSubclassOf(f.possibleTypes, s.possibleTypes)
     }
 
-  private def canBeSubclassOf(firstSet: Set[ScalarTypingResult], secSet: Set[ScalarTypingResult]): Boolean =
-    firstSet.exists(f => secSet.exists(scalarCanBeSubclassOf(f, _)))
+  private def canBeSubclassOf(firstSet: Set[SingleTypingResult], secSet: Set[SingleTypingResult]): Boolean =
+    firstSet.exists(f => secSet.exists(singleCanBeSubclassOf(f, _)))
 
-  private def scalarCanBeSubclassOf(first: ScalarTypingResult, sec: ScalarTypingResult): Boolean = {
-    def additionalRestrictions = sec match {
+  private def singleCanBeSubclassOf(first: SingleTypingResult, sec: SingleTypingResult): Boolean = {
+    def typedObjectRestrictions = sec match {
       case s: TypedObjectTypingResult =>
         val firstFields = first match {
           case f: TypedObjectTypingResult => f.fields
@@ -123,7 +126,7 @@ object typing {
       case _ =>
         true
     }
-    klassCanBeSubclassOf(first.objType, sec.objType) && additionalRestrictions
+    klassCanBeSubclassOf(first.objType, sec.objType) && typedObjectRestrictions
   }
 
   private def klassCanBeSubclassOf(first: TypedClass, sec: TypedClass): Boolean = {
@@ -139,16 +142,21 @@ object typing {
 
     def empty = TypedUnion(Set.empty)
 
-    def apply[T:ClassTag] : TypingResult = apply(ClazzRef[T])
+    def apply[T: ClassTag] : TypingResult with EitherSingleClassOrUnknown = apply(ClazzRef[T])
 
-    def apply(klass: Class[_]): TypingResult = apply(ClazzRef(klass))
+    def apply(klass: Class[_]): TypingResult with EitherSingleClassOrUnknown = apply(ClazzRef(klass))
 
-    def apply(klass: ClazzRef) : TypingResult = {
+    def apply(klass: ClazzRef): TypingResult with EitherSingleClassOrUnknown = {
+      // TODO: make creating unknown type more explicit and fix places where we have Typed type instead of TypedClass | Unknown
       if (klass == ClazzRef.unknown) {
         Unknown
       } else {
         TypedClass(klass)
       }
+    }
+
+    def apply(possibleTypes: TypingResult*): TypingResult = {
+      apply(possibleTypes.toSet)
     }
 
     // creates Typed representation of sum of possible types
@@ -170,7 +178,7 @@ object typing {
 
     private def flatten(possibleTypes: List[KnownTypingResult]) = possibleTypes.flatMap {
       case TypedUnion(possibleTypes) => possibleTypes
-      case other: ScalarTypingResult => List(other)
+      case other: SingleTypingResult => List(other)
     }
 
   }

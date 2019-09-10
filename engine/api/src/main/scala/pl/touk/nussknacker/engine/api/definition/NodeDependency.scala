@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.api.definition
 import argonaut.derive.{JsonSumCodec, JsonSumCodecFor}
 import pl.touk.nussknacker.engine.api.LazyParameter
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{EitherSingleClassOrUnknown, Typed, TypingResult, Unknown}
 
 sealed trait NodeDependency
 
@@ -19,10 +19,10 @@ object Parameter {
 
 case class Parameter(
                       name: String,
-                      typ: TypingResult,
-                      originalType: TypingResult,
+                      typ: TypingResult with EitherSingleClassOrUnknown,
+                      originalType: TypingResult with EitherSingleClassOrUnknown,
                       restriction: Option[ParameterRestriction] = None,
-                      additionalVariables: Map[String, TypingResult] = Map.empty,
+                      additionalVariables: Map[String, TypingResult with EitherSingleClassOrUnknown] = Map.empty,
                       branchParam: Boolean = false) extends NodeDependency {
 
   def isLazyParameter: Boolean = originalType == Typed[LazyParameter[_]]

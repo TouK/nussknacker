@@ -13,9 +13,8 @@ object TypeEncoders {
 
   private def encodeTypingResult(result: TypingResult): Json = result match {
     case typing.Unknown => encodeTypedClass(TypedClass[Any])
-    // FIXME: handle union
-    case TypedUnion(classes) => val headClass = classes.head
-      encodeTypingResult(headClass)
+    case TypedUnion(classes) =>
+      jObjectFields("union" -> jArray(classes.map(encodeTypingResult).toList))
     case TypedObjectTypingResult(fields, objType) => jObjectAssocList(
       //TODO: check if after objType was added still happens: map methods are suggested but validation fails?
       encodeTypedClass(objType).objectOrEmpty.toList
@@ -25,6 +24,8 @@ object TypeEncoders {
   }
 
   implicit val clazzRefEncoder: EncodeJson[ClazzRef] = EncodeJson[ClazzRef](tc => encodeTypingResult(Typed(tc)))
+
+  implicit val typingResultEitherEncoder: EncodeJson[TypingResult with EitherSingleClassOrUnknown] = EncodeJson[TypingResult with EitherSingleClassOrUnknown](encodeTypingResult)
 
   implicit val typingResultEncoder: EncodeJson[TypingResult] = EncodeJson[TypingResult](encodeTypingResult)
 

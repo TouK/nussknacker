@@ -1,14 +1,14 @@
 package pl.touk.nussknacker.ui.process.uiconfig.defaults
 
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.typed.typing.ScalarTypingResult
+import pl.touk.nussknacker.engine.api.typed.typing.SingleTypingResult
 import pl.touk.nussknacker.engine.definition.defaults.{NodeDefinition, ParameterDefaultValueExtractorStrategy}
 
 object TypeRelatedParameterValueExtractor extends ParameterDefaultValueExtractorStrategy {
   override def evaluateParameterDefaultValue(nodeDefinition: NodeDefinition,
                                              parameter: Parameter): Option[String] = {
     val klass = parameter.typ match {
-      case s: ScalarTypingResult =>
+      case s: SingleTypingResult =>
         s.objType.klass
       case _ =>
         // TOOD: what should happen here?

@@ -161,7 +161,7 @@ private[spel] class Typer(implicit classLoader: ClassLoader) {
       case e: StringLiteral => Valid(Typed[String])
 
       case e: Ternary => withTypedChildren {
-        case condition :: onTrue :: onFalse :: Nil if condition.canBeSubclassOf(Typed[Boolean]) => Valid(Typed(Set(onTrue, onFalse)))
+        case condition :: onTrue :: onFalse :: Nil if condition.canBeSubclassOf(Typed[Boolean]) => Valid(Typed(onTrue, onFalse))
         case _ => invalid("Invalid ternary operator")
       }
       //TODO: what should be here?
@@ -181,22 +181,25 @@ private[spel] class Typer(implicit classLoader: ClassLoader) {
                              (t: TypingResult): ValidatedNel[ExpressionParseError, TypingResult] = t match {
     case typed: TypingResult if typed.canHasAnyPropertyOrField => Valid(Unknown)
     case Unknown => Valid(Unknown)
+    case s: SingleTypingResult =>
+      extractSingleProperty(e)(s)
+        .map(Valid(_)).getOrElse(invalid(s"There is no property '${e.getName}' in ${s.display}"))
+    case TypedUnion(possible) =>
+      val l = possible.toList.flatMap(single => extractSingleProperty(e)(single))
+      if (l.isEmpty)
+        invalid(s"There is no property '${e.getName}' in ${t.display}")
+      else
+        Valid(Typed(l.toSet))
+  }
+
+  private def extractSingleProperty(e: PropertyOrFieldReference)
+                                   (t: SingleTypingResult) = t match {
+    case typed: SingleTypingResult if typed.canHasAnyPropertyOrField => Some(Unknown)
     case typedClass: TypedClass =>
       val clazzDefinition = EspTypeUtils.clazzDefinition(typedClass.klass)(ClassExtractionSettings.Default)
-
-      clazzDefinition.getPropertyOrFieldClazzRef(e.getName).map(Typed(_)) match {
-        case None =>
-          invalid(s"There is no property '${e.getName}' in ${typedClass.display}")
-        case Some(typ) =>
-          Valid(typ)
-      }
+      clazzDefinition.getPropertyOrFieldClazzRef(e.getName).map(Typed(_))
     case typed: TypedObjectTypingResult =>
-      typed.fields.get(e.getName) match {
-        case None => invalid(s"There is no property '${e.getName}' in ${typed.display}")
-        case Some(result) => Valid(result)
-      }
-    case TypedUnion(possible) =>
-      possible.toList.map(t => extractProperty(e)(t)).sequence.map(l => Typed(l.toSet))
+      typed.fields.get(e.getName)
   }
 
   private def extractListType(parent: TypingResult): TypingResult = parent match {
@@ -222,8 +225,8 @@ private[spel] class Typer(implicit classLoader: ClassLoader) {
     Invalid(NonEmptyList.of(ExpressionParseError(message)))
 
   private def commonNumberReference: TypingResult =
-    Typed(Set(
-      Typed[Double], Typed[Int], Typed[Long], Typed[Float], Typed[Byte], Typed[Short], Typed[BigDecimal], Typed[BigInteger]))
+    Typed(
+      Typed[Double], Typed[Int], Typed[Long], Typed[Float], Typed[Byte], Typed[Short], Typed[BigDecimal], Typed[BigInteger])
 
   implicit class RichSpelNode(n: SpelNode) {
     def children: List[SpelNode] = {

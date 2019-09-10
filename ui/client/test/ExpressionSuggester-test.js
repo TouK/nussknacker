@@ -14,6 +14,10 @@ const typesInformation = [
     "methods": {"quaxString": {"refClazz": {"refClazzName": "java.lang.String"} }}
   },
   {
+    "clazzName": {"refClazzName": "org.AA"},
+    "methods": {"fooString": {"refClazz": {"refClazzName": "java.lang.String"} }, "barB": {"refClazz": {"refClazzName": "org.C"} } }
+  },
+  {
     "clazzName": {"refClazzName": "org.WithList"},
     "methods": {"listField": {"refClazz": {"refClazzName": "java.util.List", params: [{refClazzName: "org.A"}]} }}
   },
@@ -37,7 +41,11 @@ const variables = {
   "ANOTHER": {refClazzName: "org.A"},
   "dynamicMap": {refClazzName: "java.util.Map", fields: {'intField': {refClazzName: 'java.lang.Integer'}, 'aField': {refClazzName: "org.A"}} },
   "listVar": {refClazzName: "org.WithList" },
-  "util": {refClazzName: "org.Util"}
+  "util": {refClazzName: "org.Util"},
+  "union": {union: [
+      {refClazzName: "org.A"},
+      {refClazzName: "org.B"},
+      {refClazzName: "org.AA"}]}
 };
 
 const expressionSuggester = new ExpressionSuggester(typesInformation, variables)
@@ -56,7 +64,11 @@ describe("expression suggester", () => {
       { methodName: "#ANOTHER", refClazz: { refClazzName: 'org.A'} },
       { methodName: "#dynamicMap", refClazz: {refClazzName: "java.util.Map", fields: {'intField': {refClazzName: 'java.lang.Integer'}, 'aField': {refClazzName: "org.A"}}} },
       { methodName: "#listVar", refClazz: { refClazzName: "org.WithList" } },
-      { methodName: "#util", refClazz: { refClazzName: "org.Util" } }
+      { methodName: "#util", refClazz: { refClazzName: "org.Util" } },
+      { methodName: "#union", refClazz: { union: [
+            { refClazzName: 'org.A' },
+            { refClazzName: 'org.B' },
+            { refClazzName: 'org.AA' } ] } }
     ])
   })
 
@@ -108,6 +120,23 @@ describe("expression suggester", () => {
 
   it("should suggest methods for object returned from method", () => {
     const suggestions = expressionSuggester.suggestionsFor("#input.barB.bazC.", {row: 0, column: "#input.barB.bazC.".length })
+    expect(suggestions).toEqual([
+      { methodName: 'quaxString', refClazz: { refClazzName: 'java.lang.String'} }
+    ])
+  })
+
+  it("should suggest methods for union objects", () => {
+    const suggestions = expressionSuggester.suggestionsFor("#union.", {row: 0, column: "#union.".length })
+    expect(suggestions).toEqual([
+      { methodName: 'fooString', refClazz: { refClazzName: 'java.lang.String'} },
+      { methodName: 'barB', refClazz: { refClazzName: 'org.B' } },
+      { methodName: 'bazC', refClazz: { refClazzName: 'org.C'} },
+      { methodName: 'barB', refClazz: { refClazzName: 'org.C' } }
+    ])
+  })
+
+  it("should suggest methods for object returned from method from union objects", () => {
+    const suggestions = expressionSuggester.suggestionsFor("#union.bazC.", {row: 0, column: "#union.bazC.".length })
     expect(suggestions).toEqual([
       { methodName: 'quaxString', refClazz: { refClazzName: 'java.lang.String'} }
     ])

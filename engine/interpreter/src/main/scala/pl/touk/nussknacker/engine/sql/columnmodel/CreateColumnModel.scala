@@ -24,7 +24,7 @@ object CreateColumnModel {
   }
 
   private[columnmodel] val getListInnerType: TypingResult => Validated[InvalidateMessage, TypingResult] = {
-    case typedClass: ScalarTypingResult =>
+    case typedClass: SingleTypingResult =>
       val isCollection =
         classOf[Traversable[_]].isAssignableFrom(typedClass.objType.klass) ||
         classOf[java.util.Collection[_]].isAssignableFrom(typedClass.objType.klass)
