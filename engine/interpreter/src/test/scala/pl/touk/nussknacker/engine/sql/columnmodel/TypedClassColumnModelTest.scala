@@ -8,29 +8,32 @@ import pl.touk.nussknacker.engine.sql.SqlType.{Bool, Numeric, Varchar}
 import pl.touk.nussknacker.engine.sql.columnmodel.TypedClassColumnModel.CreateColumnClassExtractionPredicate
 import pl.touk.nussknacker.engine.sql.{Column, ColumnModel}
 
-import scala.reflect.ClassTag
+import scala.reflect.runtime.universe._
 
 class TypedClassColumnModelTest extends FunSuite with Matchers{
-  def typeMe[T](implicit classTag: ClassTag[T]): ColumnModel = TypedClassColumnModel.create(Typed[T].asInstanceOf[TypedClass])
+  def typeMe[T: TypeTag]: ColumnModel = TypedClassColumnModel.create(Typed[T].asInstanceOf[TypedClass])
   test("ignore inheritance") {
-    trait Countable {
-      def value = 1
-    }
-    case class O(field: Boolean) extends Countable
-    val result = typeMe[O]
+    val result = typeMe[ClassExtendingOtherClass]
     result shouldEqual ColumnModel(List(Column("field", Bool)))
   }
   test("ignore methods") {
-    case class O(field: Boolean) {
-      def method = 1
-    }
-    val result = typeMe[O]
+    val result = typeMe[ClassWithMethod]
     result shouldEqual ColumnModel(List(Column("field", Bool)))
   }
   test("use typed list") {
     val result = typeMe[Data1]
     result shouldEqual ColumnModel(List(Column("name", Varchar), Column("value", Numeric)))
   }
+
+  trait Countable {
+    def value = 1
+  }
+  case class ClassExtendingOtherClass(field: Boolean) extends Countable
+
+  case class ClassWithMethod(field: Boolean) {
+    def method = 1
+  }
+
   case class Data1(name: String, value: Int)
 
 }

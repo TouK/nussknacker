@@ -42,7 +42,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   private val baseDefinition = ProcessDefinition[ObjectDefinition](
     Map("sampleEnricher" -> ObjectDefinition(List.empty, ClazzRef[SimpleRecord], List()), "withParamsService" -> ObjectDefinition(List(Parameter("par1",
-      ClazzRef(classOf[String]))), ClazzRef[SimpleRecord], List())),
+      ClazzRef[String])), ClazzRef[SimpleRecord], List())),
     Map("source" -> ObjectDefinition(List.empty, ClazzRef[SimpleRecord], List()),
         "sourceWithParam" -> ObjectDefinition(List(Parameter("param", ClazzRef[Any])), ClazzRef[SimpleRecord], List()),
         "typedMapSource" -> ObjectDefinition(List(Parameter("type", ClazzRef[TypedObjectDefinition])), ClazzRef[TypedMap], List())
@@ -51,7 +51,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       "sinkWithLazyParam" -> (ObjectDefinition.withParams(List(Parameter("lazyString", Typed[String], classOf[LazyParameter[_]]))), SinkAdditionalData(true))),
 
     Map("customTransformer" -> (ObjectDefinition(List.empty, ClazzRef[SimpleRecord], List()), emptyQueryNamesData()),
-      "withParamsTransformer" -> (ObjectDefinition(List(Parameter("par1", ClazzRef(classOf[String]))), ClazzRef[SimpleRecord], List()), emptyQueryNamesData()),
+      "withParamsTransformer" -> (ObjectDefinition(List(Parameter("par1", ClazzRef[String])), ClazzRef[SimpleRecord], List()), emptyQueryNamesData()),
       "manyParams" -> (ObjectDefinition(List(
                 Parameter("par1", Typed[String], classOf[LazyParameter[_]]),
                 Parameter("par2", ClazzRef[String]),
@@ -62,7 +62,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         Parameter("lazyString", Typed[String], classOf[LazyParameter[_]]), Parameter("lazyInt", Typed[Integer], classOf[LazyParameter[_]]),
         Parameter("long", ClazzRef[Long]))
       , ClazzRef[SimpleRecord], List()), emptyQueryNamesData(true)),
-      "withoutReturnType" -> (ObjectDefinition(List(Parameter("par1", ClazzRef(classOf[String]))), ClazzRef[Void], List()), emptyQueryNamesData())
+      "withoutReturnType" -> (ObjectDefinition(List(Parameter("par1", ClazzRef[String])), ClazzRef[Void], List()), emptyQueryNamesData())
     ),
     Map.empty,
     ObjectDefinition.noParam,
@@ -187,7 +187,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       "event" -> Typed[SimpleRecord]
     )
 
-    val validDefinition = baseDefinition.withService(missingServiceId, Parameter(name = "foo", typ = ClazzRef(classOf[String])))
+    val validDefinition = baseDefinition.withService(missingServiceId, Parameter(name = "foo", typ = ClazzRef[String]))
     validate(processWithRefToMissingService, validDefinition).result should matchPattern {
       case Valid(_) =>
     }
@@ -222,7 +222,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         .buildSimpleVariable("simple", "simpleVar", "'simple'")
         .processorEnd("id2", serviceId, "foo" -> "'bar'")
 
-    val definition = ProcessDefinitionBuilder.empty.withService(serviceId, Parameter(name = "foo", typ = ClazzRef(classOf[String])))
+    val definition = ProcessDefinitionBuilder.empty.withService(serviceId, Parameter(name = "foo", typ = ClazzRef[String]))
     val compilationResult = validate(processWithRefToMissingService, definition)
     compilationResult.result should matchPattern {
       case Invalid(NonEmptyList(MissingSourceFactory("source", "id1"), Nil)) =>
@@ -251,7 +251,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   test("find missing parameter for exception handler") {
     val process = EspProcessBuilder.id("process1").exceptionHandler().source("id1", "source").emptySink("id2", "sink")
-    val definition = baseDefinition.withExceptionHandlerFactory(Parameter(name = "foo", typ = ClazzRef(classOf[String])))
+    val definition = baseDefinition.withExceptionHandlerFactory(Parameter(name = "foo", typ = ClazzRef[String]))
     validate(process, definition).result should matchPattern {
       case Invalid(NonEmptyList(MissingParameters(_, _), _)) =>
     }
@@ -294,7 +294,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       .filter("sampleFilter2", "#input.value1.value3 > 10")
       .emptySink("id2", "sink")
     validate(process, definitionWithTypedSource).result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("There is no property 'value3' in type 'pl.touk.nussknacker.engine.compile.ProcessValidatorSpec$AnotherSimpleRecord'", "sampleFilter2", None, _), _)) =>
+      case Invalid(NonEmptyList(ExpressionParseError("There is no property 'value3' in type: pl.touk.nussknacker.engine.compile.ProcessValidatorSpec$AnotherSimpleRecord", "sampleFilter2", None, _), _)) =>
     }
   }
 
@@ -310,7 +310,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     val definitionWithCustomNode = definitionWithTypedSourceAndTransformNode
 
     validate(process, definitionWithCustomNode).result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("There is no property 'value3' in type 'pl.touk.nussknacker.engine.compile.ProcessValidatorSpec$AnotherSimpleRecord'", "sampleFilter2", None, _), _)) =>
+      case Invalid(NonEmptyList(ExpressionParseError("There is no property 'value3' in type: pl.touk.nussknacker.engine.compile.ProcessValidatorSpec$AnotherSimpleRecord", "sampleFilter2", None, _), _)) =>
     }
   }
 
@@ -328,7 +328,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
     val compilationResult = validate(process, definitionWithCustomNode)
     compilationResult.result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("There is no property 'value3' in type 'pl.touk.nussknacker.engine.compile.ProcessValidatorSpec$AnotherSimpleRecord'", "sampleFilter2", None, _), _)) =>
+      case Invalid(NonEmptyList(ExpressionParseError("There is no property 'value3' in type: pl.touk.nussknacker.engine.compile.ProcessValidatorSpec$AnotherSimpleRecord", "sampleFilter2", None, _), _)) =>
     }
     compilationResult.variablesInNodes("id2") shouldBe Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(process.metaData), "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass)))
     compilationResult.variablesInNodes("id3") shouldBe Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(process.metaData), "processHelper" -> Typed(ClazzRef(ProcessHelper.getClass)))
@@ -347,7 +347,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     val definitionWithCustomNode = definitionWithTypedSourceAndTransformNode
 
     validate(process, definitionWithCustomNode).result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("There is no property 'terefere' in type 'pl.touk.nussknacker.engine.compile.ProcessValidatorSpec$AnotherSimpleRecord'",
+      case Invalid(NonEmptyList(ExpressionParseError("There is no property 'terefere' in type: pl.touk.nussknacker.engine.compile.ProcessValidatorSpec$AnotherSimpleRecord",
       "sampleFilter2", None, "#out1.terefere"), _)) =>
     }
   }
@@ -374,7 +374,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       .source("id1", "source")
       .emptySink("id2", "sink")
     val definitionWithExceptionHandlerWithParams = baseDefinition.copy(exceptionHandlerFactory =
-      ObjectDefinition.withParams(List(Parameter("param1", ClazzRef(classOf[String])))))
+      ObjectDefinition.withParams(List(Parameter("param1", ClazzRef[String]))))
 
     inside (validate(process, definitionWithExceptionHandlerWithParams).result) {
       case Invalid(NonEmptyList(MissingParameters(missingParam, "$process"), _)) => missingParam shouldBe Set("param1")
@@ -391,7 +391,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         canonicalnode.FlatNode(Sink("deadEnd", SinkRef("sink", List()), Some("'deadEnd'")))), None)
 
     val definitionWithExceptionHandlerWithParams = baseDefinition.copy(exceptionHandlerFactory =
-      ObjectDefinition.withParams(List(Parameter("param1", ClazzRef(classOf[String])))))
+      ObjectDefinition.withParams(List(Parameter("param1", ClazzRef[String]))))
 
     validate(ProcessCanonizer.uncanonize(subprocess).toOption.get, definitionWithExceptionHandlerWithParams).result shouldBe 'valid
   }
@@ -418,7 +418,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       .filter("sampleFilter1", "#input.plainValueOpt.terefere > 10")
       .emptySink("id2", "sink")
     validate(process, definitionWithTypedSource).result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("There is no property 'terefere' in type 'scala.math.BigDecimal'", "sampleFilter1", None, _), _)) =>
+      case Invalid(NonEmptyList(ExpressionParseError("There is no property 'terefere' in type: scala.math.BigDecimal", "sampleFilter1", None, _), _)) =>
     }
   }
 
@@ -761,7 +761,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   private val definitionWithTypedSourceAndTransformNode =
     definitionWithTypedSource.withCustomStreamTransformer("custom",
-      classOf[AnotherSimpleRecord], emptyQueryNamesData(), Parameter("par1", ClazzRef(classOf[String])))
+      classOf[AnotherSimpleRecord], emptyQueryNamesData(), Parameter("par1", ClazzRef[String]))
 
 
   case class SimpleRecord(value1: AnotherSimpleRecord, plainValue: BigDecimal, plainValueOpt: Option[BigDecimal], intAsAny: Any, list: java.util.List[SimpleRecord]) {

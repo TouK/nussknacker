@@ -60,11 +60,11 @@ class TypingResultSpec extends FunSuite with Matchers {
   }
 
   test("determine if can be subclass for class") {
-    Typed(ClazzRef(classOf[Set[_]], List(ClazzRef[BigDecimal]))).canBeSubclassOf(Typed(ClazzRef(classOf[Set[_]], List(ClazzRef[Number])))) shouldBe true
-    Typed(ClazzRef(classOf[Set[_]], List(ClazzRef[Number]))).canBeSubclassOf(Typed(ClazzRef(classOf[Set[_]], List(ClazzRef[BigDecimal])))) shouldBe true
+    Typed[Set[BigDecimal]].canBeSubclassOf(Typed[Set[Number]]) shouldBe true
+    Typed[Set[Number]].canBeSubclassOf(Typed[Set[BigDecimal]]) shouldBe true
 
-    Typed(ClazzRef(classOf[Set[_]], List(ClazzRef[BigDecimal]))).canBeSubclassOf(Typed(ClazzRef(classOf[Set[_]], List(ClazzRef[String])))) shouldBe false
-    Typed(ClazzRef(classOf[Set[_]], List(ClazzRef[String]))).canBeSubclassOf(Typed(ClazzRef(classOf[Set[_]], List(ClazzRef[BigDecimal])))) shouldBe false
+    Typed[Set[BigDecimal]].canBeSubclassOf(Typed[Set[String]]) shouldBe false
+    Typed[Set[String]].canBeSubclassOf(Typed[Set[BigDecimal]]) shouldBe false
   }
 
 }

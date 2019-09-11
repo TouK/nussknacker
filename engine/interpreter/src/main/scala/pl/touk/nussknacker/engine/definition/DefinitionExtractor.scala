@@ -149,12 +149,12 @@ object DefinitionExtractor {
 
   object ObjectDefinition {
 
-    def noParam: ObjectDefinition = ObjectDefinition(List.empty, Typed[Null], List(), SingleNodeConfig.zero)
+    def noParam: ObjectDefinition = ObjectDefinition(List.empty, Typed[Any], List(), SingleNodeConfig.zero)
 
-    def withParams(params: List[Parameter]): ObjectDefinition = ObjectDefinition(params, Typed[Null], List(), SingleNodeConfig.zero)
+    def withParams(params: List[Parameter]): ObjectDefinition = ObjectDefinition(params, Typed[Any], List(), SingleNodeConfig.zero)
 
     def withParamsAndCategories(params: List[Parameter], categories: List[String]): ObjectDefinition =
-      ObjectDefinition(params, Typed[Null], categories, SingleNodeConfig.zero)
+      ObjectDefinition(params, Typed[Any], categories, SingleNodeConfig.zero)
 
     def apply(parameters: List[Parameter], returnType: ClazzRef, categories: List[String]): ObjectDefinition = {
       ObjectDefinition(parameters, Typed(returnType), categories, SingleNodeConfig.zero)

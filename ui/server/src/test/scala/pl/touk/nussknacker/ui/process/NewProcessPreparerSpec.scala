@@ -13,7 +13,7 @@ class NewProcessPreparerSpec extends FlatSpec with Matchers {
   val processDeffinition = ProcessTestData.processDefinition
   val processDeffinitionWithExceptionHandler = processDeffinition
     .withExceptionHandlerFactory(
-      pl.touk.nussknacker.engine.api.definition.Parameter("param1", ClazzRef(classOf[String]))
+      pl.touk.nussknacker.engine.api.definition.Parameter("param1", ClazzRef[String])
     )
 
   it should "create new empty process" in {

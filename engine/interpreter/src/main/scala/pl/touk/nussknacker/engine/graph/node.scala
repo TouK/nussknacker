@@ -11,8 +11,9 @@ import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 
-import scala.reflect.ClassTag
 import scala.util.Try
+
+import scala.reflect.runtime.universe._
 
 object node {
 
@@ -168,7 +169,7 @@ object node {
 
     object SubprocessClazzRef {
 
-      def apply[T:ClassTag]: SubprocessClazzRef = SubprocessClazzRef(ClazzRef[T].refClazzName)
+      def apply[T: TypeTag]: SubprocessClazzRef = SubprocessClazzRef(ClazzRef[T].refClazzName)
 
     }
 
