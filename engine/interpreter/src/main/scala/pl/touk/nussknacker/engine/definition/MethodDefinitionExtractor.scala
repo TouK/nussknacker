@@ -69,9 +69,8 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
           .getOrElse(throw new IllegalArgumentException(s"Parameter $p of $obj and method : ${method.getName} has missing @ParamName or @BranchParamName annotation"))
         // TODO JOIN: for branchParams we should rather look at Map's value type
         val paramType = extractParameterType(p)
-        Parameter(
-          name, Typed(paramType), Typed(p.getType), ParameterTypeMapper.prepareRestrictions(paramType, Some(p), nodeConfig.paramConfig(name)), additionalVariables(p), branchParamName.isDefined
-        )
+        val restrictions = ParameterTypeMapper.prepareRestrictions(paramType, Some(p), nodeConfig.paramConfig(name))
+        Parameter(name, Typed(paramType), p.getType, restrictions, additionalVariables(p), branchParamName.isDefined)
       }
     }.toList
 
@@ -125,14 +124,7 @@ object MethodDefinitionExtractor {
       dependencies.map {
         case param: Parameter =>
           val foundParam = prepareValue(param.name).getOrElse(throw new IllegalArgumentException(s"Missing parameter: ${param.name}"))
-          val klass = param.originalType match {
-            case s: SingleTypingResult =>
-              s.objType.klass
-            case Unknown =>
-              // TOOD: what should happen here?
-              classOf[Any]
-          }
-          validateType(param.name, foundParam, klass)
+          validateType(param.name, foundParam, param.runtimeClass)
           foundParam
         case OutputVariableNameDependency =>
           outputVariableNameOpt.getOrElse(
@@ -145,9 +137,9 @@ object MethodDefinitionExtractor {
       }
     }
 
-    private def validateType(name: String, value: AnyRef, expectedType: Class[_]) : Unit = {
-      if (value != null && !EspTypeUtils.signatureElementMatches(expectedType, value.getClass)) {
-        throw new IllegalArgumentException(s"Parameter $name has invalid class: ${value.getClass.getName}, should be: ${expectedType.getName}")
+    private def validateType(name: String, value: AnyRef, expectedClass: Class[_]) : Unit = {
+      if (value != null && !EspTypeUtils.signatureElementMatches(expectedClass, value.getClass)) {
+        throw new IllegalArgumentException(s"Parameter $name has invalid class: ${value.getClass.getName}, should be: ${expectedClass.getName}")
       }
     }
   }

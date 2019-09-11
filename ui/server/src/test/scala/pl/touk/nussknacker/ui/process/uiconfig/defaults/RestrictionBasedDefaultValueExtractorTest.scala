@@ -12,7 +12,7 @@ class RestrictionBasedDefaultValueExtractorTest extends FunSuite with Matchers {
 
   private def evaluate(restriction: Option[ParameterRestriction]) = {
     RestrictionBasedDefaultValueExtractor.evaluateParameterDefaultValue(definition,
-          Parameter("id", Typed[String], Typed[String], restriction))
+          Parameter("id", Typed[String], classOf[String], restriction))
   }
 
   test("extracts first value for restriction") {

@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.api.definition
 import argonaut.derive.{JsonSumCodec, JsonSumCodecFor}
 import pl.touk.nussknacker.engine.api.LazyParameter
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.api.typed.typing.{EitherSingleClassOrUnknown, Typed, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 
 sealed trait NodeDependency
 
@@ -12,22 +12,17 @@ case class TypedNodeDependency(clazz: Class[_]) extends NodeDependency
 case object OutputVariableNameDependency extends NodeDependency
 
 object Parameter {
-  def unknownType(name: String) = Parameter(name, Unknown, Unknown)
-
-  def apply(name: String, typ: ClazzRef): Parameter = Parameter(name, Typed(typ), Typed(typ))
+  def apply(name: String, typ: ClazzRef): Parameter = Parameter(name, Typed(typ), typ.clazz)
 }
 
-case class Parameter(
-                      name: String,
-                      // typ and additionalVariables should have type TypingResult because it can be defined anyway (e.g. in WithExplicitMethodToInvoke.parameterDefinition
-                      // but originalType is rather raw class type - just wrapped in TypingResult TODO: we should remove originalType from here
-                      typ: TypingResult,
-                      originalType: TypingResult with EitherSingleClassOrUnknown,
-                      restriction: Option[ParameterRestriction] = None,
-                      additionalVariables: Map[String, TypingResult] = Map.empty,
-                      branchParam: Boolean = false) extends NodeDependency {
+case class Parameter(name: String,
+                     typ: TypingResult,
+                     runtimeClass: Class[_],
+                     restriction: Option[ParameterRestriction] = None,
+                     additionalVariables: Map[String, TypingResult] = Map.empty,
+                     branchParam: Boolean = false) extends NodeDependency {
 
-  def isLazyParameter: Boolean = originalType == Typed[LazyParameter[_]]
+  def isLazyParameter: Boolean = classOf[LazyParameter[_]].isAssignableFrom(runtimeClass)
 
 }
 
