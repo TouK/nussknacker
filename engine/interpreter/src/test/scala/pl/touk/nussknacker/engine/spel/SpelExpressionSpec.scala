@@ -10,15 +10,14 @@ import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.data.Validated.{Invalid, Valid}
 import cats.effect.IO
 import org.scalatest.{FunSuite, Matchers}
-import org.springframework.expression.ParserContext
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.lazyy.{LazyContext, LazyValuesProvider, UsingLazyValues}
 import pl.touk.nussknacker.engine.api.typed.{ClazzRef, TypedMap}
 import pl.touk.nussknacker.engine.api.expression.{Expression, ExpressionParseError, TypedExpression, ValueWithLazyContext}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypedUnion, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
+import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Standard}
 
 import scala.collection.JavaConverters._
 import scala.concurrent.Await
@@ -60,8 +59,8 @@ class SpelExpressionSpec extends FunSuite with Matchers {
     val lazyVal: LazyState[String] = lazyValue[String](enrichingServiceId).map(_ + " ma kota")
   }
 
-  private def parseOrFail[T:ClassTag](expr: String, context: Context = ctx, parserContext: Option[ParserContext] = None) : Expression = {
-    parse(expr, context, parserContext) match {
+  private def parseOrFail[T:ClassTag](expr: String, context: Context = ctx, flavour: Flavour = Standard) : Expression = {
+    parse(expr, context, flavour) match {
       case Valid(e) => e.expression
       case Invalid(err) => throw new ParseException(err.map(_.message).toList.mkString, -1)
     }
@@ -77,20 +76,20 @@ class SpelExpressionSpec extends FunSuite with Matchers {
 
   import pl.touk.nussknacker.engine.util.Implicits._
 
-  private def parse[T:ClassTag](expr: String, context: Context = ctx, parserContext: Option[ParserContext] = None) : ValidatedNel[ExpressionParseError, TypedExpression] = {
+  private def parse[T:ClassTag](expr: String, context: Context = ctx, flavour: Flavour = Standard) : ValidatedNel[ExpressionParseError, TypedExpression] = {
     val validationCtx = ValidationContext(
       context.variables.mapValuesNow(_.getClass).mapValuesNow(ClazzRef(_)).mapValuesNow(Typed.apply))
-    parse(expr, validationCtx, parserContext)
+    parse(expr, validationCtx, flavour)
   }
 
   private def parse[T:ClassTag](expr: String, validationCtx: ValidationContext) : ValidatedNel[ExpressionParseError, TypedExpression] = {
-    parse(expr, validationCtx, None)
+    parse(expr, validationCtx, Standard)
   }
 
-  private def parse[T:ClassTag](expr: String, validationCtx: ValidationContext, parserContext: Option[ParserContext]) : ValidatedNel[ExpressionParseError, TypedExpression] = {
+  private def parse[T:ClassTag](expr: String, validationCtx: ValidationContext, flavour: Flavour) : ValidatedNel[ExpressionParseError, TypedExpression] = {
     val expressionFunctions = Map("today" -> classOf[LocalDate].getDeclaredMethod("now"))
     val imports = List(SampleValue.getClass.getPackage.getName)
-    new SpelExpressionParser(expressionFunctions, imports, getClass.getClassLoader, 1 minute, enableSpelForceCompile = true, parserContext)
+    new SpelExpressionParser(expressionFunctions, imports, getClass.getClassLoader, 1 minute, enableSpelForceCompile = true, flavour)
       .parse(expr, validationCtx, Typed[T])
   }
 
@@ -452,17 +451,15 @@ class SpelExpressionSpec extends FunSuite with Matchers {
   }
 
   test("parses expression with template context") {
-    val pctx = Some(ParserContext.TEMPLATE_EXPRESSION)
-    parse[String]("alamakota #{444}", ctx, pctx) shouldBe 'valid
-    parse[String]("alamakota #{444 + #obj.value}", ctx, pctx) shouldBe 'valid
-    parse[String]("alamakota #{444 + #nothing}", ctx, pctx) shouldBe 'invalid
+    parse[String]("alamakota #{444}", ctx, SpelExpressionParser.Template) shouldBe 'valid
+    parse[String]("alamakota #{444 + #obj.value}", ctx, SpelExpressionParser.Template) shouldBe 'valid
+    parse[String]("alamakota #{444 + #nothing}", ctx, SpelExpressionParser.Template) shouldBe 'invalid
 
   }
 
   test("evaluates expression with template context") {
-    val pctx = Some(ParserContext.TEMPLATE_EXPRESSION)
-    parseOrFail[String]("alamakota #{444}", ctx, pctx).evaluateSyncToValue[String]() shouldBe "alamakota 444"
-    parseOrFail[String]("alamakota #{444 + #obj.value} #{#mapValue.foo}", ctx, pctx).evaluateSyncToValue[String]() shouldBe "alamakota 446 bar"
+    parseOrFail[String]("alamakota #{444}", ctx, SpelExpressionParser.Template).evaluateSyncToValue[String]() shouldBe "alamakota 444"
+    parseOrFail[String]("alamakota #{444 + #obj.value} #{#mapValue.foo}", ctx, SpelExpressionParser.Template).evaluateSyncToValue[String]() shouldBe "alamakota 446 bar"
 
   }
 

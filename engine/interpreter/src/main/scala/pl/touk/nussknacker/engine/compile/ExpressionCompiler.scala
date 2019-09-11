@@ -27,7 +27,10 @@ object ExpressionCompiler {
       = default(loader, expressionConfig, optimizeCompilation = false)
 
   private def default(loader: ClassLoader, expressionConfig: ExpressionDefinition[ObjectMetadata], optimizeCompilation: Boolean): ExpressionCompiler = {
-    val defaultParsers = Seq(SpelExpressionParser.default(loader, optimizeCompilation, expressionConfig.globalImports, None), SqlExpressionParser)
+    val defaultParsers = Seq(
+      SpelExpressionParser.default(loader, optimizeCompilation, expressionConfig.globalImports, SpelExpressionParser.Standard),
+      SpelExpressionParser.default(loader, optimizeCompilation, expressionConfig.globalImports, SpelExpressionParser.Template),
+      SqlExpressionParser)
     val parsersSeq = defaultParsers  ++ expressionConfig.languages.expressionParsers
     val parsers = parsersSeq.map(p => p.languageId -> p).toMap
     new ExpressionCompiler(parsers)
