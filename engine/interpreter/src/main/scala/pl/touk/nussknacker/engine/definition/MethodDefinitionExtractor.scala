@@ -4,11 +4,11 @@ import java.lang.annotation.Annotation
 import java.lang.reflect
 import java.lang.reflect.Method
 
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.SingleNodeConfig
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.api.typed.typing.{EitherSingleClassOrUnknown, SingleTypingResult, Typed, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedDependencies}
 import pl.touk.nussknacker.engine.types.EspTypeUtils
 
@@ -78,7 +78,7 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
     new OrderedDependencies(dependencies)
   }
 
-  private def additionalVariables(p: reflect.Parameter): Map[String, TypingResult with EitherSingleClassOrUnknown] =
+  private def additionalVariables(p: reflect.Parameter): Map[String, TypingResult] =
     Option(p.getAnnotation(classOf[AdditionalVariables]))
       .map(_.value().map(additionalVariable =>
         additionalVariable.name() -> Typed(ClazzRef(additionalVariable.clazz()))).toMap

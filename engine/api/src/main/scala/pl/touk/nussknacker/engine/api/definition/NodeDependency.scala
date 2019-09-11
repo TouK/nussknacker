@@ -19,10 +19,12 @@ object Parameter {
 
 case class Parameter(
                       name: String,
-                      typ: TypingResult with EitherSingleClassOrUnknown,
+                      // typ and additionalVariables should have type TypingResult because it can be defined anyway (e.g. in WithExplicitMethodToInvoke.parameterDefinition
+                      // but originalType is rather raw class type - just wrapped in TypingResult TODO: we should remove originalType from here
+                      typ: TypingResult,
                       originalType: TypingResult with EitherSingleClassOrUnknown,
                       restriction: Option[ParameterRestriction] = None,
-                      additionalVariables: Map[String, TypingResult with EitherSingleClassOrUnknown] = Map.empty,
+                      additionalVariables: Map[String, TypingResult] = Map.empty,
                       branchParam: Boolean = false) extends NodeDependency {
 
   def isLazyParameter: Boolean = originalType == Typed[LazyParameter[_]]
