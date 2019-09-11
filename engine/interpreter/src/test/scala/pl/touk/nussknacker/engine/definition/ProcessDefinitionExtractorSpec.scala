@@ -91,7 +91,7 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
 
   case class EmptyExplicitMethodToInvoke(parameterDefinition: List[Parameter], returnType: TypingResult) extends Service with WithExplicitMethodToInvoke {
 
-    override def realReturnType: TypingResult = Typed(Set(TypedClass(classOf[Future[_]], List(returnType))))
+    override def realReturnType: TypingResult = TypedClass(classOf[Future[_]], List(returnType))
 
     override def additionalDependencies: List[Class[_]] = List()
 

@@ -10,6 +10,6 @@ object TypedList {
     Typed(ClazzRef(classOf[List[T]], List(ClazzRef[T])))
 
   def apply(fields: Map[String, TypingResult]): TypingResult =
-    Typed(Set(TypedClass(classOf[java.util.List[_]], List(TypedObjectTypingResult(fields)))))
+    TypedClass(classOf[java.util.List[_]], List(TypedObjectTypingResult(fields)))
 
 }

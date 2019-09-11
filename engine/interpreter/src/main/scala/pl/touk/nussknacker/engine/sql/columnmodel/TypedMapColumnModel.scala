@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.sql.columnmodel
 
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.sql.columnmodel.CreateColumnModel.ClazzToSqlType
 import pl.touk.nussknacker.engine.sql.{Column, ColumnModel}
 
@@ -14,9 +14,9 @@ private[columnmodel] object TypedMapColumnModel {
 
   private val  columns: TypedObjectTypingResult =>  immutable.Iterable[Column] = typedMap => {
     val toClasRef: TypingResult => Option[ClazzRef] = {
-      case Typed(possibleTypes) =>
-        possibleTypes.headOption.map { typedClass => ClazzRef(typedClass.klass) }
-      case _: TypedObjectTypingResult | Unknown =>
+      case typedClass: TypedClass =>
+        Some(ClazzRef(typedClass.klass))
+      case _: TypedObjectTypingResult | _: TypedUnion | Unknown =>
         None
     }
     for {

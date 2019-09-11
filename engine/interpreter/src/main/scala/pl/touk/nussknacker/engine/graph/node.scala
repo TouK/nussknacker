@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.graph
 
 import org.apache.commons.lang3.ClassUtils
-import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api.typed.{ClazzRef, typing}
+import pl.touk.nussknacker.engine.api.typed.typing.{EitherSingleClassOrUnknown, Typed, TypingResult}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
@@ -175,7 +175,8 @@ object node {
 
     case class SubprocessClazzRef(refClazzName: String) {
 
-      def toTyped(classLoader: ClassLoader) = Try(Typed(ClassUtils.getClass(classLoader, refClazzName)))
+      def toTyped(classLoader: ClassLoader): Try[TypingResult with EitherSingleClassOrUnknown] =
+        Try(Typed(ClassUtils.getClass(classLoader, refClazzName)))
 
     }
 

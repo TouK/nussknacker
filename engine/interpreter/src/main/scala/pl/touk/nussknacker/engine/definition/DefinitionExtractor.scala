@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.MethodToInvoke
 import pl.touk.nussknacker.engine.api.definition.{Parameter, WithExplicitMethodToInvoke}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, SingleNodeConfig, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.MethodDefinition
 import pl.touk.nussknacker.engine.types.TypesInformationExtractor
@@ -60,7 +60,7 @@ object DefinitionExtractor {
     def categories: List[String]
 
     // TODO: Use ContextTransformation API to check if custom node is adding some output variable
-    def hasNoReturn : Boolean = Set(Typed[Void], Typed[Unit], Typed[BoxedUnit]).contains(returnType)
+    def hasNoReturn : Boolean = Set[TypingResult](Typed[Void], Typed[Unit], Typed[BoxedUnit]).contains(returnType)
 
   }
 
@@ -138,13 +138,8 @@ object DefinitionExtractor {
     }
 
     private def extractTypesFromObjectDefinition(obj: ObjectWithMethodDef): List[TypingResult] = {
-      def clazzRefFromTyped(typed: TypingResult): Iterable[ClazzRef] = typed match {
-        case Typed(possibleTypes) => possibleTypes.map(t => ClazzRef(t.klass))
-        case _ => Set()
-      }
-
       def clazzRefsFromParameter(parameter: Parameter): Iterable[TypingResult] = {
-        val fromAdditionalVars = parameter.additionalVariables.values//.flatMap(clazzRefFromTyped)
+        val fromAdditionalVars = parameter.additionalVariables.values
         fromAdditionalVars.toList :+ parameter.typ
       }
 

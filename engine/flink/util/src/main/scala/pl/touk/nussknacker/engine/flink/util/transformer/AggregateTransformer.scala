@@ -34,7 +34,7 @@ object AggregateTransformer extends CustomStreamTransformer {
       .map(ctx.lazyParameterHelper.lazyMapFunction(keyBy))
       .keyBy(_.value)
       .process(new AggregatorFunction[AnyRef](ctx.lazyParameterHelper, aggregateBy, lengthInMillis, ctx.nodeId))
-  }, Typed(Set(TypedClass(classOf[java.util.List[_]], List(aggregateBy.returnType)))))
+  }, TypedClass(classOf[java.util.List[_]], List(aggregateBy.returnType)))
 
 }
 

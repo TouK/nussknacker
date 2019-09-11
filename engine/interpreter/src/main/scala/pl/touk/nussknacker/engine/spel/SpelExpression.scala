@@ -15,13 +15,13 @@ import org.springframework.expression.common.CompositeStringExpression
 import org.springframework.expression.spel.ast.SpelNodeImpl
 import org.springframework.expression.spel.support.{ReflectiveMethodExecutor, ReflectiveMethodResolver, StandardEvaluationContext, StandardTypeLocator}
 import org.springframework.expression.spel.{SpelCompilerMode, SpelEvaluationException, SpelParserConfiguration, standard}
-import pl.touk.nussknacker.engine.{api, _}
+import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.lazyy.{ContextWithLazyValuesProvider, LazyContext, LazyValuesProvider}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
-import pl.touk.nussknacker.engine.api.typed.{ClazzRef, TypedMap}
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, ExpressionParser, TypedExpression, ValueWithLazyContext}
+import pl.touk.nussknacker.engine.api.lazyy.{ContextWithLazyValuesProvider, LazyContext, LazyValuesProvider}
+import pl.touk.nussknacker.engine.api.typed.TypedMap
+import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, TypingResult}
 import pl.touk.nussknacker.engine.functionUtils.CollectionUtils
 
 import scala.collection.concurrent.TrieMap
@@ -76,7 +76,14 @@ class SpelExpression(parsed: ParsedSpelExpression,
 
   override val language: String = SpelExpressionParser.languageId
 
-  private val expectedClass = expectedReturnType.objType.klass
+  private val expectedClass =
+    expectedReturnType match {
+      case r: SingleTypingResult =>
+        r.objType.klass
+      case _ =>
+        // TOOD: what should happen here?
+        classOf[Any]
+    }
 
   override def evaluate[T](ctx: Context,
                            lazyValuesProvider: LazyValuesProvider): Future[ValueWithLazyContext[T]] = logOnException(ctx) {

@@ -38,7 +38,7 @@ export default class ExpressionSuggester {
     if (variableAlreadySelected && focusedClazz) {
       const currentType = this._getTypeInfo(focusedClazz)
       const inputValue = this._justTypedProperty(value)
-      const allowedMethodList = _.map(currentType.methods, (val, key) => { return { ...val, methodName: key} })
+      const allowedMethodList = this._getAllowedMethods(currentType)
       return inputValue.length === 0 ? allowedMethodList : this._filterSuggestionsForInput(allowedMethodList, inputValue)
     } else if (variableNotSelected && !_.isEmpty(value)) {
       const allVariablesWithClazzRefs = _.map(variables, (val, key) => {
@@ -49,6 +49,22 @@ export default class ExpressionSuggester {
     else {
       return []
     }
+  }
+
+  _getAllowedMethods(currentType) {
+    if (currentType.union != null) {
+      const allMethods = _.flatMap(currentType.union, (subType) => this._getAllowedMethodsForClass(subType))
+      // TODO: compute union of extracted methods types
+      return _.uniqWith(allMethods, (typeA, typeB) => _.isEqual(typeA, typeB))
+    } else {
+      return this._getAllowedMethodsForClass(currentType)
+    }
+  }
+
+  _getAllowedMethodsForClass(currentType) {
+    return _.map(currentType.methods, (val, key) => {
+      return {...val, methodName: key}
+    })
   }
 
   _filterSuggestionsForInput = (methods, inputValue) => {
@@ -62,15 +78,40 @@ export default class ExpressionSuggester {
     if (_.has(variables, variableName)) {
       const variableClazzName = _.get(variables, variableName);
       return _.reduce(_.tail(properties), (currentParentClazz, prop) => {
-        const parentClazz = this._getTypeInfo(currentParentClazz)
-        return _.get(parentClazz.methods, `${prop}.refClazz`) || {refClazzName: ''}
+        const parentType = this._getTypeInfo(currentParentClazz)
+        return this._extractMethod(parentType, prop)
       }, variableClazzName)
     } else {
       return null
     }
   }
 
-  _getTypeInfo = (clazz) => {
+  _extractMethod(type, prop) {
+    if (type.union != null) {
+      let foundedTypes = _.filter(_.map(type.union, (clazz) => this._extractMethodFromClass(clazz, prop)), i => i != null)
+      // TODO: compute union of extracted methods types
+      return _.first(foundedTypes) || {refClazzName: ''}
+    } else {
+      return this._extractMethodFromClass(type, prop) || {refClazzName: ''}
+    }
+  }
+
+  _extractMethodFromClass(clazz, prop) {
+    return _.get(clazz.methods, `${prop}.refClazz`)
+  }
+
+  _getTypeInfo = (type) => {
+    if (type.union != null) {
+      const unionOfTypeInfos = _.map(type.union, (clazz) => this._getTypeInfoFromClass(clazz))
+      return {
+        union: unionOfTypeInfos
+      }
+    } else {
+      return this._getTypeInfoFromClass(type)
+    }
+  }
+
+  _getTypeInfoFromClass = (clazz) => {
     const methodsFromInfo = this._getMethodsFromGlobalTypeInfo(clazz);
     const methodsFromFields = _.mapValues((clazz.fields || []), (field) => ({ refClazz: field }));
     const allMethods = _.merge(methodsFromFields, methodsFromInfo);

@@ -4,11 +4,11 @@ import java.lang.annotation.Annotation
 import java.lang.reflect
 import java.lang.reflect.Method
 
-import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, Parameter, TypedNodeDependency, WithExplicitMethodToInvoke}
+import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.SingleNodeConfig
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
-import pl.touk.nussknacker.engine.api.{AdditionalVariables, BranchParamName, LazyParameter, MethodToInvoke, OutputVariableName, ParamName}
+import pl.touk.nussknacker.engine.api.typed.typing.{EitherSingleClassOrUnknown, SingleTypingResult, Typed, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedDependencies}
 import pl.touk.nussknacker.engine.types.EspTypeUtils
 
@@ -78,7 +78,7 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
     new OrderedDependencies(dependencies)
   }
 
-  private def additionalVariables(p: reflect.Parameter): Map[String, TypingResult] =
+  private def additionalVariables(p: reflect.Parameter): Map[String, TypingResult with EitherSingleClassOrUnknown] =
     Option(p.getAnnotation(classOf[AdditionalVariables]))
       .map(_.value().map(additionalVariable =>
         additionalVariable.name() -> Typed(ClazzRef(additionalVariable.clazz()))).toMap
@@ -125,8 +125,14 @@ object MethodDefinitionExtractor {
       dependencies.map {
         case param: Parameter =>
           val foundParam = prepareValue(param.name).getOrElse(throw new IllegalArgumentException(s"Missing parameter: ${param.name}"))
-          //FIIIXME??
-          validateType(param.name, foundParam, param.originalType.objType.klass)
+          val klass = param.originalType match {
+            case s: SingleTypingResult =>
+              s.objType.klass
+            case Unknown =>
+              // TOOD: what should happen here?
+              classOf[Any]
+          }
+          validateType(param.name, foundParam, klass)
           foundParam
         case OutputVariableNameDependency =>
           outputVariableNameOpt.getOrElse(
