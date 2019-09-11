@@ -11,7 +11,7 @@ import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
 import org.springframework.core.convert.TypeDescriptor
 import org.springframework.expression._
-import org.springframework.expression.common.CompositeStringExpression
+import org.springframework.expression.common.{CompositeStringExpression, LiteralExpression}
 import org.springframework.expression.spel.ast.SpelNodeImpl
 import org.springframework.expression.spel.support.{ReflectiveMethodExecutor, ReflectiveMethodResolver, StandardEvaluationContext, StandardTypeLocator}
 import org.springframework.expression.spel.{SpelCompilerMode, SpelEvaluationException, SpelParserConfiguration, standard}
@@ -42,7 +42,7 @@ import scala.util.control.NonFatal
   * - unless Expression is marked @volatile multiple threads might parse it on their own,
   * - performance problem might occur if the ClassCastException is thrown often (e. g. for consecutive calls to getValue)
   */
-final case class ParsedSpelExpression(original: String, parser: () => Expression, initial: Expression) extends LazyLogging {
+final case class ParsedSpelExpression(original: String, parser: () => Validated[NonEmptyList[ExpressionParseError], Expression], initial: Expression) extends LazyLogging {
   @volatile var parsed: Expression = initial
 
   def getValue[T](context: EvaluationContext, desiredResultType: Class[_]): T = {
@@ -59,7 +59,8 @@ final case class ParsedSpelExpression(original: String, parser: () => Expression
   }
 
   def forceParse(): Unit = {
-    parsed = parser()
+    //we already parsed this expression successfully, so reparsing should NOT fail
+    parsed = parser().getOrElse(throw new RuntimeException(s"Failed to reparse $original - this should not happen!"))
   }
 }
 
@@ -137,8 +138,12 @@ class SpelExpression(parsed: ParsedSpelExpression,
   }
 }
 
-class SpelExpressionParser(expressionFunctions: Map[String, Method], expressionImports: List[String],
-                           classLoader: ClassLoader, lazyValuesTimeout: Duration, enableSpelForceCompile: Boolean) extends ExpressionParser {
+class SpelExpressionParser(expressionFunctions: Map[String, Method],
+                           expressionImports: List[String],
+                           classLoader: ClassLoader,
+                           lazyValuesTimeout: Duration,
+                           enableSpelForceCompile: Boolean,
+                           parserContext: Option[ParserContext]) extends ExpressionParser {
 
   import pl.touk.nussknacker.engine.spel.SpelExpressionParser._
 
@@ -168,17 +173,21 @@ class SpelExpressionParser(expressionFunctions: Map[String, Method], expressionI
   private val validator = new SpelExpressionValidator()(classLoader)
 
   override def parseWithoutContextValidation(original: String, expectedType: TypingResult): Validated[NonEmptyList[ExpressionParseError], api.expression.Expression] = {
-    Validated.catchNonFatal(parser.parseExpression(original)).leftMap(ex => NonEmptyList.of(ExpressionParseError(ex.getMessage))).map { parsed =>
-      expression(ParsedSpelExpression(original, () => parser.parseExpression(original), parsed), expectedType)
+    baseParse(original).map { parsed =>
+      expression(ParsedSpelExpression(original, () => baseParse(original), parsed), expectedType)
     }
   }
 
   override def parse(original: String, ctx: ValidationContext, expectedType: TypingResult): Validated[NonEmptyList[ExpressionParseError], TypedExpression] = {
-    Validated.catchNonFatal(parser.parseExpression(original)).leftMap(ex => NonEmptyList.of(ExpressionParseError(ex.getMessage))).andThen { parsed =>
+    baseParse(original).andThen { parsed =>
       validator.validate(parsed, ctx, expectedType).map((_, parsed))
     }.map { case (typingResult, parsed) =>
-      TypedExpression(expression(ParsedSpelExpression(original, () => parser.parseExpression(original), parsed), expectedType), typingResult)
+      TypedExpression(expression(ParsedSpelExpression(original, () => baseParse(original), parsed), expectedType), typingResult)
     }
+  }
+
+  private def baseParse(original: String): Validated[NonEmptyList[ExpressionParseError], Expression] = {
+    Validated.catchNonFatal(parser.parseExpression(original, parserContext.orNull)).leftMap(ex => NonEmptyList.of(ExpressionParseError(ex.getMessage)))
   }
 
   private def expression(expression: ParsedSpelExpression, expectedType: TypingResult) = {
@@ -204,6 +213,7 @@ object SpelExpressionParser extends LazyLogging {
     parsed match {
       case e:standard.SpelExpression => forceCompile(e)
       case e:CompositeStringExpression => e.getExpressions.foreach(forceCompile)
+      case e:LiteralExpression =>   
     }
   }
 
@@ -222,13 +232,13 @@ object SpelExpressionParser extends LazyLogging {
 
 
   //caching?
-  def default(loader: ClassLoader, enableSpelForceCompile: Boolean, imports: List[String]): SpelExpressionParser = new SpelExpressionParser(Map(
+  def default(loader: ClassLoader, enableSpelForceCompile: Boolean, imports: List[String], parserContext: Option[ParserContext]): SpelExpressionParser = new SpelExpressionParser(Map(
     "today" -> classOf[LocalDate].getDeclaredMethod("now"),
     "now" -> classOf[LocalDateTime].getDeclaredMethod("now"),
     "distinct" -> classOf[CollectionUtils].getDeclaredMethod("distinct", classOf[java.util.Collection[_]]),
     "sum" -> classOf[CollectionUtils].getDeclaredMethod("sum", classOf[java.util.Collection[_]])
   ), //FIXME: configurable timeout...
-    imports, loader, 1 minute, enableSpelForceCompile)
+    imports, loader, 1 minute, enableSpelForceCompile, parserContext)
 
 
   object ScalaPropertyAccessor extends PropertyAccessor with ReadOnly with Caching {
