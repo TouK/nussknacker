@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.spel.typer.TypeMethodReference
 import pl.touk.nussknacker.engine.types.EspTypeUtils
 
-import scala.reflect.ClassTag
+import scala.reflect.runtime._
 
 private[spel] class Typer(implicit classLoader: ClassLoader) {
 
@@ -29,7 +29,7 @@ private[spel] class Typer(implicit classLoader: ClassLoader) {
 
     val fixed = fixedWithNewCurrent(current)
 
-    def withChildrenOfType[Parts: ClassTag](result: TypingResult) = withTypedChildren {
+    def withChildrenOfType[Parts: universe.TypeTag](result: TypingResult) = withTypedChildren {
       case list if list.forall(_.canBeSubclassOf(Typed[Parts])) => Valid(result)
       case _ => invalid("Wrong part types")
     }
@@ -183,11 +183,11 @@ private[spel] class Typer(implicit classLoader: ClassLoader) {
     case Unknown => Valid(Unknown)
     case s: SingleTypingResult =>
       extractSingleProperty(e)(s)
-        .map(Valid(_)).getOrElse(invalid(s"There is no property '${e.getName}' in ${s.display}"))
+        .map(Valid(_)).getOrElse(invalid(s"There is no property '${e.getName}' in type: ${s.display}"))
     case TypedUnion(possible) =>
       val l = possible.toList.flatMap(single => extractSingleProperty(e)(single))
       if (l.isEmpty)
-        invalid(s"There is no property '${e.getName}' in ${t.display}")
+        invalid(s"There is no property '${e.getName}' in type: ${t.display}")
       else
         Valid(Typed(l.toSet))
   }

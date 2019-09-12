@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, TypedExp
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 
 import scala.concurrent.duration._
-import scala.reflect.ClassTag
+import scala.reflect.runtime.universe._
 
 class AvroSchemaSpelExpressionSpec extends FunSpec with Matchers {
 
@@ -123,7 +123,7 @@ class AvroSchemaSpelExpressionSpec extends FunSpec with Matchers {
     parse[CharSequence]("#input.union", ctx) should be ('invalid)
   }
 
-  private def parse[T:ClassTag](expr: String, validationCtx: ValidationContext) : ValidatedNel[ExpressionParseError, TypedExpression] = {
+  private def parse[T:TypeTag](expr: String, validationCtx: ValidationContext) : ValidatedNel[ExpressionParseError, TypedExpression] = {
     new SpelExpressionParser(Map.empty, List.empty, getClass.getClassLoader, 1 minute, enableSpelForceCompile = true)
       .parse(expr, validationCtx, Typed[T])
   }

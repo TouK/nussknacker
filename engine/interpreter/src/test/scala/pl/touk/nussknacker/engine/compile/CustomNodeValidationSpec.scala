@@ -147,7 +147,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
       .sink("out", "''", "dummySink")
 
     validator.validate(invalidProcess).result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("Bad expression type, expected: type 'java.lang.String', found: type 'java.lang.Integer'", "custom1",Some("stringVal"), "42"), _))  =>
+      case Invalid(NonEmptyList(ExpressionParseError("Bad expression type, expected: java.lang.String, found: java.lang.Integer", "custom1",Some("stringVal"), "42"), _))  =>
     }
   }
 
@@ -205,7 +205,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
     val errors = validationResult2.swap.toOption.value.toList
     errors should have size 1
     errors.head should matchPattern {
-      case ExpressionParseError(message, _, _, _) if message.startsWith("There is no property 'field22' in object") =>
+      case ExpressionParseError(message, _, _, _) if message.startsWith("There is no property 'field22' in type: object") =>
     }
   }
 
@@ -241,7 +241,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
     errors should have size 1
     errors.head should matchPattern {
       case ExpressionParseError(
-      "Bad expression type, expected: type 'java.lang.String', found: type 'java.lang.Integer'",
+      "Bad expression type, expected: java.lang.String, found: java.lang.Integer",
       "stringService", Some("stringParam"), _) =>
     }
   }
