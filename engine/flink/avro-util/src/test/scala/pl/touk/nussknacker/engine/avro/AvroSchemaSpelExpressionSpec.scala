@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, TypedExpression}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
+import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Standard
 
 import scala.concurrent.duration._
 import scala.reflect.runtime.universe._
@@ -124,8 +125,7 @@ class AvroSchemaSpelExpressionSpec extends FunSpec with Matchers {
   }
 
   private def parse[T:TypeTag](expr: String, validationCtx: ValidationContext) : ValidatedNel[ExpressionParseError, TypedExpression] = {
-    new SpelExpressionParser(Map.empty, List.empty, getClass.getClassLoader, 1 minute, enableSpelForceCompile = true)
-      .parse(expr, validationCtx, Typed[T])
+    SpelExpressionParser.default(getClass.getClassLoader, enableSpelForceCompile = true, Nil, Standard).parse(expr, validationCtx, Typed[T])
   }
 
   private def wrapWithRecordSchema(fieldsDefinition: String) =

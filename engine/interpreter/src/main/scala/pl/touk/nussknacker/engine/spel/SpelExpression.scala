@@ -11,18 +11,20 @@ import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
 import org.springframework.core.convert.TypeDescriptor
 import org.springframework.expression._
-import org.springframework.expression.common.CompositeStringExpression
+import org.springframework.expression.common.{CompositeStringExpression, LiteralExpression}
 import org.springframework.expression.spel.ast.SpelNodeImpl
 import org.springframework.expression.spel.support.{ReflectiveMethodExecutor, ReflectiveMethodResolver, StandardEvaluationContext, StandardTypeLocator}
 import org.springframework.expression.spel.{SpelCompilerMode, SpelEvaluationException, SpelParserConfiguration, standard}
 import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
+import pl.touk.nussknacker.engine.api.deployment.RunningState.Value
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, ExpressionParser, TypedExpression, ValueWithLazyContext}
 import pl.touk.nussknacker.engine.api.lazyy.{ContextWithLazyValuesProvider, LazyContext, LazyValuesProvider}
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, TypingResult}
 import pl.touk.nussknacker.engine.functionUtils.CollectionUtils
+import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Flavour
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.Future
@@ -42,7 +44,7 @@ import scala.util.control.NonFatal
   * - unless Expression is marked @volatile multiple threads might parse it on their own,
   * - performance problem might occur if the ClassCastException is thrown often (e. g. for consecutive calls to getValue)
   */
-final case class ParsedSpelExpression(original: String, parser: () => Expression, initial: Expression) extends LazyLogging {
+final case class ParsedSpelExpression(original: String, parser: () => Validated[NonEmptyList[ExpressionParseError], Expression], initial: Expression) extends LazyLogging {
   @volatile var parsed: Expression = initial
 
   def getValue[T](context: EvaluationContext, desiredResultType: Class[_]): T = {
@@ -59,7 +61,8 @@ final case class ParsedSpelExpression(original: String, parser: () => Expression
   }
 
   def forceParse(): Unit = {
-    parsed = parser()
+    //we already parsed this expression successfully, so reparsing should NOT fail
+    parsed = parser().getOrElse(throw new RuntimeException(s"Failed to reparse $original - this should not happen!"))
   }
 }
 
@@ -68,13 +71,13 @@ class SpelExpression(parsed: ParsedSpelExpression,
                      expressionFunctions: Map[String, Method],
                      expressionImports: List[String],
                      propertyAccessors: Seq[PropertyAccessor],
-                     classLoader: ClassLoader) extends api.expression.Expression with LazyLogging {
+                     classLoader: ClassLoader, flavour: Flavour) extends api.expression.Expression with LazyLogging {
 
   import pl.touk.nussknacker.engine.spel.SpelExpressionParser._
 
   override val original: String = parsed.original
 
-  override val language: String = SpelExpressionParser.languageId
+  override val language: String = flavour.languageId
 
   private val expectedClass =
     expectedReturnType match {
@@ -137,12 +140,16 @@ class SpelExpression(parsed: ParsedSpelExpression,
   }
 }
 
-class SpelExpressionParser(expressionFunctions: Map[String, Method], expressionImports: List[String],
-                           classLoader: ClassLoader, lazyValuesTimeout: Duration, enableSpelForceCompile: Boolean) extends ExpressionParser {
+class SpelExpressionParser(expressionFunctions: Map[String, Method],
+                           expressionImports: List[String],
+                           classLoader: ClassLoader,
+                           lazyValuesTimeout: Duration,
+                           enableSpelForceCompile: Boolean,
+                           flavour: Flavour) extends ExpressionParser {
 
   import pl.touk.nussknacker.engine.spel.SpelExpressionParser._
 
-  override final val languageId: String = SpelExpressionParser.languageId
+  override final val languageId: String = flavour.languageId
 
   private val parser = new org.springframework.expression.spel.standard.SpelExpressionParser(
     //we have to pass classloader, because default contextClassLoader can be sth different than we expect...
@@ -168,31 +175,38 @@ class SpelExpressionParser(expressionFunctions: Map[String, Method], expressionI
   private val validator = new SpelExpressionValidator()(classLoader)
 
   override def parseWithoutContextValidation(original: String, expectedType: TypingResult): Validated[NonEmptyList[ExpressionParseError], api.expression.Expression] = {
-    Validated.catchNonFatal(parser.parseExpression(original)).leftMap(ex => NonEmptyList.of(ExpressionParseError(ex.getMessage))).map { parsed =>
-      expression(ParsedSpelExpression(original, () => parser.parseExpression(original), parsed), expectedType)
+    baseParse(original).map { parsed =>
+      expression(ParsedSpelExpression(original, () => baseParse(original), parsed), expectedType)
     }
   }
 
   override def parse(original: String, ctx: ValidationContext, expectedType: TypingResult): Validated[NonEmptyList[ExpressionParseError], TypedExpression] = {
-    Validated.catchNonFatal(parser.parseExpression(original)).leftMap(ex => NonEmptyList.of(ExpressionParseError(ex.getMessage))).andThen { parsed =>
+    baseParse(original).andThen { parsed =>
       validator.validate(parsed, ctx, expectedType).map((_, parsed))
     }.map { case (typingResult, parsed) =>
-      TypedExpression(expression(ParsedSpelExpression(original, () => parser.parseExpression(original), parsed), expectedType), typingResult)
+      TypedExpression(expression(ParsedSpelExpression(original, () => baseParse(original), parsed), expectedType), typingResult)
     }
+  }
+
+  private def baseParse(original: String): Validated[NonEmptyList[ExpressionParseError], Expression] = {
+    Validated.catchNonFatal(parser.parseExpression(original, flavour.parserContext.orNull)).leftMap(ex => NonEmptyList.of(ExpressionParseError(ex.getMessage)))
   }
 
   private def expression(expression: ParsedSpelExpression, expectedType: TypingResult) = {
     if (enableSpelForceCompile) {
       forceCompile(expression.parsed)
     }
-    new SpelExpression(expression, expectedType, expressionFunctions, expressionImports, propertyAccessors, classLoader)
+    new SpelExpression(expression, expectedType, expressionFunctions, expressionImports, propertyAccessors, classLoader, flavour)
   }
 
 }
 
 object SpelExpressionParser extends LazyLogging {
 
-  val languageId: String = "spel"
+  sealed abstract class Flavour(val languageId: String, val parserContext: Option[ParserContext])
+  object Standard extends Flavour("spel", None)
+  //TODO: should we enable other prefixes/suffixes?
+  object Template extends Flavour("spelTemplate", Some(ParserContext.TEMPLATE_EXPRESSION))
 
   private[spel] final val LazyValuesProviderVariableName: String = "$lazy"
   private[spel] final val LazyContextVariableName: String = "$lazyContext"
@@ -204,6 +218,7 @@ object SpelExpressionParser extends LazyLogging {
     parsed match {
       case e:standard.SpelExpression => forceCompile(e)
       case e:CompositeStringExpression => e.getExpressions.foreach(forceCompile)
+      case e:LiteralExpression =>   
     }
   }
 
@@ -222,13 +237,13 @@ object SpelExpressionParser extends LazyLogging {
 
 
   //caching?
-  def default(loader: ClassLoader, enableSpelForceCompile: Boolean, imports: List[String]): SpelExpressionParser = new SpelExpressionParser(Map(
+  def default(loader: ClassLoader, enableSpelForceCompile: Boolean, imports: List[String], flavour: Flavour): SpelExpressionParser = new SpelExpressionParser(Map(
     "today" -> classOf[LocalDate].getDeclaredMethod("now"),
     "now" -> classOf[LocalDateTime].getDeclaredMethod("now"),
     "distinct" -> classOf[CollectionUtils].getDeclaredMethod("distinct", classOf[java.util.Collection[_]]),
     "sum" -> classOf[CollectionUtils].getDeclaredMethod("sum", classOf[java.util.Collection[_]])
   ), //FIXME: configurable timeout...
-    imports, loader, 1 minute, enableSpelForceCompile)
+    imports, loader, 1 minute, enableSpelForceCompile, flavour)
 
 
   object ScalaPropertyAccessor extends PropertyAccessor with ReadOnly with Caching {
