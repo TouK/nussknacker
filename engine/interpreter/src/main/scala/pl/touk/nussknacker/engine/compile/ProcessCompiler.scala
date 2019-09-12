@@ -215,7 +215,7 @@ protected trait ProcessCompilerBase {
 
     //TODO: better classloader error handling
     private def loadFromParameter(subprocessParameter: SubprocessParameter)(implicit nodeId: NodeId) =
-      subprocessParameter.typ.toTyped(classLoader).getOrElse(throw new IllegalArgumentException(
+      subprocessParameter.typ.toRuntimeClass(classLoader).map(Typed(_)).getOrElse(throw new IllegalArgumentException(
         s"Failed to load subprocess parameter: ${subprocessParameter.typ.refClazzName} for ${nodeId.id}"))
 
   }

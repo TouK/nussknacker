@@ -20,7 +20,7 @@ import net.ceedubs.ficus.readers.ValueReader
 import pl.touk.nussknacker.engine.api.definition.ParameterRestriction
 import pl.touk.nussknacker.engine.api.{MetaData, definition}
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.definition.ParameterTypeMapper
@@ -89,17 +89,12 @@ object UIProcessObjects {
   }
 
   private def extractParam(classLoader: ClassLoader, nodeConfig: Option[SingleNodeConfig])(p: SubprocessParameter) = {
+    val runtimeClass = p.typ.toRuntimeClass(classLoader)
     //TODO: currently if we cannot parse parameter class we assume it's unknown
-    val classRef = p.typ.toTyped(classLoader).getOrElse(Unknown)
-    val klass = classRef match {
-      case s: SingleTypingResult =>
-        s.objType.klass
-      case Unknown =>
-        //TODO: what should be here?
-        classOf[Any]
-    }
+    val typ = runtimeClass.map(Typed(_)).getOrElse(Unknown)
     val parameterConfig = nodeConfig.map(_.paramConfig(p.name)).getOrElse(ParameterConfig.empty)
-    definition.Parameter(p.name, classRef, classRef, ParameterTypeMapper.prepareRestrictions(klass, None, parameterConfig))
+    val restrictions = runtimeClass.toOption.flatMap(ParameterTypeMapper.prepareRestrictions(_, None, parameterConfig))
+    definition.Parameter(p.name, typ, runtimeClass.toOption.getOrElse(classOf[Any]), restrictions)
   }
 
 }
@@ -125,7 +120,7 @@ case class UIProcessDefinition(services: Map[String, UIObjectDefinition],
 }
 
 
-case class UIObjectDefinition(parameters: List[Parameter],
+case class UIObjectDefinition(parameters: List[UIParameter],
                               returnType: Option[TypingResult],
                               categories: List[String],
                               nodeConfig: SingleNodeConfig)
@@ -134,7 +129,7 @@ case class UIObjectDefinition(parameters: List[Parameter],
 object UIObjectDefinition {
   def apply(objectDefinition: ObjectDefinition): UIObjectDefinition = {
     UIObjectDefinition(
-      parameters = objectDefinition.parameters,
+      parameters = objectDefinition.parameters.map(UIParameter(_)),
       returnType = if (objectDefinition.hasNoReturn) None else Some(objectDefinition.returnType),
       categories = objectDefinition.categories,
       nodeConfig = objectDefinition.nodeConfig
@@ -142,6 +137,23 @@ object UIObjectDefinition {
   }
 }
 
+case class UIParameter(name: String,
+                       typ: TypingResult,
+                       restriction: Option[ParameterRestriction],
+                       additionalVariables: Map[String, TypingResult],
+                       branchParam: Boolean)
+
+object UIParameter {
+  def apply(parameter: Parameter): UIParameter = {
+    UIParameter(
+      name = parameter.name,
+      typ = parameter.typ,
+      restriction = parameter.restriction,
+      additionalVariables = parameter.additionalVariables,
+      branchParam = parameter.branchParam
+    )
+  }
+}
 
 object UIProcessDefinition {
   def apply(processDefinition: ProcessDefinition[ObjectDefinition], subprocessInputs: Map[String, ObjectDefinition]): UIProcessDefinition = {

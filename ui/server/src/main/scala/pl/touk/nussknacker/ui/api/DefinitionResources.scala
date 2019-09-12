@@ -5,7 +5,8 @@ import akka.http.scaladsl.server.{Directives, Route}
 import pl.touk.http.argonaut.{Argonaut62Support, JsonMarshaller}
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
-import pl.touk.nussknacker.ui.definition.UIProcessObjects
+import pl.touk.nussknacker.ui.definition
+import pl.touk.nussknacker.ui.definition.{UIObjectDefinition, UIProcessObjects}
 import pl.touk.nussknacker.ui.process.ProcessObjectsFinder
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -50,7 +51,7 @@ class DefinitionResources(modelData: Map[ProcessingType, ModelData],
     } ~ path("processDefinitionData" / "services") {
       get {
         complete {
-          val result = modelData.mapValues(_.processDefinition.services)
+          val result = modelData.mapValues(_.processDefinition.services.mapValues(definition.UIObjectDefinition(_)))
           HttpResponse(entity = HttpEntity(ContentTypes.`application/json`, result.asJson.toString()))
         }
       }

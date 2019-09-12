@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Standard
 
 import scala.concurrent.duration._
-import scala.reflect.ClassTag
+import scala.reflect.runtime.universe._
 
 class AvroSchemaSpelExpressionSpec extends FunSpec with Matchers {
 
@@ -124,7 +124,7 @@ class AvroSchemaSpelExpressionSpec extends FunSpec with Matchers {
     parse[CharSequence]("#input.union", ctx) should be ('invalid)
   }
 
-  private def parse[T:ClassTag](expr: String, validationCtx: ValidationContext) : ValidatedNel[ExpressionParseError, TypedExpression] = {
+  private def parse[T:TypeTag](expr: String, validationCtx: ValidationContext) : ValidatedNel[ExpressionParseError, TypedExpression] = {
     SpelExpressionParser.default(getClass.getClassLoader, enableSpelForceCompile = true, Nil, Standard).parse(expr, validationCtx, Typed[T])
   }
 

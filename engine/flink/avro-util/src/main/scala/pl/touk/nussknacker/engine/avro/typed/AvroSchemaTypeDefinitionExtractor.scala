@@ -31,13 +31,8 @@ object AvroSchemaTypeDefinitionExtractor {
       case Schema.Type.MAP =>
         TypedClass(classOf[java.util.Map[_, _]], List(Typed[CharSequence], typeDefinition(schema.getValueType)))
       case Schema.Type.UNION =>
-        val childTypeDefinitons = schema.getTypes.asScala.map(typeDefinition).toList
-        val withoutNull = childTypeDefinitons.filterNot(_ == Typed[Null])
-        withoutNull match {
-          case Nil => Typed[Null]
-          case nonEmpty =>
-            Typed(nonEmpty.toSet)
-        }
+        val childTypeDefinitons = schema.getTypes.asScala.map(typeDefinition).toSet
+        Typed(childTypeDefinitons)
       case Schema.Type.FIXED =>
         Typed[GenericData.Fixed]
       case Schema.Type.STRING =>
@@ -55,7 +50,7 @@ object AvroSchemaTypeDefinitionExtractor {
       case Schema.Type.BOOLEAN =>
         Typed[Boolean]
       case Schema.Type.NULL =>
-        Typed[Null]
+        Typed.empty
     }
   }
 

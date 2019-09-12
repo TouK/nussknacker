@@ -23,7 +23,8 @@ import scala.collection.JavaConverters._
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.language.implicitConversions
-import scala.reflect.ClassTag
+
+import scala.reflect.runtime.universe._
 
 class SpelExpressionSpec extends FunSuite with Matchers {
 
@@ -59,14 +60,14 @@ class SpelExpressionSpec extends FunSuite with Matchers {
     val lazyVal: LazyState[String] = lazyValue[String](enrichingServiceId).map(_ + " ma kota")
   }
 
-  private def parseOrFail[T:ClassTag](expr: String, context: Context = ctx, flavour: Flavour = Standard) : Expression = {
+  private def parseOrFail[T:TypeTag](expr: String, context: Context = ctx, flavour: Flavour = Standard) : Expression = {
     parse(expr, context, flavour) match {
       case Valid(e) => e.expression
       case Invalid(err) => throw new ParseException(err.map(_.message).toList.mkString, -1)
     }
   }
 
-  private def parseOrFail[T:ClassTag](expr: String, context: ValidationContext) : Expression = {
+  private def parseOrFail[T:TypeTag](expr: String, context: ValidationContext) : Expression = {
     parse(expr, context) match {
       case Valid(e) => e.expression
       case Invalid(err) => throw new ParseException(err.map(_.message).toList.mkString, -1)
@@ -76,17 +77,17 @@ class SpelExpressionSpec extends FunSuite with Matchers {
 
   import pl.touk.nussknacker.engine.util.Implicits._
 
-  private def parse[T:ClassTag](expr: String, context: Context = ctx, flavour: Flavour = Standard) : ValidatedNel[ExpressionParseError, TypedExpression] = {
+  private def parse[T:TypeTag](expr: String, context: Context = ctx, flavour: Flavour = Standard) : ValidatedNel[ExpressionParseError, TypedExpression] = {
     val validationCtx = ValidationContext(
       context.variables.mapValuesNow(_.getClass).mapValuesNow(ClazzRef(_)).mapValuesNow(Typed.apply))
     parse(expr, validationCtx, flavour)
   }
 
-  private def parse[T:ClassTag](expr: String, validationCtx: ValidationContext) : ValidatedNel[ExpressionParseError, TypedExpression] = {
+  private def parse[T:TypeTag](expr: String, validationCtx: ValidationContext) : ValidatedNel[ExpressionParseError, TypedExpression] = {
     parse(expr, validationCtx, Standard)
   }
 
-  private def parse[T:ClassTag](expr: String, validationCtx: ValidationContext, flavour: Flavour) : ValidatedNel[ExpressionParseError, TypedExpression] = {
+  private def parse[T:TypeTag](expr: String, validationCtx: ValidationContext, flavour: Flavour) : ValidatedNel[ExpressionParseError, TypedExpression] = {
     val expressionFunctions = Map("today" -> classOf[LocalDate].getDeclaredMethod("now"))
     val imports = List(SampleValue.getClass.getPackage.getName)
     new SpelExpressionParser(expressionFunctions, imports, getClass.getClassLoader, 1 minute, enableSpelForceCompile = true, flavour)
@@ -178,7 +179,7 @@ class SpelExpressionSpec extends FunSuite with Matchers {
 
   test("return invalid type if PropertyOrFieldReference does not exists") {
     val parsed = parse[Any]("#processHelper.add", ctxWithGlobal)
-    val expectedValidation =  Invalid("There is no property 'add' in type 'pl.touk.nussknacker.engine.spel.SampleGlobalObject$'")
+    val expectedValidation =  Invalid("There is no property 'add' in type: pl.touk.nussknacker.engine.spel.SampleGlobalObject$")
     parsed.isInvalid shouldBe true
     parsed.leftMap(_.head).leftMap(_.message) shouldEqual expectedValidation
   }
@@ -192,8 +193,10 @@ class SpelExpressionSpec extends FunSuite with Matchers {
   }
 
   test("access list elements by index") {
-    parseOrFail[Any]("#obj.children[0].id").evaluateSyncToValue[String](ctx) shouldEqual "3"
-    parseOrFail[Any]("#mapValue['foo']").evaluateSyncToValue[String](ctx) shouldEqual "bar"
+    parseOrFail[String]("#obj.children[0].id").evaluateSyncToValue[String](ctx) shouldEqual "3"
+    parseOrFail[String]("#mapValue['foo']").evaluateSyncToValue[String](ctx) shouldEqual "bar"
+    parse[Int]("#obj.children[0].id") shouldBe 'invalid
+
   }
 
   test("filter by list predicates") {
@@ -216,12 +219,12 @@ class SpelExpressionSpec extends FunSuite with Matchers {
 
   test("stop validation when property of Any/Object type found") {
     val ctxWithVar = ctx.withVariable("obj", SampleValue(11))
-    parse("#obj.anyObject.anyPropertyShouldValidate", ctxWithVar) shouldBe 'valid
+    parse[Any]("#obj.anyObject.anyPropertyShouldValidate", ctxWithVar) shouldBe 'valid
 
   }
 
   test("return sane error with empty expression ") {
-    parse("", ctx) should matchPattern {
+    parse[Any]("", ctx) should matchPattern {
       case Invalid(NonEmptyList(ExpressionParseError("No node"), Nil)) =>
     }
   }
@@ -279,23 +282,23 @@ class SpelExpressionSpec extends FunSuite with Matchers {
 
   test("not allow access to variables without hash in methods") {
     val withNum = ctx.withVariable("a", 5).withVariable("processHelper", SampleGlobalObject)
-    parse("#processHelper.add(a, 1)", withNum) should matchPattern {
+    parse[Any]("#processHelper.add(a, 1)", withNum) should matchPattern {
       case Invalid(NonEmptyList(ExpressionParseError("Non reference 'a' occurred. Maybe you missed '#' in front of it?"), Nil)) =>
     }
   }
 
   test("not allow unknown variables in methods") {
-    parse("#processHelper.add(#a, 1)", ctx.withVariable("processHelper", SampleGlobalObject.getClass)) should matchPattern {
+    parse[Any]("#processHelper.add(#a, 1)", ctx.withVariable("processHelper", SampleGlobalObject.getClass)) should matchPattern {
       case Invalid(NonEmptyList(ExpressionParseError("Unresolved reference a"), Nil)) =>
     }
 
-    parse("T(pl.touk.nussknacker.engine.spel.SampleGlobalObject).add(#a, 1)", ctx) should matchPattern {
+    parse[Any]("T(pl.touk.nussknacker.engine.spel.SampleGlobalObject).add(#a, 1)", ctx) should matchPattern {
       case Invalid(NonEmptyList(ExpressionParseError("Unresolved reference a"), Nil)) =>
     }
   }
 
   test("not allow vars without hashes in equality condition") {
-    parse("nonexisting == 'ala'", ctx) should matchPattern {
+    parse[Any]("nonexisting == 'ala'", ctx) should matchPattern {
       case Invalid(NonEmptyList(ExpressionParseError("Non reference 'nonexisting' occurred. Maybe you missed '#' in front of it?"), Nil)) =>
     }
   }
@@ -315,10 +318,11 @@ class SpelExpressionSpec extends FunSuite with Matchers {
   }
 
   test("validate selection and projection for list variable") {
-    val vctx = ValidationContext.empty.withVariable("a", Typed(ClazzRef(classOf[java.util.List[_]], List(ClazzRef[String])))).toOption.get
+    val vctx = ValidationContext.empty.withVariable("a", Typed[java.util.List[String]]).toOption.get
 
-    parse[java.util.List[_]]("#a.![#this.length()].?[#this > 4]", vctx) shouldBe 'valid
-    parse[java.util.List[_]]("#a.![#this / 5]", vctx) should not be 'valid
+    parse[java.util.List[Int]]("#a.![#this.length()].?[#this > 4]", vctx) shouldBe 'valid
+    parse[java.util.List[Boolean]]("#a.![#this.length()].?[#this > 4]", vctx) shouldBe 'invalid
+    parse[java.util.List[Int]]("#a.![#this / 5]", vctx) should not be 'valid
   }
 
   test("allow #this reference inside functions") {
@@ -357,7 +361,7 @@ class SpelExpressionSpec extends FunSuite with Matchers {
   }
 
   test("not validate plain string ") {
-    parse("abcd", ctx) shouldNot be ('valid)
+    parse[Any]("abcd", ctx) shouldNot be ('valid)
   }
 
   test("evaluate static field/method using property syntax") {
@@ -373,11 +377,11 @@ class SpelExpressionSpec extends FunSuite with Matchers {
       case Invalid(NonEmptyList(ExpressionParseError(msg), _)) if msg == message =>
     }
 
-    shouldHaveBadType( parse[Int]("'abcd'", ctx), "Bad expression type, expected: type 'int', found: type 'java.lang.String'" )
-    shouldHaveBadType( parse[String]("111", ctx), "Bad expression type, expected: type 'java.lang.String', found: type 'java.lang.Integer'" )
-    shouldHaveBadType( parse[String]("{1, 2, 3}", ctx), "Bad expression type, expected: type 'java.lang.String', found: type 'java.util.List'" )
-    shouldHaveBadType( parse[java.util.Map[_, _]]("'alaMa'", ctx), "Bad expression type, expected: type 'java.util.Map', found: type 'java.lang.String'" )
-    shouldHaveBadType( parse[Int]("#strVal", ctx), "Bad expression type, expected: type 'int', found: type 'java.lang.String'" )
+    shouldHaveBadType( parse[Int]("'abcd'", ctx), "Bad expression type, expected: int, found: java.lang.String" )
+    shouldHaveBadType( parse[String]("111", ctx), "Bad expression type, expected: java.lang.String, found: java.lang.Integer" )
+    shouldHaveBadType( parse[String]("{1, 2, 3}", ctx), "Bad expression type, expected: java.lang.String, found: java.util.List[java.lang.Integer]" )
+    shouldHaveBadType( parse[java.util.Map[_, _]]("'alaMa'", ctx), "Bad expression type, expected: java.util.Map[unknown,unknown], found: java.lang.String" )
+    shouldHaveBadType( parse[Int]("#strVal", ctx), "Bad expression type, expected: int, found: java.lang.String" )
 
   }
 
