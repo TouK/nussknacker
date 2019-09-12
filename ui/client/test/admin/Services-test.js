@@ -101,9 +101,7 @@ describe("translating process structure to services", () => {
     "streaming": {
       "accountService": {
         "parameters": [],
-        "returnType": {
-          "refClazzName": "scala.Unit$"
-        },
+        "returnType": null,
         "categories": [
           "Category1"
         ]
@@ -135,9 +133,7 @@ describe("translating process structure to services", () => {
             }
           }
         ],
-        "returnType": {
-          "refClazzName": "scala.Unit$"
-        },
+        "returnType": null,
         "categories": [
           "Category1",
           "Category2"
@@ -169,9 +165,7 @@ describe("translating process structure to services", () => {
       },
       "serviceModelService": {
         "parameters": [],
-        "returnType": {
-          "refClazzName": "scala.Unit$"
-        },
+        "returnType": null,
         "categories": [
           "Category1",
           "Category2"
@@ -179,9 +173,7 @@ describe("translating process structure to services", () => {
       },
       "componentService": {
         "parameters": [],
-        "returnType": {
-          "refClazzName": "scala.Unit$"
-        },
+        "returnType": null,
         "categories": [
           "Category1",
           "Category2"
@@ -206,9 +198,7 @@ describe("translating process structure to services", () => {
       },
       "transactionService": {
         "parameters": [],
-        "returnType": {
-          "refClazzName": "scala.Unit$"
-        },
+        "returnType": null,
         "categories": [
           "Category1"
         ]
@@ -244,9 +234,7 @@ describe("translating process structure to services", () => {
       },
       "processorService": {
         "parameters": [],
-        "returnType": {
-          "refClazzName": "scala.runtime.BoxedUnit"
-        },
+        "returnType": null,
         "categories": [
           "StandaloneCategory1"
         ]
@@ -261,7 +249,7 @@ describe("translating process structure to services", () => {
         "Category1"
       ],
       "parameters": [],
-      "returnClassName": "scala.Unit$",
+      "returnClassName": null,
       "processingType": "streaming"
     },
     {
@@ -271,7 +259,7 @@ describe("translating process structure to services", () => {
         "Category2"
       ],
       "parameters": [],
-      "returnClassName": "scala.Unit$",
+      "returnClassName": null,
       "processingType": "streaming"
     },
     {
@@ -322,7 +310,7 @@ describe("translating process structure to services", () => {
           "refClazzName": "java.lang.String"
         }
       ],
-      "returnClassName": "scala.Unit$",
+      "returnClassName": null,
       "processingType": "streaming"
     },
     {
@@ -345,7 +333,7 @@ describe("translating process structure to services", () => {
         "StandaloneCategory1"
       ],
       "parameters": [],
-      "returnClassName": "scala.runtime.BoxedUnit",
+      "returnClassName": null,
       "processingType": "request-response"
     },
     {
@@ -355,7 +343,7 @@ describe("translating process structure to services", () => {
         "Category2"
       ],
       "parameters": [],
-      "returnClassName": "scala.Unit$",
+      "returnClassName": null,
       "processingType": "streaming"
     },
     {
@@ -382,7 +370,7 @@ describe("translating process structure to services", () => {
         "Category1"
       ],
       "parameters": [],
-      "returnClassName": "scala.Unit$",
+      "returnClassName": null,
       "processingType": "streaming"
     }
   ]

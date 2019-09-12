@@ -27,9 +27,6 @@ object typing {
 
   }
 
-  sealed trait EitherSingleClassOrUnknown { self: TypingResult =>
-  }
-
   object TypedObjectTypingResult {
 
     def apply(definition: TypedObjectDefinition): TypedObjectTypingResult =
@@ -50,7 +47,7 @@ object typing {
   }
 
   // Unknown is representation of TypedUnion of all possible types
-  case object Unknown extends TypingResult with EitherSingleClassOrUnknown {
+  case object Unknown extends TypingResult {
 
     override def canHasAnyPropertyOrField: Boolean = true
 
@@ -75,7 +72,7 @@ object typing {
   }
 
   //TODO: make sure parameter list has right size - can be filled with Unknown if needed
-  case class TypedClass(klass: Class[_], params: List[TypingResult]) extends SingleTypingResult with EitherSingleClassOrUnknown {
+  case class TypedClass(klass: Class[_], params: List[TypingResult]) extends SingleTypingResult {
 
     override def canHasAnyPropertyOrField: Boolean =
       typing.canBeSubclassOf(this, Typed[util.Map[_, _]]) || hasGetFieldByNameMethod
@@ -142,11 +139,11 @@ object typing {
 
     def empty = TypedUnion(Set.empty)
 
-    def apply[T: ClassTag] : TypingResult with EitherSingleClassOrUnknown = apply(ClazzRef[T])
+    def apply[T: ClassTag] : TypingResult = apply(ClazzRef[T])
 
-    def apply(klass: Class[_]): TypingResult with EitherSingleClassOrUnknown = apply(ClazzRef(klass))
+    def apply(klass: Class[_]): TypingResult = apply(ClazzRef(klass))
 
-    def apply(klass: ClazzRef): TypingResult with EitherSingleClassOrUnknown = {
+    def apply(klass: ClazzRef): TypingResult = {
       // TODO: make creating unknown type more explicit and fix places where we have Typed type instead of TypedClass | Unknown
       if (klass == ClazzRef.unknown) {
         Unknown

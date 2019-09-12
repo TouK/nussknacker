@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.engine.util.service.query.ServiceQuery.QueryResult
-import pl.touk.nussknacker.ui.definition.{NodeEdges, NodeToAdd, UIProcessObjects}
+import pl.touk.nussknacker.ui.definition.{NodeEdges, NodeToAdd, UIObjectDefinition, UIProcessObjects}
 
 object UiCodecs extends UiCodecs
 
@@ -27,13 +27,13 @@ trait UiCodecs extends RestModelCodecs {
 
   implicit val processActivityCodec: CodecJson[ProcessActivity] = CodecJson.derive[ProcessActivity]
 
-  implicit val objectDefinitionEncode: EncodeJson[ObjectDefinition] = EncodeJson.derive[ObjectDefinition]
-
   //this has to be derived here, to properly encode list...
   implicit val nodeEdgesEncode: EncodeJson[NodeEdges] = EncodeJson.derive[NodeEdges]
 
   //this also has to be derived here, to properly encode list...
   implicit def nodesToAddEncode: EncodeJson[NodeToAdd] = EncodeJson.derive[NodeToAdd]
+
+  implicit def objectDefinitionEncode: EncodeJson[UIObjectDefinition] = EncodeJson.derive[UIObjectDefinition]
 
   implicit def processObjectsEncode: EncodeJson[UIProcessObjects] = EncodeJson.derive[UIProcessObjects]
 
