@@ -252,9 +252,9 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
 
   private def getSubprocessParamDefinition(subprocessInput: SubprocessInput, paramName: String): ValidatedNel[PartSubGraphCompilationError, Parameter] = {
     val subParam = subprocessInput.subprocessParams.get.find(_.name == paramName).get
-    subParam.typ.toTyped(classLoader) match {
-      case Success(typingResult) =>
-        valid(Parameter(paramName, typingResult, typingResult))
+    subParam.typ.toRuntimeClass(classLoader) match {
+      case Success(runtimeClass) =>
+        valid(Parameter(paramName, Typed(runtimeClass), runtimeClass))
       case Failure(_) =>
         invalid(
           SubprocessParamClassLoadError(paramName, subParam.typ.refClazzName, subprocessInput.id)

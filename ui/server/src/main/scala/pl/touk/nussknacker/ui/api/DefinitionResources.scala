@@ -6,7 +6,8 @@ import akka.http.scaladsl.server.{Directives, Route}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
-import pl.touk.nussknacker.ui.definition.UIProcessObjects
+import pl.touk.nussknacker.ui.definition
+import pl.touk.nussknacker.ui.definition.{UIObjectDefinition, UIProcessObjects}
 import pl.touk.nussknacker.ui.process.ProcessObjectsFinder
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -48,7 +49,7 @@ class DefinitionResources(modelData: Map[ProcessingType, ModelData],
     } ~ path("processDefinitionData" / "services") {
       get {
         complete {
-          modelData.mapValues(_.processDefinition.services)
+          modelData.mapValues(_.processDefinition.services.mapValues(definition.UIObjectDefinition(_)))
         }
       }
     }

@@ -216,7 +216,7 @@ export function mapProcessDefinitionToServices(services) {
             name: p.name,
             refClazzName: p.typ.refClazzName
           })),
-          returnClassName: service.returnType.refClazzName,
+          returnClassName: service.returnType == null ? null : service.returnType.refClazzName,
           processingType: processingType
         })
       )

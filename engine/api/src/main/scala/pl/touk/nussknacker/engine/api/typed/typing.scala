@@ -6,7 +6,7 @@ import io.circe.Encoder
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.ArgonautCirce
 
-import scala.reflect.ClassTag
+import scala.reflect.runtime.universe._
 
 object typing {
 
@@ -33,14 +33,6 @@ object typing {
 
   }
 
-  object EitherSingleClassOrUnknown {
-    //TODO: can we do it nicer?
-    implicit val encoderWithTyping: Encoder[EitherSingleClassOrUnknown with TypingResult] = TypingResult.encoder.contramap(_.asInstanceOf[TypingResult])
-  }
-
-  sealed trait EitherSingleClassOrUnknown { self: TypingResult =>
-  }
-
   object TypedObjectTypingResult {
 
     def apply(definition: TypedObjectDefinition): TypedObjectTypingResult =
@@ -56,12 +48,12 @@ object typing {
 
     override def canHasAnyPropertyOrField: Boolean = false
 
-    override def display: String = s"object with fields:${fields.map { case (name, typ) => s"$name of type ${typ.display}"}.mkString(", ")}"
+    override def display: String = fields.map { case (name, typ) => s"$name of type ${typ.display}"}.mkString("object with fields: ", ", ", "")
 
   }
 
   // Unknown is representation of TypedUnion of all possible types
-  case object Unknown extends TypingResult with EitherSingleClassOrUnknown {
+  case object Unknown extends TypingResult {
 
     override def canHasAnyPropertyOrField: Boolean = true
 
@@ -80,13 +72,13 @@ object typing {
 
     override val display : String = possibleTypes.toList match {
       case Nil => "empty"
-      case many => many.map(_.display).mkString("one of (", ", ", ")")
+      case many => many.map(_.display).mkString(" | ")
     }
 
   }
 
   //TODO: make sure parameter list has right size - can be filled with Unknown if needed
-  case class TypedClass(klass: Class[_], params: List[TypingResult]) extends SingleTypingResult with EitherSingleClassOrUnknown {
+  case class TypedClass(klass: Class[_], params: List[TypingResult]) extends SingleTypingResult {
 
     override def canHasAnyPropertyOrField: Boolean =
       typing.canBeSubclassOf(this, Typed[util.Map[_, _]]) || hasGetFieldByNameMethod
@@ -95,7 +87,12 @@ object typing {
       klass.getMethods.exists(m => m.getName == "get" && (m.getParameterTypes sameElements Array(classOf[String])))
 
     //TODO: should we use simple name here?
-    override def display: String = s"type '${klass.getName}'"
+    override def display: String = {
+      if (params.nonEmpty)
+        s"${klass.getName}[${params.map(_.display).mkString(",")}]"
+      else
+        s"${klass.getName}"
+    }
 
     override def objType: TypedClass = this
 
@@ -103,7 +100,7 @@ object typing {
 
   object TypedClass {
 
-    def apply[T:ClassTag] : TypedClass =
+    def apply[T: TypeTag] : TypedClass =
       TypedClass(ClazzRef[T])
 
     def apply(klass: ClazzRef) : TypedClass =
@@ -153,11 +150,11 @@ object typing {
 
     def empty = TypedUnion(Set.empty)
 
-    def apply[T: ClassTag] : TypingResult with EitherSingleClassOrUnknown = apply(ClazzRef[T])
+    def apply[T: TypeTag]: TypingResult = apply(ClazzRef[T])
 
-    def apply(klass: Class[_]): TypingResult with EitherSingleClassOrUnknown = apply(ClazzRef(klass))
+    def apply(klass: Class[_]): TypingResult = apply(ClazzRef(klass))
 
-    def apply(klass: ClazzRef): TypingResult with EitherSingleClassOrUnknown = {
+    def apply(klass: ClazzRef): TypingResult = {
       // TODO: make creating unknown type more explicit and fix places where we have Typed type instead of TypedClass | Unknown
       if (klass == ClazzRef.unknown) {
         Unknown

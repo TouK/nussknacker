@@ -39,7 +39,7 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
     val definition = processDefinition.services("configurable1")
 
     definition.returnType shouldBe Typed[String]
-    definition.methodDef.realReturnType shouldBe Typed(ClazzRef(classOf[Future[_]], List(ClazzRef[String])))
+    definition.methodDef.realReturnType shouldBe Typed[Future[String]]
 
     definition.parameters shouldBe List(Parameter("param1", ClazzRef[Int]))
   }

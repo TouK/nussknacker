@@ -25,8 +25,6 @@ object TypeEncoders {
 
   implicit val clazzRefEncoder: EncodeJson[ClazzRef] = EncodeJson[ClazzRef](tc => encodeTypingResult(Typed(tc)))
 
-  implicit val typingResultEitherEncoder: EncodeJson[TypingResult with EitherSingleClassOrUnknown] = EncodeJson[TypingResult with EitherSingleClassOrUnknown](encodeTypingResult)
-
   implicit val typingResultEncoder: EncodeJson[TypingResult] = EncodeJson[TypingResult](encodeTypingResult)
 
 }

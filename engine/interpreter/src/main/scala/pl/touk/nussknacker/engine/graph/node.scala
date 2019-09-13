@@ -2,8 +2,7 @@ package pl.touk.nussknacker.engine.graph
 
 import io.circe.generic.JsonCodec
 import org.apache.commons.lang3.ClassUtils
-import pl.touk.nussknacker.engine.api.typed.{ClazzRef, typing}
-import pl.touk.nussknacker.engine.api.typed.typing.{EitherSingleClassOrUnknown, Typed, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
@@ -13,8 +12,9 @@ import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 
-import scala.reflect.ClassTag
 import scala.util.Try
+
+import scala.reflect.runtime.universe._
 
 object node {
 
@@ -170,14 +170,14 @@ object node {
 
     object SubprocessClazzRef {
 
-      def apply[T:ClassTag]: SubprocessClazzRef = SubprocessClazzRef(ClazzRef[T].refClazzName)
+      def apply[T: TypeTag]: SubprocessClazzRef = SubprocessClazzRef(ClazzRef[T].refClazzName)
 
     }
 
     case class SubprocessClazzRef(refClazzName: String) {
 
-      def toTyped(classLoader: ClassLoader): Try[TypingResult with EitherSingleClassOrUnknown] =
-        Try(Typed(ClassUtils.getClass(classLoader, refClazzName)))
+      def toRuntimeClass(classLoader: ClassLoader): Try[Class[_]] =
+        Try(ClassUtils.getClass(classLoader, refClazzName))
 
     }
 
