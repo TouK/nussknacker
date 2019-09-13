@@ -18,7 +18,7 @@ import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.ceedubs.ficus.readers.EnumerationReader._
 import net.ceedubs.ficus.readers.ValueReader
 import pl.touk.nussknacker.engine.api.definition.ParameterRestriction
-import pl.touk.nussknacker.engine.api.{MetaData, definition}
+import pl.touk.nussknacker.engine.api.{CirceUtil, MetaData, definition}
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -32,9 +32,7 @@ object UIProcessObjects {
 
   private implicit val nodeConfig: ValueReader[ParameterRestriction] = ValueReader.relative(config => {
     val json = config.root().render(ConfigRenderOptions.concise().setJson(true))
-    io.circe.parser.parse(json).right
-      .flatMap(Decoder[ParameterRestriction].decodeJson).right
-      .getOrElse(throw new IllegalArgumentException("Failed to parse config"))
+    CirceUtil.decodeJson[ParameterRestriction](json).right.getOrElse(throw new IllegalArgumentException("Failed to parse config"))
   })
 
   def prepareUIProcessObjects(modelDataForType: ModelData,

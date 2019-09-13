@@ -2,11 +2,11 @@ package pl.touk.nussknacker.engine.api
 
 import java.util.concurrent.TimeUnit
 
-import argonaut.Argonaut.{jdecode3L, jencode3L}
+import argonaut.Argonaut.jdecode3L
 import argonaut.{DecodeJson, EncodeJson}
 import io.circe.generic.extras.ConfiguredJsonCodec
 import CirceUtil._
-import io.circe.{Decoder, Encoder, Json}
+import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
 import io.circe.generic.semiauto._
 

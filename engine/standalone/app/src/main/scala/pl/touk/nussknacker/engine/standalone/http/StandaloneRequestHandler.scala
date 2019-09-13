@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.standalone
 
 import akka.http.scaladsl.server.{Directive1, Directives}
-import argonaut.ArgonautShapeless._
 import argonaut.Json
 import cats.data.EitherT
 import cats.instances.future._

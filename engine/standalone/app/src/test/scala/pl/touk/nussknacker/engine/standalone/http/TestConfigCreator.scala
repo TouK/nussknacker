@@ -52,7 +52,7 @@ class TestConfigCreator extends EmptyProcessConfigCreator {
 
         override def responseEncoder = Some(new ResponseEncoder[Request] {
           override def toJsonResponse(input: Request, result: List[Any]): GenericResultType[Json] = {
-            Right(jObjectFields("inputField1" -> jString(input.field1), "list" -> jArrayElements(result.map(encoder.encode):_*)))
+            Right(jObjectFields("inputField1" -> jString(input.field1), "list" -> jArrayElements(result.map(encoder.encodeToArgonaut):_*)))
           }
         })
       }

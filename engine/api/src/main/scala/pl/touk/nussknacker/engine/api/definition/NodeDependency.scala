@@ -1,11 +1,10 @@
 package pl.touk.nussknacker.engine.api.definition
 
-import argonaut.derive.{JsonSumCodec, JsonSumCodecFor}
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.ConfiguredJsonCodec
 import pl.touk.nussknacker.engine.api.LazyParameter
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.CirceUtil._
 
 sealed trait NodeDependency
@@ -26,18 +25,6 @@ case class Parameter(name: String,
                      branchParam: Boolean = false) extends NodeDependency {
 
   def isLazyParameter: Boolean = classOf[LazyParameter[_]].isAssignableFrom(runtimeClass)
-
-}
-
-object ParameterRestriction {
-
-  import argonaut._
-  import argonaut.ArgonautShapeless._
-  import argonaut.Argonaut._
-  private implicit def typeFieldJsonSumCodecFor[S]: JsonSumCodecFor[S] = JsonSumCodecFor(JsonSumCodec.typeField)
-
-  //TODO: cannot make it implicit here easily. Derive macro fails, and implicit resolution enters infinite loop :/
-  val codec: CodecJson[ParameterRestriction] = CodecJson.derived[ParameterRestriction]
 
 }
 

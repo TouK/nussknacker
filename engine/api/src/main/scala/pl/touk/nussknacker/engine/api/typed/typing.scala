@@ -11,7 +11,7 @@ import scala.reflect.runtime.universe._
 object typing {
 
   object TypingResult {
-    implicit val encoder: Encoder[TypingResult] = ArgonautCirce.toEncoder(TypeEncoders.typingResultEncoder)
+    implicit val encoder: Encoder[TypingResult] = TypeEncoders.typingResultEncoder
   }
 
   sealed trait TypingResult {

@@ -1,7 +1,5 @@
 package pl.touk.nussknacker.engine.api.process
 
-import argonaut.CodecJson
-import argonaut.derive.{JsonSumCodec, JsonSumCodecFor}
 import cats.kernel.Semigroup
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.definition.ParameterRestriction
@@ -33,10 +31,6 @@ object WithCategories {
 
 object ParameterConfig {
   val empty: ParameterConfig = ParameterConfig(None, None)
-
-  import argonaut.Argonaut._
-  private implicit val restrictionCodec: CodecJson[ParameterRestriction] = ParameterRestriction.codec
-  implicit val codec: CodecJson[ParameterConfig] = CodecJson.derive[ParameterConfig]
 }
 
 @JsonCodec case class ParameterConfig(defaultValue: Option[String], restriction: Option[ParameterRestriction])

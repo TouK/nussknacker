@@ -5,6 +5,8 @@ import java.nio.charset.StandardCharsets
 
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.standalone.api.DeploymentData
+import io.circe.syntax._
+import pl.touk.nussknacker.engine.api.CirceUtil
 
 import scala.io.Source
 
@@ -20,11 +22,11 @@ trait ProcessRepository {
 
 class EmptyProcessRepository extends ProcessRepository {
 
-  override def add(id: ProcessName, deploymentData: DeploymentData) = {}
+  override def add(id: ProcessName, deploymentData: DeploymentData): Unit = {}
 
-  override def remove(id: ProcessName) = {}
+  override def remove(id: ProcessName): Unit = {}
 
-  override def loadAll = Map()
+  override def loadAll: Map[ProcessName, DeploymentData] = Map()
 
 }
 
@@ -41,12 +43,7 @@ object FileProcessRepository {
 
 class FileProcessRepository(path: File) extends ProcessRepository {
 
-  val UTF8 = "UTF-8"
-  import argonaut._
-  import Argonaut._
-  import ArgonautShapeless._
-
-  override def add(id: ProcessName, deploymentData: DeploymentData) = {
+  override def add(id: ProcessName, deploymentData: DeploymentData): Unit = {
     val outFile = new File(path, id.value)
     val writer = new PrintWriter(outFile, StandardCharsets.UTF_8.name())
     try {
@@ -56,16 +53,17 @@ class FileProcessRepository(path: File) extends ProcessRepository {
     }
   }
 
-  override def remove(id: ProcessName) = {
+  override def remove(id: ProcessName): Unit = {
     new File(path, id.value).delete()
   }
+
   private def fileToString(file: File)={
-    val s = Source.fromFile(file, UTF8)
+    val s = Source.fromFile(file, StandardCharsets.UTF_8.name())
     try s.getLines().mkString("\n") finally s.close()
   }
 
-  override def loadAll = path.listFiles().filter(_.isFile).map { file =>
-    ProcessName(file.getName) -> fileToString(file).decodeOption[DeploymentData].get
+  override def loadAll: Map[ProcessName, DeploymentData] = path.listFiles().filter(_.isFile).map { file =>
+    ProcessName(file.getName) -> CirceUtil.decodeJson[DeploymentData](fileToString(file)).right.get
   }.toMap
 
 }

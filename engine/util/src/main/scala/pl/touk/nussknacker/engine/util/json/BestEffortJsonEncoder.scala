@@ -17,12 +17,14 @@ case class BestEffortJsonEncoder(failOnUnkown: Boolean, highPriority: PartialFun
   private val safeDouble = safeJson[Double](jNumber(_))
   private val safeNumber = safeJson[Number](a => jNumber(a.doubleValue()))
 
-  val circeEncoder: Encoder[Any] = Encoder.encodeJson.contramap(ArgonautCirce.toCirce).contramap(encode)
+  val circeEncoder: Encoder[Any] = Encoder.encodeJson.contramap(encode)
 
-  def encode(obj: Any): Json = highPriority.applyOrElse(obj, (any: Any) =>
+  def encode(obj: Any): io.circe.Json = ArgonautCirce.toCirce(encodeToArgonaut(obj))
+
+  def encodeToArgonaut(obj: Any): Json = highPriority.applyOrElse(obj, (any: Any) =>
     any match {
       case null => jNull
-      case Some(a) => encode(a)
+      case Some(a) => encodeToArgonaut(a)
       case None => jNull
       case s: String => safeString(s)
       case a: Long => safeLong(a)
@@ -33,8 +35,8 @@ case class BestEffortJsonEncoder(failOnUnkown: Boolean, highPriority: PartialFun
       case a: Displayable => a.display
       case a: scala.collection.Map[String@unchecked, _] => encodeMap(a)
       case a: java.util.Map[String@unchecked, _] => encodeMap(a.asScala)
-      case a: Traversable[_] => jArray(a.map(encode).toList)
-      case a: java.util.Collection[_] => jArray(a.asScala.map(encode).toList)
+      case a: Traversable[_] => jArray(a.map(encodeToArgonaut).toList)
+      case a: java.util.Collection[_] => jArray(a.asScala.map(encodeToArgonaut).toList)
       case _ if !failOnUnkown => safeString(any.toString)
       case a => throw new IllegalArgumentException(s"Invalid type: ${a.getClass}")
     })
@@ -46,7 +48,7 @@ case class BestEffortJsonEncoder(failOnUnkown: Boolean, highPriority: PartialFun
 
   private def encodeMap(map: scala.collection.Map[String, _]) = {
     jObjectFields(map.toSeq.map {
-      case (k, v) => k -> encode(v)
+      case (k, v) => k -> encodeToArgonaut(v)
     }: _*)
   }
 

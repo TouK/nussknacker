@@ -7,7 +7,7 @@ import scala.reflect.runtime.universe._
 
 object ClazzRef {
 
-  implicit val encoder: Encoder[ClazzRef] = ArgonautCirce.toEncoder(TypeEncoders.clazzRefEncoder)
+  implicit val encoder: Encoder[ClazzRef] = TypeEncoders.clazzRefEncoder
 
   def unknown: ClazzRef = ClazzRef[Any]
 
