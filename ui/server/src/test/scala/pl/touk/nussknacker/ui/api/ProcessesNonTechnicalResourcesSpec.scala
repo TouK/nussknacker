@@ -13,7 +13,6 @@ import pl.touk.nussknacker.restmodel.processdetails.{ProcessDetails, ValidatedPr
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
 import scala.language.higherKinds
-import pl.touk.nussknacker.restmodel.CirceRestCodecs._
 
 class ProcessesNonTechnicalResourcesSpec extends FlatSpec with ScalatestRouteTest with Matchers with Inside with FailFastCirceSupport
   with ScalaFutures with OptionValues with Eventually with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {

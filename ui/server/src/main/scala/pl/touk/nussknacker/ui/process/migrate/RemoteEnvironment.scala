@@ -77,9 +77,7 @@ case class StandardRemoteEnvironmentConfig(uri: String, batchSize: Int)
 
 //TODO: extract interface to remote environment?
 trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironment {
-
-  import pl.touk.nussknacker.restmodel.CirceRestCodecs._
-
+  
   def environmentId: String
 
   def config: StandardRemoteEnvironmentConfig

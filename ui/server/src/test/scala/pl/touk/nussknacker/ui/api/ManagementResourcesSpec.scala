@@ -26,8 +26,6 @@ import org.scalatest.matchers.BeMatcher
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.ProcessActivity
 import io.circe.syntax._
-import pl.touk.nussknacker.restmodel.CirceRestCodecs.displayableDecoder
-import pl.touk.nussknacker.restmodel.CirceRestCodecs.displayableEncoder
 
 class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with ScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {

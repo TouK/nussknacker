@@ -4,10 +4,11 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import cats.implicits._
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
+import pl.touk.nussknacker.engine.api.typed.typing
 
 object ValidationResults {
 
-  import pl.touk.nussknacker.restmodel.DummyTypingResultDecoder.typingResultDecoder
+  private implicit val typingResultDecoder: Decoder[TypingResult] = Decoder.decodeJson.map(_ => typing.Unknown)
 
   @JsonCodec case class ValidationResult(errors: ValidationErrors, warnings: ValidationWarnings, variableTypes: Map[String, Map[String, TypingResult]]) {
     val isOk: Boolean = errors == ValidationErrors.success && warnings == ValidationWarnings.success

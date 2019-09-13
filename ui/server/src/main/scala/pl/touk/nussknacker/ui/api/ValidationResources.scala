@@ -12,8 +12,6 @@ class ValidationResources(processValidation: ProcessValidation)
                          (implicit ec: ExecutionContext)
   extends Directives with FailFastCirceSupport with RouteWithUser {
 
-  import pl.touk.nussknacker.restmodel.CirceRestCodecs.displayableDecoder
-
   def route(implicit user: LoggedUser): Route =
     path("processValidation") {
       post {

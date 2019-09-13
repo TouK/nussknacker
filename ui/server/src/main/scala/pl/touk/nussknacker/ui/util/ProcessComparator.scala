@@ -19,8 +19,8 @@ object ProcessComparator {
 
   }
 
-  import pl.touk.nussknacker.restmodel.CirceRestCodecs.nodeDataEncoder
-  import pl.touk.nussknacker.restmodel.CirceRestCodecs.nodeDataDecoder
+  import pl.touk.nussknacker.restmodel.NodeDataCodec.nodeDataEncoder
+  import pl.touk.nussknacker.restmodel.NodeDataCodec.nodeDataDecoder
   import pl.touk.nussknacker.engine.api.CirceUtil._
 
   @ConfiguredJsonCodec sealed trait Difference {

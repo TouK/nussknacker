@@ -11,8 +11,6 @@ import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
 class ProcessPosting {
 
-  import pl.touk.nussknacker.restmodel.CirceRestCodecs._
-
   private implicit val ptsEncoder: Encoder[ProcessToSave] = io.circe.generic.semiauto.deriveEncoder
 
   private def toRequest[T:Encoder](value: T): RequestEntity = HttpEntity(ContentTypes.`application/json`, value.asJson.spaces2)

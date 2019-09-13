@@ -21,7 +21,6 @@ class ProcessesExportResources(val processRepository: FetchingProcessRepository,
                               (implicit val ec: ExecutionContext, mat: Materializer)
   extends Directives with FailFastCirceSupport with RouteWithUser with ProcessDirectives {
 
-  import pl.touk.nussknacker.restmodel.CirceRestCodecs.displayableDecoder
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
 

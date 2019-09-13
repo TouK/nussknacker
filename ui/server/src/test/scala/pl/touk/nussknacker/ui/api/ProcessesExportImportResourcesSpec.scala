@@ -10,14 +10,12 @@ import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.restmodel.CirceRestCodecs
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.ui.process.marshall.{ProcessConverter, UiProcessMarshaller}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.{FileUploadUtils, MultipartUtils}
-import pl.touk.nussknacker.restmodel.CirceRestCodecs.displayableDecoder
 
 import scala.language.higherKinds
 
@@ -35,7 +33,7 @@ class ProcessesExportImportResourcesSpec extends FunSuite with ScalatestRouteTes
   test("export process from displayable") {
     val processToExport = ProcessTestData.sampleDisplayableProcess
 
-    Post(s"/processesExport", CirceRestCodecs.displayableEncoder(processToExport)) ~> routeWithAllPermissions ~> check {
+    Post(s"/processesExport", processToExport) ~> routeWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
       val exported = responseAs[String]
       val processDetails = UiProcessMarshaller.fromJson(exported).toOption.get

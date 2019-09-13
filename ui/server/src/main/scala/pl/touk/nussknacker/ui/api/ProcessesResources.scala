@@ -53,7 +53,6 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
     with ProcessDirectives {
 
   import akka.http.scaladsl.unmarshalling.Unmarshaller._
-  import pl.touk.nussknacker.restmodel.CirceRestCodecs.validatedEncoder
 
   def route(implicit user: LoggedUser): Route = {
       encodeResponse {

@@ -35,9 +35,8 @@ class TestInfoResources(providers: Map[ProcessingType, TestInfoProvider],
     with AuthorizeProcessDirectives
     with ProcessDirectives {
 
-  implicit val timeout = Timeout(1 minute)
-  import pl.touk.nussknacker.restmodel.CirceRestCodecs.displayableDecoder
-  
+  implicit val timeout: Timeout = Timeout(1 minute)
+
   private implicit final val bytes: FromEntityUnmarshaller[Array[Byte]] =
     Unmarshaller.byteArrayUnmarshaller.forContentTypes(ContentTypeRange(ContentTypes.`application/octet-stream`))
 

@@ -26,7 +26,6 @@ import cats.instances.all._
 import cats.syntax.semigroup._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.restmodel.process.ProcessId
-import pl.touk.nussknacker.restmodel.CirceRestCodecs.displayableDecoder
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 
 class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers with Inside with FailFastCirceSupport

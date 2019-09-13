@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.restmodel
 
-import io.circe.Json
+import io.circe.{Decoder, Encoder, Json}
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.graph.node.{CustomNode, SubprocessInputDefinit
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.{Edge, NodeAdditionalFields}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 
-class RestModelCodecsSpec extends FunSuite with Matchers {
+class NodeDataCodecSpec extends FunSuite with Matchers {
 
 
   test("displayable process encode and decode") {
@@ -27,7 +27,7 @@ class RestModelCodecsSpec extends FunSuite with Matchers {
       Edge("from1", "to1", None)
     ), "")
 
-    val encoded = CirceRestCodecs.displayableEncoder(process)
+    val encoded = Encoder[DisplayableProcess].apply(process)
 
     encoded.hcursor.downField("edges").focus.flatMap(_.asArray) shouldBe Some(List(Json.obj(
       "from" -> Json.fromString("from1"),
@@ -35,7 +35,7 @@ class RestModelCodecsSpec extends FunSuite with Matchers {
       "edgeType" -> Json.Null
     )))
 
-    CirceRestCodecs.displayableDecoder.decodeJson(encoded).right.toOption shouldBe Some(process)
+    Decoder[DisplayableProcess].decodeJson(encoded).right.toOption shouldBe Some(process)
   }
 
 }

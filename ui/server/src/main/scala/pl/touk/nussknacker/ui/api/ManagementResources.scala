@@ -14,12 +14,12 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.generic.JsonCodec
 import io.circe.parser.parse
 import io.circe.syntax._
-import io.circe.{Encoder, Json}
+import io.circe.{Decoder, Encoder, Json}
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{ExceptionResult, ExpressionInvocationResult, MockedResult, NodeResult, ResultContext, TestData, TestResults}
 import pl.touk.nussknacker.engine.api.{ArgonautCirce, Displayable}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
-import pl.touk.nussknacker.restmodel.CirceRestCodecs
+import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
@@ -194,7 +194,7 @@ class ManagementResources(processCounter: ProcessCounter,
   }
 
   private def performTest(id: ProcessIdWithName, testData: Array[Byte], displayableProcessJson: String)(implicit user: LoggedUser): Future[ResultsWithCounts] = {
-    parse(displayableProcessJson).right.flatMap(CirceRestCodecs.displayableDecoder.decodeJson) match {
+    parse(displayableProcessJson).right.flatMap(Decoder[DisplayableProcess].decodeJson) match {
       case Right(process) =>
         val canonical = ProcessConverter.fromDisplayable(process)
         val canonicalJson = ArgonautCirce.toCirce(UiProcessMarshaller.toJson(canonical)).spaces2

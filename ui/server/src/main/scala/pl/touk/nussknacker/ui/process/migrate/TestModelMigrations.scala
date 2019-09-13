@@ -67,9 +67,6 @@ class TestModelMigrations(migrations: Map[ProcessingType, ProcessMigrations], pr
 
 }
 
-import pl.touk.nussknacker.restmodel.CirceRestCodecs.validatedDecoder
-import pl.touk.nussknacker.restmodel.CirceRestCodecs.validatedEncoder
-
 @JsonCodec case class TestMigrationResult(converted: ValidatedDisplayableProcess, newErrors: ValidationResult, shouldFailOnNewErrors: Boolean) {
   def shouldFail: Boolean = {
     shouldFailOnNewErrors && !newErrors.isOk
