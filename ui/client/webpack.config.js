@@ -59,6 +59,7 @@ module.exports = {
   output: {
     path: path.join(__dirname, '..', 'server', 'target', 'scala-2.11', 'classes', 'web', 'static'),
     filename: '[name].js',
+    //see config.js
     publicPath: '__publicPath__/static/',
   },
   devtool: isProd ? 'hidden-source-map' : 'eval-source-map',

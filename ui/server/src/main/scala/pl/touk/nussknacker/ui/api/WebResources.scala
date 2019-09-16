@@ -7,6 +7,7 @@ import org.apache.commons.io.{FileUtils, IOUtils}
 
 class WebResources(publicPath: String) extends Directives {
 
+  //see config.js comment
   private lazy val mainContentFile = {
     val tempMainContentFile = Files.createTempFile("nussknacker", "main.html").toFile
     tempMainContentFile.deleteOnExit()
