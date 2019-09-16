@@ -5,7 +5,7 @@ import _ from "lodash"
 import Processes from "./Processes"
 import SubProcesses from "./SubProcesses"
 import NotFound from "./errors/NotFound"
-
+import {nkPath} from "../config";
 import {CSSTransition, TransitionGroup} from "react-transition-group"
 import Metrics from "./Metrics"
 import Search from "./Search"
@@ -160,7 +160,7 @@ function mapState(state) {
   }
 }
 
-EspApp.path = '/'
+EspApp.path = `${nkPath}/`
 EspApp.header = 'ESP'
 
 export default hot(module)(withRouter(connect(mapState, ActionsUtils.mapDispatchWithEspActions)(EspApp)))

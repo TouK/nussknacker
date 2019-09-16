@@ -4,6 +4,7 @@ import ActionsUtils from "../actions/ActionsUtils";
 import HttpService from "../http/HttpService";
 import QueriedStateTable from "../components/QueriedStateTable";
 import _ from "lodash";
+import {nkPath} from "../config";
 
 //this needs some love
 class Signals extends React.Component {
@@ -116,7 +117,7 @@ class Signals extends React.Component {
 
 }
 
-Signals.path = "/signals"
+Signals.path = `${nkPath}/signals`
 Signals.header = "Signals"
 
 function mapState(state) {

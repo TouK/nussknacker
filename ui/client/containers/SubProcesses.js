@@ -14,6 +14,7 @@ import BaseProcesses from "./BaseProcesses"
 import {Glyphicon} from 'react-bootstrap'
 import Select from 'react-select'
 import ProcessUtils from "../common/ProcessUtils"
+import {nkPath} from "../config";
 
 class SubProcesses extends BaseProcesses {
   queries = {
@@ -127,7 +128,7 @@ class SubProcesses extends BaseProcesses {
 }
 
 SubProcesses.header = 'Subprocesses'
-SubProcesses.path = '/subProcesses'
+SubProcesses.path = `${nkPath}/subProcesses`
 
 const mapState = (state) => ({
   loggedUser: state.settings.loggedUser,

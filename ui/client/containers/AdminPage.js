@@ -7,6 +7,7 @@ import UnusedComponents from "./admin/UnusedComponents"
 import Services from "./admin/Services"
 import CustomProcesses from "./admin/CustomProcesses"
 import {withRouter} from 'react-router-dom'
+import {nkPath} from "../config";
 
 class AdminPage extends React.Component {
   tabs = [
@@ -58,7 +59,7 @@ class AdminPage extends React.Component {
   }
 }
 
-AdminPage.path = "/admin"
+AdminPage.path = `${nkPath}/admin`
 AdminPage.header = "Admin"
 
 export default withRouter(AdminPage)
