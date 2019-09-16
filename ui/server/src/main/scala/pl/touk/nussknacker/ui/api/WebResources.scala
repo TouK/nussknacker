@@ -7,7 +7,7 @@ import org.apache.commons.io.{FileUtils, IOUtils}
 
 class WebResources(publicPath: String) extends Directives {
 
-  private val mainContentFile = {
+  private lazy val mainContentFile = {
     val tempMainContentFile = Files.createTempFile("nussknacker", "main.html").toFile
     tempMainContentFile.deleteOnExit()
     val content = IOUtils.toString(getClass.getClassLoader.getResourceAsStream("web/static/main.html"))
