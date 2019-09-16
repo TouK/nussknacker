@@ -16,6 +16,7 @@ import ProcessUtils from "../common/ProcessUtils"
 import BaseProcesses from "./BaseProcesses"
 import {Glyphicon} from 'react-bootstrap'
 import * as  queryString from 'query-string'
+import {nkPath} from "../config";
 
 class Processes extends BaseProcesses {
   queries = {
@@ -202,7 +203,7 @@ class Processes extends BaseProcesses {
   }
 }
 
-Processes.path = '/processes'
+Processes.path = `${nkPath}/processes`
 Processes.header = 'Processes'
 
 const mapState = state => ({

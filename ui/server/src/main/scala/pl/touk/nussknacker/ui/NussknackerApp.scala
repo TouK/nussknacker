@@ -43,8 +43,6 @@ object NussknackerApp extends App with Directives with LazyLogging {
 
   prepareUncaughtExceptionHandler()
 
-  //TODO: pass port as part of config
-
   private val config = system.settings.config.withFallback(ConfigFactory.load("defaultConfig.conf"))
 
   private val hsqlServer = config.getAs[DatabaseServer.Config]("jdbcServer")
@@ -167,6 +165,8 @@ object NussknackerApp extends App with Directives with LazyLogging {
       routes ++ optionalRoutes
     }
 
+
+    val webResources = new WebResources(config.getString("http.publicPath"))
     CorsSupport.cors(featureTogglesConfig.development) {
       authenticator { user =>
         pathPrefix("api") {
@@ -174,7 +174,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
         } ~
           //this is separated from api to do serve it without authentication
           pathPrefixTest(!"api") {
-            WebResources.route
+            webResources.route
           }
       }
     }
