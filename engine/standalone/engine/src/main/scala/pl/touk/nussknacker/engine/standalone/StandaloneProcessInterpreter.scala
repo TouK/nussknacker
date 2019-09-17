@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.standalone
 import java.util.concurrent.atomic.AtomicLong
 
 import cats.data.Validated.{Invalid, Valid}
-import cats.data.{NonEmptyList, ValidatedNel}
+import cats.data.{NonEmptyList, ValidatedNel, Writer}
 import pl.touk.nussknacker.engine.api.{process, _}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.UnsupportedPart
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ProcessCompilationError, ValidationContext}
@@ -55,7 +55,7 @@ object StandaloneProcessInterpreter {
       modelData.modelClassLoader.classLoader
     ).andThen { compiledProcess =>
       val source = extractSource(compiledProcess)
-      StandaloneInvokerCompiler(compiledProcess).compile.map { case (invoker, sinkTypes) =>
+      StandaloneInvokerCompiler(compiledProcess).compile.map(_.run).map { case (sinkTypes, invoker) =>
         StandaloneProcessInterpreter(source, sinkTypes, contextPreparer.prepare(process.id), invoker, compiledProcess.lifecycle, modelData)
       }
     }
@@ -70,6 +70,8 @@ object StandaloneProcessInterpreter {
     import cats.implicits._
     type CompilationResult[K] = ValidatedNel[ProcessCompilationError, K]
 
+    type WithSinkTypes[K] = Writer[Map[String, TypingResult], K]
+
     private def compileWithCompilationErrors(node: SplittedNode[_], validationContext: ValidationContext): ValidatedNel[ProcessCompilationError, Node] =
       compiledProcess.subPartCompiler.compile(node, validationContext).result
 
@@ -81,7 +83,7 @@ object StandaloneProcessInterpreter {
       override def close(): Unit = {}
     }
 
-    private def compiledPartInvoker(processPart: ProcessPart): CompilationResult[(InterpreterType, Map[String, TypingResult])] = processPart match {
+    private def compiledPartInvoker(processPart: ProcessPart): CompilationResult[WithSinkTypes[InterpreterType]] = processPart match {
       case SourcePart(_, node, validationContext, nextParts, _) =>
         compileWithCompilationErrors(node, validationContext).andThen(partInvoker(_, nextParts))
       case SinkPart(sink, endNode, validationContext) =>
@@ -96,33 +98,32 @@ object StandaloneProcessInterpreter {
         }
         validatedTransformer.andThen { transformer =>
           val result = compileWithCompilationErrors(node, validationContext).andThen(partInvoker(_, parts))
-          result.map(rs => (transformer.createTransformation(node.data.outputVar.get)(rs._1, lazyParameterInterpreter), rs._2))
+          result.map(rs => rs.map(transformer.createTransformation(node.data.outputVar.get)(_, lazyParameterInterpreter)))
         }
     }
 
-    private def prepareResponse(compiledNode: Node, sink:process.Sink)(it: (InterpreterType, Map[String, TypingResult])): (InterpreterType, Map[String, TypingResult]) = sink match {
+    private def prepareResponse(compiledNode: Node, sink:process.Sink)(it: WithSinkTypes[InterpreterType]): WithSinkTypes[InterpreterType] = sink match {
       case sinkWithParams:StandaloneSinkWithParameters =>
         implicit val lazyInterpreter: CompilerLazyParameterInterpreter = lazyParameterInterpreter
         val responseLazyParam = sinkWithParams.prepareResponse
         val responseInterpreter = lazyParameterInterpreter.createInterpreter(responseLazyParam)
-        ((ctx: Context, ec:ExecutionContext) => {
+        it.bimap(_.updated(compiledNode.id, responseLazyParam.returnType), (_:InterpreterType) => (ctx: Context, ec:ExecutionContext) => {
           responseInterpreter(ec, ctx).map(res => Right(List(InterpretationResult(EndReference(compiledNode.id), res, ctx))))(ec)
-        }, it._2.updated(compiledNode.id, responseLazyParam.returnType))
-      case _ => (it._1, it._2.updated(compiledNode.id, compiledNode.asInstanceOf[Sink].endResult.map(_._2).getOrElse(Unknown)))
+        })
+      case _ => it.mapWritten(_.updated(compiledNode.id, compiledNode.asInstanceOf[Sink].endResult.map(_._2).getOrElse(Unknown)))
     }
 
 
-    private def compilePartInvokers(parts: List[SubsequentPart]) : CompilationResult[(Map[String, InterpreterType], Map[String, TypingResult])] =
+    private def compilePartInvokers(parts: List[SubsequentPart]) : CompilationResult[WithSinkTypes[Map[String, InterpreterType]]] =
       parts.map(part => compiledPartInvoker(part).map(compiled => part.id -> compiled))
-        .sequence[CompilationResult, (String, (InterpreterType, Map[String, TypingResult]))].map { res =>
-        (res.toMap.mapValues(_._1), res.flatMap(_._2._2).toMap)
+        .sequence[CompilationResult, (String, WithSinkTypes[InterpreterType])].map { res =>
+          Writer(res.flatMap(_._2.written).toMap, res.toMap.mapValues(_.value))
       }
 
-    private def partInvoker(node: compiledgraph.node.Node, parts: List[SubsequentPart]): CompilationResult[(InterpreterType, Map[String, TypingResult])] = {
+    private def partInvoker(node: compiledgraph.node.Node, parts: List[SubsequentPart]): CompilationResult[WithSinkTypes[InterpreterType]] = {
 
-      compilePartInvokers(parts).map { case (partsInvokers, sinkTypes) =>
-
-        val interpreter = (ctx: Context, ec: ExecutionContext) => {
+      compilePartInvokers(parts).map(_.map { partsInvokers =>
+        (ctx: Context, ec: ExecutionContext) => {
           implicit val iec: ExecutionContext = ec
           compiledProcess.interpreter.interpret(node, compiledProcess.parts.metaData, ctx).flatMap { maybeResult =>
             maybeResult.fold[InterpreterOutputType](
@@ -130,8 +131,7 @@ object StandaloneProcessInterpreter {
             a => Future.successful(Left(NonEmptyList.of(a))))
           }
         }
-        (interpreter, sinkTypes)  
-      }
+      })
     }
 
     private def interpretationInvoke(partInvokers: Map[String, InterpreterType])(ir: InterpretationResult)(implicit ec: ExecutionContext) = {
@@ -148,7 +148,7 @@ object StandaloneProcessInterpreter {
       results
     }
 
-    def compile: CompilationResult[(InterpreterType, Map[String, TypingResult])]
+    def compile: CompilationResult[WithSinkTypes[InterpreterType]]
       = compiledPartInvoker(compiledProcess.parts.sources.head)
 
   }

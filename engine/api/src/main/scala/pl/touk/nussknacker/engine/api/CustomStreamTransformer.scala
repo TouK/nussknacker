@@ -42,6 +42,7 @@ trait LazyParameter[+T] {
   def returnType: TypingResult
 
   //we provide only applicative operation, monad is tricky to implement (see CompilerLazyParameterInterpreter.createInterpreter)
+  //we use product and not ap here, because it's more convenient to handle returnType computations
   def product[B](fb: LazyParameter[B])(implicit lazyParameterInterpreter: LazyParameterInterpreter): LazyParameter[(T, B)] = {
     lazyParameterInterpreter.product(this, fb)
   }

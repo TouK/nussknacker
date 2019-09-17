@@ -11,7 +11,6 @@ import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
 import scala.reflect.runtime.universe._
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, ExecutionContext, Future}
-import scala.reflect.runtime.universe
 
 private[definition] case class ExpressionLazyParameter[T](nodeId: NodeId,
                                                           parameter: evaluatedparam.Parameter,
@@ -29,23 +28,16 @@ private[definition] case class ProductLazyParameter[T, Y](arg1: LazyParameter[T]
       val arg1Value = arg1Interpreter(ec, ctx)
       val arg2Value = arg2Interpreter(ec, ctx)
       arg1Value.flatMap(left => arg2Value.map((left, _)))
-
   }
 }
 
-private[definition] trait MappedLazyParameter[Y] extends LazyParameter[Y] {
+private[definition] case class MappedLazyParameter[T, Y: TypeTag](arg: LazyParameter[T], fun: T => Y) extends LazyParameter[Y] {
 
-  type InType
-
-  def arg: LazyParameter[InType]
-
-  def fun: InType => Y
+  override def returnType: TypingResult = TypedClass[Y]
 
   def eval(lpi: LazyParameterInterpreter)(implicit ec: ExecutionContext): Context => Future[Y] = {
     val argInterpreter = lpi.createInterpreter(arg)
-    ctx: Context =>
-        argInterpreter(ec, ctx).map(fun)
-
+    ctx: Context => argInterpreter(ec, ctx).map(fun)
   }
 }
 
@@ -64,22 +56,12 @@ trait CompilerLazyParameterInterpreter extends LazyParameterInterpreter {
   override def createInterpreter[T](lazyInterpreter: LazyParameter[T]): (ExecutionContext, Context) => Future[T]
     = (ec: ExecutionContext, context: Context) => createInterpreter(ec, lazyInterpreter)(context)
 
-
   override def product[A, B](fa: LazyParameter[A], fb: LazyParameter[B]): LazyParameter[(A, B)] = {
     ProductLazyParameter(fa, fb)
   }
 
-  override def map[T, Y: universe.TypeTag](parameter: LazyParameter[T], funArg: T => Y): LazyParameter[Y] = {
-    new MappedLazyParameter[Y] {
-      override type InType = T
-
-      override def arg: LazyParameter[T] = parameter
-
-      override def fun: T => Y = funArg
-
-      override def returnType: TypingResult = TypedClass[Y]
-    }
-  }
+  override def map[T, Y: TypeTag](parameter: LazyParameter[T], funArg: T => Y): LazyParameter[Y] =
+    new MappedLazyParameter[T, Y](parameter, funArg)
 
   override def unit[T:TypeTag](value: T): LazyParameter[T] = FixedLazyParameter(value)
 
@@ -95,7 +77,7 @@ trait CompilerLazyParameterInterpreter extends LazyParameterInterpreter {
         context: Context => evaluator.evaluate[T](compiledExpression, parameter.name, nodeId.id, context)(ec, metaData).map(_.value)(ec)
       case cli:ProductLazyParameter[_, _] =>
         cli.eval(this)(ec: ExecutionContext)
-      case cli:MappedLazyParameter[T] =>
+      case cli:MappedLazyParameter[_, T] =>
         cli.eval(this)(ec)
       case FixedLazyParameter(value) =>
         _ => Future.successful(value)
