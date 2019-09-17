@@ -120,7 +120,7 @@ class Interpreter private(listeners: Seq[ProcessListener], expressionEvaluator: 
         Future.successful(List(InterpretationResult(EndReference(id), null, ctx)))
       case Sink(id, ref, optionalExpression, false) =>
         (optionalExpression match {
-          case Some(expression) =>
+          case Some((expression, _)) =>
             evaluateExpression[Any](expression, ctx, expressionName)
           case None =>
             Future.successful(ValueWithContext(outputValue(ctx), ctx))

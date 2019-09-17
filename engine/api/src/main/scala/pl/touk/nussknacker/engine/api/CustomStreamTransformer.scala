@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.reflect.runtime.universe._
 
 /**
   * Hook for using Apache Flink API directly.
@@ -35,17 +36,21 @@ abstract class CustomStreamTransformer {
   * as evaluation may need e.g. lazy variables and we have to take care of lifecycle, to use it see LazyParameterInterpreter
   *
   */
-trait LazyParameter[T] {
+trait LazyParameter[+T] {
 
   //type of parameter, derived from expression. Can be used for dependent types, see PreviousValueTransformer
   def returnType: TypingResult
 
   //we provide only applicative operation, monad is tricky to implement (see CompilerLazyParameterInterpreter.createInterpreter)
-  def ap[Y](fun: LazyParameter[T => Y])(implicit lazyParameterInterpreter: LazyParameterInterpreter): LazyParameter[Y] =
-    lazyParameterInterpreter.ap(this, fun)
+  def product[B](fb: LazyParameter[B])(implicit lazyParameterInterpreter: LazyParameterInterpreter): LazyParameter[(T, B)] = {
+    lazyParameterInterpreter.product(this, fb)
+  }
 
-  def map[Y](fun: T => Y)(implicit lazyParameterInterpreter: LazyParameterInterpreter): LazyParameter[Y] = {
-    lazyParameterInterpreter.ap(this, lazyParameterInterpreter.unit(fun))
+  def unit[A:TypeTag](value: A)(implicit lazyParameterInterpreter: LazyParameterInterpreter): LazyParameter[A] =  lazyParameterInterpreter.unit(value)
+
+  //TODO: Y can be replaced by TypingResult representing result?
+  def map[Y:TypeTag](fun: T => Y)(implicit lazyParameterInterpreter: LazyParameterInterpreter): LazyParameter[Y] = {
+    lazyParameterInterpreter.map(this, fun)
   }
 
 
@@ -57,9 +62,11 @@ trait LazyParameterInterpreter {
 
   def createInterpreter[T](parameter: LazyParameter[T]): (ExecutionContext, Context) => Future[T]
 
-  def ap[T, Y](lazyParameter: LazyParameter[T], fun: LazyParameter[T => Y]): LazyParameter[Y]
+  def product[A, B](fa: LazyParameter[A], fb: LazyParameter[B]): LazyParameter[(A, B)]
 
-  def unit[T](value: T): LazyParameter[T]
+  def unit[T:TypeTag](value: T): LazyParameter[T]
+
+  def map[T, Y:TypeTag](parameter: LazyParameter[T], fun: T => Y): LazyParameter[Y]
 
   def syncInterpretationFunction[T](parameter: LazyParameter[T]) : Context => T
 
