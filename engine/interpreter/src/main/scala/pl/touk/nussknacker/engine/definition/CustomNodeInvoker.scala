@@ -12,16 +12,29 @@ import scala.reflect.runtime.universe._
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, ExecutionContext, Future}
 
-private[definition] case class ExpressionLazyParameter[T](nodeId: NodeId,
-                                                          parameter: evaluatedparam.Parameter,
-                                                          returnType: TypingResult) extends LazyParameter[T] {
+private[definition] trait CompilerLazyParameter[T] extends LazyParameter[T] {
+
+  def prepareEvaluator(deps: CompilerLazyParameterInterpreter)(implicit ec: ExecutionContext): Context => Future[T]
+
 }
 
-private[definition] case class ProductLazyParameter[T, Y](arg1: LazyParameter[T], arg2: LazyParameter[Y]) extends LazyParameter[(T, Y)] {
+private[definition] case class ExpressionLazyParameter[T](nodeId: NodeId,
+                                                          parameter: evaluatedparam.Parameter,
+                                                          returnType: TypingResult) extends CompilerLazyParameter[T] {
+  override def prepareEvaluator(compilerInterpreter: CompilerLazyParameterInterpreter)(implicit ec: ExecutionContext): Context => Future[T] = {
+    val compiledExpression = compilerInterpreter.deps.expressionCompiler
+              .compile(parameter.expression, Some(parameter.name), None, Unknown)(nodeId)
+              .getOrElse(throw new IllegalArgumentException(s"Cannot compile ${parameter.name}")).expression
+    val evaluator = compilerInterpreter.deps.expressionEvaluator
+    context: Context => evaluator.evaluate[T](compiledExpression, parameter.name, nodeId.id, context)(ec, compilerInterpreter.metaData).map(_.value)(ec)
+  }
+}
+
+private[definition] case class ProductLazyParameter[T, Y](arg1: LazyParameter[T], arg2: LazyParameter[Y]) extends CompilerLazyParameter[(T, Y)] {
 
   override def returnType: TypingResult = TypedClass(classOf[(T, Y)], List(arg1.returnType, arg2.returnType))
 
-  def eval(lpi: LazyParameterInterpreter)(implicit ec: ExecutionContext): Context => Future[(T, Y)] = {
+  override def prepareEvaluator(lpi: CompilerLazyParameterInterpreter)(implicit ec: ExecutionContext): Context => Future[(T, Y)] = {
     val arg1Interpreter = lpi.createInterpreter(arg1)
     val arg2Interpreter = lpi.createInterpreter(arg2)
     ctx: Context =>
@@ -31,19 +44,20 @@ private[definition] case class ProductLazyParameter[T, Y](arg1: LazyParameter[T]
   }
 }
 
-private[definition] case class MappedLazyParameter[T, Y: TypeTag](arg: LazyParameter[T], fun: T => Y) extends LazyParameter[Y] {
+private[definition] case class MappedLazyParameter[T, Y: TypeTag](arg: LazyParameter[T], fun: T => Y) extends CompilerLazyParameter[Y] {
 
   override def returnType: TypingResult = TypedClass[Y]
 
-  def eval(lpi: LazyParameterInterpreter)(implicit ec: ExecutionContext): Context => Future[Y] = {
+  override def prepareEvaluator(lpi: CompilerLazyParameterInterpreter)(implicit ec: ExecutionContext): Context => Future[Y] = {
     val argInterpreter = lpi.createInterpreter(arg)
     ctx: Context => argInterpreter(ec, ctx).map(fun)
   }
 }
 
-
-private[definition] case class FixedLazyParameter[T:TypeTag](value: T) extends LazyParameter[T] {
+private[definition] case class FixedLazyParameter[T:TypeTag](value: T) extends CompilerLazyParameter[T] {
   override def returnType: TypingResult = TypedClass[T]
+
+  override def prepareEvaluator(deps: CompilerLazyParameterInterpreter)(implicit ec: ExecutionContext): Context => Future[T] = _ => Future.successful(value)
 }
 
 
@@ -69,18 +83,8 @@ trait CompilerLazyParameterInterpreter extends LazyParameterInterpreter {
   //and not e.g. (...)(Context) => Future[T] as we want to be sure when body is evaluated (in particular expression compilation)!
   private[definition] def createInterpreter[T](ec: ExecutionContext, definition: LazyParameter[T]): Context => Future[T] = {
     definition match {
-      case ExpressionLazyParameter(nodeId, parameter, _) =>
-        val compiledExpression = deps.expressionCompiler
-          .compile(parameter.expression, Some(parameter.name), None, Unknown)(nodeId)
-          .getOrElse(throw new IllegalArgumentException(s"Cannot compile ${parameter.name}")).expression
-        val evaluator = deps.expressionEvaluator
-        context: Context => evaluator.evaluate[T](compiledExpression, parameter.name, nodeId.id, context)(ec, metaData).map(_.value)(ec)
-      case cli:ProductLazyParameter[_, _] =>
-        cli.eval(this)(ec: ExecutionContext)
-      case cli:MappedLazyParameter[_, T] =>
-        cli.eval(this)(ec)
-      case FixedLazyParameter(value) =>
-        _ => Future.successful(value)
+      case e:CompilerLazyParameter[T] => e.prepareEvaluator(this)(ec)
+      case _ => throw new IllegalArgumentException(s"LazyParameter $definition is not supported")
     }
   }
 
@@ -90,7 +94,6 @@ trait CompilerLazyParameterInterpreter extends LazyParameterInterpreter {
     val interpreter = createInterpreter(ec, lazyInterpreter)
     v1: Context => Await.result(interpreter(v1), deps.processTimeout)
   }
-
 
 }
 
