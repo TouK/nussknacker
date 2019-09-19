@@ -4,10 +4,11 @@ case class ProcessState(id: DeploymentId,
                         runningState: RunningState.Value,
                         status: String,
                         startTime: Long,
+                        version: Option[Long],
                         message: Option[String] = None)
 
 object RunningState extends Enumeration {
 
-  val Running, Error, Finished = Value
+  val Running, Error, Deploying, Finished = Value
 
 }

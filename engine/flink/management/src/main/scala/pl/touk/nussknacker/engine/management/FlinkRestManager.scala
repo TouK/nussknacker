@@ -121,7 +121,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, sender: HttpSe
       runningOrFinished match {
         case Nil => None
         case duplicates if duplicates.count(_.state == JobStatus.RUNNING) > 1 =>
-          Some(ProcessState(DeploymentId(duplicates.head.jid), RunningState.Error, "INCONSISTENT", duplicates.head.`start-time`,
+          Some(ProcessState(DeploymentId(duplicates.head.jid), RunningState.Error, "INCONSISTENT", duplicates.head.`start-time`, None,
             Some(s"Expected one job, instead: ${runningOrFinished.map(job => s"${job.jid} - ${job.state.name()}").mkString(", ")}")))
         case one::_ =>
           val runningState = one.state match {
@@ -129,7 +129,8 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, sender: HttpSe
             case JobStatus.FINISHED => RunningState.Finished
             case _ => RunningState.Error
           }
-          Some(ProcessState(DeploymentId(one.jid), runningState, one.state.toString, one.`start-time`))
+          //TODO: extract version number from job config
+          Some(ProcessState(DeploymentId(one.jid), runningState, one.state.toString, one.`start-time`, None))
       }
     }
   }

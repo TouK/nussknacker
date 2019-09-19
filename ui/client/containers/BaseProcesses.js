@@ -5,6 +5,7 @@ import * as  queryString from 'query-string'
 import PeriodicallyReloadingComponent from "../components/PeriodicallyReloadingComponent"
 import history from "../history"
 import HttpService from "../http/HttpService"
+import * as ProcessStateUtils from "../common/ProcessStateUtils"
 
 class BaseProcesses extends PeriodicallyReloadingComponent {
   searchItems = ['categories']
@@ -152,36 +153,22 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
     history.push(VisualizationUrl.visualizationUrl(process.name))
   }
 
-  processStatusClass = (process, statusesLoaded, statuses) => {
+  processStatusClass = (process) => {
     const processName = process.name
     const shouldRun = process.currentlyDeployedAt.length > 0
-    const statusesKnown = statusesLoaded
-    const isRunning = statusesKnown && _.get(statuses[processName], 'isRunning')
+    return ProcessStateUtils.getStatusClass(this.state.statuses[processName], shouldRun, this.state.statusesLoaded)
+  }
 
-    if (isRunning) {
-      return "status-running"
-    } else if (shouldRun) {
-      return statusesKnown ? "status-notrunning" : "status-unknown"
-    }
-
-    return null
+  processStatusTitle = (process) => {
+    const processName = process.name
+    const shouldRun = process.currentlyDeployedAt.length > 0
+    return ProcessStateUtils.getStatusMessage(this.state.statuses[processName], shouldRun, this.state.statusesLoaded)
   }
 
   getIntervalTime() {
     return _.get(this.props, "featuresSettings.intervalTimeSettings.processes", this.intervalTime)
   }
 
-  processStatusTitle = processStatusClass => {
-    if (processStatusClass === "status-running") {
-      return "Running"
-    } else if (processStatusClass === "status-notrunning") {
-      return "Not running"
-    } else if (processStatusClass === "status-unknown") {
-      return "Unknown state"
-    }
-
-    return null
-  }
 }
 
 export default BaseProcesses

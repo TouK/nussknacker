@@ -127,7 +127,7 @@ class StandaloneTestMain(testData: TestData, process: EspProcess, modelData: Mod
 
   }
 
-  private def collectSinkResults(runId: TestRunId, results: List[InterpretationResultType]) = {
+  private def collectSinkResults(runId: TestRunId, results: List[InterpretationResultType]): Unit = {
     val successfulResults = results.flatMap(_.right.toOption.toList.flatten)
     successfulResults.foreach { result =>
       val node = result.reference.asInstanceOf[EndingReference].nodeId
@@ -135,7 +135,7 @@ class StandaloneTestMain(testData: TestData, process: EspProcess, modelData: Mod
     }
   }
 
-  private def collectExceptions(listener: ResultsCollectingListener, results: List[InterpretationResultType]) = {
+  private def collectExceptions(listener: ResultsCollectingListener, results: List[InterpretationResultType]): Unit = {
     val exceptions = results.flatMap(_.left.toOption)
     exceptions.flatMap(_.toList).foreach(listener.exceptionThrown)
   }

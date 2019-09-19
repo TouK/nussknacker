@@ -13,14 +13,25 @@ case class ProcessStatus(deploymentId: Option[String],
 }
 
 object ProcessStatus {
-  def apply(processState: ProcessState): ProcessStatus = {
+  def apply(processState: ProcessState, expectedDeploymentVersion: Option[Long]): ProcessStatus = {
+
+    val versionMatchMessage = (processState.version, expectedDeploymentVersion) match {
+      //currently returning version is optional
+      case (None, _) => None
+      case (Some(stateVersion), Some(expectedVersion)) if stateVersion == expectedVersion => None
+      case (Some(stateVersion), Some(expectedVersion)) => Some(s"Process deployed in version $stateVersion, expected version $expectedVersion")
+      case (Some(stateVersion), None) => Some(s"Process deployed in version $stateVersion, should not be deployed")
+    }
+    val isRunning = processState.runningState == RunningState.Running && versionMatchMessage.isEmpty
+    val errorMessage = List(versionMatchMessage, processState.message).flatten.reduceOption(_  + ", " + _)
+
     ProcessStatus(
       deploymentId = Some(processState.id.value),
       status = processState.status,
       startTime = processState.startTime,
-      isRunning = processState.runningState == RunningState.Running,
-      isDeployInProgress = false,
-      errorMessage = processState.message
+      isRunning = isRunning,
+      isDeployInProgress = processState.runningState == RunningState.Deploying,
+      errorMessage = errorMessage
     )
   }
 

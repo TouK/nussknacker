@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus}
+import pl.touk.nussknacker.restmodel.processdetails.DeploymentAction
 import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntityData
 import pl.touk.nussknacker.ui.process.marshall.UiProcessMarshaller
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessNotFoundError
@@ -62,10 +63,12 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
       implicit val loggedUser: LoggedUser = user
 
       val processStatus = for {
+        deployedVersions <- processRepository.fetchDeploymentHistory(id.id)
+        deployedVersion = deployedVersions.headOption.filter(_.deploymentAction == DeploymentAction.Deploy)
         manager <- processManager(id.id)
         state <- manager.findJobStatus(id.name)
         _ <- handleFinishedProcess(id, state)
-      } yield state.map(ProcessStatus.apply)
+      } yield state.map(ProcessStatus(_, deployedVersion.map(_.processVersionId)))
 
       reply(processStatus)
     case DeploymentActionFinished(id, None) =>
