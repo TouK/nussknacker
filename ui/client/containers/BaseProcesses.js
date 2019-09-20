@@ -5,6 +5,7 @@ import * as  queryString from 'query-string'
 import PeriodicallyReloadingComponent from "../components/PeriodicallyReloadingComponent"
 import history from "../history"
 import HttpService from "../http/HttpService"
+import Metrics from "./Metrics";
 
 class BaseProcesses extends PeriodicallyReloadingComponent {
   searchItems = ['categories']
@@ -145,7 +146,7 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
   }
 
   showMetrics = (process) => {
-    history.push('/metrics/' + process.name)
+    history.push(Metrics.pathForProcess(process.name))
   }
 
   showProcess = (process) => {

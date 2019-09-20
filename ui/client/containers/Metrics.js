@@ -62,6 +62,7 @@ class Metrics extends React.Component {
 
 Metrics.basePath = `${nkPath}/metrics`
 Metrics.path = Metrics.basePath + "/:processId?"
+Metrics.pathForProcess = (processId) => `${Metrics.basePath}/${processId}`
 Metrics.header = "Metrics"
 
 function mapState(state) {
