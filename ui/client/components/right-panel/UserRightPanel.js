@@ -21,6 +21,7 @@ import Archive from "../../containers/Archive";
 import SpinnerWrapper from "../SpinnerWrapper";
 import PropTypes from 'prop-types';
 import Dropzone from 'react-dropzone'
+import Metrics from "../../containers/Metrics";
 
 class UserRightPanel extends Component {
 
@@ -262,7 +263,7 @@ class UserRightPanel extends Component {
   versionId = () => this.props.fetchedProcessDetails.processVersionId
 
   showMetrics = () => {
-    history.push('/metrics/' + this.processId())
+    history.push(Metrics.pathForProcess(this.processId()))
   }
 
   exportProcess = () => {

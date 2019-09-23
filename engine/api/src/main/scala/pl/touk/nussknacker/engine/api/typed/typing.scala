@@ -6,6 +6,7 @@ import io.circe.Encoder
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.ArgonautCirce
 
+import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 
 object typing {
@@ -100,7 +101,7 @@ object typing {
 
   object TypedClass {
 
-    def apply[T: TypeTag] : TypedClass =
+    def apply[T: ClassTag] : TypedClass =
       TypedClass(ClazzRef[T])
 
     def apply(klass: ClazzRef) : TypedClass =
@@ -150,7 +151,9 @@ object typing {
 
     def empty = TypedUnion(Set.empty)
 
-    def apply[T: TypeTag]: TypingResult = apply(ClazzRef[T])
+    def apply[T: ClassTag]: TypingResult = apply(ClazzRef[T])
+
+    def detailed[T: TypeTag]: TypingResult = apply(ClazzRef.detailed[T])
 
     def apply(klass: Class[_]): TypingResult = apply(ClazzRef(klass))
 

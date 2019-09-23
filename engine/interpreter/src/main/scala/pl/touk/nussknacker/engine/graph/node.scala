@@ -170,7 +170,7 @@ object node {
 
     object SubprocessClazzRef {
 
-      def apply[T: TypeTag]: SubprocessClazzRef = SubprocessClazzRef(ClazzRef[T].refClazzName)
+      def apply[T: TypeTag]: SubprocessClazzRef = SubprocessClazzRef(ClazzRef.detailed[T].refClazzName)
 
     }
 

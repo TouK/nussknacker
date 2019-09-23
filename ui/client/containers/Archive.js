@@ -12,6 +12,7 @@ import {Glyphicon} from 'react-bootstrap'
 import BaseProcesses from "./BaseProcesses"
 import Select from 'react-select'
 import ProcessUtils from "../common/ProcessUtils"
+import {nkPath} from "../config";
 
 class Archive extends BaseProcesses {
   queries = {
@@ -128,7 +129,7 @@ class Archive extends BaseProcesses {
   }
 }
 
-Archive.path = '/archivedProcesses'
+Archive.path = `${nkPath}/archivedProcesses`
 Archive.header = 'Archive'
 
 const mapState = (state) => ({

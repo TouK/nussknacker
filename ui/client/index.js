@@ -3,6 +3,8 @@ import ReactDOM from 'react-dom'
 import {Provider} from 'react-redux'
 import {AppContainer} from 'react-hot-loader'
 import {Router} from 'react-router-dom'
+//https://webpack.js.org/guides/public-path/#on-the-fly
+import "./config"
 import configureStore from './store/configureStore'
 import Settings from './http/Settings'
 import EspApp from './containers/EspApp'

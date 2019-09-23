@@ -1,8 +1,9 @@
 import _ from "lodash";
 import Moment from "moment";
 import * as  queryString from 'query-string'
+import {nkPath} from "../config";
 
-export const visualizationBasePath = "/visualization"
+export const visualizationBasePath = `${nkPath}/visualization`
 export const visualizationPath = visualizationBasePath + '/:processId'
 
 function nodeIdPart(nodeId) {

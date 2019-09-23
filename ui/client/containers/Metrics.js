@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import {connect} from 'react-redux'
 import HttpService from "../http/HttpService"
 import {withRouter} from "react-router"
+import {nkPath} from "../config";
 
 class Metrics extends React.Component {
 
@@ -59,8 +60,9 @@ class Metrics extends React.Component {
   }
 }
 
-Metrics.basePath = "/metrics"
+Metrics.basePath = `${nkPath}/metrics`
 Metrics.path = Metrics.basePath + "/:processId?"
+Metrics.pathForProcess = (processId) => `${Metrics.basePath}/${processId}`
 Metrics.header = "Metrics"
 
 function mapState(state) {

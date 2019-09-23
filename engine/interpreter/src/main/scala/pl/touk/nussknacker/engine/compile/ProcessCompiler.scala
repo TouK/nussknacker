@@ -8,16 +8,14 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
-import pl.touk.nussknacker.engine.api.context.{AbstractContextTransformation, AbstractContextTransformationDef, ContextTransformation, ContextTransformationDef, JoinContextTransformationDef, ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.{AbstractContextTransformation, AbstractContextTransformationDef, ContextTransformationDef, JoinContextTransformationDef, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, EspExceptionInfo}
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.typed.{ClazzRef, ReturningType, TypedObjectDefinition}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.ReturningType
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
-import pl.touk.nussknacker.engine.api.expression.{TypedExpression, TypedExpressionMap}
-import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedParameter
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.MissingOutputVariableException
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
@@ -27,7 +25,7 @@ import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
 import pl.touk.nussknacker.engine.graph.node.{Sink => _, Source => _, _}
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
-import pl.touk.nussknacker.engine.graph.{EspProcess, evaluatedparam, expression}
+import pl.touk.nussknacker.engine.graph.{EspProcess, evaluatedparam}
 import pl.touk.nussknacker.engine.split._
 import pl.touk.nussknacker.engine.splittedgraph._
 import pl.touk.nussknacker.engine.splittedgraph.part._
@@ -82,11 +80,11 @@ trait ProcessValidator extends LazyLogging {
 protected trait ProcessCompilerBase {
 
   protected def definitions: ProcessDefinition[ObjectWithMethodDef]
-  protected def sourceFactories = definitions.sourceFactories
-  protected def sinkFactories = definitions.sinkFactories
-  protected def exceptionHandlerFactory = definitions.exceptionHandlerFactory
-  protected val customStreamTransformers = definitions.customStreamTransformers
-  protected val expressionConfig = definitions.expressionConfig
+  protected def sourceFactories: Map[String, ObjectWithMethodDef] = definitions.sourceFactories
+  protected def sinkFactories: Map[String, (ObjectWithMethodDef, ProcessDefinitionExtractor.SinkAdditionalData)] = definitions.sinkFactories
+  protected def exceptionHandlerFactory: ObjectWithMethodDef = definitions.exceptionHandlerFactory
+  protected val customStreamTransformers: Map[String, (ObjectWithMethodDef, ProcessDefinitionExtractor.CustomTransformerAdditionalData)] = definitions.customStreamTransformers
+  protected val expressionConfig: ProcessDefinitionExtractor.ExpressionDefinition[ObjectWithMethodDef] = definitions.expressionConfig
 
   protected def sub: PartSubGraphCompiler
 
@@ -112,7 +110,7 @@ protected trait ProcessCompilerBase {
   }
 
   private def compile(splittedProcess: SplittedProcess): CompilationResult[CompiledProcessParts] = {
-    implicit val metaData = splittedProcess.metaData
+    implicit val metaData: MetaData = splittedProcess.metaData
     CompilationResult.map3(
       CompilationResult(findDuplicates(splittedProcess.sources).toValidatedNel),
       CompilationResult(compile(splittedProcess.exceptionHandlerRef)),
@@ -137,7 +135,7 @@ protected trait ProcessCompilerBase {
 
   private def compile(ref: ExceptionHandlerRef)
                      (implicit metaData: MetaData): ValidatedNel[ProcessCompilationError, EspExceptionHandler] = {
-    implicit val nodeId = NodeId(ProcessCompilationError.ProcessNodeId)
+    implicit val nodeId: NodeId = NodeId(ProcessCompilationError.ProcessNodeId)
     if (metaData.isSubprocess) {
       //FIXME: what should be here?
       Valid(new EspExceptionHandler {
@@ -150,7 +148,7 @@ protected trait ProcessCompilerBase {
 
   private def compile(source: SourcePart)
                      (implicit metaData: MetaData): CompilationResult[compiledgraph.part.PotentiallyStartPart] = {
-    implicit val nodeId = NodeId(source.id)
+    implicit val nodeId: NodeId = NodeId(source.id)
 
     source match {
       case SourcePart(node@splittednode.SourceNode(sourceData:SourceNodeData, _), _, _) =>
@@ -230,7 +228,7 @@ protected trait ProcessCompilerBase {
 
   private def compile(part: SubsequentPart, ctx: ValidationContext)
                      (implicit metaData: MetaData): CompilationResult[compiledgraph.part.SubsequentPart] = {
-    implicit val nodeId = NodeId(part.id)
+    implicit val nodeId: NodeId = NodeId(part.id)
     part match {
       case SinkPart(node) =>
         CompilationResult.map2(sub.validate(node, ctx), CompilationResult(compile(node.data.ref, ctx)))((_, obj) =>

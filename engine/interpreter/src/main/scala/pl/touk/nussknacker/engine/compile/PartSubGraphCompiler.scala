@@ -101,12 +101,16 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
     case graph.node.Processor(id, ref, disabled, _) =>
       compile(ref, ctx).map(cn => compiledgraph.node.EndingProcessor(id, cn._1, disabled.contains(true)))
     case graph.node.Sink(id, ref, optionalExpression, disabled, _) =>
-      optionalExpression.map(oe => compile(oe, None, ctx, Unknown)._2).sequence.map(typed => compiledgraph.node.Sink(id, ref.typ, typed, disabled.contains(true)))
+      optionalExpression.map { oe =>
+        val compiled = compile(oe, None, ctx, Unknown)
+        compiled._2.map((_, compiled._1))
+      }.sequence.map(typed => compiledgraph.node.Sink(id, ref.typ, typed, disabled.contains(true)))
     //probably this shouldn't occur - otherwise we'd have empty subprocess?
     case SubprocessInput(id, _, _, _, _) => Invalid(NonEmptyList.of(UnresolvedSubprocess(id)))
-    case SubprocessOutputDefinition(id, name, disabled) =>
+    case SubprocessOutputDefinition(id, name, _) =>
       //TODO: should we validate it's process?
-      Valid(compiledgraph.node.Sink(id, name, None, disabled.contains(true)))
+      //TODO: does it make sense to validate SubprocessOutput?
+      Valid(compiledgraph.node.Sink(id, name, None, isDisabled = false))
 
     //TODO JOIN: a lot of additional validations needed here - e.g. that join with that name exists, that it
     //accepts this join, maybe we should also validate the graph is connected?
