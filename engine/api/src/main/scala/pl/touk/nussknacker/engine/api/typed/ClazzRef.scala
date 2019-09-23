@@ -1,12 +1,21 @@
 package pl.touk.nussknacker.engine.api.typed
 
+import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 
 object ClazzRef {
 
   def unknown: ClazzRef = ClazzRef[Any]
 
-  def apply[T: TypeTag]: ClazzRef = {
+  def apply[T: ClassTag]: ClazzRef = {
+    apply(implicitly[ClassTag[T]].runtimeClass)
+  }
+
+  /*using TypeTag can give better description (with extracted generic parameters), however:
+    - in runtime/production we usually don't have TypeTag, as we rely on reflection anyway
+    - one should be *very* careful with TypeTag as it degrades performance significantly when on critical path (e.g. SpelExpression.evaluate)
+   */
+  def detailed[T: TypeTag]: ClazzRef = {
     val tag = typeTag[T]
     // is it correct mirror?
     implicit val mirror: Mirror = tag.mirror
