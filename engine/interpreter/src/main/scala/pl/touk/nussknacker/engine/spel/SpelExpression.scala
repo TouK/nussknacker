@@ -90,7 +90,7 @@ class SpelExpression(parsed: ParsedSpelExpression,
 
   override def evaluate[T](ctx: Context,
                            lazyValuesProvider: LazyValuesProvider): Future[ValueWithLazyContext[T]] = logOnException(ctx) {
-    if (expectedReturnType == Typed[SpelExpressionRepr]) {
+    if (expectedClass == classOf[SpelExpressionRepr]) {
       return Future.successful(ValueWithLazyContext(SpelExpressionRepr(parsed.parsed, ctx, original).asInstanceOf[T], ctx.lazyContext))
     }
 

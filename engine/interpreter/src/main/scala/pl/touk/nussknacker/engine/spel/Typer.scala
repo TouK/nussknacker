@@ -30,7 +30,7 @@ private[spel] class Typer(implicit classLoader: ClassLoader) {
     val fixed = fixedWithNewCurrent(current)
 
     def withChildrenOfType[Parts: universe.TypeTag](result: TypingResult) = withTypedChildren {
-      case list if list.forall(_.canBeSubclassOf(Typed[Parts])) => Valid(result)
+      case list if list.forall(_.canBeSubclassOf(Typed.detailed[Parts])) => Valid(result)
       case _ => invalid("Wrong part types")
     }
 

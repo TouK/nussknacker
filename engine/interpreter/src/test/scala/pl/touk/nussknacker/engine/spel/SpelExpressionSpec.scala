@@ -91,7 +91,7 @@ class SpelExpressionSpec extends FunSuite with Matchers {
     val expressionFunctions = Map("today" -> classOf[LocalDate].getDeclaredMethod("now"))
     val imports = List(SampleValue.getClass.getPackage.getName)
     new SpelExpressionParser(expressionFunctions, imports, getClass.getClassLoader, 1 minute, enableSpelForceCompile = true, flavour)
-      .parse(expr, validationCtx, Typed[T])
+      .parse(expr, validationCtx, Typed.detailed[T])
   }
 
   test("invoke simple expression") {
@@ -318,7 +318,7 @@ class SpelExpressionSpec extends FunSuite with Matchers {
   }
 
   test("validate selection and projection for list variable") {
-    val vctx = ValidationContext.empty.withVariable("a", Typed[java.util.List[String]]).toOption.get
+    val vctx = ValidationContext.empty.withVariable("a", Typed.detailed[java.util.List[String]]).toOption.get
 
     parse[java.util.List[Int]]("#a.![#this.length()].?[#this > 4]", vctx) shouldBe 'valid
     parse[java.util.List[Boolean]]("#a.![#this.length()].?[#this > 4]", vctx) shouldBe 'invalid
