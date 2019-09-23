@@ -20,7 +20,8 @@ const getStatusMessage = (processState, shouldRun, loaded) => {
   if (isRunning) {
     return "Running"
   } else if (shouldRun) {
-    return loaded ? "Unknown state" : `Not running: ${(processState || {}).errorMessage}`
+    const message = (processState || {}).errorMessage || "Not found in engine";
+    return loaded ? `Not running: ${message}` : "Unknown state"
   }
   return null;
 

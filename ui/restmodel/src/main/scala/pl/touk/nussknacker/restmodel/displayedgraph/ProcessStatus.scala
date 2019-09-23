@@ -19,8 +19,8 @@ object ProcessStatus {
       //currently returning version is optional
       case (None, _) => None
       case (Some(stateVersion), Some(expectedVersion)) if stateVersion.versionId == expectedVersion => None
-      case (Some(stateVersion), Some(expectedVersion)) => Some(s"Process deployed in version $stateVersion, expected version $expectedVersion")
-      case (Some(stateVersion), None) => Some(s"Process deployed in version $stateVersion, should not be deployed")
+      case (Some(stateVersion), Some(expectedVersion)) => Some(s"Process deployed in version ${stateVersion.versionId} (by ${stateVersion.user}), expected version $expectedVersion")
+      case (Some(stateVersion), None) => Some(s"Process deployed in version ${stateVersion.versionId} (by ${stateVersion.user}), should not be deployed")
     }
     val isRunning = processState.runningState == RunningState.Running && versionMatchMessage.isEmpty
     val errorMessage = List(versionMatchMessage, processState.message).flatten.reduceOption(_  + ", " + _)
@@ -36,5 +36,8 @@ object ProcessStatus {
   }
 
   def failedToGet = ProcessStatus(None, "UNKOWN", 0L, isRunning = false,
-    isDeployInProgress = false, errorMessage = Some("Failed to obtain state"))
+    isDeployInProgress = false, errorMessage = Some("Failed to obtain status"))
+
+  def stateNotFound = ProcessStatus(None, "UNKOWN", 0L, isRunning = false,
+    isDeployInProgress = false, errorMessage = Some("Process not found in engine"))
 }

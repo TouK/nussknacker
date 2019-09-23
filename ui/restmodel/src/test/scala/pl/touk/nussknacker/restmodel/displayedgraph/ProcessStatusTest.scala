@@ -20,10 +20,10 @@ class ProcessStatusTest extends FunSuite with Matchers {
     ProcessStatus(sampleState(None, None, RunningState.Running), None) shouldBe sampleStatus(isRunning = true, isDeployInProgress = false, None)
     ProcessStatus(sampleState(None, None, RunningState.Running), Some(5)) shouldBe sampleStatus(isRunning = true, isDeployInProgress = false, None)
     ProcessStatus(sampleState(Some(5), None, RunningState.Running), Some(5)) shouldBe sampleStatus(isRunning = true, isDeployInProgress = false, None)
-    ProcessStatus(sampleState(Some(3), None, RunningState.Running), Some(5)) shouldBe sampleStatus(isRunning = false, isDeployInProgress = false, Some("Process deployed in version 3, expected version 5"))
+    ProcessStatus(sampleState(Some(3), None, RunningState.Running), Some(5)) shouldBe sampleStatus(isRunning = false, isDeployInProgress = false, Some("Process deployed in version 3 (by user1), expected version 5"))
     ProcessStatus(sampleState(None, Some("Failed?"), RunningState.Error), None) shouldBe sampleStatus(isRunning = false, isDeployInProgress = false, Some("Failed?"))
-    ProcessStatus(sampleState(Some(3), Some("Failed?"), RunningState.Running), Some(5)) shouldBe sampleStatus(isRunning = false, isDeployInProgress = false, Some("Process deployed in version 3, expected version 5, Failed?"))
-    ProcessStatus(sampleState(Some(3), None, RunningState.Running), None) shouldBe sampleStatus(isRunning = false, isDeployInProgress = false, Some("Process deployed in version 3, should not be deployed"))
+    ProcessStatus(sampleState(Some(3), Some("Failed?"), RunningState.Running), Some(5)) shouldBe sampleStatus(isRunning = false, isDeployInProgress = false, Some("Process deployed in version 3 (by user1), expected version 5, Failed?"))
+    ProcessStatus(sampleState(Some(3), None, RunningState.Running), None) shouldBe sampleStatus(isRunning = false, isDeployInProgress = false, Some("Process deployed in version 3 (by user1), should not be deployed"))
 
   }
 
