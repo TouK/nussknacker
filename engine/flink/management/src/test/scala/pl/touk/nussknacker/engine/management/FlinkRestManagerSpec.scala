@@ -49,7 +49,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with ScalaFutures {
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.RUNNING), JobOverview("1111", "p1", 30L, 30L, JobStatus.RUNNING))
 
     manager.findJobStatus(ProcessName("p1")).futureValue shouldBe Some(ProcessState(DeploymentId("1111"), RunningState.Error,
-      "INCONSISTENT", 30L, Some("Expected one job, instead: 1111 - RUNNING, 2343 - RUNNING")))
+      "INCONSISTENT", 30L, None, Some("Expected one job, instead: 1111 - RUNNING, 2343 - RUNNING")))
   }
 
   test("return last terminal state if not running") {

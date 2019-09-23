@@ -20,7 +20,7 @@ import org.apache.flink.api.common.ExecutionConfig
 import org.asynchttpclient.request.body.multipart.FilePart
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.dispatch.{LoggingDispatchClient, utils}
-import pl.touk.nussknacker.engine.management.flinkRestModel.{DeployProcessRequest, GetSavepointStatusResponse, JobsResponse, SavepointTriggerResponse, jobStatusDecoder}
+import pl.touk.nussknacker.engine.management.flinkRestModel.{DeployProcessRequest, GetSavepointStatusResponse, JobConfig, JobsResponse, SavepointTriggerResponse, jobStatusDecoder}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
@@ -135,6 +135,16 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, sender: HttpSe
     }
   }
 
+  private def checkVersion(jobId: String): Future[Option[Long]] = {
+    sender.send {
+      (flinkUrl / "jobs" / jobId / "config").GET OK utils.asJson[JobConfig]
+    }.map { config =>
+      config.`execution-config`.`user-config`.get("")
+
+    }
+
+  }
+
   //FIXME: get rid of sleep, refactor?
   private def waitForSavepoint(jobId: DeploymentId, savepointId: String, timeoutLeft: Long = config.jobManagerTimeout.toMillis): Future[String] = {
     val start = System.currentTimeMillis()
@@ -221,4 +231,7 @@ object flinkRestModel {
 
   case class JobOverview(jid: String, name: String, `last-modification`: Long, `start-time`: Long, state: JobStatus)
 
+  case class JobConfig(jid: String, `execution-config`: ExecutionConfig)
+
+  case class ExecutionConfig(`user-config`: Map[String, Json])
 }
