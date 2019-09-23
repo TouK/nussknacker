@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.engine.api
 
-import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.reflect.runtime.universe._
+import scala.reflect.runtime.universe.TypeTag
 
 /**
   * Hook for using Apache Flink API directly.
@@ -47,10 +47,14 @@ trait LazyParameter[+T] {
     lazyParameterInterpreter.product(this, fb)
   }
 
-  def unit[A:TypeTag](value: A)(implicit lazyParameterInterpreter: LazyParameterInterpreter): LazyParameter[A] =  lazyParameterInterpreter.unit(value)
+  def pure[A:TypeTag](value: A)(implicit lazyParameterInterpreter: LazyParameterInterpreter): LazyParameter[A] =  lazyParameterInterpreter.pure(value)
 
-  //TODO: Y can be replaced by TypingResult representing result?
   def map[Y:TypeTag](fun: T => Y)(implicit lazyParameterInterpreter: LazyParameterInterpreter): LazyParameter[Y] = {
+    map(fun, Typed.detailed[Y])
+  }
+
+  //unfortunatelly, we cannot assert that TypingResult represents Y somehow...
+  def map[Y](fun: T => Y, outputTypingResult: TypingResult)(implicit lazyParameterInterpreter: LazyParameterInterpreter): LazyParameter[Y] = {
     lazyParameterInterpreter.map(this, fun)
   }
 
@@ -65,9 +69,9 @@ trait LazyParameterInterpreter {
 
   def product[A, B](fa: LazyParameter[A], fb: LazyParameter[B]): LazyParameter[(A, B)]
 
-  def unit[T:TypeTag](value: T): LazyParameter[T]
+  def pure[T:TypeTag](value: T): LazyParameter[T]
 
-  def map[T, Y:TypeTag](parameter: LazyParameter[T], fun: T => Y): LazyParameter[Y]
+  def map[T, Y](parameter: LazyParameter[T], fun: T => Y, outputTypingResult: TypingResult): LazyParameter[Y]
 
   def syncInterpretationFunction[T](parameter: LazyParameter[T]) : Context => T
 

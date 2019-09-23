@@ -44,9 +44,7 @@ private[definition] case class ProductLazyParameter[T, Y](arg1: LazyParameter[T]
   }
 }
 
-private[definition] case class MappedLazyParameter[T, Y: TypeTag](arg: LazyParameter[T], fun: T => Y) extends CompilerLazyParameter[Y] {
-
-  override def returnType: TypingResult = TypedClass[Y]
+private[definition] case class MappedLazyParameter[T, Y](arg: LazyParameter[T], fun: T => Y, returnType: TypingResult) extends CompilerLazyParameter[Y] {
 
   override def prepareEvaluator(lpi: CompilerLazyParameterInterpreter)(implicit ec: ExecutionContext): Context => Future[Y] = {
     val argInterpreter = lpi.createInterpreter(arg)
@@ -74,10 +72,10 @@ trait CompilerLazyParameterInterpreter extends LazyParameterInterpreter {
     ProductLazyParameter(fa, fb)
   }
 
-  override def map[T, Y: TypeTag](parameter: LazyParameter[T], funArg: T => Y): LazyParameter[Y] =
+  override def map[T, Y](parameter: LazyParameter[T], funArg: T => Y, outputTypingResult: TypingResult): LazyParameter[Y] =
     new MappedLazyParameter[T, Y](parameter, funArg)
 
-  override def unit[T:TypeTag](value: T): LazyParameter[T] = FixedLazyParameter(value)
+  override def pure[T:TypeTag](value: T): LazyParameter[T] = FixedLazyParameter(value)
 
   //it's important that it's (...): (Context => Future[T])
   //and not e.g. (...)(Context) => Future[T] as we want to be sure when body is evaluated (in particular expression compilation)!
