@@ -2,13 +2,13 @@ package pl.touk.nussknacker.engine.definition
 
 import pl.touk.nussknacker.engine.api.{LazyParameter, _}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
-import pl.touk.nussknacker.engine.api.typed.typing.{TypedClass, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
 
-import scala.reflect.runtime.universe._
+import scala.reflect.runtime.universe.TypeTag
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, ExecutionContext, Future}
 
@@ -52,10 +52,10 @@ private[definition] case class MappedLazyParameter[T, Y](arg: LazyParameter[T], 
   }
 }
 
-private[definition] case class FixedLazyParameter[T:TypeTag](value: T) extends CompilerLazyParameter[T] {
-  override def returnType: TypingResult = TypedClass[T]
+private[definition] case class FixedLazyParameter[T](value: T, returnType: TypingResult) extends CompilerLazyParameter[T] {
 
   override def prepareEvaluator(deps: CompilerLazyParameterInterpreter)(implicit ec: ExecutionContext): Context => Future[T] = _ => Future.successful(value)
+
 }
 
 
@@ -73,9 +73,9 @@ trait CompilerLazyParameterInterpreter extends LazyParameterInterpreter {
   }
 
   override def map[T, Y](parameter: LazyParameter[T], funArg: T => Y, outputTypingResult: TypingResult): LazyParameter[Y] =
-    new MappedLazyParameter[T, Y](parameter, funArg)
+    new MappedLazyParameter[T, Y](parameter, funArg, outputTypingResult)
 
-  override def pure[T:TypeTag](value: T): LazyParameter[T] = FixedLazyParameter(value)
+  override def pure[T](value: T, valueTypingResult: TypingResult): LazyParameter[T] = FixedLazyParameter(value, valueTypingResult)
 
   //it's important that it's (...): (Context => Future[T])
   //and not e.g. (...)(Context) => Future[T] as we want to be sure when body is evaluated (in particular expression compilation)!
