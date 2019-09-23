@@ -5,11 +5,14 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.{FunSuite, Matchers}
+import pl.touk.nussknacker.engine.api.typed.typing.{TypedClass, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.spel
+import pl.touk.nussknacker.engine.standalone.api.types.GenericListResultType
 import pl.touk.nussknacker.engine.standalone.utils.StandaloneContextPreparer
+import pl.touk.nussknacker.engine.standalone.utils.metrics.{MetricsProvider, NoOpMetricsProvider}
 import pl.touk.nussknacker.engine.standalone.utils.metrics.dropwizard.DropwizardMetricsProvider
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
@@ -124,7 +127,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Event
 
     val metricRegistry = new MetricRegistry
 
-    val interpreter = prepareInterpreter(process, metricRegistry = metricRegistry)
+    val interpreter = prepareInterpreter(process, new StandaloneProcessConfigCreator, metricRegistry = metricRegistry)
     interpreter.open(JobData(process.metaData, ProcessVersion.empty))
     val result = interpreter.invoke(Request1("a", "b")).futureValue
 
@@ -159,16 +162,39 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Event
       .source("start", "request1-post-source")
       .emptySink("endNodeIID", "parameterResponse-sink", "computed" -> "#input.field1 + 'd'")
 
-    val creator = new StandaloneProcessConfigCreator
-    val result = runProcess(process, Request1("abc", "b"), creator)
+    val result = runProcess(process, Request1("abc", "b"))
 
     result shouldBe Right(List("abcd withRandomString"))
+  }
+
+  test("recognizes output types") {
+
+    val process = EspProcessBuilder
+      .id("proc1")
+      .exceptionHandler()
+      .source("start", "request1-post-source")
+      .emptySink("endNodeIID", "parameterResponse-sink", "computed" -> "#input.field1 + 'd'")
+
+
+    val interpreter = prepareInterpreter(process = process)
+    interpreter.sinkTypes shouldBe Map("endNodeIID" -> TypedClass[String])
+
+    val process2 = EspProcessBuilder
+      .id("proc1")
+      .exceptionHandler()
+      .source("start", "request1-post-source")
+      .sink("endNodeIID", "{'str': #input.toString(), 'int': 15}", "response-sink")
+
+
+    val interpreter2 = prepareInterpreter(process = process2)
+    interpreter2.sinkTypes shouldBe Map("endNodeIID" -> TypedObjectTypingResult(Map("str" -> TypedClass[String], "int" -> TypedClass[java.lang.Integer])))
+
   }
 
   def runProcess(process: EspProcess,
                  input: Any,
                  creator: StandaloneProcessConfigCreator = new StandaloneProcessConfigCreator,
-                 metricRegistry: MetricRegistry = new MetricRegistry) = {
+                 metricRegistry: MetricRegistry = new MetricRegistry): GenericListResultType[Any] = {
     val interpreter = prepareInterpreter(
       process = process,
       creator = creator,
@@ -181,10 +207,16 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with Event
   }
 
   def prepareInterpreter(process: EspProcess,
+                         creator: StandaloneProcessConfigCreator,
+                         metricRegistry: MetricRegistry): StandaloneProcessInterpreter = {
+    prepareInterpreter(process, creator, new DropwizardMetricsProvider(metricRegistry))
+  }
+
+  def prepareInterpreter(process: EspProcess,
                          creator: StandaloneProcessConfigCreator = new StandaloneProcessConfigCreator,
-                         metricRegistry: MetricRegistry = new MetricRegistry) = {
+                         metricsProvider: MetricsProvider = NoOpMetricsProvider): StandaloneProcessInterpreter = {
     val simpleModelData = LocalModelData(ConfigFactory.load(), creator)
-    val ctx = new StandaloneContextPreparer(new DropwizardMetricsProvider(metricRegistry))
+    val ctx = new StandaloneContextPreparer(metricsProvider)
 
     val maybeinterpreter = StandaloneProcessInterpreter(process, ctx, simpleModelData)
 

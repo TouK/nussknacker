@@ -1,9 +1,7 @@
 package pl.touk.nussknacker.engine.standalone.utils
 
-import pl.touk.nussknacker.engine.api.{Context, LazyParameter, LazyParameterInterpreter, MethodToInvoke}
+import pl.touk.nussknacker.engine.api.{LazyParameter, LazyParameterInterpreter, MethodToInvoke}
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory}
-
-import scala.concurrent.{ExecutionContext, Future}
 
 class StandaloneSinkFactory extends SinkFactory {
 
@@ -16,6 +14,7 @@ class StandaloneSinkFactory extends SinkFactory {
 
 trait StandaloneSinkWithParameters extends Sink {
 
+  //TODO: enable using outputExpression?
   def prepareResponse(implicit evaluateLazyParameter: LazyParameterInterpreter): LazyParameter[Any]
 
 }
