@@ -4,6 +4,7 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.client.program.OptimizerPlanEnvironment.ProgramAbortException
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import pl.touk.nussknacker.engine.flink.util.FlinkArgsDecodeHack
 import pl.touk.nussknacker.engine.process.FlinkProcessRegistrar
@@ -28,7 +29,7 @@ object FlinkProcessMain extends FlinkRunner with LazyLogging {
       val loadCreator = ProcessConfigCreatorLoader.justOne(Thread.currentThread().getContextClassLoader)
       val registrar: FlinkProcessRegistrar = prepareRegistrar(loadCreator, config)
       val env = StreamExecutionEnvironment.getExecutionEnvironment
-      setBuildInfo(buildInfo, env)
+      setBuildInfo(buildInfo, processVersion, env)
       registrar.register(env, process, processVersion)
       env.execute(process.id)
     } catch {
@@ -45,9 +46,12 @@ object FlinkProcessMain extends FlinkRunner with LazyLogging {
     new StandardFlinkProcessCompiler(processConfigCreator, config).createFlinkProcessRegistrar()
   }
 
-  private def setBuildInfo(buildInfo: String, env: StreamExecutionEnvironment) = {
+  private def setBuildInfo(buildInfo: String, processVersion: ProcessVersion, env: StreamExecutionEnvironment): Unit = {
     val globalJobParams = new org.apache.flink.configuration.Configuration
     globalJobParams.setString("buildInfo", buildInfo)
+    globalJobParams.setLong("version", processVersion.versionId)
+    processVersion.modelVersion.foreach(globalJobParams.setLong("modelVersion", _))
+    globalJobParams.setString("deployedBy", processVersion.user)
     env.getConfig.setGlobalJobParameters(globalJobParams)
   }
 
