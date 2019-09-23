@@ -59,7 +59,7 @@ class MultiInstanceStandaloneProcessClientSpec extends FunSuite with Matchers wi
 
   test("Status should be RUNNING if all clients running") {
 
-    val consistentState = ProcessState(jobId, RunningState.Running, "RUNNING", 10000L, Some(2))
+    val consistentState = ProcessState(jobId, RunningState.Running, "RUNNING", 10000L, None)
     val multiClient = new MultiInstanceStandaloneProcessClient(List(
       okClient(Some(consistentState)),
       okClient(Some(consistentState))

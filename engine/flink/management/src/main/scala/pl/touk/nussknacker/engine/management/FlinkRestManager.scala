@@ -18,6 +18,7 @@ import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import org.apache.flink.api.common.ExecutionConfig
 import org.asynchttpclient.request.body.multipart.FilePart
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.dispatch.{LoggingDispatchClient, utils}
 import pl.touk.nussknacker.engine.management.flinkRestModel.{DeployProcessRequest, GetSavepointStatusResponse, JobConfig, JobsResponse, SavepointTriggerResponse, jobStatusDecoder}
@@ -110,7 +111,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, sender: HttpSe
   override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = {
     sender.send {
       (flinkUrl / "jobs" / "overview").GET OK utils.asJson[JobsResponse]
-    } map { jobs =>
+    } flatMap { jobs =>
       val jobsForName = jobs.jobs
         .filter(_.name == name.value)
         .sortBy(_.`last-modification`).reverse
@@ -119,27 +120,34 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, sender: HttpSe
         .filter(status => !status.state.isGloballyTerminalState || status.state == JobStatus.FINISHED)
 
       runningOrFinished match {
-        case Nil => None
+        case Nil => Future.successful(None)
         case duplicates if duplicates.count(_.state == JobStatus.RUNNING) > 1 =>
-          Some(ProcessState(DeploymentId(duplicates.head.jid), RunningState.Error, "INCONSISTENT", duplicates.head.`start-time`, None,
-            Some(s"Expected one job, instead: ${runningOrFinished.map(job => s"${job.jid} - ${job.state.name()}").mkString(", ")}")))
+          Future.successful(Some(ProcessState(DeploymentId(duplicates.head.jid), RunningState.Error, "INCONSISTENT", duplicates.head.`start-time`, None,
+            Some(s"Expected one job, instead: ${runningOrFinished.map(job => s"${job.jid} - ${job.state.name()}").mkString(", ")}"))))
         case one::_ =>
           val runningState = one.state match {
             case JobStatus.RUNNING => RunningState.Running
             case JobStatus.FINISHED => RunningState.Finished
             case _ => RunningState.Error
           }
-          //TODO: extract version number from job config
-          Some(ProcessState(DeploymentId(one.jid), runningState, one.state.toString, one.`start-time`, None))
+          checkVersion(one.jid, name).map { version =>
+            Some(ProcessState(DeploymentId(one.jid), runningState, one.state.toString, one.`start-time`, version))
+          }
       }
     }
   }
 
-  private def checkVersion(jobId: String): Future[Option[Long]] = {
+  //TODO: cache by jobId?
+  private def checkVersion(jobId: String, name: ProcessName): Future[Option[ProcessVersion]] = {
     sender.send {
       (flinkUrl / "jobs" / jobId / "config").GET OK utils.asJson[JobConfig]
     }.map { config =>
-      config.`execution-config`.`user-config`.get("")
+      val userConfig = config.`execution-config`.`user-config`
+      for {
+        version <- userConfig.get("versionId").flatMap(_.string).map(_.toLong)
+        user <- userConfig.get("user").map(_.stringOrEmpty)
+        modelVersion = userConfig.get("modelVersion").flatMap(_.string).map(_.toInt)
+      } yield ProcessVersion(version, name, user, modelVersion)
 
     }
 

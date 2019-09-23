@@ -1,12 +1,15 @@
 package pl.touk.nussknacker.restmodel.displayedgraph
 
 import org.scalatest.{FunSuite, Matchers}
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessState, RunningState}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 
 class ProcessStatusTest extends FunSuite with Matchers {
 
   private def sampleState(version: Option[Long],
-                          message: Option[String], state: RunningState.Value) = ProcessState(DeploymentId("12345"), state, "testStatus", 1000L, version, message)
+                          message: Option[String], state: RunningState.Value) = ProcessState(DeploymentId("12345"), state, "testStatus", 1000L,
+                            version.map(ProcessVersion(_, ProcessName(""), "user1", None)), message)
 
   private def sampleStatus(isRunning: Boolean,
                            isDeployInProgress: Boolean, message: Option[String]) = ProcessStatus(Some("12345"), "testStatus", 1000L, isRunning, isDeployInProgress, message)

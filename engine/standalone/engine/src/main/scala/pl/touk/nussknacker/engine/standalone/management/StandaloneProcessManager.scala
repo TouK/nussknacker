@@ -31,7 +31,7 @@ import shapeless.Typeable
 import shapeless.syntax.typeable._
 
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
 
 object StandaloneProcessManager {
   def apply(modelData: ModelData, config: Config) : StandaloneProcessManager = new StandaloneProcessManager(modelData, StandaloneProcessClient(config))
@@ -40,7 +40,7 @@ object StandaloneProcessManager {
 class StandaloneProcessManager(modelData: ModelData, client: StandaloneProcessClient)
   extends ProcessManager with LazyLogging {
 
-  private implicit val ec = ExecutionContext.Implicits.global
+  private implicit val ec: ExecutionContextExecutor = ExecutionContext.Implicits.global
 
   override def deploy(processVersion: ProcessVersion, processDeploymentData: ProcessDeploymentData,
                       savepointPath: Option[String]): Future[Unit] = {

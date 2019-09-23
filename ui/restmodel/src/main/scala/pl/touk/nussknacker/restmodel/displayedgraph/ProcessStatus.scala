@@ -18,7 +18,7 @@ object ProcessStatus {
     val versionMatchMessage = (processState.version, expectedDeploymentVersion) match {
       //currently returning version is optional
       case (None, _) => None
-      case (Some(stateVersion), Some(expectedVersion)) if stateVersion == expectedVersion => None
+      case (Some(stateVersion), Some(expectedVersion)) if stateVersion.versionId == expectedVersion => None
       case (Some(stateVersion), Some(expectedVersion)) => Some(s"Process deployed in version $stateVersion, expected version $expectedVersion")
       case (Some(stateVersion), None) => Some(s"Process deployed in version $stateVersion, should not be deployed")
     }
