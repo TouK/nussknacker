@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.api.test
 
 import java.nio.charset.StandardCharsets
 
-trait TestDataParser[T] {
+trait TestDataParser[+T] {
   def parseTestData(data: Array[Byte]) : List[T]
 }
 
