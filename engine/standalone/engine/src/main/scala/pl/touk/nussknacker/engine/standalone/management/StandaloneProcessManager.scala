@@ -127,6 +127,7 @@ class StandaloneTestMain(testData: TestData, process: EspProcess, modelData: Mod
 
   }
 
+  //FIXME: testDataOutput is ignored here!
   private def collectSinkResults(runId: TestRunId, results: List[InterpretationResultType]) = {
     val successfulResults = results.flatMap(_.right.toOption.toList.flatten)
     successfulResults.foreach { result =>

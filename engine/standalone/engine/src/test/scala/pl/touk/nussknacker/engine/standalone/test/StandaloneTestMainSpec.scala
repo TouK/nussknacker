@@ -4,7 +4,7 @@ import java.nio.charset.StandardCharsets
 
 import argonaut.PrettyParams
 import com.typesafe.config.ConfigFactory
-import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
+import org.scalatest.{BeforeAndAfterEach, FlatSpec, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.deployment.TestProcess._
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.standalone.management.StandaloneTestMain
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
-class StandaloneTestMainSpec extends FlatSpec with Matchers with BeforeAndAfterEach {
+class StandaloneTestMainSpec extends FunSuite with Matchers with BeforeAndAfterEach {
 
   import spel.Implicits._
 
@@ -22,7 +22,7 @@ class StandaloneTestMainSpec extends FlatSpec with Matchers with BeforeAndAfterE
 
   val modelData = LocalModelData(ConfigFactory.load(), new StandaloneProcessConfigCreator)
 
-  it should "perform test on mocks" in {
+  test("perform test on mocks") {
     val process = EspProcessBuilder
       .id("proc1")
       .exceptionHandler()
@@ -59,7 +59,7 @@ class StandaloneTestMainSpec extends FlatSpec with Matchers with BeforeAndAfterE
 
   }
 
-  it should "detect errors in nodes" in {
+  test("detect errors in nodes") {
     val process = EspProcessBuilder
       .id("proc1")
       .exceptionHandler()
@@ -84,6 +84,31 @@ class StandaloneTestMainSpec extends FlatSpec with Matchers with BeforeAndAfterE
     results.exceptions.head.context shouldBe ResultContext("proc1-0", Map("input" -> Request1("a","b")))
     results.exceptions.head.nodeId shouldBe Some("occasionallyThrowFilter")
     results.exceptions.head.throwable.getMessage shouldBe "/ by zero"
+  }
+
+
+  test("get results on parameter sinks") {
+    val process = EspProcessBuilder
+      .id("proc1")
+      .exceptionHandler()
+      .source("start", "request1-post-source")
+      .emptySink("endNodeIID", "parameterResponse-sink", "computed" -> "#input.field1()")
+
+    val input = """{ "field1": "a", "field2": "b" }"""
+
+    val results = StandaloneTestMain.run(
+      processJson = ProcessMarshaller.toJson(process, PrettyParams.spaces2),
+      modelData = modelData,
+      testData = new TestData(input.getBytes(StandardCharsets.UTF_8)), variableEncoder = identity)
+
+    results.nodeResults("endNodeIID").toSet shouldBe Set(
+      NodeResult(ResultContext("proc1-0", Map("input" -> Request1("a","b"))))
+    )
+
+    results.mockedResults("endNodeIID").toSet shouldBe Set(
+      MockedResult(ResultContext("proc1-0", Map("input" -> Request1("a","b"))), "endNodeIID", "a withRandomString")
+    )
+
   }
 
 }
