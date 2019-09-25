@@ -53,7 +53,9 @@ class StandaloneTestMainSpec extends FunSuite with Matchers with BeforeAndAfterE
 
     results.mockedResults("processor").toSet shouldBe Set(MockedResult(ResultContext("proc1-0", Map()), "processorService", "processor service invoked"))
     results.mockedResults("endNodeIID").toSet shouldBe Set(MockedResult(ResultContext("proc1-0", Map("input" -> Request1("a","b"), "var1" -> Response("alamakota"))),
-      "endNodeIID", "Response(alamakota)"))
+      "endNodeIID", """{
+                      |  "field1" : "alamakota"
+                      |}""".stripMargin))
 
     StandaloneProcessConfigCreator.processorService.get().invocationsCount.get shouldBe 0
 

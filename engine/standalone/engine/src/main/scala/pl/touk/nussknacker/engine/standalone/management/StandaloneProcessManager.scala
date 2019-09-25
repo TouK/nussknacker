@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.standalone.management
 
 import java.util.concurrent.TimeUnit
 
+import argonaut.Argonaut
 import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
@@ -27,6 +28,7 @@ import pl.touk.nussknacker.engine.standalone.api.DeploymentData
 import pl.touk.nussknacker.engine.standalone.api.types._
 import pl.touk.nussknacker.engine.standalone.utils.StandaloneContextPreparer
 import pl.touk.nussknacker.engine.standalone.utils.metrics.NoOpMetricsProvider
+import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import shapeless.Typeable
 import shapeless.syntax.typeable._
 
@@ -127,12 +129,21 @@ class StandaloneTestMain(testData: TestData, process: EspProcess, modelData: Mod
 
   }
 
-  //FIXME: testDataOutput is ignored here!
   private def collectSinkResults(runId: TestRunId, results: List[InterpretationResultType]) = {
+    //FIXME: testDataOutput is ignored here!
+    val bestEffortJsonEncoder = BestEffortJsonEncoder(failOnUnkown = false)
+    val encodeFunction = (out: Any) => bestEffortJsonEncoder.encode(out).fold(
+      "null",
+      _.toString,
+      _.toString,
+      _.toString,
+      array => Argonaut.jArray(array).spaces2,
+      obj => Argonaut.jObject(obj).spaces2
+    )
     val successfulResults = results.flatMap(_.right.toOption.toList.flatten)
     successfulResults.foreach { result =>
       val node = result.reference.asInstanceOf[EndingReference].nodeId
-      SinkInvocationCollector(runId, node, node, _.toString).collect(result)
+      SinkInvocationCollector(runId, node, node, encodeFunction).collect(result)
     }
   }
 
