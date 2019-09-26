@@ -107,8 +107,12 @@ object StandaloneProcessInterpreter {
         implicit val lazyInterpreter: CompilerLazyParameterInterpreter = lazyParameterInterpreter
         val responseLazyParam = sinkWithParams.prepareResponse
         val responseInterpreter = lazyParameterInterpreter.createInterpreter(responseLazyParam)
-        it.bimap(_.updated(compiledNode.id, responseLazyParam.returnType), (_:InterpreterType) => (ctx: Context, ec:ExecutionContext) => {
-          responseInterpreter(ec, ctx).map(res => Right(List(InterpretationResult(EndReference(compiledNode.id), res, ctx))))(ec)
+        it.bimap(_.updated(compiledNode.id, responseLazyParam.returnType), (originalSink:InterpreterType) => (ctx: Context, ec:ExecutionContext) => {
+          //we ignore result of original Sink (we currently don't support output in StandaloneSinkWithParameters)
+          //but we invoke it because otherwise listeners wouldn't work properly
+          originalSink.apply(ctx, ec).flatMap { _ =>
+            responseInterpreter(ec, ctx).map(res => Right(List(InterpretationResult(EndReference(compiledNode.id), res, ctx))))(ec)
+          }(ec)
         })
       case _ => it.mapWritten(_.updated(compiledNode.id, compiledNode.asInstanceOf[Sink].endResult.map(_._2).getOrElse(Unknown)))
     }
