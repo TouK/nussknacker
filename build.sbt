@@ -507,7 +507,8 @@ lazy val standaloneUtil = (project in engine("standalone/util")).
       Seq(
         "io.dropwizard.metrics" % "metrics-core" % dropWizardV,
         "org.scalatest" %% "scalatest" % scalaTestV % "test",
-        "com.typesafe.akka" %% "akka-http" % akkaHttpV force()
+        //akka-http is only for StandaloneRequestResponseLogger
+        "com.typesafe.akka" %% "akka-http" % akkaHttpV % "provided" force()
       )
     }
   ).dependsOn(util, standaloneApi)
