@@ -6,8 +6,10 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 object evaluatedparam {
 
   object Parameter {
-    //FIXME:
-    def tupled(tpl: (String, Expression)) = Parameter(tpl._1, tpl._2)
+    //FIXME: after adding @JsonCodec
+    //one can no longer write: Parameter.tupled, Parameter.apply is no longer recognized,
+    // so lest we add this method we'd have to write (Parameter.apply _).tupled
+    val tupled: ((String, Expression)) => Parameter = (Parameter.apply _).tupled
   }
 
   @JsonCodec case class Parameter(name: String, expression: Expression)

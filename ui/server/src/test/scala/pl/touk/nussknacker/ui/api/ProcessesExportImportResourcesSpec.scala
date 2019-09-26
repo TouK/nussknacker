@@ -1,14 +1,13 @@
 package pl.touk.nussknacker.ui.api
 
-
-import akka.http.scaladsl.model.{ContentTypeRange, HttpEntity, StatusCodes}
+import akka.http.scaladsl.model.{ContentTypeRange, ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.scalatest._
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.time.{Millis, Seconds, Span}
-import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{ArgonautCirce, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
@@ -22,13 +21,13 @@ import scala.language.higherKinds
 class ProcessesExportImportResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers with Inside with FailFastCirceSupport
   with ScalaFutures with OptionValues with Eventually with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
-  implicit override val patienceConfig = PatienceConfig(timeout = scaled(Span(1, Seconds)), interval = scaled(Span(100, Millis)))
+  implicit override val patienceConfig: PatienceConfig = PatienceConfig(timeout = scaled(Span(1, Seconds)), interval = scaled(Span(100, Millis)))
 
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
   import akka.http.scaladsl.server.RouteConcatenation._
-  val routeWithAllPermissions = withAllPermissions(processesExportResources) ~ withAllPermissions(processesRoute)
-  implicit val loggedUser = LoggedUser("lu", testPermissionEmpty)
+  private val routeWithAllPermissions = withAllPermissions(processesExportResources) ~ withAllPermissions(processesRoute)
+  private implicit val loggedUser: LoggedUser = LoggedUser("lu", testPermissionEmpty)
 
   test("export process from displayable") {
     val processToExport = ProcessTestData.sampleDisplayableProcess
@@ -128,16 +127,20 @@ class ProcessesExportImportResourcesSpec extends FunSuite with ScalatestRouteTes
         "<path d=\"M20,40h20m5,0h20m5,0h20M30,30v20m25,0v-20m25,0v20\" stroke=\"#008000\" stroke-width=\"6\"/>\n</svg>"
 
       Post(s"/processesExport/pdf/${processToSave.id}/2", HttpEntity(testSvg)) ~> routeWithAllPermissions ~> check {
-        //TODO: check it's pdf?
+
         status shouldEqual StatusCodes.OK
+        contentType shouldEqual ContentTypes.`application/octet-stream`
+        //just simple sanity check that it's really pdf...
+        responseAs[String] should startWith ("%PDF")
       }
     }
 
   }
 
   private def assertProcessPrettyPrinted(response: String, process: CanonicalProcess): Unit = {
-    response.replace("\n", "").replace(" ", "") shouldBe
-      UiProcessMarshaller.toJson(process).nospaces.replace("\n", "").replace(" ", "")
+    //we convert to circe here, since there are some minor formatting differences between argonaut & circe
+    val expected = ArgonautCirce.toCirce(UiProcessMarshaller.toJson(process)).spaces2
+    response shouldBe expected
   }
 
   private def assertProcessPrettyPrinted(response: String, process: DisplayableProcess): Unit = {
