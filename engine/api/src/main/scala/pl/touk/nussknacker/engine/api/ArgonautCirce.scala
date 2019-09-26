@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.api
 
-import argonaut.{DecodeJson, EncodeJson, JsonBigDecimal, JsonDecimal, JsonLong, Json => AJson}
-import io.circe.{Decoder, Encoder, JsonNumber, Json => CJson}
+import argonaut.{JsonBigDecimal, JsonDecimal, JsonLong, Json => AJson}
+import io.circe.{JsonNumber, Json => CJson}
 
 //TODO: remove after migration
 object ArgonautCirce {
