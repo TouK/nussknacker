@@ -5,6 +5,7 @@ import io.circe.Decoder
 import pl.touk.nussknacker.engine.api.definition.ParameterRestriction
 import pl.touk.nussknacker.engine.api.process.{LanguageConfiguration, ProcessConfigCreator, SingleNodeConfig, SinkFactory}
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
+import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{CirceUtil, CustomStreamTransformer, QueryableStateNames}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
@@ -48,9 +49,13 @@ object ProcessDefinitionExtractor {
 
     //TODO: this is not so nice...
     val globalVariablesDefs = expressionConfig.globalProcessVariables.map { case (varName, globalVar) =>
-      val klass = Typed(globalVar.value.getClass)
-      (varName, ObjectWithMethodDef(globalVar.value, MethodDefinition(varName, (_, _) => globalVar, new OrderedDependencies(List()), klass,  klass, List()),
-        ObjectDefinition(List(), klass, globalVar.categories, SingleNodeConfig.zero)))
+      val runtimeClass = Typed(globalVar.value.getClass)
+      val typingResult = globalVar.value match {
+        case t: TypedMap => Typed(t)
+        case other => Typed(other.getClass)
+      }
+      (varName, ObjectWithMethodDef(globalVar.value, MethodDefinition(varName, (_, _) => globalVar, new OrderedDependencies(List()), runtimeClass,  runtimeClass, List()),
+        ObjectDefinition(List(), typingResult, globalVar.categories, SingleNodeConfig.zero)))
     }
 
     val globalImportsDefs = expressionConfig.globalImports.map(_.value)

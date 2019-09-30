@@ -13,7 +13,7 @@ import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.lazyy.{LazyContext, LazyValuesProvider, UsingLazyValues}
-import pl.touk.nussknacker.engine.api.typed.{ClazzRef, TypedMap}
+import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.expression.{Expression, ExpressionParseError, TypedExpression, ValueWithLazyContext}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
@@ -23,7 +23,6 @@ import scala.collection.JavaConverters._
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.language.implicitConversions
-
 import scala.reflect.runtime.universe._
 
 class SpelExpressionSpec extends FunSuite with Matchers {
@@ -79,7 +78,10 @@ class SpelExpressionSpec extends FunSuite with Matchers {
 
   private def parse[T:TypeTag](expr: String, context: Context = ctx, flavour: Flavour = Standard) : ValidatedNel[ExpressionParseError, TypedExpression] = {
     val validationCtx = ValidationContext(
-      context.variables.mapValuesNow(_.getClass).mapValuesNow(ClazzRef(_)).mapValuesNow(Typed.apply))
+      context.variables.mapValuesNow {
+        case t: TypedMap => Typed(t)
+        case other => Typed(other.getClass)
+      })
     parse(expr, validationCtx, flavour)
   }
 
@@ -465,6 +467,13 @@ class SpelExpressionSpec extends FunSuite with Matchers {
     parseOrFail[String]("alamakota #{444}", ctx, SpelExpressionParser.Template).evaluateSyncToValue[String]() shouldBe "alamakota 444"
     parseOrFail[String]("alamakota #{444 + #obj.value} #{#mapValue.foo}", ctx, SpelExpressionParser.Template).evaluateSyncToValue[String]() shouldBe "alamakota 446 bar"
 
+  }
+
+  test("variables with TypeMap type") {
+    val withObjVar = ctx.withVariable("dicts", TypedMap(Map("foo" -> SampleValue(123))))
+
+    parseOrFail[Int]("#dicts.foo.value", withObjVar).evaluateSyncToValue[Int](withObjVar) should equal(123)
+    parse[String]("#dicts.bar.value", withObjVar) shouldBe 'invalid
   }
 
 }

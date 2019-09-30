@@ -166,6 +166,18 @@ object typing {
       }
     }
 
+    def apply(obj: TypedMap): TypingResult = {
+      def fromObj(o: Any) = o match {
+        case typed: TypedMap => Typed(typed)
+        case _ => Typed(o.getClass)
+      }
+
+      val fieldTypes = obj.fields.map {
+        case (k, v) => k -> fromObj(v)
+      }
+      TypedObjectTypingResult(fieldTypes)
+    }
+
     def apply(possibleTypes: TypingResult*): TypingResult = {
       apply(possibleTypes.toSet)
     }
