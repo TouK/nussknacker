@@ -120,7 +120,7 @@ val argonautMajorV = "6.2"
 val argonautV = s"$argonautMajorV.1"
 val circeV = "0.11.1"
 val jacksonV = "2.9.2"
-val catsV = "1.1.0"
+val catsV = "1.5.0"
 val scalaParsersV = "1.0.4"
 val dispatchV = "1.0.1"
 val slf4jV = "1.7.21"
@@ -535,7 +535,7 @@ lazy val api = (project in engine("api")).
         "io.circe" %% "circe-generic-extras" % circeV,
         "org.apache.commons" % "commons-lang3" % commonsLangV,
         "org.typelevel" %% "cats-core" % catsV,
-        "org.typelevel" %% "cats-effect" % "0.10.1",
+        "org.typelevel" %% "cats-effect" % "1.1.0",
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
         "com.typesafe" % "config" % configV,
         "org.scalatest" %% "scalatest" % scalaTestV % "test"
