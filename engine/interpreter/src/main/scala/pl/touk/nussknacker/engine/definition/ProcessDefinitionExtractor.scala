@@ -49,13 +49,9 @@ object ProcessDefinitionExtractor {
 
     //TODO: this is not so nice...
     val globalVariablesDefs = expressionConfig.globalProcessVariables.map { case (varName, globalVar) =>
-      val runtimeClass = Typed(globalVar.value.getClass)
-      val typingResult = globalVar.value match {
-        case t: TypedMap => Typed(t)
-        case other => Typed(other.getClass)
-      }
-      (varName, ObjectWithMethodDef(globalVar.value, MethodDefinition(varName, (_, _) => globalVar, new OrderedDependencies(List()), runtimeClass,  runtimeClass, List()),
-        ObjectDefinition(List(), typingResult, globalVar.categories, SingleNodeConfig.zero)))
+      val typed = Typed.fromInstance(globalVar.value)
+      (varName, ObjectWithMethodDef(globalVar.value, MethodDefinition(varName, (_, _) => globalVar, new OrderedDependencies(List()), typed,  typed, List()),
+        ObjectDefinition(List(), typed, globalVar.categories, SingleNodeConfig.zero)))
     }
 
     val globalImportsDefs = expressionConfig.globalImports.map(_.value)

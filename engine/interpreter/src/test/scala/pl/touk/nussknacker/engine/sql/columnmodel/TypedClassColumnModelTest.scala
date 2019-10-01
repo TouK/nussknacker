@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.sql.{Column, ColumnModel}
 import scala.reflect.runtime.universe._
 
 class TypedClassColumnModelTest extends FunSuite with Matchers{
-  def typeMe[T: TypeTag]: ColumnModel = TypedClassColumnModel.create(Typed.detailed[T].asInstanceOf[TypedClass])
+  def typeMe[T: TypeTag]: ColumnModel = TypedClassColumnModel.create(Typed.fromDetailedType[T].asInstanceOf[TypedClass])
   test("ignore inheritance") {
     val result = typeMe[ClassExtendingOtherClass]
     result shouldEqual ColumnModel(List(Column("field", Bool)))

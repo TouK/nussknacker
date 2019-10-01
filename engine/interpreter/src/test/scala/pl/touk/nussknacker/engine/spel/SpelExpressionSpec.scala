@@ -78,10 +78,7 @@ class SpelExpressionSpec extends FunSuite with Matchers {
 
   private def parse[T:TypeTag](expr: String, context: Context = ctx, flavour: Flavour = Standard) : ValidatedNel[ExpressionParseError, TypedExpression] = {
     val validationCtx = ValidationContext(
-      context.variables.mapValuesNow {
-        case t: TypedMap => Typed(t)
-        case other => Typed(other.getClass)
-      })
+      context.variables.mapValuesNow(Typed.fromInstance))
     parse(expr, validationCtx, flavour)
   }
 
@@ -93,7 +90,7 @@ class SpelExpressionSpec extends FunSuite with Matchers {
     val expressionFunctions = Map("today" -> classOf[LocalDate].getDeclaredMethod("now"))
     val imports = List(SampleValue.getClass.getPackage.getName)
     new SpelExpressionParser(expressionFunctions, imports, getClass.getClassLoader, 1 minute, enableSpelForceCompile = true, flavour)
-      .parse(expr, validationCtx, Typed.detailed[T])
+      .parse(expr, validationCtx, Typed.fromDetailedType[T])
   }
 
   test("invoke simple expression") {
@@ -320,7 +317,7 @@ class SpelExpressionSpec extends FunSuite with Matchers {
   }
 
   test("validate selection and projection for list variable") {
-    val vctx = ValidationContext.empty.withVariable("a", Typed.detailed[java.util.List[String]]).toOption.get
+    val vctx = ValidationContext.empty.withVariable("a", Typed.fromDetailedType[java.util.List[String]]).toOption.get
 
     parse[java.util.List[Int]]("#a.![#this.length()].?[#this > 4]", vctx) shouldBe 'valid
     parse[java.util.List[Boolean]]("#a.![#this.length()].?[#this > 4]", vctx) shouldBe 'invalid

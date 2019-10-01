@@ -6,7 +6,7 @@ import scala.reflect.runtime.universe._
 
 object TypedList {
   def apply[T: TypeTag]: TypingResult =
-    Typed.detailed[List[T]]
+    Typed.fromDetailedType[List[T]]
 
   def apply(fields: Map[String, TypingResult]): TypingResult =
     TypedClass(classOf[java.util.List[_]], List(TypedObjectTypingResult(fields)))

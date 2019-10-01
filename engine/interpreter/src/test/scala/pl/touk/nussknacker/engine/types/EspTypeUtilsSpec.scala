@@ -116,8 +116,8 @@ class EspTypeUtilsSpec extends FunSuite with Matchers {
 
     typeUtils.find(_.clazzName == ClazzRef[TestEmbedded]) shouldBe Some(ClazzDefinition(ClazzRef[TestEmbedded], Map(
       "string" -> MethodInfo(List(), ClazzRef[String], None),
-      "javaList" -> MethodInfo(List(), ClazzRef.detailed[java.util.List[String]], None),
-      "scalaList" -> MethodInfo(List(), ClazzRef.detailed[List[String]], None),
+      "javaList" -> MethodInfo(List(), ClazzRef.fromDetailedType[java.util.List[String]], None),
+      "scalaList" -> MethodInfo(List(), ClazzRef.fromDetailedType[List[String]], None),
       "toString" -> MethodInfo(List(), ClazzRef[String], None)
     )))
 
@@ -210,7 +210,7 @@ class EspTypeUtilsSpec extends FunSuite with Matchers {
   }
 
   private def param[T: TypeTag](name: String): Parameter = {
-    Parameter(name, ClazzRef.detailed[T])
+    Parameter(name, ClazzRef.fromDetailedType[T])
   }
 
 }
