@@ -108,6 +108,7 @@ val commonSettings =
     )
 
 val akkaV = "2.4.20" //same version as in Flink
+val akkaHttpCirceV = "1.24.3"
 val flinkV = "1.7.2"
 val kafkaMajorV = "0.11"
 val kafkaV = s"$kafkaMajorV.0.2"
@@ -219,7 +220,7 @@ lazy val standaloneApp = (project in engine("standalone/app")).
     libraryDependencies ++= {
       Seq(
         "org.scalatest" %% "scalatest" % scalaTestV % "test",
-        "de.heikoseeberger" %% "akka-http-circe" % "1.27.0",
+        "de.heikoseeberger" %% "akka-http-circe" % akkaHttpCirceV,
         "com.typesafe.akka" %% "akka-http" % akkaHttpV force(),
         "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test" force(),
         "com.typesafe.akka" %% "akka-slf4j" % akkaV,
@@ -672,7 +673,7 @@ lazy val ui = (project in file("ui/server"))
     libraryDependencies ++= {
       Seq(
         "com.typesafe.akka" %% "akka-http" % akkaHttpV force(),
-        "de.heikoseeberger" %% "akka-http-circe" % "1.27.0",
+        "de.heikoseeberger" %% "akka-http-circe" % akkaHttpCirceV,
         "ch.qos.logback" % "logback-core" % logbackV,
         "ch.qos.logback" % "logback-classic" % logbackV,
         "org.slf4j" % "log4j-over-slf4j" % "1.7.21",
