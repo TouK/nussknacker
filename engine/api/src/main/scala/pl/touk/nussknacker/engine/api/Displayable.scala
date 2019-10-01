@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.api
 
 import argonaut.Argonaut._
-import argonaut.ArgonautShapeless._
 import argonaut.{EncodeJson, Json, _}
 
 /** Used to show variables in UI
@@ -19,7 +18,7 @@ trait Displayable {
 
 abstract class DisplayableAsJson[T : EncodeJson] extends Displayable { self : T =>
   //eager encoder loading due to some classloading issues
-  val encoder = implicitly[EncodeJson[T]]
+  private val encoder: EncodeJson[T] = implicitly[EncodeJson[T]]
   override def display: Json = self.asInstanceOf[T].asJson(encoder)
   override def originalDisplay: Option[String] = None
 }

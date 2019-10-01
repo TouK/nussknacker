@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.ui.definition
 
-import argonaut.CodecJson
-import argonaut.Argonaut._
 import com.typesafe.config.ConfigRenderOptions
+import io.circe.Decoder
+import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.{ParameterConfig, SingleNodeConfig}
@@ -18,7 +18,7 @@ import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.ceedubs.ficus.readers.EnumerationReader._
 import net.ceedubs.ficus.readers.ValueReader
 import pl.touk.nussknacker.engine.api.definition.ParameterRestriction
-import pl.touk.nussknacker.engine.api.{MetaData, definition}
+import pl.touk.nussknacker.engine.api.{CirceUtil, MetaData, definition}
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -32,8 +32,7 @@ object UIProcessObjects {
 
   private implicit val nodeConfig: ValueReader[ParameterRestriction] = ValueReader.relative(config => {
     val json = config.root().render(ConfigRenderOptions.concise().setJson(true))
-    implicit val cd: CodecJson[ParameterRestriction] = ParameterRestriction.codec
-    json.decodeEither[ParameterRestriction].right.getOrElse(throw new IllegalArgumentException("Failed to parse config"))
+    CirceUtil.decodeJson[ParameterRestriction](json).right.getOrElse(throw new IllegalArgumentException("Failed to parse config"))
   })
 
   def prepareUIProcessObjects(modelDataForType: ModelData,
@@ -99,13 +98,13 @@ object UIProcessObjects {
 
 }
 
-case class UIProcessObjects(nodesToAdd: List[NodeGroup],
+@JsonCodec(encodeOnly = true) case class UIProcessObjects(nodesToAdd: List[NodeGroup],
                             processDefinition: UIProcessDefinition,
                             nodesConfig: Map[String, SingleNodeConfig],
                             additionalPropertiesConfig: Map[String, AdditionalProcessProperty],
                             edgesForNodes: List[NodeEdges])
 
-case class UIProcessDefinition(services: Map[String, UIObjectDefinition],
+@JsonCodec(encodeOnly = true) case class UIProcessDefinition(services: Map[String, UIObjectDefinition],
                                sourceFactories: Map[String, UIObjectDefinition],
                                sinkFactories: Map[String, UIObjectDefinition],
                                customStreamTransformers: Map[String, UIObjectDefinition],
@@ -120,7 +119,7 @@ case class UIProcessDefinition(services: Map[String, UIObjectDefinition],
 }
 
 
-case class UIObjectDefinition(parameters: List[UIParameter],
+@JsonCodec(encodeOnly = true) case class UIObjectDefinition(parameters: List[UIParameter],
                               returnType: Option[TypingResult],
                               categories: List[String],
                               nodeConfig: SingleNodeConfig)
@@ -137,7 +136,7 @@ object UIObjectDefinition {
   }
 }
 
-case class UIParameter(name: String,
+@JsonCodec(encodeOnly = true) case class UIParameter(name: String,
                        typ: TypingResult,
                        restriction: Option[ParameterRestriction],
                        additionalVariables: Map[String, TypingResult],
@@ -173,14 +172,15 @@ object UIProcessDefinition {
 }
 
 
-case class NodeTypeId(`type`: String, id: Option[String] = None)
+@JsonCodec case class NodeTypeId(`type`: String, id: Option[String] = None)
 
-case class NodeEdges(nodeId: NodeTypeId, edges: List[EdgeType], canChooseNodes: Boolean, isForInputDefinition: Boolean)
+@JsonCodec case class NodeEdges(nodeId: NodeTypeId, edges: List[EdgeType], canChooseNodes: Boolean, isForInputDefinition: Boolean)
 
-case class NodeToAdd(`type`: String, label: String, node: NodeData, categories: List[String], branchParametersTemplate: List[evaluatedparam.Parameter] = List.empty)
+import pl.touk.nussknacker.restmodel.NodeDataCodec.nodeDataEncoder
+@JsonCodec(encodeOnly = true) case class NodeToAdd(`type`: String, label: String, node: NodeData, categories: List[String], branchParametersTemplate: List[evaluatedparam.Parameter] = List.empty)
 
 object SortedNodeGroup {
   def apply(name: String, possibleNodes: List[NodeToAdd]): NodeGroup = NodeGroup(name, possibleNodes.sortBy(_.label.toLowerCase))
 }
 
-case class NodeGroup(name: String, possibleNodes: List[NodeToAdd])
+@JsonCodec(encodeOnly = true) case class NodeGroup(name: String, possibleNodes: List[NodeToAdd])

@@ -5,7 +5,6 @@ import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server._
 import akka.stream.Materializer
-import argonaut._
 import cats.data.Validated.{Invalid, Valid}
 import cats.instances.future._
 import cats.data.EitherT
@@ -20,15 +19,15 @@ import pl.touk.nussknacker.ui.util._
 import pl.touk.nussknacker.ui._
 import EspErrorToHttp._
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.ui.codec.UiCodecs
+import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.ui.validation.{FatalValidationError, ProcessValidation}
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.ui.process._
-import pl.touk.http.argonaut.{Argonaut62Support, JsonMarshaller}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName}
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, BasicProcess, ProcessDetails, ValidatedProcessDetails}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.ui.process.repository.WriteProcessRepository.UpdateProcessAction
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
@@ -44,9 +43,9 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
                          typesForCategories: ProcessTypesForCategories,
                          newProcessPreparer: NewProcessPreparer,
                          val processAuthorizer:AuthorizeProcess)
-                        (implicit val ec: ExecutionContext, mat: Materializer, jsonMarshaller: JsonMarshaller)
+                        (implicit val ec: ExecutionContext, mat: Materializer)
   extends Directives
-    with Argonaut62Support
+    with FailFastCirceSupport
     with EspPathMatchers
     with RouteWithUser
     with LazyLogging
@@ -54,7 +53,6 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
     with ProcessDirectives {
 
   import akka.http.scaladsl.unmarshalling.Unmarshaller._
-  import UiCodecs._
 
   def route(implicit user: LoggedUser): Route = {
       encodeResponse {
@@ -109,7 +107,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
           get {
             parameter('names.as(CsvSeq[String])) { namesToFetch =>
               complete {
-                validateAll(processRepository.fetchProcessesDetails(namesToFetch.map(ProcessName).toList))
+                validateAll(processRepository.fetchProcessesDetails(namesToFetch.map(ProcessName(_)).toList))
               }
             } ~
             complete {
@@ -143,7 +141,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
                 processes <- processRepository.fetchProcesses[Unit]()
                 customProcesses <- processRepository.fetchCustomProcesses[Unit]()
                 statuses <- fetchProcessStatesForProcesses(processes ++ customProcesses)
-              } yield statuses.map { case (k, v) => k.value -> v }
+              } yield statuses
             }
           }
         } ~ path("processes" / Segment / "deployments") { processName =>
@@ -165,7 +163,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
                     case true =>
                       rejectSavingArchivedProcess
                     case false =>
-                      saveProcess(processToSave, processId.id).map(toResponse)
+                      saveProcess(processToSave, processId.id).map(toResponseEither[ValidationResult])
                   }
                 }
               }
@@ -265,7 +263,6 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
               complete {
                 withJson(processId.id, thisVersion, businessView) { thisDisplayable =>
                   withJson(processId.id, otherVersion, businessView) { otherDisplayable =>
-                    implicit val codec = ProcessComparator.codec
                     ProcessComparator.compare(thisDisplayable, otherDisplayable)
                   }
                 }
@@ -279,7 +276,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
                 complete {
                   MultipartUtils.readFile(byteSource).map[ToResponseMarshallable] { json =>
                     (UiProcessMarshaller.fromJson(json) match {
-                      case Valid(process) if process.metaData.id != processId.name.value => Invalid(WrongProcessId(processId.name.value, process.metaData.id.value))
+                      case Valid(process) if process.metaData.id != processId.name.value => Invalid(WrongProcessId(processId.name.value, process.metaData.id))
                       case Valid(process) => Valid(process)
                       case Invalid(unmarshallError) => Invalid(UnmarshallError(unmarshallError.msg))
                     }) match {
@@ -291,7 +288,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
                           toResponseXor(validatedProcess)
                         }
 
-                      case Invalid(error) => espErrorToHttp(error)
+                      case Invalid(error) => EspErrorToHttp.espErrorToHttp(error)
                     }
                   }
                 }
@@ -315,7 +312,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
                          (implicit loggedUser: LoggedUser):Future[Either[EspError, ValidationResults.ValidationResult]] = {
     val displayableProcess = processToSave.process
     val canonical = ProcessConverter.fromDisplayable(displayableProcess)
-    val json = jsonMarshaller.marshallToString(UiProcessMarshaller.toJson(canonical))
+    val json = UiProcessMarshaller.toJson(canonical).spaces2
     val deploymentData = GraphProcess(json)
 
     (for {
@@ -344,7 +341,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
 
   private def makeEmptyProcess(processId: String, processingType: ProcessingType, isSubprocess: Boolean) = {
     val emptyCanonical = newProcessPreparer.prepareEmptyProcess(processId, processingType, isSubprocess)
-    GraphProcess(jsonMarshaller.marshallToString(UiProcessMarshaller.toJson(emptyCanonical)))
+    GraphProcess(UiProcessMarshaller.toJson(emptyCanonical).spaces2)
   }
 
   private def withJson(processId: ProcessId, version: Long, businessView: Boolean)

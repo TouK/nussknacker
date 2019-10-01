@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.standalone.management
 
-import argonaut.PrettyParams
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{FunSuite, Matchers}
 import org.scalatest.concurrent.ScalaFutures

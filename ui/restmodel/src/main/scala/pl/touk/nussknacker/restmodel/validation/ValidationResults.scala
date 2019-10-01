@@ -2,10 +2,15 @@ package pl.touk.nussknacker.restmodel.validation
 
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import cats.implicits._
+import io.circe.{Decoder, Encoder}
+import io.circe.generic.JsonCodec
+import pl.touk.nussknacker.engine.api.typed.typing
 
 object ValidationResults {
 
-  case class ValidationResult(errors: ValidationErrors, warnings: ValidationWarnings, variableTypes: Map[String, Map[String, TypingResult]]) {
+  private implicit val typingResultDecoder: Decoder[TypingResult] = Decoder.decodeJson.map(_ => typing.Unknown)
+
+  @JsonCodec case class ValidationResult(errors: ValidationErrors, warnings: ValidationWarnings, variableTypes: Map[String, Map[String, TypingResult]]) {
     val isOk: Boolean = errors == ValidationErrors.success && warnings == ValidationWarnings.success
     val saveAllowed: Boolean = allErrors.forall(_.errorType == NodeValidationErrorType.SaveAllowed)
 
@@ -37,7 +42,7 @@ object ValidationResults {
 
   }
 
-  case class ValidationErrors(invalidNodes: Map[String, List[NodeValidationError]],
+  @JsonCodec case class ValidationErrors(invalidNodes: Map[String, List[NodeValidationError]],
                               processPropertiesErrors: List[NodeValidationError],
                               globalErrors: List[NodeValidationError]) {
     def isEmpty: Boolean = invalidNodes.isEmpty && processPropertiesErrors.isEmpty && globalErrors.isEmpty
@@ -46,7 +51,7 @@ object ValidationResults {
     val success = ValidationErrors(Map.empty, List(), List())
   }
 
-  case class ValidationWarnings(invalidNodes: Map[String, List[NodeValidationError]])
+  @JsonCodec case class ValidationWarnings(invalidNodes: Map[String, List[NodeValidationError]])
   object ValidationWarnings {
     val success = ValidationWarnings(Map.empty)
   }
@@ -75,7 +80,7 @@ object ValidationResults {
     }
   }
 
-  case class NodeValidationError(typ: String,
+  @JsonCodec case class NodeValidationError(typ: String,
                                  message: String,
                                  description: String,
                                  fieldName: Option[String],
@@ -83,6 +88,10 @@ object ValidationResults {
                                 )
 
   object NodeValidationErrorType extends Enumeration {
+
+    implicit val encoder: Encoder[NodeValidationErrorType.Value] = Encoder.enumEncoder(NodeValidationErrorType)
+    implicit val decoder: Decoder[NodeValidationErrorType.Value] = Decoder.enumDecoder(NodeValidationErrorType)
+
     type NodeValidationErrorType = Value
     val RenderNotAllowed, SaveNotAllowed, SaveAllowed = Value
   }

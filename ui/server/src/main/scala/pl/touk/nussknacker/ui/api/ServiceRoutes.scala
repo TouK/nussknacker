@@ -1,12 +1,11 @@
 package pl.touk.nussknacker.ui.api
 
+import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.StatusCodes._
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse, StatusCodes}
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse, MessageEntity, ResponseEntity}
 import akka.http.scaladsl.server.{Directives, ExceptionHandler, Route}
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.http.argonaut.{Argonaut62Support, JsonMarshaller}
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.{MetaData, Service}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.util.service.query.{ExpressionServiceQuery, ServiceQuery}
 import pl.touk.nussknacker.engine.util.service.query.ServiceQuery.{QueryResult, ServiceNotFoundException}
@@ -16,37 +15,41 @@ import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 import pl.touk.nussknacker.ui.security.api.PermissionSyntax._
-import argonaut._
-import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, WithCategories}
-import pl.touk.nussknacker.ui.security.api.Permission.Permission
+import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import io.circe.{Encoder, Json, ObjectEncoder}
+import io.circe.generic.JsonCodec
+import io.circe.syntax._
+import pl.touk.nussknacker.engine.api.process.WithCategories
+import pl.touk.nussknacker.engine.api.test.InvocationCollectors.QueryServiceResult
+import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
+
 class ServiceRoutes(modelDataMap: Map[ProcessingType, ModelData])
-                   (implicit ec: ExecutionContext, jsonMarshaller: JsonMarshaller)
+                   (implicit ec: ExecutionContext)
   extends Directives
     with RouteWithUser
-    with Argonaut62Support
+    with FailFastCirceSupport
     with LazyLogging{
 
   import ServiceRoutes._
-  import pl.touk.nussknacker.ui.codec.UiCodecs._
+
+  private implicit val encoder: Encoder[ServiceQuery.QueryResult] = {
+    val resultEncoder: Encoder[Any] = BestEffortJsonEncoder(failOnUnkown = false).circeEncoder
+    //FIXME: semi-auto like below does not work :/
+    //implicit val queryResult: Encoder[QueryServiceResult] = io.circe.generic.semiauto.deriveEncoder[QueryServiceResult]
+    //io.circe.generic.semiauto.deriveEncoder[ServiceQuery.QueryResult]
+    new Encoder[QueryResult] {
+      override def apply(a: QueryResult): Json = Json.obj(
+        "result" -> resultEncoder(a.result),
+        "collectedResults" -> Json.fromValues(a.collectedResults.map(r => Json.obj("name" -> Json.fromString(r.name), "result" -> resultEncoder(r.result)))))
+    }
+  }
 
   private implicit def serviceExceptionHandler: ExceptionHandler =
     ExceptionHandler {
-      case e@ServiceNotFoundException(serviceName) =>
-        complete(HttpResponse(
-          status = NotFound,
-          entity = HttpEntity(ContentTypes.`application/json`,JsonThrowable(e)
-            .asJson
-            .toString())
-        ))
+      case e@ServiceNotFoundException(_) =>
+        complete(Marshal(JsonThrowable(e)).to[ResponseEntity].map(res => HttpResponse(status = NotFound, entity = res)))
       case NonFatal(e) =>
-        logger.error("service invocation went wrong", e)
-        complete(HttpResponse(
-          status = InternalServerError,
-          entity = HttpEntity(ContentTypes.`application/json`,JsonThrowable(e)
-            .asJson
-            .toString()
-          )
-        ))
+        complete(Marshal(JsonThrowable(e)).to[ResponseEntity].map(res => HttpResponse(status = InternalServerError, entity = res)))
     }
 
   override def route(implicit user: LoggedUser): Route = {
@@ -72,7 +75,7 @@ class ServiceRoutes(modelDataMap: Map[ProcessingType, ModelData])
   private[api] def canUserInvokeService(user: LoggedUser, serviceName: String, modelData: ModelData): Boolean = {
 
     def hasUserDeployPermissionForServiceWithCategories(withCategories: WithCategories[_]) = {
-      def isAllowed(categoryName: String): JsonBoolean =
+      def isAllowed(categoryName: String): Boolean =
         user.can(categoryName, Permission.Deploy)
 
       withCategories.categories.exists(isAllowed)
@@ -94,7 +97,7 @@ class ServiceRoutes(modelDataMap: Map[ProcessingType, ModelData])
 }
 
 object ServiceRoutes {
-  case class JsonThrowable(className: String, message: Option[String], stacktrace: List[String])
+  @JsonCodec case class JsonThrowable(className: String, message: Option[String], stacktrace: List[String])
 
   object JsonThrowable {
     def apply(e: Throwable):JsonThrowable =

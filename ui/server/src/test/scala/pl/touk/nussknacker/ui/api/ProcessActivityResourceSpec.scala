@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
-import argonaut.Argonaut._
+import akka.http.scaladsl.model.{ContentTypeRange, ContentTypes, HttpEntity, StatusCodes}
+import akka.http.scaladsl.testkit.ScalatestRouteTest
+import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
+import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.apache.commons.io.FileUtils
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
@@ -12,12 +13,12 @@ import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.ProcessActivity
 import pl.touk.nussknacker.ui.util.{DateUtils, MultipartUtils}
 
-import scala.concurrent.duration._
 import scala.language.higherKinds
 
-class ProcessActivityResourceSpec extends FlatSpec with ScalatestRouteTest with Matchers with ScalaFutures with BeforeAndAfterEach with EspItTest  {
+class ProcessActivityResourceSpec extends FlatSpec with ScalatestRouteTest with Matchers with ScalaFutures with BeforeAndAfterEach with EspItTest with FailFastCirceSupport {
 
-  import pl.touk.nussknacker.ui.codec.UiCodecs._
+  private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
+
   implicit override val patienceConfig = PatienceConfig(timeout = scaled(Span(1, Seconds)), interval = scaled(Span(100, Millis)))
 
   val processActivityRouteWithAllPermission = withAllPermissions(processActivityRoute)
@@ -28,17 +29,17 @@ class ProcessActivityResourceSpec extends FlatSpec with ScalatestRouteTest with 
     val processToSave = ProcessTestData.sampleDisplayableProcess
     val commentContent = "test message"
     saveProcess(processToSave) { status shouldEqual StatusCodes.OK}
-    Post(s"/processes/${processToSave.id}/1/activity/comments", commentContent) ~> processActivityRouteWithAllPermission ~> check {
+    Post(s"/processes/${processToSave.id}/1/activity/comments", HttpEntity(ContentTypes.`text/plain(UTF-8)`, commentContent)) ~> processActivityRouteWithAllPermission ~> check {
       status shouldEqual StatusCodes.OK
       Get(s"/processes/${processToSave.id}/activity") ~> processActivityRouteWithAllPermission ~> check {
-        val processActivity = responseAs[String].decodeOption[ProcessActivity].get
+        val processActivity = responseAs[ProcessActivity]
         val firstComment = processActivity.comments.head
         processActivity.comments should have size 1
         processActivity.comments.head.content shouldBe commentContent
         Delete(s"/processes/${processToSave.id}/activity/comments/${firstComment.id}") ~> processActivityRouteWithAllPermission ~> check {
           status shouldEqual StatusCodes.OK
           Get(s"/processes/${processToSave.id}/activity") ~> processActivityRouteWithAllPermission ~> check {
-            val newProcessActivity = responseAs[String].decodeOption[ProcessActivity].get
+            val newProcessActivity = responseAs[ProcessActivity]
             newProcessActivity.comments shouldBe empty
           }
         }
@@ -58,7 +59,7 @@ class ProcessActivityResourceSpec extends FlatSpec with ScalatestRouteTest with 
       status shouldEqual StatusCodes.OK
 
       Get(s"/processes/${processToSave.id}/activity") ~> processActivityRouteWithAllPermission ~> check {
-        val processActivity = responseAs[String].decodeOption[ProcessActivity].get
+        val processActivity = responseAs[ProcessActivity]
         val attachment = processActivity.attachments.head
         attachment.fileName shouldBe fileName
         attachment.processId shouldBe processToSave.id
@@ -82,7 +83,7 @@ class ProcessActivityResourceSpec extends FlatSpec with ScalatestRouteTest with 
       Post(s"/processes/${processToSave.id}/1/activity/attachments", mutipartFile2) ~> attachmentsRouteWithPermissions ~> check {
         status shouldEqual StatusCodes.OK
         Get(s"/processes/${processToSave.id}/activity") ~> processActivityRouteWithAllPermission ~> check {
-          val processActivity = responseAs[String].decodeOption[ProcessActivity].get
+          val processActivity = responseAs[ProcessActivity]
           processActivity.attachments.size shouldBe 2
           val attachmentsOrdered = processActivity.attachments.sortBy(a => DateUtils.toMillis(a.createDate))
           val (attachment1, attachment2) = (attachmentsOrdered(0), attachmentsOrdered(1))

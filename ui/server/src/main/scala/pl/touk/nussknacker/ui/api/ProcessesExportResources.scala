@@ -1,12 +1,11 @@
 package pl.touk.nussknacker.ui.api
 
-import java.nio.charset.StandardCharsets
-
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.{Directives, Route}
+import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import akka.stream.Materializer
-import pl.touk.http.argonaut.{Argonaut62Support, JsonMarshaller, MarshallOptions}
-import pl.touk.nussknacker.ui.codec.UiCodecs
+import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import pl.touk.nussknacker.engine.api.ArgonautCirce
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
 import pl.touk.nussknacker.ui.process.marshall.{ProcessConverter, UiProcessMarshaller}
@@ -19,8 +18,11 @@ import scala.concurrent.ExecutionContext
 
 class ProcessesExportResources(val processRepository: FetchingProcessRepository,
                                processActivityRepository: ProcessActivityRepository)
-                              (implicit val ec: ExecutionContext, mat: Materializer, jsonMarshaller: JsonMarshaller)
-  extends Directives with Argonaut62Support with RouteWithUser with UiCodecs with ProcessDirectives {
+                              (implicit val ec: ExecutionContext, mat: Materializer)
+  extends Directives with FailFastCirceSupport with RouteWithUser with ProcessDirectives {
+
+  private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
+
 
   def route(implicit user: LoggedUser): Route = {
     path("processesExport" / Segment) { processName =>
@@ -42,10 +44,10 @@ class ProcessesExportResources(val processRepository: FetchingProcessRepository,
     } ~ path("processesExport" / "pdf" / Segment / LongNumber) { (processName, versionId) =>
       parameter('businessView ? false) { businessView =>
         (post & processId(processName)) { processId =>
-          entity(as[Array[Byte]]) { svg =>
+          entity(as[String]) { svg =>
             complete {
               processRepository.fetchProcessDetailsForId[DisplayableProcess](processId.id, versionId, businessView).flatMap { process =>
-                processActivityRepository.findActivity(processId).map(exportProcessToPdf(new String(svg, StandardCharsets.UTF_8), process, _))
+                processActivityRepository.findActivity(processId).map(exportProcessToPdf(svg, process, _))
               }
             }
           }
@@ -55,23 +57,24 @@ class ProcessesExportResources(val processRepository: FetchingProcessRepository,
       post {
         entity(as[DisplayableProcess]) { process =>
           complete {
-            val json = UiProcessMarshaller.toJson(ProcessConverter.fromDisplayable(process))
-            HttpResponse(entity = HttpEntity(ContentType(MediaTypes.`application/json`), jsonMarshaller.marshall(json, MarshallOptions(pretty = true))))
+            exportProcess(process)
           }
         }
       }
     }
   }
 
-  private def exportProcess(processDetails: Option[ProcessDetails]): HttpResponse = processDetails match {
-    case Some(process) =>
-      process.json.map { json =>
-        jsonMarshaller.marshall(UiProcessMarshaller.toJson(ProcessConverter.fromDisplayable(json)), MarshallOptions(pretty = true))
-      }.map { canonicalJson =>
-        AkkaHttpResponse.asFile(canonicalJson, s"${process.id}.json")
-      }.getOrElse(HttpResponse(status = StatusCodes.NotFound, entity = "Process not found"))
+  private def exportProcess(processDetails: Option[ProcessDetails]): HttpResponse = processDetails.flatMap(_.json) match {
+    case Some(displayableProcess) =>
+      exportProcess(displayableProcess)
     case None =>
       HttpResponse(status = StatusCodes.NotFound, entity = "Process not found")
+  }
+
+  private def exportProcess(processDetails: DisplayableProcess): HttpResponse = {
+    val canonicalJson = ArgonautCirce.toCirce(UiProcessMarshaller.toJson(ProcessConverter.fromDisplayable(processDetails))).spaces2
+    val entity = HttpEntity(ContentTypes.`application/json`, canonicalJson)
+    AkkaHttpResponse.asFile(entity, s"${processDetails.id}.json")
   }
 
   private def exportProcessToPdf(svg: String, processDetails: Option[ProcessDetails], processActivity: ProcessActivity) = processDetails match {
@@ -79,7 +82,7 @@ class ProcessesExportResources(val processRepository: FetchingProcessRepository,
       process.json.map { json =>
         PdfExporter.exportToPdf(svg, process, processActivity, json)
       }.map { pdf =>
-        HttpResponse(status = StatusCodes.OK, entity = pdf)
+        HttpResponse(status = StatusCodes.OK, entity = HttpEntity(pdf))
       }.getOrElse(HttpResponse(status = StatusCodes.NotFound, entity = "Process not found"))
     case None =>
       HttpResponse(status = StatusCodes.NotFound, entity = "Process not found")

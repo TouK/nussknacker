@@ -1,18 +1,17 @@
 package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.server.{Directives, Route}
-import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
-import pl.touk.http.argonaut.{Argonaut62Support, JsonMarshaller}
+import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
+import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.ExecutionContext
 
-class SettingsResources(config: FeatureTogglesConfig, typeToConfig: Map[ProcessingType, ProcessingTypeData])(implicit ec: ExecutionContext, jsonMarshaller: JsonMarshaller)
-  extends Directives with Argonaut62Support with RouteWithUser {
-
-  import argonaut.ArgonautShapeless._
+class SettingsResources(config: FeatureTogglesConfig, typeToConfig: Map[ProcessingType, ProcessingTypeData])(implicit ec: ExecutionContext)
+  extends Directives with FailFastCirceSupport with RouteWithUser {
 
   def route(implicit user: LoggedUser): Route =
     pathPrefix("settings") {
@@ -42,15 +41,15 @@ class SettingsResources(config: FeatureTogglesConfig, typeToConfig: Map[Processi
   }
 }
 
-case class MetricsSettings(url: String, defaultDashboard: String, processingTypeToDashboard: Option[Map[String,String]])
-case class KibanaSettings(url: String)
-case class RemoteEnvironmentConfig(targetEnvironmentId: String)
-case class EnvironmentAlert(content: String, cssClass: String)
-case class CommentSettings(matchExpression: String, link: String)
-case class DeploySettings(requireComment: Boolean)
-case class IntervalTimeSettings(processes: Int, healthCheck: Int)
+@JsonCodec case class MetricsSettings(url: String, defaultDashboard: String, processingTypeToDashboard: Option[Map[String,String]])
+@JsonCodec case class KibanaSettings(url: String)
+@JsonCodec case class RemoteEnvironmentConfig(targetEnvironmentId: String)
+@JsonCodec case class EnvironmentAlert(content: String, cssClass: String)
+@JsonCodec case class CommentSettings(matchExpression: String, link: String)
+@JsonCodec case class DeploySettings(requireComment: Boolean)
+@JsonCodec case class IntervalTimeSettings(processes: Int, healthCheck: Int)
 
-case class ToggleFeaturesOptions(counts: Boolean,
+@JsonCodec case class ToggleFeaturesOptions(counts: Boolean,
                                  search: Option[KibanaSettings],
                                  metrics: Option[MetricsSettings],
                                  remoteEnvironment: Option[RemoteEnvironmentConfig],
@@ -62,4 +61,4 @@ case class ToggleFeaturesOptions(counts: Boolean,
                                  signals: Boolean)
 
 
-case class UISettings(features: ToggleFeaturesOptions)
+@JsonCodec case class UISettings(features: ToggleFeaturesOptions)

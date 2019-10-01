@@ -2,12 +2,18 @@ package pl.touk.nussknacker.engine.api.typed
 
 import java.util
 
+import io.circe.Encoder
 import org.apache.commons.lang3.ClassUtils
+import pl.touk.nussknacker.engine.api.ArgonautCirce
 
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 
 object typing {
+
+  object TypingResult {
+    implicit val encoder: Encoder[TypingResult] = TypeEncoders.typingResultEncoder
+  }
 
   sealed trait TypingResult {
 

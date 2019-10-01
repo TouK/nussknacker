@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.migrate
 
+import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
@@ -66,7 +67,7 @@ class TestModelMigrations(migrations: Map[ProcessingType, ProcessMigrations], pr
 
 }
 
-case class TestMigrationResult(converted: ValidatedDisplayableProcess, newErrors: ValidationResult, shouldFailOnNewErrors: Boolean) {
+@JsonCodec case class TestMigrationResult(converted: ValidatedDisplayableProcess, newErrors: ValidationResult, shouldFailOnNewErrors: Boolean) {
   def shouldFail: Boolean = {
     shouldFailOnNewErrors && !newErrors.isOk
   }

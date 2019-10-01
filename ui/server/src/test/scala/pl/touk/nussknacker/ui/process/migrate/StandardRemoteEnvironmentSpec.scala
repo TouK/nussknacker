@@ -5,19 +5,18 @@ import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.ActorMaterializer
+import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.ui.process.ProcessToSave
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType, ValidationErrors, ValidationResult}
-import pl.touk.http.argonaut.{Argonaut62Support, JacksonJsonMarshaller, JsonMarshaller}
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with ScalaFutures with Argonaut62Support {
+class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with ScalaFutures with FailFastCirceSupport {
   import scala.concurrent.duration._
 
   implicit val system = ActorSystem("nussknacker-ui")
@@ -25,8 +24,6 @@ class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with ScalaFut
   implicit val user = LoggedUser("test")
 
   implicit override val patienceConfig = PatienceConfig(timeout = scaled(Span(1, Seconds)), interval = scaled(Span(100, Millis)))
-
-  implicit val jsonMarshaller: JsonMarshaller = JacksonJsonMarshaller
 
   trait MockRemoteEnvironment extends StandardRemoteEnvironment {
     override def environmentId = "testEnv"
@@ -43,9 +40,6 @@ class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with ScalaFut
     override def testModelMigrations: TestModelMigrations = ???
 
   }
-
-  import argonaut.ArgonautShapeless._
-  import pl.touk.nussknacker.ui.codec.UiCodecs._
 
   private trait TriedToAddProcess {
     var triedToAddProcess: Boolean = false

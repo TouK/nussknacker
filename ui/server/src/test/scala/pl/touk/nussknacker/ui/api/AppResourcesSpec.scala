@@ -5,12 +5,12 @@ import java.util.Collections
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.testkit.TestProbe
-import argonaut.Json
 import com.typesafe.config.ConfigFactory
+import io.circe.Json
+import io.circe.syntax._
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
-import pl.touk.http.argonaut.Argonaut62Support
 import pl.touk.nussknacker.engine.api.deployment.CustomProcess
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.testing.{EmptyProcessConfigCreator, LocalModelData}
@@ -98,8 +98,7 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest
   }
 
   test("it should return global config") {
-    import Argonaut62Support._
-    import argonaut.Argonaut._
+    import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 
     val creatorWithBuildInfo = new EmptyProcessConfigCreator {
       override def buildInfo(): Map[String, String] = Map("fromModel" -> "value1")

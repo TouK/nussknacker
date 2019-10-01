@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.processreport
 
+import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.ProcessAdditionalFields
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode._
@@ -70,4 +71,4 @@ class ProcessCounter(subprocessRepository: SubprocessRepository) {
 
 case class RawCount(all: Long, errors: Long)
 
-case class NodeCount(all: Long, errors: Long, subprocessCounts: Map[String, NodeCount] = Map())
+@JsonCodec case class NodeCount(all: Long, errors: Long, subprocessCounts: Map[String, NodeCount] = Map())

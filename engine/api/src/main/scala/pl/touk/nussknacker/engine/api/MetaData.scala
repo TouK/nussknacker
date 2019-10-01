@@ -2,8 +2,13 @@ package pl.touk.nussknacker.engine.api
 
 import java.util.concurrent.TimeUnit
 
-import argonaut.Argonaut.{jdecode3L, jencode3L}
+import argonaut.Argonaut.jdecode3L
 import argonaut.{DecodeJson, EncodeJson}
+import io.circe.generic.extras.ConfiguredJsonCodec
+import CirceUtil._
+import io.circe.{Decoder, Encoder}
+import io.circe.generic.JsonCodec
+import io.circe.generic.semiauto._
 
 import scala.concurrent.duration.Duration
 
@@ -24,9 +29,19 @@ object ProcessAdditionalFields {
   implicit val encoder: EncodeJson[ProcessAdditionalFields] = {
     EncodeJson.derive[ProcessAdditionalFields]
   }
+
+  //TODO: is this currently needed?
+  private case class OptionalProcessAdditionalFields(description: Option[String],
+                                     groups: Option[Set[Group]],
+                                     properties: Option[Map[String, String]])
+
+  implicit val circeDecoder: Decoder[ProcessAdditionalFields]
+  = deriveDecoder[OptionalProcessAdditionalFields].map(opp => ProcessAdditionalFields(opp.description, opp.groups.getOrElse(Set()), opp.properties.getOrElse(Map())))
+
+  implicit val circeEncoder: Encoder[ProcessAdditionalFields] = deriveEncoder
 }
 
-case class Group(id: String, nodes: Set[String])
+@JsonCodec case class Group(id: String, nodes: Set[String])
 
 // todo: MetaData should hold ProcessName as id
 case class MetaData(id: String,
@@ -35,7 +50,7 @@ case class MetaData(id: String,
                     additionalFields: Option[ProcessAdditionalFields] = None,
                     subprocessVersions: Map[String, Long] = Map.empty)
 
-sealed trait TypeSpecificData {
+@ConfiguredJsonCodec sealed trait TypeSpecificData {
   def allowLazyVars : Boolean
 }
 

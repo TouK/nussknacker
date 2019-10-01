@@ -1,13 +1,14 @@
 package pl.touk.nussknacker.restmodel.displayedgraph
 
+import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.deployment.{ProcessState, RunningState}
 
-case class ProcessStatus(deploymentId: Option[String],
-                         status: String,
-                         startTime: Long,
-                         isRunning: Boolean,
-                         isDeployInProgress: Boolean,
-                         errorMessage: Option[String] = None) {
+@JsonCodec case class ProcessStatus(deploymentId: Option[String],
+                                    status: String,
+                                    startTime: Long,
+                                    isRunning: Boolean,
+                                    isDeployInProgress: Boolean,
+                                    errorMessage: Option[String] = None) {
   def isOkForDeployed: Boolean = isRunning || isDeployInProgress
 
 }

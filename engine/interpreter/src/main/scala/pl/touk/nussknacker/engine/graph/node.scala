@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.graph
 
+import io.circe.generic.JsonCodec
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter}
@@ -124,7 +125,7 @@ object node {
     override val additionalFields: Option[UserDefinedAdditionalNodeFields] = None
   }
 
-  case class BranchEndDefinition(id: String, joinId: String)
+  @JsonCodec case class BranchEndDefinition(id: String, joinId: String)
 
   case class Sink(
                    id: String,
@@ -165,7 +166,7 @@ object node {
   //shape of this data should probably change, currently we leave it for backward compatibility
   object SubprocessInputDefinition {
 
-    case class SubprocessParameter(name: String, typ: SubprocessClazzRef)
+    @JsonCodec case class SubprocessParameter(name: String, typ: SubprocessClazzRef)
 
     object SubprocessClazzRef {
 
@@ -173,7 +174,7 @@ object node {
 
     }
 
-    case class SubprocessClazzRef(refClazzName: String) {
+    @JsonCodec case class SubprocessClazzRef(refClazzName: String) {
 
       def toRuntimeClass(classLoader: ClassLoader): Try[Class[_]] =
         Try(ClassUtils.getClass(classLoader, refClazzName))

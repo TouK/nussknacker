@@ -2,7 +2,6 @@ package pl.touk.nussknacker.ui.util
 
 import akka.http.scaladsl.model.Multipart.FormData
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, Multipart}
-import argonaut.PrettyParams
 
 object FileUploadUtils {
 

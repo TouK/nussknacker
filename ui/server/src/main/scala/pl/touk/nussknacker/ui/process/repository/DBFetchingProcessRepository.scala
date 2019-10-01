@@ -156,7 +156,7 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
   }
 
   def fetchProcessName(processId: ProcessId)(implicit ec: ExecutionContext): F[Option[ProcessName]] = {
-    run(processesTable.filter(_.id === processId.value).map(_.name).result.headOption.map(_.map(ProcessName)))
+    run(processesTable.filter(_.id === processId.value).map(_.name).result.headOption.map(_.map(ProcessName(_))))
   }
 
   def fetchDeploymentHistory(processId: ProcessId)(implicit ec: ExecutionContext): F[List[DeploymentHistoryEntry]] =

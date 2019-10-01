@@ -23,7 +23,7 @@ object DefaultResponseEncoder extends ResponseEncoder[Any] {
 
   private def toJsonOrError(value: Any): GenericResultType[Json] =
     try {
-      Right(bestEffortEncoder.encode(value))
+      Right(bestEffortEncoder.encodeToArgonaut(value))
     } catch {
       case NonFatal(e) => Left(NonEmptyList.of(EspExceptionInfo(None, e, Context(""))))
     }

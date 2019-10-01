@@ -3,7 +3,10 @@ package pl.touk.nussknacker.engine.definition
 import java.lang.reflect.{InvocationTargetException, Method}
 
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.MethodToInvoke
+import io.circe.Encoder
+import io.circe.generic.JsonCodec
+import io.circe.generic.semiauto.deriveEncoder
+import pl.touk.nussknacker.engine.api.{ArgonautCirce, MethodToInvoke}
 import pl.touk.nussknacker.engine.api.definition.{Parameter, WithExplicitMethodToInvoke}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, SingleNodeConfig, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
@@ -100,10 +103,11 @@ object DefinitionExtractor {
     }
   }
 
+
   case class ObjectDefinition(parameters: List[Parameter],
-                              returnType: TypingResult,
-                              categories: List[String],
-                              nodeConfig: SingleNodeConfig) extends ObjectMetadata
+                                         returnType: TypingResult,
+                                         categories: List[String],
+                                         nodeConfig: SingleNodeConfig) extends ObjectMetadata
 
 
   object ObjectWithMethodDef {
@@ -165,11 +169,11 @@ object DefinitionExtractor {
 
 object TypeInfos {
 
-  case class Parameter(name: String, refClazz: ClazzRef)
+  @JsonCodec(encodeOnly = true) case class Parameter(name: String, refClazz: ClazzRef)
 
-  case class MethodInfo(parameters: List[Parameter], refClazz: ClazzRef, description: Option[String])
+  @JsonCodec(encodeOnly = true) case class MethodInfo(parameters: List[Parameter], refClazz: ClazzRef, description: Option[String])
 
-  case class ClazzDefinition(clazzName: ClazzRef, methods: Map[String, MethodInfo]) {
+  @JsonCodec(encodeOnly = true) case class ClazzDefinition(clazzName: ClazzRef, methods: Map[String, MethodInfo]) {
     def getMethodClazzRef(methodName: String): Option[ClazzRef] = {
       methods.get(methodName).map(_.refClazz)
     }
