@@ -666,7 +666,7 @@ lazy val ui = (project in file("ui/server"))
       (assembly in Compile) in managementSample
     ).value,
     assemblyJarName in assembly := "nussknacker-ui-assembly.jar",
-    assembly in ThisScope := (assembly in ThisScope).dependsOn(
+    sbt.Keys.`package` in Compile := (sbt.Keys.`package`  in Compile).dependsOn(
       buildUi
     ).value,
     libraryDependencies ++= {
