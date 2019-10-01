@@ -18,9 +18,10 @@ import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import org.apache.flink.api.common.ExecutionConfig
 import org.asynchttpclient.request.body.multipart.FilePart
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.dispatch.{LoggingDispatchClient, utils}
-import pl.touk.nussknacker.engine.management.flinkRestModel.{DeployProcessRequest, GetSavepointStatusResponse, JobsResponse, SavepointTriggerResponse, jobStatusDecoder}
+import pl.touk.nussknacker.engine.management.flinkRestModel.{DeployProcessRequest, GetSavepointStatusResponse, JobConfig, JobsResponse, SavepointTriggerResponse, jobStatusDecoder}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
@@ -110,7 +111,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, sender: HttpSe
   override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = {
     sender.send {
       (flinkUrl / "jobs" / "overview").GET OK utils.asJson[JobsResponse]
-    } map { jobs =>
+    } flatMap { jobs =>
       val jobsForName = jobs.jobs
         .filter(_.name == name.value)
         .sortBy(_.`last-modification`).reverse
@@ -119,19 +120,43 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, sender: HttpSe
         .filter(status => !status.state.isGloballyTerminalState || status.state == JobStatus.FINISHED)
 
       runningOrFinished match {
-        case Nil => None
+        case Nil => Future.successful(None)
         case duplicates if duplicates.count(_.state == JobStatus.RUNNING) > 1 =>
-          Some(ProcessState(DeploymentId(duplicates.head.jid), RunningState.Error, "INCONSISTENT", duplicates.head.`start-time`,
-            Some(s"Expected one job, instead: ${runningOrFinished.map(job => s"${job.jid} - ${job.state.name()}").mkString(", ")}")))
+          Future.successful(Some(ProcessState(DeploymentId(duplicates.head.jid), RunningState.Error, "INCONSISTENT", duplicates.head.`start-time`, None,
+            Some(s"Expected one job, instead: ${runningOrFinished.map(job => s"${job.jid} - ${job.state.name()}").mkString(", ")}"))))
         case one::_ =>
           val runningState = one.state match {
             case JobStatus.RUNNING => RunningState.Running
             case JobStatus.FINISHED => RunningState.Finished
             case _ => RunningState.Error
           }
-          Some(ProcessState(DeploymentId(one.jid), runningState, one.state.toString, one.`start-time`))
+          checkVersion(one.jid, name).map { version =>
+            //TODO: return error when there's no correct version in process
+            //currently we're rather lax on this, so that this change is backward-compatible
+            //we log debug here for now, since it's invoked v. often
+            if (version.isEmpty) {
+              logger.debug(s"No correct version in deployed process: ${one.name}")
+            }
+            Some(ProcessState(DeploymentId(one.jid), runningState, one.state.toString, one.`start-time`, version))
+          }
       }
     }
+  }
+
+  //TODO: cache by jobId?
+  private def checkVersion(jobId: String, name: ProcessName): Future[Option[ProcessVersion]] = {
+    sender.send {
+      (flinkUrl / "jobs" / jobId / "config").GET OK utils.asJson[JobConfig]
+    }.map { config =>
+      val userConfig = config.`execution-config`.`user-config`
+      for {
+        version <- userConfig.get("versionId").flatMap(_.string).map(_.toLong)
+        user <- userConfig.get("user").map(_.stringOrEmpty)
+        modelVersion = userConfig.get("modelVersion").flatMap(_.string).map(_.toInt)
+      } yield ProcessVersion(version, name, user, modelVersion)
+
+    }
+
   }
 
   //FIXME: get rid of sleep, refactor?
@@ -220,4 +245,7 @@ object flinkRestModel {
 
   case class JobOverview(jid: String, name: String, `last-modification`: Long, `start-time`: Long, state: JobStatus)
 
+  case class JobConfig(jid: String, `execution-config`: ExecutionConfig)
+
+  case class ExecutionConfig(`user-config`: Map[String, Json])
 }

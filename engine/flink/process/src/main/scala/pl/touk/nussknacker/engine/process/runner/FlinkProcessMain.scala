@@ -49,9 +49,9 @@ object FlinkProcessMain extends FlinkRunner with LazyLogging {
   private def setBuildInfo(buildInfo: String, processVersion: ProcessVersion, env: StreamExecutionEnvironment): Unit = {
     val globalJobParams = new org.apache.flink.configuration.Configuration
     globalJobParams.setString("buildInfo", buildInfo)
-    globalJobParams.setLong("version", processVersion.versionId)
+    globalJobParams.setLong("versionId", processVersion.versionId)
     processVersion.modelVersion.foreach(globalJobParams.setLong("modelVersion", _))
-    globalJobParams.setString("deployedBy", processVersion.user)
+    globalJobParams.setString("user", processVersion.user)
     env.getConfig.setGlobalJobParameters(globalJobParams)
   }
 

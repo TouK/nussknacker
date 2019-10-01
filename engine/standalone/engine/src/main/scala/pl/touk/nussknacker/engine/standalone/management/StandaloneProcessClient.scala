@@ -60,7 +60,7 @@ class MultiInstanceStandaloneProcessClient(clients: List[StandaloneProcessClient
             case None => "empty"
             case Some(state) => s"state: ${state.status}, startTime: ${state.startTime}"
           }.mkString("; ")
-          Some(ProcessState(DeploymentId(name.value), runningState = RunningState.Error, "INCONSISTENT", 0L,
+          Some(ProcessState(DeploymentId(name.value), runningState = RunningState.Error, "INCONSISTENT", 0L, None,
             message = Some(s"Inconsistent states between servers: $warningMessage")))
       }
     }

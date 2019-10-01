@@ -242,7 +242,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
                 case Some(process) =>
                   findJobStatus(processId, process.processingType).map {
                     case Some(status) => status
-                    case None => HttpResponse(status = StatusCodes.OK, entity = "Process is not running")
+                    case None => ProcessStatus.stateNotFound
                   }
                 case None =>
                   Future.successful(HttpResponse(status = StatusCodes.NotFound, entity = "Process not found"))

@@ -183,8 +183,8 @@ class Processes extends BaseProcesses {
                 <Td column="modifyDate" className="centered-column">{DateUtils.format(process.modificationDate)}</Td>
                 <Td column="status" className="status-column">
                   <div
-                    className={this.processStatusClass(process, this.state.statusesLoaded, this.state.statuses)}
-                    title={this.processStatusTitle(this.processStatusClass(process))}
+                    className={this.processStatusClass(process)}
+                    title={this.processStatusTitle(process)}
                   />
                 </Td>
                 <Td column="edit" className="edit-column">

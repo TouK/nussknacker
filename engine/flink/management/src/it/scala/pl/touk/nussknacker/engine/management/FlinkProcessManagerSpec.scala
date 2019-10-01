@@ -28,9 +28,12 @@ class FlinkProcessManagerSpec extends FunSuite with Matchers with ScalaFutures w
   test("deploy process in running flink") {
     val processId = "runningFlink"
 
+    val version = ProcessVersion(15, ProcessName(processId), "user1", Some(13))
     val process = SampleProcess.prepareProcess(processId)
 
-    deployProcessAndWaitIfRunning(process, empty(process.id))
+    deployProcessAndWaitIfRunning(process, version)
+
+    processVersion(ProcessName(processId)) shouldBe Some(version)
 
     cancel(processId)
   }
@@ -170,7 +173,7 @@ class FlinkProcessManagerSpec extends FunSuite with Matchers with ScalaFutures w
     cancel(processId)
   }
 
-  def empty(processId: String): ProcessVersion = ProcessVersion.empty.copy(processName=ProcessName(processId))
+  def empty(processId: String): ProcessVersion = ProcessVersion.empty.copy(processName = ProcessName(processId))
 
   test("deploy custom process") {
     val processId = "customProcess"
@@ -219,7 +222,7 @@ class FlinkProcessManagerSpec extends FunSuite with Matchers with ScalaFutures w
     jobStatus.map(_.status) shouldBe Some("RUNNING")
   }
 
-  private def cancel(processId: String) = {
+  private def cancel(processId: String): Unit = {
     assert(processManager.cancel(ProcessName(processId)).isReadyWithin(10 seconds))
     eventually {
       val jobStatusCanceled = processManager.findJobStatus(ProcessName(processId)).futureValue.filterNot(_.runningState == RunningState.Finished)
@@ -227,4 +230,7 @@ class FlinkProcessManagerSpec extends FunSuite with Matchers with ScalaFutures w
         throw new IllegalStateException("Job still exists")
     }
   }
+
+  private def processVersion(processId: ProcessName): Option[ProcessVersion] =
+    processManager.findJobStatus(processId).futureValue.flatMap(_.version)
 }

@@ -33,7 +33,7 @@ object DeploymentService {
 class DeploymentService(context: StandaloneContextPreparer, modelData: ModelData,
                         processRepository: ProcessRepository) extends LazyLogging with ProcessInterpreters {
 
-  private val processInterpreters: collection.concurrent.TrieMap[ProcessName, (StandaloneProcessInterpreter, Long)] = collection.concurrent.TrieMap()
+  private val processInterpreters: collection.concurrent.TrieMap[ProcessName, (StandaloneProcessInterpreter, DeploymentData)] = collection.concurrent.TrieMap()
 
   private val pathToInterpreterMap: collection.concurrent.TrieMap[String, StandaloneProcessInterpreter] = collection.concurrent.TrieMap()
 
@@ -66,7 +66,7 @@ class DeploymentService(context: StandaloneContextPreparer, modelData: ModelData
               interpreter.foreach { processInterpreter =>
                 cancel(processName)
                 processRepository.add(processName, deploymentData)
-                processInterpreters.put(processName, (processInterpreter, deploymentData.deploymentTime))
+                processInterpreters.put(processName, (processInterpreter, deploymentData))
                 pathToInterpreterMap.put(pathToDeploy, processInterpreter)
                 processInterpreter.open(JobData(process.metaData, deploymentData.processVersion))
                 logger.info(s"Successfully deployed process ${processName.value}")
@@ -82,8 +82,8 @@ class DeploymentService(context: StandaloneContextPreparer, modelData: ModelData
 
 
   def checkStatus(processName: ProcessName): Option[ProcessState] = {
-    processInterpreters.get(processName).map { case (_, startTime) =>
-      ProcessState(DeploymentId(processName.value), runningState = RunningState.Running, "RUNNING", startTime)
+    processInterpreters.get(processName).map { case (_, DeploymentData(_, deploymentTime, processVersion)) =>
+      ProcessState(DeploymentId(processName.value), runningState = RunningState.Running, "RUNNING", deploymentTime, Some(processVersion))
     }
   }
 
