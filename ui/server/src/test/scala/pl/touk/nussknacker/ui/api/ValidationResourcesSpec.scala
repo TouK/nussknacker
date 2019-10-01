@@ -1,9 +1,10 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.model.{ContentTypeRange, StatusCodes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
+import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.scalatest._
-import pl.touk.http.argonaut.{JacksonJsonMarshaller, JsonMarshaller}
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -12,19 +13,17 @@ import pl.touk.nussknacker.engine.graph.node.{NodeData, Source}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
-import pl.touk.nussknacker.ui.api.helpers.TestCodecs._
-import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestProcessingTypes}
+import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestProcessingTypes}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
-import pl.touk.nussknacker.ui.security.api.Permission
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 
-class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with Matchers with Inside {
-
-  implicit val jsonMarshaller: JsonMarshaller = JacksonJsonMarshaller
+class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with Matchers with Inside with FailFastCirceSupport {
 
   val route = withPermissions(new ValidationResources(processValidation), testPermissionRead)
+
+  private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
   it should "find errors in a bad process" in {
     Post("/processValidation", posting.toEntity(ProcessTestData.invalidProcess)) ~> route ~> check {
@@ -89,7 +88,7 @@ class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with Matc
 
     Post("/processValidation", posting.toEntity(processWithDisabledFilterAndProcessor)) ~> route ~> check {
       status shouldEqual StatusCodes.OK
-      val validation = responseAs[String].decodeOption[ValidationResult].get
+      val validation = responseAs[ValidationResult]
       validation.warnings.invalidNodes("filter1").head.message should include("Node is disabled")
       validation.warnings.invalidNodes("proc1").head.message should include("Node is disabled")
     }

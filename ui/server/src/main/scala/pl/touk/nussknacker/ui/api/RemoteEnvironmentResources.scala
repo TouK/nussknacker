@@ -3,8 +3,6 @@ package pl.touk.nussknacker.ui.api
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.{HttpResponse, MessageEntity, StatusCodes}
 import akka.http.scaladsl.server.{Directive0, Directives, Route}
-import argonaut.ArgonautShapeless._
-import argonaut.{CodecJson, EncodeJson}
 import cats.instances.either._
 import cats.instances.list._
 import cats.syntax.traverse._
@@ -16,33 +14,23 @@ import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessNotFou
 import pl.touk.nussknacker.ui.util.ProcessComparator
 
 import scala.concurrent.{ExecutionContext, Future}
-import ProcessComparator._
-import pl.touk.http.argonaut.{Argonaut62Support, JsonMarshaller}
+import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import io.circe.Encoder
+import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.restmodel.process.ProcessId
-import pl.touk.nussknacker.restmodel.processdetails.{ProcessDetails, ProcessHistoryEntry}
-import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
+import pl.touk.nussknacker.restmodel.processdetails.{ProcessDetails}
+import pl.touk.nussknacker.ui.security.api.{LoggedUser}
 
 class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
                                  val processRepository: FetchingProcessRepository,
                                  val processAuthorizer:AuthorizeProcess)
-                                (implicit val ec: ExecutionContext, jsonMarshaller: JsonMarshaller)
+                                (implicit val ec: ExecutionContext)
   extends Directives
-    with Argonaut62Support
+    with FailFastCirceSupport
     with RouteWithUser
     with AuthorizeProcessDirectives
     with ProcessDirectives {
-
-  import argonaut.Argonaut._
-  import argonaut.ArgonautShapeless._
-  import pl.touk.nussknacker.ui.codec.UiCodecs._
-
-  private implicit val differenceCodec: CodecJson[Difference] = ProcessComparator.codec
-
-  private implicit val map: EncodeJson[TestMigrationResult] = EncodeJson.derive[TestMigrationResult]
-  private implicit val encodeResults: EncodeJson[TestMigrationSummary] = EncodeJson.derive[TestMigrationSummary]
-  private implicit val encodeDifference: EncodeJson[ProcessDifference] = EncodeJson.derive[ProcessDifference]
-  private implicit val encodeDifference2: EncodeJson[EnvironmentComparisonResult] = EncodeJson.derive[EnvironmentComparisonResult]
 
   def route(implicit user: LoggedUser) : Route = {
       pathPrefix("remoteEnvironment") {
@@ -100,7 +88,7 @@ class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
       comparisonResult.sequence[XError, ProcessDifference].right
         .map(_.filterNot(_.areSame))
         .right
-        .map(EnvironmentComparisonResult)
+        .map(EnvironmentComparisonResult.apply)
     }
   }
 
@@ -116,8 +104,8 @@ class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
     Marshal(summary).to[MessageEntity].map(e => HttpResponse(status = status, entity = e))
   }
 
-  private def withProcess[T:EncodeJson](processId: ProcessId, version: Long, businessView: Boolean,
-                                        fun: (DisplayableProcess, String) => Future[Either[EspError, T]])(implicit user: LoggedUser) = {
+  private def withProcess[T:Encoder](processId: ProcessId, version: Long, businessView: Boolean,
+                                     fun: (DisplayableProcess, String) => Future[Either[EspError, T]])(implicit user: LoggedUser) = {
     processRepository.fetchProcessDetailsForId[DisplayableProcess](processId, version, businessView).map {
       _.flatMap { details =>
         details.json.map((_, details.processCategory))
@@ -139,11 +127,11 @@ class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
 
 }
 
-case class TestMigrationSummary(message: String, testMigrationResults: List[TestMigrationResult])
+@JsonCodec case class TestMigrationSummary(message: String, testMigrationResults: List[TestMigrationResult])
 
 //we make additional class here to be able to e.g. compare model versions...
-case class EnvironmentComparisonResult(processDifferences:List[ProcessDifference])
+@JsonCodec case class EnvironmentComparisonResult(processDifferences:List[ProcessDifference])
 
-case class ProcessDifference(id: String, presentOnOther: Boolean, differences: Map[String, ProcessComparator.Difference]) {
+@JsonCodec case class ProcessDifference(id: String, presentOnOther: Boolean, differences: Map[String, ProcessComparator.Difference]) {
   def areSame: Boolean = presentOnOther && differences.isEmpty
 }

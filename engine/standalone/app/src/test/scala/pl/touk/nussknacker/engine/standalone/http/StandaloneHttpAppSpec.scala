@@ -4,18 +4,20 @@ import java.nio.file.Files
 import java.util
 import java.util.UUID
 
+import akka.http.scaladsl.model.MediaTypes.`application/json`
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.MethodRejection
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import argonaut.Argonaut._
-import argonaut.{CodecJson, DecodeJson, EncodeJson, PrettyParams}
+import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import com.codahale.metrics.MetricRegistry
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable}
+import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import io.circe.Encoder
+import io.circe.syntax._
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
-import pl.touk.http.argonaut.{JacksonJsonMarshaller, JsonMarshaller}
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessState, RunningState}
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessState}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.StandaloneProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
@@ -25,14 +27,13 @@ import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.standalone.api.DeploymentData
 import pl.touk.nussknacker.engine.standalone.utils.logging.StandaloneRequestResponseLogger
 import pl.touk.nussknacker.engine.testing.ModelJarBuilder
-import pl.touk.nussknacker.engine.util.json.Codecs
 
-class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTest with BeforeAndAfterEach {
+class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTest with BeforeAndAfterEach with FailFastCirceSupport {
 
-  import argonaut.ArgonautShapeless._
   import spel.Implicits._
 
-  private implicit val jsonMarshaller: JsonMarshaller = JacksonJsonMarshaller
+  private implicit final val plainString: FromEntityUnmarshaller[String] =
+    Unmarshaller.stringUnmarshaller.forContentTypes(`application/json`)
 
   var procId : ProcessName = _
 
@@ -124,7 +125,7 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
       status shouldBe StatusCodes.OK
       Get(s"/checkStatus/${procId.value}") ~> managementRoute ~> check {
         status shouldBe StatusCodes.OK
-        val processState = responseAs[String].decodeOption[ProcessState].get
+        val processState = responseAs[ProcessState]
         processState.id shouldBe DeploymentId(procId.value)
         processState.startTime shouldBe testEpoch
 
@@ -223,7 +224,7 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
       status shouldBe StatusCodes.OK
       Post(s"/${procId.value}", toEntity(Request("", "d"))) ~> processesRoute ~> check {
         status shouldBe StatusCodes.InternalServerError
-        responseAs[String] shouldBe "[{\"message\":\"/ by zero\",\"nodeId\":\"filter1\"}]"
+        responseAs[String] shouldBe "[{\"nodeId\":\"filter1\",\"message\":\"/ by zero\"}]"
         cancelProcess(procId)
       }
     }
@@ -289,20 +290,13 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
     }
   }
 
-  implicit def processStateCode = DecodeJson.derive[ProcessState]
-  private implicit val stateCodec: CodecJson[RunningState.Value] = Codecs.enumCodec(RunningState)
-
   def assertProcessNotRunning(processName: ProcessName) = {
     val id = processName.value
     Get(s"/checkStatus/$id") ~> managementRoute ~> check {
       status shouldBe StatusCodes.NotFound
     }
   }
-
-  import argonaut.Argonaut._
-  import argonaut.ArgonautShapeless._
-
-  def toEntity[J : EncodeJson](jsonable: J): RequestEntity = {
+  def toEntity[J : Encoder](jsonable: J): RequestEntity = {
     val json = jsonable.asJson.spaces2
     HttpEntity(ContentTypes.`application/json`, json)
   }

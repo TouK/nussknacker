@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.engine.definition
 
-import argonaut.CodecJson
 import com.typesafe.config.{Config, ConfigRenderOptions}
+import io.circe.Decoder
 import pl.touk.nussknacker.engine.api.definition.ParameterRestriction
 import pl.touk.nussknacker.engine.api.process.{LanguageConfiguration, ProcessConfigCreator, SingleNodeConfig, SinkFactory}
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, QueryableStateNames}
+import pl.touk.nussknacker.engine.api.{CirceUtil, CustomStreamTransformer, QueryableStateNames}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedDependencies}
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
@@ -74,15 +74,13 @@ object ProcessDefinitionExtractor {
 
   def extractNodesConfig(processConfig: Config) : Map[String, SingleNodeConfig] = {
 
-    import argonaut.Argonaut._
     import net.ceedubs.ficus.Ficus._
     import net.ceedubs.ficus.readers.ArbitraryTypeReader._
     import net.ceedubs.ficus.readers.ValueReader
 
     implicit val nodeConfig: ValueReader[ParameterRestriction] = ValueReader.relative(config => {
       val json = config.root().render(ConfigRenderOptions.concise().setJson(true))
-      implicit val cd: CodecJson[ParameterRestriction] = ParameterRestriction.codec
-      json.decodeEither[ParameterRestriction].right.getOrElse(throw new IllegalArgumentException("Failed to parse config"))
+      CirceUtil.decodeJson[ParameterRestriction](json).right.getOrElse(throw new IllegalArgumentException("Failed to parse config"))
     })
     processConfig.getOrElse[Map[String, SingleNodeConfig]]("nodes", Map.empty)
   }

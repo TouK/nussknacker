@@ -3,7 +3,6 @@ package pl.touk.nussknacker.ui.process.migrate
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
-import pl.touk.http.argonaut.{JacksonJsonMarshaller, JsonMarshaller}
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.graph.node.{Processor, asProcessor}
@@ -17,8 +16,6 @@ import shapeless.syntax.typeable.typeableOps
 class ProcessModelMigratorSpec extends FlatSpec with BeforeAndAfterEach with ScalaFutures with Matchers with TestPermissions{
 
   implicit override val patienceConfig = PatienceConfig(timeout = scaled(Span(1, Seconds)), interval = scaled(Span(100, Millis)))
-
-  private implicit val marshaller: JsonMarshaller = JacksonJsonMarshaller
 
   private def migrator(migrations: Int*) =
     new ProcessModelMigrator(Map(TestProcessingTypes.Streaming -> new TestMigrations(migrations: _*)))

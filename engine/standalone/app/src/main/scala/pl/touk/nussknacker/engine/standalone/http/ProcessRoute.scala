@@ -1,25 +1,25 @@
 package pl.touk.nussknacker.engine.standalone.http
 
 import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
-import akka.http.scaladsl.server.directives.DebuggingDirectives
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.stream.ActorMaterializer
-import argonaut.Argonaut._
-import argonaut.ArgonautShapeless._
 import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.http.argonaut.{Argonaut62Support, JsonMarshaller}
+import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import io.circe.generic.JsonCodec
+import io.circe.syntax._
+import pl.touk.nussknacker.engine.api.ArgonautCirce
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.standalone.deployment.ProcessInterpreters
-import pl.touk.nussknacker.engine.standalone.{StandaloneProcessInterpreter, StandaloneRequestHandler}
+import pl.touk.nussknacker.engine.standalone.StandaloneRequestHandler
 import pl.touk.nussknacker.engine.standalone.utils.logging.StandaloneRequestResponseLogger
 
 import scala.concurrent.ExecutionContext
 
-class ProcessRoute(processInterpreters: ProcessInterpreters) extends Directives with LazyLogging with Argonaut62Support {
+class ProcessRoute(processInterpreters: ProcessInterpreters) extends Directives with LazyLogging with FailFastCirceSupport {
 
   def route(log: StandaloneRequestResponseLogger)
-           (implicit ec: ExecutionContext, mat: ActorMaterializer, jsonMarshaller: JsonMarshaller): Route =
+           (implicit ec: ExecutionContext, mat: ActorMaterializer): Route =
     path(Segment) { processPath =>
       log.loggingDirective(processPath)(mat) {
         processInterpreters.getInterpreterByPath(processPath) match {
@@ -33,7 +33,7 @@ class ProcessRoute(processInterpreters: ProcessInterpreters) extends Directives 
               (StatusCodes.InternalServerError, errors.toList.map(info => EspError(info.nodeId, Option(info.throwable.getMessage))).asJson)
             }
             case Right(results) => complete {
-              (StatusCodes.OK, results)
+              (StatusCodes.OK, ArgonautCirce.toCirce(results))
             }
           }
         }
@@ -48,13 +48,13 @@ class ProcessRoute(processInterpreters: ProcessInterpreters) extends Directives 
     }
 
 
-  private def logErrors(processPath: JsonField, errors: NonEmptyList[EspExceptionInfo[_ <: Throwable]]): Unit = {
+  private def logErrors(processPath: String, errors: NonEmptyList[EspExceptionInfo[_ <: Throwable]]): Unit = {
     logger.warn(s"Failed to invoke: $processPath with errors: ${errors.map(_.throwable.getMessage)}")
     errors.toList.foreach { error =>
       logger.info(s"Invocation failed $processPath, error in ${error.nodeId}: ${error.throwable.getMessage}", error.throwable)
     }
   }
 
-  case class EspError(nodeId: Option[String], message: Option[String])
+  @JsonCodec case class EspError(nodeId: Option[String], message: Option[String])
 
 }

@@ -2,6 +2,10 @@ package pl.touk.nussknacker.restmodel
 
 import java.time.LocalDateTime
 
+import io.circe.{Decoder, Encoder}
+import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
+import io.circe.generic.JsonCodec
+import io.circe.java8.time.{JavaTimeDecoders, JavaTimeEncoders}
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.ProcessType.ProcessType
@@ -9,11 +13,11 @@ import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, Validat
 import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName}
 import pl.touk.nussknacker.restmodel.processdetails.DeploymentAction.DeploymentAction
 
-object processdetails {
+object processdetails extends JavaTimeEncoders with JavaTimeDecoders {
 
 
   // todo: id -> ProcessName, name -> ProcessName
-  case class BasicProcess(name: String,
+  @JsonCodec case class BasicProcess(name: String,
                           processCategory: String,
                           processType: ProcessType,
                           processingType: ProcessingType,
@@ -23,6 +27,14 @@ object processdetails {
                          //TODO: remove
                           currentlyDeployedAt: List[DeploymentEntry],
                           isSubprocess: Boolean)
+
+  object BaseProcessDetails {
+
+    implicit def encoder[T](implicit shape: Encoder[T]): Encoder[BaseProcessDetails[T]] = deriveEncoder
+
+    implicit def decoder[T](implicit shape: Decoder[T]): Decoder[BaseProcessDetails[T]] = deriveDecoder
+
+  }
 
   // todo: name -> ProcessName
   case class BaseProcessDetails[ProcessShape](id: String,
@@ -75,24 +87,24 @@ object processdetails {
   type ValidatedProcessDetails = BaseProcessDetails[ValidatedDisplayableProcess]
 
 
-  case class ProcessHistoryEntry(processId: String,
-                                 processName: String,
-                                 processVersionId: Long,
-                                 createDate: LocalDateTime,
-                                 user: String,
-                                //TODO: remove, replace with 'currentDeployments'
-                                 deployments: List[DeploymentEntry]
+  @JsonCodec case class ProcessHistoryEntry(processId: String,
+                                            processName: String,
+                                            processVersionId: Long,
+                                            createDate: LocalDateTime,
+                                            user: String,
+                                            //TODO: remove, replace with 'currentDeployments'
+                                            deployments: List[DeploymentEntry]
                                 )
 
 
-  case class DeploymentEntry(processVersionId: Long,
+  @JsonCodec case class DeploymentEntry(processVersionId: Long,
                             //TODO: remove, in current usage it's not really needed
                              environment: String,
                              deployedAt: LocalDateTime,
                              user: String,
                              buildInfo: Map[String, String])
 
-  case class DeploymentHistoryEntry(processVersionId: Long,
+  @JsonCodec case class DeploymentHistoryEntry(processVersionId: Long,
                              time: LocalDateTime,
                              user: String,
                              deploymentAction: DeploymentAction,
@@ -101,6 +113,10 @@ object processdetails {
 
 
   object DeploymentAction extends Enumeration {
+
+    implicit val typeEncoder: Encoder[DeploymentAction.Value] = Encoder.enumEncoder(DeploymentAction)
+    implicit val typeDecoder: Decoder[DeploymentAction.Value] = Decoder.enumDecoder(DeploymentAction)
+
     type DeploymentAction = Value
     val Deploy: Value = Value("DEPLOY")
     val Cancel: Value = Value("CANCEL")

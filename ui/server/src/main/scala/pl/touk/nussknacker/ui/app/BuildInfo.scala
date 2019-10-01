@@ -1,19 +1,21 @@
 package pl.touk.nussknacker.ui.app
 
-import argonaut.{Parse, PrettyParams}
+import io.circe.{Decoder, Printer}
+import io.circe.syntax._
+import io.circe.parser._
 
 object BuildInfo {
-  import argonaut.Argonaut._
 
   val empty = Map.empty[String, String]
 
-  def writeAsJson(buildInfo: Map[String, String]) = {
-    val prettyParams = PrettyParams.spaces2.copy(preserveOrder = true)
+  def writeAsJson(buildInfo: Map[String, String]): String = {
+    val prettyParams = Printer.spaces2.copy(preserveOrder = true)
     ordered(buildInfo).asJson.pretty(prettyParams)
   }
 
   def parseJson(json: String): Option[Map[String, String]] = {
-    Parse.decodeOption[Map[String, String]](json).map(ordered)
+    parse(json).right.toOption
+      .flatMap(js => Decoder[Map[String, String]].decodeJson(js).right.toOption).map(ordered)
   }
 
   def ordered(map: Map[String, String]): Map[String, String] = {

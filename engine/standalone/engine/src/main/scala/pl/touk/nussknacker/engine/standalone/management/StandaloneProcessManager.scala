@@ -2,10 +2,10 @@ package pl.touk.nussknacker.engine.standalone.management
 
 import java.util.concurrent.TimeUnit
 
-import argonaut.Argonaut
 import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
+import io.circe.Json
 import pl.touk.nussknacker.engine.ModelData.ClasspathConfig
 import pl.touk.nussknacker.engine.{ModelData, _}
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
@@ -42,7 +42,7 @@ object StandaloneProcessManager {
 class StandaloneProcessManager(modelData: ModelData, client: StandaloneProcessClient)
   extends ProcessManager with LazyLogging {
 
-  private implicit val ec = ExecutionContext.Implicits.global
+  private implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
 
   override def deploy(processVersion: ProcessVersion, processDeploymentData: ProcessDeploymentData,
                       savepointPath: Option[String]): Future[Unit] = {
@@ -129,7 +129,7 @@ class StandaloneTestMain(testData: TestData, process: EspProcess, modelData: Mod
 
   }
 
-  private def collectSinkResults(runId: TestRunId, results: List[InterpretationResultType]) = {
+  private def collectSinkResults(runId: TestRunId, results: List[InterpretationResultType]): Unit = {
     //FIXME: testDataOutput is ignored here!
     val bestEffortJsonEncoder = BestEffortJsonEncoder(failOnUnkown = false)
     val encodeFunction = (out: Any) => bestEffortJsonEncoder.encode(out).fold(
@@ -137,8 +137,8 @@ class StandaloneTestMain(testData: TestData, process: EspProcess, modelData: Mod
       _.toString,
       _.toString,
       _.toString,
-      array => Argonaut.jArray(array).spaces2,
-      obj => Argonaut.jObject(obj).spaces2
+      array => Json.fromValues(array).spaces2,
+      obj => Json.fromJsonObject(obj).spaces2
     )
     val successfulResults = results.flatMap(_.right.toOption.toList.flatten)
     successfulResults.foreach { result =>
@@ -147,7 +147,7 @@ class StandaloneTestMain(testData: TestData, process: EspProcess, modelData: Mod
     }
   }
 
-  private def collectExceptions(listener: ResultsCollectingListener, results: List[InterpretationResultType]) = {
+  private def collectExceptions(listener: ResultsCollectingListener, results: List[InterpretationResultType]): Unit = {
     val exceptions = results.flatMap(_.left.toOption)
     exceptions.flatMap(_.toList).foreach(listener.exceptionThrown)
   }

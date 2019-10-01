@@ -3,20 +3,17 @@ package pl.touk.nussknacker.ui.api
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model.{HttpResponse, StatusCode, StatusCodes}
 import akka.http.scaladsl.server.ExceptionHandler
-import argonaut.EncodeJson
 import com.typesafe.scalalogging.LazyLogging
+import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import io.circe.Encoder
 import pl.touk.nussknacker.ui.process.deployment.ProcessIsBeingDeployed
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.ui.{BadRequestError, EspError, FatalError, NotFoundError}
-import pl.touk.http.argonaut.{Argonaut62Support, JsonMarshaller}
 import pl.touk.nussknacker.ui.validation.FatalValidationError
 
 import scala.language.implicitConversions
 import scala.util.control.NonFatal
 
-object EspErrorToHttp extends LazyLogging with Argonaut62Support {
-
-  import pl.touk.nussknacker.ui.codec.UiCodecs.validationResultEncode
+object EspErrorToHttp extends LazyLogging with FailFastCirceSupport {
 
   def espErrorToHttp(error: EspError) : HttpResponse = {
     val statusCode = error match {
@@ -47,15 +44,7 @@ object EspErrorToHttp extends LazyLogging with Argonaut62Support {
     }
   }
 
-  def toResponse(either: Either[EspError, ValidationResult])(implicit jsonMarshaller: JsonMarshaller): ToResponseMarshallable =
-    either match {
-      case Right(validationResult) =>
-        validationResult
-      case Left(err) =>
-        espErrorToHttp(err)
-    }
-
-  def toResponseXor[T: EncodeJson](xor: Either[EspError, T])(implicit jsonMarshaller: JsonMarshaller): ToResponseMarshallable =
+  def toResponseXor[T: Encoder](xor: Either[EspError, T]): ToResponseMarshallable =
     xor match {
       case Right(t) =>
         t
@@ -63,7 +52,7 @@ object EspErrorToHttp extends LazyLogging with Argonaut62Support {
         espErrorToHttp(err)
     }
 
-  def toResponseEither[T: EncodeJson](either: Either[EspError, T])(implicit jsonMarshaller: JsonMarshaller): ToResponseMarshallable = either match {
+  def toResponseEither[T: Encoder](either: Either[EspError, T]): ToResponseMarshallable = either match {
       case Right(t) => t
       case Left(err) => espErrorToHttp(err)
   }
@@ -74,5 +63,5 @@ object EspErrorToHttp extends LazyLogging with Argonaut62Support {
     case Right(_) => HttpResponse(status = okStatus)
   }
 
-
 }
+

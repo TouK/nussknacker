@@ -86,6 +86,7 @@ val commonSettings =
       ),
       testOptions in Test ++= Seq(scalaTestReports, ignoreSlowTests),
       testOptions in IntegrationTest += scalaTestReports,
+      addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full),
       scalacOptions := Seq(
         "-unchecked",
         "-deprecation",
@@ -117,6 +118,7 @@ val log4jV = "1.7.21"
 val argonautShapelessV = "1.2.0-M8"
 val argonautMajorV = "6.2"
 val argonautV = s"$argonautMajorV.1"
+val circeV = "0.11.1"
 val jacksonV = "2.9.2"
 val catsV = "1.1.0"
 val scalaParsersV = "1.0.4"
@@ -203,7 +205,7 @@ lazy val engineStandalone = (project in engine("standalone/engine")).
       )
     }
   ).
-  dependsOn(interpreter, standaloneUtil, argonautUtils, httpUtils)
+  dependsOn(interpreter, standaloneUtil, httpUtils)
 
 lazy val standaloneApp = (project in engine("standalone/app")).
   settings(commonSettings).
@@ -217,6 +219,7 @@ lazy val standaloneApp = (project in engine("standalone/app")).
     libraryDependencies ++= {
       Seq(
         "org.scalatest" %% "scalatest" % scalaTestV % "test",
+        "de.heikoseeberger" %% "akka-http-circe" % "1.27.0",
         "com.typesafe.akka" %% "akka-http" % akkaHttpV force(),
         "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test" force(),
         "com.typesafe.akka" %% "akka-slf4j" % akkaV,
@@ -527,6 +530,9 @@ lazy val api = (project in engine("api")).
       Seq(
         //TODO: czy faktycznie tak chcemy??
         "com.github.alexarchambault" %% s"argonaut-shapeless_$argonautMajorV" % argonautShapelessV,
+        "io.circe" %% "circe-parser" % circeV,
+        "io.circe" %% "circe-generic" % circeV,
+        "io.circe" %% "circe-generic-extras" % circeV,
         "org.apache.commons" % "commons-lang3" % commonsLangV,
         "org.typelevel" %% "cats-core" % catsV,
         "org.typelevel" %% "cats-effect" % "0.10.1",
@@ -597,21 +603,6 @@ lazy val httpUtils = (project in engine("httpUtils")).
     }
   ).dependsOn(api)
 
-lazy val argonautUtils = (project in engine("argonautUtils")).
-  settings(commonSettings).
-  settings(
-    name := "nussknacker-argonaut-utils",
-    libraryDependencies ++= {
-      Seq(
-        "io.argonaut" %% "argonaut" % argonautV,
-        "com.github.alexarchambault" %% s"argonaut-shapeless_$argonautMajorV" % argonautShapelessV,
-        "com.typesafe.akka" %% "akka-http" % akkaHttpV force(),
-        "com.fasterxml.jackson.core" % "jackson-databind" % jacksonV,
-        "org.scalatest" %% "scalatest" % scalaTestV % "test"
-      )
-    }
-  )
-
 //osobny modul bo chcemy uzyc klienta do testowania w managementSample
 lazy val queryableState = (project in engine("queryableState")).
   settings(commonSettings).
@@ -644,7 +635,8 @@ lazy val restmodel = (project in file("ui/restmodel"))
   .settings(
     name := "nussknacker-restmodel",
     libraryDependencies ++= Seq(
-      "org.scalatest" %% "scalatest" % scalaTestV % "test"
+      "org.scalatest" %% "scalatest" % scalaTestV % "test",
+      "io.circe" %% "circe-java8" % circeV
     )
   )
   .dependsOn(interpreter)
@@ -680,7 +672,7 @@ lazy val ui = (project in file("ui/server"))
     libraryDependencies ++= {
       Seq(
         "com.typesafe.akka" %% "akka-http" % akkaHttpV force(),
-
+        "de.heikoseeberger" %% "akka-http-circe" % "1.27.0",
         "ch.qos.logback" % "logback-core" % logbackV,
         "ch.qos.logback" % "logback-classic" % logbackV,
         "org.slf4j" % "log4j-over-slf4j" % "1.7.21",
