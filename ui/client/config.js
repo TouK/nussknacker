@@ -5,7 +5,8 @@
   and __webpack_public_path__).
   It's not really elegant, but we don't see better way without moving to hash router.
  */
-let nkPath = window.nkPath
+let nkPath = __DEV__ ? '' : window.nkPath
+
 //https://webpack.js.org/guides/public-path/#on-the-fly
 __webpack_public_path__ = `${nkPath}/static/`
 
