@@ -131,6 +131,12 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, sender: HttpSe
             case _ => RunningState.Error
           }
           checkVersion(one.jid, name).map { version =>
+            //TODO: return error when there's no correct version in process
+            //currently we're rather lax on this, so that this change is backward-compatible
+            //we log debug here for now, since it's invoked v. often
+            if (version.isEmpty) {
+              logger.debug(s"No correct version in deployed process: ${one.name}")
+            }
             Some(ProcessState(DeploymentId(one.jid), runningState, one.state.toString, one.`start-time`, version))
           }
       }
