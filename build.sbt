@@ -669,7 +669,13 @@ lazy val ui = (project in file("ui/server"))
       (assembly in Compile) in managementSample
     ).value,
     assemblyJarName in assembly := "nussknacker-ui-assembly.jar",
-    sbt.Keys.packageBin in Compile := (sbt.Keys.packageBin  in Compile).dependsOn(
+    /*
+      We depend on buildUi in packageBin and assembly to be make sure fe files will be included in jar and fajar
+      We abuse sbt a little bit, but we don't want to put webpack in generate resources phase, as it's long and it would
+      make compilation v. long. This is not too nice, but so far only alternative is to put buildUi outside sbt and 
+      use bash to control when it's done - and this can lead to bugs and edge cases (release, dist/docker, dist/tgz, assembly...)
+     */
+    packageBin in Compile := (packageBin in Compile).dependsOn(
       buildUi
     ).value,
     assembly in ThisScope := (assembly in ThisScope).dependsOn(
