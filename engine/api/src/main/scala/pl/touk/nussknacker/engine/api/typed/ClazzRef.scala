@@ -19,7 +19,7 @@ object ClazzRef {
     - in runtime/production we usually don't have TypeTag, as we rely on reflection anyway
     - one should be *very* careful with TypeTag as it degrades performance significantly when on critical path (e.g. SpelExpression.evaluate)
    */
-  def detailed[T: TypeTag]: ClazzRef = {
+  def fromDetailedType[T: TypeTag]: ClazzRef = {
     val tag = typeTag[T]
     // is it correct mirror?
     implicit val mirror: Mirror = tag.mirror

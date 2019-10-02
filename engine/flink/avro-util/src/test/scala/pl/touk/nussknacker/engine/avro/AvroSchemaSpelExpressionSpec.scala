@@ -125,7 +125,7 @@ class AvroSchemaSpelExpressionSpec extends FunSpec with Matchers {
   }
 
   private def parse[T:TypeTag](expr: String, validationCtx: ValidationContext) : ValidatedNel[ExpressionParseError, TypedExpression] = {
-    SpelExpressionParser.default(getClass.getClassLoader, enableSpelForceCompile = true, Nil, Standard).parse(expr, validationCtx, Typed.detailed[T])
+    SpelExpressionParser.default(getClass.getClassLoader, enableSpelForceCompile = true, Nil, Standard).parse(expr, validationCtx, Typed.fromDetailedType[T])
   }
 
   private def wrapWithRecordSchema(fieldsDefinition: String) =

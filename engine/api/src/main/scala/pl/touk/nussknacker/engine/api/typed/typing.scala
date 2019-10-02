@@ -153,7 +153,7 @@ object typing {
 
     def apply[T: ClassTag]: TypingResult = apply(ClazzRef[T])
 
-    def detailed[T: TypeTag]: TypingResult = apply(ClazzRef.detailed[T])
+    def fromDetailedType[T: TypeTag]: TypingResult = apply(ClazzRef.fromDetailedType[T])
 
     def apply(klass: Class[_]): TypingResult = apply(ClazzRef(klass))
 
@@ -163,6 +163,20 @@ object typing {
         Unknown
       } else {
         TypedClass(klass)
+      }
+    }
+
+    def fromInstance(obj: Any): TypingResult = {
+      obj match {
+        case null =>
+          Typed.empty
+        case TypedMap(fields) =>
+          val fieldTypes = fields.map {
+            case (k, v) => k -> fromInstance(v)
+          }
+          TypedObjectTypingResult(fieldTypes, TypedClass[TypedMap])
+        case other =>
+          Typed(other.getClass)
       }
     }
 

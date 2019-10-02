@@ -52,10 +52,10 @@ trait LazyParameter[+T] {
     = lazyParameterInterpreter.pure(value, valueTypingResult)
 
   def pure[A:TypeTag](value: A)(implicit lazyParameterInterpreter: LazyParameterInterpreter): LazyParameter[A]
-    = pure(value, Typed.detailed[A])
+    = pure(value, Typed.fromDetailedType[A])
 
   def map[Y:TypeTag](fun: T => Y)(implicit lazyParameterInterpreter: LazyParameterInterpreter): LazyParameter[Y] =
-    map(fun, Typed.detailed[Y])
+    map(fun, Typed.fromDetailedType[Y])
 
   //unfortunatelly, we cannot assert that TypingResult represents Y somehow...
   def map[Y](fun: T => Y, outputTypingResult: TypingResult)(implicit lazyParameterInterpreter: LazyParameterInterpreter): LazyParameter[Y] =
