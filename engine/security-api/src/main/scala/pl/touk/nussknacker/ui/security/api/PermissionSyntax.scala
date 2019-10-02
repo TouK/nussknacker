@@ -5,17 +5,16 @@ object PermissionSyntax {
   implicit class UserPermissionsQuery(user: LoggedUser) {
     def can(permission: Permission.Permission): Set[String] =
       user.categoryPermissions.collect{
-        case (c, p) if p.exists(containsPermissionOrAdmin(permission)) =>
+        case (c, p) if user.hasAdminPermission || p.exists(containsPermission(permission)) =>
           c
       }.toSet
 
-    def can(category:String,permission: Permission.Permission): Boolean =
-      user.categoryPermissions
+    def can(category:String, permission: Permission.Permission): Boolean =
+      user.hasAdminPermission || user.categoryPermissions
         .getOrElse(category, Set.empty)
-        .exists(containsPermissionOrAdmin(permission))
-  }
-  private[api] def containsPermissionOrAdmin(expected: Permission.Permission)(userCategoryPermission:Permission.Permission):Boolean = {
-    expected == userCategoryPermission || userCategoryPermission == Permission.Admin
+        .exists(containsPermission(permission))
   }
 
+  private[api] def containsPermission(expected: Permission.Permission)(userCategoryPermission: Permission.Permission): Boolean =
+    expected == userCategoryPermission
 }

@@ -37,7 +37,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
 
   private def deployedWithVersions(versionIds: Long*) =
     BeMatcher(
-      equal(versionIds.map(l => DeploymentEntry(l, TestFactory.testEnvironment, fixedTime, user().id, buildInfo))).matcher[List[DeploymentEntry]]
+      equal(versionIds.map(l => DeploymentEntry(l, TestFactory.testEnvironment, fixedTime, user("userId").id, buildInfo))).matcher[List[DeploymentEntry]]
     ).compose[List[DeploymentEntry]](_.map(_.copy(deployedAt = fixedTime)))
 
 
@@ -84,8 +84,8 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
             val deploymentHistory = responseAs[List[DeploymentHistoryEntry]]
             val curTime = LocalDateTime.now()
             deploymentHistory.map(_.copy(time = curTime)) shouldBe List(
-              DeploymentHistoryEntry(2, curTime, user().id, DeploymentAction.Cancel, Some(secondCommentId), Map()),
-              DeploymentHistoryEntry(2, curTime, user().id, DeploymentAction.Deploy, Some(firstCommentId), TestFactory.buildInfo)
+              DeploymentHistoryEntry(2, curTime, user("userId").id, DeploymentAction.Cancel, Some(secondCommentId), Map()),
+              DeploymentHistoryEntry(2, curTime, user("userId").id, DeploymentAction.Deploy, Some(firstCommentId), TestFactory.buildInfo)
             )
           }
         }
@@ -101,7 +101,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
   }
 
   test("deploy technical process and mark it as deployed") {
-    implicit val loggedUser = user() copy(categoryPermissions = Map(testCategoryName->Set(Permission.Admin, Permission.Write, Permission.Deploy, Permission.Read)))
+    implicit val loggedUser = user("userId") copy(categoryPermissions = Map(testCategoryName->Set(Permission.Write, Permission.Deploy, Permission.Read)))
     val processId = "Process1"
     whenReady(writeProcessRepository.saveNewProcess(ProcessName(processId), testCategoryName, CustomProcess(""), TestProcessingTypes.Streaming, false)) { res =>
       deployProcess(processId) ~> check { status shouldBe StatusCodes.OK }

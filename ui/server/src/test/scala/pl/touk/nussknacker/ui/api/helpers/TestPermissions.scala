@@ -16,9 +16,7 @@ trait TestPermissions {
   val testPermissionDeploy: CategorizedPermission = Map(testCategoryName -> Set(Permission.Deploy), secondTestCategoryName -> Set(Permission.Deploy))
   val testPermissionRead: CategorizedPermission = Map(testCategoryName -> Set(Permission.Read), secondTestCategoryName -> Set(Permission.Read))
   val testPermissionWrite: CategorizedPermission = Map(testCategoryName -> Set(Permission.Write), secondTestCategoryName -> Set(Permission.Write))
-  val testPermissionAdmin: CategorizedPermission = Map(testCategoryName -> Set(Permission.Admin), secondTestCategoryName -> Set(Permission.Admin))
-  val testPermissionAll: CategorizedPermission = testPermissionDeploy |+| testPermissionRead |+| testPermissionWrite |+| testPermissionAdmin
-
+  val testPermissionAll: CategorizedPermission = testPermissionDeploy |+| testPermissionRead |+| testPermissionWrite
 }
 
 object TestPermissions {
@@ -27,5 +25,4 @@ object TestPermissions {
   val testCategoryName = "TESTCAT"
 
   val secondTestCategoryName = "TESTCAT2"
-
 }

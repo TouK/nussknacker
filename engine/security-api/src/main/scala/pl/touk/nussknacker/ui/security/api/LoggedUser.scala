@@ -1,15 +1,17 @@
 package pl.touk.nussknacker.ui.security.api
 
-import Permission.Permission
+import pl.touk.nussknacker.ui.security.api.Permission.Permission
 
-case class LoggedUser(id: String,
-                      categoryPermissions: Map[String, Set[Permission]]=Map.empty) {
+case class LoggedUser(
+  id: String,
+  categoryPermissions: Map[String, Set[Permission]] = Map.empty,
+  isAdmin: Option[Boolean] = Option.apply(false)
+) {
   private val permissions = categoryPermissions.values.flatten.toSet
+
   def hasPermission(permission: Permission): Boolean = {
-    permissions.contains(permission) || isAdmin
+    hasAdminPermission || permissions.contains(permission)
   }
 
-  //TODO: remove
-  def isAdmin: Boolean = permissions.contains(Permission.Admin)
-
+  def hasAdminPermission: Boolean = isAdmin.getOrElse(false)
 }
