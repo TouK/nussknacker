@@ -5,12 +5,11 @@ object PermissionSyntax {
   implicit class UserPermissionsQuery(user: LoggedUser) {
     def can(permission: Permission.Permission): Set[String] =
       user.categoryPermissions.collect{
-        case (c, p) if user.hasAdminPermission || p.exists(containsPermission(permission)) =>
-          c
+        case (c, p) if user.isAdmin || p.exists(containsPermission(permission)) => c
       }.toSet
 
     def can(category:String, permission: Permission.Permission): Boolean =
-      user.hasAdminPermission || user.categoryPermissions
+      user.isAdmin || user.categoryPermissions
         .getOrElse(category, Set.empty)
         .exists(containsPermission(permission))
   }

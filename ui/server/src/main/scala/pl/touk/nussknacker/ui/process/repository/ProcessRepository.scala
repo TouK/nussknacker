@@ -17,12 +17,8 @@ trait ProcessRepository[F[_]] extends Repository[F] with EspTables {
   import api._
   import pl.touk.nussknacker.ui.security.api.PermissionSyntax._
   protected def processTableFilteredByUser(implicit loggedUser: LoggedUser): Query[ProcessEntityFactory#ProcessEntity, ProcessEntityData, Seq] = {
-    if (loggedUser.hasAdminPermission) {
-      return processesTable
-    }
-
     val readCategories = loggedUser.can(Permission.Read)
-    processesTable.filter(_.processCategory inSet readCategories)
+    if (loggedUser.isAdmin) processesTable else processesTable.filter(_.processCategory inSet readCategories)
   }
 
   protected def latestProcessVersions(processId: ProcessId)

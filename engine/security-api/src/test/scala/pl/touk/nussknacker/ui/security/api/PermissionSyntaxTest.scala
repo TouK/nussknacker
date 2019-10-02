@@ -22,7 +22,7 @@ class PermissionSyntaxTest extends FunSuite with Matchers {
   }
 
   test("Admin permission grands other permissions") {
-    def admin(cp: Map[String, Set[Permission]]) = LoggedUser("admin", cp, Option.apply(true))
+    def admin(cp: Map[String, Set[Permission]]) = LoggedUser("admin", cp, true)
 
     val perms: TableFor3[LoggedUser, Permission, String] = Table(
       ("user", "permission", "category"),

@@ -71,7 +71,7 @@ object BasicHttpAuthenticator {
                                               password: Option[String],
                                               encryptedPassword: Option[String],
                                               categoryPermissions: Map[String, Set[Permission]],
-                                              isAdmin: Option[Boolean] = Option.apply(false))
+                                              isAdmin: Boolean = false)
 
   private sealed trait Password {
     def value: String
@@ -83,7 +83,7 @@ object BasicHttpAuthenticator {
 
   private case class UserWithPassword(id: String, password: Password,
                                       categoryPermissions: Map[String, Set[Permission]],
-                                      isAdmin: Option[Boolean]) {
+                                      isAdmin: Boolean) {
     def toLoggedUser = LoggedUser(id, categoryPermissions, isAdmin)
   }
 

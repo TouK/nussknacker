@@ -82,7 +82,7 @@ class AppResources(config: Config,
         }
       } ~ path("config") {
         //config can contain sensitive information, so only Admin can see it
-        authorize(user.hasAdminPermission) {
+        authorize(user.isAdmin) {
           get {
             complete {
               io.circe.parser.parse(config.root().render(ConfigRenderOptions.concise())).left.map(_.message)
