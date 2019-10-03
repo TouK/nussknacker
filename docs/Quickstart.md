@@ -2,43 +2,51 @@
 
 ## Prerequisites
 
-To run this quickstart you have to 
-* have Docker (more or less latest version) installed
+* docker (more or less latest version) installed
 * open certain ports (see docker-compose.yml)
 
 ## Running
 
-* Checkout Nussknacker [project](https://github.com/touk/nussknacker) and enter demo/docker folder
-* Run `docker-compose up` and wait a while until all components start
-    * In case of containers restart please use `docker-compose stop` instead of `docker-compose kill` in order to avoid Kafka startup issues.
+* Clone Nussknacker [project](https://github.com/touk/nussknacker) from GitHub
+* Enter demo/docker folder
+* Run `docker-compose up` and wait a until all components start
+    
+> In case of containers restart please use `docker-compose stop` instead of `docker-compose kill` in order to avoid Kafka startup issues.
 
-Now you are ready to check your newly created environment:
+Now you are ready to check your newly created environment
 
 * [Nussknacker](http://localhost:8081/) - user/password: admin/admin
 * [Apache Flink UI](http://localhost:8081/flink/)
 * [Grafana](http://localhost:8081/grafana/)
 * [Kibana](http://localhost:8081/kibana/)
 
-## Defining new process
+## Defining a new process
 
 * Go to http://localhost:8081
 * Click 'Create new process' button - name it 'DetectLargeTransactions'
-* You'll see empty diagram
+* You'll see an empty workspace 
 * Click 'Import' on right panel and upload 'testData/DetectLargeTransactions.json'
-    * This process reads transactions data from Kafka, filter only those with amount greater than some value and writes filtered events back to Kafka. These events are read by Logstash and send to Elasticsearch for further analytics
-    * Double click on nodes to see process logic
+    
+> This process reads transactions data from Kafka, filter only those with amount greater than some value and writes filtered events back to Kafka. These events are than read by Logstash and send to Elasticsearch for further analytics
+    
+* Double click on nodes to see process logic
 * Click 'Save'
-* You have just created your first process!
+> You have just created your first process!
 
 <video width="100%" controls>
   <source src="img/quickstart/createProcess.mp4" type="video/mp4">
 </video>
 
 ## Test process with data
-* Click 'Deploy' on right panel
+* Click 'Deploy' on the right panel
 * Verify on Flink UI at http://localhost:8081/flink/ that your process is running
-* Run ./testData/sendTestTransactions.sh script a few times to generate some data (first run may end with error from Kafka - don't worry about it). Script will send some json data to "transactions" Kafka topic. 
-* Go to Metrics tab on Nussknacker main panel - you should see changed metrics. Your process just processed data from Kafka and saved filtered results!
+* Run ./testData/sendTestTransactions.sh script a few times to generate some data 
+
+> The first run may end with error from Kafka - don't worry about it. Script will send some json data to "transactions" Kafka topic. 
+
+* Go to Metrics tab on Nussknacker main panel - you should see changed metrics. 
+
+> Your process just processed data from Kafka and saved filtered results!
 
 <video width="100%" controls>
   <source src="img/quickstart/deployAndMetrics.mp4" type="video/mp4">
@@ -46,17 +54,29 @@ Now you are ready to check your newly created environment:
 
 ## See results in Kibana
 
-* To see Kibana go to Search tab on Nussknacker main panel 
-  * Define processedevents* as default index pattern
-  * You will see filtered events
+* Go to Search tab on Nussknacker main panel 
+* Define processedevents* as default index pattern
+* Now you should see filtered events
+
+> If you are getting 403 creating index, please try following script in the Kibana "Dev Tools"
+`PUT .kibana/_settings
+ {
+   "index": {
+     "blocks": {
+     "read_only_allow_delete": "false"
+     }
+   }
+ }`
 
 <video width="100%" controls>
   <source src="img/quickstart/searchInKibana.mp4" type="video/mp4">
 </video>
 
-## Test your process in sandbox environment
-* Clink 'generate' button in right panel of application (assuming you have already some test data on Kafka)
-  * Latest records from Kafka will be downloaded to file
+## Test your process in a sandbox
+* Clink 'generate' button in right panel of application
+
+> If you followed the Quickstart from the beggining you should already have some data on Kafka. Latest records from Kafka will be downloaded to a file.
+
 * Click 'from file' button and upload file generated in last step
 * After a while you will see test results - how many records passed filters, and what where variables values
 
@@ -90,7 +110,7 @@ The quickstart starts several Docker containers. Let's look at them in detail:
   * Elasticsearch
   * Kibana
 * Nginx
-  * To be able to view all applications on single port
+  * To be able to view all applications on a single port
 
 ## Switch application version
 To switch Nussknacker version 
