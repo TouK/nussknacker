@@ -53,12 +53,12 @@ class EdgeDetailsModal extends React.Component {
     if (!this.props.readOnly) {
       return ([
         <LaddaButton
-            key="1"
-            title="Save edge details"
-            className='modalButton pull-right modalConfirmButton'
-            loading={this.state.pendingRequest}
-            data-style='zoom-in'
-            onClick={this.performEdgeEdit}
+          key="1"
+          title="Save edge details"
+          className='modalButton pull-right modalConfirmButton'
+          loading={this.state.pendingRequest}
+          data-style='zoom-in'
+          onClick={this.performEdgeEdit}
         >
           Save
         </LaddaButton>,
@@ -101,10 +101,12 @@ class EdgeDetailsModal extends React.Component {
         <Modal isOpen={isOpen} className="espModal" shouldCloseOnOverlayClick={false} onRequestClose={this.closeModal}>
           <div className="modalHeader" style={headerStyles}><span>edge</span></div>
           <div className="modalContentDark">
-            <EdgeDetailsContent changeEdgeTypeValue={this.changeEdgeTypeValue}
-                                updateEdgeProp={this.updateEdgeProp}
-                                readOnly={false}
-                                edge={this.state.editedEdge} />
+            <EdgeDetailsContent
+              changeEdgeTypeValue={this.changeEdgeTypeValue}
+              updateEdgeProp={this.updateEdgeProp}
+              readOnly={false}
+              edge={this.state.editedEdge}
+            />
           </div>
           <div className="modalFooter">
             <div className="footerButtons">
