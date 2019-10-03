@@ -2,8 +2,7 @@ package pl.touk.nussknacker.restmodel
 
 import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.graph.node
-import pl.touk.nussknacker.engine.graph.node.{NodeData, UserDefinedAdditionalNodeFields}
-import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.NodeAdditionalFields
+import pl.touk.nussknacker.engine.graph.node.{NodeAdditionalFields, NodeData, UserDefinedAdditionalNodeFields}
 import shapeless.syntax.typeable._
 import io.circe.generic.extras.semiauto._
 import pl.touk.nussknacker.engine.api.CirceUtil._

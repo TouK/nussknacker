@@ -197,7 +197,7 @@ class ManagementResources(processCounter: ProcessCounter,
     parse(displayableProcessJson).right.flatMap(Decoder[DisplayableProcess].decodeJson) match {
       case Right(process) =>
         val canonical = ProcessConverter.fromDisplayable(process)
-        val canonicalJson = ArgonautCirce.toCirce(UiProcessMarshaller.toJson(canonical)).spaces2
+        val canonicalJson = UiProcessMarshaller.toJson(canonical).spaces2
         (managementActor ? Test(id, canonicalJson, TestData(testData), user, ManagementResources.testResultsVariableEncoder)).mapTo[TestResults[Json]].flatMap { results =>
           assertTestResultsAreNotTooBig(results)
         }.map { results =>

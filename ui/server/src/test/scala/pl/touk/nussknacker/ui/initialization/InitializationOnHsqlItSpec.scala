@@ -24,7 +24,7 @@ class InitializationOnHsqlItSpec extends FlatSpec with ScalatestRouteTest with M
   private lazy val writeRepository = TestFactory.newWriteProcessRepository(db)
 
   private def sampleDeploymentData(processId: String) = GraphProcess(UiProcessMarshaller.toJson(ProcessCanonizer.canonize(
-    ProcessTestData.validProcessWithId(processId))).nospaces)
+    ProcessTestData.validProcessWithId(processId))).noSpaces)
 
   it should "add technical processes" in {
 

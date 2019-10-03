@@ -44,7 +44,7 @@ object ProcessAdditionalFields {
 @JsonCodec case class Group(id: String, nodes: Set[String])
 
 // todo: MetaData should hold ProcessName as id
-case class MetaData(id: String,
+@ConfiguredJsonCodec case class MetaData(id: String,
                     typeSpecificData: TypeSpecificData,
                     isSubprocess: Boolean = false,
                     additionalFields: Option[ProcessAdditionalFields] = None,

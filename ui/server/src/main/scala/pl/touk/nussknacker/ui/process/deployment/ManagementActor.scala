@@ -181,8 +181,7 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
       .map(_.withoutDisabledNodes)
       .toValidatedNel
       .andThen(subprocessResolver.resolveSubprocesses)
-      //TODO: custom JsonMarshaller
-      .map(proc => UiProcessMarshaller.toJson(proc).nospaces)
+      .map(proc => UiProcessMarshaller.toJson(proc).noSpaces)
     CatsSyntax.toFuture(validatedGraph)(e => new RuntimeException(e.head.toString))
   }
 

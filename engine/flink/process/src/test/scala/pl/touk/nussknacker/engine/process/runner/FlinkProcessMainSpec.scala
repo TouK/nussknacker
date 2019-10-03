@@ -21,6 +21,7 @@ import pl.touk.nussknacker.engine.api.test.{EmptyLineSplittedTestDataParser, New
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, ServiceReturningType, TypedMap, typing}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation, FlinkSourceFactory}
 import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
 import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
@@ -54,7 +55,7 @@ class FlinkProcessMainSpec extends FlatSpec with Matchers with Inside {
         .emptySink("out", "monitor")
 
     FlinkTestConfiguration.setQueryableStatePortRangesBySystemProperties()
-    FlinkProcessMain.main(Array(ProcessMarshaller.toJson(process, PrettyParams.spaces2), ProcessVersion.empty.asJson.toString()))
+    FlinkProcessMain.main(Array(ProcessMarshaller.toJson(ProcessCanonizer.canonize(process)).spaces2, ProcessVersion.empty.asJson.toString()))
   }
 
 }

@@ -55,7 +55,7 @@ object node {
   // TODO: remove this trait and duplicated NodeAdditionalFields in restmodel module.
   trait UserDefinedAdditionalNodeFields
 
-  case class NodeAdditionalFields(description: Option[String]) extends UserDefinedAdditionalNodeFields
+  @JsonCodec case class NodeAdditionalFields(description: Option[String]) extends UserDefinedAdditionalNodeFields
 
   sealed trait NodeData {
     def id: String

@@ -139,7 +139,7 @@ class DBFetchingProcessRepositorySpec
   }
 
   private def saveProcess(espProcess: EspProcess, now: LocalDateTime, category: String = "") = {
-    val json = UiProcessMarshaller.toJson(ProcessCanonizer.canonize(espProcess)).nospaces
+    val json = UiProcessMarshaller.toJson(ProcessCanonizer.canonize(espProcess)).noSpaces
     currentTime = now
     writingRepo.saveNewProcess(ProcessName(espProcess.id), category, GraphProcess(json), TestProcessingTypes.Streaming, false).futureValue shouldBe 'right
   }

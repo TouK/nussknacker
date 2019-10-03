@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process.marshall
 import io.circe.parser.parse
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
-import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.NodeAdditionalFields
+import pl.touk.nussknacker.engine.graph.node.NodeAdditionalFields
 
 class UiProcessMarshallerSpec extends FlatSpec with Matchers {
 
@@ -71,7 +71,7 @@ class UiProcessMarshallerSpec extends FlatSpec with Matchers {
     val displayableProcess = ProcessConverter.toDisplayableOrDie(baseProcess, TestProcessingTypes.Streaming)
     val canonical = ProcessConverter.fromDisplayable(displayableProcess)
 
-    val processAfterMarshallAndUnmarshall = UiProcessMarshaller.toJson(canonical).nospaces
+    val processAfterMarshallAndUnmarshall = UiProcessMarshaller.toJson(canonical).noSpaces
 
     parse(processAfterMarshallAndUnmarshall) shouldBe parse(baseProcess)
   }

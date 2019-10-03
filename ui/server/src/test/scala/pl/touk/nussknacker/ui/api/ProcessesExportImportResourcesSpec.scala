@@ -138,8 +138,7 @@ class ProcessesExportImportResourcesSpec extends FunSuite with ScalatestRouteTes
   }
 
   private def assertProcessPrettyPrinted(response: String, process: CanonicalProcess): Unit = {
-    //we convert to circe here, since there are some minor formatting differences between argonaut & circe
-    val expected = ArgonautCirce.toCirce(UiProcessMarshaller.toJson(process)).spaces2
+    val expected = UiProcessMarshaller.toJson(process).spaces2
     response shouldBe expected
   }
 

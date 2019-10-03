@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.marshall
 
-import argonaut.PrettyParams
 import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
 import org.scalatest.prop.TableDrivenPropertyChecks
@@ -45,7 +44,7 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
 
     result should equal(Some(process))
   }
-
+     
   it should "marshall and unmarshall to same process with ending processor" in {
     val process = EspProcessBuilder
             .id("process1")
@@ -161,8 +160,9 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
   }
 
   private def marshallAndUnmarshall(process: EspProcess): Option[EspProcess] = {
-    val marshalled = ProcessMarshaller.toJson(process, PrettyParams.spaces2)
+    val marshalled = ProcessMarshaller.toJson(ProcessCanonizer.canonize(process)).spaces2
     val unmarshalled = ProcessMarshaller.fromJson(marshalled).toOption
+    unmarshalled.foreach(_ shouldBe ProcessCanonizer.canonize(process))
     ProcessCanonizer.uncanonize(unmarshalled.value).toOption
   }
 
