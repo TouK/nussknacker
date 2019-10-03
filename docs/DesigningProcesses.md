@@ -1,5 +1,5 @@
 
-#Designing processes with UI 
+#Designing processes 
 
 In this section you will learn how to create Nussknacker processes using defined model. In the examples we'll 
   use sample model that comes with Nussknacker distribution. You can find latest sources [here](https://github.com/TouK/nussknacker/tree/master/engine/example/src/main/scala/).

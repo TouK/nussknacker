@@ -2,12 +2,11 @@ This is part of Nussknacker's [quickstart](https://touk.github.io/nussknacker/Qu
 
 Images
 =====
-Docker images are published on each commit. Available nusskancker images you can find at: https://hub.docker.com/r/touk/nussknacker/tags. 
-Default image tag is: demo-latest.  
+Docker images are published on each commit. You can find them at https://hub.docker.com/r/touk/nussknacker/tags. Default image tag is: demo-latest.  
 
 Demo version
 =======
-Demo version available at: https://demo.nussknacker.io. Access data: admin / admin. 
+Demo version available at: https://demo.nussknacker.io. Credentials: admin / admin. 
 
 Running
 =======
