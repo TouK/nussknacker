@@ -8,6 +8,7 @@ import Dialogs from "./Dialogs";
 import HttpService from "../../http/HttpService";
 import * as JsonUtils from "../../common/JsonUtils";
 import NodeDetailsContent from "../graph/NodeDetailsContent";
+import EdgeDetailsContent from "../graph/EdgeDetailsContent";
 import Moment from "moment";
 import {dateFormat} from "../../config";
 import Scrollbars from "react-custom-scrollbars";
@@ -109,16 +110,32 @@ class CompareVersionsDialog extends React.Component {
 
   printDiff(diffId) {
     const diff = this.state.difference[diffId]
-    const differentPaths = this.differentPathsForObjects(diff.currentNode, diff.otherNode)
+
+    switch (diff.type) {
+      case "NodeNotPresentInOther":
+      case "NodeNotPresentInCurrent":
+      case "NodeDifferent":
+        return this.renderDiff(diff.currentNode, diff.otherNode, this.printNode);
+      case "EdgeNotPresentInCurrent":
+      case "EdgeNotPresentInOther":
+      case "EdgeDifferent":
+        return this.renderDiff(diff.currentEdge, diff.otherEdge, this.printEdge);
+      default:
+        console.error(`Difference type ${diff.type} is not supported`)
+    }
+  }
+
+  renderDiff(currentElement, otherElement, printElement) {
+    const differentPaths = this.differentPathsForObjects(currentElement, otherElement)
     return (
       <div className="compareContainer">
         <div>
           <div className="versionHeader">Current version</div>
-          {this.printNode(diff.currentNode, differentPaths, "_current")}
+          {printElement(currentElement, differentPaths)}
         </div>
         <div>
           <div className="versionHeader">Version {this.versionDisplayString(this.state.otherVersion)}</div>
-          {this.printNode(diff.otherNode, [], "_other")}
+          {printElement(otherElement, [])}
         </div>
       </div>
     )
@@ -130,15 +147,22 @@ class CompareVersionsDialog extends React.Component {
     return _.keys(flattenObj)
   }
 
-  printNode(node, pathsToMark, keySuffix) {
+  printNode(node, pathsToMark) {
     return node ? (<NodeDetailsContent isEditMode={false}
-                                       key={node.id + keySuffix}
                                        node={node}
                                        pathsToMark={pathsToMark}
                                        onChange={() => {}}/>) :
       (<div className="notPresent">Node not present</div>)
   }
 
+  printEdge(edge, pathsToMark) {
+    return edge ? (<EdgeDetailsContent edge={edge}
+                                       readOnly={true}
+                                       changeEdgeTypeValue={() => {}}
+                                       updateEdgeProp={() => {}}
+                                       pathsToMark={pathsToMark} />) :
+      (<div className="notPresent">Edge not present</div>)
+  }
 }
 
 function mapState(state) {
