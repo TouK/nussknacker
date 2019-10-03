@@ -5,7 +5,9 @@ import sbt._
 import sbtassembly.AssemblyPlugin.autoImport.assembly
 import sbtassembly.MergeStrategy
 
-val scalaV = "2.12.8"
+val scala211 = "2.11.12"
+val scala212 = "2.12.10"
+lazy val supportedScalaVersions = List(scala212, scala211)
 
 //by default we include flink and scala, we want to be able to disable this behaviour for performance reasons
 val includeFlinkAndScala = Option(System.getProperty("includeFlinkAndScala", "true")).exists(_.toBoolean)
@@ -26,7 +28,8 @@ val dockerUpLatest = System.getProperty("dockerUpLatest", "true").toBoolean
 // unfortunately it does not work, so we resort to hack by publishing root module to Resolver.defaultLocal
 //publishArtifact := false
 publishTo := Some(Resolver.defaultLocal)
-
+crossScalaVersions := Nil
+               
 val publishSettings = Seq(
   publishMavenStyle := true,
   releasePublishArtifactsAction := PgpKeys.publishSigned.value,
@@ -80,7 +83,8 @@ val commonSettings =
     Seq(
       test in assembly := {},
       licenses += ("Apache-2.0", url("https://www.apache.org/licenses/LICENSE-2.0.html")),
-      scalaVersion  := scalaV,
+      crossScalaVersions := supportedScalaVersions,
+      scalaVersion  := scala212,
       resolvers ++= Seq(
         "confluent" at "http://packages.confluent.io/maven"
       ),
@@ -158,7 +162,7 @@ lazy val dockerSettings = {
     dockerLabels := Map(
       "tag" -> dockerTagName.getOrElse(version.value),
       "version" -> version.value,
-      "scala" -> scalaV,
+      "scala" -> scalaVersion.value,
       "flink" -> flinkV
     ),
     version in Docker := dockerTagName.getOrElse(version.value)

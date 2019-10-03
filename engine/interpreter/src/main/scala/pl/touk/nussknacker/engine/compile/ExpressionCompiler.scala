@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.compile
 
-import cats.data.Validated.{Valid, invalid, valid}
+import cats.data.Validated.{Invalid, Valid, invalid, valid}
 import cats.data.ValidatedNel
 import cats.instances.list._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
@@ -55,6 +55,8 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
   : ValidatedNel[PartSubGraphCompilationError, List[compiledgraph.evaluatedparam.Parameter]] = {
     compileObjectParameters(parameterDefinitions, parameters, List.empty, maybeCtx, maybeCtx).map(_.map {
       case TypedParameter(name, expr: TypedExpression) => compiledgraph.evaluatedparam.Parameter(name, expr.expression, expr.returnType)
+        //FIXME
+      case TypedParameter(name, expr: TypedExpressionMap) => throw new IllegalArgumentException("Typed expression map should not be here...")
     })
   }
 

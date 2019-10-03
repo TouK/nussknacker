@@ -16,10 +16,3 @@ Talk to us on our [mailing list](https://groups.google.com/forum/#!forum/nusskna
 ## License
 
 **Nussknacker** is published under [Apache License 2.0](http://www.apache.org/licenses/LICENSE-2.0).
-
-
-## Scala compatibility
-
-Currently we only support scala 2.11.x. The main reason we don't support scala < 2.11 and scala 2.12 is 
-[this jira](https://issues.apache.org/jira/browse/FLINK-5005) - we rely heavily on Flink, and making it support scala 2.12
-is suprisingly hard (due to changes in implementation of lambdas).
