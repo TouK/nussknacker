@@ -7,9 +7,8 @@ import LaddaButton from "react-ladda"
 import "ladda/dist/ladda.min.css"
 import ActionsUtils from '../../actions/ActionsUtils';
 import NodeUtils from './NodeUtils';
-import ExpressionSuggest from './ExpressionSuggest'
-import ModalRenderUtils from "./ModalRenderUtils"
 import EspModalStyles from '../../common/EspModalStyles'
+import EdgeDetailsContent from "./EdgeDetailsContent";
 
 //TODO: this is still pretty switch-specific. 
 class EdgeDetailsModal extends React.Component {
@@ -75,7 +74,7 @@ class EdgeDetailsModal extends React.Component {
   updateEdgeProp = (prop, value) => {
     const editedEdge = _.cloneDeep(this.state.editedEdge)
     const newEdge = _.set(editedEdge, prop, value)
-    this.setState( { editedEdge: newEdge})
+    this.setState({ editedEdge: newEdge })
   }
 
   changeEdgeTypeValue = (edgeTypeValue) => {
@@ -87,59 +86,6 @@ class EdgeDetailsModal extends React.Component {
       edgeType: defaultEdgeType
     }
     this.setState( { editedEdge: newEdge})
-  }
-
-  renderModalContent = () => {
-    const edge = this.state.editedEdge
-    const baseModalContent = (toAppend) => {
-      return (
-      <div className="node-table">
-        {ModalRenderUtils.renderErrors(this.props.edgeErrors, "Edge has errors")}
-        <div className="node-table-body">
-          <div className="node-row">
-            <div className="node-label">From</div>
-            <div className="node-value"><input readOnly={true} type="text" className="node-input" value={edge.from}/></div>
-          </div>
-          <div className="node-row">
-            <div className="node-label">To</div>
-            <div className="node-value"><input readOnly={true} type="text" className="node-input" value={edge.to}/></div>
-          </div>
-          <div className="node-row">
-            <div className="node-label">Type</div>
-            <div className="node-value">
-              <select id="processCategory" className="node-input" value={edge.edgeType.type} onChange={(e) => this.changeEdgeTypeValue(e.target.value)}>
-                <option value={"SwitchDefault"}>Default</option>
-                <option value={"NextSwitch"}>Condition</option>
-              </select>
-            </div>
-          </div>
-          {toAppend}
-        </div>
-      </div>
-      )
-    }
-
-    switch (_.get(edge.edgeType, 'type')) {
-      case "SwitchDefault": {
-        return baseModalContent()
-      }
-      case "NextSwitch": {
-        return baseModalContent(
-          <div className="node-row">
-            <div className="node-label">Expression</div>
-            <div className="node-value">
-              <ExpressionSuggest inputProps={{
-                rows: 1, cols: 50, className: "node-input", value: edge.edgeType.condition.expression,
-                onValueChange: (newValue) => this.updateEdgeProp("edgeType.condition.expression", newValue),
-                language: edge.edgeType.condition.language
-              }}/>
-            </div>
-          </div>
-        )
-      }
-      default:
-        return ''
-    }
   }
 
   edgeIsEditable = () => {
@@ -155,7 +101,10 @@ class EdgeDetailsModal extends React.Component {
         <Modal isOpen={isOpen} className="espModal" shouldCloseOnOverlayClick={false} onRequestClose={this.closeModal}>
           <div className="modalHeader" style={headerStyles}><span>edge</span></div>
           <div className="modalContentDark">
-            {this.renderModalContent()}
+            <EdgeDetailsContent changeEdgeTypeValue={this.changeEdgeTypeValue}
+                                updateEdgeProp={this.updateEdgeProp}
+                                readOnly={false}
+                                edge={this.state.editedEdge} />
           </div>
           <div className="modalFooter">
             <div className="footerButtons">
