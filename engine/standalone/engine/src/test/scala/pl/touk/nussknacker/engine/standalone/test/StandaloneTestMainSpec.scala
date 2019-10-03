@@ -21,7 +21,7 @@ class StandaloneTestMainSpec extends FunSuite with Matchers with BeforeAndAfterE
   private val modelData = LocalModelData(ConfigFactory.load(), new StandaloneProcessConfigCreator)
 
   private def marshall(process: EspProcess): String = ProcessMarshaller.toJson(ProcessCanonizer.canonize(process)).spaces2
-  
+
   test("perform test on mocks") {
     val process = EspProcessBuilder
       .id("proc1")
