@@ -7,7 +7,16 @@ under active development, so some parts of the API may change in the future.
 Nussknacker versions
 ====================
 
-0.0.8
+0.0.11 (1 Apr 2019)
+---------
+
+0.0.10 (13 Nov 2018)
+---------
+
+0.0.9 (13 Jul 2018)
+---------
+
+0.0.8 (7 May 2018)
 ---------
 - [ITDEVESP-389] expressions code syntax highlighting
 - source/sink params as expressions

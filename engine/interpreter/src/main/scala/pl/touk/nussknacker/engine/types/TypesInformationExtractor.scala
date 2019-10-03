@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.types
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypedUnion, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo}
 import pl.touk.nussknacker.engine.types.EspTypeUtils.clazzDefinition
 import pl.touk.nussknacker.engine.variables.MetaVariables
@@ -51,8 +51,10 @@ object TypesInformationExtractor {
   }
 
   private def clazzRefsFromTypingResult(typingResult: TypingResult): Set[ClazzRef] = typingResult match {
-    case Typed(set) =>
-      set.flatMap(clazzRefsFromTypedClass)
+    case tc: TypedClass =>
+      clazzRefsFromTypedClass(tc)
+    case TypedUnion(set) =>
+      set.flatMap(clazzRefsFromTypingResult)
     case TypedObjectTypingResult(fields, clazz) =>
       clazzRefsFromTypedClass(clazz) ++ fields.values.flatMap(clazzRefsFromTypingResult)
     case Unknown =>

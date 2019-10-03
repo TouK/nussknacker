@@ -1,5 +1,8 @@
 package pl.touk.nussknacker.ui.process.migrate
 
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
+
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshalling.Marshal
@@ -8,14 +11,13 @@ import akka.http.scaladsl.model.{RequestEntity, _}
 import akka.http.scaladsl.model.headers.{Authorization, BasicHttpCredentials}
 import akka.http.scaladsl.unmarshalling.{Unmarshal, Unmarshaller}
 import akka.stream.Materializer
-import argonaut.DecodeJson
 import cats.data.EitherT
 import cats.implicits._
-import pl.touk.http.argonaut.{Argonaut62Support, JsonMarshaller}
+import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import io.circe.Decoder
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.EspError.XError
-import pl.touk.nussknacker.ui.codec.UiCodecs
 import pl.touk.nussknacker.ui.process.ProcessToSave
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.InvalidProcessTypeError
@@ -37,7 +39,7 @@ trait RemoteEnvironment {
 
   def processVersions(processName: ProcessName)(implicit ec: ExecutionContext) : Future[List[ProcessHistoryEntry]]
 
-  def migrate(localProcess: DisplayableProcess, category: String)(implicit ec: ExecutionContext, loggedUser: LoggedUser, jsonMarshaller: JsonMarshaller) : Future[Either[EspError, Unit]]
+  def migrate(localProcess: DisplayableProcess, category: String)(implicit ec: ExecutionContext, loggedUser: LoggedUser) : Future[Either[EspError, Unit]]
 
   def testMigration(implicit ec: ExecutionContext) : Future[Either[EspError, List[TestMigrationResult]]]
 }
@@ -74,8 +76,8 @@ class HttpRemoteEnvironment(httpConfig: HttpRemoteEnvironmentConfig,
 case class StandardRemoteEnvironmentConfig(uri: String, batchSize: Int)
 
 //TODO: extract interface to remote environment?
-trait StandardRemoteEnvironment extends Argonaut62Support with RemoteEnvironment with UiCodecs {
-
+trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironment {
+  
   def environmentId: String
 
   def config: StandardRemoteEnvironmentConfig
@@ -111,7 +113,7 @@ trait StandardRemoteEnvironment extends Argonaut62Support with RemoteEnvironment
       Future.successful(response.status)
     }
 
-  private def invokeJson[T: DecodeJson](method: HttpMethod, pathParts: List[String],
+  private def invokeJson[T: Decoder](method: HttpMethod, pathParts: List[String],
                                         queryString: Option[String] = None, requestEntity: RequestEntity = HttpEntity.Empty)
                                        (implicit ec: ExecutionContext): Future[Either[EspError, T]] = {
     invoke(method, pathParts, queryString, requestEntity) { response =>
@@ -143,17 +145,15 @@ trait StandardRemoteEnvironment extends Argonaut62Support with RemoteEnvironment
   }
 
   override def migrate(localProcess: DisplayableProcess, category: String)
-                      (implicit ec: ExecutionContext, loggedUser: LoggedUser, jsonMarshaller: JsonMarshaller) : Future[Either[EspError, Unit]]= {
+                      (implicit ec: ExecutionContext, loggedUser: LoggedUser) : Future[Either[EspError, Unit]]= {
 
     val comment = s"Process migrated from $environmentId by ${loggedUser.id}"
     (for {
       processToValidate <- EitherT.right(Marshal(localProcess).to[MessageEntity])
       validation <- EitherT(invokeJson[ValidationResult](HttpMethods.POST, List("processValidation"), requestEntity = processToValidate))
       _ <- EitherT.fromEither[Future](if (validation.errors != ValidationErrors.success) Left[EspError, Unit](MigrationValidationError(validation.errors)) else Right(()))
-
       _ <- createRemoteProcessIfNotExist(localProcess, category)
-
-      processToSave <- EitherT.right(Marshal(ProcessToSave(localProcess, comment)).to[MessageEntity])
+      processToSave <- EitherT.right(Marshal(ProcessToSave(localProcess, comment)).to[MessageEntity](marshaller, ec))
       _ <- EitherT(invokeJson[ValidationResult](HttpMethods.PUT, List("processes", localProcess.id), requestEntity = processToSave))
     } yield ()).value
   }
@@ -189,7 +189,7 @@ trait StandardRemoteEnvironment extends Argonaut62Support with RemoteEnvironment
       invokeJson[List[ValidatedProcessDetails]](
         HttpMethods.GET,
         "processesDetails" :: Nil,
-        queryString = Some("names=" + processes.map(_.name).mkString(","))
+        queryString = Some("names=" + processes.map(process => URLEncoder.encode(process.name, StandardCharsets.UTF_8.displayName())).mkString(","))
       )
     }
 

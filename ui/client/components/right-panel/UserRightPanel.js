@@ -21,6 +21,7 @@ import Archive from "../../containers/Archive";
 import SpinnerWrapper from "../SpinnerWrapper";
 import PropTypes from 'prop-types';
 import Dropzone from 'react-dropzone'
+import Metrics from "../../containers/Metrics";
 
 class UserRightPanel extends Component {
 
@@ -262,7 +263,7 @@ class UserRightPanel extends Component {
   versionId = () => this.props.fetchedProcessDetails.processVersionId
 
   showMetrics = () => {
-    history.push('/metrics/' + this.processId())
+    history.push(Metrics.pathForProcess(this.processId()))
   }
 
   exportProcess = () => {
@@ -279,8 +280,7 @@ class UserRightPanel extends Component {
       this.props.actions.toggleInfoModal(Dialogs.types.infoModal,DialogMessages.cantArchiveRunningProcess())
     }else{
       this.props.actions.toggleConfirmDialog(true, DialogMessages.archiveProcess(this.processId()), () => {
-          return HttpService.archiveProcess(this.processId()).then((resp) =>
-							history.push(Archive.path))
+          return HttpService.archiveProcess(this.processId()).then((response) => history.push(Archive.path))
       })
     }
   }
@@ -334,7 +334,8 @@ class UserRightPanel extends Component {
       return {node, position}
     }
     const duplicatedNodesWithPositions = this.props.selectionState.map(duplicateNode)
-    this.props.actions.nodesAdded(duplicatedNodesWithPositions)
+    const edgesForNodes = NodeUtils.getEdgesForConnectedNodes(this.props.selectionState, this.props.processToDisplay)
+    this.props.actions.nodesWithEdgesAdded(duplicatedNodesWithPositions, edgesForNodes)
   }
 
   deleteSelection = () => {

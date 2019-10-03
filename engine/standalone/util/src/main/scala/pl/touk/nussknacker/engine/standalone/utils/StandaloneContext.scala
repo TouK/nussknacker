@@ -1,30 +1,22 @@
 package pl.touk.nussknacker.engine.standalone.utils
 
-import com.codahale.metrics.{Metric, MetricFilter, MetricRegistry}
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.standalone.utils.metrics.MetricsProvider
+import pl.touk.nussknacker.engine.util.service.EspTimer
 
-case class StandaloneContext(processId: String, private val metricRegistry: MetricRegistry) extends LazyLogging {
+case class StandaloneContext(processId: String, metricsProvider: MetricsProvider) extends LazyLogging {
 
-  //we want to be safe in concurrent conditions
-  def register[T<:Metric](name: String, metric: T) : T = {
-    val metricName = MetricRegistry.name(processId, name)
-    try {
-      metricRegistry.register(metricName, metric)
-    } catch {
-      case e:IllegalArgumentException if e.getMessage == "A metric named " + metricName + " already exists" =>
-        logger.info(s"Reusing existing metric for $name")
-        metricRegistry.getMetrics.get(metricName).asInstanceOf[T]
-    }
+  def espTimer(instantTimerWindowInSeconds: Long, name: String*): EspTimer = {
+    metricsProvider.espTimer(processId, instantTimerWindowInSeconds, name:_*)
   }
 
+
   def close(): Unit = {
-    metricRegistry.removeMatching(new MetricFilter {
-      override def matches(name: String, metric: Metric) = name.startsWith(processId)
-    })
+    metricsProvider.close(processId)
   }
 
 }
 
-class StandaloneContextPreparer(metricRegistry: MetricRegistry) {
+class StandaloneContextPreparer(metricRegistry: MetricsProvider) {
   def prepare(processId: String) = StandaloneContext(processId, metricRegistry)
 }

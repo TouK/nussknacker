@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process.repository
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.process.ProcessId
-import pl.touk.nussknacker.restmodel.processdetails.{DeploymentHistoryEntry, ProcessDetails}
+import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, DeploymentHistoryEntry, ProcessShapeFetchStrategy}
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntityData
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessNotFoundError
@@ -13,39 +13,41 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait FetchingProcessRepository {
 
-  def fetchLatestProcessDetailsForProcessId(id: ProcessId, businessView: Boolean = false)
-                                           (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Option[ProcessDetails]]
+  def fetchLatestProcessDetailsForProcessId[PS: ProcessShapeFetchStrategy](id: ProcessId, businessView: Boolean = false)
+                                                                          (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Option[BaseProcessDetails[PS]]]
 
-  def fetchLatestProcessDetailsForProcessIdEither(id: ProcessId, businessView: Boolean = false)
-                                                 (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[XError[ProcessDetails]] = {
-    fetchLatestProcessDetailsForProcessId(id).map[XError[ProcessDetails]] {
+  def fetchLatestProcessDetailsForProcessIdEither[PS: ProcessShapeFetchStrategy](id: ProcessId, businessView: Boolean = false)
+                                                                                (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[XError[BaseProcessDetails[PS]]] = {
+    fetchLatestProcessDetailsForProcessId(id).map[XError[BaseProcessDetails[PS]]] {
       case None => Left(ProcessNotFoundError(id.value.toString))
       case Some(p) => Right(p)
     }
   }
 
-  def fetchProcessDetailsForId(processId: ProcessId, versionId: Long, businessView: Boolean)
-                                (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Option[ProcessDetails]]
+  def fetchProcessDetailsForId[PS: ProcessShapeFetchStrategy](processId: ProcessId, versionId: Long, businessView: Boolean)
+                                                             (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Option[BaseProcessDetails[PS]]]
 
-  def fetchLatestProcessVersion(processId: ProcessId)
-                               (implicit loggedUser: LoggedUser): Future[Option[ProcessVersionEntityData]]
+  def fetchLatestProcessVersion[PS: ProcessShapeFetchStrategy](processId: ProcessId)
+                                                              (implicit loggedUser: LoggedUser): Future[Option[ProcessVersionEntityData]]
 
-  def fetchProcesses()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[ProcessDetails]]
+  def fetchProcesses[PS: ProcessShapeFetchStrategy]()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[BaseProcessDetails[PS]]]
 
-  def fetchProcesses(isSubprocess: Option[Boolean], isArchived: Option[Boolean], isDeployed: Option[Boolean], categories: Option[Seq[String]], processingTypes: Option[Seq[String]])
-                    (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[ProcessDetails]]
+  def fetchProcesses[PS: ProcessShapeFetchStrategy](isSubprocess: Option[Boolean], isArchived: Option[Boolean],
+                                                    isDeployed: Option[Boolean], categories: Option[Seq[String]], processingTypes: Option[Seq[String]])
+                                                   (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[BaseProcessDetails[PS]]]
 
-  def fetchCustomProcesses()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[ProcessDetails]]
+  def fetchCustomProcesses[PS: ProcessShapeFetchStrategy]()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[BaseProcessDetails[PS]]]
 
-  def fetchProcessesDetails()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[ProcessDetails]]
+  def fetchProcessesDetails[PS: ProcessShapeFetchStrategy]()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[BaseProcessDetails[PS]]]
 
-  def fetchProcessesDetails(processNames: List[ProcessName])(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[ProcessDetails]]
+  def fetchProcessesDetails[PS: ProcessShapeFetchStrategy](processNames: List[ProcessName])
+                                                          (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[BaseProcessDetails[PS]]]
 
-  def fetchSubProcessesDetails()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[ProcessDetails]]
+  def fetchSubProcessesDetails[PS: ProcessShapeFetchStrategy]()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[BaseProcessDetails[PS]]]
 
-  def fetchAllProcessesDetails()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[ProcessDetails]]
+  def fetchAllProcessesDetails[PS: ProcessShapeFetchStrategy]()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[BaseProcessDetails[PS]]]
 
-  def fetchArchivedProcesses()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[ProcessDetails]]
+  def fetchArchivedProcesses[PS: ProcessShapeFetchStrategy]()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[BaseProcessDetails[PS]]]
 
   def fetchProcessId(processName: ProcessName)(implicit ec: ExecutionContext): Future[Option[ProcessId]]
 

@@ -12,7 +12,8 @@ class AuthorizeProcess(processRepository:  FetchingProcessRepository)
                       (implicit executionContext: ExecutionContext) {
 
   def check(processId: ProcessId, permission: Permission, user:LoggedUser):Future[Boolean] = {
-    processRepository.fetchLatestProcessDetailsForProcessId(processId)(user, implicitly[ExecutionContext])
+    implicit val userImpl: LoggedUser = user
+    processRepository.fetchLatestProcessDetailsForProcessId[Unit](processId)
       .map(maybeProcessDetails =>
         maybeProcessDetails.map(_.processCategory)
           .exists(user.can(_, permission))

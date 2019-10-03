@@ -3,11 +3,14 @@ package pl.touk.nussknacker.engine.definition
 import java.lang.reflect.{InvocationTargetException, Method}
 
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.MethodToInvoke
+import io.circe.Encoder
+import io.circe.generic.JsonCodec
+import io.circe.generic.semiauto.deriveEncoder
+import pl.touk.nussknacker.engine.api.{ArgonautCirce, MethodToInvoke}
 import pl.touk.nussknacker.engine.api.definition.{Parameter, WithExplicitMethodToInvoke}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, SingleNodeConfig, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.MethodDefinition
 import pl.touk.nussknacker.engine.types.TypesInformationExtractor
@@ -60,7 +63,7 @@ object DefinitionExtractor {
     def categories: List[String]
 
     // TODO: Use ContextTransformation API to check if custom node is adding some output variable
-    def hasNoReturn : Boolean = Set(Typed[Void], Typed[Unit], Typed[BoxedUnit]).contains(returnType)
+    def hasNoReturn : Boolean = Set[TypingResult](Typed[Void], Typed[Unit], Typed[BoxedUnit]).contains(returnType)
 
   }
 
@@ -100,10 +103,11 @@ object DefinitionExtractor {
     }
   }
 
+
   case class ObjectDefinition(parameters: List[Parameter],
-                              returnType: TypingResult,
-                              categories: List[String],
-                              nodeConfig: SingleNodeConfig) extends ObjectMetadata
+                                         returnType: TypingResult,
+                                         categories: List[String],
+                                         nodeConfig: SingleNodeConfig) extends ObjectMetadata
 
 
   object ObjectWithMethodDef {
@@ -138,13 +142,8 @@ object DefinitionExtractor {
     }
 
     private def extractTypesFromObjectDefinition(obj: ObjectWithMethodDef): List[TypingResult] = {
-      def clazzRefFromTyped(typed: TypingResult): Iterable[ClazzRef] = typed match {
-        case Typed(possibleTypes) => possibleTypes.map(t => ClazzRef(t.klass))
-        case _ => Set()
-      }
-
       def clazzRefsFromParameter(parameter: Parameter): Iterable[TypingResult] = {
-        val fromAdditionalVars = parameter.additionalVariables.values//.flatMap(clazzRefFromTyped)
+        val fromAdditionalVars = parameter.additionalVariables.values
         fromAdditionalVars.toList :+ parameter.typ
       }
 
@@ -154,12 +153,12 @@ object DefinitionExtractor {
 
   object ObjectDefinition {
 
-    def noParam: ObjectDefinition = ObjectDefinition(List.empty, Typed[Null], List(), SingleNodeConfig.zero)
+    def noParam: ObjectDefinition = ObjectDefinition(List.empty, Typed[Any], List(), SingleNodeConfig.zero)
 
-    def withParams(params: List[Parameter]): ObjectDefinition = ObjectDefinition(params, Typed[Null], List(), SingleNodeConfig.zero)
+    def withParams(params: List[Parameter]): ObjectDefinition = ObjectDefinition(params, Typed[Any], List(), SingleNodeConfig.zero)
 
     def withParamsAndCategories(params: List[Parameter], categories: List[String]): ObjectDefinition =
-      ObjectDefinition(params, Typed[Null], categories, SingleNodeConfig.zero)
+      ObjectDefinition(params, Typed[Any], categories, SingleNodeConfig.zero)
 
     def apply(parameters: List[Parameter], returnType: ClazzRef, categories: List[String]): ObjectDefinition = {
       ObjectDefinition(parameters, Typed(returnType), categories, SingleNodeConfig.zero)
@@ -170,11 +169,11 @@ object DefinitionExtractor {
 
 object TypeInfos {
 
-  case class Parameter(name: String, refClazz: ClazzRef)
+  @JsonCodec(encodeOnly = true) case class Parameter(name: String, refClazz: ClazzRef)
 
-  case class MethodInfo(parameters: List[Parameter], refClazz: ClazzRef, description: Option[String])
+  @JsonCodec(encodeOnly = true) case class MethodInfo(parameters: List[Parameter], refClazz: ClazzRef, description: Option[String])
 
-  case class ClazzDefinition(clazzName: ClazzRef, methods: Map[String, MethodInfo]) {
+  @JsonCodec(encodeOnly = true) case class ClazzDefinition(clazzName: ClazzRef, methods: Map[String, MethodInfo]) {
     def getMethodClazzRef(methodName: String): Option[ClazzRef] = {
       methods.get(methodName).map(_.refClazz)
     }

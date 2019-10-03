@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.engine.api
 
-import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.reflect.runtime.universe.TypeTag
 
 /**
   * Hook for using Apache Flink API directly.
@@ -35,17 +36,44 @@ abstract class CustomStreamTransformer {
   * as evaluation may need e.g. lazy variables and we have to take care of lifecycle, to use it see LazyParameterInterpreter
   *
   */
-trait LazyParameter[T] {
+trait LazyParameter[+T] {
 
   //type of parameter, derived from expression. Can be used for dependent types, see PreviousValueTransformer
   def returnType: TypingResult
 
+  //we provide only applicative operation, monad is tricky to implement (see CompilerLazyParameterInterpreter.createInterpreter)
+  //we use product and not ap here, because it's more convenient to handle returnType computations
+  def product[B](fb: LazyParameter[B])(implicit lazyParameterInterpreter: LazyParameterInterpreter): LazyParameter[(T, B)] = {
+    lazyParameterInterpreter.product(this, fb)
+  }
+
+  //unfortunatelly, we cannot assert that TypingResult represents A somehow...
+  def pure[A](value: A, valueTypingResult: TypingResult)(implicit lazyParameterInterpreter: LazyParameterInterpreter): LazyParameter[A]
+    = lazyParameterInterpreter.pure(value, valueTypingResult)
+
+  def pure[A:TypeTag](value: A)(implicit lazyParameterInterpreter: LazyParameterInterpreter): LazyParameter[A]
+    = pure(value, Typed.fromDetailedType[A])
+
+  def map[Y:TypeTag](fun: T => Y)(implicit lazyParameterInterpreter: LazyParameterInterpreter): LazyParameter[Y] =
+    map(fun, Typed.fromDetailedType[Y])
+
+  //unfortunatelly, we cannot assert that TypingResult represents Y somehow...
+  def map[Y](fun: T => Y, outputTypingResult: TypingResult)(implicit lazyParameterInterpreter: LazyParameterInterpreter): LazyParameter[Y] =
+    lazyParameterInterpreter.map(this, fun, outputTypingResult)
+
 }
+
 
 
 trait LazyParameterInterpreter {
 
   def createInterpreter[T](parameter: LazyParameter[T]): (ExecutionContext, Context) => Future[T]
+
+  def product[A, B](fa: LazyParameter[A], fb: LazyParameter[B]): LazyParameter[(A, B)]
+
+  def pure[T](value: T, valueTypingResult: TypingResult): LazyParameter[T]
+
+  def map[T, Y](parameter: LazyParameter[T], fun: T => Y, outputTypingResult: TypingResult): LazyParameter[Y]
 
   def syncInterpretationFunction[T](parameter: LazyParameter[T]) : Context => T
 

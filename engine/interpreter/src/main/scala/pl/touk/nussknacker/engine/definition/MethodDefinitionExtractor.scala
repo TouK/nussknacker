@@ -4,11 +4,11 @@ import java.lang.annotation.Annotation
 import java.lang.reflect
 import java.lang.reflect.Method
 
-import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, Parameter, TypedNodeDependency, WithExplicitMethodToInvoke}
+import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.SingleNodeConfig
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
-import pl.touk.nussknacker.engine.api.{AdditionalVariables, BranchParamName, LazyParameter, MethodToInvoke, OutputVariableName, ParamName}
+import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedDependencies}
 import pl.touk.nussknacker.engine.types.EspTypeUtils
 
@@ -69,9 +69,8 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
           .getOrElse(throw new IllegalArgumentException(s"Parameter $p of $obj and method : ${method.getName} has missing @ParamName or @BranchParamName annotation"))
         // TODO JOIN: for branchParams we should rather look at Map's value type
         val paramType = extractParameterType(p)
-        Parameter(
-          name, Typed(paramType), Typed(p.getType), ParameterTypeMapper.prepareRestrictions(paramType, Some(p), nodeConfig.paramConfig(name)), additionalVariables(p), branchParamName.isDefined
-        )
+        val restrictions = ParameterTypeMapper.prepareRestrictions(paramType, Some(p), nodeConfig.paramConfig(name))
+        Parameter(name, Typed(paramType), p.getType, restrictions, additionalVariables(p), branchParamName.isDefined)
       }
     }.toList
 
@@ -125,8 +124,7 @@ object MethodDefinitionExtractor {
       dependencies.map {
         case param: Parameter =>
           val foundParam = prepareValue(param.name).getOrElse(throw new IllegalArgumentException(s"Missing parameter: ${param.name}"))
-          //FIIIXME??
-          validateType(param.name, foundParam, param.originalType.objType.klass)
+          validateType(param.name, foundParam, param.runtimeClass)
           foundParam
         case OutputVariableNameDependency =>
           outputVariableNameOpt.getOrElse(
@@ -139,9 +137,9 @@ object MethodDefinitionExtractor {
       }
     }
 
-    private def validateType(name: String, value: AnyRef, expectedType: Class[_]) : Unit = {
-      if (value != null && !EspTypeUtils.signatureElementMatches(expectedType, value.getClass)) {
-        throw new IllegalArgumentException(s"Parameter $name has invalid class: ${value.getClass.getName}, should be: ${expectedType.getName}")
+    private def validateType(name: String, value: AnyRef, expectedClass: Class[_]) : Unit = {
+      if (value != null && !EspTypeUtils.signatureElementMatches(expectedClass, value.getClass)) {
+        throw new IllegalArgumentException(s"Parameter $name has invalid class: ${value.getClass.getName}, should be: ${expectedClass.getName}")
       }
     }
   }

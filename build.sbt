@@ -35,12 +35,9 @@ val publishSettings = Seq(
       (if (isSnapshot.value) "snapshots" else "releases") at url)
   },
   publishArtifact in Test := false,
+  //We don't put scm information here, it will be added by release plugin and if scm provided here is different than the one from scm
+  //we'll end up with two scm sections and invalid pom...
   pomExtra in Global := {
-    <scm>
-      <connection>scm:git:github.com/touk/nussknacker.git</connection>
-      <developerConnection>scm:git:git@github.com:touk/nussknacker.git</developerConnection>
-      <url>github.com/touk/nussknacker</url>
-    </scm>
       <developers>
         <developer>
           <id>TouK</id>
@@ -89,6 +86,7 @@ val commonSettings =
       ),
       testOptions in Test ++= Seq(scalaTestReports, ignoreSlowTests),
       testOptions in IntegrationTest += scalaTestReports,
+      addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full),
       scalacOptions := Seq(
         "-unchecked",
         "-deprecation",
@@ -124,7 +122,9 @@ val log4jV = "1.7.21"
 val argonautShapelessV = "1.2.0-M8"
 val argonautMajorV = "6.2"
 val argonautV = s"$argonautMajorV.1"
-val catsV = "1.1.0"
+val circeV = "0.11.1"
+val jacksonV = "2.9.2"
+val catsV = "1.5.0"
 val scalaParsersV = "1.0.4"
 val dispatchV = "1.0.1"
 val slf4jV = "1.7.21"
@@ -136,6 +136,7 @@ val commonsLangV = "3.3.2"
 val dropWizardV = "3.1.5"
 
 val akkaHttpV = "10.0.10"
+val akkaHttpCirceV = "1.27.0"
 val slickV = "3.2.3"
 val hsqldbV = "2.3.4"
 val postgresV = "42.2.5"
@@ -210,7 +211,7 @@ lazy val engineStandalone = (project in engine("standalone/engine")).
       )
     }
   ).
-  dependsOn(interpreter, standaloneUtil, argonautUtils, httpUtils)
+  dependsOn(interpreter, standaloneUtil, httpUtils)
 
 lazy val standaloneApp = (project in engine("standalone/app")).
   settings(commonSettings).
@@ -224,7 +225,10 @@ lazy val standaloneApp = (project in engine("standalone/app")).
     libraryDependencies ++= {
       Seq(
         "org.scalatest" %% "scalatest" % scalaTestV % "test",
+        "de.heikoseeberger" %% "akka-http-circe" % akkaHttpCirceV,
+        // Force akka-http and akka-stream versions to avoid bumping by akka-http-circe.
         "com.typesafe.akka" %% "akka-http" % akkaHttpV force(),
+        "com.typesafe.akka" %% "akka-stream" % akkaV force(),
         "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test" force(),
         "com.typesafe.akka" %% "akka-slf4j" % akkaV,
         "ch.qos.logback" % "logback-classic" % logbackV
@@ -314,7 +318,7 @@ lazy val example = (project in engine("example")).
     fork := true, // without this there are some classloading issues
     libraryDependencies ++= {
       Seq(
-        "com.fasterxml.jackson.core" % "jackson-databind" % "2.9.2",
+        "com.fasterxml.jackson.core" % "jackson-databind" % jacksonV,
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
         "org.scalatest" %% "scalatest" % scalaTestV % "test",
         "ch.qos.logback" % "logback-classic" % logbackV % "test"
@@ -511,7 +515,8 @@ lazy val standaloneUtil = (project in engine("standalone/util")).
       Seq(
         "io.dropwizard.metrics" % "metrics-core" % dropWizardV,
         "org.scalatest" %% "scalatest" % scalaTestV % "test",
-        "com.typesafe.akka" %% "akka-http" % akkaHttpV force()
+        //akka-http is only for StandaloneRequestResponseLogger
+        "com.typesafe.akka" %% "akka-http" % akkaHttpV % "provided" force()
       )
     }
   ).dependsOn(util, standaloneApi)
@@ -533,9 +538,12 @@ lazy val api = (project in engine("api")).
       Seq(
         //TODO: czy faktycznie tak chcemy??
         "com.github.alexarchambault" %% s"argonaut-shapeless_$argonautMajorV" % argonautShapelessV,
+        "io.circe" %% "circe-parser" % circeV,
+        "io.circe" %% "circe-generic" % circeV,
+        "io.circe" %% "circe-generic-extras" % circeV,
         "org.apache.commons" % "commons-lang3" % commonsLangV,
         "org.typelevel" %% "cats-core" % catsV,
-        "org.typelevel" %% "cats-effect" % "0.10.1",
+        "org.typelevel" %% "cats-effect" % "1.1.0",
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
         "com.typesafe" % "config" % configV,
         "org.scalatest" %% "scalatest" % scalaTestV % "test"
@@ -603,20 +611,6 @@ lazy val httpUtils = (project in engine("httpUtils")).
     }
   ).dependsOn(api)
 
-lazy val argonautUtils = (project in engine("argonautUtils")).
-  settings(commonSettings).
-  settings(
-    name := "nussknacker-argonaut-utils",
-    libraryDependencies ++= {
-      Seq(
-        "io.argonaut" %% "argonaut" % argonautV,
-        "com.github.alexarchambault" %% s"argonaut-shapeless_$argonautMajorV" % argonautShapelessV,
-        "com.typesafe.akka" %% "akka-http" % akkaHttpV force(),
-        "com.fasterxml.jackson.core" % "jackson-databind" % "2.9.2"
-      )
-    }
-  )
-
 //osobny modul bo chcemy uzyc klienta do testowania w managementSample
 lazy val queryableState = (project in engine("queryableState")).
   settings(commonSettings).
@@ -635,7 +629,6 @@ lazy val queryableState = (project in engine("queryableState")).
 
 
 lazy val buildUi = taskKey[Unit]("builds ui")
-lazy val testUi = taskKey[Unit]("tests ui")
 
 def runNpm(command: String, errorMessage: String): Unit = {
   import sys.process.Process
@@ -650,7 +643,8 @@ lazy val restmodel = (project in file("ui/restmodel"))
   .settings(
     name := "nussknacker-restmodel",
     libraryDependencies ++= Seq(
-      "org.scalatest" %% "scalatest" % scalaTestV % "test"
+      "org.scalatest" %% "scalatest" % scalaTestV % "test",
+      "io.circe" %% "circe-java8" % circeV
     )
   )
   .dependsOn(interpreter)
@@ -663,9 +657,6 @@ lazy val ui = (project in file("ui/server"))
     name := "nussknacker-ui",
     buildUi := {
       runNpm("run build", "Client build failed")
-    },
-    testUi := {
-      runNpm("test", "Client tests failed")
     },
     parallelExecution in ThisBuild := false,
     assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = includeFlinkAndScala, level = Level.Debug),
@@ -681,17 +672,26 @@ lazy val ui = (project in file("ui/server"))
     Keys.test in Test := (Keys.test in Test).dependsOn(
       //TODO: maybe here there should be engine/demo??
       (assembly in Compile) in managementSample
-    ).dependsOn(
-      testUi
     ).value,
     assemblyJarName in assembly := "nussknacker-ui-assembly.jar",
+    /*
+      We depend on buildUi in packageBin and assembly to be make sure fe files will be included in jar and fajar
+      We abuse sbt a little bit, but we don't want to put webpack in generate resources phase, as it's long and it would
+      make compilation v. long. This is not too nice, but so far only alternative is to put buildUi outside sbt and 
+      use bash to control when it's done - and this can lead to bugs and edge cases (release, dist/docker, dist/tgz, assembly...)
+     */
+    packageBin in Compile := (packageBin in Compile).dependsOn(
+      buildUi
+    ).value,
     assembly in ThisScope := (assembly in ThisScope).dependsOn(
       buildUi
     ).value,
     libraryDependencies ++= {
       Seq(
+        // Force akka-http and akka-stream versions to avoid bumping by akka-http-circe.
         "com.typesafe.akka" %% "akka-http" % akkaHttpV force(),
-
+        "com.typesafe.akka" %% "akka-stream" % akkaV force(),
+        "de.heikoseeberger" %% "akka-http-circe" % akkaHttpCirceV,
         "ch.qos.logback" % "logback-core" % logbackV,
         "ch.qos.logback" % "logback-classic" % logbackV,
         "org.slf4j" % "log4j-over-slf4j" % "1.7.21",

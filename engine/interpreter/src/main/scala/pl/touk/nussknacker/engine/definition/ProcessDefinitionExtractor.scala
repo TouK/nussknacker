@@ -1,12 +1,13 @@
 package pl.touk.nussknacker.engine.definition
 
-import argonaut.CodecJson
 import com.typesafe.config.{Config, ConfigRenderOptions}
+import io.circe.Decoder
 import pl.touk.nussknacker.engine.api.definition.ParameterRestriction
-import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, SingleNodeConfig, SinkFactory}
+import pl.touk.nussknacker.engine.api.process.{LanguageConfiguration, ProcessConfigCreator, SingleNodeConfig, SinkFactory}
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
+import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, QueryableStateNames}
+import pl.touk.nussknacker.engine.api.{CirceUtil, CustomStreamTransformer, QueryableStateNames}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedDependencies}
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
@@ -48,9 +49,9 @@ object ProcessDefinitionExtractor {
 
     //TODO: this is not so nice...
     val globalVariablesDefs = expressionConfig.globalProcessVariables.map { case (varName, globalVar) =>
-      val klass = Typed(globalVar.value.getClass)
-      (varName, ObjectWithMethodDef(globalVar.value, MethodDefinition(varName, (_, _) => globalVar, new OrderedDependencies(List()), klass,  klass, List()),
-        ObjectDefinition(List(), klass, globalVar.categories, SingleNodeConfig.zero)))
+      val typed = Typed.fromInstance(globalVar.value)
+      (varName, ObjectWithMethodDef(globalVar.value, MethodDefinition(varName, (_, _) => globalVar, new OrderedDependencies(List()), typed,  typed, List()),
+        ObjectDefinition(List(), typed, globalVar.categories, SingleNodeConfig.zero)))
     }
 
     val globalImportsDefs = expressionConfig.globalImports.map(_.value)
@@ -66,20 +67,21 @@ object ProcessDefinitionExtractor {
       servicesDefs, sourceFactoriesDefs,
       sinkFactoriesDefs.mapValuesNow(k => (k, extractSinkAdditionalData(k))),
       customStreamTransformersDefs.mapValuesNow(k => (k, extractCustomTransformerData(k))),
-      signalsDefs, exceptionHandlerFactoryDefs, ExpressionDefinition(globalVariablesDefs, globalImportsDefs, expressionConfig.optimizeCompilation), typesInformation)
+      signalsDefs, exceptionHandlerFactoryDefs, ExpressionDefinition(globalVariablesDefs,
+        globalImportsDefs,
+        expressionConfig.languages,
+        expressionConfig.optimizeCompilation), typesInformation)
   }
 
   def extractNodesConfig(processConfig: Config) : Map[String, SingleNodeConfig] = {
 
-    import argonaut.Argonaut._
     import net.ceedubs.ficus.Ficus._
     import net.ceedubs.ficus.readers.ArbitraryTypeReader._
     import net.ceedubs.ficus.readers.ValueReader
 
     implicit val nodeConfig: ValueReader[ParameterRestriction] = ValueReader.relative(config => {
       val json = config.root().render(ConfigRenderOptions.concise().setJson(true))
-      implicit val cd: CodecJson[ParameterRestriction] = ParameterRestriction.codec
-      json.decodeEither[ParameterRestriction].right.getOrElse(throw new IllegalArgumentException("Failed to parse config"))
+      CirceUtil.decodeJson[ParameterRestriction](json).right.getOrElse(throw new IllegalArgumentException("Failed to parse config"))
     })
     processConfig.getOrElse[Map[String, SingleNodeConfig]]("nodes", Map.empty)
   }
@@ -127,6 +129,7 @@ object ProcessDefinitionExtractor {
     val expressionDefinition = ExpressionDefinition(
       definition.expressionConfig.globalVariables.mapValuesNow(_.objectDefinition),
       definition.expressionConfig.globalImports,
+      definition.expressionConfig.languages,
       definition.expressionConfig.optimizeCompilation
     )
     ProcessDefinition(
@@ -141,6 +144,7 @@ object ProcessDefinitionExtractor {
     )
   }
 
-  case class ExpressionDefinition[+T <: ObjectMetadata](globalVariables: Map[String, T], globalImports: List[String], optimizeCompilation: Boolean)
+  case class ExpressionDefinition[+T <: ObjectMetadata](globalVariables: Map[String, T], globalImports: List[String], languages: LanguageConfiguration,
+                                                        optimizeCompilation: Boolean)
 
 }

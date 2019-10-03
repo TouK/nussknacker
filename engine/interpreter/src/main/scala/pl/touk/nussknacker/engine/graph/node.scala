@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.graph
 
+import io.circe.generic.JsonCodec
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
@@ -12,8 +12,9 @@ import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 
-import scala.reflect.ClassTag
 import scala.util.Try
+
+import scala.reflect.runtime.universe._
 
 object node {
 
@@ -114,7 +115,7 @@ object node {
     override val componentId = nodeType
   }
 
-  case class Split(id: String, isDisabled: Boolean = false, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends NodeData
+  case class Split(id: String, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends NodeData
 
   case class Processor(id: String, service: ServiceRef, isDisabled: Option[Boolean] = None, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends OneOutputSubsequentNodeData with EndingNodeData with Disableable with WithComponent {
     override val componentId = service.id
@@ -124,7 +125,7 @@ object node {
     override val additionalFields: Option[UserDefinedAdditionalNodeFields] = None
   }
 
-  case class BranchEndDefinition(id: String, joinId: String)
+  @JsonCodec case class BranchEndDefinition(id: String, joinId: String)
 
   case class Sink(
                    id: String,
@@ -165,17 +166,18 @@ object node {
   //shape of this data should probably change, currently we leave it for backward compatibility
   object SubprocessInputDefinition {
 
-    case class SubprocessParameter(name: String, typ: SubprocessClazzRef)
+    @JsonCodec case class SubprocessParameter(name: String, typ: SubprocessClazzRef)
 
     object SubprocessClazzRef {
 
-      def apply[T:ClassTag]: SubprocessClazzRef = SubprocessClazzRef(ClazzRef[T].refClazzName)
+      def apply[T: TypeTag]: SubprocessClazzRef = SubprocessClazzRef(ClazzRef.fromDetailedType[T].refClazzName)
 
     }
 
-    case class SubprocessClazzRef(refClazzName: String) {
+    @JsonCodec case class SubprocessClazzRef(refClazzName: String) {
 
-      def toTyped(classLoader: ClassLoader) = Try(Typed(ClassUtils.getClass(classLoader, refClazzName)))
+      def toRuntimeClass(classLoader: ClassLoader): Try[Class[_]] =
+        Try(ClassUtils.getClass(classLoader, refClazzName))
 
     }
 

@@ -10,7 +10,6 @@ import akka.stream.Materializer
 import akka.stream.ActorMaterializer
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.http.argonaut.JsonMarshaller
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
 import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
@@ -42,8 +41,6 @@ object NussknackerApp extends App with Directives with LazyLogging {
   private implicit val materializer = ActorMaterializer()
 
   prepareUncaughtExceptionHandler()
-
-  //TODO: pass port as part of config
 
   private val config = system.settings.config.withFallback(ConfigFactory.load("defaultConfig.conf"))
 
@@ -112,8 +109,6 @@ object NussknackerApp extends App with Directives with LazyLogging {
 
     val counter = new ProcessCounter(subprocessRepository)
 
-    implicit val jsonMarshaller: JsonMarshaller = JsonMarshaller.prepareDefault(config)
-
     Initialization.init(modelData.mapValues(_.migrations), db, environment, config.getAs[Map[String, String]]("customProcesses"))
 
     val managementActor = ManagementActor(environment, managers, processRepository, deploymentProcessRepository, subprocessResolver)
@@ -167,6 +162,8 @@ object NussknackerApp extends App with Directives with LazyLogging {
       routes ++ optionalRoutes
     }
 
+
+    val webResources = new WebResources(config.getString("http.publicPath"))
     CorsSupport.cors(featureTogglesConfig.development) {
       authenticator { user =>
         pathPrefix("api") {
@@ -174,7 +171,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
         } ~
           //this is separated from api to do serve it without authentication
           pathPrefixTest(!"api") {
-            WebResources.route
+            webResources.route
           }
       }
     }

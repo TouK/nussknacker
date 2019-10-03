@@ -5,11 +5,11 @@ import cats.instances.list._
 import cats.syntax.traverse._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
-import pl.touk.http.argonaut.JsonMarshaller
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, ProcessDeploymentData}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
+import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.db.{DbConfig, EspTables}
 import pl.touk.nussknacker.restmodel.process.ProcessId
@@ -33,7 +33,7 @@ object Initialization {
   def init(migrations: Map[ProcessingType, ProcessMigrations],
            db: DbConfig,
            environment: String,
-           customProcesses: Option[Map[String, String]])(implicit ec: ExecutionContext, jsonMarshaller: JsonMarshaller) : Unit = {
+           customProcesses: Option[Map[String, String]])(implicit ec: ExecutionContext) : Unit = {
 
     val transactionalRepository = new DbWriteProcessRepository[DB](db, migrations.mapValues(_.version)) {
       override def run[R]: DB[R] => DB[R] = identity
@@ -50,7 +50,7 @@ object Initialization {
     runOperationsTransactionally(db, operations)
   }
 
-  private def runOperationsTransactionally(db: DbConfig, operations: List[InitialOperation])(implicit ec: ExecutionContext, jsonMarshaller: JsonMarshaller): List[Unit] = {
+  private def runOperationsTransactionally(db: DbConfig, operations: List[InitialOperation])(implicit ec: ExecutionContext): List[Unit] = {
 
     import db.driver.api._
 
@@ -64,13 +64,13 @@ object Initialization {
 
 trait InitialOperation extends LazyLogging {
 
-  def runOperation(implicit ec: ExecutionContext, lu: LoggedUser, jsonMarshaller: JsonMarshaller) : DB[Unit]
+  def runOperation(implicit ec: ExecutionContext, lu: LoggedUser) : DB[Unit]
 
 
 }
 
 class EnvironmentInsert(environmentName: String, dbConfig: DbConfig) extends InitialOperation {
-  override def runOperation(implicit ec: ExecutionContext, lu: LoggedUser, jsonMarshaller: JsonMarshaller): DB[Unit] = {
+  override def runOperation(implicit ec: ExecutionContext, lu: LoggedUser): DB[Unit] = {
     //`insertOrUpdate` in Slick v.3.2.0-M1 seems not to work
     import dbConfig.driver.api._
     val espTables = new EspTables {
@@ -92,7 +92,7 @@ class EnvironmentInsert(environmentName: String, dbConfig: DbConfig) extends Ini
 class TechnicalProcessUpdate(customProcesses: Map[String, String], repository: DbWriteProcessRepository[DB], fetchingProcessRepository: DBFetchingProcessRepository[DB])
   extends InitialOperation  {
 
-  def runOperation(implicit ec: ExecutionContext, lu: LoggedUser, jsonMarshaller: JsonMarshaller): DB[Unit] = {
+  def runOperation(implicit ec: ExecutionContext, lu: LoggedUser): DB[Unit] = {
     val results: DB[List[Unit]] = customProcesses
       .map { case (processName, processClass) =>
         val deploymentData = CustomProcess(processClass)
@@ -123,7 +123,7 @@ class TechnicalProcessUpdate(customProcesses: Map[String, String], repository: D
               isSubprocess = isSubprocess
             )
           case Some(processId) =>
-            fetchingProcessRepository.fetchLatestProcessVersion(processId).flatMap {
+            fetchingProcessRepository.fetchLatestProcessVersion[Unit](processId).flatMap {
               case Some(version) if version.user == Initialization.nussknackerUser.id =>
                 repository.updateProcess(UpdateProcessAction(processId, deploymentData, "External update")).map(_.right.map(_ => ()))
               case latestVersion => logger.info(s"Process $processId not updated. DB version is: \n${latestVersion.flatMap(_.json).getOrElse("")}\n " +
@@ -146,17 +146,17 @@ class AutomaticMigration(migrations: Map[ProcessingType, ProcessMigrations],
 
   private val migrator = new ProcessModelMigrator(migrations)
 
-  def runOperation(implicit ec: ExecutionContext, lu: LoggedUser, jsonMarshaller: JsonMarshaller): DB[Unit] = {
+  def runOperation(implicit ec: ExecutionContext, lu: LoggedUser): DB[Unit] = {
     val results : DB[List[Unit]] = for {
-      processes <- fetchingProcessRepository.fetchProcessesDetails()
-      subprocesses <- fetchingProcessRepository.fetchSubProcessesDetails()
+      processes <- fetchingProcessRepository.fetchProcessesDetails[DisplayableProcess]()
+      subprocesses <- fetchingProcessRepository.fetchSubProcessesDetails[DisplayableProcess]()
       allToMigrate = processes ++ subprocesses
       migrated <- allToMigrate.map(migrateOne).sequence[DB, Unit]
     } yield migrated
     results.map(_ => ())
   }
 
-  private def migrateOne(processDetails: ProcessDetails)(implicit ec: ExecutionContext, lu: LoggedUser, jsonMarshaller: JsonMarshaller) : DB[Unit] = {
+  private def migrateOne(processDetails: ProcessDetails)(implicit ec: ExecutionContext, lu: LoggedUser) : DB[Unit] = {
     // todo: unsafe processId?
     migrator.migrateProcess(processDetails).map(_.toUpdateAction(ProcessId(processDetails.id.toLong))) match {
       case Some(action) => repository.updateProcess(action).flatMap {

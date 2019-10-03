@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.process.deployment
 
 import akka.actor.{Actor, ActorRef, ActorRefFactory, Props, Status}
-import argonaut.PrettyParams
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.api.deployment._
@@ -9,7 +8,8 @@ import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName}
-import pl.touk.nussknacker.restmodel.displayedgraph.ProcessStatus
+import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus}
+import pl.touk.nussknacker.restmodel.processdetails.DeploymentAction
 import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntityData
 import pl.touk.nussknacker.ui.process.marshall.UiProcessMarshaller
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessNotFoundError
@@ -61,10 +61,12 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
       implicit val loggedUser: LoggedUser = user
 
       val processStatus = for {
+        deployedVersions <- processRepository.fetchDeploymentHistory(id.id)
+        deployedVersion = deployedVersions.headOption.filter(_.deploymentAction == DeploymentAction.Deploy)
         manager <- processManager(id.id)
         state <- manager.findJobStatus(id.name)
         _ <- handleFinishedProcess(id, state)
-      } yield state.map(ProcessStatus.apply)
+      } yield state.map(ProcessStatus(_, deployedVersion.map(_.processVersionId)))
 
       reply(processStatus)
     case DeploymentActionFinished(id, None) =>
@@ -135,7 +137,7 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
   }
 
   private def findDeployedVersion(processId: ProcessIdWithName)(implicit user: LoggedUser) : Future[Option[Long]] = for {
-    process <- processRepository.fetchLatestProcessDetailsForProcessId(processId.id)
+    process <- processRepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id)
     deployedAt = process
       .flatMap(_.currentlyDeployedAt.find(_.environment == environment))
   } yield (deployedAt.map(_.processVersionId))
@@ -144,7 +146,7 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
   private def deployProcess(processId: ProcessId, savepointPath: Option[String], comment: Option[String])(implicit user: LoggedUser): Future[Unit] = {
     for {
       processingType <- processRepository.fetchProcessingType(processId)
-      latestProcessEntity <- processRepository.fetchLatestProcessVersion(processId)
+      latestProcessEntity <- processRepository.fetchLatestProcessVersion[DisplayableProcess](processId)
       result <- latestProcessEntity match {
         case Some(latestVersion) => deployAndSaveProcess(processingType, latestVersion, savepointPath, comment)
         case None => Future.failed(ProcessNotFoundError(processId.value.toString))
@@ -175,7 +177,9 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
   }
 
   private def resolveGraph(canonicalJson: String): Future[String] = {
-    val validatedGraph = UiProcessMarshaller.fromJson(canonicalJson).toValidatedNel
+    val validatedGraph = UiProcessMarshaller.fromJson(canonicalJson)
+      .map(_.withoutDisabledNodes)
+      .toValidatedNel
       .andThen(subprocessResolver.resolveSubprocesses)
       //TODO: custom JsonMarshaller
       .map(proc => UiProcessMarshaller.toJson(proc).nospaces)

@@ -5,9 +5,13 @@ import * as  queryString from 'query-string'
 import PeriodicallyReloadingComponent from "../components/PeriodicallyReloadingComponent"
 import history from "../history"
 import HttpService from "../http/HttpService"
+import * as ProcessStateUtils from "../common/ProcessStateUtils"
+import Metrics from "./Metrics";
 
 class BaseProcesses extends PeriodicallyReloadingComponent {
   searchItems = ['categories']
+  shouldReloadStatuses = false
+  intervalTime = 15000
   queries = {}
 
   customSelectStyles = {
@@ -65,28 +69,45 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
     return state
   }
 
+  onMount() {
+    this.reloadProcesses()
+
+    if (this.shouldReloadStatuses) {
+      this.reloadStatuses()
+    }
+  }
+
+  reload() {
+    this.reloadProcesses(false)
+
+    if (this.shouldReloadStatuses) {
+      this.reloadStatuses()
+    }
+  }
+
   reloadProcesses(showLoader, search) {
     this.setState({showLoader: showLoader == null ? true : showLoader})
 
     const query = _.pick(queryString.parse(window.location.search), this.searchItems || [])
     const data = Object.assign(query, search, this.queries || {})
 
-    HttpService.fetchProcesses(data).then (fetchedProcesses => {
+    HttpService.fetchProcesses(data).then(response => {
       if (!this.state.showAddProcess) {
-        this.setState({processes: fetchedProcesses, showLoader: false})
+        this.setState({processes: response.data, showLoader: false})
       }
-    }).catch(() => this.setState({ showLoader: false }))
+    }).catch(() => this.setState({showLoader: false}))
   }
 
   reloadStatuses() {
-    HttpService.fetchProcessesStatus().then (statuses => {
+    HttpService.fetchProcessesStatus().then(response => {
       if (!this.state.showAddProcess) {
-        this.setState({ statuses: statuses, showLoader: false, statusesLoaded: true })
+        this.setState({statuses: response.data, showLoader: false, statusesLoaded: true})
       }
-    }).catch(() => this.setState({ showLoader: false }))
+    }).catch(() => this.setState({showLoader: false}))
   }
 
-  retrieveSelectedCategories(categories) {
+  retrieveSelectedCategories(data) {
+    const categories = _.isArray(data) ? data : [data]
     return _.filter(this.props.filterCategories, (category) => {
       return _.find(categories || [], categoryName => categoryName === category.value)
     })
@@ -121,40 +142,34 @@ class BaseProcesses extends PeriodicallyReloadingComponent {
     this.afterElementChange({isSubprocess: element.value, page: 0}, true)
   }
 
+  onDeployedChange = (element) => {
+    this.afterElementChange({isDeployed: element.value, page: 0}, true)
+  }
+
   showMetrics = (process) => {
-    history.push('/metrics/' + process.name)
+    history.push(Metrics.pathForProcess(process.name))
   }
 
-  showProcess = (path, process) => {
-    history.push(VisualizationUrl.visualizationUrl(path, process.name))
+  showProcess = (process) => {
+    history.push(VisualizationUrl.visualizationUrl(process.name))
   }
 
-  processStatusClass = (process, statusesLoaded, statuses) => {
+  processStatusClass = (process) => {
     const processName = process.name
     const shouldRun = process.currentlyDeployedAt.length > 0
-    const statusesKnown = statusesLoaded
-    const isRunning = statusesKnown && _.get(statuses[processName], 'isRunning')
-
-    if (isRunning) {
-      return "status-running"
-    } else if (shouldRun) {
-      return statusesKnown ? "status-notrunning" : "status-unknown"
-    }
-
-    return null
+    return ProcessStateUtils.getStatusClass(this.state.statuses[processName], shouldRun, this.state.statusesLoaded)
   }
 
-  processStatusTitle = processStatusClass => {
-    if (processStatusClass === "status-running") {
-      return "Running"
-    } else if (processStatusClass === "status-notrunning") {
-      return "Not running"
-    } else if (processStatusClass === "status-unknown") {
-      return "Unknown state"
-    }
-
-    return null
+  processStatusTitle = (process) => {
+    const processName = process.name
+    const shouldRun = process.currentlyDeployedAt.length > 0
+    return ProcessStateUtils.getStatusMessage(this.state.statuses[processName], shouldRun, this.state.statusesLoaded)
   }
+
+  getIntervalTime() {
+    return _.get(this.props, "featuresSettings.intervalTimeSettings.processes", this.intervalTime)
+  }
+
 }
 
 export default BaseProcesses

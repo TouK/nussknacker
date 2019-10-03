@@ -52,6 +52,7 @@ object DefinitionPreparer {
     val returnsUnit = ((_: String, objectDefinition: ObjectDefinition)
       => objectDefinition.returnType == Typed[BoxedUnit]).tupled
 
+    //TODO: make it possible to configure other defaults here.
     val base = NodeGroup("base", List(
       NodeToAdd("filter", "filter", Filter("", Expression("spel", "true")), readCategories),
       NodeToAdd("split", "split", Split(""), readCategories),

@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.testing
 
 import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.process.LanguageConfiguration
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectDefinition, ObjectWithMethodDef}
@@ -14,7 +15,7 @@ object ProcessDefinitionBuilder {
 
   def empty: ProcessDefinition[ObjectDefinition] =
     ProcessDefinition(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, ObjectDefinition.noParam,
-      ExpressionDefinition(Map.empty, List.empty, optimizeCompilation = true), List.empty)
+      ExpressionDefinition(Map.empty, List.empty, languages = LanguageConfiguration(List.empty), optimizeCompilation = true), List.empty)
 
   def withEmptyObjects(definition: ProcessDefinition[ObjectDefinition]): ProcessDefinition[ObjectWithMethodDef] = {
 
@@ -26,6 +27,7 @@ object ProcessDefinitionBuilder {
     val expressionDefinition = ExpressionDefinition(
       definition.expressionConfig.globalVariables.mapValuesNow(makeDummyDefinition(_)),
       definition.expressionConfig.globalImports,
+      definition.expressionConfig.languages,
       definition.expressionConfig.optimizeCompilation
     )
 

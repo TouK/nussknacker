@@ -1,10 +1,10 @@
 import React from 'react'
-import { connect } from 'react-redux';
-import { bindActionCreators } from 'redux';
+import {connect} from 'react-redux';
 import ActionsUtils from "../actions/ActionsUtils";
 import HttpService from "../http/HttpService";
-import QueriedStateTable from "./QueriedStateTable";
+import QueriedStateTable from "../components/QueriedStateTable";
 import _ from "lodash";
+import {nkPath} from "../config";
 
 //this needs some love
 class Signals extends React.Component {
@@ -15,11 +15,14 @@ class Signals extends React.Component {
   }
 
   componentDidMount() {
-    HttpService.fetchSignals().then(signals => {
+    HttpService.fetchSignals().then(response => {
+      const signals = response.data
       const firstSignal = _.head(_.keys(signals))
-      this.setState(
-        {signals: signals, signalType: firstSignal, processId : signals[firstSignal].availableProcesses[0]}
-      )
+      this.setState({
+        signals: signals,
+        signalType: firstSignal,
+        processId: signals[firstSignal].availableProcesses[0]
+      })
     })
   }
 
@@ -38,47 +41,57 @@ class Signals extends React.Component {
     //fixme simplify this view as in QueriedStateTable
     return (
       <div className="full-dark">
-      <div className="modalContentDark">
-        <div className="node-table">
-          <div className="node-table-body">
-            <div className="node-row">
-              <div className="node-label">Signal type</div>
-              <div className="node-value">
-                <select className="node-input" onChange={(e) => {
-                  const nextSignalType = e.target.value
-                  this.setState({signalType: nextSignalType, signalParams: {}, processId: this.firstProcessForSignal(nextSignalType)})
-                }}>
-                  {_.map(_.keys(this.state.signals), (sig, index) => (<option key={index} value={sig}>{sig}</option>))}
-                </select>
-              </div>
-            </div>
-            <div className="node-row">
-              <div className="node-label">Process id</div>
-              <div className="node-value">
-                <select className="node-input" onChange={(e) => this.setState({processId: e.target.value})}>
-                  {(currentSignal.availableProcesses || [])
-                    .map((process, index) => (<option key={index} value={process}>{process}</option>))}
-                </select>
-              </div>
-            </div>
-            {_.get(currentSignal, 'parameters', []).map((param, idx) => {
-              return (
-                <div className="node-row" key={idx}>
-                  <div className="node-label">{param}</div>
-                  <div className="node-value">
-                    <input className="node-input" type="text" value={this.state.signalParams[param] || ""} onChange={(e) => this.changeParamValue(param, e.target.value)}/>
-                  </div>
+        <div className="modalContentDark">
+          <div className="node-table">
+            <div className="node-table-body">
+              <div className="node-row">
+                <div className="node-label">Signal type</div>
+                <div className="node-value">
+                  <select className="node-input" onChange={(e) => {
+                    const nextSignalType = e.target.value
+                    this.setState({
+                      signalType: nextSignalType,
+                      signalParams: {},
+                      processId: this.firstProcessForSignal(nextSignalType)
+                    })
+                  }}>
+                    {_.map(_.keys(this.state.signals), (sig, index) => (
+                      <option key={index} value={sig}>{sig}</option>))}
+                  </select>
                 </div>
-              )
-            }) }
+              </div>
+              <div className="node-row">
+                <div className="node-label">Process id</div>
+                <div className="node-value">
+                  <select className="node-input" onChange={(e) => this.setState({processId: e.target.value})}>
+                    {(currentSignal.availableProcesses || [])
+                    .map((process, index) => (<option key={index} value={process}>{process}</option>))}
+                  </select>
+                </div>
+              </div>
+              {_.get(currentSignal, 'parameters', []).map((param, idx) => {
+                return (
+                  <div className="node-row" key={idx}>
+                    <div className="node-label">{param}</div>
+                    <div className="node-value">
+                      <input className="node-input" type="text" value={this.state.signalParams[param] || ""}
+                             onChange={(e) => this.changeParamValue(param, e.target.value)}/>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            <button type="button" className="modalButton"
+                    disabled={_.isEmpty(this.state.signalType) || _.isEmpty(this.state.processId)}
+                    title={sendSignalButtonTooltip}
+                    onClick={this.sendSignal.bind(this, this.state.signalType, this.state.processId, this.state.signalParams)}>Send
+              signal
+            </button>
           </div>
-          <button type="button" className="modalButton" disabled={_.isEmpty(this.state.signalType) || _.isEmpty(this.state.processId)} title={sendSignalButtonTooltip}
-                  onClick={this.sendSignal.bind(this, this.state.signalType, this.state.processId, this.state.signalParams)}>Send signal</button>
         </div>
-    </div>
         <hr/>
         <QueriedStateTable/>
-    </div>
+      </div>
     )
   }
 
@@ -104,7 +117,7 @@ class Signals extends React.Component {
 
 }
 
-Signals.path = "/signals"
+Signals.path = `${nkPath}/signals`
 Signals.header = "Signals"
 
 function mapState(state) {

@@ -1,17 +1,20 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.model.{ContentTypeRange, StatusCodes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import argonaut.Parse
+import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
+import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import io.circe.Json
+import io.circe.syntax._
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.nussknacker.ui.api.helpers.EspItTest
 
-class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest
+class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with ScalaFutures with EitherValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
-  import argonaut.Argonaut._
+  private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
   implicit override val patienceConfig: PatienceConfig =
     PatienceConfig(timeout = scaled(Span(2, Seconds)), interval = scaled(Span(100, Millis)))
@@ -26,23 +29,19 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest
     getProcessDefinitionData(existingProcessingType, Map.empty[String, Long].asJson) ~> check {
       status shouldBe StatusCodes.OK
 
-      val data = Parse.parse(responseAs[String]).right.value
-      val noneReturnType = for {
-        processDefinitionField <- data.cursor.downField("processDefinition")
-        customStreamTransformersField <- processDefinitionField.downField("customStreamTransformers")
-        noneReturnTypeTransformerField <- customStreamTransformersField.downField("noneReturnTypeTransformer")
-        returnTypeField <- noneReturnTypeTransformerField.downField("returnType")
-      } yield returnTypeField.right
+      val noneReturnType = responseAs[Json].hcursor
+        .downField("processDefinition")
+        .downField("customStreamTransformers")
+        .downField("noneReturnTypeTransformer")
 
-      noneReturnType.get shouldBe None
-      data
+      noneReturnType.downField("returnType").focus shouldBe Some(Json.Null)
     }
   }
 
   it("should return all definition services") {
     getProcessDefinitionServices() ~> check {
       status shouldBe StatusCodes.OK
-      Parse.parse(responseAs[String]).right.value
+      responseAs[Json]
     }
   }
 

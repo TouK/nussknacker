@@ -12,7 +12,8 @@ import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodI
 
 import scala.annotation.meta.{field, getter}
 import scala.concurrent.Future
-import scala.reflect.ClassTag
+
+import scala.reflect.runtime.universe._
 
 class EspTypeUtilsSpec extends FunSuite with Matchers {
 
@@ -114,8 +115,8 @@ class EspTypeUtilsSpec extends FunSuite with Matchers {
 
     typeUtils.find(_.clazzName == ClazzRef[TestEmbedded]) shouldBe Some(ClazzDefinition(ClazzRef[TestEmbedded], Map(
       "string" -> MethodInfo(List(), ClazzRef[String], None),
-      "javaList" -> MethodInfo(List(), ClazzRef(classOf[java.util.List[_]], List(ClazzRef[String])), None),
-      "scalaList" -> MethodInfo(List(), ClazzRef(classOf[List[_]], List(ClazzRef[String])), None),
+      "javaList" -> MethodInfo(List(), ClazzRef.fromDetailedType[java.util.List[String]], None),
+      "scalaList" -> MethodInfo(List(), ClazzRef.fromDetailedType[List[String]], None),
       "toString" -> MethodInfo(List(), ClazzRef[String], None)
     )))
 
@@ -187,10 +188,10 @@ class EspTypeUtilsSpec extends FunSuite with Matchers {
 
   test("should extract description and params from method") {
     val scalaExtractedInfo = TypesInformationExtractor.clazzAndItsChildrenDefinition(List(Typed[ScalaSampleDocumentedClass]))(ClassExtractionSettings.Default)
-    val scalaClazzInfo = scalaExtractedInfo.find(_.clazzName == ClazzRef(classOf[ScalaSampleDocumentedClass])).get
+    val scalaClazzInfo = scalaExtractedInfo.find(_.clazzName == ClazzRef[ScalaSampleDocumentedClass]).get
 
     val javaExtractedInfo = TypesInformationExtractor.clazzAndItsChildrenDefinition(List(Typed[JavaSampleDocumentedClass]))(ClassExtractionSettings.Default)
-    val javaClazzInfo = javaExtractedInfo.find(_.clazzName == ClazzRef(classOf[JavaSampleDocumentedClass])).get
+    val javaClazzInfo = javaExtractedInfo.find(_.clazzName == ClazzRef[JavaSampleDocumentedClass]).get
 
     val table = Table(
       ("method", "methodInfo"),
@@ -208,8 +209,8 @@ class EspTypeUtilsSpec extends FunSuite with Matchers {
     }
   }
 
-  private def param[T:ClassTag](name: String): Parameter = {
-    Parameter(name, ClazzRef[T])
+  private def param[T: TypeTag](name: String): Parameter = {
+    Parameter(name, ClazzRef.fromDetailedType[T])
   }
 
 }

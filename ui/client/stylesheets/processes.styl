@@ -93,7 +93,9 @@
     font-weight: 600
     &.reactable-th-category
       width: 30%
-    &.reactable-th-modifydate
+    &.reactable-th-nodeid
+      width: 40%
+    &.reactable-th-modifydate, &.reactable-th-isdeployed
       width: 10%
     &.reactable-th-status, &.reactable-th-edit, &.reactable-th-metrics, &.reactable-th-subprocess
       width: 5%
@@ -143,6 +145,8 @@
   .edit-column, .reactable-th-edit, .reactable-th-view
     clickableIconColumn()
 
+  .reactable-th-isdeployed
+    clickableIconColumn()
 
   .deploy-column, .reactable-th-deploy
     clickableIconColumn()

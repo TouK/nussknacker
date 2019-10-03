@@ -15,10 +15,10 @@ case class FeatureTogglesConfig(development: Boolean,
                                 environmentAlert:Option[EnvironmentAlert],
                                 commentSettings: Option[CommentSettings],
                                 deploySettings: Option[DeploySettings],
+                                intervalTimeSettings: IntervalTimeSettings,
                                 attachments: Option[String])
 
 object FeatureTogglesConfig extends LazyLogging{
-  import argonaut.ArgonautShapeless._
   import com.typesafe.config.Config
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
@@ -36,6 +36,7 @@ object FeatureTogglesConfig extends LazyLogging{
     val commentSettings = parseOptionalConfig[CommentSettings](config, "commentSettings")
     val deploySettings = parseOptionalConfig[DeploySettings](config, "deploySettings")
     val attachments = parseOptionalConfig[String](config, "attachmentsPath")
+    val intervalTimeSettings = config.as[IntervalTimeSettings]("intervalTimeSettings")
 
     FeatureTogglesConfig(
       development = isDevelopmentMode,
@@ -46,6 +47,7 @@ object FeatureTogglesConfig extends LazyLogging{
       counts = counts,
       commentSettings = commentSettings,
       deploySettings = deploySettings,
+      intervalTimeSettings = intervalTimeSettings,
       environmentAlert = environmentAlert,
       attachments = attachments
     )

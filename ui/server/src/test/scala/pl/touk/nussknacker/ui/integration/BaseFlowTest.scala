@@ -2,12 +2,12 @@ package pl.touk.nussknacker.ui.integration
 
 import java.util.UUID
 
-import argonaut.Argonaut._
-import argonaut.ArgonautShapeless._
 import akka.http.javadsl.model.headers.HttpCredentials
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
+import akka.http.scaladsl.model.{ContentTypeRange, ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import argonaut.{DecodeJson, Json}
+import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
+import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import io.circe.{Decoder, Json}
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
 import pl.touk.nussknacker.engine.api.StreamMetaData
@@ -20,16 +20,17 @@ import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{Subproce
 import pl.touk.nussknacker.engine.graph.node.{SubprocessInputDefinition, SubprocessOutputDefinition}
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.ui.NussknackerApp
-import pl.touk.nussknacker.ui.api.UISettings
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessUtil}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
-import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
+import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.ui.util.MultipartUtils
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, ValidationResult}
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 
-class BaseFlowTest extends FunSuite with ScalatestRouteTest
+class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with ScalaFutures with BeforeAndAfterEach with BeforeAndAfterAll {
+
+  private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
   private val mainRoute = NussknackerApp.initializeRoute(system.settings.config)
 
@@ -56,8 +57,9 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest
 
   test("ensure config is properly parsed") {
     Post("/api/processDefinitionData/streaming?isSubprocess=false", HttpEntity(ContentTypes.`application/json`, "{}")) ~> addCredentials(credentials) ~> mainRoute ~> check {
-      val settingsJson = responseAs[String].decodeOption[Json].flatMap(_.field("nodesConfig"))
-      val settings = settingsJson.flatMap(json => implicitly[DecodeJson[Map[String, SingleNodeConfig]]].decodeJson(json).toOption).get
+      val settingsJson = responseAs[Json].hcursor.downField("nodesConfig").focus.get
+      val settings = Decoder[Map[String, SingleNodeConfig]].decodeJson(settingsJson).right.get
+
       val underTest = Map(
         //docs url comes from reference.conf in managementSample
         "filter" -> SingleNodeConfig(None, None, Some("https://touk.github.io/nussknacker/"), None),
@@ -96,8 +98,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest
       Put(endpoint, TestFactory.posting.toEntityAsProcessToSave(process)) ~> addCredentials(credentials) ~> mainRoute ~> check {
         status shouldEqual StatusCodes.OK
 
-        import pl.touk.nussknacker.ui.codec.UiCodecs.validationResultEncode
-        val res = responseAs[String].decodeOption[ValidationResult].get
+        val res = responseAs[ValidationResult]
         //TODO: in the future should be more local error
         res.errors.globalErrors.map(_.description) shouldBe List(
           "Fatal error: Failed to load subprocess parameter: i.do.not.exist for input1, please check configuration")
@@ -124,7 +125,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest
 
     saveProcess(endpoint, process)
 
-    val multiPart = MultipartUtils.prepareMultiParts("testData" -> "record1|field2", "processJson" -> TestProcessUtil.toJson(process).nospaces)()
+    val multiPart = MultipartUtils.prepareMultiParts("testData" -> "record1|field2", "processJson" -> TestProcessUtil.toJson(process).noSpaces)()
     Post(s"/api/processManagement/test/${process.id}", multiPart) ~> addCredentials(credentials) ~> mainRoute ~> check {
       status shouldEqual StatusCodes.OK
     }

@@ -39,13 +39,13 @@ class ManagementActorSpec extends FunSuite  with Matchers with ScalaFutures with
     val id: process.ProcessId = prepareDeployedProcess(processName)
 
     jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue.map(_.isOkForDeployed) shouldBe Some(true)
-    processRepository.fetchLatestProcessDetailsForProcessId(id).futureValue.get.currentlyDeployedAt should have length 1
+    processRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get.currentlyDeployedAt should have length 1
 
     processManager.withProcessFinished {
       jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue.map(_.isOkForDeployed) shouldBe Some(false)
     }
 
-    processRepository.fetchLatestProcessDetailsForProcessId(id).futureValue.get.currentlyDeployedAt shouldBe List()
+    processRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get.currentlyDeployedAt shouldBe List()
 
   }
 

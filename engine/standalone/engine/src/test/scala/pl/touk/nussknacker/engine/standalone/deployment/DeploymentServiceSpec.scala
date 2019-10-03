@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.standalone.deployment
 import java.nio.file.Files
 
 import argonaut.PrettyParams
-import com.codahale.metrics.MetricRegistry
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
@@ -15,6 +14,8 @@ import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.standalone.StandaloneProcessConfigCreator
 import pl.touk.nussknacker.engine.standalone.api.DeploymentData
 import pl.touk.nussknacker.engine.standalone.utils.StandaloneContextPreparer
+import pl.touk.nussknacker.engine.standalone.utils.metrics.NoOpMetricsProvider
+import pl.touk.nussknacker.engine.standalone.utils.metrics.dropwizard.DropwizardMetricsProvider
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
 class DeploymentServiceSpec extends FlatSpec with Matchers {
@@ -25,7 +26,7 @@ class DeploymentServiceSpec extends FlatSpec with Matchers {
 
   private val tmpDir = Files.createTempDirectory("deploymentSpec")
 
-  def createService() = new DeploymentService(new StandaloneContextPreparer(new MetricRegistry),
+  def createService() = new DeploymentService(new StandaloneContextPreparer(NoOpMetricsProvider),
     LocalModelData(ConfigFactory.load(), new StandaloneProcessConfigCreator),
     new FileProcessRepository(tmpDir.toFile))
 

@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.NodeContext
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
-import pl.touk.nussknacker.engine.compiledgraph.expression._
+import pl.touk.nussknacker.engine.api.expression.Expression
 import pl.touk.nussknacker.engine.compiledgraph.node.{Sink, Source, _}
 import pl.touk.nussknacker.engine.compiledgraph.service._
 import pl.touk.nussknacker.engine.compiledgraph.variable._
@@ -120,7 +120,7 @@ class Interpreter private(listeners: Seq[ProcessListener], expressionEvaluator: 
         Future.successful(List(InterpretationResult(EndReference(id), null, ctx)))
       case Sink(id, ref, optionalExpression, false) =>
         (optionalExpression match {
-          case Some(expression) =>
+          case Some((expression, _)) =>
             evaluateExpression[Any](expression, ctx, expressionName)
           case None =>
             Future.successful(ValueWithContext(outputValue(ctx), ctx))

@@ -10,6 +10,16 @@ npm start
 open http://localhost:3000
 ```
 
+#Run tests from console
+```npm test```
+
+#Run tests from IntelliJ - Karma plugin needed
+- config file: ...ui/client/karma.conf.js
+- browsers to start: empty
+- node interpreter: np. usr/bin/node
+- karma package: ...ui/client/node_modules/karma
+- env variables: NODE_ENV=production
+
 # Background
 As a initial template was used todomvc example from https://github.com/gaearon/redux-devtools (commit 619a18b26a5482585b10eddd331ccacf582ba913)
 It contains:

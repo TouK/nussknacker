@@ -33,8 +33,10 @@ import scala.concurrent.{ExecutionContext, Future}
 import argonaut.Argonaut._
 import argonaut.ArgonautShapeless._
 import org.apache.flink.streaming.api.functions.TimestampAssigner
+import pl.touk.nussknacker.engine.api.definition.{Parameter, ServiceWithExplicitMethod}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{CollectableAction, ServiceInvocationCollector, TransmissionNames}
-import pl.touk.nussknacker.engine.api.typed.typing.Unknown
+import pl.touk.nussknacker.engine.api.typed.typing
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.flink.util.transformer.{TransformStateTransformer, UnionTransformer}
@@ -171,6 +173,7 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
       "enricher" -> WithCategories(Enricher, "Category1", "Category2"),
       "multipleParamsService" -> WithCategories(MultipleParamsService, "Category1", "Category2"),
       "complexReturnObjectService" -> WithCategories(ComplexReturnObjectService, "Category1", "Category2"),
+      "unionReturnObjectService" -> WithCategories(UnionReturnObjectService, "Category1", "Category2"),
       "listReturnObjectService" -> WithCategories(ListReturnObjectService, "Category1", "Category2"),
       "clientHttpService" -> WithCategories(new ClientFakeHttpService(), "Category1", "Category2"),
       "echoEnumService" -> WithCategories(EchoEnumService, "Category1", "Category2")
@@ -207,7 +210,7 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
     val globalProcessVariables = Map(
       "DATE" -> WithCategories(DateProcessHelper, "Category1", "Category2")
     )
-    ExpressionConfig(globalProcessVariables, List.empty)
+    ExpressionConfig(globalProcessVariables, List.empty, LanguageConfiguration(List()))
   }
 
   override def buildInfo(): Map[String, String] = {
@@ -343,6 +346,20 @@ case object ComplexReturnObjectService extends Service {
   def invoke() = {
     Future.successful(ComplexObject(Map("foo" -> 1, "bar" -> "baz")))
   }
+}
+
+case object UnionReturnObjectService extends ServiceWithExplicitMethod {
+
+  override def invokeService(params: List[AnyRef])
+                            (implicit ec: ExecutionContext, collector: ServiceInvocationCollector, metaData: MetaData): Future[AnyRef] =
+    Future.successful(Map("foo" -> 1))
+
+  override def parameterDefinition: List[Parameter] = List.empty
+
+  override def returnType: typing.TypingResult = Typed(
+    TypedObjectTypingResult(Map("foo" -> Typed[Int])),
+    TypedObjectTypingResult(Map("bar" -> Typed[Int])))
+
 }
 
 case object ListReturnObjectService extends Service {

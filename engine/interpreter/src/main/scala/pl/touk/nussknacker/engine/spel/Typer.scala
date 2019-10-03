@@ -4,20 +4,19 @@ import java.math.BigInteger
 
 import cats.data.NonEmptyList._
 import cats.data.Validated._
-import cats.data.{NonEmptyList, Validated}
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.instances.list._
-import cats.syntax.monoid._
 import cats.syntax.traverse._
 import org.springframework.expression.spel.SpelNode
 import org.springframework.expression.spel.ast._
 import pl.touk.nussknacker.engine.api.context.ValidationContext
+import pl.touk.nussknacker.engine.api.expression.ExpressionParseError
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing._
-import pl.touk.nussknacker.engine.compiledgraph.expression.ExpressionParseError
 import pl.touk.nussknacker.engine.spel.typer.TypeMethodReference
 import pl.touk.nussknacker.engine.types.EspTypeUtils
 
-import scala.reflect.ClassTag
+import scala.reflect.runtime._
 
 private[spel] class Typer(implicit classLoader: ClassLoader) {
 
@@ -30,8 +29,8 @@ private[spel] class Typer(implicit classLoader: ClassLoader) {
 
     val fixed = fixedWithNewCurrent(current)
 
-    def withChildrenOfType[Parts: ClassTag](result: TypingResult) = withTypedChildren {
-      case list if list.forall(_.canBeSubclassOf(Typed[Parts])) => Valid(result)
+    def withChildrenOfType[Parts: universe.TypeTag](result: TypingResult) = withTypedChildren {
+      case list if list.forall(_.canBeSubclassOf(Typed.fromDetailedType[Parts])) => Valid(result)
       case _ => invalid("Wrong part types")
     }
 
@@ -52,7 +51,7 @@ private[spel] class Typer(implicit classLoader: ClassLoader) {
       //TODO: what should be here?
       case e: ConstructorReference => fixed(Unknown)
 
-      case e: Elvis => withTypedChildren(l => Valid(l.reduce(_ |+| _)))
+      case e: Elvis => withTypedChildren(l => Valid(Typed(l.toSet)))
       case e: FloatLiteral => Valid(Typed[java.lang.Float])
       //TODO: what should be here?
       case e: FunctionReference => Valid(Unknown)
@@ -62,19 +61,15 @@ private[spel] class Typer(implicit classLoader: ClassLoader) {
       //TODO: what should be here?
       case e: Indexer =>
         val result = current match {
-          case Typed(types) :: Nil if types.size == 1 =>
-            types.head match {
-              case tc@TypedClass(clazz, param :: Nil) if clazz.isAssignableFrom(classOf[java.util.List[_]]) => param
-              case TypedClass(clazz, keyParam :: valueParam :: Nil) if clazz.isAssignableFrom(classOf[java.util.Map[_, _]]) => valueParam
-              case _ => Unknown
-            }
+          case TypedClass(clazz, param :: Nil) :: Nil if clazz.isAssignableFrom(classOf[java.util.List[_]]) => param
+          case TypedClass(clazz, keyParam :: valueParam :: Nil):: Nil if clazz.isAssignableFrom(classOf[java.util.Map[_, _]]) => valueParam
           case _ => Unknown
         }
         Valid(result)
       case e: InlineList => withTypedChildren { children =>
         val childrenTypes = children.toSet
         val genericType = if (childrenTypes.contains(Unknown) || childrenTypes.size != 1) Unknown else childrenTypes.head
-        fixed(Typed(Set(TypedClass(classOf[java.util.List[_]], List(genericType)))))
+        fixed(TypedClass(classOf[java.util.List[_]], List(genericType)))
       }
 
       case e: InlineMap =>
@@ -141,41 +136,15 @@ private[spel] class Typer(implicit classLoader: ClassLoader) {
         case Some(iterateType) =>
           val listType = extractListType(iterateType)
           typeChildren(validationContext, node, listType :: current) {
-            case result :: Nil => Valid(Typed(Set(TypedClass(classOf[java.util.List[_]], List(result)))))
+            case result :: Nil => Valid(TypedClass(classOf[java.util.List[_]], List(result)))
             case other => invalid(s"Wrong selection type: ${other.map(_.display)}")
           }
       }
 
       case e: PropertyOrFieldReference =>
-        current.headOption match {
-        case None => invalid(s"Non reference '${e.toStringAST}' occurred. Maybe you missed '#' in front of it?")
-        case Some(Unknown) => Valid(Unknown)
-        case Some(typed: Typed) if typed.canHaveAnyPropertyOrField => Valid(Unknown)
-        case Some(typed: TypedObjectTypingResult) =>
-          typed.fields.get(e.getName) match {
-            case None => invalid(s"There is no property '${e.getName}' in ${typed.display}")
-            case Some(result) => Valid(result)
-          }
-        case Some(typed@Typed(possible)) =>
-          val clazzDefinitions = possible.map(typedClass =>
-            EspTypeUtils.clazzDefinition(typedClass.klass)(ClassExtractionSettings.Default)
-          ).toList
-
-          clazzDefinitions match {
-            //in normal circumstances this should not happen, however we'd rather omit some errors than not allow correct expression
-            case Nil =>
-              Valid(Unknown)
-            case _ =>
-              clazzDefinitions.flatMap(_.getPropertyOrFieldClazzRef(e.getName).map(Typed(_))) match {
-                case Nil =>
-                  invalid(s"There is no property '${e.getName}' in ${typed.display}")
-                case nonEmpty =>
-                  val reduced = nonEmpty.reduce[TypingResult](_ |+| _)
-                  Valid(reduced)
-            }
-          }
-
-      }
+        current.headOption.map(extractProperty(e)).getOrElse {
+          invalid(s"Non reference '${e.toStringAST}' occurred. Maybe you missed '#' in front of it?")
+        }
       //TODO: what should be here?
       case e: QualifiedIdentifier => fixed(Unknown)
 
@@ -192,7 +161,7 @@ private[spel] class Typer(implicit classLoader: ClassLoader) {
       case e: StringLiteral => Valid(Typed[String])
 
       case e: Ternary => withTypedChildren {
-        case condition :: onTrue :: onFalse :: Nil if condition.canBeSubclassOf(Typed[Boolean]) => Valid(onTrue |+| onFalse)
+        case condition :: onTrue :: onFalse :: Nil if condition.canBeSubclassOf(Typed[Boolean]) => Valid(Typed(onTrue, onFalse))
         case _ => invalid("Invalid ternary operator")
       }
       //TODO: what should be here?
@@ -208,10 +177,35 @@ private[spel] class Typer(implicit classLoader: ClassLoader) {
     }
   }
 
+  private def extractProperty(e: PropertyOrFieldReference)
+                             (t: TypingResult): ValidatedNel[ExpressionParseError, TypingResult] = t match {
+    case typed: TypingResult if typed.canHasAnyPropertyOrField => Valid(Unknown)
+    case Unknown => Valid(Unknown)
+    case s: SingleTypingResult =>
+      extractSingleProperty(e)(s)
+        .map(Valid(_)).getOrElse(invalid(s"There is no property '${e.getName}' in type: ${s.display}"))
+    case TypedUnion(possible) =>
+      val l = possible.toList.flatMap(single => extractSingleProperty(e)(single))
+      if (l.isEmpty)
+        invalid(s"There is no property '${e.getName}' in type: ${t.display}")
+      else
+        Valid(Typed(l.toSet))
+  }
+
+  private def extractSingleProperty(e: PropertyOrFieldReference)
+                                   (t: SingleTypingResult) = t match {
+    case typed: SingleTypingResult if typed.canHasAnyPropertyOrField => Some(Unknown)
+    case typedClass: TypedClass =>
+      val clazzDefinition = EspTypeUtils.clazzDefinition(typedClass.klass)(ClassExtractionSettings.Default)
+      clazzDefinition.getPropertyOrFieldClazzRef(e.getName).map(Typed(_))
+    case typed: TypedObjectTypingResult =>
+      typed.fields.get(e.getName)
+  }
+
   private def extractListType(parent: TypingResult): TypingResult = parent match {
-    case Typed(klases) if parent.canBeSubclassOf(Typed[java.util.List[_]]) =>
-      //FIXME: what if more results are present?
-      klases.headOption.flatMap(_.params.headOption).getOrElse(Unknown)
+    case tc: TypedClass if tc.canBeSubclassOf(Typed[java.util.List[_]]) =>
+      tc.params.headOption.getOrElse(Unknown)
+    //FIXME: what if more results are present?
     case _ => Unknown
   }
 
@@ -231,7 +225,8 @@ private[spel] class Typer(implicit classLoader: ClassLoader) {
     Invalid(NonEmptyList.of(ExpressionParseError(message)))
 
   private def commonNumberReference: TypingResult =
-    Typed[Double] |+| Typed[Int] |+| Typed[Long] |+| Typed[Float] |+| Typed[Byte] |+| Typed[Short] |+| Typed[BigDecimal] |+| Typed[BigInteger]
+    Typed(
+      Typed[Double], Typed[Int], Typed[Long], Typed[Float], Typed[Byte], Typed[Short], Typed[BigDecimal], Typed[BigInteger])
 
   implicit class RichSpelNode(n: SpelNode) {
     def children: List[SpelNode] = {

@@ -1,8 +1,5 @@
 package pl.touk.nussknacker.ui.process.marshall
 
-import java.util.UUID
-
-import argonaut.PrettyParams
 import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode._
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}

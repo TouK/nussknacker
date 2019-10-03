@@ -3,9 +3,9 @@ package pl.touk.nussknacker.engine.standalone.management
 import java.util.concurrent.TimeUnit
 
 import cats.data.Validated.{Invalid, Valid}
-import com.codahale.metrics.MetricRegistry
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
+import io.circe.Json
 import pl.touk.nussknacker.engine.ModelData.ClasspathConfig
 import pl.touk.nussknacker.engine.{ModelData, _}
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
@@ -27,11 +27,13 @@ import pl.touk.nussknacker.engine.standalone.StandaloneProcessInterpreter
 import pl.touk.nussknacker.engine.standalone.api.DeploymentData
 import pl.touk.nussknacker.engine.standalone.api.types._
 import pl.touk.nussknacker.engine.standalone.utils.StandaloneContextPreparer
+import pl.touk.nussknacker.engine.standalone.utils.metrics.NoOpMetricsProvider
+import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import shapeless.Typeable
 import shapeless.syntax.typeable._
 
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
 
 object StandaloneProcessManager {
   def apply(modelData: ModelData, config: Config) : StandaloneProcessManager = new StandaloneProcessManager(modelData, StandaloneProcessClient(config))
@@ -40,7 +42,7 @@ object StandaloneProcessManager {
 class StandaloneProcessManager(modelData: ModelData, client: StandaloneProcessClient)
   extends ProcessManager with LazyLogging {
 
-  private implicit val ec = ExecutionContext.Implicits.global
+  private implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
 
   override def deploy(processVersion: ProcessVersion, processDeploymentData: ProcessDeploymentData,
                       savepointPath: Option[String]): Future[Unit] = {
@@ -106,7 +108,7 @@ class StandaloneTestMain(testData: TestData, process: EspProcess, modelData: Mod
     val collectingListener = ResultsCollectingListenerHolder.registerRun(variableEncoder)
 
     //in tests we don't send metrics anywhere
-    val testContext = new StandaloneContextPreparer(new MetricRegistry)
+    val testContext = new StandaloneContextPreparer(NoOpMetricsProvider)
 
     //FIXME: validation??
     val standaloneInterpreter = StandaloneProcessInterpreter(process, testContext, modelData,
@@ -127,15 +129,25 @@ class StandaloneTestMain(testData: TestData, process: EspProcess, modelData: Mod
 
   }
 
-  private def collectSinkResults(runId: TestRunId, results: List[InterpretationResultType]) = {
+  private def collectSinkResults(runId: TestRunId, results: List[InterpretationResultType]): Unit = {
+    //FIXME: testDataOutput is ignored here!
+    val bestEffortJsonEncoder = BestEffortJsonEncoder(failOnUnkown = false)
+    val encodeFunction = (out: Any) => bestEffortJsonEncoder.encode(out).fold(
+      "null",
+      _.toString,
+      _.toString,
+      _.toString,
+      array => Json.fromValues(array).spaces2,
+      obj => Json.fromJsonObject(obj).spaces2
+    )
     val successfulResults = results.flatMap(_.right.toOption.toList.flatten)
     successfulResults.foreach { result =>
       val node = result.reference.asInstanceOf[EndingReference].nodeId
-      SinkInvocationCollector(runId, node, node, _.toString).collect(result)
+      SinkInvocationCollector(runId, node, node, encodeFunction).collect(result)
     }
   }
 
-  private def collectExceptions(listener: ResultsCollectingListener, results: List[InterpretationResultType]) = {
+  private def collectExceptions(listener: ResultsCollectingListener, results: List[InterpretationResultType]): Unit = {
     val exceptions = results.flatMap(_.left.toOption)
     exceptions.flatMap(_.toList).foreach(listener.exceptionThrown)
   }

@@ -11,24 +11,22 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 import akka.pattern.ask
-import pl.touk.nussknacker.engine.util.json.Codecs
-import argonaut.ArgonautShapeless._
-import argonaut.CodecJson
-import pl.touk.http.argonaut.{Argonaut62Support, JsonMarshaller}
+import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import io.circe.{Decoder, Encoder}
+import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 
 class NotificationResources(managementActor: ActorRef,
                             processRepository: FetchingProcessRepository)
-                           (implicit ec: ExecutionContext, mat: Materializer, system: ActorSystem, jsonMarshaller: JsonMarshaller)
+                           (implicit ec: ExecutionContext, mat: Materializer, system: ActorSystem)
   extends Directives
     with LazyLogging
-    with RouteWithUser with Argonaut62Support {
+    with RouteWithUser with FailFastCirceSupport {
 
   //TODO: in the future we could use https://github.com/akka/akka-http/pull/1828 when we can bump version to 10.1.x
   private val durationFromConfig = system.settings.config.getDuration("akka.http.server.request-timeout")
   private implicit val timeout: Timeout = Timeout(durationFromConfig.toMillis millis)
-  private implicit val typeCodec: CodecJson[NotificationType.Value] = Codecs.enumCodec(NotificationType)
 
   def route(implicit user: LoggedUser): Route = {
     path("notifications") {
@@ -61,9 +59,13 @@ class NotificationResources(managementActor: ActorRef,
 
 }
 
-case class Notification(message: String, `type`: NotificationType.Value)
+@JsonCodec case class Notification(message: String, `type`: NotificationType.Value)
 
 object NotificationType extends Enumeration {
+
+  implicit val typeEncoder: Encoder[NotificationType.Value] = Encoder.enumEncoder(NotificationType)
+  implicit val typeDecoder: Decoder[NotificationType.Value] = Decoder.enumDecoder(NotificationType)
+
   type NotificationType = Value
   val info, warning = Value
 }

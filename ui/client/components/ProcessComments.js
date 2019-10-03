@@ -1,8 +1,5 @@
 import React from 'react'
-import {render} from "react-dom";
-import {Scrollbars} from "react-custom-scrollbars";
 import {connect} from "react-redux";
-import {bindActionCreators} from "redux";
 import _ from 'lodash'
 import ActionsUtils from "../actions/ActionsUtils";
 import DateUtils from '../common/DateUtils'
@@ -19,12 +16,13 @@ class ProcessComments extends React.Component {
       comment: "",
       pendingRequest: false
     }
+
     this.state = this.initState
   }
 
   addComment = () => {
     this.setState({ pendingRequest: true})
-    this.props.actions.addComment(this.props.processId, this.props.processVersionId, this.state.comment).then((resp) => {
+    this.props.actions.addComment(this.props.processId, this.props.processVersionId, this.state.comment).then((response) => {
       this.setState(this.initState)
     })
   }
@@ -32,7 +30,7 @@ class ProcessComments extends React.Component {
   deleteComment = (comment) => {
     this.props.actions.toggleConfirmDialog(true, DialogMessages.deleteComment(), () => {
       this.setState({ pendingRequest: true})
-      this.props.actions.deleteComment(this.props.processId, comment.id).then((resp) => {
+      this.props.actions.deleteComment(this.props.processId, comment.id).then((response) => {
         this.setState(this.initState)
       })
     })
@@ -63,16 +61,19 @@ class ProcessComments extends React.Component {
           })}
         </ul>
         <div className="add-comment">
-          <CommentInput onChange={this.onInputChange.bind(this)}/>
-          <button type="button" className="espButton add-comment" onClick={this.addComment}
-                  disabled={this.state.pendingRequest || _.isEmpty(this.state.comment) }>
+          <CommentInput onChange={this.onInputChange.bind(this)} value={this.state.comment} />
+          <button
+            type="button"
+            className="espButton add-comment"
+            onClick={this.addComment}
+            disabled={this.state.pendingRequest || this.state.comment == "" }
+          >
             Add
           </button>
         </div>
       </div>
     )
   }
-
 }
 
 function mapState(state) {

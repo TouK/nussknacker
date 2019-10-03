@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.compiledgraph
 
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.Parameter
-import pl.touk.nussknacker.engine.compiledgraph.expression.Expression
+import pl.touk.nussknacker.engine.api.expression.Expression
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.compiledgraph.service.ServiceRef
 import pl.touk.nussknacker.engine.compiledgraph.variable.Field
 
@@ -13,7 +14,7 @@ object node {
 
   case class Source(id: String, next: Next) extends Node
 
-  case class Sink(id: String, ref: String, endResult: Option[Expression], isDisabled: Boolean) extends Node
+  case class Sink(id: String, ref: String, endResult: Option[(Expression, TypingResult)], isDisabled: Boolean) extends Node
 
   case class BranchEnd(id: String, joinId: String) extends Node
 

@@ -1,11 +1,15 @@
 package pl.touk.nussknacker.restmodel.displayedgraph
 
+import io.circe.generic.JsonCodec
+import io.circe.generic.extras.ConfiguredJsonCodec
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node
 
 object displayablenode {
 
-  sealed abstract class EdgeType
+  import pl.touk.nussknacker.engine.api.CirceUtil._
+
+  @ConfiguredJsonCodec sealed abstract class EdgeType
   object EdgeType {
     sealed trait FilterEdge extends EdgeType
     sealed trait SwitchEdge extends EdgeType
@@ -16,6 +20,6 @@ object displayablenode {
     case class SubprocessOutput(name: String) extends EdgeType
   }
 
-  case class Edge(from: String, to: String, edgeType: Option[EdgeType])
-  case class NodeAdditionalFields(description: Option[String]) extends node.UserDefinedAdditionalNodeFields
+  @JsonCodec case class Edge(from: String, to: String, edgeType: Option[EdgeType])
+  @JsonCodec case class NodeAdditionalFields(description: Option[String]) extends node.UserDefinedAdditionalNodeFields
 }

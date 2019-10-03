@@ -6,17 +6,17 @@ import cats.instances.list._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, TypedExpression, TypedExpressionMap}
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
-import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.{TypedExpression, TypedExpressionMap, TypedParameter}
-import pl.touk.nussknacker.engine.compiledgraph.expression.ExpressionParser
+import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedParameter
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectMetadata
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
 import pl.touk.nussknacker.engine.graph.{evaluatedparam, expression}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.sql.SqlExpressionParser
+import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax
 import pl.touk.nussknacker.engine.{compiledgraph, graph}
-import pl.touk.nussknacker.engine.util.Implicits._
 
 object ExpressionCompiler {
 
@@ -27,7 +27,11 @@ object ExpressionCompiler {
       = default(loader, expressionConfig, optimizeCompilation = false)
 
   private def default(loader: ClassLoader, expressionConfig: ExpressionDefinition[ObjectMetadata], optimizeCompilation: Boolean): ExpressionCompiler = {
-    val parsersSeq = Seq(SpelExpressionParser.default(loader, optimizeCompilation, expressionConfig.globalImports), SqlExpressionParser)
+    val defaultParsers = Seq(
+      SpelExpressionParser.default(loader, optimizeCompilation, expressionConfig.globalImports, SpelExpressionParser.Standard),
+      SpelExpressionParser.default(loader, optimizeCompilation, expressionConfig.globalImports, SpelExpressionParser.Template),
+      SqlExpressionParser)
+    val parsersSeq = defaultParsers  ++ expressionConfig.languages.expressionParsers
     val parsers = parsersSeq.map(p => p.languageId -> p).toMap
     new ExpressionCompiler(parsers)
   }
@@ -42,7 +46,7 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
   def compileValidatedObjectParameters(parameters: List[evaluatedparam.Parameter],
                                        ctx: Option[ValidationContext])(implicit nodeId: NodeId)
   : ValidatedNel[PartSubGraphCompilationError, List[compiledgraph.evaluatedparam.Parameter]] =
-    compileObjectParameters(parameters.map(p => Parameter(p.name, Unknown, Unknown)), parameters, ctx)
+    compileObjectParameters(parameters.map(p => Parameter(p.name, Unknown, classOf[Any])), parameters, ctx)
 
   def compileObjectParameters(parameterDefinitions: List[Parameter],
                               parameters: List[evaluatedparam.Parameter],

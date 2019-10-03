@@ -14,6 +14,7 @@ import BaseProcesses from "./BaseProcesses"
 import {Glyphicon} from 'react-bootstrap'
 import Select from 'react-select'
 import ProcessUtils from "../common/ProcessUtils"
+import {nkPath} from "../config";
 
 class SubProcesses extends BaseProcesses {
   queries = {
@@ -24,10 +25,6 @@ class SubProcesses extends BaseProcesses {
   constructor(props) {
     super(props)
     this.state = this.prepareState()
-  }
-
-  reload() {
-    this.reloadProcesses(false)
   }
 
   render() {
@@ -45,7 +42,7 @@ class SubProcesses extends BaseProcesses {
               onChange={this.onSearchChange}
             />
             <span className="input-group-addon" id="basic-addon1">
-              <img id="search-icon" src={filterIcon} />
+              <img id="search-icon" src={filterIcon}/>
             </span>
           </div>
 
@@ -64,30 +61,30 @@ class SubProcesses extends BaseProcesses {
               theme={this.customSelectTheme}
             />
           </div>
-
+          
           {
             this.props.loggedUser.isWriter ? (
-            <div
-              id="process-add-button"
-              className="big-blue-button input-group"
-              role="button"
-              onClick={() => this.setState({showAddProcess : true})}
-            >
-              CREATE NEW SUBPROCESS
-              <img id="add-icon" src={createProcessIcon} />
-            </div>
+              <div
+                id="process-add-button"
+                className="big-blue-button input-group"
+                role="button"
+                onClick={() => this.setState({showAddProcess: true})}
+              >
+                CREATE NEW SUBPROCESS
+                <img id="add-icon" src={createProcessIcon}/>
+              </div>
             ) : null
           }
         </div>
 
         <AddProcessDialog
-          onClose={() => this.setState({showAddProcess : false})}
+          onClose={() => this.setState({showAddProcess: false})}
           isSubprocess={true}
           isOpen={this.state.showAddProcess}
           visualizationPath={SubProcesses.path}
         />
 
-        <LoaderSpinner show={this.state.showLoader} />
+        <LoaderSpinner show={this.state.showLoader}/>
 
         <Table
           className="esp-table"
@@ -105,7 +102,7 @@ class SubProcesses extends BaseProcesses {
           filterable={['id', 'name', 'category']}
           hideFilterInput
           filterBy={this.state.search.toLowerCase()}
-          columns = {[
+          columns={[
             {key: 'name', label: 'Process name'},
             {key: 'category', label: 'Category'},
             {key: 'modifyDate', label: 'Last modification'},
@@ -119,7 +116,7 @@ class SubProcesses extends BaseProcesses {
                 <Td column="category">{process.processCategory}</Td>
                 <Td column="modifyDate" className="centered-column">{DateUtils.format(process.modificationDate)}</Td>
                 <Td column="edit" className="edit-column">
-                  <Glyphicon glyph="edit" title="Edit subprocess" onClick={this.showProcess.bind(this, SubProcesses.path, process)} />
+                  <Glyphicon glyph="edit" title="Edit subprocess" onClick={this.showProcess.bind(this, process)} />
                 </Td>
               </Tr>
             )
@@ -130,12 +127,12 @@ class SubProcesses extends BaseProcesses {
   }
 }
 
-SubProcesses.title = 'SubProcesses'
-SubProcesses.path = '/subProcesses'
 SubProcesses.header = 'Subprocesses'
+SubProcesses.path = `${nkPath}/subProcesses`
 
 const mapState = (state) => ({
   loggedUser: state.settings.loggedUser,
+  featuresSettings: state.settings.featuresSettings,
   filterCategories: ProcessUtils.prepareFilterCategories(state.settings.loggedUser.categories, state.settings.loggedUser)
 })
 

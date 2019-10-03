@@ -16,6 +16,7 @@ import ProcessUtils from "../common/ProcessUtils"
 import BaseProcesses from "./BaseProcesses"
 import {Glyphicon} from 'react-bootstrap'
 import * as  queryString from 'query-string'
+import {nkPath} from "../config";
 
 class Processes extends BaseProcesses {
   queries = {
@@ -24,6 +25,7 @@ class Processes extends BaseProcesses {
   }
 
   searchItems = ['categories', 'isDeployed']
+  shouldReloadStatuses = true
 
   deployedOptions = [
     {label: 'Show all processes', value: undefined},
@@ -41,11 +43,6 @@ class Processes extends BaseProcesses {
       statusesLoaded: false,
       statuses: {},
     }, this.prepareState())
-  }
-
-  reload() {
-    this.reloadProcesses(false)
-    this.reloadStatuses()
   }
 
   updateProcess(name, mutator) {
@@ -75,10 +72,6 @@ class Processes extends BaseProcesses {
     this.updateProcess(process.name, (process) => process.editedName = process.name)
   }
 
-  onDeployedChange = (element) => {
-    this.afterElementChange({isDeployed: element.value, page: 0}, true)
-  }
-
   render() {
     return (
       <div className="Page">
@@ -94,7 +87,7 @@ class Processes extends BaseProcesses {
               onChange={this.onSearchChange}
             />
             <span className="input-group-addon" id="basic-addon1">
-              <img id="search-icon" src={filterIcon} />
+              <img id="search-icon" src={filterIcon}/>
             </span>
           </div>
 
@@ -131,23 +124,23 @@ class Processes extends BaseProcesses {
                 id="process-add-button"
                 className="big-blue-button input-group "
                 role="button"
-                onClick={() => this.setState({showAddProcess : true})}
+                onClick={() => this.setState({showAddProcess: true})}
               >
                 CREATE NEW PROCESS
-                <img id="add-icon" src={createProcessIcon} />
+                <img id="add-icon" src={createProcessIcon}/>
               </div>
             ) : null
           }
         </div>
 
         <AddProcessDialog
-          onClose={() => this.setState({showAddProcess : false})}
+          onClose={() => this.setState({showAddProcess: false})}
           isOpen={this.state.showAddProcess}
           isSubprocess={false}
           visualizationPath={Processes.path}
         />
 
-        <LoaderSpinner show={this.state.showLoader} />
+        <LoaderSpinner show={this.state.showLoader}/>
 
         <Table
           className="esp-table"
@@ -165,7 +158,7 @@ class Processes extends BaseProcesses {
           filterable={['name', 'category']}
           hideFilterInput
           filterBy={this.state.search.toLowerCase()}
-          columns = {[
+          columns={[
             {key: 'name', label: 'Process name'},
             {key: 'category', label: 'Category'},
             {key: 'modifyDate', label: 'Last modification'},
@@ -179,7 +172,7 @@ class Processes extends BaseProcesses {
               <Tr className="row-hover" key={index}>
                 <Td column="name" value={process.name}>
                   <input
-                    value={process.editedName || process.name}
+                    value={process.editedName != null ? process.editedName : process.name}
                     className="transparent"
                     onKeyPress={(event) => this.changeProcessName(process, event)}
                     onChange={(event) => this.processNameChanged(process.name, event)}
@@ -190,15 +183,16 @@ class Processes extends BaseProcesses {
                 <Td column="modifyDate" className="centered-column">{DateUtils.format(process.modificationDate)}</Td>
                 <Td column="status" className="status-column">
                   <div
-                    className={this.processStatusClass(process, this.state.statusesLoaded, this.state.statuses)}
-                    title={this.processStatusTitle(this.processStatusClass(process))}
+                    className={this.processStatusClass(process)}
+                    title={this.processStatusTitle(process)}
                   />
                 </Td>
                 <Td column="edit" className="edit-column">
-                  <Glyphicon glyph="edit" title="Edit process" onClick={this.showProcess.bind(this, Processes.path, process)} />
+                  <Glyphicon glyph="edit" title="Edit process"
+                             onClick={this.showProcess.bind(this, process)}/>
                 </Td>
                 <Td column="metrics" className="metrics-column">
-                  <Glyphicon glyph="stats" title="Show metrics" onClick={this.showMetrics.bind(this, process)} />
+                  <Glyphicon glyph="stats" title="Show metrics" onClick={this.showMetrics.bind(this, process)}/>
                 </Td>
               </Tr>
             )
@@ -209,12 +203,12 @@ class Processes extends BaseProcesses {
   }
 }
 
-Processes.title = 'Processes'
-Processes.path = '/processes'
+Processes.path = `${nkPath}/processes`
 Processes.header = 'Processes'
 
 const mapState = state => ({
   loggedUser: state.settings.loggedUser,
+  featuresSettings: state.settings.featuresSettings,
   filterCategories: ProcessUtils.prepareFilterCategories(state.settings.loggedUser.categories, state.settings.loggedUser)
 })
 

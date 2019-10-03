@@ -2,7 +2,8 @@ package pl.touk.nussknacker.ui.process.marshall
 
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api.process.LanguageConfiguration
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
@@ -27,7 +28,8 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
 
   val validation: ProcessValidation = {
     val processDefinition = ProcessDefinition[ObjectDefinition](Map("ref" -> ObjectDefinition.noParam),
-      Map("sourceRef" -> ObjectDefinition.noParam), Map(), Map(), Map(), ObjectDefinition.noParam, ExpressionDefinition(Map.empty, List.empty, optimizeCompilation = false), List())
+      Map("sourceRef" -> ObjectDefinition.noParam), Map(), Map(), Map(), ObjectDefinition.noParam,
+      ExpressionDefinition(Map.empty, List.empty, LanguageConfiguration.default, optimizeCompilation = false), List())
     val validator =  ProcessValidator.default(ProcessDefinitionBuilder.withEmptyObjects(processDefinition))
     new ProcessValidation(Map(TestProcessingTypes.Streaming -> validator), Map(TestProcessingTypes.Streaming -> Map()), sampleResolver, Map.empty)
   }
@@ -102,9 +104,9 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
         List.empty,
         List.empty,
         Map(
-          "s" -> Map("input" -> Typed[Null], "meta" -> MetaVariables.typingResult(meta)),
-          "v" -> Map("input" -> Typed[Null], "meta" -> MetaVariables.typingResult(meta)),
-          "e" -> Map("input" -> Typed[Null], "meta" -> MetaVariables.typingResult(meta), "test" -> Typed[String]))
+          "s" -> Map("input" -> Unknown, "meta" -> MetaVariables.typingResult(meta)),
+          "v" -> Map("input" -> Unknown, "meta" -> MetaVariables.typingResult(meta)),
+          "e" -> Map("input" -> Unknown, "meta" -> MetaVariables.typingResult(meta), "test" -> Typed[String]))
       )
     )
 

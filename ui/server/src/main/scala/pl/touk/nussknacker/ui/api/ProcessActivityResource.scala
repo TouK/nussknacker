@@ -3,24 +3,26 @@ package pl.touk.nussknacker.ui.api
 
 import java.io.File
 
+import akka.http.scaladsl.model.MediaTypes.`application/json`
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server._
 import akka.http.scaladsl.server.directives.ContentTypeResolver
 import akka.http.scaladsl.settings.RoutingSettings
+import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import akka.stream.{ActorAttributes, Materializer}
 import akka.stream.scaladsl.FileIO
+import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, ProcessActivityRepository}
 import pl.touk.nussknacker.ui.util.{AkkaHttpResponse, CatsSyntax}
-import pl.touk.http.argonaut.{Argonaut62Support, JsonMarshaller}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.ExecutionContext
 
 class ProcessActivityResource(processActivityRepository: ProcessActivityRepository, val processRepository: FetchingProcessRepository)
-                             (implicit val ec: ExecutionContext, mat: Materializer, jsonMarshaller: JsonMarshaller) extends Directives with Argonaut62Support with RouteWithUser with ProcessDirectives {
+                             (implicit val ec: ExecutionContext, mat: Materializer) extends Directives with FailFastCirceSupport with RouteWithUser with ProcessDirectives {
 
-  import argonaut.ArgonautShapeless._
-  import pl.touk.nussknacker.ui.codec.UiCodecs._
+  private implicit final val plainBytes: FromEntityUnmarshaller[Array[Byte]] =
+    Unmarshaller.byteArrayUnmarshaller
 
   def route(implicit user: LoggedUser) : Route = {
     path("processes" / Segment / "activity") { processName =>
@@ -49,10 +51,7 @@ class ProcessActivityResource(processActivityRepository: ProcessActivityReposito
 }
 
 class AttachmentResources(attachmentService: ProcessAttachmentService, val processRepository: FetchingProcessRepository)
-                         (implicit val ec: ExecutionContext, mat: Materializer, jsonMarshaller: JsonMarshaller) extends Directives with Argonaut62Support with RouteWithUser with ProcessDirectives {
-
-  import argonaut.ArgonautShapeless._
-  import pl.touk.nussknacker.ui.codec.UiCodecs._
+                         (implicit val ec: ExecutionContext, mat: Materializer) extends Directives with FailFastCirceSupport with RouteWithUser with ProcessDirectives {
 
   def route(implicit user: LoggedUser) : Route = {
     path("processes" / Segment / LongNumber / "activity" / "attachments") { (processName, versionId) =>

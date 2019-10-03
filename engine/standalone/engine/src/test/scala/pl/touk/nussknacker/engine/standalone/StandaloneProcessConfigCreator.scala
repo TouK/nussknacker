@@ -8,6 +8,7 @@ import ArgonautShapeless._
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.{Context => NKContext}
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, EspExceptionInfo, ExceptionHandlerFactory}
@@ -18,7 +19,7 @@ import pl.touk.nussknacker.engine.standalone.api.StandaloneCustomTransformer
 import pl.touk.nussknacker.engine.standalone.api.types.InterpreterType
 import pl.touk.nussknacker.engine.standalone.utils.customtransformers.ProcessSplitter
 import pl.touk.nussknacker.engine.standalone.utils.service.TimeMeasuringService
-import pl.touk.nussknacker.engine.standalone.utils.{JsonStandaloneSourceFactory, StandaloneSinkFactory}
+import pl.touk.nussknacker.engine.standalone.utils.{JsonStandaloneSourceFactory, StandaloneSinkFactory, StandaloneSinkWithParameters}
 import pl.touk.nussknacker.engine.util.LoggingListener
 import pl.touk.nussknacker._
 
@@ -55,7 +56,8 @@ class StandaloneProcessConfigCreator extends ProcessConfigCreator with LazyLoggi
   )
 
   override def sinkFactories(config: Config): Map[String, WithCategories[SinkFactory]] = Map(
-    "response-sink" -> WithCategories(new StandaloneSinkFactory)
+    "response-sink" -> WithCategories(new StandaloneSinkFactory),
+    "parameterResponse-sink" -> WithCategories(ParameterResponseSinkFactory)
   )
 
   override def listeners(config: Config): Seq[ProcessListener] = List(LoggingListener)
@@ -149,5 +151,22 @@ class StandaloneCustomExtractor(outputVariableName: String, expression: LazyPara
         } yield continuationResult
       }
     }
+
+}
+
+object ParameterResponseSinkFactory extends SinkFactory {
+  @MethodToInvoke
+  def invoke(@ParamName("computed") computed: LazyParameter[String]): Sink = new ParameterResponseSink(computed)
+
+  override def requiresOutput: Boolean = false
+
+  class ParameterResponseSink(computed: LazyParameter[String]) extends StandaloneSinkWithParameters {
+    
+    override def prepareResponse(implicit evaluateLazyParameter: LazyParameterInterpreter): LazyParameter[Any] = {
+      computed.map(s => s + " withRandomString")
+    }
+
+    override def testDataOutput: Option[Any => String] = Some(_.toString)
+  }
 
 }

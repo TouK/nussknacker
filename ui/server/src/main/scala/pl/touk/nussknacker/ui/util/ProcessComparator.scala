@@ -1,33 +1,61 @@
 package pl.touk.nussknacker.ui.util
 
-import argonaut.{CodecJson, EncodeJson}
-import argonaut.derive.{JsonSumCodec, JsonSumCodecFor}
+import io.circe.generic.extras.ConfiguredJsonCodec
 import pl.touk.nussknacker.engine.graph.node.NodeData
-import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
-import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType
-import pl.touk.nussknacker.ui.codec.UiCodecs._
+import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 
 object ProcessComparator {
-
   def compare(currentProcess: DisplayableProcess, otherProcess: DisplayableProcess) : Map[String, Difference] = {
-    val currentIds = currentProcess.nodes.map(_.id).toSet
-    val otherIds = otherProcess.nodes.map(_.id).toSet
+    val nodes = getDifferences(
+      currentProcess.nodes.map(node => node.id -> node).toMap,
+      otherProcess.nodes.map(node => node.id -> node).toMap
+    )(
+      notPresentInOther = current => NodeNotPresentInOther(current.id, current),
+      notPresentInCurrent = other => NodeNotPresentInCurrent(other.id, other),
+      different = (current, other) => NodeDifferent(current.id, current, other)
+    )
 
-    (currentIds ++ otherIds).map(id => (currentProcess.nodes.find(_.id == id), otherProcess.nodes.find(_.id == id))).collect {
-      case (Some(node), None) => NodeNotPresentInOther(node.id, node)
-      case (None, Some(node)) => NodeNotPresentInCurrent(node.id, node)
-      case (Some(currentNode), Some(otherNode)) if currentNode != otherNode => NodeDifferent(currentNode.id, currentNode, otherNode)
-    }.map(difference => difference.id -> difference).toMap
+    val edges = getDifferences(
+      currentProcess.edges.map(edge => (edge.from, edge.to) -> edge).toMap,
+      otherProcess.edges.map(edge => (edge.from, edge.to) -> edge).toMap
+    )(
+      notPresentInOther = current => EdgeNotPresentInOther(current.from, current.to, current),
+      notPresentInCurrent = other => EdgeNotPresentInCurrent(other.from, other.to, other),
+      different = (current, other) => EdgeDifferent(current.from, current.to, current, other)
+    )
 
+    nodes ++ edges
   }
 
-  sealed trait Difference {
+  private def getDifferences[K, V](currents: Map[K, V], others: Map[K, V])
+                                  (notPresentInOther: V => Difference,
+                                   notPresentInCurrent: V => Difference,
+                                   different: (V, V) => Difference): Map[String, Difference] = {
+    (currents.keys ++ others.keys)
+      .toSet
+      .map((id: K) => (currents.get(id), others.get(id)))
+      .collect {
+        case (Some(current), None) => notPresentInOther(current)
+        case (None, Some(other)) => notPresentInCurrent(other)
+        case (Some(current), Some(other)) if current != other => different(current, other)
+      }
+      .map(difference => difference.id -> difference)
+      .toMap
+  }
+
+  import pl.touk.nussknacker.restmodel.NodeDataCodec.nodeDataEncoder
+  import pl.touk.nussknacker.restmodel.NodeDataCodec.nodeDataDecoder
+  import pl.touk.nussknacker.engine.api.CirceUtil._
+
+  @ConfiguredJsonCodec sealed trait Difference {
     def id: String
   }
 
   sealed trait NodeDifference extends Difference {
     def nodeId: String
-    override def id : String = nodeId
+
+    override def id: String = s"Node '$nodeId'"
   }
 
   case class NodeDifferent(nodeId: String, currentNode: NodeData, otherNode: NodeData) extends NodeDifference
@@ -36,20 +64,21 @@ object ProcessComparator {
 
   case class NodeNotPresentInCurrent(nodeId: String, otherNode: NodeData) extends NodeDifference
 
+  sealed trait EdgeDifference extends Difference {
+    def fromId: String
+    def toId: String
+
+    override def id : String = s"Edge from '$fromId' to '$toId'"
+  }
+
+  case class EdgeDifferent(fromId: String, toId: String, currentEdge: Edge, otherEdge: Edge) extends EdgeDifference
+
+  case class EdgeNotPresentInOther(fromId: String, toId: String, currentEdge: Edge) extends EdgeDifference
+
+  case class EdgeNotPresentInCurrent(fromId: String, toId: String, otherEdge: Edge) extends EdgeDifference
+
   /* TODO: implement rest...
   case class PropertiesDifferent(current: ProcessProperties, other: ProcessProperties, differences: Set[NodeDifference])
     extends Difference
-
-  case class EdgeNotPresentInOther(fromId: String, toId: String) extends Difference
-
-  case class EdgeNotPresentInCurrent(fromId: String, toId: String) extends Difference
-
-  case class DifferentEdgeTypes(fromId: String, toId: String, currentEdgeType: EdgeType, otherEdgeType: EdgeType) extends Difference
-                                                                 */
-
-  //apparently this has to be here so that codecs are resolved properly :|
-  private implicit def typeFieldJsonSumCodecFor[S]: JsonSumCodecFor[S] = JsonSumCodecFor(JsonSumCodec.typeField)
-  lazy val codec : CodecJson[Difference] = CodecJson.derived[Difference]
-
-
+  */
 }

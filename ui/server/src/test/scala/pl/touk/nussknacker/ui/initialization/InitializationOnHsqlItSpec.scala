@@ -1,10 +1,8 @@
 package pl.touk.nussknacker.ui.initialization
 
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import argonaut.PrettyParams
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
-import pl.touk.http.argonaut.{JacksonJsonMarshaller, JsonMarshaller}
 import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
@@ -16,8 +14,6 @@ import pl.touk.nussknacker.ui.process.migrate.TestMigrations
 class InitializationOnHsqlItSpec extends FlatSpec with ScalatestRouteTest with Matchers with ScalaFutures with BeforeAndAfterEach with WithHsqlDbTesting with Eventually {
 
   import Initialization.nussknackerUser
-
-  private implicit val marshaller: JsonMarshaller = JacksonJsonMarshaller
 
   private val processId = "proc1"
 
@@ -34,7 +30,7 @@ class InitializationOnHsqlItSpec extends FlatSpec with ScalatestRouteTest with M
 
     Initialization.init(migrations, db, "env1", customProcesses)
 
-    repository.fetchProcessesDetails().futureValue.map(d => (d.name, d.processType)) shouldBe List(("process1", ProcessType.Custom))
+    repository.fetchProcessesDetails[Unit]().futureValue.map(d => (d.name, d.processType)) shouldBe List(("process1", ProcessType.Custom))
   }
 
   it should "migrate processes" in {
@@ -43,7 +39,7 @@ class InitializationOnHsqlItSpec extends FlatSpec with ScalatestRouteTest with M
 
     Initialization.init(migrations, db, "env1", None)
 
-    repository.fetchProcessesDetails().futureValue.map(d => (d.name, d.modelVersion)) shouldBe List(("proc1", Some(2)))
+    repository.fetchProcessesDetails[Unit]().futureValue.map(d => (d.name, d.modelVersion)) shouldBe List(("proc1", Some(2)))
   }
 
   it should "migrate processes when subprocesses present" in {
@@ -57,7 +53,7 @@ class InitializationOnHsqlItSpec extends FlatSpec with ScalatestRouteTest with M
 
     Initialization.init(migrations, db, "env1", None)
 
-    repository.fetchProcessesDetails().futureValue.map(d => (d.name, d.modelVersion)).toSet shouldBe (1 to 20).map(id => (s"id$id", Some(2))).toSet
+    repository.fetchProcessesDetails[Unit]().futureValue.map(d => (d.name, d.modelVersion)).toSet shouldBe (1 to 20).map(id => (s"id$id", Some(2))).toSet
 
   }
 
@@ -73,7 +69,7 @@ class InitializationOnHsqlItSpec extends FlatSpec with ScalatestRouteTest with M
 
     exception.getMessage shouldBe "made to fail.."
 
-    repository.fetchProcessesDetails().futureValue.map(d => (d.name, d.modelVersion)) shouldBe List(("proc1", Some(1)))
+    repository.fetchProcessesDetails[Unit]().futureValue.map(d => (d.name, d.modelVersion)) shouldBe List(("proc1", Some(1)))
   }
 
   private val customProcesses =

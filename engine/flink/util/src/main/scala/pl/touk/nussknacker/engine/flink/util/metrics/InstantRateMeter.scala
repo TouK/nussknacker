@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.flink.util.metrics
 import org.apache.flink.metrics.{Counter, Gauge, MetricGroup}
 import pl.touk.nussknacker.engine.util.metrics.RateMeter
 
-class InstantRateMeter extends  pl.touk.nussknacker.engine.util.metrics.GenericInstantRateMeter with Gauge[Double]
+class InstantRateMeter extends pl.touk.nussknacker.engine.util.metrics.GenericInstantRateMeter with Gauge[Double]
 
 object InstantRateMeterWithCount {
 

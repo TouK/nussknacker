@@ -8,10 +8,10 @@ import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, ExceptionH
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
+import pl.touk.nussknacker.engine.api.expression.{TypedExpression, TypedExpressionMap}
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam
-import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.{TypedExpression, TypedExpressionMap, TypedParameter}
+import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedParameter
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph
@@ -48,13 +48,13 @@ class ProcessObjectFactory(expressionEvaluator: ExpressionEvaluator) extends Laz
         val value = if (definition.branchParam) {
           param.typedValue.asInstanceOf[TypedExpressionMap].valueByKey.mapValuesNow {
             case TypedExpression(expr, returnType) =>
-              CompilerLazyParameter(nodeId, Parameter(
+              ExpressionLazyParameter(nodeId, Parameter(
                 param.name,
                 graph.expression.Expression(expr.language, expr.original)), returnType)
           }
         } else {
           val exprValue = param.typedValue.asInstanceOf[TypedExpression]
-          CompilerLazyParameter(nodeId, Parameter(param.name,
+          ExpressionLazyParameter(nodeId, Parameter(param.name,
             graph.expression.Expression(exprValue.expression.language, exprValue.expression.original)), exprValue.returnType)
         }
         param.name -> value

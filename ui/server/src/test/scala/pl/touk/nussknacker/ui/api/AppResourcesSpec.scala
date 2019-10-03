@@ -1,20 +1,27 @@
 package pl.touk.nussknacker.ui.api
 
+import java.util.Collections
+
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.testkit.TestProbe
 import com.typesafe.config.ConfigFactory
+import io.circe.Json
+import io.circe.syntax._
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.nussknacker.engine.api.deployment.CustomProcess
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.testing.{EmptyProcessConfigCreator, LocalModelData}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, TestFactory}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.ui.process.JobStatusService
 import pl.touk.nussknacker.ui.process.deployment.CheckStatus
 import pl.touk.nussknacker.restmodel.displayedgraph.ProcessStatus
+
+import scala.collection.JavaConverters._
 
 class AppResourcesSpec extends FunSuite with ScalatestRouteTest
   with Matchers with ScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
@@ -87,6 +94,25 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest
 
     result ~> check {
       status shouldBe StatusCodes.OK
+    }
+  }
+
+  test("it should return global config") {
+    import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
+
+    val creatorWithBuildInfo = new EmptyProcessConfigCreator {
+      override def buildInfo(): Map[String, String] = Map("fromModel" -> "value1")
+    }
+    val modelData = LocalModelData(ConfigFactory.empty(), creatorWithBuildInfo)
+
+    val globalConfig = Map("testConfig" -> "testValue", "otherConfig" -> "otherValue")
+    val resources = new AppResources(ConfigFactory.parseMap(Collections.singletonMap("globalBuildInfo", globalConfig.asJava)),
+      Map("test1" -> modelData), processRepository, TestFactory.processValidation, new JobStatusService(TestProbe().ref))
+    
+    val result = Get("/app/buildInfo") ~> withPermissions(resources, testPermissionRead)
+    result ~> check {
+      status shouldBe StatusCodes.OK
+      entityAs[Map[String, Json]] shouldBe globalConfig.mapValues(_.asJson) + ("processingType" -> Map("test1" -> creatorWithBuildInfo.buildInfo()).asJson)
     }
   }
 

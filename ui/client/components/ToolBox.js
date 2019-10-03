@@ -7,6 +7,7 @@ import "../stylesheets/toolBox.styl";
 import Tool from "./Tool"
 
 import TreeView from 'react-treeview'
+import * as ProcessDefitionUtils from "../common/ProcessDefinitionUtils";
 
 class ToolBox extends React.Component {
 
@@ -66,13 +67,7 @@ class ToolBox extends React.Component {
 function mapState(state) {
   const processDefinitionData = state.settings.processDefinitionData || {}
   const processCategory = _.get(state.graphReducer.fetchedProcessDetails, 'processCategory', '')
-  const nodesToAdd = (processDefinitionData.nodesToAdd || []).map((group) => {
-    return {
-      ...group,
-      possibleNodes: group.possibleNodes.filter((node) => node.categories.includes(processCategory))
-    }
-  })
-
+  const nodesToAdd = ProcessDefitionUtils.getNodesToAddInCategory(processDefinitionData, processCategory)
   return {
     processDefinitionData: processDefinitionData,
     processCategory: processCategory,
