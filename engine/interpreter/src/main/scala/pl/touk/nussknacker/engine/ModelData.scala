@@ -74,7 +74,9 @@ trait ModelData extends ConfigCreatorSignalDispatcher {
 
   def processConfigFromConfiguration: Config
 
-  override def processConfig: Config = {
+  protected def modelConfigResource: String = ModelData.modelConfigResource
+
+  override val processConfig: Config = {
     /*
       We want to be able to embed config in model jar, to avoid excessive config files
       For most cases using reference.conf would work, however there are subtle problems with substitution:
@@ -84,7 +86,11 @@ trait ModelData extends ConfigCreatorSignalDispatcher {
       service1Url: ${baseUrl}/service1
       and have baseUrl taken from application config
      */
-    val configFallback = ConfigFactory.parseResources(modelClassLoader.classLoader, ModelData.modelConfigResource)
-    processConfigFromConfiguration.withFallback(configFallback).resolve()
+    val configFallbackFromModel = ConfigFactory.parseResources(modelClassLoader.classLoader, modelConfigResource)
+    processConfigFromConfiguration
+      .withFallback(configFallbackFromModel)
+      //this is for reference.conf resources from model jar
+      .withFallback(ConfigFactory.load(modelClassLoader.classLoader))
+      .resolve()
   }
 }
