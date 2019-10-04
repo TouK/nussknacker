@@ -37,13 +37,11 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
   val routeWithRead = withPermissions(processesRoute, testPermissionRead)
   val routeWithWrite = withPermissions(processesRoute, testPermissionWrite)
   val routeWithAllPermissions = withAllPermissions(processesRoute)
-  val routeWithAdminPermission = withPermissions(processesRoute, testPermissionAdmin)
+  val routeWithAdminPermissions = withAdminPermissions(processesRoute)
   val processActivityRouteWithAllPermission = withAllPermissions(processActivityRoute)
-  implicit val loggedUser = LoggedUser("lu",  testCategory)
+  implicit val loggedUser = LoggedUser("lu", testCategory)
 
   private val processName = ProcessName(SampleProcess.process.id)
-
-
 
   test("return list of process") {
     saveProcess(processName, ProcessTestData.validProcess) {
@@ -159,9 +157,9 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
   test("update process category for existing process") {
     saveProcess(processName, ProcessTestData.validProcess) {
       val newCategory = "expectedCategory"
-      Post(s"/processes/category/${processName.value}/$newCategory") ~> routeWithAllPermissions ~> check {
+      Post(s"/processes/category/${processName.value}/$newCategory") ~> routeWithAdminPermissions ~> check {
         status shouldEqual StatusCodes.OK
-        Get(s"/processes/${processName.value}") ~> routeWithAdminPermission ~> check {
+        Get(s"/processes/${processName.value}") ~> routeWithAdminPermissions ~> check {
           status shouldEqual StatusCodes.OK
           val loadedProcess = responseAs[ProcessDetails]
           loadedProcess.processCategory shouldBe newCategory
@@ -327,18 +325,19 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
     }
   }
 
+  //@TODO: Tests for checking validity bad category name
   test("return all processes for admin user") {
     saveProcess(processName, ProcessTestData.validProcess) {
       status shouldEqual StatusCodes.OK
     }
     writeProcessRepository.updateCategory(getProcessId(processName), "newCategory")
 
-    Get(s"/processes/${SampleProcess.process.id}") ~> routeWithAdminPermission ~> check {
+    Get(s"/processes/${SampleProcess.process.id}") ~> routeWithAdminPermissions ~> check {
       val processDetails = responseAs[ProcessDetails]
       processDetails.processCategory shouldBe "newCategory"
     }
 
-    Get(s"/processes") ~> routeWithAdminPermission ~> check {
+    Get(s"/processes") ~> routeWithAdminPermissions ~> check {
       status shouldEqual StatusCodes.OK
       responseAs[String] should include(SampleProcess.process.id)
     }
@@ -499,7 +498,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
   }
 
   test("not allow to save process with category not allowed for user") {
-    Post(s"/processes/p11/abcd/${TestProcessingTypes.Streaming}") ~> routeWithAdminPermission ~> check {
+    Post(s"/processes/p11/abcd/${TestProcessingTypes.Streaming}") ~> routeWithWrite ~> check {
       //this one below does not work, but I cannot compose path and authorize directives in a right way
       //rejection shouldBe server.AuthorizationFailedRejection
       handled shouldBe false
