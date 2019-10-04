@@ -117,7 +117,7 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest
   }
 
   private def saveProcessWithDeployInfo(id: String) = {
-    implicit val logged = TestFactory.user(testPermissionAdmin)
+    implicit val logged = TestFactory.adminUser("userId")
     writeProcessRepository.saveNewProcess(ProcessName(id), TestFactory.testCategoryName, CustomProcess(""), TestProcessingTypes.Streaming, false)
       .futureValue shouldBe Right(())
     val processId = processRepository.fetchProcessId(ProcessName(id)).futureValue.get

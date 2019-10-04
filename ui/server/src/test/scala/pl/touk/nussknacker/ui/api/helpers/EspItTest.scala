@@ -56,10 +56,7 @@ trait EspItTest extends LazyLogging with ScalaFutures with WithHsqlDbTesting wit
     Map("streaming" -> Map.empty)
   )
 
-  private implicit val user: LoggedUser = LoggedUser("user", Map(
-    testCategoryName -> Set(Permission.Admin),
-    secondTestCategoryName -> Set(Permission.Admin)
-  ))
+  private implicit val user: LoggedUser = TestFactory.adminUser("user")
 
   val processesRoute = new ProcessesResources(
     processRepository = processRepository,
