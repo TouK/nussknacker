@@ -1,5 +1,5 @@
 package pl.touk.nussknacker.ui.security
 
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
-object NussknackerInternalUser extends LoggedUser("Nussknacker", Map.empty, true)
+object NussknackerInternalUser extends LoggedUser("Nussknacker", Map("Default"->Set(Permission.Write, Permission.Admin)))
