@@ -2,15 +2,15 @@ package pl.touk.nussknacker.engine.standalone.utils
 
 import java.nio.charset.StandardCharsets
 
-import argonaut.{DecodeJson, Parse}
-import pl.touk.nussknacker.engine.api.MethodToInvoke
+import io.circe.Decoder
+import pl.touk.nussknacker.engine.api.{CirceUtil, MethodToInvoke}
 import pl.touk.nussknacker.engine.api.process.{Source, TestDataParserProvider}
 import pl.touk.nussknacker.engine.api.test.TestDataParser
 import pl.touk.nussknacker.engine.standalone.api.{DecodingError, StandalonePostSource, StandaloneSourceFactory}
 
 import scala.reflect.ClassTag
 
-class JsonStandaloneSourceFactory[T:DecodeJson:ClassTag] extends StandaloneSourceFactory[T] {
+class JsonStandaloneSourceFactory[T:Decoder:ClassTag] extends StandaloneSourceFactory[T] {
 
   @MethodToInvoke
   def create(): Source[T] = {
@@ -27,8 +27,8 @@ class JsonStandaloneSourceFactory[T:DecodeJson:ClassTag] extends StandaloneSourc
         }
       }
 
-      private def parse(str: String): T = Parse.parse(str).right.get.jdecode[T].result match {
-        case Left(error) => throw DecodingError(s"Failed to decode on ${error._1}")
+      private def parse(str: String): T = CirceUtil.decodeJson[T](str) match {
+        case Left(error) => throw DecodingError(s"Failed to decode on ${error.getMessage}", error)
         case Right(data) => data
       }
     }

@@ -5,8 +5,9 @@ import java.time.LocalDateTime
 import java.util
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
 
-import argonaut.{Argonaut, EncodeJson, Json}
 import com.typesafe.config.Config
+import io.circe.{Encoder, Json}
+import io.circe.generic.JsonCodec
 import org.apache.flink.api.common.functions.RichMapFunction
 import org.apache.flink.api.common.state.{ValueState, ValueStateDescriptor}
 import org.apache.flink.api.common.typeinfo.TypeInformation
@@ -30,8 +31,6 @@ import pl.touk.nussknacker.engine.management.sample.signal.{RemoveLockProcessSig
 
 import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
-import argonaut.Argonaut._
-import argonaut.ArgonautShapeless._
 import org.apache.flink.streaming.api.functions.TimestampAssigner
 import pl.touk.nussknacker.engine.api.definition.{Parameter, ServiceWithExplicitMethod}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{CollectableAction, ServiceInvocationCollector, TransmissionNames}
@@ -41,6 +40,7 @@ import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.flink.util.transformer.{TransformStateTransformer, UnionTransformer}
 import pl.touk.nussknacker.engine.util.LoggingListener
+import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.sample.JavaSampleEnum
 
 class TestProcessConfigCreator extends ProcessConfigCreator {
@@ -187,7 +187,7 @@ class TestProcessConfigCreator extends ProcessConfigCreator {
       "noneReturnTypeTransformer" -> WithCategories(NoneReturnTypeTransformer, "TESTCAT"),
       "stateful" -> WithCategories(StatefulTransformer, "Category1", "Category2"),
       "customFilter" -> WithCategories(CustomFilter, "Category1", "Category2"),
-      "constantStateTransformer" -> WithCategories(ConstantStateTransformer[String](ConstantState("stateId", 1234, List("elem1", "elem2", "elem3")).asJson.nospaces), "Category1", "Category2"),
+      "constantStateTransformer" -> WithCategories(ConstantStateTransformer[String](Encoder[ConstantState].apply(ConstantState("stateId", 1234, List("elem1", "elem2", "elem3"))).noSpaces), "Category1", "Category2"),
       "constantStateTransformerLongValue" -> WithCategories(ConstantStateTransformer[Long](12333), "Category1", "Category2"),
       "additionalVariable" -> WithCategories(AdditionalVariableTransformer, "Category1", "Category2"),
       "lockStreamTransformer" -> WithCategories(new SampleSignalHandlingTransformer.LockStreamTransformer(), "Category1", "Category2"),
@@ -330,13 +330,13 @@ case object Enricher extends Service {
 
 case class RichObject(field1: String, field2: Long, field3: Option[String])
 
-case class CsvRecord(fields: List[String]) extends UsingLazyValues with Displayable {
+case class CsvRecord(fields: List[String]) extends UsingLazyValues with DisplayJson {
 
   lazy val firstField = fields.head
 
   lazy val enrichedField = lazyValue[RichObject]("enricher", "param" -> firstField)
 
-  override def display = Argonaut.jObjectFields("firstField" -> Json.jString(firstField))
+  override def asJson: Json = Json.obj("firstField" -> Json.fromString(firstField))
 
   override def originalDisplay: Option[String] = Some(fields.mkString("|"))
 }
@@ -371,13 +371,12 @@ case object ListReturnObjectService extends Service {
 
 }
 
-case class Client(id: String, name: String) extends DisplayableAsJson[Client]
+@JsonCodec case class Client(id: String, name: String) extends DisplayJsonWithEncoder[Client]
 
 class ClientFakeHttpService() extends Service {
-  import argonaut.ArgonautShapeless._
 
-  case class LogClientRequest(method: String, id: String) extends DisplayableAsJson[LogClientRequest]
-  case class LogClientResponse(body: String) extends DisplayableAsJson[LogClientResponse]
+  @JsonCodec case class LogClientRequest(method: String, id: String) extends DisplayJsonWithEncoder[LogClientRequest]
+  @JsonCodec case class LogClientResponse(body: String) extends DisplayJsonWithEncoder[LogClientResponse]
 
   @MethodToInvoke
   def invoke(@ParamName("id") id: String)(implicit executionContext: ExecutionContext, collector: ServiceInvocationCollector): Future[Client] = {
@@ -391,25 +390,13 @@ class ClientFakeHttpService() extends Service {
 
 
 object ComplexObject {
-  private implicit val mapEncoder = EncodeJson.of[Map[String, Json]]
-    .contramap[Map[String, Any]](_.mapValues {
-    case null => jNull
-    case a:String => jString(a)
-    case a:Long => jNumber(a)
-    case a:Int => jNumber(a)
-    case a:BigDecimal => jNumber(a)
-    case a:Double => jNumber(a)
-    case a:Boolean => jBool(a)
-    case a => jString(a.toString)
-  })
 
-  val complexObjectEncoder = EncodeJson.of[ComplexObject]
+  private val encoder = BestEffortJsonEncoder(failOnUnkown = false)
+
+  private implicit val mapEncoder: Encoder[Map[String, Any]] = Encoder.instance[Map[String, Any]](encoder.encode)
 }
 
-case class ComplexObject(foo: Map[String, Any]) extends Displayable {
-  override def display: Json = ComplexObject.complexObjectEncoder(this)
-  override def originalDisplay: Option[String] = None
-}
+@JsonCodec(encodeOnly = true) case class ComplexObject(foo: Map[String, Any]) extends DisplayJsonWithEncoder[ComplexObject]
 
 case object MultipleParamsService extends Service {
   @MethodToInvoke
@@ -446,4 +433,4 @@ object EchoEnumService extends Service {
   def invoke(@ParamName("id") id: JavaSampleEnum) = Future.successful(id)
 }
 
-case class ConstantState(id: String, transactionId: Int, elements: List[String])
+@JsonCodec case class ConstantState(id: String, transactionId: Int, elements: List[String])

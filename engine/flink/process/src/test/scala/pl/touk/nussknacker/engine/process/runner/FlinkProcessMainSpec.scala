@@ -170,10 +170,6 @@ class SimpleProcessConfigCreator extends ProcessConfigCreator {
 object TestSources {
   import org.apache.flink.streaming.api.scala._
 
-  import argonaut._
-  import argonaut.Argonaut._
-  import ArgonautShapeless._
-
   private val ascendingTimestampExtractor = new AscendingTimestampExtractor[SimpleRecord] {
     override def extractAscendingTimestamp(element: SimpleRecord) = element.date.getTime
   }
@@ -196,7 +192,7 @@ object TestSources {
       override def testDataParser: TestDataParser[SimpleJsonRecord] = new EmptyLineSplittedTestDataParser[SimpleJsonRecord] {
 
         override def parseElement(json: String): SimpleJsonRecord = {
-          json.decodeOption[SimpleJsonRecord].get
+          CirceUtil.decodeJsonUnsafe[SimpleJsonRecord](json)
         }
 
       }
@@ -211,7 +207,7 @@ object TestSources {
 
         override def testDataParser: TestDataParser[TypedMap] = new EmptyLineSplittedTestDataParser[TypedMap] {
           override def parseElement(json: String): TypedMap = {
-            TypedMap(json.decodeOption[Map[String, String]].get)
+            TypedMap(CirceUtil.decodeJsonUnsafe[Map[String, String]](json))
           }
         }
 

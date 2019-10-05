@@ -16,7 +16,7 @@ import io.circe.parser.parse
 import io.circe.syntax._
 import io.circe.{Decoder, Encoder, Json}
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{ExceptionResult, ExpressionInvocationResult, MockedResult, NodeResult, ResultContext, TestData, TestResults}
-import pl.touk.nussknacker.engine.api.{ArgonautCirce, Displayable}
+import pl.touk.nussknacker.engine.api.DisplayJson
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
@@ -73,9 +73,9 @@ object ManagementResources {
   }
 
   val testResultsVariableEncoder : Any => io.circe.Json = {
-    case displayable: Displayable =>
+    case displayable: DisplayJson =>
       def safeString(a: String) = Option(a).map(Json.fromString).getOrElse(Json.Null)
-      val displayableJson = ArgonautCirce.toCirce(displayable.display)
+      val displayableJson = displayable.asJson
       displayable.originalDisplay match {
         case None => Json.obj("pretty" -> displayableJson)
         case Some(original) => Json.obj("original" -> safeString(original), "pretty" -> displayableJson)

@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.api
 
-trait WithFields extends Displayable {
+trait WithFields extends DisplayJson {
 
   def separator = "|"
 

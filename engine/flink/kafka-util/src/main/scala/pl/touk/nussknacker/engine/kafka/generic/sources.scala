@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.kafka.generic
 
 import java.nio.charset.StandardCharsets
 
-import argonaut.{Json, JsonObject}
+import io.circe.{Json, JsonObject}
 import org.apache.flink.api.scala._
 import org.apache.flink.streaming.util.serialization.KeyedDeserializationSchemaWrapper
 import pl.touk.nussknacker.engine.api.process.{Source, TestDataGenerator}
@@ -35,26 +35,27 @@ object sources {
   }
 
   //FIXME: handle numeric conversion and validation here??
-  private def deserializeToMap(message: Array[Byte]): Map[String, _] = jsonToMap(toJson(new String(message, StandardCharsets.UTF_8)).objectOrEmpty)
+  private def deserializeToMap(message: Array[Byte]): Map[String, _] = jsonToMap(toJson(new String(message, StandardCharsets.UTF_8)))
 
   private def toJson(jsonString: String): Json = {
-    argonaut.Parse.parse(jsonString) match {
+    io.circe.parser.parse(jsonString) match {
       case Left(e) =>
-        throw new RuntimeException(s"Cannot parse json. Reason: $e, input string: $jsonString")
+        throw new RuntimeException(s"Cannot parse json. Reason: $e, input string: $jsonString", e)
       case Right(j) =>
         j
     }
   }
 
-  private def jsonToMap(jo: JsonObject): Map[String, _] = {
-    jo.toMap.mapValuesNow { jsonField =>
+  private def jsonToMap(jo: Json): Map[String, _] = {
+    jo.asObject.getOrElse(JsonObject()).toMap.mapValuesNow { jsonField =>
       jsonField.fold(
         jsonNull = null,
-        jsonBool = identity,
-        jsonNumber = _.truncateToLong,
+        jsonBoolean = identity,
+        //FIXME:
+        jsonNumber = _.toDouble.toLong,
         jsonString = identity,
-        jsonArray = _.map(f => jsonToMap(f.objectOrEmpty)).asJava,
-        jsonObject = jsonToMap
+        jsonArray = _.map(f => jsonToMap(f).asJava),
+        jsonObject = jo => jsonToMap(Json.fromJsonObject(jo))
       )
     }
   }

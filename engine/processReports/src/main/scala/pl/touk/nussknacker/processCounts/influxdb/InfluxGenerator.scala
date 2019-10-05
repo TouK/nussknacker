@@ -9,7 +9,6 @@ import scala.concurrent.{ExecutionContext, Future}
 
 private[influxdb] class InfluxGenerator(config: InfluxConfig, env: String = "test") extends LazyLogging {
 
-  import argonaut.ArgonautShapeless._
   import InfluxGenerator._
 
   import scala.concurrent.ExecutionContext.Implicits.global

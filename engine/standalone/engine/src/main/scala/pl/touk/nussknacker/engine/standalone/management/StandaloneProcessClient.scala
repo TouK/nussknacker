@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.standalone.management
 
-import argonaut.CodecJson
 import org.asynchttpclient.Response
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
@@ -9,9 +8,8 @@ import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessState, Ru
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.dispatch.LoggingDispatchClient
 import pl.touk.nussknacker.engine.standalone.api.DeploymentData
-import pl.touk.nussknacker.engine.util.json.Codecs
 
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
+import scala.concurrent.{ExecutionContext, Future}
 
 object StandaloneProcessClient {
 
@@ -75,13 +73,10 @@ class DispatchStandalonProcessClient(managementUrl: String, http: Http = Http.de
   import pl.touk.nussknacker.engine.dispatch.utils._
   private val dispatchClient = LoggingDispatchClient(this.getClass.getSimpleName, http)
 
-  import argonaut.ArgonautShapeless._
-  private implicit val stateCodec: CodecJson[RunningState.Value] = Codecs.enumCodec(RunningState)
-
   def deploy(deploymentData: DeploymentData): Future[Unit] = {
     val deployUrl = dispatch.url(managementUrl) / "deploy"
     dispatchClient {
-      postJson  (deployUrl, deploymentData) OK asUnit
+      postJsonCirce  (deployUrl, deploymentData) OK asUnit
     }
   }
 
@@ -97,7 +92,7 @@ class DispatchStandalonProcessClient(managementUrl: String, http: Http = Http.de
       if (r.getStatusCode == 404)
         None
       else if (r.getStatusCode / 100 == 2)
-        Some(asJson[ProcessState](r))
+        Some(asCirce[ProcessState](r))
       else
         throw StatusCode(r.getStatusCode)
     }

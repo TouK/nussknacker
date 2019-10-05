@@ -4,6 +4,8 @@ import java.nio.charset.{Charset, StandardCharsets}
 
 import org.asynchttpclient._
 import dispatch.{Req, as}
+import io.circe.{Decoder, Encoder}
+import pl.touk.nussknacker.engine.api.CirceUtil
 
 import scala.xml.{Elem, NodeSeq, XML}
 
@@ -35,6 +37,18 @@ object utils {
     }
   }
 
+  //TODO: move to asJson
+  object asCirce {
+    def apply[Resp: Decoder](r: Response): Resp = {
+      val response = as.String.charset(StandardCharsets.UTF_8)(r)
+      CirceUtil.decodeJson(response) match {
+        case Left(message) => throw InvalidJsonResponseException(message.getMessage)
+        case Right(json) => json
+
+      }
+    }
+  }
+
   //TODO: ability to use different charsets
   def asXml(r: Response): Elem = {
     val body = as.String.charset(StandardCharsets.UTF_8)(r)
@@ -50,6 +64,15 @@ object utils {
         .POST
         .setContentType("application/json", StandardCharsets.UTF_8) <<
         body.asJson.spaces2
+    }
+  }
+
+  object postJsonCirce {
+    def apply[Body: Encoder](subject: Req, body: Body, charset: Charset = StandardCharsets.UTF_8): Req = {
+      subject
+        .POST
+        .setContentType("application/json", StandardCharsets.UTF_8) <<
+        Encoder[Body].apply(body).spaces2
     }
   }
 

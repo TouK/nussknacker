@@ -3,10 +3,10 @@ package pl.touk.nussknacker.processCounts.influxdb
 import argonaut.{DecodeJson, DecodeResult}
 import dispatch.Http
 import dispatch._
+import io.circe.Decoder
+import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.dispatch.LoggingDispatchClient
-import pl.touk.nussknacker.engine.dispatch.utils.asJson
-import argonaut.ArgonautShapeless._
-import argonaut.Argonaut._
+import pl.touk.nussknacker.engine.dispatch.utils.asCirce
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -21,7 +21,7 @@ class SimpleInfluxClient(config: InfluxConfig) {
     httpClient {
       dispatch
         .url(config.influxUrl) <<? Map("db" -> config.database, "q" -> query) as_!(config.user, config.password) OK
-        asJson[InfluxResponse]
+        asCirce[InfluxResponse]
     }.map { qr =>
       //we assume only one query
       qr.results.head.series
@@ -33,24 +33,18 @@ class SimpleInfluxClient(config: InfluxConfig) {
   }
 }
 
-case class InfluxResponse(results: List[InfluxResult] = List())
+@JsonCodec(decodeOnly = true) case class InfluxResponse(results: List[InfluxResult] = List())
 
-case class InfluxResult(series: List[InfluxSerie] = List())
+@JsonCodec(decodeOnly = true) case class InfluxResult(series: List[InfluxSerie] = List())
 
 object InfluxSerie {
 
-  private implicit val numberOrStringDecoder: DecodeJson[Any] = DecodeJson.apply[Any] { cursor =>
-    val focused = cursor.focus
-    val bigDecimalDecoder = implicitly[DecodeJson[BigDecimal]].asInstanceOf[DecodeJson[Any]]
-    val stringDecoder = implicitly[DecodeJson[String]].asInstanceOf[DecodeJson[Any]]
-    DecodeResult.ok(focused.as(bigDecimalDecoder).toOption.getOrElse(focused.as(stringDecoder).toOption.getOrElse("")))
-  }
-
-  implicit val codec: DecodeJson[InfluxSerie] = DecodeJson.derive[InfluxSerie]
+  private implicit val numberOrStringDecoder: Decoder[Any]
+    = Decoder.decodeBigDecimal.asInstanceOf[Decoder[Any]] or Decoder.decodeString.asInstanceOf[Decoder[Any]] or Decoder.const("").asInstanceOf[Decoder[Any]]
 
 }
 
-case class InfluxSerie(name: String, tags: Map[String, String], columns: List[String], values: List[List[Any]] = List()) {
+@JsonCodec(decodeOnly = true) case class InfluxSerie(name: String, tags: Map[String, String], columns: List[String], values: List[List[Any]] = List()) {
   val toMap: List[Map[String, Any]] = values.map(value => columns.zip(value).toMap)
 }
 

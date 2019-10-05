@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.standalone.http
 
-import java.nio.charset.StandardCharsets
 
 import argonaut.Argonaut.{jArrayElements, jObjectFields, jString}
 import argonaut.{DecodeJson, Json}

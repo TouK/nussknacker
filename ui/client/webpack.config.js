@@ -34,7 +34,7 @@ module.exports = {
           chunks: 'all'
         }
       }
-    },
+    }/*,
     minimizer: [new TerserPlugin({
       parallel: true,
       sourceMap: true,
@@ -44,7 +44,7 @@ module.exports = {
           reserved: ['Td', 'Tr', 'Th', 'Thead', 'Table'],
         }
       }
-    })]
+    })]*/
   },
   performance: {
     maxEntrypointSize: 3000000,
@@ -57,7 +57,7 @@ module.exports = {
   },
   entry: entry,
   output: {
-    path: path.join(__dirname, '..', 'server', 'target', 'scala-2.11', 'classes', 'web', 'static'),
+    path: path.join(__dirname, '..', 'server', 'target', 'web', 'static'),
     filename: '[name].js',
     //see config.js
     publicPath: isProd ? '__publicPath__/static/' : '/static/',
