@@ -6,6 +6,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.{Date, UUID}
 
 import com.typesafe.config.Config
+import io.circe.Encoder
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.streaming.api.functions.TimestampAssigner
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor
@@ -39,7 +40,6 @@ import scala.collection.JavaConverters._
 
 class FlinkProcessMainSpec extends FlatSpec with Matchers with Inside {
 
-  import argonaut._, Argonaut._,ArgonautShapeless._
   import spel.Implicits._
 
   val ProcessMarshaller = new ProcessMarshaller
@@ -55,7 +55,7 @@ class FlinkProcessMainSpec extends FlatSpec with Matchers with Inside {
         .emptySink("out", "monitor")
 
     FlinkTestConfiguration.setQueryableStatePortRangesBySystemProperties()
-    FlinkProcessMain.main(Array(ProcessMarshaller.toJson(ProcessCanonizer.canonize(process)).spaces2, ProcessVersion.empty.asJson.toString()))
+    FlinkProcessMain.main(Array(ProcessMarshaller.toJson(ProcessCanonizer.canonize(process)).spaces2, Encoder[ProcessVersion].apply(ProcessVersion.empty).noSpaces))
   }
 
 }
