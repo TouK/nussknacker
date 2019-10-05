@@ -29,7 +29,7 @@
     "prop-types": "~15.7.2",
     "query-string": "~6.8.1",
     "react": "~16.8.6",
-    "react-ace": "~7.0.2",
+    "react-ace": "~7.0.4",
     "react-addons-pure-render-mixin": "^15.6.2",
     "react-bootstrap": "~0.32.4",
     "react-custom-scrollbars": "~4.2.1",
