@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.standalone.deployment
 
 import java.nio.file.Files
 
-import argonaut.PrettyParams
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion

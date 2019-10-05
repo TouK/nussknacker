@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.management
 
 import java.util.UUID
 
-import argonaut.PrettyParams
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{FlatSpec, Matchers}
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
@@ -10,6 +9,7 @@ import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{NodeResult, ResultContext, TestData}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 
 import scala.concurrent.Await
@@ -30,7 +30,7 @@ class FlinkProcessTestRunnerSpec extends FlatSpec with Matchers with ScalaFuture
     val processId = UUID.randomUUID().toString
 
     val process = SampleProcess.prepareProcess(processId)
-    val processData = ProcessMarshaller.toJson(process, PrettyParams.spaces2)
+    val processData = ProcessMarshaller.toJson(ProcessCanonizer.canonize(process)).spaces2
 
     whenReady(processManager.test(ProcessName(processId), processData, TestData("terefere"), identity)) { r =>
       r.nodeResults shouldBe Map(
@@ -53,7 +53,7 @@ class FlinkProcessTestRunnerSpec extends FlatSpec with Matchers with ScalaFuture
     val config = ConfigFactory.load()
     val processManager = FlinkProcessManagerProvider.defaultProcessManager(config)
 
-    val processData = ProcessMarshaller.toJson(process, PrettyParams.spaces2)
+    val processData = ProcessMarshaller.toJson(ProcessCanonizer.canonize(process)).spaces2
 
 
     val caught = intercept[IllegalArgumentException] {
