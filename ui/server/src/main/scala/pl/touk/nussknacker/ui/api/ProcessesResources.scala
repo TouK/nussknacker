@@ -252,8 +252,9 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
           }
         } ~ path("processes" / "category" / Segment / Segment) { (processName, category) =>
           (post & processId(processName)) { processId =>
-            canWrite(processId) {
+            hasAdminPermission(user) {
               complete {
+                // TODO: Validate that category exists at categories list
                 writeRepository.updateCategory(processId = processId.id, category = category).map(toResponse(StatusCodes.OK))
               }
             }

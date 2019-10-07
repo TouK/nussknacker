@@ -63,7 +63,7 @@ class SubProcesses extends BaseProcesses {
           </div>
           
           {
-            this.props.loggedUser.isWriter ? (
+            this.props.loggedUser.isWriter() ? (
               <div
                 id="process-add-button"
                 className="big-blue-button input-group"

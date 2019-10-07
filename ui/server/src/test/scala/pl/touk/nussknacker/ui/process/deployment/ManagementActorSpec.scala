@@ -19,7 +19,7 @@ class ManagementActorSpec extends FunSuite  with Matchers with ScalaFutures with
 
   implicit override val patienceConfig: PatienceConfig = PatienceConfig(timeout = scaled(Span(1, Seconds)), interval = scaled(Span(100, Millis)))
   private implicit val system: ActorSystem = ActorSystem()
-  private implicit val user: LoggedUser = LoggedUser("user", Map(testCategoryName -> Set(Permission.Admin)))
+  private implicit val user: LoggedUser = TestFactory.adminUser("user")
   private implicit val ds: ExecutionContextExecutor = system.dispatcher
 
   private val env = "test1"

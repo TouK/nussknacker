@@ -33,7 +33,7 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
   test("return edge types for subprocess, filters and switches") {
     val subprocessesDetails = TestFactory.sampleSubprocessRepository.loadSubprocesses(Map.empty)
     val edgeTypes = DefinitionPreparer.prepareEdgeTypes(
-      user = LoggedUser("aa", testPermissionAdmin),
+      user = TestFactory.adminUser("aa"),
       processDefinition = ProcessTestData.processDefinition,
       isSubprocess = false,
       subprocessesDetails = subprocessesDetails)
@@ -99,7 +99,7 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
     val subprocessInputs = Map[String, ObjectDefinition]()
 
     val groups = DefinitionPreparer.prepareNodesToAdd(
-      user = LoggedUser("aa", testPermissionAdmin),
+      user = TestFactory.adminUser("aa"),
       processDefinition = ProcessTestData.processDefinition,
       isSubprocess = false,
       subprocessInputs = subprocessInputs,
@@ -114,7 +114,7 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
   private def prepareGroupsOfNodes(services: List[String]): List[NodeGroup] = {
 
     val groups = DefinitionPreparer.prepareNodesToAdd(
-      user = LoggedUser("aa", testPermissionAdmin),
+      user = TestFactory.adminUser("aa"),
       processDefinition = services.foldRight(ProcessDefinitionBuilder.empty)((s, p) => p.withService(s)),
       isSubprocess = false,
       subprocessInputs = Map(),
