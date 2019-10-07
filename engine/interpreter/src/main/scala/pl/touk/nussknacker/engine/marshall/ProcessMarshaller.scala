@@ -1,146 +1,110 @@
 package pl.touk.nussknacker.engine.marshall
 
-import argonaut.Argonaut._
-import argonaut.ArgonautShapeless._
-import argonaut._
-import argonaut.derive._
 import cats.data.Validated
-import pl.touk.nussknacker.engine.api._
+import io.circe.generic.extras.semiauto.{deriveDecoder, deriveEncoder}
+import io.circe.{Decoder, Encoder, Json, JsonObject}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode._
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
-import pl.touk.nussknacker.engine.graph.node.{Case => _, FilterNode => _, SplitNode => _, SwitchNode => _, _}
-import pl.touk.nussknacker.engine.graph.{EspProcess, node}
-import pl.touk.nussknacker.engine.marshall.ProcessUnmarshallError._
+import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, Case, FilterNode, FlatNode, SplitNode, Subprocess, SwitchNode}
+import pl.touk.nussknacker.engine.graph.node.{Filter, NodeData, Split, SubprocessInput, Switch}
+import pl.touk.nussknacker.engine.marshall.ProcessUnmarshallError.ProcessJsonDecodeError
+import pl.touk.nussknacker.engine.api.CirceUtil._
 
-import scala.reflect.ClassTag
+object ProcessMarshaller {
 
-class ProcessMarshaller(implicit
-                        additionalNodeDataFieldsCodec: CodecJson[Option[node.UserDefinedAdditionalNodeFields]] = ProcessMarshaller.additionalNodeDataFieldsCodec,
-                        additionalProcessFieldsCodec: CodecJson[Option[ProcessAdditionalFields]] = ProcessMarshaller.additionalProcessFieldsCodec ) {
+  private implicit val nodeDataEncoder: Encoder[NodeData] = deriveEncoder
 
-  //TODO: UI needs it - unfortunately there were some argonaut/compile issues...
-  val typeSpecificEncoder =  CodecJson.derived[TypeSpecificData]
+  private implicit val nodeDataDecoder: Decoder[NodeData] = deriveDecoder
 
-  private implicit def typeFieldJsonSumCodecFor[S]: JsonSumCodecFor[S] =
-    JsonSumCodecFor(JsonSumCodec.typeField)
+  private implicit lazy val flatNodeEncode: Encoder[FlatNode] =
+    Encoder.apply[NodeData].contramap[FlatNode](_.data)
 
-  private implicit lazy val flatNodeEncode: EncodeJson[FlatNode] =
-    EncodeJson.of[NodeData].contramap[FlatNode](_.data)
+  private def withFields(fields: (String, Json)*): JsonObject => Json = obj =>
+    Json.fromJsonObject(fields.foldLeft(obj)(_.+:(_)))
 
-  private lazy val flatNodeDecode: DecodeJson[CanonicalNode] =
-    DecodeJson.of[NodeData].map(FlatNode)
+  private lazy val flatNodeDecode: Decoder[CanonicalNode] =
+    Decoder.apply[NodeData].map(FlatNode)
 
-  private implicit lazy val filterEncode: EncodeJson[FilterNode] =
-    EncodeJson[FilterNode](filter =>
-      EncodeJson.of[NodeData].encode(filter.data).withObject(_
-        :+ "nextFalse" -> listOfCanonicalNodeEncoder.encode(filter.nextFalse)
-      )
+  private lazy val filterEncode: Encoder[FilterNode] =
+    Encoder.instance[FilterNode](filter =>
+      Encoder[NodeData].apply(filter.data).withObject(withFields("nextFalse" ->
+        Encoder[List[CanonicalNode]].apply(filter.nextFalse)))
     )
-  private lazy val filterDecode: DecodeJson[CanonicalNode] =
+  private lazy val filterDecode: Decoder[CanonicalNode] =
     for {
-      data <- DecodeJson.of[Filter]
-      nextFalse <- DecodeJson(j => listOfCanonicalNodeDecoder.tryDecode(j --\ "nextFalse"))
+      data <- deriveDecoder[Filter]
+      nextFalse <- Decoder.instance(j => Decoder[List[CanonicalNode]].tryDecode(j.downField("nextFalse")))
     } yield FilterNode(data, nextFalse)
 
-  private implicit lazy val switchEncode: EncodeJson[SwitchNode] =
-    EncodeJson[SwitchNode](switch =>
-      EncodeJson.of[NodeData].encode(switch.data).withObject(_
-        :+ "nexts" -> EncodeJson.of[List[Case]].encode(switch.nexts)
-        :+ "defaultNext" -> listOfCanonicalNodeEncoder.encode(switch.defaultNext)
-      )
+  private lazy val switchEncode: Encoder[SwitchNode] =
+    Encoder.instance[SwitchNode](switch =>
+      Encoder[NodeData].apply(switch.data).withObject(withFields(
+         "nexts" -> Encoder[List[Case]].apply(switch.nexts),
+        "defaultNext" -> Encoder[List[CanonicalNode]].apply(switch.defaultNext)
+      ))
     )
 
-  private lazy val switchDecode: DecodeJson[CanonicalNode] =
+  private lazy val switchDecode: Decoder[CanonicalNode] =
     for {
-      data <- DecodeJson.of[Switch]
-      nexts <- DecodeJson(j => DecodeJson.of[List[Case]].tryDecode(j --\  "nexts"))
-      defaultNext <- DecodeJson(j => listOfCanonicalNodeDecoder.tryDecode(j --\ "defaultNext"))
+      data <- deriveDecoder[Switch]
+      nexts <- Decoder.instance(j => Decoder[List[Case]].tryDecode(j downField "nexts"))
+      defaultNext <- Decoder.instance(j => Decoder[List[CanonicalNode]].tryDecode(j downField "defaultNext"))
     } yield SwitchNode(data, nexts, defaultNext)
 
-  private implicit lazy val splitEncode: EncodeJson[SplitNode] =
-    EncodeJson[SplitNode](switch =>
-      EncodeJson.of[NodeData].encode(switch.data).withObject(_
-        :+ "nexts" -> EncodeJson.of[List[List[CanonicalNode]]].encode(switch.nexts)
-      )
+  private implicit lazy val splitEncode: Encoder[SplitNode] =
+    Encoder.instance[SplitNode](switch =>
+      Encoder[NodeData].apply(switch.data).withObject(withFields(
+        "nexts" -> Encoder[List[List[CanonicalNode]]].apply(switch.nexts)
+      ))
     )
-  private lazy val splitDecode: DecodeJson[CanonicalNode] =
+
+  private lazy val splitDecode: Decoder[CanonicalNode] =
     for {
-      data <- DecodeJson.of[Split]
-      nexts <- DecodeJson(j => DecodeJson.of[List[List[CanonicalNode]]].tryDecode(j --\  "nexts"))
+      data <- deriveDecoder[Split]
+      nexts <- Decoder.instance(j => Decoder[List[List[CanonicalNode]]].tryDecode(j downField "nexts"))
     } yield SplitNode(data, nexts)
 
-  private lazy val subprocessEncode: EncodeJson[Subprocess] =
-    EncodeJson[Subprocess](subprocess =>
-      EncodeJson.of[NodeData].encode(subprocess.data).withObject(_
-        :+ "outputs" -> EncodeJson.of[Map[String, List[CanonicalNode]]].encode(subprocess.outputs)
-      )
+  private lazy val subprocessEncode: Encoder[Subprocess] =
+    Encoder.instance[Subprocess](subprocess =>
+      Encoder[NodeData].apply(subprocess.data).withObject(withFields(
+        "outputs" -> Encoder[Map[String, List[CanonicalNode]]].apply(subprocess.outputs)
+      ))
     )
 
-  private lazy val subprocessDecode: DecodeJson[CanonicalNode] =
+  private lazy val subprocessDecode: Decoder[CanonicalNode] =
     for {
-      data <- DecodeJson.of[SubprocessInput]
-      nexts <- DecodeJson(j => DecodeJson.of[Map[String, List[CanonicalNode]]].tryDecode(j --\  "outputs"))
+      data <- deriveDecoder[SubprocessInput]
+      nexts <- Decoder.instance(j => Decoder[Map[String, List[CanonicalNode]]].tryDecode(j downField "outputs"))
     } yield Subprocess(data, nexts)
 
 
-  private implicit lazy val nodeEncode: EncodeJson[CanonicalNode] =
-    EncodeJson[CanonicalNode] {
+  private implicit lazy val nodeEncode: Encoder[CanonicalNode] =
+    Encoder.instance[CanonicalNode] {
       case flat: FlatNode => flatNodeEncode(flat)
       case filter: FilterNode => filterEncode(filter)
       case switch: SwitchNode => switchEncode(switch)
       case split: SplitNode => splitEncode(split)
       case subprocess: Subprocess => subprocessEncode(subprocess)
-
     }
 
   //order is important here! flatNodeDecode has to be the last
   //TODO: this can lead to difficult to debug errors, when e.g. subprocess is incorrect it'll be parsed as flatNode...
-  private implicit lazy val nodeDecode: DecodeJson[CanonicalNode] =
-  filterDecode ||| switchDecode ||| splitDecode||| subprocessDecode ||| flatNodeDecode
+  private implicit lazy val nodeDecode: Decoder[CanonicalNode] =
+    filterDecode or switchDecode or splitDecode or subprocessDecode or flatNodeDecode
 
-  // Without this nested lists were serialized to colon(head, tail) instead of json array
-  private implicit lazy val listOfCanonicalNodeEncoder: EncodeJson[List[CanonicalNode]] = ListEncodeJson[CanonicalNode]
-  private implicit lazy val listOfCanonicalNodeDecoder: DecodeJson[List[CanonicalNode]] = CanBuildFromDecodeJson[CanonicalNode, List]
+  private implicit lazy val caseDecode: Decoder[Case] = deriveDecoder
 
-  //TODO: used only in tests, so for now we hardcode JsonMarshaller
-  def toJson(node: EspProcess, prettyParams: PrettyParams) : String = {
-    val canonical = ProcessCanonizer.canonize(node)
-    toJson(canonical).pretty(prettyParams.copy(dropNullKeys = true, preserveOrder = true))
-  }
+  private implicit lazy val caseEncode: Encoder[Case] = deriveEncoder
 
-  def parseProcessVersion(json:String): Validated[String, ProcessVersion] = {
-    Validated.fromEither(json.decodeEither[ProcessVersion])
-  }
+  implicit lazy val canonicalProcessEncoder: Encoder[CanonicalProcess] = deriveEncoder
+
+  implicit lazy val canonicalProcessDecoder: Decoder[CanonicalProcess] = deriveDecoder
 
   def toJson(canonical: CanonicalProcess): Json = {
-    canonical.asJson
+    Encoder[CanonicalProcess].apply(canonical)
   }
 
   def fromJson(json: String): Validated[ProcessJsonDecodeError, CanonicalProcess] = {
-    Validated.fromEither(json.decodeEither[CanonicalProcess]).leftMap(ProcessJsonDecodeError)
+    Validated.fromEither(decodeJson[CanonicalProcess](json)).leftMap(_.getMessage).leftMap(ProcessJsonDecodeError)
   }
 
-}
-
-object ProcessMarshaller {
-
-  val additionalNodeDataFieldsCodec: CodecJson[Option[UserDefinedAdditionalNodeFields]] =
-    derivedTypeOrNoneCodec[UserDefinedAdditionalNodeFields, NodeAdditionalFields]
-
-  val additionalProcessFieldsCodec: CodecJson[Option[ProcessAdditionalFields]] = {
-    CodecJson.derived[Option[ProcessAdditionalFields]]
-  }
-
-  private def derivedTypeOrNoneCodec[Base, Derived <: Base : ClassTag](implicit
-                                                                       encodeJson: EncodeJson[Derived],
-                                                                       decodeJson: DecodeJson[Derived]): CodecJson[Option[Base]] = {
-    CodecJson.derived(
-      EncodeJson.of[Option[Derived]].contramap[Option[Base]] {
-        case Some(fields: Derived) => Some(fields)
-        case _ => None
-      },
-      DecodeJson.of[Option[Derived]].map(identity[Option[Base]]) ||| DecodeJson(_ => DecodeResult.ok(None))
-    )
-  }
 }

@@ -4,14 +4,14 @@ import java.io.File
 import java.nio.charset.StandardCharsets
 import java.util.UUID
 
-import argonaut.PrettyParams
 import com.typesafe.config.ConfigValueFactory
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
-import org.scalatest.{FlatSpec, FunSpec, FunSuite, Matchers}
+import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, GraphProcess, RunningState}
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaClient
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
@@ -22,8 +22,6 @@ import scala.concurrent.duration._
 class FlinkProcessManagerSpec extends FunSuite with Matchers with ScalaFutures with Eventually with DockerTest {
 
   import pl.touk.nussknacker.engine.kafka.KafkaUtils._
-
-  val ProcessMarshaller = new ProcessMarshaller
 
   test("deploy process in running flink") {
     val processId = "runningFlink"
@@ -88,7 +86,7 @@ class FlinkProcessManagerSpec extends FunSuite with Matchers with ScalaFutures w
     kafkaClient.producer.send(new ProducerRecord[String, String](inTopic, "2"))
 
     val messages2 = kafkaClient.createConsumer().consume(outTopic)
-    new String(messages2.take(2).toIterable.last.message(), StandardCharsets.UTF_8) shouldBe "2"
+    new String(messages2.take(2).last.message(), StandardCharsets.UTF_8) shouldBe "2"
 
     assert(processManager.cancel(ProcessName(kafkaProcess.id)).isReadyWithin(10 seconds))
   }
@@ -165,7 +163,7 @@ class FlinkProcessManagerSpec extends FunSuite with Matchers with ScalaFutures w
     Thread.sleep(2000)
     logger.info("Starting to redeploy")
 
-    val newMarshalled = ProcessMarshaller.toJson(StatefulSampleProcess.prepareProcessWithLongState(processId), PrettyParams.spaces2)
+    val newMarshalled = ProcessMarshaller.toJson(ProcessCanonizer.canonize(StatefulSampleProcess.prepareProcessWithLongState(processId))).spaces2
     val exception = processManager.deploy(empty(process.id), GraphProcess(newMarshalled), None).failed.futureValue
 
     exception.getMessage shouldBe "State is incompatible, please stop process and start again with clean state"
@@ -215,7 +213,7 @@ class FlinkProcessManagerSpec extends FunSuite with Matchers with ScalaFutures w
   }
 
   private def deployProcessAndWaitIfRunning(process: EspProcess, processVersion: ProcessVersion, savepointPath : Option[String] = None) = {
-    val marshaled = ProcessMarshaller.toJson(process, PrettyParams.spaces2)
+    val marshaled = ProcessMarshaller.toJson(ProcessCanonizer.canonize(process)).spaces2
     assert(processManager.deploy(processVersion, GraphProcess(marshaled), savepointPath).isReadyWithin(100 seconds))
     Thread.sleep(1000)
     val jobStatus = processManager.findJobStatus(ProcessName(process.id)).futureValue

@@ -3,7 +3,6 @@ package pl.touk.nussknacker.restmodel.displayedgraph
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.ConfiguredJsonCodec
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.node
 
 object displayablenode {
 
@@ -21,5 +20,4 @@ object displayablenode {
   }
 
   @JsonCodec case class Edge(from: String, to: String, edgeType: Option[EdgeType])
-  @JsonCodec case class NodeAdditionalFields(description: Option[String]) extends node.UserDefinedAdditionalNodeFields
 }

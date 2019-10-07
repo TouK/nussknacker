@@ -178,7 +178,6 @@ class StandaloneTestMain(testData: TestData, process: EspProcess, modelData: Mod
 //FIXME deduplicate with pl.touk.nussknacker.engine.process.runner.FlinkRunner?
 // maybe we should test processes via HTTP instead of reflection?
 object TestUtils {
-  private val ProcessMarshaller = new ProcessMarshaller
 
   def readProcessFromArg(arg: String): EspProcess = {
     val canonicalJson = if (arg.startsWith("@")) {

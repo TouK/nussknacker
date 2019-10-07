@@ -4,7 +4,7 @@ import java.nio.charset.StandardCharsets
 
 import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.config.{Config, ConfigFactory}
-import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.{CirceUtil, ProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -12,12 +12,10 @@ import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 
 trait FlinkRunner {
 
-  private val ProcessMarshaller = new ProcessMarshaller
-
   protected def parseProcessVersion(json: String): ProcessVersion =
-    ProcessMarshaller.parseProcessVersion(json) match {
-      case Valid(p) => p
-      case Invalid(err) => throw new IllegalArgumentException(s"ProcessVersion parse error $err")
+    CirceUtil.decodeJson[ProcessVersion](json) match {
+      case Right(p) => p
+      case Left(err) => throw new IllegalArgumentException(s"ProcessVersion parse error $err")
     }
 
   protected def readConfigFromArgs(args: Array[String]): Config = {

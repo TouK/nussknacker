@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.graph.node.Source
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
-import pl.touk.nussknacker.ui.process.marshall.{ProcessConverter, UiProcessMarshaller}
+import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.restmodel.processdetails.{BasicProcess, ProcessDetails}
 
 import scala.concurrent.Future
@@ -25,6 +25,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import cats.instances.all._
 import cats.syntax.semigroup._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.process.ProcessId
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 
@@ -578,7 +579,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
       .fetchLatestProcessVersion[DisplayableProcess](getProcessId(processName))
       .map(_.getOrElse(sys.error("Sample process missing")))
       .map { version =>
-        val parsed = UiProcessMarshaller.fromJson(version.json.get)
+        val parsed = ProcessMarshaller.fromJson(version.json.get)
         parsed.valueOr(_ => sys.error("Invalid process json"))
       }
   }

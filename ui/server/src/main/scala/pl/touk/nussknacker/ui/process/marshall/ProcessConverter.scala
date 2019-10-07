@@ -5,13 +5,14 @@ import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode._
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
+import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType.SubprocessOutput
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.{Edge, EdgeType}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties, displayablenode}
 
 object ProcessConverter {
   def toCanonicalOrDie(canonicalJson: String) : CanonicalProcess = {
-    UiProcessMarshaller.fromJson(canonicalJson) match {
+    ProcessMarshaller.fromJson(canonicalJson) match {
       case Valid(canonical) => canonical
       case Invalid(err) => throw new IllegalArgumentException(err.msg + "\n" + canonicalJson)
     }
@@ -25,7 +26,7 @@ object ProcessConverter {
     val displayable = ProcessConverter.toDisplayableOrDie(canonicalJson, processingType)
     val modified = f(displayable)
     val canonical = ProcessConverter.fromDisplayable(modified)
-    UiProcessMarshaller.toJson(canonical).spaces2
+    ProcessMarshaller.toJson(canonical).spaces2
   }
 
   //FIXME: without default param

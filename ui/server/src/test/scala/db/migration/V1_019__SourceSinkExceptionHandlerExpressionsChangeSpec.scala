@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.{Sink, Source}
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
-import pl.touk.nussknacker.ui.process.marshall.UiProcessMarshaller
+import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 
 class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends FlatSpec with Matchers {
 
@@ -47,7 +47,7 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends FlatSpec w
       |          }
       |       }"""
 
-  private implicit val marshaller = UiProcessMarshaller
+  private implicit val marshaller = ProcessMarshaller
 
   it should "convert exceptionHandlerRef" in {
 

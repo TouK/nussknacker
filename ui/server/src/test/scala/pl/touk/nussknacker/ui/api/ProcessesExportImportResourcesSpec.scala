@@ -7,12 +7,13 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.scalatest._
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.time.{Millis, Seconds, Span}
-import pl.touk.nussknacker.engine.api.{ArgonautCirce, ProcessAdditionalFields, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.ui.process.marshall.{ProcessConverter, UiProcessMarshaller}
+import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.{FileUploadUtils, MultipartUtils}
 
@@ -35,7 +36,7 @@ class ProcessesExportImportResourcesSpec extends FunSuite with ScalatestRouteTes
     Post(s"/processesExport", processToExport) ~> routeWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
       val exported = responseAs[String]
-      val processDetails = UiProcessMarshaller.fromJson(exported).toOption.get
+      val processDetails = ProcessMarshaller.fromJson(exported).toOption.get
       
       processDetails shouldBe ProcessConverter.fromDisplayable(processToExport)
     }
@@ -50,12 +51,12 @@ class ProcessesExportImportResourcesSpec extends FunSuite with ScalatestRouteTes
 
     Get(s"/processesExport/${processToSave.id}/2") ~> routeWithAllPermissions ~> check {
       val response = responseAs[String]
-      val processDetails = UiProcessMarshaller.fromJson(response).toOption.get
+      val processDetails = ProcessMarshaller.fromJson(response).toOption.get
       assertProcessPrettyPrinted(response, processDetails)
 
       val modified = processDetails.copy(metaData = processDetails.metaData.copy(typeSpecificData = StreamMetaData(Some(987))))
       val multipartForm =
-        MultipartUtils.prepareMultiPart(UiProcessMarshaller.toJson(modified).spaces2, "process")
+        MultipartUtils.prepareMultiPart(ProcessMarshaller.toJson(modified).spaces2, "process")
       Post(s"/processes/import/${processToSave.id}", multipartForm) ~> routeWithAllPermissions ~> check {
         status shouldEqual StatusCodes.OK
         val imported = responseAs[DisplayableProcess]
@@ -105,11 +106,11 @@ class ProcessesExportImportResourcesSpec extends FunSuite with ScalatestRouteTes
     }
 
     Get(s"/processesExport/${processToSave.id}/2") ~> routeWithAllPermissions ~> check {
-      val processDetails = UiProcessMarshaller.fromJson(responseAs[String]).toOption.get
+      val processDetails = ProcessMarshaller.fromJson(responseAs[String]).toOption.get
       val modified = processDetails.copy(metaData = processDetails.metaData.copy(id = "SOMEVERYFAKEID"))
 
       val multipartForm =
-        FileUploadUtils.prepareMultiPart(UiProcessMarshaller.toJson(modified).spaces2, "process")
+        FileUploadUtils.prepareMultiPart(ProcessMarshaller.toJson(modified).spaces2, "process")
 
       Post(s"/processes/import/${processToSave.id}", multipartForm) ~> routeWithAllPermissions ~> check {
         status shouldEqual StatusCodes.BadRequest
@@ -138,8 +139,7 @@ class ProcessesExportImportResourcesSpec extends FunSuite with ScalatestRouteTes
   }
 
   private def assertProcessPrettyPrinted(response: String, process: CanonicalProcess): Unit = {
-    //we convert to circe here, since there are some minor formatting differences between argonaut & circe
-    val expected = ArgonautCirce.toCirce(UiProcessMarshaller.toJson(process)).spaces2
+    val expected = ProcessMarshaller.toJson(process).spaces2
     response shouldBe expected
   }
 

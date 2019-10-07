@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.marshall
 
-import argonaut.PrettyParams
 import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
 import org.scalatest.prop.TableDrivenPropertyChecks
@@ -21,8 +20,6 @@ import pl.touk.nussknacker.engine.graph.source.SourceRef
 class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues with Inside with TableDrivenPropertyChecks {
 
   import spel.Implicits._
-
-  val ProcessMarshaller = new ProcessMarshaller
 
   it should "marshall and unmarshall to same process" in {
 
@@ -45,7 +42,7 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
 
     result should equal(Some(process))
   }
-
+     
   it should "marshall and unmarshall to same process with ending processor" in {
     val process = EspProcessBuilder
             .id("process1")
@@ -117,7 +114,7 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
     inside(ProcessMarshaller.fromJson(processJson)) { case Valid(process) =>
       process.metaData.id shouldBe "custom"
       process.nodes should have size 1
-      process.nodes.head.data.additionalFields shouldBe Some(NodeAdditionalFields(description = Some("single node description")))
+      process.nodes.head.data.additionalFields shouldBe Some(UserDefinedAdditionalNodeFields(description = Some("single node description")))
     }
   }
 
@@ -140,7 +137,7 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
       process.metaData.id shouldBe "custom"
       process.metaData.additionalFields shouldBe Some(ProcessAdditionalFields(description = None, groups = Set.empty, properties = Map.empty))
       process.nodes should have size 1
-      process.nodes.head.data.additionalFields shouldBe Some(NodeAdditionalFields(description = None))
+      process.nodes.head.data.additionalFields shouldBe Some(UserDefinedAdditionalNodeFields(description = None))
     }
   }
 
@@ -161,8 +158,9 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
   }
 
   private def marshallAndUnmarshall(process: EspProcess): Option[EspProcess] = {
-    val marshalled = ProcessMarshaller.toJson(process, PrettyParams.spaces2)
+    val marshalled = ProcessMarshaller.toJson(ProcessCanonizer.canonize(process)).spaces2
     val unmarshalled = ProcessMarshaller.fromJson(marshalled).toOption
+    unmarshalled.foreach(_ shouldBe ProcessCanonizer.canonize(process))
     ProcessCanonizer.uncanonize(unmarshalled.value).toOption
   }
 

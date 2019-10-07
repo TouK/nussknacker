@@ -176,7 +176,7 @@ object UIProcessDefinition {
 
 @JsonCodec case class NodeEdges(nodeId: NodeTypeId, edges: List[EdgeType], canChooseNodes: Boolean, isForInputDefinition: Boolean)
 
-import pl.touk.nussknacker.restmodel.NodeDataCodec.nodeDataEncoder
+import pl.touk.nussknacker.engine.graph.NodeDataCodec._
 @JsonCodec(encodeOnly = true) case class NodeToAdd(`type`: String, label: String, node: NodeData, categories: List[String], branchParametersTemplate: List[evaluatedparam.Parameter] = List.empty)
 
 object SortedNodeGroup {
