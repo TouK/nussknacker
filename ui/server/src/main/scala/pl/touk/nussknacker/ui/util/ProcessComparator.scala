@@ -44,8 +44,7 @@ object ProcessComparator {
       .toMap
   }
 
-  import pl.touk.nussknacker.restmodel.NodeDataCodec.nodeDataEncoder
-  import pl.touk.nussknacker.restmodel.NodeDataCodec.nodeDataDecoder
+  import pl.touk.nussknacker.engine.graph.NodeDataCodec._
   import pl.touk.nussknacker.engine.api.CirceUtil._
 
   @ConfiguredJsonCodec sealed trait Difference {

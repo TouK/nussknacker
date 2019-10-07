@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.processdetails.ProcessShapeFetchStrategy
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestPermissions, TestProcessingTypes, WithHsqlDbTesting}
-import pl.touk.nussknacker.ui.process.marshall.UiProcessMarshaller
+import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessAlreadyExists
 import pl.touk.nussknacker.ui.security.api.Permission
 
@@ -139,7 +139,7 @@ class DBFetchingProcessRepositorySpec
   }
 
   private def saveProcess(espProcess: EspProcess, now: LocalDateTime, category: String = "") = {
-    val json = UiProcessMarshaller.toJson(ProcessCanonizer.canonize(espProcess)).noSpaces
+    val json = ProcessMarshaller.toJson(ProcessCanonizer.canonize(espProcess)).noSpaces
     currentTime = now
     writingRepo.saveNewProcess(ProcessName(espProcess.id), category, GraphProcess(json), TestProcessingTypes.Streaming, false).futureValue shouldBe 'right
   }

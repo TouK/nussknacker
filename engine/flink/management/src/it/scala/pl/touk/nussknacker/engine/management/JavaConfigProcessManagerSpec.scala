@@ -23,8 +23,6 @@ class JavaConfigProcessManagerSpec extends FunSuite with Matchers with ScalaFutu
         ConfigValueFactory.fromIterable(Collections.singletonList("./engine/flink/management/java_sample/target/scala-2.11/managementJavaSample.jar")))
   }
 
-  val ProcessMarshaller = new ProcessMarshaller
-
   test("deploy java process in running flink") {
     val processId = "runningJavaFlink"
 

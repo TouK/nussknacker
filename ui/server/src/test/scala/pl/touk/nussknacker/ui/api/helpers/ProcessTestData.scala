@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.CustomTransformerAdditionalData
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
-import pl.touk.nussknacker.engine.graph.node.{Case, NodeAdditionalFields, Split, SubprocessInputDefinition, SubprocessOutputDefinition}
+import pl.touk.nussknacker.engine.graph.node.{Case, Split, SubprocessInputDefinition, SubprocessOutputDefinition, UserDefinedAdditionalNodeFields}
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.{EspProcess, node}
@@ -169,7 +169,7 @@ object ProcessTestData {
         node.Source(
           id = "sourceId",
           ref = SourceRef(existingSourceFactory, List.empty),
-          additionalFields = Some(NodeAdditionalFields(Some("node description")))
+          additionalFields = Some(UserDefinedAdditionalNodeFields(Some("node description")))
         ),
         node.Sink(
           id = "sinkId",

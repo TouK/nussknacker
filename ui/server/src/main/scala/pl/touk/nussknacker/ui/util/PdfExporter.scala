@@ -193,7 +193,6 @@ object PdfExporter extends LazyLogging {
       case _ => List()
     }
     val data = node.additionalFields
-      .map(_.asInstanceOf[NodeAdditionalFields])
       .flatMap(_.description)
       .map(naf => ("Description", naf)).toList ++ nodeData
     if (data.isEmpty) {
@@ -277,7 +276,7 @@ object PdfExporter extends LazyLogging {
               </table-cell>
               <table-cell border="1pt solid black" padding-left="1pt">
                 <block>
-                  {node.additionalFields.map(_.asInstanceOf[NodeAdditionalFields]).flatMap(_.description).getOrElse("")}
+                  {node.additionalFields.flatMap(_.description).getOrElse("")}
                 </block>
               </table-cell>
             </table-row>

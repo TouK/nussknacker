@@ -20,8 +20,6 @@ class FlinkProcessTestRunnerSpec extends FlatSpec with Matchers with ScalaFuture
     timeout = Span(10, Seconds),
     interval = Span(100, Millis)
   )
-  val ProcessMarshaller = new ProcessMarshaller
-
 
   it should "run process in test mode" in {
     val config = ConfigFactory.load()

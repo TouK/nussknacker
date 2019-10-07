@@ -42,8 +42,6 @@ class FlinkProcessMainSpec extends FlatSpec with Matchers with Inside {
 
   import spel.Implicits._
 
-  val ProcessMarshaller = new ProcessMarshaller
-
   it should "be able to compile and serialize services" in {
     val process =
       EspProcessBuilder

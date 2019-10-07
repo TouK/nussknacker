@@ -25,7 +25,7 @@ class StandaloneProcessManagerSpec extends FunSuite with ScalaFutures with Match
 
     val manager = new StandaloneProcessManager(modelData, null)
 
-    val process = new ProcessMarshaller().toJson(CanonicalProcess(MetaData("t1", StandaloneMetaData(None)), ExceptionHandlerRef(List()),
+    val process = ProcessMarshaller.toJson(CanonicalProcess(MetaData("t1", StandaloneMetaData(None)), ExceptionHandlerRef(List()),
       List(
         FlatNode(Source("source", SourceRef("request1-source", List()))),
         FlatNode(Sink("sink", SinkRef("response-sink", List())))

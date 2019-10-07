@@ -18,8 +18,6 @@ class StandaloneTestMainSpec extends FunSuite with Matchers with BeforeAndAfterE
 
   import spel.Implicits._
 
-  private val ProcessMarshaller = new ProcessMarshaller
-
   private val modelData = LocalModelData(ConfigFactory.load(), new StandaloneProcessConfigCreator)
 
   private def marshall(process: EspProcess): String = ProcessMarshaller.toJson(ProcessCanonizer.canonize(process)).spaces2

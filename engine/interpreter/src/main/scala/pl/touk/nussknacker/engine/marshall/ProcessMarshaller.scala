@@ -5,24 +5,11 @@ import io.circe.generic.extras.semiauto.{deriveDecoder, deriveEncoder}
 import io.circe.{Decoder, Encoder, Json, JsonObject}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, Case, FilterNode, FlatNode, SplitNode, Subprocess, SwitchNode}
-import pl.touk.nussknacker.engine.graph.node.{Filter, NodeAdditionalFields, NodeData, Split, SubprocessInput, Switch, UserDefinedAdditionalNodeFields}
+import pl.touk.nussknacker.engine.graph.node.{Filter, NodeData, Split, SubprocessInput, Switch}
 import pl.touk.nussknacker.engine.marshall.ProcessUnmarshallError.ProcessJsonDecodeError
 import pl.touk.nussknacker.engine.api.CirceUtil._
-import shapeless.syntax.typeable._
 
 object ProcessMarshaller {
-  val defaultAdditionalFieldsEncoder: Encoder[Option[UserDefinedAdditionalNodeFields]]
-    = Encoder.encodeOption[NodeAdditionalFields].contramap(_.flatMap(_.cast[NodeAdditionalFields]))
-
-  val defaultAdditionalFieldsDecoder: Decoder[Option[UserDefinedAdditionalNodeFields]]
-    = Decoder.decodeOption[NodeAdditionalFields].or(Decoder.const(None))
-
-  val default = new ProcessMarshaller()
-
-}
-
-class ProcessMarshaller(implicit additionalFieldsEncoder: Encoder[Option[UserDefinedAdditionalNodeFields]] = ProcessMarshaller.defaultAdditionalFieldsEncoder,
-                                additionalFieldsDecoder: Decoder[Option[UserDefinedAdditionalNodeFields]] = ProcessMarshaller.defaultAdditionalFieldsDecoder) {
 
   private implicit val nodeDataEncoder: Encoder[NodeData] = deriveEncoder
 
@@ -108,9 +95,9 @@ class ProcessMarshaller(implicit additionalFieldsEncoder: Encoder[Option[UserDef
 
   private implicit lazy val caseEncode: Encoder[Case] = deriveEncoder
 
-  private implicit lazy val canEncode: Encoder[CanonicalProcess] = deriveEncoder
+  implicit lazy val canonicalProcessEncoder: Encoder[CanonicalProcess] = deriveEncoder
 
-  private implicit lazy val casDecode: Decoder[CanonicalProcess] = deriveDecoder
+  implicit lazy val canonicalProcessDecoder: Decoder[CanonicalProcess] = deriveDecoder
 
   def toJson(canonical: CanonicalProcess): Json = {
     Encoder[CanonicalProcess].apply(canonical)

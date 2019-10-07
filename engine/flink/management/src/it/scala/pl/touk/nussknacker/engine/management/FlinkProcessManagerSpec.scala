@@ -23,8 +23,6 @@ class FlinkProcessManagerSpec extends FunSuite with Matchers with ScalaFutures w
 
   import pl.touk.nussknacker.engine.kafka.KafkaUtils._
 
-  val ProcessMarshaller = new ProcessMarshaller
-
   test("deploy process in running flink") {
     val processId = "runningFlink"
 

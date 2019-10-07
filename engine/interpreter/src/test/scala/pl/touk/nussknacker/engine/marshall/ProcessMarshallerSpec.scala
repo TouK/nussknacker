@@ -21,8 +21,6 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
 
   import spel.Implicits._
 
-  val ProcessMarshaller = new ProcessMarshaller
-
   it should "marshall and unmarshall to same process" in {
 
     def nestedGraph(id: String) =
@@ -116,7 +114,7 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
     inside(ProcessMarshaller.fromJson(processJson)) { case Valid(process) =>
       process.metaData.id shouldBe "custom"
       process.nodes should have size 1
-      process.nodes.head.data.additionalFields shouldBe Some(NodeAdditionalFields(description = Some("single node description")))
+      process.nodes.head.data.additionalFields shouldBe Some(UserDefinedAdditionalNodeFields(description = Some("single node description")))
     }
   }
 
@@ -139,7 +137,7 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
       process.metaData.id shouldBe "custom"
       process.metaData.additionalFields shouldBe Some(ProcessAdditionalFields(description = None, groups = Set.empty, properties = Map.empty))
       process.nodes should have size 1
-      process.nodes.head.data.additionalFields shouldBe Some(NodeAdditionalFields(description = None))
+      process.nodes.head.data.additionalFields shouldBe Some(UserDefinedAdditionalNodeFields(description = None))
     }
   }
 

@@ -12,8 +12,6 @@ import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 
 trait FlinkRunner {
 
-  private val ProcessMarshaller = new ProcessMarshaller
-
   protected def parseProcessVersion(json: String): ProcessVersion =
     CirceUtil.decodeJson[ProcessVersion](json) match {
       case Right(p) => p
