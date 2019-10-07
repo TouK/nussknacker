@@ -84,7 +84,12 @@ class ExampleProcessConfigCreator extends ProcessConfigCreator {
     val encoder = BestEffortJsonEncoder(failOnUnkown = false)
     val stringOrJsonSink = kafkaSink(kafkaConfig, new KeyedSerializationSchema[Any] {
       override def serializeKey(element: Any): Array[Byte] = UUID.randomUUID().toString.getBytes(StandardCharsets.UTF_8)
-      override def serializeValue(element: Any): Array[Byte] = encoder.encode(element).noSpaces.getBytes(StandardCharsets.UTF_8)
+      override def serializeValue(element: Any): Array[Byte] = element match {
+        case a:DisplayJson => a.asJson.noSpaces.getBytes(StandardCharsets.UTF_8)
+        case a:Json => a.noSpaces.getBytes(StandardCharsets.UTF_8)
+        case a:String => a.getBytes(StandardCharsets.UTF_8)
+        case _ => throw new RuntimeException("Sorry, only strings or json are supported...")
+      }
       override def getTargetTopic(element: Any): String = null
     })
     Map(

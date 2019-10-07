@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.processCounts.influxdb
 
-import argonaut.{DecodeJson, DecodeResult}
 import dispatch.Http
 import dispatch._
 import io.circe.Decoder

@@ -463,7 +463,8 @@ lazy val util = (project in engine("util")).
     libraryDependencies ++= {
       Seq(
         "com.iheart" %% "ficus" % ficusV,
-        "org.scalatest" %% "scalatest" % scalaTestV % "test"
+        "org.scalatest" %% "scalatest" % scalaTestV % "test",
+        "io.circe" %% "circe-java8" % "0.11.1"       
       )
     }
   ).dependsOn(api)

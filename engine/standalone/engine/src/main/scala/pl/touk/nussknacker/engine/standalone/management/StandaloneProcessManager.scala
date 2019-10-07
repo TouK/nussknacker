@@ -33,7 +33,7 @@ import shapeless.Typeable
 import shapeless.syntax.typeable._
 
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 object StandaloneProcessManager {
   def apply(modelData: ModelData, config: Config) : StandaloneProcessManager = new StandaloneProcessManager(modelData, StandaloneProcessClient(config))
@@ -136,10 +136,11 @@ class StandaloneTestMain(testData: TestData, process: EspProcess, modelData: Mod
       "null",
       _.toString,
       _.toString,
-      _.toString,
+      identity,
       array => Json.fromValues(array).spaces2,
       obj => Json.fromJsonObject(obj).spaces2
     )
+
     val successfulResults = results.flatMap(_.right.toOption.toList.flatten)
     successfulResults.foreach { result =>
       val node = result.reference.asInstanceOf[EndingReference].nodeId
