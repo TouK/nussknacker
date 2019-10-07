@@ -91,6 +91,9 @@ object NussknackerApp extends App with Directives with LazyLogging {
     val typeToConfig = ProcessingTypeDeps(config, featureTogglesConfig.standaloneMode)
 
     val modelData = typeToConfig.mapValues(_.modelData)
+
+    val systemCategories = modelData.values.flatMap(_.processDefinitionCategories).toList.distinct
+
     val managers = typeToConfig.mapValues(_.processManager)
 
     val subprocessRepository = new DbSubprocessRepository(db, system.dispatcher)
@@ -135,7 +138,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
         new ValidationResources(processValidation),
         new DefinitionResources(modelData, subprocessRepository),
         new SignalsResources(modelData, processRepository, processAuthorizer),
-        new UserResources(),
+        new UserResources(systemCategories),
         new NotificationResources(managementActor, processRepository),
         new SettingsResources(featureTogglesConfig, typeToConfig),
         new AppResources(config, modelData, processRepository, processValidation, jobStatusService),

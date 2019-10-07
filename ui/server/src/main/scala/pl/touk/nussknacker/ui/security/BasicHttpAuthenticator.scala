@@ -70,7 +70,7 @@ object BasicHttpAuthenticator {
   private[security] case class ConfiguredUser(id: String,
                                               password: Option[String],
                                               encryptedPassword: Option[String],
-                                              categoryPermissions: Map[String, Set[Permission]],
+                                              categoryPermissions: Map[String, Set[Permission]] = Map.empty,
                                               isAdmin: Boolean = false)
 
   private sealed trait Password {
@@ -81,9 +81,7 @@ object BasicHttpAuthenticator {
 
   private case class EncryptedPassword(value: String) extends Password
 
-  private case class UserWithPassword(id: String, password: Password,
-                                      categoryPermissions: Map[String, Set[Permission]],
-                                      isAdmin: Boolean) {
+  private case class UserWithPassword(id: String, password: Password, categoryPermissions: Map[String, Set[Permission]], isAdmin: Boolean) {
     def toLoggedUser = LoggedUser(id, categoryPermissions, isAdmin)
   }
 

@@ -123,6 +123,18 @@ object ProcessDefinitionExtractor {
       ids.toList
     }
 
+    @Override
+    def categories: List[String] = {
+      val categories = customStreamTransformers.values.flatMap{ case (metadata, _) => metadata.categories }.toList ++
+      expressionConfig.globalVariables.values.flatMap(_.categories).toList ++
+      services.values.flatMap(_.categories).toList
+      signalsWithTransformers.values.flatMap{ case (metadata, _) => metadata.categories }.toList ++
+      sinkFactories.values.flatMap{ case (metadata, _) => metadata.categories }.toList ++
+      sourceFactories.values.flatMap(_.categories).toList ++
+      exceptionHandlerFactory.categories
+
+      categories.distinct
+    }
   }
 
   def toObjectDefinition(definition: ProcessDefinition[ObjectWithMethodDef]) : ProcessDefinition[ObjectDefinition] = {
