@@ -17,7 +17,7 @@ object StandaloneProcessClient {
 
   def apply(config: Config) : StandaloneProcessClient = {
     val managementUrls = config.getString("managementUrl").split(",").map(_.trim).toList
-    val clients = managementUrls.map(new DispatchStandalonProcessClient(_))
+    val clients = managementUrls.map(new DispatchStandaloneProcessClient(_))
     new MultiInstanceStandaloneProcessClient(clients)
   }
 
@@ -68,7 +68,7 @@ class MultiInstanceStandaloneProcessClient(clients: List[StandaloneProcessClient
 
 }
 
-class DispatchStandalonProcessClient(managementUrl: String, http: Http = Http.default) extends StandaloneProcessClient {
+class DispatchStandaloneProcessClient(managementUrl: String, http: Http = Http.default) extends StandaloneProcessClient {
 
 
   private implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
@@ -76,6 +76,7 @@ class DispatchStandalonProcessClient(managementUrl: String, http: Http = Http.de
   private val dispatchClient = LoggingDispatchClient(this.getClass.getSimpleName, http)
 
   import argonaut.ArgonautShapeless._
+  import ProcessName.codec
   private implicit val stateCodec: CodecJson[RunningState.Value] = Codecs.enumCodec(RunningState)
 
   def deploy(deploymentData: DeploymentData): Future[Unit] = {
