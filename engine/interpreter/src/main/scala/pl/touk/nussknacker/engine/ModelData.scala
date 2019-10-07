@@ -62,10 +62,6 @@ trait ModelData extends ConfigCreatorSignalDispatcher {
 
   lazy val validator: ProcessValidator = ProcessValidator.default(processWithObjectsDefinition, modelClassLoader.classLoader)
 
-  lazy val processDefinitionCategories: List[String] = {
-    processDefinition.categories
-  }
-
   def withThisAsContextClassLoader[T](block: => T) : T = {
     ThreadUtils.withThisAsContextClassLoader(modelClassLoader.classLoader) {
       block

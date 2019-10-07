@@ -20,7 +20,5 @@ class ProcessTypesForCategories(config: Config) {
     categoriesToTypesMap.get(category)
   }
 
-  def getSystemCategories(): List[String] = {
-    categoriesToTypesMap.keys.toList
-  }
+  val getAllCategories = categoriesToTypesMap.keys.toList
 }

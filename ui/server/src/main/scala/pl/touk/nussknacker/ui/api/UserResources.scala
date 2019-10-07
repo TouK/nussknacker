@@ -16,7 +16,7 @@ class UserResources(typesForCategories: ProcessTypesForCategories)(implicit ec: 
           DisplayableUser(
             id = user.id,
             isAdmin = user.isAdmin,
-            categories = typesForCategories.getSystemCategories(),
+            categories = typesForCategories.getAllCategories,
             categoryPermissions = user.categoryPermissions.mapValues(_.map(_.toString)))
         }
       }
