@@ -63,7 +63,7 @@ class UiProcessMarshallerSpec extends FlatSpec with Matchers {
     val displayableProcess = ProcessConverter.toDisplayableOrDie(processWithPartialAdditionalFields, TestProcessingTypes.Streaming)
 
     val processDescription = displayableProcess.properties.additionalFields.flatMap(_.description)
-    val nodeDescription = displayableProcess.nodes.head.additionalFields.flatMap(_.asInstanceOf[UserDefinedAdditionalNodeFields].description)
+    val nodeDescription = displayableProcess.nodes.head.additionalFields.flatMap(_.description)
     processDescription shouldBe Some(someProcessDescription)
     nodeDescription shouldBe Some(someNodeDescription)
   }
