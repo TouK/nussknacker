@@ -239,8 +239,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
       currentDeployment = currentlyDeployedAt.headOption.map(ProcessRepository.toDeploymentEntry),
       tags = tags.map(_.name).toList,
       modificationDate = DateUtils.toLocalDateTime(processVersion.createDate),
-      // asInstanceOf[PS] is ok here because there is only two options process is fetched (Option[ProcessDetails]) or not (None)
-      json = processVersion.json.map(jsonString => displayableFromJson(jsonString, process, businessView).asInstanceOf[PS]),
+      json = processVersion.json.map(jsonString => convertToTargetShape(jsonString, process, businessView)),
       history = history.toList,
       modelVersion = processVersion.modelVersion
     )
@@ -261,8 +260,13 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
       }
   }
 
-  private def displayableFromJson(json: String, process: ProcessEntityData, businessView: Boolean) = {
-    ProcessConverter.toDisplayableOrDie(json, process.processingType, businessView = businessView)
+  private def convertToTargetShape[PS: ProcessShapeFetchStrategy](json: String, process: ProcessEntityData, businessView: Boolean): PS = {
+    val canonical = ProcessConverter.toCanonicalOrDie(json)
+    implicitly[ProcessShapeFetchStrategy[PS]] match {
+      case ProcessShapeFetchStrategy.FetchCanonical => canonical.asInstanceOf[PS]
+      case ProcessShapeFetchStrategy.FetchDisplayable => ProcessConverter.toDisplayable(canonical, process.processingType, businessView).asInstanceOf[PS]
+      case ProcessShapeFetchStrategy.NotFetch => throw new IllegalArgumentException("Process conversion shouldn't be necesary for NotFetch strategy")
+    }
   }
 
   private def latestDeployedProcessVersionsPerEnvironment(processId: Long) = {

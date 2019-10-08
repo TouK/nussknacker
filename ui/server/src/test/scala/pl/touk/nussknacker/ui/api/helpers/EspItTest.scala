@@ -64,6 +64,7 @@ trait EspItTest extends LazyLogging with ScalaFutures with WithHsqlDbTesting wit
     jobStatusService = jobStatusService,
     processActivityRepository = processActivityRepository,
     processValidation = processValidation,
+    processResolving = processResolving,
     typesForCategories = typesForCategories,
     newProcessPreparer = newProcessPreparer,
     processAuthorizer = processAuthorizer

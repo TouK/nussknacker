@@ -12,7 +12,7 @@
     </root>
 
     <logger name="ch.qos.logback" level="warn"/>
-<!--    <logger name="pl.touk" level="debug"/>-->
+    <logger name="pl.touk.nussknacker" level="trace"/>
 <!--    <logger name="slick.jdbc.JdbcBackend.statement" level="debug"/>-->
 <!--    <logger name="slick.jdbc.StatementInvoker.result" level="debug"/>-->
 

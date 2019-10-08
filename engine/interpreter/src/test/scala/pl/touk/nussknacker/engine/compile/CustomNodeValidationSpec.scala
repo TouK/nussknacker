@@ -10,15 +10,15 @@ import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.compile.NodeTypingInfo._
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
+import pl.touk.nussknacker.engine.expression.PositionRange
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingInfo
-import pl.touk.nussknacker.engine.spel.ast.SpelAst.PositionRange
 import pl.touk.nussknacker.engine.testing.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.variables.MetaVariables
 import pl.touk.nussknacker.engine.{api, spel}
-import pl.touk.nussknacker.engine.compile.NodeTypingInfo._
 
 import scala.collection.Set
 import scala.concurrent.Future

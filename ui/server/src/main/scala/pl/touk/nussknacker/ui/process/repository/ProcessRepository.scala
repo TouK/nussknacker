@@ -29,7 +29,8 @@ trait ProcessRepository[F[_]] extends Repository[F] with EspTables {
 
   protected def processVersionsTableQuery(implicit fetchShape: ProcessShapeFetchStrategy[_]): TableQuery[ProcessVersionEntityFactory#BaseProcessVersionEntity] = {
     fetchShape match {
-      case ProcessShapeFetchStrategy.Fetch => processVersionsTable.asInstanceOf[TableQuery[ProcessVersionEntityFactory#BaseProcessVersionEntity]]
+      case ProcessShapeFetchStrategy.FetchDisplayable => processVersionsTable.asInstanceOf[TableQuery[ProcessVersionEntityFactory#BaseProcessVersionEntity]]
+      case ProcessShapeFetchStrategy.FetchCanonical => processVersionsTable.asInstanceOf[TableQuery[ProcessVersionEntityFactory#BaseProcessVersionEntity]]
       case ProcessShapeFetchStrategy.NotFetch => processVersionsTableNoJson.asInstanceOf[TableQuery[ProcessVersionEntityFactory#BaseProcessVersionEntity]]
     }
   }

@@ -10,6 +10,7 @@ import akka.stream.Materializer
 import akka.stream.ActorMaterializer
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
 import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
@@ -29,6 +30,7 @@ import pl.touk.nussknacker.ui.validation.ProcessValidation
 import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.restmodel.validation.CustomProcessValidator
 import pl.touk.nussknacker.ui.definition.AdditionalProcessProperty
+import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import slick.jdbc.{HsqldbProfile, JdbcBackend, PostgresProfile}
 
 object NussknackerApp extends App with Directives with LazyLogging {
@@ -102,6 +104,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
     val additionalFields = modelData.mapValues(_.processConfig.getOrElse[Map[String, AdditionalProcessProperty]]("additionalFieldsConfig", Map.empty))
     val customProcessNodesValidators = modelData.mapValues(CustomProcessValidator(_, config))
     val processValidation = ProcessValidation(modelData, additionalFields, subprocessResolver, customProcessNodesValidators)
+    val processResolving = new UIProcessResolving(processValidation, ProcessDictSubstitutor())
 
     val processRepository = DBFetchingProcessRepository.create(db)
     val writeProcessRepository = WriteProcessRepository.create(db, modelData)
@@ -127,6 +130,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
           jobStatusService = jobStatusService,
           processActivityRepository = processActivityRepository,
           processValidation = processValidation,
+          processResolving = processResolving,
           typesForCategories = typesForCategories,
           newProcessPreparer = NewProcessPreparer(typeToConfig, additionalFields),
           processAuthorizer = processAuthorizer
@@ -135,7 +139,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
         new ProcessActivityResource(processActivityRepository, processRepository),
         ManagementResources(counter, managementActor, testResultsMaxSizeInBytes,
           processAuthorizer, processRepository, featureTogglesConfig),
-        new ValidationResources(processValidation),
+        new ValidationResources(processResolving),
         new DefinitionResources(modelData, subprocessRepository, typesForCategories),
         new SignalsResources(modelData, processRepository, processAuthorizer),
         new UserResources(typesForCategories),
