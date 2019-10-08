@@ -3,10 +3,8 @@ package pl.touk.nussknacker.engine.definition
 import java.lang.reflect.{InvocationTargetException, Method}
 
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.Encoder
 import io.circe.generic.JsonCodec
-import io.circe.generic.semiauto.deriveEncoder
-import pl.touk.nussknacker.engine.api.{ArgonautCirce, MethodToInvoke}
+import pl.touk.nussknacker.engine.api.MethodToInvoke
 import pl.touk.nussknacker.engine.api.definition.{Parameter, WithExplicitMethodToInvoke}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, SingleNodeConfig, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.ClazzRef

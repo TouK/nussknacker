@@ -4,7 +4,6 @@ import java.util
 
 import io.circe.Encoder
 import org.apache.commons.lang3.ClassUtils
-import pl.touk.nussknacker.engine.api.ArgonautCirce
 
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
