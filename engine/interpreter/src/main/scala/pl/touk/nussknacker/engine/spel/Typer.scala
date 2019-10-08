@@ -7,8 +7,10 @@ import cats.data.Validated._
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.instances.list._
 import cats.syntax.traverse._
-import org.springframework.expression.spel.SpelNode
+import org.springframework.expression.Expression
+import org.springframework.expression.common.{CompositeStringExpression, LiteralExpression}
 import org.springframework.expression.spel.ast._
+import org.springframework.expression.spel.{SpelNode, standard}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression.ExpressionParseError
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
@@ -20,8 +22,27 @@ import scala.reflect.runtime._
 
 private[spel] class Typer(implicit classLoader: ClassLoader) {
 
-  def typeExpression(validationContext: ValidationContext, node: SpelNode, current: List[TypingResult] = Nil)
-  : Validated[NonEmptyList[ExpressionParseError], TypingResult] = {
+  def typeExpression(expr: Expression, ctx: ValidationContext): ValidatedNel[ExpressionParseError, TypingResult] = {
+    expr match {
+      case e:standard.SpelExpression =>
+        typeExpression(e, ctx)
+      case e:CompositeStringExpression =>
+        val validatedParts = e.getExpressions.toList.map(typeExpression(_, ctx)).sequence
+        validatedParts.map(_ => Typed[String])
+      case e:LiteralExpression =>
+        Valid(Typed[String])
+    }
+  }
+
+  private def typeExpression(spelExpression: standard.SpelExpression, ctx: ValidationContext): ValidatedNel[ExpressionParseError, TypingResult] = {
+    Validated.fromOption(Option(spelExpression.getAST), NonEmptyList.of(ExpressionParseError("Empty expression"))).andThen(typeNode(ctx, _))
+  }
+
+  private def typeNode(validationContext: ValidationContext, node: SpelNode): ValidatedNel[ExpressionParseError, TypingResult] =
+    typeNode(validationContext, node, Nil)
+
+  private def typeNode(validationContext: ValidationContext, node: SpelNode, current: List[TypingResult])
+  : ValidatedNel[ExpressionParseError, TypingResult] = {
 
     val withTypedChildren = typeChildren(validationContext, node, current) _
 
@@ -40,8 +61,8 @@ private[spel] class Typer(implicit classLoader: ClassLoader) {
       case e: BeanReference => invalid("Bean reference is not supported")
       case e: BooleanLiteral => Valid(Typed[Boolean])
       case e: CompoundExpression => e.children match {
-        case first :: rest => rest.foldLeft(typeExpression(validationContext, first, current)) {
-          case (Valid(typ), next) => typeExpression(validationContext, next, typ :: current)
+        case first :: rest => rest.foldLeft(typeNode(validationContext, first, current)) {
+          case (Valid(typ), next) => typeNode(validationContext, next, typ :: current)
           case (invalid, _) => invalid
         }
         //should not happen as CompoundExpression doesn't allow this...
@@ -85,7 +106,7 @@ private[spel] class Typer(implicit classLoader: ClassLoader) {
         if (literalKeys.size != keys.size) {
           invalid("Currently inline maps with not literal keys (e.g. expressions as keys) are not supported")
         } else {
-          values.map(typeExpression(validationContext, _, current)).sequence.map { typedValues =>
+          values.map(typeNode(validationContext, _, current)).sequence.map { typedValues =>
             TypedObjectTypingResult(literalKeys.zip(typedValues).toMap)
           }
         }
@@ -217,7 +238,7 @@ private[spel] class Typer(implicit classLoader: ClassLoader) {
   private def typeChildren(validationContext: ValidationContext, node: SpelNode, current: List[TypingResult])
                           (result: List[TypingResult] => Validated[NonEmptyList[ExpressionParseError], TypingResult])
   : Validated[NonEmptyList[ExpressionParseError], TypingResult] = {
-    val data = node.children.map(child => typeExpression(validationContext, child, current)).sequence
+    val data = node.children.map(child => typeNode(validationContext, child, current)).sequence
     data.andThen(result)
   }
 
