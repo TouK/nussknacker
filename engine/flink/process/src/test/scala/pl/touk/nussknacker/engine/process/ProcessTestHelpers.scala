@@ -20,6 +20,7 @@ import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContex
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionInfo, ExceptionHandlerFactory, NonTransientException}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
+import pl.touk.nussknacker.engine.api.typed.dict.TypedDictInstance
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.api.{LazyParameter, _}
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionHandler}
@@ -29,17 +30,27 @@ import pl.touk.nussknacker.engine.flink.util.exception._
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.process.ProcessTestHelpers.SimpleEnum
 import pl.touk.nussknacker.engine.process.compiler.StandardFlinkProcessCompiler
 
 import scala.concurrent.{ExecutionContext, Future}
 
 object ProcessTestHelpers {
 
-  case class SimpleRecord(id: String, value1: Long, value2: String, date: Date, value3Opt: Option[BigDecimal] = None, value3: BigDecimal = 1, intAsAny: Any = 1)
+  case class SimpleRecord(id: String, value1: Long, value2: String, date: Date, value3Opt: Option[BigDecimal] = None,
+                          value3: BigDecimal = 1, intAsAny: Any = 1, enumValue: SimpleEnum.Value = SimpleEnum.One)
 
   case class SimpleRecordWithPreviousValue(record: SimpleRecord, previous: Long, added: String)
 
   case class SimpleRecordAcc(id: String, value1: Long, value2: Set[String], date: Date)
+
+  object SimpleEnum extends Enumeration {
+    // we must explicitly define Value class to recognize if type is matching
+    class Value(name: String) extends Val(name)
+
+    val One: Value = new Value("one")
+    val Two: Value = new Value("two")
+  }
 
   @JsonCodec case class SimpleJsonRecord(id: String, field: String)
 
@@ -99,7 +110,9 @@ object ProcessTestHelpers {
 
 
       override def expressionConfig(config: Config) = {
-        val globalProcessVariables = Map("processHelper" -> WithCategories(ProcessHelper))
+        val globalProcessVariables = Map(
+          "processHelper" -> WithCategories(ProcessHelper),
+          "enum" -> WithCategories(TypedDictInstance.forEnum[SimpleEnum.type](SimpleEnum).withValueClass[SimpleEnum.Value]))
         ExpressionConfig(globalProcessVariables, List.empty)
       }
 

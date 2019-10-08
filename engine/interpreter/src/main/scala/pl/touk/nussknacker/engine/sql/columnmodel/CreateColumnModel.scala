@@ -18,7 +18,7 @@ object CreateColumnModel {
         TypedClassColumnModel.create(typed).valid
       case typedMap: TypedObjectTypingResult =>
         TypedMapColumnModel.create(typedMap).valid
-      case _: TypedUnion | Unknown =>
+      case _: TypedUnion | Unknown | _:TypedDict =>
         UnknownInner.invalid
     }
   }

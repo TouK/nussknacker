@@ -9,7 +9,7 @@ import java.util.Collections
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.data.Validated.{Invalid, Valid}
 import cats.effect.IO
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.{EitherValues, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.lazyy.{LazyContext, LazyValuesProvider, UsingLazyValues}
@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.expression.{Expression, ExpressionParseError, TypedExpression, ValueWithLazyContext}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
+import pl.touk.nussknacker.engine.api.typed.dict.TypedDictInstance
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Standard}
 
 import scala.collection.JavaConverters._
@@ -25,7 +26,7 @@ import scala.concurrent.duration._
 import scala.language.implicitConversions
 import scala.reflect.runtime.universe._
 
-class SpelExpressionSpec extends FunSuite with Matchers {
+class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
 
   private class EvaluateSync(expression: Expression) {
     def evaluateSync[T](ctx: Context = ctx, lvp: LazyValuesProvider = dumbLazyProvider) : ValueWithLazyContext[T]
@@ -472,6 +473,27 @@ class SpelExpressionSpec extends FunSuite with Matchers {
     parse[String]("#dicts.bar.value", withObjVar) shouldBe 'invalid
   }
 
+  test("static dict values") {
+    val staticDictId = "staticDictId"
+    val withObjVar = ctx.withVariable("staticDict", TypedDictInstance(staticDictId, Map("fooId" -> "fooLabel")))
+
+    parse[String]("#staticDict['fooId']", withObjVar).toEither.right.value.returnType shouldEqual Typed[String]
+    parse[String]("#staticDict['wrongId']", withObjVar) shouldBe 'invalid
+  }
+
+  test("enum dict values") {
+    val withObjVar = ctx
+      .withVariable("stringValue", "one")
+      .withVariable("enumValue", SimpleEnum.One)
+      .withVariable("enum", TypedDictInstance.forEnum[SimpleEnum.type](SimpleEnum).withValueClass[SimpleEnum.Value])
+
+    parseOrFail[SimpleEnum.Value]("#enum['one']", withObjVar).evaluateSyncToValue[SimpleEnum.Value](withObjVar) shouldEqual SimpleEnum.One
+    parse[SimpleEnum.Value]("#enum['wrongId']", withObjVar) shouldBe 'invalid
+
+    parseOrFail[Boolean]("#enumValue == #enum['one']", withObjVar).evaluateSyncToValue[Boolean](withObjVar) shouldBe true
+//    parse[Boolean]("#stringValue == #enum['one']", withObjVar) shouldBe 'invalid
+  }
+
 }
 
 case class SampleObject(list: List[SampleValue])
@@ -482,6 +504,14 @@ case class SampleValue(value: Int, anyObject: Any = "") extends UsingLazyValues 
 
   val lazy2 : LazyState[Long] = lazyValue[Long]("")
 
+}
+
+object SimpleEnum extends Enumeration {
+  // we must explicitly define Value class to recognize if type is matching
+  class Value(name: String) extends Val(name)
+
+  val One: Value = new Value("one")
+  val Two: Value = new Value("two")
 }
 
 object SampleGlobalObject {

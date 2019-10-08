@@ -23,10 +23,11 @@ import pl.touk.nussknacker.engine.types.EspTypeUtils
 
 import scala.reflect.runtime._
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.dict.DictTyper
 import pl.touk.nussknacker.engine.spel.ast.SpelAst.SpelNodeId
 import pl.touk.nussknacker.engine.spel.ast.SpelNodePrettyPrinter
 
-private[spel] class Typer(classLoader: ClassLoader) extends LazyLogging {
+private[spel] class Typer(classLoader: ClassLoader, dictTyper: DictTyper) extends LazyLogging {
 
   import ast.SpelAst._
 
@@ -110,6 +111,7 @@ private[spel] class Typer(classLoader: ClassLoader) extends LazyLogging {
         current.stack match {
           case TypedClass(clazz, param :: Nil) :: Nil if clazz.isAssignableFrom(classOf[java.util.List[_]]) => valid(param)
           case TypedClass(clazz, keyParam :: valueParam :: Nil):: Nil if clazz.isAssignableFrom(classOf[java.util.Map[_, _]]) => valid(valueParam)
+          case (d: TypedDict) :: Nil => dictTyper.typeDictValue(d, e).map(toResult)
           case _ => valid(Unknown)
         }
       case e: InlineList => withTypedChildren { children =>
@@ -287,6 +289,10 @@ private[spel] class Typer(classLoader: ClassLoader) extends LazyLogging {
   private def commonNumberReference: TypingResult =
     Typed(
       Typed[Double], Typed[Int], Typed[Long], Typed[Float], Typed[Byte], Typed[Short], Typed[BigDecimal], Typed[BigInteger])
+
+
+  def withDictTyper(dictTyper: DictTyper) =
+    new Typer(classLoader, dictTyper)
 
 }
 

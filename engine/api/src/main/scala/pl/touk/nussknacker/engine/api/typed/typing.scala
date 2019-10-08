@@ -4,6 +4,7 @@ import java.util
 
 import io.circe.Encoder
 import org.apache.commons.lang3.ClassUtils
+import pl.touk.nussknacker.engine.api.typed.dict.TypedDictInstance
 
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
@@ -49,6 +50,24 @@ object typing {
     override def canHasAnyPropertyOrField: Boolean = false
 
     override def display: String = fields.map { case (name, typ) => s"$name of type ${typ.display}"}.mkString("object with fields: ", ", ", "")
+
+  }
+
+  case class TypedDict(dictId: String, objType: TypedClass, labelById: Map[String, String]) extends SingleTypingResult {
+
+    override def canHasAnyPropertyOrField: Boolean = false
+
+    def valueType: TypedDictValue = TypedDictValue(dictId, objType)
+
+    override def display: String = labelById.map { case (k, v) => s"$k -> $v" }.mkString(s"dict with id: $dictId and labels: ", ", ", "")
+
+  }
+
+  case class TypedDictValue(dictId: String, objType: TypedClass) extends SingleTypingResult {
+
+    override def canHasAnyPropertyOrField: Boolean = false
+
+    override def display: String = s"dict value for dict: $dictId"
 
   }
 
@@ -134,7 +153,14 @@ object typing {
       case _ =>
         true
     }
-    klassCanBeSubclassOf(first.objType, sec.objType) && typedObjectRestrictions
+    def dictValueRestriction: Boolean = (first, sec) match {
+      case (firstDictValue: TypedDictValue, secDictValue: TypedDictValue) =>
+        firstDictValue.dictId == secDictValue.dictId
+      case (_: TypedDictValue, _) => false
+      case (_, _: TypedDictValue) => false
+      case _ => true
+    }
+    klassCanBeSubclassOf(first.objType, sec.objType) && typedObjectRestrictions && dictValueRestriction
   }
 
   private def klassCanBeSubclassOf(first: TypedClass, sec: TypedClass): Boolean = {
@@ -152,9 +178,24 @@ object typing {
 
     def apply[T: ClassTag]: TypingResult = apply(ClazzRef[T])
 
-    def fromDetailedType[T: TypeTag]: TypingResult = apply(ClazzRef.fromDetailedType[T])
+    def fromDetailedType[T: TypeTag]: TypingResult = {
+      val (classRef, runtimeClass) = ClazzRef.fromDetailedTypeWithRuntimeClass[T]
+      apply(runtimeClass) match {
+        case dictValue: TypedDictValue => dictValue
+        // TODO: handle nested, dict types
+        case _ => apply(classRef)
+      }
+    }
 
-    def apply(klass: Class[_]): TypingResult = apply(ClazzRef(klass))
+    def apply(klass: Class[_]): TypingResult = {
+      if (klass.isEnum) {
+        TypedDictValue(klass.getName, TypedClass(ClazzRef(klass)))
+      } else if (classOf[Enumeration#Value].isAssignableFrom(klass)) {
+        TypedDictValue(klass.getName, TypedClass(ClazzRef(klass)))
+      } else {
+        apply(ClazzRef(klass))
+      }
+    }
 
     def apply(klass: ClazzRef): TypingResult = {
       // TODO: make creating unknown type more explicit and fix places where we have Typed type instead of TypedClass | Unknown
@@ -174,6 +215,8 @@ object typing {
             case (k, v) => k -> fromInstance(v)
           }
           TypedObjectTypingResult(fieldTypes, TypedClass[TypedMap])
+        case dict: TypedDictInstance =>
+          TypedDict(dict.dictId, TypedClass(dict.runtimeClass), dict.labelByKey)
         case other =>
           Typed(other.getClass)
       }
