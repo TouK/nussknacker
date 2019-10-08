@@ -33,20 +33,44 @@ class CommonSupertypeFinder(classResolutionStrategy: SupertypeClassResolutionStr
   private def singleCommonSupertype(left: SingleTypingResult, right: SingleTypingResult)
                                    (implicit numberPromotionStrategy: NumberTypesPromotionStrategy): TypingResult =
     (left, right) match {
-      case (f: TypedObjectTypingResult, s: TypedObjectTypingResult) =>
-        if (f == s) {
-          f
-        } else {
-          klassCommonSupertypeReturningTypedClass(f.objType, s.objType).map { commonSupertype =>
+      case (l: TypedObjectTypingResult, r: TypedObjectTypingResult) =>
+        checkDirectEqualityOrMorePreciseCommonSupertype(l, r) {
+          klassCommonSupertypeReturningTypedClass(l.objType, r.objType).map { commonSupertype =>
             // can't be sure intention of user - union of fields is more secure than intersection
-            val fields = unionOfFields(f, s)
+            val fields = unionOfFields(l, r)
             TypedObjectTypingResult(fields, commonSupertype)
           }.getOrElse(Typed.empty)
         }
       case (_: TypedObjectTypingResult, _) => Typed.empty
       case (_, _: TypedObjectTypingResult) => Typed.empty
+      case (l@TypedDict(leftDictId, _, leftLabels), r@TypedDict(rightDictId, _, rightLabels)) if leftDictId == rightDictId && leftLabels == rightLabels =>
+        checkDirectEqualityOrMorePreciseCommonSupertype(l, r) {
+          klassCommonSupertypeReturningTypedClass(l.objType, r.objType).map { commonSupertype =>
+            TypedDict(leftDictId, commonSupertype, leftLabels)
+          }.getOrElse(Typed.empty)
+        }
+      case (_: TypedDict, _) => Typed.empty
+      case (_, _: TypedDict) => Typed.empty
+      case (l@TypedTaggedValue(leftType, leftTag), r@TypedTaggedValue(rightType, rightTag)) if leftTag == rightTag =>
+        checkDirectEqualityOrMorePreciseCommonSupertype(l, r) {
+          Option(singleCommonSupertype(leftType, rightType))
+            .collect {
+              case single: SingleTypingResult => TypedTaggedValue(single, leftTag)
+            }
+            .getOrElse(Typed.empty)
+        }
+      case (_: TypedTaggedValue, _) => Typed.empty
+      case (_, _: TypedTaggedValue) => Typed.empty
       case (f: TypedClass, s: TypedClass) => klassCommonSupertype(f, s)
     }
+  
+  private def checkDirectEqualityOrMorePreciseCommonSupertype[T <: SingleTypingResult](left: T, right: T)(preciseCommonSupertype: => TypingResult) = {
+    if (left == right) {
+      left
+    } else {
+      preciseCommonSupertype
+    }
+  }
 
   private def unionOfFields(l: TypedObjectTypingResult, r: TypedObjectTypingResult)
                            (implicit numberPromotionStrategy: NumberTypesPromotionStrategy) = {

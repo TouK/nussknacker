@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.types
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypedUnion, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedDict, TypedObjectTypingResult, TypedTaggedValue, TypedUnion, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo}
 import pl.touk.nussknacker.engine.types.EspTypeUtils.clazzDefinition
 import pl.touk.nussknacker.engine.variables.MetaVariables
@@ -57,6 +57,10 @@ object TypesInformationExtractor {
       set.flatMap(clazzRefsFromTypingResult)
     case TypedObjectTypingResult(fields, clazz) =>
       clazzRefsFromTypedClass(clazz) ++ fields.values.flatMap(clazzRefsFromTypingResult)
+    case TypedDict(_, tc, _) =>
+      clazzRefsFromTypedClass(tc.objType)
+    case TypedTaggedValue(underlying, _) =>
+      clazzRefsFromTypedClass(underlying.objType)
     case Unknown =>
       Set()
   }

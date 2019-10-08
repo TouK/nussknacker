@@ -22,7 +22,9 @@ import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, Expressi
 import pl.touk.nussknacker.engine.api.lazyy.{ContextWithLazyValuesProvider, LazyContext, LazyValuesProvider}
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, SupertypeClassResolutionStrategy}
 import pl.touk.nussknacker.engine.api.typed.TypedMap
+import pl.touk.nussknacker.engine.api.typed.dict.TypedDictInstance
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.dict.DictTyper
 import pl.touk.nussknacker.engine.functionUtils.CollectionUtils
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Flavour
 
@@ -151,6 +153,9 @@ class SpelExpressionParser(parser: org.springframework.expression.spel.standard.
     new SpelExpression(expression, expectedType, flavour, prepareEvaluationContext)
   }
 
+  def typingDictLabels =
+    new SpelExpressionParser(parser, validator.withTyper(_.withDictTyper(DictTyper.typingDictLabels)), enableSpelForceCompile, flavour, prepareEvaluationContext)
+
 }
 
 object SpelExpressionParser extends LazyLogging {
@@ -209,12 +214,13 @@ object SpelExpressionParser extends LazyLogging {
       StaticPropertyAccessor,
       MapPropertyAccessor,
       TypedMapPropertyAccessor,
+      TypedDictInstancePropertyAccessor,
       // it can add performance overhead so it will be better to keep it on the bottom
       MapLikePropertyAccessor
     )
 
     val commonSupertypeFinder = new CommonSupertypeFinder(if (strictTypeChecking) SupertypeClassResolutionStrategy.Intersection else SupertypeClassResolutionStrategy.Union)
-    val validator = new SpelExpressionValidator(new Typer(classLoader, commonSupertypeFinder))
+    val validator = new SpelExpressionValidator(new Typer(classLoader, commonSupertypeFinder, DictTyper.typingDictKeys))
     new SpelExpressionParser(parser, validator, enableSpelForceCompile, flavour,
       prepareEvaluationContext(classLoader, imports, propertyAccessors, functions))
   }
@@ -340,6 +346,18 @@ object SpelExpressionParser extends LazyLogging {
       new TypedValue(target.asInstanceOf[TypedMap].fields(name))
 
     override def getSpecificTargetClasses = Array(classOf[TypedMap])
+  }
+
+  object TypedDictInstancePropertyAccessor extends PropertyAccessor with ReadOnly {
+    //in theory this always happends, because we typed it properly ;)
+    override def canRead(context: EvaluationContext, target: scala.Any, key: String) =
+      target.asInstanceOf[TypedDictInstance].labelByKey.contains(key)
+
+    // we already replaced dict's label with id so we can just return id
+    override def read(context: EvaluationContext, target: scala.Any, key: String) =
+      new TypedValue(target.asInstanceOf[TypedDictInstance].value(key))
+
+    override def getSpecificTargetClasses = Array(classOf[TypedDictInstance])
   }
 
   // mainly for avro's GenericRecord purpose

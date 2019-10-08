@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.api.typed
 
 import org.apache.commons.lang3.ClassUtils
-import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypedClass, TypedObjectTypingResult, TypedUnion, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypedClass, TypedDict, TypedObjectTypingResult, TypedTaggedValue, TypedUnion, TypingResult, Unknown}
 
 /**
   * This class determine if type can be subclass of other type. It basically based on fact that TypingResults are
@@ -36,7 +36,24 @@ private[typed] object CanBeSubclassDeterminer {
       case _ =>
         true
     }
-    klassCanBeSubclassOf(first.objType, sec.objType) && typedObjectRestrictions
+    def dictRestriction: Boolean = (first, sec) match {
+      case (f: TypedDict, s: TypedDict) =>
+        f.dictId == s.dictId && f.labelByKey == s.labelByKey
+      case (_: TypedDict, _) =>
+        false
+      case (_, _: TypedDict) =>
+        false
+      case _ =>
+        true
+    }
+    def taggedValueRestriction: Boolean = (first, sec) match {
+      case (firstTaggedValue: TypedTaggedValue, secTaggedValue: TypedTaggedValue) =>
+        firstTaggedValue.tag == secTaggedValue.tag
+      case (_: TypedTaggedValue, _) => true
+      case (_, _: TypedTaggedValue) => false
+      case _ => true
+    }
+    klassCanBeSubclassOf(first.objType, sec.objType) && typedObjectRestrictions && dictRestriction && taggedValueRestriction
   }
 
   private def klassCanBeSubclassOf(first: TypedClass, sec: TypedClass): Boolean = {

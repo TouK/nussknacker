@@ -8,7 +8,7 @@ import cats.data.Validated.Valid
 import com.typesafe.config.{Config, ConfigFactory}
 import io.circe.generic.JsonCodec
 import org.apache.flink.api.common.ExecutionConfig
-import org.apache.flink.api.common.functions.{FilterFunction, RuntimeContext}
+import org.apache.flink.api.common.functions.FilterFunction
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.functions.TimestampAssigner
@@ -20,6 +20,7 @@ import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContex
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionInfo, ExceptionHandlerFactory, NonTransientException}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
+import pl.touk.nussknacker.engine.api.typed.dict.TypedDictInstance
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.api.{LazyParameter, _}
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionHandler}
@@ -35,7 +36,9 @@ import scala.concurrent.{ExecutionContext, Future}
 
 object ProcessTestHelpers {
 
-  case class SimpleRecord(id: String, value1: Long, value2: String, date: Date, value3Opt: Option[BigDecimal] = None, value3: BigDecimal = 1, intAsAny: Any = 1)
+  // Unfortunately we can't sue scala Enumeration because of limited scala TypeInformation macro - see note in TypedDictInstance
+  case class SimpleRecord(id: String, value1: Long, value2: String, date: Date, value3Opt: Option[BigDecimal] = None,
+                          value3: BigDecimal = 1, intAsAny: Any = 1, enumValue: SimpleJavaEnum = SimpleJavaEnum.ONE)
 
   case class SimpleRecordWithPreviousValue(record: SimpleRecord, previous: Long, added: String)
 
@@ -99,7 +102,9 @@ object ProcessTestHelpers {
 
 
       override def expressionConfig(config: Config) = {
-        val globalProcessVariables = Map("processHelper" -> WithCategories(ProcessHelper))
+        val globalProcessVariables = Map(
+          "processHelper" -> WithCategories(ProcessHelper),
+          "enum" -> WithCategories(TypedDictInstance.forJavaEnum(classOf[SimpleJavaEnum])))
         ExpressionConfig(globalProcessVariables, List.empty)
       }
 

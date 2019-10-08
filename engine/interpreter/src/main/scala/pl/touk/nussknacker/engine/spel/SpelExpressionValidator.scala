@@ -19,4 +19,7 @@ class SpelExpressionValidator(typer: Typer) {
     }
   }
 
+  def withTyper(modify: Typer => Typer): SpelExpressionValidator =
+    new SpelExpressionValidator(modify(typer))
+
 }

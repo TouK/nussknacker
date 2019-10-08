@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, Expressi
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing._
+import pl.touk.nussknacker.engine.dict.DictTyper
 import pl.touk.nussknacker.engine.spel.Typer._
 import pl.touk.nussknacker.engine.spel.ast.SpelAst.SpelNodeId
 import pl.touk.nussknacker.engine.spel.ast.SpelNodePrettyPrinter
@@ -25,7 +26,8 @@ import pl.touk.nussknacker.engine.types.EspTypeUtils
 
 import scala.reflect.runtime._
 
-private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: CommonSupertypeFinder) extends LazyLogging {
+private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: CommonSupertypeFinder,
+                          dictTyper: DictTyper) extends LazyLogging {
 
   import ast.SpelAst._
 
@@ -107,6 +109,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
         current.stack match {
           case TypedClass(clazz, param :: Nil) :: Nil if clazz.isAssignableFrom(classOf[java.util.List[_]]) => valid(param)
           case TypedClass(clazz, keyParam :: valueParam :: Nil):: Nil if clazz.isAssignableFrom(classOf[java.util.Map[_, _]]) => valid(valueParam)
+          case (d: TypedDict) :: Nil => dictTyper.typeDictValue(d, e).map(toResult)
           case _ => valid(Unknown)
         }
 
@@ -316,6 +319,9 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
 
   private def invalid[T](message: String): ValidatedNel[ExpressionParseError, T] =
     Invalid(NonEmptyList.of(ExpressionParseError(message)))
+
+  def withDictTyper(dictTyper: DictTyper) =
+    new Typer(classLoader, commonSupertypeFinder, dictTyper)
 
 }
 
