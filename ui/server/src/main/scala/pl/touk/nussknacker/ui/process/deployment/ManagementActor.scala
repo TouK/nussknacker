@@ -7,11 +7,12 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus}
 import pl.touk.nussknacker.restmodel.processdetails.DeploymentAction
 import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntityData
-import pl.touk.nussknacker.ui.process.marshall.UiProcessMarshaller
+import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.repository.{DeployedProcessRepository, FetchingProcessRepository}
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
@@ -19,7 +20,7 @@ import pl.touk.nussknacker.ui.security.NussknackerInternalUser
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.CatsSyntax
 
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 object ManagementActor {
@@ -177,12 +178,11 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
   }
 
   private def resolveGraph(canonicalJson: String): Future[String] = {
-    val validatedGraph = UiProcessMarshaller.fromJson(canonicalJson)
+    val validatedGraph = ProcessMarshaller.fromJson(canonicalJson)
       .map(_.withoutDisabledNodes)
       .toValidatedNel
       .andThen(subprocessResolver.resolveSubprocesses)
-      //TODO: custom JsonMarshaller
-      .map(proc => UiProcessMarshaller.toJson(proc).nospaces)
+      .map(proc => ProcessMarshaller.toJson(proc).noSpaces)
     CatsSyntax.toFuture(validatedGraph)(e => new RuntimeException(e.head.toString))
   }
 

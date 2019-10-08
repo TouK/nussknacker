@@ -37,8 +37,6 @@ class DeploymentService(context: StandaloneContextPreparer, modelData: ModelData
 
   private val pathToInterpreterMap: collection.concurrent.TrieMap[String, StandaloneProcessInterpreter] = collection.concurrent.TrieMap()
 
-  private val processMarshaller = new ProcessMarshaller()
-
   initProcesses()
 
   private def initProcesses() : Unit = {
@@ -107,7 +105,7 @@ class DeploymentService(context: StandaloneContextPreparer, modelData: ModelData
 
 
   private def toEspProcess(processJson: String): ValidatedNel[DeploymentError, CanonicalProcess] =
-    processMarshaller.fromJson(processJson)
+    ProcessMarshaller.fromJson(processJson)
       .leftMap(error => NonEmptyList.of(DeploymentError(error)))
 }
 

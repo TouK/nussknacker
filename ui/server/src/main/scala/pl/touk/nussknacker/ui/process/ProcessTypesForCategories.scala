@@ -20,4 +20,5 @@ class ProcessTypesForCategories(config: Config) {
     categoriesToTypesMap.get(category)
   }
 
+  val getAllCategories = categoriesToTypesMap.keys.toList
 }

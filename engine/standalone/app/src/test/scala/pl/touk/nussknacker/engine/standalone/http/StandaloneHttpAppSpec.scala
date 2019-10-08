@@ -41,8 +41,6 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
     procId = ProcessName(UUID.randomUUID().toString)
   }
 
-  private val processMarshaller = new ProcessMarshaller
-
   private val testEpoch = (math.random * 10000).toLong
 
   private def deploymentData(processJson: String) = DeploymentData(processJson, testEpoch, ProcessVersion.empty.copy(processName=procId))
@@ -101,7 +99,7 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
 
   def processToJson(espProcess: EspProcess): String = {
     val canonical = ProcessCanonizer.canonize(espProcess)
-    processMarshaller.toJson(canonical).spaces2
+    ProcessMarshaller.toJson(canonical).spaces2
   }
 
 

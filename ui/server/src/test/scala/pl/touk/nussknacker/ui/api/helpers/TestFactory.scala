@@ -62,13 +62,18 @@ object TestFactory extends TestPermissions{
   def newProcessActivityRepository(db: DbConfig) = new ProcessActivityRepository(db)
 
   def withPermissions(route: RouteWithUser, permissions: TestPermissions.CategorizedPermission) =
-    route.route(user(permissions))
-
-  //FIXME: update
-  def user(testPermissions: CategorizedPermission = testPermissionEmpty) = LoggedUser("userId", testPermissions)
+    route.route(user("userId", permissions))
 
   //FIXME: update
   def withAllPermissions(route: RouteWithUser) = withPermissions(route, testPermissionAll)
+
+  def withAdminPermissions(route: RouteWithUser) =
+    route.route(adminUser("adminId"))
+
+  //FIXME: update
+  def user(userName: String = "userId", testPermissions: CategorizedPermission = testPermissionEmpty) = LoggedUser(userName, testPermissions)
+
+  def adminUser(userName: String = "adminId") = LoggedUser(userName, Map.empty, true)
 
   class MockProcessManager extends FlinkProcessManager(FlinkProcessManagerProvider.defaultModelData(ConfigFactory.load()), false){
 

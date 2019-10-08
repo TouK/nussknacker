@@ -63,7 +63,8 @@ class FileProcessRepository(path: File) extends ProcessRepository {
   }
 
   override def loadAll: Map[ProcessName, DeploymentData] = path.listFiles().filter(_.isFile).map { file =>
-    ProcessName(file.getName) -> CirceUtil.decodeJson[DeploymentData](fileToString(file)).right.get
+    ProcessName(file.getName) -> CirceUtil.decodeJson[DeploymentData](fileToString(file))
+      .fold(error => throw new IllegalStateException(s"Could not decode deployment data for file: $file", error), identity)
   }.toMap
 
 }

@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestProcessingTypes, WithHsqlDbTesting}
 import pl.touk.nussknacker.restmodel.ProcessType
-import pl.touk.nussknacker.ui.process.marshall.UiProcessMarshaller
+import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.ui.process.migrate.TestMigrations
 
 class InitializationOnHsqlItSpec extends FlatSpec with ScalatestRouteTest with Matchers with ScalaFutures with BeforeAndAfterEach with WithHsqlDbTesting with Eventually {
@@ -23,8 +23,8 @@ class InitializationOnHsqlItSpec extends FlatSpec with ScalatestRouteTest with M
 
   private lazy val writeRepository = TestFactory.newWriteProcessRepository(db)
 
-  private def sampleDeploymentData(processId: String) = GraphProcess(UiProcessMarshaller.toJson(ProcessCanonizer.canonize(
-    ProcessTestData.validProcessWithId(processId))).nospaces)
+  private def sampleDeploymentData(processId: String) = GraphProcess(ProcessMarshaller.toJson(ProcessCanonizer.canonize(
+    ProcessTestData.validProcessWithId(processId))).noSpaces)
 
   it should "add technical processes" in {
 

@@ -52,7 +52,7 @@ class BasicHttpAuthenticator(usersList: List[ConfiguredUser]) extends SecurityDi
         case (Some(_), Some(_)) => throw new IllegalStateException("Specified both password and encrypted password for user: " + u.id)
         case (None, None) => throw new IllegalStateException("Neither specified password nor encrypted password for user: " + u.id)
       }
-      u.id -> UserWithPassword(u.id, password, u.categoryPermissions)
+      u.id -> UserWithPassword(u.id, password, u.categoryPermissions, u.isAdmin)
     }.toMap
   }
 
@@ -70,7 +70,8 @@ object BasicHttpAuthenticator {
   private[security] case class ConfiguredUser(id: String,
                                               password: Option[String],
                                               encryptedPassword: Option[String],
-                                              categoryPermissions: Map[String, Set[Permission]])
+                                              categoryPermissions: Map[String, Set[Permission]] = Map.empty,
+                                              isAdmin: Boolean = false)
 
   private sealed trait Password {
     def value: String
@@ -80,8 +81,8 @@ object BasicHttpAuthenticator {
 
   private case class EncryptedPassword(value: String) extends Password
 
-  private case class UserWithPassword(id: String, password: Password, categoryPermissions: Map[String, Set[Permission]]) {
-    def toLoggedUser = LoggedUser(id, categoryPermissions)
+  private case class UserWithPassword(id: String, password: Password, categoryPermissions: Map[String, Set[Permission]], isAdmin: Boolean) {
+    def toLoggedUser = LoggedUser(id, categoryPermissions, isAdmin)
   }
 
 }

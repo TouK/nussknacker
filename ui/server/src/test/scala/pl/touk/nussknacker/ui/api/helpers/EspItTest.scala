@@ -23,7 +23,7 @@ import pl.touk.nussknacker.ui.process.deployment.ManagementActor
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
-import pl.touk.nussknacker.ui.process.marshall.UiProcessMarshaller
+import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
@@ -56,10 +56,7 @@ trait EspItTest extends LazyLogging with ScalaFutures with WithHsqlDbTesting wit
     Map("streaming" -> Map.empty)
   )
 
-  private implicit val user: LoggedUser = LoggedUser("user", Map(
-    testCategoryName -> Set(Permission.Admin),
-    secondTestCategoryName -> Set(Permission.Admin)
-  ))
+  private implicit val user: LoggedUser = TestFactory.adminUser("user")
 
   val processesRoute = new ProcessesResources(
     processRepository = processRepository,
@@ -202,7 +199,7 @@ trait EspItTest extends LazyLogging with ScalaFutures with WithHsqlDbTesting wit
 
   private def makeEmptyProcess(processId: String, processingType: ProcessingType, isSubprocess: Boolean) = {
     val emptyCanonical = newProcessPreparer.prepareEmptyProcess(processId, processingType, isSubprocess)
-    GraphProcess(UiProcessMarshaller.toJson(emptyCanonical).spaces2)
+    GraphProcess(ProcessMarshaller.toJson(emptyCanonical).spaces2)
   }
 
   private def prepareProcess(processName: ProcessName, category: String, isSubprocess: Boolean) = {

@@ -62,7 +62,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
 
       val underTest = Map(
         //docs url comes from reference.conf in managementSample
-        "filter" -> SingleNodeConfig(None, None, Some("https://touk.github.io/nussknacker/"), None),
+        "filter" -> SingleNodeConfig(None, None, Some("https://touk.github.io/nussknacker/filter"), None),
         "test1" -> SingleNodeConfig(None, Some("Sink.svg"), None, None),
         "enricher" -> SingleNodeConfig(Some(Map("param" -> ParameterConfig(Some("'default value'"), Some(
           FixedExpressionValues(List(
@@ -70,7 +70,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
             FixedExpressionValue("'other value'", "second")
           )))
           //docs url comes from reference.conf in managementSample
-        ))), Some("Filter.svg"), Some("https://touk.github.io/nussknacker/"), None),
+        ))), Some("Filter.svg"), Some("https://touk.github.io/nussknacker/enricher"), None),
         "accountService" -> SingleNodeConfig(None, None, Some("accountServiceDocs"), None)
       )
 

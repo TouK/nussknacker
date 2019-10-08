@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.CustomTransformerAdditionalData
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
-import pl.touk.nussknacker.engine.graph.node.{Case, Split, SubprocessInputDefinition, SubprocessOutputDefinition}
+import pl.touk.nussknacker.engine.graph.node.{Case, Split, SubprocessInputDefinition, SubprocessOutputDefinition, UserDefinedAdditionalNodeFields}
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.{EspProcess, node}
@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder._
 import pl.touk.nussknacker.restmodel.ProcessType
-import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.{Edge, NodeAdditionalFields}
+import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessDetails, ValidatedProcessDetails}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
@@ -169,7 +169,7 @@ object ProcessTestData {
         node.Source(
           id = "sourceId",
           ref = SourceRef(existingSourceFactory, List.empty),
-          additionalFields = Some(NodeAdditionalFields(Some("node description")))
+          additionalFields = Some(UserDefinedAdditionalNodeFields(Some("node description")))
         ),
         node.Sink(
           id = "sinkId",

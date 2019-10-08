@@ -15,6 +15,8 @@ import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, 
 
 object ModelData {
 
+  val modelConfigResource = "model.conf"
+
   def apply(processConfig: Config, classpath: List[URL]) : ModelData = {
     //TODO: ability to generate additional classpath?
     val jarClassLoader = ModelClassLoader(classpath)
@@ -72,9 +74,23 @@ trait ModelData extends ConfigCreatorSignalDispatcher {
 
   def processConfigFromConfiguration: Config
 
-  override def processConfig: Config = {
-    //This allows to add reference.conf to model jar and use properties from there
-    //NOTE: substitutions work only one way, i.e. config from NK configuration can use properties from reference.conf, but not vice-versa
-    ConfigFactory.load(modelClassLoader.classLoader, processConfigFromConfiguration)
+  protected def modelConfigResource: String = ModelData.modelConfigResource
+
+  override val processConfig: Config = {
+    /*
+      We want to be able to embed config in model jar, to avoid excessive config files
+      For most cases using reference.conf would work, however there are subtle problems with substitution:
+      https://github.com/lightbend/config#note-about-resolving-substitutions-in-referenceconf-and-applicationconf
+      https://github.com/lightbend/config/issues/167
+      By using separate model.conf we can define configs there like:
+      service1Url: ${baseUrl}/service1
+      and have baseUrl taken from application config
+     */
+    val configFallbackFromModel = ConfigFactory.parseResources(modelClassLoader.classLoader, modelConfigResource)
+    processConfigFromConfiguration
+      .withFallback(configFallbackFromModel)
+      //this is for reference.conf resources from model jar
+      .withFallback(ConfigFactory.load(modelClassLoader.classLoader))
+      .resolve()
   }
 }

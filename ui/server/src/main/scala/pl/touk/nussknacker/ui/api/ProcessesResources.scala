@@ -12,7 +12,7 @@ import cats.syntax.either._
 import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.ui.api.ProcessesResources.{UnmarshallError, WrongProcessId}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus}
-import pl.touk.nussknacker.ui.process.marshall.{ProcessConverter, UiProcessMarshaller}
+import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, ProcessActivityRepository, WriteProcessRepository}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository._
 import pl.touk.nussknacker.ui.util._
@@ -24,6 +24,7 @@ import pl.touk.nussknacker.ui.validation.{FatalValidationError, ProcessValidatio
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName}
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, BasicProcess, ProcessDetails, ValidatedProcessDetails}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults
@@ -251,8 +252,9 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
           }
         } ~ path("processes" / "category" / Segment / Segment) { (processName, category) =>
           (post & processId(processName)) { processId =>
-            canWrite(processId) {
+            hasAdminPermission(user) {
               complete {
+                // TODO: Validate that category exists at categories list
                 writeRepository.updateCategory(processId = processId.id, category = category).map(toResponse(StatusCodes.OK))
               }
             }
@@ -275,7 +277,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
               fileUpload("process") { case (metadata, byteSource) =>
                 complete {
                   MultipartUtils.readFile(byteSource).map[ToResponseMarshallable] { json =>
-                    (UiProcessMarshaller.fromJson(json) match {
+                    (ProcessMarshaller.fromJson(json) match {
                       case Valid(process) if process.metaData.id != processId.name.value => Invalid(WrongProcessId(processId.name.value, process.metaData.id))
                       case Valid(process) => Valid(process)
                       case Invalid(unmarshallError) => Invalid(UnmarshallError(unmarshallError.msg))
@@ -312,7 +314,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
                          (implicit loggedUser: LoggedUser):Future[Either[EspError, ValidationResults.ValidationResult]] = {
     val displayableProcess = processToSave.process
     val canonical = ProcessConverter.fromDisplayable(displayableProcess)
-    val json = UiProcessMarshaller.toJson(canonical).spaces2
+    val json = ProcessMarshaller.toJson(canonical).spaces2
     val deploymentData = GraphProcess(json)
 
     (for {
@@ -341,7 +343,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
 
   private def makeEmptyProcess(processId: String, processingType: ProcessingType, isSubprocess: Boolean) = {
     val emptyCanonical = newProcessPreparer.prepareEmptyProcess(processId, processingType, isSubprocess)
-    GraphProcess(UiProcessMarshaller.toJson(emptyCanonical).spaces2)
+    GraphProcess(ProcessMarshaller.toJson(emptyCanonical).spaces2)
   }
 
   private def withJson(processId: ProcessId, version: Long, businessView: Boolean)

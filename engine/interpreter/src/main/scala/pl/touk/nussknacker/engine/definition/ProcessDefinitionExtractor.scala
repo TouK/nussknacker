@@ -122,7 +122,6 @@ object ProcessDefinitionExtractor {
         signalsWithTransformers.keys
       ids.toList
     }
-
   }
 
   def toObjectDefinition(definition: ProcessDefinition[ObjectWithMethodDef]) : ProcessDefinition[ObjectDefinition] = {

@@ -1,12 +1,16 @@
 import * as _ from "lodash"
 
 const User = function User(data) {
-  _.defaultsDeep(this, data)
+  this.permissions = _.uniq(_.flatMap(data.categoryPermissions))
+  this.categoryPermissions = data.categoryPermissions
+  this.categories = data.categories
+  this.isAdmin = data.isAdmin
+  this.id = data.id
 }
 
 User.prototype.hasPermission = function (permission, category) {
   let permissions = this.categoryPermissions[category] || []
-  return category && permissions.includes(permission)
+  return this.isAdmin || category && permissions.includes(permission)
 }
 
 User.prototype.canRead = function (category) {
@@ -21,20 +25,8 @@ User.prototype.canWrite = function (category) {
   return this.hasPermission("Write", category)
 }
 
-User.prototype.isReader = function () {
-  return this.permissions.includes("Read")
-}
-
-User.prototype.isDeployer = function () {
-  return this.permissions.includes("Deploy")
-}
-
 User.prototype.isWriter = function () {
-  return this.permissions.includes("Write")
-}
-
-User.prototype.isAdmin = function () {
-  return this.permissions.includes("Admin")
+  return this.isAdmin || this.permissions.includes("Write")
 }
 
 export default User

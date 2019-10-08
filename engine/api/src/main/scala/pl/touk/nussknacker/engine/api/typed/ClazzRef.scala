@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.api.typed
 
 import io.circe.Encoder
-import pl.touk.nussknacker.engine.api.ArgonautCirce
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 
