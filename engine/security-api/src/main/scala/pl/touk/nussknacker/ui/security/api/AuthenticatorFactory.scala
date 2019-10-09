@@ -12,7 +12,6 @@ trait AuthenticatorFactory {
 
 object AuthenticatorFactory {
   type LoggedUserAuth = AuthenticationDirective[LoggedUser]
-
 }
 
 

@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessDeploymen
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.management.{FlinkProcessManager, FlinkProcessManagerProvider}
-import pl.touk.nussknacker.ui.api.RouteWithUser
+import pl.touk.nussknacker.ui.api.{RouteWithUser, RouteWithoutUser}
 import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
 import pl.touk.nussknacker.ui.db.DbConfig
 import pl.touk.nussknacker.ui.process.repository.{DBFetchingProcessRepository, FetchingProcessRepository, _}
@@ -72,8 +72,9 @@ object TestFactory extends TestPermissions{
   //FIXME: update
   def withAllPermissions(route: RouteWithUser) = withPermissions(route, testPermissionAll)
 
-  def withAdminPermissions(route: RouteWithUser) =
-    route.route(adminUser("adminId"))
+  def withAdminPermissions(route: RouteWithUser) = route.route(adminUser("adminId"))
+
+  def withoutPermissions(route: RouteWithoutUser) = route.route()
 
   //FIXME: update
   def user(userName: String = "userId", testPermissions: CategorizedPermission = testPermissionEmpty) = LoggedUser(userName, testPermissions)

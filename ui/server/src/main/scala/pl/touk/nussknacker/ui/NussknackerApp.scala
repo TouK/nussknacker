@@ -23,7 +23,7 @@ import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, TestModelM
 import pl.touk.nussknacker.ui.process.repository.{DBFetchingProcessRepository, DeployedProcessRepository, ProcessActivityRepository, WriteProcessRepository}
 import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, SubprocessResolver}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
-import pl.touk.nussknacker.ui.security.AuthenticatorProvider
+import pl.touk.nussknacker.ui.security.{AuthenticationConfig, AuthenticatorProvider}
 import pl.touk.nussknacker.ui.security.ssl.{HttpsConnectionContextFactory, SslConfigParser}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
@@ -89,6 +89,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
     val db = initDb(config)
 
     val typeToConfig = ProcessingTypeDeps(config, featureTogglesConfig.standaloneMode)
+    val authenticationConfig = AuthenticationConfig(config)
 
     val modelData = typeToConfig.mapValues(_.modelData)
 
@@ -108,7 +109,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
 
     val deploymentProcessRepository = DeployedProcessRepository.create(db, modelData)
     val processActivityRepository = new ProcessActivityRepository(db)
-    val authenticator = AuthenticatorProvider(config, getClass.getClassLoader)
+    val authenticator = AuthenticatorProvider(config, authenticationConfig, getClass.getClassLoader)
 
     val counter = new ProcessCounter(subprocessRepository)
 
@@ -119,7 +120,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
 
     val processAuthorizer = new AuthorizeProcess(processRepository)
 
-    val apiResources: List[RouteWithUser] = {
+    val apiResourcesWithAuthentication: List[RouteWithUser] = {
       val routes = List(
         new ProcessesResources(
           processRepository = processRepository,
@@ -140,7 +141,6 @@ object NussknackerApp extends App with Directives with LazyLogging {
         new SignalsResources(modelData, processRepository, processAuthorizer),
         new UserResources(typesForCategories),
         new NotificationResources(managementActor, processRepository),
-        new SettingsResources(featureTogglesConfig, typeToConfig),
         new AppResources(config, modelData, processRepository, processValidation, jobStatusService),
         TestInfoResources(modelData, processAuthorizer, processRepository),
         new ServiceRoutes(modelData)
@@ -165,20 +165,26 @@ object NussknackerApp extends App with Directives with LazyLogging {
       routes ++ optionalRoutes
     }
 
+    val apiResourcesWithoutAuthentication: List[RouteWithoutUser] = {
+      val routes = List(
+        new SettingsResources(featureTogglesConfig, typeToConfig, authenticationConfig)
+      )
+
+      routes
+    }
 
     val webResources = new WebResources(config.getString("http.publicPath"))
     CorsSupport.cors(featureTogglesConfig.development) {
-      authenticator { user =>
+      pathPrefixTest(!"api") {
+        webResources.route
+      } ~  pathPrefix("api") {
+        apiResourcesWithoutAuthentication.map(_.route()).reduce(_ ~ _)
+      } ~ authenticator { user =>
         pathPrefix("api") {
-          apiResources.map(_.route(user)).reduce(_ ~ _)
-        } ~
-          //this is separated from api to do serve it without authentication
-          pathPrefixTest(!"api") {
-            webResources.route
-          }
+          apiResourcesWithAuthentication.map(_.route(user)).reduce(_ ~ _)
+        }
       }
     }
-
   }
 
   //by default, we use InfluxCountsReporterCreator
@@ -193,7 +199,7 @@ object NussknackerApp extends App with Directives with LazyLogging {
         throw new IllegalArgumentException(s"Many CountsReporters found: ${many.mkString(", ")}")
     }
     creator.createReporter(env, configAtKey)
-  } 
+  }
 
   private def initDb(config: Config) = {
     val db = JdbcBackend.Database.forConfig("db", config)
@@ -221,5 +227,4 @@ object NussknackerApp extends App with Directives with LazyLogging {
       }
     })
   }
-
 }

@@ -9,6 +9,7 @@ import pl.touk.nussknacker.ui.security.api.{AuthenticatorFactory, LoggedUser}
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor2}
 import pl.touk.nussknacker.ui.security.api.AuthenticatorFactory.LoggedUserAuth
+import pl.touk.nussknacker.ui.security.basicauth.BasicAuthenticatorFactory
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -40,7 +41,9 @@ class AuthenticatorProviderSpec extends FlatSpec with Matchers with TableDrivenP
 
   it should "return default authentication provider" in {
     val conf = ConfigFactory.defaultApplication()
-    AuthenticatorProvider(conf, this.getClass.getClassLoader) shouldBe a[LoggedUserAuth]
+    val authConf = AuthenticationConfig(conf)
+
+    AuthenticatorProvider(conf, authConf, this.getClass.getClassLoader) shouldBe a[LoggedUserAuth]
   }
 
   object AuthenticatorProviderSpec {
@@ -62,8 +65,6 @@ class AuthenticatorProviderSpec extends FlatSpec with Matchers with TableDrivenP
     case class DummyAuthenticatorFactory2() extends AuthenticatorFactory {
       override def createAuthenticator(config: Config) = new DummyAuthenticator2
     }
-
-
   }
 
 }
