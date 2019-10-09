@@ -32,6 +32,7 @@ import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
 import argonaut.Argonaut._
 import argonaut.ArgonautShapeless._
+import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.streaming.api.functions.TimestampAssigner
 import pl.touk.nussknacker.engine.api.definition.{Parameter, ServiceWithExplicitMethod}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{CollectableAction, ServiceInvocationCollector, TransmissionNames}
@@ -230,7 +231,7 @@ object BoundedSource extends FlinkSourceFactory[Any] {
   override def timestampAssigner: Option[TimestampAssigner[Any]] = None
 }
 
-case object StatefulTransformer extends CustomStreamTransformer {
+case object StatefulTransformer extends CustomStreamTransformer with LazyLogging {
 
   @MethodToInvoke
   def execute(@ParamName("keyBy") keyBy: LazyParameter[String])
@@ -239,6 +240,7 @@ case object StatefulTransformer extends CustomStreamTransformer {
       .map(ctx.lazyParameterHelper.lazyMapFunction(keyBy))
       .keyBy(_.value)
       .mapWithState[ValueWithContext[Any], List[String]] { case (StringFromIr(ir, sr), oldState) =>
+      logger.info(s"received: $sr, current state: $oldState")
       val nList = sr :: oldState.getOrElse(Nil)
       (ValueWithContext(nList, ir.context), Some(nList))
     }

@@ -1,15 +1,13 @@
 package pl.touk.nussknacker.engine.standalone.http
 
-import java.nio.charset.StandardCharsets
-
-import argonaut.Argonaut.{jArrayElements, jObjectFields, jString}
-import argonaut.{DecodeJson, Json}
+import argonaut.DecodeJson
 import com.typesafe.config.Config
+import io.circe.Json
+import io.circe.Json._
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.{JobData, MethodToInvoke, Service}
 import pl.touk.nussknacker.engine.api.process.{SinkFactory, Source, SourceFactory, WithCategories}
-import pl.touk.nussknacker.engine.api.test.TestDataParser
-import pl.touk.nussknacker.engine.standalone.api.{ResponseEncoder, StandaloneGetSource, StandalonePostSource, StandaloneSourceFactory}
+import pl.touk.nussknacker.engine.standalone.api.{ResponseEncoder, StandaloneGetSource, StandaloneSourceFactory}
 import pl.touk.nussknacker.engine.standalone.api.types.GenericResultType
 import pl.touk.nussknacker.engine.standalone.utils._
 import pl.touk.nussknacker.engine.testing.EmptyProcessConfigCreator
@@ -52,7 +50,7 @@ class TestConfigCreator extends EmptyProcessConfigCreator {
 
         override def responseEncoder = Some(new ResponseEncoder[Request] {
           override def toJsonResponse(input: Request, result: List[Any]): GenericResultType[Json] = {
-            Right(jObjectFields("inputField1" -> jString(input.field1), "list" -> jArrayElements(result.map(encoder.encodeToArgonaut):_*)))
+            Right(obj("inputField1" -> fromString(input.field1), "list" -> fromValues(result.map(encoder.encode))))
           }
         })
       }
