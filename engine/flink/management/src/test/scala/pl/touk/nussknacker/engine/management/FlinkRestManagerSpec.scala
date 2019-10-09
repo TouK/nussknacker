@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.engine.management
 
-import argonaut.Json
-import argonaut.Argonaut._
 import com.typesafe.config.ConfigFactory
 import dispatch.FunctionHandler
+import io.circe.Json
+import io.circe.Json.fromString
 import org.apache.flink.runtime.jobgraph.JobStatus
 import org.asynchttpclient.Request
 import org.scalatest.concurrent.ScalaFutures
@@ -28,7 +28,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with ScalaFutures {
         case "/jobs/overview" =>
           JobsResponse(statuses)
         case "/jars/upload" =>
-          Json.jObjectFields("filename" -> Json.jString("file"))
+          Json.obj("filename" -> fromString("file"))
         case "/jars/file/run" =>
           ()
         case jobConfig(jobId) => JobConfig(jobId, ExecutionConfig(configs.getOrElse(jobId, Map())))
@@ -75,7 +75,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with ScalaFutures {
     statuses = List(JobOverview(jid, processName.value, 40L, 10L, JobStatus.FINISHED),
       JobOverview("1111", "p1", 35L, 30L, JobStatus.FINISHED))
     //Flink seems to be using strings also for Configuration.setLong
-    configs = Map(jid -> Map("versionId" -> jString(version.toString), "user" -> jString(user)))
+    configs = Map(jid -> Map("versionId" -> fromString(version.toString), "user" -> fromString(user)))
 
     manager.findJobStatus(processName).futureValue shouldBe Some(ProcessState(DeploymentId("2343"), RunningState.Finished,
       "FINISHED", 10L, Some(ProcessVersion(version, processName, user, None))))

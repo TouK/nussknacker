@@ -26,5 +26,5 @@ trait StandaloneSource[T] extends Source[T] {
 
 }
 
-case class DecodingError(message: String) extends IllegalArgumentException(message)
+case class DecodingError(message: String, ex: Throwable) extends IllegalArgumentException(message, ex)
 

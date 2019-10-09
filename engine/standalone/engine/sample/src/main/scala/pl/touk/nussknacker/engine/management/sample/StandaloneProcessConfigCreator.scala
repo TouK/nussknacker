@@ -1,17 +1,16 @@
 package pl.touk.nussknacker.engine.management.sample
 
-import java.nio.charset.StandardCharsets
 import java.util.concurrent.atomic.AtomicInteger
 
-import argonaut.{DecodeJson, Parse}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
+import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, EspExceptionInfo, ExceptionHandlerFactory}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
-import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, MethodToInvoke, ProcessListener, Service}
+import pl.touk.nussknacker.engine.api.{CirceUtil, CustomStreamTransformer, MethodToInvoke, ProcessListener, Service}
 import pl.touk.nussknacker.engine.standalone.api.{DecodingError, StandaloneGetSource, StandalonePostSource, StandaloneSourceFactory}
 import pl.touk.nussknacker.engine.standalone.utils.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.util.LoggingListener
@@ -54,8 +53,8 @@ class StandaloneProcessConfigCreator extends ProcessConfigCreator with LazyLoggi
 }
 
 //field3 is for checking some quircks of classloading...
-case class Request1(field1: String, field2: String, field3: Option[Request2] = None)
-case class Request2(field12: String, field22: String)
+@JsonCodec case class Request1(field1: String, field2: String, field3: Option[Request2] = None)
+@JsonCodec case class Request2(field12: String, field22: String)
 case class Request3(field13: String, field23: String)
 
 
@@ -112,21 +111,11 @@ class ProcessorService extends Service {
 
 class Request1SourceFactory extends StandaloneSourceFactory[Request1] {
 
-  import argonaut.ArgonautShapeless._
-
-  val decoder = DecodeJson.derive[Request1]
-
   @MethodToInvoke
   def create(): Source[Request1] = {
     new StandalonePostSource[Request1] with StandaloneGetSource[Request1] with TestDataParserProvider[Request1] {
 
-      override def parse(data: Array[Byte]): Request1 = {
-        val str = new String(data, StandardCharsets.UTF_8)
-        decoder.decodeJson(Parse.parse(str).right.get).result match {
-          case Left(req) => throw DecodingError(s"Failed to decode on: ${req._1}")
-          case Right(req) => req
-        }
-      }
+      override def parse(data: Array[Byte]): Request1 = CirceUtil.decodeJsonUnsafe[Request1](data)
 
       override def parse(parameters: Map[String, List[String]]): Request1 = {
         def takeFirst(id: String) = parameters.getOrElse(id, List()).headOption.getOrElse("")
@@ -136,7 +125,7 @@ class Request1SourceFactory extends StandaloneSourceFactory[Request1] {
       override def testDataParser: TestDataParser[Request1] = new NewLineSplittedTestDataParser[Request1] {
 
         override def parseElement(testElement: String): Request1 = {
-          decoder.decodeJson(Parse.parse(testElement).right.get).result.right.get
+          CirceUtil.decodeJsonUnsafe[Request1](testElement, "invalid request")
         }
 
       }
