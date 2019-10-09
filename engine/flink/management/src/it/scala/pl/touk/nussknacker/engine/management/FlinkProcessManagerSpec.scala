@@ -115,13 +115,6 @@ class FlinkProcessManagerSpec extends FunSuite with Matchers with ScalaFutures w
     cancel(processId)
   }
 
-  private def messagesFromTopic(outTopic: String, kafkaClient: KafkaClient, count: Int) = {
-    kafkaClient.createConsumer()
-      .consume(outTopic)
-      .map(_.message()).map(new String(_, StandardCharsets.UTF_8))
-      .take(count).toList
-  }
-
   test("snapshot state and be able to deploy using it") {
 
     val processId = "snapshot"
@@ -153,22 +146,18 @@ class FlinkProcessManagerSpec extends FunSuite with Matchers with ScalaFutures w
 
   }
 
-  private def createKafkaClient = {
-    val kafkaClient = new KafkaClient(config.getString("processConfig.kafka.kafkaAddress"),
-      config.getString("processConfig.kafka.zkAddress"))
-    kafkaClient
-  }
-
   test("fail to redeploy if old is incompatible") {
     val processId = "redeployFail"
+    val outTopic = s"output-$processId"
 
     val process = StatefulSampleProcess.prepareProcessStringWithStringState(processId)
 
     val kafkaClient: KafkaClient = createKafkaClient
-    kafkaClient.createTopic(s"output-$processId", 1)
+    kafkaClient.createTopic(outTopic, 1)
 
     deployProcessAndWaitIfRunning(process, empty(process.id))
-    Thread.sleep(2000)
+    messagesFromTopic(outTopic, kafkaClient, 1) shouldBe List("")
+
     logger.info("Starting to redeploy")
 
     val newMarshalled = ProcessMarshaller.toJson(ProcessCanonizer.canonize(StatefulSampleProcess.prepareProcessWithLongState(processId))).spaces2
@@ -218,6 +207,20 @@ class FlinkProcessManagerSpec extends FunSuite with Matchers with ScalaFutures w
     signalJson.field("processId").get.nospaces shouldBe "\"test-process\""
     signalJson.field("action").get.field("type").get.nospaces shouldBe "\"RemoveLock\""
     signalJson.field("action").get.field("lockId").get.nospaces shouldBe "\"test-lockId\""
+  }
+
+
+  private def messagesFromTopic(outTopic: String, kafkaClient: KafkaClient, count: Int): List[String] = {
+    kafkaClient.createConsumer()
+      .consume(outTopic)
+      .map(_.message()).map(new String(_, StandardCharsets.UTF_8))
+      .take(count).toList
+  }
+
+  private def createKafkaClient: KafkaClient = {
+    val kafkaClient = new KafkaClient(config.getString("processConfig.kafka.kafkaAddress"),
+      config.getString("processConfig.kafka.zkAddress"))
+    kafkaClient
   }
 
   private def deployProcessAndWaitIfRunning(process: EspProcess, processVersion: ProcessVersion, savepointPath : Option[String] = None) = {
