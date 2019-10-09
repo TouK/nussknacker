@@ -3,12 +3,15 @@ package pl.touk.nussknacker.processCounts.influxdb
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
+import com.softwaremill.sttp.SttpBackend
+import com.softwaremill.sttp.asynchttpclient.future.AsyncHttpClientFutureBackend
 import com.typesafe.config.Config
+import org.asynchttpclient.DefaultAsyncHttpClientConfig
 import pl.touk.nussknacker.processCounts._
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class InfluxCountsReporter(env: String, config: InfluxConfig) extends CountsReporter {
+class InfluxCountsReporter(env: String, config: InfluxConfig)(implicit backend: SttpBackend[Future, Nothing]) extends CountsReporter {
 
   private val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
@@ -38,7 +41,11 @@ class InfluxCountsReporterCreator extends CountsReporterCreator {
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
-  override def createReporter(env: String, config: Config): CountsReporter = new InfluxCountsReporter(env,
-    config.as[InfluxConfig](CountsReporterCreator.reporterCreatorConfigPath))
+
+  override def createReporter(env: String, config: Config): CountsReporter = {
+    //TODO: logger
+    implicit val backend: SttpBackend[Future, Nothing] = AsyncHttpClientFutureBackend.usingConfig(new DefaultAsyncHttpClientConfig.Builder().build())
+    new InfluxCountsReporter(env, config.as[InfluxConfig](CountsReporterCreator.reporterCreatorConfigPath))
+  }
 
 }

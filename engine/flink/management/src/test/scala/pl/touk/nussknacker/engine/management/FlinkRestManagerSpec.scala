@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.engine.management
 
+import com.softwaremill.sttp.Response
+import com.softwaremill.sttp.testing.SttpBackendStub
 import com.typesafe.config.ConfigFactory
-import dispatch.FunctionHandler
 import io.circe.Json
 import io.circe.Json.fromString
 import org.apache.flink.runtime.jobgraph.JobStatus
-import org.asynchttpclient.Request
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
@@ -15,32 +15,27 @@ import pl.touk.nussknacker.engine.management.flinkRestModel.{ExecutionConfig, Jo
 import pl.touk.nussknacker.engine.testing.{EmptyProcessConfigCreator, LocalModelData}
 
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
 
 class FlinkRestManagerSpec extends FunSuite with Matchers with ScalaFutures {
 
   private val config = FlinkConfig(10 minute, None, None, None, "http://test.pl", None)
 
-  private val manager = new FlinkRestManager(config, LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator()), new HttpSender {
-    override def send[T](pair: (Request, FunctionHandler[T]))(implicit executor: ExecutionContext): Future[T] = {
-      val jobConfig = "/jobs/(.*)/config".r
-      val res = pair._1.getUrl.replace(config.restUrl, "") match {
-        case "/jobs/overview" =>
-          JobsResponse(statuses)
-        case "/jars/upload" =>
-          Json.obj("filename" -> fromString("file"))
-        case "/jars/file/run" =>
-          ()
-        case jobConfig(jobId) => JobConfig(jobId, ExecutionConfig(configs.getOrElse(jobId, Map())))
-
-      }
-      Future.successful(res).asInstanceOf[Future[T]]
-    }
-  })
-
   private var statuses: List[JobOverview] = List()
 
   private var configs: Map[String, Map[String, Json]] = Map()
+
+  private val manager = new FlinkRestManager(config, LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator()))(SttpBackendStub.asynchronousFuture.whenRequestMatchesPartial { case req =>
+    val toReturn = req.uri.path match {
+      case List("jobs", "overview") =>
+        JobsResponse(statuses)
+      case List("jars", "upload") =>
+        Json.obj("filename" -> fromString("file"))
+      case List("jobs", jobId, "config") =>
+        JobConfig(jobId, ExecutionConfig(configs.getOrElse(jobId, Map())))
+
+    }
+    Response.ok(Right(toReturn))
+  })
 
   test("refuse to deploy if process is failing") {
 

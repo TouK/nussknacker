@@ -82,7 +82,7 @@ val commonSettings =
       licenses += ("Apache-2.0", url("https://www.apache.org/licenses/LICENSE-2.0.html")),
       scalaVersion  := scalaV,
       resolvers ++= Seq(
-        "confluent" at "http://packages.confluent.io/maven"
+        "confluent" at "https://packages.confluent.io/maven"
       ),
       testOptions in Test ++= Seq(scalaTestReports, ignoreSlowTests),
       testOptions in IntegrationTest += scalaTestReports,
@@ -115,9 +115,7 @@ val springV = "5.1.4.RELEASE"
 val scalaTestV = "3.0.3"
 val logbackV = "1.1.3"
 val log4jV = "1.7.21"
-val argonautShapelessV = "1.2.0-M8"
-val argonautMajorV = "6.2"
-val argonautV = s"$argonautMajorV.1"
+val argonautV = "6.2.1"
 val circeV = "0.11.1"
 val jacksonV = "2.9.2"
 val catsV = "1.5.0"
@@ -199,8 +197,6 @@ lazy val engineStandalone = (project in engine("standalone/engine")).
       Seq(
         "org.typelevel" %% "cats-core" % catsV,
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
-        "io.argonaut" %% "argonaut" % argonautV,
-        "com.github.alexarchambault" %% s"argonaut-shapeless_$argonautMajorV" % argonautShapelessV,
         "org.scalatest" %% "scalatest" % scalaTestV % "it,test",
         "ch.qos.logback" % "logback-classic" % logbackV % "it,test"
       )
@@ -373,7 +369,6 @@ lazy val interpreter = (project in engine("interpreter")).
         "com.google.code.findbugs" % "jsr305" % "3.0.2",
         "org.hsqldb" % "hsqldb" % hsqldbV,
         "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
-        "com.github.alexarchambault" %% s"argonaut-shapeless_$argonautMajorV" % argonautShapelessV,
         "ch.qos.logback" % "logback-classic" % logbackV % "test",
         "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )
@@ -532,8 +527,7 @@ lazy val api = (project in engine("api")).
     name := "nussknacker-api",
     libraryDependencies ++= {
       Seq(
-        //TODO: czy faktycznie tak chcemy??
-        "com.github.alexarchambault" %% s"argonaut-shapeless_$argonautMajorV" % argonautShapelessV,
+        "io.argonaut" %% "argonaut" % argonautV,
         "io.circe" %% "circe-parser" % circeV,
         "io.circe" %% "circe-generic" % circeV,
         "io.circe" %% "circe-generic-extras" % circeV,
@@ -594,14 +588,15 @@ lazy val httpUtils = (project in engine("httpUtils")).
   settings(
     name := "nussknacker-http-utils",
     libraryDependencies ++= {
+      val sttpV = "1.7.1"
       Seq(
         "org.dispatchhttp" %% "dispatch-core" % dispatchV,
         "org.asynchttpclient" % "async-http-client" % "2.8.1",
         "org.scala-lang.modules" %% "scala-parser-combinators" % scalaParsersV, // scalaxb deps
-        "io.argonaut" %% "argonaut" % argonautV,
-        "com.github.alexarchambault" %% s"argonaut-shapeless_$argonautMajorV" % argonautShapelessV,
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
-
+        "com.softwaremill.sttp" %% "core" % sttpV,
+        "com.softwaremill.sttp" %% "async-http-client-backend-future" % sttpV,
+        "com.softwaremill.sttp" %% "circe" % sttpV,
         "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )
     }
