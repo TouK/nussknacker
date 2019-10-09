@@ -8,7 +8,7 @@ import org.apache.flink.streaming.util.serialization.KeyedDeserializationSchemaW
 import pl.touk.nussknacker.engine.api.process.{Source, TestDataGenerator}
 import pl.touk.nussknacker.engine.api.test.TestParsingUtils
 import pl.touk.nussknacker.engine.api.typed._
-import pl.touk.nussknacker.engine.api.{MetaData, MethodToInvoke, ParamName}
+import pl.touk.nussknacker.engine.api.{CirceUtil, MetaData, MethodToInvoke, ParamName}
 import pl.touk.nussknacker.engine.flink.util.source.EspDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.{BaseKafkaSourceFactory, KafkaConfig, KafkaSourceFactory}
 import pl.touk.nussknacker.engine.util.Implicits._
@@ -37,14 +37,7 @@ object sources {
   //FIXME: handle numeric conversion and validation here??
   private def deserializeToMap(message: Array[Byte]): Map[String, _] = jsonToMap(toJson(new String(message, StandardCharsets.UTF_8)))
 
-  private def toJson(jsonString: String): Json = {
-    io.circe.parser.parse(jsonString) match {
-      case Left(e) =>
-        throw new RuntimeException(s"Cannot parse json. Reason: $e, input string: $jsonString", e)
-      case Right(j) =>
-        j
-    }
-  }
+  private def toJson(jsonString: String): Json = CirceUtil.decodeJsonUnsafe[Json](jsonString, s"invalid message ($jsonString)")
 
   private def jsonToMap(jo: Json): Map[String, _] = {
     jo.asObject.getOrElse(JsonObject()).toMap.mapValuesNow { jsonField =>

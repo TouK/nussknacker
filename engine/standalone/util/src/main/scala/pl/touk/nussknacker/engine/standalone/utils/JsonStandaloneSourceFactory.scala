@@ -6,7 +6,7 @@ import io.circe.Decoder
 import pl.touk.nussknacker.engine.api.{CirceUtil, MethodToInvoke}
 import pl.touk.nussknacker.engine.api.process.{Source, TestDataParserProvider}
 import pl.touk.nussknacker.engine.api.test.TestDataParser
-import pl.touk.nussknacker.engine.standalone.api.{DecodingError, StandalonePostSource, StandaloneSourceFactory}
+import pl.touk.nussknacker.engine.standalone.api.{StandalonePostSource, StandaloneSourceFactory}
 
 import scala.reflect.ClassTag
 

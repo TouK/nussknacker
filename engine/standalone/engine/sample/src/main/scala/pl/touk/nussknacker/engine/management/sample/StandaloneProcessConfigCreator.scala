@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
 import pl.touk.nussknacker.engine.api.{CirceUtil, CustomStreamTransformer, MethodToInvoke, ProcessListener, Service}
-import pl.touk.nussknacker.engine.standalone.api.{DecodingError, StandaloneGetSource, StandalonePostSource, StandaloneSourceFactory}
+import pl.touk.nussknacker.engine.standalone.api.{StandaloneGetSource, StandalonePostSource, StandaloneSourceFactory}
 import pl.touk.nussknacker.engine.standalone.utils.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.util.LoggingListener
 

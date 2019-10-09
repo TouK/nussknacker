@@ -204,7 +204,7 @@ class FlinkProcessManagerSpec extends FunSuite with Matchers with ScalaFutures w
     flinkModelData.dispatchSignal("removeLockSignal", "test-process", Map("lockId" -> "test-lockId"))
 
     val readSignals = consumer.consume(signalsTopic).take(1).map(m => new String(m.message(), StandardCharsets.UTF_8)).toList
-    val signalJson = CirceUtil.decodeJsonUnsafe[Json](readSignals.head).hcursor
+    val signalJson = CirceUtil.decodeJsonUnsafe[Json](readSignals.head, "invalid signals").hcursor
     signalJson.downField("processId").focus shouldBe Some(Json.fromString("test-process"))
     signalJson.downField("action").downField("type").focus shouldBe Some(Json.fromString("RemoveLock"))
     signalJson.downField("action").downField("lockId").focus shouldBe Some(Json.fromString("test-lockId"))

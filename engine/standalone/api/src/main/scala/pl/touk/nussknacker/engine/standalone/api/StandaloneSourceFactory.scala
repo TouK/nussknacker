@@ -25,6 +25,3 @@ trait StandaloneSource[T] extends Source[T] {
   def responseEncoder: Option[ResponseEncoder[T]] = None
 
 }
-
-case class DecodingError(message: String, ex: Throwable) extends IllegalArgumentException(message, ex)
-
