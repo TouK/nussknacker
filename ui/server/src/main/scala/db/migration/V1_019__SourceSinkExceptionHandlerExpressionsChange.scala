@@ -1,7 +1,7 @@
 package db.migration
 
-import argonaut.Argonaut._
-import argonaut._
+import io.circe.Json._
+import io.circe._
 import pl.touk.nussknacker.ui.db.migration.ProcessJsonMigration
 
 trait V1_019__SourceSinkExceptionHandlerExpressionsChange extends ProcessJsonMigration {
@@ -27,13 +27,13 @@ object V1_019__SourceSinkExceptionHandlerExpressionsChange {
     updateField(jsonProcess, "exceptionHandlerRef", updateField(_, "parameters", updateParameterList))
   }
 
-  private def updateNodes(array: Json, fun: Json => Json) = jArray(array.arrayOrEmpty.map(fun))
+  private def updateNodes(array: Json, fun: Json => Json) = fromValues(array.asArray.getOrElse(List()).map(fun))
 
   private def updateField(obj: Json, field: String, update: Json => Json): Json
-  = (obj.cursor --\ field).map(_.withFocus(update).undo).getOrElse(obj)
+  = (obj.hcursor downField field).success.flatMap(_.withFocus(update).top).getOrElse(obj)
 
   private def updateCanonicalNode(node: Json): Json = {
-    node.field("type").flatMap(_.string).getOrElse("") match {
+    node.hcursor.downField("type").focus.flatMap(_.asString).getOrElse("") match {
       case "Source" | "Sink" => updateObject(node)
       case "Switch" =>
         val updatedDefault = updateField(node, "defaultNext", updateCanonicalNodes)
@@ -43,28 +43,28 @@ object V1_019__SourceSinkExceptionHandlerExpressionsChange {
       case "Split" =>
         updateField(node, "nexts", updateNodes(_, updateCanonicalNodes))
       case "SubprocessInput" =>
-        updateField(node, "outputs", outputs => {
-          jObjectAssocList(outputs.objectFieldsOrEmpty.map(f => f -> updateCanonicalNodes(outputs.fieldOrEmptyArray(f))))
-        })
+        updateField(node, "outputs", outputs =>
+          outputs.mapObject(obj => obj.mapValues(updateCanonicalNodes))
+        )
       case _ => node
     }
 
   }
 
   private def updateObject(sourceOrSink: Json): Json = {
-    (for {
-      ref <- sourceOrSink.cursor --\ "ref"
-      parameters <- ref --\ "parameters"
-      updatedParams = parameters.withFocus(updateParameterList)
-    } yield updatedParams.undo).getOrElse(sourceOrSink)
+    sourceOrSink.hcursor
+      .downField("ref")
+      .downField("parameters")
+      .withFocus(updateParameterList)
+      .top.getOrElse(sourceOrSink)
   }
 
   private def updateParameterList(old: Json): Json =
-    jArray(old.arrayOrEmpty.map(updateParameter))
+    fromValues(old.asArray.getOrElse(List()).map(updateParameter))
 
   private def updateParameter(old: Json): Json =
-    jObjectFields("name" -> old.fieldOrEmptyString("name"),
-      "expression" -> jObjectFields("language" -> jString("spel"), "expression" ->
-        jString("'" + old.fieldOrEmptyString("value").stringOrEmpty + "'")))
+    obj("name" -> old.hcursor.downField("name").focus.getOrElse(fromString("")),
+      "expression" -> obj("language" -> fromString("spel"), "expression" ->
+        fromString("'" + old.hcursor.downField("value").focus.flatMap(_.asString).getOrElse("") + "'")))
 
 }

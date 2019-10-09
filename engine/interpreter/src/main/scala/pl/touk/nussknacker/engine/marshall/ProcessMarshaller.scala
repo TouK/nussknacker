@@ -18,15 +18,15 @@ object ProcessMarshaller {
   private implicit lazy val flatNodeEncode: Encoder[FlatNode] =
     Encoder.apply[NodeData].contramap[FlatNode](_.data)
 
-  private def withFields(fields: (String, Json)*): JsonObject => Json = obj =>
-    Json.fromJsonObject(fields.foldLeft(obj)(_.+:(_)))
+  private def addFields(fields: (String, Json)*): JsonObject => JsonObject = obj =>
+    fields.foldLeft(obj)(_.+:(_))
 
   private lazy val flatNodeDecode: Decoder[CanonicalNode] =
     Decoder.apply[NodeData].map(FlatNode)
 
   private lazy val filterEncode: Encoder[FilterNode] =
     Encoder.instance[FilterNode](filter =>
-      Encoder[NodeData].apply(filter.data).withObject(withFields("nextFalse" ->
+      Encoder[NodeData].apply(filter.data).mapObject(addFields("nextFalse" ->
         Encoder[List[CanonicalNode]].apply(filter.nextFalse)))
     )
   private lazy val filterDecode: Decoder[CanonicalNode] =
@@ -37,7 +37,7 @@ object ProcessMarshaller {
 
   private lazy val switchEncode: Encoder[SwitchNode] =
     Encoder.instance[SwitchNode](switch =>
-      Encoder[NodeData].apply(switch.data).withObject(withFields(
+      Encoder[NodeData].apply(switch.data).mapObject(addFields(
          "nexts" -> Encoder[List[Case]].apply(switch.nexts),
         "defaultNext" -> Encoder[List[CanonicalNode]].apply(switch.defaultNext)
       ))
@@ -52,7 +52,7 @@ object ProcessMarshaller {
 
   private implicit lazy val splitEncode: Encoder[SplitNode] =
     Encoder.instance[SplitNode](switch =>
-      Encoder[NodeData].apply(switch.data).withObject(withFields(
+      Encoder[NodeData].apply(switch.data).mapObject(addFields(
         "nexts" -> Encoder[List[List[CanonicalNode]]].apply(switch.nexts)
       ))
     )
@@ -65,7 +65,7 @@ object ProcessMarshaller {
 
   private lazy val subprocessEncode: Encoder[Subprocess] =
     Encoder.instance[Subprocess](subprocess =>
-      Encoder[NodeData].apply(subprocess.data).withObject(withFields(
+      Encoder[NodeData].apply(subprocess.data).mapObject(addFields(
         "outputs" -> Encoder[Map[String, List[CanonicalNode]]].apply(subprocess.outputs)
       ))
     )
