@@ -5,7 +5,8 @@ import java.time.LocalDateTime
 import io.circe.{Encoder, Json}
 import io.circe.Json._
 import io.circe.java8.time._
-import pl.touk.nussknacker.engine.api.{ArgonautCirce, CirceUtil, DisplayJson}
+import pl.touk.nussknacker.engine.api.{ArgonautCirce, DisplayJson}
+import pl.touk.nussknacker.engine.util.Implicits._
 
 case class BestEffortJsonEncoder(failOnUnkown: Boolean, highPriority: PartialFunction[Any, Json] = Map()) {
 
@@ -21,9 +22,9 @@ case class BestEffortJsonEncoder(failOnUnkown: Boolean, highPriority: PartialFun
 
   def encode(obj: Any): Json = highPriority.applyOrElse(obj, (any: Any) =>
     any match {
-      case null => Json.Null
+      case null => Null
       case Some(a) => encode(a)
-      case None => Json.Null
+      case None => Null
       case j: Json => j
       case j: argonaut.Json => ArgonautCirce.toCirce(j)
       case s: String => safeString(s)
@@ -33,8 +34,8 @@ case class BestEffortJsonEncoder(failOnUnkown: Boolean, highPriority: PartialFun
       case a: Number => safeNumber(a.doubleValue())
       case a: LocalDateTime => Encoder[LocalDateTime].apply(a)
       case a: DisplayJson => a.asJson
-      case a: scala.collection.Map[String@unchecked, _] => encodeMap(a)
-      case a: java.util.Map[String@unchecked, _] => encodeMap(a.asScala)
+      case a: scala.collection.Map[String@unchecked, _] => encodeMap(a.toMap)
+      case a: java.util.Map[String@unchecked, _] => encodeMap(a.asScala.toMap)
       case a: Traversable[_] => fromValues(a.map(encode).toList)
       case a: java.util.Collection[_] => fromValues(a.asScala.map(encode).toList)
       case _ if !failOnUnkown => safeString(any.toString)
@@ -46,8 +47,8 @@ case class BestEffortJsonEncoder(failOnUnkown: Boolean, highPriority: PartialFun
     case None => Null
   }
 
-  private def encodeMap(map: scala.collection.Map[String, _]) = {
-    fromFields(map.mapValues(encode).toSeq)
+  private def encodeMap(map: Map[String, _]) = {
+    fromFields(map.mapValuesNow(encode))
   }
 
 }

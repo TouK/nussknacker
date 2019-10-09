@@ -106,12 +106,16 @@ class FlinkProcessManagerSpec extends FunSuite with Matchers with ScalaFutures w
     Thread.sleep(2000)
     deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId))
 
-    val messages = kafkaClient.createConsumer().consume(outTopic).take(2).toList
+    val messages = messagesFromTopic(outTopic, kafkaClient)
+      .take(2).toList
 
-    val message = messages.last.message()
-    new String(message, StandardCharsets.UTF_8) shouldBe "List(One element, One element)"
+    messages shouldBe List("List(One element)", "List(One element, One element)")
 
     cancel(processId)
+  }
+
+  private def messagesFromTopic(outTopic: String, kafkaClient: KafkaClient) = {
+    kafkaClient.createConsumer().consume(outTopic).map(_.message()).map(new String(_, StandardCharsets.UTF_8))
   }
 
   test("snapshot state and be able to deploy using it") {
@@ -136,10 +140,9 @@ class FlinkProcessManagerSpec extends FunSuite with Matchers with ScalaFutures w
 
     deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId), Some(savepointPath.futureValue))
 
-    val messages = kafkaClient.createConsumer().consume(outTopic).take(2).toList
+    val messages = messagesFromTopic(outTopic, kafkaClient).take(2).toList
 
-    val message = messages.last.message()
-    new String(message, StandardCharsets.UTF_8) shouldBe "List(One element, One element)"
+    messages shouldBe List("List(One element)", "List(One element, One element)")
 
     cancel(processId)
 
