@@ -18,8 +18,14 @@ object CirceUtil {
 
   def decodeJson[T:Decoder](json: Array[Byte]): Either[circe.Error, T] = decodeJson(new String(json, StandardCharsets.UTF_8))
 
-  def decodeJsonUnsafe[T:Decoder](json: String): T = decodeJson(json).right.get
+  def decodeJsonUnsafe[T:Decoder](json: String, message: String): T = unsafe(decodeJson(json), message)
 
-  def decodeJsonUnsafe[T:Decoder](json: Array[Byte]): T = decodeJson(json).right.get
+  def decodeJsonUnsafe[T:Decoder](json: Array[Byte]): T = unsafe(decodeJson(json), "")
 
+  private def unsafe[T](result: Either[circe.Error, T], message: String) = result match {
+    case Left(error) => throw DecodingError(s"Failed to decode - $message, error: ${error.getMessage}", error)
+    case Right(data) => data
+  }
+
+  case class DecodingError(message: String, ex: Throwable) extends IllegalArgumentException(message, ex)
 }

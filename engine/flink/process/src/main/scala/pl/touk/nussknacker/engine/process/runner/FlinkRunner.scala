@@ -13,10 +13,7 @@ import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 trait FlinkRunner {
 
   protected def parseProcessVersion(json: String): ProcessVersion =
-    CirceUtil.decodeJson[ProcessVersion](json) match {
-      case Right(p) => p
-      case Left(err) => throw new IllegalArgumentException(s"ProcessVersion parse error $err")
-    }
+    CirceUtil.decodeJsonUnsafe[ProcessVersion](json, "invalid process version")
 
   protected def readConfigFromArgs(args: Array[String]): Config = {
     val optionalConfigArg = if (args.length > 2) Some(args(2)) else None

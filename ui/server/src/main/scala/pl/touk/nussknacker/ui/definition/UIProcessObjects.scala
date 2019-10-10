@@ -1,7 +1,5 @@
 package pl.touk.nussknacker.ui.definition
 
-import com.typesafe.config.ConfigRenderOptions
-import io.circe.Decoder
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.definition.Parameter
@@ -18,23 +16,18 @@ import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.ceedubs.ficus.readers.EnumerationReader._
 import net.ceedubs.ficus.readers.ValueReader
 import pl.touk.nussknacker.engine.api.definition.ParameterRestriction
-import pl.touk.nussknacker.engine.api.{CirceUtil, MetaData, definition}
+import pl.touk.nussknacker.engine.api.{MetaData, definition}
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
-import pl.touk.nussknacker.engine.definition.ParameterTypeMapper
+import pl.touk.nussknacker.engine.definition.{ParameterTypeMapper, ProcessDefinitionExtractor}
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
 
 object UIProcessObjects {
-
-  private implicit val nodeConfig: ValueReader[ParameterRestriction] = ValueReader.relative(config => {
-    val json = config.root().render(ConfigRenderOptions.concise().setJson(true))
-    CirceUtil.decodeJson[ParameterRestriction](json).right.getOrElse(throw new IllegalArgumentException("Failed to parse config"))
-  })
-
+  
   def prepareUIProcessObjects(modelDataForType: ModelData,
                               user: LoggedUser,
                               subprocessesDetails: Set[SubprocessDetails],
@@ -42,7 +35,7 @@ object UIProcessObjects {
     val processConfig = modelDataForType.processConfig
 
     val chosenProcessDefinition = modelDataForType.processDefinition
-    val fixedNodesConfig = processConfig.getOrElse[Map[String, SingleNodeConfig]]("nodes", Map.empty)
+    val fixedNodesConfig = ProcessDefinitionExtractor.extractNodesConfig(processConfig)
 
     //FIXME: how to handle dynamic configuration of subprocesses??
     val subprocessInputs = fetchSubprocessInputs(subprocessesDetails, modelDataForType.modelClassLoader.classLoader, fixedNodesConfig)

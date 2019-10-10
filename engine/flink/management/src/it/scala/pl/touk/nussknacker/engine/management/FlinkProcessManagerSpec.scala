@@ -5,10 +5,11 @@ import java.nio.charset.StandardCharsets
 import java.util.UUID
 
 import com.typesafe.config.ConfigValueFactory
+import io.circe.Json
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.{CirceUtil, ProcessVersion}
 import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, GraphProcess, RunningState}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
@@ -79,7 +80,7 @@ class FlinkProcessManagerSpec extends FunSuite with Matchers with ScalaFutures w
 
     val consumer = kafkaClient.createConsumer()
     val messages1 = consumer.consume(outTopic)
-    new String(messages1.take(1).toIterable.head.message(), StandardCharsets.UTF_8) shouldBe "1"
+    new String(messages1.take(1).head.message(), StandardCharsets.UTF_8) shouldBe "1"
 
     deployProcessAndWaitIfRunning(kafkaProcess, empty(processId))
 
@@ -203,10 +204,10 @@ class FlinkProcessManagerSpec extends FunSuite with Matchers with ScalaFutures w
     flinkModelData.dispatchSignal("removeLockSignal", "test-process", Map("lockId" -> "test-lockId"))
 
     val readSignals = consumer.consume(signalsTopic).take(1).map(m => new String(m.message(), StandardCharsets.UTF_8)).toList
-    val signalJson = argonaut.Parse.parse(readSignals(0)).right.get
-    signalJson.field("processId").get.nospaces shouldBe "\"test-process\""
-    signalJson.field("action").get.field("type").get.nospaces shouldBe "\"RemoveLock\""
-    signalJson.field("action").get.field("lockId").get.nospaces shouldBe "\"test-lockId\""
+    val signalJson = CirceUtil.decodeJsonUnsafe[Json](readSignals.head, "invalid signals").hcursor
+    signalJson.downField("processId").focus shouldBe Some(Json.fromString("test-process"))
+    signalJson.downField("action").downField("type").focus shouldBe Some(Json.fromString("RemoveLock"))
+    signalJson.downField("action").downField("lockId").focus shouldBe Some(Json.fromString("test-lockId"))
   }
 
 

@@ -4,13 +4,14 @@ import akka.http.scaladsl.model.{ContentTypes, HttpEntity, MediaTypes, StatusCod
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{FlatSpec, FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.DisplayableAsJson
+import pl.touk.nussknacker.engine.api.{DisplayJsonWithEncoder, DisplayableAsJson}
 import pl.touk.nussknacker.engine.management.FlinkProcessManagerProvider
 import pl.touk.nussknacker.ui.api.ServiceRoutes.JsonThrowable
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Decoder.Result
+import io.circe.generic.JsonCodec
 import io.circe.{Decoder, HCursor}
 import pl.touk.nussknacker.engine.util.service.query.ExpressionServiceQuery.ParametersCompilationException
 import pl.touk.nussknacker.engine.util.service.query.ServiceQuery.{QueryResult, ServiceNotFoundException}
@@ -107,8 +108,6 @@ class ServiceRoutesSpec extends FunSuite with Matchers with ScalatestRouteTest w
 
 object ServiceRoutesSpec {
 
-  import argonaut._, Argonaut._, ArgonautShapeless._
-
-  case class Response(age: Int, name: String) extends DisplayableAsJson[Response]
+  @JsonCodec case class Response(age: Int, name: String) extends DisplayJsonWithEncoder[Response]
 
 }

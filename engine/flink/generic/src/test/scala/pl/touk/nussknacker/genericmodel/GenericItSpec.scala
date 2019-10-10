@@ -2,7 +2,6 @@ package pl.touk.nussknacker.genericmodel
 
 import java.nio.charset.StandardCharsets
 
-import argonaut.Parse
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import io.confluent.kafka.schemaregistry.client.{MockSchemaRegistryClient, SchemaRegistryClient}
@@ -156,8 +155,7 @@ class GenericItSpec extends FunSpec with BeforeAndAfterAll with Matchers with Ev
     processed shouldEqual List(givenMatchingAvroObj)
   }
 
-  private def parseJson(str: String) =
-    Parse.parse(str).right.value
+  private def parseJson(str: String) = io.circe.parser.parse(str).right.get
 
   private def consumeOneAvroMessage(topic: String) = {
     val consumer = kafkaClient.createConsumer()

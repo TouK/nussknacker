@@ -1,9 +1,8 @@
 package pl.touk.nussknacker.engine.standalone.http
 
-import argonaut.DecodeJson
+
 import com.typesafe.config.Config
 import io.circe.Json
-import io.circe.Json._
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.{JobData, MethodToInvoke, Service}
 import pl.touk.nussknacker.engine.api.process.{SinkFactory, Source, SourceFactory, WithCategories}
@@ -12,12 +11,11 @@ import pl.touk.nussknacker.engine.standalone.api.types.GenericResultType
 import pl.touk.nussknacker.engine.standalone.utils._
 import pl.touk.nussknacker.engine.testing.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
+import io.circe.Json._
 
 import scala.concurrent.Future
 
 class TestConfigCreator extends EmptyProcessConfigCreator {
-
-  private implicit val decoder = DecodeJson.derive[Request]
 
   override def sourceFactories(config: Config): Map[String, WithCategories[SourceFactory[_]]] = Map(
     "request1-post-source" -> WithCategories(new JsonStandaloneSourceFactory[Request]),
@@ -50,7 +48,7 @@ class TestConfigCreator extends EmptyProcessConfigCreator {
 
         override def responseEncoder = Some(new ResponseEncoder[Request] {
           override def toJsonResponse(input: Request, result: List[Any]): GenericResultType[Json] = {
-            Right(obj("inputField1" -> fromString(input.field1), "list" -> fromValues(result.map(encoder.encode))))
+            Right(obj("inputField1" -> fromString(input.field1), "list" -> arr(result.map(encoder.encode):_*)))
           }
         })
       }
