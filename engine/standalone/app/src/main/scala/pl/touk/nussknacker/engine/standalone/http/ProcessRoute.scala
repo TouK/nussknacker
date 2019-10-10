@@ -8,7 +8,6 @@ import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.generic.JsonCodec
 import io.circe.syntax._
-import pl.touk.nussknacker.engine.api.ArgonautCirce
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.standalone.deployment.ProcessInterpreters
 import pl.touk.nussknacker.engine.standalone.StandaloneRequestHandler
@@ -33,7 +32,7 @@ class ProcessRoute(processInterpreters: ProcessInterpreters) extends Directives 
               (StatusCodes.InternalServerError, errors.toList.map(info => EspError(info.nodeId, Option(info.throwable.getMessage))).asJson)
             }
             case Right(results) => complete {
-              (StatusCodes.OK, ArgonautCirce.toCirce(results))
+              (StatusCodes.OK, results)
             }
           }
         }

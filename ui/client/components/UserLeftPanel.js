@@ -48,7 +48,7 @@ export default class UserLeftPanel extends Component {
                         </Panel.Collapse>
                     </Panel>
                     <Panel defaultExpanded>
-                        <Panel.Heading><Panel.Title toggle>Versions</Panel.Title></Panel.Heading>
+                        <Panel.Heading><Panel.Title toggle>Comments</Panel.Title></Panel.Heading>
                         <Panel.Collapse>
                             <Panel.Body><ProcessComments/></Panel.Body>
                         </Panel.Collapse>

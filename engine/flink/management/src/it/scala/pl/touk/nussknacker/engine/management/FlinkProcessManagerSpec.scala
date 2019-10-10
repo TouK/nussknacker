@@ -103,13 +103,14 @@ class FlinkProcessManagerSpec extends FunSuite with Matchers with ScalaFutures w
     kafkaClient.createTopic(outTopic, 1)
 
     deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId))
-    Thread.sleep(2000)
+    //we wait for first element to appear in kafka to be sure it's processed, before we proceed to checkpoint
+    messagesFromTopic(outTopic, kafkaClient, 1) shouldBe List("List(One element)")
+
     deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId))
 
-    val messages = kafkaClient.createConsumer().consume(outTopic).take(2).toList
+    val messages = messagesFromTopic(outTopic, kafkaClient, 2)
 
-    val message = messages.last.message()
-    new String(message, StandardCharsets.UTF_8) shouldBe "List(One element, One element)"
+    messages shouldBe List("List(One element)", "List(One element, One element)")
 
     cancel(processId)
   }
@@ -126,7 +127,8 @@ class FlinkProcessManagerSpec extends FunSuite with Matchers with ScalaFutures w
     kafkaClient.createTopic(outTopic, 1)
 
     deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId))
-    Thread.sleep(3000)
+    //we wait for first element to appear in kafka to be sure it's processed, before we proceed to checkpoint
+    messagesFromTopic(outTopic, kafkaClient, 1) shouldBe List("List(One element)")
 
     val dir = new File("/tmp").toURI.toString
     val savepointPath = processManager.savepoint(ProcessName(processEmittingOneElementAfterStart.id), dir)
@@ -136,31 +138,26 @@ class FlinkProcessManagerSpec extends FunSuite with Matchers with ScalaFutures w
 
     deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId), Some(savepointPath.futureValue))
 
-    val messages = kafkaClient.createConsumer().consume(outTopic).take(2).toList
+    val messages = messagesFromTopic(outTopic, kafkaClient, 2)
 
-    val message = messages.last.message()
-    new String(message, StandardCharsets.UTF_8) shouldBe "List(One element, One element)"
+    messages shouldBe List("List(One element)", "List(One element, One element)")
 
     cancel(processId)
 
   }
 
-  private def createKafkaClient = {
-    val kafkaClient = new KafkaClient(config.getString("processConfig.kafka.kafkaAddress"),
-      config.getString("processConfig.kafka.zkAddress"))
-    kafkaClient
-  }
-
   test("fail to redeploy if old is incompatible") {
     val processId = "redeployFail"
+    val outTopic = s"output-$processId"
 
     val process = StatefulSampleProcess.prepareProcessStringWithStringState(processId)
 
     val kafkaClient: KafkaClient = createKafkaClient
-    kafkaClient.createTopic(s"output-$processId", 1)
+    kafkaClient.createTopic(outTopic, 1)
 
     deployProcessAndWaitIfRunning(process, empty(process.id))
-    Thread.sleep(2000)
+    messagesFromTopic(outTopic, kafkaClient, 1) shouldBe List("")
+
     logger.info("Starting to redeploy")
 
     val newMarshalled = ProcessMarshaller.toJson(ProcessCanonizer.canonize(StatefulSampleProcess.prepareProcessWithLongState(processId))).spaces2
@@ -210,6 +207,20 @@ class FlinkProcessManagerSpec extends FunSuite with Matchers with ScalaFutures w
     signalJson.field("processId").get.nospaces shouldBe "\"test-process\""
     signalJson.field("action").get.field("type").get.nospaces shouldBe "\"RemoveLock\""
     signalJson.field("action").get.field("lockId").get.nospaces shouldBe "\"test-lockId\""
+  }
+
+
+  private def messagesFromTopic(outTopic: String, kafkaClient: KafkaClient, count: Int): List[String] = {
+    kafkaClient.createConsumer()
+      .consume(outTopic)
+      .map(_.message()).map(new String(_, StandardCharsets.UTF_8))
+      .take(count).toList
+  }
+
+  private def createKafkaClient: KafkaClient = {
+    val kafkaClient = new KafkaClient(config.getString("processConfig.kafka.kafkaAddress"),
+      config.getString("processConfig.kafka.zkAddress"))
+    kafkaClient
   }
 
   private def deployProcessAndWaitIfRunning(process: EspProcess, processVersion: ProcessVersion, savepointPath : Option[String] = None) = {

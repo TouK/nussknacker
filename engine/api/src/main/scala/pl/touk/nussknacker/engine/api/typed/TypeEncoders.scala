@@ -6,10 +6,10 @@ import pl.touk.nussknacker.engine.api.typed.typing._
 
 object TypeEncoders {
 
-  private def encodeTypedClass(ref: TypedClass): Json = fromFields(List(
+  private def encodeTypedClass(ref: TypedClass): Json = obj(
     "refClazzName" -> fromString(ref.klass.getName),
     "params" -> fromValues(ref.params.map(encodeTypingResult))
-  ))
+  )
 
   private def encodeTypingResult(result: TypingResult): Json = result match {
     case typing.Unknown => encodeTypedClass(TypedClass[Any])
