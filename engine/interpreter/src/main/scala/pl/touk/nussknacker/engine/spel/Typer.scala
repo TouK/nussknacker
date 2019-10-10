@@ -23,8 +23,11 @@ import pl.touk.nussknacker.engine.types.EspTypeUtils
 
 import scala.reflect.runtime._
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.spel.ast.SpelNodePrettyPrinter
 
-private[spel] class Typer(implicit classLoader: ClassLoader) {
+import scala.util.{Failure, Success}
+
+private[spel] class Typer(implicit classLoader: ClassLoader) extends LazyLogging {
 
   def typeExpression(expr: Expression, ctx: ValidationContext): ValidatedNel[ExpressionParseError, TypingResult] = {
     typeExpressionInternal(expr, ctx).map(_.finalResult)
@@ -44,7 +47,19 @@ private[spel] class Typer(implicit classLoader: ClassLoader) {
   }
 
   private def typeExpression(spelExpression: standard.SpelExpression, ctx: ValidationContext): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
-    Validated.fromOption(Option(spelExpression.getAST), NonEmptyList.of(ExpressionParseError("Empty expression"))).andThen(typeNode(ctx, _))
+    Validated.fromOption(Option(spelExpression.getAST), NonEmptyList.of(ExpressionParseError("Empty expression"))).andThen { ast =>
+      val result = typeNode(ctx, ast)
+      logger.whenTraceEnabled {
+        result match {
+          case Valid(collectedResult) =>
+            val printer = new SpelNodePrettyPrinter(n => collectedResult.intermediateResults.get(n).map(_.display).getOrElse("NOT_TYPED"))
+            logger.trace("typed valid expression: " + printer.print(ast))
+          case Invalid(errors) =>
+            logger.trace(s"typed invalid expression: ${spelExpression.getExpressionString}, errors: ${errors.toList.mkString(", ")}")
+        }
+      }
+      result
+    }
   }
 
   private def typeNode(validationContext: ValidationContext, node: SpelNode): ValidatedNel[ExpressionParseError, CollectedTypingResult] =
@@ -74,10 +89,14 @@ private[spel] class Typer(implicit classLoader: ClassLoader) {
       case e: BeanReference => invalid("Bean reference is not supported")
       case e: BooleanLiteral => valid(Typed[Boolean])
       case e: CompoundExpression => e.children match {
-        case first :: rest => rest.foldLeft(typeNode(validationContext, first, current)) {
-          case (Valid(prevResult), next) => typeNode(validationContext, next, current.pushOnStack(prevResult))
-          case (invalid, _) => invalid
-        }
+        case first :: rest =>
+          val validatedLastType = rest.foldLeft(typeNode(validationContext, first, current)) {
+            case (Valid(prevResult), next) => typeNode(validationContext, next, current.pushOnStack(prevResult))
+            case (invalid, _) => invalid
+          }
+          validatedLastType.map { lastType =>
+            CollectedTypingResult(lastType.intermediateResults + (e -> lastType.finalResult), lastType.finalResult)
+          }
         //should not happen as CompoundExpression doesn't allow this...
         case Nil => valid(Unknown)
       }
@@ -295,9 +314,10 @@ object Typer {
   implicit def notAcceptingMergingSemigroup: Semigroup[TypingResult] = new Semigroup[TypingResult] with LazyLogging {
     override def combine(x: TypingResult, y: TypingResult): TypingResult = {
       assert(x == y, "Types not matching during combination of types for spel nodes")
+      // merging the same types is not bad but it is a warning that sth went wrong e.g. typer typed something more than one time
+      // or spel node's identity is broken
       logger.warn(s"Merging same types: $x for the same nodes. This shouldn't happen")
-//      x
-      throw new IllegalArgumentException(s"Merging same types: $x for the same nodes. This shouldn't happen")
+      x
     }
   }
 
