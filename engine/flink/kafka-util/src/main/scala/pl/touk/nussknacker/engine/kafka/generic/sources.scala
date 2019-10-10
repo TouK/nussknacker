@@ -44,8 +44,11 @@ object sources {
       jsonField.fold(
         jsonNull = null,
         jsonBoolean = identity,
-        //FIXME:
-        jsonNumber = _.toDouble.toLong,
+        //TODO: how to handle fractions here? using BigDecimal is not always good way to go...
+        jsonNumber = number => {
+          val d = number.toDouble
+          if (d.isWhole()) d.toLong else d
+        },
         jsonString = identity,
         jsonArray = _.map(f => jsonToMap(f).asJava),
         jsonObject = jo => jsonToMap(Json.fromJsonObject(jo))
