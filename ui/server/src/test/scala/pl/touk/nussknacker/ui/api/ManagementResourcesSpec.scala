@@ -70,7 +70,6 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
 
   test("deploys and cancels with comment") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-    val currentMaxComments =
     deployProcess(SampleProcess.process.id, true, Some("deployComment")) ~> check {
       cancelProcess(SampleProcess.process.id, true, Some("cancelComment")) ~> check {
         status shouldBe StatusCodes.OK
@@ -84,8 +83,8 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
             val deploymentHistory = responseAs[List[DeploymentHistoryEntry]]
             val curTime = LocalDateTime.now()
             deploymentHistory.map(_.copy(time = curTime)) shouldBe List(
-              DeploymentHistoryEntry(2, curTime, user("userId").id, DeploymentAction.Cancel, Some(secondCommentId), Map()),
-              DeploymentHistoryEntry(2, curTime, user("userId").id, DeploymentAction.Deploy, Some(firstCommentId), TestFactory.buildInfo)
+              DeploymentHistoryEntry(2, curTime, user("userId").id, DeploymentAction.Cancel, Some(secondCommentId), Some("Stop: cancelComment"), Map()),
+              DeploymentHistoryEntry(2, curTime, user("userId").id, DeploymentAction.Deploy, Some(firstCommentId), Some("Deployment: deployComment"), TestFactory.buildInfo)
             )
           }
         }

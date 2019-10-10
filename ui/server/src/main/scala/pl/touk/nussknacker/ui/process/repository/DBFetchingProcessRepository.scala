@@ -161,17 +161,19 @@ abstract class DBFetchingProcessRepository[F[_]](val dbConfig: DbConfig) extends
 
   def fetchDeploymentHistory(processId: ProcessId)(implicit ec: ExecutionContext): F[List[DeploymentHistoryEntry]] =
     run(deployedProcessesTable.filter(_.processId === processId.value)
-      .sortBy(_.deployedAt.desc)
-      .result.map(_.map(de =>
-      DeploymentHistoryEntry(
+      .joinLeft(commentsTable)
+      .on { case (deployment, comment) => deployment.commentId === comment.id }
+      .sortBy(_._1.deployedAt.desc)
+      .result.map(_.map { case (de, comment) => DeploymentHistoryEntry(
         processVersionId = de.processVersionId.getOrElse(0),
         time = de.deployedAtTime,
         user = de.user,
         deploymentAction = de.deploymentAction,
         commentId = de.commentId,
+        comment = comment.map(_.content),
         buildInfo = de.buildInfo.flatMap(BuildInfo.parseJson).getOrElse(BuildInfo.empty)
       )
-    ).toList))
+    }.toList))
 
   def fetchProcessingType(processId: ProcessId)(implicit user: LoggedUser, ec: ExecutionContext): F[ProcessingType] = {
     run {
