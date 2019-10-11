@@ -6,6 +6,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import cats.data.Validated.Valid
 import com.typesafe.config.{Config, ConfigFactory}
+import io.circe.generic.JsonCodec
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.functions.{FilterFunction, RuntimeContext}
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
@@ -40,7 +41,7 @@ object ProcessTestHelpers {
 
   case class SimpleRecordAcc(id: String, value1: Long, value2: Set[String], date: Date)
 
-  case class SimpleJsonRecord(id: String, field: String)
+  @JsonCodec case class SimpleJsonRecord(id: String, field: String)
 
   object processInvoker {
 

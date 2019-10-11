@@ -3,8 +3,9 @@ package pl.touk.nussknacker.engine.management.sample
 import java.nio.charset.StandardCharsets
 import java.time.{LocalDateTime, ZoneOffset}
 
-import argonaut.{Argonaut, Json}
 import com.typesafe.config.Config
+import io.circe.Json
+import io.circe.generic.JsonCodec
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext
@@ -96,32 +97,32 @@ class DemoProcessConfigCreator extends ProcessConfigCreator {
   case class Notification(msisdn: String, notificationType: Int, finalCharge: BigDecimal, tariffId: Long, timestamp: Long) extends WithFields {
     override def fields = List(msisdn, notificationType, finalCharge, tariffId, timestamp)
 
-    override def display: Json = Argonaut.jObjectFields(
-      "msisdn" -> Argonaut.jString(msisdn),
-      "notificationType" -> Argonaut.jNumber(notificationType),
-      "finalCharge" -> Argonaut.jNumber(finalCharge),
-      "tariffId" -> Argonaut.jNumber(tariffId),
-      "timestamp" -> Argonaut.jNumber(timestamp)
+    override def asJson: Json = Json.obj(
+      "msisdn" -> Json.fromString(msisdn),
+      "notificationType" -> Json.fromLong(notificationType),
+      "finalCharge" -> Json.fromBigDecimal(finalCharge),
+      "tariffId" -> Json.fromLong(tariffId),
+      "timestamp" -> Json.fromLong(timestamp)
     )
   }
 
   case class Transaction(clientId: String, date: LocalDateTime, amount: Int, `type`: String) extends WithFields {
     override def fields = List(clientId, date, amount, `type`)
-    override def display: Json = Argonaut.jObjectFields(
-      "clientId" -> Argonaut.jString(clientId),
-      "date" -> Argonaut.jString(date.toString),
-      "amount" -> Argonaut.jNumber(amount),
-      "type" -> Argonaut.jString(`type`)
+    override def asJson: Json = Json.obj(
+      "clientId" -> Json.fromString(clientId),
+      "date" -> Json.fromString(date.toString),
+      "amount" -> Json.fromInt(amount),
+      "type" -> Json.fromString(`type`)
     )
   }
 
   case class PageVisit(clientId: String, date:LocalDateTime, path: String, ip: String) extends WithFields {
     override def fields = List(clientId, date, path, ip)
-    override def display: Json = Argonaut.jObjectFields(
-      "clientId" -> Argonaut.jString(clientId),
-      "date" -> Argonaut.jString(date.toString),
-      "path" -> Argonaut.jString(path),
-      "ip" -> Argonaut.jString(ip)
+    override def asJson: Json = Json.obj(
+      "clientId" -> Json.fromString(clientId),
+      "date" -> Json.fromString(date.toString),
+      "path" -> Json.fromString(path),
+      "ip" -> Json.fromString(ip)
     )
   }
 
@@ -204,6 +205,5 @@ class DemoProcessConfigCreator extends ProcessConfigCreator {
     }
   }
 
-  import argonaut.ArgonautShapeless._
-  case class CustomerData(msisdn: String, pesel: String) extends DisplayableAsJson[CustomerData]
+  @JsonCodec case class CustomerData(msisdn: String, pesel: String) extends DisplayJsonWithEncoder[CustomerData]
 }

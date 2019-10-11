@@ -1,20 +1,21 @@
 package db.migration
 
-import argonaut.Parse
+import io.circe.Json
 import org.scalatest.{FlatSpec, Matchers}
-import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{CirceUtil, MetaData, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 
 class V1_016__TypeSpecificMetaDataChangeSpec extends FlatSpec with Matchers {
 
   it should "convert json" in {
 
-    implicit val marshaller = ProcessMarshaller
-
     val oldJson =
-      Parse.parse("""{"metaData":{"id":"DEFGH","parallelism":3, "additionalFields":{"groups":[]}}, "exceptionHandlerRef": {"parameters":[]},"nodes":[]}""").right.get
+      CirceUtil.decodeJsonUnsafe[Json](
+        """{"metaData":{"id":"DEFGH","parallelism":3,
+          |"additionalFields":{"groups":[]}},
+          |"exceptionHandlerRef": {"parameters":[]},"nodes":[]}""".stripMargin, "invalid process")
 
-    val converted = V1_016__TypeSpecificMetaDataChange.updateMetaData(oldJson).flatMap(js => marshaller.fromJson(js.nospaces).toOption)
+    val converted = V1_016__TypeSpecificMetaDataChange.updateMetaData(oldJson).flatMap(js => ProcessMarshaller.fromJson(js.noSpaces).toOption)
 
     val metaData = converted.map(_.metaData)
     

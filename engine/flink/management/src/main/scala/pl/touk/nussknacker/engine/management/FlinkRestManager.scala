@@ -6,10 +6,8 @@ import argonaut.Argonaut._
 import argonaut._
 import ArgonautShapeless._
 import org.asynchttpclient.{AsyncCompletionHandler, Request, RequestBuilder}
-import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import dispatch._
-import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.runtime.jobgraph.JobStatus
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.deployment._
@@ -18,7 +16,7 @@ import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import org.apache.flink.api.common.ExecutionConfig
 import org.asynchttpclient.request.body.multipart.FilePart
-import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.{ArgonautCirce, ProcessVersion}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.dispatch.{LoggingDispatchClient, utils}
 import pl.touk.nussknacker.engine.management.flinkRestModel.{DeployProcessRequest, GetSavepointStatusResponse, JobConfig, JobsResponse, SavepointTriggerResponse, jobStatusDecoder}
@@ -145,14 +143,18 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, sender: HttpSe
 
   //TODO: cache by jobId?
   private def checkVersion(jobId: String, name: ProcessName): Future[Option[ProcessVersion]] = {
+    
+    //temporary
+    implicit val decoderCirce: DecodeJson[io.circe.Json] = DecodeJson.of[Json].map(ArgonautCirce.toCirce)
+
     sender.send {
       (flinkUrl / "jobs" / jobId / "config").GET OK utils.asJson[JobConfig]
     }.map { config =>
       val userConfig = config.`execution-config`.`user-config`
       for {
-        version <- userConfig.get("versionId").flatMap(_.string).map(_.toLong)
-        user <- userConfig.get("user").map(_.stringOrEmpty)
-        modelVersion = userConfig.get("modelVersion").flatMap(_.string).map(_.toInt)
+        version <- userConfig.get("versionId").flatMap(_.asString).map(_.toLong)
+        user <- userConfig.get("user").map(_.asString.getOrElse(""))
+        modelVersion = userConfig.get("modelVersion").flatMap(_.asString).map(_.toInt)
       } yield ProcessVersion(version, name, user, modelVersion)
 
     }
@@ -247,5 +249,9 @@ object flinkRestModel {
 
   case class JobConfig(jid: String, `execution-config`: ExecutionConfig)
 
-  case class ExecutionConfig(`user-config`: Map[String, Json])
+
+  case class ExecutionConfig(`user-config`: Map[String, io.circe.Json])
+
 }
+
+

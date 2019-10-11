@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.engine.example.custom
 
+import io.circe.generic.JsonCodec
 import org.apache.flink.api.scala._
 import org.apache.flink.streaming.api.scala.DataStream
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.example.Transaction
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation}
-import argonaut.ArgonautShapeless._
 
 /** Sums all-time transaction amount for each client */
 class TransactionAmountAggregator extends CustomStreamTransformer {
@@ -31,4 +31,4 @@ class TransactionAmountAggregator extends CustomStreamTransformer {
   }
 }
 
-case class AggregatedAmount(clientId: String, amount: Int, lastTransaction: Long) extends DisplayableAsJson[AggregatedAmount]
+@JsonCodec case class AggregatedAmount(clientId: String, amount: Int, lastTransaction: Long) extends DisplayJsonWithEncoder[AggregatedAmount]
