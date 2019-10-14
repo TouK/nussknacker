@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.util
 
 import io.circe.generic.extras.ConfiguredJsonCodec
 import pl.touk.nussknacker.engine.graph.node.NodeData
-import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 
 object ProcessComparator {
@@ -25,7 +25,13 @@ object ProcessComparator {
       different = (current, other) => EdgeDifferent(current.from, current.to, current, other)
     )
 
-    nodes ++ edges
+    val properties = if (currentProcess.properties != otherProcess.properties) {
+      PropertiesDifferent(currentProcess.properties, otherProcess.properties) :: Nil
+    } else {
+      Nil
+    }
+
+    nodes ++ edges ++ properties.map(property => property.id -> property).toMap
   }
 
   private def getDifferences[K, V](currents: Map[K, V], others: Map[K, V])
@@ -67,7 +73,7 @@ object ProcessComparator {
     def fromId: String
     def toId: String
 
-    override def id : String = s"Edge from '$fromId' to '$toId'"
+    override def id: String = s"Edge from '$fromId' to '$toId'"
   }
 
   case class EdgeDifferent(fromId: String, toId: String, currentEdge: Edge, otherEdge: Edge) extends EdgeDifference
@@ -76,8 +82,7 @@ object ProcessComparator {
 
   case class EdgeNotPresentInCurrent(fromId: String, toId: String, otherEdge: Edge) extends EdgeDifference
 
-  /* TODO: implement rest...
-  case class PropertiesDifferent(current: ProcessProperties, other: ProcessProperties, differences: Set[NodeDifference])
-    extends Difference
-  */
+  case class PropertiesDifferent(currentProperties: ProcessProperties, otherProperties: ProcessProperties) extends Difference {
+    override def id: String = "Properties"
+  }
 }

@@ -1,18 +1,19 @@
 package pl.touk.nussknacker.ui.util
 
 import org.scalatest.{FunSuite, Matchers}
+import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.{Case, Filter}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
-import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType.{FilterTrue, NextSwitch}
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.{Edge, EdgeType}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
-import pl.touk.nussknacker.ui.util.ProcessComparator.{EdgeDifferent, EdgeNotPresentInCurrent, EdgeNotPresentInOther, NodeDifferent, NodeNotPresentInCurrent, NodeNotPresentInOther}
+import pl.touk.nussknacker.ui.util.ProcessComparator.{EdgeDifferent, EdgeNotPresentInCurrent, EdgeNotPresentInOther, NodeDifferent, NodeNotPresentInCurrent, NodeNotPresentInOther, PropertiesDifferent}
 
-//TODO: tests for changed properties
 class ProcessComparatorSpec extends FunSuite with Matchers {
 
   import pl.touk.nussknacker.engine.spel.Implicits._
@@ -88,13 +89,63 @@ class ProcessComparatorSpec extends FunSuite with Matchers {
     )
   }
 
-  private def toDisplayable(espProcess: GraphBuilder[EspProcess] => EspProcess) : DisplayableProcess  =
-    toDisplayableFromProcess(espProcess(EspProcessBuilder.id("test").parallelism(1).exceptionHandler().source("start", "testSource")))
+  test("detect changed description") {
+    val current = toDisplayable(_.emptySink("end", "testSink"), description = Some("current"))
+    val other = toDisplayable(_.emptySink("end", "testSink"), description = Some("other"))
+
+    ProcessComparator.compare(current, other) shouldBe Map(
+      "Properties" -> PropertiesDifferent(
+        processProperties(description = Some("current")),
+        processProperties(description = Some("other"))
+      )
+    )
+  }
+
+  test("detect changed property") {
+    val current = toDisplayable(_.emptySink("end", "testSink"), properties = Map("key" -> "current"))
+    val other = toDisplayable(_.emptySink("end", "testSink"), properties = Map("key" -> "other"))
+
+    ProcessComparator.compare(current, other) shouldBe Map(
+      "Properties" -> PropertiesDifferent(
+        processProperties(properties = Map("key" -> "current")),
+        processProperties(properties = Map("key" -> "other"))
+      )
+    )
+  }
+
+  private def toDisplayable(espProcess: GraphBuilder[EspProcess] => EspProcess,
+                            description: Option[String] = None,
+                            properties: Map[String, String] = Map.empty) : DisplayableProcess  =
+    toDisplayableFromProcess(espProcess(
+      EspProcessBuilder.id("test")
+        .additionalFields(
+          description = description,
+          properties = properties
+        )
+        .parallelism(1)
+        .exceptionHandler()
+        .source("start", "testSource")
+    ))
 
   private def toDisplayableFromProcess(espProcess: EspProcess) : DisplayableProcess =
     ProcessConverter.toDisplayable(ProcessCanonizer.canonize(espProcess), TestProcessingTypes.Streaming)
 
   private def caseWithExpression(expr: String, id: Int = 1): Case = {
     Case(expr, GraphBuilder.emptySink(s"end$id", "end"))
+  }
+
+  private def processProperties(description: Option[String] = None, properties: Map[String, String] = Map.empty): ProcessProperties = {
+    ProcessProperties(
+      typeSpecificProperties = StreamMetaData(
+        parallelism = Some(1)
+      ),
+      exceptionHandler = ExceptionHandlerRef(Nil),
+      additionalFields = Some(ProcessAdditionalFields(
+        description,
+        Set.empty,
+        properties
+      )),
+      subprocessVersions = Map.empty
+    )
   }
 }

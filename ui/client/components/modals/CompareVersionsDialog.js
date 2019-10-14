@@ -120,6 +120,8 @@ class CompareVersionsDialog extends React.Component {
       case "EdgeNotPresentInOther":
       case "EdgeDifferent":
         return this.renderDiff(diff.currentEdge, diff.otherEdge, this.printEdge);
+      case "PropertiesDifferent":
+        return this.renderDiff(diff.currentProperties, diff.otherProperties, this.printProperties);
       default:
         console.error(`Difference type ${diff.type} is not supported`)
     }
@@ -151,7 +153,7 @@ class CompareVersionsDialog extends React.Component {
     return node ? (<NodeDetailsContent isEditMode={false}
                                        node={node}
                                        pathsToMark={pathsToMark}
-                                       onChange={() => {}}/>) :
+                                       onChange={() => {}} />) :
       (<div className="notPresent">Node not present</div>)
   }
 
@@ -162,6 +164,14 @@ class CompareVersionsDialog extends React.Component {
                                        updateEdgeProp={() => {}}
                                        pathsToMark={pathsToMark} />) :
       (<div className="notPresent">Edge not present</div>)
+  }
+
+  printProperties(property, pathsToMark) {
+    return property ? (<NodeDetailsContent isEditMode={false}
+                                           node={property}
+                                           pathsToMark={pathsToMark}
+                                           onChange={() => {}} />) :
+      (<div className="notPresent">Properties not present</div>)
   }
 }
 
