@@ -13,8 +13,8 @@ import pl.touk.nussknacker.engine.graph.node.{Filter, UserDefinedAdditionalNodeF
 import pl.touk.nussknacker.restmodel.ProcessType
 import pl.touk.nussknacker.ui.api.helpers.{SampleProcess, TestProcessingTypes}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
+import pl.touk.nussknacker.restmodel.process.{Comment, ProcessActivity}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
-import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.{Comment, ProcessActivity}
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessHistoryEntry}
 
 import scala.io.Source

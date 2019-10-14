@@ -5,10 +5,10 @@ import java.time.LocalDateTime
 
 import pl.touk.nussknacker.restmodel.processdetails.DeploymentAction
 import pl.touk.nussknacker.restmodel.processdetails.DeploymentAction.DeploymentAction
-import pl.touk.nussknacker.ui.util.DateUtils
+import pl.touk.nussknacker.restmodel.util.DateUtils
 import slick.ast.BaseTypedType
 import slick.jdbc.{JdbcProfile, JdbcType}
-import slick.lifted.{TableQuery=>LTableQuery}
+import slick.lifted.{TableQuery => LTableQuery}
 import slick.sql.SqlProfile.ColumnOption.{NotNull, Nullable}
 
 trait ProcessDeploymentInfoEntityFactory {

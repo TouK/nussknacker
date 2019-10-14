@@ -6,17 +6,17 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{FileIO, Source}
 import akka.util.ByteString
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.ui.api.ProcessAttachmentService.AttachmentToAdd
+import pl.touk.nussknacker.restmodel.api.AttachmentToAdd
+import pl.touk.nussknacker.restmodel.db.entity.AttachmentEntityData
 import pl.touk.nussknacker.restmodel.process.ProcessId
-import pl.touk.nussknacker.ui.db.entity.AttachmentEntityData
-import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository
+import pl.touk.nussknacker.ui.process.repository.DBProcessActivityRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.CatsSyntax
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
-class ProcessAttachmentService(attachmentsBasePath: String, processActivityRepository: ProcessActivityRepository) extends LazyLogging {
+class ProcessAttachmentService(attachmentsBasePath: String, processActivityRepository: DBProcessActivityRepository) extends LazyLogging {
 
   def saveAttachment(processId: ProcessId, processVersionId: Long, originalFileName: String, byteSource: Source[ByteString, Any])
                     (implicit ec: ExecutionContext, loggedUser: LoggedUser, mat: Materializer): Future[Unit] = {
@@ -50,10 +50,5 @@ class ProcessAttachmentService(attachmentsBasePath: String, processActivityRepos
 
 object ProcessAttachmentService {
 
-  case class AttachmentToAdd(processId: Long,
-                             processVersionId: Long,
-                             fileName: String,
-                             relativeFilePath: String
-                            )
 
 }

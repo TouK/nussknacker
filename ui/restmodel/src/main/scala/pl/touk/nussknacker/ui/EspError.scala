@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui
 
-
 object EspError {
 
   type XError[A] = Either[EspError, A]

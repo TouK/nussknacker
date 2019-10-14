@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.util
+package pl.touk.nussknacker.restmodel.util
 
 import java.sql.Timestamp
 import java.time.format.DateTimeFormatter

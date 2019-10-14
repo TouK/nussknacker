@@ -1,14 +1,15 @@
 package pl.touk.nussknacker.ui.process.repository
 
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.restmodel.db.entity.ProcessVersionEntityData
 import pl.touk.nussknacker.restmodel.process.ProcessId
 import pl.touk.nussknacker.restmodel.processdetails.{DeploymentEntry, ProcessHistoryEntry, ProcessShapeFetchStrategy}
+import pl.touk.nussknacker.restmodel.util.DateUtils
 import pl.touk.nussknacker.ui.app.BuildInfo
 import pl.touk.nussknacker.ui.db.EspTables
 import pl.touk.nussknacker.ui.db.entity._
-import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, LoggedUser, Permission}
-import pl.touk.nussknacker.ui.util.DateUtils
-import pl.touk.nussknacker.ui.{BadRequestError, NotFoundError}
+import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser}
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
 import scala.language.higherKinds
 
@@ -68,19 +69,4 @@ object ProcessRepository {
                        deployedVersion.deployedAtTime,
                        deployedVersion.user,
                        deployedVersion.buildInfo.flatMap(BuildInfo.parseJson).getOrElse(BuildInfo.empty))
-
-  case class ProcessNotFoundError(id: String) extends Exception(s"No process $id found") with NotFoundError
-
-  case class ProcessAlreadyExists(id: String) extends BadRequestError {
-    def getMessage = s"Process $id already exists"
-  }
-
-  case class ProcessAlreadyDeployed(id: String) extends BadRequestError {
-    def getMessage = s"Process $id is already deployed"
-  }
-
-  case class InvalidProcessTypeError(id: String) extends BadRequestError {
-    def getMessage = s"Process $id is not GraphProcess"
-  }
-
 }

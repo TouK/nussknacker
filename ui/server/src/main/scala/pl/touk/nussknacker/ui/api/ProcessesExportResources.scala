@@ -7,17 +7,18 @@ import akka.stream.Materializer
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.restmodel.process.ProcessActivity
+import pl.touk.nussknacker.restmodel.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
-import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.ProcessActivity
-import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, ProcessActivityRepository}
+import pl.touk.nussknacker.ui.process.repository.DBProcessActivityRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util._
 
 import scala.concurrent.ExecutionContext
 
 class ProcessesExportResources(val processRepository: FetchingProcessRepository,
-                               processActivityRepository: ProcessActivityRepository)
+                               processActivityRepository: DBProcessActivityRepository)
                               (implicit val ec: ExecutionContext, mat: Materializer)
   extends Directives with FailFastCirceSupport with RouteWithUser with ProcessDirectives {
 

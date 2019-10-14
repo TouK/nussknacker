@@ -1,9 +1,8 @@
 package pl.touk.nussknacker.ui.db.entity
 
 import java.sql.Timestamp
-import java.time.LocalDateTime
 
-import pl.touk.nussknacker.ui.util.DateUtils
+import pl.touk.nussknacker.restmodel.db.entity.AttachmentEntityData
 import slick.ast.ColumnOption.PrimaryKey
 import slick.jdbc.JdbcProfile
 import slick.lifted.{TableQuery => LTableQuery}
@@ -37,8 +36,4 @@ trait AttachmentEntityFactory {
 
   val attachmentsTable: LTableQuery[AttachmentEntityFactory#AttachmentEntity] = LTableQuery(new AttachmentEntity(_)) 
   
-}
-
-case class AttachmentEntityData(id: Long, processId: Long, processVersionId: Long, fileName: String, filePath: String, user: String, createDate: Timestamp) {
-  val createDateTime: LocalDateTime = DateUtils.toLocalDateTime(createDate)
 }

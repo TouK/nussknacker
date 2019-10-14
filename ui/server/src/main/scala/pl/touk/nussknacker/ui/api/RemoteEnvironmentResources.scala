@@ -9,8 +9,6 @@ import cats.syntax.traverse._
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.ui.process.migrate.{RemoteEnvironment, RemoteEnvironmentCommunicationError, TestMigrationResult}
-import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.util.ProcessComparator
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -19,8 +17,9 @@ import io.circe.Encoder
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.restmodel.process.ProcessId
-import pl.touk.nussknacker.restmodel.processdetails.{ProcessDetails}
-import pl.touk.nussknacker.ui.security.api.{LoggedUser}
+import pl.touk.nussknacker.restmodel.process.repository.{FetchingProcessRepository, ProcessNotFoundError}
+import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
                                  val processRepository: FetchingProcessRepository,

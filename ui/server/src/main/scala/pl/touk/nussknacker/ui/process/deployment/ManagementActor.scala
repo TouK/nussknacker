@@ -2,19 +2,21 @@ package pl.touk.nussknacker.ui.process.deployment
 
 import akka.actor.{Actor, ActorRef, ActorRefFactory, Props, Status}
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.plugins.ChangesManagement
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus}
 import pl.touk.nussknacker.restmodel.processdetails.DeploymentAction
-import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntityData
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessNotFoundError
-import pl.touk.nussknacker.ui.process.repository.{DeployedProcessRepository, FetchingProcessRepository}
+import pl.touk.nussknacker.plugins.ChangeEvent.OnDeployed
+import pl.touk.nussknacker.restmodel.db.entity.ProcessVersionEntityData
+import pl.touk.nussknacker.restmodel.process.deployment.{DeployInfo, DeploymentActionType}
+import pl.touk.nussknacker.restmodel.process.repository.{FetchingProcessRepository, ProcessNotFoundError}
+import pl.touk.nussknacker.ui.process.repository.DeployedProcessRepository
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
 import pl.touk.nussknacker.ui.security.NussknackerInternalUser
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -27,15 +29,20 @@ object ManagementActor {
   def apply(environment: String,
             managers: Map[ProcessingType, ProcessManager],
             processRepository: FetchingProcessRepository,
-            deployedProcessRepository: DeployedProcessRepository, subprocessResolver: SubprocessResolver)(implicit context: ActorRefFactory): ActorRef = {
-    context.actorOf(Props(classOf[ManagementActor], environment, managers, processRepository, deployedProcessRepository, subprocessResolver))
+            deployedProcessRepository: DeployedProcessRepository,
+            subprocessResolver: SubprocessResolver,
+            changesManagement: ChangesManagement)
+           (implicit context: ActorRefFactory): ActorRef = {
+    context.actorOf(Props(classOf[ManagementActor], environment, managers, processRepository, deployedProcessRepository, subprocessResolver, changesManagement))
   }
 
 }
 
 class ManagementActor(environment: String, managers: Map[ProcessingType, ProcessManager],
-                      processRepository: FetchingProcessRepository,
-                      deployedProcessRepository: DeployedProcessRepository, subprocessResolver: SubprocessResolver) extends Actor with LazyLogging {
+                      val processRepository: FetchingProcessRepository,
+                      deployedProcessRepository: DeployedProcessRepository,
+                      subprocessResolver: SubprocessResolver,
+                      changesManagement: ChangesManagement) extends Actor with LazyLogging {
 
   private var beingDeployed = Map[ProcessName, DeployInfo]()
 
@@ -45,7 +52,7 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
     case Deploy(process, user, savepointPath, comment) =>
       ensureNoDeploymentRunning {
         val deployRes: Future[Unit] = deployProcess(process.id, savepointPath, comment)(user)
-        reply(withDeploymentInfo(process, user.id, DeploymentActionType.Deployment, deployRes))
+        reply(withDeploymentInfo(process, user, DeploymentActionType.Deployment, deployRes))
       }
     case Snapshot(id, user, savepointDir) =>
       reply(processManager(id.id)(ec, user).flatMap(_.savepoint(id.name, savepointDir)))
@@ -53,7 +60,7 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
       ensureNoDeploymentRunning {
         implicit val loggedUser: LoggedUser = user
         val cancelRes = cancelProcess(id, comment)
-        reply(withDeploymentInfo(id, user.id, DeploymentActionType.Cancel, cancelRes))
+        reply(withDeploymentInfo(id, user, DeploymentActionType.Cancel, cancelRes))
       }
     case CheckStatus(id, user) if isBeingDeployed(id.name) =>
       val info = beingDeployed(id.name)
@@ -70,10 +77,15 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
       } yield state.map(ProcessStatus(_, deployedVersion.map(_.processVersionId)))
 
       reply(processStatus)
-    case DeploymentActionFinished(id, None) =>
+    case DeploymentActionFinished(id, user, None) =>
+      implicit val loggedUser = user
       logger.info(s"Finishing ${beingDeployed.get(id.name)} of $id")
+
+      beingDeployed.get(id.name).foreach { deployInfo =>
+        changesManagement.handler(OnDeployed(id.name, deployInfo))
+      }
       beingDeployed -= id.name
-    case DeploymentActionFinished(id, Some(failure)) =>
+    case DeploymentActionFinished(id, _, Some(failure)) =>
       logger.error(s"Action: ${beingDeployed.get(id.name)} of $id finished with failure", failure)
       beingDeployed -= id.name
     case Test(id, processJson, testData, user, encoder) =>
@@ -105,11 +117,11 @@ class ManagementActor(environment: String, managers: Map[ProcessingType, Process
     }
   }
 
-  private def withDeploymentInfo[T](id: ProcessIdWithName, userId: String, action: DeploymentActionType, actionFuture: => Future[T]): Future[T] = {
-    beingDeployed += id.name -> DeployInfo(userId, System.currentTimeMillis(), action)
+  private def withDeploymentInfo[T](id: ProcessIdWithName, user: LoggedUser, action: DeploymentActionType, actionFuture: => Future[T]): Future[T] = {
+    beingDeployed += id.name -> DeployInfo(user.id, System.currentTimeMillis(), action)
     actionFuture.onComplete {
-      case Success(_) => self ! DeploymentActionFinished(id, None)
-      case Failure(ex) => self ! DeploymentActionFinished(id, Some(ex))
+      case Success(_) => self ! DeploymentActionFinished(id, user, None)
+      case Failure(ex) => self ! DeploymentActionFinished(id, user, Some(ex))
     }
     actionFuture
   }
@@ -217,16 +229,7 @@ case class CheckStatus(id: ProcessIdWithName, user: LoggedUser)
 
 case class Test[T](id: ProcessIdWithName, processJson: String, test: TestData, user: LoggedUser, variableEncoder: Any => T)
 
-case class DeploymentActionFinished(id: ProcessIdWithName, optionalFailure: Option[Throwable])
-
-case class DeployInfo(userId: String, time: Long, action: DeploymentActionType)
-
-sealed trait DeploymentActionType
-
-object DeploymentActionType {
-  case object Deployment extends DeploymentActionType
-  case object Cancel extends DeploymentActionType
-}
+case class DeploymentActionFinished(id: ProcessIdWithName, user: LoggedUser, optionalFailure: Option[Throwable])
 
 case object DeploymentStatus
 

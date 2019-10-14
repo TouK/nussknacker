@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
 import pl.touk.nussknacker.restmodel.process.ProcessId
-import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
+import pl.touk.nussknacker.restmodel.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.security.api.Permission.Permission
 

@@ -10,6 +10,7 @@ import akka.stream.Materializer
 import akka.stream.ActorMaterializer
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.plugins.{ChangesManagementDependencies, ChangesManagementFactory}
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
 import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
@@ -20,7 +21,7 @@ import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment.ManagementActor
 import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, TestModelMigrations}
-import pl.touk.nussknacker.ui.process.repository.{DBFetchingProcessRepository, DeployedProcessRepository, ProcessActivityRepository, WriteProcessRepository}
+import pl.touk.nussknacker.ui.process.repository.{DBFetchingProcessRepository, DeployedProcessRepository, DBProcessActivityRepository, WriteProcessRepository}
 import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, SubprocessResolver}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.AuthenticatorProvider
@@ -107,14 +108,18 @@ object NussknackerApp extends App with Directives with LazyLogging {
     val writeProcessRepository = WriteProcessRepository.create(db, modelData)
 
     val deploymentProcessRepository = DeployedProcessRepository.create(db, modelData)
-    val processActivityRepository = new ProcessActivityRepository(db)
+    val processActivityRepository = DBProcessActivityRepository(db)
     val authenticator = AuthenticatorProvider(config, getClass.getClassLoader)
 
     val counter = new ProcessCounter(subprocessRepository)
 
     Initialization.init(modelData.mapValues(_.migrations), db, environment, config.getAs[Map[String, String]]("customProcesses"))
 
-    val managementActor = ManagementActor(environment, managers, processRepository, deploymentProcessRepository, subprocessResolver)
+    val changesManagement = ChangesManagementFactory.serviceLoader(getClass.getClassLoader).create(
+      config,
+      ChangesManagementDependencies(processRepository, processActivityRepository)
+    )
+    val managementActor = ManagementActor(environment, managers, processRepository, deploymentProcessRepository, subprocessResolver, changesManagement)
     val jobStatusService = new JobStatusService(managementActor)
 
     val processAuthorizer = new AuthorizeProcess(processRepository)
@@ -129,7 +134,8 @@ object NussknackerApp extends App with Directives with LazyLogging {
           processValidation = processValidation,
           typesForCategories = typesForCategories,
           newProcessPreparer = NewProcessPreparer(typeToConfig, additionalFields),
-          processAuthorizer = processAuthorizer
+          processAuthorizer = processAuthorizer,
+          changesManagement = changesManagement
         ),
         new ProcessesExportResources(processRepository, processActivityRepository),
         new ProcessActivityResource(processActivityRepository, processRepository),

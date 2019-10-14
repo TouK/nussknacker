@@ -12,13 +12,14 @@ import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import akka.stream.{ActorAttributes, Materializer}
 import akka.stream.scaladsl.FileIO
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, ProcessActivityRepository}
+import pl.touk.nussknacker.restmodel.process.repository.FetchingProcessRepository
+import pl.touk.nussknacker.ui.process.repository.DBProcessActivityRepository
 import pl.touk.nussknacker.ui.util.{AkkaHttpResponse, CatsSyntax}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.ExecutionContext
 
-class ProcessActivityResource(processActivityRepository: ProcessActivityRepository, val processRepository: FetchingProcessRepository)
+class ProcessActivityResource(processActivityRepository: DBProcessActivityRepository, val processRepository: FetchingProcessRepository)
                              (implicit val ec: ExecutionContext, mat: Materializer) extends Directives with FailFastCirceSupport with RouteWithUser with ProcessDirectives {
 
   private implicit final val plainBytes: FromEntityUnmarshaller[Array[Byte]] =

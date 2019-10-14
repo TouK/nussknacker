@@ -4,22 +4,21 @@ import java.sql.Timestamp
 import java.time.LocalDateTime
 
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.generic.JsonCodec
-import io.circe.java8.time.{JavaTimeDecoders, JavaTimeEncoders}
-import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName}
-import pl.touk.nussknacker.ui.api.ProcessAttachmentService.AttachmentToAdd
-import pl.touk.nussknacker.ui.db.entity.{AttachmentEntityData, CommentActions, CommentEntityData}
+import pl.touk.nussknacker.restmodel.api.AttachmentToAdd
+import pl.touk.nussknacker.restmodel.db.entity.AttachmentEntityData
+import pl.touk.nussknacker.restmodel.process.repository.ProcessActivityRepository
+import pl.touk.nussknacker.restmodel.process.{Attachment, Comment, ProcessActivity, ProcessId, ProcessIdWithName}
+import pl.touk.nussknacker.ui.db.entity.CommentActions
 import pl.touk.nussknacker.ui.db.{DbConfig, EspTables}
-import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.{Attachment, Comment, ProcessActivity}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class ProcessActivityRepository(dbConfig: DbConfig) 
-  extends LazyLogging with BasicRepository with EspTables with CommentActions {
+case class DBProcessActivityRepository(dbConfig: DbConfig)
+  extends ProcessActivityRepository with LazyLogging with BasicRepository with EspTables with CommentActions {
 
   import profile.api._
-  
+
   def addComment(processId: ProcessId, processVersionId: Long, comment: String)
                 (implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Unit] = {
     run(newCommentAction(processId, processVersionId, comment)).map(_ => ())
@@ -69,39 +68,5 @@ case class ProcessActivityRepository(dbConfig: DbConfig)
   def findAttachment(attachmentId: Long)(implicit ec: ExecutionContext): Future[Option[AttachmentEntityData]] = {
     val findAttachmentAction = attachmentsTable.filter(_.id === attachmentId).result.headOption
     run(findAttachmentAction)
-  }
-}
-
-object ProcessActivityRepository extends JavaTimeDecoders with JavaTimeEncoders {
-
-  @JsonCodec case class ProcessActivity(comments: List[Comment], attachments: List[Attachment])
-
-  @JsonCodec  case class Attachment(id: Long, processId: String, processVersionId: Long, fileName: String, user: String, createDate: LocalDateTime)
-
-  object Attachment {
-    def apply(attachment: AttachmentEntityData, processName: String): Attachment = {
-      Attachment(
-        id = attachment.id,
-        processId = processName,
-        processVersionId = attachment.processVersionId,
-        fileName = attachment.fileName,
-        user = attachment.user,
-        createDate = attachment.createDateTime
-      )
-    }
-  }
-
-  @JsonCodec case class Comment(id: Long, processId: String, processVersionId: Long, content: String, user: String, createDate: LocalDateTime)
-  object Comment {
-    def apply(comment: CommentEntityData, processName: String): Comment = {
-      Comment(
-        id = comment.id,
-        processId = processName,
-        processVersionId = comment.processVersionId,
-        content = comment.content,
-        user = comment.user,
-        createDate = comment.createDateTime
-      )
-    }
   }
 }

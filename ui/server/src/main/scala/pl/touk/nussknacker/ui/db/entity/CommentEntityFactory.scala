@@ -4,10 +4,10 @@ import java.sql.Timestamp
 import java.time.LocalDateTime
 
 import db.util.DBIOActionInstances.DB
+import pl.touk.nussknacker.restmodel.db.entity.CommentEntityData
 import pl.touk.nussknacker.restmodel.process.ProcessId
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.util.DateUtils
-import slick.jdbc.{HsqldbProfile, JdbcProfile, PostgresProfile}
+import slick.jdbc.JdbcProfile
 import slick.lifted.{TableQuery => LTableQuery}
 import slick.sql.SqlProfile.ColumnOption.NotNull
 
@@ -37,10 +37,6 @@ trait CommentEntityFactory {
   }
 
   val commentsTable: LTableQuery[CommentEntityFactory#CommentEntity] = LTableQuery(new CommentEntity(_))
-}
-
-case class CommentEntityData(id: Long, processId: Long, processVersionId: Long, content: String, user: String, createDate: Timestamp) {
-  val createDateTime: LocalDateTime = DateUtils.toLocalDateTime(createDate)
 }
 
 trait CommentActions {

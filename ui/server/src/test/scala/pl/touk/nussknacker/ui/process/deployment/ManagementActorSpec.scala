@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
+import pl.touk.nussknacker.plugins.ChangesManagement
 import pl.touk.nussknacker.engine.api.deployment.CustomProcess
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.process
@@ -30,7 +31,7 @@ class ManagementActorSpec extends FunSuite  with Matchers with ScalaFutures with
   private val writeProcessRepository = newWriteProcessRepository(db)
   private val deploymentProcessRepository = newDeploymentProcessRepository(db)
   private val managementActor = ManagementActor(env,
-    Map(TestProcessingTypes.Streaming -> processManager), processRepository, deploymentProcessRepository, TestFactory.sampleResolver)
+    Map(TestProcessingTypes.Streaming -> processManager), processRepository, deploymentProcessRepository, TestFactory.sampleResolver, ChangesManagement.noop)
 
   private val jobStatusService = new JobStatusService(managementActor)
 

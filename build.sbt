@@ -125,7 +125,7 @@ val scalaParsersV = "1.0.4"
 val dispatchV = "1.0.1"
 val slf4jV = "1.7.21"
 val scalaLoggingV = "3.9.0"
-val scalaCompatV = "0.8.0"
+val scalaCompatV = "0.9.0"
 val ficusV = "1.4.1"
 val configV = "1.3.0"
 val commonsLangV = "3.3.2"
@@ -297,7 +297,7 @@ lazy val managementJavaSample = (project in engine("flink/management/java_sample
     test in assembly := {},
     libraryDependencies ++= {
       Seq(
-        "org.scala-lang.modules" %% "scala-java8-compat" % "0.8.0",
+        "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided"
       )
     }
@@ -641,7 +641,14 @@ lazy val restmodel = (project in file("ui/restmodel"))
       "io.circe" %% "circe-java8" % circeV
     )
   )
-  .dependsOn(interpreter)
+  .dependsOn(api, securityApi, interpreter)
+
+lazy val pluginApi = (project in file("ui/plugin-api"))
+  .settings(commonSettings)
+  .settings(
+    name := "nussknacker-plugin-api",
+  )
+  .dependsOn(restmodel, api, util)
 
 lazy val ui = (project in file("ui/server"))
   .configs(SlowTests)
@@ -708,7 +715,7 @@ lazy val ui = (project in file("ui/server"))
     }
   )
   .settings(addArtifact(artifact in (Compile, assembly), assembly))
-  .dependsOn(management, interpreter, engineStandalone, processReports, securityApi, restmodel)
+  .dependsOn(management, interpreter, engineStandalone, processReports, securityApi, restmodel, pluginApi)
 
 addCommandAlias("assemblySamples", ";managementSample/assembly;standaloneSample/assembly")
 
