@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.management
 
-import com.softwaremill.sttp.Response
-import com.softwaremill.sttp.testing.SttpBackendStub
+import sttp.client.Response
+import sttp.client.testing.SttpBackendStub
 import com.typesafe.config.ConfigFactory
 import io.circe.Json
 import io.circe.Json.fromString

@@ -2,8 +2,8 @@ package pl.touk.nussknacker.engine.management
 
 import java.io.File
 
-import com.softwaremill.sttp.SttpBackend
-import com.softwaremill.sttp.asynchttpclient.future.AsyncHttpClientFutureBackend
+import sttp.client.{NothingT, SttpBackend}
+import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Encoder
@@ -141,7 +141,7 @@ class FlinkProcessManagerProvider extends ProcessManagerProvider {
 
 
   override def createProcessManager(modelData: ModelData, config: Config): ProcessManager = {
-    implicit val backend: SttpBackend[Future, Nothing] = AsyncHttpClientFutureBackend.usingConfig(new DefaultAsyncHttpClientConfig.Builder().build())
+    implicit val backend: SttpBackend[Future, Nothing, NothingT] = AsyncHttpClientFutureBackend.usingConfig(new DefaultAsyncHttpClientConfig.Builder().build())
 
     //FIXME: how to do it easier??
     val flinkConfig = asFlinkConfig(config)

@@ -1,22 +1,25 @@
 package pl.touk.nussknacker.engine.standalone.management
 
-import com.softwaremill.sttp._
-import com.softwaremill.sttp.asynchttpclient.future.AsyncHttpClientFutureBackend
+import sttp.client._
+import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
+import io.circe
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessState, RunningState}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.standalone.api.DeploymentData
-import com.softwaremill.sttp.circe._
+import sttp.client.circe._
 import pl.touk.nussknacker.engine.sttp.SttpJson
+import pl.touk.nussknacker.engine.sttp.SttpJson.asOptionalJson
+import sttp.model.{StatusCode, Uri}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 object StandaloneProcessClient {
 
   def apply(config: Config) : StandaloneProcessClient = {
-    implicit val backend: SttpBackend[Future, Nothing] = AsyncHttpClientFutureBackend.usingConfig(new DefaultAsyncHttpClientConfig.Builder().build())
+    implicit val backend: SttpBackend[Future, Nothing, NothingT] = AsyncHttpClientFutureBackend.usingConfig(new DefaultAsyncHttpClientConfig.Builder().build())
 
     val managementUrls = config.getString("managementUrl").split(",").map(_.trim).toList
     val clients = managementUrls.map(new DispatchStandaloneProcessClient(_))
@@ -70,14 +73,14 @@ class MultiInstanceStandaloneProcessClient(clients: List[StandaloneProcessClient
 
 }
 
-class DispatchStandaloneProcessClient(managementUrl: String)(implicit backend: SttpBackend[Future, Nothing]) extends StandaloneProcessClient {
+class DispatchStandaloneProcessClient(managementUrl: String)(implicit backend: SttpBackend[Future, Nothing, NothingT]) extends StandaloneProcessClient {
 
   private val managementUri = Uri.parse(managementUrl).get
 
   private implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
 
   def deploy(deploymentData: DeploymentData): Future[Unit] = {
-    sttp
+    basicRequest
       .post(managementUri.path("deploy"))
       .body(deploymentData)
       .send()
@@ -85,17 +88,16 @@ class DispatchStandaloneProcessClient(managementUrl: String)(implicit backend: S
   }
 
   def cancel(processName: ProcessName): Future[Unit] = {
-    sttp
+    basicRequest
       .post(managementUri.path("cancel", processName.value))
       .send()
       .map(_ => ())
   }
 
   def findStatus(name: ProcessName): Future[Option[ProcessState]] = {
-    sttp
+    basicRequest
       .get(managementUri.path("checkStatus", name.value))
-      .parseResponseIf(code => code == 404 || (code / 100 == 2))
-      .response(asJson[Option[ProcessState]])
+      .response(asOptionalJson[ProcessState])
       .send()
       .flatMap(SttpJson.failureToFuture)
   }

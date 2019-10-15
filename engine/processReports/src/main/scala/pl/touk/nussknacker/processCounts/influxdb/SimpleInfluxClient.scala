@@ -1,23 +1,24 @@
 package pl.touk.nussknacker.processCounts.influxdb
 
-import com.softwaremill.sttp._
-import com.softwaremill.sttp.circe._
+import sttp.client._
+import sttp.client.circe._
 import io.circe.Decoder
 import io.circe.generic.JsonCodec
 import io.circe.generic.semiauto._
 import pl.touk.nussknacker.engine.sttp.SttpJson
+import sttp.model.Uri
 
 import scala.concurrent.{ExecutionContext, Future}
 
 case class InfluxConfig(influxUrl: String, user: String, password: String, database: String = "esp")
 
 //we use simplistic InfluxClient, as we only need queries
-class SimpleInfluxClient(config: InfluxConfig)(implicit backend: SttpBackend[Future, Nothing]) {
+class SimpleInfluxClient(config: InfluxConfig)(implicit backend: SttpBackend[Future, Nothing, NothingT]) {
 
   private val uri = Uri.parse(config.influxUrl).get
 
   def query(query: String)(implicit ec: ExecutionContext): Future[List[InfluxSerie]] = {
-    sttp.get(uri.params("db" -> config.database, "q" -> query))
+    basicRequest.get(uri.params("db" -> config.database, "q" -> query))
       .auth.basic(config.user, config.password)
       .response(asJson[InfluxResponse])
       .send()

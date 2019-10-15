@@ -588,15 +588,15 @@ lazy val httpUtils = (project in engine("httpUtils")).
   settings(
     name := "nussknacker-http-utils",
     libraryDependencies ++= {
-      val sttpV = "1.7.1"
+      val sttpV = "2.0.0-M6"
       Seq(
         "org.dispatchhttp" %% "dispatch-core" % dispatchV,
         "org.asynchttpclient" % "async-http-client" % "2.8.1",
         "org.scala-lang.modules" %% "scala-parser-combinators" % scalaParsersV, // scalaxb deps
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
-        "com.softwaremill.sttp" %% "core" % sttpV,
-        "com.softwaremill.sttp" %% "async-http-client-backend-future" % sttpV,
-        "com.softwaremill.sttp" %% "circe" % sttpV,
+        "com.softwaremill.sttp.client" %% "core" % sttpV,
+        "com.softwaremill.sttp.client" %% "async-http-client-backend-future" % sttpV,
+        "com.softwaremill.sttp.client" %% "circe" % sttpV,
         "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )
     }

@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.management
 
 import java.io.File
 
-import com.softwaremill.sttp._
+import sttp.client._
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Decoder
 import org.apache.flink.runtime.jobgraph.JobStatus
@@ -13,16 +13,17 @@ import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import org.apache.flink.api.common.ExecutionConfig
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.management.flinkRestModel.{DeployProcessRequest, GetSavepointStatusResponse, JarsResponse, JobConfig, JobsResponse, SavepointTriggerResponse, UploadJarResponse, jobStatusDecoder}
+import pl.touk.nussknacker.engine.management.flinkRestModel.{DeployProcessRequest, GetSavepointStatusResponse, JarsResponse, JobConfig, JobsResponse, SavepointTriggerResponse, UploadJarResponse}
 import pl.touk.nussknacker.engine.sttp.SttpJson
-import com.softwaremill.sttp.circe._
+import sttp.client.circe._
 import io.circe.generic.JsonCodec
+import sttp.model.Uri
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 
-class FlinkRestManager(config: FlinkConfig, modelData: ModelData)(implicit backend: SttpBackend[Future, Nothing])
+class FlinkRestManager(config: FlinkConfig, modelData: ModelData)(implicit backend: SttpBackend[Future, Nothing, NothingT])
     extends FlinkProcessManager(modelData, config.shouldVerifyBeforeDeploy.getOrElse(true)) with LazyLogging {
 
   private val flinkUrl = Uri.parse(config.restUrl).get
@@ -46,7 +47,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData)(implicit backe
 
   private def checkIfJarExists(jarId: String): Future[String] = {
 
-    sttp
+    basicRequest
       .get(flinkUrl.path("jars"))
       .response(asJson[JarsResponse])
       .send()
@@ -64,9 +65,9 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData)(implicit backe
   private def uploadCurrentJar(): Future[String] = {
     logger.debug("Uploading new jar")
 
-    val uploadedJar = sttp
+    val uploadedJar = basicRequest
       .post(flinkUrl.path("jars", "upload"))
-      .multipartBody( multipartFile("jarfile", jarFile).copy(contentType = Some("application/x-java-archive")))
+      .multipartBody( multipartFile("jarfile", jarFile).contentType("application/x-java-archive"))
       .response(asJson[UploadJarResponse])
       .send()
       .flatMap(SttpJson.failureToFuture)
@@ -80,7 +81,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData)(implicit backe
 
 
   override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = {
-    sttp
+    basicRequest
       .get(flinkUrl.path("jobs", "overview"))
       .response(asJson[JobsResponse])
       .send()
@@ -120,7 +121,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData)(implicit backe
   //TODO: cache by jobId?
   private def checkVersion(jobId: String, name: ProcessName): Future[Option[ProcessVersion]] = {
 
-    sttp
+    basicRequest
       .get(flinkUrl.path("jobs", jobId, "config"))
       .response(asJson[JobConfig])
       .send()
@@ -143,7 +144,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData)(implicit backe
     if (timeoutLeft <= 0) {
       return Future.failed(new Exception(s"Failed to complete savepoint in time for $jobId and trigger $savepointId"))
     }
-    sttp
+    basicRequest
       .get(flinkUrl.path("jobs", jobId.value, "savepoints", savepointId))
       .response(asJson[GetSavepointStatusResponse])
       .send()
@@ -165,14 +166,14 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData)(implicit backe
   }
 
   override protected def cancel(job: ProcessState): Future[Unit] = {
-    sttp
+    basicRequest
       .patch(flinkUrl.path("jobs", job.id.value))
       .send()
       .flatMap(handleUnitResponse)
   }
 
   override protected def makeSavepoint(job: ProcessState, savepointDir: Option[String]): Future[String] = {
-    sttp
+    basicRequest
       .post(flinkUrl.path("jobs", job.id.value, "savepoints"))
       .body("""{"cancel-job": false}""")
       .response(asJson[SavepointTriggerResponse])
@@ -195,7 +196,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData)(implicit backe
     logger.debug(s"Starting to deploy process: $processName with savepoint $savepointPath")
     uploadedJarId().flatMap { jarId =>
       logger.debug(s"Deploying $processName with $savepointPath and jarId: $jarId")
-      sttp
+      basicRequest
         .post(flinkUrl.path("jars", jarId, "run"))
         .body(program)
         .send()
@@ -203,7 +204,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData)(implicit backe
     }
   }
 
-  private def handleUnitResponse(response: Response[String]): Future[Unit] = response.body match {
+  private def handleUnitResponse(response: Response[Either[String, String]]): Future[Unit] = response.body match {
     case Right(_) => Future.successful(())
     case Left(error) => Future.failed(new RuntimeException(s"Request failed: $error, code: ${response.code}"))
   }

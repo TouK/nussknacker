@@ -3,12 +3,12 @@ package pl.touk.nussknacker.processCounts.influxdb
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDateTime, ZoneId, ZonedDateTime}
 
-import com.softwaremill.sttp.SttpBackend
+import sttp.client.{NothingT, SttpBackend}
 import com.typesafe.scalalogging.LazyLogging
 
 import scala.concurrent.{ExecutionContext, Future}
 
-private[influxdb] class InfluxGenerator(config: InfluxConfig, env: String = "test")(implicit backend: SttpBackend[Future, Nothing]) extends LazyLogging {
+private[influxdb] class InfluxGenerator(config: InfluxConfig, env: String = "test")(implicit backend: SttpBackend[Future, Nothing, NothingT]) extends LazyLogging {
 
   import InfluxGenerator._
 
