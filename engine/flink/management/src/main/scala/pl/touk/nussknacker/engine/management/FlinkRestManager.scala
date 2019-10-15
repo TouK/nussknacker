@@ -144,7 +144,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData)(implicit backe
       return Future.failed(new Exception(s"Failed to complete savepoint in time for $jobId and trigger $savepointId"))
     }
     sttp
-      .get(flinkUrl.path("jobs", jobId.value, "savepoints"))
+      .get(flinkUrl.path("jobs", jobId.value, "savepoints", savepointId))
       .response(asJson[GetSavepointStatusResponse])
       .send()
       .flatMap(SttpJson.failureToFuture)
@@ -168,7 +168,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData)(implicit backe
     sttp
       .patch(flinkUrl.path("jobs", job.id.value))
       .send()
-      .map(_ => ())
+      .flatMap(handleUnitResponse)
   }
 
   override protected def makeSavepoint(job: ProcessState, savepointDir: Option[String]): Future[String] = {
@@ -196,11 +196,16 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData)(implicit backe
     uploadedJarId().flatMap { jarId =>
       logger.debug(s"Deploying $processName with $savepointPath and jarId: $jarId")
       sttp
-        .post(flinkUrl.path("jobs", jarId, "run"))
+        .post(flinkUrl.path("jars", jarId, "run"))
         .body(program)
         .send()
-        .map(_ => ())
+        .flatMap(handleUnitResponse)
     }
+  }
+
+  private def handleUnitResponse(response: Response[String]): Future[Unit] = response.body match {
+    case Right(_) => Future.successful(())
+    case Left(error) => Future.failed(new RuntimeException(s"Request failed: $error, code: ${response.code}"))
   }
 
 }
