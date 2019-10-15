@@ -40,9 +40,9 @@ class CustomProcesses extends BaseProcesses {
     })
   }
 
-  stop = (process) => {
+  cancel = (process) => {
     this.props.actions.toggleConfirmDialog(true, DialogMessages.stop(process.name), () => {
-      return HttpService.stop(process.name).then(() => this.reload())
+      return HttpService.cancel(process.name).then(() => this.reload())
     })
   }
 
@@ -84,7 +84,7 @@ class CustomProcesses extends BaseProcesses {
             {key: 'modifyDate', label: 'Last modification'},
             {key: 'status', label: 'Status'},
             {key: 'deploy', label: 'Deploy'},
-            {key: 'stop', label: 'Stop'}
+            {key: 'cancel', label: 'Cancel'}
           ]}
         >
           {
@@ -106,8 +106,8 @@ class CustomProcesses extends BaseProcesses {
                   {
                     (this.processStatusClass(process, this.state.statusesLoaded, this.state.statuses) === "status-running") ?
                       (
-                        <Td column="stop" className="stop-column">
-                          <Glyphicon glyph="stop" title="Stop process" onClick={this.stop.bind(this, process)}/>
+                        <Td column="cancel" className="cancel-column">
+                          <Glyphicon glyph="stop" title="Cancel process" onClick={this.cancel.bind(this, process)}/>
                         </Td>
                       ) : []
                   }

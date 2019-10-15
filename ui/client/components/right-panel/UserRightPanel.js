@@ -119,7 +119,7 @@ class UserRightPanel extends Component {
         panelName: "Deployment",
         buttons:[
           {name: "deploy", visible: this.props.capabilities.deploy, disabled: !conf.deployPossible, icon: InlinedSvgs.buttonDeploy, btnTitle: conf.deployToolTip, onClick: this.deploy, onMouseOver: conf.deployMouseOver, onMouseOut: conf.deployMouseOut},
-          {name: "stop", visible: this.props.capabilities.deploy, disabled: !this.isRunning(), onClick: this.stop, icon: InlinedSvgs.buttonStop},
+          {name: "cancel", visible: this.props.capabilities.deploy, disabled: !this.isRunning(), onClick: this.cancel, icon: InlinedSvgs.buttonCancel},
           {name: "metrics", onClick: this.showMetrics, icon: InlinedSvgs.buttonMetrics}
         ]
       }),
@@ -244,8 +244,8 @@ class UserRightPanel extends Component {
     this.props.actions.toggleProcessActionDialog("Deploy process", (p, c) => HttpService.deploy(p, c), true)
   }
 
-  stop = () => {
-    this.props.actions.toggleProcessActionDialog("Stop process", (p, c) => HttpService.stop(p, c), false)
+  cancel = () => {
+    this.props.actions.toggleProcessActionDialog("Cancel process", (p, c) => HttpService.cancel(p, c), false)
   }
 
   clearHistory = () => {
