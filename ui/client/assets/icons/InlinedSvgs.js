@@ -30,7 +30,7 @@ InlinedSvgs.buttonSave = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3
 
 InlinedSvgs.buttonSettings = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"> <defs> <style>.a { fill: #999; } .b { fill: none; } </style> </defs>  <g> <path class="a" d="M16,8a8.06,8.06,0,0,1,1.4.12l1.16-2.86,3.07,1.24L20.47,9.35a8.05,8.05,0,0,1,2.17,2.17l2.86-1.16,1.24,3.07L23.89,14.6a8.1,8.1,0,0,1,0,2.8l2.86,1.16-1.24,3.07-2.86-1.16a8.06,8.06,0,0,1-1.94,2L22,25.31l-3,1.35-1.26-2.82a8.09,8.09,0,0,1-3.07.05l-1.16,2.86-3.07-1.24,1.16-2.86a8.06,8.06,0,0,1-2.17-2.17L6.49,21.63,5.25,18.56,8.11,17.4a8.1,8.1,0,0,1,0-2.8L5.25,13.44l1.24-3.07,2.86,1.16a8.06,8.06,0,0,1,1.94-2L10,6.69l3-1.35,1.26,2.82A8,8,0,0,1,16,8Zm0,2.49A5.53,5.53,0,1,0,21.52,16,5.52,5.52,0,0,0,16,10.47Z"/> <rect class="b" width="32" height="32"/> </g> </svg>`
 
-InlinedSvgs.buttonStop = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"> <defs> <style>.a { fill: #999; } .b { fill: none; } </style> </defs>  <g> <rect class="a" x="6.74" y="6.74" width="18.52" height="18.52"/> <rect class="b" width="32" height="32"/> </g> </svg>
+InlinedSvgs.buttonCancel = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"> <defs> <style>.a { fill: #999; } .b { fill: none; } </style> </defs>  <g> <rect class="a" x="6.74" y="6.74" width="18.52" height="18.52"/> <rect class="b" width="32" height="32"/> </g> </svg>
 `
 
 InlinedSvgs.buttonUndo = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"> <defs> <style>.a { fill: #999; } .b { fill: none; } </style> </defs>  <g> <path class="a" d="M9,6.91v4.77a9.62,9.62,0,1,1,13.8,13.41l-2.17-2.17a6.56,6.56,0,1,0-9.53-9H16l-2.62,2.62h-7v-7Z"/> <rect class="b" width="32" height="32"/> </g> </svg>`
