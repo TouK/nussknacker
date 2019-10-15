@@ -56,12 +56,12 @@ class AddProcessDialog extends React.Component {
           <div className="node-table">
             <div className="node-table-body">
               <div className="node-row">
-                <div className="node-label">Process id</div>
+                <div className="node-label">Id</div>
                 <div className="node-value"><input type="text" id="newProcessId" className="node-input" value={this.state.processId}
                                                    onChange={(e) => this.setState({processId: e.target.value})}/></div>
               </div>
               <div className="node-row">
-                <div className="node-label">Process category</div>
+                <div className="node-label">Category</div>
                 <div className="node-value">
                   <select id="processCategory" className="node-input"  onChange={(e) => this.setState({processCategory: e.target.value})}>
                     {this.props.categories.map((cat, index) => (<option key={index} value={cat}>{cat}</option>))}
