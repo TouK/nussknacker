@@ -1,21 +1,26 @@
 package pl.touk.nussknacker.engine.standalone.management
 
-import argonaut.CodecJson
-import org.asynchttpclient.Response
+import sttp.client._
+import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
+import org.asynchttpclient.DefaultAsyncHttpClientConfig
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import dispatch.{Http, StatusCode}
+import io.circe
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessState, RunningState}
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.dispatch.LoggingDispatchClient
 import pl.touk.nussknacker.engine.standalone.api.DeploymentData
-import pl.touk.nussknacker.engine.util.json.Codecs
+import sttp.client.circe._
+import pl.touk.nussknacker.engine.sttp.SttpJson
+import pl.touk.nussknacker.engine.sttp.SttpJson.asOptionalJson
+import sttp.model.{StatusCode, Uri}
 
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
+import scala.concurrent.{ExecutionContext, Future}
 
 object StandaloneProcessClient {
 
   def apply(config: Config) : StandaloneProcessClient = {
+    implicit val backend: SttpBackend[Future, Nothing, NothingT] = AsyncHttpClientFutureBackend.usingConfig(new DefaultAsyncHttpClientConfig.Builder().build())
+
     val managementUrls = config.getString("managementUrl").split(",").map(_.trim).toList
     val clients = managementUrls.map(new DispatchStandaloneProcessClient(_))
     new MultiInstanceStandaloneProcessClient(clients)
@@ -68,45 +73,33 @@ class MultiInstanceStandaloneProcessClient(clients: List[StandaloneProcessClient
 
 }
 
-class DispatchStandaloneProcessClient(managementUrl: String, http: Http = Http.default) extends StandaloneProcessClient {
+class DispatchStandaloneProcessClient(managementUrl: String)(implicit backend: SttpBackend[Future, Nothing, NothingT]) extends StandaloneProcessClient {
 
+  private val managementUri = Uri.parse(managementUrl).get
 
   private implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
-  import pl.touk.nussknacker.engine.dispatch.utils._
-  private val dispatchClient = LoggingDispatchClient(this.getClass.getSimpleName, http)
-
-  import argonaut.ArgonautShapeless._
-  import ProcessName.codec
-  private implicit val stateCodec: CodecJson[RunningState.Value] = Codecs.enumCodec(RunningState)
 
   def deploy(deploymentData: DeploymentData): Future[Unit] = {
-    val deployUrl = dispatch.url(managementUrl) / "deploy"
-    dispatchClient {
-      postJson  (deployUrl, deploymentData) OK asUnit
-    }
+    basicRequest
+      .post(managementUri.path("deploy"))
+      .body(deploymentData)
+      .send()
+      .map(_ => ())
   }
 
   def cancel(processName: ProcessName): Future[Unit] = {
-    val cancelUrl = dispatch.url(managementUrl) / "cancel" / processName.value
-    dispatchClient {
-      cancelUrl.POST OK asUnit
-    }
+    basicRequest
+      .post(managementUri.path("cancel", processName.value))
+      .send()
+      .map(_ => ())
   }
 
   def findStatus(name: ProcessName): Future[Option[ProcessState]] = {
-    def notFoundHandler(r: Response): Option[ProcessState] = {
-      if (r.getStatusCode == 404)
-        None
-      else if (r.getStatusCode / 100 == 2)
-        Some(asJson[ProcessState](r))
-      else
-        throw StatusCode(r.getStatusCode)
-    }
-
-    val jobStatusUrl = dispatch.url(managementUrl) / "checkStatus" / name.value
-    dispatchClient {
-      jobStatusUrl > notFoundHandler _
-    }
+    basicRequest
+      .get(managementUri.path("checkStatus", name.value))
+      .response(asOptionalJson[ProcessState])
+      .send()
+      .flatMap(SttpJson.failureToFuture)
   }
 
 }
