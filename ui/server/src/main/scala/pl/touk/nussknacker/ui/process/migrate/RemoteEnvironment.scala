@@ -6,7 +6,7 @@ import java.nio.charset.StandardCharsets
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshalling.Marshal
-import akka.http.scaladsl.model.Uri.Path
+import akka.http.scaladsl.model.Uri.{Path, Query}
 import akka.http.scaladsl.model.headers.{Authorization, BasicHttpCredentials}
 import akka.http.scaladsl.model.{RequestEntity, _}
 import akka.http.scaladsl.unmarshalling.{Unmarshal, Unmarshaller}
@@ -87,16 +87,16 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
 
   implicit def materializer: Materializer
 
-  private def invoke[T](method: HttpMethod, pathParts: List[String], queryString: Option[String] = None, requestEntity: RequestEntity = HttpEntity.Empty)
+  private def invoke[T](method: HttpMethod, pathParts: List[String], query: Query = Query.Empty, requestEntity: RequestEntity = HttpEntity.Empty)
                        (f: HttpResponse => Future[T])(implicit ec: ExecutionContext): Future[T] = {
     val pathEncoded = pathParts.foldLeft[Path](baseUri.path)(_ / _)
-    val uri = baseUri.withPath(pathEncoded).withRawQueryString(queryString.getOrElse(""))
+    val uri = baseUri.withPath(pathEncoded).withQuery(query)
 
     request(uri, method, requestEntity) flatMap f
   }
 
-  private def invokeForSuccess(method: HttpMethod, pathParts: List[String], queryString: Option[String] = None)(implicit ec: ExecutionContext): Future[XError[Unit]] =
-    invoke(method, pathParts, queryString) { response =>
+  private def invokeForSuccess(method: HttpMethod, pathParts: List[String], query: Query = Query.Empty)(implicit ec: ExecutionContext): Future[XError[Unit]] =
+    invoke(method, pathParts, query) { response =>
       if (response.status.isSuccess()) {
         response.discardEntityBytes()
         Future.successful(().asRight)
@@ -113,9 +113,9 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
     }
 
   private def invokeJson[T: Decoder](method: HttpMethod, pathParts: List[String],
-                                        queryString: Option[String] = None, requestEntity: RequestEntity = HttpEntity.Empty)
+                                     query: Query = Query.Empty, requestEntity: RequestEntity = HttpEntity.Empty)
                                        (implicit ec: ExecutionContext): Future[Either[EspError, T]] = {
-    invoke(method, pathParts, queryString, requestEntity) { response =>
+    invoke(method, pathParts, query, requestEntity) { response =>
       if (response.status.isSuccess()) {
         Unmarshal(response.entity).to[T].map(Either.right)
       } else {
@@ -126,7 +126,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
   }
 
   override def processVersions(processName: ProcessName)(implicit ec: ExecutionContext): Future[List[ProcessHistoryEntry]] =
-    invokeJson[ProcessDetails](HttpMethods.GET, List("processes", processName.value), Some("businessView=true")).map { result =>
+    invokeJson[ProcessDetails](HttpMethods.GET, List("processes", processName.value), Query(("businessView", true.toString))).map { result =>
       result.fold(_ => List(), _.history)
     }
 
@@ -137,7 +137,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
 
     (for {
       //TODO: move urls to some constants...
-      process <- EitherT(invokeJson[ProcessDetails](HttpMethods.GET, List("processes", id) ++ remoteProcessVersion.map(_.toString).toList, Some(s"businessView=$businessView")))
+      process <- EitherT(invokeJson[ProcessDetails](HttpMethods.GET, List("processes", id) ++ remoteProcessVersion.map(_.toString).toList, Query(("businessView", businessView.toString))))
       compared <- EitherT.fromEither[Future](compareProcess(id, localProcess)(process))
     } yield compared).value
 
@@ -162,7 +162,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
     EitherT {
       invokeStatus(HttpMethods.GET, List("processes", localProcess.id)).flatMap { status =>
         if (status == StatusCodes.NotFound)
-          invokeForSuccess(HttpMethods.POST, pathParts = List("processes", localProcess.id, category), queryString = Some(s"isSubprocess=${localProcess.metaData.isSubprocess}"))
+          invokeForSuccess(HttpMethods.POST, List("processes", localProcess.id, category), Query(("isSubprocess", localProcess.metaData.isSubprocess.toString)))
         else
           Future.successful(().asRight)
       }
@@ -188,7 +188,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
       invokeJson[List[ValidatedProcessDetails]](
         HttpMethods.GET,
         "processesDetails" :: Nil,
-        queryString = Some("names=" + processes.map(process => URLEncoder.encode(process.name, StandardCharsets.UTF_8.displayName())).mkString(","))
+        Query(("names", processes.map(process => URLEncoder.encode(process.name, StandardCharsets.UTF_8.displayName())).mkString(",")))
       )
     }
 
