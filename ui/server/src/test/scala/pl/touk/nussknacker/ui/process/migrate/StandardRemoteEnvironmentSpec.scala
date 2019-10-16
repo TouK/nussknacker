@@ -11,13 +11,14 @@ import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.ui.process.ProcessToSave
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType, ValidationErrors, ValidationResult}
-import pl.touk.nussknacker.ui.api.helpers.ProcessTestData
+import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestProcessingTypes}
+import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with ScalaFutures with FailFastCirceSupport {
-  import scala.concurrent.duration._
 
   implicit val system = ActorSystem("nussknacker-ui")
 
@@ -43,6 +44,7 @@ class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with ScalaFut
 
   private trait TriedToAddProcess {
     var triedToAddProcess: Boolean = false
+    var addedSubprocess: Option[Boolean] = None
   }
 
   private def statefulEnvironment(expectedProcessId: String,
@@ -73,7 +75,13 @@ class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with ScalaFut
       }
 
       object AddProcess {
-        def unapply(arg: (String, HttpMethod)): Boolean = is(s"/processes/$expectedProcessId/$expectedProcessCategory", POST)
+        def unapply(arg: (String, HttpMethod)): Option[Boolean] = {
+          if (is(s"/processes/$expectedProcessId/$expectedProcessCategory", POST)) {
+            path.query().get("isSubprocess").map(_.toBoolean).orElse(Some(false))
+          } else {
+            None
+          }
+        }
       }
       // end helpers
 
@@ -89,9 +97,10 @@ class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with ScalaFut
         case CheckProcess() =>
           Future.successful(HttpResponse(NotFound))
 
-        case AddProcess() =>
+        case AddProcess(isSubprocess) =>
           remoteProcessList = expectedProcessId :: remoteProcessList
           triedToAddProcess = true
+          addedSubprocess = Some(isSubprocess)
 
           Marshal(ProcessTestData.validProcessDetails).to[RequestEntity].map { entity =>
             HttpResponse(OK, entity = entity)
@@ -195,6 +204,7 @@ class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with ScalaFut
 
     migrated shouldBe 'defined
     remoteEnvironment.triedToAddProcess shouldBe false
+    remoteEnvironment.addedSubprocess shouldBe None
 
     whenReady(migrated.get) { processToSave =>
       processToSave.comment shouldBe "Process migrated from testEnv by test"
@@ -217,10 +227,33 @@ class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with ScalaFut
 
     migrated shouldBe 'defined
     remoteEnvironment.triedToAddProcess shouldBe true
+    remoteEnvironment.addedSubprocess shouldBe Some(false)
 
     whenReady(migrated.get) { processToSave =>
       processToSave.comment shouldBe "Process migrated from testEnv by test"
       processToSave.process shouldBe ProcessTestData.validDisplayableProcess.toDisplayable
+    }
+  }
+
+  it should "migrate subprocess" in {
+    var migrated : Option[Future[ProcessToSave]] = None
+    val subprocess = ProcessConverter.toDisplayable(ProcessTestData.sampleSubprocess, TestProcessingTypes.Streaming)
+    val category = "Category"
+    val remoteEnvironment: MockRemoteEnvironment with TriedToAddProcess = statefulEnvironment(
+      expectedProcessId = subprocess.id,
+      expectedProcessCategory = category,
+      initialRemoteProcessList = Nil,
+      onMigrate = migrationFuture => migrated = Some(migrationFuture)
+    )
+
+    remoteEnvironment.migrate(subprocess, category).futureValue shouldBe 'right
+    migrated shouldBe 'defined
+    remoteEnvironment.triedToAddProcess shouldBe true
+    remoteEnvironment.addedSubprocess shouldBe Some(true)
+
+    whenReady(migrated.get) { processToSave =>
+      processToSave.comment shouldBe "Process migrated from testEnv by test"
+      processToSave.process shouldBe subprocess
     }
   }
 }

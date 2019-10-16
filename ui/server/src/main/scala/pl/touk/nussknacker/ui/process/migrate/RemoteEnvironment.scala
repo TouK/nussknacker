@@ -7,8 +7,8 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.Uri.Path
-import akka.http.scaladsl.model.{RequestEntity, _}
 import akka.http.scaladsl.model.headers.{Authorization, BasicHttpCredentials}
+import akka.http.scaladsl.model.{RequestEntity, _}
 import akka.http.scaladsl.unmarshalling.{Unmarshal, Unmarshaller}
 import akka.stream.Materializer
 import cats.data.EitherT
@@ -16,19 +16,18 @@ import cats.implicits._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Decoder
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.restmodel.processdetails.{BasicProcess, ProcessDetails, ProcessHistoryEntry, ValidatedProcessDetails}
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{ValidationErrors, ValidationResult}
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.process.ProcessToSave
-import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.InvalidProcessTypeError
-import pl.touk.nussknacker.restmodel.processdetails.{BasicProcess, ProcessDetails, ProcessHistoryEntry, ValidatedProcessDetails}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ProcessComparator
 import pl.touk.nussknacker.ui.util.ProcessComparator.Difference
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.{ValidationErrors, ValidationResult}
 
-import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future}
 
 trait RemoteEnvironment {
 
@@ -77,7 +76,7 @@ case class StandardRemoteEnvironmentConfig(uri: String, batchSize: Int)
 
 //TODO: extract interface to remote environment?
 trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironment {
-  
+
   def environmentId: String
 
   def config: StandardRemoteEnvironmentConfig
@@ -96,8 +95,8 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
     request(uri, method, requestEntity) flatMap f
   }
 
-  private def invokeForSuccess(method: HttpMethod, pathParts: List[String])(implicit ec: ExecutionContext): Future[XError[Unit]] =
-    invoke(method, pathParts) { response =>
+  private def invokeForSuccess(method: HttpMethod, pathParts: List[String], queryString: Option[String] = None)(implicit ec: ExecutionContext): Future[XError[Unit]] =
+    invoke(method, pathParts, queryString) { response =>
       if (response.status.isSuccess()) {
         response.discardEntityBytes()
         Future.successful(().asRight)
@@ -163,7 +162,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
     EitherT {
       invokeStatus(HttpMethods.GET, List("processes", localProcess.id)).flatMap { status =>
         if (status == StatusCodes.NotFound)
-          invokeForSuccess(HttpMethods.POST, List("processes", localProcess.id, category))
+          invokeForSuccess(HttpMethods.POST, pathParts = List("processes", localProcess.id, category), queryString = Some(s"isSubprocess=${localProcess.metaData.isSubprocess}"))
         else
           Future.successful(().asRight)
       }
