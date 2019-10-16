@@ -41,7 +41,7 @@ object TypesInformationExtractor {
   private val blacklistedClazzPackagePrefix = Set(
     "scala.collection", "scala.Function", "scala.xml",
     "javax.xml", "java.util",
-    "cats", "argonaut", "dispatch",
+    "cats", "argonaut", "dispatch", "io.circe",
     "org.apache.flink.api.common.typeinfo.TypeInformation"
   )
 

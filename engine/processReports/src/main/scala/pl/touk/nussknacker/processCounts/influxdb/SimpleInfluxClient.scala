@@ -1,52 +1,47 @@
 package pl.touk.nussknacker.processCounts.influxdb
 
-import argonaut.{DecodeJson, DecodeResult}
-import dispatch.Http
-import dispatch._
-import pl.touk.nussknacker.engine.dispatch.LoggingDispatchClient
-import pl.touk.nussknacker.engine.dispatch.utils.asJson
-import argonaut.ArgonautShapeless._
-import argonaut.Argonaut._
+import sttp.client._
+import sttp.client.circe._
+import io.circe.Decoder
+import io.circe.generic.JsonCodec
+import io.circe.generic.semiauto._
+import pl.touk.nussknacker.engine.sttp.SttpJson
+import sttp.model.Uri
 
 import scala.concurrent.{ExecutionContext, Future}
 
 case class InfluxConfig(influxUrl: String, user: String, password: String, database: String = "esp")
 
 //we use simplistic InfluxClient, as we only need queries
-class SimpleInfluxClient(config: InfluxConfig) {
+class SimpleInfluxClient(config: InfluxConfig)(implicit backend: SttpBackend[Future, Nothing, NothingT]) {
 
-  private val httpClient = LoggingDispatchClient(classOf[InfluxGenerator].getSimpleName, Http.default)
+  private val uri = Uri.parse(config.influxUrl).get
 
   def query(query: String)(implicit ec: ExecutionContext): Future[List[InfluxSerie]] = {
-    httpClient {
-      dispatch
-        .url(config.influxUrl) <<? Map("db" -> config.database, "q" -> query) as_!(config.user, config.password) OK
-        asJson[InfluxResponse]
-    }.map { qr =>
+    basicRequest.get(uri.params("db" -> config.database, "q" -> query))
+      .auth.basic(config.user, config.password)
+      .response(asJson[InfluxResponse])
+      .send()
+      .flatMap(SttpJson.failureToFuture[InfluxResponse])
       //we assume only one query
-      qr.results.head.series
-    }
+      .map(_.results.head.series)
   }
 
   def close(): Unit = {
-    httpClient.shutdown()
+    backend.close()
   }
 }
 
-case class InfluxResponse(results: List[InfluxResult] = List())
+@JsonCodec(decodeOnly = true) case class InfluxResponse(results: List[InfluxResult] = List())
 
-case class InfluxResult(series: List[InfluxSerie] = List())
+@JsonCodec(decodeOnly = true) case class InfluxResult(series: List[InfluxSerie] = List())
 
 object InfluxSerie {
 
-  private implicit val numberOrStringDecoder: DecodeJson[Any] = DecodeJson.apply[Any] { cursor =>
-    val focused = cursor.focus
-    val bigDecimalDecoder = implicitly[DecodeJson[BigDecimal]].asInstanceOf[DecodeJson[Any]]
-    val stringDecoder = implicitly[DecodeJson[String]].asInstanceOf[DecodeJson[Any]]
-    DecodeResult.ok(focused.as(bigDecimalDecoder).toOption.getOrElse(focused.as(stringDecoder).toOption.getOrElse("")))
-  }
+  private implicit val numberOrStringDecoder: Decoder[Any] =
+    Decoder.decodeBigDecimal.asInstanceOf[Decoder[Any]] or Decoder.decodeString.asInstanceOf[Decoder[Any]] or Decoder.const[Any]("")
 
-  implicit val codec: DecodeJson[InfluxSerie] = DecodeJson.derive[InfluxSerie]
+  implicit val decoder: Decoder[InfluxSerie] = deriveDecoder[InfluxSerie]
 
 }
 

@@ -71,6 +71,15 @@ module.exports = {
     hot: true,
     hotOnly: true,
     port: 3000,
+    proxy: {
+      '/api': {
+        target: process.env.PROXY_API_DOMAIN,
+        changeOrigin: true,
+        pathRewrite: {
+          '^/api': ''
+        }
+      }
+    }
   },
   plugins: [
     new HtmlWebpackPlugin({

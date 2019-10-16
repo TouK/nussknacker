@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.util.service
 
-import pl.touk.nussknacker.engine.util.metrics.GenericInstantRateMeter
+import pl.touk.nussknacker.engine.util.metrics.{GenericInstantRateMeter, RateMeter}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -36,7 +36,7 @@ trait GenericTimeMeasuringService {
 
 }
 
-case class EspTimer(rateMeter: GenericInstantRateMeter, histogram: Long => Unit) {
+case class EspTimer(rateMeter: RateMeter, histogram: Long => Unit) {
 
   def update(nanoTimeStart: Long): Unit = {
     val delta = System.nanoTime() - nanoTimeStart

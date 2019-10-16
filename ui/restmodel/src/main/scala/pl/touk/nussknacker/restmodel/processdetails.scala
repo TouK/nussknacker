@@ -93,23 +93,23 @@ object processdetails extends JavaTimeEncoders with JavaTimeDecoders {
                                             createDate: LocalDateTime,
                                             user: String,
                                             //TODO: remove, replace with 'currentDeployments'
-                                            deployments: List[DeploymentEntry]
-                                )
+                                            deployments: List[DeploymentEntry])
 
 
   @JsonCodec case class DeploymentEntry(processVersionId: Long,
-                            //TODO: remove, in current usage it's not really needed
-                             environment: String,
-                             deployedAt: LocalDateTime,
-                             user: String,
-                             buildInfo: Map[String, String])
+                                        //TODO: remove, in current usage it's not really needed
+                                        environment: String,
+                                        deployedAt: LocalDateTime,
+                                        user: String,
+                                        buildInfo: Map[String, String])
 
   @JsonCodec case class DeploymentHistoryEntry(processVersionId: Long,
-                             time: LocalDateTime,
-                             user: String,
-                             deploymentAction: DeploymentAction,
-                             commentId: Option[Long],
-                             buildInfo: Map[String, String])
+                                               time: LocalDateTime,
+                                               user: String,
+                                               deploymentAction: DeploymentAction,
+                                               commentId: Option[Long],
+                                               comment: Option[String],
+                                               buildInfo: Map[String, String])
 
 
   object DeploymentAction extends Enumeration {
