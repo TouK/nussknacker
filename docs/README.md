@@ -1,12 +1,14 @@
-Nussknacker - streaming processes diagrams
-==========================================
 ![logo](img/nussknacker_small.jpg)
 
-Nussknacker lets you design, deploy and monitor streaming processes using easy to use GUI. We leverage power, performance and reliability of Apache Flink to make your processes fast and accurate.
+Nussknacker lets you design, deploy and monitor processes using GUI. You can run your processes on various engines. 
+
+Nussknacker started as Apache Flink "self-service" process authoring tool. We still leverage the power, performance and reliability of Apache Flink to make your streaming processes fast and accurate. 
+
+But you are not limited to Flink. The request-response engine lets you create processes exposing REST API.
 
 See:
 * [Quickstart](Quickstart.md) to have a look around
-* [Why Nussknacker](WhyNussknacker.md) to understand how Nussknacker can help you
+* [Why Nussknacker](Why.md) to understand how Nussknacker can help you
 * [Architecture](Architecture.md) to understand how Nussknacker works
 * [PoweredBy](PoweredBy.md) to see where Nussknacker is used
 
