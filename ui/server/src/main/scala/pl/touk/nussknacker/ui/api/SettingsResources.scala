@@ -6,13 +6,13 @@ import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
-import pl.touk.nussknacker.ui.security.AuthenticationConfig
+import pl.touk.nussknacker.ui.security.AuthenticationConfiguration
 
 import scala.concurrent.ExecutionContext
 
 class SettingsResources(config: FeatureTogglesConfig,
                         typeToConfig: Map[ProcessingType, ProcessingTypeData],
-                        authenticationConfig: AuthenticationConfig
+                        authenticationConfig: AuthenticationConfiguration
                        )(implicit ec: ExecutionContext)
   extends Directives with FailFastCirceSupport with RouteWithoutUser {
 
