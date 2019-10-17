@@ -145,6 +145,32 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
               } yield statuses
             }
           }
+        } ~ path("processes" / "import" / Segment) { processName =>
+          processId(processName) { processId =>
+            (canWrite(processId) & post) {
+              fileUpload("process") { case (metadata, byteSource) =>
+                complete {
+                  MultipartUtils.readFile(byteSource).map[ToResponseMarshallable] { json =>
+                    (ProcessMarshaller.fromJson(json) match {
+                      case Valid(process) if process.metaData.id != processId.name.value => Invalid(WrongProcessId(processId.name.value, process.metaData.id))
+                      case Valid(process) => Valid(process)
+                      case Invalid(unmarshallError) => Invalid(UnmarshallError(unmarshallError.msg))
+                    }) match {
+                      case Valid(process) =>
+                        processRepository.fetchLatestProcessDetailsForProcessIdEither[Unit](processId.id).map { detailsXor =>
+                          val validatedProcess = detailsXor
+                            .map(details => ProcessConverter.toDisplayable(process, details.processingType))
+                            .map(processValidation.toValidated)
+                          toResponseXor(validatedProcess)
+                        }
+
+                      case Invalid(error) => EspErrorToHttp.espErrorToHttp(error)
+                    }
+                  }
+                }
+              }
+            }
+          }
         } ~ path("processes" / Segment / "deployments") { processName =>
           processId(processName) { processId =>
             complete {
@@ -266,32 +292,6 @@ class ProcessesResources(val processRepository: FetchingProcessRepository,
                 withJson(processId.id, thisVersion, businessView) { thisDisplayable =>
                   withJson(processId.id, otherVersion, businessView) { otherDisplayable =>
                     ProcessComparator.compare(thisDisplayable, otherDisplayable)
-                  }
-                }
-              }
-            }
-          }
-        } ~ path("processes" / "import" / Segment) { processName =>
-          processId(processName) { processId =>
-            (canWrite(processId) & post) {
-              fileUpload("process") { case (metadata, byteSource) =>
-                complete {
-                  MultipartUtils.readFile(byteSource).map[ToResponseMarshallable] { json =>
-                    (ProcessMarshaller.fromJson(json) match {
-                      case Valid(process) if process.metaData.id != processId.name.value => Invalid(WrongProcessId(processId.name.value, process.metaData.id))
-                      case Valid(process) => Valid(process)
-                      case Invalid(unmarshallError) => Invalid(UnmarshallError(unmarshallError.msg))
-                    }) match {
-                      case Valid(process) =>
-                        processRepository.fetchLatestProcessDetailsForProcessIdEither[Unit](processId.id).map { detailsXor =>
-                          val validatedProcess = detailsXor
-                            .map(details => ProcessConverter.toDisplayable(process, details.processingType))
-                            .map(processValidation.toValidated)
-                          toResponseXor(validatedProcess)
-                        }
-
-                      case Invalid(error) => EspErrorToHttp.espErrorToHttp(error)
-                    }
                   }
                 }
               }
