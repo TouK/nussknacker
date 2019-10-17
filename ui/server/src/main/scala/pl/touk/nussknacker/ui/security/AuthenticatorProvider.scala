@@ -16,7 +16,7 @@ object AuthenticatorProvider extends LazyLogging {
 
   import scala.collection.JavaConverters._
 
-  def apply(config: Config, authenticationConfig: AuthenticationConfig, classLoader: ClassLoader): LoggedUserAuth = {
+  def apply(config: Config, authenticationConfig: AuthenticationConfiguration, classLoader: ClassLoader): LoggedUserAuth = {
     val default = getDefaultAuthenticatorFactory(authenticationConfig.getBackend())
 
     logger.info(s"Default authenticator backend: $default")

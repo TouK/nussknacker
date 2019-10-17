@@ -41,7 +41,7 @@ class AuthenticatorProviderSpec extends FlatSpec with Matchers with TableDrivenP
 
   it should "return default authentication provider" in {
     val conf = ConfigFactory.defaultApplication()
-    val authConf = AuthenticationConfig(conf)
+    val authConf = AuthenticationConfiguration(conf)
 
     AuthenticatorProvider(conf, authConf, this.getClass.getClassLoader) shouldBe a[LoggedUserAuth]
   }
