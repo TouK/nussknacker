@@ -9,8 +9,8 @@ import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.ObjectProcess
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType._
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestPermissions}
+import pl.touk.nussknacker.ui.process.ProcessTypesForCategories
 import pl.touk.nussknacker.ui.process.uiconfig.defaults.{DefaultValueExtractorChain, ParamDefaultValueConfig}
-import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions{
 
@@ -105,7 +105,8 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
       subprocessInputs = subprocessInputs,
       extractorFactory = DefaultValueExtractorChain(ParamDefaultValueConfig(Map()), ModelClassLoader.empty),
       nodesConfig = nodesConfig.mapValues(v => SingleNodeConfig(None, None, None, Some(v))),
-      nodeCategoryMapping = nodeCategoryMapping
+      nodeCategoryMapping = nodeCategoryMapping,
+      typesForCategories = ProcessTypesForCategories()
     )
     groups
   }
@@ -120,7 +121,8 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
       subprocessInputs = Map(),
       extractorFactory = DefaultValueExtractorChain(ParamDefaultValueConfig(Map()), ModelClassLoader.empty),
       nodesConfig = Map(),
-      nodeCategoryMapping =  Map()
+      nodeCategoryMapping =  Map(),
+      typesForCategories = ProcessTypesForCategories()
     )
     groups
   }

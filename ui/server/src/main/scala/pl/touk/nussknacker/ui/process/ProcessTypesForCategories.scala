@@ -22,3 +22,7 @@ class ProcessTypesForCategories(config: Config) {
 
   val getAllCategories = categoriesToTypesMap.keys.toList
 }
+
+object ProcessTypesForCategories {
+  def apply(): ProcessTypesForCategories = new ProcessTypesForCategories(ConfigFactory.load())
+}

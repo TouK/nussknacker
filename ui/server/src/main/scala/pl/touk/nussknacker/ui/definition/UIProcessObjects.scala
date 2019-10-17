@@ -14,7 +14,6 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.ceedubs.ficus.readers.EnumerationReader._
-import net.ceedubs.ficus.readers.ValueReader
 import pl.touk.nussknacker.engine.api.definition.ParameterRestriction
 import pl.touk.nussknacker.engine.api.{MetaData, definition}
 import pl.touk.nussknacker.engine.api.typed.ClazzRef
@@ -25,13 +24,15 @@ import pl.touk.nussknacker.engine.definition.{ParameterTypeMapper, ProcessDefini
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
+import pl.touk.nussknacker.ui.process.ProcessTypesForCategories
 
 object UIProcessObjects {
   
   def prepareUIProcessObjects(modelDataForType: ModelData,
                               user: LoggedUser,
                               subprocessesDetails: Set[SubprocessDetails],
-                              isSubprocess: Boolean): UIProcessObjects = {
+                              isSubprocess: Boolean,
+                              typesForCategories: ProcessTypesForCategories): UIProcessObjects = {
     val processConfig = modelDataForType.processConfig
 
     val chosenProcessDefinition = modelDataForType.processDefinition
@@ -59,7 +60,8 @@ object UIProcessObjects {
         subprocessInputs = subprocessInputs,
         extractorFactory = defaultParametersFactory,
         nodesConfig = nodesConfig,
-        nodeCategoryMapping = nodeCategoryMapping
+        nodeCategoryMapping = nodeCategoryMapping,
+        typesForCategories = typesForCategories
       ),
       processDefinition = uiProcessDefinition,
       nodesConfig = nodesConfig,

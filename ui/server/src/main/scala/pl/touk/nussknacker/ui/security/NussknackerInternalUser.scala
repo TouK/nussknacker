@@ -1,5 +1,5 @@
 package pl.touk.nussknacker.ui.security
 
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.api.AdminUser
 
-object NussknackerInternalUser extends LoggedUser("Nussknacker", Map.empty, true)
+object NussknackerInternalUser extends AdminUser("Nussknacker")
