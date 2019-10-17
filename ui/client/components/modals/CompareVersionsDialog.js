@@ -74,7 +74,7 @@ class CompareVersionsDialog extends React.Component {
 
         <div className="esp-form-row">
           <p>Version to compare</p>
-          <select id="otherVersion" className="node-input" value={this.state.otherVersion || ''}
+          <select autoFocus={true} id="otherVersion" className="node-input" value={this.state.otherVersion || ''}
                   onChange={(e) => this.loadVersion(e.target.value)}>
             <option key="" value=""/>
             {this.props.versions.filter(version => this.props.version !== version.processVersionId).map((version, index) => this.createVersionElement(version))}

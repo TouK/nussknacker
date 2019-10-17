@@ -83,6 +83,8 @@ processActivityList()
       &.date
         color panelTitleTextColor
         font-style italic
+      &.comment-header
+        color #808080
     p
       font-style italic
       color panelTitleTextColor
@@ -104,11 +106,14 @@ processActivityList()
         &:hover
           cursor pointer
           opacity 0.5
+    .comment-under-line
+      width 90%
+      margin-left 0
   .add-comment
     font-size 12px
     textarea
       width 90%
-      height 30px
+      height 45px
       font-size 12px
       font-weight lighter
       border 1px solid commentBorderColor

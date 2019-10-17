@@ -27,7 +27,7 @@ class GenerateTestDataDialog extends React.Component {
       <GenericModalDialog init={() => this.setState(this.initState)}
         confirm={this.confirm} type={Dialogs.types.generateTestData}>
         <p>Generate test data</p>
-        <input className="add-comment-on-save" value={this.state.testSampleSize} onChange={(e) => { this.setState({testSampleSize: e.target.value}) } } />
+        <input autoFocus={true} className="add-comment-on-save" value={this.state.testSampleSize} onChange={(e) => { this.setState({testSampleSize: e.target.value}) } } />
       </GenericModalDialog>
     );
   }
