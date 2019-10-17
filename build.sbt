@@ -56,6 +56,7 @@ val publishSettings = Seq(
 def nussknackerMergeStrategy: String => MergeStrategy = {
   case PathList(ps@_*) if ps.last == "NumberUtils.class" => MergeStrategy.first
   case PathList(ps@_*) if ps.last == "io.netty.versions.properties" => MergeStrategy.first
+  case PathList(ps@_*) if ps.last == "libnetty_transport_native_kqueue_x86_64.jnilib" => MergeStrategy.first
   case PathList("org", "w3c", "dom", "events", xs @ _*) => MergeStrategy.first
   case PathList("org", "apache", "commons", "logging", xs @ _*) => MergeStrategy.first
   case PathList("akka", xs @ _*) => MergeStrategy.last
@@ -591,7 +592,7 @@ lazy val httpUtils = (project in engine("httpUtils")).
       val sttpV = "2.0.0-M6"
       Seq(
         "org.dispatchhttp" %% "dispatch-core" % dispatchV,
-        "org.asynchttpclient" % "async-http-client" % "2.8.1",
+        "org.asynchttpclient" % "async-http-client" % "2.10.4",
         "org.scala-lang.modules" %% "scala-parser-combinators" % scalaParsersV, // scalaxb deps
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
         "com.softwaremill.sttp.client" %% "core" % sttpV,
