@@ -100,7 +100,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
   }
 
   test("deploy technical process and mark it as deployed") {
-    implicit val loggedUser = user("userId") copy(categoryPermissions = Map(testCategoryName->Set(Permission.Write, Permission.Deploy, Permission.Read)))
+    implicit val loggedUser = user("userId", Map(testCategoryName->Set(Permission.Write, Permission.Deploy, Permission.Read)))
     val processId = "Process1"
     whenReady(writeProcessRepository.saveNewProcess(ProcessName(processId), testCategoryName, CustomProcess(""), TestProcessingTypes.Streaming, false)) { res =>
       deployProcess(processId) ~> check { status shouldBe StatusCodes.OK }

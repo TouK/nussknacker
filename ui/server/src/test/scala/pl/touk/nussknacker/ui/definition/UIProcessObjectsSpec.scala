@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{Subproce
 import pl.touk.nussknacker.engine.graph.node.{Enricher, SubprocessInput, SubprocessInputDefinition}
 import pl.touk.nussknacker.engine.testing.{EmptyProcessConfigCreator, LocalModelData}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory
+import pl.touk.nussknacker.ui.process.ProcessTypesForCategories
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
 
 import scala.concurrent.Future
@@ -35,7 +36,7 @@ class UIProcessObjectsSpec extends FunSuite with Matchers {
     })
 
     val processObjects =
-      UIProcessObjects.prepareUIProcessObjects(model, TestFactory.user("userId"), Set(), false)
+      UIProcessObjects.prepareUIProcessObjects(model, TestFactory.user("userId"), Set(), false, ProcessTypesForCategories())
 
     processObjects.nodesConfig("enricher").params shouldBe Some(Map("param" -> ParameterConfig(Some("'default value'"),
       Some(FixedExpressionValues(List(
@@ -74,7 +75,7 @@ class UIProcessObjectsSpec extends FunSuite with Matchers {
         SubprocessDetails(CanonicalProcess(MetaData("enricher", null, isSubprocess = true), null, List(FlatNode(SubprocessInputDefinition("", List(
           SubprocessParameter("param", SubprocessClazzRef[String])
         )))), None), "")
-      ), false)
+      ), false, ProcessTypesForCategories())
 
     processObjects.processDefinition.subprocessInputs("enricher").parameters.map(p => (p.name, p.restriction)).toMap shouldBe Map(
       "param" -> Some(FixedExpressionValues(List(
