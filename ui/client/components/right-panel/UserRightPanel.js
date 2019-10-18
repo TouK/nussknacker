@@ -33,7 +33,10 @@ class UserRightPanel extends Component {
     zoomIn: PropTypes.func.isRequired,
     zoomOut: PropTypes.func.isRequired,
     featuresSettings: PropTypes.object.isRequired,
-    isReady: PropTypes.bool.isRequired
+    isReady: PropTypes.bool.isRequired,
+    copySelection: PropTypes.func.isRequired,
+    pasteSelection: PropTypes.func.isRequired,
+    cutSelection: PropTypes.func.isRequired
   };
 
   render() {
@@ -135,24 +138,72 @@ class UserRightPanel extends Component {
         {name: "zoomIn", onClick: this.props.zoomIn, icon: 'zoomin.svg'},
         {name: "zoomOut", onClick: this.props.zoomOut, icon: 'zoomout.svg'},
         {name: "archive", onClick: this.archiveProcess, icon: 'archive.svg', visible: this.props.capabilities.write}
-
       ]
     },
       {
         panelName: "Edit",
         buttons: [
-          {name: "undo", visible: this.props.capabilities.write, onClick: this.undo, icon: InlinedSvgs.buttonUndo},
-          {name: "redo", visible: this.props.capabilities.write, onClick: this.redo, icon: InlinedSvgs.buttonRedo},
-          {name: "align", onClick: this.props.graphLayoutFunction, icon: InlinedSvgs.buttonAlign, visible: this.props.capabilities.write},
-          {name: "properties", className: conf.propertiesBtnClass, onClick: this.showProperties, icon: InlinedSvgs.buttonSettings, visible: !this.props.isSubprocess},
-          {name: "duplicate", onClick: this.duplicateSelection, icon: 'duplicate.svg',
+          {
+            name: "undo",
+            visible: this.props.capabilities.write,
+            onClick: this.undo,
+            icon: InlinedSvgs.buttonUndo
+          },
+          {
+            name: "redo",
+            visible: this.props.capabilities.write,
+            onClick: this.redo,
+            icon: InlinedSvgs.buttonRedo
+          },
+          {
+            name: "align",
+            onClick: this.props.graphLayoutFunction,
+            icon: InlinedSvgs.buttonAlign,
+            visible: this.props.capabilities.write
+          },
+          {
+            name: "properties",
+            className: conf.propertiesBtnClass,
+            onClick: this.showProperties,
+            icon: InlinedSvgs.buttonSettings,
+            visible: !this.props.isSubprocess
+          },
+          {
+            name: "duplicate",
+            onClick: this.duplicateSelection,
+            icon: 'duplicate.svg',
             //cloning groups can be tricky...
             disabled: !NodeUtils.isPlainNode(this.props.nodeToDisplay) || NodeUtils.nodeIsGroup(this.props.nodeToDisplay),
-            visible: this.props.capabilities.write},
-          {name: "delete", onClick: this.deleteSelection, icon: 'delete.svg',
+            visible: this.props.capabilities.write
+          },
+          {
+            name: "copy",
+            onClick: (event) =>  this.props.copySelection(event, true),
+            icon: 'copy.svg',
             visible: this.props.capabilities.write,
-            disabled: !NodeUtils.isPlainNode(this.props.nodeToDisplay) || _.isEmpty(this.props.selectionState)}
-
+            disabled: !NodeUtils.isPlainNode(this.props.nodeToDisplay) || _.isEmpty(this.props.selectionState)
+          },
+          {
+            name: "cut",
+            onClick: (event) =>  this.props.cutSelection(event),
+            icon: 'cut.svg',
+            visible: this.props.capabilities.write,
+            disabled: !NodeUtils.isPlainNode(this.props.nodeToDisplay) || _.isEmpty(this.props.selectionState)
+          },
+          {
+            name: "delete",
+            onClick: this.deleteSelection,
+            icon: 'delete.svg',
+            visible: this.props.capabilities.write,
+            disabled: !NodeUtils.isPlainNode(this.props.nodeToDisplay) || _.isEmpty(this.props.selectionState)
+          },
+          {
+            name: "paste",
+            onClick: (event) =>  this.props.pasteSelection(event),
+            icon: 'paste.svg',
+            visible: this.props.capabilities.write,
+            disabled: !this.props.clipboard
+          }
         ]
       },
       //TODO: testing subprocesses should work, but currently we don't know how to pass parameters in sane way...
@@ -371,7 +422,8 @@ function mapState(state) {
     selectionState: state.graphReducer.selectionState,
     featuresSettings: state.settings.featuresSettings,
     isSubprocess: _.get(state.graphReducer.processToDisplay, "properties.isSubprocess", false),
-    businessView: state.graphReducer.businessView
+    businessView: state.graphReducer.businessView,
+    clipboard: state.graphReducer.clipboard
   };
 }
 

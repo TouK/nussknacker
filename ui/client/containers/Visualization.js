@@ -13,13 +13,29 @@ import '../stylesheets/visualization.styl';
 import NodeUtils from '../components/graph/NodeUtils';
 import * as VisualizationUrl from '../common/VisualizationUrl'
 import SpinnerWrapper from "../components/SpinnerWrapper";
+import * as JsonUtils from "../common/JsonUtils";
 
 class Visualization extends React.Component {
 
   constructor(props) {
     super(props);
     this.state = {timeoutId: null, intervalId: null, status: {}, isArchived: null, dataResolved: false};
-    this.graphRef = React.createRef()
+    this.graphRef = React.createRef();
+
+    const {loggedUser, processCategory} = this.props;
+    this.capabilities = {
+      write: loggedUser.canWrite(processCategory) && !this.state.isArchived,
+      deploy: loggedUser.canDeploy(processCategory) && !this.state.isArchived,
+    };
+    this.bindShortCuts();
+  }
+
+  bindShortCuts() {
+    this.windowListeners = {
+      copy: (event) => this.copySelection(event, true),
+      paste: (event) => this.pasteSelection(event),
+      cut: (event) => this.cutSelection(event)
+    }
   }
 
   componentDidMount() {
@@ -94,12 +110,14 @@ class Visualization extends React.Component {
         this.deleteSelection()
       }
     }
+    _.forOwn(this.windowListeners, (listener, type) => window.addEventListener(type, listener))
   }
 
   componentWillUnmount() {
     clearTimeout(this.state.timeoutId)
     clearInterval(this.state.intervalId)
     this.props.actions.clearProcess()
+    _.forOwn(this.windowListeners, (listener, type) => window.removeEventListener(type, listener))
   }
 
   fetchProcessDetails(businessView) {
@@ -134,6 +152,76 @@ class Visualization extends React.Component {
     this.props.actions.deleteNodes(this.props.selectionState)
   }
 
+  copySelection = (event, shouldCreateNotification) => {
+    const copyNodeElementId = 'copy-node'
+    if (event.target && event.target.id !== copyNodeElementId && this.canCopySelection()) {
+      let nodeIds = this.props.selectionState;
+      let process = this.props.processToDisplay;
+      const selectedNodes = NodeUtils.getAllNodesById(nodeIds, process)
+      const edgesForNodes = NodeUtils.getEdgesForConnectedNodes(nodeIds, process)
+      const selection = {
+        nodes: selectedNodes,
+        edges: edgesForNodes
+      }
+      this.props.actions.copySelection(JSON.stringify(selection));
+      if (shouldCreateNotification) {
+        this.props.notificationActions.success(this.successMessage('Copied', selectedNodes))
+      }
+    }
+  }
+
+  successMessage(action, selectedNodes) {
+    return `${action} ${selectedNodes.length} ${selectedNodes.length === 1 ? 'node' : 'nodes'}`;
+  }
+
+  canCopySelection() {
+    return this.props.allModalsClosed &&
+        !_.isEmpty(this.props.selectionState) &&
+        NodeUtils.containsOnlyPlainNodesWithoutGroups(this.props.selectionState, this.props.processToDisplay)
+  }
+
+  cutSelection = (event) => {
+    if (this.canCutSelection() ) {
+      this.copySelection(event, false)
+      const nodeIds = NodeUtils.getAllNodesById(this.props.selectionState, this.props.processToDisplay)
+          .map(node => node.id)
+      this.props.actions.deleteNodes(nodeIds)
+      this.props.notificationActions.success(this.successMessage('Cut', nodeIds))
+    }
+  }
+
+  canCutSelection() {
+    return this.canCopySelection() && this.capabilities.write
+  }
+
+  pasteSelection = (event) => {
+    if (!this.props.allModalsClosed) {
+      return
+    }
+    const selection = JsonUtils.tryParseOrNull(this.props.clipboard)
+    const canPasteSelection = _.has(selection, 'nodes') && _.has(selection, 'edges') && selection.nodes.every(node => this.canAddNode(node))
+    if (!canPasteSelection) {
+      this.props.notificationActions.error("Cannot paste invalid nodes")
+      return
+    }
+
+    const positions = selection.nodes.map((node, ix) => {
+      return {x: 300, y: ix * 100}
+    })
+    const nodesWithPositions = _.zipWith(selection.nodes, positions, (node, position) => {
+      return {node, position}
+    })
+    this.props.actions.nodesWithEdgesAdded(nodesWithPositions, selection.edges)
+    this.props.notificationActions.success(this.successMessage('Pasted', selection.nodes))
+  }
+
+  canAddNode(node) {
+    return this.capabilities.write &&
+        NodeUtils.isNode(node) &&
+        !NodeUtils.nodeIsGroup(node) &&
+        NodeUtils.isAvailable(node, this.props.processDefinitionData, this.props.processCategory)
+  }
+
   render() {
     const {leftPanelIsOpened, actions, loggedUser} = this.props;
 
@@ -143,11 +231,6 @@ class Visualization extends React.Component {
     const exportGraphFun = () => getGraph().exportGraph()
     const zoomOutFun = () => getGraph().zoomOut()
     const zoomInFun = () => getGraph().zoomIn()
-
-    const capabilities = {
-      write: loggedUser.canWrite(this.props.processCategory) && !this.state.isArchived,
-      deploy: loggedUser.canDeploy(this.props.processCategory) && !this.state.isArchived,
-    };
 
     const graphNotReady = _.isEmpty(this.props.fetchedProcessDetails) || this.props.graphLoading;
 
@@ -162,7 +245,7 @@ class Visualization extends React.Component {
           isOpened={leftPanelIsOpened}
           onToggle={actions.toggleLeftPanel}
           loggedUser={loggedUser}
-          capabilities={capabilities}
+          capabilities={this.capabilities}
           isReady={this.state.dataResolved}
         />
 
@@ -171,12 +254,15 @@ class Visualization extends React.Component {
           exportGraph={exportGraphFun}
           zoomIn={zoomInFun}
           zoomOut={zoomOutFun}
-          capabilities={capabilities}
+          capabilities={this.capabilities}
           isReady={this.state.dataResolved}
+          copySelection={(event) => this.copySelection(event, true)}
+          cutSelection={(event) => this.cutSelection(event)}
+          pasteSelection={(event) => this.pasteSelection(event)}
         />
 
         <SpinnerWrapper isReady={!graphNotReady}>
-          <Graph ref={this.graphRef} capabilities={capabilities}/>
+          <Graph ref={this.graphRef} capabilities={this.capabilities}/>
         </SpinnerWrapper>
       </div>
     );
@@ -194,6 +280,8 @@ function mapState(state) {
   return {
     processCategory: processCategory,
     selectionState: state.graphReducer.selectionState,
+    processToDisplay: state.graphReducer.processToDisplay,
+    processDefinitionData: state.settings.processDefinitionData || {},
     canDelete: canDelete,
     fetchedProcessDetails: state.graphReducer.fetchedProcessDetails,
     subprocessVersions: _.get(state.graphReducer.processToDisplay, "properties.subprocessVersions"),
@@ -201,8 +289,10 @@ function mapState(state) {
     graphLoading: state.graphReducer.graphLoading,
     leftPanelIsOpened: state.ui.leftPanelIsOpened,
     undoRedoAvailable: state.ui.allModalsClosed,
+    allModalsClosed: state.ui.allModalsClosed,
     nothingToSave: ProcessUtils.nothingToSave(state),
-    loggedUser: state.settings.loggedUser
+    loggedUser: state.settings.loggedUser,
+    clipboard: state.graphReducer.clipboard
   };
 }
 
